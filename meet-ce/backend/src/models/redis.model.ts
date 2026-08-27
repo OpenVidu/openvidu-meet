@@ -17,7 +17,11 @@ export const enum RedisKeyName {
 	RECORDING_AUTO_START_DISABLED = `${REDIS_KEY_PREFIX}recording_auto_start_disabled:`,
 	// Marks that the "meeting ending soon" warning was already sent for the current meeting
 	// (the stored value is the meeting's LiveKit room sid), so the max-duration sweep warns once.
-	MEETING_DURATION_WARNING_SENT = `${REDIS_KEY_PREFIX}meeting_duration_warning_sent:`
+	MEETING_DURATION_WARNING_SENT = `${REDIS_KEY_PREFIX}meeting_duration_warning_sent:`,
+	// Marks that the current meeting was force-ended by the duration GC rather than a moderator
+	// (the stored value is the meeting's LiveKit room sid), so room_finished can attribute the
+	// meetingEnded webhook and the participants' left reason correctly.
+	MEETING_ENDED_CAUSE = `${REDIS_KEY_PREFIX}meeting_ended_cause:`
 }
 
 export const enum RedisLockPrefix {

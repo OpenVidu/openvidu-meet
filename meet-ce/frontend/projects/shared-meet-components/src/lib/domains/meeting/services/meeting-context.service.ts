@@ -7,6 +7,13 @@ import { ViewportService } from '../openvidu-components';
 import { RoomAccessLinkService } from './room-access-link.service';
 
 /**
+ * Who/what ended the meeting, from this participant's own local knowledge — set from intent (the
+ * moment 'self' clicks end, or the ending-soon warning is received for 'duration') rather than
+ * derived from any server response, since the server has no way to reconstruct it after the fact.
+ */
+export type MeetingEndedBy = 'self' | 'other' | 'duration' | null;
+
+/**
  * Meeting-domain context: the room identity/config and session flags of the current meeting.
  * Lightweight (no LiveKit); the live participant/room runtime state lives in MeetingStateService.
  */
@@ -25,7 +32,7 @@ export class MeetingContextService {
 	private readonly _isE2eeKeyFromUrl = signal<boolean>(false);
 	private readonly _hasRecordings = signal<boolean>(false);
 	private readonly _isActiveMeeting = signal<boolean>(false);
-	private readonly _meetingEndedBy = signal<'self' | 'other' | null>(null);
+	private readonly _meetingEndedBy = signal<MeetingEndedBy>(null);
 
 	/** Readonly signal for the current room ID */
 	readonly roomId = this._roomId.asReadonly();
@@ -39,7 +46,7 @@ export class MeetingContextService {
 
 	/** Readonly signal for whether the room has recordings */
 	readonly hasRecordings = this._hasRecordings.asReadonly();
-	/** Readonly signal for who ended the meeting ('self', 'other', or null) */
+	/** Readonly signal for who/what ended the meeting. See {@link MeetingEndedBy} for details */
 	readonly meetingEndedBy = this._meetingEndedBy.asReadonly();
 	/** Readonly signal for whether the meeting is active */
 	readonly isActiveMeeting = this._isActiveMeeting.asReadonly();
@@ -127,10 +134,9 @@ export class MeetingContextService {
 	}
 
 	/**
-	 * Sets who ended the meeting
-	 * @param by 'self' if ended by this user, 'other' if ended by someone else
+	 * Sets who/what ended the meeting. See {@link MeetingEndedBy} for details.
 	 */
-	setMeetingEndedBy(by: 'self' | 'other' | null): void {
+	setMeetingEndedBy(by: MeetingEndedBy): void {
 		this._meetingEndedBy.set(by);
 	}
 

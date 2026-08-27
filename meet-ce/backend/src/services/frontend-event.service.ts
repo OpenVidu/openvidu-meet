@@ -1,4 +1,5 @@
 import type {
+	MeetMeetingEndedByModeratorPayload,
 	MeetMeetingEndingSoonPayload,
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantMuteOptions,
@@ -178,14 +179,32 @@ export class FrontendEventService {
 	}
 
 	/**
+	 * Sends a signal telling every participant that a moderator's own request to end the meeting
+	 * was just validated, moments before the room actually closes. The caller must send this before
+	 * deleting the room — the room has to still exist for the data channel broadcast to reach anyone.
+	 * Lets a client that locally attributed an earlier ending-soon warning to the duration limit
+	 * correct itself before it sees the room disconnect.
+	 */
+	async sendMeetingEndedByModeratorSignal(roomId: string): Promise<void> {
+		this.logger.debug(`Sending meeting ended by moderator signal for room '${roomId}'`);
+
+		const payload: MeetMeetingEndedByModeratorPayload = {
+			roomId,
+			timestamp: Date.now()
+		};
+
+		const options: SendDataOptions = {
+			topic: MeetSignalType.MEET_MEETING_ENDED_BY_MODERATOR
+		};
+
+		await this.sendSignal(roomId, payload, options);
+	}
+
+	/**
 	 * Generic method to send signals to the frontend
 	 */
 
-	protected async sendSignal(
-		roomId: string,
-		rawData: MeetSignalPayload,
-		options: SendDataOptions
-	): Promise<void> {
+	protected async sendSignal(roomId: string, rawData: MeetSignalPayload, options: SendDataOptions): Promise<void> {
 		this.logger.verbose(`Notifying participants in room ${roomId}: "${options.topic}".`);
 		await this.livekitService.sendData(roomId, rawData, options);
 	}

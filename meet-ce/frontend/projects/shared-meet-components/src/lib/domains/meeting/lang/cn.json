@@ -237,6 +237,7 @@
 		"ENDED_TITLE": "会议已结束",
 		"ENDED_MESSAGE": "会议已被主持人结束",
 		"ENDED_BY_SELF_MESSAGE": "您已成功结束会议",
+		"ENDED_BY_DURATION_LIMIT_MESSAGE": "该会议已达到最长时长，已自动结束",
 		"DISCONNECTED_TITLE": "已与会议断开连接",
 		"NETWORK_MESSAGE": "由于网络连接问题，连接已丢失",
 		"SERVER_SHUTDOWN_MESSAGE": "由于服务器关闭，连接已丢失",

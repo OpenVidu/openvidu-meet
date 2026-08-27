@@ -3,6 +3,7 @@ import {
 	EmbeddedEventName,
 	LeftEventReason,
 	MeetEventOrigin,
+	MeetMeetingEndedByModeratorPayload,
 	MeetMeetingEndingSoonPayload,
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantPermissionsUpdatedPayload,
@@ -93,7 +94,8 @@ export class MeetingEventHandlerService {
 					MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED,
 					MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED,
 					MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED,
-					MeetSignalType.MEET_MEETING_ENDING_SOON
+					MeetSignalType.MEET_MEETING_ENDING_SOON,
+					MeetSignalType.MEET_MEETING_ENDED_BY_MODERATOR
 				];
 
 				if (!topic || !relevantTopics.includes(topic)) {
@@ -134,6 +136,10 @@ export class MeetingEventHandlerService {
 
 						case MeetSignalType.MEET_MEETING_ENDING_SOON:
 							this.handleMeetingEndingSoon(event as MeetMeetingEndingSoonPayload);
+							break;
+
+						case MeetSignalType.MEET_MEETING_ENDED_BY_MODERATOR:
+							this.handleMeetingEndedByModerator(event as MeetMeetingEndedByModeratorPayload);
 							break;
 					}
 				} catch (error) {
@@ -332,11 +338,17 @@ export class MeetingEventHandlerService {
 	onParticipantLeft = async (event: ParticipantLeftEvent): Promise<void> => {
 		let leftReason = this.mapLeftReason(event.reason);
 
-		// If meeting was ended by local user, update reason
-		const meetingEndedBySelf = this.meetingContext.meetingEndedBy() === 'self';
+		// The backend can't tell apart why the meeting ended (see extractLeftReason's own doc
+		// comment), so it's left as the generic MEETING_ENDED; only this participant's own local
+		// knowledge — set from intent, not derived from the server — can narrow it further.
+		if (leftReason === LeftEventReason.MEETING_ENDED) {
+			const meetingEndedBy = this.meetingContext.meetingEndedBy();
 
-		if (leftReason === LeftEventReason.MEETING_ENDED && meetingEndedBySelf) {
-			leftReason = LeftEventReason.MEETING_ENDED_BY_SELF;
+			if (meetingEndedBy === 'self') {
+				leftReason = LeftEventReason.MEETING_ENDED_BY_SELF;
+			} else if (meetingEndedBy === 'duration') {
+				leftReason = LeftEventReason.MEETING_ENDED_BY_DURATION_LIMIT;
+			}
 		}
 
 		// Clear meeting context but keep session storage intact
@@ -426,7 +438,9 @@ export class MeetingEventHandlerService {
 	/**
 	 * Warns the user that the meeting is about to reach its room's duration limit
 	 * (`maxDurationMinutes`) and will be ended for every participant. The backend sends this signal
-	 * once per meeting to the whole room, so everyone sees the same warning.
+	 * once per meeting to the whole room, so everyone sees the same warning. Also records the cause
+	 * locally (see {@link MeetingEndedBy}) so the eventual `left`/`meetingLeft` event this participant
+	 * receives is attributed correctly instead of reading as a moderator's end.
 	 */
 	private handleMeetingEndingSoon(event: MeetMeetingEndingSoonPayload): void {
 		const roomId = this.meetingContext.roomId();
@@ -435,6 +449,8 @@ export class MeetingEventHandlerService {
 			return;
 		}
 
+		this.meetingContext.setMeetingEndedBy('duration');
+
 		const message =
 			event.remainingMinutes === 1
 				? this.translateService.translate('ROOM.ENDING_SOON_ONE_MINUTE')
@@ -442,6 +458,26 @@ export class MeetingEventHandlerService {
 						.translate('ROOM.ENDING_SOON_MANY_MINUTES')
 						.replace('{minutes}', `${event.remainingMinutes}`);
 		this.notificationService.showSnackbar(message, this.MEETING_ENDING_SOON_SNACKBAR_DURATION);
+	}
+
+	/**
+	 * A moderator's own end-meeting request was just validated server-side, moments before the room
+	 * closes. Corrects a `'duration'` attribution this participant may have recorded from an earlier
+	 * ending-soon warning, now that a moderator has beaten the duration GC to it. Never downgrades
+	 * `'self'`: the moderator who actually clicked already set that synchronously, before their own
+	 * request even reached the server, so it's guaranteed to still be set when their own broadcast
+	 * echoes back to them.
+	 */
+	private handleMeetingEndedByModerator(event: MeetMeetingEndedByModeratorPayload): void {
+		const roomId = this.meetingContext.roomId();
+
+		if (roomId && event.roomId !== roomId) {
+			return;
+		}
+
+		if (this.meetingContext.meetingEndedBy() !== 'self') {
+			this.meetingContext.setMeetingEndedBy('other');
+		}
 	}
 
 	private handleRecordingUpdated(event: MeetRecordingUpdatedPayload): void {

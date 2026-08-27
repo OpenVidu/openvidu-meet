@@ -79,6 +79,8 @@ export enum LeftEventReason {
 	MEETING_ENDED = 'meeting_ended',
 	/** The local participant ended the meeting for all participants */
 	MEETING_ENDED_BY_SELF = 'meeting_ended_by_self',
+	/** The meeting was automatically ended because it reached its configured maximum duration */
+	MEETING_ENDED_BY_DURATION_LIMIT = 'meeting_ended_by_duration_limit',
 	/** The participant was disconnected because the same identity joined again */
 	DUPLICATE_IDENTITY = 'duplicate_identity',
 	/** Unknown reason for leaving the meeting */

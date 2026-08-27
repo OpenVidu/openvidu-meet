@@ -237,6 +237,7 @@
 		"ENDED_TITLE": "Meeting beëindigd",
 		"ENDED_MESSAGE": "De meeting is door een moderator beëindigd",
 		"ENDED_BY_SELF_MESSAGE": "U heeft de meeting succesvol beëindigd",
+		"ENDED_BY_DURATION_LIMIT_MESSAGE": "Deze meeting is automatisch beëindigd omdat de maximale duur is bereikt",
 		"DISCONNECTED_TITLE": "Verbinding met meeting verbroken",
 		"NETWORK_MESSAGE": "Verbinding verloren door netwerkproblemen",
 		"SERVER_SHUTDOWN_MESSAGE": "Verbinding verloren door het afsluiten van de server",

@@ -2,7 +2,10 @@ import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular
 import { TestBed } from '@angular/core/testing';
 import {
 	EmbeddedEventName,
+	LeftEventReason,
 	MeetEventOrigin,
+	MeetMeetingEndedByModeratorPayload,
+	MeetMeetingEndingSoonPayload,
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantMuteOptions,
 	MeetSignalType
@@ -17,8 +20,13 @@ import { EmbeddedEventBusService } from '../../embedded/services/embedded-event-
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
-import { LocalMediaControlService, LocalMediaIntentService, LocalMediaStateService } from '../openvidu-components';
-import { MeetingContextService } from './meeting-context.service';
+import {
+	LocalMediaControlService,
+	LocalMediaIntentService,
+	LocalMediaStateService,
+	ParticipantLeftReason
+} from '../openvidu-components';
+import { MeetingContextService, MeetingEndedBy } from './meeting-context.service';
 import { MeetingEventHandlerService } from './meeting-event-handler.service';
 import { MeetingStateService } from './meeting-state.service';
 
@@ -41,11 +49,31 @@ describe('MeetingEventHandlerService', () => {
 	let microphoneEnabled: WritableSignal<boolean>;
 	let cameraEnabled: WritableSignal<boolean>;
 	let screenShareEnabled: WritableSignal<boolean>;
+	let meetingEndedBy: WritableSignal<MeetingEndedBy>;
+	let meetingContextStub: {
+		meetingEndedBy: () => MeetingEndedBy;
+		setMeetingEndedBy: jasmine.Spy;
+		roomId: () => string;
+		clearMeetingContext: jasmine.Spy;
+	};
+	let navigationServiceStub: { goToDisconnected: jasmine.Spy };
 
 	beforeEach(() => {
 		microphoneEnabled = signal(true);
 		cameraEnabled = signal(true);
 		screenShareEnabled = signal(false);
+		meetingEndedBy = signal<MeetingEndedBy>(null);
+		meetingContextStub = {
+			meetingEndedBy: () => meetingEndedBy(),
+			setMeetingEndedBy: jasmine.createSpy('setMeetingEndedBy').and.callFake((by: MeetingEndedBy) => {
+				meetingEndedBy.set(by);
+			}),
+			roomId: () => 'room1',
+			clearMeetingContext: jasmine.createSpy('clearMeetingContext')
+		};
+		navigationServiceStub = {
+			goToDisconnected: jasmine.createSpy('goToDisconnected').and.resolveTo(undefined)
+		};
 		mediaControl = jasmine.createSpyObj<LocalMediaControlService>('LocalMediaControlService', [
 			'setMicrophoneEnabled',
 			'setCameraEnabled',
@@ -82,12 +110,12 @@ describe('MeetingEventHandlerService', () => {
 					useValue: { microphoneEnabled, cameraEnabled, screenShareEnabled }
 				},
 				{ provide: RuntimeConfigService, useValue: { isEmbeddedMode: () => true } },
-				{ provide: MeetingContextService, useValue: {} },
-				{ provide: MeetingStateService, useValue: {} },
+				{ provide: MeetingContextService, useValue: meetingContextStub },
+				{ provide: MeetingStateService, useValue: { clear: () => {} } },
 				{ provide: RoomFeatureService, useValue: {} },
 				{ provide: RecordingService, useValue: {} },
 				{ provide: RoomMemberContextService, useValue: {} },
-				{ provide: NavigationService, useValue: {} },
+				{ provide: NavigationService, useValue: navigationServiceStub },
 				{ provide: NotificationService, useValue: notificationService },
 				{ provide: SoundService, useValue: {} },
 				{ provide: TranslateService, useValue: { translate: (key: string) => key } }
@@ -110,6 +138,18 @@ describe('MeetingEventHandlerService', () => {
 			media,
 			timestamp: Date.now()
 		});
+	}
+
+	/** Simulates the server broadcasting `topic` with `payload` over the room's data channel. */
+	function emitServerSignal(topic: MeetSignalType, payload: object): void {
+		let onData: ((...args: unknown[]) => void) | undefined;
+		const room = {
+			on: (event: string, handler: (...args: unknown[]) => void) => {
+				if (event === 'dataReceived') onData = handler;
+			}
+		};
+		service.setupRoomListeners(room as never);
+		onData!(new TextEncoder().encode(JSON.stringify(payload)), undefined, undefined, topic);
 	}
 
 	describe('moderator mute', () => {
@@ -284,6 +324,232 @@ describe('MeetingEventHandlerService', () => {
 
 			expect(mediaControl.setMicrophoneEnabled).not.toHaveBeenCalled();
 			expect(eventBus.events()).toEqual([]);
+		});
+	});
+
+	/**
+	 * C7 (MEET-BRANCH-AUDIT-FINDINGS.md): the ending-soon warning is also this participant's only
+	 * local signal that a force-end (not a moderator) is what's about to happen, so it's recorded
+	 * here for onParticipantLeft to pick up later.
+	 */
+	describe('meeting ending soon', () => {
+		function receiveEndingSoonSignal(): void {
+			const payload: MeetMeetingEndingSoonPayload = { roomId: 'room1', remainingMinutes: 5, timestamp: 0 };
+			emitServerSignal(MeetSignalType.MEET_MEETING_ENDING_SOON, payload);
+		}
+
+		it("records the meeting as ended by 'duration' for later attribution", () => {
+			receiveEndingSoonSignal();
+
+			expect(meetingContextStub.setMeetingEndedBy).toHaveBeenCalledOnceWith('duration');
+		});
+
+		it('shows a snackbar warning', () => {
+			receiveEndingSoonSignal();
+
+			expect(notificationService.showSnackbar).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	/**
+	 * C7 follow-up: a moderator ending the meeting manually, inside the ending-soon warning window,
+	 * used to leave every OTHER participant's local 'duration' attribution stale — they'd get
+	 * MEETING_ENDED_BY_DURATION_LIMIT for a meeting a moderator actually ended on purpose. The
+	 * endMeeting endpoint now broadcasts this signal, once validated, just before the room closes.
+	 */
+	describe('meeting ended by moderator', () => {
+		function receiveEndedByModeratorSignal(): void {
+			const payload: MeetMeetingEndedByModeratorPayload = { roomId: 'room1', timestamp: 0 };
+			emitServerSignal(MeetSignalType.MEET_MEETING_ENDED_BY_MODERATOR, payload);
+		}
+
+		it("corrects a stale 'duration' attribution to 'other'", () => {
+			meetingContextStub.setMeetingEndedBy('duration');
+
+			receiveEndedByModeratorSignal();
+
+			expect(meetingEndedBy()).toBe('other');
+		});
+
+		it("sets 'other' even when nothing was recorded yet (no prior ending-soon warning)", () => {
+			receiveEndedByModeratorSignal();
+
+			expect(meetingEndedBy()).toBe('other');
+		});
+
+		it("never downgrades the moderator's own 'self' attribution", () => {
+			meetingContextStub.setMeetingEndedBy('self');
+
+			receiveEndedByModeratorSignal();
+
+			expect(meetingEndedBy()).toBe('self');
+		});
+
+		it('ignores a signal for a different room', () => {
+			meetingContextStub.setMeetingEndedBy('duration');
+
+			emitServerSignal(MeetSignalType.MEET_MEETING_ENDED_BY_MODERATOR, { roomId: 'other-room', timestamp: 0 });
+
+			expect(meetingEndedBy()).toBe('duration');
+		});
+	});
+
+	describe('participant left', () => {
+		function participantLeft(reason: ParticipantLeftReason) {
+			return service.onParticipantLeft({
+				roomName: 'room1',
+				participantName: 'Alice',
+				identity: 'alice',
+				reason
+			});
+		}
+
+		it('attributes a room deletion to a moderator by default', async () => {
+			await participantLeft(ParticipantLeftReason.ROOM_DELETED);
+
+			expect(eventBus.events()).toEqual([
+				{
+					event: EmbeddedEventName.MEETING_LEFT,
+					payload: { roomId: 'room1', participantIdentity: 'alice', reason: LeftEventReason.MEETING_ENDED }
+				}
+			]);
+		});
+
+		it('upgrades the reason to MEETING_ENDED_BY_DURATION_LIMIT after the ending-soon warning', async () => {
+			meetingContextStub.setMeetingEndedBy('duration');
+
+			await participantLeft(ParticipantLeftReason.ROOM_DELETED);
+
+			expect(eventBus.events()).toEqual([
+				{
+					event: EmbeddedEventName.MEETING_LEFT,
+					payload: {
+						roomId: 'room1',
+						participantIdentity: 'alice',
+						reason: LeftEventReason.MEETING_ENDED_BY_DURATION_LIMIT
+					}
+				}
+			]);
+		});
+
+		it('does not upgrade a room deletion this participant ended themselves', async () => {
+			meetingContextStub.setMeetingEndedBy('self');
+
+			await participantLeft(ParticipantLeftReason.ROOM_DELETED);
+
+			expect(eventBus.events()).toEqual([
+				{
+					event: EmbeddedEventName.MEETING_LEFT,
+					payload: {
+						roomId: 'room1',
+						participantIdentity: 'alice',
+						reason: LeftEventReason.MEETING_ENDED_BY_SELF
+					}
+				}
+			]);
+		});
+
+		it('never upgrades a reason other than the generic MEETING_ENDED', async () => {
+			meetingContextStub.setMeetingEndedBy('duration');
+
+			await participantLeft(ParticipantLeftReason.LEAVE);
+
+			expect(eventBus.events()).toEqual([
+				{
+					event: EmbeddedEventName.MEETING_LEFT,
+					payload: {
+						roomId: 'room1',
+						participantIdentity: 'alice',
+						reason: LeftEventReason.VOLUNTARY_LEAVE
+					}
+				}
+			]);
+		});
+
+		it('does not upgrade a kicked participant even during the ending-soon warning window', async () => {
+			meetingContextStub.setMeetingEndedBy('duration');
+
+			await participantLeft(ParticipantLeftReason.PARTICIPANT_REMOVED);
+
+			expect(eventBus.events()).toEqual([
+				{
+					event: EmbeddedEventName.MEETING_LEFT,
+					payload: {
+						roomId: 'room1',
+						participantIdentity: 'alice',
+						reason: LeftEventReason.PARTICIPANT_KICKED
+					}
+				}
+			]);
+		});
+
+		// The scenario that broke before the "meeting ended by moderator" signal existed: the
+		// warning fires, then a moderator ends the meeting themselves before the GC ever would have.
+		// Every OTHER participant must see the plain, correct MEETING_ENDED — not the duration one.
+		it('reports the generic MEETING_ENDED — not MEETING_ENDED_BY_DURATION_LIMIT — when a moderator ends the meeting during the warning window', async () => {
+			emitServerSignal(MeetSignalType.MEET_MEETING_ENDING_SOON, {
+				roomId: 'room1',
+				remainingMinutes: 5,
+				timestamp: 0
+			});
+			emitServerSignal(MeetSignalType.MEET_MEETING_ENDED_BY_MODERATOR, { roomId: 'room1', timestamp: 1 });
+
+			await participantLeft(ParticipantLeftReason.ROOM_DELETED);
+
+			expect(eventBus.events()).toEqual([
+				{
+					event: EmbeddedEventName.MEETING_LEFT,
+					payload: { roomId: 'room1', participantIdentity: 'alice', reason: LeftEventReason.MEETING_ENDED }
+				}
+			]);
+		});
+
+		// The moderator's own client: 'self' is set synchronously by the button click, strictly
+		// before their own endMeeting request can complete and echo the broadcast back to them.
+		it("still attributes the end to 'self' for the moderator who ended it, even after their own broadcast echoes back", async () => {
+			emitServerSignal(MeetSignalType.MEET_MEETING_ENDING_SOON, {
+				roomId: 'room1',
+				remainingMinutes: 5,
+				timestamp: 0
+			});
+			meetingContextStub.setMeetingEndedBy('self'); // the button click, before the REST call
+			emitServerSignal(MeetSignalType.MEET_MEETING_ENDED_BY_MODERATOR, { roomId: 'room1', timestamp: 1 }); // their own broadcast, echoed back
+
+			await participantLeft(ParticipantLeftReason.ROOM_DELETED);
+
+			expect(eventBus.events()).toEqual([
+				{
+					event: EmbeddedEventName.MEETING_LEFT,
+					payload: {
+						roomId: 'room1',
+						participantIdentity: 'alice',
+						reason: LeftEventReason.MEETING_ENDED_BY_SELF
+					}
+				}
+			]);
+		});
+
+		// If the GC's own force-end genuinely wins the race (no moderator end request arrives), the
+		// 'duration' attribution from the warning must still upgrade correctly, unaffected by this signal.
+		it('still upgrades to MEETING_ENDED_BY_DURATION_LIMIT when no moderator end ever arrives', async () => {
+			emitServerSignal(MeetSignalType.MEET_MEETING_ENDING_SOON, {
+				roomId: 'room1',
+				remainingMinutes: 5,
+				timestamp: 0
+			});
+
+			await participantLeft(ParticipantLeftReason.ROOM_DELETED);
+
+			expect(eventBus.events()).toEqual([
+				{
+					event: EmbeddedEventName.MEETING_LEFT,
+					payload: {
+						roomId: 'room1',
+						participantIdentity: 'alice',
+						reason: LeftEventReason.MEETING_ENDED_BY_DURATION_LIMIT
+					}
+				}
+			]);
 		});
 	});
 });

@@ -237,6 +237,7 @@
 		"ENDED_TITLE": "Reunión finalizada",
 		"ENDED_MESSAGE": "Un moderador ha finalizado la reunión",
 		"ENDED_BY_SELF_MESSAGE": "Has finalizado la reunión correctamente",
+		"ENDED_BY_DURATION_LIMIT_MESSAGE": "Esta reunión ha finalizado automáticamente al alcanzar su duración máxima",
 		"DISCONNECTED_TITLE": "Desconectado de la reunión",
 		"NETWORK_MESSAGE": "Se perdió la conexión debido a problemas de conectividad de red",
 		"SERVER_SHUTDOWN_MESSAGE": "Se perdió la conexión debido al apagado del servidor",

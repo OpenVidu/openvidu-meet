@@ -18,7 +18,9 @@ export enum MeetSignalType {
 	/** Emitted when a moderator turns off a participant's microphone, camera or screen share */
 	MEET_PARTICIPANT_MEDIA_MUTED = 'meet_participant_media_muted',
 	/** Emitted once per meeting when a duration-limited meeting is about to reach its limit and be force-ended */
-	MEET_MEETING_ENDING_SOON = 'meet_meeting_ending_soon'
+	MEET_MEETING_ENDING_SOON = 'meet_meeting_ending_soon',
+	/** Emitted when a moderator's own request to end the meeting has been validated, just before the room actually closes */
+	MEET_MEETING_ENDED_BY_MODERATOR = 'meet_meeting_ended_by_moderator'
 }
 
 /**
@@ -107,6 +109,19 @@ export interface MeetMeetingEndingSoonPayload {
 	timestamp: number;
 }
 
+/**
+ * Payload for MEET_MEETING_ENDED_BY_MODERATOR signal, telling every participant that a moderator's
+ * own request to end the meeting was just validated and the room is about to close — sent before
+ * the room actually closes, so a client that locally attributed an earlier `MEET_MEETING_ENDING_SOON`
+ * warning to the duration limit can correct itself before it sees the room disconnect.
+ */
+export interface MeetMeetingEndedByModeratorPayload {
+	/** ID of the room whose meeting is about to be ended */
+	roomId: string;
+	/** Timestamp in milliseconds when the request was validated */
+	timestamp: number;
+}
+
 export interface MeetingChatSignalPayload {
 	message: string;
 }
@@ -115,8 +130,8 @@ export interface MeetingChatSignalPayload {
  * Union type representing the payload of a MeetSignal.
  * It can be either a {@link MeetRecordingUpdatedPayload}, {@link MeetRoomConfigUpdatedPayload},
  * {@link MeetParticipantRoleUpdatedPayload}, {@link MeetParticipantPermissionsUpdatedPayload},
- * {@link MeetParticipantMediaMutedPayload} or {@link MeetMeetingEndingSoonPayload}, depending on the
- * signal type.
+ * {@link MeetParticipantMediaMutedPayload}, {@link MeetMeetingEndingSoonPayload} or
+ * {@link MeetMeetingEndedByModeratorPayload}, depending on the signal type.
  */
 export type MeetSignalPayload =
 	| MeetRecordingUpdatedPayload
@@ -124,4 +139,5 @@ export type MeetSignalPayload =
 	| MeetParticipantRoleUpdatedPayload
 	| MeetParticipantPermissionsUpdatedPayload
 	| MeetParticipantMediaMutedPayload
-	| MeetMeetingEndingSoonPayload;
+	| MeetMeetingEndingSoonPayload
+	| MeetMeetingEndedByModeratorPayload;

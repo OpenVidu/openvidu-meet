@@ -237,6 +237,7 @@
 		"ENDED_TITLE": "Meeting Ended",
 		"ENDED_MESSAGE": "The meeting was ended by a moderator",
 		"ENDED_BY_SELF_MESSAGE": "You have successfully ended the meeting",
+		"ENDED_BY_DURATION_LIMIT_MESSAGE": "This meeting was automatically ended because it reached its maximum duration",
 		"DISCONNECTED_TITLE": "Disconnected from Meeting",
 		"NETWORK_MESSAGE": "Connection lost due to network connectivity issues",
 		"SERVER_SHUTDOWN_MESSAGE": "Connection lost due to server shutdown",

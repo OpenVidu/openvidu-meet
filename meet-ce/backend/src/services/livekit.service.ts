@@ -164,13 +164,19 @@ export class LiveKitService {
 		}
 	}
 
-	async deleteRoom(roomName: string): Promise<void> {
+	/**
+	 * @returns `true` if this call is what actually deleted the room, `false` if it was already
+	 * gone (a benign no-op, not an error) — callers that attribute side effects to "I ended this
+	 * meeting" (e.g. the duration GC) need that distinction, not just whether the call threw.
+	 */
+	async deleteRoom(roomName: string): Promise<boolean> {
 		try {
 			await this.lk.room.deleteRoom(roomName);
+			return true;
 		} catch (error) {
 			if (this.isNotFoundError(error)) {
 				this.logger.warn(`LiveKit room '${roomName}' not found. Skipping deletion`);
-				return;
+				return false;
 			}
 
 			this.logger.error(`Error deleting LiveKit room '${roomName}'`, error);

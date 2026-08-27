@@ -237,6 +237,7 @@
 		"ENDED_TITLE": "会議が終了しました",
 		"ENDED_MESSAGE": "モデレーターによって会議が終了されました",
 		"ENDED_BY_SELF_MESSAGE": "会議を正常に終了しました",
+		"ENDED_BY_DURATION_LIMIT_MESSAGE": "この会議は最大時間に達したため自動的に終了しました",
 		"DISCONNECTED_TITLE": "会議から切断されました",
 		"NETWORK_MESSAGE": "ネットワーク接続の問題により接続が切断されました",
 		"SERVER_SHUTDOWN_MESSAGE": "サーバーのシャットダウンにより接続が切断されました",

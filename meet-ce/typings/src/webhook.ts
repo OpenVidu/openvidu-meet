@@ -53,6 +53,23 @@ export interface MeetParticipantDeparturePayload extends MeetParticipantPayload 
 }
 
 /**
+ * Why a meeting was force-ended rather than ended normally (a moderator ended it, or the room
+ * emptied out), as carried by the {@link MeetWebhookEventType.MEETING_ENDED} webhook event.
+ */
+export enum MeetMeetingEndedCause {
+	/** The meeting reached its configured maximum duration and was force-ended by the server */
+	MAX_DURATION_REACHED = 'max_duration_reached'
+}
+
+/**
+ * Payload for the {@link MeetWebhookEventType.MEETING_ENDED} webhook event.
+ */
+export interface MeetMeetingEndedPayload extends MeetRoom {
+	/** Set only when the meeting was force-ended. Absent for a normal end. See {@link MeetMeetingEndedCause} for details */
+	cause?: MeetMeetingEndedCause;
+}
+
+/**
  * Payload for the {@link MeetWebhookEventType.PARTICIPANT_JOINED} webhook event.
  */
 export interface MeetParticipantJoinedPayload {
@@ -75,7 +92,8 @@ export interface MeetParticipantLeftPayload extends MeetParticipantJoinedPayload
 /**
  * Payload for OpenVidu Meet webhook events.
  * Depending on the event type, the payload can be {@link MeetRecordingInfo}, {@link MeetRoom},
- * {@link MeetParticipantJoinedPayload} or {@link MeetParticipantLeftPayload}.
+ * {@link MeetMeetingEndedPayload}, {@link MeetParticipantJoinedPayload} or
+ * {@link MeetParticipantLeftPayload}.
  */
 export type MeetWebhookPayload =
-	MeetRecordingInfo | MeetRoom | MeetParticipantJoinedPayload | MeetParticipantLeftPayload;
+	MeetRecordingInfo | MeetRoom | MeetMeetingEndedPayload | MeetParticipantJoinedPayload | MeetParticipantLeftPayload;

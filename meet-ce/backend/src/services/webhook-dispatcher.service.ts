@@ -1,5 +1,6 @@
 import type {
 	MeetApiKey,
+	MeetMeetingEndedPayload,
 	MeetParticipantJoinedPayload,
 	MeetParticipantLeftPayload,
 	MeetRecordingInfo,
@@ -7,7 +8,7 @@ import type {
 	MeetWebhookEvent,
 	MeetWebhookPayload
 } from '@openvidu-meet/typings';
-import { MeetWebhookEventType } from '@openvidu-meet/typings';
+import { MeetMeetingEndedCause, MeetWebhookEventType } from '@openvidu-meet/typings';
 import crypto from 'crypto';
 import { inject, injectable } from 'inversify';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
@@ -55,13 +56,12 @@ export class WebhookDispatcherService {
 	 * that a meeting session has concluded for the specified room.
 	 *
 	 * @param room - The MeetRoom object containing details of the ended meeting
+	 * @param cause - Set when the meeting was force-ended rather than ended normally (a moderator
+	 * ending it, or the room emptying out). See {@link MeetMeetingEndedCause} for details
 	 */
-	sendMeetingEndedWebhook(room: MeetRoom) {
-		this.sendWebhookEventInBackground(
-			MeetWebhookEventType.MEETING_ENDED,
-			this.roomToWirePermissions(room),
-			`Room ID: ${room.roomId}`
-		);
+	sendMeetingEndedWebhook(room: MeetRoom, cause?: MeetMeetingEndedCause) {
+		const payload: MeetMeetingEndedPayload = { ...this.roomToWirePermissions(room), ...(cause && { cause }) };
+		this.sendWebhookEventInBackground(MeetWebhookEventType.MEETING_ENDED, payload, `Room ID: ${room.roomId}`);
 	}
 
 	/**
@@ -253,11 +253,9 @@ export class WebhookDispatcherService {
 			},
 			body
 		};
-		const deliveries = await runConcurrently(
-			webhooks,
-			(webhook) => this.fetchWithRetry(webhook.url, requestInit),
-			{ concurrency: INTERNAL_CONFIG.WEBHOOK_MAX_ENDPOINTS }
-		);
+		const deliveries = await runConcurrently(webhooks, (webhook) => this.fetchWithRetry(webhook.url, requestInit), {
+			concurrency: INTERNAL_CONFIG.WEBHOOK_MAX_ENDPOINTS
+		});
 
 		deliveries.forEach((delivery, index) => {
 			if (delivery.status === 'rejected') {
@@ -321,10 +319,9 @@ export class WebhookDispatcherService {
 
 			// Handle timeout error specifically
 			if (error instanceof Error && error.name === 'AbortError') {
-				throw new Error(
-					`Request timed out after ${INTERNAL_CONFIG.WEBHOOK_REQUEST_TIMEOUT / 1000} seconds`,
-					{ cause: error }
-				);
+				throw new Error(`Request timed out after ${INTERNAL_CONFIG.WEBHOOK_REQUEST_TIMEOUT / 1000} seconds`, {
+					cause: error
+				});
 			}
 
 			// Re-throw other errors

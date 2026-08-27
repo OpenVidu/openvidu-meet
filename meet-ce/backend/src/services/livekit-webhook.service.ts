@@ -1,5 +1,5 @@
 import type { MeetRecordingInfo } from '@openvidu-meet/typings';
-import { MeetingEndAction, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetingEndAction, MeetMeetingEndedCause, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { EgressInfo, ParticipantInfo, Room, WebhookEvent } from 'livekit-server-sdk';
 import { WebhookReceiver } from 'livekit-server-sdk';
@@ -8,6 +8,7 @@ import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { DistributedEventType } from '../models/distributed-event.model.js';
+import { RedisKeyName } from '../models/redis.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
@@ -18,6 +19,7 @@ import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { MeetingPresenceService } from './meeting-presence.service.js';
 import { RecordingService } from './recording.service.js';
+import { RedisService } from './redis.service.js';
 import { RoomMemberService } from './room-member.service.js';
 import { RoomService } from './room.service.js';
 import { TokenService } from './token.service.js';
@@ -40,6 +42,7 @@ export class LivekitWebhookService {
 		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
 		@inject(AiAssistantService) protected aiAssistantService: AiAssistantService,
 		@inject(TokenService) protected tokenService: TokenService,
+		@inject(RedisService) protected redisService: RedisService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {
 		this.webhookReceiver = new WebhookReceiver(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
@@ -291,8 +294,10 @@ export class LivekitWebhookService {
 					tasks.push(this.roomRepository.updatePartial(roomId, { status: MeetRoomStatus.OPEN }));
 			}
 
-			// Send webhook notification
-			this.webhookDispatcherService.sendMeetingEndedWebhook(meetRoom);
+			// Send webhook notification, attributing the end to the duration GC when that's what
+			// actually force-ended this meeting (see RoomScheduledTasksService.markMeetingEndedByDurationLimit).
+			const cause = await this.getMeetingEndedCause(roomId, meetingId);
+			this.webhookDispatcherService.sendMeetingEndedWebhook(meetRoom, cause);
 
 			tasks.push(
 				this.meetingPresenceService.removeRoomFromAllUsers(roomId),
@@ -304,6 +309,22 @@ export class LivekitWebhookService {
 		} catch (error) {
 			this.logger.error(`Error handling room finished event for room '${roomId}'`, error);
 		}
+	}
+
+	/**
+	 * Whether `meetingId` was force-ended by the duration GC rather than ending normally (a
+	 * moderator's own end, or the room emptying out). Scoped to the meeting's sid — like
+	 * {@link RecordingAutoStartStateService#isDisabled}, a flag left over from a different, earlier
+	 * meeting in the same room never applies here.
+	 */
+	protected async getMeetingEndedCause(
+		roomId: string,
+		meetingId: string
+	): Promise<MeetMeetingEndedCause | undefined> {
+		const key = `${RedisKeyName.MEETING_ENDED_CAUSE}${roomId}`;
+		const value = await this.redisService.get(key);
+
+		return value === meetingId ? MeetMeetingEndedCause.MAX_DURATION_REACHED : undefined;
 	}
 
 	/**

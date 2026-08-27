@@ -11,6 +11,10 @@ const noopTaskScheduler = { registerTask: () => {} };
 class FakeLiveKitService {
 	liveRoomNames: string[] = [];
 	existingRoomNames = new Set<string>();
+	rooms = new Map<string, { sid: string; creationTime: number }>();
+	/** 'deleted' = deleteRoom really ended it; 'already-gone' = a no-op (room was gone already); 'error' = deleteRoom throws */
+	deleteOutcome: 'deleted' | 'already-gone' | 'error' = 'deleted';
+	deletedRoomNames: string[] = [];
 
 	async listRooms(): Promise<Room[]> {
 		return this.liveRoomNames.map((name) => ({ name }) as Room);
@@ -19,11 +23,32 @@ class FakeLiveKitService {
 	async roomsExist(roomNames: string[]): Promise<Map<string, boolean>> {
 		return new Map(roomNames.map((name) => [name, this.existingRoomNames.has(name)]));
 	}
+
+	async getRoom(roomName: string): Promise<Room> {
+		const room = this.rooms.get(roomName);
+
+		if (!room) {
+			throw new Error(`room '${roomName}' not found`);
+		}
+
+		return room as unknown as Room;
+	}
+
+	async deleteRoom(roomName: string): Promise<boolean> {
+		this.deletedRoomNames.push(roomName);
+
+		if (this.deleteOutcome === 'error') {
+			throw new Error(`boom deleting ${roomName}`);
+		}
+
+		return this.deleteOutcome === 'deleted';
+	}
 }
 
 class FakeRoomRepository {
 	openRoomIds = new Set<string>();
 	activeRoomIds: string[] = [];
+	roomsWithMaxDuration: { roomId: string; config: { maxDurationMinutes: number } }[] = [];
 
 	async findOpenRoomIds(roomIds: string[]): Promise<string[]> {
 		return roomIds.filter((roomId) => this.openRoomIds.has(roomId));
@@ -31,6 +56,14 @@ class FakeRoomRepository {
 
 	async findActiveRooms(): Promise<{ rooms: { roomId: string }[]; isTruncated: boolean; nextPageToken?: string }> {
 		return { rooms: this.activeRoomIds.map((roomId) => ({ roomId })), isTruncated: false };
+	}
+
+	async findActiveRoomsWithMaxDuration(): Promise<{
+		rooms: { roomId: string; config: { maxDurationMinutes: number } }[];
+		isTruncated: boolean;
+		nextPageToken?: string;
+	}> {
+		return { rooms: this.roomsWithMaxDuration, isTruncated: false };
 	}
 }
 
@@ -52,6 +85,25 @@ class FakeLivekitWebhookService {
 	}
 }
 
+class FakeRedisService {
+	store = new Map<string, string>();
+
+	async get(key: string): Promise<string | null> {
+		return this.store.get(key) ?? null;
+	}
+
+	async set(key: string, value: string): Promise<string> {
+		this.store.set(key, value);
+		return 'OK';
+	}
+
+	delete(keys: string | string[]): Promise<number> {
+		const list = typeof keys === 'string' ? [keys] : keys;
+		const deleted = list.filter((key) => this.store.delete(key)).length;
+		return Promise.resolve(deleted);
+	}
+}
+
 class TestableRoomScheduledTasksService extends RoomScheduledTasksService {
 	runReconcileOpenRoomsGC(): Promise<void> {
 		return this.reconcileOpenRoomsGC();
@@ -60,9 +112,25 @@ class TestableRoomScheduledTasksService extends RoomScheduledTasksService {
 	runValidateRoomsStatusGC(): Promise<void> {
 		return this.validateRoomsStatusGC();
 	}
+
+	runMarkMeetingEndedByDurationLimit(roomId: string, meetingId: string): Promise<void> {
+		return this.markMeetingEndedByDurationLimit(roomId, meetingId);
+	}
+
+	runEnforceMeetingMaxDurationGC(): Promise<void> {
+		return this.enforceMeetingMaxDurationGC();
+	}
+
+	runClearMeetingEndedCause(roomId: string, meetingId: string): Promise<void> {
+		return this.clearMeetingEndedCause(roomId, meetingId);
+	}
 }
 
-const buildService = (livekitService: FakeLiveKitService, roomRepository: FakeRoomRepository) => {
+const buildService = (
+	livekitService: FakeLiveKitService,
+	roomRepository: FakeRoomRepository,
+	redisService: FakeRedisService = new FakeRedisService()
+) => {
 	const livekitWebhookService = new FakeLivekitWebhookService();
 	const service = new TestableRoomScheduledTasksService(
 		...([
@@ -73,7 +141,7 @@ const buildService = (livekitService: FakeLiveKitService, roomRepository: FakeRo
 			livekitService,
 			livekitWebhookService,
 			{},
-			{}
+			redisService
 		] as unknown as ConstructorParameters<typeof RoomScheduledTasksService>)
 	);
 	return { service, livekitWebhookService };
@@ -154,5 +222,129 @@ describe('RoomScheduledTasksService.validateRoomsStatusGC (orchestrates both rec
 
 		expect(livekitWebhookService.cleanedUpRoomIds).toEqual(['room-gone']);
 		expect(livekitWebhookService.reconciledRoomIds).toEqual(['room-open']);
+	});
+});
+
+/**
+ * C7 (MEET-BRANCH-AUDIT-FINDINGS.md): the write side of the MEETING_ENDED_CAUSE flag
+ * LivekitWebhookService.getMeetingEndedCause reads on room_finished, scoped to the meeting sid the
+ * same way MEETING_DURATION_WARNING_SENT already is.
+ */
+describe('RoomScheduledTasksService.markMeetingEndedByDurationLimit (C7: force-end attribution)', () => {
+	it('stores the flag under the meeting sid so a later read for the same meeting matches', async () => {
+		const redisService = new FakeRedisService();
+		const { service } = buildService(new FakeLiveKitService(), new FakeRoomRepository(), redisService);
+
+		await service.runMarkMeetingEndedByDurationLimit('room-1', 'sid-N');
+
+		expect(redisService.store.get('ov_meet:meeting_ended_cause:room-1')).toBe('sid-N');
+	});
+
+	it('scopes the flag per room, not globally', async () => {
+		const redisService = new FakeRedisService();
+		const { service } = buildService(new FakeLiveKitService(), new FakeRoomRepository(), redisService);
+
+		await service.runMarkMeetingEndedByDurationLimit('room-1', 'sid-N');
+		await service.runMarkMeetingEndedByDurationLimit('room-2', 'sid-M');
+
+		expect(redisService.store.get('ov_meet:meeting_ended_cause:room-1')).toBe('sid-N');
+		expect(redisService.store.get('ov_meet:meeting_ended_cause:room-2')).toBe('sid-M');
+	});
+});
+
+/**
+ * C7 follow-up: `enforceMeetingMaxDurationGC` writes the MEETING_ENDED_CAUSE flag *before* calling
+ * `deleteRoom`, deliberately, so the flag is visible to `room_finished` no matter how fast that
+ * webhook arrives (see the doc comment above the write). But `deleteRoom` treats "room already
+ * gone" as a benign no-op, not an error — so if a moderator's own `endMeeting` deletes the room in
+ * the narrow window between the flag write and this GC's own `deleteRoom` call (or if the GC's
+ * delete fails outright, e.g. a transient LiveKit error), the flag is left behind even though this
+ * GC attempt is *not* what actually ended the meeting. Since the flag is scoped by the meeting's
+ * sid — not cleared until it expires (24h TTL) — it then misattributes whatever *later, unrelated*
+ * event actually closes that same still-running meeting (a moderator ending it minutes or hours
+ * afterward, or the room emptying out) to the duration limit. `getMeetingEndedCause`
+ * (livekit-webhook.service.test.ts) already proves the read side trusts the flag unconditionally;
+ * these tests pin the write side's obligation to withdraw it when its own deletion didn't happen.
+ */
+describe('RoomScheduledTasksService.enforceMeetingMaxDurationGC (C7 follow-up: stale cause flag after a delete that was not this GC)', () => {
+	const roomId = 'room-race';
+	const sid = 'sid-race';
+	const causeKey = `ov_meet:meeting_ended_cause:${roomId}`;
+
+	const buildExpiredRoom = (livekitService: FakeLiveKitService, roomRepository: FakeRoomRepository) => {
+		const maxDurationMinutes = 10;
+		// Comfortably past the deadline — no reliance on exact timing during the test run.
+		const creationTime = Math.floor(Date.now() / 1000) - (maxDurationMinutes * 60 + 120);
+		livekitService.rooms.set(roomId, { sid, creationTime });
+		roomRepository.roomsWithMaxDuration = [{ roomId, config: { maxDurationMinutes } }];
+	};
+
+	it('withdraws the cause flag when its own deleteRoom finds the room already gone (a moderator won the race)', async () => {
+		const livekitService = new FakeLiveKitService();
+		const roomRepository = new FakeRoomRepository();
+		buildExpiredRoom(livekitService, roomRepository);
+		livekitService.deleteOutcome = 'already-gone';
+		const redisService = new FakeRedisService();
+		const { service } = buildService(livekitService, roomRepository, redisService);
+
+		await service.runEnforceMeetingMaxDurationGC();
+
+		expect(redisService.store.get(causeKey)).toBeUndefined();
+	});
+
+	it('withdraws the cause flag when its own deleteRoom fails outright', async () => {
+		const livekitService = new FakeLiveKitService();
+		const roomRepository = new FakeRoomRepository();
+		buildExpiredRoom(livekitService, roomRepository);
+		livekitService.deleteOutcome = 'error';
+		const redisService = new FakeRedisService();
+		const { service } = buildService(livekitService, roomRepository, redisService);
+
+		await expect(service.runEnforceMeetingMaxDurationGC()).resolves.toBeUndefined();
+
+		expect(redisService.store.get(causeKey)).toBeUndefined();
+	});
+
+	it('keeps the cause flag when its own deleteRoom actually ends the meeting', async () => {
+		const livekitService = new FakeLiveKitService();
+		const roomRepository = new FakeRoomRepository();
+		buildExpiredRoom(livekitService, roomRepository);
+		livekitService.deleteOutcome = 'deleted';
+		const redisService = new FakeRedisService();
+		const { service } = buildService(livekitService, roomRepository, redisService);
+
+		await service.runEnforceMeetingMaxDurationGC();
+
+		expect(redisService.store.get(causeKey)).toBe(sid);
+	});
+});
+
+describe('RoomScheduledTasksService.clearMeetingEndedCause (C7 follow-up: withdrawal is sid-scoped)', () => {
+	it('deletes the flag when it still matches the given meeting', async () => {
+		const redisService = new FakeRedisService();
+		const { service } = buildService(new FakeLiveKitService(), new FakeRoomRepository(), redisService);
+		await service.runMarkMeetingEndedByDurationLimit('room-1', 'sid-N');
+
+		await service.runClearMeetingEndedCause('room-1', 'sid-N');
+
+		expect(redisService.store.has('ov_meet:meeting_ended_cause:room-1')).toBe(false);
+	});
+
+	it('leaves a flag belonging to a different meeting untouched', async () => {
+		const redisService = new FakeRedisService();
+		const { service } = buildService(new FakeLiveKitService(), new FakeRoomRepository(), redisService);
+		// A legitimate flag for a different (e.g. later) meeting already occupies the room-scoped key.
+		await service.runMarkMeetingEndedByDurationLimit('room-1', 'sid-unrelated');
+
+		await service.runClearMeetingEndedCause('room-1', 'sid-N');
+
+		expect(redisService.store.get('ov_meet:meeting_ended_cause:room-1')).toBe('sid-unrelated');
+	});
+
+	it('is a no-op when no flag was ever set', async () => {
+		const redisService = new FakeRedisService();
+		const { service } = buildService(new FakeLiveKitService(), new FakeRoomRepository(), redisService);
+
+		await expect(service.runClearMeetingEndedCause('room-1', 'sid-N')).resolves.toBeUndefined();
 	});
 });

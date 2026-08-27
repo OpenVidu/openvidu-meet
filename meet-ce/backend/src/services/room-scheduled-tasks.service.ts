@@ -286,10 +286,12 @@ export class RoomScheduledTasksService {
 							return false;
 						}
 
+						let livekitRoom;
+
 						try {
 							// The meeting start is the LiveKit room's creation time. A room that is
 							// gone by now simply ended on its own; the status GC reconciles it.
-							const livekitRoom = await this.livekitService.getRoom(room.roomId);
+							livekitRoom = await this.livekitService.getRoom(room.roomId);
 							const creationTimeSeconds = Number(livekitRoom.creationTime);
 							const remainingMs = MeetRoomHelper.meetingRemainingMs(
 								creationTimeSeconds,
@@ -308,10 +310,28 @@ export class RoomScheduledTasksService {
 							this.logger.info(
 								`Meeting in room '${room.roomId}' exceeded its ${maxDurationMinutes}-minute limit. Ending it.`
 							);
-							await this.livekitService.deleteRoom(room.roomId);
-							return true;
+							// Written before deleteRoom, which is what triggers room_finished: the
+							// flag must already be visible (on every replica) by the time that
+							// webhook handler reads it.
+							await this.markMeetingEndedByDurationLimit(room.roomId, livekitRoom.sid);
+							const deleted = await this.livekitService.deleteRoom(room.roomId);
+
+							if (!deleted) {
+								// Something else — most likely a moderator's own endMeeting — already
+								// deleted the room in the window between the write above and this
+								// call: this GC attempt did not cause the room_finished that's about
+								// to fire, so withdraw the attribution before anything reads it.
+								await this.clearMeetingEndedCause(room.roomId, livekitRoom.sid);
+							}
+
+							return deleted;
 						} catch (error) {
 							this.logger.error(`Error enforcing the duration limit of room '${room.roomId}':`, error);
+
+							if (livekitRoom) {
+								await this.clearMeetingEndedCause(room.roomId, livekitRoom.sid);
+							}
+
 							// Continue with other rooms even if one fails
 							return false;
 						}
@@ -355,5 +375,35 @@ export class RoomScheduledTasksService {
 		);
 		await this.frontendEventService.sendMeetingEndingSoonSignal(roomId, remainingMinutes);
 		await this.redisService.set(warningKey, meetingId, ms(INTERNAL_CONFIG.MEETING_DURATION_WARNING_SENT_TTL));
+	}
+
+	/**
+	 * Records that `meetingId` is being force-ended by this GC, so {@link LivekitWebhookService}
+	 * can attribute the resulting `room_finished`/`meetingEnded` webhook to the duration limit
+	 * instead of a moderator's own end. Scoped to the meeting's LiveKit room sid, so a leaked flag
+	 * is inert for the room's later meetings.
+	 */
+	protected async markMeetingEndedByDurationLimit(roomId: string, meetingId: string): Promise<void> {
+		const key = `${RedisKeyName.MEETING_ENDED_CAUSE}${roomId}`;
+		await this.redisService.set(key, meetingId, ms(INTERNAL_CONFIG.MEETING_ENDED_CAUSE_TTL));
+	}
+
+	/**
+	 * Withdraws a duration-cause attribution this GC speculatively wrote, once it turns out this
+	 * attempt is not what actually ended the meeting (its own `deleteRoom` found the room already
+	 * gone, or failed outright). Without this, the flag would sit for up to
+	 * `MEETING_ENDED_CAUSE_TTL` and misattribute whatever later, unrelated event actually ends this
+	 * same still-running meeting — its sid doesn't change just because this attempt didn't land.
+	 * Only clears the flag if it still matches `meetingId`, the same guard {@link
+	 * markMeetingEndedByDurationLimit}'s read side uses, so a legitimate flag from a different
+	 * meeting already occupying the (room-scoped) key is never touched.
+	 */
+	protected async clearMeetingEndedCause(roomId: string, meetingId: string): Promise<void> {
+		const key = `${RedisKeyName.MEETING_ENDED_CAUSE}${roomId}`;
+		const value = await this.redisService.get(key);
+
+		if (value === meetingId) {
+			await this.redisService.delete(key);
+		}
 	}
 }

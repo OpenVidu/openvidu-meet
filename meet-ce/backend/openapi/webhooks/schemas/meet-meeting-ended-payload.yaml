@@ -1,0 +1,12 @@
+allOf:
+    - $ref: ../../rooms/schemas/meet-room.yaml
+    - type: object
+      properties:
+          cause:
+              type: string
+              enum:
+                  - max_duration_reached
+              example: 'max_duration_reached'
+              description: >
+                  Set only when the meeting was force-ended by the server rather than ended
+                  normally (a moderator ending it, or the room emptying out). Absent for a normal end.

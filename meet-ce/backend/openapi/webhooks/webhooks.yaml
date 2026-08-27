@@ -169,7 +169,7 @@ meetingEnded:
                                   event:
                                       example: meetingEnded
                                   data:
-                                      $ref: ../rooms/schemas/meet-room.yaml
+                                      $ref: ./schemas/meet-meeting-ended-payload.yaml
         responses:
             '200':
                 $ref: ./responses/success/webhook-success.yaml
