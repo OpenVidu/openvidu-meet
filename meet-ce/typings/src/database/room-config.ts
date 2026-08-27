@@ -1,4 +1,5 @@
 import { MeetRecordingEncodingOptions, MeetRecordingEncodingPreset, MeetRecordingLayout } from './recording.entity.js';
+import { MeetRoomMemberRole } from './room-member.entity.js';
 
 /**
  * Interface representing the config for a room.
@@ -102,6 +103,51 @@ export enum MeetRecordingAutoStartMode {
 	/** Starts as soon as a participant with the moderator role joins the meeting. */
 	WHEN_MODERATOR_JOINS = 'when_moderator_joins'
 }
+
+/**
+ * The trigger condition for a {@link MeetRecordingAutoStartMode}, expressed as data rather than a
+ * verdict: how many participants of which room roles the meeting must already hold. Evaluating it
+ * against the live meeting state is the caller's job.
+ */
+export interface MeetRecordingAutoStartPreset {
+	/** Minimum number of matching participants that must be present for this mode to trigger. */
+	minParticipants: number;
+	/**
+	 * Room roles whose participants count toward `minParticipants`. `when_first_participant_joins`
+	 * and `when_second_participant_joins` list every {@link MeetRoomMemberRole}, so they count any
+	 * standard participant. A mode gated on one specific role (like `when_moderator_joins`) lists
+	 * just that role instead of adding a separate counting mechanism.
+	 */
+	participantRoles: MeetRoomMemberRole[];
+}
+
+/**
+ * The trigger condition for every {@link MeetRecordingAutoStartMode}. The single source of truth
+ * for both the backend (which evaluates it against the live meeting to decide whether to start
+ * recording) and the frontend (which uses it to warn when a room's `maxParticipants` can never
+ * reach the threshold), so the two can't drift apart.
+ */
+export const MEET_RECORDING_AUTO_START_PRESETS: Record<MeetRecordingAutoStartMode, MeetRecordingAutoStartPreset> = {
+	[MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS]: {
+		minParticipants: 1,
+		participantRoles: Object.values(MeetRoomMemberRole)
+	},
+	[MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS]: {
+		minParticipants: 2,
+		participantRoles: Object.values(MeetRoomMemberRole)
+	},
+	[MeetRecordingAutoStartMode.WHEN_MODERATOR_JOINS]: {
+		minParticipants: 1,
+		participantRoles: [MeetRoomMemberRole.MODERATOR]
+	}
+};
+
+/**
+ * The minimum number of matching participants required for a {@link MeetRecordingAutoStartMode} to
+ * ever trigger.
+ */
+export const minParticipantsForAutoStart = (mode: MeetRecordingAutoStartMode): number =>
+	MEET_RECORDING_AUTO_START_PRESETS[mode].minParticipants;
 
 /**
  * Interface representing the config for chat in a room.

@@ -8,7 +8,8 @@ import {
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomMemberOptions,
 	MeetRoomMemberPermissions,
-	MeetRoomOptions
+	MeetRoomOptions,
+	minParticipantsForAutoStart
 } from '@openvidu-meet/typings';
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
 import { deepMerge, DeepPartial } from '../../../shared/utils/object.utils';
@@ -137,6 +138,52 @@ export class RoomWizardStateService {
 	public readonly pendingMembers = this._pendingMembers.asReadonly();
 
 	/**
+	 * The recording auto-start requirement the room currently fails to meet — the trigger's minimum
+	 * participant count versus the configured `maxParticipants` (e.g. a "second participant joins"
+	 * trigger with the limit set to 1). This is the same rule the backend rejects with a 422,
+	 * evaluated client-side from the same shared preset data so the wizard can block Finish instead
+	 * of building a combination that's certain to be rejected. `null` means the combination is fine;
+	 * `null`/absent `maxParticipants` means unlimited, which reaches every threshold.
+	 */
+	private readonly recordingAutoStartRequirement = computed<{ required: number; limit: number } | null>(() => {
+		const { maxParticipants, recording } = this._roomOptions().config ?? {};
+		const autoStart = recording?.autoStart;
+
+		if (!autoStart || typeof maxParticipants !== 'number') return null;
+
+		const required = minParticipantsForAutoStart(autoStart);
+
+		return maxParticipants < required ? { required, limit: maxParticipants } : null;
+	});
+
+	/** Whether {@link recordingAutoStartRequirement} currently holds. */
+	public readonly recordingAutoStartUnreachable = computed(() => this.recordingAutoStartRequirement() !== null);
+
+	/** Step ids to flag in the step indicator while {@link recordingAutoStartUnreachable} holds. */
+	public readonly stepsWithAutoStartWarning = computed<WizardStepId[]>(() =>
+		this.recordingAutoStartUnreachable() ? [WizardStepId.ROOM_CONFIG, WizardStepId.RECORDING_TRIGGER] : []
+	);
+
+	/**
+	 * The inline warning text for {@link recordingAutoStartUnreachable}, with the actual required/
+	 * configured participant counts substituted into the translated message's `${required}`/`${limit}`
+	 * placeholders — the translation engine has no interpolation of its own, so this is done by hand.
+	 * Reads {@link TranslateService.translationsLoaded} purely to stay reactive to a language switch.
+	 */
+	public readonly recordingAutoStartWarningMessage = computed<string | null>(() => {
+		this.translateService.translationsLoaded();
+
+		const requirement = this.recordingAutoStartRequirement();
+
+		if (!requirement) return null;
+
+		return this.translateService
+			.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_UNREACHABLE_MESSAGE')
+			.replace('${required}', String(requirement.required))
+			.replace('${limit}', String(requirement.limit));
+	});
+
+	/**
 	 * Initializes the wizard with base steps and default room options.
 	 * @param editMode - Whether the wizard is in edit mode
 	 * @param existingData - Existing room options to prefill the wizard
@@ -145,12 +192,14 @@ export class RoomWizardStateService {
 		this._isInitialized.set(false);
 		this._editMode.set(editMode);
 
-		// Initialize room options with defaults merged with existing data. deepMerge mutates its
-		// target, so it's given a fresh clone rather than the current signal value directly — otherwise
-		// set() below would receive back the same object reference and signal consumers relying on
-		// Object.is (computed(), effect()) would never see the change.
-		const currentOptions = this._roomOptions();
-		const initialRoomOptions: MeetRoomOptions = deepMerge(deepMerge({}, currentOptions), existingData ?? {});
+		// Every entry starts from DEFAULT_ROOM_OPTIONS, never from this service's current signal
+		// value: initializeWizard() is the wizard's only reset point, so a session abandoned via
+		// browser-back or a navbar link (skipping Cancel/Create, the only other paths that reset)
+		// must not leak into the next one. deepMerge mutates its target, so DEFAULT_ROOM_OPTIONS is
+		// given a fresh clone rather than being merged into directly — otherwise set() below would
+		// also receive back the same object reference and signal consumers relying on Object.is
+		// (computed(), effect()) would never see the change.
+		const initialRoomOptions: MeetRoomOptions = deepMerge(deepMerge({}, DEFAULT_ROOM_OPTIONS), existingData ?? {});
 
 		this._roomOptions.set(initialRoomOptions);
 		this._pendingMembers.set([]);
@@ -248,9 +297,7 @@ export class RoomWizardStateService {
 					anonymousSpeakerEnabled: this.formBuilder.nonNullable.control(
 						initialRoomOptions.access!.anonymous!.speaker!.enabled
 					),
-					userEnabled: this.formBuilder.nonNullable.control(
-						initialRoomOptions.access!.user!.enabled
-					),
+					userEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.access!.user!.enabled),
 					moderator: this.formBuilder.group({
 						...this.buildPermissionsFormConfig(initialRoomOptions.roles!.moderator!.permissions)
 					}),
@@ -485,7 +532,7 @@ export class RoomWizardStateService {
 			showBack: !isEditMode,
 			showFinish: isLastStep,
 			showSkipAndFinish: false, // Skip and finish is not used in this wizard
-			disableFinish: isSomeStepInvalid,
+			disableFinish: isSomeStepInvalid || this.recordingAutoStartUnreachable(),
 			nextLabel: this.translateService.translate('ROOMS.WIZARD.NEXT'),
 			previousLabel: this.translateService.translate('ROOMS.WIZARD.PREVIOUS'),
 			finishLabel: isEditMode

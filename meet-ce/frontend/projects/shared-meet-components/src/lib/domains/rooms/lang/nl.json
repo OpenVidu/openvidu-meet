@@ -296,7 +296,9 @@
         "AUTOSTART_MODE_SECOND_TITLE": "Tweede deelnemer neemt deel",
         "AUTOSTART_MODE_SECOND_DESC": "Wacht tot er nog iemand bijkomt",
         "AUTOSTART_MODE_MODERATOR_TITLE": "Een moderator neemt deel",
-        "AUTOSTART_MODE_MODERATOR_DESC": "Start zodra een moderator aan de vergadering deelneemt"
+        "AUTOSTART_MODE_MODERATOR_DESC": "Start zodra een moderator aan de vergadering deelneemt",
+        "AUTOSTART_UNREACHABLE_TITLE": "Opnametrigger onbereikbaar",
+        "AUTOSTART_UNREACHABLE_MESSAGE": "Deze trigger heeft minstens ${required} deelnemers nodig om af te gaan, maar de deelnemerslimiet van de kamer is ingesteld op ${limit}."
       }
     },
     "ERRORS": {

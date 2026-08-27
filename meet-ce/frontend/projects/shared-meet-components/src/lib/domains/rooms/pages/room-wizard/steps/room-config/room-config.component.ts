@@ -35,6 +35,9 @@ export class RoomConfigComponent {
 	readonly maxParticipantsLimit = MAX_PARTICIPANTS_LIMIT;
 	readonly maxDurationMinutesLimit = MAX_DURATION_MINUTES_LIMIT;
 
+	/** Set when the configured recording trigger can never fire at this participant limit. */
+	autoStartWarningMessage = this.wizardService.recordingAutoStartWarningMessage;
+
 	roomConfigForm: RoomConfigFormGroup;
 
 	constructor() {

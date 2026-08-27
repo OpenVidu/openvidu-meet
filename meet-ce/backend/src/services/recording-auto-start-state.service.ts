@@ -1,10 +1,10 @@
+import type { MeetRecordingAutoStartPreset } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { ParticipantInfo } from 'livekit-server-sdk';
 import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { RedisKeyName } from '../models/redis.model.js';
-import type { MeetRecordingAutoStartPreset } from '../types/recording-auto-start.types.js';
 import { LoggerService } from './logger.service.js';
 import { RedisService } from './redis.service.js';
 

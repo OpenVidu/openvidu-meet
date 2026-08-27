@@ -1,4 +1,5 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -50,7 +51,7 @@ import { RoomWizardRoomDetailsComponent } from './steps/room-details/room-detail
 	templateUrl: './room-wizard.component.html',
 	styleUrl: './room-wizard.component.scss'
 })
-export class RoomWizardComponent implements OnInit {
+export class RoomWizardComponent implements OnInit, OnDestroy {
 	private wizardService = inject(RoomWizardStateService);
 	protected roomService = inject(RoomService);
 	protected roomMemberService = inject(RoomMemberService);
@@ -68,6 +69,7 @@ export class RoomWizardComponent implements OnInit {
 	initialized = this.wizardService.isInitialized;
 	editMode = this.wizardService.editMode;
 	steps = this.wizardService.steps;
+	stepWarnings = this.wizardService.stepsWithAutoStartWarning;
 	currentStep = this.wizardService.currentStep;
 	currentStepIndex = this.wizardService.currentStepIndex;
 	navigationConfig = computed(() => this.wizardService.getNavigationConfig());
@@ -91,6 +93,13 @@ export class RoomWizardComponent implements OnInit {
 		if (requestedStep && Object.values(WizardStepId).includes(requestedStep)) {
 			this.wizardService.goToStepById(requestedStep);
 		}
+	}
+
+	// Backstop for exits that skip Cancel/Create/Update (browser-back, a navbar link): the router
+	// destroys this component on every route change, so this is the one place guaranteed to run
+	// regardless of how the wizard was left.
+	ngOnDestroy() {
+		this.wizardService.resetWizard();
 	}
 
 	private detectEditMode(): boolean {
@@ -218,6 +227,7 @@ export class RoomWizardComponent implements OnInit {
 	async createRoomAdvance() {
 		const roomOptions = this.wizardService.roomOptions();
 		const pendingMembers = this.wizardService.pendingMembers();
+		const isEditMode = this.editMode();
 
 		// Activate loading state
 		const delayLoader = setTimeout(() => {
@@ -225,7 +235,7 @@ export class RoomWizardComponent implements OnInit {
 		}, 200);
 
 		try {
-			if (this.editMode() && this.roomId) {
+			if (isEditMode && this.roomId) {
 				// Update only the fields that are editable in the wizard (config, access and roles)
 				if (roomOptions.config) {
 					await this.roomService.updateRoomConfig(this.roomId, roomOptions.config);
@@ -239,14 +249,10 @@ export class RoomWizardComponent implements OnInit {
 					await this.roomService.updateRoomRoles(this.roomId, roomOptions.roles);
 				}
 
-				// Navigate to the room detail page after update, refreshing the rooms list
-				// and this room's detail so the changes are reflected
-				await this.navigationService.navigateToAndInvalidate(
-					`/rooms/${this.roomId}`,
-					'rooms',
-					undefined,
-					true
-				);
+				// Navigate to the room detail page after update, refreshing the rooms list and this
+				// room's detail so the changes are reflected. The route change destroys this
+				// component, which resets the wizard on its own (see ngOnDestroy).
+				await this.navigationService.navigateToAndInvalidate(`/rooms/${this.roomId}`, 'rooms', undefined, true);
 				this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.ROOM_UPDATED'));
 			} else {
 				// Create new room
@@ -263,23 +269,36 @@ export class RoomWizardComponent implements OnInit {
 				// Refresh the rooms list so the new room appears when the user returns to it
 				this.navigationService.invalidateCachedRoute('rooms');
 
-				// Extract the path from the access URL and navigate to it
+				// Extract the path from the access URL and navigate to it. Same as above: the route
+				// change destroys this component and resets the wizard.
 				const url = new URL(access.user.url);
 				const path = url.pathname;
 				await this.navigationService.redirectTo(path);
 			}
 		} catch (error) {
-			const errorMessage = this.editMode()
-				? this.translateService.translate('ROOMS.ERRORS.FAILED_UPDATE_ROOM')
-				: this.translateService.translate('ROOMS.ERRORS.FAILED_CREATE_ROOM');
+			// The backend already states which fields conflict (e.g. a recording auto-start mode
+			// unreachable at the configured maxParticipants) — show that instead of a generic
+			// message whenever the server sent one.
+			const backendMessage = (error as HttpErrorResponse | undefined)?.error?.message;
+			const errorMessage =
+				backendMessage ||
+				(isEditMode
+					? this.translateService.translate('ROOMS.ERRORS.FAILED_UPDATE_ROOM')
+					: this.translateService.translate('ROOMS.ERRORS.FAILED_CREATE_ROOM'));
 			this.notificationService.showSnackbar(errorMessage);
 			console.error(errorMessage, error);
 
-			// A partial update may have been applied — invalidate so the list/detail reload fresh
-			const destination = this.editMode() && this.roomId ? `/rooms/${this.roomId}` : '/rooms';
-			await this.navigationService.navigateToAndInvalidate(destination, 'rooms', undefined, true);
+			if (isEditMode && this.roomId) {
+				// A partial update may already have been applied across the separate requests
+				// above — invalidate so the list/detail reload fresh instead of showing stale data.
+				// The route change destroys this component and resets the wizard.
+				await this.navigationService.navigateToAndInvalidate(`/rooms/${this.roomId}`, 'rooms', undefined, true);
+			}
+
+			// A failed room creation never partially applies, so there's nothing to refresh: stay
+			// on the wizard with its six steps of input intact instead of discarding them, so the
+			// user can fix whatever the message above flagged and resubmit.
 		} finally {
-			this.wizardService.resetWizard();
 			// Deactivate loading state
 			clearTimeout(delayLoader);
 			this.isCreatingRoom.set(false);

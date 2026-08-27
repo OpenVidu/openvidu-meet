@@ -127,6 +127,8 @@
 			color: var(--ov-meet-color-warning);
 			flex-shrink: 0;
 			margin-top: 2px;
+			padding: 4px;
+			box-sizing: content-box;
 		}
 
 		.warning-content {

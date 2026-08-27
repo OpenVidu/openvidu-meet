@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
 import { MeetRecordingAutoStartMode, MeetRoomOptions } from '@openvidu-meet/typings';
@@ -37,6 +38,7 @@ interface AutoStartOption {
 		MatButtonModule,
 		MatIconModule,
 		MatCardModule,
+		MatFormFieldModule,
 		MatRadioModule,
 		SelectableCardComponent,
 		TranslatePipe
@@ -49,6 +51,9 @@ export class RecordingTriggerComponent {
 	private readonly translateService = inject(TranslateService);
 
 	triggerForm: RecordingTriggerFormGroup;
+
+	/** Set when the selected trigger can never fire at the room's configured participant limit. */
+	autoStartWarningMessage = this.wizardService.recordingAutoStartWarningMessage;
 
 	// Top-level decision: whether recording starts by itself at all.
 	modeOptions: SelectableCardOption[] = [

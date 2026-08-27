@@ -44,6 +44,20 @@
 							</mat-radio-button>
 						}
 					</mat-radio-group>
+
+					@if (autoStartWarningMessage(); as message) {
+						<div class="autostart-unreachable-section fade-in">
+							<div class="warning-card">
+								<mat-icon class="warning-icon">warning</mat-icon>
+								<div class="warning-content">
+									<p class="warning-title">
+										{{ 'ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_UNREACHABLE_TITLE' | translate }}
+									</p>
+									<p class="warning-text">{{ message }}</p>
+								</div>
+							</div>
+						</div>
+					}
 				</div>
 			}
 		</form>

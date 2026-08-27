@@ -23,8 +23,12 @@
 						<div class="feature-info">
 							<mat-icon class="feature-icon">group</mat-icon>
 							<div class="feature-text">
-								<span class="feature-label">{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS' | translate }}</span>
-								<span class="feature-description">{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_DESC' | translate }}</span>
+								<span class="feature-label">{{
+									'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS' | translate
+								}}</span>
+								<span class="feature-description">{{
+									'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_DESC' | translate
+								}}</span>
 							</div>
 						</div>
 						<mat-form-field appearance="outline" class="limit-field" subscriptSizing="dynamic">
@@ -48,13 +52,31 @@
 						</mat-form-field>
 					</div>
 
+					@if (autoStartWarningMessage(); as message) {
+						<div class="autostart-unreachable-section fade-in">
+							<div class="warning-card">
+								<mat-icon class="warning-icon">warning</mat-icon>
+								<div class="warning-content">
+									<p class="warning-title">
+										{{ 'ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_UNREACHABLE_TITLE' | translate }}
+									</p>
+									<p class="warning-text">{{ message }}</p>
+								</div>
+							</div>
+						</div>
+					}
+
 					<!-- Meeting duration limit -->
 					<div class="feature-row" id="room-feature-max-duration">
 						<div class="feature-info">
 							<mat-icon class="feature-icon">hourglass_bottom</mat-icon>
 							<div class="feature-text">
-								<span class="feature-label">{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION' | translate }}</span>
-								<span class="feature-description">{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_DESC' | translate }}</span>
+								<span class="feature-label">{{
+									'ROOMS.WIZARD.FEATURES.MAX_DURATION' | translate
+								}}</span>
+								<span class="feature-description">{{
+									'ROOMS.WIZARD.FEATURES.MAX_DURATION_DESC' | translate
+								}}</span>
 							</div>
 						</div>
 						<mat-form-field appearance="outline" class="limit-field" subscriptSizing="dynamic">
@@ -94,7 +116,9 @@
 								<mat-icon class="feature-icon">lock</mat-icon>
 								<div class="feature-text">
 									<span class="feature-label">{{ 'ROOMS.WIZARD.FEATURES.E2EE' | translate }}</span>
-									<span class="feature-description">{{ 'ROOMS.WIZARD.FEATURES.E2EE_DESC' | translate }}</span>
+									<span class="feature-description">{{
+										'ROOMS.WIZARD.FEATURES.E2EE_DESC' | translate
+									}}</span>
 								</div>
 							</div>
 							<mat-slide-toggle
@@ -109,11 +133,30 @@
 								<div class="warning-card">
 									<mat-icon class="warning-icon">warning</mat-icon>
 									<div class="warning-content">
-										<p class="warning-title">{{ 'ROOMS.WIZARD.FEATURES.RESTRICTIONS' | translate }}</p>
+										<p class="warning-title">
+											{{ 'ROOMS.WIZARD.FEATURES.RESTRICTIONS' | translate }}
+										</p>
 										<ul class="restrictions-list">
-											<li>{{ 'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_ALL_PARTICIPANTS' | translate }}<span class="restriction-detail">{{ 'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_INCORRECT_KEY' | translate }}</span>
+											<li>
+												{{
+													'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_ALL_PARTICIPANTS'
+														| translate
+												}}<span class="restriction-detail">{{
+													'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_INCORRECT_KEY' | translate
+												}}</span>
 											</li>
-											<li>{{ 'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_RECORDING_PREFIX' | translate }}<b>{{ 'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_RECORDING_BOLD' | translate }}</b>{{ 'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_RECORDING_SUFFIX' | translate }}</li>
+											<li>
+												{{
+													'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_RECORDING_PREFIX'
+														| translate
+												}}<b>{{
+													'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_RECORDING_BOLD' | translate
+												}}</b
+												>{{
+													'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_RECORDING_SUFFIX'
+														| translate
+												}}
+											</li>
 										</ul>
 									</div>
 								</div>
@@ -136,7 +179,9 @@
 							<mat-icon class="feature-icon">closed_caption</mat-icon>
 							<div class="feature-text">
 								<span class="feature-label">{{ 'ROOMS.WIZARD.FEATURES.CAPTIONS' | translate }}</span>
-								<span class="feature-description">{{ 'ROOMS.WIZARD.FEATURES.CAPTIONS_DESC' | translate }}</span>
+								<span class="feature-description">{{
+									'ROOMS.WIZARD.FEATURES.CAPTIONS_DESC' | translate
+								}}</span>
 							</div>
 						</div>
 						<mat-slide-toggle
@@ -153,7 +198,9 @@
 							<mat-icon class="feature-icon">chat</mat-icon>
 							<div class="feature-text">
 								<span class="feature-label">{{ 'ROOMS.WIZARD.FEATURES.CHAT' | translate }}</span>
-								<span class="feature-description">{{ 'ROOMS.WIZARD.FEATURES.CHAT_DESC' | translate }}</span>
+								<span class="feature-description">{{
+									'ROOMS.WIZARD.FEATURES.CHAT_DESC' | translate
+								}}</span>
 							</div>
 						</div>
 						<mat-slide-toggle
@@ -178,8 +225,12 @@
 						<div class="feature-info">
 							<mat-icon class="feature-icon material-symbols-outlined">background_replace</mat-icon>
 							<div class="feature-text">
-								<span class="feature-label">{{ 'ROOMS.WIZARD.FEATURES.VIRTUAL_BACKGROUNDS' | translate }}</span>
-								<span class="feature-description">{{ 'ROOMS.WIZARD.FEATURES.VIRTUAL_BACKGROUNDS_DESC' | translate }}</span>
+								<span class="feature-label">{{
+									'ROOMS.WIZARD.FEATURES.VIRTUAL_BACKGROUNDS' | translate
+								}}</span>
+								<span class="feature-description">{{
+									'ROOMS.WIZARD.FEATURES.VIRTUAL_BACKGROUNDS_DESC' | translate
+								}}</span>
 							</div>
 						</div>
 						<mat-slide-toggle

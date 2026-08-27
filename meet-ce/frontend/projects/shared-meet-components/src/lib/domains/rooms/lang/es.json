@@ -296,7 +296,9 @@
         "AUTOSTART_MODE_SECOND_TITLE": "Al unirse el segundo participante",
         "AUTOSTART_MODE_SECOND_DESC": "Espera a que se una otra persona",
         "AUTOSTART_MODE_MODERATOR_TITLE": "Al unirse un moderador",
-        "AUTOSTART_MODE_MODERATOR_DESC": "Empieza en cuanto se une un moderador"
+        "AUTOSTART_MODE_MODERATOR_DESC": "Empieza en cuanto se une un moderador",
+        "AUTOSTART_UNREACHABLE_TITLE": "Disparador de grabación inalcanzable",
+        "AUTOSTART_UNREACHABLE_MESSAGE": "Este disparador necesita al menos ${required} participantes para activarse, pero el límite de participantes de la sala está fijado en ${limit}."
       }
     },
     "ERRORS": {

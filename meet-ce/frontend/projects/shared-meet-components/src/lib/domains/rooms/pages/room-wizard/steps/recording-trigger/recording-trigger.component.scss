@@ -128,6 +128,12 @@
 					}
 				}
 			}
+
+			.autostart-unreachable-section {
+				@include design-tokens.ov-warning-panel;
+
+				margin-top: var(--ov-meet-spacing-md);
+			}
 		}
 	}
 

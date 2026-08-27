@@ -4,7 +4,7 @@
 	@include design-tokens.ov-page-content;
 	@include design-tokens.ov-container;
 
-    justify-content: center;
+	justify-content: center;
 
 	.step-header {
 		display: flex;
@@ -152,6 +152,10 @@
 	}
 
 	.e2ee-info-section {
+		@include design-tokens.ov-warning-panel;
+	}
+
+	.autostart-unreachable-section {
 		@include design-tokens.ov-warning-panel;
 	}
 }

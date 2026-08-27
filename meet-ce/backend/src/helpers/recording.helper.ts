@@ -1,11 +1,8 @@
 import { EgressStatus } from '@livekit/protocol';
-import {
-	MeetRecordingAutoStartMode,
-	MeetRecordingLayout,
-	MeetRecordingStatus,
-	MeetRoomMemberRole
-} from '@openvidu-meet/typings';
+import { MeetRecordingLayout, MeetRecordingStatus, MEET_RECORDING_AUTO_START_PRESETS } from '@openvidu-meet/typings';
 import type {
+	MeetRecordingAutoStartMode,
+	MeetRecordingAutoStartPreset,
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
 	MeetRecordingField,
@@ -14,37 +11,8 @@ import type {
 import type { EgressInfo } from 'livekit-server-sdk';
 import { container } from '../config/dependency-injector.config.js';
 import { RoomService } from '../services/room.service.js';
-import type { MeetRecordingAutoStartPreset } from '../types/recording-auto-start.types.js';
 import { EncodingConverter } from './encoding-converter.helper.js';
 import { applyHttpFieldFiltering } from './field-filter.helper.js';
-
-/** Every room role — read from the enum so a future addition to it is automatically included. */
-const ALL_PARTICIPANT_ROLES = Object.values(MeetRoomMemberRole);
-
-/**
- * One preset per {@link MeetRecordingAutoStartMode}. A `Record` keyed by the full enum rather than a
- * switch: TypeScript already requires every key to be present in the object literal, so a mode added
- * to the enum without a matching row here is a compile error, the same guarantee a switch's missing
- * `default` gives, for a plain data table.
- *
- * This is also the single source of truth for the numbers: `MeetRoomHelper.minParticipantsForAutoStart`
- * (used to validate `maxParticipants` against the configured mode) reads `minParticipants` from here
- * instead of keeping its own copy, so the two can't drift apart.
- */
-const AUTO_START_PRESETS: Record<MeetRecordingAutoStartMode, MeetRecordingAutoStartPreset> = {
-	[MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS]: {
-		minParticipants: 1,
-		participantRoles: ALL_PARTICIPANT_ROLES
-	},
-	[MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS]: {
-		minParticipants: 2,
-		participantRoles: ALL_PARTICIPANT_ROLES
-	},
-	[MeetRecordingAutoStartMode.WHEN_MODERATOR_JOINS]: {
-		minParticipants: 1,
-		participantRoles: [MeetRoomMemberRole.MODERATOR]
-	}
-};
 
 export class RecordingHelper {
 	private constructor() {
@@ -115,7 +83,7 @@ export class RecordingHelper {
 	 * state that answers it, so this stays pure and never calls `MeetingService`.
 	 */
 	static getAutoStartConfig(mode: MeetRecordingAutoStartMode): MeetRecordingAutoStartPreset {
-		return AUTO_START_PRESETS[mode];
+		return MEET_RECORDING_AUTO_START_PRESETS[mode];
 	}
 
 	static canBeDeleted(status: MeetRecordingStatus): boolean {

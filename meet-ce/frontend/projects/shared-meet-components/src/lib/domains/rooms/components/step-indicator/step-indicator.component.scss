@@ -184,11 +184,23 @@
 		// Remove absolute positioning to work with flexbox
 	}
 
+	// Shrinks the glyph inside the fixed-size circle (rather than growing the circle itself) so the
+	// icon has breathing room around it without changing the stepper's overall footprint.
+	.mat-step-icon .mat-icon {
+		font-size: 14px !important;
+		width: 14px !important;
+		height: 14px !important;
+	}
+
 	.mat-step-header .mat-step-icon-selected {
 		background-color: var(--ov-meet-color-primary) !important;
 	}
 	.mat-step-icon-state-done {
 		background-color: var(--ov-meet-color-success) !important;
+		color: var(--ov-meet-text-on-primary) !important;
+	}
+	.mat-step-icon-state-error {
+		background-color: var(--ov-meet-color-error) !important;
 		color: var(--ov-meet-text-on-primary) !important;
 	}
 }
