@@ -27,7 +27,6 @@ import {
 	ThemeService,
 	ViewRecordingComponent,
 	wcRouteFromAttributes,
-	wcRouteIdentity,
 	WcRouteName,
 	WcRouterService
 } from '@openvidu-meet/shared-components';
@@ -126,11 +125,6 @@ export class App {
 	/** @deprecated Renamed to `meetingClosed`. Removed in 3.12.0. Dispatched alongside it. */
 	readonly closed = output<void>();
 
-	// ── Internal state ───────────────────────────────────────────────────────
-	// Identity of the last attribute-derived route navigated to, so a non-identity attribute change
-	// (e.g. participant-name) doesn't re-navigate and yank the user off an interrupt view.
-	private lastHomeIdentity: string | null = null;
-
 	// ── Derived state ────────────────────────────────────────────────────────
 	private readonly inputs = computed<WebComponentPropertyValues>(() => ({
 		roomUrl: this.roomUrl(),
@@ -214,18 +208,12 @@ export class App {
 			}
 		});
 
-		// Navigate the mini-router to the attribute-derived route. Registered AFTER the server-base-URL
-		// effect so the base URL is set before the guard's first API call. Re-navigates only when the
-		// route-determining identity changes: an interrupt view (login, recordings…) is driven by
-		// NavigationService → router.navigate and leaves `lastHomeIdentity` untouched, so an unrelated
-		// attribute recompute won't stomp it; only a genuine room/recording change re-navigates.
+		// Sync the mini-router's home route with the attribute-derived one. Registered AFTER the
+		// server-base-URL effect so the base URL is set before the guard's first API call. The router
+		// re-navigates only when the route-determining identity changes (see syncHomeRoute), so an
+		// unrelated attribute change doesn't yank the user off an interrupt view (login, recordings…).
 		effect(() => {
 			const route = wcRouteFromAttributes(this.inputs());
-			const identity = wcRouteIdentity(route);
-
-			if (identity === this.lastHomeIdentity) return;
-
-			this.lastHomeIdentity = identity;
 
 			// Surface the specific misconfiguration cause to the integrator via the console;
 			// the in-shell `<ov-error>` shows the general embedded-error copy.
@@ -233,8 +221,7 @@ export class App {
 				console.warn(`[OpenVidu Meet] ${route.params.message}`);
 			}
 
-			this.router.setHomeRoute(route);
-			void this.router.navigate(route);
+			void this.router.syncHomeRoute(route);
 		});
 
 		// Drain and process every queued host event in order (queue → no same-tick loss).

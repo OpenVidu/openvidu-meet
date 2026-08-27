@@ -1,7 +1,7 @@
 import { inject, Service } from '@angular/core';
 import { NavigationStart, Params, Router, UrlTree } from '@angular/router';
 import { EmbeddedEventName, LeftEventReason } from '@openvidu-meet/typings';
-import { WcRouteName } from '../../domains/embedded/models/wc-route.model';
+import { MeetingRoute, WcRouteName } from '../../domains/embedded/models/wc-route.model';
 import { wcRouteFromPath } from '../../domains/embedded/utils/wc-route.utils';
 import { EmbeddedEventBusService } from '../../domains/embedded/services/embedded-event-bus.service';
 import { WcRouterGateway } from '../../domains/embedded/services/wc-router-gateway.service';
@@ -344,12 +344,25 @@ export class NavigationService {
 	}
 
 	/**
-	 * Return from the room-recordings view to the room. WC: re-enter the
-	 * attribute-derived home view (the meeting/lobby). SPA: navigate to `/room/<roomId>`.
+	 * Return from the room-recordings view to the room. WC: re-enter the meeting. SPA: navigate to
+	 * `/room/<roomId>`.
+	 *
+	 * In WC mode this reuses the home route's params (secret, e2eeKey, participantName,
+	 * participantExternalId, participantMetadata, initial media state, leaveRedirectUrl) when it's
+	 * still the meeting for this same room — the common case, since viewing recordings from within a
+	 * meeting (`goToRoomRecordings`) never changes the registered home route. Only a bare
+	 * `{ roomId }` is built when there's no such home route to reuse (e.g. a `show-only-recordings`
+	 * embed, where this button's job is to *enter* the meeting rather than resume one), matching this
+	 * method's previous behavior for that case.
 	 */
 	async goBackToRoom(roomId: string): Promise<void> {
 		if (this.runtimeConfigService.isWebcomponentMode()) {
-			await this.wcRouterGateway.navigate({ name: WcRouteName.MEETING, params: { roomId } });
+			const homeRoute = this.wcRouterGateway.getHomeRoute();
+			const route: MeetingRoute =
+				homeRoute?.name === WcRouteName.MEETING && homeRoute.params.roomId === roomId
+					? homeRoute
+					: { name: WcRouteName.MEETING, params: { roomId } };
+			await this.wcRouterGateway.navigate(route);
 			return;
 		}
 
