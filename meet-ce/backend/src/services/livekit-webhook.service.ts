@@ -251,10 +251,10 @@ export class LivekitWebhookService {
 	 *
 	 * @param {Room} room - The room object that has finished.
 	 */
-	async handleRoomFinished({ name: roomId }: Room): Promise<void> {
+	async handleRoomFinished({ name: roomId, sid: meetingId }: Room): Promise<void> {
 		try {
 			// Reactivate the recording auto-start before anything else
-			await this.recordingService.reactivateAutoRecording(roomId);
+			await this.recordingService.reactivateAutoRecording(roomId, meetingId);
 
 			const meetRoom = await this.roomService.getMeetRoom(roomId);
 

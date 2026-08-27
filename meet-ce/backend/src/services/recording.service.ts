@@ -265,12 +265,14 @@ export class RecordingService {
 	}
 
 	/**
-	 * Reactivates the room's recording auto-start. Called when the meeting ends (`room_finished`), so
-	 * the next meeting in the same room auto-starts its recording again. Never throws: the
-	 * `room_finished` handler must not be aborted by flag bookkeeping.
+	 * Reactivates the room's recording auto-start. Called when a meeting ends (`room_finished`), so
+	 * the next meeting in the same room auto-starts its recording again. `meetingId` (the finishing
+	 * meeting's sid) scopes the reactivation to that meeting's own flag — see
+	 * {@link RecordingAutoStartStateService#activateAutoStart}. Never throws: the `room_finished`
+	 * handler must not be aborted by flag bookkeeping.
 	 */
-	async reactivateAutoRecording(roomId: string): Promise<void> {
-		await this.recAutoStartStateService.activateAutoStart(roomId);
+	async reactivateAutoRecording(roomId: string, meetingId: string): Promise<void> {
+		await this.recAutoStartStateService.activateAutoStart(roomId, meetingId);
 	}
 
 	/**

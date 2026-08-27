@@ -66,15 +66,22 @@ export class RecordingAutoStartStateService {
 	}
 
 	/**
-	 * Reactivates the room's recording auto-start. Called when the meeting ends
+	 * Reactivates the room's recording auto-start. Called when a meeting ends
 	 * ({@link RecordingService#reactivateAutoRecording}, itself called from the `room_finished`
-	 * handler), so the next meeting in the same room auto-starts its recording again. Never throws:
-	 * the `room_finished` handling must not be aborted by flag bookkeeping, and a leaked flag is
-	 * inert for later meetings anyway (it is scoped to the sid).
+	 * handler), so the next meeting in the same room auto-starts its recording again. Deletes the
+	 * flag only if it belongs to the finishing meeting (`meetingId`, the sid) — mirroring
+	 * {@link isDisabled}'s own read-side check — so a `room_finished` redelivered or delayed past the
+	 * next meeting's start doesn't wipe out a deliberate stop that meeting made for itself. Never
+	 * throws: the `room_finished` handling must not be aborted by flag bookkeeping.
 	 */
-	async activateAutoStart(roomId: string): Promise<void> {
+	async activateAutoStart(roomId: string, meetingId: string): Promise<void> {
 		try {
-			await this.redisService.delete(this.getKey(roomId));
+			const key = this.getKey(roomId);
+			const value = await this.redisService.get(key);
+
+			if (value === meetingId) {
+				await this.redisService.delete(key);
+			}
 		} catch (error) {
 			this.logger.warn(`Error reactivating recording auto-start for room '${roomId}'`, error);
 		}
