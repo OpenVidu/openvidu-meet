@@ -4,7 +4,7 @@ import { AssetsService } from '../../../../../shared/services/assets.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { DeviceService } from '../device/device.service';
-import { ConnectionState, Room, RoomEvent } from '../livekit';
+import { ConnectionError, ConnectionState, Room, RoomEvent } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { MeetingLiveKitService } from './meeting-livekit.service';
 
@@ -268,6 +268,50 @@ describe('MeetingLiveKitService', () => {
 			await service.teardown();
 
 			expect(service.shouldHandleClientInitiatedDisconnectEvent).toBeTrue();
+		});
+	});
+
+	/**
+	 * C4 (MEET-BRANCH-AUDIT-FINDINGS.md): connect() used to flatten every rejection into the same
+	 * generic CONNECTION_ERROR, including LiveKit's own native `maxParticipants` cap — the backstop
+	 * for the accepted-over-issue race the REST-token-time check can still lose — which then never
+	 * got the room-full message the token-time 409 already has.
+	 */
+	describe('connect()', () => {
+		beforeEach(() => {
+			// initializeAndSetToken always decodes the token payload (even though livekitUrl is
+			// passed explicitly here), so it must be a real base64url JWT shape or it throws before
+			// connect() is ever reached.
+			const fakeToken = `header.${btoa('{}')}.signature`;
+			service.initializeAndSetToken(fakeToken, 'wss://livekit.example.test');
+		});
+
+		it('resolves when the connection succeeds', async () => {
+			livekitSdkService.connectRoom.and.resolveTo();
+
+			await expectAsync(service.connect()).toBeResolved();
+		});
+
+		it('maps a 403 NotAllowed rejection (the native maxParticipants cap) to MEETING_FULL', async () => {
+			livekitSdkService.connectRoom.and.rejectWith(ConnectionError.notAllowed('room is full', 403));
+
+			await expectAsync(service.connect()).toBeRejectedWith(jasmine.objectContaining({ code: 'MEETING_FULL' }));
+		});
+
+		it('leaves a 401 NotAllowed rejection (a bad/expired token) on the generic path', async () => {
+			livekitSdkService.connectRoom.and.rejectWith(ConnectionError.notAllowed('invalid token', 401));
+
+			await expectAsync(service.connect()).toBeRejectedWith(
+				jasmine.objectContaining({ code: 'CONNECTION_ERROR' })
+			);
+		});
+
+		it('leaves every other connect failure on the generic path', async () => {
+			livekitSdkService.connectRoom.and.rejectWith(new Error('network down'));
+
+			await expectAsync(service.connect()).toBeRejectedWith(
+				jasmine.objectContaining({ code: 'CONNECTION_ERROR' })
+			);
 		});
 	});
 });

@@ -581,7 +581,9 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 		} catch (error: any) {
 			// The technical detail goes to the log; the user gets a translated, actionable message.
 			this.log.e('There was an error connecting to the meeting:', error?.code, error?.message, error);
-			this.showStartupError('ERRORS.MEETING_CONNECTION_FAILED');
+			this.showStartupError(
+				error?.code === 'MEETING_FULL' ? 'ERRORS.MEETING_FULL' : 'ERRORS.MEETING_CONNECTION_FAILED'
+			);
 		}
 	}
 

@@ -4,7 +4,18 @@ import { AssetsService } from '../../../../../shared/services/assets.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { CAMERA_CAPTURE_DEFAULTS, MICROPHONE_CAPTURE_DEFAULTS } from '../../models/media-capture.model';
 import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
-import { ConnectionState, E2EEOptions, ExternalE2EEKeyProvider, Room, RoomEvent, RoomOptions } from '../livekit';
+import { DeviceService } from '../device/device.service';
+import {
+	ConnectionError,
+	ConnectionErrorReason,
+	ConnectionState,
+	E2EEOptions,
+	ExternalE2EEKeyProvider,
+	Room,
+	RoomEvent,
+	RoomOptions,
+	VideoPresets
+} from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 
 /**
@@ -204,6 +215,20 @@ export class MeetingLiveKitService {
 			this.log.d(`Successfully connected to room ${room.name}`);
 		} catch (error) {
 			this.log.e('Error connecting to room:', error);
+
+			// A 403 during the connect handshake means LiveKit itself rejected an otherwise validly
+			// signed token — with no other room-level restriction in play here, that's its native
+			// `maxParticipants` cap catching the accepted-over-issue race the REST-token-time check
+			// (a separate, earlier guard) can still lose. A 401 is a genuinely different cause (bad/
+			// expired token) and is deliberately left on the generic path below.
+			if (
+				error instanceof ConnectionError &&
+				error.reason === ConnectionErrorReason.NotAllowed &&
+				error.status === 403
+			) {
+				throw { code: 'MEETING_FULL', message: 'The meeting has reached its maximum number of participants' };
+			}
+
 			throw {
 				code: 'CONNECTION_ERROR',
 				message: `Error connecting to the server at the following URL: ${this.livekitUrl}`

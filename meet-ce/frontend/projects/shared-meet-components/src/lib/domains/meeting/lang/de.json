@@ -128,6 +128,7 @@
 		"SESSION": "Es ist ein Fehler beim Verbinden mit dem Meeting aufgetreten",
 		"MEETING_NOT_READY": "Das Meeting ist noch nicht bereit. Laden Sie die Seite neu und versuchen Sie es erneut.",
 		"MEETING_CONNECTION_FAILED": "Verbindung zum Meeting nicht möglich. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+		"MEETING_FULL": "Dieses Meeting hat seine maximale Teilnehmerzahl erreicht",
 		"CONNECTION": "Verbindung verloren",
 		"RECONNECT": "Verbindung zum Meeting wird wiederhergestellt...",
 		"DISCONNECT": "Sie wurden getrennt",

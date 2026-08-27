@@ -128,6 +128,7 @@
 		"SESSION": "There was an error connecting to the meeting",
 		"MEETING_NOT_READY": "The meeting is not ready yet. Please reload the page and try again.",
 		"MEETING_CONNECTION_FAILED": "Could not connect to the meeting. Please check your connection and try again.",
+		"MEETING_FULL": "This meeting has reached its maximum number of participants",
 		"CONNECTION": "Connection lost",
 		"RECONNECT": "Oops! Trying to reconnect to the meeting...",
 		"DISCONNECT": "You have been disconnected",
