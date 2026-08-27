@@ -210,7 +210,8 @@ export class IframeBridgeService {
 	 */
 	private extractActivePayload(message: EmbeddedCommand): boolean | undefined {
 		const payload = 'payload' in message ? message.payload : undefined;
-		return payload && 'active' in payload ? payload.active : undefined;
+		const active = payload && 'active' in payload ? payload.active : undefined;
+		return typeof active === 'boolean' ? active : undefined;
 	}
 
 	/**

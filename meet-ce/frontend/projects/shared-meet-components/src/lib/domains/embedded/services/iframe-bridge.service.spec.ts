@@ -292,6 +292,16 @@ describe('IframeBridgeService', () => {
 				expect(commandService.mediaToggleAudio).toHaveBeenCalledOnceWith(undefined);
 			});
 
+			// A6 (MEET-BRANCH-AUDIT-FINDINGS.md): a hand-built postMessage payload isn't type-checked
+			// by TypeScript, and a stringified 'false' is truthy — this must not slip through as "on".
+			it('treats a non-boolean active payload as absent and toggles instead of blindly enabling', () => {
+				startBridge();
+
+				postFromHost({ command: EmbeddedCommandName.MEDIA_TOGGLE_AUDIO, payload: { active: 'false' } });
+
+				expect(commandService.mediaToggleAudio).toHaveBeenCalledOnceWith(undefined);
+			});
+
 			it('forwards MEDIA_TOGGLE_VIDEO with its explicit active flag', () => {
 				startBridge();
 
