@@ -296,7 +296,7 @@
         "AUTOSTART_MODE_SECOND_TITLE": "Si unisce il secondo partecipante",
         "AUTOSTART_MODE_SECOND_DESC": "Attende che si unisca un'altra persona",
         "AUTOSTART_MODE_MODERATOR_TITLE": "Si unisce un moderatore",
-        "AUTOSTART_MODE_MODERATOR_DESC": "Si avvia non appena un moderatore si unisce alla riunione",
+        "AUTOSTART_MODE_MODERATOR_DESC": "Si avvia non appena un moderatore si unisce o viene promosso",
         "AUTOSTART_UNREACHABLE_TITLE": "Attivatore di registrazione non raggiungibile",
         "AUTOSTART_UNREACHABLE_MESSAGE": "Questo attivatore richiede almeno ${required} partecipanti per scattare, ma il limite di partecipanti della sala è impostato su ${limit}."
       }

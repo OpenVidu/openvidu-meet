@@ -296,7 +296,7 @@
         "AUTOSTART_MODE_SECOND_TITLE": "2人目の参加者が参加したとき",
         "AUTOSTART_MODE_SECOND_DESC": "もう一人参加するまで待ちます",
         "AUTOSTART_MODE_MODERATOR_TITLE": "モデレーターが参加したとき",
-        "AUTOSTART_MODE_MODERATOR_DESC": "モデレーターが会議に参加すると同時に録画を開始します",
+        "AUTOSTART_MODE_MODERATOR_DESC": "モデレーターが参加、または昇格した時点で録画を開始します",
         "AUTOSTART_UNREACHABLE_TITLE": "録画トリガーに到達できません",
         "AUTOSTART_UNREACHABLE_MESSAGE": "このトリガーには少なくとも ${required} 人の参加者が必要ですが、ルームの参加者数の上限は ${limit} に設定されています。"
       }

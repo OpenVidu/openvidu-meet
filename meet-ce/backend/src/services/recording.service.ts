@@ -219,9 +219,12 @@ export class RecordingService {
 
 	/**
 	 * Starts the room's recording when its config declares `autoStart` and the meeting's live state
-	 * meets the configured threshold.
+	 * meets the configured threshold. Triggered by a join or by a promotion to moderator.
 	 */
-	async startAutoRecordingIfNeeded({ name: roomId, sid: meetingId }: Room, joiner: ParticipantInfo): Promise<void> {
+	async startAutoRecordingIfNeeded(
+		{ name: roomId, sid: meetingId }: Room,
+		candidate: ParticipantInfo
+	): Promise<void> {
 		try {
 			const roomService = await this.getRoomService();
 			const room = await roomService.getMeetRoom(roomId, ['config']);
@@ -244,7 +247,7 @@ export class RecordingService {
 			const thresholdReached = this.recAutoStartStateService.hasReachedAutoStartThreshold(
 				roomId,
 				autoStartConfig,
-				joiner,
+				candidate,
 				participants
 			);
 

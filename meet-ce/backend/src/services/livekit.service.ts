@@ -305,6 +305,7 @@ export class LiveKitService {
 	 * @param participantIdentity - The identity of the participant to update
 	 * @param metadata - The new metadata to set for the participant
 	 * @param permission - Optional complete permission set to apply to the participant
+	 * @returns The updated participant as acknowledged by LiveKit
 	 * @throws An internal error if there is an issue updating the participant
 	 */
 	async updateParticipant(
@@ -312,10 +313,14 @@ export class LiveKitService {
 		participantIdentity: string,
 		metadata: string,
 		permission?: Partial<ParticipantPermission>
-	): Promise<void> {
+	): Promise<ParticipantInfo> {
 		try {
-			await this.lk.room.updateParticipant(roomName, participantIdentity, { metadata, permission });
+			const participant = await this.lk.room.updateParticipant(roomName, participantIdentity, {
+				metadata,
+				permission
+			});
 			this.logger.verbose(`Updated participant '${participantIdentity}' in room '${roomName}'`);
+			return participant;
 		} catch (error) {
 			this.logger.error(`Error updating participant '${participantIdentity}' in room '${roomName}'`, error);
 			throw internalError(`updating participant '${participantIdentity}' in room '${roomName}'`);

@@ -90,32 +90,30 @@ export class RecordingAutoStartStateService {
 	/**
 	 * Determines whether a recording auto-start should trigger for the current meeting state.
 	 *
-	 * The check is based on the room's auto-start preset, the participant that just joined, and the
-	 * standard participants currently in the meeting (excluding the joiner). The joiner is included
-	 * in the count if they are not already listed and they are eligible for the preset.
+	 * `candidate` overrides its own entry in `participants`: LiveKit's listing lags behind both the
+	 * join webhook and the role a promotion has just written.
 	 *
 	 * @param roomId - The room where the meeting is taking place
 	 * @param preset - The auto-start preset configured for the room
-	 * @param joiner - The participant that just joined the meeting, triggering this check
-	 * @param participants - The standard participants currently in the meeting (excluding the joiner)
+	 * @param candidate - The participant whose join or promotion triggered this check
+	 * @param participants - The standard participants currently in the meeting
 	 * @returns `true` if the auto-start threshold is reached, `false` otherwise
 	 */
 	hasReachedAutoStartThreshold(
 		roomId: string,
 		preset: MeetRecordingAutoStartPreset,
-		joiner: ParticipantInfo,
+		candidate: ParticipantInfo,
 		participants: ParticipantInfo[]
 	): boolean {
 		const isParticipantEligible = (participant: ParticipantInfo): boolean =>
 			preset.participantRoles.includes(MeetParticipantHelper.extractRole(participant));
 
-		const isJoinerAlreadyListed = participants.some((participant) => participant.identity === joiner.identity);
+		const meetingParticipants = [
+			...participants.filter((participant) => participant.identity !== candidate.identity),
+			candidate
+		];
 
-		const listedEligibleParticipants = participants.filter(isParticipantEligible).length;
-
-		const joinerCountsTowardsThreshold = !isJoinerAlreadyListed && isParticipantEligible(joiner);
-
-		const eligibleParticipantCount = listedEligibleParticipants + (joinerCountsTowardsThreshold ? 1 : 0);
+		const eligibleParticipantCount = meetingParticipants.filter(isParticipantEligible).length;
 
 		const thresholdReached = eligibleParticipantCount >= preset.minParticipants;
 

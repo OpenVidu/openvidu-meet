@@ -1,4 +1,12 @@
 import { describe, expect, it } from '@jest/globals';
+import type { MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import {
+	MEET_PERMISSION_KEYS,
+	MEET_RECORDING_AUTO_START_PRESETS,
+	MeetRecordingAutoStartMode,
+	MeetRoomMemberUIBadge
+} from '@openvidu-meet/typings';
+import type { ParticipantInfo } from 'livekit-server-sdk';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
@@ -69,5 +77,50 @@ describe("RecordingAutoStartStateService.activateAutoStart — B2: a late room_f
 
 		await expect(service.activateAutoStart('room-1', 'sid-N')).resolves.toBeUndefined();
 		expect(redis.store.size).toBe(0);
+	});
+});
+
+/**
+ * B10 (MEET-BRANCH-AUDIT-FINDINGS.md): a promotion evaluates the threshold with the triggering
+ * participant already in the listing, under the role LiveKit has not published back yet. The
+ * participant handed to the check is the authority on their own role.
+ */
+describe('RecordingAutoStartStateService.hasReachedAutoStartThreshold — the candidate is counted exactly once', () => {
+	const permissions = Object.fromEntries(
+		MEET_PERMISSION_KEYS.map((key) => [key, false])
+	) as unknown as MeetRoomMemberPermissions;
+
+	const participant = (identity: string, badge: MeetRoomMemberUIBadge): ParticipantInfo =>
+		({
+			identity,
+			metadata: JSON.stringify({ iat: Date.now(), roomId: 'room-1', permissions, badge })
+		}) as ParticipantInfo;
+
+	const whenModeratorJoins = MEET_RECORDING_AUTO_START_PRESETS[MeetRecordingAutoStartMode.WHEN_MODERATOR_JOINS];
+	const whenSecondParticipantJoins =
+		MEET_RECORDING_AUTO_START_PRESETS[MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS];
+
+	const service = buildService(new FakeRedisService());
+
+	it('reads the role from the candidate, not from their stale entry in the listing', () => {
+		const promoted = participant('speaker-1', MeetRoomMemberUIBadge.MODERATOR);
+		const listing = [participant('speaker-1', MeetRoomMemberUIBadge.OTHER)];
+
+		expect(service.hasReachedAutoStartThreshold('room-1', whenModeratorJoins, promoted, listing)).toBe(true);
+	});
+
+	it('does not count a listed candidate twice', () => {
+		const joiner = participant('speaker-1', MeetRoomMemberUIBadge.OTHER);
+
+		expect(service.hasReachedAutoStartThreshold('room-1', whenSecondParticipantJoins, joiner, [joiner])).toBe(
+			false
+		);
+	});
+
+	it('counts a candidate the listing has not caught up with yet', () => {
+		const joiner = participant('speaker-2', MeetRoomMemberUIBadge.OTHER);
+		const listing = [participant('speaker-1', MeetRoomMemberUIBadge.OTHER)];
+
+		expect(service.hasReachedAutoStartThreshold('room-1', whenSecondParticipantJoins, joiner, listing)).toBe(true);
 	});
 });

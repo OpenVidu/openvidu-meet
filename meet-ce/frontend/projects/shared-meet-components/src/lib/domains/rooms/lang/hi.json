@@ -296,7 +296,7 @@
         "AUTOSTART_MODE_SECOND_TITLE": "दूसरा सदस्य शामिल होने पर",
         "AUTOSTART_MODE_SECOND_DESC": "किसी अन्य सदस्य के शामिल होने का इंतज़ार करती है",
         "AUTOSTART_MODE_MODERATOR_TITLE": "मॉडरेटर के शामिल होने पर",
-        "AUTOSTART_MODE_MODERATOR_DESC": "मॉडरेटर के मीटिंग में शामिल होते ही रिकॉर्डिंग शुरू हो जाती है",
+        "AUTOSTART_MODE_MODERATOR_DESC": "मॉडरेटर के शामिल होने या पदोन्नत होने पर रिकॉर्डिंग शुरू हो जाती है",
         "AUTOSTART_UNREACHABLE_TITLE": "रिकॉर्डिंग ट्रिगर तक नहीं पहुंचा जा सकता",
         "AUTOSTART_UNREACHABLE_MESSAGE": "इस ट्रिगर को सक्रिय होने के लिए कम से कम ${required} प्रतिभागियों की आवश्यकता है, लेकिन रूम की प्रतिभागी सीमा ${limit} निर्धारित है।"
       }

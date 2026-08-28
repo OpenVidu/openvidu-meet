@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { ParticipantInfo, ParticipantInfo_Kind } from '@livekit/protocol';
 import {
 	MEET_PERMISSION_KEYS,
+	MeetParticipantModerationAction,
 	MeetRecordingAutoStartMode,
 	MeetRecordingStatus,
 	MeetRoomMemberPermissions,
@@ -13,6 +14,7 @@ import { LivekitWebhookService } from '../../../../src/services/livekit-webhook.
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { RecordingAutoStartStateService } from '../../../../src/services/recording-auto-start-state.service.js';
 import { RecordingService } from '../../../../src/services/recording.service.js';
+import { RoomMemberService } from '../../../../src/services/room-member.service.js';
 import {
 	disconnectFakeParticipants,
 	joinFakeParticipant,
@@ -40,6 +42,7 @@ describe('Recording Auto-Start Tests', () => {
 	let recordingRepository: RecordingRepository;
 	let recordingService: RecordingService;
 	let recAutoStartStateService: RecordingAutoStartStateService;
+	let roomMemberService: RoomMemberService;
 
 	beforeAll(async () => {
 		await startTestServer();
@@ -48,6 +51,7 @@ describe('Recording Auto-Start Tests', () => {
 		recordingRepository = container.get(RecordingRepository);
 		recordingService = container.get(RecordingService);
 		recAutoStartStateService = container.get(RecordingAutoStartStateService);
+		roomMemberService = container.get(RoomMemberService);
 	});
 
 	afterAll(async () => {
@@ -199,6 +203,49 @@ describe('Recording Auto-Start Tests', () => {
 		await simulateParticipantJoined(room.roomId, 'MODERATOR_PARTICIPANT');
 
 		// The handler fires the start in the background; poll until the recording shows up
+		let recordings = await findRoomRecordings(room.roomId);
+		const deadline = Date.now() + 30_000;
+
+		while (recordings.length === 0 && Date.now() < deadline) {
+			await sleep('1s');
+			recordings = await findRoomRecordings(room.roomId);
+		}
+
+		expect(recordings.length).toBe(1);
+		expect([MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE]).toContain(recordings[0].status);
+
+		await stopRecording(recordings[0].recordingId);
+	}, 90_000);
+
+	/**
+	 * B10 (MEET-BRANCH-AUDIT-FINDINGS.md): a participant promoted mid-meeting reaches the
+	 * moderator-only threshold without any join webhook to re-evaluate it.
+	 */
+	it('should auto-start the recording when a participant is promoted to moderator', async () => {
+		const { room } = await setupSingleRoom(false, 'AUTO_START_PROMOTION_ROOM', {
+			recording: { enabled: true, autoStart: MeetRecordingAutoStartMode.WHEN_MODERATOR_JOINS }
+		});
+
+		await joinFakeParticipant(room.roomId, 'PROMOTED_PARTICIPANT');
+		await updateParticipantMetadata(room.roomId, 'PROMOTED_PARTICIPANT', {
+			iat: Date.now(),
+			roomId: room.roomId,
+			permissions: Object.fromEntries(
+				MEET_PERMISSION_KEYS.map((key) => [key, false])
+			) as unknown as MeetRoomMemberPermissions,
+			badge: MeetRoomMemberUIBadge.OTHER
+		});
+		await simulateParticipantJoined(room.roomId, 'PROMOTED_PARTICIPANT');
+		await sleep('3s');
+
+		expect((await findRoomRecordings(room.roomId)).length).toBe(0);
+
+		await roomMemberService.updateParticipantRole(
+			room.roomId,
+			'PROMOTED_PARTICIPANT',
+			MeetParticipantModerationAction.UPGRADE
+		);
+
 		let recordings = await findRoomRecordings(room.roomId);
 		const deadline = Date.now() + 30_000;
 

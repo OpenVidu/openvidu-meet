@@ -212,6 +212,11 @@
         description: >
             Applies a moderation action to a participant in the current meeting in an OpenVidu Meet room.
             Supported actions are `upgrade` (promote to moderator) and `downgrade` (restore original permissions).
+
+
+            An `upgrade` reaches the `when_moderator_joins` recording auto-start trigger: in a room configured
+            with it, the recording starts on its own once this request has returned, unless it was already
+            stopped by hand during this meeting.
         tags:
             - OpenVidu Meet - Meetings
         security:

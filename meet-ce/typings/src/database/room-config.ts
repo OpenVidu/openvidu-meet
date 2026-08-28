@@ -72,9 +72,10 @@ export interface MeetRecordingConfig {
 	enabled: boolean;
 	/**
 	 * When set, the recording starts automatically once the configured participant threshold is
-	 * reached — see {@link MeetRecordingAutoStartMode} for the available thresholds. The start is
-	 * attributed to the system: no participant holding the `recordingControl` permission is
-	 * involved. Ignored while end-to-end encryption is enabled, which already excludes recording.
+	 * reached — see {@link MeetRecordingAutoStartMode} for the available thresholds. The threshold is
+	 * re-evaluated on every join and on every promotion to moderator. The start is attributed to the
+	 * system: no participant holding the `recordingControl` permission is involved. Ignored while
+	 * end-to-end encryption is enabled, which already excludes recording.
 	 * `null` (or an absent key) means recordings only start on demand. Config updates deep-merge
 	 * with the stored config, so omitting this field keeps its current value; send `null` to turn
 	 * auto-start off.
@@ -100,7 +101,7 @@ export enum MeetRecordingAutoStartMode {
 	WHEN_FIRST_PARTICIPANT_JOINS = 'when_first_participant_joins',
 	/** Starts as soon as a second participant joins the meeting. */
 	WHEN_SECOND_PARTICIPANT_JOINS = 'when_second_participant_joins',
-	/** Starts as soon as a participant with the moderator role joins the meeting. */
+	/** Starts as soon as a participant with the moderator role is in the meeting, by join or promotion. */
 	WHEN_MODERATOR_JOINS = 'when_moderator_joins'
 }
 

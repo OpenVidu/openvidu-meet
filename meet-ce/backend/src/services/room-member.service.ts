@@ -58,6 +58,7 @@ import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { MeetingService } from './meeting.service.js';
 import { ParticipantNameService } from './participant-name.service.js';
+import { RecordingService } from './recording.service.js';
 import { RequestSessionService } from './request-session.service.js';
 import { RoomService } from './room.service.js';
 import { TokenService } from './token.service.js';
@@ -90,7 +91,8 @@ export class RoomMemberService {
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(TokenService) protected tokenService: TokenService,
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
-		@inject(MeetingService) protected meetingService: MeetingService
+		@inject(MeetingService) protected meetingService: MeetingService,
+		@inject(RecordingService) protected recordingService: RecordingService
 	) {}
 
 	/**
@@ -1098,12 +1100,17 @@ export class RoomMemberService {
 				participant.permission,
 				metadata.permissions.chatWrite
 			);
-			await this.livekitService.updateParticipant(
+			const updatedParticipant = await this.livekitService.updateParticipant(
 				roomId,
 				participantIdentity,
 				JSON.stringify(metadata),
 				permission
 			);
+
+			if (action === MeetParticipantModerationAction.UPGRADE) {
+				void this.reevaluateRecordingAutoStart(roomId, updatedParticipant);
+			}
+
 			await this.frontendEventService.sendParticipantRoleUpdatedSignal(
 				roomId,
 				participantIdentity,
@@ -1115,6 +1122,22 @@ export class RoomMemberService {
 				error
 			);
 			throw error;
+		}
+	}
+
+	/**
+	 * A promotion reaches the `when_moderator_joins` auto-start threshold, which no join webhook
+	 * reports. Detached: starting a recording waits up to `RECORDING_STARTED_TIMEOUT` for its egress.
+	 */
+	private async reevaluateRecordingAutoStart(roomId: string, candidate: ParticipantInfo): Promise<void> {
+		try {
+			const room = await this.livekitService.getRoom(roomId);
+			await this.recordingService.startAutoRecordingIfNeeded(room, candidate);
+		} catch (error) {
+			this.logger.warn(
+				`Error re-evaluating the recording auto-start in room '${roomId}' after promoting '${candidate.identity}'`,
+				error
+			);
 		}
 	}
 

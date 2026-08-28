@@ -296,7 +296,7 @@
         "AUTOSTART_MODE_SECOND_TITLE": "第二位参与者加入时",
         "AUTOSTART_MODE_SECOND_DESC": "等待另一人加入后才开始录制",
         "AUTOSTART_MODE_MODERATOR_TITLE": "主持人加入时",
-        "AUTOSTART_MODE_MODERATOR_DESC": "主持人加入会议后立即开始录制",
+        "AUTOSTART_MODE_MODERATOR_DESC": "主持人加入或被提升为主持人后立即开始录制",
         "AUTOSTART_UNREACHABLE_TITLE": "录制触发条件无法达成",
         "AUTOSTART_UNREACHABLE_MESSAGE": "此触发条件至少需要 ${required} 名参与者才能触发，但房间的人数上限设置为 ${limit}。"
       }

@@ -296,7 +296,7 @@
         "AUTOSTART_MODE_SECOND_TITLE": "Zweiter Teilnehmer tritt bei",
         "AUTOSTART_MODE_SECOND_DESC": "Wartet, bis eine weitere Person beitritt",
         "AUTOSTART_MODE_MODERATOR_TITLE": "Ein Moderator tritt bei",
-        "AUTOSTART_MODE_MODERATOR_DESC": "Startet, sobald ein Moderator dem Meeting beitritt",
+        "AUTOSTART_MODE_MODERATOR_DESC": "Startet, sobald ein Moderator beitritt oder befördert wird",
         "AUTOSTART_UNREACHABLE_TITLE": "Aufnahme-Auslöser nicht erreichbar",
         "AUTOSTART_UNREACHABLE_MESSAGE": "Dieser Auslöser benötigt mindestens ${required} Teilnehmer, um ausgelöst zu werden, aber das Teilnehmerlimit des Raums ist auf ${limit} festgelegt."
       }

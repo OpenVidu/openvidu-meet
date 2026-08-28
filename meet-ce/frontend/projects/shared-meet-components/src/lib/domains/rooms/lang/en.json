@@ -296,7 +296,7 @@
         "AUTOSTART_MODE_SECOND_TITLE": "Second participant joins",
         "AUTOSTART_MODE_SECOND_DESC": "Waits for someone else to join",
         "AUTOSTART_MODE_MODERATOR_TITLE": "A moderator joins",
-        "AUTOSTART_MODE_MODERATOR_DESC": "Starts as soon as a moderator joins the meeting",
+        "AUTOSTART_MODE_MODERATOR_DESC": "Starts as soon as a moderator joins or is promoted",
         "AUTOSTART_UNREACHABLE_TITLE": "Recording trigger unreachable",
         "AUTOSTART_UNREACHABLE_MESSAGE": "This trigger needs at least ${required} participants to fire, but the room's participant limit is set to ${limit}."
       }

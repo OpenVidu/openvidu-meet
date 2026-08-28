@@ -296,7 +296,7 @@
         "AUTOSTART_MODE_SECOND_TITLE": "O segundo participante entra",
         "AUTOSTART_MODE_SECOND_DESC": "Espera que outra pessoa entre",
         "AUTOSTART_MODE_MODERATOR_TITLE": "Um moderador entra",
-        "AUTOSTART_MODE_MODERATOR_DESC": "Começa assim que um moderador entra na reunião",
+        "AUTOSTART_MODE_MODERATOR_DESC": "Começa assim que um moderador entra ou é promovido",
         "AUTOSTART_UNREACHABLE_TITLE": "Acionador de gravação inalcançável",
         "AUTOSTART_UNREACHABLE_MESSAGE": "Este acionador precisa de pelo menos ${required} participantes para disparar, mas o limite de participantes da sala está definido como ${limit}."
       }
