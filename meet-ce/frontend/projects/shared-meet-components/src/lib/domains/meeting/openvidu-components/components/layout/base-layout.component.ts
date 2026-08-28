@@ -22,7 +22,6 @@ import { LayoutAdditionalElementsDirective } from '../../directives/template/int
 import { ParticipantStream } from '../../models/participant.model';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
-import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
 import { StreamComponent } from '../stream/stream.component';
@@ -40,7 +39,6 @@ import { StreamComponent } from '../stream/stream.component';
 })
 export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private readonly layoutService = inject(SmartLayoutService);
-	private readonly panelService = inject(PanelService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly directiveService = inject(MeetingUiConfigService);
 	private readonly templateRegistry = inject(TemplateRegistryService);
@@ -146,7 +144,6 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 	// ── Drag tracking ─────────────────────────────────────────────────────────────
 
-	private videoIsAtRight = false;
 	private wasLocalFloating = false;
 	private lastLayoutWidth = 0;
 	private lastLayoutHeight = 0;
@@ -182,7 +179,6 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 		if (this.wasLocalFloating && !isLocalFloating) {
 			// Restore from floating: clear CSS resize state, reset drag offset, reposition.
-			this.videoIsAtRight = false;
 			this.floatPlacementSettling = false;
 			clearTimeout(this.floatPlacementTimeout);
 			queueMicrotask(() => {
@@ -197,8 +193,6 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 			});
 		} else if (!this.wasLocalFloating && isLocalFloating) {
 			// Just became floating: move to the bottom-right corner to avoid overlapping the main layout.
-			// Mark it right-anchored so layout/panel resizes keep it pinned to the right edge.
-			this.videoIsAtRight = true;
 			this.floatPlacementSettling = true;
 			// FLIP glide: capture the tile's grid rect now — effects run before the template applies
 			// the .OV_floating class, so this is the pre-float geometry — then place the tile at the
@@ -235,7 +229,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		this.lastLayoutHeight = rect.height;
 		this.listenToLayoutDomChanges(container);
 		this.listenToResizeLayout(container);
-		this.listenToCdkDrag(container);
+		this.listenToCdkDrag();
 	}
 
 	ngOnDestroy(): void {
@@ -343,7 +337,8 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 	/**
 	 * Sets up a ResizeObserver on the layout container to detect size changes and update the layout accordingly.
-	 * Also handles repositioning of the floating local participant stream when the layout size changes.
+	 * Also re-places the floating local participant stream when the layout size changes (window
+	 * resize, panel open/close), keeping it in the same relative zone and always visible.
 	 * The resize handling is debounced to avoid excessive layout updates during rapid size changes.
 	 */
 	private listenToResizeLayout(container: HTMLElement): void {
@@ -352,31 +347,17 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 			clearTimeout(this.resizeTimeout);
 			this.resizeTimeout = setTimeout(() => {
-				if (
+				const sizeChanged =
 					Math.abs(this.lastLayoutWidth - parentWidth) > 1 ||
-					Math.abs(this.lastLayoutHeight - parentHeight) > 1
-				) {
+					Math.abs(this.lastLayoutHeight - parentHeight) > 1;
+
+				if (sizeChanged) {
 					this.layoutService.update();
-				}
 
-				// While the float glide is settling, rects are mid-animation — skip the
-				// repositioning entirely (the pending final snap already lands the tile).
-				if (this.localParticipant()?.isFloating && !this.floatPlacementSettling) {
-					const drag = this.getActiveLocalDrag();
-
-					if (drag) {
-						if (this.panelService.isPanelOpened()) {
-							if (this.lastLayoutWidth < parentWidth) {
-								if (this.videoIsAtRight) this.moveStreamToRight(parentWidth, drag);
-							} else {
-								const { x, width } = drag.element.nativeElement.getBoundingClientRect();
-								this.videoIsAtRight = x + width >= parentWidth;
-
-								if (this.videoIsAtRight) this.moveStreamToRight(parentWidth, drag);
-							}
-						} else if (this.videoIsAtRight) {
-							this.moveStreamToRight(parentWidth, drag);
-						}
+					// While the float glide is settling, rects are mid-animation — skip the
+					// repositioning entirely (the pending final snap already lands the tile).
+					if (this.localParticipant()?.isFloating && !this.floatPlacementSettling) {
+						this.repositionFloatingStream(parentWidth, parentHeight);
 					}
 				}
 
@@ -388,16 +369,11 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		this.resizeObserver.observe(container);
 	}
 
-	private listenToCdkDrag(container: HTMLElement): void {
+	private listenToCdkDrag(): void {
 		const onRelease = (event: CdkDragRelease<any>): void => {
 			const el = event.source.element.nativeElement as HTMLElement;
 			// Sync signal with the actual post-drag transform so CD never resets it.
 			this.setDragPosition(this.getActualDragPosition(el), event.source);
-
-			if (!this.panelService.isPanelOpened()) return;
-
-			const { x, width } = el.getBoundingClientRect();
-			this.videoIsAtRight = x !== 0 && x + width >= container.getBoundingClientRect().width;
 		};
 
 		this.localParticipantDrags().forEach((drag) =>
@@ -445,14 +421,57 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		this.currentDragPosition.set(pos);
 	}
 
-	private moveStreamToRight(parentWidth: number, drag = this.getActiveLocalDrag()): void {
+	/**
+	 * Re-places the floating tile after the layout viewport changes size. The tile keeps its
+	 * relative position within the movable range — a tile the user parked somewhere stays in
+	 * that zone, and one flush against an edge (the default bottom-right corner) stays flush —
+	 * computed from `currentDragPosition` (the last SET target, immune to mid-animation rects)
+	 * and the previous layout size. A containment pass then covers any residual overflow.
+	 */
+	private repositionFloatingStream(
+		parentWidth: number,
+		parentHeight: number,
+		drag = this.getActiveLocalDrag()
+	): void {
 		if (!drag) return;
 
-		const { width } = drag.element.nativeElement.getBoundingClientRect();
-		// Preserve the last SET y target rather than rect.y: a rect read while the tile is
-		// animating returns a mid-flight y, which would redirect the move instead of only
-		// re-anchoring it horizontally.
-		this.setDragPosition({ x: parentWidth - width - this.RIGHT_EDGE_MARGIN, y: this.currentDragPosition().y }, drag);
+		const { width, height } = drag.element.nativeElement.getBoundingClientRect();
+		const prev = this.currentDragPosition();
+		const prevRangeX = this.lastLayoutWidth - width;
+		const prevRangeY = this.lastLayoutHeight - height;
+		const x = prevRangeX > 0 ? (prev.x / prevRangeX) * Math.max(parentWidth - width, 0) : prev.x;
+		const y = prevRangeY > 0 ? (prev.y / prevRangeY) * Math.max(parentHeight - height, 0) : prev.y;
+
+		this.setDragPosition({ x, y }, drag);
+		this.containStreamWithinDragBoundary(drag);
+	}
+
+	/**
+	 * Pulls the floating tile back inside the drag boundary after the layout viewport shrinks
+	 * (window un-maximize, browser resize). `cdkDragBoundary` only constrains active pointer
+	 * drags, so a programmatically placed tile parked near the old bottom/right edge would
+	 * otherwise stay outside the new bounds — invisible and unreachable.
+	 */
+	private containStreamWithinDragBoundary(drag = this.getActiveLocalDrag()): void {
+		const el = drag?.element.nativeElement as HTMLElement | undefined;
+
+		if (!drag || !el) return;
+
+		const boundary = el.closest('#layout-container') ?? this.layoutContainer()?.element?.nativeElement;
+
+		if (!boundary) return;
+
+		const tile = el.getBoundingClientRect();
+		const bounds = boundary.getBoundingClientRect();
+		// Right/bottom corrections first, left/top last, so a tile larger than the boundary keeps
+		// its top-left corner (where the drag surface and controls live) reachable.
+		const dx = Math.max(bounds.left - tile.left, Math.min(0, bounds.right - tile.right));
+		const dy = Math.max(bounds.top - tile.top, Math.min(0, bounds.bottom - tile.bottom));
+
+		if (dx === 0 && dy === 0) return;
+
+		const { x, y } = this.currentDragPosition();
+		this.setDragPosition({ x: x + dx, y: y + dy }, drag);
 	}
 
 	/**

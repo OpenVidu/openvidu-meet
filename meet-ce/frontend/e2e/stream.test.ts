@@ -824,6 +824,75 @@ test.describe('Stream E2E Tests', () => {
 			}
 		});
 
+		test('should keep the FLOATING video inside the layout when the browser window shrinks', async ({ page }) => {
+			await openMeeting(page, accessUrl);
+
+			// Float: the tile lands at the bottom-right corner of the current (large) layout.
+			const localContainer = page.locator('.local_participant:has(.OV_stream_video.local)').first();
+			await floatStream(page);
+			await expect(localContainer).toHaveClass(/OV_floating/);
+			await page.waitForTimeout(800);
+
+			// Un-maximize: shrink the browser window. The layout viewport shrinks with it, so the
+			// tile's old bottom-right position now falls OUTSIDE the new bounds.
+			await page.setViewportSize({ width: 1000, height: 600 });
+
+			// The corner-parked tile must be re-anchored to the NEW bottom-right corner; otherwise
+			// it is off-screen and the user can never reach it again.
+			await expect(async () => {
+				const tileBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
+				const layoutBox = await getElementBoundingBox(page, '#layout');
+				expect(tileBox).not.toBeNull();
+				expect(layoutBox).not.toBeNull();
+				expect(tileBox!.x + tileBox!.width).toBeCloseTo(layoutBox!.x + layoutBox!.width - 5, -1);
+				expect(tileBox!.y + tileBox!.height).toBeCloseTo(layoutBox!.y + layoutBox!.height, -1);
+			}).toPass({ timeout: 8_000, intervals: [200, 300, 500, 1000] });
+
+			await page.close();
+		});
+
+		test('should keep the FLOATING video in its dragged zone when the window shrinks', async ({ page }) => {
+			await openMeeting(page, accessUrl);
+
+			const localContainer = page.locator('.local_participant:has(.OV_stream_video.local)').first();
+			await floatStream(page);
+			await expect(localContainer).toHaveClass(/OV_floating/);
+			await page.waitForTimeout(800);
+
+			// Park the tile in the bottom-LEFT quadrant — a deliberate user-chosen position.
+			await dragStream(page, '.local_participant', 300, 700);
+			await page.waitForTimeout(500);
+
+			const layoutBefore = await getElementBoundingBox(page, '#layout');
+			const tileBefore = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
+			expect(layoutBefore).not.toBeNull();
+			expect(tileBefore).not.toBeNull();
+			expect(tileBefore!.x + tileBefore!.width / 2).toBeLessThan(layoutBefore!.x + layoutBefore!.width / 2);
+
+			await page.setViewportSize({ width: 1000, height: 600 });
+
+			// The tile must stay in the zone the user chose (bottom-left), just re-fitted into the
+			// smaller layout — NOT re-anchored to the right edge, and never out of view.
+			await expect(async () => {
+				const tileBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
+				const layoutBox = await getElementBoundingBox(page, '#layout');
+				const boundsBox = await getElementBoundingBox(page, '#layout-container');
+				expect(tileBox).not.toBeNull();
+				expect(layoutBox).not.toBeNull();
+				expect(boundsBox).not.toBeNull();
+				// Fully visible…
+				expect(tileBox!.x).toBeGreaterThanOrEqual(boundsBox!.x - 2);
+				expect(tileBox!.y).toBeGreaterThanOrEqual(boundsBox!.y - 2);
+				expect(tileBox!.x + tileBox!.width).toBeLessThanOrEqual(boundsBox!.x + boundsBox!.width + 2);
+				expect(tileBox!.y + tileBox!.height).toBeLessThanOrEqual(boundsBox!.y + boundsBox!.height + 2);
+				// …and still in the left half / bottom half where the user parked it.
+				expect(tileBox!.x + tileBox!.width / 2).toBeLessThan(layoutBox!.x + layoutBox!.width / 2);
+				expect(tileBox!.y + tileBox!.height / 2).toBeGreaterThan(layoutBox!.y + layoutBox!.height / 2);
+			}).toPass({ timeout: 8_000, intervals: [200, 300, 500, 1000] });
+
+			await page.close();
+		});
+
 		test('should resize the floating LOCAL video using the SE corner handle', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 			await floatStream(page);
