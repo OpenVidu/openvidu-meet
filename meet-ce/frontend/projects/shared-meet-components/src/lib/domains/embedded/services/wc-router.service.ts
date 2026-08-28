@@ -99,6 +99,18 @@ export class WcRouterService implements WcNavigator {
 		return this.homeRoute;
 	}
 
+	/**
+	 * Clears route, status and home route, and invalidates any in-flight navigation. This service
+	 * outlives a single mount of `<openvidu-meet>` (shared root injector), so the shell must call
+	 * this on a genuine destroy or the next mount inherits stale state.
+	 */
+	reset(): void {
+		this.navSeq++;
+		this._currentRoute.set(null);
+		this._status.set('running');
+		this.homeRoute = null;
+	}
+
 	private async runNavigation(route: WcRoute, depth: number): Promise<void> {
 		if (depth > MAX_REDIRECTS) {
 			console.error('WcRouter: too many redirects; aborting to the error view');

@@ -245,8 +245,12 @@ export class App {
 			}
 		});
 
-		// Restore WC state when the custom element is removed from the DOM.
-		this._destroyRef.onDestroy(() => this.meetingContext.clearMeetingContext());
+		// The meeting context and router outlive this component instance (shared root injector), so
+		// a genuine destroy must clear both.
+		this._destroyRef.onDestroy(() => {
+			this.meetingContext.clearMeetingContext();
+			this.router.reset();
+		});
 	}
 
 	// ── Imperative host API ──────────────────────────────────────────────────

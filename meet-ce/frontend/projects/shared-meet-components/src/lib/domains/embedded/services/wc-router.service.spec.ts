@@ -1,6 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { WcMeetingGuard, WcRoomRecordingsGuard, WcSingleRecordingGuard } from '../guards/wc-route-guards';
+import { WcGuardResult, WcMeetingGuard, WcRoomRecordingsGuard, WcSingleRecordingGuard } from '../guards/wc-route-guards';
 import { MeetingRoute, WcRouteName } from '../models/wc-route.model';
 import { WcRouterService } from './wc-router.service';
 
@@ -76,5 +76,68 @@ describe('WcRouterService.syncHomeRoute', () => {
 		await service.navigateToInitial();
 
 		expect(meetingGuard.canActivate).toHaveBeenCalledOnceWith(updated);
+	});
+});
+
+/** This service outlives a single mount of `<openvidu-meet>` (shared root injector), so `reset()` must return it to a clean slate for the next mount. */
+describe('WcRouterService.reset', () => {
+	let service: WcRouterService;
+	let meetingGuard: jasmine.SpyObj<WcMeetingGuard>;
+
+	beforeEach(() => {
+		meetingGuard = jasmine.createSpyObj<WcMeetingGuard>('WcMeetingGuard', ['canActivate']);
+		meetingGuard.canActivate.and.resolveTo({ kind: 'ready' });
+
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				WcRouterService,
+				{ provide: WcMeetingGuard, useValue: meetingGuard },
+				{ provide: WcSingleRecordingGuard, useValue: { canActivate: () => ({ kind: 'ready' }) } },
+				{ provide: WcRoomRecordingsGuard, useValue: { canActivate: () => ({ kind: 'ready' }) } }
+			]
+		});
+
+		service = TestBed.inject(WcRouterService);
+	});
+
+	it('clears the current route, status and home route', async () => {
+		await service.syncHomeRoute(meetingRoute({ roomId: 'room-1' }));
+
+		service.reset();
+
+		expect(service.currentRoute()).toBeNull();
+		expect(service.status()).toBe('running');
+		expect(service.getHomeRoute()).toBeNull();
+	});
+
+	it('lets a remount of the SAME room re-navigate instead of being treated as a no-op', async () => {
+		const first = meetingRoute({ roomId: 'room-1', participantName: 'Alice' });
+		await service.syncHomeRoute(first);
+
+		service.reset();
+		meetingGuard.canActivate.calls.reset();
+
+		const remounted = meetingRoute({ roomId: 'room-1', participantName: 'Bob' });
+		await service.syncHomeRoute(remounted);
+
+		expect(meetingGuard.canActivate).toHaveBeenCalledOnceWith(remounted);
+		expect(service.currentRoute()).toBe(remounted);
+		expect(service.status()).toBe('ready');
+	});
+
+	it('discards a navigation left in flight by the destroyed instance', async () => {
+		let resolveGuard!: (result: WcGuardResult) => void;
+		meetingGuard.canActivate.and.returnValue(new Promise((resolve) => (resolveGuard = resolve)));
+
+		const stale = meetingRoute({ roomId: 'room-1' });
+		const pending = service.syncHomeRoute(stale);
+
+		service.reset();
+		resolveGuard({ kind: 'ready' });
+		await pending;
+
+		expect(service.currentRoute()).toBeNull();
+		expect(service.status()).toBe('running');
 	});
 });
