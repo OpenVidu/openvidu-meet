@@ -74,7 +74,10 @@ export interface ParticipantStream {
 	isCameraStream: boolean;
 	/** True when this is the screen-share stream. */
 	isScreenStream: boolean;
-	/** Stable identifier used for @for trackBy — videoTrack SID or a synthetic fallback. */
+	/**
+	 * Stable identifier used for @for trackBy and as the pin/float key — `camera-<identity>` for
+	 * camera streams (stable across track republishes), the video track SID for screen streams.
+	 */
 	streamId: string;
 	/** Whether this stream is pinned (enlarged) for this viewer. */
 	isPinned: boolean;
@@ -205,7 +208,10 @@ export class ParticipantModel {
 
 		// Camera stream — always present so the participant is always visible in the grid.
 		// When there is no real camera track, the MediaElement renders the avatar instead.
-		const cameraStreamId = cameraVideoTrack?.trackSid ?? `camera-${this.identity}`;
+		// Keyed by identity rather than track SID: the SID changes whenever the camera track is
+		// (re)published — camera toggles, LiveKit's full-reconnect republish — and per-viewer
+		// pin/float state keyed to it would silently die with the old SID.
+		const cameraStreamId = `camera-${this.identity}`;
 		result.push({
 			participant: this,
 			source: Track.Source.Camera,

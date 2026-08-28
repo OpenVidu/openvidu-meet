@@ -95,7 +95,21 @@ describe('ParticipantModel', () => {
 			expect(streams.length).toBe(1);
 			expect(streams[0].videoTrack).toBe(camera);
 			expect(streams[0].audioTrack).toBe(mic);
-			expect(streams[0].streamId).toBe('TR_camera');
+			expect(streams[0].streamId).toBe('camera-alice');
+		});
+
+		it('keeps the camera streamId stable when the camera track is republished with a new SID', () => {
+			// Regression: the camera streamId used to be the track SID, so per-viewer pin/float
+			// state keyed to it died on every republish (camera toggle, reconnect).
+			const fake = fakeLiveKitParticipant({ publications: [cameraPublication('TR_camera_1')] });
+			const participant = modelFor(fake);
+
+			const before = participant.streams()[0].streamId;
+
+			fake.publications = [cameraPublication('TR_camera_2')];
+			participant.bump();
+
+			expect(participant.streams()[0].streamId).toBe(before);
 		});
 
 		it('produces a second stream grouping screen video and screen audio while sharing', () => {

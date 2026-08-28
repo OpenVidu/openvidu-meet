@@ -142,6 +142,20 @@ describe('StreamLayoutStateService', () => {
 			expect(participant.isFloating).toBeTrue();
 		});
 
+		it('keeps the float across camera track republishes (reconnect, camera toggle)', () => {
+			// Regression: the float key used to be the camera track SID, so it died whenever the
+			// SID changed — LiveKit's full-reconnect republish or toggling the camera off and on.
+			service.floatLocalCameraVideo(participant);
+
+			fake.publications = [fakePublication('TR_cam', Track.Kind.Video, Track.Source.Camera)];
+			participant.bump();
+			expect(cameraStream().isFloating).toBeTrue();
+
+			fake.publications = [fakePublication('TR_cam_2', Track.Kind.Video, Track.Source.Camera)];
+			participant.bump();
+			expect(cameraStream().isFloating).toBeTrue();
+		});
+
 		it('pins by streamId and unpins everything at once', () => {
 			service.toggleStreamPinned(cameraStream().streamId);
 

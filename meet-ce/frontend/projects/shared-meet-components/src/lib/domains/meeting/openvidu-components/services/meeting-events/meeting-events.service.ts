@@ -52,9 +52,16 @@ export class MeetingEventsService {
 	private readonly log = this.loggerSrv.get('MeetingEventsService');
 	private readonly _activeSpeakers = signal<Participant[]>([]);
 	readonly activeSpeakers = this._activeSpeakers.asReadonly();
+	/**
+	 * True while LiveKit is reconnecting. A full reconnect unwinds every remote participant with
+	 * real ParticipantDisconnected events and re-adds them after Reconnected, so the auto-dock in
+	 * {@link dockLocalCameraVideoWhenAlone} must not mistake that unwind for everyone leaving.
+	 */
+	private reconnectInProgress = false;
 
 	bindRoom(room: Room, callbacks: MeetingEventCallbacks): void {
 		this._activeSpeakers.set([]);
+		this.reconnectInProgress = false;
 		this.subscribeToEncryptionErrors(room);
 		this.subscribeToActiveSpeakersChanged(room);
 		this.subscribeToParticipantConnected(room);
@@ -205,6 +212,19 @@ export class MeetingEventsService {
 	private subscribeToParticipantDisconnected(room: Room) {
 		room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
 			this.participantService.removeRemoteParticipant(participant.sid);
+			this.dockLocalCameraVideoWhenAlone();
+		});
+	}
+
+	/**
+	 * Docks the local floating video once the last remote participant is gone — unless the "leave"
+	 * is part of a reconnect. The check is deferred a microtask because a first-attempt full
+	 * reconnect unwinds the remote participants *before* emitting RoomEvent.Reconnecting, so at
+	 * unwind time the flag may not be raised yet; by the time the microtask runs it always is.
+	 */
+	private dockLocalCameraVideoWhenAlone() {
+		queueMicrotask(() => {
+			if (this.reconnectInProgress) return;
 
 			if (this.participantService.remoteParticipants().length === 0) {
 				this.streamLayoutService.dockLocalCameraVideo(this.participantService.localParticipant());
@@ -301,7 +321,14 @@ export class MeetingEventsService {
 	}
 
 	private subscribeToReconnection(room: Room, callbacks: MeetingEventCallbacks) {
+		// A resume-type reconnect starts here (transparent to the user, so no dialog), and can
+		// escalate to the full reconnect that unwinds the remote participants.
+		room.on(RoomEvent.SignalReconnecting, () => {
+			this.reconnectInProgress = true;
+		});
+
 		room.on(RoomEvent.Reconnecting, () => {
+			this.reconnectInProgress = true;
 			this.log.w('Connection lost: Reconnecting');
 			this.actionService.openConnectionDialog(
 				this.translateService.translate('ERRORS.CONNECTION'),
@@ -313,10 +340,19 @@ export class MeetingEventsService {
 		room.on(RoomEvent.Reconnected, () => {
 			this.log.w('Connection lost: Reconnected');
 			this.actionService.closeConnectionDialog();
+			// LiveKit replays the ParticipantConnected events buffered during the reconnect
+			// synchronously right after this event, so release the flag one microtask later and
+			// only then re-evaluate whether the local video is truly alone (everyone may have
+			// left for good while the connection was down).
+			queueMicrotask(() => {
+				this.reconnectInProgress = false;
+			});
+			this.dockLocalCameraVideoWhenAlone();
 			callbacks.onRoomReconnected();
 		});
 
 		room.on(RoomEvent.Disconnected, async (reason: DisconnectReason | undefined) => {
+			this.reconnectInProgress = false;
 			this._activeSpeakers.set([]);
 			this.actionService.closeConnectionDialog();
 			const participantLeftEvent: ParticipantLeftEvent = {

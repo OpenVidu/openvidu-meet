@@ -18,10 +18,11 @@ interface ForcedMuteScopes {
  * `ParticipantModel.streams()` picks up changes reactively and the state survives track
  * republishes.
  *
- * Keys: pin/float state is keyed by `ParticipantStream.streamId` (the real video track SID, or
- * the `camera-<identity>` fallback when the camera is off — which is what makes pinning/floating
- * an avatar-only tile work). Forcible mutes are keyed by participant SID so they survive the
- * participant's own publish/unpublish cycles.
+ * Keys: pin/float state is keyed by `ParticipantStream.streamId` — `camera-<identity>` for camera
+ * streams, which is stable across camera toggles and reconnect republishes and makes
+ * pinning/floating an avatar-only tile work, or the video track SID for screen streams. Forcible
+ * mutes are keyed by participant SID so they survive the participant's own publish/unpublish
+ * cycles.
  *
  * The service deliberately has no dependencies: `ParticipantService` (the registry) hands it to
  * every model it creates, and callers that operate on "the local participant" pass the model in.
