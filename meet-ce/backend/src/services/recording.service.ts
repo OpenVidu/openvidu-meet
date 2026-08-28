@@ -28,6 +28,7 @@ import {
 	errorInsufficientPermissions,
 	errorRecordingAlreadyStarted,
 	errorRecordingAlreadyStopped,
+	errorRecordingAutoStartDisabled,
 	errorRecordingCannotBeStoppedWhileStarting,
 	errorRecordingNotFound,
 	errorRecordingNotStopped,
@@ -84,12 +85,20 @@ export class RecordingService {
 		return container.get(RoomService);
 	}
 
+	/**
+	 * Starts a recording in the room. `autoStartMeetingId` marks the request as a recording
+	 * auto-start on behalf of that meeting (the LiveKit room sid): the deliberate-stop latch is
+	 * re-checked once the `recording_active` lock is held. A stop writes the latch before its
+	 * `egress_ended` releases the lock, so a stop that completed after the caller's own latch
+	 * check is always visible here and cannot be overridden.
+	 */
 	async startRecording(
 		roomId: string,
 		configOverride?: {
 			layout?: MeetRecordingLayout;
 			encoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
-		}
+		},
+		autoStartMeetingId?: string
 	): Promise<MeetRecordingInfo> {
 		let acquiredLock: RedisLock | null = null;
 		let eventListener!: (info: Record<string, unknown>) => void;
@@ -102,6 +111,10 @@ export class RecordingService {
 			acquiredLock = await this.acquireRoomRecordingActiveLock(roomId);
 
 			if (!acquiredLock) throw errorRecordingAlreadyStarted(roomId);
+
+			if (autoStartMeetingId && (await this.recAutoStartStateService.isDisabled(roomId, autoStartMeetingId))) {
+				throw errorRecordingAutoStartDisabled(roomId);
+			}
 
 			const roomRecordingConfig = await this.validateRoomForStartRecording(roomId);
 
@@ -253,11 +266,12 @@ export class RecordingService {
 
 			if (!thresholdReached) return;
 
-			const recordingInfo = await this.startRecording(roomId);
+			const recordingInfo = await this.startRecording(roomId, undefined, meetingId);
 			this.logger.info(`Recording '${recordingInfo.recordingId}' auto-started in room '${roomId}'`);
 		} catch (error) {
 			// 404: the room was deleted between the webhook firing and this check running.
-			// 409: the recording is already active (started by another join in the meantime).
+			// 409: the recording is already active (started by another join in the meantime),
+			// or a deliberate stop disarmed the auto-start while this candidate was evaluated.
 			if (error instanceof OpenViduMeetError && [404, 409].includes(error.statusCode)) {
 				this.logger.verbose(`Skipping recording auto-start in room '${roomId}': ${error.message}`);
 				return;

@@ -165,6 +165,14 @@ export const errorRecordingAlreadyStarted = (roomId: string): OpenViduMeetError 
 	return new OpenViduMeetError('Recording Error', `Room '${roomId}' is already being recorded`, 409);
 };
 
+export const errorRecordingAutoStartDisabled = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Recording Error',
+		`Recording auto-start in room '${roomId}' is disabled by a deliberate stop during this meeting`,
+		409
+	);
+};
+
 export const errorRecordingStartTimeout = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Recording Error', `Recording in room '${roomId}' timed out while starting`, 503);
 };
