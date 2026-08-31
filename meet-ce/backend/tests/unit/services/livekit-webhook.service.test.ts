@@ -1,5 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
-import { MeetMeetingEndedCause } from '@openvidu-meet/typings';
+import { MeetMeetingEndedCause, MeetRoomStatus } from '@openvidu-meet/typings';
+import type { Room } from 'livekit-server-sdk';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
@@ -32,12 +33,11 @@ const buildService = (redis: FakeRedisService) =>
 	);
 
 /**
- * C7 (MEET-BRANCH-AUDIT-FINDINGS.md): getMeetingEndedCause is the read side of the
- * MEETING_ENDED_CAUSE flag RoomScheduledTasksService.markMeetingEndedByDurationLimit stamps before
- * force-ending a meeting for exceeding its duration limit — it decides whether the meetingEnded
- * webhook gets an attributed cause instead of reading as a moderator's own end.
+ * Reads the MEETING_ENDED_CAUSE flag that RoomScheduledTasksService stamps before force-ending a
+ * meeting for exceeding its duration limit, deciding whether the meetingEnded webhook carries an
+ * attributed cause instead of reading as a moderator's own end.
  */
-describe('LivekitWebhookService.getMeetingEndedCause — C7: attributing a force-end to the duration GC', () => {
+describe('LivekitWebhookService.getMeetingEndedCause (force-end attribution flag)', () => {
 	it('is undefined when no flag was ever set (a normal end)', async () => {
 		const service = buildService(new FakeRedisService());
 
@@ -60,5 +60,102 @@ describe('LivekitWebhookService.getMeetingEndedCause — C7: attributing a force
 		const service = buildService(redis);
 
 		await expect(service.runGetMeetingEndedCause('room-1', 'sid-NEW')).resolves.toBeUndefined();
+	});
+});
+
+class FakeLogger {
+	info() {}
+	warn() {}
+	error() {}
+	debug() {}
+	verbose() {}
+}
+
+class FakeRoomService {
+	constructor(private status: MeetRoomStatus) {}
+
+	async getMeetRoom() {
+		return { status: this.status };
+	}
+}
+
+class FakeRoomRepository {
+	updatePartialCalls: Array<{ roomId: string; fields: unknown }> = [];
+
+	async updatePartial(roomId: string, fields: unknown) {
+		this.updatePartialCalls.push({ roomId, fields });
+		return { roomId, ...(fields as object) };
+	}
+}
+
+class FakeLiveKitService {
+	deleteRoomCalls: string[] = [];
+
+	async deleteRoom(roomId: string) {
+		this.deleteRoomCalls.push(roomId);
+		return true;
+	}
+}
+
+class FakeWebhookDispatcherService {
+	sendMeetingStartedWebhookCalls: unknown[] = [];
+
+	sendMeetingStartedWebhook(room: unknown) {
+		this.sendMeetingStartedWebhookCalls.push(room);
+	}
+}
+
+const buildRoomStartedService = (roomService: FakeRoomService) => {
+	const roomRepository = new FakeRoomRepository();
+	const livekitService = new FakeLiveKitService();
+	const webhookDispatcherService = new FakeWebhookDispatcherService();
+	const service = new LivekitWebhookService(
+		...([
+			{},
+			{},
+			livekitService,
+			roomService,
+			roomRepository,
+			webhookDispatcherService,
+			{},
+			{},
+			{},
+			{},
+			{},
+			{},
+			{},
+			{},
+			new FakeLogger()
+		] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
+	);
+
+	return { service, roomRepository, livekitService, webhookDispatcherService };
+};
+
+describe('LivekitWebhookService.handleRoomStarted (closed rooms are not reactivated)', () => {
+	it('leaves a closed room closed and deletes the LiveKit room instead of reactivating it', async () => {
+		const { service, roomRepository, livekitService, webhookDispatcherService } = buildRoomStartedService(
+			new FakeRoomService(MeetRoomStatus.CLOSED)
+		);
+
+		await service.handleRoomStarted({ name: 'room-1', sid: 'sid-1' } as unknown as Room);
+
+		expect(roomRepository.updatePartialCalls).toEqual([]);
+		expect(webhookDispatcherService.sendMeetingStartedWebhookCalls).toEqual([]);
+		expect(livekitService.deleteRoomCalls).toEqual(['room-1']);
+	});
+
+	it('activates an open room and sends the meeting-started webhook', async () => {
+		const { service, roomRepository, livekitService, webhookDispatcherService } = buildRoomStartedService(
+			new FakeRoomService(MeetRoomStatus.OPEN)
+		);
+
+		await service.handleRoomStarted({ name: 'room-1', sid: 'sid-1' } as unknown as Room);
+
+		expect(roomRepository.updatePartialCalls).toEqual([
+			{ roomId: 'room-1', fields: { status: MeetRoomStatus.ACTIVE_MEETING } }
+		]);
+		expect(webhookDispatcherService.sendMeetingStartedWebhookCalls).toHaveLength(1);
+		expect(livekitService.deleteRoomCalls).toEqual([]);
 	});
 });

@@ -217,15 +217,27 @@ export class LivekitWebhookService {
 	/**
 	 * Handles a room started event from LiveKit.
 	 *
-	 * This method retrieves the corresponding meet room from the room service using the LiveKit room name.
-	 * If the meet room is found, it updates the room status to ACTIVE_MEETING,
-	 * and sends a webhook notification indicating that the meeting has started.
+	 * A closed room is left closed and its LiveKit room deleted instead of reactivated — a still-valid
+	 * room-member token can make LiveKit auto-create it again on a raw reconnect, bypassing Meet's own
+	 * closed-room check. Otherwise, updates the room status to ACTIVE_MEETING and sends a webhook
+	 * notification indicating that the meeting has started.
 	 *
 	 * @param {Room} room - The room object that has started.
 	 */
-	async handleRoomStarted({ name: roomId }: Room) {
+	async handleRoomStarted({ name: roomId, sid: meetingId }: Room) {
 		try {
 			this.logger.info(`Processing room_started event for room '${roomId}'`);
+
+			const { status } = await this.roomService.getMeetRoom(roomId, ['status']);
+
+			if (status === MeetRoomStatus.CLOSED) {
+				this.logger.warn(
+					`Room '${roomId}' is closed in OpenVidu Meet but LiveKit started a new meeting '${meetingId}' in it, ` +
+						`most likely a stale room-member token reconnecting straight to LiveKit. Deleting the resurrected LiveKit room instead of reopening the meeting.`
+				);
+				await this.livekitService.deleteRoom(roomId);
+				return;
+			}
 
 			// Update Meet room status to ACTIVE_MEETING
 			const updatedRoom = await this.roomRepository.updatePartial(roomId, {
