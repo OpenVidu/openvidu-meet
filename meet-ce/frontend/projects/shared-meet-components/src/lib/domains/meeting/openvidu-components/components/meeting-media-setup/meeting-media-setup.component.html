@@ -43,7 +43,7 @@
 											<div class="control-group">
 												<ov-video-devices-select
 													[compact]="true"
-													(onVideoDeviceChanged)="videoDeviceChanged($event)"
+													(onVideoDeviceChanged)="onVideoDeviceChanged.emit($event)"
 													(onVideoEnabledChanged)="videoEnabledChanged($event)"
 													class="device-selector"
 												/>
@@ -54,8 +54,8 @@
 											<div class="control-group">
 												<ov-audio-devices-select
 													[compact]="true"
-													(onAudioDeviceChanged)="audioDeviceChanged($event)"
-													(onAudioEnabledChanged)="audioEnabledChanged($event)"
+													(onAudioDeviceChanged)="onAudioDeviceChanged.emit($event)"
+													(onAudioEnabledChanged)="onAudioEnabledChanged.emit($event)"
 													(onDeviceSelectorClicked)="onDeviceSelectorClicked()"
 													class="device-selector"
 												/>

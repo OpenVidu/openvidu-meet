@@ -7,8 +7,11 @@ import {
 	expectMicAlertDoesNotOverlap,
 	expectMicAlertFullyVisible,
 	expectMicAlertPointsAtButton,
+	getAudioDeviceOptions,
 	getVideoDeviceOptions,
+	isPrejoinAudioEnabled,
 	isPrejoinVideoEnabled,
+	selectAudioDevice,
 	selectVideoDevice,
 	setSystemMicrophoneMuted,
 	setSystemMicrophoneMutedFromStart,
@@ -20,7 +23,13 @@ import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-
 import { openMeeting, openPrejoin, reopenPrejoin } from './helpers/meeting-navigation.helper';
 import { openSettingsPanel } from './helpers/panels.helper';
 import { getFirstVideoTrackDeviceId, getFirstVideoTrackLabel, getScreenTrackLabel } from './helpers/stream.helper';
-import { getGetUserMediaCallCount, getGetUserMediaCalls, installGetUserMediaCounter } from './helpers/ui-utils.helper';
+import {
+	failGetUserMediaFor,
+	getGetUserMediaCallCount,
+	getGetUserMediaCalls,
+	getGetUserMediaCallsFor,
+	installGetUserMediaCounter
+} from './helpers/ui-utils.helper';
 
 test.describe('Media Devices E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -274,6 +283,142 @@ test.describe('Media Devices E2E Tests', () => {
 
 			expect(await getGetUserMediaCallCount(page)).toBe(callsBefore);
 			expect(await getFirstVideoTrackDeviceId(page)).toBe(beforeDeviceId);
+		});
+
+		test('opens both devices with the shared capture profile', async ({ page }) => {
+			await installGetUserMediaCounter(page);
+
+			await openPrejoin(page, accessUrl);
+			await expect.poll(() => getFirstVideoTrackDeviceId(page), { timeout: 15_000 }).not.toBeNull();
+
+			const [videoCall] = await getGetUserMediaCallsFor(page, 'video');
+			const [audioCall] = await getGetUserMediaCallsFor(page, 'audio');
+
+			// Every path that opens the camera restates the capture profile; a path that omits it
+			// captures whatever the browser defaults to, so the published resolution would depend on
+			// how the device happened to be opened.
+			expect(videoCall.videoWidth).toBe(1280);
+			expect(videoCall.videoHeight).toBe(720);
+			expect(audioCall.echoCancellation).toBe(true);
+			expect(audioCall.noiseSuppression).toBe(true);
+			expect(audioCall.autoGainControl).toBe(true);
+		});
+
+		test('turning the camera back on opens the device exactly once', async ({ page }) => {
+			await installGetUserMediaCounter(page);
+
+			await openPrejoin(page, accessUrl);
+			await expect.poll(() => getFirstVideoTrackDeviceId(page), { timeout: 15_000 }).not.toBeNull();
+
+			// Store the "camera off" preference and reopen, so the prejoin starts with no camera
+			// track at all — the path where enabling the camera has to create one.
+			await ensurePrejoinVideoState(page, false);
+			await page.waitForTimeout(500);
+			await reopenPrejoin(page, accessUrl);
+			await expect.poll(() => isPrejoinVideoEnabled(page), { timeout: 15_000 }).toBe(false);
+			expect(await getGetUserMediaCallsFor(page, 'video')).toEqual([]);
+
+			await ensurePrejoinVideoState(page, true);
+			await expect.poll(() => isPrejoinVideoEnabled(page), { timeout: 15_000 }).toBe(true);
+			await expect.poll(() => getFirstVideoTrackDeviceId(page), { timeout: 15_000 }).not.toBeNull();
+			// Let a second acquisition show up if the track is opened and then re-acquired.
+			await page.waitForTimeout(1500);
+
+			// Creating the track muted and unmuting it afterwards costs a second getUserMedia and
+			// blinks the camera light for what the user experienced as a single click.
+			const videoCalls = await getGetUserMediaCallsFor(page, 'video');
+			expect(videoCalls.length).toBe(1);
+			expect(videoCalls[0].videoWidth).toBe(1280);
+		});
+
+		test('switching the microphone opens the chosen device with the capture profile', async ({ page }) => {
+			await installGetUserMediaCounter(page);
+
+			await openPrejoin(page, accessUrl);
+			await expect.poll(() => getGetUserMediaCallsFor(page, 'audio'), { timeout: 15_000 }).not.toEqual([]);
+
+			const options = await getAudioDeviceOptions(page);
+			const alternate = options.find((option) => !option.selected);
+
+			if (options.length < 2 || !alternate) {
+				test.skip(true, 'Needs at least two distinguishable audio devices to switch between');
+				return;
+			}
+
+			const callsBefore = (await getGetUserMediaCallsFor(page, 'audio')).length;
+			await selectAudioDevice(page, alternate.label);
+
+			// restartTrack replaces the whole constraint set, so the switch must restate the
+			// microphone capture profile or the new device falls back to the browser defaults.
+			await expect
+				.poll(() => getGetUserMediaCallsFor(page, 'audio').then((calls) => calls.length), { timeout: 15_000 })
+				.toBeGreaterThan(callsBefore);
+
+			const switchCall = (await getGetUserMediaCallsFor(page, 'audio')).at(-1)!;
+			expect(switchCall.audioDeviceId).toBeTruthy();
+			expect(switchCall.echoCancellation).toBe(true);
+			expect(switchCall.noiseSuppression).toBe(true);
+			expect(switchCall.autoGainControl).toBe(true);
+
+			// The microphone stays enabled and usable after the switch.
+			expect(await isPrejoinAudioEnabled(page)).toBe(true);
+		});
+	});
+
+	// The prejoin requests each kind separately so one unavailable device does not take the other
+	// down with it. A device held by another application is the realistic failure: permission is
+	// granted and the device is listed, but the capture cannot start.
+	test.describe('Degraded Device Availability', () => {
+		test('keeps the prejoin usable when the camera cannot be opened', async ({ page }) => {
+			await failGetUserMediaFor(page, 'video');
+			await installGetUserMediaCounter(page);
+
+			await openPrejoin(page, accessUrl);
+
+			// The microphone still opens, and the prejoin is joinable.
+			await expect.poll(() => isPrejoinAudioEnabled(page), { timeout: 15_000 }).toBe(true);
+			await expect(page.locator('#join-button')).toBeEnabled();
+
+			// The camera must not be reported as enabled: there is no camera track behind it, so a
+			// preview that claims to be on would show nothing, and the background effects that
+			// require a camera track would be offered.
+			expect(await isPrejoinVideoEnabled(page)).toBe(false);
+			const backgroundsButton = page.locator('#backgrounds-button');
+
+			if (await backgroundsButton.isVisible()) {
+				await expect(backgroundsButton).toBeDisabled();
+			}
+		});
+
+		test('does not report devices as enabled when no capture could start', async ({ page }) => {
+			await failGetUserMediaFor(page, 'video');
+			await failGetUserMediaFor(page, 'audio');
+
+			await openPrejoin(page, accessUrl);
+
+			// Both devices are present and both preferences say "on", but neither capture started.
+			// Predicting the state from the preference would show two enabled buttons with no track
+			// behind them — a preview that is on and shows nothing, a mic warning that never fires.
+			await expect(page.locator('#camera-button')).toBeVisible({ timeout: 15_000 });
+			expect(await isPrejoinVideoEnabled(page)).toBe(false);
+			expect(await isPrejoinAudioEnabled(page)).toBe(false);
+
+			// This is "busy", not "absent": the devices are still listed.
+			await expect(page.locator('#no-video-device-message')).toHaveCount(0);
+			await expect(page.locator('#no-audio-device-message')).toHaveCount(0);
+		});
+
+		test('joins with the microphone only when the camera cannot be opened', async ({ page }) => {
+			await failGetUserMediaFor(page, 'video');
+
+			await openPrejoin(page, accessUrl);
+			await expect.poll(() => isPrejoinAudioEnabled(page), { timeout: 15_000 }).toBe(true);
+
+			await page.locator('#join-button').click();
+
+			await expect(page.locator('#layout-container')).toBeVisible({ timeout: 15_000 });
+			await expect(page.locator('#media-buttons-container')).toBeVisible({ timeout: 15_000 });
+			await expect(page.locator('#camera-btn')).toBeEnabled();
 		});
 	});
 

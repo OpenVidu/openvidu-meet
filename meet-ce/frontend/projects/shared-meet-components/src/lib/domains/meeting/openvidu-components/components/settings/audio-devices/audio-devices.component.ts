@@ -7,7 +7,7 @@ import { CustomDevice } from '../../../models/device.model';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { MicStatusAlertComponent } from '../../mic-status-alert/mic-status-alert.component';
 import { DeviceService } from '../../../services/device/device.service';
-import { LocalMediaControlService } from '../../../services/local-media-control/local-media-control.service';
+import { LocalMediaService } from '../../../services/local-media/local-media.service';
 import { ParticipantService } from '../../../services/participant/participant.service';
 import { LoggerService } from '../../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../../shared/models/logger.model';
@@ -42,7 +42,7 @@ export class AudioDevicesComponent implements OnInit {
 
 	private readonly deviceSrv = inject(DeviceService);
 	private readonly participantService = inject(ParticipantService);
-	private readonly localMediaControlService = inject(LocalMediaControlService);
+	private readonly localMediaService = inject(LocalMediaService);
 	private readonly loggerSrv = inject(LoggerService);
 
 	constructor() {
@@ -52,7 +52,7 @@ export class AudioDevicesComponent implements OnInit {
 		this.hasAudioDevices = this.deviceSrv.hasAudioDevices;
 
 		// Keep the local flag in sync with the participant state. Persistence of the preference is
-		// owned by the media-control service — do NOT write storage here, or a
+		// owned by LocalMediaService — do NOT write storage here, or a
 		// non-user mute (e.g. moderator force-mute) would overwrite the user's preference.
 		effect(() => {
 			const participant = this.participantService.localParticipant();
@@ -64,7 +64,7 @@ export class AudioDevicesComponent implements OnInit {
 	}
 
 	async ngOnInit() {
-		this.isMicrophoneEnabled.set(this.localMediaControlService.isMyMicrophoneEnabled());
+		this.isMicrophoneEnabled.set(this.localMediaService.isMyMicrophoneEnabled());
 	}
 
 	async toggleMic(event: MouseEvent) {
@@ -72,7 +72,7 @@ export class AudioDevicesComponent implements OnInit {
 		this.microphoneStatusChanging.set(true);
 		const enabled = !this.isMicrophoneEnabled();
 		this.isMicrophoneEnabled.set(enabled);
-		await this.localMediaControlService.setMicrophoneEnabled(enabled);
+		await this.localMediaService.setMicrophoneEnabled(enabled);
 		this.microphoneStatusChanging.set(false);
 		this.onAudioEnabledChanged.emit(enabled);
 	}
@@ -83,7 +83,7 @@ export class AudioDevicesComponent implements OnInit {
 
 			if (this.deviceSrv.needUpdateAudioTrack(device)) {
 				this.microphoneStatusChanging.set(true);
-				await this.localMediaControlService.switchMicrophone(device.device);
+				await this.localMediaService.switchMicrophone(device.device);
 				this.deviceSrv.setMicSelected(device.device);
 				const selectedMicrophone = this.microphoneSelected();
 

@@ -1,30 +1,23 @@
 import { Service, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
 import { ParticipantModel, ParticipantProperties } from '../../models/participant.model';
-import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { E2eeService } from '../e2ee/e2ee.service';
 import type {
 	DataPublishOptions,
 	LocalParticipant,
+	LocalTrack,
 	LocalTrackPublication,
 	Participant,
 	RemoteParticipant
 } from '../livekit';
-import { DeviceService } from '../device/device.service';
 import { ConnectionQuality, Track } from '../livekit';
-import { LocalTrackService } from '../local-track/local-track.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
-import { MediaStorageService } from '../storage/storage.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 
 @Service()
 export class ParticipantService {
-	private readonly directiveService = inject(MeetingUiConfigService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
-	private readonly localTrackService = inject(LocalTrackService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
-	private readonly storageSrv = inject(MediaStorageService);
-	private readonly deviceSrv = inject(DeviceService);
 	private readonly e2eeService = inject(E2eeService);
 	private readonly log = inject(LoggerService).get('ParticipantService');
 
@@ -83,35 +76,18 @@ export class ParticipantService {
 	}
 
 	/**
-	 * Connects to the room and publishes the local tracks.
+	 * Connects to the room and publishes the given tracks (see `LocalMediaService.acquireJoinTracks`,
+	 * which the caller uses to obtain them and, once published here, to release the prejoin
+	 * reference through `releaseJoinTracks`).
 	 * @internal
 	 */
-	async connect(): Promise<void> {
-		let prejoinTracks = this.localTrackService.getLocalTracks();
-
-		if (prejoinTracks.length === 0) {
-			// No prejoin page ran, so the local tracks have not been created yet. Decide what to open
-			// from the user's stored preferences (availability-independent: on first visit the device
-			// list is empty until permission is granted by this very call). This is the single
-			// getUserMedia of the no-prejoin path.
-			const wantCamera = this.directiveService.isVideoEnabled() && this.storageSrv.isCameraEnabled();
-			const wantMicrophone = this.directiveService.isAudioEnabled() && this.storageSrv.isMicrophoneEnabled();
-
-			if (wantCamera || wantMicrophone) {
-				prejoinTracks = await this.localTrackService.createLocalTracks(wantCamera, wantMicrophone);
-
-				// Permission may have just been granted → populate the device list and align the
-				// selection with the opened devices so the in-room selectors work.
-				await this.deviceSrv.syncDevicesAfterTrackCreation(prejoinTracks);
-			}
-		}
-
+	async connect(tracks: LocalTrack[]): Promise<void> {
 		await this.meetingLiveKitService.connect();
 		this.setLocalParticipant(this.meetingLiveKitService.getRoom().localParticipant);
 
 		const localParticipant = this.localParticipant();
-		const videoTrack = prejoinTracks.find((track) => track.kind === Track.Kind.Video);
-		const audioTrack = prejoinTracks.find((track) => track.kind === Track.Kind.Audio);
+		const videoTrack = tracks.find((track) => track.kind === Track.Kind.Video);
+		const audioTrack = tracks.find((track) => track.kind === Track.Kind.Audio);
 
 		const promises: Promise<LocalTrackPublication>[] = [];
 
@@ -120,17 +96,11 @@ export class ParticipantService {
 		}
 
 		if (localParticipant && audioTrack) {
-			promises.push(localParticipant?.publishTrack(audioTrack));
+			promises.push(localParticipant.publishTrack(audioTrack));
 		}
 
 		await Promise.all(promises);
 		this._localParticipant()?.bump();
-
-		// The tracks are now published and owned by the participant, so release the prejoin
-		// reference (without stopping them). The local-media state hands off from the prejoin
-		// track signal to the connected participant, and MicActivityService follows it via its
-		// effect — reusing the same underlying MediaStreamTrack the prejoin was already monitoring.
-		this.localTrackService.clearLocalTracksReference();
 		this.log.d('Connected to room', this.meetingLiveKitService.getRoom());
 		this.meetingLiveKitService.getRoom().remoteParticipants.forEach((p) => {
 			this.addRemoteParticipant(p);

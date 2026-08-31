@@ -38,7 +38,7 @@ import { DocumentService } from '../../services/document/document.service';
 import { Room, RoomEvent } from '../../services/livekit';
 import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
 import { PanelService } from '../../services/panel/panel.service';
-import { LocalMediaControlService } from '../../services/local-media-control/local-media-control.service';
+import { LocalMediaService } from '../../services/local-media/local-media.service';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { PlatformService } from '../../services/platform/platform.service';
 import { RecordingService } from '../../services/recording/recording.service';
@@ -73,7 +73,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly chatService = inject(ChatService);
 	private readonly panelService = inject(PanelService);
 	private readonly participantService = inject(ParticipantService);
-	private readonly localMediaControlService = inject(LocalMediaControlService);
+	private readonly localMediaService = inject(LocalMediaService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly deviceService = inject(DeviceService);
 	private readonly actionService = inject(ActionService);
@@ -395,7 +395,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			const screenShareChanged = currentScreenShareEnabled !== p.isScreenShareEnabled;
 
 			// Only emit and update if there's an actual change. Persistence of the camera/mic
-			// preference is owned by the media-control service — this effect only mirrors
+			// preference is owned by LocalMediaService — this effect only mirrors
 			// participant state into local signals + emits API events; it must NOT write storage, or
 			// a non-user state change (e.g. moderator force-mute) would clobber the user's preference.
 			if (cameraChanged) {
@@ -445,8 +445,8 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	async toggleMicrophone() {
 		try {
 			this.microphoneMuteChanging.set(false);
-			const isMicrophoneEnabled = this.localMediaControlService.isMyMicrophoneEnabled();
-			await this.localMediaControlService.setMicrophoneEnabled(!isMicrophoneEnabled);
+			const isMicrophoneEnabled = this.localMediaService.isMyMicrophoneEnabled();
+			await this.localMediaService.setMicrophoneEnabled(!isMicrophoneEnabled);
 		} catch (error: unknown) {
 			this.log.e('There was an error toggling microphone:', (error as any).code, (error as any).message);
 			this.actionService.openDialog(
@@ -464,13 +464,13 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	async toggleCamera() {
 		try {
 			this.cameraMuteChanging.set(true);
-			const isCameraEnabled = this.localMediaControlService.isMyCameraEnabled();
+			const isCameraEnabled = this.localMediaService.isMyCameraEnabled();
 
 			if (this.panelService.isBackgroundEffectsPanelOpened() && isCameraEnabled) {
 				this.panelService.togglePanel(PanelType.BACKGROUND_EFFECTS);
 			}
 
-			await this.localMediaControlService.setCameraEnabled(!isCameraEnabled);
+			await this.localMediaService.setCameraEnabled(!isCameraEnabled);
 		} catch (error) {
 			this.log.e('There was an error toggling camera:', (error as any).code, (error as any).message);
 			this.actionService.openDialog(
@@ -486,15 +486,15 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * @ignore
 	 */
 	async toggleScreenShare() {
-		const isScreenShareEnabled = this.localMediaControlService.isMyScreenShareEnabled();
-		await this.localMediaControlService.setScreenShareEnabled(!isScreenShareEnabled);
+		const isScreenShareEnabled = this.localMediaService.isMyScreenShareEnabled();
+		await this.localMediaService.setScreenShareEnabled(!isScreenShareEnabled);
 	}
 
 	/**
 	 * @ignore
 	 */
 	async replaceScreenTrack() {
-		await this.localMediaControlService.switchScreenShare();
+		await this.localMediaService.switchScreenShare();
 	}
 
 	/**
@@ -602,6 +602,12 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 
 		if (!roomValue) return;
 
+		// Both events leave the Room unable to publish, so the actions they gate must be
+		// unreachable while they last. `Reconnected` follows either of them — a resumed signal goes
+		// straight back to `Connected`, and a failed resume escalates to the full reconnect below —
+		// so the gate always lifts again. A signal resume is short and does not tear the media down,
+		// so it does not close an open panel; a full reconnect does.
+		roomValue.on(RoomEvent.SignalReconnecting, () => this.isConnectionLost.set(true));
 		roomValue.on(RoomEvent.Reconnecting, () => {
 			if (this.panelService.isPanelOpened()) {
 				this.panelService.closePanel();

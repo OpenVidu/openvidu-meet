@@ -1,7 +1,7 @@
 import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
 import { AvailableLangs, LangOption } from '../../models/lang.model';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
-import { MediaStorageService } from '../../services/storage/storage.service';
+import { LocalMediaService } from '../../services/local-media/local-media.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 
 /**
@@ -413,7 +413,7 @@ export class VideoEnabledDirective implements OnDestroy {
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
-	private readonly storageService = inject(MediaStorageService);
+	private readonly localMediaService = inject(LocalMediaService);
 	private readonly videoEnabledEffect = effect(() => {
 		this.update(this.videoEnabled());
 	});
@@ -436,27 +436,8 @@ export class VideoEnabledDirective implements OnDestroy {
 	 * @ignore
 	 */
 	update(enabled: boolean) {
-		const storageIsEnabled = this.storageService.isCameraEnabled();
+		const finalEnabledState = this.localMediaService.applyInitialCameraPreference(enabled);
 
-		// Determine the final enabled state of the camera
-		let finalEnabledState: boolean;
-
-		if (enabled) {
-			// If enabled is true, respect the storage value if it's false
-			finalEnabledState = storageIsEnabled !== false;
-		} else {
-			// If enabled is false, disable the camera
-			finalEnabledState = false;
-		}
-
-		// Update the storage with the final state.
-		// Second writer of the camera preference (besides the media-control toggle):
-		// it runs before tracks are created and seeds the stored
-		// preference from the embedding app's `cameraEnabled` input — a flow that never goes through
-		// setCameraEnabled(), so it cannot be folded into that single writer.
-		this.storageService.setCameraEnabled(finalEnabledState);
-
-		// Ensure libService state is consistent with the final enabled state
 		if (this.libService.isVideoEnabled() !== finalEnabledState) {
 			this.libService.updateStreamConfig({ videoEnabled: finalEnabledState });
 		}
@@ -488,7 +469,7 @@ export class AudioEnabledDirective implements OnDestroy {
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
-	private readonly storageService = inject(MediaStorageService);
+	private readonly localMediaService = inject(LocalMediaService);
 	private readonly audioEnabledEffect = effect(() => {
 		this.update(this.audioEnabled());
 	});
@@ -508,27 +489,10 @@ export class AudioEnabledDirective implements OnDestroy {
 	 * @ignore
 	 */
 	update(enabled: boolean) {
-		const storageIsEnabled = this.storageService.isMicrophoneEnabled();
+		const finalEnabledState = this.localMediaService.applyInitialMicrophonePreference(enabled);
 
-		// Determine the final enabled state of the microphone
-		let finalEnabledState: boolean;
-
-		if (enabled) {
-			// If enabled is true, respect the storage value if it's false
-			finalEnabledState = storageIsEnabled !== false;
-		} else {
-			// If enabled is false, disable the camera
-			finalEnabledState = false;
-		}
-
-		// Update the storage with the final state.
-		// Second writer of the microphone preference (besides the media-control toggle):
-		// it seeds the stored preference from the embedding
-		// app's `audioEnabled` input before tracks exist (does not go through setMicrophoneEnabled()).
-		this.storageService.setMicrophoneEnabled(finalEnabledState);
-
-		if (this.libService.isAudioEnabled() !== enabled) {
-			this.libService.updateStreamConfig({ audioEnabled: enabled });
+		if (this.libService.isAudioEnabled() !== finalEnabledState) {
+			this.libService.updateStreamConfig({ audioEnabled: finalEnabledState });
 		}
 	}
 }

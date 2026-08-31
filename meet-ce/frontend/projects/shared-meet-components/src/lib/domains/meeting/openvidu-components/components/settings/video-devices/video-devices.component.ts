@@ -6,7 +6,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { CustomDevice } from '../../../models/device.model';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { DeviceService } from '../../../services/device/device.service';
-import { LocalMediaControlService } from '../../../services/local-media-control/local-media-control.service';
+import { LocalMediaService } from '../../../services/local-media/local-media.service';
 import { ParticipantService } from '../../../services/participant/participant.service';
 import { LoggerService } from '../../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../../shared/models/logger.model';
@@ -41,7 +41,7 @@ export class VideoDevicesComponent implements OnInit {
 
 	private readonly deviceSrv = inject(DeviceService);
 	private readonly participantService = inject(ParticipantService);
-	private readonly localMediaControlService = inject(LocalMediaControlService);
+	private readonly localMediaService = inject(LocalMediaService);
 	private readonly loggerSrv = inject(LoggerService);
 
 	constructor() {
@@ -51,7 +51,7 @@ export class VideoDevicesComponent implements OnInit {
 		this.hasVideoDevices = this.deviceSrv.hasVideoDevices;
 
 		// Keep the local flag in sync with the participant state. Persistence of the preference is
-		// owned by the media-control service — do NOT write storage here.
+		// owned by LocalMediaService — do NOT write storage here.
 		effect(() => {
 			const participant = this.participantService.localParticipant();
 
@@ -62,7 +62,7 @@ export class VideoDevicesComponent implements OnInit {
 	}
 
 	async ngOnInit() {
-		this.isCameraEnabled.set(this.localMediaControlService.isMyCameraEnabled());
+		this.isCameraEnabled.set(this.localMediaService.isMyCameraEnabled());
 	}
 
 	async toggleCam(event: MouseEvent) {
@@ -70,7 +70,7 @@ export class VideoDevicesComponent implements OnInit {
 		this.cameraStatusChanging.set(true);
 		const enabled = !this.isCameraEnabled();
 		this.isCameraEnabled.set(enabled);
-		await this.localMediaControlService.setCameraEnabled(enabled);
+		await this.localMediaService.setCameraEnabled(enabled);
 		this.onVideoEnabledChanged.emit(enabled);
 		this.cameraStatusChanging.set(false);
 	}
@@ -82,7 +82,7 @@ export class VideoDevicesComponent implements OnInit {
 			// Is New deviceId different from the old one?
 			if (this.deviceSrv.needUpdateVideoTrack(device)) {
 				this.cameraStatusChanging.set(true);
-				await this.localMediaControlService.switchCamera(device.device);
+				await this.localMediaService.switchCamera(device.device);
 				this.deviceSrv.setCameraSelected(device.device);
 				const selectedCamera = this.cameraSelected();
 

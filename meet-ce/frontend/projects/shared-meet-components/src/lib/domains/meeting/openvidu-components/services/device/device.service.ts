@@ -41,10 +41,6 @@ export class DeviceService implements OnDestroy {
 	// check, and there is no separate state to keep in sync.
 	readonly hasVideoDevices = computed(() => this.cameras().length > 0);
 	readonly hasAudioDevices = computed(() => this.microphones().length > 0);
-	// Permission is inferred from device presence, so these are plain aliases of the availability
-	// signals — no extra computed node needed.
-	readonly hasVideoPermission = this.hasVideoDevices;
-	readonly hasAudioPermission = this.hasAudioDevices;
 
 	// Internal state
 	private log: ILogger;
@@ -335,22 +331,6 @@ export class DeviceService implements OnDestroy {
 		// Register listener
 		navigator.mediaDevices.addEventListener('devicechange', this.deviceChangeHandler);
 		this.log.d('Device change detection enabled');
-	}
-
-	/**
-	 * Whether the camera should be opened: a stored "enabled" preference AND a camera being present.
-	 * Combines storage with availability, so it is not a plain signal alias and stays here.
-	 */
-	isCameraEnabled(): boolean {
-		return this.hasVideoDevices() && this.storageSrv.isCameraEnabled();
-	}
-
-	/**
-	 * Whether the microphone should be opened: a stored "enabled" preference AND a microphone being
-	 * present. Combines storage with availability, so it is not a plain signal alias and stays here.
-	 */
-	isMicrophoneEnabled(): boolean {
-		return this.hasAudioDevices() && this.storageSrv.isMicrophoneEnabled();
 	}
 
 	/**

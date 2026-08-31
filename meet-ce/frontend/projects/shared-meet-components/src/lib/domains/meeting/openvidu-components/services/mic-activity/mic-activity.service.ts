@@ -3,7 +3,7 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import type { LocalAudioTrack } from '../livekit';
 import { createAudioAnalyser } from '../livekit';
-import { LocalMediaStateService } from '../local-media-state/local-media-state.service';
+import { LocalMediaService } from '../local-media/local-media.service';
 
 // Voice-activity thresholds, expressed on a time-domain RMS scale (0-1) — see the loop for why
 // we measure RMS rather than LiveKit's frequency-based `calculateVolume`. Typical readings:
@@ -45,25 +45,24 @@ export class MicActivityService implements OnDestroy {
 	private currentTrackId?: string;
 
 	private readonly log: ILogger = inject(LoggerService).get('MicActivityService');
-	private readonly localMediaState = inject(LocalMediaStateService);
+	private readonly localMediaService = inject(LocalMediaService);
 
 	constructor() {
-		// Self-managed lifecycle: the monitored track follows the reactive local-media state,
-		// so there are no external attach/detach call-sites. The effect fires only when the underlying
-		// MediaStreamTrack changes (the signal is compared by MST id), re-cloning onto the new track or
-		// detaching when it becomes undefined (prejoin torn down, participant cleared, left the meeting).
-		effect(() => this.attach(this.localMediaState.microphoneTrack()));
+		// Self-managed lifecycle: the monitored capture follows the reactive local-media state, so
+		// there are no external attach/detach call-sites. The effect fires whenever the captured
+		// MediaStreamTrack changes — a device switch swaps it behind the same LocalAudioTrack, which
+		// is why the signal carries the raw capture — re-cloning onto the new one, or detaching when
+		// it becomes undefined (prejoin torn down, participant cleared, left the meeting).
+		effect(() => this.attach(this.localMediaService.microphoneMediaStreamTrack()));
 	}
 
 	/**
-	 * Starts monitoring the given local microphone track. Idempotent for the same underlying
-	 * MediaStreamTrack; when the track changes (device switch / re-acquisition) the previous
-	 * analyser and clone are disposed first.
+	 * Starts monitoring the given microphone capture track. Idempotent for the same MediaStreamTrack;
+	 * when the capture changes (device switch / re-acquisition) the previous analyser and clone are
+	 * disposed first.
 	 */
-	private attach(track: LocalAudioTrack | undefined): void {
-		const source = track?.mediaStreamTrack;
-
-		if (!track || !source) {
+	private attach(source: MediaStreamTrack | undefined): void {
+		if (!source) {
 			this.detach();
 			return;
 		}

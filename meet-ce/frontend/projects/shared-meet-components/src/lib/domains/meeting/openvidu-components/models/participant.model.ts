@@ -603,7 +603,7 @@ export class ParticipantModel {
 	/**
 	 * Bumps the internal revision signal, causing `streams` and all reactive getters
 	 * (isCameraEnabled, name, etc.) to re-evaluate in templates and effects.
-	 * Only the event/media layer (ParticipantService, LocalMediaControlService) should call this,
+	 * Only the event/media layer (ParticipantService, LocalMediaService) should call this,
 	 * and only after an operation that mutates the underlying LiveKit participant in-place
 	 * (e.g. after setCameraEnabled, setMicrophoneEnabled, publishTrack, a room event).
 	 * @internal

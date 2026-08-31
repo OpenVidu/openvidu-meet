@@ -216,14 +216,32 @@ export const getElementBoundingBox = async (
 // ─── getUserMedia instrumentation ────────────────────────────────────────────
 
 /**
+ * One recorded `getUserMedia` call: which kinds were requested and the parts of the constraint set
+ * the app is responsible for — the device it asked for and the capture profile it restated.
+ */
+export type GetUserMediaCall = {
+	audio: boolean;
+	video: boolean;
+	/** Requested device id, unwrapped from `{ exact }` / `{ ideal }`. */
+	audioDeviceId?: string;
+	videoDeviceId?: string;
+	videoWidth?: number;
+	videoHeight?: number;
+	echoCancellation?: boolean;
+	noiseSuppression?: boolean;
+	autoGainControl?: boolean;
+};
+
+/**
  * Wraps `navigator.mediaDevices.getUserMedia` *before any application code runs* so its
- * invocations can be counted. Must be called before navigating to the app — it registers an init
+ * invocations can be recorded. Must be called before navigating to the app — it registers an init
  * script that re-installs the wrapper on every navigation. Read the tally with
- * {@link getGetUserMediaCallCount}.
+ * {@link getGetUserMediaCallCount} and the recorded constraints with {@link getGetUserMediaCalls}.
  */
 export const installGetUserMediaCounter = async (page: Page): Promise<void> => {
 	await page.addInitScript(() => {
-		const w = window as Window & { __ovGumCalls?: Array<{ audio: boolean; video: boolean }> };
+		type RecordedCall = Record<string, boolean | number | string | undefined>;
+		const w = window as Window & { __ovGumCalls?: RecordedCall[] };
 		w.__ovGumCalls = [];
 
 		const mediaDevices = navigator.mediaDevices;
@@ -234,12 +252,38 @@ export const installGetUserMediaCounter = async (page: Page): Promise<void> => {
 
 		const original = mediaDevices.getUserMedia.bind(mediaDevices);
 
+		// Self-contained: this function is serialized into the page, so it cannot close over
+		// anything defined outside the init script.
+		const unwrap = (value: unknown): string | number | boolean | undefined => {
+			const isPlain = (candidate: unknown): candidate is string | number | boolean =>
+				typeof candidate === 'string' || typeof candidate === 'number' || typeof candidate === 'boolean';
+
+			if (isPlain(value)) return value;
+
+			if (value && typeof value === 'object') {
+				const range = value as { exact?: unknown; ideal?: unknown };
+				const picked = range.exact ?? range.ideal;
+
+				if (isPlain(picked)) return picked;
+			}
+
+			return undefined;
+		};
+
 		mediaDevices.getUserMedia = (constraints?: MediaStreamConstraints) => {
-			// Record only whether each kind was requested — enough to tell a per-kind acquisition
-			// apart from a combined {audio,video} permission probe, and trivially serialisable.
+			const audio = typeof constraints?.audio === 'object' ? (constraints.audio as MediaTrackConstraints) : {};
+			const video = typeof constraints?.video === 'object' ? (constraints.video as MediaTrackConstraints) : {};
+
 			w.__ovGumCalls?.push({
 				audio: Boolean(constraints?.audio),
-				video: Boolean(constraints?.video)
+				video: Boolean(constraints?.video),
+				audioDeviceId: unwrap(audio.deviceId) as string | undefined,
+				videoDeviceId: unwrap(video.deviceId) as string | undefined,
+				videoWidth: unwrap(video.width) as number | undefined,
+				videoHeight: unwrap(video.height) as number | undefined,
+				echoCancellation: unwrap(audio.echoCancellation) as boolean | undefined,
+				noiseSuppression: unwrap(audio.noiseSuppression) as boolean | undefined,
+				autoGainControl: unwrap(audio.autoGainControl) as boolean | undefined
 			});
 			return original(constraints as MediaStreamConstraints);
 		};
@@ -256,11 +300,76 @@ export const getGetUserMediaCallCount = async (page: Page): Promise<number> => {
 
 /**
  * Returns one entry per `navigator.mediaDevices.getUserMedia` call since
- * {@link installGetUserMediaCounter} was installed, each flagging whether audio/video was requested.
- * A combined `{ audio: true, video: true }` entry is the signature of the old permission probe.
+ * {@link installGetUserMediaCounter} was installed. A combined `{ audio: true, video: true }` entry
+ * is the signature of the old permission probe.
  */
-export const getGetUserMediaCalls = async (page: Page): Promise<Array<{ audio: boolean; video: boolean }>> => {
-	return await page.evaluate(
-		() => (window as Window & { __ovGumCalls?: Array<{ audio: boolean; video: boolean }> }).__ovGumCalls ?? []
-	);
+export const getGetUserMediaCalls = async (page: Page): Promise<GetUserMediaCall[]> => {
+	return (await page.evaluate(
+		() => (window as Window & { __ovGumCalls?: GetUserMediaCall[] }).__ovGumCalls ?? []
+	)) as GetUserMediaCall[];
+};
+
+/** The recorded calls that requested the given kind, in order. */
+export const getGetUserMediaCallsFor = async (page: Page, kind: 'audio' | 'video'): Promise<GetUserMediaCall[]> => {
+	return (await getGetUserMediaCalls(page)).filter((call) => call[kind]);
+};
+
+/**
+ * Records every WebSocket the page opens *before any application code runs*, so a test can drop the
+ * LiveKit signal connection with {@link dropLastWebSocket}. Registers an init script, so it must be
+ * called before navigating.
+ */
+export const installWebSocketCapture = async (page: Page): Promise<void> => {
+	await page.addInitScript(() => {
+		const w = window as unknown as { __ovSockets: WebSocket[] };
+		w.__ovSockets = [];
+
+		const OriginalWebSocket = window.WebSocket;
+		const Wrapped = function (this: unknown, ...args: unknown[]) {
+			const socket = new (OriginalWebSocket as unknown as new (...a: unknown[]) => WebSocket)(...args);
+			w.__ovSockets.push(socket);
+
+			return socket;
+		} as unknown as typeof WebSocket;
+
+		Wrapped.prototype = OriginalWebSocket.prototype;
+		Object.assign(Wrapped, OriginalWebSocket);
+		window.WebSocket = Wrapped;
+	});
+};
+
+/**
+ * Closes the most recently opened WebSocket with a non-normal code — what a lost signal connection
+ * looks like to livekit-client, which then tries to resume the session (`SignalReconnecting`)
+ * instead of treating it as an intentional disconnect.
+ */
+export const dropLastWebSocket = async (page: Page): Promise<void> => {
+	await page.evaluate(() => {
+		const w = window as unknown as { __ovSockets?: WebSocket[] };
+		w.__ovSockets?.at(-1)?.close(3001, 'e2e signal drop');
+	});
+};
+
+/**
+ * Makes `getUserMedia` fail for the given kind, as a device already held by another application
+ * does (`NotReadableError`). Registers an init script, so it must be called before navigating.
+ */
+export const failGetUserMediaFor = async (page: Page, kind: 'audio' | 'video'): Promise<void> => {
+	await page.addInitScript((failingKind: 'audio' | 'video') => {
+		const mediaDevices = navigator.mediaDevices;
+
+		if (!mediaDevices?.getUserMedia) {
+			return;
+		}
+
+		const original = mediaDevices.getUserMedia.bind(mediaDevices);
+
+		mediaDevices.getUserMedia = (constraints?: MediaStreamConstraints) => {
+			if (constraints?.[failingKind]) {
+				return Promise.reject(new DOMException(`Could not start ${failingKind} source`, 'NotReadableError'));
+			}
+
+			return original(constraints as MediaStreamConstraints);
+		};
+	}, kind);
 };

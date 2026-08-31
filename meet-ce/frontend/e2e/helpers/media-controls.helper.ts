@@ -387,6 +387,47 @@ export const selectVideoDevice = async (page: Page, label: string): Promise<void
 	await option.click();
 };
 
+/**
+ * Opens the microphone device dropdown (prejoin compact selector or settings panel) and returns each
+ * device option's `label` and whether it is currently `selected`. See {@link getVideoDeviceOptions}.
+ *
+ * The dropdown only exists while the microphone is enabled, so the microphone must be on.
+ * Returns `[]` when the dropdown is not openable.
+ */
+export const getAudioDeviceOptions = async (page: Page): Promise<Array<{ label: string; selected: boolean }>> => {
+	const dropdown = page.locator('#audio-dropdown');
+	await expect(dropdown).toBeVisible({ timeout: 10_000 });
+
+	if (await dropdown.isDisabled()) {
+		return [];
+	}
+
+	await dropdown.click();
+	const options = page.locator('[id^="option-"]');
+	await expect(options.first()).toBeVisible({ timeout: 10_000 });
+	return options.evaluateAll((elements) =>
+		elements.map((el) => ({
+			label: el.id.replace(/^option-/, ''),
+			selected: el.classList.contains('selected')
+		}))
+	);
+};
+
+/**
+ * Selects a microphone device option by its label, opening the dropdown first when needed. Device
+ * labels contain spaces, so the option is addressed by attribute rather than as an id selector.
+ */
+export const selectAudioDevice = async (page: Page, label: string): Promise<void> => {
+	const option = page.locator(`[id="option-${label}"]`);
+
+	if (!(await option.isVisible())) {
+		await clickControlButton(page, '#audio-dropdown');
+	}
+
+	await expect(option).toBeVisible({ timeout: 10_000 });
+	await option.click();
+};
+
 // ─── Mic status alert popups ────────────────────────────────────────────────
 
 export const MIC_MUTED_SPEAKING_ALERT = '#mic-muted-speaking-alert';
