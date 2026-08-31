@@ -1,20 +1,7 @@
 import { computed, inject, Service, Signal } from '@angular/core';
-import type { LocalAudioTrack, LocalVideoTrack } from '../livekit';
+import type { LocalVideoTrack } from '../livekit';
 import { LocalTrackService } from '../local-track/local-track.service';
 import { ParticipantService } from '../participant/participant.service';
-
-/**
- * Signal equality keyed on the underlying MediaStreamTrack id: two track objects are "equal" when
- * they wrap the same MediaStreamTrack. This makes the state emit when the real capture track
- * changes (creation, device switch, re-acquisition after `stopMicTrackOnMute`) but stay quiet on a
- * mere enabled/mute toggle of the same track — avoiding needless churn in downstream consumers.
- */
-function sameMediaStreamTrack(
-	a: LocalAudioTrack | LocalVideoTrack | undefined,
-	b: LocalAudioTrack | LocalVideoTrack | undefined
-): boolean {
-	return a?.mediaStreamTrack?.id === b?.mediaStreamTrack?.id;
-}
 
 /**
  * Reactive state of the local participant's microphone/camera/screen share across both phases of the
@@ -39,38 +26,27 @@ export class LocalMediaStateService {
 	private readonly localTrackService = inject(LocalTrackService);
 	private readonly participantService = inject(ParticipantService);
 
-	/** The microphone track in effect right now (prejoin or meeting), or undefined. */
-	readonly microphoneTrack: Signal<LocalAudioTrack | undefined> = computed(
-		() => {
-			const local = this.participantService.localParticipant();
+	/**
+	 * The camera track in effect right now (prejoin or meeting), or undefined — including while a
+	 * dropped connection is being resumed, when the Room does not report `Connected` but the
+	 * participant still holds its publications.
+	 */
+	readonly cameraTrack: Signal<LocalVideoTrack | undefined> = computed(() => {
+		const local = this.participantService.localParticipant();
 
-			// Connected: read the published track (reactive via the model's _revision).
-			if (local) return local.getMicrophoneTrack();
+		// Connected: read the published track (reactive via the model's _revision).
+		if (local) return local.getCameraTrack();
 
-			// Prejoin: read the temporary local track signal.
-			return this.localTrackService.microphoneTrack();
-		},
-		{ equal: sameMediaStreamTrack }
-	);
-
-	/** The camera track in effect right now (prejoin or meeting), or undefined. */
-	readonly cameraTrack: Signal<LocalVideoTrack | undefined> = computed(
-		() => {
-			const local = this.participantService.localParticipant();
-
-			if (local) return local.getCameraTrack();
-
-			return this.localTrackService.cameraTrack();
-		},
-		{ equal: sameMediaStreamTrack }
-	);
+		// Prejoin: read the temporary local track signal.
+		return this.localTrackService.cameraTrack();
+	});
 
 	/**
 	 * The MediaStreamTrack the microphone is capturing right now (prejoin or meeting), or undefined.
 	 *
 	 * Consumers that own something derived from the raw capture — MicActivityService clones it to
-	 * power the "speaking while muted" warning — must depend on this and not on
-	 * {@link microphoneTrack}: a device switch swaps the MediaStreamTrack in place, keeping the same
+	 * power the "speaking while muted" warning — must depend on this and not on a signal of track
+	 * objects: a device switch swaps the MediaStreamTrack in place, keeping the same
 	 * LocalAudioTrack object, so a signal of tracks holds the same value across the switch and cannot
 	 * notify. Muting does not swap the capture track (the room publishes with
 	 * `stopMicTrackOnMute: false`), so a mute/unmute leaves this signal — and the monitor — untouched.

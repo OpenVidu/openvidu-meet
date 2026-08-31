@@ -1,4 +1,4 @@
-import { Injector, Service, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { ParticipantModel } from '../../models/participant.model';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
 import type { AudioCaptureOptions, ScreenShareCaptureOptions, VideoCaptureOptions } from '../livekit';
@@ -113,17 +113,12 @@ class PrejoinTarget implements LocalMediaTarget {
  */
 @Service()
 export class LocalMediaControlService {
-	private readonly injector = inject(Injector);
 	private readonly localTrackService = inject(LocalTrackService);
+	private readonly participantService = inject(ParticipantService);
 	private readonly storageSrv = inject(MediaStorageService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
 	private readonly mediaIntent = inject(LocalMediaIntentService);
 	private readonly log = inject(LoggerService).get('LocalMediaControlService');
-
-	/** Resolved lazily to avoid a construction-time DI cycle with the participant registry. */
-	private get participantService(): ParticipantService {
-		return this.injector.get(ParticipantService);
-	}
 
 	/**
 	 * Prejoin-vs-room branching point: the published participant once it exists, the prejoin tracks

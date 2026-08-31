@@ -9,6 +9,9 @@ import { LocalMediaStateService } from './local-media-state.service';
 const fakeCapture = (id: string): MediaStreamTrack => ({ id }) as unknown as MediaStreamTrack;
 const fakeTrack = (id: string): LocalAudioTrack =>
 	({ mediaStreamTrack: fakeCapture(id) }) as unknown as LocalAudioTrack;
+const fakeVideoTrack = (id: string): LocalVideoTrack =>
+	({ mediaStreamTrack: fakeCapture(id) }) as unknown as LocalVideoTrack;
+const roomCameraTrack = fakeVideoTrack('room-camera');
 
 /**
  * Stand-in for the connected participant. Its enabled getters read a signal, the way the real
@@ -40,7 +43,7 @@ class FakeParticipant {
 	}
 
 	getCameraTrack(): LocalVideoTrack | undefined {
-		return undefined;
+		return roomCameraTrack;
 	}
 
 	/** Mutates like LiveKit does — in place — then notifies, as ParticipantModel.bump() does. */
@@ -56,6 +59,7 @@ describe('LocalMediaStateService', () => {
 	let prejoinMicEnabled: WritableSignal<boolean>;
 	let prejoinCameraEnabled: WritableSignal<boolean>;
 	let prejoinMicCapture: WritableSignal<MediaStreamTrack | undefined>;
+	let prejoinCameraTrack: WritableSignal<LocalVideoTrack | undefined>;
 	let participant: FakeParticipant;
 
 	beforeEach(() => {
@@ -63,6 +67,7 @@ describe('LocalMediaStateService', () => {
 		prejoinMicEnabled = signal(true);
 		prejoinCameraEnabled = signal(true);
 		prejoinMicCapture = signal<MediaStreamTrack | undefined>(fakeCapture('prejoin-capture'));
+		prejoinCameraTrack = signal<LocalVideoTrack | undefined>(undefined);
 		participant = new FakeParticipant();
 
 		TestBed.configureTestingModule({
@@ -74,8 +79,7 @@ describe('LocalMediaStateService', () => {
 					useValue: {
 						microphoneEnabled: prejoinMicEnabled,
 						cameraEnabled: prejoinCameraEnabled,
-						microphoneTrack: signal(fakeTrack('prejoin-mic')),
-						cameraTrack: signal(undefined),
+						cameraTrack: prejoinCameraTrack,
 						microphoneMediaStreamTrack: prejoinMicCapture
 					} as unknown as LocalTrackService
 				},
@@ -98,6 +102,15 @@ describe('LocalMediaStateService', () => {
 
 			expect(service.microphoneEnabled()).toBeFalse();
 			expect(service.cameraEnabled()).toBeTrue();
+		});
+
+		it('reads the camera track from the prejoin tracks', () => {
+			expect(service.cameraTrack()).toBeUndefined();
+
+			const camera = fakeVideoTrack('prejoin-camera');
+			prejoinCameraTrack.set(camera);
+
+			expect(service.cameraTrack()).toBe(camera);
 		});
 
 		it('reports no screen share: there is no prejoin sharing', () => {
@@ -124,6 +137,19 @@ describe('LocalMediaStateService', () => {
 			participant.set({ micEnabled: false });
 
 			expect(service.microphoneEnabled()).toBeFalse();
+		});
+
+		/*
+		 * The camera track is what the virtual-background processor is attached to, and this service
+		 * resolves it without ever reading the Room's connection state — so it still answers while a
+		 * dropped connection is being resumed, when the Room reports neither Connected nor the prejoin
+		 * tracks exist any more.
+		 */
+		it('reads the camera track from the participant, not from the connection state', () => {
+			connect();
+			prejoinCameraTrack.set(fakeVideoTrack('stale-prejoin-camera'));
+
+			expect(service.cameraTrack()).toBe(roomCameraTrack);
 		});
 
 		it('reports the screen share of the participant', () => {

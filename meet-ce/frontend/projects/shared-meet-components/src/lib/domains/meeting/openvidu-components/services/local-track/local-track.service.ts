@@ -12,23 +12,10 @@ import {
 	VideoCaptureOptions
 } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
-import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
 import { LocalMediaIntentService } from '../local-media-intent/local-media-intent.service';
 import { VideoTrackProcessorService } from '../track-processor/video-track-processor.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';
-
-/**
- * Signal equality keyed on the underlying MediaStreamTrack id. Two track objects are "equal" when
- * they wrap the same MediaStreamTrack — so consumers re-run when the real capture track changes
- * (creation, device switch, re-acquisition) but not on a mere enabled/mute toggle of the same track.
- */
-function sameMediaStreamTrack(
-	a: LocalAudioTrack | LocalVideoTrack | undefined,
-	b: LocalAudioTrack | LocalVideoTrack | undefined
-): boolean {
-	return a?.mediaStreamTrack?.id === b?.mediaStreamTrack?.id;
-}
 
 /**
  * Owns the local participant's media capture: creating/switching camera & microphone tracks
@@ -41,7 +28,6 @@ export class LocalTrackService {
 	private readonly mediaIntent = inject(LocalMediaIntentService);
 	private readonly livekitSdkService = inject(LivekitSdkService);
 	private readonly videoTrackProcessorService = inject(VideoTrackProcessorService);
-	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 
 	/*
 	 * Tracks used in the prejoin component. They are created when the room is not yet created.
@@ -65,32 +51,22 @@ export class LocalTrackService {
 	readonly prejoinActive = this._prejoinActive.asReadonly();
 
 	/**
-	 * Current prejoin microphone track, or undefined. Equality is compared by the underlying
-	 * MediaStreamTrack id, so an in-place device switch (restartTrack keeps the same LocalAudioTrack
-	 * object but swaps its MediaStreamTrack) still propagates to consumers, while a mute/unmute
-	 * (same MediaStreamTrack) does not churn the monitor.
-	 * @internal
-	 */
-	readonly microphoneTrack: Signal<LocalAudioTrack | undefined> = computed(
-		() => this._localTracks().find((t) => t.kind === Track.Kind.Audio) as LocalAudioTrack | undefined,
-		{ equal: sameMediaStreamTrack }
-	);
-
-	/**
-	 * Current prejoin camera track, or undefined. See {@link microphoneTrack} for the equality note.
+	 * Current prejoin camera track, or undefined. A device switch swaps the MediaStreamTrack *inside*
+	 * this object (`restartTrack`), so its value is unchanged by a switch: livekit-client re-attaches
+	 * the new MediaStreamTrack to the already-attached video elements, and consumers that must follow
+	 * the real capture read {@link microphoneMediaStreamTrack} instead.
 	 * @internal
 	 */
 	readonly cameraTrack: Signal<LocalVideoTrack | undefined> = computed(
-		() => this._localTracks().find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined,
-		{ equal: sameMediaStreamTrack }
+		() => this._localTracks().find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined
 	);
 
 	/**
-	 * The MediaStreamTrack the prejoin microphone is capturing, or undefined. Reads `_localTracks`
-	 * directly rather than deriving from {@link microphoneTrack}: a device switch swaps the
-	 * MediaStreamTrack inside the same LocalAudioTrack object, so a signal of tracks holds the same
-	 * value before and after the switch and cannot notify — while the raw capture track is a new
-	 * object per acquisition and does.
+	 * The MediaStreamTrack the prejoin microphone is capturing, or undefined. Consumers that own
+	 * something derived from the raw capture — MicActivityService clones it — must depend on this and
+	 * not on a signal of track objects: a device switch swaps the MediaStreamTrack inside the same
+	 * LocalAudioTrack object, so a signal of tracks holds the same value before and after the switch
+	 * and cannot notify, while the raw capture track is a new object per acquisition and does.
 	 * @internal
 	 */
 	readonly microphoneMediaStreamTrack: Signal<MediaStreamTrack | undefined> = computed(
@@ -100,10 +76,9 @@ export class LocalTrackService {
 	);
 
 	/**
-	 * Whether the prejoin microphone is on. This deliberately reads `_localTracks` instead of
-	 * {@link microphoneTrack}: that signal compares by MediaStreamTrack id so a mute does not churn
-	 * the mic monitor, which is exactly the transition this one has to report. Every mutation of the
-	 * enabled state therefore emits a new array reference — see {@link setAudioTrackEnabled}.
+	 * Whether the prejoin microphone is on. Derived from the track's `isMuted`/`enabled`, which
+	 * `mute()`/`unmute()` flip in place, so every mutation of the enabled state has to emit a new
+	 * array reference — see {@link setAudioTrackEnabled}.
 	 * @internal
 	 */
 	readonly microphoneEnabled: Signal<boolean> = computed(() => this.isTrackEnabled(Track.Kind.Audio));
@@ -426,8 +401,8 @@ export class LocalTrackService {
 					existingTrack.mediaStreamTrack.stop();
 				}
 
-				// restartTrack swapped the MediaStreamTrack in place (same LocalVideoTrack object), so
-				// emit a new array reference to re-run the cameraTrack computed (which compares by MST id).
+				// restartTrack mutated the track in place (same LocalVideoTrack object), so emit a new
+				// array reference for the enabled computeds to re-read it.
 				this._localTracks.update((tracks) => [...tracks]);
 				this.log.d('Camera switched via restartTrack:', deviceId);
 			} catch (error) {
@@ -517,26 +492,5 @@ export class LocalTrackService {
 			const message = error instanceof Error ? error.message : 'Unknown error';
 			throw new Error(`Failed to switch microphone: ${message}`, { cause: error });
 		}
-	}
-
-	/**
-	 * Gets the current video track from local tracks or room.
-	 * @returns LocalVideoTrack or undefined
-	 * @internal
-	 */
-	async getCurrentVideoTrack(): Promise<LocalVideoTrack | undefined> {
-		// First try to get from local tracks (prejoin state)
-		let videoTrack = this._localTracks().find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
-
-		// If not found and room is connected, get from published tracks
-		if (!videoTrack && this.meetingLiveKitService.isConnected()) {
-			const localParticipant = this.meetingLiveKitService.getRoom().localParticipant;
-			const videoPublication = localParticipant
-				.getTrackPublications()
-				.find((pub) => pub.kind === Track.Kind.Video);
-			videoTrack = videoPublication?.track as LocalVideoTrack | undefined;
-		}
-
-		return videoTrack;
 	}
 }

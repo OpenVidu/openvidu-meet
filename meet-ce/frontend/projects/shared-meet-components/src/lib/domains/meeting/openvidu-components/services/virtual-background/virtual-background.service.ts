@@ -2,7 +2,7 @@ import { computed, inject, Service, Signal, signal } from '@angular/core';
 import type { SwitchBackgroundProcessorOptions } from '@livekit/track-processors';
 import { AssetsService } from '../../../../../shared/services/assets.service';
 import { BackgroundCategory, BackgroundEffect, EffectType } from '../../models/background-effect.model';
-import { LocalTrackService } from '../local-track/local-track.service';
+import { LocalMediaStateService } from '../local-media-state/local-media-state.service';
 import { MediaStorageService } from '../storage/storage.service';
 import { VideoTrackProcessorService } from '../track-processor/video-track-processor.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
@@ -16,7 +16,7 @@ function categoryPrefix(category: BackgroundCategory): string {
  */
 @Service()
 export class VirtualBackgroundService {
-	private readonly localTrackService = inject(LocalTrackService);
+	private readonly localMediaStateService = inject(LocalMediaStateService);
 	private readonly videoTrackProcessorService = inject(VideoTrackProcessorService);
 	private readonly storageService = inject(MediaStorageService);
 	private readonly log = inject(LoggerService).get('VirtualBackgroundService');
@@ -86,7 +86,7 @@ export class VirtualBackgroundService {
 
 	/**
 	 * Computed signal that checks if virtual background is supported (requires GPU).
-	 * Reactively tracks the support status from LocalTrackService.
+	 * Reactively tracks the support status from {@link VideoTrackProcessorService}.
 	 */
 	readonly isVirtualBackgroundSupported: Signal<boolean> = computed(() =>
 		this.videoTrackProcessorService.isBackgroundProcessorSupported()
@@ -124,9 +124,9 @@ export class VirtualBackgroundService {
 	}
 
 	/**
-	 * Applies a background effect to the local video track.
-	 * Works both in prejoin (using LocalTrackService's processor) and in-room states.
-	 * The background processor is centralized in LocalTrackService for consistency.
+	 * Applies a background effect to the local video track. Works in both phases: the camera track is
+	 * read from {@link LocalMediaStateService} and the processor lives in
+	 * {@link VideoTrackProcessorService}.
 	 */
 	async applyBackground(bg: BackgroundEffect) {
 		// Ensure the (lazily-loaded) processors module is ready and support has been detected
@@ -145,7 +145,7 @@ export class VirtualBackgroundService {
 
 		try {
 			const options = this.getBackgroundOptions(bg);
-			const videoTrack = await this.localTrackService.getCurrentVideoTrack();
+			const videoTrack = this.localMediaStateService.cameraTrack();
 			await this.videoTrackProcessorService.switchBackgroundMode(options, videoTrack);
 
 			this.storageService.setBackground(bg.id);
@@ -161,7 +161,7 @@ export class VirtualBackgroundService {
 			this.backgroundIdSelectedWritable.set('no_effect');
 
 			try {
-				const videoTrack = await this.localTrackService.getCurrentVideoTrack();
+				const videoTrack = this.localMediaStateService.cameraTrack();
 				await this.videoTrackProcessorService.switchBackgroundMode({ mode: 'disabled' }, videoTrack);
 			} catch (e) {
 				this.log.w('Error disabling processor:', e);
