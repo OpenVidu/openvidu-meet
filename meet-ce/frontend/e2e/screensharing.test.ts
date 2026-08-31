@@ -1,5 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { startScreensharing, stopScreensharing, toggleCamera, toggleMicrophone } from './helpers/media-controls.helper';
+import {
+	dismissMicMutedSpeakingAlert,
+	startScreensharing,
+	stopScreensharing,
+	toggleCamera,
+	toggleMicrophone
+} from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-navigation.helper';
 import { disconnectAllBrowserFakeParticipants, joinParticipants } from './helpers/participant-management.helper';
@@ -126,6 +132,10 @@ test.describe('Screensharing E2E Tests', () => {
 		await openMeeting(page, accessUrl);
 
 		await toggleMicrophone(page);
+		// Muting starts the "talking while muted" warning, whose popup overlaps the screenshare menu
+		// this test opens later and intercepts its clicks.
+		await dismissMicMutedSpeakingAlert(page);
+
 		await startScreensharing(page);
 		await expectScreenSourceCount(page, 1);
 		await expectVideoCount(page, 2);

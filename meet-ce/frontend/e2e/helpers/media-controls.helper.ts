@@ -434,6 +434,20 @@ export const MIC_MUTED_SPEAKING_ALERT = '#mic-muted-speaking-alert';
 export const MIC_SYSTEM_MUTED_ALERT = '#mic-system-muted-alert';
 
 /**
+ * Waits for the "talking while muted" popup and closes it.
+ *
+ * The fake microphone feeds continuous speech, so muting raises this warning a moment later — and
+ * the popup is a CDK overlay that can land on top of the toolbar menus and swallow their clicks. A
+ * muted test that then drives a menu has to get it out of the way first; the dismissal is latched
+ * until the microphone is toggled again, so it does not come back mid-test.
+ */
+export const dismissMicMutedSpeakingAlert = async (page: Page, timeoutMs = 15_000): Promise<void> => {
+	await expect(page.locator(MIC_MUTED_SPEAKING_ALERT)).toBeVisible({ timeout: timeoutMs });
+	await page.locator('#mic-alert-close').click();
+	await expect(page.locator(MIC_MUTED_SPEAKING_ALERT)).toHaveCount(0);
+};
+
+/**
  * Asserts a mic status popup is visible, fully inside the viewport, and not covered by another
  * element. Guards the mobile regressions where it was clipped by the prejoin controls or hidden
  * behind the meeting layout.
