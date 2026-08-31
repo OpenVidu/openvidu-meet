@@ -13,8 +13,7 @@ import {
 	ExternalE2EEKeyProvider,
 	Room,
 	RoomEvent,
-	RoomOptions,
-	VideoPresets
+	RoomOptions
 } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 

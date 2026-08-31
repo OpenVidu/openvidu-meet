@@ -58,9 +58,9 @@ import { ActionService } from '../../services/action/action.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import type { Room } from '../../services/livekit';
-import { LocalMediaService } from '../../services/local-media/local-media.service';
 import { MeetingEventsService } from '../../services/meeting-events/meeting-events.service';
 import { LocalMediaIntentService } from '../../services/local-media-intent/local-media-intent.service';
+import { LocalTrackService } from '../../services/local-track/local-track.service';
 import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
@@ -121,11 +121,11 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	private readonly storageSrv = inject(MediaStorageService);
 	private readonly deviceSrv = inject(DeviceService);
 	private readonly mediaIntent = inject(LocalMediaIntentService);
+	private readonly localTrackService = inject(LocalTrackService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly actionService = inject(ActionService);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly participantService = inject(ParticipantService);
-	private readonly localMediaService = inject(LocalMediaService);
 	private readonly panelService = inject(PanelService);
 	private readonly backgroundService = inject(VirtualBackgroundService);
 	private readonly meetingEventsService = inject(MeetingEventsService);
@@ -438,6 +438,10 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 
 		this.participantService.clear();
 		this.deviceSrv.clear();
+		// No-op after a successful join, when the tracks were handed over to the participant. It
+		// matters when the connection failed midway: the acquired camera/microphone would otherwise
+		// stay open with nobody holding them, and a later join would try to publish dead tracks.
+		this.localTrackService.removeLocalTracks();
 		// Per entry: the next meeting resolves its own instead of inheriting this one's toggles.
 		this.mediaIntent.reset();
 	}
@@ -563,11 +567,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 		});
 
 		try {
-			const joinTracks = await this.localMediaService.acquireJoinTracks();
-			await this.participantService.connect(joinTracks);
-			// The tracks are now published and owned by the participant: release the prejoin
-			// reference (without stopping them) so the media state hands off to the participant.
-			this.localMediaService.releaseJoinTracks();
+			await this.participantService.connect();
 			// Send room created after participant connect for avoiding to send incomplete room payload
 			this.onRoomCreated.emit(room);
 

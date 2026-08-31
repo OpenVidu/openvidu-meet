@@ -6,7 +6,9 @@ import { LocalTrackService } from '../local-track/local-track.service';
 import { ParticipantService } from '../participant/participant.service';
 import { LocalMediaStateService } from './local-media-state.service';
 
-const fakeTrack = (id: string): LocalAudioTrack => ({ mediaStreamTrack: { id } }) as unknown as LocalAudioTrack;
+const fakeCapture = (id: string): MediaStreamTrack => ({ id }) as unknown as MediaStreamTrack;
+const fakeTrack = (id: string): LocalAudioTrack =>
+	({ mediaStreamTrack: fakeCapture(id) }) as unknown as LocalAudioTrack;
 
 /**
  * Stand-in for the connected participant. Its enabled getters read a signal, the way the real
@@ -53,12 +55,14 @@ describe('LocalMediaStateService', () => {
 	let localParticipant: WritableSignal<ParticipantModel | undefined>;
 	let prejoinMicEnabled: WritableSignal<boolean>;
 	let prejoinCameraEnabled: WritableSignal<boolean>;
+	let prejoinMicCapture: WritableSignal<MediaStreamTrack | undefined>;
 	let participant: FakeParticipant;
 
 	beforeEach(() => {
 		localParticipant = signal<ParticipantModel | undefined>(undefined);
 		prejoinMicEnabled = signal(true);
 		prejoinCameraEnabled = signal(true);
+		prejoinMicCapture = signal<MediaStreamTrack | undefined>(fakeCapture('prejoin-capture'));
 		participant = new FakeParticipant();
 
 		TestBed.configureTestingModule({
@@ -71,7 +75,8 @@ describe('LocalMediaStateService', () => {
 						microphoneEnabled: prejoinMicEnabled,
 						cameraEnabled: prejoinCameraEnabled,
 						microphoneTrack: signal(fakeTrack('prejoin-mic')),
-						cameraTrack: signal(undefined)
+						cameraTrack: signal(undefined),
+						microphoneMediaStreamTrack: prejoinMicCapture
 					} as unknown as LocalTrackService
 				},
 				{ provide: ParticipantService, useValue: { localParticipant } as unknown as ParticipantService }
@@ -128,6 +133,29 @@ describe('LocalMediaStateService', () => {
 			participant.set({ screenEnabled: true });
 
 			expect(service.screenShareEnabled()).toBeTrue();
+		});
+	});
+
+	describe('the microphone capture the mic monitor clones', () => {
+		it('follows the prejoin capture track', () => {
+			expect(service.microphoneMediaStreamTrack()?.id).toBe('prejoin-capture');
+		});
+
+		it('emits when a device switch swaps the capture track', () => {
+			const before = service.microphoneMediaStreamTrack();
+
+			prejoinMicCapture.set(fakeCapture('prejoin-capture-2'));
+
+			// The switch keeps the same LocalAudioTrack object, so a signal of tracks could not report
+			// it and the monitor would stay on a clone of the previous — stopped — device.
+			expect(service.microphoneMediaStreamTrack()).not.toBe(before);
+			expect(service.microphoneMediaStreamTrack()?.id).toBe('prejoin-capture-2');
+		});
+
+		it('reads the participant capture once connected', () => {
+			connect();
+
+			expect(service.microphoneMediaStreamTrack()?.id).toBe('room-mic');
 		});
 	});
 

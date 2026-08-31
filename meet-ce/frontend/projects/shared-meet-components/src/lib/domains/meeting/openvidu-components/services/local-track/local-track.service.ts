@@ -1,4 +1,5 @@
 import { computed, inject, Service, Signal, signal } from '@angular/core';
+import { CAMERA_CAPTURE_DEFAULTS, MICROPHONE_CAPTURE_DEFAULTS } from '../../models/media-capture.model';
 import { DeviceService } from '../device/device.service';
 import {
 	AudioCaptureOptions,
@@ -52,6 +53,13 @@ export class LocalTrackService {
 	 */
 	private readonly _localTracks = signal<LocalTrack[]>([]);
 
+	/**
+	 * Whether an acquisition has already run. Before it does, the enabled state can only be predicted
+	 * from the intent; afterwards the tracks are the truth, so a device that could not be opened
+	 * (busy, unplugged, permission revoked) is not reported as enabled.
+	 */
+	private tracksAcquired = false;
+
 	/** Whether the prejoin (media-setup) screen is mounted with its devices ready. */
 	private readonly _prejoinActive = signal(false);
 	readonly prejoinActive = this._prejoinActive.asReadonly();
@@ -75,6 +83,20 @@ export class LocalTrackService {
 	readonly cameraTrack: Signal<LocalVideoTrack | undefined> = computed(
 		() => this._localTracks().find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined,
 		{ equal: sameMediaStreamTrack }
+	);
+
+	/**
+	 * The MediaStreamTrack the prejoin microphone is capturing, or undefined. Reads `_localTracks`
+	 * directly rather than deriving from {@link microphoneTrack}: a device switch swaps the
+	 * MediaStreamTrack inside the same LocalAudioTrack object, so a signal of tracks holds the same
+	 * value before and after the switch and cannot notify — while the raw capture track is a new
+	 * object per acquisition and does.
+	 * @internal
+	 */
+	readonly microphoneMediaStreamTrack: Signal<MediaStreamTrack | undefined> = computed(
+		() =>
+			(this._localTracks().find((t) => t.kind === Track.Kind.Audio) as LocalAudioTrack | undefined)
+				?.mediaStreamTrack
 	);
 
 	/**
@@ -110,6 +132,7 @@ export class LocalTrackService {
 	 */
 	setLocalTracks(tracks: LocalTrack[]): void {
 		this._localTracks.set(tracks.filter((track) => track !== undefined) as LocalTrack[]);
+		this.tracksAcquired = true;
 	}
 
 	/**
@@ -136,6 +159,7 @@ export class LocalTrackService {
 			track.detach();
 		});
 		this._localTracks.set([]);
+		this.tracksAcquired = false;
 	}
 
 	/**
@@ -167,22 +191,22 @@ export class LocalTrackService {
 		audioDeviceId ??= this.mediaIntent.microphoneEnabled();
 
 		const options: CreateLocalTracksOptions = {
-			audio: { echoCancellation: true, noiseSuppression: true },
-			video: {}
+			audio: { ...MICROPHONE_CAPTURE_DEFAULTS },
+			video: { ...CAMERA_CAPTURE_DEFAULTS }
 		};
 
-		// Video device
+		// Video device. An empty device list means either "permission not granted yet" — labels, and
+		// therefore the list, only exist once it is — or "no camera at all", and the two are not
+		// distinguishable from here. Both are served by keeping the default-device request set above:
+		// on a first visit it is what grants permission, and a missing camera simply fails that
+		// request, which requestTracks absorbs.
 		if (videoDeviceId === true) {
 			if (this.deviceService.hasVideoDevices()) {
 				const selectedCamera = this.deviceService.cameraSelected();
-				options.video = { deviceId: this.toDeviceConstraint(selectedCamera?.device) } as VideoCaptureOptions;
-			} else if (!this.deviceService.hasVideoPermission()) {
-				// Permission not granted yet (e.g. first visit): request the default camera so this
-				// call obtains permission. The caller enumerates devices afterwards.
-				options.video = {} as VideoCaptureOptions;
-			} else {
-				// Permission granted but no camera present.
-				options.video = false;
+				options.video = {
+					...CAMERA_CAPTURE_DEFAULTS,
+					deviceId: this.toDeviceConstraint(selectedCamera?.device)
+				} as VideoCaptureOptions;
 			}
 		} else if (videoDeviceId === false) {
 			options.video = false;
@@ -190,17 +214,11 @@ export class LocalTrackService {
 			(options.video as VideoCaptureOptions).deviceId = this.toDeviceConstraint(videoDeviceId);
 		}
 
-		// Audio device
+		// Audio device. See the video branch for why an empty device list keeps the default request.
 		if (audioDeviceId === true) {
 			if (this.deviceService.hasAudioDevices()) {
 				const selectedMic = this.deviceService.microphoneSelected();
 				(options.audio as AudioCaptureOptions).deviceId = this.toDeviceConstraint(selectedMic?.device);
-			} else if (!this.deviceService.hasAudioPermission()) {
-				// Permission not granted yet: keep the default-device audio request (set above) so
-				// this call can obtain permission. The caller enumerates devices afterwards.
-			} else {
-				// Permission granted but no microphone present.
-				options.audio = false;
 			}
 		} else if (audioDeviceId === false) {
 			options.audio = false;
@@ -351,7 +369,7 @@ export class LocalTrackService {
 	private isTrackEnabled(kind: Track.Kind): boolean {
 		const tracks = this._localTracks();
 
-		if (tracks.length === 0) {
+		if (!this.tracksAcquired && tracks.length === 0) {
 			return kind === Track.Kind.Audio
 				? this.deviceService.isMicrophoneEnabled()
 				: this.deviceService.isCameraEnabled();
@@ -386,7 +404,12 @@ export class LocalTrackService {
 		const existingTrack = this._localTracks().find((t) => t.kind === Track.Kind.Video) as
 			| LocalVideoTrack
 			| undefined;
-		const options: VideoCaptureOptions = { deviceId: this.toDeviceConstraint(deviceId) };
+		// restartTrack replaces the whole constraint set, so the capture profile has to be restated
+		// or the switched camera would fall back to the browser's default resolution.
+		const options: VideoCaptureOptions = {
+			...CAMERA_CAPTURE_DEFAULTS,
+			deviceId: this.toDeviceConstraint(deviceId)
+		};
 
 		if (existingTrack) {
 			try {
@@ -396,7 +419,11 @@ export class LocalTrackService {
 				await existingTrack.restartTrack(options);
 
 				if (!this.deviceService.isCameraEnabled()) {
+					// restartTrack re-acquired the device. mute() returns early on an already-muted
+					// track, so the camera would stay open — light on — behind a UI that says it is
+					// off; stop the re-acquired capture explicitly. Unmuting re-acquires it anyway.
 					await existingTrack.mute();
+					existingTrack.mediaStreamTrack.stop();
 				}
 
 				// restartTrack swapped the MediaStreamTrack in place (same LocalVideoTrack object), so
@@ -447,10 +474,8 @@ export class LocalTrackService {
 			| LocalAudioTrack
 			| undefined;
 		const options: AudioCaptureOptions = {
-			deviceId: this.toDeviceConstraint(deviceId),
-			echoCancellation: true,
-			noiseSuppression: true,
-			autoGainControl: true
+			...MICROPHONE_CAPTURE_DEFAULTS,
+			deviceId: this.toDeviceConstraint(deviceId)
 		};
 
 		if (existingTrack) {
@@ -462,8 +487,8 @@ export class LocalTrackService {
 				}
 
 				// restartTrack swapped the MediaStreamTrack in place (same LocalAudioTrack object), so
-				// emit a new array reference to re-run the microphoneTrack computed (MST-id equality):
-				// this is what re-clones the mic-activity monitor onto the new device.
+				// emit a new array reference to re-read it through microphoneMediaStreamTrack: that is
+				// what re-clones the mic-activity monitor onto the new device.
 				this._localTracks.update((tracks) => [...tracks]);
 				this.log.d('Microphone switched via restartTrack:', deviceId);
 			} catch (error) {
@@ -474,9 +499,9 @@ export class LocalTrackService {
 			return;
 		}
 
-		// No existing track (edge case) → create a fresh one
+		// No existing track (the microphone intent was "off", so none was ever opened) → create one
 		try {
-			const newAudioTracks = await this.livekitSdkService.createLocalTracks(options as CreateLocalTracksOptions);
+			const newAudioTracks = await this.livekitSdkService.createLocalTracks({ audio: options });
 			const audioTrack = newAudioTracks.find((t) => t.kind === Track.Kind.Audio);
 
 			if (audioTrack) {

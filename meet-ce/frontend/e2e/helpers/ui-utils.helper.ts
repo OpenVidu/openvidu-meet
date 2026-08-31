@@ -271,8 +271,11 @@ export const installGetUserMediaCounter = async (page: Page): Promise<void> => {
 		};
 
 		mediaDevices.getUserMedia = (constraints?: MediaStreamConstraints) => {
-			// Record only whether each kind was requested — enough to tell the single combined
-			// acquisition apart from a probe or a per-kind split, and trivially serialisable.
+			const audio = typeof constraints?.audio === 'object' ? (constraints.audio as MediaTrackConstraints) : {};
+			const video = typeof constraints?.video === 'object' ? (constraints.video as MediaTrackConstraints) : {};
+
+			// Which kinds were requested — enough to tell the single combined acquisition apart from a
+			// probe or a per-kind split — plus the device and capture profile each one asked for.
 			w.__ovGumCalls?.push({
 				audio: Boolean(constraints?.audio),
 				video: Boolean(constraints?.video),
@@ -312,42 +315,6 @@ export const getGetUserMediaCalls = async (page: Page): Promise<GetUserMediaCall
 /** The recorded calls that requested the given kind, in order. */
 export const getGetUserMediaCallsFor = async (page: Page, kind: 'audio' | 'video'): Promise<GetUserMediaCall[]> => {
 	return (await getGetUserMediaCalls(page)).filter((call) => call[kind]);
-};
-
-/**
- * Records every WebSocket the page opens *before any application code runs*, so a test can drop the
- * LiveKit signal connection with {@link dropLastWebSocket}. Registers an init script, so it must be
- * called before navigating.
- */
-export const installWebSocketCapture = async (page: Page): Promise<void> => {
-	await page.addInitScript(() => {
-		const w = window as unknown as { __ovSockets: WebSocket[] };
-		w.__ovSockets = [];
-
-		const OriginalWebSocket = window.WebSocket;
-		const Wrapped = function (this: unknown, ...args: unknown[]) {
-			const socket = new (OriginalWebSocket as unknown as new (...a: unknown[]) => WebSocket)(...args);
-			w.__ovSockets.push(socket);
-
-			return socket;
-		} as unknown as typeof WebSocket;
-
-		Wrapped.prototype = OriginalWebSocket.prototype;
-		Object.assign(Wrapped, OriginalWebSocket);
-		window.WebSocket = Wrapped;
-	});
-};
-
-/**
- * Closes the most recently opened WebSocket with a non-normal code — what a lost signal connection
- * looks like to livekit-client, which then tries to resume the session (`SignalReconnecting`)
- * instead of treating it as an intentional disconnect.
- */
-export const dropLastWebSocket = async (page: Page): Promise<void> => {
-	await page.evaluate(() => {
-		const w = window as unknown as { __ovSockets?: WebSocket[] };
-		w.__ovSockets?.at(-1)?.close(3001, 'e2e signal drop');
-	});
 };
 
 /**

@@ -65,6 +65,24 @@ export class LocalMediaStateService {
 		{ equal: sameMediaStreamTrack }
 	);
 
+	/**
+	 * The MediaStreamTrack the microphone is capturing right now (prejoin or meeting), or undefined.
+	 *
+	 * Consumers that own something derived from the raw capture — MicActivityService clones it to
+	 * power the "speaking while muted" warning — must depend on this and not on
+	 * {@link microphoneTrack}: a device switch swaps the MediaStreamTrack in place, keeping the same
+	 * LocalAudioTrack object, so a signal of tracks holds the same value across the switch and cannot
+	 * notify. Muting does not swap the capture track (the room publishes with
+	 * `stopMicTrackOnMute: false`), so a mute/unmute leaves this signal — and the monitor — untouched.
+	 */
+	readonly microphoneMediaStreamTrack: Signal<MediaStreamTrack | undefined> = computed(() => {
+		const local = this.participantService.localParticipant();
+
+		if (local) return local.getMicrophoneTrack()?.mediaStreamTrack;
+
+		return this.localTrackService.microphoneMediaStreamTrack();
+	});
+
 	/** Whether the local microphone is on right now (prejoin or meeting). */
 	readonly microphoneEnabled: Signal<boolean> = computed(() => {
 		const local = this.participantService.localParticipant();

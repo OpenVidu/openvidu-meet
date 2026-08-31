@@ -2,6 +2,8 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { DeviceService } from '../device/device.service';
+import { CAMERA_CAPTURE_DEFAULTS, MICROPHONE_CAPTURE_DEFAULTS } from '../../models/media-capture.model';
+import type { AudioCaptureOptions, CreateLocalTracksOptions, VideoCaptureOptions } from '../livekit';
 import { LocalTrack, Track } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
@@ -22,10 +24,13 @@ class LoggerServiceStub {
  */
 class FakeLocalTrack {
 	isMuted = false;
-	readonly mediaStreamTrack: { id: string; enabled: boolean };
+	mediaStreamTrack: FakeMediaStreamTrack;
+	/** Constraints each restartTrack() was asked for, so a device switch can be inspected. */
+	readonly restartOptions: Array<VideoCaptureOptions | AudioCaptureOptions | undefined> = [];
+	private restarts = 0;
 
 	constructor(readonly kind: Track.Kind) {
-		this.mediaStreamTrack = { id: `mst-${kind}`, enabled: true };
+		this.mediaStreamTrack = new FakeMediaStreamTrack(`mst-${kind}`);
 	}
 
 	async mute(): Promise<void> {
@@ -36,9 +41,28 @@ class FakeLocalTrack {
 		this.isMuted = false;
 	}
 
+	/** Swaps the capture track in place, exactly like the real one — the object identity survives. */
+	async restartTrack(options?: VideoCaptureOptions | AudioCaptureOptions): Promise<void> {
+		this.restartOptions.push(options);
+		this.mediaStreamTrack.stop();
+		this.restarts++;
+		this.mediaStreamTrack = new FakeMediaStreamTrack(`mst-${this.kind}-restart-${this.restarts}`);
+	}
+
 	stop(): void {}
 
 	detach(): void {}
+}
+
+class FakeMediaStreamTrack {
+	enabled = true;
+	readyState: 'live' | 'ended' = 'live';
+
+	constructor(readonly id: string) {}
+
+	stop(): void {
+		this.readyState = 'ended';
+	}
 }
 
 describe('LocalTrackService', () => {
@@ -59,6 +83,7 @@ describe('LocalTrackService', () => {
 	let livekitSdkService: jasmine.SpyObj<LivekitSdkService>;
 
 	const asTrack = (track: FakeLocalTrack) => track as unknown as LocalTrack;
+	const asMediaStreamTrack = (track: FakeMediaStreamTrack) => track as unknown as MediaStreamTrack;
 
 	beforeEach(() => {
 		audio = new FakeLocalTrack(Track.Kind.Audio);
@@ -257,6 +282,102 @@ describe('LocalTrackService', () => {
 
 			expect(livekitSdkService.createLocalTracks).toHaveBeenCalledTimes(1);
 			expect(tracks).toEqual([]);
+		});
+	});
+	// Rescued from main's LocalMediaService suite: the capture profile, the device switch and the
+	// state a failed acquisition must report.
+	describe('the shared capture profile', () => {
+		const lastRequest = (): CreateLocalTracksOptions =>
+			livekitSdkService.createLocalTracks.calls.mostRecent().args[0];
+
+		it('opens both devices with it', async () => {
+			await service.createLocalTracks();
+
+			const video = lastRequest().video as VideoCaptureOptions;
+			const audio = lastRequest().audio as AudioCaptureOptions;
+
+			// Without it each path captures whatever the browser defaults to, so the published
+			// resolution would depend on how the device happened to be opened.
+			expect(video.resolution).toEqual(CAMERA_CAPTURE_DEFAULTS.resolution);
+			expect(audio.echoCancellation).toBe(MICROPHONE_CAPTURE_DEFAULTS.echoCancellation);
+			expect(audio.autoGainControl).toBe(MICROPHONE_CAPTURE_DEFAULTS.autoGainControl);
+		});
+
+		it('restates it when switching the camera, which replaces the whole constraint set', async () => {
+			service.setLocalTracks([asTrack(video)]);
+
+			await service.switchCamera('cam-2');
+
+			const options = video.restartOptions[0] as VideoCaptureOptions;
+			expect(options.deviceId).toEqual({ exact: 'cam-2' });
+			expect(options.resolution).toEqual(CAMERA_CAPTURE_DEFAULTS.resolution);
+		});
+
+		it('restates it when switching the microphone', async () => {
+			service.setLocalTracks([asTrack(audio)]);
+
+			await service.switchMicrophone('mic-2');
+
+			const options = audio.restartOptions[0] as AudioCaptureOptions;
+			expect(options.deviceId).toEqual({ exact: 'mic-2' });
+			expect(options.echoCancellation).toBe(MICROPHONE_CAPTURE_DEFAULTS.echoCancellation);
+			expect(options.autoGainControl).toBe(MICROPHONE_CAPTURE_DEFAULTS.autoGainControl);
+		});
+	});
+
+	describe('switching devices', () => {
+		it('re-reads the capture track the mic monitor clones', async () => {
+			service.setLocalTracks([asTrack(audio)]);
+			const before = service.microphoneMediaStreamTrack();
+
+			await service.switchMicrophone('mic-2');
+
+			// The switch swaps the MediaStreamTrack behind the same LocalAudioTrack object, so a signal
+			// of tracks cannot see it: the monitor would keep analysing a clone of the previous — now
+			// stopped — device and the mic warnings would go quiet for good.
+			expect(service.microphoneMediaStreamTrack()).not.toBe(before);
+			expect(service.microphoneMediaStreamTrack()).toBe(asMediaStreamTrack(audio.mediaStreamTrack));
+		});
+
+		it('leaves the camera device closed when switching while it is off', async () => {
+			deviceService.isCameraEnabled.and.returnValue(false);
+			video.isMuted = true;
+			service.setLocalTracks([asTrack(video)]);
+
+			await service.switchCamera('cam-2');
+
+			// restartTrack re-acquired the device; mute() returns early on an already-muted track, so
+			// without an explicit stop the camera stays open — light on — behind a UI that says off.
+			expect(video.mediaStreamTrack.readyState).toBe('ended');
+			expect(service.cameraEnabled()).toBeFalse();
+		});
+
+		it('opens the requested microphone when no microphone track exists yet', async () => {
+			const fresh = new FakeLocalTrack(Track.Kind.Audio);
+			livekitSdkService.createLocalTracks.and.resolveTo([asTrack(fresh)]);
+			service.setLocalTracks([]);
+
+			await service.switchMicrophone('mic-2');
+
+			// The request has to be shaped as CreateLocalTracksOptions: passing the bare capture
+			// options meant livekit saw neither audio nor video and getUserMedia threw every time.
+			const request = livekitSdkService.createLocalTracks.calls.mostRecent().args[0];
+			expect((request.audio as AudioCaptureOptions).deviceId).toEqual({ exact: 'mic-2' });
+			expect(request.video).toBeUndefined();
+			expect(service.microphoneMediaStreamTrack()).toBe(asMediaStreamTrack(fresh.mediaStreamTrack));
+		});
+	});
+
+	describe('when no device could be opened at all', () => {
+		it('does not report a device as on just because the intent says so', async () => {
+			livekitSdkService.createLocalTracks.and.resolveTo([]);
+
+			service.setLocalTracks(await service.createLocalTracks());
+
+			// The devices are present and the intent says on, but neither capture started: reporting
+			// them enabled shows a preview that is on and displays nothing.
+			expect(service.cameraEnabled()).toBeFalse();
+			expect(service.microphoneEnabled()).toBeFalse();
 		});
 	});
 });
