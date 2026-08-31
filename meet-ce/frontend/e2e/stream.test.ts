@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { openFloatingWithCaptions, type LayoutBox } from './helpers/captions.helper';
 import {
+	dismissMicMutedSpeakingAlert,
 	muteRemoteParticipant,
 	startScreensharing,
 	stopScreensharing,
@@ -112,6 +113,9 @@ test.describe('Stream E2E Tests', () => {
 
 		test('should add screen share even when audio is disabled', async ({ page }) => {
 			await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: false });
+			// Joining muted starts the "talking while muted" warning, whose popup overlaps the screenshare
+			// menu this test opens later and intercepts its clicks.
+			await dismissMicMutedSpeakingAlert(page);
 			await expectStreamCount(page, 1);
 
 			await startScreensharing(page);
@@ -126,6 +130,8 @@ test.describe('Stream E2E Tests', () => {
 
 		test('should add screen share even when all media is disabled', async ({ page }) => {
 			await openMeeting(page, accessUrl, { videoEnabled: false, audioEnabled: false });
+			// See the audio-disabled case above: the muted-microphone warning would swallow the click.
+			await dismissMicMutedSpeakingAlert(page);
 			await expectStreamCount(page, 1);
 
 			await startScreensharing(page);
