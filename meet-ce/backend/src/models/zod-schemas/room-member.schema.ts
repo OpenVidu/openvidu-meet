@@ -330,7 +330,10 @@ export const RoomMemberTokenOptionsSchema: z.ZodType<MeetRoomMemberTokenOptions>
 		.max(64, 'participantExternalId cannot exceed 64 characters')
 		.regex(/^[A-Za-z0-9_-]+$/, 'participantExternalId must contain only letters, digits, underscores and hyphens')
 		.optional(),
-	participantMetadata: z.string().max(2048, 'participantMetadata cannot exceed 2048 characters').optional()
+	participantMetadata: z
+		.string()
+		.refine((value) => Buffer.byteLength(value, 'utf8') <= 2048, 'participantMetadata cannot exceed 2048 bytes')
+		.optional()
 });
 
 export const RoomMemberTokenMetadataSchema: z.ZodType<MeetRoomMemberTokenMetadata> = z.object({

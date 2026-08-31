@@ -48,12 +48,27 @@ describe('RoomMemberTokenOptionsSchema — participant identity correlation fiel
 		}
 	});
 
-	it('rejects a participantMetadata payload over 2 KB', () => {
+	it('rejects a participantMetadata payload over 2048 bytes', () => {
 		const result = RoomMemberTokenOptionsSchema.safeParse({ participantMetadata: 'x'.repeat(2049) });
 
 		expect(result.success).toBe(false);
 		expect(firstIssue(result).path).toEqual(['participantMetadata']);
-		expect(firstIssue(result).message).toContain('cannot exceed 2048 characters');
+		expect(firstIssue(result).message).toContain('cannot exceed 2048 bytes');
+	});
+
+	it('rejects a multibyte participantMetadata within 2048 characters but over 2048 UTF-8 bytes', () => {
+		// '€' is one UTF-16 code unit (a plain .length/.max() count would let this through) but three
+		// UTF-8 bytes, so 2048 of them are 6144 bytes — well over the documented limit.
+		const result = RoomMemberTokenOptionsSchema.safeParse({ participantMetadata: '€'.repeat(2048) });
+
+		expect(result.success).toBe(false);
+		expect(firstIssue(result).path).toEqual(['participantMetadata']);
+	});
+
+	it('accepts a multibyte participantMetadata within the 2048-byte limit', () => {
+		const result = RoomMemberTokenOptionsSchema.safeParse({ participantMetadata: '€'.repeat(682) });
+
+		expect(result.success).toBe(true);
 	});
 });
 

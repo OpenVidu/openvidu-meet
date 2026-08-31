@@ -37,6 +37,7 @@ properties:
         maxLength: 2048
         description: >
             Opaque application-defined payload attached to the participant when joining the meeting
-            (JSON is recommended). Stored in the token metadata as `metadata`; never interpreted by
-            OpenVidu Meet.
+            (JSON is recommended). Up to 2048 bytes measured as UTF-8 (not 2048 characters — a
+            multibyte string of exactly 2048 characters can be rejected as too large). Stored in the
+            token metadata as `metadata`; never interpreted by OpenVidu Meet.
         example: '{"department": "cardiology"}'

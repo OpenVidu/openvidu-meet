@@ -1127,12 +1127,20 @@ describe('Room Members API Tests', () => {
 			);
 		});
 
-		it('should fail when participantMetadata exceeds 2 KB', async () => {
+		it('should fail when participantMetadata exceeds 2048 bytes', async () => {
 			const response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
 				secret: roomData.moderatorSecret,
 				participantMetadata: 'x'.repeat(2049)
 			});
-			expectValidationError(response, 'participantMetadata', 'participantMetadata cannot exceed 2048 characters');
+			expectValidationError(response, 'participantMetadata', 'participantMetadata cannot exceed 2048 bytes');
+		});
+
+		it('should fail when a multibyte participantMetadata is within 2048 characters but over 2048 UTF-8 bytes', async () => {
+			const response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
+				secret: roomData.moderatorSecret,
+				participantMetadata: '€'.repeat(2048)
+			});
+			expectValidationError(response, 'participantMetadata', 'participantMetadata cannot exceed 2048 bytes');
 		});
 	});
 });

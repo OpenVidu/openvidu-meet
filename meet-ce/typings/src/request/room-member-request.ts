@@ -42,8 +42,8 @@ export interface MeetRoomMemberTokenOptions {
 	participantExternalId?: string;
 	/**
 	 * Opaque application-defined payload attached to the participant when joining the meeting
-	 * (JSON is recommended). Up to 2 KB. Stored in the token metadata as `metadata`; never
-	 * interpreted by OpenVidu Meet.
+	 * (JSON is recommended). Up to 2048 bytes (UTF-8). Stored in the token metadata as `metadata`;
+	 * never interpreted by OpenVidu Meet.
 	 */
 	participantMetadata?: string;
 }

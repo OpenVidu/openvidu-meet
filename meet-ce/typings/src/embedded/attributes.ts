@@ -24,7 +24,7 @@ export enum EmbeddedAttribute {
 	PARTICIPANT_EXTERNAL_ID = 'participant-external-id',
 	/**
 	 * Opaque application-defined payload attached to the local participant (JSON is recommended).
-	 * Up to 2 KB. Never interpreted by OpenVidu Meet.
+	 * Up to 2048 bytes (UTF-8). Never interpreted by OpenVidu Meet.
 	 */
 	PARTICIPANT_METADATA = 'participant-metadata',
 	/**
@@ -81,7 +81,7 @@ export interface WebComponentPropertyValues {
 	participantName?: string;
 	/** Application-defined identifier for the local participant (≤ 64 chars: letters, digits, `_`, `-`). Never interpreted by Meet. */
 	participantExternalId?: string;
-	/** Opaque application-defined payload for the local participant (JSON recommended, ≤ 2 KB). Never interpreted by Meet. */
+	/** Opaque application-defined payload for the local participant (JSON recommended, ≤ 2048 bytes UTF-8). Never interpreted by Meet. */
 	participantMetadata?: string;
 	/** Initial microphone state (they may unmute later). Set: wins over `config.initialAudioActive`; omitted: the room decides. */
 	initialAudioActive?: boolean;
