@@ -1084,8 +1084,8 @@ test.describe('Stream E2E Tests', () => {
 			const { pages, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
 				accessUrl,
-				// participant-1 joins WITHOUT a microphone — `stopMicTrackOnMute: true` means no audio
-				// publication ever reaches participant-0, so the silence button has nothing to mute.
+				// participant-1 joins WITHOUT a microphone, so no audio track is ever created or
+				// published and the silence button on participant-0 has nothing to mute.
 				participants: [
 					{ name: 'participant-0' },
 					{ name: 'participant-1', headless: true, audioEnabled: false }

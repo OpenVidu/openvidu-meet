@@ -2,27 +2,19 @@ import { inject, Service } from '@angular/core';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 import { AssetsService } from '../../../../../shared/services/assets.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
+import { CAMERA_CAPTURE_DEFAULTS, MICROPHONE_CAPTURE_DEFAULTS } from '../../models/media-capture.model';
 import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
-import { DeviceService } from '../device/device.service';
-import {
-	ConnectionState,
-	E2EEOptions,
-	ExternalE2EEKeyProvider,
-	Room,
-	RoomOptions,
-	VideoPresets
-} from '../livekit';
+import { ConnectionState, E2EEOptions, ExternalE2EEKeyProvider, Room, RoomOptions } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { MediaStorageService } from '../storage/storage.service';
 
 /**
  * Owns the live meeting connection: the LiveKit Room lifecycle (create/connect/disconnect),
  * its E2EE setup (worker + key provider) and the connection token. Local media capture lives
- * separately in LocalTrackService.
+ * separately in LocalMediaService.
  */
 @Service()
 export class MeetingLiveKitService {
-	private readonly deviceService = inject(DeviceService);
 	private readonly storageService = inject(MediaStorageService);
 	private readonly configService = inject(MeetingUiConfigService);
 	private readonly livekitSdkService = inject(LivekitSdkService);
@@ -43,7 +35,8 @@ export class MeetingLiveKitService {
 	private log: ILogger = inject(LoggerService).get('MeetingLiveKitService');
 
 	/**
-	 * Creates a new Room with audio and video devices selected or default ones.
+	 * Creates the Room, applying the shared capture profiles. Idempotent: an existing Room is only
+	 * recreated when E2EE has to be wired into it.
 	 * @internal
 	 */
 	init(): void {
@@ -63,29 +56,19 @@ export class MeetingLiveKitService {
 			this.room = undefined;
 		}
 
-		const videoDeviceId = this.deviceService.cameraSelected()?.device ?? undefined;
-		const audioDeviceId = this.deviceService.microphoneSelected()?.device ?? undefined;
-
 		const roomOptions: RoomOptions = {
 			adaptiveStream: true,
 			dynacast: true,
-			audioCaptureDefaults: {
-				deviceId: audioDeviceId,
-				echoCancellation: true,
-				noiseSuppression: true,
-				autoGainControl: true
-			},
-			videoCaptureDefaults: {
-				deviceId: videoDeviceId,
-				resolution: VideoPresets.h720.resolution
-			},
+			audioCaptureDefaults: { ...MICROPHONE_CAPTURE_DEFAULTS },
+			videoCaptureDefaults: { ...CAMERA_CAPTURE_DEFAULTS },
 			publishDefaults: {
-				dtx: true,
-				simulcast: true,
-				stopMicTrackOnMute: true
-			},
-			stopLocalTrackOnUnpublish: true,
-			disconnectOnPageLeave: true
+				// MicActivityService monitors a clone of the capture track to power the
+				// "speaking while muted" warning, so the device (and the OS recording indicator)
+				// stays open while muted anyway. Stopping the SDK's track would only add a full
+				// getUserMedia on every unmute — latency, a Bluetooth profile switch and a fresh
+				// MediaStreamTrack that re-clones the monitor — for no privacy gain.
+				stopMicTrackOnMute: false
+			}
 		};
 
 		// Configure E2EE if key is provided and keyProvider exists
@@ -171,10 +154,7 @@ export class MeetingLiveKitService {
 	 * @param callback - Optional function to be executed after a successful disconnection
 	 * @returns A Promise that resolves once the disconnection is complete
 	 */
-	async disconnect(
-		callback?: () => void,
-		shouldHandleClientInitiatedDisconnectEvent = true
-	): Promise<void> {
+	async disconnect(callback?: () => void, shouldHandleClientInitiatedDisconnectEvent = true): Promise<void> {
 		this.shouldHandleClientInitiatedDisconnectEvent = shouldHandleClientInitiatedDisconnectEvent;
 		const room = this.room;
 
