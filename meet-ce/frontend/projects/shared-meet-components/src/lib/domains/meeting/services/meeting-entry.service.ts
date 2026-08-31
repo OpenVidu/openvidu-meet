@@ -99,6 +99,10 @@ export class MeetingEntryService {
 
 		this.meetingContextService.setRoomId(roomId);
 
+		// RoomFeatureService is a singleton that survives a room switch, so without this its
+		// stale feature/media flags would keep governing the new room until its config loads.
+		this.roomFeatureService.reset();
+
 		// The app-provided correlation fields are pure passthrough: seeded (or cleared) on every
 		// entry and never restored from storage — they belong to the embedding application, not to
 		// the browser.
