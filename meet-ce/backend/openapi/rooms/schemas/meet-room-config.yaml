@@ -17,14 +17,14 @@ MeetRoomConfig:
                 auto-start mode, which such a room could never reach.
         maxDurationMinutes:
             type: [integer, 'null']
-            minimum: 1
+            minimum: 10
             maximum: 1440
             example: 60
             description: >
                 Maximum duration of the meeting in minutes. When reached, the meeting ends for
                 every participant, exactly as if a moderator had ended it.
-                `null` means the meeting duration is unlimited; the highest limit that can be set
-                is `1440` (1 day).
+                `null` means the meeting duration is unlimited; the lowest limit that can be set
+                is `10`, the highest is `1440` (1 day).
                 Config updates merge with the stored config, so an omitted limit keeps its
                 current value; send `null` to lift it.
         initialAudioActive:

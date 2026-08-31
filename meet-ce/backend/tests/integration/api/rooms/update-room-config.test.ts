@@ -435,6 +435,11 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(422);
 			expect(JSON.stringify(response.body.details)).toContain('maxDurationMinutes');
 
+			// Below the floor: shorter than the GC sweep can reliably warn before ending the meeting
+			response = await updateRoomConfig(createdRoom.roomId, { maxDurationMinutes: 9 });
+			expect(response.status).toBe(422);
+			expect(JSON.stringify(response.body.details)).toContain('maxDurationMinutes');
+
 			// Above the ceilings: a value LiveKit cannot encode must never reach the stored config
 			response = await updateRoomConfig(createdRoom.roomId, { maxParticipants: 31 });
 			expect(response.status).toBe(422);
@@ -444,7 +449,11 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(422);
 			expect(JSON.stringify(response.body.details)).toContain('maxDurationMinutes');
 
-			// The ceilings themselves are valid
+			// The floor and the ceilings themselves are valid
+			response = await updateRoomConfig(createdRoom.roomId, { maxDurationMinutes: 10 });
+			expect(response.status).toBe(200);
+			expect(response.body.maxDurationMinutes).toBe(10);
+
 			response = await updateRoomConfig(createdRoom.roomId, {
 				maxParticipants: 30,
 				maxDurationMinutes: 1_440

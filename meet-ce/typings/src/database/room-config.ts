@@ -15,8 +15,8 @@ export interface MeetRoomConfig {
 	/**
 	 * Maximum duration of the meeting in minutes. When reached, the meeting ends for every
 	 * participant, exactly as if a moderator had ended it.
-	 * `null` (or an absent key) means the meeting duration is unlimited; the highest limit that can
-	 * be set is `1440` (1 day).
+	 * `null` (or an absent key) means the meeting duration is unlimited; the lowest limit that can
+	 * be set is `10`, the highest is `1440` (1 day).
 	 */
 	maxDurationMinutes?: number | null;
 	/**

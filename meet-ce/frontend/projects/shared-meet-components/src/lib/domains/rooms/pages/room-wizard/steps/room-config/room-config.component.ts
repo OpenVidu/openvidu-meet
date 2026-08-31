@@ -10,6 +10,7 @@ import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
 import {
 	MAX_DURATION_MINUTES_LIMIT,
 	MAX_PARTICIPANTS_LIMIT,
+	MIN_DURATION_MINUTES_LIMIT,
 	RoomConfigFormGroup,
 	RoomConfigFormValue
 } from '../../../../models/wizard-forms.model';
@@ -33,6 +34,7 @@ export class RoomConfigComponent {
 	private wizardService = inject(RoomWizardStateService);
 
 	readonly maxParticipantsLimit = MAX_PARTICIPANTS_LIMIT;
+	readonly minDurationMinutesLimit = MIN_DURATION_MINUTES_LIMIT;
 	readonly maxDurationMinutesLimit = MAX_DURATION_MINUTES_LIMIT;
 
 	/** Set when the configured recording trigger can never fire at this participant limit. */

@@ -84,7 +84,7 @@
 							<input
 								matInput
 								type="number"
-								min="1"
+								[min]="minDurationMinutesLimit"
 								[max]="maxDurationMinutesLimit"
 								step="1"
 								formControlName="maxDurationMinutes"
@@ -92,9 +92,9 @@
 							/>
 							@if (roomConfigForm.controls.maxDurationMinutes.invalid) {
 								<mat-error>
-									{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_INVALID' | translate }} (1-{{
-										maxDurationMinutesLimit
-									}})
+									{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_INVALID' | translate }} ({{
+										minDurationMinutesLimit
+									}}-{{ maxDurationMinutesLimit }})
 								</mat-error>
 							}
 						</mat-form-field>

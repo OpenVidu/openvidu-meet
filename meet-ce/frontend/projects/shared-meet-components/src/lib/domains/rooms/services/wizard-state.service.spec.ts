@@ -2,15 +2,16 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MeetRecordingAutoStartMode } from '@openvidu-meet/typings';
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
+import { WizardStepId } from '../models/wizard.model';
 import { RoomWizardStateService } from './wizard-state.service';
 
 /**
- * B4 (MEET-BRANCH-AUDIT-FINDINGS.md): RoomWizardStateService is a root singleton with no reset on
- * every wizard entry — only on Cancel and on the create/update `finally`. Leaving the wizard any
- * other way (browser-back, a navbar link) skips those, so `initializeWizard`'s merge-onto-stale-state
- * lets a previous, abandoned session's choices ride into the next one.
+ * RoomWizardStateService is a root singleton with no reset on every wizard entry — only on Cancel
+ * and on the create/update `finally`. Leaving the wizard any other way (browser-back, a navbar link)
+ * skips those, so `initializeWizard`'s merge-onto-stale-state lets a previous, abandoned session's
+ * choices ride into the next one.
  */
-describe('RoomWizardStateService — B4: stale state leaking across wizard entries', () => {
+describe('RoomWizardStateService.initializeWizard (stale state does not leak across wizard entries)', () => {
 	let service: RoomWizardStateService;
 
 	beforeEach(() => {
@@ -66,13 +67,11 @@ describe('RoomWizardStateService — B4: stale state leaking across wizard entri
 });
 
 /**
- * B5 / F7 (MEET-BRANCH-AUDIT-FINDINGS.md): nothing client-side stopped `maxParticipants` and the
- * recording auto-start trigger from being set to a combination the backend can only reject (e.g.
- * `maxParticipants: 1` with `when_second_participant_joins`). `recordingAutoStartUnreachable`
- * evaluates the same rule the backend does, from the same shared typings preset data, so Finish can
- * be blocked before a doomed request is ever sent.
+ * `recordingAutoStartUnreachable` evaluates the same reachability rule the backend enforces between
+ * `maxParticipants` and the recording auto-start trigger, from the same shared typings preset data,
+ * so Finish can be blocked before a request the backend can only reject is ever sent.
  */
-describe('RoomWizardStateService — B5/F7: cross-field guard for an unreachable recording auto-start', () => {
+describe('RoomWizardStateService.recordingAutoStartUnreachable (cross-field guard against an unreachable auto-start trigger)', () => {
 	let service: RoomWizardStateService;
 
 	beforeEach(() => {
@@ -126,5 +125,42 @@ describe('RoomWizardStateService — B5/F7: cross-field guard for an unreachable
 		service.updateStepData({ config: { maxParticipants: 1 } });
 
 		expect(service.recordingAutoStartUnreachable()).toBe(false);
+	});
+});
+
+describe('RoomWizardStateService.getStepById (maxDurationMinutes control bounds)', () => {
+	let service: RoomWizardStateService;
+
+	beforeEach(() => {
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				RoomWizardStateService,
+				{ provide: TranslateService, useValue: { translate: (key: string) => key } }
+			]
+		});
+		service = TestBed.inject(RoomWizardStateService);
+		service.initializeWizard(false);
+	});
+
+	const maxDurationMinutesControl = () =>
+		service.getStepById(WizardStepId.ROOM_CONFIG)!.formGroup.controls.maxDurationMinutes;
+
+	it('rejects a duration below the minimum', () => {
+		maxDurationMinutesControl().setValue(9);
+
+		expect(maxDurationMinutesControl().valid).toBe(false);
+	});
+
+	it('accepts the minimum duration', () => {
+		maxDurationMinutesControl().setValue(10);
+
+		expect(maxDurationMinutesControl().valid).toBe(true);
+	});
+
+	it('accepts an empty value as unlimited', () => {
+		maxDurationMinutesControl().setValue(null);
+
+		expect(maxDurationMinutesControl().valid).toBe(true);
 	});
 });

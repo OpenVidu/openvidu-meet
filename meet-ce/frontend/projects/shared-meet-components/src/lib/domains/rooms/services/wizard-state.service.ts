@@ -19,6 +19,7 @@ import {
 	autoStartToTriggerFormValue,
 	MAX_DURATION_MINUTES_LIMIT,
 	MAX_PARTICIPANTS_LIMIT,
+	MIN_DURATION_MINUTES_LIMIT,
 	RecordingEnabledOption,
 	RoomAccessPermissionsControls,
 	RoomDetailsFormGroup
@@ -326,7 +327,11 @@ export class RoomWizardStateService {
 					),
 					maxDurationMinutes: this.formBuilder.control<number | null>(
 						initialRoomOptions.config!.maxDurationMinutes ?? null,
-						[Validators.min(1), Validators.max(MAX_DURATION_MINUTES_LIMIT), Validators.pattern(/^\d+$/)]
+						[
+							Validators.min(MIN_DURATION_MINUTES_LIMIT),
+							Validators.max(MAX_DURATION_MINUTES_LIMIT),
+							Validators.pattern(/^\d+$/)
+						]
 					)
 				})
 			},
