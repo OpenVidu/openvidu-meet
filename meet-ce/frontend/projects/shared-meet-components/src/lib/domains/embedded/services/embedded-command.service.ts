@@ -91,20 +91,31 @@ export class EmbeddedCommandService {
 
 	async mediaToggleAudio(active?: boolean): Promise<void> {
 		await this.run(EmbeddedCommandName.MEDIA_TOGGLE_AUDIO, 'mediaPublishAudio', () =>
-			this.localMediaControlService.setMicrophoneEnabled(active ?? !this.localMediaState.microphoneEnabled())
+			this.localMediaControlService.setMicrophoneEnabled(
+				this.resolveToggle(active, this.localMediaState.microphoneEnabled())
+			)
 		);
 	}
 
 	async mediaToggleVideo(active?: boolean): Promise<void> {
 		await this.run(EmbeddedCommandName.MEDIA_TOGGLE_VIDEO, 'mediaPublishVideo', () =>
-			this.localMediaControlService.setCameraEnabled(active ?? !this.localMediaState.cameraEnabled())
+			this.localMediaControlService.setCameraEnabled(
+				this.resolveToggle(active, this.localMediaState.cameraEnabled())
+			)
 		);
 	}
 
 	async mediaToggleScreenShare(active?: boolean): Promise<void> {
 		await this.run(EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE, 'mediaShareScreen', () =>
-			this.localMediaControlService.setScreenShareEnabled(active ?? !this.localMediaState.screenShareEnabled())
+			this.localMediaControlService.setScreenShareEnabled(
+				this.resolveToggle(active, this.localMediaState.screenShareEnabled())
+			)
 		);
+	}
+
+	/** Anything other than an actual boolean (e.g. a webcomponent attribute string) means "toggle". */
+	private resolveToggle(active: boolean | undefined, currentlyEnabled: boolean): boolean {
+		return typeof active === 'boolean' ? active : !currentlyEnabled;
 	}
 
 	private async run(
