@@ -1,8 +1,12 @@
 import { computed, inject, Service, signal } from '@angular/core';
+import type { MeetMeetingInfo } from '@openvidu-meet/typings';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 import { AssetsService } from '../../../../../shared/services/assets.service';
+import { HttpService } from '../../../../../shared/services/http.service';
+import { HTTP_HEADERS } from '../../../../../shared/constants/http-headers.constants';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { CAMERA_CAPTURE_DEFAULTS, MICROPHONE_CAPTURE_DEFAULTS } from '../../models/media-capture.model';
+import { MeetingConnectError } from '../../models/meeting-connect-error.model';
 import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { DeviceService } from '../device/device.service';
 import {
@@ -19,9 +23,9 @@ import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 
 /**
  * Owns the live meeting connection end to end: the LiveKit Room lifecycle (create / connect /
- * disconnect / teardown), its E2EE setup (worker + key provider) and the connection token. Nothing
- * outside subscribes or unsubscribes Room listeners on its behalf. Local media capture lives
- * separately in LocalTrackService.
+ * disconnect / teardown), its E2EE setup (worker + key provider), the connection token and why a
+ * join failed. Nothing outside subscribes or unsubscribes Room listeners on its behalf. Local media
+ * capture lives separately in LocalTrackService.
  */
 @Service()
 export class MeetingLiveKitService {
@@ -29,6 +33,7 @@ export class MeetingLiveKitService {
 	private readonly configService = inject(MeetingUiConfigService);
 	private readonly livekitSdkService = inject(LivekitSdkService);
 	private readonly assets = inject(AssetsService);
+	private readonly httpService = inject(HttpService);
 
 	private room: Room | undefined = undefined;
 	private keyProvider: ExternalE2EEKeyProvider | undefined;
@@ -88,6 +93,7 @@ export class MeetingLiveKitService {
 
 	private livekitToken = '';
 	private livekitUrl = '';
+	private roomId = '';
 	private log: ILogger = inject(LoggerService).get('MeetingLiveKitService');
 
 	/**
@@ -215,23 +221,48 @@ export class MeetingLiveKitService {
 		} catch (error) {
 			this.log.e('Error connecting to room:', error);
 
-			// A 403 during the connect handshake means LiveKit itself rejected an otherwise validly
-			// signed token — with no other room-level restriction in play here, that's its native
-			// `maxParticipants` cap catching the accepted-over-issue race the REST-token-time check
-			// (a separate, earlier guard) can still lose. A 401 is a genuinely different cause (bad/
-			// expired token) and is deliberately left on the generic path below.
-			if (
-				error instanceof ConnectionError &&
-				error.reason === ConnectionErrorReason.NotAllowed &&
-				error.status === 403
-			) {
-				throw { code: 'MEETING_FULL', message: 'The meeting has reached its maximum number of participants' };
+			if (await this.isMeetingAtCapacity(error)) {
+				throw new MeetingConnectError(
+					'MEETING_FULL',
+					'The meeting has reached its maximum number of participants',
+					error
+				);
 			}
 
-			throw {
-				code: 'CONNECTION_ERROR',
-				message: `Error connecting to the server at the following URL: ${this.livekitUrl}`
-			};
+			throw new MeetingConnectError(
+				'CONNECTION_ERROR',
+				`Error connecting to the server at the following URL: ${this.livekitUrl}`,
+				error
+			);
+		}
+	}
+
+	/**
+	 * Whether the meeting rejected this participant because it is full. LiveKit reports its own
+	 * `maxParticipants` rejection as an unexplained server error, indistinguishable from any other
+	 * one, so the occupancy is read from Meet's API instead — every other failure reason (an
+	 * unreachable server, a timeout, a rejected token, a cancelled attempt) is explained already and
+	 * never reaches that read.
+	 */
+	private async isMeetingAtCapacity(error: unknown): Promise<boolean> {
+		const unexplainedServerError =
+			error instanceof ConnectionError && error.reason === ConnectionErrorReason.InternalError;
+
+		if (!unexplainedServerError || !this.roomId) {
+			return false;
+		}
+
+		try {
+			const { participantCount, maxParticipants } = await this.httpService.getRequest<MeetMeetingInfo>(
+				`${HttpService.API_PATH_PREFIX}/meetings/${this.roomId}`,
+				// A failed read here is an answer ("could not tell"), not a session to recover: without
+				// this the interceptor would mint a fresh joining token and reserve a participant name.
+				{ [HTTP_HEADERS.SKIP_AUTH_RECOVERY]: 'true' }
+			);
+			return maxParticipants !== undefined && participantCount >= maxParticipants;
+		} catch (error) {
+			this.log.w('Could not read the meeting occupancy after a failed connect:', error);
+			return false;
 		}
 	}
 
@@ -339,9 +370,10 @@ export class MeetingLiveKitService {
 	 * @internal
 	 */
 	initializeAndSetToken(token: string, livekitUrl?: string): void {
-		const { livekitUrl: urlFromToken } = this.extractLivekitData(token);
+		const { livekitUrl: urlFromToken, roomId } = this.extractLivekitData(token);
 
 		this.livekitToken = token;
+		this.roomId = roomId ?? '';
 		const url = livekitUrl || urlFromToken;
 
 		if (!url) {
@@ -362,13 +394,13 @@ export class MeetingLiveKitService {
 	}
 
 	/**
-	 * Extracts Livekit data from the provided token and returns an object containing the Livekit URL and room admin status.
+	 * Extracts Livekit data from the provided token and returns an object containing the Livekit URL,
+	 * the room it grants access to and the room admin status.
 	 * @param token - The token to extract Livekit data from.
-	 * @returns An object containing the Livekit URL and room admin status.
 	 * @throws Error if there is an error decoding and parsing the token.
 	 * @internal
 	 */
-	private extractLivekitData(token: string): { livekitUrl?: string; livekitRoomAdmin: boolean } {
+	private extractLivekitData(token: string): { livekitUrl?: string; roomId?: string; livekitRoomAdmin: boolean } {
 		try {
 			const base64Url = token.split('.')[1];
 			const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -388,6 +420,7 @@ export class MeetingLiveKitService {
 				const tokenMetadata = JSON.parse(payload.metadata);
 				return {
 					livekitUrl: tokenMetadata.livekitUrl,
+					roomId: tokenMetadata.roomId,
 					livekitRoomAdmin: !!tokenMetadata.roomAdmin
 				};
 			}

@@ -1,6 +1,8 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import type { MeetMeetingInfo } from '@openvidu-meet/typings';
 import { AssetsService } from '../../../../../shared/services/assets.service';
+import { HttpService } from '../../../../../shared/services/http.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { DeviceService } from '../device/device.service';
@@ -56,6 +58,7 @@ describe('MeetingLiveKitService', () => {
 	let service: MeetingLiveKitService;
 	let room: FakeRoom;
 	let livekitSdkService: jasmine.SpyObj<LivekitSdkService>;
+	let httpService: jasmine.SpyObj<HttpService>;
 
 	beforeEach(() => {
 		room = new FakeRoom();
@@ -66,6 +69,7 @@ describe('MeetingLiveKitService', () => {
 		]);
 		livekitSdkService.createRoom.and.returnValue(room as unknown as Room);
 		livekitSdkService.disconnectRoom.and.resolveTo();
+		httpService = jasmine.createSpyObj<HttpService>('HttpService', ['getRequest']);
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -73,6 +77,7 @@ describe('MeetingLiveKitService', () => {
 				MeetingLiveKitService,
 				{ provide: LoggerService, useClass: LoggerServiceStub },
 				{ provide: LivekitSdkService, useValue: livekitSdkService },
+				{ provide: HttpService, useValue: httpService },
 				{
 					provide: DeviceService,
 					useValue: {
@@ -272,18 +277,20 @@ describe('MeetingLiveKitService', () => {
 	});
 
 	/**
-	 * C4 (MEET-BRANCH-AUDIT-FINDINGS.md): connect() used to flatten every rejection into the same
-	 * generic CONNECTION_ERROR, including LiveKit's own native `maxParticipants` cap — the backstop
-	 * for the accepted-over-issue race the REST-token-time check can still lose — which then never
-	 * got the room-full message the token-time 409 already has.
+	 * A full meeting and a broken network both reach connect() as a rejection, and only the first one
+	 * deserves the room-full message. LiveKit cannot tell them apart on its own — it reports its
+	 * `maxParticipants` rejection as `InternalError`, the same bucket as any unexplained server
+	 * failure — so occupancy is confirmed against Meet's own API before that message is shown.
 	 */
 	describe('connect()', () => {
+		/** What livekit-client throws when the server refused the upgrade without explaining itself. */
+		const unexplainedServerError = () => ConnectionError.internal('unknown websocket error', { status: 200 });
+
 		beforeEach(() => {
-			// initializeAndSetToken always decodes the token payload (even though livekitUrl is
-			// passed explicitly here), so it must be a real base64url JWT shape or it throws before
-			// connect() is ever reached.
-			const fakeToken = `header.${btoa('{}')}.signature`;
-			service.initializeAndSetToken(fakeToken, 'wss://livekit.example.test');
+			// A room member token as the backend mints them: Meet's own data, the room id included,
+			// travels in the JWT's `metadata` claim.
+			const metadata = JSON.stringify({ roomId: 'room-1' });
+			service.initializeAndSetToken(`header.${btoa(JSON.stringify({ metadata }))}.signature`, 'wss://lk.test');
 		});
 
 		it('resolves when the connection succeeds', async () => {
@@ -292,25 +299,82 @@ describe('MeetingLiveKitService', () => {
 			await expectAsync(service.connect()).toBeResolved();
 		});
 
-		it('maps a 403 NotAllowed rejection (the native maxParticipants cap) to MEETING_FULL', async () => {
-			livekitSdkService.connectRoom.and.rejectWith(ConnectionError.notAllowed('room is full', 403));
+		it('reports MEETING_FULL when the meeting is at capacity', async () => {
+			livekitSdkService.connectRoom.and.rejectWith(unexplainedServerError());
+			httpService.getRequest.and.resolveTo({ participantCount: 3, maxParticipants: 3 } as MeetMeetingInfo);
 
 			await expectAsync(service.connect()).toBeRejectedWith(jasmine.objectContaining({ code: 'MEETING_FULL' }));
+			expect(httpService.getRequest).toHaveBeenCalledOnceWith(
+				'api/v1/meetings/room-1',
+				jasmine.objectContaining({ 'x-ov-skip-auth-recovery': 'true' })
+			);
 		});
 
-		it('leaves a 401 NotAllowed rejection (a bad/expired token) on the generic path', async () => {
-			livekitSdkService.connectRoom.and.rejectWith(ConnectionError.notAllowed('invalid token', 401));
+		it('reports a connection error when the meeting is below capacity', async () => {
+			livekitSdkService.connectRoom.and.rejectWith(unexplainedServerError());
+			httpService.getRequest.and.resolveTo({ participantCount: 1, maxParticipants: 3 } as MeetMeetingInfo);
 
 			await expectAsync(service.connect()).toBeRejectedWith(
 				jasmine.objectContaining({ code: 'CONNECTION_ERROR' })
 			);
 		});
 
-		it('leaves every other connect failure on the generic path', async () => {
-			livekitSdkService.connectRoom.and.rejectWith(new Error('network down'));
+		it('reports a connection error when the meeting admits unlimited participants', async () => {
+			livekitSdkService.connectRoom.and.rejectWith(unexplainedServerError());
+			httpService.getRequest.and.resolveTo({ participantCount: 10 } as MeetMeetingInfo);
 
 			await expectAsync(service.connect()).toBeRejectedWith(
 				jasmine.objectContaining({ code: 'CONNECTION_ERROR' })
+			);
+		});
+
+		it('reports a connection error when the occupancy cannot be read', async () => {
+			livekitSdkService.connectRoom.and.rejectWith(unexplainedServerError());
+			httpService.getRequest.and.rejectWith(new Error('meetingRead denied'));
+
+			await expectAsync(service.connect()).toBeRejectedWith(
+				jasmine.objectContaining({ code: 'CONNECTION_ERROR' })
+			);
+		});
+
+		// Reasons LiveKit already explains: asking Meet about them would delay the error the
+		// participant is waiting for — behind an unreachable server, on the very request that cannot
+		// answer either.
+		it('does not ask about occupancy when the server was unreachable', async () => {
+			livekitSdkService.connectRoom.and.rejectWith(ConnectionError.serverUnreachable('down'));
+
+			await expectAsync(service.connect()).toBeRejectedWith(
+				jasmine.objectContaining({ code: 'CONNECTION_ERROR' })
+			);
+			expect(httpService.getRequest).not.toHaveBeenCalled();
+		});
+
+		it('does not ask about occupancy when the token was rejected', async () => {
+			livekitSdkService.connectRoom.and.rejectWith(ConnectionError.notAllowed('invalid token', 401));
+
+			await expectAsync(service.connect()).toBeRejectedWith(
+				jasmine.objectContaining({ code: 'CONNECTION_ERROR' })
+			);
+			expect(httpService.getRequest).not.toHaveBeenCalled();
+		});
+
+		it('does not ask about occupancy when the token carries no room id', async () => {
+			service.initializeAndSetToken(`header.${btoa('{}')}.signature`, 'wss://lk.test');
+			livekitSdkService.connectRoom.and.rejectWith(unexplainedServerError());
+
+			await expectAsync(service.connect()).toBeRejectedWith(
+				jasmine.objectContaining({ code: 'CONNECTION_ERROR' })
+			);
+			expect(httpService.getRequest).not.toHaveBeenCalled();
+		});
+
+		it('keeps the LiveKit failure as the cause of the error it throws', async () => {
+			const livekitFailure = unexplainedServerError();
+			livekitSdkService.connectRoom.and.rejectWith(livekitFailure);
+			httpService.getRequest.and.rejectWith(new Error('unreachable'));
+
+			await expectAsync(service.connect()).toBeRejectedWith(
+				jasmine.objectContaining({ cause: livekitFailure })
 			);
 		});
 	});

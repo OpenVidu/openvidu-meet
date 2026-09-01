@@ -60,7 +60,10 @@ export class MeetingService {
 			roomName: await this.resolveRoomName(room),
 			startDate: Number(room.creationTime) * 1000,
 			participantCount: participants.length,
-			recordingActive: activeRecordings.length > 0
+			recordingActive: activeRecordings.length > 0,
+			// The cap LiveKit is enforcing right now, stamped on the room at creation from
+			// `config.maxParticipants`: the database holds what the *next* meeting will get.
+			maxParticipants: room.maxParticipants || undefined
 		};
 	}
 

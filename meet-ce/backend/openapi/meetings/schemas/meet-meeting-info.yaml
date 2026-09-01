@@ -32,3 +32,10 @@ properties:
         example: false
         description: >
             Whether a recording is currently in progress in the meeting.
+    maxParticipants:
+        type: number
+        example: 10
+        description: >
+            The participant cap in force for this meeting, taken from the room's `maxParticipants` when
+            the meeting started (so it does not change mid-meeting). Absent when the meeting admits
+            unlimited participants.

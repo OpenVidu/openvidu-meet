@@ -28,9 +28,11 @@ const APP_METADATA = '{"department": "cardiology"}';
 describe('Meetings API Tests', () => {
 	let app: Express;
 
-	// A room with an active meeting (one fake participant) and one without any meeting.
+	// A room with an active meeting (one fake participant), one without any meeting, and one whose
+	// meeting runs under a participant cap.
 	let meetingRoom: RoomData;
 	let idleRoom: RoomData;
+	let cappedRoom: RoomData;
 
 	const getMeeting = (roomId: string, token: string) =>
 		request(app).get(`${MEETINGS_PATH}/${roomId}`).set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token);
@@ -50,6 +52,7 @@ describe('Meetings API Tests', () => {
 
 		meetingRoom = await setupSingleRoom(true, 'MEETING_INFO_ROOM');
 		idleRoom = await setupSingleRoom(false, 'IDLE_ROOM');
+		cappedRoom = await setupSingleRoom(true, 'MEETING_INFO_CAPPED_ROOM', { maxParticipants: 5 });
 
 		// Stamp the fake participant with the metadata a real Meet join would carry, including the
 		// app-provided correlation fields.
@@ -82,6 +85,13 @@ describe('Meetings API Tests', () => {
 			expect(meeting.startDate).toBeLessThanOrEqual(Date.now());
 			expect(meeting.participantCount).toBe(1);
 			expect(meeting.recordingActive).toBe(false);
+			expect(meeting.maxParticipants).toBeUndefined();
+		});
+
+		it('should report the participant cap in force when the meeting runs under one', async () => {
+			const response = await getMeeting(cappedRoom.room.roomId, cappedRoom.moderatorToken);
+			expect(response.status).toBe(200);
+			expect((response.body as MeetMeetingInfo).maxParticipants).toBe(5);
 		});
 
 		it('should fail with 404 when the room has no active meeting', async () => {
