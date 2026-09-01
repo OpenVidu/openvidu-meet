@@ -509,22 +509,6 @@ export class LiveKitService {
 	}
 
 	/**
-	 * Retrieves a list of active egress information based on the provided egress ID.
-	 *
-	 * @param egressId - The unique identifier of the egress to retrieve.
-	 * @returns A promise that resolves to an array of `EgressInfo` objects representing the active egress.
-	 * @throws Will throw an error if there is an issue retrieving the egress information.
-	 */
-	async getActiveEgress(roomName?: string, egressId?: string): Promise<EgressInfo[]> {
-		const egress = await this.getEgress(roomName, egressId, true);
-
-		// In some cases, the egress list may contain egress that their status is ENDINDG
-		// which means that the egress is still active but it is in the process of stopping.
-		// We need to filter those out.
-		return egress.filter((e) => e.status === EgressStatus.EGRESS_ACTIVE);
-	}
-
-	/**
 	 * Retrieves all recording egress sessions for a specific room or all rooms.
 	 *
 	 * @param {string} [roomName] - Optional room name to filter recordings by room
@@ -540,25 +524,6 @@ export class LiveKitService {
 
 		// Filter the egress array to include only recording egress
 		return egressArray.filter((egress) => RecordingHelper.isRecordingEgress(egress));
-	}
-
-	/**
-	 * Retrieves all active recording egress sessions for a specific room or all rooms.
-	 *
-	 * @param {string} [roomName] - Optional room name to filter recordings by room
-	 * @returns {Promise<EgressInfo[]>} A promise that resolves to an array of active recording EgressInfo objects
-	 * @throws Will throw an error if there is an issue retrieving the egress information
-	 */
-	async getActiveRecordingsEgress(roomName?: string): Promise<EgressInfo[]> {
-		// Get all recording egress
-		const recordingEgress = await this.getRecordingsEgress(roomName);
-
-		if (recordingEgress.length === 0) {
-			return [];
-		}
-
-		// Filter the recording egress array to include only active egress
-		return recordingEgress.filter((egress) => egress.status === EgressStatus.EGRESS_ACTIVE);
 	}
 
 	/**

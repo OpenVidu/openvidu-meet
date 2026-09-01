@@ -6,6 +6,7 @@ import {
 	MeetWebhookEventType
 } from '@openvidu-meet/typings';
 import http from 'http';
+import { EgressInfo, EgressStatus } from 'livekit-server-sdk';
 import { container } from '../../src/config/dependency-injector.config.js';
 import { MeetParticipantHelper } from '../../src/helpers/participant.helper.js';
 import { RecordingRepository } from '../../src/repositories/recording.repository.js';
@@ -265,6 +266,59 @@ export const waitForParticipantToUpdateMetadata = async (
 };
 
 // ─── RECORDING WAIT HELPERS ───────────────────────────────────────────────────
+
+/**
+ * Waits until a room's recording egress reaches EGRESS_ACTIVE (not STARTING or ENDING) and
+ * returns the matching egress. A STARTING egress answers 409 to every stop, so a test that needs
+ * to fire a stop against an egress that can actually accept one must wait for ACTIVE first.
+ *
+ * @param roomId    - Room identifier to poll.
+ * @param timeoutMs - Maximum wait time in milliseconds (default: 30 000).
+ */
+export const waitForActiveRecordingEgress = async (
+	roomId: string,
+	timeoutMs = DEFAULT_RECORDING_TIMEOUT_MS
+): Promise<EgressInfo[]> => {
+	const livekitService = container.get(LiveKitService);
+	let activeEgress: EgressInfo[] = [];
+
+	await pollUntil(
+		async () => {
+			const egress = await livekitService.getRecordingsEgress(roomId);
+			activeEgress = egress.filter((e) => e.status === EgressStatus.EGRESS_ACTIVE);
+			return activeEgress.length > 0;
+		},
+		{ timeoutMs, errorMessage: `No active recording egress found for room '${roomId}'` }
+	);
+
+	return activeEgress;
+};
+
+/**
+ * Waits until a room has no in-progress recording egress left (STARTING, ACTIVE or ENDING). The
+ * `egress_ended` webhook that releases the recording-active lock is delivered to the real
+ * deployment, not to the in-process test app, so tests poll LiveKit directly and then release the
+ * lock the same way the webhook handler would.
+ *
+ * Must match `RecordingService.releaseRecordingLockIfNoEgress`'s own STARTING/ACTIVE/ENDING gate,
+ * not just ACTIVE: stopping at ACTIVE-only would report "done" while the egress is still uploading
+ * its output to storage, and a release call right after this would then no-op, leaving the lock
+ * held for a real ABS/GCS upload's whole duration.
+ *
+ * @param roomId    - Room identifier to poll.
+ * @param timeoutMs - Maximum wait time in milliseconds (default: 30 000).
+ */
+export const waitForNoInProgressEgress = async (
+	roomId: string,
+	timeoutMs = DEFAULT_RECORDING_TIMEOUT_MS
+): Promise<void> => {
+	const livekitService = container.get(LiveKitService);
+
+	await pollUntil(async () => (await livekitService.getInProgressRecordingsEgress(roomId)).length === 0, {
+		timeoutMs,
+		errorMessage: `Room '${roomId}' still has in-progress recording egress`
+	});
+};
 
 /**
  * Waits until a recording's `egress_ended` LiveKit webhook has been fully

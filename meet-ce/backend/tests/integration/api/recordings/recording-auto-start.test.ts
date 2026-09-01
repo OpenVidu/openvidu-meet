@@ -28,6 +28,7 @@ import {
 	stopRecording
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { waitForActiveRecordingEgress, waitForNoInProgressEgress } from '../../../helpers/wait-helpers.js';
 
 /**
  * `config.recording.autoStart`: the recording starts by itself once the configured participant
@@ -93,25 +94,6 @@ describe('Recording Auto-Start Tests', () => {
 	const findRoomRecordings = async (roomId: string) => {
 		const { recordings } = await recordingRepository.find({ roomId });
 		return recordings;
-	};
-
-	/**
-	 * Waits for LiveKit to report no active egress left in the room. The 'egress_ended' webhook
-	 * that releases the recording-active lock is delivered to the real deployment, not to this
-	 * in-process app (see file docstring above), so tests poll LiveKit directly and then release
-	 * the lock the same way the webhook handler would — the same direct-invocation technique
-	 * `simulateParticipantJoined` uses.
-	 */
-	const waitForEgressToEnd = async (roomId: string) => {
-		let activeEgress = await livekitService.getActiveEgress(roomId);
-		const deadline = Date.now() + 30_000;
-
-		while (activeEgress.length > 0 && Date.now() < deadline) {
-			await sleep('1s');
-			activeEgress = await livekitService.getActiveEgress(roomId);
-		}
-
-		expect(activeEgress.length).toBe(0);
 	};
 
 	it('should auto-start the recording when the first participant joins', async () => {
@@ -347,7 +329,7 @@ describe('Recording Auto-Start Tests', () => {
 
 		await stopRecording(recordings[0].recordingId);
 
-		await waitForEgressToEnd(room.roomId);
+		await waitForNoInProgressEgress(room.roomId);
 		await recordingService.releaseRecordingLockIfNoEgress(room.roomId);
 
 		// A manual stop is a deliberate decision: a later join reaching the same threshold again
@@ -383,15 +365,8 @@ describe('Recording Auto-Start Tests', () => {
 		expect(recordings.length).toBe(1);
 
 		// A STARTING egress answers 409 to every stop, which would hide the race: wait until the
-		// egress is active (the only status `getActiveEgress` reports) so a stop can succeed
-		let activeEgress = await livekitService.getActiveEgress(room.roomId);
-		const activeDeadline = Date.now() + 30_000;
-
-		while (activeEgress.length === 0 && Date.now() < activeDeadline) {
-			await sleep('1s');
-			activeEgress = await livekitService.getActiveEgress(room.roomId);
-		}
-
+		// egress is active so a stop can succeed
+		const activeEgress = await waitForActiveRecordingEgress(room.roomId);
 		expect(activeEgress.length).toBe(1);
 
 		// Only one stop reaches LiveKit; the other is rejected instead of racing it
@@ -401,7 +376,7 @@ describe('Recording Auto-Start Tests', () => {
 		]);
 		expect(responses.map((response) => response.status).sort()).toEqual([202, 409]);
 
-		await waitForEgressToEnd(room.roomId);
+		await waitForNoInProgressEgress(room.roomId);
 		await recordingService.releaseRecordingLockIfNoEgress(room.roomId);
 
 		// The rejected stop must not have undone the disarm the accepted one wrote
@@ -436,7 +411,7 @@ describe('Recording Auto-Start Tests', () => {
 		const firstRecordingId = recordings[0].recordingId;
 
 		await stopRecording(firstRecordingId);
-		await waitForEgressToEnd(room.roomId);
+		await waitForNoInProgressEgress(room.roomId);
 		await recordingService.releaseRecordingLockIfNoEgress(room.roomId);
 
 		// The disarm is scoped to the meeting, not to the room: once the meeting ends
@@ -500,7 +475,7 @@ describe('Recording Auto-Start Tests', () => {
 		const lkRoom = await livekitService.getRoom(room.roomId);
 		expect(await recAutoStartStateService.isDisabled(room.roomId, lkRoom.sid)).toBe(false);
 
-		await waitForEgressToEnd(room.roomId);
+		await waitForNoInProgressEgress(room.roomId);
 		await recordingService.releaseRecordingLockIfNoEgress(room.roomId);
 
 		// The threshold is still met, so the next join relaunches the recording
