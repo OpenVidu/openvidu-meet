@@ -36,6 +36,25 @@ export enum MeetWebhookEventType {
 }
 
 /**
+ * Envelope sent to a webhook's URL by the `webhookTest` endpoint, to verify it is reachable. Distinct
+ * from {@link MeetWebhookEvent}: `event` is the fixed literal `'testEvent'` rather than a
+ * {@link MeetWebhookEventType} member, since this delivery reports no real occurrence. It is not
+ * filterable through a webhook's `events` subscription list and is not part of the naming charter's
+ * `moduleEvent` scheme. A receiver validating `event` against {@link MeetWebhookEventType} should
+ * treat this literal as a recognized, benign test delivery rather than reject it.
+ */
+export interface MeetWebhookTestEvent {
+	/** Always `'testEvent'`. */
+	event: 'testEvent';
+	/** Timestamp in milliseconds since epoch when the test event was created */
+	creationDate: number;
+	/** Fixed test payload; carries no information about any real occurrence */
+	data: {
+		message: string;
+	};
+}
+
+/**
  * A participant that has left a meeting, as carried by the
  * {@link MeetWebhookEventType.PARTICIPANT_LEFT} webhook event.
  *

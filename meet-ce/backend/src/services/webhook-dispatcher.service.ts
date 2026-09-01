@@ -6,7 +6,8 @@ import type {
 	MeetRecordingInfo,
 	MeetRoom,
 	MeetWebhookEvent,
-	MeetWebhookPayload
+	MeetWebhookPayload,
+	MeetWebhookTestEvent
 } from '@openvidu-meet/typings';
 import { MeetMeetingEndedCause, MeetWebhookEventType } from '@openvidu-meet/typings';
 import crypto from 'crypto';
@@ -171,7 +172,7 @@ export class WebhookDispatcherService {
 	 */
 	async testWebhookUrl(url: string) {
 		const creationDate = Date.now();
-		const data = {
+		const data: MeetWebhookTestEvent = {
 			event: 'testEvent',
 			creationDate,
 			data: {

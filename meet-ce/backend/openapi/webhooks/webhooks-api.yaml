@@ -136,9 +136,16 @@
     post:
         operationId: webhookTest
         summary: Test a webhook
-        description: >
+        description: |
             Sends a test event to the stored URL of a registered webhook, to verify it is
             reachable and answers successfully.
+
+            The delivery uses the same envelope, signature and retry policy as a real webhook event,
+            but its content is synthetic: `event` is the fixed literal `testEvent`, which is **not**
+            a member of the `event` enum documented on `MeetWebhookEvent`, and `data` is always
+            `{ "message": "This is a test webhook event" }`. A receiver that validates incoming
+            `event` values strictly against that enum should still accept `testEvent` as a
+            recognized, benign test delivery rather than reject it.
         tags:
             - OpenVidu Meet - Webhooks
         security:
