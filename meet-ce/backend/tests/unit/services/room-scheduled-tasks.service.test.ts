@@ -15,12 +15,17 @@ class FakeLiveKitService {
 	/** 'deleted' = deleteRoom really ended it; 'already-gone' = a no-op (room was gone already); 'error' = deleteRoom throws */
 	deleteOutcome: 'deleted' | 'already-gone' | 'error' = 'deleted';
 	deletedRoomNames: string[] = [];
+	roomsExistError: Error | null = null;
 
 	async listRooms(): Promise<Room[]> {
 		return this.liveRoomNames.map((name) => ({ name }) as Room);
 	}
 
 	async roomsExist(roomNames: string[]): Promise<Map<string, boolean>> {
+		if (this.roomsExistError) {
+			throw this.roomsExistError;
+		}
+
 		return new Map(roomNames.map((name) => [name, this.existingRoomNames.has(name)]));
 	}
 
@@ -109,6 +114,10 @@ class TestableRoomScheduledTasksService extends RoomScheduledTasksService {
 		return this.reconcileOpenRoomsGC();
 	}
 
+	runReconcileActiveMeetingsGoneFromLiveKit(): Promise<void> {
+		return this.reconcileActiveMeetingsGoneFromLiveKit();
+	}
+
 	runValidateRoomsStatusGC(): Promise<void> {
 		return this.validateRoomsStatusGC();
 	}
@@ -189,6 +198,27 @@ describe('RoomScheduledTasksService.reconcileOpenRoomsGC (C2: lost room_started 
 		await expect(service.runReconcileOpenRoomsGC()).resolves.toBeUndefined();
 
 		expect(livekitWebhookService.reconciledRoomIds).toEqual(['room-succeeds']);
+	});
+});
+
+/**
+ * G1 (MEET-BRANCH-AUDIT-FINDINGS.md): a LiveKit API failure must read as "existence unknown", never
+ * as "these rooms are gone" — `LiveKitService.roomsExist` now rethrows instead of defaulting every
+ * room to `false`, so a network blip or a LiveKit restart during this sweep can no longer be
+ * mistaken for every active room having ended (which would fire spurious `meetingEnded` webhooks and,
+ * for `meetingEndAction=DELETE` rooms, delete recordings for meetings that are still running).
+ */
+describe('RoomScheduledTasksService.reconcileActiveMeetingsGoneFromLiveKit (G1: LiveKit outage must not read as "rooms gone")', () => {
+	it('aborts the batch and touches no room when roomsExist fails, instead of treating the failure as "all gone"', async () => {
+		const livekitService = new FakeLiveKitService();
+		livekitService.roomsExistError = new Error('LiveKit down');
+		const roomRepository = new FakeRoomRepository();
+		roomRepository.activeRoomIds = ['room-a', 'room-b'];
+		const { service, livekitWebhookService } = buildService(livekitService, roomRepository);
+
+		await expect(service.runReconcileActiveMeetingsGoneFromLiveKit()).resolves.toBeUndefined();
+
+		expect(livekitWebhookService.cleanedUpRoomIds).toEqual([]);
 	});
 });
 

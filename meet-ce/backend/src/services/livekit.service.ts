@@ -53,6 +53,8 @@ export class LiveKitService {
 	 *
 	 * @param roomNames - Array of room names to check
 	 * @returns A Map with room names as keys and boolean indicating existence as values
+	 * @throws If the LiveKit API call fails. Existence is undeterminable in that case, and callers
+	 * (e.g. the room-status GC) must not treat the failure as "these rooms are gone".
 	 */
 	async roomsExist(roomNames: string[]): Promise<Map<string, boolean>> {
 		const result = new Map<string, boolean>();
@@ -69,12 +71,8 @@ export class LiveKitService {
 				result.set(roomName, existingRoomNames.has(roomName));
 			}
 		} catch (error) {
-			this.logger.warn('Error batch checking rooms', error);
-
-			// If the API call fails, assume no rooms exist
-			for (const roomName of roomNames) {
-				result.set(roomName, false);
-			}
+			this.logger.error('Error batch checking rooms', error);
+			throw internalError('batch checking rooms');
 		}
 
 		return result;
