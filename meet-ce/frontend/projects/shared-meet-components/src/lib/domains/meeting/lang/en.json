@@ -17,7 +17,8 @@
 		"ENDING_SOON_ONE_MINUTE": "This meeting will end in about 1 minute",
 		"ENDING_SOON_MANY_MINUTES": "This meeting will end in about {minutes} minutes",
 		"ENDING_SOON_CONFIRM": "OK",
-		"ENDING_SOON_BADGE_ENDING": "Ending..."
+		"ENDING_SOON_BADGE_LABEL": "Ends in",
+		"ENDING_SOON_BADGE_ENDING": "Ending now"
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Mute your audio",

@@ -10,6 +10,12 @@ export enum SmartLayoutMode {
 	SMART_MOSAIC = 'SMART_MOSAIC'
 }
 
+/** The participants the smart layout is not showing, as the status rail renders them. */
+export interface HiddenParticipantsSummary {
+	count: number;
+	names: string[];
+}
+
 /**
  * Whether two identity orders hold the same identities in the same positions. Both the speaker
  * priority and the displayed camera order are recomputed on every active-speaker event — about twice

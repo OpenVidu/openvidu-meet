@@ -7,24 +7,11 @@
 				<img id="branding-logo" [ovLogo]="brandingLogo()" />
 			}
 
-			<!-- Session Info -->
-			<div id="meeting-info-container" [class.collapsed]="isRecordingStarted()">
+			<!-- Session Info. Recording status lives in the meeting view's status rail. -->
+			<div id="meeting-info-container">
 				<!-- Room Name -->
 				@if (showRoomName()) {
 					<span id="meeting-name">{{ roomName() }}</span>
-				}
-
-				<!-- Activities (Recording) -->
-				@if (isRecordingStarted()) {
-					<div id="activities-tag">
-						<div id="recording-tag" class="recording-tag" (click)="openRecordingActivityPanel()">
-							<mat-icon class="blink">radio_button_checked</mat-icon>
-							<span class="blink">REC</span>
-							@if (recordingTime()) {
-								<span> | {{ recordingTime() | date: 'H:mm:ss' }}</span>
-							}
-						</div>
-					</div>
 				}
 			</div>
 		</div>

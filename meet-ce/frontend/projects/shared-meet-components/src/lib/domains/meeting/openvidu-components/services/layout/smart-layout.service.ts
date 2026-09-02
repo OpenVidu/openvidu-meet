@@ -1,5 +1,5 @@
 import { computed, effect, inject, Service, signal, untracked } from '@angular/core';
-import { sameIdentityOrder, SmartLayoutMode } from '../../models/layout/smart-layout.model';
+import { HiddenParticipantsSummary, sameIdentityOrder, SmartLayoutMode } from '../../models/layout/smart-layout.model';
 import type { Participant } from '../../services/livekit';
 import { MeetingEventsService } from '../meeting-events/meeting-events.service';
 import { ViewportService } from '../viewport/viewport.service';
@@ -30,6 +30,19 @@ export class SmartLayoutService extends BaseLayoutService {
 	readonly isSmartLayoutEnabled = computed(() => this._layoutMode() === SmartLayoutMode.SMART_MOSAIC);
 
 	private readonly _speakerPriorityOrder = signal<string[]>([]);
+
+	/**
+	 * The hidden-participant summary the status rail shows, published by {@link SmartLayoutComponent}
+	 * because the rail lives outside the layout. Set only while the layout would have rendered its
+	 * top-bar variant: when a pinned participant or a full grid calls for the in-grid tile instead,
+	 * this stays `undefined` and the layout renders that tile as before.
+	 */
+	private readonly _railHiddenParticipants = signal<HiddenParticipantsSummary | undefined>(undefined);
+	readonly railHiddenParticipants = this._railHiddenParticipants.asReadonly();
+
+	setRailHiddenParticipants(summary: HiddenParticipantsSummary | undefined): void {
+		this._railHiddenParticipants.set(summary);
+	}
 
 	private speakingStartTimes = new Map<string, number>();
 	private speakingStopTimes = new Map<string, number>();

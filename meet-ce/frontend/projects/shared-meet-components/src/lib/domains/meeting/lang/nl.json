@@ -8,7 +8,8 @@
 		"ENDING_SOON_ONE_MINUTE": "De meeting eindigt over ongeveer 1 minuut",
 		"ENDING_SOON_MANY_MINUTES": "De meeting eindigt over ongeveer {minutes} minuten",
 		"ENDING_SOON_CONFIRM": "OK",
-		"ENDING_SOON_BADGE_ENDING": "Wordt beëindigd..."
+		"ENDING_SOON_BADGE_LABEL": "Eindigt over",
+		"ENDING_SOON_BADGE_ENDING": "Wordt beëindigd"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Deelnemen aan meeting",

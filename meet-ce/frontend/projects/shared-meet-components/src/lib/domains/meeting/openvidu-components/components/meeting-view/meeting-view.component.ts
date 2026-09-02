@@ -1,4 +1,4 @@
-import { NgTemplateOutlet } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import {
 	AfterViewInit,
 	Component,
@@ -50,14 +50,16 @@ import {
 	ActivitiesPanelStatusEvent,
 	ChatPanelStatusEvent,
 	ParticipantsPanelStatusEvent,
+	PanelType,
 	SettingsPanelStatusEvent
 } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '../../models/participant.model';
-import { RecordingStartRequestedEvent, RecordingStopRequestedEvent } from '../../models/recording.model';
+import { RecordingStartRequestedEvent, RecordingState, RecordingStopRequestedEvent } from '../../models/recording.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { ActionService } from '../../services/action/action.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
+import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import type { Room } from '../../services/livekit';
 import { MeetingEndingSoonService } from '../../services/meeting-ending-soon/meeting-ending-soon.service';
 import { MeetingEventsService } from '../../services/meeting-events/meeting-events.service';
@@ -66,11 +68,13 @@ import { LocalTrackService } from '../../services/local-track/local-track.servic
 import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
+import { RecordingService } from '../../services/recording/recording.service';
 import { MediaStorageService } from '../../services/storage/storage.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
 import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
+import { HiddenParticipantsIndicatorComponent } from '../hidden-participants-indicator/hidden-participants-indicator.component';
 import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
 import { SmartLayoutComponent } from '../layout/smart-layout/smart-layout.component';
 import { MeetingMediaSetupComponent } from '../meeting-media-setup/meeting-media-setup.component';
@@ -98,6 +102,8 @@ import { ToolbarComponent } from '../toolbar/toolbar.component';
 		SidenavLayoutDirective,
 		TranslatePipe,
 		MeetingMediaSetupComponent,
+		DatePipe,
+		HiddenParticipantsIndicatorComponent,
 		LandscapeWarningComponent,
 		ToolbarComponent,
 		PanelComponent,
@@ -133,6 +139,8 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	private readonly meetingEventsService = inject(MeetingEventsService);
 	private readonly translateService = inject(MeetingTranslateService);
 	private readonly meetingEndingSoonService = inject(MeetingEndingSoonService);
+	private readonly smartLayoutService = inject(SmartLayoutService);
+	private readonly recordingService = inject(RecordingService);
 	protected readonly viewportService = inject(ViewportService);
 	readonly templateRegistry = inject(TemplateRegistryService);
 
@@ -140,20 +148,27 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 
 	protected readonly isEndingSoon = computed(() => this.endingSoonRemainingMs() !== undefined);
 
+	/** Solid warn treatment for the last minute; above it the chip stays on the calm surface. */
+	protected readonly isEndingSoonUrgent = computed(() => {
+		const remainingMs = this.endingSoonRemainingMs();
+		return remainingMs !== undefined && remainingMs <= MeetingViewComponent.ENDING_SOON_URGENT_MS;
+	});
+
+	protected readonly endingSoonLabel = computed(() =>
+		this.translateService.translate(
+			this.endingSoonTime() ? 'ROOM.ENDING_SOON_BADGE_LABEL' : 'ROOM.ENDING_SOON_BADGE_ENDING'
+		)
+	);
+
 	/**
-	 * `mm:ss` while counting down, or the "ending" label once it reaches zero: the real end is
-	 * still up to the backend's own sweep, so this can sit at zero for a little while before the
-	 * meeting actually closes. Rendered here (not in the toolbar) so it stays visible even when a
-	 * customization or embedding host doesn't render a toolbar at all.
+	 * `mm:ss`, or nothing once the countdown is spent: the real end is still up to the backend's own
+	 * sweep a moment later, and a frozen `0:00` reads as a broken clock rather than a meeting about
+	 * to close.
 	 */
-	protected readonly endingSoonLabel = computed(() => {
+	protected readonly endingSoonTime = computed(() => {
 		const remainingMs = this.endingSoonRemainingMs();
 
-		if (remainingMs === undefined) return undefined;
-
-		if (remainingMs <= 0) {
-			return this.translateService.translate('ROOM.ENDING_SOON_BADGE_ENDING');
-		}
+		if (remainingMs === undefined || remainingMs <= 0) return undefined;
 
 		const totalSeconds = Math.ceil(remainingMs / 1000);
 		const minutes = Math.floor(totalSeconds / 60);
@@ -162,9 +177,30 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 		return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 	});
 
+	private readonly recordingStatus = this.recordingService.recordingStatus.asReadonly();
+
+	protected readonly isRecording = computed(() => this.recordingStatus().status === RecordingState.STARTED);
+
+	/** Elapsed recording time, which {@link RecordingService} refreshes every second. */
+	protected readonly recordingElapsed = computed(() =>
+		this.isRecording() ? this.recordingStatus().startedAt : undefined
+	);
+
+	/** Published by the smart layout, which cannot render into the rail itself. */
+	protected readonly railHiddenParticipants = this.smartLayoutService.railHiddenParticipants;
+
+	/**
+	 * The rail is the home for meeting-wide status, and it only takes up room while it has
+	 * something to say.
+	 */
+	protected readonly showStatusRail = computed(
+		() => this.isRecording() || this.isEndingSoon() || this.railHiddenParticipants() !== undefined
+	);
+
 	// Constants
 	private static readonly SPINNER_DIAMETER = 50;
 	private static readonly ENTER_ANIMATION_CLASS = 'ov-fade-in-enter';
+	private static readonly ENDING_SOON_URGENT_MS = 60_000;
 
 	// *** Toolbar ***
 
@@ -498,6 +534,18 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 			.finally(() => {
 				this._transitionAfterDevicesReady();
 			});
+	}
+
+	/** Same destination the in-grid tile has: the list of who is in the meeting. */
+	protected openParticipantsPanel(): void {
+		this.panelService.togglePanel(PanelType.PARTICIPANTS);
+	}
+
+	/** Same destination the recording tag had in the toolbar: the recording activity. */
+	protected openRecordingActivityPanel(): void {
+		if (this.panelService.isActivitiesPanelOpened()) return;
+
+		this.panelService.togglePanel(PanelType.ACTIVITIES, 'recording');
 	}
 
 	/**

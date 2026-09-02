@@ -5,54 +5,95 @@
 	height: 100%;
 }
 #meeting-stage {
-	--ov-ending-soon-row-height: 52px;
+	--ov-status-rail-height: 52px;
+
+	// The ink that reads on a warn fill in both themes; there is no on-warn theme colour.
+	--ov-status-chip-warn-ink: #1f2020;
 
 	background-color: var(--ov-background-color);
 }
 
-.ending-soon-row {
+.status-rail {
 	display: flex;
 	align-items: center;
-	justify-content: flex-start;
-	height: var(--ov-ending-soon-row-height);
+	gap: 8px;
+	height: var(--ov-status-rail-height);
 	padding: 0 16px;
 }
 
-.ending-soon-badge {
+.status-rail-end {
 	display: flex;
 	align-items: center;
-	gap: 10px;
-	padding: 4px 16px 4px 4px;
-	border-radius: var(--ov-surface-radius);
-	width: fit-content;
-	background-color: var(--ov-warn-color);
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+	margin-left: auto;
+	min-width: 0;
 }
 
-.ending-soon-icon-badge {
+.status-chip {
 	display: flex;
 	align-items: center;
-	justify-content: center;
-	flex-shrink: 0;
-	width: 30px;
-	height: 30px;
-	border-radius: 50%;
-	background-color: color-mix(in srgb, var(--ov-warn-color) 30%, #000000);
+	gap: 8px;
+	height: 32px;
+	padding: 0 12px;
+	border-radius: var(--ov-surface-radius);
+	background-color: var(--ov-surface-color);
+	border: 1px solid var(--ov-border-color);
+	white-space: nowrap;
 
-	mat-icon {
-		font-size: 18px;
-		width: 18px;
-		height: 18px;
-		color: #ffffff;
+	.status-chip-icon {
+		font-size: 16px;
+		width: 16px;
+		height: 16px;
+		flex-shrink: 0;
+	}
+
+	.status-chip-label {
+		font-size: 13px;
+		color: var(--ov-text-secondary-color);
+	}
+
+	.status-chip-value {
+		font-size: 13px;
+		font-weight: 700;
+		color: var(--ov-text-primary-color);
+		font-variant-numeric: tabular-nums;
 	}
 }
 
-.ending-soon-time {
-	font-size: 14px;
-	font-weight: 600;
-	line-height: 1;
-	letter-spacing: 0.3px;
-	color: color-mix(in srgb, var(--ov-warn-color) 22%, #000000);
+.recording-chip {
+	cursor: pointer;
+	transition: background-color 0.2s ease;
+
+	&:hover {
+		background-color: var(--ov-hover-color);
+	}
+
+	.recording-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background-color: var(--ov-recording-color, var(--ov-error-color));
+		flex-shrink: 0;
+	}
+}
+
+// Calm while there is time to act: only the icon carries the warn colour.
+.ending-soon-chip .status-chip-icon {
+	color: var(--ov-warn-color);
+}
+
+// Last minute: the whole chip goes warn.
+.ending-soon-chip.urgent {
+	background-color: var(--ov-warn-color);
+	border-color: var(--ov-warn-color);
+
+	.status-chip-icon,
+	.status-chip-value {
+		color: var(--ov-status-chip-warn-ink);
+	}
+
+	.status-chip-label {
+		color: color-mix(in srgb, var(--ov-status-chip-warn-ink) 72%, transparent);
+	}
 }
 
 #pre-join-container {
@@ -137,10 +178,10 @@
 	overflow: hidden;
 }
 
-/* The ending-soon row is a real row, so the layout gives up its height instead of being covered. */
-#meeting-stage:has(.ending-soon-row) .sidenav-container {
-	height: calc(100% - 70px - var(--ov-ending-soon-row-height));
-	min-height: calc(100% - 70px - var(--ov-ending-soon-row-height));
+/* The status rail is a real row, so the layout gives up its height instead of being covered. */
+#meeting-stage:has(.status-rail) .sidenav-container {
+	height: calc(100% - 70px - var(--ov-status-rail-height));
+	min-height: calc(100% - 70px - var(--ov-status-rail-height));
 }
 
 .sidenav-menu {
@@ -187,7 +228,7 @@
 
 @media only screen and (max-width: 790px) {
 	#meeting-stage {
-		--ov-ending-soon-row-height: 44px;
+		--ov-status-rail-height: 44px;
 
 		width: 100%;
 	}

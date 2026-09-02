@@ -183,6 +183,19 @@ export class SmartLayoutComponent implements OnDestroy {
 	});
 
 	/**
+	 * The top-bar variant is rendered by the status rail, which lives outside the layout, so its
+	 * content is published rather than projected. The in-grid tile is unaffected.
+	 */
+	private readonly railHiddenParticipantsEffect = effect(() => {
+		const showsInRail = this.shouldShowHiddenParticipantsIndicator() && this.showTopBarHiddenParticipantsIndicator();
+		const summary = showsInRail
+			? { count: this.hiddenParticipantsCount(), names: this.hiddenParticipantNames() }
+			: undefined;
+
+		untracked(() => this.layoutService.setRailHiddenParticipants(summary));
+	});
+
+	/**
 	 * Returns a new identity order applying in-place replacements:
 	 * each departing participant (present in `previousOrder` but absent from `targetIds`)
 	 * is replaced by an arriving one at the same index, keeping all others at stable positions.
@@ -251,6 +264,7 @@ export class SmartLayoutComponent implements OnDestroy {
 
 	ngOnDestroy(): void {
 		this.cleanupAudioElements(new Set());
+		this.layoutService.setRailHiddenParticipants(undefined);
 	}
 
 	private manageAudioTracks(participants: ParticipantModel[], container: HTMLElement | null): void {

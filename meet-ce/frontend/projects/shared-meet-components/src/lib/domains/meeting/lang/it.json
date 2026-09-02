@@ -8,7 +8,8 @@
 		"ENDING_SOON_ONE_MINUTE": "La riunione terminerà tra circa 1 minuto",
 		"ENDING_SOON_MANY_MINUTES": "La riunione terminerà tra circa {minutes} minuti",
 		"ENDING_SOON_CONFIRM": "OK",
-		"ENDING_SOON_BADGE_ENDING": "Terminazione in corso..."
+		"ENDING_SOON_BADGE_LABEL": "Termina in",
+		"ENDING_SOON_BADGE_ENDING": "In chiusura"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Partecipa alla riunione",

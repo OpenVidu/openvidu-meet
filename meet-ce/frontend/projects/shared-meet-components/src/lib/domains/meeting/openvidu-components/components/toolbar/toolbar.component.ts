@@ -1,4 +1,4 @@
-import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
 	AfterViewInit,
 	Component,
@@ -57,7 +57,6 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 @Component({
 	selector: 'ov-toolbar',
 	imports: [
-		DatePipe,
 		MatIconModule,
 		MatToolbarModule,
 		FallbackLogoDirective,
@@ -292,14 +291,10 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 */
 	recordingStatus = this.recordingService.recordingStatus.asReadonly();
 
-	isRecordingStarted = computed(() => this.recordingStatus().status === RecordingState.STARTED);
-
 	/**
 	 * @ignore
 	 */
 	_recordingStatus = RecordingState;
-
-	recordingTime: WritableSignal<Date | undefined> = signal(undefined);
 
 	readonly totalParticipants = this.participantService.totalParticipantsSignal;
 
@@ -343,13 +338,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 		// Do this last to avoid circular reads
 		this.lastKnownChatMessageCount.set(currentMessageCount);
 		this.messageList.set(messages);
-	});
-	private readonly recordingStatusEffect = effect(() => {
-		const { status, startedAt } = this.recordingStatus();
-
-		if (status === RecordingState.STARTED && startedAt) {
-			this.recordingTime.set(startedAt);
-		}
 	});
 	/**
 	 * Closes any open panel when the connection drops. `isConnectionLost` is a boolean signal, so this

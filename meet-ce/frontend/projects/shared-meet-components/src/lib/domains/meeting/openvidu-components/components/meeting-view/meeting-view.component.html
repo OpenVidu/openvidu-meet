@@ -47,16 +47,39 @@
 			<ov-landscape-warning />
 		}
 		<div id="meeting-stage" [animate.enter]="enterAnimationClass" [animate.leave]="'ov-fade-out-200'">
-			<!-- Meeting ending soon: its own row above the layout, so it neither covers a
-			     participant nor depends on a toolbar the host may not render. -->
-			@if (isEndingSoon()) {
-				<div id="ending-soon-row" class="ending-soon-row">
-					<div class="ending-soon-badge">
-						<span class="ending-soon-icon-badge">
-							<mat-icon>schedule</mat-icon>
-						</span>
-						<span class="ending-soon-time">{{ endingSoonLabel() }}</span>
-					</div>
+			<!-- Status rail: every meeting-wide status, in its own row above the layout, so nothing
+			     covers a participant and nothing depends on a toolbar the host may not render. -->
+			@if (showStatusRail()) {
+				<div id="status-rail" class="status-rail">
+					@if (isRecording()) {
+						<div id="recording-tag" class="status-chip recording-chip" (click)="openRecordingActivityPanel()">
+							<span class="recording-dot"></span>
+							<span class="status-chip-value">REC</span>
+							@if (recordingElapsed(); as elapsed) {
+								<span class="status-chip-label">{{ elapsed | date: 'H:mm:ss' }}</span>
+							}
+						</div>
+					}
+
+					@if (isEndingSoon()) {
+						<div class="status-chip ending-soon-chip" [class.urgent]="isEndingSoonUrgent()">
+							<mat-icon class="status-chip-icon">schedule</mat-icon>
+							<span class="status-chip-label">{{ endingSoonLabel() }}</span>
+							@if (endingSoonTime(); as time) {
+								<span class="status-chip-value">{{ time }}</span>
+							}
+						</div>
+					}
+
+					@if (railHiddenParticipants(); as hidden) {
+						<ov-hidden-participants-indicator
+							class="status-rail-end"
+							mode="topbar"
+							[count]="hidden.count"
+							[hiddenParticipantNames]="hidden.names"
+							(clicked)="openParticipantsPanel()"
+						/>
+					}
 				</div>
 			}
 			<mat-sidenav-container
