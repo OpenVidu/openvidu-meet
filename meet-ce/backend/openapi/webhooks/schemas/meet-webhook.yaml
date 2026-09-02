@@ -24,9 +24,15 @@ MeetWebhookEvent:
                       - description: Data for recording-related events (started, updated, ended)
                       - $ref: '../../recordings/schemas/meet-recording.yaml'
                 - allOf:
-                      - title: Room Event Data
-                      - description: Data for room-related events (meeting started, meeting ended)
+                      - title: Meeting Started Event Data
+                      - description: Data for the meetingStarted event
                       - $ref: '../../rooms/schemas/meet-room.yaml'
+                - allOf:
+                      - title: Meeting Ended Event Data
+                      - description: >
+                            Data for the meetingEnded event: the room, plus `cause` when the meeting
+                            was force-ended by the server instead of ending normally
+                      - $ref: './meet-meeting-ended-payload.yaml'
                 - allOf:
                       - title: Participant Joined Event Data
                       - description: Data for the participantJoined event
@@ -42,6 +48,6 @@ MeetWebhookEvent:
                     recordingUpdated: '../../recordings/schemas/meet-recording.yaml'
                     recordingEnded: '../../recordings/schemas/meet-recording.yaml'
                     meetingStarted: '../../rooms/schemas/meet-room.yaml'
-                    meetingEnded: '../../rooms/schemas/meet-room.yaml'
+                    meetingEnded: './meet-meeting-ended-payload.yaml'
                     participantJoined: './meet-participant-joined-event.yaml'
                     participantLeft: './meet-participant-left-event.yaml'

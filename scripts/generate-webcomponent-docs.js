@@ -383,10 +383,13 @@ class WebComponentDocGenerator {
     }
 
     /**
-     * When a command may be sent, from its `@prejoin` annotation.
+     * What a command requires to be accepted. A `@prejoin` command is accepted earlier than the
+     * rest, but not unrestricted: outside those two phases it is rejected like any other.
      */
     getRestriction(item) {
-        return item.isPrejoin ? '-' : 'Requires having joined the meeting';
+        return item.isPrejoin
+            ? 'Requires the prejoin screen or an ongoing meeting'
+            : 'Requires having joined the meeting';
     }
 
     /**

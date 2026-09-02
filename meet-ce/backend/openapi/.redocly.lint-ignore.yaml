@@ -34,6 +34,5 @@ auth/auth.yaml:
     - '#/~1auth~1logout/post'
 config/config.yaml:
   security-defined:
-    - '#/~1config~1webhooks~1test/post'
     - '#/~1config~1security/get'
     - '#/~1config~1captions/get'

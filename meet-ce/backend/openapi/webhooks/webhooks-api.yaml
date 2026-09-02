@@ -23,7 +23,7 @@
             '403':
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '409':
-                $ref: './responses/errors/max-webhooks-reached.yaml'
+                $ref: './responses/errors/webhook-conflict.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
             '429':
@@ -140,9 +140,13 @@
             Sends a test event to the stored URL of a registered webhook, to verify it is
             reachable and answers successfully.
 
-            The delivery uses the same envelope, signature and retry policy as a real webhook event,
-            but its content is synthetic: `event` is the fixed literal `testEvent`, which is **not**
-            a member of the `event` enum documented on `MeetWebhookEvent`, and `data` is always
+            The delivery carries the same envelope and signature headers as a real webhook event, so
+            it exercises your signature verification, but **it is a single attempt**: unlike a real
+            event, a failed test is not retried, and the failure is reported to this call instead
+            (`400`) rather than only logged server-side. The 5-second per-request timeout is the same.
+
+            Its content is synthetic: `event` is the fixed literal `testEvent`, which is **not** a
+            member of the `event` enum documented on `MeetWebhookEvent`, and `data` is always
             `{ "message": "This is a test webhook event" }`. A receiver that validates incoming
             `event` values strictly against that enum should still accept `testEvent` as a
             recognized, benign test delivery rather than reject it.
@@ -157,7 +161,7 @@
             '200':
                 $ref: './responses/success/test-webhook.yaml'
             '400':
-                $ref: './responses/errors/webhook-url-unreachable.yaml'
+                $ref: './responses/errors/webhook-not-delivered.yaml'
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':

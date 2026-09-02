@@ -1,0 +1,21 @@
+description: |
+    Webhook conflict error. The webhook could not be registered, for one of two reasons:
+
+    * **The maximum number of webhooks has been reached** for this deployment.
+    * **Another registration was in progress**: they are serialized so that concurrent calls cannot
+      exceed the maximum, and the call that loses the race is asked to retry.
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        examples:
+            max_webhooks_reached:
+                summary: The maximum number of webhooks has been reached
+                value:
+                    error: 'Webhook Error'
+                    message: 'The maximum number of registered webhooks (10) has been reached'
+            registration_in_progress:
+                summary: Another registration was in progress
+                value:
+                    error: 'Webhook Error'
+                    message: 'Another webhook registration is in progress, please retry'
