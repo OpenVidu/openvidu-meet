@@ -240,7 +240,7 @@ export class MeetingLiveKitService {
 	/**
 	 * Whether the meeting rejected this participant because it is full. LiveKit reports its own
 	 * `maxParticipants` rejection as an unexplained server error, indistinguishable from any other
-	 * one, so the occupancy is read from Meet's API instead — every other failure reason (an
+	 * one, so the occupancy is read from Meet's API instead. Every other failure reason (an
 	 * unreachable server, a timeout, a rejected token, a cancelled attempt) is explained already and
 	 * never reaches that read.
 	 */

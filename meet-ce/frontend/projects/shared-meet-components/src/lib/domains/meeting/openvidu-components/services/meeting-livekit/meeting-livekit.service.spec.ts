@@ -278,9 +278,9 @@ describe('MeetingLiveKitService', () => {
 
 	/**
 	 * A full meeting and a broken network both reach connect() as a rejection, and only the first one
-	 * deserves the room-full message. LiveKit cannot tell them apart on its own — it reports its
+	 * deserves the room-full message. LiveKit cannot tell them apart on its own: it reports its
 	 * `maxParticipants` rejection as `InternalError`, the same bucket as any unexplained server
-	 * failure — so occupancy is confirmed against Meet's own API before that message is shown.
+	 * failure, so occupancy is confirmed against Meet's own API before that message is shown.
 	 */
 	describe('connect()', () => {
 		/** What livekit-client throws when the server refused the upgrade without explaining itself. */
@@ -338,7 +338,7 @@ describe('MeetingLiveKitService', () => {
 		});
 
 		// Reasons LiveKit already explains: asking Meet about them would delay the error the
-		// participant is waiting for — behind an unreachable server, on the very request that cannot
+		// participant is waiting for, behind an unreachable server, on the very request that cannot
 		// answer either.
 		it('does not ask about occupancy when the server was unreachable', async () => {
 			livekitSdkService.connectRoom.and.rejectWith(ConnectionError.serverUnreachable('down'));

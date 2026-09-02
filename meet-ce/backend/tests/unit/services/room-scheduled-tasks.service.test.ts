@@ -203,7 +203,7 @@ describe('RoomScheduledTasksService.reconcileOpenRoomsGC (C2: lost room_started 
 
 /**
  * G1 (MEET-BRANCH-AUDIT-FINDINGS.md): a LiveKit API failure must read as "existence unknown", never
- * as "these rooms are gone" — `LiveKitService.roomsExist` now rethrows instead of defaulting every
+ * as "these rooms are gone". `LiveKitService.roomsExist` now rethrows instead of defaulting every
  * room to `false`, so a network blip or a LiveKit restart during this sweep can no longer be
  * mistaken for every active room having ended (which would fire spurious `meetingEnded` webhooks and,
  * for `meetingEndAction=DELETE` rooms, delete recordings for meetings that are still running).

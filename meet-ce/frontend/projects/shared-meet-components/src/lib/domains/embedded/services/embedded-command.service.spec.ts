@@ -354,7 +354,7 @@ describe('EmbeddedCommandService', () => {
 		});
 
 		// A6 (MEET-BRANCH-AUDIT-FINDINGS.md): the webcomponent's element methods are a JS API, not a
-		// typed one — `el.mediaToggleAudio('false')` reaches this service with a truthy string, not a
+		// typed one: `el.mediaToggleAudio('false')` reaches this service with a truthy string, not a
 		// boolean. It must be treated the same as "omitted" (toggle), not as `active`.
 		it('mediaToggleAudio treats a non-boolean active value as omitted (toggle), not as truthy', async () => {
 			microphoneEnabled.set(true);
