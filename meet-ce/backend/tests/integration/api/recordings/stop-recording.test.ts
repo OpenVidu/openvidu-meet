@@ -82,15 +82,14 @@ describe('Recording API Tests', () => {
 				expect(response.body.message).toContain('not found');
 			});
 
-			it('should return 400 when recording is already stopped', async () => {
+			it('should return 409 when recording is already stopped', async () => {
 				// First stop the recording
 				await stopRecording(recordingId);
 
 				// Try to stop it again
 				const response = await stopRecording(recordingId);
 
-				console.log('Response:', response.body);
-				expectErrorResponse(response, 409, '', `Recording '${recordingId}' is already stopped`);
+				expectErrorResponse(response, 409, 'Recording Error', `Recording '${recordingId}' is already stopped`);
 			});
 
 			it('should return 404 when recordingId is not in the correct format', async () => {

@@ -56,11 +56,7 @@ describe('Recording API Tests', () => {
 
 			// Get the recording URL with public access
 			const response = await getRecordingUrl(recordingId);
-			expectValidGetRecordingUrlResponse(response, recordingId);
-
-			// Parse the URL to extract the secret from the query parameters
-			const parsedUrl = new URL(response.body.url);
-			const secret = parsedUrl.searchParams.get('recordingSecret');
+			const secret = expectValidGetRecordingUrlResponse(response, recordingId);
 
 			// Verify that the URL is publicly accessible
 			const recordingResponse = await request(app)
@@ -98,11 +94,7 @@ describe('Recording API Tests', () => {
 
 			// Get the recording URL with private access
 			const response = await getRecordingUrl(recordingId, true);
-			expectValidGetRecordingUrlResponse(response, recordingId);
-
-			// Parse the URL to extract the secret from the query parameters
-			const parsedUrl = new URL(response.body.url);
-			const secret = parsedUrl.searchParams.get('recordingSecret');
+			const secret = expectValidGetRecordingUrlResponse(response, recordingId);
 
 			// Verify that the URL is not publicly accessible
 			let recordingResponse = await request(app)
@@ -131,11 +123,7 @@ describe('Recording API Tests', () => {
 
 			// Get the recording URL with private access
 			const response = await getRecordingUrl(recordingId, true);
-			expectValidGetRecordingUrlResponse(response, recordingId);
-
-			// Parse the URL to extract the secret from the query parameters
-			const parsedUrl = new URL(response.body.url);
-			const secret = parsedUrl.searchParams.get('recordingSecret');
+			const secret = expectValidGetRecordingUrlResponse(response, recordingId);
 
 			// Verify that the URL is not publicly accessible
 			let recordingResponse = await request(app)

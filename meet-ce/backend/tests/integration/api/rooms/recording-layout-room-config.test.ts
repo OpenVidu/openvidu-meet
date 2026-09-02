@@ -39,7 +39,10 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false },
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, 'Room with Default Layout', 'room_with_default_layout', expectedConfig);
+			expectValidRoom(room, 'Room with Default Layout', {
+				roomIdPrefix: 'room_with_default_layout',
+				config: expectedConfig
+			});
 		});
 
 		it('Should create a room with speaker layout', async () => {
@@ -66,7 +69,10 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false },
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, 'Speaker Layout Room', 'speaker_layout_room', expectedConfig);
+			expectValidRoom(room, 'Speaker Layout Room', {
+				roomIdPrefix: 'speaker_layout_room',
+				config: expectedConfig
+			});
 		});
 
 		it('Should create a room with single-speaker layout', async () => {
@@ -93,7 +99,10 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false },
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, 'Single Speaker Layout Room', 'single_speaker_layout_room', expectedConfig);
+			expectValidRoom(room, 'Single Speaker Layout Room', {
+				roomIdPrefix: 'single_speaker_layout_room',
+				config: expectedConfig
+			});
 		});
 	});
 });

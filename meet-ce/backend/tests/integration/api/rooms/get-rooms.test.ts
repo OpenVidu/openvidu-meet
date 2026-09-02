@@ -55,7 +55,7 @@ describe('Room API Tests', () => {
 
 			const response = await getRooms();
 			expectSuccessRoomsResponse(response, 1, 10, false, false);
-			expectValidRoom(response.body.rooms[0], 'test-room', 'test_room');
+			expectValidRoom(response.body.rooms[0], 'test-room', { roomIdPrefix: 'test_room' });
 			expectExtraFieldsInResponse(response.body);
 		});
 
@@ -189,7 +189,7 @@ describe('Room API Tests', () => {
 			expectSuccessRoomsResponse(response, 3, 3, true, true);
 			// Rooms are ordered by creation date descending (newest first)
 			rooms.forEach((room: MeetRoom, i: number) => {
-				expectValidRoom(room, `test-room-${5 - i}`, undefined, undefined, validAutoDeletionDate);
+				expectValidRoom(room, `test-room-${5 - i}`, { autoDeletionDate: validAutoDeletionDate });
 			});
 
 			const nextPageToken = pagination.nextPageToken;
@@ -197,7 +197,7 @@ describe('Room API Tests', () => {
 			({ pagination, rooms } = response.body);
 			expectSuccessRoomsResponse(response, 3, 3, false, false);
 			rooms.forEach((room: MeetRoom, i: number) => {
-				expectValidRoom(room, `test-room-${2 - i}`, undefined, undefined, validAutoDeletionDate);
+				expectValidRoom(room, `test-room-${2 - i}`, { autoDeletionDate: validAutoDeletionDate });
 			});
 		});
 
@@ -279,18 +279,18 @@ describe('Room API Tests', () => {
 			let rooms = response.body.rooms;
 
 			expectSuccessRoomsResponse(response, 3, 10, false, false);
-			expectValidRoom(rooms[0], 'room-without-date', undefined, undefined, undefined);
-			expectValidRoom(rooms[1], 'room-2h', undefined, undefined, date1);
-			expectValidRoom(rooms[2], 'room-3h', undefined, undefined, date2);
+			expectValidRoom(rooms[0], 'room-without-date');
+			expectValidRoom(rooms[1], 'room-2h', { autoDeletionDate: date1 });
+			expectValidRoom(rooms[2], 'room-3h', { autoDeletionDate: date2 });
 
 			// Test descending
 			response = await getRooms({ sortField: 'autoDeletionDate', sortOrder: 'desc' });
 			rooms = response.body.rooms;
 
 			expectSuccessRoomsResponse(response, 3, 10, false, false);
-			expectValidRoom(rooms[0], 'room-3h', undefined, undefined, date2);
-			expectValidRoom(rooms[1], 'room-2h', undefined, undefined, date1);
-			expectValidRoom(rooms[2], 'room-without-date', undefined, undefined, undefined);
+			expectValidRoom(rooms[0], 'room-3h', { autoDeletionDate: date2 });
+			expectValidRoom(rooms[1], 'room-2h', { autoDeletionDate: date1 });
+			expectValidRoom(rooms[2], 'room-without-date');
 		});
 	});
 
@@ -610,7 +610,7 @@ describe('Room API Tests', () => {
 			expectSuccessRoomsResponse(response, 1, 10, false, false);
 
 			const room = response.body.rooms[0];
-			expectValidRoom(room, 'no-extrafields-list-test', 'no_extrafields_list_test');
+			expectValidRoom(room, 'no-extrafields-list-test', { roomIdPrefix: 'no_extrafields_list_test' });
 		});
 
 		it('should return rooms with full config when using extraFields=config', async () => {
@@ -635,7 +635,10 @@ describe('Room API Tests', () => {
 			expectSuccessRoomsResponse(response, 1, 10, false, false);
 
 			const room = response.body.rooms[0];
-			expectValidRoom(room, 'extrafields-list-test', 'extrafields_list_test', customConfig);
+			expectValidRoom(room, 'extrafields-list-test', {
+				roomIdPrefix: 'extrafields_list_test',
+				config: customConfig
+			});
 		});
 
 		it('should not fail when extraFields has invalid values', async () => {
@@ -646,7 +649,9 @@ describe('Room API Tests', () => {
 			const response = await getRooms({ extraFields: 'invalid,wrongparam' });
 			expectSuccessRoomsResponse(response, 1, 10, false, false);
 
-			expectValidRoom(response.body.rooms[0], 'invalid-extrafields-list', 'invalid_extrafields_list');
+			expectValidRoom(response.body.rooms[0], 'invalid-extrafields-list', {
+				roomIdPrefix: 'invalid_extrafields_list'
+			});
 		});
 
 		it('should return multiple rooms with full config when using extraFields=config', async () => {
@@ -689,8 +694,8 @@ describe('Room API Tests', () => {
 			expect(room1).toBeDefined();
 			expect(room2).toBeDefined();
 
-			expectValidRoom(room1, 'multi-extrafields-1', 'multi_extrafields_1', config1);
-			expectValidRoom(room2, 'multi-extrafields-2', 'multi_extrafields_2', config2);
+			expectValidRoom(room1, 'multi-extrafields-1', { roomIdPrefix: 'multi_extrafields_1', config: config1 });
+			expectValidRoom(room2, 'multi-extrafields-2', { roomIdPrefix: 'multi_extrafields_2', config: config2 });
 		});
 	});
 });

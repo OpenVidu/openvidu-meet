@@ -92,16 +92,10 @@ describe('Room API Tests', () => {
 					'successCode',
 					MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED
 				);
-				expectValidRoom(
-					response.body.room,
-					roomName,
-					undefined,
-					undefined,
-					undefined,
-					undefined,
-					MeetRoomStatus.ACTIVE_MEETING,
-					MeetingEndAction.DELETE
-				);
+				expectValidRoom(response.body.room, roomName, {
+					status: MeetRoomStatus.ACTIVE_MEETING,
+					meetingEndAction: MeetingEndAction.DELETE
+				});
 				expectExtraFieldsInResponse(response.body.room);
 
 				// End meeting and check the room is deleted
@@ -304,16 +298,10 @@ describe('Room API Tests', () => {
 				expect(response.body).toHaveProperty('successCode', MeetRoomDeletionSuccessCode.ROOM_CLOSED);
 				expect(response.body).toHaveProperty('room');
 				// Check that the room is closed and recordings are not deleted
-				expectValidRoom(
-					response.body.room,
-					roomName,
-					undefined,
-					undefined,
-					undefined,
-					undefined,
-					MeetRoomStatus.CLOSED,
-					MeetingEndAction.NONE
-				);
+				expectValidRoom(response.body.room, roomName, {
+					status: MeetRoomStatus.CLOSED,
+					meetingEndAction: MeetingEndAction.NONE
+				});
 				expectExtraFieldsInResponse(response.body.room);
 
 				const recordingsResponse = await getAllRecordings({ roomId, maxItems: 1 });
@@ -373,16 +361,10 @@ describe('Room API Tests', () => {
 					'successCode',
 					MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_CLOSED
 				);
-				expectValidRoom(
-					response.body.room,
-					roomName,
-					undefined,
-					undefined,
-					undefined,
-					undefined,
-					MeetRoomStatus.ACTIVE_MEETING,
-					MeetingEndAction.CLOSE
-				);
+				expectValidRoom(response.body.room, roomName, {
+					status: MeetRoomStatus.ACTIVE_MEETING,
+					meetingEndAction: MeetingEndAction.CLOSE
+				});
 				expectExtraFieldsInResponse(response.body.room);
 				await waitForParticipantsToDisconnect([roomId]); // Wait for participants to be disconnected after meeting is closed
 				await waitForRoomToClose(roomId); // Wait for the room status to be updated to closed
@@ -390,16 +372,10 @@ describe('Room API Tests', () => {
 				// Check that the room is closed and recordings are not deleted
 				const roomResponse = await getRoom(roomId);
 				expect(roomResponse.status).toBe(200);
-				expectValidRoom(
-					roomResponse.body,
-					roomName,
-					undefined,
-					undefined,
-					undefined,
-					undefined,
-					MeetRoomStatus.CLOSED,
-					MeetingEndAction.NONE
-				);
+				expectValidRoom(roomResponse.body, roomName, {
+					status: MeetRoomStatus.CLOSED,
+					meetingEndAction: MeetingEndAction.NONE
+				});
 
 				const recordingsResponse = await getAllRecordings({ roomId, maxItems: 1 });
 				expectSuccessListRecordingResponse(recordingsResponse, 1, false, false, 1);
@@ -427,16 +403,10 @@ describe('Room API Tests', () => {
 					'successCode',
 					MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_SCHEDULED_TO_BE_DELETED
 				);
-				expectValidRoom(
-					response.body.room,
-					roomName,
-					undefined,
-					undefined,
-					undefined,
-					undefined,
-					MeetRoomStatus.ACTIVE_MEETING,
-					MeetingEndAction.DELETE
-				);
+				expectValidRoom(response.body.room, roomName, {
+					status: MeetRoomStatus.ACTIVE_MEETING,
+					meetingEndAction: MeetingEndAction.DELETE
+				});
 				expectExtraFieldsInResponse(response.body.room);
 
 				// End meeting and check the room and recordings are deleted
@@ -458,16 +428,10 @@ describe('Room API Tests', () => {
 					'successCode',
 					MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_CLOSED
 				);
-				expectValidRoom(
-					response.body.room,
-					roomName,
-					undefined,
-					undefined,
-					undefined,
-					undefined,
-					MeetRoomStatus.ACTIVE_MEETING,
-					MeetingEndAction.CLOSE
-				);
+				expectValidRoom(response.body.room, roomName, {
+					status: MeetRoomStatus.ACTIVE_MEETING,
+					meetingEndAction: MeetingEndAction.CLOSE
+				});
 				expectExtraFieldsInResponse(response.body.room);
 
 				// End meeting and check that the room is closed and recordings are not deleted
@@ -494,16 +458,10 @@ describe('Room API Tests', () => {
 				}
 
 				expect(roomResponse!.status).toBe(200);
-				expectValidRoom(
-					roomResponse!.body,
-					roomName,
-					undefined,
-					undefined,
-					undefined,
-					undefined,
-					MeetRoomStatus.CLOSED,
-					MeetingEndAction.NONE
-				);
+				expectValidRoom(roomResponse!.body, roomName, {
+					status: MeetRoomStatus.CLOSED,
+					meetingEndAction: MeetingEndAction.NONE
+				});
 
 				const recordingsResponse = await getAllRecordings({ roomId, maxItems: 1 });
 				expectSuccessListRecordingResponse(recordingsResponse, 1, false, false, 1);
