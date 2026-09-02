@@ -38,6 +38,7 @@ import {
 	LocalMediaControlService,
 	LocalMediaIntentService,
 	LocalMediaStateService,
+	MeetingEndingSoonService,
 	ParticipantLeftReason,
 	RoomEvent,
 	Track,
@@ -70,6 +71,7 @@ export class MeetingEventHandlerService {
 	protected localMediaState = inject(LocalMediaStateService);
 	protected localMediaControl = inject(LocalMediaControlService);
 	protected mediaIntent = inject(LocalMediaIntentService);
+	protected meetingEndingSoon = inject(MeetingEndingSoonService);
 
 	// ============================================
 	// PUBLIC METHODS - Room Event Handlers
@@ -434,9 +436,10 @@ export class MeetingEventHandlerService {
 
 	/**
 	 * Warns the user that the meeting is about to reach its room's duration limit
-	 * (`maxDurationMinutes`) and will be ended for every participant. The backend sends this signal
-	 * once per meeting to the whole room, so everyone sees the same warning. Also records the cause
-	 * locally (see {@link MeetingEndedBy}) so the eventual `left`/`meetingLeft` event this participant
+	 * (`maxDurationMinutes`) and will be ended for every participant, via a dialog and a countdown
+	 * badge in the toolbar ({@link MeetingEndingSoonService}). The backend sends this signal once per
+	 * meeting to the whole room, so everyone sees the same warning. Also records the cause locally
+	 * (see {@link MeetingEndedBy}) so the eventual `left`/`meetingLeft` event this participant
 	 * receives is attributed correctly instead of reading as a moderator's end.
 	 */
 	private handleMeetingEndingSoon(event: MeetMeetingEndingSoonPayload): void {
@@ -447,14 +450,17 @@ export class MeetingEventHandlerService {
 		}
 
 		this.meetingContext.setMeetingEndedBy('duration');
+		this.meetingEndingSoon.start(event.remainingMs);
 
+		const remainingMinutes = Math.ceil(event.remainingMs / 60_000);
 		const message =
-			event.remainingMinutes === 1
+			remainingMinutes === 1
 				? this.translateService.translate('ROOM.ENDING_SOON_ONE_MINUTE')
 				: this.translateService
 						.translate('ROOM.ENDING_SOON_MANY_MINUTES')
-						.replace('{minutes}', `${event.remainingMinutes}`);
+						.replace('{minutes}', `${remainingMinutes}`);
 		this.notificationService.showDialog({
+			icon: 'schedule',
 			title: this.translateService.translate('ROOM.ENDING_SOON_TITLE'),
 			message,
 			showCancelButton: false,

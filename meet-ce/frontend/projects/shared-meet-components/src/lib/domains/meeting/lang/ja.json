@@ -7,7 +7,8 @@
 		"ENDING_SOON_TITLE": "まもなく会議が終了します",
 		"ENDING_SOON_ONE_MINUTE": "会議はあと約1分で終了します",
 		"ENDING_SOON_MANY_MINUTES": "会議はあと約{minutes}分で終了します",
-		"ENDING_SOON_CONFIRM": "OK"
+		"ENDING_SOON_CONFIRM": "OK",
+		"ENDING_SOON_BADGE_ENDING": "終了中..."
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "会議に参加する",

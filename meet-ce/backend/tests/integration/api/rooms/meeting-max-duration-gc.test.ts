@@ -116,7 +116,12 @@ describe('Meeting Max Duration GC Tests', () => {
 
 		const warningCalls = sendWarningSpy.mock.calls.filter(([roomId]) => roomId === room.roomId);
 		expect(warningCalls).toHaveLength(1);
-		expect(warningCalls[0][1]).toBe(remainingMinutes);
+
+		// remainingMs is exact, not rounded: it must be at most the requested 1 minute, and no more
+		// than a few seconds under it (the time this test itself took to reach the assertion)
+		const remainingMs = warningCalls[0][1];
+		expect(remainingMs).toBeLessThanOrEqual(remainingMinutes * 60_000);
+		expect(remainingMs).toBeGreaterThan(remainingMinutes * 60_000 - 5_000);
 
 		// The meeting was warned, not ended
 		expect(await livekitService.roomExists(room.roomId)).toBe(true);

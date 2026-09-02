@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import {
 	AfterViewInit,
 	Component,
+	computed,
 	contentChild,
 	effect,
 	ElementRef,
@@ -58,6 +59,7 @@ import { ActionService } from '../../services/action/action.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import type { Room } from '../../services/livekit';
+import { MeetingEndingSoonService } from '../../services/meeting-ending-soon/meeting-ending-soon.service';
 import { MeetingEventsService } from '../../services/meeting-events/meeting-events.service';
 import { LocalMediaIntentService } from '../../services/local-media-intent/local-media-intent.service';
 import { LocalTrackService } from '../../services/local-track/local-track.service';
@@ -130,8 +132,35 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	private readonly backgroundService = inject(VirtualBackgroundService);
 	private readonly meetingEventsService = inject(MeetingEventsService);
 	private readonly translateService = inject(MeetingTranslateService);
+	private readonly meetingEndingSoonService = inject(MeetingEndingSoonService);
 	protected readonly viewportService = inject(ViewportService);
 	readonly templateRegistry = inject(TemplateRegistryService);
+
+	private readonly endingSoonRemainingMs = this.meetingEndingSoonService.remainingMs.asReadonly();
+
+	protected readonly isEndingSoon = computed(() => this.endingSoonRemainingMs() !== undefined);
+
+	/**
+	 * `mm:ss` while counting down, or the "ending" label once it reaches zero: the real end is
+	 * still up to the backend's own sweep, so this can sit at zero for a little while before the
+	 * meeting actually closes. Rendered here (not in the toolbar) so it stays visible even when a
+	 * customization or embedding host doesn't render a toolbar at all.
+	 */
+	protected readonly endingSoonLabel = computed(() => {
+		const remainingMs = this.endingSoonRemainingMs();
+
+		if (remainingMs === undefined) return undefined;
+
+		if (remainingMs <= 0) {
+			return this.translateService.translate('ROOM.ENDING_SOON_BADGE_ENDING');
+		}
+
+		const totalSeconds = Math.ceil(remainingMs / 1000);
+		const minutes = Math.floor(totalSeconds / 60);
+		const seconds = totalSeconds % 60;
+
+		return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+	});
 
 	// Constants
 	private static readonly SPINNER_DIAMETER = 50;

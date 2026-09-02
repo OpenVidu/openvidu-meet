@@ -373,7 +373,7 @@ export class RoomScheduledTasksService {
 		this.logger.info(
 			`Meeting in room '${roomId}' reaches its duration limit in ~${remainingMinutes} min. Warning its participants.`
 		);
-		await this.frontendEventService.sendMeetingEndingSoonSignal(roomId, remainingMinutes);
+		await this.frontendEventService.sendMeetingEndingSoonSignal(roomId, remainingMs);
 		await this.redisService.set(warningKey, meetingId, ms(INTERNAL_CONFIG.MEETING_DURATION_WARNING_SENT_TTL));
 	}
 

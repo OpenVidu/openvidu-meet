@@ -5,7 +5,54 @@
 	height: 100%;
 }
 #meeting-stage {
+	--ov-ending-soon-row-height: 52px;
+
 	background-color: var(--ov-background-color);
+}
+
+.ending-soon-row {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	height: var(--ov-ending-soon-row-height);
+	padding: 0 16px;
+}
+
+.ending-soon-badge {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 4px 16px 4px 4px;
+	border-radius: var(--ov-surface-radius);
+	width: fit-content;
+	background-color: var(--ov-warn-color);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.ending-soon-icon-badge {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 30px;
+	height: 30px;
+	border-radius: 50%;
+	background-color: color-mix(in srgb, var(--ov-warn-color) 30%, #000000);
+
+	mat-icon {
+		font-size: 18px;
+		width: 18px;
+		height: 18px;
+		color: #ffffff;
+	}
+}
+
+.ending-soon-time {
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1;
+	letter-spacing: 0.3px;
+	color: color-mix(in srgb, var(--ov-warn-color) 22%, #000000);
 }
 
 #pre-join-container {
@@ -90,6 +137,12 @@
 	overflow: hidden;
 }
 
+/* The ending-soon row is a real row, so the layout gives up its height instead of being covered. */
+#meeting-stage:has(.ending-soon-row) .sidenav-container {
+	height: calc(100% - 70px - var(--ov-ending-soon-row-height));
+	min-height: calc(100% - 70px - var(--ov-ending-soon-row-height));
+}
+
 .sidenav-menu {
 	display: flex;
 	align-items: center;
@@ -134,6 +187,8 @@
 
 @media only screen and (max-width: 790px) {
 	#meeting-stage {
+		--ov-ending-soon-row-height: 44px;
+
 		width: 100%;
 	}
 

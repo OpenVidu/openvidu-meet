@@ -55,6 +55,7 @@ export * from './services/local-media-control/local-media-control.service';
 export * from './services/local-media-intent/local-media-intent.service';
 export * from './services/local-media-state/local-media-state.service';
 export * from './services/local-track/local-track.service';
+export * from './services/meeting-ending-soon/meeting-ending-soon.service';
 export * from './services/meeting-livekit/meeting-livekit.service';
 export * from './services/panel/panel.service';
 export * from './services/participant/participant.service';

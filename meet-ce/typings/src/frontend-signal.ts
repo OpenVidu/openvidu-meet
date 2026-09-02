@@ -103,8 +103,8 @@ export interface MeetParticipantMediaMutedPayload {
 export interface MeetMeetingEndingSoonPayload {
 	/** ID of the room whose meeting is about to be ended */
 	roomId: string;
-	/** Approximate minutes (rounded up, always >= 1) until the meeting is force-ended */
-	remainingMinutes: number;
+	/** Exact milliseconds until the meeting is force-ended, as measured when the warning was sent */
+	remainingMs: number;
 	/** Timestamp in milliseconds when the warning was emitted */
 	timestamp: number;
 }

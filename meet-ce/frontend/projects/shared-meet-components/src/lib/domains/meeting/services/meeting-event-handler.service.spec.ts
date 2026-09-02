@@ -24,6 +24,7 @@ import {
 	LocalMediaControlService,
 	LocalMediaIntentService,
 	LocalMediaStateService,
+	MeetingEndingSoonService,
 	ParticipantLeftReason
 } from '../openvidu-components';
 import { MeetingContextService, MeetingEndedBy } from './meeting-context.service';
@@ -46,6 +47,7 @@ describe('MeetingEventHandlerService', () => {
 	let eventBus: EmbeddedEventBusService;
 	let mediaControl: jasmine.SpyObj<LocalMediaControlService>;
 	let notificationService: jasmine.SpyObj<NotificationService>;
+	let meetingEndingSoon: jasmine.SpyObj<MeetingEndingSoonService>;
 	let microphoneEnabled: WritableSignal<boolean>;
 	let cameraEnabled: WritableSignal<boolean>;
 	let screenShareEnabled: WritableSignal<boolean>;
@@ -99,6 +101,7 @@ describe('MeetingEventHandlerService', () => {
 			'showSnackbar',
 			'showDialog'
 		]);
+		meetingEndingSoon = jasmine.createSpyObj<MeetingEndingSoonService>('MeetingEndingSoonService', ['start']);
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -120,6 +123,7 @@ describe('MeetingEventHandlerService', () => {
 				{ provide: RoomMemberContextService, useValue: {} },
 				{ provide: NavigationService, useValue: navigationServiceStub },
 				{ provide: NotificationService, useValue: notificationService },
+				{ provide: MeetingEndingSoonService, useValue: meetingEndingSoon },
 				{ provide: SoundService, useValue: {} },
 				{ provide: TranslateService, useValue: { translate: (key: string) => key } }
 			]
@@ -337,7 +341,7 @@ describe('MeetingEventHandlerService', () => {
 	 */
 	describe('meeting ending soon', () => {
 		function receiveEndingSoonSignal(): void {
-			const payload: MeetMeetingEndingSoonPayload = { roomId: 'room1', remainingMinutes: 5, timestamp: 0 };
+			const payload: MeetMeetingEndingSoonPayload = { roomId: 'room1', remainingMs: 300_000, timestamp: 0 };
 			emitServerSignal(MeetSignalType.MEET_MEETING_ENDING_SOON, payload);
 		}
 
@@ -354,6 +358,12 @@ describe('MeetingEventHandlerService', () => {
 				jasmine.objectContaining({ showCancelButton: false })
 			);
 			expect(notificationService.showSnackbar).not.toHaveBeenCalled();
+		});
+
+		it('starts the toolbar countdown with the exact remaining milliseconds', () => {
+			receiveEndingSoonSignal();
+
+			expect(meetingEndingSoon.start).toHaveBeenCalledOnceWith(300_000);
 		});
 	});
 
@@ -495,7 +505,7 @@ describe('MeetingEventHandlerService', () => {
 		it('reports the generic MEETING_ENDED — not MEETING_ENDED_BY_DURATION_LIMIT — when a moderator ends the meeting during the warning window', async () => {
 			emitServerSignal(MeetSignalType.MEET_MEETING_ENDING_SOON, {
 				roomId: 'room1',
-				remainingMinutes: 5,
+				remainingMs: 300_000,
 				timestamp: 0
 			});
 			emitServerSignal(MeetSignalType.MEET_MEETING_ENDED_BY_MODERATOR, { roomId: 'room1', timestamp: 1 });
@@ -515,7 +525,7 @@ describe('MeetingEventHandlerService', () => {
 		it("still attributes the end to 'self' for the moderator who ended it, even after their own broadcast echoes back", async () => {
 			emitServerSignal(MeetSignalType.MEET_MEETING_ENDING_SOON, {
 				roomId: 'room1',
-				remainingMinutes: 5,
+				remainingMs: 300_000,
 				timestamp: 0
 			});
 			meetingContextStub.setMeetingEndedBy('self'); // the button click, before the REST call
@@ -540,7 +550,7 @@ describe('MeetingEventHandlerService', () => {
 		it('still upgrades to MEETING_ENDED_BY_DURATION_LIMIT when no moderator end ever arrives', async () => {
 			emitServerSignal(MeetSignalType.MEET_MEETING_ENDING_SOON, {
 				roomId: 'room1',
-				remainingMinutes: 5,
+				remainingMs: 300_000,
 				timestamp: 0
 			});
 

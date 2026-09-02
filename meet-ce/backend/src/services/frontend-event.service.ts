@@ -162,12 +162,12 @@ export class FrontendEventService {
 	 * duration limit and will be force-ended. Errors are the caller's to handle: the max-duration
 	 * sweep only marks the warning as sent after this resolves, so a failed send is retried.
 	 */
-	async sendMeetingEndingSoonSignal(roomId: string, remainingMinutes: number): Promise<void> {
+	async sendMeetingEndingSoonSignal(roomId: string, remainingMs: number): Promise<void> {
 		this.logger.debug(`Sending meeting ending soon signal for room '${roomId}'`);
 
 		const payload: MeetMeetingEndingSoonPayload = {
 			roomId,
-			remainingMinutes,
+			remainingMs,
 			timestamp: Date.now()
 		};
 

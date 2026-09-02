@@ -47,6 +47,18 @@
 			<ov-landscape-warning />
 		}
 		<div id="meeting-stage" [animate.enter]="enterAnimationClass" [animate.leave]="'ov-fade-out-200'">
+			<!-- Meeting ending soon: its own row above the layout, so it neither covers a
+			     participant nor depends on a toolbar the host may not render. -->
+			@if (isEndingSoon()) {
+				<div id="ending-soon-row" class="ending-soon-row">
+					<div class="ending-soon-badge">
+						<span class="ending-soon-icon-badge">
+							<mat-icon>schedule</mat-icon>
+						</span>
+						<span class="ending-soon-time">{{ endingSoonLabel() }}</span>
+					</div>
+				</div>
+			}
 			<mat-sidenav-container
 				ovSidenavLayout
 				#sidenavLayout="ovSidenavLayout"
