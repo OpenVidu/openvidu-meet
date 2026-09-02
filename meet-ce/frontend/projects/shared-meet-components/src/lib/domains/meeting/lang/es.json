@@ -4,8 +4,10 @@
 		"LANDSCAPE_WARNING": "Por favor, gira tu dispositivo a modo retrato para una mejor experiencia",
 		"DISCONNECTED": "Has salido de la reunión",
 		"DISCONNECTED_SUBTITLE": "La reunión ha finalizado",
+		"ENDING_SOON_TITLE": "La reunión va a terminar",
 		"ENDING_SOON_ONE_MINUTE": "La reunión terminará en aproximadamente 1 minuto",
-		"ENDING_SOON_MANY_MINUTES": "La reunión terminará en aproximadamente {minutes} minutos"
+		"ENDING_SOON_MANY_MINUTES": "La reunión terminará en aproximadamente {minutes} minutos",
+		"ENDING_SOON_CONFIRM": "Aceptar"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Unirme ahora",

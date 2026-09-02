@@ -71,9 +71,6 @@ export class MeetingEventHandlerService {
 	protected localMediaControl = inject(LocalMediaControlService);
 	protected mediaIntent = inject(LocalMediaIntentService);
 
-	// Shown longer than the 3s default: this warning is the only notice before the meeting ends
-	private readonly MEETING_ENDING_SOON_SNACKBAR_DURATION = 10_000;
-
 	// ============================================
 	// PUBLIC METHODS - Room Event Handlers
 	// ============================================
@@ -457,7 +454,12 @@ export class MeetingEventHandlerService {
 				: this.translateService
 						.translate('ROOM.ENDING_SOON_MANY_MINUTES')
 						.replace('{minutes}', `${event.remainingMinutes}`);
-		this.notificationService.showSnackbar(message, this.MEETING_ENDING_SOON_SNACKBAR_DURATION);
+		this.notificationService.showDialog({
+			title: this.translateService.translate('ROOM.ENDING_SOON_TITLE'),
+			message,
+			showCancelButton: false,
+			confirmText: this.translateService.translate('ROOM.ENDING_SOON_CONFIRM')
+		});
 	}
 
 	/**

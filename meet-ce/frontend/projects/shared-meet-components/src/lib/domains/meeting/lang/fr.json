@@ -4,8 +4,10 @@
 		"LANDSCAPE_WARNING": "Veuillez faire pivoter votre appareil en mode portrait pour une meilleure expérience",
 		"DISCONNECTED": "Vous avez quitté la réunion",
 		"DISCONNECTED_SUBTITLE": "La réunion est terminée",
+		"ENDING_SOON_TITLE": "La réunion va bientôt se terminer",
 		"ENDING_SOON_ONE_MINUTE": "La réunion se terminera dans environ 1 minute",
-		"ENDING_SOON_MANY_MINUTES": "La réunion se terminera dans environ {minutes} minutes"
+		"ENDING_SOON_MANY_MINUTES": "La réunion se terminera dans environ {minutes} minutes",
+		"ENDING_SOON_CONFIRM": "OK"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Rejoindre la réunion",

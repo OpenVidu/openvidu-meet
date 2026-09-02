@@ -95,7 +95,10 @@ describe('MeetingEventHandlerService', () => {
 			TestBed.tick();
 		});
 
-		notificationService = jasmine.createSpyObj<NotificationService>('NotificationService', ['showSnackbar']);
+		notificationService = jasmine.createSpyObj<NotificationService>('NotificationService', [
+			'showSnackbar',
+			'showDialog'
+		]);
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -344,10 +347,13 @@ describe('MeetingEventHandlerService', () => {
 			expect(meetingContextStub.setMeetingEndedBy).toHaveBeenCalledOnceWith('duration');
 		});
 
-		it('shows a snackbar warning', () => {
+		it('shows a dialog the user must acknowledge, not a snackbar', () => {
 			receiveEndingSoonSignal();
 
-			expect(notificationService.showSnackbar).toHaveBeenCalledTimes(1);
+			expect(notificationService.showDialog).toHaveBeenCalledOnceWith(
+				jasmine.objectContaining({ showCancelButton: false })
+			);
+			expect(notificationService.showSnackbar).not.toHaveBeenCalled();
 		});
 	});
 

@@ -13,8 +13,10 @@
 		"LANDSCAPE_WARNING": "Please rotate your device to portrait for a better experience",
 		"DISCONNECTED": "You have left the meeting",
 		"DISCONNECTED_SUBTITLE": "The meeting has ended",
+		"ENDING_SOON_TITLE": "Meeting ending soon",
 		"ENDING_SOON_ONE_MINUTE": "This meeting will end in about 1 minute",
-		"ENDING_SOON_MANY_MINUTES": "This meeting will end in about {minutes} minutes"
+		"ENDING_SOON_MANY_MINUTES": "This meeting will end in about {minutes} minutes",
+		"ENDING_SOON_CONFIRM": "OK"
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Mute your audio",
