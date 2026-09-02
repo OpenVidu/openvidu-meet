@@ -253,11 +253,18 @@
         "MAX_DURATION_LABEL": "Minuten",
         "MAX_DURATION_PLACEHOLDER": "Onbeperkt",
         "MAX_DURATION_INVALID": "Voer een geheel aantal minuten in",
+        "MAX_DURATION_TOO_LOW_PREFIX": "Voer minimaal ",
+        "MAX_DURATION_TOO_LOW_SUFFIX": " minuten in",
+        "MAX_DURATION_TOO_HIGH_PREFIX": "Voer maximaal ",
+        "MAX_DURATION_TOO_HIGH_SUFFIX": " minuten in",
         "MAX_PARTICIPANTS": "Deelnemerslimiet",
         "MAX_PARTICIPANTS_DESC": "Maximaal aantal deelnemers dat aan de meeting kan deelnemen. Laat leeg voor geen limiet",
         "MAX_PARTICIPANTS_LABEL": "Deelnemers",
         "MAX_PARTICIPANTS_PLACEHOLDER": "Onbeperkt",
-        "MAX_PARTICIPANTS_INVALID": "Voer een geheel aantal deelnemers in"
+        "MAX_PARTICIPANTS_INVALID": "Voer een geheel aantal deelnemers in",
+        "MAX_PARTICIPANTS_TOO_LOW": "Voer minimaal 1 deelnemer in",
+        "MAX_PARTICIPANTS_TOO_HIGH_PREFIX": "Voer maximaal ",
+        "MAX_PARTICIPANTS_TOO_HIGH_SUFFIX": " deelnemers in"
       },
       "RECORDING_CONFIG": {
         "TITLE": "Opnameconfiguratie",

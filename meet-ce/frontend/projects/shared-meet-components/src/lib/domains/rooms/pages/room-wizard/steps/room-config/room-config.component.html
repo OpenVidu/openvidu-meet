@@ -19,37 +19,50 @@
 				</div>
 				<div class="config-grid">
 					<!-- Participant limit -->
-					<div class="feature-row" id="room-feature-max-participants">
-						<div class="feature-info">
-							<mat-icon class="feature-icon">group</mat-icon>
-							<div class="feature-text">
-								<span class="feature-label">{{
-									'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS' | translate
-								}}</span>
-								<span class="feature-description">{{
-									'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_DESC' | translate
-								}}</span>
+					<div class="feature-row-wrapper">
+						<div class="feature-row limit-row" id="room-feature-max-participants">
+							<div class="feature-info">
+								<mat-icon class="feature-icon">group</mat-icon>
+								<div class="feature-text">
+									<span class="feature-label">{{
+										'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS' | translate
+									}}</span>
+									<span class="feature-description">{{
+										'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_DESC' | translate
+									}}</span>
+								</div>
 							</div>
+							<mat-form-field appearance="outline" class="limit-field" subscriptSizing="dynamic">
+								<mat-label>{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_LABEL' | translate }}</mat-label>
+								<input
+									matInput
+									type="number"
+									min="1"
+									[max]="maxParticipantsLimit"
+									step="1"
+									formControlName="maxParticipants"
+									[placeholder]="'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_PLACEHOLDER' | translate"
+									[attr.aria-describedby]="
+										roomConfigForm.controls.maxParticipants.invalid
+											? 'max-participants-error'
+											: null
+									"
+								/>
+							</mat-form-field>
 						</div>
-						<mat-form-field appearance="outline" class="limit-field" subscriptSizing="dynamic">
-							<mat-label>{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_LABEL' | translate }}</mat-label>
-							<input
-								matInput
-								type="number"
-								min="1"
-								[max]="maxParticipantsLimit"
-								step="1"
-								formControlName="maxParticipants"
-								[placeholder]="'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_PLACEHOLDER' | translate"
-							/>
-							@if (roomConfigForm.controls.maxParticipants.invalid) {
-								<mat-error>
-									{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_INVALID' | translate }} (1-{{
-										maxParticipantsLimit
-									}})
-								</mat-error>
-							}
-						</mat-form-field>
+						@if (roomConfigForm.controls.maxParticipants.invalid) {
+							<p class="limit-error" id="max-participants-error" role="alert">
+								@if (roomConfigForm.controls.maxParticipants.hasError('min')) {
+									{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_TOO_LOW' | translate }}
+								} @else if (roomConfigForm.controls.maxParticipants.hasError('max')) {
+									{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_TOO_HIGH_PREFIX' | translate
+									}}{{ maxParticipantsLimit
+									}}{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_TOO_HIGH_SUFFIX' | translate }}
+								} @else {
+									{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_INVALID' | translate }}
+								}
+							</p>
+						}
 					</div>
 
 					@if (autoStartWarningMessage(); as message) {
@@ -67,37 +80,52 @@
 					}
 
 					<!-- Meeting duration limit -->
-					<div class="feature-row" id="room-feature-max-duration">
-						<div class="feature-info">
-							<mat-icon class="feature-icon">hourglass_bottom</mat-icon>
-							<div class="feature-text">
-								<span class="feature-label">{{
-									'ROOMS.WIZARD.FEATURES.MAX_DURATION' | translate
-								}}</span>
-								<span class="feature-description">{{
-									'ROOMS.WIZARD.FEATURES.MAX_DURATION_DESC' | translate
-								}}</span>
+					<div class="feature-row-wrapper">
+						<div class="feature-row limit-row" id="room-feature-max-duration">
+							<div class="feature-info">
+								<mat-icon class="feature-icon">hourglass_bottom</mat-icon>
+								<div class="feature-text">
+									<span class="feature-label">{{
+										'ROOMS.WIZARD.FEATURES.MAX_DURATION' | translate
+									}}</span>
+									<span class="feature-description">{{
+										'ROOMS.WIZARD.FEATURES.MAX_DURATION_DESC' | translate
+									}}</span>
+								</div>
 							</div>
+							<mat-form-field appearance="outline" class="limit-field" subscriptSizing="dynamic">
+								<mat-label>{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_LABEL' | translate }}</mat-label>
+								<input
+									matInput
+									type="number"
+									[min]="minDurationMinutesLimit"
+									[max]="maxDurationMinutesLimit"
+									step="1"
+									formControlName="maxDurationMinutes"
+									[placeholder]="'ROOMS.WIZARD.FEATURES.MAX_DURATION_PLACEHOLDER' | translate"
+									[attr.aria-describedby]="
+										roomConfigForm.controls.maxDurationMinutes.invalid
+											? 'max-duration-error'
+											: null
+									"
+								/>
+							</mat-form-field>
 						</div>
-						<mat-form-field appearance="outline" class="limit-field" subscriptSizing="dynamic">
-							<mat-label>{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_LABEL' | translate }}</mat-label>
-							<input
-								matInput
-								type="number"
-								[min]="minDurationMinutesLimit"
-								[max]="maxDurationMinutesLimit"
-								step="1"
-								formControlName="maxDurationMinutes"
-								[placeholder]="'ROOMS.WIZARD.FEATURES.MAX_DURATION_PLACEHOLDER' | translate"
-							/>
-							@if (roomConfigForm.controls.maxDurationMinutes.invalid) {
-								<mat-error>
-									{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_INVALID' | translate }} ({{
-										minDurationMinutesLimit
-									}}-{{ maxDurationMinutesLimit }})
-								</mat-error>
-							}
-						</mat-form-field>
+						@if (roomConfigForm.controls.maxDurationMinutes.invalid) {
+							<p class="limit-error" id="max-duration-error" role="alert">
+								@if (roomConfigForm.controls.maxDurationMinutes.hasError('min')) {
+									{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_TOO_LOW_PREFIX' | translate
+									}}{{ minDurationMinutesLimit
+									}}{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_TOO_LOW_SUFFIX' | translate }}
+								} @else if (roomConfigForm.controls.maxDurationMinutes.hasError('max')) {
+									{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_TOO_HIGH_PREFIX' | translate
+									}}{{ maxDurationMinutesLimit
+									}}{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_TOO_HIGH_SUFFIX' | translate }}
+								} @else {
+									{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_INVALID' | translate }}
+								}
+							</p>
+						}
 					</div>
 				</div>
 			</div>

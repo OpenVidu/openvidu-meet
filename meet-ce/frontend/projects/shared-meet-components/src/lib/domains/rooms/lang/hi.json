@@ -253,11 +253,18 @@
         "MAX_DURATION_LABEL": "मिनट",
         "MAX_DURATION_PLACEHOLDER": "असीमित",
         "MAX_DURATION_INVALID": "मिनटों की पूर्ण संख्या दर्ज करें",
+        "MAX_DURATION_TOO_LOW_PREFIX": "कम से कम ",
+        "MAX_DURATION_TOO_LOW_SUFFIX": " मिनट दर्ज करें",
+        "MAX_DURATION_TOO_HIGH_PREFIX": "अधिकतम ",
+        "MAX_DURATION_TOO_HIGH_SUFFIX": " मिनट दर्ज करें",
         "MAX_PARTICIPANTS": "प्रतिभागियों की सीमा",
         "MAX_PARTICIPANTS_DESC": "मीटिंग में शामिल हो सकने वाले प्रतिभागियों की अधिकतम संख्या। बिना सीमा के लिए खाली छोड़ें",
         "MAX_PARTICIPANTS_LABEL": "प्रतिभागी",
         "MAX_PARTICIPANTS_PLACEHOLDER": "असीमित",
-        "MAX_PARTICIPANTS_INVALID": "प्रतिभागियों की पूर्ण संख्या दर्ज करें"
+        "MAX_PARTICIPANTS_INVALID": "प्रतिभागियों की पूर्ण संख्या दर्ज करें",
+        "MAX_PARTICIPANTS_TOO_LOW": "कम से कम 1 प्रतिभागी दर्ज करें",
+        "MAX_PARTICIPANTS_TOO_HIGH_PREFIX": "अधिकतम ",
+        "MAX_PARTICIPANTS_TOO_HIGH_SUFFIX": " प्रतिभागी दर्ज करें"
       },
       "RECORDING_CONFIG": {
         "TITLE": "रिकॉर्डिंग कॉन्फ़िगरेशन",

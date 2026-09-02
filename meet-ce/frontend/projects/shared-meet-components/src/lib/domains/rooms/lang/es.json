@@ -253,11 +253,18 @@
         "MAX_DURATION_LABEL": "Minutos",
         "MAX_DURATION_PLACEHOLDER": "Ilimitada",
         "MAX_DURATION_INVALID": "Introduce un número entero de minutos",
+        "MAX_DURATION_TOO_LOW_PREFIX": "Introduce al menos ",
+        "MAX_DURATION_TOO_LOW_SUFFIX": " minutos",
+        "MAX_DURATION_TOO_HIGH_PREFIX": "Introduce como máximo ",
+        "MAX_DURATION_TOO_HIGH_SUFFIX": " minutos",
         "MAX_PARTICIPANTS": "Límite de participantes",
         "MAX_PARTICIPANTS_DESC": "Número máximo de participantes que pueden unirse a la reunión. Déjalo vacío para no poner límite",
         "MAX_PARTICIPANTS_LABEL": "Participantes",
         "MAX_PARTICIPANTS_PLACEHOLDER": "Ilimitado",
-        "MAX_PARTICIPANTS_INVALID": "Introduce un número entero de participantes"
+        "MAX_PARTICIPANTS_INVALID": "Introduce un número entero de participantes",
+        "MAX_PARTICIPANTS_TOO_LOW": "Introduce al menos 1 participante",
+        "MAX_PARTICIPANTS_TOO_HIGH_PREFIX": "Introduce como máximo ",
+        "MAX_PARTICIPANTS_TOO_HIGH_SUFFIX": " participantes"
       },
       "RECORDING_CONFIG": {
         "TITLE": "Configuración de grabación",

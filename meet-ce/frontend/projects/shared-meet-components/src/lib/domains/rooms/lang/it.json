@@ -253,11 +253,18 @@
         "MAX_DURATION_LABEL": "Minuti",
         "MAX_DURATION_PLACEHOLDER": "Illimitata",
         "MAX_DURATION_INVALID": "Inserisci un numero intero di minuti",
+        "MAX_DURATION_TOO_LOW_PREFIX": "Inserisci almeno ",
+        "MAX_DURATION_TOO_LOW_SUFFIX": " minuti",
+        "MAX_DURATION_TOO_HIGH_PREFIX": "Inserisci al massimo ",
+        "MAX_DURATION_TOO_HIGH_SUFFIX": " minuti",
         "MAX_PARTICIPANTS": "Limite di partecipanti",
         "MAX_PARTICIPANTS_DESC": "Numero massimo di partecipanti che possono unirsi alla riunione. Lascia vuoto per nessun limite",
         "MAX_PARTICIPANTS_LABEL": "Partecipanti",
         "MAX_PARTICIPANTS_PLACEHOLDER": "Illimitato",
-        "MAX_PARTICIPANTS_INVALID": "Inserisci un numero intero di partecipanti"
+        "MAX_PARTICIPANTS_INVALID": "Inserisci un numero intero di partecipanti",
+        "MAX_PARTICIPANTS_TOO_LOW": "Inserisci almeno 1 partecipante",
+        "MAX_PARTICIPANTS_TOO_HIGH_PREFIX": "Inserisci al massimo ",
+        "MAX_PARTICIPANTS_TOO_HIGH_SUFFIX": " partecipanti"
       },
       "RECORDING_CONFIG": {
         "TITLE": "Configurazione della registrazione",

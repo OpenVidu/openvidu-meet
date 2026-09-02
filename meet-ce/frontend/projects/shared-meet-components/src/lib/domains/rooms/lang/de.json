@@ -253,11 +253,18 @@
         "MAX_DURATION_LABEL": "Minuten",
         "MAX_DURATION_PLACEHOLDER": "Unbegrenzt",
         "MAX_DURATION_INVALID": "Geben Sie eine ganze Minutenzahl ein",
+        "MAX_DURATION_TOO_LOW_PREFIX": "Geben Sie mindestens ",
+        "MAX_DURATION_TOO_LOW_SUFFIX": " Minuten ein",
+        "MAX_DURATION_TOO_HIGH_PREFIX": "Geben Sie höchstens ",
+        "MAX_DURATION_TOO_HIGH_SUFFIX": " Minuten ein",
         "MAX_PARTICIPANTS": "Teilnehmerlimit",
         "MAX_PARTICIPANTS_DESC": "Maximale Anzahl an Teilnehmern, die dem Meeting beitreten können. Leer lassen für kein Limit",
         "MAX_PARTICIPANTS_LABEL": "Teilnehmer",
         "MAX_PARTICIPANTS_PLACEHOLDER": "Unbegrenzt",
-        "MAX_PARTICIPANTS_INVALID": "Geben Sie eine ganze Teilnehmerzahl ein"
+        "MAX_PARTICIPANTS_INVALID": "Geben Sie eine ganze Teilnehmerzahl ein",
+        "MAX_PARTICIPANTS_TOO_LOW": "Geben Sie mindestens 1 Teilnehmer ein",
+        "MAX_PARTICIPANTS_TOO_HIGH_PREFIX": "Geben Sie höchstens ",
+        "MAX_PARTICIPANTS_TOO_HIGH_SUFFIX": " Teilnehmer ein"
       },
       "RECORDING_CONFIG": {
         "TITLE": "Aufnahmekonfiguration",

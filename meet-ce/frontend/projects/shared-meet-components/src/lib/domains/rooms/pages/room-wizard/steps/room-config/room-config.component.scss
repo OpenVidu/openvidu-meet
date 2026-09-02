@@ -107,6 +107,15 @@
 			color: var(--ov-meet-color-info);
 		}
 
+		&.limit-row {
+			background: transparent;
+			border-color: transparent;
+
+			&:hover {
+				background: transparent;
+			}
+		}
+
 		.feature-info {
 			display: flex;
 			align-items: center;
@@ -149,6 +158,13 @@
 			flex-shrink: 0;
 			width: 150px;
 		}
+	}
+
+	.limit-error {
+		margin: 0;
+		padding: 0 var(--ov-meet-spacing-md);
+		font-size: var(--ov-meet-font-size-sm);
+		color: var(--ov-meet-color-error);
 	}
 
 	.e2ee-info-section {

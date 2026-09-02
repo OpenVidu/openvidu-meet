@@ -253,11 +253,18 @@
         "MAX_DURATION_LABEL": "分钟",
         "MAX_DURATION_PLACEHOLDER": "不限",
         "MAX_DURATION_INVALID": "请输入整数分钟数",
+        "MAX_DURATION_TOO_LOW_PREFIX": "请至少输入 ",
+        "MAX_DURATION_TOO_LOW_SUFFIX": " 分钟",
+        "MAX_DURATION_TOO_HIGH_PREFIX": "请最多输入 ",
+        "MAX_DURATION_TOO_HIGH_SUFFIX": " 分钟",
         "MAX_PARTICIPANTS": "参与者人数上限",
         "MAX_PARTICIPANTS_DESC": "可加入会议的最大参与者数量。留空表示不限",
         "MAX_PARTICIPANTS_LABEL": "人数",
         "MAX_PARTICIPANTS_PLACEHOLDER": "不限",
-        "MAX_PARTICIPANTS_INVALID": "请输入整数人数"
+        "MAX_PARTICIPANTS_INVALID": "请输入整数人数",
+        "MAX_PARTICIPANTS_TOO_LOW": "请至少输入 1 人",
+        "MAX_PARTICIPANTS_TOO_HIGH_PREFIX": "请最多输入 ",
+        "MAX_PARTICIPANTS_TOO_HIGH_SUFFIX": " 人"
       },
       "RECORDING_CONFIG": {
         "TITLE": "录制配置",

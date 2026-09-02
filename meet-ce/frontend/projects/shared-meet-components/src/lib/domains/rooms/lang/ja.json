@@ -253,11 +253,18 @@
         "MAX_DURATION_LABEL": "分",
         "MAX_DURATION_PLACEHOLDER": "無制限",
         "MAX_DURATION_INVALID": "整数（分）を入力してください",
+        "MAX_DURATION_TOO_LOW_PREFIX": "最低",
+        "MAX_DURATION_TOO_LOW_SUFFIX": "分を入力してください",
+        "MAX_DURATION_TOO_HIGH_PREFIX": "最大",
+        "MAX_DURATION_TOO_HIGH_SUFFIX": "分を入力してください",
         "MAX_PARTICIPANTS": "参加者数の上限",
         "MAX_PARTICIPANTS_DESC": "会議に参加できる最大人数です。空欄の場合は無制限です",
         "MAX_PARTICIPANTS_LABEL": "人数",
         "MAX_PARTICIPANTS_PLACEHOLDER": "無制限",
-        "MAX_PARTICIPANTS_INVALID": "整数（人数）を入力してください"
+        "MAX_PARTICIPANTS_INVALID": "整数（人数）を入力してください",
+        "MAX_PARTICIPANTS_TOO_LOW": "最低1人を入力してください",
+        "MAX_PARTICIPANTS_TOO_HIGH_PREFIX": "最大",
+        "MAX_PARTICIPANTS_TOO_HIGH_SUFFIX": "人を入力してください"
       },
       "RECORDING_CONFIG": {
         "TITLE": "録画設定",
