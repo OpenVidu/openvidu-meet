@@ -59,6 +59,11 @@ export class AssetsService {
 		return this.resolve('assets/sounds/chat-message.mp3');
 	}
 
+	/** Notification played when a duration-limited meeting is about to end. */
+	get meetingEndingSoonSound(): string {
+		return this.resolve('assets/sounds/meeting-ending-soon.mp3');
+	}
+
 	// ── Workers ───────────────────────────────────────────────────────────────
 
 	/** LiveKit client E2EE worker module. */

@@ -452,6 +452,7 @@ export class MeetingEventHandlerService {
 
 		this.meetingContext.setMeetingEndedBy('duration');
 		this.meetingEndingSoon.start(event.remainingMs);
+		this.soundService.playMeetingEndingSoonSound();
 	}
 
 	/**

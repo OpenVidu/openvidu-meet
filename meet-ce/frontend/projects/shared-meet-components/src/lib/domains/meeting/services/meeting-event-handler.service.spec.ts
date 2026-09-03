@@ -48,6 +48,7 @@ describe('MeetingEventHandlerService', () => {
 	let mediaControl: jasmine.SpyObj<LocalMediaControlService>;
 	let notificationService: jasmine.SpyObj<NotificationService>;
 	let meetingEndingSoon: jasmine.SpyObj<MeetingEndingSoonService>;
+	let soundService: jasmine.SpyObj<SoundService>;
 	let microphoneEnabled: WritableSignal<boolean>;
 	let cameraEnabled: WritableSignal<boolean>;
 	let screenShareEnabled: WritableSignal<boolean>;
@@ -102,6 +103,12 @@ describe('MeetingEventHandlerService', () => {
 			'showDialog'
 		]);
 		meetingEndingSoon = jasmine.createSpyObj<MeetingEndingSoonService>('MeetingEndingSoonService', ['start']);
+		soundService = jasmine.createSpyObj<SoundService>('SoundService', [
+			'playParticipantJoinedSound',
+			'playParticipantRoleUpgradedSound',
+			'playParticipantRoleDowngradedSound',
+			'playMeetingEndingSoonSound'
+		]);
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -124,7 +131,7 @@ describe('MeetingEventHandlerService', () => {
 				{ provide: NavigationService, useValue: navigationServiceStub },
 				{ provide: NotificationService, useValue: notificationService },
 				{ provide: MeetingEndingSoonService, useValue: meetingEndingSoon },
-				{ provide: SoundService, useValue: {} },
+				{ provide: SoundService, useValue: soundService },
 				{ provide: TranslateService, useValue: { translate: (key: string) => key } }
 			]
 		});
@@ -362,6 +369,12 @@ describe('MeetingEventHandlerService', () => {
 			receiveEndingSoonSignal();
 
 			expect(meetingEndingSoon.start).toHaveBeenCalledOnceWith(300_000);
+		});
+
+		it('plays the ending-soon sound', () => {
+			receiveEndingSoonSignal();
+
+			expect(soundService.playMeetingEndingSoonSound).toHaveBeenCalledOnceWith();
 		});
 	});
 
