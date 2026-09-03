@@ -3,6 +3,7 @@ import { MeetingEndAction, MeetMeetingEndedCause, MeetRecordingStatus, MeetRoomS
 import { inject, injectable } from 'inversify';
 import type { EgressInfo, ParticipantInfo, Room, WebhookEvent } from 'livekit-server-sdk';
 import { WebhookReceiver } from 'livekit-server-sdk';
+import { container } from '../config/dependency-injector.config.js';
 import { MEET_ENV } from '../environment.js';
 import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
@@ -21,6 +22,7 @@ import { MeetingPresenceService } from './meeting-presence.service.js';
 import { RecordingService } from './recording.service.js';
 import { RedisService } from './redis.service.js';
 import { RoomMemberService } from './room-member.service.js';
+import type { RoomScheduledTasksService } from './room-scheduled-tasks.service.js';
 import { RoomService } from './room.service.js';
 import { TokenService } from './token.service.js';
 import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
@@ -46,6 +48,15 @@ export class LivekitWebhookService {
 		@inject(LoggerService) protected logger: LoggerService
 	) {
 		this.webhookReceiver = new WebhookReceiver(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
+	}
+
+	/**
+	 * Resolved on use rather than injected: RoomScheduledTasksService injects this service for its
+	 * reconcile paths, so a constructor dependency back would be a cycle.
+	 */
+	protected async getRoomScheduledTasksService(): Promise<RoomScheduledTasksService> {
+		const { RoomScheduledTasksService } = await import('./room-scheduled-tasks.service.js');
+		return container.get(RoomScheduledTasksService);
 	}
 
 	/**
@@ -217,18 +228,21 @@ export class LivekitWebhookService {
 	/**
 	 * Handles a room started event from LiveKit.
 	 *
-	 * A closed room is left closed and its LiveKit room deleted instead of reactivated — a still-valid
+	 * A closed room is left closed and its LiveKit room deleted instead of reactivated: a still-valid
 	 * room-member token can make LiveKit auto-create it again on a raw reconnect, bypassing Meet's own
-	 * closed-room check. Otherwise, updates the room status to ACTIVE_MEETING and sends a webhook
+	 * closed-room check. Otherwise, arms the timer that ends the meeting at its room's duration limit
+	 * (when the room declares one), updates the room status to ACTIVE_MEETING and sends a webhook
 	 * notification indicating that the meeting has started.
 	 *
 	 * @param {Room} room - The room object that has started.
 	 */
-	async handleRoomStarted({ name: roomId, sid: meetingId }: Room) {
+	async handleRoomStarted(room: Room) {
+		const { name: roomId, sid: meetingId } = room;
+
 		try {
 			this.logger.info(`Processing room_started event for room '${roomId}'`);
 
-			const { status } = await this.roomService.getMeetRoom(roomId, ['status']);
+			const { status, config } = await this.roomService.getMeetRoom(roomId, ['status', 'config']);
 
 			if (status === MeetRoomStatus.CLOSED) {
 				this.logger.warn(
@@ -237,6 +251,11 @@ export class LivekitWebhookService {
 				);
 				await this.livekitService.deleteRoom(roomId);
 				return;
+			}
+
+			if (config.maxDurationMinutes) {
+				const roomScheduledTasksService = await this.getRoomScheduledTasksService();
+				roomScheduledTasksService.scheduleMeetingMaxDurationEnd(room, config.maxDurationMinutes);
 			}
 
 			// Update Meet room status to ACTIVE_MEETING
@@ -262,7 +281,8 @@ export class LivekitWebhookService {
 	 * - If the action is NONE, it simply updates the room status to OPEN.
 	 *
 	 * Then, it sends a webhook notification indicating that the meeting has ended,
-	 * and cleans up any resources associated with the room.
+	 * and cleans up any resources associated with the room, the meeting's duration-limit timer
+	 * included.
 	 *
 	 * @param {Room} room - The room object that has finished.
 	 */
@@ -270,6 +290,9 @@ export class LivekitWebhookService {
 		try {
 			// Reactivate the recording auto-start before anything else
 			await this.recordingService.reactivateAutoRecording(roomId, meetingId);
+
+			const roomScheduledTasksService = await this.getRoomScheduledTasksService();
+			roomScheduledTasksService.cancelMeetingMaxDurationEnd(roomId);
 
 			const meetRoom = await this.roomService.getMeetRoom(roomId);
 

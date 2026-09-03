@@ -25,12 +25,15 @@ export const INTERNAL_CONFIG = {
 	// Timing and cleanup settings for room lifecycle management
 	ROOM_EXPIRED_GC_INTERVAL: '1h' as StringValue, // Interval for processing and deleting expired rooms
 	ROOM_ACTIVE_VERIFICATION_GC_INTERVAL: '15m' as StringValue, // Interval for checking room 'active_meeting' status consistency
-	MEETING_MAX_DURATION_GC_INTERVAL: '1m' as StringValue, // Interval for ending meetings that exceeded their room's maxDurationMinutes (bounds how far a meeting can overrun its limit)
+	MEETING_MAX_DURATION_GC_INTERVAL: '1m' as StringValue, // Interval of the safety-net sweep for meetings past their room's maxDurationMinutes, for when a per-meeting timer was lost
 	MEETING_DURATION_WARNING_REMAINING: '5m' as StringValue, // How long before a duration-limited meeting is force-ended every participant gets the ending-soon warning signal
 	MEETING_DURATION_WARNING_SENT_TTL: '24h' as StringValue, // Redis TTL for the per-room "ending-soon warning already sent" flag; scoped to the meeting's LiveKit room sid so a leaked flag is inert for later meetings, this is only a last-resort safety net
-	MEETING_ENDED_CAUSE_TTL: '24h' as StringValue, // Redis TTL for the per-room "meeting was force-ended by the duration GC" flag consumed by the room_finished handler; scoped to the meeting's LiveKit room sid, this is only a last-resort safety net
+	MEETING_DURATION_END_LOCK_TTL: '15s' as StringValue, // Redis lock TTL serializing the force-end of a meeting past its duration limit
+	MEETING_DURATION_END_TOLERANCE: '1s' as StringValue, // How close to its deadline a meeting counts as due, instead of arming a timer for a remainder this small
+	MEETING_DURATION_END_RETRY_DELAY: '5s' as StringValue, // First delay a fired duration-limit timer waits to retry an end it could not carry out; doubles per attempt, up to MEETING_MAX_DURATION_GC_INTERVAL
+	MEETING_ENDED_CAUSE_TTL: '24h' as StringValue, // Redis TTL for the per-room "meeting was force-ended for exceeding its duration limit" flag consumed by the room_finished handler; scoped to the meeting's LiveKit room sid, this is only a last-resort safety net
 	MEETING_MAX_PARTICIPANTS_LIMIT: 30, // Highest value config.maxParticipants may be set to
-	MEETING_MIN_DURATION_MINUTES_LIMIT: 10, // Lowest value config.maxDurationMinutes may be set to (the GC sweep runs on a 1m tick, so anything shorter risks ending with no warning)
+	MEETING_MIN_DURATION_MINUTES_LIMIT: 10, // Lowest value config.maxDurationMinutes may be set to (it must leave room for the MEETING_DURATION_WARNING_REMAINING window)
 	MEETING_MAX_DURATION_MINUTES_LIMIT: 1_440, // Highest value config.maxDurationMinutes may be set to (1 day)
 
 	// Timing and cleanup settings for recording lifecycle management

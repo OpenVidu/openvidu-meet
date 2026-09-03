@@ -1,10 +1,11 @@
 import { describe, expect, it } from '@jest/globals';
-import { MeetMeetingEndedCause, MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetingEndAction, MeetMeetingEndedCause, MeetRoomStatus } from '@openvidu-meet/typings';
 import type { Room } from 'livekit-server-sdk';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
 import { LivekitWebhookService } from '../../../src/services/livekit-webhook.service.js';
+import type { RoomScheduledTasksService } from '../../../src/services/room-scheduled-tasks.service.js';
 
 class FakeRedisService {
 	store = new Map<string, string>();
@@ -72,10 +73,26 @@ class FakeLogger {
 }
 
 class FakeRoomService {
-	constructor(private status: MeetRoomStatus) {}
+	constructor(
+		private status: MeetRoomStatus,
+		private maxDurationMinutes?: number
+	) {}
 
 	async getMeetRoom() {
-		return { status: this.status };
+		return { status: this.status, config: { maxDurationMinutes: this.maxDurationMinutes } };
+	}
+}
+
+class FakeRoomScheduledTasksService {
+	scheduled: { room: Room; maxDurationMinutes: number }[] = [];
+	cancelled: string[] = [];
+
+	scheduleMeetingMaxDurationEnd(room: Room, maxDurationMinutes: number): void {
+		this.scheduled.push({ room, maxDurationMinutes });
+	}
+
+	cancelMeetingMaxDurationEnd(roomId: string): void {
+		this.cancelled.push(roomId);
 	}
 }
 
@@ -105,11 +122,19 @@ class FakeWebhookDispatcherService {
 	}
 }
 
+class TestableRoomLifecycleService extends LivekitWebhookService {
+	readonly roomScheduledTasks = new FakeRoomScheduledTasksService();
+
+	protected override getRoomScheduledTasksService(): Promise<RoomScheduledTasksService> {
+		return Promise.resolve(this.roomScheduledTasks as unknown as RoomScheduledTasksService);
+	}
+}
+
 const buildRoomStartedService = (roomService: FakeRoomService) => {
 	const roomRepository = new FakeRoomRepository();
 	const livekitService = new FakeLiveKitService();
 	const webhookDispatcherService = new FakeWebhookDispatcherService();
-	const service = new LivekitWebhookService(
+	const service = new TestableRoomLifecycleService(
 		...([
 			{},
 			{},
@@ -157,5 +182,66 @@ describe('LivekitWebhookService.handleRoomStarted (closed rooms are not reactiva
 		]);
 		expect(webhookDispatcherService.sendMeetingStartedWebhookCalls).toHaveLength(1);
 		expect(livekitService.deleteRoomCalls).toEqual([]);
+	});
+});
+
+/**
+ * D1 (MEET-MEETING-DURATION-PRECISION-PLAN.md): the duration limit is enforced by a timer armed for
+ * the meeting's own deadline, so `room_started` is where it gets armed and `room_finished` is where
+ * it gets disarmed.
+ */
+describe('LivekitWebhookService duration-limit timer wiring', () => {
+	const startedRoom = { name: 'room-1', sid: 'sid-1', creationTime: 1_700_000_000 } as unknown as Room;
+
+	// The started room itself is handed over, not just its id: the timer's deadline is that room's
+	// own creation time plus the limit.
+	it('arms the timer with the room limit when a limited meeting starts', async () => {
+		const { service } = buildRoomStartedService(new FakeRoomService(MeetRoomStatus.OPEN, 30));
+
+		await service.handleRoomStarted(startedRoom);
+
+		expect(service.roomScheduledTasks.scheduled).toEqual([{ room: startedRoom, maxDurationMinutes: 30 }]);
+	});
+
+	it('arms nothing for a room without a duration limit', async () => {
+		const { service } = buildRoomStartedService(new FakeRoomService(MeetRoomStatus.OPEN));
+
+		await service.handleRoomStarted(startedRoom);
+
+		expect(service.roomScheduledTasks.scheduled).toEqual([]);
+	});
+
+	it('arms nothing for a closed room, whose resurrected LiveKit room is deleted instead', async () => {
+		const { service } = buildRoomStartedService(new FakeRoomService(MeetRoomStatus.CLOSED, 30));
+
+		await service.handleRoomStarted(startedRoom);
+
+		expect(service.roomScheduledTasks.scheduled).toEqual([]);
+	});
+
+	it('disarms the timer when the meeting finishes by any other means', async () => {
+		const service = new TestableRoomLifecycleService(
+			...([
+				{ reactivateAutoRecording: async () => {}, releaseRecordingLockIfNoEgress: async () => {} },
+				{},
+				new FakeLiveKitService(),
+				{ getMeetRoom: async () => ({ roomId: 'room-1', meetingEndAction: MeetingEndAction.NONE }) },
+				new FakeRoomRepository(),
+				{ sendMeetingEndedWebhook: () => {} },
+				{},
+				{},
+				{ cleanupParticipantNames: async () => {} },
+				{ removeRoomFromAllUsers: async () => {} },
+				{},
+				{ cleanupState: async () => {} },
+				{},
+				new FakeRedisService(),
+				new FakeLogger()
+			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
+		);
+
+		await service.handleRoomFinished({ name: 'room-1', sid: 'sid-1' } as unknown as Room);
+
+		expect(service.roomScheduledTasks.cancelled).toEqual(['room-1']);
 	});
 });

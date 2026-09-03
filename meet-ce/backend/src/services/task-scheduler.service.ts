@@ -28,8 +28,8 @@ export class TaskSchedulerService {
 		});
 
 		this.systemEventService.onRedisDisconnected(() => {
-			this.logger.warn('Redis disconnected. Stopping all scheduled tasks until it is back...');
-			this.taskRegistry.forEach(({ name }) => this.stopTask(name));
+			this.logger.warn('Redis disconnected. Stopping all scheduled cron tasks until it is back...');
+			this.stopCronTasks();
 			this.started = false;
 		});
 	}
@@ -117,6 +117,14 @@ export class TaskSchedulerService {
 		this.stopTask(name);
 		this.unregisterTask(name);
 		this.logger.debug(`Task '${name}' cancelled.`);
+	}
+
+	/**
+	 * Timeout tasks are left armed: their delay is relative to when they were scheduled, so the
+	 * deadline of a re-armed one would move by the downtime.
+	 */
+	protected stopCronTasks(): void {
+		this.taskRegistry.filter(({ type }) => type === 'cron').forEach(({ name }) => this.stopTask(name));
 	}
 
 	/**

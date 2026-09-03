@@ -18,9 +18,9 @@ export const enum RedisKeyName {
 	// Marks that the "meeting ending soon" warning was already sent for the current meeting
 	// (the stored value is the meeting's LiveKit room sid), so the max-duration sweep warns once.
 	MEETING_DURATION_WARNING_SENT = `${REDIS_KEY_PREFIX}meeting_duration_warning_sent:`,
-	// Marks that the current meeting was force-ended by the duration GC rather than a moderator
-	// (the stored value is the meeting's LiveKit room sid), so room_finished can attribute the
-	// meetingEnded webhook and the participants' left reason correctly.
+	// Marks that the current meeting was force-ended for exceeding its room's duration limit rather
+	// than by a moderator (the stored value is the meeting's LiveKit room sid), so room_finished can
+	// attribute the meetingEnded webhook and the participants' left reason correctly.
 	MEETING_ENDED_CAUSE = `${REDIS_KEY_PREFIX}meeting_ended_cause:`
 }
 
@@ -33,6 +33,7 @@ export const enum RedisLockName {
 	RECORDING_ACTIVE = 'recording_active',
 	RECORDING_STOP = 'recording_stop',
 	SCHEDULED_TASK = 'scheduled_task',
+	MEETING_DURATION_END = 'meeting_duration_end',
 	STORAGE_INITIALIZATION = 'storage_initialization',
 	MIGRATION = 'migration',
 	WEBHOOK = 'webhook',

@@ -21,8 +21,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 	let lockExistsMock: SpiedFunction<(key: string) => Promise<boolean>>;
 	let getLockCreatedAtMock: SpiedFunction<(key: string) => Promise<number | null>>;
 	let releaseWithRegistryMock: SpiedFunction<(key: string) => Promise<void>>;
-	let roomExistsMock: SpiedFunction<(roomName: string) => Promise<boolean>>;
-	let getRoomMock: SpiedFunction<(roomName: string) => Promise<Room>>;
+	let findRoomMock: SpiedFunction<(roomName: string) => Promise<Room | undefined>>;
 	let getInProgressRecordingsEgressMock: SpiedFunction<(roomName?: string) => Promise<EgressInfo[]>>;
 	let evaluateAndReleaseOrphanedLockMock: SpiedFunction<(roomId: string, lockPrefix: string) => Promise<void>>;
 
@@ -45,8 +44,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 		lockExistsMock = jest.spyOn(mutexService, 'lockRegistryExists');
 		getLockCreatedAtMock = jest.spyOn(mutexService, 'getLockCreatedAtFromRegistry');
 		releaseWithRegistryMock = jest.spyOn(mutexService, 'releaseWithRegistry');
-		roomExistsMock = jest.spyOn(livekitService, 'roomExists');
-		getRoomMock = jest.spyOn(livekitService, 'getRoom');
+		findRoomMock = jest.spyOn(livekitService, 'findRoom');
 		getInProgressRecordingsEgressMock = jest.spyOn(livekitService, 'getInProgressRecordingsEgress');
 		evaluateAndReleaseOrphanedLockMock = jest.spyOn(
 			recordingTaskScheduler as never,
@@ -125,7 +123,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 
 			// Verify that no further checks were performed
 			expect(getLockCreatedAtMock).not.toHaveBeenCalled();
-			expect(roomExistsMock).not.toHaveBeenCalled();
+			expect(findRoomMock).not.toHaveBeenCalled();
 			expect(releaseWithRegistryMock).not.toHaveBeenCalled();
 		});
 
@@ -143,7 +141,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 
 			// Verify that lock age was checked but no further processing occurred
 			expect(getLockCreatedAtMock).toHaveBeenCalled();
-			expect(roomExistsMock).not.toHaveBeenCalled();
+			expect(findRoomMock).not.toHaveBeenCalled();
 			expect(releaseWithRegistryMock).not.toHaveBeenCalled();
 		});
 
@@ -155,8 +153,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			getLockCreatedAtMock.mockResolvedValueOnce(Date.now() - ms('5m')); // 5 minutes old
 
 			// Configure specific mocks for this test
-			roomExistsMock.mockResolvedValueOnce(true);
-			getRoomMock.mockResolvedValueOnce({
+			findRoomMock.mockResolvedValueOnce({
 				numPublishers: 0
 			} as Room);
 			getInProgressRecordingsEgressMock.mockResolvedValueOnce([]);
@@ -165,8 +162,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			await recordingTaskScheduler['evaluateAndReleaseOrphanedLock'](roomId, 'prefix_');
 
 			// Check that release was called with correct lock name
-			expect(roomExistsMock).toHaveBeenCalledWith(roomId);
-			expect(getRoomMock).toHaveBeenCalledWith(roomId);
+			expect(findRoomMock).toHaveBeenCalledWith(roomId);
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
 			expect(releaseWithRegistryMock).toHaveBeenCalledWith(`prefix_${roomId}`);
 		});
@@ -179,8 +175,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			getLockCreatedAtMock.mockResolvedValueOnce(Date.now() - ms('5m')); // 5 minutes ago
 
 			// Configure specific mocks for this test
-			roomExistsMock.mockResolvedValue(true);
-			getRoomMock.mockResolvedValue({
+			findRoomMock.mockResolvedValue({
 				numPublishers: 0
 			} as Room);
 			getInProgressRecordingsEgressMock.mockResolvedValue([{} as EgressInfo]);
@@ -189,8 +184,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			await recordingTaskScheduler['evaluateAndReleaseOrphanedLock'](roomId, 'prefix_');
 
 			// Check that release was called with correct lock name
-			expect(roomExistsMock).toHaveBeenCalledWith(roomId);
-			expect(getRoomMock).toHaveBeenCalledWith(roomId);
+			expect(findRoomMock).toHaveBeenCalledWith(roomId);
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
 			expect(releaseWithRegistryMock).toHaveBeenCalledWith(`prefix_${roomId}`);
 		});
@@ -203,8 +197,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			getLockCreatedAtMock.mockResolvedValueOnce(Date.now() - ms('5m'));
 
 			// Configure specific mocks for this test
-			roomExistsMock.mockResolvedValueOnce(true);
-			getRoomMock.mockResolvedValueOnce({
+			findRoomMock.mockResolvedValueOnce({
 				numPublishers: 1
 			} as Room);
 			getInProgressRecordingsEgressMock.mockResolvedValueOnce([{} as EgressInfo]);
@@ -213,8 +206,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			await recordingTaskScheduler['evaluateAndReleaseOrphanedLock'](roomId, 'prefix_');
 
 			// Verify lock is kept (release not called)
-			expect(roomExistsMock).toHaveBeenCalledWith(roomId);
-			expect(getRoomMock).toHaveBeenCalledWith(roomId);
+			expect(findRoomMock).toHaveBeenCalledWith(roomId);
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
 			expect(releaseWithRegistryMock).not.toHaveBeenCalled();
 		});
@@ -227,15 +219,14 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			getLockCreatedAtMock.mockResolvedValueOnce(Date.now() - ms('5m'));
 
 			// Configure specific mocks for this test
-			roomExistsMock.mockResolvedValueOnce(false);
+			findRoomMock.mockResolvedValueOnce(undefined);
 			getInProgressRecordingsEgressMock.mockResolvedValueOnce([{} as EgressInfo]);
 
 			// Execute evaluateAndReleaseOrphanedLock
 			await recordingTaskScheduler['evaluateAndReleaseOrphanedLock'](roomId, 'prefix_');
 
 			// Check that release was called with correct lock name
-			expect(roomExistsMock).toHaveBeenCalledWith(roomId);
-			expect(getRoomMock).not.toHaveBeenCalled(); // Room doesn't exist
+			expect(findRoomMock).toHaveBeenCalledWith(roomId);
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
 			expect(releaseWithRegistryMock).toHaveBeenCalledWith(`prefix_${roomId}`);
 		});
@@ -248,15 +239,14 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			getLockCreatedAtMock.mockResolvedValueOnce(Date.now() - ms('5m'));
 
 			// Configure specific mocks for this test
-			roomExistsMock.mockResolvedValueOnce(false);
+			findRoomMock.mockResolvedValueOnce(undefined);
 			getInProgressRecordingsEgressMock.mockResolvedValueOnce([]);
 
 			// Execute evaluateAndReleaseOrphanedLock
 			await recordingTaskScheduler['evaluateAndReleaseOrphanedLock'](roomId, 'prefix_');
 
 			// Check that release was called with correct lock name
-			expect(roomExistsMock).toHaveBeenCalledWith(roomId);
-			expect(getRoomMock).not.toHaveBeenCalled(); // Room doesn't exist
+			expect(findRoomMock).toHaveBeenCalledWith(roomId);
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
 			expect(releaseWithRegistryMock).toHaveBeenCalledWith(`prefix_${roomId}`);
 		});
@@ -268,8 +258,8 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			lockExistsMock.mockResolvedValueOnce(true);
 			getLockCreatedAtMock.mockResolvedValueOnce(Date.now() - ms('5m'));
 
-			// Simulate error during roomExists check
-			roomExistsMock.mockRejectedValueOnce(new Error('Failed to check room'));
+			// Simulate error during the room lookup
+			findRoomMock.mockRejectedValueOnce(new Error('Failed to check room'));
 			getInProgressRecordingsEgressMock.mockResolvedValueOnce([]);
 
 			// Execute evaluateAndReleaseOrphanedLock and expect error to propagate
@@ -277,8 +267,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 				'Failed to check room'
 			);
 
-			// Verify that process stopped at roomExists
-			expect(getRoomMock).not.toHaveBeenCalled();
+			// Verify that process stopped at the room lookup
 			expect(releaseWithRegistryMock).not.toHaveBeenCalled();
 		});
 
@@ -290,7 +279,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			getLockCreatedAtMock.mockResolvedValueOnce(Date.now() - ms('5m'));
 
 			// Configure specific mocks for this test
-			roomExistsMock.mockResolvedValueOnce(false);
+			findRoomMock.mockResolvedValueOnce(undefined);
 			getInProgressRecordingsEgressMock.mockResolvedValueOnce([]);
 
 			// Simulate error during release

@@ -161,9 +161,9 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	});
 
 	/**
-	 * `mm:ss`, or nothing once the countdown is spent: the real end is still up to the backend's own
-	 * sweep a moment later, and a frozen `0:00` reads as a broken clock rather than a meeting about
-	 * to close.
+	 * `mm:ss`, or nothing once the countdown is spent: the backend force-ends the meeting at that
+	 * same deadline, and a frozen `0:00` reads as a broken clock rather than a meeting about to
+	 * close.
 	 */
 	protected readonly endingSoonTime = computed(() => {
 		const remainingMs = this.endingSoonRemainingMs();

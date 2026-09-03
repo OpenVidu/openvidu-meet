@@ -947,9 +947,7 @@ export const getMeetingParticipant = async (roomId: string, participantIdentity:
 	checkAppIsRunning();
 
 	const response = await request(app)
-		.get(
-			getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}`)
-		)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}`))
 		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 	return response;
 };
@@ -959,9 +957,7 @@ export const kickParticipant = async (roomId: string, participantIdentity: strin
 
 	const response = await request(app)
 		.delete(
-			getFullPath(
-				`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}`
-			)
+			getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}`)
 		)
 		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
 		.send();

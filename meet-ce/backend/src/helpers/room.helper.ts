@@ -90,6 +90,14 @@ export class MeetRoomHelper {
 	}
 
 	/**
+	 * Name of the scheduled task that ends the meeting running in `roomId` at its duration limit.
+	 * One name per room, so arming it replaces the timer of an earlier meeting in the same room.
+	 */
+	static meetingMaxDurationTaskName(roomId: string): string {
+		return `meetingMaxDurationEnd_${roomId}`;
+	}
+
+	/**
 	 * Participants a room must be able to hold for the recording auto-start `mode` to ever fire, so
 	 * that a `maxParticipants` limit below it can be rejected instead of stored as a recording that
 	 * never starts.

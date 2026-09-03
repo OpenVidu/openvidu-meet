@@ -159,33 +159,19 @@ export class RecordingScheduledTasksService {
 				return;
 			}
 
-			const [lkRoomExists, inProgressRecordings] = await Promise.all([
-				this.livekitService.roomExists(roomId),
+			const [lkRoom, inProgressRecordings] = await Promise.all([
+				this.livekitService.findRoom(roomId),
 				this.livekitService.getInProgressRecordingsEgress(roomId)
 			]);
 
-			if (lkRoomExists) {
-				const lkRoom = await this.livekitService.getRoom(roomId);
-				const hasPublishers = lkRoom.numPublishers > 0;
-
-				if (hasPublishers) {
-					this.logger.debug(`Room ${roomId} exists, checking recordings`);
-					const hasInProgressRecordings = inProgressRecordings.length > 0;
-
-					if (hasInProgressRecordings) {
-						this.logger.debug(`Room ${roomId} has in-progress recordings, keeping lock`);
-						return;
-					}
-
-					// No in-progress recordings, releasing orphaned lock
-					this.logger.verbose(`Room '${roomId}' has no in-progress recordings, releasing orphaned lock`);
-					await safeLockRelease(lockKey);
-					return;
-				}
+			if (lkRoom && lkRoom.numPublishers > 0 && inProgressRecordings.length > 0) {
+				this.logger.debug(`Room ${roomId} has in-progress recordings, keeping lock`);
+				return;
 			}
 
-			// Release lock if room does not exist or has no publishers
-			this.logger.debug(`Room ${roomId} no longer exists or has no publishers, releasing orphaned lock`);
+			this.logger.verbose(
+				`Room '${roomId}' has no publishers or no in-progress recordings, releasing orphaned lock`
+			);
 			await safeLockRelease(lockKey);
 		} catch (error) {
 			this.logger.warn(`Error processing orphan lock for room ${roomId}:`, error);

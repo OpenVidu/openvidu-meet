@@ -1,12 +1,46 @@
-import { describe, expect, it } from '@jest/globals';
+import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import type { Room } from 'livekit-server-sdk';
+import ms from 'ms';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see meeting-mute.test.ts).
 import '../../../src/config/dependency-injector.config.js';
+import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
+import { MeetRoomHelper } from '../../../src/helpers/room.helper.js';
+import type { IScheduledTask } from '../../../src/models/task-scheduler.model.js';
 import { RoomScheduledTasksService } from '../../../src/services/room-scheduled-tasks.service.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, debug: () => {}, error: () => {}, verbose: () => {} };
-const noopTaskScheduler = { registerTask: () => {} };
+
+class FakeTaskSchedulerService {
+	tasks = new Map<string, IScheduledTask>();
+	armed: IScheduledTask[] = [];
+	cancelled: string[] = [];
+
+	registerTask(task: IScheduledTask): void {
+		this.armed.push(task);
+		this.tasks.set(task.name, task);
+	}
+
+	cancelTask(name: string): void {
+		this.cancelled.push(name);
+		this.tasks.delete(name);
+	}
+}
+
+class FakeMutexService {
+	acquirable = true;
+	lockedKeys: string[] = [];
+
+	async withLock<T>(key: string, _ttl: number, callback: () => Promise<T>): Promise<T | null> {
+		this.lockedKeys.push(key);
+
+		if (!this.acquirable) {
+			return null;
+		}
+
+		return await callback();
+	}
+}
 
 class FakeLiveKitService {
 	liveRoomNames: string[] = [];
@@ -16,9 +50,10 @@ class FakeLiveKitService {
 	deleteOutcome: 'deleted' | 'already-gone' | 'error' = 'deleted';
 	deletedRoomNames: string[] = [];
 	roomsExistError: Error | null = null;
+	findRoomError: Error | null = null;
 
 	async listRooms(): Promise<Room[]> {
-		return this.liveRoomNames.map((name) => ({ name }) as Room);
+		return this.liveRoomNames.map((name) => ({ name, ...this.rooms.get(name) }) as unknown as Room);
 	}
 
 	async roomsExist(roomNames: string[]): Promise<Map<string, boolean>> {
@@ -29,14 +64,13 @@ class FakeLiveKitService {
 		return new Map(roomNames.map((name) => [name, this.existingRoomNames.has(name)]));
 	}
 
-	async getRoom(roomName: string): Promise<Room> {
-		const room = this.rooms.get(roomName);
-
-		if (!room) {
-			throw new Error(`room '${roomName}' not found`);
+	async findRoom(roomName: string): Promise<Room | undefined> {
+		if (this.findRoomError) {
+			throw this.findRoomError;
 		}
 
-		return room as unknown as Room;
+		const room = this.rooms.get(roomName);
+		return room && ({ name: roomName, ...room } as unknown as Room);
 	}
 
 	async deleteRoom(roomName: string): Promise<boolean> {
@@ -73,16 +107,20 @@ class FakeRoomRepository {
 }
 
 class FakeLivekitWebhookService {
-	reconciledRoomIds: string[] = [];
+	reconciledRooms: Room[] = [];
 	cleanedUpRoomIds: string[] = [];
 	failFor = new Set<string>();
 
-	async handleRoomStarted({ name }: Room): Promise<void> {
-		if (this.failFor.has(name)) {
-			throw new Error(`boom for ${name}`);
+	get reconciledRoomIds(): string[] {
+		return this.reconciledRooms.map(({ name }) => name);
+	}
+
+	async handleRoomStarted(room: Room): Promise<void> {
+		if (this.failFor.has(room.name)) {
+			throw new Error(`boom for ${room.name}`);
 		}
 
-		this.reconciledRoomIds.push(name);
+		this.reconciledRooms.push(room);
 	}
 
 	async handleRoomFinished({ name }: Room): Promise<void> {
@@ -141,19 +179,22 @@ const buildService = (
 	redisService: FakeRedisService = new FakeRedisService()
 ) => {
 	const livekitWebhookService = new FakeLivekitWebhookService();
+	const taskScheduler = new FakeTaskSchedulerService();
+	const mutexService = new FakeMutexService();
 	const service = new TestableRoomScheduledTasksService(
 		...([
 			noopLogger,
 			roomRepository,
 			{},
-			noopTaskScheduler,
+			taskScheduler,
 			livekitService,
 			livekitWebhookService,
 			{},
-			redisService
+			redisService,
+			mutexService
 		] as unknown as ConstructorParameters<typeof RoomScheduledTasksService>)
 	);
-	return { service, livekitWebhookService };
+	return { service, livekitWebhookService, taskScheduler, mutexService };
 };
 
 describe('RoomScheduledTasksService.reconcileOpenRoomsGC (C2: lost room_started self-heal)', () => {
@@ -185,6 +226,21 @@ describe('RoomScheduledTasksService.reconcileOpenRoomsGC (C2: lost room_started 
 		await service.runReconcileOpenRoomsGC();
 
 		expect(livekitWebhookService.reconciledRoomIds.sort()).toEqual(['room-gone-from-db', 'room-open']);
+	});
+
+	it('hands over the live LiveKit room, whose creation time is what the duration timer needs', async () => {
+		const livekitService = new FakeLiveKitService();
+		livekitService.liveRoomNames = ['room-open'];
+		livekitService.rooms.set('room-open', { sid: 'sid-open', creationTime: 1_700_000_000 });
+		const roomRepository = new FakeRoomRepository();
+		roomRepository.openRoomIds = new Set(['room-open']);
+		const { service, livekitWebhookService } = buildService(livekitService, roomRepository);
+
+		await service.runReconcileOpenRoomsGC();
+
+		expect(livekitWebhookService.reconciledRooms).toEqual([
+			{ name: 'room-open', sid: 'sid-open', creationTime: 1_700_000_000 }
+		]);
 	});
 
 	it('keeps reconciling the other rooms when one fails', async () => {
@@ -259,7 +315,14 @@ describe('RoomScheduledTasksService.validateRoomsStatusGC (orchestrates both rec
  * C7 (MEET-BRANCH-AUDIT-FINDINGS.md): the write side of the MEETING_ENDED_CAUSE flag
  * LivekitWebhookService.getMeetingEndedCause reads on room_finished, scoped to the meeting sid the
  * same way MEETING_DURATION_WARNING_SENT already is.
+ *//**
+ * D1 (MEET-MEETING-DURATION-PRECISION-PLAN.md): the duration limit is enforced by a timer armed
+ * for the meeting's own deadline, not by the sweep's tick, so a meeting no longer overruns its
+ * limit by up to the sweep interval. The timer lives on the replica that armed it and is
+ * replica-locally cancelled on `room_finished`, so firing it re-reads the live LiveKit room: a
+ * timer that outlived its meeting must never end a later meeting in the same room.
  */
+
 describe('RoomScheduledTasksService.markMeetingEndedByDurationLimit (C7: force-end attribution)', () => {
 	it('stores the flag under the meeting sid so a later read for the same meeting matches', async () => {
 		const redisService = new FakeRedisService();
@@ -296,6 +359,7 @@ describe('RoomScheduledTasksService.markMeetingEndedByDurationLimit (C7: force-e
  * (livekit-webhook.service.test.ts) already proves the read side trusts the flag unconditionally;
  * these tests pin the write side's obligation to withdraw it when its own deletion didn't happen.
  */
+
 describe('RoomScheduledTasksService.enforceMeetingMaxDurationGC (C7 follow-up: stale cause flag after a delete that was not this GC)', () => {
 	const roomId = 'room-race';
 	const sid = 'sid-race';
@@ -376,5 +440,239 @@ describe('RoomScheduledTasksService.clearMeetingEndedCause (C7 follow-up: withdr
 		const { service } = buildService(new FakeLiveKitService(), new FakeRoomRepository(), redisService);
 
 		await expect(service.runClearMeetingEndedCause('room-1', 'sid-N')).resolves.toBeUndefined();
+	});
+});
+
+describe('RoomScheduledTasksService duration-limit timers', () => {
+	const roomId = 'room-timer';
+	const maxDurationMinutes = 10;
+	const taskName = MeetRoomHelper.meetingMaxDurationTaskName(roomId);
+	const retryDelayMs = ms(INTERNAL_CONFIG.MEETING_DURATION_END_RETRY_DELAY);
+	const causeKey = `ov_meet:meeting_ended_cause:${roomId}`;
+	// The armed delay is a difference between two clock readings, so the clock is pinned instead of
+	// asserting a tolerance band wide enough to absorb the jitter between them.
+	const nowMs = Date.UTC(2026, 8, 3, 12, 0, 0);
+	const nowSeconds = () => nowMs / 1000;
+
+	beforeAll(() => {
+		jest.spyOn(Date, 'now').mockReturnValue(nowMs);
+	});
+
+	afterAll(() => {
+		jest.restoreAllMocks();
+	});
+
+	const startedRoom = (creationTimeSeconds: number, sid = 'sid-timer') =>
+		({ name: roomId, sid, creationTime: creationTimeSeconds }) as unknown as Room;
+
+	const armedTask = (taskScheduler: FakeTaskSchedulerService): IScheduledTask => {
+		const task = taskScheduler.tasks.get(taskName);
+
+		if (!task) {
+			throw new Error(`no task armed under '${taskName}'`);
+		}
+
+		return task;
+	};
+
+	const armCount = (taskScheduler: FakeTaskSchedulerService): number =>
+		taskScheduler.armed.filter(({ name }) => name === taskName).length;
+
+	it('arms a one-shot task for the time left until the meeting reaches its limit', () => {
+		const { service, taskScheduler } = buildService(new FakeLiveKitService(), new FakeRoomRepository());
+
+		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - 60), maxDurationMinutes);
+
+		const task = armedTask(taskScheduler);
+		expect(task.type).toBe('timeout');
+		expect(ms(task.scheduleOrDelay)).toBe(9 * 60_000);
+	});
+
+	it('arms an immediate task for a meeting that is already past its limit', () => {
+		const { service, taskScheduler } = buildService(new FakeLiveKitService(), new FakeRoomRepository());
+
+		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - maxDurationMinutes * 60 - 120), 10);
+
+		expect(ms(armedTask(taskScheduler).scheduleOrDelay)).toBe(0);
+	});
+
+	it('replaces the timer left armed for an earlier meeting in the same room', () => {
+		const { service, taskScheduler } = buildService(new FakeLiveKitService(), new FakeRoomRepository());
+
+		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - 9 * 60), maxDurationMinutes);
+		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds()), maxDurationMinutes);
+
+		expect(taskScheduler.cancelled).toEqual([taskName, taskName]);
+		// The surviving timer is the second meeting's, a full limit ahead, not the first's last minute
+		expect(ms(armedTask(taskScheduler).scheduleOrDelay)).toBe(maxDurationMinutes * 60_000);
+	});
+
+	it('re-arms the timer of a meeting still running, so a replica that came up mid-meeting has one', async () => {
+		const livekitService = new FakeLiveKitService();
+		livekitService.rooms.set(roomId, { sid: 'sid-timer', creationTime: nowSeconds() - 60 });
+		const roomRepository = new FakeRoomRepository();
+		roomRepository.roomsWithMaxDuration = [{ roomId, config: { maxDurationMinutes } }];
+		const { service, taskScheduler } = buildService(livekitService, roomRepository);
+
+		await service.runEnforceMeetingMaxDurationGC();
+
+		expect(ms(armedTask(taskScheduler).scheduleOrDelay)).toBe(9 * 60_000);
+		expect(livekitService.deletedRoomNames).toEqual([]);
+	});
+
+	it('cancels the timer by the same name it was armed under', () => {
+		const { service, taskScheduler } = buildService(new FakeLiveKitService(), new FakeRoomRepository());
+		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds()), maxDurationMinutes);
+
+		service.cancelMeetingMaxDurationEnd(roomId);
+
+		expect(taskScheduler.tasks.has(taskName)).toBe(false);
+	});
+
+	it('ends the meeting, attributed to the duration limit, when the timer fires', async () => {
+		const livekitService = new FakeLiveKitService();
+		livekitService.rooms.set(roomId, { sid: 'sid-timer', creationTime: nowSeconds() - maxDurationMinutes * 60 });
+		const redisService = new FakeRedisService();
+		const { service, taskScheduler, mutexService } = buildService(
+			livekitService,
+			new FakeRoomRepository(),
+			redisService
+		);
+		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - maxDurationMinutes * 60), maxDurationMinutes);
+
+		await armedTask(taskScheduler).callback();
+
+		expect(livekitService.deletedRoomNames).toEqual([roomId]);
+		expect(redisService.store.get(causeKey)).toBe('sid-timer');
+		expect(mutexService.lockedKeys).toEqual([`ov_meet_lock:meeting_duration_end_${roomId}`]);
+		expect(armCount(taskScheduler)).toBe(1);
+	});
+
+	it('leaves a later meeting in the same room alone when a stale timer fires', async () => {
+		const livekitService = new FakeLiveKitService();
+		const redisService = new FakeRedisService();
+		const { service, taskScheduler } = buildService(livekitService, new FakeRoomRepository(), redisService);
+		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - maxDurationMinutes * 60), maxDurationMinutes);
+		// The meeting the timer was armed for is over and another one is running in the same room,
+		// long enough to be past the limit the stale timer carries but not past its own.
+		livekitService.rooms.set(roomId, {
+			sid: 'sid-later',
+			creationTime: nowSeconds() - maxDurationMinutes * 60 - 60
+		});
+
+		await armedTask(taskScheduler).callback();
+
+		expect(livekitService.deletedRoomNames).toEqual([]);
+		expect(redisService.store.has(causeKey)).toBe(false);
+		expect(armCount(taskScheduler)).toBe(1);
+	});
+
+	it('is a no-op when the meeting is already gone', async () => {
+		const livekitService = new FakeLiveKitService();
+		const redisService = new FakeRedisService();
+		const { service, taskScheduler } = buildService(livekitService, new FakeRoomRepository(), redisService);
+		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - maxDurationMinutes * 60), maxDurationMinutes);
+
+		await expect(armedTask(taskScheduler).callback()).resolves.toBeUndefined();
+
+		expect(livekitService.deletedRoomNames).toEqual([]);
+		expect(redisService.store.has(causeKey)).toBe(false);
+		expect(armCount(taskScheduler)).toBe(1);
+	});
+
+	it('retries instead of handing the meeting to the sweep when another replica holds the room lock', async () => {
+		const livekitService = new FakeLiveKitService();
+		livekitService.rooms.set(roomId, { sid: 'sid-timer', creationTime: nowSeconds() - maxDurationMinutes * 60 });
+		const redisService = new FakeRedisService();
+		const { service, taskScheduler, mutexService } = buildService(
+			livekitService,
+			new FakeRoomRepository(),
+			redisService
+		);
+		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - maxDurationMinutes * 60), maxDurationMinutes);
+		mutexService.acquirable = false;
+
+		await armedTask(taskScheduler).callback();
+
+		expect(livekitService.deletedRoomNames).toEqual([]);
+		expect(redisService.store.has(causeKey)).toBe(false);
+		expect(armCount(taskScheduler)).toBe(2);
+		expect(ms(armedTask(taskScheduler).scheduleOrDelay)).toBe(retryDelayMs);
+	});
+
+	it('retries when its own deleteRoom fails, rather than spending its one shot', async () => {
+		const livekitService = new FakeLiveKitService();
+		livekitService.rooms.set(roomId, { sid: 'sid-timer', creationTime: nowSeconds() - maxDurationMinutes * 60 });
+		livekitService.deleteOutcome = 'error';
+		const { service, taskScheduler } = buildService(livekitService, new FakeRoomRepository());
+		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - maxDurationMinutes * 60), maxDurationMinutes);
+
+		await armedTask(taskScheduler).callback();
+
+		expect(armCount(taskScheduler)).toBe(2);
+		expect(ms(armedTask(taskScheduler).scheduleOrDelay)).toBe(retryDelayMs);
+	});
+
+	it('retries when the LiveKit read throws, so an outage does not demote the meeting to the sweep', async () => {
+		const livekitService = new FakeLiveKitService();
+		livekitService.rooms.set(roomId, { sid: 'sid-timer', creationTime: nowSeconds() - maxDurationMinutes * 60 });
+		const { service, taskScheduler } = buildService(livekitService, new FakeRoomRepository());
+		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - maxDurationMinutes * 60), maxDurationMinutes);
+		livekitService.findRoomError = new Error('livekit unreachable');
+
+		await expect(armedTask(taskScheduler).callback()).resolves.toBeUndefined();
+
+		expect(livekitService.deletedRoomNames).toEqual([]);
+		expect(armCount(taskScheduler)).toBe(2);
+		expect(ms(armedTask(taskScheduler).scheduleOrDelay)).toBe(retryDelayMs);
+	});
+
+	it('backs off per failed attempt and stops retrying once the sweep is the faster owner', async () => {
+		const livekitService = new FakeLiveKitService();
+		livekitService.rooms.set(roomId, { sid: 'sid-timer', creationTime: nowSeconds() - maxDurationMinutes * 60 });
+		livekitService.deleteOutcome = 'error';
+		const { service, taskScheduler } = buildService(livekitService, new FakeRoomRepository());
+		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - maxDurationMinutes * 60), maxDurationMinutes);
+
+		for (let fire = 0; fire < 6; fire++) {
+			await armedTask(taskScheduler).callback();
+		}
+
+		const armedDelays = taskScheduler.armed
+			.filter(({ name }) => name === taskName)
+			.map(({ scheduleOrDelay }) => ms(scheduleOrDelay));
+		// The first delay is the arm itself, already past the limit; the rest are the retries.
+		expect(armedDelays).toEqual([0, retryDelayMs, retryDelayMs * 2, retryDelayMs * 4, retryDelayMs * 8]);
+		expect(retryDelayMs * 16).toBeGreaterThan(ms(INTERNAL_CONFIG.MEETING_MAX_DURATION_GC_INTERVAL));
+	});
+
+	it('ends the meeting when it fires a hair early, instead of arming a timer for a millisecond', async () => {
+		// A millisecond short of its deadline, which is what a timer counting down on the monotonic
+		// clock can read back off a wall clock that moved under it.
+		const creationTime = (nowMs - maxDurationMinutes * 60_000 + 1) / 1000;
+		const livekitService = new FakeLiveKitService();
+		livekitService.rooms.set(roomId, { sid: 'sid-timer', creationTime });
+		const { service, taskScheduler } = buildService(livekitService, new FakeRoomRepository());
+		service.scheduleMeetingMaxDurationEnd(startedRoom(creationTime), maxDurationMinutes);
+
+		await armedTask(taskScheduler).callback();
+
+		expect(livekitService.deletedRoomNames).toEqual([roomId]);
+		expect(armCount(taskScheduler)).toBe(1);
+	});
+
+	it('re-arms for what is left when it fires further from the deadline than the tolerance', async () => {
+		const remainingMs = ms(INTERNAL_CONFIG.MEETING_DURATION_END_TOLERANCE) + 1;
+		const creationTime = (nowMs - maxDurationMinutes * 60_000 + remainingMs) / 1000;
+		const livekitService = new FakeLiveKitService();
+		livekitService.rooms.set(roomId, { sid: 'sid-timer', creationTime });
+		const { service, taskScheduler } = buildService(livekitService, new FakeRoomRepository());
+		service.scheduleMeetingMaxDurationEnd(startedRoom(creationTime), maxDurationMinutes);
+
+		await armedTask(taskScheduler).callback();
+
+		expect(livekitService.deletedRoomNames).toEqual([]);
+		expect(armCount(taskScheduler)).toBe(2);
+		expect(ms(armedTask(taskScheduler).scheduleOrDelay)).toBe(remainingMs);
 	});
 });

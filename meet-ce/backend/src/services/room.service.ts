@@ -205,11 +205,11 @@ export class RoomService {
 	 * The metadata includes the room options from the Meet Room.
 	 **/
 	async createLivekitRoom(roomId: string): Promise<Room> {
-		const roomExists = await this.livekitService.roomExists(roomId);
+		const existingRoom = await this.livekitService.findRoom(roomId);
 
-		if (roomExists) {
+		if (existingRoom) {
 			this.logger.verbose(`Room '${roomId}' already exists in LiveKit`);
-			return this.livekitService.getRoom(roomId);
+			return existingRoom;
 		}
 
 		const meetRoom: MeetRoom = await this.getMeetRoom(roomId);

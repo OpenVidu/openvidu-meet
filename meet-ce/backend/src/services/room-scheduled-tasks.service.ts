@@ -2,6 +2,7 @@ import { inject, injectable } from 'inversify';
 import type { Room } from 'livekit-server-sdk';
 import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import { MeetLock } from '../helpers/redis.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { RedisKeyName } from '../models/redis.model.js';
 import type { IScheduledTask } from '../models/task-scheduler.model.js';
@@ -11,15 +12,15 @@ import { FrontendEventService } from './frontend-event.service.js';
 import { LivekitWebhookService } from './livekit-webhook.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
+import { MutexService } from './mutex.service.js';
 import { RedisService } from './redis.service.js';
 import { RoomService } from './room.service.js';
 import { TaskSchedulerService } from './task-scheduler.service.js';
 
 /**
- * Service responsible for managing scheduled tasks related to rooms.
- *
- * This service handles periodic cleanup operations for rooms, such as:
- * - Deleting expired rooms based on their auto-deletion date
+ * Owns the scheduled work around a room's lifecycle: the periodic sweeps (expired rooms, room
+ * status reconciliation, and the safety net for meetings past their duration limit) and the
+ * per-meeting timer that ends a meeting the moment it reaches that limit.
  */
 @injectable()
 export class RoomScheduledTasksService {
@@ -31,7 +32,8 @@ export class RoomScheduledTasksService {
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(LivekitWebhookService) protected livekitWebhookService: LivekitWebhookService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
-		@inject(RedisService) protected redisService: RedisService
+		@inject(RedisService) protected redisService: RedisService,
+		@inject(MutexService) protected mutexService: MutexService
 	) {
 		this.registerScheduledTasks();
 	}
@@ -214,48 +216,147 @@ export class RoomScheduledTasksService {
 				return;
 			}
 
-			const liveRoomIds = liveRooms.map((room) => room.name);
-			const roomIdsToReconcile = await this.roomRepository.findOpenRoomIds(liveRoomIds);
+			const openRoomIds = new Set(await this.roomRepository.findOpenRoomIds(liveRooms.map((room) => room.name)));
+			const roomsToReconcile = liveRooms.filter((room) => openRoomIds.has(room.name));
 
-			if (roomIdsToReconcile.length === 0) {
+			if (roomsToReconcile.length === 0) {
 				this.logger.verbose('All LiveKit-active rooms are already reflected as active in DB.');
 				return;
 			}
 
 			this.logger.warn(
-				`Found ${roomIdsToReconcile.length} rooms active in LiveKit but still 'open' in DB. Reconciling...`
+				`Found ${roomsToReconcile.length} rooms active in LiveKit but still 'open' in DB. Reconciling...`
 			);
 
 			await runConcurrently(
-				roomIdsToReconcile,
-				async (roomId) => {
+				roomsToReconcile,
+				async (room) => {
 					try {
-						await this.livekitWebhookService.handleRoomStarted({ name: roomId } as unknown as Room);
+						await this.livekitWebhookService.handleRoomStarted(room);
 					} catch (error) {
-						this.logger.error(`Error reconciling room '${roomId}':`, error);
+						this.logger.error(`Error reconciling room '${room.name}':`, error);
 						// Continue with other rooms even if one fails
 					}
 				},
 				{ concurrency: INTERNAL_CONFIG.CONCURRENCY_VALIDATE_ROOMS_STATUS, failFast: true }
 			);
 
-			this.logger.warn(`Open-room reconciliation finished. Total rooms reconciled: ${roomIdsToReconcile.length}`);
+			this.logger.warn(`Open-room reconciliation finished. Total rooms reconciled: ${roomsToReconcile.length}`);
 		} catch (error) {
 			this.logger.error('Error reconciling open rooms with a live meeting:', error);
 		}
 	}
 
 	/**
-	 * Ends the meetings that have exceeded their room's `maxDurationMinutes`.
+	 * Arms the timer that ends the meeting running in `room` the moment it reaches its room's
+	 * `maxDurationMinutes`, replacing any timer already armed for that room. The meeting start is
+	 * the LiveKit room's creation time, so re-arming mid-meeting keeps the same deadline.
+	 */
+	scheduleMeetingMaxDurationEnd(room: Room, maxDurationMinutes: number): void {
+		const remainingMs = this.remainingMsUntilDurationLimit(room, maxDurationMinutes);
+		this.startMeetingMaxDurationTimeout(room, maxDurationMinutes, Math.max(remainingMs, 0));
+	}
+
+	/**
+	 * Disarms the duration-limit timer of `roomId`, for a meeting that ended by any other means.
+	 * The timer only exists on the replica that armed it, so {@link endMeetingOverMaxDuration}
+	 * checks the deadline again before ending anything.
+	 */
+	cancelMeetingMaxDurationEnd(roomId: string): void {
+		this.taskSchedulerService.cancelTask(MeetRoomHelper.meetingMaxDurationTaskName(roomId));
+	}
+
+	protected startMeetingMaxDurationTimeout(
+		room: Room,
+		maxDurationMinutes: number,
+		delayMs: number,
+		retryMs = ms(INTERNAL_CONFIG.MEETING_DURATION_END_RETRY_DELAY)
+	): void {
+		const name = MeetRoomHelper.meetingMaxDurationTaskName(room.name);
+
+		this.taskSchedulerService.cancelTask(name);
+		this.taskSchedulerService.registerTask({
+			name,
+			type: 'timeout',
+			scheduleOrDelay: `${delayMs}ms`,
+			callback: () => this.endMeetingOnDurationLimitReached(room, maxDurationMinutes, retryMs)
+		});
+	}
+
+	/**
+	 * Ends the meeting a fired timer was armed for, and re-arms the timer, which no longer exists
+	 * once it has fired.
 	 *
-	 * LiveKit has no native duration limit, so this periodic sweep is the enforcement: it walks
-	 * the active rooms that declare a limit, compares the LiveKit room's creation time against it,
-	 * and ends the expired ones by deleting the LiveKit room — the exact flow a moderator's
-	 * `meetingEnd` triggers, so participants leave with the `meeting_ended` reason and the
-	 * `meetingEnded` webhook fires. A meeting can overrun its limit by up to the sweep interval.
+	 * The meeting is identified before anything is ended: a timer outliving its meeting carries the
+	 * limit that meeting was armed with, which is not necessarily the room's limit now.
+	 */
+	protected async endMeetingOnDurationLimitReached(
+		room: Room,
+		maxDurationMinutes: number,
+		retryMs: number
+	): Promise<void> {
+		try {
+			const runningMeeting = await this.livekitService.findRoom(room.name);
+
+			if (runningMeeting?.sid !== room.sid) {
+				return;
+			}
+
+			const remainingMs = this.remainingMsUntilDurationLimit(runningMeeting, maxDurationMinutes);
+
+			if (!this.isDurationLimitReached(remainingMs)) {
+				this.startMeetingMaxDurationTimeout(runningMeeting, maxDurationMinutes, remainingMs);
+				return;
+			}
+
+			if (await this.endMeetingOverMaxDuration(room.name, maxDurationMinutes)) {
+				return;
+			}
+
+			this.retryMeetingMaxDurationEnd(room, maxDurationMinutes, retryMs);
+		} catch (error) {
+			this.logger.error(`Error running the duration-limit timer of room '${room.name}':`, error);
+			this.retryMeetingMaxDurationEnd(room, maxDurationMinutes, retryMs);
+		}
+	}
+
+	/**
+	 * Re-arms a timer whose end could not be carried out, backing off per consecutive attempt.
+	 * Retrying stops once it would be slower than the safety-net sweep, which owns the end from
+	 * there.
+	 */
+	protected retryMeetingMaxDurationEnd(room: Room, maxDurationMinutes: number, retryMs: number): void {
+		if (retryMs > ms(INTERNAL_CONFIG.MEETING_MAX_DURATION_GC_INTERVAL)) {
+			return;
+		}
+
+		this.startMeetingMaxDurationTimeout(room, maxDurationMinutes, retryMs, retryMs * 2);
+	}
+
+	protected remainingMsUntilDurationLimit(room: Room, maxDurationMinutes: number): number {
+		return MeetRoomHelper.meetingRemainingMs(Number(room.creationTime), maxDurationMinutes, Date.now());
+	}
+
+	/**
+	 * A remainder this small is spent ending the meeting anyway, so it counts as reached rather
+	 * than as a deadline to wait for. It is also what keeps a timer that fires a hair early, its
+	 * delay counted down on the monotonic clock against a wall-clock deadline, from re-arming for
+	 * a millisecond.
+	 */
+	protected isDurationLimitReached(remainingMs: number): boolean {
+		return remainingMs <= ms(INTERNAL_CONFIG.MEETING_DURATION_END_TOLERANCE);
+	}
+
+	/**
+	 * Safety net for the per-meeting timers armed at `room_started`
+	 * ({@link scheduleMeetingMaxDurationEnd}): walks the active rooms that declare a limit, ends the
+	 * meetings already past their deadline and re-arms the timer of every meeting still running, so
+	 * a meeting whose timer died with its replica (a restart or a rolling deploy included) gets one
+	 * back and is ended on time rather than on this sweep's next tick. Its interval bounds how far a
+	 * meeting can overrun only while it has no timer, at most one tick.
 	 *
 	 * The same sweep also warns the meetings that are not over yet but are inside the
-	 * `MEETING_DURATION_WARNING_REMAINING` window before their deadline — see
+	 * `MEETING_DURATION_WARNING_REMAINING` window before their deadline, see
 	 * {@link warnMeetingEndingSoon}.
 	 */
 	protected async enforceMeetingMaxDurationGC(): Promise<void> {
@@ -286,20 +387,20 @@ export class RoomScheduledTasksService {
 							return false;
 						}
 
-						let livekitRoom;
-
 						try {
 							// The meeting start is the LiveKit room's creation time. A room that is
 							// gone by now simply ended on its own; the status GC reconciles it.
-							livekitRoom = await this.livekitService.getRoom(room.roomId);
-							const creationTimeSeconds = Number(livekitRoom.creationTime);
-							const remainingMs = MeetRoomHelper.meetingRemainingMs(
-								creationTimeSeconds,
-								maxDurationMinutes,
-								Date.now()
-							);
+							const livekitRoom = await this.livekitService.findRoom(room.roomId);
 
-							if (remainingMs > 0) {
+							if (!livekitRoom) {
+								return false;
+							}
+
+							const remainingMs = this.remainingMsUntilDurationLimit(livekitRoom, maxDurationMinutes);
+
+							if (!this.isDurationLimitReached(remainingMs)) {
+								this.scheduleMeetingMaxDurationEnd(livekitRoom, maxDurationMinutes);
+
 								if (remainingMs <= ms(INTERNAL_CONFIG.MEETING_DURATION_WARNING_REMAINING)) {
 									await this.warnMeetingEndingSoon(room.roomId, livekitRoom.sid, remainingMs);
 								}
@@ -307,31 +408,9 @@ export class RoomScheduledTasksService {
 								return false;
 							}
 
-							this.logger.info(
-								`Meeting in room '${room.roomId}' exceeded its ${maxDurationMinutes}-minute limit. Ending it.`
-							);
-							// Written before deleteRoom, which is what triggers room_finished: the
-							// flag must already be visible (on every replica) by the time that
-							// webhook handler reads it.
-							await this.markMeetingEndedByDurationLimit(room.roomId, livekitRoom.sid);
-							const deleted = await this.livekitService.deleteRoom(room.roomId);
-
-							if (!deleted) {
-								// Something else — most likely a moderator's own endMeeting — already
-								// deleted the room in the window between the write above and this
-								// call: this GC attempt did not cause the room_finished that's about
-								// to fire, so withdraw the attribution before anything reads it.
-								await this.clearMeetingEndedCause(room.roomId, livekitRoom.sid);
-							}
-
-							return deleted;
+							return await this.endMeetingOverMaxDuration(room.roomId, maxDurationMinutes);
 						} catch (error) {
 							this.logger.error(`Error enforcing the duration limit of room '${room.roomId}':`, error);
-
-							if (livekitRoom) {
-								await this.clearMeetingEndedCause(room.roomId, livekitRoom.sid);
-							}
-
 							// Continue with other rooms even if one fails
 							return false;
 						}
@@ -351,6 +430,60 @@ export class RoomScheduledTasksService {
 		} catch (error) {
 			this.logger.error('Error checking meetings over their duration limit:', error);
 		}
+	}
+
+	/**
+	 * Ends the meeting running in `roomId` if it is already past `maxDurationMinutes`, by deleting
+	 * its LiveKit room: the exact flow a moderator's `meetingEnd` triggers, so participants leave
+	 * with the `meeting_ended` reason and the `meetingEnded` webhook fires. LiveKit has no native
+	 * duration limit, so this is what enforces the configured one.
+	 *
+	 * The deadline is re-read from the live LiveKit room under a per-room lock, so that the timer
+	 * and the sweep cannot both claim the same end.
+	 *
+	 * @returns whether this call is what ended the meeting.
+	 */
+	protected async endMeetingOverMaxDuration(roomId: string, maxDurationMinutes: number): Promise<boolean> {
+		const lockKey = MeetLock.getMeetingDurationEndLock(roomId);
+		const ended = await this.mutexService.withLock(
+			lockKey,
+			ms(INTERNAL_CONFIG.MEETING_DURATION_END_LOCK_TTL),
+			async () => {
+				const livekitRoom = await this.livekitService.findRoom(roomId);
+
+				if (!livekitRoom) {
+					return false;
+				}
+
+				const remainingMs = this.remainingMsUntilDurationLimit(livekitRoom, maxDurationMinutes);
+
+				if (!this.isDurationLimitReached(remainingMs)) {
+					return false;
+				}
+
+				this.logger.info(
+					`Meeting in room '${roomId}' exceeded its ${maxDurationMinutes}-minute limit. Ending it.`
+				);
+				// deleteRoom is what triggers room_finished, whose handler reads this flag.
+				await this.markMeetingEndedByDurationLimit(roomId, livekitRoom.sid);
+
+				let deleted = false;
+
+				try {
+					deleted = await this.livekitService.deleteRoom(roomId);
+				} catch (error) {
+					this.logger.error(`Error ending the meeting over its duration limit in '${roomId}':`, error);
+				}
+
+				if (!deleted) {
+					await this.clearMeetingEndedCause(roomId, livekitRoom.sid);
+				}
+
+				return deleted;
+			}
+		);
+
+		return ended ?? false;
 	}
 
 	/**
@@ -378,10 +511,10 @@ export class RoomScheduledTasksService {
 	}
 
 	/**
-	 * Records that `meetingId` is being force-ended by this GC, so {@link LivekitWebhookService}
-	 * can attribute the resulting `room_finished`/`meetingEnded` webhook to the duration limit
-	 * instead of a moderator's own end. Scoped to the meeting's LiveKit room sid, so a leaked flag
-	 * is inert for the room's later meetings.
+	 * Records that `meetingId` is being force-ended for exceeding its room's duration limit, so
+	 * {@link LivekitWebhookService} can attribute the resulting `room_finished`/`meetingEnded`
+	 * webhook to the duration limit instead of a moderator's own end. Scoped to the meeting's
+	 * LiveKit room sid, so a leaked flag is inert for the room's later meetings.
 	 */
 	protected async markMeetingEndedByDurationLimit(roomId: string, meetingId: string): Promise<void> {
 		const key = `${RedisKeyName.MEETING_ENDED_CAUSE}${roomId}`;
@@ -389,11 +522,11 @@ export class RoomScheduledTasksService {
 	}
 
 	/**
-	 * Withdraws a duration-cause attribution this GC speculatively wrote, once it turns out this
-	 * attempt is not what actually ended the meeting (its own `deleteRoom` found the room already
-	 * gone, or failed outright). Without this, the flag would sit for up to
+	 * Withdraws a duration-cause attribution {@link endMeetingOverMaxDuration} speculatively wrote,
+	 * once it turns out that attempt is not what actually ended the meeting (its own `deleteRoom`
+	 * found the room already gone, or failed outright). Without this, the flag would sit for up to
 	 * `MEETING_ENDED_CAUSE_TTL` and misattribute whatever later, unrelated event actually ends this
-	 * same still-running meeting — its sid doesn't change just because this attempt didn't land.
+	 * same still-running meeting: its sid doesn't change just because this attempt didn't land.
 	 * Only clears the flag if it still matches `meetingId`, the same guard {@link
 	 * markMeetingEndedByDurationLimit}'s read side uses, so a legitimate flag from a different
 	 * meeting already occupying the (room-scoped) key is never touched.

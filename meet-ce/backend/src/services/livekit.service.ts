@@ -79,6 +79,27 @@ export class LiveKitService {
 	}
 
 	/**
+	 * Like {@link getRoom}, but a room that does not exist is a benign outcome rather than an error,
+	 * for callers that only act on a meeting that is still running.
+	 *
+	 * @param roomName - The name of the room to look up
+	 * @returns The room, or undefined if LiveKit has no room with that name
+	 * @throws Will rethrow service availability or other unexpected errors, since existence is
+	 * undeterminable in that case
+	 */
+	async findRoom(roomName: string): Promise<Room | undefined> {
+		try {
+			return await this.getRoom(roomName);
+		} catch (error) {
+			if (error instanceof OpenViduMeetError && error.statusCode === 404) {
+				return undefined;
+			}
+
+			throw error;
+		}
+	}
+
+	/**
 	 * Checks if a room with the specified name exists in LiveKit.
 	 *
 	 * @param roomName - The name of the room to check
@@ -86,18 +107,7 @@ export class LiveKitService {
 	 * @throws Will rethrow service availability or other unexpected errors
 	 */
 	async roomExists(roomName: string): Promise<boolean> {
-		try {
-			await this.getRoom(roomName);
-			return true;
-		} catch (error) {
-			if (error instanceof OpenViduMeetError && error.statusCode === 404) {
-				return false;
-			}
-
-			// Rethrow other errors as they indicate we couldn't determine if the room exists
-			this.logger.error(`Error checking if room '${roomName}' exists`, error);
-			throw error;
-		}
+		return (await this.findRoom(roomName)) !== undefined;
 	}
 
 	/**

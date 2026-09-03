@@ -6,9 +6,9 @@ import { Service, signal } from '@angular/core';
  * Ticks locally against `Date.now()`, so it needs no further signals from the server to stay
  * accurate.
  *
- * The real end is still driven by the backend's own sweep, up to about a minute after this reaches
- * zero: `remainingMs` clamps at 0 instead of going negative, since the meeting really is about to
- * end and the actual `meetingEnded`/room-closed flow takes over from there.
+ * `remainingMs` clamps at 0 instead of going negative: the backend force-ends the meeting on its
+ * own timer at that same deadline, and the actual `meetingEnded`/room-closed flow takes over from
+ * there.
  */
 @Service()
 export class MeetingEndingSoonService {

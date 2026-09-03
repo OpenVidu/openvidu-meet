@@ -44,6 +44,10 @@ class TestableTaskSchedulerService extends TaskSchedulerService {
 	registeredNames(): string[] {
 		return this.taskRegistry.map((task) => task.name);
 	}
+
+	scheduledHandle(name: string): unknown {
+		return this.scheduledTasks.get(name);
+	}
 }
 
 const cronTask = (name: string, runs: string[]): IScheduledTask => ({
@@ -55,7 +59,7 @@ const cronTask = (name: string, runs: string[]): IScheduledTask => ({
 	}
 });
 
-const openSchedulers: FakeDistributedEventService[] = [];
+const openSchedulers: { service: TestableTaskSchedulerService; events: FakeDistributedEventService }[] = [];
 
 const buildScheduler = () => {
 	const events = new FakeDistributedEventService();
@@ -64,12 +68,16 @@ const buildScheduler = () => {
 			typeof TaskSchedulerService
 		>)
 	);
-	openSchedulers.push(events);
+	openSchedulers.push({ service, events });
 	return { service, events };
 };
 
+// A Redis disconnection no longer stops the timeout tasks, so pending ones are cancelled by hand.
 afterEach(() => {
-	openSchedulers.splice(0).forEach((events) => events.emitDisconnected());
+	openSchedulers.splice(0).forEach(({ service, events }) => {
+		service.registeredNames().forEach((name) => service.cancelTask(name));
+		events.emitDisconnected();
+	});
 });
 
 describe('TaskSchedulerService', () => {
@@ -107,6 +115,32 @@ describe('TaskSchedulerService', () => {
 		await flush();
 		expect(service.scheduledNames()).toEqual(['meetingMaxDurationGC']);
 		expect(service.registeredNames()).toEqual(['meetingMaxDurationGC']);
+	});
+
+	/**
+	 * D1: a timeout task carries a delay, not an absolute deadline, so stopping it on a Redis blip
+	 * and rescheduling it on reconnect would push a meeting's end out by the whole downtime.
+	 */
+	it('keeps a timeout task armed across a Redis blip instead of restarting its delay', async () => {
+		const { service, events } = buildScheduler();
+		service.registerTask({
+			name: 'meetingMaxDurationEnd_room-1',
+			type: 'timeout',
+			scheduleOrDelay: '1h',
+			callback: async () => {}
+		});
+
+		events.emitReady();
+		await flush();
+		const armed = service.scheduledHandle('meetingMaxDurationEnd_room-1');
+		expect(armed).toBeDefined();
+
+		events.emitDisconnected();
+		expect(service.scheduledNames()).toEqual(['meetingMaxDurationEnd_room-1']);
+
+		events.emitReady();
+		await flush();
+		expect(service.scheduledHandle('meetingMaxDurationEnd_room-1')).toBe(armed);
 	});
 
 	it('does not re-arm a timeout task that already ran', async () => {
