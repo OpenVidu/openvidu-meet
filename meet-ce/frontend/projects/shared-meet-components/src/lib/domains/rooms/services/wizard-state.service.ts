@@ -20,6 +20,7 @@ import {
 	MAX_DURATION_MINUTES_LIMIT,
 	MAX_PARTICIPANTS_LIMIT,
 	MIN_DURATION_MINUTES_LIMIT,
+	MIN_PARTICIPANTS_LIMIT,
 	RecordingEnabledOption,
 	RoomAccessPermissionsControls,
 	RoomDetailsFormGroup
@@ -323,7 +324,11 @@ export class RoomWizardStateService {
 					// Empty (null) means unlimited; the backend accepts null or an integer within these bounds
 					maxParticipants: this.formBuilder.control<number | null>(
 						initialRoomOptions.config!.maxParticipants ?? null,
-						[Validators.min(1), Validators.max(MAX_PARTICIPANTS_LIMIT), Validators.pattern(/^\d+$/)]
+						[
+							Validators.min(MIN_PARTICIPANTS_LIMIT),
+							Validators.max(MAX_PARTICIPANTS_LIMIT),
+							Validators.pattern(/^\d+$/)
+						]
 					),
 					maxDurationMinutes: this.formBuilder.control<number | null>(
 						initialRoomOptions.config!.maxDurationMinutes ?? null,

@@ -11,6 +11,7 @@ import {
 	MAX_DURATION_MINUTES_LIMIT,
 	MAX_PARTICIPANTS_LIMIT,
 	MIN_DURATION_MINUTES_LIMIT,
+	MIN_PARTICIPANTS_LIMIT,
 	RoomConfigFormGroup,
 	RoomConfigFormValue
 } from '../../../../models/wizard-forms.model';
@@ -33,6 +34,7 @@ import { RoomWizardStateService } from '../../../../services';
 export class RoomConfigComponent {
 	private wizardService = inject(RoomWizardStateService);
 
+	readonly minParticipantsLimit = MIN_PARTICIPANTS_LIMIT;
 	readonly maxParticipantsLimit = MAX_PARTICIPANTS_LIMIT;
 	readonly minDurationMinutesLimit = MIN_DURATION_MINUTES_LIMIT;
 	readonly maxDurationMinutesLimit = MAX_DURATION_MINUTES_LIMIT;
