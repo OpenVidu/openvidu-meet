@@ -2,6 +2,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MeetRecordingStatus, MeetSignalType } from '@openvidu-meet/typings';
 import { LoggerService } from '../../../../../shared/services/logger.service';
+import { MeetStorageService } from '../../../../../shared/services/storage.service';
 import { DataTopic } from '../../models/data-topic.model';
 import { ParticipantModel } from '../../models/participant.model';
 import { RemoteParticipant, Room, RoomEvent } from '../../services/livekit';
@@ -61,7 +62,8 @@ describe('MeetingEventsService', () => {
 				{ provide: MeetingUiConfigService, useValue: {} },
 				{ provide: MeetingLiveKitService, useValue: {} },
 				{ provide: StreamLayoutStateService, useValue: {} },
-				{ provide: MeetingTranslateService, useValue: {} }
+				{ provide: MeetingTranslateService, useValue: {} },
+				{ provide: MeetStorageService, useValue: { getLocalTileFloating: () => null } }
 			]
 		});
 
@@ -141,6 +143,7 @@ const flushMicrotasks = () => Promise.resolve();
 describe('MeetingEventsService (reconnection view state)', () => {
 	let service: MeetingEventsService;
 	let streamLayoutService: jasmine.SpyObj<StreamLayoutStateService>;
+	let meetStorageService: jasmine.SpyObj<MeetStorageService>;
 	let emit: (event: RoomEvent, ...args: unknown[]) => void;
 	let remotes: ParticipantModel[];
 	let callbacks: MeetingEventCallbacks;
@@ -156,6 +159,8 @@ describe('MeetingEventsService (reconnection view state)', () => {
 			'clearScreenSharePublication',
 			'setLastScreenPinned'
 		]);
+		meetStorageService = jasmine.createSpyObj<MeetStorageService>('MeetStorageService', ['getLocalTileFloating']);
+		meetStorageService.getLocalTileFloating.and.returnValue(null);
 
 		const participantServiceStub = {
 			addRemoteParticipant: () => remotes.push({} as ParticipantModel),
@@ -192,7 +197,8 @@ describe('MeetingEventsService (reconnection view state)', () => {
 				{ provide: MeetingTranslateService, useValue: { translate: (key: string) => key } },
 				{ provide: ChatService, useValue: {} },
 				{ provide: MeetingUiConfigService, useValue: {} },
-				{ provide: RecordingService, useValue: {} }
+				{ provide: RecordingService, useValue: {} },
+				{ provide: MeetStorageService, useValue: meetStorageService }
 			]
 		});
 
@@ -282,5 +288,19 @@ describe('MeetingEventsService (reconnection view state)', () => {
 		await flushMicrotasks();
 
 		expect(streamLayoutService.dockLocalCameraVideo).toHaveBeenCalledTimes(1);
+	});
+
+	it('auto-floats the local video when the first remote participant joins', () => {
+		emit(RoomEvent.ParticipantConnected, remoteParticipant('PA_bob'));
+
+		expect(streamLayoutService.floatLocalCameraVideo).toHaveBeenCalledTimes(1);
+	});
+
+	it('does not auto-float when the user has explicitly docked their tile before', () => {
+		meetStorageService.getLocalTileFloating.and.returnValue(false);
+
+		emit(RoomEvent.ParticipantConnected, remoteParticipant('PA_bob'));
+
+		expect(streamLayoutService.floatLocalCameraVideo).not.toHaveBeenCalled();
 	});
 });

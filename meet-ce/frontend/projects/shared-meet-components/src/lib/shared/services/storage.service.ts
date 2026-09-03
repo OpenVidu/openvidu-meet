@@ -84,4 +84,17 @@ export class MeetStorageService {
 	setLastParticipantName(name: string): void {
 		this.storage.set(MeetStorageKeys.LAST_PARTICIPANT_NAME, name);
 	}
+
+	/**
+	 * Retrieves the user's last explicit choice for their local tile (floating vs docked), or `null`
+	 * if they have never toggled it.
+	 */
+	getLocalTileFloating(): boolean | null {
+		return this.storage.get<boolean>(MeetStorageKeys.LOCAL_TILE_FLOATING);
+	}
+
+	/** Persists the user's explicit choice for their local tile (floating vs docked). */
+	setLocalTileFloating(floating: boolean): void {
+		this.storage.set(MeetStorageKeys.LOCAL_TILE_FLOATING, floating);
+	}
 }

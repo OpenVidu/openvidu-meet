@@ -31,6 +31,7 @@ import { ParticipantService } from '../participant/participant.service';
 import { RecordingService } from '../recording/recording.service';
 import { MeetingTranslateService } from '../translate/meeting-translate.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
+import { MeetStorageService } from '../../../../../shared/services/storage.service';
 
 export interface MeetingEventCallbacks {
 	onRoomReconnecting: () => void;
@@ -47,6 +48,7 @@ export class MeetingEventsService {
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
+	private readonly meetStorageService = inject(MeetStorageService);
 	private readonly recordingService = inject(RecordingService);
 	private readonly translateService = inject(MeetingTranslateService);
 	private readonly log = this.loggerSrv.get('MeetingEventsService');
@@ -100,8 +102,12 @@ export class MeetingEventsService {
 		room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
 			this.participantService.addRemoteParticipant(participant);
 
-			// Auto-float the local video the first time a remote participant joins.
-			if (this.participantService.remoteParticipants().length === 1) {
+			// Auto-float the local video the first time a remote participant joins, unless the user
+			// has explicitly docked their tile before (persisted preference wins over the default).
+			if (
+				this.participantService.remoteParticipants().length === 1 &&
+				this.meetStorageService.getLocalTileFloating() !== false
+			) {
 				this.streamLayoutService.floatLocalCameraVideo(this.participantService.localParticipant());
 			}
 		});

@@ -15,12 +15,14 @@ import { LocalTrackService } from '../local-track/local-track.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
+import { MeetStorageService } from '../../../../../shared/services/storage.service';
 
 @Service()
 export class ParticipantService {
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly localTrackService = inject(LocalTrackService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
+	private readonly meetStorageService = inject(MeetStorageService);
 	private readonly mediaIntent = inject(LocalMediaIntentService);
 	private readonly deviceSrv = inject(DeviceService);
 	private readonly e2eeService = inject(E2eeService);
@@ -134,7 +136,8 @@ export class ParticipantService {
 			this.addRemoteParticipant(p);
 		});
 
-		if (this._remoteParticipants().length > 0) {
+		// Auto-float on entry too, unless the user has explicitly docked their tile before.
+		if (this._remoteParticipants().length > 0 && this.meetStorageService.getLocalTileFloating() !== false) {
 			this.streamLayoutService.floatLocalCameraVideo(this._localParticipant());
 		}
 	}
