@@ -1,10 +1,10 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { AssetsService } from './assets.service';
 
 /**
  * Service responsible for managing sound effects within the application.
  */
-@Injectable()
+@Service()
 export class SoundService {
 	private readonly assets = inject(AssetsService);
 

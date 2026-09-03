@@ -36,7 +36,7 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 		MatProgressSpinnerModule,
 		MeetingLobbyComponent
 	],
-	providers: [MeetingLobbyService, MeetingEventHandlerService, SoundService]
+	providers: [MeetingLobbyService, MeetingEventHandlerService]
 })
 export class MeetingComponent implements OnInit, OnDestroy {
 	protected meetingContextService = inject(MeetingContextService);
