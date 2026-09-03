@@ -58,3 +58,8 @@ pnpm-debug.log*
 # meet-screenshots / meet-videos skill output (default --out dirs at repo root)
 /screenshots/
 /videos/
+
+# /design skill output: the .dc.html artboards and canvas.json are the source, the seeded page
+# they publish as is a 2MB+ generated bundle rebuilt by re-seeding.
+/design/**/*.html
+!/design/**/*.dc.html

@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Roboto', 'RobotoDraft', Helvetica, Arial, sans-serif; }
+    a { color: #00b3d6; } a:hover { color: #0098b5; }
+    .spec { font-size: 12px; color: #8a8a8a; line-height: 1.6 }
+    .step { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #8a8a8a }
+  </style>
+</helmet>
+<div style="width: 1500px; height: 620px; background: #171818; box-sizing: border-box; padding: 40px; display: flex; flex-direction: column; gap: 28px">
+  <div style="display: flex; flex-direction: column; gap: 6px">
+    <span style="font-size: 22px; font-weight: 700; color: #ffffff">One notice, then the rail carries it</span>
+    <span class="spec">The backend sends a single signal. The notice is the one moment that asks for attention; the chip is what stays true for the rest of the window, which is what makes an auto-dismissing notice safe here.</span>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; align-items: start">
+    <div style="display: flex; flex-direction: column; gap: 14px">
+      <span class="step">1 &middot; Signal arrives</span>
+      <div style="padding: 24px; border-radius: 5px; background: #1f2020; border: 1px solid #2d2d2d; display: flex; align-items: flex-start; min-height: 150px"><div style="width: 100%; box-sizing: border-box; display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-radius: 5px; background: #2d2d2d; border: 1px solid #555555; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28)">
+        <span style="display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: rgba(255, 217, 61, 0.18)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffd93d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2"></path><path d="M9 2h6"></path></svg>
+        </span>
+        <div style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1; min-width: 0; padding-top: 4px">
+          <span style="font-size: 14px; font-weight: 600; color: #ffffff">Meeting ending soon</span>
+          <span style="font-size: 13px; line-height: 1.5; color: #b3b3b3">This meeting will end in about 9 minutes</span>
+        </div>
+        <span style="display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 40px; height: 40px; margin: -4px -4px 0 0; border-radius: 50%; color: #b3b3b3">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b3b3b3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+        </span>
+      </div></div>
+      <span class="spec">Slides in under the rail, 12s, dismissible. Nothing is blocked and nobody has to click.</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px">
+      <span class="step">2 &middot; Notice gone</span>
+      <div style="padding: 24px; border-radius: 5px; background: #1f2020; border: 1px solid #2d2d2d; display: flex; align-items: flex-start; min-height: 150px"><div style="display: flex; align-items: center; gap: 8px; height: 32px; width: fit-content; padding: 0 12px; border-radius: 5px; background: #2d2d2d; border: 1px solid #555555">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffd93d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block; flex-shrink: 0"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2"></path><path d="M9 2h6"></path></svg>
+        <span style="font-size: 13px; color: #b3b3b3">Ends in</span>
+        <span style="font-size: 13px; font-weight: 700; color: #ffffff; font-variant-numeric: tabular-nums">4:12</span>
+      </div></div>
+      <span class="spec">The chip has been there since the signal and stays for the whole window. This is the part that cannot be missed.</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px">
+      <span class="step">3 &middot; Last minute</span>
+      <div style="padding: 24px; border-radius: 5px; background: #1f2020; border: 1px solid #2d2d2d; display: flex; align-items: flex-start; min-height: 150px"><div style="display: flex; align-items: center; gap: 8px; height: 32px; width: fit-content; padding: 0 12px; border-radius: 5px; background: #ffd93d; border: 1px solid #ffd93d">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1f2020" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block; flex-shrink: 0"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2"></path><path d="M9 2h6"></path></svg>
+        <span style="font-size: 13px; color: rgba(31, 32, 32, 0.72)">Ends in</span>
+        <span style="font-size: 13px; font-weight: 700; color: #1f2020; font-variant-numeric: tabular-nums">0:47</span>
+      </div></div>
+      <span class="spec">Solid warn at 60s, dark ink. Same threshold the notice never needed to repeat.</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px">
+      <span class="step">4 &middot; Timer spent</span>
+      <div style="padding: 24px; border-radius: 5px; background: #1f2020; border: 1px solid #2d2d2d; display: flex; align-items: flex-start; min-height: 150px"><div style="display: flex; align-items: center; gap: 8px; height: 32px; width: fit-content; padding: 0 12px; border-radius: 5px; background: #ffd93d; border: 1px solid #ffd93d">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1f2020" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block; flex-shrink: 0"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2"></path><path d="M9 2h6"></path></svg>
+        <span style="font-size: 13px; color: rgba(31, 32, 32, 0.72)">Ending</span>
+        <span style="font-size: 13px; font-weight: 700; color: #1f2020; font-variant-numeric: tabular-nums">now</span>
+      </div></div>
+      <span class="spec">No mm:ss, so a stuck 0:00 never reads as a bug while the backend sweep closes the room.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
