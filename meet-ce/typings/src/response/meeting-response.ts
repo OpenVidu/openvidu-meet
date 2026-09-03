@@ -12,6 +12,12 @@ export interface MeetMeetingInfo {
 	roomName: string;
 	/** Timestamp when the meeting started (milliseconds since epoch). */
 	startDate: number;
+	/**
+	 * Timestamp at which the meeting is force-ended for reaching the room's duration limit
+	 * (milliseconds since epoch), or `undefined` when the meeting runs under no limit. Stamped on the
+	 * meeting when it started, from the room's `maxDurationMinutes`, so it does not change mid-meeting.
+	 */
+	endDate?: number;
 	/** Number of participants currently in the meeting (standard participants only). */
 	participantCount: number;
 	/** Whether a recording is currently in progress in the meeting. */

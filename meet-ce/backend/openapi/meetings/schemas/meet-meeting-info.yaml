@@ -21,6 +21,14 @@ properties:
         example: 1620000000000
         description: >
             The date when the meeting started (milliseconds since the Unix epoch).
+    endDate:
+        type: number
+        example: 1620003600000
+        description: >
+            The date at which the meeting is force-ended for reaching the room's duration limit
+            (milliseconds since the Unix epoch), stamped on the meeting when it started from the
+            room's `maxDurationMinutes` (so it does not change mid-meeting). Absent when the meeting
+            runs under no duration limit.
     participantCount:
         type: number
         example: 3

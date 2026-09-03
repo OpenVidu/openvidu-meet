@@ -1,5 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import type { MeetMeetingInfo, MeetParticipantInfo, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import type {
+	MeetMeetingInfo,
+	MeetParticipantInfo,
+	MeetRoomConfig,
+	MeetRoomMemberPermissions
+} from '@openvidu-meet/typings';
 import { MEET_PERMISSION_KEYS, MeetRoomMemberRole, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
@@ -22,17 +27,19 @@ import { RoomData } from '../../../interfaces/scenarios.js';
 const MEETINGS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings`);
 
 const PARTICIPANT_IDENTITY = 'TEST_PARTICIPANT';
+const MAX_DURATION_MINUTES = INTERNAL_CONFIG.MEETING_MIN_DURATION_MINUTES_LIMIT;
 const EXTERNAL_ID = 'crm-user_42';
 const APP_METADATA = '{"department": "cardiology"}';
 
 describe('Meetings API Tests', () => {
 	let app: Express;
 
-	// A room with an active meeting (one fake participant), one without any meeting, and one whose
-	// meeting runs under a participant cap.
+	// A room with an active meeting (one fake participant), one without any meeting, one whose
+	// meeting runs under a participant cap and one whose meeting runs under a duration limit.
 	let meetingRoom: RoomData;
 	let idleRoom: RoomData;
 	let cappedRoom: RoomData;
+	let limitedRoom: RoomData;
 
 	const getMeeting = (roomId: string, token: string) =>
 		request(app).get(`${MEETINGS_PATH}/${roomId}`).set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token);
@@ -47,12 +54,32 @@ describe('Meetings API Tests', () => {
 			.get(`${MEETINGS_PATH}/${roomId}/participants/${identity}`)
 			.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token);
 
+	/**
+	 * The fake participants join with the LiveKit CLI, which uses LiveKit's own keys and therefore
+	 * makes LiveKit auto-create the room unconfigured. Meet stamps its configuration and its metadata
+	 * on the room when it creates it itself, which is what minting a token to join does, so the
+	 * meeting has to be started that way for the API to report either of them.
+	 */
+	const startMeetingThroughMeet = async (roomName: string, config: Partial<MeetRoomConfig>) => {
+		const roomData = await setupSingleRoom(false, roomName, config);
+		await generateRoomMemberToken(roomData.room.roomId, {
+			secret: roomData.moderatorSecret,
+			joinMeeting: true,
+			participantName: 'MEETING_STARTER'
+		});
+		await joinFakeParticipant(roomData.room.roomId, PARTICIPANT_IDENTITY);
+		return roomData;
+	};
+
 	beforeAll(async () => {
 		app = await startTestServer();
 
 		meetingRoom = await setupSingleRoom(true, 'MEETING_INFO_ROOM');
 		idleRoom = await setupSingleRoom(false, 'IDLE_ROOM');
-		cappedRoom = await setupSingleRoom(true, 'MEETING_INFO_CAPPED_ROOM', { maxParticipants: 5 });
+		cappedRoom = await startMeetingThroughMeet('MEETING_INFO_CAPPED_ROOM', { maxParticipants: 5 });
+		limitedRoom = await startMeetingThroughMeet('MEETING_INFO_LIMITED_ROOM', {
+			maxDurationMinutes: MAX_DURATION_MINUTES
+		});
 
 		// Stamp the fake participant with the metadata a real Meet join would carry, including the
 		// app-provided correlation fields.
@@ -91,7 +118,24 @@ describe('Meetings API Tests', () => {
 		it('should report the participant cap in force when the meeting runs under one', async () => {
 			const response = await getMeeting(cappedRoom.room.roomId, cappedRoom.moderatorToken);
 			expect(response.status).toBe(200);
-			expect((response.body as MeetMeetingInfo).maxParticipants).toBe(5);
+
+			const meeting = response.body as MeetMeetingInfo;
+			expect(meeting.maxParticipants).toBe(5);
+			// This room limits participants, not duration
+			expect(meeting.endDate).toBeUndefined();
+		});
+
+		it('should report the deadline of a meeting running under a duration limit', async () => {
+			const response = await getMeeting(limitedRoom.room.roomId, limitedRoom.moderatorToken);
+			expect(response.status).toBe(200);
+
+			const meeting = response.body as MeetMeetingInfo;
+			expect(meeting.endDate).toBeDefined();
+			// The two dates are separate clock readings, Meet's when it created the room and
+			// LiveKit's own, which it reports in whole seconds: the limit apart, give or take that.
+			const durationMs = meeting.endDate! - meeting.startDate;
+			expect(durationMs).toBeGreaterThan(MAX_DURATION_MINUTES * 60_000 - 2_000);
+			expect(durationMs).toBeLessThan(MAX_DURATION_MINUTES * 60_000 + 2_000);
 		});
 
 		it('should fail with 404 when the room has no active meeting', async () => {
