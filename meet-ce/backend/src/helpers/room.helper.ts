@@ -12,6 +12,7 @@ import {
 	MeetRecordingAutoStartMode,
 	SENSITIVE_ROOM_FIELDS_ENTRIES
 } from '@openvidu-meet/typings';
+import type { Room } from 'livekit-server-sdk';
 import { MEET_ENV } from '../environment.js';
 import { addHttpResponseMetadata, applyHttpFieldFiltering, buildFieldsForDbQuery } from './field-filter.helper.js';
 import { RecordingHelper } from './recording.helper.js';
@@ -72,21 +73,16 @@ export class MeetRoomHelper {
 	}
 
 	/**
-	 * Milliseconds left until a meeting reaches its room's duration limit (zero or negative once the
-	 * limit is exceeded). The meeting's start is the LiveKit room creation time (in seconds, as
-	 * LiveKit reports it).
+	 * Milliseconds left until the meeting running in `room` reaches its room's duration limit (zero
+	 * or negative once the limit is exceeded). The deadline is the `endDate` in the room's metadata;
+	 * a room LiveKit auto-created, or one created before Meet wrote that key, falls back to the limit
+	 * counted from the LiveKit room creation time (in seconds, as LiveKit reports it).
 	 */
-	static meetingRemainingMs(creationTimeSeconds: number, maxDurationMinutes: number, nowMs: number): number {
-		const deadlineMs = creationTimeSeconds * 1000 + maxDurationMinutes * 60_000;
+	static meetingRemainingMs(room: Room, maxDurationMinutes: number, nowMs: number): number {
+		const deadlineMs =
+			this.extractMeetingEndDateFromMetadata(room.metadata) ??
+			Number(room.creationTime) * 1000 + maxDurationMinutes * 60_000;
 		return deadlineMs - nowMs;
-	}
-
-	/**
-	 * Decides whether a meeting has exceeded its room's duration limit. The meeting's start is the
-	 * LiveKit room creation time (in seconds, as LiveKit reports it).
-	 */
-	static isMeetingOverMaxDuration(creationTimeSeconds: number, maxDurationMinutes: number, nowMs: number): boolean {
-		return this.meetingRemainingMs(creationTimeSeconds, maxDurationMinutes, nowMs) <= 0;
 	}
 
 	/**
@@ -173,23 +169,25 @@ export class MeetRoomHelper {
 	}
 
 	/**
+	 * Builds the metadata OpenVidu Meet embeds in a LiveKit room when it creates it: the creator
+	 * mark, the room options and, for a room that declares a duration limit, the deadline of the
+	 * meeting that starts with that very creation, `nowMs` being its start.
+	 */
+	static toLivekitRoomMetadata(room: MeetRoom, nowMs: number): string {
+		const { maxDurationMinutes } = room.config;
+		return JSON.stringify({
+			createdBy: MEET_ENV.NAME_ID,
+			endDate: maxDurationMinutes ? nowMs + maxDurationMinutes * 60_000 : undefined,
+			roomOptions: this.toRoomOptions(room)
+		});
+	}
+
+	/**
 	 * Safely parses JSON metadata and checks if createdBy matches NAME_ID.
 	 * @returns true if metadata indicates OpenVidu Meet as creator, false otherwise
 	 */
 	static checkIfMeetingBelogsToOpenViduMeet(metadata?: string): boolean {
-		if (!metadata) return false;
-
-		try {
-			const parsed: unknown = JSON.parse(metadata);
-			return (
-				typeof parsed === 'object' &&
-				parsed !== null &&
-				'createdBy' in parsed &&
-				parsed.createdBy === MEET_ENV.NAME_ID
-			);
-		} catch {
-			return false;
-		}
+		return this.parseMetadata(metadata)?.createdBy === MEET_ENV.NAME_ID;
 	}
 
 	/**
@@ -202,22 +200,36 @@ export class MeetRoomHelper {
 	 * not written by OpenVidu Meet.
 	 */
 	static extractRoomOptionsFromMetadata(metadata?: string): MeetRoomOptions | undefined {
+		const roomOptions = this.parseMetadata(metadata)?.roomOptions;
+
+		if (typeof roomOptions !== 'object' || roomOptions === null) {
+			return undefined;
+		}
+
+		return roomOptions;
+	}
+
+	/**
+	 * Extracts the instant at which the running meeting reaches its room's duration limit, which
+	 * OpenVidu Meet embeds in a LiveKit room's metadata when it creates the room for a room that
+	 * declares a limit (see `RoomService.createLivekitRoom`). Being shared state, it is the one
+	 * deadline the backend enforces and every participant counts down to.
+	 *
+	 * @param metadata - The raw LiveKit room metadata.
+	 * @returns The deadline in milliseconds since the epoch, or undefined if the metadata is absent,
+	 * malformed, was not written by OpenVidu Meet or declares no deadline.
+	 */
+	static extractMeetingEndDateFromMetadata(metadata?: string): number | undefined {
+		const endDate = this.parseMetadata(metadata)?.endDate;
+		return typeof endDate === 'number' && Number.isFinite(endDate) ? endDate : undefined;
+	}
+
+	private static parseMetadata(metadata?: string): Record<string, unknown> | undefined {
 		if (!metadata) return undefined;
 
 		try {
 			const parsed: unknown = JSON.parse(metadata);
-
-			if (typeof parsed !== 'object' || parsed === null || !('roomOptions' in parsed)) {
-				return undefined;
-			}
-
-			const { roomOptions } = parsed;
-
-			if (typeof roomOptions !== 'object' || roomOptions === null) {
-				return undefined;
-			}
-
-			return roomOptions;
+			return typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : undefined;
 		} catch {
 			return undefined;
 		}

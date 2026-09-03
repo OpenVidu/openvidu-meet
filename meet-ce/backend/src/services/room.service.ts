@@ -28,7 +28,6 @@ import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { MEET_ENV } from '../environment.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import {
 	errorDeletingRoom,
@@ -202,7 +201,8 @@ export class RoomService {
 	 * Creates a LiveKit room for the specified Meet Room.
 	 *
 	 * This method creates a LiveKit room with the specified room name and metadata.
-	 * The metadata includes the room options from the Meet Room.
+	 * The metadata includes the room options from the Meet Room and, when the room limits the
+	 * meeting duration, the deadline every participant counts down to.
 	 **/
 	async createLivekitRoom(roomId: string): Promise<Room> {
 		const existingRoom = await this.livekitService.findRoom(roomId);
@@ -217,10 +217,7 @@ export class RoomService {
 		const { maxParticipants } = meetRoom.config;
 		const livekitRoomOptions: CreateOptions = {
 			name: roomId,
-			metadata: JSON.stringify({
-				createdBy: MEET_ENV.NAME_ID,
-				roomOptions: MeetRoomHelper.toRoomOptions(meetRoom)
-			}),
+			metadata: MeetRoomHelper.toLivekitRoomMetadata(meetRoom, Date.now()),
 			emptyTimeout: MEETING_EMPTY_TIMEOUT ? ms(MEETING_EMPTY_TIMEOUT) / 1000 : undefined,
 			departureTimeout: MEETING_DEPARTURE_TIMEOUT ? ms(MEETING_DEPARTURE_TIMEOUT) / 1000 : undefined,
 			maxParticipants: maxParticipants || undefined

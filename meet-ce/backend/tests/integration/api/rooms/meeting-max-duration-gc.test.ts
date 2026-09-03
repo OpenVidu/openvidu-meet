@@ -3,20 +3,26 @@ import { MeetRoomStatus } from '@openvidu-meet/typings';
 import type { Room } from 'livekit-server-sdk';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
+import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
 import { RoomRepository } from '../../../../src/repositories/room.repository.js';
 import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
-import { deleteAllRooms, executeMeetingMaxDurationGC, startTestServer } from '../../../helpers/request-helpers.js';
+import {
+	deleteAllRooms,
+	executeMeetingMaxDurationGC,
+	generateRoomMemberToken,
+	startTestServer
+} from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 
 const { MEETING_MIN_DURATION_MINUTES_LIMIT } = INTERNAL_CONFIG;
 
 /**
  * `config.maxDurationMinutes` is enforced by a timer armed for each meeting's own deadline, with a
- * periodic sweep as the safety net: LiveKit has no native duration limit, so both compare the
- * LiveKit room's creation time against the limit and end the expired meetings by deleting the
- * LiveKit room (the same flow a moderator's meetingEnd triggers). This suite drives the sweep,
+ * periodic sweep as the safety net: LiveKit has no native duration limit, so both read the deadline
+ * Meet writes into the LiveKit room metadata and end the expired meetings by deleting the LiveKit
+ * room (the same flow a moderator's meetingEnd triggers). This suite drives the sweep,
  * which is also what warns the meetings that entered the `MEETING_DURATION_WARNING_REMAINING`
  * window before their deadline, once per meeting. The timers themselves are armed from the
  * `room_started` webhook, which this in-process suite does not receive, and are covered by the
@@ -55,12 +61,12 @@ describe('Meeting Max Duration GC Tests', () => {
 	};
 
 	/**
-	 * Makes every read of this meeting report it as having started `elapsedSeconds` ago, instead of
-	 * waiting out real time: the only clock the enforcement has is LiveKit's own room creation
-	 * time, so that is the one thing that has to be faked. Existence still comes from LiveKit, so a
-	 * room the enforcement deleted reads as gone.
+	 * Makes every read of this meeting report `remainingMs` left before its deadline, instead of
+	 * waiting out real time: the deadline the enforcement reads is the `endDate` Meet writes into
+	 * the LiveKit room metadata at room creation, so that is the one thing that has to be moved.
+	 * Existence still comes from LiveKit, so a room the enforcement deleted reads as gone.
 	 */
-	const mockMeetingElapsedTime = (roomId: string, elapsedSeconds: number) => {
+	const mockMeetingRemainingTime = (roomId: string, remainingMs: number) => {
 		jest.spyOn(livekitService, 'getRoom').mockImplementation(async (roomName: string) => {
 			const liveRoom = await realGetRoom(roomName);
 
@@ -70,10 +76,36 @@ describe('Meeting Max Duration GC Tests', () => {
 
 			return {
 				...liveRoom,
-				creationTime: BigInt(Math.floor(Date.now() / 1000) - elapsedSeconds)
+				metadata: JSON.stringify({
+					...JSON.parse(liveRoom.metadata || '{}'),
+					endDate: Date.now() + remainingMs
+				})
 			} as unknown as Room;
 		});
 	};
+
+	it('should write the meeting deadline into the LiveKit room metadata', async () => {
+		const maxDurationMinutes = 60;
+		// No fake participant: the LiveKit CLI joins with LiveKit's own keys, which auto-creates the
+		// room unconfigured, and Meet then finds it already there and writes no metadata at all.
+		const { room, moderatorSecret } = await setupSingleRoom(false, 'MAX_DURATION_METADATA_ROOM', {
+			maxDurationMinutes
+		});
+		// Minting a token to join is what creates the LiveKit room, metadata included
+		await generateRoomMemberToken(room.roomId, {
+			secret: moderatorSecret,
+			joinMeeting: true,
+			participantName: 'TEST_PARTICIPANT'
+		});
+
+		const livekitRoom = await livekitService.getRoom(room.roomId);
+		const endDate = MeetRoomHelper.extractMeetingEndDateFromMetadata(livekitRoom.metadata);
+
+		expect(endDate).toBeDefined();
+		// Written when Meet created the room, which this test's own setup did moments ago
+		expect(endDate! - Date.now()).toBeLessThanOrEqual(maxDurationMinutes * 60_000);
+		expect(endDate! - Date.now()).toBeGreaterThan(maxDurationMinutes * 60_000 - 30_000);
+	});
 
 	it('should not end a meeting before its duration limit', async () => {
 		const { room } = await setupSingleRoom(true, 'MAX_DURATION_FRESH_ROOM', {
@@ -117,20 +149,19 @@ describe('Meeting Max Duration GC Tests', () => {
 		await markRoomAsActiveMeeting(room.roomId);
 		// 1 minute left out of the floor's 10: inside the default 5-minute warning threshold
 		const remainingMinutes = 1;
-		const elapsedSeconds = (MEETING_MIN_DURATION_MINUTES_LIMIT - remainingMinutes) * 60;
 
-		mockMeetingElapsedTime(room.roomId, elapsedSeconds);
+		mockMeetingRemainingTime(room.roomId, remainingMinutes * 60_000);
 		await executeMeetingMaxDurationGC();
 		// The warning must not repeat on the next sweep (once-only Redis guard), still inside the
 		// same warning window
-		mockMeetingElapsedTime(room.roomId, elapsedSeconds);
+		mockMeetingRemainingTime(room.roomId, remainingMinutes * 60_000);
 		await executeMeetingMaxDurationGC();
 
 		const warningCalls = sendWarningSpy.mock.calls.filter(([roomId]) => roomId === room.roomId);
 		expect(warningCalls).toHaveLength(1);
 
-		// remainingMs is exact, not rounded: it must be at most the requested 1 minute, and no more
-		// than a few seconds under it (the time this test itself took to reach the assertion)
+		// remainingMs is exact, not rounded: the deadline is read a hair after it is faked, so it
+		// must be at most the requested 1 minute and within a few seconds of it
 		const remainingMs = warningCalls[0][1];
 		expect(remainingMs).toBeLessThanOrEqual(remainingMinutes * 60_000);
 		expect(remainingMs).toBeGreaterThan(remainingMinutes * 60_000 - 5_000);
@@ -148,7 +179,7 @@ describe('Meeting Max Duration GC Tests', () => {
 		expect(await livekitService.roomExists(room.roomId)).toBe(true);
 
 		// Past its deadline by a margin, so the assertion cannot flake on clock rounding
-		mockMeetingElapsedTime(room.roomId, MEETING_MIN_DURATION_MINUTES_LIMIT * 60 + 5);
+		mockMeetingRemainingTime(room.roomId, -5_000);
 		await executeMeetingMaxDurationGC();
 
 		expect(await livekitService.roomExists(room.roomId)).toBe(false);

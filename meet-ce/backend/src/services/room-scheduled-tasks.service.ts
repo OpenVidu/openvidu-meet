@@ -249,8 +249,8 @@ export class RoomScheduledTasksService {
 
 	/**
 	 * Arms the timer that ends the meeting running in `room` the moment it reaches its room's
-	 * `maxDurationMinutes`, replacing any timer already armed for that room. The meeting start is
-	 * the LiveKit room's creation time, so re-arming mid-meeting keeps the same deadline.
+	 * `maxDurationMinutes`, replacing any timer already armed for that room. The deadline is the
+	 * meeting's own state, so re-arming mid-meeting keeps it.
 	 */
 	scheduleMeetingMaxDurationEnd(room: Room, maxDurationMinutes: number): void {
 		const remainingMs = this.remainingMsUntilDurationLimit(room, maxDurationMinutes);
@@ -334,7 +334,7 @@ export class RoomScheduledTasksService {
 	}
 
 	protected remainingMsUntilDurationLimit(room: Room, maxDurationMinutes: number): number {
-		return MeetRoomHelper.meetingRemainingMs(Number(room.creationTime), maxDurationMinutes, Date.now());
+		return MeetRoomHelper.meetingRemainingMs(room, maxDurationMinutes, Date.now());
 	}
 
 	/**
@@ -388,8 +388,8 @@ export class RoomScheduledTasksService {
 						}
 
 						try {
-							// The meeting start is the LiveKit room's creation time. A room that is
-							// gone by now simply ended on its own; the status GC reconciles it.
+							// The deadline lives in the LiveKit room. A room that is gone by now
+							// simply ended on its own; the status GC reconciles it.
 							const livekitRoom = await this.livekitService.findRoom(room.roomId);
 
 							if (!livekitRoom) {

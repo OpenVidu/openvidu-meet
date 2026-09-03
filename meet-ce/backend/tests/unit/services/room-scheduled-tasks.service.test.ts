@@ -462,8 +462,8 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 		jest.restoreAllMocks();
 	});
 
-	const startedRoom = (creationTimeSeconds: number, sid = 'sid-timer') =>
-		({ name: roomId, sid, creationTime: creationTimeSeconds }) as unknown as Room;
+	const startedRoom = (creationTimeSeconds: number, sid = 'sid-timer', metadata?: string) =>
+		({ name: roomId, sid, creationTime: creationTimeSeconds, metadata }) as unknown as Room;
 
 	const armedTask = (taskScheduler: FakeTaskSchedulerService): IScheduledTask => {
 		const task = taskScheduler.tasks.get(taskName);
@@ -486,6 +486,18 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 		const task = armedTask(taskScheduler);
 		expect(task.type).toBe('timeout');
 		expect(ms(task.scheduleOrDelay)).toBe(9 * 60_000);
+	});
+
+	it('arms for the deadline the meeting carries, not for the limit counted from the creation time', () => {
+		const { service, taskScheduler } = buildService(new FakeLiveKitService(), new FakeRoomRepository());
+		const metadata = JSON.stringify({ createdBy: 'openvidu-meet', endDate: nowMs + 2 * 60_000 });
+
+		service.scheduleMeetingMaxDurationEnd(
+			startedRoom(nowSeconds() - 60, 'sid-timer', metadata),
+			maxDurationMinutes
+		);
+
+		expect(ms(armedTask(taskScheduler).scheduleOrDelay)).toBe(2 * 60_000);
 	});
 
 	it('arms an immediate task for a meeting that is already past its limit', () => {
