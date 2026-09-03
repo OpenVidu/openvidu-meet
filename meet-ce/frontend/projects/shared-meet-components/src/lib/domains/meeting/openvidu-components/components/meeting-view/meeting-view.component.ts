@@ -150,7 +150,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	protected readonly viewportService = inject(ViewportService);
 	readonly templateRegistry = inject(TemplateRegistryService);
 
-	private readonly endingSoonRemainingMs = this.meetingEndingSoonService.remainingMs.asReadonly();
+	private readonly endingSoonRemainingMs = this.meetingEndingSoonService.remainingMs;
 
 	protected readonly isEndingSoon = computed(() => this.endingSoonRemainingMs() !== undefined);
 

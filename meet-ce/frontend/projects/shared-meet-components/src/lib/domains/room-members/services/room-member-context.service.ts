@@ -39,6 +39,7 @@ export class RoomMemberContextService {
 	private readonly _memberBadge = signal<MeetRoomMemberUIBadge>(MeetRoomMemberUIBadge.OTHER);
 	private readonly _permissions = signal<MeetRoomMemberPermissions | undefined>(undefined);
 	private readonly _member = signal<MeetRoomMember | undefined>(undefined);
+	private readonly _serverTimeSkewMs = signal<number>(0);
 
 	/** Readonly signal for the room member token */
 	readonly roomMemberToken = this._roomMemberToken.asReadonly();
@@ -56,6 +57,12 @@ export class RoomMemberContextService {
 	readonly permissions = this._permissions.asReadonly();
 	/** Readonly signal for the room member info (when memberId is set) */
 	readonly member = this._member.asReadonly();
+	/**
+	 * How far this device's clock is behind the server's, from the `iat` the server stamps on every
+	 * room member token. Shared meeting state such as the meeting's end date is written in server
+	 * time, so reading it against `Date.now()` alone would be off by this device's own skew.
+	 */
+	readonly serverTimeSkewMs = this._serverTimeSkewMs.asReadonly();
 	/** Computed signal for the room member's display name */
 	readonly memberName = computed(() => this._member()?.name);
 	/** Readonly signal for the room member's UI badge */
@@ -193,6 +200,7 @@ export class RoomMemberContextService {
 			}
 
 			this._roomId.set(tokenMetadata.roomId);
+			this._serverTimeSkewMs.set(Number.isFinite(tokenMetadata.iat) ? tokenMetadata.iat - Date.now() : 0);
 			this._permissions.set(tokenMetadata.permissions);
 			this._memberBadge.set(tokenMetadata.badge);
 
@@ -261,5 +269,6 @@ export class RoomMemberContextService {
 		this._permissions.set(undefined);
 		this._memberBadge.set(MeetRoomMemberUIBadge.OTHER);
 		this._member.set(undefined);
+		this._serverTimeSkewMs.set(0);
 	}
 }

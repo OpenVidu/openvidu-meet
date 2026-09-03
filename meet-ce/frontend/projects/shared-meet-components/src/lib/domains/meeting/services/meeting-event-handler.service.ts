@@ -46,6 +46,7 @@ import {
 } from '../openvidu-components';
 import { toEmbeddedParticipantPayload } from '../utils/embedded-participant.utils';
 import { toMediaStatusChangedEvent } from '../utils/media-status-event.utils';
+import { parseMeetingEndDate } from '../utils/room-metadata.utils';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingStateService } from './meeting-state.service';
 
@@ -163,6 +164,23 @@ export class MeetingEventHandlerService {
 		room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
 			this.onRemoteParticipantDisconnected(participant);
 		});
+
+		// LiveKit seeds the room metadata silently when the join response lands and only emits the
+		// changes that follow, so the deadline is read here as well as listened for.
+		this.handleRoomMetadataChanged(room.metadata);
+		room.on(RoomEvent.RoomMetadataChanged, (metadata: string) => this.handleRoomMetadataChanged(metadata));
+	}
+
+	/**
+	 * Hands the meeting's deadline to {@link MeetingEndingSoonService}, converted from the server
+	 * clock the metadata carries it in to this device's, so the countdown is right however far off
+	 * this device's own clock is.
+	 */
+	private handleRoomMetadataChanged(metadata?: string): void {
+		const endDate = parseMeetingEndDate(metadata);
+		const skewMs = this.roomMemberContextService.serverTimeSkewMs();
+
+		this.meetingEndingSoon.watch(endDate === undefined ? undefined : endDate - skewMs);
 	}
 
 	// What the host has been told about each local device's status in the current entry.
@@ -435,13 +453,14 @@ export class MeetingEventHandlerService {
 	}
 
 	/**
-	 * Warns the user that the meeting is about to reach its room's duration limit
-	 * (`maxDurationMinutes`) and will be ended for every participant, through
-	 * {@link MeetingEndingSoonService}, which drives both the notice and the status rail's countdown.
-	 * The backend sends this signal once per meeting to the whole room, so everyone sees the same
-	 * warning. Also records the cause locally
-	 * (see {@link MeetingEndedBy}) so the eventual `left`/`meetingLeft` event this participant
-	 * receives is attributed correctly instead of reading as a moderator's end.
+	 * Records that the meeting is about to reach its room's duration limit (`maxDurationMinutes`) and
+	 * will be ended for every participant, so the eventual `left`/`meetingLeft` event this
+	 * participant receives is attributed to the limit (see {@link MeetingEndedBy}) instead of reading
+	 * as a moderator's end.
+	 *
+	 * The backend sends this signal once per meeting to the whole room. Announcing it is left to
+	 * {@link MeetingEndingSoonService}, which only falls back to this signal for a meeting whose
+	 * deadline it could not read off the room metadata.
 	 */
 	private handleMeetingEndingSoon(event: MeetMeetingEndingSoonPayload): void {
 		const roomId = this.meetingContext.roomId();
@@ -451,8 +470,7 @@ export class MeetingEventHandlerService {
 		}
 
 		this.meetingContext.setMeetingEndedBy('duration');
-		this.meetingEndingSoon.start(event.remainingMs);
-		this.soundService.playMeetingEndingSoonSound();
+		this.meetingEndingSoon.warn(event.remainingMs);
 	}
 
 	/**

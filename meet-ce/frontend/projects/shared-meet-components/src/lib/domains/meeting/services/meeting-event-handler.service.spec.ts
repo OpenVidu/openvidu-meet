@@ -53,6 +53,7 @@ describe('MeetingEventHandlerService', () => {
 	let cameraEnabled: WritableSignal<boolean>;
 	let screenShareEnabled: WritableSignal<boolean>;
 	let meetingEndedBy: WritableSignal<MeetingEndedBy>;
+	let serverTimeSkewMs: WritableSignal<number>;
 	let meetingContextStub: {
 		meetingEndedBy: () => MeetingEndedBy;
 		setMeetingEndedBy: jasmine.Spy;
@@ -66,6 +67,7 @@ describe('MeetingEventHandlerService', () => {
 		cameraEnabled = signal(true);
 		screenShareEnabled = signal(false);
 		meetingEndedBy = signal<MeetingEndedBy>(null);
+		serverTimeSkewMs = signal(0);
 		meetingContextStub = {
 			meetingEndedBy: () => meetingEndedBy(),
 			setMeetingEndedBy: jasmine.createSpy('setMeetingEndedBy').and.callFake((by: MeetingEndedBy) => {
@@ -102,7 +104,10 @@ describe('MeetingEventHandlerService', () => {
 			'showSnackbar',
 			'showDialog'
 		]);
-		meetingEndingSoon = jasmine.createSpyObj<MeetingEndingSoonService>('MeetingEndingSoonService', ['start']);
+		meetingEndingSoon = jasmine.createSpyObj<MeetingEndingSoonService>('MeetingEndingSoonService', [
+			'watch',
+			'warn'
+		]);
 		soundService = jasmine.createSpyObj<SoundService>('SoundService', [
 			'playParticipantJoinedSound',
 			'playParticipantRoleUpgradedSound',
@@ -127,7 +132,7 @@ describe('MeetingEventHandlerService', () => {
 				{ provide: MeetingStateService, useValue: { clear: () => {} } },
 				{ provide: RoomFeatureService, useValue: {} },
 				{ provide: RecordingService, useValue: {} },
-				{ provide: RoomMemberContextService, useValue: {} },
+				{ provide: RoomMemberContextService, useValue: { serverTimeSkewMs } },
 				{ provide: NavigationService, useValue: navigationServiceStub },
 				{ provide: NotificationService, useValue: notificationService },
 				{ provide: MeetingEndingSoonService, useValue: meetingEndingSoon },
@@ -365,16 +370,71 @@ describe('MeetingEventHandlerService', () => {
 			expect(notificationService.showSnackbar).not.toHaveBeenCalled();
 		});
 
-		it('starts the countdown with the exact remaining milliseconds', () => {
+		it("hands the warning's remaining milliseconds to the countdown, as the fallback source", () => {
 			receiveEndingSoonSignal();
 
-			expect(meetingEndingSoon.start).toHaveBeenCalledOnceWith(300_000);
+			expect(meetingEndingSoon.warn).toHaveBeenCalledOnceWith(300_000);
+		});
+	});
+
+	/**
+	 * The meeting's deadline is shared state, written into the LiveKit room metadata, so it reaches
+	 * late joiners and reconnectors too. It is stamped in server time, which is why it is shifted by
+	 * the skew measured from the room member token before anything counts down to it.
+	 */
+	describe('meeting deadline', () => {
+		const endDate = Date.UTC(2026, 8, 3, 12, 0, 0);
+		const meetMetadata = (deadline?: number) =>
+			JSON.stringify({ createdBy: 'openvidu-meet', endDate: deadline, roomOptions: {} });
+
+		/** Simulates joining a room whose metadata is `metadata`, and returns its change listener. */
+		function joinRoom(metadata?: string): (metadata: string) => void {
+			let onMetadataChanged: ((metadata: string) => void) | undefined;
+			const room = {
+				metadata,
+				on: (event: string, handler: (...args: unknown[]) => void) => {
+					if (event === 'roomMetadataChanged') onMetadataChanged = handler as (metadata: string) => void;
+				}
+			};
+
+			service.setupRoomListeners(room as never);
+			return onMetadataChanged!;
+		}
+
+		it('follows the deadline the room metadata carries', () => {
+			joinRoom(meetMetadata(endDate));
+
+			expect(meetingEndingSoon.watch).toHaveBeenCalledOnceWith(endDate);
 		});
 
-		it('plays the ending-soon sound', () => {
-			receiveEndingSoonSignal();
+		it("shifts the deadline by this device's distance from the server clock", () => {
+			// The server's clock reads 2 seconds ahead of this device's
+			serverTimeSkewMs.set(2_000);
 
-			expect(soundService.playMeetingEndingSoonSound).toHaveBeenCalledOnceWith();
+			joinRoom(meetMetadata(endDate));
+
+			expect(meetingEndingSoon.watch).toHaveBeenCalledOnceWith(endDate - 2_000);
+		});
+
+		it('follows nothing when the meeting declares no deadline', () => {
+			joinRoom(meetMetadata(undefined));
+
+			expect(meetingEndingSoon.watch).toHaveBeenCalledOnceWith(undefined);
+		});
+
+		it("follows nothing for a room whose metadata is not Meet's", () => {
+			// A room LiveKit auto-created, which carries no metadata at all
+			joinRoom(undefined);
+
+			expect(meetingEndingSoon.watch).toHaveBeenCalledOnceWith(undefined);
+		});
+
+		it('follows the deadline a later metadata change brings', () => {
+			const onMetadataChanged = joinRoom(meetMetadata(undefined));
+
+			onMetadataChanged(meetMetadata(endDate));
+
+			expect(meetingEndingSoon.watch).toHaveBeenCalledWith(endDate);
 		});
 	});
 
