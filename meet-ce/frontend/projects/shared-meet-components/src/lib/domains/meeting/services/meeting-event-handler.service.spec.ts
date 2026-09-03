@@ -105,8 +105,8 @@ describe('MeetingEventHandlerService', () => {
 			'showDialog'
 		]);
 		meetingEndingSoon = jasmine.createSpyObj<MeetingEndingSoonService>('MeetingEndingSoonService', [
-			'watch',
-			'warn'
+			'trackMeetingEnd',
+			'warnEndingIn'
 		]);
 		soundService = jasmine.createSpyObj<SoundService>('SoundService', [
 			'playParticipantJoinedSound',
@@ -373,7 +373,7 @@ describe('MeetingEventHandlerService', () => {
 		it("hands the warning's remaining milliseconds to the countdown, as the fallback source", () => {
 			receiveEndingSoonSignal();
 
-			expect(meetingEndingSoon.warn).toHaveBeenCalledOnceWith(300_000);
+			expect(meetingEndingSoon.warnEndingIn).toHaveBeenCalledOnceWith(300_000);
 		});
 	});
 
@@ -401,10 +401,10 @@ describe('MeetingEventHandlerService', () => {
 			return onMetadataChanged!;
 		}
 
-		it('follows the deadline the room metadata carries', () => {
+		it('tracks the end the room metadata carries', () => {
 			joinRoom(meetMetadata(endDate));
 
-			expect(meetingEndingSoon.watch).toHaveBeenCalledOnceWith(endDate);
+			expect(meetingEndingSoon.trackMeetingEnd).toHaveBeenCalledOnceWith(endDate);
 		});
 
 		it("shifts the deadline by this device's distance from the server clock", () => {
@@ -413,28 +413,28 @@ describe('MeetingEventHandlerService', () => {
 
 			joinRoom(meetMetadata(endDate));
 
-			expect(meetingEndingSoon.watch).toHaveBeenCalledOnceWith(endDate - 2_000);
+			expect(meetingEndingSoon.trackMeetingEnd).toHaveBeenCalledOnceWith(endDate - 2_000);
 		});
 
-		it('follows nothing when the meeting declares no deadline', () => {
+		it('tracks nothing when the meeting declares no end', () => {
 			joinRoom(meetMetadata(undefined));
 
-			expect(meetingEndingSoon.watch).toHaveBeenCalledOnceWith(undefined);
+			expect(meetingEndingSoon.trackMeetingEnd).toHaveBeenCalledOnceWith(undefined);
 		});
 
-		it("follows nothing for a room whose metadata is not Meet's", () => {
+		it("tracks nothing for a room whose metadata is not Meet's", () => {
 			// A room LiveKit auto-created, which carries no metadata at all
 			joinRoom(undefined);
 
-			expect(meetingEndingSoon.watch).toHaveBeenCalledOnceWith(undefined);
+			expect(meetingEndingSoon.trackMeetingEnd).toHaveBeenCalledOnceWith(undefined);
 		});
 
-		it('follows the deadline a later metadata change brings', () => {
+		it('tracks the end a later metadata change brings', () => {
 			const onMetadataChanged = joinRoom(meetMetadata(undefined));
 
 			onMetadataChanged(meetMetadata(endDate));
 
-			expect(meetingEndingSoon.watch).toHaveBeenCalledWith(endDate);
+			expect(meetingEndingSoon.trackMeetingEnd).toHaveBeenCalledWith(endDate);
 		});
 	});
 

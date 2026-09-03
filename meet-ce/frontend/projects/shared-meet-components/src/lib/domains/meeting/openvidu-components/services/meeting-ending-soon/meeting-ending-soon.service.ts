@@ -2,143 +2,119 @@ import { inject, Service, signal } from '@angular/core';
 import { SoundService } from '../../../../../shared/services/sound.service';
 
 /**
- * Announces that a duration-limited meeting is about to be force-ended, once, and counts down to it
- * from there.
+ * Announces that a duration-limited meeting is about to be force-ended, and counts down to its end.
  *
- * It follows the meeting's own deadline ({@link watch}), which every participant reads off the
- * LiveKit room metadata, so someone who joined late or reconnected counts down to the same instant
- * as everyone else. The server's `MEET_MEETING_ENDING_SOON` signal ({@link warn}) is the fallback
- * for a meeting whose deadline this client could not read.
- *
- * Everything is timed against `Date.now()`, the deadline having been converted to this device's
- * clock before it gets here.
- *
- * `remainingMs` clamps at 0 instead of going negative: the backend force-ends the meeting on its
- * own timer at that same deadline, and the actual `meetingEnded`/room-closed flow takes over from
- * there.
+ * That end is tracked from the meeting's own end date, which every participant reads off the LiveKit
+ * room metadata; the server's ending-soon signal only covers a meeting whose metadata carries none.
+ * The end date reaches this service already converted to the device's clock, so everything here is
+ * timed against `Date.now()`.
  */
 @Service()
 export class MeetingEndingSoonService {
-	private static readonly NOTICE_TIMEOUT_MS = 12_000;
-	/** How long before its end a meeting is announced as ending soon. */
 	private static readonly NOTICE_WINDOW_MS = 5 * 60_000;
+	private static readonly NOTICE_DURATION_MS = 12_000;
 
 	private readonly soundService = inject(SoundService);
 
-	private tickHandle: ReturnType<typeof setInterval> | undefined;
-	private noticeHandle: ReturnType<typeof setTimeout> | undefined;
-	private announceHandle: ReturnType<typeof setTimeout> | undefined;
-	private deadline: number | undefined;
 	private endsAt: number | undefined;
+	private announceHandle: ReturnType<typeof setTimeout> | undefined;
+	private dismissHandle: ReturnType<typeof setTimeout> | undefined;
+	private countdownHandle: ReturnType<typeof setInterval> | undefined;
 
 	private readonly _remainingMs = signal<number | undefined>(undefined);
 	private readonly _noticeMinutes = signal<number | undefined>(undefined);
 
-	/** Milliseconds left before the meeting is force-ended, once it has been announced. */
+	/** Milliseconds left before the meeting is force-ended, `undefined` until it is announced. */
 	readonly remainingMs = this._remainingMs.asReadonly();
 
 	/**
-	 * Whole minutes left when the meeting was announced, or `undefined` once the one-off notice
-	 * announcing it is gone. Frozen at that moment rather than derived from {@link remainingMs}: the
-	 * notice is transient, and the status rail's countdown is what stays exact afterwards.
+	 * Whole minutes left when the meeting was announced, `undefined` once the notice is gone. Frozen
+	 * at that moment rather than derived from {@link remainingMs}, which goes on counting after it.
 	 */
 	readonly noticeMinutes = this._noticeMinutes.asReadonly();
 
 	/**
-	 * Follows `deadline`, the instant this meeting is force-ended in this device's clock, announcing
-	 * it once the meeting enters the notice window and immediately if it is already inside. Pass
-	 * `undefined` for a meeting with no deadline to follow, which leaves {@link warn} as the only
-	 * source. Called once per meeting, so it also drops whatever the previous meeting left behind.
+	 * Tracks the instant this meeting is force-ended, in the device's clock, announcing it as soon as
+	 * the meeting is inside the notice window. Called once per meeting, with `undefined` for one that
+	 * has no end to track, so it also drops what the previous meeting left behind.
 	 */
-	watch(deadline: number | undefined): void {
+	trackMeetingEnd(endsAt: number | undefined): void {
 		this.reset();
-		this.deadline = deadline;
+		this.endsAt = endsAt;
 
-		if (deadline === undefined) return;
+		if (endsAt === undefined) return;
 
-		const remainingMs = deadline - Date.now();
+		const remainingMs = endsAt - Date.now();
 
 		if (remainingMs <= 0) return;
 
 		if (remainingMs <= MeetingEndingSoonService.NOTICE_WINDOW_MS) {
-			this.announce(deadline);
+			this.announceEndingSoon();
 			return;
 		}
 
 		this.announceHandle = setTimeout(
-			() => this.announce(deadline),
+			() => this.announceEndingSoon(),
 			remainingMs - MeetingEndingSoonService.NOTICE_WINDOW_MS
 		);
 	}
 
-	/**
-	 * Announces a meeting ending `remainingMs` from now, as the server's warning reports it. Ignored
-	 * while a deadline is being followed: that is the same warning, exact and already delivered.
-	 */
-	warn(remainingMs: number): void {
-		if (this.deadline !== undefined) return;
+	/** Announces a meeting ending `remainingMs` from now, unless its end is already known. */
+	warnEndingIn(remainingMs: number): void {
+		if (this.endsAt !== undefined) return;
 
-		this.announce(Date.now() + remainingMs);
+		this.endsAt = Date.now() + remainingMs;
+		this.announceEndingSoon();
 	}
 
 	dismissNotice(): void {
-		this.clearNoticeTimeout();
+		clearTimeout(this.dismissHandle);
+		this.dismissHandle = undefined;
 		this._noticeMinutes.set(undefined);
 	}
 
-	private announce(endsAt: number): void {
-		this.endsAt = endsAt;
-		this.clearTick();
+	private announceEndingSoon(): void {
+		if (this.endsAt === undefined) return;
+
+		this.startCountdown();
+		this.showNotice(Math.ceil((this.endsAt - Date.now()) / 60_000));
+	}
+
+	private startCountdown(): void {
+		this.clearCountdown();
 		this.tick();
-		this.tickHandle = setInterval(() => this.tick(), 1000);
-		this.showNotice(Math.ceil((endsAt - Date.now()) / 60_000));
-		this.soundService.playMeetingEndingSoonSound();
-	}
-
-	private reset(): void {
-		this.clearAnnounceTimeout();
-		this.clearTick();
-		this.dismissNotice();
-		this.deadline = undefined;
-		this.endsAt = undefined;
-		this._remainingMs.set(undefined);
-	}
-
-	private showNotice(minutes: number): void {
-		this.clearNoticeTimeout();
-		this._noticeMinutes.set(minutes);
-		this.noticeHandle = setTimeout(() => this.dismissNotice(), MeetingEndingSoonService.NOTICE_TIMEOUT_MS);
-	}
-
-	private clearNoticeTimeout(): void {
-		if (this.noticeHandle) {
-			clearTimeout(this.noticeHandle);
-			this.noticeHandle = undefined;
-		}
-	}
-
-	private clearAnnounceTimeout(): void {
-		if (this.announceHandle) {
-			clearTimeout(this.announceHandle);
-			this.announceHandle = undefined;
-		}
+		this.countdownHandle = setInterval(() => this.tick(), 1000);
 	}
 
 	private tick(): void {
 		if (this.endsAt === undefined) return;
 
-		const remaining = Math.max(0, this.endsAt - Date.now());
-		this._remainingMs.set(remaining);
+		const remainingMs = Math.max(0, this.endsAt - Date.now());
+		this._remainingMs.set(remainingMs);
 
-		if (remaining === 0) {
-			this.clearTick();
+		if (remainingMs === 0) {
+			this.clearCountdown();
 		}
 	}
 
-	private clearTick(): void {
-		if (this.tickHandle) {
-			clearInterval(this.tickHandle);
-			this.tickHandle = undefined;
-		}
+	private showNotice(minutes: number): void {
+		this.dismissNotice();
+		this._noticeMinutes.set(minutes);
+		this.dismissHandle = setTimeout(() => this.dismissNotice(), MeetingEndingSoonService.NOTICE_DURATION_MS);
+		this.soundService.playMeetingEndingSoonSound();
+	}
+
+	private reset(): void {
+		clearTimeout(this.announceHandle);
+		this.announceHandle = undefined;
+		this.clearCountdown();
+		this.dismissNotice();
+		this.endsAt = undefined;
+		this._remainingMs.set(undefined);
+	}
+
+	private clearCountdown(): void {
+		clearInterval(this.countdownHandle);
+		this.countdownHandle = undefined;
 	}
 }

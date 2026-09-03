@@ -180,7 +180,7 @@ export class MeetingEventHandlerService {
 		const endDate = parseMeetingEndDate(metadata);
 		const skewMs = this.roomMemberContextService.serverTimeSkewMs();
 
-		this.meetingEndingSoon.watch(endDate === undefined ? undefined : endDate - skewMs);
+		this.meetingEndingSoon.trackMeetingEnd(endDate === undefined ? undefined : endDate - skewMs);
 	}
 
 	// What the host has been told about each local device's status in the current entry.
@@ -470,7 +470,7 @@ export class MeetingEventHandlerService {
 		}
 
 		this.meetingContext.setMeetingEndedBy('duration');
-		this.meetingEndingSoon.warn(event.remainingMs);
+		this.meetingEndingSoon.warnEndingIn(event.remainingMs);
 	}
 
 	/**
