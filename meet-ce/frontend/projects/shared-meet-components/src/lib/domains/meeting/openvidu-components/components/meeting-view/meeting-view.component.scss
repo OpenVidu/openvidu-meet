@@ -9,7 +9,18 @@
 #meeting-stage {
 	--ov-status-rail-height: 52px;
 
+	position: relative;
 	background-color: var(--ov-background-color);
+}
+
+/* Hangs under the rail without taking a row from it, so the layout keeps its height. */
+ov-ending-soon-notice {
+	position: absolute;
+	z-index: 2;
+	top: var(--ov-status-rail-height);
+	left: 16px;
+	width: 360px;
+	max-width: calc(100% - 32px);
 }
 
 .status-rail {
@@ -200,6 +211,13 @@
 		--ov-status-rail-height: 44px;
 
 		width: 100%;
+	}
+
+	ov-ending-soon-notice {
+		left: 8px;
+		right: 8px;
+		width: auto;
+		max-width: none;
 	}
 
 	.sidenav-container {

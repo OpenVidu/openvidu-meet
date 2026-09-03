@@ -12,19 +12,50 @@ import { Service, signal } from '@angular/core';
  */
 @Service()
 export class MeetingEndingSoonService {
+	private static readonly NOTICE_TIMEOUT_MS = 12_000;
+
 	private tickHandle: ReturnType<typeof setInterval> | undefined;
+	private noticeHandle: ReturnType<typeof setTimeout> | undefined;
 	private endsAt: number | undefined;
 
 	readonly remainingMs = signal<number | undefined>(undefined);
 
+	private readonly _noticeMinutes = signal<number | undefined>(undefined);
+
 	/**
-	 * Starts the countdown, ending `remainingMs` milliseconds from now.
+	 * Whole minutes left when the warning arrived, or `undefined` once the one-off notice announcing
+	 * it is gone. Frozen at that moment rather than derived from {@link remainingMs}: the notice is
+	 * transient, and the status rail's countdown is what stays exact afterwards.
+	 */
+	readonly noticeMinutes = this._noticeMinutes.asReadonly();
+
+	/**
+	 * Starts the countdown, ending `remainingMs` milliseconds from now, and announces it once.
 	 */
 	start(remainingMs: number): void {
 		this.endsAt = Date.now() + remainingMs;
 		this.clearTick();
 		this.tick();
 		this.tickHandle = setInterval(() => this.tick(), 1000);
+		this.showNotice(Math.ceil(remainingMs / 60_000));
+	}
+
+	dismissNotice(): void {
+		this.clearNoticeTimeout();
+		this._noticeMinutes.set(undefined);
+	}
+
+	private showNotice(minutes: number): void {
+		this.clearNoticeTimeout();
+		this._noticeMinutes.set(minutes);
+		this.noticeHandle = setTimeout(() => this.dismissNotice(), MeetingEndingSoonService.NOTICE_TIMEOUT_MS);
+	}
+
+	private clearNoticeTimeout(): void {
+		if (this.noticeHandle) {
+			clearTimeout(this.noticeHandle);
+			this.noticeHandle = undefined;
+		}
 	}
 
 	private tick(): void {

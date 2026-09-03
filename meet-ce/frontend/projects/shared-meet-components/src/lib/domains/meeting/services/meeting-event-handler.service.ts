@@ -436,9 +436,10 @@ export class MeetingEventHandlerService {
 
 	/**
 	 * Warns the user that the meeting is about to reach its room's duration limit
-	 * (`maxDurationMinutes`) and will be ended for every participant, via a dialog and a countdown
-	 * badge in the toolbar ({@link MeetingEndingSoonService}). The backend sends this signal once per
-	 * meeting to the whole room, so everyone sees the same warning. Also records the cause locally
+	 * (`maxDurationMinutes`) and will be ended for every participant, through
+	 * {@link MeetingEndingSoonService}, which drives both the notice and the status rail's countdown.
+	 * The backend sends this signal once per meeting to the whole room, so everyone sees the same
+	 * warning. Also records the cause locally
 	 * (see {@link MeetingEndedBy}) so the eventual `left`/`meetingLeft` event this participant
 	 * receives is attributed correctly instead of reading as a moderator's end.
 	 */
@@ -451,19 +452,6 @@ export class MeetingEventHandlerService {
 
 		this.meetingContext.setMeetingEndedBy('duration');
 		this.meetingEndingSoon.start(event.remainingMs);
-
-		const remainingMinutes = Math.ceil(event.remainingMs / 60_000);
-		const message =
-			remainingMinutes === 1
-				? this.translateService.translate('ROOM.ENDING_SOON_ONE_MINUTE')
-				: this.translateService.translate('ROOM.ENDING_SOON_MANY_MINUTES', { minutes: remainingMinutes });
-		this.notificationService.showDialog({
-			icon: 'schedule',
-			title: this.translateService.translate('ROOM.ENDING_SOON_TITLE'),
-			message,
-			showCancelButton: false,
-			confirmText: this.translateService.translate('ROOM.ENDING_SOON_CONFIRM')
-		});
 	}
 
 	/**

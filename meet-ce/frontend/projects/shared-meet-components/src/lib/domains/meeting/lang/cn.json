@@ -7,7 +7,7 @@
 		"ENDING_SOON_TITLE": "会议即将结束",
 		"ENDING_SOON_ONE_MINUTE": "会议将在约 1 分钟后结束",
 		"ENDING_SOON_MANY_MINUTES": "会议将在约 {minutes} 分钟后结束",
-		"ENDING_SOON_CONFIRM": "确定",
+		"ENDING_SOON_DISMISS": "关闭",
 		"ENDING_SOON_BADGE_LABEL": "还剩",
 		"ENDING_SOON_BADGE_ENDING": "即将结束"
 	},

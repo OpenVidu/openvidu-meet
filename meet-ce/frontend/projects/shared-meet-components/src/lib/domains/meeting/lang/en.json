@@ -16,7 +16,7 @@
 		"ENDING_SOON_TITLE": "Meeting ending soon",
 		"ENDING_SOON_ONE_MINUTE": "This meeting will end in about 1 minute",
 		"ENDING_SOON_MANY_MINUTES": "This meeting will end in about {minutes} minutes",
-		"ENDING_SOON_CONFIRM": "OK",
+		"ENDING_SOON_DISMISS": "Dismiss",
 		"ENDING_SOON_BADGE_LABEL": "Ends in",
 		"ENDING_SOON_BADGE_ENDING": "Ending now"
 	},

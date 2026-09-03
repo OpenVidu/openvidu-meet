@@ -7,7 +7,7 @@
 		"ENDING_SOON_TITLE": "मीटिंग जल्द ही समाप्त होगी",
 		"ENDING_SOON_ONE_MINUTE": "मीटिंग लगभग 1 मिनट में समाप्त हो जाएगी",
 		"ENDING_SOON_MANY_MINUTES": "मीटिंग लगभग {minutes} मिनट में समाप्त हो जाएगी",
-		"ENDING_SOON_CONFIRM": "ठीक है",
+		"ENDING_SOON_DISMISS": "बंद करें",
 		"ENDING_SOON_BADGE_LABEL": "समाप्ति में",
 		"ENDING_SOON_BADGE_ENDING": "समाप्त हो रही है"
 	},

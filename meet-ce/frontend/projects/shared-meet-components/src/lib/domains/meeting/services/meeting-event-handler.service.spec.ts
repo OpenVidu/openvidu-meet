@@ -351,16 +351,14 @@ describe('MeetingEventHandlerService', () => {
 			expect(meetingContextStub.setMeetingEndedBy).toHaveBeenCalledOnceWith('duration');
 		});
 
-		it('shows a dialog the user must acknowledge, not a snackbar', () => {
+		it('interrupts nobody: no dialog and no snackbar', () => {
 			receiveEndingSoonSignal();
 
-			expect(notificationService.showDialog).toHaveBeenCalledOnceWith(
-				jasmine.objectContaining({ showCancelButton: false })
-			);
+			expect(notificationService.showDialog).not.toHaveBeenCalled();
 			expect(notificationService.showSnackbar).not.toHaveBeenCalled();
 		});
 
-		it('starts the toolbar countdown with the exact remaining milliseconds', () => {
+		it('starts the countdown with the exact remaining milliseconds', () => {
 			receiveEndingSoonSignal();
 
 			expect(meetingEndingSoon.start).toHaveBeenCalledOnceWith(300_000);

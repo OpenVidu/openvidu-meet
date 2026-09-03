@@ -1,0 +1,21 @@
+@if (noticeMinutes(); as minutes) {
+	<div class="ending-soon-notice" role="alert">
+		<span class="notice-icon">
+			<mat-icon>schedule</mat-icon>
+		</span>
+
+		<div class="notice-body">
+			<span class="notice-title">{{ 'ROOM.ENDING_SOON_TITLE' | translate }}</span>
+			<span class="notice-message">{{ messageKey() | translate: { minutes } }}</span>
+		</div>
+
+		<button
+			type="button"
+			class="notice-dismiss"
+			[attr.aria-label]="'ROOM.ENDING_SOON_DISMISS' | translate"
+			(click)="dismiss()"
+		>
+			<mat-icon>close</mat-icon>
+		</button>
+	</div>
+}

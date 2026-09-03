@@ -7,7 +7,7 @@
 		"ENDING_SOON_TITLE": "Das Meeting endet bald",
 		"ENDING_SOON_ONE_MINUTE": "Das Meeting endet in etwa 1 Minute",
 		"ENDING_SOON_MANY_MINUTES": "Das Meeting endet in etwa {minutes} Minuten",
-		"ENDING_SOON_CONFIRM": "OK",
+		"ENDING_SOON_DISMISS": "Schließen",
 		"ENDING_SOON_BADGE_LABEL": "Endet in",
 		"ENDING_SOON_BADGE_ENDING": "Wird beendet"
 	},
