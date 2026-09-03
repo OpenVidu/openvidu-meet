@@ -1,5 +1,4 @@
 import type {
-	MeetMeetingEndedByModeratorPayload,
 	MeetMeetingEndingSoonPayload,
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantMuteOptions,
@@ -173,28 +172,6 @@ export class FrontendEventService {
 
 		const options: SendDataOptions = {
 			topic: MeetSignalType.MEET_MEETING_ENDING_SOON
-		};
-
-		await this.sendSignal(roomId, payload, options);
-	}
-
-	/**
-	 * Sends a signal telling every participant that a moderator's own request to end the meeting
-	 * was just validated, moments before the room actually closes. The caller must send this before
-	 * deleting the room — the room has to still exist for the data channel broadcast to reach anyone.
-	 * Lets a client that locally attributed an earlier ending-soon warning to the duration limit
-	 * correct itself before it sees the room disconnect.
-	 */
-	async sendMeetingEndedByModeratorSignal(roomId: string): Promise<void> {
-		this.logger.debug(`Sending meeting ended by moderator signal for room '${roomId}'`);
-
-		const payload: MeetMeetingEndedByModeratorPayload = {
-			roomId,
-			timestamp: Date.now()
-		};
-
-		const options: SendDataOptions = {
-			topic: MeetSignalType.MEET_MEETING_ENDED_BY_MODERATOR
 		};
 
 		await this.sendSignal(roomId, payload, options);

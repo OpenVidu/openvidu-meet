@@ -3,7 +3,6 @@ import {
 	EmbeddedEventName,
 	LeftEventReason,
 	MeetEventOrigin,
-	MeetMeetingEndedByModeratorPayload,
 	MeetMeetingEndingSoonPayload,
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantPermissionsUpdatedPayload,
@@ -46,7 +45,7 @@ import {
 } from '../openvidu-components';
 import { toEmbeddedParticipantPayload } from '../utils/embedded-participant.utils';
 import { toMediaStatusChangedEvent } from '../utils/media-status-event.utils';
-import { parseMeetingEndDate } from '../utils/room-metadata.utils';
+import { hasReachedMeetingEnd, parseMeetingEndDate } from '../utils/room-metadata.utils';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingStateService } from './meeting-state.service';
 
@@ -94,8 +93,7 @@ export class MeetingEventHandlerService {
 					MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED,
 					MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED,
 					MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED,
-					MeetSignalType.MEET_MEETING_ENDING_SOON,
-					MeetSignalType.MEET_MEETING_ENDED_BY_MODERATOR
+					MeetSignalType.MEET_MEETING_ENDING_SOON
 				];
 
 				if (!topic || !relevantTopics.includes(topic)) {
@@ -137,10 +135,6 @@ export class MeetingEventHandlerService {
 						case MeetSignalType.MEET_MEETING_ENDING_SOON:
 							this.handleMeetingEndingSoon(event as MeetMeetingEndingSoonPayload);
 							break;
-
-						case MeetSignalType.MEET_MEETING_ENDED_BY_MODERATOR:
-							this.handleMeetingEndedByModerator(event as MeetMeetingEndedByModeratorPayload);
-							break;
 					}
 				} catch (error) {
 					console.warn(`Failed to parse data message for topic: ${topic}`, error);
@@ -179,8 +173,10 @@ export class MeetingEventHandlerService {
 	private handleRoomMetadataChanged(metadata?: string): void {
 		const endDate = parseMeetingEndDate(metadata);
 		const skewMs = this.roomMemberContextService.serverTimeSkewMs();
+		const endsAt = endDate === undefined ? undefined : endDate - skewMs;
 
-		this.meetingEndingSoon.trackMeetingEnd(endDate === undefined ? undefined : endDate - skewMs);
+		this.meetingContext.setMeetingEndsAt(endsAt);
+		this.meetingEndingSoon.trackMeetingEnd(endsAt);
 	}
 
 	// What the host has been told about each local device's status in the current entry.
@@ -355,15 +351,13 @@ export class MeetingEventHandlerService {
 	onParticipantLeft = async (event: ParticipantLeftEvent): Promise<void> => {
 		let leftReason = this.mapLeftReason(event.reason);
 
-		// The backend can't tell apart why the meeting ended (see extractLeftReason's own doc
-		// comment), so it's left as the generic MEETING_ENDED; only this participant's own local
-		// knowledge — set from intent, not derived from the server — can narrow it further.
+		// LiveKit reports the same room deletion whoever caused it, so the generic MEETING_ENDED is
+		// narrowed here from what this participant knows: their own intent first, then the meeting's
+		// end date, which every participant can see for themselves.
 		if (leftReason === LeftEventReason.MEETING_ENDED) {
-			const meetingEndedBy = this.meetingContext.meetingEndedBy();
-
-			if (meetingEndedBy === 'self') {
+			if (this.meetingContext.endedBySelf()) {
 				leftReason = LeftEventReason.MEETING_ENDED_BY_SELF;
-			} else if (meetingEndedBy === 'duration') {
+			} else if (hasReachedMeetingEnd(this.meetingContext.meetingEndsAt())) {
 				leftReason = LeftEventReason.MEETING_ENDED_BY_DURATION_LIMIT;
 			}
 		}
@@ -453,14 +447,10 @@ export class MeetingEventHandlerService {
 	}
 
 	/**
-	 * Records that the meeting is about to reach its room's duration limit (`maxDurationMinutes`) and
-	 * will be ended for every participant, so the eventual `left`/`meetingLeft` event this
-	 * participant receives is attributed to the limit (see {@link MeetingEndedBy}) instead of reading
-	 * as a moderator's end.
-	 *
-	 * The backend sends this signal once per meeting to the whole room. Announcing it is left to
-	 * {@link MeetingEndingSoonService}, which only falls back to this signal for a meeting whose
-	 * deadline it could not read off the room metadata.
+	 * Warns that the meeting is about to reach its room's duration limit (`maxDurationMinutes`), as
+	 * the backend reports it once per meeting to the whole room. {@link MeetingEndingSoonService}
+	 * only falls back to this warning for a meeting whose end it could not read off the room
+	 * metadata.
 	 */
 	private handleMeetingEndingSoon(event: MeetMeetingEndingSoonPayload): void {
 		const roomId = this.meetingContext.roomId();
@@ -469,28 +459,7 @@ export class MeetingEventHandlerService {
 			return;
 		}
 
-		this.meetingContext.setMeetingEndedBy('duration');
 		this.meetingEndingSoon.warnEndingIn(event.remainingMs);
-	}
-
-	/**
-	 * A moderator's own end-meeting request was just validated server-side, moments before the room
-	 * closes. Corrects a `'duration'` attribution this participant may have recorded from an earlier
-	 * ending-soon warning, now that a moderator has beaten the duration GC to it. Never downgrades
-	 * `'self'`: the moderator who actually clicked already set that synchronously, before their own
-	 * request even reached the server, so it's guaranteed to still be set when their own broadcast
-	 * echoes back to them.
-	 */
-	private handleMeetingEndedByModerator(event: MeetMeetingEndedByModeratorPayload): void {
-		const roomId = this.meetingContext.roomId();
-
-		if (roomId && event.roomId !== roomId) {
-			return;
-		}
-
-		if (this.meetingContext.meetingEndedBy() !== 'self') {
-			this.meetingContext.setMeetingEndedBy('other');
-		}
 	}
 
 	private handleRecordingUpdated(event: MeetRecordingUpdatedPayload): void {

@@ -41,7 +41,7 @@ export class MeetingToolbarLeaveButtonComponent {
 			return;
 		}
 
-		this.meetingContextService.setMeetingEndedBy('self');
+		this.meetingContextService.markMeetingEndedBySelf();
 		await this.meetingModerationService.endMeeting(roomId);
 	}
 }

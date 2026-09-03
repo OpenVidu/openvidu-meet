@@ -21,22 +21,21 @@ const buildService = (livekitService: FakeLiveKitService) =>
 	);
 
 /**
- * C7 (MEET-BRANCH-AUDIT-FINDINGS.md): the moderator's own endMeeting request broadcasts this signal
- * before the room actually closes, so a client that locally attributed an earlier ending-soon
- * warning to the duration limit can correct itself before it sees the room disconnect.
+ * The ending-soon warning has to reach every participant of the meeting, so it goes out with no
+ * destinationIdentities filter.
  */
-describe('FrontendEventService.sendMeetingEndedByModeratorSignal (C7)', () => {
-	it('broadcasts to every participant in the room (no destinationIdentities filter)', async () => {
+describe('FrontendEventService.sendMeetingEndingSoonSignal', () => {
+	it('broadcasts to every participant in the room', async () => {
 		const livekitService = new FakeLiveKitService();
 		const service = buildService(livekitService);
 
-		await service.sendMeetingEndedByModeratorSignal('room-1');
+		await service.sendMeetingEndingSoonSignal('room-1', 300_000);
 
 		expect(livekitService.calls).toEqual([
 			{
 				roomName: 'room-1',
-				rawData: { roomId: 'room-1', timestamp: expect.any(Number) },
-				topic: MeetSignalType.MEET_MEETING_ENDED_BY_MODERATOR
+				rawData: { roomId: 'room-1', remainingMs: 300_000, timestamp: expect.any(Number) },
+				topic: MeetSignalType.MEET_MEETING_ENDING_SOON
 			}
 		]);
 	});

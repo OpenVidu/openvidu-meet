@@ -7,13 +7,6 @@ import { ViewportService } from '../openvidu-components';
 import { RoomAccessLinkService } from './room-access-link.service';
 
 /**
- * Who/what ended the meeting, from this participant's own local knowledge — set from intent (the
- * moment 'self' clicks end, or the ending-soon warning is received for 'duration') rather than
- * derived from any server response, since the server has no way to reconstruct it after the fact.
- */
-export type MeetingEndedBy = 'self' | 'other' | 'duration' | null;
-
-/**
  * Meeting-domain context: the room identity/config and session flags of the current meeting.
  * Lightweight (no LiveKit); the live participant/room runtime state lives in MeetingStateService.
  */
@@ -32,7 +25,8 @@ export class MeetingContextService {
 	private readonly _isE2eeKeyFromUrl = signal<boolean>(false);
 	private readonly _hasRecordings = signal<boolean>(false);
 	private readonly _isActiveMeeting = signal<boolean>(false);
-	private readonly _meetingEndedBy = signal<MeetingEndedBy>(null);
+	private readonly _endedBySelf = signal<boolean>(false);
+	private readonly _meetingEndsAt = signal<number | undefined>(undefined);
 
 	/** Readonly signal for the current room ID */
 	readonly roomId = this._roomId.asReadonly();
@@ -46,8 +40,13 @@ export class MeetingContextService {
 
 	/** Readonly signal for whether the room has recordings */
 	readonly hasRecordings = this._hasRecordings.asReadonly();
-	/** Readonly signal for who/what ended the meeting. See {@link MeetingEndedBy} for details */
-	readonly meetingEndedBy = this._meetingEndedBy.asReadonly();
+	/** Readonly signal for whether this participant is the one who ended the meeting for everyone */
+	readonly endedBySelf = this._endedBySelf.asReadonly();
+	/**
+	 * Readonly signal for the instant the meeting is force-ended at its room's duration limit, in
+	 * this device's clock, or `undefined` for a meeting running under no limit
+	 */
+	readonly meetingEndsAt = this._meetingEndsAt.asReadonly();
 	/** Readonly signal for whether the meeting is active */
 	readonly isActiveMeeting = this._isActiveMeeting.asReadonly();
 
@@ -134,10 +133,15 @@ export class MeetingContextService {
 	}
 
 	/**
-	 * Sets who/what ended the meeting. See {@link MeetingEndedBy} for details.
+	 * Records that this participant is ending the meeting for everyone, at the moment they ask for
+	 * it: the disconnect that follows carries no trace of who caused it.
 	 */
-	setMeetingEndedBy(by: MeetingEndedBy): void {
-		this._meetingEndedBy.set(by);
+	markMeetingEndedBySelf(): void {
+		this._endedBySelf.set(true);
+	}
+
+	setMeetingEndsAt(endsAt: number | undefined): void {
+		this._meetingEndsAt.set(endsAt);
 	}
 
 	/**
@@ -168,6 +172,7 @@ export class MeetingContextService {
 		this._isE2eeKeyFromUrl.set(false);
 		this._hasRecordings.set(false);
 		this._isActiveMeeting.set(false);
-		this._meetingEndedBy.set(null);
+		this._endedBySelf.set(false);
+		this._meetingEndsAt.set(undefined);
 	}
 }
