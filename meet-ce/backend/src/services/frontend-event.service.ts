@@ -1,5 +1,4 @@
 import type {
-	MeetMeetingEndingSoonPayload,
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantMuteOptions,
 	MeetParticipantPermissionsUpdatedPayload,
@@ -154,27 +153,6 @@ export class FrontendEventService {
 		};
 
 		await this.sendSignal(roomId, signalPayload, signalOptions);
-	}
-
-	/**
-	 * Sends a signal warning every participant in a room that the meeting is about to reach its
-	 * duration limit and will be force-ended. Errors are the caller's to handle: the max-duration
-	 * sweep only marks the warning as sent after this resolves, so a failed send is retried.
-	 */
-	async sendMeetingEndingSoonSignal(roomId: string, remainingMs: number): Promise<void> {
-		this.logger.debug(`Sending meeting ending soon signal for room '${roomId}'`);
-
-		const payload: MeetMeetingEndingSoonPayload = {
-			roomId,
-			remainingMs,
-			timestamp: Date.now()
-		};
-
-		const options: SendDataOptions = {
-			topic: MeetSignalType.MEET_MEETING_ENDING_SOON
-		};
-
-		await this.sendSignal(roomId, payload, options);
 	}
 
 	/**

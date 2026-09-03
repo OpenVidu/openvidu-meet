@@ -4,10 +4,9 @@ import { SoundService } from '../../../../../shared/services/sound.service';
 /**
  * Announces that a duration-limited meeting is about to be force-ended, and counts down to its end.
  *
- * That end is tracked from the meeting's own end date, which every participant reads off the LiveKit
- * room metadata; the server's ending-soon signal only covers a meeting whose metadata carries none.
- * The end date reaches this service already converted to the device's clock, so everything here is
- * timed against `Date.now()`.
+ * The end is tracked from the meeting's own end date, which every participant reads off the LiveKit
+ * room metadata, converted to the device's clock before it gets here, so everything is timed
+ * against `Date.now()`.
  */
 @Service()
 export class MeetingEndingSoonService {
@@ -57,14 +56,6 @@ export class MeetingEndingSoonService {
 			() => this.announceEndingSoon(),
 			remainingMs - MeetingEndingSoonService.NOTICE_WINDOW_MS
 		);
-	}
-
-	/** Announces a meeting ending `remainingMs` from now, unless its end is already known. */
-	warnEndingIn(remainingMs: number): void {
-		if (this.endsAt !== undefined) return;
-
-		this.endsAt = Date.now() + remainingMs;
-		this.announceEndingSoon();
 	}
 
 	dismissNotice(): void {

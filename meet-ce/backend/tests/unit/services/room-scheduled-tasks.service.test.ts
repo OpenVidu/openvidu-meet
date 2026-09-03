@@ -189,7 +189,6 @@ const buildService = (
 			taskScheduler,
 			livekitService,
 			livekitWebhookService,
-			{},
 			redisService,
 			mutexService
 		] as unknown as ConstructorParameters<typeof RoomScheduledTasksService>)
@@ -313,8 +312,8 @@ describe('RoomScheduledTasksService.validateRoomsStatusGC (orchestrates both rec
 
 /**
  * C7 (MEET-BRANCH-AUDIT-FINDINGS.md): the write side of the MEETING_ENDED_CAUSE flag
- * LivekitWebhookService.getMeetingEndedCause reads on room_finished, scoped to the meeting sid the
- * same way MEETING_DURATION_WARNING_SENT already is.
+ * LivekitWebhookService.getMeetingEndedCause reads on room_finished, scoped to the meeting sid so a
+ * leaked flag is inert for the room's later meetings.
  *//**
  * D1 (MEET-MEETING-DURATION-PRECISION-PLAN.md): the duration limit is enforced by a timer armed
  * for the meeting's own deadline, not by the sweep's tick, so a meeting no longer overruns its

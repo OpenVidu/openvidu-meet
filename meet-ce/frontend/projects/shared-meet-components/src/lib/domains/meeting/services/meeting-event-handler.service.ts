@@ -3,7 +3,6 @@ import {
 	EmbeddedEventName,
 	LeftEventReason,
 	MeetEventOrigin,
-	MeetMeetingEndingSoonPayload,
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantPermissionsUpdatedPayload,
 	MeetParticipantRoleUpdatedPayload,
@@ -92,8 +91,7 @@ export class MeetingEventHandlerService {
 					MeetSignalType.MEET_RECORDING_UPDATED,
 					MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED,
 					MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED,
-					MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED,
-					MeetSignalType.MEET_MEETING_ENDING_SOON
+					MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED
 				];
 
 				if (!topic || !relevantTopics.includes(topic)) {
@@ -131,10 +129,6 @@ export class MeetingEventHandlerService {
 							await this.handleParticipantMediaMuted(mediaMutedEvent);
 							break;
 						}
-
-						case MeetSignalType.MEET_MEETING_ENDING_SOON:
-							this.handleMeetingEndingSoon(event as MeetMeetingEndingSoonPayload);
-							break;
 					}
 				} catch (error) {
 					console.warn(`Failed to parse data message for topic: ${topic}`, error);
@@ -444,22 +438,6 @@ export class MeetingEventHandlerService {
 			console.error('Error refreshing room member token after role update:', error);
 			await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
 		}
-	}
-
-	/**
-	 * Warns that the meeting is about to reach its room's duration limit (`maxDurationMinutes`), as
-	 * the backend reports it once per meeting to the whole room. {@link MeetingEndingSoonService}
-	 * only falls back to this warning for a meeting whose end it could not read off the room
-	 * metadata.
-	 */
-	private handleMeetingEndingSoon(event: MeetMeetingEndingSoonPayload): void {
-		const roomId = this.meetingContext.roomId();
-
-		if (roomId && event.roomId !== roomId) {
-			return;
-		}
-
-		this.meetingEndingSoon.warnEndingIn(event.remainingMs);
 	}
 
 	private handleRecordingUpdated(event: MeetRecordingUpdatedPayload): void {

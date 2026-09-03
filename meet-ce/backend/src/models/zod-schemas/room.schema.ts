@@ -186,7 +186,7 @@ const maxParticipantsSchema = z
 const maxDurationMinutesSchema = z
 	.number('Must be a number')
 	.int('Must be an integer')
-	.min(MEETING_MIN_DURATION_MINUTES_LIMIT, `Must be at least ${MEETING_MIN_DURATION_MINUTES_LIMIT} minutes`)
+	.min(MEETING_MIN_DURATION_MINUTES_LIMIT, 'Must last at least one minute')
 	.max(MEETING_MAX_DURATION_MINUTES_LIMIT, `Must not exceed ${MEETING_MAX_DURATION_MINUTES_LIMIT} minutes`)
 	.nullable()
 	.optional();

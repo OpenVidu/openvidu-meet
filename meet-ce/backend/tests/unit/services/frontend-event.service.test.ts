@@ -1,4 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
+import type { MeetRoom } from '@openvidu-meet/typings';
 import { MeetSignalType } from '@openvidu-meet/typings';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
@@ -21,21 +22,22 @@ const buildService = (livekitService: FakeLiveKitService) =>
 	);
 
 /**
- * The ending-soon warning has to reach every participant of the meeting, so it goes out with no
+ * A room-wide signal has to reach every participant of the meeting, so it goes out with no
  * destinationIdentities filter.
  */
-describe('FrontendEventService.sendMeetingEndingSoonSignal', () => {
+describe('FrontendEventService.sendRoomConfigUpdatedSignal', () => {
 	it('broadcasts to every participant in the room', async () => {
 		const livekitService = new FakeLiveKitService();
 		const service = buildService(livekitService);
+		const config = { chat: { enabled: true } };
 
-		await service.sendMeetingEndingSoonSignal('room-1', 300_000);
+		await service.sendRoomConfigUpdatedSignal('room-1', { config } as unknown as MeetRoom);
 
 		expect(livekitService.calls).toEqual([
 			{
 				roomName: 'room-1',
-				rawData: { roomId: 'room-1', remainingMs: 300_000, timestamp: expect.any(Number) },
-				topic: MeetSignalType.MEET_MEETING_ENDING_SOON
+				rawData: { roomId: 'room-1', config, timestamp: expect.any(Number) },
+				topic: MeetSignalType.MEET_ROOM_CONFIG_UPDATED
 			}
 		]);
 	});

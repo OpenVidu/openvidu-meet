@@ -15,9 +15,6 @@ export const enum RedisKeyName {
 	// Marks that a room's recording was deliberately stopped during the current meeting, so the
 	// recording auto-start must not fire again until the meeting ends.
 	RECORDING_AUTO_START_DISABLED = `${REDIS_KEY_PREFIX}recording_auto_start_disabled:`,
-	// Marks that the "meeting ending soon" warning was already sent for the current meeting
-	// (the stored value is the meeting's LiveKit room sid), so the max-duration sweep warns once.
-	MEETING_DURATION_WARNING_SENT = `${REDIS_KEY_PREFIX}meeting_duration_warning_sent:`,
 	// Marks that the current meeting was force-ended for exceeding its room's duration limit rather
 	// than by a moderator (the stored value is the meeting's LiveKit room sid), so room_finished can
 	// attribute the meetingEnded webhook and the participants' left reason correctly.

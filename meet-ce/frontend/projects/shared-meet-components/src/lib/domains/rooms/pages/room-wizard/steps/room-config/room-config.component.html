@@ -114,9 +114,7 @@
 						@if (roomConfigForm.controls.maxDurationMinutes.invalid) {
 							<p class="limit-error" id="max-duration-error" role="alert">
 								@if (roomConfigForm.controls.maxDurationMinutes.hasError('min')) {
-									{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_TOO_LOW_PREFIX' | translate
-									}}{{ minDurationMinutesLimit
-									}}{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_TOO_LOW_SUFFIX' | translate }}
+									{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_TOO_LOW' | translate }}
 								} @else if (roomConfigForm.controls.maxDurationMinutes.hasError('max')) {
 									{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_TOO_HIGH_PREFIX' | translate
 									}}{{ maxDurationMinutesLimit

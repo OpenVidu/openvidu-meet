@@ -37,7 +37,7 @@ export type RoomDetailsFormGroup = FormGroup<{
  * pre-submit check so the wizard can explain the bound instead of showing a `422`.
  */
 export const MAX_PARTICIPANTS_LIMIT = 30;
-export const MIN_DURATION_MINUTES_LIMIT = 10;
+export const MIN_DURATION_MINUTES_LIMIT = 1;
 export const MAX_DURATION_MINUTES_LIMIT = 1_440;
 
 export interface RoomConfigFormValue {

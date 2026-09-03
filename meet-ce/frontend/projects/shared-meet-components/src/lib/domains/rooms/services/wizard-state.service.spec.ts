@@ -146,14 +146,14 @@ describe('RoomWizardStateService.getStepById (maxDurationMinutes control bounds)
 	const maxDurationMinutesControl = () =>
 		service.getStepById(WizardStepId.ROOM_CONFIG)!.formGroup.controls.maxDurationMinutes;
 
-	it('rejects a duration below the minimum', () => {
-		maxDurationMinutesControl().setValue(9);
+	it('rejects a duration below one minute, which no limit can express', () => {
+		maxDurationMinutesControl().setValue(0);
 
 		expect(maxDurationMinutesControl().valid).toBe(false);
 	});
 
-	it('accepts the minimum duration', () => {
-		maxDurationMinutesControl().setValue(10);
+	it('accepts a one-minute duration, the room being the only judge of how short is useful', () => {
+		maxDurationMinutesControl().setValue(1);
 
 		expect(maxDurationMinutesControl().valid).toBe(true);
 	});

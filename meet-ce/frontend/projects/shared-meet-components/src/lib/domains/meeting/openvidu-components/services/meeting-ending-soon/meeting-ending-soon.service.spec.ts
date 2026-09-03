@@ -117,54 +117,6 @@ describe('MeetingEndingSoonService', () => {
 		});
 	});
 
-	describe("falling back to the server's warning", () => {
-		it('announces the meeting the warning reports', () => {
-			service.warnEndingIn(300_000);
-
-			expect(service.remainingMs()).toBe(300_000);
-			expect(service.noticeMinutes()).toBe(5);
-			expect(soundService.playMeetingEndingSoonSound).toHaveBeenCalledTimes(1);
-		});
-
-		it('ticks down from the moment the warning arrived', () => {
-			service.warnEndingIn(10_000);
-
-			jasmine.clock().tick(3_000);
-
-			expect(service.remainingMs()).toBe(7_000);
-		});
-
-		it('is ignored while an end is being tracked, so the meeting is announced once', () => {
-			service.trackMeetingEnd(endsIn(NOTICE_WINDOW_MS + 60_000));
-			jasmine.clock().tick(60_000);
-			expect(service.remainingMs()).toBe(NOTICE_WINDOW_MS);
-
-			// The server's warning lands up to a sweep tick after the deadline it reports
-			service.warnEndingIn(4 * 60_000);
-
-			expect(service.remainingMs()).toBe(NOTICE_WINDOW_MS);
-			expect(soundService.playMeetingEndingSoonSound).toHaveBeenCalledTimes(1);
-		});
-
-		it('is ignored once the meeting has already been announced, however often it repeats', () => {
-			// The server marks the warning as sent only after sending it, so a failed mark repeats it
-			service.warnEndingIn(300_000);
-
-			service.warnEndingIn(240_000);
-
-			expect(service.remainingMs()).toBe(300_000);
-			expect(soundService.playMeetingEndingSoonSound).toHaveBeenCalledTimes(1);
-		});
-
-		it('still announces a meeting whose end could not be read', () => {
-			service.trackMeetingEnd(undefined);
-
-			service.warnEndingIn(120_000);
-
-			expect(service.remainingMs()).toBe(120_000);
-		});
-	});
-
 	it('dismisses the notice on its own, leaving the countdown running', () => {
 		service.trackMeetingEnd(endsIn(120_000));
 		expect(service.noticeMinutes()).toBe(2);

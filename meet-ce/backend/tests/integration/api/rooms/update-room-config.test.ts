@@ -435,8 +435,8 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(422);
 			expect(JSON.stringify(response.body.details)).toContain('maxDurationMinutes');
 
-			// Below the floor: shorter than the GC sweep can reliably warn before ending the meeting
-			response = await updateRoomConfig(createdRoom.roomId, { maxDurationMinutes: 9 });
+			// Below the structural minimum: a limit of 0 would be indistinguishable from no limit
+			response = await updateRoomConfig(createdRoom.roomId, { maxDurationMinutes: 0 });
 			expect(response.status).toBe(422);
 			expect(JSON.stringify(response.body.details)).toContain('maxDurationMinutes');
 
@@ -449,10 +449,10 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(422);
 			expect(JSON.stringify(response.body.details)).toContain('maxDurationMinutes');
 
-			// The floor and the ceilings themselves are valid
-			response = await updateRoomConfig(createdRoom.roomId, { maxDurationMinutes: 10 });
+			// The bounds themselves are valid
+			response = await updateRoomConfig(createdRoom.roomId, { maxDurationMinutes: 1 });
 			expect(response.status).toBe(200);
-			expect(response.body.maxDurationMinutes).toBe(10);
+			expect(response.body.maxDurationMinutes).toBe(1);
 
 			response = await updateRoomConfig(createdRoom.roomId, {
 				maxParticipants: 30,

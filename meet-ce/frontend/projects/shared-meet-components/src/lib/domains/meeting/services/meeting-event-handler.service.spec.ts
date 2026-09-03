@@ -4,7 +4,6 @@ import {
 	EmbeddedEventName,
 	LeftEventReason,
 	MeetEventOrigin,
-	MeetMeetingEndingSoonPayload,
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantMuteOptions,
 	MeetSignalType
@@ -112,8 +111,7 @@ describe('MeetingEventHandlerService', () => {
 			'showDialog'
 		]);
 		meetingEndingSoon = jasmine.createSpyObj<MeetingEndingSoonService>('MeetingEndingSoonService', [
-			'trackMeetingEnd',
-			'warnEndingIn'
+			'trackMeetingEnd'
 		]);
 		soundService = jasmine.createSpyObj<SoundService>('SoundService', [
 			'playParticipantJoinedSound',
@@ -164,18 +162,6 @@ describe('MeetingEventHandlerService', () => {
 			media,
 			timestamp: Date.now()
 		});
-	}
-
-	/** Simulates the server broadcasting `topic` with `payload` over the room's data channel. */
-	function emitServerSignal(topic: MeetSignalType, payload: object): void {
-		let onData: ((...args: unknown[]) => void) | undefined;
-		const room = {
-			on: (event: string, handler: (...args: unknown[]) => void) => {
-				if (event === 'dataReceived') onData = handler;
-			}
-		};
-		service.setupRoomListeners(room as never);
-		onData!(new TextEncoder().encode(JSON.stringify(payload)), undefined, undefined, topic);
 	}
 
 	describe('moderator mute', () => {
@@ -353,26 +339,6 @@ describe('MeetingEventHandlerService', () => {
 		});
 	});
 
-	describe('meeting ending soon', () => {
-		function receiveEndingSoonSignal(): void {
-			const payload: MeetMeetingEndingSoonPayload = { roomId: 'room1', remainingMs: 300_000, timestamp: 0 };
-			emitServerSignal(MeetSignalType.MEET_MEETING_ENDING_SOON, payload);
-		}
-
-		it('interrupts nobody: no dialog and no snackbar', () => {
-			receiveEndingSoonSignal();
-
-			expect(notificationService.showDialog).not.toHaveBeenCalled();
-			expect(notificationService.showSnackbar).not.toHaveBeenCalled();
-		});
-
-		it("hands the warning's remaining milliseconds to the countdown, as the fallback source", () => {
-			receiveEndingSoonSignal();
-
-			expect(meetingEndingSoon.warnEndingIn).toHaveBeenCalledOnceWith(300_000);
-		});
-	});
-
 	/**
 	 * The meeting's deadline is shared state, written into the LiveKit room metadata, so it reaches
 	 * late joiners and reconnectors too. It is stamped in server time, which is why it is shifted by
@@ -530,15 +496,10 @@ describe('MeetingEventHandlerService', () => {
 			]);
 		});
 
-		// The scenario a whole signal used to exist for: a moderator ends the meeting inside the
-		// warning window, before the meeting reaches its own end. Every other participant must see
-		// the plain MEETING_ENDED, and the end date alone is what tells them so.
-		it('reports the generic MEETING_ENDED when a moderator ends the meeting inside the warning window', async () => {
-			emitServerSignal(MeetSignalType.MEET_MEETING_ENDING_SOON, {
-				roomId: 'room1',
-				remainingMs: 300_000,
-				timestamp: 0
-			});
+		// The scenario two signals used to exist for: a moderator ends the meeting before it reaches
+		// its own end. Every other participant must see the plain MEETING_ENDED, and the end date
+		// alone is what tells them so.
+		it('reports the generic MEETING_ENDED when a moderator ends the meeting before its end', async () => {
 			meetingEndsAt.set(Date.now() + 300_000);
 
 			await participantLeft(ParticipantLeftReason.ROOM_DELETED);
@@ -566,25 +527,6 @@ describe('MeetingEventHandlerService', () => {
 						participantIdentity: 'alice',
 						reason: LeftEventReason.MEETING_ENDED_BY_DURATION_LIMIT
 					}
-				}
-			]);
-		});
-
-		// A meeting whose end this client never learned, its room having been auto-created by
-		// LiveKit without Meet's metadata: nothing to compare against, so nothing to narrow.
-		it('reports the generic MEETING_ENDED for a meeting with no end to compare against', async () => {
-			emitServerSignal(MeetSignalType.MEET_MEETING_ENDING_SOON, {
-				roomId: 'room1',
-				remainingMs: 300_000,
-				timestamp: 0
-			});
-
-			await participantLeft(ParticipantLeftReason.ROOM_DELETED);
-
-			expect(eventBus.events()).toEqual([
-				{
-					event: EmbeddedEventName.MEETING_LEFT,
-					payload: { roomId: 'room1', participantIdentity: 'alice', reason: LeftEventReason.MEETING_ENDED }
 				}
 			]);
 		});

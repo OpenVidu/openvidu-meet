@@ -8,7 +8,6 @@ import { RedisKeyName } from '../models/redis.model.js';
 import type { IScheduledTask } from '../models/task-scheduler.model.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
-import { FrontendEventService } from './frontend-event.service.js';
 import { LivekitWebhookService } from './livekit-webhook.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
@@ -31,7 +30,6 @@ export class RoomScheduledTasksService {
 		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(LivekitWebhookService) protected livekitWebhookService: LivekitWebhookService,
-		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(RedisService) protected redisService: RedisService,
 		@inject(MutexService) protected mutexService: MutexService
 	) {
@@ -354,10 +352,6 @@ export class RoomScheduledTasksService {
 	 * a meeting whose timer died with its replica (a restart or a rolling deploy included) gets one
 	 * back and is ended on time rather than on this sweep's next tick. Its interval bounds how far a
 	 * meeting can overrun only while it has no timer, at most one tick.
-	 *
-	 * The same sweep also warns the meetings that are not over yet but are inside the
-	 * `MEETING_DURATION_WARNING_REMAINING` window before their deadline, see
-	 * {@link warnMeetingEndingSoon}.
 	 */
 	protected async enforceMeetingMaxDurationGC(): Promise<void> {
 		this.logger.verbose(`Checking meetings over their duration limit at ${new Date(Date.now()).toISOString()}`);
@@ -400,11 +394,6 @@ export class RoomScheduledTasksService {
 
 							if (!this.isDurationLimitReached(remainingMs)) {
 								this.scheduleMeetingMaxDurationEnd(livekitRoom, maxDurationMinutes);
-
-								if (remainingMs <= ms(INTERNAL_CONFIG.MEETING_DURATION_WARNING_REMAINING)) {
-									await this.warnMeetingEndingSoon(room.roomId, livekitRoom.sid, remainingMs);
-								}
-
 								return false;
 							}
 
@@ -484,30 +473,6 @@ export class RoomScheduledTasksService {
 		);
 
 		return ended ?? false;
-	}
-
-	/**
-	 * Warns every participant, once per meeting, that the meeting is inside the warning window
-	 * before its duration limit. The once-only guard is a Redis flag scoped to the meeting
-	 * (`meetingId` is the LiveKit room sid), so a leaked flag is inert for the room's later
-	 * meetings. The flag is only set after the signal is actually sent: a failed send stays
-	 * unmarked and is retried on the next sweep, while a failed mark can at worst repeat the
-	 * warning once per sweep interval.
-	 */
-	protected async warnMeetingEndingSoon(roomId: string, meetingId: string, remainingMs: number): Promise<void> {
-		const warningKey = `${RedisKeyName.MEETING_DURATION_WARNING_SENT}${roomId}`;
-		const alreadyWarned = (await this.redisService.get(warningKey)) === meetingId;
-
-		if (alreadyWarned) {
-			return;
-		}
-
-		const remainingMinutes = Math.ceil(remainingMs / 60_000);
-		this.logger.info(
-			`Meeting in room '${roomId}' reaches its duration limit in ~${remainingMinutes} min. Warning its participants.`
-		);
-		await this.frontendEventService.sendMeetingEndingSoonSignal(roomId, remainingMs);
-		await this.redisService.set(warningKey, meetingId, ms(INTERNAL_CONFIG.MEETING_DURATION_WARNING_SENT_TTL));
 	}
 
 	/**
