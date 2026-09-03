@@ -213,6 +213,11 @@
 		"COUNT_HELPER": "Choose how many remote participants are shown in the grid",
 		"COUNT_ARIA": "Number of participants to display"
 	},
+	"HIDDEN_PARTICIPANTS": {
+		"ONE_MORE": "more participant",
+		"MANY_MORE": "more participants",
+		"NAMES_AND_MORE": "{names} and {count} more"
+	},
 	"PARTICIPANT_ITEM": {
 		"PROMOTE": "Promote to moderator",
 		"DOWNGRADE": "Downgrade to original permissions",

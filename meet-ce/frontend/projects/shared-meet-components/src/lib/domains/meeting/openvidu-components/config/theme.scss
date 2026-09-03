@@ -16,6 +16,7 @@
 		// === State Colors ===
 		--ov-error-color: #{mat.get-theme-color($theme, error)};
 		--ov-warn-color: #{mat.get-theme-color($theme, error-container)};
+		--ov-text-on-warn-color: #{mat.get-theme-color($theme, on-error-container)};
 		--ov-success-color: #{mat.get-theme-color($theme, tertiary-container)};
 
 		// === Text Colors ===
@@ -50,6 +51,7 @@
 		// === State Colors ===
 		--ov-error-color: #ff6b6b;
 		--ov-warn-color: #ffd93d;
+		--ov-text-on-warn-color: #1f2020;
 		--ov-success-color: #69db7c;
 
 		// === Text Colors ===
@@ -88,6 +90,7 @@
 		// === State Colors ===
 		--ov-error-color: #dc3545;
 		--ov-warn-color: #ffc107;
+		--ov-text-on-warn-color: #212529;
 		--ov-success-color: #28a745;
 
 		// === Text Colors ===

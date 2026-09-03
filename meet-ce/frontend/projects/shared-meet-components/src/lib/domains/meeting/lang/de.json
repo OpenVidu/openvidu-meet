@@ -213,6 +213,11 @@
 		"COUNT_HELPER": "Wählen Sie, wie viele entfernte Teilnehmer im Raster angezeigt werden",
 		"COUNT_ARIA": "Anzahl der anzuzeigenden Teilnehmer"
 	},
+	"HIDDEN_PARTICIPANTS": {
+		"ONE_MORE": "weiterer Teilnehmer",
+		"MANY_MORE": "weitere Teilnehmer",
+		"NAMES_AND_MORE": "{names} und {count} weitere"
+	},
 	"PARTICIPANT_ITEM": {
 		"PROMOTE": "Zum Moderator hochstufen",
 		"DOWNGRADE": "Auf ursprüngliche Berechtigungen herabstufen",

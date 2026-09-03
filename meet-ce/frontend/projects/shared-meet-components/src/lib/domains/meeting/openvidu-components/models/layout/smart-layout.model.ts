@@ -24,3 +24,16 @@ export interface HiddenParticipantsSummary {
  */
 export const sameIdentityOrder = (a: readonly string[], b: readonly string[]): boolean =>
 	a.length === b.length && a.every((identity, index) => identity === b[index]);
+
+/**
+ * Whether two summaries describe the same hidden participants. The summary is rebuilt on every
+ * active-speaker event, so identity alone would re-render the rail about twice a second.
+ */
+export function sameHiddenParticipantsSummary(
+	a: HiddenParticipantsSummary | undefined,
+	b: HiddenParticipantsSummary | undefined
+): boolean {
+	if (a === undefined || b === undefined) return a === b;
+
+	return a.count === b.count && sameIdentityOrder(a.names, b.names);
+}

@@ -1,3 +1,5 @@
+@use 'status-chip' as chip;
+
 /* ── Phase containers ─────────────────────────────────────────────────────── */
 /* #meeting-view-container hosts every phase; #meeting-stage is the live one. */
 #meeting-view-container,
@@ -6,9 +8,6 @@
 }
 #meeting-stage {
 	--ov-status-rail-height: 52px;
-
-	// The ink that reads on a warn fill in both themes; there is no on-warn theme colour.
-	--ov-status-chip-warn-ink: #1f2020;
 
 	background-color: var(--ov-background-color);
 }
@@ -29,42 +28,12 @@
 }
 
 .status-chip {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	height: 32px;
-	padding: 0 12px;
-	border-radius: var(--ov-surface-radius);
-	background-color: var(--ov-surface-color);
-	border: 1px solid var(--ov-border-color);
-	white-space: nowrap;
-
-	.status-chip-icon {
-		font-size: 16px;
-		width: 16px;
-		height: 16px;
-		flex-shrink: 0;
-	}
-
-	.status-chip-label {
-		font-size: 13px;
-		color: var(--ov-text-secondary-color);
-	}
-
-	.status-chip-value {
-		font-size: 13px;
-		font-weight: 700;
-		color: var(--ov-text-primary-color);
-		font-variant-numeric: tabular-nums;
-	}
+	@include chip.status-chip;
 }
 
 .recording-chip {
-	cursor: pointer;
-	transition: background-color 0.2s ease;
-
-	&:hover {
-		background-color: var(--ov-hover-color);
+	&.clickable {
+		@include chip.status-chip-interactive;
 	}
 
 	.recording-dot {
@@ -88,11 +57,11 @@
 
 	.status-chip-icon,
 	.status-chip-value {
-		color: var(--ov-status-chip-warn-ink);
+		color: var(--ov-text-on-warn-color);
 	}
 
 	.status-chip-label {
-		color: color-mix(in srgb, var(--ov-status-chip-warn-ink) 72%, transparent);
+		color: color-mix(in srgb, var(--ov-text-on-warn-color) 72%, transparent);
 	}
 }
 

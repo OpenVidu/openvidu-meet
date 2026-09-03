@@ -158,14 +158,13 @@ export const expectNoRecordButton = async (page: Page): Promise<void> => {
 
 /**
  * Asserts that the recording chip in the status rail is visible and displays a `REC H:MM:SS` timer.
- * The separator is optional: the chip spaces the two apart, the old toolbar tag used a pipe.
  */
 export const expectRecordingBadgeVisible = async (page: Page, timeoutMs = 30_000): Promise<void> => {
 	const recordingTag = page.locator(RECORDING_TAG);
 	await expect(recordingTag).toContainText('REC', { timeout: timeoutMs });
 	await expect
 		.poll(async () => (await recordingTag.innerText()).replace(/\s+/g, ' ').trim(), { timeout: timeoutMs })
-		.toMatch(/REC\s*\|?\s*\d{1,2}:\d{2}:\d{2}/);
+		.toMatch(/REC\s*\d{1,2}:\d{2}:\d{2}/);
 };
 
 /**

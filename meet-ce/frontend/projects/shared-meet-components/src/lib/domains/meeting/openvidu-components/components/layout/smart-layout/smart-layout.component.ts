@@ -29,11 +29,7 @@ interface PersistentAudioEntry {
 
 @Component({
 	selector: 'ov-smart-layout',
-	imports: [
-		BaseLayoutComponent,
-		LayoutAdditionalElementsDirective,
-		HiddenParticipantsIndicatorComponent
-	],
+	imports: [BaseLayoutComponent, LayoutAdditionalElementsDirective, HiddenParticipantsIndicatorComponent],
 	templateUrl: './smart-layout.component.html'
 })
 export class SmartLayoutComponent implements OnDestroy {
@@ -162,12 +158,13 @@ export class SmartLayoutComponent implements OnDestroy {
 		const { targetIds } = this.visibleState();
 		return this.remoteParticipants()
 			.filter((p) => !targetIds.has(p.identity))
-			.map((p) => p.name || 'Unknown');
+			.map((p) => p.name ?? '');
 	});
 
 	/** Whether to render the hidden-participants indicator in the layout. */
 	readonly shouldShowHiddenParticipantsIndicator = computed(
-		() => this.ovShowHiddenParticipantsIndicator() && this.isSmartLayoutActive() && this.hiddenParticipantsCount() > 0
+		() =>
+			this.ovShowHiddenParticipantsIndicator() && this.isSmartLayoutActive() && this.hiddenParticipantsCount() > 0
 	);
 
 	/**
@@ -182,12 +179,10 @@ export class SmartLayoutComponent implements OnDestroy {
 		return !hasPinnedParticipant && visibleCount < this.layoutService.MAX_VISIBLE_REMOTE_PARTICIPANTS_LIMIT;
 	});
 
-	/**
-	 * The top-bar variant is rendered by the status rail, which lives outside the layout, so its
-	 * content is published rather than projected. The in-grid tile is unaffected.
-	 */
+	/** The status rail lives outside the layout, so the top-bar variant is published, not projected. */
 	private readonly railHiddenParticipantsEffect = effect(() => {
-		const showsInRail = this.shouldShowHiddenParticipantsIndicator() && this.showTopBarHiddenParticipantsIndicator();
+		const showsInRail =
+			this.shouldShowHiddenParticipantsIndicator() && this.showTopBarHiddenParticipantsIndicator();
 		const summary = showsInRail
 			? { count: this.hiddenParticipantsCount(), names: this.hiddenParticipantNames() }
 			: undefined;

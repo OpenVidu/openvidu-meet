@@ -1,4 +1,10 @@
-.hidden-participants-container {
+@use '../meeting-view/status-chip' as chip;
+
+:host.inert {
+	pointer-events: none;
+}
+
+.hidden-participants-container.vertical {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -12,15 +18,6 @@
 	container-type: size;
 	container-name: hidden-indicator;
 }
-/* Top-bar mode renders in the status rail, so it sizes to its content and takes the rail's
-   chip treatment instead of filling a layout tile. */
-.hidden-participants-container.horizontal {
-	width: auto;
-	height: auto;
-	background-color: transparent;
-	container-type: normal;
-}
-
 .count-badge {
 	display: flex;
 	align-items: center;
@@ -96,72 +93,31 @@
 	}
 }
 
-.horizontal-content {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: auto;
-	height: auto;
-	padding: 0;
+.unified-indicator {
+	@include chip.status-chip;
+	@include chip.status-chip-interactive;
+	max-width: 100%;
 
-	.unified-indicator {
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		height: 32px;
-		padding: 0 12px;
-		background-color: var(--ov-surface-color);
-		border: 1px solid var(--ov-border-color);
-		border-radius: var(--ov-surface-radius);
-		max-width: 100%;
-		transition: background-color 0.2s ease;
-
-		&:hover {
-			background-color: var(--ov-hover-color);
-		}
-	}
-
-	.indicator-icon {
-		font-size: 16px;
-		width: 16px;
-		height: 16px;
+	.status-chip-icon {
 		color: var(--ov-accent-action-color);
-		flex-shrink: 0;
 	}
 
 	.text-container {
 		display: flex;
 		align-items: baseline;
 		gap: 4px;
-		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
 
-	.participant-count-value {
-		font-size: 13px;
-		font-weight: 700;
-		color: var(--ov-text-primary-color);
-		font-variant-numeric: tabular-nums;
-	}
-
-	.participant-count-label {
-		font-size: 13px;
-		color: var(--ov-text-secondary-color);
-	}
-
 	.names-text {
-		font-size: 13px;
-		color: var(--ov-text-secondary-color);
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
 }
 
-/* In a narrow rail the chip keeps the icon and the count, and drops the words. */
 @media (max-width: 790px) {
-	.horizontal-content {
+	.unified-indicator {
 		.participant-count-label,
 		.names-text {
 			display: none;

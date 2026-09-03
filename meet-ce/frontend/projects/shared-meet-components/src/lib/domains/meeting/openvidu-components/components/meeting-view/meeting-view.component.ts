@@ -54,7 +54,11 @@ import {
 	SettingsPanelStatusEvent
 } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '../../models/participant.model';
-import { RecordingStartRequestedEvent, RecordingState, RecordingStopRequestedEvent } from '../../models/recording.model';
+import {
+	RecordingStartRequestedEvent,
+	RecordingState,
+	RecordingStopRequestedEvent
+} from '../../models/recording.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { ActionService } from '../../services/action/action.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
@@ -154,12 +158,6 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 		return remainingMs !== undefined && remainingMs <= MeetingViewComponent.ENDING_SOON_URGENT_MS;
 	});
 
-	protected readonly endingSoonLabel = computed(() =>
-		this.translateService.translate(
-			this.endingSoonTime() ? 'ROOM.ENDING_SOON_BADGE_LABEL' : 'ROOM.ENDING_SOON_BADGE_ENDING'
-		)
-	);
-
 	/**
 	 * `mm:ss`, or nothing once the countdown is spent: the real end is still up to the backend's own
 	 * sweep a moment later, and a frozen `0:00` reads as a broken clock rather than a meeting about
@@ -177,22 +175,17 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 		return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 	});
 
-	private readonly recordingStatus = this.recordingService.recordingStatus.asReadonly();
+	protected readonly recordingStatus = this.recordingService.recordingStatus;
 
 	protected readonly isRecording = computed(() => this.recordingStatus().status === RecordingState.STARTED);
 
-	/** Elapsed recording time, which {@link RecordingService} refreshes every second. */
-	protected readonly recordingElapsed = computed(() =>
-		this.isRecording() ? this.recordingStatus().startedAt : undefined
-	);
+	protected readonly canOpenActivitiesPanel = this.libService.activitiesPanelButtonSignal;
 
 	/** Published by the smart layout, which cannot render into the rail itself. */
 	protected readonly railHiddenParticipants = this.smartLayoutService.railHiddenParticipants;
 
-	/**
-	 * The rail is the home for meeting-wide status, and it only takes up room while it has
-	 * something to say.
-	 */
+	protected readonly canOpenParticipantsPanel = this.libService.participantsPanelButtonSignal;
+
 	protected readonly showStatusRail = computed(
 		() => this.isRecording() || this.isEndingSoon() || this.railHiddenParticipants() !== undefined
 	);
@@ -536,14 +529,14 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 			});
 	}
 
-	/** Same destination the in-grid tile has: the list of who is in the meeting. */
 	protected openParticipantsPanel(): void {
+		if (!this.canOpenParticipantsPanel()) return;
+
 		this.panelService.togglePanel(PanelType.PARTICIPANTS);
 	}
 
-	/** Same destination the recording tag had in the toolbar: the recording activity. */
 	protected openRecordingActivityPanel(): void {
-		if (this.panelService.isActivitiesPanelOpened()) return;
+		if (!this.canOpenActivitiesPanel() || this.panelService.isActivitiesPanelOpened()) return;
 
 		this.panelService.togglePanel(PanelType.ACTIVITIES, 'recording');
 	}

@@ -1,5 +1,10 @@
 import { computed, effect, inject, Service, signal, untracked } from '@angular/core';
-import { HiddenParticipantsSummary, sameIdentityOrder, SmartLayoutMode } from '../../models/layout/smart-layout.model';
+import {
+	HiddenParticipantsSummary,
+	sameHiddenParticipantsSummary,
+	sameIdentityOrder,
+	SmartLayoutMode
+} from '../../models/layout/smart-layout.model';
 import type { Participant } from '../../services/livekit';
 import { MeetingEventsService } from '../meeting-events/meeting-events.service';
 import { ViewportService } from '../viewport/viewport.service';
@@ -32,12 +37,12 @@ export class SmartLayoutService extends BaseLayoutService {
 	private readonly _speakerPriorityOrder = signal<string[]>([]);
 
 	/**
-	 * The hidden-participant summary the status rail shows, published by {@link SmartLayoutComponent}
-	 * because the rail lives outside the layout. Set only while the layout would have rendered its
-	 * top-bar variant: when a pinned participant or a full grid calls for the in-grid tile instead,
-	 * this stays `undefined` and the layout renders that tile as before.
+	 * Published by {@link SmartLayoutComponent} while it would render its top-bar variant; `undefined`
+	 * while a pinned participant or a full grid calls for the in-grid tile instead.
 	 */
-	private readonly _railHiddenParticipants = signal<HiddenParticipantsSummary | undefined>(undefined);
+	private readonly _railHiddenParticipants = signal<HiddenParticipantsSummary | undefined>(undefined, {
+		equal: sameHiddenParticipantsSummary
+	});
 	readonly railHiddenParticipants = this._railHiddenParticipants.asReadonly();
 
 	setRailHiddenParticipants(summary: HiddenParticipantsSummary | undefined): void {
@@ -172,9 +177,7 @@ export class SmartLayoutService extends BaseLayoutService {
 	private processActiveSpeakersChanged(speakers: Participant[]): void {
 		const now = Date.now();
 		const activeSpeakerIds = new Set(
-			speakers
-				.filter((p) => !p.isLocal && p.audioLevel >= this.AUDIO_LEVEL_THRESHOLD)
-				.map((p) => p.identity)
+			speakers.filter((p) => !p.isLocal && p.audioLevel >= this.AUDIO_LEVEL_THRESHOLD).map((p) => p.identity)
 		);
 
 		this.updateSpeakerActivityTimers(activeSpeakerIds, now);

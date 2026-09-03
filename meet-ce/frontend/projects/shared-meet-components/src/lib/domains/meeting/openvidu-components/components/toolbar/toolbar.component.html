@@ -1,5 +1,5 @@
 <mat-toolbar id="toolbar" class="toolbar-container">
-	<!-- Info container (logo, room name, recording status) -->
+	<!-- Info container (logo, room name) -->
 	<div id="info-container" class="info-container">
 		<div>
 			<!-- Branding Logo -->
@@ -7,7 +7,7 @@
 				<img id="branding-logo" [ovLogo]="brandingLogo()" />
 			}
 
-			<!-- Session Info. Recording status lives in the meeting view's status rail. -->
+			<!-- Session Info -->
 			<div id="meeting-info-container">
 				<!-- Room Name -->
 				@if (showRoomName()) {

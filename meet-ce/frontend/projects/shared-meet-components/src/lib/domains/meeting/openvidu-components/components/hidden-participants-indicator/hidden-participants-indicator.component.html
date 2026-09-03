@@ -1,22 +1,26 @@
 @if (count() > 0) {
+	@let names = hiddenNames();
+	@let namesText =
+		names && names.remaining > 0
+			? ('HIDDEN_PARTICIPANTS.NAMES_AND_MORE' | translate: { names: names.shown, count: names.remaining })
+			: names?.shown;
+
 	<div class="hidden-participants-container" [class.horizontal]="isTopBarMode()" [class.vertical]="!isTopBarMode()">
 		@if (isTopBarMode()) {
-			<div class="horizontal-content">
-				<div class="unified-indicator" (click)="clicked.emit()">
-					<mat-icon class="indicator-icon">
-						@if (count() === 1) {
-							person
-						} @else {
-							people
-						}
-					</mat-icon>
-					<div class="text-container">
-						<span class="participant-count-value">+{{ count() }}</span>
-						<span class="participant-count-label">{{ descriptionText() }}</span>
-						@if (formattedParticipantNames()) {
-							<span class="names-text">({{ formattedParticipantNames() }})</span>
-						}
-					</div>
+			<div class="unified-indicator" (click)="clicked.emit()">
+				<mat-icon class="status-chip-icon">
+					@if (count() === 1) {
+						person
+					} @else {
+						people
+					}
+				</mat-icon>
+				<div class="text-container">
+					<span class="participant-count-value status-chip-value">+{{ count() }}</span>
+					<span class="participant-count-label status-chip-label">{{ descriptionKey() | translate }}</span>
+					@if (namesText) {
+						<span class="names-text status-chip-label">({{ namesText }})</span>
+					}
 				</div>
 			</div>
 		} @else {
@@ -34,12 +38,12 @@
 					</div>
 					<div class="count-info">
 						<span class="participant-count-value">+{{ count() }}</span>
-						<span class="participant-count-label">{{ descriptionText() }}</span>
+						<span class="participant-count-label">{{ descriptionKey() | translate }}</span>
 					</div>
-					@if (formattedParticipantNames()) {
+					@if (namesText) {
 						<div class="participant-names">
 							<mat-icon class="names-icon">visibility_off</mat-icon>
-							<span class="names-text">{{ formattedParticipantNames() }}</span>
+							<span class="names-text">{{ namesText }}</span>
 						</div>
 					}
 				</div>

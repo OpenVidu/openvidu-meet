@@ -626,7 +626,7 @@ test.describe('Layout E2E Tests', () => {
 					await expectHidden(pageA, '#settings-container');
 
 					// Pin the visible remote participant: hasPinnedParticipant becomes true
-					// → showTopBarHiddenParticipantsIndicator() returns false → indicator moves to OV_last
+					// → showTopBarHiddenParticipantsIndicator() returns false → indicator moves into the grid
 					await toggleStreamPin(pageA, '.OV_stream_video.remote');
 					await Promise.all([
 						expect(pageA.locator('.hidden-participants-container.vertical')).toBeVisible({

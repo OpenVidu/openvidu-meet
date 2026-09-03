@@ -213,6 +213,11 @@
 		"COUNT_HELPER": "चुनें कि ग्रिड में कितने दूरस्थ सदस्य दिखाए जाएं",
 		"COUNT_ARIA": "प्रदर्शित करने के लिए सदस्यों की संख्या"
 	},
+	"HIDDEN_PARTICIPANTS": {
+		"ONE_MORE": "और प्रतिभागी",
+		"MANY_MORE": "और प्रतिभागी",
+		"NAMES_AND_MORE": "{names} और {count} अन्य"
+	},
 	"PARTICIPANT_ITEM": {
 		"PROMOTE": "मॉडरेटर बनाएं",
 		"DOWNGRADE": "मूल अनुमतियों पर वापस लाएं",

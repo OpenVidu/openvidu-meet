@@ -456,9 +456,7 @@ export class MeetingEventHandlerService {
 		const message =
 			remainingMinutes === 1
 				? this.translateService.translate('ROOM.ENDING_SOON_ONE_MINUTE')
-				: this.translateService
-						.translate('ROOM.ENDING_SOON_MANY_MINUTES')
-						.replace('{minutes}', `${remainingMinutes}`);
+				: this.translateService.translate('ROOM.ENDING_SOON_MANY_MINUTES', { minutes: remainingMinutes });
 		this.notificationService.showDialog({
 			icon: 'schedule',
 			title: this.translateService.translate('ROOM.ENDING_SOON_TITLE'),

@@ -213,6 +213,11 @@
 		"COUNT_HELPER": "Elige cuántos participantes remotos se muestran en la cuadrícula",
 		"COUNT_ARIA": "Número de participantes a mostrar"
 	},
+	"HIDDEN_PARTICIPANTS": {
+		"ONE_MORE": "participante más",
+		"MANY_MORE": "participantes más",
+		"NAMES_AND_MORE": "{names} y {count} más"
+	},
 	"PARTICIPANT_ITEM": {
 		"PROMOTE": "Ascender a moderador",
 		"DOWNGRADE": "Restablecer los permisos originales",

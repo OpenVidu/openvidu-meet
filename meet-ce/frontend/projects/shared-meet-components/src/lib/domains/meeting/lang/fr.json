@@ -213,6 +213,11 @@
 		"COUNT_HELPER": "Choisissez combien de participants distants sont affichés dans la grille",
 		"COUNT_ARIA": "Nombre de participants à afficher"
 	},
+	"HIDDEN_PARTICIPANTS": {
+		"ONE_MORE": "participant de plus",
+		"MANY_MORE": "participants de plus",
+		"NAMES_AND_MORE": "{names} et {count} de plus"
+	},
 	"PARTICIPANT_ITEM": {
 		"PROMOTE": "Promouvoir en modérateur",
 		"DOWNGRADE": "Rétrograder aux autorisations d'origine",

@@ -1,14 +1,11 @@
 <ov-base-layout [ovRemoteStreams]="visibleRemoteStreams()" [externalAdditionalElements]="projectedAdditionalElements()">
-	<!-- The top-bar variant now lives in the status rail; only the in-grid tile is projected here. -->
 	@if (shouldShowHiddenParticipantsIndicator() && !showTopBarHiddenParticipantsIndicator()) {
 		<ng-container *ovLayoutAdditionalElements="'bottom'">
-			<div class="OV_last">
-				<ov-hidden-participants-indicator
-					(clicked)="hiddenParticipantsIndicatorClicked.emit()"
-					[count]="hiddenParticipantsCount()"
-					[hiddenParticipantNames]="hiddenParticipantNames()"
-				/>
-			</div>
+			<ov-hidden-participants-indicator
+				(clicked)="hiddenParticipantsIndicatorClicked.emit()"
+				[count]="hiddenParticipantsCount()"
+				[hiddenParticipantNames]="hiddenParticipantNames()"
+			/>
 		</ng-container>
 	}
 </ov-base-layout>

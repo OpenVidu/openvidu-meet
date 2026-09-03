@@ -213,6 +213,11 @@
 		"COUNT_HELPER": "グリッドに表示するリモート参加者の人数を選択してください",
 		"COUNT_ARIA": "表示する参加者数"
 	},
+	"HIDDEN_PARTICIPANTS": {
+		"ONE_MORE": "人の他の参加者",
+		"MANY_MORE": "人の他の参加者",
+		"NAMES_AND_MORE": "{names} と他{count}人"
+	},
 	"PARTICIPANT_ITEM": {
 		"PROMOTE": "モデレーターに昇格",
 		"DOWNGRADE": "元の権限に戻す",

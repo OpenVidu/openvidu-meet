@@ -213,6 +213,11 @@
 		"COUNT_HELPER": "选择在网格中显示的远端参与者数量",
 		"COUNT_ARIA": "要显示的参与者数量"
 	},
+	"HIDDEN_PARTICIPANTS": {
+		"ONE_MORE": "位其他参与者",
+		"MANY_MORE": "位其他参与者",
+		"NAMES_AND_MORE": "{names} 及其他 {count} 人"
+	},
 	"PARTICIPANT_ITEM": {
 		"PROMOTE": "提升为主持人",
 		"DOWNGRADE": "降级为原始权限",

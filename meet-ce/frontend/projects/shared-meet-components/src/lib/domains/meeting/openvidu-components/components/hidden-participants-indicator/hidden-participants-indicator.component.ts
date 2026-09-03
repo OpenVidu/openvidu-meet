@@ -1,17 +1,20 @@
 import { Component, computed, input, output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
- * Component that displays an indicator for participants not visible in the current layout.
- * This appears as an extra participant tile when using the smart layout feature.
+ * Component that displays an indicator for participants not visible in the current layout, either as
+ * an extra tile in the smart layout grid or as a chip in the meeting's status rail.
  */
 @Component({
 	selector: 'ov-hidden-participants-indicator',
-	imports: [MatIconModule],
+	imports: [MatIconModule, TranslatePipe],
 	templateUrl: './hidden-participants-indicator.component.html',
 	styleUrl: './hidden-participants-indicator.component.scss'
 })
 export class HiddenParticipantsIndicatorComponent {
+	private static readonly MAX_NAMES_SHOWN = 3;
+
 	count = input<number>(0);
 	hiddenParticipantNames = input<string[]>([]);
 	clicked = output<void>();
@@ -19,26 +22,18 @@ export class HiddenParticipantsIndicatorComponent {
 
 	protected isTopBarMode = computed(() => this.mode() === 'topbar');
 
-	protected descriptionText = computed(() => {
-		return this.count() === 1 ? 'more participant ' : 'more participants';
-	});
+	protected descriptionKey = computed(() =>
+		this.count() === 1 ? 'HIDDEN_PARTICIPANTS.ONE_MORE' : 'HIDDEN_PARTICIPANTS.MANY_MORE'
+	);
 
-	protected formattedParticipantNames = computed(() => {
-		const names = this.hiddenParticipantNames();
-		const total = this.count();
+	/** The first few names, and how many hidden participants are left unnamed after them. */
+	protected hiddenNames = computed(() => {
+		const shown = this.hiddenParticipantNames()
+			.filter(Boolean)
+			.slice(0, HiddenParticipantsIndicatorComponent.MAX_NAMES_SHOWN);
 
-		if (!names || names.length === 0) {
-			return '';
-		}
+		if (shown.length === 0) return undefined;
 
-		const maxNamesToShow = 3;
-		const visibleNames = names.slice(0, maxNamesToShow);
-		const remaining = total - visibleNames.length;
-
-		if (remaining > 0) {
-			return `${visibleNames.join(', ')} and ${remaining} more`;
-		}
-
-		return visibleNames.join(', ');
+		return { shown: shown.join(', '), remaining: this.count() - shown.length };
 	});
 }

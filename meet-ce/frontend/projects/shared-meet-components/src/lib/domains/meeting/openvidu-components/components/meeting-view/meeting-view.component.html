@@ -47,16 +47,20 @@
 			<ov-landscape-warning />
 		}
 		<div id="meeting-stage" [animate.enter]="enterAnimationClass" [animate.leave]="'ov-fade-out-200'">
-			<!-- Status rail: every meeting-wide status, in its own row above the layout, so nothing
-			     covers a participant and nothing depends on a toolbar the host may not render. -->
+			<!-- Meeting-wide status stays visible even when the host renders no toolbar. -->
 			@if (showStatusRail()) {
 				<div id="status-rail" class="status-rail">
 					@if (isRecording()) {
-						<div id="recording-tag" class="status-chip recording-chip" (click)="openRecordingActivityPanel()">
+						<div
+							id="recording-tag"
+							class="status-chip recording-chip"
+							[class.clickable]="canOpenActivitiesPanel()"
+							(click)="openRecordingActivityPanel()"
+						>
 							<span class="recording-dot"></span>
 							<span class="status-chip-value">REC</span>
-							@if (recordingElapsed(); as elapsed) {
-								<span class="status-chip-label">{{ elapsed | date: 'H:mm:ss' }}</span>
+							@if (recordingStatus().startedAt; as startedAt) {
+								<span class="status-chip-label">{{ startedAt | date: 'H:mm:ss' }}</span>
 							}
 						</div>
 					}
@@ -64,9 +68,11 @@
 					@if (isEndingSoon()) {
 						<div class="status-chip ending-soon-chip" [class.urgent]="isEndingSoonUrgent()">
 							<mat-icon class="status-chip-icon">schedule</mat-icon>
-							<span class="status-chip-label">{{ endingSoonLabel() }}</span>
 							@if (endingSoonTime(); as time) {
+								<span class="status-chip-label">{{ 'ROOM.ENDING_SOON_BADGE_LABEL' | translate }}</span>
 								<span class="status-chip-value">{{ time }}</span>
+							} @else {
+								<span class="status-chip-label">{{ 'ROOM.ENDING_SOON_BADGE_ENDING' | translate }}</span>
 							}
 						</div>
 					}
@@ -75,6 +81,7 @@
 						<ov-hidden-participants-indicator
 							class="status-rail-end"
 							mode="topbar"
+							[class.inert]="!canOpenParticipantsPanel()"
 							[count]="hidden.count"
 							[hiddenParticipantNames]="hidden.names"
 							(clicked)="openParticipantsPanel()"

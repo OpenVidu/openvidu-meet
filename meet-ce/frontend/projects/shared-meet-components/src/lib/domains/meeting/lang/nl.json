@@ -213,6 +213,11 @@
 		"COUNT_HELPER": "Kies hoeveel externe deelnemers in het raster worden getoond",
 		"COUNT_ARIA": "Aantal weer te geven deelnemers"
 	},
+	"HIDDEN_PARTICIPANTS": {
+		"ONE_MORE": "andere deelnemer",
+		"MANY_MORE": "andere deelnemers",
+		"NAMES_AND_MORE": "{names} en {count} anderen"
+	},
 	"PARTICIPANT_ITEM": {
 		"PROMOTE": "Promoveren tot moderator",
 		"DOWNGRADE": "Terugzetten naar oorspronkelijke rechten",
