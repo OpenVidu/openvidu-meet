@@ -32,6 +32,12 @@ video {
 		opacity: 1;
 	}
 
+	/* Screen-share gestures are ours: without this the browser claims the touch for its own
+	   scroll/pinch and cancels the pointer stream mid-gesture. */
+	&.screen-source {
+		touch-action: none;
+	}
+
 	/* Screen-share zoom: show a grab cursor when panning is available. */
 	&.zoomable {
 		cursor: grab;

@@ -52,6 +52,11 @@ export class ScreenZoomState {
 		return this._level() > ScreenZoomState.MIN_LEVEL;
 	}
 
+	/** Current zoom as whole percent, so a continuous gesture cannot render 137.00000000000003%. */
+	get percent(): number {
+		return Math.round(this._level() * 100);
+	}
+
 	/** Increases the zoom by one step, capped at {@link MAX_LEVEL}. */
 	zoomIn(): void {
 		this.setLevel(this._level() + ScreenZoomState.LEVEL_STEP);
@@ -80,7 +85,11 @@ export class ScreenZoomState {
 		this._pan.set({ x: ScreenZoomState.clampAxis(x), y: ScreenZoomState.clampAxis(y) });
 	}
 
-	private setLevel(level: number): void {
+	/**
+	 * Sets an absolute zoom level, clamped to [{@link MIN_LEVEL}, {@link MAX_LEVEL}]. Continuous, so a
+	 * pinch can land between the button steps.
+	 */
+	setLevel(level: number): void {
 		const clamped = Math.min(ScreenZoomState.MAX_LEVEL, Math.max(ScreenZoomState.MIN_LEVEL, level));
 		this._level.set(clamped);
 
