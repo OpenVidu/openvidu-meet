@@ -59,57 +59,6 @@ export class LivekitUrlDirective implements OnDestroy {
 }
 
 /**
- * The **token** directive sets the token to grant a participant access to a Room.
- * This OpenVidu token will be use by each participant when connecting to a Room.
- *
- * It is only available for {@link MeetingViewComponent}.
- *
- * Default: `""`
- *
- * @example
- * <ov-meeting-view [token]="token"></ov-meeting-view>
- */
-@Directive({
-	selector: 'ov-meeting-view[token]'
-})
-export class TokenDirective implements OnDestroy {
-	/**
-	 * @ignore
-	 */
-	readonly token = input<string>('');
-
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
-	private readonly libService = inject(MeetingUiConfigService);
-	private readonly tokenEffect = effect(() => {
-		this.update(this.token());
-	});
-
-	/**
-	 * @ignore
-	 */
-	ngOnDestroy(): void {
-		this.clear();
-	}
-
-	/**
-	 * @ignore
-	 */
-	clear() {
-		this.update('');
-	}
-
-	/**
-	 * @ignore
-	 */
-	update(value: string) {
-		this.libService.updateGeneralConfig({ token: value });
-	}
-}
-
-/**
  * The **tokenError** directive allows to display an error message in case of issues during token request.
  *
  * It is only available for {@link MeetingViewComponent}.

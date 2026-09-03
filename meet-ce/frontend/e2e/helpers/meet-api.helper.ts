@@ -8,6 +8,7 @@ import {
 	MeetRoomMemberRole,
 	MeetRoomOptions,
 	MeetRoomRoles,
+	MeetRoomStatus,
 	MeetUserDTO,
 	MeetUserOptions,
 	MeetUserRole
@@ -130,6 +131,24 @@ export const createRoomAsUser = async (accessToken: string, options: MeetRoomOpt
 	assertOk(response, responseText, 'create room as user');
 
 	return JSON.parse(responseText) as MeetRoom;
+};
+
+/**
+ * Reads a room's current status, which is what tells a meeting apart from a room nobody has joined:
+ * it flips to `active_meeting` when Meet creates the LiveKit room and LiveKit reports it started.
+ */
+export const getRoomStatus = async (roomId: string): Promise<MeetRoomStatus> => {
+	const response = await fetch(withApiPath(`/rooms/${encodeURIComponent(roomId)}?fields=status`), {
+		method: 'GET',
+		headers: {
+			'x-api-key': API_KEY
+		}
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'get room status');
+
+	return (JSON.parse(responseText) as MeetRoom).status;
 };
 
 /**

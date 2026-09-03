@@ -7,6 +7,7 @@ import {
 	effect,
 	ElementRef,
 	inject,
+	input,
 	OnDestroy,
 	output,
 	signal,
@@ -414,6 +415,15 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	 */
 	readonly onParticipantConnected = output<ParticipantModel>();
 
+	// ── Inputs ───────────────────────────────────────────────────────────────
+
+	/**
+	 * Mints the token this participant joins with, asked for at the moment they commit to joining.
+	 * Minting reserves the participant name, checks the meeting's capacity and creates the room, so
+	 * it must not run while the participant is still choosing devices.
+	 */
+	readonly tokenProvider = input.required<() => Promise<string>>();
+
 	// ── Effects ──────────────────────────────────────────────────────────────
 	// Each effect reads only from libService signals and uses untracked() for
 	// any reads of internal signals, preventing reactive dependency cycles.
@@ -546,7 +556,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	/**
 	 * @internal
 	 * Called by the PreJoin component when the user clicks join.
-	 * Transitions from 'prejoin' → 'connecting' by applying the token immediately.
+	 * Transitions from 'prejoin' → 'connecting' by requesting the token for this join.
 	 */
 	_onReadyToJoin(): void {
 		this.log.d('User clicked join in prejoin');
@@ -554,8 +564,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 		const rawName = this.libService.getCurrentParticipantName() || this.storageSrv.getParticipantName() || '';
 		this.storageSrv.setParticipantName(rawName);
 
-		this.meetingLiveKitService.init();
-		this._applyToken(this.libService.tokenSignal());
+		void this._requestTokenAndConnect();
 	}
 
 	/**
@@ -578,30 +587,43 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 			this.log.d('Devices ready, showing prejoin');
 			this.phase.set('prejoin');
 		} else {
-			this.log.d('Devices ready, no prejoin — requesting token directly');
-			this._requestTokenSkippingPrejoin();
+			this.log.d('Devices ready, no prejoin, joining directly');
+			void this._requestTokenAndConnect();
 		}
 	}
 
 	/**
 	 * @internal
-	 * Used when showPrejoin = false. Applies the token directly without showing the prejoin page.
+	 * Asks the consumer for the token of this join and applies it: 'connecting' → 'live'. The phase
+	 * moves first, so the join the participant just committed to cannot be committed to twice while
+	 * the token is in flight.
 	 */
-	private _requestTokenSkippingPrejoin(): void {
+	private async _requestTokenAndConnect(): Promise<void> {
+		this.phase.set('connecting');
 		this.meetingLiveKitService.init();
-		this._applyToken(this.libService.tokenSignal());
+
+		let token: string;
+
+		try {
+			token = await this.tokenProvider()();
+		} catch (error: unknown) {
+			this.log.e('Error requesting the token to join the meeting:', error);
+			this.showStartupError('ERRORS.MEETING_NOT_READY');
+			return;
+		}
+
+		this._applyToken(token);
 	}
 
 	/**
 	 * @internal
-	 * Applies a received token and connects: 'connecting' → 'live'.
+	 * Applies the token of this join and connects: 'connecting' → 'live'.
 	 */
 	private _applyToken(token: string): void {
 		try {
 			const livekitUrl = this.libService.getLivekitUrl();
 			this.meetingLiveKitService.initializeAndSetToken(token, livekitUrl);
 			this.log.d('Token applied, room is ready to connect');
-			this.phase.set('connecting');
 		} catch (error: any) {
 			this.log.e('Error applying token', error);
 			this.tokenError.set({ name: 'Token error', message: error?.message ?? String(error) });

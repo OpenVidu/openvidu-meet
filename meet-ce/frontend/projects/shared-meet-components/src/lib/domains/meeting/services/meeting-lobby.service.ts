@@ -42,7 +42,7 @@ export class MeetingLobbyService {
 	private readonly _showRecordingCard = signal<boolean>(false);
 	private readonly _showBackButton = signal<boolean>(true);
 	private readonly _backButtonText = signal<string>('Back');
-	private readonly _roomMemberToken = signal<string | undefined>(undefined);
+	private readonly _accessGranted = signal<boolean>(false);
 	private readonly _participantForm = signal<FormGroup>(
 		new FormGroup({
 			name: new FormControl('', [Validators.required]),
@@ -90,8 +90,8 @@ export class MeetingLobbyService {
 	/** Computed signal for room access URL derived from MeetingContextService */
 	readonly roomAccessUrl = computed(() => this.accessLinkService.speakerPublicLink() ?? '');
 
-	/** Readonly signal for the room member token */
-	readonly roomMemberToken = this._roomMemberToken.asReadonly();
+	/** Whether the participant cleared the lobby and moved on to the meeting's prejoin. */
+	readonly accessGranted = this._accessGranted.asReadonly();
 
 	/** Readonly signal for the participant form */
 	readonly participantForm = this._participantForm.asReadonly();
@@ -275,14 +275,14 @@ export class MeetingLobbyService {
 			this.meetingContextService.setE2eeKey(e2eeKey);
 		}
 
-		// Order matters: the room config carries the initial media state, and setting the room-member
-		// token is what hides the lobby and renders the meeting view, whose prejoin opens the devices
-		// from that state. Loading it second lets a slow response reach the prejoin too late, and nothing
-		// mutes a track that already exists. A failure must not block the join, though.
+		// Order matters: the room config carries the initial media state, and granting access is what
+		// hides the lobby and renders the meeting view, whose prejoin opens the devices from that
+		// state. Loading it second lets a slow response reach the prejoin too late, and nothing mutes
+		// a track that already exists. A failure must not block the join, though.
 		await this.roomService.loadRoomConfig(this._roomId()!).catch((error) => {
 			this.log.w('Could not load the room config before joining; its initial media state will not apply', error);
 		});
-		await this.generateRoomMemberToken();
+		this._accessGranted.set(true);
 	}
 
 	/**
@@ -385,11 +385,13 @@ export class MeetingLobbyService {
 	}
 
 	/**
-	 * Generates a room member token for joining a meeting.
+	 * Mints the token this participant joins the meeting with, called when they commit to
+	 * joining rather than when they clear the lobby: minting reserves their name, checks the
+	 * meeting's capacity and creates the LiveKit room, and all three belong to the real join.
 	 *
-	 * @returns Promise that resolves when token is generated
+	 * @returns The room member token to connect with
 	 */
-	protected async generateRoomMemberToken() {
+	async generateJoinToken(): Promise<string> {
 		try {
 			const roomId = this._roomId();
 			const roomSecret = this.meetingContextService.roomSecret();
@@ -423,8 +425,8 @@ export class MeetingLobbyService {
 				this.roomMemberContextService.saveParticipantNameToStorage(participantName);
 			}
 
-			this._roomMemberToken.set(roomMemberToken);
 			this.meetingContextService.setIsActiveMeeting(true);
+			return roomMemberToken;
 		} catch (error: any) {
 			this.log.e('Error generating room member token for joining meeting:', error);
 			const message = error?.error?.message || error.message || 'Unknown error';
@@ -485,7 +487,7 @@ export class MeetingLobbyService {
 		this._showRecordingCard.set(false);
 		this._showBackButton.set(true);
 		this._backButtonText.set('LOBBY.BACK');
-		this._roomMemberToken.set(undefined);
+		this._accessGranted.set(false);
 		this._participantForm.set(
 			new FormGroup({
 				name: new FormControl('', [Validators.required]),

@@ -46,7 +46,6 @@ interface RecordingActivityConfig {
  * General application configuration
  */
 interface GeneralConfig {
-	token: string;
 	livekitUrl: string;
 	tokenError: any;
 	participantName: string;
@@ -62,7 +61,6 @@ interface GeneralConfig {
 export class MeetingUiConfigService {
 	// Grouped configuration items by domain
 	private readonly generalConfig = signal<GeneralConfig>({
-		token: '',
 		livekitUrl: '',
 		tokenError: null,
 		participantName: '',
@@ -114,7 +112,6 @@ export class MeetingUiConfigService {
 	private readonly showMicrophoneControlsConfig = signal<boolean>(true);
 
 	// Signals-first selectors used by migrated consumers/directives
-	readonly tokenSignal = computed(() => this.generalConfig().token);
 	readonly tokenErrorSignal = computed(() => this.generalConfig().tokenError);
 	readonly participantNameSignal = computed(() => this.generalConfig().participantName);
 	readonly e2eeKeySignal = computed(() => this.generalConfig().e2eeKey);

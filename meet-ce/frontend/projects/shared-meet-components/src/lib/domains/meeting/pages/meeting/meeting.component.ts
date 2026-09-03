@@ -56,7 +56,7 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	protected participantItemTemplate = computed(() => this.participantItem().template());
 
 	/** Controls whether to show lobby (true) or meeting view (false) */
-	showLobby = computed(() => !this.roomMemberToken());
+	showLobby = computed(() => !this.lobbyService.accessGranted());
 	lobbyState = signal<'loading' | 'ready' | 'error'>('loading');
 
 	/** Controls whether to show the videoconference component */
@@ -76,11 +76,13 @@ export class MeetingComponent implements OnInit, OnDestroy {
 
 	// Signals for meeting context data
 	roomName = this.lobbyService.roomName;
-	roomMemberToken = this.lobbyService.roomMemberToken;
 	e2eeKey = this.lobbyService.e2eeKeyValue;
 	features = this.meetingContextService.meetingUI;
 	initialMediaState = this.meetingContextService.initialMediaState;
 	hasRecordings = this.meetingContextService.hasRecordings;
+
+	/** Handed to the meeting view, which calls it when the participant commits to joining. */
+	protected readonly generateJoinToken = () => this.lobbyService.generateJoinToken();
 
 	constructor() {
 		// Change theme variables when custom theme is enabled.

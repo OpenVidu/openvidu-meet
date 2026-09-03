@@ -41,13 +41,11 @@ import {
     PrejoinDirective,
     ShowCameraControlsDirective,
     ShowMicrophoneControlsDirective,
-    TokenDirective,
     TokenErrorDirective
 } from './videoconference.directive';
 
 const directives = [
 	LivekitUrlDirective,
-	TokenDirective,
 	TokenErrorDirective,
 	LangDirective,
 	LangOptionsDirective,

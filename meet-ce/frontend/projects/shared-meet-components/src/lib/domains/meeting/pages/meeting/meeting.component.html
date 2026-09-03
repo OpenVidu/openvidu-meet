@@ -15,7 +15,7 @@
 	}
 } @else if (!isMeetingLeft()) {
 	<ov-meeting-view
-		[token]="roomMemberToken()!"
+		[tokenProvider]="generateJoinToken"
 		[prejoin]="true"
 		[initialMediaState]="initialMediaState()"
 		[e2eeKey]="e2eeKey()"
