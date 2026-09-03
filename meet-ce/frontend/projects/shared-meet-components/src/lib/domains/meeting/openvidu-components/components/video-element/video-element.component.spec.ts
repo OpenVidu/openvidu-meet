@@ -51,6 +51,12 @@ describe('VideoElementComponent screen-share gestures', () => {
 		pointer('pointermove', 2, to, 0);
 	}
 
+	/** Lifts both fingers, so the next pinch is a fresh gesture rather than a move of this one. */
+	function release(): void {
+		pointer('pointerup', 2, 0, 0);
+		pointer('pointerup', 1, 0, 0);
+	}
+
 	it('scales the zoom by the ratio the fingers moved apart', () => {
 		pinch(100, 200);
 
@@ -108,6 +114,27 @@ describe('VideoElementComponent screen-share gestures', () => {
 
 		expect(fixture.componentInstance.isGesturing()).toBe(false);
 		expect(zoom.level()).toBe(ScreenZoomState.MIN_LEVEL);
+	});
+
+	// The label interpolates `percent`, and a pinch lands between the buttons' 0.25 steps: the raw
+	// level * 100 the label used to do renders 109.00000000000001 for a good fraction of those.
+	it('reports a whole percentage at every level a pinch can reach', () => {
+		for (let distance = 101; distance <= 400; distance += 1) {
+			zoom.reset();
+			pinch(100, distance);
+
+			expect(Number.isInteger(zoom.percent))
+				.withContext(`pinch to ${distance}px gave ${zoom.percent}`)
+				.toBe(true);
+
+			release();
+		}
+
+		zoom.reset();
+		pinch(100, 137);
+
+		expect(zoom.level()).toBeCloseTo(1.37, 5);
+		expect(zoom.percent).toBe(137);
 	});
 
 	it('leaves a camera stream alone', () => {
