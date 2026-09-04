@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { container } from '../../../../src/config/dependency-injector.config.js';
-import { OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import { deleteAllRooms, endMeeting, getRoom, startTestServer } from '../../../helpers/request-helpers.js';
 
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { waitForMeetingToEnd } from '../../../helpers/wait-helpers.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
 
 describe('Meetings API Tests', () => {
@@ -27,19 +27,14 @@ describe('Meetings API Tests', () => {
 		it('should remove LiveKit room when ending meeting', async () => {
 			// Check if the LiveKit room exists before ending the meeting
 			const lkRoom = await livekitService.getRoom(roomData.room.roomId);
-			expect(lkRoom).toBeDefined();
 			expect(lkRoom.name).toBe(roomData.room.roomId);
 
 			// End the meeting
 			let response = await endMeeting(roomData.room.roomId, roomData.moderatorToken);
 			expect(response.status).toBe(200);
 
-			// Check if the LiveKit room has been removed
-			try {
-				await livekitService.getRoom(roomData.room.roomId);
-			} catch (error) {
-				expect((error as OpenViduMeetError).statusCode).toBe(404);
-			}
+			await waitForMeetingToEnd(roomData.room.roomId);
+			await expect(livekitService.getRoom(roomData.room.roomId)).rejects.toMatchObject({ statusCode: 404 });
 
 			// Check if the Meet room already exists
 			response = await getRoom(roomData.room.roomId);
@@ -51,11 +46,7 @@ describe('Meetings API Tests', () => {
 			roomData = await setupSingleRoom();
 
 			// Check that the LiveKit room does not exist before ending the meeting
-			try {
-				await livekitService.getRoom(roomData.room.roomId);
-			} catch (error) {
-				expect((error as OpenViduMeetError).statusCode).toBe(404);
-			}
+			await expect(livekitService.getRoom(roomData.room.roomId)).rejects.toMatchObject({ statusCode: 404 });
 
 			// End the meeting
 			const response = await endMeeting(roomData.room.roomId, roomData.moderatorToken);

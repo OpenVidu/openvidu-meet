@@ -7,14 +7,7 @@ describe('Captions Config API Tests', () => {
 	});
 
 	describe('Get captions config', () => {
-		it('should return captions config when not authenticated', async () => {
-			const response = await getCaptionsConfig();
-			expect(response.status).toBe(200);
-			expect(response.body).toHaveProperty('enabled');
-			expect(typeof response.body.enabled).toBe('boolean');
-		});
-
-		it('should return enabled true by default', async () => {
+		it('should serve the captions config unauthenticated, disabled unless MEET_CAPTIONS_ENABLED says otherwise', async () => {
 			const response = await getCaptionsConfig();
 			expect(response.status).toBe(200);
 			expect(response.body).toEqual({ enabled: false });
