@@ -600,9 +600,11 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 
 	/**
 	 * @internal
-	 * Asks the consumer for the token of this join and applies it: 'connecting' → 'live'. The phase
-	 * moves first, so the join the participant just committed to cannot be committed to twice while
-	 * the token is in flight.
+	 * Asks the consumer for the token of this join and applies it: 'connecting' → 'live'.
+	 *
+	 * A join is committed to once. What takes the prejoin button off screen is the phase leaving
+	 * 'prejoin', and that only lands on the next change detection, so a second click is turned away
+	 * here: minting twice reserves a second name and a second participant identity server side.
 	 *
 	 * The mint is a round trip the participant can walk out of, and leaving the page destroys this
 	 * view mid-flight, so nothing past the await runs once that has happened: connecting then would
@@ -610,6 +612,8 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	 * land on top of the error page the mint already navigated to.
 	 */
 	private async _requestTokenAndConnect(): Promise<void> {
+		if (this.phase() === 'connecting' || this.phase() === 'live') return;
+
 		this.phase.set('connecting');
 		this.meetingLiveKitService.init();
 
