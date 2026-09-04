@@ -422,9 +422,10 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	// ── Inputs ───────────────────────────────────────────────────────────────
 
 	/**
-	 * Mints the token this participant joins with, asked for at the moment they commit to joining.
-	 * Minting reserves the participant name, checks the meeting's capacity and creates the room, so
-	 * it must not run while the participant is still choosing devices.
+	 * Mints the token this participant joins with, asked for when they commit to joining: the join
+	 * click in the prejoin, or entering the view when there is no prejoin. Minting reserves the
+	 * participant name, checks the meeting's capacity and creates the room, so it must not run while
+	 * the participant is still choosing devices.
 	 */
 	readonly tokenProvider = input.required<() => Promise<string>>();
 
