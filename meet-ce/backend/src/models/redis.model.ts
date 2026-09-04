@@ -30,7 +30,7 @@ export const enum RedisLockName {
 	RECORDING_ACTIVE = 'recording_active',
 	RECORDING_STOP = 'recording_stop',
 	SCHEDULED_TASK = 'scheduled_task',
-	MEETING_DURATION_END = 'meeting_duration_end',
+	MEETING_DURATION_LIMIT_END = 'meeting_duration_limit_end',
 	STORAGE_INITIALIZATION = 'storage_initialization',
 	MIGRATION = 'migration',
 	WEBHOOK = 'webhook',

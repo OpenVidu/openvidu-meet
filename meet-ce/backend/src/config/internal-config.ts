@@ -25,10 +25,10 @@ export const INTERNAL_CONFIG = {
 	// Timing and cleanup settings for room lifecycle management
 	ROOM_EXPIRED_GC_INTERVAL: '1h' as StringValue, // Interval for processing and deleting expired rooms
 	ROOM_ACTIVE_VERIFICATION_GC_INTERVAL: '15m' as StringValue, // Interval for checking room 'active_meeting' status consistency
-	MEETING_MAX_DURATION_GC_INTERVAL: '1m' as StringValue, // Interval of the safety-net sweep for meetings past their room's maxDurationMinutes, for when a per-meeting timer was lost
-	MEETING_DURATION_END_LOCK_TTL: '15s' as StringValue, // Redis lock TTL serializing the force-end of a meeting past its duration limit
-	MEETING_DURATION_END_TOLERANCE: '1s' as StringValue, // How close to its deadline a meeting counts as due, instead of arming a timer for a remainder this small
-	MEETING_DURATION_END_RETRY_DELAY: '5s' as StringValue, // First delay a fired duration-limit timer waits to retry an end it could not carry out; doubles per attempt, up to MEETING_MAX_DURATION_GC_INTERVAL
+	MEETING_DURATION_LIMIT_GC_INTERVAL: '1m' as StringValue, // Interval of the safety-net sweep for meetings past their room's maxDurationMinutes, for when a per-meeting timer was lost
+	MEETING_DURATION_LIMIT_LOCK_TTL: '15s' as StringValue, // Redis lock TTL serializing the force-end of a meeting past its duration limit
+	MEETING_DURATION_LIMIT_TOLERANCE: '1s' as StringValue, // How close to its deadline a meeting counts as due, instead of arming a timer for a remainder this small
+	MEETING_DURATION_LIMIT_RETRY_DELAY: '5s' as StringValue, // First delay a fired duration-limit timer waits to retry an end it could not carry out; doubles per attempt, up to MEETING_DURATION_LIMIT_GC_INTERVAL
 	MEETING_ENDED_CAUSE_TTL: '24h' as StringValue, // Redis TTL for the per-room "meeting was force-ended for exceeding its duration limit" flag consumed by the room_finished handler; scoped to the meeting's LiveKit room sid, this is only a last-resort safety net
 	MEETING_MIN_PARTICIPANTS_LIMIT: 1, // Lowest value config.maxParticipants may be set to; 0 would be a room nobody could ever join
 	MEETING_MAX_PARTICIPANTS_LIMIT: 30, // Highest value config.maxParticipants may be set to
@@ -69,13 +69,13 @@ export const INTERNAL_CONFIG = {
 	// Batch and concurrency processing settings
 	BATCH_SIZE_ROOMS_EXPIRED_GC: 100, // Number of expired rooms to process per batch during GC
 	BATCH_SIZE_ROOMS_STATUS_VALIDATION_GC: 100, // Number of active rooms to validate per batch during status consistency GC
-	BATCH_SIZE_MEETING_MAX_DURATION_GC: 100, // Number of duration-limited active rooms to evaluate per batch during max-duration GC
+	BATCH_SIZE_MEETING_DURATION_LIMIT_GC: 100, // Number of duration-limited active rooms to re-arm or end per batch during the duration-limit GC
 	BATCH_SIZE_RECORDINGS: 100, // Process 100 recordings at a time to balance throughput and memory
 	BATCH_SIZE_REGISTRY_LOCKS_RETRIEVAL: 100, // Number of recording locks to retrieve from registry in each batch during orphaned locks GC
 	CONCURRENCY_STALE_RECORDINGS_GC: 20, // Concurrency limit for processing stale recordings garbage collection
 	CONCURRENCY_ORPHANED_LOCKS_GC: 10, // Concurrency limit for processing orphaned recording locks with failFast enabled
 	CONCURRENCY_VALIDATE_ROOMS_STATUS: 10, // Concurrency limit for validating and cleaning up inconsistent rooms
-	CONCURRENCY_MEETING_MAX_DURATION_GC: 10, // Concurrency limit for ending meetings that exceeded their duration limit
+	CONCURRENCY_MEETING_DURATION_LIMIT_GC: 10, // Concurrency limit for re-arming duration-limit timers and ending the meetings already past them
 	CONCURRENCY_BULK_DELETE_ROOMS: 10, // Concurrency limit for bulk deleting rooms
 	CONCURRENCY_BULK_RETRIEVE_ROOMS: 20, // Concurrency limit for bulk retrieving room info
 	CONCURRENCY_BULK_DELETE_RECORDINGS: 20, // Concurrency limit for bulk deleting recordings

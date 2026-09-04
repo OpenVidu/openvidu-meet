@@ -85,26 +85,26 @@ describe('TaskSchedulerService', () => {
 		const runs: string[] = [];
 		const { service, events } = buildScheduler();
 		service.registerTask(cronTask('expiredRoomsGC', runs));
-		service.registerTask(cronTask('meetingMaxDurationGC', runs));
+		service.registerTask(cronTask('reconcileDurationLimitTimersGC', runs));
 
 		events.emitReady();
 		await flush();
-		expect(service.scheduledNames()).toEqual(['expiredRoomsGC', 'meetingMaxDurationGC']);
+		expect(service.scheduledNames()).toEqual(['expiredRoomsGC', 'reconcileDurationLimitTimersGC']);
 
 		events.emitDisconnected();
 		expect(service.scheduledNames()).toEqual([]);
-		expect(service.registeredNames()).toEqual(['expiredRoomsGC', 'meetingMaxDurationGC']);
+		expect(service.registeredNames()).toEqual(['expiredRoomsGC', 'reconcileDurationLimitTimersGC']);
 
 		events.emitReady();
 		await flush();
-		expect(service.scheduledNames()).toEqual(['expiredRoomsGC', 'meetingMaxDurationGC']);
+		expect(service.scheduledNames()).toEqual(['expiredRoomsGC', 'reconcileDurationLimitTimersGC']);
 	});
 
 	it('does not resurrect a task cancelled while Redis was down', async () => {
 		const runs: string[] = [];
 		const { service, events } = buildScheduler();
 		service.registerTask(cronTask('expiredRoomsGC', runs));
-		service.registerTask(cronTask('meetingMaxDurationGC', runs));
+		service.registerTask(cronTask('reconcileDurationLimitTimersGC', runs));
 
 		events.emitReady();
 		await flush();
@@ -113,8 +113,8 @@ describe('TaskSchedulerService', () => {
 
 		events.emitReady();
 		await flush();
-		expect(service.scheduledNames()).toEqual(['meetingMaxDurationGC']);
-		expect(service.registeredNames()).toEqual(['meetingMaxDurationGC']);
+		expect(service.scheduledNames()).toEqual(['reconcileDurationLimitTimersGC']);
+		expect(service.registeredNames()).toEqual(['reconcileDurationLimitTimersGC']);
 	});
 
 	/**
@@ -124,7 +124,7 @@ describe('TaskSchedulerService', () => {
 	it('keeps a timeout task armed across a Redis blip instead of restarting its delay', async () => {
 		const { service, events } = buildScheduler();
 		service.registerTask({
-			name: 'meetingMaxDurationEnd_room-1',
+			name: 'durationLimitTimer_room-1',
 			type: 'timeout',
 			scheduleOrDelay: '1h',
 			callback: async () => {}
@@ -132,15 +132,15 @@ describe('TaskSchedulerService', () => {
 
 		events.emitReady();
 		await flush();
-		const armed = service.scheduledHandle('meetingMaxDurationEnd_room-1');
+		const armed = service.scheduledHandle('durationLimitTimer_room-1');
 		expect(armed).toBeDefined();
 
 		events.emitDisconnected();
-		expect(service.scheduledNames()).toEqual(['meetingMaxDurationEnd_room-1']);
+		expect(service.scheduledNames()).toEqual(['durationLimitTimer_room-1']);
 
 		events.emitReady();
 		await flush();
-		expect(service.scheduledHandle('meetingMaxDurationEnd_room-1')).toBe(armed);
+		expect(service.scheduledHandle('durationLimitTimer_room-1')).toBe(armed);
 	});
 
 	it('does not re-arm a timeout task that already ran', async () => {

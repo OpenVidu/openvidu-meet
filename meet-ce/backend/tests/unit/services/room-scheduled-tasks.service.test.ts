@@ -165,12 +165,12 @@ class TestableRoomScheduledTasksService extends RoomScheduledTasksService {
 		return this.validateRoomsStatusGC();
 	}
 
-	runMarkMeetingEndedByDurationLimit(roomId: string, meetingId: string): Promise<void> {
-		return this.markMeetingEndedByDurationLimit(roomId, meetingId);
+	runRecordMeetingEndedCause(roomId: string, meetingId: string): Promise<void> {
+		return this.recordMeetingEndedCause(roomId, meetingId);
 	}
 
-	runEnforceMeetingMaxDurationGC(): Promise<void> {
-		return this.enforceMeetingMaxDurationGC();
+	runDurationLimitTimersGC(): Promise<void> {
+		return this.reconcileDurationLimitTimersGC();
 	}
 
 	runClearMeetingEndedCause(roomId: string, meetingId: string): Promise<void> {
@@ -327,12 +327,12 @@ describe('RoomScheduledTasksService.validateRoomsStatusGC (orchestrates both rec
  * timer that outlived its meeting must never end a later meeting in the same room.
  */
 
-describe('RoomScheduledTasksService.markMeetingEndedByDurationLimit (C7: force-end attribution)', () => {
+describe('RoomScheduledTasksService.recordMeetingEndedCause (C7: force-end attribution)', () => {
 	it('stores the flag under the meeting sid so a later read for the same meeting matches', async () => {
 		const redisService = new FakeRedisService();
 		const { service } = buildService(new FakeLiveKitService(), new FakeRoomRepository(), redisService);
 
-		await service.runMarkMeetingEndedByDurationLimit('room-1', 'sid-N');
+		await service.runRecordMeetingEndedCause('room-1', 'sid-N');
 
 		expect(redisService.store.get('ov_meet:meeting_ended_cause:room-1')).toBe('sid-N');
 	});
@@ -341,8 +341,8 @@ describe('RoomScheduledTasksService.markMeetingEndedByDurationLimit (C7: force-e
 		const redisService = new FakeRedisService();
 		const { service } = buildService(new FakeLiveKitService(), new FakeRoomRepository(), redisService);
 
-		await service.runMarkMeetingEndedByDurationLimit('room-1', 'sid-N');
-		await service.runMarkMeetingEndedByDurationLimit('room-2', 'sid-M');
+		await service.runRecordMeetingEndedCause('room-1', 'sid-N');
+		await service.runRecordMeetingEndedCause('room-2', 'sid-M');
 
 		expect(redisService.store.get('ov_meet:meeting_ended_cause:room-1')).toBe('sid-N');
 		expect(redisService.store.get('ov_meet:meeting_ended_cause:room-2')).toBe('sid-M');
@@ -350,7 +350,7 @@ describe('RoomScheduledTasksService.markMeetingEndedByDurationLimit (C7: force-e
 });
 
 /**
- * C7 follow-up: `enforceMeetingMaxDurationGC` writes the MEETING_ENDED_CAUSE flag *before* calling
+ * C7 follow-up: `reconcileDurationLimitTimersGC` writes the MEETING_ENDED_CAUSE flag *before* calling
  * `deleteRoom`, deliberately, so the flag is visible to `room_finished` no matter how fast that
  * webhook arrives (see the doc comment above the write). But `deleteRoom` treats "room already
  * gone" as a benign no-op, not an error — so if a moderator's own `endMeeting` deletes the room in
@@ -364,7 +364,7 @@ describe('RoomScheduledTasksService.markMeetingEndedByDurationLimit (C7: force-e
  * these tests pin the write side's obligation to withdraw it when its own deletion didn't happen.
  */
 
-describe('RoomScheduledTasksService.enforceMeetingMaxDurationGC (C7 follow-up: stale cause flag after a delete that was not this GC)', () => {
+describe('RoomScheduledTasksService.reconcileDurationLimitTimersGC (C7 follow-up: stale cause flag after a delete that was not this GC)', () => {
 	const roomId = 'room-race';
 	const sid = 'sid-race';
 	const causeKey = `ov_meet:meeting_ended_cause:${roomId}`;
@@ -385,7 +385,7 @@ describe('RoomScheduledTasksService.enforceMeetingMaxDurationGC (C7 follow-up: s
 		const redisService = new FakeRedisService();
 		const { service } = buildService(livekitService, roomRepository, redisService);
 
-		await service.runEnforceMeetingMaxDurationGC();
+		await service.runDurationLimitTimersGC();
 
 		expect(redisService.store.get(causeKey)).toBeUndefined();
 	});
@@ -398,7 +398,7 @@ describe('RoomScheduledTasksService.enforceMeetingMaxDurationGC (C7 follow-up: s
 		const redisService = new FakeRedisService();
 		const { service } = buildService(livekitService, roomRepository, redisService);
 
-		await expect(service.runEnforceMeetingMaxDurationGC()).resolves.toBeUndefined();
+		await expect(service.runDurationLimitTimersGC()).resolves.toBeUndefined();
 
 		expect(redisService.store.get(causeKey)).toBeUndefined();
 	});
@@ -411,7 +411,7 @@ describe('RoomScheduledTasksService.enforceMeetingMaxDurationGC (C7 follow-up: s
 		const redisService = new FakeRedisService();
 		const { service } = buildService(livekitService, roomRepository, redisService);
 
-		await service.runEnforceMeetingMaxDurationGC();
+		await service.runDurationLimitTimersGC();
 
 		expect(redisService.store.get(causeKey)).toBe(sid);
 	});
@@ -421,7 +421,7 @@ describe('RoomScheduledTasksService.clearMeetingEndedCause (C7 follow-up: withdr
 	it('deletes the flag when it still matches the given meeting', async () => {
 		const redisService = new FakeRedisService();
 		const { service } = buildService(new FakeLiveKitService(), new FakeRoomRepository(), redisService);
-		await service.runMarkMeetingEndedByDurationLimit('room-1', 'sid-N');
+		await service.runRecordMeetingEndedCause('room-1', 'sid-N');
 
 		await service.runClearMeetingEndedCause('room-1', 'sid-N');
 
@@ -432,7 +432,7 @@ describe('RoomScheduledTasksService.clearMeetingEndedCause (C7 follow-up: withdr
 		const redisService = new FakeRedisService();
 		const { service } = buildService(new FakeLiveKitService(), new FakeRoomRepository(), redisService);
 		// A legitimate flag for a different (e.g. later) meeting already occupies the room-scoped key.
-		await service.runMarkMeetingEndedByDurationLimit('room-1', 'sid-unrelated');
+		await service.runRecordMeetingEndedCause('room-1', 'sid-unrelated');
 
 		await service.runClearMeetingEndedCause('room-1', 'sid-N');
 
@@ -450,8 +450,8 @@ describe('RoomScheduledTasksService.clearMeetingEndedCause (C7 follow-up: withdr
 describe('RoomScheduledTasksService duration-limit timers', () => {
 	const roomId = 'room-timer';
 	const maxDurationMinutes = 10;
-	const taskName = MeetRoomHelper.meetingMaxDurationTaskName(roomId);
-	const retryDelayMs = ms(INTERNAL_CONFIG.MEETING_DURATION_END_RETRY_DELAY);
+	const taskName = MeetRoomHelper.durationLimitTimerName(roomId);
+	const retryDelayMs = ms(INTERNAL_CONFIG.MEETING_DURATION_LIMIT_RETRY_DELAY);
 	const causeKey = `ov_meet:meeting_ended_cause:${roomId}`;
 	// The armed delay is a difference between two clock readings, so the clock is pinned instead of
 	// asserting a tolerance band wide enough to absorb the jitter between them.
@@ -485,7 +485,7 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 	it('arms a one-shot task for the time left until the meeting reaches its limit', () => {
 		const { service, taskScheduler } = buildService(new FakeLiveKitService(), new FakeRoomRepository());
 
-		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - 60), maxDurationMinutes);
+		service.scheduleMeetingEndAtDurationLimit(startedRoom(nowSeconds() - 60), maxDurationMinutes);
 
 		const task = armedTask(taskScheduler);
 		expect(task.type).toBe('timeout');
@@ -496,7 +496,7 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 		const { service, taskScheduler } = buildService(new FakeLiveKitService(), new FakeRoomRepository());
 		const metadata = JSON.stringify({ createdBy: 'openvidu-meet', endDate: nowMs + 2 * 60_000 });
 
-		service.scheduleMeetingMaxDurationEnd(
+		service.scheduleMeetingEndAtDurationLimit(
 			startedRoom(nowSeconds() - 60, 'sid-timer', metadata),
 			maxDurationMinutes
 		);
@@ -507,7 +507,7 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 	it('arms an immediate task for a meeting that is already past its limit', () => {
 		const { service, taskScheduler } = buildService(new FakeLiveKitService(), new FakeRoomRepository());
 
-		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - maxDurationMinutes * 60 - 120), 10);
+		service.scheduleMeetingEndAtDurationLimit(startedRoom(nowSeconds() - maxDurationMinutes * 60 - 120), 10);
 
 		expect(ms(armedTask(taskScheduler).scheduleOrDelay)).toBe(0);
 	});
@@ -515,8 +515,8 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 	it('replaces the timer left armed for an earlier meeting in the same room', () => {
 		const { service, taskScheduler } = buildService(new FakeLiveKitService(), new FakeRoomRepository());
 
-		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - 9 * 60), maxDurationMinutes);
-		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds()), maxDurationMinutes);
+		service.scheduleMeetingEndAtDurationLimit(startedRoom(nowSeconds() - 9 * 60), maxDurationMinutes);
+		service.scheduleMeetingEndAtDurationLimit(startedRoom(nowSeconds()), maxDurationMinutes);
 
 		expect(taskScheduler.cancelled).toEqual([taskName, taskName]);
 		// The surviving timer is the second meeting's, a full limit ahead, not the first's last minute
@@ -530,7 +530,7 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 		roomRepository.roomsWithMaxDuration = [{ roomId, config: { maxDurationMinutes } }];
 		const { service, taskScheduler } = buildService(livekitService, roomRepository);
 
-		await service.runEnforceMeetingMaxDurationGC();
+		await service.runDurationLimitTimersGC();
 
 		expect(ms(armedTask(taskScheduler).scheduleOrDelay)).toBe(9 * 60_000);
 		expect(livekitService.deletedRoomNames).toEqual([]);
@@ -538,9 +538,9 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 
 	it('cancels the timer by the same name it was armed under', () => {
 		const { service, taskScheduler } = buildService(new FakeLiveKitService(), new FakeRoomRepository());
-		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds()), maxDurationMinutes);
+		service.scheduleMeetingEndAtDurationLimit(startedRoom(nowSeconds()), maxDurationMinutes);
 
-		service.cancelMeetingMaxDurationEnd(roomId);
+		service.cancelMeetingEndAtDurationLimit(roomId);
 
 		expect(taskScheduler.tasks.has(taskName)).toBe(false);
 	});
@@ -554,13 +554,16 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 			new FakeRoomRepository(),
 			redisService
 		);
-		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - maxDurationMinutes * 60), maxDurationMinutes);
+		service.scheduleMeetingEndAtDurationLimit(
+			startedRoom(nowSeconds() - maxDurationMinutes * 60),
+			maxDurationMinutes
+		);
 
 		await armedTask(taskScheduler).callback();
 
 		expect(livekitService.deletedRoomNames).toEqual([roomId]);
 		expect(redisService.store.get(causeKey)).toBe('sid-timer');
-		expect(mutexService.lockedKeys).toEqual([`ov_meet_lock:meeting_duration_end_${roomId}`]);
+		expect(mutexService.lockedKeys).toEqual([`ov_meet_lock:meeting_duration_limit_end_${roomId}`]);
 		expect(armCount(taskScheduler)).toBe(1);
 	});
 
@@ -568,7 +571,10 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 		const livekitService = new FakeLiveKitService();
 		const redisService = new FakeRedisService();
 		const { service, taskScheduler } = buildService(livekitService, new FakeRoomRepository(), redisService);
-		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - maxDurationMinutes * 60), maxDurationMinutes);
+		service.scheduleMeetingEndAtDurationLimit(
+			startedRoom(nowSeconds() - maxDurationMinutes * 60),
+			maxDurationMinutes
+		);
 		// The meeting the timer was armed for is over and another one is running in the same room,
 		// long enough to be past the limit the stale timer carries but not past its own.
 		livekitService.rooms.set(roomId, {
@@ -587,7 +593,10 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 		const livekitService = new FakeLiveKitService();
 		const redisService = new FakeRedisService();
 		const { service, taskScheduler } = buildService(livekitService, new FakeRoomRepository(), redisService);
-		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - maxDurationMinutes * 60), maxDurationMinutes);
+		service.scheduleMeetingEndAtDurationLimit(
+			startedRoom(nowSeconds() - maxDurationMinutes * 60),
+			maxDurationMinutes
+		);
 
 		await expect(armedTask(taskScheduler).callback()).resolves.toBeUndefined();
 
@@ -605,7 +614,10 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 			new FakeRoomRepository(),
 			redisService
 		);
-		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - maxDurationMinutes * 60), maxDurationMinutes);
+		service.scheduleMeetingEndAtDurationLimit(
+			startedRoom(nowSeconds() - maxDurationMinutes * 60),
+			maxDurationMinutes
+		);
 		mutexService.acquirable = false;
 
 		await armedTask(taskScheduler).callback();
@@ -621,7 +633,10 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 		livekitService.rooms.set(roomId, { sid: 'sid-timer', creationTime: nowSeconds() - maxDurationMinutes * 60 });
 		livekitService.deleteOutcome = 'error';
 		const { service, taskScheduler } = buildService(livekitService, new FakeRoomRepository());
-		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - maxDurationMinutes * 60), maxDurationMinutes);
+		service.scheduleMeetingEndAtDurationLimit(
+			startedRoom(nowSeconds() - maxDurationMinutes * 60),
+			maxDurationMinutes
+		);
 
 		await armedTask(taskScheduler).callback();
 
@@ -633,7 +648,10 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 		const livekitService = new FakeLiveKitService();
 		livekitService.rooms.set(roomId, { sid: 'sid-timer', creationTime: nowSeconds() - maxDurationMinutes * 60 });
 		const { service, taskScheduler } = buildService(livekitService, new FakeRoomRepository());
-		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - maxDurationMinutes * 60), maxDurationMinutes);
+		service.scheduleMeetingEndAtDurationLimit(
+			startedRoom(nowSeconds() - maxDurationMinutes * 60),
+			maxDurationMinutes
+		);
 		livekitService.findRoomError = new Error('livekit unreachable');
 
 		await expect(armedTask(taskScheduler).callback()).resolves.toBeUndefined();
@@ -648,7 +666,10 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 		livekitService.rooms.set(roomId, { sid: 'sid-timer', creationTime: nowSeconds() - maxDurationMinutes * 60 });
 		livekitService.deleteOutcome = 'error';
 		const { service, taskScheduler } = buildService(livekitService, new FakeRoomRepository());
-		service.scheduleMeetingMaxDurationEnd(startedRoom(nowSeconds() - maxDurationMinutes * 60), maxDurationMinutes);
+		service.scheduleMeetingEndAtDurationLimit(
+			startedRoom(nowSeconds() - maxDurationMinutes * 60),
+			maxDurationMinutes
+		);
 
 		for (let fire = 0; fire < 6; fire++) {
 			await armedTask(taskScheduler).callback();
@@ -659,7 +680,7 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 			.map(({ scheduleOrDelay }) => ms(scheduleOrDelay));
 		// The first delay is the arm itself, already past the limit; the rest are the retries.
 		expect(armedDelays).toEqual([0, retryDelayMs, retryDelayMs * 2, retryDelayMs * 4, retryDelayMs * 8]);
-		expect(retryDelayMs * 16).toBeGreaterThan(ms(INTERNAL_CONFIG.MEETING_MAX_DURATION_GC_INTERVAL));
+		expect(retryDelayMs * 16).toBeGreaterThan(ms(INTERNAL_CONFIG.MEETING_DURATION_LIMIT_GC_INTERVAL));
 	});
 
 	it('ends the meeting when it fires a hair early, instead of arming a timer for a millisecond', async () => {
@@ -669,7 +690,7 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 		const livekitService = new FakeLiveKitService();
 		livekitService.rooms.set(roomId, { sid: 'sid-timer', creationTime });
 		const { service, taskScheduler } = buildService(livekitService, new FakeRoomRepository());
-		service.scheduleMeetingMaxDurationEnd(startedRoom(creationTime), maxDurationMinutes);
+		service.scheduleMeetingEndAtDurationLimit(startedRoom(creationTime), maxDurationMinutes);
 
 		await armedTask(taskScheduler).callback();
 
@@ -678,12 +699,12 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 	});
 
 	it('re-arms for what is left when it fires further from the deadline than the tolerance', async () => {
-		const remainingMs = ms(INTERNAL_CONFIG.MEETING_DURATION_END_TOLERANCE) + 1;
+		const remainingMs = ms(INTERNAL_CONFIG.MEETING_DURATION_LIMIT_TOLERANCE) + 1;
 		const creationTime = (nowMs - maxDurationMinutes * 60_000 + remainingMs) / 1000;
 		const livekitService = new FakeLiveKitService();
 		livekitService.rooms.set(roomId, { sid: 'sid-timer', creationTime });
 		const { service, taskScheduler } = buildService(livekitService, new FakeRoomRepository());
-		service.scheduleMeetingMaxDurationEnd(startedRoom(creationTime), maxDurationMinutes);
+		service.scheduleMeetingEndAtDurationLimit(startedRoom(creationTime), maxDurationMinutes);
 
 		await armedTask(taskScheduler).callback();
 

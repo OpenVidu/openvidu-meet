@@ -23,7 +23,7 @@ export const parseMeetingEndDate = (metadata?: string): number | undefined => {
  * reporting the very same room deletion for both.
  *
  * The tolerance absorbs the backend ending the meeting a hair early, by its own
- * `MEETING_DURATION_END_TOLERANCE`, plus whatever clock skew survives the token's `iat` correction.
+ * `MEETING_DURATION_LIMIT_TOLERANCE`, plus whatever clock skew survives the token's `iat` correction.
  * Inside it a moderator's end reads as the duration limit, which is the ambiguity this accepts in
  * exchange for needing no signal that would race the room's deletion.
  */

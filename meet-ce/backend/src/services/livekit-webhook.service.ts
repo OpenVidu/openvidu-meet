@@ -255,7 +255,7 @@ export class LivekitWebhookService {
 
 			if (config.maxDurationMinutes) {
 				const roomScheduledTasksService = await this.getRoomScheduledTasksService();
-				roomScheduledTasksService.scheduleMeetingMaxDurationEnd(room, config.maxDurationMinutes);
+				roomScheduledTasksService.scheduleMeetingEndAtDurationLimit(room, config.maxDurationMinutes);
 			}
 
 			// Update Meet room status to ACTIVE_MEETING
@@ -294,7 +294,7 @@ export class LivekitWebhookService {
 			await this.recordingService.reactivateAutoRecording(roomId, meetingId);
 
 			const roomScheduledTasksService = await this.getRoomScheduledTasksService();
-			roomScheduledTasksService.cancelMeetingMaxDurationEnd(roomId);
+			roomScheduledTasksService.cancelMeetingEndAtDurationLimit(roomId);
 
 			const meetRoom = await this.roomService.getMeetRoom(roomId);
 
@@ -332,7 +332,7 @@ export class LivekitWebhookService {
 			}
 
 			// Send webhook notification, attributing the end to the duration GC when that's what
-			// actually force-ended this meeting (see RoomScheduledTasksService.markMeetingEndedByDurationLimit).
+			// actually force-ended this meeting (see RoomScheduledTasksService.recordMeetingEndedCause).
 			const cause = await this.getMeetingEndedCause(roomId, meetingId);
 			this.webhookDispatcherService.sendMeetingEndedWebhook(meetRoom, cause);
 

@@ -130,11 +130,11 @@ class FakeRoomScheduledTasksService {
 	scheduled: { room: Room; maxDurationMinutes: number }[] = [];
 	cancelled: string[] = [];
 
-	scheduleMeetingMaxDurationEnd(room: Room, maxDurationMinutes: number): void {
+	scheduleMeetingEndAtDurationLimit(room: Room, maxDurationMinutes: number): void {
 		this.scheduled.push({ room, maxDurationMinutes });
 	}
 
-	cancelMeetingMaxDurationEnd(roomId: string): void {
+	cancelMeetingEndAtDurationLimit(roomId: string): void {
 		this.cancelled.push(roomId);
 	}
 }

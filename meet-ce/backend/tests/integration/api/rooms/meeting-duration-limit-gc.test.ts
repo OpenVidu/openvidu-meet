@@ -8,7 +8,7 @@ import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRooms,
-	executeMeetingMaxDurationGC,
+	executeDurationLimitTimersGC,
 	generateRoomMemberToken,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
@@ -24,7 +24,7 @@ const MAX_DURATION_MINUTES = 10;
  * themselves are armed from the `room_started` webhook, which this in-process suite does not
  * receive, and are covered by the unit suites.
  */
-describe('Meeting Max Duration GC Tests', () => {
+describe('Meeting Duration Limit GC Tests', () => {
 	let livekitService: LiveKitService;
 	let roomRepository: RoomRepository;
 	let realGetRoom: (roomName: string) => Promise<Room>;
@@ -107,7 +107,7 @@ describe('Meeting Max Duration GC Tests', () => {
 		});
 		await markRoomAsActiveMeeting(room.roomId);
 
-		await executeMeetingMaxDurationGC();
+		await executeDurationLimitTimersGC();
 
 		expect(await livekitService.roomExists(room.roomId)).toBe(true);
 	});
@@ -116,7 +116,7 @@ describe('Meeting Max Duration GC Tests', () => {
 		const { room } = await setupSingleRoom(true, 'NO_DURATION_LIMIT_ROOM');
 		await markRoomAsActiveMeeting(room.roomId);
 
-		await executeMeetingMaxDurationGC();
+		await executeDurationLimitTimersGC();
 
 		expect(await livekitService.roomExists(room.roomId)).toBe(true);
 	});
@@ -131,7 +131,7 @@ describe('Meeting Max Duration GC Tests', () => {
 
 		// Past its deadline by a margin, so the assertion cannot flake on clock rounding
 		mockMeetingRemainingTime(room.roomId, -5_000);
-		await executeMeetingMaxDurationGC();
+		await executeDurationLimitTimersGC();
 
 		expect(await livekitService.roomExists(room.roomId)).toBe(false);
 	});

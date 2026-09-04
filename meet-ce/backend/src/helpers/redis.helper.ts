@@ -38,12 +38,12 @@ export class MeetLock {
 		return `${RedisLockPrefix.BASE}${RedisLockName.SCHEDULED_TASK}_${taskName}`;
 	}
 
-	static getMeetingDurationEndLock(roomId: string): string {
+	static getDurationLimitEndLock(roomId: string): string {
 		if (!roomId) {
 			throw new Error('roomId must be a non-empty string');
 		}
 
-		return `${RedisLockPrefix.BASE}${RedisLockName.MEETING_DURATION_END}_${roomId}`;
+		return `${RedisLockPrefix.BASE}${RedisLockName.MEETING_DURATION_LIMIT_END}_${roomId}`;
 	}
 
 	static getStorageInitializationLock(): string {

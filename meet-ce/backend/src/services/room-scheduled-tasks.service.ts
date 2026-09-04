@@ -56,13 +56,13 @@ export class RoomScheduledTasksService {
 		};
 		this.taskSchedulerService.registerTask(validateRoomsStatusGCTask);
 
-		const meetingMaxDurationGCTask: IScheduledTask = {
-			name: 'meetingMaxDurationGC',
+		const durationLimitTimersGCTask: IScheduledTask = {
+			name: 'reconcileDurationLimitTimersGC',
 			type: 'cron',
-			scheduleOrDelay: INTERNAL_CONFIG.MEETING_MAX_DURATION_GC_INTERVAL,
-			callback: this.enforceMeetingMaxDurationGC.bind(this)
+			scheduleOrDelay: INTERNAL_CONFIG.MEETING_DURATION_LIMIT_GC_INTERVAL,
+			callback: this.reconcileDurationLimitTimersGC.bind(this)
 		};
-		this.taskSchedulerService.registerTask(meetingMaxDurationGCTask);
+		this.taskSchedulerService.registerTask(durationLimitTimersGCTask);
 	}
 
 	/**
@@ -244,93 +244,100 @@ export class RoomScheduledTasksService {
 	}
 
 	/**
-	 * Arms the timer that ends the meeting running in `room` the moment it reaches its room's
+	 * Arms the timer that ends the meeting running in `livekitRoom` the moment it reaches its room's
 	 * `maxDurationMinutes`, replacing any timer already armed for that room. The deadline is the
 	 * meeting's own state, so re-arming mid-meeting keeps it.
 	 */
-	scheduleMeetingMaxDurationEnd(room: Room, maxDurationMinutes: number): void {
-		const remainingMs = this.remainingMsUntilDurationLimit(room, maxDurationMinutes);
-		this.startMeetingMaxDurationTimeout(room, maxDurationMinutes, Math.max(remainingMs, 0));
+	scheduleMeetingEndAtDurationLimit(livekitRoom: Room, maxDurationMinutes: number): void {
+		const remainingMs = this.meetingRemainingMs(livekitRoom, maxDurationMinutes);
+		this.armDurationLimitTimer(livekitRoom, maxDurationMinutes, Math.max(remainingMs, 0));
 	}
 
 	/**
 	 * Disarms the duration-limit timer of `roomId`, for a meeting that ended by any other means.
-	 * The timer only exists on the replica that armed it, so {@link endMeetingOverMaxDuration}
+	 * The timer only exists on the replica that armed it, so {@link endMeetingIfPastDurationLimit}
 	 * checks the deadline again before ending anything.
 	 */
-	cancelMeetingMaxDurationEnd(roomId: string): void {
-		this.taskSchedulerService.cancelTask(MeetRoomHelper.meetingMaxDurationTaskName(roomId));
+	cancelMeetingEndAtDurationLimit(roomId: string): void {
+		this.taskSchedulerService.cancelTask(MeetRoomHelper.durationLimitTimerName(roomId));
 	}
 
-	protected startMeetingMaxDurationTimeout(
-		room: Room,
+	/**
+	 * Arms the timer to fire in `delayMs`, carrying the delay its own failed end would retry with.
+	 */
+	protected armDurationLimitTimer(
+		livekitRoom: Room,
 		maxDurationMinutes: number,
 		delayMs: number,
-		retryMs = ms(INTERNAL_CONFIG.MEETING_DURATION_END_RETRY_DELAY)
+		nextRetryDelayMs = ms(INTERNAL_CONFIG.MEETING_DURATION_LIMIT_RETRY_DELAY)
 	): void {
-		const name = MeetRoomHelper.meetingMaxDurationTaskName(room.name);
+		const name = MeetRoomHelper.durationLimitTimerName(livekitRoom.name);
 
 		this.taskSchedulerService.cancelTask(name);
 		this.taskSchedulerService.registerTask({
 			name,
 			type: 'timeout',
 			scheduleOrDelay: `${delayMs}ms`,
-			callback: () => this.endMeetingOnDurationLimitReached(room, maxDurationMinutes, retryMs)
+			callback: () => this.runDurationLimitTimer(livekitRoom, maxDurationMinutes, nextRetryDelayMs)
 		});
 	}
 
 	/**
-	 * Ends the meeting a fired timer was armed for, and re-arms the timer, which no longer exists
-	 * once it has fired.
+	 * Body of a fired timer: ends the meeting it was armed for, re-arming itself for the deadline it
+	 * has yet to reach, or for another attempt at an end that did not land. A fired timer no longer
+	 * exists, so every path out of here either re-arms or leaves the meeting to the sweep.
 	 *
-	 * The meeting is identified before anything is ended: a timer outliving its meeting carries the
-	 * limit that meeting was armed with, which is not necessarily the room's limit now.
+	 * `armedMeeting` is compared against the meeting running now before anything is ended: a timer
+	 * outliving the meeting it was armed for carries that meeting's limit, which is not necessarily
+	 * the room's limit now.
 	 */
-	protected async endMeetingOnDurationLimitReached(
-		room: Room,
+	protected async runDurationLimitTimer(
+		armedMeeting: Room,
 		maxDurationMinutes: number,
-		retryMs: number
+		retryDelayMs: number
 	): Promise<void> {
-		try {
-			const runningMeeting = await this.livekitService.findRoom(room.name);
+		const roomId = armedMeeting.name;
 
-			if (runningMeeting?.sid !== room.sid) {
+		try {
+			const currentMeeting = await this.livekitService.findRoom(roomId);
+
+			if (currentMeeting?.sid !== armedMeeting.sid) {
 				return;
 			}
 
-			const remainingMs = this.remainingMsUntilDurationLimit(runningMeeting, maxDurationMinutes);
+			const remainingMs = this.meetingRemainingMs(currentMeeting, maxDurationMinutes);
 
 			if (!this.isDurationLimitReached(remainingMs)) {
-				this.startMeetingMaxDurationTimeout(runningMeeting, maxDurationMinutes, remainingMs);
+				this.armDurationLimitTimer(currentMeeting, maxDurationMinutes, remainingMs);
 				return;
 			}
 
-			if (await this.endMeetingOverMaxDuration(room.name, maxDurationMinutes)) {
+			if (await this.endMeetingIfPastDurationLimit(roomId, maxDurationMinutes)) {
 				return;
 			}
 
-			this.retryMeetingMaxDurationEnd(room, maxDurationMinutes, retryMs);
+			this.retryDurationLimitTimer(armedMeeting, maxDurationMinutes, retryDelayMs);
 		} catch (error) {
-			this.logger.error(`Error running the duration-limit timer of room '${room.name}':`, error);
-			this.retryMeetingMaxDurationEnd(room, maxDurationMinutes, retryMs);
+			this.logger.error(`Error running the duration-limit timer of room '${roomId}':`, error);
+			this.retryDurationLimitTimer(armedMeeting, maxDurationMinutes, retryDelayMs);
 		}
 	}
 
 	/**
-	 * Re-arms a timer whose end could not be carried out, backing off per consecutive attempt.
-	 * Retrying stops once it would be slower than the safety-net sweep, which owns the end from
-	 * there.
+	 * Re-arms a timer whose end could not be carried out, doubling the delay per consecutive
+	 * attempt. Retrying stops once it would be slower than the safety-net sweep, which owns the end
+	 * from there.
 	 */
-	protected retryMeetingMaxDurationEnd(room: Room, maxDurationMinutes: number, retryMs: number): void {
-		if (retryMs > ms(INTERNAL_CONFIG.MEETING_MAX_DURATION_GC_INTERVAL)) {
+	protected retryDurationLimitTimer(armedMeeting: Room, maxDurationMinutes: number, retryDelayMs: number): void {
+		if (retryDelayMs > ms(INTERNAL_CONFIG.MEETING_DURATION_LIMIT_GC_INTERVAL)) {
 			return;
 		}
 
-		this.startMeetingMaxDurationTimeout(room, maxDurationMinutes, retryMs, retryMs * 2);
+		this.armDurationLimitTimer(armedMeeting, maxDurationMinutes, retryDelayMs, retryDelayMs * 2);
 	}
 
-	protected remainingMsUntilDurationLimit(room: Room, maxDurationMinutes: number): number {
-		return MeetRoomHelper.meetingRemainingMs(room, maxDurationMinutes, Date.now());
+	protected meetingRemainingMs(livekitRoom: Room, maxDurationMinutes: number): number {
+		return MeetRoomHelper.meetingRemainingMs(livekitRoom, maxDurationMinutes, Date.now());
 	}
 
 	/**
@@ -340,22 +347,25 @@ export class RoomScheduledTasksService {
 	 * a millisecond.
 	 */
 	protected isDurationLimitReached(remainingMs: number): boolean {
-		return remainingMs <= ms(INTERNAL_CONFIG.MEETING_DURATION_END_TOLERANCE);
+		return remainingMs <= ms(INTERNAL_CONFIG.MEETING_DURATION_LIMIT_TOLERANCE);
 	}
 
 	/**
 	 * Safety net for the per-meeting timers armed at `room_started`
-	 * ({@link scheduleMeetingMaxDurationEnd}): walks the active rooms that declare a limit, ends the
-	 * meetings already past their deadline and re-arms the timer of every meeting still running, so
-	 * a meeting whose timer died with its replica (a restart or a rolling deploy included) gets one
-	 * back and is ended on time rather than on this sweep's next tick. Its interval bounds how far a
-	 * meeting can overrun only while it has no timer, at most one tick.
+	 * ({@link scheduleMeetingEndAtDurationLimit}): walks the active rooms that declare a limit, ends
+	 * the meetings already past their deadline and re-arms the timer of every meeting still running,
+	 * so a meeting whose timer died with its replica (a restart or a rolling deploy included) gets
+	 * one back and is ended on time rather than on this sweep's next tick. Its interval bounds how
+	 * far a meeting can overrun only while it has no timer, at most one tick.
+	 *
+	 * Re-arming is what this mostly does: a timer lives in the memory of the single replica that
+	 * armed it, and nothing else restores one.
 	 */
-	protected async enforceMeetingMaxDurationGC(): Promise<void> {
+	protected async reconcileDurationLimitTimersGC(): Promise<void> {
 		this.logger.verbose(`Checking meetings over their duration limit at ${new Date(Date.now()).toISOString()}`);
 
 		try {
-			const BATCH_SIZE = INTERNAL_CONFIG.BATCH_SIZE_MEETING_MAX_DURATION_GC;
+			const BATCH_SIZE = INTERNAL_CONFIG.BATCH_SIZE_MEETING_DURATION_LIMIT_GC;
 			let nextPageToken: string | undefined;
 			let hasMore = true;
 			let totalEndedMeetings = 0;
@@ -372,8 +382,8 @@ export class RoomScheduledTasksService {
 
 				const results = await runConcurrently(
 					limitedRoomsPage.rooms,
-					async (room) => {
-						const maxDurationMinutes = room.config.maxDurationMinutes;
+					async (meetRoom) => {
+						const maxDurationMinutes = meetRoom.config.maxDurationMinutes;
 
 						if (!maxDurationMinutes) {
 							return false;
@@ -382,27 +392,30 @@ export class RoomScheduledTasksService {
 						try {
 							// The deadline lives in the LiveKit room. A room that is gone by now
 							// simply ended on its own; the status GC reconciles it.
-							const livekitRoom = await this.livekitService.findRoom(room.roomId);
+							const livekitRoom = await this.livekitService.findRoom(meetRoom.roomId);
 
 							if (!livekitRoom) {
 								return false;
 							}
 
-							const remainingMs = this.remainingMsUntilDurationLimit(livekitRoom, maxDurationMinutes);
+							const remainingMs = this.meetingRemainingMs(livekitRoom, maxDurationMinutes);
 
 							if (!this.isDurationLimitReached(remainingMs)) {
-								this.scheduleMeetingMaxDurationEnd(livekitRoom, maxDurationMinutes);
+								this.scheduleMeetingEndAtDurationLimit(livekitRoom, maxDurationMinutes);
 								return false;
 							}
 
-							return await this.endMeetingOverMaxDuration(room.roomId, maxDurationMinutes);
+							return await this.endMeetingIfPastDurationLimit(meetRoom.roomId, maxDurationMinutes);
 						} catch (error) {
-							this.logger.error(`Error enforcing the duration limit of room '${room.roomId}':`, error);
+							this.logger.error(
+								`Error enforcing the duration limit of room '${meetRoom.roomId}':`,
+								error
+							);
 							// Continue with other rooms even if one fails
 							return false;
 						}
 					},
-					{ concurrency: INTERNAL_CONFIG.CONCURRENCY_MEETING_MAX_DURATION_GC, failFast: true }
+					{ concurrency: INTERNAL_CONFIG.CONCURRENCY_MEETING_DURATION_LIMIT_GC, failFast: true }
 				);
 
 				totalEndedMeetings += results.filter(Boolean).length;
@@ -430,11 +443,11 @@ export class RoomScheduledTasksService {
 	 *
 	 * @returns whether this call is what ended the meeting.
 	 */
-	protected async endMeetingOverMaxDuration(roomId: string, maxDurationMinutes: number): Promise<boolean> {
-		const lockKey = MeetLock.getMeetingDurationEndLock(roomId);
+	protected async endMeetingIfPastDurationLimit(roomId: string, maxDurationMinutes: number): Promise<boolean> {
+		const lockKey = MeetLock.getDurationLimitEndLock(roomId);
 		const ended = await this.mutexService.withLock(
 			lockKey,
-			ms(INTERNAL_CONFIG.MEETING_DURATION_END_LOCK_TTL),
+			ms(INTERNAL_CONFIG.MEETING_DURATION_LIMIT_LOCK_TTL),
 			async () => {
 				const livekitRoom = await this.livekitService.findRoom(roomId);
 
@@ -442,7 +455,7 @@ export class RoomScheduledTasksService {
 					return false;
 				}
 
-				const remainingMs = this.remainingMsUntilDurationLimit(livekitRoom, maxDurationMinutes);
+				const remainingMs = this.meetingRemainingMs(livekitRoom, maxDurationMinutes);
 
 				if (!this.isDurationLimitReached(remainingMs)) {
 					return false;
@@ -452,7 +465,7 @@ export class RoomScheduledTasksService {
 					`Meeting in room '${roomId}' exceeded its ${maxDurationMinutes}-minute limit. Ending it.`
 				);
 				// deleteRoom is what triggers room_finished, whose handler reads this flag.
-				await this.markMeetingEndedByDurationLimit(roomId, livekitRoom.sid);
+				await this.recordMeetingEndedCause(roomId, livekitRoom.sid);
 
 				let deleted = false;
 
@@ -479,19 +492,19 @@ export class RoomScheduledTasksService {
 	 * webhook to the duration limit instead of a moderator's own end. Scoped to the meeting's
 	 * LiveKit room sid, so a leaked flag is inert for the room's later meetings.
 	 */
-	protected async markMeetingEndedByDurationLimit(roomId: string, meetingId: string): Promise<void> {
+	protected async recordMeetingEndedCause(roomId: string, meetingId: string): Promise<void> {
 		const key = `${RedisKeyName.MEETING_ENDED_CAUSE}${roomId}`;
 		await this.redisService.set(key, meetingId, ms(INTERNAL_CONFIG.MEETING_ENDED_CAUSE_TTL));
 	}
 
 	/**
-	 * Withdraws a duration-cause attribution {@link endMeetingOverMaxDuration} speculatively wrote,
-	 * once it turns out that attempt is not what actually ended the meeting (its own `deleteRoom`
-	 * found the room already gone, or failed outright). Without this, the flag would sit for up to
-	 * `MEETING_ENDED_CAUSE_TTL` and misattribute whatever later, unrelated event actually ends this
-	 * same still-running meeting: its sid doesn't change just because this attempt didn't land.
-	 * Only clears the flag if it still matches `meetingId`, the same guard {@link
-	 * markMeetingEndedByDurationLimit}'s read side uses, so a legitimate flag from a different
+	 * Withdraws a duration-cause attribution {@link endMeetingIfPastDurationLimit} speculatively
+	 * wrote, once it turns out that attempt is not what actually ended the meeting (its own
+	 * `deleteRoom` found the room already gone, or failed outright). Without this, the flag would
+	 * sit for up to `MEETING_ENDED_CAUSE_TTL` and misattribute whatever later, unrelated event
+	 * actually ends this same still-running meeting: its sid doesn't change just because this
+	 * attempt didn't land. Only clears the flag if it still matches `meetingId`, the same guard
+	 * {@link recordMeetingEndedCause}'s read side uses, so a legitimate flag from a different
 	 * meeting already occupying the (room-scoped) key is never touched.
 	 */
 	protected async clearMeetingEndedCause(roomId: string, meetingId: string): Promise<void> {

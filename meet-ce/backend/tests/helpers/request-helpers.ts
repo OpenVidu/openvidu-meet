@@ -730,11 +730,11 @@ export const executeRoomStatusValidationGC = async () => {
 	await sleep('1s');
 };
 
-export const executeMeetingMaxDurationGC = async () => {
+export const executeDurationLimitTimersGC = async () => {
 	checkAppIsRunning();
 
 	const roomTaskScheduler = container.get(RoomScheduledTasksService);
-	await roomTaskScheduler['enforceMeetingMaxDurationGC']();
+	await roomTaskScheduler['reconcileDurationLimitTimersGC']();
 	await sleep('1s');
 };
 
