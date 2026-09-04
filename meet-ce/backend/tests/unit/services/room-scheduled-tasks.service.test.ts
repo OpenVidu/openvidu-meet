@@ -108,11 +108,16 @@ class FakeRoomRepository {
 
 class FakeLivekitWebhookService {
 	reconciledRooms: Room[] = [];
-	cleanedUpRoomIds: string[] = [];
+	/** Whole objects, not just ids: what the GC can name about a meeting is the point of C7. */
+	cleanedUpRooms: { name: string; sid?: string }[] = [];
 	failFor = new Set<string>();
 
 	get reconciledRoomIds(): string[] {
 		return this.reconciledRooms.map(({ name }) => name);
+	}
+
+	get cleanedUpRoomIds(): string[] {
+		return this.cleanedUpRooms.map(({ name }) => name);
 	}
 
 	async handleRoomStarted(room: Room): Promise<void> {
@@ -123,8 +128,8 @@ class FakeLivekitWebhookService {
 		this.reconciledRooms.push(room);
 	}
 
-	async handleRoomFinished({ name }: Room): Promise<void> {
-		this.cleanedUpRoomIds.push(name);
+	async handleRoomFinished(finishedRoom: { name: string; sid?: string }): Promise<void> {
+		this.cleanedUpRooms.push(finishedRoom);
 	}
 }
 

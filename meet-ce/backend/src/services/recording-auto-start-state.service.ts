@@ -74,7 +74,12 @@ export class RecordingAutoStartStateService {
 	 * next meeting's start doesn't wipe out a deliberate stop that meeting made for itself. Never
 	 * throws: the `room_finished` handling must not be aborted by flag bookkeeping.
 	 */
-	async activateAutoStart(roomId: string, meetingId: string): Promise<void> {
+	async activateAutoStart(roomId: string, meetingId?: string): Promise<void> {
+		// A caller that cannot name the finishing meeting (the reconcile GC, reporting a room LiveKit
+		// has already forgotten) leaves the flag alone: scoped to that meeting's sid, it can no
+		// longer match any later one, so it blocks nothing and lapses with its TTL.
+		if (!meetingId) return;
+
 		try {
 			const key = this.getKey(roomId);
 			const value = await this.redisService.get(key);

@@ -166,9 +166,7 @@ export class RoomScheduledTasksService {
 						roomsToCleanup,
 						async (room) => {
 							try {
-								await this.livekitWebhookService.handleRoomFinished({
-									name: room.roomId
-								} as unknown as Room);
+								await this.livekitWebhookService.handleRoomFinished({ name: room.roomId });
 							} catch (error) {
 								this.logger.error(`Error cleaning up room '${room.roomId}':`, error);
 								// Continue with other rooms even if one fails

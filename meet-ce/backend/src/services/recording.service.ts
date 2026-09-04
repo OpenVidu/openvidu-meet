@@ -288,7 +288,7 @@ export class RecordingService {
 	 * {@link RecordingAutoStartStateService#activateAutoStart}. Never throws: the `room_finished`
 	 * handler must not be aborted by flag bookkeeping.
 	 */
-	async reactivateAutoRecording(roomId: string, meetingId: string): Promise<void> {
+	async reactivateAutoRecording(roomId: string, meetingId?: string): Promise<void> {
 		await this.recAutoStartStateService.activateAutoStart(roomId, meetingId);
 	}
 

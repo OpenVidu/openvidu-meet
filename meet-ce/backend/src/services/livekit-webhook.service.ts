@@ -284,9 +284,11 @@ export class LivekitWebhookService {
 	 * and cleans up any resources associated with the room, the meeting's duration-limit timer
 	 * included.
 	 *
-	 * @param {Room} room - The room object that has finished.
+	 * @param finishedRoom - The finished room, as much of it as the caller knows: the LiveKit
+	 * webhook carries the meeting's `sid`, while {@link RoomScheduledTasksService}'s reconcile GC
+	 * knows only the room id, LiveKit having already forgotten the meeting it is reporting.
 	 */
-	async handleRoomFinished({ name: roomId, sid: meetingId }: Room): Promise<void> {
+	async handleRoomFinished({ name: roomId, sid: meetingId }: { name: string; sid?: string }): Promise<void> {
 		try {
 			// Reactivate the recording auto-start before anything else
 			await this.recordingService.reactivateAutoRecording(roomId, meetingId);
@@ -347,19 +349,31 @@ export class LivekitWebhookService {
 	}
 
 	/**
-	 * Whether `meetingId` was force-ended by the duration GC rather than ending normally (a
-	 * moderator's own end, or the room emptying out). Scoped to the meeting's sid — like
-	 * {@link RecordingAutoStartStateService#isDisabled}, a flag left over from a different, earlier
-	 * meeting in the same room never applies here.
+	 * Whether the meeting finishing in `roomId` was force-ended by the duration GC rather than
+	 * ending normally (a moderator's own end, or the room emptying out). Scoped to the meeting's
+	 * sid when the caller knows it: like {@link RecordingAutoStartStateService#isDisabled}, a flag
+	 * left over from a different, earlier meeting in the same room never applies.
+	 *
+	 * The flag is consumed on the way out, so it attributes exactly one end. That is what lets a
+	 * caller with no sid attribute at all: a flag still standing means no `room_finished` ever came
+	 * for the meeting the duration GC ended, which is the very case the reconcile GC covers.
 	 */
 	protected async getMeetingEndedCause(
 		roomId: string,
-		meetingId: string
+		meetingId?: string
 	): Promise<MeetMeetingEndedCause | undefined> {
 		const key = `${RedisKeyName.MEETING_ENDED_CAUSE}${roomId}`;
 		const value = await this.redisService.get(key);
 
-		return value === meetingId ? MeetMeetingEndedCause.MAX_DURATION_REACHED : undefined;
+		if (value === null || (meetingId !== undefined && value !== meetingId)) return undefined;
+
+		try {
+			await this.redisService.delete(key);
+		} catch (error) {
+			this.logger.warn(`Error consuming the meeting ended cause flag for room '${roomId}'`, error);
+		}
+
+		return MeetMeetingEndedCause.MAX_DURATION_REACHED;
 	}
 
 	/**
