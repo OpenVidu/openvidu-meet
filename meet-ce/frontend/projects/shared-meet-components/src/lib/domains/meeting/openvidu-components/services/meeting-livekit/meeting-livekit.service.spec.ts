@@ -274,6 +274,21 @@ describe('MeetingLiveKitService', () => {
 
 			expect(service.shouldHandleClientInitiatedDisconnectEvent).toBeTrue();
 		});
+
+		// A token minted while the participant was leaving arrives after this: applying it must not
+		// bring the meeting back, or they end up connected to a meeting nothing is showing them.
+		it('stays torn down when a token arrives afterwards', async () => {
+			service.init();
+			await service.teardown();
+
+			const metadata = JSON.stringify({ roomId: 'room-1' });
+			service.initializeAndSetToken(`header.${btoa(JSON.stringify({ metadata }))}.signature`, 'wss://lk.test');
+
+			expect(service.isInitialized()).toBeFalse();
+			expect(livekitSdkService.createRoom).toHaveBeenCalledTimes(1);
+			await expectAsync(service.connect()).toBeRejected();
+			expect(livekitSdkService.connectRoom).not.toHaveBeenCalled();
+		});
 	});
 
 	/**
@@ -287,6 +302,7 @@ describe('MeetingLiveKitService', () => {
 		const unexplainedServerError = () => ConnectionError.internal('unknown websocket error', { status: 200 });
 
 		beforeEach(() => {
+			service.init();
 			// A room member token as the backend mints them: Meet's own data, the room id included,
 			// travels in the JWT's `metadata` claim.
 			const metadata = JSON.stringify({ roomId: 'room-1' });

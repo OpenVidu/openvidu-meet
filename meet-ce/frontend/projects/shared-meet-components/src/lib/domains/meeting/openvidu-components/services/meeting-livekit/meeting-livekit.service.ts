@@ -367,6 +367,8 @@ export class MeetingLiveKitService {
 	}
 
 	/**
+	 * Points the Room created by {@link init} at the meeting this token grants: it never creates one
+	 * of its own, so a token that arrives after {@link teardown} cannot revive a torn-down Room.
 	 * @internal
 	 */
 	initializeAndSetToken(token: string, livekitUrl?: string): void {
@@ -384,13 +386,6 @@ export class MeetingLiveKitService {
 		}
 
 		this.livekitUrl = url;
-
-		// Initialize room if it doesn't exist yet
-		// This ensures that getRoom() won't fail if token is set before onTokenRequested
-		if (!this.room) {
-			this.log.d('Room not initialized yet, initializing room due to token assignment');
-			this.init();
-		}
 	}
 
 	/**

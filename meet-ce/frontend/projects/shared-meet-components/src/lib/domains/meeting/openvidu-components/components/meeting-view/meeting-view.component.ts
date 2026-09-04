@@ -306,6 +306,10 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	// reach into MeetingLiveKitService, which is root-provided and outlives this component.
 	private shouldDisconnectRoomWhenComponentIsDestroyed = false;
 
+	// MeetingLiveKitService is root-provided, so work resumed after this component is gone would
+	// reach a live service with nothing on screen to own it.
+	private destroyed = false;
+
 	// Expose constants to template
 	get spinnerDiameter(): number {
 		return MeetingViewComponent.SPINNER_DIAMETER;
@@ -500,6 +504,8 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	}
 
 	async ngOnDestroy() {
+		this.destroyed = true;
+
 		if (this.shouldDisconnectRoomWhenComponentIsDestroyed) {
 			await this.disconnectRoom(ParticipantLeftReason.LEAVE);
 		}
@@ -597,6 +603,11 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	 * Asks the consumer for the token of this join and applies it: 'connecting' → 'live'. The phase
 	 * moves first, so the join the participant just committed to cannot be committed to twice while
 	 * the token is in flight.
+	 *
+	 * The mint is a round trip the participant can walk out of, and leaving the page destroys this
+	 * view mid-flight, so nothing past the await runs once that has happened: connecting then would
+	 * put a participant in the meeting with no view to leave it with, and the failure dialog would
+	 * land on top of the error page the mint already navigated to.
 	 */
 	private async _requestTokenAndConnect(): Promise<void> {
 		this.phase.set('connecting');
@@ -608,9 +619,13 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 			token = await this.tokenProvider()();
 		} catch (error: unknown) {
 			this.log.e('Error requesting the token to join the meeting:', error);
-			this.showStartupError('ERRORS.MEETING_NOT_READY');
+
+			if (!this.destroyed) this.showStartupError('ERRORS.MEETING_NOT_READY');
+
 			return;
 		}
+
+		if (this.destroyed) return;
 
 		this._applyToken(token);
 	}
@@ -638,8 +653,8 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	 * @internal
 	 * Joins the room the token was applied to and transitions to the 'live' phase.
 	 *
-	 * Only reachable after `initializeAndSetToken()` succeeded, so the room exists; `getRoom()` is
-	 * still wrapped because it throws rather than returning undefined.
+	 * Only reachable after `init()` created the room and `initializeAndSetToken()` pointed it at the
+	 * meeting; `getRoom()` is still wrapped because it throws rather than returning undefined.
 	 */
 	private async _connectToRoom(): Promise<void> {
 		this.shouldDisconnectRoomWhenComponentIsDestroyed = true;
