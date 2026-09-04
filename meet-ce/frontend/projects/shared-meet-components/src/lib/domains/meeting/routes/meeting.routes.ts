@@ -17,7 +17,12 @@ export const meetingDomainRoutes: DomainRouteConfig[] = [
 				runGuardsSerially(
 					extractRoomMeetingParamsGuard,
 					validateRoomMeetingAccessGuard,
-					removeQueryParamsGuard(['secret', EmbeddedAttribute.E2EE_KEY])
+					removeQueryParamsGuard([
+						'secret',
+						EmbeddedAttribute.E2EE_KEY,
+						EmbeddedAttribute.SKIP_LOBBY,
+						EmbeddedAttribute.SKIP_PREJOIN
+					])
 				)
 			]
 		}

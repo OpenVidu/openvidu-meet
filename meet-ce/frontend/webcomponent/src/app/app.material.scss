@@ -59,3 +59,7 @@
 	direction: ltr;
 	-webkit-font-smoothing: antialiased;
 }
+
+video {
+	object-fit: contain !important;
+}

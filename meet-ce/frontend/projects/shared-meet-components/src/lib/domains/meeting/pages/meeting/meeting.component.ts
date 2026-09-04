@@ -82,6 +82,8 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	features = this.meetingContextService.meetingUI;
 	initialMediaState = this.meetingContextService.initialMediaState;
 	hasRecordings = this.meetingContextService.hasRecordings;
+	skipLobby = this.meetingContextService.skipLobby;
+	skipPrejoin = this.meetingContextService.skipPrejoin;
 
 	/** Handed to the meeting view, which calls it when the participant commits to joining. */
 	protected readonly generateJoinToken = () => this.lobbyService.generateJoinToken();
@@ -118,6 +120,11 @@ export class MeetingComponent implements OnInit, OnDestroy {
 		try {
 			this.lobbyState.set('loading');
 			await this.lobbyService.initialize();
+
+			if (this.skipLobby()) {
+				await this.lobbyService.joinWithoutLobby();
+			}
+
 			this.lobbyState.set('ready');
 		} catch (error) {
 			console.error('Error initializing lobby state:', error);

@@ -26,7 +26,7 @@ export class SmartLayoutService extends BaseLayoutService {
 	private readonly MIN_SPEAKING_DURATION_MS = 2000;
 	private readonly SPEAKING_GRACE_PERIOD_MS = 3000;
 
-	private readonly _layoutMode = signal<SmartLayoutMode>(SmartLayoutMode.SMART_MOSAIC);
+	private readonly _layoutMode = signal<SmartLayoutMode>(SmartLayoutMode.MOSAIC);
 	readonly layoutMode = this._layoutMode.asReadonly();
 
 	private readonly _maxVisibleRemoteParticipants = signal<number>(this.INITIAL_VISIBLE_PARTICIPANTS_COUNT);

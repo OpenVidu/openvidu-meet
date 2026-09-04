@@ -66,7 +66,9 @@ export const wcRouteFromAttributes = (inputs: WebComponentPropertyValues): WcRou
 				// a meaningful, non-default value for these two (explicitly inactive), not an absence.
 				initialAudioActive: inputs.initialAudioActive,
 				initialVideoActive: inputs.initialVideoActive,
-				leaveRedirectUrl: inputs.leaveRedirectUrl || undefined
+				leaveRedirectUrl: inputs.leaveRedirectUrl || undefined,
+				skipLobby: inputs.skipLobby || undefined,
+				skipPrejoin: inputs.skipPrejoin || undefined
 			}
 		};
 	}

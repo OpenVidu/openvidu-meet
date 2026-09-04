@@ -73,7 +73,9 @@ export const extractParams = (route: {
 		leaveRedirectUrl: queryParams[EmbeddedAttribute.LEAVE_REDIRECT_URL],
 		showOnlyRecordings: queryParams[EmbeddedAttribute.SHOW_ONLY_RECORDINGS] || 'false',
 		showRecording: queryParams[EmbeddedAttribute.SHOW_RECORDING],
-		e2eeKey: queryParams[EmbeddedAttribute.E2EE_KEY]
+		e2eeKey: queryParams[EmbeddedAttribute.E2EE_KEY],
+		skipLobby: queryParams[EmbeddedAttribute.SKIP_LOBBY] || 'false',
+		skipPrejoin: queryParams[EmbeddedAttribute.SKIP_PREJOIN] || 'false'
 	};
 };
 

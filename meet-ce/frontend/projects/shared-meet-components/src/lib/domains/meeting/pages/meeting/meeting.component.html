@@ -16,7 +16,7 @@
 } @else if (!isMeetingLeft()) {
 	<ov-meeting-view
 		[tokenProvider]="generateJoinToken"
-		[prejoin]="true"
+		[prejoin]="!skipPrejoin()"
 		[initialMediaState]="initialMediaState()"
 		[e2eeKey]="e2eeKey()"
 		[toolbarRoomName]="roomName()"

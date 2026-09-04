@@ -32,6 +32,8 @@ export interface MeetingRoute {
 		initialAudioActive?: boolean;
 		initialVideoActive?: boolean;
 		leaveRedirectUrl?: string;
+		skipLobby?: boolean;
+		skipPrejoin?: boolean;
 	};
 }
 

@@ -65,7 +65,18 @@ export enum EmbeddedAttribute {
 	 * Identifier of the recording to display.
 	 * When provided along with `room-url`, the app redirects to the recording view.
 	 */
-	SHOW_RECORDING = 'show-recording'
+	SHOW_RECORDING = 'show-recording',
+	/**
+	 * Whether to skip the lobby screen (participant name input) and join the meeting directly.
+	 * Requires `participant-name` (or an authenticated user / room member) to resolve the display name.
+	 * Default: false (lobby is shown).
+	 */
+	SKIP_LOBBY = 'skip-lobby',
+	/**
+	 * Whether to skip the prejoin screen (camera/microphone preview).
+	 * Default: false (prejoin is shown).
+	 */
+	SKIP_PREJOIN = 'skip-prejoin'
 }
 
 /**
@@ -95,4 +106,8 @@ export interface WebComponentPropertyValues {
 	showOnlyRecordings?: boolean;
 	/** Identifier of the recording to display. When provided along with `room-url`, the app redirects to the recording view. */
 	showRecording?: string;
+	/** When true, skips the lobby (participant name input) and joins the meeting directly. */
+	skipLobby?: boolean;
+	/** When true, skips the prejoin screen (camera/microphone preview). */
+	skipPrejoin?: boolean;
 }

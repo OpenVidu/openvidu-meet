@@ -26,3 +26,7 @@ body {
 	background-color: var(--ov-meet-background-color);
 	color: var(--ov-meet-text-on-background);
 }
+
+video {
+	object-fit: contain !important;
+}

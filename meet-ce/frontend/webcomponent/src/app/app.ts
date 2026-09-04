@@ -112,6 +112,8 @@ export class App {
 	readonly leaveRedirectUrl = input<string | undefined>(undefined);
 	readonly showOnlyRecordings = input<boolean>(false);
 	readonly showRecording = input<string | undefined>(undefined);
+	readonly skipLobby = input(false, { transform: booleanAttribute });
+	readonly skipPrejoin = input(false, { transform: booleanAttribute });
 
 	// ── Host outputs (element events) ────────────────────────────────────────
 	// Canonical names, plus their deprecated 3.8.0 spellings dispatched alongside them (Angular
@@ -146,7 +148,9 @@ export class App {
 		e2eeKey: this.e2eeKey(),
 		leaveRedirectUrl: this.leaveRedirectUrl(),
 		showOnlyRecordings: this.showOnlyRecordings(),
-		showRecording: this.showRecording()
+		showRecording: this.showRecording(),
+		skipLobby: this.skipLobby(),
+		skipPrejoin: this.skipPrejoin()
 	}));
 
 	// Per-view inputs, narrowed from the current route. Empty/undefined when the route doesn't carry them.

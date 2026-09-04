@@ -37,6 +37,10 @@ export interface MeetingEntryParams {
 	showRecording?: string;
 	/** Request a redirect to `/room/<id>/recordings` instead of the meeting. */
 	showOnlyRecordings?: boolean;
+	/** Skip the lobby (participant name input) and join the meeting directly. */
+	skipLobby?: boolean;
+	/** Skip the prejoin screen (camera/microphone preview). */
+	skipPrejoin?: boolean;
 }
 
 /**
@@ -93,7 +97,9 @@ export class MeetingEntryService {
 		participantExternalId,
 		participantMetadata,
 		initialAudioActive,
-		initialVideoActive
+		initialVideoActive,
+		skipLobby,
+		skipPrejoin
 	}: MeetingEntryParams): MeetingEntryDecision {
 		this.leaveRedirect.handleLeaveRedirectUrl(leaveRedirectUrl);
 
@@ -146,6 +152,9 @@ export class MeetingEntryService {
 		} else {
 			this.roomMemberContextService.loadParticipantNameFromStorage();
 		}
+
+		this.meetingContextService.setSkipLobby(!!skipLobby);
+		this.meetingContextService.setSkipPrejoin(!!skipPrejoin);
 
 		return { kind: 'proceed' };
 	}

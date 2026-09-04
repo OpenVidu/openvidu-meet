@@ -253,6 +253,36 @@ export class MeetingLobbyService {
 		}
 	}
 
+	/**
+	 * Joins the meeting directly, bypassing the lobby form (`skip-lobby`).
+	 * The display name is resolved from the room member, the authenticated user or the
+	 * `participant-name` param; when none is available the lobby is shown as usual.
+	 */
+	async joinWithoutLobby(): Promise<void> {
+		const form = this._participantForm();
+
+		if (!form.getRawValue().name?.trim()) {
+			const name =
+				this.roomMemberContextService.memberName() ||
+				(await this.authService.getUserName()) ||
+				this.roomMemberContextService.participantName();
+
+			if (!name) {
+				this.log.w('Cannot skip the lobby without a participant name. Showing the lobby.');
+				return;
+			}
+
+			this.setParticipantName(name);
+		}
+
+		if (form.invalid) {
+			this.log.w('Participant form is not valid. Showing the lobby.');
+			return;
+		}
+
+		await this.submitAccess();
+	}
+
 	async submitAccess(): Promise<void> {
 		const name = this.participantName();
 

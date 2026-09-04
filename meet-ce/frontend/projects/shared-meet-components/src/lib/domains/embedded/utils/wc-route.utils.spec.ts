@@ -15,7 +15,9 @@ const BASE_INPUTS: Required<WebComponentPropertyValues> = {
 	e2eeKey: '',
 	leaveRedirectUrl: '',
 	showOnlyRecordings: false,
-	showRecording: ''
+	showRecording: '',
+	skipLobby: false,
+	skipPrejoin: false
 };
 
 const inputs = (overrides: Partial<WebComponentPropertyValues>): Required<WebComponentPropertyValues> => ({
@@ -110,6 +112,21 @@ describe('wcRouteFromAttributes', () => {
 		const withoutFields = wcRouteFromAttributes(inputs({ roomUrl: 'https://x/room/r1' }));
 		expect((withoutFields as { params: Record<string, unknown> }).params['participantExternalId']).toBeUndefined();
 		expect((withoutFields as { params: Record<string, unknown> }).params['participantMetadata']).toBeUndefined();
+	});
+
+	it('carries skip-lobby and skip-prejoin into the meeting route only when enabled', () => {
+		const enabled = wcRouteFromAttributes(
+			inputs({ roomUrl: 'https://x/room/r1', skipLobby: true, skipPrejoin: true })
+		) as Extract<WcRoute, { name: WcRouteName.MEETING }>;
+		expect(enabled.params.skipLobby).toBe(true);
+		expect(enabled.params.skipPrejoin).toBe(true);
+
+		const disabled = wcRouteFromAttributes(inputs({ roomUrl: 'https://x/room/r1' })) as Extract<
+			WcRoute,
+			{ name: WcRouteName.MEETING }
+		>;
+		expect(disabled.params.skipLobby).toBeUndefined();
+		expect(disabled.params.skipPrejoin).toBeUndefined();
 	});
 
 	it('resolves room-recordings when show-only-recordings is enabled', () => {
