@@ -223,6 +223,9 @@ describe('Recording Auto-Start Tests', () => {
 		await simulateUnlistedParticipantJoined(room.roomId, 'UNLISTED_SPEAKER');
 		expect((await findRoomRecordings(room.roomId)).length).toBe(0);
 
+		await expectAutoStartVisibleInControlRoom();
+		expect((await findRoomRecordings(room.roomId)).length).toBe(0);
+
 		await joinFakeParticipant(room.roomId, 'MODERATOR_PARTICIPANT');
 		await updateParticipantMetadata(room.roomId, 'MODERATOR_PARTICIPANT', {
 			iat: Date.now(),
@@ -286,6 +289,9 @@ describe('Recording Auto-Start Tests', () => {
 		// Only one participant so far: the second-participant threshold must not have been reached
 		expect((await findRoomRecordings(room.roomId)).length).toBe(0);
 
+		await expectAutoStartVisibleInControlRoom();
+		expect((await findRoomRecordings(room.roomId)).length).toBe(0);
+
 		await joinFakeParticipant(room.roomId, 'SECOND_PARTICIPANT');
 		await simulateParticipantJoined(room.roomId, 'SECOND_PARTICIPANT');
 
@@ -307,6 +313,9 @@ describe('Recording Auto-Start Tests', () => {
 
 		await joinFakeParticipant(room.roomId, 'FIRST_PARTICIPANT');
 		await simulateParticipantJoined(room.roomId, 'FIRST_PARTICIPANT');
+		expect((await findRoomRecordings(room.roomId)).length).toBe(0);
+
+		await expectAutoStartVisibleInControlRoom();
 		expect((await findRoomRecordings(room.roomId)).length).toBe(0);
 
 		// The second join webhook arrives but the listing does not include the joiner yet: the
