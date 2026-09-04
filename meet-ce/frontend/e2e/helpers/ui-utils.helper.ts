@@ -213,6 +213,31 @@ export const getElementBoundingBox = async (
 	};
 };
 
+/**
+ * Returns the bounding box of the first element matching {@link selector} once two consecutive
+ * reads agree on it. The floating tile animates into its place and into its new size, so a box
+ * read a fixed moment after the gesture can be a value the element only passes through.
+ */
+export const getSettledBoundingBox = async (
+	page: Page,
+	selector: string,
+	timeoutMs = 8_000
+): Promise<{ x: number; y: number; width: number; height: number }> => {
+	let lastBox: { x: number; y: number; width: number; height: number } | null = null;
+
+	await expect(async () => {
+		const box = await getElementBoundingBox(page, selector);
+		expect(box).not.toBeNull();
+
+		const previous = lastBox;
+		lastBox = box;
+
+		expect(previous).toEqual(box);
+	}).toPass({ timeout: timeoutMs, intervals: [100, 200, 300, 500] });
+
+	return lastBox!;
+};
+
 // ─── getUserMedia instrumentation ────────────────────────────────────────────
 
 /**

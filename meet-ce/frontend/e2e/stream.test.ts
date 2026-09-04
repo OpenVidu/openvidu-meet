@@ -30,7 +30,7 @@ import {
 	waitForVisibleRemoteParticipants,
 	zoomInScreenShare
 } from './helpers/stream.helper';
-import { getElementBoundingBox, hoverStream } from './helpers/ui-utils.helper';
+import { getElementBoundingBox, getSettledBoundingBox, hoverStream } from './helpers/ui-utils.helper';
 
 test.describe('Stream E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -902,18 +902,14 @@ test.describe('Stream E2E Tests', () => {
 		test('should resize the floating LOCAL video using the SE corner handle', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 			await floatStream(page);
-			await page.waitForTimeout(500);
 
-			const beforeBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
-			expect(beforeBox).not.toBeNull();
+			const beforeBox = await getSettledBoundingBox(page, '.local_participant:has(.OV_stream_video.local)');
 
 			await resizeStream(page, 'resize-se', 80, 45);
-			await page.waitForTimeout(300);
 
-			const afterBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
-			expect(afterBox).not.toBeNull();
-			expect(afterBox!.width).toBeGreaterThan(beforeBox!.width);
-			expect(afterBox!.height).toBeGreaterThan(beforeBox!.height);
+			const afterBox = await getSettledBoundingBox(page, '.local_participant:has(.OV_stream_video.local)');
+			expect(afterBox.width).toBeGreaterThan(beforeBox.width);
+			expect(afterBox.height).toBeGreaterThan(beforeBox.height);
 
 			await page.close();
 		});
@@ -921,15 +917,12 @@ test.describe('Stream E2E Tests', () => {
 		test('should maintain the 16:9 aspect ratio after resizing the floating video', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 			await floatStream(page);
-			await page.waitForTimeout(500);
 
 			await resizeStream(page, 'resize-se', 100, 0);
-			await page.waitForTimeout(300);
 
-			const box = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
-			expect(box).not.toBeNull();
+			const box = await getSettledBoundingBox(page, '.local_participant:has(.OV_stream_video.local)');
 
-			const ratio = box!.width / box!.height;
+			const ratio = box.width / box.height;
 			const expectedRatio = 16 / 9;
 			// Allow 5% tolerance
 			expect(Math.abs(ratio - expectedRatio) / expectedRatio).toBeLessThan(0.05);
@@ -940,30 +933,24 @@ test.describe('Stream E2E Tests', () => {
 		test('should RESET the floating video size to default after dock and re-float', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 			await floatStream(page);
-			await page.waitForTimeout(500);
 
 			// Record the default floating size
-			const defaultBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
-			expect(defaultBox).not.toBeNull();
+			const defaultBox = await getSettledBoundingBox(page, '.local_participant:has(.OV_stream_video.local)');
 
 			// Resize to a larger size
 			await resizeStream(page, 'resize-se', 100, 56);
-			await page.waitForTimeout(300);
 
-			const resizedBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
-			expect(resizedBox!.width).toBeGreaterThan(defaultBox!.width + 50);
+			const resizedBox = await getSettledBoundingBox(page, '.local_participant:has(.OV_stream_video.local)');
+			expect(resizedBox.width).toBeGreaterThan(defaultBox.width + 50);
 
 			// Dock then re-float
 			await dockStream(page);
-			await page.waitForTimeout(800);
 			await floatStream(page);
-			await page.waitForTimeout(500);
 
 			// Size should be back to the default minimum (~160px wide)
-			const resetBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
-			expect(resetBox).not.toBeNull();
-			expect(Math.abs(resetBox!.width - defaultBox!.width)).toBeLessThan(20);
-			expect(Math.abs(resetBox!.height - defaultBox!.height)).toBeLessThan(20);
+			const resetBox = await getSettledBoundingBox(page, '.local_participant:has(.OV_stream_video.local)');
+			expect(Math.abs(resetBox.width - defaultBox.width)).toBeLessThan(20);
+			expect(Math.abs(resetBox.height - defaultBox.height)).toBeLessThan(20);
 
 			await page.close();
 		});
