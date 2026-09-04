@@ -40,30 +40,24 @@ export const isPrejoinAudioEnabled = async (page: Page): Promise<boolean> => {
  * Ensures the prejoin camera matches the desired state, toggling if needed.
  */
 export const ensurePrejoinVideoState = async (page: Page, enabled: boolean, timeoutMs = 10_000): Promise<void> => {
-	const currentlyEnabled = await isPrejoinVideoEnabled(page);
-
-	if (currentlyEnabled !== enabled) {
-		await togglePrejoinCamera(page);
-		await expect
-			.poll(async () => (await isPrejoinVideoEnabled(page)) !== currentlyEnabled, { timeout: timeoutMs })
-			.toBeTruthy()
-			.catch(() => Promise.resolve());
+	if ((await isPrejoinVideoEnabled(page)) === enabled) {
+		return;
 	}
+
+	await togglePrejoinCamera(page);
+	await expect.poll(() => isPrejoinVideoEnabled(page), { timeout: timeoutMs }).toBe(enabled);
 };
 
 /**
  * Ensures the prejoin microphone matches the desired state, toggling if needed.
  */
 export const ensurePrejoinAudioState = async (page: Page, enabled: boolean, timeoutMs = 10_000): Promise<void> => {
-	const currentlyEnabled = await isPrejoinAudioEnabled(page);
-
-	if (currentlyEnabled !== enabled) {
-		await togglePrejoinMicrophone(page);
-		await expect
-			.poll(async () => (await isPrejoinAudioEnabled(page)) !== currentlyEnabled, { timeout: timeoutMs })
-			.toBeTruthy()
-			.catch(() => Promise.resolve());
+	if ((await isPrejoinAudioEnabled(page)) === enabled) {
+		return;
 	}
+
+	await togglePrejoinMicrophone(page);
+	await expect.poll(() => isPrejoinAudioEnabled(page), { timeout: timeoutMs }).toBe(enabled);
 };
 
 /**
