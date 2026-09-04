@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { ParticipantInfo, ParticipantInfo_Kind } from '@livekit/protocol';
 import {
 	MEET_PERMISSION_KEYS,
@@ -44,6 +44,7 @@ describe('Recording Auto-Start Tests', () => {
 	let recordingService: RecordingService;
 	let recAutoStartStateService: RecordingAutoStartStateService;
 	let roomMemberService: RoomMemberService;
+	let startAutoRecording: RecordingService['startAutoRecordingIfNeeded'];
 
 	beforeAll(async () => {
 		await startTestServer();
@@ -53,6 +54,7 @@ describe('Recording Auto-Start Tests', () => {
 		recordingService = container.get(RecordingService);
 		recAutoStartStateService = container.get(RecordingAutoStartStateService);
 		roomMemberService = container.get(RoomMemberService);
+		startAutoRecording = recordingService.startAutoRecordingIfNeeded.bind(recordingService);
 	});
 
 	afterAll(async () => {
@@ -60,6 +62,28 @@ describe('Recording Auto-Start Tests', () => {
 		await deleteAllRooms();
 		await deleteAllRecordings();
 	});
+
+	/**
+	 * The `participant_joined` handler fires the auto-start and forgets it (`void
+	 * startAutoRecordingIfNeeded(...)`), so it returns before the decision to record is made.
+	 * Delivering a join through this wrapper settles that decision, so a test asserts what did or
+	 * did not start instead of waiting a fixed time and hoping.
+	 */
+	const withSettledAutoStart = async (deliverWebhook: () => Promise<void>): Promise<void> => {
+		const decisions: Promise<void>[] = [];
+		const spy = jest.spyOn(recordingService, 'startAutoRecordingIfNeeded').mockImplementation((room, candidate) => {
+			const decision = startAutoRecording(room, candidate);
+			decisions.push(decision);
+			return decision;
+		});
+
+		try {
+			await deliverWebhook();
+			await Promise.all(decisions);
+		} finally {
+			spy.mockRestore();
+		}
+	};
 
 	/**
 	 * Simulates LiveKit delivering the `participant_joined` webhook for a participant already
@@ -76,7 +100,7 @@ describe('Recording Auto-Start Tests', () => {
 			throw new Error(`Participant '${identity}' not found in room '${roomId}'`);
 		}
 
-		await livekitWebhookService.handleParticipantJoined(room, participant);
+		await withSettledAutoStart(() => livekitWebhookService.handleParticipantJoined(room, participant));
 	};
 
 	/**
@@ -88,12 +112,50 @@ describe('Recording Auto-Start Tests', () => {
 		const room = await livekitService.getRoom(roomId);
 		const participant = new ParticipantInfo({ identity, name: identity, kind: ParticipantInfo_Kind.STANDARD });
 
-		await livekitWebhookService.handleParticipantJoined(room, participant);
+		await withSettledAutoStart(() => livekitWebhookService.handleParticipantJoined(room, participant));
 	};
 
 	const findRoomRecordings = async (roomId: string) => {
 		const { recordings } = await recordingRepository.find({ roomId });
 		return recordings;
+	};
+
+	/**
+	 * Waits until the room holds `count` recordings. A settled local decision is not enough here:
+	 * LiveKit delivers the real `participant_joined` to the deployment as well, so whichever
+	 * replica takes the room's `recording_active` lock first is the one that writes the document,
+	 * and this app's own call then skips with a 409.
+	 */
+	const waitForRoomRecordingCount = async (roomId: string, count: number) => {
+		const deadline = Date.now() + 30_000;
+		let recordings = await findRoomRecordings(roomId);
+
+		while (recordings.length < count && Date.now() < deadline) {
+			await sleep('1s');
+			recordings = await findRoomRecordings(roomId);
+		}
+
+		expect(recordings.length).toBe(count);
+		return recordings;
+	};
+
+	/**
+	 * Measures, in a room that does auto-start, how long a start takes to become visible. A "must
+	 * not start" check re-run after this control cannot be an absence read too early: the join
+	 * under test happened first, so a recording of its own would be on record by now. The control
+	 * needs its own room because a recording leaked into the room under test would otherwise be
+	 * the very recording this control waits for.
+	 */
+	const expectAutoStartVisibleInControlRoom = async () => {
+		const { room } = await setupSingleRoom(false, 'AUTO_START_CONTROL_ROOM', {
+			recording: { enabled: true, autoStart: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS }
+		});
+
+		await joinFakeParticipant(room.roomId, 'CONTROL_PARTICIPANT');
+		await simulateParticipantJoined(room.roomId, 'CONTROL_PARTICIPANT');
+
+		const recordings = await waitForRoomRecordingCount(room.roomId, 1);
+		await stopRecording(recordings[0].recordingId);
 	};
 
 	it('should auto-start the recording when the first participant joins', async () => {
@@ -104,23 +166,12 @@ describe('Recording Auto-Start Tests', () => {
 		await joinFakeParticipant(room.roomId, 'FIRST_PARTICIPANT');
 		await simulateParticipantJoined(room.roomId);
 
-		// The handler fires the start in the background; poll until the recording shows up
-		let recordings = await findRoomRecordings(room.roomId);
-		const deadline = Date.now() + 30_000;
-
-		while (recordings.length === 0 && Date.now() < deadline) {
-			await sleep('1s');
-			recordings = await findRoomRecordings(room.roomId);
-		}
-
-		expect(recordings.length).toBe(1);
+		const recordings = await waitForRoomRecordingCount(room.roomId, 1);
 		expect([MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE]).toContain(recordings[0].status);
 
 		// A second join must not start a second recording (the recording-active lock dedupes)
 		await joinFakeParticipant(room.roomId, 'SECOND_PARTICIPANT');
 		await simulateParticipantJoined(room.roomId);
-		await sleep('3s');
-
 		expect((await findRoomRecordings(room.roomId)).length).toBe(1);
 
 		await stopRecording(recordings[0].recordingId);
@@ -133,10 +184,11 @@ describe('Recording Auto-Start Tests', () => {
 
 		await joinFakeParticipant(room.roomId, 'ONLY_PARTICIPANT');
 		await simulateParticipantJoined(room.roomId);
-		await sleep('3s');
-
 		expect((await findRoomRecordings(room.roomId)).length).toBe(0);
-	});
+
+		await expectAutoStartVisibleInControlRoom();
+		expect((await findRoomRecordings(room.roomId)).length).toBe(0);
+	}, 90_000);
 
 	it('should not auto-start the recording when autoStart is explicitly null', async () => {
 		// This is the value the room wizard actually stores when the user picks "manual start",
@@ -147,10 +199,11 @@ describe('Recording Auto-Start Tests', () => {
 
 		await joinFakeParticipant(room.roomId, 'ONLY_PARTICIPANT');
 		await simulateParticipantJoined(room.roomId);
-		await sleep('3s');
-
 		expect((await findRoomRecordings(room.roomId)).length).toBe(0);
-	});
+
+		await expectAutoStartVisibleInControlRoom();
+		expect((await findRoomRecordings(room.roomId)).length).toBe(0);
+	}, 90_000);
 
 	it('should auto-start the recording only when a moderator joins', async () => {
 		const { room } = await setupSingleRoom(false, 'AUTO_START_MODERATOR_ROOM', {
@@ -161,7 +214,6 @@ describe('Recording Auto-Start Tests', () => {
 		// No metadata stamped: `MeetParticipantHelper.extractRole` falls back to SPEAKER, exactly
 		// like a fake participant that never went through Meet's own join flow.
 		await simulateParticipantJoined(room.roomId, 'SPEAKER_PARTICIPANT');
-		await sleep('3s');
 
 		// A speaker joining must not reach the moderator-only threshold
 		expect((await findRoomRecordings(room.roomId)).length).toBe(0);
@@ -169,8 +221,6 @@ describe('Recording Auto-Start Tests', () => {
 		// Neither must an unlisted speaker: the joiner is counted explicitly when the listing
 		// misses them, but only when their role matches the preset
 		await simulateUnlistedParticipantJoined(room.roomId, 'UNLISTED_SPEAKER');
-		await sleep('3s');
-
 		expect((await findRoomRecordings(room.roomId)).length).toBe(0);
 
 		await joinFakeParticipant(room.roomId, 'MODERATOR_PARTICIPANT');
@@ -184,16 +234,7 @@ describe('Recording Auto-Start Tests', () => {
 		});
 		await simulateParticipantJoined(room.roomId, 'MODERATOR_PARTICIPANT');
 
-		// The handler fires the start in the background; poll until the recording shows up
-		let recordings = await findRoomRecordings(room.roomId);
-		const deadline = Date.now() + 30_000;
-
-		while (recordings.length === 0 && Date.now() < deadline) {
-			await sleep('1s');
-			recordings = await findRoomRecordings(room.roomId);
-		}
-
-		expect(recordings.length).toBe(1);
+		const recordings = await waitForRoomRecordingCount(room.roomId, 1);
 		expect([MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE]).toContain(recordings[0].status);
 
 		await stopRecording(recordings[0].recordingId);
@@ -218,25 +259,17 @@ describe('Recording Auto-Start Tests', () => {
 			badge: MeetRoomMemberUIBadge.OTHER
 		});
 		await simulateParticipantJoined(room.roomId, 'PROMOTED_PARTICIPANT');
-		await sleep('3s');
-
 		expect((await findRoomRecordings(room.roomId)).length).toBe(0);
 
-		await roomMemberService.updateParticipantRole(
-			room.roomId,
-			'PROMOTED_PARTICIPANT',
-			MeetParticipantModerationAction.UPGRADE
+		await withSettledAutoStart(() =>
+			roomMemberService.updateParticipantRole(
+				room.roomId,
+				'PROMOTED_PARTICIPANT',
+				MeetParticipantModerationAction.UPGRADE
+			)
 		);
 
-		let recordings = await findRoomRecordings(room.roomId);
-		const deadline = Date.now() + 30_000;
-
-		while (recordings.length === 0 && Date.now() < deadline) {
-			await sleep('1s');
-			recordings = await findRoomRecordings(room.roomId);
-		}
-
-		expect(recordings.length).toBe(1);
+		const recordings = await waitForRoomRecordingCount(room.roomId, 1);
 		expect([MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE]).toContain(recordings[0].status);
 
 		await stopRecording(recordings[0].recordingId);
@@ -249,7 +282,6 @@ describe('Recording Auto-Start Tests', () => {
 
 		await joinFakeParticipant(room.roomId, 'FIRST_PARTICIPANT');
 		await simulateParticipantJoined(room.roomId, 'FIRST_PARTICIPANT');
-		await sleep('3s');
 
 		// Only one participant so far: the second-participant threshold must not have been reached
 		expect((await findRoomRecordings(room.roomId)).length).toBe(0);
@@ -257,23 +289,12 @@ describe('Recording Auto-Start Tests', () => {
 		await joinFakeParticipant(room.roomId, 'SECOND_PARTICIPANT');
 		await simulateParticipantJoined(room.roomId, 'SECOND_PARTICIPANT');
 
-		// The handler fires the start in the background; poll until the recording shows up
-		let recordings = await findRoomRecordings(room.roomId);
-		const deadline = Date.now() + 30_000;
-
-		while (recordings.length === 0 && Date.now() < deadline) {
-			await sleep('1s');
-			recordings = await findRoomRecordings(room.roomId);
-		}
-
-		expect(recordings.length).toBe(1);
+		const recordings = await waitForRoomRecordingCount(room.roomId, 1);
 		expect([MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE]).toContain(recordings[0].status);
 
 		// A third join must not start a second recording (the recording-active lock dedupes)
 		await joinFakeParticipant(room.roomId, 'THIRD_PARTICIPANT');
 		await simulateParticipantJoined(room.roomId, 'THIRD_PARTICIPANT');
-		await sleep('3s');
-
 		expect((await findRoomRecordings(room.roomId)).length).toBe(1);
 
 		await stopRecording(recordings[0].recordingId);
@@ -286,8 +307,6 @@ describe('Recording Auto-Start Tests', () => {
 
 		await joinFakeParticipant(room.roomId, 'FIRST_PARTICIPANT');
 		await simulateParticipantJoined(room.roomId, 'FIRST_PARTICIPANT');
-		await sleep('3s');
-
 		expect((await findRoomRecordings(room.roomId)).length).toBe(0);
 
 		// The second join webhook arrives but the listing does not include the joiner yet: the
@@ -295,16 +314,7 @@ describe('Recording Auto-Start Tests', () => {
 		// stale listing would never start its recording (no later join corrects the under-count).
 		await simulateUnlistedParticipantJoined(room.roomId, 'UNLISTED_SECOND_PARTICIPANT');
 
-		// The handler fires the start in the background; poll until the recording shows up
-		let recordings = await findRoomRecordings(room.roomId);
-		const deadline = Date.now() + 30_000;
-
-		while (recordings.length === 0 && Date.now() < deadline) {
-			await sleep('1s');
-			recordings = await findRoomRecordings(room.roomId);
-		}
-
-		expect(recordings.length).toBe(1);
+		const recordings = await waitForRoomRecordingCount(room.roomId, 1);
 		await stopRecording(recordings[0].recordingId);
 	}, 90_000);
 
@@ -316,16 +326,7 @@ describe('Recording Auto-Start Tests', () => {
 		await joinFakeParticipant(room.roomId, 'FIRST_PARTICIPANT');
 		await simulateParticipantJoined(room.roomId, 'FIRST_PARTICIPANT');
 
-		// The handler fires the start in the background; poll until the recording shows up
-		let recordings = await findRoomRecordings(room.roomId);
-		const startDeadline = Date.now() + 30_000;
-
-		while (recordings.length === 0 && Date.now() < startDeadline) {
-			await sleep('1s');
-			recordings = await findRoomRecordings(room.roomId);
-		}
-
-		expect(recordings.length).toBe(1);
+		const recordings = await waitForRoomRecordingCount(room.roomId, 1);
 
 		await stopRecording(recordings[0].recordingId);
 
@@ -336,8 +337,6 @@ describe('Recording Auto-Start Tests', () => {
 		// must not auto-restart the recording.
 		await joinFakeParticipant(room.roomId, 'SECOND_PARTICIPANT');
 		await simulateParticipantJoined(room.roomId, 'SECOND_PARTICIPANT');
-		await sleep('5s');
-
 		expect((await findRoomRecordings(room.roomId)).length).toBe(1);
 
 		// The disarm is keyed to this very meeting through its LiveKit room sid
@@ -353,16 +352,7 @@ describe('Recording Auto-Start Tests', () => {
 		await joinFakeParticipant(room.roomId, 'FIRST_PARTICIPANT');
 		await simulateParticipantJoined(room.roomId, 'FIRST_PARTICIPANT');
 
-		// The handler fires the start in the background; poll until the recording shows up
-		let recordings = await findRoomRecordings(room.roomId);
-		const startDeadline = Date.now() + 30_000;
-
-		while (recordings.length === 0 && Date.now() < startDeadline) {
-			await sleep('1s');
-			recordings = await findRoomRecordings(room.roomId);
-		}
-
-		expect(recordings.length).toBe(1);
+		const recordings = await waitForRoomRecordingCount(room.roomId, 1);
 
 		// A STARTING egress answers 409 to every stop, which would hide the race: wait until the
 		// egress is active so a stop can succeed
@@ -385,8 +375,6 @@ describe('Recording Auto-Start Tests', () => {
 
 		await joinFakeParticipant(room.roomId, 'SECOND_PARTICIPANT');
 		await simulateParticipantJoined(room.roomId, 'SECOND_PARTICIPANT');
-		await sleep('5s');
-
 		expect((await findRoomRecordings(room.roomId)).length).toBe(1);
 	}, 90_000);
 
@@ -398,17 +386,8 @@ describe('Recording Auto-Start Tests', () => {
 		await joinFakeParticipant(room.roomId, 'FIRST_PARTICIPANT');
 		await simulateParticipantJoined(room.roomId, 'FIRST_PARTICIPANT');
 
-		// The handler fires the start in the background; poll until the recording shows up
-		let recordings = await findRoomRecordings(room.roomId);
-		const startDeadline = Date.now() + 30_000;
-
-		while (recordings.length === 0 && Date.now() < startDeadline) {
-			await sleep('1s');
-			recordings = await findRoomRecordings(room.roomId);
-		}
-
-		expect(recordings.length).toBe(1);
-		const firstRecordingId = recordings[0].recordingId;
+		const initialRecordings = await waitForRoomRecordingCount(room.roomId, 1);
+		const firstRecordingId = initialRecordings[0].recordingId;
 
 		await stopRecording(firstRecordingId);
 		await waitForNoInProgressEgress(room.roomId);
@@ -423,15 +402,7 @@ describe('Recording Auto-Start Tests', () => {
 		await joinFakeParticipant(room.roomId, 'SECOND_PARTICIPANT');
 		await simulateParticipantJoined(room.roomId, 'SECOND_PARTICIPANT');
 
-		recordings = await findRoomRecordings(room.roomId);
-		const restartDeadline = Date.now() + 30_000;
-
-		while (recordings.length < 2 && Date.now() < restartDeadline) {
-			await sleep('1s');
-			recordings = await findRoomRecordings(room.roomId);
-		}
-
-		expect(recordings.length).toBe(2);
+		const recordings = await waitForRoomRecordingCount(room.roomId, 2);
 
 		// Target the restarted recording explicitly by id: the first one's final status is written
 		// by the deployment processing the real egress webhooks, so filtering by status races it
@@ -482,15 +453,7 @@ describe('Recording Auto-Start Tests', () => {
 		await joinFakeParticipant(room.roomId, 'SECOND_PARTICIPANT');
 		await simulateParticipantJoined(room.roomId, 'SECOND_PARTICIPANT');
 
-		recordings = await findRoomRecordings(room.roomId);
-		const restartDeadline = Date.now() + 30_000;
-
-		while (recordings.length < 2 && Date.now() < restartDeadline) {
-			await sleep('1s');
-			recordings = await findRoomRecordings(room.roomId);
-		}
-
-		expect(recordings.length).toBe(2);
+		recordings = await waitForRoomRecordingCount(room.roomId, 2);
 
 		const restartedRecording = recordings.find((recording) => recording.recordingId !== firstRecordingId);
 		expect(restartedRecording).toBeDefined();

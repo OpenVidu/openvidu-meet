@@ -114,9 +114,24 @@ describe('Webhook Integration Tests', () => {
 			await deleteAllWebhooks();
 			await createWebhook({ url: `http://localhost:5080/webhook`, enabled: false });
 
-			await setupSingleRoom(true);
+			const { room, moderatorToken } = await setupSingleRoom(true);
 
-			expect(receivedWebhooks.length).toBe(0);
+			// Delivery is asynchronous, so an empty list right here only means "not yet". Re-enable
+			// the webhook and end the meeting: `meeting_ended` is strictly later than the
+			// `meeting_started` under test, so once it lands on the same receiver, a delivery of
+			// `meeting_started` would already have landed too.
+			await deleteAllWebhooks();
+			await createWebhook({ url: `http://localhost:5080/webhook` });
+			await endMeeting(room.roomId, moderatorToken);
+			await waitForWebhookEvent(receivedWebhooks, MeetWebhookEventType.MEETING_ENDED, {
+				roomId: room.roomId
+			});
+
+			// Only the two events of the disabled window are denied: ending the meeting emits its
+			// own participant_left alongside meeting_ended.
+			const deniedEvents = [MeetWebhookEventType.MEETING_STARTED, MeetWebhookEventType.PARTICIPANT_JOINED];
+			expect(receivedWebhooks.filter((webhook) => deniedEvents.includes(webhook.body.event))).toEqual([]);
+			expect(receivedWebhooks.filter((webhook) => webhook.body.event === MeetWebhookEventType.MEETING_ENDED)).toHaveLength(1);
 		});
 
 		it('should send meeting_started webhook when room is created', async () => {
