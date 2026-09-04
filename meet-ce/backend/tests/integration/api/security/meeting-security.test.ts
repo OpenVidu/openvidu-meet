@@ -11,10 +11,17 @@ import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import {
+	errorInsufficientPermissions,
+	errorInvalidToken,
+	errorUnauthorized
+} from '../../../../src/models/error.model.js';
+import { expectMeetError } from '../../../helpers/assertion-helpers.js';
+import {
 	disconnectFakeParticipants,
 	joinFakeParticipant,
 	updateParticipantMetadata
 } from '../../../helpers/livekit-cli-helpers.js';
+import { describeInCompatibilityMode } from '../../../helpers/meet-mode-helpers.js';
 import {
 	createAssistant,
 	deleteAllRooms,
@@ -73,12 +80,12 @@ describe('Meeting API Security Tests', () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, rootAdminAccessToken);
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 
-		it('should succeed when using room member token with canEndMeeting permission', async () => {
-			// Update room member to have canEndMeeting permission
-			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, { canEndMeeting: true });
+		it('should succeed when using room member token with meetingEnd permission', async () => {
+			// Update room member to have meetingEnd permission
+			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, { meetingEnd: true });
 
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomId}`)
@@ -89,16 +96,16 @@ describe('Meeting API Security Tests', () => {
 			await joinFakeParticipant(roomId, participantIdentity);
 		});
 
-		it('should fail when using room member token without canEndMeeting permission', async () => {
-			// Update room member to not have canEndMeeting permission
+		it('should fail when using room member token without meetingEnd permission', async () => {
+			// Update room member to not have meetingEnd permission
 			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
-				canEndMeeting: false
+				meetingEnd: false
 			});
 
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when using room member token from a different room', async () => {
@@ -107,7 +114,7 @@ describe('Meeting API Security Tests', () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 	});
 
@@ -146,13 +153,13 @@ describe('Meeting API Security Tests', () => {
 				.put(`${MEETINGS_PATH}/${roomId}/participants/${participantIdentity}/role`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, rootAdminAccessToken)
 				.send({ action });
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 
-		it('should succeed when using room member token with canMakeModerator permission', async () => {
-			// Update room member to have canMakeModerator permission
+		it('should succeed when using room member token with participantPromote permission', async () => {
+			// Update room member to have participantPromote permission
 			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
-				canMakeModerator: true
+				participantPromote: true
 			});
 
 			const response = await request(app)
@@ -166,17 +173,17 @@ describe('Meeting API Security Tests', () => {
 			await setParticipantMetadata();
 		});
 
-		it('should fail when using room member token without canMakeModerator permission', async () => {
-			// Update room member to not have canMakeModerator permission
+		it('should fail when using room member token without participantPromote permission', async () => {
+			// Update room member to not have participantPromote permission
 			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
-				canMakeModerator: false
+				participantPromote: false
 			});
 
 			const response = await request(app)
 				.put(`${MEETINGS_PATH}/${roomId}/participants/${participantIdentity}/role`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken)
 				.send({ action });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when using room member token from a different room', async () => {
@@ -186,7 +193,7 @@ describe('Meeting API Security Tests', () => {
 				.put(`${MEETINGS_PATH}/${roomId}/participants/${participantIdentity}/role`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken)
 				.send({ action });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 	});
 
@@ -205,13 +212,13 @@ describe('Meeting API Security Tests', () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomId}/participants/${participantIdentity}`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, rootAdminAccessToken);
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 
-		it('should succeed when using room member token with canKickParticipants permission', async () => {
-			// Update room member to have canKickParticipants permission
+		it('should succeed when using room member token with participantKick permission', async () => {
+			// Update room member to have participantKick permission
 			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
-				canKickParticipants: true
+				participantKick: true
 			});
 
 			const response = await request(app)
@@ -223,16 +230,16 @@ describe('Meeting API Security Tests', () => {
 			await joinFakeParticipant(roomId, participantIdentity);
 		});
 
-		it('should fail when using room member token without canKickParticipants permission', async () => {
-			// Update room member to not have canKickParticipants permission
+		it('should fail when using room member token without participantKick permission', async () => {
+			// Update room member to not have participantKick permission
 			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
-				canKickParticipants: false
+				participantKick: false
 			});
 
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomId}/participants/${participantIdentity}`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when using room member token from a different room', async () => {
@@ -241,7 +248,47 @@ describe('Meeting API Security Tests', () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomId}/participants/${participantIdentity}`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
+		});
+	});
+
+	// The member's base role is MODERATOR, which grants all three gates, so only the denial carries
+	// signal: an ignored deprecated key would leave the moderator default in place and the request
+	// would succeed. Every request here is rejected before its controller, so the meeting and its
+	// participant are left untouched.
+	describeInCompatibilityMode('Deprecated permission spellings', () => {
+		it('should deny ending the meeting when canEndMeeting is denied', async () => {
+			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
+				canEndMeeting: false
+			});
+
+			const response = await request(app)
+				.delete(`${MEETINGS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+			expectMeetError(response, errorInsufficientPermissions());
+		});
+
+		it('should deny promoting a participant when canMakeModerator is denied', async () => {
+			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
+				canMakeModerator: false
+			});
+
+			const response = await request(app)
+				.put(`${MEETINGS_PATH}/${roomId}/participants/${participantIdentity}/role`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken)
+				.send({ action: MeetParticipantModerationAction.UPGRADE });
+			expectMeetError(response, errorInsufficientPermissions());
+		});
+
+		it('should deny kicking a participant when canKickParticipants is denied', async () => {
+			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
+				canKickParticipants: false
+			});
+
+			const response = await request(app)
+				.delete(`${MEETINGS_PATH}/${roomId}/participants/${participantIdentity}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 	});
 
@@ -249,65 +296,63 @@ describe('Meeting API Security Tests', () => {
 		const MOCK_DISPATCH_ID = 'dispatch-test-001';
 
 		describe('Create Assistant Security Tests', () => {
-			it('should return 401 when no room member token header is provided', async () => {
+			it('should fail when no room member token header is provided', async () => {
 				const response = await request(app).post(ASSISTANTS_PATH).send(LIVE_CAPTIONS_BODY);
 
-				expect(response.status).toBe(401);
+				expectMeetError(response, errorUnauthorized());
 			});
 
-			it('should return 401 when the room member token is malformed', async () => {
+			it('should fail when the room member token is malformed', async () => {
 				const response = await request(app)
 					.post(ASSISTANTS_PATH)
 					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, 'Bearer this.is.not.a.valid.jwt')
 					.send(LIVE_CAPTIONS_BODY);
 
-				expect(response.status).toBe(401);
+				expectMeetError(response, errorInvalidToken());
 			});
 
-			it('should return 401 when the token header contains a random string without Bearer prefix', async () => {
+			it('should read a token header without the Bearer prefix as no credentials at all', async () => {
 				const response = await request(app)
 					.post(ASSISTANTS_PATH)
 					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, 'random-garbage-token')
 					.send(LIVE_CAPTIONS_BODY);
 
-				expect(response.status).toBe(401);
+				expectMeetError(response, errorUnauthorized());
 			});
 
-			it('should return 401 when an expired token is used', async () => {
-				// Generate a token for a room that has already been deleted → verify will fail
-				const expiredToken = await generateRoomMemberToken(roomData.room.roomId, {
+			it('should fail when the token belongs to a room that no longer exists', async () => {
+				const orphanedToken = await generateRoomMemberToken(roomData.room.roomId, {
 					secret: roomData.speakerSecret
 				});
 				await deleteAllRooms();
 
-				const response = await createAssistant(expiredToken);
+				const response = await createAssistant(orphanedToken);
 
-				// The room is gone → token validation or room lookup fails → not 200
-				expect(response.status).not.toBe(200);
+				expectMeetError(response, errorInvalidToken());
 			});
 		});
 
 		describe('Cancel Assistant Security Tests', () => {
-			it('should return 401 when no room member token header is provided', async () => {
+			it('should fail when no room member token header is provided', async () => {
 				const response = await request(app).delete(`${ASSISTANTS_PATH}/${MOCK_DISPATCH_ID}`);
 
-				expect(response.status).toBe(401);
+				expectMeetError(response, errorUnauthorized());
 			});
 
-			it('should return 401 when the room member token is malformed', async () => {
+			it('should fail when the room member token is malformed', async () => {
 				const response = await request(app)
 					.delete(`${ASSISTANTS_PATH}/${MOCK_DISPATCH_ID}`)
 					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, 'Bearer malformed.token.here');
 
-				expect(response.status).toBe(401);
+				expectMeetError(response, errorInvalidToken());
 			});
 
-			it('should return 401 when the token header contains a random string without Bearer prefix', async () => {
+			it('should read a token header without the Bearer prefix as no credentials at all', async () => {
 				const response = await request(app)
 					.delete(`${ASSISTANTS_PATH}/${MOCK_DISPATCH_ID}`)
 					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, 'garbage');
 
-				expect(response.status).toBe(401);
+				expectMeetError(response, errorUnauthorized());
 			});
 		});
 	});

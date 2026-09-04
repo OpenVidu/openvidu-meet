@@ -21,6 +21,7 @@ import { Response } from 'supertest';
 import { container } from '../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../src/config/internal-config.js';
 import { MEET_ENV } from '../../src/environment.js';
+import type { OpenViduMeetError } from '../../src/models/error.model.js';
 import { TokenService } from '../../src/services/token.service.js';
 import { getFullPath } from './request-helpers.js';
 
@@ -37,6 +38,16 @@ export const wirePermissions = (permissions: Readonly<Partial<MeetRoomMemberPerm
 	...permissions,
 	...toDeprecatedPermissions(permissions)
 });
+
+/**
+ * Asserts a rejection against the very factory the backend was expected to throw. The backend has 4
+ * distinct 401 factories and 5 distinct 403 ones, so a status code alone does not tell a rejection
+ * for the right reason from one for the wrong reason.
+ */
+export const expectMeetError = (response: Response, expected: OpenViduMeetError) => {
+	expect(response.status).toBe(expected.statusCode);
+	expect(response.body).toEqual({ error: expected.name, message: expected.message });
+};
 
 export const expectErrorResponse = (
 	response: Response,
@@ -71,6 +82,36 @@ export const expectErrorResponse = (
 
 export const expectValidationError = (response: Response, field: string, message: string) => {
 	expectErrorResponse(response, 422, 'Unprocessable Entity', 'Invalid request', [{ field, message }]);
+};
+
+/**
+ * Asserts a per-item rejection from a bulk endpoint: 400, the resource listed under `failed` with
+ * the expected reason, absent from `deleted`, and still readable afterwards. The read-back is the
+ * point — an endpoint that deletes the resource and then reports it as failed satisfies a
+ * status-only assertion.
+ *
+ * `failed` entries are not shaped alike across endpoints (rooms split the reason into
+ * `error`/`message`, recordings collapse it into `error`), so the reason is matched against the
+ * entry's values instead of a fixed field.
+ */
+export const expectBulkDenied = async (
+	response: Response,
+	denied: { id: string; reason: OpenViduMeetError; readBack: () => Promise<Response> }
+) => {
+	const { id, reason, readBack } = denied;
+
+	expect(response.status).toBe(400);
+	expect(JSON.stringify(response.body.deleted ?? [])).not.toContain(id);
+
+	const failed = (response.body.failed ?? []) as Record<string, string>[];
+	const entry = failed.find((item) => Object.values(item).includes(id));
+
+	if (!entry) {
+		throw new Error(`Bulk response did not list '${id}' as failed: ${JSON.stringify(response.body)}`);
+	}
+
+	expect(Object.values(entry)).toContain(reason.message);
+	expect((await readBack()).status).toBe(200);
 };
 
 /**

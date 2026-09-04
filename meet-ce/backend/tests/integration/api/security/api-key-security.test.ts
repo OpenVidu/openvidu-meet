@@ -2,6 +2,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/glo
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
+import { errorInsufficientPermissions, errorUnauthorized } from '../../../../src/models/error.model.js';
+import { expectMeetError } from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllUsers,
 	generateApiKey,
@@ -40,19 +42,19 @@ describe('API Keys API Security Tests', () => {
 			const response = await request(app)
 				.post(`${API_KEYS_PATH}`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is authenticated as ROOM_MEMBER', async () => {
 			const response = await request(app)
 				.post(`${API_KEYS_PATH}`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).post(`${API_KEYS_PATH}`);
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 	});
 
@@ -68,19 +70,19 @@ describe('API Keys API Security Tests', () => {
 			const response = await request(app)
 				.get(`${API_KEYS_PATH}`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is authenticated as ROOM_MEMBER', async () => {
 			const response = await request(app)
 				.get(`${API_KEYS_PATH}`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).get(`${API_KEYS_PATH}`);
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 	});
 
@@ -101,19 +103,19 @@ describe('API Keys API Security Tests', () => {
 			const response = await request(app)
 				.delete(`${API_KEYS_PATH}`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is authenticated as ROOM_MEMBER', async () => {
 			const response = await request(app)
 				.delete(`${API_KEYS_PATH}`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).delete(`${API_KEYS_PATH}`);
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 	});
 });

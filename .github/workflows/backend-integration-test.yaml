@@ -54,6 +54,8 @@ jobs:
             test-script: 'test:integration-backend-webhooks'
           - test-name: 'Auth & Security API Tests (Security, Auth, API Keys, Users)'
             test-script: 'test:integration-backend-auth-security'
+          - test-name: 'Security API Tests without the deprecated permission names (MEET_MODE=3.9.0)'
+            test-script: 'test:integration-backend-security-3.9.0'
           - test-name: 'Config & Analytics API Tests (Global Config, Analytics)'
             test-script: 'test:integration-backend-config-analytics'
     steps:
