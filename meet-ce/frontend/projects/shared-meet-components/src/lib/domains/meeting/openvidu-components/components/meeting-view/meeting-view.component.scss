@@ -7,7 +7,11 @@
 	height: 100%;
 }
 #meeting-stage {
-	--ov-status-rail-height: 52px;
+	--ov-status-rail-height: 44px;
+
+	// Breathing room on either side of the video grid. The layout engine sizes itself from the
+	// container's box and ignores its padding, so this has to narrow the box, not pad it.
+	--ov-layout-side-gap: 0.5%;
 
 	position: relative;
 	background-color: var(--ov-background-color);
@@ -197,7 +201,8 @@ ov-ending-soon-notice {
 
 #layout-container {
 	height: inherit;
-	width: inherit;
+	width: auto;
+	margin: 0 var(--ov-layout-side-gap);
 }
 
 .mat-drawer-container {
@@ -212,7 +217,7 @@ ov-ending-soon-notice {
 
 @media only screen and (max-width: 790px) {
 	#meeting-stage {
-		--ov-status-rail-height: 44px;
+		--ov-status-rail-height: 37px;
 
 		width: 100%;
 	}

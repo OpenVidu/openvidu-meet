@@ -1,9 +1,9 @@
 .panel-container {
-	margin: 20px;
+	margin: 0px 10px 0px 5px;
 	background-color: var(--ov-surface-color);
 	border-radius: var(--ov-surface-radius);
-	max-height: calc(100% - 40px);
-	min-height: calc(100% - 40px);
+	max-height: calc(100% - 20px);
+	min-height: calc(100% - 20px);
 	display: flex;
 	flex-direction: column;
 	align-items: stretch;
