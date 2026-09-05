@@ -9,7 +9,9 @@
 		"ENDING_SOON_MANY_MINUTES": "मीटिंग लगभग {minutes} मिनट में समाप्त हो जाएगी",
 		"ENDING_SOON_DISMISS": "बंद करें",
 		"ENDING_SOON_BADGE_LABEL": "समाप्ति में",
-		"ENDING_SOON_BADGE_ENDING": "समाप्त हो रही है"
+		"ENDING_SOON_BADGE_ENDING": "समाप्त हो रही है",
+		"E2EE_BADGE_LABEL": "एन्क्रिप्टेड",
+		"E2EE_BADGE_TOOLTIP": "यह मीटिंग एंड-टू-एंड एन्क्रिप्टेड है"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "मीटिंग में शामिल हों",

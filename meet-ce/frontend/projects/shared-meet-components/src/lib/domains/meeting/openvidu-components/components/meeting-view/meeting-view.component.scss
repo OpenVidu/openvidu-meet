@@ -56,6 +56,10 @@ ov-ending-soon-notice {
 	}
 }
 
+.e2ee-chip .status-chip-icon {
+	color: var(--ov-success-color);
+}
+
 // Calm while there is time to act: only the icon carries the warn colour.
 .ending-soon-chip .status-chip-icon {
 	color: var(--ov-warn-color);

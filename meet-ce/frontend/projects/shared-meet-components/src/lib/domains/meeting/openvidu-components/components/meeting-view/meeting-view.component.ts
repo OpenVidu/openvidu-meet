@@ -18,6 +18,7 @@ import {
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { SidenavLayoutDirective } from '../../directives/layout/sidenav-layout.directive';
@@ -105,6 +106,7 @@ import { ToolbarComponent } from '../toolbar/toolbar.component';
 		MatIconModule,
 		MatProgressSpinnerModule,
 		MatSidenavModule,
+		MatTooltipModule,
 		SidenavLayoutDirective,
 		TranslatePipe,
 		MeetingMediaSetupComponent,
@@ -184,13 +186,23 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 
 	protected readonly canOpenActivitiesPanel = this.libService.activitiesPanelButtonSignal;
 
+	/**
+	 * The key is what actually encrypts: `MeetingLiveKitService` builds the room's `encryption`
+	 * options from it, so a key here means the media really is end-to-end encrypted.
+	 */
+	protected readonly isE2eeActive = computed(() => (this.libService.e2eeKeySignal() ?? '').trim() !== '');
+
 	/** Published by the smart layout, which cannot render into the rail itself. */
 	protected readonly railHiddenParticipants = this.smartLayoutService.railHiddenParticipants;
 
 	protected readonly canOpenParticipantsPanel = this.libService.participantsPanelButtonSignal;
 
 	protected readonly showStatusRail = computed(
-		() => this.isRecording() || this.isEndingSoon() || this.railHiddenParticipants() !== undefined
+		() =>
+			this.isRecording() ||
+			this.isEndingSoon() ||
+			this.isE2eeActive() ||
+			this.railHiddenParticipants() !== undefined
 	);
 
 	// Constants

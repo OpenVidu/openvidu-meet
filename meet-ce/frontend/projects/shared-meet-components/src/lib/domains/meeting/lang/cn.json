@@ -9,7 +9,9 @@
 		"ENDING_SOON_MANY_MINUTES": "会议将在约 {minutes} 分钟后结束",
 		"ENDING_SOON_DISMISS": "关闭",
 		"ENDING_SOON_BADGE_LABEL": "还剩",
-		"ENDING_SOON_BADGE_ENDING": "即将结束"
+		"ENDING_SOON_BADGE_ENDING": "即将结束",
+		"E2EE_BADGE_LABEL": "已加密",
+		"E2EE_BADGE_TOOLTIP": "此会议采用端到端加密"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "加入会议",

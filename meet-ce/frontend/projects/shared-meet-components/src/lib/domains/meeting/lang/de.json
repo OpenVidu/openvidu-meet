@@ -9,7 +9,9 @@
 		"ENDING_SOON_MANY_MINUTES": "Das Meeting endet in etwa {minutes} Minuten",
 		"ENDING_SOON_DISMISS": "Schließen",
 		"ENDING_SOON_BADGE_LABEL": "Endet in",
-		"ENDING_SOON_BADGE_ENDING": "Wird beendet"
+		"ENDING_SOON_BADGE_ENDING": "Wird beendet",
+		"E2EE_BADGE_LABEL": "Verschlüsselt",
+		"E2EE_BADGE_TOOLTIP": "Dieses Meeting ist Ende-zu-Ende-verschlüsselt"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Meeting beitreten",

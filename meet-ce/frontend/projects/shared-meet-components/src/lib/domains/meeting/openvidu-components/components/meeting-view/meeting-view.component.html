@@ -77,6 +77,13 @@
 						</div>
 					}
 
+					@if (isE2eeActive()) {
+						<div class="status-chip e2ee-chip" [matTooltip]="'ROOM.E2EE_BADGE_TOOLTIP' | translate">
+							<mat-icon class="status-chip-icon">lock</mat-icon>
+							<span class="status-chip-label">{{ 'ROOM.E2EE_BADGE_LABEL' | translate }}</span>
+						</div>
+					}
+
 					@if (railHiddenParticipants(); as hidden) {
 						<ov-hidden-participants-indicator
 							class="status-rail-end"

@@ -9,7 +9,9 @@
 		"ENDING_SOON_MANY_MINUTES": "La riunione terminerà tra circa {minutes} minuti",
 		"ENDING_SOON_DISMISS": "Chiudi",
 		"ENDING_SOON_BADGE_LABEL": "Termina in",
-		"ENDING_SOON_BADGE_ENDING": "In chiusura"
+		"ENDING_SOON_BADGE_ENDING": "In chiusura",
+		"E2EE_BADGE_LABEL": "Crittografata",
+		"E2EE_BADGE_TOOLTIP": "Questa riunione è crittografata end-to-end"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Partecipa alla riunione",

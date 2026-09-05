@@ -9,7 +9,9 @@
 		"ENDING_SOON_MANY_MINUTES": "La réunion se terminera dans environ {minutes} minutes",
 		"ENDING_SOON_DISMISS": "Fermer",
 		"ENDING_SOON_BADGE_LABEL": "Se termine dans",
-		"ENDING_SOON_BADGE_ENDING": "Fin en cours"
+		"ENDING_SOON_BADGE_ENDING": "Fin en cours",
+		"E2EE_BADGE_LABEL": "Chiffrée",
+		"E2EE_BADGE_TOOLTIP": "Cette réunion est chiffrée de bout en bout"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Rejoindre la réunion",

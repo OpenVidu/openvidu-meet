@@ -9,7 +9,9 @@
 		"ENDING_SOON_MANY_MINUTES": "会議はあと約{minutes}分で終了します",
 		"ENDING_SOON_DISMISS": "閉じる",
 		"ENDING_SOON_BADGE_LABEL": "終了まで",
-		"ENDING_SOON_BADGE_ENDING": "まもなく終了"
+		"ENDING_SOON_BADGE_ENDING": "まもなく終了",
+		"E2EE_BADGE_LABEL": "暗号化",
+		"E2EE_BADGE_TOOLTIP": "この会議はエンドツーエンドで暗号化されています"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "会議に参加する",

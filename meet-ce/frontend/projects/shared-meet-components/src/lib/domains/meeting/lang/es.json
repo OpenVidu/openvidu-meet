@@ -9,7 +9,9 @@
 		"ENDING_SOON_MANY_MINUTES": "La reunión terminará en aproximadamente {minutes} minutos",
 		"ENDING_SOON_DISMISS": "Descartar",
 		"ENDING_SOON_BADGE_LABEL": "Termina en",
-		"ENDING_SOON_BADGE_ENDING": "Terminando"
+		"ENDING_SOON_BADGE_ENDING": "Terminando",
+		"E2EE_BADGE_LABEL": "Cifrada",
+		"E2EE_BADGE_TOOLTIP": "Esta reunión está cifrada de extremo a extremo"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Unirme ahora",
