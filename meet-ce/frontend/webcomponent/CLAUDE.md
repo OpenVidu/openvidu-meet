@@ -38,6 +38,17 @@ registers the real element as `openvidu-meet-impl`), and delegates to an inner `
 attributes/properties are mirrored, imperative calls made before load are buffered and replayed, and
 events are re-dispatched on the outer element.
 
+- **Where the ESM is imported from.** First the sibling of the loader's own `src`
+  (`document.currentScript`), which is the Meet server for a host that embeds the url directly. A
+  host that serves the loader from somewhere else has no sibling there — a reverse proxy forwarding
+  only `/openvidu-meet.js` (what 3.8.0 hosts wrote, when that url was the whole bundle), a copy in
+  its own assets, a bundler that inlined it — so on failure the loader falls back to
+  `<meet server>/v1/openvidu-meet.esm.js`, derived from the element's `room-url` / `recording-url`
+  with the same `computeServerUrl()` the app uses to find the API. That fallback url is read at the
+  moment the sibling fails, not up front: a host that binds `room-url` through a framework sets it
+  right after the element connects. The host needs no change either way; the fallback only costs one
+  404 and logs a warning naming both urls.
+
 - The delegated surface is derived from `EmbeddedAttribute` / `EmbeddedCommandName` /
   `EmbeddedEventName` in `@openvidu-meet/typings` — the single source of truth. Adding a public
   attribute/command/event means editing the typings first; the loader then picks it up automatically.

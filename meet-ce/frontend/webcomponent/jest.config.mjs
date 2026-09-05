@@ -19,6 +19,8 @@ const config = {
   },
   moduleNameMapper: {
     '^@openvidu-meet/typings$': '<rootDir>/../../typings/src/index.ts',
+    // Mirrors the tsconfig path the loader uses to reach the library's url helpers.
+    '^projects/shared-meet-components/src/(.*)$': '<rootDir>/../projects/shared-meet-components/src/$1',
     '\\.(css|less|scss|sass)$': '<rootDir>/tests/__mocks__/styleMock.js'
   }
 }
