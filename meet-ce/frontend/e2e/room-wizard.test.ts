@@ -1,6 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 import { authenticate, createReadyUser, type ReadyUser } from './helpers/auth.helper';
-import { createRoom, deleteRooms, deleteUsers, getRoomRoles, MEET_BASE_URL } from './helpers/meet-api.helper';
+import {
+	createRoom,
+	deleteRooms,
+	deleteUsers,
+	getRoomConfig,
+	getRoomRoles,
+	MEET_BASE_URL
+} from './helpers/meet-api.helper';
 
 /**
  * Room-creation wizard E2E tests.
@@ -244,5 +251,56 @@ test.describe('Room wizard E2E Tests', () => {
 		for (const key of FLIPPED_PERMISSIONS) {
 			expect(roles.moderator.permissions[key], key).toBe(false);
 		}
+	});
+
+	// ── Initial media state round-trip (wizard -> API) ──────────────────────────
+
+	test('create mode: initial media toggled off reaches the created room', async ({ page }) => {
+		await page.goto(`${MEET_BASE_URL}/rooms/new`, { waitUntil: 'domcontentloaded' });
+		await page.locator('#wizard-advanced-mode-btn').click();
+		await page.locator('input[formcontrolname="roomName"]').fill('wizard-initial-media-create');
+		await page.locator('#wizard-next-btn').click(); // Room Details -> Room Access
+		await page.locator('#wizard-next-btn').click(); // Room Access -> Meeting Features
+
+		await setFeature(page, 'room-feature-initial-audio', false);
+		await setFeature(page, 'room-feature-initial-video', false);
+
+		await gotoLastStep(page);
+		await page.locator('#wizard-finish-btn').click();
+
+		await page.waitForURL(/\/room\/[^/?]+/);
+		const roomId = /\/room\/([^/?]+)/.exec(page.url())![1];
+		createdRoomIds.push(roomId);
+
+		const config = await getRoomConfig(roomId);
+
+		expect(config.initialAudioActive).toBe(false);
+		expect(config.initialVideoActive).toBe(false);
+	});
+
+	test('edit mode: the stored initial media state prefills the toggles and can be flipped back', async ({ page }) => {
+		const room = await createRoom({
+			roomName: 'wizard-initial-media-edit',
+			config: { initialAudioActive: false, initialVideoActive: false }
+		});
+		createdRoomIds.push(room.roomId);
+
+		await page.goto(`${MEET_BASE_URL}/rooms/${room.roomId}/edit`, { waitUntil: 'domcontentloaded' });
+		await page.locator('#wizard-next-btn').click(); // Room Access -> Meeting Features
+
+		await expect(page.locator('#room-feature-initial-audio button')).toHaveAttribute('aria-checked', 'false');
+		await expect(page.locator('#room-feature-initial-video button')).toHaveAttribute('aria-checked', 'false');
+
+		await setFeature(page, 'room-feature-initial-audio', true);
+		await setFeature(page, 'room-feature-initial-video', true);
+
+		await gotoLastStep(page);
+		await page.locator('#wizard-finish-btn').click();
+		await page.waitForURL(`**/rooms/${room.roomId}`);
+
+		const config = await getRoomConfig(room.roomId);
+
+		expect(config.initialAudioActive).toBe(true);
+		expect(config.initialVideoActive).toBe(true);
 	});
 });

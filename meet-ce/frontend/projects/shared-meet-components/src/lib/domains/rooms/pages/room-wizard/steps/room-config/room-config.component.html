@@ -128,6 +128,49 @@
 				</div>
 			</div>
 
+			<!-- ── Media ────────────────────────────────── -->
+			<div class="feature-category">
+				<div class="category-header">
+					<mat-icon class="category-icon">perm_camera_mic</mat-icon>
+					<span class="category-label">{{ 'ROOMS.WIZARD.FEATURES.MEDIA' | translate }}</span>
+				</div>
+				<div class="config-grid">
+					<!-- Initial microphone state -->
+					<div class="feature-row" id="room-feature-initial-audio">
+						<div class="feature-info">
+							<mat-icon class="feature-icon">mic</mat-icon>
+							<div class="feature-text">
+								<span class="feature-label">{{
+									'ROOMS.WIZARD.FEATURES.INITIAL_AUDIO' | translate
+								}}</span>
+								<span class="feature-description">
+									{{ 'ROOMS.WIZARD.FEATURES.INITIAL_AUDIO_DESC' | translate }}
+									<em>{{ 'ROOMS.WIZARD.FEATURES.INITIAL_AUDIO_NOTE' | translate }}</em>
+								</span>
+							</div>
+						</div>
+						<mat-slide-toggle formControlName="initialAudioActive" color="primary" class="feature-toggle" />
+					</div>
+
+					<!-- Initial camera state -->
+					<div class="feature-row" id="room-feature-initial-video">
+						<div class="feature-info">
+							<mat-icon class="feature-icon">videocam</mat-icon>
+							<div class="feature-text">
+								<span class="feature-label">{{
+									'ROOMS.WIZARD.FEATURES.INITIAL_VIDEO' | translate
+								}}</span>
+								<span class="feature-description">
+									{{ 'ROOMS.WIZARD.FEATURES.INITIAL_VIDEO_DESC' | translate }}
+									<em>{{ 'ROOMS.WIZARD.FEATURES.INITIAL_VIDEO_NOTE' | translate }}</em>
+								</span>
+							</div>
+						</div>
+						<mat-slide-toggle formControlName="initialVideoActive" color="primary" class="feature-toggle" />
+					</div>
+				</div>
+			</div>
+
 			<!-- ── Security ─────────────────────────────── -->
 			<div class="feature-category">
 				<div class="category-header">

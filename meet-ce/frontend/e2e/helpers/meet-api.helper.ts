@@ -3,6 +3,7 @@ import {
 	MeetPermissionKey,
 	MeetRecordingInfo,
 	MeetRoom,
+	MeetRoomConfig,
 	MeetRoomMember,
 	MeetRoomMemberOptions,
 	MeetRoomMemberRole,
@@ -155,6 +156,20 @@ export const getRoomStatus = async (roomId: string): Promise<MeetRoomStatus> => 
  * Reads a room's role permissions. `roles` is an extra field, excluded from the default projection,
  * so it has to be asked for explicitly.
  */
+export const getRoomConfig = async (roomId: string): Promise<MeetRoomConfig> => {
+	const response = await fetch(withApiPath(`/rooms/${encodeURIComponent(roomId)}?extraFields=config`), {
+		method: 'GET',
+		headers: {
+			'x-api-key': API_KEY
+		}
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'get room config');
+
+	return (JSON.parse(responseText) as MeetRoom).config;
+};
+
 export const getRoomRoles = async (roomId: string): Promise<MeetRoomRoles> => {
 	const response = await fetch(withApiPath(`/rooms/${encodeURIComponent(roomId)}?extraFields=roles`), {
 		method: 'GET',

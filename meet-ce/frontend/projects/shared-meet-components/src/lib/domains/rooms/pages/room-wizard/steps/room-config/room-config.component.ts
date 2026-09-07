@@ -73,6 +73,8 @@ export class RoomConfigComponent {
 				captions: {
 					enabled: formValue.captionsEnabled ?? false
 				},
+				initialAudioActive: formValue.initialAudioActive ?? true,
+				initialVideoActive: formValue.initialVideoActive ?? true,
 				maxParticipants: this.normalizedLimit(
 					this.roomConfigForm.controls.maxParticipants,
 					formValue.maxParticipants

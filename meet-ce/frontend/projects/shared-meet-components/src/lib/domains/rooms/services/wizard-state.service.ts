@@ -78,7 +78,9 @@ const DEFAULT_CONFIG: MeetRoomConfig = {
 	chat: { enabled: true },
 	virtualBackground: { enabled: true },
 	e2ee: { enabled: false },
-	captions: { enabled: true }
+	captions: { enabled: true },
+	initialAudioActive: true,
+	initialVideoActive: true
 };
 
 const DEFAULT_ROOM_OPTIONS: MeetRoomOptions = {
@@ -321,6 +323,12 @@ export class RoomWizardStateService {
 					),
 					e2eeEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.e2ee!.enabled),
 					captionsEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.captions!.enabled),
+					initialAudioActive: this.formBuilder.nonNullable.control(
+						initialRoomOptions.config!.initialAudioActive!
+					),
+					initialVideoActive: this.formBuilder.nonNullable.control(
+						initialRoomOptions.config!.initialVideoActive!
+					),
 					// Empty (null) means unlimited; the backend accepts null or an integer within these bounds
 					maxParticipants: this.formBuilder.control<number | null>(
 						initialRoomOptions.config!.maxParticipants ?? null,

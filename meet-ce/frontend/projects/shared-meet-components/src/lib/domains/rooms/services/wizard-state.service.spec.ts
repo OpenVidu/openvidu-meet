@@ -164,3 +164,37 @@ describe('RoomWizardStateService.getStepById (maxDurationMinutes control bounds)
 		expect(maxDurationMinutesControl().valid).toBe(true);
 	});
 });
+
+describe('RoomWizardStateService.getStepById (initial media state controls)', () => {
+	let service: RoomWizardStateService;
+
+	beforeEach(() => {
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				RoomWizardStateService,
+				{ provide: TranslateService, useValue: { translate: (key: string) => key } }
+			]
+		});
+		service = TestBed.inject(RoomWizardStateService);
+	});
+
+	const roomConfigControls = () => service.getStepById(WizardStepId.ROOM_CONFIG)!.formGroup.controls;
+
+	it('starts a create-mode session with both devices active, matching the backend creation default', () => {
+		service.initializeWizard(false);
+
+		expect(roomConfigControls().initialAudioActive.value).toBe(true);
+		expect(roomConfigControls().initialVideoActive.value).toBe(true);
+	});
+
+	it('prefills the toggles from the edited room rather than the creation default', () => {
+		service.initializeWizard(true, {
+			roomName: 'Existing room',
+			config: { initialAudioActive: false, initialVideoActive: false }
+		});
+
+		expect(roomConfigControls().initialAudioActive.value).toBe(false);
+		expect(roomConfigControls().initialVideoActive.value).toBe(false);
+	});
+});
