@@ -317,13 +317,13 @@ export class LocalTrackService {
 
 		if (!enabled) {
 			await track?.mute();
-			this.notifyEnabledStateChanged();
+			this.notifyTracksMutated();
 			return;
 		}
 
 		if (track) {
 			await track.unmute();
-			this.notifyEnabledStateChanged();
+			this.notifyTracksMutated();
 			return;
 		}
 
@@ -331,13 +331,13 @@ export class LocalTrackService {
 	}
 
 	/**
-	 * Opens the device of the given kind and adds it to the prejoin tracks. Whether the fresh track
-	 * starts muted is decided by `createLocalTracks` from the stored preference, which is why the
-	 * media-control facade records the preference before asking for the change.
+	 * Opens a device of the given kind (the selected one unless a device id is given) and adds it to
+	 * the prejoin tracks. Whether the fresh track starts muted is decided by `createLocalTracks` from
+	 * the intent, which is why the media-control facade records the intent before asking for the change.
 	 */
-	private async openTrack(kind: Track.Kind): Promise<void> {
+	private async openTrack(kind: Track.Kind, deviceId: string | true = true): Promise<void> {
 		const isAudio = kind === Track.Kind.Audio;
-		const created = await this.createLocalTracks(!isAudio, isAudio);
+		const created = await this.createLocalTracks(isAudio ? false : deviceId, isAudio ? deviceId : false);
 		const track = created.find((t) => t.kind === kind);
 
 		if (!track) {
@@ -375,140 +375,70 @@ export class LocalTrackService {
 	}
 
 	/**
-	 * Re-emits the track array so {@link microphoneEnabled}/{@link cameraEnabled} re-evaluate.
-	 * `mute()`/`unmute()` flip `isMuted` on the track object in place, which the array signal cannot
-	 * see on its own.
+	 * Re-emits the track array. `mute()`/`unmute()`/`restartTrack()` mutate the track objects in
+	 * place, which the array signal cannot see on its own.
 	 */
-	private notifyEnabledStateChanged(): void {
+	private notifyTracksMutated(): void {
 		this._localTracks.update((tracks) => [...tracks]);
 	}
 
 	/**
-	 * Switches the camera device in prejoin (room not yet connected).
-	 *
-	 * Uses `LocalVideoTrack.restartTrack({ deviceId })` on the existing track when available.
-	 * This is the correct LiveKit pattern: `restartTrack` internally calls `setMediaStreamTrack`,
-	 * which automatically calls `processor.restart(newTrack)` if a background processor is
-	 * attached, preserving any active virtual-background effect without extra work.
-	 *
-	 * Falls back to creating a new track (with processor reattachment) when no track exists.
-	 * @param deviceId - The new video device ID
+	 * Switches the prejoin camera to the given device. See {@link switchDevice}.
 	 * @internal
 	 */
 	async switchCamera(deviceId: string): Promise<void> {
-		const existingTrack = this._localTracks().find((t) => t.kind === Track.Kind.Video) as
-			LocalVideoTrack | undefined;
-		// restartTrack replaces the whole constraint set, so the capture profile has to be restated
-		// or the switched camera would fall back to the browser's default resolution.
-		const options: VideoCaptureOptions = {
-			...CAMERA_CAPTURE_DEFAULTS,
-			deviceId: this.toDeviceConstraint(deviceId)
-		};
+		await this.switchDevice(Track.Kind.Video, deviceId);
+	}
 
-		if (existingTrack) {
-			try {
-				// restartTrack replaces the underlying MediaStreamTrack in-place.
-				// LiveKit's setMediaStreamTrack will call processor.restart(newTrack) automatically
-				// if a background processor is attached, preserving the active effect.
-				await existingTrack.restartTrack(options);
+	/**
+	 * Switches the prejoin microphone to the given device. See {@link switchDevice}.
+	 * @internal
+	 */
+	async switchMicrophone(deviceId: string): Promise<void> {
+		await this.switchDevice(Track.Kind.Audio, deviceId);
+	}
 
-				if (!this.shouldBeOpen(Track.Kind.Video)) {
-					// restartTrack re-acquired the device. mute() returns early on an already-muted
-					// track, so the camera would stay open, light on, behind a UI that says it is
-					// off; stop the re-acquired capture explicitly. Unmuting re-acquires it anyway.
-					await existingTrack.mute();
-					existingTrack.mediaStreamTrack.stop();
-				}
+	/**
+	 * Restarts the existing track of the given kind onto another device. livekit-client swaps the
+	 * MediaStreamTrack inside the same track object, so attached video elements follow, and a
+	 * background processor is restarted onto the new capture. Without a track of that kind (the
+	 * device was off, or could not be opened) the requested device is opened as a fresh track.
+	 */
+	private async switchDevice(kind: Track.Kind, deviceId: string): Promise<void> {
+		const track = this._localTracks().find((t) => t.kind === kind);
 
-				// restartTrack mutated the track in place (same LocalVideoTrack object), so emit a new
-				// array reference for the enabled computeds to re-read it.
-				this._localTracks.update((tracks) => [...tracks]);
-				this.log.d('Camera switched via restartTrack:', deviceId);
-			} catch (error) {
-				this.log.e('Failed to switch camera via restartTrack:', error);
-				throw error;
-			}
-
+		if (!track) {
+			await this.openTrack(kind, deviceId);
 			return;
 		}
 
-		// No existing track (edge case: camera was unavailable/unpublished) → create a fresh one
 		try {
-			const newVideoTracks = await this.livekitSdkService.createLocalTracks({ video: options });
-			const videoTrack = newVideoTracks.find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
+			await this.restartTrack(track, deviceId);
 
-			if (videoTrack) {
-				if (!this.shouldBeOpen(Track.Kind.Video)) {
-					await videoTrack.mute();
-				}
-
-				// Attach processor (and restore active background if any) to the fresh track
-				await this.videoTrackProcessorService.applyToVideoTrack(videoTrack);
-				this._localTracks.update((tracks) => [...tracks, videoTrack]);
-				this.log.d('New camera track created and added:', deviceId);
+			if (!this.shouldBeOpen(kind)) {
+				// mute() returns early on an already-muted track, which would leave the capture that
+				// restartTrack just re-acquired open behind a UI that says off. Unmuting re-acquires it.
+				await track.mute();
+				track.mediaStreamTrack.stop();
 			}
+
+			this.notifyTracksMutated();
+			this.log.d(`${kind} switched to device`, deviceId);
 		} catch (error) {
-			this.log.e('Failed to create new video track:', error);
-			const message = error instanceof Error ? error.message : 'Unknown error';
-			throw new Error(`Failed to switch camera: ${message}`, { cause: error });
+			this.log.e(`Failed to switch the ${kind} device:`, error);
+			throw error;
 		}
 	}
 
 	/**
-	 * Switches the microphone device in prejoin (room not yet connected).
-	 *
-	 * Uses `LocalAudioTrack.restartTrack({ deviceId })` on the existing track when available,
-	 * preserving echo-cancellation, noise-suppression and auto-gain-control constraints.
-	 * Falls back to creating a new audio track when none exists.
-	 * @param deviceId - The new audio device ID
-	 * @internal
+	 * restartTrack replaces the whole constraint set, so the capture profile has to be restated or the
+	 * switched device would fall back to the browser's defaults.
 	 */
-	async switchMicrophone(deviceId: string): Promise<void> {
-		const existingTrack = this._localTracks().find((t) => t.kind === Track.Kind.Audio) as
-			LocalAudioTrack | undefined;
-		const options: AudioCaptureOptions = {
-			...MICROPHONE_CAPTURE_DEFAULTS,
-			deviceId: this.toDeviceConstraint(deviceId)
-		};
+	private restartTrack(track: LocalTrack, deviceId: string): Promise<void> {
+		const constraint = this.toDeviceConstraint(deviceId);
 
-		if (existingTrack) {
-			try {
-				await existingTrack.restartTrack(options);
-
-				if (!this.shouldBeOpen(Track.Kind.Audio)) {
-					await existingTrack.mute();
-				}
-
-				// restartTrack swapped the MediaStreamTrack in place (same LocalAudioTrack object), so
-				// emit a new array reference to re-read it through microphoneMediaStreamTrack: that is
-				// what re-clones the mic-activity monitor onto the new device.
-				this._localTracks.update((tracks) => [...tracks]);
-				this.log.d('Microphone switched via restartTrack:', deviceId);
-			} catch (error) {
-				this.log.e('Failed to switch microphone via restartTrack:', error);
-				throw error;
-			}
-
-			return;
-		}
-
-		// No existing track (the microphone intent was "off", so none was ever opened) → create one
-		try {
-			const newAudioTracks = await this.livekitSdkService.createLocalTracks({ audio: options });
-			const audioTrack = newAudioTracks.find((t) => t.kind === Track.Kind.Audio);
-
-			if (audioTrack) {
-				if (!this.shouldBeOpen(Track.Kind.Audio)) {
-					await audioTrack.mute();
-				}
-
-				this._localTracks.update((tracks) => [...tracks, audioTrack]);
-				this.log.d('New microphone track created and added:', deviceId);
-			}
-		} catch (error) {
-			this.log.e('Failed to create new audio track:', error);
-			const message = error instanceof Error ? error.message : 'Unknown error';
-			throw new Error(`Failed to switch microphone: ${message}`, { cause: error });
-		}
+		return track.kind === Track.Kind.Video
+			? (track as LocalVideoTrack).restartTrack({ ...CAMERA_CAPTURE_DEFAULTS, deviceId: constraint })
+			: (track as LocalAudioTrack).restartTrack({ ...MICROPHONE_CAPTURE_DEFAULTS, deviceId: constraint });
 	}
 }

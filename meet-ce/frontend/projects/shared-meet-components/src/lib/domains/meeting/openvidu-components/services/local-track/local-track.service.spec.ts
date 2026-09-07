@@ -4,7 +4,7 @@ import { LoggerService } from '../../../../../shared/services/logger.service';
 import { DeviceService } from '../device/device.service';
 import { CAMERA_CAPTURE_DEFAULTS, MICROPHONE_CAPTURE_DEFAULTS } from '../../models/media-capture.model';
 import type { AudioCaptureOptions, CreateLocalTracksOptions, VideoCaptureOptions } from '../livekit';
-import { LocalTrack, Track } from '../livekit';
+import { LocalTrack, LocalVideoTrack, Track } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
 import { LocalMediaIntentService } from '../local-media-intent/local-media-intent.service';
@@ -78,6 +78,7 @@ describe('LocalTrackService', () => {
 	};
 	let mediaIntent: { cameraEnabled: jasmine.Spy; microphoneEnabled: jasmine.Spy };
 	let livekitSdkService: jasmine.SpyObj<LivekitSdkService>;
+	let applyToVideoTrack: jasmine.Spy;
 
 	const asTrack = (track: FakeLocalTrack) => track as unknown as LocalTrack;
 	const asMediaStreamTrack = (track: FakeMediaStreamTrack) => track as unknown as MediaStreamTrack;
@@ -98,6 +99,7 @@ describe('LocalTrackService', () => {
 		};
 		livekitSdkService = jasmine.createSpyObj<LivekitSdkService>('LivekitSdkService', ['createLocalTracks']);
 		livekitSdkService.createLocalTracks.and.resolveTo([]);
+		applyToVideoTrack = jasmine.createSpy('applyToVideoTrack').and.resolveTo();
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -111,7 +113,7 @@ describe('LocalTrackService', () => {
 					provide: VideoTrackProcessorService,
 					useValue: {
 						isBackgroundProcessorSupported: () => false,
-						applyToVideoTrack: () => Promise.resolve()
+						applyToVideoTrack
 					} as unknown as VideoTrackProcessorService
 				},
 				{ provide: MeetingLiveKitService, useValue: {} as unknown as MeetingLiveKitService }
@@ -341,9 +343,42 @@ describe('LocalTrackService', () => {
 			await service.switchCamera('cam-2');
 
 			// restartTrack re-acquired the device; mute() returns early on an already-muted track, so
-			// without an explicit stop the camera stays open — light on — behind a UI that says off.
+			// without an explicit stop the camera stays open, light on, behind a UI that says off.
 			expect(video.mediaStreamTrack.readyState).toBe('ended');
 			expect(service.cameraEnabled()).toBeFalse();
+		});
+
+		it('leaves the microphone capture closed when switching while it is off', async () => {
+			mediaIntent.microphoneEnabled.and.returnValue(false);
+			audio.isMuted = true;
+			service.setLocalTracks([asTrack(audio)]);
+
+			await service.switchMicrophone('mic-2');
+
+			expect(audio.mediaStreamTrack.readyState).toBe('ended');
+			expect(service.microphoneEnabled()).toBeFalse();
+		});
+
+		it('opens the requested camera when no camera track exists yet, with the background processor', async () => {
+			const fresh = new FakeLocalTrack(Track.Kind.Video);
+			livekitSdkService.createLocalTracks.and.resolveTo([asTrack(fresh)]);
+			service.setLocalTracks([asTrack(audio)]);
+
+			await service.switchCamera('cam-2');
+
+			const request = livekitSdkService.createLocalTracks.calls.mostRecent().args[0];
+			expect((request.video as VideoCaptureOptions).deviceId).toEqual({ exact: 'cam-2' });
+			expect(request.audio).toBeFalse();
+			expect(applyToVideoTrack).toHaveBeenCalledWith(asTrack(fresh));
+			expect(service.cameraTrack()).toBe(asTrack(fresh) as LocalVideoTrack);
+		});
+
+		it('surfaces a failed restart to the caller', async () => {
+			const failure = new Error('NotReadableError');
+			spyOn(video, 'restartTrack').and.rejectWith(failure);
+			service.setLocalTracks([asTrack(video)]);
+
+			await expectAsync(service.switchCamera('cam-2')).toBeRejectedWith(failure);
 		});
 
 		it('opens the requested microphone when no microphone track exists yet', async () => {
@@ -353,11 +388,12 @@ describe('LocalTrackService', () => {
 
 			await service.switchMicrophone('mic-2');
 
-			// The request has to be shaped as CreateLocalTracksOptions: passing the bare capture
-			// options meant livekit saw neither audio nor video and getUserMedia threw every time.
 			const request = livekitSdkService.createLocalTracks.calls.mostRecent().args[0];
 			expect((request.audio as AudioCaptureOptions).deviceId).toEqual({ exact: 'mic-2' });
-			expect(request.video).toBeUndefined();
+			expect((request.audio as AudioCaptureOptions).echoCancellation).toBe(
+				MICROPHONE_CAPTURE_DEFAULTS.echoCancellation
+			);
+			expect(request.video).toBeFalse();
 			expect(service.microphoneMediaStreamTrack()).toBe(asMediaStreamTrack(fresh.mediaStreamTrack));
 		});
 	});
