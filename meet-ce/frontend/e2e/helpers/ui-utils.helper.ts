@@ -258,12 +258,6 @@ export type GetUserMediaCall = {
 };
 
 /**
- * Wraps `navigator.mediaDevices.getUserMedia` *before any application code runs* so its
- * invocations can be recorded. Must be called before navigating to the app — it registers an init
- * script that re-installs the wrapper on every navigation. Read the tally with
- * {@link getGetUserMediaCallCount} and the recorded constraints with {@link getGetUserMediaCalls}.
- */
-/**
  * Emulates the privacy behaviour every browser applies before media permission is granted:
  * `enumerateDevices()` reports one entry per device kind, but with no label and no id. The suite's
  * Chromium is launched with fake media *and* an auto-accepting permission UI, which exposes the
@@ -311,6 +305,12 @@ export const hideDeviceLabelsUntilPermissionGranted = async (page: Page): Promis
 	});
 };
 
+/**
+ * Wraps `navigator.mediaDevices.getUserMedia` *before any application code runs* so its
+ * invocations can be recorded. Must be called before navigating to the app: it registers an init
+ * script that re-installs the wrapper on every navigation. Read the tally with
+ * {@link getGetUserMediaCallCount} and the recorded constraints with {@link getGetUserMediaCalls}.
+ */
 export const installGetUserMediaCounter = async (page: Page): Promise<void> => {
 	await page.addInitScript(() => {
 		type RecordedCall = Record<string, boolean | number | string | undefined>;

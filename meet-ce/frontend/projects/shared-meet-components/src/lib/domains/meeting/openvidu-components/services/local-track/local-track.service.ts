@@ -35,7 +35,7 @@ export class LocalTrackService {
 	 * Reactive source of truth for the prejoin phase: mutating it re-drives the
 	 * microphone/camera computeds below, which feed LocalMediaStateService and, through it,
 	 * MicActivityService. Always mutate via setLocalTracks/removeLocalTracks/clearLocalTracksReference
-	 * or update() — never push into the array in place, or the signal would not notify.
+	 * or update(); never push into the array in place, or the signal would not notify.
 	 */
 	private readonly _localTracks = signal<LocalTrack[]>([]);
 
@@ -63,7 +63,7 @@ export class LocalTrackService {
 
 	/**
 	 * The MediaStreamTrack the prejoin microphone is capturing, or undefined. Consumers that own
-	 * something derived from the raw capture — MicActivityService clones it — must depend on this and
+	 * something derived from the raw capture (MicActivityService clones it) must depend on this and
 	 * not on a signal of track objects: a device switch swaps the MediaStreamTrack inside the same
 	 * LocalAudioTrack object, so a signal of tracks holds the same value before and after the switch
 	 * and cannot notify, while the raw capture track is a new object per acquisition and does.
@@ -78,7 +78,7 @@ export class LocalTrackService {
 	/**
 	 * Whether the prejoin microphone is on. Derived from the track's `isMuted`/`enabled`, which
 	 * `mute()`/`unmute()` flip in place, so every mutation of the enabled state has to emit a new
-	 * array reference — see {@link setAudioTrackEnabled}.
+	 * array reference; see {@link setAudioTrackEnabled}.
 	 * @internal
 	 */
 	readonly microphoneEnabled: Signal<boolean> = computed(() => this.isTrackEnabled(Track.Kind.Audio));
@@ -160,7 +160,7 @@ export class LocalTrackService {
 		audioDeviceId: string | boolean | undefined = undefined
 	): Promise<LocalTrack[]> {
 		// Default to the participant's current intent (availability-independent). Whether a device is
-		// actually opened — and which one — is resolved by the per-kind logic below; on first visit the
+		// actually opened, and which one, is resolved by the per-kind logic below; on first visit the
 		// device list is still empty, so a default-device request is issued to obtain permission.
 		videoDeviceId ??= this.mediaIntent.cameraEnabled();
 		audioDeviceId ??= this.mediaIntent.microphoneEnabled();
@@ -170,8 +170,8 @@ export class LocalTrackService {
 			video: { ...CAMERA_CAPTURE_DEFAULTS }
 		};
 
-		// Video device. With no camera selected yet — first visit, so the device list is still
-		// unlabelled — the default-device request set above stands: it is what grants permission, and
+		// Video device. With no camera selected yet (first visit, so the device list is still
+		// unlabelled) the default-device request set above stands: it is what grants permission, and
 		// a missing camera simply fails it, which requestTracks absorbs.
 		if (videoDeviceId === true) {
 			const selectedCamera = this.deviceService.cameraSelected();
@@ -207,8 +207,6 @@ export class LocalTrackService {
 			this.log.d('Creating local tracks with options', options);
 			newLocalTracks = await this.requestTracks(options);
 
-			// Whether these devices exist is only knowable once one has been opened, so the attempt
-			// and its outcome are reported: it is what turns the device lists conclusive.
 			await this.deviceService.syncDevicesAfterAcquisition(this.requestedKinds(options), newLocalTracks);
 
 			const videoTrack = newLocalTracks.find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
@@ -245,7 +243,7 @@ export class LocalTrackService {
 	 * Asks for every wanted device in one `getUserMedia`, which costs a single browser permission
 	 * prompt. That request is all-or-nothing, so a camera held by another application would take the
 	 * microphone down with it: only then is each device asked for on its own. A denied permission is
-	 * never retried — the prompt would come back asking for an answer already given.
+	 * never retried: the prompt would come back asking for an answer already given.
 	 * @internal
 	 */
 	private async requestTracks(options: CreateLocalTracksOptions): Promise<LocalTrack[]> {
@@ -306,9 +304,9 @@ export class LocalTrackService {
 	}
 
 	/**
-	 * Turns the prejoin track of the given kind on or off. Enabling a device that was never opened —
-	 * joined with `initial-video-active="false"`, or the stored preference was off, so
-	 * `createLocalTracks()` skipped it — acquires it here.
+	 * Turns the prejoin track of the given kind on or off. Enabling a device that was never opened
+	 * (joined with `initial-video-active="false"`, or the stored preference was off, so
+	 * `createLocalTracks()` skipped it) acquires it here.
 	 *
 	 * That acquisition used to live in the prejoin component's `onVideoEnabledChanged` handler, i.e.
 	 * behind a UI click: an embedded host calling `mediaToggleVideo(true)` reached only the
@@ -351,17 +349,25 @@ export class LocalTrackService {
 	}
 
 	/**
-	 * Enabled state of the prejoin track of the given kind. With no tracks at all — still
-	 * initializing, or the device was unavailable — it falls back to the intent, device availability
-	 * included.
+	 * Whether a device of the given kind is meant to be open: what the participant asked for, and a
+	 * device of that kind being available at all. Both halves are needed: an intent to open a
+	 * camera that does not exist must not read as "camera on".
+	 */
+	private shouldBeOpen(kind: Track.Kind): boolean {
+		return kind === Track.Kind.Audio
+			? this.deviceService.hasAudioDevices() && this.mediaIntent.microphoneEnabled()
+			: this.deviceService.hasVideoDevices() && this.mediaIntent.cameraEnabled();
+	}
+
+	/**
+	 * Enabled state of the prejoin track of the given kind. With no tracks at all (still
+	 * initializing, or the device was unavailable) it falls back to {@link shouldBeOpen}.
 	 */
 	private isTrackEnabled(kind: Track.Kind): boolean {
 		const tracks = this._localTracks();
 
 		if (!this.tracksAcquired && tracks.length === 0) {
-			return kind === Track.Kind.Audio
-				? this.deviceService.isMicrophoneEnabled()
-				: this.deviceService.isCameraEnabled();
+			return this.shouldBeOpen(kind);
 		}
 
 		const track = tracks.find((t) => t.kind === kind);
@@ -383,7 +389,7 @@ export class LocalTrackService {
 	 * Uses `LocalVideoTrack.restartTrack({ deviceId })` on the existing track when available.
 	 * This is the correct LiveKit pattern: `restartTrack` internally calls `setMediaStreamTrack`,
 	 * which automatically calls `processor.restart(newTrack)` if a background processor is
-	 * attached — preserving any active virtual-background effect without extra work.
+	 * attached, preserving any active virtual-background effect without extra work.
 	 *
 	 * Falls back to creating a new track (with processor reattachment) when no track exists.
 	 * @param deviceId - The new video device ID
@@ -391,8 +397,7 @@ export class LocalTrackService {
 	 */
 	async switchCamera(deviceId: string): Promise<void> {
 		const existingTrack = this._localTracks().find((t) => t.kind === Track.Kind.Video) as
-			| LocalVideoTrack
-			| undefined;
+			LocalVideoTrack | undefined;
 		// restartTrack replaces the whole constraint set, so the capture profile has to be restated
 		// or the switched camera would fall back to the browser's default resolution.
 		const options: VideoCaptureOptions = {
@@ -407,9 +412,9 @@ export class LocalTrackService {
 				// if a background processor is attached, preserving the active effect.
 				await existingTrack.restartTrack(options);
 
-				if (!this.deviceService.isCameraEnabled()) {
+				if (!this.shouldBeOpen(Track.Kind.Video)) {
 					// restartTrack re-acquired the device. mute() returns early on an already-muted
-					// track, so the camera would stay open — light on — behind a UI that says it is
+					// track, so the camera would stay open, light on, behind a UI that says it is
 					// off; stop the re-acquired capture explicitly. Unmuting re-acquires it anyway.
 					await existingTrack.mute();
 					existingTrack.mediaStreamTrack.stop();
@@ -433,7 +438,7 @@ export class LocalTrackService {
 			const videoTrack = newVideoTracks.find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
 
 			if (videoTrack) {
-				if (!this.deviceService.isCameraEnabled()) {
+				if (!this.shouldBeOpen(Track.Kind.Video)) {
 					await videoTrack.mute();
 				}
 
@@ -460,8 +465,7 @@ export class LocalTrackService {
 	 */
 	async switchMicrophone(deviceId: string): Promise<void> {
 		const existingTrack = this._localTracks().find((t) => t.kind === Track.Kind.Audio) as
-			| LocalAudioTrack
-			| undefined;
+			LocalAudioTrack | undefined;
 		const options: AudioCaptureOptions = {
 			...MICROPHONE_CAPTURE_DEFAULTS,
 			deviceId: this.toDeviceConstraint(deviceId)
@@ -471,7 +475,7 @@ export class LocalTrackService {
 			try {
 				await existingTrack.restartTrack(options);
 
-				if (!this.deviceService.isMicrophoneEnabled()) {
+				if (!this.shouldBeOpen(Track.Kind.Audio)) {
 					await existingTrack.mute();
 				}
 
@@ -494,7 +498,7 @@ export class LocalTrackService {
 			const audioTrack = newAudioTracks.find((t) => t.kind === Track.Kind.Audio);
 
 			if (audioTrack) {
-				if (!this.deviceService.isMicrophoneEnabled()) {
+				if (!this.shouldBeOpen(Track.Kind.Audio)) {
 					await audioTrack.mute();
 				}
 

@@ -169,7 +169,7 @@ test.describe('Media Devices E2E Tests', () => {
 	});
 
 	// A room configured to start with the microphone and camera off has nothing to open on entry,
-	// so nothing asks for media permission — and a browser withholds device labels until it is
+	// so nothing asks for media permission, and a browser withholds device labels until it is
 	// granted, leaving the device lists empty. Read as "no devices", that empty list used to
 	// disable the very toggles that would have asked, so a first-time visitor could never turn a
 	// device on for the whole meeting.

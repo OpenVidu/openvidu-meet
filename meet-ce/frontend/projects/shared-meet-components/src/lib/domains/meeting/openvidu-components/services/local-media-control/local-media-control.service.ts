@@ -15,7 +15,7 @@ import { LoggerService } from '../../../../../shared/services/logger.service';
  * switching the camera/microphone behaves differently before the Room exists (operate on the
  * temporary {@link LocalTrackService} tracks) versus after connecting (operate on the published
  * {@link ParticipantModel}). This branching used to be copy-pasted across 6 methods of
- * ParticipantService; it now lives in exactly one place — the {@link target} getter — behind a
+ * ParticipantService; it now lives in exactly one place, the {@link target} getter, behind a
  * minimal {@link LocalMediaTarget} Strategy.
  *
  * Only the *write* side branches. Reading whether a device is on is the same question in both phases
@@ -30,13 +30,17 @@ interface LocalMediaTarget {
 
 /**
  * Connected phase: operate on the published participant. A device switch or enable re-acquires the
- * underlying MediaStreamTrack, so every mutation bumps the model's revision — that is what re-drives
+ * underlying MediaStreamTrack, so every mutation bumps the model's revision: that is what re-drives
  * the reactive local-media state and, through it, the mic-activity monitor.
+ *
+ * Enabling a device is also what asks for media permission, so the attempt is reported to
+ * {@link DeviceService} whatever its outcome. The prejoin tracks report their own acquisitions.
  */
 class RoomTarget implements LocalMediaTarget {
 	constructor(
 		private readonly participant: ParticipantModel,
-		private readonly storageSrv: MediaStorageService
+		private readonly storageSrv: MediaStorageService,
+		private readonly deviceService: DeviceService
 	) {}
 
 	async setCameraEnabled(enabled: boolean): Promise<void> {
@@ -51,8 +55,12 @@ class RoomTarget implements LocalMediaTarget {
 			};
 		}
 
-		await this.participant.setCameraEnabled(enabled, options);
-		this.participant.bump();
+		try {
+			await this.participant.setCameraEnabled(enabled, options);
+			this.participant.bump();
+		} finally {
+			if (enabled) await this.deviceService.syncDevicesAfterAcquisition([Track.Kind.Video]);
+		}
 	}
 
 	async setMicrophoneEnabled(enabled: boolean): Promise<void> {
@@ -63,8 +71,12 @@ class RoomTarget implements LocalMediaTarget {
 			options = { deviceId: storageDevice.device };
 		}
 
-		await this.participant.setMicrophoneEnabled(enabled, options);
-		this.participant.bump();
+		try {
+			await this.participant.setMicrophoneEnabled(enabled, options);
+			this.participant.bump();
+		} finally {
+			if (enabled) await this.deviceService.syncDevicesAfterAcquisition([Track.Kind.Audio]);
+		}
 	}
 
 	async switchCamera(deviceId: string): Promise<void> {
@@ -104,7 +116,7 @@ class PrejoinTarget implements LocalMediaTarget {
 /**
  * Facade for local media control: the toggles/switches for camera, microphone and
  * screen share. Extracted from ParticipantService so that service can shrink to the participant
- * registry + connect(). Persistence of the camera/microphone preference lives here — a call to
+ * registry + connect(). Persistence of the camera/microphone preference lives here: a call to
  * setCameraEnabled/setMicrophoneEnabled always represents user/app intent.
  *
  * Screen share is room-only (no prejoin equivalent), so it is handled directly rather than through
@@ -129,7 +141,9 @@ export class LocalMediaControlService {
 	 */
 	private get target(): LocalMediaTarget {
 		const local = this.participantService.localParticipant();
-		return local ? new RoomTarget(local, this.storageSrv) : new PrejoinTarget(this.localTrackService);
+		return local
+			? new RoomTarget(local, this.storageSrv, this.deviceService)
+			: new PrejoinTarget(this.localTrackService);
 	}
 
 	/**
@@ -139,17 +153,7 @@ export class LocalMediaControlService {
 		// Single writer of the camera intent. Recorded BEFORE acting, because opening a camera that was
 		// never acquired reads the intent to decide whether the fresh track starts muted.
 		this.mediaIntent.setCameraEnabled(enabled);
-
-		try {
-			await this.target.setCameraEnabled(enabled);
-		} finally {
-			// Turning a device on is what asks for media permission, and until something has asked, a
-			// device list cannot tell an absent camera from an unauthorized one — so the attempt is
-			// reported either way, success or failure. In the prejoin phase the acquisition reports
-			// itself; this is what covers a participant who joined with the camera off and turns it
-			// on from the toolbar.
-			if (enabled) await this.deviceService.syncDevicesAfterAcquisition([Track.Kind.Video]);
-		}
+		await this.target.setCameraEnabled(enabled);
 	}
 
 	/**
@@ -158,12 +162,7 @@ export class LocalMediaControlService {
 	async setMicrophoneEnabled(enabled: boolean): Promise<void> {
 		// Single writer of the microphone intent; recorded before acting, as above.
 		this.mediaIntent.setMicrophoneEnabled(enabled);
-
-		try {
-			await this.target.setMicrophoneEnabled(enabled);
-		} finally {
-			if (enabled) await this.deviceService.syncDevicesAfterAcquisition([Track.Kind.Audio]);
-		}
+		await this.target.setMicrophoneEnabled(enabled);
 	}
 
 	/**

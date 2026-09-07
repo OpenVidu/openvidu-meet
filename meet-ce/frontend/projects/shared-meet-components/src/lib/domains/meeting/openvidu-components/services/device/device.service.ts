@@ -4,7 +4,6 @@ import type { LocalTrack } from '../livekit';
 import { Track } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { PlatformService } from '../platform/platform.service';
-import { LocalMediaIntentService } from '../local-media-intent/local-media-intent.service';
 import { MediaStorageService } from '../storage/storage.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';
@@ -15,8 +14,8 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
  * Design:
  * - Enumeration-only: this service never calls getUserMedia itself. Media permission is obtained
  *   when the real local tracks are created (prejoin / connect), so there is no throwaway probe
- *   that would acquire and immediately release the camera/microphone. Device labels — and hence a
- *   populated device list — only become available once that permission has been granted.
+ *   that would acquire and immediately release the camera/microphone. Device labels, and hence a
+ *   populated device list, only become available once that permission has been granted.
  * - Angular Signals for reactive state management (cameras, microphones as signals)
  * - Live device detection - automatically refreshes the list when devices are connected/disconnected
  * - LiveKit client integration for modern device enumeration
@@ -28,7 +27,6 @@ export class DeviceService implements OnDestroy {
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly platformSrv = inject(PlatformService);
 	private readonly storageSrv = inject(MediaStorageService);
-	private readonly mediaIntent = inject(LocalMediaIntentService);
 	private readonly livekitSdkService = inject(LivekitSdkService);
 
 	// Reactive device lists with Signals
@@ -37,22 +35,17 @@ export class DeviceService implements OnDestroy {
 	readonly cameraSelected = signal<CustomDevice | undefined>(undefined);
 	readonly microphoneSelected = signal<CustomDevice | undefined>(undefined);
 
-	// Whether a device of each kind has been opened at least once, which is what makes the lists
-	// above conclusive — see {@link syncDevicesAfterAcquisition}.
+	// Whether a device of each kind has been opened at least once; see {@link syncDevicesAfterAcquisition}.
 	private readonly cameraOpenAttempted = signal(false);
 	private readonly microphoneOpenAttempted = signal(false);
 
-	// Whether the participant has a camera/microphone to use. A device only appears in the lists
-	// above once it carries a label, which the browser withholds until media permission has been
-	// granted — and an unlabelled device is indistinguishable from an absent one. So until the kind
-	// has been opened, an empty list is read as "not asked yet" and these stay optimistic: the media
-	// toggles gate on them, and it is the toggle that does the asking.
+	// A device only enters the lists above once it carries a label, which the browser withholds until
+	// media permission is granted, so an empty list means "not asked yet" until a device of that kind
+	// has been opened. The media toggles gate on these, and it is the toggle that does the asking.
 	readonly hasVideoDevices = computed(() => !this.cameraOpenAttempted() || this.cameras().length > 0);
 	readonly hasAudioDevices = computed(() => !this.microphoneOpenAttempted() || this.microphones().length > 0);
 
-	// Internal state
 	private log: ILogger;
-	private initializationPromise: Promise<void> | null = null;
 	private deviceChangeHandler: (() => void) | null = null;
 	private deviceChangeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 	// Browsers commonly fire several `devicechange` events for a single hotplug; coalesce them.
@@ -81,52 +74,15 @@ export class DeviceService implements OnDestroy {
 	}
 
 	/**
-	 * Enumerate media devices and populate the reactive lists.
-	 * Returns a promise that resolves when enumeration is complete.
+	 * Enumerate media devices, populate the reactive lists and start following device hotplugs.
 	 *
-	 * This does NOT request media permission. On first visit (before any track has been created)
-	 * the lists will be empty; callers create the local tracks — which grants permission — and then
-	 * call this again to populate the now-labelled device list.
+	 * This does NOT request media permission: before any track has been created the lists stay
+	 * empty, and {@link syncDevicesAfterAcquisition} populates them once one has.
 	 */
 	async initializeDevices(): Promise<void> {
-		// Prevent multiple simultaneous initializations
-		if (this.initializationPromise) {
-			return this.initializationPromise;
-		}
-
-		this.initializationPromise = this.performInitialization();
-
-		try {
-			await this.initializationPromise;
-		} finally {
-			this.initializationPromise = null;
-		}
-	}
-
-	private async performInitialization(): Promise<void> {
 		this.clear();
-
-		try {
-			const devices = await this.enumerateDevices();
-
-			this.processDevices(devices);
-			this.updateSelectedDevices();
-
-			// Setup live device detection
-			this.setupDeviceChangeDetection();
-
-			if (devices.length === 0) {
-				this.log.w('No media devices found yet (permission may not have been granted)');
-			} else {
-				this.log.d('Media devices initialized', {
-					cameras: this.cameras().length,
-					microphones: this.microphones().length
-				});
-			}
-		} catch (error) {
-			this.log.e('Error initializing devices', error);
-			throw error;
-		}
+		await this.refreshDevices();
+		this.setupDeviceChangeDetection();
 	}
 
 	/**
@@ -209,39 +165,29 @@ export class DeviceService implements OnDestroy {
 	}
 
 	/**
-	 * Update selected devices from storage or use defaults
+	 * Keeps each selection on a listed device: the current one while it is still there, else the
+	 * stored preference, else the first device.
 	 */
 	private updateSelectedDevices(): void {
-		const storedCamera = this.storageSrv.getVideoDevice();
-		const selectedCam = this.findDeviceOrDefault(
-			this.cameras(),
-			storedCamera?.device
+		this.cameraSelected.set(
+			this.pickSelected(this.cameras(), this.cameraSelected(), this.storageSrv.getVideoDevice())
 		);
-
-		if (selectedCam) {
-			this.cameraSelected.set(selectedCam);
-		}
-
-		const storedMic = this.storageSrv.getAudioDevice();
-		const selectedMic = this.findDeviceOrDefault(
-			this.microphones(),
-			storedMic?.device
+		this.microphoneSelected.set(
+			this.pickSelected(this.microphones(), this.microphoneSelected(), this.storageSrv.getAudioDevice())
 		);
-
-		if (selectedMic) {
-			this.microphoneSelected.set(selectedMic);
-		}
 	}
 
-	/**
-	 * Find device by ID or return first available
-	 */
-	private findDeviceOrDefault(devices: CustomDevice[], deviceId?: string): CustomDevice | undefined {
-		if (devices.length === 0) return undefined;
+	private pickSelected(
+		devices: CustomDevice[],
+		...preferred: (CustomDevice | null | undefined)[]
+	): CustomDevice | undefined {
+		for (const candidate of preferred) {
+			const match = devices.find((d) => d.device === candidate?.device);
 
-		return deviceId
-			? devices.find((d) => d.device === deviceId) || devices[0]
-			: devices[0];
+			if (match) return match;
+		}
+
+		return devices[0];
 	}
 
 	/**
@@ -273,12 +219,9 @@ export class DeviceService implements OnDestroy {
 	/**
 	 * Settles the device state after an attempt to open the given kinds, whatever its outcome.
 	 *
-	 * Opening a device is what grants media permission, and only then does the browser expose the
-	 * device labels a populated list needs. So this is the moment the list becomes conclusive —
-	 * populated when the device opened, still empty when it could not — and the moment
+	 * Opening a device is what grants media permission and reveals the device labels, so this is the
+	 * moment the lists become conclusive, populated or still empty, and the moment
 	 * {@link hasVideoDevices}/{@link hasAudioDevices} stop being optimistic about those kinds.
-	 * Without it, a participant who joined with both devices off would be left holding an empty
-	 * list that reads as "no camera, no microphone", and toggles disabled by it.
 	 *
 	 * Best-effort: an enumeration failure is logged, never thrown, so it can neither block joining
 	 * nor make the caller re-acquire the tracks.
@@ -299,7 +242,7 @@ export class DeviceService implements OnDestroy {
 	/**
 	 * Refresh devices (e.g., when a device is plugged/unplugged).
 	 *
-	 * Re-enumerates only — it does not request permission, so it is cheap to call from the
+	 * Re-enumerates only: it does not request permission, so it is cheap to call from the
 	 * `devicechange` handler.
 	 */
 	async refreshDevices(): Promise<void> {
@@ -344,23 +287,6 @@ export class DeviceService implements OnDestroy {
 		// Register listener
 		navigator.mediaDevices.addEventListener('devicechange', this.deviceChangeHandler);
 		this.log.d('Device change detection enabled');
-	}
-
-	/**
-	 * Whether the camera should be opened: the participant's current intent AND a camera being
-	 * present. Combines intent with availability, so it is not a plain signal alias and stays here.
-	 */
-	isCameraEnabled(): boolean {
-		return this.hasVideoDevices() && this.mediaIntent.cameraEnabled();
-	}
-
-	/**
-	 * Whether the microphone should be opened: the participant's current intent AND a microphone
-	 * being present. Combines intent with availability, so it is not a plain signal alias and stays
-	 * here.
-	 */
-	isMicrophoneEnabled(): boolean {
-		return this.hasAudioDevices() && this.mediaIntent.microphoneEnabled();
 	}
 
 	/**
@@ -425,7 +351,6 @@ export class DeviceService implements OnDestroy {
 		this.microphones.set([]);
 		this.cameraSelected.set(undefined);
 		this.microphoneSelected.set(undefined);
-		// The next entry asks again: an empty list must not read as "no devices" on the way in.
 		this.cameraOpenAttempted.set(false);
 		this.microphoneOpenAttempted.set(false);
 	}

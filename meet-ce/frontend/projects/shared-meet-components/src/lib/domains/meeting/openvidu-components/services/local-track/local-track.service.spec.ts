@@ -70,12 +70,8 @@ describe('LocalTrackService', () => {
 	let audio: FakeLocalTrack;
 	let video: FakeLocalTrack;
 	let deviceService: {
-		isCameraEnabled: jasmine.Spy;
-		isMicrophoneEnabled: jasmine.Spy;
 		hasVideoDevices: jasmine.Spy;
 		hasAudioDevices: jasmine.Spy;
-		hasVideoPermission: jasmine.Spy;
-		hasAudioPermission: jasmine.Spy;
 		cameraSelected: jasmine.Spy;
 		microphoneSelected: jasmine.Spy;
 		syncDevicesAfterAcquisition: jasmine.Spy;
@@ -90,12 +86,8 @@ describe('LocalTrackService', () => {
 		audio = new FakeLocalTrack(Track.Kind.Audio);
 		video = new FakeLocalTrack(Track.Kind.Video);
 		deviceService = {
-			isCameraEnabled: jasmine.createSpy('isCameraEnabled').and.returnValue(true),
-			isMicrophoneEnabled: jasmine.createSpy('isMicrophoneEnabled').and.returnValue(true),
 			hasVideoDevices: jasmine.createSpy('hasVideoDevices').and.returnValue(true),
 			hasAudioDevices: jasmine.createSpy('hasAudioDevices').and.returnValue(true),
-			hasVideoPermission: jasmine.createSpy('hasVideoPermission').and.returnValue(true),
-			hasAudioPermission: jasmine.createSpy('hasAudioPermission').and.returnValue(true),
 			cameraSelected: jasmine.createSpy('cameraSelected').and.returnValue(undefined),
 			microphoneSelected: jasmine.createSpy('microphoneSelected').and.returnValue(undefined),
 			syncDevicesAfterAcquisition: jasmine.createSpy('syncDevicesAfterAcquisition').and.resolveTo(undefined)
@@ -134,7 +126,7 @@ describe('LocalTrackService', () => {
 			expect(service.microphoneEnabled()).toBeTrue();
 			expect(service.cameraEnabled()).toBeTrue();
 
-			deviceService.isMicrophoneEnabled.and.returnValue(false);
+			mediaIntent.microphoneEnabled.and.returnValue(false);
 			service.setLocalTracks([]);
 
 			expect(service.microphoneEnabled()).toBeFalse();
@@ -190,7 +182,7 @@ describe('LocalTrackService', () => {
 		});
 
 		it('falls back to the preference again after the tracks are released', () => {
-			deviceService.isMicrophoneEnabled.and.returnValue(false);
+			mediaIntent.microphoneEnabled.and.returnValue(false);
 
 			service.removeLocalTracks();
 
@@ -342,7 +334,7 @@ describe('LocalTrackService', () => {
 		});
 
 		it('leaves the camera device closed when switching while it is off', async () => {
-			deviceService.isCameraEnabled.and.returnValue(false);
+			mediaIntent.cameraEnabled.and.returnValue(false);
 			video.isMuted = true;
 			service.setLocalTracks([asTrack(video)]);
 
