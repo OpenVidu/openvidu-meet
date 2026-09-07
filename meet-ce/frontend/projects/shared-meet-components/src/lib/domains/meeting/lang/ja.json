@@ -11,7 +11,8 @@
 		"ENDING_SOON_BADGE_LABEL": "終了まで",
 		"ENDING_SOON_BADGE_ENDING": "まもなく終了",
 		"E2EE_BADGE_LABEL": "暗号化",
-		"E2EE_BADGE_TOOLTIP": "この会議はエンドツーエンドで暗号化されています"
+		"E2EE_BADGE_TOOLTIP": "この会議はエンドツーエンドで暗号化されています",
+		"RECORDING_BADGE_STARTING": "開始中"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "会議に参加する",

@@ -11,7 +11,8 @@
 		"ENDING_SOON_BADGE_LABEL": "还剩",
 		"ENDING_SOON_BADGE_ENDING": "即将结束",
 		"E2EE_BADGE_LABEL": "已加密",
-		"E2EE_BADGE_TOOLTIP": "此会议采用端到端加密"
+		"E2EE_BADGE_TOOLTIP": "此会议采用端到端加密",
+		"RECORDING_BADGE_STARTING": "正在开始"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "加入会议",

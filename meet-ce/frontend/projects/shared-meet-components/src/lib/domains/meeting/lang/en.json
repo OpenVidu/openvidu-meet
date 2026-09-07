@@ -20,7 +20,8 @@
 		"ENDING_SOON_BADGE_LABEL": "Ends in",
 		"ENDING_SOON_BADGE_ENDING": "Ending now",
 		"E2EE_BADGE_LABEL": "Encrypted",
-		"E2EE_BADGE_TOOLTIP": "This meeting is end-to-end encrypted"
+		"E2EE_BADGE_TOOLTIP": "This meeting is end-to-end encrypted",
+		"RECORDING_BADGE_STARTING": "Starting"
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Mute your audio",

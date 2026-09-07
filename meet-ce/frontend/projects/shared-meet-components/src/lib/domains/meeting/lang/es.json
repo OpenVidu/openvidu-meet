@@ -11,7 +11,8 @@
 		"ENDING_SOON_BADGE_LABEL": "Termina en",
 		"ENDING_SOON_BADGE_ENDING": "Terminando",
 		"E2EE_BADGE_LABEL": "Cifrada",
-		"E2EE_BADGE_TOOLTIP": "Esta reunión está cifrada de extremo a extremo"
+		"E2EE_BADGE_TOOLTIP": "Esta reunión está cifrada de extremo a extremo",
+		"RECORDING_BADGE_STARTING": "Iniciando"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Unirme ahora",

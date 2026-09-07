@@ -11,7 +11,8 @@
 		"ENDING_SOON_BADGE_LABEL": "Endet in",
 		"ENDING_SOON_BADGE_ENDING": "Wird beendet",
 		"E2EE_BADGE_LABEL": "Verschlüsselt",
-		"E2EE_BADGE_TOOLTIP": "Dieses Meeting ist Ende-zu-Ende-verschlüsselt"
+		"E2EE_BADGE_TOOLTIP": "Dieses Meeting ist Ende-zu-Ende-verschlüsselt",
+		"RECORDING_BADGE_STARTING": "Wird gestartet"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Meeting beitreten",

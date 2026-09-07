@@ -50,7 +50,7 @@
 			<!-- Meeting-wide status stays visible even when the host renders no toolbar. -->
 			@if (showStatusRail()) {
 				<div id="status-rail" class="status-rail">
-					@if (isRecording()) {
+					@if (showRecordingChip()) {
 						<div
 							id="recording-tag"
 							class="status-chip recording-chip"
@@ -59,7 +59,11 @@
 						>
 							<span class="recording-dot"></span>
 							<span class="status-chip-value">REC</span>
-							@if (recordingStatus().startedAt; as startedAt) {
+							@if (isRecordingStarting()) {
+								<span class="status-chip-label">
+									{{ 'ROOM.RECORDING_BADGE_STARTING' | translate }}
+								</span>
+							} @else if (recordingStatus().startedAt; as startedAt) {
 								<span class="status-chip-label">{{ startedAt | date: 'H:mm:ss' }}</span>
 							}
 						</div>

@@ -11,7 +11,8 @@
 		"ENDING_SOON_BADGE_LABEL": "Se termine dans",
 		"ENDING_SOON_BADGE_ENDING": "Fin en cours",
 		"E2EE_BADGE_LABEL": "Chiffrée",
-		"E2EE_BADGE_TOOLTIP": "Cette réunion est chiffrée de bout en bout"
+		"E2EE_BADGE_TOOLTIP": "Cette réunion est chiffrée de bout en bout",
+		"RECORDING_BADGE_STARTING": "Démarrage"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Rejoindre la réunion",

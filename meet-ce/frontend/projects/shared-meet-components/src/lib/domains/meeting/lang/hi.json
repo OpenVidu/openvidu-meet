@@ -11,7 +11,8 @@
 		"ENDING_SOON_BADGE_LABEL": "समाप्ति में",
 		"ENDING_SOON_BADGE_ENDING": "समाप्त हो रही है",
 		"E2EE_BADGE_LABEL": "एन्क्रिप्टेड",
-		"E2EE_BADGE_TOOLTIP": "यह मीटिंग एंड-टू-एंड एन्क्रिप्टेड है"
+		"E2EE_BADGE_TOOLTIP": "यह मीटिंग एंड-टू-एंड एन्क्रिप्टेड है",
+		"RECORDING_BADGE_STARTING": "शुरू हो रही है"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "मीटिंग में शामिल हों",

@@ -57,6 +57,19 @@ ov-ending-soon-notice {
 		border-radius: 50%;
 		background-color: var(--ov-recording-color, var(--ov-error-color));
 		flex-shrink: 0;
+		animation: ov-recording-pulse 1.2s ease-in-out infinite;
+	}
+}
+
+@keyframes ov-recording-pulse {
+	50% {
+		opacity: 0.25;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.recording-chip .recording-dot {
+		animation: none;
 	}
 }
 

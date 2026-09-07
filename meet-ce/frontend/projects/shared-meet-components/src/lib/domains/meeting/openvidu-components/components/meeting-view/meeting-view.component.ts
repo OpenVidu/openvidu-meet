@@ -184,6 +184,16 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 
 	protected readonly isRecording = computed(() => this.recordingStatus().status === RecordingState.STARTED);
 
+	/**
+	 * Egress takes a few seconds to come up, and until it does there is no elapsed time to show.
+	 * The chip goes up anyway, so asking for a recording is never met with silence.
+	 */
+	protected readonly isRecordingStarting = computed(
+		() => this.recordingStatus().status === RecordingState.STARTING
+	);
+
+	protected readonly showRecordingChip = computed(() => this.isRecordingStarting() || this.isRecording());
+
 	protected readonly canOpenActivitiesPanel = this.libService.activitiesPanelButtonSignal;
 
 	/**
@@ -199,7 +209,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 
 	protected readonly showStatusRail = computed(
 		() =>
-			this.isRecording() ||
+			this.showRecordingChip() ||
 			this.isEndingSoon() ||
 			this.isE2eeActive() ||
 			this.railHiddenParticipants() !== undefined

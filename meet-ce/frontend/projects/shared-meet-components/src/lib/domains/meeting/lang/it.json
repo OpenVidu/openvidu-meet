@@ -11,7 +11,8 @@
 		"ENDING_SOON_BADGE_LABEL": "Termina in",
 		"ENDING_SOON_BADGE_ENDING": "In chiusura",
 		"E2EE_BADGE_LABEL": "Crittografata",
-		"E2EE_BADGE_TOOLTIP": "Questa riunione è crittografata end-to-end"
+		"E2EE_BADGE_TOOLTIP": "Questa riunione è crittografata end-to-end",
+		"RECORDING_BADGE_STARTING": "Avvio"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Partecipa alla riunione",

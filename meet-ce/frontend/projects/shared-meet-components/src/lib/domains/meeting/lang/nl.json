@@ -11,7 +11,8 @@
 		"ENDING_SOON_BADGE_LABEL": "Eindigt over",
 		"ENDING_SOON_BADGE_ENDING": "Wordt beëindigd",
 		"E2EE_BADGE_LABEL": "Versleuteld",
-		"E2EE_BADGE_TOOLTIP": "Deze meeting is end-to-end versleuteld"
+		"E2EE_BADGE_TOOLTIP": "Deze meeting is end-to-end versleuteld",
+		"RECORDING_BADGE_STARTING": "Wordt gestart"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Deelnemen aan meeting",
