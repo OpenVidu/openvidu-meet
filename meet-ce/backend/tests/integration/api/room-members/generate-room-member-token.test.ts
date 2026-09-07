@@ -1,4 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { TrackSource } from '@livekit/protocol';
 import {
 	MeetParticipantModerationAction,
 	MeetRoomMember,
@@ -37,6 +38,7 @@ import {
 	updateUserRole
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom, setupTestUsers, setupTestUsersForRoom, setupUser } from '../../../helpers/test-scenarios.js';
+import { waitForParticipantMediaState } from '../../../helpers/wait-helpers.js';
 import { RoomData, RoomTestUsers, TestUsers } from '../../../interfaces/scenarios.js';
 
 // Token metadata carries the current permission keys from this phase on (the API accepts the
@@ -836,6 +838,64 @@ describe('Room Members API Tests', () => {
 
 			participant = await livekitService.getParticipant(roomId, participantIdentity!);
 			expect(participant.permission?.canPublishData).toBe(true);
+		});
+
+		it('should revoke the LiveKit camera grant live when mediaPublishVideo is removed mid-meeting', async () => {
+			const createResponse = await createRoomMember(roomId, {
+				name: 'Live Camera Publisher',
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: { mediaPublishVideo: true }
+			});
+			const memberId = createResponse.body.memberId as string;
+
+			const initialToken = await generateRoomMemberToken(roomId, {
+				secret: memberId,
+				joinMeeting: true,
+				participantName: 'Live Camera Publisher'
+			});
+			const claims = tokenService.getClaimsIgnoringExpiration(getRawToken(initialToken));
+			const participantIdentity = claims.sub!;
+			const metadata = JSON.parse(claims.metadata || '{}') as MeetRoomMemberTokenMetadata;
+
+			await joinFakeParticipant(roomId, participantIdentity);
+			await updateParticipantMetadata(roomId, participantIdentity, metadata);
+			await waitForParticipantMediaState(roomId, participantIdentity, { videoActive: true });
+
+			let updateResponse = await updateRoomMember(roomId, memberId, {
+				customPermissions: { mediaPublishVideo: false }
+			});
+			expect(updateResponse.status).toBe(200);
+
+			let refreshResponse = await generateRoomMemberTokenRequest(
+				roomId,
+				{ secret: memberId, joinMeeting: true },
+				undefined,
+				initialToken
+			);
+			expect(refreshResponse.status).toBe(200);
+
+			// The SFU drops the camera the participant was already publishing, without a reconnection
+			await waitForParticipantMediaState(roomId, participantIdentity, { videoActive: false });
+			let participant = await livekitService.getParticipant(roomId, participantIdentity);
+			expect(participant.permission?.canPublish).toBe(true);
+			expect(participant.permission?.canPublishSources).not.toContain(TrackSource.CAMERA);
+			expect(participant.permission?.canPublishSources).toContain(TrackSource.MICROPHONE);
+
+			updateResponse = await updateRoomMember(roomId, memberId, {
+				customPermissions: { mediaPublishVideo: true }
+			});
+			expect(updateResponse.status).toBe(200);
+
+			refreshResponse = await generateRoomMemberTokenRequest(
+				roomId,
+				{ secret: memberId, joinMeeting: true },
+				undefined,
+				initialToken
+			);
+			expect(refreshResponse.status).toBe(200);
+
+			participant = await livekitService.getParticipant(roomId, participantIdentity);
+			expect(participant.permission?.canPublishSources).toContain(TrackSource.CAMERA);
 		});
 
 		it('should fail to regenerate token when participant does not exist in the meeting', async () => {

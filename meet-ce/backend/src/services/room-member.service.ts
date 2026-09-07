@@ -626,10 +626,7 @@ export class RoomMemberService {
 				metadataToApply = JSON.stringify(tokenMetadata);
 			}
 
-			const permission = this.buildLiveParticipantPermission(
-				participant.permission,
-				tokenMetadata.permissions.chatWrite
-			);
+			const permission = this.buildLiveParticipantPermission(participant.permission, tokenMetadata.permissions);
 			await this.livekitService.updateParticipant(roomId, participant.identity, metadataToApply, permission);
 		}
 
@@ -1003,6 +1000,21 @@ export class RoomMemberService {
 	 * @returns The LiveKit permissions for the room member
 	 */
 	protected getLiveKitPermissions(roomId: string, permissions: MeetRoomMemberPermissions): LiveKitPermissions {
+		return {
+			room: roomId,
+			roomJoin: true,
+			canSubscribe: true,
+			canUpdateOwnMetadata: false,
+			...this.buildPublishGrant(permissions)
+		};
+	}
+
+	/**
+	 * The grant fields a participant's Meet permissions decide: media sources and data channel.
+	 */
+	private buildPublishGrant(
+		permissions: MeetRoomMemberPermissions
+	): Pick<LiveKitPermissions, 'canPublish' | 'canPublishSources' | 'canPublishData'> {
 		const canPublishSources: TrackSource[] = [];
 
 		if (permissions.mediaPublishAudio) {
@@ -1018,31 +1030,25 @@ export class RoomMemberService {
 			canPublishSources.push(TrackSource.SCREEN_SHARE_AUDIO);
 		}
 
-		const livekitPermissions: LiveKitPermissions = {
-			room: roomId,
-			roomJoin: true,
+		return {
 			canPublish: permissions.mediaPublishAudio || permissions.mediaPublishVideo || permissions.mediaShareScreen,
 			canPublishSources,
-			canSubscribe: true,
-			canPublishData: permissions.chatWrite,
-			canUpdateOwnMetadata: false
+			canPublishData: permissions.chatWrite
 		};
-		return livekitPermissions;
 	}
 
 	/**
-	 * Builds the LiveKit grant to push when a participant's permissions change mid-meeting.
-	 * `canPublishData` is LiveKit's name for the data-channel grant; Meet's `chatWrite` feeds it.
+	 * Builds the LiveKit grant to push to a participant whose permissions changed mid-meeting.
 	 */
 	protected buildLiveParticipantPermission(
 		currentPermission: ParticipantInfo['permission'],
-		chatWrite: boolean
+		permissions: MeetRoomMemberPermissions
 	): Partial<ParticipantPermission> | undefined {
 		if (!currentPermission) {
 			return undefined;
 		}
 
-		return { ...currentPermission, canPublishData: chatWrite };
+		return { ...currentPermission, ...this.buildPublishGrant(permissions) };
 	}
 
 	/**
@@ -1096,10 +1102,7 @@ export class RoomMemberService {
 				delete metadata.originalPermissions;
 			}
 
-			const permission = this.buildLiveParticipantPermission(
-				participant.permission,
-				metadata.permissions.chatWrite
-			);
+			const permission = this.buildLiveParticipantPermission(participant.permission, metadata.permissions);
 			const updatedParticipant = await this.livekitService.updateParticipant(
 				roomId,
 				participantIdentity,
