@@ -8,7 +8,6 @@ import type {
 	Participant,
 	RemoteParticipant
 } from '../livekit';
-import { DeviceService } from '../device/device.service';
 import { ConnectionQuality, Track } from '../livekit';
 import { LocalMediaIntentService } from '../local-media-intent/local-media-intent.service';
 import { LocalTrackService } from '../local-track/local-track.service';
@@ -24,7 +23,6 @@ export class ParticipantService {
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
 	private readonly meetStorageService = inject(MeetStorageService);
 	private readonly mediaIntent = inject(LocalMediaIntentService);
-	private readonly deviceSrv = inject(DeviceService);
 	private readonly e2eeService = inject(E2eeService);
 	private readonly log = inject(LoggerService).get('ParticipantService');
 
@@ -99,10 +97,6 @@ export class ParticipantService {
 
 			if (wantCamera || wantMicrophone) {
 				prejoinTracks = await this.localTrackService.createLocalTracks(wantCamera, wantMicrophone);
-
-				// Permission may have just been granted → populate the device list and align the
-				// selection with the opened devices so the in-room selectors work.
-				await this.deviceSrv.syncDevicesAfterTrackCreation(prejoinTracks);
 			}
 		}
 

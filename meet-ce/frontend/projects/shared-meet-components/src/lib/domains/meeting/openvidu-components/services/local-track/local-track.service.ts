@@ -170,17 +170,16 @@ export class LocalTrackService {
 			video: { ...CAMERA_CAPTURE_DEFAULTS }
 		};
 
-		// Video device. An empty device list means either "permission not granted yet" — labels, and
-		// therefore the list, only exist once it is — or "no camera at all", and the two are not
-		// distinguishable from here. Both are served by keeping the default-device request set above:
-		// on a first visit it is what grants permission, and a missing camera simply fails that
-		// request, which requestTracks absorbs.
+		// Video device. With no camera selected yet — first visit, so the device list is still
+		// unlabelled — the default-device request set above stands: it is what grants permission, and
+		// a missing camera simply fails it, which requestTracks absorbs.
 		if (videoDeviceId === true) {
-			if (this.deviceService.hasVideoDevices()) {
-				const selectedCamera = this.deviceService.cameraSelected();
+			const selectedCamera = this.deviceService.cameraSelected();
+
+			if (selectedCamera) {
 				options.video = {
 					...CAMERA_CAPTURE_DEFAULTS,
-					deviceId: this.toDeviceConstraint(selectedCamera?.device)
+					deviceId: this.toDeviceConstraint(selectedCamera.device)
 				} as VideoCaptureOptions;
 			}
 		} else if (videoDeviceId === false) {
@@ -189,11 +188,12 @@ export class LocalTrackService {
 			(options.video as VideoCaptureOptions).deviceId = this.toDeviceConstraint(videoDeviceId);
 		}
 
-		// Audio device. See the video branch for why an empty device list keeps the default request.
+		// Audio device. See the video branch for why no selection keeps the default request.
 		if (audioDeviceId === true) {
-			if (this.deviceService.hasAudioDevices()) {
-				const selectedMic = this.deviceService.microphoneSelected();
-				(options.audio as AudioCaptureOptions).deviceId = this.toDeviceConstraint(selectedMic?.device);
+			const selectedMic = this.deviceService.microphoneSelected();
+
+			if (selectedMic) {
+				(options.audio as AudioCaptureOptions).deviceId = this.toDeviceConstraint(selectedMic.device);
 			}
 		} else if (audioDeviceId === false) {
 			options.audio = false;
@@ -206,6 +206,10 @@ export class LocalTrackService {
 		if (options.audio || options.video) {
 			this.log.d('Creating local tracks with options', options);
 			newLocalTracks = await this.requestTracks(options);
+
+			// Whether these devices exist is only knowable once one has been opened, so the attempt
+			// and its outcome are reported: it is what turns the device lists conclusive.
+			await this.deviceService.syncDevicesAfterAcquisition(this.requestedKinds(options), newLocalTracks);
 
 			const videoTrack = newLocalTracks.find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
 
@@ -225,6 +229,16 @@ export class LocalTrackService {
 		}
 
 		return newLocalTracks;
+	}
+
+	private requestedKinds(options: CreateLocalTracksOptions): Track.Kind[] {
+		const kinds: Track.Kind[] = [];
+
+		if (options.video) kinds.push(Track.Kind.Video);
+
+		if (options.audio) kinds.push(Track.Kind.Audio);
+
+		return kinds;
 	}
 
 	/**

@@ -78,6 +78,7 @@ describe('LocalTrackService', () => {
 		hasAudioPermission: jasmine.Spy;
 		cameraSelected: jasmine.Spy;
 		microphoneSelected: jasmine.Spy;
+		syncDevicesAfterAcquisition: jasmine.Spy;
 	};
 	let mediaIntent: { cameraEnabled: jasmine.Spy; microphoneEnabled: jasmine.Spy };
 	let livekitSdkService: jasmine.SpyObj<LivekitSdkService>;
@@ -96,7 +97,8 @@ describe('LocalTrackService', () => {
 			hasVideoPermission: jasmine.createSpy('hasVideoPermission').and.returnValue(true),
 			hasAudioPermission: jasmine.createSpy('hasAudioPermission').and.returnValue(true),
 			cameraSelected: jasmine.createSpy('cameraSelected').and.returnValue(undefined),
-			microphoneSelected: jasmine.createSpy('microphoneSelected').and.returnValue(undefined)
+			microphoneSelected: jasmine.createSpy('microphoneSelected').and.returnValue(undefined),
+			syncDevicesAfterAcquisition: jasmine.createSpy('syncDevicesAfterAcquisition').and.resolveTo(undefined)
 		};
 		mediaIntent = {
 			cameraEnabled: jasmine.createSpy('cameraEnabled').and.returnValue(true),

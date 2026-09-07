@@ -263,6 +263,54 @@ export type GetUserMediaCall = {
  * script that re-installs the wrapper on every navigation. Read the tally with
  * {@link getGetUserMediaCallCount} and the recorded constraints with {@link getGetUserMediaCalls}.
  */
+/**
+ * Emulates the privacy behaviour every browser applies before media permission is granted:
+ * `enumerateDevices()` reports one entry per device kind, but with no label and no id. The suite's
+ * Chromium is launched with fake media *and* an auto-accepting permission UI, which exposes the
+ * labels from the first page load and so can only ever act out a returning visitor.
+ *
+ * `getUserMedia` keeps working, and the first successful call reveals the real labels, exactly as
+ * granting the permission does.
+ */
+export const hideDeviceLabelsUntilPermissionGranted = async (page: Page): Promise<void> => {
+	await page.addInitScript(() => {
+		const mediaDevices = navigator.mediaDevices;
+
+		if (!mediaDevices?.enumerateDevices || !mediaDevices.getUserMedia) {
+			return;
+		}
+
+		const enumerate = mediaDevices.enumerateDevices.bind(mediaDevices);
+		const getUserMedia = mediaDevices.getUserMedia.bind(mediaDevices);
+		let granted = false;
+
+		mediaDevices.getUserMedia = async (constraints?: MediaStreamConstraints) => {
+			const stream = await getUserMedia(constraints);
+			granted = true;
+			return stream;
+		};
+
+		mediaDevices.enumerateDevices = async () => {
+			const devices = await enumerate();
+
+			if (granted) return devices;
+
+			return devices.map(
+				(device) =>
+					({
+						deviceId: '',
+						groupId: '',
+						kind: device.kind,
+						label: '',
+						toJSON() {
+							return { deviceId: '', groupId: '', kind: device.kind, label: '' };
+						}
+					}) as MediaDeviceInfo
+			);
+		};
+	});
+};
+
 export const installGetUserMediaCounter = async (page: Page): Promise<void> => {
 	await page.addInitScript(() => {
 		type RecordedCall = Record<string, boolean | number | string | undefined>;

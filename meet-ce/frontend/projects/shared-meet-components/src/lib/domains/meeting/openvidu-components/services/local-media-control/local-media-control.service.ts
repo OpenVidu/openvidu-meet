@@ -1,8 +1,9 @@
 import { Service, inject } from '@angular/core';
 import { ParticipantModel } from '../../models/participant.model';
+import { DeviceService } from '../device/device.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
 import type { AudioCaptureOptions, ScreenShareCaptureOptions, VideoCaptureOptions } from '../livekit';
-import { VideoPresets } from '../livekit';
+import { Track, VideoPresets } from '../livekit';
 import { LocalMediaIntentService } from '../local-media-intent/local-media-intent.service';
 import { LocalTrackService } from '../local-track/local-track.service';
 import { ParticipantService } from '../participant/participant.service';
@@ -116,6 +117,7 @@ export class LocalMediaControlService {
 	private readonly localTrackService = inject(LocalTrackService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly storageSrv = inject(MediaStorageService);
+	private readonly deviceService = inject(DeviceService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
 	private readonly mediaIntent = inject(LocalMediaIntentService);
 	private readonly log = inject(LoggerService).get('LocalMediaControlService');
@@ -137,7 +139,17 @@ export class LocalMediaControlService {
 		// Single writer of the camera intent. Recorded BEFORE acting, because opening a camera that was
 		// never acquired reads the intent to decide whether the fresh track starts muted.
 		this.mediaIntent.setCameraEnabled(enabled);
-		await this.target.setCameraEnabled(enabled);
+
+		try {
+			await this.target.setCameraEnabled(enabled);
+		} finally {
+			// Turning a device on is what asks for media permission, and until something has asked, a
+			// device list cannot tell an absent camera from an unauthorized one — so the attempt is
+			// reported either way, success or failure. In the prejoin phase the acquisition reports
+			// itself; this is what covers a participant who joined with the camera off and turns it
+			// on from the toolbar.
+			if (enabled) await this.deviceService.syncDevicesAfterAcquisition([Track.Kind.Video]);
+		}
 	}
 
 	/**
@@ -146,7 +158,12 @@ export class LocalMediaControlService {
 	async setMicrophoneEnabled(enabled: boolean): Promise<void> {
 		// Single writer of the microphone intent; recorded before acting, as above.
 		this.mediaIntent.setMicrophoneEnabled(enabled);
-		await this.target.setMicrophoneEnabled(enabled);
+
+		try {
+			await this.target.setMicrophoneEnabled(enabled);
+		} finally {
+			if (enabled) await this.deviceService.syncDevicesAfterAcquisition([Track.Kind.Audio]);
+		}
 	}
 
 	/**

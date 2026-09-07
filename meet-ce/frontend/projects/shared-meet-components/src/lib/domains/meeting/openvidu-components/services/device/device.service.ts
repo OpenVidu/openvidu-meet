@@ -37,12 +37,18 @@ export class DeviceService implements OnDestroy {
 	readonly cameraSelected = signal<CustomDevice | undefined>(undefined);
 	readonly microphoneSelected = signal<CustomDevice | undefined>(undefined);
 
-	// Computed availability/permission, derived directly from the device lists. A device only
-	// appears in these lists once it carries a label, which the browser exposes only after media
-	// permission has been granted — so "has devices" and "permission granted" collapse to the same
-	// check, and there is no separate state to keep in sync.
-	readonly hasVideoDevices = computed(() => this.cameras().length > 0);
-	readonly hasAudioDevices = computed(() => this.microphones().length > 0);
+	// Whether a device of each kind has been opened at least once, which is what makes the lists
+	// above conclusive — see {@link syncDevicesAfterAcquisition}.
+	private readonly cameraOpenAttempted = signal(false);
+	private readonly microphoneOpenAttempted = signal(false);
+
+	// Whether the participant has a camera/microphone to use. A device only appears in the lists
+	// above once it carries a label, which the browser withholds until media permission has been
+	// granted — and an unlabelled device is indistinguishable from an absent one. So until the kind
+	// has been opened, an empty list is read as "not asked yet" and these stay optimistic: the media
+	// toggles gate on them, and it is the toggle that does the asking.
+	readonly hasVideoDevices = computed(() => !this.cameraOpenAttempted() || this.cameras().length > 0);
+	readonly hasAudioDevices = computed(() => !this.microphoneOpenAttempted() || this.microphones().length > 0);
 
 	// Internal state
 	private log: ILogger;
@@ -265,23 +271,28 @@ export class DeviceService implements OnDestroy {
 	}
 
 	/**
-	 * Populate the device list right after the initial local tracks were created — the call that
-	 * grants media permission on first visit — then align the current selection with the devices the
-	 * browser actually opened.
+	 * Settles the device state after an attempt to open the given kinds, whatever its outcome.
 	 *
-	 * Re-enumeration is skipped when the list is already populated (returning users enumerate up
-	 * front), and the whole operation is best-effort: an enumeration failure is logged, never thrown,
-	 * so it can neither block joining nor cause the caller to re-acquire the tracks.
+	 * Opening a device is what grants media permission, and only then does the browser expose the
+	 * device labels a populated list needs. So this is the moment the list becomes conclusive —
+	 * populated when the device opened, still empty when it could not — and the moment
+	 * {@link hasVideoDevices}/{@link hasAudioDevices} stop being optimistic about those kinds.
+	 * Without it, a participant who joined with both devices off would be left holding an empty
+	 * list that reads as "no camera, no microphone", and toggles disabled by it.
+	 *
+	 * Best-effort: an enumeration failure is logged, never thrown, so it can neither block joining
+	 * nor make the caller re-acquire the tracks.
 	 */
-	async syncDevicesAfterTrackCreation(tracks: LocalTrack[]): Promise<void> {
-		try {
-			if (this.cameras().length === 0 && this.microphones().length === 0) {
-				await this.initializeDevices();
-			}
+	async syncDevicesAfterAcquisition(kinds: Track.Kind[], tracks: LocalTrack[] = []): Promise<void> {
+		if (kinds.includes(Track.Kind.Video)) this.cameraOpenAttempted.set(true);
 
+		if (kinds.includes(Track.Kind.Audio)) this.microphoneOpenAttempted.set(true);
+
+		try {
+			await this.refreshDevices();
 			this.syncSelectedFromTracks(tracks);
 		} catch (error) {
-			this.log.w('Failed to enumerate devices after track creation', error);
+			this.log.w('Failed to enumerate devices after opening a device', error);
 		}
 	}
 
@@ -414,5 +425,8 @@ export class DeviceService implements OnDestroy {
 		this.microphones.set([]);
 		this.cameraSelected.set(undefined);
 		this.microphoneSelected.set(undefined);
+		// The next entry asks again: an empty list must not read as "no devices" on the way in.
+		this.cameraOpenAttempted.set(false);
+		this.microphoneOpenAttempted.set(false);
 	}
 }

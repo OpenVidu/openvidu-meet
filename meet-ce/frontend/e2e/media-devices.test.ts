@@ -28,6 +28,7 @@ import {
 	getGetUserMediaCallCount,
 	getGetUserMediaCalls,
 	getGetUserMediaCallsFor,
+	hideDeviceLabelsUntilPermissionGranted,
 	installGetUserMediaCounter
 } from './helpers/ui-utils.helper';
 
@@ -164,6 +165,58 @@ test.describe('Media Devices E2E Tests', () => {
 			await noMediaPage.locator('#audio-opt').click();
 			await expect(noMediaPage.locator('ov-audio-devices-select')).toBeVisible();
 			await expect(noMediaPage.locator('#no-audio-device-message')).toBeVisible();
+		});
+	});
+
+	// A room configured to start with the microphone and camera off has nothing to open on entry,
+	// so nothing asks for media permission — and a browser withholds device labels until it is
+	// granted, leaving the device lists empty. Read as "no devices", that empty list used to
+	// disable the very toggles that would have asked, so a first-time visitor could never turn a
+	// device on for the whole meeting.
+	test.describe('First visit to a room that starts with media off', () => {
+		let mediaOffAccessUrl: string;
+
+		test.beforeEach(async ({ page }) => {
+			const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl({
+				config: { initialAudioActive: false, initialVideoActive: false }
+			});
+			createdRoomIds.push(room.roomId);
+			mediaOffAccessUrl = url;
+
+			await hideDeviceLabelsUntilPermissionGranted(page);
+		});
+
+		test('offers working camera and microphone toggles in the prejoin', async ({ page }) => {
+			await openPrejoin(page, mediaOffAccessUrl);
+
+			await expect(page.locator('#no-video-device-message')).toHaveCount(0);
+			await expect(page.locator('#no-audio-device-message')).toHaveCount(0);
+			await expect(page.locator('#camera-button')).toBeEnabled();
+			await expect(page.locator('#microphone-button')).toBeEnabled();
+
+			// Both start off: that is what the room asked for.
+			expect(await isPrejoinVideoEnabled(page)).toBe(false);
+			expect(await isPrejoinAudioEnabled(page)).toBe(false);
+
+			// Turning one on is what asks for permission, and the labelled device list follows.
+			await ensurePrejoinVideoState(page, true);
+			await page.locator('#video-dropdown').click();
+			await assertHasVideoDeviceOption(page);
+		});
+
+		test('keeps the media buttons usable in the meeting after joining with both devices off', async ({ page }) => {
+			await openMeeting(page, mediaOffAccessUrl, { skipPrejoinMediaCheck: true });
+
+			const cameraButton = page.locator('#camera-btn');
+			const microphoneButton = page.locator('#mic-btn');
+			await expect(cameraButton).toBeEnabled();
+			await expect(microphoneButton).toBeEnabled();
+
+			await cameraButton.click();
+			await expect(page.locator('#videocam')).toBeVisible();
+
+			await microphoneButton.click();
+			await expect(page.locator('#mic')).toBeVisible();
 		});
 	});
 

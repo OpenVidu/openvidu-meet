@@ -226,10 +226,6 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 				const tracks = await this.localTrackService.createLocalTracks();
 				this.localTrackService.setLocalTracks(tracks);
 
-				// Creating the tracks above is what grants media permission on first visit; only then
-				// are device labels available. Populate the list and align the selection accordingly.
-				await this.deviceSrv.syncDevicesAfterTrackCreation(tracks);
-
 				// The mic-activity monitor starts automatically: setLocalTracks above populated the
 				// local-media state, whose signal the MicActivityService effect follows.
 
