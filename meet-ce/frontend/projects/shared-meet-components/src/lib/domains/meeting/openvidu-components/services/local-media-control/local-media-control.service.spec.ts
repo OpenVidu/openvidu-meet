@@ -8,7 +8,8 @@ import { Track } from '../livekit';
 import { LocalMediaIntentService } from '../local-media-intent/local-media-intent.service';
 import { LocalTrackService } from '../local-track/local-track.service';
 import { ParticipantService } from '../participant/participant.service';
-import { MediaStorageService } from '../storage/storage.service';
+import { CAMERA_CAPTURE_DEFAULTS, MICROPHONE_CAPTURE_DEFAULTS } from '../../models/media-capture.model';
+import { CustomDevice } from '../../models/device.model';
 import { LocalMediaControlService } from './local-media-control.service';
 
 class LoggerServiceStub {
@@ -22,7 +23,10 @@ describe('LocalMediaControlService', () => {
 	let localParticipant: WritableSignal<ParticipantModel | undefined>;
 	let participant: jasmine.SpyObj<ParticipantModel>;
 	let localTrackService: jasmine.SpyObj<LocalTrackService>;
-	let deviceService: jasmine.SpyObj<DeviceService>;
+	let deviceService: jasmine.SpyObj<DeviceService> & {
+		cameraSelected: WritableSignal<CustomDevice | undefined>;
+		microphoneSelected: WritableSignal<CustomDevice | undefined>;
+	};
 	let mediaIntent: jasmine.SpyObj<LocalMediaIntentService>;
 
 	beforeEach(() => {
@@ -40,7 +44,13 @@ describe('LocalMediaControlService', () => {
 		]);
 		localTrackService.setVideoTrackEnabled.and.resolveTo();
 		localTrackService.setAudioTrackEnabled.and.resolveTo();
-		deviceService = jasmine.createSpyObj<DeviceService>('DeviceService', ['syncDevicesAfterAcquisition']);
+		deviceService = Object.assign(
+			jasmine.createSpyObj<DeviceService>('DeviceService', ['syncDevicesAfterAcquisition']),
+			{
+				cameraSelected: signal<CustomDevice | undefined>(undefined),
+				microphoneSelected: signal<CustomDevice | undefined>(undefined)
+			}
+		);
 		deviceService.syncDevicesAfterAcquisition.and.resolveTo();
 		mediaIntent = jasmine.createSpyObj<LocalMediaIntentService>('LocalMediaIntentService', [
 			'setCameraEnabled',
@@ -54,10 +64,6 @@ describe('LocalMediaControlService', () => {
 				{ provide: LoggerService, useClass: LoggerServiceStub },
 				{ provide: LocalTrackService, useValue: localTrackService },
 				{ provide: ParticipantService, useValue: { localParticipant } as unknown as ParticipantService },
-				{
-					provide: MediaStorageService,
-					useValue: { getVideoDevice: () => undefined, getAudioDevice: () => undefined }
-				},
 				{ provide: DeviceService, useValue: deviceService },
 				{ provide: StreamLayoutStateService, useValue: {} },
 				{ provide: LocalMediaIntentService, useValue: mediaIntent }
@@ -88,11 +94,33 @@ describe('LocalMediaControlService', () => {
 			localParticipant.set(participant);
 		});
 
+		it('opens the default camera with the capture profile while none is selected', async () => {
+			await service.setCameraEnabled(true);
+
+			expect(participant.setCameraEnabled).toHaveBeenCalledWith(true, CAMERA_CAPTURE_DEFAULTS);
+			expect(participant.bump).toHaveBeenCalled();
+		});
+
+		it('opens the selected devices, the same ones the prejoin would', async () => {
+			deviceService.cameraSelected.set({ label: 'Webcam', device: 'cam-2' });
+			deviceService.microphoneSelected.set({ label: 'Headset', device: 'mic-2' });
+
+			await service.setCameraEnabled(true);
+			await service.setMicrophoneEnabled(true);
+
+			expect(participant.setCameraEnabled).toHaveBeenCalledWith(true, {
+				...CAMERA_CAPTURE_DEFAULTS,
+				deviceId: { exact: 'cam-2' }
+			});
+			expect(participant.setMicrophoneEnabled).toHaveBeenCalledWith(true, {
+				...MICROPHONE_CAPTURE_DEFAULTS,
+				deviceId: { exact: 'mic-2' }
+			});
+		});
+
 		it('reports the camera acquisition after enabling it', async () => {
 			await service.setCameraEnabled(true);
 
-			expect(participant.setCameraEnabled).toHaveBeenCalledWith(true, undefined);
-			expect(participant.bump).toHaveBeenCalled();
 			expect(deviceService.syncDevicesAfterAcquisition).toHaveBeenCalledOnceWith([Track.Kind.Video]);
 		});
 

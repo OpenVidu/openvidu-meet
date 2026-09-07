@@ -1,13 +1,13 @@
 import { Service, inject } from '@angular/core';
+import { cameraCaptureOptions, microphoneCaptureOptions } from '../../models/media-capture.model';
 import { ParticipantModel } from '../../models/participant.model';
 import { DeviceService } from '../device/device.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
-import type { AudioCaptureOptions, ScreenShareCaptureOptions, VideoCaptureOptions } from '../livekit';
+import type { ScreenShareCaptureOptions } from '../livekit';
 import { Track, VideoPresets } from '../livekit';
 import { LocalMediaIntentService } from '../local-media-intent/local-media-intent.service';
 import { LocalTrackService } from '../local-track/local-track.service';
 import { ParticipantService } from '../participant/participant.service';
-import { MediaStorageService } from '../storage/storage.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 
 /**
@@ -33,27 +33,18 @@ interface LocalMediaTarget {
  * underlying MediaStreamTrack, so every mutation bumps the model's revision: that is what re-drives
  * the reactive local-media state and, through it, the mic-activity monitor.
  *
- * Enabling a device is also what asks for media permission, so the attempt is reported to
- * {@link DeviceService} whatever its outcome. The prejoin tracks report their own acquisitions.
+ * Enabling a device opens the one selected in {@link DeviceService}, exactly as the prejoin does.
+ * It is also what asks for media permission, so the attempt is reported to {@link DeviceService}
+ * whatever its outcome; the prejoin tracks report their own acquisitions.
  */
 class RoomTarget implements LocalMediaTarget {
 	constructor(
 		private readonly participant: ParticipantModel,
-		private readonly storageSrv: MediaStorageService,
 		private readonly deviceService: DeviceService
 	) {}
 
 	async setCameraEnabled(enabled: boolean): Promise<void> {
-		const storageDevice = this.storageSrv.getVideoDevice();
-		let options: VideoCaptureOptions | undefined;
-
-		if (storageDevice) {
-			options = {
-				deviceId: storageDevice.device,
-				facingMode: 'user',
-				resolution: VideoPresets.h720.resolution
-			};
-		}
+		const options = cameraCaptureOptions(this.deviceService.cameraSelected()?.device);
 
 		try {
 			await this.participant.setCameraEnabled(enabled, options);
@@ -64,12 +55,7 @@ class RoomTarget implements LocalMediaTarget {
 	}
 
 	async setMicrophoneEnabled(enabled: boolean): Promise<void> {
-		const storageDevice = this.storageSrv.getAudioDevice();
-		let options: AudioCaptureOptions | undefined;
-
-		if (storageDevice) {
-			options = { deviceId: storageDevice.device };
-		}
+		const options = microphoneCaptureOptions(this.deviceService.microphoneSelected()?.device);
 
 		try {
 			await this.participant.setMicrophoneEnabled(enabled, options);
@@ -116,8 +102,8 @@ class PrejoinTarget implements LocalMediaTarget {
 /**
  * Facade for local media control: the toggles/switches for camera, microphone and
  * screen share. Extracted from ParticipantService so that service can shrink to the participant
- * registry + connect(). Persistence of the camera/microphone preference lives here: a call to
- * setCameraEnabled/setMicrophoneEnabled always represents user/app intent.
+ * registry + connect(). A call to setCameraEnabled/setMicrophoneEnabled always represents user/app
+ * intent, which is recorded here.
  *
  * Screen share is room-only (no prejoin equivalent), so it is handled directly rather than through
  * the {@link LocalMediaTarget} Strategy.
@@ -128,7 +114,6 @@ class PrejoinTarget implements LocalMediaTarget {
 export class LocalMediaControlService {
 	private readonly localTrackService = inject(LocalTrackService);
 	private readonly participantService = inject(ParticipantService);
-	private readonly storageSrv = inject(MediaStorageService);
 	private readonly deviceService = inject(DeviceService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
 	private readonly mediaIntent = inject(LocalMediaIntentService);
@@ -141,9 +126,7 @@ export class LocalMediaControlService {
 	 */
 	private get target(): LocalMediaTarget {
 		const local = this.participantService.localParticipant();
-		return local
-			? new RoomTarget(local, this.storageSrv, this.deviceService)
-			: new PrejoinTarget(this.localTrackService);
+		return local ? new RoomTarget(local, this.deviceService) : new PrejoinTarget(this.localTrackService);
 	}
 
 	/**

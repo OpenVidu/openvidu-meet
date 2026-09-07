@@ -1,15 +1,14 @@
 import { computed, inject, Service, Signal, signal } from '@angular/core';
-import { CAMERA_CAPTURE_DEFAULTS, MICROPHONE_CAPTURE_DEFAULTS } from '../../models/media-capture.model';
+import { cameraCaptureOptions, microphoneCaptureOptions } from '../../models/media-capture.model';
+import { CustomDevice } from '../../models/device.model';
 import { DeviceService } from '../device/device.service';
 import {
-	AudioCaptureOptions,
 	CreateLocalTracksOptions,
 	LocalAudioTrack,
 	LocalTrack,
 	LocalVideoTrack,
 	MediaDeviceFailure,
-	Track,
-	VideoCaptureOptions
+	Track
 } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { LocalMediaIntentService } from '../local-media-intent/local-media-intent.service';
@@ -148,58 +147,26 @@ export class LocalTrackService {
 	}
 
 	/**
-	 * Creates local tracks for video and audio devices.
+	 * Creates the local camera and microphone tracks.
 	 *
-	 * @param videoDeviceId - The ID of the video device to use. If not provided, the default video device will be used.
-	 * @param audioDeviceId - The ID of the audio device to use. If not provided, the default audio device will be used.
-	 * @returns A promise that resolves to an array of LocalTrack objects representing the created tracks.
+	 * Each kind takes a device id, `true` for the selected device (the browser's default when none
+	 * is selected yet: on a first visit the device list is still unlabelled, and this very request is
+	 * what grants the permission that labels it), or `false` to leave the device closed. Omitted, a
+	 * kind follows the participant's intent.
 	 * @internal
 	 */
 	async createLocalTracks(
-		videoDeviceId: string | boolean | undefined = undefined,
-		audioDeviceId: string | boolean | undefined = undefined
+		videoDevice: string | boolean = this.mediaIntent.cameraEnabled(),
+		audioDevice: string | boolean = this.mediaIntent.microphoneEnabled()
 	): Promise<LocalTrack[]> {
-		// Default to the participant's current intent (availability-independent). Whether a device is
-		// actually opened, and which one, is resolved by the per-kind logic below; on first visit the
-		// device list is still empty, so a default-device request is issued to obtain permission.
-		videoDeviceId ??= this.mediaIntent.cameraEnabled();
-		audioDeviceId ??= this.mediaIntent.microphoneEnabled();
-
 		const options: CreateLocalTracksOptions = {
-			audio: { ...MICROPHONE_CAPTURE_DEFAULTS },
-			video: { ...CAMERA_CAPTURE_DEFAULTS }
+			video:
+				videoDevice !== false &&
+				cameraCaptureOptions(this.deviceId(videoDevice, this.deviceService.cameraSelected())),
+			audio:
+				audioDevice !== false &&
+				microphoneCaptureOptions(this.deviceId(audioDevice, this.deviceService.microphoneSelected()))
 		};
-
-		// Video device. With no camera selected yet (first visit, so the device list is still
-		// unlabelled) the default-device request set above stands: it is what grants permission, and
-		// a missing camera simply fails it, which requestTracks absorbs.
-		if (videoDeviceId === true) {
-			const selectedCamera = this.deviceService.cameraSelected();
-
-			if (selectedCamera) {
-				options.video = {
-					...CAMERA_CAPTURE_DEFAULTS,
-					deviceId: this.toDeviceConstraint(selectedCamera.device)
-				} as VideoCaptureOptions;
-			}
-		} else if (videoDeviceId === false) {
-			options.video = false;
-		} else {
-			(options.video as VideoCaptureOptions).deviceId = this.toDeviceConstraint(videoDeviceId);
-		}
-
-		// Audio device. See the video branch for why no selection keeps the default request.
-		if (audioDeviceId === true) {
-			const selectedMic = this.deviceService.microphoneSelected();
-
-			if (selectedMic) {
-				(options.audio as AudioCaptureOptions).deviceId = this.toDeviceConstraint(selectedMic.device);
-			}
-		} else if (audioDeviceId === false) {
-			options.audio = false;
-		} else {
-			(options.audio as AudioCaptureOptions).deviceId = this.toDeviceConstraint(audioDeviceId);
-		}
 
 		let newLocalTracks: LocalTrack[] = [];
 
@@ -227,6 +194,10 @@ export class LocalTrackService {
 		}
 
 		return newLocalTracks;
+	}
+
+	private deviceId(device: string | true, selected: CustomDevice | undefined): string | undefined {
+		return device === true ? selected?.device : device;
 	}
 
 	private requestedKinds(options: CreateLocalTracksOptions): Track.Kind[] {
@@ -275,14 +246,6 @@ export class LocalTrackService {
 		}
 
 		return tracks;
-	}
-
-	private toDeviceConstraint(deviceId?: string): ConstrainDOMString {
-		if (!deviceId || deviceId === 'default') {
-			return { ideal: 'default' };
-		}
-
-		return { exact: deviceId };
 	}
 
 	/**
@@ -435,10 +398,8 @@ export class LocalTrackService {
 	 * switched device would fall back to the browser's defaults.
 	 */
 	private restartTrack(track: LocalTrack, deviceId: string): Promise<void> {
-		const constraint = this.toDeviceConstraint(deviceId);
-
 		return track.kind === Track.Kind.Video
-			? (track as LocalVideoTrack).restartTrack({ ...CAMERA_CAPTURE_DEFAULTS, deviceId: constraint })
-			: (track as LocalAudioTrack).restartTrack({ ...MICROPHONE_CAPTURE_DEFAULTS, deviceId: constraint });
+			? (track as LocalVideoTrack).restartTrack(cameraCaptureOptions(deviceId))
+			: (track as LocalAudioTrack).restartTrack(microphoneCaptureOptions(deviceId));
 	}
 }
