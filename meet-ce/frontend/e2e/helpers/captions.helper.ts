@@ -118,7 +118,6 @@ export const openFloatingWithCaptions = async (page: Page): Promise<FloatingCapt
 
 	await floatStream(page);
 	await page.waitForTimeout(1000);
-	await expect(page.locator('.local_participant:has(.OV_stream_video.local)').first()).toHaveClass(/OV_floating/);
 
 	const layoutBox = await getElementBoundingBox(page, '#layout-container');
 	const gridBox = await getElementBoundingBox(page, '#layout');

@@ -23,6 +23,7 @@ import {
 	floatStream,
 	getZoomControlOrder,
 	hoverScreenShareStream,
+	localCameraStream,
 	readZoomPercent,
 	resizeStream,
 	screenShareStream,
@@ -30,7 +31,13 @@ import {
 	waitForVisibleRemoteParticipants,
 	zoomInScreenShare
 } from './helpers/stream.helper';
-import { getElementBoundingBox, getSettledBoundingBox, hoverStream } from './helpers/ui-utils.helper';
+import {
+	getElementBoundingBox,
+	getSettledBoundingBox,
+	hoverStream,
+	resumeRenderingFrames,
+	stopRenderingFrames
+} from './helpers/ui-utils.helper';
 
 test.describe('Stream E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -789,6 +796,45 @@ test.describe('Stream E2E Tests', () => {
 			}
 		});
 
+		test('should keep the local video in the layout when the first remote joins and leaves while the window is not rendering', async ({
+			browser
+		}) => {
+			const { pages, addParticipant, removeParticipant, removeAllParticipants } = await joinParticipants(
+				browser,
+				{
+					roomId,
+					accessUrl,
+					participants: [{ name: 'participant-0' }]
+				}
+			);
+			const [pageA] = pages;
+			const localContainer = localCameraStream(pageA);
+
+			try {
+				await expect(localContainer).toBeVisible();
+				await stopRenderingFrames(pageA);
+
+				await addParticipant({ name: 'participant-1', headless: true });
+				await expect(localContainer).toHaveClass(/OV_floating/, { timeout: 15_000 });
+
+				await removeParticipant('participant-1');
+				await expect(localContainer).not.toHaveClass(/OV_floating/, { timeout: 15_000 });
+
+				await resumeRenderingFrames(pageA);
+
+				// The frames the auto-float deferred are delivered only now, after the tile docked:
+				// the corner placement they carry must not move the docked tile out of the layout.
+				const tileBox = await getSettledBoundingBox(pageA, '.local_participant .OV_stream_video.local');
+				const layoutBox = await getSettledBoundingBox(pageA, '#layout');
+				expect(tileBox.x).toBeGreaterThanOrEqual(layoutBox.x - 2);
+				expect(tileBox.y).toBeGreaterThanOrEqual(layoutBox.y - 2);
+				expect(tileBox.x + tileBox.width).toBeLessThanOrEqual(layoutBox.x + layoutBox.width + 2);
+				expect(tileBox.y + tileBox.height).toBeLessThanOrEqual(layoutBox.y + layoutBox.height + 2);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
 		test('should reposition the AUTO-FLOATED local video when a panel opens so it is not hidden behind it', async ({
 			browser
 		}) => {
@@ -834,9 +880,7 @@ test.describe('Stream E2E Tests', () => {
 			await openMeeting(page, accessUrl);
 
 			// Float: the tile lands at the bottom-right corner of the current (large) layout.
-			const localContainer = page.locator('.local_participant:has(.OV_stream_video.local)').first();
 			await floatStream(page);
-			await expect(localContainer).toHaveClass(/OV_floating/);
 			await page.waitForTimeout(800);
 
 			// Un-maximize: shrink the browser window. The layout viewport shrinks with it, so the
@@ -860,9 +904,7 @@ test.describe('Stream E2E Tests', () => {
 		test('should keep the FLOATING video in its dragged zone when the window shrinks', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 
-			const localContainer = page.locator('.local_participant:has(.OV_stream_video.local)').first();
 			await floatStream(page);
-			await expect(localContainer).toHaveClass(/OV_floating/);
 			await page.waitForTimeout(800);
 
 			// Park the tile in the bottom-LEFT quadrant — a deliberate user-chosen position.

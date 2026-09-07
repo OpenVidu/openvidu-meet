@@ -10,7 +10,11 @@ import { hoverStream } from './ui-utils.helper';
  */
 const waitForBoundingBoxStable = async (
 	locator: Locator,
-	{ samples = 4, intervalMs = 100, timeoutMs = 5_000 }: { samples?: number; intervalMs?: number; timeoutMs?: number } = {}
+	{
+		samples = 4,
+		intervalMs = 100,
+		timeoutMs = 5_000
+	}: { samples?: number; intervalMs?: number; timeoutMs?: number } = {}
 ): Promise<void> => {
 	const deadline = Date.now() + timeoutMs;
 	let stableHits = 0;
@@ -378,6 +382,10 @@ export const getScreenSourceTracks = async (
 
 // ─── Stream layout (float / dock / drag) ─────────────────────────────
 
+/** The local camera tile, whose `OV_floating` class tells float from dock. */
+export const localCameraStream = (page: Page): Locator =>
+	page.locator('.local_participant:has(.OV_stream_video.local)').first();
+
 /**
  * Floats the local stream by hovering and clicking the float button.
  */
@@ -385,6 +393,7 @@ export const floatStream = async (page: Page): Promise<void> => {
 	await hoverStream(page, '.OV_publisher .OV_stream_video.local');
 	await expect(page.locator('#float-btn')).toBeVisible();
 	await page.locator('#float-btn').click();
+	await expect(localCameraStream(page)).toHaveClass(/OV_floating/);
 };
 
 /**
@@ -395,6 +404,7 @@ export const dockStream = async (page: Page): Promise<void> => {
 	await hoverStream(page, '.local_participant .OV_stream_video.local');
 	await expect(page.locator('#float-btn')).toBeVisible();
 	await page.locator('#float-btn').click();
+	await expect(localCameraStream(page)).not.toHaveClass(/OV_floating/);
 };
 
 /**
@@ -520,10 +530,7 @@ export const getZoomControlOrder = async (page: Page): Promise<string[]> => {
  * Drags a stream element to a new viewport position.
  */
 export const dragStream = async (page: Page, selector: string, targetX: number, targetY: number): Promise<void> => {
-	const element =
-		selector === '.local_participant'
-			? page.locator('.local_participant:has(.OV_stream_video.local)').first()
-			: page.locator(selector).first();
+	const element = selector === '.local_participant' ? localCameraStream(page) : page.locator(selector).first();
 
 	await expect(element).toBeVisible({ timeout: 5_000 });
 	const box = await element.boundingBox();

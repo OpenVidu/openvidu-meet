@@ -413,3 +413,63 @@ export const failGetUserMediaFor = async (page: Page, kind: 'audio' | 'video'): 
 		};
 	}, kind);
 };
+
+/** The frame queue installed by {@link stopRenderingFrames}, held on the page under test. */
+type FrameQueue = {
+	queued: Map<number, FrameRequestCallback>;
+	restore: () => void;
+};
+
+type FrameQueueWindow = Window & { __ovFrameQueue?: FrameQueue };
+
+/**
+ * Emulates a window that stops producing frames (minimised, or fully covered by another window):
+ * `requestAnimationFrame` callbacks are queued instead of run, while timers, microtasks and the
+ * websocket keep working, as Chrome does for a page it is not rendering.
+ */
+export const stopRenderingFrames = async (page: Page): Promise<void> => {
+	await page.evaluate(() => {
+		const win = window as FrameQueueWindow;
+
+		if (win.__ovFrameQueue) return;
+
+		const realRequest = window.requestAnimationFrame.bind(window);
+		const realCancel = window.cancelAnimationFrame.bind(window);
+		const queued = new Map<number, FrameRequestCallback>();
+		let lastId = 0;
+
+		win.__ovFrameQueue = {
+			queued,
+			restore: () => {
+				window.requestAnimationFrame = realRequest;
+				window.cancelAnimationFrame = realCancel;
+			}
+		};
+
+		window.requestAnimationFrame = (callback: FrameRequestCallback) => {
+			queued.set(++lastId, callback);
+			return lastId;
+		};
+
+		window.cancelAnimationFrame = (id: number) => {
+			// Ids issued before the queue was installed still belong to the real scheduler.
+			if (!queued.delete(id)) realCancel(id);
+		};
+	});
+};
+
+/** Shows the window again: restores `requestAnimationFrame` and runs what was queued while hidden. */
+export const resumeRenderingFrames = async (page: Page): Promise<void> => {
+	await page.evaluate(() => {
+		const win = window as FrameQueueWindow;
+		const frames = win.__ovFrameQueue;
+
+		if (!frames) return;
+
+		delete win.__ovFrameQueue;
+		frames.restore();
+		const now = performance.now();
+
+		for (const callback of frames.queued.values()) callback(now);
+	});
+};
