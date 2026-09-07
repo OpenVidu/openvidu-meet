@@ -247,7 +247,7 @@
         "EXPERIENCE": "Experience",
         "VIRTUAL_BACKGROUNDS": "Virtual Backgrounds",
         "VIRTUAL_BACKGROUNDS_DESC": "Enable virtual backgrounds and blur effects for participants",
-        "MEDIA": "Media",
+        "DEVICES": "Devices",
         "INITIAL_AUDIO": "Microphone on when joining",
         "INITIAL_AUDIO_DESC": "Participants join with the microphone active",
         "INITIAL_AUDIO_NOTE": "(they can mute themselves at any time)",

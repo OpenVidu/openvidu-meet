@@ -247,7 +247,7 @@
         "EXPERIENCE": "エクスペリエンス",
         "VIRTUAL_BACKGROUNDS": "仮想背景",
         "VIRTUAL_BACKGROUNDS_DESC": "参加者向けに仮想背景とぼかし効果を有効にします",
-        "MEDIA": "メディア",
+        "DEVICES": "デバイス",
         "INITIAL_AUDIO": "参加時にマイクをオン",
         "INITIAL_AUDIO_DESC": "参加者はマイクをオンにした状態で参加します",
         "INITIAL_AUDIO_NOTE": "（いつでもミュートできます）",

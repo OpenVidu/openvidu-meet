@@ -247,7 +247,7 @@
         "EXPERIENCE": "Esperienza",
         "VIRTUAL_BACKGROUNDS": "Sfondi virtuali",
         "VIRTUAL_BACKGROUNDS_DESC": "Abilita gli sfondi virtuali e gli effetti di sfocatura per i partecipanti",
-        "MEDIA": "Media",
+        "DEVICES": "Dispositivi",
         "INITIAL_AUDIO": "Microfono acceso all'ingresso",
         "INITIAL_AUDIO_DESC": "I partecipanti entrano con il microfono acceso",
         "INITIAL_AUDIO_NOTE": "(possono silenziarsi in qualsiasi momento)",
