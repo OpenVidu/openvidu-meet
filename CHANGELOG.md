@@ -67,7 +67,7 @@ Added configurable participant and duration limits:
 * `config.maxParticipants`: maximum number of participants. New joins are rejected once the limit is reached.
 * `config.maxDurationMinutes`: maximum meeting duration. The meeting ends automatically when the limit is reached, with a warning shown beforehand.
 
-An automatic end is reported on both integration surfaces: the `meetingEnded` webhook carries `cause: max_duration_reached`, and the embedded `meetingLeft` event carries `reason: meeting_ended_by_duration_limit`.
+An automatic end is reported on both integration surfaces: the `meetingEnded` webhook carries `reason: max_duration_reached`, and the embedded `meetingLeft` event carries `reason: meeting_ended_by_duration_limit`.
 
 #### Recording auto-start
 
@@ -194,7 +194,7 @@ Participant payloads include `externalId` and `metadata`.
 
 **Meeting events**
 
-The `meetingEnded` webhook now includes an optional `cause`, set only when the meeting was force-ended. Automatic duration-limit termination reports `max_duration_reached`.
+The `meetingEnded` webhook now includes an optional `reason`, set only when the meeting was force-ended. Automatic duration-limit termination reports `max_duration_reached`.
 
 #### REST API
 

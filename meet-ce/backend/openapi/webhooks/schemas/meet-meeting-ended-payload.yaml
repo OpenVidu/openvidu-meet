@@ -2,7 +2,7 @@ allOf:
     - $ref: ../../rooms/schemas/meet-room.yaml
     - type: object
       properties:
-          cause:
+          reason:
               type: string
               enum:
                   - max_duration_reached

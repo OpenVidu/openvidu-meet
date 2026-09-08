@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { MeetMeetingEndedCause, MeetWebhookEventType } from '@openvidu-meet/typings';
+import { MeetMeetingEndedReason, MeetWebhookEventType } from '@openvidu-meet/typings';
 import type { MeetRoom, MeetWebhookPayload } from '@openvidu-meet/typings';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
@@ -22,29 +22,29 @@ const buildService = () =>
 const fakeRoom = { roomId: 'room-1', roomName: 'Room 1' } as MeetRoom;
 
 /**
- * C7 (MEET-BRANCH-AUDIT-FINDINGS.md): cause is additive on the meetingEnded payload — absent for
+ * C7 (MEET-BRANCH-AUDIT-FINDINGS.md): reason is additive on the meetingEnded payload: absent for
  * every end path except the one that actually needs it (a force-end by the duration GC), so every
  * other integrator's parsing of this event is unaffected.
  */
-describe('WebhookDispatcherService.sendMeetingEndedWebhook (C7: additive cause field)', () => {
-	it('omits cause entirely for a normal end', () => {
+describe('WebhookDispatcherService.sendMeetingEndedWebhook (C7: additive reason field)', () => {
+	it('omits reason entirely for a normal end', () => {
 		const service = buildService();
 
 		service.sendMeetingEndedWebhook(fakeRoom);
 
 		expect(service.calls).toEqual([{ event: MeetWebhookEventType.MEETING_ENDED, payload: fakeRoom }]);
-		expect('cause' in service.calls[0].payload).toBe(false);
+		expect('reason' in service.calls[0].payload).toBe(false);
 	});
 
-	it('includes cause when the meeting was force-ended by the duration GC', () => {
+	it('includes reason when the meeting was force-ended by the duration GC', () => {
 		const service = buildService();
 
-		service.sendMeetingEndedWebhook(fakeRoom, MeetMeetingEndedCause.MAX_DURATION_REACHED);
+		service.sendMeetingEndedWebhook(fakeRoom, MeetMeetingEndedReason.MAX_DURATION_REACHED);
 
 		expect(service.calls).toEqual([
 			{
 				event: MeetWebhookEventType.MEETING_ENDED,
-				payload: { ...fakeRoom, cause: MeetMeetingEndedCause.MAX_DURATION_REACHED }
+				payload: { ...fakeRoom, reason: MeetMeetingEndedReason.MAX_DURATION_REACHED }
 			}
 		]);
 	});

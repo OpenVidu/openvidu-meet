@@ -1,5 +1,5 @@
 import type { MeetRecordingInfo } from '@openvidu-meet/typings';
-import { MeetingEndAction, MeetMeetingEndedCause, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetingEndAction, MeetMeetingEndedReason, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { EgressInfo, ParticipantInfo, Room, WebhookEvent } from 'livekit-server-sdk';
 import { WebhookReceiver } from 'livekit-server-sdk';
@@ -332,9 +332,9 @@ export class LivekitWebhookService {
 			}
 
 			// Send webhook notification, attributing the end to the duration GC when that's what
-			// actually force-ended this meeting (see RoomScheduledTasksService.recordMeetingEndedCause).
-			const cause = await this.getMeetingEndedCause(roomId, meetingId);
-			this.webhookDispatcherService.sendMeetingEndedWebhook(meetRoom, cause);
+			// actually force-ended this meeting (see RoomScheduledTasksService.recordMeetingEndedReason).
+			const reason = await this.getMeetingEndedReason(roomId, meetingId);
+			this.webhookDispatcherService.sendMeetingEndedWebhook(meetRoom, reason);
 
 			tasks.push(
 				this.meetingPresenceService.removeRoomFromAllUsers(roomId),
@@ -358,11 +358,11 @@ export class LivekitWebhookService {
 	 * caller with no sid attribute at all: a flag still standing means no `room_finished` ever came
 	 * for the meeting the duration GC ended, which is the very case the reconcile GC covers.
 	 */
-	protected async getMeetingEndedCause(
+	protected async getMeetingEndedReason(
 		roomId: string,
 		meetingId?: string
-	): Promise<MeetMeetingEndedCause | undefined> {
-		const key = `${RedisKeyName.MEETING_ENDED_CAUSE}${roomId}`;
+	): Promise<MeetMeetingEndedReason | undefined> {
+		const key = `${RedisKeyName.MEETING_ENDED_REASON}${roomId}`;
 		const value = await this.redisService.get(key);
 
 		if (value === null || (meetingId !== undefined && value !== meetingId)) return undefined;
@@ -370,10 +370,10 @@ export class LivekitWebhookService {
 		try {
 			await this.redisService.delete(key);
 		} catch (error) {
-			this.logger.warn(`Error consuming the meeting ended cause flag for room '${roomId}'`, error);
+			this.logger.warn(`Error consuming the meeting ended reason flag for room '${roomId}'`, error);
 		}
 
-		return MeetMeetingEndedCause.MAX_DURATION_REACHED;
+		return MeetMeetingEndedReason.MAX_DURATION_REACHED;
 	}
 
 	/**

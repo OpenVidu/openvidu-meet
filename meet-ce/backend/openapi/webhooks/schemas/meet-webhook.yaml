@@ -30,7 +30,7 @@ MeetWebhookEvent:
                 - allOf:
                       - title: Meeting Ended Event Data
                       - description: >
-                            Data for the meetingEnded event: the room, plus `cause` when the meeting
+                            Data for the meetingEnded event: the room, plus `reason` when the meeting
                             was force-ended by the server instead of ending normally
                       - $ref: './meet-meeting-ended-payload.yaml'
                 - allOf:

@@ -165,16 +165,16 @@ class TestableRoomScheduledTasksService extends RoomScheduledTasksService {
 		return this.validateRoomsStatusGC();
 	}
 
-	runRecordMeetingEndedCause(roomId: string, meetingId: string): Promise<void> {
-		return this.recordMeetingEndedCause(roomId, meetingId);
+	runRecordMeetingEndedReason(roomId: string, meetingId: string): Promise<void> {
+		return this.recordMeetingEndedReason(roomId, meetingId);
 	}
 
 	runDurationLimitTimersGC(): Promise<void> {
 		return this.reconcileDurationLimitTimersGC();
 	}
 
-	runClearMeetingEndedCause(roomId: string, meetingId: string): Promise<void> {
-		return this.clearMeetingEndedCause(roomId, meetingId);
+	runClearMeetingEndedReason(roomId: string, meetingId: string): Promise<void> {
+		return this.clearMeetingEndedReason(roomId, meetingId);
 	}
 }
 
@@ -316,8 +316,8 @@ describe('RoomScheduledTasksService.validateRoomsStatusGC (orchestrates both rec
 });
 
 /**
- * C7 (MEET-BRANCH-AUDIT-FINDINGS.md): the write side of the MEETING_ENDED_CAUSE flag
- * LivekitWebhookService.getMeetingEndedCause reads on room_finished, scoped to the meeting sid so a
+ * C7 (MEET-BRANCH-AUDIT-FINDINGS.md): the write side of the MEETING_ENDED_REASON flag
+ * LivekitWebhookService.getMeetingEndedReason reads on room_finished, scoped to the meeting sid so a
  * leaked flag is inert for the room's later meetings.
  *//**
  * D1 (MEET-MEETING-DURATION-PRECISION-PLAN.md): the duration limit is enforced by a timer armed
@@ -327,30 +327,30 @@ describe('RoomScheduledTasksService.validateRoomsStatusGC (orchestrates both rec
  * timer that outlived its meeting must never end a later meeting in the same room.
  */
 
-describe('RoomScheduledTasksService.recordMeetingEndedCause (C7: force-end attribution)', () => {
+describe('RoomScheduledTasksService.recordMeetingEndedReason (C7: force-end attribution)', () => {
 	it('stores the flag under the meeting sid so a later read for the same meeting matches', async () => {
 		const redisService = new FakeRedisService();
 		const { service } = buildService(new FakeLiveKitService(), new FakeRoomRepository(), redisService);
 
-		await service.runRecordMeetingEndedCause('room-1', 'sid-N');
+		await service.runRecordMeetingEndedReason('room-1', 'sid-N');
 
-		expect(redisService.store.get('ov_meet:meeting_ended_cause:room-1')).toBe('sid-N');
+		expect(redisService.store.get('ov_meet:meeting_ended_reason:room-1')).toBe('sid-N');
 	});
 
 	it('scopes the flag per room, not globally', async () => {
 		const redisService = new FakeRedisService();
 		const { service } = buildService(new FakeLiveKitService(), new FakeRoomRepository(), redisService);
 
-		await service.runRecordMeetingEndedCause('room-1', 'sid-N');
-		await service.runRecordMeetingEndedCause('room-2', 'sid-M');
+		await service.runRecordMeetingEndedReason('room-1', 'sid-N');
+		await service.runRecordMeetingEndedReason('room-2', 'sid-M');
 
-		expect(redisService.store.get('ov_meet:meeting_ended_cause:room-1')).toBe('sid-N');
-		expect(redisService.store.get('ov_meet:meeting_ended_cause:room-2')).toBe('sid-M');
+		expect(redisService.store.get('ov_meet:meeting_ended_reason:room-1')).toBe('sid-N');
+		expect(redisService.store.get('ov_meet:meeting_ended_reason:room-2')).toBe('sid-M');
 	});
 });
 
 /**
- * C7 follow-up: `reconcileDurationLimitTimersGC` writes the MEETING_ENDED_CAUSE flag *before* calling
+ * C7 follow-up: `reconcileDurationLimitTimersGC` writes the MEETING_ENDED_REASON flag *before* calling
  * `deleteRoom`, deliberately, so the flag is visible to `room_finished` no matter how fast that
  * webhook arrives (see the doc comment above the write). But `deleteRoom` treats "room already
  * gone" as a benign no-op, not an error — so if a moderator's own `endMeeting` deletes the room in
@@ -359,15 +359,15 @@ describe('RoomScheduledTasksService.recordMeetingEndedCause (C7: force-end attri
  * GC attempt is *not* what actually ended the meeting. Since the flag is scoped by the meeting's
  * sid — not cleared until it expires (24h TTL) — it then misattributes whatever *later, unrelated*
  * event actually closes that same still-running meeting (a moderator ending it minutes or hours
- * afterward, or the room emptying out) to the duration limit. `getMeetingEndedCause`
+ * afterward, or the room emptying out) to the duration limit. `getMeetingEndedReason`
  * (livekit-webhook.service.test.ts) already proves the read side trusts the flag unconditionally;
  * these tests pin the write side's obligation to withdraw it when its own deletion didn't happen.
  */
 
-describe('RoomScheduledTasksService.reconcileDurationLimitTimersGC (C7 follow-up: stale cause flag after a delete that was not this GC)', () => {
+describe('RoomScheduledTasksService.reconcileDurationLimitTimersGC (C7 follow-up: stale reason flag after a delete that was not this GC)', () => {
 	const roomId = 'room-race';
 	const sid = 'sid-race';
-	const causeKey = `ov_meet:meeting_ended_cause:${roomId}`;
+	const reasonKey = `ov_meet:meeting_ended_reason:${roomId}`;
 
 	const buildExpiredRoom = (livekitService: FakeLiveKitService, roomRepository: FakeRoomRepository) => {
 		const maxDurationMinutes = 10;
@@ -377,7 +377,7 @@ describe('RoomScheduledTasksService.reconcileDurationLimitTimersGC (C7 follow-up
 		roomRepository.roomsWithMaxDuration = [{ roomId, config: { maxDurationMinutes } }];
 	};
 
-	it('withdraws the cause flag when its own deleteRoom finds the room already gone (a moderator won the race)', async () => {
+	it('withdraws the reason flag when its own deleteRoom finds the room already gone (a moderator won the race)', async () => {
 		const livekitService = new FakeLiveKitService();
 		const roomRepository = new FakeRoomRepository();
 		buildExpiredRoom(livekitService, roomRepository);
@@ -387,10 +387,10 @@ describe('RoomScheduledTasksService.reconcileDurationLimitTimersGC (C7 follow-up
 
 		await service.runDurationLimitTimersGC();
 
-		expect(redisService.store.get(causeKey)).toBeUndefined();
+		expect(redisService.store.get(reasonKey)).toBeUndefined();
 	});
 
-	it('withdraws the cause flag when its own deleteRoom fails outright', async () => {
+	it('withdraws the reason flag when its own deleteRoom fails outright', async () => {
 		const livekitService = new FakeLiveKitService();
 		const roomRepository = new FakeRoomRepository();
 		buildExpiredRoom(livekitService, roomRepository);
@@ -400,10 +400,10 @@ describe('RoomScheduledTasksService.reconcileDurationLimitTimersGC (C7 follow-up
 
 		await expect(service.runDurationLimitTimersGC()).resolves.toBeUndefined();
 
-		expect(redisService.store.get(causeKey)).toBeUndefined();
+		expect(redisService.store.get(reasonKey)).toBeUndefined();
 	});
 
-	it('keeps the cause flag when its own deleteRoom actually ends the meeting', async () => {
+	it('keeps the reason flag when its own deleteRoom actually ends the meeting', async () => {
 		const livekitService = new FakeLiveKitService();
 		const roomRepository = new FakeRoomRepository();
 		buildExpiredRoom(livekitService, roomRepository);
@@ -413,37 +413,37 @@ describe('RoomScheduledTasksService.reconcileDurationLimitTimersGC (C7 follow-up
 
 		await service.runDurationLimitTimersGC();
 
-		expect(redisService.store.get(causeKey)).toBe(sid);
+		expect(redisService.store.get(reasonKey)).toBe(sid);
 	});
 });
 
-describe('RoomScheduledTasksService.clearMeetingEndedCause (C7 follow-up: withdrawal is sid-scoped)', () => {
+describe('RoomScheduledTasksService.clearMeetingEndedReason (C7 follow-up: withdrawal is sid-scoped)', () => {
 	it('deletes the flag when it still matches the given meeting', async () => {
 		const redisService = new FakeRedisService();
 		const { service } = buildService(new FakeLiveKitService(), new FakeRoomRepository(), redisService);
-		await service.runRecordMeetingEndedCause('room-1', 'sid-N');
+		await service.runRecordMeetingEndedReason('room-1', 'sid-N');
 
-		await service.runClearMeetingEndedCause('room-1', 'sid-N');
+		await service.runClearMeetingEndedReason('room-1', 'sid-N');
 
-		expect(redisService.store.has('ov_meet:meeting_ended_cause:room-1')).toBe(false);
+		expect(redisService.store.has('ov_meet:meeting_ended_reason:room-1')).toBe(false);
 	});
 
 	it('leaves a flag belonging to a different meeting untouched', async () => {
 		const redisService = new FakeRedisService();
 		const { service } = buildService(new FakeLiveKitService(), new FakeRoomRepository(), redisService);
 		// A legitimate flag for a different (e.g. later) meeting already occupies the room-scoped key.
-		await service.runRecordMeetingEndedCause('room-1', 'sid-unrelated');
+		await service.runRecordMeetingEndedReason('room-1', 'sid-unrelated');
 
-		await service.runClearMeetingEndedCause('room-1', 'sid-N');
+		await service.runClearMeetingEndedReason('room-1', 'sid-N');
 
-		expect(redisService.store.get('ov_meet:meeting_ended_cause:room-1')).toBe('sid-unrelated');
+		expect(redisService.store.get('ov_meet:meeting_ended_reason:room-1')).toBe('sid-unrelated');
 	});
 
 	it('is a no-op when no flag was ever set', async () => {
 		const redisService = new FakeRedisService();
 		const { service } = buildService(new FakeLiveKitService(), new FakeRoomRepository(), redisService);
 
-		await expect(service.runClearMeetingEndedCause('room-1', 'sid-N')).resolves.toBeUndefined();
+		await expect(service.runClearMeetingEndedReason('room-1', 'sid-N')).resolves.toBeUndefined();
 	});
 });
 
@@ -452,7 +452,7 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 	const maxDurationMinutes = 10;
 	const taskName = MeetRoomHelper.durationLimitTimerName(roomId);
 	const retryDelayMs = ms(INTERNAL_CONFIG.MEETING_DURATION_LIMIT_RETRY_DELAY);
-	const causeKey = `ov_meet:meeting_ended_cause:${roomId}`;
+	const reasonKey = `ov_meet:meeting_ended_reason:${roomId}`;
 	// The armed delay is a difference between two clock readings, so the clock is pinned instead of
 	// asserting a tolerance band wide enough to absorb the jitter between them.
 	const nowMs = Date.UTC(2026, 8, 3, 12, 0, 0);
@@ -562,7 +562,7 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 		await armedTask(taskScheduler).callback();
 
 		expect(livekitService.deletedRoomNames).toEqual([roomId]);
-		expect(redisService.store.get(causeKey)).toBe('sid-timer');
+		expect(redisService.store.get(reasonKey)).toBe('sid-timer');
 		expect(mutexService.lockedKeys).toEqual([`ov_meet_lock:meeting_duration_limit_end_${roomId}`]);
 		expect(armCount(taskScheduler)).toBe(1);
 	});
@@ -585,7 +585,7 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 		await armedTask(taskScheduler).callback();
 
 		expect(livekitService.deletedRoomNames).toEqual([]);
-		expect(redisService.store.has(causeKey)).toBe(false);
+		expect(redisService.store.has(reasonKey)).toBe(false);
 		expect(armCount(taskScheduler)).toBe(1);
 	});
 
@@ -601,7 +601,7 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 		await expect(armedTask(taskScheduler).callback()).resolves.toBeUndefined();
 
 		expect(livekitService.deletedRoomNames).toEqual([]);
-		expect(redisService.store.has(causeKey)).toBe(false);
+		expect(redisService.store.has(reasonKey)).toBe(false);
 		expect(armCount(taskScheduler)).toBe(1);
 	});
 
@@ -623,7 +623,7 @@ describe('RoomScheduledTasksService duration-limit timers', () => {
 		await armedTask(taskScheduler).callback();
 
 		expect(livekitService.deletedRoomNames).toEqual([]);
-		expect(redisService.store.has(causeKey)).toBe(false);
+		expect(redisService.store.has(reasonKey)).toBe(false);
 		expect(armCount(taskScheduler)).toBe(2);
 		expect(ms(armedTask(taskScheduler).scheduleOrDelay)).toBe(retryDelayMs);
 	});

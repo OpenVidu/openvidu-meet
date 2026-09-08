@@ -465,7 +465,7 @@ export class RoomScheduledTasksService {
 					`Meeting in room '${roomId}' exceeded its ${maxDurationMinutes}-minute limit. Ending it.`
 				);
 				// deleteRoom is what triggers room_finished, whose handler reads this flag.
-				await this.recordMeetingEndedCause(roomId, livekitRoom.sid);
+				await this.recordMeetingEndedReason(roomId, livekitRoom.sid);
 
 				let deleted = false;
 
@@ -476,7 +476,7 @@ export class RoomScheduledTasksService {
 				}
 
 				if (!deleted) {
-					await this.clearMeetingEndedCause(roomId, livekitRoom.sid);
+					await this.clearMeetingEndedReason(roomId, livekitRoom.sid);
 				}
 
 				return deleted;
@@ -492,23 +492,23 @@ export class RoomScheduledTasksService {
 	 * webhook to the duration limit instead of a moderator's own end. Scoped to the meeting's
 	 * LiveKit room sid, so a leaked flag is inert for the room's later meetings.
 	 */
-	protected async recordMeetingEndedCause(roomId: string, meetingId: string): Promise<void> {
-		const key = `${RedisKeyName.MEETING_ENDED_CAUSE}${roomId}`;
-		await this.redisService.set(key, meetingId, ms(INTERNAL_CONFIG.MEETING_ENDED_CAUSE_TTL));
+	protected async recordMeetingEndedReason(roomId: string, meetingId: string): Promise<void> {
+		const key = `${RedisKeyName.MEETING_ENDED_REASON}${roomId}`;
+		await this.redisService.set(key, meetingId, ms(INTERNAL_CONFIG.MEETING_ENDED_REASON_TTL));
 	}
 
 	/**
-	 * Withdraws a duration-cause attribution {@link endMeetingIfPastDurationLimit} speculatively
+	 * Withdraws a duration-limit attribution {@link endMeetingIfPastDurationLimit} speculatively
 	 * wrote, once it turns out that attempt is not what actually ended the meeting (its own
 	 * `deleteRoom` found the room already gone, or failed outright). Without this, the flag would
-	 * sit for up to `MEETING_ENDED_CAUSE_TTL` and misattribute whatever later, unrelated event
+	 * sit for up to `MEETING_ENDED_REASON_TTL` and misattribute whatever later, unrelated event
 	 * actually ends this same still-running meeting: its sid doesn't change just because this
 	 * attempt didn't land. Only clears the flag if it still matches `meetingId`, the same guard
-	 * {@link recordMeetingEndedCause}'s read side uses, so a legitimate flag from a different
+	 * {@link recordMeetingEndedReason}'s read side uses, so a legitimate flag from a different
 	 * meeting already occupying the (room-scoped) key is never touched.
 	 */
-	protected async clearMeetingEndedCause(roomId: string, meetingId: string): Promise<void> {
-		const key = `${RedisKeyName.MEETING_ENDED_CAUSE}${roomId}`;
+	protected async clearMeetingEndedReason(roomId: string, meetingId: string): Promise<void> {
+		const key = `${RedisKeyName.MEETING_ENDED_REASON}${roomId}`;
 		const value = await this.redisService.get(key);
 
 		if (value === meetingId) {

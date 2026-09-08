@@ -9,7 +9,7 @@ import type {
 	MeetWebhookPayload,
 	MeetWebhookTestEvent
 } from '@openvidu-meet/typings';
-import { MeetMeetingEndedCause, MeetWebhookEventType } from '@openvidu-meet/typings';
+import { MeetMeetingEndedReason, MeetWebhookEventType } from '@openvidu-meet/typings';
 import crypto from 'crypto';
 import { inject, injectable } from 'inversify';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
@@ -57,11 +57,11 @@ export class WebhookDispatcherService {
 	 * that a meeting session has concluded for the specified room.
 	 *
 	 * @param room - The MeetRoom object containing details of the ended meeting
-	 * @param cause - Set when the meeting was force-ended rather than ended normally (a moderator
-	 * ending it, or the room emptying out). See {@link MeetMeetingEndedCause} for details
+	 * @param reason - Set when the meeting was force-ended rather than ended normally (a moderator
+	 * ending it, or the room emptying out). See {@link MeetMeetingEndedReason} for details
 	 */
-	sendMeetingEndedWebhook(room: MeetRoom, cause?: MeetMeetingEndedCause) {
-		const payload: MeetMeetingEndedPayload = { ...this.roomToWirePermissions(room), ...(cause && { cause }) };
+	sendMeetingEndedWebhook(room: MeetRoom, reason?: MeetMeetingEndedReason) {
+		const payload: MeetMeetingEndedPayload = { ...this.roomToWirePermissions(room), ...(reason && { reason }) };
 		this.sendWebhookEventInBackground(MeetWebhookEventType.MEETING_ENDED, payload, `Room ID: ${room.roomId}`);
 	}
 

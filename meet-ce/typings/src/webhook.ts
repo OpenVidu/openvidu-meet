@@ -74,8 +74,11 @@ export interface MeetParticipantDeparturePayload extends MeetParticipantPayload 
 /**
  * Why a meeting was force-ended rather than ended normally (a moderator ended it, or the room
  * emptied out), as carried by the {@link MeetWebhookEventType.MEETING_ENDED} webhook event.
+ *
+ * Describes the end of the meeting itself. {@link LeftEventReason} answers a different question,
+ * why one participant's own session ended, and the two never share a value.
  */
-export enum MeetMeetingEndedCause {
+export enum MeetMeetingEndedReason {
 	/** The meeting reached its configured maximum duration and was force-ended by the server */
 	MAX_DURATION_REACHED = 'max_duration_reached'
 }
@@ -84,8 +87,8 @@ export enum MeetMeetingEndedCause {
  * Payload for the {@link MeetWebhookEventType.MEETING_ENDED} webhook event.
  */
 export interface MeetMeetingEndedPayload extends MeetRoom {
-	/** Set only when the meeting was force-ended. Absent for a normal end. See {@link MeetMeetingEndedCause} for details */
-	cause?: MeetMeetingEndedCause;
+	/** Set only when the meeting was force-ended. Absent for a normal end. See {@link MeetMeetingEndedReason} for details */
+	reason?: MeetMeetingEndedReason;
 }
 
 /**

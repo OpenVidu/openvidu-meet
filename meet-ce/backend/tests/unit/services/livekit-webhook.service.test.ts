@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { MeetingEndAction, MeetMeetingEndedCause, MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetingEndAction, MeetMeetingEndedReason, MeetRoomStatus } from '@openvidu-meet/typings';
 import type { Room } from 'livekit-server-sdk';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
@@ -25,8 +25,8 @@ class FakeRedisService {
 }
 
 class TestableLivekitWebhookService extends LivekitWebhookService {
-	runGetMeetingEndedCause(roomId: string, meetingId?: string): Promise<MeetMeetingEndedCause | undefined> {
-		return this.getMeetingEndedCause(roomId, meetingId);
+	runGetMeetingEndedReason(roomId: string, meetingId?: string): Promise<MeetMeetingEndedReason | undefined> {
+		return this.getMeetingEndedReason(roomId, meetingId);
 	}
 }
 
@@ -38,72 +38,72 @@ const buildService = (redis: FakeRedisService) =>
 	);
 
 /**
- * Reads the MEETING_ENDED_CAUSE flag that RoomScheduledTasksService stamps before force-ending a
+ * Reads the MEETING_ENDED_REASON flag that RoomScheduledTasksService stamps before force-ending a
  * meeting for exceeding its duration limit, deciding whether the meetingEnded webhook carries an
- * attributed cause instead of reading as a moderator's own end.
+ * attributed reason instead of reading as a moderator's own end.
  */
-describe('LivekitWebhookService.getMeetingEndedCause (force-end attribution flag)', () => {
+describe('LivekitWebhookService.getMeetingEndedReason (force-end attribution flag)', () => {
 	it('is undefined when no flag was ever set (a normal end)', async () => {
 		const service = buildService(new FakeRedisService());
 
-		await expect(service.runGetMeetingEndedCause('room-1', 'sid-N')).resolves.toBeUndefined();
+		await expect(service.runGetMeetingEndedReason('room-1', 'sid-N')).resolves.toBeUndefined();
 	});
 
 	it('is MAX_DURATION_REACHED when the flag matches the finishing meeting', async () => {
 		const redis = new FakeRedisService();
-		await redis.set('ov_meet:meeting_ended_cause:room-1', 'sid-N');
+		await redis.set('ov_meet:meeting_ended_reason:room-1', 'sid-N');
 		const service = buildService(redis);
 
-		await expect(service.runGetMeetingEndedCause('room-1', 'sid-N')).resolves.toBe(
-			MeetMeetingEndedCause.MAX_DURATION_REACHED
+		await expect(service.runGetMeetingEndedReason('room-1', 'sid-N')).resolves.toBe(
+			MeetMeetingEndedReason.MAX_DURATION_REACHED
 		);
 	});
 
 	it('is undefined when the flag belongs to a different (stale) meeting in the same room', async () => {
 		const redis = new FakeRedisService();
-		await redis.set('ov_meet:meeting_ended_cause:room-1', 'sid-OLD');
+		await redis.set('ov_meet:meeting_ended_reason:room-1', 'sid-OLD');
 		const service = buildService(redis);
 
-		await expect(service.runGetMeetingEndedCause('room-1', 'sid-NEW')).resolves.toBeUndefined();
+		await expect(service.runGetMeetingEndedReason('room-1', 'sid-NEW')).resolves.toBeUndefined();
 	});
 
 	it('consumes the flag, so it can only ever attribute one end', async () => {
 		const redis = new FakeRedisService();
-		await redis.set('ov_meet:meeting_ended_cause:room-1', 'sid-N');
+		await redis.set('ov_meet:meeting_ended_reason:room-1', 'sid-N');
 		const service = buildService(redis);
 
-		await expect(service.runGetMeetingEndedCause('room-1', 'sid-N')).resolves.toBe(
-			MeetMeetingEndedCause.MAX_DURATION_REACHED
+		await expect(service.runGetMeetingEndedReason('room-1', 'sid-N')).resolves.toBe(
+			MeetMeetingEndedReason.MAX_DURATION_REACHED
 		);
-		expect(redis.store.has('ov_meet:meeting_ended_cause:room-1')).toBe(false);
+		expect(redis.store.has('ov_meet:meeting_ended_reason:room-1')).toBe(false);
 	});
 
 	it('leaves a flag it did not attribute standing, for the end it belongs to', async () => {
 		const redis = new FakeRedisService();
-		await redis.set('ov_meet:meeting_ended_cause:room-1', 'sid-OLD');
+		await redis.set('ov_meet:meeting_ended_reason:room-1', 'sid-OLD');
 		const service = buildService(redis);
 
-		await service.runGetMeetingEndedCause('room-1', 'sid-NEW');
+		await service.runGetMeetingEndedReason('room-1', 'sid-NEW');
 
-		expect(redis.store.get('ov_meet:meeting_ended_cause:room-1')).toBe('sid-OLD');
+		expect(redis.store.get('ov_meet:meeting_ended_reason:room-1')).toBe('sid-OLD');
 	});
 
 	// The reconcile GC reports an end it found by noticing the room is gone from LiveKit, which is
 	// also why it cannot name the meeting: there is no sid left to compare the flag against.
 	it('attributes a standing flag to a caller that cannot name the finishing meeting', async () => {
 		const redis = new FakeRedisService();
-		await redis.set('ov_meet:meeting_ended_cause:room-1', 'sid-N');
+		await redis.set('ov_meet:meeting_ended_reason:room-1', 'sid-N');
 		const service = buildService(redis);
 
-		await expect(service.runGetMeetingEndedCause('room-1')).resolves.toBe(
-			MeetMeetingEndedCause.MAX_DURATION_REACHED
+		await expect(service.runGetMeetingEndedReason('room-1')).resolves.toBe(
+			MeetMeetingEndedReason.MAX_DURATION_REACHED
 		);
 	});
 
-	it('reports no cause to that caller when no flag stands', async () => {
+	it('reports no reason to that caller when no flag stands', async () => {
 		const service = buildService(new FakeRedisService());
 
-		await expect(service.runGetMeetingEndedCause('room-1')).resolves.toBeUndefined();
+		await expect(service.runGetMeetingEndedReason('room-1')).resolves.toBeUndefined();
 	});
 });
 
@@ -159,14 +159,14 @@ class FakeLiveKitService {
 
 class FakeWebhookDispatcherService {
 	sendMeetingStartedWebhookCalls: unknown[] = [];
-	sendMeetingEndedWebhookCauses: (MeetMeetingEndedCause | undefined)[] = [];
+	sendMeetingEndedWebhookReasons: (MeetMeetingEndedReason | undefined)[] = [];
 
 	sendMeetingStartedWebhook(room: unknown) {
 		this.sendMeetingStartedWebhookCalls.push(room);
 	}
 
-	sendMeetingEndedWebhook(_room: unknown, cause?: MeetMeetingEndedCause) {
-		this.sendMeetingEndedWebhookCauses.push(cause);
+	sendMeetingEndedWebhook(_room: unknown, reason?: MeetMeetingEndedReason) {
+		this.sendMeetingEndedWebhookReasons.push(reason);
 	}
 }
 
@@ -328,13 +328,13 @@ describe('LivekitWebhookService.handleRoomFinished (force-end attribution reache
 
 	it('attributes the end to the duration limit for a caller that knows only the room', async () => {
 		const redis = new FakeRedisService();
-		await redis.set('ov_meet:meeting_ended_cause:room-1', 'sid-N');
+		await redis.set('ov_meet:meeting_ended_reason:room-1', 'sid-N');
 		const { service, webhookDispatcherService } = buildFinishedService(redis);
 
 		await service.handleRoomFinished({ name: 'room-1' });
 
-		expect(webhookDispatcherService.sendMeetingEndedWebhookCauses).toEqual([
-			MeetMeetingEndedCause.MAX_DURATION_REACHED
+		expect(webhookDispatcherService.sendMeetingEndedWebhookReasons).toEqual([
+			MeetMeetingEndedReason.MAX_DURATION_REACHED
 		]);
 	});
 
@@ -343,16 +343,16 @@ describe('LivekitWebhookService.handleRoomFinished (force-end attribution reache
 
 		await service.handleRoomFinished({ name: 'room-1' });
 
-		expect(webhookDispatcherService.sendMeetingEndedWebhookCauses).toEqual([undefined]);
+		expect(webhookDispatcherService.sendMeetingEndedWebhookReasons).toEqual([undefined]);
 	});
 
 	it('still scopes the attribution to the meeting when the caller names it', async () => {
 		const redis = new FakeRedisService();
-		await redis.set('ov_meet:meeting_ended_cause:room-1', 'sid-OLD');
+		await redis.set('ov_meet:meeting_ended_reason:room-1', 'sid-OLD');
 		const { service, webhookDispatcherService } = buildFinishedService(redis);
 
 		await service.handleRoomFinished({ name: 'room-1', sid: 'sid-NEW' });
 
-		expect(webhookDispatcherService.sendMeetingEndedWebhookCauses).toEqual([undefined]);
+		expect(webhookDispatcherService.sendMeetingEndedWebhookReasons).toEqual([undefined]);
 	});
 });

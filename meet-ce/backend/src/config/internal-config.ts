@@ -29,7 +29,7 @@ export const INTERNAL_CONFIG = {
 	MEETING_DURATION_LIMIT_LOCK_TTL: '15s' as StringValue, // Redis lock TTL serializing the force-end of a meeting past its duration limit
 	MEETING_DURATION_LIMIT_TOLERANCE: '1s' as StringValue, // How close to its deadline a meeting counts as due, instead of arming a timer for a remainder this small
 	MEETING_DURATION_LIMIT_RETRY_DELAY: '5s' as StringValue, // First delay a fired duration-limit timer waits to retry an end it could not carry out; doubles per attempt, up to MEETING_DURATION_LIMIT_GC_INTERVAL
-	MEETING_ENDED_CAUSE_TTL: '24h' as StringValue, // Redis TTL for the per-room "meeting was force-ended for exceeding its duration limit" flag consumed by the room_finished handler; scoped to the meeting's LiveKit room sid, this is only a last-resort safety net
+	MEETING_ENDED_REASON_TTL: '24h' as StringValue, // Redis TTL for the per-room "meeting was force-ended for exceeding its duration limit" flag consumed by the room_finished handler; scoped to the meeting's LiveKit room sid, this is only a last-resort safety net
 	MEETING_MIN_PARTICIPANTS_LIMIT: 1, // Lowest value config.maxParticipants may be set to; 0 would be a room nobody could ever join
 	MEETING_MAX_PARTICIPANTS_LIMIT: 30, // Highest value config.maxParticipants may be set to
 	MEETING_MIN_DURATION_MINUTES_LIMIT: 1, // Lowest value config.maxDurationMinutes may be set to; 0 would be indistinguishable from the null that means no limit
