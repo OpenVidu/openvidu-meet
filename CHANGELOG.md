@@ -1,268 +1,329 @@
 # Changelog
 
-## 3.9.0 (Unreleased)
+## 3.9.0 (unreleased)
 
-### Breaking Changes
+3.9.0 opens the live meeting to the host application. A meeting can now be read, moderated and
+ended over the REST API, participants arriving and leaving are reported as webhooks, the embedded
+API can drive the local participant's microphone, camera and screen share, and a room can carry a
+participant cap, a duration limit and automatic recording.
 
-#### Permission, command, and event naming
+Adopting 3.9.0 requires no change to an existing integration. No endpoint, attribute, command or
+event was removed. The permission, command and event names introduced here run alongside the
+previous ones, which keep working until 3.12.0.
 
-Permission keys, embedded commands, and events now follow a consistent naming scheme with the module name first.
+| Surface | Where it changed |
+| --- | --- |
+| REST API | [Meetings API](#meetings-api), [Webhooks API](#webhooks-api), [Recording download](#recording-download), [Deprecated](#deprecated) |
+| Webhooks | [Webhooks API](#webhooks-api), [Participant events](#participant-events), [Meeting limits](#meeting-limits) |
+| Embedded API | [Local media controls](#local-media-controls), [Participant identity](#participant-identity), [Initial media state](#initial-media-state), [Deprecated](#deprecated) |
+| Room configuration | [Meeting limits](#meeting-limits), [Recording auto-start](#recording-auto-start), [Initial media state](#initial-media-state) |
+| Meeting experience | [Meeting status rail](#meeting-status-rail), [Microphone warnings](#microphone-warnings), [Improved](#improved) |
+| Console | [Console](#console) |
+| Deployment | [Upgrade notes](#upgrade-notes) |
 
-The previous names remain supported but are deprecated and will be removed in **3.12.0**.
+### Upgrade notes
 
-##### Permission keys
+- **`MEET_MODE` selects which permission keys the API accepts.** It defaults to `compatibility`,
+  which accepts both the deprecated and the current keys, including a mix of the two in one
+  request, and serves both key sets in responses and webhooks. No configuration change is required
+  for this version. Setting it to `3.9.0` restricts acceptance to the current keys. It governs
+  permission keys only, and does not affect the embedded API.
+- **Compatibility mode rejects a partial rewrite of an alias pair.** A permission object read from
+  the API carries both key sets, so writing it back after modifying only the deprecated half of a
+  pair returns `422` naming the replacement key. Echoing the object back unchanged, or sending only
+  the keys being changed, is accepted.
 
-| Deprecated                   | Current                                               |
-| ---------------------------- | ----------------------------------------------------- |
-| `canRecord`                  | `recordingControl`                                    |
-| `canRetrieveRecordings`      | `recordingList`, `recordingPlay`, `recordingDownload` |
-| `canDeleteRecordings`        | `recordingDelete`                                     |
-| `canJoinMeeting`             | `meetingJoin`                                         |
-| `canEndMeeting`              | `meetingEnd`                                          |
-| `canMakeModerator`           | `participantPromote`                                  |
-| `canKickParticipants`        | `participantKick`                                     |
-| `canPublishAudio`            | `mediaPublishAudio`                                   |
-| `canPublishVideo`            | `mediaPublishVideo`                                   |
-| `canShareScreen`             | `mediaShareScreen`                                    |
-| `canChangeVirtualBackground` | `mediaChangeVirtualBackground`                        |
-| `canReadChat`                | `chatRead`                                            |
-| `canWriteChat`               | `chatWrite`                                           |
-| `canShareAccessLinks`        | `roomShareAccessLinks`                                |
+### Breaking changes
 
-`canRetrieveRecordings` is split into separate permissions for listing, playing, and downloading recordings.
+**None.** No endpoint, attribute, command or event was removed, no response field disappeared and
+no value changed. Host application code written against 3.8.0 keeps working, over both the web
+component and the iframe.
 
-##### Embedded commands
+### Deprecated
 
-| Deprecated        | Current           |
-| ----------------- | ----------------- |
-| `endMeeting`      | `meetingEnd`      |
-| `leaveRoom`       | `meetingLeave`    |
-| `kickParticipant` | `participantKick` |
+The names below still work in this release and are removed in **3.12.0**. Responses that carry
+deprecated permission keys also return the header `Deprecation: true`.
 
-##### Embedded events
+#### Permission keys
 
-| Deprecated | Current         |
-| ---------- | --------------- |
-| `joined`   | `meetingJoined` |
-| `left`     | `meetingLeft`   |
-| `closed`   | `meetingClosed` |
+| Deprecated | Replacement |
+| --- | --- |
+| `canRecord` | `recordingControl` |
+| `canRetrieveRecordings` | `recordingList`, `recordingPlay`, `recordingDownload` |
+| `canDeleteRecordings` | `recordingDelete` |
+| `canJoinMeeting` | `meetingJoin` |
+| `canEndMeeting` | `meetingEnd` |
+| `canMakeModerator` | `participantPromote` |
+| `canKickParticipants` | `participantKick` |
+| `canPublishAudio` | `mediaPublishAudio` |
+| `canPublishVideo` | `mediaPublishVideo` |
+| `canShareScreen` | `mediaShareScreen` |
+| `canChangeVirtualBackground` | `mediaChangeVirtualBackground` |
+| `canReadChat` | `chatRead` |
+| `canWriteChat` | `chatWrite` |
+| `canShareAccessLinks` | `roomShareAccessLinks` |
 
-##### Compatibility mode
+`canRetrieveRecordings` becomes three permissions, so that listing, playing and downloading a
+recording can be granted separately.
 
-The `MEET_MODE` environment variable controls which permission names are accepted:
+#### Embedded commands and events
 
-* `compatibility` (default): accepts old and new permission keys, including mixed usage. Responses and webhooks include both key sets and return `Deprecation: true`.
-* `3.9.0`: accepts only the new permission keys. Deprecated keys return `422` with the replacement key.
+| Deprecated | Replacement | Kind |
+| --- | --- | --- |
+| `endMeeting` | `meetingEnd` | command |
+| `leaveRoom` | `meetingLeave` | command |
+| `kickParticipant` | `participantKick` | command |
+| `joined` | `meetingJoined` | event |
+| `left` | `meetingLeft` | event |
+| `closed` | `meetingClosed` | event |
 
-`MEET_MODE` only affects permission keys and does not change the embedded API.
+Both name sets are accepted regardless of `MEET_MODE`.
 
----
+#### Moving to the current names
+
+Responses and webhooks carry both permission key sets while `MEET_MODE` is `compatibility`, so
+readers can move to the current names before writers do. Once no deprecated key is in use,
+`MEET_MODE=3.9.0` makes the API reject them with a `422` that names the replacement.
 
 ### Added
 
+#### Meetings API
+
+**Surfaces:** REST API, permissions
+
+An API under `/api/v1/meetings` for operating a live meeting from the host application:
+
+| Endpoint | Permission |
+| --- | --- |
+| `GET /api/v1/meetings/{roomId}` | `meetingRead` |
+| `DELETE /api/v1/meetings/{roomId}` | `meetingEnd` |
+| `GET /api/v1/meetings/{roomId}/participants` | `meetingRead` |
+| `GET /api/v1/meetings/{roomId}/participants/{participantIdentity}` | `meetingRead` |
+| `DELETE /api/v1/meetings/{roomId}/participants/{participantIdentity}` | `participantKick` |
+| `PUT /api/v1/meetings/{roomId}/participants/media` | `participantMute` |
+| `PUT /api/v1/meetings/{roomId}/participants/{participantIdentity}/media` | `participantMute` |
+| `PUT /api/v1/meetings/{roomId}/participants/{participantIdentity}/role` | `participantPromote` |
+
+Every endpoint accepts both API keys and room member tokens. Reading a meeting or its participants
+requires the new `meetingRead` permission and does not require the caller to have a seat in the
+meeting. A permission set that does not name `meetingRead` takes it from `meetingJoin`, so existing
+integrations keep the access they had.
+
+A meeting reports `startDate`, `participantCount` and `recordingActive`, and, when the room sets
+limits, the `endDate` it will be force-ended at and the `maxParticipants` in force. Both are
+stamped when the meeting starts, so a change to the room configuration does not move them
+mid-meeting.
+
+#### Webhooks API
+
+**Surfaces:** REST API
+
+Webhooks are individually managed resources under `/api/v1/webhooks`, replacing the single global
+webhook configuration:
+
+| Endpoint | Operation |
+| --- | --- |
+| `POST /api/v1/webhooks` | Register a webhook |
+| `GET /api/v1/webhooks` | List the registered webhooks |
+| `GET /api/v1/webhooks/{webhookId}` | Read one webhook |
+| `PUT /api/v1/webhooks/{webhookId}` | Update a webhook |
+| `DELETE /api/v1/webhooks/{webhookId}` | Delete a webhook |
+| `POST /api/v1/webhooks/{webhookId}/test` | Send a test delivery to its URL |
+
+Each webhook defines its own event filter and room scope, so different systems can receive
+different events. Managing them is a deployment-level operation rather than a room-level one:
+these endpoints accept an API key or an administrator's access token, and no room permission grants
+access to them.
+
+#### Participant events
+
+**Surfaces:** webhooks, embedded API
+
+`participantJoined` and `participantLeft` are reported on two surfaces:
+
+- As webhooks. `participantLeft` also carries `leaveDate`, `durationSeconds` and `leaveReason`.
+- As embedded events, reporting remote participants. The local participant's own arrival and
+  departure stay on `meetingJoined` and `meetingLeft`.
+
+`leaveReason` describes how that participant's own session ended. A meeting ended for everyone is
+reported as `meeting_ended`, whoever or whatever triggered it.
+
 #### Meeting limits
 
-Added configurable participant and duration limits:
+**Surfaces:** room configuration, REST API, webhooks, embedded API, meeting UI, console
 
-* `config.maxParticipants`: maximum number of participants. New joins are rejected once the limit is reached.
-* `config.maxDurationMinutes`: maximum meeting duration. The meeting ends automatically when the limit is reached, with a warning shown beforehand.
+Two new room configuration fields:
 
-An automatic end is reported on both integration surfaces: the `meetingEnded` webhook carries `reason: max_duration_reached`, and the embedded `meetingLeft` event carries `reason: meeting_ended_by_duration_limit`.
+- `config.maxParticipants`, from 1 to 30. Joins are rejected once the meeting is full, and the
+  participant is told the meeting is full rather than shown a generic connection error.
+- `config.maxDurationMinutes`, from 1 to 1440. The meeting is force-ended when it is reached.
+
+The deadline is fixed when the meeting starts, so changing the room configuration does not move a
+meeting that is already running. Participants see a countdown as the deadline approaches, and a
+notice with a sound when the meeting is about to end.
+
+An automatic end is reported on both integration surfaces, in each one's own vocabulary: the
+`meetingEnded` webhook carries `reason: max_duration_reached`, and the embedded `meetingLeft` event
+carries `reason: meeting_ended_by_duration_limit`.
 
 #### Recording auto-start
 
-Added automatic recording based on meeting state:
+**Surfaces:** room configuration, console
 
-* `when_first_participant_joins`
-* `when_second_participant_joins`
-* `when_moderator_joins`
+Recording can start on its own, through `config.recording.autoStart`:
 
-`when_moderator_joins` also triggers when a participant is promoted to moderator.
+- `when_first_participant_joins`
+- `when_second_participant_joins`
+- `when_moderator_joins`, which also triggers when a participant is promoted to moderator
 
-Manually stopping the recording disables auto-start for the remainder of the meeting.
+Stopping the recording by hand disables auto-start for the rest of the meeting, so it does not
+restart on the next join. A room that records automatically rejects an on-demand start, and a
+threshold that the room's participant cap makes unreachable is rejected at configuration time.
+
+#### Recording download
+
+**Surfaces:** REST API, permissions
+
+`GET /api/v1/recordings/{recordingId}/download`. Downloading a recording is permissioned separately
+from playing it, through `recordingDownload` and `recordingPlay`.
 
 #### Initial media state
 
-Added room-level defaults for microphone and camera state:
+**Surfaces:** room configuration, embedded API, console
 
-* `initialAudioActive`
-* `initialVideoActive`
+`config.initialAudioActive` and `config.initialVideoActive` set the microphone and camera state a
+participant joins with. Both default to `true`.
 
-Both default to `true`.
+The embedding attributes `initial-audio-active` and `initial-video-active` override them for one
+embed. A denied `mediaPublishAudio` or `mediaPublishVideo` permission always wins over both.
 
-Added embedding attributes to override the room defaults:
+#### Local media controls
 
-* `initial-audio-active`
-* `initial-video-active`
+**Surfaces:** embedded API
 
-Explicitly denied `mediaPublish*` permissions always take precedence.
+Commands for the local participant's own media:
+
+- `mediaToggleAudio`
+- `mediaToggleVideo`
+- `mediaToggleScreenShare`
+
+Each one toggles when called with no argument and sets the state explicitly when given one, and
+requires the matching `mediaPublish*` or `mediaShareScreen` permission. Audio and video can also be
+set from the prejoin screen.
+
+Every change, local or remote, is reported by a matching event carrying `{ active, origin }`:
+
+- `mediaAudioStatusChanged`
+- `mediaVideoStatusChanged`
+- `mediaScreenShareStatusChanged`
+
+`origin` says whether the participant themselves or a moderator caused the change.
 
 #### Moderator media controls
 
-Added the ability for moderators to mute a participant's microphone, camera, or screen share.
+**Surfaces:** REST API, embedded API, meeting UI
 
-**Permissions**
+Moderators can mute a participant's microphone, camera or screen share, one participant at a time
+or everyone at once, over the [meetings API](#meetings-api) or with the embedded commands
+`participantMute(participantIdentity, media)` and `participantMuteAll(media)`.
 
-* Added `participantMute`, configurable per role or member.
-* Disabled by default.
+They are gated on the new `participantMute` permission, configurable per role or per member and
+disabled by default. A moderator cannot mute another moderator, and a participant can always turn
+their own device back on. A remote mute reaches the affected participant as the media status event
+for that device, carrying `origin: 'moderator'`.
 
-**REST API**
+#### Participant identity
 
-* `PUT /meetings/{roomId}/participants/{participantIdentity}/media`
-* `PUT /meetings/{roomId}/participants/media`
+**Surfaces:** embedded API, REST API, webhooks
 
-**Embedded API**
+The embedding attributes `participant-external-id` and `participant-metadata` associate a meeting
+participant with a user in the host application. They travel as `externalId` and `metadata` in
+participant payloads, on both the meetings API and the participant webhooks. `metadata` is capped
+at 2 KB, measured in UTF-8 bytes.
 
-* `participantMute(participantIdentity, media)`
-* `participantMuteAll(media)`
+Participant identity is fixed by the join token. A participant can no longer rewrite their own
+identity from the client.
 
-Both commands require `participantMute`.
+#### Meeting status rail
 
-Moderators cannot mute other moderators. Participant mutes are always reversible by the participant.
+**Surfaces:** meeting UI
 
-**Events**
+Meeting-wide status is gathered into one rail above the layout, so it stays visible even when the
+host application renders no toolbar. It shows a recording chip, which reports that a recording is
+starting and then how long it has been running, a countdown when the meeting is about to reach its
+duration limit, an indicator when the meeting is end-to-end encrypted, and the number of hidden
+participants. A chip that opens a panel does so only when the viewer is allowed to open that panel.
 
-The following events now include `origin: 'moderator'` when applicable:
+#### Microphone warnings
 
-* `mediaAudioStatusChanged`
-* `mediaVideoStatusChanged`
-* `mediaScreenShareStatusChanged`
+**Surfaces:** meeting UI
 
+A participant who speaks while muted is told, and so is one whose microphone has been muted by the
+operating system rather than by Meet.
 
-#### Embedding API: media controls
+#### Console
 
-Added commands for controlling local media:
+**Surfaces:** console
 
-* `mediaToggleAudio`
-* `mediaToggleVideo`
-* `mediaToggleScreenShare`
-
-Commands can toggle or explicitly set the media state and require the corresponding permission. Audio and video controls are also available from the prejoin screen.
-
-Added media state events:
-
-* `mediaAudioStatusChanged`
-* `mediaVideoStatusChanged`
-* `mediaScreenShareStatusChanged`
-
-Events include `{ active, origin }`.
-
-Added participant lifecycle events:
-
-* `participantJoined`
-* `participantLeft`
-
-These events are emitted for remote participants.
-
-#### Embedding API: participant correlation
-
-Added embedding attributes for associating meeting participants with users in the host application:
-
-* `participant-external-id`
-* `participant-metadata`
-
-#### Webhooks
-
-Replaced the single global webhook configuration with individually managed webhook resources.
-
-**Webhook management**
-
-* `POST /webhooks`
-* `GET /webhooks`
-* `PUT /webhooks/{webhookId}`
-* `DELETE /webhooks/{webhookId}`
-* `POST /webhooks/{webhookId}/test`
-
-Each webhook can define its own event filter and room scope.
-
-**Participant events**
-
-Added:
-
-* `participantJoined`
-* `participantLeft`
-
-Participant payloads include `externalId` and `metadata`.
-
-`participantLeft` also includes:
-
-* `leaveDate`
-* `durationSeconds`
-* `leaveReason`
-
-`leaveReason` describes how that participant's own session ended. A meeting ended for everyone is reported as `meeting_ended`, whoever or whatever triggered it.
-
-**Meeting events**
-
-The `meetingEnded` webhook now includes an optional `reason`, set only when the meeting was force-ended. Automatic duration-limit termination reports `max_duration_reached`.
-
-#### REST API
-
-**Meetings**
-
-Added a public meetings API under `/api/v1/meetings` for operating a live meeting from the host application:
-
-| Endpoint                                                          | Permission           |
-| ----------------------------------------------------------------- | -------------------- |
-| `GET /meetings/{roomId}`                                          | `meetingRead`        |
-| `DELETE /meetings/{roomId}`                                       | `meetingEnd`         |
-| `GET /meetings/{roomId}/participants`                             | `meetingRead`        |
-| `GET /meetings/{roomId}/participants/{participantIdentity}`       | `meetingRead`        |
-| `DELETE /meetings/{roomId}/participants/{participantIdentity}`    | `participantKick`    |
-| `PUT /meetings/{roomId}/participants/media`                       | `participantMute`    |
-| `PUT /meetings/{roomId}/participants/{participantIdentity}/media` | `participantMute`    |
-| `PUT /meetings/{roomId}/participants/{participantIdentity}/role`  | `participantPromote` |
-
-Every endpoint accepts both API keys and room member tokens. Reading a meeting or its participants requires the new `meetingRead` permission and does not require the caller to have a seat in the meeting. A permission set that does not name `meetingRead` takes it from `meetingJoin`, so existing integrations keep the access they had.
-
-**Recordings**
-
-Added `GET /recordings/{recordingId}/download`. Recording download is now independently permissioned from playback.
-
----
+- The room wizard configures the meeting limits and the initial microphone and camera state.
+- Room ids can be copied from the rooms list and from the room detail page.
+- Webhooks are managed as individual resources, over the [webhooks API](#webhooks-api).
 
 ### Improved
 
-#### Participants panel
-
-The participants panel now:
-
-* Displays microphone, camera, and screen-share state for each participant.
-* Provides per-device moderator mute controls alongside **Promote** and **Kick**.
-
-#### Meeting join
-
-Camera and microphone permissions are now requested in a single browser permission prompt.
-
-#### Participant tile layout
-
-The floating/docked participant tile preference is now persisted per browser.
-
----
+- **Participants panel.** It shows the microphone, camera and screen share state of every
+  participant, and offers per-device mute controls next to **Promote** and **Kick**.
+- **Joining a meeting** asks for the camera and the microphone in a single browser permission
+  prompt instead of two.
+- **The floating or docked choice for the local video tile** is remembered per browser.
+- **Screen shares can be zoomed with two fingers** on touch devices. The zoom used to live in a
+  hover overlay that a finger never reaches.
+- **The web component loader** imports the bundle lazily, so the entry script stays small and the
+  bundle is cached on its own.
+- **Rate limits** for token issuance, API requests and static assets were raised to accommodate
+  large audiences.
+- **Meetings render more cheaply.** Layout work no longer runs while nothing has moved, microphone
+  level metering runs on a timer instead of every frame, speaking detection is off the main thread,
+  and MediaPipe and the virtual background processors load only when used.
 
 ### Fixed
 
 #### Security
 
-Fixed an issue that allowed a participant to grant themselves moderator permissions by modifying their own role and identity data.
+- A participant could grant themselves moderator permissions by modifying their own role and
+  identity data. Roles and permissions are decided by the server alone.
+- The `chatWrite` permission was enforced in the interface only. It is enforced at the media server,
+  through the data publish grant, both at join time and when permissions change mid-meeting.
+- Two object merge helpers accepted prototype-chain keys, and temporary passwords were generated
+  from a non-cryptographic random source.
+- Changing a member's media permissions mid-meeting did not reach the media server, so a revoked
+  permission left the participant able to keep publishing.
 
-Moderator permissions are now controlled exclusively by the server.
+#### Meetings and rooms
 
-#### Meeting state
+- Ended meetings could stay marked as running, which blocked duration limits and room configuration
+  changes from taking effect. Meeting state is reconciled and closed automatically.
+- A stale reconnect could reopen a closed room.
+- A meeting that filled up while a participant was joining reported a generic connection error
+  instead of saying the meeting was full.
+- Transferring room ownership while deleting a user could lose the transfer to a race.
+- The local video disappeared from the layout when the last remote participant left.
+- A participant who joined with a device turned off could not turn it on.
 
-Fixed an issue where ended meetings could remain marked as running.
+#### Recordings
 
-Meeting state is now reconciled and closed automatically, allowing duration limits and room configuration changes to work correctly.
+- Stopping a recording could race a concurrent stop, and a recording that was starting or ending
+  was not counted as in progress when the lock was released.
+- The auto-start latch outlived its own meeting.
+- Deleting a recording could fail on an error payload with missing fields.
 
-#### Closed rooms
+#### Embedding
 
-Fixed an issue where an old reconnect could reopen a closed room.
-
-Closed rooms now remain closed.
+- Re-entering a meeting in the same web component instance wiped or froze the entry attributes.
+- The web component could not find its bundle when the host application served the loader from its
+  own origin.
 
 #### Room wizard
 
-Fixed an issue where:
-
-* Abandoned wizard state could leak into the next room.
-* Failed saves reset the entered form data.
+- Abandoned wizard state leaked into the next room, and a failed save reset the form.
+- The wizard sent back the deprecated permission keys it had read.
