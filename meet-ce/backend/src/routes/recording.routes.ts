@@ -16,7 +16,7 @@ import {
 	setupRecordingAuthentication,
 	validateBulkDeleteRecordingsAccess,
 	validateDownloadRecordingsAccess,
-	withRecordingEnabled
+	withRecordingStartAllowed
 } from '../middlewares/recording.middleware.js';
 import {
 	validateBulkDeleteRecordingsReq,
@@ -39,7 +39,7 @@ recordingRouter.post(
 	'/',
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	validateStartRecordingReq,
-	withRecordingEnabled,
+	withRecordingStartAllowed,
 	authorizeRecordingControl,
 	recordingCtrl.startRecording
 );

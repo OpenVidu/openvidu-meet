@@ -14,3 +14,8 @@ content:
                 value:
                     error: Recording Error
                     message: 'Recording is disabled for room room-123'
+            manual_recording_not_allowed:
+                summary: Room Records Automatically Example
+                value:
+                    error: Recording Error
+                    message: "Room 'room-123' starts its recording automatically, so it cannot be started on-demand"

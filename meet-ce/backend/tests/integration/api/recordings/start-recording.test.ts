@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import {
 	MeetRecordingAudioCodec,
+	MeetRecordingAutoStartMode,
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
@@ -20,6 +21,7 @@ import {
 } from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
+	createRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
 	startRecording,
@@ -699,6 +701,31 @@ describe('Recording API Tests', () => {
 				room.roomName,
 				MeetRecordingLayout.SPEAKER,
 				customEncoding
+			);
+		});
+	});
+
+	describe('Rooms That Record Automatically', () => {
+		it('Should refuse an on-demand start in a room configured to start its own recording', async () => {
+			const autoStartRoom = await createRoom(
+				{
+					roomName: 'Auto Start Room',
+					config: {
+						recording: {
+							enabled: true,
+							autoStart: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS
+						}
+					}
+				},
+				undefined,
+				{ xFields: 'roomId,roomName,config', xExtraFields: 'config' }
+			);
+
+			const response = await startRecording(autoStartRoom.roomId);
+
+			expect(response.status).toBe(403);
+			expect(response.body.message).toBe(
+				`Room '${autoStartRoom.roomId}' starts its recording automatically, so it cannot be started on-demand`
 			);
 		});
 	});

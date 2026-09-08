@@ -93,7 +93,7 @@ MeetRecordingConfig:
                 meeting; `when_second_participant_joins` starts as soon as a second participant
                 joins; `when_moderator_joins` starts as soon as a participant with the moderator
                 role is in the meeting, by join or by promotion during the meeting.
-                `null` (the default) means recordings only start on demand.
+                `null` (the default) means recordings only start on-demand.
                 Config updates merge with the stored config, so an omitted value keeps its current
                 setting; send `null` to turn auto-start off.
                 `when_second_participant_joins` needs a room that admits at least two participants,

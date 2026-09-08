@@ -12,6 +12,11 @@
 
 
             If a configuration override is provided, those values will take precedence over the room's configuration.
+
+
+            Only rooms that record on-demand can be started this way. A room configured with
+            `recording.autoStart` starts its own recording when the configured threshold is reached, and
+            rejects an on-demand start with `403`.
         tags:
             - OpenVidu Meet - Recordings
         security:

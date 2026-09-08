@@ -141,6 +141,14 @@ export const errorRecordingDisabled = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Recording Error', `Recording is disabled for room '${roomId}'`, 403);
 };
 
+export const errorManualRecordingNotAllowed = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Recording Error',
+		`Room '${roomId}' starts its recording automatically, so it cannot be started on-demand`,
+		403
+	);
+};
+
 export const errorRecordingNotFound = (recordingId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Recording Error', `Recording '${recordingId}' not found`, 404);
 };
