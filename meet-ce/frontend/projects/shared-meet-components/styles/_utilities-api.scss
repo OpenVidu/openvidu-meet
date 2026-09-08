@@ -1223,7 +1223,9 @@
 %ov-page-container {
 	height: 100%;
 	overflow: auto;
-	button {
+	// Material renders the slide-toggle and the button-toggle as <button>, so a bare selector here
+	// pads their internals and collapses the switch track.
+	button:where(:not(.mdc-switch, .mat-button-toggle-button)) {
 		@include components.ov-button-base;
 	}
 
@@ -1394,7 +1396,7 @@
 
 		::ng-deep .mat-mdc-text-field-wrapper {
 			background-color: var(--ov-meet-surface);
-			border-radius: var(--ov-meet-border-radius-sm);
+			border-radius: var(--ov-meet-radius-sm);
 		}
 
 		::ng-deep .mdc-notched-outline__leading,

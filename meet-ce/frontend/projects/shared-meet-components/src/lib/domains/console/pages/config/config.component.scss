@@ -1,11 +1,5 @@
 @use '_design-tokens.scss';
 
-.ov-page-container {
-	button {
-		padding: var(--ov-meet-button-padding-vertical) var(--ov-meet-button-padding-horizontal);
-	}
-}
-
 // Theme Configuration Section
 .theme-config-card {
 	.theme-form {

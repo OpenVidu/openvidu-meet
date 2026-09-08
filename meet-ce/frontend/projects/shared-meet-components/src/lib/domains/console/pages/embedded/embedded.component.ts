@@ -1,17 +1,15 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatChipsModule } from '@angular/material/chips';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetApiKey, MeetWebhook, MeetWebhookEventType, MeetWebhookOptions } from '@openvidu-meet/typings';
+import { MeetApiKey, MeetWebhook } from '@openvidu-meet/typings';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { ApiKeyService } from '../../../../shared/services/api-key.service';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
@@ -19,6 +17,7 @@ import { TranslateService } from '../../../../shared/services/i18n/translate.ser
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { WebhookService } from '../../../../shared/services/webhook.service';
+import { WebhookEditorDialogComponent } from '../../components/webhook-editor-dialog/webhook-editor-dialog.component';
 
 @Component({
 	selector: 'ov-embedded',
@@ -28,11 +27,8 @@ import { WebhookService } from '../../../../shared/services/webhook.service';
 		MatIconModule,
 		MatInputModule,
 		MatFormFieldModule,
-		MatChipsModule,
-		MatSelectModule,
 		MatSlideToggleModule,
 		MatTooltipModule,
-		ReactiveFormsModule,
 		MatProgressSpinnerModule,
 		TranslatePipe
 	],
@@ -46,6 +42,7 @@ export class EmbeddedComponent implements OnInit {
 	protected notificationService = inject(NotificationService);
 	protected dialogPresetsService = inject(DialogPresetsService);
 	protected clipboard = inject(Clipboard);
+	private readonly dialog = inject(MatDialog);
 	private readonly translateService = inject(TranslateService);
 
 	restApiDocsUrl = signal<string>('');
@@ -56,23 +53,6 @@ export class EmbeddedComponent implements OnInit {
 	showApiKey = signal(false);
 
 	webhooks = signal<MeetWebhook[]>([]);
-	/** `null` = editor closed; `'new'` = creating; otherwise the id of the webhook being edited */
-	editingWebhookId = signal<string | 'new' | null>(null);
-	savingWebhook = signal(false);
-
-	/** Event types offered by the filter selector, in the order the contract declares them */
-	readonly webhookEventTypes = Object.values(MeetWebhookEventType);
-
-	webhookForm = new FormGroup({
-		url: new FormControl('', {
-			nonNullable: true,
-			validators: [Validators.required, Validators.pattern(/^https?:\/\/.+/)]
-		}),
-		// An empty selection means "every event type"
-		events: new FormControl<MeetWebhookEventType[]>([], { nonNullable: true }),
-		roomId: new FormControl('', { nonNullable: true }),
-		enabled: new FormControl(true, { nonNullable: true })
-	});
 
 	async ngOnInit() {
 		// Build the REST API documentation URL with the deployment base path
@@ -156,6 +136,11 @@ export class EmbeddedComponent implements OnInit {
 		return !!this.apiKeyData();
 	}
 
+	/** Number of registered webhooks currently delivering events */
+	get activeWebhookCount(): number {
+		return this.webhooks().filter((webhook) => webhook.enabled).length;
+	}
+
 	private async loadWebhooks() {
 		try {
 			this.webhooks.set(await this.webhookService.getWebhooks());
@@ -167,59 +152,23 @@ export class EmbeddedComponent implements OnInit {
 		}
 	}
 
-	openWebhookCreator() {
-		this.webhookForm.reset();
-		this.editingWebhookId.set('new');
+	/** Opens the editor dialog; `webhook` is omitted when registering a new one. */
+	openWebhookEditor(webhook?: MeetWebhook) {
+		this.dialog
+			.open(WebhookEditorDialogComponent, {
+				width: '620px',
+				data: { webhook },
+				panelClass: 'ov-meet-dialog'
+			})
+			.afterClosed()
+			.subscribe(async (saved) => {
+				if (saved) await this.loadWebhooks();
+			});
 	}
 
-	openWebhookEditor(webhook: MeetWebhook) {
-		this.webhookForm.reset({
-			url: webhook.url,
-			events: webhook.events ?? [],
-			roomId: webhook.roomId ?? '',
-			enabled: webhook.enabled
-		});
-		this.editingWebhookId.set(webhook.webhookId);
-	}
-
-	closeWebhookEditor() {
-		this.editingWebhookId.set(null);
-		this.webhookForm.reset();
-	}
-
-	async saveWebhook() {
-		if (this.webhookForm.invalid || this.savingWebhook()) return;
-
-		const { url, events, roomId, enabled } = this.webhookForm.getRawValue();
-		const options: MeetWebhookOptions = {
-			url,
-			events: events.length > 0 ? events : undefined,
-			roomId: roomId.trim() || undefined,
-			enabled
-		};
-		const editingId = this.editingWebhookId();
-
-		this.savingWebhook.set(true);
-
-		try {
-			if (editingId === 'new') {
-				await this.webhookService.createWebhook(options);
-			} else if (editingId) {
-				await this.webhookService.updateWebhook(editingId, options);
-			}
-
-			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_SAVED'));
-			this.closeWebhookEditor();
-			await this.loadWebhooks();
-		} catch (error: any) {
-			console.error('Error saving webhook:', error);
-			const errorMessage = error.error?.message || error.message || '';
-			this.notificationService.showSnackbar(
-				`${this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_SAVE_FAILED')} ${errorMessage}`.trim()
-			);
-		} finally {
-			this.savingWebhook.set(false);
-		}
+	copyWebhookUrl(webhook: MeetWebhook) {
+		this.clipboard.copy(webhook.url);
+		this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_URL_COPIED'));
 	}
 
 	async toggleWebhookEnabled(webhook: MeetWebhook, enabled: boolean) {
@@ -246,11 +195,6 @@ export class EmbeddedComponent implements OnInit {
 			confirmCallback: async () => {
 				try {
 					await this.webhookService.deleteWebhook(webhook.webhookId);
-
-					if (this.editingWebhookId() === webhook.webhookId) {
-						this.closeWebhookEditor();
-					}
-
 					this.notificationService.showSnackbar(
 						this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_DELETED')
 					);

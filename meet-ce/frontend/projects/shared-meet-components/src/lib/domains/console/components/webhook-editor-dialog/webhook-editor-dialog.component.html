@@ -1,0 +1,98 @@
+<div class="webhook-editor-dialog">
+	<h2 mat-dialog-title class="dialog-title">
+		<mat-icon class="title-icon">webhook</mat-icon>
+		{{ (isNewWebhook ? 'EMBEDDED.ADD_WEBHOOK' : 'EMBEDDED.EDIT_WEBHOOK') | translate }}
+	</h2>
+
+	<mat-dialog-content class="dialog-content">
+		<form [formGroup]="webhookForm">
+			<mat-form-field appearance="outline" class="full-width">
+				<mat-label>{{ 'EMBEDDED.WEBHOOK_URL' | translate }}</mat-label>
+				<input matInput formControlName="url" placeholder="https://your-server.com/openvidu/webhook" />
+				<mat-icon matSuffix>link</mat-icon>
+				@if (webhookForm.get('url')?.hasError('required')) {
+					<mat-error>{{ 'EMBEDDED.WEBHOOK_URL_REQUIRED' | translate }}</mat-error>
+				}
+				@if (webhookForm.get('url')?.hasError('pattern')) {
+					<mat-error>{{ 'EMBEDDED.WEBHOOK_URL_INVALID' | translate }}</mat-error>
+				}
+			</mat-form-field>
+
+			<div class="editor-field">
+				<label class="editor-label">{{ 'EMBEDDED.WEBHOOK_EVENTS_LABEL' | translate }}</label>
+				<mat-button-toggle-group formControlName="eventsMode" hideSingleSelectionIndicator>
+					<mat-button-toggle value="all">
+						{{ 'EMBEDDED.WEBHOOK_ALL_EVENTS' | translate }}
+					</mat-button-toggle>
+					<mat-button-toggle value="selected">
+						{{ 'EMBEDDED.WEBHOOK_EVENTS_SELECTED' | translate }}
+					</mat-button-toggle>
+				</mat-button-toggle-group>
+
+				@if (webhookForm.controls.eventsMode.value === 'selected') {
+					<div class="event-options">
+						@for (eventType of webhookEventTypes; track eventType) {
+							<mat-checkbox
+								class="event-option"
+								[checked]="isEventTypeSelected(eventType)"
+								(change)="toggleEventType(eventType, $event.checked)"
+							>
+								{{ eventType }}
+							</mat-checkbox>
+						}
+					</div>
+				}
+			</div>
+
+			<div class="editor-field">
+				<label class="editor-label">{{ 'EMBEDDED.WEBHOOK_ROOMS_LABEL' | translate }}</label>
+				<div class="room-scope">
+					<mat-button-toggle-group formControlName="roomScope" hideSingleSelectionIndicator>
+						<mat-button-toggle value="all">
+							{{ 'EMBEDDED.WEBHOOK_ALL_ROOMS' | translate }}
+						</mat-button-toggle>
+						<mat-button-toggle value="one">
+							{{ 'EMBEDDED.WEBHOOK_ROOMS_ONE' | translate }}
+						</mat-button-toggle>
+					</mat-button-toggle-group>
+
+					@if (webhookForm.controls.roomScope.value === 'one') {
+						<mat-form-field appearance="outline" subscriptSizing="dynamic" class="room-id-field">
+							<mat-label>{{ 'EMBEDDED.WEBHOOK_ROOM_ID' | translate }}</mat-label>
+							<input matInput formControlName="roomId" />
+							<mat-icon matSuffix>meeting_room</mat-icon>
+						</mat-form-field>
+					}
+				</div>
+			</div>
+
+			<div class="editor-field">
+				<label class="editor-label">{{ 'EMBEDDED.WEBHOOK_STATUS' | translate }}</label>
+				<mat-slide-toggle formControlName="enabled" class="ov-slide-toggle-success">
+					{{
+						(webhookForm.controls.enabled.value ? 'EMBEDDED.WEBHOOK_ACTIVE' : 'EMBEDDED.WEBHOOK_PAUSED')
+							| translate
+					}}
+				</mat-slide-toggle>
+				<p class="editor-hint">
+					{{
+						(webhookForm.controls.enabled.value
+							? 'EMBEDDED.WEBHOOK_STATUS_HINT_ACTIVE'
+							: 'EMBEDDED.WEBHOOK_STATUS_HINT_PAUSED'
+						) | translate
+					}}
+				</p>
+			</div>
+		</form>
+	</mat-dialog-content>
+
+	<mat-dialog-actions class="dialog-actions">
+		<button mat-button class="primary-button" (click)="save()" [disabled]="!canSave">
+			<mat-icon>save</mat-icon>
+			{{ 'EMBEDDED.SAVE_WEBHOOK' | translate }}
+		</button>
+		<button mat-stroked-button (click)="cancel()">
+			{{ 'EMBEDDED.CANCEL' | translate }}
+		</button>
+	</mat-dialog-actions>
+</div>
