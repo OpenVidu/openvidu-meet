@@ -1,6 +1,6 @@
 import { EmbeddedAttribute } from '@openvidu-meet/typings';
 import { expect, type Page } from '@playwright/test';
-import { ensureFixture } from './testapp.helper';
+import { ensureFixture, selectIntegration, showControlsPanel } from './testapp.helper';
 import { type Integration } from './webcomponent.helper';
 
 /**
@@ -44,8 +44,9 @@ export const openWebcomponentWithAttributes = async (
 	const integration = options?.integration ?? 'webcomponent';
 
 	await ensureFixture(page);
+	await showControlsPanel(page, 'setup');
 
-	await page.getByTestId('select-integration').selectOption(integration);
+	await selectIntegration(page, integration);
 
 	for (const [property, testId] of TEXT_INPUT_TESTIDS) {
 		const value = attributes[property];

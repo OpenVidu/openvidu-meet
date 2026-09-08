@@ -101,6 +101,36 @@ export const ensureFixture = async (page: Page): Promise<void> => {
 	});
 };
 
+/** Tab of the testapp's controls panel a control lives in. */
+export type ControlsPanel = 'setup' | 'commands';
+
+/**
+ * Opens a tab of the testapp's controls panel. Setup and Commands are tabs, so a
+ * control is only in the DOM while its tab is open — every helper below opens the
+ * one it needs first. The click is skipped when the tab is already selected.
+ */
+export const showControlsPanel = async (page: Page, panel: ControlsPanel): Promise<void> => {
+	const tab = page.getByTestId(`tab-${panel}`);
+
+	if ((await tab.getAttribute('aria-selected')) === 'true') return;
+
+	await tab.click();
+	await expect(tab).toHaveAttribute('aria-selected', 'true');
+};
+
+/**
+ * Picks the embedding integration. The selector is a two-option button group, so
+ * the value is chosen by clicking its option rather than through `selectOption`.
+ */
+export const selectIntegration = async (page: Page, integration: Integration): Promise<void> => {
+	const option = page.getByTestId(`integration-${integration}`);
+
+	if ((await option.getAttribute('aria-pressed')) === 'true') return;
+
+	await option.click();
+	await expect(option).toHaveAttribute('aria-pressed', 'true');
+};
+
 type OpenMeetingOptions = {
 	integration?: Integration;
 	role?: 'moderator' | 'speaker';
@@ -140,6 +170,7 @@ export const openMeetingAtMediaSetup = async (
 	const participantName = name ?? `pw-${Math.random().toString(36).substring(2, 9)}`;
 
 	await ensureFixture(page);
+	await showControlsPanel(page, 'setup');
 
 	const room = await getRoom(roomId);
 	const roomUrl = room.access?.anonymous?.[role]?.url;
@@ -151,7 +182,7 @@ export const openMeetingAtMediaSetup = async (
 	// Drive the Angular testapp's UI: pick the integration, fill the properties
 	// form and click "Apply config" to mount the chosen transport with the
 	// API-issued URL.
-	await page.getByTestId('select-integration').selectOption(integration);
+	await selectIntegration(page, integration);
 	await page.getByTestId('input-roomUrl').fill(roomUrl);
 	await page.getByTestId('input-participantName').fill(participantName);
 
@@ -269,18 +300,19 @@ export const leaveMeeting = async (
 
 // ─── Imperative commands (driven through the testapp's buttons) ─────────────
 //
-// The testapp's "Imperative API" section wires each button to the matching
-// method on the WC reference, so clicking them exercises the same code path
-// a real host would use.
+// The testapp's Commands tab wires each button to the matching method on the WC
+// reference, so clicking them exercises the same code path a real host would use.
 // ────────────────────────────────────────────────────────────────────────────
 
 /** Clicks the testapp's `leaveRoom()` button. */
 export const leaveRoomCommand = async (page: Page): Promise<void> => {
+	await showControlsPanel(page, 'commands');
 	await page.getByTestId('btn-leave-room').click();
 };
 
 /** Clicks the testapp's `endMeeting()` button. */
 export const endMeetingCommand = async (page: Page): Promise<void> => {
+	await showControlsPanel(page, 'commands');
 	await page.getByTestId('btn-end-meeting').click();
 };
 
@@ -291,6 +323,7 @@ const fillParticipantIdentity = async (page: Page, participantIdentity: string):
 
 /** Fills the participant identity and clicks the testapp's `kickParticipant()` button. */
 export const kickParticipantCommand = async (page: Page, participantIdentity: string): Promise<void> => {
+	await showControlsPanel(page, 'commands');
 	await fillParticipantIdentity(page, participantIdentity);
 	await page.getByTestId('btn-kick-participant').click();
 };
@@ -309,6 +342,7 @@ export const participantMuteCommand = async (
 	participantIdentity: string,
 	media: MuteMedia
 ): Promise<void> => {
+	await showControlsPanel(page, 'commands');
 	await fillParticipantIdentity(page, participantIdentity);
 	await selectMuteMedia(page, media);
 	await page.getByTestId('btn-participant-mute').click();
@@ -316,6 +350,7 @@ export const participantMuteCommand = async (
 
 /** Picks the device and clicks the testapp's `participantMuteAll()` button. */
 export const participantMuteAllCommand = async (page: Page, media: MuteMedia): Promise<void> => {
+	await showControlsPanel(page, 'commands');
 	await selectMuteMedia(page, media);
 	await page.getByTestId('btn-participant-mute-all').click();
 };
@@ -327,34 +362,40 @@ const selectMediaActive = async (page: Page, active?: boolean): Promise<void> =>
 
 /** Clicks the testapp's `mediaToggleAudio()` button. Omitted `active` = toggle. */
 export const mediaToggleAudioCommand = async (page: Page, active?: boolean): Promise<void> => {
+	await showControlsPanel(page, 'commands');
 	await selectMediaActive(page, active);
 	await page.getByTestId('btn-media-toggle-audio').click();
 };
 
 /** Clicks the testapp's `mediaToggleVideo()` button. Omitted `active` = toggle. */
 export const mediaToggleVideoCommand = async (page: Page, active?: boolean): Promise<void> => {
+	await showControlsPanel(page, 'commands');
 	await selectMediaActive(page, active);
 	await page.getByTestId('btn-media-toggle-video').click();
 };
 
 /** Clicks the testapp's `mediaToggleScreenShare()` button. Omitted `active` = toggle. */
 export const mediaToggleScreenShareCommand = async (page: Page, active?: boolean): Promise<void> => {
+	await showControlsPanel(page, 'commands');
 	await selectMediaActive(page, active);
 	await page.getByTestId('btn-media-toggle-screen-share').click();
 };
 
 /** Clicks the testapp's deprecated `leaveRoom()` button. Removed in 3.12.0. */
 export const leaveRoomLegacyCommand = async (page: Page): Promise<void> => {
+	await showControlsPanel(page, 'commands');
 	await page.getByTestId('btn-legacy-leave-room').click();
 };
 
 /** Clicks the testapp's deprecated `endMeeting()` button. Removed in 3.12.0. */
 export const endMeetingLegacyCommand = async (page: Page): Promise<void> => {
+	await showControlsPanel(page, 'commands');
 	await page.getByTestId('btn-legacy-end-meeting').click();
 };
 
 /** Fills the participant identity and clicks the testapp's deprecated `kickParticipant()` button. Removed in 3.12.0. */
 export const kickParticipantLegacyCommand = async (page: Page, participantIdentity: string): Promise<void> => {
+	await showControlsPanel(page, 'commands');
 	await page.getByTestId('input-participant-identity').fill(participantIdentity);
 	await page.getByTestId('btn-legacy-kick-participant').click();
 };

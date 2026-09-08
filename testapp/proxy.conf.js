@@ -7,6 +7,7 @@
 //
 //   MEET_API_URL            backend base URL incl. base path
 //                           (default http://localhost:6080/meet)
+//   MEET_API_KEY            key the room browser reads rooms with (default meet-api-key)
 //   MEET_WEBHOOK_BRIDGE_URL local webhook bridge (default http://localhost:5081)
 
 const { URL } = require('url');
@@ -16,6 +17,7 @@ const backend = new URL(meetApiUrl);
 const backendOrigin = backend.origin; // e.g. http://localhost:6080
 const backendBasePath = backend.pathname.replace(/\/+$/, ''); // '' or '/meet'
 
+const meetApiKey = process.env.MEET_API_KEY || 'meet-api-key';
 const bridge = process.env.MEET_WEBHOOK_BRIDGE_URL || 'http://localhost:5081';
 
 module.exports = {
@@ -40,6 +42,18 @@ module.exports = {
 		changeOrigin: true,
 		secure: false,
 		pathRewrite: { '^/openvidu-meet.js': `${backendBasePath}/v1/openvidu-meet.js` },
+		logLevel: 'warn'
+	},
+	// Read-only room listing for the Setup tab's room browser. The API key is
+	// attached HERE, by the dev server, so it never reaches the browser bundle.
+	// Dev-server scaffolding: a production build of the testapp has no proxy and
+	// the room browser reports the endpoint as unavailable.
+	'/api/v1/rooms': {
+		target: backendOrigin,
+		changeOrigin: true,
+		secure: false,
+		headers: { 'x-api-key': meetApiKey },
+		pathRewrite: { '^/api': `${backendBasePath}/api` },
 		logLevel: 'warn'
 	},
 	'/webhook': {
