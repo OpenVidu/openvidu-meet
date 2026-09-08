@@ -15,7 +15,9 @@
       "DELETE_ROOM": "कक्ष हटाएं",
       "SHARE_LINK": "लिंक साझा करें",
       "MORE_ACTIONS": "और क्रियाएं",
-      "VIEW_USER_PROFILE": "उपयोगकर्ता प्रोफ़ाइल देखें"
+      "VIEW_USER_PROFILE": "उपयोगकर्ता प्रोफ़ाइल देखें",
+      "COPY_ROOM_ID": "कक्ष ID कॉपी करें",
+      "ROOM_ID_COPIED": "कक्ष ID क्लिपबोर्ड पर कॉपी की गई"
     },
     "LIST": {
       "LOADING_TITLE": "कक्ष लोड हो रहे हैं",

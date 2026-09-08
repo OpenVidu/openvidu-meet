@@ -15,7 +15,9 @@
       "DELETE_ROOM": "Delete room",
       "SHARE_LINK": "Share link",
       "MORE_ACTIONS": "More actions",
-      "VIEW_USER_PROFILE": "View user profile"
+      "VIEW_USER_PROFILE": "View user profile",
+      "COPY_ROOM_ID": "Copy room ID",
+      "ROOM_ID_COPIED": "Room ID copied to clipboard"
     },
     "LIST": {
       "LOADING_TITLE": "Loading Rooms",

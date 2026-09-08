@@ -172,8 +172,30 @@
 		@extend .primary-text;
 	}
 
+	.room-id-wrap {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-xs);
+	}
+
 	.room-id {
 		@extend .secondary-text, .monospace-text;
+	}
+
+	.copy-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 20px;
+		height: 20px;
+		padding: 0;
+		flex-shrink: 0;
+
+		mat-icon {
+			font-size: 14px;
+			width: 14px;
+			height: 14px;
+		}
 	}
 }
 

@@ -15,7 +15,9 @@
       "DELETE_ROOM": "Elimina stanza",
       "SHARE_LINK": "Condividi link",
       "MORE_ACTIONS": "Altre azioni",
-      "VIEW_USER_PROFILE": "Visualizza profilo utente"
+      "VIEW_USER_PROFILE": "Visualizza profilo utente",
+      "COPY_ROOM_ID": "Copia ID stanza",
+      "ROOM_ID_COPIED": "ID stanza copiato negli appunti"
     },
     "LIST": {
       "LOADING_TITLE": "Caricamento delle stanze",

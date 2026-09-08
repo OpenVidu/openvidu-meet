@@ -15,7 +15,9 @@
       "DELETE_ROOM": "Kamer verwijderen",
       "SHARE_LINK": "Link delen",
       "MORE_ACTIONS": "Meer acties",
-      "VIEW_USER_PROFILE": "Gebruikersprofiel bekijken"
+      "VIEW_USER_PROFILE": "Gebruikersprofiel bekijken",
+      "COPY_ROOM_ID": "Kamer-ID kopiëren",
+      "ROOM_ID_COPIED": "Kamer-ID naar klembord gekopieerd"
     },
     "LIST": {
       "LOADING_TITLE": "Kamers laden",

@@ -15,7 +15,9 @@
       "DELETE_ROOM": "Raum löschen",
       "SHARE_LINK": "Link teilen",
       "MORE_ACTIONS": "Weitere Aktionen",
-      "VIEW_USER_PROFILE": "Benutzerprofil anzeigen"
+      "VIEW_USER_PROFILE": "Benutzerprofil anzeigen",
+      "COPY_ROOM_ID": "Raum-ID kopieren",
+      "ROOM_ID_COPIED": "Raum-ID in die Zwischenablage kopiert"
     },
     "LIST": {
       "LOADING_TITLE": "Räume werden geladen",

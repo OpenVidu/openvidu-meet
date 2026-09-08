@@ -15,7 +15,9 @@
       "DELETE_ROOM": "Eliminar sala",
       "SHARE_LINK": "Compartir enlace",
       "MORE_ACTIONS": "Más acciones",
-      "VIEW_USER_PROFILE": "Ver perfil de usuario"
+      "VIEW_USER_PROFILE": "Ver perfil de usuario",
+      "COPY_ROOM_ID": "Copiar ID de la sala",
+      "ROOM_ID_COPIED": "ID de la sala copiado al portapapeles"
     },
     "LIST": {
       "LOADING_TITLE": "Cargando salas",

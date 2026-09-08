@@ -1,3 +1,4 @@
+import { Clipboard } from '@angular/cdk/clipboard';
 import { DatePipe } from '@angular/common';
 import {
 	Component,
@@ -39,6 +40,7 @@ import {
 import { merge } from 'rxjs';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
+import { NotificationService } from '../../../../shared/services/notification.service';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { RoomUiUtils } from '../../utils/ui';
 
@@ -124,6 +126,8 @@ export interface RoomTableFilter {
 export class RoomsListsComponent implements OnInit {
 	private destroyRef = inject(DestroyRef);
 	private readonly translateService = inject(TranslateService);
+	private readonly clipboard = inject(Clipboard);
+	private readonly notificationService = inject(NotificationService);
 
 	rooms = input<MeetRoom[]>([]);
 	showSearchBox = input(true);
@@ -434,6 +438,11 @@ export class RoomsListsComponent implements OnInit {
 
 	onRoomClick(room: MeetRoom) {
 		this.roomClicked.emit(room.roomId);
+	}
+
+	copyRoomId(room: MeetRoom) {
+		this.clipboard.copy(room.roomId);
+		this.notificationService.showSnackbar(this.translateService.translate('ROOMS.COMMON.ROOM_ID_COPIED'));
 	}
 
 	editRoom(room: MeetRoom) {

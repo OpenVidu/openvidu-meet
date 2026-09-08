@@ -15,7 +15,9 @@
       "DELETE_ROOM": "删除房间",
       "SHARE_LINK": "分享链接",
       "MORE_ACTIONS": "更多操作",
-      "VIEW_USER_PROFILE": "查看用户资料"
+      "VIEW_USER_PROFILE": "查看用户资料",
+      "COPY_ROOM_ID": "复制房间 ID",
+      "ROOM_ID_COPIED": "房间 ID 已复制到剪贴板"
     },
     "LIST": {
       "LOADING_TITLE": "正在加载房间",

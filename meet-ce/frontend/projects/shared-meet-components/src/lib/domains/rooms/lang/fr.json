@@ -15,7 +15,9 @@
       "DELETE_ROOM": "Supprimer la salle",
       "SHARE_LINK": "Partager le lien",
       "MORE_ACTIONS": "Plus d'actions",
-      "VIEW_USER_PROFILE": "Voir le profil de l'utilisateur"
+      "VIEW_USER_PROFILE": "Voir le profil de l'utilisateur",
+      "COPY_ROOM_ID": "Copier l'ID de la salle",
+      "ROOM_ID_COPIED": "ID de la salle copié dans le presse-papiers"
     },
     "LIST": {
       "LOADING_TITLE": "Chargement des salles",

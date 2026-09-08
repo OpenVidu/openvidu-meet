@@ -15,7 +15,9 @@
       "DELETE_ROOM": "ルームを削除",
       "SHARE_LINK": "リンクを共有",
       "MORE_ACTIONS": "その他の操作",
-      "VIEW_USER_PROFILE": "ユーザープロフィールを表示"
+      "VIEW_USER_PROFILE": "ユーザープロフィールを表示",
+      "COPY_ROOM_ID": "ルーム ID をコピー",
+      "ROOM_ID_COPIED": "ルーム ID をクリップボードにコピーしました"
     },
     "LIST": {
       "LOADING_TITLE": "ルームを読み込んでいます",
