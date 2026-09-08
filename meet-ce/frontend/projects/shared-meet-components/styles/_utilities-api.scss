@@ -1225,8 +1225,12 @@
 	overflow: auto;
 	button {
 		@include components.ov-button-base;
+	}
+
+	.mat-mdc-icon-button {
 		padding: var(--ov-meet-spacing-xs);
 	}
+
 	@include responsive.ov-tablet-down {
 		padding: var(--ov-meet-spacing-md);
 	}
@@ -1249,11 +1253,6 @@
 
 	.section-card {
 		@include components.ov-section-card;
-	}
-
-	.section-divider {
-		border-top: 1px solid var(--ov-meet-border-color-strong);
-		margin: var(--ov-meet-spacing-sm) 0;
 	}
 }
 
