@@ -12,7 +12,11 @@
 		"ENDING_SOON_BADGE_ENDING": "Wird beendet",
 		"E2EE_BADGE_LABEL": "Verschlüsselt",
 		"E2EE_BADGE_TOOLTIP": "Dieses Meeting ist Ende-zu-Ende-verschlüsselt",
-		"RECORDING_BADGE_STARTING": "Wird gestartet"
+		"RECORDING_BADGE_STARTING": "Wird gestartet",
+		"RECORDING_STARTED_TITLE": "Dieses Meeting wird aufgezeichnet",
+		"RECORDING_STARTED_MESSAGE": "Ab jetzt werden Ihr Audio, Ihr Video und alles, was Sie teilen, aufgezeichnet.",
+		"RECORDING_STOPPED_TITLE": "Aufzeichnung beendet",
+		"RECORDING_STOPPED_MESSAGE": "Es wird nichts mehr aufgezeichnet."
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Meeting beitreten",
@@ -121,14 +125,21 @@
 		},
 		"RECORDING": {
 			"TITLE": "Aufnahme",
-			"SUBTITLE": "Zeichnen Sie Ihr Meeting für die Nachwelt auf",
-			"CONTENT_TITLE": "Ihr Videogespräch aufzeichnen",
-			"CONTENT_SUBTITLE": "Wenn die Aufzeichnung beendet ist, können Sie sie ganz einfach herunterladen",
-			"STARTING": "Aufzeichnung starten",
-			"STOPPING": "Aufnahme stoppen",
-			"ACCEPT": "Akzeptieren",
-			"NO_TRACKS_PUBLISHED": "Teile Audio oder Video, um mit der Aufnahme zu beginnen.",
-			"ERROR_STARTING": "Fehler beim Starten der Aufnahme"
+			"STARTING": "Aufzeichnung wird gestartet…",
+			"STOPPING": "Aufzeichnung wird beendet…",
+			"ERROR_STARTING": "Die Aufzeichnung wurde nicht gestartet",
+			"TRIGGER_MANUAL_MODE": "Manuelle Aufzeichnung",
+			"TRIGGER_AUTO_MODE": "Automatische Aufzeichnung",
+			"STATUS_RECORDING": "Aufzeichnung läuft",
+			"STATUS_STARTING": "Wird gestartet…",
+			"STATUS_STOPPING": "Wird beendet…",
+			"STATUS_FAILED": "Start fehlgeschlagen",
+			"IN_PROGRESS_TITLE": "Dieses Meeting wird aufgezeichnet",
+			"IN_PROGRESS_MESSAGE": "Audio, Video und alles, was in diesem Meeting geteilt wird, wird aufgezeichnet.",
+			"TRY_AGAIN": "Erneut versuchen",
+			"DISMISS": "Schließen",
+			"MODERATORS_ONLY": "Nur Moderatoren können die Aufzeichnung starten oder beenden.",
+			"AUTO_START_ONLY": "Dieser Raum startet die Aufzeichnung selbst, sie kann daher nicht manuell gestartet werden."
 		}
 	},
 	"ERRORS": {

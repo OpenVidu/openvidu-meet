@@ -32,11 +32,6 @@ export class AssetsService {
 		return this.resolve('assets/images/meet_logo.png');
 	}
 
-	/** Recording panel empty-state illustration. */
-	get recordingPlaceholder(): string {
-		return this.resolve('assets/images/recording-placeholder.webp');
-	}
-
 	// ── Sounds ──────────────────────────────────────────────────────────────
 
 	/** Notification played when a participant joins the meeting. */

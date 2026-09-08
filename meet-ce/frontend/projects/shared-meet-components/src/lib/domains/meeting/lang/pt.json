@@ -12,7 +12,11 @@
 		"ENDING_SOON_BADGE_ENDING": "Encerrando",
 		"E2EE_BADGE_LABEL": "Criptografada",
 		"E2EE_BADGE_TOOLTIP": "Esta reunião é criptografada de ponta a ponta",
-		"RECORDING_BADGE_STARTING": "Iniciando"
+		"RECORDING_BADGE_STARTING": "Iniciando",
+		"RECORDING_STARTED_TITLE": "Esta reunião está a ser gravada",
+		"RECORDING_STARTED_MESSAGE": "A partir de agora, o seu áudio, o seu vídeo e tudo o que partilhar são capturados.",
+		"RECORDING_STOPPED_TITLE": "Gravação parada",
+		"RECORDING_STOPPED_MESSAGE": "Já não está a ser capturado mais nada."
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Entrar na reunião",
@@ -121,14 +125,21 @@
 		},
 		"RECORDING": {
 			"TITLE": "Gravação",
-			"SUBTITLE": "Grave a sua reunião para a posteridade",
-			"CONTENT_TITLE": "Grave a sua videochamada",
-			"CONTENT_SUBTITLE": "Quando a gravação tiver terminado, poderá descarregá-la com facilidade",
-			"STARTING": "Começar a gravação",
-			"STOPPING": "Parando a gravação",
-			"ACCEPT": "Aceitar",
-			"NO_TRACKS_PUBLISHED": "Compartilhe áudio ou vídeo para começar a gravar.",
-			"ERROR_STARTING": "Erro ao iniciar gravação"
+			"STARTING": "A iniciar a gravação…",
+			"STOPPING": "A parar a gravação…",
+			"ERROR_STARTING": "A gravação não foi iniciada",
+			"TRIGGER_MANUAL_MODE": "Gravação manual",
+			"TRIGGER_AUTO_MODE": "Gravação automática",
+			"STATUS_RECORDING": "A gravar",
+			"STATUS_STARTING": "A iniciar…",
+			"STATUS_STOPPING": "A parar…",
+			"STATUS_FAILED": "Não foi possível iniciar",
+			"IN_PROGRESS_TITLE": "Esta reunião está a ser gravada",
+			"IN_PROGRESS_MESSAGE": "O áudio, o vídeo e tudo o que for partilhado nesta reunião estão a ser capturados.",
+			"TRY_AGAIN": "Tentar novamente",
+			"DISMISS": "Dispensar",
+			"MODERATORS_ONLY": "Apenas os moderadores podem iniciar ou parar a gravação.",
+			"AUTO_START_ONLY": "Esta sala inicia a gravação por si só, pelo que não pode ser iniciada manualmente."
 		}
 	},
 	"ERRORS": {

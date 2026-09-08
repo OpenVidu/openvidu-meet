@@ -21,7 +21,11 @@
 		"ENDING_SOON_BADGE_ENDING": "Ending now",
 		"E2EE_BADGE_LABEL": "Encrypted",
 		"E2EE_BADGE_TOOLTIP": "This meeting is end-to-end encrypted",
-		"RECORDING_BADGE_STARTING": "Starting"
+		"RECORDING_BADGE_STARTING": "Starting",
+		"RECORDING_STARTED_TITLE": "This meeting is being recorded",
+		"RECORDING_STARTED_MESSAGE": "Your audio, your video and anything you share are being captured from now on.",
+		"RECORDING_STOPPED_TITLE": "Recording stopped",
+		"RECORDING_STOPPED_MESSAGE": "Nothing more is being captured."
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Mute your audio",
@@ -121,14 +125,21 @@
 		},
 		"RECORDING": {
 			"TITLE": "Recording",
-			"SUBTITLE": "Record your meeting for posterity",
-			"CONTENT_TITLE": "Record your video call",
-			"CONTENT_SUBTITLE": "When recording has finished you will be able to download it with ease",
-			"STARTING": "Starting recording",
-			"STOPPING": "Stopping recording",
-			"ACCEPT": "Accept",
-			"NO_TRACKS_PUBLISHED": "Share audio or video to start recording.",
-			"ERROR_STARTING": "Error starting recording"
+			"STARTING": "Starting recording…",
+			"STOPPING": "Stopping recording…",
+			"ERROR_STARTING": "The recording did not start",
+			"TRIGGER_MANUAL_MODE": "Manual recording",
+			"TRIGGER_AUTO_MODE": "Automatic recording",
+			"STATUS_RECORDING": "Recording",
+			"STATUS_STARTING": "Starting…",
+			"STATUS_STOPPING": "Stopping…",
+			"STATUS_FAILED": "Could not start",
+			"IN_PROGRESS_TITLE": "This meeting is being recorded",
+			"IN_PROGRESS_MESSAGE": "Audio, video and anything shared in this meeting is being captured.",
+			"TRY_AGAIN": "Try again",
+			"DISMISS": "Dismiss",
+			"MODERATORS_ONLY": "Only moderators can start or stop the recording.",
+			"AUTO_START_ONLY": "This room starts recording on its own, so it cannot be started manually."
 		}
 	},
 	"ERRORS": {

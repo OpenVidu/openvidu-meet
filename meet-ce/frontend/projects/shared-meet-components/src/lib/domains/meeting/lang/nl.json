@@ -12,7 +12,11 @@
 		"ENDING_SOON_BADGE_ENDING": "Wordt beëindigd",
 		"E2EE_BADGE_LABEL": "Versleuteld",
 		"E2EE_BADGE_TOOLTIP": "Deze meeting is end-to-end versleuteld",
-		"RECORDING_BADGE_STARTING": "Wordt gestart"
+		"RECORDING_BADGE_STARTING": "Wordt gestart",
+		"RECORDING_STARTED_TITLE": "Deze vergadering wordt opgenomen",
+		"RECORDING_STARTED_MESSAGE": "Vanaf nu worden uw audio, uw video en alles wat u deelt vastgelegd.",
+		"RECORDING_STOPPED_TITLE": "Opname gestopt",
+		"RECORDING_STOPPED_MESSAGE": "Er wordt niets meer vastgelegd."
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Deelnemen aan meeting",
@@ -121,14 +125,21 @@
 		},
 		"RECORDING": {
 			"TITLE": "Opname",
-			"SUBTITLE": "Neem uw vergadering op voor het nageslacht",
-			"CONTENT_TITLE": "Neem uw videogesprek op",
-			"CONTENT_SUBTITLE": "Als de opname klaar is kunt u deze met gemak downloaden",
-			"STARTING": "Beginnen met opnemen",
-			"STOPPING": "Opname stoppen",
-			"ACCEPT": "Accepteren",
-			"NO_TRACKS_PUBLISHED": "Deel audio of video om met opnemen te beginnen.",
-			"ERROR_STARTING": "Fout bij starten opname"
+			"STARTING": "Opname starten…",
+			"STOPPING": "Opname stoppen…",
+			"ERROR_STARTING": "De opname is niet gestart",
+			"TRIGGER_MANUAL_MODE": "Handmatige opname",
+			"TRIGGER_AUTO_MODE": "Automatische opname",
+			"STATUS_RECORDING": "Opname bezig",
+			"STATUS_STARTING": "Starten…",
+			"STATUS_STOPPING": "Stoppen…",
+			"STATUS_FAILED": "Kon niet starten",
+			"IN_PROGRESS_TITLE": "Deze vergadering wordt opgenomen",
+			"IN_PROGRESS_MESSAGE": "Audio, video en alles wat in deze vergadering wordt gedeeld, wordt vastgelegd.",
+			"TRY_AGAIN": "Opnieuw proberen",
+			"DISMISS": "Sluiten",
+			"MODERATORS_ONLY": "Alleen moderators kunnen de opname starten of stoppen.",
+			"AUTO_START_ONLY": "Deze ruimte start de opname zelf, dus die kan niet handmatig worden gestart."
 		}
 	},
 	"ERRORS": {

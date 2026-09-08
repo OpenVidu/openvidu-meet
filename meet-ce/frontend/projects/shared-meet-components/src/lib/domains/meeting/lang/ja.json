@@ -12,7 +12,11 @@
 		"ENDING_SOON_BADGE_ENDING": "まもなく終了",
 		"E2EE_BADGE_LABEL": "暗号化",
 		"E2EE_BADGE_TOOLTIP": "この会議はエンドツーエンドで暗号化されています",
-		"RECORDING_BADGE_STARTING": "開始中"
+		"RECORDING_BADGE_STARTING": "開始中",
+		"RECORDING_STARTED_TITLE": "このミーティングは録画されています",
+		"RECORDING_STARTED_MESSAGE": "これ以降、あなたの音声、映像、共有した内容はすべて録画されます。",
+		"RECORDING_STOPPED_TITLE": "録画を停止しました",
+		"RECORDING_STOPPED_MESSAGE": "これ以上は録画されません。"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "会議に参加する",
@@ -121,14 +125,21 @@
 		},
 		"RECORDING": {
 			"TITLE": "レコーディング",
-			"SUBTITLE": "会議を録画して保存する",
-			"CONTENT_TITLE": "ビデオ通話を録音する",
-			"CONTENT_SUBTITLE": "録画が完了したら、簡単にダウンロードできます",
-			"STARTING": "録画開始",
-			"STOPPING": "録音停止",
-			"ACCEPT": "受け入れる",
-			"NO_TRACKS_PUBLISHED": "録音を開始するには、音声または動画を共有してください。",
-			"ERROR_STARTING": "録画開始エラー"
+			"STARTING": "録画を開始しています…",
+			"STOPPING": "録画を停止しています…",
+			"ERROR_STARTING": "録画が開始されませんでした",
+			"TRIGGER_MANUAL_MODE": "手動録画",
+			"TRIGGER_AUTO_MODE": "自動録画",
+			"STATUS_RECORDING": "録画中",
+			"STATUS_STARTING": "開始しています…",
+			"STATUS_STOPPING": "停止しています…",
+			"STATUS_FAILED": "開始できませんでした",
+			"IN_PROGRESS_TITLE": "このミーティングは録画されています",
+			"IN_PROGRESS_MESSAGE": "このミーティングの音声、映像、共有された内容はすべて録画されています。",
+			"TRY_AGAIN": "再試行",
+			"DISMISS": "閉じる",
+			"MODERATORS_ONLY": "録画の開始と停止はモデレーターのみが行えます。",
+			"AUTO_START_ONLY": "このルームは自動で録画を開始するため、手動では開始できません。"
 		}
 	},
 	"ERRORS": {

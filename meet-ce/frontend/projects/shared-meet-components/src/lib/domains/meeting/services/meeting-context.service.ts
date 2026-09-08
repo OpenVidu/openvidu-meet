@@ -54,6 +54,8 @@ export class MeetingContextService {
 	readonly meetingUI = this.roomFeatureService.features;
 	/** Readonly signal for which local devices the participant starts the meeting with */
 	readonly initialMediaState = this.roomFeatureService.initialMediaState;
+	/** Readonly signal for the room's recording configuration (trigger, layout) */
+	readonly recordingConfig = this.roomFeatureService.recordingConfig;
 	/** Readonly signal for room appearance configuration from global settings */
 	readonly meetingAppearance = this.globalConfigService.roomAppearanceConfig;
 

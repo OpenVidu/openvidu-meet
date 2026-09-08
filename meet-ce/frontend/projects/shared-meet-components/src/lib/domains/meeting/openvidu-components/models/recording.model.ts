@@ -16,7 +16,11 @@ export enum RecordingState {
 export interface RecordingStateInfo {
 	id?: string;
 	status: RecordingState;
-	startedAt?: Date;
+	/**
+	 * Time the recording has been running, as a `Date` offset from zero rather than an instant, so
+	 * it can be formatted with the `date` pipe. Not the moment the recording started.
+	 */
+	elapsed?: Date;
 	error?: string;
 }
 

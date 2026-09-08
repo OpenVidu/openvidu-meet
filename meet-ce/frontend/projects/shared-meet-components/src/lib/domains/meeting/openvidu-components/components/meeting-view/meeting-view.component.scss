@@ -18,13 +18,23 @@
 }
 
 /* Hangs under the rail without taking a row from it, so the layout keeps its height. */
-ov-ending-soon-notice {
+// Both transient notices live here, stacked, so a recording that starts while the meeting is also
+// about to end does not drop one notice on top of the other.
+.notice-layer {
 	position: absolute;
 	z-index: 2;
 	top: var(--ov-status-rail-height);
 	left: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
 	width: 360px;
 	max-width: calc(100% - 32px);
+	pointer-events: none;
+}
+
+.notice-layer > * {
+	pointer-events: auto;
 }
 
 .status-rail {
@@ -235,7 +245,7 @@ ov-ending-soon-notice {
 		width: 100%;
 	}
 
-	ov-ending-soon-notice {
+	.notice-layer {
 		left: 8px;
 		right: 8px;
 		width: auto;

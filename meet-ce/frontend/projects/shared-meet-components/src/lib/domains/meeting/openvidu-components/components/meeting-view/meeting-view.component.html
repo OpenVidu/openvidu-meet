@@ -63,8 +63,8 @@
 								<span class="status-chip-label">
 									{{ 'ROOM.RECORDING_BADGE_STARTING' | translate }}
 								</span>
-							} @else if (recordingStatus().startedAt; as startedAt) {
-								<span class="status-chip-label">{{ startedAt | date: 'H:mm:ss' }}</span>
+							} @else if (recordingStatus().elapsed; as elapsed) {
+								<span class="status-chip-label">{{ elapsed | date: 'H:mm:ss' }}</span>
 							}
 						</div>
 					}
@@ -101,7 +101,10 @@
 				</div>
 			}
 
-			<ov-ending-soon-notice />
+			<div class="notice-layer">
+				<ov-recording-notice />
+				<ov-ending-soon-notice />
+			</div>
 
 			<mat-sidenav-container
 				ovSidenavLayout

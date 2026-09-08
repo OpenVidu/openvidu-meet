@@ -1,5 +1,10 @@
 import { computed, effect, inject, Service, signal, untracked } from '@angular/core';
-import { MeetAppearanceConfig, MeetRoomConfig, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import {
+	MeetAppearanceConfig,
+	MeetRecordingConfig,
+	MeetRoomConfig,
+	MeetRoomMemberPermissions
+} from '@openvidu-meet/typings';
 import type { InitialMediaState } from '../../meeting/openvidu-components';
 import { GlobalConfigService } from '../../../shared/services/global-config.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
@@ -69,6 +74,9 @@ export class RoomFeatureService {
 	public readonly initialMediaState = computed<InitialMediaState>(() =>
 		FeatureCalculator.resolveInitialMediaState(this.initialMediaRequest(), this.permissions(), this.roomConfig())
 	);
+
+	/** The room's recording configuration (trigger, layout), for UI that needs to describe it. */
+	public readonly recordingConfig = computed<MeetRecordingConfig | undefined>(() => this.roomConfig()?.recording);
 
 	/**
 	 * Loads global feature configuration once the service is ready for requests.

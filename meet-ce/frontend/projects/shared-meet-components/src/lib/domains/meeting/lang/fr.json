@@ -12,7 +12,11 @@
 		"ENDING_SOON_BADGE_ENDING": "Fin en cours",
 		"E2EE_BADGE_LABEL": "Chiffrée",
 		"E2EE_BADGE_TOOLTIP": "Cette réunion est chiffrée de bout en bout",
-		"RECORDING_BADGE_STARTING": "Démarrage"
+		"RECORDING_BADGE_STARTING": "Démarrage",
+		"RECORDING_STARTED_TITLE": "Cette réunion est en cours d’enregistrement",
+		"RECORDING_STARTED_MESSAGE": "À partir de maintenant, votre audio, votre vidéo et tout ce que vous partagez sont enregistrés.",
+		"RECORDING_STOPPED_TITLE": "Enregistrement arrêté",
+		"RECORDING_STOPPED_MESSAGE": "Plus rien n’est enregistré."
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Rejoindre la réunion",
@@ -121,14 +125,21 @@
 		},
 		"RECORDING": {
 			"TITLE": "Enregistrement",
-			"SUBTITLE": "Enregistrez votre réunion pour la postérité",
-			"CONTENT_TITLE": "Enregistrez votre appel vidéo",
-			"CONTENT_SUBTITLE": "Une fois l'enregistrement terminé, vous pourrez le télécharger facilement",
-			"STARTING": "Début de l'enregistrement",
-			"STOPPING": "Arrêt de l'enregistrement",
-			"ACCEPT": "Accepter",
-			"NO_TRACKS_PUBLISHED": "Partagez de l’audio ou de la vidéo pour commencer l’enregistrement.",
-			"ERROR_STARTING": "Erreur de démarrage"
+			"STARTING": "Démarrage de l’enregistrement…",
+			"STOPPING": "Arrêt de l’enregistrement…",
+			"ERROR_STARTING": "L’enregistrement n’a pas démarré",
+			"TRIGGER_MANUAL_MODE": "Enregistrement manuel",
+			"TRIGGER_AUTO_MODE": "Enregistrement automatique",
+			"STATUS_RECORDING": "Enregistrement en cours",
+			"STATUS_STARTING": "Démarrage…",
+			"STATUS_STOPPING": "Arrêt…",
+			"STATUS_FAILED": "Démarrage impossible",
+			"IN_PROGRESS_TITLE": "Cette réunion est en cours d’enregistrement",
+			"IN_PROGRESS_MESSAGE": "L’audio, la vidéo et tout ce qui est partagé dans cette réunion sont enregistrés.",
+			"TRY_AGAIN": "Réessayer",
+			"DISMISS": "Ignorer",
+			"MODERATORS_ONLY": "Seuls les modérateurs peuvent démarrer ou arrêter l’enregistrement.",
+			"AUTO_START_ONLY": "Cette salle démarre l’enregistrement d’elle-même, il ne peut donc pas être lancé manuellement."
 		}
 	},
 	"ERRORS": {

@@ -12,7 +12,11 @@
 		"ENDING_SOON_BADGE_ENDING": "Terminando",
 		"E2EE_BADGE_LABEL": "Cifrada",
 		"E2EE_BADGE_TOOLTIP": "Esta reunión está cifrada de extremo a extremo",
-		"RECORDING_BADGE_STARTING": "Iniciando"
+		"RECORDING_BADGE_STARTING": "Iniciando",
+		"RECORDING_STARTED_TITLE": "Esta reunión se está grabando",
+		"RECORDING_STARTED_MESSAGE": "Desde ahora se captura tu audio, tu vídeo y todo lo que compartas.",
+		"RECORDING_STOPPED_TITLE": "Grabación detenida",
+		"RECORDING_STOPPED_MESSAGE": "Ya no se captura nada más."
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Unirme ahora",
@@ -121,14 +125,21 @@
 		},
 		"RECORDING": {
 			"TITLE": "Grabación",
-			"SUBTITLE": "Graba tus llamadas para la posteridad",
-			"CONTENT_TITLE": "Graba tu vídeo conferencia",
-			"CONTENT_SUBTITLE": "Cuando la grabación haya finalizado, podrás descargarla con facilidad",
-			"STARTING": "Iniciando grabación...",
-			"STOPPING": "Parando grabación",
-			"ACCEPT": "Aceptar",
-			"NO_TRACKS_PUBLISHED": "Comparte audio o vídeo para poder empezar a grabar.",
-			"ERROR_STARTING": "Error iniciando la grabación"
+			"STARTING": "Iniciando grabación…",
+			"STOPPING": "Deteniendo grabación…",
+			"ERROR_STARTING": "La grabación no se inició",
+			"TRIGGER_MANUAL_MODE": "Grabación manual",
+			"TRIGGER_AUTO_MODE": "Grabación automática",
+			"STATUS_RECORDING": "Grabando",
+			"STATUS_STARTING": "Iniciando…",
+			"STATUS_STOPPING": "Deteniendo…",
+			"STATUS_FAILED": "No se pudo iniciar",
+			"IN_PROGRESS_TITLE": "Esta reunión se está grabando",
+			"IN_PROGRESS_MESSAGE": "Se está capturando el audio, el vídeo y todo lo que se comparta en esta reunión.",
+			"TRY_AGAIN": "Reintentar",
+			"DISMISS": "Descartar",
+			"MODERATORS_ONLY": "Solo los moderadores pueden iniciar o detener la grabación.",
+			"AUTO_START_ONLY": "Esta sala inicia la grabación por sí sola, así que no se puede iniciar manualmente."
 		}
 	},
 	"ERRORS": {

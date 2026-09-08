@@ -12,7 +12,11 @@
 		"ENDING_SOON_BADGE_ENDING": "即将结束",
 		"E2EE_BADGE_LABEL": "已加密",
 		"E2EE_BADGE_TOOLTIP": "此会议采用端到端加密",
-		"RECORDING_BADGE_STARTING": "正在开始"
+		"RECORDING_BADGE_STARTING": "正在开始",
+		"RECORDING_STARTED_TITLE": "本次会议正在录制",
+		"RECORDING_STARTED_MESSAGE": "从现在起，您的音频、视频以及您共享的所有内容都会被录制。",
+		"RECORDING_STOPPED_TITLE": "录制已停止",
+		"RECORDING_STOPPED_MESSAGE": "不再录制任何内容。"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "加入会议",
@@ -121,14 +125,21 @@
 		},
 		"RECORDING": {
 			"TITLE": "录音",
-			"SUBTITLE": "为后人记录你的会议",
-			"CONTENT_TITLE": "记录你的视频通话",
-			"CONTENT_SUBTITLE": "当录音完成后，你将可以轻松地下载它",
-			"STARTING": "开始录音",
-			"STOPPING": "停止录制",
-			"ACCEPT": "接受",
-			"NO_TRACKS_PUBLISHED": "请分享音频或视频以开始录制。",
-			"ERROR_STARTING": "开始录音时出错"
+			"STARTING": "正在启动录制…",
+			"STOPPING": "正在停止录制…",
+			"ERROR_STARTING": "录制未启动",
+			"TRIGGER_MANUAL_MODE": "手动录制",
+			"TRIGGER_AUTO_MODE": "自动录制",
+			"STATUS_RECORDING": "正在录制",
+			"STATUS_STARTING": "正在启动…",
+			"STATUS_STOPPING": "正在停止…",
+			"STATUS_FAILED": "无法启动",
+			"IN_PROGRESS_TITLE": "本次会议正在录制",
+			"IN_PROGRESS_MESSAGE": "本次会议的音频、视频以及共享的所有内容都在被录制。",
+			"TRY_AGAIN": "重试",
+			"DISMISS": "关闭",
+			"MODERATORS_ONLY": "只有主持人可以启动或停止录制。",
+			"AUTO_START_ONLY": "此房间会自行开始录制，因此无法手动开始。"
 		}
 	},
 	"ERRORS": {

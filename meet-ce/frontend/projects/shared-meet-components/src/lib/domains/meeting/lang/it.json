@@ -12,7 +12,11 @@
 		"ENDING_SOON_BADGE_ENDING": "In chiusura",
 		"E2EE_BADGE_LABEL": "Crittografata",
 		"E2EE_BADGE_TOOLTIP": "Questa riunione è crittografata end-to-end",
-		"RECORDING_BADGE_STARTING": "Avvio"
+		"RECORDING_BADGE_STARTING": "Avvio",
+		"RECORDING_STARTED_TITLE": "Questa riunione è in registrazione",
+		"RECORDING_STARTED_MESSAGE": "Da ora vengono registrati il tuo audio, il tuo video e tutto ciò che condividi.",
+		"RECORDING_STOPPED_TITLE": "Registrazione arrestata",
+		"RECORDING_STOPPED_MESSAGE": "Non viene registrato più nulla."
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Partecipa alla riunione",
@@ -121,14 +125,21 @@
 		},
 		"RECORDING": {
 			"TITLE": "Registrazione",
-			"SUBTITLE": "Registra la tua riunione per i posteri",
-			"CONTENT_TITLE": "Registra la tua videochiamata",
-			"CONTENT_SUBTITLE": "Al termine della registrazione potrete scaricarla con facilità",
-			"STARTING": "Avvio della registrazione",
-			"STOPPING": "Interruzione della registrazione",
-			"ACCEPT": "Accetta",
-			"NO_TRACKS_PUBLISHED": "Condividi audio o video per iniziare la registrazione.",
-			"ERROR_STARTING": "Errore di avvio"
+			"STARTING": "Avvio della registrazione…",
+			"STOPPING": "Arresto della registrazione…",
+			"ERROR_STARTING": "La registrazione non è partita",
+			"TRIGGER_MANUAL_MODE": "Registrazione manuale",
+			"TRIGGER_AUTO_MODE": "Registrazione automatica",
+			"STATUS_RECORDING": "Registrazione in corso",
+			"STATUS_STARTING": "Avvio…",
+			"STATUS_STOPPING": "Arresto…",
+			"STATUS_FAILED": "Avvio non riuscito",
+			"IN_PROGRESS_TITLE": "Questa riunione è in registrazione",
+			"IN_PROGRESS_MESSAGE": "Audio, video e tutto ciò che viene condiviso in questa riunione vengono registrati.",
+			"TRY_AGAIN": "Riprova",
+			"DISMISS": "Ignora",
+			"MODERATORS_ONLY": "Solo i moderatori possono avviare o arrestare la registrazione.",
+			"AUTO_START_ONLY": "Questa stanza avvia la registrazione da sé, quindi non può essere avviata manualmente."
 		}
 	},
 	"ERRORS": {

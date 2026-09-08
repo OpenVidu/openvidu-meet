@@ -1,0 +1,16 @@
+@if (announcement()) {
+	<div class="recording-notice" [class.stopped]="!isStarted()" role="alert">
+		<span class="notice-icon">
+			<mat-icon>radio_button_checked</mat-icon>
+		</span>
+
+		<div class="notice-body">
+			<span class="notice-title">{{ titleKey() | translate }}</span>
+			<span class="notice-message">{{ messageKey() | translate }}</span>
+		</div>
+
+		<button type="button" class="notice-dismiss" [attr.aria-label]="'PANEL.CLOSE' | translate" (click)="dismiss()">
+			<mat-icon>close</mat-icon>
+		</button>
+	</div>
+}

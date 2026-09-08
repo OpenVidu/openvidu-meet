@@ -84,11 +84,13 @@ export const stopRecordingIfActive = async (page: Page): Promise<void> => {
 };
 
 /**
- * Returns the current recording status text, trimmed and uppercased.
+ * Returns the current `MeetRecordingStatus` as the row reports it. Read off `data-status` rather
+ * than the row's text, which is human copy in the active language and says how the room records
+ * while nothing is being recorded.
  */
 const getRecordingStatusText = async (page: Page): Promise<string> => {
-	const status = await page.locator(RECORDING_STATUS).first().innerText();
-	return status.trim().toUpperCase();
+	const status = await page.locator(RECORDING_STATUS).first().getAttribute('data-status');
+	return (status ?? '').trim().toUpperCase();
 };
 
 /**
@@ -103,7 +105,7 @@ export const waitForRecordingStarted = async (page: Page, timeoutMs = 40_000): P
 
 				if (status === 'FAILED') {
 					const errorMessage = await page
-						.locator(`${RECORDING_ACTIVITY} .error-message`)
+						.locator(`${RECORDING_ACTIVITY} .recording-note-message`)
 						.first()
 						.innerText()
 						.catch(() => 'unknown recording error');

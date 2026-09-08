@@ -83,6 +83,7 @@ import { ViewportService } from '../../services/viewport/viewport.service';
 import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
 import { HiddenParticipantsIndicatorComponent } from '../hidden-participants-indicator/hidden-participants-indicator.component';
 import { EndingSoonNoticeComponent } from '../ending-soon-notice/ending-soon-notice.component';
+import { RecordingNoticeComponent } from '../recording-notice/recording-notice.component';
 import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
 import { SmartLayoutComponent } from '../layout/smart-layout/smart-layout.component';
 import { MeetingMediaSetupComponent } from '../meeting-media-setup/meeting-media-setup.component';
@@ -114,6 +115,7 @@ import { ToolbarComponent } from '../toolbar/toolbar.component';
 		DatePipe,
 		HiddenParticipantsIndicatorComponent,
 		EndingSoonNoticeComponent,
+		RecordingNoticeComponent,
 		LandscapeWarningComponent,
 		ToolbarComponent,
 		PanelComponent,

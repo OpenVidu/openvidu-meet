@@ -43,6 +43,7 @@ import { LocalMediaStateService } from '../../services/local-media-state/local-m
 import { ParticipantService } from '../../services/participant/participant.service';
 import { PlatformService } from '../../services/platform/platform.service';
 import { RecordingService } from '../../services/recording/recording.service';
+import { MeetingContextService } from '../../../services/meeting-context.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ToolbarMediaButtonsComponent } from './toolbar-media-buttons/toolbar-media-buttons.component';
@@ -79,6 +80,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly deviceService = inject(DeviceService);
 	private readonly actionService = inject(ActionService);
 	private readonly recordingService = inject(RecordingService);
+	private readonly meetingContext = inject(MeetingContextService);
 	private readonly translateService = inject(MeetingTranslateService);
 	private readonly cdkOverlayService = inject(CdkOverlayService);
 	private readonly libService = inject(MeetingUiConfigService);
@@ -290,6 +292,13 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * @ignore
 	 */
 	recordingStatus = this.recordingService.recordingStatus.asReadonly();
+
+	/**
+	 * @ignore
+	 * A room that starts its own recording is not asked to start one from the toolbar either, so the
+	 * control there only ever stops.
+	 */
+	readonly recordingStartsAutomatically = computed(() => !!this.meetingContext.recordingConfig()?.autoStart);
 
 	readonly totalParticipants = this.participantService.totalParticipantsSignal;
 
