@@ -1,4 +1,4 @@
-@if (canMuteAll()) {
+@if (showBulkActions()) {
 	<div class="panel-bulk-actions" id="panel-bulk-actions">
 		<span class="bulk-label">{{ 'PARTICIPANTS_PANEL_ACTIONS.TURN_OFF_FOR_EVERYONE' | translate }}</span>
 		<div class="bulk-group">
@@ -8,6 +8,7 @@
 						mat-icon-button
 						class="bulk-btn"
 						[id]="action.id"
+						[attr.data-kind]="action.kind"
 						[disabled]="!action.enabled"
 						[attr.aria-label]="action.labelKey | translate"
 						(click)="onBulkActionClick(action)"

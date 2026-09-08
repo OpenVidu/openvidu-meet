@@ -11,7 +11,9 @@
 		border-radius: var(--ov-surface-radius);
 		transition: background-color 0.15s ease-in-out;
 
-		&:hover,
+		// The row itself does nothing on click (only the buttons it holds do), so it carries no
+		// hover background. Focus-within stays: it's the only way a keyboard user sees which row
+		// their tab lands in.
 		&:focus-within {
 			background-color: color-mix(in srgb, var(--ov-text-surface-color) 7%, transparent);
 		}
@@ -113,7 +115,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
-		width: 84px;
+		gap: 6px;
+		width: 96px;
 		flex-shrink: 0;
 		margin-right: 4px;
 	}
@@ -141,21 +144,33 @@
 		}
 	}
 
+	// Same fill the toolbar has always used for this participant's own devices: a neutral chip
+	// when on, red when off, cyan while sharing a screen. One meaning for the color, everywhere.
 	.media-btn {
 		&:disabled {
 			opacity: 1;
 		}
 
 		&[data-state='active'] {
-			color: var(--ov-media-active-color);
+			background-color: var(--ov-primary-action-color);
+			color: var(--ov-text-primary-color);
+
+			&:not(:disabled):hover {
+				background-color: color-mix(in srgb, var(--ov-primary-action-color) 85%, white 15%);
+			}
+		}
+
+		&[data-kind='screenShare'][data-state='active'] {
+			background-color: var(--ov-accent-action-color);
+
+			&:not(:disabled):hover {
+				background-color: color-mix(in srgb, var(--ov-accent-action-color) 85%, white 15%);
+			}
 		}
 
 		&[data-state='off'] {
-			color: var(--ov-media-inactive-color);
-		}
-
-		&:not(:disabled):hover {
-			background-color: color-mix(in srgb, currentColor 16%, transparent);
+			background-color: var(--ov-error-color);
+			color: #ffffff;
 		}
 	}
 

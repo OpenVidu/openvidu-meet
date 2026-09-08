@@ -16,6 +16,31 @@ export class PreJoinDirective {
 }
 
 /**
+ * The ***ovParticipantPanelBeforeLocalParticipant** directive allows you to inject custom HTML or Angular templates
+ * at the top of the participant panel, above the local participant item: the place for content that is about the
+ * room rather than about anyone in the list (an invitation link, for instance).
+ *
+ * Usage example:
+ * ```html
+ * <ov-participant-panel>
+ *   <ng-container *ovParticipantPanelBeforeLocalParticipant>
+ *     <div class="custom-content">
+ *       <!-- Your custom HTML here -->
+ *       <span>Custom content above the local participant</span>
+ *     </div>
+ *   </ng-container>
+ * </ov-participant-panel>
+ * ```
+ */
+@Directive({
+	selector: '[ovParticipantPanelBeforeLocalParticipant]'
+})
+export class ParticipantPanelBeforeLocalParticipantDirective {
+	public template = inject(TemplateRef<any>);
+	public container = inject(ViewContainerRef);
+}
+
+/**
  * The ***ovParticipantPanelAfterLocalParticipant** directive allows you to inject custom HTML or Angular templates
  * immediately after the local participant item in the participant panel.
  * This enables you to extend the participant panel with additional controls, information, or UI elements.

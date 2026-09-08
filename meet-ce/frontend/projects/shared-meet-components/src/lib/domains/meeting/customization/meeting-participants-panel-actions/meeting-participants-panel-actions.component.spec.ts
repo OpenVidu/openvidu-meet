@@ -93,6 +93,24 @@ describe('MeetingParticipantsPanelActionsComponent', () => {
 		expect(fixture.componentInstance.canMuteAll()).toBeTrue();
 	});
 
+	it('stays out of the panel while there is nobody to reach', () => {
+		granted.set(true);
+
+		expect(fixture.componentInstance.showBulkActions()).toBeFalse();
+
+		remoteParticipants.set([participantWith({})]);
+
+		expect(fixture.componentInstance.showBulkActions()).toBeTrue();
+	});
+
+	// A room whose only remote participant is a moderator is as unreachable as an empty one.
+	it('stays out of the panel when every remote participant is badged', () => {
+		granted.set(true);
+		remoteParticipants.set([participantWith({ badged: true, microphone: true })]);
+
+		expect(fixture.componentInstance.showBulkActions()).toBeFalse();
+	});
+
 	it('turns off one device across the room, leaving the other two alone', async () => {
 		granted.set(true);
 		remoteParticipants.set([participantWith({ camera: true })]);

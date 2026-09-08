@@ -2,7 +2,11 @@
 	display: block;
 }
 
-// Same slots as a participant row, so each button lands at the head of its media column.
+// Same slots as a participant row, so each button lands at the head of its media column. The tinted
+// band is what tells the strip apart from those rows: it acts on all of them at once, so it should
+// not read as one more of them. The tint comes from the panel's own text, like the header count
+// badge, because it then keeps the same weight in either theme, which the surface-container token
+// does not: it is all but invisible on white.
 .panel-bulk-actions {
 	display: flex;
 	align-items: center;
@@ -10,6 +14,8 @@
 	box-sizing: border-box;
 	margin: 0 10px;
 	padding: 0 8px 0 10px;
+	border-radius: var(--ov-surface-radius);
+	background-color: color-mix(in srgb, var(--ov-text-surface-color) 6%, transparent);
 }
 
 .bulk-label {
@@ -28,7 +34,8 @@
 	display: flex;
 	align-items: center;
 	justify-content: flex-end;
-	width: 84px;
+	gap: 6px;
+	width: 96px;
 	flex-shrink: 0;
 	margin-right: 4px;
 }
@@ -38,6 +45,9 @@
 	line-height: 0;
 }
 
+// Same fill the toolbar has always used for a device that's on: a neutral chip you can act on,
+// nothing (just an outline) when there's no live target. Stopping every screen share gets the
+// toolbar's own cyan, matching what an active share looks like everywhere else in the meeting.
 .bulk-btn {
 	--mdc-icon-button-state-layer-size: 28px;
 	--mdc-icon-button-icon-size: 18px;
@@ -47,11 +57,26 @@
 	height: 28px;
 	padding: 0;
 	flex-shrink: 0;
-	color: var(--ov-text-secondary-color);
+	background-color: var(--ov-primary-action-color);
+	color: var(--ov-text-primary-color);
 
 	&:disabled {
 		opacity: 1;
+		background-color: transparent;
+		box-shadow: inset 0 0 0 1px var(--ov-disabled-border-color);
 		color: var(--ov-text-disabled-color);
+	}
+
+	&:not(:disabled):hover {
+		background-color: color-mix(in srgb, var(--ov-primary-action-color) 85%, white 15%);
+	}
+
+	&[data-kind='screenShare']:not(:disabled) {
+		background-color: var(--ov-accent-action-color);
+
+		&:hover {
+			background-color: color-mix(in srgb, var(--ov-accent-action-color) 85%, white 15%);
+		}
 	}
 
 	mat-icon {

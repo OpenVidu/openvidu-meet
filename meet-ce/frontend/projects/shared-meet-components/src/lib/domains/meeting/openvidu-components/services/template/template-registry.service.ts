@@ -32,6 +32,7 @@ export class TemplateRegistryService {
 
 	readonly participantPanelItem = signal<TemplateRef<any> | undefined>(undefined);
 	readonly participantPanelItemElements = signal<TemplateRef<any> | undefined>(undefined);
+	readonly participantPanelBeforeLocalParticipant = signal<TemplateRef<any> | undefined>(undefined);
 	readonly participantPanelAfterLocalParticipant = signal<TemplateRef<any> | undefined>(undefined);
 
 	// ── Toolbar extension templates ───────────────────────────────────────────

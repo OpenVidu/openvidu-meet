@@ -16,6 +16,7 @@ import {
 import {
 	LayoutAdditionalElementsDirective,
 	ParticipantPanelAfterLocalParticipantDirective,
+	ParticipantPanelBeforeLocalParticipantDirective,
 	ParticipantPanelParticipantBadgeDirective,
 	ParticipantsPanelHeaderActionsDirective,
 	PreJoinDirective,
@@ -40,6 +41,7 @@ const directives = [
 	ParticipantPanelItemElementsDirective,
 	ActivitiesPanelDirective,
 	PreJoinDirective,
+	ParticipantPanelBeforeLocalParticipantDirective,
 	ParticipantPanelAfterLocalParticipantDirective,
 	LayoutAdditionalElementsDirective,
 	ParticipantPanelParticipantBadgeDirective,

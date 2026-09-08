@@ -26,6 +26,7 @@ import {
 	LayoutAdditionalElementsDirective,
 	LeaveButtonDirective,
 	ParticipantPanelAfterLocalParticipantDirective,
+	ParticipantPanelBeforeLocalParticipantDirective,
 	ParticipantsPanelHeaderActionsDirective,
 	PreJoinDirective,
 	SettingsPanelGeneralAdditionalElementsDirective,
@@ -246,6 +247,9 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	// *** PreJoin ***
 
 	readonly externalPreJoin = contentChild(PreJoinDirective);
+	readonly externalParticipantPanelBeforeLocalParticipant = contentChild(
+		ParticipantPanelBeforeLocalParticipantDirective
+	);
 	readonly externalParticipantPanelAfterLocalParticipant = contentChild(
 		ParticipantPanelAfterLocalParticipantDirective
 	);
@@ -779,6 +783,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 			this.externalParticipantPanelItem()?.template ?? this.defaultParticipantPanelItemTemplate()!
 		);
 		r.participantPanelItemElements.set(this.externalParticipantPanelItemElements()?.template);
+		r.participantPanelBeforeLocalParticipant.set(this.externalParticipantPanelBeforeLocalParticipant()?.template);
 		r.participantPanelAfterLocalParticipant.set(this.externalParticipantPanelAfterLocalParticipant()?.template);
 
 		// Toolbar extensions

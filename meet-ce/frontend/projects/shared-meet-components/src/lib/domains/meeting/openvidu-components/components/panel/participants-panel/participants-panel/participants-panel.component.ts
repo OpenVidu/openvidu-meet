@@ -52,6 +52,9 @@ export class ParticipantsPanelComponent {
 	readonly participantPanelItemTemplate = computed(
 		() => this.templateRegistry.participantPanelItem() ?? this.defaultParticipantPanelItemTemplateQuery()
 	);
+	readonly participantPanelBeforeLocalParticipantTemplate = computed(() =>
+		this.templateRegistry.participantPanelBeforeLocalParticipant()
+	);
 	readonly participantPanelAfterLocalParticipantTemplate = computed(() =>
 		this.templateRegistry.participantPanelAfterLocalParticipant()
 	);

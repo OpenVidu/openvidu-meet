@@ -63,22 +63,25 @@
 			<ng-content select="ov-meeting-toolbar-more-options-menu" />
 		</ng-container>
 
-		<!-- Panel After Local Participant: an invitation while alone, otherwise the panel-wide
-		     moderation strip, which heads the remote list because it never touches your own devices -->
-		<div *ovParticipantPanelAfterLocalParticipant>
-			@if (isAlone()) {
-				@if (isEmbeddedMode()) {
-					<!-- Embedded (webcomponent or iframe): link sharing is handled by the host app -->
-					<div id="waiting-panel">
-						<ng-content select="ov-meeting-waiting-panel" />
-					</div>
-				} @else {
-					<!-- Standalone SPA mode: show the share/copy room access link panel -->
-					<ng-content select="ov-meeting-invite-panel" />
-				}
-			} @else {
-				<ng-content select="ov-meeting-participants-panel-actions" />
+		<!-- Panel Before Local Participant: the invitation heads the panel because it is about the
+		     room, not about anyone in the list. Embedded mode leaves it out: there, link sharing is
+		     the host app's job -->
+		<div *ovParticipantPanelBeforeLocalParticipant>
+			@if (!isEmbeddedMode()) {
+				<ng-content select="ov-meeting-invite-panel" />
 			}
+		</div>
+
+		<!-- Panel After Local Participant: the panel-wide moderation strip heads the remote list,
+		     because it never touches your own devices, and takes itself out of the panel when there
+		     is nobody there to reach. In embedded mode, a wait notice takes its place while alone -->
+		<div *ovParticipantPanelAfterLocalParticipant>
+			@if (isAlone() && isEmbeddedMode()) {
+				<div id="waiting-panel">
+					<ng-content select="ov-meeting-waiting-panel" />
+				</div>
+			}
+			<ng-content select="ov-meeting-participants-panel-actions" />
 		</div>
 
 		<!-- Participant Panel Item Template -->

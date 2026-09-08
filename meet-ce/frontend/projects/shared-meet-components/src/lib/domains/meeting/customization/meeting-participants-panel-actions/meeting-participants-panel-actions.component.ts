@@ -6,12 +6,13 @@ import { MeetParticipantMuteOptions } from '@openvidu-meet/typings';
 import { LoggerService } from '../../../../shared/services/logger.service';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
-import { ParticipantModel, ParticipantService } from '../../openvidu-components';
+import { ParticipantMediaKind, ParticipantModel, ParticipantService } from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingModerationService } from '../../services/meeting-moderation.service';
 
 /** One device the strip can turn off across the room. */
 interface BulkAction {
+	kind: ParticipantMediaKind;
 	id: string;
 	icon: string;
 	enabled: boolean;
@@ -27,6 +28,7 @@ interface BulkAction {
  */
 const BULK_ACTIONS = [
 	{
+		kind: 'screenShare' as const,
 		id: 'stop-all-screen-shares-btn',
 		icon: 'stop_screen_share',
 		isLive: (participant: ParticipantModel) => participant.isScreenShareEnabled,
@@ -35,6 +37,7 @@ const BULK_ACTIONS = [
 		media: { screenShareActive: false } as MeetParticipantMuteOptions
 	},
 	{
+		kind: 'audio' as const,
 		id: 'mute-all-participants-btn',
 		icon: 'mic_off',
 		isLive: (participant: ParticipantModel) => participant.isMicrophoneEnabled,
@@ -43,6 +46,7 @@ const BULK_ACTIONS = [
 		media: { audioActive: false } as MeetParticipantMuteOptions
 	},
 	{
+		kind: 'video' as const,
 		id: 'mute-all-cameras-btn',
 		icon: 'videocam_off',
 		isLive: (participant: ParticipantModel) => participant.isCameraEnabled,
@@ -77,6 +81,9 @@ export class MeetingParticipantsPanelActionsComponent {
 		this.participantService.remoteParticipants().filter((participant) => !participant.hasBadge())
 	);
 
+	/** A strip with nobody to reach says nothing worth saying, so it stays out of the panel. */
+	readonly showBulkActions = computed(() => this.canMuteAll() && this.targets().length > 0);
+
 	readonly bulkActions = computed<BulkAction[]>(() => {
 		const targets = this.targets();
 
@@ -84,6 +91,7 @@ export class MeetingParticipantsPanelActionsComponent {
 			const enabled = targets.some(action.isLive);
 
 			return {
+				kind: action.kind,
 				id: action.id,
 				icon: action.icon,
 				enabled,

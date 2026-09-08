@@ -46,6 +46,7 @@
 								mat-icon-button
 								class="media-btn"
 								[id]="control.id"
+								[attr.data-kind]="control.kind"
 								[attr.data-state]="face.state"
 								[disabled]="!face.actionable"
 								[attr.aria-label]="(face.labelKey | translate) + ': ' + participantDisplayName()"
@@ -70,7 +71,7 @@
 					<mat-icon class="material-symbols-outlined" fontIcon="more_vert" />
 				</button>
 
-				<mat-menu #participantMenu="matMenu" class="participant-menu">
+				<mat-menu #participantMenu="matMenu" class="participant-menu" xPosition="before">
 					@if (canMuteLocally()) {
 						<button
 							mat-menu-item
