@@ -1,9 +1,9 @@
 /meetings/{roomId}:
     get:
         operationId: meetingGet
-        summary: Get the live meeting info
+        summary: Get the info of a live meeting
         description: |
-            Returns the live info of the meeting currently running in an OpenVidu Meet room.
+            Retrieves the details of a live meeting.
 
             Requires the `meetingRead` permission when using a room-member token.
         tags:
@@ -30,7 +30,7 @@
         operationId: meetingEnd
         summary: End a meeting
         description: |
-            Ends the current meeting in an OpenVidu Meet room. This will stop all recordings and disconnect all participants.
+            Ends the live meeting in a room. This will stop all recordings and disconnect all participants.
 
             This endpoint is idempotent. If the meeting is already ended, it will return a success response without any action.
         tags:
@@ -58,7 +58,7 @@
         operationId: participantList
         summary: List the participants of a meeting
         description: |
-            Lists the participants currently in the meeting of an OpenVidu Meet room, as live
+            Lists the participants currently in the meeting, as live
             snapshots: identity, the application-provided correlation fields (`externalId`,
             `metadata`), effective role, join date and current media state.
 
@@ -86,10 +86,11 @@
 /meetings/{roomId}/participants/media:
     put:
         operationId: participantMuteAll
-        summary: Mute every participant of a meeting
+        summary: Mute all participants
         description: >
-            Turns off the requested devices of every participant in the current meeting of an OpenVidu Meet
-            room, except the moderators and the caller. Only `false` is accepted: moderation never turns a
+            Turns off the devices of all participant in the current meeting.
+            This action affects all participants in the meeting, excluding the moderators.
+            Only `false` is accepted: moderation never turns a
             remote device on, and each participant may turn theirs back on afterwards.
         tags:
             - OpenVidu Meet - Meetings
@@ -118,9 +119,9 @@
 /meetings/{roomId}/participants/{participantIdentity}:
     get:
         operationId: participantGet
-        summary: Get one participant of a meeting
+        summary: Get a participant
         description: |
-            Returns the live snapshot of one participant in the meeting of an OpenVidu Meet room.
+            Retrieves the live snapshot of one participant in the meeting.
 
             Requires the `meetingRead` permission when using a room-member token.
         tags:
@@ -146,9 +147,9 @@
                 $ref: '../shared/responses/errors/internal-server.yaml'
     delete:
         operationId: participantKick
-        summary: Kick a participant from a meeting
+        summary: Kick a participant
         description: >
-            Kicks a participant from the current meeting in an OpenVidu Meet room.
+            Kicks a participant from a meeting.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -173,9 +174,9 @@
 /meetings/{roomId}/participants/{participantIdentity}/media:
     put:
         operationId: participantMute
-        summary: Mute a participant of a meeting
+        summary: Mute a participant
         description: >
-            Turns off the requested devices of a participant in the current meeting of an OpenVidu Meet room.
+            Turns off the requested devices of a participant in the current meeting.
             Only `false` is accepted: moderation never turns a remote device on, and the participant may turn
             theirs back on afterwards. Moderators cannot be muted.
         tags:
@@ -210,7 +211,7 @@
         operationId: participantRoleUpdate
         summary: Update participant role in a meeting
         description: >
-            Applies a moderation action to a participant in the current meeting in an OpenVidu Meet room.
+            Applies a moderation action to a participant in the current meeting.
             Supported actions are `upgrade` (promote to moderator) and `downgrade` (restore original permissions).
 
 
