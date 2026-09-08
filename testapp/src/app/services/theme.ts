@@ -18,8 +18,10 @@ const preferredTheme = (): Theme => (matchMedia('(prefers-color-scheme: light)')
 
 /**
  * Owns the shell's theme: resolves it once from storage or the OS preference and
- * publishes it as `data-theme` on `<html>`, which is what the token blocks in
- * `styles.css` key off.
+ * publishes it as `data-ta-theme` on `<html>`, which is what the token blocks in
+ * `styles.css` key off. The attribute is the shell's own: the embedded app themes
+ * the same document through `data-theme` / `data-ov-theme`, and writing that same
+ * `data-theme` here would let either side repaint the other.
  */
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
@@ -30,7 +32,7 @@ export class ThemeService {
 	constructor() {
 		effect(() => {
 			const theme = this._theme();
-			document.documentElement.dataset['theme'] = theme;
+			document.documentElement.dataset['taTheme'] = theme;
 
 			try {
 				localStorage.setItem(STORAGE_KEY, theme);

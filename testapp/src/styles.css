@@ -30,7 +30,7 @@ app-root {
    embedded app it hosts. */
 
 :root,
-:root[data-theme='dark'] {
+:root[data-ta-theme='dark'] {
 	color-scheme: dark;
 
 	--ta-bg: #0d0f14;
@@ -70,7 +70,7 @@ app-root {
 	--ta-kind-info: #6b7385;
 }
 
-:root[data-theme='light'] {
+:root[data-ta-theme='light'] {
 	color-scheme: light;
 
 	--ta-bg: #e9ebf0;
