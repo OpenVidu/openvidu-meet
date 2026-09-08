@@ -217,7 +217,7 @@ for (const integration of INTEGRATIONS) {
 		// every assertion here reads the target page's real device state — the toolbar buttons bind
 		// straight off the track state, which a client-side-only "please mute" could not move.
 		test.describe('PARTICIPANT_MUTE Command', () => {
-			test('should turn off a speaker microphone and camera', async ({ page, browser }) => {
+			test('should turn off a speaker microphone and camera in one command', async ({ page, browser }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.JOINED);
 
@@ -228,10 +228,8 @@ for (const integration of INTEGRATIONS) {
 
 				await expect(meetLocator(page, integration, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
 
-				await participantMuteCommand(page, speakerIdentity, 'audio');
+				await participantMuteCommand(page, speakerIdentity, ['audio', 'video']);
 				await expectToolbarMicEnabled(speakerPage, 'webcomponent', false, { timeout: 15_000 });
-
-				await participantMuteCommand(page, speakerIdentity, 'video');
 				await expectToolbarCameraEnabled(speakerPage, 'webcomponent', false, { timeout: 15_000 });
 
 				await speakerContext.close();

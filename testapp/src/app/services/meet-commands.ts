@@ -5,9 +5,6 @@ import type { OpenViduMeetElement } from '../openvidu-meet-element';
 import { EventLogService } from './event-log';
 import { IframeHostService } from './iframe-host';
 
-/** The device a moderation mute turns off. */
-export type MuteMedia = 'audio' | 'video' | 'screenShare';
-
 type JoinedHandler = (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName.JOINED>) => void;
 
 /**
@@ -16,7 +13,7 @@ type JoinedHandler = (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName.JO
  * element directly, the iframe through `postMessage` — so every method here is
  * the same call routed two ways.
  *
- * The shared arguments (target identity, mute device, explicit `active`) live
+ * The shared arguments (target identity, muted devices, explicit `active`) live
  * here too, because they belong to the commands rather than to the mount config.
  */
 @Injectable({ providedIn: 'root' })
@@ -25,9 +22,11 @@ export class MeetCommandsService {
 	private readonly log = inject(EventLogService);
 
 	/** Participant addressed by `participantKick()` and `participantMute()`. */
-	readonly participantIdentity = signal('test-participant-1');
-	/** Device the two moderation-mute commands turn off. */
-	readonly muteMedia = signal<MuteMedia>('audio');
+	readonly participantIdentity = signal('');
+	/** Devices the two moderation-mute commands turn off; any combination is a valid request. */
+	readonly muteAudio = signal(true);
+	readonly muteVideo = signal(false);
+	readonly muteScreenShare = signal(false);
 	/** Explicit `active` for the media toggles. `''` toggles instead. */
 	readonly mediaActive = signal<TriState>('');
 	/** Whether an `on("joined")` handler is currently registered. */
@@ -73,7 +72,10 @@ export class MeetCommandsService {
 	// ── Participant moderation ──────────────────────────────────────────────
 
 	participantKick(): void {
-		const identity = this.participantIdentity();
+		const identity = this.requireIdentity('participantKick');
+
+		if (!identity) return;
+
 		this.dispatch(
 			() => this.iframeHost.participantKick(identity),
 			(element) => element.participantKick(identity)
@@ -82,8 +84,11 @@ export class MeetCommandsService {
 	}
 
 	participantMute(): void {
-		const identity = this.participantIdentity();
-		const media = this.muteOptions();
+		const identity = this.requireIdentity('participantMute');
+		const media = this.muteOptions('participantMute');
+
+		if (!identity || !media) return;
+
 		this.dispatch(
 			() => this.iframeHost.participantMute(identity, media),
 			(element) => element.participantMute(identity, media)
@@ -92,7 +97,10 @@ export class MeetCommandsService {
 	}
 
 	participantMuteAll(): void {
-		const media = this.muteOptions();
+		const media = this.muteOptions('participantMuteAll');
+
+		if (!media) return;
+
 		this.dispatch(
 			() => this.iframeHost.participantMuteAll(media),
 			(element) => element.participantMuteAll(media)
@@ -153,7 +161,10 @@ export class MeetCommandsService {
 
 	/** @deprecated Sends the 3.8.0 `kickParticipant` command. Removed in 3.12.0. */
 	legacyKickParticipant(): void {
-		const identity = this.participantIdentity();
+		const identity = this.requireIdentity('kickParticipant');
+
+		if (!identity) return;
+
 		this.dispatch(
 			() => this.iframeHost.legacyKickParticipant(identity),
 			(element) => element.kickParticipant(identity)
@@ -213,13 +224,37 @@ export class MeetCommandsService {
 		return null;
 	}
 
-	/** Resolves the device selector to the one-way mute options the moderation commands carry. */
-	private muteOptions(): MeetParticipantMuteOptions {
-		if (this.muteMedia() === 'video') return { videoActive: false };
+	/** The target identity, or `null` (with a reason in the console) when none is set. */
+	private requireIdentity(command: string): string | null {
+		const identity = this.participantIdentity().trim();
 
-		if (this.muteMedia() === 'screenShare') return { screenShareActive: false };
+		if (!identity) {
+			this.log.warning(command, 'set a target participant identity');
+			return null;
+		}
 
-		return { audioActive: false };
+		return identity;
+	}
+
+	/**
+	 * Builds the one-way mute options the moderation commands carry from the selected
+	 * devices, or `null` when none is selected: the API requires at least one.
+	 */
+	private muteOptions(command: string): MeetParticipantMuteOptions | null {
+		const media: MeetParticipantMuteOptions = {};
+
+		if (this.muteAudio()) media.audioActive = false;
+
+		if (this.muteVideo()) media.videoActive = false;
+
+		if (this.muteScreenShare()) media.screenShareActive = false;
+
+		if (Object.keys(media).length === 0) {
+			this.log.warning(command, 'select at least one device to mute');
+			return null;
+		}
+
+		return media;
 	}
 
 	private dispatch(onIframe: () => void, onElement: (element: OpenViduMeetElement) => void): void {

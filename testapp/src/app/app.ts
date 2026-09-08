@@ -18,6 +18,7 @@ import type { OpenViduMeetElement } from './openvidu-meet-element';
 import { EventLogService } from './services/event-log';
 import { IframeHostService } from './services/iframe-host';
 import { MeetCommandsService } from './services/meet-commands';
+import { ParticipantRosterService } from './services/participant-roster';
 import { TestappConfigStore } from './services/testapp-config';
 import { ThemeService } from './services/theme';
 
@@ -43,6 +44,7 @@ export class App {
 	protected readonly config = inject(TestappConfigStore);
 	protected readonly theme = inject(ThemeService);
 	private readonly commands = inject(MeetCommandsService);
+	private readonly roster = inject(ParticipantRosterService);
 	private readonly iframeHost = inject(IframeHostService);
 	private readonly sanitizer = inject(DomSanitizer);
 
@@ -108,6 +110,7 @@ export class App {
 
 	protected applyConfig(): void {
 		this.log.clear();
+		this.roster.clear();
 
 		const apply = () => {
 			if (this.integration() === 'iframe') {
@@ -206,6 +209,7 @@ export class App {
 	private publishEvent(name: string, detail: unknown): void {
 		const payload = detail ?? {};
 		this.log.event(name, payload);
+		this.roster.track(name, payload);
 		this.eventSink()?.nativeElement.dispatchEvent(new CustomEvent(name, { detail: payload, bubbles: true }));
 	}
 }

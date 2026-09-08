@@ -28,7 +28,7 @@
 			<h2>Participant</h2>
 		</div>
 		<div class="ta-field">
-			<label for="participant-identity-input">Target identity, used by kick and mute</label>
+			<label class="ta-arg-label" for="participant-identity-input">Target identity, used by kick and mute</label>
 			<input
 				id="participant-identity-input"
 				type="text"
@@ -36,6 +36,23 @@
 				data-testid="input-participant-identity"
 				[(ngModel)]="commands.participantIdentity"
 			/>
+			@if (roster.participants().length) {
+			<div class="ta-targets" data-testid="participant-roster">
+				@for (participant of roster.participants(); track participant.participantIdentity) {
+				<button
+					class="ta-btn ta-btn--sm"
+					[class.ta-btn--on]="commands.participantIdentity() === participant.participantIdentity"
+					[title]="participant.participantIdentity"
+					data-testid="btn-roster-target"
+					(click)="commands.participantIdentity.set(participant.participantIdentity)"
+				>
+					{{ participant.participantName }}
+				</button>
+				}
+			</div>
+			} @else {
+			<span class="ta-hint">no participant has joined since this host mounted, type an identity</span>
+			}
 		</div>
 		<button
 			id="kick-participant-btn"
@@ -46,12 +63,37 @@
 			participantKick()
 		</button>
 		<div class="ta-field">
-			<label for="muteMedia">device to mute</label>
-			<select id="muteMedia" data-testid="select-mute-media" [(ngModel)]="commands.muteMedia">
-				<option value="audio">audio</option>
-				<option value="video">video</option>
-				<option value="screenShare">screenShare</option>
-			</select>
+			<label class="ta-arg-label">Devices the two mute commands turn off, any combination</label>
+			<div class="ta-switch-field">
+				<label for="mute-audio">audio</label>
+				<input
+					id="mute-audio"
+					class="ta-switch"
+					type="checkbox"
+					data-testid="input-mute-audio"
+					[(ngModel)]="commands.muteAudio"
+				/>
+			</div>
+			<div class="ta-switch-field">
+				<label for="mute-video">video</label>
+				<input
+					id="mute-video"
+					class="ta-switch"
+					type="checkbox"
+					data-testid="input-mute-video"
+					[(ngModel)]="commands.muteVideo"
+				/>
+			</div>
+			<div class="ta-switch-field">
+				<label for="mute-screen-share">screenShare</label>
+				<input
+					id="mute-screen-share"
+					class="ta-switch"
+					type="checkbox"
+					data-testid="input-mute-screen-share"
+					[(ngModel)]="commands.muteScreenShare"
+				/>
+			</div>
 		</div>
 		<button
 			id="participant-mute-btn"
@@ -76,7 +118,7 @@
 			<h2>Local media</h2>
 		</div>
 		<div class="ta-field">
-			<label for="mediaActive">active, shared by the three toggles</label>
+			<label class="ta-arg-label" for="mediaActive">active, shared by the three toggles</label>
 			<select id="mediaActive" data-testid="select-media-active" [(ngModel)]="commands.mediaActive">
 				<option value="">omitted (toggle)</option>
 				<option value="true">true</option>

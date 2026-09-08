@@ -1,11 +1,15 @@
-/* The identity and device selectors are arguments, not properties, so their
-   labels read as prose rather than as the monospaced attribute names Setup uses. */
-.ta-field > label[for='participant-identity-input'],
-.ta-field > label[for='muteMedia'],
-.ta-field > label[for='mediaActive'] {
+/* Command arguments, not properties, so their labels read as prose rather than
+   as the monospaced attribute names Setup uses. */
+.ta-arg-label {
 	font-family: var(--ta-font);
 	font-size: 10px;
 	color: var(--ta-text-3);
+}
+
+.ta-targets {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
 }
 
 .ta-card--deprecated {

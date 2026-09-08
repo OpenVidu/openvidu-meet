@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MeetCommandsService } from '../../services/meet-commands';
+import { ParticipantRosterService } from '../../services/participant-roster';
 
 /**
  * Commands tab: every call of the embedded API, grouped by what it acts on
@@ -15,4 +16,5 @@ import { MeetCommandsService } from '../../services/meet-commands';
 })
 export class CommandsPanel {
 	protected readonly commands = inject(MeetCommandsService);
+	protected readonly roster = inject(ParticipantRosterService);
 }

@@ -328,19 +328,32 @@ export const kickParticipantCommand = async (page: Page, participantIdentity: st
 	await page.getByTestId('btn-kick-participant').click();
 };
 
-/** The device a moderation mute turns off. */
+/** A device a moderation mute turns off. */
 export type MuteMedia = 'audio' | 'video' | 'screenShare';
 
-/** Sets the shared device selector the two moderation-mute buttons below read from. */
-const selectMuteMedia = async (page: Page, media: MuteMedia): Promise<void> => {
-	await page.getByTestId('select-mute-media').selectOption(media);
+const MUTE_SWITCH_TESTID: Record<MuteMedia, string> = {
+	audio: 'input-mute-audio',
+	video: 'input-mute-video',
+	screenShare: 'input-mute-screen-share'
 };
 
-/** Fills the participant identity, picks the device and clicks the testapp's `participantMute()` button. */
+/**
+ * Leaves exactly the given devices selected in the shared mute switches the two
+ * moderation-mute buttons below read from, so a single command can carry any combination.
+ */
+const selectMuteMedia = async (page: Page, media: MuteMedia | MuteMedia[]): Promise<void> => {
+	const selected = new Set(Array.isArray(media) ? media : [media]);
+
+	for (const device of Object.keys(MUTE_SWITCH_TESTID) as MuteMedia[]) {
+		await page.getByTestId(MUTE_SWITCH_TESTID[device]).setChecked(selected.has(device));
+	}
+};
+
+/** Fills the participant identity, picks the devices and clicks the testapp's `participantMute()` button. */
 export const participantMuteCommand = async (
 	page: Page,
 	participantIdentity: string,
-	media: MuteMedia
+	media: MuteMedia | MuteMedia[]
 ): Promise<void> => {
 	await showControlsPanel(page, 'commands');
 	await fillParticipantIdentity(page, participantIdentity);
@@ -348,8 +361,8 @@ export const participantMuteCommand = async (
 	await page.getByTestId('btn-participant-mute').click();
 };
 
-/** Picks the device and clicks the testapp's `participantMuteAll()` button. */
-export const participantMuteAllCommand = async (page: Page, media: MuteMedia): Promise<void> => {
+/** Picks the devices and clicks the testapp's `participantMuteAll()` button. */
+export const participantMuteAllCommand = async (page: Page, media: MuteMedia | MuteMedia[]): Promise<void> => {
 	await showControlsPanel(page, 'commands');
 	await selectMuteMedia(page, media);
 	await page.getByTestId('btn-participant-mute-all').click();
