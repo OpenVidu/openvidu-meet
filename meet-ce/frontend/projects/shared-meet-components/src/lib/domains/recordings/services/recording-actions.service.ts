@@ -85,7 +85,7 @@ export class RecordingActionsService {
 		};
 
 		this.dialogService.showDialog({
-			...deleteRecordingDialogPreset(recording.recordingId),
+			...deleteRecordingDialogPreset(this.translateService, recording.recordingId),
 			confirmCallback: deleteCallback
 		});
 	}
@@ -145,7 +145,7 @@ export class RecordingActionsService {
 		};
 
 		this.dialogService.showDialog({
-			...bulkDeleteRecordingsDialogPreset(recordings.length),
+			...bulkDeleteRecordingsDialogPreset(this.translateService, recordings.length),
 			confirmCallback: bulkDeleteCallback
 		});
 	}

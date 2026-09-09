@@ -43,7 +43,7 @@ export class RoomDeletionService {
 		};
 
 		this.dialogService.showDialog({
-			...deleteRoomDialogPreset(roomId),
+			...deleteRoomDialogPreset(this.translateService, roomId),
 			confirmCallback: deleteCallback
 		});
 	}

@@ -676,7 +676,10 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 			this.log.d('Token applied, room is ready to connect');
 		} catch (error: any) {
 			this.log.e('Error applying token', error);
-			this.tokenError.set({ name: 'Token error', message: error?.message ?? String(error) });
+			this.tokenError.set({
+				name: this.translateService.translate('ERRORS.TOKEN_TITLE'),
+				message: error?.message ?? String(error)
+			});
 			this.phase.set('error');
 			return;
 		}

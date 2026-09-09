@@ -173,7 +173,7 @@ export class RecordingDetailComponent implements OnInit {
 		};
 
 		this.dialogService.showDialog({
-			...deleteRecordingDialogPreset(this.recordingId()),
+			...deleteRecordingDialogPreset(this.translateService, this.recordingId()),
 			confirmCallback: deleteCallback
 		});
 	}

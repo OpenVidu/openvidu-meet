@@ -479,7 +479,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 
 	private deleteMember(member: MeetRoomMember) {
 		this.dialogService.showDialog({
-			...removeMemberDialogPreset(member.name, this.shouldShowMeetingKickWarning()),
+			...removeMemberDialogPreset(this.translateService, member.name, this.shouldShowMeetingKickWarning()),
 			confirmCallback: async () => {
 				try {
 					await this.roomMemberService.deleteRoomMember(this.roomId(), member.memberId);
@@ -537,7 +537,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 
 		const count = members.length;
 		this.dialogService.showDialog({
-			...bulkRemoveMembersDialogPreset(count, this.shouldShowMeetingKickWarning()),
+			...bulkRemoveMembersDialogPreset(this.translateService, count, this.shouldShowMeetingKickWarning()),
 			confirmCallback: bulkDeleteCallback
 		});
 	}

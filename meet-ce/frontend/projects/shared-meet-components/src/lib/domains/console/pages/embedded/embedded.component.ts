@@ -11,6 +11,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetApiKey, MeetWebhook } from '@openvidu-meet/typings';
 import type { DialogPreset } from '../../../../shared/models/notification.model';
+import type { Translator } from '../../../../shared/models/translator.model';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { ApiKeyService } from '../../../../shared/services/api-key.service';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
@@ -20,12 +21,12 @@ import { RuntimeConfigService } from '../../../../shared/services/runtime-config
 import { WebhookService } from '../../../../shared/services/webhook.service';
 import { WebhookEditorDialogComponent } from '../../components/webhook-editor-dialog/webhook-editor-dialog.component';
 
-const deleteWebhookDialogPreset = (url: string): DialogPreset => ({
-	title: 'Delete Webhook',
+const deleteWebhookDialogPreset = (t: Translator, url: string): DialogPreset => ({
+	title: t.translate('EMBEDDED.DIALOGS.DELETE_WEBHOOK_TITLE'),
 	icon: 'delete_outline',
-	message: `Are you sure you want to delete the webhook pointing to <b>${url}</b>? It will stop receiving event notifications immediately.`,
-	confirmText: 'Delete',
-	cancelText: 'Cancel'
+	message: t.translate('EMBEDDED.DIALOGS.DELETE_WEBHOOK_MESSAGE', { url }),
+	confirmText: t.translate('EMBEDDED.DIALOGS.DELETE'),
+	cancelText: t.translate('EMBEDDED.CANCEL')
 });
 
 @Component({
@@ -200,7 +201,7 @@ export class EmbeddedComponent implements OnInit {
 
 	deleteWebhook(webhook: MeetWebhook) {
 		this.dialogService.showDialog({
-			...deleteWebhookDialogPreset(webhook.url),
+			...deleteWebhookDialogPreset(this.translateService, webhook.url),
 			confirmCallback: async () => {
 				try {
 					await this.webhookService.deleteWebhook(webhook.webhookId);

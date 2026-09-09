@@ -146,7 +146,7 @@ export class ViewRecordingComponent implements OnInit {
 		};
 
 		this.dialogService.showDialog({
-			...deleteRecordingDialogPreset(recording.recordingId),
+			...deleteRecordingDialogPreset(this.translateService, recording.recordingId),
 			confirmCallback: deleteCallback
 		});
 	}

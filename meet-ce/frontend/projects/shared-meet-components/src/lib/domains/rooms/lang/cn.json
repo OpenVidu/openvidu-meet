@@ -383,6 +383,22 @@
         "ACTIVE": "在进行中会议期间无法编辑房间",
         "DEFAULT": "编辑房间设置"
       }
+    },
+    "DIALOGS": {
+      "DELETE_ROOM_TITLE": "删除房间",
+      "DELETE_ROOM_MESSAGE": "确定要删除房间 <b>{roomId}</b> 吗？",
+      "DELETE_ROOMS_TITLE": "删除房间",
+      "DELETE_ROOMS_MESSAGE": "确定要删除 <b>{count}</b> 个房间吗？",
+      "REMOVE_MEMBER_TITLE": "移除成员",
+      "REMOVE_MEMBER_MESSAGE": "确定要将 <b>{memberName}</b> 从此房间移除吗？",
+      "REMOVE_MEMBERS_TITLE": "移除成员",
+      "REMOVE_MEMBERS_MESSAGE_ONE": "确定要将 <b>{count} 位成员</b>从此房间移除吗？",
+      "REMOVE_MEMBERS_MESSAGE_MANY": "确定要将 <b>{count} 位成员</b>从此房间移除吗？",
+      "MEETING_WARNING_TITLE": "会议进行中提醒",
+      "REMOVE_MEMBER_WARNING": "如果该用户正在会议中，将被立即移出。",
+      "REMOVE_MEMBERS_WARNING": "正在会议中的成员将被立即移出。",
+      "DELETE": "删除",
+      "REMOVE": "移除"
     }
   }
 }

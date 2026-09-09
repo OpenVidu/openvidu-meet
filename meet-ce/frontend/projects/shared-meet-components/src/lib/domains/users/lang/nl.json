@@ -158,6 +158,17 @@
       "USERS_DELETED_SUFFIX_PLURAL": "gebruikers succesvol verwijderd.",
       "USERS_FAILED_SUFFIX_SINGULAR": "gebruiker kon niet worden verwijderd.",
       "USERS_FAILED_SUFFIX_PLURAL": "gebruikers konden niet worden verwijderd."
+    },
+    "DIALOGS": {
+      "DELETE_USER_TITLE": "Gebruiker verwijderen",
+      "DELETE_USER_MESSAGE": "Weet je zeker dat je gebruiker <b>{name}</b> ({userId}) definitief wilt verwijderen? Deze actie kan niet worden ongedaan gemaakt.",
+      "DELETE_USER_WARNING": "Als de gebruiker eigenaar is van ruimtes, gaat het eigendom over naar de root-beheerder. Zit de gebruiker in een vergadering, dan wordt hij er onmiddellijk uit verwijderd.",
+      "DELETE_USERS_TITLE": "Gebruikers verwijderen",
+      "DELETE_USERS_MESSAGE_ONE": "Weet je zeker dat je <b>{count} gebruiker</b> definitief wilt verwijderen? Deze actie kan niet worden ongedaan gemaakt.",
+      "DELETE_USERS_MESSAGE_MANY": "Weet je zeker dat je <b>{count} gebruikers</b> definitief wilt verwijderen? Deze actie kan niet worden ongedaan gemaakt.",
+      "DELETE_USERS_WARNING": "Als verwijderde gebruikers eigenaar zijn van ruimtes, gaat het eigendom over naar de root-beheerder. Wie in een vergadering zit, wordt er onmiddellijk uit verwijderd.",
+      "WARNING_TITLE": "Belangrijke gevolgen",
+      "DELETE": "Verwijderen"
     }
   }
 }

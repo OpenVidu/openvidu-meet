@@ -139,6 +139,11 @@
       "WEBHOOK_DELETED": "Webhook eliminado correctamente",
       "WEBHOOK_DELETE_FAILED": "Error al eliminar el webhook",
       "WEBHOOK_URL_COPIED": "URL del webhook copiada al portapapeles"
+    },
+    "DIALOGS": {
+      "DELETE_WEBHOOK_TITLE": "Eliminar webhook",
+      "DELETE_WEBHOOK_MESSAGE": "¿Seguro que quieres eliminar el webhook que apunta a <b>{url}</b>? Dejará de recibir notificaciones de eventos de inmediato.",
+      "DELETE": "Eliminar"
     }
   },
   "LOGO_SELECTOR": {

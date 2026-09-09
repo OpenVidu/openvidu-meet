@@ -158,6 +158,17 @@
       "USERS_DELETED_SUFFIX_PLURAL": "utenti eliminati con successo.",
       "USERS_FAILED_SUFFIX_SINGULAR": "utente non può essere eliminato.",
       "USERS_FAILED_SUFFIX_PLURAL": "utenti non possono essere eliminati."
+    },
+    "DIALOGS": {
+      "DELETE_USER_TITLE": "Elimina utente",
+      "DELETE_USER_MESSAGE": "Vuoi eliminare definitivamente l’utente <b>{name}</b> ({userId})? Questa azione non può essere annullata.",
+      "DELETE_USER_WARNING": "Se l’utente possiede delle stanze, la proprietà passerà all’amministratore root. Se è in una riunione, verrà rimosso immediatamente.",
+      "DELETE_USERS_TITLE": "Elimina utenti",
+      "DELETE_USERS_MESSAGE_ONE": "Vuoi eliminare definitivamente <b>{count} utente</b>? Questa azione non può essere annullata.",
+      "DELETE_USERS_MESSAGE_MANY": "Vuoi eliminare definitivamente <b>{count} utenti</b>? Questa azione non può essere annullata.",
+      "DELETE_USERS_WARNING": "Se gli utenti eliminati possiedono delle stanze, la proprietà passerà all’amministratore root. Quelli in riunione verranno rimossi immediatamente.",
+      "WARNING_TITLE": "Conseguenze importanti",
+      "DELETE": "Elimina"
     }
   }
 }

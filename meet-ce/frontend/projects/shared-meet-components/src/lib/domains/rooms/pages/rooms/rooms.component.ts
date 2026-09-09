@@ -381,7 +381,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 		};
 
 		this.dialogService.showDialog({
-			...bulkDeleteRoomsDialogPreset(rooms.length),
+			...bulkDeleteRoomsDialogPreset(this.translateService, rooms.length),
 			confirmCallback: bulkDeleteCallback
 		});
 	}

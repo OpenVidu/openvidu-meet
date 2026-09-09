@@ -383,6 +383,22 @@
         "ACTIVE": "Die Bearbeitung des Raums ist während eines aktiven Meetings deaktiviert",
         "DEFAULT": "Raumeinstellungen bearbeiten"
       }
+    },
+    "DIALOGS": {
+      "DELETE_ROOM_TITLE": "Raum löschen",
+      "DELETE_ROOM_MESSAGE": "Möchten Sie den Raum <b>{roomId}</b> wirklich löschen?",
+      "DELETE_ROOMS_TITLE": "Räume löschen",
+      "DELETE_ROOMS_MESSAGE": "Möchten Sie <b>{count}</b> Räume wirklich löschen?",
+      "REMOVE_MEMBER_TITLE": "Mitglied entfernen",
+      "REMOVE_MEMBER_MESSAGE": "Möchten Sie <b>{memberName}</b> wirklich aus diesem Raum entfernen?",
+      "REMOVE_MEMBERS_TITLE": "Mitglieder entfernen",
+      "REMOVE_MEMBERS_MESSAGE_ONE": "Möchten Sie <b>{count} Mitglied</b> wirklich aus diesem Raum entfernen?",
+      "REMOVE_MEMBERS_MESSAGE_MANY": "Möchten Sie <b>{count} Mitglieder</b> wirklich aus diesem Raum entfernen?",
+      "MEETING_WARNING_TITLE": "Hinweis zum laufenden Meeting",
+      "REMOVE_MEMBER_WARNING": "Befindet sich dieser Benutzer im Meeting, wird er sofort entfernt.",
+      "REMOVE_MEMBERS_WARNING": "Mitglieder, die sich im Meeting befinden, werden sofort entfernt.",
+      "DELETE": "Löschen",
+      "REMOVE": "Entfernen"
     }
   }
 }

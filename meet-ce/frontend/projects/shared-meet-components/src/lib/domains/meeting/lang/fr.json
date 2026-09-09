@@ -146,6 +146,7 @@
 	},
 	"ERRORS": {
 		"SESSION": "Une erreur s'est produite lors de la connexion à la réunion",
+		"TOKEN_TITLE": "Erreur de jeton",
 		"MEETING_NOT_READY": "La réunion n'est pas encore prête. Rechargez la page et réessayez.",
 		"MEETING_CONNECTION_FAILED": "Impossible de se connecter à la réunion. Vérifiez votre connexion et réessayez.",
 		"MEETING_FULL": "Cette réunion a atteint son nombre maximum de participants",

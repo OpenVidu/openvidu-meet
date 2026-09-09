@@ -139,6 +139,11 @@
       "WEBHOOK_DELETED": "Webhook deleted successfully",
       "WEBHOOK_DELETE_FAILED": "Failed to delete webhook",
       "WEBHOOK_URL_COPIED": "Webhook URL copied to clipboard"
+    },
+    "DIALOGS": {
+      "DELETE_WEBHOOK_TITLE": "Delete Webhook",
+      "DELETE_WEBHOOK_MESSAGE": "Are you sure you want to delete the webhook pointing to <b>{url}</b>? It will stop receiving event notifications immediately.",
+      "DELETE": "Delete"
     }
   },
   "LOGO_SELECTOR": {

@@ -383,6 +383,22 @@
         "ACTIVE": "La edición de la sala está desactivada durante una reunión activa",
         "DEFAULT": "Editar los ajustes de la sala"
       }
+    },
+    "DIALOGS": {
+      "DELETE_ROOM_TITLE": "Eliminar sala",
+      "DELETE_ROOM_MESSAGE": "¿Seguro que quieres eliminar la sala <b>{roomId}</b>?",
+      "DELETE_ROOMS_TITLE": "Eliminar salas",
+      "DELETE_ROOMS_MESSAGE": "¿Seguro que quieres eliminar <b>{count}</b> salas?",
+      "REMOVE_MEMBER_TITLE": "Quitar miembro",
+      "REMOVE_MEMBER_MESSAGE": "¿Seguro que quieres quitar a <b>{memberName}</b> de esta sala?",
+      "REMOVE_MEMBERS_TITLE": "Quitar miembros",
+      "REMOVE_MEMBERS_MESSAGE_ONE": "¿Seguro que quieres quitar <b>{count} miembro</b> de esta sala?",
+      "REMOVE_MEMBERS_MESSAGE_MANY": "¿Seguro que quieres quitar <b>{count} miembros</b> de esta sala?",
+      "MEETING_WARNING_TITLE": "Aviso de reunión en curso",
+      "REMOVE_MEMBER_WARNING": "Si este usuario está en la reunión, se le expulsará de inmediato.",
+      "REMOVE_MEMBERS_WARNING": "Los miembros que estén en la reunión serán expulsados de inmediato.",
+      "DELETE": "Eliminar",
+      "REMOVE": "Quitar"
     }
   }
 }

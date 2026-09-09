@@ -158,6 +158,17 @@
       "USERS_DELETED_SUFFIX_PLURAL": "users deleted successfully.",
       "USERS_FAILED_SUFFIX_SINGULAR": "user could not be deleted.",
       "USERS_FAILED_SUFFIX_PLURAL": "users could not be deleted."
+    },
+    "DIALOGS": {
+      "DELETE_USER_TITLE": "Delete User",
+      "DELETE_USER_MESSAGE": "Are you sure you want to permanently delete user <b>{name}</b> ({userId})? This action cannot be undone.",
+      "DELETE_USER_WARNING": "If the user owns rooms, ownership will be transferred to the root admin. If the user is currently in a meeting, they will be kicked from it immediately.",
+      "DELETE_USERS_TITLE": "Delete Users",
+      "DELETE_USERS_MESSAGE_ONE": "Are you sure you want to permanently delete <b>{count} user</b>? This action cannot be undone.",
+      "DELETE_USERS_MESSAGE_MANY": "Are you sure you want to permanently delete <b>{count} users</b>? This action cannot be undone.",
+      "DELETE_USERS_WARNING": "If deleted users own rooms, ownership will be transferred to the root admin. Users currently in a meeting will be kicked from it immediately.",
+      "WARNING_TITLE": "Important consequences",
+      "DELETE": "Delete"
     }
   }
 }

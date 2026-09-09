@@ -139,6 +139,11 @@
       "WEBHOOK_DELETED": "Webhookを削除しました",
       "WEBHOOK_DELETE_FAILED": "Webhookの削除に失敗しました",
       "WEBHOOK_URL_COPIED": "Webhook URL をクリップボードにコピーしました"
+    },
+    "DIALOGS": {
+      "DELETE_WEBHOOK_TITLE": "Webhook を削除",
+      "DELETE_WEBHOOK_MESSAGE": "<b>{url}</b> を指す Webhook を削除してもよろしいですか？ただちにイベント通知が届かなくなります。",
+      "DELETE": "削除"
     }
   },
   "LOGO_SELECTOR": {

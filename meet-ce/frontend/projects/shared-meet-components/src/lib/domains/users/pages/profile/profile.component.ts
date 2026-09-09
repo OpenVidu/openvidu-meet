@@ -255,7 +255,7 @@ export class ProfileComponent implements OnInit {
 		if (!user) return;
 
 		this.dialogService.showDialog({
-			...deleteUserDialogPreset(user.name, user.userId),
+			...deleteUserDialogPreset(this.translateService, user.name, user.userId),
 			confirmCallback: async () => {
 				try {
 					await this.userService.deleteUser(user.userId);

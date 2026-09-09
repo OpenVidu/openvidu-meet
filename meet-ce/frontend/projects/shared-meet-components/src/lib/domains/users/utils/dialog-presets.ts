@@ -1,25 +1,27 @@
 import type { DialogPreset } from '../../../shared/models/notification.model';
+import type { Translator } from '../../../shared/models/translator.model';
 
-export const deleteUserDialogPreset = (name: string, userId: string): DialogPreset => ({
-	title: 'Delete User',
+export const deleteUserDialogPreset = (t: Translator, name: string, userId: string): DialogPreset => ({
+	title: t.translate('USERS.DIALOGS.DELETE_USER_TITLE'),
 	icon: 'delete_forever',
-	message: `Are you sure you want to permanently delete user <b>${name}</b> (${userId})? This action cannot be undone.`,
+	message: t.translate('USERS.DIALOGS.DELETE_USER_MESSAGE', { name, userId }),
 	showWarningBox: true,
-	warningTitle: 'Important consequences',
-	warningMessage: `If the user owns rooms, ownership will be transferred to the root admin. 
-            If the user is currently in a meeting, they will be kicked from it immediately.`,
-	confirmText: 'Delete',
-	cancelText: 'Cancel'
+	warningTitle: t.translate('USERS.DIALOGS.WARNING_TITLE'),
+	warningMessage: t.translate('USERS.DIALOGS.DELETE_USER_WARNING'),
+	confirmText: t.translate('USERS.DIALOGS.DELETE'),
+	cancelText: t.translate('USERS.COMMON.CANCEL')
 });
 
-export const bulkDeleteUsersDialogPreset = (count: number): DialogPreset => ({
-	title: 'Delete Users',
+export const bulkDeleteUsersDialogPreset = (t: Translator, count: number): DialogPreset => ({
+	title: t.translate('USERS.DIALOGS.DELETE_USERS_TITLE'),
 	icon: 'delete_forever',
-	message: `Are you sure you want to permanently delete <b>${count} user${count > 1 ? 's' : ''}</b>? This action cannot be undone.`,
+	message: t.translate(
+		count === 1 ? 'USERS.DIALOGS.DELETE_USERS_MESSAGE_ONE' : 'USERS.DIALOGS.DELETE_USERS_MESSAGE_MANY',
+		{ count }
+	),
 	showWarningBox: true,
-	warningTitle: 'Important consequences',
-	warningMessage: `If deleted users own rooms, ownership will be transferred to the root admin. 
-            Users currently in a meeting will be kicked from it immediately.`,
-	confirmText: 'Delete',
-	cancelText: 'Cancel'
+	warningTitle: t.translate('USERS.DIALOGS.WARNING_TITLE'),
+	warningMessage: t.translate('USERS.DIALOGS.DELETE_USERS_WARNING'),
+	confirmText: t.translate('USERS.DIALOGS.DELETE'),
+	cancelText: t.translate('USERS.COMMON.CANCEL')
 });

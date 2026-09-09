@@ -156,6 +156,15 @@
       "RECORDINGS_FAILED_SUFFIX_SINGULAR": "रिकॉर्डिंग हटाई नहीं जा सकी।",
       "RECORDINGS_FAILED_SUFFIX_PLURAL": "रिकॉर्डिंग हटाई नहीं जा सकीं।",
       "DELETE_RECORDINGS_FAILED": "रिकॉर्डिंग हटाने में विफल"
+    },
+    "DIALOGS": {
+      "DELETE_RECORDING_TITLE": "रिकॉर्डिंग हटाएँ",
+      "DELETE_RECORDING_MESSAGE": "क्या आप वाकई रिकॉर्डिंग <b>{recordingId}</b> को स्थायी रूप से हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।",
+      "DELETE_RECORDINGS_TITLE": "रिकॉर्डिंग हटाएँ",
+      "DELETE_RECORDINGS_MESSAGE_ONE": "क्या आप वाकई <b>{count} रिकॉर्डिंग</b> को स्थायी रूप से हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।",
+      "DELETE_RECORDINGS_MESSAGE_MANY": "क्या आप वाकई <b>{count} रिकॉर्डिंग</b> को स्थायी रूप से हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।",
+      "DELETE": "हटाएँ",
+      "CANCEL": "रद्द करें"
     }
   }
 }

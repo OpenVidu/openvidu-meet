@@ -158,6 +158,17 @@
       "USERS_DELETED_SUFFIX_PLURAL": "utilisateurs supprimés avec succès.",
       "USERS_FAILED_SUFFIX_SINGULAR": "utilisateur n'a pas pu être supprimé.",
       "USERS_FAILED_SUFFIX_PLURAL": "utilisateurs n'ont pas pu être supprimés."
+    },
+    "DIALOGS": {
+      "DELETE_USER_TITLE": "Supprimer l’utilisateur",
+      "DELETE_USER_MESSAGE": "Voulez-vous vraiment supprimer définitivement l’utilisateur <b>{name}</b> ({userId}) ? Cette action est irréversible.",
+      "DELETE_USER_WARNING": "Si l’utilisateur possède des salles, leur propriété sera transférée à l’administrateur racine. S’il est en réunion, il en sera exclu immédiatement.",
+      "DELETE_USERS_TITLE": "Supprimer les utilisateurs",
+      "DELETE_USERS_MESSAGE_ONE": "Voulez-vous vraiment supprimer définitivement <b>{count} utilisateur</b> ? Cette action est irréversible.",
+      "DELETE_USERS_MESSAGE_MANY": "Voulez-vous vraiment supprimer définitivement <b>{count} utilisateurs</b> ? Cette action est irréversible.",
+      "DELETE_USERS_WARNING": "Si les utilisateurs supprimés possèdent des salles, leur propriété sera transférée à l’administrateur racine. Ceux qui sont en réunion en seront exclus immédiatement.",
+      "WARNING_TITLE": "Conséquences importantes",
+      "DELETE": "Supprimer"
     }
   }
 }

@@ -156,6 +156,15 @@
       "RECORDINGS_FAILED_SUFFIX_SINGULAR": "registrazione non può essere eliminata.",
       "RECORDINGS_FAILED_SUFFIX_PLURAL": "registrazioni non possono essere eliminate.",
       "DELETE_RECORDINGS_FAILED": "Impossibile eliminare le registrazioni"
+    },
+    "DIALOGS": {
+      "DELETE_RECORDING_TITLE": "Elimina registrazione",
+      "DELETE_RECORDING_MESSAGE": "Vuoi eliminare definitivamente la registrazione <b>{recordingId}</b>? Questa azione non può essere annullata.",
+      "DELETE_RECORDINGS_TITLE": "Elimina registrazioni",
+      "DELETE_RECORDINGS_MESSAGE_ONE": "Vuoi eliminare definitivamente <b>{count} registrazione</b>? Questa azione non può essere annullata.",
+      "DELETE_RECORDINGS_MESSAGE_MANY": "Vuoi eliminare definitivamente <b>{count} registrazioni</b>? Questa azione non può essere annullata.",
+      "DELETE": "Elimina",
+      "CANCEL": "Annulla"
     }
   }
 }

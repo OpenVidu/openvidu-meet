@@ -139,6 +139,11 @@
       "WEBHOOK_DELETED": "वेबहुक सफलतापूर्वक हटाया गया",
       "WEBHOOK_DELETE_FAILED": "वेबहुक हटाने में विफल",
       "WEBHOOK_URL_COPIED": "वेबहुक URL क्लिपबोर्ड पर कॉपी किया गया"
+    },
+    "DIALOGS": {
+      "DELETE_WEBHOOK_TITLE": "वेबहुक हटाएँ",
+      "DELETE_WEBHOOK_MESSAGE": "क्या आप वाकई <b>{url}</b> की ओर इंगित करने वाला वेबहुक हटाना चाहते हैं? इसे तुरंत ईवेंट सूचनाएँ मिलना बंद हो जाएगा।",
+      "DELETE": "हटाएँ"
     }
   },
   "LOGO_SELECTOR": {

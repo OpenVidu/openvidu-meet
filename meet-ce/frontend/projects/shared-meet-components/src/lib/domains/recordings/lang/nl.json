@@ -156,6 +156,15 @@
       "RECORDINGS_FAILED_SUFFIX_SINGULAR": "opname kon niet worden verwijderd.",
       "RECORDINGS_FAILED_SUFFIX_PLURAL": "opnames konden niet worden verwijderd.",
       "DELETE_RECORDINGS_FAILED": "Opnames verwijderen mislukt"
+    },
+    "DIALOGS": {
+      "DELETE_RECORDING_TITLE": "Opname verwijderen",
+      "DELETE_RECORDING_MESSAGE": "Weet je zeker dat je de opname <b>{recordingId}</b> definitief wilt verwijderen? Deze actie kan niet worden ongedaan gemaakt.",
+      "DELETE_RECORDINGS_TITLE": "Opnames verwijderen",
+      "DELETE_RECORDINGS_MESSAGE_ONE": "Weet je zeker dat je <b>{count} opname</b> definitief wilt verwijderen? Deze actie kan niet worden ongedaan gemaakt.",
+      "DELETE_RECORDINGS_MESSAGE_MANY": "Weet je zeker dat je <b>{count} opnames</b> definitief wilt verwijderen? Deze actie kan niet worden ongedaan gemaakt.",
+      "DELETE": "Verwijderen",
+      "CANCEL": "Annuleren"
     }
   }
 }

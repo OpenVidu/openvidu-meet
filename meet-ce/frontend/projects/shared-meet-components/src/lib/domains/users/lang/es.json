@@ -158,6 +158,17 @@
       "USERS_DELETED_SUFFIX_PLURAL": "usuarios eliminados correctamente.",
       "USERS_FAILED_SUFFIX_SINGULAR": "usuario no se pudo eliminar.",
       "USERS_FAILED_SUFFIX_PLURAL": "usuarios no se pudieron eliminar."
+    },
+    "DIALOGS": {
+      "DELETE_USER_TITLE": "Eliminar usuario",
+      "DELETE_USER_MESSAGE": "¿Seguro que quieres eliminar permanentemente al usuario <b>{name}</b> ({userId})? Esta acción no se puede deshacer.",
+      "DELETE_USER_WARNING": "Si el usuario es propietario de salas, su propiedad se transferirá al administrador raíz. Si está en una reunión, se le expulsará de inmediato.",
+      "DELETE_USERS_TITLE": "Eliminar usuarios",
+      "DELETE_USERS_MESSAGE_ONE": "¿Seguro que quieres eliminar permanentemente <b>{count} usuario</b>? Esta acción no se puede deshacer.",
+      "DELETE_USERS_MESSAGE_MANY": "¿Seguro que quieres eliminar permanentemente <b>{count} usuarios</b>? Esta acción no se puede deshacer.",
+      "DELETE_USERS_WARNING": "Si los usuarios eliminados son propietarios de salas, su propiedad se transferirá al administrador raíz. Los que estén en una reunión serán expulsados de inmediato.",
+      "WARNING_TITLE": "Consecuencias importantes",
+      "DELETE": "Eliminar"
     }
   }
 }

@@ -139,6 +139,11 @@
       "WEBHOOK_DELETED": "Webhook 删除成功",
       "WEBHOOK_DELETE_FAILED": "删除 Webhook 失败",
       "WEBHOOK_URL_COPIED": "Webhook URL 已复制到剪贴板"
+    },
+    "DIALOGS": {
+      "DELETE_WEBHOOK_TITLE": "删除 Webhook",
+      "DELETE_WEBHOOK_MESSAGE": "确定要删除指向 <b>{url}</b> 的 Webhook 吗？它将立即停止接收事件通知。",
+      "DELETE": "删除"
     }
   },
   "LOGO_SELECTOR": {

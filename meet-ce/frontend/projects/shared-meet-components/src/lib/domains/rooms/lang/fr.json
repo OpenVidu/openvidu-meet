@@ -383,6 +383,22 @@
         "ACTIVE": "La modification de la salle est désactivée pendant une réunion active",
         "DEFAULT": "Modifier les paramètres de la salle"
       }
+    },
+    "DIALOGS": {
+      "DELETE_ROOM_TITLE": "Supprimer la salle",
+      "DELETE_ROOM_MESSAGE": "Voulez-vous vraiment supprimer la salle <b>{roomId}</b> ?",
+      "DELETE_ROOMS_TITLE": "Supprimer les salles",
+      "DELETE_ROOMS_MESSAGE": "Voulez-vous vraiment supprimer <b>{count}</b> salles ?",
+      "REMOVE_MEMBER_TITLE": "Retirer le membre",
+      "REMOVE_MEMBER_MESSAGE": "Voulez-vous vraiment retirer <b>{memberName}</b> de cette salle ?",
+      "REMOVE_MEMBERS_TITLE": "Retirer les membres",
+      "REMOVE_MEMBERS_MESSAGE_ONE": "Voulez-vous vraiment retirer <b>{count} membre</b> de cette salle ?",
+      "REMOVE_MEMBERS_MESSAGE_MANY": "Voulez-vous vraiment retirer <b>{count} membres</b> de cette salle ?",
+      "MEETING_WARNING_TITLE": "Avertissement : réunion en cours",
+      "REMOVE_MEMBER_WARNING": "Si cet utilisateur est en réunion, il en sera exclu immédiatement.",
+      "REMOVE_MEMBERS_WARNING": "Les membres en réunion en seront exclus immédiatement.",
+      "DELETE": "Supprimer",
+      "REMOVE": "Retirer"
     }
   }
 }

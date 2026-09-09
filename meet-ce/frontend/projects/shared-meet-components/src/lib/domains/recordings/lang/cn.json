@@ -156,6 +156,15 @@
       "RECORDINGS_FAILED_SUFFIX_SINGULAR": "个录像无法删除。",
       "RECORDINGS_FAILED_SUFFIX_PLURAL": "个录像无法删除。",
       "DELETE_RECORDINGS_FAILED": "删除录像失败"
+    },
+    "DIALOGS": {
+      "DELETE_RECORDING_TITLE": "删除录制",
+      "DELETE_RECORDING_MESSAGE": "确定要永久删除录制 <b>{recordingId}</b> 吗？此操作无法撤销。",
+      "DELETE_RECORDINGS_TITLE": "删除录制",
+      "DELETE_RECORDINGS_MESSAGE_ONE": "确定要永久删除 <b>{count} 个录制</b>吗？此操作无法撤销。",
+      "DELETE_RECORDINGS_MESSAGE_MANY": "确定要永久删除 <b>{count} 个录制</b>吗？此操作无法撤销。",
+      "DELETE": "删除",
+      "CANCEL": "取消"
     }
   }
 }

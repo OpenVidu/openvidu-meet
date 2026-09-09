@@ -139,6 +139,11 @@
       "WEBHOOK_DELETED": "Webhook erfolgreich gelöscht",
       "WEBHOOK_DELETE_FAILED": "Webhook konnte nicht gelöscht werden",
       "WEBHOOK_URL_COPIED": "Webhook-URL in die Zwischenablage kopiert"
+    },
+    "DIALOGS": {
+      "DELETE_WEBHOOK_TITLE": "Webhook löschen",
+      "DELETE_WEBHOOK_MESSAGE": "Möchten Sie den Webhook auf <b>{url}</b> wirklich löschen? Er erhält sofort keine Ereignisbenachrichtigungen mehr.",
+      "DELETE": "Löschen"
     }
   },
   "LOGO_SELECTOR": {

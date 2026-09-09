@@ -383,6 +383,22 @@
         "ACTIVE": "Editing the room is disabled during an active meeting",
         "DEFAULT": "Edit room settings"
       }
+    },
+    "DIALOGS": {
+      "DELETE_ROOM_TITLE": "Delete Room",
+      "DELETE_ROOM_MESSAGE": "Are you sure you want to delete the room <b>{roomId}</b>?",
+      "DELETE_ROOMS_TITLE": "Delete Rooms",
+      "DELETE_ROOMS_MESSAGE": "Are you sure you want to delete <b>{count}</b> rooms?",
+      "REMOVE_MEMBER_TITLE": "Remove Member",
+      "REMOVE_MEMBER_MESSAGE": "Are you sure you want to remove <b>{memberName}</b> from this room?",
+      "REMOVE_MEMBERS_TITLE": "Remove Members",
+      "REMOVE_MEMBERS_MESSAGE_ONE": "Are you sure you want to remove <b>{count} member</b> from this room?",
+      "REMOVE_MEMBERS_MESSAGE_MANY": "Are you sure you want to remove <b>{count} members</b> from this room?",
+      "MEETING_WARNING_TITLE": "Active meeting warning",
+      "REMOVE_MEMBER_WARNING": "If this user is currently in the meeting, they will be kicked immediately.",
+      "REMOVE_MEMBERS_WARNING": "Members currently in the meeting will be kicked immediately.",
+      "DELETE": "Delete",
+      "REMOVE": "Remove"
     }
   }
 }

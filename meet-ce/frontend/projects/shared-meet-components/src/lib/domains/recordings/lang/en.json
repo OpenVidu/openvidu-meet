@@ -156,6 +156,15 @@
       "RECORDINGS_FAILED_SUFFIX_SINGULAR": "recording could not be deleted.",
       "RECORDINGS_FAILED_SUFFIX_PLURAL": "recordings could not be deleted.",
       "DELETE_RECORDINGS_FAILED": "Failed to delete recordings"
+    },
+    "DIALOGS": {
+      "DELETE_RECORDING_TITLE": "Delete Recording",
+      "DELETE_RECORDING_MESSAGE": "Are you sure you want to permanently delete the recording <b>{recordingId}</b>? This action cannot be undone.",
+      "DELETE_RECORDINGS_TITLE": "Delete Recordings",
+      "DELETE_RECORDINGS_MESSAGE_ONE": "Are you sure you want to permanently delete <b>{count} recording</b>? This action cannot be undone.",
+      "DELETE_RECORDINGS_MESSAGE_MANY": "Are you sure you want to permanently delete <b>{count} recordings</b>? This action cannot be undone.",
+      "DELETE": "Delete",
+      "CANCEL": "Cancel"
     }
   }
 }

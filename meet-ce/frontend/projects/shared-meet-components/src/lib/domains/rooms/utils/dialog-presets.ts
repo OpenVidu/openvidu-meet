@@ -1,39 +1,51 @@
 import type { DialogPreset } from '../../../shared/models/notification.model';
+import type { Translator } from '../../../shared/models/translator.model';
 
-export const deleteRoomDialogPreset = (roomId: string): DialogPreset => ({
-	title: 'Delete Room',
+export const deleteRoomDialogPreset = (t: Translator, roomId: string): DialogPreset => ({
+	title: t.translate('ROOMS.DIALOGS.DELETE_ROOM_TITLE'),
 	icon: 'delete_outline',
-	message: `Are you sure you want to delete the room <b>${roomId}</b>?`,
-	confirmText: 'Delete',
-	cancelText: 'Cancel'
+	message: t.translate('ROOMS.DIALOGS.DELETE_ROOM_MESSAGE', { roomId }),
+	confirmText: t.translate('ROOMS.DIALOGS.DELETE'),
+	cancelText: t.translate('ROOMS.COMMON.CANCEL')
 });
 
-export const bulkDeleteRoomsDialogPreset = (count: number): DialogPreset => ({
-	title: 'Delete Rooms',
+export const bulkDeleteRoomsDialogPreset = (t: Translator, count: number): DialogPreset => ({
+	title: t.translate('ROOMS.DIALOGS.DELETE_ROOMS_TITLE'),
 	icon: 'delete_outline',
-	message: `Are you sure you want to delete <b>${count}</b> rooms?`,
-	confirmText: 'Delete',
-	cancelText: 'Cancel'
+	message: t.translate('ROOMS.DIALOGS.DELETE_ROOMS_MESSAGE', { count }),
+	confirmText: t.translate('ROOMS.DIALOGS.DELETE'),
+	cancelText: t.translate('ROOMS.COMMON.CANCEL')
 });
 
-export const removeMemberDialogPreset = (memberName: string, showMeetingKickWarning: boolean): DialogPreset => ({
-	title: 'Remove Member',
+export const removeMemberDialogPreset = (
+	t: Translator,
+	memberName: string,
+	showMeetingKickWarning: boolean
+): DialogPreset => ({
+	title: t.translate('ROOMS.DIALOGS.REMOVE_MEMBER_TITLE'),
 	icon: 'person_remove',
-	message: `Are you sure you want to remove <b>${memberName}</b> from this room?`,
+	message: t.translate('ROOMS.DIALOGS.REMOVE_MEMBER_MESSAGE', { memberName }),
 	showWarningBox: showMeetingKickWarning,
-	warningTitle: 'Active meeting warning',
-	warningMessage: 'If this user is currently in the meeting, they will be kicked immediately.',
-	confirmText: 'Remove',
-	cancelText: 'Cancel'
+	warningTitle: t.translate('ROOMS.DIALOGS.MEETING_WARNING_TITLE'),
+	warningMessage: t.translate('ROOMS.DIALOGS.REMOVE_MEMBER_WARNING'),
+	confirmText: t.translate('ROOMS.DIALOGS.REMOVE'),
+	cancelText: t.translate('ROOMS.COMMON.CANCEL')
 });
 
-export const bulkRemoveMembersDialogPreset = (count: number, showMeetingKickWarning: boolean): DialogPreset => ({
-	title: 'Remove Members',
+export const bulkRemoveMembersDialogPreset = (
+	t: Translator,
+	count: number,
+	showMeetingKickWarning: boolean
+): DialogPreset => ({
+	title: t.translate('ROOMS.DIALOGS.REMOVE_MEMBERS_TITLE'),
 	icon: 'group_remove',
-	message: `Are you sure you want to remove <b>${count} member${count > 1 ? 's' : ''}</b> from this room?`,
+	message: t.translate(
+		count === 1 ? 'ROOMS.DIALOGS.REMOVE_MEMBERS_MESSAGE_ONE' : 'ROOMS.DIALOGS.REMOVE_MEMBERS_MESSAGE_MANY',
+		{ count }
+	),
 	showWarningBox: showMeetingKickWarning,
-	warningTitle: 'Active meeting warning',
-	warningMessage: 'Members currently in the meeting will be kicked immediately.',
-	confirmText: 'Remove',
-	cancelText: 'Cancel'
+	warningTitle: t.translate('ROOMS.DIALOGS.MEETING_WARNING_TITLE'),
+	warningMessage: t.translate('ROOMS.DIALOGS.REMOVE_MEMBERS_WARNING'),
+	confirmText: t.translate('ROOMS.DIALOGS.REMOVE'),
+	cancelText: t.translate('ROOMS.COMMON.CANCEL')
 });

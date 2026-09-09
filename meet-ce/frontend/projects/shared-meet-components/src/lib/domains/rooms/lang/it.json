@@ -383,6 +383,22 @@
         "ACTIVE": "La modifica della stanza è disabilitata durante una riunione attiva",
         "DEFAULT": "Modifica le impostazioni della stanza"
       }
+    },
+    "DIALOGS": {
+      "DELETE_ROOM_TITLE": "Elimina stanza",
+      "DELETE_ROOM_MESSAGE": "Vuoi eliminare la stanza <b>{roomId}</b>?",
+      "DELETE_ROOMS_TITLE": "Elimina stanze",
+      "DELETE_ROOMS_MESSAGE": "Vuoi eliminare <b>{count}</b> stanze?",
+      "REMOVE_MEMBER_TITLE": "Rimuovi membro",
+      "REMOVE_MEMBER_MESSAGE": "Vuoi rimuovere <b>{memberName}</b> da questa stanza?",
+      "REMOVE_MEMBERS_TITLE": "Rimuovi membri",
+      "REMOVE_MEMBERS_MESSAGE_ONE": "Vuoi rimuovere <b>{count} membro</b> da questa stanza?",
+      "REMOVE_MEMBERS_MESSAGE_MANY": "Vuoi rimuovere <b>{count} membri</b> da questa stanza?",
+      "MEETING_WARNING_TITLE": "Avviso: riunione in corso",
+      "REMOVE_MEMBER_WARNING": "Se questo utente è nella riunione, verrà rimosso immediatamente.",
+      "REMOVE_MEMBERS_WARNING": "I membri presenti nella riunione verranno rimossi immediatamente.",
+      "DELETE": "Elimina",
+      "REMOVE": "Rimuovi"
     }
   }
 }

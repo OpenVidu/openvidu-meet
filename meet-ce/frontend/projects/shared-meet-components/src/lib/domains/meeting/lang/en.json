@@ -146,6 +146,7 @@
 	},
 	"ERRORS": {
 		"SESSION": "There was an error connecting to the meeting",
+		"TOKEN_TITLE": "Token error",
 		"MEETING_NOT_READY": "The meeting is not ready yet. Please reload the page and try again.",
 		"MEETING_CONNECTION_FAILED": "Could not connect to the meeting. Please check your connection and try again.",
 		"MEETING_FULL": "This meeting has reached its maximum number of participants",

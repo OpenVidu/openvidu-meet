@@ -383,6 +383,22 @@
         "ACTIVE": "会議が進行中の間はルームの編集が無効になります",
         "DEFAULT": "ルーム設定を編集"
       }
+    },
+    "DIALOGS": {
+      "DELETE_ROOM_TITLE": "ルームを削除",
+      "DELETE_ROOM_MESSAGE": "ルーム <b>{roomId}</b> を削除してもよろしいですか？",
+      "DELETE_ROOMS_TITLE": "ルームを削除",
+      "DELETE_ROOMS_MESSAGE": "<b>{count}</b> 件のルームを削除してもよろしいですか？",
+      "REMOVE_MEMBER_TITLE": "メンバーを削除",
+      "REMOVE_MEMBER_MESSAGE": "<b>{memberName}</b> をこのルームから削除してもよろしいですか？",
+      "REMOVE_MEMBERS_TITLE": "メンバーを削除",
+      "REMOVE_MEMBERS_MESSAGE_ONE": "<b>{count} 人のメンバー</b>をこのルームから削除してもよろしいですか？",
+      "REMOVE_MEMBERS_MESSAGE_MANY": "<b>{count} 人のメンバー</b>をこのルームから削除してもよろしいですか？",
+      "MEETING_WARNING_TITLE": "ミーティング進行中の注意",
+      "REMOVE_MEMBER_WARNING": "このユーザーがミーティング中の場合、ただちに退出させられます。",
+      "REMOVE_MEMBERS_WARNING": "ミーティング中のメンバーはただちに退出させられます。",
+      "DELETE": "削除",
+      "REMOVE": "削除"
     }
   }
 }

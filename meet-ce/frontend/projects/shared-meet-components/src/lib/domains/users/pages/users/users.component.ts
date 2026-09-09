@@ -201,7 +201,7 @@ export class UsersComponent implements OnInit, OnDestroy {
 
 	private onDeleteUser(user: MeetUserDTO) {
 		this.dialogService.showDialog({
-			...deleteUserDialogPreset(user.name, user.userId),
+			...deleteUserDialogPreset(this.translateService, user.name, user.userId),
 			confirmCallback: async () => {
 				try {
 					await this.userService.deleteUser(user.userId);
@@ -261,7 +261,7 @@ export class UsersComponent implements OnInit, OnDestroy {
 
 		const count = usersToDelete.length;
 		this.dialogService.showDialog({
-			...bulkDeleteUsersDialogPreset(count),
+			...bulkDeleteUsersDialogPreset(this.translateService, count),
 			confirmCallback: bulkDeleteCallback
 		});
 	}

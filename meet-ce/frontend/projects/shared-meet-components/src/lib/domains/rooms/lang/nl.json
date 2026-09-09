@@ -383,6 +383,22 @@
         "ACTIVE": "De kamer bewerken is uitgeschakeld tijdens een actieve meeting",
         "DEFAULT": "Kamerinstellingen bewerken"
       }
+    },
+    "DIALOGS": {
+      "DELETE_ROOM_TITLE": "Ruimte verwijderen",
+      "DELETE_ROOM_MESSAGE": "Weet je zeker dat je de ruimte <b>{roomId}</b> wilt verwijderen?",
+      "DELETE_ROOMS_TITLE": "Ruimtes verwijderen",
+      "DELETE_ROOMS_MESSAGE": "Weet je zeker dat je <b>{count}</b> ruimtes wilt verwijderen?",
+      "REMOVE_MEMBER_TITLE": "Lid verwijderen",
+      "REMOVE_MEMBER_MESSAGE": "Weet je zeker dat je <b>{memberName}</b> uit deze ruimte wilt verwijderen?",
+      "REMOVE_MEMBERS_TITLE": "Leden verwijderen",
+      "REMOVE_MEMBERS_MESSAGE_ONE": "Weet je zeker dat je <b>{count} lid</b> uit deze ruimte wilt verwijderen?",
+      "REMOVE_MEMBERS_MESSAGE_MANY": "Weet je zeker dat je <b>{count} leden</b> uit deze ruimte wilt verwijderen?",
+      "MEETING_WARNING_TITLE": "Waarschuwing: vergadering bezig",
+      "REMOVE_MEMBER_WARNING": "Zit deze gebruiker in de vergadering, dan wordt hij er onmiddellijk uit verwijderd.",
+      "REMOVE_MEMBERS_WARNING": "Leden die in de vergadering zitten, worden er onmiddellijk uit verwijderd.",
+      "DELETE": "Verwijderen",
+      "REMOVE": "Verwijderen"
     }
   }
 }

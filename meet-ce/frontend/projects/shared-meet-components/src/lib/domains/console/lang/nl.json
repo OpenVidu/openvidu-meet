@@ -139,6 +139,11 @@
       "WEBHOOK_DELETED": "Webhook succesvol verwijderd",
       "WEBHOOK_DELETE_FAILED": "Verwijderen van webhook mislukt",
       "WEBHOOK_URL_COPIED": "Webhook-URL gekopieerd naar klembord"
+    },
+    "DIALOGS": {
+      "DELETE_WEBHOOK_TITLE": "Webhook verwijderen",
+      "DELETE_WEBHOOK_MESSAGE": "Weet je zeker dat je de webhook naar <b>{url}</b> wilt verwijderen? Hij ontvangt onmiddellijk geen gebeurtenismeldingen meer.",
+      "DELETE": "Verwijderen"
     }
   },
   "LOGO_SELECTOR": {
