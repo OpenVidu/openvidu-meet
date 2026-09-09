@@ -22,20 +22,18 @@ describe('ParticipantNameService', () => {
 		await cleanupTestData();
 	});
 
+	// Every room this suite reserves names in starts with testRoomId, so one prefix per key family clears it all
 	async function cleanupTestData() {
 		try {
-			const pattern = `ov_meet:room_participants:${testRoomId}:*`;
-			const keys = await redisService.getKeys(pattern);
+			for (const pattern of [
+				`ov_meet:room_participants:${testRoomId}*`,
+				`ov_meet:participant_pool:${testRoomId}*`
+			]) {
+				const keys = await redisService.getKeys(pattern);
 
-			if (keys.length > 0) {
-				await redisService.delete(keys);
-			}
-
-			const counterPattern = `ov_meet:participant_counter:${testRoomId}:*`;
-			const counterKeys = await redisService.getKeys(counterPattern);
-
-			if (counterKeys.length > 0) {
-				await redisService.delete(counterKeys);
+				if (keys.length > 0) {
+					await redisService.delete(keys);
+				}
 			}
 		} catch (error) {
 			// Ignore cleanup errors
@@ -289,29 +287,30 @@ describe('ParticipantNameService', () => {
 		});
 
 		it('should reuse expired names after TTL', async () => {
-			(participantNameService as any)['PARTICIPANT_NAME_TTL'] = ms('1ms');
-			const requestedName = 'TTLTest';
+			const service = participantNameService as unknown as { PARTICIPANT_NAME_TTL: number };
+			const configuredTtl = service.PARTICIPANT_NAME_TTL;
+			service.PARTICIPANT_NAME_TTL = ms('50ms');
 
-			// Reserva con TTL muy corto (simulado)
-			const name = await participantNameService.reserveUniqueName(testRoomId, requestedName);
-			expect(name).toBe('TTLTest');
+			try {
+				const requestedName = 'TTLTest';
+				const name = await participantNameService.reserveUniqueName(testRoomId, requestedName);
+				expect(name).toBe('TTLTest');
 
-			// Wait for TTL to expire
-			await new Promise((resolve) =>
-				setTimeout(resolve, (participantNameService['PARTICIPANT_NAME_TTL'] + 1) * 1000)
-			);
+				await new Promise((resolve) => setTimeout(resolve, service.PARTICIPANT_NAME_TTL + 50));
 
-			// Try to reserve again
-			const newName = await participantNameService.reserveUniqueName(testRoomId, requestedName);
-			expect(newName).toBe('TTLTest'); // Reuse original name
+				const newName = await participantNameService.reserveUniqueName(testRoomId, requestedName);
+				expect(newName).toBe('TTLTest');
+			} finally {
+				service.PARTICIPANT_NAME_TTL = configuredTtl;
+			}
 		});
 
 		it('should keep names isolated per room', async () => {
 			const requestedName = 'Isolated';
 
 			// Reserve in two different rooms
-			const room1Name = await participantNameService.reserveUniqueName('room1', requestedName);
-			const room2Name = await participantNameService.reserveUniqueName('room2', requestedName);
+			const room1Name = await participantNameService.reserveUniqueName(`${testRoomId}-a`, requestedName);
+			const room2Name = await participantNameService.reserveUniqueName(`${testRoomId}-b`, requestedName);
 
 			// Both names should be isolated
 			expect(room1Name).toBe(requestedName);
