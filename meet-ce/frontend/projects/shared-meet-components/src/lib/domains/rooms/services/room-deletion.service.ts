@@ -7,7 +7,7 @@ import {
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode
 } from '@openvidu-meet/typings';
-import { DeleteRoomDialogOptions } from '../../../shared/models/notification.model';
+import { DeleteRoomDialogOptions } from '../models/delete-room-dialog.model';
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
 import { deleteRoomDialogPreset } from '../utils/dialog-presets';
 import { DialogService } from '../../../shared/services/dialog.service';

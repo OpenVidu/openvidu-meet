@@ -35,7 +35,7 @@ import { NavigationService } from '../../../../shared/services/navigation.servic
 import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 
-import { DeleteRoomDialogOptions } from '../../../../shared/models/notification.model';
+import { DeleteRoomDialogOptions } from '../../models/delete-room-dialog.model';
 import { DeleteRoomDialogComponent } from '../../components/delete-room-dialog/delete-room-dialog.component';
 import { RoomShareDialogComponent } from '../../components/room-share-dialog/room-share-dialog.component';
 import {

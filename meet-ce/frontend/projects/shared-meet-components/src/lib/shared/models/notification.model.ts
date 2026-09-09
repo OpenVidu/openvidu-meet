@@ -1,5 +1,3 @@
-import { MeetRoomDeletionPolicyWithMeeting, MeetRoomDeletionPolicyWithRecordings } from '@openvidu-meet/typings';
-
 /** A {@link DialogOptions} with the wording filled in and the answers left to the caller. */
 export type DialogPreset = Omit<DialogOptions, 'confirmCallback' | 'cancelCallback'>;
 
@@ -25,18 +23,6 @@ export interface DialogOptions {
 	forceCheckboxLabel?: string;
 	forceMessage?: string;
 	forceConfirmCallback?: () => void;
-}
-
-export interface DeleteRoomDialogOptions {
-	title: string;
-	message: string;
-	showWithMeetingPolicy: boolean;
-	showWithRecordingsPolicy: boolean;
-	confirmText?: string;
-	confirmCallback: (
-		meetingPolicy: MeetRoomDeletionPolicyWithMeeting,
-		recordingPolicy: MeetRoomDeletionPolicyWithRecordings
-	) => void;
 }
 
 /**
