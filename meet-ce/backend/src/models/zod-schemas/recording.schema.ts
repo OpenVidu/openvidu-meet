@@ -8,6 +8,7 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { z } from 'zod';
+import { invalidRegexPatternReason } from '../../utils/string-match-filter.utils.js';
 import { encodingValidator, nonEmptySanitizedRoomId } from './room.schema.js';
 
 /**
@@ -126,14 +127,10 @@ export const RecordingFiltersSchema = z
 	})
 	.superRefine((data, ctx) => {
 		if (data.roomNameMatchMode === TextMatchMode.REGEX && data.roomName) {
-			try {
-				new RegExp(String(data.roomName));
-			} catch {
-				ctx.addIssue({
-					code: 'custom',
-					path: ['roomName'],
-					message: 'Invalid regular expression pattern'
-				});
+			const reason = invalidRegexPatternReason(data.roomName);
+
+			if (reason) {
+				ctx.addIssue({ code: 'custom', path: ['roomName'], message: reason });
 			}
 		}
 	});
