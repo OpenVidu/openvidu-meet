@@ -1,0 +1,8 @@
+description: 'Bad Request: the nextPageToken was not issued by this API'
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/error.yaml'
+        example:
+            error: 'Bad Request'
+            message: 'Invalid pagination token'
