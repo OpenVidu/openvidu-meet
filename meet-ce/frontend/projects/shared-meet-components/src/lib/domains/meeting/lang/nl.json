@@ -74,7 +74,7 @@
 			"PLACEHOLDER": "Stuur een bericht ...",
 			"SEND": "Versturen",
 			"WRITE_DISABLED": "U hebt geen toestemming om berichten te versturen",
-			"MESSAGE_SENT_NOTIFICATION": "bericht verzonden",
+			"MESSAGE_SENT_NOTIFICATION": "{name} bericht verzonden",
 			"OPEN_CHAT": "OPENEN",
 			"ENCRYPTION_KEY_MISMATCH": "Er zijn deelnemers verbonden met een andere versleutelingssleutel. U ontvangt hun berichten niet."
 		},

@@ -531,10 +531,7 @@ export const expectNoMuteAllButton = async (page: Page, media: MuteMedia = 'audi
 
 /**
  * Asserts that the local participant sees the snackbar `NotificationService` shows when a moderator
- * mute lands — the only notice of it, since the API sends no message the muted device is a target of.
- * The vendored `ActionService` fires its own snackbar (`.snackbarNotification`, see
- * {@link expectSnackbarNotification} in `ui-utils.helper`) under a different panel class, so the two
- * must not be confused.
+ * mute lands: the only notice of it, since the API sends no message the muted device is a target of.
  */
 export const expectMutedByModeratorNotification = async (page: Page): Promise<void> => {
 	await expect(page.locator('.custom-snackbar')).toBeVisible({ timeout: 10_000 });

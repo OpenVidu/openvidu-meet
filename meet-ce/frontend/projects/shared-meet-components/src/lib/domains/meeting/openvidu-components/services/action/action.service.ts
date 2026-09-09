@@ -1,15 +1,12 @@
 import { inject, Service } from '@angular/core';
 import { MatDialog, MatDialogConfig, MatDialogRef } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { DialogTemplateComponent } from '../../components/dialogs/dialog.component';
-import { INotificationOptions } from '../../models/notification-options.model';
 
 /**
  * @internal
  */
 @Service()
 export class ActionService {
-	private readonly snackBar = inject(MatSnackBar);
 	public readonly dialog = inject(MatDialog);
 
 	private dialogRef: MatDialogRef<DialogTemplateComponent> | undefined;
@@ -17,27 +14,6 @@ export class ActionService {
 	private isConnectionDialogOpen = false;
 
 	constructor() {}
-
-	launchNotification(options: INotificationOptions, callback?: () => void): void {
-		if (!options.config) {
-			options.config = {
-				duration: 3000,
-				verticalPosition: 'top',
-				horizontalPosition: 'end',
-				panelClass: 'snackbarNotification'
-			};
-		}
-
-		const notification = this.snackBar.open(options.message, options.buttonActionText, options.config);
-
-		if (callback) {
-			// subscribe and complete immediately after calling callback
-			const sub = notification.onAction().subscribe(() => {
-				sub.unsubscribe();
-				callback();
-			});
-		}
-	}
 
 	openDialog(titleMessage: string, descriptionMessage: string, allowClose = true) {
 		this.closeDialog();

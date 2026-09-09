@@ -72,13 +72,6 @@ export const expectHidden = async (page: Page, selector: string): Promise<void> 
 		.toBeTruthy();
 };
 
-/**
- * Asserts that a snackbar notification is currently visible.
- */
-export const expectSnackbarNotification = (page: Page): Promise<void> => {
-	return expectVisible(page, '.snackbarNotification');
-};
-
 // ─── Clipboard ──────────────────────────────────────────────────────────────
 
 /**
