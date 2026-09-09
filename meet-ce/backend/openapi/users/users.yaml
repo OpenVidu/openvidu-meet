@@ -23,6 +23,8 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '409':
                 $ref: './responses/errors/userId-already-exists.yaml'
+            '413':
+                $ref: '../shared/responses/errors/payload-too-large.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
             '429':
@@ -173,6 +175,8 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '404':
                 $ref: './responses/errors/user-not-found.yaml'
+            '413':
+                $ref: '../shared/responses/errors/payload-too-large.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
             '429':
@@ -205,6 +209,8 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '404':
                 $ref: './responses/errors/user-not-found.yaml'
+            '413':
+                $ref: '../shared/responses/errors/payload-too-large.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
             '429':

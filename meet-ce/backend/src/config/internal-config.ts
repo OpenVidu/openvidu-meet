@@ -12,6 +12,9 @@ export const INTERNAL_CONFIG = {
 	REFRESH_TOKEN_HEADER: 'x-refresh-token',
 	ROOM_MEMBER_TOKEN_HEADER: 'x-room-member-token',
 
+	// Request parsing
+	REQUEST_BODY_LIMIT: '100kb', // Largest request body any endpoint accepts (JSON and LiveKit webhooks alike); a bigger one answers 413
+
 	// Token verification settings
 	REFRESH_CLOCK_TOLERANCE_SECONDS: 10, // Time in seconds to allow for clock skew when validating token expiration
 
