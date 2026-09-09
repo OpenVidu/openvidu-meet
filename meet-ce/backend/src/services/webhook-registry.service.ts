@@ -61,13 +61,14 @@ export class WebhookRegistryService {
 	 *
 	 * Serialized deployment-wide: counting the existing webhooks and inserting the new one must
 	 * happen as one unit, or two concurrent registrations at the cap boundary could both pass the
-	 * count check and together overshoot `WEBHOOK_MAX_ENDPOINTS`.
+	 * count check and together overshoot `WEBHOOK_MAX_ENDPOINTS`. A registration that finds the lock
+	 * taken waits its turn instead of failing.
 	 *
 	 * @throws A 409 error when the maximum number of registered webhooks has been reached
-	 * @throws A 409 error when another registration is already in progress
+	 * @throws A 409 error when another registration still holds the lock after the retries
 	 */
 	async createWebhook(options: MeetWebhookOptions): Promise<MeetWebhook> {
-		const createdWebhook = await this.mutexService.withLock(
+		const createdWebhook = await this.mutexService.withRetryLock(
 			MeetLock.getWebhookRegistrationLock(),
 			ms(INTERNAL_CONFIG.WEBHOOK_REGISTRY_LOCK_TTL),
 			async () => {
