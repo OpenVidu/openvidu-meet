@@ -379,6 +379,9 @@ const RoomAccessConfigSchema: z.ZodType<MeetRoomAccessConfig> = z.object({
 		.optional()
 });
 
+// The largest time value a Date can hold: ECMAScript caps it at 100 million days from the epoch
+const LATEST_REPRESENTABLE_DATE = 8_640_000_000_000_000;
+
 export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 	roomName: z
 		.string()
@@ -389,6 +392,7 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 	autoDeletionDate: z
 		.number()
 		.positive('autoDeletionDate must be a positive integer')
+		.max(LATEST_REPRESENTABLE_DATE, 'autoDeletionDate must be a valid timestamp in milliseconds')
 		.refine(
 			(date) => date >= Date.now() + ms(INTERNAL_CONFIG.MIN_ROOM_AUTO_DELETE_DURATION),
 			`autoDeletionDate must be at least ${INTERNAL_CONFIG.MIN_ROOM_AUTO_DELETE_DURATION} in the future`
