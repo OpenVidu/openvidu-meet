@@ -56,7 +56,7 @@ export class RecordingAutoStartStateService {
 
 		if (disabled) {
 			try {
-				await this.redisService.setExpiration(key, this.DISABLED_TTL_MS / 1000);
+				await this.redisService.setExpiration(key, this.DISABLED_TTL_MS);
 			} catch (error) {
 				this.logger.warn(`Error refreshing the recording auto-start disable flag for room '${roomId}'`, error);
 			}
