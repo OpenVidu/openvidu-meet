@@ -2,7 +2,7 @@ name: roomIds
 in: query
 required: true
 description: >
-    Comma-separated list of room IDs to delete.
+    Comma-separated list of room IDs to delete, at most 100 per request.
     Each ID should correspond to an existing room.
 schema:
     type: string

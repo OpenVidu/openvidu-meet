@@ -649,9 +649,12 @@ export const BulkDeleteRoomsReqSchema = z.object({
 
 			return Array.from(sanitizedIds);
 		},
-		z.array(z.string()).min(1, {
-			message: 'At least one valid roomId is required after sanitization'
-		})
+		z
+			.array(z.string())
+			.min(1, { message: 'At least one valid roomId is required after sanitization' })
+			.max(INTERNAL_CONFIG.BULK_DELETE_MAX_ITEMS, {
+				message: `roomIds cannot exceed ${INTERNAL_CONFIG.BULK_DELETE_MAX_ITEMS} items`
+			})
 	),
 	fields: fieldsSchema,
 	extraFields: extraFieldsSchema,
