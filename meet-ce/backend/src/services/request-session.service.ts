@@ -1,4 +1,9 @@
-import type { MeetRoomMemberPermissions, MeetRoomMemberTokenMetadata, MeetUser, MeetUserRole } from '@openvidu-meet/typings';
+import type {
+	MeetRoomMemberPermissions,
+	MeetRoomMemberTokenMetadata,
+	MeetUser,
+	MeetUserRole
+} from '@openvidu-meet/typings';
 import { randomUUID } from 'crypto';
 import { inject, injectable } from 'inversify';
 import type { RequestContext } from '../models/request-context.model.js';
@@ -41,6 +46,19 @@ export class RequestSessionService {
 	 */
 	getRequestId(): string | undefined {
 		return this.getContext()?.requestId;
+	}
+
+	/**
+	 * Stores the origin (scheme and host) the current request was addressed to, so every URL built for
+	 * its response points back at that same host.
+	 * If called outside a request context, this operation is silently ignored.
+	 */
+	setRequestOrigin(origin: string): void {
+		const context = this.getContext();
+
+		if (context) {
+			context.origin = origin;
+		}
 	}
 
 	/**
