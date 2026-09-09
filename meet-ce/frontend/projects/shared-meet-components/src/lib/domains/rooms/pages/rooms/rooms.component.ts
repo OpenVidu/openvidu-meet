@@ -32,6 +32,7 @@ import { DialogPresetsService } from '../../../../shared/services/dialog-presets
 import { EntityListSnapshot, EntityListState } from '../../../../shared/models/entity-list.model';
 import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
+import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 
 import { DeleteRoomDialogOptions } from '../../../../shared/models/notification.model';
@@ -84,6 +85,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 	private listStateCache = inject(ListStateCacheService);
 	private authService = inject(AuthService);
 	private notificationService = inject(NotificationService);
+	private dialogService = inject(DialogService);
 	private dialogPresetsService = inject(DialogPresetsService);
 	private readonly translateService = inject(TranslateService);
 	protected navigationService = inject(NavigationService);
@@ -379,7 +381,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 			}
 		};
 
-		this.notificationService.showDialog({
+		this.dialogService.showDialog({
 			...this.dialogPresetsService.getBulkDeleteRoomsDialogPreset(rooms.length),
 			confirmCallback: bulkDeleteCallback
 		});

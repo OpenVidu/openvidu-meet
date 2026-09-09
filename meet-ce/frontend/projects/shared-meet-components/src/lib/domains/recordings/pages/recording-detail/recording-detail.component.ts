@@ -17,6 +17,7 @@ import {
 import { BreadcrumbComponent, BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
+import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
@@ -53,6 +54,7 @@ export class RecordingDetailComponent implements OnInit {
 	private readonly recordingService = inject(RecordingService);
 	private readonly roomMemberService = inject(RoomMemberService);
 	private readonly notificationService = inject(NotificationService);
+	private readonly dialogService = inject(DialogService);
 	private readonly dialogPresetsService = inject(DialogPresetsService);
 	protected readonly navigationService = inject(NavigationService);
 	private readonly clipboard = inject(Clipboard);
@@ -171,7 +173,7 @@ export class RecordingDetailComponent implements OnInit {
 			}
 		};
 
-		this.notificationService.showDialog({
+		this.dialogService.showDialog({
 			...this.dialogPresetsService.getDeleteRecordingDialogPreset(this.recordingId()),
 			confirmCallback: deleteCallback
 		});

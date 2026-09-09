@@ -14,6 +14,7 @@ import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { ApiKeyService } from '../../../../shared/services/api-key.service';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
+import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { WebhookService } from '../../../../shared/services/webhook.service';
@@ -40,6 +41,7 @@ export class EmbeddedComponent implements OnInit {
 	protected apiKeyService = inject(ApiKeyService);
 	protected webhookService = inject(WebhookService);
 	protected notificationService = inject(NotificationService);
+	protected dialogService = inject(DialogService);
 	protected dialogPresetsService = inject(DialogPresetsService);
 	protected clipboard = inject(Clipboard);
 	private readonly dialog = inject(MatDialog);
@@ -190,7 +192,7 @@ export class EmbeddedComponent implements OnInit {
 	}
 
 	deleteWebhook(webhook: MeetWebhook) {
-		this.notificationService.showDialog({
+		this.dialogService.showDialog({
 			...this.dialogPresetsService.getDeleteWebhookDialogPreset(webhook.url),
 			confirmCallback: async () => {
 				try {

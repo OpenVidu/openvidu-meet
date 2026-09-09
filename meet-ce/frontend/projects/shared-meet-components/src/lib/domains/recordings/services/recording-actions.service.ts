@@ -4,6 +4,7 @@ import type { ILogger } from '../../../shared/models/logger.model';
 import { EntityListState } from '../../../shared/models/entity-list.model';
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
 import { DialogPresetsService } from '../../../shared/services/dialog-presets.service';
+import { DialogService } from '../../../shared/services/dialog.service';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { parseBulkDeleteError } from '../../../shared/utils/bulk-delete.utils';
 import { RecordingTableAction, RecordingTableFilter } from '../models/recording-list.model';
@@ -36,6 +37,7 @@ export interface RecordingListContext {
 export class RecordingActionsService {
 	private readonly recordingService = inject(RecordingService);
 	private readonly notificationService = inject(NotificationService);
+	private readonly dialogService = inject(DialogService);
 	private readonly dialogPresetsService = inject(DialogPresetsService);
 	private readonly translateService = inject(TranslateService);
 
@@ -83,7 +85,7 @@ export class RecordingActionsService {
 			}
 		};
 
-		this.notificationService.showDialog({
+		this.dialogService.showDialog({
 			...this.dialogPresetsService.getDeleteRecordingDialogPreset(recording.recordingId),
 			confirmCallback: deleteCallback
 		});
@@ -143,7 +145,7 @@ export class RecordingActionsService {
 			}
 		};
 
-		this.notificationService.showDialog({
+		this.dialogService.showDialog({
 			...this.dialogPresetsService.getBulkDeleteRecordingsDialogPreset(recordings.length),
 			confirmCallback: bulkDeleteCallback
 		});

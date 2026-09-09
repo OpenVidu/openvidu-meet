@@ -1,19 +1,15 @@
-import { Overlay } from '@angular/cdk/overlay';
-import { ComponentPortal } from '@angular/cdk/portal';
 import { inject, Service, signal } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ConfirmDialogComponent } from '../components/dialogs/confirm-dialog/confirm-dialog.component';
-import { SpinnerComponent } from '../components/spinner/spinner.component';
-import { DialogOptions, NotificationOptions, ShownNotification } from '../models/notification.model';
+import { NotificationOptions, ShownNotification } from '../models/notification.model';
 
+/**
+ * Says things to the user without stopping what they are doing: notifications pinned in the layout
+ * by whoever hosts the `ov-notifications` outlet, and snackbars in the corner. What has to stop
+ * them until they answer is a dialog, and belongs to {@link DialogService}.
+ */
 @Service()
 export class NotificationService {
-	private snackBar = inject(MatSnackBar);
-	private dialog = inject(MatDialog);
-	private overlay = inject(Overlay);
-
-	private spinnerRef: any;
+	private readonly snackBar = inject(MatSnackBar);
 
 	private lastNotificationId = 0;
 	private readonly notificationTimers = new Map<number, ReturnType<typeof setTimeout>>();
@@ -25,24 +21,6 @@ export class NotificationService {
 	 * `ov-notifications` outlet, which the host places wherever they belong.
 	 */
 	readonly notifications = this._notifications.asReadonly();
-
-	showSpinner() {
-		if (!this.spinnerRef) {
-			const overlayRef = this.overlay.create({
-				positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
-				panelClass: 'spinner-overlay'
-			});
-
-			this.spinnerRef = overlayRef.attach(new ComponentPortal(SpinnerComponent));
-		}
-	}
-
-	hideSpinner(): void {
-		if (this.spinnerRef) {
-			this.spinnerRef.detach();
-			this.spinnerRef = null;
-		}
-	}
 
 	/**
 	 * Pins a notification in the layout and returns its id, which the caller keeps to take it away
@@ -75,31 +53,13 @@ export class NotificationService {
 		this._notifications.update((notifications) => notifications.filter((notification) => notification.id !== id));
 	}
 
+	/** A message in the corner, for a screen with nowhere to pin one. */
 	showSnackbar(message: string, duration = 3000): void {
 		this.snackBar.open(message, 'Close', {
 			duration,
 			verticalPosition: 'top',
 			horizontalPosition: 'right',
 			panelClass: 'custom-snackbar'
-		});
-	}
-
-	showDialog(options: DialogOptions): void {
-		this.dialog.open(ConfirmDialogComponent, {
-			data: options,
-			width: '450px',
-			disableClose: true
-		});
-	}
-
-	showAlert(message: string): void {
-		this.dialog.open(ConfirmDialogComponent, {
-			data: {
-				message,
-				confirmText: 'OK'
-			},
-			width: '300px',
-			disableClose: true
 		});
 	}
 }

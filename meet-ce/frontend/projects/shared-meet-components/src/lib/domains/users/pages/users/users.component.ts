@@ -12,6 +12,7 @@ import { TranslateService } from '../../../../shared/services/i18n/translate.ser
 import { EntityListSnapshot, EntityListState } from '../../../../shared/models/entity-list.model';
 import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
+import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { parseBulkDeleteError } from '../../../../shared/utils/bulk-delete.utils';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -50,6 +51,7 @@ export class UsersComponent implements OnInit, OnDestroy {
 	private listStateCache = inject(ListStateCacheService);
 	private authService = inject(AuthService);
 	private notificationService = inject(NotificationService);
+	private dialogService = inject(DialogService);
 	private readonly translateService = inject(TranslateService);
 	private dialogPresetsService = inject(DialogPresetsService);
 	private navigationService = inject(NavigationService);
@@ -199,7 +201,7 @@ export class UsersComponent implements OnInit, OnDestroy {
 	}
 
 	private onDeleteUser(user: MeetUserDTO) {
-		this.notificationService.showDialog({
+		this.dialogService.showDialog({
 			...this.dialogPresetsService.getDeleteUserDialogPreset(user.name, user.userId),
 			confirmCallback: async () => {
 				try {
@@ -259,7 +261,7 @@ export class UsersComponent implements OnInit, OnDestroy {
 		};
 
 		const count = usersToDelete.length;
-		this.notificationService.showDialog({
+		this.dialogService.showDialog({
 			...this.dialogPresetsService.getBulkDeleteUsersDialogPreset(count),
 			confirmCallback: bulkDeleteCallback
 		});

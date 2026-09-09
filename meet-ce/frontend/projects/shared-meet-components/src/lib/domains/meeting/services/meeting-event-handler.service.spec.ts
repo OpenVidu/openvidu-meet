@@ -106,10 +106,7 @@ describe('MeetingEventHandlerService', () => {
 			TestBed.tick();
 		});
 
-		notificationService = jasmine.createSpyObj<NotificationService>('NotificationService', [
-			'showSnackbar',
-			'showDialog'
-		]);
+		notificationService = jasmine.createSpyObj<NotificationService>('NotificationService', ['showSnackbar']);
 		meetingEndingSoon = jasmine.createSpyObj<MeetingEndingSoonService>('MeetingEndingSoonService', [
 			'trackMeetingEnd'
 		]);

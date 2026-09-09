@@ -13,6 +13,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
+import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { SoundService } from '../../../../shared/services/sound.service';
@@ -47,6 +48,7 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	protected meetingThemeService = inject(MeetingThemeService);
 	protected navigationService = inject(NavigationService);
 	protected notificationService = inject(NotificationService);
+	protected dialogService = inject(DialogService);
 	protected soundService = inject(SoundService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
 	private readonly translateService = inject(TranslateService);
@@ -120,7 +122,7 @@ export class MeetingComponent implements OnInit, OnDestroy {
 		} catch (error) {
 			console.error('Error initializing lobby state:', error);
 			this.lobbyState.set('error');
-			this.notificationService.showDialog({
+			this.dialogService.showDialog({
 				title: this.translateService.translate('MEETING_PAGE.INIT_ERROR_TITLE'),
 				message: this.translateService.translate('MEETING_PAGE.INIT_ERROR_MESSAGE'),
 				showCancelButton: false,

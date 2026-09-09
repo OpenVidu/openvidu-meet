@@ -30,6 +30,7 @@ import { DialogPresetsService } from '../../../../shared/services/dialog-presets
 import { EntityListSnapshot, EntityListState } from '../../../../shared/models/entity-list.model';
 import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
+import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { parseBulkDeleteError } from '../../../../shared/utils/bulk-delete.utils';
 import { decodeToken } from '../../../../shared/utils/token.utils';
@@ -94,6 +95,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 	private readonly recordingService = inject(RecordingService);
 	private readonly recordingActions = inject(RecordingActionsService);
 	private readonly notificationService = inject(NotificationService);
+	private readonly dialogService = inject(DialogService);
 	private readonly dialogPresetsService = inject(DialogPresetsService);
 	private readonly translateService = inject(TranslateService);
 	protected readonly navigationService = inject(NavigationService);
@@ -477,7 +479,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 	}
 
 	private deleteMember(member: MeetRoomMember) {
-		this.notificationService.showDialog({
+		this.dialogService.showDialog({
 			...this.dialogPresetsService.getRemoveMemberDialogPreset(member.name, this.shouldShowMeetingKickWarning()),
 			confirmCallback: async () => {
 				try {
@@ -535,7 +537,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		};
 
 		const count = members.length;
-		this.notificationService.showDialog({
+		this.dialogService.showDialog({
 			...this.dialogPresetsService.getBulkRemoveMembersDialogPreset(count, this.shouldShowMeetingKickWarning()),
 			confirmCallback: bulkDeleteCallback
 		});

@@ -13,6 +13,7 @@ import { DialogPresetsService } from '../../../../shared/services/dialog-presets
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { LeaveRedirectService } from '../../../../shared/services/leave-redirect.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
+import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -41,6 +42,7 @@ import { RecordingUiUtils } from '../../utils/ui';
 export class ViewRecordingComponent implements OnInit {
 	protected readonly recordingService = inject(RecordingService);
 	protected readonly notificationService = inject(NotificationService);
+	protected readonly dialogService = inject(DialogService);
 	protected readonly dialogPresetsService = inject(DialogPresetsService);
 	protected readonly navigationService = inject(NavigationService);
 	protected readonly leaveRedirect = inject(LeaveRedirectService);
@@ -144,7 +146,7 @@ export class ViewRecordingComponent implements OnInit {
 			}
 		};
 
-		this.notificationService.showDialog({
+		this.dialogService.showDialog({
 			...this.dialogPresetsService.getDeleteRecordingDialogPreset(recording.recordingId),
 			confirmCallback: deleteCallback
 		});

@@ -5,6 +5,7 @@ import type { ILogger } from '../../../shared/models/logger.model';
 import { EntityListState } from '../../../shared/models/entity-list.model';
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
 import { DialogPresetsService } from '../../../shared/services/dialog-presets.service';
+import { DialogService } from '../../../shared/services/dialog.service';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { RecordingTableFilter } from '../models/recording-list.model';
 import { RecordingActionsService } from './recording-actions.service';
@@ -16,6 +17,7 @@ describe('RecordingActionsService', () => {
 	let service: RecordingActionsService;
 	let recordingService: jasmine.SpyObj<RecordingService>;
 	let notificationService: jasmine.SpyObj<NotificationService>;
+	let dialogService: jasmine.SpyObj<DialogService>;
 	let list: EntityListState<MeetRecordingInfo, RecordingTableFilter>;
 	let log: ILogger;
 	/** confirmCallback captured from the last confirmation dialog opened. */
@@ -32,11 +34,9 @@ describe('RecordingActionsService', () => {
 			'bulkDeleteRecordings',
 			'downloadRecordingsAsZip'
 		]);
-		notificationService = jasmine.createSpyObj<NotificationService>('NotificationService', [
-			'showSnackbar',
-			'showDialog'
-		]);
-		notificationService.showDialog.and.callFake((options) => {
+		notificationService = jasmine.createSpyObj<NotificationService>('NotificationService', ['showSnackbar']);
+		dialogService = jasmine.createSpyObj<DialogService>('DialogService', ['showDialog']);
+		dialogService.showDialog.and.callFake((options) => {
 			confirmDialog = options.confirmCallback as () => Promise<void>;
 		});
 
@@ -52,6 +52,7 @@ describe('RecordingActionsService', () => {
 				provideZonelessChangeDetection(),
 				{ provide: RecordingService, useValue: recordingService },
 				{ provide: NotificationService, useValue: notificationService },
+				{ provide: DialogService, useValue: dialogService },
 				{ provide: DialogPresetsService, useValue: dialogPresetsStub as unknown as DialogPresetsService },
 				{ provide: TranslateService, useValue: translateStub as unknown as TranslateService }
 			]
