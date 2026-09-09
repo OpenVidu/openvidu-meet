@@ -143,6 +143,39 @@ describe('TaskSchedulerService', () => {
 		expect(service.scheduledHandle('durationLimitTimer_room-1')).toBe(armed);
 	});
 
+	it('runs the first execution once when Redis reports ready twice in a row', async () => {
+		const runs: string[] = [];
+		const { service, events } = buildScheduler();
+		service.registerTask(cronTask('expiredRoomsGC', runs));
+
+		events.emitReady();
+		events.emitReady();
+		await flush();
+
+		expect(runs).toEqual(['expiredRoomsGC']);
+		expect(service.scheduledNames()).toEqual(['expiredRoomsGC']);
+	});
+
+	/**
+	 * M6: scheduleTask used to await the first execution before recording the job, so a second
+	 * scheduling in that window passed the duplicate guard and left a job nothing could ever stop.
+	 */
+	it('leaves no cron job running after a disconnect, even when it was scheduled twice', async () => {
+		const runs: string[] = [];
+		const { service, events } = buildScheduler();
+		service.registerTask({ ...cronTask('everySecondGC', runs), scheduleOrDelay: '1s' });
+
+		events.emitReady();
+		events.emitReady();
+		await flush();
+		events.emitDisconnected();
+		expect(service.scheduledNames()).toEqual([]);
+
+		const runsAfterStop = runs.length;
+		await new Promise((resolve) => setTimeout(resolve, 1300));
+		expect(runs).toHaveLength(runsAfterStop);
+	});
+
 	it('does not re-arm a timeout task that already ran', async () => {
 		const runs: string[] = [];
 		const { service, events } = buildScheduler();
