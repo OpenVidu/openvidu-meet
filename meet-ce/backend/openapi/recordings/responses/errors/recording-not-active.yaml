@@ -1,14 +1,9 @@
-description: Conflict — The recording is starting, already stopped, or already being stopped
+description: Conflict — The recording is already stopped, or already being stopped
 content:
     application/json:
         schema:
             $ref: '../../../shared/schemas/error.yaml'
         examples:
-            starting_recording:
-                summary: Recording is starting
-                value:
-                    error: 'Recording Error'
-                    message: 'Recording "room-123--EG_XYZ--XX445" cannot be stopped while starting'
             already_stopped:
                 summary: Recording is already stopped
                 value:

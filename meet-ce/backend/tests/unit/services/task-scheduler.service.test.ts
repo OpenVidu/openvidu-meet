@@ -9,15 +9,15 @@ const noopLogger = { info: () => {}, warn: () => {}, debug: () => {}, error: () 
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
-class FakeDistributedEventService {
+class FakeRedisService {
 	private readyCallbacks: (() => void)[] = [];
 	private disconnectedCallbacks: (() => void)[] = [];
 
-	onRedisReady(callback: () => void): void {
+	onReady(callback: () => void): void {
 		this.readyCallbacks.push(callback);
 	}
 
-	onRedisDisconnected(callback: () => void): void {
+	onDisconnected(callback: () => void): void {
 		this.disconnectedCallbacks.push(callback);
 	}
 
@@ -59,10 +59,10 @@ const cronTask = (name: string, runs: string[]): IScheduledTask => ({
 	}
 });
 
-const openSchedulers: { service: TestableTaskSchedulerService; events: FakeDistributedEventService }[] = [];
+const openSchedulers: { service: TestableTaskSchedulerService; events: FakeRedisService }[] = [];
 
 const buildScheduler = () => {
-	const events = new FakeDistributedEventService();
+	const events = new FakeRedisService();
 	const service = new TestableTaskSchedulerService(
 		...([noopLogger, events, new FakeMutexService()] as unknown as ConstructorParameters<
 			typeof TaskSchedulerService

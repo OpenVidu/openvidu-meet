@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { SpiedFunction } from 'jest-mock';
-import { EgressInfo, Room } from 'livekit-server-sdk';
+import { EgressInfo, EgressStatus } from 'livekit-server-sdk';
 import ms from 'ms';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MeetLock } from '../../../../src/helpers/redis.helper.js';
@@ -21,7 +21,6 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 	let lockExistsMock: SpiedFunction<(key: string) => Promise<boolean>>;
 	let getLockCreatedAtMock: SpiedFunction<(key: string) => Promise<number | null>>;
 	let releaseWithRegistryMock: SpiedFunction<(key: string) => Promise<void>>;
-	let findRoomMock: SpiedFunction<(roomName: string) => Promise<Room | undefined>>;
 	let getInProgressRecordingsEgressMock: SpiedFunction<(roomName?: string) => Promise<EgressInfo[]>>;
 	let evaluateAndReleaseOrphanedLockMock: SpiedFunction<(roomId: string, lockPrefix: string) => Promise<void>>;
 
@@ -44,7 +43,6 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 		lockExistsMock = jest.spyOn(mutexService, 'lockRegistryExists');
 		getLockCreatedAtMock = jest.spyOn(mutexService, 'getLockCreatedAtFromRegistry');
 		releaseWithRegistryMock = jest.spyOn(mutexService, 'releaseWithRegistry');
-		findRoomMock = jest.spyOn(livekitService, 'findRoom');
 		getInProgressRecordingsEgressMock = jest.spyOn(livekitService, 'getInProgressRecordingsEgress');
 		evaluateAndReleaseOrphanedLockMock = jest.spyOn(
 			recordingTaskScheduler as never,
@@ -123,7 +121,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 
 			// Verify that no further checks were performed
 			expect(getLockCreatedAtMock).not.toHaveBeenCalled();
-			expect(findRoomMock).not.toHaveBeenCalled();
+			expect(getInProgressRecordingsEgressMock).not.toHaveBeenCalled();
 			expect(releaseWithRegistryMock).not.toHaveBeenCalled();
 		});
 
@@ -141,133 +139,49 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 
 			// Verify that lock age was checked but no further processing occurred
 			expect(getLockCreatedAtMock).toHaveBeenCalled();
-			expect(findRoomMock).not.toHaveBeenCalled();
+			expect(getInProgressRecordingsEgressMock).not.toHaveBeenCalled();
 			expect(releaseWithRegistryMock).not.toHaveBeenCalled();
 		});
 
-		it('should release lock for a room with no publishers and no active recordings', async () => {
+		it('should release the lock of a room with no in-progress recording egress', async () => {
 			const roomId = 'test-room';
 
-			// Simulate lock exists and is old enough
 			lockExistsMock.mockResolvedValue(true);
-			getLockCreatedAtMock.mockResolvedValueOnce(Date.now() - ms('5m')); // 5 minutes old
-
-			// Configure specific mocks for this test
-			findRoomMock.mockResolvedValueOnce({
-				numPublishers: 0
-			} as Room);
+			getLockCreatedAtMock.mockResolvedValueOnce(Date.now() - ms('5m'));
 			getInProgressRecordingsEgressMock.mockResolvedValueOnce([]);
 
-			// Execute evaluateAndReleaseOrphanedLock
 			await recordingTaskScheduler['evaluateAndReleaseOrphanedLock'](roomId, 'prefix_');
 
-			// Check that release was called with correct lock name
-			expect(findRoomMock).toHaveBeenCalledWith(roomId);
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
 			expect(releaseWithRegistryMock).toHaveBeenCalledWith(`prefix_${roomId}`);
 		});
 
-		it('should release the lock for a room with active recordings and lack of publishers', async () => {
+		it('should keep the lock while a recording egress is in progress, even with nobody publishing', async () => {
 			const roomId = 'test-room';
 
-			// Simulate lock exists and is old enough
-			lockExistsMock.mockResolvedValue(true);
-			getLockCreatedAtMock.mockResolvedValueOnce(Date.now() - ms('5m')); // 5 minutes ago
-
-			// Configure specific mocks for this test
-			findRoomMock.mockResolvedValue({
-				numPublishers: 0
-			} as Room);
-			getInProgressRecordingsEgressMock.mockResolvedValue([{} as EgressInfo]);
-
-			// Execute evaluateAndReleaseOrphanedLock
-			await recordingTaskScheduler['evaluateAndReleaseOrphanedLock'](roomId, 'prefix_');
-
-			// Check that release was called with correct lock name
-			expect(findRoomMock).toHaveBeenCalledWith(roomId);
-			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
-			expect(releaseWithRegistryMock).toHaveBeenCalledWith(`prefix_${roomId}`);
-		});
-
-		it('should keep lock for a room with active recordings and with publishers', async () => {
-			const roomId = 'test-room';
-
-			// Simulate lock exists and is old enough
 			lockExistsMock.mockResolvedValueOnce(true);
 			getLockCreatedAtMock.mockResolvedValueOnce(Date.now() - ms('5m'));
+			getInProgressRecordingsEgressMock.mockResolvedValueOnce([
+				{ status: EgressStatus.EGRESS_STARTING } as EgressInfo
+			]);
 
-			// Configure specific mocks for this test
-			findRoomMock.mockResolvedValueOnce({
-				numPublishers: 1
-			} as Room);
-			getInProgressRecordingsEgressMock.mockResolvedValueOnce([{} as EgressInfo]);
-
-			// Execute evaluateAndReleaseOrphanedLock
 			await recordingTaskScheduler['evaluateAndReleaseOrphanedLock'](roomId, 'prefix_');
 
-			// Verify lock is kept (release not called)
-			expect(findRoomMock).toHaveBeenCalledWith(roomId);
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
 			expect(releaseWithRegistryMock).not.toHaveBeenCalled();
 		});
 
-		it('should release the lock for a non-existent room with active recordings', async () => {
+		it('should handle errors during the egress check', async () => {
 			const roomId = 'test-room';
 
-			// Simulate lock exists and is old enough
-			lockExistsMock.mockResolvedValue(true);
-			getLockCreatedAtMock.mockResolvedValueOnce(Date.now() - ms('5m'));
-
-			// Configure specific mocks for this test
-			findRoomMock.mockResolvedValueOnce(undefined);
-			getInProgressRecordingsEgressMock.mockResolvedValueOnce([{} as EgressInfo]);
-
-			// Execute evaluateAndReleaseOrphanedLock
-			await recordingTaskScheduler['evaluateAndReleaseOrphanedLock'](roomId, 'prefix_');
-
-			// Check that release was called with correct lock name
-			expect(findRoomMock).toHaveBeenCalledWith(roomId);
-			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
-			expect(releaseWithRegistryMock).toHaveBeenCalledWith(`prefix_${roomId}`);
-		});
-
-		it('should release lock for a non-existent room with no active recordings', async () => {
-			const roomId = 'test-room';
-
-			// Simulate lock exists and is old enough
-			lockExistsMock.mockResolvedValue(true);
-			getLockCreatedAtMock.mockResolvedValueOnce(Date.now() - ms('5m'));
-
-			// Configure specific mocks for this test
-			findRoomMock.mockResolvedValueOnce(undefined);
-			getInProgressRecordingsEgressMock.mockResolvedValueOnce([]);
-
-			// Execute evaluateAndReleaseOrphanedLock
-			await recordingTaskScheduler['evaluateAndReleaseOrphanedLock'](roomId, 'prefix_');
-
-			// Check that release was called with correct lock name
-			expect(findRoomMock).toHaveBeenCalledWith(roomId);
-			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
-			expect(releaseWithRegistryMock).toHaveBeenCalledWith(`prefix_${roomId}`);
-		});
-
-		it('should handle errors during room existence check', async () => {
-			const roomId = 'test-room';
-
-			// Simulate lock exists and is old enough
 			lockExistsMock.mockResolvedValueOnce(true);
 			getLockCreatedAtMock.mockResolvedValueOnce(Date.now() - ms('5m'));
+			getInProgressRecordingsEgressMock.mockRejectedValueOnce(new Error('Failed to list egress'));
 
-			// Simulate error during the room lookup
-			findRoomMock.mockRejectedValueOnce(new Error('Failed to check room'));
-			getInProgressRecordingsEgressMock.mockResolvedValueOnce([]);
-
-			// Execute evaluateAndReleaseOrphanedLock and expect error to propagate
 			await expect(recordingTaskScheduler['evaluateAndReleaseOrphanedLock'](roomId, 'prefix_')).rejects.toThrow(
-				'Failed to check room'
+				'Failed to list egress'
 			);
 
-			// Verify that process stopped at the room lookup
 			expect(releaseWithRegistryMock).not.toHaveBeenCalled();
 		});
 
@@ -277,9 +191,6 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			// Simulate lock exists and is old enough
 			lockExistsMock.mockResolvedValue(true);
 			getLockCreatedAtMock.mockResolvedValueOnce(Date.now() - ms('5m'));
-
-			// Configure specific mocks for this test
-			findRoomMock.mockResolvedValueOnce(undefined);
 			getInProgressRecordingsEgressMock.mockResolvedValueOnce([]);
 
 			// Simulate error during release

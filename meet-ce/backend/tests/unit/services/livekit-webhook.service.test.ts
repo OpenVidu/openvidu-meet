@@ -32,7 +32,7 @@ class TestableLivekitWebhookService extends LivekitWebhookService {
 
 const buildService = (redis: FakeRedisService) =>
 	new TestableLivekitWebhookService(
-		...([{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, redis, {}] as unknown as ConstructorParameters<
+		...([{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, redis, {}] as unknown as ConstructorParameters<
 			typeof LivekitWebhookService
 		>)
 	);
@@ -197,7 +197,6 @@ const buildRoomStartedService = (roomService: FakeRoomService) => {
 			{},
 			{},
 			{},
-			{},
 			new FakeLogger()
 		] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
 	);
@@ -277,7 +276,6 @@ describe('LivekitWebhookService duration-limit timer wiring', () => {
 				new FakeRoomRepository(),
 				{ sendMeetingEndedWebhook: () => {} },
 				{},
-				{},
 				{ cleanupParticipantNames: async () => {} },
 				{ removeRoomFromAllUsers: async () => {} },
 				{},
@@ -311,7 +309,6 @@ describe('LivekitWebhookService.handleRoomFinished (force-end attribution reache
 				{ getMeetRoom: async () => ({ roomId: 'room-1', meetingEndAction: MeetingEndAction.NONE }) },
 				new FakeRoomRepository(),
 				webhookDispatcherService,
-				{},
 				{},
 				{ cleanupParticipantNames: async () => {} },
 				{ removeRoomFromAllUsers: async () => {} },

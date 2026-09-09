@@ -1130,7 +1130,7 @@ export class RoomMemberService {
 
 	/**
 	 * A promotion reaches the `when_moderator_joins` auto-start threshold, which no join webhook
-	 * reports. Detached: starting a recording waits up to `RECORDING_STARTED_TIMEOUT` for its egress.
+	 * reports. Detached: starting a recording is a LiveKit round trip the promotion must not wait on.
 	 */
 	private async reevaluateRecordingAutoStart(roomId: string, candidate: ParticipantInfo): Promise<void> {
 		try {

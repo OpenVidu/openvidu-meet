@@ -1,14 +1,12 @@
 import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
+import { MeetRecordingStatus } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
-import { setInternalConfig } from '../../../../src/config/internal-config.js';
-import { DistributedEventType } from '../../../../src/models/distributed-event.model.js';
 import { RecordingScheduledTasksService } from '../../../../src/services/recording-scheduled-tasks.service.js';
 import { RecordingService } from '../../../../src/services/recording.service.js';
 import {
 	expectValidStartRecordingResponse,
 	expectValidStopRecordingResponse
 } from '../../../helpers/assertion-helpers.js';
-import { eventController } from '../../../helpers/event-controller.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	bulkDeleteRecordings,
@@ -17,8 +15,8 @@ import {
 	deleteRecording,
 	getRecording,
 	getRecordingMedia,
-	sleep,
 	startRecording,
+	startRecordingAndWaitUntilActive,
 	startTestServer,
 	stopAllRecordings,
 	stopRecording
@@ -36,7 +34,6 @@ describe('Recording API Race Conditions Tests', () => {
 		recordingService = container.get(RecordingService);
 
 		await deleteAllRecordings();
-		eventController.reset();
 	});
 
 	afterEach(async () => {
@@ -45,11 +42,10 @@ describe('Recording API Race Conditions Tests', () => {
 
 		await deleteAllRooms();
 		await deleteAllRecordings();
-		eventController.reset();
-		jest.clearAllMocks();
+		jest.restoreAllMocks();
 	});
 
-	it('should handle recording rejection when start recording fails', async () => {
+	it('should release the recording lock when LiveKit refuses to start the egress', async () => {
 		context = await setupMultiRoomTestContext(1, true);
 		const roomData = context.getRoomByIndex(0)!;
 		const startRoomCompositeSpy = jest
@@ -57,236 +53,100 @@ describe('Recording API Race Conditions Tests', () => {
 			.mockImplementation(async () => {
 				throw new Error('Failed to start room composite');
 			});
-		const eventServiceOffSpy = jest.spyOn(recordingService['systemEventService'], 'off');
-		const handleRecordingLockTimeoutSpy = jest.spyOn(recordingService as any, 'handleRecordingTimeout');
 		const releaseLockSpy = jest.spyOn(recordingService, 'releaseRecordingLockIfNoEgress');
 
-		try {
-			// Attempt to start recording
-			const result = await startRecording(roomData.room.roomId);
-			expect(eventServiceOffSpy).toHaveBeenCalledWith(
-				DistributedEventType.RECORDING_ACTIVE,
-				expect.any(Function)
-			);
-			expect(handleRecordingLockTimeoutSpy).not.toHaveBeenCalledWith(
-				'', // empty recordingId since it never started
-				roomData.room.roomId
-			);
-			expect(releaseLockSpy).toHaveBeenCalled();
-			expect(startRoomCompositeSpy).toHaveBeenCalled();
-			console.log('Recording start response:', result.body);
-			expect(result.status).toBe(500); // Service Unavailable due to failure
-			expect(result.body.error).toContain('Internal Server Error');
-		} finally {
-			// Cleanup
-			startRoomCompositeSpy.mockRestore();
-			handleRecordingLockTimeoutSpy.mockRestore();
-			releaseLockSpy.mockRestore();
-			eventServiceOffSpy.mockRestore();
-		}
+		const result = await startRecording(roomData.room.roomId);
+
+		expect(startRoomCompositeSpy).toHaveBeenCalledTimes(1);
+		expect(releaseLockSpy).toHaveBeenCalledWith(roomData.room.roomId);
+		expect(result.status).toBe(500);
+		expect(result.body.error).toContain('Internal Server Error');
 	});
 
-	it('should properly release recording lock when timeout occurs before startRoomComposite completes', async () => {
-		setInternalConfig({
-			RECORDING_STARTED_TIMEOUT: '1s' // Set a short timeout for testing
-		});
-		context = await setupMultiRoomTestContext(1, true);
-		const roomData = context.getRoomByIndex(0)!;
-
-		// Track active mock promises to ensure we can handle timeouts correctly
-		const activeMockPromises: Promise<any>[] = [];
-
-		// Mock the startRoomComposite method to simulate a delay
-		// const originalStartRoomComposite = recordingService['livekitService'].startRoomComposite;
-		const startRoomCompositeSpy = jest
-			.spyOn(recordingService['livekitService'], 'startRoomComposite')
-			.mockImplementation(async (...args) => {
-				const mockPromise = (async () => {
-					await sleep('4s'); // Longer than 1s timeout
-					throw new Error('Request failed with status 503: Service Unavailable');
-				})();
-
-				activeMockPromises.push(mockPromise);
-				return mockPromise;
-			});
-
-		// Mock the handleRecordingLockTimeout method to prevent actual timeout handling
-		const handleTimeoutSpy = jest.spyOn(recordingService as any, 'handleRecordingTimeout');
-		// Mock the releaseRecordingLockIfNoEgress method to prevent actual lock release
-		const releaseLockSpy = jest.spyOn(recordingService, 'releaseRecordingLockIfNoEgress');
-		const eventServiceOffSpy = jest.spyOn(recordingService['systemEventService'], 'off');
-
-		try {
-			// Start recording with a short timeout
-			const result = await startRecording(roomData.room.roomId);
-
-			expect(eventServiceOffSpy).toHaveBeenCalledWith(
-				DistributedEventType.RECORDING_ACTIVE,
-				expect.any(Function)
-			);
-			// Expect the recording to fail due to timeout
-			expect(handleTimeoutSpy).toHaveBeenCalledWith(
-				'', // empty recordingId since it never started
-				roomData.room.roomId
-			);
-			expect(releaseLockSpy).toHaveBeenCalled();
-			expect(startRoomCompositeSpy).toHaveBeenCalledTimes(1);
-
-			console.log('Recording start response:', result.body);
-			expect(result.body.message).toContain('timed out while starting');
-			expect(result.status).toBe(503); // Service Unavailable due to timeout
-			await Promise.allSettled(activeMockPromises);
-		} finally {
-			// Cleanup after mock finishes
-			startRoomCompositeSpy.mockRestore();
-			handleTimeoutSpy.mockRestore();
-			releaseLockSpy.mockRestore();
-			eventServiceOffSpy.mockRestore();
-			setInternalConfig({
-				RECORDING_STARTED_TIMEOUT: '20s' // Reset to default value
-			});
-		}
-	});
-
-	it('should maintain system stability when timeout occurs during recording start', async () => {
-		setInternalConfig({
-			RECORDING_STARTED_TIMEOUT: '3s'
-		});
+	it('should leave the room available again after a start that LiveKit refused', async () => {
 		context = await setupMultiRoomTestContext(2, true);
 		const room1 = context.getRoomByIndex(0)!;
 		const room2 = context.getRoomByIndex(1)!;
 
-		expect(room1.room.roomId).not.toBe(room2.room.roomId);
-
-		// Mock startRoomComposite for room1 to timeout
 		const originalStartRoomComposite = recordingService['livekitService'].startRoomComposite;
-		let callCount = 0;
 		const startRoomCompositeSpy = jest
 			.spyOn(recordingService['livekitService'], 'startRoomComposite')
-			.mockImplementation(async (...args) => {
-				callCount++;
+			.mockImplementationOnce(async () => {
+				throw new Error('Request failed with status 503: Service Unavailable');
+			})
+			.mockImplementation((...args) =>
+				originalStartRoomComposite.apply(recordingService['livekitService'], args)
+			);
 
-				if (callCount === 1) {
-					// First call (room1) - timeout
-					await sleep('5s');
-					throw new Error('Request failed with status 503: Service Unavailable');
-				} else {
-					// Subsequent calls - work normally
-					return originalStartRoomComposite.apply(recordingService['livekitService'], args);
-				}
-			});
+		const rec1 = await startRecording(room1.room.roomId);
+		expect(rec1.status).toBe(500);
 
-		try {
-			// Start recording in room1 (should timeout)
-			const rec1 = await startRecording(room1.room.roomId);
-			expect(rec1.status).toBe(503);
+		// Other rooms are unaffected
+		const rec2 = await startRecordingAndWaitUntilActive(room2.room.roomId);
+		expectValidStartRecordingResponse(rec2, room2.room.roomId, room2.room.roomName);
+		let response = await stopRecording(rec2.body.recordingId!);
+		expectValidStopRecordingResponse(response, rec2.body.recordingId!, room2.room.roomId, room2.room.roomName);
 
-			setInternalConfig({
-				RECORDING_STARTED_TIMEOUT: '20s' // Reset to default value
-			});
-			// ✅ EXPECTED BEHAVIOR: System should remain stable
-			// Recording in different room should work normally
-			const rec2 = await startRecording(room2.room.roomId);
-			expect(rec2.status).toBe(201);
-			expectValidStartRecordingResponse(rec2, room2.room.roomId, room2.room.roomName);
-
-			let response = await stopRecording(rec2.body.recordingId!);
-			expectValidStopRecordingResponse(response, rec2.body.recordingId!, room2.room.roomId, room2.room.roomName);
-
-			// ✅ EXPECTED BEHAVIOR: After timeout cleanup, room1 should be available again
-			const rec3 = await startRecording(room1.room.roomId);
-			expect(rec3.status).toBe(201);
-			expectValidStartRecordingResponse(rec3, room1.room.roomId, room1.room.roomName);
-			response = await stopRecording(rec3.body.recordingId!);
-			expectValidStopRecordingResponse(response, rec3.body.recordingId!, room1.room.roomId, room1.room.roomName);
-		} finally {
-			startRoomCompositeSpy.mockRestore();
-		}
+		// The refused room accepts a new start right away
+		const rec3 = await startRecordingAndWaitUntilActive(room1.room.roomId);
+		expectValidStartRecordingResponse(rec3, room1.room.roomId, room1.room.roomName);
+		response = await stopRecording(rec3.body.recordingId!);
+		expectValidStopRecordingResponse(response, rec3.body.recordingId!, room1.room.roomId, room1.room.roomName);
+		expect(startRoomCompositeSpy).toHaveBeenCalledTimes(3);
 	});
 
-	it('should handle concurrent timeout scenarios in multiple rooms', async () => {
-		setInternalConfig({
-			RECORDING_STARTED_TIMEOUT: '2s'
-		});
+	it('should handle concurrent refused starts in multiple rooms', async () => {
 		context = await setupMultiRoomTestContext(3, true);
 		const rooms = [0, 1, 2].map((i) => context!.getRoomByIndex(i)!);
 
-		// Mock startRoomComposite to timeout for all rooms
 		const startRoomCompositeSpy = jest
 			.spyOn(recordingService['livekitService'], 'startRoomComposite')
 			.mockImplementation(async () => {
-				await sleep('5s');
-				throw new Error('Should timeout before this');
+				throw new Error('Failed to start room composite');
 			});
 
-		try {
-			// Start recordings in all rooms simultaneously (all should timeout)
-			const results = await Promise.all(rooms.map((room) => startRecording(room.room.roomId)));
+		const results = await Promise.all(rooms.map((room) => startRecording(room.room.roomId)));
+		results.forEach((result) => expect(result.status).toBe(500));
 
-			// All should timeout
-			results.forEach((result) => {
-				expect(result.status).toBe(503);
-			});
+		startRoomCompositeSpy.mockRestore();
 
-			startRoomCompositeSpy.mockRestore();
-			setInternalConfig({
-				RECORDING_STARTED_TIMEOUT: '6s'
-			});
+		const retryResults = await Promise.all(rooms.map((room) => startRecordingAndWaitUntilActive(room.room.roomId)));
 
-			// ✅ EXPECTED BEHAVIOR: After timeouts, all rooms should be available again
-			const retryResults = await Promise.all(rooms.map((room) => startRecording(room.room.roomId)));
-
-			for (const startResult of retryResults) {
-				expect(startResult.status).toBe(201);
-				const room = rooms.find((r) => r.room.roomId === startResult.body.roomId)!;
-				expectValidStartRecordingResponse(startResult, room.room.roomId, room.room.roomName);
-				const stopResult = await stopRecording(startResult.body.recordingId!);
-				expectValidStopRecordingResponse(
-					stopResult,
-					startResult.body.recordingId!,
-					room.room.roomId,
-					room.room.roomName
-				);
-			}
-		} finally {
-			startRoomCompositeSpy.mockRestore();
-			setInternalConfig({
-				RECORDING_STARTED_TIMEOUT: '20s' // Reset to default value
-			});
+		for (const startResult of retryResults) {
+			const room = rooms.find((r) => r.room.roomId === startResult.body.roomId)!;
+			expectValidStartRecordingResponse(startResult, room.room.roomId, room.room.roomName);
+			const stopResult = await stopRecording(startResult.body.recordingId!);
+			expectValidStopRecordingResponse(
+				stopResult,
+				startResult.body.recordingId!,
+				room.room.roomId,
+				room.room.roomName
+			);
 		}
 	});
 
-	it('should start recordings concurrently in two rooms and stop one before RECORDING_ACTIVE is received for the other', async () => {
+	it('should keep a recording waiting for its first track while another room stops its own', async () => {
 		context = await setupMultiRoomTestContext(2, true);
-		const roomDataA = context.getRoomByIndex(0);
-		const roomDataB = context.getRoomByIndex(1);
+		const roomDataA = context.getRoomByIndex(0)!;
+		const roomDataB = context.getRoomByIndex(1)!;
 
-		eventController.initialize();
-		eventController.pauseEventsForRoom(roomDataA!.room.roomId);
+		const recordingResponseA = await startRecording(roomDataA.room.roomId);
+		expectValidStartRecordingResponse(recordingResponseA, roomDataA.room.roomId, roomDataA.room.roomName);
+		const recordingIdA = recordingResponseA.body.recordingId;
 
-		const recordingPromiseA = startRecording(roomDataA!.room.roomId);
-
-		// Brief delay to ensure both recordings start in the right order
-		await sleep('1s');
-
-		// Step 2: Start recording in roomB (this will complete quickly)
-		const recordingResponseB = await startRecording(roomDataB!.room.roomId);
-		expectValidStartRecordingResponse(recordingResponseB, roomDataB!.room.roomId, roomDataB!.room.roomName);
+		const recordingResponseB = await startRecordingAndWaitUntilActive(roomDataB.room.roomId);
+		expectValidStartRecordingResponse(recordingResponseB, roomDataB.room.roomId, roomDataB.room.roomName);
 		const recordingIdB = recordingResponseB.body.recordingId;
 
-		// Step 3: Stop recording in roomB while roomA is still waiting for its event
 		const stopResponseB = await stopRecording(recordingIdB);
-		expectValidStopRecordingResponse(stopResponseB, recordingIdB, roomDataB!.room.roomId, roomDataB!.room.roomName);
+		expectValidStopRecordingResponse(stopResponseB, recordingIdB, roomDataB.room.roomId, roomDataB.room.roomName);
 
-		eventController.releaseEventsForRoom(roomDataA!.room.roomId);
+		const recordingA = await getRecording(recordingIdA);
+		expect(recordingA.status).toBe(200);
+		expect([MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE]).toContain(recordingA.body.status);
 
-		const recordingResponseA = (await Promise.race([
-			recordingPromiseA,
-			new Promise((_, reject) => setTimeout(() => reject(new Error('Recording A timed out')), 10000))
-		])) as Response;
-
-		// If we get here, the recording in roomA completed despite roomB being stopped
-		expect(recordingResponseA.status).toBe(201);
+		const secondStartA = await startRecording(roomDataA.room.roomId);
+		expect(secondStartA.status).toBe(409);
 	});
 
 	it('should handle simultaneous recordings in different rooms correctly', async () => {
@@ -294,7 +154,9 @@ describe('Recording API Race Conditions Tests', () => {
 
 		const roomDataList = Array.from({ length: 5 }, (_, index) => context!.getRoomByIndex(index)!);
 
-		const startResponses = await Promise.all(roomDataList.map((roomData) => startRecording(roomData.room.roomId)));
+		const startResponses = await Promise.all(
+			roomDataList.map((roomData) => startRecordingAndWaitUntilActive(roomData.room.roomId))
+		);
 
 		startResponses.forEach((response, index) => {
 			expectValidStartRecordingResponse(
@@ -322,8 +184,8 @@ describe('Recording API Race Conditions Tests', () => {
 		context = await setupMultiRoomTestContext(2, true);
 		const roomDataA = context.getRoomByIndex(0);
 		const roomDataB = context.getRoomByIndex(1);
-		const responseA = await startRecording(roomDataA!.room.roomId);
-		const responseB = await startRecording(roomDataB!.room.roomId);
+		const responseA = await startRecordingAndWaitUntilActive(roomDataA!.room.roomId);
+		const responseB = await startRecordingAndWaitUntilActive(roomDataB!.room.roomId);
 		const recordingIdA = responseA.body.recordingId;
 		const recordingIdB = responseB.body.recordingId;
 
@@ -344,36 +206,11 @@ describe('Recording API Race Conditions Tests', () => {
 			startRecording(roomData.room.roomId)
 		]);
 
-		console.log('First recording response:', firstRecordingResponse.body);
-		console.log('Second recording response:', secondRecordingResponse.body);
+		const statuses = [firstRecordingResponse.status, secondRecordingResponse.status].sort();
+		expect(statuses).toEqual([201, 409]);
 
-		// One of the recordings responses should be successful and the other should fail
-		const oneShouldBeSuccessful = firstRecordingResponse.status === 201 || secondRecordingResponse.status === 201;
-		const oneShouldBeFailed = firstRecordingResponse.status === 409 || secondRecordingResponse.status === 409;
-		expect(oneShouldBeSuccessful).toBe(true);
-		expect(oneShouldBeFailed).toBe(true);
-
-		if (firstRecordingResponse.status === 201) {
-			expectValidStartRecordingResponse(firstRecordingResponse, roomData.room.roomId, roomData.room.roomName);
-			// stop the first recording
-			const stopResponse = await stopRecording(firstRecordingResponse.body.recordingId);
-			expectValidStopRecordingResponse(
-				stopResponse,
-				firstRecordingResponse.body.recordingId,
-				roomData.room.roomId,
-				roomData.room.roomName
-			);
-		} else {
-			expectValidStartRecordingResponse(secondRecordingResponse, roomData.room.roomId, roomData.room.roomName);
-			// stop the second recording
-			const stopResponse = await stopRecording(secondRecordingResponse.body.recordingId);
-			expectValidStopRecordingResponse(
-				stopResponse,
-				secondRecordingResponse.body.recordingId,
-				roomData.room.roomId,
-				roomData.room.roomName
-			);
-		}
+		const accepted = firstRecordingResponse.status === 201 ? firstRecordingResponse : secondRecordingResponse;
+		expectValidStartRecordingResponse(accepted, roomData.room.roomId, roomData.room.roomName);
 	});
 
 	it('should handle race condition between stopping recording and garbage collection', async () => {
@@ -383,7 +220,7 @@ describe('Recording API Race Conditions Tests', () => {
 		const recordingTaskScheduler = container.get(RecordingScheduledTasksService);
 		const gcSpy = jest.spyOn(recordingTaskScheduler as any, 'performActiveRecordingLocksGC');
 
-		const startResponse = await startRecording(roomData.room.roomId);
+		const startResponse = await startRecordingAndWaitUntilActive(roomData.room.roomId);
 		expectValidStartRecordingResponse(startResponse, roomData.room.roomId, roomData.room.roomName);
 		const recordingId = startResponse.body.recordingId;
 
@@ -455,8 +292,8 @@ describe('Recording API Race Conditions Tests', () => {
 		const room2 = context.getRoomByIndex(1)!;
 		const room3 = context.getRoomByIndex(2)!;
 
-		const start1 = await startRecording(room1.room.roomId);
-		const start2 = await startRecording(room2.room.roomId);
+		const start1 = await startRecordingAndWaitUntilActive(room1.room.roomId);
+		const start2 = await startRecordingAndWaitUntilActive(room2.room.roomId);
 
 		const recordingId1 = start1.body.recordingId;
 		const recordingId2 = start2.body.recordingId;
@@ -466,7 +303,7 @@ describe('Recording API Race Conditions Tests', () => {
 
 		// Bulk delete the recordings while starting a new one
 		const bulkDeletePromise = bulkDeleteRecordings([recordingId1, recordingId2]);
-		const startNewRecordingPromise = startRecording(room3.room.roomId);
+		const startNewRecordingPromise = startRecordingAndWaitUntilActive(room3.room.roomId);
 
 		// Both operations should complete successfully
 		const [bulkDeleteResult, newRecordingResult] = await Promise.all([bulkDeletePromise, startNewRecordingPromise]);

@@ -1,5 +1,6 @@
 import {
 	MeetParticipantInfo,
+	MeetRecordingInfo,
 	MeetRecordingStatus,
 	MeetRoomStatus,
 	MeetWebhookEvent,
@@ -352,6 +353,29 @@ export const waitForRecordingToStop = async (
 		},
 		{ timeoutMs, errorMessage: `Recording '${recordingId}' did not stop` }
 	);
+};
+
+/**
+ * Waits until the recording document reaches `status`. Recording statuses are written by the
+ * deployment processing the real egress webhooks, not by the in-process test app.
+ */
+export const waitForRecordingStatus = async (
+	recordingId: string,
+	status: MeetRecordingStatus,
+	timeoutMs = DEFAULT_RECORDING_TIMEOUT_MS
+): Promise<MeetRecordingInfo> => {
+	const recordingRepository = container.get(RecordingRepository);
+	let recording: MeetRecordingInfo | null = null;
+
+	await pollUntil(
+		async () => {
+			recording = await recordingRepository.findByRecordingId(recordingId);
+			return recording?.status === status;
+		},
+		{ timeoutMs, errorMessage: `Recording '${recordingId}' did not reach status '${status}'` }
+	);
+
+	return recording!;
 };
 
 /**

@@ -435,8 +435,14 @@ export const expectValidStartRecordingResponse = (
 	expect(recordingId).toContain(roomId);
 	expect(response.body).toHaveProperty('roomId', roomId);
 	expect(response.body).toHaveProperty('roomName', roomName);
-	expect(response.body).toHaveProperty('startDate');
-	expect(response.body).toHaveProperty('status', 'active');
+	expect([MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE]).toContain(response.body.status);
+
+	if (response.body.status === MeetRecordingStatus.STARTING) {
+		expect(response.body).not.toHaveProperty('startDate');
+	} else {
+		expect(response.body).toHaveProperty('startDate');
+	}
+
 	expect(response.body).toHaveProperty('filename');
 	expect(response.body).toHaveProperty('layout');
 	expect(response.body).not.toHaveProperty('duration');

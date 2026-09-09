@@ -128,7 +128,7 @@ describe('RoomMemberService.updateParticipantRole — B10: a promotion re-evalua
 		expect(recordingService.startAutoRecordingIfNeeded).not.toHaveBeenCalled();
 	});
 
-	// Starting a recording waits up to RECORDING_STARTED_TIMEOUT for the egress to go active.
+	// Starting a recording is a LiveKit round trip the promotion must not wait on.
 	it('does not hold the promotion response while the recording starts', async () => {
 		let releaseAutoStart!: () => void;
 		recordingService.startAutoRecordingIfNeeded.mockReturnValue(

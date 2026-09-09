@@ -8,13 +8,11 @@ import { MEET_ENV } from '../environment.js';
 import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
-import { DistributedEventType } from '../models/distributed-event.model.js';
 import { RedisKeyName } from '../models/redis.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { AiAssistantService } from './ai-assistant.service.js';
-import { DistributedEventService } from './distributed-event.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
@@ -37,7 +35,6 @@ export class LivekitWebhookService {
 		@inject(RoomService) protected roomService: RoomService,
 		@inject(RoomRepository) protected roomRepository: RoomRepository,
 		@inject(WebhookDispatcherService) protected webhookDispatcherService: WebhookDispatcherService,
-		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(RoomMemberService) protected roomMemberService: RoomMemberService,
 		@inject(MeetingPresenceService) protected meetingPresenceService: MeetingPresenceService,
@@ -432,19 +429,7 @@ export class LivekitWebhookService {
 					break;
 				case 'updated':
 					this.webhookDispatcherService.sendRecordingUpdatedWebhook(recordingInfo);
-
-					if (recordingInfo.status === MeetRecordingStatus.ACTIVE) {
-						// Send system event for active recording with the aim of cancelling the cleanup timer
-						specificTasks.push(
-							this.distributedEventService.publishEvent(
-								DistributedEventType.RECORDING_ACTIVE,
-								recordingInfo as unknown as Record<string, unknown>
-							)
-						);
-					}
-
 					specificTasks.push(this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo));
-
 					break;
 				case 'ended':
 					specificTasks.push(

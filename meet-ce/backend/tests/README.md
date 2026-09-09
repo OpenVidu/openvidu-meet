@@ -110,7 +110,6 @@ Automated cleanup and maintenance operations:
 - Active status room cleanup
 - Stale recording garbage collection
 - Orphaned lock cleanup
-- Recording lock timeout handling
 
 ##### **Race Condition Tests**
 Concurrent operation handling:
@@ -152,7 +151,6 @@ tests/
 ├── README.md                          # This documentation
 ├── helpers/                           # Shared test utilities
 │   ├── assertion-helpers.ts           # Custom Jest matchers and assertions
-│   ├── event-controller.ts            # Event handling for distributed tests
 │   ├── request-helpers.ts             # HTTP request builders and utilities
 │   └── test-scenarios.ts              # Reusable test setup scenarios
 ├── interfaces/

@@ -36,11 +36,10 @@ export const INTERNAL_CONFIG = {
 	MEETING_MAX_DURATION_MINUTES_LIMIT: 1_440, // Highest value config.maxDurationMinutes may be set to (1 day)
 
 	// Timing and cleanup settings for recording lifecycle management
-	RECORDING_STARTED_TIMEOUT: '20s' as StringValue, // Timeout for recording to be marked as started
 	RECORDING_ACTIVE_LOCK_TTL: '24h' as StringValue, // Redis Lock TTL for active recording in a room (capped at the 24h max supported by the distributed-lock engine; the real lifecycle is governed by the orphaned-locks GC, this is only a last-resort safety net)
 	RECORDING_STOP_LOCK_TTL: '30s' as StringValue, // Redis Lock TTL while a stop request is in flight in a room (serializes concurrent stops); released as soon as the request finishes, so the TTL only bounds a stop stuck in LiveKit
 	RECORDING_ACTIVE_LOCK_GC_INTERVAL: '15m' as StringValue, // Interval for cleaning up stale active recording locks
-	RECORDING_ORPHANED_ACTIVE_LOCK_GRACE_PERIOD: '30s' as StringValue, // Grace period to consider an active recording lock as orphaned (should be greater than RECORDING_STARTED_TIMEOUT)
+	RECORDING_ORPHANED_ACTIVE_LOCK_GRACE_PERIOD: '30s' as StringValue, // Minimum age of an active recording lock before the GC may release it, so a start request still creating its egress in LiveKit keeps its lock
 	RECORDING_STALE_GC_INTERVAL: '14m' as StringValue, // Interval for cleaning up stale recordings (not updated recently)
 	RECORDING_STALE_GRACE_PERIOD: '5m' as StringValue, // Maximum allowed time since the last recording update before marking it as stale
 	RECORDING_AUTO_START_DISABLED_TTL: '24h' as StringValue, // Redis TTL for the per-room "auto-start disabled after a manual stop" flag; cleared on room_finished and refreshed on every hit, this is only a last-resort safety net against leaked flags

@@ -28,7 +28,7 @@ import {
 	generateRoomMemberToken,
 	loginUser,
 	sleep,
-	startRecording,
+	startRecordingAndWaitUntilActive,
 	stopRecording,
 	updateRoomMember
 } from './request-helpers.js';
@@ -127,7 +127,7 @@ export const setupSingleRoomWithRecording = async (
 	roomName = 'TEST_ROOM'
 ): Promise<RoomData> => {
 	const roomData = await setupSingleRoom(true, roomName);
-	const response = await startRecording(roomData.room.roomId);
+	const response = await startRecordingAndWaitUntilActive(roomData.room.roomId);
 	expectValidStartRecordingResponse(response, roomData.room.roomId, roomData.room.roomName);
 	roomData.recordingId = response.body.recordingId;
 
@@ -155,7 +155,7 @@ export const setupSingleRoomWithRecording = async (
  */
 export const setupCompletedRecording = async (roomData: RoomData, stopDelay?: StringValue): Promise<string> => {
 	// Start recording
-	const response = await startRecording(roomData.room.roomId);
+	const response = await startRecordingAndWaitUntilActive(roomData.room.roomId);
 	expectValidStartRecordingResponse(response, roomData.room.roomId, roomData.room.roomName);
 	const recordingId = response.body.recordingId;
 	roomData.recordingId = recordingId;
@@ -182,7 +182,7 @@ export const createRecordingForRoom = async (roomId: string): Promise<string> =>
 	await joinFakeParticipant(roomId, `usr-${Date.now()}`);
 
 	// Start recording
-	const startResponse = await startRecording(roomId);
+	const startResponse = await startRecordingAndWaitUntilActive(roomId);
 	expect(startResponse.status).toBe(201);
 	const recordingId = startResponse.body.recordingId as string;
 
@@ -226,7 +226,7 @@ export const setupMultiRecordingsTestContext = async (
 		}
 
 		// Send start recording request
-		const response = await startRecording(roomData.room.roomId);
+		const response = await startRecordingAndWaitUntilActive(roomData.room.roomId);
 		expectValidStartRecordingResponse(response, roomData.room.roomId, roomData.room.roomName);
 
 		// Store the recordingId in context

@@ -385,15 +385,8 @@ export class MeetingEventHandlerService {
 	onRecordingStartRequested = async (event: RecordingStartRequestedEvent): Promise<void> => {
 		try {
 			await this.recordingService.startRecording(event.roomName);
-		} catch (error: any) {
-			if (error.status === 503) {
-				console.error(
-					'No egress service available. Check CPU usage or Media Node capacity. ' +
-						'By default, a recording uses 2 CPUs per room.'
-				);
-			} else {
-				console.error('Error starting recording:', error);
-			}
+		} catch (error) {
+			console.error('Error starting recording:', error);
 		}
 	};
 

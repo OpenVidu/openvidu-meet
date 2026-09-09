@@ -17,7 +17,7 @@ describe('Stale Recordings GC Tests', () => {
 	let recordingTaskScheduler: RecordingScheduledTasksService;
 
 	// Mock functions
-	let findActiveRecordingsMock: SpiedFunction<() => Promise<MeetRecordingPage<MeetRecordingInfo>>>;
+	let findInProgressRecordingsMock: SpiedFunction<() => Promise<MeetRecordingPage<MeetRecordingInfo>>>;
 	let roomExistsMock: SpiedFunction<(roomName: string) => Promise<boolean>>;
 	let roomHasParticipantsMock: SpiedFunction<(roomName: string) => Promise<boolean>>;
 	let getInProgressRecordingsEgressMock: SpiedFunction<(roomName?: string) => Promise<EgressInfo[]>>;
@@ -42,7 +42,7 @@ describe('Stale Recordings GC Tests', () => {
 		jest.spyOn(logger, 'error').mockImplementation(() => {});
 
 		// Setup spies and store mock references
-		findActiveRecordingsMock = jest.spyOn(recordingRepository, 'findActiveRecordings');
+		findInProgressRecordingsMock = jest.spyOn(recordingRepository, 'findInProgressRecordings');
 		roomExistsMock = jest.spyOn(livekitService, 'roomExists');
 		roomHasParticipantsMock = jest.spyOn(livekitService, 'roomHasParticipants');
 		getInProgressRecordingsEgressMock = jest.spyOn(livekitService, 'getInProgressRecordingsEgress');
@@ -115,25 +115,29 @@ describe('Stale Recordings GC Tests', () => {
 	describe('performStaleRecordingsGC', () => {
 		it('should not process any recordings when there are no active recordings in database', async () => {
 			// Mock empty response from database
-			findActiveRecordingsMock.mockResolvedValueOnce({ recordings: [], isTruncated: false, nextPageToken: undefined });
+			findInProgressRecordingsMock.mockResolvedValueOnce({
+				recordings: [],
+				isTruncated: false,
+				nextPageToken: undefined
+			});
 
 			// Execute the stale recordings cleanup
 			await recordingTaskScheduler['performStaleRecordingsGC']();
 
 			// Verify that we checked for recordings but didn't attempt to process any
-			expect(findActiveRecordingsMock).toHaveBeenCalled();
+			expect(findInProgressRecordingsMock).toHaveBeenCalled();
 			expect(evaluateAndAbortStaleRecordingMock).not.toHaveBeenCalled();
 		});
 
 		it('should gracefully handle errors during active recordings retrieval from database', async () => {
 			// Simulate database failure
-			findActiveRecordingsMock.mockRejectedValueOnce(new Error('Failed to retrieve recordings'));
+			findInProgressRecordingsMock.mockRejectedValueOnce(new Error('Failed to retrieve recordings'));
 
 			// Execute the stale recordings cleanup - should not throw
 			await recordingTaskScheduler['performStaleRecordingsGC']();
 
 			// Verify the error was handled properly without further processing
-			expect(findActiveRecordingsMock).toHaveBeenCalled();
+			expect(findInProgressRecordingsMock).toHaveBeenCalled();
 			expect(evaluateAndAbortStaleRecordingMock).not.toHaveBeenCalled();
 		});
 
@@ -145,7 +149,11 @@ describe('Stale Recordings GC Tests', () => {
 			];
 
 			// Mock database response with active recordings
-			findActiveRecordingsMock.mockResolvedValueOnce({ recordings: mockRecordings, isTruncated: false, nextPageToken: undefined });
+			findInProgressRecordingsMock.mockResolvedValueOnce({
+				recordings: mockRecordings,
+				isTruncated: false,
+				nextPageToken: undefined
+			});
 
 			// Mock that no egress exists for any recording (all stale)
 			getInProgressRecordingsEgressMock.mockResolvedValue([]);
@@ -179,6 +187,39 @@ describe('Stale Recordings GC Tests', () => {
 			expect(updateRecordingStatusMock).toHaveBeenCalledWith(recordingId, MeetRecordingStatus.ABORTED);
 			expect(stopEgressMock).not.toHaveBeenCalled();
 			expect(roomExistsMock).not.toHaveBeenCalled();
+		});
+
+		it('should abort a recording still starting whose egress is gone from LiveKit', async () => {
+			const roomId = 'test-room';
+			const recordingId = `${roomId}--EG_test--1234567890`;
+			const recording = createMockRecordingInfo(recordingId, roomId, MeetRecordingStatus.STARTING);
+
+			getInProgressRecordingsEgressMock.mockResolvedValueOnce([]);
+
+			const result = await recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording);
+
+			expect(result).toBe(true);
+			expect(updateRecordingStatusMock).toHaveBeenCalledWith(recordingId, MeetRecordingStatus.ABORTED);
+			expect(stopEgressMock).not.toHaveBeenCalled();
+		});
+
+		it('should keep a recording waiting for its first track while the room has participants', async () => {
+			const roomId = 'test-room';
+			const egressId = 'EG_test';
+			const recordingId = `${roomId}--${egressId}--1234567890`;
+			const recording = createMockRecordingInfo(recordingId, roomId, MeetRecordingStatus.STARTING);
+			const staleUpdateTime = Date.now() - ms(INTERNAL_CONFIG.RECORDING_STALE_GRACE_PERIOD) - ms('1m');
+			const egressInfo = createMockEgressInfo(roomId, egressId, EgressStatus.EGRESS_STARTING, staleUpdateTime);
+
+			getInProgressRecordingsEgressMock.mockResolvedValueOnce([egressInfo]);
+			roomExistsMock.mockResolvedValueOnce(true);
+			roomHasParticipantsMock.mockResolvedValueOnce(true);
+
+			const result = await recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording);
+
+			expect(result).toBe(false);
+			expect(updateRecordingStatusMock).not.toHaveBeenCalled();
+			expect(stopEgressMock).not.toHaveBeenCalled();
 		});
 
 		it('should skip processing if the recording has no updatedAt timestamp', async () => {

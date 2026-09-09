@@ -11,7 +11,6 @@ import { UserRepository } from '../repositories/user.repository.js';
 import { WebhookRepository } from '../repositories/webhook.repository.js';
 
 import { BaseUrlService } from '../services/base-url.service.js';
-import { DistributedEventService } from '../services/distributed-event.service.js';
 import { LoggerService } from '../services/logger.service.js';
 import { MutexService } from '../services/mutex.service.js';
 import { RedisService } from '../services/redis.service.js';
@@ -83,7 +82,6 @@ export const STORAGE_TYPES = {
 const infrastructureModule = new ContainerModule(({ bind }) => {
 	bind(LoggerService).toSelf().inSingletonScope();
 	bind(RedisService).toSelf().inSingletonScope();
-	bind(DistributedEventService).toSelf().inSingletonScope();
 	bind(MutexService).toSelf().inSingletonScope();
 	bind(TaskSchedulerService).toSelf().inSingletonScope();
 	bind(BaseUrlService).toSelf().inSingletonScope();

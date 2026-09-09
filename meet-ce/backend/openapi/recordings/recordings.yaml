@@ -17,6 +17,12 @@
             Only rooms that record on-demand can be started this way. A room configured with
             `recording.autoStart` starts its own recording when the configured threshold is reached, and
             rejects an on-demand start with `403`.
+
+
+            The request completes as soon as the media server accepts the recording, which is returned in
+            the `starting` status. It becomes `active` when the first published track reaches it, so a
+            room where nobody publishes audio or video keeps it `starting` until someone does. Follow the
+            transition through the `recordingUpdated` webhook or by fetching the recording.
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -43,8 +49,6 @@
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
-            '503':
-                $ref: '../shared/responses/errors/service-unavailable.yaml'
 
     get:
         operationId: getRecordings
@@ -377,7 +381,8 @@
         description: |
             Stops a recording with the specified recording ID.
 
-            > **Note:** The recording must be in an `active` state; otherwise, a 409 error is returned.
+            > **Note:** The recording must be `starting` or `active`; otherwise, a 409 error is returned.
+            > Stopping a recording that is still `starting` cancels it: it ends `aborted`, without a file.
             > Stops are also serialized per room: while one stop is in flight, another stop for the
             > same room is rejected with a 409 error.
         tags:

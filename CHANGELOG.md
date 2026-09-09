@@ -332,11 +332,26 @@ operating system rather than by Meet.
   carry that inaccurate value. This reaches `GET /recordings`, `GET /recordings/{recordingId}` and
   the `recordingStarted`, `recordingUpdated` and `recordingEnded` webhooks, so code that reads
   `startDate` must tolerate its absence, and code that sorts by it should expect those recordings
-  grouped apart from the rest. `POST /recordings` and `POST /recordings/{recordingId}/stop` answer
-  with a recording that is already recording, so their responses still carry it. Recordings made
-  before this version keep the value they were stored with.
+  grouped apart from the rest. `POST /recordings/{recordingId}/stop` answers with a recording that
+  is already recording, so its response still carries it. Recordings made before this version keep
+  the value they were stored with.
+- **`POST /recordings` no longer waits for the recording to start recording, and no longer gives
+  up on it.** It used to hold the request until the media server reported the recording active and
+  answer `503` after 20 seconds otherwise, cancelling the recording. A recording only becomes active
+  when a published track reaches it, so in a room where nobody was publishing yet the wait ran out
+  and a perfectly healthy recording was reported as failed. The request now completes as soon as
+  the media server accepts the recording, answering `201` with the recording in the `starting`
+  status and without `startDate`; it turns `active` through the `recordingUpdated` webhook, and a
+  recording that fails to start is reported by the media server through `recordingEnded`. Code that
+  read `status` or `startDate` from the `201` response must follow the recording instead, and the
+  `503` response is gone from the operation.
+- **A recording that is still `starting` can now be stopped.** `POST /recordings/{recordingId}/stop`
+  used to answer `409` for it (while cancelling it anyway); it now answers `202`, and the recording
+  ends `aborted` without a file.
 - Stopping a recording could race a concurrent stop, and a recording that was starting or ending
   was not counted as in progress when the lock was released.
+- The per-room recording lock was released while a recording waited for its first track, which
+  allowed a second recording to be started on the same room.
 - The auto-start latch outlived its own meeting.
 - Deleting a recording could fail on an error payload with missing fields.
 

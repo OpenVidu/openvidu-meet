@@ -173,7 +173,7 @@ The recording feature is based on the following key concepts:
    Each room can only have one active recording at a time. When a new recording starts, a lock is acquired to mark that room as actively recording. Any attempt to start another recording for the same room while the lock is active will be rejected.
 
 2. **Lock lifetime**:
-   The lock has not lifetime. It is not automatically released after a certain period. Instead, it remains active until the recording is manually stopped and an `egress_ended` webhook is received, or when the room meeting ends. This design choice allows for flexibility in managing recordings, as the lock can be held for an extended duration if needed. However, it also means that care must be taken to ensure that the lock is released appropriately to avoid blocking future recording attempts. (see **Failure handling** below).
+   The lock has no lifetime of its own. It is held until the recording's `egress_ended` webhook arrives or the room meeting ends, however long the recording runs. The start request itself does not wait for the recording to be recording: it completes as soon as LiveKit accepts the egress, which is returned in the `starting` status and turns `active` when the first published track reaches it. A room where nobody publishes keeps it `starting`, and LiveKit reports the outcome either way (`egress_updated` when it activates, `egress_ended` when it fails or the room closes), so OpenVidu Meet never decides on its own that a recording failed to start.
 
 ```mermaid
 flowchart TD
@@ -181,23 +181,15 @@ flowchart TD
   B -- No --> C["Reject Request"]
   B -- Yes --> D["Acquire lock in Redis"]
   D --> E["Send startRecording to LiveKit"]
-  E --> F["Wait for recording_active event"]
-
-  %% Branch for recording_active event
-  F -- "recording_active event received" --> G["Cancel timeout"]
-  G --> I["Resolve Request"] --> H{"Monitor recording events"}
+  E -- "Egress refused" --> F["Release lock"] --> C
+  E -- "Egress accepted (starting)" --> G["Resolve Request"] --> H{"Monitor recording events"}
+  H -- "egress_updated (active)" --> H
   H -- "egress_ended" --> J["Release lock"]
   H -- "room_finished" --> J["Release lock"]
-
-  %% Branch: Timeout
-  F -- "No event within 30 sec (Timeout)" --> K["Attempt to stop recording"]
-  K --> L{"Stop recording result"}
-  L -- "Success (recording stopped)" --> N["Reject Request"] --> H
-  L -- "Error (recording not found, already stopped,\nor unknown error)" --> O["Reject Request"] --> J
 ```
 
 3. **Failure handling**:
-   If an OpenVidu instance crashes while a recording is active, the lock remains in place. This scenario can block subsequent recording attempts if the lock is not released promptly. To mitigate this issue, a lock garbage collector is implemented to periodically clean up orphaned locks.
+   If an OpenVidu instance crashes while a recording is active, or the `egress_ended` webhook is lost, the lock remains in place. This scenario can block subsequent recording attempts if the lock is not released promptly. To mitigate this issue, a lock garbage collector is implemented to periodically clean up orphaned locks: a lock older than a grace period whose room has no recording egress in progress in LiveKit is released. An in-progress egress keeps the lock whatever the room looks like, since an egress waiting for its first track has no publishers yet and LiveKit ends every egress of a room that closes.
 
     The garbage collector runs when the OpenVidu deployment starts, and then every 15 minutes.
 
@@ -212,14 +204,10 @@ graph TD;
     Z -->|Lock not found| M[Proceed to next roomId]
     Z -->|Lock exists| Y[Check lock age]
     Y -->|Lock too recent| M
-    Y -->|Lock old enough| H[Retrieve room information]
+    Y -->|Lock old enough| W[Check for in-progress recording egress]
 
-    H -->|Room has no publishers| W[Check for in-progress recordings]
-    W -->|Active recordings| L[Keep lock]
-    W -->|No active recordings| I[Release lock]
-
-    H -->|Room found with publishers| W[Check for in-progress recordings]
-    H -->|Room not found| W[Check for in-progress recordings]
+    W -->|Egress in progress| L[Keep lock]
+    W -->|No egress in progress| I[Release lock]
 
     I --> M
     L --> M
@@ -228,11 +216,11 @@ graph TD;
 ```
 
 4. **Stale recordings cleanup**:
-   To handle recordings that become stale due to network issues, LiveKit or Egress crashes, or other unexpected situations, a separate cleanup process runs every 14 minutes to identify and abort recordings that haven't been updated within a configured threshold (5 minutes by default).
+   To handle recordings that become stale due to network issues, LiveKit or Egress crashes, or other unexpected situations, a separate cleanup process runs every 14 minutes to identify and abort recordings that haven't been updated within a configured threshold (5 minutes by default). A recording still waiting for its first track is only aborted once its room is gone or empty: with participants in the room it is legitimately waiting for someone to publish.
 
 ```mermaid
 graph TD;
-    A[Initiate stale recordings cleanup] --> B[Get all active recordings from database<br/>ACTIVE or ENDING status]
+    A[Initiate stale recordings cleanup] --> B[Get all in-progress recordings from database<br/>STARTING, ACTIVE or ENDING status]
     B -->|Error| C[Log error and exit]
     B -->|No recordings found| D[Log and exit]
     B -->|Recordings found| E[Process recordings in batches of 10]

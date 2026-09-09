@@ -2,7 +2,7 @@
 
 Node.js + Express 5 REST API in TypeScript. ESM (`"type": "module"`) — every relative import needs an
 explicit `.js` extension, even when the source file is `.ts`. Deliberately framework-light: no Nest,
-no ORM beyond Mongoose. Dependencies: MongoDB (state), Redis (locks / pub-sub / ephemeral state),
+no ORM beyond Mongoose. Dependencies: MongoDB (state), Redis (locks / ephemeral state),
 LiveKit (media), and S3 / Azure Blob / GCS (recordings).
 
 Entry point: `src/server.ts`. It also serves the built SPA and the webcomponent bundle out of
@@ -122,9 +122,10 @@ Full migration plan: `../openvidu-competitors/meet-update-plan/api-naming-migrat
   `errorProFeature()`, …), `handleError` for controllers, `rejectRequestFromMeetError` for
   middleware. Unknown errors must be logged and masked as 500 — `globalErrorHandler` is the last
   resort and is registered after every route.
-- **Distributed coordination** — `MutexService` (redlock-universal via `models/redis-lock.model.ts`)
-  and `DistributedEventService` for Redis pub/sub. Meet runs multi-replica: any garbage collection,
-  migration or recording state transition must be lock-guarded. Lock TTLs cap at 24h.
+- **Distributed coordination** — `MutexService` (redlock-universal via `models/redis-lock.model.ts`).
+  Meet runs multi-replica: any garbage collection, migration or recording state transition must be
+  lock-guarded. Lock TTLs cap at 24h. Cross-replica state lives in Redis keys, never in process
+  memory; there is no pub/sub channel between replicas.
 - **Scheduled tasks** — `TaskSchedulerService` + `*-scheduled-tasks.service.ts` (cron). Intervals,
   batch sizes and concurrency limits are all constants in `config/internal-config.ts`; reuse them
   instead of hardcoding numbers, and use `utils/concurrency.utils.ts` (`runConcurrently`) for fan-out.

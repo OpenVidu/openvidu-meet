@@ -10,7 +10,7 @@ import { RedisService } from './redis.service.js';
 
 /**
  * Tracks, per room, whether a deliberate recording stop has disarmed the recording auto-start for
- * the rest of the current meeting (see {@link RecordingService#stopRecordingEgress}). The stored
+ * the rest of the current meeting (see {@link RecordingService#stopRecording}). The stored
  * value is the meeting's LiveKit room sid, so a flag leaked by a lost `room_finished` event is
  * inert for later meetings instead of blocking their auto-start until the TTL expires.
  */

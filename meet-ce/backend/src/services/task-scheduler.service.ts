@@ -4,9 +4,9 @@ import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import type { IScheduledTask } from '../models/task-scheduler.model.js';
-import { DistributedEventService } from './distributed-event.service.js';
 import { LoggerService } from './logger.service.js';
 import { MutexService } from './mutex.service.js';
+import { RedisService } from './redis.service.js';
 
 @injectable()
 export class TaskSchedulerService {
@@ -16,10 +16,10 @@ export class TaskSchedulerService {
 
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
-		@inject(DistributedEventService) protected systemEventService: DistributedEventService,
+		@inject(RedisService) protected redisService: RedisService,
 		@inject(MutexService) protected mutexService: MutexService
 	) {
-		this.systemEventService.onRedisReady(() => {
+		this.redisService.onReady(() => {
 			this.logger.debug('Starting all registered tasks...');
 			this.taskRegistry.forEach((task) => {
 				void this.scheduleTask(task);
@@ -27,7 +27,7 @@ export class TaskSchedulerService {
 			this.started = true;
 		});
 
-		this.systemEventService.onRedisDisconnected(() => {
+		this.redisService.onDisconnected(() => {
 			this.logger.warn('Redis disconnected. Stopping all scheduled cron tasks until it is back...');
 			this.stopCronTasks();
 			this.started = false;

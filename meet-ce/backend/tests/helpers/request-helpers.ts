@@ -41,6 +41,7 @@ import { RecordingService } from '../../src/services/recording.service.js';
 import { RoomScheduledTasksService } from '../../src/services/room-scheduled-tasks.service.js';
 import { getBasePath } from '../../src/utils/html-dynamic-base-path.utils.js';
 import {
+	waitForActiveRecordingEgress,
 	waitForAllRecordingsToStop,
 	waitForAllRoomsToDelete,
 	waitForMeetingToEnd,
@@ -1014,6 +1015,22 @@ export const startRecording = async (
 	return await req;
 };
 
+/**
+ * Starts a recording and, when accepted, waits until its egress is recording: the API answers as
+ * soon as LiveKit accepts the egress, while a stop only produces a file once the egress is active.
+ */
+export const startRecordingAndWaitUntilActive = async (
+	...args: Parameters<typeof startRecording>
+): Promise<Response> => {
+	const response = await startRecording(...args);
+
+	if (response.status === 201) {
+		await waitForActiveRecordingEgress(args[0]);
+	}
+
+	return response;
+};
+
 export const stopRecording = async (
 	recordingId: string,
 	options?: {
@@ -1185,7 +1202,9 @@ export const stopAllRecordings = async () => {
 	const response = await getAllRecordings();
 
 	const recordingIds: string[] = response.body.recordings
-		.filter((rec: MeetRecordingInfo) => rec.status === MeetRecordingStatus.ACTIVE)
+		.filter((rec: MeetRecordingInfo) =>
+			[MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE].includes(rec.status)
+		)
 		.map((recording: { recordingId: string }) => recording.recordingId);
 
 	if (recordingIds.length === 0) {

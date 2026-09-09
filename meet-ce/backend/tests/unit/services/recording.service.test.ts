@@ -27,7 +27,7 @@ class FakeMutexService {
 
 const buildService = (livekit: FakeLiveKitService, mutex: FakeMutexService) =>
 	new RecordingService(
-		...([livekit, mutex, {}, {}, {}, {}, {}, {}, noopLogger] as unknown as ConstructorParameters<
+		...([livekit, mutex, {}, {}, {}, {}, {}, noopLogger] as unknown as ConstructorParameters<
 			typeof RecordingService
 		>)
 	);
@@ -146,17 +146,9 @@ const buildStartService = (latchDisabled: boolean) => {
 	const frontendEvents = new FakeFrontendEventService();
 	const latch = new FakeAutoStartState(latchDisabled);
 	const service = new RecordingService(
-		...([
-			livekit,
-			mutex,
-			{ on: () => {}, off: () => {} },
-			{},
-			{},
-			{},
-			frontendEvents,
-			latch,
-			noopLogger
-		] as unknown as ConstructorParameters<typeof RecordingService>)
+		...([livekit, mutex, {}, {}, {}, frontendEvents, latch, noopLogger] as unknown as ConstructorParameters<
+			typeof RecordingService
+		>)
 	);
 	return { service, livekit, mutex, frontendEvents, latch };
 };

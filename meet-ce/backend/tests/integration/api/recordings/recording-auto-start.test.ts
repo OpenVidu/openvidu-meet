@@ -9,6 +9,7 @@ import {
 	MeetRoomMemberUIBadge
 } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
+import { RecordingHelper } from '../../../../src/helpers/recording.helper.js';
 import { RecordingRepository } from '../../../../src/repositories/recording.repository.js';
 import { LivekitWebhookService } from '../../../../src/services/livekit-webhook.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
@@ -444,13 +445,9 @@ describe('Recording Auto-Start Tests', () => {
 		expect(recordings[0].status).toBe(MeetRecordingStatus.ACTIVE);
 		const firstRecordingId = recordings[0].recordingId;
 
-		// A system cleanup (RecordingService.handleRecordingTimeout) is NOT a deliberate stop: it
-		// must keep the auto-start armed so a later join can retry the recording that failed.
-		await (
-			recordingService as unknown as {
-				handleRecordingTimeout(recordingId: string, roomId: string): Promise<void>;
-			}
-		).handleRecordingTimeout(firstRecordingId, room.roomId);
+		// An egress ended by the system (here, as the stale recordings GC does it) is NOT a
+		// deliberate stop: the auto-start stays armed so a later join relaunches the recording.
+		await livekitService.stopEgress(RecordingHelper.extractInfoFromRecordingId(firstRecordingId).egressId);
 
 		const lkRoom = await livekitService.getRoom(room.roomId);
 		expect(await recAutoStartStateService.isDisabled(room.roomId, lkRoom.sid)).toBe(false);
