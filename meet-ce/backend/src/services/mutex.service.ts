@@ -68,7 +68,9 @@ export class MutexService {
 			if (result !== null) return result;
 
 			if (attempt < maxAttempts) {
-				this.logger.warn(`Lock '${key}' attempt ${attempt}/${maxAttempts} failed. Retrying in ${delayMs}ms...`);
+				this.logger.debug(
+					`Lock '${key}' attempt ${attempt}/${maxAttempts} failed. Retrying in ${delayMs}ms...`
+				);
 				await new Promise((resolve) => setTimeout(resolve, delayMs));
 			}
 		}
@@ -270,7 +272,12 @@ export class MutexService {
 			this.logger.debug(`Requesting local lock: ${key}`);
 			return await this.redlockWithoutRetry.acquire([key], ttl);
 		} catch (error) {
-			this.logger.warn(`Error acquiring local lock '${key}':`, error);
+			if (await this.lockExists(key)) {
+				this.logger.debug(`Lock '${key}' is held by another contender`);
+			} else {
+				this.logger.warn(`Error acquiring local lock '${key}':`, error);
+			}
+
 			return null;
 		}
 	}
