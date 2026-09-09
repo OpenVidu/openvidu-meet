@@ -4,6 +4,7 @@ import type { z } from 'zod';
 import { container } from '../config/dependency-injector.config.js';
 import { configureZodErrorMessages } from '../config/zod-config.js';
 import { LoggerService } from '../services/logger.service.js';
+import { DocumentNotFoundError } from './database.model.js';
 
 // Applied here because this module owns the rendering of zod errors into 422 responses
 // (`rejectUnprocessableRequest`) and is imported by every request validator, so the error
@@ -55,6 +56,27 @@ export const errorUnsupportedMediaType = (supportedTypes: string[]): OpenViduMee
 
 export const internalError = (operationDescription: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Internal Server Error', `Unexpected error while ${operationDescription}`, 500);
+};
+
+export const errorResourceNotFound = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Not Found', 'The requested resource no longer exists', 404);
+};
+
+/**
+ * Gives any error thrown while serving a request its HTTP meaning. A resource that vanished between
+ * its existence check and the write (a lost race against a concurrent deletion) is a 404, not a
+ * failure of the service; anything the code did not raise on purpose stays a masked 500.
+ */
+export const toMeetError = (error: unknown, operationDescription: string): OpenViduMeetError => {
+	if (error instanceof OpenViduMeetError) {
+		return error;
+	}
+
+	if (error instanceof DocumentNotFoundError) {
+		return errorResourceNotFound();
+	}
+
+	return internalError(operationDescription);
 };
 
 export const errorLivekitNotAvailable = (): OpenViduMeetError => {
@@ -455,22 +477,15 @@ export const errorWebhookCreationInProgress = (): OpenViduMeetError => {
 
 export const handleError = (res: Response, error: unknown, operationDescription: string) => {
 	const logger = container.get(LoggerService);
+	const meetError = toMeetError(error, operationDescription);
 
-	if (error instanceof OpenViduMeetError) {
-		if (error.statusCode >= 500) {
-			// Server-side failure surfaced as a MeetError: log with cause/stack for diagnosis
-			logger.error(`Error while ${operationDescription}`, error);
-		} else {
-			// Expected client-side rejection (4xx): keep it out of the error stream
-			logger.debug(`Request rejected while ${operationDescription}: ${error.message}`);
-		}
-
-		return rejectRequestFromMeetError(res, error);
+	if (meetError.statusCode >= 500) {
+		logger.error(`Error while ${operationDescription}`, error);
+	} else {
+		logger.debug(`Request rejected while ${operationDescription}: ${meetError.message}`);
 	}
 
-	// Unexpected error: always log with full stack, then mask it as a 500 to the client
-	logger.error(`Unexpected error while ${operationDescription}`, error);
-	return rejectRequestFromMeetError(res, internalError(operationDescription));
+	return rejectRequestFromMeetError(res, meetError);
 };
 
 export const rejectRequestFromMeetError = (res: Response, error: OpenViduMeetError) => {
