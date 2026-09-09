@@ -15,6 +15,8 @@
 		"RECORDING_BADGE_STARTING": "開始中",
 		"RECORDING_STARTED_TITLE": "このミーティングは録画されています",
 		"RECORDING_STARTED_MESSAGE": "これ以降、あなたの音声、映像、共有した内容はすべて録画されます。",
+		"RECORDING_WAITING_MEDIA_TITLE": "録画は開始を待っています",
+		"RECORDING_WAITING_MEDIA_MESSAGE": "参加者がマイクまたはカメラをオンにするとすぐに始まります。",
 		"RECORDING_STOPPED_TITLE": "録画を停止しました",
 		"RECORDING_STOPPED_MESSAGE": "これ以上は録画されません。"
 	},

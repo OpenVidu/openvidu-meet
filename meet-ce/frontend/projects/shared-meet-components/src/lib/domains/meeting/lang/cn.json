@@ -15,6 +15,8 @@
 		"RECORDING_BADGE_STARTING": "正在开始",
 		"RECORDING_STARTED_TITLE": "本次会议正在录制",
 		"RECORDING_STARTED_MESSAGE": "从现在起，您的音频、视频以及您共享的所有内容都会被录制。",
+		"RECORDING_WAITING_MEDIA_TITLE": "录制正在等待开始",
+		"RECORDING_WAITING_MEDIA_MESSAGE": "有参会者打开麦克风或摄像头后即会开始。",
 		"RECORDING_STOPPED_TITLE": "录制已停止",
 		"RECORDING_STOPPED_MESSAGE": "不再录制任何内容。"
 	},

@@ -118,14 +118,6 @@ export class RecordingService {
 
 			const roomRecordingConfig = await this.validateRoomForStartRecording(roomId);
 
-			// Manually send the recording update to avoid missing the state transition if the webhook is delayed.
-			await this.frontendEventService.sendRecordingUpdatedSignal(roomId, {
-				recordingId: '',
-				roomId,
-				roomName: roomId,
-				status: MeetRecordingStatus.STARTING
-			});
-
 			// Promise that rejects after timeout
 			const timeoutPromise = new Promise<never>((_, reject) => {
 				timeoutId = setTimeout(() => {

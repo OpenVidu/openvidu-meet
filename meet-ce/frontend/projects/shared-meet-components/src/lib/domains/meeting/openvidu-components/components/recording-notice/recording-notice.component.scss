@@ -31,8 +31,10 @@
 	}
 }
 
-// Once it has stopped there is nothing live to flag, so the glyph drops to the neutral ink.
-.recording-notice.stopped .notice-icon {
+// Nothing is being captured in either of these, so the glyph drops to the neutral ink: stopped has
+// nothing left to flag, and waiting has not captured anything yet.
+.recording-notice.stopped .notice-icon,
+.recording-notice.waiting .notice-icon {
 	background-color: color-mix(in srgb, var(--ov-text-secondary-color) 18%, transparent);
 
 	mat-icon {

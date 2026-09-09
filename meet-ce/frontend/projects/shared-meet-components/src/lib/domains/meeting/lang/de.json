@@ -15,6 +15,8 @@
 		"RECORDING_BADGE_STARTING": "Wird gestartet",
 		"RECORDING_STARTED_TITLE": "Dieses Meeting wird aufgezeichnet",
 		"RECORDING_STARTED_MESSAGE": "Ab jetzt werden Ihr Audio, Ihr Video und alles, was Sie teilen, aufgezeichnet.",
+		"RECORDING_WAITING_MEDIA_TITLE": "Die Aufzeichnung wartet auf den Start",
+		"RECORDING_WAITING_MEDIA_MESSAGE": "Sie beginnt, sobald ein Teilnehmer sein Mikrofon oder seine Kamera einschaltet.",
 		"RECORDING_STOPPED_TITLE": "Aufzeichnung beendet",
 		"RECORDING_STOPPED_MESSAGE": "Es wird nichts mehr aufgezeichnet."
 	},

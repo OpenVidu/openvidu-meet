@@ -24,6 +24,8 @@
 		"RECORDING_BADGE_STARTING": "Starting",
 		"RECORDING_STARTED_TITLE": "This meeting is being recorded",
 		"RECORDING_STARTED_MESSAGE": "Your audio, your video and anything you share are being captured from now on.",
+		"RECORDING_WAITING_MEDIA_TITLE": "Recording is waiting to start",
+		"RECORDING_WAITING_MEDIA_MESSAGE": "It will begin as soon as a participant turns on their microphone or camera.",
 		"RECORDING_STOPPED_TITLE": "Recording stopped",
 		"RECORDING_STOPPED_MESSAGE": "Nothing more is being captured."
 	},

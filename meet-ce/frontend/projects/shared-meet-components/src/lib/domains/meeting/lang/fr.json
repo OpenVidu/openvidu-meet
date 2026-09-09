@@ -15,6 +15,8 @@
 		"RECORDING_BADGE_STARTING": "Démarrage",
 		"RECORDING_STARTED_TITLE": "Cette réunion est en cours d’enregistrement",
 		"RECORDING_STARTED_MESSAGE": "À partir de maintenant, votre audio, votre vidéo et tout ce que vous partagez sont enregistrés.",
+		"RECORDING_WAITING_MEDIA_TITLE": "L’enregistrement attend de démarrer",
+		"RECORDING_WAITING_MEDIA_MESSAGE": "Il commencera dès qu’un participant activera son microphone ou sa caméra.",
 		"RECORDING_STOPPED_TITLE": "Enregistrement arrêté",
 		"RECORDING_STOPPED_MESSAGE": "Plus rien n’est enregistré."
 	},

@@ -1,6 +1,7 @@
 import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { RecordingState, RecordingStateInfo } from '../../models/recording.model';
+import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
 import { RecordingService } from '../recording/recording.service';
 import { RecordingNoticeService } from './recording-notice.service';
 
@@ -9,6 +10,8 @@ describe('RecordingNoticeService', () => {
 
 	let service: RecordingNoticeService;
 	let recordingStatus: WritableSignal<RecordingStateInfo>;
+	/** A room that has media to record, which is the only one the toolbar lets you record. */
+	let hasRoomTracksPublished: boolean;
 
 	/** Drives the service the only way the app does: by moving the recording state. */
 	const moveTo = (status: RecordingState) => {
@@ -21,12 +24,20 @@ describe('RecordingNoticeService', () => {
 		jasmine.clock().mockDate();
 
 		recordingStatus = signal<RecordingStateInfo>({ status: RecordingState.STOPPED });
+		hasRoomTracksPublished = true;
 
 		TestBed.configureTestingModule({
 			providers: [
 				provideZonelessChangeDetection(),
 				RecordingNoticeService,
-				{ provide: RecordingService, useValue: { recordingStatus } }
+				{ provide: RecordingService, useValue: { recordingStatus } },
+				{
+					provide: MeetingLiveKitService,
+					useValue: {
+						isInitialized: () => true,
+						hasRoomTracksPublished: () => hasRoomTracksPublished
+					}
+				}
 			]
 		});
 
@@ -126,5 +137,69 @@ describe('RecordingNoticeService', () => {
 
 		jasmine.clock().tick(NOTICE_DURATION_MS);
 		expect(service.announcement()).toBeUndefined();
+	});
+
+	describe('a recording that has nothing to record yet', () => {
+		beforeEach(() => {
+			hasRoomTracksPublished = false;
+		});
+
+		it('announces that the recording is waiting for a device to be turned on', () => {
+			moveTo(RecordingState.STARTING);
+
+			expect(service.announcement()).toBe('waiting-for-media');
+		});
+
+		it('announces the wait once, however many times the start is reported', () => {
+			moveTo(RecordingState.STARTING);
+			service.dismiss();
+
+			moveTo(RecordingState.STARTING);
+
+			expect(service.announcement()).toBeUndefined();
+		});
+
+		it('replaces the wait with the start once the first track arrives', () => {
+			moveTo(RecordingState.STARTING);
+			hasRoomTracksPublished = true;
+
+			moveTo(RecordingState.STARTED);
+
+			expect(service.announcement()).toBe('started');
+		});
+
+		it('stays on screen, so the room cannot miss what it is waiting for', () => {
+			moveTo(RecordingState.STARTING);
+
+			jasmine.clock().tick(NOTICE_DURATION_MS * 10);
+
+			expect(service.announcement()).toBe('waiting-for-media');
+		});
+
+		it('can still be closed by hand', () => {
+			moveTo(RecordingState.STARTING);
+
+			service.dismiss();
+
+			expect(service.announcement()).toBeUndefined();
+		});
+
+		it('goes away when the recording gives up instead of starting', () => {
+			moveTo(RecordingState.STARTING);
+
+			moveTo(RecordingState.FAILED);
+
+			expect(service.announcement()).toBeUndefined();
+		});
+
+		it('announces the wait again for a later attempt', () => {
+			moveTo(RecordingState.STARTING);
+			service.dismiss();
+			moveTo(RecordingState.FAILED);
+
+			moveTo(RecordingState.STARTING);
+
+			expect(service.announcement()).toBe('waiting-for-media');
+		});
 	});
 });

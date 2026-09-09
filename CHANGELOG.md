@@ -17,7 +17,7 @@ previous ones, which keep working until 3.12.0.
 | Webhooks | [Webhooks API](#webhooks-api), [Participant events](#participant-events), [Meeting limits](#meeting-limits) |
 | Embedded API | [Local media controls](#local-media-controls), [Participant identity](#participant-identity), [Initial media state](#initial-media-state), [Deprecated](#deprecated) |
 | Room configuration | [Meeting limits](#meeting-limits), [Recording auto-start](#recording-auto-start), [Initial media state](#initial-media-state) |
-| Meeting experience | [Meeting status rail](#meeting-status-rail), [Microphone warnings](#microphone-warnings), [Improved](#improved) |
+| Meeting experience | [Meeting status rail](#meeting-status-rail), [Recording notices](#recording-notices), [Microphone warnings](#microphone-warnings), [Improved](#improved) |
 | Console | [Console](#console) |
 | Deployment | [Upgrade notes](#upgrade-notes) |
 
@@ -254,6 +254,15 @@ host application renders no toolbar. It shows a recording chip, which reports th
 starting and then how long it has been running, a countdown when the meeting is about to reach its
 duration limit, an indicator when the meeting is end-to-end encrypted, and the number of hidden
 participants. A chip that opens a panel does so only when the viewer is allowed to open that panel.
+
+#### Recording notices
+
+**Surfaces:** meeting UI
+
+The meeting itself says when a recording starts and when it stops, instead of only the panel that
+has to be opened to be read. A recording that cannot start because nobody in the room is publishing
+anything is announced too, saying it will begin as soon as a participant turns on their microphone
+or camera; that one stays until it is closed, because the room is what ends the wait.
 
 #### Microphone warnings
 

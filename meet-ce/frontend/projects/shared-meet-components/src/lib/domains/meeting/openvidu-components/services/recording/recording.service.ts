@@ -78,9 +78,16 @@ export class RecordingService {
 	/**
 	 * Set the {@link RecordingState} to **starting**.
 	 * The `started` stastus will be updated automatically when the recording is actually started.
+	 *
+	 * A recording that is already running stays as it is: the start of a recording is reported by
+	 * one webhook and its activation by another, and a webhook that arrives late must not walk the
+	 * meeting back to a state the recording has already left.
 	 */
 	setRecordingStarting(id: string) {
-		const { elapsed } = this.recordingStatus();
+		const { status, elapsed } = this.recordingStatus();
+
+		if (status === RecordingState.STARTED || status === RecordingState.STOPPING) return;
+
 		this.updateStatus({
 			id,
 			status: RecordingState.STARTING,

@@ -15,6 +15,8 @@
 		"RECORDING_BADGE_STARTING": "शुरू हो रही है",
 		"RECORDING_STARTED_TITLE": "इस मीटिंग की रिकॉर्डिंग हो रही है",
 		"RECORDING_STARTED_MESSAGE": "अब से आपका ऑडियो, वीडियो और आपके द्वारा साझा की गई हर चीज़ रिकॉर्ड होगी।",
+		"RECORDING_WAITING_MEDIA_TITLE": "रिकॉर्डिंग शुरू होने की प्रतीक्षा में है",
+		"RECORDING_WAITING_MEDIA_MESSAGE": "यह तब शुरू होगी जब कोई प्रतिभागी अपना माइक्रोफ़ोन या कैमरा चालू करेगा।",
 		"RECORDING_STOPPED_TITLE": "रिकॉर्डिंग रोक दी गई",
 		"RECORDING_STOPPED_MESSAGE": "अब कुछ भी रिकॉर्ड नहीं हो रहा है।"
 	},

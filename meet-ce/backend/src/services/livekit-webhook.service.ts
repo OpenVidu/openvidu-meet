@@ -176,13 +176,10 @@ export class LivekitWebhookService {
 				await this.meetingPresenceService.upsertUserInRoom(userId, room.name, participant.identity);
 			}
 
-			const { recordings } = await this.recordingService.getAllRecordings({
-				roomId: room.name,
-				status: MeetRecordingStatus.ACTIVE
-			});
+			const recording = await this.findRecordingInProgress(room.name);
 
-			if (recordings.length > 0) {
-				await this.frontendEventService.sendRecordingUpdatedSignal(room.name, recordings[0], participant.sid);
+			if (recording) {
+				await this.frontendEventService.sendRecordingUpdatedSignal(room.name, recording, participant.sid);
 			}
 		} catch (error) {
 			this.logger.error(
@@ -190,6 +187,21 @@ export class LivekitWebhookService {
 				error
 			);
 		}
+	}
+
+	/**
+	 * The room's recording that a participant joining now has to be told about: one that is already
+	 * recording, or one that is still starting, which is what a room whose participants publish
+	 * nothing keeps doing until one of them turns a device on.
+	 */
+	protected async findRecordingInProgress(roomId: string): Promise<MeetRecordingInfo | undefined> {
+		for (const status of [MeetRecordingStatus.ACTIVE, MeetRecordingStatus.STARTING]) {
+			const { recordings } = await this.recordingService.getAllRecordings({ roomId, status });
+
+			if (recordings.length > 0) return recordings[0];
+		}
+
+		return undefined;
 	}
 
 	/**
@@ -415,6 +427,7 @@ export class LivekitWebhookService {
 			// Send webhook notification
 			switch (webhookAction) {
 				case 'started':
+					specificTasks.push(this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo));
 					this.webhookDispatcherService.sendRecordingStartedWebhook(recordingInfo);
 					break;
 				case 'updated':

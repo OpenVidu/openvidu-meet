@@ -13,6 +13,7 @@ const STOP_RECORDING_BUTTON = '#stop-recording-btn';
 const VIEW_RECORDINGS_BUTTON = '#view-recordings-btn';
 const SETTINGS_RECORDING_BUTTON = '#recording-btn';
 const RECORDING_TAG = '#recording-tag';
+const RECORDING_NOTICE = '.recording-notice';
 
 /**
  * Ensures the activities panel is open, toggling it if currently closed.
@@ -156,6 +157,45 @@ export const expectNoRecordButton = async (page: Page): Promise<void> => {
 	await openMoreOptionsMenu(page);
 	await expect(page.locator(SETTINGS_RECORDING_BUTTON)).toHaveCount(0);
 	await page.keyboard.press('Escape');
+};
+
+/**
+ * Asserts that the meeting stage is announcing the given recording transition. Read off
+ * `data-announcement` rather than the notice's text, which is human copy in the active language.
+ */
+export const expectRecordingNotice = async (
+	page: Page,
+	announcement: 'started' | 'stopped' | 'waiting-for-media',
+	timeoutMs = 15_000
+): Promise<void> => {
+	await expect(page.locator(`${RECORDING_NOTICE}[data-announcement="${announcement}"]`)).toBeVisible({
+		timeout: timeoutMs
+	});
+};
+
+/**
+ * Asserts that no recording notice is on the meeting stage.
+ */
+export const expectNoRecordingNotice = async (page: Page, timeoutMs = 15_000): Promise<void> => {
+	await expect(page.locator(RECORDING_NOTICE)).toBeHidden({ timeout: timeoutMs });
+};
+
+/**
+ * Closes the recording notice the way a participant does.
+ */
+export const dismissRecordingNotice = async (page: Page): Promise<void> => {
+	await page.locator(`${RECORDING_NOTICE} .notice-dismiss`).click();
+};
+
+/**
+ * Asserts that the recording chip in the status rail reports a recording that has not started
+ * capturing yet: it is up, and it is not counting. The label itself is copy in the active language,
+ * so what is asserted is the absence of the timer.
+ */
+export const expectRecordingBadgeStarting = async (page: Page, timeoutMs = 15_000): Promise<void> => {
+	const recordingTag = page.locator(RECORDING_TAG);
+	await expect(recordingTag).toContainText('REC', { timeout: timeoutMs });
+	await expect(recordingTag).not.toHaveText(/\d{1,2}:\d{2}:\d{2}/, { timeout: timeoutMs });
 };
 
 /**

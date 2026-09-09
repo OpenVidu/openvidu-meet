@@ -15,6 +15,8 @@
 		"RECORDING_BADGE_STARTING": "Wordt gestart",
 		"RECORDING_STARTED_TITLE": "Deze vergadering wordt opgenomen",
 		"RECORDING_STARTED_MESSAGE": "Vanaf nu worden uw audio, uw video en alles wat u deelt vastgelegd.",
+		"RECORDING_WAITING_MEDIA_TITLE": "De opname wacht om te starten",
+		"RECORDING_WAITING_MEDIA_MESSAGE": "Ze begint zodra een deelnemer zijn microfoon of camera aanzet.",
 		"RECORDING_STOPPED_TITLE": "Opname gestopt",
 		"RECORDING_STOPPED_MESSAGE": "Er wordt niets meer vastgelegd."
 	},

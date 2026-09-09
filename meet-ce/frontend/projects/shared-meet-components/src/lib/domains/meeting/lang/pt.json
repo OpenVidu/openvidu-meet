@@ -15,6 +15,8 @@
 		"RECORDING_BADGE_STARTING": "Iniciando",
 		"RECORDING_STARTED_TITLE": "Esta reunião está a ser gravada",
 		"RECORDING_STARTED_MESSAGE": "A partir de agora, o seu áudio, o seu vídeo e tudo o que partilhar são capturados.",
+		"RECORDING_WAITING_MEDIA_TITLE": "A gravação está à espera para começar",
+		"RECORDING_WAITING_MEDIA_MESSAGE": "Vai começar assim que um participante ligar o microfone ou a câmara.",
 		"RECORDING_STOPPED_TITLE": "Gravação parada",
 		"RECORDING_STOPPED_MESSAGE": "Já não está a ser capturado mais nada."
 	},

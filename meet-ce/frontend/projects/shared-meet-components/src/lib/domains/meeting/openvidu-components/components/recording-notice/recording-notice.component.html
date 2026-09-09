@@ -1,12 +1,18 @@
-@if (announcement()) {
-	<div class="recording-notice" [class.stopped]="!isStarted()" role="alert">
+@if (copy(); as copy) {
+	<div
+		class="recording-notice"
+		[class.stopped]="announcement() === 'stopped'"
+		[class.waiting]="announcement() === 'waiting-for-media'"
+		[attr.data-announcement]="announcement()"
+		role="alert"
+	>
 		<span class="notice-icon">
-			<mat-icon>radio_button_checked</mat-icon>
+			<mat-icon>{{ copy.icon }}</mat-icon>
 		</span>
 
 		<div class="notice-body">
-			<span class="notice-title">{{ titleKey() | translate }}</span>
-			<span class="notice-message">{{ messageKey() | translate }}</span>
+			<span class="notice-title">{{ copy.titleKey | translate }}</span>
+			<span class="notice-message">{{ copy.messageKey | translate }}</span>
 		</div>
 
 		<button type="button" class="notice-dismiss" [attr.aria-label]="'PANEL.CLOSE' | translate" (click)="dismiss()">
