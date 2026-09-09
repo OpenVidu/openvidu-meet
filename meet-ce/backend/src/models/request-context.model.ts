@@ -12,6 +12,8 @@ import type {
 export interface RequestContext {
 	/** Correlation id assigned once per HTTP request, emitted on every log line for traceability. */
 	requestId?: string;
+	/** Scheme and host the request was addressed to (e.g. `https://meet.example.com`), the base of every URL handed back to the caller. */
+	origin?: string;
 	user?: MeetUser;
 	roomMember?: MeetRoomMemberTokenMetadata & { participantIdentity?: string };
 }
