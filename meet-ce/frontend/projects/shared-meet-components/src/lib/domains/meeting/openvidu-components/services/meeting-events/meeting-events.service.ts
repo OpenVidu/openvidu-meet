@@ -317,10 +317,10 @@ export class MeetingEventsService {
 				this.recordingService.setRecordingStopping();
 				break;
 			case MeetRecordingStatus.COMPLETE:
+			case MeetRecordingStatus.ABORTED:
 				this.recordingService.setRecordingStopped();
 				break;
 			case MeetRecordingStatus.FAILED:
-			case MeetRecordingStatus.ABORTED:
 			case MeetRecordingStatus.LIMIT_REACHED:
 				this.recordingService.setRecordingFailed(recording.error ?? recording.details ?? 'Recording failed');
 				break;

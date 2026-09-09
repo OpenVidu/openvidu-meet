@@ -502,7 +502,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			return;
 		}
 
-		if (recordingStatus === RecordingState.STARTED) {
+		if (recordingStatus === RecordingState.STARTED || recordingStatus === RecordingState.STARTING) {
 			this.onRecordingStopRequested.emit({
 				roomName: this.meetingLiveKitService.getRoomName(),
 				recordingId: this.recordingStatus().id!

@@ -100,9 +100,9 @@
 							</button>
 						}
 						@case (recStatusEnum.STARTING) {
-							<button mat-flat-button class="is-busy" disabled>
-								<span class="busy-spinner" aria-hidden="true"></span>
-								<span>{{ 'PANEL.RECORDING.STARTING' | translate }}</span>
+							<button mat-flat-button id="stop-recording-btn" (click)="stopRecording()">
+								<mat-icon>stop_circle</mat-icon>
+								<span>{{ 'TOOLBAR.STOP_RECORDING' | translate }}</span>
 							</button>
 						}
 						@case (recStatusEnum.STOPPING) {

@@ -347,7 +347,9 @@ operating system rather than by Meet.
   `503` response is gone from the operation.
 - **A recording that is still `starting` can now be stopped.** `POST /recordings/{recordingId}/stop`
   used to answer `409` for it (while cancelling it anyway); it now answers `202`, and the recording
-  ends `aborted` without a file.
+  ends `aborted` without a file. The meeting offers the stop as well, in the recording panel and in
+  the toolbar, where the control used to be disabled until the recording was active; a recording
+  that ends this way reads as stopped in the room, not as failed.
 - Stopping a recording could race a concurrent stop, and a recording that was starting or ending
   was not counted as in progress when the lock was released.
 - The per-room recording lock was released while a recording waited for its first track, which

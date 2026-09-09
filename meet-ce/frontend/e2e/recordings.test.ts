@@ -123,6 +123,26 @@ test.describe('Recordings E2E Tests', () => {
 			await pendingRequest.catch(() => {});
 		});
 
+		test('should let a moderator stop the recording while it waits, from the panel', async ({ page }) => {
+			await denyMediaAccess(page);
+			await openMeeting(page, accessUrl, { skipPrejoinMediaCheck: true });
+
+			const pendingRequest = requestRecording(roomId);
+			pendingRequest.catch(() => {});
+
+			await expectRecordingNotice(page, 'waiting-for-media');
+			await startStopRecordingFromActivitiesPanel(page, 'stop');
+
+			// Nothing was recorded, so the room is told nothing failed: the wait notice goes away
+			// and the panel offers to start again
+			await expectNoRecordingNotice(page);
+			await expectStartRecordingButtonVisible(page);
+			await expect
+				.poll(async () => (await getRoomRecordings(roomId))[0]?.status)
+				.toBe(MeetRecordingStatus.ABORTED);
+			await pendingRequest.catch(() => {});
+		});
+
 		test('should let a participant close the notice', async ({ page }) => {
 			await denyMediaAccess(page);
 			await openMeeting(page, accessUrl, { skipPrejoinMediaCheck: true });

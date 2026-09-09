@@ -142,11 +142,9 @@
 				<mat-icon color="warn">radio_button_checked</mat-icon>
 				<span>
 					{{
-						recordingStatus() === _recordingStatus.STOPPED ||
-						recordingStatus() === _recordingStatus.STOPPING ||
-						recordingStatus() === _recordingStatus.FAILED
-							? ('TOOLBAR.START_RECORDING' | translate)
-							: ('TOOLBAR.STOP_RECORDING' | translate)
+						isRecordingInProgress()
+							? ('TOOLBAR.STOP_RECORDING' | translate)
+							: ('TOOLBAR.START_RECORDING' | translate)
 					}}
 				</span>
 			</button>
