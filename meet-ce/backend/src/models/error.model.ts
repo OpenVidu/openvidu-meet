@@ -53,6 +53,10 @@ export const errorUnsupportedMediaType = (supportedTypes: string[]): OpenViduMee
 	);
 };
 
+export const errorInvalidPaginationToken = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Bad Request', 'Invalid pagination token', 400);
+};
+
 export const internalError = (operationDescription: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Internal Server Error', `Unexpected error while ${operationDescription}`, 500);
 };
