@@ -1,4 +1,5 @@
 import { inject, Service, signal } from '@angular/core';
+import { NotificationService } from '../../../../../shared/services/notification.service';
 import { SoundService } from '../../../../../shared/services/sound.service';
 
 /**
@@ -14,23 +15,17 @@ export class MeetingEndingSoonService {
 	private static readonly NOTICE_DURATION_MS = 12_000;
 
 	private readonly soundService = inject(SoundService);
+	private readonly notificationService = inject(NotificationService);
 
 	private endsAt: number | undefined;
 	private announceHandle: ReturnType<typeof setTimeout> | undefined;
-	private dismissHandle: ReturnType<typeof setTimeout> | undefined;
 	private countdownHandle: ReturnType<typeof setInterval> | undefined;
+	private shownId: number | undefined;
 
 	private readonly _remainingMs = signal<number | undefined>(undefined);
-	private readonly _noticeMinutes = signal<number | undefined>(undefined);
 
 	/** Milliseconds left before the meeting is force-ended, `undefined` until it is announced. */
 	readonly remainingMs = this._remainingMs.asReadonly();
-
-	/**
-	 * Whole minutes left when the meeting was announced, `undefined` once the notice is gone. Frozen
-	 * at that moment rather than derived from {@link remainingMs}, which goes on counting after it.
-	 */
-	readonly noticeMinutes = this._noticeMinutes.asReadonly();
 
 	/**
 	 * Tracks the instant this meeting is force-ended, in the device's clock, announcing it as soon as
@@ -58,12 +53,6 @@ export class MeetingEndingSoonService {
 		);
 	}
 
-	dismissNotice(): void {
-		clearTimeout(this.dismissHandle);
-		this.dismissHandle = undefined;
-		this._noticeMinutes.set(undefined);
-	}
-
 	private announceEndingSoon(): void {
 		if (this.endsAt === undefined) return;
 
@@ -88,11 +77,30 @@ export class MeetingEndingSoonService {
 		}
 	}
 
+	/**
+	 * The minutes left are frozen into the announcement rather than counted down in it: the countdown
+	 * belongs to the status rail, which keeps it for the whole window, while this is read once.
+	 */
 	private showNotice(minutes: number): void {
 		this.dismissNotice();
-		this._noticeMinutes.set(minutes);
-		this.dismissHandle = setTimeout(() => this.dismissNotice(), MeetingEndingSoonService.NOTICE_DURATION_MS);
+		this.shownId = this.notificationService.showNotification({
+			kind: 'meeting-ending-soon',
+			icon: 'schedule',
+			tone: 'warning',
+			titleKey: 'ROOM.ENDING_SOON_TITLE',
+			messageKey: minutes === 1 ? 'ROOM.ENDING_SOON_ONE_MINUTE' : 'ROOM.ENDING_SOON_MANY_MINUTES',
+			messageParams: { minutes },
+			dismissLabelKey: 'ROOM.ENDING_SOON_DISMISS',
+			durationMs: MeetingEndingSoonService.NOTICE_DURATION_MS
+		});
 		this.soundService.playMeetingEndingSoonSound();
+	}
+
+	private dismissNotice(): void {
+		if (this.shownId === undefined) return;
+
+		this.notificationService.dismissNotification(this.shownId);
+		this.shownId = undefined;
 	}
 
 	private reset(): void {

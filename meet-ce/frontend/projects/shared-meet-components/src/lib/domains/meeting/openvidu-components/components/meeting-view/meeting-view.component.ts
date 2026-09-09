@@ -19,6 +19,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { NotificationsComponent } from '../../../../../shared/components/notifications/notifications.component';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { SidenavLayoutDirective } from '../../directives/layout/sidenav-layout.directive';
@@ -69,6 +70,7 @@ import { DeviceService } from '../../services/device/device.service';
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import type { Room } from '../../services/livekit';
 import { MeetingEndingSoonService } from '../../services/meeting-ending-soon/meeting-ending-soon.service';
+import { RecordingNoticeService } from '../../services/recording-notice/recording-notice.service';
 import { MeetingEventsService } from '../../services/meeting-events/meeting-events.service';
 import { LocalMediaIntentService } from '../../services/local-media-intent/local-media-intent.service';
 import { LocalTrackService } from '../../services/local-track/local-track.service';
@@ -82,8 +84,6 @@ import { MeetingTranslateService } from '../../services/translate/meeting-transl
 import { ViewportService } from '../../services/viewport/viewport.service';
 import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
 import { HiddenParticipantsIndicatorComponent } from '../hidden-participants-indicator/hidden-participants-indicator.component';
-import { EndingSoonNoticeComponent } from '../ending-soon-notice/ending-soon-notice.component';
-import { RecordingNoticeComponent } from '../recording-notice/recording-notice.component';
 import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
 import { SmartLayoutComponent } from '../layout/smart-layout/smart-layout.component';
 import { MeetingMediaSetupComponent } from '../meeting-media-setup/meeting-media-setup.component';
@@ -114,9 +114,8 @@ import { ToolbarComponent } from '../toolbar/toolbar.component';
 		MeetingMediaSetupComponent,
 		DatePipe,
 		HiddenParticipantsIndicatorComponent,
-		EndingSoonNoticeComponent,
-		RecordingNoticeComponent,
 		LandscapeWarningComponent,
+		NotificationsComponent,
 		ToolbarComponent,
 		PanelComponent,
 		BackgroundEffectsPanelComponent,
@@ -151,6 +150,9 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	private readonly meetingEventsService = inject(MeetingEventsService);
 	private readonly translateService = inject(MeetingTranslateService);
 	private readonly meetingEndingSoonService = inject(MeetingEndingSoonService);
+	// Injected for its own sake: it watches the recording state and announces it to the room, and
+	// this is the view that hosts the notifications it raises.
+	private readonly recordingNoticeService = inject(RecordingNoticeService);
 	private readonly smartLayoutService = inject(SmartLayoutService);
 	private readonly recordingService = inject(RecordingService);
 	protected readonly viewportService = inject(ViewportService);

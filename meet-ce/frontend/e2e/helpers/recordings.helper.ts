@@ -13,7 +13,7 @@ const STOP_RECORDING_BUTTON = '#stop-recording-btn';
 const VIEW_RECORDINGS_BUTTON = '#view-recordings-btn';
 const SETTINGS_RECORDING_BUTTON = '#recording-btn';
 const RECORDING_TAG = '#recording-tag';
-const RECORDING_NOTICE = '.recording-notice';
+const NOTIFICATION = '.ov-notification';
 
 /**
  * Ensures the activities panel is open, toggling it if currently closed.
@@ -160,31 +160,31 @@ export const expectNoRecordButton = async (page: Page): Promise<void> => {
 };
 
 /**
- * Asserts that the meeting stage is announcing the given recording transition. Read off
- * `data-announcement` rather than the notice's text, which is human copy in the active language.
+ * Asserts that the meeting stage is announcing the given recording transition. Read off `data-kind`
+ * rather than the notification's text, which is human copy in the active language.
  */
 export const expectRecordingNotice = async (
 	page: Page,
 	announcement: 'started' | 'stopped' | 'waiting-for-media',
 	timeoutMs = 15_000
 ): Promise<void> => {
-	await expect(page.locator(`${RECORDING_NOTICE}[data-announcement="${announcement}"]`)).toBeVisible({
+	await expect(page.locator(`${NOTIFICATION}[data-kind="recording-${announcement}"]`)).toBeVisible({
 		timeout: timeoutMs
 	});
 };
 
 /**
- * Asserts that no recording notice is on the meeting stage.
+ * Asserts that the meeting stage is announcing nothing about the recording.
  */
 export const expectNoRecordingNotice = async (page: Page, timeoutMs = 15_000): Promise<void> => {
-	await expect(page.locator(RECORDING_NOTICE)).toBeHidden({ timeout: timeoutMs });
+	await expect(page.locator(`${NOTIFICATION}[data-kind^="recording-"]`)).toBeHidden({ timeout: timeoutMs });
 };
 
 /**
- * Closes the recording notice the way a participant does.
+ * Closes the recording notification the way a participant does.
  */
 export const dismissRecordingNotice = async (page: Page): Promise<void> => {
-	await page.locator(`${RECORDING_NOTICE} .notice-dismiss`).click();
+	await page.locator(`${NOTIFICATION}[data-kind^="recording-"] .notification-dismiss`).click();
 };
 
 /**

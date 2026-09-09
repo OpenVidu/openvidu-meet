@@ -1,10 +1,41 @@
-import { effect, inject, Service, signal } from '@angular/core';
+import { effect, inject, Service } from '@angular/core';
+import { NotificationService } from '../../../../../shared/services/notification.service';
 import { RecordingState } from '../../models/recording.model';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
 import { RecordingService } from '../recording/recording.service';
 
 /** Which transition the room is being told about. */
 export type RecordingAnnouncement = 'started' | 'stopped' | 'waiting-for-media';
+
+/** Long enough to be read, short enough not to sit on top of the meeting. */
+const NOTICE_DURATION_MS = 10_000;
+
+/**
+ * What each announcement puts on the notification. The wait is the one with no duration: it has no
+ * end of its own, so it stays until it is dismissed.
+ */
+const ANNOUNCEMENTS = {
+	started: {
+		icon: 'radio_button_checked',
+		tone: 'alert' as const,
+		titleKey: 'ROOM.RECORDING_STARTED_TITLE',
+		messageKey: 'ROOM.RECORDING_STARTED_MESSAGE',
+		durationMs: NOTICE_DURATION_MS
+	},
+	stopped: {
+		icon: 'radio_button_checked',
+		tone: 'neutral' as const,
+		titleKey: 'ROOM.RECORDING_STOPPED_TITLE',
+		messageKey: 'ROOM.RECORDING_STOPPED_MESSAGE',
+		durationMs: NOTICE_DURATION_MS
+	},
+	'waiting-for-media': {
+		icon: 'hourglass_top',
+		tone: 'neutral' as const,
+		titleKey: 'ROOM.RECORDING_WAITING_MEDIA_TITLE',
+		messageKey: 'ROOM.RECORDING_WAITING_MEDIA_MESSAGE'
+	}
+};
 
 /**
  * Announces to every participant that the recording has started or stopped.
@@ -23,19 +54,13 @@ export type RecordingAnnouncement = 'started' | 'stopped' | 'waiting-for-media';
  */
 @Service()
 export class RecordingNoticeService {
-	private static readonly NOTICE_DURATION_MS = 10_000;
-
 	private readonly recordingService = inject(RecordingService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
+	private readonly notificationService = inject(NotificationService);
 
 	private wasRecording = false;
 	private wasWaitingForMedia = false;
-	private dismissHandle: ReturnType<typeof setTimeout> | undefined;
-
-	private readonly _announcement = signal<RecordingAnnouncement | undefined>(undefined);
-
-	/** The transition to announce, `undefined` once the notice is gone. */
-	readonly announcement = this._announcement.asReadonly();
+	private shownId: number | undefined;
 
 	private readonly announceEffect = effect(() => {
 		const { status } = this.recordingService.recordingStatus();
@@ -65,12 +90,6 @@ export class RecordingNoticeService {
 		}
 	});
 
-	dismiss(): void {
-		clearTimeout(this.dismissHandle);
-		this.dismissHandle = undefined;
-		this._announcement.set(undefined);
-	}
-
 	/** Answered off this client's own room, which is where a track publication is already known. */
 	private hasRoomTracksPublished(): boolean {
 		return this.meetingLiveKitService.isInitialized() && this.meetingLiveKitService.hasRoomTracksPublished();
@@ -78,10 +97,17 @@ export class RecordingNoticeService {
 
 	private announce(announcement: RecordingAnnouncement): void {
 		this.dismiss();
-		this._announcement.set(announcement);
+		this.shownId = this.notificationService.showNotification({
+			kind: `recording-${announcement}`,
+			dismissLabelKey: 'PANEL.CLOSE',
+			...ANNOUNCEMENTS[announcement]
+		});
+	}
 
-		if (announcement === 'waiting-for-media') return;
+	private dismiss(): void {
+		if (this.shownId === undefined) return;
 
-		this.dismissHandle = setTimeout(() => this.dismiss(), RecordingNoticeService.NOTICE_DURATION_MS);
+		this.notificationService.dismissNotification(this.shownId);
+		this.shownId = undefined;
 	}
 }

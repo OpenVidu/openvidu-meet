@@ -1,5 +1,9 @@
+import { Overlay } from '@angular/cdk/overlay';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { NotificationService } from '../../../../../shared/services/notification.service';
 import { SoundService } from '../../../../../shared/services/sound.service';
 import { MeetingEndingSoonService } from './meeting-ending-soon.service';
 
@@ -8,8 +12,18 @@ describe('MeetingEndingSoonService', () => {
 
 	let service: MeetingEndingSoonService;
 	let soundService: jasmine.SpyObj<SoundService>;
+	let notificationService: NotificationService;
 
 	const endsIn = (ms: number) => Date.now() + ms;
+
+	/** The minutes the room is being told about, or `undefined` when nothing is being told. */
+	const announcedMinutes = (): number | undefined => {
+		const announcement = notificationService
+			.notifications()
+			.find((notification) => notification.kind === 'meeting-ending-soon');
+
+		return announcement?.messageParams?.['minutes'] as number | undefined;
+	};
 
 	beforeEach(() => {
 		// mockDate is required too: without it, Date.now() keeps returning real wall-clock time
@@ -24,11 +38,18 @@ describe('MeetingEndingSoonService', () => {
 			providers: [
 				provideZonelessChangeDetection(),
 				MeetingEndingSoonService,
-				{ provide: SoundService, useValue: soundService }
+				NotificationService,
+				{ provide: SoundService, useValue: soundService },
+				// The real notification service is under test here through its caller; only its
+				// Material collaborators, which this never reaches, are stubbed out.
+				{ provide: MatSnackBar, useValue: {} },
+				{ provide: MatDialog, useValue: {} },
+				{ provide: Overlay, useValue: {} }
 			]
 		});
 
 		service = TestBed.inject(MeetingEndingSoonService);
+		notificationService = TestBed.inject(NotificationService);
 	});
 
 	afterEach(() => {
@@ -37,7 +58,7 @@ describe('MeetingEndingSoonService', () => {
 
 	it('has nothing to show before a meeting is tracked', () => {
 		expect(service.remainingMs()).toBeUndefined();
-		expect(service.noticeMinutes()).toBeUndefined();
+		expect(announcedMinutes()).toBeUndefined();
 	});
 
 	describe("tracking the meeting's own end", () => {
@@ -57,7 +78,7 @@ describe('MeetingEndingSoonService', () => {
 			jasmine.clock().tick(60_000);
 
 			expect(service.remainingMs()).toBe(NOTICE_WINDOW_MS);
-			expect(service.noticeMinutes()).toBe(5);
+			expect(announcedMinutes()).toBe(5);
 			expect(soundService.playMeetingEndingSoonSound).toHaveBeenCalledTimes(1);
 		});
 
@@ -65,7 +86,7 @@ describe('MeetingEndingSoonService', () => {
 			service.trackMeetingEnd(endsIn(90_000));
 
 			expect(service.remainingMs()).toBe(90_000);
-			expect(service.noticeMinutes()).toBe(2);
+			expect(announcedMinutes()).toBe(2);
 			expect(soundService.playMeetingEndingSoonSound).toHaveBeenCalledTimes(1);
 		});
 
@@ -73,7 +94,7 @@ describe('MeetingEndingSoonService', () => {
 			service.trackMeetingEnd(endsIn(60_000));
 
 			expect(service.remainingMs()).toBe(60_000);
-			expect(service.noticeMinutes()).toBe(1);
+			expect(announcedMinutes()).toBe(1);
 		});
 
 		it('ticks down once a second, against the clock rather than a fixed decrement', () => {
@@ -110,7 +131,7 @@ describe('MeetingEndingSoonService', () => {
 			service.trackMeetingEnd(undefined);
 
 			expect(service.remainingMs()).toBeUndefined();
-			expect(service.noticeMinutes()).toBeUndefined();
+			expect(announcedMinutes()).toBeUndefined();
 
 			jasmine.clock().tick(10_000);
 			expect(service.remainingMs()).toBeUndefined();
@@ -119,11 +140,11 @@ describe('MeetingEndingSoonService', () => {
 
 	it('dismisses the notice on its own, leaving the countdown running', () => {
 		service.trackMeetingEnd(endsIn(120_000));
-		expect(service.noticeMinutes()).toBe(2);
+		expect(announcedMinutes()).toBe(2);
 
 		jasmine.clock().tick(12_000);
 
-		expect(service.noticeMinutes()).toBeUndefined();
+		expect(announcedMinutes()).toBeUndefined();
 		expect(service.remainingMs()).toBe(108_000);
 	});
 });
