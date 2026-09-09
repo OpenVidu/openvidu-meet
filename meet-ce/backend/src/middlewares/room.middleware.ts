@@ -7,9 +7,8 @@ import {
 	errorInsufficientPermissions,
 	errorRoomNotFound,
 	handleError,
-	internalError,
-	OpenViduMeetError,
-	rejectRequestFromMeetError
+	rejectRequestFromMeetError,
+	toMeetError
 } from '../models/error.model.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomService } from '../services/room.service.js';
@@ -231,8 +230,7 @@ export const validateBulkDeleteRoomManagement = async (_req: Request, res: Respo
 
 				return { ok: true, roomId };
 			} catch (error) {
-				const meetError =
-					error instanceof OpenViduMeetError ? error : internalError(`deleting room '${roomId}'`);
+				const meetError = toMeetError(error, `deleting room '${roomId}'`);
 
 				return {
 					ok: false,
