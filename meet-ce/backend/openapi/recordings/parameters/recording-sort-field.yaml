@@ -1,7 +1,10 @@
 name: sortField
 in: query
 required: false
-description: The recording field by which to sort the results.
+description: >
+    The recording field by which to sort the results. Recordings that do not carry the sort field
+    are placed last in descending order and first in ascending order, so recordings that have not
+    started recording yet are listed apart from the rest when sorting by `startDate`.
 schema:
     type: string
     enum:

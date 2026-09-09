@@ -35,9 +35,10 @@ previous ones, which keep working until 3.12.0.
 
 ### Breaking changes
 
-**None.** No endpoint, attribute, command or event was removed, no response field disappeared and
-no value changed. Host application code written against 3.8.0 keeps working, over both the web
-component and the iframe.
+**None.** No endpoint, attribute, command or event was removed. Host application code written
+against 3.8.0 keeps working, over both the web component and the iframe. A recording's `startDate`
+is corrected in this version and is not sent while a recording has not started recording yet, which
+is described under [Recordings](#recordings).
 
 ### Deprecated
 
@@ -312,6 +313,19 @@ operating system rather than by Meet.
 
 #### Recordings
 
+- **A recording's `startDate` was the moment the recording was requested, not the moment it started
+  recording media.** Every recording reported a start earlier than its own first frame, so its
+  duration never matched the distance between its start and its end, and the elapsed time shown
+  during the meeting ran ahead of the recording; one that waited for a participant to publish
+  reported a start minutes early. `startDate` is now that first frame, and is no longer sent while
+  a recording has not reached it: a recording in the `starting` status, and one that ended without
+  recording anything (`failed` and `aborted` statuses), carry no `startDate` where they used to
+  carry that inaccurate value. This reaches `GET /recordings`, `GET /recordings/{recordingId}` and
+  the `recordingStarted`, `recordingUpdated` and `recordingEnded` webhooks, so code that reads
+  `startDate` must tolerate its absence, and code that sorts by it should expect those recordings
+  grouped apart from the rest. `POST /recordings` and `POST /recordings/{recordingId}/stop` answer
+  with a recording that is already recording, so their responses still carry it. Recordings made
+  before this version keep the value they were stored with.
 - Stopping a recording could race a concurrent stop, and a recording that was starting or ending
   was not counted as in progress when the lock was released.
 - The auto-start latch outlived its own meeting.

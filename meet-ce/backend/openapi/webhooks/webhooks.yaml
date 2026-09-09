@@ -5,6 +5,8 @@ recordingStarted:
             This webhook is triggered when a recording starts.
 
             > The recording can be in the `starting` status for a few seconds before it becomes `active`.
+            > A recording in the `starting` status carries no `startDate`: it has not recorded anything
+            > yet. The `recordingUpdated` webhook reports it when the recording becomes `active`.
         operationId: recordingStartedWebhook
         parameters:
             - $ref: ./parameters/x-timestamp.yaml
@@ -74,6 +76,8 @@ recordingEnded:
 
             > The recording can end due to various reasons, such as a participant stopping the recording
             > or the recording reaching its maximum duration.
+            > A recording that ended without ever recording media (`failed` and `aborted` statuses)
+            > carries no `startDate`, `duration` or `size`.
         operationId: recordingEndedWebhook
         parameters:
             - $ref: ./parameters/x-timestamp.yaml
@@ -93,8 +97,6 @@ recordingEnded:
                                       type: object
                                       required:
                                           - endDate
-                                          - duration
-                                          - size
                                           - details
                                       allOf:
                                           - $ref: ../recordings/schemas/recording-base.yaml

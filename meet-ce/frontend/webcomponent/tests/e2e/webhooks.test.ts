@@ -3,6 +3,7 @@ import {
 	MeetParticipantJoinedPayload,
 	MeetParticipantLeftPayload,
 	MeetRecordingInfo,
+	MeetRecordingStatus,
 	MeetRoomMemberRole,
 	MeetRoomStatus,
 	MeetWebhookEventType
@@ -113,15 +114,23 @@ test.describe('Webhooks E2E Tests', () => {
 		expect(recordingStartedWebhook.event).toBe(MeetWebhookEventType.RECORDING_STARTED);
 		expect(recordingStartedWebhook.data).toBeDefined();
 
-		const recordingId = (recordingStartedWebhook.data as MeetRecordingInfo).recordingId;
+		const startedRecording = recordingStartedWebhook.data as MeetRecordingInfo;
+		const recordingId = startedRecording.recordingId;
 		expect(recordingId).toBeDefined();
 
-		const actualRecording = await getRecording(recordingId);
-		expect(recordingStartedWebhook.data).toMatchObject({
+		// startDate is compared apart: a recording still starting has not recorded anything yet,
+		// so it carries no startDate while the one read back may already be active
+		const { startDate: _startDate, ...actualRecording } = await getRecording(recordingId);
+		expect(startedRecording).toMatchObject({
 			...actualRecording,
-			startDate: expect.any(Number),
 			status: expect.stringMatching(/active|starting/)
 		});
+
+		if (startedRecording.status === MeetRecordingStatus.ACTIVE) {
+			expect(startedRecording.startDate).toEqual(expect.any(Number));
+		} else {
+			expect(startedRecording.startDate).toBeUndefined();
+		}
 
 		await expectWebhook(page, MeetWebhookEventType.RECORDING_UPDATED);
 

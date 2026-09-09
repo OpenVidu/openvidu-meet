@@ -249,15 +249,23 @@ export class RecordingHelper {
 	}
 
 	/**
-	 * Extracts the creation timestamp from the given EgressInfo object.
-	 * If the startedAt property is not defined, it returns 0.
-	 * @param egressInfo The EgressInfo object from which to extract the creation timestamp.
-	 * @returns The creation timestamp in milliseconds.
+	 * Extracts the instant the recording started writing media from the given EgressInfo object.
+	 *
+	 * The egress's own `startedAt` is stamped when the request is accepted, which can be minutes
+	 * before any media exists, so the file result is the only accurate source. LiveKit backfills the
+	 * file's `startedAt` with its `endedAt` when the egress ended without ever recording, and that
+	 * case is reported as no start date at all.
+	 *
+	 * @param egressInfo The EgressInfo object from which to extract the start date.
+	 * @returns The start date in milliseconds, or `undefined` if the recording has not started.
 	 */
-	static extractStartDate(egressInfo: EgressInfo): number {
-		const { startedAt, updatedAt } = egressInfo;
-		const createdAt = startedAt && Number(startedAt) !== 0 ? startedAt : (updatedAt ?? 0);
-		return this.toMilliseconds(Number(createdAt));
+	static extractStartDate(egressInfo: EgressInfo): number | undefined {
+		const { startedAt, endedAt } = egressInfo.fileResults?.[0] ?? {};
+
+		if (startedAt === endedAt) return undefined;
+
+		const startDateMs = this.toMilliseconds(Number(startedAt ?? 0));
+		return startDateMs !== 0 ? startDateMs : undefined;
 	}
 
 	static extractUpdatedDate(egressInfo: EgressInfo): number | undefined {
