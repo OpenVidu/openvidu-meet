@@ -43,6 +43,8 @@
                 $ref: '../rooms/responses/errors/room-not-found.yaml'
             '409':
                 $ref: './responses/errors/recording-conflict.yaml'
+            '413':
+                $ref: '../shared/responses/errors/payload-too-large.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
             '429':

@@ -110,6 +110,8 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '404':
                 $ref: './responses/errors/no-active-meeting.yaml'
+            '413':
+                $ref: '../shared/responses/errors/payload-too-large.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
             '429':
@@ -200,6 +202,8 @@
                 $ref: './responses/errors/room-participant-not-found.yaml'
             '409':
                 $ref: './responses/errors/participant-mute-conflict.yaml'
+            '413':
+                $ref: '../shared/responses/errors/payload-too-large.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
             '429':
@@ -239,6 +243,8 @@
                 $ref: './responses/errors/room-participant-not-found.yaml'
             '409':
                 $ref: './responses/errors/participant-role-conflict.yaml'
+            '413':
+                $ref: '../shared/responses/errors/payload-too-large.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
             '429':

@@ -10,7 +10,7 @@ import { LoggerService } from '../services/logger.service.js';
 // map is installed at boot in both editions before any request is parsed.
 configureZodErrorMessages();
 
-type StatusError = 400 | 401 | 402 | 403 | 404 | 409 | 415 | 416 | 422 | 500 | 503;
+type StatusError = 400 | 401 | 402 | 403 | 404 | 409 | 413 | 415 | 416 | 422 | 500 | 503;
 export class OpenViduMeetError extends Error {
 	name: string;
 	statusCode: StatusError;
@@ -35,6 +35,10 @@ interface ErrorResponse {
 
 export const errorMalformedBody = (): OpenViduMeetError => {
 	return new OpenViduMeetError('Bad Request', 'Malformed body', 400);
+};
+
+export const errorPayloadTooLarge = (limitBytes: number): OpenViduMeetError => {
+	return new OpenViduMeetError('Payload Too Large', `Request body exceeds the limit of ${limitBytes} bytes`, 413);
 };
 
 export const errorProFeature = (operation: string): OpenViduMeetError => {
