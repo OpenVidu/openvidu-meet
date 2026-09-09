@@ -77,6 +77,15 @@ const optionalBooleanAttribute = (value: unknown): boolean | undefined =>
 	}
 })
 export class App {
+	/**
+	 * The mount that currently owns the state shared through the root injector (router, meeting
+	 * context). A host remounting `<openvidu-meet>` replaces the element rather than moving it, so the
+	 * incoming instance can be constructed before the outgoing one is destroyed. Ownership makes the
+	 * newest mount the only writer, so the outgoing instance's cleanup cannot clear what the incoming
+	 * one has already set up.
+	 */
+	private static activeMount: App | null = null;
+
 	// ── Injected dependencies ────────────────────────────────────────────────
 	protected readonly themeService = inject(ThemeService);
 	protected readonly router = inject(WcRouterService);
@@ -181,6 +190,13 @@ export class App {
 	});
 
 	constructor() {
+		// Claim the shared state before the effects below run, so the navigate effect always starts
+		// from a clean router and reaches syncHomeRoute with no stored home: re-entering the same room
+		// is then a navigation, not a no-op.
+		App.activeMount = this;
+		this.meetingContext.clearMeetingContext();
+		this.router.reset();
+
 		// ── Reactive wiring ──
 		// Effect creation order is significant: the server base URL must be set (first effect) before
 		// the navigate effect runs, because the route guards call the API.
@@ -245,9 +261,13 @@ export class App {
 			}
 		});
 
-		// The meeting context and router outlive this component instance (shared root injector), so
-		// a genuine destroy must clear both.
+		// The meeting context and router outlive this component instance (shared root injector), so a
+		// genuine destroy must clear both. A remount has already handed ownership to the incoming
+		// mount by this point, and clearing there would blank it.
 		this._destroyRef.onDestroy(() => {
+			if (App.activeMount !== this) return;
+
+			App.activeMount = null;
 			this.meetingContext.clearMeetingContext();
 			this.router.reset();
 		});
