@@ -1,7 +1,7 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LoggerService } from '../../../../../shared/services/logger.service';
-import { ActionService } from '../../services/action/action.service';
+import { DialogService } from '../../../../../shared/services/dialog.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
@@ -61,7 +61,7 @@ describe('MeetingViewComponent', () => {
 	let showPrejoin: ReturnType<typeof signal<boolean>>;
 	let meetingLiveKitService: jasmine.SpyObj<MeetingLiveKitService>;
 	let participantService: jasmine.SpyObj<ParticipantService>;
-	let actionService: jasmine.SpyObj<ActionService>;
+	let dialogService: jasmine.SpyObj<DialogService>;
 	let tokenProvider: jasmine.Spy<() => Promise<string>>;
 
 	/** Runs the device initialization the view waits on before it decides its first phase. */
@@ -97,7 +97,7 @@ describe('MeetingViewComponent', () => {
 		participantService.connect.and.resolveTo();
 		participantService.localParticipant.and.returnValue(undefined);
 
-		actionService = jasmine.createSpyObj<ActionService>('ActionService', ['openDialog']);
+		dialogService = jasmine.createSpyObj<DialogService>('DialogService', ['showDialog', 'showBlockingDialog']);
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -105,7 +105,7 @@ describe('MeetingViewComponent', () => {
 				{ provide: LoggerService, useClass: LoggerServiceStub },
 				{ provide: MeetingLiveKitService, useValue: meetingLiveKitService },
 				{ provide: ParticipantService, useValue: participantService },
-				{ provide: ActionService, useValue: actionService },
+				{ provide: DialogService, useValue: dialogService },
 				{
 					provide: MeetingUiConfigService,
 					useValue: {
@@ -270,7 +270,7 @@ describe('MeetingViewComponent', () => {
 			fixture.destroy();
 			await mint.reject();
 
-			expect(actionService.openDialog).not.toHaveBeenCalled();
+			expect(dialogService.showDialog).not.toHaveBeenCalled();
 		});
 	});
 
@@ -283,7 +283,7 @@ describe('MeetingViewComponent', () => {
 			component._onReadyToJoin();
 			await mint.reject();
 
-			expect(actionService.openDialog).toHaveBeenCalled();
+			expect(dialogService.showDialog).toHaveBeenCalled();
 			expect(participantService.connect).not.toHaveBeenCalled();
 		});
 	});

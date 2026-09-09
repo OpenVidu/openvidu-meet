@@ -29,7 +29,7 @@ import {
 	RecordingState,
 	RecordingStopRequestedEvent
 } from '../../models/recording.model';
-import { ActionService } from '../../services/action/action.service';
+import { DialogService } from '../../../../../shared/services/dialog.service';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { ChatService } from '../../services/chat/chat.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
@@ -78,7 +78,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly localMediaState = inject(LocalMediaStateService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly deviceService = inject(DeviceService);
-	private readonly actionService = inject(ActionService);
+	private readonly dialogService = inject(DialogService);
 	private readonly recordingService = inject(RecordingService);
 	private readonly meetingContext = inject(MeetingContextService);
 	private readonly translateService = inject(MeetingTranslateService);
@@ -404,10 +404,12 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			await this.localMediaControlService.setMicrophoneEnabled(!isMicrophoneEnabled);
 		} catch (error: unknown) {
 			this.log.e('There was an error toggling microphone:', (error as any).code, (error as any).message);
-			this.actionService.openDialog(
-				this.translateService.translate('ERRORS.TOGGLE_MICROPHONE'),
-				this.translateService.translate('ERRORS.GENERIC')
-			);
+			this.dialogService.showDialog({
+				title: this.translateService.translate('ERRORS.TOGGLE_MICROPHONE'),
+				message: this.translateService.translate('ERRORS.GENERIC'),
+				showCancelButton: false,
+				confirmText: this.translateService.translate('PANEL.CLOSE')
+			});
 		} finally {
 			this.microphoneMuteChanging.set(false);
 		}
@@ -428,10 +430,12 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			await this.localMediaControlService.setCameraEnabled(!isCameraEnabled);
 		} catch (error) {
 			this.log.e('There was an error toggling camera:', (error as any).code, (error as any).message);
-			this.actionService.openDialog(
-				this.translateService.translate('ERRORS.TOGGLE_CAMERA'),
-				this.translateService.translate('ERRORS.GENERIC')
-			);
+			this.dialogService.showDialog({
+				title: this.translateService.translate('ERRORS.TOGGLE_CAMERA'),
+				message: this.translateService.translate('ERRORS.GENERIC'),
+				showCancelButton: false,
+				confirmText: this.translateService.translate('PANEL.CLOSE')
+			});
 		} finally {
 			this.cameraMuteChanging.set(false);
 		}
@@ -469,10 +473,12 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			}, false);
 		} catch (error) {
 			this.log.e('There was an error disconnecting:', (error as any).code, (error as any).message);
-			this.actionService.openDialog(
-				this.translateService.translate('ERRORS.DISCONNECT'),
-				this.translateService.translate('ERRORS.GENERIC')
-			);
+			this.dialogService.showDialog({
+				title: this.translateService.translate('ERRORS.DISCONNECT'),
+				message: this.translateService.translate('ERRORS.GENERIC'),
+				showCancelButton: false,
+				confirmText: this.translateService.translate('PANEL.CLOSE')
+			});
 		}
 	}
 

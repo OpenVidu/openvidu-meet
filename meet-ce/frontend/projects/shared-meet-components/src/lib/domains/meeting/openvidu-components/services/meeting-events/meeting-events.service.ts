@@ -22,7 +22,6 @@ import {
 	TrackPublication
 } from '../../services/livekit';
 import { safeJsonParse } from '../../utils/utils';
-import { ActionService } from '../action/action.service';
 import { ChatService } from '../chat/chat.service';
 import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
@@ -30,6 +29,7 @@ import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.servic
 import { ParticipantService } from '../participant/participant.service';
 import { RecordingService } from '../recording/recording.service';
 import { MeetingTranslateService } from '../translate/meeting-translate.service';
+import { DialogService } from '../../../../../shared/services/dialog.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { MeetStorageService } from '../../../../../shared/services/storage.service';
 
@@ -41,7 +41,7 @@ export interface MeetingEventCallbacks {
 
 @Service()
 export class MeetingEventsService {
-	private readonly actionService = inject(ActionService);
+	private readonly dialogService = inject(DialogService);
 	private readonly chatService = inject(ChatService);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly loggerSrv = inject(LoggerService);
@@ -339,16 +339,16 @@ export class MeetingEventsService {
 		room.on(RoomEvent.Reconnecting, () => {
 			this.reconnectInProgress = true;
 			this.log.w('Connection lost: Reconnecting');
-			this.actionService.openConnectionDialog(
-				this.translateService.translate('ERRORS.CONNECTION'),
-				this.translateService.translate('ERRORS.RECONNECT')
-			);
+			this.dialogService.showBlockingDialog({
+				title: this.translateService.translate('ERRORS.CONNECTION'),
+				message: this.translateService.translate('ERRORS.RECONNECT')
+			});
 			callbacks.onRoomReconnecting();
 		});
 
 		room.on(RoomEvent.Reconnected, () => {
 			this.log.w('Connection lost: Reconnected');
-			this.actionService.closeConnectionDialog();
+			this.dialogService.closeBlockingDialog();
 			// LiveKit replays the ParticipantConnected events buffered during the reconnect
 			// synchronously right after this event, so release the flag one microtask later and
 			// only then re-evaluate whether the local video is truly alone (everyone may have
@@ -363,7 +363,7 @@ export class MeetingEventsService {
 		room.on(RoomEvent.Disconnected, async (reason: DisconnectReason | undefined) => {
 			this.reconnectInProgress = false;
 			this._activeSpeakers.set([]);
-			this.actionService.closeConnectionDialog();
+			this.dialogService.closeBlockingDialog();
 			const participantLeftEvent: ParticipantLeftEvent = {
 				roomName: this.meetingLiveKitService.getRoomName(),
 				participantName: this.participantService.getMyName() || '',

@@ -20,6 +20,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NotificationsComponent } from '../../../../../shared/components/notifications/notifications.component';
+import { DialogService } from '../../../../../shared/services/dialog.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { SidenavLayoutDirective } from '../../directives/layout/sidenav-layout.directive';
@@ -64,7 +65,6 @@ import {
 	RecordingStopRequestedEvent
 } from '../../models/recording.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
-import { ActionService } from '../../services/action/action.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
@@ -142,7 +142,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	private readonly mediaIntent = inject(LocalMediaIntentService);
 	private readonly localTrackService = inject(LocalTrackService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
-	private readonly actionService = inject(ActionService);
+	private readonly dialogService = inject(DialogService);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly panelService = inject(PanelService);
@@ -480,7 +480,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 
 		// Open dialog only when user is already in the session (not on prejoin)
 		if (prevPhase !== 'prejoin' && prevPhase !== 'loading') {
-			this.actionService.openDialog(error.name, error.message, false);
+			this.dialogService.showBlockingDialog({ title: error.name, message: error.message });
 		}
 
 		// A token error raised while connected has to release the room. Before the merge this was
@@ -754,10 +754,12 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	 * internals into the dialog. Callers are responsible for logging the technical detail.
 	 */
 	private showStartupError(messageKey: string): void {
-		this.actionService.openDialog(
-			this.translateService.translate('ERRORS.SESSION'),
-			this.translateService.translate(messageKey)
-		);
+		this.dialogService.showDialog({
+			title: this.translateService.translate('ERRORS.SESSION'),
+			message: this.translateService.translate(messageKey),
+			showCancelButton: false,
+			confirmText: this.translateService.translate('PANEL.CLOSE')
+		});
 	}
 
 	/**

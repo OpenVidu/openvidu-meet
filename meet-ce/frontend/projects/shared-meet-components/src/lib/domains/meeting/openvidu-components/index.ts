@@ -47,7 +47,6 @@ export * from './models/viewport.model';
 export * from './pipes/participant.pipe';
 export * from './pipes/translate.pipe';
 // Services
-export * from './services/action/action.service';
 export * from './services/chat/chat.service';
 export * from './services/e2ee/e2ee.service';
 export * from './services/layout/smart-layout.service';

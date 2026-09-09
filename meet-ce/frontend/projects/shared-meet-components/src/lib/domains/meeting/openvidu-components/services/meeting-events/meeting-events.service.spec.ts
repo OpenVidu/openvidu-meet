@@ -6,7 +6,7 @@ import { MeetStorageService } from '../../../../../shared/services/storage.servi
 import { DataTopic } from '../../models/data-topic.model';
 import { ParticipantModel } from '../../models/participant.model';
 import { RemoteParticipant, Room, RoomEvent } from '../../services/livekit';
-import { ActionService } from '../action/action.service';
+import { DialogService } from '../../../../../shared/services/dialog.service';
 import { ChatService } from '../chat/chat.service';
 import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
@@ -58,7 +58,7 @@ describe('MeetingEventsService', () => {
 							sid === storedParticipant.sid ? storedParticipant : undefined
 					}
 				},
-				{ provide: ActionService, useValue: {} },
+				{ provide: DialogService, useValue: {} },
 				{ provide: MeetingUiConfigService, useValue: {} },
 				{ provide: MeetingLiveKitService, useValue: {} },
 				{ provide: StreamLayoutStateService, useValue: {} },
@@ -147,6 +147,7 @@ describe('MeetingEventsService (reconnection view state)', () => {
 	let emit: (event: RoomEvent, ...args: unknown[]) => void;
 	let remotes: ParticipantModel[];
 	let callbacks: MeetingEventCallbacks;
+	let dialogService: jasmine.SpyObj<DialogService>;
 
 	beforeEach(() => {
 		remotes = [];
@@ -161,6 +162,10 @@ describe('MeetingEventsService (reconnection view state)', () => {
 		]);
 		meetStorageService = jasmine.createSpyObj<MeetStorageService>('MeetStorageService', ['getLocalTileFloating']);
 		meetStorageService.getLocalTileFloating.and.returnValue(null);
+		dialogService = jasmine.createSpyObj<DialogService>('DialogService', [
+			'showBlockingDialog',
+			'closeBlockingDialog'
+		]);
 
 		const participantServiceStub = {
 			addRemoteParticipant: () => remotes.push({} as ParticipantModel),
@@ -185,10 +190,7 @@ describe('MeetingEventsService (reconnection view state)', () => {
 				provideZonelessChangeDetection(),
 				{ provide: StreamLayoutStateService, useValue: streamLayoutService },
 				{ provide: ParticipantService, useValue: participantServiceStub as unknown as ParticipantService },
-				{
-					provide: ActionService,
-					useValue: { openConnectionDialog: () => {}, closeConnectionDialog: () => {} }
-				},
+				{ provide: DialogService, useValue: dialogService },
 				{ provide: LoggerService, useValue: loggerStub as unknown as LoggerService },
 				{
 					provide: MeetingLiveKitService,
@@ -302,5 +304,27 @@ describe('MeetingEventsService (reconnection view state)', () => {
 		emit(RoomEvent.ParticipantConnected, remoteParticipant('PA_bob'));
 
 		expect(streamLayoutService.floatLocalCameraVideo).not.toHaveBeenCalled();
+	});
+	it('tells the participant the connection is lost, with nothing to answer', () => {
+		emit(RoomEvent.Reconnecting);
+
+		expect(dialogService.showBlockingDialog).toHaveBeenCalledWith({
+			title: 'ERRORS.CONNECTION',
+			message: 'ERRORS.RECONNECT'
+		});
+	});
+
+	it('says nothing while the connection is only being resumed, which the participant never notices', () => {
+		emit(RoomEvent.SignalReconnecting);
+
+		expect(dialogService.showBlockingDialog).not.toHaveBeenCalled();
+	});
+
+	it('takes the notice away once the connection is back', () => {
+		emit(RoomEvent.Reconnecting);
+
+		emit(RoomEvent.Reconnected);
+
+		expect(dialogService.closeBlockingDialog).toHaveBeenCalled();
 	});
 });
