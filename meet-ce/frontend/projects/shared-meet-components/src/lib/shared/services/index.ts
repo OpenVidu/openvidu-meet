@@ -4,7 +4,6 @@ export * from './api-key.service';
 export * from './assets.service';
 export * from './app-context.service';
 export * from './browser-storage.service';
-export * from './dialog-presets.service';
 export * from './dialog.service';
 export * from './global-config.service';
 export * from './http-error-notifier.service';

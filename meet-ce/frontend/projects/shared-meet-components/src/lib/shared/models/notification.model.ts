@@ -1,5 +1,8 @@
 import { MeetRoomDeletionPolicyWithMeeting, MeetRoomDeletionPolicyWithRecordings } from '@openvidu-meet/typings';
 
+/** A {@link DialogOptions} with the wording filled in and the answers left to the caller. */
+export type DialogPreset = Omit<DialogOptions, 'confirmCallback' | 'cancelCallback'>;
+
 export interface DialogOptions {
 	icon?: string;
 	title?: string;

@@ -7,7 +7,8 @@ import { DialogOptions } from '../models/notification.model';
  * Opens the application's modal dialogs, the ones that stop what the user was doing until they
  * answer. What can be said without stopping them goes through {@link NotificationService} instead.
  *
- * The wording of each dialog lives in {@link DialogPresetsService}.
+ * It knows nothing about what any dialog is for: the caller brings the wording, the buttons and
+ * what pressing them does.
  */
 @Service()
 export class DialogService {

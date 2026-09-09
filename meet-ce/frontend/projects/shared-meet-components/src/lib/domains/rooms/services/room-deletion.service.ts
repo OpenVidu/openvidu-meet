@@ -9,7 +9,7 @@ import {
 } from '@openvidu-meet/typings';
 import { DeleteRoomDialogOptions } from '../../../shared/models/notification.model';
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
-import { DialogPresetsService } from '../../../shared/services/dialog-presets.service';
+import { deleteRoomDialogPreset } from '../utils/dialog-presets';
 import { DialogService } from '../../../shared/services/dialog.service';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { DeleteRoomDialogComponent } from '../components/delete-room-dialog/delete-room-dialog.component';
@@ -34,7 +34,6 @@ export class RoomDeletionService {
 	private roomService = inject(RoomService);
 	private notificationService = inject(NotificationService);
 	private dialogService = inject(DialogService);
-	private dialogPresetsService = inject(DialogPresetsService);
 	private dialog = inject(MatDialog);
 	private readonly translateService = inject(TranslateService);
 
@@ -44,7 +43,7 @@ export class RoomDeletionService {
 		};
 
 		this.dialogService.showDialog({
-			...this.dialogPresetsService.getDeleteRoomDialogPreset(roomId),
+			...deleteRoomDialogPreset(roomId),
 			confirmCallback: deleteCallback
 		});
 	}

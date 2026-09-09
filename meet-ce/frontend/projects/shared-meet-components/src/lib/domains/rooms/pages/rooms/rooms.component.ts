@@ -28,7 +28,7 @@ import {
 import { ScrollPersistDirective } from '../../../../shared/directives/scroll-persist.directive';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
-import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
+import { bulkDeleteRoomsDialogPreset } from '../../utils/dialog-presets';
 import { EntityListSnapshot, EntityListState } from '../../../../shared/models/entity-list.model';
 import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
@@ -86,7 +86,6 @@ export class RoomsComponent implements OnInit, OnDestroy {
 	private authService = inject(AuthService);
 	private notificationService = inject(NotificationService);
 	private dialogService = inject(DialogService);
-	private dialogPresetsService = inject(DialogPresetsService);
 	private readonly translateService = inject(TranslateService);
 	protected navigationService = inject(NavigationService);
 	protected roomDeletionService = inject(RoomDeletionService);
@@ -382,7 +381,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 		};
 
 		this.dialogService.showDialog({
-			...this.dialogPresetsService.getBulkDeleteRoomsDialogPreset(rooms.length),
+			...bulkDeleteRoomsDialogPreset(rooms.length),
 			confirmCallback: bulkDeleteCallback
 		});
 	}

@@ -21,7 +21,7 @@ import { ActivatedRoute } from '@angular/router';
 import { MeetUserDTO } from '@openvidu-meet/typings';
 import { firstValueFrom } from 'rxjs';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
-import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
+import { deleteUserDialogPreset } from '../../utils/dialog-presets';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -55,7 +55,6 @@ export class ProfileComponent implements OnInit {
 	private notificationService = inject(NotificationService);
 	private dialogService = inject(DialogService);
 	private readonly translateService = inject(TranslateService);
-	private dialogPresetsService = inject(DialogPresetsService);
 	private route = inject(ActivatedRoute);
 	private navigationService = inject(NavigationService);
 	private dialog = inject(MatDialog);
@@ -256,7 +255,7 @@ export class ProfileComponent implements OnInit {
 		if (!user) return;
 
 		this.dialogService.showDialog({
-			...this.dialogPresetsService.getDeleteUserDialogPreset(user.name, user.userId),
+			...deleteUserDialogPreset(user.name, user.userId),
 			confirmCallback: async () => {
 				try {
 					await this.userService.deleteUser(user.userId);

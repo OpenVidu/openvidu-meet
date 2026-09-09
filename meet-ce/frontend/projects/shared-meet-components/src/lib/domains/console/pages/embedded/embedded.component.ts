@@ -10,15 +10,23 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetApiKey, MeetWebhook } from '@openvidu-meet/typings';
+import type { DialogPreset } from '../../../../shared/models/notification.model';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { ApiKeyService } from '../../../../shared/services/api-key.service';
-import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { WebhookService } from '../../../../shared/services/webhook.service';
 import { WebhookEditorDialogComponent } from '../../components/webhook-editor-dialog/webhook-editor-dialog.component';
+
+const deleteWebhookDialogPreset = (url: string): DialogPreset => ({
+	title: 'Delete Webhook',
+	icon: 'delete_outline',
+	message: `Are you sure you want to delete the webhook pointing to <b>${url}</b>? It will stop receiving event notifications immediately.`,
+	confirmText: 'Delete',
+	cancelText: 'Cancel'
+});
 
 @Component({
 	selector: 'ov-embedded',
@@ -42,7 +50,6 @@ export class EmbeddedComponent implements OnInit {
 	protected webhookService = inject(WebhookService);
 	protected notificationService = inject(NotificationService);
 	protected dialogService = inject(DialogService);
-	protected dialogPresetsService = inject(DialogPresetsService);
 	protected clipboard = inject(Clipboard);
 	private readonly dialog = inject(MatDialog);
 	private readonly translateService = inject(TranslateService);
@@ -193,7 +200,7 @@ export class EmbeddedComponent implements OnInit {
 
 	deleteWebhook(webhook: MeetWebhook) {
 		this.dialogService.showDialog({
-			...this.dialogPresetsService.getDeleteWebhookDialogPreset(webhook.url),
+			...deleteWebhookDialogPreset(webhook.url),
 			confirmCallback: async () => {
 				try {
 					await this.webhookService.deleteWebhook(webhook.webhookId);

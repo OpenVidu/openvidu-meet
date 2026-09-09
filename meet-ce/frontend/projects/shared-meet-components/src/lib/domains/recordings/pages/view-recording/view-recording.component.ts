@@ -9,7 +9,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
-import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
+import { deleteRecordingDialogPreset } from '../../utils/dialog-presets';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { LeaveRedirectService } from '../../../../shared/services/leave-redirect.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
@@ -43,7 +43,6 @@ export class ViewRecordingComponent implements OnInit {
 	protected readonly recordingService = inject(RecordingService);
 	protected readonly notificationService = inject(NotificationService);
 	protected readonly dialogService = inject(DialogService);
-	protected readonly dialogPresetsService = inject(DialogPresetsService);
 	protected readonly navigationService = inject(NavigationService);
 	protected readonly leaveRedirect = inject(LeaveRedirectService);
 	protected readonly runtimeConfigService = inject(RuntimeConfigService);
@@ -147,7 +146,7 @@ export class ViewRecordingComponent implements OnInit {
 		};
 
 		this.dialogService.showDialog({
-			...this.dialogPresetsService.getDeleteRecordingDialogPreset(recording.recordingId),
+			...deleteRecordingDialogPreset(recording.recordingId),
 			confirmCallback: deleteCallback
 		});
 	}

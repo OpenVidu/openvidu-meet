@@ -7,7 +7,7 @@ import { MeetUserDTO, MeetUserFilters, MeetUserRole, SortOrder, TextMatchMode } 
 import { firstValueFrom } from 'rxjs';
 import { ScrollPersistDirective } from '../../../../shared/directives/scroll-persist.directive';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
-import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
+import { bulkDeleteUsersDialogPreset, deleteUserDialogPreset } from '../../utils/dialog-presets';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { EntityListSnapshot, EntityListState } from '../../../../shared/models/entity-list.model';
 import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
@@ -53,7 +53,6 @@ export class UsersComponent implements OnInit, OnDestroy {
 	private notificationService = inject(NotificationService);
 	private dialogService = inject(DialogService);
 	private readonly translateService = inject(TranslateService);
-	private dialogPresetsService = inject(DialogPresetsService);
 	private navigationService = inject(NavigationService);
 	private dialog = inject(MatDialog);
 	private loggerService = inject(LoggerService);
@@ -202,7 +201,7 @@ export class UsersComponent implements OnInit, OnDestroy {
 
 	private onDeleteUser(user: MeetUserDTO) {
 		this.dialogService.showDialog({
-			...this.dialogPresetsService.getDeleteUserDialogPreset(user.name, user.userId),
+			...deleteUserDialogPreset(user.name, user.userId),
 			confirmCallback: async () => {
 				try {
 					await this.userService.deleteUser(user.userId);
@@ -262,7 +261,7 @@ export class UsersComponent implements OnInit, OnDestroy {
 
 		const count = usersToDelete.length;
 		this.dialogService.showDialog({
-			...this.dialogPresetsService.getBulkDeleteUsersDialogPreset(count),
+			...bulkDeleteUsersDialogPreset(count),
 			confirmCallback: bulkDeleteCallback
 		});
 	}

@@ -4,7 +4,6 @@ import { MeetRecordingInfo } from '@openvidu-meet/typings';
 import type { ILogger } from '../../../shared/models/logger.model';
 import { EntityListState } from '../../../shared/models/entity-list.model';
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
-import { DialogPresetsService } from '../../../shared/services/dialog-presets.service';
 import { DialogService } from '../../../shared/services/dialog.service';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { RecordingTableFilter } from '../models/recording-list.model';
@@ -40,10 +39,6 @@ describe('RecordingActionsService', () => {
 			confirmDialog = options.confirmCallback as () => Promise<void>;
 		});
 
-		const dialogPresetsStub = {
-			getDeleteRecordingDialogPreset: () => ({}),
-			getBulkDeleteRecordingsDialogPreset: () => ({})
-		};
 		// Translation returns the key itself, so assertions can match on keys.
 		const translateStub = { translate: (key: string) => key };
 
@@ -53,7 +48,6 @@ describe('RecordingActionsService', () => {
 				{ provide: RecordingService, useValue: recordingService },
 				{ provide: NotificationService, useValue: notificationService },
 				{ provide: DialogService, useValue: dialogService },
-				{ provide: DialogPresetsService, useValue: dialogPresetsStub as unknown as DialogPresetsService },
 				{ provide: TranslateService, useValue: translateStub as unknown as TranslateService }
 			]
 		});

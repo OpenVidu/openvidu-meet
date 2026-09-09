@@ -15,7 +15,7 @@ import {
 	MeetUserRole
 } from '@openvidu-meet/typings';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.component';
-import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
+import { deleteRecordingDialogPreset } from '../../utils/dialog-presets';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -55,7 +55,6 @@ export class RecordingDetailComponent implements OnInit {
 	private readonly roomMemberService = inject(RoomMemberService);
 	private readonly notificationService = inject(NotificationService);
 	private readonly dialogService = inject(DialogService);
-	private readonly dialogPresetsService = inject(DialogPresetsService);
 	protected readonly navigationService = inject(NavigationService);
 	private readonly clipboard = inject(Clipboard);
 	private readonly translateService = inject(TranslateService);
@@ -174,7 +173,7 @@ export class RecordingDetailComponent implements OnInit {
 		};
 
 		this.dialogService.showDialog({
-			...this.dialogPresetsService.getDeleteRecordingDialogPreset(this.recordingId()),
+			...deleteRecordingDialogPreset(this.recordingId()),
 			confirmCallback: deleteCallback
 		});
 	}

@@ -26,7 +26,7 @@ import { BreadcrumbComponent, BreadcrumbItem } from '../../../../shared/componen
 import { ScrollPersistDirective } from '../../../../shared/directives/scroll-persist.directive';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
-import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
+import { bulkRemoveMembersDialogPreset, removeMemberDialogPreset } from '../../utils/dialog-presets';
 import { EntityListSnapshot, EntityListState } from '../../../../shared/models/entity-list.model';
 import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
@@ -96,7 +96,6 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 	private readonly recordingActions = inject(RecordingActionsService);
 	private readonly notificationService = inject(NotificationService);
 	private readonly dialogService = inject(DialogService);
-	private readonly dialogPresetsService = inject(DialogPresetsService);
 	private readonly translateService = inject(TranslateService);
 	protected readonly navigationService = inject(NavigationService);
 	private readonly clipboard = inject(Clipboard);
@@ -480,7 +479,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 
 	private deleteMember(member: MeetRoomMember) {
 		this.dialogService.showDialog({
-			...this.dialogPresetsService.getRemoveMemberDialogPreset(member.name, this.shouldShowMeetingKickWarning()),
+			...removeMemberDialogPreset(member.name, this.shouldShowMeetingKickWarning()),
 			confirmCallback: async () => {
 				try {
 					await this.roomMemberService.deleteRoomMember(this.roomId(), member.memberId);
@@ -538,7 +537,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 
 		const count = members.length;
 		this.dialogService.showDialog({
-			...this.dialogPresetsService.getBulkRemoveMembersDialogPreset(count, this.shouldShowMeetingKickWarning()),
+			...bulkRemoveMembersDialogPreset(count, this.shouldShowMeetingKickWarning()),
 			confirmCallback: bulkDeleteCallback
 		});
 	}
