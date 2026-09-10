@@ -1,0 +1,8 @@
+description: 'Bad Request: the webhook URL points where webhooks may not be delivered (link-local and unspecified addresses always; private networks when MEET_WEBHOOK_ALLOW_PRIVATE_NETWORKS is false)'
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        example:
+            error: 'Webhook Error'
+            message: "Webhook URL 'http://169.254.169.254/hook' is not allowed: no webhook receiver can live at that address"
