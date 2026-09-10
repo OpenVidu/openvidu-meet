@@ -1,5 +1,10 @@
 MeetRoomConfig:
     type: object
+    description: >
+        Config of a room. A config update merges with the stored config, so an omitted top-level field keeps
+        its current value. The nested objects (`chat`, `recording`, `virtualBackground`, `e2ee`, `captions`)
+        merge field by field too, but each one requires its own `enabled` whenever it is sent at all: a
+        request that carries `recording` without `recording.enabled` is rejected with a `422`.
     properties:
         maxParticipants:
             type: [integer, 'null']
@@ -64,6 +69,8 @@ MeetRoomConfig:
             description: Config for live captions in the room.
 MeetChatConfig:
     type: object
+    required:
+        - enabled
     properties:
         enabled:
             type: boolean
@@ -72,6 +79,8 @@ MeetChatConfig:
             description: If true, the room will be allowed to send and receive chat messages.
 MeetRecordingConfig:
     type: object
+    required:
+        - enabled
     properties:
         enabled:
             type: boolean
@@ -93,9 +102,12 @@ MeetRecordingConfig:
                 meeting; `when_second_participant_joins` starts as soon as a second participant
                 joins; `when_moderator_joins` starts as soon as a participant with the moderator
                 role is in the meeting, by join or by promotion during the meeting.
-                `null` (the default) means recordings only start on-demand.
+                `null` means recordings only start on-demand, and is also the effective default: a room
+                that never configured auto-start carries no `autoStart` field at all, which reads the same
+                way.
                 Config updates merge with the stored config, so an omitted value keeps its current
-                setting; send `null` to turn auto-start off.
+                setting; send `null` to turn auto-start off (the field is then served explicitly as `null`).
+                Sending `autoStart` requires sending `recording.enabled` alongside it.
                 `when_second_participant_joins` needs a room that admits at least two participants,
                 so pairing it with `maxParticipants: 1` is rejected with a `422`.
         layout:
@@ -123,6 +135,8 @@ MeetRecordingConfig:
                 - $ref: '#/MeetRecordingEncodingOptions'
 MeetVirtualBackgroundConfig:
     type: object
+    required:
+        - enabled
     properties:
         enabled:
             type: boolean
@@ -131,6 +145,8 @@ MeetVirtualBackgroundConfig:
             description: If true, the room will be allowed to use virtual background.
 MeetE2EEConfig:
     type: object
+    required:
+        - enabled
     properties:
         enabled:
             type: boolean
@@ -142,6 +158,8 @@ MeetE2EEConfig:
                 **Enabling E2EE will disable the recording feature for the room**.
 MeetCaptionsConfig:
     type: object
+    required:
+        - enabled
     properties:
         enabled:
             type: boolean

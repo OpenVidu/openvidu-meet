@@ -1,4 +1,7 @@
 description: Success response for retrieving a room
+headers:
+    Deprecation:
+        $ref: '../../../shared/headers/deprecation.yaml'
 content:
     application/json:
         schema:

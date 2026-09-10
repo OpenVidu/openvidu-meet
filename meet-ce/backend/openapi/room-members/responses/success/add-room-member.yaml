@@ -30,6 +30,8 @@ content:
                     permissionsUpdatedAt: 1620007200000
                     _extraFields: ['effectivePermissions']
 headers:
+    Deprecation:
+        $ref: '../../../shared/headers/deprecation.yaml'
     Location:
         description: URL of the newly added room member
         schema:

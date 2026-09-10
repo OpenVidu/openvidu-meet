@@ -1,0 +1,8 @@
+description: >
+    Present when the response body actually carries the deprecated `can*` permission keys, which a
+    `compatibility` deployment serves alongside the current ones. Absent with `MEET_MODE='3.9.0'`, and absent
+    on a response that carries no permissions at all (a field-filtered room, for instance).
+schema:
+    type: string
+    enum: ['true']
+    example: 'true'

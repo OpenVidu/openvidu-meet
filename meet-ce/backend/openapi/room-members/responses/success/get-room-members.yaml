@@ -1,4 +1,7 @@
 description: Successfully retrieved the list of room members
+headers:
+    Deprecation:
+        $ref: '../../../shared/headers/deprecation.yaml'
 content:
     application/json:
         schema:

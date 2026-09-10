@@ -1,4 +1,7 @@
 description: Success response for updating room roles configuration. Returns the updated roles.
+headers:
+    Deprecation:
+        $ref: '../../../shared/headers/deprecation.yaml'
 content:
     application/json:
         schema:

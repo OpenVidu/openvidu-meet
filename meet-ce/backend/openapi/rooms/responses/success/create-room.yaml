@@ -44,6 +44,8 @@ content:
                     meetingEndAction: none
                     _extraFields: ['config', 'roles']
 headers:
+    Deprecation:
+        $ref: '../../../shared/headers/deprecation.yaml'
     Location:
         description: URL of the newly created room
         schema:

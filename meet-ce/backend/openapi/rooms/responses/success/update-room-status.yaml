@@ -1,4 +1,7 @@
 description: Success response for updating room status. Returns the updated room.
+headers:
+    Deprecation:
+        $ref: '../../../shared/headers/deprecation.yaml'
 content:
     application/json:
         schema:

@@ -1,4 +1,7 @@
 description: Successfully retrieved the list of OpenVidu Meet rooms
+headers:
+    Deprecation:
+        $ref: '../../../shared/headers/deprecation.yaml'
 content:
     application/json:
         schema:

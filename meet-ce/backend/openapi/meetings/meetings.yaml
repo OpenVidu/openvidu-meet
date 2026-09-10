@@ -5,7 +5,7 @@
         description: |
             Retrieves the details of a live meeting.
 
-            Requires the `meetingRead` permission when using a room-member token.
+            Requires the `meetingRead` permission.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -31,6 +31,8 @@
         summary: End a meeting
         description: |
             Ends the live meeting in a room. This will stop all recordings and disconnect all participants.
+
+            Requires the `meetingEnd` permission.
 
             This endpoint is idempotent. If the meeting is already ended, it will return a success response without any action.
         tags:
@@ -62,7 +64,7 @@
             snapshots: identity, the application-provided correlation fields (`externalId`,
             `metadata`), effective role, join date and current media state.
 
-            Requires the `meetingRead` permission when using a room-member token.
+            Requires the `meetingRead` permission.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -92,6 +94,9 @@
             This action affects all participants in the meeting, excluding the moderators.
             Only `false` is accepted: moderation never turns a
             remote device on, and each participant may turn theirs back on afterwards.
+
+
+            Requires the `participantMute` permission.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -123,7 +128,7 @@
         description: |
             Retrieves the live snapshot of one participant in the meeting.
 
-            Requires the `meetingRead` permission when using a room-member token.
+            Requires the `meetingRead` permission.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -150,6 +155,9 @@
         summary: Kick a participant
         description: >
             Kicks a participant from a meeting.
+
+
+            Requires the `participantKick` permission.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -179,6 +187,9 @@
             Turns off the requested devices of a participant in the current meeting.
             Only `false` is accepted: moderation never turns a remote device on, and the participant may turn
             theirs back on afterwards. Moderators cannot be muted.
+
+
+            Requires the `participantMute` permission.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -213,6 +224,9 @@
         description: >
             Applies a moderation action to a participant in the current meeting.
             Supported actions are `upgrade` (promote to moderator) and `downgrade` (restore original permissions).
+
+
+            Requires the `participantPromote` permission.
 
 
             An `upgrade` reaches the `when_moderator_joins` recording auto-start trigger: in a room configured

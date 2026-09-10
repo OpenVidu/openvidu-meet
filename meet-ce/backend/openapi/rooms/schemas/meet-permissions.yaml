@@ -1,6 +1,6 @@
 type: object
 description: |
-    Permissions of a room member, keyed with the `moduleAction` scheme (module first, no `can` prefix).
+    Permissions of a room member.
 
     Which key sets the API speaks is a **deployment-wide** setting: the `MEET_MODE` environment variable of the
     server, with two values.
@@ -22,6 +22,10 @@ description: |
       `canRetrieveRecordings`, the group collapses with AND (it is `true` only when the three are granted, and
       the flag is omitted when only part of the group is defined).
     - Every other deprecated key is a straight rename of exactly one new key.
+
+    A request carries only the permissions it means to change: both the room roles and a room member's
+    permissions are partial objects, so an omitted key keeps the value the role or the member already had. No
+    permission is ever derived from another one.
 
     The examples in this reference show only the new keys; a `compatibility` deployment adds the deprecated
     spellings next to them. The `compatibility` mode and the deprecated keys are removed in **3.12.0**.
@@ -57,11 +61,10 @@ properties:
         example: true
         description: >
             Can read the live state of the meeting (its info and the participants currently in it)
-            without necessarily joining it. Introduced after the deprecated spellings were frozen, so
-            it has none of its own; it is independent of every other permission — a complete
-            permission set that omits it takes the value of `meetingJoin` (which gated this
-            capability before the permission existed), and a partial update that omits it leaves it
-            untouched.
+            without necessarily joining it. Introduced after the deprecated spellings were frozen, so it
+            has none of its own. A room created from 3.9.0 on grants it to both roles by default; a room
+            or member that existed before 3.9.0 starts with the value of its `meetingJoin`, which gated
+            this capability before the permission existed.
     roomShareAccessLinks:
         type: boolean
         example: false
@@ -79,9 +82,9 @@ properties:
         example: false
         description: >
             Can turn off another participant's microphone, camera or screen share. The affected participant
-            may turn the device back on. Introduced after the deprecated spellings were frozen, so it has none
-            of its own; it is independent of every other permission, and a request that sends a complete
-            permission set without it is read as `false`.
+            may turn the device back on. Introduced after the deprecated spellings were frozen, so it has
+            none of its own. A room created from 3.9.0 on grants it to the moderator role and denies it to
+            the speaker role by default; a room or member that existed before 3.9.0 starts without it.
     meetingEnd:
         type: boolean
         example: false
