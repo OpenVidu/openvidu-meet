@@ -40,6 +40,7 @@ export const MEET_ENV = {
 	// Webhook configuration
 	INITIAL_WEBHOOK_ENABLED: process.env.MEET_INITIAL_WEBHOOK_ENABLED || 'false',
 	INITIAL_WEBHOOK_URL: process.env.MEET_INITIAL_WEBHOOK_URL ?? '',
+	WEBHOOK_ALLOW_PRIVATE_NETWORKS: process.env.MEET_WEBHOOK_ALLOW_PRIVATE_NETWORKS || 'true',
 
 	// LiveKit configuration
 	LIVEKIT_URL: process.env.LIVEKIT_URL ?? 'ws://localhost:7880',
@@ -207,6 +208,8 @@ export const logEnvVars = () => {
 	if (MEET_ENV.INITIAL_WEBHOOK_ENABLED === 'true') {
 		console.log('INITIAL WEBHOOK URL:', text(MEET_ENV.INITIAL_WEBHOOK_URL));
 	}
+
+	console.log('WEBHOOK ALLOW PRIVATE NETWORKS:', text(MEET_ENV.WEBHOOK_ALLOW_PRIVATE_NETWORKS));
 
 	console.log('---------------------------------------------------------');
 	console.log('LIVEKIT Configuration');

@@ -25,6 +25,7 @@ import { WebhookRepository } from '../repositories/webhook.repository.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
 import { ApiKeyService } from './api-key.service.js';
 import { LoggerService } from './logger.service.js';
+import { assertWebhookDestinationAllowed } from '../utils/webhook-destination.utils.js';
 
 @injectable()
 export class WebhookDispatcherService {
@@ -305,8 +306,10 @@ export class WebhookDispatcherService {
 		const timeoutId = setTimeout(() => controller.abort(), INTERNAL_CONFIG.WEBHOOK_REQUEST_TIMEOUT);
 
 		try {
+			await assertWebhookDestinationAllowed(url);
 			const response = await fetch(url, {
 				...options,
+				redirect: 'manual',
 				signal: controller.signal
 			});
 
@@ -341,8 +344,10 @@ export class WebhookDispatcherService {
 		const timeoutId = setTimeout(() => controller.abort(), INTERNAL_CONFIG.WEBHOOK_REQUEST_TIMEOUT);
 
 		try {
+			await assertWebhookDestinationAllowed(url);
 			const response = await fetch(url, {
 				...options,
+				redirect: 'manual',
 				signal: controller.signal
 			});
 
