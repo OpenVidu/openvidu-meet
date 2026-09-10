@@ -35,6 +35,17 @@ if [ -n "${MODULES_FILE}" ]; then
     . "${MODULES_FILE}"
 fi
 
+# V8 sizes its heap from the memory it can see. In a container without a memory limit that is the
+# whole host, so unless the deployment already chose a ceiling, one is set here.
+case " ${NODE_OPTIONS:-} " in
+    *--max-old-space-size*) ;;
+    *)
+        if [ "$(cat /sys/fs/cgroup/memory.max 2>/dev/null || echo max)" = "max" ]; then
+            export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--max-old-space-size=${MEET_MAX_HEAP_MB:-1024}"
+        fi
+        ;;
+esac
+
 cd /opt/openvidu-meet || { echo "Can't cd into /opt/openvidu-meet"; exit 1; }
 ./meet.sh start --prod --skip-install --skip-build &
 
