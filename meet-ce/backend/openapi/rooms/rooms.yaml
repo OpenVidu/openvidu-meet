@@ -59,6 +59,8 @@
         responses:
             '200':
                 $ref: './responses/success/get-rooms.yaml'
+            '400':
+                $ref: '../shared/responses/errors/invalid-pagination-token.yaml'
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
