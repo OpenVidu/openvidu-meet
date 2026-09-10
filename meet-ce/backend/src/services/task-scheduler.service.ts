@@ -21,9 +21,7 @@ export class TaskSchedulerService {
 	) {
 		this.redisService.onReady(() => {
 			this.logger.debug('Starting all registered tasks...');
-			this.taskRegistry.forEach((task) => {
-				void this.scheduleTask(task);
-			});
+			this.taskRegistry.forEach((task) => this.scheduleTask(task));
 			this.started = true;
 		});
 
@@ -48,7 +46,7 @@ export class TaskSchedulerService {
 		this.taskRegistry.push(task);
 
 		if (this.started) {
-			void this.scheduleTask(task);
+			this.scheduleTask(task);
 		}
 	}
 
@@ -72,7 +70,7 @@ export class TaskSchedulerService {
 		}
 	}
 
-	protected async scheduleTask(task: IScheduledTask): Promise<void> {
+	protected scheduleTask(task: IScheduledTask): void {
 		const { name, type, scheduleOrDelay, callback } = task;
 
 		if (this.scheduledTasks.has(name)) {
@@ -85,13 +83,10 @@ export class TaskSchedulerService {
 			const cronExpression = this.msStringToCronExpression(scheduleOrDelay);
 			const lockDuration = Math.max(ms(scheduleOrDelay) - ms('1m'), ms(INTERNAL_CONFIG.CRON_JOB_LOCK_TTL));
 
-			const job = new CronJob(cronExpression, async () => {
-				await this.runCronTask(name, lockDuration, callback);
-			});
-			// Start the job immediately only in one instance to avoid multiple instances running the same task at the same time on startup.
-			await this.runCronTask(name, lockDuration, callback);
-			job.start();
+			const job = new CronJob(cronExpression, () => this.runCronTask(name, lockDuration, callback));
 			this.scheduledTasks.set(name, job);
+			job.start();
+			void this.runCronTask(name, lockDuration, callback);
 		} else if (type === 'timeout') {
 			this.logger.debug(`Scheduling timeout task '${name}' with delay ${scheduleOrDelay}`);
 			const timeoutId = setTimeout(() => {
