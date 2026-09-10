@@ -35,6 +35,7 @@ import ms from 'ms';
 import { z } from 'zod';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import { MeetRoomHelper } from '../../helpers/room.helper.js';
+import { invalidRegexPatternReason } from '../../utils/string-match-filter.utils.js';
 import { PartialMeetPermissionsSchema } from './room-member.schema.js';
 
 export const nonEmptySanitizedRoomId = (fieldName: string) =>
@@ -538,14 +539,10 @@ export const RoomFiltersSchema = z
 	})
 	.superRefine((data, ctx) => {
 		if (data.roomNameMatchMode === TextMatchMode.REGEX && data.roomName) {
-			try {
-				new RegExp(String(data.roomName));
-			} catch {
-				ctx.addIssue({
-					code: 'custom',
-					path: ['roomName'],
-					message: 'Invalid regular expression pattern'
-				});
+			const reason = invalidRegexPatternReason(data.roomName);
+
+			if (reason) {
+				ctx.addIssue({ code: 'custom', path: ['roomName'], message: reason });
 			}
 		}
 	});

@@ -1,6 +1,7 @@
 import type { MeetUserOptions } from '@openvidu-meet/typings';
 import { MEET_USER_SORT_FIELDS, MeetUserRole, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { z } from 'zod';
+import { invalidRegexPatternReason } from '../../utils/string-match-filter.utils.js';
 
 export const UserOptionsSchema: z.ZodType<MeetUserOptions> = z.object({
 	userId: z
@@ -44,14 +45,10 @@ export const UserFiltersSchema = z
 	})
 	.superRefine((data, ctx) => {
 		if (data.nameMatchMode === TextMatchMode.REGEX && data.name) {
-			try {
-				new RegExp(String(data.name));
-			} catch {
-				ctx.addIssue({
-					code: 'custom',
-					path: ['name'],
-					message: 'Invalid regular expression pattern'
-				});
+			const reason = invalidRegexPatternReason(data.name);
+
+			if (reason) {
+				ctx.addIssue({ code: 'custom', path: ['name'], message: reason });
 			}
 		}
 	});

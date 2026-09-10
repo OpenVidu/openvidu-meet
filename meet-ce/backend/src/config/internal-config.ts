@@ -55,6 +55,10 @@ export const INTERNAL_CONFIG = {
 
 	MEETING_PRESENCE_TTL: '32d' as StringValue, // Time-to-live for user/room presence mappings used to kick users from meetings
 
+	// List filters
+	TEXT_MATCH_REGEX_MAX_LENGTH: 100, // Longest regular expression a list filter accepts; the names it matches are at most 50 characters
+	TEXT_MATCH_REGEX_MAX_QUANTIFIER: 65_535, // Highest {n} or {n,m} a pattern may use: the PCRE ceiling MongoDB compiles it with, well below JavaScript's
+
 	// Webhooks
 	WEBHOOK_MAX_ENDPOINTS: 10, // Maximum number of registered webhooks per deployment; also the delivery concurrency, so no endpoint ever queues behind another
 	WEBHOOK_RETRY_ATTEMPTS: 5, // Delivery retries per endpoint and event (exponential backoff, isolated per endpoint)
