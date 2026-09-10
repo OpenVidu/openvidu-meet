@@ -1,14 +1,14 @@
-import { container } from '../config/dependency-injector.config.js';
 import { MEET_ENV } from '../environment.js';
-import { BaseUrlService } from '../services/base-url.service.js';
 import { getBasePath } from './html-dynamic-base-path.utils.js';
+import { getCurrentRequestOrigin } from './request-context.utils.js';
 
 /**
  * Returns the base URL for the application, including the configured base path.
  *
  * If the global `BASE_URL` variable is defined, it returns its value,
  * ensuring there is no trailing slash and removing default ports (443 for HTTPS, 80 for HTTP).
- * Otherwise, it retrieves the base URL from the `HttpContextService` instance.
+ * Otherwise, it uses the origin (scheme and host) the current request was addressed to, falling back
+ * to this server's local address outside a request (schedulers, LiveKit webhooks).
  *
  * The configured BASE_PATH is appended to the URL (without trailing slash).
  *
@@ -30,8 +30,7 @@ export const getBaseUrl = (): string => {
 			hostUrl = hostUrl.replace(':80', '');
 		}
 	} else {
-		const baseUrlService = container.get(BaseUrlService);
-		hostUrl = baseUrlService.getBaseUrl();
+		hostUrl = getCurrentRequestOrigin() ?? `http://localhost:${MEET_ENV.SERVER_PORT}`;
 	}
 
 	// Append the base path (without trailing slash)
@@ -60,7 +59,7 @@ export const addBaseUrlToPath = (path: string): string => {
 /**
  * Extracts the path from a URL, removing the configured basePath when present.
  * If the input is a relative path, it is returned with the basePath stripped if applicable.
- * 
+ *
  * @param url - The full URL or absolute path to extract the path from
  * @return The extracted path with the basePath removed if it was present
  */
@@ -82,7 +81,7 @@ export const extractPathFromUrl = (url: string): string => {
 
 /**
  * Strips the configured basePath from a given absolute path when present.
- * 
+ *
  * @param path - The absolute path to strip the basePath from
  * @return The path with the basePath removed if it was present, otherwise the original path
  */

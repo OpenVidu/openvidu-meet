@@ -15,3 +15,9 @@ export const requestContextStorage = new AsyncLocalStorage<RequestContext>();
  * an HTTP request context (schedulers, webhooks, background jobs, startup).
  */
 export const getCurrentRequestId = (): string | undefined => requestContextStorage.getStore()?.requestId;
+
+/**
+ * Returns the origin (scheme and host) the current HTTP request was addressed to, or undefined when
+ * called outside an HTTP request context.
+ */
+export const getCurrentRequestOrigin = (): string | undefined => requestContextStorage.getStore()?.origin;

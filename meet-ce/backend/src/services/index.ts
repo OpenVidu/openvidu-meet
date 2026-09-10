@@ -1,7 +1,6 @@
 // Core services
 export * from './analytics.service.js';
 export * from './api-key.service.js';
-export * from './base-url.service.js';
 export * from './frontend-event.service.js';
 export * from './global-config.service.js';
 export * from './livekit-webhook.service.js';

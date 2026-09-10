@@ -10,7 +10,6 @@ import { RoomRepository } from '../repositories/room.repository.js';
 import { UserRepository } from '../repositories/user.repository.js';
 import { WebhookRepository } from '../repositories/webhook.repository.js';
 
-import { BaseUrlService } from '../services/base-url.service.js';
 import { LoggerService } from '../services/logger.service.js';
 import { MutexService } from '../services/mutex.service.js';
 import { RedisService } from '../services/redis.service.js';
@@ -84,7 +83,6 @@ const infrastructureModule = new ContainerModule(({ bind }) => {
 	bind(RedisService).toSelf().inSingletonScope();
 	bind(MutexService).toSelf().inSingletonScope();
 	bind(TaskSchedulerService).toSelf().inSingletonScope();
-	bind(BaseUrlService).toSelf().inSingletonScope();
 	// RequestSessionService uses AsyncLocalStorage for request isolation. It's a singleton but
 	// provides per-request data isolation automatically.
 	bind(RequestSessionService).toSelf().inSingletonScope();
