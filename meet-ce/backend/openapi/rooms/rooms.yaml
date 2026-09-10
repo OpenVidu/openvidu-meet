@@ -21,6 +21,8 @@
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
                 $ref: '../shared/responses/errors/forbidden.yaml'
+            '413':
+                $ref: '../shared/responses/errors/payload-too-large.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
             '429':
@@ -239,6 +241,8 @@
                 $ref: './responses/errors/room-not-found.yaml'
             '409':
                 $ref: './responses/errors/room-active-meeting.yaml'
+            '413':
+                $ref: '../shared/responses/errors/payload-too-large.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
             '429':
@@ -274,6 +278,8 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '404':
                 $ref: './responses/errors/room-not-found.yaml'
+            '413':
+                $ref: '../shared/responses/errors/payload-too-large.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
             '429':
@@ -309,6 +315,8 @@
                 $ref: './responses/errors/room-not-found.yaml'
             '409':
                 $ref: './responses/errors/room-active-meeting.yaml'
+            '413':
+                $ref: '../shared/responses/errors/payload-too-large.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
             '429':
@@ -344,6 +352,8 @@
                 $ref: './responses/errors/room-not-found.yaml'
             '409':
                 $ref: './responses/errors/room-active-meeting.yaml'
+            '413':
+                $ref: '../shared/responses/errors/payload-too-large.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
             '429':

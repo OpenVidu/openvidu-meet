@@ -10,7 +10,6 @@ import { getInfo } from './controllers/system-info.controller.js';
 import { checkModuleEnabled, logEnvVars, MEET_ENV, validateMeetMode } from './environment.js';
 import { apiKeyValidator, withAuth } from './middlewares/auth.middleware.js';
 import { setBaseUrlFromRequest } from './middlewares/base-url.middleware.js';
-import { jsonSyntaxErrorHandler } from './middlewares/content-type.middleware.js';
 import { globalErrorHandler } from './middlewares/error-handler.middleware.js';
 import { staticAssetLimiter } from './middlewares/rate-limit.middleware.js';
 import { initRequestContext } from './middlewares/request-context.middleware.js';
@@ -69,8 +68,7 @@ const createApp = () => {
 				: trustProxyValue;
 	app.set('trust proxy', parsedTrustProxy);
 
-	app.use(express.json());
-	app.use(jsonSyntaxErrorHandler);
+	app.use(express.json({ limit: INTERNAL_CONFIG.REQUEST_BODY_LIMIT }));
 	app.use(cookieParser());
 
 	// CRITICAL: Initialize request context FIRST
