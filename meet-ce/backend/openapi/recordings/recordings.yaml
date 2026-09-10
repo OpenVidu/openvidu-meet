@@ -22,7 +22,8 @@
             The request completes as soon as the media server accepts the recording, which is returned in
             the `starting` status. It becomes `active` when the first published track reaches it, so a
             room where nobody publishes audio or video keeps it `starting` until someone does. Follow the
-            transition through the `recordingUpdated` webhook or by fetching the recording.
+            transition through the [`recordingUpdated`](#/webhooks/recordingUpdatedWebhook) webhook or by
+            [fetching the recording](#/operations/getRecording).
         tags:
             - OpenVidu Meet - Recordings
         security:

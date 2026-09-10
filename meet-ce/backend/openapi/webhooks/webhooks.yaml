@@ -6,7 +6,8 @@ recordingStarted:
 
             > The recording can be in the `starting` status for a few seconds before it becomes `active`.
             > A recording in the `starting` status carries no `startDate`: it has not recorded anything
-            > yet. The `recordingUpdated` webhook reports it when the recording becomes `active`.
+            > yet. The [`recordingUpdated`](#/webhooks/recordingUpdatedWebhook) webhook reports it when
+            > the recording becomes `active`.
         operationId: recordingStartedWebhook
         parameters:
             - $ref: ./parameters/x-timestamp.yaml
