@@ -66,6 +66,7 @@ export const INTERNAL_CONFIG = {
 	ASSISTANT_STATE_LOCK_TTL: '60s' as StringValue, // Redis lock TTL for AI assistant state (start/stop operations)
 
 	// Batch and concurrency processing settings
+	BULK_DELETE_MAX_ITEMS: 100, // Most ids one bulk deletion accepts; they travel in the query string, so this bounds the request instead of the URL length
 	BATCH_SIZE_ROOMS_EXPIRED_GC: 100, // Number of expired rooms to process per batch during GC
 	BATCH_SIZE_ROOMS_STATUS_VALIDATION_GC: 100, // Number of active rooms to validate per batch during status consistency GC
 	BATCH_SIZE_MEETING_DURATION_LIMIT_GC: 100, // Number of duration-limited active rooms to re-arm or end per batch during the duration-limit GC
