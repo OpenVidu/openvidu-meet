@@ -179,12 +179,19 @@ class WebComponentDocGenerator {
                         requiredText = requiredMatch ? requiredMatch[1].trim() : '';
                     }
 
+                    // Extract @deprecated text if present (kept verbatim; getDeprecationDescription
+                    // resolves the replacement from the alias map and only reads the removal version
+                    // from this text, since that isn't recorded anywhere else machine-readable)
+                    const deprecatedComment = commentLines.find(c => c.includes('@deprecated'));
+                    const deprecatedText = deprecatedComment ? deprecatedComment.replace(/^@deprecated\s*/, '') : '';
+
                     currentItem = {
                         name: match[1],
                         value: match[2],
                         description: commentLines.filter(line => !line.includes('@')).join(' '),
                         isPrivate: commentLines.some(c => c.includes('@private')),
                         isDeprecated: commentLines.some(c => c.includes('@deprecated')),
+                        deprecatedText: deprecatedText,
                         isModerator: commentLines.some(c => c.includes('@moderator')),
                         isPrejoin: commentLines.some(c => c.includes('@prejoin')),
                         isRequired: commentLines.some(c => c.includes('@required')),
@@ -272,11 +279,12 @@ class WebComponentDocGenerator {
     }
 
     /**
-     * Generates markdown table for events (only public events)
+     * Generates markdown table for events (public events, deprecated aliases included and marked)
      */
     generateEventsTable() {
         const enums = this.parseEnumFile(path.join(this.typingsPath, 'events.ts'));
         const payloads = this.extractPayloads(path.join(this.typingsPath, 'events.ts'));
+        const aliasMap = this.parseAliasMap(path.join(this.typingsPath, 'events.ts'));
 
         const eventEnum = enums.find(e => e.name === 'EmbeddedEventName');
         if (!eventEnum) return '';
@@ -285,24 +293,32 @@ class WebComponentDocGenerator {
         markdown += '|-------|-------------|------------|\n';
 
         for (const item of eventEnum.items) {
-            // Skip private events and deprecated aliases (see isDocumented)
-            if (!this.isDocumented(item, 'event')) continue;
+            if (!this.isPublic(item, 'event')) continue;
 
-            const payload = payloads[item.name];
+            // A deprecated alias carries the same payload as its canonical event (guaranteed by the
+            // typings themselves), so read it from there instead of the alias's own indexed-access type.
+            const canonicalName = item.isDeprecated ? aliasMap[item.name] : undefined;
+            const payload = payloads[canonicalName || item.name];
             const payloadInfo = payload ? this.formatPayload(payload.type) : '-';
 
-            markdown += `| \`${item.value}\` | ${item.description || 'No description available'} | ${payloadInfo} |\n`;
+            const description = item.isDeprecated
+                ? this.getDeprecationDescription(item, aliasMap, eventEnum.items)
+                : (item.description || 'No description available');
+
+            markdown += `| \`${item.value}\` | ${description} | ${payloadInfo} |\n`;
         }
 
         return markdown;
     }
 
     /**
-     * Generates markdown table for commands/methods (only public methods)
+     * Generates markdown table for commands/methods (public commands, deprecated aliases included
+     * and marked)
      */
     generateCommandsTable() {
         const enums = this.parseEnumFile(path.join(this.typingsPath, 'commands.ts'));
         const payloads = this.extractPayloads(path.join(this.typingsPath, 'commands.ts'));
+        const aliasMap = this.parseAliasMap(path.join(this.typingsPath, 'commands.ts'));
 
         const commandEnum = enums.find(e => e.name === 'EmbeddedCommandName');
         if (!commandEnum) return '';
@@ -311,10 +327,12 @@ class WebComponentDocGenerator {
         markdown += '|--------|---------|-------------|------------|--------------|-------------|\n';
 
         for (const item of commandEnum.items) {
-            // Skip private commands and deprecated aliases (see isDocumented)
-            if (!this.isDocumented(item, 'command')) continue;
+            if (!this.isPublic(item, 'command')) continue;
 
-            const payload = payloads[item.name];
+            // A deprecated alias carries the same payload as its canonical command (guaranteed by the
+            // typings themselves), so read it from there instead of the alias's own indexed-access type.
+            const canonicalName = item.isDeprecated ? aliasMap[item.name] : undefined;
+            const payload = payloads[canonicalName || item.name];
 
             // Generate method name from command name and payload
             const methodName = this.generateMethodName(item.name, item.value, payload);
@@ -326,7 +344,11 @@ class WebComponentDocGenerator {
 
             const restriction = this.getRestriction(item);
 
-            markdown += `| \`${methodName}\` | \`${item.value}\` | ${item.description || 'No description available'} | ${params} | ${accessLevel} | ${restriction} |\n`;
+            const description = item.isDeprecated
+                ? this.getDeprecationDescription(item, aliasMap, commandEnum.items)
+                : (item.description || 'No description available');
+
+            markdown += `| \`${methodName}\` | \`${item.value}\` | ${description} | ${params} | ${accessLevel} | ${restriction} |\n`;
         }
 
         return markdown;
@@ -393,20 +415,14 @@ class WebComponentDocGenerator {
     }
 
     /**
-     * Decides whether an enum member reaches the public documentation.
-     *
-     * `@private` members are internal. `@deprecated` members are the legacy aliases kept alive for the
-     * deprecation window: they keep working, but the docs must show only the canonical name so nobody
-     * writes new integrations against a name that is already scheduled for removal. Exclusions are
-     * reported on stdout so a rename that accidentally deprecates the wrong member is visible.
+     * Decides whether an enum member reaches the public documentation. Only `@private` members
+     * (internal implementation details) are excluded; `@deprecated` members are documented too,
+     * marked with a badge by `getDeprecationDescription` — a host still calling one needs to find
+     * it in the reference. Exclusions are reported on stdout so a stray `@private` is visible.
      */
-    isDocumented(item, kind) {
+    isPublic(item, kind) {
         if (item.isPrivate) {
-            return false;
-        }
-
-        if (item.isDeprecated) {
-            this.excluded.push(`${kind} \`${item.value}\` (deprecated)`);
+            this.excluded.push(`${kind} \`${item.value}\` (private)`);
             return false;
         }
 
@@ -414,11 +430,67 @@ class WebComponentDocGenerator {
     }
 
     /**
-     * Generates markdown table for attributes/properties
+     * Parses an alias map declared as `export const X_ALIASES = { [Enum.DEPRECATED]: Enum.CANONICAL,
+     * ... } as const ...` into a plain `{ DEPRECATED: CANONICAL }` object keyed by enum member name
+     * (not by its string value). Returns `{}` when the file declares no such map (e.g. attributes.ts).
+     */
+    parseAliasMap(filePath) {
+        const content = fs.readFileSync(filePath, 'utf8');
+        const match = content.match(/export const \w+_ALIASES\s*=\s*{([\s\S]*?)}\s*as const/);
+        if (!match) return {};
+
+        const aliasMap = {};
+        for (const pair of match[1].matchAll(/\[\w+\.(\w+)\]:\s*\w+\.(\w+)/g)) {
+            aliasMap[pair[1]] = pair[2];
+        }
+        return aliasMap;
+    }
+
+    /**
+     * Strips TypeDoc `{@link ...}` references out of a comment, since they render as literal
+     * braces in a plain markdown table. A lone reference in its own parenthetical (the pattern
+     * every current `@deprecated` comment uses) is dropped entirely; any other one falls back to
+     * just the name it points at.
+     */
+    stripTypedocLinks(text) {
+        return text
+            .replace(/\(\{@link[^}]*\}\)/g, '')
+            .replace(/\{@link\s+([^}|\s]+)[^}]*\}/g, '$1')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+    }
+
+    /**
+     * Description shown for a deprecated table row: a badge plus a replacement note. The canonical
+     * name is read from the alias map — the same map the runtime uses to redirect a deprecated call
+     * — rather than parsed out of the `@deprecated` prose, so it can never point at a stale name.
+     * Only the removal version comes from that prose, since it isn't recorded anywhere else
+     * machine-readable. The functional description itself is not repeated: it is right there on the
+     * canonical row this one points to.
+     */
+    getDeprecationDescription(item, aliasMap, siblingItems) {
+        const canonicalName = aliasMap[item.name];
+        const canonicalItem = canonicalName && siblingItems.find(i => i.name === canonicalName);
+
+        let note;
+        if (canonicalItem) {
+            const removedMatch = item.deprecatedText.match(/Removed in (\d+(?:\.\d+)*)/i);
+            note = `Renamed to \`${canonicalItem.value}\`.` + (removedMatch ? ` Removed in ${removedMatch[1]}.` : '');
+        } else {
+            note = this.stripTypedocLinks(item.deprecatedText) || 'Deprecated.';
+        }
+
+        return `**Deprecated**{ .openvidu-tag .openvidu-deprecated-tag } ${note}`;
+    }
+
+    /**
+     * Generates markdown table for attributes/properties (deprecated aliases included and marked,
+     * same as the events and commands tables — none exist today, but the table supports one)
      */
     generateAttributesTable() {
         const propertyEnums = this.parseEnumFile(path.join(this.typingsPath, 'attributes.ts'));
         const propertyEnum = propertyEnums.find(e => e.name === 'EmbeddedAttribute');
+        const aliasMap = this.parseAliasMap(path.join(this.typingsPath, 'attributes.ts'));
 
         let markdown = '| Attribute | Description | Required |\n';
         markdown += '|-----------|-------------|----------|\n';
@@ -426,8 +498,7 @@ class WebComponentDocGenerator {
         // Add attributes from the properties enum only
         if (propertyEnum) {
             for (const item of propertyEnum.items) {
-                // Skip private attributes and deprecated aliases (see isDocumented)
-                if (!this.isDocumented(item, 'attribute')) continue;
+                if (!this.isPublic(item, 'attribute')) continue;
 
                 // Format required column with additional text if present
                 let requiredColumn = 'No';
@@ -436,7 +507,9 @@ class WebComponentDocGenerator {
                 }
 
                 // Use description from JSDoc comments, fallback to hardcoded if not available
-                const description = item.description || this.getDescriptionForAttribute(item.value);
+                const description = item.isDeprecated
+                    ? this.getDeprecationDescription(item, aliasMap, propertyEnum.items)
+                    : (item.description || this.getDescriptionForAttribute(item.value));
 
                 markdown += `| \`${item.value}\` | ${description} | ${requiredColumn} |\n`;
             }
@@ -570,7 +643,7 @@ class WebComponentDocGenerator {
         // Display summary
         console.log('\n📊 Documentation Summary:');
         console.log('- Only public/non-private elements included');
-        console.log('- Deprecated aliases excluded (they keep working until their removal release)');
+        console.log('- Deprecated aliases included in the tables, marked with a "Deprecated" badge');
         console.log('- Three separate markdown files generated');
         console.log('- Tables only, no additional content');
 
