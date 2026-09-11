@@ -117,6 +117,7 @@ const ALL_FLOWS = [
 	// anon: starts logged OUT (it IS the login) — no reused session, no room seeding.
 	{ id: 'login', kind: 'ui', anon: true, domain: 'auth', drive: driveLogin },
 	{ id: 'create-room', kind: 'ui', domain: 'rooms', drive: driveCreateRoom },
+	{ id: 'create-room-wizard', kind: 'ui', domain: 'rooms', drive: driveCreateRoomWizard },
 	{ id: 'console-tour', kind: 'ui', domain: 'console', drive: driveConsoleTour },
 	// lifecycle: one continuous authed + fake-camera recording (create -> join -> record) that is
 	// split by timestamp into 3 clips. Needs an EMPTY room list for the "create first room" card.
@@ -572,6 +573,50 @@ async function driveCreateRoom(page) {
 	await clickSelector(page, '#create-room-button');
 	await page.waitForURL((u) => !u.pathname.includes('/rooms/new'), { timeout: TIMEOUT }).catch(() => {});
 	await page.waitForTimeout(P(2400)); // land on the created room / list
+}
+
+// Advanced creation: walks every wizard step (details, access, meeting features with limits,
+// recording settings, recording trigger, layout) and creates the room.
+async function driveCreateRoomWizard(page) {
+	await page.goto(`${APP}/rooms`, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#rooms-table', { state: 'attached', timeout: TIMEOUT }).catch(() => {});
+	await page.waitForSelector('#create-room-btn', { state: 'visible', timeout: TIMEOUT });
+	await parkCursor(page);
+	await page.waitForTimeout(P(900));
+	await clickSelector(page, '#create-room-btn');
+	await page.waitForSelector('#wizard-advanced-mode-btn', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(600));
+	await clickSelector(page, '#wizard-advanced-mode-btn');
+	await page.waitForSelector('.room-details-step', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(400));
+	await typeText(page, '.room-details-step input[formcontrolname="roomName"]', 'Product Team');
+	await page.waitForTimeout(P(500));
+	await clickSelector(page, '#wizard-next-btn');
+	await page.waitForSelector('.room-access-step', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(1400));
+	await clickSelector(page, '#wizard-next-btn');
+	await page.waitForSelector('#room-feature-max-participants', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(500));
+	await typeText(page, '#room-feature-max-participants input', '10');
+	await typeText(page, '#room-feature-max-duration input', '60');
+	await page.waitForTimeout(P(700));
+	await clickSelector(page, '#wizard-next-btn');
+	await page.waitForSelector('.recording-config-step', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(1200));
+	await clickSelector(page, '#wizard-next-btn');
+	await page.waitForSelector('.recording-trigger-step', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(500));
+	await clickSelector(page, '.recording-trigger-step ov-selectable-card:has-text("Automatic")');
+	await page.waitForSelector('.autostart-mode-section', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(1200));
+	await clickSelector(page, '#wizard-next-btn');
+	await page.waitForSelector('.recording-layout-step', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(600));
+	await clickSelector(page, '.recording-layout-step ov-selectable-card:has-text("Speaker")');
+	await page.waitForTimeout(P(900));
+	await clickSelector(page, '#wizard-finish-btn');
+	await page.waitForURL((u) => !u.pathname.includes('/rooms/new'), { timeout: TIMEOUT }).catch(() => {});
+	await page.waitForTimeout(P(2400)); // land on the created room
 }
 
 // Live flows receive the recorded participant's page, the room url, and the roster.

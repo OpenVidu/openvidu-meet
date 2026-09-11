@@ -137,7 +137,7 @@ the 3-segment room-lifecycle flow × 2 themes):
 auth/      login-{light,dark}
 meeting/   live-meeting-{light,dark} · join-meeting-{light,dark}
 meeting/   room-lifecycle-{create,join,record}-{light,dark}   (one take, split into 3 clips)
-rooms/     create-room-{light,dark}
+rooms/     create-room-{light,dark} · create-room-wizard-{light,dark}
 console/   console-tour-{light,dark}
 ```
 
@@ -150,6 +150,7 @@ console/   console-tour-{light,dark}
 | `join-meeting` | live (3 ppl) | meeting | Two participants already in the room; the filmed viewer walks the lobby: types a display name → clicks the name submit → device-preview prejoin → clicks **Join** → lands in the populated room. |
 | `enable-captions` | live (2 ppl) | meeting | Filmed moderator + one remote participant. The moderator clicks the toolbar **captions button** to turn live captions ON, then the remote participant "speaks" — captions stream in word-by-word (interim → final) at the bottom. Live captions are backend-gated (`MEET_CAPTIONS_ENABLED`), so the room is created with `config.captions.enabled=true`, the filmed page stubs `GET /config/captions` + `POST`/`DELETE /ai/assistants` (mirrors the e2e `mockCaptionsBackend`), and caption text is injected into `MeetingCaptionsService._captions` via the dev-build Angular debug API (`window.ng`) — the fake tone-audio camera produces no real transcription. Requires the **non-optimized development** build on :6080 (window.ng + unmangled identifiers). |
 | `create-room` | ui (admin) | rooms | Rooms list → clicks **Create Room** → basic wizard → clears the default "Room" and types "Product Demo Room" → clicks **Create Room**. |
+| `create-room-wizard` | ui (admin) | rooms | Rooms list → **Create Room** → **Advanced setup** → walks every wizard step: types the name, lingers on Room Access, types the participant (10) and duration (60) limits in Meeting Features, lingers on Recording Settings, picks **Automatic Recording** in Recording Trigger, picks the **Speaker** layout → **Finish**. Selectors: `#wizard-advanced-mode-btn`, `#wizard-next-btn`, `#wizard-finish-btn`, step roots `.room-details-step` / `.room-access-step` / `.recording-config-step` / `.recording-trigger-step` / `.recording-layout-step`, limits `#room-feature-max-participants input` / `#room-feature-max-duration input`. |
 | `console-tour` | ui (admin) | console | Overview → clicks each side-nav item (Rooms → Recordings → Users → Configuration) → back to Overview, lingering on each screen. Uses 3 seeded demo rooms so lists are populated. |
 | `room-lifecycle` | lifecycle (admin + own camera) | meeting | **One continuous take, split into 3 clips.** create: empty overview → "create first room" card → wizard → name → **Create Room** (auto-redirects to the prejoin). join: prejoin → **Join**, host publishing `hostVideo`. record: a guest joins publishing `guestVideo` (2-person meeting) → more options → **Start recording** → recording active. Needs an empty room list for the first-room card. `cleanToolData()` removes tool-created rooms **and recordings** before/after each theme, so light & dark start from an identical empty state. |
 
