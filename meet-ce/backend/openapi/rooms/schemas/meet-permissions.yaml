@@ -61,10 +61,10 @@ properties:
         example: true
         description: >
             Can read the live state of the meeting (its info and the participants currently in it)
-            without necessarily joining it. Introduced after the deprecated spellings were frozen, so it
-            has none of its own. A room created from 3.9.0 on grants it to both roles by default; a room
-            or member that existed before 3.9.0 starts with the value of its `meetingJoin`, which gated
-            this capability before the permission existed.
+            without necessarily joining it. Has no deprecated `can*` equivalent. A room created from
+            3.9.0 on grants it to both roles by default; a room or member that existed before 3.9.0
+            starts with the value of its `meetingJoin`, which gated this capability before this
+            permission was added.
     roomShareAccessLinks:
         type: boolean
         example: false
@@ -82,9 +82,9 @@ properties:
         example: false
         description: >
             Can turn off another participant's microphone, camera or screen share. The affected participant
-            may turn the device back on. Introduced after the deprecated spellings were frozen, so it has
-            none of its own. A room created from 3.9.0 on grants it to the moderator role and denies it to
-            the speaker role by default; a room or member that existed before 3.9.0 starts without it.
+            may turn the device back on. Has no deprecated `can*` equivalent. A room created from 3.9.0 on
+            grants it to the moderator role and denies it to the speaker role by default; a room or member
+            that existed before 3.9.0 starts without it.
     meetingEnd:
         type: boolean
         example: false
