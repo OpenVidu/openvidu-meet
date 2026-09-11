@@ -35,7 +35,7 @@ import {
 	errorRoomNotFound,
 	errorUnreachableRecordingAutoStart,
 	internalError,
-	OpenViduMeetError
+	toMeetError
 } from '../models/error.model.js';
 import type { MeetRoomDeletionOptions } from '../models/request-context.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
@@ -797,8 +797,7 @@ export class RoomService {
 						}
 					};
 				} catch (error) {
-					const meetError =
-						error instanceof OpenViduMeetError ? error : internalError(`deleting room '${roomId}'`);
+					const meetError = toMeetError(error, `deleting room '${roomId}'`);
 
 					return {
 						ok: false,

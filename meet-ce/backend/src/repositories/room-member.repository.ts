@@ -259,13 +259,13 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 
 	/**
 	 * Removes multiple members from a room.
+	 * Does not fail if none of them is found: a member deleted meanwhile by someone else is gone all the same.
 	 *
 	 * @param roomId - The ID of the room
 	 * @param memberIds - Array of member IDs to remove
-	 * @throws Error if no room members were found or could not be deleted
 	 */
 	deleteByRoomIdAndMemberIds(roomId: string, memberIds: string[]): Promise<void> {
-		return this.deleteMany({ roomId, memberId: { $in: memberIds } });
+		return this.deleteMany({ roomId, memberId: { $in: memberIds } }, false);
 	}
 
 	/**
