@@ -97,7 +97,7 @@ class WebComponentDocGenerator {
             );
         }
 
-        return resolved.replace(/\|/g, '\\|');
+        return resolved.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
     }
 
     /**

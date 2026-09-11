@@ -12,10 +12,6 @@ export type DeepPartial<T> = T extends Array<infer U>
 		? { [K in keyof T]?: DeepPartial<T[K]> }
 		: T;
 
-// Keys that could reach/replace an object's prototype through bracket assignment
-// (e.g. a JSON.parse'd payload with an own "__proto__" property).
-const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
-
 export const isPlainObject = (value: unknown): value is PlainObject => {
 	if (value === null || typeof value !== 'object') return false;
 
@@ -38,7 +34,9 @@ export const deepMerge = <T>(target: T, source: unknown): T => {
 	const out = (isPlainObject(target) ? target : {}) as PlainObject;
 
 	for (const key of Object.keys(source)) {
-		if (UNSAFE_KEYS.has(key)) continue;
+		// Reject keys that could reach/replace an object's prototype through bracket assignment
+		// (e.g. a JSON.parse'd payload with an own "__proto__" property).
+		if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
 
 		const sourceValue = source[key];
 
