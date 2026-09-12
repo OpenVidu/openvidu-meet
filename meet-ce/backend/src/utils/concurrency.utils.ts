@@ -1,13 +1,12 @@
 import { PromisePool } from '@supercharge/promise-pool';
-import { INTERNAL_CONFIG } from '../config/internal-config.js';
 
 export interface RunConcurrentlyOptions {
-	concurrency?: number;
+	concurrency: number;
 	failFast: true;
 }
 
 export interface RunConcurrentlySettledOptions {
-	concurrency?: number;
+	concurrency: number;
 	failFast?: false;
 }
 
@@ -24,7 +23,7 @@ export interface RunConcurrentlySettledOptions {
  * @param items - Source items to process.
  * @param workerFn - Async worker invoked as `(item, index)` for each source item.
  * @param options - Concurrency and mode configuration.
- * @param options.concurrency - Maximum parallel tasks (defaults to `INTERNAL_CONFIG.DEFAULT_CONCURRENCY`).
+ * @param options.concurrency - Maximum parallel tasks.
  * @param options.failFast - Mode selector. Use `true` for fail-fast semantics.
  * @returns `Promise<R[]>` in fail-fast mode, otherwise `Promise<PromiseSettledResult<R>[]>`.
  *
@@ -50,15 +49,15 @@ export function runConcurrently<T, R>(
 export function runConcurrently<T, R>(
 	items: T[],
 	workerFn: (item: T, index: number) => Promise<R>,
-	options?: RunConcurrentlySettledOptions
+	options: RunConcurrentlySettledOptions
 ): Promise<PromiseSettledResult<R>[]>;
 
 export async function runConcurrently<T, R>(
 	items: T[],
 	workerFn: (item: T, index: number) => Promise<R>,
-	options: RunConcurrentlyOptions | RunConcurrentlySettledOptions = {}
+	options: RunConcurrentlyOptions | RunConcurrentlySettledOptions
 ): Promise<R[] | PromiseSettledResult<R>[]> {
-	const { concurrency = INTERNAL_CONFIG.DEFAULT_CONCURRENCY, failFast = false } = options;
+	const { concurrency, failFast = false } = options;
 
 	if (items.length === 0) {
 		return [];

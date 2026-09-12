@@ -1,0 +1,33 @@
+/* Command arguments, not properties, so their labels read as prose rather than
+   as the monospaced attribute names Setup uses. */
+.ta-arg-label {
+	font-family: var(--ta-font);
+	font-size: 10px;
+	color: var(--ta-text-3);
+}
+
+.ta-targets {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.ta-card--deprecated {
+	border-style: dashed;
+}
+
+.ta-card--deprecated .ta-btn {
+	color: var(--ta-text-2);
+	border-color: var(--ta-line);
+}
+
+.ta-listener-state {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+}
+
+.ta-listener-state__dot {
+	color: var(--ta-accent);
+}

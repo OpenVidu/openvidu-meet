@@ -46,27 +46,6 @@ export class MediaStorageService {
 		this.storage.set(MediaStorageKeys.AUDIO_DEVICE, device, this.areaFor(MediaStorageKeys.AUDIO_DEVICE));
 	}
 
-	/** Defaults to enabled: a missing key means the participant never turned the camera off. */
-	isCameraEnabled(): boolean {
-		return this.storage.get<boolean>(MediaStorageKeys.CAMERA_ENABLED, this.areaFor(MediaStorageKeys.CAMERA_ENABLED)) ?? true;
-	}
-
-	setCameraEnabled(enabled: boolean): void {
-		this.storage.set(MediaStorageKeys.CAMERA_ENABLED, enabled, this.areaFor(MediaStorageKeys.CAMERA_ENABLED));
-	}
-
-	/** Defaults to enabled: a missing key means the participant never turned the microphone off. */
-	isMicrophoneEnabled(): boolean {
-		return (
-			this.storage.get<boolean>(MediaStorageKeys.MICROPHONE_ENABLED, this.areaFor(MediaStorageKeys.MICROPHONE_ENABLED)) ??
-			true
-		);
-	}
-
-	setMicrophoneEnabled(enabled: boolean): void {
-		this.storage.set(MediaStorageKeys.MICROPHONE_ENABLED, enabled, this.areaFor(MediaStorageKeys.MICROPHONE_ENABLED));
-	}
-
 	getBackground(): string | null {
 		return this.storage.get<string>(MediaStorageKeys.BACKGROUND, this.areaFor(MediaStorageKeys.BACKGROUND));
 	}

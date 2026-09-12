@@ -39,7 +39,7 @@
 								<!-- Video Controls Overlay -->
 								<div class="video-overlay">
 									<div class="device-controls">
-										@if (showCameraButton()) {
+										@if (showCameraControls()) {
 											<div class="control-group">
 												<ov-video-devices-select
 													[compact]="true"
@@ -50,7 +50,7 @@
 											</div>
 										}
 
-										@if (showMicrophoneButton()) {
+										@if (showMicrophoneControls()) {
 											<div class="control-group">
 												<ov-audio-devices-select
 													[compact]="true"

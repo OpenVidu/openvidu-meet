@@ -1,27 +1,88 @@
-import { inject, Service } from '@angular/core';
+import { computed, inject, Service, signal } from '@angular/core';
+import type { MeetMeetingInfo } from '@openvidu-meet/typings';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 import { AssetsService } from '../../../../../shared/services/assets.service';
+import { HttpService } from '../../../../../shared/services/http.service';
+import { HTTP_HEADERS } from '../../../../../shared/constants/http-headers.constants';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { CAMERA_CAPTURE_DEFAULTS, MICROPHONE_CAPTURE_DEFAULTS } from '../../models/media-capture.model';
+import { MeetingConnectError } from '../../models/meeting-connect-error.model';
 import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
-import { ConnectionState, E2EEOptions, ExternalE2EEKeyProvider, Room, RoomOptions } from '../livekit';
+import { DeviceService } from '../device/device.service';
+import {
+	ConnectionError,
+	ConnectionErrorReason,
+	ConnectionState,
+	E2EEOptions,
+	ExternalE2EEKeyProvider,
+	Room,
+	RoomEvent,
+	RoomOptions
+} from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
-import { MediaStorageService } from '../storage/storage.service';
 
 /**
- * Owns the live meeting connection: the LiveKit Room lifecycle (create/connect/disconnect),
- * its E2EE setup (worker + key provider) and the connection token. Local media capture lives
- * separately in LocalMediaService.
+ * Owns the live meeting connection end to end: the LiveKit Room lifecycle (create / connect /
+ * disconnect / teardown), its E2EE setup (worker + key provider), the connection token and why a
+ * join failed. Nothing outside subscribes or unsubscribes Room listeners on its behalf. Local media
+ * capture lives separately in LocalTrackService.
  */
 @Service()
 export class MeetingLiveKitService {
-	private readonly storageService = inject(MediaStorageService);
+	private readonly deviceService = inject(DeviceService);
 	private readonly configService = inject(MeetingUiConfigService);
 	private readonly livekitSdkService = inject(LivekitSdkService);
 	private readonly assets = inject(AssetsService);
+	private readonly httpService = inject(HttpService);
 
 	private room: Room | undefined = undefined;
 	private keyProvider: ExternalE2EEKeyProvider | undefined;
+	// Held only so teardown() can terminate it: the Room owns it while it lives, and a Room is
+	// discarded once per meeting.
+	private e2eeWorker: Worker | undefined;
+
+	private readonly _connectionState = signal<ConnectionState>(ConnectionState.Disconnected);
+
+	/**
+	 * The single writer of {@link connectionState}, held as a stable reference so it can be removed
+	 * again: this service adds and removes its OWN Room listener and never reaches for
+	 * `removeAllListeners()`, which would take down every other subscriber of the Room too.
+	 */
+	private readonly publishConnectionState = (state: ConnectionState): void => this._connectionState.set(state);
+
+	/**
+	 * Reactive mirror of the Room's `ConnectionState`, with a single writer: the
+	 * `ConnectionStateChanged` subscription registered when the Room is created. It exists so
+	 * consumers can be `computed()` over the connection instead of probing the mutable `Room.state`
+	 * and mirroring it into a local signal kept in sync by an effect.
+	 *
+	 * This is the *connection* state only. Which screen the meeting shows (loading / prejoin /
+	 * error…) is a separate concern owned by `MeetingViewComponent`'s `MeetingViewPhase`.
+	 */
+	readonly connectionState = this._connectionState.asReadonly();
+
+	/**
+	 * Whether the local participant is connected to the room. While connecting or reconnecting the
+	 * room is initialized but not connected, so this is false.
+	 */
+	readonly isConnected = computed(() => this._connectionState() === ConnectionState.Connected);
+
+	/**
+	 * Whether the connection dropped and the client is performing a full reconnect. A
+	 * signal-only reconnect (`SignalReconnecting`) keeps media flowing and is deliberately excluded.
+	 */
+	readonly isReconnecting = computed(() => this._connectionState() === ConnectionState.Reconnecting);
+
+	/** Whether a room session is in progress — connected or mid-reconnect — unlike the stricter {@link isConnected}. */
+	readonly isSessionActive = computed(() => {
+		const state = this._connectionState();
+
+		return (
+			state === ConnectionState.Connected ||
+			state === ConnectionState.Reconnecting ||
+			state === ConnectionState.SignalReconnecting
+		);
+	});
 
 	/**
 	 * @internal
@@ -32,6 +93,7 @@ export class MeetingLiveKitService {
 
 	private livekitToken = '';
 	private livekitUrl = '';
+	private roomId = '';
 	private log: ILogger = inject(LoggerService).get('MeetingLiveKitService');
 
 	/**
@@ -47,12 +109,16 @@ export class MeetingLiveKitService {
 		// If room already exists and doesn't need E2EE reconfiguration, don't recreate it
 		if (this.room && !needsE2EEConfig) {
 			this.log.d('Room already initialized, skipping re-initialization');
+			// Re-arm rather than trust: the subscription is idempotent (removed before it is added), so a
+			// Room whose listeners were stripped from outside still ends up with exactly one writer.
+			this.trackConnectionState(this.room);
 			return;
 		}
 
 		// If room exists but needs E2EE configuration, we need to recreate it
 		if (this.room && needsE2EEConfig) {
 			this.log.d('Room needs E2EE configuration, recreating room');
+			this.untrackConnectionState(this.room);
 			this.room = undefined;
 		}
 
@@ -77,15 +143,37 @@ export class MeetingLiveKitService {
 		}
 
 		this.room = this.livekitSdkService.createRoom(roomOptions);
+		this.trackConnectionState(this.room);
 		this.log.d('Room initialized successfully');
+	}
+
+	/**
+	 * Publishes the Room's connection state into {@link connectionState}. Subscribed where the Room is
+	 * created, so that signal has exactly one writer, and safe to call again on the same Room: the
+	 * listener is removed before it is added. The state is seeded from the Room rather than assumed,
+	 * because `init()` also recreates the Room to apply E2EE.
+	 */
+	private trackConnectionState(room: Room): void {
+		room.off(RoomEvent.ConnectionStateChanged, this.publishConnectionState);
+		this._connectionState.set(room.state);
+		room.on(RoomEvent.ConnectionStateChanged, this.publishConnectionState);
+	}
+
+	/**
+	 * Removes this service's own connection-state subscription from `room`, leaving every other
+	 * subscriber of that Room untouched.
+	 */
+	private untrackConnectionState(room: Room): void {
+		room.off(RoomEvent.ConnectionStateChanged, this.publishConnectionState);
 	}
 
 	private buildE2EEOptions(): E2EEOptions {
 		this.log.d('Configuring E2EE with provided key');
 		this.keyProvider = new ExternalE2EEKeyProvider();
+		this.e2eeWorker = this.createE2EEWorker();
 		return {
 			keyProvider: this.keyProvider,
-			worker: this.createE2EEWorker()
+			worker: this.e2eeWorker
 		};
 	}
 
@@ -130,18 +218,51 @@ export class MeetingLiveKitService {
 
 			await this.livekitSdkService.connectRoom(room, this.livekitUrl, this.livekitToken);
 			this.log.d(`Successfully connected to room ${room.name}`);
-
-			const participantName = this.storageService.getParticipantName();
-
-			if (participantName) {
-				room.localParticipant.setName(participantName);
-			}
 		} catch (error) {
 			this.log.e('Error connecting to room:', error);
-			throw {
-				code: 'CONNECTION_ERROR',
-				message: `Error connecting to the server at the following URL: ${this.livekitUrl}`
-			};
+
+			if (await this.isMeetingAtCapacity(error)) {
+				throw new MeetingConnectError(
+					'MEETING_FULL',
+					'The meeting has reached its maximum number of participants',
+					error
+				);
+			}
+
+			throw new MeetingConnectError(
+				'CONNECTION_ERROR',
+				`Error connecting to the server at the following URL: ${this.livekitUrl}`,
+				error
+			);
+		}
+	}
+
+	/**
+	 * Whether the meeting rejected this participant because it is full. LiveKit reports its own
+	 * `maxParticipants` rejection as an unexplained server error, indistinguishable from any other
+	 * one, so the occupancy is read from Meet's API instead. Every other failure reason (an
+	 * unreachable server, a timeout, a rejected token, a cancelled attempt) is explained already and
+	 * never reaches that read.
+	 */
+	private async isMeetingAtCapacity(error: unknown): Promise<boolean> {
+		const unexplainedServerError =
+			error instanceof ConnectionError && error.reason === ConnectionErrorReason.InternalError;
+
+		if (!unexplainedServerError || !this.roomId) {
+			return false;
+		}
+
+		try {
+			const { participantCount, maxParticipants } = await this.httpService.getRequest<MeetMeetingInfo>(
+				`${HttpService.API_PATH_PREFIX}/meetings/${this.roomId}`,
+				// A failed read here is an answer ("could not tell"), not a session to recover: without
+				// this the interceptor would mint a fresh joining token and reserve a participant name.
+				{ [HTTP_HEADERS.SKIP_AUTH_RECOVERY]: 'true' }
+			);
+			return maxParticipants !== undefined && participantCount >= maxParticipants;
+		} catch (error) {
+			this.log.w('Could not read the meeting occupancy after a failed connect:', error);
+			return false;
 		}
 	}
 
@@ -163,6 +284,50 @@ export class MeetingLiveKitService {
 			await this.livekitSdkService.disconnectRoom(room);
 
 			if (callback) callback();
+		}
+	}
+
+	/**
+	 * Tears down the current Room and leaves the service ready for a clean `init()`.
+	 *
+	 * The Room's lifecycle belongs to this service alone, so this is the only way out: it removes the
+	 * listener it registered itself — never the caller's, and never `removeAllListeners()` — makes sure
+	 * the connection is closed, and clears `this.room` so the next `init()` builds a fresh Room with a
+	 * fresh connection-state subscription instead of silently reusing the outgoing one.
+	 */
+	async teardown(): Promise<void> {
+		const room = this.room;
+
+		if (!room) return;
+
+		this.log.d('Tearing down the room');
+
+		const state = this._connectionState();
+
+		try {
+			if (state === ConnectionState.Connected) {
+				// Not a client-initiated leave: whoever ended the meeting emitted its own event already.
+				await this.disconnect(undefined, false);
+			} else if (state !== ConnectionState.Disconnected) {
+				// Connecting / reconnecting: `disconnect()` guards on `isConnected()` and would skip this
+				// Room, leaving it negotiating in the background with the local tracks still attached.
+				this.log.d(`Closing a room left in state '${state}'`);
+				this.shouldHandleClientInitiatedDisconnectEvent = false;
+				await this.livekitSdkService.disconnectRoom(room);
+			}
+		} finally {
+			this.untrackConnectionState(room);
+
+			// Reset the service only if a new meeting has not claimed it while the disconnect was in
+			// flight: Angular does not await `ngOnDestroy`, so a remount can overlap this teardown.
+			if (this.room === room) {
+				this.room = undefined;
+				this.keyProvider = undefined;
+				this.e2eeWorker?.terminate();
+				this.e2eeWorker = undefined;
+				this.shouldHandleClientInitiatedDisconnectEvent = true;
+				this._connectionState.set(ConnectionState.Disconnected);
+			}
 		}
 	}
 
@@ -193,15 +358,6 @@ export class MeetingLiveKitService {
 		return this.room?.name ?? '';
 	}
 
-	/**
-	 * Returns if local participant is connected to the room.
-	 * When reconnecting, the room is initialized but not connected yet, so this method will return false.
-	 * @returns true if local participant is connected to the room, false otherwise
-	 */
-	isConnected(): boolean {
-		return this.room?.state === ConnectionState.Connected;
-	}
-
 	hasRoomTracksPublished(): boolean {
 		const { localParticipant, remoteParticipants } = this.getRoom();
 		const localTracks = localParticipant.getTrackPublications();
@@ -211,12 +367,15 @@ export class MeetingLiveKitService {
 	}
 
 	/**
+	 * Points the Room created by {@link init} at the meeting this token grants: it never creates one
+	 * of its own, so a token that arrives after {@link teardown} cannot revive a torn-down Room.
 	 * @internal
 	 */
 	initializeAndSetToken(token: string, livekitUrl?: string): void {
-		const { livekitUrl: urlFromToken } = this.extractLivekitData(token);
+		const { livekitUrl: urlFromToken, roomId } = this.extractLivekitData(token);
 
 		this.livekitToken = token;
+		this.roomId = roomId ?? '';
 		const url = livekitUrl || urlFromToken;
 
 		if (!url) {
@@ -227,23 +386,16 @@ export class MeetingLiveKitService {
 		}
 
 		this.livekitUrl = url;
-
-		// Initialize room if it doesn't exist yet
-		// This ensures that getRoom() won't fail if token is set before onTokenRequested
-		if (!this.room) {
-			this.log.d('Room not initialized yet, initializing room due to token assignment');
-			this.init();
-		}
 	}
 
 	/**
-	 * Extracts Livekit data from the provided token and returns an object containing the Livekit URL and room admin status.
+	 * Extracts Livekit data from the provided token and returns an object containing the Livekit URL,
+	 * the room it grants access to and the room admin status.
 	 * @param token - The token to extract Livekit data from.
-	 * @returns An object containing the Livekit URL and room admin status.
 	 * @throws Error if there is an error decoding and parsing the token.
 	 * @internal
 	 */
-	private extractLivekitData(token: string): { livekitUrl?: string; livekitRoomAdmin: boolean } {
+	private extractLivekitData(token: string): { livekitUrl?: string; roomId?: string; livekitRoomAdmin: boolean } {
 		try {
 			const base64Url = token.split('.')[1];
 			const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -263,6 +415,7 @@ export class MeetingLiveKitService {
 				const tokenMetadata = JSON.parse(payload.metadata);
 				return {
 					livekitUrl: tokenMetadata.livekitUrl,
+					roomId: tokenMetadata.roomId,
 					livekitRoomAdmin: !!tokenMetadata.roomAdmin
 				};
 			}

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { openFloatingWithCaptions, type LayoutBox } from './helpers/captions.helper';
 import {
+	dismissMicMutedSpeakingAlert,
 	muteRemoteParticipant,
 	startScreensharing,
 	stopScreensharing,
@@ -22,6 +23,7 @@ import {
 	floatStream,
 	getZoomControlOrder,
 	hoverScreenShareStream,
+	localCameraStream,
 	readZoomPercent,
 	resizeStream,
 	screenShareStream,
@@ -29,7 +31,13 @@ import {
 	waitForVisibleRemoteParticipants,
 	zoomInScreenShare
 } from './helpers/stream.helper';
-import { getElementBoundingBox, hoverStream } from './helpers/ui-utils.helper';
+import {
+	getElementBoundingBox,
+	getSettledBoundingBox,
+	hoverStream,
+	resumeRenderingFrames,
+	stopRenderingFrames
+} from './helpers/ui-utils.helper';
 
 test.describe('Stream E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -112,6 +120,9 @@ test.describe('Stream E2E Tests', () => {
 
 		test('should add screen share even when audio is disabled', async ({ page }) => {
 			await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: false });
+			// Joining muted starts the "talking while muted" warning, whose popup overlaps the screenshare
+			// menu this test opens later and intercepts its clicks.
+			await dismissMicMutedSpeakingAlert(page);
 			await expectStreamCount(page, 1);
 
 			await startScreensharing(page);
@@ -126,6 +137,8 @@ test.describe('Stream E2E Tests', () => {
 
 		test('should add screen share even when all media is disabled', async ({ page }) => {
 			await openMeeting(page, accessUrl, { videoEnabled: false, audioEnabled: false });
+			// See the audio-disabled case above: the muted-microphone warning would swallow the click.
+			await dismissMicMutedSpeakingAlert(page);
 			await expectStreamCount(page, 1);
 
 			await startScreensharing(page);
@@ -783,6 +796,45 @@ test.describe('Stream E2E Tests', () => {
 			}
 		});
 
+		test('should keep the local video in the layout when the first remote joins and leaves while the window is not rendering', async ({
+			browser
+		}) => {
+			const { pages, addParticipant, removeParticipant, removeAllParticipants } = await joinParticipants(
+				browser,
+				{
+					roomId,
+					accessUrl,
+					participants: [{ name: 'participant-0' }]
+				}
+			);
+			const [pageA] = pages;
+			const localContainer = localCameraStream(pageA);
+
+			try {
+				await expect(localContainer).toBeVisible();
+				await stopRenderingFrames(pageA);
+
+				await addParticipant({ name: 'participant-1', headless: true });
+				await expect(localContainer).toHaveClass(/OV_floating/, { timeout: 15_000 });
+
+				await removeParticipant('participant-1');
+				await expect(localContainer).not.toHaveClass(/OV_floating/, { timeout: 15_000 });
+
+				await resumeRenderingFrames(pageA);
+
+				// The frames the auto-float deferred are delivered only now, after the tile docked:
+				// the corner placement they carry must not move the docked tile out of the layout.
+				const tileBox = await getSettledBoundingBox(pageA, '.local_participant .OV_stream_video.local');
+				const layoutBox = await getSettledBoundingBox(pageA, '#layout');
+				expect(tileBox.x).toBeGreaterThanOrEqual(layoutBox.x - 2);
+				expect(tileBox.y).toBeGreaterThanOrEqual(layoutBox.y - 2);
+				expect(tileBox.x + tileBox.width).toBeLessThanOrEqual(layoutBox.x + layoutBox.width + 2);
+				expect(tileBox.y + tileBox.height).toBeLessThanOrEqual(layoutBox.y + layoutBox.height + 2);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
 		test('should reposition the AUTO-FLOATED local video when a panel opens so it is not hidden behind it', async ({
 			browser
 		}) => {
@@ -828,9 +880,7 @@ test.describe('Stream E2E Tests', () => {
 			await openMeeting(page, accessUrl);
 
 			// Float: the tile lands at the bottom-right corner of the current (large) layout.
-			const localContainer = page.locator('.local_participant:has(.OV_stream_video.local)').first();
 			await floatStream(page);
-			await expect(localContainer).toHaveClass(/OV_floating/);
 			await page.waitForTimeout(800);
 
 			// Un-maximize: shrink the browser window. The layout viewport shrinks with it, so the
@@ -854,9 +904,7 @@ test.describe('Stream E2E Tests', () => {
 		test('should keep the FLOATING video in its dragged zone when the window shrinks', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 
-			const localContainer = page.locator('.local_participant:has(.OV_stream_video.local)').first();
 			await floatStream(page);
-			await expect(localContainer).toHaveClass(/OV_floating/);
 			await page.waitForTimeout(800);
 
 			// Park the tile in the bottom-LEFT quadrant — a deliberate user-chosen position.
@@ -896,18 +944,14 @@ test.describe('Stream E2E Tests', () => {
 		test('should resize the floating LOCAL video using the SE corner handle', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 			await floatStream(page);
-			await page.waitForTimeout(500);
 
-			const beforeBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
-			expect(beforeBox).not.toBeNull();
+			const beforeBox = await getSettledBoundingBox(page, '.local_participant:has(.OV_stream_video.local)');
 
 			await resizeStream(page, 'resize-se', 80, 45);
-			await page.waitForTimeout(300);
 
-			const afterBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
-			expect(afterBox).not.toBeNull();
-			expect(afterBox!.width).toBeGreaterThan(beforeBox!.width);
-			expect(afterBox!.height).toBeGreaterThan(beforeBox!.height);
+			const afterBox = await getSettledBoundingBox(page, '.local_participant:has(.OV_stream_video.local)');
+			expect(afterBox.width).toBeGreaterThan(beforeBox.width);
+			expect(afterBox.height).toBeGreaterThan(beforeBox.height);
 
 			await page.close();
 		});
@@ -915,15 +959,12 @@ test.describe('Stream E2E Tests', () => {
 		test('should maintain the 16:9 aspect ratio after resizing the floating video', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 			await floatStream(page);
-			await page.waitForTimeout(500);
 
 			await resizeStream(page, 'resize-se', 100, 0);
-			await page.waitForTimeout(300);
 
-			const box = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
-			expect(box).not.toBeNull();
+			const box = await getSettledBoundingBox(page, '.local_participant:has(.OV_stream_video.local)');
 
-			const ratio = box!.width / box!.height;
+			const ratio = box.width / box.height;
 			const expectedRatio = 16 / 9;
 			// Allow 5% tolerance
 			expect(Math.abs(ratio - expectedRatio) / expectedRatio).toBeLessThan(0.05);
@@ -934,30 +975,24 @@ test.describe('Stream E2E Tests', () => {
 		test('should RESET the floating video size to default after dock and re-float', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 			await floatStream(page);
-			await page.waitForTimeout(500);
 
 			// Record the default floating size
-			const defaultBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
-			expect(defaultBox).not.toBeNull();
+			const defaultBox = await getSettledBoundingBox(page, '.local_participant:has(.OV_stream_video.local)');
 
 			// Resize to a larger size
 			await resizeStream(page, 'resize-se', 100, 56);
-			await page.waitForTimeout(300);
 
-			const resizedBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
-			expect(resizedBox!.width).toBeGreaterThan(defaultBox!.width + 50);
+			const resizedBox = await getSettledBoundingBox(page, '.local_participant:has(.OV_stream_video.local)');
+			expect(resizedBox.width).toBeGreaterThan(defaultBox.width + 50);
 
 			// Dock then re-float
 			await dockStream(page);
-			await page.waitForTimeout(800);
 			await floatStream(page);
-			await page.waitForTimeout(500);
 
 			// Size should be back to the default minimum (~160px wide)
-			const resetBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
-			expect(resetBox).not.toBeNull();
-			expect(Math.abs(resetBox!.width - defaultBox!.width)).toBeLessThan(20);
-			expect(Math.abs(resetBox!.height - defaultBox!.height)).toBeLessThan(20);
+			const resetBox = await getSettledBoundingBox(page, '.local_participant:has(.OV_stream_video.local)');
+			expect(Math.abs(resetBox.width - defaultBox.width)).toBeLessThan(20);
+			expect(Math.abs(resetBox.height - defaultBox.height)).toBeLessThan(20);
 
 			await page.close();
 		});

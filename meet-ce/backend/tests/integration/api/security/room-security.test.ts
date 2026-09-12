@@ -3,11 +3,14 @@ import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
+import { errorInsufficientPermissions, errorUnauthorized } from '../../../../src/models/error.model.js';
+import { expectBulkDenied, expectMeetError } from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRooms,
 	deleteAllUsers,
 	generateRoomMemberToken,
 	getFullPath,
+	getRoom,
 	startTestServer,
 	updateRoomAccessConfig
 } from '../../../helpers/request-helpers.js';
@@ -60,12 +63,12 @@ describe('Room API Security Tests', () => {
 				.post(ROOMS_PATH)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
 				.send({});
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).post(ROOMS_PATH).send({});
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 	});
 
@@ -197,14 +200,14 @@ describe('Room API Security Tests', () => {
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).get(ROOMS_PATH);
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 
 		it('should fail when using room member token', async () => {
 			const response = await request(app)
 				.get(ROOMS_PATH)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 	});
 
@@ -262,8 +265,11 @@ describe('Room API Security Tests', () => {
 				.delete(ROOMS_PATH)
 				.query({ roomIds: roomId })
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken);
-			expect(response.status).toBe(400);
-			// No need to recreate - room was not deleted
+			await expectBulkDenied(response, {
+				id: roomId,
+				reason: errorInsufficientPermissions(),
+				readBack: () => getRoom(roomId)
+			});
 		});
 
 		it('should fail when user is authenticated as ROOM_MANAGER without access to the room', async () => {
@@ -271,8 +277,11 @@ describe('Room API Security Tests', () => {
 				.delete(ROOMS_PATH)
 				.query({ roomIds: roomId })
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
-			expect(response.status).toBe(400);
-			// No need to recreate - room was not deleted
+			await expectBulkDenied(response, {
+				id: roomId,
+				reason: errorInsufficientPermissions(),
+				readBack: () => getRoom(roomId)
+			});
 		});
 
 		it('should fail when user is authenticated as ROOM_MEMBER and is room member', async () => {
@@ -280,8 +289,8 @@ describe('Room API Security Tests', () => {
 				.delete(ROOMS_PATH)
 				.query({ roomIds: roomId })
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomMember.accessToken);
-			expect(response.status).toBe(403);
-			// No need to recreate - room was not deleted
+			expectMeetError(response, errorInsufficientPermissions());
+			expect((await getRoom(roomId)).status).toBe(200);
 		});
 
 		it('should fail when user is authenticated as ROOM_MEMBER without access to the room', async () => {
@@ -289,13 +298,14 @@ describe('Room API Security Tests', () => {
 				.delete(ROOMS_PATH)
 				.query({ roomIds: roomId })
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
-			expect(response.status).toBe(403);
-			// No need to recreate - room was not deleted
+			expectMeetError(response, errorInsufficientPermissions());
+			expect((await getRoom(roomId)).status).toBe(200);
 		});
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).delete(ROOMS_PATH).query({ roomIds: roomId });
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
+			expect((await getRoom(roomId)).status).toBe(200);
 		});
 
 		it('should fail when using room member token', async () => {
@@ -303,8 +313,8 @@ describe('Room API Security Tests', () => {
 				.delete(ROOMS_PATH)
 				.query({ roomIds: roomId })
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
-			expect(response.status).toBe(401);
-			// No need to recreate - room was not deleted
+			expectMeetError(response, errorUnauthorized());
+			expect((await getRoom(roomId)).status).toBe(200);
 		});
 	});
 
@@ -352,7 +362,7 @@ describe('Room API Security Tests', () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should succeed when user is authenticated as ROOM_MANAGER without membership and user access is enabled', async () => {
@@ -391,7 +401,7 @@ describe('Room API Security Tests', () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should succeed when user is authenticated as ROOM_MEMBER without membership and user access is enabled', async () => {
@@ -419,7 +429,7 @@ describe('Room API Security Tests', () => {
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).get(`${ROOMS_PATH}/${roomId}`);
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 
 		it('should succeed when using room member token', async () => {
@@ -435,7 +445,7 @@ describe('Room API Security Tests', () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 	});
 
@@ -489,46 +499,46 @@ describe('Room API Security Tests', () => {
 			const response = await request(app)
 				.delete(`${ROOMS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken);
-			expect(response.status).toBe(403);
-			// No need to recreate - room was not deleted
+			expectMeetError(response, errorInsufficientPermissions());
+			expect((await getRoom(roomId)).status).toBe(200);
 		});
 
 		it('should fail when user is authenticated as ROOM_MANAGER without access to the room', async () => {
 			const response = await request(app)
 				.delete(`${ROOMS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
-			expect(response.status).toBe(403);
-			// No need to recreate - room was not deleted
+			expectMeetError(response, errorInsufficientPermissions());
+			expect((await getRoom(roomId)).status).toBe(200);
 		});
 
 		it('should fail when user is authenticated as ROOM_MEMBER and is room member', async () => {
 			const response = await request(app)
 				.delete(`${ROOMS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomMember.accessToken);
-			expect(response.status).toBe(403);
-			// No need to recreate - room was not deleted
+			expectMeetError(response, errorInsufficientPermissions());
+			expect((await getRoom(roomId)).status).toBe(200);
 		});
 
 		it('should fail when user is authenticated as ROOM_MEMBER without access to the room', async () => {
 			const response = await request(app)
 				.delete(`${ROOMS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
-			expect(response.status).toBe(403);
-			// No need to recreate - room was not deleted
+			expectMeetError(response, errorInsufficientPermissions());
+			expect((await getRoom(roomId)).status).toBe(200);
 		});
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).delete(`${ROOMS_PATH}/${roomId}`);
-			expect(response.status).toBe(401);
-			// No need to recreate - room was not deleted
+			expectMeetError(response, errorUnauthorized());
+			expect((await getRoom(roomId)).status).toBe(200);
 		});
 
 		it('should fail when using room member token', async () => {
 			const response = await request(app)
 				.delete(`${ROOMS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
-			expect(response.status).toBe(401);
-			// No need to recreate - room was not deleted
+			expectMeetError(response, errorUnauthorized());
+			expect((await getRoom(roomId)).status).toBe(200);
 		});
 	});
 
@@ -576,7 +586,7 @@ describe('Room API Security Tests', () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomId}/config`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should succeed when user is authenticated as ROOM_MANAGER without membership and user access is enabled', async () => {
@@ -613,7 +623,7 @@ describe('Room API Security Tests', () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomId}/config`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should succeed when user is authenticated as ROOM_MEMBER without membership and user access is enabled', async () => {
@@ -641,7 +651,7 @@ describe('Room API Security Tests', () => {
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).get(`${ROOMS_PATH}/${roomId}/config`);
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 
 		it('should succeed when using room member token', async () => {
@@ -657,7 +667,7 @@ describe('Room API Security Tests', () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomId}/config`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 	});
 
@@ -710,7 +720,7 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/config`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken)
 				.send({ config: roomConfig });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is authenticated as ROOM_MANAGER without access to the room', async () => {
@@ -718,7 +728,7 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/config`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken)
 				.send({ config: roomConfig });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is authenticated as ROOM_MEMBER and is room member', async () => {
@@ -726,7 +736,7 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/config`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomMember.accessToken)
 				.send({ config: roomConfig });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is authenticated as ROOM_MEMBER without access to the room', async () => {
@@ -734,12 +744,12 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/config`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
 				.send({ config: roomConfig });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).put(`${ROOMS_PATH}/${roomId}/config`).send({ config: roomConfig });
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 
 		it('should fail when using room member token', async () => {
@@ -747,7 +757,7 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/config`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken)
 				.send({ config: roomConfig });
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 	});
 
@@ -792,7 +802,7 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/status`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken)
 				.send({ status: 'open' });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is authenticated as ROOM_MANAGER without access to the room', async () => {
@@ -800,7 +810,7 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/status`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken)
 				.send({ status: 'open' });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is authenticated as ROOM_MEMBER and is room member', async () => {
@@ -808,7 +818,7 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/status`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomMember.accessToken)
 				.send({ status: 'open' });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is authenticated as ROOM_MEMBER without access to the room', async () => {
@@ -816,12 +826,12 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/status`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
 				.send({ status: 'open' });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).put(`${ROOMS_PATH}/${roomId}/status`).send({ status: 'open' });
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 
 		it('should fail when using room member token', async () => {
@@ -829,7 +839,7 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/status`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken)
 				.send({ status: 'open' });
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 	});
 
@@ -874,7 +884,7 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/roles`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken)
 				.send({ roles: {} });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is authenticated as ROOM_MANAGER without access to the room', async () => {
@@ -882,7 +892,7 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/roles`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken)
 				.send({ roles: {} });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is authenticated as ROOM_MEMBER and is room member', async () => {
@@ -890,7 +900,7 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/roles`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomMember.accessToken)
 				.send({ roles: {} });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is authenticated as ROOM_MEMBER without access to the room', async () => {
@@ -898,12 +908,12 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/roles`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
 				.send({ roles: {} });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).put(`${ROOMS_PATH}/${roomId}/roles`).send({ roles: {} });
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 
 		it('should fail when using room member token', async () => {
@@ -911,7 +921,7 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/roles`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken)
 				.send({ roles: {} });
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 	});
 
@@ -956,7 +966,7 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/access`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken)
 				.send({ access: {} });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is authenticated as ROOM_MANAGER without access to the room', async () => {
@@ -964,7 +974,7 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/access`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken)
 				.send({ access: {} });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is authenticated as ROOM_MEMBER and is room member', async () => {
@@ -972,7 +982,7 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/access`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomMember.accessToken)
 				.send({ access: {} });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is authenticated as ROOM_MEMBER without access to the room', async () => {
@@ -980,12 +990,12 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/access`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
 				.send({ access: {} });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).put(`${ROOMS_PATH}/${roomId}/access`).send({ access: {} });
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 
 		it('should fail when using room member token', async () => {
@@ -993,7 +1003,7 @@ describe('Room API Security Tests', () => {
 				.put(`${ROOMS_PATH}/${roomId}/access`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken)
 				.send({ access: {} });
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 	});
 });

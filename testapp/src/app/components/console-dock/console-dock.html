@@ -1,0 +1,167 @@
+<section
+	class="ta-console"
+	[class.ta-console--collapsed]="collapsed()"
+	[style.height.px]="collapsed() ? null : height()"
+	data-testid="section-event-log"
+>
+	@if (!collapsed()) {
+	<div
+		class="ta-console__grip"
+		role="separator"
+		tabindex="0"
+		aria-orientation="horizontal"
+		aria-label="Resize the console"
+		data-testid="console-resize-grip"
+		(pointerdown)="startResize($event)"
+		(pointermove)="resize($event)"
+		(pointerup)="endResize($event)"
+		(pointercancel)="endResize($event)"
+		(keydown.arrowup)="nudgeHeight(24, $event)"
+		(keydown.arrowdown)="nudgeHeight(-24, $event)"
+	></div>
+	}
+	<header class="ta-console__bar">
+		<button
+			class="ta-icon-btn ta-icon-btn--bare"
+			[attr.aria-label]="collapsed() ? 'Expand console' : 'Collapse console'"
+			[attr.aria-expanded]="!collapsed()"
+			data-testid="btn-toggle-console"
+			(click)="collapsed.set(!collapsed())"
+		>
+			<svg
+				class="ta-console__chevron"
+				width="14"
+				height="14"
+				viewBox="0 0 16 16"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="1.6"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<polyline points="4,10 8,5.5 12,10"></polyline>
+			</svg>
+		</button>
+		<h2>Console</h2>
+
+		@if (collapsed()) { @if (latestRow(); as row) {
+		<div class="ta-console__latest ta-log-entry--{{ row.kind }} ta-mono">
+			<span class="ta-log-entry__time">{{ row.time }}</span>
+			<span class="ta-log-entry__tag">{{ row.tag }}</span>
+			<span class="ta-log-entry__name">{{ row.name }}</span>
+			<span class="ta-log-entry__detail">{{ row.detail }}</span>
+		</div>
+		}
+		<span class="ta-hint ta-console__count">{{ log.entries().length }} entries</span>
+		} @else {
+		<div class="ta-console__chips">
+			<button
+				class="ta-chip ta-chip--all"
+				[class.ta-chip--on]="everyKindShown()"
+				[attr.aria-pressed]="everyKindShown()"
+				title="Show every kind"
+				data-testid="chip-all"
+				(click)="showEveryKind()"
+			>
+				all {{ log.entries().length }}
+			</button>
+			@for (chip of chips(); track chip.kind) {
+			<button
+				class="ta-chip ta-chip--{{ chip.kind }}"
+				[class.ta-chip--on]="chip.on"
+				[attr.aria-pressed]="chip.on"
+				[attr.data-testid]="'chip-' + chip.kind"
+				(click)="toggleKind(chip.kind)"
+			>
+				{{ chip.label }} {{ chip.count }}
+			</button>
+			}
+		</div>
+
+		<div class="ta-console__actions">
+			<input
+				class="ta-console__search"
+				type="text"
+				placeholder="Filter entries"
+				aria-label="Filter entries"
+				data-testid="input-log-query"
+				[(ngModel)]="query"
+			/>
+			<button
+				class="ta-icon-btn ta-icon-btn--sm"
+				aria-label="Copy visible entries"
+				data-testid="btn-copy-log"
+				(click)="copyVisible()"
+			>
+				<svg
+					width="13"
+					height="13"
+					viewBox="0 0 16 16"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.4"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<rect x="5.75" y="5.75" width="8.5" height="8.5" rx="1.5"></rect>
+					<path d="M10.25 3.75v-1a1 1 0 0 0-1-1h-6.5a1 1 0 0 0-1 1v6.5a1 1 0 0 0 1 1h1"></path>
+				</svg>
+			</button>
+			<button
+				class="ta-icon-btn ta-icon-btn--sm"
+				aria-label="Clear the console"
+				data-testid="btn-clear-log"
+				(click)="clear()"
+			>
+				<svg
+					width="13"
+					height="13"
+					viewBox="0 0 16 16"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.4"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<line x1="2.5" y1="4.25" x2="13.5" y2="4.25"></line>
+					<path d="M4.25 4.25v8.5a1 1 0 0 0 1 1h5.5a1 1 0 0 0 1-1v-8.5"></path>
+					<path d="M6.25 4.25v-1.5h3.5v1.5"></path>
+				</svg>
+			</button>
+		</div>
+		}
+	</header>
+
+	@if (!collapsed()) {
+	<ul class="ta-scroll ta-log" data-testid="event-log">
+		@for (row of rows(); track row.id) {
+		<li class="ta-log-entry ta-log-entry--{{ row.kind }}" data-testid="event-log-entry">
+			<button
+				class="ta-log-entry__row ta-mono"
+				[class.ta-log-entry__row--static]="!row.payload"
+				[attr.aria-expanded]="row.payload ? expandedId() === row.id : null"
+				(click)="toggleExpanded(row)"
+			>
+				<span class="ta-log-entry__time">{{ row.time }}</span>
+				<span class="ta-log-entry__tag">{{ row.tag }}</span>
+				<span class="ta-log-entry__name">{{ row.name }}</span>
+				<span class="ta-log-entry__detail">{{ row.detail }}</span>
+			</button>
+			@if (expandedId() === row.id && row.payload) {
+			<pre class="ta-log-entry__payload ta-mono">{{ row.payload }}</pre>
+			}
+		</li>
+		} @empty {
+		<li class="ta-log-empty ta-hint">
+			@if (log.entries().length) { No entry matches the current filters. } @else { Nothing yet. Commands, events
+			and webhooks land here. }
+		</li>
+		}
+	</ul>
+
+	<footer class="ta-console__footer">
+		<span class="ta-hint">{{ rows().length }} of {{ log.entries().length }} entries</span>
+		<span class="ta-hint">Click a row with a payload to expand it</span>
+	</footer>
+	}
+</section>

@@ -11,7 +11,7 @@ import {
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
 import { MeetRoomDeletionPolicyWithMeeting, MeetRoomDeletionPolicyWithRecordings } from '@openvidu-meet/typings';
-import type { DeleteRoomDialogOptions } from '../../../../shared/models';
+import type { DeleteRoomDialogOptions } from '../../models/delete-room-dialog.model';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 
 @Component({

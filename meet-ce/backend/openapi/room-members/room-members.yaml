@@ -57,6 +57,8 @@
             - $ref: './parameters/room-member-name-case-insensitive.yaml'
             - $ref: './parameters/room-member-base-role.yaml'
             - $ref: './parameters/room-member-type.yaml'
+            - $ref: './parameters/room-member-x-fields-header.yaml'
+            - $ref: './parameters/room-member-x-extra-fields-header.yaml'
             - $ref: './parameters/room-member-fields.yaml'
             - $ref: './parameters/room-member-extra-fields.yaml'
             - $ref: '../shared/parameters/max-items.yaml'
@@ -123,6 +125,8 @@
         parameters:
             - $ref: '../rooms/parameters/room-id-path.yaml'
             - $ref: './parameters/room-member-id.yaml'
+            - $ref: './parameters/room-member-x-fields-header.yaml'
+            - $ref: './parameters/room-member-x-extra-fields-header.yaml'
             - $ref: './parameters/room-member-fields.yaml'
             - $ref: './parameters/room-member-extra-fields.yaml'
         responses:

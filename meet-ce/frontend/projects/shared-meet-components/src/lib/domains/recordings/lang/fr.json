@@ -156,6 +156,15 @@
       "RECORDINGS_FAILED_SUFFIX_SINGULAR": "enregistrement n'a pas pu être supprimé.",
       "RECORDINGS_FAILED_SUFFIX_PLURAL": "enregistrements n'ont pas pu être supprimés.",
       "DELETE_RECORDINGS_FAILED": "Échec de la suppression des enregistrements"
+    },
+    "DIALOGS": {
+      "DELETE_RECORDING_TITLE": "Supprimer l’enregistrement",
+      "DELETE_RECORDING_MESSAGE": "Voulez-vous vraiment supprimer définitivement l’enregistrement <b>{recordingId}</b> ? Cette action est irréversible.",
+      "DELETE_RECORDINGS_TITLE": "Supprimer les enregistrements",
+      "DELETE_RECORDINGS_MESSAGE_ONE": "Voulez-vous vraiment supprimer définitivement <b>{count} enregistrement</b> ? Cette action est irréversible.",
+      "DELETE_RECORDINGS_MESSAGE_MANY": "Voulez-vous vraiment supprimer définitivement <b>{count} enregistrements</b> ? Cette action est irréversible.",
+      "DELETE": "Supprimer",
+      "CANCEL": "Annuler"
     }
   }
 }

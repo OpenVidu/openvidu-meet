@@ -10,7 +10,8 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
-import { LocalMediaService } from '../../services/local-media/local-media.service';
+import { LocalMediaStateService } from '../../services/local-media-state/local-media-state.service';
+import { LocalTrackService } from '../../services/local-track/local-track.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
 import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
@@ -54,7 +55,8 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	readonly onReadyToJoin = output<void>();
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly deviceSrv = inject(DeviceService);
-	private readonly localMediaService = inject(LocalMediaService);
+	private readonly localTrackService = inject(LocalTrackService);
+	private readonly localMediaState = inject(LocalMediaStateService);
 
 	readonly errorMessage = signal<string | undefined>(undefined);
 	readonly isLoading = signal(true);
@@ -63,15 +65,20 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	readonly showCameraButton = this.libService.cameraButtonSignal;
-	readonly showMicrophoneButton = this.libService.microphoneButtonSignal;
+	readonly showCameraControls = this.libService.showCameraControlsSignal;
+	readonly showMicrophoneControls = this.libService.showMicrophoneControlsSignal;
 	readonly showBackgroundsButton = this.libService.backgroundEffectsButtonSignal;
 	readonly showLogo = this.libService.displayLogoSignal;
 
 	readonly showBackgroundPanel = signal(false);
 
-	readonly videoTrack = this.localMediaService.cameraTrack;
-	readonly isVideoEnabled = signal(false);
+	/** Preview track, read from the media layer so a device switch or a fresh camera lands here too. */
+	readonly videoTrack = this.localTrackService.cameraTrack;
+	/**
+	 * Single source of truth for the camera state, so a host `mediaToggleVideo` command lands on this
+	 * screen too — it used to be a local snapshot only the local click could move.
+	 */
+	readonly isVideoEnabled = this.localMediaState.cameraEnabled;
 	readonly hasVideoDevices = this.deviceSrv.hasVideoDevices;
 
 	/**
@@ -111,15 +118,19 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	async ngOnInit() {
 		await this.initializeDevicesWithRetry();
 		this.isLoading.set(false);
+		this.localTrackService.setPrejoinActive(true);
 	}
 
 	async ngOnDestroy() {
 		this.cdkSrv.setSelector('body');
+		this.localTrackService.setPrejoinActive(false);
 
 		if (this.shouldRemoveTracksWhenComponentIsDestroyed) {
-			// On join (shouldRemove=false) the tracks are kept — they get published and the prejoin
-			// reference released instead, so monitoring hands off to the connected participant.
-			this.localMediaService.discardPrejoinMedia();
+			// Stop and release the prejoin tracks. Clearing the track signal drops the local-media
+			// state to `undefined`, which detaches the mic-activity monitor automatically.
+			// On join (shouldRemove=false) the tracks are kept — connect() publishes them and releases
+			// the reference instead, so monitoring hands off to the connected participant seamlessly.
+			this.localTrackService.removeLocalTracks();
 		}
 	}
 
@@ -149,13 +160,27 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	}
 
 	videoEnabledChanged(enabled: boolean) {
-		this.isVideoEnabled.set(enabled);
-
 		if (!enabled) {
 			this.closeBackgroundPanel();
 		}
 
 		this.onVideoEnabledChanged.emit(enabled);
+	}
+
+	videoDeviceChanged(device: CustomDevice) {
+		this.log.d('Video device changed to:', device);
+		this.onVideoDeviceChanged.emit(device);
+	}
+
+	audioDeviceChanged(device: CustomDevice) {
+		// The device switch replaced the underlying MediaStreamTrack; the mic-activity monitor
+		// re-clones automatically via the local-media state — see LocalTrackService.switchMicrophone.
+		this.log.d('Audio device changed to:', device);
+		this.onAudioDeviceChanged.emit(device);
+	}
+
+	audioEnabledChanged(enabled: boolean) {
+		this.onAudioEnabledChanged.emit(enabled);
 	}
 
 	/**
@@ -198,10 +223,10 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	private async initializeDevicesWithRetry(maxRetries = 3): Promise<void> {
 		for (let attempt = 1; attempt <= maxRetries; attempt++) {
 			try {
-				await this.localMediaService.initPrejoinMedia();
-				this.isVideoEnabled.set(this.localMediaService.isMyCameraEnabled());
+				const tracks = await this.localTrackService.createLocalTracks();
+				this.localTrackService.setLocalTracks(tracks);
 
-				// The mic-activity monitor starts automatically: initPrejoinMedia populated the
+				// The mic-activity monitor starts automatically: setLocalTracks above populated the
 				// local-media state, whose signal the MicActivityService effect follows.
 
 				// Restore previously selected virtual background in prejoin when possible.

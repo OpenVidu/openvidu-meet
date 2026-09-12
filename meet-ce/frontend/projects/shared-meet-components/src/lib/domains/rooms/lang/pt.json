@@ -15,7 +15,9 @@
       "DELETE_ROOM": "Excluir sala",
       "SHARE_LINK": "Compartilhar link",
       "MORE_ACTIONS": "Mais ações",
-      "VIEW_USER_PROFILE": "Ver perfil do usuário"
+      "VIEW_USER_PROFILE": "Ver perfil do usuário",
+      "COPY_ROOM_ID": "Copiar ID da sala",
+      "ROOM_ID_COPIED": "ID da sala copiado para a área de transferência"
     },
     "LIST": {
       "LOADING_TITLE": "Carregando salas",
@@ -154,7 +156,7 @@
       "UPDATE_ROOM": "Atualizar sala",
       "CREATE_ROOM": "Criar sala",
       "STEP_ROOM_DETAILS": "Detalhes da sala",
-      "STEP_ROOM_FEATURES": "Recursos da sala",
+      "STEP_ROOM_FEATURES": "Recursos da reunião",
       "STEP_ROOM_ACCESS": "Acesso à sala",
       "STEP_RECORDING_SETTINGS": "Configurações de gravação",
       "STEP_RECORDING_TRIGGER": "Acionador de gravação",
@@ -225,11 +227,11 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Editar membro",
         "REMOVE_MEMBER": "Remover membro",
-        "FEATURE_DISABLED_PERMISSION": "Ative o recurso correspondente em Recursos da sala para configurar esta permissão."
+        "FEATURE_DISABLED_PERMISSION": "Ative o recurso correspondente em Recursos da reunião para configurar esta permissão."
       },
       "FEATURES": {
-        "TITLE": "Recursos da sala",
-        "DESCRIPTION": "Configure recursos e funcionalidades adicionais para sua sala",
+        "TITLE": "Recursos da reunião",
+        "DESCRIPTION": "Configure recursos e funcionalidades adicionais para suas reuniões",
         "SECURITY": "Segurança",
         "E2EE": "Criptografia de ponta a ponta",
         "E2EE_DESC": "Adicione uma camada extra de segurança às suas reuniões. Ninguém fora da reunião, nem mesmo quem tem acesso ao servidor, pode ver ou ouvir a conversa.",
@@ -246,7 +248,31 @@
         "CHAT_DESC": "Permitir que os participantes enviem mensagens durante a reunião",
         "EXPERIENCE": "Experiência",
         "VIRTUAL_BACKGROUNDS": "Fundos virtuais",
-        "VIRTUAL_BACKGROUNDS_DESC": "Habilite fundos virtuais e efeitos de desfoque para os participantes"
+        "VIRTUAL_BACKGROUNDS_DESC": "Habilite fundos virtuais e efeitos de desfoque para os participantes",
+        "DEVICES": "Dispositivos",
+        "INITIAL_AUDIO": "Microfone ligado ao entrar",
+        "INITIAL_AUDIO_DESC": "Os participantes entram com o microfone ligado",
+        "INITIAL_AUDIO_NOTE": "(podem silenciar-se em qualquer momento)",
+        "INITIAL_VIDEO": "Câmera ligada ao entrar",
+        "INITIAL_VIDEO_DESC": "Os participantes entram com a câmera ligada",
+        "INITIAL_VIDEO_NOTE": "(podem desligá-la em qualquer momento)",
+        "LIMITS": "Limites",
+        "MAX_DURATION": "Duração máxima da reunião",
+        "MAX_DURATION_DESC": "Encerra a reunião automaticamente após esse tempo. Deixe vazio para duração ilimitada",
+        "MAX_DURATION_LABEL": "Minutos",
+        "MAX_DURATION_PLACEHOLDER": "Ilimitada",
+        "MAX_DURATION_INVALID": "Insira um número inteiro de minutos",
+        "MAX_DURATION_TOO_LOW": "Insira pelo menos 1 minuto",
+        "MAX_DURATION_TOO_HIGH_PREFIX": "Insira no máximo ",
+        "MAX_DURATION_TOO_HIGH_SUFFIX": " minutos",
+        "MAX_PARTICIPANTS": "Limite de participantes",
+        "MAX_PARTICIPANTS_DESC": "Número máximo de participantes que podem entrar na reunião. Deixe vazio para não impor limite",
+        "MAX_PARTICIPANTS_LABEL": "Participantes",
+        "MAX_PARTICIPANTS_PLACEHOLDER": "Ilimitado",
+        "MAX_PARTICIPANTS_INVALID": "Insira um número inteiro de participantes",
+        "MAX_PARTICIPANTS_TOO_LOW": "Insira pelo menos 1 participante",
+        "MAX_PARTICIPANTS_TOO_HIGH_PREFIX": "Insira no máximo ",
+        "MAX_PARTICIPANTS_TOO_HIGH_SUFFIX": " participantes"
       },
       "RECORDING_CONFIG": {
         "TITLE": "Configuração de gravação",
@@ -277,10 +303,17 @@
         "DESCRIPTION": "Escolha quando a gravação deve começar automaticamente",
         "MANUAL_TITLE": "Gravação manual",
         "MANUAL_DESC": "Inicie a gravação manualmente quando necessário",
-        "AUTO1_TITLE": "Automático com 1 participante",
-        "AUTO1_DESC": "Iniciar a gravação automaticamente quando 1 participante entrar",
-        "AUTO2_TITLE": "Automático com 2 participantes",
-        "AUTO2_DESC": "Iniciar a gravação automaticamente quando 2 participantes entrarem"
+        "AUTO_TITLE": "Gravação automática",
+        "AUTO_DESC": "A gravação começa automaticamente assim que a reunião é iniciada",
+        "AUTOSTART_MODE_LABEL": "Quando a gravação deve começar?",
+        "AUTOSTART_MODE_FIRST_TITLE": "O primeiro participante entra",
+        "AUTOSTART_MODE_FIRST_DESC": "Começa assim que a reunião é iniciada",
+        "AUTOSTART_MODE_SECOND_TITLE": "O segundo participante entra",
+        "AUTOSTART_MODE_SECOND_DESC": "Espera que outra pessoa entre",
+        "AUTOSTART_MODE_MODERATOR_TITLE": "Um moderador entra",
+        "AUTOSTART_MODE_MODERATOR_DESC": "Começa assim que um moderador entra ou é promovido",
+        "AUTOSTART_UNREACHABLE_TITLE": "Acionador de gravação inalcançável",
+        "AUTOSTART_UNREACHABLE_MESSAGE": "Este acionador precisa de pelo menos ${required} participantes para disparar, mas o limite de participantes da sala está definido como ${limit}."
       }
     },
     "ERRORS": {
@@ -350,6 +383,22 @@
         "ACTIVE": "A edição da sala está desabilitada durante uma reunião ativa",
         "DEFAULT": "Editar configurações da sala"
       }
+    },
+    "DIALOGS": {
+      "DELETE_ROOM_TITLE": "Eliminar sala",
+      "DELETE_ROOM_MESSAGE": "Tem a certeza de que quer eliminar a sala <b>{roomId}</b>?",
+      "DELETE_ROOMS_TITLE": "Eliminar salas",
+      "DELETE_ROOMS_MESSAGE": "Tem a certeza de que quer eliminar <b>{count}</b> salas?",
+      "REMOVE_MEMBER_TITLE": "Remover membro",
+      "REMOVE_MEMBER_MESSAGE": "Tem a certeza de que quer remover <b>{memberName}</b> desta sala?",
+      "REMOVE_MEMBERS_TITLE": "Remover membros",
+      "REMOVE_MEMBERS_MESSAGE_ONE": "Tem a certeza de que quer remover <b>{count} membro</b> desta sala?",
+      "REMOVE_MEMBERS_MESSAGE_MANY": "Tem a certeza de que quer remover <b>{count} membros</b> desta sala?",
+      "MEETING_WARNING_TITLE": "Aviso de reunião em curso",
+      "REMOVE_MEMBER_WARNING": "Se este utilizador estiver na reunião, será expulso imediatamente.",
+      "REMOVE_MEMBERS_WARNING": "Os membros que estiverem na reunião serão expulsos imediatamente.",
+      "DELETE": "Eliminar",
+      "REMOVE": "Remover"
     }
   }
 }

@@ -4,7 +4,6 @@
 export enum LayoutClass {
 	BIG_ELEMENT = 'OV_big',
 	SMALL_ELEMENT = 'OV_small',
-	TOP_BAR_ELEMENT = 'OV_top-bar',
 	IGNORED_ELEMENT = 'OV_ignored',
 	FLOATING_ELEMENT = 'OV_floating',
 	CLASS_NAME = 'layout'
@@ -40,7 +39,6 @@ export interface ElementDimensions {
 	width: number;
 	big?: boolean;
 	small?: boolean;
-	topBar?: boolean;
 }
 
 /**
@@ -102,14 +100,13 @@ export interface LayoutAreas {
 	big: LayoutArea | null;
 	normal: LayoutArea | null;
 	small: LayoutArea | null;
-	topBar: LayoutArea | null;
 }
 
 /**
  * Element category used to route each element through the right layout area.
  * @internal
  */
-export type ElementCategory = 'big' | 'normal' | 'small' | 'topBar';
+export type ElementCategory = 'big' | 'normal' | 'small';
 
 /**
  * Categorized elements by type. `categories[i]` is the category assigned to the
@@ -120,7 +117,6 @@ export interface CategorizedElements {
 	big: ElementDimensions[];
 	normal: ElementDimensions[];
 	small: ElementDimensions[];
-	topBar: ElementDimensions[];
 	categories: ElementCategory[];
 }
 

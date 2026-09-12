@@ -47,11 +47,14 @@ export * from './models/viewport.model';
 export * from './pipes/participant.pipe';
 export * from './pipes/translate.pipe';
 // Services
-export * from './services/action/action.service';
 export * from './services/chat/chat.service';
 export * from './services/e2ee/e2ee.service';
 export * from './services/layout/smart-layout.service';
-export * from './services/local-media/local-media.service';
+export * from './services/local-media-control/local-media-control.service';
+export * from './services/local-media-intent/local-media-intent.service';
+export * from './services/local-media-state/local-media-state.service';
+export * from './services/local-track/local-track.service';
+export * from './services/meeting-ending-soon/meeting-ending-soon.service';
 export * from './services/meeting-livekit/meeting-livekit.service';
 export * from './services/panel/panel.service';
 export * from './services/participant/participant.service';

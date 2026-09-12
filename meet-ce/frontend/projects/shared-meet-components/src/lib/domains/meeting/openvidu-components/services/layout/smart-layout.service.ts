@@ -1,5 +1,10 @@
 import { computed, effect, inject, Service, signal, untracked } from '@angular/core';
-import { SmartLayoutMode } from '../../models/layout/smart-layout.model';
+import {
+	HiddenParticipantsSummary,
+	sameHiddenParticipantsSummary,
+	sameIdentityOrder,
+	SmartLayoutMode
+} from '../../models/layout/smart-layout.model';
 import type { Participant } from '../../services/livekit';
 import { MeetingEventsService } from '../meeting-events/meeting-events.service';
 import { ViewportService } from '../viewport/viewport.service';
@@ -30,6 +35,19 @@ export class SmartLayoutService extends BaseLayoutService {
 	readonly isSmartLayoutEnabled = computed(() => this._layoutMode() === SmartLayoutMode.SMART_MOSAIC);
 
 	private readonly _speakerPriorityOrder = signal<string[]>([]);
+
+	/**
+	 * Published by {@link SmartLayoutComponent} while it would render its top-bar variant; `undefined`
+	 * while a pinned participant or a full grid calls for the in-grid tile instead.
+	 */
+	private readonly _railHiddenParticipants = signal<HiddenParticipantsSummary | undefined>(undefined, {
+		equal: sameHiddenParticipantsSummary
+	});
+	readonly railHiddenParticipants = this._railHiddenParticipants.asReadonly();
+
+	setRailHiddenParticipants(summary: HiddenParticipantsSummary | undefined): void {
+		this._railHiddenParticipants.set(summary);
+	}
 
 	private speakingStartTimes = new Map<string, number>();
 	private speakingStopTimes = new Map<string, number>();
@@ -159,9 +177,7 @@ export class SmartLayoutService extends BaseLayoutService {
 	private processActiveSpeakersChanged(speakers: Participant[]): void {
 		const now = Date.now();
 		const activeSpeakerIds = new Set(
-			speakers
-				.filter((p) => !p.isLocal && p.audioLevel >= this.AUDIO_LEVEL_THRESHOLD)
-				.map((p) => p.identity)
+			speakers.filter((p) => !p.isLocal && p.audioLevel >= this.AUDIO_LEVEL_THRESHOLD).map((p) => p.identity)
 		);
 
 		this.updateSpeakerActivityTimers(activeSpeakerIds, now);
@@ -228,7 +244,16 @@ export class SmartLayoutService extends BaseLayoutService {
 		// Group 3: no longer qualified — keep at the tail for ordered removal
 		const inactive = currentOrder.filter((id) => !qualifiedSet.has(id));
 
-		const updated = [...existingActiveSpeakers, ...newActiveSpeakers, ...gracePeriodExisting, ...newGracePeriod, ...inactive];
-		this._speakerPriorityOrder.set(updated.slice(0, this._maxVisibleRemoteParticipants() * 2));
+		const updated = [
+			...existingActiveSpeakers,
+			...newActiveSpeakers,
+			...gracePeriodExisting,
+			...newGracePeriod,
+			...inactive
+		].slice(0, this._maxVisibleRemoteParticipants() * 2);
+
+		if (sameIdentityOrder(currentOrder, updated)) return;
+
+		this._speakerPriorityOrder.set(updated);
 	}
 }

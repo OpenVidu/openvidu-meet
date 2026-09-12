@@ -7,9 +7,10 @@ import {
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode
 } from '@openvidu-meet/typings';
-import { DeleteRoomDialogOptions } from '../../../shared/models/notification.model';
+import { DeleteRoomDialogOptions } from '../models/delete-room-dialog.model';
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
-import { DialogPresetsService } from '../../../shared/services/dialog-presets.service';
+import { deleteRoomDialogPreset } from '../utils/dialog-presets';
+import { DialogService } from '../../../shared/services/dialog.service';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { DeleteRoomDialogComponent } from '../components/delete-room-dialog/delete-room-dialog.component';
 import { RoomService } from './room.service';
@@ -32,7 +33,7 @@ interface RoomDeletionOptions {
 export class RoomDeletionService {
 	private roomService = inject(RoomService);
 	private notificationService = inject(NotificationService);
-	private dialogPresetsService = inject(DialogPresetsService);
+	private dialogService = inject(DialogService);
 	private dialog = inject(MatDialog);
 	private readonly translateService = inject(TranslateService);
 
@@ -41,8 +42,8 @@ export class RoomDeletionService {
 			await this.deleteRoomWithDefaultPolicies(roomId, log, onSuccess);
 		};
 
-		this.notificationService.showDialog({
-			...this.dialogPresetsService.getDeleteRoomDialogPreset(roomId),
+		this.dialogService.showDialog({
+			...deleteRoomDialogPreset(this.translateService, roomId),
 			confirmCallback: deleteCallback
 		});
 	}

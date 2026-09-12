@@ -28,6 +28,7 @@ import {
 	getGetUserMediaCallCount,
 	getGetUserMediaCalls,
 	getGetUserMediaCallsFor,
+	hideDeviceLabelsUntilPermissionGranted,
 	installGetUserMediaCounter
 } from './helpers/ui-utils.helper';
 
@@ -167,6 +168,58 @@ test.describe('Media Devices E2E Tests', () => {
 		});
 	});
 
+	// A room configured to start with the microphone and camera off has nothing to open on entry,
+	// so nothing asks for media permission, and a browser withholds device labels until it is
+	// granted, leaving the device lists empty. Read as "no devices", that empty list used to
+	// disable the very toggles that would have asked, so a first-time visitor could never turn a
+	// device on for the whole meeting.
+	test.describe('First visit to a room that starts with media off', () => {
+		let mediaOffAccessUrl: string;
+
+		test.beforeEach(async ({ page }) => {
+			const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl({
+				config: { initialAudioActive: false, initialVideoActive: false }
+			});
+			createdRoomIds.push(room.roomId);
+			mediaOffAccessUrl = url;
+
+			await hideDeviceLabelsUntilPermissionGranted(page);
+		});
+
+		test('offers working camera and microphone toggles in the prejoin', async ({ page }) => {
+			await openPrejoin(page, mediaOffAccessUrl);
+
+			await expect(page.locator('#no-video-device-message')).toHaveCount(0);
+			await expect(page.locator('#no-audio-device-message')).toHaveCount(0);
+			await expect(page.locator('#camera-button')).toBeEnabled();
+			await expect(page.locator('#microphone-button')).toBeEnabled();
+
+			// Both start off: that is what the room asked for.
+			expect(await isPrejoinVideoEnabled(page)).toBe(false);
+			expect(await isPrejoinAudioEnabled(page)).toBe(false);
+
+			// Turning one on is what asks for permission, and the labelled device list follows.
+			await ensurePrejoinVideoState(page, true);
+			await page.locator('#video-dropdown').click();
+			await assertHasVideoDeviceOption(page);
+		});
+
+		test('keeps the media buttons usable in the meeting after joining with both devices off', async ({ page }) => {
+			await openMeeting(page, mediaOffAccessUrl, { skipPrejoinMediaCheck: true });
+
+			const cameraButton = page.locator('#camera-btn');
+			const microphoneButton = page.locator('#mic-btn');
+			await expect(cameraButton).toBeEnabled();
+			await expect(microphoneButton).toBeEnabled();
+
+			await cameraButton.click();
+			await expect(page.locator('#videocam')).toBeVisible();
+
+			await microphoneButton.click();
+			await expect(page.locator('#mic')).toBeVisible();
+		});
+	});
+
 	// Regression guards for the device-service reorder: media permission is now obtained by the
 	// first real track creation (no throwaway getUserMedia probe), the device list is enumerated
 	// afterwards, and the stored device selection / enabled state must be honoured.
@@ -223,26 +276,23 @@ test.describe('Media Devices E2E Tests', () => {
 			await expect.poll(() => getFirstVideoTrackDeviceId(page), { timeout: 15_000 }).toBe(switchedDeviceId);
 		});
 
-		test('remembers a disabled-camera preference on reload', async ({ page }) => {
+		// The enabled state is resolved per entry, never remembered. The device *selection* (which
+		// camera) is remembered — that is the test above.
+		test('does not remember a disabled camera across a reload', async ({ page }) => {
 			await openPrejoin(page, accessUrl);
 			await expect.poll(() => getFirstVideoTrackLabel(page), { timeout: 15_000 }).not.toBeNull();
 
 			await ensurePrejoinVideoState(page, false);
 			expect(await isPrejoinVideoEnabled(page)).toBe(false);
 
-			// Give the async "camera off" preference write time to reach storage before reloading.
-			await page.waitForTimeout(500);
-
-			// Reopen: the stored "camera off" preference must survive, and the freshly created track
-			// must arrive muted — the camera stays off without the user toggling it again.
+			// Reopen: the choice was per-entry, so the camera comes back on with the room's default.
 			await reopenPrejoin(page, accessUrl);
-			await expect.poll(() => isPrejoinVideoEnabled(page), { timeout: 15_000 }).toBe(false);
+			await expect.poll(() => isPrejoinVideoEnabled(page), { timeout: 15_000 }).toBe(true);
 
-			// Cameras are still present — this is "camera off", not "no camera available".
 			await expect(page.locator('#no-video-device-message')).toHaveCount(0);
 		});
 
-		test('opens the prejoin without a redundant getUserMedia probe', async ({ page }) => {
+		test('opens the prejoin with a single combined getUserMedia', async ({ page }) => {
 			await installGetUserMediaCounter(page);
 
 			await openPrejoin(page, accessUrl);
@@ -250,12 +300,13 @@ test.describe('Media Devices E2E Tests', () => {
 
 			const calls = await getGetUserMediaCalls(page);
 
-			// The pre-reorder design — and LiveKit's getLocalDevices() with requestPermissions=true —
-			// probed for permission with a throwaway getUserMedia({audio,video}) before acquiring the
-			// real tracks. The reorder requests media per kind (video-only / audio-only) and never as a
-			// combined audio+video acquisition, so no call carries both kinds.
-			expect(calls.length).toBeGreaterThan(0);
-			expect(calls.filter((call) => call.audio && call.video)).toEqual([]);
+			// Two things are pinned here. There is no throwaway permission probe (LiveKit's
+			// getLocalDevices() with requestPermissions=true would add one before the real tracks), and
+			// the microphone and the camera are asked for together: one request is one browser
+			// permission prompt, where a request per kind costs the participant two.
+			expect(calls.length).toBe(1);
+			expect(calls[0].audio).toBe(true);
+			expect(calls[0].video).toBe(true);
 		});
 
 		test('re-selecting the active camera does not re-acquire the track', async ({ page }) => {
@@ -305,16 +356,17 @@ test.describe('Media Devices E2E Tests', () => {
 		});
 
 		test('turning the camera back on opens the device exactly once', async ({ page }) => {
+			// A room whose initial state leaves the camera off, so the prejoin opens with no camera
+			// track at all — the path where enabling it has to acquire the device. The participant's
+			// intent is deliberately not persisted, so a reload would not reproduce this.
+			const { room, accessUrl: cameraOffUrl } = await createRoomAndGetAnonymousAccessUrl({
+				config: { initialVideoActive: false }
+			});
+			createdRoomIds.push(room.roomId);
+
 			await installGetUserMediaCounter(page);
 
-			await openPrejoin(page, accessUrl);
-			await expect.poll(() => getFirstVideoTrackDeviceId(page), { timeout: 15_000 }).not.toBeNull();
-
-			// Store the "camera off" preference and reopen, so the prejoin starts with no camera
-			// track at all — the path where enabling the camera has to create one.
-			await ensurePrejoinVideoState(page, false);
-			await page.waitForTimeout(500);
-			await reopenPrejoin(page, accessUrl);
+			await openPrejoin(page, cameraOffUrl);
 			await expect.poll(() => isPrejoinVideoEnabled(page), { timeout: 15_000 }).toBe(false);
 			expect(await getGetUserMediaCallsFor(page, 'video')).toEqual([]);
 

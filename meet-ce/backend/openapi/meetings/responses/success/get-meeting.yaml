@@ -1,0 +1,5 @@
+description: Live info of the meeting currently running in the room
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/meet-meeting-info.yaml'

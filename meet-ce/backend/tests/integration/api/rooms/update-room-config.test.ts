@@ -1,6 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import {
 	MeetRecordingAudioCodec,
+	MeetRecordingAutoStartMode,
 	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
 	MeetRecordingVideoCodec,
@@ -59,6 +60,8 @@ describe('Room API Tests', () => {
 			expect(updateResponse.status).toBe(200);
 			expect(updateResponse.body).toEqual({
 				...updatedConfig,
+				initialAudioActive: true, // Creation default, unchanged
+				initialVideoActive: true, // Creation default, unchanged
 				recording: { ...updatedConfig.recording, layout: MeetRecordingLayout.GRID } // Layout remains unchanged
 			});
 
@@ -67,8 +70,73 @@ describe('Room API Tests', () => {
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body.config).toEqual({
 				...updatedConfig,
+				initialAudioActive: true, // Creation default, unchanged
+				initialVideoActive: true, // Creation default, unchanged
 				recording: { ...updatedConfig.recording, layout: MeetRecordingLayout.GRID } // Layout remains unchanged
 			});
+		});
+
+		it('should update the meeting limits and the recording autoStart mode', async () => {
+			const createdRoom = await createRoom({ roomName: 'meeting-config-test' });
+
+			const updateResponse = await updateRoomConfig(createdRoom.roomId, {
+				maxParticipants: 10,
+				maxDurationMinutes: 60,
+				recording: {
+					enabled: true,
+					autoStart: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS
+				}
+			});
+
+			expect(updateResponse.status).toBe(200);
+			expect(updateResponse.body.maxParticipants).toBe(10);
+			expect(updateResponse.body.maxDurationMinutes).toBe(60);
+			expect(updateResponse.body.recording).toMatchObject({
+				enabled: true,
+				autoStart: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS
+			});
+
+			// Config updates deep-merge, so an omitted limit/autoStart keeps its value and `null` clears it
+			const clearResponse = await updateRoomConfig(createdRoom.roomId, {
+				maxParticipants: 5,
+				maxDurationMinutes: null,
+				recording: {
+					enabled: true,
+					autoStart: null
+				}
+			});
+
+			expect(clearResponse.status).toBe(200);
+			expect(clearResponse.body.maxParticipants).toBe(5);
+			expect(clearResponse.body.maxDurationMinutes).toBeNull();
+			expect(clearResponse.body.recording.autoStart).toBeNull();
+		});
+
+		it('should update the room-wide initial media state', async () => {
+			// Creation defaults both initial media fields to true
+			const createdRoom = await createRoom({ roomName: 'initial-media-state-test' }, undefined, {
+				xExtraFields: 'config'
+			});
+			expect(createdRoom.config.initialAudioActive).toBe(true);
+			expect(createdRoom.config.initialVideoActive).toBe(true);
+
+			const updateResponse = await updateRoomConfig(createdRoom.roomId, {
+				initialAudioActive: false
+			});
+
+			expect(updateResponse.status).toBe(200);
+			expect(updateResponse.body.initialAudioActive).toBe(false);
+			// Config updates deep-merge, so the omitted sibling keeps its value
+			expect(updateResponse.body.initialVideoActive).toBe(true);
+
+			const restoreResponse = await updateRoomConfig(createdRoom.roomId, {
+				initialAudioActive: true,
+				initialVideoActive: false
+			});
+
+			expect(restoreResponse.status).toBe(200);
+			expect(restoreResponse.body.initialAudioActive).toBe(true);
+			expect(restoreResponse.body.initialVideoActive).toBe(false);
 		});
 
 		it('should allow partial config updates', async () => {
@@ -112,7 +180,9 @@ describe('Room API Tests', () => {
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
-				captions: { enabled: true }
+				captions: { enabled: true },
+				initialAudioActive: true, // Creation default
+				initialVideoActive: true // Creation default
 			};
 			expect(getResponse.body.config).toEqual(expectedConfig);
 		});
@@ -321,7 +391,9 @@ describe('Room API Tests', () => {
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
-				captions: { enabled: true }
+				captions: { enabled: true },
+				initialAudioActive: true, // Creation default
+				initialVideoActive: true // Creation default
 			};
 			expect(getResponse.body.config).toEqual(expectedConfig);
 		});
@@ -346,6 +418,102 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(422);
 			expect(response.body.error).toContain('Unprocessable Entity');
 			expect(JSON.stringify(response.body.details)).toContain('recording.enabled');
+		});
+
+		it('should reject meeting limits outside the accepted range', async () => {
+			const createdRoom = await createRoom({ roomName: 'meeting-limits-validation-test' });
+
+			let response = await updateRoomConfig(createdRoom.roomId, {
+				maxParticipants: 0
+			} as unknown as MeetRoomConfig);
+			expect(response.status).toBe(422);
+			expect(JSON.stringify(response.body.details)).toContain('maxParticipants');
+
+			response = await updateRoomConfig(createdRoom.roomId, {
+				maxDurationMinutes: 1.5
+			} as unknown as MeetRoomConfig);
+			expect(response.status).toBe(422);
+			expect(JSON.stringify(response.body.details)).toContain('maxDurationMinutes');
+
+			// Below the structural minimum: a limit of 0 would be indistinguishable from no limit
+			response = await updateRoomConfig(createdRoom.roomId, { maxDurationMinutes: 0 });
+			expect(response.status).toBe(422);
+			expect(JSON.stringify(response.body.details)).toContain('maxDurationMinutes');
+
+			// Above the ceilings: a value LiveKit cannot encode must never reach the stored config
+			response = await updateRoomConfig(createdRoom.roomId, { maxParticipants: 31 });
+			expect(response.status).toBe(422);
+			expect(JSON.stringify(response.body.details)).toContain('maxParticipants');
+
+			response = await updateRoomConfig(createdRoom.roomId, { maxDurationMinutes: 1_441 });
+			expect(response.status).toBe(422);
+			expect(JSON.stringify(response.body.details)).toContain('maxDurationMinutes');
+
+			// The bounds themselves are valid
+			response = await updateRoomConfig(createdRoom.roomId, { maxDurationMinutes: 1 });
+			expect(response.status).toBe(200);
+			expect(response.body.maxDurationMinutes).toBe(1);
+
+			response = await updateRoomConfig(createdRoom.roomId, {
+				maxParticipants: 30,
+				maxDurationMinutes: 1_440
+			});
+			expect(response.status).toBe(200);
+			expect(response.body.maxParticipants).toBe(30);
+			expect(response.body.maxDurationMinutes).toBe(1_440);
+		});
+
+		it('should reject an auto-start threshold that the participant limit can never reach', async () => {
+			const createdRoom = await createRoom({ roomName: 'unreachable-autostart-test' });
+
+			// Both halves of the contradiction in the same request
+			let response = await updateRoomConfig(createdRoom.roomId, {
+				maxParticipants: 1,
+				recording: {
+					enabled: true,
+					autoStart: MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS
+				}
+			});
+			expect(response.status).toBe(422);
+			expect(response.body.error).toBe('Room Error');
+			expect(response.body.message).toContain(
+				`Recording auto-start '${MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS}'`
+			);
+
+			// And with each half coming from a different request: the limit is stored first, so only
+			// the merged config exposes the contradiction
+			response = await updateRoomConfig(createdRoom.roomId, { maxParticipants: 1 });
+			expect(response.status).toBe(200);
+
+			response = await updateRoomConfig(createdRoom.roomId, {
+				recording: {
+					enabled: true,
+					autoStart: MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS
+				}
+			});
+			expect(response.status).toBe(422);
+
+			// A single-participant room does reach the first-participant threshold
+			response = await updateRoomConfig(createdRoom.roomId, {
+				recording: {
+					enabled: true,
+					autoStart: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS
+				}
+			});
+			expect(response.status).toBe(200);
+			expect(response.body.recording.autoStart).toBe(MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS);
+
+			// Lifting the limit makes the second-participant threshold reachable again
+			response = await updateRoomConfig(createdRoom.roomId, {
+				maxParticipants: null,
+				recording: {
+					enabled: true,
+					autoStart: MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS
+				}
+			});
+			expect(response.status).toBe(200);
+			expect(response.body.maxParticipants).toBeNull();
+			expect(response.body.recording.autoStart).toBe(MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS);
 		});
 
 		it('should reject update with video-only encoding (audio required)', async () => {

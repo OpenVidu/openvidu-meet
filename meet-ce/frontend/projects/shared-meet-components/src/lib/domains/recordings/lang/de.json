@@ -156,6 +156,15 @@
       "RECORDINGS_FAILED_SUFFIX_SINGULAR": "Aufnahme konnte nicht gelöscht werden.",
       "RECORDINGS_FAILED_SUFFIX_PLURAL": "Aufnahmen konnten nicht gelöscht werden.",
       "DELETE_RECORDINGS_FAILED": "Aufnahmen konnten nicht gelöscht werden"
+    },
+    "DIALOGS": {
+      "DELETE_RECORDING_TITLE": "Aufzeichnung löschen",
+      "DELETE_RECORDING_MESSAGE": "Möchten Sie die Aufzeichnung <b>{recordingId}</b> wirklich dauerhaft löschen? Diese Aktion kann nicht widerrufen werden.",
+      "DELETE_RECORDINGS_TITLE": "Aufzeichnungen löschen",
+      "DELETE_RECORDINGS_MESSAGE_ONE": "Möchten Sie <b>{count} Aufzeichnung</b> wirklich dauerhaft löschen? Diese Aktion kann nicht widerrufen werden.",
+      "DELETE_RECORDINGS_MESSAGE_MANY": "Möchten Sie <b>{count} Aufzeichnungen</b> wirklich dauerhaft löschen? Diese Aktion kann nicht widerrufen werden.",
+      "DELETE": "Löschen",
+      "CANCEL": "Abbrechen"
     }
   }
 }

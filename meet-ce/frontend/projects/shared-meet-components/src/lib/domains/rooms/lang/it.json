@@ -15,7 +15,9 @@
       "DELETE_ROOM": "Elimina stanza",
       "SHARE_LINK": "Condividi link",
       "MORE_ACTIONS": "Altre azioni",
-      "VIEW_USER_PROFILE": "Visualizza profilo utente"
+      "VIEW_USER_PROFILE": "Visualizza profilo utente",
+      "COPY_ROOM_ID": "Copia ID stanza",
+      "ROOM_ID_COPIED": "ID stanza copiato negli appunti"
     },
     "LIST": {
       "LOADING_TITLE": "Caricamento delle stanze",
@@ -154,7 +156,7 @@
       "UPDATE_ROOM": "Aggiorna stanza",
       "CREATE_ROOM": "Crea stanza",
       "STEP_ROOM_DETAILS": "Dettagli della stanza",
-      "STEP_ROOM_FEATURES": "Funzionalità della stanza",
+      "STEP_ROOM_FEATURES": "Funzionalità della riunione",
       "STEP_ROOM_ACCESS": "Accesso alla stanza",
       "STEP_RECORDING_SETTINGS": "Impostazioni di registrazione",
       "STEP_RECORDING_TRIGGER": "Attivazione della registrazione",
@@ -225,11 +227,11 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Modifica membro",
         "REMOVE_MEMBER": "Rimuovi membro",
-        "FEATURE_DISABLED_PERMISSION": "Abilita la funzionalità corrispondente in Funzionalità della stanza per configurare questa autorizzazione."
+        "FEATURE_DISABLED_PERMISSION": "Abilita la funzionalità corrispondente in Funzionalità della riunione per configurare questa autorizzazione."
       },
       "FEATURES": {
-        "TITLE": "Funzionalità della stanza",
-        "DESCRIPTION": "Configura funzionalità aggiuntive per la tua stanza",
+        "TITLE": "Funzionalità della riunione",
+        "DESCRIPTION": "Configura funzionalità aggiuntive per le tue riunioni",
         "SECURITY": "Sicurezza",
         "E2EE": "Crittografia end-to-end",
         "E2EE_DESC": "Aggiungi un ulteriore livello di sicurezza alle tue riunioni. Nessuno al di fuori della riunione, nemmeno chi ha accesso al server, può vedere o ascoltare la conversazione.",
@@ -246,7 +248,31 @@
         "CHAT_DESC": "Consenti ai partecipanti di inviare messaggi durante la riunione",
         "EXPERIENCE": "Esperienza",
         "VIRTUAL_BACKGROUNDS": "Sfondi virtuali",
-        "VIRTUAL_BACKGROUNDS_DESC": "Abilita gli sfondi virtuali e gli effetti di sfocatura per i partecipanti"
+        "VIRTUAL_BACKGROUNDS_DESC": "Abilita gli sfondi virtuali e gli effetti di sfocatura per i partecipanti",
+        "DEVICES": "Dispositivi",
+        "INITIAL_AUDIO": "Microfono acceso all'ingresso",
+        "INITIAL_AUDIO_DESC": "I partecipanti entrano con il microfono acceso",
+        "INITIAL_AUDIO_NOTE": "(possono silenziarsi in qualsiasi momento)",
+        "INITIAL_VIDEO": "Videocamera accesa all'ingresso",
+        "INITIAL_VIDEO_DESC": "I partecipanti entrano con la videocamera accesa",
+        "INITIAL_VIDEO_NOTE": "(possono spegnerla in qualsiasi momento)",
+        "LIMITS": "Limiti",
+        "MAX_DURATION": "Durata massima della riunione",
+        "MAX_DURATION_DESC": "Termina automaticamente la riunione dopo questo tempo. Lascia vuoto per durata illimitata",
+        "MAX_DURATION_LABEL": "Minuti",
+        "MAX_DURATION_PLACEHOLDER": "Illimitata",
+        "MAX_DURATION_INVALID": "Inserisci un numero intero di minuti",
+        "MAX_DURATION_TOO_LOW": "Inserisci almeno 1 minuto",
+        "MAX_DURATION_TOO_HIGH_PREFIX": "Inserisci al massimo ",
+        "MAX_DURATION_TOO_HIGH_SUFFIX": " minuti",
+        "MAX_PARTICIPANTS": "Limite di partecipanti",
+        "MAX_PARTICIPANTS_DESC": "Numero massimo di partecipanti che possono unirsi alla riunione. Lascia vuoto per nessun limite",
+        "MAX_PARTICIPANTS_LABEL": "Partecipanti",
+        "MAX_PARTICIPANTS_PLACEHOLDER": "Illimitato",
+        "MAX_PARTICIPANTS_INVALID": "Inserisci un numero intero di partecipanti",
+        "MAX_PARTICIPANTS_TOO_LOW": "Inserisci almeno 1 partecipante",
+        "MAX_PARTICIPANTS_TOO_HIGH_PREFIX": "Inserisci al massimo ",
+        "MAX_PARTICIPANTS_TOO_HIGH_SUFFIX": " partecipanti"
       },
       "RECORDING_CONFIG": {
         "TITLE": "Configurazione della registrazione",
@@ -277,10 +303,17 @@
         "DESCRIPTION": "Scegli quando la registrazione deve avviarsi automaticamente",
         "MANUAL_TITLE": "Registrazione manuale",
         "MANUAL_DESC": "Avvia la registrazione manualmente quando necessario",
-        "AUTO1_TITLE": "Auto 1 partecipante",
-        "AUTO1_DESC": "Avvia automaticamente la registrazione quando si unisce 1 partecipante",
-        "AUTO2_TITLE": "Auto 2 partecipanti",
-        "AUTO2_DESC": "Avvia automaticamente la registrazione quando si uniscono 2 partecipanti"
+        "AUTO_TITLE": "Registrazione automatica",
+        "AUTO_DESC": "La registrazione si avvia automaticamente non appena inizia la riunione",
+        "AUTOSTART_MODE_LABEL": "Quando deve avviarsi la registrazione?",
+        "AUTOSTART_MODE_FIRST_TITLE": "Si unisce il primo partecipante",
+        "AUTOSTART_MODE_FIRST_DESC": "Si avvia non appena inizia la riunione",
+        "AUTOSTART_MODE_SECOND_TITLE": "Si unisce il secondo partecipante",
+        "AUTOSTART_MODE_SECOND_DESC": "Attende che si unisca un'altra persona",
+        "AUTOSTART_MODE_MODERATOR_TITLE": "Si unisce un moderatore",
+        "AUTOSTART_MODE_MODERATOR_DESC": "Si avvia non appena un moderatore si unisce o viene promosso",
+        "AUTOSTART_UNREACHABLE_TITLE": "Attivatore di registrazione non raggiungibile",
+        "AUTOSTART_UNREACHABLE_MESSAGE": "Questo attivatore richiede almeno ${required} partecipanti per scattare, ma il limite di partecipanti della sala è impostato su ${limit}."
       }
     },
     "ERRORS": {
@@ -350,6 +383,22 @@
         "ACTIVE": "La modifica della stanza è disabilitata durante una riunione attiva",
         "DEFAULT": "Modifica le impostazioni della stanza"
       }
+    },
+    "DIALOGS": {
+      "DELETE_ROOM_TITLE": "Elimina stanza",
+      "DELETE_ROOM_MESSAGE": "Vuoi eliminare la stanza <b>{roomId}</b>?",
+      "DELETE_ROOMS_TITLE": "Elimina stanze",
+      "DELETE_ROOMS_MESSAGE": "Vuoi eliminare <b>{count}</b> stanze?",
+      "REMOVE_MEMBER_TITLE": "Rimuovi membro",
+      "REMOVE_MEMBER_MESSAGE": "Vuoi rimuovere <b>{memberName}</b> da questa stanza?",
+      "REMOVE_MEMBERS_TITLE": "Rimuovi membri",
+      "REMOVE_MEMBERS_MESSAGE_ONE": "Vuoi rimuovere <b>{count} membro</b> da questa stanza?",
+      "REMOVE_MEMBERS_MESSAGE_MANY": "Vuoi rimuovere <b>{count} membri</b> da questa stanza?",
+      "MEETING_WARNING_TITLE": "Avviso: riunione in corso",
+      "REMOVE_MEMBER_WARNING": "Se questo utente è nella riunione, verrà rimosso immediatamente.",
+      "REMOVE_MEMBERS_WARNING": "I membri presenti nella riunione verranno rimossi immediatamente.",
+      "DELETE": "Elimina",
+      "REMOVE": "Rimuovi"
     }
   }
 }

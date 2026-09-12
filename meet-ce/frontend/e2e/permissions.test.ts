@@ -48,8 +48,12 @@ import { toggleParticipantsPanel } from './helpers/panels.helper';
 import {
 	expectKickButton,
 	expectMakeModeratorButton,
+	expectMuteAllButton,
+	expectMuteButton,
 	expectNoKickButton,
 	expectNoMakeModeratorButton,
+	expectNoMuteAllButton,
+	expectNoMuteButton,
 	expectParticipantBadge,
 	getLocalParticipantId,
 	getParticipantIdByName,
@@ -317,6 +321,63 @@ test.describe('Permissions E2E Tests', () => {
 
 		test('canKickParticipants denied: the kick button is not available', async ({ browser }) => {
 			await withTarget(browser, { canKickParticipants: false }, expectNoKickButton);
+		});
+	});
+
+	// ── Room role permissions (granted by the role, not by a member override) ────────
+
+	// Every block above overrides the permission on the member; this one leaves the member alone and
+	// moves it to the room's moderator role — the only place the room-creation UI writes to, and the
+	// only source a moderator with no overrides reads from.
+	test.describe('Room role permissions', () => {
+		const withRoleTarget = async (
+			browser: Browser,
+			participantMute: boolean,
+			assertion: (actorPage: Page, targetId: string) => Promise<void>
+		): Promise<void> => {
+			// The suite's shared room keeps the defaults, so each state needs a room of its own.
+			const roleRoom = await createRoom({
+				roomName: `role-mute-${participantMute}`,
+				roles: { moderator: { permissions: { participantMute } } }
+			});
+			createdRoomIds.push(roleRoom.roomId);
+
+			// The remote stream is waited for here, unlike in the block above: a mute button only shows
+			// while the device is on, so the target's media has to have reached the actor first.
+			const { byName, removeAllParticipants } = await joinParticipants(browser, {
+				roomId: roleRoom.roomId,
+				participants: [
+					{ name: 'Actor', baseRole: MeetRoomMemberRole.MODERATOR },
+					{ name: 'Target', baseRole: MeetRoomMemberRole.SPEAKER, headless: true }
+				]
+			});
+
+			try {
+				const actorPage = byName['Actor'];
+				await toggleParticipantsPanel(actorPage);
+				const targetId = await getParticipantIdByName(actorPage, 'Target');
+				await assertion(actorPage, targetId);
+			} finally {
+				await removeAllParticipants();
+			}
+		};
+
+		test('participantMute granted by the role: the mute controls are available', async ({ browser }) => {
+			await withRoleTarget(browser, true, async (actorPage, targetId) => {
+				await expectMuteButton(actorPage, targetId, 'audio');
+				await expectMuteAllButton(actorPage);
+			});
+		});
+
+		test('participantMute denied by the role: the mute controls are not available', async ({ browser }) => {
+			await withRoleTarget(browser, false, async (actorPage, targetId) => {
+				// The rest of the moderation controls are still there, so the absence is the permission
+				// and not an unrendered panel item.
+				await expectKickButton(actorPage, targetId);
+				await expectNoMuteButton(actorPage, targetId, 'audio');
+				await expectNoMuteButton(actorPage, targetId, 'video');
+				await expectNoMuteAllButton(actorPage);
+			});
 		});
 	});
 

@@ -1,0 +1,221 @@
+<div class="ta-scroll ta-panel-scroll">
+	<section class="ta-card" data-testid="section-imperative">
+		<div class="ta-card__header">
+			<h2>Meeting</h2>
+		</div>
+		<div class="ta-row">
+			<button
+				id="leave-room-btn"
+				class="ta-btn ta-btn--grow"
+				data-testid="btn-leave-room"
+				(click)="commands.meetingLeave()"
+			>
+				meetingLeave()
+			</button>
+			<button
+				id="end-meeting-btn"
+				class="ta-btn ta-btn--grow ta-btn--danger"
+				data-testid="btn-end-meeting"
+				(click)="commands.meetingEnd()"
+			>
+				meetingEnd()
+			</button>
+		</div>
+	</section>
+
+	<section class="ta-card">
+		<div class="ta-card__header">
+			<h2>Participant</h2>
+		</div>
+		<div class="ta-field">
+			<label class="ta-arg-label" for="participant-identity-input">Target identity, used by kick and mute</label>
+			<input
+				id="participant-identity-input"
+				type="text"
+				placeholder="participant identity"
+				data-testid="input-participant-identity"
+				[(ngModel)]="commands.participantIdentity"
+			/>
+			@if (roster.participants().length) {
+			<div class="ta-targets" data-testid="participant-roster">
+				@for (participant of roster.participants(); track participant.participantIdentity) {
+				<button
+					class="ta-btn ta-btn--sm"
+					[class.ta-btn--on]="commands.participantIdentity() === participant.participantIdentity"
+					[title]="participant.participantIdentity"
+					data-testid="btn-roster-target"
+					(click)="commands.participantIdentity.set(participant.participantIdentity)"
+				>
+					{{ participant.participantName }}
+				</button>
+				}
+			</div>
+			} @else {
+			<span class="ta-hint">no participant has joined since this host mounted, type an identity</span>
+			}
+		</div>
+		<button
+			id="kick-participant-btn"
+			class="ta-btn ta-btn--danger"
+			data-testid="btn-kick-participant"
+			(click)="commands.participantKick()"
+		>
+			participantKick()
+		</button>
+		<div class="ta-field">
+			<label class="ta-arg-label">Devices the two mute commands turn off, any combination</label>
+			<div class="ta-switch-field">
+				<label for="mute-audio">audio</label>
+				<input
+					id="mute-audio"
+					class="ta-switch"
+					type="checkbox"
+					data-testid="input-mute-audio"
+					[(ngModel)]="commands.muteAudio"
+				/>
+			</div>
+			<div class="ta-switch-field">
+				<label for="mute-video">video</label>
+				<input
+					id="mute-video"
+					class="ta-switch"
+					type="checkbox"
+					data-testid="input-mute-video"
+					[(ngModel)]="commands.muteVideo"
+				/>
+			</div>
+			<div class="ta-switch-field">
+				<label for="mute-screen-share">screenShare</label>
+				<input
+					id="mute-screen-share"
+					class="ta-switch"
+					type="checkbox"
+					data-testid="input-mute-screen-share"
+					[(ngModel)]="commands.muteScreenShare"
+				/>
+			</div>
+		</div>
+		<button
+			id="participant-mute-btn"
+			class="ta-btn"
+			data-testid="btn-participant-mute"
+			(click)="commands.participantMute()"
+		>
+			participantMute()
+		</button>
+		<button
+			id="participant-mute-all-btn"
+			class="ta-btn ta-btn--danger"
+			data-testid="btn-participant-mute-all"
+			(click)="commands.participantMuteAll()"
+		>
+			participantMuteAll()
+		</button>
+	</section>
+
+	<section class="ta-card">
+		<div class="ta-card__header">
+			<h2>Local media</h2>
+		</div>
+		<div class="ta-field">
+			<label class="ta-arg-label" for="mediaActive">active, shared by the three toggles</label>
+			<select id="mediaActive" data-testid="select-media-active" [(ngModel)]="commands.mediaActive">
+				<option value="">omitted (toggle)</option>
+				<option value="true">true</option>
+				<option value="false">false</option>
+			</select>
+		</div>
+		<button
+			id="media-toggle-audio-btn"
+			class="ta-btn"
+			data-testid="btn-media-toggle-audio"
+			(click)="commands.mediaToggleAudio()"
+		>
+			mediaToggleAudio()
+		</button>
+		<button
+			id="media-toggle-video-btn"
+			class="ta-btn"
+			data-testid="btn-media-toggle-video"
+			(click)="commands.mediaToggleVideo()"
+		>
+			mediaToggleVideo()
+		</button>
+		<button
+			id="media-toggle-screen-share-btn"
+			class="ta-btn"
+			data-testid="btn-media-toggle-screen-share"
+			(click)="commands.mediaToggleScreenShare()"
+		>
+			mediaToggleScreenShare()
+		</button>
+	</section>
+
+	<section class="ta-card" data-testid="section-event-api">
+		<div class="ta-card__header">
+			<h2>Listeners</h2>
+			<span class="ta-hint">webcomponent only</span>
+		</div>
+		<div class="ta-row">
+			<button
+				class="ta-btn ta-btn--grow"
+				[class.ta-btn--on]="commands.joinedListenerRegistered()"
+				data-testid="btn-on-joined"
+				(click)="commands.registerJoinedListener()"
+			>
+				on()
+			</button>
+			<button
+				class="ta-btn ta-btn--grow"
+				data-testid="btn-once-joined"
+				(click)="commands.registerJoinedListenerOnce()"
+			>
+				once()
+			</button>
+			<button class="ta-btn ta-btn--grow" data-testid="btn-off-joined" (click)="commands.removeJoinedListener()">
+				off()
+			</button>
+		</div>
+		<p class="ta-hint ta-listener-state">
+			@if (commands.joinedListenerRegistered()) {
+			<span class="ta-dot ta-dot--sm ta-listener-state__dot"></span>
+			<span>on("joined") handler registered</span>
+			} @else {
+			<span>no on("joined") handler registered</span>
+			}
+		</p>
+	</section>
+
+	<!-- Same actions under the 3.8.0 names, so the e2e can prove a host that never
+	     migrates keeps working until 3.12.0. Shares the identity input above. -->
+	<section class="ta-card ta-card--deprecated" data-testid="section-imperative-deprecated">
+		<div class="ta-card__header">
+			<h2>Deprecated names</h2>
+			<span class="ta-hint">3.8.0, removed in 3.12.0</span>
+		</div>
+		<button
+			id="legacy-leave-room-btn"
+			class="ta-btn"
+			data-testid="btn-legacy-leave-room"
+			(click)="commands.legacyLeaveRoom()"
+		>
+			leaveRoom()
+		</button>
+		<button
+			id="legacy-end-meeting-btn"
+			class="ta-btn"
+			data-testid="btn-legacy-end-meeting"
+			(click)="commands.legacyEndMeeting()"
+		>
+			endMeeting()
+		</button>
+		<button
+			id="legacy-kick-participant-btn"
+			class="ta-btn"
+			data-testid="btn-legacy-kick-participant"
+			(click)="commands.legacyKickParticipant()"
+		>
+			kickParticipant()
+		</button>
+	</section>
+</div>

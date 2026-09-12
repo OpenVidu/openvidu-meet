@@ -122,6 +122,10 @@
           "LABEL": "Can join meeting",
           "DESCRIPTION": "Allow joining the meeting"
         },
+        "meetingRead": {
+          "LABEL": "Can read meeting",
+          "DESCRIPTION": "Allow reading the live state of the meeting and its participants without joining"
+        },
         "meetingEnd": {
           "LABEL": "Can end meeting",
           "DESCRIPTION": "Allow ending the meeting for all participants"
@@ -133,6 +137,10 @@
         "participantKick": {
           "LABEL": "Can kick participants",
           "DESCRIPTION": "Allow removing participants from the meeting"
+        },
+        "participantMute": {
+          "LABEL": "Can mute participants",
+          "DESCRIPTION": "Allow turning off other participants' microphone, camera or screen share"
         },
         "roomShareAccessLinks": {
           "LABEL": "Can share access links",

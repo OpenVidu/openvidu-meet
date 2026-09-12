@@ -1,26 +1,28 @@
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { StepperOrientation, StepperSelectionEvent, StepState } from '@angular/cdk/stepper';
+import { StepperOrientation, StepperSelectionEvent } from '@angular/cdk/stepper';
 import { Component, computed, inject, input, output } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatStepperModule } from '@angular/material/stepper';
 import { map } from 'rxjs/operators';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
-import { WizardStep } from '../../models';
+import { WizardStep, WizardStepId } from '../../models';
 
 type LayoutType = 'vertical-sidebar' | 'horizontal-compact' | 'vertical-compact';
 
 @Component({
-    selector: 'ov-step-indicator',
+	selector: 'ov-step-indicator',
 	imports: [MatStepperModule, ReactiveFormsModule, TranslatePipe],
-    templateUrl: './step-indicator.component.html',
-    styleUrl: './step-indicator.component.scss'
+	templateUrl: './step-indicator.component.html',
+	styleUrl: './step-indicator.component.scss'
 })
 export class StepIndicatorComponent {
 	steps = input.required<WizardStep[]>();
 	currentStepIndex = input.required<number>();
 	allowNavigation = input<boolean>(true);
 	editMode = input<boolean>(false);
+	/** Step ids to flag with the error/warning icon regardless of their completion or active state. */
+	stepWarnings = input<WizardStepId[]>([]);
 
 	stepClick = output<{ index: number; step: WizardStep }>();
 
@@ -63,19 +65,16 @@ export class StepIndicatorComponent {
 		}
 	}
 
-	getStepState(step: WizardStep): StepState {
-		if (step.isCompleted && !step.isActive) {
-			return 'done';
-		}
-
-		if (step.isActive && step.formGroup?.invalid) {
-			return 'error';
-		}
-
-		if (step.isActive) {
-			return 'edit';
-		}
-
-		return 'number';
+	/**
+	 * `CdkStep`'s own `indicatorType` — what actually drives the rendered icon — only consults a
+	 * `[state]` binding when `STEPPER_GLOBAL_OPTIONS.displayDefaultIndicatorType` is explicitly
+	 * `false` (not the case here); the number/edit/done inference is otherwise entirely internal.
+	 * `[hasError]` is the one binding it does honor for a custom error indicator, gated by the
+	 * `showError` global option this app already sets — so this is the actual seam, not `state`.
+	 * Also covers a step that's already valid on its own but fell out of sync with a *different*
+	 * step's later change (e.g. Room Config's limit vs. Recording Trigger's mode) via stepWarnings.
+	 */
+	stepHasError(step: WizardStep): boolean {
+		return step.formGroup.invalid || this.stepWarnings().includes(step.id);
 	}
 }

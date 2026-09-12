@@ -16,6 +16,10 @@
       "TITLE": "房间已关闭",
       "MESSAGE": "此房间已关闭，期间无法在其中进行会议"
     },
+    "MEETING_FULL": {
+      "TITLE": "会议已满",
+      "MESSAGE": "该会议已达到最大参会人数"
+    },
     "ANONYMOUS_ACCESS_DISABLED": {
       "TITLE": "匿名访问已禁用",
       "MESSAGE": "此房间（及其录像）已禁用您所属角色的匿名访问"

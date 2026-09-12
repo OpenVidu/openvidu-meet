@@ -1,11 +1,13 @@
-import { NgTemplateOutlet } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import {
 	AfterViewInit,
 	Component,
+	computed,
 	contentChild,
 	effect,
 	ElementRef,
 	inject,
+	input,
 	OnDestroy,
 	output,
 	signal,
@@ -16,11 +18,18 @@ import {
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { NotificationsComponent } from '../../../../../shared/components/notifications/notifications.component';
+import { DialogService } from '../../../../../shared/services/dialog.service';
+import type { ILogger } from '../../../../../shared/models/logger.model';
+import { LoggerService } from '../../../../../shared/services/logger.service';
 import { SidenavLayoutDirective } from '../../directives/layout/sidenav-layout.directive';
 import {
 	LayoutAdditionalElementsDirective,
 	LeaveButtonDirective,
 	ParticipantPanelAfterLocalParticipantDirective,
+	ParticipantPanelBeforeLocalParticipantDirective,
+	ParticipantsPanelHeaderActionsDirective,
 	PreJoinDirective,
 	SettingsPanelGeneralAdditionalElementsDirective,
 	ToolbarMoreOptionsAdditionalMenuItemsDirective
@@ -46,26 +55,38 @@ import {
 	ActivitiesPanelStatusEvent,
 	ChatPanelStatusEvent,
 	ParticipantsPanelStatusEvent,
+	PanelType,
 	SettingsPanelStatusEvent
 } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '../../models/participant.model';
-import { RecordingStartRequestedEvent, RecordingStopRequestedEvent } from '../../models/recording.model';
+import {
+	RecordingStartRequestedEvent,
+	RecordingState,
+	RecordingStopRequestedEvent
+} from '../../models/recording.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
-import { ActionService } from '../../services/action/action.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
+import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import type { Room } from '../../services/livekit';
-import { LocalMediaService } from '../../services/local-media/local-media.service';
+import { MeetingEndingSoonService } from '../../services/meeting-ending-soon/meeting-ending-soon.service';
+import { RecordingNoticeService } from '../../services/recording-notice/recording-notice.service';
 import { MeetingEventsService } from '../../services/meeting-events/meeting-events.service';
+import { LocalMediaIntentService } from '../../services/local-media-intent/local-media-intent.service';
+import { LocalTrackService } from '../../services/local-track/local-track.service';
 import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
+import { RecordingService } from '../../services/recording/recording.service';
 import { MediaStorageService } from '../../services/storage/storage.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
 import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
+import { HiddenParticipantsIndicatorComponent } from '../hidden-participants-indicator/hidden-participants-indicator.component';
+import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
 import { SmartLayoutComponent } from '../layout/smart-layout/smart-layout.component';
+import { MeetingMediaSetupComponent } from '../meeting-media-setup/meeting-media-setup.component';
 import { ActivitiesPanelComponent } from '../panel/activities-panel/activities-panel.component';
 import { BackgroundEffectsPanelComponent } from '../panel/background-effects-panel/background-effects-panel.component';
 import { ChatPanelComponent } from '../panel/chat-panel/chat-panel.component';
@@ -73,12 +94,8 @@ import { PanelComponent } from '../panel/panel.component';
 import { ParticipantPanelItemComponent } from '../panel/participants-panel/participant-panel-item/participant-panel-item.component';
 import { ParticipantsPanelComponent } from '../panel/participants-panel/participants-panel/participants-panel.component';
 import { SettingsPanelComponent } from '../panel/settings-panel/settings-panel.component';
-import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
-import { MeetingMediaSetupComponent } from '../meeting-media-setup/meeting-media-setup.component';
 import { StreamComponent } from '../stream/stream.component';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
-import { LoggerService } from '../../../../../shared/services/logger.service';
-import type { ILogger } from '../../../../../shared/models/logger.model';
 
 /**
  * The **MeetingViewComponent** is the parent of all OpenVidu components: it owns the phase machine
@@ -91,10 +108,14 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 		MatIconModule,
 		MatProgressSpinnerModule,
 		MatSidenavModule,
+		MatTooltipModule,
 		SidenavLayoutDirective,
 		TranslatePipe,
 		MeetingMediaSetupComponent,
+		DatePipe,
+		HiddenParticipantsIndicatorComponent,
 		LandscapeWarningComponent,
+		NotificationsComponent,
 		ToolbarComponent,
 		PanelComponent,
 		BackgroundEffectsPanelComponent,
@@ -118,21 +139,91 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly storageSrv = inject(MediaStorageService);
 	private readonly deviceSrv = inject(DeviceService);
+	private readonly mediaIntent = inject(LocalMediaIntentService);
+	private readonly localTrackService = inject(LocalTrackService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
-	private readonly actionService = inject(ActionService);
+	private readonly dialogService = inject(DialogService);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly participantService = inject(ParticipantService);
-	private readonly localMediaService = inject(LocalMediaService);
 	private readonly panelService = inject(PanelService);
 	private readonly backgroundService = inject(VirtualBackgroundService);
 	private readonly meetingEventsService = inject(MeetingEventsService);
 	private readonly translateService = inject(MeetingTranslateService);
+	private readonly meetingEndingSoonService = inject(MeetingEndingSoonService);
+	// Injected for its own sake: it watches the recording state and announces it to the room, and
+	// this is the view that hosts the notifications it raises.
+	private readonly recordingNoticeService = inject(RecordingNoticeService);
+	private readonly smartLayoutService = inject(SmartLayoutService);
+	private readonly recordingService = inject(RecordingService);
 	protected readonly viewportService = inject(ViewportService);
 	readonly templateRegistry = inject(TemplateRegistryService);
+
+	private readonly endingSoonRemainingMs = this.meetingEndingSoonService.remainingMs;
+
+	protected readonly isEndingSoon = computed(() => this.endingSoonRemainingMs() !== undefined);
+
+	/** Solid warn treatment for the last minute; above it the chip stays on the calm surface. */
+	protected readonly isEndingSoonUrgent = computed(() => {
+		const remainingMs = this.endingSoonRemainingMs();
+		return remainingMs !== undefined && remainingMs <= MeetingViewComponent.ENDING_SOON_URGENT_MS;
+	});
+
+	/**
+	 * `mm:ss`, or nothing once the countdown is spent: the backend force-ends the meeting at that
+	 * same deadline, and a frozen `0:00` reads as a broken clock rather than a meeting about to
+	 * close.
+	 */
+	protected readonly endingSoonTime = computed(() => {
+		const remainingMs = this.endingSoonRemainingMs();
+
+		if (remainingMs === undefined || remainingMs <= 0) return undefined;
+
+		const totalSeconds = Math.ceil(remainingMs / 1000);
+		const minutes = Math.floor(totalSeconds / 60);
+		const seconds = totalSeconds % 60;
+
+		return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+	});
+
+	protected readonly recordingStatus = this.recordingService.recordingStatus;
+
+	protected readonly isRecording = computed(() => this.recordingStatus().status === RecordingState.STARTED);
+
+	/**
+	 * Egress takes a few seconds to come up, and until it does there is no elapsed time to show.
+	 * The chip goes up anyway, so asking for a recording is never met with silence.
+	 */
+	protected readonly isRecordingStarting = computed(
+		() => this.recordingStatus().status === RecordingState.STARTING
+	);
+
+	protected readonly showRecordingChip = computed(() => this.isRecordingStarting() || this.isRecording());
+
+	protected readonly canOpenActivitiesPanel = this.libService.activitiesPanelButtonSignal;
+
+	/**
+	 * The key is what actually encrypts: `MeetingLiveKitService` builds the room's `encryption`
+	 * options from it, so a key here means the media really is end-to-end encrypted.
+	 */
+	protected readonly isE2eeActive = computed(() => (this.libService.e2eeKeySignal() ?? '').trim() !== '');
+
+	/** Published by the smart layout, which cannot render into the rail itself. */
+	protected readonly railHiddenParticipants = this.smartLayoutService.railHiddenParticipants;
+
+	protected readonly canOpenParticipantsPanel = this.libService.participantsPanelButtonSignal;
+
+	protected readonly showStatusRail = computed(
+		() =>
+			this.showRecordingChip() ||
+			this.isEndingSoon() ||
+			this.isE2eeActive() ||
+			this.railHiddenParticipants() !== undefined
+	);
 
 	// Constants
 	private static readonly SPINNER_DIAMETER = 50;
 	private static readonly ENTER_ANIMATION_CLASS = 'ov-fade-in-enter';
+	private static readonly ENDING_SOON_URGENT_MS = 60_000;
 
 	// *** Toolbar ***
 
@@ -148,6 +239,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	readonly externalChatPanel = contentChild(ChatPanelDirective);
 	readonly externalActivitiesPanel = contentChild(ActivitiesPanelDirective);
 	readonly externalParticipantsPanel = contentChild(ParticipantsPanelDirective);
+	readonly externalParticipantsPanelHeaderActions = contentChild(ParticipantsPanelHeaderActionsDirective);
 	readonly externalParticipantPanelItem = contentChild(ParticipantPanelItemDirective);
 	readonly externalParticipantPanelItemElements = contentChild(ParticipantPanelItemElementsDirective);
 
@@ -159,6 +251,9 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	// *** PreJoin ***
 
 	readonly externalPreJoin = contentChild(PreJoinDirective);
+	readonly externalParticipantPanelBeforeLocalParticipant = contentChild(
+		ParticipantPanelBeforeLocalParticipantDirective
+	);
 	readonly externalParticipantPanelAfterLocalParticipant = contentChild(
 		ParticipantPanelAfterLocalParticipantDirective
 	);
@@ -241,6 +336,10 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	// reach into MeetingLiveKitService, which is root-provided and outlives this component.
 	private shouldDisconnectRoomWhenComponentIsDestroyed = false;
 
+	// MeetingLiveKitService is root-provided, so work resumed after this component is gone would
+	// reach a live service with nothing on screen to own it.
+	private destroyed = false;
+
 	// Expose constants to template
 	get spinnerDiameter(): number {
 		return MeetingViewComponent.SPINNER_DIAMETER;
@@ -290,11 +389,6 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	 * This event is emitted when the language changes, providing information about the new language that has been selected.
 	 */
 	readonly onLangChanged = output<LangOption>();
-
-	/**
-	 * This event is emitted when the screen share state changes, providing information about if the screen share is enabled (true) or disabled (false).
-	 */
-	readonly onScreenShareEnabledChanged = output<boolean>();
 
 	/**
 	 * The event is emitted when the fullscreen state changes, providing information about if the fullscreen is enabled (true) or disabled (false).
@@ -355,6 +449,16 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	 */
 	readonly onParticipantConnected = output<ParticipantModel>();
 
+	// ── Inputs ───────────────────────────────────────────────────────────────
+
+	/**
+	 * Mints the token this participant joins with, asked for when they commit to joining: the join
+	 * click in the prejoin, or entering the view when there is no prejoin. Minting reserves the
+	 * participant name, checks the meeting's capacity and creates the room, so it must not run while
+	 * the participant is still choosing devices.
+	 */
+	readonly tokenProvider = input.required<() => Promise<string>>();
+
 	// ── Effects ──────────────────────────────────────────────────────────────
 	// Each effect reads only from libService signals and uses untracked() for
 	// any reads of internal signals, preventing reactive dependency cycles.
@@ -376,7 +480,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 
 		// Open dialog only when user is already in the session (not on prejoin)
 		if (prevPhase !== 'prejoin' && prevPhase !== 'loading') {
-			this.actionService.openDialog(error.name, error.message, false);
+			this.dialogService.showBlockingDialog({ title: error.name, message: error.message });
 		}
 
 		// A token error raised while connected has to release the room. Before the merge this was
@@ -431,20 +535,22 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	}
 
 	async ngOnDestroy() {
+		this.destroyed = true;
+
 		if (this.shouldDisconnectRoomWhenComponentIsDestroyed) {
 			await this.disconnectRoom(ParticipantLeftReason.LEAVE);
 		}
 
-		if (this.meetingLiveKitService.isInitialized()) {
-			this.meetingLiveKitService.getRoom().removeAllListeners();
-		}
+		await this.meetingLiveKitService.teardown();
 
 		this.participantService.clear();
 		this.deviceSrv.clear();
 		// No-op after a successful join, when the tracks were handed over to the participant. It
 		// matters when the connection failed midway: the acquired camera/microphone would otherwise
 		// stay open with nobody holding them, and a later join would try to publish dead tracks.
-		this.localMediaService.discardPrejoinMedia();
+		this.localTrackService.removeLocalTracks();
+		// Per entry: the next meeting resolves its own instead of inheriting this one's toggles.
+		this.mediaIntent.reset();
 	}
 
 	/**
@@ -472,10 +578,22 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 			});
 	}
 
+	protected openParticipantsPanel(): void {
+		if (!this.canOpenParticipantsPanel()) return;
+
+		this.panelService.togglePanel(PanelType.PARTICIPANTS);
+	}
+
+	protected openRecordingActivityPanel(): void {
+		if (!this.canOpenActivitiesPanel() || this.panelService.isActivitiesPanelOpened()) return;
+
+		this.panelService.togglePanel(PanelType.ACTIVITIES, 'recording');
+	}
+
 	/**
 	 * @internal
 	 * Called by the PreJoin component when the user clicks join.
-	 * Transitions from 'prejoin' → 'connecting' by applying the token immediately.
+	 * Transitions from 'prejoin' → 'connecting' by requesting the token for this join.
 	 */
 	_onReadyToJoin(): void {
 		this.log.d('User clicked join in prejoin');
@@ -483,8 +601,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 		const rawName = this.libService.getCurrentParticipantName() || this.storageSrv.getParticipantName() || '';
 		this.storageSrv.setParticipantName(rawName);
 
-		this.meetingLiveKitService.init();
-		this._applyToken(this.libService.tokenSignal());
+		void this._requestTokenAndConnect();
 	}
 
 	/**
@@ -507,33 +624,62 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 			this.log.d('Devices ready, showing prejoin');
 			this.phase.set('prejoin');
 		} else {
-			this.log.d('Devices ready, no prejoin — requesting token directly');
-			this._requestTokenSkippingPrejoin();
+			this.log.d('Devices ready, no prejoin, joining directly');
+			void this._requestTokenAndConnect();
 		}
 	}
 
 	/**
 	 * @internal
-	 * Used when showPrejoin = false. Applies the token directly without showing the prejoin page.
+	 * Asks the consumer for the token of this join and applies it: 'connecting' → 'live'.
+	 *
+	 * A join is committed to once. What takes the prejoin button off screen is the phase leaving
+	 * 'prejoin', and that only lands on the next change detection, so a second click is turned away
+	 * here: minting twice reserves a second name and a second participant identity server side.
+	 *
+	 * The mint is a round trip the participant can walk out of, and leaving the page destroys this
+	 * view mid-flight, so nothing past the await runs once that has happened: connecting then would
+	 * put a participant in the meeting with no view to leave it with, and the failure dialog would
+	 * land on top of the error page the mint already navigated to.
 	 */
-	private _requestTokenSkippingPrejoin(): void {
+	private async _requestTokenAndConnect(): Promise<void> {
+		if (this.phase() === 'connecting' || this.phase() === 'live') return;
+
+		this.phase.set('connecting');
 		this.meetingLiveKitService.init();
-		this._applyToken(this.libService.tokenSignal());
+
+		let token: string;
+
+		try {
+			token = await this.tokenProvider()();
+		} catch (error: unknown) {
+			this.log.e('Error requesting the token to join the meeting:', error);
+
+			if (!this.destroyed) this.showStartupError('ERRORS.MEETING_NOT_READY');
+
+			return;
+		}
+
+		if (this.destroyed) return;
+
+		this._applyToken(token);
 	}
 
 	/**
 	 * @internal
-	 * Applies a received token and connects: 'connecting' → 'live'.
+	 * Applies the token of this join and connects: 'connecting' → 'live'.
 	 */
 	private _applyToken(token: string): void {
 		try {
 			const livekitUrl = this.libService.getLivekitUrl();
 			this.meetingLiveKitService.initializeAndSetToken(token, livekitUrl);
 			this.log.d('Token applied, room is ready to connect');
-			this.phase.set('connecting');
 		} catch (error: any) {
 			this.log.e('Error applying token', error);
-			this.tokenError.set({ name: 'Token error', message: error?.message ?? String(error) });
+			this.tokenError.set({
+				name: this.translateService.translate('ERRORS.TOKEN_TITLE'),
+				message: error?.message ?? String(error)
+			});
 			this.phase.set('error');
 			return;
 		}
@@ -545,8 +691,8 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	 * @internal
 	 * Joins the room the token was applied to and transitions to the 'live' phase.
 	 *
-	 * Only reachable after `initializeAndSetToken()` succeeded, so the room exists; `getRoom()` is
-	 * still wrapped because it throws rather than returning undefined.
+	 * Only reachable after `init()` created the room and `initializeAndSetToken()` pointed it at the
+	 * meeting; `getRoom()` is still wrapped because it throws rather than returning undefined.
 	 */
 	private async _connectToRoom(): Promise<void> {
 		this.shouldDisconnectRoomWhenComponentIsDestroyed = true;
@@ -568,11 +714,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 		});
 
 		try {
-			const joinTracks = await this.localMediaService.acquireJoinTracks();
-			await this.participantService.connect(joinTracks);
-			// The tracks are now published and owned by the participant: release the prejoin
-			// reference (without stopping them) so the media state hands off to the participant.
-			this.localMediaService.releaseJoinTracks();
+			await this.participantService.connect();
 			// Send room created after participant connect for avoiding to send incomplete room payload
 			this.onRoomCreated.emit(room);
 
@@ -586,7 +728,9 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 		} catch (error: any) {
 			// The technical detail goes to the log; the user gets a translated, actionable message.
 			this.log.e('There was an error connecting to the meeting:', error?.code, error?.message, error);
-			this.showStartupError('ERRORS.MEETING_CONNECTION_FAILED');
+			this.showStartupError(
+				error?.code === 'MEETING_FULL' ? 'ERRORS.MEETING_FULL' : 'ERRORS.MEETING_CONNECTION_FAILED'
+			);
 		}
 	}
 
@@ -613,10 +757,12 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	 * internals into the dialog. Callers are responsible for logging the technical detail.
 	 */
 	private showStartupError(messageKey: string): void {
-		this.actionService.openDialog(
-			this.translateService.translate('ERRORS.SESSION'),
-			this.translateService.translate(messageKey)
-		);
+		this.dialogService.showDialog({
+			title: this.translateService.translate('ERRORS.SESSION'),
+			message: this.translateService.translate(messageKey),
+			showCancelButton: false,
+			confirmText: this.translateService.translate('PANEL.CLOSE')
+		});
 	}
 
 	/**
@@ -635,6 +781,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 		// Panel slots
 		r.chatPanel.set(this.externalChatPanel()?.template ?? this.defaultChatPanelTemplate()!);
 		r.participantsPanel.set(this.externalParticipantsPanel()?.template ?? this.defaultParticipantsPanelTemplate()!);
+		r.participantsPanelHeaderActions.set(this.externalParticipantsPanelHeaderActions()?.template);
 		r.activitiesPanel.set(this.externalActivitiesPanel()?.template ?? this.defaultActivitiesPanelTemplate()!);
 		r.additionalPanels.set(this.externalAdditionalPanels()?.template);
 		r.backgroundEffectsPanel.set(this.defaultBackgroundEffectsPanelTemplate());
@@ -645,6 +792,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 			this.externalParticipantPanelItem()?.template ?? this.defaultParticipantPanelItemTemplate()!
 		);
 		r.participantPanelItemElements.set(this.externalParticipantPanelItemElements()?.template);
+		r.participantPanelBeforeLocalParticipant.set(this.externalParticipantPanelBeforeLocalParticipant()?.template);
 		r.participantPanelAfterLocalParticipant.set(this.externalParticipantPanelAfterLocalParticipant()?.template);
 
 		// Toolbar extensions

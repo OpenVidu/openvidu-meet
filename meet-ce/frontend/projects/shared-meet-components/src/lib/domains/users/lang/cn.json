@@ -158,6 +158,17 @@
       "USERS_DELETED_SUFFIX_PLURAL": "个用户已成功删除。",
       "USERS_FAILED_SUFFIX_SINGULAR": "个用户无法删除。",
       "USERS_FAILED_SUFFIX_PLURAL": "个用户无法删除。"
+    },
+    "DIALOGS": {
+      "DELETE_USER_TITLE": "删除用户",
+      "DELETE_USER_MESSAGE": "确定要永久删除用户 <b>{name}</b>（{userId}）吗？此操作无法撤销。",
+      "DELETE_USER_WARNING": "如果该用户拥有房间，其所有权将转移给根管理员。如果该用户正在会议中，将被立即移出。",
+      "DELETE_USERS_TITLE": "删除用户",
+      "DELETE_USERS_MESSAGE_ONE": "确定要永久删除 <b>{count} 个用户</b>吗？此操作无法撤销。",
+      "DELETE_USERS_MESSAGE_MANY": "确定要永久删除 <b>{count} 个用户</b>吗？此操作无法撤销。",
+      "DELETE_USERS_WARNING": "如果被删除的用户拥有房间，其所有权将转移给根管理员。正在会议中的用户将被立即移出。",
+      "WARNING_TITLE": "重要影响",
+      "DELETE": "删除"
     }
   }
 }

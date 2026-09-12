@@ -73,8 +73,8 @@ export class SettingsPanelComponent implements OnInit {
 	settingsOptions: typeof PanelSettingsOptions = PanelSettingsOptions;
 	readonly isMobile = signal(false);
 
-	readonly showCameraButton = this.libService.cameraButtonSignal;
-	readonly showMicrophoneButton = this.libService.microphoneButtonSignal;
+	readonly showCameraControls = this.libService.showCameraControlsSignal;
+	readonly showMicrophoneControls = this.libService.showMicrophoneControlsSignal;
 	readonly showThemeSelector = this.libService.showThemeSelectorSignal;
 	readonly selectedOption = signal<PanelSettingsOptions>(PanelSettingsOptions.GENERAL);
 

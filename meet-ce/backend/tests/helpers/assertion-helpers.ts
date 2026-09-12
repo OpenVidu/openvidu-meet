@@ -20,6 +20,8 @@ import {
 import { Response } from 'supertest';
 import { container } from '../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../src/config/internal-config.js';
+import { MEET_ENV } from '../../src/environment.js';
+import type { OpenViduMeetError } from '../../src/models/error.model.js';
 import { TokenService } from '../../src/services/token.service.js';
 import { getFullPath } from './request-helpers.js';
 
@@ -37,6 +39,16 @@ export const wirePermissions = (permissions: Readonly<Partial<MeetRoomMemberPerm
 	...toDeprecatedPermissions(permissions)
 });
 
+/**
+ * Asserts a rejection against the very factory the backend was expected to throw. The backend has 4
+ * distinct 401 factories and 5 distinct 403 ones, so a status code alone does not tell a rejection
+ * for the right reason from one for the wrong reason.
+ */
+export const expectMeetError = (response: Response, expected: OpenViduMeetError) => {
+	expect(response.status).toBe(expected.statusCode);
+	expect(response.body).toEqual({ error: expected.name, message: expected.message });
+};
+
 export const expectErrorResponse = (
 	response: Response,
 	status = 422,
@@ -45,10 +57,7 @@ export const expectErrorResponse = (
 	details?: Array<{ field?: string; message: string }>
 ) => {
 	expect(response.status).toBe(status);
-	expect(response.body).toMatchObject({
-		...(error ? { error } : {}),
-		...(message ? { message } : {})
-	});
+	expect(response.body).toMatchObject({ error, message });
 
 	if (details === undefined) {
 		expect(response.body.details).toBeUndefined();
@@ -76,6 +85,36 @@ export const expectValidationError = (response: Response, field: string, message
 };
 
 /**
+ * Asserts a per-item rejection from a bulk endpoint: 400, the resource listed under `failed` with
+ * the expected reason, absent from `deleted`, and still readable afterwards. The read-back is the
+ * point — an endpoint that deletes the resource and then reports it as failed satisfies a
+ * status-only assertion.
+ *
+ * `failed` entries are not shaped alike across endpoints (rooms split the reason into
+ * `error`/`message`, recordings collapse it into `error`), so the reason is matched against the
+ * entry's values instead of a fixed field.
+ */
+export const expectBulkDenied = async (
+	response: Response,
+	denied: { id: string; reason: OpenViduMeetError; readBack: () => Promise<Response> }
+) => {
+	const { id, reason, readBack } = denied;
+
+	expect(response.status).toBe(400);
+	expect(JSON.stringify(response.body.deleted ?? [])).not.toContain(id);
+
+	const failed = (response.body.failed ?? []) as Record<string, string>[];
+	const entry = failed.find((item) => Object.values(item).includes(id));
+
+	if (!entry) {
+		throw new Error(`Bulk response did not list '${id}' as failed: ${JSON.stringify(response.body)}`);
+	}
+
+	expect(Object.values(entry)).toContain(reason.message);
+	expect((await readBack()).status).toBe(200);
+};
+
+/**
  * Asserts that a rooms response matches the expected values for testing purposes.
  * Validates the room array length and pagination properties.
  *
@@ -96,113 +135,106 @@ export const expectSuccessRoomsResponse = (
 ) => {
 	const { body } = response;
 	expect(response.status).toBe(200);
-	expect(body).toBeDefined();
-	expect(body.rooms).toBeDefined();
 	expect(Array.isArray(body.rooms)).toBe(true);
 	expect(body.rooms.length).toBe(expectedRoomLength);
-	expect(body.pagination).toBeDefined();
 	expect(body.pagination.isTruncated).toBe(expectedTruncated);
 
 	expectedNextPageToken
-		? expect(body.pagination.nextPageToken).toBeDefined()
+		? expect(body.pagination.nextPageToken).toEqual(expect.stringMatching(/\S+/))
 		: expect(body.pagination.nextPageToken).toBeUndefined();
 	expect(body.pagination.maxItems).toBe(expectedMaxItems);
 };
 
-export const expectSuccessRoomResponse = (
-	response: Response,
-	roomName: string,
-	roomIdPrefix?: string,
-	autoDeletionDate?: number,
-	config?: MeetRoomConfig
-) => {
+export const expectSuccessRoomResponse = (response: Response, roomName: string, expected: ExpectedRoom = {}) => {
 	expect(response.status).toBe(200);
-	expectValidRoom(response.body, roomName, roomIdPrefix, config, autoDeletionDate);
+	expectValidRoom(response.body, roomName, expected);
 };
 
 export const expectSuccessRoomConfigResponse = (response: Response, config: MeetRoomConfig) => {
 	expect(response.status).toBe(200);
-	expect(response.body).toBeDefined();
 	expect(response.body).toEqual(config);
 };
 
 export const expectExtraFieldsInResponse = (room: MeetRoom) => {
-	expect((room as any)._extraFields).toBeDefined();
-	expect((room as any)._extraFields).toContain('config');
-	expect((room as any)._extraFields).toContain('roles');
+	expect((room as any)._extraFields).toEqual(['config', 'roles']);
 };
 
-export const expectValidRoom = (
-	room: MeetRoom,
-	name: string,
-	roomIdPrefix?: string,
-	config?: MeetRoomConfig,
-	autoDeletionDate?: number,
-	autoDeletionPolicy?: MeetRoomAutoDeletionPolicy,
-	status?: MeetRoomStatus,
-	meetingEndAction?: MeetingEndAction
-) => {
-	expect(room).toBeDefined();
+/**
+ * Expected values for a room, defaulting to what `POST /rooms` produces for a payload that only
+ * carries a room name: anonymous access open for the three roles, user access closed, no auto
+ * deletion, no config in the response and the initial admin as the owner.
+ */
+export type ExpectedRoom = {
+	roomIdPrefix?: string;
+	config?: MeetRoomConfig;
+	autoDeletionDate?: number;
+	autoDeletionPolicy?: MeetRoomAutoDeletionPolicy;
+	status?: MeetRoomStatus;
+	meetingEndAction?: MeetingEndAction;
+	owner?: string;
+	access?: {
+		anonymous?: { moderator?: boolean; speaker?: boolean; recording?: boolean };
+		user?: boolean;
+	};
+};
 
-	expect(room.roomId).toBeDefined();
-	expect(room.roomName).toBeDefined();
+export const expectValidRoom = (room: MeetRoom, name: string, expected: ExpectedRoom = {}) => {
+	const {
+		roomIdPrefix,
+		config,
+		autoDeletionDate,
+		autoDeletionPolicy,
+		status = MeetRoomStatus.OPEN,
+		meetingEndAction = MeetingEndAction.NONE,
+		owner = MEET_ENV.INITIAL_ADMIN_USER,
+		access = {}
+	} = expected;
+
 	expect(room.roomName).toBe(name);
-	expect(room.roomId).not.toBe('');
+	expect(room.roomId).toMatch(new RegExp(`^${roomIdPrefix ?? '[a-z0-9_]+'}-[0-9a-z]{15}$`));
+	expect(room.owner).toBe(owner);
+	expect(room.creationDate).toBeGreaterThan(0);
+	expect(room.creationDate).toBeLessThanOrEqual(Date.now());
 
-	if (roomIdPrefix) {
-		expect(room.roomId.startsWith(roomIdPrefix)).toBe(true);
-	}
-
-	expect(room.creationDate).toBeDefined();
-
-	if (autoDeletionDate !== undefined) {
-		expect(room.autoDeletionDate).toBeDefined();
-		expect(room.autoDeletionDate).toBe(autoDeletionDate);
-	} else {
+	if (autoDeletionDate === undefined) {
 		expect(room.autoDeletionDate).toBeUndefined();
 		expect(room.autoDeletionPolicy).toBeUndefined();
+	} else {
+		expect(room.autoDeletionDate).toBe(autoDeletionDate);
 	}
 
 	if (autoDeletionPolicy !== undefined) {
-		expect(room.autoDeletionPolicy).toBeDefined();
 		expect(room.autoDeletionPolicy).toEqual(autoDeletionPolicy);
 	}
 
-	// Validate config based on parameter:
-	// - If config is provided: verify it exists and matches the expected value
-	// - If config is undefined: verify the property does not exist
+	// toMatchObject so the encoding defaults the server fills in do not have to be spelled out
 	if (config === undefined) {
 		expect(room.config).toBeUndefined();
 	} else {
-		expect(room.config).toBeDefined();
-		// Use toMatchObject to allow encoding defaults to be added without breaking tests
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		expect(room.config).toMatchObject(config as any);
+		expect(room.config).toMatchObject(config as unknown as Record<string, unknown>);
 	}
 
-	expect(room.owner).toBeDefined();
-	expect(room.access).toBeDefined();
-	expect(room.access.anonymous.moderator).toBeDefined();
-	expect(room.access.anonymous.speaker).toBeDefined();
-	expect(room.access.anonymous.recording).toBeDefined();
-	expect(room.access.user).toBeDefined();
-	expect(room.access.anonymous.moderator.enabled).toBeDefined();
-	expect(room.access.anonymous.speaker.enabled).toBeDefined();
-	expect(room.access.anonymous.recording.enabled).toBeDefined();
-	expect(room.access.user.enabled).toBeDefined();
-	expect(room.access.anonymous.moderator.url).toBeDefined();
-	expect(room.access.anonymous.speaker.url).toBeDefined();
-	expect(room.access.anonymous.recording.url).toBeDefined();
-	expect(room.access.user.url).toBeDefined();
-	expect(room.access.anonymous.moderator.url).toContain(room.roomId);
-	expect(room.access.anonymous.speaker.url).toContain(room.roomId);
-	expect(room.access.anonymous.recording.url).toContain(room.roomId);
-	expect(room.access.user.url).toContain(room.roomId);
+	expect(room.access.anonymous.moderator.enabled).toBe(access.anonymous?.moderator ?? true);
+	expect(room.access.anonymous.speaker.enabled).toBe(access.anonymous?.speaker ?? true);
+	expect(room.access.anonymous.recording.enabled).toBe(access.anonymous?.recording ?? true);
+	expect(room.access.user.enabled).toBe(access.user ?? false);
 
-	expect(room.status).toBeDefined();
-	expect(room.status).toEqual(status || MeetRoomStatus.OPEN);
-	expect(room.meetingEndAction).toBeDefined();
-	expect(room.meetingEndAction).toEqual(meetingEndAction || MeetingEndAction.NONE);
+	expectAnonymousAccessUrl(room.access.anonymous.moderator.url, `/room/${room.roomId}`);
+	expectAnonymousAccessUrl(room.access.anonymous.speaker.url, `/room/${room.roomId}`);
+	expectAnonymousAccessUrl(room.access.anonymous.recording.url, `/room/${room.roomId}/recordings`);
+
+	const userUrl = new URL(room.access.user.url);
+	expect(userUrl.pathname).toBe(getFullPath(`/room/${room.roomId}`));
+	expect(userUrl.searchParams.get('secret')).toBeNull();
+
+	expect(room.status).toEqual(status);
+	expect(room.meetingEndAction).toEqual(meetingEndAction);
+};
+
+const expectAnonymousAccessUrl = (url: string, path: string) => {
+	const parsedUrl = new URL(url);
+	expect(parsedUrl.pathname).toBe(getFullPath(path));
+	expect(parsedUrl.searchParams.get('secret')).toEqual(expect.stringMatching(/\S+/));
 };
 
 export const expectValidRecording = (
@@ -210,77 +242,49 @@ export const expectValidRecording = (
 	recordingId: string,
 	roomId: string,
 	roomName: string,
-	status: MeetRecordingStatus
+	status: MeetRecordingStatus,
+	expectedLayout: MeetRecordingLayout = DEFAULT_RECORDING_LAYOUT,
+	expectedEncoding: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions = DEFAULT_RECORDING_ENCODING_PRESET
 ) => {
-	expect(recording).toBeDefined();
-	expect(recording.recordingId).toBeDefined();
-	expect(recording.roomId).toBeDefined();
-	expect(recording.roomName).toBeDefined();
 	expect(recording.recordingId).toBe(recordingId);
 	expect(recording.roomId).toBe(roomId);
 	expect(recording.roomName).toBe(roomName);
-	expect(recording.startDate).toBeDefined();
-	expect(recording.status).toBeDefined();
 	expect(recording.status).toBe(status);
-	expect(recording.filename).toBeDefined();
-	expect(recording.details).toBeDefined();
-	expect(recording.layout).toBeDefined();
+	expect(recording.startDate).toBeGreaterThan(0);
+	expect(recording.startDate).toBeLessThanOrEqual(Date.now());
+	expect(recording.filename).toMatch(new RegExp(`^${roomId}--[0-9a-z]+\\.mp4$`));
+	expect(typeof recording.details).toBe('string');
+	expect(recording.layout).toBe(expectedLayout);
 
-	// Validate layout is a valid value
-	if (recording.layout !== undefined) {
-		expect(Object.values(MeetRecordingLayout)).toContain(recording.layout);
-	}
-
-	// Validate encoding is present and has a valid value
-	expect(recording.encoding).toBeDefined();
-
-	if (recording.encoding !== undefined) {
-		if (typeof recording.encoding === 'string') {
-			// Encoding preset: should match the default H264_720P_30
-			expect(recording.encoding).toBe('H264_720P_30');
-		} else {
-			// Advanced encoding options: should have valid codec values
-			expect(typeof recording.encoding).toBe('object');
-			const encodingObj = recording.encoding as MeetRecordingEncodingOptions;
-
-			if (encodingObj.video?.codec) {
-				expect(['H264_BASELINE', 'H264_MAIN', 'H264_HIGH', 'VP8']).toContain(encodingObj.video.codec);
-			}
-
-			if (encodingObj.audio?.codec) {
-				expect(['OPUS', 'AAC']).toContain(encodingObj.audio.codec);
-			}
-		}
+	if (typeof expectedEncoding === 'string') {
+		expect(recording.encoding).toBe(expectedEncoding);
+	} else {
+		expect(recording.encoding).toMatchObject(expectedEncoding as unknown as Record<string, unknown>);
 	}
 };
 
-export const expectValidRoomWithFields = (room: MeetRoom, fields: string[] = []) => {
-	expect(room).toBeDefined();
+export const expectValidRoomWithFields = (room: MeetRoom, fields: string[]) => {
 	expectObjectFields(room, fields);
 };
 
-export const expectValidRecordingWithFields = (rec: MeetRecordingInfo, fields: string[] = []) => {
-	expect(rec).toBeDefined();
+export const expectValidRecordingWithFields = (rec: MeetRecordingInfo, fields: string[]) => {
 	expectObjectFields(rec, fields);
 };
 
-const expectObjectFields = (obj: unknown, present: string[] = [], absent: string[] = []) => {
-	expect(Object.keys(obj as any)).toEqual(expect.arrayContaining(present));
-	present.forEach((key) => {
-		expect(obj).toHaveProperty(key);
-		expect((obj as any)[key]).not.toBeUndefined();
-	});
-	absent.forEach((key) => {
-		// if the property exists, it must be undefined. If it doesn't exist, it's also valid (not present)
-		expect(Object.prototype.hasOwnProperty.call(obj, key) ? (obj as any)[key] : undefined).toBeUndefined();
-	});
+/**
+ * Asserts that field filtering returned exactly the requested fields and nothing else.
+ * `_extraFields` is response metadata every room endpoint appends, never a filtered field.
+ */
+const expectObjectFields = (obj: unknown, fields: string[]) => {
+	expect(obj).toBeDefined();
+	const keys = Object.keys(obj as object).filter((key) => key !== '_extraFields');
+	expect(keys.sort()).toEqual([...fields].sort());
+	fields.forEach((field) => expect((obj as Record<string, unknown>)[field]).not.toBeUndefined());
 };
 
 // Validate recording location header in the response
 export const expectValidRecordingLocationHeader = (response: Response) => {
-	const locationHeader = response.headers.location;
-	expect(locationHeader).toBeDefined();
-	const locationHeaderUrl = new URL(locationHeader);
+	const locationHeaderUrl = new URL(response.headers.location);
 	expect(locationHeaderUrl.pathname).toBe(
 		getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${response.body.recordingId}`)
 	);
@@ -321,7 +325,6 @@ export const expectSuccessRecordingMediaResponse = (
 	expect(response.status).toBe(expectedStatus);
 	expect(response.headers['content-type']).toBe('video/mp4');
 	expect(response.headers['accept-ranges']).toBe('bytes');
-	expect(response.headers['content-length']).toBeDefined();
 	expect(parseInt(response.headers['content-length'])).toBeGreaterThan(0);
 	expect(response.headers['cache-control']).toBeDefined();
 
@@ -429,21 +432,22 @@ export const expectValidStartRecordingResponse = (
 	expectValidRecordingLocationHeader(response);
 
 	const recordingId = response.body.recordingId;
-	expect(recordingId).toBeDefined();
-
 	expect(recordingId).toContain(roomId);
 	expect(response.body).toHaveProperty('roomId', roomId);
 	expect(response.body).toHaveProperty('roomName', roomName);
-	expect(response.body).toHaveProperty('startDate');
-	expect(response.body).toHaveProperty('status', 'active');
+	expect([MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE]).toContain(response.body.status);
+
+	if (response.body.status === MeetRecordingStatus.STARTING) {
+		expect(response.body).not.toHaveProperty('startDate');
+	} else {
+		expect(response.body).toHaveProperty('startDate');
+	}
+
 	expect(response.body).toHaveProperty('filename');
 	expect(response.body).toHaveProperty('layout');
 	expect(response.body).not.toHaveProperty('duration');
 	expect(response.body).not.toHaveProperty('endDate');
 	expect(response.body).not.toHaveProperty('size');
-
-	expect(response.body.layout).toBeDefined();
-	expect(response.body.encoding).toBeDefined();
 
 	// Validate expected layout if provided
 	if (expectedLayout) {
@@ -476,7 +480,6 @@ export const expectValidStopRecordingResponse = (
 	expectedEncoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions
 ) => {
 	expect(response.status).toBe(202);
-	expect(response.body).toBeDefined();
 	expectValidRecordingLocationHeader(response);
 	expect(response.body).toHaveProperty('recordingId', recordingId);
 	expect([MeetRecordingStatus.COMPLETE, MeetRecordingStatus.ENDING]).toContain(response.body.status);
@@ -518,7 +521,6 @@ export const expectValidGetRecordingResponse = (
 	}
 ) => {
 	expect(response.status).toBe(200);
-	expect(response.body).toBeDefined();
 	const body = response.body;
 
 	const { recordingId, roomId, roomName, recordingStatus, recordingDuration, recordingLayout, recordingEncoding } =
@@ -527,9 +529,6 @@ export const expectValidGetRecordingResponse = (
 	expect(body).toMatchObject({ recordingId, roomId, roomName });
 
 	// Validate layout property
-	expect(body).toHaveProperty('layout');
-	expect(body.layout).toBeDefined();
-
 	if (recordingLayout !== undefined) {
 		expect(body.layout).toBe(recordingLayout);
 	} else {
@@ -537,14 +536,10 @@ export const expectValidGetRecordingResponse = (
 		expect(body.layout).toBe(DEFAULT_RECORDING_LAYOUT);
 	}
 
-	// Validate encoding property
-	expect(body).toHaveProperty('encoding');
-	expect(body.encoding).toBeDefined();
-
 	// Validate encoding property is present and coherent
 	if (recordingEncoding !== undefined) {
 		if (typeof recordingEncoding === 'string') {
-			expect(body.layout).toBe(recordingLayout);
+			expect(body.encoding).toBe(recordingEncoding);
 		} else {
 			expect(body.encoding).toMatchObject(recordingEncoding as any);
 		}
@@ -553,10 +548,10 @@ export const expectValidGetRecordingResponse = (
 		expect(body.encoding).toBe(DEFAULT_RECORDING_ENCODING_PRESET);
 	}
 
-	expect(body.status).toBeDefined();
-
 	if (recordingStatus !== undefined) {
 		expect(body.status).toBe(recordingStatus);
+	} else {
+		expect(Object.values(MeetRecordingStatus)).toContain(body.status);
 	}
 
 	const isRecFinished =
@@ -603,33 +598,29 @@ export const expectSuccessListRecordingResponse = (
 	maxItems = 10
 ) => {
 	expect(response.status).toBe(200);
-	expect(response.body).toBeDefined();
-	expect(response.body.recordings).toBeDefined();
 	expect(Array.isArray(response.body.recordings)).toBe(true);
 	expect(response.body.recordings.length).toBe(recordingLength);
-	expect(response.body.pagination).toBeDefined();
 	expect(response.body.pagination.isTruncated).toBe(isTruncated);
 
 	if (nextPageToken) {
-		expect(response.body.pagination.nextPageToken).toBeDefined();
+		expect(response.body.pagination.nextPageToken).toEqual(expect.stringMatching(/\S+/));
 	} else {
 		expect(response.body.pagination.nextPageToken).toBeUndefined();
 	}
 
-	expect(response.body.pagination.maxItems).toBeDefined();
-	expect(response.body.pagination.maxItems).toBeGreaterThan(0);
-	expect(response.body.pagination.maxItems).toBeLessThanOrEqual(100);
 	expect(response.body.pagination.maxItems).toBe(maxItems);
 };
 
-export const expectValidGetRecordingUrlResponse = (response: Response, recordingId: string) => {
+/** Asserts the recording access URL and returns the secret it carries. */
+export const expectValidGetRecordingUrlResponse = (response: Response, recordingId: string): string => {
 	expect(response.status).toBe(200);
-	const recordingUrl = response.body.url;
-	expect(recordingUrl).toBeDefined();
 
-	const parsedUrl = new URL(recordingUrl);
+	const parsedUrl = new URL(response.body.url);
 	expect(parsedUrl.pathname).toBe(getFullPath(`/recording/${recordingId}`));
-	expect(parsedUrl.searchParams.get('secret')).toBeDefined();
+
+	const secret = parsedUrl.searchParams.get('recordingSecret');
+	expect(secret).toEqual(expect.stringMatching(/\S+/));
+	return secret!;
 };
 
 export const expectValidRoomMemberTokenResponse = (
@@ -746,8 +737,8 @@ const getLiveKitPermissions = (roomId: string, permissions: MeetRoomMemberPermis
 		canPublish: permissions.mediaPublishAudio || permissions.mediaPublishVideo || permissions.mediaShareScreen,
 		canPublishSources,
 		canSubscribe: true,
-		canPublishData: true,
-		canUpdateOwnMetadata: true
+		canPublishData: permissions.chatWrite,
+		canUpdateOwnMetadata: false
 	};
 	return livekitPermissions;
 };

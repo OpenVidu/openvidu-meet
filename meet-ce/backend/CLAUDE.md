@@ -2,7 +2,7 @@
 
 Node.js + Express 5 REST API in TypeScript. ESM (`"type": "module"`) — every relative import needs an
 explicit `.js` extension, even when the source file is `.ts`. Deliberately framework-light: no Nest,
-no ORM beyond Mongoose. Dependencies: MongoDB (state), Redis (locks / pub-sub / ephemeral state),
+no ORM beyond Mongoose. Dependencies: MongoDB (state), Redis (locks / ephemeral state),
 LiveKit (media), and S3 / Azure Blob / GCS (recordings).
 
 Entry point: `src/server.ts`. It also serves the built SPA and the webcomponent bundle out of
@@ -29,9 +29,9 @@ Entry point: `src/server.ts`. It also serves the built SPA and the webcomponent 
 Two OpenAPI specs, two base paths (`src/config/internal-config.ts`):
 
 - **Public** `/api/v1` — the documented, supported, backwards-compatible surface: `users`, `rooms`
-  (incl. room members), `recordings`. Docs at `<basePath>/api/v1/docs`.
+  (incl. room members), `meetings`, `recordings`, `webhooks`. Docs at `<basePath>/api/v1/docs`.
 - **Internal** `/internal-api/v1` — consumed by our own frontend/webcomponent, no compatibility
-  promise: `auth`, `api-keys`, `meetings`, `config`, `analytics`, `ai`, plus internal room/user
+  promise: `auth`, `api-keys`, `config`, `analytics`, `ai`, plus internal room/user
   routes. Docs only served in `NODE_ENV=development`.
 
 Some routers export both (`roomRouter` + `internalRoomRouter`). Adding an endpoint means updating the
@@ -91,10 +91,13 @@ the more obvious `applyFieldFilters` helper, so don't assume that one already co
   grants or denies all three at once. That's why `recording.middleware.ts` checks three things where
   it used to check one, and why `GET /recordings/{recordingId}/download` is a new endpoint: it used to
   share `/media` with playback, and the server had no way to tell "play" from "download" apart there.
-- **The database already stores the new names** — two migrations (`room` v3→v4, `roomMember` v1→v2)
+- **The database already stores the new names** — migrations (`room` v3→v4, `roomMember` v1→v2)
   rewrote existing data. If you add a new permission, add it to `MEET_PERMISSION_KEYS` too: Mongoose
   silently drops any key it doesn't recognize, so a missed entry means the permission quietly reads as
-  `false` instead of raising an error.
+  `false` instead of raising an error. It also needs a migration **step of its own** (`room` v4→v5,
+  `roomMember` v2→v3 for `participantMute`) that re-runs the same permission normalization: documents
+  already at the previous version are up to date as far as the runner is concerned, so extending the
+  previous step would never reach them.
 - **Login tokens carry permissions too.** Renaming a permission doesn't invalidate tokens already
   issued — that would kick everyone out of an ongoing meeting — so decoding a token normalizes old
   names to new ones instead, in **both** modes (`MeetTokenPermissionsSchema`): tokens are our own
@@ -119,9 +122,10 @@ Full migration plan: `../openvidu-competitors/meet-update-plan/api-naming-migrat
   `errorProFeature()`, …), `handleError` for controllers, `rejectRequestFromMeetError` for
   middleware. Unknown errors must be logged and masked as 500 — `globalErrorHandler` is the last
   resort and is registered after every route.
-- **Distributed coordination** — `MutexService` (redlock-universal via `models/redis-lock.model.ts`)
-  and `DistributedEventService` for Redis pub/sub. Meet runs multi-replica: any garbage collection,
-  migration or recording state transition must be lock-guarded. Lock TTLs cap at 24h.
+- **Distributed coordination** — `MutexService` (redlock-universal via `models/redis-lock.model.ts`).
+  Meet runs multi-replica: any garbage collection, migration or recording state transition must be
+  lock-guarded. Lock TTLs cap at 24h. Cross-replica state lives in Redis keys, never in process
+  memory; there is no pub/sub channel between replicas.
 - **Scheduled tasks** — `TaskSchedulerService` + `*-scheduled-tasks.service.ts` (cron). Intervals,
   batch sizes and concurrency limits are all constants in `config/internal-config.ts`; reuse them
   instead of hardcoding numbers, and use `utils/concurrency.utils.ts` (`runConcurrently`) for fan-out.

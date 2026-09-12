@@ -122,6 +122,10 @@
           "LABEL": "Pode entrar na reunião",
           "DESCRIPTION": "Permitir entrar na reunião"
         },
+        "meetingRead": {
+          "LABEL": "Pode consultar a reunião",
+          "DESCRIPTION": "Permitir consultar o estado ao vivo da reunião e os seus participantes sem entrar"
+        },
         "meetingEnd": {
           "LABEL": "Pode encerrar a reunião",
           "DESCRIPTION": "Permitir encerrar a reunião para todos os participantes"
@@ -133,6 +137,10 @@
         "participantKick": {
           "LABEL": "Pode expulsar participantes",
           "DESCRIPTION": "Permitir remover participantes da reunião"
+        },
+        "participantMute": {
+          "LABEL": "Pode silenciar participantes",
+          "DESCRIPTION": "Permitir desligar o microfone, a câmara ou a partilha de ecrã de outros participantes"
         },
         "roomShareAccessLinks": {
           "LABEL": "Pode compartilhar links de acesso",

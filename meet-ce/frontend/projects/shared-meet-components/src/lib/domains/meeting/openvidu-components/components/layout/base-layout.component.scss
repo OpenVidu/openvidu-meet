@@ -13,6 +13,16 @@
 	height: calc(100% - 5px) !important;
 }
 
+/**
+ * Separation between tiles. The renderer subtracts an element's own margin from the box the
+ * calculator gave it, so a margin here opens a gap without the tiles overflowing their boxes.
+ * Same selector the engine uses to pick what it positions: a floating or ignored tile is not
+ * part of the grid and keeps its own geometry.
+ */
+#layout > *:not(.OV_floating):not(.OV_ignored) {
+	margin: 0.25%;
+}
+
 .layout {
 	position: relative;
 	left: 0;

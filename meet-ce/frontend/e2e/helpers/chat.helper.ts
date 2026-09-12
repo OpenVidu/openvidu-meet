@@ -1,5 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 
+const CHAT_NOTIFICATION = '.ov-notification[data-kind="chat-message"]';
+
 /**
  * Ensures the chat panel is open or closed, clicking the appropriate control only when the panel is
  * not already in the desired state. Keyed off the panel container rather than the message input, since
@@ -37,6 +39,19 @@ export const sendChatMessage = async (page: Page, message: string): Promise<void
 /**
  * Asserts that the chat contains exactly {@link count} messages.
  */
+/**
+ * Asserts that the participant is told a message arrived while they had the chat closed. Read off
+ * `data-kind` rather than the text, which is human copy in the active language.
+ */
+export const expectChatMessageNotification = async (page: Page): Promise<void> => {
+	await expect(page.locator(CHAT_NOTIFICATION)).toBeVisible({ timeout: 10_000 });
+};
+
+/** Opens the chat from the notification's own action, the way a participant does. */
+export const openChatFromNotification = async (page: Page): Promise<void> => {
+	await page.locator(`${CHAT_NOTIFICATION} .notification-action`).click();
+};
+
 export const expectChatMessageCount = async (page: Page, count: number): Promise<void> => {
 	await expect(page.locator('.message')).toHaveCount(count);
 };

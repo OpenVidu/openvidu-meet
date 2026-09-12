@@ -79,8 +79,8 @@ const RoomMemberRoleSchema: z.ZodType<MeetRoomMemberRole> = z.enum(MeetRoomMembe
 // request may actually use is decided per parse by MEET_MODE — declaring the deprecated keys even in
 // '3.9.0' mode is what lets that mode *reject* them with a pointed message instead of silently
 // stripping them (a stripped permission would just read as denied). Every key is optional at the
-// shape level: requiredness ("all 16 keys defined after normalization") only applies to the full
-// schemas and is enforced in their superRefine. The deprecated branch is removed in 3.12.0.
+// shape level: requiredness (every permission key defined after normalization) only applies to the
+// full schemas and is enforced in their superRefine. The deprecated branch is removed in 3.12.0.
 const dualNamingPermissionShape = (): Record<string, z.ZodOptional<z.ZodBoolean>> => {
 	const shape: Record<string, z.ZodOptional<z.ZodBoolean>> = {};
 
@@ -125,7 +125,7 @@ const addDeprecatedKeyRejectionIssues = (input: Record<string, unknown>, ctx: z.
 
 // Completeness: every current key must be defined once deprecated spellings are expanded.
 const addMissingPermissionIssues = (input: Record<string, unknown>, ctx: z.RefinementCtx): void => {
-	const normalized = normalizePermissions(input);
+	const normalized = normalizePermissions(input, { complete: true });
 
 	for (const key of MEET_PERMISSION_KEYS) {
 		if (typeof normalized[key] !== 'boolean') {
@@ -155,7 +155,7 @@ const permissionsShapeSchema = (options: { complete: boolean; alwaysAcceptDeprec
 
 export const MeetPermissionsSchema: z.ZodType<MeetRoomMemberPermissions> = permissionsShapeSchema({
 	complete: true
-}).transform((input) => normalizePermissions(input) as MeetRoomMemberPermissions);
+}).transform((input) => normalizePermissions(input, { complete: true }) as MeetRoomMemberPermissions);
 
 export const PartialMeetPermissionsSchema: z.ZodType<Partial<MeetRoomMemberPermissions>> = permissionsShapeSchema({
 	complete: false
@@ -167,7 +167,7 @@ export const PartialMeetPermissionsSchema: z.ZodType<Partial<MeetRoomMemberPermi
 export const MeetTokenPermissionsSchema: z.ZodType<MeetRoomMemberPermissions> = permissionsShapeSchema({
 	complete: true,
 	alwaysAcceptDeprecated: true
-}).transform((input) => normalizePermissions(input) as MeetRoomMemberPermissions);
+}).transform((input) => normalizePermissions(input, { complete: true }) as MeetRoomMemberPermissions);
 
 export const RoomMemberOptionsSchema: z.ZodType<MeetRoomMemberOptions> = z
 	.object({
@@ -323,7 +323,17 @@ export const UpdateRoomMemberReqSchema = z.object({
 export const RoomMemberTokenOptionsSchema: z.ZodType<MeetRoomMemberTokenOptions> = z.object({
 	secret: z.string().optional(),
 	joinMeeting: z.boolean().optional().default(false),
-	participantName: z.string().optional()
+	participantName: z.string().optional(),
+	participantExternalId: z
+		.string()
+		.min(1, 'participantExternalId cannot be empty')
+		.max(64, 'participantExternalId cannot exceed 64 characters')
+		.regex(/^[A-Za-z0-9_-]+$/, 'participantExternalId must contain only letters, digits, underscores and hyphens')
+		.optional(),
+	participantMetadata: z
+		.string()
+		.refine((value) => Buffer.byteLength(value, 'utf8') <= 2048, 'participantMetadata cannot exceed 2048 bytes')
+		.optional()
 });
 
 export const RoomMemberTokenMetadataSchema: z.ZodType<MeetRoomMemberTokenMetadata> = z.object({
@@ -334,5 +344,10 @@ export const RoomMemberTokenMetadataSchema: z.ZodType<MeetRoomMemberTokenMetadat
 	permissions: MeetTokenPermissionsSchema,
 	badge: z.enum(MeetRoomMemberUIBadge),
 	isPromotedModerator: z.boolean().optional(),
-	livekitUrl: z.url('LiveKit URL must be a valid URL').optional()
+	livekitUrl: z.url('LiveKit URL must be a valid URL').optional(),
+	// App-provided correlation fields, echoed from the join request. Lenient on purpose (tokens are
+	// our own artifacts, already validated at issuance); an undeclared key would be dropped by this
+	// schema on every refresh/promotion round trip.
+	externalId: z.string().optional(),
+	metadata: z.string().optional()
 });

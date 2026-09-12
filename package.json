@@ -28,6 +28,7 @@
 		"test:integration-backend-room-management": "pnpm --filter @openvidu-meet/backend run test:integration-room-management",
 		"test:integration-backend-webhooks": "pnpm --filter @openvidu-meet/backend run test:integration-webhooks",
 		"test:integration-backend-auth-security": "pnpm --filter @openvidu-meet/backend run test:integration-auth-security",
+		"test:integration-backend-security-3.9.0": "pnpm --filter @openvidu-meet/backend run test:integration-security-3.9.0",
 		"test:integration-backend-config-analytics": "pnpm --filter @openvidu-meet/backend run test:integration-config-analytics",
 		"test:integration-backend-recordings": "pnpm --filter @openvidu-meet/backend run test:integration-recordings",
 		"test:unit-backend": "pnpm --filter @openvidu-meet/backend run test:unit",

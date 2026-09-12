@@ -1,11 +1,5 @@
 @use '_design-tokens.scss';
 
-.ov-page-container {
-	button {
-		padding: var(--ov-meet-button-padding-vertical) var(--ov-meet-button-padding-horizontal);
-	}
-}
-
 // API Key Section - use utility classes
 .api-key-section {
 	.rest-api-link {
@@ -36,7 +30,7 @@
 
 			.copy-button {
 				color: var(--ov-meet-primary);
-				border-radius: var(--ov-meet-border-radius-sm);
+				border-radius: var(--ov-meet-radius-sm);
 				white-space: nowrap;
 
 				.mat-icon {
@@ -79,47 +73,215 @@
 	}
 }
 
-// Webhooks Section - simplified with utilities
+// Webhooks Section
 .webhooks-section {
-	.webhook-form {
-		@extend %ov-settings-form-section;
+	.webhook-warning {
+		@include design-tokens.ov-warning-panel;
+		margin-bottom: var(--ov-meet-spacing-md);
+	}
 
-		.full-width {
-			width: 100%;
+	.no-webhooks {
+		text-align: center;
+		padding: var(--ov-meet-spacing-xl) var(--ov-meet-spacing-sm);
+		border: 1px solid var(--ov-meet-border-color);
+		border-radius: var(--ov-meet-radius-md);
+
+		.no-webhooks-icon {
+			@include design-tokens.ov-icon(xl);
+			color: var(--ov-meet-text-disabled);
 		}
 
-		.webhook-section-title {
-			margin: 0;
+		h3 {
+			color: var(--ov-meet-text-primary);
+			font-size: var(--ov-meet-font-size-xl);
+			font-weight: var(--ov-meet-font-weight-regular);
+			margin: var(--ov-meet-spacing-md) 0;
 		}
 
-		.webhook-toggle {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			padding: 0 var(--ov-meet-spacing-md) var(--ov-meet-spacing-md) 0;
+		p {
+			color: var(--ov-meet-text-secondary);
+			font-size: var(--ov-meet-font-size-md);
+			max-width: 450px;
+			margin: 0 auto var(--ov-meet-spacing-lg) auto;
+		}
+	}
 
-			::ng-deep button {
-				padding: 0 !important;
+	.webhook-toolbar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--ov-meet-spacing-md);
+		margin-bottom: var(--ov-meet-spacing-sm);
+
+		.webhook-count {
+			font-size: var(--ov-meet-font-size-sm);
+			color: var(--ov-meet-text-secondary);
+		}
+
+		@include design-tokens.ov-mobile-down {
+			flex-direction: column;
+			align-items: stretch;
+		}
+	}
+
+	.webhook-list {
+		border: 1px solid var(--ov-meet-border-color);
+		border-radius: var(--ov-meet-radius-md);
+		overflow: hidden;
+	}
+
+	.webhook-list-header,
+	.webhook-row {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-md);
+		padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+	}
+
+	.webhook-list-header {
+		background-color: var(--ov-meet-surface-variant);
+		border-bottom: 1px solid var(--ov-meet-border-color);
+		color: var(--ov-meet-text-primary);
+		font-size: var(--ov-meet-font-size-sm);
+		font-weight: var(--ov-meet-font-weight-medium);
+
+		@media (max-width: design-tokens.$ov-meet-breakpoint-wide) {
+			display: none;
+		}
+	}
+
+	.webhook-item + .webhook-item {
+		border-top: 1px solid var(--ov-meet-border-color-light);
+	}
+
+	.webhook-row {
+		min-height: 56px;
+	}
+
+	.webhook-row:hover {
+		background-color: var(--ov-meet-surface-hover);
+	}
+
+	// The console sidenav takes 250px, so the columns must shrink with the card, not with the
+	// viewport: only the two that cannot lose width keep a fixed size.
+	.col-endpoint {
+		flex: 1 1 320px;
+		min-width: 200px;
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-xs);
+	}
+
+	.col-events {
+		flex: 0 1 200px;
+		min-width: 90px;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--ov-meet-spacing-xs);
+	}
+
+	.col-room {
+		flex: 0 1 170px;
+		min-width: 70px;
+	}
+
+	.col-status {
+		width: 70px;
+		flex: none;
+	}
+
+	.col-actions {
+		width: 150px;
+		flex: none;
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: var(--ov-meet-spacing-xs);
+
+		.test-button {
+			font-size: var(--ov-meet-font-size-sm);
+
+			.mat-icon {
+				margin-right: var(--ov-meet-spacing-xs);
 			}
 		}
 
-		// Input field styling
-		.mat-mdc-form-field {
-			margin-bottom: var(--ov-meet-spacing-lg);
+		.delete-webhook-button:hover {
+			color: var(--ov-meet-color-error);
+		}
+	}
 
-			::ng-deep .mat-mdc-text-field-wrapper {
-				&.mdc-text-field--disabled {
-					background-color: var(--ov-meet-surface-variant);
-				}
+	.webhook-url {
+		font-family: 'Roboto Mono', monospace;
+		font-size: var(--ov-meet-font-size-sm);
+		color: var(--ov-meet-text-primary);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
 
-				border-radius: var(--ov-meet-border-radius-sm);
-			}
+	.copy-url-button {
+		flex-shrink: 0;
+		color: var(--ov-meet-text-hint);
+	}
 
-			::ng-deep .mdc-notched-outline__leading,
-			::ng-deep .mdc-notched-outline__notch,
-			::ng-deep .mdc-notched-outline__trailing {
-				border-color: var(--ov-meet-border-color);
-			}
+	.webhook-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 2px;
+		max-width: 100%;
+		padding: 2px var(--ov-meet-spacing-sm);
+		border-radius: var(--ov-meet-radius-sm);
+		background-color: var(--ov-meet-surface-variant);
+		color: var(--ov-meet-text-secondary);
+		font-family: monospace;
+		font-size: var(--ov-meet-font-size-xs);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+
+		&.all-events {
+			background-color: transparent;
+			border: 1px solid var(--ov-meet-border-color);
+			font-family: var(--ov-meet-font-family);
+			font-size: var(--ov-meet-font-size-sm);
+		}
+
+		.chip-icon {
+			@include design-tokens.ov-icon(sm);
+		}
+	}
+
+	.webhook-all-rooms {
+		font-size: var(--ov-meet-font-size-sm);
+		color: var(--ov-meet-text-secondary);
+	}
+
+	@media (max-width: design-tokens.$ov-meet-breakpoint-wide) {
+		.webhook-row {
+			flex-wrap: wrap;
+			align-items: flex-start;
+			gap: var(--ov-meet-spacing-sm);
+		}
+
+		.col-status {
+			flex: 0 0 auto;
+			width: auto;
+		}
+
+		.col-endpoint {
+			flex: 1 1 240px;
+		}
+
+		.col-events,
+		.col-room {
+			flex: 0 1 auto;
+			width: auto;
+		}
+
+		.col-actions {
+			flex: 1 0 auto;
+			width: auto;
 		}
 	}
 }

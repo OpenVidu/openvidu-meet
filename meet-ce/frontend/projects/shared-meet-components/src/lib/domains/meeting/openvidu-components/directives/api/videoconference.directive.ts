@@ -1,7 +1,10 @@
 import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
 import { AvailableLangs, LangOption } from '../../models/lang.model';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
-import { LocalMediaService } from '../../services/local-media/local-media.service';
+import {
+	InitialMediaState,
+	LocalMediaIntentService
+} from '../../services/local-media-intent/local-media-intent.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 
 /**
@@ -52,57 +55,6 @@ export class LivekitUrlDirective implements OnDestroy {
 	 */
 	update(value: string) {
 		this.libService.updateGeneralConfig({ livekitUrl: value });
-	}
-}
-
-/**
- * The **token** directive sets the token to grant a participant access to a Room.
- * This OpenVidu token will be use by each participant when connecting to a Room.
- *
- * It is only available for {@link MeetingViewComponent}.
- *
- * Default: `""`
- *
- * @example
- * <ov-meeting-view [token]="token"></ov-meeting-view>
- */
-@Directive({
-	selector: 'ov-meeting-view[token]'
-})
-export class TokenDirective implements OnDestroy {
-	/**
-	 * @ignore
-	 */
-	readonly token = input<string>('');
-
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
-	private readonly libService = inject(MeetingUiConfigService);
-	private readonly tokenEffect = effect(() => {
-		this.update(this.token());
-	});
-
-	/**
-	 * @ignore
-	 */
-	ngOnDestroy(): void {
-		this.clear();
-	}
-
-	/**
-	 * @ignore
-	 */
-	clear() {
-		this.update('');
-	}
-
-	/**
-	 * @ignore
-	 */
-	update(value: string) {
-		this.libService.updateGeneralConfig({ token: value });
 	}
 }
 
@@ -389,111 +341,44 @@ export class PrejoinDirective implements OnDestroy {
 }
 
 /**
- * The **videoEnabled** directive allows to join the meeting with camera enabled or disabled.
+ * The **initialMediaState** directive sets which local devices are opened when the participant joins.
+ * Initial state only — the participant may toggle either device afterwards — and a separate axis from
+ * whether the controls exist at all ({@link ShowCameraControlsDirective} /
+ * {@link ShowMicrophoneControlsDirective}).
  *
  * It is only available for {@link MeetingViewComponent}.
  *
- * Default: `true`
- *
+ * Default: `{ camera: true, microphone: true }`
  *
  * @example
- * <ov-meeting-view [videoEnabled]="false"></ov-meeting-view>
+ * <ov-meeting-view [initialMediaState]="{ camera: false, microphone: true }"></ov-meeting-view>
  */
 @Directive({
-	selector: 'ov-meeting-view[videoEnabled]'
+	selector: 'ov-meeting-view[initialMediaState]'
 })
-export class VideoEnabledDirective implements OnDestroy {
+export class InitialMediaStateDirective {
 	/**
 	 * @ignore
 	 */
-	readonly videoEnabled = input<boolean>(true);
+	readonly initialMediaState = input<InitialMediaState>({ camera: true, microphone: true });
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(MeetingUiConfigService);
-	private readonly localMediaService = inject(LocalMediaService);
-	private readonly videoEnabledEffect = effect(() => {
-		this.update(this.videoEnabled());
+	private readonly mediaIntent = inject(LocalMediaIntentService);
+	private readonly initialMediaStateEffect = effect(() => {
+		this.update(this.initialMediaState());
 	});
 
-	/**
-	 * @ignore
-	 */
-	ngOnDestroy(): void {
-		this.clear();
-	}
+	// No teardown on purpose: the intent is per-entry state owned by the meeting view, which resets
+	// it. Pushing a default from here would make the next entry's identical request a no-op.
 
 	/**
 	 * @ignore
 	 */
-	clear() {
-		this.update(true);
-	}
-
-	/**
-	 * @ignore
-	 */
-	update(enabled: boolean) {
-		const finalEnabledState = this.localMediaService.applyInitialCameraPreference(enabled);
-
-		if (this.libService.isVideoEnabled() !== finalEnabledState) {
-			this.libService.updateStreamConfig({ videoEnabled: finalEnabledState });
-		}
-	}
-}
-
-/**
- * The **audioEnabled** directive allows to join the meeting with microphone enabled or disabled.
- *
- * It is only available for {@link MeetingViewComponent}.
- *
- * Default: `true`
- *
- * @example
- * <ov-meeting-view [audioEnabled]="false"></ov-meeting-view>
- */
-
-@Directive({
-	selector: 'ov-meeting-view[audioEnabled]'
-})
-export class AudioEnabledDirective implements OnDestroy {
-	/**
-	 * @ignore
-	 */
-	readonly audioEnabled = input<boolean>(true);
-
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
-	private readonly libService = inject(MeetingUiConfigService);
-	private readonly localMediaService = inject(LocalMediaService);
-	private readonly audioEnabledEffect = effect(() => {
-		this.update(this.audioEnabled());
-	});
-
-	ngOnDestroy(): void {
-		this.clear();
-	}
-
-	/**
-	 * @ignore
-	 */
-	clear() {
-		this.update(true);
-	}
-
-	/**
-	 * @ignore
-	 */
-	update(enabled: boolean) {
-		const finalEnabledState = this.localMediaService.applyInitialMicrophonePreference(enabled);
-
-		if (this.libService.isAudioEnabled() !== finalEnabledState) {
-			this.libService.updateStreamConfig({ audioEnabled: finalEnabledState });
-		}
+	update(state: InitialMediaState) {
+		this.mediaIntent.applyInitialState(state);
 	}
 }
 
@@ -532,5 +417,81 @@ export class ChatWritableDirective implements OnDestroy {
 	 */
 	ngOnDestroy(): void {
 		this.libService.setChatInputEnabled(true);
+	}
+}
+
+/**
+ * The **showCameraControls** directive shows/hides every camera control: the toolbar button, the
+ * prejoin screen and the settings panel. It is a capability — whether the participant may use the
+ * camera at all — not a toolbar decoration, and a separate axis from whether the camera *starts* on.
+ *
+ * It is only available for {@link MeetingViewComponent}.
+ *
+ * Default: `true`
+ *
+ * @example
+ * <ov-meeting-view [showCameraControls]="false"></ov-meeting-view>
+ */
+@Directive({
+	selector: 'ov-meeting-view[showCameraControls]'
+})
+export class ShowCameraControlsDirective implements OnDestroy {
+	/**
+	 * @ignore
+	 */
+	readonly showCameraControls = input<boolean | undefined>(undefined);
+
+	/**
+	 * @ignore
+	 */
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(MeetingUiConfigService);
+	private readonly showCameraControlsEffect = effect(() => {
+		this.libService.setShowCameraControls(this.showCameraControls() ?? true);
+	});
+
+	/**
+	 * @ignore
+	 */
+	ngOnDestroy(): void {
+		this.libService.setShowCameraControls(true);
+	}
+}
+
+/**
+ * The **showMicrophoneControls** directive shows/hides every microphone control: the toolbar button,
+ * the prejoin screen and the settings panel. It is a capability — whether the participant may use the
+ * microphone at all — not a toolbar decoration, and a separate axis from whether it *starts* on.
+ *
+ * It is only available for {@link MeetingViewComponent}.
+ *
+ * Default: `true`
+ *
+ * @example
+ * <ov-meeting-view [showMicrophoneControls]="false"></ov-meeting-view>
+ */
+@Directive({
+	selector: 'ov-meeting-view[showMicrophoneControls]'
+})
+export class ShowMicrophoneControlsDirective implements OnDestroy {
+	/**
+	 * @ignore
+	 */
+	readonly showMicrophoneControls = input<boolean | undefined>(undefined);
+
+	/**
+	 * @ignore
+	 */
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(MeetingUiConfigService);
+	private readonly showMicrophoneControlsEffect = effect(() => {
+		this.libService.setShowMicrophoneControls(this.showMicrophoneControls() ?? true);
+	});
+
+	/**
+	 * @ignore
+	 */
+	ngOnDestroy(): void {
+		this.libService.setShowMicrophoneControls(true);
 	}
 }

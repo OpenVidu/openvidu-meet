@@ -1,6 +1,57 @@
 MeetRoomConfig:
     type: object
+    description: >
+        Config of a room. A config update merges with the stored config, so an omitted top-level field keeps
+        its current value. The nested objects (`chat`, `recording`, `virtualBackground`, `e2ee`, `captions`)
+        merge field by field too, but each one requires its own `enabled` whenever it is sent at all: a
+        request that carries `recording` without `recording.enabled` is rejected with a `422`.
     properties:
+        maxParticipants:
+            type: [integer, 'null']
+            minimum: 1
+            maximum: 30
+            example: 10
+            description: >
+                Maximum number of participants that may be in the meeting at the same time.
+                Once reached, further join attempts are rejected.
+                `null` means the number of participants is unlimited; the highest limit that can
+                be set is `30`.
+                Config updates merge with the stored config, so an omitted limit keeps its
+                current value; send `null` to lift it.
+                A limit of `1` is incompatible with the `when_second_participant_joins` recording
+                auto-start mode, which such a room could never reach.
+        maxDurationMinutes:
+            type: [integer, 'null']
+            minimum: 1
+            maximum: 1440
+            example: 60
+            description: >
+                Maximum duration of the meeting in minutes. When reached, the meeting ends for
+                every participant, exactly as if a moderator had ended it.
+                `null` means the meeting duration is unlimited; the lowest limit that can be set
+                is `1`, the highest is `1440` (1 day).
+                Config updates merge with the stored config, so an omitted limit keeps its
+                current value; send `null` to lift it.
+        initialAudioActive:
+            type: boolean
+            default: true
+            description: >
+                Room-wide **default** for whether participants join with their microphone active.
+                This is the initial state, not a capability: the participant may reactivate the
+                device afterwards, and a denying `mediaPublishAudio` permission always wins.
+                It is a default, not a policy — the embedding application's `initial-audio-active`
+                attribute takes precedence whenever it is set, to either value. To *enforce*
+                silence, deny the permission instead.
+        initialVideoActive:
+            type: boolean
+            default: true
+            description: >
+                Room-wide **default** for whether participants join with their camera active.
+                This is the initial state, not a capability: the participant may reactivate the
+                device afterwards, and a denying `mediaPublishVideo` permission always wins.
+                It is a default, not a policy — the embedding application's `initial-video-active`
+                attribute takes precedence whenever it is set, to either value. To *enforce* a
+                camera-off meeting, deny the permission instead.
         chat:
             $ref: '#/MeetChatConfig'
             description: Config for the chat feature in the room.
@@ -18,6 +69,8 @@ MeetRoomConfig:
             description: Config for live captions in the room.
 MeetChatConfig:
     type: object
+    required:
+        - enabled
     properties:
         enabled:
             type: boolean
@@ -26,12 +79,37 @@ MeetChatConfig:
             description: If true, the room will be allowed to send and receive chat messages.
 MeetRecordingConfig:
     type: object
+    required:
+        - enabled
     properties:
         enabled:
             type: boolean
             default: true
             example: true
             description: If true, the room will be allowed to record the video of the participants.
+        autoStart:
+            type: [string, 'null']
+            enum:
+                - when_first_participant_joins
+                - when_second_participant_joins
+                - when_moderator_joins
+                - null
+            default: null
+            example: when_first_participant_joins
+            description: >
+                When set, the recording starts automatically once the configured trigger fires:
+                `when_first_participant_joins` starts as soon as the first participant joins the
+                meeting; `when_second_participant_joins` starts as soon as a second participant
+                joins; `when_moderator_joins` starts as soon as a participant with the moderator
+                role is in the meeting, by join or by promotion during the meeting.
+                `null` means recordings only start on-demand, and is also the effective default: a room
+                that never configured auto-start carries no `autoStart` field at all, which reads the same
+                way.
+                Config updates merge with the stored config, so an omitted value keeps its current
+                setting; send `null` to turn auto-start off (the field is then served explicitly as `null`).
+                Sending `autoStart` requires sending `recording.enabled` alongside it.
+                `when_second_participant_joins` needs a room that admits at least two participants,
+                so pairing it with `maxParticipants: 1` is rejected with a `422`.
         layout:
             type: string
             enum:
@@ -57,6 +135,8 @@ MeetRecordingConfig:
                 - $ref: '#/MeetRecordingEncodingOptions'
 MeetVirtualBackgroundConfig:
     type: object
+    required:
+        - enabled
     properties:
         enabled:
             type: boolean
@@ -65,6 +145,8 @@ MeetVirtualBackgroundConfig:
             description: If true, the room will be allowed to use virtual background.
 MeetE2EEConfig:
     type: object
+    required:
+        - enabled
     properties:
         enabled:
             type: boolean
@@ -76,6 +158,8 @@ MeetE2EEConfig:
                 **Enabling E2EE will disable the recording feature for the room**.
 MeetCaptionsConfig:
     type: object
+    required:
+        - enabled
     properties:
         enabled:
             type: boolean

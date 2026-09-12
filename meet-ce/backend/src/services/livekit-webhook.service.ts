@@ -1,26 +1,29 @@
 import type { MeetRecordingInfo } from '@openvidu-meet/typings';
-import { MeetingEndAction, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetingEndAction, MeetMeetingEndedReason, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { EgressInfo, ParticipantInfo, Room, WebhookEvent } from 'livekit-server-sdk';
 import { WebhookReceiver } from 'livekit-server-sdk';
+import { container } from '../config/dependency-injector.config.js';
 import { MEET_ENV } from '../environment.js';
+import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
-import { DistributedEventType } from '../models/distributed-event.model.js';
+import { RedisKeyName } from '../models/redis.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { AiAssistantService } from './ai-assistant.service.js';
-import { DistributedEventService } from './distributed-event.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { MeetingPresenceService } from './meeting-presence.service.js';
-import { OpenViduWebhookService } from './openvidu-webhook.service.js';
 import { RecordingService } from './recording.service.js';
+import { RedisService } from './redis.service.js';
 import { RoomMemberService } from './room-member.service.js';
+import type { RoomScheduledTasksService } from './room-scheduled-tasks.service.js';
 import { RoomService } from './room.service.js';
 import { TokenService } from './token.service.js';
+import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 
 @injectable()
 export class LivekitWebhookService {
@@ -31,17 +34,26 @@ export class LivekitWebhookService {
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(RoomService) protected roomService: RoomService,
 		@inject(RoomRepository) protected roomRepository: RoomRepository,
-		@inject(OpenViduWebhookService) protected openViduWebhookService: OpenViduWebhookService,
-		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
+		@inject(WebhookDispatcherService) protected webhookDispatcherService: WebhookDispatcherService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(RoomMemberService) protected roomMemberService: RoomMemberService,
 		@inject(MeetingPresenceService) protected meetingPresenceService: MeetingPresenceService,
 		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
 		@inject(AiAssistantService) protected aiAssistantService: AiAssistantService,
 		@inject(TokenService) protected tokenService: TokenService,
+		@inject(RedisService) protected redisService: RedisService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {
 		this.webhookReceiver = new WebhookReceiver(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
+	}
+
+	/**
+	 * Resolved on use rather than injected: RoomScheduledTasksService injects this service for its
+	 * reconcile paths, so a constructor dependency back would be a cycle.
+	 */
+	protected async getRoomScheduledTasksService(): Promise<RoomScheduledTasksService> {
+		const { RoomScheduledTasksService } = await import('./room-scheduled-tasks.service.js');
+		return container.get(RoomScheduledTasksService);
 	}
 
 	/**
@@ -77,9 +89,7 @@ export class LivekitWebhookService {
 				if (MeetRoomHelper.checkIfMeetingBelogsToOpenViduMeet(updatedMetadata)) return true;
 
 				const roomExists = await this.roomService.meetRoomExists(room.name);
-				this.logger.debug(
-					`Room '${room.name}' ${roomExists ? 'exists' : 'does not exist'} in OpenVidu Meet`
-				);
+				this.logger.debug(`Room '${room.name}' ${roomExists ? 'exists' : 'does not exist'} in OpenVidu Meet`);
 				return roomExists;
 			}
 
@@ -150,20 +160,23 @@ export class LivekitWebhookService {
 		// Skip if the participant is not a standard participant
 		if (!this.livekitService.isStandardParticipant(participant)) return;
 
+		// The room's recording may be configured to start by itself.
+		void this.recordingService.startAutoRecordingIfNeeded(room, participant);
+
 		try {
+			const payload = await MeetParticipantHelper.toParticipantJoinedPayload(room, participant);
+			this.webhookDispatcherService.sendParticipantJoinedWebhook(payload);
+
 			const userId = this.getUserIdFromParticipant(participant);
 
 			if (userId) {
 				await this.meetingPresenceService.upsertUserInRoom(userId, room.name, participant.identity);
 			}
 
-			const { recordings } = await this.recordingService.getAllRecordings({
-				roomId: room.name,
-				status: MeetRecordingStatus.ACTIVE
-			});
+			const recording = await this.findRecordingInProgress(room.name);
 
-			if (recordings.length > 0) {
-				await this.frontendEventService.sendRecordingUpdatedSignal(room.name, recordings[0], participant.sid);
+			if (recording) {
+				await this.frontendEventService.sendRecordingUpdatedSignal(room.name, recording, participant.sid);
 			}
 		} catch (error) {
 			this.logger.error(
@@ -171,6 +184,21 @@ export class LivekitWebhookService {
 				error
 			);
 		}
+	}
+
+	/**
+	 * The room's recording that a participant joining now has to be told about: one that is already
+	 * recording, or one that is still starting, which is what a room whose participants publish
+	 * nothing keeps doing until one of them turns a device on.
+	 */
+	protected async findRecordingInProgress(roomId: string): Promise<MeetRecordingInfo | undefined> {
+		for (const status of [MeetRecordingStatus.ACTIVE, MeetRecordingStatus.STARTING]) {
+			const { recordings } = await this.recordingService.getAllRecordings({ roomId, status });
+
+			if (recordings.length > 0) return recordings[0];
+		}
+
+		return undefined;
 	}
 
 	/**
@@ -184,6 +212,9 @@ export class LivekitWebhookService {
 		if (!this.livekitService.isStandardParticipant(participant)) return;
 
 		try {
+			const payload = await MeetParticipantHelper.toParticipantLeftPayload(room, participant, Date.now());
+			this.webhookDispatcherService.sendParticipantLeftWebhook(payload);
+
 			const userId = this.getUserIdFromParticipant(participant);
 
 			if (userId) {
@@ -206,15 +237,35 @@ export class LivekitWebhookService {
 	/**
 	 * Handles a room started event from LiveKit.
 	 *
-	 * This method retrieves the corresponding meet room from the room service using the LiveKit room name.
-	 * If the meet room is found, it updates the room status to ACTIVE_MEETING,
-	 * and sends a webhook notification indicating that the meeting has started.
+	 * A closed room is left closed and its LiveKit room deleted instead of reactivated: a still-valid
+	 * room-member token can make LiveKit auto-create it again on a raw reconnect, bypassing Meet's own
+	 * closed-room check. Otherwise, arms the timer that ends the meeting at its room's duration limit
+	 * (when the room declares one), updates the room status to ACTIVE_MEETING and sends a webhook
+	 * notification indicating that the meeting has started.
 	 *
 	 * @param {Room} room - The room object that has started.
 	 */
-	async handleRoomStarted({ name: roomId }: Room) {
+	async handleRoomStarted(room: Room) {
+		const { name: roomId, sid: meetingId } = room;
+
 		try {
 			this.logger.info(`Processing room_started event for room '${roomId}'`);
+
+			const { status, config } = await this.roomService.getMeetRoom(roomId, ['status', 'config']);
+
+			if (status === MeetRoomStatus.CLOSED) {
+				this.logger.warn(
+					`Room '${roomId}' is closed in OpenVidu Meet but LiveKit started a new meeting '${meetingId}' in it, ` +
+						`most likely a stale room-member token reconnecting straight to LiveKit. Deleting the resurrected LiveKit room instead of reopening the meeting.`
+				);
+				await this.livekitService.deleteRoom(roomId);
+				return;
+			}
+
+			if (config.maxDurationMinutes) {
+				const roomScheduledTasksService = await this.getRoomScheduledTasksService();
+				roomScheduledTasksService.scheduleMeetingEndAtDurationLimit(room, config.maxDurationMinutes);
+			}
 
 			// Update Meet room status to ACTIVE_MEETING
 			const updatedRoom = await this.roomRepository.updatePartial(roomId, {
@@ -222,7 +273,7 @@ export class LivekitWebhookService {
 			});
 
 			// Send webhook notification
-			this.openViduWebhookService.sendMeetingStartedWebhook(updatedRoom);
+			this.webhookDispatcherService.sendMeetingStartedWebhook(updatedRoom);
 		} catch (error) {
 			this.logger.error(`Error handling room started event for room '${roomId}'`, error);
 		}
@@ -239,12 +290,21 @@ export class LivekitWebhookService {
 	 * - If the action is NONE, it simply updates the room status to OPEN.
 	 *
 	 * Then, it sends a webhook notification indicating that the meeting has ended,
-	 * and cleans up any resources associated with the room.
+	 * and cleans up any resources associated with the room, the meeting's duration-limit timer
+	 * included.
 	 *
-	 * @param {Room} room - The room object that has finished.
+	 * @param finishedRoom - The finished room, as much of it as the caller knows: the LiveKit
+	 * webhook carries the meeting's `sid`, while {@link RoomScheduledTasksService}'s reconcile GC
+	 * knows only the room id, LiveKit having already forgotten the meeting it is reporting.
 	 */
-	async handleRoomFinished({ name: roomId }: Room): Promise<void> {
+	async handleRoomFinished({ name: roomId, sid: meetingId }: { name: string; sid?: string }): Promise<void> {
 		try {
+			// Reactivate the recording auto-start before anything else
+			await this.recordingService.reactivateAutoRecording(roomId, meetingId);
+
+			const roomScheduledTasksService = await this.getRoomScheduledTasksService();
+			roomScheduledTasksService.cancelMeetingEndAtDurationLimit(roomId);
+
 			const meetRoom = await this.roomService.getMeetRoom(roomId);
 
 			this.logger.info(`Processing room_finished event for room '${roomId}'`);
@@ -280,8 +340,10 @@ export class LivekitWebhookService {
 					tasks.push(this.roomRepository.updatePartial(roomId, { status: MeetRoomStatus.OPEN }));
 			}
 
-			// Send webhook notification
-			this.openViduWebhookService.sendMeetingEndedWebhook(meetRoom);
+			// Send webhook notification, attributing the end to the duration GC when that's what
+			// actually force-ended this meeting (see RoomScheduledTasksService.recordMeetingEndedReason).
+			const reason = await this.getMeetingEndedReason(roomId, meetingId);
+			this.webhookDispatcherService.sendMeetingEndedWebhook(meetRoom, reason);
 
 			tasks.push(
 				this.meetingPresenceService.removeRoomFromAllUsers(roomId),
@@ -293,6 +355,34 @@ export class LivekitWebhookService {
 		} catch (error) {
 			this.logger.error(`Error handling room finished event for room '${roomId}'`, error);
 		}
+	}
+
+	/**
+	 * Whether the meeting finishing in `roomId` was force-ended by the duration GC rather than
+	 * ending normally (a moderator's own end, or the room emptying out). Scoped to the meeting's
+	 * sid when the caller knows it: like {@link RecordingAutoStartStateService#isDisabled}, a flag
+	 * left over from a different, earlier meeting in the same room never applies.
+	 *
+	 * The flag is consumed on the way out, so it attributes exactly one end. That is what lets a
+	 * caller with no sid attribute at all: a flag still standing means no `room_finished` ever came
+	 * for the meeting the duration GC ended, which is the very case the reconcile GC covers.
+	 */
+	protected async getMeetingEndedReason(
+		roomId: string,
+		meetingId?: string
+	): Promise<MeetMeetingEndedReason | undefined> {
+		const key = `${RedisKeyName.MEETING_ENDED_REASON}${roomId}`;
+		const value = await this.redisService.get(key);
+
+		if (value === null || (meetingId !== undefined && value !== meetingId)) return undefined;
+
+		try {
+			await this.redisService.delete(key);
+		} catch (error) {
+			this.logger.warn(`Error consuming the meeting ended reason flag for room '${roomId}'`, error);
+		}
+
+		return MeetMeetingEndedReason.MAX_DURATION_REACHED;
 	}
 
 	/**
@@ -334,30 +424,19 @@ export class LivekitWebhookService {
 			// Send webhook notification
 			switch (webhookAction) {
 				case 'started':
-					this.openViduWebhookService.sendRecordingStartedWebhook(recordingInfo);
+					specificTasks.push(this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo));
+					this.webhookDispatcherService.sendRecordingStartedWebhook(recordingInfo);
 					break;
 				case 'updated':
-					this.openViduWebhookService.sendRecordingUpdatedWebhook(recordingInfo);
-
-					if (recordingInfo.status === MeetRecordingStatus.ACTIVE) {
-						// Send system event for active recording with the aim of cancelling the cleanup timer
-						specificTasks.push(
-							this.distributedEventService.publishEvent(
-								DistributedEventType.RECORDING_ACTIVE,
-								recordingInfo as unknown as Record<string, unknown>
-							)
-						);
-					}
-
+					this.webhookDispatcherService.sendRecordingUpdatedWebhook(recordingInfo);
 					specificTasks.push(this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo));
-
 					break;
 				case 'ended':
 					specificTasks.push(
 						this.recordingService.releaseRecordingLockIfNoEgress(roomId),
 						this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo)
 					);
-					this.openViduWebhookService.sendRecordingEndedWebhook(recordingInfo);
+					this.webhookDispatcherService.sendRecordingEndedWebhook(recordingInfo);
 					break;
 			}
 

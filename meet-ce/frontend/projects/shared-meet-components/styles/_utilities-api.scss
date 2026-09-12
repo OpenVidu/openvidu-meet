@@ -1223,10 +1223,16 @@
 %ov-page-container {
 	height: 100%;
 	overflow: auto;
-	button {
+	// Material renders the slide-toggle and the button-toggle as <button>, so a bare selector here
+	// pads their internals and collapses the switch track.
+	button:where(:not(.mdc-switch, .mat-button-toggle-button)) {
 		@include components.ov-button-base;
+	}
+
+	.mat-mdc-icon-button {
 		padding: var(--ov-meet-spacing-xs);
 	}
+
 	@include responsive.ov-tablet-down {
 		padding: var(--ov-meet-spacing-md);
 	}
@@ -1249,11 +1255,6 @@
 
 	.section-card {
 		@include components.ov-section-card;
-	}
-
-	.section-divider {
-		border-top: 1px solid var(--ov-meet-border-color-strong);
-		margin: var(--ov-meet-spacing-sm) 0;
 	}
 }
 
@@ -1395,7 +1396,7 @@
 
 		::ng-deep .mat-mdc-text-field-wrapper {
 			background-color: var(--ov-meet-surface);
-			border-radius: var(--ov-meet-border-radius-sm);
+			border-radius: var(--ov-meet-radius-sm);
 		}
 
 		::ng-deep .mdc-notched-outline__leading,

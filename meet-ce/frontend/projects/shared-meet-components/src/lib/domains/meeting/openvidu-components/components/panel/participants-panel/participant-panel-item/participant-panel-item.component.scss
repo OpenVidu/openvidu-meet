@@ -1,173 +1,141 @@
 :host {
-	// Container for the participant item
+	display: block;
+
 	.participant-container {
 		position: relative;
 		display: flex;
 		align-items: center;
-		padding: 12px 16px;
-		border-radius: var(--ov-surface-radius, 8px);
-		background-color: var(--ov-surface-color);
-		border-bottom: 1px solid var(--ov-border-color);
-		transition: all 0.2s ease-in-out;
-		min-height: 64px;
+		height: 56px;
+		box-sizing: border-box;
+		padding: 0 8px 0 10px;
+		border-radius: var(--ov-surface-radius);
+		transition: background-color 0.15s ease-in-out;
 
-		// &:hover {
-		// 	background-color: var(--ov-surface-hover, #f5f5f5);
-		// 	transform: translateY(-1px);
-		// 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-		// }
-
-		&:last-child {
-			border-bottom: none;
-		}
-
-		// Focus state for keyboard navigation
+		// The row itself does nothing on click (only the buttons it holds do), so it carries no
+		// hover background. Focus-within stays: it's the only way a keyboard user sees which row
+		// their tab lands in.
 		&:focus-within {
-			outline: 2px solid var(--ov-primary-color, #1976d2);
-			outline-offset: 2px;
+			background-color: color-mix(in srgb, var(--ov-text-surface-color) 7%, transparent);
 		}
 	}
 
-	// Avatar layout — sizing and visuals live inside ParticipantAvatarComponent
-	ov-participant-avatar {
-		margin-right: 12px;
+	// ── Avatar and its corner badges ────────────────────────────────────────────
+	// Both badges report something about the person rather than their media, which is why they live
+	// here instead of costing a slot in the row.
+
+	.participant-avatar-slot {
+		position: relative;
 		flex-shrink: 0;
+		margin-right: 12px;
+		line-height: 0;
 	}
 
-	// Main content area
-	.participant-content {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		min-width: 0; // Allows text truncation
-		margin-right: 8px;
-	}
-
-	// Participant name row container
-	.participant-name-row {
+	.avatar-badge {
+		position: absolute;
+		bottom: -5px;
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		width: 100%;
-		margin: 0;
-		gap: 4px;
-		min-height: 20px;
+		justify-content: center;
+		width: 16px;
+		height: 16px;
+		border-radius: 50%;
+		box-shadow: 0 0 0 2px var(--ov-surface-color);
+
+		mat-icon {
+			font-size: 11px;
+			width: 11px;
+			height: 11px;
+			color: var(--ov-surface-color);
+		}
 	}
 
-	// Participant name styling with overflow control
+	.avatar-badge-muted {
+		left: -5px;
+		background-color: var(--ov-text-secondary-color);
+	}
+
+	// ── Name ────────────────────────────────────────────────────────────────────
+
 	.participant-name {
 		display: flex;
 		align-items: center;
 		gap: 6px;
 		flex: 1;
 		min-width: 0;
-		max-width: 100%;
-
-		.participant-name-text {
-			font-weight: 600 !important;
-			font-size: 14px;
-			line-height: 1.2;
-			color: var(--ov-text-surface-color);
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			flex: 0 1 auto;
-			min-width: 0;
-		}
-
-		// "(you)" suffix integrated into the name
-		.you-suffix {
-			font-size: 13px;
-			font-weight: 400;
-			color: var(--ov-text-secondary-color);
-			flex-shrink: 0;
-			white-space: nowrap;
-		}
+		margin-right: 8px;
 	}
 
-	// Subtitle styling
-	.participant-subtitle {
-		font-style: normal;
-		font-size: 12px !important;
-		font-weight: 400;
-		margin: 0;
-		color: var(--ov-text-secondary-color);
-		line-height: 1.3;
-		display: flex;
-		align-items: center;
-		gap: 6px;
+	.participant-name-text {
+		font-size: 14px;
+		font-weight: 600;
+		line-height: 1.2;
+		color: var(--ov-text-surface-color);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
-
 	}
 
-	// Action buttons container
-	.participant-action-buttons {
-		display: flex;
-		align-items: center;
-		gap: 4px;
+	.you-suffix {
+		font-size: 13px;
+		font-weight: 400;
+		color: var(--ov-text-secondary-color);
 		flex-shrink: 0;
-		margin-left: auto;
+		white-space: nowrap;
 	}
 
-	// Status indicators (screen share / camera off / mic off) — rendered in the subtitle row beneath the name
-	.screen-share-indicator,
-	.camera-off-indicator,
-	.mic-off-indicator {
-		font-size: 16px;
-		width: 16px;
-		height: 16px;
+	.participant-badges {
 		display: inline-flex;
 		align-items: center;
-		justify-content: center;
-		color: var(--ov-error-color, #d32f2f);
+		flex-shrink: 0;
+
+		::ng-deep mat-icon {
+			font-size: 18px;
+			width: 18px;
+			height: 18px;
+			line-height: 18px;
+		}
+
+		::ng-deep .badge {
+			display: inline-flex;
+			align-items: center;
+			flex-shrink: 0;
+		}
 	}
 
-	.screen-share-indicator {
-		color: var(--ov-text-surface-color);
-	}
-	// Mute button styling
-	#mute-btn {
-		width: 32px;
-		height: 32px;
-		border-radius: 50%;
-		color: var(--ov-text-secondary, #757575);
-		background-color: transparent;
-		transition: all 0.2s ease-in-out;
+	// ── Media ───────────────────────────────────────────────────────────────────
+	// A zone of fixed width, so the name always truncates at the same point, holding icons anchored
+	// to its right edge. A device with nothing to report draws nothing, and because the only such
+	// device leads the group, its absence shortens the group away from the anchor: the microphone and
+	// camera keep their columns, and the slack lands beside the name where it reads as spacing.
+	// Whatever is drawn reads the same way: the colour is the participant's device state, the hover
+	// affordance is your permission over it. Off is never actionable — the mute API turns devices off
+	// and cannot turn them on — so it never grows one.
+
+	.participant-media {
 		display: flex;
 		align-items: center;
-		justify-content: center;
-		position: relative;
+		justify-content: flex-end;
+		gap: 6px;
+		width: 96px;
+		flex-shrink: 0;
+		margin-right: 4px;
+	}
 
-		&:hover {
-			background-color: var(--ov-surface-hover, #f5f5f5);
-			color: var(--ov-text-primary, #212121);
-			transform: scale(1.1);
-		}
+	.media-slot {
+		display: inline-flex;
+		line-height: 0;
+	}
 
-		&:focus {
-			outline: 2px solid var(--ov-primary-color, #1976d2);
-			outline-offset: 2px;
-		}
-
-		&:disabled {
-			opacity: 0.5;
-			pointer-events: none;
-		}
-
-		&.warn-btn {
-			color: var(--ov-error-color, #d32f2f);
-			background-color: var(--ov-error-light, #ffebee);
-
-			&:hover {
-				background-color: var(--ov-error-color, #d32f2f);
-				color: #ffffff;
-			}
-
-			// Pulsing animation for muted state
-			animation: pulse 2s infinite;
-		}
+	.media-btn,
+	.participant-menu-btn {
+		--mdc-icon-button-state-layer-size: 28px;
+		--mdc-icon-button-icon-size: 18px;
+		--mdc-icon-button-icon-color: currentColor;
+		--mdc-icon-button-disabled-icon-color: currentColor;
+		width: 28px;
+		height: 28px;
+		padding: 0;
+		flex-shrink: 0;
 
 		mat-icon {
 			font-size: 18px;
@@ -176,86 +144,53 @@
 		}
 	}
 
-	// Participant badges container — inline with the participant name
-	.participant-badges {
-		display: inline-flex;
-		align-items: center;
-		gap: 2px;
+	// Same fill the toolbar has always used for this participant's own devices: a neutral chip
+	// when on, red when off, cyan while sharing a screen. One meaning for the color, everywhere.
+	.media-btn {
+		&:disabled {
+			opacity: 1;
+		}
+
+		&[data-state='active'] {
+			background-color: var(--ov-primary-action-color);
+			color: var(--ov-text-primary-color);
+
+			&:not(:disabled):hover {
+				background-color: color-mix(in srgb, var(--ov-primary-action-color) 85%, white 15%);
+			}
+		}
+
+		&[data-kind='screenShare'][data-state='active'] {
+			background-color: var(--ov-accent-action-color);
+
+			&:not(:disabled):hover {
+				background-color: color-mix(in srgb, var(--ov-accent-action-color) 85%, white 15%);
+			}
+		}
+
+		&[data-state='off'] {
+			background-color: var(--ov-error-color);
+			color: #ffffff;
+		}
+	}
+
+	.participant-menu-btn {
+		color: var(--ov-text-secondary-color);
+	}
+
+	.participant-menu-slot {
+		width: 28px;
+		height: 28px;
 		flex-shrink: 0;
-
-		// Scale down icons and text so the badge sits unobtrusively next to the name
-		::ng-deep mat-icon {
-			font-size: 20px;
-			width: 20px;
-			height: 20px;
-			line-height: 20px;
-		}
-
-		::ng-deep .badge {
-			display: inline-flex;
-			align-items: center;
-			flex-shrink: 0;
-			font-size: 20px;
-
-			&.moderator {
-				color: var(--ov-warning-color, #f57c00);
-			}
-
-			&.speaker {
-				color: var(--ov-primary-color, #1976d2);
-			}
-		}
 	}
 
-	// External item elements styling
-	.external-elements {
-		display: flex;
-		align-items: center;
-		gap: 4px;
+	// ── Animations ──────────────────────────────────────────────────────────────
+	// No rule in this component animates fadeIn or pulse any more, but @keyframes names are NOT
+	// scoped by Angular's style encapsulation: end-meeting, recording-lists, error and room-wizard
+	// write `animation: fadeIn ...`, and room-wizard and selectable-card write `animation: pulse ...`,
+	// without declaring either. They depend on definitions like these being in the document. Kept
+	// until that is untangled — do not delete as "unused".
 
-		// Custom styling for external buttons
-		::ng-deep button {
-			transition: all 0.2s ease-in-out;
-
-			&:hover {
-				transform: scale(1.05);
-			}
-		}
-	}
-
-	// Material Design overrides for better integration
-	mat-list {
-		padding: 0;
-	}
-
-	::ng-deep .mat-mdc-list-item {
-		height: auto !important;
-		padding: 0 !important;
-		min-height: auto !important;
-		border-radius: var(--ov-surface-radius, 8px);
-	}
-
-	::ng-deep .mdc-list-item__content {
-		padding: 0 !important;
-		align-self: stretch !important;
-		width: 100%;
-	}
-
-	::ng-deep .mat-mdc-list-base {
-		--mat-list-list-item-hover-label-text-color: unset;
-		--mat-list-list-item-hover-leading-icon-color: unset;
-		padding: 0;
-	}
-
-	::ng-deep .mat-mdc-list-item:hover {
-		background-color: transparent !important;
-	}
-
-	// Animations
-	// No rule in this component animates fadeIn any more, but @keyframes names are NOT scoped by
-	// Angular's style encapsulation: end-meeting, recording-lists, error and room-wizard all write
-	// `animation: fadeIn ...` without declaring it, so they depend on a definition like this one being
-	// in the document. Kept until that is untangled — do not delete as "unused".
 	@keyframes fadeIn {
 		from {
 			opacity: 0;
@@ -277,87 +212,18 @@
 		}
 	}
 
-	// Responsive design
-	@media (max-width: 768px) {
-		.participant-container {
-			padding: 10px 12px;
-			min-height: 56px;
-		}
-
-		.participant-name {
-			max-width: calc(100% - 60px); // Less space on mobile
-
-			.participant-name-text {
-				font-size: 13px;
-			}
-		}
-
-		.participant-subtitle {
-			font-size: 11px !important;
-		}
-
-		#mute-btn {
-			width: 28px;
-			height: 28px;
-
-			mat-icon {
-				font-size: 16px;
-				width: 16px;
-				height: 16px;
-			}
-		}
-
-	}
-
-	// High contrast mode support
-	@media (prefers-contrast: high) {
-		.participant-container {
-			border: 2px solid var(--ov-text-primary, #212121);
-		}
-	}
-
-	// Reduced motion support
 	@media (prefers-reduced-motion: reduce) {
-		.participant-container,
-		.participant-avatar,
-		#mute-btn,
-		.external-elements ::ng-deep button {
+		.participant-container {
 			transition: none;
-			animation: none;
-		}
-
-		.participant-container:hover {
-			transform: none;
-		}
-
-		.participant-avatar:hover,
-		#mute-btn:hover,
-		.external-elements ::ng-deep button:hover {
-			transform: none;
-		}
-
-		#mute-btn.warn-btn {
-			animation: none;
 		}
 	}
+}
 
-	// Dark theme support
-	@media (prefers-color-scheme: dark) {
-		.participant-container {
-			background-color: var(--ov-surface-background, #424242);
-			border-bottom-color: var(--ov-surface-border, #616161);
-
-			&:hover {
-				background-color: var(--ov-surface-hover, #484848);
-			}
-		}
-
-		.participant-name {
-			color: var(--ov-text-primary, #ffffff);
-		}
-
-		.participant-subtitle {
-			color: var(--ov-text-secondary, #cccccc);
-		}
+// The row menu is rendered in an overlay, outside this component's DOM.
+::ng-deep .participant-menu {
+	mat-icon {
+		font-size: 20px;
+		width: 20px;
+		height: 20px;
 	}
 }

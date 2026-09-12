@@ -25,7 +25,8 @@ export class MeetingContextService {
 	private readonly _isE2eeKeyFromUrl = signal<boolean>(false);
 	private readonly _hasRecordings = signal<boolean>(false);
 	private readonly _isActiveMeeting = signal<boolean>(false);
-	private readonly _meetingEndedBy = signal<'self' | 'other' | null>(null);
+	private readonly _endedBySelf = signal<boolean>(false);
+	private readonly _meetingEndsAt = signal<number | undefined>(undefined);
 
 	/** Readonly signal for the current room ID */
 	readonly roomId = this._roomId.asReadonly();
@@ -39,13 +40,22 @@ export class MeetingContextService {
 
 	/** Readonly signal for whether the room has recordings */
 	readonly hasRecordings = this._hasRecordings.asReadonly();
-	/** Readonly signal for who ended the meeting ('self', 'other', or null) */
-	readonly meetingEndedBy = this._meetingEndedBy.asReadonly();
+	/** Readonly signal for whether this participant is the one who ended the meeting for everyone */
+	readonly endedBySelf = this._endedBySelf.asReadonly();
+	/**
+	 * Readonly signal for the instant the meeting is force-ended at its room's duration limit, in
+	 * this device's clock, or `undefined` for a meeting running under no limit
+	 */
+	readonly meetingEndsAt = this._meetingEndsAt.asReadonly();
 	/** Readonly signal for whether the meeting is active */
 	readonly isActiveMeeting = this._isActiveMeeting.asReadonly();
 
 	/** Readonly signal for meeting features */
 	readonly meetingUI = this.roomFeatureService.features;
+	/** Readonly signal for which local devices the participant starts the meeting with */
+	readonly initialMediaState = this.roomFeatureService.initialMediaState;
+	/** Readonly signal for the room's recording configuration (trigger, layout) */
+	readonly recordingConfig = this.roomFeatureService.recordingConfig;
 	/** Readonly signal for room appearance configuration from global settings */
 	readonly meetingAppearance = this.globalConfigService.roomAppearanceConfig;
 
@@ -125,11 +135,15 @@ export class MeetingContextService {
 	}
 
 	/**
-	 * Sets who ended the meeting
-	 * @param by 'self' if ended by this user, 'other' if ended by someone else
+	 * Records that this participant is ending the meeting for everyone, at the moment they ask for
+	 * it: the disconnect that follows carries no trace of who caused it.
 	 */
-	setMeetingEndedBy(by: 'self' | 'other' | null): void {
-		this._meetingEndedBy.set(by);
+	markMeetingEndedBySelf(): void {
+		this._endedBySelf.set(true);
+	}
+
+	setMeetingEndsAt(endsAt: number | undefined): void {
+		this._meetingEndsAt.set(endsAt);
 	}
 
 	/**
@@ -160,6 +174,7 @@ export class MeetingContextService {
 		this._isE2eeKeyFromUrl.set(false);
 		this._hasRecordings.set(false);
 		this._isActiveMeeting.set(false);
-		this._meetingEndedBy.set(null);
+		this._endedBySelf.set(false);
+		this._meetingEndsAt.set(undefined);
 	}
 }

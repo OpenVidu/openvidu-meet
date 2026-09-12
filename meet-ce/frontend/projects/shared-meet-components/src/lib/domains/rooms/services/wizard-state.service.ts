@@ -8,15 +8,20 @@ import {
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomMemberOptions,
 	MeetRoomMemberPermissions,
-	MeetRoomOptions
+	MeetRoomOptions,
+	minParticipantsForAutoStart
 } from '@openvidu-meet/typings';
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
-import { deepMerge } from '../../../shared/utils/object.utils';
+import { deepMerge, DeepPartial } from '../../../shared/utils/object.utils';
 import { WizardNavigationConfig, WizardStepId } from '../models';
 import {
 	AnyWizardStep,
+	autoStartToTriggerFormValue,
+	MAX_DURATION_MINUTES_LIMIT,
+	MAX_PARTICIPANTS_LIMIT,
+	MIN_DURATION_MINUTES_LIMIT,
+	MIN_PARTICIPANTS_LIMIT,
 	RecordingEnabledOption,
-	RecordingTriggerType,
 	RoomAccessPermissionsControls,
 	RoomDetailsFormGroup
 } from '../models/wizard-forms.model';
@@ -29,9 +34,11 @@ const DEFAULT_MODERATOR_PERMISSIONS: MeetRoomMemberPermissions = {
 	recordingDownload: true,
 	recordingDelete: true,
 	meetingJoin: true,
+	meetingRead: true,
 	roomShareAccessLinks: true,
 	participantPromote: true,
 	participantKick: true,
+	participantMute: true,
 	meetingEnd: true,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -48,9 +55,11 @@ const DEFAULT_SPEAKER_PERMISSIONS: MeetRoomMemberPermissions = {
 	recordingDownload: true,
 	recordingDelete: false,
 	meetingJoin: true,
+	meetingRead: true,
 	roomShareAccessLinks: false,
 	participantPromote: false,
 	participantKick: false,
+	participantMute: false,
 	meetingEnd: false,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -69,7 +78,9 @@ const DEFAULT_CONFIG: MeetRoomConfig = {
 	chat: { enabled: true },
 	virtualBackground: { enabled: true },
 	e2ee: { enabled: false },
-	captions: { enabled: true }
+	captions: { enabled: true },
+	initialAudioActive: true,
+	initialVideoActive: true
 };
 
 const DEFAULT_ROOM_OPTIONS: MeetRoomOptions = {
@@ -131,6 +142,52 @@ export class RoomWizardStateService {
 	public readonly pendingMembers = this._pendingMembers.asReadonly();
 
 	/**
+	 * The recording auto-start requirement the room currently fails to meet — the trigger's minimum
+	 * participant count versus the configured `maxParticipants` (e.g. a "second participant joins"
+	 * trigger with the limit set to 1). This is the same rule the backend rejects with a 422,
+	 * evaluated client-side from the same shared preset data so the wizard can block Finish instead
+	 * of building a combination that's certain to be rejected. `null` means the combination is fine;
+	 * `null`/absent `maxParticipants` means unlimited, which reaches every threshold.
+	 */
+	private readonly recordingAutoStartRequirement = computed<{ required: number; limit: number } | null>(() => {
+		const { maxParticipants, recording } = this._roomOptions().config ?? {};
+		const autoStart = recording?.autoStart;
+
+		if (!autoStart || typeof maxParticipants !== 'number') return null;
+
+		const required = minParticipantsForAutoStart(autoStart);
+
+		return maxParticipants < required ? { required, limit: maxParticipants } : null;
+	});
+
+	/** Whether {@link recordingAutoStartRequirement} currently holds. */
+	public readonly recordingAutoStartUnreachable = computed(() => this.recordingAutoStartRequirement() !== null);
+
+	/** Step ids to flag in the step indicator while {@link recordingAutoStartUnreachable} holds. */
+	public readonly stepsWithAutoStartWarning = computed<WizardStepId[]>(() =>
+		this.recordingAutoStartUnreachable() ? [WizardStepId.ROOM_CONFIG, WizardStepId.RECORDING_TRIGGER] : []
+	);
+
+	/**
+	 * The inline warning text for {@link recordingAutoStartUnreachable}, with the actual required/
+	 * configured participant counts substituted into the translated message's `${required}`/`${limit}`
+	 * placeholders — the translation engine has no interpolation of its own, so this is done by hand.
+	 * Reads {@link TranslateService.translationsLoaded} purely to stay reactive to a language switch.
+	 */
+	public readonly recordingAutoStartWarningMessage = computed<string | null>(() => {
+		this.translateService.translationsLoaded();
+
+		const requirement = this.recordingAutoStartRequirement();
+
+		if (!requirement) return null;
+
+		return this.translateService
+			.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_UNREACHABLE_MESSAGE')
+			.replace('${required}', String(requirement.required))
+			.replace('${limit}', String(requirement.limit));
+	});
+
+	/**
 	 * Initializes the wizard with base steps and default room options.
 	 * @param editMode - Whether the wizard is in edit mode
 	 * @param existingData - Existing room options to prefill the wizard
@@ -139,12 +196,19 @@ export class RoomWizardStateService {
 		this._isInitialized.set(false);
 		this._editMode.set(editMode);
 
-		// Initialize room options with defaults merged with existing data
-		const currentOptions = this._roomOptions();
-		const initialRoomOptions: MeetRoomOptions = deepMerge(currentOptions, existingData ?? {});
+		// Every entry starts from DEFAULT_ROOM_OPTIONS, never from this service's current signal
+		// value: initializeWizard() is the wizard's only reset point, so a session abandoned via
+		// browser-back or a navbar link (skipping Cancel/Create, the only other paths that reset)
+		// must not leak into the next one. deepMerge mutates its target, so DEFAULT_ROOM_OPTIONS is
+		// given a fresh clone rather than being merged into directly — otherwise set() below would
+		// also receive back the same object reference and signal consumers relying on Object.is
+		// (computed(), effect()) would never see the change.
+		const initialRoomOptions: MeetRoomOptions = deepMerge(deepMerge({}, DEFAULT_ROOM_OPTIONS), existingData ?? {});
 
 		this._roomOptions.set(initialRoomOptions);
 		this._pendingMembers.set([]);
+
+		const recordingTriggerFormValue = autoStartToTriggerFormValue(initialRoomOptions.config!.recording!.autoStart);
 
 		// Define wizard steps
 		const baseSteps: AnyWizardStep[] = [
@@ -225,25 +289,10 @@ export class RoomWizardStateService {
 				)
 			},
 			{
-				id: WizardStepId.ROOM_CONFIG,
-				label: this.translateService.translate('ROOMS.WIZARD.STEP_ROOM_FEATURES'),
-				isCompleted: editMode,
-				isActive: editMode, // Start with Room Features step active in edit mode
-				isVisible: true,
-				formGroup: this.formBuilder.group({
-					chatEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.chat!.enabled),
-					virtualBackgroundEnabled: this.formBuilder.nonNullable.control(
-						initialRoomOptions.config!.virtualBackground!.enabled
-					),
-					e2eeEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.e2ee!.enabled),
-					captionsEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.captions!.enabled)
-				})
-			},
-			{
 				id: WizardStepId.ROOM_ACCESS,
 				label: this.translateService.translate('ROOMS.WIZARD.STEP_ROOM_ACCESS'),
 				isCompleted: editMode,
-				isActive: false,
+				isActive: editMode, // Start with Room Access step active in edit mode
 				isVisible: true,
 				formGroup: this.formBuilder.group({
 					anonymousModeratorEnabled: this.formBuilder.nonNullable.control(
@@ -252,15 +301,51 @@ export class RoomWizardStateService {
 					anonymousSpeakerEnabled: this.formBuilder.nonNullable.control(
 						initialRoomOptions.access!.anonymous!.speaker!.enabled
 					),
-					userEnabled: this.formBuilder.nonNullable.control(
-						initialRoomOptions.access!.user!.enabled
-					),
+					userEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.access!.user!.enabled),
 					moderator: this.formBuilder.group({
 						...this.buildPermissionsFormConfig(initialRoomOptions.roles!.moderator!.permissions)
 					}),
 					speaker: this.formBuilder.group({
 						...this.buildPermissionsFormConfig(initialRoomOptions.roles!.speaker!.permissions)
 					})
+				})
+			},
+			{
+				id: WizardStepId.ROOM_CONFIG,
+				label: this.translateService.translate('ROOMS.WIZARD.STEP_ROOM_FEATURES'),
+				isCompleted: editMode,
+				isActive: false,
+				isVisible: true,
+				formGroup: this.formBuilder.group({
+					chatEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.chat!.enabled),
+					virtualBackgroundEnabled: this.formBuilder.nonNullable.control(
+						initialRoomOptions.config!.virtualBackground!.enabled
+					),
+					e2eeEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.e2ee!.enabled),
+					captionsEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.captions!.enabled),
+					initialAudioActive: this.formBuilder.nonNullable.control(
+						initialRoomOptions.config!.initialAudioActive!
+					),
+					initialVideoActive: this.formBuilder.nonNullable.control(
+						initialRoomOptions.config!.initialVideoActive!
+					),
+					// Empty (null) means unlimited; the backend accepts null or an integer within these bounds
+					maxParticipants: this.formBuilder.control<number | null>(
+						initialRoomOptions.config!.maxParticipants ?? null,
+						[
+							Validators.min(MIN_PARTICIPANTS_LIMIT),
+							Validators.max(MAX_PARTICIPANTS_LIMIT),
+							Validators.pattern(/^\d+$/)
+						]
+					),
+					maxDurationMinutes: this.formBuilder.control<number | null>(
+						initialRoomOptions.config!.maxDurationMinutes ?? null,
+						[
+							Validators.min(MIN_DURATION_MINUTES_LIMIT),
+							Validators.max(MAX_DURATION_MINUTES_LIMIT),
+							Validators.pattern(/^\d+$/)
+						]
+					)
 				})
 			},
 			{
@@ -285,7 +370,8 @@ export class RoomWizardStateService {
 				isActive: false,
 				isVisible: false, // Initially hidden, will be shown based on recording settings
 				formGroup: this.formBuilder.group({
-					triggerType: this.formBuilder.nonNullable.control<RecordingTriggerType>('manual')
+					triggerMode: this.formBuilder.nonNullable.control(recordingTriggerFormValue.triggerMode),
+					autoStartMode: this.formBuilder.nonNullable.control(recordingTriggerFormValue.autoStartMode)
 				})
 			},
 			{
@@ -325,9 +411,12 @@ export class RoomWizardStateService {
 	 * This method merges the provided data with the current room options.
 	 * @param stepData - The data to update in the room options
 	 */
-	updateStepData(stepData: Partial<MeetRoomOptions>): void {
+	updateStepData(stepData: DeepPartial<MeetRoomOptions>): void {
+		// deepMerge mutates its target, so it's given a fresh clone rather than the current signal
+		// value directly — otherwise set() below would receive back the same object reference and
+		// signal consumers relying on Object.is (computed(), effect()) would never see the change.
 		const currentOptions = this._roomOptions();
-		const updatedOptions = deepMerge(currentOptions, stepData);
+		const updatedOptions = deepMerge(deepMerge({}, currentOptions), stepData);
 
 		this._roomOptions.set(updatedOptions);
 		this.updateStepsVisibility();
@@ -345,17 +434,10 @@ export class RoomWizardStateService {
 
 		// Update recording steps visibility based on recordingEnabled
 		const updatedSteps = currentSteps.map((step) => {
-			if (step.id === WizardStepId.RECORDING_LAYOUT) {
+			if (step.id === WizardStepId.RECORDING_LAYOUT || step.id === WizardStepId.RECORDING_TRIGGER) {
 				return {
 					...step,
 					isVisible: recordingEnabled // Only show if recording is enabled
-				};
-			}
-
-			if (step.id === WizardStepId.RECORDING_TRIGGER) {
-				return {
-					...step,
-					isVisible: false // TODO: Change to 'recordingEnabled' when recording trigger config is implemented
 				};
 			}
 
@@ -468,7 +550,7 @@ export class RoomWizardStateService {
 			showBack: !isEditMode,
 			showFinish: isLastStep,
 			showSkipAndFinish: false, // Skip and finish is not used in this wizard
-			disableFinish: isSomeStepInvalid,
+			disableFinish: isSomeStepInvalid || this.recordingAutoStartUnreachable(),
 			nextLabel: this.translateService.translate('ROOMS.WIZARD.NEXT'),
 			previousLabel: this.translateService.translate('ROOMS.WIZARD.PREVIOUS'),
 			finishLabel: isEditMode

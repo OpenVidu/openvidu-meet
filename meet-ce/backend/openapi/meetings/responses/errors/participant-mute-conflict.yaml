@@ -1,0 +1,11 @@
+description: Participant cannot be muted
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        examples:
+            moderator:
+                summary: The participant is a moderator
+                value:
+                    error: 'Participant Error'
+                    message: 'Participant "alice_smith" in room "room_123" cannot be muted because they are a moderator'

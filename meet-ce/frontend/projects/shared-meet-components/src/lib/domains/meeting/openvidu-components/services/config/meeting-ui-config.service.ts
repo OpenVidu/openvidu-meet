@@ -6,8 +6,6 @@ import { ToolbarAdditionalButtonsPosition } from '../../models/toolbar.model';
  * Toolbar configuration grouped by domain
  */
 interface ToolbarConfig {
-	camera: boolean;
-	microphone: boolean;
 	screenshare: boolean;
 	fullscreen: boolean;
 	settings: boolean;
@@ -29,8 +27,6 @@ interface ToolbarConfig {
  * Stream/Video configuration
  */
 interface StreamConfig {
-	videoEnabled: boolean;
-	audioEnabled: boolean;
 	displayParticipantName: boolean;
 	displayAudioDetection: boolean;
 	videoControls: boolean;
@@ -50,7 +46,6 @@ interface RecordingActivityConfig {
  * General application configuration
  */
 interface GeneralConfig {
-	token: string;
 	livekitUrl: string;
 	tokenError: any;
 	participantName: string;
@@ -66,7 +61,6 @@ interface GeneralConfig {
 export class MeetingUiConfigService {
 	// Grouped configuration items by domain
 	private readonly generalConfig = signal<GeneralConfig>({
-		token: '',
 		livekitUrl: '',
 		tokenError: null,
 		participantName: '',
@@ -76,8 +70,6 @@ export class MeetingUiConfigService {
 	});
 
 	private readonly toolbarConfig = signal<ToolbarConfig>({
-		camera: true,
-		microphone: true,
 		screenshare: true,
 		fullscreen: true,
 		settings: true,
@@ -96,8 +88,6 @@ export class MeetingUiConfigService {
 	});
 
 	private readonly streamConfig = signal<StreamConfig>({
-		videoEnabled: true,
-		audioEnabled: true,
 		displayParticipantName: true,
 		displayAudioDetection: true,
 		videoControls: true,
@@ -115,9 +105,13 @@ export class MeetingUiConfigService {
 	// Whether the chat message input is enabled (the participant may send messages). The chat panel
 	// visibility is a separate concern (chatPanel above); this only gates writing.
 	private readonly chatInputEnabledConfig = signal<boolean>(true);
+	// Whether the camera / microphone controls are shown. Deliberately NOT in ToolbarConfig: each gates
+	// every control of its device — toolbar button, prejoin screen and settings panel — so it is a
+	// meeting-wide capability, not a toolbar decoration.
+	private readonly showCameraControlsConfig = signal<boolean>(true);
+	private readonly showMicrophoneControlsConfig = signal<boolean>(true);
 
 	// Signals-first selectors used by migrated consumers/directives
-	readonly tokenSignal = computed(() => this.generalConfig().token);
 	readonly tokenErrorSignal = computed(() => this.generalConfig().tokenError);
 	readonly participantNameSignal = computed(() => this.generalConfig().participantName);
 	readonly e2eeKeySignal = computed(() => this.generalConfig().e2eeKey);
@@ -125,8 +119,8 @@ export class MeetingUiConfigService {
 	readonly displayAudioDetectionSignal = computed(() => this.streamConfig().displayAudioDetection);
 	readonly streamVideoControlsSignal = computed(() => this.streamConfig().videoControls);
 	readonly participantItemMuteButtonSignal = computed(() => this.streamConfig().participantItemMuteButton);
-	readonly cameraButtonSignal = computed(() => this.toolbarConfig().camera);
-	readonly microphoneButtonSignal = computed(() => this.toolbarConfig().microphone);
+	readonly showCameraControlsSignal = this.showCameraControlsConfig.asReadonly();
+	readonly showMicrophoneControlsSignal = this.showMicrophoneControlsConfig.asReadonly();
 	readonly screenshareButtonSignal = computed(() => this.toolbarConfig().screenshare);
 	readonly fullscreenButtonSignal = computed(() => this.toolbarConfig().fullscreen);
 	readonly toolbarSettingsButtonSignal = computed(() => this.toolbarConfig().settings);
@@ -188,6 +182,21 @@ export class MeetingUiConfigService {
 		this.chatInputEnabledConfig.set(enabled);
 	}
 
+	/**
+	 * Show or hide every camera control: the toolbar button, the prejoin screen and the settings panel.
+	 */
+	setShowCameraControls(show: boolean): void {
+		this.showCameraControlsConfig.set(show);
+	}
+
+	/**
+	 * Show or hide every microphone control: the toolbar button, the prejoin screen and the settings
+	 * panel.
+	 */
+	setShowMicrophoneControls(show: boolean): void {
+		this.showMicrophoneControlsConfig.set(show);
+	}
+
 	// ============================================
 	// DIRECT ACCESS METHODS (for internal use)
 	// ============================================
@@ -217,16 +226,6 @@ export class MeetingUiConfigService {
 
 	getE2EEKey(): string | undefined {
 		return this.generalConfig().e2eeKey;
-	}
-
-	// Stream configuration methods
-
-	isVideoEnabled(): boolean {
-		return this.streamConfig().videoEnabled;
-	}
-
-	isAudioEnabled(): boolean {
-		return this.streamConfig().audioEnabled;
 	}
 
 	// Toolbar configuration methods

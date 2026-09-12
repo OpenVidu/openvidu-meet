@@ -27,3 +27,27 @@ export const MICROPHONE_CAPTURE_DEFAULTS: AudioCaptureOptions = {
 	autoGainControl: true,
 	voiceIsolation: true
 };
+
+/**
+ * @internal
+ * The camera capture profile bound to the given device, or to the browser's default camera when
+ * none is given. Every path that opens or restarts the local camera, prejoin or in the room,
+ * describes the request with this, so they all ask for the same thing.
+ */
+export const cameraCaptureOptions = (deviceId?: string): VideoCaptureOptions => ({
+	...CAMERA_CAPTURE_DEFAULTS,
+	...deviceConstraint(deviceId)
+});
+
+/** @internal See {@link cameraCaptureOptions}. */
+export const microphoneCaptureOptions = (deviceId?: string): AudioCaptureOptions => ({
+	...MICROPHONE_CAPTURE_DEFAULTS,
+	...deviceConstraint(deviceId)
+});
+
+// Firefox has no 'default' device id, so that one is only ever a preference.
+const deviceConstraint = (deviceId?: string): { deviceId?: ConstrainDOMString } => {
+	if (!deviceId) return {};
+
+	return { deviceId: deviceId === 'default' ? { ideal: 'default' } : { exact: deviceId } };
+};

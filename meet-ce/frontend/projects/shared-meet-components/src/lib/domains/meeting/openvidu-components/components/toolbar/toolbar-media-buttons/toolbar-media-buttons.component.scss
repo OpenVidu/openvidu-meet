@@ -135,3 +135,13 @@
 	}
 
 }
+
+// Material never themes tooltip typography here, so it falls back to the raw browser default
+// (16px) instead of the app's own type scale. Invisible on the app's other, one-word tooltips,
+// but this one carries a full sentence, so give it the app's font. CDK portals the tooltip to
+// <body>, outside this component's view, so the rule cannot be nested under :host.
+::ng-deep .ov-recording-disabled-tooltip {
+	font-family: var(--ov-meet-font-family);
+	font-size: 13px;
+	line-height: 1.4;
+}

@@ -16,6 +16,8 @@ import { LanguageService } from './language.service';
  * which the impure translate pipe calls on every change-detection cycle — never splits keys or walks
  * a nested object.
  */
+export type TranslateParams = Record<string, string | number>;
+
 @Service()
 export class TranslateService {
 	private readonly languageService = inject(LanguageService);
@@ -65,9 +67,16 @@ export class TranslateService {
 		return this.languageService.availableLanguages();
 	}
 
-	/** Translates a dot-separated key into the current language (empty string if missing everywhere). */
-	translate(key: string): string {
-		return this.lookup(this.active, key);
+	/**
+	 * Translates a dot-separated key into the current language (empty string if missing everywhere),
+	 * filling `{name}` placeholders from `params`.
+	 */
+	translate(key: string, params?: TranslateParams): string {
+		const translation = this.lookup(this.active, key);
+
+		if (!params) return translation;
+
+		return translation.replace(/\{(\w+)\}/g, (placeholder, name) => `${params[name] ?? placeholder}`);
 	}
 
 	/**

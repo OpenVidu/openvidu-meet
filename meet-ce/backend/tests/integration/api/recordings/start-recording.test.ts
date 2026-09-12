@@ -1,14 +1,15 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import {
 	MeetRecordingAudioCodec,
+	MeetRecordingAutoStartMode,
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
+	MeetRecordingStatus,
 	MeetRecordingVideoCodec,
 	MeetRoom
 } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
-import { setInternalConfig } from '../../../../src/config/internal-config.js';
 import { errorRoomNotFound } from '../../../../src/models/error.model.js';
 import { RecordingRepository } from '../../../../src/repositories/recording.repository.js';
 import {
@@ -20,15 +21,18 @@ import {
 } from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
+	createRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
 	startRecording,
+	startRecordingAndWaitUntilActive,
 	startTestServer,
 	stopAllRecordings,
 	stopRecording
 } from '../../../helpers/request-helpers.js';
 
 import { setupMultiRoomTestContext } from '../../../helpers/test-scenarios.js';
+import { waitForActiveRecordingEgress, waitForRecordingStatus } from '../../../helpers/wait-helpers.js';
 import { TestContext } from '../../../interfaces/scenarios.js';
 
 describe('Recording API Tests', () => {
@@ -61,7 +65,7 @@ describe('Recording API Tests', () => {
 		});
 
 		it('should return 201 with proper response and location header when recording starts successfully', async () => {
-			const response = await startRecording(room.roomId);
+			const response = await startRecordingAndWaitUntilActive(room.roomId);
 			const recordingId = response.body.recordingId;
 			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
 
@@ -69,8 +73,22 @@ describe('Recording API Tests', () => {
 			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId, room.roomName);
 		});
 
-		it('should create secrets when recording starts', async () => {
+		it('should answer with a starting recording that turns active once its egress records', async () => {
 			const response = await startRecording(room.roomId);
+			const recordingId = response.body.recordingId;
+			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
+			expect(response.body.status).toBe(MeetRecordingStatus.STARTING);
+
+			await waitForActiveRecordingEgress(room.roomId);
+			const activeRecording = await waitForRecordingStatus(recordingId, MeetRecordingStatus.ACTIVE);
+			expect(activeRecording.startDate).toEqual(expect.any(Number));
+
+			const stopResponse = await stopRecording(recordingId);
+			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId, room.roomName);
+		});
+
+		it('should create secrets when recording starts', async () => {
+			const response = await startRecordingAndWaitUntilActive(room.roomId);
 			const recordingId = response.body.recordingId;
 			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
 
@@ -86,7 +104,7 @@ describe('Recording API Tests', () => {
 		});
 
 		it('should successfully start recording, stop it, and start again (sequential operations)', async () => {
-			const firstStartResponse = await startRecording(room.roomId);
+			const firstStartResponse = await startRecordingAndWaitUntilActive(room.roomId);
 			const firstRecordingId = firstStartResponse.body.recordingId;
 
 			expectValidStartRecordingResponse(firstStartResponse, room.roomId, room.roomName);
@@ -94,7 +112,7 @@ describe('Recording API Tests', () => {
 			const firstStopResponse = await stopRecording(firstRecordingId);
 			expectValidStopRecordingResponse(firstStopResponse, firstRecordingId, room.roomId, room.roomName);
 
-			const secondStartResponse = await startRecording(room.roomId);
+			const secondStartResponse = await startRecordingAndWaitUntilActive(room.roomId);
 			expectValidStartRecordingResponse(secondStartResponse, room.roomId, room.roomName);
 			const secondRecordingId = secondStartResponse.body.recordingId;
 
@@ -108,8 +126,8 @@ describe('Recording API Tests', () => {
 			const roomDataA = context.getRoomByIndex(0)!;
 			const roomDataB = context.getRoomByIndex(1)!;
 
-			const firstResponse = await startRecording(roomDataA.room.roomId);
-			const secondResponse = await startRecording(roomDataB.room.roomId);
+			const firstResponse = await startRecordingAndWaitUntilActive(roomDataA.room.roomId);
+			const secondResponse = await startRecordingAndWaitUntilActive(roomDataB.room.roomId);
 
 			expectValidStartRecordingResponse(firstResponse, roomDataA.room.roomId, roomDataA.room.roomName);
 			expectValidStartRecordingResponse(secondResponse, roomDataB.room.roomId, roomDataB.room.roomName);
@@ -154,7 +172,7 @@ describe('Recording API Tests', () => {
 
 		it('should filter response fields using X-Fields header on start recording', async () => {
 			// Start a new recording with X-Fields header
-			const response = await startRecording(room.roomId, undefined, {
+			const response = await startRecordingAndWaitUntilActive(room.roomId, undefined, {
 				headers: { xFields: 'recordingId,roomId,status' }
 			});
 
@@ -225,7 +243,7 @@ describe('Recording API Tests', () => {
 
 		it('should return 409 when recording is already in progress', async () => {
 			await joinFakeParticipant(room.roomId, 'fakeParticipantId');
-			const firstResponse = await startRecording(room.roomId);
+			const firstResponse = await startRecordingAndWaitUntilActive(room.roomId);
 			const recordingId = firstResponse.body.recordingId;
 			expectValidStartRecordingResponse(firstResponse, room.roomId, room.roomName);
 
@@ -234,19 +252,6 @@ describe('Recording API Tests', () => {
 			expect(secondResponse.body.message).toContain('already');
 			const stopResponse = await stopRecording(recordingId);
 			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId, room.roomName);
-		});
-
-		it('should return 503 when recording start times out', async () => {
-			setInternalConfig({
-				RECORDING_STARTED_TIMEOUT: '1s'
-			});
-			await joinFakeParticipant(room.roomId, 'fakeParticipantId');
-			const response = await startRecording(room.roomId);
-			expect(response.status).toBe(503);
-			expect(response.body.message).toContain('timed out while starting');
-			setInternalConfig({
-				RECORDING_STARTED_TIMEOUT: '30s'
-			});
 		});
 
 		it('should reject invalid layout in config override', async () => {
@@ -553,7 +558,9 @@ describe('Recording API Tests', () => {
 		});
 
 		it('should override room layout when recording layout is provided', async () => {
-			const response = await startRecording(room.roomId, { layout: MeetRecordingLayout.SPEAKER });
+			const response = await startRecordingAndWaitUntilActive(room.roomId, {
+				layout: MeetRecordingLayout.SPEAKER
+			});
 			const recordingId = response.body.recordingId;
 
 			expectValidStartRecordingResponse(response, room.roomId, room.roomName, MeetRecordingLayout.SPEAKER);
@@ -569,7 +576,7 @@ describe('Recording API Tests', () => {
 		});
 
 		it('should accept empty config object and use room defaults', async () => {
-			const response = await startRecording(room.roomId, {});
+			const response = await startRecordingAndWaitUntilActive(room.roomId, {});
 			const recordingId = response.body.recordingId;
 
 			console.log('Response for empty config override:', response);
@@ -580,7 +587,9 @@ describe('Recording API Tests', () => {
 		});
 
 		it('should override room encoding with a preset when config with encoding is provided', async () => {
-			const response = await startRecording(room.roomId, { encoding: MeetRecordingEncodingPreset.H264_1080P_60 });
+			const response = await startRecordingAndWaitUntilActive(room.roomId, {
+				encoding: MeetRecordingEncodingPreset.H264_1080P_60
+			});
 			const recordingId = response.body.recordingId;
 
 			expectValidStartRecordingResponse(
@@ -603,7 +612,7 @@ describe('Recording API Tests', () => {
 		});
 
 		it('should override room encoding with portrait preset', async () => {
-			const response = await startRecording(room.roomId, {
+			const response = await startRecordingAndWaitUntilActive(room.roomId, {
 				encoding: MeetRecordingEncodingPreset.PORTRAIT_H264_1080P_30
 			});
 			const recordingId = response.body.recordingId;
@@ -644,7 +653,7 @@ describe('Recording API Tests', () => {
 					frequency: 48000
 				}
 			};
-			const response = await startRecording(room.roomId, { encoding: customEncoding });
+			const response = await startRecordingAndWaitUntilActive(room.roomId, { encoding: customEncoding });
 			const recordingId = response.body.recordingId;
 
 			expectValidStartRecordingResponse(response, room.roomId, room.roomName, undefined, customEncoding);
@@ -677,7 +686,7 @@ describe('Recording API Tests', () => {
 					frequency: 44100
 				}
 			};
-			const response = await startRecording(room.roomId, {
+			const response = await startRecordingAndWaitUntilActive(room.roomId, {
 				layout: MeetRecordingLayout.SPEAKER,
 				encoding: customEncoding
 			});
@@ -699,6 +708,31 @@ describe('Recording API Tests', () => {
 				room.roomName,
 				MeetRecordingLayout.SPEAKER,
 				customEncoding
+			);
+		});
+	});
+
+	describe('Rooms That Record Automatically', () => {
+		it('Should refuse an on-demand start in a room configured to start its own recording', async () => {
+			const autoStartRoom = await createRoom(
+				{
+					roomName: 'Auto Start Room',
+					config: {
+						recording: {
+							enabled: true,
+							autoStart: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS
+						}
+					}
+				},
+				undefined,
+				{ xFields: 'roomId,roomName,config', xExtraFields: 'config' }
+			);
+
+			const response = await startRecording(autoStartRoom.roomId);
+
+			expect(response.status).toBe(403);
+			expect(response.body.message).toBe(
+				`Room '${autoStartRoom.roomId}' starts its recording automatically, so it cannot be started on-demand`
 			);
 		});
 	});

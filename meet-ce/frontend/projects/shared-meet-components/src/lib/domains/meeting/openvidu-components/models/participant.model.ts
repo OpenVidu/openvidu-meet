@@ -123,6 +123,12 @@ export interface ParticipantProperties {
 }
 
 /**
+ * A participant device a moderator can turn off. Turning one back on is not possible: the API
+ * accepts only `false` for each device.
+ */
+export type ParticipantMediaKind = 'audio' | 'video' | 'screenShare';
+
+/**
  * Interface for computed participant display properties
  */
 export interface ParticipantDisplayProperties {
@@ -131,6 +137,7 @@ export interface ParticipantDisplayProperties {
 	showMakeModeratorButton: boolean;
 	showUnmakeModeratorButton: boolean;
 	showKickButton: boolean;
+	canMuteMedia: boolean;
 }
 
 /**

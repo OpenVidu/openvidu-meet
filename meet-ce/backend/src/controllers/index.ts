@@ -9,4 +9,5 @@ export * from './room-member.controller.js';
 export * from './room.controller.js';
 export * from './system-info.controller.js';
 export * from './user.controller.js';
+export * from './webhook.controller.js';
 

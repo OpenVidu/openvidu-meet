@@ -1,5 +1,6 @@
 import {
 	afterNextRender,
+	booleanAttribute,
 	Component,
 	computed,
 	DestroyRef,
@@ -26,7 +27,6 @@ import {
 	ThemeService,
 	ViewRecordingComponent,
 	wcRouteFromAttributes,
-	wcRouteIdentity,
 	WcRouteName,
 	WcRouterService
 } from '@openvidu-meet/shared-components';
@@ -35,10 +35,19 @@ import {
 	EmbeddedEventPayloadFor,
 	LeftEventReason,
 	type EmbeddedEvent,
+	type MeetParticipantMuteOptions,
 	type WebComponentPropertyValues
 } from '@openvidu-meet/typings';
 import { ShadowOverlayContainer } from './shadow-dom/overlay-container.service';
 import { ShadowStylesService } from './shadow-dom/styles.service';
+
+/**
+ * `booleanAttribute` with the third state kept: an attribute that was never set stays `undefined`
+ * instead of collapsing to a default, so "the host said nothing" reaches whoever resolves precedence
+ * as its own value. Otherwise identical, DOM strings included (`"false"` → `false`, bare → `true`).
+ */
+const optionalBooleanAttribute = (value: unknown): boolean | undefined =>
+	value === undefined || value === null ? undefined : booleanAttribute(value);
 
 /**
  * Root component of the OpenVidu Meet web component. It maps host attributes/properties to a
@@ -68,6 +77,15 @@ import { ShadowStylesService } from './shadow-dom/styles.service';
 	}
 })
 export class App {
+	/**
+	 * The mount that currently owns the state shared through the root injector (router, meeting
+	 * context). A host remounting `<openvidu-meet>` replaces the element rather than moving it, so the
+	 * incoming instance can be constructed before the outgoing one is destroyed. Ownership makes the
+	 * newest mount the only writer, so the outgoing instance's cleanup cannot clear what the incoming
+	 * one has already set up.
+	 */
+	private static activeMount: App | null = null;
+
 	// ── Injected dependencies ────────────────────────────────────────────────
 	protected readonly themeService = inject(ThemeService);
 	protected readonly router = inject(WcRouterService);
@@ -84,6 +102,12 @@ export class App {
 	readonly roomUrl = input<string | undefined>(undefined);
 	readonly recordingUrl = input<string | undefined>(undefined);
 	readonly participantName = input<string | undefined>(undefined);
+	readonly participantExternalId = input<string | undefined>(undefined);
+	readonly participantMetadata = input<string | undefined>(undefined);
+	// Tri-state: unset means "no opinion", so the room's own default applies; either value set takes
+	// precedence over it. A plain `input(true, …)` cannot tell those two apart.
+	readonly initialAudioActive = input(undefined, { transform: optionalBooleanAttribute });
+	readonly initialVideoActive = input(undefined, { transform: optionalBooleanAttribute });
 	readonly e2eeKey = input<string | undefined>(undefined);
 	readonly leaveRedirectUrl = input<string | undefined>(undefined);
 	readonly showOnlyRecordings = input<boolean>(false);
@@ -96,6 +120,12 @@ export class App {
 	readonly meetingJoined = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEETING_JOINED>>();
 	readonly meetingLeft = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEETING_LEFT>>();
 	readonly meetingClosed = output<void>();
+	readonly participantJoined = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_JOINED>>();
+	readonly participantLeft = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_LEFT>>();
+	readonly mediaAudioStatusChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED>>();
+	readonly mediaVideoStatusChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED>>();
+	readonly mediaScreenShareStatusChanged =
+		output<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED>>();
 
 	/** @deprecated Renamed to `meetingJoined`. Removed in 3.12.0. Dispatched alongside it. */
 	readonly joined = output<EmbeddedEventPayloadFor<EmbeddedEventName.JOINED>>();
@@ -104,16 +134,15 @@ export class App {
 	/** @deprecated Renamed to `meetingClosed`. Removed in 3.12.0. Dispatched alongside it. */
 	readonly closed = output<void>();
 
-	// ── Internal state ───────────────────────────────────────────────────────
-	// Identity of the last attribute-derived route navigated to, so a non-identity attribute change
-	// (e.g. participant-name) doesn't re-navigate and yank the user off an interrupt view.
-	private lastHomeIdentity: string | null = null;
-
 	// ── Derived state ────────────────────────────────────────────────────────
 	private readonly inputs = computed<WebComponentPropertyValues>(() => ({
 		roomUrl: this.roomUrl(),
 		recordingUrl: this.recordingUrl(),
 		participantName: this.participantName(),
+		participantExternalId: this.participantExternalId(),
+		participantMetadata: this.participantMetadata(),
+		initialAudioActive: this.initialAudioActive(),
+		initialVideoActive: this.initialVideoActive(),
 		e2eeKey: this.e2eeKey(),
 		leaveRedirectUrl: this.leaveRedirectUrl(),
 		showOnlyRecordings: this.showOnlyRecordings(),
@@ -161,6 +190,13 @@ export class App {
 	});
 
 	constructor() {
+		// Claim the shared state before the effects below run, so the navigate effect always starts
+		// from a clean router and reaches syncHomeRoute with no stored home: re-entering the same room
+		// is then a navigation, not a no-op.
+		App.activeMount = this;
+		this.meetingContext.clearMeetingContext();
+		this.router.reset();
+
 		// ── Reactive wiring ──
 		// Effect creation order is significant: the server base URL must be set (first effect) before
 		// the navigate effect runs, because the route guards call the API.
@@ -188,18 +224,12 @@ export class App {
 			}
 		});
 
-		// Navigate the mini-router to the attribute-derived route. Registered AFTER the server-base-URL
-		// effect so the base URL is set before the guard's first API call. Re-navigates only when the
-		// route-determining identity changes: an interrupt view (login, recordings…) is driven by
-		// NavigationService → router.navigate and leaves `lastHomeIdentity` untouched, so an unrelated
-		// attribute recompute won't stomp it; only a genuine room/recording change re-navigates.
+		// Sync the mini-router's home route with the attribute-derived one. Registered AFTER the
+		// server-base-URL effect so the base URL is set before the guard's first API call. The router
+		// re-navigates only when the route-determining identity changes (see syncHomeRoute), so an
+		// unrelated attribute change doesn't yank the user off an interrupt view (login, recordings…).
 		effect(() => {
 			const route = wcRouteFromAttributes(this.inputs());
-			const identity = wcRouteIdentity(route);
-
-			if (identity === this.lastHomeIdentity) return;
-
-			this.lastHomeIdentity = identity;
 
 			// Surface the specific misconfiguration cause to the integrator via the console;
 			// the in-shell `<ov-error>` shows the general embedded-error copy.
@@ -207,8 +237,7 @@ export class App {
 				console.warn(`[OpenVidu Meet] ${route.params.message}`);
 			}
 
-			this.router.setHomeRoute(route);
-			void this.router.navigate(route);
+			void this.router.syncHomeRoute(route);
 		});
 
 		// Drain and process every queued host event in order (queue → no same-tick loss).
@@ -232,8 +261,16 @@ export class App {
 			}
 		});
 
-		// Restore WC state when the custom element is removed from the DOM.
-		this._destroyRef.onDestroy(() => this.meetingContext.clearMeetingContext());
+		// The meeting context and router outlive this component instance (shared root injector), so a
+		// genuine destroy must clear both. A remount has already handed ownership to the incoming
+		// mount by this point, and clearing there would blank it.
+		this._destroyRef.onDestroy(() => {
+			if (App.activeMount !== this) return;
+
+			App.activeMount = null;
+			this.meetingContext.clearMeetingContext();
+			this.router.reset();
+		});
 	}
 
 	// ── Imperative host API ──────────────────────────────────────────────────
@@ -251,23 +288,67 @@ export class App {
 		return this.commandService.participantKick(participantIdentity);
 	}
 
+	participantMute(participantIdentity: string, media: MeetParticipantMuteOptions): Promise<void> {
+		return this.commandService.participantMute(participantIdentity, media);
+	}
+
+	participantMuteAll(media: MeetParticipantMuteOptions): Promise<void> {
+		return this.commandService.participantMuteAll(media);
+	}
+
+	mediaToggleAudio(active?: boolean): Promise<void> {
+		return this.commandService.mediaToggleAudio(active);
+	}
+
+	mediaToggleVideo(active?: boolean): Promise<void> {
+		return this.commandService.mediaToggleVideo(active);
+	}
+
+	mediaToggleScreenShare(active?: boolean): Promise<void> {
+		return this.commandService.mediaToggleScreenShare(active);
+	}
+
 	// ── Internal ─────────────────────────────────────────────────────────────
 	// The bus only ever queues canonical events (see EmbeddedEventBusService), so this switch
 	// only ever handles canonical names; emitting the deprecated output alongside the canonical
 	// one is this method's job, not the bus's.
-	private handleWebComponentEvent(event: EmbeddedEvent): void {
-		switch (event.event) {
+	private handleWebComponentEvent(embeddedEvent: EmbeddedEvent): void {
+		// The closed events carry no payload, so they are handled before the destructuring below
+		// (the deprecated CLOSED never actually reaches here — the bus is canonical-only).
+		if (
+			embeddedEvent.event === EmbeddedEventName.MEETING_CLOSED ||
+			embeddedEvent.event === EmbeddedEventName.CLOSED
+		) {
+			this.meetingClosed.emit();
+			this.closed.emit();
+			return;
+		}
+
+		const { event, payload } = embeddedEvent;
+
+		switch (event) {
 			case EmbeddedEventName.MEETING_JOINED:
-				this.meetingJoined.emit(event.payload);
-				this.joined.emit(event.payload);
+				this.meetingJoined.emit(payload);
+				this.joined.emit(payload);
 				break;
 			case EmbeddedEventName.MEETING_LEFT:
-				this.meetingLeft.emit(event.payload);
-				this.left.emit(event.payload);
+				this.meetingLeft.emit(payload);
+				this.left.emit(payload);
 				break;
-			case EmbeddedEventName.MEETING_CLOSED:
-				this.meetingClosed.emit();
-				this.closed.emit();
+			case EmbeddedEventName.PARTICIPANT_JOINED:
+				this.participantJoined.emit(payload);
+				break;
+			case EmbeddedEventName.PARTICIPANT_LEFT:
+				this.participantLeft.emit(payload);
+				break;
+			case EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED:
+				this.mediaAudioStatusChanged.emit(payload);
+				break;
+			case EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED:
+				this.mediaVideoStatusChanged.emit(payload);
+				break;
+			case EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED:
+				this.mediaScreenShareStatusChanged.emit(payload);
 				break;
 		}
 	}

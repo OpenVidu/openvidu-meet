@@ -190,6 +190,7 @@ this.themeService.currentVariables$.subscribe(variables => {
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `--ov-recording-color` | Recording indicator | `var(--ov-error-color)` |
+| `--ov-recording-start-color` | Start-recording action fill; carries white text, so it does not follow the accent | `#00758f` |
 | `--ov-broadcasting-color` | Broadcasting indicator | `#5903ca` |
 | `--ov-selection-color` | Selection highlight | `#d4d6d7` |
 | `--ov-selection-color-btn` | Button selection | `#afafaf` |

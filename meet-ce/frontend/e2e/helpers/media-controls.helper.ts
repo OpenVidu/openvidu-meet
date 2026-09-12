@@ -40,30 +40,24 @@ export const isPrejoinAudioEnabled = async (page: Page): Promise<boolean> => {
  * Ensures the prejoin camera matches the desired state, toggling if needed.
  */
 export const ensurePrejoinVideoState = async (page: Page, enabled: boolean, timeoutMs = 10_000): Promise<void> => {
-	const currentlyEnabled = await isPrejoinVideoEnabled(page);
-
-	if (currentlyEnabled !== enabled) {
-		await togglePrejoinCamera(page);
-		await expect
-			.poll(async () => (await isPrejoinVideoEnabled(page)) !== currentlyEnabled, { timeout: timeoutMs })
-			.toBeTruthy()
-			.catch(() => Promise.resolve());
+	if ((await isPrejoinVideoEnabled(page)) === enabled) {
+		return;
 	}
+
+	await togglePrejoinCamera(page);
+	await expect.poll(() => isPrejoinVideoEnabled(page), { timeout: timeoutMs }).toBe(enabled);
 };
 
 /**
  * Ensures the prejoin microphone matches the desired state, toggling if needed.
  */
 export const ensurePrejoinAudioState = async (page: Page, enabled: boolean, timeoutMs = 10_000): Promise<void> => {
-	const currentlyEnabled = await isPrejoinAudioEnabled(page);
-
-	if (currentlyEnabled !== enabled) {
-		await togglePrejoinMicrophone(page);
-		await expect
-			.poll(async () => (await isPrejoinAudioEnabled(page)) !== currentlyEnabled, { timeout: timeoutMs })
-			.toBeTruthy()
-			.catch(() => Promise.resolve());
+	if ((await isPrejoinAudioEnabled(page)) === enabled) {
+		return;
 	}
+
+	await togglePrejoinMicrophone(page);
+	await expect.poll(() => isPrejoinAudioEnabled(page), { timeout: timeoutMs }).toBe(enabled);
 };
 
 /**
@@ -177,41 +171,42 @@ export const unmuteRemoteParticipant = async (
 };
 
 /**
- * Returns the mute/unmute button for the remote participant named {@link participantName} in the
- * participants panel.
+ * Returns the participants panel row of the remote participant named {@link participantName}.
  */
-const participantPanelMuteButton = (page: Page, participantName: string): Locator =>
-	page.locator('[data-participant-id]', { hasText: participantName }).first().locator('#mute-btn');
+const participantPanelRow = (page: Page, participantName: string): Locator =>
+	page.locator(`[data-participant-name="${participantName}"]`).first();
 
 /**
- * Toggles the mute button of a remote participant in the participants panel. This silences that
- * participant's audio for the local user only (it does not force-mute them for everyone).
- *
- * The muted button runs an infinite `pulse` (scale) animation, so its bounding box never settles.
- * The click is forced to skip Playwright's stability wait, which would otherwise time out when
- * toggling an already-muted participant back to unmuted.
+ * Toggles the local mute of a remote participant from their row menu. This silences that
+ * participant's audio for the local user only — it does not turn off their microphone for the room,
+ * which is why it sits apart from the row's device buttons.
  */
 export const toggleParticipantPanelMute = async (page: Page, participantName: string): Promise<void> => {
-	const muteButton = participantPanelMuteButton(page, participantName);
-	await expect(muteButton).toBeVisible({ timeout: 10_000 });
-	await muteButton.click({ force: true });
+	const row = participantPanelRow(page, participantName);
+	await expect(row).toBeVisible({ timeout: 10_000 });
+
+	const participantId = await row.getAttribute('data-participant-id', { timeout: 10_000 });
+	await page.locator(`#participant-menu-btn-${participantId}`).click({ timeout: 10_000 });
+	await page.locator(`#mute-for-me-btn-${participantId}`).click({ timeout: 10_000 });
 };
 
 /**
- * Asserts that the given remote participant is muted for the local user (the panel mute button is in
- * its "muted" warn state).
+ * Asserts that the given remote participant is muted for the local user. The state shows as a badge
+ * on the avatar rather than in the row, since it is nobody else's business.
  */
 export const expectParticipantPanelMuted = async (page: Page, participantName: string): Promise<void> => {
-	await expect(participantPanelMuteButton(page, participantName)).toHaveClass(/warn-btn/, { timeout: 10_000 });
+	await expect(participantPanelRow(page, participantName).locator('.avatar-badge-muted')).toBeVisible({
+		timeout: 10_000
+	});
 };
 
 /**
  * Asserts that the given remote participant is not muted for the local user.
  */
 export const expectParticipantPanelUnmuted = async (page: Page, participantName: string): Promise<void> => {
-	const muteButton = participantPanelMuteButton(page, participantName);
-	await expect(muteButton).toBeVisible({ timeout: 10_000 });
-	await expect(muteButton).not.toHaveClass(/warn-btn/);
+	const row = participantPanelRow(page, participantName);
+	await expect(row).toBeVisible({ timeout: 10_000 });
+	await expect(row.locator('.avatar-badge-muted')).toHaveCount(0, { timeout: 10_000 });
 };
 
 // ─── Virtual backgrounds ────────────────────────────────────────────────────

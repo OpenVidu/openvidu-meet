@@ -1,0 +1,87 @@
+<dialog #dialog class="ta-dialog" data-testid="room-browser" (close)="query.set('')">
+	<header class="ta-dialog__bar">
+		<h2>Rooms</h2>
+		<div class="ta-segmented" role="group" aria-label="Access role">
+			<button
+				class="ta-segmented__option"
+				[class.ta-segmented__option--on]="role() === 'moderator'"
+				[attr.aria-pressed]="role() === 'moderator'"
+				data-testid="room-role-moderator"
+				(click)="role.set('moderator')"
+			>
+				moderator
+			</button>
+			<button
+				class="ta-segmented__option"
+				[class.ta-segmented__option--on]="role() === 'speaker'"
+				[attr.aria-pressed]="role() === 'speaker'"
+				data-testid="room-role-speaker"
+				(click)="role.set('speaker')"
+			>
+				speaker
+			</button>
+		</div>
+		<input
+			class="ta-dialog__search"
+			type="text"
+			placeholder="Filter by name or id"
+			aria-label="Filter rooms"
+			data-testid="input-room-query"
+			[(ngModel)]="query"
+		/>
+		<button
+			class="ta-btn ta-btn--sm"
+			[disabled]="api.loading()"
+			data-testid="btn-refresh-rooms"
+			(click)="api.loadRooms()"
+		>
+			{{ api.loading() ? 'Loading' : 'Refresh' }}
+		</button>
+		<button class="ta-icon-btn ta-icon-btn--sm" aria-label="Close" data-testid="btn-close-rooms" (click)="close()">
+			<svg
+				width="13"
+				height="13"
+				viewBox="0 0 16 16"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="1.5"
+				stroke-linecap="round"
+			>
+				<line x1="4" y1="4" x2="12" y2="12"></line>
+				<line x1="12" y1="4" x2="4" y2="12"></line>
+			</svg>
+		</button>
+	</header>
+
+	<div class="ta-scroll ta-dialog__body">
+		@if (api.error(); as error) {
+		<p class="ta-dialog__notice">
+			Could not read the room list: {{ error }}.<br />
+			The list comes from the Meet API through the dev server, so it needs
+			<code class="ta-mono">ng serve</code> and a reachable backend.
+		</p>
+		} @else { @for (room of rows(); track room.roomId) {
+		<div class="ta-room" data-testid="room-browser-row">
+			<div class="ta-room__id">
+				<span class="ta-room__name">{{ room.roomName }}</span>
+				<span class="ta-mono ta-hint">{{ room.roomId }}</span>
+			</div>
+			<span class="ta-room__status ta-room__status--{{ room.status }}">{{ room.status }}</span>
+			@if (room.url; as url) {
+			<span class="ta-mono ta-room__url">{{ url }}</span>
+			<button class="ta-btn ta-btn--sm" data-testid="btn-copy-room-url" (click)="copy(room.roomId, url)">
+				{{ copiedRoomId() === room.roomId ? 'Copied' : 'Copy' }}
+			</button>
+			<button class="ta-btn ta-btn--sm ta-btn--on" data-testid="btn-use-room" (click)="use(url)">Use</button>
+			} @else {
+			<span class="ta-hint ta-room__url">no anonymous {{ role() }} access</span>
+			}
+		</div>
+		} @empty {
+		<p class="ta-dialog__notice">
+			@if (api.loading()) { Loading rooms... } @else if (api.rooms().length) { No room matches the filter. } @else
+			{ The Meet API returned no rooms. Create one in the Meet console first. }
+		</p>
+		} }
+	</div>
+</dialog>

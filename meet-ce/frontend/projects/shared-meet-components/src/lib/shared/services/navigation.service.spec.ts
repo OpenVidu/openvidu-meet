@@ -4,6 +4,8 @@ import { Router } from '@angular/router';
 import { EmbeddedEventName, LeftEventReason } from '@openvidu-meet/typings';
 import { EMPTY } from 'rxjs';
 import { EmbeddedEventBusService } from '../../domains/embedded/services/embedded-event-bus.service';
+import { WcRouteName } from '../../domains/embedded/models/wc-route.model';
+import { WcRouterGateway } from '../../domains/embedded/services/wc-router-gateway.service';
 import { LeaveRedirectService } from './leave-redirect.service';
 import { ListStateCacheService } from './list-state-cache.service';
 import { NavigationService } from './navigation.service';
@@ -29,6 +31,7 @@ describe('NavigationService - hosted-mode event gates', () => {
 	let eventBus: EmbeddedEventBusService;
 	let leaveRedirect: LeaveRedirectService;
 	let router: { navigate: jasmine.Spy; events: typeof EMPTY };
+	let wcRouterGateway: { getHomeRoute: jasmine.Spy; navigate: jasmine.Spy; navigateToInitial: jasmine.Spy };
 
 	// Mutable per-test mode flags read by the runtime-config stub.
 	let webcomponentMode: boolean;
@@ -38,6 +41,11 @@ describe('NavigationService - hosted-mode event gates', () => {
 		webcomponentMode = false;
 		iframeMode = false;
 		router = { navigate: jasmine.createSpy('navigate').and.resolveTo(true), events: EMPTY };
+		wcRouterGateway = {
+			getHomeRoute: jasmine.createSpy('getHomeRoute').and.returnValue(null),
+			navigate: jasmine.createSpy('navigate').and.resolveTo(undefined),
+			navigateToInitial: jasmine.createSpy('navigateToInitial').and.resolveTo(undefined)
+		};
 
 		const runtimeConfigStub = {
 			isWebcomponentMode: () => webcomponentMode,
@@ -60,7 +68,8 @@ describe('NavigationService - hosted-mode event gates', () => {
 				{ provide: Router, useValue: router as unknown as Router },
 				{ provide: RuntimeConfigService, useValue: runtimeConfigStub as unknown as RuntimeConfigService },
 				{ provide: SessionStorageService, useValue: sessionStorageStub as unknown as SessionStorageService },
-				{ provide: ListStateCacheService, useValue: {} as ListStateCacheService }
+				{ provide: ListStateCacheService, useValue: {} as ListStateCacheService },
+				{ provide: WcRouterGateway, useValue: wcRouterGateway as unknown as WcRouterGateway }
 			]
 		});
 
@@ -155,4 +164,86 @@ describe('NavigationService - hosted-mode event gates', () => {
 		});
 	});
 
+	/**
+	 * Bug 1 (MEET-BRANCH-AUDIT-FINDINGS.md A5): re-entering the meeting from the room-recordings
+	 * view used to build a bare `{ roomId }` route, silently wiping participantExternalId /
+	 * participantMetadata / initial media state even though the host's element attributes never
+	 * changed. Reusing the WC router's registered home route (when it's still this same meeting)
+	 * carries those params through instead.
+	 */
+	describe('goBackToRoom() — WC mode reuses the home route when it matches', () => {
+		beforeEach(() => {
+			webcomponentMode = true;
+		});
+
+		it('reuses the full home route params when the home route is this same meeting', async () => {
+			const homeRoute = {
+				name: WcRouteName.MEETING,
+				params: {
+					roomId: 'room-1',
+					secret: 'sec',
+					e2eeKey: 'e2ee',
+					participantName: 'Alice',
+					participantExternalId: 'ext-1',
+					participantMetadata: '{"team":"eng"}',
+					initialAudioActive: false,
+					initialVideoActive: true,
+					leaveRedirectUrl: 'https://host.example.com/done'
+				}
+			} as const;
+			wcRouterGateway.getHomeRoute.and.returnValue(homeRoute);
+
+			await service.goBackToRoom('room-1');
+
+			expect(wcRouterGateway.navigate).toHaveBeenCalledOnceWith(homeRoute);
+		});
+
+		it('falls back to a bare route when there is no registered home route', async () => {
+			wcRouterGateway.getHomeRoute.and.returnValue(null);
+
+			await service.goBackToRoom('room-1');
+
+			expect(wcRouterGateway.navigate).toHaveBeenCalledOnceWith({
+				name: WcRouteName.MEETING,
+				params: { roomId: 'room-1' }
+			});
+		});
+
+		it('falls back to a bare route when the home route is a different room (show-only-recordings never entered this one)', async () => {
+			wcRouterGateway.getHomeRoute.and.returnValue({
+				name: WcRouteName.MEETING,
+				params: { roomId: 'room-other' }
+			});
+
+			await service.goBackToRoom('room-1');
+
+			expect(wcRouterGateway.navigate).toHaveBeenCalledOnceWith({
+				name: WcRouteName.MEETING,
+				params: { roomId: 'room-1' }
+			});
+		});
+
+		it('falls back to a bare route when the home route is not a meeting (show-only-recordings embed: this button enters the meeting, not resumes it)', async () => {
+			wcRouterGateway.getHomeRoute.and.returnValue({
+				name: WcRouteName.ROOM_RECORDINGS,
+				params: { roomId: 'room-1', secret: 'sec' }
+			});
+
+			await service.goBackToRoom('room-1');
+
+			expect(wcRouterGateway.navigate).toHaveBeenCalledOnceWith({
+				name: WcRouteName.MEETING,
+				params: { roomId: 'room-1' }
+			});
+		});
+
+		it('SPA mode: still navigates to /room/<roomId> and never touches the WC gateway', async () => {
+			webcomponentMode = false;
+
+			await service.goBackToRoom('room-1');
+
+			expect(router.navigate).toHaveBeenCalledWith(['/room/room-1'], jasmine.any(Object));
+			expect(wcRouterGateway.navigate).not.toHaveBeenCalled();
+		});
+	});
 });

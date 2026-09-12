@@ -20,7 +20,8 @@ export enum MeetStorageKeys {
 	MAX_VISIBLE_REMOTE_PARTICIPANTS = 'maxVisibleRemoteParticipants',
 	LANG = 'lang',
 	THEME = 'theme',
-	LAST_PARTICIPANT_NAME = 'lastParticipantName'
+	LAST_PARTICIPANT_NAME = 'lastParticipantName',
+	LOCAL_TILE_FLOATING = 'localTileFloating'
 }
 
 /**

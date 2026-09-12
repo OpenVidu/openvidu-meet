@@ -2,8 +2,7 @@ import { expect, test } from '@playwright/test';
 import { toggleCamera, toggleMicrophone } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-navigation.helper';
-import { openLayoutSettingsPanel, openMoreOptionsMenu, openSettingsPanel } from './helpers/panels.helper';
-import { dropLastWebSocket, installWebSocketCapture } from './helpers/ui-utils.helper';
+import { openLayoutSettingsPanel, openMoreOptionsMenu } from './helpers/panels.helper';
 
 test.describe('Toolbar Buttons E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -30,27 +29,6 @@ test.describe('Toolbar Buttons E2E Tests', () => {
 
 		await toggleMicrophone(page);
 		await expect(page.locator('#mic-btn #mic')).toBeVisible();
-	});
-
-	test('disables the media buttons while a dropped signal connection is resumed', async ({ page }) => {
-		await installWebSocketCapture(page);
-		await openMeeting(page, accessUrl);
-		await expect(page.locator('#mic-btn')).toBeEnabled();
-
-		// A panel left open tells the two reconnection states apart: a full reconnect closes it, a
-		// signal resume does not — so "panel still open AND buttons disabled" is specifically the
-		// SignalReconnecting gate. Without it the buttons stay live while the Room cannot publish,
-		// and a toggle lands on the prejoin branch in the middle of the meeting.
-		await openSettingsPanel(page);
-
-		await dropLastWebSocket(page);
-
-		await expect(page.locator('#mic-btn')).toBeDisabled({ timeout: 15_000 });
-		await expect(page.locator('#camera-btn')).toBeDisabled();
-		await expect(page.locator('.sidenav-menu')).toBeVisible();
-
-		// The gate lifts by itself once the session is back.
-		await expect(page.locator('#mic-btn')).toBeEnabled({ timeout: 40_000 });
 	});
 
 	test('should toggle mute/unmute on the local camera and update the icon accordingly', async ({ page }) => {

@@ -31,3 +31,14 @@ content:
                     encoding: 'H264_720P_30'
                     filename: 'room-456--QR789.mp4'
                     startDate: 1682500000000
+
+            starting_recording:
+                summary: Recording that has not started recording yet
+                value:
+                    recordingId: 'room-789--EG_DEF--ST123'
+                    roomId: 'room-789'
+                    roomName: 'room'
+                    status: 'starting'
+                    layout: 'grid'
+                    encoding: 'H264_720P_30'
+                    filename: 'room-789--ST123.mp4'

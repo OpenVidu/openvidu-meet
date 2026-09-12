@@ -119,6 +119,41 @@ export const installTokenExpiryController = async (page: Page): Promise<TokenExp
 			body: JSON.stringify({ error, message })
 		});
 
+	/** Records a token as the current one, resolving an armed "expire the next RMT seen" against it. */
+	const observeRmt = (token: string): void => {
+		lastSeenRmt = token;
+
+		if (captureNextRmt) {
+			expired.add(token);
+			captureNextRmt = false;
+		}
+	};
+
+	/**
+	 * Lets a mint/refresh request through unmodified, but reads the token its response carries so
+	 * `lastSeenRmt` reflects it immediately. Anonymous access mints twice — an unauthenticated
+	 * pre-join token, then a second one carrying the joined participant's identity — and only request
+	 * *headers* are otherwise observed, so the second token stays invisible to the controller until
+	 * some later request happens to carry it. In that gap, `expireRoomMemberToken()` would mark a
+	 * token the app has already moved past, and the real (already-current) one would then sail
+	 * through unexpired.
+	 */
+	const continueAndCaptureRmt = async (route: Route): Promise<void> => {
+		const response = await route.fetch();
+
+		try {
+			const body = (await response.json()) as { token?: string };
+
+			if (body.token) {
+				observeRmt(body.token);
+			}
+		} catch {
+			// Not a { token } JSON body: nothing to capture, still fulfill with the real response.
+		}
+
+		await route.fulfill({ response });
+	};
+
 	const handler = async (route: Route): Promise<void> => {
 		const request = route.request();
 		const path = new URL(request.url()).pathname;
@@ -130,12 +165,7 @@ export const installTokenExpiryController = async (page: Page): Promise<TokenExp
 		const skipRecovery = headers['x-ov-skip-auth-recovery'] === 'true';
 
 		if (rmt) {
-			lastSeenRmt = rmt;
-
-			if (captureNextRmt) {
-				expired.add(rmt);
-				captureNextRmt = false;
-			}
+			observeRmt(rmt);
 		}
 
 		// Access-token refresh: only reject (400) when its refresh token is marked expired (logout scenario).
@@ -153,7 +183,7 @@ export const installTokenExpiryController = async (page: Page): Promise<TokenExp
 		// RMT mint / proactive refresh endpoints: let recovery genuinely mint fresh tokens.
 		if (/\/members\/token\/refresh$/.test(path)) {
 			rmtRefreshes++;
-			return route.continue();
+			return continueAndCaptureRmt(route);
 		}
 
 		if (/\/members\/token$/.test(path)) {
@@ -174,7 +204,7 @@ export const installTokenExpiryController = async (page: Page): Promise<TokenExp
 				return fulfillError(route, 401, 'Authentication Error', 'Invalid token');
 			}
 
-			return route.continue();
+			return continueAndCaptureRmt(route);
 		}
 
 		// The profile endpoint is excluded from interceptor recovery, and the logout endpoint must

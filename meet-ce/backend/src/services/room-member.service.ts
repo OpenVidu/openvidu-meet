@@ -33,6 +33,7 @@ import {
 	errorInsufficientPermissions,
 	errorInvalidRoomSecret,
 	errorInvalidToken,
+	errorMeetingFull,
 	errorParticipantCannotBeDemotedFromModerator,
 	errorParticipantCannotBePromotedToModerator,
 	errorParticipantNameRequiredForMeetingJoin,
@@ -55,7 +56,9 @@ import { runConcurrently } from '../utils/concurrency.utils.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
+import { MeetingService } from './meeting.service.js';
 import { ParticipantNameService } from './participant-name.service.js';
+import { RecordingService } from './recording.service.js';
 import { RequestSessionService } from './request-session.service.js';
 import { RoomService } from './room.service.js';
 import { TokenService } from './token.service.js';
@@ -87,7 +90,9 @@ export class RoomMemberService {
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(TokenService) protected tokenService: TokenService,
-		@inject(RequestSessionService) protected requestSessionService: RequestSessionService
+		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
+		@inject(MeetingService) protected meetingService: MeetingService,
+		@inject(RecordingService) protected recordingService: RecordingService
 	) {}
 
 	/**
@@ -444,7 +449,13 @@ export class RoomMemberService {
 		tokenOptions: MeetRoomMemberTokenOptions,
 		previousToken?: string
 	): Promise<string> {
-		const { secret, joinMeeting = false, participantName } = tokenOptions;
+		const {
+			secret,
+			joinMeeting = false,
+			participantName,
+			participantExternalId,
+			participantMetadata
+		} = tokenOptions;
 
 		const [secretSource, authenticatedSource, room] = await Promise.all([
 			secret ? this.resolvePermissionSourceFromSecret(roomId, secret) : Promise.resolve(undefined),
@@ -469,7 +480,9 @@ export class RoomMemberService {
 			memberId: secretSource?.memberId || authenticatedSource?.memberId,
 			userId: authenticatedSource?.userId,
 			permissions: mergedPermissions,
-			badge
+			badge,
+			externalId: participantExternalId,
+			metadata: participantMetadata
 		};
 
 		if (joinMeeting) {
@@ -486,6 +499,11 @@ export class RoomMemberService {
 					participantIdentity = tokenContext.participantIdentity;
 					resolvedParticipantName = tokenContext.participantName;
 				}
+
+				// The app-provided correlation fields travel with the participant, not with the request:
+				// keep the previous token's values unless the regeneration explicitly re-provides them.
+				tokenMetadata.externalId ??= tokenContext.tokenMetadata.externalId;
+				tokenMetadata.metadata ??= tokenContext.tokenMetadata.metadata;
 			}
 
 			return this.generateTokenForJoiningMeeting(
@@ -519,7 +537,7 @@ export class RoomMemberService {
 		participantIdentity?: string
 	): Promise<string> {
 		// Check that room is open
-		const { status, roles } = await this.roomService.getMeetRoom(roomId, ['status', 'roles']);
+		const { status, roles, config } = await this.roomService.getMeetRoom(roomId, ['status', 'roles', 'config']);
 
 		if (status === MeetRoomStatus.CLOSED) {
 			throw errorRoomClosed(roomId);
@@ -538,6 +556,15 @@ export class RoomMemberService {
 			// Name is required for joining a meeting
 			if (!participantName) {
 				throw errorParticipantNameRequiredForMeetingJoin();
+			}
+
+			const { maxParticipants } = config;
+
+			if (maxParticipants) {
+				const currentParticipantsCount = await this.meetingService.countStandardParticipants(roomId);
+				const isMeetingFull = currentParticipantsCount >= maxParticipants;
+
+				if (isMeetingFull) throw errorMeetingFull(roomId);
 			}
 
 			this.logger.verbose(
@@ -599,10 +626,7 @@ export class RoomMemberService {
 				metadataToApply = JSON.stringify(tokenMetadata);
 			}
 
-			const permission = this.buildLiveParticipantPermission(
-				participant.permission,
-				tokenMetadata.permissions.chatWrite
-			);
+			const permission = this.buildLiveParticipantPermission(participant.permission, tokenMetadata.permissions);
 			await this.livekitService.updateParticipant(roomId, participant.identity, metadataToApply, permission);
 		}
 
@@ -894,7 +918,9 @@ export class RoomMemberService {
 			permissions: participantMetadata.permissions,
 			badge: participantMetadata.badge,
 			isPromotedModerator: participantMetadata.isPromotedModerator,
-			livekitUrl: participantMetadata.livekitUrl
+			livekitUrl: participantMetadata.livekitUrl,
+			externalId: participantMetadata.externalId,
+			metadata: participantMetadata.metadata
 		};
 	}
 
@@ -909,9 +935,11 @@ export class RoomMemberService {
 			recordingDownload: true,
 			recordingDelete: true,
 			meetingJoin: true,
+			meetingRead: true,
 			roomShareAccessLinks: true,
 			participantPromote: true,
 			participantKick: true,
+			participantMute: true,
 			meetingEnd: true,
 			mediaPublishVideo: true,
 			mediaPublishAudio: true,
@@ -933,9 +961,11 @@ export class RoomMemberService {
 			recordingDownload: false,
 			recordingDelete: false,
 			meetingJoin: false,
+			meetingRead: false,
 			roomShareAccessLinks: false,
 			participantPromote: false,
 			participantKick: false,
+			participantMute: false,
 			meetingEnd: false,
 			mediaPublishVideo: false,
 			mediaPublishAudio: false,
@@ -970,6 +1000,21 @@ export class RoomMemberService {
 	 * @returns The LiveKit permissions for the room member
 	 */
 	protected getLiveKitPermissions(roomId: string, permissions: MeetRoomMemberPermissions): LiveKitPermissions {
+		return {
+			room: roomId,
+			roomJoin: true,
+			canSubscribe: true,
+			canUpdateOwnMetadata: false,
+			...this.buildPublishGrant(permissions)
+		};
+	}
+
+	/**
+	 * The grant fields a participant's Meet permissions decide: media sources and data channel.
+	 */
+	private buildPublishGrant(
+		permissions: MeetRoomMemberPermissions
+	): Pick<LiveKitPermissions, 'canPublish' | 'canPublishSources' | 'canPublishData'> {
 		const canPublishSources: TrackSource[] = [];
 
 		if (permissions.mediaPublishAudio) {
@@ -985,31 +1030,25 @@ export class RoomMemberService {
 			canPublishSources.push(TrackSource.SCREEN_SHARE_AUDIO);
 		}
 
-		const livekitPermissions: LiveKitPermissions = {
-			room: roomId,
-			roomJoin: true,
+		return {
 			canPublish: permissions.mediaPublishAudio || permissions.mediaPublishVideo || permissions.mediaShareScreen,
 			canPublishSources,
-			canSubscribe: true,
-			canPublishData: permissions.chatWrite,
-			canUpdateOwnMetadata: true
+			canPublishData: permissions.chatWrite
 		};
-		return livekitPermissions;
 	}
 
 	/**
-	 * Builds the LiveKit grant to push when a participant's permissions change mid-meeting.
-	 * `canPublishData` is LiveKit's name for the data-channel grant; Meet's `chatWrite` feeds it.
+	 * Builds the LiveKit grant to push to a participant whose permissions changed mid-meeting.
 	 */
 	protected buildLiveParticipantPermission(
 		currentPermission: ParticipantInfo['permission'],
-		chatWrite: boolean
+		permissions: MeetRoomMemberPermissions
 	): Partial<ParticipantPermission> | undefined {
 		if (!currentPermission) {
 			return undefined;
 		}
 
-		return { ...currentPermission, canPublishData: chatWrite };
+		return { ...currentPermission, ...this.buildPublishGrant(permissions) };
 	}
 
 	/**
@@ -1063,11 +1102,18 @@ export class RoomMemberService {
 				delete metadata.originalPermissions;
 			}
 
-			const permission = this.buildLiveParticipantPermission(
-				participant.permission,
-				metadata.permissions.chatWrite
+			const permission = this.buildLiveParticipantPermission(participant.permission, metadata.permissions);
+			const updatedParticipant = await this.livekitService.updateParticipant(
+				roomId,
+				participantIdentity,
+				JSON.stringify(metadata),
+				permission
 			);
-			await this.livekitService.updateParticipant(roomId, participantIdentity, JSON.stringify(metadata), permission);
+
+			if (action === MeetParticipantModerationAction.UPGRADE) {
+				void this.reevaluateRecordingAutoStart(roomId, updatedParticipant);
+			}
+
 			await this.frontendEventService.sendParticipantRoleUpdatedSignal(
 				roomId,
 				participantIdentity,
@@ -1079,6 +1125,22 @@ export class RoomMemberService {
 				error
 			);
 			throw error;
+		}
+	}
+
+	/**
+	 * A promotion reaches the `when_moderator_joins` auto-start threshold, which no join webhook
+	 * reports. Detached: starting a recording is a LiveKit round trip the promotion must not wait on.
+	 */
+	private async reevaluateRecordingAutoStart(roomId: string, candidate: ParticipantInfo): Promise<void> {
+		try {
+			const room = await this.livekitService.getRoom(roomId);
+			await this.recordingService.startAutoRecordingIfNeeded(room, candidate);
+		} catch (error) {
+			this.logger.warn(
+				`Error re-evaluating the recording auto-start in room '${roomId}' after promoting '${candidate.identity}'`,
+				error
+			);
 		}
 	}
 
@@ -1205,7 +1267,11 @@ export class RoomMemberService {
 			// touch it); normalize here so a later demotion restores the current keys instead of feeding
 			// deprecated-keyed permissions back into grants and metadata.
 			...(parsed.originalPermissions
-				? { originalPermissions: normalizePermissions(parsed.originalPermissions) as MeetRoomMemberPermissions }
+				? {
+						originalPermissions: normalizePermissions(parsed.originalPermissions, {
+							complete: true
+						}) as MeetRoomMemberPermissions
+					}
 				: {})
 		};
 	}

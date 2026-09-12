@@ -5,6 +5,9 @@ recordingStarted:
             This webhook is triggered when a recording starts.
 
             > The recording can be in the `starting` status for a few seconds before it becomes `active`.
+            > A recording in the `starting` status carries no `startDate`: it has not recorded anything
+            > yet. The [`recordingUpdated`](#/webhooks/recordingUpdatedWebhook) webhook reports it when
+            > the recording becomes `active`.
         operationId: recordingStartedWebhook
         parameters:
             - $ref: ./parameters/x-timestamp.yaml
@@ -74,6 +77,8 @@ recordingEnded:
 
             > The recording can end due to various reasons, such as a participant stopping the recording
             > or the recording reaching its maximum duration.
+            > A recording that ended without ever recording media (`failed` and `aborted` statuses)
+            > carries no `startDate`, `duration` or `size`.
         operationId: recordingEndedWebhook
         parameters:
             - $ref: ./parameters/x-timestamp.yaml
@@ -93,8 +98,6 @@ recordingEnded:
                                       type: object
                                       required:
                                           - endDate
-                                          - duration
-                                          - size
                                           - details
                                       allOf:
                                           - $ref: ../recordings/schemas/recording-base.yaml
@@ -169,7 +172,59 @@ meetingEnded:
                                   event:
                                       example: meetingEnded
                                   data:
-                                      $ref: ../rooms/schemas/meet-room.yaml
+                                      $ref: ./schemas/meet-meeting-ended-payload.yaml
+        responses:
+            '200':
+                $ref: ./responses/success/webhook-success.yaml
+
+participantJoined:
+    post:
+        summary: Participant joined
+        description: >
+            This webhook is triggered when a participant joins a meeting.
+        operationId: participantJoinedWebhook
+        parameters:
+            - $ref: ./parameters/x-timestamp.yaml
+            - $ref: ./parameters/x-signature.yaml
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        allOf:
+                            - $ref: ./schemas/webhook-base-event.yaml
+                            - properties:
+                                  event:
+                                      example: participantJoined
+                                  data:
+                                      $ref: ./schemas/meet-participant-joined-event.yaml
+        responses:
+            '200':
+                $ref: ./responses/success/webhook-success.yaml
+
+participantLeft:
+    post:
+        summary: Participant left
+        description: >
+            This webhook is triggered when a participant leaves a meeting.
+        operationId: participantLeftWebhook
+        parameters:
+            - $ref: ./parameters/x-timestamp.yaml
+            - $ref: ./parameters/x-signature.yaml
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        allOf:
+                            - $ref: ./schemas/webhook-base-event.yaml
+                            - properties:
+                                  event:
+                                      example: participantLeft
+                                  data:
+                                      $ref: ./schemas/meet-participant-left-event.yaml
         responses:
             '200':
                 $ref: ./responses/success/webhook-success.yaml

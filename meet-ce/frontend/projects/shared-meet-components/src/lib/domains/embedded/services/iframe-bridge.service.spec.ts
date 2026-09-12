@@ -2,7 +2,6 @@ import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular
 import { TestBed } from '@angular/core/testing';
 import { EmbeddedCommandName, EmbeddedEventName, LeftEventReason } from '@openvidu-meet/typings';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
-import { MeetingLiveKitService } from '../../meeting/openvidu-components';
 import { EmbeddedCommandService } from './embedded-command.service';
 import { EmbeddedEventBusService } from './embedded-event-bus.service';
 import { IframeBridgeService } from './iframe-bridge.service';
@@ -27,7 +26,6 @@ describe('IframeBridgeService', () => {
 	let service: IframeBridgeService;
 	let eventBus: EmbeddedEventBusService;
 	let commandService: jasmine.SpyObj<EmbeddedCommandService>;
-	let meetingLiveKitService: { isConnected: jasmine.Spy };
 	let isIframeMode: WritableSignal<boolean>;
 	let postMessageSpy: jasmine.Spy;
 
@@ -38,12 +36,21 @@ describe('IframeBridgeService', () => {
 		commandService = jasmine.createSpyObj<EmbeddedCommandService>('EmbeddedCommandService', [
 			'meetingEnd',
 			'meetingLeave',
-			'participantKick'
+			'participantKick',
+			'participantMute',
+			'participantMuteAll',
+			'mediaToggleAudio',
+			'mediaToggleVideo',
+			'mediaToggleScreenShare'
 		]);
 		commandService.meetingEnd.and.resolveTo();
 		commandService.meetingLeave.and.resolveTo();
 		commandService.participantKick.and.resolveTo();
-		meetingLiveKitService = { isConnected: jasmine.createSpy('isConnected').and.returnValue(true) };
+		commandService.participantMute.and.resolveTo();
+		commandService.participantMuteAll.and.resolveTo();
+		commandService.mediaToggleAudio.and.resolveTo();
+		commandService.mediaToggleVideo.and.resolveTo();
+		commandService.mediaToggleScreenShare.and.resolveTo();
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -52,7 +59,6 @@ describe('IframeBridgeService', () => {
 				EmbeddedEventBusService,
 				{ provide: LoggerService, useClass: LoggerServiceStub },
 				{ provide: EmbeddedCommandService, useValue: commandService },
-				{ provide: MeetingLiveKitService, useValue: meetingLiveKitService as unknown as MeetingLiveKitService },
 				{ provide: RuntimeConfigService, useValue: { isIframeMode } as unknown as RuntimeConfigService }
 			]
 		});
@@ -122,15 +128,6 @@ describe('IframeBridgeService', () => {
 			startBridge();
 
 			postFromHost({ command: EmbeddedCommandName.MEETING_END }, 'https://evil.example.com');
-
-			expect(commandService.meetingEnd).not.toHaveBeenCalled();
-		});
-
-		it('ignores commands while not connected to the room', () => {
-			meetingLiveKitService.isConnected.and.returnValue(false);
-			startBridge();
-
-			postFromHost({ command: EmbeddedCommandName.MEETING_END });
 
 			expect(commandService.meetingEnd).not.toHaveBeenCalled();
 		});
@@ -209,16 +206,133 @@ describe('IframeBridgeService', () => {
 			expect(commandService.participantKick).not.toHaveBeenCalled();
 		});
 
-		it('re-evaluates room connection on every command, not just the first', () => {
-			startBridge();
+		describe('participant mute commands', () => {
+			it('forwards PARTICIPANT_MUTE with the participant identity and the media', () => {
+				startBridge();
 
-			postFromHost({ command: EmbeddedCommandName.MEETING_LEAVE });
-			expect(commandService.meetingLeave).toHaveBeenCalledTimes(1);
+				postFromHost({
+					command: EmbeddedCommandName.PARTICIPANT_MUTE,
+					payload: { participantIdentity: IDENTITY, media: { audioActive: false } }
+				});
 
-			// Connection dropped after the first command: the next one must be rejected.
-			meetingLiveKitService.isConnected.and.returnValue(false);
-			postFromHost({ command: EmbeddedCommandName.MEETING_END });
-			expect(commandService.meetingEnd).not.toHaveBeenCalled();
+				expect(commandService.participantMute).toHaveBeenCalledOnceWith(IDENTITY, { audioActive: false });
+			});
+
+			it('ignores PARTICIPANT_MUTE without a participant identity', () => {
+				startBridge();
+
+				postFromHost({
+					command: EmbeddedCommandName.PARTICIPANT_MUTE,
+					payload: { media: { audioActive: false } }
+				});
+
+				expect(commandService.participantMute).not.toHaveBeenCalled();
+			});
+
+			it('ignores PARTICIPANT_MUTE with an empty participant identity', () => {
+				startBridge();
+
+				postFromHost({
+					command: EmbeddedCommandName.PARTICIPANT_MUTE,
+					payload: { participantIdentity: '', media: { audioActive: false } }
+				});
+
+				expect(commandService.participantMute).not.toHaveBeenCalled();
+			});
+
+			it('ignores PARTICIPANT_MUTE without media', () => {
+				startBridge();
+
+				postFromHost({
+					command: EmbeddedCommandName.PARTICIPANT_MUTE,
+					payload: { participantIdentity: IDENTITY }
+				});
+
+				expect(commandService.participantMute).not.toHaveBeenCalled();
+			});
+
+			it('forwards PARTICIPANT_MUTE_ALL with the media', () => {
+				startBridge();
+
+				postFromHost({
+					command: EmbeddedCommandName.PARTICIPANT_MUTE_ALL,
+					payload: { media: { audioActive: false, videoActive: false } }
+				});
+
+				expect(commandService.participantMuteAll).toHaveBeenCalledOnceWith({
+					audioActive: false,
+					videoActive: false
+				});
+			});
+
+			it('ignores PARTICIPANT_MUTE_ALL without media', () => {
+				startBridge();
+
+				postFromHost({ command: EmbeddedCommandName.PARTICIPANT_MUTE_ALL });
+
+				expect(commandService.participantMuteAll).not.toHaveBeenCalled();
+			});
+		});
+
+		// The bridge forwards without gating; phase and permission are enforced by EmbeddedCommandService.
+		describe('media toggle commands', () => {
+			it('forwards MEDIA_TOGGLE_AUDIO with its explicit active flag', () => {
+				startBridge();
+
+				postFromHost({ command: EmbeddedCommandName.MEDIA_TOGGLE_AUDIO, payload: { active: false } });
+
+				expect(commandService.mediaToggleAudio).toHaveBeenCalledOnceWith(false);
+			});
+
+			it('forwards MEDIA_TOGGLE_AUDIO without payload as a toggle (undefined active)', () => {
+				startBridge();
+
+				postFromHost({ command: EmbeddedCommandName.MEDIA_TOGGLE_AUDIO });
+
+				expect(commandService.mediaToggleAudio).toHaveBeenCalledOnceWith(undefined);
+			});
+
+			// A6 (MEET-BRANCH-AUDIT-FINDINGS.md): a hand-built postMessage payload isn't type-checked
+			// by TypeScript, and a stringified 'false' is truthy — this must not slip through as "on".
+			it('treats a non-boolean active payload as absent and toggles instead of blindly enabling', () => {
+				startBridge();
+
+				postFromHost({ command: EmbeddedCommandName.MEDIA_TOGGLE_AUDIO, payload: { active: 'false' } });
+
+				expect(commandService.mediaToggleAudio).toHaveBeenCalledOnceWith(undefined);
+			});
+
+			it('forwards MEDIA_TOGGLE_VIDEO with its explicit active flag', () => {
+				startBridge();
+
+				postFromHost({ command: EmbeddedCommandName.MEDIA_TOGGLE_VIDEO, payload: { active: true } });
+
+				expect(commandService.mediaToggleVideo).toHaveBeenCalledOnceWith(true);
+			});
+
+			it('forwards MEDIA_TOGGLE_VIDEO without payload as a toggle (undefined active)', () => {
+				startBridge();
+
+				postFromHost({ command: EmbeddedCommandName.MEDIA_TOGGLE_VIDEO });
+
+				expect(commandService.mediaToggleVideo).toHaveBeenCalledOnceWith(undefined);
+			});
+
+			it('forwards MEDIA_TOGGLE_SCREEN_SHARE with its explicit active flag', () => {
+				startBridge();
+
+				postFromHost({ command: EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE, payload: { active: true } });
+
+				expect(commandService.mediaToggleScreenShare).toHaveBeenCalledOnceWith(true);
+			});
+
+			it('forwards MEDIA_TOGGLE_SCREEN_SHARE without payload as a toggle (undefined active)', () => {
+				startBridge();
+
+				postFromHost({ command: EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE });
+
+				expect(commandService.mediaToggleScreenShare).toHaveBeenCalledOnceWith(undefined);
+			});
 		});
 	});
 
@@ -273,10 +387,16 @@ describe('IframeBridgeService', () => {
 
 			expect(postMessageSpy.calls.allArgs()).toEqual([
 				[
-					{ event: EmbeddedEventName.MEETING_JOINED, payload: { roomId: ROOM_ID, participantIdentity: IDENTITY } },
+					{
+						event: EmbeddedEventName.MEETING_JOINED,
+						payload: { roomId: ROOM_ID, participantIdentity: IDENTITY }
+					},
 					PARENT_ORIGIN
 				],
-				[{ event: EmbeddedEventName.JOINED, payload: { roomId: ROOM_ID, participantIdentity: IDENTITY } }, PARENT_ORIGIN]
+				[
+					{ event: EmbeddedEventName.JOINED, payload: { roomId: ROOM_ID, participantIdentity: IDENTITY } },
+					PARENT_ORIGIN
+				]
 			]);
 		});
 

@@ -5,7 +5,6 @@ import { Redis } from 'ioredis';
 import ms from 'ms';
 import { IoredisAdapter } from 'redlock-universal';
 import { MEET_ENV } from '../environment.js';
-import type { DistributedEventPayload } from '../models/distributed-event.model.js';
 import { internalError } from '../models/error.model.js';
 import { RedisRedlock } from '../models/redis-lock.model.js';
 import { LoggerService } from './logger.service.js';
@@ -13,19 +12,15 @@ import { LoggerService } from './logger.service.js';
 @injectable()
 export class RedisService extends EventEmitter {
 	protected readonly DEFAULT_TTL: number = ms('32 days');
-	protected EVENT_CHANNEL = 'ov_meet_channel';
 	protected redisPublisher: Redis;
-	protected redisSubscriber: Redis;
 	protected redlockAdapter: IoredisAdapter;
 	protected isConnected = false;
-	protected eventHandler?: (event: DistributedEventPayload) => void;
 
 	constructor(@inject(LoggerService) protected logger: LoggerService) {
 		super();
 
 		const redisOptions = this.loadRedisConfig();
 		this.redisPublisher = new Redis(redisOptions);
-		this.redisSubscriber = new Redis(redisOptions);
 
 		// Shared distributed-lock adapter over the publisher connection. Reused
 		// across every Redlock so the release/extend Lua scripts stay EVALSHA-cached.
@@ -64,11 +59,8 @@ export class RedisService extends EventEmitter {
 		};
 
 		this.redisPublisher.on('connect', onConnect);
-		this.redisSubscriber.on('connect', () => this.logger.verbose('Connected to Redis subscriber'));
 		this.redisPublisher.on('error', onError);
-		this.redisSubscriber.on('error', (error) => this.logger.error('Redis subscriber error', error));
 		this.redisPublisher.on('end', onDisconnect);
-		this.redisSubscriber.on('end', () => this.logger.warn('Redis subscriber disconnected'));
 	}
 
 	/**
@@ -91,63 +83,8 @@ export class RedisService extends EventEmitter {
 		this.on('redisConnected', callback);
 	}
 
-	public onceError(callback: () => void) {
-		this.once('redisError', callback);
-	}
-
-	/**
-	 * Publishes a message to a specified Redis channel.
-	 *
-	 * @param channel - The name of the Redis channel to publish the message to.
-	 * @param message - The message to be published to the channel.
-	 * @returns A promise that resolves when the message has been successfully published.
-	 */
-	async publishEvent(channel: string, message: string) {
-		try {
-			await this.redisPublisher.publish(channel, message);
-		} catch (error) {
-			this.logger.error(`Error publishing message to Redis channel '${channel}'`, error);
-		}
-	}
-
-	/**
-	 * Subscribes to a Redis channel.
-	 *
-	 * @param channel - The channel to subscribe to.
-	 * @param callback - The callback function to execute when a message is received on the channel.
-	 */
-	subscribe(channel: string, callback: (message: string) => void) {
-		this.logger.verbose(`Subscribing to Redis channel: ${channel}`);
-		void this.redisSubscriber.subscribe(channel, (err, count) => {
-			if (err) {
-				this.logger.error(`Error subscribing to Redis channel '${channel}'`, err);
-				return;
-			}
-
-			this.logger.verbose(`Subscribed to ${channel}. Now subscribed to ${String(count)} channel(s).`);
-		});
-
-		this.redisSubscriber.on('message', (receivedChannel, message) => {
-			if (receivedChannel === channel) {
-				callback(message);
-			}
-		});
-	}
-
-	/**
-	 * Unsubscribes from a Redis channel.
-	 *
-	 * @param channel - The channel to unsubscribe from.
-	 */
-	unsubscribe(channel: string) {
-		void this.redisSubscriber.unsubscribe(channel, (err, count) => {
-			if (err) {
-				this.logger.error(`Error unsubscribing from Redis channel '${channel}'`, err);
-				return;
-			}
-
-			this.logger.verbose(`Unsubscribed from channel ${channel}. Now subscribed to ${String(count)} channel(s).`);
-		});
+	public onDisconnected(callback: () => void) {
+		this.on('redisDisconnected', callback);
 	}
 
 	/**
@@ -438,14 +375,7 @@ export class RedisService extends EventEmitter {
 	cleanup() {
 		this.logger.verbose('Cleaning up Redis connections');
 		void this.redisPublisher.quit();
-		void this.redisSubscriber.quit();
 		this.removeAllListeners();
-
-		if (this.eventHandler) {
-			this.off('systemEvent', this.eventHandler);
-			this.eventHandler = undefined;
-		}
-
 		this.isConnected = false;
 	}
 

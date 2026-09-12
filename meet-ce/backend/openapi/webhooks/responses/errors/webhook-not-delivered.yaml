@@ -1,0 +1,21 @@
+description: |
+    The test event was not delivered, for one of two reasons:
+
+    * **The URL did not accept it**: unreachable host, connection refused or reset, DNS failure,
+      TLS certificate error, timeout, or any non-2xx response.
+    * **The deployment has no API key**, which is what signatures are keyed with.
+content:
+    application/json:
+        schema:
+            $ref: ../../../shared/schemas/error.yaml
+        examples:
+            url_rejected_the_event:
+                summary: The URL did not accept the test event
+                value:
+                    error: Webhook Error
+                    message: "Webhook URL 'http://localhost:5080/webhook' is invalid: Connection refused by server"
+            no_api_key_to_sign_with:
+                summary: No API key to sign the event with
+                value:
+                    error: Webhook Error
+                    message: 'There are no API keys configured yet. Please, create one to use webhooks.'

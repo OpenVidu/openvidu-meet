@@ -72,13 +72,6 @@ export const expectHidden = async (page: Page, selector: string): Promise<void> 
 		.toBeTruthy();
 };
 
-/**
- * Asserts that a snackbar notification is currently visible.
- */
-export const expectSnackbarNotification = (page: Page): Promise<void> => {
-	return expectVisible(page, '.snackbarNotification');
-};
-
 // ─── Clipboard ──────────────────────────────────────────────────────────────
 
 /**
@@ -213,6 +206,31 @@ export const getElementBoundingBox = async (
 	};
 };
 
+/**
+ * Returns the bounding box of the first element matching {@link selector} once two consecutive
+ * reads agree on it. The floating tile animates into its place and into its new size, so a box
+ * read a fixed moment after the gesture can be a value the element only passes through.
+ */
+export const getSettledBoundingBox = async (
+	page: Page,
+	selector: string,
+	timeoutMs = 8_000
+): Promise<{ x: number; y: number; width: number; height: number }> => {
+	let lastBox: { x: number; y: number; width: number; height: number } | null = null;
+
+	await expect(async () => {
+		const box = await getElementBoundingBox(page, selector);
+		expect(box).not.toBeNull();
+
+		const previous = lastBox;
+		lastBox = box;
+
+		expect(previous).toEqual(box);
+	}).toPass({ timeout: timeoutMs, intervals: [100, 200, 300, 500] });
+
+	return lastBox!;
+};
+
 // ─── getUserMedia instrumentation ────────────────────────────────────────────
 
 /**
@@ -233,8 +251,56 @@ export type GetUserMediaCall = {
 };
 
 /**
+ * Emulates the privacy behaviour every browser applies before media permission is granted:
+ * `enumerateDevices()` reports one entry per device kind, but with no label and no id. The suite's
+ * Chromium is launched with fake media *and* an auto-accepting permission UI, which exposes the
+ * labels from the first page load and so can only ever act out a returning visitor.
+ *
+ * `getUserMedia` keeps working, and the first successful call reveals the real labels, exactly as
+ * granting the permission does.
+ */
+export const hideDeviceLabelsUntilPermissionGranted = async (page: Page): Promise<void> => {
+	await page.addInitScript(() => {
+		const mediaDevices = navigator.mediaDevices;
+
+		if (!mediaDevices?.enumerateDevices || !mediaDevices.getUserMedia) {
+			return;
+		}
+
+		const enumerate = mediaDevices.enumerateDevices.bind(mediaDevices);
+		const getUserMedia = mediaDevices.getUserMedia.bind(mediaDevices);
+		let granted = false;
+
+		mediaDevices.getUserMedia = async (constraints?: MediaStreamConstraints) => {
+			const stream = await getUserMedia(constraints);
+			granted = true;
+			return stream;
+		};
+
+		mediaDevices.enumerateDevices = async () => {
+			const devices = await enumerate();
+
+			if (granted) return devices;
+
+			return devices.map(
+				(device) =>
+					({
+						deviceId: '',
+						groupId: '',
+						kind: device.kind,
+						label: '',
+						toJSON() {
+							return { deviceId: '', groupId: '', kind: device.kind, label: '' };
+						}
+					}) as MediaDeviceInfo
+			);
+		};
+	});
+};
+
+/**
  * Wraps `navigator.mediaDevices.getUserMedia` *before any application code runs* so its
- * invocations can be recorded. Must be called before navigating to the app — it registers an init
+ * invocations can be recorded. Must be called before navigating to the app: it registers an init
  * script that re-installs the wrapper on every navigation. Read the tally with
  * {@link getGetUserMediaCallCount} and the recorded constraints with {@link getGetUserMediaCalls}.
  */
@@ -274,6 +340,8 @@ export const installGetUserMediaCounter = async (page: Page): Promise<void> => {
 			const audio = typeof constraints?.audio === 'object' ? (constraints.audio as MediaTrackConstraints) : {};
 			const video = typeof constraints?.video === 'object' ? (constraints.video as MediaTrackConstraints) : {};
 
+			// Which kinds were requested — enough to tell the single combined acquisition apart from a
+			// probe or a per-kind split — plus the device and capture profile each one asked for.
 			w.__ovGumCalls?.push({
 				audio: Boolean(constraints?.audio),
 				video: Boolean(constraints?.video),
@@ -300,8 +368,9 @@ export const getGetUserMediaCallCount = async (page: Page): Promise<number> => {
 
 /**
  * Returns one entry per `navigator.mediaDevices.getUserMedia` call since
- * {@link installGetUserMediaCounter} was installed. A combined `{ audio: true, video: true }` entry
- * is the signature of the old permission probe.
+ * {@link installGetUserMediaCounter} was installed, each flagging whether audio/video was requested.
+ * A prejoin that wants both devices asks for them in one combined call, so more than one entry is
+ * the signature of a throwaway permission probe or of a request split per kind.
  */
 export const getGetUserMediaCalls = async (page: Page): Promise<GetUserMediaCall[]> => {
 	return (await page.evaluate(
@@ -312,42 +381,6 @@ export const getGetUserMediaCalls = async (page: Page): Promise<GetUserMediaCall
 /** The recorded calls that requested the given kind, in order. */
 export const getGetUserMediaCallsFor = async (page: Page, kind: 'audio' | 'video'): Promise<GetUserMediaCall[]> => {
 	return (await getGetUserMediaCalls(page)).filter((call) => call[kind]);
-};
-
-/**
- * Records every WebSocket the page opens *before any application code runs*, so a test can drop the
- * LiveKit signal connection with {@link dropLastWebSocket}. Registers an init script, so it must be
- * called before navigating.
- */
-export const installWebSocketCapture = async (page: Page): Promise<void> => {
-	await page.addInitScript(() => {
-		const w = window as unknown as { __ovSockets: WebSocket[] };
-		w.__ovSockets = [];
-
-		const OriginalWebSocket = window.WebSocket;
-		const Wrapped = function (this: unknown, ...args: unknown[]) {
-			const socket = new (OriginalWebSocket as unknown as new (...a: unknown[]) => WebSocket)(...args);
-			w.__ovSockets.push(socket);
-
-			return socket;
-		} as unknown as typeof WebSocket;
-
-		Wrapped.prototype = OriginalWebSocket.prototype;
-		Object.assign(Wrapped, OriginalWebSocket);
-		window.WebSocket = Wrapped;
-	});
-};
-
-/**
- * Closes the most recently opened WebSocket with a non-normal code — what a lost signal connection
- * looks like to livekit-client, which then tries to resume the session (`SignalReconnecting`)
- * instead of treating it as an intentional disconnect.
- */
-export const dropLastWebSocket = async (page: Page): Promise<void> => {
-	await page.evaluate(() => {
-		const w = window as unknown as { __ovSockets?: WebSocket[] };
-		w.__ovSockets?.at(-1)?.close(3001, 'e2e signal drop');
-	});
 };
 
 /**
@@ -372,4 +405,64 @@ export const failGetUserMediaFor = async (page: Page, kind: 'audio' | 'video'): 
 			return original(constraints as MediaStreamConstraints);
 		};
 	}, kind);
+};
+
+/** The frame queue installed by {@link stopRenderingFrames}, held on the page under test. */
+type FrameQueue = {
+	queued: Map<number, FrameRequestCallback>;
+	restore: () => void;
+};
+
+type FrameQueueWindow = Window & { __ovFrameQueue?: FrameQueue };
+
+/**
+ * Emulates a window that stops producing frames (minimised, or fully covered by another window):
+ * `requestAnimationFrame` callbacks are queued instead of run, while timers, microtasks and the
+ * websocket keep working, as Chrome does for a page it is not rendering.
+ */
+export const stopRenderingFrames = async (page: Page): Promise<void> => {
+	await page.evaluate(() => {
+		const win = window as FrameQueueWindow;
+
+		if (win.__ovFrameQueue) return;
+
+		const realRequest = window.requestAnimationFrame.bind(window);
+		const realCancel = window.cancelAnimationFrame.bind(window);
+		const queued = new Map<number, FrameRequestCallback>();
+		let lastId = 0;
+
+		win.__ovFrameQueue = {
+			queued,
+			restore: () => {
+				window.requestAnimationFrame = realRequest;
+				window.cancelAnimationFrame = realCancel;
+			}
+		};
+
+		window.requestAnimationFrame = (callback: FrameRequestCallback) => {
+			queued.set(++lastId, callback);
+			return lastId;
+		};
+
+		window.cancelAnimationFrame = (id: number) => {
+			// Ids issued before the queue was installed still belong to the real scheduler.
+			if (!queued.delete(id)) realCancel(id);
+		};
+	});
+};
+
+/** Shows the window again: restores `requestAnimationFrame` and runs what was queued while hidden. */
+export const resumeRenderingFrames = async (page: Page): Promise<void> => {
+	await page.evaluate(() => {
+		const win = window as FrameQueueWindow;
+		const frames = win.__ovFrameQueue;
+
+		if (!frames) return;
+
+		delete win.__ovFrameQueue;
+		frames.restore();
+		const now = performance.now();
+
+		for (const callback of frames.queued.values()) callback(now);
+	});
 };

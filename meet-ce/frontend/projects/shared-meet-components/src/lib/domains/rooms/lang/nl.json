@@ -15,7 +15,9 @@
       "DELETE_ROOM": "Kamer verwijderen",
       "SHARE_LINK": "Link delen",
       "MORE_ACTIONS": "Meer acties",
-      "VIEW_USER_PROFILE": "Gebruikersprofiel bekijken"
+      "VIEW_USER_PROFILE": "Gebruikersprofiel bekijken",
+      "COPY_ROOM_ID": "Kamer-ID kopiëren",
+      "ROOM_ID_COPIED": "Kamer-ID naar klembord gekopieerd"
     },
     "LIST": {
       "LOADING_TITLE": "Kamers laden",
@@ -154,7 +156,7 @@
       "UPDATE_ROOM": "Kamer bijwerken",
       "CREATE_ROOM": "Kamer aanmaken",
       "STEP_ROOM_DETAILS": "Kamerdetails",
-      "STEP_ROOM_FEATURES": "Kamerfuncties",
+      "STEP_ROOM_FEATURES": "Meetingfuncties",
       "STEP_ROOM_ACCESS": "Kamertoegang",
       "STEP_RECORDING_SETTINGS": "Opname-instellingen",
       "STEP_RECORDING_TRIGGER": "Opnametrigger",
@@ -225,11 +227,11 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Lid bewerken",
         "REMOVE_MEMBER": "Lid verwijderen",
-        "FEATURE_DISABLED_PERMISSION": "Schakel de betreffende functie in bij Kamerfuncties om deze machtiging te configureren."
+        "FEATURE_DISABLED_PERMISSION": "Schakel de betreffende functie in bij Meetingfuncties om deze machtiging te configureren."
       },
       "FEATURES": {
-        "TITLE": "Kamerfuncties",
-        "DESCRIPTION": "Configureer aanvullende functies en functionaliteit voor uw kamer",
+        "TITLE": "Meetingfuncties",
+        "DESCRIPTION": "Configureer aanvullende functies en functionaliteit voor uw meetings",
         "SECURITY": "Beveiliging",
         "E2EE": "End-to-end-versleuteling",
         "E2EE_DESC": "Voeg een extra beveiligingslaag toe aan uw meetings. Niemand buiten de meeting, zelfs niet iemand met servertoegang, kan het gesprek zien of horen.",
@@ -246,7 +248,31 @@
         "CHAT_DESC": "Sta deelnemers toe om tijdens de meeting berichten te sturen",
         "EXPERIENCE": "Ervaring",
         "VIRTUAL_BACKGROUNDS": "Virtuele achtergronden",
-        "VIRTUAL_BACKGROUNDS_DESC": "Schakel virtuele achtergronden en vervagingseffecten in voor deelnemers"
+        "VIRTUAL_BACKGROUNDS_DESC": "Schakel virtuele achtergronden en vervagingseffecten in voor deelnemers",
+        "DEVICES": "Apparaten",
+        "INITIAL_AUDIO": "Microfoon aan bij deelnemen",
+        "INITIAL_AUDIO_DESC": "Deelnemers komen binnen met de microfoon aan",
+        "INITIAL_AUDIO_NOTE": "(ze kunnen zichzelf altijd dempen)",
+        "INITIAL_VIDEO": "Camera aan bij deelnemen",
+        "INITIAL_VIDEO_DESC": "Deelnemers komen binnen met de camera aan",
+        "INITIAL_VIDEO_NOTE": "(ze kunnen deze altijd uitschakelen)",
+        "LIMITS": "Limieten",
+        "MAX_DURATION": "Maximale duur van de meeting",
+        "MAX_DURATION_DESC": "Beëindigt de meeting automatisch na deze tijd. Laat leeg voor onbeperkte duur",
+        "MAX_DURATION_LABEL": "Minuten",
+        "MAX_DURATION_PLACEHOLDER": "Onbeperkt",
+        "MAX_DURATION_INVALID": "Voer een geheel aantal minuten in",
+        "MAX_DURATION_TOO_LOW": "Voer minimaal 1 minuut in",
+        "MAX_DURATION_TOO_HIGH_PREFIX": "Voer maximaal ",
+        "MAX_DURATION_TOO_HIGH_SUFFIX": " minuten in",
+        "MAX_PARTICIPANTS": "Deelnemerslimiet",
+        "MAX_PARTICIPANTS_DESC": "Maximaal aantal deelnemers dat aan de meeting kan deelnemen. Laat leeg voor geen limiet",
+        "MAX_PARTICIPANTS_LABEL": "Deelnemers",
+        "MAX_PARTICIPANTS_PLACEHOLDER": "Onbeperkt",
+        "MAX_PARTICIPANTS_INVALID": "Voer een geheel aantal deelnemers in",
+        "MAX_PARTICIPANTS_TOO_LOW": "Voer minimaal 1 deelnemer in",
+        "MAX_PARTICIPANTS_TOO_HIGH_PREFIX": "Voer maximaal ",
+        "MAX_PARTICIPANTS_TOO_HIGH_SUFFIX": " deelnemers in"
       },
       "RECORDING_CONFIG": {
         "TITLE": "Opnameconfiguratie",
@@ -277,10 +303,17 @@
         "DESCRIPTION": "Kies wanneer de opname automatisch moet starten",
         "MANUAL_TITLE": "Handmatige opname",
         "MANUAL_DESC": "Start de opname handmatig wanneer nodig",
-        "AUTO1_TITLE": "Automatisch 1 deelnemer",
-        "AUTO1_DESC": "Start de opname automatisch wanneer er 1 deelnemer deelneemt",
-        "AUTO2_TITLE": "Automatisch 2 deelnemers",
-        "AUTO2_DESC": "Start de opname automatisch wanneer er 2 deelnemers deelnemen"
+        "AUTO_TITLE": "Automatische opname",
+        "AUTO_DESC": "De opname start automatisch zodra de vergadering begint",
+        "AUTOSTART_MODE_LABEL": "Wanneer moet de opname starten?",
+        "AUTOSTART_MODE_FIRST_TITLE": "Eerste deelnemer neemt deel",
+        "AUTOSTART_MODE_FIRST_DESC": "Start zodra de vergadering begint",
+        "AUTOSTART_MODE_SECOND_TITLE": "Tweede deelnemer neemt deel",
+        "AUTOSTART_MODE_SECOND_DESC": "Wacht tot er nog iemand bijkomt",
+        "AUTOSTART_MODE_MODERATOR_TITLE": "Een moderator neemt deel",
+        "AUTOSTART_MODE_MODERATOR_DESC": "Start zodra een moderator deelneemt of wordt gepromoveerd",
+        "AUTOSTART_UNREACHABLE_TITLE": "Opnametrigger onbereikbaar",
+        "AUTOSTART_UNREACHABLE_MESSAGE": "Deze trigger heeft minstens ${required} deelnemers nodig om af te gaan, maar de deelnemerslimiet van de kamer is ingesteld op ${limit}."
       }
     },
     "ERRORS": {
@@ -350,6 +383,22 @@
         "ACTIVE": "De kamer bewerken is uitgeschakeld tijdens een actieve meeting",
         "DEFAULT": "Kamerinstellingen bewerken"
       }
+    },
+    "DIALOGS": {
+      "DELETE_ROOM_TITLE": "Ruimte verwijderen",
+      "DELETE_ROOM_MESSAGE": "Weet je zeker dat je de ruimte <b>{roomId}</b> wilt verwijderen?",
+      "DELETE_ROOMS_TITLE": "Ruimtes verwijderen",
+      "DELETE_ROOMS_MESSAGE": "Weet je zeker dat je <b>{count}</b> ruimtes wilt verwijderen?",
+      "REMOVE_MEMBER_TITLE": "Lid verwijderen",
+      "REMOVE_MEMBER_MESSAGE": "Weet je zeker dat je <b>{memberName}</b> uit deze ruimte wilt verwijderen?",
+      "REMOVE_MEMBERS_TITLE": "Leden verwijderen",
+      "REMOVE_MEMBERS_MESSAGE_ONE": "Weet je zeker dat je <b>{count} lid</b> uit deze ruimte wilt verwijderen?",
+      "REMOVE_MEMBERS_MESSAGE_MANY": "Weet je zeker dat je <b>{count} leden</b> uit deze ruimte wilt verwijderen?",
+      "MEETING_WARNING_TITLE": "Waarschuwing: vergadering bezig",
+      "REMOVE_MEMBER_WARNING": "Zit deze gebruiker in de vergadering, dan wordt hij er onmiddellijk uit verwijderd.",
+      "REMOVE_MEMBERS_WARNING": "Leden die in de vergadering zitten, worden er onmiddellijk uit verwijderd.",
+      "DELETE": "Verwijderen",
+      "REMOVE": "Verwijderen"
     }
   }
 }

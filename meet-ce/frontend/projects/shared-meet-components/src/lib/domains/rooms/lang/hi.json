@@ -15,7 +15,9 @@
       "DELETE_ROOM": "कक्ष हटाएं",
       "SHARE_LINK": "लिंक साझा करें",
       "MORE_ACTIONS": "और क्रियाएं",
-      "VIEW_USER_PROFILE": "उपयोगकर्ता प्रोफ़ाइल देखें"
+      "VIEW_USER_PROFILE": "उपयोगकर्ता प्रोफ़ाइल देखें",
+      "COPY_ROOM_ID": "कक्ष ID कॉपी करें",
+      "ROOM_ID_COPIED": "कक्ष ID क्लिपबोर्ड पर कॉपी की गई"
     },
     "LIST": {
       "LOADING_TITLE": "कक्ष लोड हो रहे हैं",
@@ -154,7 +156,7 @@
       "UPDATE_ROOM": "कक्ष अपडेट करें",
       "CREATE_ROOM": "कक्ष बनाएं",
       "STEP_ROOM_DETAILS": "कक्ष विवरण",
-      "STEP_ROOM_FEATURES": "कक्ष सुविधाएं",
+      "STEP_ROOM_FEATURES": "मीटिंग सुविधाएं",
       "STEP_ROOM_ACCESS": "कक्ष पहुंच",
       "STEP_RECORDING_SETTINGS": "रिकॉर्डिंग सेटिंग्स",
       "STEP_RECORDING_TRIGGER": "रिकॉर्डिंग ट्रिगर",
@@ -225,11 +227,11 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "सदस्य संपादित करें",
         "REMOVE_MEMBER": "सदस्य हटाएं",
-        "FEATURE_DISABLED_PERMISSION": "इस अनुमति को कॉन्फ़िगर करने के लिए कक्ष सुविधाएं में संबंधित सुविधा सक्षम करें।"
+        "FEATURE_DISABLED_PERMISSION": "इस अनुमति को कॉन्फ़िगर करने के लिए मीटिंग सुविधाएं में संबंधित सुविधा सक्षम करें।"
       },
       "FEATURES": {
-        "TITLE": "कक्ष सुविधाएं",
-        "DESCRIPTION": "अपने कक्ष के लिए अतिरिक्त सुविधाएं और कार्यक्षमता कॉन्फ़िगर करें",
+        "TITLE": "मीटिंग सुविधाएं",
+        "DESCRIPTION": "अपनी मीटिंग के लिए अतिरिक्त सुविधाएं और कार्यक्षमता कॉन्फ़िगर करें",
         "SECURITY": "सुरक्षा",
         "E2EE": "एंड-टू-एंड एन्क्रिप्शन",
         "E2EE_DESC": "अपनी मीटिंग में सुरक्षा की एक अतिरिक्त परत जोड़ें। मीटिंग के बाहर कोई भी, यहां तक कि सर्वर पहुंच वाला कोई भी व्यक्ति, बातचीत को देख या सुन नहीं सकता।",
@@ -246,7 +248,31 @@
         "CHAT_DESC": "सदस्यों को मीटिंग के दौरान संदेश भेजने की अनुमति दें",
         "EXPERIENCE": "अनुभव",
         "VIRTUAL_BACKGROUNDS": "वर्चुअल पृष्ठभूमि",
-        "VIRTUAL_BACKGROUNDS_DESC": "सदस्यों के लिए वर्चुअल पृष्ठभूमि और ब्लर प्रभाव सक्षम करें"
+        "VIRTUAL_BACKGROUNDS_DESC": "सदस्यों के लिए वर्चुअल पृष्ठभूमि और ब्लर प्रभाव सक्षम करें",
+        "DEVICES": "डिवाइस",
+        "INITIAL_AUDIO": "शामिल होते समय माइक्रोफ़ोन चालू",
+        "INITIAL_AUDIO_DESC": "प्रतिभागी माइक्रोफ़ोन चालू रखते हुए शामिल होते हैं",
+        "INITIAL_AUDIO_NOTE": "(वे किसी भी समय म्यूट कर सकते हैं)",
+        "INITIAL_VIDEO": "शामिल होते समय कैमरा चालू",
+        "INITIAL_VIDEO_DESC": "प्रतिभागी कैमरा चालू रखते हुए शामिल होते हैं",
+        "INITIAL_VIDEO_NOTE": "(वे इसे किसी भी समय बंद कर सकते हैं)",
+        "LIMITS": "सीमाएँ",
+        "MAX_DURATION": "मीटिंग की अधिकतम अवधि",
+        "MAX_DURATION_DESC": "इस समय के बाद मीटिंग अपने आप समाप्त हो जाएगी। असीमित अवधि के लिए खाली छोड़ें",
+        "MAX_DURATION_LABEL": "मिनट",
+        "MAX_DURATION_PLACEHOLDER": "असीमित",
+        "MAX_DURATION_INVALID": "मिनटों की पूर्ण संख्या दर्ज करें",
+        "MAX_DURATION_TOO_LOW": "कम से कम 1 मिनट दर्ज करें",
+        "MAX_DURATION_TOO_HIGH_PREFIX": "अधिकतम ",
+        "MAX_DURATION_TOO_HIGH_SUFFIX": " मिनट दर्ज करें",
+        "MAX_PARTICIPANTS": "प्रतिभागियों की सीमा",
+        "MAX_PARTICIPANTS_DESC": "मीटिंग में शामिल हो सकने वाले प्रतिभागियों की अधिकतम संख्या। बिना सीमा के लिए खाली छोड़ें",
+        "MAX_PARTICIPANTS_LABEL": "प्रतिभागी",
+        "MAX_PARTICIPANTS_PLACEHOLDER": "असीमित",
+        "MAX_PARTICIPANTS_INVALID": "प्रतिभागियों की पूर्ण संख्या दर्ज करें",
+        "MAX_PARTICIPANTS_TOO_LOW": "कम से कम 1 प्रतिभागी दर्ज करें",
+        "MAX_PARTICIPANTS_TOO_HIGH_PREFIX": "अधिकतम ",
+        "MAX_PARTICIPANTS_TOO_HIGH_SUFFIX": " प्रतिभागी दर्ज करें"
       },
       "RECORDING_CONFIG": {
         "TITLE": "रिकॉर्डिंग कॉन्फ़िगरेशन",
@@ -277,10 +303,17 @@
         "DESCRIPTION": "चुनें कि रिकॉर्डिंग स्वचालित रूप से कब शुरू होनी चाहिए",
         "MANUAL_TITLE": "मैनुअल रिकॉर्डिंग",
         "MANUAL_DESC": "आवश्यकता पड़ने पर मैन्युअल रूप से रिकॉर्डिंग शुरू करें",
-        "AUTO1_TITLE": "स्वतः 1 सदस्य",
-        "AUTO1_DESC": "जब 1 सदस्य शामिल हो तो स्वतः रिकॉर्डिंग शुरू करें",
-        "AUTO2_TITLE": "स्वतः 2 सदस्य",
-        "AUTO2_DESC": "जब 2 सदस्य शामिल हों तो स्वतः रिकॉर्डिंग शुरू करें"
+        "AUTO_TITLE": "स्वचालित रिकॉर्डिंग",
+        "AUTO_DESC": "मीटिंग शुरू होते ही रिकॉर्डिंग स्वचालित रूप से शुरू हो जाती है",
+        "AUTOSTART_MODE_LABEL": "रिकॉर्डिंग कब शुरू होनी चाहिए?",
+        "AUTOSTART_MODE_FIRST_TITLE": "पहला सदस्य शामिल होने पर",
+        "AUTOSTART_MODE_FIRST_DESC": "मीटिंग शुरू होते ही रिकॉर्डिंग शुरू हो जाती है",
+        "AUTOSTART_MODE_SECOND_TITLE": "दूसरा सदस्य शामिल होने पर",
+        "AUTOSTART_MODE_SECOND_DESC": "किसी अन्य सदस्य के शामिल होने का इंतज़ार करती है",
+        "AUTOSTART_MODE_MODERATOR_TITLE": "मॉडरेटर के शामिल होने पर",
+        "AUTOSTART_MODE_MODERATOR_DESC": "मॉडरेटर के शामिल होने या पदोन्नत होने पर रिकॉर्डिंग शुरू हो जाती है",
+        "AUTOSTART_UNREACHABLE_TITLE": "रिकॉर्डिंग ट्रिगर तक नहीं पहुंचा जा सकता",
+        "AUTOSTART_UNREACHABLE_MESSAGE": "इस ट्रिगर को सक्रिय होने के लिए कम से कम ${required} प्रतिभागियों की आवश्यकता है, लेकिन रूम की प्रतिभागी सीमा ${limit} निर्धारित है।"
       }
     },
     "ERRORS": {
@@ -350,6 +383,22 @@
         "ACTIVE": "सक्रिय मीटिंग के दौरान कक्ष संपादित करना अक्षम है",
         "DEFAULT": "कक्ष सेटिंग्स संपादित करें"
       }
+    },
+    "DIALOGS": {
+      "DELETE_ROOM_TITLE": "कक्ष हटाएँ",
+      "DELETE_ROOM_MESSAGE": "क्या आप वाकई कक्ष <b>{roomId}</b> को हटाना चाहते हैं?",
+      "DELETE_ROOMS_TITLE": "कक्ष हटाएँ",
+      "DELETE_ROOMS_MESSAGE": "क्या आप वाकई <b>{count}</b> कक्ष हटाना चाहते हैं?",
+      "REMOVE_MEMBER_TITLE": "सदस्य हटाएँ",
+      "REMOVE_MEMBER_MESSAGE": "क्या आप वाकई <b>{memberName}</b> को इस कक्ष से हटाना चाहते हैं?",
+      "REMOVE_MEMBERS_TITLE": "सदस्य हटाएँ",
+      "REMOVE_MEMBERS_MESSAGE_ONE": "क्या आप वाकई <b>{count} सदस्य</b> को इस कक्ष से हटाना चाहते हैं?",
+      "REMOVE_MEMBERS_MESSAGE_MANY": "क्या आप वाकई <b>{count} सदस्यों</b> को इस कक्ष से हटाना चाहते हैं?",
+      "MEETING_WARNING_TITLE": "सक्रिय मीटिंग चेतावनी",
+      "REMOVE_MEMBER_WARNING": "यदि यह उपयोगकर्ता मीटिंग में है, तो उसे तुरंत हटा दिया जाएगा।",
+      "REMOVE_MEMBERS_WARNING": "मीटिंग में मौजूद सदस्यों को तुरंत हटा दिया जाएगा।",
+      "DELETE": "हटाएँ",
+      "REMOVE": "हटाएँ"
     }
   }
 }

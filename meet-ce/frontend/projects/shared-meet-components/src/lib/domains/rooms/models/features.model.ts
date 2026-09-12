@@ -4,18 +4,20 @@
 export type CaptionsStatus = 'HIDDEN' | 'ENABLED' | 'DISABLED_WITH_WARNING';
 
 /**
+ * What the embedding application asked for through the initial-audio-active / initial-video-active
+ * embed attributes (or their URL query params). `undefined` per device means the host said nothing,
+ * which is **not** the same as `true`: only a value that is set outranks the room's own
+ * `config.initial*Active`.
+ */
+export interface InitialMediaRequest {
+	audioActive?: boolean;
+	videoActive?: boolean;
+}
+
+/**
  * Interface that defines all available features in the application
  */
 export interface RoomFeatures {
-	/**
-	 * Indicates if video track is enabled in the room (mutued or unmuted)
-	 */
-	videoEnabled: boolean;
-	/**
-	 * Indicates if audio track is enabled in the room (muted or unmuted)
-	 */
-	audioEnabled: boolean;
-
 	/**
 	 * Indicates if camera control is shown in the UI
 	 */

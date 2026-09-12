@@ -3,7 +3,22 @@
 		"JOINING": "正在加入会议...",
 		"LANDSCAPE_WARNING": "请将设备旋转到纵向以获得最佳体验",
 		"DISCONNECTED": "您已离开会议",
-		"DISCONNECTED_SUBTITLE": "会议已结束"
+		"DISCONNECTED_SUBTITLE": "会议已结束",
+		"ENDING_SOON_TITLE": "会议即将结束",
+		"ENDING_SOON_ONE_MINUTE": "会议将在约 1 分钟后结束",
+		"ENDING_SOON_MANY_MINUTES": "会议将在约 {minutes} 分钟后结束",
+		"ENDING_SOON_DISMISS": "关闭",
+		"ENDING_SOON_BADGE_LABEL": "还剩",
+		"ENDING_SOON_BADGE_ENDING": "即将结束",
+		"E2EE_BADGE_LABEL": "已加密",
+		"E2EE_BADGE_TOOLTIP": "此会议采用端到端加密",
+		"RECORDING_BADGE_STARTING": "正在开始",
+		"RECORDING_STARTED_TITLE": "本次会议正在录制",
+		"RECORDING_STARTED_MESSAGE": "从现在起，您的音频、视频以及您共享的所有内容都会被录制。",
+		"RECORDING_WAITING_MEDIA_TITLE": "录制正在等待开始",
+		"RECORDING_WAITING_MEDIA_MESSAGE": "有参会者打开麦克风或摄像头后即会开始。",
+		"RECORDING_STOPPED_TITLE": "录制已停止",
+		"RECORDING_STOPPED_MESSAGE": "不再录制任何内容。"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "加入会议",
@@ -59,7 +74,7 @@
 			"PLACEHOLDER": "发送消息...",
 			"SEND": "发送",
 			"WRITE_DISABLED": "您没有发送消息的权限",
-			"MESSAGE_SENT_NOTIFICATION": "消息已发送",
+			"MESSAGE_SENT_NOTIFICATION": "{name} 消息已发送",
 			"OPEN_CHAT": "打开",
 			"ENCRYPTION_KEY_MISMATCH": "有参与者使用不同的加密密钥连接。您将不会收到他们的消息。"
 		},
@@ -69,18 +84,25 @@
 		"PARTICIPANTS": {
 			"TITLE": "参与者",
 			"YOU": "你",
-			"MUTE": "静音",
-			"UNMUTE": "取消静音",
+			"MORE_ACTIONS": "更多操作",
+			"MIC_ON": "麦克风已开启",
+			"MIC_OFF": "麦克风已关闭",
+			"CAM_ON": "摄像头已开启",
+			"CAM_OFF": "摄像头已关闭",
+			"SHARING_SCREEN": "正在共享屏幕",
+			"MUTE_MICROPHONE": "静音麦克风",
+			"TURN_OFF_CAMERA": "关闭摄像头",
+			"STOP_SCREEN_SHARE": "停止屏幕共享",
+			"MUTE_FOR_ME": "仅对我静音",
+			"UNMUTE_FOR_ME": "对我取消静音",
+			"MUTED_FOR_YOU": "仅对你静音",
 			"CONNECTION_QUALITY": {
 				"LABEL": "连接质量",
 				"EXCELLENT": "优秀",
 				"GOOD": "良好",
 				"POOR": "较差",
 				"LOST": "丢失"
-			},
-			"SHARING_SCREEN": "正在共享屏幕",
-			"MIC_OFF": "麦克风已关闭",
-			"CAM_OFF": "摄像头已关闭"
+			}
 		},
 		"SETTINGS": {
 			"TITLE": "设置",
@@ -105,20 +127,29 @@
 		},
 		"RECORDING": {
 			"TITLE": "录音",
-			"SUBTITLE": "为后人记录你的会议",
-			"CONTENT_TITLE": "记录你的视频通话",
-			"CONTENT_SUBTITLE": "当录音完成后，你将可以轻松地下载它",
-			"STARTING": "开始录音",
-			"STOPPING": "停止录制",
-			"ACCEPT": "接受",
-			"NO_TRACKS_PUBLISHED": "请分享音频或视频以开始录制。",
-			"ERROR_STARTING": "开始录音时出错"
+			"STARTING": "正在启动录制…",
+			"STOPPING": "正在停止录制…",
+			"ERROR_STARTING": "录制未启动",
+			"TRIGGER_MANUAL_MODE": "手动录制",
+			"TRIGGER_AUTO_MODE": "自动录制",
+			"STATUS_RECORDING": "正在录制",
+			"STATUS_STARTING": "正在启动…",
+			"STATUS_STOPPING": "正在停止…",
+			"STATUS_FAILED": "无法启动",
+			"IN_PROGRESS_TITLE": "本次会议正在录制",
+			"IN_PROGRESS_MESSAGE": "本次会议的音频、视频以及共享的所有内容都在被录制。",
+			"TRY_AGAIN": "重试",
+			"DISMISS": "关闭",
+			"MODERATORS_ONLY": "只有主持人可以启动或停止录制。",
+			"AUTO_START_ONLY": "此房间会自行开始录制，因此无法手动开始。"
 		}
 	},
 	"ERRORS": {
 		"SESSION": "连接会议时出错",
+		"TOKEN_TITLE": "令牌错误",
 		"MEETING_NOT_READY": "会议尚未准备就绪。请重新加载页面后重试。",
 		"MEETING_CONNECTION_FAILED": "无法连接到会议。请检查网络连接后重试。",
+		"MEETING_FULL": "该会议已达到最大参会人数",
 		"CONNECTION": "连接丢失",
 		"RECONNECT": "正在尝试重新连接会议...",
 		"DISCONNECT": "您已断开连接",
@@ -199,13 +230,30 @@
 		"COUNT_HELPER": "选择在网格中显示的远端参与者数量",
 		"COUNT_ARIA": "要显示的参与者数量"
 	},
+	"HIDDEN_PARTICIPANTS": {
+		"ONE_MORE": "位其他参与者",
+		"MANY_MORE": "位其他参与者",
+		"NAMES_AND_MORE": "{names} 及其他 {count} 人"
+	},
 	"PARTICIPANT_ITEM": {
-		"PROMOTE_TOOLTIP": "提升为主持人",
-		"DOWNGRADE_TOOLTIP": "降级为原始权限",
-		"KICK_TOOLTIP": "踢出参与者",
+		"PROMOTE": "提升为主持人",
+		"DOWNGRADE": "降级为原始权限",
+		"REMOVE": "移出会议",
 		"BADGE_OWNER": "所有者",
 		"BADGE_ADMIN": "管理员",
 		"BADGE_MODERATOR": "主持人"
+	},
+	"PARTICIPANTS_PANEL_ACTIONS": {
+		"TURN_OFF_FOR_EVERYONE": "对所有人关闭",
+		"MUTE_ALL_TOOLTIP": "将所有人的麦克风静音",
+		"MUTE_ALL_NONE": "所有麦克风均已关闭",
+		"TURN_OFF_ALL_CAMERAS_TOOLTIP": "关闭所有人的摄像头",
+		"TURN_OFF_ALL_CAMERAS_NONE": "所有摄像头均已关闭",
+		"STOP_ALL_SCREEN_SHARES_TOOLTIP": "停止所有屏幕共享",
+		"STOP_ALL_SCREEN_SHARES_NONE": "没有人在共享屏幕"
+	},
+	"MODERATION": {
+		"MUTED_BY_MODERATOR": "主持人已关闭您的一个设备"
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "您已离开会议",
@@ -215,6 +263,7 @@
 		"ENDED_TITLE": "会议已结束",
 		"ENDED_MESSAGE": "会议已被主持人结束",
 		"ENDED_BY_SELF_MESSAGE": "您已成功结束会议",
+		"ENDED_BY_DURATION_LIMIT_MESSAGE": "该会议已达到最长时长，已自动结束",
 		"DISCONNECTED_TITLE": "已与会议断开连接",
 		"NETWORK_MESSAGE": "由于网络连接问题，连接已丢失",
 		"SERVER_SHUTDOWN_MESSAGE": "由于服务器关闭，连接已丢失",

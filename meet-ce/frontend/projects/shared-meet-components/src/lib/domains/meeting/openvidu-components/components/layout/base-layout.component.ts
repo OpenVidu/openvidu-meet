@@ -13,6 +13,7 @@ import {
 	OnDestroy,
 	signal,
 	TemplateRef,
+	untracked,
 	viewChild,
 	viewChildren,
 	ViewContainerRef
@@ -171,18 +172,49 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 	// ── Reactive effect ───────────────────────────────────────────────────────────
 
-	private readonly reactiveStateEffect = effect(() => {
-		const localParticipant = this.localParticipant();
-		// Read local streams so this effect re-runs when float/pin/mute state changes.
-		const localStreams = localParticipant?.streams() ?? [];
-		const isLocalFloating = localStreams.some((s) => s.isFloating);
+	private readonly localStreams = computed(() => this.localParticipant()?.streams() ?? []);
 
+	private readonly isLocalFloating = computed(() => this.localStreams().some((stream) => stream.isFloating));
+
+	/**
+	 * Everything about the streams on screen that can move a tile: which tiles exist, and which of
+	 * them floats or is pinned. The layout tracks this rather than the stream arrays themselves,
+	 * whose identity also changes when participant state the layout cannot act on churns — speaker
+	 * priority alone rebuilt them about twice a second while anyone talked.
+	 */
+	private readonly layoutShape = computed(() => {
+		const describe = (stream: ParticipantStream) =>
+			[
+				stream.streamId,
+				// A tile showing video and the same tile showing the avatar are laid out from
+				// different aspect ratios, so this belongs to the shape.
+				stream.videoTrack?.track && !stream.videoTrack.isMuted ? 'video' : 'poster',
+				stream.isFloating ? 'floating' : '',
+				stream.isPinned ? 'pinned' : ''
+			].join(':');
+
+		return [...this.localStreams(), ...this.remoteStreams()].map(describe).join('|');
+	});
+
+	private readonly reactiveStateEffect = effect(() => {
+		this.layoutShape();
+		const isLocalFloating = this.isLocalFloating();
+
+		untracked(() => this.applyFloatingTransition(isLocalFloating));
+	});
+
+	/**
+	 * Moves the local tile in or out of its floating position and re-runs the layout. Called with no
+	 * reactive context: the DOM reads and the layout options below would otherwise subscribe this
+	 * component's effect to signals that say nothing about where the tiles go.
+	 */
+	private applyFloatingTransition(isLocalFloating: boolean): void {
 		if (this.wasLocalFloating && !isLocalFloating) {
 			// Restore from floating: clear CSS resize state, reset drag offset, reposition.
 			this.floatPlacementSettling = false;
 			clearTimeout(this.floatPlacementTimeout);
 			queueMicrotask(() => {
-				const el = this.getActiveLocalDrag()?.element.nativeElement as HTMLElement | undefined;
+				const el = this.getLocalCameraDrag()?.element.nativeElement as HTMLElement | undefined;
 				el?.style.removeProperty('--ov-min-w');
 				el?.style.removeProperty('--ov-min-h');
 				// Drop the float-time inline `transition: none` so the grid renderer's own
@@ -197,14 +229,14 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 			// FLIP glide: capture the tile's grid rect now — effects run before the template applies
 			// the .OV_floating class, so this is the pre-float geometry — then place the tile at the
 			// corner and glide only the CDK transform (compositor-driven; see glideFloatingTile...).
-			const gridRect = this.getActiveLocalDrag()?.element.nativeElement.getBoundingClientRect();
+			const gridRect = this.getLocalCameraDrag()?.element.nativeElement.getBoundingClientRect();
 			requestAnimationFrame(() => this.glideFloatingTileToBottomRight(gridRect));
 			clearTimeout(this.floatPlacementTimeout);
 			this.floatPlacementTimeout = setTimeout(() => {
 				// Final correction with transitions off: the container reflows while the glide runs
 				// (its content height collapses as the tile leaves the grid), so snap the last few
 				// pixels and hand control back to the resize/drag handlers.
-				const el = this.getActiveLocalDrag()?.element.nativeElement as HTMLElement | undefined;
+				const el = this.getFloatingLocalDrag()?.element.nativeElement as HTMLElement | undefined;
 				el?.style.setProperty('transition', 'none');
 				this.moveStreamToBottomRight();
 				this.floatPlacementSettling = false;
@@ -212,9 +244,8 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		}
 
 		this.wasLocalFloating = isLocalFloating;
-		this.remoteStreams(); // subscribe to remote track publish/unpublish, pin, mute changes
 		this.layoutService.update();
-	});
+	}
 
 	// ── Lifecycle ─────────────────────────────────────────────────────────────────
 
@@ -259,7 +290,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		event.preventDefault();
 		event.stopPropagation();
 
-		this.resizingDrag = this.getActiveLocalDrag();
+		this.resizingDrag = this.getFloatingLocalDrag();
 
 		if (!this.resizingDrag) return;
 
@@ -322,9 +353,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 	private listenToLayoutDomChanges(container: HTMLElement): void {
 		this.mutationObserver = new MutationObserver((mutations) => {
-			const hasStructuralChanges = mutations.some(
-				(m) => m.type === 'childList' && (m.addedNodes.length > 0 || m.removedNodes.length > 0)
-			);
+			const hasStructuralChanges = mutations.some((m) => m.addedNodes.length > 0 || m.removedNodes.length > 0);
 
 			if (!hasStructuralChanges) return;
 
@@ -332,7 +361,9 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 			this.mutationTimeout = setTimeout(() => this.layoutService.update(), 0);
 		});
 
-		this.mutationObserver.observe(container, { childList: true, subtree: true });
+		// Direct children only: those are the tiles the layout positions, so nodes coming and going
+		// inside a tile (the audio wave of whoever is talking, a badge) are not a layout change.
+		this.mutationObserver.observe(container, { childList: true });
 	}
 
 	/**
@@ -356,7 +387,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 					// While the float glide is settling, rects are mid-animation — skip the
 					// repositioning entirely (the pending final snap already lands the tile).
-					if (this.localParticipant()?.isFloating && !this.floatPlacementSettling) {
+					if (!this.floatPlacementSettling) {
 						this.repositionFloatingStream(parentWidth, parentHeight);
 					}
 				}
@@ -371,6 +402,8 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 	private listenToCdkDrag(): void {
 		const onRelease = (event: CdkDragRelease<any>): void => {
+			if (!this.isLocalFloating()) return;
+
 			const el = event.source.element.nativeElement as HTMLElement;
 			// Sync signal with the actual post-drag transform so CD never resets it.
 			this.setDragPosition(this.getActualDragPosition(el), event.source);
@@ -393,22 +426,24 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	}
 
 	/**
-	 * Returns the CdkDrag for the floating local camera stream, falling back to
-	 * the non-screen local participant when no element is currently floating.
+	 * The local camera tile whatever its state. Identified by role rather than by the `OV_floating`
+	 * class because {@link applyFloatingTransition} runs before the template applies it.
 	 */
-	private getActiveLocalDrag(): CdkDrag | undefined {
-		const drags = this.cdkDragQueries();
-		const floating = drags.find((d) => {
-			const el = d.element.nativeElement as HTMLElement;
-			return el.classList.contains('local_participant') && el.classList.contains('OV_floating');
+	private getLocalCameraDrag(): CdkDrag | undefined {
+		return this.cdkDragQueries().find((drag) => {
+			const el = drag.element.nativeElement as HTMLElement;
+			return el.classList.contains('local_participant') && !el.classList.contains('OV_screen');
 		});
-		return (
-			floating ??
-			drags.find((d) => {
-				const el = d.element.nativeElement as HTMLElement;
-				return el.classList.contains('local_participant') && !el.classList.contains('OV_screen');
-			})
-		);
+	}
+
+	/**
+	 * The local camera tile while it floats, and nothing once it is docked. Every caller places the
+	 * tile from a deferred callback (an animation frame, a timer, a debounce, a pointer release);
+	 * a window that is not being rendered holds those until it is shown again, which can be after
+	 * the tile has docked, and a placement then pushes a tile the layout owns out of the viewport.
+	 */
+	private getFloatingLocalDrag(): CdkDrag | undefined {
+		return this.isLocalFloating() ? this.getLocalCameraDrag() : undefined;
 	}
 
 	/**
@@ -416,7 +451,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	 * so that Angular's CD binding `[cdkDragFreeDragPosition]="currentDragPosition()"` never
 	 * resets the position to a stale value.
 	 */
-	private setDragPosition(pos: { x: number; y: number }, drag = this.getActiveLocalDrag()): void {
+	private setDragPosition(pos: { x: number; y: number }, drag: CdkDrag | undefined): void {
 		drag?.setFreeDragPosition(pos);
 		this.currentDragPosition.set(pos);
 	}
@@ -431,7 +466,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private repositionFloatingStream(
 		parentWidth: number,
 		parentHeight: number,
-		drag = this.getActiveLocalDrag()
+		drag = this.getFloatingLocalDrag()
 	): void {
 		if (!drag) return;
 
@@ -452,7 +487,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	 * drags, so a programmatically placed tile parked near the old bottom/right edge would
 	 * otherwise stay outside the new bounds — invisible and unreachable.
 	 */
-	private containStreamWithinDragBoundary(drag = this.getActiveLocalDrag()): void {
+	private containStreamWithinDragBoundary(drag: CdkDrag | undefined): void {
 		const el = drag?.element.nativeElement as HTMLElement | undefined;
 
 		if (!drag || !el) return;
@@ -487,7 +522,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	 * glides from the old grid slot (center-anchored) to the corner with a deceleration curve.
 	 */
 	private glideFloatingTileToBottomRight(gridRect: DOMRect | undefined): void {
-		const drag = this.getActiveLocalDrag();
+		const drag = this.getFloatingLocalDrag();
 		const el = drag?.element.nativeElement as HTMLElement | undefined;
 
 		if (!drag || !el) return;
@@ -515,7 +550,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		drag.setFreeDragPosition(target);
 	}
 
-	private moveStreamToBottomRight(drag = this.getActiveLocalDrag()): void {
+	private moveStreamToBottomRight(drag = this.getFloatingLocalDrag()): void {
 		if (!drag) return;
 
 		const container = this.layoutContainer()?.element?.nativeElement as HTMLElement | undefined;

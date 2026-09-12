@@ -15,7 +15,9 @@
       "DELETE_ROOM": "Raum löschen",
       "SHARE_LINK": "Link teilen",
       "MORE_ACTIONS": "Weitere Aktionen",
-      "VIEW_USER_PROFILE": "Benutzerprofil anzeigen"
+      "VIEW_USER_PROFILE": "Benutzerprofil anzeigen",
+      "COPY_ROOM_ID": "Raum-ID kopieren",
+      "ROOM_ID_COPIED": "Raum-ID in die Zwischenablage kopiert"
     },
     "LIST": {
       "LOADING_TITLE": "Räume werden geladen",
@@ -154,7 +156,7 @@
       "UPDATE_ROOM": "Raum aktualisieren",
       "CREATE_ROOM": "Raum erstellen",
       "STEP_ROOM_DETAILS": "Raumdetails",
-      "STEP_ROOM_FEATURES": "Raumfunktionen",
+      "STEP_ROOM_FEATURES": "Meeting-Funktionen",
       "STEP_ROOM_ACCESS": "Raumzugriff",
       "STEP_RECORDING_SETTINGS": "Aufnahmeeinstellungen",
       "STEP_RECORDING_TRIGGER": "Aufnahme-Auslöser",
@@ -225,11 +227,11 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Mitglied bearbeiten",
         "REMOVE_MEMBER": "Mitglied entfernen",
-        "FEATURE_DISABLED_PERMISSION": "Aktivieren Sie die zugehörige Funktion unter Raumfunktionen, um diese Berechtigung zu konfigurieren."
+        "FEATURE_DISABLED_PERMISSION": "Aktivieren Sie die zugehörige Funktion unter Meeting-Funktionen, um diese Berechtigung zu konfigurieren."
       },
       "FEATURES": {
-        "TITLE": "Raumfunktionen",
-        "DESCRIPTION": "Konfigurieren Sie zusätzliche Funktionen und Funktionalitäten für Ihren Raum",
+        "TITLE": "Meeting-Funktionen",
+        "DESCRIPTION": "Konfigurieren Sie zusätzliche Funktionen und Funktionalitäten für Ihre Meetings",
         "SECURITY": "Sicherheit",
         "E2EE": "Ende-zu-Ende-Verschlüsselung",
         "E2EE_DESC": "Fügen Sie Ihren Meetings eine zusätzliche Sicherheitsebene hinzu. Niemand außerhalb des Meetings, nicht einmal jemand mit Serverzugriff, kann das Gespräch sehen oder hören.",
@@ -246,7 +248,31 @@
         "CHAT_DESC": "Teilnehmern erlauben, während des Meetings Nachrichten zu senden",
         "EXPERIENCE": "Erfahrung",
         "VIRTUAL_BACKGROUNDS": "Virtuelle Hintergründe",
-        "VIRTUAL_BACKGROUNDS_DESC": "Aktivieren Sie virtuelle Hintergründe und Unschärfeeffekte für Teilnehmer"
+        "VIRTUAL_BACKGROUNDS_DESC": "Aktivieren Sie virtuelle Hintergründe und Unschärfeeffekte für Teilnehmer",
+        "DEVICES": "Geräte",
+        "INITIAL_AUDIO": "Mikrofon beim Beitritt an",
+        "INITIAL_AUDIO_DESC": "Teilnehmende treten mit aktiviertem Mikrofon bei",
+        "INITIAL_AUDIO_NOTE": "(sie können sich jederzeit stummschalten)",
+        "INITIAL_VIDEO": "Kamera beim Beitritt an",
+        "INITIAL_VIDEO_DESC": "Teilnehmende treten mit aktivierter Kamera bei",
+        "INITIAL_VIDEO_NOTE": "(sie können sie jederzeit ausschalten)",
+        "LIMITS": "Limits",
+        "MAX_DURATION": "Maximale Meetingdauer",
+        "MAX_DURATION_DESC": "Beendet das Meeting automatisch nach dieser Zeit. Leer lassen für unbegrenzte Dauer",
+        "MAX_DURATION_LABEL": "Minuten",
+        "MAX_DURATION_PLACEHOLDER": "Unbegrenzt",
+        "MAX_DURATION_INVALID": "Geben Sie eine ganze Minutenzahl ein",
+        "MAX_DURATION_TOO_LOW": "Geben Sie mindestens 1 Minute ein",
+        "MAX_DURATION_TOO_HIGH_PREFIX": "Geben Sie höchstens ",
+        "MAX_DURATION_TOO_HIGH_SUFFIX": " Minuten ein",
+        "MAX_PARTICIPANTS": "Teilnehmerlimit",
+        "MAX_PARTICIPANTS_DESC": "Maximale Anzahl an Teilnehmern, die dem Meeting beitreten können. Leer lassen für kein Limit",
+        "MAX_PARTICIPANTS_LABEL": "Teilnehmer",
+        "MAX_PARTICIPANTS_PLACEHOLDER": "Unbegrenzt",
+        "MAX_PARTICIPANTS_INVALID": "Geben Sie eine ganze Teilnehmerzahl ein",
+        "MAX_PARTICIPANTS_TOO_LOW": "Geben Sie mindestens 1 Teilnehmer ein",
+        "MAX_PARTICIPANTS_TOO_HIGH_PREFIX": "Geben Sie höchstens ",
+        "MAX_PARTICIPANTS_TOO_HIGH_SUFFIX": " Teilnehmer ein"
       },
       "RECORDING_CONFIG": {
         "TITLE": "Aufnahmekonfiguration",
@@ -277,10 +303,17 @@
         "DESCRIPTION": "Wählen Sie, wann die Aufnahme automatisch starten soll",
         "MANUAL_TITLE": "Manuelle Aufnahme",
         "MANUAL_DESC": "Aufnahme bei Bedarf manuell starten",
-        "AUTO1_TITLE": "Auto 1 Teilnehmer",
-        "AUTO1_DESC": "Aufnahme automatisch starten, wenn 1 Teilnehmer beitritt",
-        "AUTO2_TITLE": "Auto 2 Teilnehmer",
-        "AUTO2_DESC": "Aufnahme automatisch starten, wenn 2 Teilnehmer beitreten"
+        "AUTO_TITLE": "Automatische Aufnahme",
+        "AUTO_DESC": "Die Aufnahme startet automatisch, sobald das Meeting beginnt",
+        "AUTOSTART_MODE_LABEL": "Wann soll die Aufnahme starten?",
+        "AUTOSTART_MODE_FIRST_TITLE": "Erster Teilnehmer tritt bei",
+        "AUTOSTART_MODE_FIRST_DESC": "Startet, sobald das Meeting beginnt",
+        "AUTOSTART_MODE_SECOND_TITLE": "Zweiter Teilnehmer tritt bei",
+        "AUTOSTART_MODE_SECOND_DESC": "Wartet, bis eine weitere Person beitritt",
+        "AUTOSTART_MODE_MODERATOR_TITLE": "Ein Moderator tritt bei",
+        "AUTOSTART_MODE_MODERATOR_DESC": "Startet, sobald ein Moderator beitritt oder befördert wird",
+        "AUTOSTART_UNREACHABLE_TITLE": "Aufnahme-Auslöser nicht erreichbar",
+        "AUTOSTART_UNREACHABLE_MESSAGE": "Dieser Auslöser benötigt mindestens ${required} Teilnehmer, um ausgelöst zu werden, aber das Teilnehmerlimit des Raums ist auf ${limit} festgelegt."
       }
     },
     "ERRORS": {
@@ -350,6 +383,22 @@
         "ACTIVE": "Die Bearbeitung des Raums ist während eines aktiven Meetings deaktiviert",
         "DEFAULT": "Raumeinstellungen bearbeiten"
       }
+    },
+    "DIALOGS": {
+      "DELETE_ROOM_TITLE": "Raum löschen",
+      "DELETE_ROOM_MESSAGE": "Möchten Sie den Raum <b>{roomId}</b> wirklich löschen?",
+      "DELETE_ROOMS_TITLE": "Räume löschen",
+      "DELETE_ROOMS_MESSAGE": "Möchten Sie <b>{count}</b> Räume wirklich löschen?",
+      "REMOVE_MEMBER_TITLE": "Mitglied entfernen",
+      "REMOVE_MEMBER_MESSAGE": "Möchten Sie <b>{memberName}</b> wirklich aus diesem Raum entfernen?",
+      "REMOVE_MEMBERS_TITLE": "Mitglieder entfernen",
+      "REMOVE_MEMBERS_MESSAGE_ONE": "Möchten Sie <b>{count} Mitglied</b> wirklich aus diesem Raum entfernen?",
+      "REMOVE_MEMBERS_MESSAGE_MANY": "Möchten Sie <b>{count} Mitglieder</b> wirklich aus diesem Raum entfernen?",
+      "MEETING_WARNING_TITLE": "Hinweis zum laufenden Meeting",
+      "REMOVE_MEMBER_WARNING": "Befindet sich dieser Benutzer im Meeting, wird er sofort entfernt.",
+      "REMOVE_MEMBERS_WARNING": "Mitglieder, die sich im Meeting befinden, werden sofort entfernt.",
+      "DELETE": "Löschen",
+      "REMOVE": "Entfernen"
     }
   }
 }

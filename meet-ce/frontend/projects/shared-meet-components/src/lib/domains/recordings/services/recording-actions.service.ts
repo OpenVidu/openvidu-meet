@@ -3,7 +3,8 @@ import { MeetRecordingInfo } from '@openvidu-meet/typings';
 import type { ILogger } from '../../../shared/models/logger.model';
 import { EntityListState } from '../../../shared/models/entity-list.model';
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
-import { DialogPresetsService } from '../../../shared/services/dialog-presets.service';
+import { bulkDeleteRecordingsDialogPreset, deleteRecordingDialogPreset } from '../utils/dialog-presets';
+import { DialogService } from '../../../shared/services/dialog.service';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { parseBulkDeleteError } from '../../../shared/utils/bulk-delete.utils';
 import { RecordingTableAction, RecordingTableFilter } from '../models/recording-list.model';
@@ -36,7 +37,7 @@ export interface RecordingListContext {
 export class RecordingActionsService {
 	private readonly recordingService = inject(RecordingService);
 	private readonly notificationService = inject(NotificationService);
-	private readonly dialogPresetsService = inject(DialogPresetsService);
+	private readonly dialogService = inject(DialogService);
 	private readonly translateService = inject(TranslateService);
 
 	async handle(action: RecordingTableAction, context: RecordingListContext): Promise<void> {
@@ -83,8 +84,8 @@ export class RecordingActionsService {
 			}
 		};
 
-		this.notificationService.showDialog({
-			...this.dialogPresetsService.getDeleteRecordingDialogPreset(recording.recordingId),
+		this.dialogService.showDialog({
+			...deleteRecordingDialogPreset(this.translateService, recording.recordingId),
 			confirmCallback: deleteCallback
 		});
 	}
@@ -143,8 +144,8 @@ export class RecordingActionsService {
 			}
 		};
 
-		this.notificationService.showDialog({
-			...this.dialogPresetsService.getBulkDeleteRecordingsDialogPreset(recordings.length),
+		this.dialogService.showDialog({
+			...bulkDeleteRecordingsDialogPreset(this.translateService, recordings.length),
 			confirmCallback: bulkDeleteCallback
 		});
 	}

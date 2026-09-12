@@ -1,4 +1,4 @@
-import { EmbeddedEventName, EmbeddedEventPayloadFor } from '@openvidu-meet/typings';
+import { EmbeddedEventName, EmbeddedEventPayloadFor, MeetParticipantMuteOptions } from '@openvidu-meet/typings';
 
 /**
  * Minimal typing for the `<openvidu-meet>` custom element registered by the
@@ -12,22 +12,18 @@ export interface OpenViduMeetElement extends HTMLElement {
 	meetingEnd(): void;
 	meetingLeave(): void;
 	participantKick(participantIdentity: string): void;
+	participantMute(participantIdentity: string, media: MeetParticipantMuteOptions): void;
+	participantMuteAll(media: MeetParticipantMuteOptions): void;
+	mediaToggleAudio(active?: boolean): void;
+	mediaToggleVideo(active?: boolean): void;
+	mediaToggleScreenShare(active?: boolean): void;
 	/** @deprecated Renamed to `meetingEnd()`. Removed in 3.12.0. Declared so the e2e can drive it. */
 	endMeeting(): void;
 	/** @deprecated Renamed to `meetingLeave()`. Removed in 3.12.0. Declared so the e2e can drive it. */
 	leaveRoom(): void;
 	/** @deprecated Renamed to `participantKick()`. Removed in 3.12.0. Declared so the e2e can drive it. */
 	kickParticipant(participantIdentity: string): void;
-	on(
-		eventName: EmbeddedEventName,
-		callback: (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName>) => void
-	): this;
-	once(
-		eventName: EmbeddedEventName,
-		callback: (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName>) => void
-	): this;
-	off(
-		eventName: EmbeddedEventName,
-		callback?: (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName>) => void
-	): this;
+	on<E extends EmbeddedEventName>(eventName: E, callback: (eventPayload: EmbeddedEventPayloadFor<E>) => void): this;
+	once<E extends EmbeddedEventName>(eventName: E, callback: (eventPayload: EmbeddedEventPayloadFor<E>) => void): this;
+	off<E extends EmbeddedEventName>(eventName: E, callback?: (eventPayload: EmbeddedEventPayloadFor<E>) => void): this;
 }

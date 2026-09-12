@@ -1,0 +1,7 @@
+name: participantIdentity
+in: path
+required: true
+description: The unique identity of the participant in the meeting.
+schema:
+    type: string
+example: 'participant-123'

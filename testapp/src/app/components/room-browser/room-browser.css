@@ -1,0 +1,115 @@
+.ta-dialog {
+	width: min(900px, 92vw);
+	max-height: 80vh;
+	padding: 0;
+	background: var(--ta-panel);
+	border: 1px solid var(--ta-line-strong);
+	border-radius: var(--ta-radius-lg);
+	color: var(--ta-text);
+	font-family: var(--ta-font);
+	font-size: 13px;
+	overflow: hidden;
+}
+
+.ta-dialog::backdrop {
+	background: rgba(0, 0, 0, 0.55);
+}
+
+.ta-dialog__bar {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 12px;
+	border-bottom: 1px solid var(--ta-line);
+}
+
+.ta-dialog__bar h2 {
+	margin: 0;
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--ta-text);
+}
+
+.ta-dialog__search {
+	flex-grow: 1;
+	height: 26px;
+	padding: 0 9px;
+	background: var(--ta-field);
+	border: 1px solid var(--ta-line);
+	border-radius: var(--ta-radius);
+	color: var(--ta-text);
+	font-family: var(--ta-font);
+	font-size: 11px;
+	outline: none;
+}
+
+.ta-dialog__search:focus-visible {
+	border-color: var(--ta-accent);
+	box-shadow: 0 0 0 2px var(--ta-accent-soft);
+}
+
+.ta-dialog__body {
+	max-height: calc(80vh - 51px);
+	padding: 8px 12px 12px;
+}
+
+.ta-dialog__notice {
+	margin: 10px 2px;
+	line-height: 1.6;
+	color: var(--ta-text-2);
+}
+
+/* ── Room row ───────────────────────────────────────────────────────────────── */
+
+.ta-room {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 8px 0;
+	border-bottom: 1px solid var(--ta-row-line);
+}
+
+.ta-room__id {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	flex-shrink: 0;
+	width: 200px;
+	min-width: 0;
+}
+
+.ta-room__name {
+	font-size: 12px;
+	color: var(--ta-text);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ta-room__status {
+	flex-shrink: 0;
+	padding: 2px 10px;
+	border: 1px solid var(--ta-line);
+	border-radius: 10px;
+	font-size: 10px;
+	text-align: center;
+	color: var(--ta-text-3);
+}
+
+.ta-room__status--active_meeting {
+	background: var(--ta-success-soft);
+	border-color: var(--ta-success-line);
+	color: var(--ta-success);
+}
+
+.ta-room__url {
+	flex-grow: 1;
+	min-width: 0;
+	font-size: 11px;
+	color: var(--ta-text-2);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}

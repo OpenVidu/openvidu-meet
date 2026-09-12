@@ -16,6 +16,10 @@
       "TITLE": "Stanza chiusa",
       "MESSAGE": "Le riunioni in questa stanza non sono disponibili mentre è chiusa"
     },
+    "MEETING_FULL": {
+      "TITLE": "Riunione al completo",
+      "MESSAGE": "Questa riunione ha raggiunto il numero massimo di partecipanti"
+    },
     "ANONYMOUS_ACCESS_DISABLED": {
       "TITLE": "Accesso anonimo disabilitato",
       "MESSAGE": "L'accesso anonimo per il tuo ruolo è stato disabilitato in questa stanza (e nelle sue registrazioni)"

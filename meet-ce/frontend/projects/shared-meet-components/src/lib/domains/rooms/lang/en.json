@@ -15,7 +15,9 @@
       "DELETE_ROOM": "Delete room",
       "SHARE_LINK": "Share link",
       "MORE_ACTIONS": "More actions",
-      "VIEW_USER_PROFILE": "View user profile"
+      "VIEW_USER_PROFILE": "View user profile",
+      "COPY_ROOM_ID": "Copy room ID",
+      "ROOM_ID_COPIED": "Room ID copied to clipboard"
     },
     "LIST": {
       "LOADING_TITLE": "Loading Rooms",
@@ -154,7 +156,7 @@
       "UPDATE_ROOM": "Update Room",
       "CREATE_ROOM": "Create Room",
       "STEP_ROOM_DETAILS": "Room Details",
-      "STEP_ROOM_FEATURES": "Room Features",
+      "STEP_ROOM_FEATURES": "Meeting Features",
       "STEP_ROOM_ACCESS": "Room Access",
       "STEP_RECORDING_SETTINGS": "Recording Settings",
       "STEP_RECORDING_TRIGGER": "Recording Trigger",
@@ -225,11 +227,11 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Edit member",
         "REMOVE_MEMBER": "Remove member",
-        "FEATURE_DISABLED_PERMISSION": "Enable the related feature in Room Features to configure this permission."
+        "FEATURE_DISABLED_PERMISSION": "Enable the related feature in Meeting Features to configure this permission."
       },
       "FEATURES": {
-        "TITLE": "Room Features",
-        "DESCRIPTION": "Configure additional features and functionality for your room",
+        "TITLE": "Meeting Features",
+        "DESCRIPTION": "Configure additional features and functionality for your meetings",
         "SECURITY": "Security",
         "E2EE": "End-to-End Encryption",
         "E2EE_DESC": "Add an extra layer of security to your meetings. No one outside the meeting, not even anyone with server access, can see or hear the conversation.",
@@ -246,7 +248,31 @@
         "CHAT_DESC": "Allow participants to send messages during the meeting",
         "EXPERIENCE": "Experience",
         "VIRTUAL_BACKGROUNDS": "Virtual Backgrounds",
-        "VIRTUAL_BACKGROUNDS_DESC": "Enable virtual backgrounds and blur effects for participants"
+        "VIRTUAL_BACKGROUNDS_DESC": "Enable virtual backgrounds and blur effects for participants",
+        "DEVICES": "Devices",
+        "INITIAL_AUDIO": "Microphone on when joining",
+        "INITIAL_AUDIO_DESC": "Participants join with the microphone active",
+        "INITIAL_AUDIO_NOTE": "(they can mute themselves at any time)",
+        "INITIAL_VIDEO": "Camera on when joining",
+        "INITIAL_VIDEO_DESC": "Participants join with the camera active",
+        "INITIAL_VIDEO_NOTE": "(they can turn it off at any time)",
+        "LIMITS": "Limits",
+        "MAX_DURATION": "Meeting duration limit",
+        "MAX_DURATION_DESC": "End the meeting automatically after this time. Leave empty for unlimited duration",
+        "MAX_DURATION_LABEL": "Minutes",
+        "MAX_DURATION_PLACEHOLDER": "Unlimited",
+        "MAX_DURATION_INVALID": "Enter a whole number of minutes",
+        "MAX_DURATION_TOO_LOW": "Enter at least 1 minute",
+        "MAX_DURATION_TOO_HIGH_PREFIX": "Enter at most ",
+        "MAX_DURATION_TOO_HIGH_SUFFIX": " minutes",
+        "MAX_PARTICIPANTS": "Participant limit",
+        "MAX_PARTICIPANTS_DESC": "Maximum number of participants that can join the meeting. Leave empty for no limit",
+        "MAX_PARTICIPANTS_LABEL": "Participants",
+        "MAX_PARTICIPANTS_PLACEHOLDER": "Unlimited",
+        "MAX_PARTICIPANTS_INVALID": "Enter a whole number of participants",
+        "MAX_PARTICIPANTS_TOO_LOW": "Enter at least 1 participant",
+        "MAX_PARTICIPANTS_TOO_HIGH_PREFIX": "Enter at most ",
+        "MAX_PARTICIPANTS_TOO_HIGH_SUFFIX": " participants"
       },
       "RECORDING_CONFIG": {
         "TITLE": "Recording Configuration",
@@ -277,10 +303,17 @@
         "DESCRIPTION": "Choose when recording should start automatically",
         "MANUAL_TITLE": "Manual Recording",
         "MANUAL_DESC": "Start recording manually when needed",
-        "AUTO1_TITLE": "Auto 1 Participant",
-        "AUTO1_DESC": "Auto-start recording when 1 participant joins",
-        "AUTO2_TITLE": "Auto 2 Participants",
-        "AUTO2_DESC": "Auto-start recording when 2 participants join"
+        "AUTO_TITLE": "Automatic Recording",
+        "AUTO_DESC": "Recording starts automatically once the meeting begins",
+        "AUTOSTART_MODE_LABEL": "When should it start recording?",
+        "AUTOSTART_MODE_FIRST_TITLE": "First participant joins",
+        "AUTOSTART_MODE_FIRST_DESC": "Starts as soon as the meeting begins",
+        "AUTOSTART_MODE_SECOND_TITLE": "Second participant joins",
+        "AUTOSTART_MODE_SECOND_DESC": "Waits for someone else to join",
+        "AUTOSTART_MODE_MODERATOR_TITLE": "A moderator joins",
+        "AUTOSTART_MODE_MODERATOR_DESC": "Starts as soon as a moderator joins or is promoted",
+        "AUTOSTART_UNREACHABLE_TITLE": "Recording trigger unreachable",
+        "AUTOSTART_UNREACHABLE_MESSAGE": "This trigger needs at least ${required} participants to fire, but the room's participant limit is set to ${limit}."
       }
     },
     "ERRORS": {
@@ -350,6 +383,22 @@
         "ACTIVE": "Editing the room is disabled during an active meeting",
         "DEFAULT": "Edit room settings"
       }
+    },
+    "DIALOGS": {
+      "DELETE_ROOM_TITLE": "Delete Room",
+      "DELETE_ROOM_MESSAGE": "Are you sure you want to delete the room <b>{roomId}</b>?",
+      "DELETE_ROOMS_TITLE": "Delete Rooms",
+      "DELETE_ROOMS_MESSAGE": "Are you sure you want to delete <b>{count}</b> rooms?",
+      "REMOVE_MEMBER_TITLE": "Remove Member",
+      "REMOVE_MEMBER_MESSAGE": "Are you sure you want to remove <b>{memberName}</b> from this room?",
+      "REMOVE_MEMBERS_TITLE": "Remove Members",
+      "REMOVE_MEMBERS_MESSAGE_ONE": "Are you sure you want to remove <b>{count} member</b> from this room?",
+      "REMOVE_MEMBERS_MESSAGE_MANY": "Are you sure you want to remove <b>{count} members</b> from this room?",
+      "MEETING_WARNING_TITLE": "Active meeting warning",
+      "REMOVE_MEMBER_WARNING": "If this user is currently in the meeting, they will be kicked immediately.",
+      "REMOVE_MEMBERS_WARNING": "Members currently in the meeting will be kicked immediately.",
+      "DELETE": "Delete",
+      "REMOVE": "Remove"
     }
   }
 }

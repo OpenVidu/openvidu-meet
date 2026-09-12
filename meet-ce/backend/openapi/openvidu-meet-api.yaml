@@ -33,6 +33,18 @@ paths:
         $ref: './room-members/room-members.yaml#/~1rooms~1{roomId}~1members'
     /rooms/{roomId}/members/{memberId}:
         $ref: './room-members/room-members.yaml#/~1rooms~1{roomId}~1members~1{memberId}'
+    /meetings/{roomId}:
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}'
+    /meetings/{roomId}/participants:
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants'
+    /meetings/{roomId}/participants/media:
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants~1media'
+    /meetings/{roomId}/participants/{participantIdentity}:
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}'
+    /meetings/{roomId}/participants/{participantIdentity}/media:
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}~1media'
+    /meetings/{roomId}/participants/{participantIdentity}/role:
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}~1role'
     /recordings:
         $ref: './recordings/recordings.yaml#/~1recordings'
     /recordings/download:
@@ -47,6 +59,12 @@ paths:
         $ref: './recordings/recordings.yaml#/~1recordings~1{recordingId}~1url'
     /recordings/{recordingId}/stop:
         $ref: './recordings/recordings.yaml#/~1recordings~1{recordingId}~1stop'
+    /webhooks:
+        $ref: './webhooks/webhooks-api.yaml#/~1webhooks'
+    /webhooks/{webhookId}:
+        $ref: './webhooks/webhooks-api.yaml#/~1webhooks~1{webhookId}'
+    /webhooks/{webhookId}/test:
+        $ref: './webhooks/webhooks-api.yaml#/~1webhooks~1{webhookId}~1test'
 components:
     securitySchemes:
         $ref: './shared/security.yaml'
@@ -65,8 +83,14 @@ components:
             $ref: ./room-members/schemas/meet-room-member.yaml
         MeetPermissions:
             $ref: ./rooms/schemas/meet-permissions.yaml
+        MeetMeetingInfo:
+            $ref: ./meetings/schemas/meet-meeting-info.yaml
+        MeetParticipantInfo:
+            $ref: ./meetings/schemas/meet-participant-info.yaml
         MeetRecording:
             $ref: ./recordings/schemas/meet-recording.yaml
+        MeetWebhook:
+            $ref: ./webhooks/schemas/meet-webhook-endpoint.yaml
         MeetWebhookEvent:
             $ref: ./webhooks/schemas/meet-webhook.yaml#/MeetWebhookEvent
         Error:

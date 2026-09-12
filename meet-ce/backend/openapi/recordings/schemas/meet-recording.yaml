@@ -82,7 +82,10 @@ properties:
     startDate:
         type: [number, 'null']
         example: 1620000000000
-        description: The date when the recording started (milliseconds since the Unix epoch).
+        description: >
+            The date when the recording started to record media (milliseconds since the Unix epoch).
+            It is absent while the recording has not started yet (`starting` status) and on
+            recordings that ended without recording anything (`failed` and `aborted` statuses).
     endDate:
         type: [number, 'null']
         example: 1620000003600

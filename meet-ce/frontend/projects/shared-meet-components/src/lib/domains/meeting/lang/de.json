@@ -3,7 +3,22 @@
 		"JOINING": "Meeting wird betreten...",
 		"LANDSCAPE_WARNING": "Bitte drehen Sie Ihr Gerät für eine bessere Erfahrung in den Hochformatmodus",
 		"DISCONNECTED": "Sie haben das Meeting verlassen",
-		"DISCONNECTED_SUBTITLE": "Das Meeting wurde beendet"
+		"DISCONNECTED_SUBTITLE": "Das Meeting wurde beendet",
+		"ENDING_SOON_TITLE": "Das Meeting endet bald",
+		"ENDING_SOON_ONE_MINUTE": "Das Meeting endet in etwa 1 Minute",
+		"ENDING_SOON_MANY_MINUTES": "Das Meeting endet in etwa {minutes} Minuten",
+		"ENDING_SOON_DISMISS": "Schließen",
+		"ENDING_SOON_BADGE_LABEL": "Endet in",
+		"ENDING_SOON_BADGE_ENDING": "Wird beendet",
+		"E2EE_BADGE_LABEL": "Verschlüsselt",
+		"E2EE_BADGE_TOOLTIP": "Dieses Meeting ist Ende-zu-Ende-verschlüsselt",
+		"RECORDING_BADGE_STARTING": "Wird gestartet",
+		"RECORDING_STARTED_TITLE": "Dieses Meeting wird aufgezeichnet",
+		"RECORDING_STARTED_MESSAGE": "Ab jetzt werden Ihr Audio, Ihr Video und alles, was Sie teilen, aufgezeichnet.",
+		"RECORDING_WAITING_MEDIA_TITLE": "Die Aufzeichnung wartet auf den Start",
+		"RECORDING_WAITING_MEDIA_MESSAGE": "Sie beginnt, sobald ein Teilnehmer sein Mikrofon oder seine Kamera einschaltet.",
+		"RECORDING_STOPPED_TITLE": "Aufzeichnung beendet",
+		"RECORDING_STOPPED_MESSAGE": "Es wird nichts mehr aufgezeichnet."
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Meeting beitreten",
@@ -59,7 +74,7 @@
 			"PLACEHOLDER": "Eine Nachricht senden...",
 			"SEND": "Senden",
 			"WRITE_DISABLED": "Sie haben keine Berechtigung, Nachrichten zu senden",
-			"MESSAGE_SENT_NOTIFICATION": "Nachricht gesendet",
+			"MESSAGE_SENT_NOTIFICATION": "{name} Nachricht gesendet",
 			"OPEN_CHAT": "ÖFFNEN",
 			"ENCRYPTION_KEY_MISMATCH": "Es gibt Teilnehmer, die mit einem anderen Verschlüsselungsschlüssel verbunden sind. Sie werden deren Nachrichten nicht empfangen."
 		},
@@ -69,18 +84,25 @@
 		"PARTICIPANTS": {
 			"TITLE": "Teilnehmer",
 			"YOU": "Sie",
-			"MUTE": "Stummschalten",
-			"UNMUTE": "Stummschaltung aufheben",
+			"MORE_ACTIONS": "Weitere Aktionen",
+			"MIC_ON": "Mikrofon an",
+			"MIC_OFF": "Mikrofon aus",
+			"CAM_ON": "Kamera an",
+			"CAM_OFF": "Kamera aus",
+			"SHARING_SCREEN": "Bildschirm wird geteilt",
+			"MUTE_MICROPHONE": "Mikrofon stummschalten",
+			"TURN_OFF_CAMERA": "Kamera ausschalten",
+			"STOP_SCREEN_SHARE": "Bildschirmfreigabe beenden",
+			"MUTE_FOR_ME": "Nur für mich stummschalten",
+			"UNMUTE_FOR_ME": "Für mich wieder hörbar machen",
+			"MUTED_FOR_YOU": "Nur für dich stummgeschaltet",
 			"CONNECTION_QUALITY": {
 				"LABEL": "Verbindungsqualität",
 				"EXCELLENT": "Ausgezeichnet",
 				"GOOD": "Gut",
 				"POOR": "Schlecht",
 				"LOST": "Verloren"
-			},
-			"SHARING_SCREEN": "Bildschirm wird geteilt",
-			"MIC_OFF": "Mikrofon aus",
-			"CAM_OFF": "Kamera aus"
+			}
 		},
 		"SETTINGS": {
 			"TITLE": "Einstellungen",
@@ -105,20 +127,29 @@
 		},
 		"RECORDING": {
 			"TITLE": "Aufnahme",
-			"SUBTITLE": "Zeichnen Sie Ihr Meeting für die Nachwelt auf",
-			"CONTENT_TITLE": "Ihr Videogespräch aufzeichnen",
-			"CONTENT_SUBTITLE": "Wenn die Aufzeichnung beendet ist, können Sie sie ganz einfach herunterladen",
-			"STARTING": "Aufzeichnung starten",
-			"STOPPING": "Aufnahme stoppen",
-			"ACCEPT": "Akzeptieren",
-			"NO_TRACKS_PUBLISHED": "Teile Audio oder Video, um mit der Aufnahme zu beginnen.",
-			"ERROR_STARTING": "Fehler beim Starten der Aufnahme"
+			"STARTING": "Aufzeichnung wird gestartet…",
+			"STOPPING": "Aufzeichnung wird beendet…",
+			"ERROR_STARTING": "Die Aufzeichnung wurde nicht gestartet",
+			"TRIGGER_MANUAL_MODE": "Manuelle Aufzeichnung",
+			"TRIGGER_AUTO_MODE": "Automatische Aufzeichnung",
+			"STATUS_RECORDING": "Aufzeichnung läuft",
+			"STATUS_STARTING": "Wird gestartet…",
+			"STATUS_STOPPING": "Wird beendet…",
+			"STATUS_FAILED": "Start fehlgeschlagen",
+			"IN_PROGRESS_TITLE": "Dieses Meeting wird aufgezeichnet",
+			"IN_PROGRESS_MESSAGE": "Audio, Video und alles, was in diesem Meeting geteilt wird, wird aufgezeichnet.",
+			"TRY_AGAIN": "Erneut versuchen",
+			"DISMISS": "Schließen",
+			"MODERATORS_ONLY": "Nur Moderatoren können die Aufzeichnung starten oder beenden.",
+			"AUTO_START_ONLY": "Dieser Raum startet die Aufzeichnung selbst, sie kann daher nicht manuell gestartet werden."
 		}
 	},
 	"ERRORS": {
 		"SESSION": "Es ist ein Fehler beim Verbinden mit dem Meeting aufgetreten",
+		"TOKEN_TITLE": "Token-Fehler",
 		"MEETING_NOT_READY": "Das Meeting ist noch nicht bereit. Laden Sie die Seite neu und versuchen Sie es erneut.",
 		"MEETING_CONNECTION_FAILED": "Verbindung zum Meeting nicht möglich. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+		"MEETING_FULL": "Dieses Meeting hat seine maximale Teilnehmerzahl erreicht",
 		"CONNECTION": "Verbindung verloren",
 		"RECONNECT": "Verbindung zum Meeting wird wiederhergestellt...",
 		"DISCONNECT": "Sie wurden getrennt",
@@ -199,13 +230,30 @@
 		"COUNT_HELPER": "Wählen Sie, wie viele entfernte Teilnehmer im Raster angezeigt werden",
 		"COUNT_ARIA": "Anzahl der anzuzeigenden Teilnehmer"
 	},
+	"HIDDEN_PARTICIPANTS": {
+		"ONE_MORE": "weiterer Teilnehmer",
+		"MANY_MORE": "weitere Teilnehmer",
+		"NAMES_AND_MORE": "{names} und {count} weitere"
+	},
 	"PARTICIPANT_ITEM": {
-		"PROMOTE_TOOLTIP": "Zum Moderator hochstufen",
-		"DOWNGRADE_TOOLTIP": "Auf ursprüngliche Berechtigungen herabstufen",
-		"KICK_TOOLTIP": "Teilnehmer entfernen",
+		"PROMOTE": "Zum Moderator hochstufen",
+		"DOWNGRADE": "Auf ursprüngliche Berechtigungen herabstufen",
+		"REMOVE": "Aus dem Meeting entfernen",
 		"BADGE_OWNER": "Eigentümer",
 		"BADGE_ADMIN": "Administrator",
 		"BADGE_MODERATOR": "Moderator"
+	},
+	"PARTICIPANTS_PANEL_ACTIONS": {
+		"TURN_OFF_FOR_EVERYONE": "Für alle ausschalten",
+		"MUTE_ALL_TOOLTIP": "Alle Mikrofone stummschalten",
+		"MUTE_ALL_NONE": "Alle Mikrofone sind bereits aus",
+		"TURN_OFF_ALL_CAMERAS_TOOLTIP": "Kamera von allen ausschalten",
+		"TURN_OFF_ALL_CAMERAS_NONE": "Alle Kameras sind bereits aus",
+		"STOP_ALL_SCREEN_SHARES_TOOLTIP": "Alle Bildschirmfreigaben beenden",
+		"STOP_ALL_SCREEN_SHARES_NONE": "Niemand teilt seinen Bildschirm"
+	},
+	"MODERATION": {
+		"MUTED_BY_MODERATOR": "Ein Moderator hat eines Ihrer Geräte ausgeschaltet"
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "Sie haben das Meeting verlassen",
@@ -215,6 +263,7 @@
 		"ENDED_TITLE": "Meeting beendet",
 		"ENDED_MESSAGE": "Das Meeting wurde von einem Moderator beendet",
 		"ENDED_BY_SELF_MESSAGE": "Sie haben das Meeting erfolgreich beendet",
+		"ENDED_BY_DURATION_LIMIT_MESSAGE": "Dieses Meeting wurde automatisch beendet, da die maximale Dauer erreicht wurde",
 		"DISCONNECTED_TITLE": "Vom Meeting getrennt",
 		"NETWORK_MESSAGE": "Verbindung aufgrund von Netzwerkproblemen verloren",
 		"SERVER_SHUTDOWN_MESSAGE": "Verbindung aufgrund einer Serverabschaltung verloren",

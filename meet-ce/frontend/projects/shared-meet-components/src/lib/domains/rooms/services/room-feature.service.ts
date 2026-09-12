@@ -1,9 +1,15 @@
 import { computed, effect, inject, Service, signal, untracked } from '@angular/core';
-import { MeetAppearanceConfig, MeetRoomConfig, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import {
+	MeetAppearanceConfig,
+	MeetRecordingConfig,
+	MeetRoomConfig,
+	MeetRoomMemberPermissions
+} from '@openvidu-meet/typings';
+import type { InitialMediaState } from '../../meeting/openvidu-components';
 import { GlobalConfigService } from '../../../shared/services/global-config.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
-import { RoomFeatures } from '../models/features.model';
+import { InitialMediaRequest, RoomFeatures } from '../models/features.model';
 import { FeatureCalculator } from '../utils/features.utils';
 import { LoggerService } from '../../../shared/services/logger.service';
 import type { ILogger } from '../../../shared/models/logger.model';
@@ -12,8 +18,6 @@ import type { ILogger } from '../../../shared/models/logger.model';
  * Base configuration for features, used as a starting point before applying room-specific and user-specific configurations
  */
 const DEFAULT_FEATURES: RoomFeatures = {
-	videoEnabled: true,
-	audioEnabled: true,
 	showCamera: true,
 	showMicrophone: true,
 	showScreenShare: true,
@@ -50,6 +54,7 @@ export class RoomFeatureService {
 
 	// Signals to handle reactive state
 	protected roomConfig = signal<MeetRoomConfig | undefined>(undefined);
+	protected initialMediaRequest = signal<InitialMediaRequest>({});
 	permissions = this.roomMemberContextService.permissions;
 
 	// Computed signal to derive features based on current configurations
@@ -61,6 +66,17 @@ export class RoomFeatureService {
 			this.globalConfigService.captionsGlobalEnabled()
 		)
 	);
+
+	/**
+	 * Which local devices the participant starts with. A seed consumed once per entry when the local
+	 * tracks are created, not live state.
+	 */
+	public readonly initialMediaState = computed<InitialMediaState>(() =>
+		FeatureCalculator.resolveInitialMediaState(this.initialMediaRequest(), this.permissions(), this.roomConfig())
+	);
+
+	/** The room's recording configuration (trigger, layout), for UI that needs to describe it. */
+	public readonly recordingConfig = computed<MeetRecordingConfig | undefined>(() => this.roomConfig()?.recording);
 
 	/**
 	 * Loads global feature configuration once the service is ready for requests.
@@ -80,6 +96,11 @@ export class RoomFeatureService {
 	setRoomConfig(config: MeetRoomConfig): void {
 		this.log.d('Updating room config', config);
 		this.roomConfig.set(config);
+	}
+
+	setInitialMediaRequest(request: InitialMediaRequest): void {
+		this.log.d('Updating initial media request', request);
+		this.initialMediaRequest.set(request);
 	}
 
 	protected async loadGlobalFeatureConfigs(): Promise<void> {

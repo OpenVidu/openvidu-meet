@@ -58,7 +58,7 @@ export class WebhookBridgeService {
 		const name = event.event;
 		this.appendWebhookMarker(name, event);
 		this.saveWebhookToSessionStorage(event);
-		this.eventLog.log(`[webhook] ${name}`);
+		this.eventLog.webhook(name, event.data);
 	}
 
 	private saveWebhookToSessionStorage(event: MeetWebhookEvent): void {

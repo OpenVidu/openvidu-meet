@@ -60,10 +60,12 @@ export class RecordingScheduledTasksService {
 	 *
 	 * This method identifies and releases locks that are no longer needed by:
 	 * 1. Finding all active recording locks in the system
-	 * 2. Checking if the associated room still exists in LiveKit
-	 * 3. For existing rooms, checking if they have active recordings in progress
-	 * 4. Releasing lock if the room exists but has no participants or no active recordings
-	 * 5. Releasing lock if the room does not exist
+	 * 2. Checking whether the room still has a recording egress in progress in LiveKit
+	 * 3. Releasing the lock when it does not
+	 *
+	 * An in-progress egress keeps the lock whatever the room looks like: an egress waiting for its
+	 * first track has no publishers yet, and LiveKit ends every egress of a room that closes, so
+	 * the `egress_ended` webhook is what releases the lock in the normal case.
 	 *
 	 * Orphaned locks can occur when:
 	 * - A room is deleted but its lock remains
@@ -159,33 +161,14 @@ export class RecordingScheduledTasksService {
 				return;
 			}
 
-			const [lkRoomExists, inProgressRecordings] = await Promise.all([
-				this.livekitService.roomExists(roomId),
-				this.livekitService.getInProgressRecordingsEgress(roomId)
-			]);
+			const inProgressRecordings = await this.livekitService.getInProgressRecordingsEgress(roomId);
 
-			if (lkRoomExists) {
-				const lkRoom = await this.livekitService.getRoom(roomId);
-				const hasPublishers = lkRoom.numPublishers > 0;
-
-				if (hasPublishers) {
-					this.logger.debug(`Room ${roomId} exists, checking recordings`);
-					const hasInProgressRecordings = inProgressRecordings.length > 0;
-
-					if (hasInProgressRecordings) {
-						this.logger.debug(`Room ${roomId} has in-progress recordings, keeping lock`);
-						return;
-					}
-
-					// No in-progress recordings, releasing orphaned lock
-					this.logger.verbose(`Room '${roomId}' has no in-progress recordings, releasing orphaned lock`);
-					await safeLockRelease(lockKey);
-					return;
-				}
+			if (inProgressRecordings.length > 0) {
+				this.logger.debug(`Room ${roomId} has in-progress recordings, keeping lock`);
+				return;
 			}
 
-			// Release lock if room does not exist or has no publishers
-			this.logger.debug(`Room ${roomId} no longer exists or has no publishers, releasing orphaned lock`);
+			this.logger.verbose(`Room '${roomId}' has no in-progress recordings, releasing orphaned lock`);
 			await safeLockRelease(lockKey);
 		} catch (error) {
 			this.logger.warn(`Error processing orphan lock for room ${roomId}:`, error);
@@ -197,7 +180,7 @@ export class RecordingScheduledTasksService {
 	 * Performs garbage collection for stale recordings in the system.
 	 *
 	 * This method identifies and aborts recordings that have become stale by:
-	 * 1. Getting active recordings from database in paginated batches (ACTIVE status only)
+	 * 1. Getting in-progress recordings from database in paginated batches (STARTING, ACTIVE and ENDING)
 	 * 2. Processing each batch with bounded concurrency to avoid memory overhead
 	 * 3. For each recording, checking if there's a corresponding in-progress egress in LiveKit
 	 * 4. If no egress exists, marking the recording as ABORTED
@@ -221,16 +204,15 @@ export class RecordingScheduledTasksService {
 
 		try {
 			while (hasMore) {
-				// Fetch one batch of active recordings
-				const batch = await this.recordingRepository.findActiveRecordings(BATCH_SIZE, nextPageToken);
+				const batch = await this.recordingRepository.findInProgressRecordings(BATCH_SIZE, nextPageToken);
 
 				if (batch.recordings.length === 0) {
-					this.logger.debug('No more active recordings found in database');
+					this.logger.debug('No more in-progress recordings found in database');
 					break;
 				}
 
 				this.logger.debug(
-					`Processing batch of ${batch.recordings.length} active recordings (total processed: ${totalProcessed})`
+					`Processing batch of ${batch.recordings.length} in-progress recordings (total processed: ${totalProcessed})`
 				);
 
 				// Process this batch with bounded concurrency

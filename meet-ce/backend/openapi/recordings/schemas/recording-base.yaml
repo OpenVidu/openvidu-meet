@@ -5,7 +5,6 @@ required:
     - roomName
     - status
     - filename
-    - startDate
 properties:
     recordingId:
         type: string
@@ -33,5 +32,8 @@ properties:
         example: room-123--XX445.mp4
     startDate:
         type: number
-        description: The date when the recording started (milliseconds since the Unix epoch).
+        description: >
+            The date when the recording started to record media (milliseconds since the Unix epoch).
+            It is not sent while the recording has not started yet (`starting` status), nor on
+            recordings that ended without recording anything (`failed` and `aborted` statuses).
         example: 1620000000000

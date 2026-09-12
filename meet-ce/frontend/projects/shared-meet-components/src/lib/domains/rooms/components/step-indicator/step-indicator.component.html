@@ -11,7 +11,7 @@
 		@for (step of visibleSteps(); track step.id; let i = $index) {
 			<mat-step
 				[stepControl]="step.formGroup"
-				[state]="getStepState(step)"
+				[hasError]="stepHasError(step)"
 				[errorMessage]="'ROOMS.WIZARD.INVALID_FIELDS' | translate"
 				[editable]="true"
 				[label]="step.label"

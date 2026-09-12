@@ -78,7 +78,10 @@ describe('Room API Tests', () => {
 			// Retrieve the room by its ID with expand=config
 			const response = await getRoom(roomId, undefined, 'config');
 
-			expectSuccessRoomResponse(response, 'custom-config', 'custom_config', undefined, payload.config);
+			expectSuccessRoomResponse(response, 'custom-config', {
+				roomIdPrefix: 'custom_config',
+				config: payload.config
+			});
 		});
 
 		it('should retrieve only specified fields when using fields parameter', async () => {
@@ -106,7 +109,7 @@ describe('Room API Tests', () => {
 
 			const response = await getRoom(dirtyRoomId);
 
-			expectSuccessRoomResponse(response, 'test-room', 'test_room');
+			expectSuccessRoomResponse(response, 'test-room', { roomIdPrefix: 'test_room' });
 			expectExtraFieldsInResponse(response.body);
 		});
 
@@ -123,7 +126,10 @@ describe('Room API Tests', () => {
 			// Get the room
 			const response = await getRoom(createdRoom.roomId);
 
-			expectSuccessRoomResponse(response, 'deletion-date', 'deletion_date', validAutoDeletionDate);
+			expectSuccessRoomResponse(response, 'deletion-date', {
+				roomIdPrefix: 'deletion_date',
+				autoDeletionDate: validAutoDeletionDate
+			});
 		});
 
 		it("should not include access.anonymous URLs when user doesn't have canShareAccessLinks permission", async () => {

@@ -28,13 +28,14 @@ import {
 import { ScrollPersistDirective } from '../../../../shared/directives/scroll-persist.directive';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
-import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
+import { bulkDeleteRoomsDialogPreset } from '../../utils/dialog-presets';
 import { EntityListSnapshot, EntityListState } from '../../../../shared/models/entity-list.model';
 import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
+import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 
-import { DeleteRoomDialogOptions } from '../../../../shared/models/notification.model';
+import { DeleteRoomDialogOptions } from '../../models/delete-room-dialog.model';
 import { DeleteRoomDialogComponent } from '../../components/delete-room-dialog/delete-room-dialog.component';
 import { RoomShareDialogComponent } from '../../components/room-share-dialog/room-share-dialog.component';
 import {
@@ -84,7 +85,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 	private listStateCache = inject(ListStateCacheService);
 	private authService = inject(AuthService);
 	private notificationService = inject(NotificationService);
-	private dialogPresetsService = inject(DialogPresetsService);
+	private dialogService = inject(DialogService);
 	private readonly translateService = inject(TranslateService);
 	protected navigationService = inject(NavigationService);
 	protected roomDeletionService = inject(RoomDeletionService);
@@ -379,8 +380,8 @@ export class RoomsComponent implements OnInit, OnDestroy {
 			}
 		};
 
-		this.notificationService.showDialog({
-			...this.dialogPresetsService.getBulkDeleteRoomsDialogPreset(rooms.length),
+		this.dialogService.showDialog({
+			...bulkDeleteRoomsDialogPreset(this.translateService, rooms.length),
 			confirmCallback: bulkDeleteCallback
 		});
 	}

@@ -7,6 +7,7 @@ import {
 	MEET_PERMISSION_DEPRECATED_ALIASES,
 	MEET_PERMISSION_KEYS,
 	MEET_ROOM_MEMBER_PERMISSIONS_FIELDS,
+	MEET_UNALIASED_PERMISSION_KEYS,
 	normalizePermissions,
 	toDeprecatedPermissions
 } from '@openvidu-meet/typings';
@@ -29,7 +30,10 @@ describe('Permission alias map', () => {
 
 	it('should never reuse a permission name across modules', () => {
 		expect(new Set(MEET_PERMISSION_KEYS).size).toBe(MEET_PERMISSION_KEYS.length);
-		expect(Object.keys(MEET_PERMISSION_DEPRECATED_ALIASES)).toHaveLength(MEET_PERMISSION_KEYS.length);
+		// Every key except the ones born after the rename maps back to a deprecated spelling.
+		expect(Object.keys(MEET_PERMISSION_DEPRECATED_ALIASES)).toHaveLength(
+			MEET_PERMISSION_KEYS.length - MEET_UNALIASED_PERMISSION_KEYS.length
+		);
 	});
 
 	it('should split recording retrieval into list, play and download', () => {
@@ -41,7 +45,28 @@ describe('Permission alias map', () => {
 		expect(MEET_PERMISSION_ALIASES.canRecord).toEqual(['recordingControl']);
 		expect(MEET_PERMISSION_ALIASES.canDeleteRecordings).toEqual(['recordingDelete']);
 		// 14 deprecated flags become 16 current ones: only recording retrieval is split.
-		expect(MEET_PERMISSION_KEYS).toHaveLength(16);
+		expect(MEET_PERMISSION_KEYS).toHaveLength(16 + MEET_UNALIASED_PERMISSION_KEYS.length);
+	});
+
+	it('should keep the permissions born after the rename out of the deprecated surface', () => {
+		// They are contract keys like any other, they simply have no `can*` spelling: a deployment
+		// must never invent one, so they appear in neither direction of the alias map.
+		expect(MEET_UNALIASED_PERMISSION_KEYS).toEqual(['meetingRead', 'participantMute']);
+
+		for (const permissionKey of MEET_UNALIASED_PERMISSION_KEYS) {
+			expect(MEET_PERMISSION_KEYS).toContain(permissionKey);
+			expect(MEET_PERMISSION_DEPRECATED_ALIASES[permissionKey]).toBeUndefined();
+			expect(Object.values(MEET_PERMISSION_ALIASES).flat()).not.toContain(permissionKey);
+		}
+
+		// ...and therefore never travel back to a client that speaks the deprecated names.
+		const deprecated = toDeprecatedPermissions(
+			Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true])) as Record<MeetPermissionKey, boolean>
+		);
+
+		for (const permissionKey of MEET_UNALIASED_PERMISSION_KEYS) {
+			expect(deprecated).not.toHaveProperty(permissionKey);
+		}
 	});
 
 	it('should map every current key back to the deprecated key it replaces', () => {
@@ -140,8 +165,57 @@ describe('normalizePermissions', () => {
 
 	it('should produce a complete permission set from a complete deprecated set', () => {
 		const deprecatedInput = Object.fromEntries(MEET_DEPRECATED_PERMISSION_KEYS.map((key) => [key, true]));
-		const normalized = normalizePermissions(deprecatedInput);
+		const normalized = normalizePermissions(deprecatedInput, { complete: true });
 		expect(Object.keys(normalized).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
+	});
+
+	// A complete input that predates the key keeps behaving as it did — joining gated reading — but
+	// the two permissions are independent: nothing is derived outside that completion.
+	it('should complete meetingRead from meetingJoin only in a complete set', () => {
+		expect(normalizePermissions({ meetingJoin: true }, { complete: true })).toEqual({
+			meetingJoin: true,
+			meetingRead: true,
+			participantMute: false
+		});
+		expect(normalizePermissions({ meetingJoin: false }, { complete: true })).toEqual({
+			meetingJoin: false,
+			meetingRead: false,
+			participantMute: false
+		});
+		// The deprecated spelling cannot name it either, and reaches it through meetingJoin.
+		expect(normalizePermissions({ canJoinMeeting: true }, { complete: true })).toEqual({
+			meetingJoin: true,
+			meetingRead: true,
+			participantMute: false
+		});
+	});
+
+	// participantMute is implied by nothing: kicking someone and silencing them are different powers.
+	it('should default participantMute to false, never take it from participantKick', () => {
+		expect(normalizePermissions({ participantKick: true }, { complete: true })).toEqual({
+			participantKick: true,
+			participantMute: false
+		});
+		expect(normalizePermissions({ participantMute: true }, { complete: true })).toEqual({
+			participantMute: true
+		});
+	});
+
+	it('should keep an explicit meetingRead that diverges from meetingJoin', () => {
+		expect(normalizePermissions({ meetingJoin: true, meetingRead: false }, { complete: true })).toEqual({
+			meetingJoin: true,
+			meetingRead: false,
+			participantMute: false
+		});
+		expect(normalizePermissions({ meetingRead: true })).toEqual({ meetingRead: true });
+	});
+
+	// In a patch over stored permissions an absent key means "not touched": nothing is derived or
+	// defaulted, or the patch would rewrite permissions the caller never mentioned.
+	it('should leave every unnamed permission out of a patch', () => {
+		expect(normalizePermissions({ meetingJoin: true })).toEqual({ meetingJoin: true });
+		expect(normalizePermissions({ participantKick: true })).toEqual({ participantKick: true });
+		expect(normalizePermissions({ chatRead: true })).toEqual({ chatRead: true });
 	});
 });
 
@@ -170,12 +244,18 @@ describe('toDeprecatedPermissions', () => {
 		expect(toDeprecatedPermissions({ recordingList: true, recordingPlay: true })).toEqual({});
 	});
 
-	it('should round-trip a complete set', () => {
+	// A round trip through the frozen deprecated surface loses whatever that surface cannot name: an
+	// implied key comes back through the permission that implies it, a defaulted one only as its
+	// default.
+	it('should round-trip a complete set except the keys with no deprecated spelling', () => {
 		const current = Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true])) as Record<
 			MeetPermissionKey,
 			boolean
 		>;
-		expect(normalizePermissions(toDeprecatedPermissions(current))).toEqual(current);
+		expect(normalizePermissions(toDeprecatedPermissions(current), { complete: true })).toEqual({
+			...current,
+			participantMute: false
+		});
 	});
 
 	it('should omit keys with no boolean value', () => {
@@ -212,6 +292,49 @@ describe('findPermissionAliasConflicts', () => {
 			recordingDownload: false
 		});
 		expect(conflicts).toEqual([
+			{
+				deprecatedKey: 'canRetrieveRecordings',
+				replacementKey: 'recordingDownload',
+				deprecatedValue: true,
+				replacementValue: false
+			}
+		]);
+	});
+
+	it('should accept a split alias that matches the AND of its complete group', () => {
+		// The shape the server itself serializes for a partial recording grant: the alias is
+		// redundant, and rejecting it would 422 the echo of a compatibility-mode response.
+		expect(
+			findPermissionAliasConflicts({
+				canRetrieveRecordings: false,
+				recordingList: true,
+				recordingPlay: true,
+				recordingDownload: false
+			})
+		).toEqual([]);
+	});
+
+	it('should still report a split alias that contradicts the AND of its complete group', () => {
+		// A legacy revoke echoing a stale all-true group: resolving it silently (current keys win in
+		// normalizePermissions) would keep granted a permission the caller believes revoked.
+		expect(
+			findPermissionAliasConflicts({
+				canRetrieveRecordings: false,
+				recordingList: true,
+				recordingPlay: true,
+				recordingDownload: true
+			})
+		).toHaveLength(3);
+
+		// The grant direction stays loud too: the alias asks for the whole group.
+		expect(
+			findPermissionAliasConflicts({
+				canRetrieveRecordings: true,
+				recordingList: true,
+				recordingPlay: true,
+				recordingDownload: false
+			})
+		).toEqual([
 			{
 				deprecatedKey: 'canRetrieveRecordings',
 				replacementKey: 'recordingDownload',

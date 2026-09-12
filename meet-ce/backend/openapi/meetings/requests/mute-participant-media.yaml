@@ -1,0 +1,27 @@
+description: Devices to turn off
+required: true
+content:
+    application/json:
+        schema:
+            type: object
+            minProperties: 1
+            properties:
+                audioActive:
+                    type: boolean
+                    enum: [false]
+                    description: Set to `false` to mute the participant's microphone.
+                    example: false
+                videoActive:
+                    type: boolean
+                    enum: [false]
+                    description: Set to `false` to turn off the participant's camera.
+                    example: false
+                screenShareActive:
+                    type: boolean
+                    enum: [false]
+                    description: Set to `false` to stop the participant's screen share.
+                    example: false
+            description: |
+                Moderation is one-way: `false` is the only accepted value, because nobody turns a remote device
+                **on**. At least one device must be named. The affected participant may turn the device back on
+                afterwards — this mutes, it does not revoke their publishing permissions.

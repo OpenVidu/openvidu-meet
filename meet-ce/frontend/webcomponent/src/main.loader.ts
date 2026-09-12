@@ -1,4 +1,5 @@
 import { EmbeddedAttribute, EmbeddedCommandName, EmbeddedEventName } from '@openvidu-meet/typings';
+import { computeServerUrl } from 'projects/shared-meet-components/src/lib/shared/utils/url.utils';
 
 /**
  * Lazy loader for `<openvidu-meet>`.
@@ -56,24 +57,56 @@ const METHODS: readonly string[] = Object.values(EmbeddedCommandName);
 // they leave the typings in 3.12.0.
 const EVENTS: readonly string[] = Object.values(EmbeddedEventName);
 
+const ESM_FILENAME = 'openvidu-meet.esm.js';
+// Where the backend serves the heavy bundle, relative to the deployment base url.
+const ESM_PATH = `v1/${ESM_FILENAME}`;
+
 // Resolve the sibling heavy ESM url from this script's own `src`, captured
 // synchronously at load (`document.currentScript` is only valid during initial
 // classic-script execution). Served at `.../v1/openvidu-meet.js`, so the sibling
 // resolves to `.../v1/openvidu-meet.esm.js`.
 const loaderSrc = (document.currentScript as HTMLScriptElement | null)?.src;
-const ESM_URL = new URL('openvidu-meet.esm.js', loaderSrc || window.location.href).href;
+const SIBLING_ESM_URL = new URL(ESM_FILENAME, loaderSrc || window.location.href).href;
+
+type ImplModule = { bootstrapOpenViduMeet: (tag: string) => Promise<void> };
+
+// The bundle normally sits next to this script. It does not when the host serves the loader
+// from somewhere else — a reverse proxy that only forwards `/openvidu-meet.js`, a copy in the
+// host's own assets, a bundler that inlined it — so fall back to the Meet server the element
+// already points at, which is the deployment that has to serve the matching bundle anyway.
+//
+// The fallback url is read only once the sibling has actually failed, not up front: a host that
+// binds `room-url` through a framework sets it right after the element connects, so asking for it
+// before the first request would find nothing.
+const importEsm = async (meetServerEsmUrl: () => string | null): Promise<ImplModule> => {
+	try {
+		return (await import(SIBLING_ESM_URL)) as ImplModule;
+	} catch (error) {
+		const fallbackUrl = meetServerEsmUrl();
+
+		if (!fallbackUrl || fallbackUrl === SIBLING_ESM_URL) throw error;
+
+		console.warn(
+			`[OpenVidu Meet] ${SIBLING_ESM_URL} is not reachable, loading the bundle from ` +
+				`${fallbackUrl} instead. Serve both webcomponent urls from the same place to ` +
+				'save this extra request.'
+		);
+
+		return (await import(fallbackUrl)) as ImplModule;
+	}
+};
 
 // Load the heavy bundle once (shared across every loader instance) and register
 // the internal implementation tag.
 let implReady: Promise<void> | null = null;
 
-const importImpl = async (): Promise<void> => {
+const importImpl = async (meetServerEsmUrl: () => string | null): Promise<void> => {
 	// Already registered (e.g. the ESM was imported directly, or a previous load
 	// already ran): nothing to import or bootstrap. Keeps this idempotent.
 	if (customElements.get(IMPL_TAG)) return;
 
 	globalThis.__OV_MEET_SKIP_AUTODEFINE__ = true;
-	const mod: { bootstrapOpenViduMeet: (tag: string) => Promise<void> } = await import(ESM_URL);
+	const mod = await importEsm(meetServerEsmUrl);
 	await mod.bootstrapOpenViduMeet(IMPL_TAG);
 };
 
@@ -81,9 +114,9 @@ const importImpl = async (): Promise<void> => {
 // promise is CLEARED so a later reconnect can retry — otherwise a single transient
 // import error (network blip, 5xx) would leave a permanently-rejected promise and
 // break every <openvidu-meet> on the page for good.
-const loadImpl = (): Promise<void> => {
+const loadImpl = (meetServerEsmUrl: () => string | null): Promise<void> => {
 	if (!implReady) {
-		implReady = importImpl().catch((err) => {
+		implReady = importImpl(meetServerEsmUrl).catch((err) => {
 			implReady = null;
 			throw err;
 		});
@@ -195,12 +228,26 @@ class OpenViduMeetLoader extends HTMLElement {
 	// reconnect) re-imports.
 	async _load(): Promise<void> {
 		try {
-			await loadImpl();
+			await loadImpl(() => this._meetServerEsmUrl());
 			this._upgrade();
 		} catch (err) {
 			console.error('[OpenVidu Meet] failed to load the web component bundle', err);
 			this._showError();
 		}
+	}
+
+	// The heavy bundle on the Meet server this element points at, derived from `room-url` /
+	// `recording-url` the same way the app derives the server it calls. Null before the host has
+	// set either, where the sibling url is the only candidate.
+	_meetServerEsmUrl(): string | null {
+		const roomUrl = (this._props['roomUrl'] as string) || this.getAttribute(EmbeddedAttribute.ROOM_URL);
+		const recordingUrl =
+			(this._props['recordingUrl'] as string) || this.getAttribute(EmbeddedAttribute.RECORDING_URL);
+		const serverUrl = roomUrl
+			? computeServerUrl(roomUrl, '/room/')
+			: computeServerUrl(recordingUrl ?? '', '/recording/');
+
+		return serverUrl ? `${serverUrl}/${ESM_PATH}` : null;
 	}
 
 	// ── Placeholder states ───────────────────────────────────────────────────────
@@ -367,10 +414,9 @@ for (const prop of PROPERTIES) {
 	});
 }
 
-// Proxy the imperative methods (meetingEnd, meetingLeave, participantKick and their deprecated
-// aliases, removed in 3.12.0): delegate once the inner element exists, otherwise buffer for
-// replay in _upgrade(). The buffered call keeps the name it was made with — resolving an alias is
-// the wrapper's job.
+// Proxy the imperative methods (canonical commands and their deprecated aliases, removed in
+// 3.12.0): delegate once the inner element exists, otherwise buffer for replay in _upgrade().
+// The buffered call keeps the name it was made with — resolving an alias is the wrapper's job.
 for (const method of METHODS) {
 	Object.defineProperty(OpenViduMeetLoader.prototype, method, {
 		configurable: true,

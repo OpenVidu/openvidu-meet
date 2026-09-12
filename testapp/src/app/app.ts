@@ -8,20 +8,31 @@ import {
 	signal,
 	viewChild
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { EmbeddedAttribute, EmbeddedEvent, EmbeddedEventName, EmbeddedEventPayloadFor } from '@openvidu-meet/typings';
-import { EventLog } from './components/event-log/event-log';
+import { EmbeddedAttribute, EmbeddedEvent, EmbeddedEventName } from '@openvidu-meet/typings';
+import { CommandsPanel } from './components/commands-panel/commands-panel';
+import { ConsoleDock } from './components/console-dock/console-dock';
+import { SetupPanel } from './components/setup-panel/setup-panel';
+import { Integration } from './models';
 import type { OpenViduMeetElement } from './openvidu-meet-element';
 import { EventLogService } from './services/event-log';
 import { IframeHostService } from './services/iframe-host';
+import { MeetCommandsService } from './services/meet-commands';
+import { ParticipantRosterService } from './services/participant-roster';
+import { TestappConfigStore } from './services/testapp-config';
+import { ThemeService } from './services/theme';
 
-/** Embedding integration the testapp currently exercises. */
-export type Integration = 'webcomponent' | 'iframe';
+/** Sidebar tab currently shown. */
+type Panel = 'setup' | 'commands';
 
+/**
+ * Shell of the testapp: it mounts the chosen integration with the applied config,
+ * funnels every lifecycle event into the console and the e2e event sink, and
+ * hosts the setup, commands and console surfaces.
+ */
 @Component({
 	selector: 'app-root',
-	imports: [FormsModule, EventLog],
+	imports: [SetupPanel, CommandsPanel, ConsoleDock],
 	templateUrl: './app.html',
 	styleUrl: './app.css',
 	// The webcomponent integration uses the raw <openvidu-meet> element from the
@@ -30,6 +41,10 @@ export type Integration = 'webcomponent' | 'iframe';
 })
 export class App {
 	protected readonly log = inject(EventLogService);
+	protected readonly config = inject(TestappConfigStore);
+	protected readonly theme = inject(ThemeService);
+	private readonly commands = inject(MeetCommandsService);
+	private readonly roster = inject(ParticipantRosterService);
 	private readonly iframeHost = inject(IframeHostService);
 	private readonly sanitizer = inject(DomSanitizer);
 
@@ -39,27 +54,18 @@ export class App {
 	// lifecycle events here so the e2e suite observes them the same way.
 	protected readonly eventSink = viewChild<ElementRef<HTMLElement>>('eventSink');
 
-	// ── Integration selector (UI-driven; the e2e suite picks the mode through it) ──
+	// ── Shell state ─────────────────────────────────────────────────────────
 	protected readonly integration = signal<Integration>('webcomponent');
+	protected readonly panel = signal<Panel>('setup');
+	protected readonly sidebarCollapsed = signal(false);
+	/** Whether the active integration is currently mounted. */
+	protected readonly mounted = signal(false);
 
-	// ── Config form (editable inputs) ──────────────────────────────────────
-	protected roomUrlInput = 'http://localhost:6080/meet/room/room-6vnlh1ltf4ej3mh?secret=1d766d7734';
-	protected recordingUrlInput = '';
-	protected participantNameInput = 'Test User';
-	protected e2eeKeyInput = '';
-	protected leaveRedirectUrlInput = '';
-	protected showRecordingInput = '';
-	protected showOnlyRecordingsInput = false;
-	protected kickIdentityInput = 'test-participant-1';
-
-	// ── Applied signals (bound to the WC via Angular wrapper inputs) ────────
-	protected readonly roomUrl = signal<string | undefined>(undefined);
-	protected readonly recordingUrl = signal<string | undefined>(undefined);
-	protected readonly participantName = signal<string | undefined>(undefined);
-	protected readonly e2eeKey = signal<string | undefined>(undefined);
-	protected readonly leaveRedirectUrl = signal<string | undefined>(undefined);
-	protected readonly showRecording = signal<string | undefined>(undefined);
-	protected readonly showOnlyRecordings = signal<boolean | undefined>(undefined);
+	/** Room the applied config points at, for the status bar. */
+	protected readonly roomId = computed(() => {
+		const roomUrl = this.config.applied()?.roomUrl;
+		return roomUrl ? (/\/room\/([^/?#]+)/.exec(roomUrl)?.[1] ?? null) : null;
+	});
 
 	// ── Applied signals (iframe integration) ───────────────────────────────
 	protected readonly iframeSrc = signal<string | undefined>(undefined);
@@ -70,12 +76,10 @@ export class App {
 		return src ? this.sanitizer.bypassSecurityTrustResourceUrl(src) : undefined;
 	});
 
-	// Whether the active integration is currently mounted.
-	protected readonly mounted = signal(false);
-
-	private onJoinedHandler: ((eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName.JOINED>) => void) | null = null;
-
 	constructor() {
+		// Point the imperative commands at whichever transport is mounted.
+		effect(() => this.commands.useTransport(this.integration(), this.meetRef()?.nativeElement ?? null));
+
 		// Wire the iframe host controller to the rendered iframe whenever it (re)mounts
 		// in iframe mode; tear it down otherwise.
 		effect((onCleanup) => {
@@ -95,34 +99,33 @@ export class App {
 	// ── Integration selector ───────────────────────────────────────────────
 
 	protected onIntegrationChange(value: Integration): void {
+		if (this.integration() === value) return;
+
 		this.integration.set(value);
 		this.mounted.set(false);
-		this.log.log(`Integration: ${value}`);
+		this.log.info('Integration changed', value);
 	}
 
 	// ── Config ───────────────────────────────────────────────────────────────
 
 	protected applyConfig(): void {
 		this.log.clear();
+		this.roster.clear();
 
 		const apply = () => {
 			if (this.integration() === 'iframe') {
 				const built = this.buildIframeSrc();
+
 				if (!built) return;
+
 				this.iframeSrc.set(built.src);
 				this.iframeTargetOrigin.set(built.origin);
-			} else {
-				this.roomUrl.set(this.roomUrlInput || undefined);
-				this.recordingUrl.set(this.recordingUrlInput || undefined);
-				this.participantName.set(this.participantNameInput || undefined);
-				this.e2eeKey.set(this.e2eeKeyInput || undefined);
-				this.leaveRedirectUrl.set(this.leaveRedirectUrlInput || undefined);
-				this.showRecording.set(this.showRecordingInput || undefined);
-				this.showOnlyRecordings.set(this.showOnlyRecordingsInput);
 			}
 
+			this.config.apply();
 			this.mounted.set(true);
-			this.log.log('Config applied');
+			this.panel.set('commands');
+			this.log.info('Config applied', this.integration());
 		};
 
 		// Remount to apply fresh config: drop the current view first, then re-add.
@@ -137,33 +140,42 @@ export class App {
 
 	/** Builds the iframe `src` (room/recording URL + property query params) and its origin. */
 	private buildIframeSrc(): { src: string; origin: string } | null {
-		const base = this.roomUrlInput || this.recordingUrlInput;
+		const base = this.config.roomUrl() || this.config.recordingUrl();
+
 		if (!base) {
-			this.log.log('⚠ roomUrl or recordingUrl is required');
+			this.log.warning('Apply config', 'roomUrl or recordingUrl is required');
 			return null;
 		}
 
 		let url: URL;
+
 		try {
 			url = new URL(base);
 		} catch {
-			this.log.log(`⚠ invalid URL: ${base}`);
+			this.log.warning('Apply config', `invalid URL: ${base}`);
 			return null;
 		}
 
 		const set = (key: string, value: string | undefined) => {
 			if (value) url.searchParams.set(key, value);
 		};
-		set(EmbeddedAttribute.PARTICIPANT_NAME, this.participantNameInput);
+		set(EmbeddedAttribute.PARTICIPANT_NAME, this.config.participantName());
+		set(EmbeddedAttribute.PARTICIPANT_EXTERNAL_ID, this.config.participantExternalId());
+		set(EmbeddedAttribute.PARTICIPANT_METADATA, this.config.participantMetadata());
 		// The embedded app runs on the Meet server origin (the iframe `src`), NOT this
 		// host's origin, and cannot reliably reconstruct the host origin from
 		// document.referrer. So resolve a relative leave-redirect path against THIS
 		// window's origin here and hand the iframe an absolute URL it can navigate to
 		// (the webcomponent gets this for free since it runs in the host window).
-		set(EmbeddedAttribute.LEAVE_REDIRECT_URL, this.resolveLeaveRedirectUrl(this.leaveRedirectUrlInput));
-		set(EmbeddedAttribute.E2EE_KEY, this.e2eeKeyInput);
-		set(EmbeddedAttribute.SHOW_RECORDING, this.showRecordingInput);
-		if (this.showOnlyRecordingsInput) {
+		set(EmbeddedAttribute.LEAVE_REDIRECT_URL, this.resolveLeaveRedirectUrl(this.config.leaveRedirectUrl()));
+		set(EmbeddedAttribute.E2EE_KEY, this.config.e2eeKey());
+		set(EmbeddedAttribute.SHOW_RECORDING, this.config.showRecording());
+		// Omitted stays omitted: the query param is only written when the form sets a value, so the
+		// iframe transport carries the same three states as the webcomponent one.
+		set(EmbeddedAttribute.INITIAL_AUDIO_ACTIVE, this.config.initialAudioActive());
+		set(EmbeddedAttribute.INITIAL_VIDEO_ACTIVE, this.config.initialVideoActive());
+
+		if (this.config.showOnlyRecordings()) {
 			url.searchParams.set(EmbeddedAttribute.SHOW_ONLY_RECORDINGS, 'true');
 		}
 
@@ -181,171 +193,23 @@ export class App {
 
 	// ── Lifecycle events (unified across integrations) ──────────────────────
 
-	/** @deprecated Handles the 3.8.0 `joined` event. Removed in 3.12.0. Kept so the e2e can listen for it. */
-	protected handleJoined(event: Event): void {
-		this.emitEvent(
-			EmbeddedEventName.JOINED,
-			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.JOINED>>).detail
-		);
-	}
-
-	/** @deprecated Handles the 3.8.0 `left` event. Removed in 3.12.0. Kept so the e2e can listen for it. */
-	protected handleLeft(event: Event): void {
-		this.emitEvent(
-			EmbeddedEventName.LEFT,
-			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.LEFT>>).detail
-		);
-	}
-
-	/** @deprecated Handles the 3.8.0 `closed` event. Removed in 3.12.0. Kept so the e2e can listen for it. */
-	protected handleClosed(): void {
-		this.emitEvent(EmbeddedEventName.CLOSED, {});
-	}
-
-	protected handleMeetingJoined(event: Event): void {
-		this.emitEvent(
-			EmbeddedEventName.MEETING_JOINED,
-			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.MEETING_JOINED>>).detail
-		);
-	}
-
-	protected handleMeetingLeft(event: Event): void {
-		this.emitEvent(
-			EmbeddedEventName.MEETING_LEFT,
-			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.MEETING_LEFT>>).detail
-		);
-	}
-
-	protected handleMeetingClosed(): void {
-		this.emitEvent(EmbeddedEventName.MEETING_CLOSED, {});
+	/**
+	 * Handles every lifecycle event the webcomponent emits. The `EmbeddedEventName`
+	 * values are the DOM event names, so the template passes the name it binds.
+	 */
+	protected handleEmbeddedEvent(name: `${EmbeddedEventName}`, event: Event): void {
+		this.publishEvent(name, (event as CustomEvent<unknown>).detail);
 	}
 
 	private handleIframeEvent(event: EmbeddedEvent): void {
-		this.emitEvent(event.event, 'payload' in event ? event.payload : {});
+		this.publishEvent(event.event, 'payload' in event ? event.payload : {});
 	}
 
 	/** Log the event and re-dispatch it on the integration-agnostic event sink for e2e. */
-	private emitEvent(name: EmbeddedEventName, detail: unknown): void {
-		this.log.log(`[event] ${name} — ${this.stringify(detail)}`);
-		this.eventSink()?.nativeElement.dispatchEvent(new CustomEvent(name, { detail: detail ?? {}, bubbles: true }));
-	}
-
-	private stringify(detail: unknown): string {
-		try {
-			return JSON.stringify(detail ?? {});
-		} catch {
-			return '';
-		}
-	}
-
-	// ── Imperative API (dispatched to the active integration) ───────────────
-
-	protected callMeetingEnd(): void {
-		if (this.integration() === 'iframe') {
-			this.iframeHost.meetingEnd();
-		} else {
-			this.meetRef()?.nativeElement.meetingEnd();
-		}
-		this.log.log('→ meetingEnd()');
-	}
-
-	protected callMeetingLeave(): void {
-		if (this.integration() === 'iframe') {
-			this.iframeHost.meetingLeave();
-		} else {
-			this.meetRef()?.nativeElement.meetingLeave();
-		}
-		this.log.log('→ meetingLeave()');
-	}
-
-	protected callParticipantKick(): void {
-		if (this.integration() === 'iframe') {
-			this.iframeHost.participantKick(this.kickIdentityInput);
-		} else {
-			this.meetRef()?.nativeElement.participantKick(this.kickIdentityInput);
-		}
-		this.log.log(`→ participantKick("${this.kickIdentityInput}")`);
-	}
-
-	// ── Deprecated command spellings (kept so the e2e covers the 3.8.0 surface) ──
-
-	/** @deprecated Sends the 3.8.0 `endMeeting` command. Removed in 3.12.0. */
-	protected callLegacyEndMeeting(): void {
-		if (this.integration() === 'iframe') {
-			this.iframeHost.legacyEndMeeting();
-		} else {
-			this.meetRef()?.nativeElement.endMeeting();
-		}
-		this.log.log('→ endMeeting() [deprecated]');
-	}
-
-	/** @deprecated Sends the 3.8.0 `leaveRoom` command. Removed in 3.12.0. */
-	protected callLegacyLeaveRoom(): void {
-		if (this.integration() === 'iframe') {
-			this.iframeHost.legacyLeaveRoom();
-		} else {
-			this.meetRef()?.nativeElement.leaveRoom();
-		}
-		this.log.log('→ leaveRoom() [deprecated]');
-	}
-
-	/** @deprecated Sends the 3.8.0 `kickParticipant` command. Removed in 3.12.0. */
-	protected callLegacyKickParticipant(): void {
-		if (this.integration() === 'iframe') {
-			this.iframeHost.legacyKickParticipant(this.kickIdentityInput);
-		} else {
-			this.meetRef()?.nativeElement.kickParticipant(this.kickIdentityInput);
-		}
-		this.log.log(`→ kickParticipant("${this.kickIdentityInput}") [deprecated]`);
-	}
-
-	// ── on / once / off API (webcomponent element only) ─────────────────────
-
-	protected callOn(): void {
-		const el = this.meetRef()?.nativeElement;
-
-		if (!el) {
-			this.log.log('⚠ on/once/off is webcomponent-only (no element mounted)');
-			return;
-		}
-
-		if (this.onJoinedHandler) {
-			this.log.log('⚠ on("joined") handler already registered — call off first');
-			return;
-		}
-
-		this.onJoinedHandler = (e) => this.log.log(`[on] joined — identity: ${e.participantIdentity}`);
-		el.on(EmbeddedEventName.JOINED, this.onJoinedHandler);
-		this.log.log('on("joined", handler) registered');
-	}
-
-	protected callOnce(): void {
-		const el = this.meetRef()?.nativeElement;
-
-		if (!el) {
-			this.log.log('⚠ on/once/off is webcomponent-only (no element mounted)');
-			return;
-		}
-
-		el.once(EmbeddedEventName.JOINED, (e) => this.log.log(`[once] joined — identity: ${e.participantIdentity}`));
-		this.log.log('once("joined", handler) registered');
-	}
-
-	protected callOff(): void {
-		const el = this.meetRef()?.nativeElement;
-
-		if (!el) {
-			this.log.log('⚠ on/once/off is webcomponent-only (no element mounted)');
-			return;
-		}
-
-		if (!this.onJoinedHandler) {
-			this.log.log('⚠ no on("joined") handler registered');
-			return;
-		}
-
-		el.off(EmbeddedEventName.JOINED, this.onJoinedHandler);
-		this.onJoinedHandler = null;
-		this.log.log('off("joined", handler) called');
+	private publishEvent(name: string, detail: unknown): void {
+		const payload = detail ?? {};
+		this.log.event(name, payload);
+		this.roster.track(name, payload);
+		this.eventSink()?.nativeElement.dispatchEvent(new CustomEvent(name, { detail: payload, bubbles: true }));
 	}
 }

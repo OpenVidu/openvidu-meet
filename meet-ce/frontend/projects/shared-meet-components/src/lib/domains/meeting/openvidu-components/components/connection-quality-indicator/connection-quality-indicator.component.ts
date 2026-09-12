@@ -13,12 +13,26 @@ import { MeetingTranslateService } from '../../services/translate/meeting-transl
 })
 export class ConnectionQualityIndicatorComponent implements OnDestroy {
 	readonly participant = input.required<ParticipantModel>();
-	readonly transparent = input(false);
+
+	/**
+	 * `tile` floats the badge over a video tile. `badge` pins it to the corner of a participant
+	 * avatar and shows it only while the connection is actually in trouble — a healthy connection on
+	 * every row is noise.
+	 */
+	readonly variant = input<'tile' | 'badge'>('tile');
 	readonly connectionQuality = computed(() => this.participant().connectionQuality);
 	readonly participantKey = computed(() => this.participant().sid);
 	private readonly translateService = inject(MeetingTranslateService);
 
-	readonly showBadge = computed(() => this.connectionQuality() !== ConnectionQuality.Unknown && this.isVisible());
+	readonly isTroubled = computed(
+		() => this.connectionQuality() === ConnectionQuality.Poor || this.connectionQuality() === ConnectionQuality.Lost
+	);
+
+	readonly showBadge = computed(() => {
+		if (this.variant() === 'badge') return this.isTroubled();
+
+		return this.connectionQuality() !== ConnectionQuality.Unknown && this.isVisible();
+	});
 
 	readonly tooltipText = computed(() => {
 		const label = this.translateService.translate('PANEL.PARTICIPANTS.CONNECTION_QUALITY.LABEL');
@@ -34,9 +48,9 @@ export class ConnectionQualityIndicatorComponent implements OnDestroy {
 			case ConnectionQuality.Good:
 				return 'network_wifi_3_bar';
 			case ConnectionQuality.Poor:
-				return 'network_wifi_2_bar';
+				return this.variant() === 'badge' ? 'signal_wifi_bad' : 'network_wifi_2_bar';
 			default:
-				return 'signal_wifi_off';
+				return this.variant() === 'badge' ? 'wifi_off' : 'signal_wifi_off';
 		}
 	});
 

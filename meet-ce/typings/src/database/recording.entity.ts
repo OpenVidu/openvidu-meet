@@ -21,7 +21,10 @@ export interface MeetRecordingInfo {
 	encoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
 	/** Filename of the recording file (if available) */
 	filename?: string;
-	/** Timestamp in milliseconds since epoch when the recording started (if available) */
+	/**
+	 * Timestamp in milliseconds since epoch when the recording started to record media.
+	 * Absent while the recording has not started yet, and on recordings that never recorded anything
+	 */
 	startDate?: number;
 	/** Timestamp in milliseconds since epoch when the recording ended (if available) */
 	endDate?: number;

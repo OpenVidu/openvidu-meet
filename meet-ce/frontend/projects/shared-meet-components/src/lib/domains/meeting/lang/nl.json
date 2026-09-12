@@ -3,7 +3,22 @@
 		"JOINING": "Deelnemen aan meeting...",
 		"LANDSCAPE_WARNING": "Draai uw apparaat voor een betere ervaring naar portretmodus",
 		"DISCONNECTED": "U heeft de meeting verlaten",
-		"DISCONNECTED_SUBTITLE": "De meeting is beëindigd"
+		"DISCONNECTED_SUBTITLE": "De meeting is beëindigd",
+		"ENDING_SOON_TITLE": "De meeting eindigt binnenkort",
+		"ENDING_SOON_ONE_MINUTE": "De meeting eindigt over ongeveer 1 minuut",
+		"ENDING_SOON_MANY_MINUTES": "De meeting eindigt over ongeveer {minutes} minuten",
+		"ENDING_SOON_DISMISS": "Sluiten",
+		"ENDING_SOON_BADGE_LABEL": "Eindigt over",
+		"ENDING_SOON_BADGE_ENDING": "Wordt beëindigd",
+		"E2EE_BADGE_LABEL": "Versleuteld",
+		"E2EE_BADGE_TOOLTIP": "Deze meeting is end-to-end versleuteld",
+		"RECORDING_BADGE_STARTING": "Wordt gestart",
+		"RECORDING_STARTED_TITLE": "Deze vergadering wordt opgenomen",
+		"RECORDING_STARTED_MESSAGE": "Vanaf nu worden uw audio, uw video en alles wat u deelt vastgelegd.",
+		"RECORDING_WAITING_MEDIA_TITLE": "De opname wacht om te starten",
+		"RECORDING_WAITING_MEDIA_MESSAGE": "Ze begint zodra een deelnemer zijn microfoon of camera aanzet.",
+		"RECORDING_STOPPED_TITLE": "Opname gestopt",
+		"RECORDING_STOPPED_MESSAGE": "Er wordt niets meer vastgelegd."
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Deelnemen aan meeting",
@@ -59,7 +74,7 @@
 			"PLACEHOLDER": "Stuur een bericht ...",
 			"SEND": "Versturen",
 			"WRITE_DISABLED": "U hebt geen toestemming om berichten te versturen",
-			"MESSAGE_SENT_NOTIFICATION": "bericht verzonden",
+			"MESSAGE_SENT_NOTIFICATION": "{name} bericht verzonden",
 			"OPEN_CHAT": "OPENEN",
 			"ENCRYPTION_KEY_MISMATCH": "Er zijn deelnemers verbonden met een andere versleutelingssleutel. U ontvangt hun berichten niet."
 		},
@@ -69,18 +84,25 @@
 		"PARTICIPANTS": {
 			"TITLE": "Deelnemers",
 			"YOU": "Jij",
-			"MUTE": "Dempen",
-			"UNMUTE": "Dempen opheffen",
+			"MORE_ACTIONS": "Meer acties",
+			"MIC_ON": "Microfoon aan",
+			"MIC_OFF": "Microfoon uit",
+			"CAM_ON": "Camera aan",
+			"CAM_OFF": "Camera uit",
+			"SHARING_SCREEN": "Scherm delen",
+			"MUTE_MICROPHONE": "Microfoon dempen",
+			"TURN_OFF_CAMERA": "Camera uitschakelen",
+			"STOP_SCREEN_SHARE": "Schermdeling stoppen",
+			"MUTE_FOR_ME": "Alleen voor mij dempen",
+			"UNMUTE_FOR_ME": "Voor mij weer hoorbaar maken",
+			"MUTED_FOR_YOU": "Alleen voor jou gedempt",
 			"CONNECTION_QUALITY": {
 				"LABEL": "Verbindingskwaliteit",
 				"EXCELLENT": "Uitstekend",
 				"GOOD": "Goed",
 				"POOR": "Slecht",
 				"LOST": "Verloren"
-			},
-			"SHARING_SCREEN": "Scherm delen",
-			"MIC_OFF": "Microfoon uit",
-			"CAM_OFF": "Camera uit"
+			}
 		},
 		"SETTINGS": {
 			"TITLE": "Instellingen",
@@ -105,20 +127,29 @@
 		},
 		"RECORDING": {
 			"TITLE": "Opname",
-			"SUBTITLE": "Neem uw vergadering op voor het nageslacht",
-			"CONTENT_TITLE": "Neem uw videogesprek op",
-			"CONTENT_SUBTITLE": "Als de opname klaar is kunt u deze met gemak downloaden",
-			"STARTING": "Beginnen met opnemen",
-			"STOPPING": "Opname stoppen",
-			"ACCEPT": "Accepteren",
-			"NO_TRACKS_PUBLISHED": "Deel audio of video om met opnemen te beginnen.",
-			"ERROR_STARTING": "Fout bij starten opname"
+			"STARTING": "Opname starten…",
+			"STOPPING": "Opname stoppen…",
+			"ERROR_STARTING": "De opname is niet gestart",
+			"TRIGGER_MANUAL_MODE": "Handmatige opname",
+			"TRIGGER_AUTO_MODE": "Automatische opname",
+			"STATUS_RECORDING": "Opname bezig",
+			"STATUS_STARTING": "Starten…",
+			"STATUS_STOPPING": "Stoppen…",
+			"STATUS_FAILED": "Kon niet starten",
+			"IN_PROGRESS_TITLE": "Deze vergadering wordt opgenomen",
+			"IN_PROGRESS_MESSAGE": "Audio, video en alles wat in deze vergadering wordt gedeeld, wordt vastgelegd.",
+			"TRY_AGAIN": "Opnieuw proberen",
+			"DISMISS": "Sluiten",
+			"MODERATORS_ONLY": "Alleen moderators kunnen de opname starten of stoppen.",
+			"AUTO_START_ONLY": "Deze ruimte start de opname zelf, dus die kan niet handmatig worden gestart."
 		}
 	},
 	"ERRORS": {
 		"SESSION": "Er is een fout opgetreden bij het verbinden met de meeting",
+		"TOKEN_TITLE": "Tokenfout",
 		"MEETING_NOT_READY": "De meeting is nog niet gereed. Herlaad de pagina en probeer het opnieuw.",
 		"MEETING_CONNECTION_FAILED": "Kan geen verbinding maken met de meeting. Controleer uw verbinding en probeer het opnieuw.",
+		"MEETING_FULL": "Deze vergadering heeft het maximale aantal deelnemers bereikt",
 		"CONNECTION": "Verbinding verloren",
 		"RECONNECT": "Proberen opnieuw verbinding te maken met de meeting...",
 		"DISCONNECT": "Je bent losgekoppeld",
@@ -199,13 +230,30 @@
 		"COUNT_HELPER": "Kies hoeveel externe deelnemers in het raster worden getoond",
 		"COUNT_ARIA": "Aantal weer te geven deelnemers"
 	},
+	"HIDDEN_PARTICIPANTS": {
+		"ONE_MORE": "andere deelnemer",
+		"MANY_MORE": "andere deelnemers",
+		"NAMES_AND_MORE": "{names} en {count} anderen"
+	},
 	"PARTICIPANT_ITEM": {
-		"PROMOTE_TOOLTIP": "Promoveren tot moderator",
-		"DOWNGRADE_TOOLTIP": "Terugzetten naar oorspronkelijke rechten",
-		"KICK_TOOLTIP": "Deelnemer verwijderen",
+		"PROMOTE": "Promoveren tot moderator",
+		"DOWNGRADE": "Terugzetten naar oorspronkelijke rechten",
+		"REMOVE": "Uit de vergadering verwijderen",
 		"BADGE_OWNER": "Eigenaar",
 		"BADGE_ADMIN": "Beheerder",
 		"BADGE_MODERATOR": "Moderator"
+	},
+	"PARTICIPANTS_PANEL_ACTIONS": {
+		"TURN_OFF_FOR_EVERYONE": "Voor iedereen uitschakelen",
+		"MUTE_ALL_TOOLTIP": "Microfoon van iedereen dempen",
+		"MUTE_ALL_NONE": "Alle microfoons staan al uit",
+		"TURN_OFF_ALL_CAMERAS_TOOLTIP": "Camera van iedereen uitschakelen",
+		"TURN_OFF_ALL_CAMERAS_NONE": "Alle camera's staan al uit",
+		"STOP_ALL_SCREEN_SHARES_TOOLTIP": "Alle schermdelingen stoppen",
+		"STOP_ALL_SCREEN_SHARES_NONE": "Niemand deelt zijn scherm"
+	},
+	"MODERATION": {
+		"MUTED_BY_MODERATOR": "Een moderator heeft een van uw apparaten uitgeschakeld"
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "U heeft de meeting verlaten",
@@ -215,6 +263,7 @@
 		"ENDED_TITLE": "Meeting beëindigd",
 		"ENDED_MESSAGE": "De meeting is door een moderator beëindigd",
 		"ENDED_BY_SELF_MESSAGE": "U heeft de meeting succesvol beëindigd",
+		"ENDED_BY_DURATION_LIMIT_MESSAGE": "Deze meeting is automatisch beëindigd omdat de maximale duur is bereikt",
 		"DISCONNECTED_TITLE": "Verbinding met meeting verbroken",
 		"NETWORK_MESSAGE": "Verbinding verloren door netwerkproblemen",
 		"SERVER_SHUTDOWN_MESSAGE": "Verbinding verloren door het afsluiten van de server",

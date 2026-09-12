@@ -3,6 +3,7 @@ import {
 	MeetAppearanceConfig,
 	MeetAssistantCapabilityName,
 	MeetParticipantModerationAction,
+	MeetParticipantMuteOptions,
 	MeetPermissionsInput,
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
@@ -21,8 +22,9 @@ import {
 	MeetRoomRolesConfig,
 	MeetRoomStatus,
 	MeetUserOptions,
-	SecurityConfig,
-	WebhookConfig
+	MeetWebhook,
+	MeetWebhookOptions,
+	SecurityConfig
 } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import ms, { StringValue } from 'ms';
@@ -39,6 +41,7 @@ import { RecordingService } from '../../src/services/recording.service.js';
 import { RoomScheduledTasksService } from '../../src/services/room-scheduled-tasks.service.js';
 import { getBasePath } from '../../src/utils/html-dynamic-base-path.utils.js';
 import {
+	waitForActiveRecordingEgress,
 	waitForAllRecordingsToStop,
 	waitForAllRoomsToDelete,
 	waitForMeetingToEnd,
@@ -149,36 +152,40 @@ export const updateRoomsAppearanceConfig = async (config: { appearance: MeetAppe
 	return response;
 };
 
-export const getWebhookConfig = async () => {
+export const createWebhook = async (options: MeetWebhookOptions) => {
 	checkAppIsRunning();
 
-	const { accessToken } = await loginRootAdmin();
 	const response = await request(app)
-		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks`))
-		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/webhooks`))
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.send(options);
+	return response;
+};
+
+export const getWebhooks = async () => {
+	checkAppIsRunning();
+
+	const response = await request(app)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/webhooks`))
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send();
 	return response;
 };
 
-export const updateWebhookConfig = async (config: WebhookConfig) => {
+export const deleteAllWebhooks = async () => {
 	checkAppIsRunning();
 
-	const { accessToken } = await loginRootAdmin();
-	const response = await request(app)
-		.put(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks`))
-		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
-		.send(config);
+	const response = await getWebhooks();
+	const { webhooks } = response.body as { webhooks: MeetWebhook[] };
 
-	return response;
-};
-
-export const testWebhookUrl = async (url: string) => {
-	checkAppIsRunning();
-
-	const response = await request(app)
-		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks/test`))
-		.send({ url });
-	return response;
+	await Promise.all(
+		webhooks.map((webhook) =>
+			request(app)
+				.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/webhooks/${webhook.webhookId}`))
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+				.send()
+		)
+	);
 };
 
 export const getSecurityConfig = async () => {
@@ -724,6 +731,14 @@ export const executeRoomStatusValidationGC = async () => {
 	await sleep('1s');
 };
 
+export const executeDurationLimitTimersGC = async () => {
+	checkAppIsRunning();
+
+	const roomTaskScheduler = container.get(RoomScheduledTasksService);
+	await roomTaskScheduler['reconcileDurationLimitTimersGC']();
+	await sleep('1s');
+};
+
 // ROOM MEMBER HELPERS
 
 export const createRoomMember = async (
@@ -888,11 +903,53 @@ export const updateParticipant = async (
 	const response = await request(app)
 		.put(
 			getFullPath(
-				`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}/role`
+				`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}/role`
 			)
 		)
 		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
 		.send({ action });
+	return response;
+};
+
+export const muteParticipantMedia = async (
+	roomId: string,
+	participantIdentity: string,
+	media: MeetParticipantMuteOptions,
+	roomMemberToken: string
+) => {
+	checkAppIsRunning();
+
+	const response = await request(app)
+		.put(
+			getFullPath(
+				`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}/media`
+			)
+		)
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
+		.send(media);
+	return response;
+};
+
+export const muteAllParticipantsMedia = async (
+	roomId: string,
+	media: MeetParticipantMuteOptions,
+	roomMemberToken: string
+) => {
+	checkAppIsRunning();
+
+	const response = await request(app)
+		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/participants/media`))
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
+		.send(media);
+	return response;
+};
+
+export const getMeetingParticipant = async (roomId: string, participantIdentity: string, roomMemberToken: string) => {
+	checkAppIsRunning();
+
+	const response = await request(app)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}`))
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 	return response;
 };
 
@@ -901,9 +958,7 @@ export const kickParticipant = async (roomId: string, participantIdentity: strin
 
 	const response = await request(app)
 		.delete(
-			getFullPath(
-				`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}`
-			)
+			getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}`)
 		)
 		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
 		.send();
@@ -914,7 +969,7 @@ export const endMeeting = async (roomId: string, roomMemberToken: string) => {
 	checkAppIsRunning();
 
 	const response = await request(app)
-		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}`))
+		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}`))
 		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
 		.send();
 
@@ -958,6 +1013,22 @@ export const startRecording = async (
 	}
 
 	return await req;
+};
+
+/**
+ * Starts a recording and, when accepted, waits until its egress is recording: the API answers as
+ * soon as LiveKit accepts the egress, while a stop only produces a file once the egress is active.
+ */
+export const startRecordingAndWaitUntilActive = async (
+	...args: Parameters<typeof startRecording>
+): Promise<Response> => {
+	const response = await startRecording(...args);
+
+	if (response.status === 201) {
+		await waitForActiveRecordingEgress(args[0]);
+	}
+
+	return response;
 };
 
 export const stopRecording = async (
@@ -1131,7 +1202,9 @@ export const stopAllRecordings = async () => {
 	const response = await getAllRecordings();
 
 	const recordingIds: string[] = response.body.recordings
-		.filter((rec: MeetRecordingInfo) => rec.status === MeetRecordingStatus.ACTIVE)
+		.filter((rec: MeetRecordingInfo) =>
+			[MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE].includes(rec.status)
+		)
 		.map((recording: { recordingId: string }) => recording.recordingId);
 
 	if (recordingIds.length === 0) {

@@ -100,6 +100,25 @@ describe('Permission naming (MEET_MODE)', () => {
 			expect(permissions.recordingDownload).toBe(false);
 		});
 
+		it('should grant every replacement key when the whole deprecated set is granted', async () => {
+			// Start from a full denial written in current keys, so the grant below has to move every
+			// replacement key rather than agree with whatever the role already held.
+			const denial = await putSpeakerPermissions(roomId, Object.fromEntries(CURRENT_KEYS.map((k) => [k, false])));
+			expect(denial.status).toBe(200);
+
+			const response = await putSpeakerPermissions(
+				roomId,
+				Object.fromEntries(DEPRECATED_KEYS.map((key) => [key, true]))
+			);
+			expect(response.status).toBe(200);
+
+			const permissions = (await rawGetRoom(roomId)).body.roles.speaker.permissions;
+
+			for (const key of CURRENT_KEYS) {
+				expect(permissions[key]).toBe(true);
+			}
+		});
+
 		it('should accept a consistent mix of deprecated and current spellings', async () => {
 			const response = await putSpeakerPermissions(roomId, { canRecord: true, recordingControl: true });
 			expect(response.status).toBe(200);

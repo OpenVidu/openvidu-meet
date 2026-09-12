@@ -17,6 +17,8 @@ webhooks/webhooks.yaml:
     - '#/recordingEnded/post'
     - '#/meetingStarted/post'
     - '#/meetingEnded/post'
+    - '#/participantJoined/post'
+    - '#/participantLeft/post'
 config/schemas/global-security-config.yaml:
   struct:
     - '#/AuthenticationConfig'
@@ -26,18 +28,11 @@ config/schemas/rooms-appearance-config.yaml:
     - '#/MeetAppearanceConfig'
     - '#/MeetRoomTheme'
     - '#/MeetRoomThemeMode'
-meetings/meetings.yaml:
-  path-parameters-defined:
-    - >-
-      #/~1meetings~1{roomId}~1participants~1{participantIdentity}/delete/parameters
-    - >-
-      #/~1meetings~1{roomId}~1participants~1{participantIdentity}~1role/put/parameters
 auth/auth.yaml:
   security-defined:
     - '#/~1auth~1login/post'
     - '#/~1auth~1logout/post'
 config/config.yaml:
   security-defined:
-    - '#/~1config~1webhooks~1test/post'
     - '#/~1config~1security/get'
     - '#/~1config~1captions/get'

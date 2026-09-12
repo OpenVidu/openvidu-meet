@@ -1,25 +1,26 @@
 import { inject, Service } from '@angular/core';
-import { MeetingLiveKitService } from '../../meeting/openvidu-components';
+import { EmbeddedCommandName, MeetParticipantMuteOptions, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import {
+	LocalMediaControlService,
+	LocalMediaStateService,
+	LocalTrackService,
+	MeetingLiveKitService
+} from '../../meeting/openvidu-components';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 
+/** Commands that also work from the prejoin screen; every other command needs an active session. */
+const PREJOIN_CAPABLE_COMMANDS: ReadonlySet<EmbeddedCommandName> = new Set([
+	EmbeddedCommandName.MEDIA_TOGGLE_AUDIO,
+	EmbeddedCommandName.MEDIA_TOGGLE_VIDEO
+]);
+
 /**
- * Meeting-domain command bridge exposed to the Angular Elements
- * `<openvidu-meet>` webcomponent's public API.
- *
- * Hosts call `meetingEnd()`, `meetingLeave()` and `participantKick()` on the
- * custom element; the WC adapter forwards each call to this service, which
- * then delegates to the appropriate meeting-domain service after checking
- * permissions and room context.
- *
- * The former action-first spellings are kept as `@deprecated` aliases that forward to the
- * canonical method, and are removed in **3.12.0**. Each canonical method holds the whole
- * implementation so the alias adds no behaviour of its own.
- *
- * The signal-based bridge for shell-level actions lives separately on
- * `EmbeddedEventBusService` (in `shared/`, no meeting-domain deps).
+ * Meeting-domain command bridge for the `<openvidu-meet>` webcomponent and the iframe `postMessage`
+ * bridge. Both transports call these methods, so every command is accepted or rejected identically
+ * through {@link run}.
  */
 @Service()
 export class EmbeddedCommandService {
@@ -27,98 +28,133 @@ export class EmbeddedCommandService {
 	private readonly meetingContextService = inject(MeetingContextService);
 	private readonly roomMemberContextService = inject(RoomMemberContextService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
+	private readonly localMediaControlService = inject(LocalMediaControlService);
+	private readonly localMediaState = inject(LocalMediaStateService);
+	private readonly localTrackService = inject(LocalTrackService);
 	private readonly log = inject(LoggerService).get('EmbeddedCommandService');
 
-	/**
-	 * Ends the meeting for all participants. Requires the local participant
-	 * to hold the `meetingEnd` permission; otherwise the call is a no-op.
-	 */
 	async meetingEnd(): Promise<void> {
-		if (!this.roomMemberContextService.hasPermission('meetingEnd')) {
-			this.log.w('meetingEnd() called but local participant lacks meetingEnd permission');
-			return;
-		}
+		await this.run(EmbeddedCommandName.MEETING_END, 'meetingEnd', async () => {
+			const roomId = this.meetingContextService.roomId();
 
-		const roomId = this.meetingContextService.roomId();
+			if (!roomId) {
+				this.log.w('meetingEnd() called but room id is undefined');
+				return;
+			}
 
-		if (!roomId) {
-			this.log.w('meetingEnd() called but room id is undefined');
-			return;
-		}
-
-		try {
-			this.log.d(`Ending meeting ${roomId}...`);
 			await this.meetingModerationService.endMeeting(roomId);
-		} catch (error) {
-			this.log.e('Error ending meeting:', error);
-		}
+		});
 	}
 
-	/**
-	 * Disconnects the local participant from the current room. Voluntary
-	 * leave; surfaces as `LeftEventReason.VOLUNTARY_LEAVE` to the host.
-	 */
 	async meetingLeave(): Promise<void> {
-		try {
-			this.log.d('Leaving room...');
-			await this.meetingLiveKitService.disconnect();
-		} catch (error) {
-			this.log.e('Error leaving room:', error);
-		}
+		await this.run(EmbeddedCommandName.MEETING_LEAVE, null, () => this.meetingLiveKitService.disconnect());
 	}
 
-	/**
-	 * Removes the named participant from the meeting. Requires the local
-	 * participant to hold the `participantKick` permission; otherwise the
-	 * call is a no-op.
-	 */
 	async participantKick(participantIdentity: string): Promise<void> {
-		if (!this.roomMemberContextService.hasPermission('participantKick')) {
-			this.log.w('participantKick() called but local participant lacks participantKick permission');
+		await this.run(EmbeddedCommandName.PARTICIPANT_KICK, 'participantKick', async () => {
+			const roomId = this.meetingContextService.roomId();
+
+			if (!participantIdentity || !roomId) {
+				this.log.w('participantKick() called without a participant identity or room id');
+				return;
+			}
+
+			await this.meetingModerationService.kickParticipant(roomId, participantIdentity);
+		});
+	}
+
+	async participantMute(participantIdentity: string, media: MeetParticipantMuteOptions): Promise<void> {
+		await this.run(EmbeddedCommandName.PARTICIPANT_MUTE, 'participantMute', async () => {
+			const roomId = this.meetingContextService.roomId();
+
+			if (!participantIdentity || !roomId) {
+				this.log.w('participantMute() called without a participant identity or room id');
+				return;
+			}
+
+			await this.meetingModerationService.muteParticipant(roomId, participantIdentity, media);
+		});
+	}
+
+	async participantMuteAll(media: MeetParticipantMuteOptions): Promise<void> {
+		await this.run(EmbeddedCommandName.PARTICIPANT_MUTE_ALL, 'participantMute', async () => {
+			const roomId = this.meetingContextService.roomId();
+
+			if (!roomId) {
+				this.log.w('participantMuteAll() called but room id is undefined');
+				return;
+			}
+
+			await this.meetingModerationService.muteAllParticipants(roomId, media);
+		});
+	}
+
+	async mediaToggleAudio(active?: boolean): Promise<void> {
+		await this.run(EmbeddedCommandName.MEDIA_TOGGLE_AUDIO, 'mediaPublishAudio', () =>
+			this.localMediaControlService.setMicrophoneEnabled(
+				this.resolveToggle(active, this.localMediaState.microphoneEnabled())
+			)
+		);
+	}
+
+	async mediaToggleVideo(active?: boolean): Promise<void> {
+		await this.run(EmbeddedCommandName.MEDIA_TOGGLE_VIDEO, 'mediaPublishVideo', () =>
+			this.localMediaControlService.setCameraEnabled(
+				this.resolveToggle(active, this.localMediaState.cameraEnabled())
+			)
+		);
+	}
+
+	async mediaToggleScreenShare(active?: boolean): Promise<void> {
+		await this.run(EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE, 'mediaShareScreen', () =>
+			this.localMediaControlService.setScreenShareEnabled(
+				this.resolveToggle(active, this.localMediaState.screenShareEnabled())
+			)
+		);
+	}
+
+	/** Anything other than an actual boolean (e.g. a webcomponent attribute string) means "toggle". */
+	private resolveToggle(active: boolean | undefined, currentlyEnabled: boolean): boolean {
+		return typeof active === 'boolean' ? active : !currentlyEnabled;
+	}
+
+	private async run(
+		command: EmbeddedCommandName,
+		permission: keyof MeetRoomMemberPermissions | null,
+		action: () => Promise<void>
+	): Promise<void> {
+		if (permission && !this.roomMemberContextService.hasPermission(permission)) {
+			this.log.w(`${command} rejected: local participant lacks the '${permission}' permission`);
 			return;
 		}
 
-		if (!participantIdentity) {
-			this.log.w('participantKick() called without a participant identity');
-			return;
-		}
+		const allowed =
+			this.meetingLiveKitService.isSessionActive() ||
+			(PREJOIN_CAPABLE_COMMANDS.has(command) && this.localTrackService.prejoinActive());
 
-		const roomId = this.meetingContextService.roomId();
-
-		if (!roomId) {
-			this.log.w('participantKick() called but room id is undefined');
+		if (!allowed) {
+			this.log.w(`${command} rejected: not available in the current meeting phase`);
 			return;
 		}
 
 		try {
-			this.log.d(`Kicking participant ${participantIdentity} from meeting ${roomId}...`);
-			await this.meetingModerationService.kickParticipant(roomId, participantIdentity);
+			await action();
 		} catch (error) {
-			this.log.e(`Error kicking participant ${participantIdentity}:`, error);
+			this.log.e(`Error running ${command}:`, error);
 		}
 	}
 
-	// ── Deprecated aliases ───────────────────────────────────────────────────
-	// Pure forwarders, so a host still on the 3.8.0 spelling goes through exactly the same
-	// code path as a migrated one.
-
-	/**
-	 * @deprecated Renamed to {@link EmbeddedCommandService.meetingEnd}. Removed in 3.12.0.
-	 */
+	/** @deprecated Renamed to {@link EmbeddedCommandService.meetingEnd}. Removed in 3.12.0. */
 	endMeeting(): Promise<void> {
 		return this.meetingEnd();
 	}
 
-	/**
-	 * @deprecated Renamed to {@link EmbeddedCommandService.meetingLeave}. Removed in 3.12.0.
-	 */
+	/** @deprecated Renamed to {@link EmbeddedCommandService.meetingLeave}. Removed in 3.12.0. */
 	leaveRoom(): Promise<void> {
 		return this.meetingLeave();
 	}
 
-	/**
-	 * @deprecated Renamed to {@link EmbeddedCommandService.participantKick}. Removed in 3.12.0.
-	 */
+	/** @deprecated Renamed to {@link EmbeddedCommandService.participantKick}. Removed in 3.12.0. */
 	kickParticipant(participantIdentity: string): Promise<void> {
 		return this.participantKick(participantIdentity);
 	}

@@ -10,6 +10,7 @@ properties:
                 example:
                     recordingControl: false
                     participantKick: false
+                    participantMute: false
                 description: |
                     Partial permissions object for the moderator role.
                     Only specify the permissions you want to override from the default or previously configured moderator permissions.
@@ -40,7 +41,7 @@ description: |
     For permissions, only specify the ones you want to change.
 
     On a `compatibility` deployment (the default `MEET_MODE`, removed in **3.12.0**), permission keys are
-    accepted under their `moduleAction` names or their deprecated `can*` spellings (see
+    accepted under their current names or their deprecated `can*` spellings (see
     [MeetPermissions](#/schemas/MeetPermissions)); sending both spellings of the same permission with
     contradicting values is rejected with a `422`. With `MEET_MODE='3.9.0'` the deprecated spellings are
     rejected.

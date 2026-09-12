@@ -1,0 +1,294 @@
+:host {
+	display: block;
+	flex-shrink: 0;
+}
+
+.ta-console {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	height: 236px;
+	background: var(--ta-panel);
+	border-top: 1px solid var(--ta-line);
+}
+
+/* Sits on the dock's top edge, over the border, so the whole edge is grabbable. */
+.ta-console__grip {
+	position: absolute;
+	top: -3px;
+	left: 0;
+	right: 0;
+	height: 7px;
+	cursor: ns-resize;
+	touch-action: none;
+	z-index: 1;
+}
+
+.ta-console__grip:hover,
+.ta-console__grip:focus-visible {
+	outline: none;
+	background: var(--ta-accent);
+	opacity: 0.55;
+}
+
+.ta-console--collapsed {
+	height: 34px;
+}
+
+/* ── Bar ────────────────────────────────────────────────────────────────────── */
+
+.ta-console__bar {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-shrink: 0;
+	height: 40px;
+	padding: 0 12px;
+	border-bottom: 1px solid var(--ta-line);
+}
+
+.ta-console--collapsed .ta-console__bar {
+	height: 34px;
+	border-bottom: 0;
+}
+
+.ta-console__bar h2 {
+	margin: 0;
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--ta-text);
+}
+
+.ta-console--collapsed .ta-console__bar h2 {
+	color: var(--ta-text-2);
+}
+
+.ta-console__chevron {
+	transition: transform 0.15s ease-in-out;
+}
+
+.ta-console--collapsed .ta-console__chevron {
+	transform: rotate(180deg);
+}
+
+.ta-console__latest {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	padding-left: 12px;
+	border-left: 1px solid var(--ta-line);
+}
+
+.ta-console__count {
+	margin-left: auto;
+}
+
+.ta-console__chips {
+	display: flex;
+	gap: 5px;
+}
+
+.ta-console__actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-left: auto;
+}
+
+.ta-console__search {
+	width: 200px;
+	height: 26px;
+	padding: 0 9px;
+	background: var(--ta-field);
+	border: 1px solid var(--ta-line);
+	border-radius: var(--ta-radius);
+	color: var(--ta-text);
+	font-family: var(--ta-font);
+	font-size: 11px;
+	outline: none;
+}
+
+.ta-console__search:focus-visible {
+	border-color: var(--ta-accent);
+	box-shadow: 0 0 0 2px var(--ta-accent-soft);
+}
+
+.ta-console__footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-shrink: 0;
+	height: 28px;
+	padding: 0 12px;
+	border-top: 1px solid var(--ta-line);
+}
+
+/* ── Filter chips ───────────────────────────────────────────────────────────── */
+
+.ta-chip {
+	height: 22px;
+	padding: 0 9px;
+	background: transparent;
+	border: 1px solid var(--ta-line);
+	border-radius: 3px;
+	color: var(--ta-text-3);
+	font-family: var(--ta-font-mono);
+	font-size: 10px;
+	letter-spacing: 0.04em;
+	cursor: pointer;
+	transition:
+		color 0.15s ease-in-out,
+		border-color 0.15s ease-in-out;
+}
+
+.ta-chip:hover {
+	color: var(--ta-text);
+	border-color: var(--ta-line-strong);
+}
+
+.ta-chip--on {
+	color: var(--ta-chip-color, var(--ta-text));
+	border-color: currentColor;
+	background: var(--ta-card);
+}
+
+.ta-chip--command {
+	--ta-chip-color: var(--ta-kind-command);
+}
+
+.ta-chip--event {
+	--ta-chip-color: var(--ta-kind-event);
+}
+
+.ta-chip--webhook {
+	--ta-chip-color: var(--ta-kind-webhook);
+}
+
+.ta-chip--warning {
+	--ta-chip-color: var(--ta-kind-warning);
+}
+
+/* Info has no hue of its own: its rail is neutral, so its chip is too. */
+.ta-chip--all,
+.ta-chip--info {
+	--ta-chip-color: var(--ta-text);
+}
+
+/* ── Entries ────────────────────────────────────────────────────────────────── */
+
+.ta-log {
+	flex-grow: 1;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ta-log-empty {
+	padding: 14px 12px;
+}
+
+.ta-log-entry {
+	border-bottom: 1px solid var(--ta-row-line);
+	border-left: 2px solid var(--ta-entry-color, var(--ta-line-strong));
+}
+
+.ta-log-entry--command {
+	--ta-entry-color: var(--ta-kind-command);
+}
+
+.ta-log-entry--event {
+	--ta-entry-color: var(--ta-kind-event);
+}
+
+.ta-log-entry--webhook {
+	--ta-entry-color: var(--ta-kind-webhook);
+}
+
+.ta-log-entry--warning {
+	--ta-entry-color: var(--ta-kind-warning);
+}
+
+.ta-log-entry--info {
+	--ta-entry-color: var(--ta-line-strong);
+}
+
+.ta-log-entry__row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	height: 26px;
+	padding: 0 12px;
+	background: transparent;
+	border: 0;
+	color: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.ta-log-entry__row:hover {
+	background: var(--ta-card);
+}
+
+.ta-log-entry__row--static {
+	cursor: default;
+}
+
+.ta-log-entry__row--static:hover {
+	background: transparent;
+}
+
+.ta-log-entry__time {
+	flex-shrink: 0;
+	width: 62px;
+	font-size: 10px;
+	color: var(--ta-text-3);
+	white-space: nowrap;
+}
+
+.ta-log-entry__tag {
+	flex-shrink: 0;
+	width: 34px;
+	font-size: 9px;
+	font-weight: 500;
+	letter-spacing: 0.06em;
+	color: var(--ta-entry-color, var(--ta-text-3));
+}
+
+.ta-log-entry__name {
+	flex-shrink: 0;
+	width: 230px;
+	font-size: 11px;
+	color: var(--ta-text);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ta-log-entry__detail {
+	flex-grow: 1;
+	min-width: 0;
+	font-size: 11px;
+	color: var(--ta-text-2);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ta-log-entry__payload {
+	margin: 0 12px 10px 108px;
+	padding: 10px 12px;
+	background: var(--ta-field);
+	border: 1px solid var(--ta-line);
+	border-radius: var(--ta-radius);
+	font-size: 11px;
+	line-height: 1.65;
+	color: var(--ta-text-2);
+	white-space: pre-wrap;
+	word-break: break-word;
+}

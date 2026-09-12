@@ -3,6 +3,21 @@ description: |
     The OpenVidu Meet REST API provides a comprehensive set of endpoints for integrating real-time video
     conferencing capabilities into your applications.
 
+    ## Permissions
+
+    Every operation on a room's live meeting and on its recordings is gated by one room member permission,
+    named in the operation's own description and listed in the `MeetPermissions` schema. A caller without it
+    gets a `403`.
+
+    Who is subject to them:
+
+    - **API key** (`X-API-KEY`): not subject to any permission check.
+    - **Room member token** (`X-Room-Member-Token`): the permissions the token itself carries, for the one
+      room it was issued for.
+    - **User access token** (`Authorization`): administrators and the room's owner always hold every
+      permission; a room member holds their effective permissions; any other user holds the speaker role's
+      permissions when the room has `access.user.enabled`, and none otherwise.
+
     ## API compatibility mode (`MEET_MODE`)
 
     The permission keys of room roles and room members were renamed in 3.9.0 (for example `canRecord` became

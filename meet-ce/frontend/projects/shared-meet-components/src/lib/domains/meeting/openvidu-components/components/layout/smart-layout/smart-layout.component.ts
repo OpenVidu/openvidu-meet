@@ -13,6 +13,7 @@ import {
 	viewChild
 } from '@angular/core';
 import { LayoutAdditionalElementsDirective } from '../../../directives/template/internals.directive';
+import { sameIdentityOrder } from '../../../models/layout/smart-layout.model';
 import { ParticipantModel, ParticipantStream } from '../../../models/participant.model';
 import { SmartLayoutService } from '../../../services/layout/smart-layout.service';
 import { ParticipantService } from '../../../services/participant/participant.service';
@@ -28,11 +29,7 @@ interface PersistentAudioEntry {
 
 @Component({
 	selector: 'ov-smart-layout',
-	imports: [
-		BaseLayoutComponent,
-		LayoutAdditionalElementsDirective,
-		HiddenParticipantsIndicatorComponent
-	],
+	imports: [BaseLayoutComponent, LayoutAdditionalElementsDirective, HiddenParticipantsIndicatorComponent],
 	templateUrl: './smart-layout.component.html'
 })
 export class SmartLayoutComponent implements OnDestroy {
@@ -75,43 +72,42 @@ export class SmartLayoutComponent implements OnDestroy {
 	 * Pure — does not mutate `_displayedCameraOrder`; {@link orderSyncEffect} persists the
 	 * result back so the next evaluation sees the up-to-date previous frame.
 	 */
-	private readonly displayedCameraOrder = computed<string[]>(() => {
-		const allRemotes = this.remoteParticipants();
-		const isSmart = this.isSmartLayoutActive();
-		const previous = untracked(() => this._displayedCameraOrder());
+	private readonly displayedCameraOrder = computed<string[]>(
+		() => {
+			const allRemotes = this.remoteParticipants();
+			const isSmart = this.isSmartLayoutActive();
+			const previous = untracked(() => this._displayedCameraOrder());
 
-		if (!isSmart) {
-			// Mosaic mode: preserve previous order across smart↔mosaic transitions so existing
-			// DOM nodes keep their positions. Newcomers are appended at the end.
-			const allIds = allRemotes.map((p) => p.identity);
-			const allIdSet = new Set(allIds);
-			const mosaicOrder = previous.filter((id) => allIdSet.has(id));
-			const orderSet = new Set(mosaicOrder);
+			if (!isSmart) {
+				// Mosaic mode: preserve previous order across smart↔mosaic transitions so existing
+				// DOM nodes keep their positions. Newcomers are appended at the end.
+				const allIds = allRemotes.map((p) => p.identity);
+				const allIdSet = new Set(allIds);
+				const mosaicOrder = previous.filter((id) => allIdSet.has(id));
+				const orderSet = new Set(mosaicOrder);
 
-			for (const p of allRemotes) {
-				if (!orderSet.has(p.identity)) mosaicOrder.push(p.identity);
+				for (const p of allRemotes) {
+					if (!orderSet.has(p.identity)) mosaicOrder.push(p.identity);
+				}
+
+				return mosaicOrder;
 			}
 
-			return mosaicOrder;
-		}
-
-		const availableIds = new Set(allRemotes.map((p) => p.identity));
-		const toDisplayIds = this.layoutService.computeParticipantsToDisplay(availableIds);
-		// In-place swaps: departing participants are replaced by arriving ones at the same index,
-		// so Angular @for sees INSERT+REMOVE instead of MOVE.
-		return this.syncDisplayOrder(previous, toDisplayIds, availableIds);
-	});
+			const availableIds = new Set(allRemotes.map((p) => p.identity));
+			const toDisplayIds = this.layoutService.computeParticipantsToDisplay(availableIds);
+			// In-place swaps: departing participants are replaced by arriving ones at the same index,
+			// so Angular @for sees INSERT+REMOVE instead of MOVE.
+			return this.syncDisplayOrder(previous, toDisplayIds, availableIds);
+		},
+		// A fresh array holding the same order is not a change: without this, every active-speaker
+		// event would hand the layout a new stream list and cost a full re-layout.
+		{ equal: sameIdentityOrder }
+	);
 
 	/** Persists the latest computed order into `_displayedCameraOrder` for the next frame. */
 	private readonly orderSyncEffect = effect(() => {
 		const next = this.displayedCameraOrder();
-		untracked(() => {
-			const current = this._displayedCameraOrder();
-
-			if (current.length === next.length && current.every((v, i) => v === next[i])) return;
-
-			this._displayedCameraOrder.set(next);
-		});
+		untracked(() => this._displayedCameraOrder.set(next));
 	});
 
 	private readonly visibleState = computed(() => {
@@ -162,12 +158,13 @@ export class SmartLayoutComponent implements OnDestroy {
 		const { targetIds } = this.visibleState();
 		return this.remoteParticipants()
 			.filter((p) => !targetIds.has(p.identity))
-			.map((p) => p.name || 'Unknown');
+			.map((p) => p.name ?? '');
 	});
 
 	/** Whether to render the hidden-participants indicator in the layout. */
 	readonly shouldShowHiddenParticipantsIndicator = computed(
-		() => this.ovShowHiddenParticipantsIndicator() && this.isSmartLayoutActive() && this.hiddenParticipantsCount() > 0
+		() =>
+			this.ovShowHiddenParticipantsIndicator() && this.isSmartLayoutActive() && this.hiddenParticipantsCount() > 0
 	);
 
 	/**
@@ -180,6 +177,17 @@ export class SmartLayoutComponent implements OnDestroy {
 			!!this.localParticipant()?.isPinned || this.remoteParticipants().some((p) => p.isPinned);
 		const visibleCount = this.visibleState().targetIds.size;
 		return !hasPinnedParticipant && visibleCount < this.layoutService.MAX_VISIBLE_REMOTE_PARTICIPANTS_LIMIT;
+	});
+
+	/** The status rail lives outside the layout, so the top-bar variant is published, not projected. */
+	private readonly railHiddenParticipantsEffect = effect(() => {
+		const showsInRail =
+			this.shouldShowHiddenParticipantsIndicator() && this.showTopBarHiddenParticipantsIndicator();
+		const summary = showsInRail
+			? { count: this.hiddenParticipantsCount(), names: this.hiddenParticipantNames() }
+			: undefined;
+
+		untracked(() => this.layoutService.setRailHiddenParticipants(summary));
 	});
 
 	/**
@@ -251,6 +259,7 @@ export class SmartLayoutComponent implements OnDestroy {
 
 	ngOnDestroy(): void {
 		this.cleanupAudioElements(new Set());
+		this.layoutService.setRailHiddenParticipants(undefined);
 	}
 
 	private manageAudioTracks(participants: ParticipantModel[], container: HTMLElement | null): void {

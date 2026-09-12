@@ -15,7 +15,9 @@ describe('Room API Tests', () => {
 		chat: { enabled: true },
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false },
-		captions: { enabled: true }
+		captions: { enabled: true },
+		initialAudioActive: true,
+		initialVideoActive: true
 	};
 
 	beforeAll(async () => {
@@ -48,7 +50,9 @@ describe('Room API Tests', () => {
 					chat: { enabled: true },
 					virtualBackground: { enabled: false },
 					e2ee: { enabled: false },
-					captions: { enabled: true }
+					captions: { enabled: true },
+					initialAudioActive: false,
+					initialVideoActive: true
 				}
 			};
 

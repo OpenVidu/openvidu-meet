@@ -95,6 +95,18 @@ frontend). Two details matter when things look stale:
 
 ## Code style
 
+- **Simplicity is the goal.** Fixing a bug or adding a feature must leave the code simpler and easier
+  to read and maintain, never more complex. Spend the smallest amount of technical complexity that
+  solves the problem; prefer removing code to adding it.
+- **Refactor before you add.** When resolving a bug, prefer refactoring, deleting and restructuring the
+  existing code over piling new code on top. Reworking what is there keeps the system smaller; a fix
+  that only adds is the last resort, not the first.
+- **Few comments.** Code must read and explain itself; if it needs a comment to be understood, it is
+  written wrong — rename, restructure or simplify instead. Never write historical-narrative comments
+  or comments that explain a bug fix or how a problem was solved (that belongs in commits, not the
+  source). A rare comment is acceptable only to state a genuine non-obvious constraint the code cannot
+  express. (Typings are the one exception: `meet-ce/typings/src` requires a concise TSDoc on every
+  exported member because the docs are generated from it — keep those factual, not narrative.)
 - Prettier (`.prettierrc`) is the formatter: **tabs**, tab width 4, print width 120, single quotes,
   no trailing commas, semicolons. Match it; do not reformat unrelated code.
 - ESLint is flat-config (`eslint.config.mjs`) per package and runs with `--max-warnings 0`, so
@@ -102,6 +114,47 @@ frontend). Two details matter when things look stale:
   and between class methods.
 - TypeScript 6.0 everywhere, `strict`. Backend is ESM (`"type": "module"`) and therefore needs
   explicit `.js` extensions on relative imports.
+
+## Changelog
+
+`CHANGELOG.md` at the root, newest release first. **Review it on every commit and every PR**: a
+change a user or an integrator can observe gets its line in the unreleased release in the same
+commit that makes it. Internal refactors, tests and build work do not.
+
+A release uses these sections, in this order, omitting the empty ones:
+
+`Upgrade notes` → `Breaking changes` → `Deprecated` → `Added` → `Improved` → `Fixed`
+
+`Added`, `Improved` and `Fixed` group their entries under `Integration`, `UI` and `Deployment`,
+defined once at the top of the file: the surfaces a host application is built against, what a
+person using Meet sees, and running the server.
+
+- **One line per change**, in the present tense. What changed, not why, not how it behaves, not
+  what the reader should do about it.
+- **One entry per feature, not per surface.** A capability that reaches the REST API and the
+  embedded API is one line naming both, never one line each: split entries dissolve a headline
+  feature into a list. A permission belongs in the entry that uses it, never in an entry of its
+  own, so the reader never meets a permission before the thing it gates.
+- **Order the entries of a subsection by feature**, so the list does not jump between unrelated
+  ones and never mentions something it explains later.
+- **No recommendations.** No `must`, no `should`, no second person. A remedy is stated as a fact:
+  "the unchanged object is accepted", never "echo the object back unchanged".
+- **No API reference.** Endpoint tables, payload fields, status semantics and enum meanings live
+  in `meet-ce/backend/openapi/` and in the typings TSDoc, which generate the published docs. Link
+  them instead of restating them.
+- **Name the identifiers that changed**: endpoints, configuration fields, commands, events,
+  permissions, enum values. That is what a reader searches for.
+- **Say what actually gates a capability**: the permission the server checks, not the role that
+  usually holds it. Check the route and the service before writing it.
+- **A fix says what was wrong and then what is true now**, in one or two sentences. No story of
+  the bug, no consequences, no rationale: that belongs in the commit message.
+- Tables only for mappings, such as a deprecated name to its replacement.
+
+Links to the REST API reference are markdown reference-style definitions collected at the end of
+the file, labelled with the release (`[3.9-meetings]`) because the published URL is version-pinned
+to `https://openvidu.io/<version>/meet/embedded/reference/api.html`. Anchors follow the convention
+the OpenAPI sources already use for their own cross-references: `#/operations/<operationId>`,
+`#/webhooks/<operationId>` and `#/schemas/<Schema>`.
 
 ## Tests, CI and docs
 

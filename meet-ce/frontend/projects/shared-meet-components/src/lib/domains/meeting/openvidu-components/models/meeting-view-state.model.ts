@@ -3,9 +3,9 @@
  *
  * Transitions:
  *   loading    → prejoin      (when showPrejoin = true)
- *   loading    → connecting   (when showPrejoin = false, token applied directly)
- *   prejoin    → connecting   (user clicks join, token applied directly)
- *   connecting → live         (connected to the room)
+ *   loading    → connecting   (when showPrejoin = false)
+ *   prejoin    → connecting   (user clicks join)
+ *   connecting → live         (token minted and connected to the room)
  *   live       → disconnected (user leaves)
  *   any        → error        (unrecoverable error)
  */

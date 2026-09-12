@@ -25,14 +25,24 @@ export const INTERNAL_CONFIG = {
 	// Timing and cleanup settings for room lifecycle management
 	ROOM_EXPIRED_GC_INTERVAL: '1h' as StringValue, // Interval for processing and deleting expired rooms
 	ROOM_ACTIVE_VERIFICATION_GC_INTERVAL: '15m' as StringValue, // Interval for checking room 'active_meeting' status consistency
+	MEETING_DURATION_LIMIT_GC_INTERVAL: '1m' as StringValue, // Interval of the safety-net sweep for meetings past their room's maxDurationMinutes, for when a per-meeting timer was lost
+	MEETING_DURATION_LIMIT_LOCK_TTL: '15s' as StringValue, // Redis lock TTL serializing the force-end of a meeting past its duration limit
+	MEETING_DURATION_LIMIT_TOLERANCE: '1s' as StringValue, // How close to its deadline a meeting counts as due, instead of arming a timer for a remainder this small
+	MEETING_DURATION_LIMIT_RETRY_DELAY: '5s' as StringValue, // First delay a fired duration-limit timer waits to retry an end it could not carry out; doubles per attempt, up to MEETING_DURATION_LIMIT_GC_INTERVAL
+	MEETING_ENDED_REASON_TTL: '24h' as StringValue, // Redis TTL for the per-room "meeting was force-ended for exceeding its duration limit" flag consumed by the room_finished handler; scoped to the meeting's LiveKit room sid, this is only a last-resort safety net
+	MEETING_MIN_PARTICIPANTS_LIMIT: 1, // Lowest value config.maxParticipants may be set to; 0 would be a room nobody could ever join
+	MEETING_MAX_PARTICIPANTS_LIMIT: 30, // Highest value config.maxParticipants may be set to
+	MEETING_MIN_DURATION_MINUTES_LIMIT: 1, // Lowest value config.maxDurationMinutes may be set to; 0 would be indistinguishable from the null that means no limit
+	MEETING_MAX_DURATION_MINUTES_LIMIT: 1_440, // Highest value config.maxDurationMinutes may be set to (1 day)
 
 	// Timing and cleanup settings for recording lifecycle management
-	RECORDING_STARTED_TIMEOUT: '20s' as StringValue, // Timeout for recording to be marked as started
 	RECORDING_ACTIVE_LOCK_TTL: '24h' as StringValue, // Redis Lock TTL for active recording in a room (capped at the 24h max supported by the distributed-lock engine; the real lifecycle is governed by the orphaned-locks GC, this is only a last-resort safety net)
+	RECORDING_STOP_LOCK_TTL: '30s' as StringValue, // Redis Lock TTL while a stop request is in flight in a room (serializes concurrent stops); released as soon as the request finishes, so the TTL only bounds a stop stuck in LiveKit
 	RECORDING_ACTIVE_LOCK_GC_INTERVAL: '15m' as StringValue, // Interval for cleaning up stale active recording locks
-	RECORDING_ORPHANED_ACTIVE_LOCK_GRACE_PERIOD: '30s' as StringValue, // Grace period to consider an active recording lock as orphaned (should be greater than RECORDING_STARTED_TIMEOUT)
+	RECORDING_ORPHANED_ACTIVE_LOCK_GRACE_PERIOD: '30s' as StringValue, // Minimum age of an active recording lock before the GC may release it, so a start request still creating its egress in LiveKit keeps its lock
 	RECORDING_STALE_GC_INTERVAL: '14m' as StringValue, // Interval for cleaning up stale recordings (not updated recently)
 	RECORDING_STALE_GRACE_PERIOD: '5m' as StringValue, // Maximum allowed time since the last recording update before marking it as stale
+	RECORDING_AUTO_START_DISABLED_TTL: '24h' as StringValue, // Redis TTL for the per-room "auto-start disabled after a manual stop" flag; cleared on room_finished and refreshed on every hit, this is only a last-resort safety net against leaked flags
 
 	// Additional intervals
 	MIN_ROOM_AUTO_DELETE_DURATION: '1h' as StringValue, // Minimum duration before a room can be auto-deleted
@@ -42,21 +52,29 @@ export const INTERNAL_CONFIG = {
 	// Participant name reservation
 	PARTICIPANT_MAX_CONCURRENT_NAME_REQUESTS: 20, // Maximum number of request by the same name at the same time allowed
 	PARTICIPANT_NAME_RESERVATION_TTL: '12h' as StringValue, // Time-to-live for participant name reservations
-	
+
 	MEETING_PRESENCE_TTL: '32d' as StringValue, // Time-to-live for user/room presence mappings used to kick users from meetings
+
+	// Webhooks
+	WEBHOOK_MAX_ENDPOINTS: 10, // Maximum number of registered webhooks per deployment; also the delivery concurrency, so no endpoint ever queues behind another
+	WEBHOOK_RETRY_ATTEMPTS: 5, // Delivery retries per endpoint and event (exponential backoff, isolated per endpoint)
+	WEBHOOK_RETRY_INITIAL_DELAY: 300, // Initial backoff delay in ms between webhook delivery retries (doubles per retry)
+	WEBHOOK_REQUEST_TIMEOUT: 5000, // Timeout in ms for each webhook HTTP request (delivery and URL test)
+	WEBHOOK_REGISTRY_LOCK_TTL: '5s' as StringValue, // Redis lock TTL serializing the webhook registration count-then-create against WEBHOOK_MAX_ENDPOINTS
 
 	CAPTIONS_AGENT_NAME: 'speech-processing',
 	ASSISTANT_STATE_LOCK_TTL: '60s' as StringValue, // Redis lock TTL for AI assistant state (start/stop operations)
 
 	// Batch and concurrency processing settings
-	DEFAULT_CONCURRENCY: 10, // Default concurrency limit for concurrent operations
 	BATCH_SIZE_ROOMS_EXPIRED_GC: 100, // Number of expired rooms to process per batch during GC
 	BATCH_SIZE_ROOMS_STATUS_VALIDATION_GC: 100, // Number of active rooms to validate per batch during status consistency GC
+	BATCH_SIZE_MEETING_DURATION_LIMIT_GC: 100, // Number of duration-limited active rooms to re-arm or end per batch during the duration-limit GC
 	BATCH_SIZE_RECORDINGS: 100, // Process 100 recordings at a time to balance throughput and memory
 	BATCH_SIZE_REGISTRY_LOCKS_RETRIEVAL: 100, // Number of recording locks to retrieve from registry in each batch during orphaned locks GC
 	CONCURRENCY_STALE_RECORDINGS_GC: 20, // Concurrency limit for processing stale recordings garbage collection
 	CONCURRENCY_ORPHANED_LOCKS_GC: 10, // Concurrency limit for processing orphaned recording locks with failFast enabled
 	CONCURRENCY_VALIDATE_ROOMS_STATUS: 10, // Concurrency limit for validating and cleaning up inconsistent rooms
+	CONCURRENCY_MEETING_DURATION_LIMIT_GC: 10, // Concurrency limit for re-arming duration-limit timers and ending the meetings already past them
 	CONCURRENCY_BULK_DELETE_ROOMS: 10, // Concurrency limit for bulk deleting rooms
 	CONCURRENCY_BULK_RETRIEVE_ROOMS: 20, // Concurrency limit for bulk retrieving room info
 	CONCURRENCY_BULK_DELETE_RECORDINGS: 20, // Concurrency limit for bulk deleting recordings
@@ -64,21 +82,33 @@ export const INTERNAL_CONFIG = {
 	CONCURRENCY_BULK_RETRIEVE_RECORDINGS: 10, // Concurrency limit for bulk retrieving recording info
 	CONCURRENCY_BULK_DELETE_STORAGE: 20, // Concurrency limit for bulk deleting objects in storage
 	CONCURRENCY_BULK_KICK_MEMBERS: 20, // Concurrency limit for bulk kicking members from a room
+	CONCURRENCY_BULK_MUTE_PARTICIPANTS: 20, // Concurrency limit for bulk muting participants in a meeting
 	CONCURRENCY_BULK_UPDATE_PERMISSIONS: 20, // Concurrency limit for bulk updating room members' permissions
 	CONCURRENCY_BULK_CLEANUP_USER_RESOURCES: 20, // Concurrency limit for bulk cleanup of user resources
 	CONCURRENCY_BULK_CLEANUP_PARTICIPANT_NAME_RESERVATIONS: 20, // Concurrency limit for bulk cleanup of participant name reservations
+
+	// Boot-time locks (migrations, storage seeding). The guarded routines are idempotent, so a
+	// contender waits for the lock and re-runs them itself instead of assuming the holder finished;
+	// each retry budget outlives its lock TTL so a dead holder's lock lapses within the window.
+	MIGRATION_LOCK_TTL: '5m' as StringValue, // Redis lock TTL serializing startup migrations across instances
+	MIGRATION_LOCK_RETRY_DELAY: '5s' as StringValue, // Delay between migration lock acquisition attempts
+	MIGRATION_LOCK_MAX_ATTEMPTS: 72, // ~6min budget; boot fails if the lock is still unavailable after this
+	STORAGE_INIT_LOCK_TTL: '30s' as StringValue, // Redis lock TTL serializing default-data seeding across instances
+	STORAGE_INIT_LOCK_RETRY_DELAY: '2s' as StringValue, // Delay between storage init lock acquisition attempts
+	STORAGE_INIT_LOCK_MAX_ATTEMPTS: 30, // ~1min budget; boot fails if the lock is still unavailable after this
 
 	// MongoDB Schema Versions
 	// These define the current schema version for each collection
 	// Increment when making breaking changes to the schema structure
 	// IMPORTANT: whenever you increment a schema version, update the MIGRATION_REV timestamp too.
 	// This helps surface merge conflicts when multiple branches create schema migrations concurrently.
-	GLOBAL_CONFIG_SCHEMA_VERSION: 2 as SchemaVersion, // MIGRATION_REV: 1771580869366
+	GLOBAL_CONFIG_SCHEMA_VERSION: 3 as SchemaVersion, // MIGRATION_REV: 1786652415187
 	USER_SCHEMA_VERSION: 2 as SchemaVersion, // MIGRATION_REV: 1774181859233
 	API_KEY_SCHEMA_VERSION: 1 as SchemaVersion, // MIGRATION_REV: 1771328577054
-	ROOM_SCHEMA_VERSION: 4 as SchemaVersion, // MIGRATION_REV: 1786381454949
-	ROOM_MEMBER_SCHEMA_VERSION: 2 as SchemaVersion, // MIGRATION_REV: 1786381454949
-	RECORDING_SCHEMA_VERSION: 3 as SchemaVersion // MIGRATION_REV: 1781616231619
+	ROOM_SCHEMA_VERSION: 5 as SchemaVersion, // MIGRATION_REV: 1787569647276
+	ROOM_MEMBER_SCHEMA_VERSION: 3 as SchemaVersion, // MIGRATION_REV: 1787569647276
+	RECORDING_SCHEMA_VERSION: 3 as SchemaVersion, // MIGRATION_REV: 1781616231619
+	WEBHOOK_SCHEMA_VERSION: 1 as SchemaVersion // MIGRATION_REV: 1786634401242
 };
 
 // This function is used to set private configuration values for testing purposes.

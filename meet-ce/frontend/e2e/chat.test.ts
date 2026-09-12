@@ -3,15 +3,16 @@ import {
 	expectChatLinkCount,
 	expectChatLinkHrefContains,
 	expectChatMessageCount,
+	expectChatMessageNotification,
 	expectChatMessageTextAt,
 	expectFirstMessageSender,
+	openChatFromNotification,
 	sendChatMessage,
 	toggleChatPanel
 } from './helpers/chat.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-navigation.helper';
 import { disconnectAllBrowserFakeParticipants, joinParticipants } from './helpers/participant-management.helper';
-import { expectSnackbarNotification } from './helpers/ui-utils.helper';
 
 test.describe('Chat E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -157,7 +158,9 @@ test.describe('Chat E2E Tests', () => {
 		await expectChatLinkHrefContains(page, 0, 'demos\\.openvidu\\.io');
 	});
 
-	test('should show snackbar notification when receiving a message with chat panel closed', async ({ browser }) => {
+	test('should notify a message received with the chat panel closed, and open the chat from it', async ({
+		browser
+	}) => {
 		const senderName = `sender`;
 		const receiverName = `receiver`;
 		const { byName, removeAllParticipants } = await joinParticipants(browser, {
@@ -177,9 +180,9 @@ test.describe('Chat E2E Tests', () => {
 			await toggleChatPanel(senderPage);
 			await sendChatMessage(senderPage, message);
 
-			await expectSnackbarNotification(receiverPage);
+			await expectChatMessageNotification(receiverPage);
 
-			await toggleChatPanel(receiverPage);
+			await openChatFromNotification(receiverPage);
 			await expectChatMessageCount(receiverPage, 1);
 			await expectChatMessageTextAt(receiverPage, 0, message);
 		} finally {

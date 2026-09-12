@@ -73,6 +73,17 @@ generated type/manifest artifacts were removed in favor of this single deliverab
     console.log('Left room, reason:', e.detail.reason);
   });
 
+  // Remote participants (live transitions only; the local participant uses the
+  // meeting* events above). The participant object carries the identity, the
+  // app-provided externalId/metadata correlation fields and the effective role.
+  meet.addEventListener('participantJoined', (e) => {
+    console.log('Participant joined:', e.detail.participant.participantName, e.detail.participant.externalId);
+  });
+
+  meet.addEventListener('participantLeft', (e) => {
+    console.log('Participant left:', e.detail.participant.participantIdentity);
+  });
+
   // The 3.8.0 event names ('joined', 'left', 'closed') are dispatched alongside the
   // canonical ones above until 3.12.0 — listening to both delivers the event twice.
 

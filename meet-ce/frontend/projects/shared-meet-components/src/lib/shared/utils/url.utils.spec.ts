@@ -7,6 +7,7 @@ import {
 	getReferrerOrigin,
 	isValidUrl,
 	lastPathSegment,
+	parseOptionalBoolean,
 	queryParam
 } from './url.utils';
 
@@ -105,6 +106,29 @@ describe('isValidUrl', () => {
 	});
 });
 
+describe('parseOptionalBoolean', () => {
+	// The third state is the point: an absent param must stay distinguishable from an explicit
+	// `true`, because only the latter outranks the room's own initial-media default.
+	it('keeps an absent value undefined instead of defaulting it', () => {
+		expect(parseOptionalBoolean(undefined)).toBeUndefined();
+	});
+
+	it('reads only the literal "false" as false', () => {
+		expect(parseOptionalBoolean('false')).toBeFalse();
+		expect(parseOptionalBoolean('true')).toBeTrue();
+		expect(parseOptionalBoolean('')).toBeTrue();
+		expect(parseOptionalBoolean('anything')).toBeTrue();
+	});
+
+	// Same exact-literal rule Angular's `booleanAttribute` applies to the webcomponent attribute, so
+	// both transports agree on every spelling — including the surprising ones.
+	it('does not accept other spellings of false', () => {
+		expect(parseOptionalBoolean('FALSE')).toBeTrue();
+		expect(parseOptionalBoolean('False')).toBeTrue();
+		expect(parseOptionalBoolean('0')).toBeTrue();
+	});
+});
+
 describe('extractParams', () => {
 	it('maps route params + query params onto the entry-parameter bag', () => {
 		const result = extractParams({
@@ -112,6 +136,10 @@ describe('extractParams', () => {
 			queryParams: {
 				secret: 'sec',
 				[EmbeddedAttribute.PARTICIPANT_NAME]: 'Alice',
+				[EmbeddedAttribute.PARTICIPANT_EXTERNAL_ID]: 'crm-user_42',
+				[EmbeddedAttribute.PARTICIPANT_METADATA]: '{"plan":"premium"}',
+				[EmbeddedAttribute.INITIAL_AUDIO_ACTIVE]: 'true',
+				[EmbeddedAttribute.INITIAL_VIDEO_ACTIVE]: 'false',
 				[EmbeddedAttribute.LEAVE_REDIRECT_URL]: 'https://back',
 				[EmbeddedAttribute.SHOW_ONLY_RECORDINGS]: 'true',
 				[EmbeddedAttribute.SHOW_RECORDING]: 'rec-1',
@@ -123,6 +151,10 @@ describe('extractParams', () => {
 			roomId: 'r1',
 			secret: 'sec',
 			participantName: 'Alice',
+			participantExternalId: 'crm-user_42',
+			participantMetadata: '{"plan":"premium"}',
+			initialAudioActive: 'true',
+			initialVideoActive: 'false',
 			leaveRedirectUrl: 'https://back',
 			showOnlyRecordings: 'true',
 			showRecording: 'rec-1',
@@ -135,6 +167,8 @@ describe('extractParams', () => {
 		expect(result.showOnlyRecordings).toBe('false');
 		expect(result.secret).toBeUndefined();
 		expect(result.participantName).toBeUndefined();
+		expect(result.participantExternalId).toBeUndefined();
+		expect(result.participantMetadata).toBeUndefined();
 	});
 });
 

@@ -15,7 +15,9 @@
       "DELETE_ROOM": "ルームを削除",
       "SHARE_LINK": "リンクを共有",
       "MORE_ACTIONS": "その他の操作",
-      "VIEW_USER_PROFILE": "ユーザープロフィールを表示"
+      "VIEW_USER_PROFILE": "ユーザープロフィールを表示",
+      "COPY_ROOM_ID": "ルーム ID をコピー",
+      "ROOM_ID_COPIED": "ルーム ID をクリップボードにコピーしました"
     },
     "LIST": {
       "LOADING_TITLE": "ルームを読み込んでいます",
@@ -154,7 +156,7 @@
       "UPDATE_ROOM": "ルームを更新",
       "CREATE_ROOM": "ルームを作成",
       "STEP_ROOM_DETAILS": "ルームの詳細",
-      "STEP_ROOM_FEATURES": "ルームの機能",
+      "STEP_ROOM_FEATURES": "会議の機能",
       "STEP_ROOM_ACCESS": "ルームのアクセス",
       "STEP_RECORDING_SETTINGS": "録画設定",
       "STEP_RECORDING_TRIGGER": "録画のトリガー",
@@ -225,11 +227,11 @@
         "MEMBERS_TO_ADD_SUFFIX": "）",
         "EDIT_MEMBER": "メンバーを編集",
         "REMOVE_MEMBER": "メンバーを削除",
-        "FEATURE_DISABLED_PERMISSION": "この権限を設定するには、「ルームの機能」で対応する機能を有効にしてください。"
+        "FEATURE_DISABLED_PERMISSION": "この権限を設定するには、「会議の機能」で対応する機能を有効にしてください。"
       },
       "FEATURES": {
-        "TITLE": "ルームの機能",
-        "DESCRIPTION": "ルームの追加機能を設定します",
+        "TITLE": "会議の機能",
+        "DESCRIPTION": "会議の追加機能を設定します",
         "SECURITY": "セキュリティ",
         "E2EE": "エンドツーエンド暗号化",
         "E2EE_DESC": "会議にさらなるセキュリティ層を追加します。会議の外部にいる人は、サーバーにアクセスできる人であっても、会話を見たり聞いたりすることはできません。",
@@ -246,7 +248,31 @@
         "CHAT_DESC": "会議中に参加者がメッセージを送信できるようにします",
         "EXPERIENCE": "エクスペリエンス",
         "VIRTUAL_BACKGROUNDS": "仮想背景",
-        "VIRTUAL_BACKGROUNDS_DESC": "参加者向けに仮想背景とぼかし効果を有効にします"
+        "VIRTUAL_BACKGROUNDS_DESC": "参加者向けに仮想背景とぼかし効果を有効にします",
+        "DEVICES": "デバイス",
+        "INITIAL_AUDIO": "参加時にマイクをオン",
+        "INITIAL_AUDIO_DESC": "参加者はマイクをオンにした状態で参加します",
+        "INITIAL_AUDIO_NOTE": "（いつでもミュートできます）",
+        "INITIAL_VIDEO": "参加時にカメラをオン",
+        "INITIAL_VIDEO_DESC": "参加者はカメラをオンにした状態で参加します",
+        "INITIAL_VIDEO_NOTE": "（いつでもオフにできます）",
+        "LIMITS": "制限",
+        "MAX_DURATION": "会議の最大時間",
+        "MAX_DURATION_DESC": "この時間が経過すると会議は自動的に終了します。空欄の場合は無制限です",
+        "MAX_DURATION_LABEL": "分",
+        "MAX_DURATION_PLACEHOLDER": "無制限",
+        "MAX_DURATION_INVALID": "整数（分）を入力してください",
+        "MAX_DURATION_TOO_LOW": "最低1分を入力してください",
+        "MAX_DURATION_TOO_HIGH_PREFIX": "最大",
+        "MAX_DURATION_TOO_HIGH_SUFFIX": "分を入力してください",
+        "MAX_PARTICIPANTS": "参加者数の上限",
+        "MAX_PARTICIPANTS_DESC": "会議に参加できる最大人数です。空欄の場合は無制限です",
+        "MAX_PARTICIPANTS_LABEL": "人数",
+        "MAX_PARTICIPANTS_PLACEHOLDER": "無制限",
+        "MAX_PARTICIPANTS_INVALID": "整数（人数）を入力してください",
+        "MAX_PARTICIPANTS_TOO_LOW": "最低1人を入力してください",
+        "MAX_PARTICIPANTS_TOO_HIGH_PREFIX": "最大",
+        "MAX_PARTICIPANTS_TOO_HIGH_SUFFIX": "人を入力してください"
       },
       "RECORDING_CONFIG": {
         "TITLE": "録画設定",
@@ -277,10 +303,17 @@
         "DESCRIPTION": "録画を自動的に開始するタイミングを選択します",
         "MANUAL_TITLE": "手動録画",
         "MANUAL_DESC": "必要に応じて手動で録画を開始します",
-        "AUTO1_TITLE": "自動（参加者 1 人）",
-        "AUTO1_DESC": "参加者が 1 人参加すると自動的に録画を開始します",
-        "AUTO2_TITLE": "自動（参加者 2 人）",
-        "AUTO2_DESC": "参加者が 2 人参加すると自動的に録画を開始します"
+        "AUTO_TITLE": "自動録画",
+        "AUTO_DESC": "ミーティングが始まると自動的に録画を開始します",
+        "AUTOSTART_MODE_LABEL": "録画はいつ開始しますか？",
+        "AUTOSTART_MODE_FIRST_TITLE": "最初の参加者が参加したとき",
+        "AUTOSTART_MODE_FIRST_DESC": "ミーティング開始と同時に録画を開始します",
+        "AUTOSTART_MODE_SECOND_TITLE": "2人目の参加者が参加したとき",
+        "AUTOSTART_MODE_SECOND_DESC": "もう一人参加するまで待ちます",
+        "AUTOSTART_MODE_MODERATOR_TITLE": "モデレーターが参加したとき",
+        "AUTOSTART_MODE_MODERATOR_DESC": "モデレーターが参加、または昇格した時点で録画を開始します",
+        "AUTOSTART_UNREACHABLE_TITLE": "録画トリガーに到達できません",
+        "AUTOSTART_UNREACHABLE_MESSAGE": "このトリガーには少なくとも ${required} 人の参加者が必要ですが、ルームの参加者数の上限は ${limit} に設定されています。"
       }
     },
     "ERRORS": {
@@ -350,6 +383,22 @@
         "ACTIVE": "会議が進行中の間はルームの編集が無効になります",
         "DEFAULT": "ルーム設定を編集"
       }
+    },
+    "DIALOGS": {
+      "DELETE_ROOM_TITLE": "ルームを削除",
+      "DELETE_ROOM_MESSAGE": "ルーム <b>{roomId}</b> を削除してもよろしいですか？",
+      "DELETE_ROOMS_TITLE": "ルームを削除",
+      "DELETE_ROOMS_MESSAGE": "<b>{count}</b> 件のルームを削除してもよろしいですか？",
+      "REMOVE_MEMBER_TITLE": "メンバーを削除",
+      "REMOVE_MEMBER_MESSAGE": "<b>{memberName}</b> をこのルームから削除してもよろしいですか？",
+      "REMOVE_MEMBERS_TITLE": "メンバーを削除",
+      "REMOVE_MEMBERS_MESSAGE_ONE": "<b>{count} 人のメンバー</b>をこのルームから削除してもよろしいですか？",
+      "REMOVE_MEMBERS_MESSAGE_MANY": "<b>{count} 人のメンバー</b>をこのルームから削除してもよろしいですか？",
+      "MEETING_WARNING_TITLE": "ミーティング進行中の注意",
+      "REMOVE_MEMBER_WARNING": "このユーザーがミーティング中の場合、ただちに退出させられます。",
+      "REMOVE_MEMBERS_WARNING": "ミーティング中のメンバーはただちに退出させられます。",
+      "DELETE": "削除",
+      "REMOVE": "削除"
     }
   }
 }

@@ -46,10 +46,12 @@
 					<div class="recording-info">
 						<h1 class="recording-title">{{ recording()!.roomName }}</h1>
 						<div class="recording-metadata">
-							<span class="recording-date">
-								<mat-icon>schedule</mat-icon>
-								{{ recording()!.startDate | date: 'MMM d, y' }}
-							</span>
+							@if (recording()!.startDate) {
+								<span class="recording-date">
+									<mat-icon>schedule</mat-icon>
+									{{ recording()!.startDate | date: 'MMM d, y' }}
+								</span>
+							}
 							@if (recording()!.duration) {
 								<span class="recording-duration">
 									<mat-icon>timer</mat-icon>
@@ -149,10 +151,12 @@
 									<h1 class="recording-title">{{ recording()!.roomName }}</h1>
 								</div>
 								<div class="recording-metadata">
-									<span class="recording-date">
-										<mat-icon class="ov-action-icon">schedule</mat-icon>
-										{{ recording()!.startDate | date: 'MMM d, y - h:mm a' }}
-									</span>
+									@if (recording()!.startDate) {
+										<span class="recording-date">
+											<mat-icon class="ov-action-icon">schedule</mat-icon>
+											{{ recording()!.startDate | date: 'MMM d, y - h:mm a' }}
+										</span>
+									}
 									@if (recording()!.duration) {
 										<span class="recording-duration">
 											<mat-icon class="ov-action-icon">timer</mat-icon>

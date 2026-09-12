@@ -156,6 +156,15 @@
       "RECORDINGS_FAILED_SUFFIX_SINGULAR": "件の録画を削除できませんでした。",
       "RECORDINGS_FAILED_SUFFIX_PLURAL": "件の録画を削除できませんでした。",
       "DELETE_RECORDINGS_FAILED": "録画の削除に失敗しました"
+    },
+    "DIALOGS": {
+      "DELETE_RECORDING_TITLE": "録画を削除",
+      "DELETE_RECORDING_MESSAGE": "録画 <b>{recordingId}</b> を完全に削除してもよろしいですか？この操作は取り消せません。",
+      "DELETE_RECORDINGS_TITLE": "録画を削除",
+      "DELETE_RECORDINGS_MESSAGE_ONE": "<b>{count} 件の録画</b>を完全に削除してもよろしいですか？この操作は取り消せません。",
+      "DELETE_RECORDINGS_MESSAGE_MANY": "<b>{count} 件の録画</b>を完全に削除してもよろしいですか？この操作は取り消せません。",
+      "DELETE": "削除",
+      "CANCEL": "キャンセル"
     }
   }
 }

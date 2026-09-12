@@ -38,7 +38,7 @@
 
 		<!-- Mic status warnings (talking while muted / muted by the system).
 			 The popup overlay is anchored to the mic button so it always points at it. -->
-		<ov-mic-status-alert [micEnabled]="isMicrophoneEnabled()" originSelector="#mic-btn" />
+		<ov-mic-status-alert originSelector="#mic-btn" />
 	</div>
 }
 
@@ -134,22 +134,17 @@
 			<button
 				mat-menu-item
 				id="recording-btn"
-				[disabled]="
-					recordingStatus() === _recordingStatus.STARTING ||
-					recordingStatus() === _recordingStatus.STOPPING ||
-					!hasRoomTracksPublished()
-				"
-				[matTooltip]="!hasRoomTracksPublished() ? ('TOOLBAR.NO_TRACKS_PUBLISHED' | translate) : ''"
+				[disabled]="isRecordingToggleDisabled()"
+				[matTooltip]="recordingDisabledReasonKey() ? (recordingDisabledReasonKey() | translate) : ''"
+				matTooltipClass="ov-recording-disabled-tooltip"
 				(click)="onRecordingToggle()"
 			>
 				<mat-icon color="warn">radio_button_checked</mat-icon>
 				<span>
 					{{
-						recordingStatus() === _recordingStatus.STOPPED ||
-						recordingStatus() === _recordingStatus.STOPPING ||
-						recordingStatus() === _recordingStatus.FAILED
-							? ('TOOLBAR.START_RECORDING' | translate)
-							: ('TOOLBAR.STOP_RECORDING' | translate)
+						isRecordingInProgress()
+							? ('TOOLBAR.STOP_RECORDING' | translate)
+							: ('TOOLBAR.START_RECORDING' | translate)
 					}}
 				</span>
 			</button>

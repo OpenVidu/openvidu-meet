@@ -38,6 +38,17 @@ registers the real element as `openvidu-meet-impl`), and delegates to an inner `
 attributes/properties are mirrored, imperative calls made before load are buffered and replayed, and
 events are re-dispatched on the outer element.
 
+- **Where the ESM is imported from.** First the sibling of the loader's own `src`
+  (`document.currentScript`), which is the Meet server for a host that embeds the url directly. A
+  host that serves the loader from somewhere else has no sibling there — a reverse proxy forwarding
+  only `/openvidu-meet.js` (what 3.8.0 hosts wrote, when that url was the whole bundle), a copy in
+  its own assets, a bundler that inlined it — so on failure the loader falls back to
+  `<meet server>/v1/openvidu-meet.esm.js`, derived from the element's `room-url` / `recording-url`
+  with the same `computeServerUrl()` the app uses to find the API. That fallback url is read at the
+  moment the sibling fails, not up front: a host that binds `room-url` through a framework sets it
+  right after the element connects. The host needs no change either way; the fallback only costs one
+  404 and logs a warning naming both urls.
+
 - The delegated surface is derived from `EmbeddedAttribute` / `EmbeddedCommandName` /
   `EmbeddedEventName` in `@openvidu-meet/typings` — the single source of truth. Adding a public
   attribute/command/event means editing the typings first; the loader then picks it up automatically.
@@ -47,18 +58,33 @@ events are re-dispatched on the outer element.
 ## Element API
 
 - **Attributes/properties** — kebab-case attribute ⇄ camelCase property: `room-url`,
-  `recording-url`, `participant-name`, `e2ee-key`, `leave-redirect-url`, `show-only-recordings`,
-  `show-recording`. Either `room-url` or `recording-url` is required.
+  `recording-url`, `participant-name`, `participant-external-id`, `participant-metadata`,
+  `initial-audio-active`, `initial-video-active` (tri-state: set values outrank the room's
+  `config.initial*Active`, unset defers to it), `e2ee-key`, `leave-redirect-url`,
+  `show-only-recordings`, `show-recording`. Either `room-url` or `recording-url` is required.
 - **Events** (`CustomEvent`, `detail` = payload): `meetingJoined`, `meetingLeft` (with
-  `LeftEventReason`), `meetingClosed`, plus a `ready` event dispatched by the wrapper after first
-  render. The 3.8.0 spellings (`joined`, `left`, `closed`) are dispatched **alongside** their
+  `LeftEventReason`), `meetingClosed`, `mediaAudioStatusChanged`/`mediaVideoStatusChanged`/
+  `mediaScreenShareStatusChanged` (local participant only, payload `{active, origin}`),
+  `participantJoined`/`participantLeft` (**remote**
+  participants only; payload `{ roomId, participant: MeetParticipantPayload }` — identity,
+  correlation fields and role; live transitions only, no replay of participants already present,
+  no media state, and no client-side departure reason — the authoritative one travels on the
+  `participantLeft` webhook), plus a `ready` event dispatched by the wrapper after first render.
+  The 3.8.0 spellings (`joined`, `left`, `closed`) are dispatched **alongside** their
   canonical twin until **3.12.0** — a host listening to both names receives the event twice.
   `EmbeddedEventBusService`'s queue only ever carries canonical names; `src/app/app.ts` emits both
   outputs from a single switch on the canonical name, and the iframe bridge posts a second
   `postMessage` under the deprecated name via `deprecatedEmbeddedEventAliasOf()` from the typings.
-- **Methods**: `meetingEnd()`, `meetingLeave()`, `participantKick(identity)`, and the convenience
-  listener API `on()` / `once()` / `off()` added in `src/app/custom-element/wrapper.ts`. The 3.8.0
-  spellings (`endMeeting`, `leaveRoom`, `kickParticipant`) stay as `@deprecated` aliases on the
+- **Methods**: `meetingEnd()`, `meetingLeave()`, `participantKick(identity)`,
+  `participantMute(identity, media)`, `participantMuteAll(media)` (moderation is one-way: `media`
+  only accepts `false` values, e.g. `{audioActive: false}`, and never applies to a moderator),
+  `mediaToggleAudio(active?)`, `mediaToggleVideo(active?)`, `mediaToggleScreenShare(active?)`
+  (omitted = toggle), and the convenience listener API `on()` / `once()` / `off()` added in
+  `src/app/custom-element/wrapper.ts`. Every command runs through `EmbeddedCommandService.run()`,
+  which enforces the permission and, internally, which commands work from the prejoin screen — the
+  audio/video toggles do, the rest are rejected (with a log) until the meeting is connected. The
+  iframe bridge applies no transport-level gating, so both transports accept/reject identically. The
+  3.8.0 spellings (`endMeeting`, `leaveRoom`, `kickParticipant`) stay as `@deprecated` aliases on the
   wrapper until **3.12.0**; they forward to the canonical method, so `src/app/app.ts` and
   `EmbeddedCommandService` only ever declare the canonical name. The iframe bridge accepts both wire
   names by running `resolveEmbeddedCommandName()` from the typings.

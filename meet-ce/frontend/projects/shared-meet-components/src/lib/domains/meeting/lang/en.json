@@ -12,7 +12,22 @@
 		"JOINING": "Joining meeting...",
 		"LANDSCAPE_WARNING": "Please rotate your device to portrait for a better experience",
 		"DISCONNECTED": "You have left the meeting",
-		"DISCONNECTED_SUBTITLE": "The meeting has ended"
+		"DISCONNECTED_SUBTITLE": "The meeting has ended",
+		"ENDING_SOON_TITLE": "Meeting ending soon",
+		"ENDING_SOON_ONE_MINUTE": "This meeting will end in about 1 minute",
+		"ENDING_SOON_MANY_MINUTES": "This meeting will end in about {minutes} minutes",
+		"ENDING_SOON_DISMISS": "Dismiss",
+		"ENDING_SOON_BADGE_LABEL": "Ends in",
+		"ENDING_SOON_BADGE_ENDING": "Ending now",
+		"E2EE_BADGE_LABEL": "Encrypted",
+		"E2EE_BADGE_TOOLTIP": "This meeting is end-to-end encrypted",
+		"RECORDING_BADGE_STARTING": "Starting",
+		"RECORDING_STARTED_TITLE": "This meeting is being recorded",
+		"RECORDING_STARTED_MESSAGE": "Your audio, your video and anything you share are being captured from now on.",
+		"RECORDING_WAITING_MEDIA_TITLE": "Recording is waiting to start",
+		"RECORDING_WAITING_MEDIA_MESSAGE": "It will begin as soon as a participant turns on their microphone or camera.",
+		"RECORDING_STOPPED_TITLE": "Recording stopped",
+		"RECORDING_STOPPED_MESSAGE": "Nothing more is being captured."
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Mute your audio",
@@ -59,25 +74,32 @@
 			"PLACEHOLDER": "Send a message...",
 			"SEND": "Send",
 			"WRITE_DISABLED": "You don't have permission to send messages",
-			"MESSAGE_SENT_NOTIFICATION": "message sent",
+			"MESSAGE_SENT_NOTIFICATION": "{name} message sent",
 			"OPEN_CHAT": "OPEN",
 			"ENCRYPTION_KEY_MISMATCH": "There are participants connected with a different encryption key. You will not receive messages from them."
 		},
 		"PARTICIPANTS": {
 			"TITLE": "Participants",
 			"YOU": "You",
-			"MUTE": "Mute",
-			"UNMUTE": "Unmute",
+			"MORE_ACTIONS": "More actions",
+			"MIC_ON": "Microphone on",
+			"MIC_OFF": "Microphone off",
+			"CAM_ON": "Camera on",
+			"CAM_OFF": "Camera off",
 			"SHARING_SCREEN": "Sharing screen",
+			"MUTE_MICROPHONE": "Mute microphone",
+			"TURN_OFF_CAMERA": "Turn off camera",
+			"STOP_SCREEN_SHARE": "Stop screen share",
+			"MUTE_FOR_ME": "Mute for me only",
+			"UNMUTE_FOR_ME": "Unmute for me",
+			"MUTED_FOR_YOU": "Muted for you only",
 			"CONNECTION_QUALITY": {
 				"LABEL": "Connection quality",
 				"EXCELLENT": "Excellent",
 				"GOOD": "Good",
 				"POOR": "Poor",
 				"LOST": "Lost"
-			},
-			"MIC_OFF": "Microphone off",
-			"CAM_OFF": "Camera off"
+			}
 		},
 		"ACTIVITIES": {
 			"TITLE": "Activities"
@@ -105,20 +127,29 @@
 		},
 		"RECORDING": {
 			"TITLE": "Recording",
-			"SUBTITLE": "Record your meeting for posterity",
-			"CONTENT_TITLE": "Record your video call",
-			"CONTENT_SUBTITLE": "When recording has finished you will be able to download it with ease",
-			"STARTING": "Starting recording",
-			"STOPPING": "Stopping recording",
-			"ACCEPT": "Accept",
-			"NO_TRACKS_PUBLISHED": "Share audio or video to start recording.",
-			"ERROR_STARTING": "Error starting recording"
+			"STARTING": "Starting recording…",
+			"STOPPING": "Stopping recording…",
+			"ERROR_STARTING": "The recording did not start",
+			"TRIGGER_MANUAL_MODE": "Manual recording",
+			"TRIGGER_AUTO_MODE": "Automatic recording",
+			"STATUS_RECORDING": "Recording",
+			"STATUS_STARTING": "Starting…",
+			"STATUS_STOPPING": "Stopping…",
+			"STATUS_FAILED": "Could not start",
+			"IN_PROGRESS_TITLE": "This meeting is being recorded",
+			"IN_PROGRESS_MESSAGE": "Audio, video and anything shared in this meeting is being captured.",
+			"TRY_AGAIN": "Try again",
+			"DISMISS": "Dismiss",
+			"MODERATORS_ONLY": "Only moderators can start or stop the recording.",
+			"AUTO_START_ONLY": "This room starts recording on its own, so it cannot be started manually."
 		}
 	},
 	"ERRORS": {
 		"SESSION": "There was an error connecting to the meeting",
+		"TOKEN_TITLE": "Token error",
 		"MEETING_NOT_READY": "The meeting is not ready yet. Please reload the page and try again.",
 		"MEETING_CONNECTION_FAILED": "Could not connect to the meeting. Please check your connection and try again.",
+		"MEETING_FULL": "This meeting has reached its maximum number of participants",
 		"CONNECTION": "Connection lost",
 		"RECONNECT": "Oops! Trying to reconnect to the meeting...",
 		"DISCONNECT": "You have been disconnected",
@@ -199,13 +230,30 @@
 		"COUNT_HELPER": "Choose how many remote participants are shown in the grid",
 		"COUNT_ARIA": "Number of participants to display"
 	},
+	"HIDDEN_PARTICIPANTS": {
+		"ONE_MORE": "more participant",
+		"MANY_MORE": "more participants",
+		"NAMES_AND_MORE": "{names} and {count} more"
+	},
 	"PARTICIPANT_ITEM": {
-		"PROMOTE_TOOLTIP": "Promote to moderator",
-		"DOWNGRADE_TOOLTIP": "Downgrade to original permissions",
-		"KICK_TOOLTIP": "Kick participant",
+		"PROMOTE": "Promote to moderator",
+		"DOWNGRADE": "Downgrade to original permissions",
+		"REMOVE": "Remove from meeting",
 		"BADGE_OWNER": "Owner",
 		"BADGE_ADMIN": "Admin",
 		"BADGE_MODERATOR": "Moderator"
+	},
+	"PARTICIPANTS_PANEL_ACTIONS": {
+		"TURN_OFF_FOR_EVERYONE": "Turn off for everyone",
+		"MUTE_ALL_TOOLTIP": "Mute everyone's microphone",
+		"MUTE_ALL_NONE": "Every microphone is already off",
+		"TURN_OFF_ALL_CAMERAS_TOOLTIP": "Turn off everyone's camera",
+		"TURN_OFF_ALL_CAMERAS_NONE": "Every camera is already off",
+		"STOP_ALL_SCREEN_SHARES_TOOLTIP": "Stop all screen shares",
+		"STOP_ALL_SCREEN_SHARES_NONE": "Nobody is sharing their screen"
+	},
+	"MODERATION": {
+		"MUTED_BY_MODERATOR": "A moderator turned off one of your devices"
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "You Left the Meeting",
@@ -215,6 +263,7 @@
 		"ENDED_TITLE": "Meeting Ended",
 		"ENDED_MESSAGE": "The meeting was ended by a moderator",
 		"ENDED_BY_SELF_MESSAGE": "You have successfully ended the meeting",
+		"ENDED_BY_DURATION_LIMIT_MESSAGE": "This meeting was automatically ended because it reached its maximum duration",
 		"DISCONNECTED_TITLE": "Disconnected from Meeting",
 		"NETWORK_MESSAGE": "Connection lost due to network connectivity issues",
 		"SERVER_SHUTDOWN_MESSAGE": "Connection lost due to server shutdown",

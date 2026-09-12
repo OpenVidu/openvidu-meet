@@ -20,7 +20,9 @@ export const decodeToken = (token: string): DecodedRoomMemberToken => {
 	const metadata = JSON.parse(decodedToken.metadata) as MeetRoomMemberTokenMetadata;
 
 	if (metadata.permissions) {
-		metadata.permissions = normalizePermissions(metadata.permissions) as MeetRoomMemberPermissions;
+		metadata.permissions = normalizePermissions(metadata.permissions, {
+			complete: true
+		}) as MeetRoomMemberPermissions;
 	}
 
 	return {

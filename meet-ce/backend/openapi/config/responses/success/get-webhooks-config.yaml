@@ -1,5 +1,0 @@
-description: Successfully retrieved webhooks config
-content:
-    application/json:
-        schema:
-            $ref: '../../schemas/webhooks-config.yaml'

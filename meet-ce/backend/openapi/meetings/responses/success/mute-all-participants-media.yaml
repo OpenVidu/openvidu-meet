@@ -1,0 +1,9 @@
+description: Successfully muted the devices of every participant except the moderators
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: Media of participants in meeting in room 'room-123' muted

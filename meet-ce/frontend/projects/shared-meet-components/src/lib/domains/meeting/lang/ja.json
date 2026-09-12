@@ -3,7 +3,22 @@
 		"JOINING": "会議に参加しています...",
 		"LANDSCAPE_WARNING": "より良い体験のために、デバイスを縦向きに回転させてください",
 		"DISCONNECTED": "会議から退出しました",
-		"DISCONNECTED_SUBTITLE": "会議が終了しました"
+		"DISCONNECTED_SUBTITLE": "会議が終了しました",
+		"ENDING_SOON_TITLE": "まもなく会議が終了します",
+		"ENDING_SOON_ONE_MINUTE": "会議はあと約1分で終了します",
+		"ENDING_SOON_MANY_MINUTES": "会議はあと約{minutes}分で終了します",
+		"ENDING_SOON_DISMISS": "閉じる",
+		"ENDING_SOON_BADGE_LABEL": "終了まで",
+		"ENDING_SOON_BADGE_ENDING": "まもなく終了",
+		"E2EE_BADGE_LABEL": "暗号化",
+		"E2EE_BADGE_TOOLTIP": "この会議はエンドツーエンドで暗号化されています",
+		"RECORDING_BADGE_STARTING": "開始中",
+		"RECORDING_STARTED_TITLE": "このミーティングは録画されています",
+		"RECORDING_STARTED_MESSAGE": "これ以降、あなたの音声、映像、共有した内容はすべて録画されます。",
+		"RECORDING_WAITING_MEDIA_TITLE": "録画は開始を待っています",
+		"RECORDING_WAITING_MEDIA_MESSAGE": "参加者がマイクまたはカメラをオンにするとすぐに始まります。",
+		"RECORDING_STOPPED_TITLE": "録画を停止しました",
+		"RECORDING_STOPPED_MESSAGE": "これ以上は録画されません。"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "会議に参加する",
@@ -59,7 +74,7 @@
 			"PLACEHOLDER": "メッセージを送信...",
 			"SEND": "送信する",
 			"WRITE_DISABLED": "メッセージを送信する権限がありません",
-			"MESSAGE_SENT_NOTIFICATION": "メッセージを送信しました",
+			"MESSAGE_SENT_NOTIFICATION": "{name} メッセージを送信しました",
 			"OPEN_CHAT": "開く",
 			"ENCRYPTION_KEY_MISMATCH": "異なる暗号化キーで接続している参加者がいます。彼らからのメッセージは受信できません。"
 		},
@@ -69,18 +84,25 @@
 		"PARTICIPANTS": {
 			"TITLE": "参加者",
 			"YOU": "あなた",
-			"MUTE": "ミュート",
-			"UNMUTE": "ミュート解除",
+			"MORE_ACTIONS": "その他の操作",
+			"MIC_ON": "マイクオン",
+			"MIC_OFF": "マイクオフ",
+			"CAM_ON": "カメラオン",
+			"CAM_OFF": "カメラオフ",
+			"SHARING_SCREEN": "画面を共有中",
+			"MUTE_MICROPHONE": "マイクをミュート",
+			"TURN_OFF_CAMERA": "カメラをオフ",
+			"STOP_SCREEN_SHARE": "画面共有を停止",
+			"MUTE_FOR_ME": "自分にだけミュート",
+			"UNMUTE_FOR_ME": "自分へのミュートを解除",
+			"MUTED_FOR_YOU": "あなたにだけミュート中",
 			"CONNECTION_QUALITY": {
 				"LABEL": "接続品質",
 				"EXCELLENT": "優れた",
 				"GOOD": "良好",
 				"POOR": "不良",
 				"LOST": "失われた"
-			},
-			"SHARING_SCREEN": "画面を共有中",
-			"MIC_OFF": "マイクオフ",
-			"CAM_OFF": "カメラオフ"
+			}
 		},
 		"SETTINGS": {
 			"TITLE": "設定",
@@ -105,20 +127,29 @@
 		},
 		"RECORDING": {
 			"TITLE": "レコーディング",
-			"SUBTITLE": "会議を録画して保存する",
-			"CONTENT_TITLE": "ビデオ通話を録音する",
-			"CONTENT_SUBTITLE": "録画が完了したら、簡単にダウンロードできます",
-			"STARTING": "録画開始",
-			"STOPPING": "録音停止",
-			"ACCEPT": "受け入れる",
-			"NO_TRACKS_PUBLISHED": "録音を開始するには、音声または動画を共有してください。",
-			"ERROR_STARTING": "録画開始エラー"
+			"STARTING": "録画を開始しています…",
+			"STOPPING": "録画を停止しています…",
+			"ERROR_STARTING": "録画が開始されませんでした",
+			"TRIGGER_MANUAL_MODE": "手動録画",
+			"TRIGGER_AUTO_MODE": "自動録画",
+			"STATUS_RECORDING": "録画中",
+			"STATUS_STARTING": "開始しています…",
+			"STATUS_STOPPING": "停止しています…",
+			"STATUS_FAILED": "開始できませんでした",
+			"IN_PROGRESS_TITLE": "このミーティングは録画されています",
+			"IN_PROGRESS_MESSAGE": "このミーティングの音声、映像、共有された内容はすべて録画されています。",
+			"TRY_AGAIN": "再試行",
+			"DISMISS": "閉じる",
+			"MODERATORS_ONLY": "録画の開始と停止はモデレーターのみが行えます。",
+			"AUTO_START_ONLY": "このルームは自動で録画を開始するため、手動では開始できません。"
 		}
 	},
 	"ERRORS": {
 		"SESSION": "会議への接続にエラーが発生しました",
+		"TOKEN_TITLE": "トークンエラー",
 		"MEETING_NOT_READY": "会議の準備がまだできていません。ページを再読み込みしてもう一度お試しください。",
 		"MEETING_CONNECTION_FAILED": "会議に接続できませんでした。接続を確認してもう一度お試しください。",
+		"MEETING_FULL": "この会議は参加者数の上限に達しました",
 		"CONNECTION": "接続が失われました",
 		"RECONNECT": "会議への再接続を試みています...",
 		"DISCONNECT": "接続が切断されました",
@@ -199,13 +230,30 @@
 		"COUNT_HELPER": "グリッドに表示するリモート参加者の人数を選択してください",
 		"COUNT_ARIA": "表示する参加者数"
 	},
+	"HIDDEN_PARTICIPANTS": {
+		"ONE_MORE": "人の他の参加者",
+		"MANY_MORE": "人の他の参加者",
+		"NAMES_AND_MORE": "{names} と他{count}人"
+	},
 	"PARTICIPANT_ITEM": {
-		"PROMOTE_TOOLTIP": "モデレーターに昇格",
-		"DOWNGRADE_TOOLTIP": "元の権限に戻す",
-		"KICK_TOOLTIP": "参加者を退出させる",
+		"PROMOTE": "モデレーターに昇格",
+		"DOWNGRADE": "元の権限に戻す",
+		"REMOVE": "会議から削除",
 		"BADGE_OWNER": "オーナー",
 		"BADGE_ADMIN": "管理者",
 		"BADGE_MODERATOR": "モデレーター"
+	},
+	"PARTICIPANTS_PANEL_ACTIONS": {
+		"TURN_OFF_FOR_EVERYONE": "全員に対してオフにする",
+		"MUTE_ALL_TOOLTIP": "全員のマイクをミュート",
+		"MUTE_ALL_NONE": "すべてのマイクはすでにオフです",
+		"TURN_OFF_ALL_CAMERAS_TOOLTIP": "全員のカメラをオフにする",
+		"TURN_OFF_ALL_CAMERAS_NONE": "すべてのカメラはすでにオフです",
+		"STOP_ALL_SCREEN_SHARES_TOOLTIP": "すべての画面共有を停止",
+		"STOP_ALL_SCREEN_SHARES_NONE": "誰も画面を共有していません"
+	},
+	"MODERATION": {
+		"MUTED_BY_MODERATOR": "モデレーターがあなたのデバイスの1つをオフにしました"
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "会議を退出しました",
@@ -215,6 +263,7 @@
 		"ENDED_TITLE": "会議が終了しました",
 		"ENDED_MESSAGE": "モデレーターによって会議が終了されました",
 		"ENDED_BY_SELF_MESSAGE": "会議を正常に終了しました",
+		"ENDED_BY_DURATION_LIMIT_MESSAGE": "この会議は最大時間に達したため自動的に終了しました",
 		"DISCONNECTED_TITLE": "会議から切断されました",
 		"NETWORK_MESSAGE": "ネットワーク接続の問題により接続が切断されました",
 		"SERVER_SHUTDOWN_MESSAGE": "サーバーのシャットダウンにより接続が切断されました",

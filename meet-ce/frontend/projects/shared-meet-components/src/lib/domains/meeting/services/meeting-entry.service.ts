@@ -3,6 +3,7 @@ import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomAccessService } from '../../rooms/services/room-access.service';
+import { RoomFeatureService } from '../../rooms/services/room-feature.service';
 import { MeetingContextService } from './meeting-context.service';
 
 /**
@@ -22,6 +23,14 @@ export interface MeetingEntryParams {
 	e2eeKey?: string;
 	/** Optional participant display name. */
 	participantName?: string;
+	/** Optional application-defined participant identifier (correlation key; ≤ 64 chars: letters, digits, `_`, `-`). */
+	participantExternalId?: string;
+	/** Optional opaque application-defined participant payload (JSON recommended, ≤ 2 KB). */
+	participantMetadata?: string;
+	/** Join with the microphone active (initial state only; the participant may mute afterwards). Defaults to true. */
+	initialAudioActive?: boolean;
+	/** Join with the camera active (initial state only; the participant may deactivate it afterwards). Defaults to true. */
+	initialVideoActive?: boolean;
 	/** Optional leave-redirect URL passed to {@link LeaveRedirectService}. */
 	leaveRedirectUrl?: string;
 	/** Request a redirect to `/recording/<id>` instead of the meeting. */
@@ -59,6 +68,7 @@ export class MeetingEntryService {
 	private readonly meetingContextService = inject(MeetingContextService);
 	private readonly roomMemberContextService = inject(RoomMemberContextService);
 	private readonly roomAccessService = inject(RoomAccessService);
+	private readonly roomFeatureService = inject(RoomFeatureService);
 	private readonly leaveRedirect = inject(LeaveRedirectService);
 
 	/**
@@ -79,11 +89,32 @@ export class MeetingEntryService {
 		showRecording,
 		showOnlyRecordings,
 		e2eeKey,
-		participantName
+		participantName,
+		participantExternalId,
+		participantMetadata,
+		initialAudioActive,
+		initialVideoActive
 	}: MeetingEntryParams): MeetingEntryDecision {
 		this.leaveRedirect.handleLeaveRedirectUrl(leaveRedirectUrl);
 
 		this.meetingContextService.setRoomId(roomId);
+
+		// RoomFeatureService is a singleton that survives a room switch, so without this its
+		// stale feature/media flags would keep governing the new room until its config loads.
+		this.roomFeatureService.reset();
+
+		// The app-provided correlation fields are pure passthrough: seeded (or cleared) on every
+		// entry and never restored from storage — they belong to the embedding application, not to
+		// the browser.
+		this.roomMemberContextService.setParticipantExternalId(participantExternalId);
+		this.roomMemberContextService.setParticipantMetadata(participantMetadata);
+
+		// Initial media state asked by the embedding application, seeded (or cleared) on every entry
+		// like the correlation fields above: `undefined` means "no opinion", so the room decides.
+		this.roomFeatureService.setInitialMediaRequest({
+			audioActive: initialAudioActive,
+			videoActive: initialVideoActive
+		});
 
 		// Prefer the caller-supplied secret (URL/input); otherwise restore the one
 		// persisted on this origin. Keeping the fallback here means every adapter

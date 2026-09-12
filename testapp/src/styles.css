@@ -1,116 +1,555 @@
-/* Global reset & base for the testapp shell */
+/* Global reset, design tokens and the UI primitives every panel of the testapp
+   shell reuses. Components use emulated encapsulation, so anything shared
+   (cards, fields, buttons) has to live here rather than in one component. */
+
 *,
 *::before,
 *::after {
-  box-sizing: border-box;
+	box-sizing: border-box;
 }
 
 html,
 body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  overflow: hidden;
-  background: #0f1117;
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	overflow: hidden;
+	background: var(--ta-bg);
 }
 
 app-root {
-  display: block;
-  width: 100vw;
-  height: 100vh;
+	display: block;
+	width: 100vw;
+	height: 100vh;
 }
 
-/* ── Shared UI primitives ─────────────────────────────────────────────────────
-   Reusable building blocks for the controls panel. Kept global (not scoped to a
-   single component) so panel sections like <app-event-log> can reuse them. */
+/* ── Design tokens ───────────────────────────────────────────────────────────
+   Values are lifted from the OpenVidu Meet theme tokens
+   (shared-meet-components/styles/_tokens-*.scss) so the harness chrome stays in
+   the product's colour language while reading as clearly distinct from the
+   embedded app it hosts. */
 
-.ta-section {
-  padding: 10px 14px;
-  border-bottom: 1px solid #2d3047;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex-shrink: 0;
+:root,
+:root[data-ta-theme='dark'] {
+	color-scheme: dark;
+
+	--ta-bg: #0d0f14;
+	--ta-panel: #15181f;
+	--ta-card: #1c2029;
+	--ta-field: #10131a;
+	--ta-line: #262b36;
+	--ta-line-strong: #333a49;
+	--ta-row-line: #1a1e26;
+
+	--ta-text: #e4e7ee;
+	--ta-text-2: #98a0b3;
+	--ta-text-3: #6b7385;
+
+	--ta-accent: #3ea8ff;
+	--ta-accent-solid: #1976d2;
+	--ta-accent-soft: rgba(62, 168, 255, 0.12);
+	--ta-accent-line: rgba(62, 168, 255, 0.45);
+
+	--ta-brand: #c084fc;
+	--ta-brand-soft: rgba(192, 132, 252, 0.12);
+	--ta-brand-line: rgba(192, 132, 252, 0.3);
+
+	--ta-danger: #f4645d;
+	--ta-danger-soft: rgba(244, 100, 93, 0.08);
+	--ta-danger-line: rgba(244, 100, 93, 0.4);
+
+	--ta-success: #4caf50;
+	--ta-success-soft: rgba(76, 175, 80, 0.1);
+	--ta-success-line: rgba(76, 175, 80, 0.3);
+	--ta-attention: #fbbf24;
+
+	--ta-kind-command: #3ea8ff;
+	--ta-kind-event: #2dd4bf;
+	--ta-kind-webhook: #fbbf24;
+	--ta-kind-warning: #f4645d;
+	--ta-kind-info: #6b7385;
 }
 
-.ta-section h2 {
-  margin: 0 0 4px;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #7c88a3;
+:root[data-ta-theme='light'] {
+	color-scheme: light;
+
+	--ta-bg: #e9ebf0;
+	--ta-panel: #ffffff;
+	--ta-card: #f6f7f9;
+	--ta-field: #ffffff;
+	--ta-line: #dde1e8;
+	--ta-line-strong: #c3cad6;
+	--ta-row-line: #eceef2;
+
+	--ta-text: #1b2029;
+	--ta-text-2: #59616f;
+	--ta-text-3: #838c9b;
+
+	--ta-accent: #1565c0;
+	--ta-accent-solid: #1976d2;
+	--ta-accent-soft: rgba(21, 101, 192, 0.09);
+	--ta-accent-line: rgba(21, 101, 192, 0.4);
+
+	--ta-brand: #7b1fa2;
+	--ta-brand-soft: rgba(123, 31, 162, 0.08);
+	--ta-brand-line: rgba(123, 31, 162, 0.25);
+
+	--ta-danger: #c62828;
+	--ta-danger-soft: rgba(198, 40, 40, 0.06);
+	--ta-danger-line: rgba(198, 40, 40, 0.35);
+
+	--ta-success: #2e7d32;
+	--ta-success-soft: rgba(46, 125, 50, 0.09);
+	--ta-success-line: rgba(46, 125, 50, 0.3);
+	--ta-attention: #a86800;
+
+	--ta-kind-command: #1565c0;
+	--ta-kind-event: #0d9488;
+	--ta-kind-webhook: #a86800;
+	--ta-kind-warning: #c62828;
+	--ta-kind-info: #838c9b;
 }
 
-/* Form fields */
+/* ── Typography and shared metrics ─────────────────────────────────────────── */
+
+:root {
+	--ta-font: Roboto, 'Helvetica Neue', Arial, sans-serif;
+	--ta-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+	--ta-radius: 4px;
+	--ta-radius-lg: 8px;
+	--ta-control-height: 32px;
+}
+
+.ta-mono {
+	font-family: var(--ta-font-mono);
+}
+
+.ta-hint {
+	font-size: 10px;
+	color: var(--ta-text-3);
+}
+
+/* ── Scrollable regions ─────────────────────────────────────────────────────── */
+
+.ta-scroll {
+	overflow-y: auto;
+	scrollbar-width: thin;
+	scrollbar-color: var(--ta-line-strong) transparent;
+}
+
+.ta-scroll::-webkit-scrollbar {
+	width: 8px;
+}
+
+.ta-scroll::-webkit-scrollbar-thumb {
+	background: var(--ta-line-strong);
+	border-radius: var(--ta-radius);
+}
+
+.ta-scroll::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+/* ── Grouping card ──────────────────────────────────────────────────────────── */
+
+.ta-card {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 11px;
+	background: var(--ta-card);
+	border: 1px solid var(--ta-line);
+	border-radius: var(--ta-radius-lg);
+}
+
+.ta-card__header {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.ta-card h2 {
+	margin: 0;
+	font-size: 10px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--ta-text-2);
+}
+
+/* ── Form fields ────────────────────────────────────────────────────────────── */
 
 .ta-field {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
 }
 
-.ta-field label {
-  font-size: 10px;
-  color: #7c88a3;
+.ta-field > label {
+	font-family: var(--ta-font-mono);
+	font-size: 11px;
+	color: var(--ta-text-2);
 }
 
-.ta-field input,
-.ta-row input {
-  background: #0f1117;
-  border: 1px solid #2d3047;
-  color: #e2e8f0;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  outline: none;
-  width: 100%;
+.ta-field input[type='text'],
+.ta-field select,
+.ta-row input[type='text'],
+.ta-row select {
+	height: var(--ta-control-height);
+	width: 100%;
+	padding: 0 8px;
+	background: var(--ta-field);
+	border: 1px solid var(--ta-line);
+	border-radius: var(--ta-radius);
+	color: var(--ta-text);
+	font-family: var(--ta-font-mono);
+	font-size: 11px;
+	outline: none;
 }
 
-.ta-field input:focus,
-.ta-row input:focus {
-  border-color: #a78bfa;
+.ta-field input[type='text']:hover,
+.ta-field select:hover,
+.ta-row input[type='text']:hover,
+.ta-row select:hover {
+	border-color: var(--ta-line-strong);
 }
 
-.ta-field--checkbox {
-  flex-direction: row;
-  align-items: center;
+.ta-field input[type='text']:focus-visible,
+.ta-field select:focus-visible,
+.ta-row input[type='text']:focus-visible,
+.ta-row select:focus-visible {
+	border-color: var(--ta-accent);
+	box-shadow: 0 0 0 2px var(--ta-accent-soft);
 }
 
-.ta-field--checkbox label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: #e2e8f0;
-  cursor: pointer;
+.ta-field input[type='text']::placeholder {
+	color: var(--ta-text-3);
 }
 
 .ta-row {
-  display: flex;
-  gap: 6px;
-  align-items: center;
+	display: flex;
+	align-items: center;
+	gap: 8px;
 }
 
-/* Buttons */
+/* Boolean shown as a switch. It stays a real checkbox so `isChecked()` and
+   `click()` keep addressing it the way the e2e suite already does. */
+
+.ta-switch-field {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	min-height: var(--ta-control-height);
+}
+
+.ta-switch-field > label {
+	font-family: var(--ta-font-mono);
+	font-size: 11px;
+	color: var(--ta-text);
+	cursor: pointer;
+}
+
+.ta-switch {
+	appearance: none;
+	flex-shrink: 0;
+	position: relative;
+	width: 34px;
+	height: 18px;
+	margin: 0;
+	background: var(--ta-field);
+	border: 1px solid var(--ta-line-strong);
+	border-radius: 9px;
+	cursor: pointer;
+	transition:
+		background 0.15s ease-in-out,
+		border-color 0.15s ease-in-out;
+}
+
+.ta-switch::after {
+	content: '';
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: var(--ta-text-3);
+	transition:
+		transform 0.15s ease-in-out,
+		background 0.15s ease-in-out;
+}
+
+.ta-switch:checked {
+	background: var(--ta-accent-soft);
+	border-color: var(--ta-accent);
+}
+
+.ta-switch:checked::after {
+	transform: translateX(16px);
+	background: var(--ta-accent);
+}
+
+.ta-switch:focus-visible {
+	box-shadow: 0 0 0 2px var(--ta-accent-soft);
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────────────── */
 
 .ta-btn {
-  background: #312e7a;
-  color: #c4b5fd;
-  border: 1px solid #4c3caf;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  text-align: left;
-  transition: background 0.1s;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	height: var(--ta-control-height);
+	padding: 0 11px;
+	background: transparent;
+	border: 1px solid var(--ta-line-strong);
+	border-radius: var(--ta-radius);
+	color: var(--ta-text);
+	font-family: var(--ta-font-mono);
+	font-size: 12px;
+	text-align: left;
+	cursor: pointer;
+	transition:
+		background 0.15s ease-in-out,
+		border-color 0.15s ease-in-out;
 }
 
 .ta-btn:hover {
-  background: #3d3a8a;
+	background: var(--ta-accent-soft);
+	border-color: var(--ta-accent-line);
+}
+
+.ta-btn:focus-visible {
+	outline: none;
+	border-color: var(--ta-accent);
+	box-shadow: 0 0 0 2px var(--ta-accent-soft);
+}
+
+.ta-btn--grow {
+	flex-grow: 1;
+	justify-content: center;
+}
+
+.ta-btn--primary {
+	justify-content: center;
+	height: 38px;
+	background: var(--ta-accent-solid);
+	border-color: var(--ta-accent-solid);
+	color: #ffffff;
+	font-family: var(--ta-font);
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.ta-btn--primary:hover {
+	background: var(--ta-accent);
+	border-color: var(--ta-accent);
+}
+
+.ta-btn--danger {
+	background: var(--ta-danger-soft);
+	border-color: var(--ta-danger-line);
+	color: var(--ta-danger);
+}
+
+.ta-btn--danger:hover {
+	background: var(--ta-danger-soft);
+	border-color: var(--ta-danger);
+}
+
+.ta-btn--ghost {
+	border-style: dashed;
+	border-color: var(--ta-line-strong);
+	color: var(--ta-text-3);
+	font-family: var(--ta-font);
+	font-size: 11px;
+}
+
+.ta-btn--on {
+	background: var(--ta-accent-soft);
+	border-color: var(--ta-accent-line);
+	color: var(--ta-accent);
 }
 
 .ta-btn--sm {
-  padding: 2px 8px;
-  font-size: 11px;
+	height: 26px;
+	padding: 0 9px;
+	font-size: 11px;
+}
+
+.ta-icon-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	background: transparent;
+	border: 1px solid var(--ta-line);
+	border-radius: var(--ta-radius);
+	color: var(--ta-text-2);
+	cursor: pointer;
+	transition:
+		background 0.15s ease-in-out,
+		color 0.15s ease-in-out;
+}
+
+.ta-icon-btn:hover {
+	background: var(--ta-accent-soft);
+	color: var(--ta-accent);
+}
+
+.ta-icon-btn:focus-visible {
+	outline: none;
+	border-color: var(--ta-accent);
+	box-shadow: 0 0 0 2px var(--ta-accent-soft);
+}
+
+.ta-icon-btn--sm {
+	width: 26px;
+	height: 26px;
+}
+
+.ta-icon-btn--bare {
+	width: 22px;
+	height: 22px;
+	border-color: transparent;
+}
+
+/* ── Status pill ────────────────────────────────────────────────────────────── */
+
+.ta-pill {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	height: 26px;
+	padding: 0 10px;
+	border: 1px solid var(--ta-line);
+	border-radius: 13px;
+	font-size: 11px;
+	font-weight: 500;
+	color: var(--ta-text-2);
+	white-space: nowrap;
+}
+
+.ta-pill--on {
+	background: var(--ta-success-soft);
+	border-color: var(--ta-success-line);
+	color: var(--ta-success);
+}
+
+.ta-dot {
+	flex-shrink: 0;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: currentColor;
+}
+
+.ta-dot--sm {
+	width: 5px;
+	height: 5px;
+}
+
+/* ── Panel body ─────────────────────────────────────────────────────────────
+   Both sidebar tabs share the same shape: a scrolling stack of cards, plus an
+   optional footer pinned under it. */
+
+.ta-panel-body {
+	display: flex;
+	flex-direction: column;
+	flex-grow: 1;
+	min-height: 0;
+}
+
+.ta-panel-scroll {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	flex-grow: 1;
+	min-height: 0;
+	padding: 12px;
+}
+
+.ta-panel-footer {
+	display: flex;
+	flex-direction: column;
+	gap: 7px;
+	flex-shrink: 0;
+	padding: 12px;
+	background: var(--ta-panel);
+	border-top: 1px solid var(--ta-line);
+}
+
+/* A label row that carries a secondary action next to the field name. */
+
+.ta-field__label-row {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.ta-link-btn {
+	padding: 0;
+	background: transparent;
+	border: 0;
+	color: var(--ta-accent);
+	font-family: var(--ta-font);
+	font-size: 11px;
+	cursor: pointer;
+}
+
+.ta-link-btn:hover {
+	text-decoration: underline;
+}
+
+.ta-link-btn:focus-visible {
+	outline: 1px solid var(--ta-accent);
+	outline-offset: 2px;
+	border-radius: 2px;
+}
+
+/* ── Segmented control ─────────────────────────────────────────────────────── */
+
+.ta-segmented {
+	display: flex;
+	gap: 2px;
+	padding: 2px;
+	background: var(--ta-field);
+	border: 1px solid var(--ta-line);
+	border-radius: var(--ta-radius);
+}
+
+.ta-segmented__option {
+	height: 24px;
+	padding: 0 11px;
+	background: transparent;
+	border: 0;
+	border-radius: 3px;
+	color: var(--ta-text-3);
+	font-family: var(--ta-font);
+	font-size: 12px;
+	cursor: pointer;
+	transition:
+		background 0.15s ease-in-out,
+		color 0.15s ease-in-out;
+}
+
+.ta-segmented__option:hover {
+	color: var(--ta-text);
+}
+
+.ta-segmented__option--on {
+	background: var(--ta-line);
+	color: var(--ta-text);
+	font-weight: 500;
+}
+
+.ta-segmented__option:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 2px var(--ta-accent-soft);
 }

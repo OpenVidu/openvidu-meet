@@ -1,6 +1,15 @@
-import { MeetRecordingStatus, MeetRoomStatus, MeetWebhookEvent, MeetWebhookEventType } from '@openvidu-meet/typings';
+import {
+	MeetParticipantInfo,
+	MeetRecordingInfo,
+	MeetRecordingStatus,
+	MeetRoomStatus,
+	MeetWebhookEvent,
+	MeetWebhookEventType
+} from '@openvidu-meet/typings';
 import http from 'http';
+import { EgressInfo, EgressStatus } from 'livekit-server-sdk';
 import { container } from '../../src/config/dependency-injector.config.js';
+import { MeetParticipantHelper } from '../../src/helpers/participant.helper.js';
 import { RecordingRepository } from '../../src/repositories/recording.repository.js';
 import { RoomMemberRepository } from '../../src/repositories/room-member.repository.js';
 import { RoomRepository } from '../../src/repositories/room.repository.js';
@@ -189,6 +198,39 @@ export const waitForParticipantToConnect = async (
 };
 
 /**
+ * Waits until a participant's published tracks read as the expected media state, exactly as
+ * `MeetParticipantHelper.extractMediaState` serializes them for the live snapshots — the
+ * authoritative view of what LiveKit currently publishes.
+ *
+ * @param roomId              - Room identifier to query.
+ * @param participantIdentity - Participant identity to inspect.
+ * @param expected            - The media flags that must hold (omitted ones are not checked).
+ * @param timeoutMs           - Maximum wait time in milliseconds (default: 15 000).
+ */
+export const waitForParticipantMediaState = async (
+	roomId: string,
+	participantIdentity: string,
+	expected: Partial<Pick<MeetParticipantInfo, 'audioActive' | 'videoActive' | 'screenShareActive'>>,
+	timeoutMs = DEFAULT_PARTICIPANT_TIMEOUT_MS
+): Promise<void> => {
+	const livekitService = container.get(LiveKitService);
+
+	await pollUntil(
+		async () => {
+			const participant = await livekitService.getParticipant(roomId, participantIdentity);
+			const media = MeetParticipantHelper.extractMediaState(participant) as Record<string, boolean>;
+			return Object.entries(expected).every(([device, active]) => media[device] === active);
+		},
+		{
+			timeoutMs,
+			errorMessage:
+				`Participant '${participantIdentity}' in room '${roomId}' did not reach ` +
+				`media state ${JSON.stringify(expected)}`
+		}
+	);
+};
+
+/**
  * Waits until a participant's metadata matches the expected serialized value.
  *
  * The helper fetches the participant directly from LiveKit and compares its
@@ -227,6 +269,59 @@ export const waitForParticipantToUpdateMetadata = async (
 // ─── RECORDING WAIT HELPERS ───────────────────────────────────────────────────
 
 /**
+ * Waits until a room's recording egress reaches EGRESS_ACTIVE (not STARTING or ENDING) and
+ * returns the matching egress. A STARTING egress answers 409 to every stop, so a test that needs
+ * to fire a stop against an egress that can actually accept one must wait for ACTIVE first.
+ *
+ * @param roomId    - Room identifier to poll.
+ * @param timeoutMs - Maximum wait time in milliseconds (default: 30 000).
+ */
+export const waitForActiveRecordingEgress = async (
+	roomId: string,
+	timeoutMs = DEFAULT_RECORDING_TIMEOUT_MS
+): Promise<EgressInfo[]> => {
+	const livekitService = container.get(LiveKitService);
+	let activeEgress: EgressInfo[] = [];
+
+	await pollUntil(
+		async () => {
+			const egress = await livekitService.getRecordingsEgress(roomId);
+			activeEgress = egress.filter((e) => e.status === EgressStatus.EGRESS_ACTIVE);
+			return activeEgress.length > 0;
+		},
+		{ timeoutMs, errorMessage: `No active recording egress found for room '${roomId}'` }
+	);
+
+	return activeEgress;
+};
+
+/**
+ * Waits until a room has no in-progress recording egress left (STARTING, ACTIVE or ENDING). The
+ * `egress_ended` webhook that releases the recording-active lock is delivered to the real
+ * deployment, not to the in-process test app, so tests poll LiveKit directly and then release the
+ * lock the same way the webhook handler would.
+ *
+ * Must match `RecordingService.releaseRecordingLockIfNoEgress`'s own STARTING/ACTIVE/ENDING gate,
+ * not just ACTIVE: stopping at ACTIVE-only would report "done" while the egress is still uploading
+ * its output to storage, and a release call right after this would then no-op, leaving the lock
+ * held for a real ABS/GCS upload's whole duration.
+ *
+ * @param roomId    - Room identifier to poll.
+ * @param timeoutMs - Maximum wait time in milliseconds (default: 30 000).
+ */
+export const waitForNoInProgressEgress = async (
+	roomId: string,
+	timeoutMs = DEFAULT_RECORDING_TIMEOUT_MS
+): Promise<void> => {
+	const livekitService = container.get(LiveKitService);
+
+	await pollUntil(async () => (await livekitService.getInProgressRecordingsEgress(roomId)).length === 0, {
+		timeoutMs,
+		errorMessage: `Room '${roomId}' still has in-progress recording egress`
+	});
+};
+
+/**
  * Waits until a recording's `egress_ended` LiveKit webhook has been fully
  * processed by the backend handler.
  *
@@ -258,6 +353,29 @@ export const waitForRecordingToStop = async (
 		},
 		{ timeoutMs, errorMessage: `Recording '${recordingId}' did not stop` }
 	);
+};
+
+/**
+ * Waits until the recording document reaches `status`. Recording statuses are written by the
+ * deployment processing the real egress webhooks, not by the in-process test app.
+ */
+export const waitForRecordingStatus = async (
+	recordingId: string,
+	status: MeetRecordingStatus,
+	timeoutMs = DEFAULT_RECORDING_TIMEOUT_MS
+): Promise<MeetRecordingInfo> => {
+	const recordingRepository = container.get(RecordingRepository);
+	let recording: MeetRecordingInfo | null = null;
+
+	await pollUntil(
+		async () => {
+			recording = await recordingRepository.findByRecordingId(recordingId);
+			return recording?.status === status;
+		},
+		{ timeoutMs, errorMessage: `Recording '${recordingId}' did not reach status '${status}'` }
+	);
+
+	return recording!;
 };
 
 /**

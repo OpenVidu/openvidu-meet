@@ -84,6 +84,10 @@ export class EndMeetingComponent implements OnInit {
 				titleKey: 'END_MEETING.ENDED_TITLE',
 				messageKey: 'END_MEETING.ENDED_BY_SELF_MESSAGE'
 			},
+			[LeftEventReason.MEETING_ENDED_BY_DURATION_LIMIT]: {
+				titleKey: 'END_MEETING.ENDED_TITLE',
+				messageKey: 'END_MEETING.ENDED_BY_DURATION_LIMIT_MESSAGE'
+			},
 			[LeftEventReason.NETWORK_DISCONNECT]: {
 				titleKey: 'END_MEETING.DISCONNECTED_TITLE',
 				messageKey: 'END_MEETING.NETWORK_MESSAGE'
@@ -103,8 +107,7 @@ export class EndMeetingComponent implements OnInit {
 		};
 
 		const normalizedReason = Object.values(LeftEventReason).find((enumValue) => enumValue === reason) as
-			| LeftEventReason
-			| undefined;
+			LeftEventReason | undefined;
 		return reasonMap[normalizedReason ?? LeftEventReason.UNKNOWN];
 	}
 

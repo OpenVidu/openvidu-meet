@@ -1,11 +1,48 @@
-import type { MeetParticipantModerationAction } from '@openvidu-meet/typings';
+import type { MeetParticipantModerationAction, MeetParticipantMuteOptions } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { handleError } from '../models/error.model.js';
 import { LiveKitService } from '../services/livekit.service.js';
 import { LoggerService } from '../services/logger.service.js';
+import { MeetingService } from '../services/meeting.service.js';
 import { RoomMemberService } from '../services/room-member.service.js';
 import { RoomService } from '../services/room.service.js';
+
+export const getMeeting = async (req: Request, res: Response) => {
+	const meetingService = container.get(MeetingService);
+	const { roomId } = req.params as Record<string, string>;
+
+	try {
+		const meeting = await meetingService.getMeetingInfo(roomId);
+		res.status(200).json(meeting);
+	} catch (error) {
+		handleError(res, error, `getting meeting in room '${roomId}'`);
+	}
+};
+
+export const getMeetingParticipants = async (req: Request, res: Response) => {
+	const meetingService = container.get(MeetingService);
+	const { roomId } = req.params as Record<string, string>;
+
+	try {
+		const participants = await meetingService.getParticipants(roomId);
+		res.status(200).json({ participants });
+	} catch (error) {
+		handleError(res, error, `getting participants of meeting in room '${roomId}'`);
+	}
+};
+
+export const getMeetingParticipant = async (req: Request, res: Response) => {
+	const meetingService = container.get(MeetingService);
+	const { roomId, participantIdentity } = req.params as Record<string, string>;
+
+	try {
+		const participant = await meetingService.getParticipant(roomId, participantIdentity);
+		res.status(200).json(participant);
+	} catch (error) {
+		handleError(res, error, `getting participant '${participantIdentity}' of meeting in room '${roomId}'`);
+	}
+};
 
 export const endMeeting = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -23,6 +60,7 @@ export const endMeeting = async (req: Request, res: Response) => {
 
 	try {
 		logger.info(`Ending meeting from room '${roomId}'`);
+
 		// To end a meeting, we need to delete the room from LiveKit
 		await livekitService.deleteRoom(roomId);
 		res.status(200).json({ message: `Meeting in room '${roomId}' ended successfully` });
@@ -51,6 +89,38 @@ export const updateParticipantRole = async (req: Request, res: Response) => {
 			error,
 			`applying moderation action for participant '${participantIdentity}' in room '${roomId}'`
 		);
+	}
+};
+
+export const muteParticipantMedia = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const meetingService = container.get(MeetingService);
+	const { roomId, participantIdentity } = req.params as Record<string, string>;
+	const media = req.body as MeetParticipantMuteOptions;
+
+	try {
+		logger.verbose(`Muting media of participant '${participantIdentity}' in room '${roomId}'`);
+		await meetingService.muteParticipant(roomId, participantIdentity, media);
+		res.status(200).json({
+			message: `Media of participant '${participantIdentity}' muted in meeting in room '${roomId}'`
+		});
+	} catch (error) {
+		handleError(res, error, `muting media of participant '${participantIdentity}' in room '${roomId}'`);
+	}
+};
+
+export const muteAllParticipantsMedia = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const meetingService = container.get(MeetingService);
+	const { roomId } = req.params as Record<string, string>;
+	const media = req.body as MeetParticipantMuteOptions;
+
+	try {
+		logger.verbose(`Muting media of every participant in room '${roomId}'`);
+		await meetingService.muteAllParticipants(roomId, media);
+		res.status(200).json({ message: `Media of participants in meeting in room '${roomId}' muted` });
+	} catch (error) {
+		handleError(res, error, `muting media of participants in room '${roomId}'`);
 	}
 };
 

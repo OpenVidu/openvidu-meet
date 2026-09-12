@@ -77,7 +77,10 @@ describe('Room Header Fields Tests', () => {
 			expectSuccessRoomsResponse(response, 1, 10, false, false);
 
 			const room = response.body.rooms[0];
-			expectValidRoom(room, 'header-extrafields-test', 'header_extrafields_test', customConfig);
+			expectValidRoom(room, 'header-extrafields-test', {
+				roomIdPrefix: 'header_extrafields_test',
+				config: customConfig
+			});
 		});
 
 		it('should combine X-Fields header with fields query param (union)', async () => {

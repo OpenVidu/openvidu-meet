@@ -122,6 +122,10 @@
           "LABEL": "会議に参加可能",
           "DESCRIPTION": "会議への参加を許可します"
         },
+        "meetingRead": {
+          "LABEL": "会議を参照可能",
+          "DESCRIPTION": "参加せずに会議のライブ状態と参加者の参照を許可します"
+        },
         "meetingEnd": {
           "LABEL": "会議を終了可能",
           "DESCRIPTION": "すべての参加者の会議を終了することを許可します"
@@ -133,6 +137,10 @@
         "participantKick": {
           "LABEL": "参加者を退出させ可能",
           "DESCRIPTION": "会議から参加者を退出させることを許可します"
+        },
+        "participantMute": {
+          "LABEL": "参加者をミュート可能",
+          "DESCRIPTION": "他の参加者のマイク、カメラ、画面共有をオフにすることを許可します"
         },
         "roomShareAccessLinks": {
           "LABEL": "アクセスリンクを共有可能",

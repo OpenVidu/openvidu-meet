@@ -3,8 +3,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
+import { MeetRecordingAutoStartMode, MeetRoomOptions } from '@openvidu-meet/typings';
 import {
 	SelectableCardComponent,
 	SelectableCardOption,
@@ -12,9 +14,22 @@ import {
 } from '../../../../../../shared//components/selectable-card/selectable-card.component';
 import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../../../shared/services/i18n/translate.service';
-import { RecordingTriggerFormGroup, RecordingTriggerType } from '../../../../models/wizard-forms.model';
+import { DeepPartial } from '../../../../../../shared/utils/object.utils';
+import {
+	RecordingTriggerFormGroup,
+	RecordingTriggerFormValue,
+	RecordingTriggerMode,
+	triggerFormValueToAutoStart
+} from '../../../../models/wizard-forms.model';
 import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services/wizard-state.service';
+
+interface AutoStartOption {
+	value: MeetRecordingAutoStartMode;
+	icon: string;
+	title: string;
+	description: string;
+}
 
 @Component({
 	selector: 'ov-recording-trigger',
@@ -23,6 +38,7 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
 		MatButtonModule,
 		MatIconModule,
 		MatCardModule,
+		MatFormFieldModule,
 		MatRadioModule,
 		SelectableCardComponent,
 		TranslatePipe
@@ -35,29 +51,46 @@ export class RecordingTriggerComponent {
 	private readonly translateService = inject(TranslateService);
 
 	triggerForm: RecordingTriggerFormGroup;
-	triggerOptions: SelectableCardOption[] = [
+
+	/** Set when the selected trigger can never fire at the room's configured participant limit. */
+	autoStartWarningMessage = this.wizardService.recordingAutoStartWarningMessage;
+
+	// Top-level decision: whether recording starts by itself at all.
+	modeOptions: SelectableCardOption[] = [
 		{
 			id: 'manual',
 			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.MANUAL_TITLE'),
 			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.MANUAL_DESC'),
 			icon: 'touch_app'
-			// recommended: true
 		},
 		{
-			id: 'auto1',
-			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTO1_TITLE'),
-			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTO1_DESC'),
+			id: 'auto',
+			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTO_TITLE'),
+			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTO_DESC'),
+			icon: 'smart_display'
+		}
+	];
+
+	// Secondary decision, only shown once "Automatic" is picked: which participant threshold
+	// triggers the start.
+	autoStartOptions: AutoStartOption[] = [
+		{
+			value: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS,
 			icon: 'person',
-			isPro: true,
-			disabled: true
+			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_MODE_FIRST_TITLE'),
+			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_MODE_FIRST_DESC')
 		},
 		{
-			id: 'auto2',
-			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTO2_TITLE'),
-			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTO2_DESC'),
+			value: MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS,
 			icon: 'people',
-			isPro: true,
-			disabled: true
+			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_MODE_SECOND_TITLE'),
+			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_MODE_SECOND_DESC')
+		},
+		{
+			value: MeetRecordingAutoStartMode.WHEN_MODERATOR_JOINS,
+			icon: 'admin_panel_settings',
+			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_MODE_MODERATOR_TITLE'),
+			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_MODE_MODERATOR_DESC')
 		}
 	];
 
@@ -70,29 +103,43 @@ export class RecordingTriggerComponent {
 
 		this.triggerForm = recordingTriggerStep.formGroup;
 
-		this.triggerForm.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {
-			this.saveFormData(value);
+		this.triggerForm.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
+			this.saveFormData(this.triggerForm.getRawValue());
 		});
 	}
 
-	private saveFormData(_formValue: unknown) {
-		// Note: Recording trigger type is not part of MeetRoomOptions
-		// For now, just keep the form state
+	private saveFormData(formValue: RecordingTriggerFormValue) {
+		const stepData: DeepPartial<MeetRoomOptions> = {
+			config: {
+				recording: {
+					autoStart: triggerFormValueToAutoStart(formValue)
+				}
+			}
+		};
+
+		this.wizardService.updateStepData(stepData);
 	}
 
 	/**
-	 * Handle option selection from the SelectableCardComponent
+	 * Handle the top-level Manual/Automatic selection from the SelectableCardComponent.
 	 */
-	onOptionChange(event: SelectionCardEvent): void {
+	onModeChange(event: SelectionCardEvent): void {
 		this.triggerForm.patchValue({
-			triggerType: event.optionId as RecordingTriggerType
+			triggerMode: event.optionId as RecordingTriggerMode
 		});
 	}
 
 	/**
-	 * Get the currently selected option ID for the SelectableCardComponent
+	 * Currently selected top-level mode, for the SelectableCardComponent.
 	 */
-	get selectedOption(): string {
-		return this.triggerForm.value.triggerType ?? 'manual';
+	get selectedMode(): string {
+		return this.triggerForm.value.triggerMode ?? 'manual';
+	}
+
+	/**
+	 * Whether the secondary participant-threshold choice should be shown.
+	 */
+	get isAutoMode(): boolean {
+		return this.selectedMode === 'auto';
 	}
 }

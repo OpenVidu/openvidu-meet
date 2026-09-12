@@ -30,6 +30,12 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 				icon: 'login'
 			},
 			{
+				key: 'meetingRead',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.meetingRead.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.meetingRead.DESCRIPTION',
+				icon: 'monitoring'
+			},
+			{
 				key: 'meetingEnd',
 				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.meetingEnd.LABEL',
 				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.meetingEnd.DESCRIPTION',
@@ -46,6 +52,12 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantKick.LABEL',
 				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantKick.DESCRIPTION',
 				icon: 'person_remove'
+			},
+			{
+				key: 'participantMute',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantMute.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantMute.DESCRIPTION',
+				icon: 'mic_off'
 			},
 			{
 				key: 'roomShareAccessLinks',

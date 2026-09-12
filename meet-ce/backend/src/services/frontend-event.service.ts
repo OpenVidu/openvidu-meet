@@ -1,4 +1,6 @@
 import type {
+	MeetParticipantMediaMutedPayload,
+	MeetParticipantMuteOptions,
 	MeetParticipantPermissionsUpdatedPayload,
 	MeetParticipantRoleUpdatedPayload,
 	MeetRecordingInfo,
@@ -125,14 +127,39 @@ export class FrontendEventService {
 	}
 
 	/**
+	 * Sends a signal telling the given participants which of their devices a moderator just turned
+	 * off, so their clients can attribute the change and stop reopening a device the moderator closed.
+	 *
+	 * One signal carries every recipient: they were all told the same thing, and the destinations are
+	 * what scopes it to them.
+	 */
+	async sendParticipantMediaMutedSignal(
+		roomId: string,
+		participantIdentities: string[],
+		media: MeetParticipantMuteOptions
+	): Promise<void> {
+		this.logger.debug(
+			`Sending participant media muted signal to ${participantIdentities.length} participant(s) in room '${roomId}'`
+		);
+
+		const signalPayload: MeetParticipantMediaMutedPayload = {
+			roomId,
+			media,
+			timestamp: Date.now()
+		};
+		const signalOptions: SendDataOptions = {
+			topic: MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED,
+			destinationIdentities: participantIdentities
+		};
+
+		await this.sendSignal(roomId, signalPayload, signalOptions);
+	}
+
+	/**
 	 * Generic method to send signals to the frontend
 	 */
 
-	protected async sendSignal(
-		roomId: string,
-		rawData: MeetSignalPayload,
-		options: SendDataOptions
-	): Promise<void> {
+	protected async sendSignal(roomId: string, rawData: MeetSignalPayload, options: SendDataOptions): Promise<void> {
 		this.logger.verbose(`Notifying participants in room ${roomId}: "${options.topic}".`);
 		await this.livekitService.sendData(roomId, rawData, options);
 	}

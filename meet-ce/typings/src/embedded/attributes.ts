@@ -17,6 +17,37 @@ export enum EmbeddedAttribute {
 	 */
 	PARTICIPANT_NAME = 'participant-name',
 	/**
+	 * Application-defined identifier for the local participant, so the embedding application can
+	 * correlate the participant with one of its own users.
+	 * Up to 64 characters (letters, digits, `_` and `-`). Never interpreted by OpenVidu Meet.
+	 */
+	PARTICIPANT_EXTERNAL_ID = 'participant-external-id',
+	/**
+	 * Opaque application-defined payload attached to the local participant (JSON is recommended).
+	 * Up to 2048 bytes (UTF-8). Never interpreted by OpenVidu Meet.
+	 */
+	PARTICIPANT_METADATA = 'participant-metadata',
+	/**
+	 * Join the meeting with the microphone active. This is the participant's initial state only:
+	 * they may mute afterwards.
+	 *
+	 * Setting it — to either value — **takes precedence over the room's own
+	 * `config.initialAudioActive`**; leaving it out means "no opinion", so the room's value applies
+	 * (and `true` when the room has none either). The `mediaPublishAudio` permission is not part of
+	 * that chain: it is a capability, and a denial always wins.
+	 */
+	INITIAL_AUDIO_ACTIVE = 'initial-audio-active',
+	/**
+	 * Join the meeting with the camera active. This is the participant's initial state only: they
+	 * may deactivate it afterwards.
+	 *
+	 * Setting it — to either value — **takes precedence over the room's own
+	 * `config.initialVideoActive`**; leaving it out means "no opinion", so the room's value applies
+	 * (and `true` when the room has none either). The `mediaPublishVideo` permission is not part of
+	 * that chain: it is a capability, and a denial always wins.
+	 */
+	INITIAL_VIDEO_ACTIVE = 'initial-video-active',
+	/**
 	 * Secret key for end-to-end encryption (E2EE).
 	 * If provided, the participant will join the meeting using E2EE key.
 	 */
@@ -48,6 +79,14 @@ export interface WebComponentPropertyValues {
 	recordingUrl?: string;
 	/** Display name for the local participant. */
 	participantName?: string;
+	/** Application-defined identifier for the local participant (≤ 64 chars: letters, digits, `_`, `-`). Never interpreted by Meet. */
+	participantExternalId?: string;
+	/** Opaque application-defined payload for the local participant (JSON recommended, ≤ 2048 bytes UTF-8). Never interpreted by Meet. */
+	participantMetadata?: string;
+	/** Initial microphone state (they may unmute later). Set: wins over `config.initialAudioActive`; omitted: the room decides. */
+	initialAudioActive?: boolean;
+	/** Initial camera state (they may activate it later). Set: wins over `config.initialVideoActive`; omitted: the room decides. */
+	initialVideoActive?: boolean;
 	/** Secret key for end-to-end encryption (E2EE). When provided the participant joins using E2EE. */
 	e2eeKey?: string;
 	/** URL to redirect to after the `CLOSED` event fires when leaving OpenVidu Meet. */

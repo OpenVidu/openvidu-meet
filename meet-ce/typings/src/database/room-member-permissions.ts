@@ -36,6 +36,18 @@ export interface MeetRoomMemberPermissions {
 	 */
 	meetingJoin: boolean;
 	/**
+	 * Can read the live state of the meeting (its info and the participants currently in it) without
+	 * necessarily joining it.
+	 *
+	 * Introduced after the rename, so it has no deprecated `can*` spelling (see
+	 * {@link MEET_UNALIASED_PERMISSION_KEYS}). It is independent of every other permission: a request
+	 * that omits it leaves it at whatever the role or the member already had. Only a set completed
+	 * from scratch, which is what a stored document migrated from before 3.9.0 and a token issued
+	 * back then go through, derives it from `meetingJoin`, the permission that gated this capability
+	 * before this one existed (see {@link UNALIASED_PERMISSION_DEFAULTS}).
+	 */
+	meetingRead: boolean;
+	/**
 	 * Can share room access links to invite others.
 	 */
 	roomShareAccessLinks: boolean;
@@ -47,6 +59,18 @@ export interface MeetRoomMemberPermissions {
 	 * Can remove other participants from the meeting.
 	 */
 	participantKick: boolean;
+	/**
+	 * Can turn off another participant's microphone, camera or screen share in the meeting. The
+	 * affected participant may turn the device back on: this mutes, it does not revoke
+	 * `mediaPublishAudio`/`mediaPublishVideo`/`mediaShareScreen`.
+	 *
+	 * Introduced after the rename, so it has no deprecated `can*` spelling (see
+	 * {@link MEET_UNALIASED_PERMISSION_KEYS}). It is independent of every other permission: a request
+	 * that omits it leaves it at whatever the role or the member already had. Only a set completed
+	 * from scratch, which is what a stored document migrated from before 3.9.0 and a token issued
+	 * back then go through, starts it at `false` (see {@link UNALIASED_PERMISSION_DEFAULTS}).
+	 */
+	participantMute: boolean;
 	/**
 	 * Can end the meeting for all participants.
 	 */
@@ -198,20 +222,70 @@ export const MEET_PERMISSION_ALIASES = {
 >;
 
 /**
+ * What each key introduced after the rename completes to when a **complete** input omits it: either
+ * the value of another permission, or a literal.
+ *
+ * Those keys are missing from everything issued before they shipped: tokens of meetings in progress,
+ * stored documents awaiting their migration, requests from clients built against the previous
+ * contract, and every input that spells its permissions the deprecated way. Rejecting those (the
+ * schemas require a complete set) would interrupt live meetings and break integrations over a
+ * permission they cannot even name yet.
+ *
+ * These are starting values, not implications: every permission is independent of every other, an
+ * explicit value always wins, and a patch over stored permissions receives none of them — an absent
+ * key there means "not touched", and writing one would change a permission the caller never
+ * mentioned.
+ *
+ * - `meetingRead` ← the value of `meetingJoin`, which gated the live meeting reads before this key
+ *   existed, so a complete input that cannot name it keeps behaving as it did. An operator grants
+ *   the two apart by naming both (observe without entering, or enter without observing).
+ * - `participantMute` ← `false`: a moderation capability nothing hands out unasked. Deliberately
+ *   not derived from `participantKick` — removing someone from a meeting and silencing their
+ *   microphone are different powers, and a deployment that granted one never decided on the other.
+ */
+const UNALIASED_PERMISSION_DEFAULTS = {
+	meetingRead: 'meetingJoin',
+	participantMute: false
+} as const satisfies Readonly<
+	Partial<Record<keyof MeetRoomMemberPermissions, keyof MeetRoomMemberPermissions | boolean>>
+>;
+
+/**
+ * Permission keys that have **no** deprecated `can*` spelling, because they were introduced after
+ * the rename froze that surface. They are part of the contract like any other key, they simply never
+ * appear in {@link MEET_PERMISSION_ALIASES}, in a compatibility-mode response or in a request that
+ * uses the deprecated spellings — a client that only knows the `can*` names cannot express them.
+ *
+ * The deprecated set stays frozen at its 14 keys until 3.12.0: a capability that did not exist in
+ * 3.8.0 never gets a `can*` name invented for it. Every permission added from now on belongs here.
+ *
+ * There is no "unset" permission — the effective value must always be a boolean — so every key here
+ * declares in {@link UNALIASED_PERMISSION_DEFAULTS} what it completes to when a complete input omits
+ * it.
+ */
+export const MEET_UNALIASED_PERMISSION_KEYS = Object.keys(
+	UNALIASED_PERMISSION_DEFAULTS
+) as readonly (keyof typeof UNALIASED_PERMISSION_DEFAULTS)[];
+
+/**
  * A deprecated (`can*`) permission key, replaced by its current `moduleAbility` key(s).
  */
 export type MeetDeprecatedPermissionKey = keyof typeof MEET_PERMISSION_ALIASES;
 
 /**
- * A current `moduleAbility` permission key.
+ * A current `moduleAbility` permission key: either the replacement of a deprecated one, or a key
+ * introduced after the rename ({@link MEET_UNALIASED_PERMISSION_KEYS}).
  */
-export type MeetPermissionKey = (typeof MEET_PERMISSION_ALIASES)[MeetDeprecatedPermissionKey][number];
+export type MeetPermissionKey =
+	| (typeof MEET_PERMISSION_ALIASES)[MeetDeprecatedPermissionKey][number]
+	| (typeof MEET_UNALIASED_PERMISSION_KEYS)[number];
 
-// Compile-time guard: every key declared on the interface must be reachable through the alias map
-// (the reverse direction — map values being valid keys — is enforced by the `satisfies` clause
-// above). If a new permission is ever added to the interface without an alias entry, the constraint
-// below is violated and this file stops compiling, forcing the author to decide how the deprecated
-// surface represents the new key.
+// Compile-time guard: every key declared on the interface must be reachable through the alias map or
+// listed in MEET_UNALIASED_PERMISSION_KEYS (the reverse direction — map values being valid keys — is
+// enforced by the `satisfies` clauses above). If a new permission is ever added to the interface
+// without appearing in either place, the constraint below is violated and this file stops compiling,
+// forcing the author to decide how the deprecated surface represents the new key: as part of an
+// existing `can*` group, or (the normal answer for anything born after the rename) not at all.
 type _RequireTrue<T extends true> = T;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type _AssertAliasMapCoversPermissions = _RequireTrue<
@@ -230,28 +304,29 @@ export const MEET_DEPRECATED_PERMISSION_KEYS = Object.keys(
 	MEET_PERMISSION_ALIASES
 ) as readonly MeetDeprecatedPermissionKey[];
 
-// Flattens the alias groups. Written with `concat` because this package targets `lib: es2017`, where
-// `Array.prototype.flat` does not exist yet.
-function flattenPermissionAliases(): readonly MeetPermissionKey[] {
-	let flattened: MeetPermissionKey[] = [];
+// Flattens the alias groups and appends the keys that never had a deprecated spelling. Written with
+// `concat` because this package targets `lib: es2017`, where `Array.prototype.flat` does not exist yet.
+function collectPermissionKeys(): readonly MeetPermissionKey[] {
+	let collected: MeetPermissionKey[] = [];
 
 	for (const replacementKeys of Object.values(MEET_PERMISSION_ALIASES)) {
-		flattened = flattened.concat(replacementKeys as readonly MeetPermissionKey[]);
+		collected = collected.concat(replacementKeys as readonly MeetPermissionKey[]);
 	}
 
-	return flattened;
+	return collected.concat(MEET_UNALIASED_PERMISSION_KEYS as readonly MeetPermissionKey[]);
 }
 
 /**
  * Every current permission key, in the order they are documented.
  */
-export const MEET_PERMISSION_KEYS = flattenPermissionAliases();
+export const MEET_PERMISSION_KEYS = collectPermissionKeys();
 
 // Inverts MEET_PERMISSION_ALIASES. Written as a loop because this package targets `lib: es2017`,
 // where `Object.fromEntries` does not exist yet. Many-to-one: the three recording retrieval keys all
-// point back at `canRetrieveRecordings`.
-function invertPermissionAliases(): Record<MeetPermissionKey, MeetDeprecatedPermissionKey> {
-	const inverted = {} as Record<MeetPermissionKey, MeetDeprecatedPermissionKey>;
+// point back at `canRetrieveRecordings`. Partial by construction: the keys of
+// MEET_UNALIASED_PERMISSION_KEYS have no deprecated spelling to point back at.
+function invertPermissionAliases(): Partial<Record<MeetPermissionKey, MeetDeprecatedPermissionKey>> {
+	const inverted: Partial<Record<MeetPermissionKey, MeetDeprecatedPermissionKey>> = {};
 
 	for (const [deprecatedKey, replacementKeys] of Object.entries(MEET_PERMISSION_ALIASES)) {
 		for (const replacementKey of replacementKeys as readonly MeetPermissionKey[]) {
@@ -264,12 +339,14 @@ function invertPermissionAliases(): Record<MeetPermissionKey, MeetDeprecatedPerm
 
 /**
  * Reverse of {@link MEET_PERMISSION_ALIASES}: current key → the deprecated key it replaces. Several
- * current keys can share one deprecated key (the recording retrieval split).
+ * current keys can share one deprecated key (the recording retrieval split), and the keys listed in
+ * {@link MEET_UNALIASED_PERMISSION_KEYS} have no entry at all.
  *
  * Removed in **3.12.0** together with the deprecated aliases.
  */
-export const MEET_PERMISSION_DEPRECATED_ALIASES: Readonly<Record<MeetPermissionKey, MeetDeprecatedPermissionKey>> =
-	Object.freeze(invertPermissionAliases());
+export const MEET_PERMISSION_DEPRECATED_ALIASES: Readonly<
+	Partial<Record<MeetPermissionKey, MeetDeprecatedPermissionKey>>
+> = Object.freeze(invertPermissionAliases());
 
 /**
  * A permission object as it arrives from an untrusted source (an HTTP body, a decoded token), where
@@ -300,10 +377,19 @@ export interface MeetPermissionAliasConflict {
  * alias — callers that must reject a contradiction should run {@link findPermissionAliasConflicts}
  * first.
  *
+ * When the caller asks for a `complete` set, the post-rename keys the input omitted are then filled
+ * from {@link UNALIASED_PERMISSION_DEFAULTS}. A patch over stored permissions receives no defaults —
+ * an absent key there means "not touched", and writing one would change a permission the caller
+ * never mentioned.
+ *
  * @param input - A permission object with deprecated keys, current keys, or a mix of both
+ * @param options - `complete` also fills the defaults, for a caller producing a whole set
  * @returns The same permissions under the current keys
  */
-export function normalizePermissions(input: MeetPermissionsInput): Partial<Record<MeetPermissionKey, boolean>> {
+export function normalizePermissions(
+	input: MeetPermissionsInput,
+	options: { complete?: boolean } = {}
+): Partial<Record<MeetPermissionKey, boolean>> {
 	const record = input as Readonly<Record<string, unknown>>;
 	const normalized: Partial<Record<MeetPermissionKey, boolean>> = {};
 
@@ -327,7 +413,35 @@ export function normalizePermissions(input: MeetPermissionsInput): Partial<Recor
 		}
 	}
 
+	applyUnaliasedPermissionDefaults(normalized, options.complete === true);
 	return normalized;
+}
+
+/**
+ * Fills the keys of {@link MEET_UNALIASED_PERMISSION_KEYS} a complete input did not carry, from
+ * {@link UNALIASED_PERMISSION_DEFAULTS}. A patch receives none. Mutates the object it is given.
+ */
+function applyUnaliasedPermissionDefaults(
+	permissions: Partial<Record<MeetPermissionKey, boolean>>,
+	complete: boolean
+): void {
+	if (!complete) {
+		return;
+	}
+
+	const entries = Object.entries(UNALIASED_PERMISSION_DEFAULTS) as [MeetPermissionKey, MeetPermissionKey | boolean][];
+
+	for (const [permissionKey, resolution] of entries) {
+		if (typeof permissions[permissionKey] === 'boolean') {
+			continue;
+		}
+
+		const value = typeof resolution === 'boolean' ? resolution : permissions[resolution];
+
+		if (typeof value === 'boolean') {
+			permissions[permissionKey] = value;
+		}
+	}
 }
 
 /**
@@ -373,12 +487,15 @@ export function toDeprecatedPermissions(
 }
 
 /**
- * Finds alias keys supplied together with a replacement key that contradicts them. An empty array
+ * Finds alias keys supplied together with replacement keys that contradict them. An empty array
  * means the input is unambiguous and safe to {@link normalizePermissions}.
  *
- * A split alias is checked against **every** key of its group, so
- * `{ canRetrieveRecordings: true, recordingDownload: false }` is reported: the caller is asking for
- * two different things at once and the request should be rejected rather than silently resolved.
+ * An alias equal to what {@link toDeprecatedPermissions} derives from the supplied current keys is
+ * redundant, not a conflict — a compatibility-mode response echoed back unchanged is always valid
+ * input. Everything else is checked key by key: `{ canRetrieveRecordings: true, recordingDownload:
+ * false }` is reported (the alias grants the whole group), and so is a stale
+ * `canRetrieveRecordings: false` next to an all-true group — resolving that silently would leave
+ * granted a permission the caller meant to revoke.
  *
  * Removed in **3.12.0** together with the deprecated aliases.
  *
@@ -387,12 +504,17 @@ export function toDeprecatedPermissions(
  */
 export function findPermissionAliasConflicts(input: MeetPermissionsInput): MeetPermissionAliasConflict[] {
 	const record = input as Readonly<Record<string, unknown>>;
+	const serialized = toDeprecatedPermissions(record as Readonly<Partial<Record<MeetPermissionKey, boolean>>>);
 	const conflicts: MeetPermissionAliasConflict[] = [];
 
 	for (const [deprecatedKey, replacementKeys] of Object.entries(MEET_PERMISSION_ALIASES)) {
 		const deprecatedValue = record[deprecatedKey];
 
 		if (typeof deprecatedValue !== 'boolean') {
+			continue;
+		}
+
+		if (deprecatedValue === serialized[deprecatedKey as MeetDeprecatedPermissionKey]) {
 			continue;
 		}
 

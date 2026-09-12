@@ -4,35 +4,33 @@ import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import type { IScheduledTask } from '../models/task-scheduler.model.js';
-import { DistributedEventService } from './distributed-event.service.js';
 import { LoggerService } from './logger.service.js';
 import { MutexService } from './mutex.service.js';
+import { RedisService } from './redis.service.js';
 
 @injectable()
 export class TaskSchedulerService {
-	private taskRegistry: IScheduledTask[] = [];
-	private scheduledTasks = new Map<string, CronJob | NodeJS.Timeout>();
+	protected taskRegistry: IScheduledTask[] = [];
+	protected scheduledTasks = new Map<string, CronJob | NodeJS.Timeout>();
 	private started = false;
 
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
-		@inject(DistributedEventService) protected systemEventService: DistributedEventService,
+		@inject(RedisService) protected redisService: RedisService,
 		@inject(MutexService) protected mutexService: MutexService
 	) {
-		this.systemEventService.onRedisReady(() => {
+		this.redisService.onReady(() => {
 			this.logger.debug('Starting all registered tasks...');
 			this.taskRegistry.forEach((task) => {
 				void this.scheduleTask(task);
 			});
 			this.started = true;
+		});
 
-			this.systemEventService.onceRedisError(() => {
-				this.logger.warn('Redis shutdown detected. Cancelling all scheduled tasks...');
-				this.scheduledTasks.forEach((task, name) => {
-					this.cancelTask(name);
-				});
-				this.started = false;
-			});
+		this.redisService.onDisconnected(() => {
+			this.logger.warn('Redis disconnected. Stopping all scheduled cron tasks until it is back...');
+			this.stopCronTasks();
+			this.started = false;
 		});
 	}
 
@@ -100,6 +98,7 @@ export class TaskSchedulerService {
 				void (async () => {
 					try {
 						this.scheduledTasks.delete(name);
+						this.unregisterTask(name);
 						await callback();
 					} catch (error) {
 						this.logger.error(`Error running timeout task "${name}":`, error);
@@ -111,22 +110,44 @@ export class TaskSchedulerService {
 	}
 
 	/**
-	 * Cancel the scheduled task with the given name.
+	 * Stops the scheduled task with the given name and unregisters it, so it is not
+	 * scheduled again when Redis reconnects.
 	 */
 	public cancelTask(name: string): void {
+		this.stopTask(name);
+		this.unregisterTask(name);
+		this.logger.debug(`Task '${name}' cancelled.`);
+	}
+
+	/**
+	 * Timeout tasks are left armed: their delay is relative to when they were scheduled, so the
+	 * deadline of a re-armed one would move by the downtime.
+	 */
+	protected stopCronTasks(): void {
+		this.taskRegistry.filter(({ type }) => type === 'cron').forEach(({ name }) => this.stopTask(name));
+	}
+
+	/**
+	 * Stops the schedule of the given task, keeping it registered so it can be scheduled again.
+	 */
+	protected stopTask(name: string): void {
 		const scheduled = this.scheduledTasks.get(name);
 
-		if (scheduled) {
-			if (scheduled instanceof CronJob) {
-				void scheduled.stop();
-			} else {
-				clearTimeout(scheduled);
-			}
-
-			this.scheduledTasks.delete(name);
-			this.taskRegistry = this.taskRegistry.filter((task) => task.name !== name);
-			this.logger.debug(`Task '${name}' cancelled.`);
+		if (!scheduled) {
+			return;
 		}
+
+		if (scheduled instanceof CronJob) {
+			void scheduled.stop();
+		} else {
+			clearTimeout(scheduled);
+		}
+
+		this.scheduledTasks.delete(name);
+	}
+
+	protected unregisterTask(name: string): void {
+		this.taskRegistry = this.taskRegistry.filter((task) => task.name !== name);
 	}
 
 	/**

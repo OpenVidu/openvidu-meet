@@ -2,28 +2,19 @@ import { MeetAppearanceConfig } from './room-config.js';
 
 /**
  * Represents global config for OpenVidu Meet.
+ *
+ * Webhooks are not configured here: they are a resource of their own ({@link MeetWebhook},
+ * `/webhooks` on the public API).
  */
 export interface GlobalConfig {
 	/** The projectId is used to identify the project in which the OpenVidu Meet instance is running. */
 	projectId: string;
 	/** Security configuration. See {@link SecurityConfig} for details. */
 	securityConfig: SecurityConfig;
-	/** Webhooks configuration. See {@link WebhookConfig} for details. */
-	webhooksConfig: WebhookConfig;
 	/** Rooms configuration. See {@link MeetAppearanceConfig} for details. */
 	roomsConfig: {
 		appearance: MeetAppearanceConfig;
 	};
-}
-
-/**
- * Represents the configuration for webhooks in OpenVidu Meet.
- */
-export interface WebhookConfig {
-	/** Indicates whether webhooks are enabled or not */
-	enabled: boolean;
-	/** The URL to which webhook events will be sent */
-	url?: string;
 }
 
 /**

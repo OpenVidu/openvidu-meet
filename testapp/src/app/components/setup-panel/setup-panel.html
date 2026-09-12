@@ -1,0 +1,149 @@
+<div class="ta-panel-body">
+	<div class="ta-scroll ta-panel-scroll" data-testid="section-properties">
+		<section class="ta-card">
+			<div class="ta-card__header">
+				<h2>Source</h2>
+				<span class="ta-hint">roomUrl or recordingUrl</span>
+			</div>
+			<div class="ta-field">
+				<div class="ta-field__label-row">
+					<label for="roomUrl">roomUrl</label>
+					<button class="ta-link-btn" type="button" data-testid="btn-browse-rooms" (click)="browseRooms()">
+						Browse rooms
+					</button>
+				</div>
+				<input id="roomUrl" type="text" data-testid="input-roomUrl" [(ngModel)]="config.roomUrl" />
+			</div>
+			<div class="ta-field">
+				<label for="recordingUrl">recordingUrl</label>
+				<input
+					id="recordingUrl"
+					type="text"
+					placeholder="replaces roomUrl"
+					data-testid="input-recordingUrl"
+					[(ngModel)]="config.recordingUrl"
+				/>
+			</div>
+			<div class="ta-field">
+				<label for="showRecording">showRecording</label>
+				<input
+					id="showRecording"
+					type="text"
+					placeholder="recording id"
+					data-testid="input-showRecording"
+					[(ngModel)]="config.showRecording"
+				/>
+			</div>
+			<div class="ta-switch-field">
+				<label for="showOnlyRecordings">showOnlyRecordings</label>
+				<input
+					id="showOnlyRecordings"
+					class="ta-switch"
+					type="checkbox"
+					data-testid="input-showOnlyRecordings"
+					[(ngModel)]="config.showOnlyRecordings"
+				/>
+			</div>
+		</section>
+
+		<section class="ta-card">
+			<div class="ta-card__header">
+				<h2>Participant</h2>
+			</div>
+			<div class="ta-field">
+				<label for="participantName">participantName</label>
+				<input
+					id="participantName"
+					type="text"
+					data-testid="input-participantName"
+					[(ngModel)]="config.participantName"
+				/>
+			</div>
+			<div class="ta-field">
+				<label for="participantExternalId">participantExternalId</label>
+				<input
+					id="participantExternalId"
+					type="text"
+					placeholder="max 64 chars"
+					data-testid="input-participantExternalId"
+					[(ngModel)]="config.participantExternalId"
+				/>
+			</div>
+			<div class="ta-field">
+				<label for="participantMetadata">participantMetadata</label>
+				<input
+					id="participantMetadata"
+					type="text"
+					placeholder='{"role":"host"}'
+					data-testid="input-participantMetadata"
+					[(ngModel)]="config.participantMetadata"
+				/>
+			</div>
+		</section>
+
+		<section class="ta-card">
+			<div class="ta-card__header">
+				<h2>Meeting options</h2>
+			</div>
+			<div class="ta-field">
+				<label for="e2eeKey">e2eeKey</label>
+				<input
+					id="e2eeKey"
+					type="text"
+					placeholder="no encryption"
+					data-testid="input-e2eeKey"
+					[(ngModel)]="config.e2eeKey"
+				/>
+			</div>
+			<div class="ta-field">
+				<label for="leaveRedirectUrl">leaveRedirectUrl</label>
+				<input
+					id="leaveRedirectUrl"
+					type="text"
+					placeholder="/bye or an absolute URL"
+					data-testid="input-leaveRedirectUrl"
+					[(ngModel)]="config.leaveRedirectUrl"
+				/>
+			</div>
+			<div class="ta-field">
+				<label for="initialAudioActive">initialAudioActive</label>
+				<select
+					id="initialAudioActive"
+					data-testid="select-initialAudioActive"
+					[(ngModel)]="config.initialAudioActive"
+				>
+					<option value="">omitted (room default)</option>
+					<option value="true">true</option>
+					<option value="false">false</option>
+				</select>
+			</div>
+			<div class="ta-field">
+				<label for="initialVideoActive">initialVideoActive</label>
+				<select
+					id="initialVideoActive"
+					data-testid="select-initialVideoActive"
+					[(ngModel)]="config.initialVideoActive"
+				>
+					<option value="">omitted (room default)</option>
+					<option value="true">true</option>
+					<option value="false">false</option>
+				</select>
+			</div>
+			<p class="ta-hint ta-note">Omitted is not the same as false: only a value that is set outranks the room.</p>
+		</section>
+	</div>
+
+	<footer class="ta-panel-footer">
+		@if (config.isDirty()) {
+		<div class="ta-dirty">
+			<span class="ta-dot ta-dot--sm"></span>
+			<span>Changes not applied</span>
+		</div>
+		}
+		<button class="ta-btn ta-btn--primary" data-testid="btn-apply-config" (click)="apply.emit()">
+			Apply and remount
+		</button>
+	</footer>
+</div>
+
+<app-room-browser (pick)="config.roomUrl.set($event)" />

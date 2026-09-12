@@ -8,6 +8,7 @@ import { WcRoute } from '../models/wc-route.model';
 export interface WcNavigator {
 	navigate(route: WcRoute): Promise<void>;
 	navigateToInitial(): Promise<void>;
+	getHomeRoute(): WcRoute | null;
 }
 
 /**
@@ -36,5 +37,10 @@ export class WcRouterGateway {
 
 	navigateToInitial(): Promise<void> {
 		return this.navigator?.navigateToInitial() ?? Promise.resolve();
+	}
+
+	/** The attribute-derived route currently registered as home, or `null` if none has been set yet. */
+	getHomeRoute(): WcRoute | null {
+		return this.navigator?.getHomeRoute() ?? null;
 	}
 }

@@ -1,7 +1,10 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import {
+	LeftEventReason,
 	MEET_DEPRECATED_PERMISSION_KEYS,
 	MEET_PERMISSION_KEYS,
+	MeetParticipantJoinedPayload,
+	MeetParticipantLeftPayload,
 	MeetRecordingEncodingPreset,
 	MeetRecordingInfo,
 	MeetRecordingLayout,
@@ -9,6 +12,9 @@ import {
 	MeetRoom,
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomMemberPermissions,
+	MeetRoomMemberRole,
+	MeetRoomMemberUIBadge,
 	MeetWebhookEvent,
 	MeetWebhookEventType
 } from '@openvidu-meet/typings';
@@ -19,18 +25,24 @@ import { container } from '../../../src/config/dependency-injector.config.js';
 import { lkWebhookHandler } from '../../../src/controllers/livekit-webhook.controller.js';
 import { MeetLock } from '../../../src/helpers/redis.helper.js';
 import { LivekitWebhookService } from '../../../src/services/livekit-webhook.service.js';
+import { LiveKitService } from '../../../src/services/livekit.service.js';
 import { MutexService } from '../../../src/services/mutex.service.js';
-import { OpenViduWebhookService } from '../../../src/services/openvidu-webhook.service.js';
-import { disconnectFakeParticipants } from '../../helpers/livekit-cli-helpers.js';
+import { WebhookDispatcherService } from '../../../src/services/webhook-dispatcher.service.js';
 import {
+	disconnectFakeParticipants,
+	joinFakeParticipant,
+	updateParticipantMetadata
+} from '../../helpers/livekit-cli-helpers.js';
+import {
+	createWebhook,
 	deleteAllRecordings,
 	deleteAllRooms,
+	deleteAllWebhooks,
 	deleteRoom,
 	endMeeting,
 	restoreDefaultGlobalConfig,
 	sleep,
-	startTestServer,
-	updateWebhookConfig
+	startTestServer
 } from '../../helpers/request-helpers.js';
 import {
 	setupSingleRoom,
@@ -58,7 +70,9 @@ describe('Webhook Integration Tests', () => {
 		chat: { enabled: true },
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false },
-		captions: { enabled: true }
+		captions: { enabled: true },
+		initialAudioActive: true,
+		initialVideoActive: true
 	};
 
 	beforeAll(async () => {
@@ -75,11 +89,9 @@ describe('Webhook Integration Tests', () => {
 
 	beforeEach(async () => {
 		receivedWebhooks = [];
-		// Enable webhooks in global config
-		await updateWebhookConfig({
-			enabled: true,
-			url: `http://localhost:5080/webhook`
-		});
+		// Register the receiver as the only webhook of the deployment
+		await deleteAllWebhooks();
+		await createWebhook({ url: `http://localhost:5080/webhook` });
 	});
 
 	afterAll(async () => {
@@ -89,6 +101,7 @@ describe('Webhook Integration Tests', () => {
 		await disconnectFakeParticipants();
 		await deleteAllRooms();
 		await deleteAllRecordings();
+		await deleteAllWebhooks();
 	});
 
 	const expectValidSignature = (webhook: { headers: http.IncomingHttpHeaders; body: MeetWebhookEvent }) => {
@@ -97,14 +110,28 @@ describe('Webhook Integration Tests', () => {
 	};
 
 	describe('Webhook sending', () => {
-		it('should not send webhooks when disabled', async () => {
-			await updateWebhookConfig({
-				enabled: false
+		it('should not send webhooks when the registered webhook is disabled', async () => {
+			await deleteAllWebhooks();
+			await createWebhook({ url: `http://localhost:5080/webhook`, enabled: false });
+
+			const { room, moderatorToken } = await setupSingleRoom(true);
+
+			// Delivery is asynchronous, so an empty list right here only means "not yet". Re-enable
+			// the webhook and end the meeting: `meeting_ended` is strictly later than the
+			// `meeting_started` under test, so once it lands on the same receiver, a delivery of
+			// `meeting_started` would already have landed too.
+			await deleteAllWebhooks();
+			await createWebhook({ url: `http://localhost:5080/webhook` });
+			await endMeeting(room.roomId, moderatorToken);
+			await waitForWebhookEvent(receivedWebhooks, MeetWebhookEventType.MEETING_ENDED, {
+				roomId: room.roomId
 			});
 
-			await setupSingleRoom(true);
-
-			expect(receivedWebhooks.length).toBe(0);
+			// Only the two events of the disabled window are denied: ending the meeting emits its
+			// own participant_left alongside meeting_ended.
+			const deniedEvents = [MeetWebhookEventType.MEETING_STARTED, MeetWebhookEventType.PARTICIPANT_JOINED];
+			expect(receivedWebhooks.filter((webhook) => deniedEvents.includes(webhook.body.event))).toEqual([]);
+			expect(receivedWebhooks.filter((webhook) => webhook.body.event === MeetWebhookEventType.MEETING_ENDED)).toHaveLength(1);
 		});
 
 		it('should send meeting_started webhook when room is created', async () => {
@@ -173,9 +200,9 @@ describe('Webhook Integration Tests', () => {
 				// Created under '3.9.0' too, so the REST response seeds only current keys
 				const context = await setupSingleRoom();
 				const room = context.room;
-				const webhookService = container.get(OpenViduWebhookService);
+				const webhookDispatcherService = container.get(WebhookDispatcherService);
 
-				webhookService.sendMeetingStartedWebhook(room);
+				webhookDispatcherService.sendMeetingStartedWebhook(room);
 				const meetingStartedWebhook = await waitForWebhookEvent(
 					receivedWebhooks,
 					MeetWebhookEventType.MEETING_STARTED,
@@ -196,7 +223,7 @@ describe('Webhook Integration Tests', () => {
 				}
 
 				// meeting_ended flows through the same serializer — verify the negative branch there too
-				webhookService.sendMeetingEndedWebhook(room);
+				webhookDispatcherService.sendMeetingEndedWebhook(room);
 				const meetingEndedWebhook = await waitForWebhookEvent(
 					receivedWebhooks,
 					MeetWebhookEventType.MEETING_ENDED,
@@ -228,6 +255,99 @@ describe('Webhook Integration Tests', () => {
 			expect(room.config).toEqual(defaultRoomConfig);
 
 			expectValidSignature(meetingEndedWebhook);
+		});
+
+		it('should send participantJoined webhook when a participant joins the meeting', async () => {
+			const context = await setupSingleRoom(true);
+			const roomData = context.room;
+
+			const participantJoinedWebhook = await waitForWebhookEvent(
+				receivedWebhooks,
+				MeetWebhookEventType.PARTICIPANT_JOINED,
+				{ roomId: roomData.roomId }
+			);
+			expect(participantJoinedWebhook.body.creationDate).toBeLessThanOrEqual(Date.now());
+			expect(participantJoinedWebhook.body.creationDate).toBeGreaterThanOrEqual(Date.now() - 3000);
+
+			const payload = participantJoinedWebhook.body.data as MeetParticipantJoinedPayload;
+			expect(payload.roomId).toBe(roomData.roomId);
+			expect(payload.roomName).toBe(roomData.roomName);
+			expect(payload.participant.participantIdentity).toBe('TEST_PARTICIPANT');
+			// The fake CLI participant joins without any Meet room-member token metadata, so it falls
+			// back to the same default a real anonymous non-moderator participant would get.
+			expect(payload.participant.role).toBe(MeetRoomMemberRole.SPEAKER);
+			expect(payload.participant.joinDate).toBeLessThanOrEqual(Date.now());
+
+			expectValidSignature(participantJoinedWebhook);
+		});
+
+		it('should send participantLeft webhook when a participant leaves the meeting', async () => {
+			const context = await setupSingleRoom(true);
+			const roomData = context.room;
+
+			// A second participant, kicked deliberately: TEST_PARTICIPANT stays connected so the
+			// meeting keeps running and doesn't also fire a competing meetingEnded webhook.
+			const leavingIdentity = 'TEST_PARTICIPANT_LEAVING';
+			await joinFakeParticipant(roomData.roomId, leavingIdentity);
+
+			const startDate = Date.now();
+			const livekitService = container.get(LiveKitService);
+			await livekitService.deleteParticipant(roomData.roomId, leavingIdentity);
+
+			const participantLeftWebhook = await waitForWebhookEvent(
+				receivedWebhooks,
+				MeetWebhookEventType.PARTICIPANT_LEFT,
+				{ roomId: roomData.roomId }
+			);
+			expect(participantLeftWebhook.body.creationDate).toBeGreaterThanOrEqual(startDate);
+
+			const payload = participantLeftWebhook.body.data as MeetParticipantLeftPayload;
+			expect(payload.roomId).toBe(roomData.roomId);
+			expect(payload.roomName).toBe(roomData.roomName);
+			expect(payload.participant.participantIdentity).toBe(leavingIdentity);
+			expect(payload.participant.leaveReason).toBe(LeftEventReason.PARTICIPANT_KICKED);
+			expect(payload.participant.leaveDate).toBeGreaterThanOrEqual(startDate);
+			expect(payload.participant.durationSeconds).toBeGreaterThanOrEqual(0);
+
+			expectValidSignature(participantLeftWebhook);
+		});
+
+		it('should echo the app-provided correlation fields in the participantLeft webhook', async () => {
+			const context = await setupSingleRoom(true);
+			const roomData = context.room;
+
+			const leavingIdentity = 'TEST_PARTICIPANT_CORRELATED';
+			await joinFakeParticipant(roomData.roomId, leavingIdentity);
+
+			// The CLI participant joins without Meet metadata; stamp it as a real join would have,
+			// including the app-provided correlation fields, before disconnecting it.
+			await updateParticipantMetadata(roomData.roomId, leavingIdentity, {
+				iat: Date.now(),
+				roomId: roomData.roomId,
+				permissions: Object.fromEntries(
+					MEET_PERMISSION_KEYS.map((key) => [key, true])
+				) as unknown as MeetRoomMemberPermissions,
+				badge: MeetRoomMemberUIBadge.OTHER,
+				externalId: 'crm-user_42',
+				metadata: '{"department": "cardiology"}'
+			});
+
+			const livekitService = container.get(LiveKitService);
+			await livekitService.deleteParticipant(roomData.roomId, leavingIdentity);
+
+			const participantLeftWebhook = await waitForWebhookEvent(
+				receivedWebhooks,
+				MeetWebhookEventType.PARTICIPANT_LEFT,
+				{ roomId: roomData.roomId }
+			);
+
+			const payload = participantLeftWebhook.body.data as MeetParticipantLeftPayload;
+			expect(payload.participant.participantIdentity).toBe(leavingIdentity);
+			expect(payload.participant.externalId).toBe('crm-user_42');
+			expect(payload.participant.metadata).toBe('{"department": "cardiology"}');
+			expect(payload.participant.role).toBe(MeetRoomMemberRole.SPEAKER);
+
+			expectValidSignature(participantLeftWebhook);
 		});
 
 		it('should send recordingStarted, recordingUpdated and recordingEnded webhooks when recording is started and stopped', async () => {

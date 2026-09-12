@@ -158,6 +158,17 @@
       "USERS_DELETED_SUFFIX_PLURAL": "Benutzer erfolgreich gelöscht.",
       "USERS_FAILED_SUFFIX_SINGULAR": "Benutzer konnte nicht gelöscht werden.",
       "USERS_FAILED_SUFFIX_PLURAL": "Benutzer konnten nicht gelöscht werden."
+    },
+    "DIALOGS": {
+      "DELETE_USER_TITLE": "Benutzer löschen",
+      "DELETE_USER_MESSAGE": "Möchten Sie den Benutzer <b>{name}</b> ({userId}) wirklich dauerhaft löschen? Diese Aktion kann nicht widerrufen werden.",
+      "DELETE_USER_WARNING": "Besitzt der Benutzer Räume, geht deren Eigentum an den Root-Administrator über. Befindet er sich in einem Meeting, wird er sofort entfernt.",
+      "DELETE_USERS_TITLE": "Benutzer löschen",
+      "DELETE_USERS_MESSAGE_ONE": "Möchten Sie <b>{count} Benutzer</b> wirklich dauerhaft löschen? Diese Aktion kann nicht widerrufen werden.",
+      "DELETE_USERS_MESSAGE_MANY": "Möchten Sie <b>{count} Benutzer</b> wirklich dauerhaft löschen? Diese Aktion kann nicht widerrufen werden.",
+      "DELETE_USERS_WARNING": "Besitzen gelöschte Benutzer Räume, geht deren Eigentum an den Root-Administrator über. Benutzer in einem Meeting werden sofort entfernt.",
+      "WARNING_TITLE": "Wichtige Folgen",
+      "DELETE": "Löschen"
     }
   }
 }

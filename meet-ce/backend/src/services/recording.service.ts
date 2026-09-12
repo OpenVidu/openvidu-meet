@@ -11,7 +11,7 @@ import { MeetRecordingStatus } from '@openvidu-meet/typings';
 import type { Archiver } from 'archiver';
 import { ZipArchive } from 'archiver';
 import { inject, injectable } from 'inversify';
-import type { RoomCompositeOptions } from 'livekit-server-sdk';
+import type { ParticipantInfo, Room, RoomCompositeOptions } from 'livekit-server-sdk';
 import { EgressStatus, EncodedFileOutput, EncodedFileType } from 'livekit-server-sdk';
 import ms from 'ms';
 import type { Readable } from 'stream';
@@ -22,23 +22,20 @@ import { MEET_ENV } from '../environment.js';
 import { EncodingConverter } from '../helpers/encoding-converter.helper.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
-import { DistributedEventType } from '../models/distributed-event.model.js';
 import {
 	errorAnonymousAccessDisabled,
 	errorInsufficientPermissions,
 	errorRecordingAlreadyStarted,
 	errorRecordingAlreadyStopped,
-	errorRecordingCannotBeStoppedWhileStarting,
+	errorRecordingAutoStartDisabled,
 	errorRecordingNotFound,
 	errorRecordingNotStopped,
 	errorRecordingNotStreamable,
-	errorRecordingStartTimeout,
+	errorRecordingStopInProgress,
 	errorRoomHasNoParticipants,
-	isErrorRecordingAlreadyStopped,
-	isErrorRecordingCannotBeStoppedWhileStarting,
-	isErrorRecordingNotFound,
 	OpenViduMeetError
 } from '../models/error.model.js';
+import type { RedisLock } from '../models/redis-lock.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import type {
 	MeetRecordingPage,
@@ -49,12 +46,11 @@ import type {
 } from '../types/recording-projection.types.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
 import { getBaseUrl } from '../utils/url.utils.js';
-import { DistributedEventService } from './distributed-event.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
-import type { RedisLock } from '../models/redis-lock.model.js';
 import { MutexService } from './mutex.service.js';
+import { RecordingAutoStartStateService } from './recording-auto-start-state.service.js';
 import { RequestSessionService } from './request-session.service.js';
 import type { RoomService } from './room.service.js';
 import { BlobStorageService } from './storage/blob-storage.service.js';
@@ -64,11 +60,11 @@ export class RecordingService {
 	constructor(
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(MutexService) protected mutexService: MutexService,
-		@inject(DistributedEventService) protected systemEventService: DistributedEventService,
 		@inject(RecordingRepository) protected recordingRepository: RecordingRepository,
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
 		@inject(BlobStorageService) protected blobStorageService: BlobStorageService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
+		@inject(RecordingAutoStartStateService) protected recAutoStartStateService: RecordingAutoStartStateService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {}
 
@@ -80,171 +76,164 @@ export class RecordingService {
 		return container.get(RoomService);
 	}
 
+	/**
+	 * Starts a recording in the room. The request completes as soon as LiveKit accepts the egress:
+	 * the recording is `starting` until the first track is published and LiveKit reports it active,
+	 * which can take as long as the participants take to publish. `autoStartMeetingId` marks the
+	 * request as a recording auto-start on behalf of that meeting (the LiveKit room sid): the
+	 * deliberate-stop latch is re-checked once the `recording_active` lock is held. A stop writes the
+	 * latch before its `egress_ended` releases the lock, so a stop that completed after the caller's
+	 * own latch check is always visible here and cannot be overridden.
+	 */
 	async startRecording(
 		roomId: string,
 		configOverride?: {
 			layout?: MeetRecordingLayout;
 			encoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
-		}
+		},
+		autoStartMeetingId?: string
 	): Promise<MeetRecordingInfo> {
-		let acquiredLock: RedisLock | null = null;
-		let eventListener!: (info: Record<string, unknown>) => void;
-		let recordingId = '';
-		let timeoutId: NodeJS.Timeout | undefined;
-		let isOperationCompleted = false;
+		const acquiredLock = await this.acquireRoomRecordingActiveLock(roomId);
+
+		if (!acquiredLock) throw errorRecordingAlreadyStarted(roomId);
 
 		try {
-			// Attempt to acquire lock. If the lock is not acquired, the recording is already active.
-			acquiredLock = await this.acquireRoomRecordingActiveLock(roomId);
-
-			if (!acquiredLock) throw errorRecordingAlreadyStarted(roomId);
+			if (autoStartMeetingId && (await this.recAutoStartStateService.isDisabled(roomId, autoStartMeetingId))) {
+				throw errorRecordingAutoStartDisabled(roomId);
+			}
 
 			const roomRecordingConfig = await this.validateRoomForStartRecording(roomId);
+			const options = this.generateCompositeOptionsFromRequest(roomRecordingConfig, configOverride);
+			const output = this.generateFileOutputFromRequest(roomId);
+			const egressInfo = await this.livekitService.startRoomComposite(roomId, output, options);
+			const recordingInfo = await RecordingHelper.toRecordingInfo(egressInfo);
 
-			// Manually send the recording update to avoid missing the state transition if the webhook is delayed.
-			await this.frontendEventService.sendRecordingUpdatedSignal(roomId, {
-				recordingId: '',
-				roomId,
-				roomName: roomId,
-				status: MeetRecordingStatus.STARTING
-			});
-
-			// Promise that rejects after timeout
-			const timeoutPromise = new Promise<never>((_, reject) => {
-				timeoutId = setTimeout(() => {
-					if (isOperationCompleted) return;
-
-					isOperationCompleted = true;
-
-					// Clean up the event listener and timeout
-					this.systemEventService.off(DistributedEventType.RECORDING_ACTIVE, eventListener);
-					this.handleRecordingTimeout(recordingId, roomId).catch(() => {});
-					reject(errorRecordingStartTimeout(roomId));
-				}, ms(INTERNAL_CONFIG.RECORDING_STARTED_TIMEOUT));
-			});
-
-			// Promise that resolves when RECORDING_ACTIVE event is received
-			const activeEgressEventPromise = new Promise<MeetRecordingInfo>((resolve) => {
-				eventListener = (info: Record<string, unknown>) => {
-					// Process the event only if it belongs to the current room.
-					// Each room has only ONE active recording at the same time
-					if (info?.roomId !== roomId || isOperationCompleted) return;
-
-					isOperationCompleted = true;
-
-					clearTimeout(timeoutId);
-					this.systemEventService.off(DistributedEventType.RECORDING_ACTIVE, eventListener);
-					resolve(info as unknown as MeetRecordingInfo);
-				};
-
-				this.systemEventService.on(DistributedEventType.RECORDING_ACTIVE, eventListener);
-			});
-
-			// Promise that starts the recording process
-			const startRecordingPromise = (async (): Promise<MeetRecordingInfo> => {
-				try {
-					const options = this.generateCompositeOptionsFromRequest(roomRecordingConfig, configOverride);
-					const output = this.generateFileOutputFromRequest(roomId);
-					const egressInfo = await this.livekitService.startRoomComposite(roomId, output, options);
-
-					// Check if operation was completed while we were waiting
-					if (isOperationCompleted) {
-						this.logger.warn(`Recording start for room '${roomId}' completed after timeout`);
-						throw errorRecordingStartTimeout(roomId);
-					}
-
-					const recordingInfo = await RecordingHelper.toRecordingInfo(egressInfo);
-					recordingId = recordingInfo.recordingId;
-
-					// If the recording is already active, we can resolve the promise immediately.
-					if (recordingInfo.status === MeetRecordingStatus.ACTIVE) {
-						if (!isOperationCompleted) {
-							isOperationCompleted = true;
-							clearTimeout(timeoutId);
-							this.systemEventService.off(DistributedEventType.RECORDING_ACTIVE, eventListener);
-							return recordingInfo;
-						}
-					}
-
-					// Wait for RECORDING_ACTIVE event
-					return await activeEgressEventPromise;
-				} catch (error) {
-					if (isOperationCompleted) {
-						this.logger.warn(`Recording start for room '${roomId}' failed after timeout`, error);
-
-						// Manually send the recording FAILED update to avoid missing the state transition.
-						await this.frontendEventService.sendRecordingUpdatedSignal(roomId, {
-							recordingId,
-							roomId,
-							roomName: roomId,
-							status: MeetRecordingStatus.FAILED,
-							error: (error as Error).message
-						});
-
-						throw errorRecordingStartTimeout(roomId);
-					}
-
-					throw error;
-				}
-			})();
-
-			// Swallow late rejections to prevent UnhandledPromiseRejection; the awaited race
-			// below (or its outer catch) surfaces and logs the actual failure.
-			startRecordingPromise.catch(() => {});
-			const recordingInfo = await Promise.race([startRecordingPromise, timeoutPromise]);
 			this.logger.info(`Recording '${recordingInfo.recordingId}' started for room '${roomId}'`);
 			return recordingInfo;
 		} catch (error) {
 			this.logger.debug(`Error starting recording in room '${roomId}'`, error);
-			throw error;
-		} finally {
+
 			try {
-				if (acquiredLock) {
-					// Only clean up resources if the lock was successfully acquired.
-					// This prevents unnecessary cleanup operations when the request was rejected
-					// due to another recording already in progress in this room.
-					clearTimeout(timeoutId);
-					this.systemEventService.off(DistributedEventType.RECORDING_ACTIVE, eventListener);
-					await this.releaseRecordingLockIfNoEgress(roomId);
-				}
-			} catch (e) {
-				this.logger.warn(`Failed to release recording lock for room '${roomId}'`, e);
+				await this.releaseRecordingLockIfNoEgress(roomId);
+			} catch (releaseError) {
+				this.logger.warn(`Failed to release recording lock for room '${roomId}'`, releaseError);
 			}
+
+			throw error;
 		}
 	}
 
-	async stopRecording(recordingId: string): Promise<MeetRecordingInfo> {
+	/**
+	 * Starts the room's recording when its config declares `autoStart` and the meeting's live state
+	 * meets the configured threshold. Triggered by a join or by a promotion to moderator.
+	 */
+	async startAutoRecordingIfNeeded(
+		{ name: roomId, sid: meetingId }: Room,
+		candidate: ParticipantInfo
+	): Promise<void> {
 		try {
-			const { roomId, egressId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
+			const roomService = await this.getRoomService();
+			const room = await roomService.getMeetRoom(roomId, ['config']);
+			const { recording, e2ee } = room.config;
 
-			const [egress] = await this.livekitService.getEgress(roomId, egressId);
+			if (!recording.enabled || !recording.autoStart || e2ee.enabled) return;
 
-			if (!egress) {
-				throw errorRecordingNotFound(egressId);
+			// A deliberate stop during this meeting disarms the auto-start until the meeting ends
+			const recWasStoppedManually = await this.recAutoStartStateService.isDisabled(roomId, meetingId);
+
+			if (recWasStoppedManually) {
+				this.logger.verbose(
+					`Skipping recording auto-start in room '${roomId}': disabled by a deliberate stop during this meeting`
+				);
+				return;
 			}
 
-			switch (egress.status) {
-				case EgressStatus.EGRESS_ACTIVE:
-					// Everything is fine, the recording can be stopped.
-					break;
-				case EgressStatus.EGRESS_STARTING:
-					// Avoid pending egress after timeout, stop it immediately
-					await this.livekitService.stopEgress(egressId);
-					// The recording is still starting, it cannot be stopped yet.
-					throw errorRecordingCannotBeStoppedWhileStarting(recordingId);
-				default:
-					// The recording is already stopped.
-					throw errorRecordingAlreadyStopped(recordingId);
-			}
+			const autoStartConfig = RecordingHelper.getAutoStartConfig(recording.autoStart);
+			const participants = await this.livekitService.listStandardParticipants(roomId);
+			const thresholdReached = this.recAutoStartStateService.hasReachedAutoStartThreshold(
+				roomId,
+				autoStartConfig,
+				candidate,
+				participants
+			);
 
-			const egressInfo = await this.livekitService.stopEgress(egressId);
+			if (!thresholdReached) return;
 
-			this.logger.info(`Recording stopped successfully for room '${roomId}'`);
-			return await RecordingHelper.toRecordingInfo(egressInfo);
+			const recordingInfo = await this.startRecording(roomId, undefined, meetingId);
+			this.logger.info(`Recording '${recordingInfo.recordingId}' auto-started in room '${roomId}'`);
 		} catch (error) {
-			this.logger.debug(`Error stopping recording '${recordingId}'`, error);
-			throw error;
+			// 404: the room was deleted between the webhook firing and this check running.
+			// 409: the recording is already active (started by another join in the meantime),
+			// or a deliberate stop disarmed the auto-start while this candidate was evaluated.
+			if (error instanceof OpenViduMeetError && [404, 409].includes(error.statusCode)) {
+				this.logger.verbose(`Skipping recording auto-start in room '${roomId}': ${error.message}`);
+				return;
+			}
+
+			this.logger.error(`Error auto-starting recording in room '${roomId}':`, error);
 		}
+	}
+
+	/**
+	 * Reactivates the room's recording auto-start. Called when a meeting ends (`room_finished`), so
+	 * the next meeting in the same room auto-starts its recording again. `meetingId` (the finishing
+	 * meeting's sid) scopes the reactivation to that meeting's own flag — see
+	 * {@link RecordingAutoStartStateService#activateAutoStart}. Never throws: the `room_finished`
+	 * handler must not be aborted by flag bookkeeping.
+	 */
+	async reactivateAutoRecording(roomId: string, meetingId?: string): Promise<void> {
+		await this.recAutoStartStateService.activateAutoStart(roomId, meetingId);
+	}
+
+	/**
+	 * Stops a recording, whether it is already recording or still waiting for its first track. A
+	 * stop is a deliberate decision, so it also disables the room's recording auto-start for the rest
+	 * of the meeting.
+	 *
+	 * Serialized per room while it runs, so a second stop is rejected with a 409 instead of racing
+	 * this one in LiveKit.
+	 */
+	async stopRecording(recordingId: string): Promise<MeetRecordingInfo> {
+		const { roomId, egressId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
+		const lockKey = MeetLock.getRecordingStopLock(roomId);
+
+		const recordingInfo = await this.mutexService.withLock(
+			lockKey,
+			ms(INTERNAL_CONFIG.RECORDING_STOP_LOCK_TTL),
+			async () => {
+				try {
+					const [egress] = await this.livekitService.getEgress(roomId, egressId);
+
+					if (!egress) {
+						throw errorRecordingNotFound(egressId);
+					}
+
+					const isStoppable = [EgressStatus.EGRESS_ACTIVE, EgressStatus.EGRESS_STARTING].includes(
+						egress.status
+					);
+
+					if (!isStoppable) {
+						throw errorRecordingAlreadyStopped(recordingId);
+					}
+
+					// Written BEFORE stopping the egress: the flag is guaranteed to be visible on
+					// every replica before the egress_ended webhook releases the recording-active lock.
+					await this.recAutoStartStateService.markDisabled(roomId, egress.roomId);
+
+					const egressInfo = await this.livekitService.stopEgress(egressId);
+
+					this.logger.info(`Recording stopped successfully for room '${roomId}'`);
+					return await RecordingHelper.toRecordingInfo(egressInfo);
+				} catch (error) {
+					this.logger.debug(`Error stopping recording '${recordingId}'`, error);
+					throw error;
+				}
+			}
+		);
+
+		if (!recordingInfo) throw errorRecordingStopInProgress(recordingId);
+
+		return recordingInfo;
 	}
 
 	/**
@@ -776,20 +765,24 @@ export class RecordingService {
 	}
 
 	/**
-	 * Releases the active recording lock for a specified room, but only if there are no active egress operations.
+	 * Releases the active recording lock for a specified room, but only if there are no in-progress
+	 * recording egress operations.
 	 *
-	 * This method first checks for any ongoing egress operations for the room.
-	 * If active egress operations are found, the lock isn't released as recording is still considered active.
+	 * This method first checks for any ongoing recording egress for the room, in any in-progress
+	 * state (STARTING, ACTIVE or ENDING) — not just ACTIVE: a duplicate/stale `egress_ended` for a
+	 * previous egress arriving while a new one is still STARTING must not release the lock a
+	 * concurrent request could then re-acquire, starting a second recording.
+	 * If any is found, the lock isn't released as recording is still considered active.
 	 * Otherwise, it proceeds to release the mutex lock associated with the room's recording.
 	 */
 	async releaseRecordingLockIfNoEgress(roomId: string): Promise<void> {
 		if (roomId) {
 			const lockName = MeetLock.getRecordingActiveLock(roomId);
-			const egress = await this.livekitService.getActiveEgress(roomId);
+			const egress = await this.livekitService.getInProgressRecordingsEgress(roomId);
 
 			if (egress.length > 0) {
 				this.logger.verbose(
-					`Active egress found for room '${roomId}': ${egress.map((e) => e.egressId).join(', ')}`
+					`In-progress recording egress found for room '${roomId}': ${egress.map((e) => e.egressId).join(', ')}`
 				);
 				this.logger.debug(`Cannot release recording lock for room '${roomId}'. Recording is still active.`);
 				return;
@@ -803,85 +796,6 @@ export class RecordingService {
 				this.logger.verbose(`Recording active lock released for room '${roomId}'`);
 			} catch (error) {
 				this.logger.warn(`Error releasing recording lock for room '${roomId}' on egress ended`, error);
-			}
-		}
-	}
-
-	/**
-	 * Handles the timeout event for a recording session in a specific room.
-	 *
-	 * This method is triggered when a recording cleanup timer fires, indicating that a recording
-	 * has either failed to start or has not been stopped within the expected timeframe.
-	 * It attempts to update the recording status to `FAILED` and stop the recording if necessary.
-	 *
-	 * If the recording is already stopped, not found, or cannot be stopped because it is still starting,
-	 * the method logs the appropriate message and determines whether to release the active recording lock.
-	 *
-	 * Regardless of the outcome, if the lock should be released, it attempts to release the recording lock
-	 * for the room to allow further recordings.
-	 *
-	 * @param recordingId - The unique identifier of the recording session.
-	 * @param roomId - The unique identifier of the room associated with the recording.
-	 * @returns A promise that resolves when the timeout handling is complete.
-	 */
-	protected async handleRecordingTimeout(recordingId: string, roomId: string) {
-		this.logger.debug(`Recording cleanup timer triggered for room '${roomId}'.`);
-
-		let shouldReleaseLock = false;
-
-		try {
-			if (!recordingId || recordingId.trim() === '') {
-				this.logger.warn(
-					`Timeout triggered but recordingId is empty for room '${roomId}'. Recording likely failed to start.`
-				);
-				shouldReleaseLock = true;
-				const recordingInfo: MeetRecordingInfo = {
-					recordingId,
-					roomId,
-					roomName: roomId,
-					status: MeetRecordingStatus.FAILED,
-					error: `No egress service was able to register a request. Check your CPU usage or if there's any Media Node with enough CPU. Remember that by default, composite recording uses 2 CPUs for each room.`
-				};
-
-				// Manually send the recording FAILED update because the webhook may never arrive.
-				await this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo);
-			} else {
-				await this.updateRecordingStatus(recordingId, MeetRecordingStatus.FAILED);
-				await this.stopRecording(recordingId);
-				// The recording was stopped successfully
-				// the cleanup timer will be cancelled when the egress_ended event is received.
-			}
-		} catch (error) {
-			if (error instanceof OpenViduMeetError) {
-				// The recording is already stopped or not found in LiveKit.
-				const isRecordingAlreadyStopped = isErrorRecordingAlreadyStopped(error, recordingId);
-				const isRecordingNotFound = isErrorRecordingNotFound(error, recordingId);
-
-				if (isRecordingAlreadyStopped || isRecordingNotFound) {
-					this.logger.verbose(
-						`Recording '${recordingId}' is already stopped or not found. Releasing the active lock.`
-					);
-					shouldReleaseLock = true;
-				} else if (isErrorRecordingCannotBeStoppedWhileStarting(error, recordingId)) {
-					// The recording is still starting, the cleanup timer will be cancelled.
-					this.logger.warn(
-						`Recording '${recordingId}' is still starting. Skipping recording active lock release.`
-					);
-				} else {
-					// An error occurred while stopping the recording.
-					this.logger.error(`Error stopping recording '${recordingId}'`, error);
-					shouldReleaseLock = true;
-				}
-			} else {
-				this.logger.error(`Unexpected error while running recording cleanup timer for room '${roomId}'`, error);
-			}
-		} finally {
-			if (shouldReleaseLock) {
-				try {
-					await this.releaseRecordingLockIfNoEgress(roomId);
-				} catch (releaseError) {
-					this.logger.warn(`Error releasing active recording lock for room '${roomId}'`, releaseError);
-				}
 			}
 		}
 	}

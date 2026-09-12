@@ -1,8 +1,11 @@
 name: x-timestamp
 in: header
 description: >
-    Unix timestamp (in milliseconds) when the webhook was sent.
-    Can be used to validate webhook age and prevent replay attacks.
+    Unix timestamp (in milliseconds) when the event was sent, identical to the `creationDate` of the
+    body. It is the first half of the string signed in `x-signature`, so it cannot be tampered with
+    on its own: verify the signature first, then reject deliveries whose timestamp is too old to
+    stop replays.
 required: true
 schema:
     type: string
+    example: '1620000000000'

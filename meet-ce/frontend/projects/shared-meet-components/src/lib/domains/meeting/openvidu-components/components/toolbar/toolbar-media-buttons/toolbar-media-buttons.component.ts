@@ -75,6 +75,7 @@ export class ToolbarMediaButtonsComponent {
 	// Recording related inputs
 	recordingStatus = input<RecordingState>(RecordingState.STOPPED);
 	hasRoomTracksPublished = input<boolean>(false);
+	recordingStartsAutomatically = input<boolean>(false);
 
 	// Leave button
 	showLeaveButton = input<boolean>(true);
@@ -102,8 +103,36 @@ export class ToolbarMediaButtonsComponent {
 		return this.externalMoreOptionsAdditionalMenuItems()?.template;
 	}
 
-	// Status enums for template usage
-	_recordingStatus = RecordingState;
+	/** A recording that is capturing, or still waiting for its first track: the toggle stops it. */
+	readonly isRecordingInProgress = computed(
+		() => this.recordingStatus() === RecordingState.STARTED || this.recordingStatus() === RecordingState.STARTING
+	);
+
+	/**
+	 * The toggle would start a recording, in a room that starts its own. Stopping one stays
+	 * available: this only takes away the half that is not offered.
+	 */
+	readonly cannotStartRecordingHere = computed(
+		() => this.recordingStartsAutomatically() && !this.isRecordingInProgress()
+	);
+
+	readonly isRecordingToggleDisabled = computed(
+		() =>
+			this.recordingStatus() === RecordingState.STOPPING ||
+			(!this.isRecordingInProgress() && !this.hasRoomTracksPublished()) ||
+			this.cannotStartRecordingHere()
+	);
+
+	/** Why the toggle cannot be used, or an empty string when it can. */
+	readonly recordingDisabledReasonKey = computed(() => {
+		if (this.isRecordingInProgress()) return '';
+
+		if (this.cannotStartRecordingHere()) return 'PANEL.RECORDING.AUTO_START_ONLY';
+
+		if (!this.hasRoomTracksPublished()) return 'TOOLBAR.NO_TRACKS_PUBLISHED';
+
+		return '';
+	});
 
 	// Viewport service for responsive behavior
 	private viewportService = inject(ViewportService);

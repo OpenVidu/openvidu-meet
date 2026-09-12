@@ -223,47 +223,29 @@ describe('Room API Tests', () => {
 				(s: { roomId: string; successCode: MeetRoomDeletionSuccessCode; message: string; room?: MeetRoom }) =>
 					s.room?.roomId === room2.roomId
 			);
-			expectValidRoom(
-				successfulRoom2.room,
-				successfulRoom2.room.roomName,
-				undefined,
-				undefined,
-				undefined,
-				undefined,
-				MeetRoomStatus.ACTIVE_MEETING,
-				MeetingEndAction.DELETE
-			);
+			expectValidRoom(successfulRoom2.room, successfulRoom2.room.roomName, {
+				status: MeetRoomStatus.ACTIVE_MEETING,
+				meetingEndAction: MeetingEndAction.DELETE
+			});
 			expectExtraFieldsInResponse(successfulRoom2.room);
 			const successfulRoom3 = response.body.deleted.find(
 				(r: { roomId: string; successCode: MeetRoomDeletionSuccessCode; message: string; room?: MeetRoom }) =>
 					r.room?.roomId === room3.roomId
 			);
-			expectValidRoom(
-				successfulRoom3.room,
-				successfulRoom3.room.roomName,
-				undefined,
-				undefined,
-				undefined,
-				undefined,
-				MeetRoomStatus.ACTIVE_MEETING,
-				MeetingEndAction.CLOSE
-			);
+			expectValidRoom(successfulRoom3.room, successfulRoom3.room.roomName, {
+				status: MeetRoomStatus.ACTIVE_MEETING,
+				meetingEndAction: MeetingEndAction.CLOSE
+			});
 			expectExtraFieldsInResponse(successfulRoom3.room);
 
 			const successfulRoom4 = response.body.deleted.find(
 				(r: { roomId: string; successCode: MeetRoomDeletionSuccessCode; message: string; room?: MeetRoom }) =>
 					r.room?.roomId === room4.roomId
 			);
-			expectValidRoom(
-				successfulRoom4.room,
-				successfulRoom4.room.roomName,
-				undefined,
-				undefined,
-				undefined,
-				undefined,
-				MeetRoomStatus.CLOSED,
-				MeetingEndAction.NONE
-			);
+			expectValidRoom(successfulRoom4.room, successfulRoom4.room.roomName, {
+				status: MeetRoomStatus.CLOSED,
+				meetingEndAction: MeetingEndAction.NONE
+			});
 			expectExtraFieldsInResponse(successfulRoom4.room);
 
 			await endMeeting(room2.roomId, modToken2);

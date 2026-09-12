@@ -1,22 +1,46 @@
 import { Component, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MeetRoomOptions } from '@openvidu-meet/typings';
 import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
-import { RoomConfigFormGroup, RoomConfigFormValue } from '../../../../models/wizard-forms.model';
+import {
+	MAX_DURATION_MINUTES_LIMIT,
+	MAX_PARTICIPANTS_LIMIT,
+	MIN_DURATION_MINUTES_LIMIT,
+	MIN_PARTICIPANTS_LIMIT,
+	RoomConfigFormGroup,
+	RoomConfigFormValue
+} from '../../../../models/wizard-forms.model';
 import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services';
 
 @Component({
 	selector: 'ov-room-config',
-	imports: [ReactiveFormsModule, MatIconModule, MatSlideToggleModule, TranslatePipe],
+	imports: [
+		ReactiveFormsModule,
+		MatFormFieldModule,
+		MatIconModule,
+		MatInputModule,
+		MatSlideToggleModule,
+		TranslatePipe
+	],
 	templateUrl: './room-config.component.html',
 	styleUrl: './room-config.component.scss'
 })
 export class RoomConfigComponent {
 	private wizardService = inject(RoomWizardStateService);
+
+	readonly minParticipantsLimit = MIN_PARTICIPANTS_LIMIT;
+	readonly maxParticipantsLimit = MAX_PARTICIPANTS_LIMIT;
+	readonly minDurationMinutesLimit = MIN_DURATION_MINUTES_LIMIT;
+	readonly maxDurationMinutesLimit = MAX_DURATION_MINUTES_LIMIT;
+
+	/** Set when the configured recording trigger can never fire at this participant limit. */
+	autoStartWarningMessage = this.wizardService.recordingAutoStartWarningMessage;
 
 	roomConfigForm: RoomConfigFormGroup;
 
@@ -48,11 +72,37 @@ export class RoomConfigComponent {
 				},
 				captions: {
 					enabled: formValue.captionsEnabled ?? false
-				}
+				},
+				initialAudioActive: formValue.initialAudioActive ?? true,
+				initialVideoActive: formValue.initialVideoActive ?? true,
+				maxParticipants: this.normalizedLimit(
+					this.roomConfigForm.controls.maxParticipants,
+					formValue.maxParticipants
+				),
+				maxDurationMinutes: this.normalizedLimit(
+					this.roomConfigForm.controls.maxDurationMinutes,
+					formValue.maxDurationMinutes
+				)
 			}
 		};
 
 		this.wizardService.updateStepData(stepData);
+	}
+
+	/**
+	 * Maps a limit input to its persisted `config` value: an empty input is `null` (the stored
+	 * "unlimited" value), and an invalid draft is `undefined` so the wizard's deep-merge keeps the
+	 * last valid value while the form invalidity blocks finishing.
+	 */
+	private normalizedLimit(
+		control: FormControl<number | null>,
+		value: number | null | undefined
+	): number | null | undefined {
+		if (control.invalid) {
+			return undefined;
+		}
+
+		return value ?? null;
 	}
 
 	onE2EEToggleChange(event: MatSlideToggleChange): void {

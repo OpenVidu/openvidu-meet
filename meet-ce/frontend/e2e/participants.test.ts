@@ -1,5 +1,5 @@
 import { MeetRoom, MeetRoomMemberRole, MeetRoomMemberUIBadge, MeetUserRole } from '@openvidu-meet/typings';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Browser } from '@playwright/test';
 import {
 	expectParticipantPanelMuted,
 	expectParticipantPanelUnmuted,
@@ -23,9 +23,16 @@ import {
 	expectKickButton,
 	expectMakeModeratorButton,
 	expectModerationControls,
+	expectMediaState,
+	expectNoMediaReport,
+	expectMuteAllButton,
+	expectMuteButton,
+	expectMutedByModeratorNotification,
 	expectNoKickButton,
 	expectNoMakeModeratorButton,
 	expectNoModerationControls,
+	expectNoMuteAllButton,
+	expectNoMuteButton,
 	expectNoParticipantBadge,
 	expectNoRemoveModeratorButton,
 	expectParticipantBadge,
@@ -35,7 +42,10 @@ import {
 	joinParticipants,
 	kickParticipant,
 	makeParticipantModerator,
-	removeParticipantModerator
+	muteAllParticipantsMedia,
+	muteParticipantMedia,
+	removeParticipantModerator,
+	type ParticipantConfig
 } from './helpers/participant-management.helper';
 
 test.describe('Participants E2E Tests', () => {
@@ -340,6 +350,195 @@ test.describe('Participants E2E Tests', () => {
 		});
 	});
 
+	// The panel is the only UI that mutes someone else, and the muted participant is never told in
+	// words — their own toolbar reading off IS the notice, so that is what every case asserts.
+	test.describe('Mute participant media (participantMute)', () => {
+		const joinModeratorAndSpeaker = (browser: Browser, speaker: Partial<ParticipantConfig> = {}) =>
+			joinParticipants(browser, {
+				roomId,
+				participants: [
+					{ name: moderatorName, baseRole: MeetRoomMemberRole.MODERATOR },
+					{ name: speakerName, baseRole: MeetRoomMemberRole.SPEAKER, headless: true, ...speaker }
+				]
+			});
+
+		test('should turn off a participant microphone and camera from the participants panel', async ({ browser }) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeaker(browser);
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const speakerPage = byName[speakerName];
+
+				await toggleParticipantsPanel(moderatorPage);
+				const speakerId = await getParticipantIdByName(moderatorPage, speakerName);
+
+				await expectMuteButton(moderatorPage, speakerId, 'audio');
+				await muteParticipantMedia(moderatorPage, speakerId, 'audio');
+				await expect(speakerPage.locator('#mic-btn #mic_off')).toBeVisible({ timeout: 15_000 });
+
+				// A device that is off cannot be turned back on by anyone, so its button reports the state
+				// and stops being actionable.
+				await expectNoMuteButton(moderatorPage, speakerId, 'audio');
+
+				await muteParticipantMedia(moderatorPage, speakerId, 'video');
+				await expect(speakerPage.locator('#camera-btn #videocam_off')).toBeVisible({ timeout: 15_000 });
+				await expectNoMuteButton(moderatorPage, speakerId, 'video');
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should let the muted participant turn the microphone back on', async ({ browser }) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeaker(browser);
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const speakerPage = byName[speakerName];
+
+				await toggleParticipantsPanel(moderatorPage);
+				const speakerId = await getParticipantIdByName(moderatorPage, speakerName);
+
+				await muteParticipantMedia(moderatorPage, speakerId, 'audio');
+				await expect(speakerPage.locator('#mic-btn #mic_off')).toBeVisible({ timeout: 15_000 });
+
+				// A mute, not a lock: the participant keeps the permission to publish audio.
+				await toggleMicrophone(speakerPage);
+				await expect(speakerPage.locator('#mic-btn #mic')).toBeVisible({ timeout: 10_000 });
+
+				// And nothing latched — the moderator can mute the re-enabled device again.
+				await expectMuteButton(moderatorPage, speakerId, 'audio');
+				await muteParticipantMedia(moderatorPage, speakerId, 'audio');
+				await expect(speakerPage.locator('#mic-btn #mic_off')).toBeVisible({ timeout: 15_000 });
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should stop a participant screen share', async ({ browser }) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeaker(browser, { screenShare: true });
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const speakerPage = byName[speakerName];
+
+				await toggleParticipantsPanel(moderatorPage);
+				const speakerId = await getParticipantIdByName(moderatorPage, speakerName);
+
+				await expectMuteButton(moderatorPage, speakerId, 'screenShare');
+				await muteParticipantMedia(moderatorPage, speakerId, 'screenShare');
+
+				// Muting the track alone would leave the publication — and every UI saying "sharing".
+				await expect(speakerPage.locator('.OV_screen .local')).toHaveCount(0, { timeout: 15_000 });
+				await expectNoMediaReport(moderatorPage, speakerId, 'screenShare');
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should not offer the mute controls to a participant without participantMute', async ({ browser }) => {
+			const { byName, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				participants: [
+					{
+						name: moderatorName,
+						baseRole: MeetRoomMemberRole.MODERATOR,
+						customPermissions: { participantMute: false }
+					},
+					{ name: speakerName, baseRole: MeetRoomMemberRole.SPEAKER, headless: true }
+				]
+			});
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				await toggleParticipantsPanel(moderatorPage);
+				const speakerId = await getParticipantIdByName(moderatorPage, speakerName);
+
+				// The rest of the moderation controls are still there, so the absence is the permission
+				// and not an unrendered panel item.
+				await expectKickButton(moderatorPage, speakerId);
+				await expectNoMuteButton(moderatorPage, speakerId, 'audio');
+				await expectNoMuteButton(moderatorPage, speakerId, 'video');
+				await expectNoMuteAllButton(moderatorPage);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should not offer the mute controls for another moderator', async ({ browser }) => {
+			const otherModeratorName = 'Other Moderator';
+			const { byName, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				participants: [
+					{ name: moderatorName, baseRole: MeetRoomMemberRole.MODERATOR },
+					{ name: otherModeratorName, baseRole: MeetRoomMemberRole.MODERATOR, headless: true }
+				]
+			});
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				await toggleParticipantsPanel(moderatorPage);
+				const otherModeratorId = await getParticipantIdByName(moderatorPage, otherModeratorName);
+
+				await expectParticipantBadge(moderatorPage, otherModeratorId, MeetRoomMemberUIBadge.MODERATOR);
+				await expectNoMuteButton(moderatorPage, otherModeratorId, 'audio');
+				await expectNoMuteButton(moderatorPage, otherModeratorId, 'video');
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should notify the muted participant with a snackbar', async ({ browser }) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeaker(browser);
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const speakerPage = byName[speakerName];
+
+				await toggleParticipantsPanel(moderatorPage);
+				const speakerId = await getParticipantIdByName(moderatorPage, speakerName);
+
+				await muteParticipantMedia(moderatorPage, speakerId, 'audio');
+
+				await expectMutedByModeratorNotification(speakerPage);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should mute every participant microphone via the mute-all button, leaving the caller alone', async ({
+			browser
+		}) => {
+			const secondSpeakerName = 'Second Speaker';
+			const { byName, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				participants: [
+					{ name: moderatorName, baseRole: MeetRoomMemberRole.MODERATOR },
+					{ name: speakerName, baseRole: MeetRoomMemberRole.SPEAKER, headless: true },
+					{ name: secondSpeakerName, baseRole: MeetRoomMemberRole.SPEAKER, headless: true }
+				]
+			});
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const speakerPage = byName[speakerName];
+				const secondSpeakerPage = byName[secondSpeakerName];
+
+				await toggleParticipantsPanel(moderatorPage);
+				await expectMuteAllButton(moderatorPage);
+				await muteAllParticipantsMedia(moderatorPage);
+
+				await expect(speakerPage.locator('#mic-btn #mic_off')).toBeVisible({ timeout: 15_000 });
+				await expect(secondSpeakerPage.locator('#mic-btn #mic_off')).toBeVisible({ timeout: 15_000 });
+
+				// The backend excludes the caller from a bulk mute: muting everyone else must not
+				// reach back to the moderator's own microphone.
+				await expect(moderatorPage.locator('#mic-btn #mic')).toBeVisible();
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+	});
+
 	test.describe('Original moderator protection', () => {
 		test('should not let a promoted moderator demote or kick an original moderator', async ({ browser }) => {
 			const { byName, removeAllParticipants } = await joinParticipants(browser, {
@@ -393,43 +592,37 @@ test.describe('Participants E2E Tests', () => {
 				// A opens the participants panel BEFORE B's state changes — the panel must react in place.
 				await toggleParticipantsPanel(pageA);
 				await expect(pageA.locator('.local-participant-container')).toBeVisible({ timeout: 5_000 });
-				const remoteItem = pageA.locator('#remote-participant-item ov-participant-panel-item').first();
-				await expect(remoteItem).toBeVisible({ timeout: 5_000 });
-				const screenIcon = remoteItem.locator('#screen-share-indicator');
-				const micOffIcon = remoteItem.locator('#mic-off-indicator');
-				const cameraOffIcon = remoteItem.locator('#camera-off-indicator');
 
-				// Initially: camera on, mic on, no screen sharing → no indicators visible.
-				await expect(screenIcon).toHaveCount(0);
-				await expect(micOffIcon).toHaveCount(0);
-				await expect(cameraOffIcon).toHaveCount(0);
+				const remoteId = await getParticipantIdByName(pageA, 'participant-1');
 
-				// B turns their camera off → camera-off icon appears, then back on → it disappears.
+				// Initially: camera on, mic on, not sharing.
+				await expectMediaState(pageA, remoteId, 'video', 'active');
+				await expectMediaState(pageA, remoteId, 'audio', 'active');
+				await expectNoMediaReport(pageA, remoteId, 'screenShare');
+
+				// B turns their camera off, then back on.
 				await toggleCamera(pageB);
-				await expect(cameraOffIcon).toHaveCount(1, { timeout: 10_000 });
-				await expect(cameraOffIcon).toBeVisible();
+				await expectMediaState(pageA, remoteId, 'video', 'off');
 
 				await toggleCamera(pageB);
-				await expect(cameraOffIcon).toHaveCount(0, { timeout: 10_000 });
+				await expectMediaState(pageA, remoteId, 'video', 'active');
 
-				// B starts screen sharing → screen-share icon appears.
+				// B starts screen sharing.
 				await startScreensharing(pageB);
-				await expect(screenIcon).toHaveCount(1, { timeout: 10_000 });
-				await expect(screenIcon).toBeVisible();
+				await expectMediaState(pageA, remoteId, 'screenShare', 'active');
 
-				// B mutes their mic → mic-off icon appears (screen-share icon still visible).
+				// B mutes their mic; the screen share keeps reporting independently.
 				await toggleMicrophone(pageB);
-				await expect(micOffIcon).toHaveCount(1, { timeout: 5_000 });
-				await expect(micOffIcon).toBeVisible();
-				await expect(screenIcon).toHaveCount(1);
+				await expectMediaState(pageA, remoteId, 'audio', 'off');
+				await expectMediaState(pageA, remoteId, 'screenShare', 'active');
 
-				// B un-mutes → mic-off icon disappears.
+				// B un-mutes.
 				await toggleMicrophone(pageB);
-				await expect(micOffIcon).toHaveCount(0, { timeout: 5_000 });
+				await expectMediaState(pageA, remoteId, 'audio', 'active');
 
-				// B stops screen sharing → screen-share icon disappears.
+				// B stops screen sharing.
 				await stopScreensharing(pageB);
-				await expect(screenIcon).toHaveCount(0, { timeout: 10_000 });
+				await expectNoMediaReport(pageA, remoteId, 'screenShare');
 			} finally {
 				await removeAllParticipants();
 			}

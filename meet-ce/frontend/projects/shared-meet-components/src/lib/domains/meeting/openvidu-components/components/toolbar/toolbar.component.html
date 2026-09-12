@@ -1,5 +1,5 @@
 <mat-toolbar id="toolbar" class="toolbar-container">
-	<!-- Info container (logo, room name, recording status) -->
+	<!-- Info container (logo, room name) -->
 	<div id="info-container" class="info-container">
 		<div>
 			<!-- Branding Logo -->
@@ -8,25 +8,10 @@
 			}
 
 			<!-- Session Info -->
-			<div id="meeting-info-container" [class.collapsed]="isRecordingStarted()">
+			<div id="meeting-info-container">
 				<!-- Room Name -->
 				@if (showRoomName()) {
 					<span id="meeting-name">{{ roomName() }}</span>
-				}
-
-				<!-- Activities (Recording) -->
-				@if (isRecordingStarted()) {
-					<div id="activities-tag">
-						@if (isRecordingStarted()) {
-							<div id="recording-tag" class="recording-tag" (click)="openRecordingActivityPanel()">
-								<mat-icon class="blink">radio_button_checked</mat-icon>
-								<span class="blink">REC</span>
-								@if (recordingTime()) {
-									<span> | {{ recordingTime() | date: 'H:mm:ss' }}</span>
-								}
-							</div>
-						}
-					</div>
 				}
 			</div>
 		</div>
@@ -35,10 +20,10 @@
 	<!-- Media and menu buttons container -->
 	<div class="media-buttons-container" id="media-buttons-container">
 		<ov-toolbar-media-buttons
-			[showCameraButton]="showCameraButton()"
+			[showCameraButton]="showCameraControls()"
 			[isCameraEnabled]="isCameraEnabled()"
 			[cameraMuteChanging]="cameraMuteChanging()"
-			[showMicrophoneButton]="showMicrophoneButton()"
+			[showMicrophoneButton]="showMicrophoneControls()"
 			[isMicrophoneEnabled]="isMicrophoneEnabled()"
 			[microphoneMuteChanging]="microphoneMuteChanging()"
 			[showScreenshareButton]="showScreenshareButton()"
@@ -56,6 +41,7 @@
 			[isFullscreenActive]="isFullscreenActive()"
 			[recordingStatus]="recordingStatus().status"
 			[hasRoomTracksPublished]="hasRoomTracksPublished"
+			[recordingStartsAutomatically]="recordingStartsAutomatically()"
 			[showLeaveButton]="showLeaveButton()"
 			[toolbarAdditionalButtonsTemplate]="templateRegistry.toolbarAdditionalButtons() ?? null"
 			[additionalButtonsPosition]="additionalButtonsPosition()"

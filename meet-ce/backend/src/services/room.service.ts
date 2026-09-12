@@ -28,12 +28,12 @@ import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { MEET_ENV } from '../environment.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import {
 	errorDeletingRoom,
 	errorRoomActiveMeeting,
 	errorRoomNotFound,
+	errorUnreachableRecordingAutoStart,
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
@@ -90,6 +90,8 @@ export class RoomService {
 	async createMeetRoom(roomOptions: MeetRoomOptions): Promise<MeetRoom> {
 		const { roomName, autoDeletionDate, autoDeletionPolicy, config, roles, access } = roomOptions;
 
+		this.validateRecordingAutoStartIsReachable(config ?? {});
+
 		// Generate a unique room ID based on the room name
 		const roomIdPrefix = MeetRoomHelper.createRoomIdPrefixFromRoomName(roomName!) || 'room';
 		const roomId = `${roomIdPrefix}-${uid(15)}`;
@@ -107,9 +109,11 @@ export class RoomService {
 			recordingDownload: true,
 			recordingDelete: true,
 			meetingJoin: true,
+			meetingRead: true,
 			roomShareAccessLinks: true,
 			participantPromote: true,
 			participantKick: true,
+			participantMute: true,
 			meetingEnd: true,
 			mediaPublishVideo: true,
 			mediaPublishAudio: true,
@@ -119,7 +123,8 @@ export class RoomService {
 			mediaChangeVirtualBackground: true
 		};
 		// The three recording retrieval keys mirror the pre-split `canRetrieveRecordings: true` default,
-		// so rooms created after the split behave exactly like the ones that existed before it.
+		// so rooms created after the split behave exactly like the ones that existed before it; for the
+		// same reason `meetingRead` mirrors `meetingJoin`, which used to gate the live meeting reads.
 		const defaultSpeakerPermissions: MeetRoomMemberPermissions = {
 			recordingControl: false,
 			recordingList: true,
@@ -127,9 +132,11 @@ export class RoomService {
 			recordingDownload: true,
 			recordingDelete: false,
 			meetingJoin: true,
+			meetingRead: true,
 			roomShareAccessLinks: false,
 			participantPromote: false,
 			participantKick: false,
+			participantMute: false,
 			meetingEnd: false,
 			mediaPublishVideo: true,
 			mediaPublishAudio: true,
@@ -194,27 +201,26 @@ export class RoomService {
 	 * Creates a LiveKit room for the specified Meet Room.
 	 *
 	 * This method creates a LiveKit room with the specified room name and metadata.
-	 * The metadata includes the room options from the Meet Room.
+	 * The metadata includes the room options from the Meet Room and, when the room limits the
+	 * meeting duration, the deadline every participant counts down to.
 	 **/
 	async createLivekitRoom(roomId: string): Promise<Room> {
-		const roomExists = await this.livekitService.roomExists(roomId);
+		const existingRoom = await this.livekitService.findRoom(roomId);
 
-		if (roomExists) {
+		if (existingRoom) {
 			this.logger.verbose(`Room '${roomId}' already exists in LiveKit`);
-			return this.livekitService.getRoom(roomId);
+			return existingRoom;
 		}
 
 		const meetRoom: MeetRoom = await this.getMeetRoom(roomId);
 		const { MEETING_DEPARTURE_TIMEOUT, MEETING_EMPTY_TIMEOUT } = INTERNAL_CONFIG;
+		const { maxParticipants } = meetRoom.config;
 		const livekitRoomOptions: CreateOptions = {
 			name: roomId,
-			metadata: JSON.stringify({
-				createdBy: MEET_ENV.NAME_ID,
-				roomOptions: MeetRoomHelper.toRoomOptions(meetRoom)
-			}),
+			metadata: MeetRoomHelper.toLivekitRoomMetadata(meetRoom, Date.now()),
 			emptyTimeout: MEETING_EMPTY_TIMEOUT ? ms(MEETING_EMPTY_TIMEOUT) / 1000 : undefined,
-			departureTimeout: MEETING_DEPARTURE_TIMEOUT ? ms(MEETING_DEPARTURE_TIMEOUT) / 1000 : undefined
-			// maxParticipants: maxParticipants || undefined,
+			departureTimeout: MEETING_DEPARTURE_TIMEOUT ? ms(MEETING_DEPARTURE_TIMEOUT) / 1000 : undefined,
+			maxParticipants: maxParticipants || undefined
 		};
 
 		const room = await this.livekitService.createRoom(livekitRoomOptions);
@@ -246,12 +252,32 @@ export class RoomService {
 			updatedConfig.recording.enabled = false;
 		}
 
+		this.validateRecordingAutoStartIsReachable(updatedConfig);
+
 		const updatedRoom = await this.roomRepository.updatePartial(roomId, { config: updatedConfig });
 		// Send signal to frontend.
 		// Note: Rooms updates are not allowed during active meetings, so we don't need to send an immediate update signal to participants,
 		// as they will receive the updated config when they join the meeting or when the meeting is restarted.
 		// await this.frontendEventService.sendRoomConfigUpdatedSignal(roomId, updatedRoom);
 		return updatedRoom;
+	}
+
+	/**
+	 * Checks if a recording `autoStart` property is reachable.
+	 * @throws Error when maxParticipants is lower than the required participants for auto start recording.
+	 */
+	protected validateRecordingAutoStartIsReachable(config: Partial<MeetRoomConfig>): void {
+		const { maxParticipants } = config;
+		const autoStart = config.recording?.autoStart;
+
+		// `null` (and an absent limit) mean unlimited, which reaches every threshold
+		if (!autoStart || typeof maxParticipants !== 'number') return;
+
+		const minParticipantsAutoStart = MeetRoomHelper.minParticipantsForAutoStart(autoStart);
+
+		if (maxParticipants < minParticipantsAutoStart) {
+			throw errorUnreachableRecordingAutoStart(autoStart, maxParticipants, minParticipantsAutoStart);
+		}
 	}
 
 	/**
@@ -350,8 +376,7 @@ export class RoomService {
 
 		if (updatedUserAccessEnabled !== previousUserAccessEnabled) {
 			await this.recordingService.updateRoomRecordingsAccessScopeMetadata(roomId, {
-				roomUserAccess:
-					updatedRoom.access.user.enabled && updatedRoom.roles.speaker.permissions.recordingList
+				roomUserAccess: updatedRoom.access.user.enabled && updatedRoom.roles.speaker.permissions.recordingList
 			});
 		}
 

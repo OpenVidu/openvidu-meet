@@ -12,6 +12,11 @@ class FakeImpl extends HTMLElement {
 	meetingEnd = jest.fn();
 	meetingLeave = jest.fn();
 	participantKick = jest.fn();
+	participantMute = jest.fn();
+	participantMuteAll = jest.fn();
+	mediaToggleAudio = jest.fn();
+	mediaToggleVideo = jest.fn();
+	mediaToggleScreenShare = jest.fn();
 	endMeeting = jest.fn();
 	leaveRoom = jest.fn();
 	kickParticipant = jest.fn();
@@ -35,6 +40,8 @@ type Loader = HTMLElement & {
 	leaveRoom(): void;
 	kickParticipant(id: string): void;
 	roomUrl?: string;
+	recordingUrl?: string;
+	_meetServerEsmUrl(): string | null;
 };
 
 // Flush microtasks (connectedCallback awaits loadImpl) + one macrotask
@@ -265,6 +272,43 @@ describe('openvidu-meet lazy loader', () => {
 			const second = implOf(el);
 			expect(second).toBeInstanceOf(FakeImpl);
 			expect(second).not.toBe(first);
+		});
+	});
+
+	// The bundle normally sits next to the loader script. A host that serves the loader from its
+	// own origin (a reverse proxy forwarding only `/openvidu-meet.js`, a copy in its assets) has no
+	// sibling there, and the loader falls back to the Meet server the element already points at.
+	describe('bundle url on the Meet server the element points at', () => {
+		it('derives it from the room url set as a property', () => {
+			const el = createLoader();
+			el.roomUrl = 'http://meet.example.com/meet/room/my-room?secret=abc';
+
+			expect(el._meetServerEsmUrl()).toBe('http://meet.example.com/meet/v1/openvidu-meet.esm.js');
+		});
+
+		it('derives it from the room url set as an attribute', () => {
+			const el = createLoader();
+			el.setAttribute('room-url', 'https://meet.example.com/room/my-room');
+
+			expect(el._meetServerEsmUrl()).toBe('https://meet.example.com/v1/openvidu-meet.esm.js');
+		});
+
+		it('derives it from the recording url when there is no room url', () => {
+			const el = createLoader();
+			el.recordingUrl = 'http://meet.example.com/meet/recording/rec-1?recordingSecret=abc';
+
+			expect(el._meetServerEsmUrl()).toBe('http://meet.example.com/meet/v1/openvidu-meet.esm.js');
+		});
+
+		it('has nothing to fall back to before the host sets either url', () => {
+			expect(createLoader()._meetServerEsmUrl()).toBeNull();
+		});
+
+		it('has nothing to fall back to when the url the host set cannot be parsed', () => {
+			const el = createLoader();
+			el.roomUrl = 'not a url';
+
+			expect(el._meetServerEsmUrl()).toBeNull();
 		});
 	});
 });

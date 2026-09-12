@@ -53,6 +53,8 @@ export class LiveKitService {
 	 *
 	 * @param roomNames - Array of room names to check
 	 * @returns A Map with room names as keys and boolean indicating existence as values
+	 * @throws If the LiveKit API call fails. Existence is undeterminable in that case, and callers
+	 * (e.g. the room-status GC) must not treat the failure as "these rooms are gone".
 	 */
 	async roomsExist(roomNames: string[]): Promise<Map<string, boolean>> {
 		const result = new Map<string, boolean>();
@@ -69,15 +71,32 @@ export class LiveKitService {
 				result.set(roomName, existingRoomNames.has(roomName));
 			}
 		} catch (error) {
-			this.logger.warn('Error batch checking rooms', error);
-
-			// If the API call fails, assume no rooms exist
-			for (const roomName of roomNames) {
-				result.set(roomName, false);
-			}
+			this.logger.error('Error batch checking rooms', error);
+			throw internalError('batch checking rooms');
 		}
 
 		return result;
+	}
+
+	/**
+	 * Like {@link getRoom}, but a room that does not exist is a benign outcome rather than an error,
+	 * for callers that only act on a meeting that is still running.
+	 *
+	 * @param roomName - The name of the room to look up
+	 * @returns The room, or undefined if LiveKit has no room with that name
+	 * @throws Will rethrow service availability or other unexpected errors, since existence is
+	 * undeterminable in that case
+	 */
+	async findRoom(roomName: string): Promise<Room | undefined> {
+		try {
+			return await this.getRoom(roomName);
+		} catch (error) {
+			if (error instanceof OpenViduMeetError && error.statusCode === 404) {
+				return undefined;
+			}
+
+			throw error;
+		}
 	}
 
 	/**
@@ -88,18 +107,7 @@ export class LiveKitService {
 	 * @throws Will rethrow service availability or other unexpected errors
 	 */
 	async roomExists(roomName: string): Promise<boolean> {
-		try {
-			await this.getRoom(roomName);
-			return true;
-		} catch (error) {
-			if (error instanceof OpenViduMeetError && error.statusCode === 404) {
-				return false;
-			}
-
-			// Rethrow other errors as they indicate we couldn't determine if the room exists
-			this.logger.error(`Error checking if room '${roomName}' exists`, error);
-			throw error;
-		}
+		return (await this.findRoom(roomName)) !== undefined;
 	}
 
 	/**
@@ -164,13 +172,19 @@ export class LiveKitService {
 		}
 	}
 
-	async deleteRoom(roomName: string): Promise<void> {
+	/**
+	 * @returns `true` if this call is what actually deleted the room, `false` if it was already
+	 * gone (a benign no-op, not an error) — callers that attribute side effects to "I ended this
+	 * meeting" (e.g. the duration GC) need that distinction, not just whether the call threw.
+	 */
+	async deleteRoom(roomName: string): Promise<boolean> {
 		try {
 			await this.lk.room.deleteRoom(roomName);
+			return true;
 		} catch (error) {
-			if (this.isRoomNotFoundError(error)) {
+			if (this.isNotFoundError(error)) {
 				this.logger.warn(`LiveKit room '${roomName}' not found. Skipping deletion`);
-				return;
+				return false;
 			}
 
 			this.logger.error(`Error deleting LiveKit room '${roomName}'`, error);
@@ -179,10 +193,10 @@ export class LiveKitService {
 	}
 
 	/**
-	 * Whether the given error is LiveKit reporting that the room does not exist.
+	 * Whether the given error is LiveKit reporting that the addressed resource does not exist.
 	 * LiveKit's Twirp errors carry the HTTP status (404) and a twirp code ('not_found').
 	 */
-	private isRoomNotFoundError(error: unknown): boolean {
+	private isNotFoundError(error: unknown): boolean {
 		const err = error as { status?: number; code?: string } | null;
 		return err?.status === 404 || err?.code === 'not_found';
 	}
@@ -231,6 +245,17 @@ export class LiveKitService {
 			this.logger.error(`Error listing participants for room '${roomName}'`, error);
 			throw internalError(`listing participants for room '${roomName}'`);
 		}
+	}
+
+	/**
+	 * Lists the standard participants (web clients) currently in a LiveKit room, filtering out its
+	 * internal participants (egress, ingress, agents) from the API surface.
+	 *
+	 * @param roomName - The name of the room to list participants from
+	 */
+	async listStandardParticipants(roomName: string): Promise<ParticipantInfo[]> {
+		const participants = await this.listRoomParticipants(roomName);
+		return participants.filter((participant) => this.isStandardParticipant(participant));
 	}
 
 	async participantExists(roomName: string, participantIdentity: string): Promise<boolean> {
@@ -288,6 +313,7 @@ export class LiveKitService {
 	 * @param participantIdentity - The identity of the participant to update
 	 * @param metadata - The new metadata to set for the participant
 	 * @param permission - Optional complete permission set to apply to the participant
+	 * @returns The updated participant as acknowledged by LiveKit
 	 * @throws An internal error if there is an issue updating the participant
 	 */
 	async updateParticipant(
@@ -295,13 +321,50 @@ export class LiveKitService {
 		participantIdentity: string,
 		metadata: string,
 		permission?: Partial<ParticipantPermission>
-	): Promise<void> {
+	): Promise<ParticipantInfo> {
 		try {
-			await this.lk.room.updateParticipant(roomName, participantIdentity, { metadata, permission });
+			const participant = await this.lk.room.updateParticipant(roomName, participantIdentity, {
+				metadata,
+				permission
+			});
 			this.logger.verbose(`Updated participant '${participantIdentity}' in room '${roomName}'`);
+			return participant;
 		} catch (error) {
 			this.logger.error(`Error updating participant '${participantIdentity}' in room '${roomName}'`, error);
 			throw internalError(`updating participant '${participantIdentity}' in room '${roomName}'`);
+		}
+	}
+
+	/**
+	 * Mutes a track a participant is publishing. LiveKit pushes the mute to the publisher's client,
+	 * so it is enforced server-side rather than being a request the participant could ignore.
+	 *
+	 * @param roomName - The name of the room where the participant is located
+	 * @param participantIdentity - The identity of the participant publishing the track
+	 * @param trackSid - The SID of the published track to mute
+	 * @throws An internal error if the track cannot be muted
+	 */
+	async mutePublishedTrack(roomName: string, participantIdentity: string, trackSid: string): Promise<void> {
+		try {
+			await this.lk.room.mutePublishedTrack(roomName, participantIdentity, trackSid, true);
+			this.logger.verbose(
+				`Muted track '${trackSid}' of participant '${participantIdentity}' in room '${roomName}'`
+			);
+		} catch (error) {
+			// A track the participant stopped publishing while the mute was in flight is already
+			// in the state the mute was asking for.
+			if (this.isNotFoundError(error)) {
+				this.logger.warn(
+					`Track '${trackSid}' of participant '${participantIdentity}' in room '${roomName}' is already gone. Skipping mute`
+				);
+				return;
+			}
+
+			this.logger.error(
+				`Error muting track '${trackSid}' of participant '${participantIdentity}' in room '${roomName}'`,
+				error
+			);
+			throw internalError(`muting track '${trackSid}' of participant '${participantIdentity}'`);
 		}
 	}
 
@@ -389,7 +452,7 @@ export class LiveKitService {
 		try {
 			await this.lk.agentDispatch.deleteDispatch(agentId, roomName);
 		} catch (error) {
-			if (this.isRoomNotFoundError(error)) {
+			if (this.isNotFoundError(error)) {
 				this.logger.debug(`Agent dispatch '${agentId}' already gone in room '${roomName}', skipping stop.`);
 				return;
 			}
@@ -454,22 +517,6 @@ export class LiveKitService {
 	}
 
 	/**
-	 * Retrieves a list of active egress information based on the provided egress ID.
-	 *
-	 * @param egressId - The unique identifier of the egress to retrieve.
-	 * @returns A promise that resolves to an array of `EgressInfo` objects representing the active egress.
-	 * @throws Will throw an error if there is an issue retrieving the egress information.
-	 */
-	async getActiveEgress(roomName?: string, egressId?: string): Promise<EgressInfo[]> {
-		const egress = await this.getEgress(roomName, egressId, true);
-
-		// In some cases, the egress list may contain egress that their status is ENDINDG
-		// which means that the egress is still active but it is in the process of stopping.
-		// We need to filter those out.
-		return egress.filter((e) => e.status === EgressStatus.EGRESS_ACTIVE);
-	}
-
-	/**
 	 * Retrieves all recording egress sessions for a specific room or all rooms.
 	 *
 	 * @param {string} [roomName] - Optional room name to filter recordings by room
@@ -485,25 +532,6 @@ export class LiveKitService {
 
 		// Filter the egress array to include only recording egress
 		return egressArray.filter((egress) => RecordingHelper.isRecordingEgress(egress));
-	}
-
-	/**
-	 * Retrieves all active recording egress sessions for a specific room or all rooms.
-	 *
-	 * @param {string} [roomName] - Optional room name to filter recordings by room
-	 * @returns {Promise<EgressInfo[]>} A promise that resolves to an array of active recording EgressInfo objects
-	 * @throws Will throw an error if there is an issue retrieving the egress information
-	 */
-	async getActiveRecordingsEgress(roomName?: string): Promise<EgressInfo[]> {
-		// Get all recording egress
-		const recordingEgress = await this.getRecordingsEgress(roomName);
-
-		if (recordingEgress.length === 0) {
-			return [];
-		}
-
-		// Filter the recording egress array to include only active egress
-		return recordingEgress.filter((egress) => egress.status === EgressStatus.EGRESS_ACTIVE);
 	}
 
 	/**

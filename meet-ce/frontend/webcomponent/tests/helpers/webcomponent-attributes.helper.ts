@@ -1,6 +1,6 @@
 import { EmbeddedAttribute } from '@openvidu-meet/typings';
 import { expect, type Page } from '@playwright/test';
-import { ensureFixture } from './testapp.helper';
+import { ensureFixture, selectIntegration, showControlsPanel } from './testapp.helper';
 import { type Integration } from './webcomponent.helper';
 
 /**
@@ -44,8 +44,9 @@ export const openWebcomponentWithAttributes = async (
 	const integration = options?.integration ?? 'webcomponent';
 
 	await ensureFixture(page);
+	await showControlsPanel(page, 'setup');
 
-	await page.getByTestId('select-integration').selectOption(integration);
+	await selectIntegration(page, integration);
 
 	for (const [property, testId] of TEXT_INPUT_TESTIDS) {
 		const value = attributes[property];
@@ -53,11 +54,23 @@ export const openWebcomponentWithAttributes = async (
 		await page.getByTestId(testId).fill(filled);
 	}
 
-	const showOnlyRecordingsCheckbox = page.getByTestId('input-showOnlyRecordings');
-	const desired = toBoolean(attributes[EmbeddedAttribute.SHOW_ONLY_RECORDINGS]);
+	const checkbox = page.getByTestId('input-showOnlyRecordings');
+	const showOnlyRecordings = toBoolean(attributes[EmbeddedAttribute.SHOW_ONLY_RECORDINGS]);
 
-	if ((await showOnlyRecordingsCheckbox.isChecked()) !== desired) {
-		await showOnlyRecordingsCheckbox.click();
+	if ((await checkbox.isChecked()) !== showOnlyRecordings) {
+		await checkbox.click();
+	}
+
+	// Tri-state in the form ('' = attribute omitted): omitting it and setting it to `true` are
+	// different requests, and only the latter outranks the room's own `config.initial*Active` default.
+	const TRI_STATE_TESTIDS: ReadonlyArray<[EmbeddedAttribute, string]> = [
+		[EmbeddedAttribute.INITIAL_AUDIO_ACTIVE, 'select-initialAudioActive'],
+		[EmbeddedAttribute.INITIAL_VIDEO_ACTIVE, 'select-initialVideoActive']
+	];
+
+	for (const [property, testId] of TRI_STATE_TESTIDS) {
+		const value = attributes[property];
+		await page.getByTestId(testId).selectOption(value === undefined ? '' : String(value));
 	}
 
 	await page.getByTestId('btn-apply-config').click();

@@ -1,9 +1,12 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { MeetRecordingStatus, MeetSignalType } from '@openvidu-meet/typings';
 import { LoggerService } from '../../../../../shared/services/logger.service';
+import { MeetStorageService } from '../../../../../shared/services/storage.service';
+import { DataTopic } from '../../models/data-topic.model';
 import { ParticipantModel } from '../../models/participant.model';
 import { RemoteParticipant, Room, RoomEvent } from '../../services/livekit';
-import { ActionService } from '../action/action.service';
+import { DialogService } from '../../../../../shared/services/dialog.service';
 import { ChatService } from '../chat/chat.service';
 import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
@@ -12,6 +15,107 @@ import { ParticipantService } from '../participant/participant.service';
 import { RecordingService } from '../recording/recording.service';
 import { MeetingTranslateService } from '../translate/meeting-translate.service';
 import { MeetingEventCallbacks, MeetingEventsService } from './meeting-events.service';
+
+class LoggerServiceStub {
+	get() {
+		return { d: () => {}, w: () => {}, e: () => {} };
+	}
+}
+
+describe('MeetingEventsService', () => {
+	let service: MeetingEventsService;
+	let chatService: jasmine.SpyObj<ChatService>;
+	let recordingService: jasmine.SpyObj<RecordingService>;
+	let onData: (payload: Uint8Array, participant?: unknown, kind?: unknown, topic?: string) => Promise<void>;
+
+	const storedParticipant = { sid: 'sid1', identity: 'speaker1', name: 'Speaker 1' };
+
+	function receive(topic: string, payload: object, participant?: { sid: string }): Promise<void> {
+		return onData(new TextEncoder().encode(JSON.stringify(payload)), participant, undefined, topic);
+	}
+
+	beforeEach(() => {
+		chatService = jasmine.createSpyObj<ChatService>('ChatService', ['addRemoteMessage']);
+		recordingService = jasmine.createSpyObj<RecordingService>('RecordingService', [
+			'setRecordingStarting',
+			'setRecordingStarted',
+			'setRecordingStopping',
+			'setRecordingStopped',
+			'setRecordingFailed'
+		]);
+
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				MeetingEventsService,
+				{ provide: LoggerService, useClass: LoggerServiceStub },
+				{ provide: ChatService, useValue: chatService },
+				{ provide: RecordingService, useValue: recordingService },
+				{
+					provide: ParticipantService,
+					useValue: {
+						getRemoteParticipantBySid: (sid: string) =>
+							sid === storedParticipant.sid ? storedParticipant : undefined
+					}
+				},
+				{ provide: DialogService, useValue: {} },
+				{ provide: MeetingUiConfigService, useValue: {} },
+				{ provide: MeetingLiveKitService, useValue: {} },
+				{ provide: StreamLayoutStateService, useValue: {} },
+				{ provide: MeetingTranslateService, useValue: {} },
+				{ provide: MeetStorageService, useValue: { getLocalTileFloating: () => null } }
+			]
+		});
+
+		service = TestBed.inject(MeetingEventsService);
+		const room = {
+			on(event: string, handler: (...args: never[]) => void) {
+				if (event === RoomEvent.DataReceived) onData = handler as typeof onData;
+
+				return room;
+			}
+		};
+		service.bindRoom(room as never, {
+			onRoomReconnecting: () => {},
+			onRoomReconnected: () => {},
+			onParticipantLeft: () => {}
+		});
+	});
+
+	describe('data message sender', () => {
+		const recordingUpdate = {
+			roomId: 'room1',
+			recording: { recordingId: 'rec1', status: MeetRecordingStatus.COMPLETE },
+			timestamp: 0
+		};
+
+		it('drives the recording indicator from a server-sent recording update', async () => {
+			await receive(MeetSignalType.MEET_RECORDING_UPDATED, recordingUpdate);
+
+			expect(recordingService.setRecordingStopped).toHaveBeenCalled();
+		});
+
+		// Meet's chat is the data channel, so a participant allowed to chat can publish on any
+		// topic: the recording indicator must not be steerable by a forged packet.
+		it('ignores a recording update relayed from a participant', async () => {
+			await receive(MeetSignalType.MEET_RECORDING_UPDATED, recordingUpdate, storedParticipant);
+
+			expect(recordingService.setRecordingStopped).not.toHaveBeenCalled();
+		});
+
+		it('still delivers chat messages relayed from a known participant', async () => {
+			await receive(DataTopic.CHAT, { message: 'hello' }, storedParticipant);
+
+			expect(chatService.addRemoteMessage).toHaveBeenCalledWith('hello', 'Speaker 1');
+		});
+
+		it('discards chat messages from a participant that is not in the roster', async () => {
+			await receive(DataTopic.CHAT, { message: 'hello' }, { sid: 'unknown-sid' });
+
+			expect(chatService.addRemoteMessage).not.toHaveBeenCalled();
+		});
+	});
+});
 
 type RoomHandler = (...args: unknown[]) => void;
 
@@ -39,9 +143,11 @@ const flushMicrotasks = () => Promise.resolve();
 describe('MeetingEventsService (reconnection view state)', () => {
 	let service: MeetingEventsService;
 	let streamLayoutService: jasmine.SpyObj<StreamLayoutStateService>;
+	let meetStorageService: jasmine.SpyObj<MeetStorageService>;
 	let emit: (event: RoomEvent, ...args: unknown[]) => void;
 	let remotes: ParticipantModel[];
 	let callbacks: MeetingEventCallbacks;
+	let dialogService: jasmine.SpyObj<DialogService>;
 
 	beforeEach(() => {
 		remotes = [];
@@ -53,6 +159,12 @@ describe('MeetingEventsService (reconnection view state)', () => {
 			'recordScreenSharePublication',
 			'clearScreenSharePublication',
 			'setLastScreenPinned'
+		]);
+		meetStorageService = jasmine.createSpyObj<MeetStorageService>('MeetStorageService', ['getLocalTileFloating']);
+		meetStorageService.getLocalTileFloating.and.returnValue(null);
+		dialogService = jasmine.createSpyObj<DialogService>('DialogService', [
+			'showBlockingDialog',
+			'closeBlockingDialog'
 		]);
 
 		const participantServiceStub = {
@@ -78,10 +190,7 @@ describe('MeetingEventsService (reconnection view state)', () => {
 				provideZonelessChangeDetection(),
 				{ provide: StreamLayoutStateService, useValue: streamLayoutService },
 				{ provide: ParticipantService, useValue: participantServiceStub as unknown as ParticipantService },
-				{
-					provide: ActionService,
-					useValue: { openConnectionDialog: () => {}, closeConnectionDialog: () => {} }
-				},
+				{ provide: DialogService, useValue: dialogService },
 				{ provide: LoggerService, useValue: loggerStub as unknown as LoggerService },
 				{
 					provide: MeetingLiveKitService,
@@ -90,7 +199,8 @@ describe('MeetingEventsService (reconnection view state)', () => {
 				{ provide: MeetingTranslateService, useValue: { translate: (key: string) => key } },
 				{ provide: ChatService, useValue: {} },
 				{ provide: MeetingUiConfigService, useValue: {} },
-				{ provide: RecordingService, useValue: {} }
+				{ provide: RecordingService, useValue: {} },
+				{ provide: MeetStorageService, useValue: meetStorageService }
 			]
 		});
 
@@ -180,5 +290,41 @@ describe('MeetingEventsService (reconnection view state)', () => {
 		await flushMicrotasks();
 
 		expect(streamLayoutService.dockLocalCameraVideo).toHaveBeenCalledTimes(1);
+	});
+
+	it('auto-floats the local video when the first remote participant joins', () => {
+		emit(RoomEvent.ParticipantConnected, remoteParticipant('PA_bob'));
+
+		expect(streamLayoutService.floatLocalCameraVideo).toHaveBeenCalledTimes(1);
+	});
+
+	it('does not auto-float when the user has explicitly docked their tile before', () => {
+		meetStorageService.getLocalTileFloating.and.returnValue(false);
+
+		emit(RoomEvent.ParticipantConnected, remoteParticipant('PA_bob'));
+
+		expect(streamLayoutService.floatLocalCameraVideo).not.toHaveBeenCalled();
+	});
+	it('tells the participant the connection is lost, with nothing to answer', () => {
+		emit(RoomEvent.Reconnecting);
+
+		expect(dialogService.showBlockingDialog).toHaveBeenCalledWith({
+			title: 'ERRORS.CONNECTION',
+			message: 'ERRORS.RECONNECT'
+		});
+	});
+
+	it('says nothing while the connection is only being resumed, which the participant never notices', () => {
+		emit(RoomEvent.SignalReconnecting);
+
+		expect(dialogService.showBlockingDialog).not.toHaveBeenCalled();
+	});
+
+	it('takes the notice away once the connection is back', () => {
+		emit(RoomEvent.Reconnecting);
+
+		emit(RoomEvent.Reconnected);
+
+		expect(dialogService.closeBlockingDialog).toHaveBeenCalled();
 	});
 });

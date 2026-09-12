@@ -20,10 +20,6 @@ paths:
         $ref: './users/internal/users.yaml#/~1users~1me'
     /users/change-password:
         $ref: './users/internal/users.yaml#/~1users~1change-password'
-    /config/webhooks:
-        $ref: './config/config.yaml#/~1config~1webhooks'
-    /config/webhooks/test:
-        $ref: './config/config.yaml#/~1config~1webhooks~1test'
     /config/security:
         $ref: './config/config.yaml#/~1config~1security'
     /config/rooms/appearance:
@@ -34,12 +30,6 @@ paths:
         $ref: './room-members/internal/room-members.yaml#/~1rooms~1{roomId}~1members~1token'
     /rooms/{roomId}/members/token/refresh:
         $ref: './room-members/internal/room-members.yaml#/~1rooms~1{roomId}~1members~1token~1refresh'
-    /meetings/{roomId}:
-        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}'
-    /meetings/{roomId}/participants/{participantIdentity}:
-        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}'
-    /meetings/{roomId}/participants/{participantIdentity}/role:
-        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}~1role'
     /ai/assistants:
         $ref: './ai-assistants/ai-assistants.yaml#/~1ai~1assistants'
     /ai/assistants/{assistantId}:
@@ -55,8 +45,6 @@ components:
             $ref: ./api-keys/schemas/meet-api-key.yaml
         MeetUser:
             $ref: ./users/schemas/meet-user.yaml
-        WebhooksConfig:
-            $ref: ./config/schemas/webhooks-config.yaml
         SecurityConfig:
             $ref: ./config/schemas/global-security-config.yaml
         RoomsAppearanceConfig:

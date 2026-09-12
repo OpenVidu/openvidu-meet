@@ -1,10 +1,10 @@
-import { EmbeddedEventName, EmbeddedEventPayloadFor } from '@openvidu-meet/typings';
+import { EmbeddedEventName, EmbeddedEventPayloadFor, MeetParticipantMuteOptions } from '@openvidu-meet/typings';
 import type { App } from '../app';
 
 /**
- * Wraps the Angular Elements base class to add: imperative methods
- * (meetingEnd, meetingLeave, participantKick — plus their deprecated 3.8.0 spellings),
- * convenience event API (on/once/off), and a `ready` CustomEvent dispatched after first render.
+ * Wraps the Angular Elements base class to add: the imperative command methods (plus the
+ * deprecated 3.8.0 spellings of the renamed ones), the convenience event API (on/once/off),
+ * and a `ready` CustomEvent dispatched after first render.
  */
 export function createOpenViduMeetElementClass(
 	NgElementConstructor: CustomElementConstructor
@@ -97,6 +97,26 @@ export function createOpenViduMeetElementClass(
 
 		participantKick(participantIdentity: string): void {
 			this._getComponentInstance()?.participantKick(participantIdentity);
+		}
+
+		participantMute(participantIdentity: string, media: MeetParticipantMuteOptions): void {
+			this._getComponentInstance()?.participantMute(participantIdentity, media);
+		}
+
+		participantMuteAll(media: MeetParticipantMuteOptions): void {
+			this._getComponentInstance()?.participantMuteAll(media);
+		}
+
+		mediaToggleAudio(active?: boolean): void {
+			this._getComponentInstance()?.mediaToggleAudio(active);
+		}
+
+		mediaToggleVideo(active?: boolean): void {
+			this._getComponentInstance()?.mediaToggleVideo(active);
+		}
+
+		mediaToggleScreenShare(active?: boolean): void {
+			this._getComponentInstance()?.mediaToggleScreenShare(active);
 		}
 
 		// ── Deprecated method aliases ────────────────────────────────────────

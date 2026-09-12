@@ -6,12 +6,27 @@
             Start a new recording for an OpenVidu Meet room with the specified room ID.
 
 
+            Requires the `recordingControl` permission.
+
+
             By default, the recording will use the configuration defined in the room's settings.
             However, you can optionally provide a configuration override in the request body to customize
             the recording settings (e.g., layout) for this specific recording session.
 
 
             If a configuration override is provided, those values will take precedence over the room's configuration.
+
+
+            Only rooms that record on-demand can be started this way. A room configured with
+            `recording.autoStart` starts its own recording when the configured threshold is reached, and
+            rejects an on-demand start with `403`.
+
+
+            The request completes as soon as the media server accepts the recording, which is returned in
+            the `starting` status. It becomes `active` when the first published track reaches it, so a
+            room where nobody publishes audio or video keeps it `starting` until someone does. Follow the
+            transition through the [`recordingUpdated`](#/webhooks/recordingUpdatedWebhook) webhook or by
+            [fetching the recording](#/operations/getRecording).
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -38,8 +53,6 @@
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
-            '503':
-                $ref: '../shared/responses/errors/service-unavailable.yaml'
 
     get:
         operationId: getRecordings
@@ -49,6 +62,8 @@
             You can apply filters to narrow down the results based on specific criteria.
 
             By default, the recordings are sorted by start date in descending order (newest first).
+
+            Requires the `recordingList` permission.
 
             > **Note:**
             > - When using `accessTokenHeader` authentication: Only recordings the authenticated user has access to will be returned.
@@ -91,6 +106,9 @@
         description: |
             Deletes multiple recordings at once with the specified recording IDs.
 
+            Requires the `recordingDelete` permission, checked per recording: the ones the caller may not
+            delete are reported in `failed` instead of failing the whole request.
+
             > **Note:**
             > - When using `accessTokenHeader` authentication: Only deletes recordings the authenticated user has access to.
             > - When using `roomMemberTokenHeader` authentication: Only deletes recordings associated with the room included in the token.
@@ -125,6 +143,9 @@
         description: |
             Downloads multiple recordings as a ZIP file with the specified recording IDs.
             The ZIP file will contain all recordings in MP4 format.
+
+            Requires the `recordingDownload` permission, checked per recording: only the ones the caller may
+            download are included in the ZIP.
 
             > **Note:**
             > - When using `accessTokenHeader` authentication: Only includes recordings the authenticated user has access to.
@@ -172,6 +193,9 @@
         summary: Get a recording
         description: >
             Retrieves the details of a recording with the specified recording ID.
+
+
+            Requires the `recordingPlay` permission, or a valid `recordingSecret` for the recording.
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -205,6 +229,8 @@
         summary: Delete a recording
         description: |
             Deletes a recording with the specified recording ID.
+
+            Requires the `recordingDelete` permission.
 
             > ⚠️ **Note:** The recording will only be deleted if it exists and is not in progress
             > (i.e., not in a state such as `active`, `starting`, or `ending`).
@@ -243,6 +269,8 @@
 
             This endpoint supports range requests, allowing partial content retrieval
             for video playback without downloading the entire file.
+
+            Requires the `recordingPlay` permission, or a valid `recordingSecret` for the recording.
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -318,6 +346,8 @@
             `GET /recordings/{recordingId}/media`, served with a `Content-Disposition: attachment` header so
             browsers save the file instead of playing it inline.
 
+            Requires the `recordingDownload` permission, or a valid `recordingSecret` for the recording.
+
             Playing and downloading are gated by different permissions (`recordingPlay` vs `recordingDownload`),
             which is why they are separate endpoints — the server cannot tell the intent apart on a shared one.
 
@@ -372,7 +402,12 @@
         description: |
             Stops a recording with the specified recording ID.
 
-            > **Note:** The recording must be in an `active` state; otherwise, a 409 error is returned.
+            Requires the `recordingControl` permission.
+
+            > **Note:** The recording must be `starting` or `active`; otherwise, a 409 error is returned.
+            > Stopping a recording that is still `starting` cancels it: it ends `aborted`, without a file.
+            > Stops are also serialized per room: while one stop is in flight, another stop for the
+            > same room is rejected with a 409 error.
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -405,6 +440,8 @@
         description: |
             Retrieves the URL of a recording with the specified recording ID.
             This URL is intended to be shared with people who do not have direct access to the recording.
+
+            Requires the `recordingPlay` permission.
 
             It can be restricted to OpenVidu Meet users only, or made accessible by anyone with the link,
             depending on the `privateAccess` query parameter.

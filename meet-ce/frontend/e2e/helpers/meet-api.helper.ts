@@ -3,10 +3,13 @@ import {
 	MeetPermissionKey,
 	MeetRecordingInfo,
 	MeetRoom,
+	MeetRoomConfig,
 	MeetRoomMember,
 	MeetRoomMemberOptions,
 	MeetRoomMemberRole,
 	MeetRoomOptions,
+	MeetRoomRoles,
+	MeetRoomStatus,
 	MeetUserDTO,
 	MeetUserOptions,
 	MeetUserRole
@@ -129,6 +132,56 @@ export const createRoomAsUser = async (accessToken: string, options: MeetRoomOpt
 	assertOk(response, responseText, 'create room as user');
 
 	return JSON.parse(responseText) as MeetRoom;
+};
+
+/**
+ * Reads a room's current status, which is what tells a meeting apart from a room nobody has joined:
+ * it flips to `active_meeting` when Meet creates the LiveKit room and LiveKit reports it started.
+ */
+export const getRoomStatus = async (roomId: string): Promise<MeetRoomStatus> => {
+	const response = await fetch(withApiPath(`/rooms/${encodeURIComponent(roomId)}?fields=status`), {
+		method: 'GET',
+		headers: {
+			'x-api-key': API_KEY
+		}
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'get room status');
+
+	return (JSON.parse(responseText) as MeetRoom).status;
+};
+
+/**
+ * Reads a room's role permissions. `roles` is an extra field, excluded from the default projection,
+ * so it has to be asked for explicitly.
+ */
+export const getRoomConfig = async (roomId: string): Promise<MeetRoomConfig> => {
+	const response = await fetch(withApiPath(`/rooms/${encodeURIComponent(roomId)}?extraFields=config`), {
+		method: 'GET',
+		headers: {
+			'x-api-key': API_KEY
+		}
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'get room config');
+
+	return (JSON.parse(responseText) as MeetRoom).config;
+};
+
+export const getRoomRoles = async (roomId: string): Promise<MeetRoomRoles> => {
+	const response = await fetch(withApiPath(`/rooms/${encodeURIComponent(roomId)}?extraFields=roles`), {
+		method: 'GET',
+		headers: {
+			'x-api-key': API_KEY
+		}
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'get room roles');
+
+	return (JSON.parse(responseText) as MeetRoom).roles;
 };
 
 /**
@@ -400,6 +453,29 @@ const changeUserPassword = async (
 // ---------------------------------------------------------------------------
 // Recording helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Asks the room to record, without waiting for the answer: the request only comes back once the
+ * recording is actually recording, which is what a caller testing the wait for it has not seen yet.
+ * The returned promise is the caller's to settle.
+ */
+export const requestRecording = (roomId: string): Promise<Response> =>
+	fetch(withApiPath('/recordings'), {
+		method: 'POST',
+		headers: { 'x-api-key': API_KEY, 'Content-Type': 'application/json' },
+		body: JSON.stringify({ roomId })
+	});
+
+/**
+ * Ends a recording that is still starting. The media server ends the egress right away while the
+ * API answers 409, so the response is deliberately not asserted: that conflict is the outcome.
+ */
+export const stopStartingRecording = async (recordingId: string): Promise<void> => {
+	await fetch(withApiPath(`/recordings/${encodeURIComponent(recordingId)}/stop`), {
+		method: 'POST',
+		headers: { 'x-api-key': API_KEY }
+	});
+};
 
 /**
  * Lists the recordings of the given room.

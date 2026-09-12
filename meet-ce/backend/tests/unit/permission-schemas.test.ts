@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MEET_PERMISSION_KEYS } from '@openvidu-meet/typings';
+import { withDeprecatedPermissionAliases } from '../../src/helpers/permission-naming.helper.js';
 import {
 	MeetPermissionsSchema,
 	MeetTokenPermissionsSchema,
@@ -30,9 +31,11 @@ const fullCurrentInput = {
 	recordingDownload: true,
 	recordingDelete: false,
 	meetingJoin: true,
+	meetingRead: true,
 	roomShareAccessLinks: false,
 	participantPromote: false,
 	participantKick: false,
+	participantMute: false,
 	meetingEnd: false,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -49,7 +52,7 @@ const fullCurrentInput = {
  * always keyed with the current names. Removed in 3.12.0 together with the compatibility mode.
  */
 describe('MeetPermissionsSchema (full, compatibility mode)', () => {
-	it('should accept a full deprecated input and normalize it to the 16 current keys', () => {
+	it('should accept a full deprecated input and normalize it to every current key', () => {
 		const result = MeetPermissionsSchema.safeParse(fullDeprecatedInput);
 		expect(result.success).toBe(true);
 
@@ -128,6 +131,23 @@ describe('PartialMeetPermissionsSchema (partial, compatibility mode)', () => {
 	});
 });
 
+/**
+ * GET → PUT round-trip: both permission-carrying PUT endpoints (member customPermissions and room
+ * roles) validate with PartialMeetPermissionsSchema, so the wire shape the server produces in
+ * compatibility mode must always parse back to the stored permissions. The deprecated split flag
+ * collapses with AND, so a partial recording grant is the shape where the served alias disagrees
+ * with part of its group. Removed in 3.12.0 together with the deprecated aliases.
+ */
+describe('Compatibility-mode round-trip (served permissions echoed back)', () => {
+	it('should accept its own wire output when the recording grant is partial', () => {
+		const stored = { ...fullCurrentInput, recordingDownload: false };
+		const result = PartialMeetPermissionsSchema.safeParse(withDeprecatedPermissionAliases(stored));
+
+		expect(result.success).toBe(true);
+		expect(result.data).toEqual(stored);
+	});
+});
+
 describe("Permission schemas with MEET_MODE '3.9.0'", () => {
 	beforeAll(() => {
 		process.env.MEET_MODE = '3.9.0';
@@ -175,5 +195,55 @@ describe("Permission schemas with MEET_MODE '3.9.0'", () => {
 		expect(result.success).toBe(true);
 		expect(result.data!.recordingControl).toBe(true);
 		expect(Object.keys(result.data!).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
+	});
+});
+
+/**
+ * Permissions introduced after the rename (MEET_UNALIASED_PERMISSION_KEYS) are missing from every
+ * input produced before they shipped. The schemas must complete them from the permission that used
+ * to govern the same capability instead of failing the completeness check — otherwise a deployment
+ * would 422 the requests of an unmodified integration and reject the tokens of meetings in progress.
+ */
+describe('Permissions introduced after the rename', () => {
+	const { meetingRead, ...currentInputWithoutMeetingRead } = fullCurrentInput;
+	void meetingRead;
+
+	it('should complete meetingRead from meetingJoin when a full request omits it', () => {
+		const result = MeetPermissionsSchema.safeParse(currentInputWithoutMeetingRead);
+		expect(result.success).toBe(true);
+		expect(result.data!.meetingRead).toBe(true);
+	});
+
+	it('should deny meetingRead when the omitted meetingJoin is denied', () => {
+		const result = MeetPermissionsSchema.safeParse({ ...currentInputWithoutMeetingRead, meetingJoin: false });
+		expect(result.success).toBe(true);
+		expect(result.data!.meetingRead).toBe(false);
+	});
+
+	it('should complete meetingRead in the token of a meeting in progress', () => {
+		const result = MeetTokenPermissionsSchema.safeParse(currentInputWithoutMeetingRead);
+		expect(result.success).toBe(true);
+		expect(result.data!.meetingRead).toBe(true);
+	});
+
+	it('should let an explicit meetingRead diverge from meetingJoin', () => {
+		const result = MeetPermissionsSchema.safeParse({ ...fullCurrentInput, meetingRead: false });
+		expect(result.success).toBe(true);
+		expect(result.data!.meetingJoin).toBe(true);
+		expect(result.data!.meetingRead).toBe(false);
+	});
+
+	it('should not invent meetingRead in a partial overlay that does not touch meetingJoin', () => {
+		const result = PartialMeetPermissionsSchema.safeParse({ chatWrite: false });
+		expect(result.success).toBe(true);
+		expect(result.data).toEqual({ chatWrite: false });
+	});
+
+	// The two permissions are independent: a patch naming only meetingJoin must not rewrite a stored
+	// meetingRead the caller never mentioned.
+	it('should not rewrite meetingRead when a partial update mentions meetingJoin', () => {
+		const result = PartialMeetPermissionsSchema.safeParse({ meetingJoin: true });
+		expect(result.success).toBe(true);
+		expect(result.data).toEqual({ meetingJoin: true });
 	});
 });

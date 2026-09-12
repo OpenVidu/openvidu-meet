@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform, inject } from '@angular/core';
-import { TranslateService } from '../services/i18n/translate.service';
+import { TranslateParams, TranslateService } from '../services/i18n/translate.service';
 
 /**
  * Translates a dot-separated key into the current language. Shared by the whole application.
@@ -15,8 +15,8 @@ import { TranslateService } from '../services/i18n/translate.service';
 export class TranslatePipe implements PipeTransform {
 	private readonly translateService = inject(TranslateService);
 
-	transform(key: string): string {
+	transform(key: string, params?: TranslateParams): string {
 		this.translateService.translationsLoaded();
-		return this.translateService.translate(key);
+		return this.translateService.translate(key, params);
 	}
 }

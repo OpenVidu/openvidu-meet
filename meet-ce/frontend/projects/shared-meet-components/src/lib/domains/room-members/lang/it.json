@@ -122,6 +122,10 @@
           "LABEL": "Può partecipare alla riunione",
           "DESCRIPTION": "Consenti di partecipare alla riunione"
         },
+        "meetingRead": {
+          "LABEL": "Può consultare la riunione",
+          "DESCRIPTION": "Consenti di consultare lo stato in tempo reale della riunione e dei suoi partecipanti senza parteciparvi"
+        },
         "meetingEnd": {
           "LABEL": "Può terminare la riunione",
           "DESCRIPTION": "Consenti di terminare la riunione per tutti i partecipanti"
@@ -133,6 +137,10 @@
         "participantKick": {
           "LABEL": "Può espellere i partecipanti",
           "DESCRIPTION": "Consenti di rimuovere i partecipanti dalla riunione"
+        },
+        "participantMute": {
+          "LABEL": "Può silenziare i partecipanti",
+          "DESCRIPTION": "Consenti di disattivare microfono, videocamera o condivisione schermo degli altri partecipanti"
         },
         "roomShareAccessLinks": {
           "LABEL": "Può condividere i link di accesso",

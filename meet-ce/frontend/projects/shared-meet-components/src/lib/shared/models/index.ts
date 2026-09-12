@@ -10,3 +10,4 @@ export * from './storage.model';
 export * from './translation-bundle.model';
 
 export * from './logger.model';
+export * from './translator.model';

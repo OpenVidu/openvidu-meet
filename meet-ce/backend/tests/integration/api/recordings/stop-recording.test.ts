@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRoom } from '@openvidu-meet/typings';
+import { MeetRecordingStatus, MeetRoom } from '@openvidu-meet/typings';
 import {
 	expectErrorResponse,
 	expectValidRecordingLocationHeader,
@@ -11,12 +11,14 @@ import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	startRecording,
+	startRecordingAndWaitUntilActive,
 	startTestServer,
 	stopAllRecordings,
 	stopRecording
 } from '../../../helpers/request-helpers.js';
 
 import { setupMultiRoomTestContext } from '../../../helpers/test-scenarios.js';
+import { waitForRecordingStatus } from '../../../helpers/wait-helpers.js';
 import { TestContext } from '../../../interfaces/scenarios.js';
 
 describe('Recording API Tests', () => {
@@ -41,7 +43,7 @@ describe('Recording API Tests', () => {
 			// Create a room and join a participant
 			context = await setupMultiRoomTestContext(1, true);
 			({ room } = context.getRoomByIndex(0)!);
-			const response = await startRecording(room.roomId);
+			const response = await startRecordingAndWaitUntilActive(room.roomId);
 			recordingId = response.body.recordingId;
 		});
 
@@ -54,8 +56,8 @@ describe('Recording API Tests', () => {
 			const context = await setupMultiRoomTestContext(2, true);
 			const roomDataA = context.getRoomByIndex(0);
 			const roomDataB = context.getRoomByIndex(1);
-			const responseA = await startRecording(roomDataA!.room.roomId);
-			const responseB = await startRecording(roomDataB!.room.roomId);
+			const responseA = await startRecordingAndWaitUntilActive(roomDataA!.room.roomId);
+			const responseB = await startRecordingAndWaitUntilActive(roomDataB!.room.roomId);
 			const recordingIdA = responseA.body.recordingId;
 			const recordingIdB = responseB.body.recordingId;
 			const stopResponseA = await stopRecording(recordingIdA);
@@ -74,6 +76,25 @@ describe('Recording API Tests', () => {
 			);
 		});
 
+		it('should stop a recording still waiting for its first track, leaving it aborted', async () => {
+			const context = await setupMultiRoomTestContext(1, true);
+			const { room } = context.getRoomByIndex(0)!;
+			const startResponse = await startRecording(room.roomId);
+			expect(startResponse.body.status).toBe(MeetRecordingStatus.STARTING);
+			const recordingId = startResponse.body.recordingId;
+
+			const response = await stopRecording(recordingId);
+
+			expect(response.status).toBe(202);
+			expectValidRecordingLocationHeader(response);
+			expect(response.body).toHaveProperty('recordingId', recordingId);
+			expect([MeetRecordingStatus.ENDING, MeetRecordingStatus.ABORTED]).toContain(response.body.status);
+			expect(response.body).not.toHaveProperty('startDate');
+
+			const abortedRecording = await waitForRecordingStatus(recordingId, MeetRecordingStatus.ABORTED);
+			expect(abortedRecording).not.toHaveProperty('startDate');
+		});
+
 		describe('Stop Recording Validation failures', () => {
 			it('should return 404 when recordingId does not exist', async () => {
 				const response = await stopRecording(`${room.roomId}--EG_123--444`);
@@ -82,15 +103,14 @@ describe('Recording API Tests', () => {
 				expect(response.body.message).toContain('not found');
 			});
 
-			it('should return 400 when recording is already stopped', async () => {
+			it('should return 409 when recording is already stopped', async () => {
 				// First stop the recording
 				await stopRecording(recordingId);
 
 				// Try to stop it again
 				const response = await stopRecording(recordingId);
 
-				console.log('Response:', response.body);
-				expectErrorResponse(response, 409, '', `Recording '${recordingId}' is already stopped`);
+				expectErrorResponse(response, 409, 'Recording Error', `Recording '${recordingId}' is already stopped`);
 			});
 
 			it('should return 404 when recordingId is not in the correct format', async () => {
@@ -114,7 +134,7 @@ describe('Recording API Tests', () => {
 			// Create a room and join a participant
 			context = await setupMultiRoomTestContext(1, true);
 			({ room } = context.getRoomByIndex(0)!);
-			const response = await startRecording(room.roomId);
+			const response = await startRecordingAndWaitUntilActive(room.roomId);
 			recordingId = response.body.recordingId;
 		});
 

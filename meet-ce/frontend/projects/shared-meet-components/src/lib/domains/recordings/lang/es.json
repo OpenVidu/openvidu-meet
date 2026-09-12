@@ -156,6 +156,15 @@
       "RECORDINGS_FAILED_SUFFIX_SINGULAR": "grabación no se pudo eliminar.",
       "RECORDINGS_FAILED_SUFFIX_PLURAL": "grabaciones no se pudieron eliminar.",
       "DELETE_RECORDINGS_FAILED": "Error al eliminar las grabaciones"
+    },
+    "DIALOGS": {
+      "DELETE_RECORDING_TITLE": "Eliminar grabación",
+      "DELETE_RECORDING_MESSAGE": "¿Seguro que quieres eliminar permanentemente la grabación <b>{recordingId}</b>? Esta acción no se puede deshacer.",
+      "DELETE_RECORDINGS_TITLE": "Eliminar grabaciones",
+      "DELETE_RECORDINGS_MESSAGE_ONE": "¿Seguro que quieres eliminar permanentemente <b>{count} grabación</b>? Esta acción no se puede deshacer.",
+      "DELETE_RECORDINGS_MESSAGE_MANY": "¿Seguro que quieres eliminar permanentemente <b>{count} grabaciones</b>? Esta acción no se puede deshacer.",
+      "DELETE": "Eliminar",
+      "CANCEL": "Cancelar"
     }
   }
 }

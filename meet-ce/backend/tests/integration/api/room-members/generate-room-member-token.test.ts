@@ -1,4 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { TrackSource } from '@livekit/protocol';
 import {
 	MeetParticipantModerationAction,
 	MeetRoomMember,
@@ -37,6 +38,7 @@ import {
 	updateUserRole
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom, setupTestUsers, setupTestUsersForRoom, setupUser } from '../../../helpers/test-scenarios.js';
+import { waitForParticipantMediaState } from '../../../helpers/wait-helpers.js';
 import { RoomData, RoomTestUsers, TestUsers } from '../../../interfaces/scenarios.js';
 
 // Token metadata carries the current permission keys from this phase on (the API accepts the
@@ -48,9 +50,11 @@ const allPermissions: MeetRoomMemberPermissions = {
 	recordingDownload: true,
 	recordingDelete: true,
 	meetingJoin: true,
+	meetingRead: true,
 	roomShareAccessLinks: true,
 	participantPromote: true,
 	participantKick: true,
+	participantMute: true,
 	meetingEnd: true,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -67,9 +71,11 @@ const recordingReadOnlyPermissions: MeetRoomMemberPermissions = {
 	recordingDownload: true,
 	recordingDelete: false,
 	meetingJoin: false,
+	meetingRead: false,
 	roomShareAccessLinks: false,
 	participantPromote: false,
 	participantKick: false,
+	participantMute: false,
 	meetingEnd: false,
 	mediaPublishVideo: false,
 	mediaPublishAudio: false,
@@ -86,9 +92,11 @@ const noPermissions: MeetRoomMemberPermissions = {
 	recordingDownload: false,
 	recordingDelete: false,
 	meetingJoin: false,
+	meetingRead: false,
 	roomShareAccessLinks: false,
 	participantPromote: false,
 	participantKick: false,
+	participantMute: false,
 	meetingEnd: false,
 	mediaPublishVideo: false,
 	mediaPublishAudio: false,
@@ -539,6 +547,7 @@ describe('Room Members API Tests', () => {
 					roomShareAccessLinks: true,
 					participantPromote: true,
 					participantKick: true,
+					participantMute: true,
 					meetingEnd: true
 				}
 			});
@@ -831,6 +840,64 @@ describe('Room Members API Tests', () => {
 			expect(participant.permission?.canPublishData).toBe(true);
 		});
 
+		it('should revoke the LiveKit camera grant live when mediaPublishVideo is removed mid-meeting', async () => {
+			const createResponse = await createRoomMember(roomId, {
+				name: 'Live Camera Publisher',
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: { mediaPublishVideo: true }
+			});
+			const memberId = createResponse.body.memberId as string;
+
+			const initialToken = await generateRoomMemberToken(roomId, {
+				secret: memberId,
+				joinMeeting: true,
+				participantName: 'Live Camera Publisher'
+			});
+			const claims = tokenService.getClaimsIgnoringExpiration(getRawToken(initialToken));
+			const participantIdentity = claims.sub!;
+			const metadata = JSON.parse(claims.metadata || '{}') as MeetRoomMemberTokenMetadata;
+
+			await joinFakeParticipant(roomId, participantIdentity);
+			await updateParticipantMetadata(roomId, participantIdentity, metadata);
+			await waitForParticipantMediaState(roomId, participantIdentity, { videoActive: true });
+
+			let updateResponse = await updateRoomMember(roomId, memberId, {
+				customPermissions: { mediaPublishVideo: false }
+			});
+			expect(updateResponse.status).toBe(200);
+
+			let refreshResponse = await generateRoomMemberTokenRequest(
+				roomId,
+				{ secret: memberId, joinMeeting: true },
+				undefined,
+				initialToken
+			);
+			expect(refreshResponse.status).toBe(200);
+
+			// The SFU drops the camera the participant was already publishing, without a reconnection
+			await waitForParticipantMediaState(roomId, participantIdentity, { videoActive: false });
+			let participant = await livekitService.getParticipant(roomId, participantIdentity);
+			expect(participant.permission?.canPublish).toBe(true);
+			expect(participant.permission?.canPublishSources).not.toContain(TrackSource.CAMERA);
+			expect(participant.permission?.canPublishSources).toContain(TrackSource.MICROPHONE);
+
+			updateResponse = await updateRoomMember(roomId, memberId, {
+				customPermissions: { mediaPublishVideo: true }
+			});
+			expect(updateResponse.status).toBe(200);
+
+			refreshResponse = await generateRoomMemberTokenRequest(
+				roomId,
+				{ secret: memberId, joinMeeting: true },
+				undefined,
+				initialToken
+			);
+			expect(refreshResponse.status).toBe(200);
+
+			participant = await livekitService.getParticipant(roomId, participantIdentity);
+			expect(participant.permission?.canPublishSources).toContain(TrackSource.CAMERA);
+		});
+
 		it('should fail to regenerate token when participant does not exist in the meeting', async () => {
 			// Generate initial token for a user to join the meeting
 			const initialToken = await generateRoomMemberToken(roomId, {
@@ -992,6 +1059,85 @@ describe('Room Members API Tests', () => {
 		});
 	});
 
+	describe('Participant Identity Correlation Field Tests', () => {
+		const participantExternalId = 'crm-user_42';
+		const participantMetadata = '{"department": "cardiology"}';
+
+		const metadataOf = (token: string): MeetRoomMemberTokenMetadata => {
+			const claims = tokenService.getClaimsIgnoringExpiration(getRawToken(token));
+			return JSON.parse(claims.metadata || '{}') as MeetRoomMemberTokenMetadata;
+		};
+
+		it('should embed externalId and metadata in the token metadata when joining a meeting', async () => {
+			const token = await generateRoomMemberToken(roomId, {
+				secret: roomData.speakerSecret,
+				joinMeeting: true,
+				participantName: 'Correlated Participant',
+				participantExternalId,
+				participantMetadata
+			});
+
+			const metadata = metadataOf(token);
+			expect(metadata.externalId).toBe(participantExternalId);
+			expect(metadata.metadata).toBe(participantMetadata);
+		});
+
+		it('should carry the correlation fields on non-join tokens too', async () => {
+			const token = await generateRoomMemberToken(roomId, {
+				secret: roomData.speakerSecret,
+				participantExternalId,
+				participantMetadata
+			});
+
+			const metadata = metadataOf(token);
+			expect(metadata.externalId).toBe(participantExternalId);
+			expect(metadata.metadata).toBe(participantMetadata);
+		});
+
+		it('should omit the correlation fields when the application does not provide them', async () => {
+			const token = await generateRoomMemberToken(roomId, {
+				secret: roomData.speakerSecret,
+				joinMeeting: true,
+				participantName: 'Plain Participant'
+			});
+
+			const metadata = metadataOf(token);
+			expect(metadata).not.toHaveProperty('externalId');
+			expect(metadata).not.toHaveProperty('metadata');
+		});
+
+		it('should preserve the correlation fields across a regeneration that does not re-provide them', async () => {
+			const initialToken = await generateRoomMemberToken(roomId, {
+				secret: roomData.speakerSecret,
+				joinMeeting: true,
+				participantName: 'Sticky Correlation',
+				participantExternalId,
+				participantMetadata
+			});
+
+			const initialClaims = tokenService.getClaimsIgnoringExpiration(getRawToken(initialToken));
+			const participantIdentity = initialClaims.sub;
+			expect(participantIdentity).toBeDefined();
+			const initialMetadata = JSON.parse(initialClaims.metadata || '{}') as MeetRoomMemberTokenMetadata;
+
+			// The regeneration path requires the participant to actually be in the meeting
+			await joinFakeParticipant(roomId, participantIdentity!);
+			await updateParticipantMetadata(roomId, participantIdentity!, initialMetadata);
+
+			const response = await generateRoomMemberTokenRequest(
+				roomId,
+				{ secret: roomData.speakerSecret, joinMeeting: true },
+				undefined,
+				initialToken
+			);
+			expect(response.status).toBe(200);
+
+			const metadata = metadataOf(response.body.token as string);
+			expect(metadata.externalId).toBe(participantExternalId);
+			expect(metadata.metadata).toBe(participantMetadata);
+		});
+	});
+
 	describe('Generate Room Member Token Validation Tests', () => {
 		it('should fail when joinMeeting is not a boolean', async () => {
 			const response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
@@ -1009,6 +1155,52 @@ describe('Room Members API Tests', () => {
 			expect(response.body.message).toContain(
 				'participantName is required when joining a meeting and it cannot be inferred from member/user context'
 			);
+		});
+
+		it('should fail when participantExternalId has characters outside the documented alphabet', async () => {
+			const response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
+				secret: roomData.moderatorSecret,
+				participantExternalId: 'user 42!'
+			});
+			expectValidationError(
+				response,
+				'participantExternalId',
+				'participantExternalId must contain only letters, digits, underscores and hyphens'
+			);
+		});
+
+		it('should fail when participantExternalId is empty or too long', async () => {
+			let response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
+				secret: roomData.moderatorSecret,
+				participantExternalId: ''
+			});
+			expectValidationError(response, 'participantExternalId', 'participantExternalId cannot be empty');
+
+			response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
+				secret: roomData.moderatorSecret,
+				participantExternalId: 'a'.repeat(65)
+			});
+			expectValidationError(
+				response,
+				'participantExternalId',
+				'participantExternalId cannot exceed 64 characters'
+			);
+		});
+
+		it('should fail when participantMetadata exceeds 2048 bytes', async () => {
+			const response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
+				secret: roomData.moderatorSecret,
+				participantMetadata: 'x'.repeat(2049)
+			});
+			expectValidationError(response, 'participantMetadata', 'participantMetadata cannot exceed 2048 bytes');
+		});
+
+		it('should fail when a multibyte participantMetadata is within 2048 characters but over 2048 UTF-8 bytes', async () => {
+			const response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
+				secret: roomData.moderatorSecret,
+				participantMetadata: '€'.repeat(2048)
+			});
+			expectValidationError(response, 'participantMetadata', 'participantMetadata cannot exceed 2048 bytes');
 		});
 	});
 });

@@ -21,8 +21,10 @@ export type MeetPermissionsWire = Partial<Record<MeetPermissionKey | MeetDepreca
  * by both the REST serialization below and the webhook payloads, which have no `Response` to stamp.
  *
  * The split recording group collapses with AND and its deprecated flag is omitted when the group is
- * incomplete (see `toDeprecatedPermissions`); every other alias mirrors its replacement's value, so
- * echoing a compatibility-mode response back at the API never trips the conflict check.
+ * incomplete (see `toDeprecatedPermissions`). The conflict check accepts any alias that matches this
+ * serialization, so a compatibility-mode response echoed back **unchanged** never trips it. An edit
+ * that leaves a stale alias contradicting its group still does, so a client that edits a permission
+ * object must send only the keys it means to change, or drop the deprecated half.
  */
 export function withDeprecatedPermissionAliases(
 	permissions: Readonly<Partial<Record<MeetPermissionKey, boolean>>>

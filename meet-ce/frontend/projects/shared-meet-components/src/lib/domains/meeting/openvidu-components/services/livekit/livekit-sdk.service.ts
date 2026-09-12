@@ -1,6 +1,8 @@
 import { Service } from '@angular/core';
 import type { SwitchBackgroundProcessorOptions } from '@livekit/track-processors';
 import {
+	ConnectionError,
+	ConnectionErrorReason,
 	ConnectionQuality,
 	ConnectionState,
 	createAudioAnalyser,
@@ -15,6 +17,7 @@ import {
 	LocalTrack,
 	LocalTrackPublication,
 	LocalVideoTrack,
+	MediaDeviceFailure,
 	Participant,
 	RemoteParticipant,
 	RemoteTrack,
@@ -68,6 +71,8 @@ export class LivekitSdkService {
 
 export {
 	AudioCaptureOptions,
+	ConnectionError,
+	ConnectionErrorReason,
 	ConnectionQuality,
 	ConnectionState,
 	createAudioAnalyser,
@@ -86,6 +91,7 @@ export {
 	LocalTrack,
 	LocalTrackPublication,
 	LocalVideoTrack,
+	MediaDeviceFailure,
 	Participant,
 	RemoteParticipant,
 	RemoteTrack,

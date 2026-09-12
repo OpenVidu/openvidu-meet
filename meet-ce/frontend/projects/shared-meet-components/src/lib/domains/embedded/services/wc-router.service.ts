@@ -1,7 +1,7 @@
 import { Service, computed, inject, signal } from '@angular/core';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { WcRoute, WcRouteName, WcRouteStatus } from '../models/wc-route.model';
-import { wcRouteToPath } from '../utils/wc-route.utils';
+import { wcRouteIdentity, wcRouteToPath } from '../utils/wc-route.utils';
 import {
 	WcGuardResult,
 	WcMeetingGuard,
@@ -44,7 +44,7 @@ export class WcRouterService implements WcNavigator {
 	private readonly _currentRoute = signal<WcRoute | null>(null);
 	private readonly _status = signal<WcRouteStatus>('running');
 
-	/** The route the shell falls back to (the attribute-derived "home"); set via {@link setHomeRoute}. */
+	/** The route the shell falls back to (the attribute-derived "home"); set via {@link syncHomeRoute}. */
 	private homeRoute: WcRoute | null = null;
 
 	/** Monotonic id so a slow guard from a superseded navigation cannot overwrite a newer route. */
@@ -78,9 +78,37 @@ export class WcRouterService implements WcNavigator {
 		return this.homeRoute ? this.navigate(this.homeRoute) : Promise.resolve();
 	}
 
-	/** Register the current attribute-derived route as the fallback for {@link navigateToInitial}. */
-	setHomeRoute(route: WcRoute): void {
+	/**
+	 * Registers `route` as the attribute-derived home — the fallback {@link navigateToInitial}
+	 * replays and {@link getHomeRoute} readers reuse — and navigates to it when its identity (which
+	 * room/recording it shows) differs from the previous home's. A non-identity attribute change
+	 * (participant name/metadata, initial media…) only refreshes the stored home, so it never yanks
+	 * the user off an interrupt view (login, recordings…) or restarts the meeting.
+	 */
+	async syncHomeRoute(route: WcRoute): Promise<void> {
+		const identityChanged = !this.homeRoute || wcRouteIdentity(this.homeRoute) !== wcRouteIdentity(route);
 		this.homeRoute = route;
+
+		if (identityChanged) {
+			await this.navigate(route);
+		}
+	}
+
+	/** The attribute-derived route currently registered as home, or `null` if none has been set yet. */
+	getHomeRoute(): WcRoute | null {
+		return this.homeRoute;
+	}
+
+	/**
+	 * Clears route, status and home route, and invalidates any in-flight navigation. This service
+	 * outlives a single mount of `<openvidu-meet>` (shared root injector), so the shell must call
+	 * this on a genuine destroy or the next mount inherits stale state.
+	 */
+	reset(): void {
+		this.navSeq++;
+		this._currentRoute.set(null);
+		this._status.set('running');
+		this.homeRoute = null;
 	}
 
 	private async runNavigation(route: WcRoute, depth: number): Promise<void> {

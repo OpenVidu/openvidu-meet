@@ -1,4 +1,7 @@
 description: Success response for retrieving a room
+headers:
+    Deprecation:
+        $ref: '../../../shared/headers/deprecation.yaml'
 content:
     application/json:
         schema:
@@ -103,9 +106,11 @@ content:
                                 recordingDownload: true
                                 recordingDelete: true
                                 meetingJoin: true
+                                meetingRead: true
                                 roomShareAccessLinks: true
                                 participantPromote: true
                                 participantKick: true
+                                participantMute: true
                                 meetingEnd: true
                                 mediaPublishVideo: true
                                 mediaPublishAudio: true
@@ -121,9 +126,11 @@ content:
                                 recordingDownload: true
                                 recordingDelete: false
                                 meetingJoin: true
+                                meetingRead: true
                                 roomShareAccessLinks: false
                                 participantPromote: false
                                 participantKick: false
+                                participantMute: false
                                 meetingEnd: false
                                 mediaPublishVideo: true
                                 mediaPublishAudio: true

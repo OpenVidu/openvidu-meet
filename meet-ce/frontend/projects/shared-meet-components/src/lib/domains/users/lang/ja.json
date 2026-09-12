@@ -158,6 +158,17 @@
       "USERS_DELETED_SUFFIX_PLURAL": "件のユーザーを削除しました。",
       "USERS_FAILED_SUFFIX_SINGULAR": "件のユーザーを削除できませんでした。",
       "USERS_FAILED_SUFFIX_PLURAL": "件のユーザーを削除できませんでした。"
+    },
+    "DIALOGS": {
+      "DELETE_USER_TITLE": "ユーザーを削除",
+      "DELETE_USER_MESSAGE": "ユーザー <b>{name}</b>（{userId}）を完全に削除してもよろしいですか？この操作は取り消せません。",
+      "DELETE_USER_WARNING": "ユーザーがルームを所有している場合、所有権はルート管理者に移ります。ミーティング中の場合はただちに退出させられます。",
+      "DELETE_USERS_TITLE": "ユーザーを削除",
+      "DELETE_USERS_MESSAGE_ONE": "<b>{count} 人のユーザー</b>を完全に削除してもよろしいですか？この操作は取り消せません。",
+      "DELETE_USERS_MESSAGE_MANY": "<b>{count} 人のユーザー</b>を完全に削除してもよろしいですか？この操作は取り消せません。",
+      "DELETE_USERS_WARNING": "削除されるユーザーがルームを所有している場合、所有権はルート管理者に移ります。ミーティング中のユーザーはただちに退出させられます。",
+      "WARNING_TITLE": "重要な影響",
+      "DELETE": "削除"
     }
   }
 }

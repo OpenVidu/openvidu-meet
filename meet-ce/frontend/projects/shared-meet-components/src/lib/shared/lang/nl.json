@@ -16,6 +16,10 @@
       "TITLE": "Gesloten kamer",
       "MESSAGE": "Meetings in deze kamer zijn niet beschikbaar zolang deze gesloten is"
     },
+    "MEETING_FULL": {
+      "TITLE": "Vergadering vol",
+      "MESSAGE": "Deze vergadering heeft het maximale aantal deelnemers bereikt"
+    },
     "ANONYMOUS_ACCESS_DISABLED": {
       "TITLE": "Anonieme toegang uitgeschakeld",
       "MESSAGE": "De anonieme toegang voor uw rol is in deze kamer uitgeschakeld (en de bijbehorende opnames)"

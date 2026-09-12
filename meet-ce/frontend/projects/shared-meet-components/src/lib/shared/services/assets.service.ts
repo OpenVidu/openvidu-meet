@@ -32,11 +32,6 @@ export class AssetsService {
 		return this.resolve('assets/images/meet_logo.png');
 	}
 
-	/** Recording panel empty-state illustration. */
-	get recordingPlaceholder(): string {
-		return this.resolve('assets/images/recording-placeholder.webp');
-	}
-
 	// ── Sounds ──────────────────────────────────────────────────────────────
 
 	/** Notification played when a participant joins the meeting. */
@@ -57,6 +52,11 @@ export class AssetsService {
 	/** Notification played when a chat message arrives. */
 	get chatMessageSound(): string {
 		return this.resolve('assets/sounds/chat-message.mp3');
+	}
+
+	/** Notification played when a duration-limited meeting is about to end. */
+	get meetingEndingSoonSound(): string {
+		return this.resolve('assets/sounds/meeting-ending-soon.mp3');
 	}
 
 	// ── Workers ───────────────────────────────────────────────────────────────

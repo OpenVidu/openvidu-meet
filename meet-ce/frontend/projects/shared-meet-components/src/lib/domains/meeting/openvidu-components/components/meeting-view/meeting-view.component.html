@@ -47,6 +47,62 @@
 			<ov-landscape-warning />
 		}
 		<div id="meeting-stage" [animate.enter]="enterAnimationClass" [animate.leave]="'ov-fade-out-200'">
+			<!-- Meeting-wide status stays visible even when the host renders no toolbar. -->
+			@if (showStatusRail()) {
+				<div id="status-rail" class="status-rail">
+					@if (showRecordingChip()) {
+						<div
+							id="recording-tag"
+							class="status-chip recording-chip"
+							[class.clickable]="canOpenActivitiesPanel()"
+							(click)="openRecordingActivityPanel()"
+						>
+							<span class="recording-dot"></span>
+							<span class="status-chip-value">REC</span>
+							@if (isRecordingStarting()) {
+								<span class="status-chip-label">
+									{{ 'ROOM.RECORDING_BADGE_STARTING' | translate }}
+								</span>
+							} @else if (recordingStatus().elapsed; as elapsed) {
+								<span class="status-chip-label">{{ elapsed | date: 'H:mm:ss' }}</span>
+							}
+						</div>
+					}
+
+					@if (isEndingSoon()) {
+						<div class="status-chip ending-soon-chip" [class.urgent]="isEndingSoonUrgent()">
+							<mat-icon class="status-chip-icon">schedule</mat-icon>
+							@if (endingSoonTime(); as time) {
+								<span class="status-chip-label">{{ 'ROOM.ENDING_SOON_BADGE_LABEL' | translate }}</span>
+								<span class="status-chip-value">{{ time }}</span>
+							} @else {
+								<span class="status-chip-label">{{ 'ROOM.ENDING_SOON_BADGE_ENDING' | translate }}</span>
+							}
+						</div>
+					}
+
+					@if (isE2eeActive()) {
+						<div class="status-chip e2ee-chip" [matTooltip]="'ROOM.E2EE_BADGE_TOOLTIP' | translate">
+							<mat-icon class="status-chip-icon">lock</mat-icon>
+							<span class="status-chip-label">{{ 'ROOM.E2EE_BADGE_LABEL' | translate }}</span>
+						</div>
+					}
+
+					@if (railHiddenParticipants(); as hidden) {
+						<ov-hidden-participants-indicator
+							class="status-rail-end"
+							mode="topbar"
+							[class.inert]="!canOpenParticipantsPanel()"
+							[count]="hidden.count"
+							[hiddenParticipantNames]="hidden.names"
+							(clicked)="openParticipantsPanel()"
+						/>
+					}
+				</div>
+			}
+
+			<ov-notifications class="notice-layer" />
+
 			<mat-sidenav-container
 				ovSidenavLayout
 				#sidenavLayout="ovSidenavLayout"
@@ -85,9 +141,6 @@
 	<ov-toolbar
 		id="default-toolbar"
 		(onParticipantLeft)="_onParticipantLeft($event)"
-		(onVideoEnabledChanged)="onVideoEnabledChanged.emit($event)"
-		(onAudioEnabledChanged)="onAudioEnabledChanged.emit($event)"
-		(onScreenShareEnabledChanged)="onScreenShareEnabledChanged.emit($event)"
 		(onFullscreenEnabledChanged)="onFullscreenEnabledChanged.emit($event)"
 		(onRecordingStartRequested)="onRecordingStartRequested.emit($event)"
 		(onRecordingStopRequested)="onRecordingStopRequested.emit($event)"

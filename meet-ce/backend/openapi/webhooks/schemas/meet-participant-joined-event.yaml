@@ -1,0 +1,18 @@
+type: object
+required:
+    - roomId
+    - roomName
+    - participant
+properties:
+    roomId:
+        type: string
+        example: 'room-123'
+        description: >
+            The unique identifier of the room the participant joined.
+    roomName:
+        type: string
+        example: 'room'
+        description: >
+            The display name of the room the participant joined.
+    participant:
+        $ref: ./meet-participant-payload.yaml

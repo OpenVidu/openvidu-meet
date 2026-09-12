@@ -1,16 +1,17 @@
 type: object
 description: |
-    Permissions of a room member, keyed with the `moduleAction` scheme (module first, no `can` prefix).
+    Permissions of a room member.
 
     Which key sets the API speaks is a **deployment-wide** setting: the `MEET_MODE` environment variable of the
     server, with two values.
 
     - **`compatibility`** (the default): the former `can*` spellings remain available alongside the new keys.
-      Requests accept any mix of both key sets — sending a deprecated key together with one of its replacements
-      with a contradicting value is rejected with a `422` — and responses (and webhooks) carry **both** key sets,
-      so integrations can migrate endpoint by endpoint. Responses carrying the deprecated names include a
-      `Deprecation: true` header. When updating an object read from the API, change **both** spellings of a
-      permission (or strip one key set first): editing only one of them produces a contradiction and a `422`.
+      Requests accept any mix of both key sets — a deprecated key that contradicts what its replacements say
+      (for `canRetrieveRecordings`, the AND of its group) is rejected with a `422` — and responses (and
+      webhooks) carry **both** key sets, so integrations can migrate endpoint by endpoint: an object read from
+      the API is always accepted back unchanged. Responses carrying the deprecated names include a
+      `Deprecation: true` header. When updating a permission, change **both** spellings of it (or strip one
+      key set first): a stale spelling contradicting the edit produces a `422`.
     - **`3.9.0`**: only the new keys exist. A request using a deprecated key is rejected with a `422` naming its
       replacement, and responses and webhooks carry only the new keys.
 
@@ -21,6 +22,10 @@ description: |
       `canRetrieveRecordings`, the group collapses with AND (it is `true` only when the three are granted, and
       the flag is omitted when only part of the group is defined).
     - Every other deprecated key is a straight rename of exactly one new key.
+
+    A request carries only the permissions it means to change: both the room roles and a room member's
+    permissions are partial objects, so an omitted key keeps the value the role or the member already had. No
+    permission is ever derived from another one.
 
     The examples in this reference show only the new keys; a `compatibility` deployment adds the deprecated
     spellings next to them. The `compatibility` mode and the deprecated keys are removed in **3.12.0**.
@@ -51,6 +56,15 @@ properties:
         type: boolean
         example: true
         description: Can join the meeting.
+    meetingRead:
+        type: boolean
+        example: true
+        description: >
+            Can read the live state of the meeting (its info and the participants currently in it)
+            without necessarily joining it. Has no deprecated `can*` equivalent. A room created from
+            3.9.0 on grants it to both roles by default; a room or member that existed before 3.9.0
+            starts with the value of its `meetingJoin`, which gated this capability before this
+            permission was added.
     roomShareAccessLinks:
         type: boolean
         example: false
@@ -63,6 +77,14 @@ properties:
         type: boolean
         example: false
         description: Can remove other participants from the meeting.
+    participantMute:
+        type: boolean
+        example: false
+        description: >
+            Can turn off another participant's microphone, camera or screen share. The affected participant
+            may turn the device back on. Has no deprecated `can*` equivalent. A room created from 3.9.0 on
+            grants it to the moderator role and denies it to the speaker role by default; a room or member
+            that existed before 3.9.0 starts without it.
     meetingEnd:
         type: boolean
         example: false

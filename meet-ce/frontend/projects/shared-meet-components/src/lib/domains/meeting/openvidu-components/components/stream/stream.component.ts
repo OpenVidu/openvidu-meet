@@ -13,6 +13,7 @@ import { ParticipantService } from '../../services/participant/participant.servi
 import { AudioWaveComponent } from '../audio-wave/audio-wave.component';
 import { ConnectionQualityIndicatorComponent } from '../connection-quality-indicator/connection-quality-indicator.component';
 import { VideoElementComponent } from '../video-element/video-element.component';
+import { MeetStorageService } from '../../../../../shared/services/storage.service';
 
 /**
  * The **StreamComponent** is hosted inside of the {@link LayoutComponent}.
@@ -38,6 +39,7 @@ export class StreamComponent implements OnDestroy {
 	private readonly participantService = inject(ParticipantService);
 	private readonly cdkSrv = inject(CdkOverlayService);
 	private readonly libService = inject(MeetingUiConfigService);
+	private readonly meetStorageService = inject(MeetStorageService);
 	readonly stream = input<ParticipantStream | undefined>(undefined);
 
 	readonly showParticipantName = this.libService.displayParticipantNameSignal;
@@ -157,6 +159,7 @@ export class StreamComponent implements OnDestroy {
 
 		if (stream?.participant && stream.participant.isLocal) {
 			this.streamLayoutService.toggleStreamFloating(stream.streamId);
+			this.meetStorageService.setLocalTileFloating(!stream.isFloating);
 			this.layoutService.update();
 		}
 	}

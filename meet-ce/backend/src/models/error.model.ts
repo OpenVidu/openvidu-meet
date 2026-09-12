@@ -141,6 +141,14 @@ export const errorRecordingDisabled = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Recording Error', `Recording is disabled for room '${roomId}'`, 403);
 };
 
+export const errorManualRecordingNotAllowed = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Recording Error',
+		`Room '${roomId}' starts its recording automatically, so it cannot be started on-demand`,
+		403
+	);
+};
+
 export const errorRecordingNotFound = (recordingId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Recording Error', `Recording '${recordingId}' not found`, 404);
 };
@@ -153,16 +161,20 @@ export const errorRecordingAlreadyStopped = (recordingId: string): OpenViduMeetE
 	return new OpenViduMeetError('Recording Error', `Recording '${recordingId}' is already stopped`, 409);
 };
 
-export const errorRecordingCannotBeStoppedWhileStarting = (recordingId: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Recording Error', `Recording '${recordingId}' cannot be stopped while starting`, 409);
+export const errorRecordingStopInProgress = (recordingId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Recording Error', `Recording '${recordingId}' is already being stopped`, 409);
 };
 
 export const errorRecordingAlreadyStarted = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Recording Error', `Room '${roomId}' is already being recorded`, 409);
 };
 
-export const errorRecordingStartTimeout = (roomId: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Recording Error', `Recording in room '${roomId}' timed out while starting`, 503);
+export const errorRecordingAutoStartDisabled = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Recording Error',
+		`Recording auto-start in room '${roomId}' is disabled by a deliberate stop during this meeting`,
+		409
+	);
 };
 
 export const errorRecordingNotStreamable = (recordingId: string): OpenViduMeetError => {
@@ -214,11 +226,8 @@ export const isErrorRecordingNotFound = (error: OpenViduMeetError, recordingId: 
 	return isMatchingError(error, errorRecordingNotFound(recordingId));
 };
 
-export const isErrorRecordingCannotBeStoppedWhileStarting = (
-	error: OpenViduMeetError,
-	recordingId: string
-): boolean => {
-	return isMatchingError(error, errorRecordingCannotBeStoppedWhileStarting(recordingId));
+export const isErrorRecordingStopInProgress = (error: OpenViduMeetError, recordingId: string): boolean => {
+	return isMatchingError(error, errorRecordingStopInProgress(recordingId));
 };
 
 // User errors
@@ -289,8 +298,34 @@ export const errorRoomClosed = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `Room '${roomId}' is closed and cannot be joined`, 409);
 };
 
+export const errorMeetingFull = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Room Error', `Room '${roomId}' has reached its maximum number of participants`, 409);
+};
+
 export const errorRoomActiveMeeting = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `Room '${roomId}' has an active meeting`, 409);
+};
+
+/**
+ * A recording auto-start threshold that the room's participant limit can never reach: storing it
+ * would configure a recording that is guaranteed never to start.
+ */
+export const errorUnreachableRecordingAutoStart = (
+	mode: string,
+	maxParticipants: number,
+	minParticipants: number
+): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Room Error',
+		`Recording auto-start '${mode}' can never trigger in a room whose 'maxParticipants' is ${maxParticipants}: it requires the room to admit at least ${minParticipants} participants`,
+		422
+	);
+};
+
+// Meeting errors
+
+export const errorNoActiveMeeting = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Meeting Error', `Room '${roomId}' has no active meeting`, 404);
 };
 
 export const errorInvalidRoomSecret = (roomId: string): OpenViduMeetError => {
@@ -368,6 +403,14 @@ export const errorParticipantCannotBeDemotedFromModerator = (
 	);
 };
 
+export const errorParticipantCannotBeMuted = (participantIdentity: string, roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Participant Error',
+		`Participant '${participantIdentity}' in room '${roomId}' cannot be muted because they are a moderator`,
+		409
+	);
+};
+
 // AI Assistant errors
 
 export const errorAiAssistantAlreadyStarting = (roomId: string): OpenViduMeetError => {
@@ -390,6 +433,22 @@ export const errorApiKeyNotConfiguredForWebhooks = (): OpenViduMeetError => {
 		'There are no API keys configured yet. Please, create one to use webhooks.',
 		400
 	);
+};
+
+export const errorWebhookNotFound = (webhookId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Webhook Error', `Webhook '${webhookId}' does not exist`, 404);
+};
+
+export const errorMaxWebhooksReached = (max: number): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Webhook Error',
+		`The maximum number of registered webhooks (${max}) has been reached`,
+		409
+	);
+};
+
+export const errorWebhookCreationInProgress = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Webhook Error', 'Another webhook registration is in progress, please retry', 409);
 };
 
 // Handlers

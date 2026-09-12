@@ -1,0 +1,30 @@
+/**
+ * Live snapshot of the meeting currently running in a room, as served by `GET /meetings/{roomId}`.
+ *
+ * The endpoint only answers while a meeting is active (404 otherwise), so the shape carries no
+ * lifecycle status field yet; a `status` (once more than one live state exists, e.g. a lobby hold)
+ * and a per-module `features` object are planned as additive extensions.
+ */
+export interface MeetMeetingInfo {
+	/** Identifier of the room hosting the meeting. */
+	roomId: string;
+	/** Name of the room hosting the meeting. */
+	roomName: string;
+	/** Timestamp when the meeting started (milliseconds since epoch). */
+	startDate: number;
+	/**
+	 * Timestamp at which the meeting is force-ended for reaching the room's duration limit
+	 * (milliseconds since epoch), or `undefined` when the meeting runs under no limit. Stamped on the
+	 * meeting when it started, from the room's `maxDurationMinutes`, so it does not change mid-meeting.
+	 */
+	endDate?: number;
+	/** Number of participants currently in the meeting (standard participants only). */
+	participantCount: number;
+	/** Whether a recording is currently in progress in the meeting. */
+	recordingActive: boolean;
+	/**
+	 * Participant cap in force for this meeting, or `undefined` when it admits unlimited participants.
+	 * Taken from the room's `maxParticipants` when the meeting started, so it does not change mid-meeting.
+	 */
+	maxParticipants?: number;
+}

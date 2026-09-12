@@ -1,38 +1,37 @@
-import { UpperCasePipe } from '@angular/common';
-import { Component, effect, inject, input, output, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
-import { MatListModule } from '@angular/material/list';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import {
-    RecordingStartRequestedEvent,
-    RecordingState,
-    RecordingStopRequestedEvent
+	RecordingStartRequestedEvent,
+	RecordingState,
+	RecordingStopRequestedEvent
 } from '../../../../models/recording.model';
 import { TranslatePipe } from '../../../../pipes/translate.pipe';
 import { MeetingUiConfigService } from '../../../../services/config/meeting-ui-config.service';
 import { MeetingLiveKitService } from '../../../../services/meeting-livekit/meeting-livekit.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
 import { RecordingService } from '../../../../services/recording/recording.service';
-import { AssetsService } from '../../../../../../../shared/services/assets.service';
+import { MeetingContextService } from '../../../../../services/meeting-context.service';
+
+/**
+ * What the row says while something is happening. States absent from this map are idle, and the row
+ * says how the room records instead.
+ */
+const STATUS_KEYS: Partial<Record<RecordingState, string>> = {
+	[RecordingState.STARTED]: 'PANEL.RECORDING.STATUS_RECORDING',
+	[RecordingState.STARTING]: 'PANEL.RECORDING.STATUS_STARTING',
+	[RecordingState.STOPPING]: 'PANEL.RECORDING.STATUS_STOPPING',
+	[RecordingState.FAILED]: 'PANEL.RECORDING.STATUS_FAILED'
+};
 
 /**
  * The **RecordingActivityComponent** is the component that allows showing the recording activity.
  */
 @Component({
 	selector: 'ov-recording-activity',
-	imports: [
-		MatButtonModule,
-		MatDividerModule,
-		MatExpansionModule,
-		MatIconModule,
-		MatListModule,
-		MatTooltipModule,
-		TranslatePipe,
-		UpperCasePipe
-	],
+	imports: [DatePipe, MatButtonModule, MatExpansionModule, MatIconModule, TranslatePipe],
 	templateUrl: './recording-activity.component.html',
 	styleUrls: ['./recording-activity.component.scss', '../activities-panel.component.scss']
 })
@@ -41,10 +40,7 @@ export class RecordingActivityComponent {
 	private readonly recordingService = inject(RecordingService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
-	private readonly assets = inject(AssetsService);
-
-	/** Empty-state illustration served as a static asset (resolves in SPA & WC modes). */
-	protected readonly placeholderSrc = this.assets.recordingPlaceholder;
+	private readonly meetingContext = inject(MeetingContextService);
 
 	/**
 	 * @internal
@@ -87,6 +83,47 @@ export class RecordingActivityComponent {
 	 * @internal
 	 */
 	recStatusEnum = RecordingState;
+
+	/**
+	 * @internal
+	 * Whether the room starts its own recording, rather than waiting to be asked.
+	 */
+	readonly startsAutomatically = computed(() => !!this.meetingContext.recordingConfig()?.autoStart);
+
+	/**
+	 * @internal
+	 * Manual or automatic, for the row line that stays visible while the panel is collapsed.
+	 */
+	readonly triggerModeKey = computed(() =>
+		this.startsAutomatically() ? 'PANEL.RECORDING.TRIGGER_AUTO_MODE' : 'PANEL.RECORDING.TRIGGER_MANUAL_MODE'
+	);
+
+	/**
+	 * @internal
+	 * What the row says: the live state while something is happening, the room's recording mode
+	 * while nothing is.
+	 */
+	readonly statusKey = computed(() => STATUS_KEYS[this.recordingStatus()] ?? this.triggerModeKey());
+
+	/**
+	 * @internal
+	 * Nothing is happening: the panel is offering to start rather than reporting on a recording.
+	 */
+	readonly isIdle = computed(() => !STATUS_KEYS[this.recordingStatus()]);
+
+	/**
+	 * @internal
+	 * A room that starts its own recording is not asked to start one, so the control is offered but
+	 * not usable, with the reason next to it.
+	 */
+	readonly canStartRecording = computed(() => this.hasRoomTracksPublished() && !this.startsAutomatically());
+
+	/**
+	 * @internal
+	 * How long the recording has been running. The status rail's REC chip shows it too, and stays on
+	 * screen whether or not this panel is open.
+	 */
+	readonly elapsed = computed(() => this.recordingService.recordingStatus().elapsed);
 
 	/**
 	 * @internal
@@ -142,14 +179,26 @@ export class RecordingActivityComponent {
 	 * @internal
 	 */
 	resetStatus() {
-		const currentStatus = this.recordingService.recordingStatus();
-
-		if (this.oldRecordingStatus() === RecordingState.STARTING) {
-			this.recordingService.setRecordingStopped();
-		} else if (this.oldRecordingStatus() === RecordingState.STOPPING) {
-			this.recordingService.setRecordingStarted(currentStatus.id!, currentStatus.startedAt!.getTime());
+		if (this.oldRecordingStatus() === RecordingState.STOPPING) {
+			this.recordingService.restoreRecordingStarted();
 		} else {
 			this.recordingService.setRecordingStopped();
+		}
+	}
+
+	/**
+	 * @internal
+	 * Clears the failure and asks again for whatever failed: a stop that failed leaves a recording
+	 * still running, so retrying it means stopping, not starting.
+	 */
+	retry() {
+		const wasStopping = this.oldRecordingStatus() === RecordingState.STOPPING;
+		this.resetStatus();
+
+		if (wasStopping) {
+			this.stopRecording();
+		} else {
+			this.startRecording();
 		}
 	}
 

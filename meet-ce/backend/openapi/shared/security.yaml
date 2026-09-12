@@ -3,22 +3,31 @@ apiKeyHeader:
     name: X-API-KEY
     in: header
     description: >
-        The API key to authenticate the request. This key is required to access the OpenVidu Meet API.
+        The API key to authenticate the request, sent as the bare key with no prefix. This key is required to
+        access the OpenVidu Meet API.
 accessTokenHeader:
-    type: apiKey
-    name: Authorization
-    in: header
+    type: http
+    scheme: bearer
+    bearerFormat: JWT
     description: >
-        The JWT token to authenticate the request in case of consuming the API from the OpenVidu Meet frontend.
+        The JWT access token returned by `POST /auth/login`, to authenticate the request as an OpenVidu Meet
+        user. Sent as `Authorization: Bearer <token>`.<br/><br/>
+        It can also travel as the `accessToken` query parameter, for requests a browser issues without custom
+        headers (the `src` of a `<video>` element, for instance).
 refreshTokenHeader:
     type: apiKey
     name: X-Refresh-Token
     in: header
     description: >
-        The JWT token to refresh the access token when it expires.
+        The JWT token to refresh the access token when it expires. Sent as
+        `X-Refresh-Token: Bearer <token>`: the `Bearer ` prefix is required, and the bare token is rejected.
 roomMemberTokenHeader:
     type: apiKey
     name: X-Room-Member-Token
     in: header
     description: >
-        The JWT token to authenticate a room member when accessing a room and its resources.
+        The JWT token returned by the room member token endpoint, to authenticate a room member when accessing
+        a room and its resources. Sent as `X-Room-Member-Token: Bearer <token>`: the `Bearer ` prefix is
+        required, and the bare token is rejected.<br/><br/>
+        It can also travel as the `roomMemberToken` query parameter, for requests a browser issues without
+        custom headers (the `src` of a `<video>` element, for instance).

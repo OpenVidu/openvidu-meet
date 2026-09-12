@@ -22,7 +22,6 @@ import {
 	TrackPublication
 } from '../../services/livekit';
 import { safeJsonParse } from '../../utils/utils';
-import { ActionService } from '../action/action.service';
 import { ChatService } from '../chat/chat.service';
 import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
@@ -30,7 +29,9 @@ import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.servic
 import { ParticipantService } from '../participant/participant.service';
 import { RecordingService } from '../recording/recording.service';
 import { MeetingTranslateService } from '../translate/meeting-translate.service';
+import { DialogService } from '../../../../../shared/services/dialog.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
+import { MeetStorageService } from '../../../../../shared/services/storage.service';
 
 export interface MeetingEventCallbacks {
 	onRoomReconnecting: () => void;
@@ -40,13 +41,14 @@ export interface MeetingEventCallbacks {
 
 @Service()
 export class MeetingEventsService {
-	private readonly actionService = inject(ActionService);
+	private readonly dialogService = inject(DialogService);
 	private readonly chatService = inject(ChatService);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
+	private readonly meetStorageService = inject(MeetStorageService);
 	private readonly recordingService = inject(RecordingService);
 	private readonly translateService = inject(MeetingTranslateService);
 	private readonly log = this.loggerSrv.get('MeetingEventsService');
@@ -100,8 +102,12 @@ export class MeetingEventsService {
 		room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
 			this.participantService.addRemoteParticipant(participant);
 
-			// Auto-float the local video the first time a remote participant joins.
-			if (this.participantService.remoteParticipants().length === 1) {
+			// Auto-float the local video the first time a remote participant joins, unless the user
+			// has explicitly docked their tile before (persisted preference wins over the default).
+			if (
+				this.participantService.remoteParticipants().length === 1 &&
+				this.meetStorageService.getLocalTileFloating() !== false
+			) {
 				this.streamLayoutService.floatLocalCameraVideo(this.participantService.localParticipant());
 			}
 		});
@@ -238,18 +244,21 @@ export class MeetingEventsService {
 			async (payload: Uint8Array, participant?: RemoteParticipant, _?: DataPacket_Kind, topic?: string) => {
 				try {
 					const decoder = new TextDecoder();
-					const fromServer = participant === undefined;
+
+					// Meet signals carry server authority (recording state), so only the server may
+					// send them: a packet relayed from a participant arrives with that participant,
+					// one sent by the server does not.
+					if (participant && Object.values(MeetSignalType).includes(topic as MeetSignalType)) {
+						this.log.w(`Discarding '${topic}' data relayed from a participant`, participant.identity);
+						return;
+					}
+
 					const storedParticipant = participant
 						? this.participantService.getRemoteParticipantBySid(participant.sid || '')
 						: undefined;
 
 					if (participant && !storedParticipant) {
 						this.log.w('DataReceived from unknown participant', participant);
-						return;
-					}
-
-					if (!fromServer && !participant) {
-						this.log.w('DataReceived from unknown source', payload);
 						return;
 					}
 
@@ -308,10 +317,10 @@ export class MeetingEventsService {
 				this.recordingService.setRecordingStopping();
 				break;
 			case MeetRecordingStatus.COMPLETE:
+			case MeetRecordingStatus.ABORTED:
 				this.recordingService.setRecordingStopped();
 				break;
 			case MeetRecordingStatus.FAILED:
-			case MeetRecordingStatus.ABORTED:
 			case MeetRecordingStatus.LIMIT_REACHED:
 				this.recordingService.setRecordingFailed(recording.error ?? recording.details ?? 'Recording failed');
 				break;
@@ -330,16 +339,16 @@ export class MeetingEventsService {
 		room.on(RoomEvent.Reconnecting, () => {
 			this.reconnectInProgress = true;
 			this.log.w('Connection lost: Reconnecting');
-			this.actionService.openConnectionDialog(
-				this.translateService.translate('ERRORS.CONNECTION'),
-				this.translateService.translate('ERRORS.RECONNECT')
-			);
+			this.dialogService.showBlockingDialog({
+				title: this.translateService.translate('ERRORS.CONNECTION'),
+				message: this.translateService.translate('ERRORS.RECONNECT')
+			});
 			callbacks.onRoomReconnecting();
 		});
 
 		room.on(RoomEvent.Reconnected, () => {
 			this.log.w('Connection lost: Reconnected');
-			this.actionService.closeConnectionDialog();
+			this.dialogService.closeBlockingDialog();
 			// LiveKit replays the ParticipantConnected events buffered during the reconnect
 			// synchronously right after this event, so release the flag one microtask later and
 			// only then re-evaluate whether the local video is truly alone (everyone may have
@@ -354,7 +363,7 @@ export class MeetingEventsService {
 		room.on(RoomEvent.Disconnected, async (reason: DisconnectReason | undefined) => {
 			this.reconnectInProgress = false;
 			this._activeSpeakers.set([]);
-			this.actionService.closeConnectionDialog();
+			this.dialogService.closeBlockingDialog();
 			const participantLeftEvent: ParticipantLeftEvent = {
 				roomName: this.meetingLiveKitService.getRoomName(),
 				participantName: this.participantService.getMyName() || '',

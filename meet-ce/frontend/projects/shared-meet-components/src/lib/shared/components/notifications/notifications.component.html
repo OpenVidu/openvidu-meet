@@ -1,0 +1,37 @@
+@for (notification of notifications(); track notification.id) {
+	<div
+		class="ov-notification"
+		[class.tone-alert]="notification.tone === 'alert'"
+		[class.tone-warning]="notification.tone === 'warning'"
+		[attr.data-kind]="notification.kind"
+		role="alert"
+	>
+		<span class="notification-icon">
+			<mat-icon>{{ notification.icon }}</mat-icon>
+		</span>
+
+		<div class="notification-body">
+			@if (notification.titleKey) {
+				<span class="notification-title">{{ notification.titleKey | translate }}</span>
+			}
+			<span class="notification-message">
+				{{ notification.messageKey | translate: notification.messageParams }}
+			</span>
+
+			@if (notification.action; as action) {
+				<button type="button" class="notification-action" (click)="run(notification)">
+					{{ action.labelKey | translate }}
+				</button>
+			}
+		</div>
+
+		<button
+			type="button"
+			class="notification-dismiss"
+			[attr.aria-label]="notification.dismissLabelKey | translate"
+			(click)="dismiss(notification.id)"
+		>
+			<mat-icon>close</mat-icon>
+		</button>
+	</div>
+}

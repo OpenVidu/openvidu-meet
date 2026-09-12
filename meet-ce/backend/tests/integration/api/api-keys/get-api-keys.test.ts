@@ -17,15 +17,12 @@ describe('API Keys API Tests', () => {
 
 	describe('Get API Keys', () => {
 		it('should get the list of API keys', async () => {
-			await generateApiKey();
+			const key = await generateApiKey();
 			const response = await getApiKeys();
 
-			expect(Array.isArray(response.body)).toBe(true);
-
-			if (response.body.length > 0) {
-				expect(response.body[0]).toHaveProperty('key');
-				expect(response.body[0]).toHaveProperty('creationDate');
-			}
+			expect(response.status).toBe(200);
+			// The deployment holds one API key at a time, so the listing is the key just created
+			expect(response.body).toEqual([{ key, creationDate: expect.any(Number) }]);
 		});
 	});
 });

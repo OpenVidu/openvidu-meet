@@ -39,7 +39,7 @@ import { ParticipantAvatarComponent } from '../participant-avatar/participant-av
 				class="OV_media-element OV_video-element"
 				[class.ov-video-ready]="!avatar().show"
 				[class.zoomable]="isZoomable()"
-				[class.panning]="isPanning()"
+				[class.panning]="isGesturing()"
 				[style.transform]="videoTransform()"
 				[style.transform-origin]="'center center'"
 				(pointerdown)="onPointerDown($event)"
@@ -68,8 +68,11 @@ export class VideoElementComponent implements OnDestroy {
 	private previousVideoTrack: Track | null = null;
 	private previousVideoElement: HTMLVideoElement | null = null;
 
-	readonly isPanning = signal(false);
+	/** True while pointers are driving the video, so the transform stops easing and tracks them 1:1. */
+	readonly isGesturing = signal(false);
 	private dragOrigin = { pointerX: 0, pointerY: 0, panX: 0, panY: 0 };
+	private pinchOrigin: { distance: number; level: number } | undefined;
+	private readonly activePointers = new Map<number, { x: number; y: number }>();
 
 	private readonly isScreenShare = computed(() => this.videoTrack()?.source === Track.Source.ScreenShare);
 
@@ -149,26 +152,44 @@ export class VideoElementComponent implements OnDestroy {
 
 	/**
 	 * @ignore
-	 * Starts a pan drag when the screen share is zoomed in. Only pointerdown is a template binding;
-	 * pointermove/pointerup are attached natively for the duration of the gesture, so an idle
-	 * <video> never schedules change detection at pointer rate. During the drag the pan updates flow
-	 * through the zoom-state signals, which is what keeps the [style.transform] binding in sync.
+	 * Begins a gesture on a screen share: two pointers pinch the zoom, one pans an already zoomed
+	 * video. Only pointerdown is a template binding; pointermove/pointerup are attached natively for
+	 * the duration of the gesture, so an idle <video> never schedules change detection at pointer
+	 * rate. The updates flow through the zoom-state signals, which is what keeps the
+	 * [style.transform] binding in sync.
+	 *
+	 * Every pointer is captured, gesture or not, so a finger that slides off the video still
+	 * delivers its pointerup and cannot be left behind in {@link activePointers}. The default is
+	 * only prevented once a gesture actually starts, since preventing it makes CDK ignore the event
+	 * and a floating tile has to stay draggable.
 	 */
 	onPointerDown(event: PointerEvent) {
 		const state = this.zoomState();
 
-		if (!this.isZoomable() || !state) {
+		if (!this.isScreenShare() || !state || this.activePointers.size >= 2) {
 			return;
 		}
 
-		event.preventDefault();
-		const { x, y } = state.pan();
-		this.dragOrigin = { pointerX: event.clientX, pointerY: event.clientY, panX: x, panY: y };
-		this.isPanning.set(true);
+		this.activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
 
 		const target = event.target as HTMLElement;
 		target.setPointerCapture?.(event.pointerId);
 		this.attachDragListeners(target);
+
+		const pinchDistance = this.pointerDistance();
+
+		if (pinchDistance > 0) {
+			this.pinchOrigin = { distance: pinchDistance, level: state.level() };
+		} else if (this.isZoomable()) {
+			const { x, y } = state.pan();
+			this.dragOrigin = { pointerX: event.clientX, pointerY: event.clientY, panX: x, panY: y };
+		} else {
+			// A lone finger on an unzoomed share is not a gesture yet: a second one may still pinch.
+			return;
+		}
+
+		event.preventDefault();
+		this.isGesturing.set(true);
 	}
 
 	/**
@@ -178,7 +199,23 @@ export class VideoElementComponent implements OnDestroy {
 	private readonly onPointerMove = (event: PointerEvent) => {
 		const state = this.zoomState();
 
-		if (!this.isPanning() || !state) {
+		if (!state || !this.activePointers.has(event.pointerId)) {
+			return;
+		}
+
+		this.activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+		if (this.pinchOrigin) {
+			const distance = this.pointerDistance();
+
+			if (distance > 0) {
+				state.setLevel((this.pinchOrigin.level * distance) / this.pinchOrigin.distance);
+			}
+
+			return;
+		}
+
+		if (!this.isGesturing()) {
 			return;
 		}
 
@@ -189,15 +226,32 @@ export class VideoElementComponent implements OnDestroy {
 	};
 
 	private readonly onPointerUp = (event: PointerEvent) => {
-		this.detachDragListeners(event.target as HTMLElement);
+		const target = event.target as HTMLElement;
 
-		if (!this.isPanning()) {
-			return;
+		this.activePointers.delete(event.pointerId);
+		target.releasePointerCapture?.(event.pointerId);
+
+		// Lifting one finger of a pinch ends the gesture: the one still down has no drag origin, and
+		// panning from a stale one would jump the video.
+		if (this.activePointers.size < 2) {
+			this.pinchOrigin = undefined;
+			this.isGesturing.set(false);
 		}
 
-		this.isPanning.set(false);
-		(event.target as HTMLElement).releasePointerCapture?.(event.pointerId);
+		if (this.activePointers.size === 0) {
+			this.detachDragListeners(target);
+		}
 	};
+
+	/** Distance between the two active pointers, or 0 unless exactly two are down. */
+	private pointerDistance(): number {
+		if (this.activePointers.size !== 2) {
+			return 0;
+		}
+
+		const [first, second] = [...this.activePointers.values()];
+		return Math.hypot(second.x - first.x, second.y - first.y);
+	}
 
 	private attachDragListeners(target: HTMLElement): void {
 		target.addEventListener('pointermove', this.onPointerMove);

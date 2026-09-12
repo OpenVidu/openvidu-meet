@@ -2,6 +2,7 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import {
 	MeetRecordingAudioCodec,
+	MeetRecordingAutoStartMode,
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
@@ -59,7 +60,7 @@ describe('Room API Tests', () => {
 				roomName: 'Room'
 			});
 
-			expectValidRoom(room, 'Room', 'room', undefined, validAutoDeletionDate);
+			expectValidRoom(room, 'Room', { roomIdPrefix: 'room', autoDeletionDate: validAutoDeletionDate });
 			expectExtraFieldsInResponse(room);
 		});
 
@@ -86,14 +87,11 @@ describe('Room API Tests', () => {
 
 			const room = await createRoom(payload);
 
-			expectValidRoom(
-				room,
-				'Example Room',
-				'example_room',
-				undefined,
-				validAutoDeletionDate,
-				payload.autoDeletionPolicy
-			);
+			expectValidRoom(room, 'Example Room', {
+				roomIdPrefix: 'example_room',
+				autoDeletionDate: validAutoDeletionDate,
+				autoDeletionPolicy: payload.autoDeletionPolicy
+			});
 			expectExtraFieldsInResponse(room);
 		});
 
@@ -124,16 +122,17 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false }, // Default value
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, 'Partial Config Room', 'partial_config_room', undefined, validAutoDeletionDate);
+			expectValidRoom(room, 'Partial Config Room', {
+				roomIdPrefix: 'partial_config_room',
+				autoDeletionDate: validAutoDeletionDate
+			});
 			expectExtraFieldsInResponse(room);
 			const response = await getRoom(room.roomId, undefined, 'config');
-			expectValidRoom(
-				response.body,
-				'Partial Config Room',
-				'partial_config_room',
-				expectedConfig,
-				validAutoDeletionDate
-			);
+			expectValidRoom(response.body, 'Partial Config Room', {
+				roomIdPrefix: 'partial_config_room',
+				config: expectedConfig,
+				autoDeletionDate: validAutoDeletionDate
+			});
 		});
 
 		it('Should create a room when sending partial config with two fields', async () => {
@@ -163,16 +162,17 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false }, // Default value
 				captions: { enabled: true } // Default value
 			};
-			expectValidRoom(room, 'Partial Config Room', 'partial_config_room', undefined, validAutoDeletionDate);
+			expectValidRoom(room, 'Partial Config Room', {
+				roomIdPrefix: 'partial_config_room',
+				autoDeletionDate: validAutoDeletionDate
+			});
 			expectExtraFieldsInResponse(room);
 			const response = await getRoom(room.roomId, undefined, 'config');
-			expectValidRoom(
-				response.body,
-				'Partial Config Room',
-				'partial_config_room',
-				expectedConfig,
-				validAutoDeletionDate
-			);
+			expectValidRoom(response.body, 'Partial Config Room', {
+				roomIdPrefix: 'partial_config_room',
+				config: expectedConfig,
+				autoDeletionDate: validAutoDeletionDate
+			});
 		});
 
 		it('should not include config nor roles properties by default (extraFields not specified)', async () => {
@@ -262,140 +262,140 @@ describe('Room API Tests', () => {
 			const room = await createRoom({
 				roomName: 'Habitación José'
 			});
-			expectValidRoom(room, 'Habitación José', 'habitacion_jose');
+			expectValidRoom(room, 'Habitación José', { roomIdPrefix: 'habitacion_jose' });
 		});
 
 		it('should create room with German umlauts and generate sanitized roomId', async () => {
 			const room = await createRoom({
 				roomName: 'Café Müller'
 			});
-			expectValidRoom(room, 'Café Müller', 'cafe_muller');
+			expectValidRoom(room, 'Café Müller', { roomIdPrefix: 'cafe_muller' });
 		});
 
 		it('should create room with French accents and generate sanitized roomId', async () => {
 			const room = await createRoom({
 				roomName: 'Réunion François'
 			});
-			expectValidRoom(room, 'Réunion François', 'reunion_francois');
+			expectValidRoom(room, 'Réunion François', { roomIdPrefix: 'reunion_francois' });
 		});
 
 		it('should create room with uppercase letters and convert to lowercase in roomId', async () => {
 			const room = await createRoom({
 				roomName: 'MY ROOM'
 			});
-			expectValidRoom(room, 'MY ROOM', 'my_room');
+			expectValidRoom(room, 'MY ROOM', { roomIdPrefix: 'my_room' });
 		});
 
 		it('should create room with mixed case and convert to lowercase in roomId', async () => {
 			const room = await createRoom({
 				roomName: 'MyRoom123'
 			});
-			expectValidRoom(room, 'MyRoom123', 'myroom123');
+			expectValidRoom(room, 'MyRoom123', { roomIdPrefix: 'myroom123' });
 		});
 
 		it('should create room with hyphens and convert to underscores in roomId', async () => {
 			const room = await createRoom({
 				roomName: 'my-test-room'
 			});
-			expectValidRoom(room, 'my-test-room', 'my_test_room');
+			expectValidRoom(room, 'my-test-room', { roomIdPrefix: 'my_test_room' });
 		});
 
 		it('should create room with spaces and convert to underscores in roomId', async () => {
 			const room = await createRoom({
 				roomName: 'My Test Room'
 			});
-			expectValidRoom(room, 'My Test Room', 'my_test_room');
+			expectValidRoom(room, 'My Test Room', { roomIdPrefix: 'my_test_room' });
 		});
 
 		it('should create room with multiple consecutive spaces and normalize in roomId', async () => {
 			const room = await createRoom({
 				roomName: 'My    Test    Room'
 			});
-			expectValidRoom(room, 'My Test Room', 'my_test_room');
+			expectValidRoom(room, 'My Test Room', { roomIdPrefix: 'my_test_room' });
 		});
 
 		it('should create room with special characters and remove them in roomId', async () => {
 			const room = await createRoom({
 				roomName: 'Room@#$%^&*()123'
 			});
-			expectValidRoom(room, 'Room@#$%^&*()123', 'room123');
+			expectValidRoom(room, 'Room@#$%^&*()123', { roomIdPrefix: 'room123' });
 		});
 
 		it('should create room with emojis and remove them in roomId', async () => {
 			const room = await createRoom({
 				roomName: 'Meeting 🎉 Room'
 			});
-			expectValidRoom(room, 'Meeting 🎉 Room', 'meeting_room');
+			expectValidRoom(room, 'Meeting 🎉 Room', { roomIdPrefix: 'meeting_room' });
 		});
 
 		it('should create room with leading/trailing underscores and remove them in roomId', async () => {
 			const room = await createRoom({
 				roomName: '__test_room__'
 			});
-			expectValidRoom(room, '__test_room__', 'test_room');
+			expectValidRoom(room, '__test_room__', { roomIdPrefix: 'test_room' });
 		});
 
 		it('should create room with leading/trailing hyphens and remove them in roomId', async () => {
 			const room = await createRoom({
 				roomName: '--test-room--'
 			});
-			expectValidRoom(room, '--test-room--', 'test_room');
+			expectValidRoom(room, '--test-room--', { roomIdPrefix: 'test_room' });
 		});
 
 		it('should create room with multiple consecutive hyphens/underscores and normalize in roomId', async () => {
 			const room = await createRoom({
 				roomName: 'test___---room'
 			});
-			expectValidRoom(room, 'test___---room', 'test_room');
+			expectValidRoom(room, 'test___---room', { roomIdPrefix: 'test_room' });
 		});
 
 		it('should create room with numbers and preserve them in roomId', async () => {
 			const room = await createRoom({
 				roomName: 'Room 123 456'
 			});
-			expectValidRoom(room, 'Room 123 456', 'room_123_456');
+			expectValidRoom(room, 'Room 123 456', { roomIdPrefix: 'room_123_456' });
 		});
 
 		it('should create room with mix of all sanitization rules', async () => {
 			const room = await createRoom({
 				roomName: 'SALA--Médica  #2024  (Niños)'
 			});
-			expectValidRoom(room, 'SALA--Médica #2024 (Niños)', 'sala_medica_2024_ninos');
+			expectValidRoom(room, 'SALA--Médica #2024 (Niños)', { roomIdPrefix: 'sala_medica_2024_ninos' });
 		});
 
 		it('should create room with Portuguese characters and generate sanitized roomId', async () => {
 			const room = await createRoom({
 				roomName: 'Reunião São Paulo'
 			});
-			expectValidRoom(room, 'Reunião São Paulo', 'reuniao_sao_paulo');
+			expectValidRoom(room, 'Reunião São Paulo', { roomIdPrefix: 'reuniao_sao_paulo' });
 		});
 
 		it('should create room with Scandinavian characters and generate sanitized roomId', async () => {
 			const room = await createRoom({
 				roomName: 'Møde Åse'
 			});
-			expectValidRoom(room, 'Møde Åse', 'mde_ase');
+			expectValidRoom(room, 'Møde Åse', { roomIdPrefix: 'mde_ase' });
 		});
 
 		it('should create room with Chinese characters and use default "room" prefix', async () => {
 			const room = await createRoom({
 				roomName: '会议室'
 			});
-			expectValidRoom(room, '会议室', 'room');
+			expectValidRoom(room, '会议室', { roomIdPrefix: 'room' });
 		});
 
 		it('should create room with only special characters and use default "room" prefix', async () => {
 			const room = await createRoom({
 				roomName: '@#$%^&*()'
 			});
-			expectValidRoom(room, '@#$%^&*()', 'room');
+			expectValidRoom(room, '@#$%^&*()', { roomIdPrefix: 'room' });
 		});
 
 		it('should create room with emojis only and use default "room" prefix', async () => {
 			const room = await createRoom({
 				roomName: '🎉🎊🎈'
 			});
-			expectValidRoom(room, '🎉🎊🎈', 'room');
+			expectValidRoom(room, '🎉🎊🎈', { roomIdPrefix: 'room' });
 		});
 	});
 
@@ -424,11 +424,14 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false },
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, 'Room without encoding', 'room_without_encoding', undefined);
+			expectValidRoom(room, 'Room without encoding', { roomIdPrefix: 'room_without_encoding' });
 			expectExtraFieldsInResponse(room);
 
 			const response = await getRoom(room.roomId, undefined, 'config');
-			expectValidRoom(response.body, 'Room without encoding', 'room_without_encoding', expectedConfig);
+			expectValidRoom(response.body, 'Room without encoding', {
+				roomIdPrefix: 'room_without_encoding',
+				config: expectedConfig
+			});
 		});
 
 		it('Should create a room with H264_1080P_30 encoding preset', async () => {
@@ -455,9 +458,12 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false },
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, '1080p Preset Room', '1080p_preset_room', undefined);
+			expectValidRoom(room, '1080p Preset Room', { roomIdPrefix: '1080p_preset_room' });
 			const response = await getRoom(room.roomId, undefined, 'config');
-			expectValidRoom(response.body, '1080p Preset Room', '1080p_preset_room', expectedConfig);
+			expectValidRoom(response.body, '1080p Preset Room', {
+				roomIdPrefix: '1080p_preset_room',
+				config: expectedConfig
+			});
 		});
 
 		it('Should create a room with PORTRAIT_H264_720P_30 encoding preset', async () => {
@@ -484,9 +490,12 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false },
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, 'Portrait 720p Room', 'portrait_720p_room', undefined);
+			expectValidRoom(room, 'Portrait 720p Room', { roomIdPrefix: 'portrait_720p_room' });
 			const response = await getRoom(room.roomId, undefined, 'config');
-			expectValidRoom(response.body, 'Portrait 720p Room', 'portrait_720p_room', expectedConfig);
+			expectValidRoom(response.body, 'Portrait 720p Room', {
+				roomIdPrefix: 'portrait_720p_room',
+				config: expectedConfig
+			});
 		});
 
 		it('Should create a room with advanced encoding options - both video and audio', async () => {
@@ -543,14 +552,12 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false },
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, 'Full Advanced Encoding Room', 'full_advanced_encoding_room', undefined);
+			expectValidRoom(room, 'Full Advanced Encoding Room', { roomIdPrefix: 'full_advanced_encoding_room' });
 			const response = await getRoom(room.roomId, undefined, 'config');
-			expectValidRoom(
-				response.body,
-				'Full Advanced Encoding Room',
-				'full_advanced_encoding_room',
-				expectedConfig
-			);
+			expectValidRoom(response.body, 'Full Advanced Encoding Room', {
+				roomIdPrefix: 'full_advanced_encoding_room',
+				config: expectedConfig
+			});
 		});
 	});
 
@@ -780,6 +787,30 @@ describe('Room API Tests', () => {
 				.expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('Expected boolean');
+		});
+
+		it('should fail when the auto-start threshold is unreachable for maxParticipants', async () => {
+			const payload = {
+				roomName: 'TestRoom',
+				config: {
+					maxParticipants: 1,
+					recording: {
+						enabled: true,
+						autoStart: MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS
+					}
+				}
+			};
+
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+				.send(payload)
+				.expect(422);
+
+			expect(response.body.error).toBe('Room Error');
+			expect(response.body.message).toContain(
+				`Recording auto-start '${MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS}'`
+			);
 		});
 
 		it('should fail with invalid JSON payload', async () => {

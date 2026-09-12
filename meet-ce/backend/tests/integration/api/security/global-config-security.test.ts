@@ -4,6 +4,8 @@ import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
+import { errorInsufficientPermissions, errorUnauthorized } from '../../../../src/models/error.model.js';
+import { expectMeetError } from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllUsers,
 	getFullPath,
@@ -28,87 +30,6 @@ describe('Global Config API Security Tests', () => {
 		await deleteAllUsers();
 	});
 
-	describe('Update Webhook Config Tests', () => {
-		const webhookConfig = {
-			enabled: true,
-			url: 'https://example.com/webhook'
-		};
-
-		it('should fail when request includes API key', async () => {
-			const response = await request(app)
-				.put(`${CONFIG_PATH}/webhooks`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-				.send(webhookConfig);
-			expect(response.status).toBe(401);
-		});
-
-		it('should succeed when user is authenticated as ADMIN', async () => {
-			const response = await request(app)
-				.put(`${CONFIG_PATH}/webhooks`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken)
-				.send(webhookConfig);
-			expect(response.status).toBe(200);
-
-			await restoreDefaultGlobalConfig();
-		});
-
-		it('should fail when user is authenticated as ROOM_MANAGER', async () => {
-			const response = await request(app)
-				.put(`${CONFIG_PATH}/webhooks`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken)
-				.send(webhookConfig);
-			expect(response.status).toBe(403);
-		});
-
-		it('should fail when user is authenticated as ROOM_MEMBER', async () => {
-			const response = await request(app)
-				.put(`${CONFIG_PATH}/webhooks`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
-				.send(webhookConfig);
-			expect(response.status).toBe(403);
-		});
-
-		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).put(`${CONFIG_PATH}/webhooks`).send(webhookConfig);
-			expect(response.status).toBe(401);
-		});
-	});
-
-	describe('Get Webhook Config Tests', () => {
-		it('should fail when request includes API key', async () => {
-			const response = await request(app)
-				.get(`${CONFIG_PATH}/webhooks`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
-			expect(response.status).toBe(401);
-		});
-
-		it('should succeed when user is authenticated as ADMIN', async () => {
-			const response = await request(app)
-				.get(`${CONFIG_PATH}/webhooks`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken);
-			expect(response.status).toBe(200);
-		});
-
-		it('should fail when user is authenticated as ROOM_MANAGER', async () => {
-			const response = await request(app)
-				.get(`${CONFIG_PATH}/webhooks`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
-			expect(response.status).toBe(403);
-		});
-
-		it('should fail when user is authenticated as ROOM_MEMBER', async () => {
-			const response = await request(app)
-				.get(`${CONFIG_PATH}/webhooks`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
-			expect(response.status).toBe(403);
-		});
-
-		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).get(`${CONFIG_PATH}/webhooks`);
-			expect(response.status).toBe(401);
-		});
-	});
-
 	describe('Update Security Config Tests', () => {
 		const securityConfig = {
 			authentication: {
@@ -122,7 +43,7 @@ describe('Global Config API Security Tests', () => {
 				.put(`${CONFIG_PATH}/security`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send(securityConfig);
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 
 		it('should succeed when user is authenticated as ADMIN', async () => {
@@ -140,7 +61,7 @@ describe('Global Config API Security Tests', () => {
 				.put(`${CONFIG_PATH}/security`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken)
 				.send(securityConfig);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is authenticated as ROOM_MEMBER', async () => {
@@ -148,12 +69,12 @@ describe('Global Config API Security Tests', () => {
 				.put(`${CONFIG_PATH}/security`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
 				.send(securityConfig);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).put(`${CONFIG_PATH}/security`).send(securityConfig);
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 	});
 
@@ -182,7 +103,7 @@ describe('Global Config API Security Tests', () => {
 				.put(`${CONFIG_PATH}/rooms/appearance`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send(appearanceConfig);
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 
 		it('should succeed when user is authenticated as ADMIN', async () => {
@@ -200,7 +121,7 @@ describe('Global Config API Security Tests', () => {
 				.put(`${CONFIG_PATH}/rooms/appearance`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken)
 				.send(appearanceConfig);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is authenticated as ROOM_MEMBER', async () => {
@@ -208,12 +129,12 @@ describe('Global Config API Security Tests', () => {
 				.put(`${CONFIG_PATH}/rooms/appearance`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
 				.send(appearanceConfig);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).put(`${CONFIG_PATH}/rooms/appearance`).send(appearanceConfig);
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 	});
 

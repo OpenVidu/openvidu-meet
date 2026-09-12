@@ -3,7 +3,22 @@
 		"JOINING": "Partecipazione alla riunione in corso...",
 		"LANDSCAPE_WARNING": "Per una migliore esperienza, ruota il dispositivo in modalità verticale",
 		"DISCONNECTED": "Hai lasciato la riunione",
-		"DISCONNECTED_SUBTITLE": "La riunione è terminata"
+		"DISCONNECTED_SUBTITLE": "La riunione è terminata",
+		"ENDING_SOON_TITLE": "La riunione sta per terminare",
+		"ENDING_SOON_ONE_MINUTE": "La riunione terminerà tra circa 1 minuto",
+		"ENDING_SOON_MANY_MINUTES": "La riunione terminerà tra circa {minutes} minuti",
+		"ENDING_SOON_DISMISS": "Chiudi",
+		"ENDING_SOON_BADGE_LABEL": "Termina in",
+		"ENDING_SOON_BADGE_ENDING": "In chiusura",
+		"E2EE_BADGE_LABEL": "Crittografata",
+		"E2EE_BADGE_TOOLTIP": "Questa riunione è crittografata end-to-end",
+		"RECORDING_BADGE_STARTING": "Avvio",
+		"RECORDING_STARTED_TITLE": "Questa riunione è in registrazione",
+		"RECORDING_STARTED_MESSAGE": "Da ora vengono registrati il tuo audio, il tuo video e tutto ciò che condividi.",
+		"RECORDING_WAITING_MEDIA_TITLE": "La registrazione è in attesa di iniziare",
+		"RECORDING_WAITING_MEDIA_MESSAGE": "Inizierà appena un partecipante attiverà il microfono o la videocamera.",
+		"RECORDING_STOPPED_TITLE": "Registrazione arrestata",
+		"RECORDING_STOPPED_MESSAGE": "Non viene registrato più nulla."
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Partecipa alla riunione",
@@ -59,7 +74,7 @@
 			"PLACEHOLDER": "Invia un messaggio...",
 			"SEND": "Invia",
 			"WRITE_DISABLED": "Non hai il permesso di inviare messaggi",
-			"MESSAGE_SENT_NOTIFICATION": "messaggio inviato",
+			"MESSAGE_SENT_NOTIFICATION": "{name} messaggio inviato",
 			"OPEN_CHAT": "APRI",
 			"ENCRYPTION_KEY_MISMATCH": "Ci sono partecipanti connessi con una chiave di crittografia diversa. Non riceverai i loro messaggi."
 		},
@@ -69,18 +84,25 @@
 		"PARTICIPANTS": {
 			"TITLE": "Partecipanti",
 			"YOU": "Tu",
-			"MUTE": "Disattiva l'audio",
-			"UNMUTE": "Attiva l'audio",
+			"MORE_ACTIONS": "Altre azioni",
+			"MIC_ON": "Microfono acceso",
+			"MIC_OFF": "Microfono spento",
+			"CAM_ON": "Videocamera accesa",
+			"CAM_OFF": "Videocamera spenta",
+			"SHARING_SCREEN": "Sta condividendo lo schermo",
+			"MUTE_MICROPHONE": "Silenzia microfono",
+			"TURN_OFF_CAMERA": "Spegni videocamera",
+			"STOP_SCREEN_SHARE": "Interrompi condivisione schermo",
+			"MUTE_FOR_ME": "Silenzia solo per me",
+			"UNMUTE_FOR_ME": "Riattiva l'audio per me",
+			"MUTED_FOR_YOU": "Silenziato solo per te",
 			"CONNECTION_QUALITY": {
 				"LABEL": "Qualità della connessione",
 				"EXCELLENT": "Eccellente",
 				"GOOD": "Buona",
 				"POOR": "Scarsa",
 				"LOST": "Persa"
-			},
-			"SHARING_SCREEN": "Sta condividendo lo schermo",
-			"MIC_OFF": "Microfono spento",
-			"CAM_OFF": "Videocamera spenta"
+			}
 		},
 		"SETTINGS": {
 			"TITLE": "Impostazioni",
@@ -105,20 +127,29 @@
 		},
 		"RECORDING": {
 			"TITLE": "Registrazione",
-			"SUBTITLE": "Registra la tua riunione per i posteri",
-			"CONTENT_TITLE": "Registra la tua videochiamata",
-			"CONTENT_SUBTITLE": "Al termine della registrazione potrete scaricarla con facilità",
-			"STARTING": "Avvio della registrazione",
-			"STOPPING": "Interruzione della registrazione",
-			"ACCEPT": "Accetta",
-			"NO_TRACKS_PUBLISHED": "Condividi audio o video per iniziare la registrazione.",
-			"ERROR_STARTING": "Errore di avvio"
+			"STARTING": "Avvio della registrazione…",
+			"STOPPING": "Arresto della registrazione…",
+			"ERROR_STARTING": "La registrazione non è partita",
+			"TRIGGER_MANUAL_MODE": "Registrazione manuale",
+			"TRIGGER_AUTO_MODE": "Registrazione automatica",
+			"STATUS_RECORDING": "Registrazione in corso",
+			"STATUS_STARTING": "Avvio…",
+			"STATUS_STOPPING": "Arresto…",
+			"STATUS_FAILED": "Avvio non riuscito",
+			"IN_PROGRESS_TITLE": "Questa riunione è in registrazione",
+			"IN_PROGRESS_MESSAGE": "Audio, video e tutto ciò che viene condiviso in questa riunione vengono registrati.",
+			"TRY_AGAIN": "Riprova",
+			"DISMISS": "Ignora",
+			"MODERATORS_ONLY": "Solo i moderatori possono avviare o arrestare la registrazione.",
+			"AUTO_START_ONLY": "Questa stanza avvia la registrazione da sé, quindi non può essere avviata manualmente."
 		}
 	},
 	"ERRORS": {
 		"SESSION": "Si è verificato un errore di connessione alla riunione",
+		"TOKEN_TITLE": "Errore del token",
 		"MEETING_NOT_READY": "La riunione non è ancora pronta. Ricarica la pagina e riprova.",
 		"MEETING_CONNECTION_FAILED": "Impossibile connettersi alla riunione. Controlla la connessione e riprova.",
+		"MEETING_FULL": "Questa riunione ha raggiunto il numero massimo di partecipanti",
 		"CONNECTION": "Connessione persa",
 		"RECONNECT": "Oops! Si sta cercando di riconnettersi alla riunione...",
 		"DISCONNECT": "Sei stato disconnesso",
@@ -199,13 +230,30 @@
 		"COUNT_HELPER": "Scegli quanti partecipanti remoti vengono mostrati nella griglia",
 		"COUNT_ARIA": "Numero di partecipanti da visualizzare"
 	},
+	"HIDDEN_PARTICIPANTS": {
+		"ONE_MORE": "altro partecipante",
+		"MANY_MORE": "altri partecipanti",
+		"NAMES_AND_MORE": "{names} e altri {count}"
+	},
 	"PARTICIPANT_ITEM": {
-		"PROMOTE_TOOLTIP": "Promuovi a moderatore",
-		"DOWNGRADE_TOOLTIP": "Ripristina le autorizzazioni originali",
-		"KICK_TOOLTIP": "Espelli partecipante",
+		"PROMOTE": "Promuovi a moderatore",
+		"DOWNGRADE": "Ripristina le autorizzazioni originali",
+		"REMOVE": "Rimuovi dalla riunione",
 		"BADGE_OWNER": "Proprietario",
 		"BADGE_ADMIN": "Amministratore",
 		"BADGE_MODERATOR": "Moderatore"
+	},
+	"PARTICIPANTS_PANEL_ACTIONS": {
+		"TURN_OFF_FOR_EVERYONE": "Disattiva per tutti",
+		"MUTE_ALL_TOOLTIP": "Silenzia il microfono di tutti",
+		"MUTE_ALL_NONE": "Tutti i microfoni sono già spenti",
+		"TURN_OFF_ALL_CAMERAS_TOOLTIP": "Spegni la videocamera di tutti",
+		"TURN_OFF_ALL_CAMERAS_NONE": "Tutte le videocamere sono già spente",
+		"STOP_ALL_SCREEN_SHARES_TOOLTIP": "Interrompi tutte le condivisioni schermo",
+		"STOP_ALL_SCREEN_SHARES_NONE": "Nessuno sta condividendo lo schermo"
+	},
+	"MODERATION": {
+		"MUTED_BY_MODERATOR": "Un moderatore ha disattivato uno dei tuoi dispositivi"
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "Hai abbandonato la riunione",
@@ -215,6 +263,7 @@
 		"ENDED_TITLE": "Riunione terminata",
 		"ENDED_MESSAGE": "La riunione è stata terminata da un moderatore",
 		"ENDED_BY_SELF_MESSAGE": "Hai terminato la riunione con successo",
+		"ENDED_BY_DURATION_LIMIT_MESSAGE": "Questa riunione è stata terminata automaticamente perché ha raggiunto la durata massima",
 		"DISCONNECTED_TITLE": "Disconnesso dalla riunione",
 		"NETWORK_MESSAGE": "Connessione persa a causa di problemi di connettività di rete",
 		"SERVER_SHUTDOWN_MESSAGE": "Connessione persa a causa dell'arresto del server",

@@ -175,6 +175,33 @@
 					}
 				}
 
+				.info-value-wrap {
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					gap: var(--ov-meet-spacing-xs);
+
+					.info-value {
+						margin: 0;
+					}
+
+					.copy-btn {
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						width: 20px;
+						height: 20px;
+						padding: 0;
+						flex-shrink: 0;
+
+						mat-icon {
+							font-size: 14px;
+							width: 14px;
+							height: 14px;
+						}
+					}
+				}
+
 				.owner-info {
 					display: flex;
 					align-items: center;

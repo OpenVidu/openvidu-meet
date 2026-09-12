@@ -8,7 +8,6 @@ import {
 } from '@openvidu-meet/typings';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
-import { MeetingLiveKitService } from '../../meeting/openvidu-components';
 import { EmbeddedCommandService } from './embedded-command.service';
 import { EmbeddedEventBusService } from './embedded-event-bus.service';
 
@@ -21,8 +20,8 @@ import { EmbeddedEventBusService } from './embedded-event-bus.service';
  * delegates to the already-centralized API so the iframe exposes the *same* public
  * surface as the webcomponent:
  *
- * - **Commands** (host → app) are forwarded to {@link EmbeddedCommandService}
- *   (the shared, permission-checked command bridge).
+ * - **Commands** (host → app) are forwarded to {@link EmbeddedCommandService}, which checks the
+ *   permission and meeting phase each command declares. The bridge applies no gating of its own.
  * - **Events** (app → host) are drained from {@link EmbeddedEventBusService.events}
  *   (the shared lifecycle-event queue, canonical names only) and relayed as `postMessage` events —
  *   each canonical event is followed by a second post under its deprecated 3.8.0 name, if it has
@@ -32,7 +31,6 @@ import { EmbeddedEventBusService } from './embedded-event-bus.service';
 export class IframeBridgeService {
 	private readonly commandService = inject(EmbeddedCommandService);
 	private readonly eventBus = inject(EmbeddedEventBusService);
-	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly runtimeConfig = inject(RuntimeConfigService);
 	private readonly log = inject(LoggerService).get('IframeBridgeService');
 
@@ -133,12 +131,6 @@ export class IframeBridgeService {
 			return;
 		}
 
-		// Commands only make sense once connected to the room.
-		if (!this.meetingLiveKitService.isConnected()) {
-			this.log.w('Received command but participant is not connected to the room');
-			return;
-		}
-
 		// Hosts written against 3.8.0 post the deprecated names; resolving up front means the
 		// switch only ever deals with canonical ones, and adding a future alias is a typings
 		// change alone. This resolve call is itself removed in 3.12.0 along with the aliases —
@@ -153,9 +145,10 @@ export class IframeBridgeService {
 
 			case EmbeddedCommandName.PARTICIPANT_KICK: {
 				// Resolving the name discards the discriminant, so narrow on the payload's presence
-				// instead — only the kick commands carry one.
+				// instead — only the payload-carrying commands have one.
 				const payload = 'payload' in message ? message.payload : undefined;
-				const participantIdentity = payload?.participantIdentity;
+				const participantIdentity =
+					payload && 'participantIdentity' in payload ? payload.participantIdentity : undefined;
 
 				if (!participantIdentity) {
 					this.log.e('participantKick command received without a participantIdentity');
@@ -166,9 +159,59 @@ export class IframeBridgeService {
 				break;
 			}
 
+			case EmbeddedCommandName.PARTICIPANT_MUTE: {
+				const payload = 'payload' in message ? message.payload : undefined;
+				const participantIdentity =
+					payload && 'participantIdentity' in payload ? payload.participantIdentity : undefined;
+				const media = payload && 'media' in payload ? payload.media : undefined;
+
+				if (!participantIdentity || !media) {
+					this.log.e('participantMute command received without a participantIdentity or media');
+					return;
+				}
+
+				await this.commandService.participantMute(participantIdentity, media);
+				break;
+			}
+
+			case EmbeddedCommandName.PARTICIPANT_MUTE_ALL: {
+				const payload = 'payload' in message ? message.payload : undefined;
+				const media = payload && 'media' in payload ? payload.media : undefined;
+
+				if (!media) {
+					this.log.e('participantMuteAll command received without media');
+					return;
+				}
+
+				await this.commandService.participantMuteAll(media);
+				break;
+			}
+
+			case EmbeddedCommandName.MEDIA_TOGGLE_AUDIO:
+				await this.commandService.mediaToggleAudio(this.extractActivePayload(message));
+				break;
+
+			case EmbeddedCommandName.MEDIA_TOGGLE_VIDEO:
+				await this.commandService.mediaToggleVideo(this.extractActivePayload(message));
+				break;
+
+			case EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE:
+				await this.commandService.mediaToggleScreenShare(this.extractActivePayload(message));
+				break;
+
 			default:
 				break;
 		}
+	}
+
+	/**
+	 * Reads the optional `active` flag of a media toggle command message: absent payload (or
+	 * flag) means "toggle".
+	 */
+	private extractActivePayload(message: EmbeddedCommand): boolean | undefined {
+		const payload = 'payload' in message ? message.payload : undefined;
+		const active = payload && 'active' in payload ? payload.active : undefined;
+		return typeof active === 'boolean' ? active : undefined;
 	}
 
 	/**

@@ -1,0 +1,49 @@
+type: object
+required:
+    - roomId
+    - roomName
+    - startDate
+    - participantCount
+    - recordingActive
+properties:
+    roomId:
+        type: string
+        example: 'room-123'
+        description: >
+            The identifier of the room hosting the meeting.
+    roomName:
+        type: string
+        example: 'Daily Standup'
+        description: >
+            The name of the room hosting the meeting.
+    startDate:
+        type: number
+        example: 1620000000000
+        description: >
+            The date when the meeting started (milliseconds since the Unix epoch).
+    endDate:
+        type: number
+        example: 1620003600000
+        description: >
+            The date at which the meeting is force-ended for reaching the room's duration limit
+            (milliseconds since the Unix epoch), stamped on the meeting when it started from the
+            room's `maxDurationMinutes` (so it does not change mid-meeting). Absent when the meeting
+            runs under no duration limit.
+    participantCount:
+        type: number
+        example: 3
+        description: >
+            The number of participants currently in the meeting (standard participants only;
+            internal ones such as recording egress are not counted).
+    recordingActive:
+        type: boolean
+        example: false
+        description: >
+            Whether a recording is currently in progress in the meeting.
+    maxParticipants:
+        type: number
+        example: 10
+        description: >
+            The participant cap in force for this meeting, taken from the room's `maxParticipants` when
+            the meeting started (so it does not change mid-meeting). Absent when the meeting admits
+            unlimited participants.

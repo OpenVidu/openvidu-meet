@@ -46,6 +46,15 @@ export const queryParam = (rawUrl: string, name: string): string | null => {
 };
 
 /**
+ * Parses a boolean query param with three meaningful states: absent ("no opinion", so a
+ * lower-precedence source decides), `'false'`, and anything else (`true`). Collapsing the absent case
+ * to a default would make it indistinguishable from an explicit `true`, and for
+ * `initial-audio-active` / `initial-video-active` only the latter outranks the room's own default.
+ */
+export const parseOptionalBoolean = (value: string | undefined): boolean | undefined =>
+	value === undefined ? undefined : value !== 'false';
+
+/**
  * Extracts the meeting/recording entry parameters from a route snapshot's `params` + `queryParams`.
  */
 export const extractParams = (route: {
@@ -57,6 +66,10 @@ export const extractParams = (route: {
 		roomId: params['room-id'],
 		secret: queryParams['secret'],
 		participantName: queryParams[EmbeddedAttribute.PARTICIPANT_NAME],
+		participantExternalId: queryParams[EmbeddedAttribute.PARTICIPANT_EXTERNAL_ID],
+		participantMetadata: queryParams[EmbeddedAttribute.PARTICIPANT_METADATA],
+		initialAudioActive: queryParams[EmbeddedAttribute.INITIAL_AUDIO_ACTIVE],
+		initialVideoActive: queryParams[EmbeddedAttribute.INITIAL_VIDEO_ACTIVE],
 		leaveRedirectUrl: queryParams[EmbeddedAttribute.LEAVE_REDIRECT_URL],
 		showOnlyRecordings: queryParams[EmbeddedAttribute.SHOW_ONLY_RECORDINGS] || 'false',
 		showRecording: queryParams[EmbeddedAttribute.SHOW_RECORDING],

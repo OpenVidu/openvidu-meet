@@ -8,6 +8,7 @@ import {
 	errorAnonymousAccessDisabled,
 	errorInsufficientPermissions,
 	errorInvalidRecordingSecret,
+	errorManualRecordingNotAllowed,
 	errorRecordingDisabled,
 	handleError,
 	OpenViduMeetError,
@@ -28,9 +29,13 @@ import {
 } from './auth.middleware.js';
 
 /**
- * Middleware to ensure that recording is enabled for the specified room.
+ * Middleware to ensure the room accepts a recording being started on-demand: recording has to be
+ * enabled, and the room must not be one that starts its own.
+ *
+ * Only requests pass through here. A room's automatic start is raised inside the backend, on join
+ * and on promotion to moderator, and is deliberately not subject to this gate.
  */
-export const withRecordingEnabled = async (req: Request, res: Response, next: NextFunction) => {
+export const withRecordingStartAllowed = async (req: Request, res: Response, next: NextFunction) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
 
@@ -41,6 +46,12 @@ export const withRecordingEnabled = async (req: Request, res: Response, next: Ne
 		if (!config.recording.enabled) {
 			logger.debug(`Recording is disabled for room '${roomId}'`);
 			const error = errorRecordingDisabled(roomId);
+			return rejectRequestFromMeetError(res, error);
+		}
+
+		if (config.recording.autoStart) {
+			logger.debug(`Room '${roomId}' starts its recording automatically: refusing an on-demand start`);
+			const error = errorManualRecordingNotAllowed(roomId);
 			return rejectRequestFromMeetError(res, error);
 		}
 
@@ -78,10 +89,7 @@ export const setupRecordingAuthentication = async (req: Request, res: Response, 
 					const { access } = await roomService.getMeetRoom(roomId, ['access']);
 
 					if (!access.anonymous.recording.enabled) {
-						return rejectRequestFromMeetError(
-							res,
-							errorAnonymousAccessDisabled(roomId, 'recording')
-						);
+						return rejectRequestFromMeetError(res, errorAnonymousAccessDisabled(roomId, 'recording'));
 					}
 
 					// Public access secret allows anonymous access
@@ -195,7 +203,11 @@ export const authorizeRecordingAccess = (
 		// In that case, grant access directly for retrieval requests. A share-link secret covers the
 		// whole retrieval group (play and download), matching what the pre-split
 		// canRetrieveRecordings secret granted.
-		if (allowAccessWithSecret && recordingSecret && (permission === 'recordingPlay' || permission === 'recordingDownload')) {
+		if (
+			allowAccessWithSecret &&
+			recordingSecret &&
+			(permission === 'recordingPlay' || permission === 'recordingDownload')
+		) {
 			return next();
 		}
 

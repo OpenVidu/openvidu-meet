@@ -15,7 +15,13 @@ import { LayoutCalculator } from './layout-calculator.model';
 import { LayoutDimensionsCache } from './layout-dimensions-cache.model';
 import { elementHeight, elementWidth, readStyle, readStyleNumber } from './layout-dom.util';
 import { LayoutRenderer } from './layout-renderer.model';
-import { ElementDimensions, ExtendedLayoutOptions, LAYOUT_CONSTANTS, LayoutClass, OpenViduLayoutOptions } from './layout-types.model';
+import {
+	ElementDimensions,
+	ExtendedLayoutOptions,
+	LAYOUT_CONSTANTS,
+	LayoutClass,
+	OpenViduLayoutOptions
+} from './layout-types.model';
 
 /**
  * OpenViduLayout orchestrates layout calculation and rendering.
@@ -118,15 +124,12 @@ export class OpenViduLayout {
 		const dims = this.getChildDims(element);
 		dims.big = element.classList.contains(this.opts.bigClass);
 		dims.small = element.classList.contains(LayoutClass.SMALL_ELEMENT);
-		dims.topBar = element.classList.contains(LayoutClass.TOP_BAR_ELEMENT);
 		return dims;
 	}
 
 	private getChildDims(child: HTMLElement): ElementDimensions {
 		const video =
-			child instanceof HTMLVideoElement
-				? child
-				: (child.querySelector('video') as HTMLVideoElement | null);
+			child instanceof HTMLVideoElement ? child : (child.querySelector('video') as HTMLVideoElement | null);
 
 		if (video && video.videoHeight && video.videoWidth) {
 			return { height: video.videoHeight, width: video.videoWidth };

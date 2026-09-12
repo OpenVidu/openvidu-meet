@@ -4,11 +4,13 @@ import {
 	MeetRoomConfig,
 	MeetRoomMemberPermissions
 } from '@openvidu-meet/typings';
-import { CaptionsStatus, RoomFeatures } from '../models/features.model';
+import type { InitialMediaState } from '../../meeting/openvidu-components';
+import { CaptionsStatus, InitialMediaRequest, RoomFeatures } from '../models/features.model';
 
 /**
- * Utility class responsible for calculating the enabled features in the meeting based on room configuration, participant permissions, and global appearance settings.
- * This class provides static methods to apply different layers of configuration to derive the final set of features that should be available in the UI.
+ * Utility class responsible for calculating the enabled features in the meeting — and the participant's
+ * initial media state — from the room configuration, the participant permissions and the global
+ * appearance settings.
  */
 export class FeatureCalculator {
 	static applyRoomConfig(features: RoomFeatures, roomConfig: MeetRoomConfig, captionsGlobalEnabled: boolean): void {
@@ -40,9 +42,7 @@ export class FeatureCalculator {
 		}
 
 		// Media features
-		features.videoEnabled = permissions.mediaPublishVideo;
 		features.showCamera = permissions.mediaPublishVideo;
-		features.audioEnabled = permissions.mediaPublishAudio;
 		features.showMicrophone = permissions.mediaPublishAudio;
 		features.showScreenShare = permissions.mediaShareScreen;
 		features.showShareAccessLinks = permissions.roomShareAccessLinks;
@@ -51,6 +51,28 @@ export class FeatureCalculator {
 		features.showKickParticipants = permissions.participantKick;
 		features.showViewRecordings = permissions.recordingList;
 		features.showJoinMeeting = permissions.meetingJoin;
+	}
+
+	/**
+	 * Precedence, not conjunction: the embedding application's request decides whenever it is set — to
+	 * either value, so it can also *raise* a room default of `false` — otherwise the room-wide
+	 * `config.initial*Active` does, and `true` when neither says anything. The room field is a default,
+	 * not a policy: enforcing a device off is the `mediaPublish*` permission's job, and being signed
+	 * into the token puts it above the whole chain.
+	 */
+	static resolveInitialMediaState(
+		request: InitialMediaRequest,
+		permissions?: MeetRoomMemberPermissions,
+		roomConfig?: MeetRoomConfig
+	): InitialMediaState {
+		return {
+			microphone:
+				(permissions?.mediaPublishAudio ?? true) &&
+				(request.audioActive ?? roomConfig?.initialAudioActive ?? true),
+			camera:
+				(permissions?.mediaPublishVideo ?? true) &&
+				(request.videoActive ?? roomConfig?.initialVideoActive ?? true)
+		};
 	}
 
 	static applyAppearanceConfig(features: RoomFeatures, appearanceConfig: MeetAppearanceConfig): void {

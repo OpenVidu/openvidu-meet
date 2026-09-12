@@ -13,6 +13,7 @@ const STOP_RECORDING_BUTTON = '#stop-recording-btn';
 const VIEW_RECORDINGS_BUTTON = '#view-recordings-btn';
 const SETTINGS_RECORDING_BUTTON = '#recording-btn';
 const RECORDING_TAG = '#recording-tag';
+const NOTIFICATION = '.ov-notification';
 
 /**
  * Ensures the activities panel is open, toggling it if currently closed.
@@ -84,11 +85,13 @@ export const stopRecordingIfActive = async (page: Page): Promise<void> => {
 };
 
 /**
- * Returns the current recording status text, trimmed and uppercased.
+ * Returns the current `MeetRecordingStatus` as the row reports it. Read off `data-status` rather
+ * than the row's text, which is human copy in the active language and says how the room records
+ * while nothing is being recorded.
  */
 const getRecordingStatusText = async (page: Page): Promise<string> => {
-	const status = await page.locator(RECORDING_STATUS).first().innerText();
-	return status.trim().toUpperCase();
+	const status = await page.locator(RECORDING_STATUS).first().getAttribute('data-status');
+	return (status ?? '').trim().toUpperCase();
 };
 
 /**
@@ -103,7 +106,7 @@ export const waitForRecordingStarted = async (page: Page, timeoutMs = 40_000): P
 
 				if (status === 'FAILED') {
 					const errorMessage = await page
-						.locator(`${RECORDING_ACTIVITY} .error-message`)
+						.locator(`${RECORDING_ACTIVITY} .recording-note-message`)
 						.first()
 						.innerText()
 						.catch(() => 'unknown recording error');
@@ -157,14 +160,53 @@ export const expectNoRecordButton = async (page: Page): Promise<void> => {
 };
 
 /**
- * Asserts that the recording badge is visible and displays a `REC | H:MM:SS` timer.
+ * Asserts that the meeting stage is announcing the given recording transition. Read off `data-kind`
+ * rather than the notification's text, which is human copy in the active language.
+ */
+export const expectRecordingNotice = async (
+	page: Page,
+	announcement: 'started' | 'stopped' | 'waiting-for-media',
+	timeoutMs = 15_000
+): Promise<void> => {
+	await expect(page.locator(`${NOTIFICATION}[data-kind="recording-${announcement}"]`)).toBeVisible({
+		timeout: timeoutMs
+	});
+};
+
+/**
+ * Asserts that the meeting stage is announcing nothing about the recording.
+ */
+export const expectNoRecordingNotice = async (page: Page, timeoutMs = 15_000): Promise<void> => {
+	await expect(page.locator(`${NOTIFICATION}[data-kind^="recording-"]`)).toBeHidden({ timeout: timeoutMs });
+};
+
+/**
+ * Closes the recording notification the way a participant does.
+ */
+export const dismissRecordingNotice = async (page: Page): Promise<void> => {
+	await page.locator(`${NOTIFICATION}[data-kind^="recording-"] .notification-dismiss`).click();
+};
+
+/**
+ * Asserts that the recording chip in the status rail reports a recording that has not started
+ * capturing yet: it is up, and it is not counting. The label itself is copy in the active language,
+ * so what is asserted is the absence of the timer.
+ */
+export const expectRecordingBadgeStarting = async (page: Page, timeoutMs = 15_000): Promise<void> => {
+	const recordingTag = page.locator(RECORDING_TAG);
+	await expect(recordingTag).toContainText('REC', { timeout: timeoutMs });
+	await expect(recordingTag).not.toHaveText(/\d{1,2}:\d{2}:\d{2}/, { timeout: timeoutMs });
+};
+
+/**
+ * Asserts that the recording chip in the status rail is visible and displays a `REC H:MM:SS` timer.
  */
 export const expectRecordingBadgeVisible = async (page: Page, timeoutMs = 30_000): Promise<void> => {
 	const recordingTag = page.locator(RECORDING_TAG);
 	await expect(recordingTag).toContainText('REC', { timeout: timeoutMs });
 	await expect
 		.poll(async () => (await recordingTag.innerText()).replace(/\s+/g, ' ').trim(), { timeout: timeoutMs })
-		.toMatch(/REC\s*\|\s*\d{1,2}:\d{2}:\d{2}/);
+		.toMatch(/REC\s*\d{1,2}:\d{2}:\d{2}/);
 };
 
 /**

@@ -3,7 +3,22 @@
 		"JOINING": "मीटिंग में शामिल हो रहे हैं...",
 		"LANDSCAPE_WARNING": "कृपया बेहतर अनुभव के लिए अपने डिवाइस को पोर्ट्रेट मोड में घुमाएं",
 		"DISCONNECTED": "आपने मीटिंग छोड़ दी है",
-		"DISCONNECTED_SUBTITLE": "मीटिंग समाप्त हो गई है"
+		"DISCONNECTED_SUBTITLE": "मीटिंग समाप्त हो गई है",
+		"ENDING_SOON_TITLE": "मीटिंग जल्द ही समाप्त होगी",
+		"ENDING_SOON_ONE_MINUTE": "मीटिंग लगभग 1 मिनट में समाप्त हो जाएगी",
+		"ENDING_SOON_MANY_MINUTES": "मीटिंग लगभग {minutes} मिनट में समाप्त हो जाएगी",
+		"ENDING_SOON_DISMISS": "बंद करें",
+		"ENDING_SOON_BADGE_LABEL": "समाप्ति में",
+		"ENDING_SOON_BADGE_ENDING": "समाप्त हो रही है",
+		"E2EE_BADGE_LABEL": "एन्क्रिप्टेड",
+		"E2EE_BADGE_TOOLTIP": "यह मीटिंग एंड-टू-एंड एन्क्रिप्टेड है",
+		"RECORDING_BADGE_STARTING": "शुरू हो रही है",
+		"RECORDING_STARTED_TITLE": "इस मीटिंग की रिकॉर्डिंग हो रही है",
+		"RECORDING_STARTED_MESSAGE": "अब से आपका ऑडियो, वीडियो और आपके द्वारा साझा की गई हर चीज़ रिकॉर्ड होगी।",
+		"RECORDING_WAITING_MEDIA_TITLE": "रिकॉर्डिंग शुरू होने की प्रतीक्षा में है",
+		"RECORDING_WAITING_MEDIA_MESSAGE": "यह तब शुरू होगी जब कोई प्रतिभागी अपना माइक्रोफ़ोन या कैमरा चालू करेगा।",
+		"RECORDING_STOPPED_TITLE": "रिकॉर्डिंग रोक दी गई",
+		"RECORDING_STOPPED_MESSAGE": "अब कुछ भी रिकॉर्ड नहीं हो रहा है।"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "मीटिंग में शामिल हों",
@@ -59,7 +74,7 @@
 			"PLACEHOLDER": "एक संदेश भेजें ...",
 			"SEND": "भेजें",
 			"WRITE_DISABLED": "आपके पास संदेश भेजने की अनुमति नहीं है",
-			"MESSAGE_SENT_NOTIFICATION": "संदेश भेजा गया",
+			"MESSAGE_SENT_NOTIFICATION": "{name} संदेश भेजा गया",
 			"OPEN_CHAT": "खोलें",
 			"ENCRYPTION_KEY_MISMATCH": "कुछ सदस्य एक अलग एन्क्रिप्शन कुंजी के साथ जुड़े हैं। आपको उनके संदेश प्राप्त नहीं होंगे।"
 		},
@@ -69,18 +84,25 @@
 		"PARTICIPANTS": {
 			"TITLE": "सदस्य",
 			"YOU": "आप",
-			"MUTE": "मौन",
-			"UNMUTE": "अनमौन",
+			"MORE_ACTIONS": "और कार्रवाइयाँ",
+			"MIC_ON": "माइक्रोफ़ोन चालू",
+			"MIC_OFF": "माइक्रोफ़ोन बंद",
+			"CAM_ON": "कैमरा चालू",
+			"CAM_OFF": "कैमरा बंद",
+			"SHARING_SCREEN": "स्क्रीन साझा कर रहे हैं",
+			"MUTE_MICROPHONE": "माइक्रोफ़ोन म्यूट करें",
+			"TURN_OFF_CAMERA": "कैमरा बंद करें",
+			"STOP_SCREEN_SHARE": "स्क्रीन शेयर रोकें",
+			"MUTE_FOR_ME": "केवल मेरे लिए म्यूट करें",
+			"UNMUTE_FOR_ME": "मेरे लिए अनम्यूट करें",
+			"MUTED_FOR_YOU": "केवल आपके लिए म्यूट",
 			"CONNECTION_QUALITY": {
 				"LABEL": "कनेक्शन गुणवत्ता",
 				"EXCELLENT": "उत्कृष्ट",
 				"GOOD": "अच्छा",
 				"POOR": "खराब",
 				"LOST": "खो गया"
-			},
-			"SHARING_SCREEN": "स्क्रीन साझा कर रहे हैं",
-			"MIC_OFF": "माइक्रोफ़ोन बंद",
-			"CAM_OFF": "कैमरा बंद"
+			}
 		},
 		"SETTINGS": {
 			"TITLE": "सेटिंग्स",
@@ -105,20 +127,29 @@
 		},
 		"RECORDING": {
 			"TITLE": "रिकॉर्डिंग",
-			"SUBTITLE": "अपनी बैठक को भावी पीढ़ी के लिए रिकॉर्ड करें",
-			"CONTENT_TITLE": "अपना वीडियो कॉल रिकॉर्ड करें",
-			"CONTENT_SUBTITLE": "रिकॉर्डिंग समाप्त हो जाने पर आप इसे आसानी से डाउनलोड कर सकेंगे",
-			"STARTING": "रिकॉर्डिंग शुरू कर रहा है",
-			"STOPPING": "रिकॉर्डिंग बंद करना",
-			"ACCEPT": "स्वीकार करना",
-			"NO_TRACKS_PUBLISHED": "रिकॉर्डिंग शुरू करने के लिए ऑडियो या वीडियो साझा करें।",
-			"ERROR_STARTING": "रिकॉर्डिंग शुरू करने में त्रुटि"
+			"STARTING": "रिकॉर्डिंग शुरू हो रही है…",
+			"STOPPING": "रिकॉर्डिंग रुक रही है…",
+			"ERROR_STARTING": "रिकॉर्डिंग शुरू नहीं हुई",
+			"TRIGGER_MANUAL_MODE": "मैनुअल रिकॉर्डिंग",
+			"TRIGGER_AUTO_MODE": "स्वचालित रिकॉर्डिंग",
+			"STATUS_RECORDING": "रिकॉर्डिंग जारी है",
+			"STATUS_STARTING": "शुरू हो रही है…",
+			"STATUS_STOPPING": "रुक रही है…",
+			"STATUS_FAILED": "शुरू नहीं हो सकी",
+			"IN_PROGRESS_TITLE": "इस मीटिंग की रिकॉर्डिंग हो रही है",
+			"IN_PROGRESS_MESSAGE": "इस मीटिंग का ऑडियो, वीडियो और साझा की गई हर चीज़ रिकॉर्ड हो रही है।",
+			"TRY_AGAIN": "पुनः प्रयास करें",
+			"DISMISS": "खारिज करें",
+			"MODERATORS_ONLY": "केवल मॉडरेटर रिकॉर्डिंग शुरू या बंद कर सकते हैं।",
+			"AUTO_START_ONLY": "यह कक्ष स्वयं रिकॉर्डिंग शुरू करता है, इसलिए इसे मैनुअल रूप से शुरू नहीं किया जा सकता।"
 		}
 	},
 	"ERRORS": {
 		"SESSION": "मीटिंग से जुड़ने में त्रुटि हुई",
+		"TOKEN_TITLE": "टोकन त्रुटि",
 		"MEETING_NOT_READY": "मीटिंग अभी तैयार नहीं है। पेज को फिर से लोड करें और दोबारा प्रयास करें।",
 		"MEETING_CONNECTION_FAILED": "मीटिंग से कनेक्ट नहीं हो सका। अपना कनेक्शन जांचें और दोबारा प्रयास करें।",
+		"MEETING_FULL": "इस मीटिंग में प्रतिभागियों की अधिकतम संख्या पूरी हो चुकी है",
 		"CONNECTION": "कनेक्शन खो गया",
 		"RECONNECT": "ओह! मीटिंग से फिर से कनेक्ट करने का प्रयास कर रहे हैं...",
 		"DISCONNECT": "आपको डिस्कनेक्ट कर दिया गया है",
@@ -199,13 +230,30 @@
 		"COUNT_HELPER": "चुनें कि ग्रिड में कितने दूरस्थ सदस्य दिखाए जाएं",
 		"COUNT_ARIA": "प्रदर्शित करने के लिए सदस्यों की संख्या"
 	},
+	"HIDDEN_PARTICIPANTS": {
+		"ONE_MORE": "और प्रतिभागी",
+		"MANY_MORE": "और प्रतिभागी",
+		"NAMES_AND_MORE": "{names} और {count} अन्य"
+	},
 	"PARTICIPANT_ITEM": {
-		"PROMOTE_TOOLTIP": "मॉडरेटर बनाएं",
-		"DOWNGRADE_TOOLTIP": "मूल अनुमतियों पर वापस लाएं",
-		"KICK_TOOLTIP": "सदस्य को निकालें",
+		"PROMOTE": "मॉडरेटर बनाएं",
+		"DOWNGRADE": "मूल अनुमतियों पर वापस लाएं",
+		"REMOVE": "मीटिंग से हटाएँ",
 		"BADGE_OWNER": "स्वामी",
 		"BADGE_ADMIN": "व्यवस्थापक",
 		"BADGE_MODERATOR": "मॉडरेटर"
+	},
+	"PARTICIPANTS_PANEL_ACTIONS": {
+		"TURN_OFF_FOR_EVERYONE": "सभी के लिए बंद करें",
+		"MUTE_ALL_TOOLTIP": "सभी का माइक्रोफ़ोन म्यूट करें",
+		"MUTE_ALL_NONE": "सभी माइक्रोफ़ोन पहले से बंद हैं",
+		"TURN_OFF_ALL_CAMERAS_TOOLTIP": "सभी का कैमरा बंद करें",
+		"TURN_OFF_ALL_CAMERAS_NONE": "सभी कैमरे पहले से बंद हैं",
+		"STOP_ALL_SCREEN_SHARES_TOOLTIP": "सभी स्क्रीन शेयर रोकें",
+		"STOP_ALL_SCREEN_SHARES_NONE": "कोई भी स्क्रीन साझा नहीं कर रहा"
+	},
+	"MODERATION": {
+		"MUTED_BY_MODERATOR": "एक मॉडरेटर ने आपका एक डिवाइस बंद कर दिया"
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "आपने मीटिंग छोड़ दी",
@@ -215,6 +263,7 @@
 		"ENDED_TITLE": "मीटिंग समाप्त हुई",
 		"ENDED_MESSAGE": "मीटिंग एक मॉडरेटर द्वारा समाप्त की गई",
 		"ENDED_BY_SELF_MESSAGE": "आपने सफलतापूर्वक मीटिंग समाप्त कर दी है",
+		"ENDED_BY_DURATION_LIMIT_MESSAGE": "यह मीटिंग अपनी अधिकतम अवधि तक पहुंचने के कारण स्वचालित रूप से समाप्त हो गई",
 		"DISCONNECTED_TITLE": "मीटिंग से डिस्कनेक्ट हुए",
 		"NETWORK_MESSAGE": "नेटवर्क कनेक्टिविटी समस्याओं के कारण कनेक्शन खो गया",
 		"SERVER_SHUTDOWN_MESSAGE": "सर्वर बंद होने के कारण कनेक्शन खो गया",

@@ -3,6 +3,8 @@ import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
+import { errorInvalidApiKey, errorUnauthorized } from '../../../../src/models/error.model.js';
+import { expectMeetError } from '../../../helpers/assertion-helpers.js';
 import { deleteAllUsers, getFullPath, loginRootAdmin, startTestServer } from '../../../helpers/request-helpers.js';
 
 const INFO_PATH = getFullPath('/info');
@@ -30,17 +32,17 @@ describe('System Info API Security Tests', () => {
 		it('should fail when using access token', async () => {
 			const { accessToken } = await loginRootAdmin();
 			const response = await request(app).get(INFO_PATH).set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken);
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 
 		it('should fail when request includes an invalid API key', async () => {
 			const response = await request(app).get(INFO_PATH).set(INTERNAL_CONFIG.API_KEY_HEADER, 'invalid-key');
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorInvalidApiKey());
 		});
 
 		it('should fail when request is not authenticated', async () => {
 			const response = await request(app).get(INFO_PATH);
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 	});
 });

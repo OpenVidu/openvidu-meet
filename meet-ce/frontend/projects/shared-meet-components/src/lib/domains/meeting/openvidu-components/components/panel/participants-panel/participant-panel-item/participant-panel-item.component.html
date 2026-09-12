@@ -1,116 +1,103 @@
-<mat-list>
-	<mat-list-item>
-		@if (_participant) {
-			<!-- Main participant container with improved structure -->
-			<div
-				class="participant-container"
-				[attr.data-participant-id]="_participant.sid"
-				[attr.data-participant-name]="participantDisplayName()"
-			>
-				<!-- Avatar section -->
-				<ov-participant-avatar
-					variant="panel"
-					[nickname]="_participant.name ?? ''"
-					[color]="_participant.colorProfile"
-					[isSpeaking]="showAudioDetection() && _participant.isSpeaking"
-					[hasEncryptionError]="_participant.hasEncryptionError"
-					[attr.aria-label]="'Avatar for ' + participantDisplayName()"
-				/>
+@if (_participant) {
+	<div
+		class="participant-container"
+		[attr.data-participant-id]="_participant.sid"
+		[attr.data-participant-name]="participantDisplayName()"
+	>
+		<div class="participant-avatar-slot">
+			<ov-participant-avatar
+				variant="panel"
+				[nickname]="_participant.name ?? ''"
+				[color]="_participant.colorProfile"
+				[isSpeaking]="showAudioDetection() && _participant.isSpeaking"
+				[hasEncryptionError]="_participant.hasEncryptionError"
+				[attr.aria-label]="'Avatar for ' + participantDisplayName()"
+			/>
 
-				<!-- Content section with name and status -->
-				<div class="participant-content">
-					<!-- Name row with better space management -->
-					<div class="participant-name-row">
-						<div class="participant-name">
-							<span class="participant-name-text">{{ participantDisplayName() }}</span>
-							@if (isLocalParticipant()) {
-								<span class="you-suffix" aria-label="({{ 'PANEL.PARTICIPANTS.YOU' | translate | lowercase }})"
-									>({{ 'PANEL.PARTICIPANTS.YOU' | translate | lowercase }})</span
-								>
-							}
-							<!-- Role badge inline with name -->
-							<div class="participant-badges">
-								<ng-container *ngTemplateOutlet="participantBadgeTemplate()" />
-							</div>
-						</div>
-					</div>
+			<ov-connection-quality-indicator variant="badge" [participant]="_participant!" />
 
-					<!-- Status indicators row — sits where the track-types description used to be. -->
-					@if (!_participant.hasEncryptionError && (isCameraOff() || isMicrophoneOff() || isScreenSharing())) {
-						<div class="participant-subtitle">
-							@if (isCameraOff()) {
-								<mat-icon
-									id="camera-off-indicator"
-									class="camera-off-indicator"
-									fontIcon="videocam_off"
-									[attr.aria-label]="('PANEL.PARTICIPANTS.CAM_OFF' | translate) + ' ' + participantDisplayName()"
-									[matTooltip]="'PANEL.PARTICIPANTS.CAM_OFF' | translate"
-								/>
-							}
-							@if (isMicrophoneOff()) {
-								<mat-icon
-									id="mic-off-indicator"
-									class="mic-off-indicator"
-									fontIcon="mic_off"
-									[attr.aria-label]="('PANEL.PARTICIPANTS.MIC_OFF' | translate) + ' ' + participantDisplayName()"
-									[matTooltip]="'PANEL.PARTICIPANTS.MIC_OFF' | translate"
-								/>
-							}
-							@if (isScreenSharing()) {
-								<mat-icon
-									id="screen-share-indicator"
-									class="screen-share-indicator"
-									fontIcon="screen_share"
-									[attr.aria-label]="('PANEL.PARTICIPANTS.SHARING_SCREEN' | translate) + ' ' + participantDisplayName()"
-									[matTooltip]="'PANEL.PARTICIPANTS.SHARING_SCREEN' | translate"
-								/>
-							}
-						</div>
-					}
-				</div>
+			@if (isMutedLocally()) {
+				<span
+					class="avatar-badge avatar-badge-muted"
+					[id]="'muted-for-me-badge-' + _participant.sid"
+					[matTooltip]="'PANEL.PARTICIPANTS.MUTED_FOR_YOU' | translate"
+				>
+					<mat-icon class="material-symbols-outlined" fontIcon="volume_off" />
+				</span>
+			}
+		</div>
 
-				<!-- Action buttons section -->
-				@if (!_participant.hasEncryptionError) {
-					<div class="participant-action-buttons">
-						<ov-connection-quality-indicator [participant]="_participant!" [transparent]="true" />
+		<div class="participant-name">
+			<span class="participant-name-text">{{ participantDisplayName() }}</span>
+			@if (isLocalParticipant()) {
+				<span class="you-suffix">({{ 'PANEL.PARTICIPANTS.YOU' | translate | lowercase }})</span>
+			}
+			<div class="participant-badges">
+				<ng-container *ngTemplateOutlet="participantBadgeTemplate()" />
+			</div>
+		</div>
 
-						<!-- Mute/Unmute button for remote participants -->
-						@if (!isLocalParticipant() && showMuteButton()) {
+		@if (!_participant.hasEncryptionError) {
+			<div class="participant-media">
+				@for (control of mediaControls(); track control.kind) {
+					@if (control.face; as face) {
+						<span class="media-slot" [matTooltip]="face.labelKey | translate">
 							<button
 								mat-icon-button
-								id="mute-btn"
-								[class.warn-btn]="_participant.isMutedForcibly"
-								(click)="toggleMuteForcibly()"
-								[disabled]="!_participant"
-								[disableRipple]="true"
-								[attr.aria-label]="
-									_participant.isMutedForcibly
-										? ('PANEL.PARTICIPANTS.UNMUTE' | translate) + ' ' + participantDisplayName()
-										: ('PANEL.PARTICIPANTS.MUTE' | translate) + ' ' + participantDisplayName()
-								"
-								[matTooltip]="
-									_participant.isMutedForcibly
-										? ('PANEL.PARTICIPANTS.UNMUTE' | translate)
-										: ('PANEL.PARTICIPANTS.MUTE' | translate)
-								"
+								class="media-btn"
+								[id]="control.id"
+								[attr.data-kind]="control.kind"
+								[attr.data-state]="face.state"
+								[disabled]="!face.actionable"
+								[attr.aria-label]="(face.labelKey | translate) + ': ' + participantDisplayName()"
+								(click)="requestMediaMute(control.kind)"
 							>
-								@if (!_participant.isMutedForcibly) {
-									<mat-icon>volume_up</mat-icon>
-								} @else {
-									<mat-icon>volume_off</mat-icon>
-								}
+								<mat-icon class="material-symbols-outlined" [fontIcon]="face.icon" />
 							</button>
-						}
-
-						<!-- External item elements with improved structure -->
-						@if (hasExternalElements()) {
-							<div class="external-elements">
-								<ng-container *ngTemplateOutlet="participantPanelItemElementsTemplate()" />
-							</div>
-						}
-					</div>
+						</span>
+					}
 				}
 			</div>
+
+			@if (hasMenu()) {
+				<button
+					mat-icon-button
+					class="participant-menu-btn"
+					[id]="'participant-menu-btn-' + _participant.sid"
+					[matMenuTriggerFor]="participantMenu"
+					[matTooltip]="'PANEL.PARTICIPANTS.MORE_ACTIONS' | translate"
+					[attr.aria-label]="('PANEL.PARTICIPANTS.MORE_ACTIONS' | translate) + ': ' + participantDisplayName()"
+				>
+					<mat-icon class="material-symbols-outlined" fontIcon="more_vert" />
+				</button>
+
+				<mat-menu #participantMenu="matMenu" class="participant-menu" xPosition="before">
+					@if (canMuteLocally()) {
+						<button
+							mat-menu-item
+							[id]="'mute-for-me-btn-' + _participant.sid"
+							(click)="toggleMuteForcibly()"
+						>
+							<mat-icon
+								class="material-symbols-outlined"
+								[fontIcon]="isMutedLocally() ? 'volume_up' : 'volume_off'"
+							/>
+							<span>{{
+								(isMutedLocally()
+									? 'PANEL.PARTICIPANTS.UNMUTE_FOR_ME'
+									: 'PANEL.PARTICIPANTS.MUTE_FOR_ME'
+								) | translate
+							}}</span>
+						</button>
+					}
+					@if (canMuteLocally() && hasExternalElements()) {
+						<mat-divider />
+					}
+					<ng-container *ngTemplateOutlet="participantPanelItemElementsTemplate()" />
+				</mat-menu>
+			} @else {
+				<div class="participant-menu-slot"></div>
+			}
 		}
-	</mat-list-item>
-</mat-list>
+	</div>
+}

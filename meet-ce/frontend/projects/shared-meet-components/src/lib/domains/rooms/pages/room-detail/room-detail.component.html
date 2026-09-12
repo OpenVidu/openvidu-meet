@@ -127,7 +127,17 @@
 						<!-- Room ID -->
 						<div class="info-item">
 							<p class="info-label">{{ 'ROOMS.DETAIL.INFO_ROOM_ID' | translate }}</p>
-							<p class="info-value monospace">{{ roomId() }}</p>
+							<div class="info-value-wrap">
+								<p class="info-value monospace">{{ roomId() }}</p>
+								<button
+									mat-icon-button
+									class="copy-btn"
+									(click)="copyRoomId()"
+									[matTooltip]="'ROOMS.COMMON.COPY_ROOM_ID' | translate"
+								>
+									<mat-icon>content_copy</mat-icon>
+								</button>
+							</div>
 						</div>
 
 						<!-- Owner -->

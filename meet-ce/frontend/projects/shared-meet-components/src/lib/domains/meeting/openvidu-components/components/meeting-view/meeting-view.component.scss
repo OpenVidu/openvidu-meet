@@ -1,3 +1,5 @@
+@use 'status-chip' as chip;
+
 /* ── Phase containers ─────────────────────────────────────────────────────── */
 /* #meeting-view-container hosts every phase; #meeting-stage is the live one. */
 #meeting-view-container,
@@ -5,7 +7,98 @@
 	height: 100%;
 }
 #meeting-stage {
+	--ov-status-rail-height: 44px;
+
+	// Breathing room on either side of the video grid. The layout engine sizes itself from the
+	// container's box and ignores its padding, so this has to narrow the box, not pad it.
+	--ov-layout-side-gap: 0.5%;
+
+	position: relative;
 	background-color: var(--ov-background-color);
+}
+
+/*
+ * Where the meeting hangs its notifications: under the rail without taking a row from it, so the
+ * layout keeps its height, and transparent to clicks so the empty space does not shield the stage.
+ */
+.notice-layer {
+	position: absolute;
+	z-index: 2;
+	top: var(--ov-status-rail-height);
+	left: 16px;
+	width: 360px;
+	max-width: calc(100% - 32px);
+	pointer-events: none;
+}
+
+.status-rail {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	height: var(--ov-status-rail-height);
+	padding: 0 16px;
+}
+
+.status-rail-end {
+	display: flex;
+	align-items: center;
+	margin-left: auto;
+	min-width: 0;
+}
+
+.status-chip {
+	@include chip.status-chip;
+}
+
+.recording-chip {
+	&.clickable {
+		@include chip.status-chip-interactive;
+	}
+
+	.recording-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background-color: var(--ov-recording-color, var(--ov-error-color));
+		flex-shrink: 0;
+		animation: ov-recording-pulse 1.2s ease-in-out infinite;
+	}
+}
+
+@keyframes ov-recording-pulse {
+	50% {
+		opacity: 0.25;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.recording-chip .recording-dot {
+		animation: none;
+	}
+}
+
+.e2ee-chip .status-chip-icon {
+	color: var(--ov-success-color);
+}
+
+// Calm while there is time to act: only the icon carries the warn colour.
+.ending-soon-chip .status-chip-icon {
+	color: var(--ov-warn-color);
+}
+
+// Last minute: the whole chip goes warn.
+.ending-soon-chip.urgent {
+	background-color: var(--ov-warn-color);
+	border-color: var(--ov-warn-color);
+
+	.status-chip-icon,
+	.status-chip-value {
+		color: var(--ov-text-on-warn-color);
+	}
+
+	.status-chip-label {
+		color: color-mix(in srgb, var(--ov-text-on-warn-color) 72%, transparent);
+	}
 }
 
 #pre-join-container {
@@ -90,6 +183,12 @@
 	overflow: hidden;
 }
 
+/* The status rail is a real row, so the layout gives up its height instead of being covered. */
+#meeting-stage:has(.status-rail) .sidenav-container {
+	height: calc(100% - 70px - var(--ov-status-rail-height));
+	min-height: calc(100% - 70px - var(--ov-status-rail-height));
+}
+
 .sidenav-menu {
 	display: flex;
 	align-items: center;
@@ -119,7 +218,8 @@
 
 #layout-container {
 	height: inherit;
-	width: inherit;
+	width: auto;
+	margin: 0 var(--ov-layout-side-gap);
 }
 
 .mat-drawer-container {
@@ -134,7 +234,16 @@
 
 @media only screen and (max-width: 790px) {
 	#meeting-stage {
+		--ov-status-rail-height: 37px;
+
 		width: 100%;
+	}
+
+	.notice-layer {
+		left: 8px;
+		right: 8px;
+		width: auto;
+		max-width: none;
 	}
 
 	.sidenav-container {

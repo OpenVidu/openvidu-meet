@@ -1,8 +1,16 @@
 type PlainObject = Record<string, unknown>;
 
-// Keys that could reach/replace an object's prototype through bracket assignment
-// (e.g. a JSON.parse'd payload with an own "__proto__" property).
-const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+/**
+ * Recursively makes every property of `T` (at every nesting level) optional — the type-level
+ * counterpart of {@link deepMerge}: a value of this type is exactly what `deepMerge` accepts as a
+ * partial update without forcing callers to re-specify sibling fields just to satisfy a nested
+ * interface's required properties.
+ */
+export type DeepPartial<T> = T extends Array<infer U>
+	? Array<DeepPartial<U>>
+	: T extends object
+		? { [K in keyof T]?: DeepPartial<T[K]> }
+		: T;
 
 export const isPlainObject = (value: unknown): value is PlainObject => {
 	if (value === null || typeof value !== 'object') return false;
@@ -26,7 +34,9 @@ export const deepMerge = <T>(target: T, source: unknown): T => {
 	const out = (isPlainObject(target) ? target : {}) as PlainObject;
 
 	for (const key of Object.keys(source)) {
-		if (UNSAFE_KEYS.has(key)) continue;
+		// Reject keys that could reach/replace an object's prototype through bracket assignment
+		// (e.g. a JSON.parse'd payload with an own "__proto__" property).
+		if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
 
 		const sourceValue = source[key];
 

@@ -20,6 +20,7 @@ import {
 	MEET_ROOM_FIELDS,
 	MEET_ROOM_SORT_FIELDS,
 	MeetRecordingAudioCodec,
+	MeetRecordingAutoStartMode,
 	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
 	MeetRecordingVideoCodec,
@@ -165,8 +166,43 @@ export const encodingValidator = z.any().superRefine((value: unknown, ctx) => {
 	}
 });
 
+/**
+ * Meeting limits (`maxParticipants`, `maxDurationMinutes`): `null` is the explicit "no limit"
+ * value, so it is stored as such. Config updates deep-merge with the stored config, which makes
+ * omitting a limit keep its current value and sending `null` lift it. The ceilings come from
+ * `INTERNAL_CONFIG`, where the reason each one exists is documented.
+ */
+const {
+	MEETING_MIN_PARTICIPANTS_LIMIT,
+	MEETING_MAX_PARTICIPANTS_LIMIT,
+	MEETING_MIN_DURATION_MINUTES_LIMIT,
+	MEETING_MAX_DURATION_MINUTES_LIMIT
+} = INTERNAL_CONFIG;
+
+const maxParticipantsSchema = z
+	.number('Must be a number')
+	.int('Must be an integer')
+	.min(MEETING_MIN_PARTICIPANTS_LIMIT, 'Must allow at least one participant')
+	.max(MEETING_MAX_PARTICIPANTS_LIMIT, `Must not exceed ${MEETING_MAX_PARTICIPANTS_LIMIT} participants`)
+	.nullable()
+	.optional();
+
+const maxDurationMinutesSchema = z
+	.number('Must be a number')
+	.int('Must be an integer')
+	.min(MEETING_MIN_DURATION_MINUTES_LIMIT, 'Must last at least one minute')
+	.max(MEETING_MAX_DURATION_MINUTES_LIMIT, `Must not exceed ${MEETING_MAX_DURATION_MINUTES_LIMIT} minutes`)
+	.nullable()
+	.optional();
+
+// Room-wide initial media state (initialAudioActive/initialVideoActive): plain booleans, since
+// unlike the limits above `false` is the explicit "off" value and an absent key already reads as
+// the default (`true`) — no `null` spelling is needed.
+const initialMediaActiveSchema = z.boolean('Must be a boolean').optional();
+
 const RecordingConfigSchema: z.ZodType<MeetRecordingConfig> = z.object({
 	enabled: z.boolean(),
+	autoStart: z.enum(MeetRecordingAutoStartMode).nullable().optional(),
 	layout: z.enum(MeetRecordingLayout).optional(),
 	encoding: encodingValidator.optional()
 });
@@ -221,6 +257,10 @@ export const AppearanceConfigSchema: z.ZodType<MeetAppearanceConfig> = z.object(
  */
 const UpdateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 	.object({
+		maxParticipants: maxParticipantsSchema,
+		maxDurationMinutes: maxDurationMinutesSchema,
+		initialAudioActive: initialMediaActiveSchema,
+		initialVideoActive: initialMediaActiveSchema,
 		recording: RecordingConfigSchema.optional(),
 		chat: ChatConfigSchema.optional(),
 		virtualBackground: VirtualBackgroundConfigSchema.optional(),
@@ -249,6 +289,10 @@ const UpdateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
  */
 const CreateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 	.object({
+		maxParticipants: maxParticipantsSchema,
+		maxDurationMinutes: maxDurationMinutesSchema,
+		initialAudioActive: initialMediaActiveSchema.default(true),
+		initialVideoActive: initialMediaActiveSchema.default(true),
 		recording: RecordingConfigSchema.optional().default(() => ({
 			enabled: true,
 			layout: MeetRecordingLayout.GRID,
@@ -382,7 +426,9 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		chat: { enabled: true },
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false },
-		captions: { enabled: true }
+		captions: { enabled: true },
+		initialAudioActive: true,
+		initialVideoActive: true
 	}),
 	roles: RoomRolesConfigSchema.optional(),
 	access: RoomAccessConfigSchema.optional().default({

@@ -62,16 +62,15 @@ export class LayoutCalculator {
 		} = opts;
 
 		const categorized = this.categorizeElements(elements);
-		const { big: bigOnes, normal: normalOnes, small: smallOnes, topBar: topBarOnes } = categorized;
+		const { big: bigOnes, normal: normalOnes, small: smallOnes } = categorized;
 
-		const areas: LayoutCalculationResult['areas'] = { big: null, normal: null, small: null, topBar: null };
+		const areas: LayoutCalculationResult['areas'] = { big: null, normal: null, small: null };
 		let bigBoxes: LayoutBox[] = [];
 		let normalBoxes: LayoutBox[] = [];
 		let smallBoxes: LayoutBox[] = [];
-		let topBarBoxes: LayoutBox[] = [];
 
 		const hasBig = bigOnes.length > 0;
-		const hasOthers = normalOnes.length + smallOnes.length + topBarOnes.length > 0;
+		const hasOthers = normalOnes.length + smallOnes.length > 0;
 
 		if (hasBig && hasOthers) {
 			const isTall = containerHeight / containerWidth > this.getVideoRatio(bigOnes[0]);
@@ -92,17 +91,27 @@ export class LayoutCalculator {
 				smallMaxHeight,
 				bigFirst,
 				bigOnes,
-				othersCount: normalOnes.length + smallOnes.length + topBarOnes.length
+				othersCount: normalOnes.length + smallOnes.length
 			});
 
 			const { bigWidth, bigHeight, offsetTop, offsetLeft, bigOffsetTop, bigOffsetLeft, showBigFirst } = placement;
 
 			if (showBigFirst) {
 				areas.big = { top: 0, left: 0, width: bigWidth, height: bigHeight };
-				areas.normal = { top: offsetTop, left: offsetLeft, width: containerWidth - offsetLeft, height: containerHeight - offsetTop };
+				areas.normal = {
+					top: offsetTop,
+					left: offsetLeft,
+					width: containerWidth - offsetLeft,
+					height: containerHeight - offsetTop
+				};
 			} else {
 				areas.big = { left: bigOffsetLeft, top: bigOffsetTop, width: bigWidth, height: bigHeight };
-				areas.normal = { top: 0, left: 0, width: containerWidth - offsetLeft, height: containerHeight - offsetTop };
+				areas.normal = {
+					top: 0,
+					left: 0,
+					width: containerWidth - offsetLeft,
+					height: containerHeight - offsetTop
+				};
 			}
 		} else if (hasBig) {
 			areas.big = { top: 0, left: 0, width: containerWidth, height: containerHeight };
@@ -131,7 +140,6 @@ export class LayoutCalculator {
 
 		if (areas.normal) {
 			const placed = this.placeNormalArea(areas.normal, {
-				topBarOnes,
 				smallOnes,
 				normalOnes,
 				containerWidth,
@@ -145,12 +153,11 @@ export class LayoutCalculator {
 				scaleLastRow,
 				alignItems: areas.big ? smallAlignItems : alignItems
 			});
-			topBarBoxes = placed.topBarBoxes;
 			smallBoxes = placed.smallBoxes;
 			normalBoxes = placed.normalBoxes;
 		}
 
-		const boxes = this.reconstructBoxesInOrder(categorized, bigBoxes, normalBoxes, smallBoxes, topBarBoxes);
+		const boxes = this.reconstructBoxesInOrder(categorized, bigBoxes, normalBoxes, smallBoxes);
 		return { boxes, areas };
 	}
 
@@ -163,7 +170,15 @@ export class LayoutCalculator {
 		maxWidth: number,
 		maxHeight: number
 	): BestDimensions {
-		const cacheKey = LayoutDimensionsCache.generateKey(minRatio, maxRatio, width, height, count, maxWidth, maxHeight);
+		const cacheKey = LayoutDimensionsCache.generateKey(
+			minRatio,
+			maxRatio,
+			width,
+			height,
+			count,
+			maxWidth,
+			maxHeight
+		);
 		const cached = this.dimensionsCache.get(cacheKey);
 
 		if (cached) {
@@ -256,7 +271,7 @@ export class LayoutCalculator {
 					count,
 					maxWidth,
 					maxHeight
-			  )
+				)
 			: this.getBestDimensions(minRatio, maxRatio, containerWidth, containerHeight, count, maxWidth, maxHeight);
 
 		// Bucket elements into rows of `dimensions.targetCols`.
@@ -351,7 +366,6 @@ export class LayoutCalculator {
 	private placeNormalArea(
 		area: LayoutArea,
 		opts: {
-			topBarOnes: ElementDimensions[];
 			smallOnes: ElementDimensions[];
 			normalOnes: ElementDimensions[];
 			containerWidth: number;
@@ -365,9 +379,8 @@ export class LayoutCalculator {
 			scaleLastRow: boolean;
 			alignItems: LayoutAlignment;
 		}
-	): { topBarBoxes: LayoutBox[]; smallBoxes: LayoutBox[]; normalBoxes: LayoutBox[] } {
+	): { smallBoxes: LayoutBox[]; normalBoxes: LayoutBox[] } {
 		const {
-			topBarOnes,
 			smallOnes,
 			normalOnes,
 			containerWidth,
@@ -384,22 +397,8 @@ export class LayoutCalculator {
 
 		let currentTop = area.top;
 		let remainingHeight = area.height;
-		let topBarBoxes: LayoutBox[] = [];
 		let smallBoxes: LayoutBox[] = [];
 		let normalBoxes: LayoutBox[] = [];
-
-		if (topBarOnes.length > 0) {
-			const topBarHeight = 50;
-			const topBarWidth = Math.floor(containerWidth / topBarOnes.length);
-			topBarBoxes = topBarOnes.map((_element, idx) => ({
-				left: area.left + idx * topBarWidth,
-				top: currentTop,
-				width: topBarWidth,
-				height: topBarHeight
-			}));
-			currentTop += topBarHeight;
-			remainingHeight -= topBarHeight;
-		}
 
 		if (smallOnes.length > 0) {
 			const tentativeCols =
@@ -439,7 +438,7 @@ export class LayoutCalculator {
 			);
 		}
 
-		return { topBarBoxes, smallBoxes, normalBoxes };
+		return { smallBoxes, normalBoxes };
 	}
 
 	/**
@@ -492,7 +491,15 @@ export class LayoutCalculator {
 			const ratio0 = bigOnes[0].height / bigOnes[0].width;
 			const bigDimensions = bigFixedRatio
 				? this.getBestDimensions(ratio0, ratio0, bigWidth, bigHeight, bigOnes.length, bigMaxWidth, bigMaxHeight)
-				: this.getBestDimensions(bigMinRatio, bigMaxRatio, bigWidth, bigHeight, bigOnes.length, bigMaxWidth, bigMaxHeight);
+				: this.getBestDimensions(
+						bigMinRatio,
+						bigMaxRatio,
+						bigWidth,
+						bigHeight,
+						bigOnes.length,
+						bigMaxWidth,
+						bigMaxHeight
+					);
 
 			if (isTall) {
 				bigHeight = Math.max(
@@ -508,7 +515,10 @@ export class LayoutCalculator {
 					smallMaxWidth,
 					smallMaxHeight
 				);
-				bigHeight = Math.max(bigHeight, containerHeight - smallDimensions.targetRows * smallDimensions.targetHeight);
+				bigHeight = Math.max(
+					bigHeight,
+					containerHeight - smallDimensions.targetRows * smallDimensions.targetHeight
+				);
 			} else {
 				bigWidth = Math.max(
 					containerWidth * minBigPercentage,
@@ -523,7 +533,10 @@ export class LayoutCalculator {
 					smallMaxWidth,
 					smallMaxHeight
 				);
-				bigWidth = Math.max(bigWidth, containerWidth - smallDimensions.targetCols * smallDimensions.targetWidth);
+				bigWidth = Math.max(
+					bigWidth,
+					containerWidth - smallDimensions.targetCols * smallDimensions.targetWidth
+				);
 			}
 		}
 
@@ -553,7 +566,6 @@ export class LayoutCalculator {
 		const big: ElementDimensions[] = [];
 		const normal: ElementDimensions[] = [];
 		const small: ElementDimensions[] = [];
-		const topBar: ElementDimensions[] = [];
 		const categories: ElementCategory[] = new Array(elements.length);
 
 		for (let i = 0; i < elements.length; i++) {
@@ -562,9 +574,6 @@ export class LayoutCalculator {
 			if (el.big) {
 				big.push(el);
 				categories[i] = 'big';
-			} else if (el.topBar) {
-				topBar.push(el);
-				categories[i] = 'topBar';
 			} else if (el.small) {
 				small.push(el);
 				categories[i] = 'small';
@@ -574,7 +583,7 @@ export class LayoutCalculator {
 			}
 		}
 
-		return { big, normal, small, topBar, categories };
+		return { big, normal, small, categories };
 	}
 
 	/**
@@ -584,14 +593,12 @@ export class LayoutCalculator {
 		categorized: CategorizedElements,
 		bigBoxes: LayoutBox[],
 		normalBoxes: LayoutBox[],
-		smallBoxes: LayoutBox[],
-		topBarBoxes: LayoutBox[]
+		smallBoxes: LayoutBox[]
 	): LayoutBox[] {
 		const sources: Record<ElementCategory, { boxes: LayoutBox[]; idx: number }> = {
 			big: { boxes: bigBoxes, idx: 0 },
 			normal: { boxes: normalBoxes, idx: 0 },
-			small: { boxes: smallBoxes, idx: 0 },
-			topBar: { boxes: topBarBoxes, idx: 0 }
+			small: { boxes: smallBoxes, idx: 0 }
 		};
 
 		const result: LayoutBox[] = new Array(categorized.categories.length);

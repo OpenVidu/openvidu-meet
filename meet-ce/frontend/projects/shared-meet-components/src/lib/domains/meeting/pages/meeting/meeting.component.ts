@@ -13,6 +13,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
+import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { SoundService } from '../../../../shared/services/sound.service';
@@ -36,7 +37,7 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 		MatProgressSpinnerModule,
 		MeetingLobbyComponent
 	],
-	providers: [MeetingLobbyService, MeetingEventHandlerService, SoundService]
+	providers: [MeetingLobbyService, MeetingEventHandlerService]
 })
 export class MeetingComponent implements OnInit, OnDestroy {
 	protected meetingContextService = inject(MeetingContextService);
@@ -47,6 +48,7 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	protected meetingThemeService = inject(MeetingThemeService);
 	protected navigationService = inject(NavigationService);
 	protected notificationService = inject(NotificationService);
+	protected dialogService = inject(DialogService);
 	protected soundService = inject(SoundService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
 	private readonly translateService = inject(TranslateService);
@@ -56,7 +58,7 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	protected participantItemTemplate = computed(() => this.participantItem().template());
 
 	/** Controls whether to show lobby (true) or meeting view (false) */
-	showLobby = computed(() => !this.roomMemberToken());
+	showLobby = computed(() => !this.lobbyService.accessGranted());
 	lobbyState = signal<'loading' | 'ready' | 'error'>('loading');
 
 	/** Controls whether to show the videoconference component */
@@ -76,10 +78,13 @@ export class MeetingComponent implements OnInit, OnDestroy {
 
 	// Signals for meeting context data
 	roomName = this.lobbyService.roomName;
-	roomMemberToken = this.lobbyService.roomMemberToken;
 	e2eeKey = this.lobbyService.e2eeKeyValue;
 	features = this.meetingContextService.meetingUI;
+	initialMediaState = this.meetingContextService.initialMediaState;
 	hasRecordings = this.meetingContextService.hasRecordings;
+
+	/** Handed to the meeting view, which calls it when the participant commits to joining. */
+	protected readonly generateJoinToken = () => this.lobbyService.generateJoinToken();
 
 	constructor() {
 		// Change theme variables when custom theme is enabled.
@@ -117,7 +122,7 @@ export class MeetingComponent implements OnInit, OnDestroy {
 		} catch (error) {
 			console.error('Error initializing lobby state:', error);
 			this.lobbyState.set('error');
-			this.notificationService.showDialog({
+			this.dialogService.showDialog({
 				title: this.translateService.translate('MEETING_PAGE.INIT_ERROR_TITLE'),
 				message: this.translateService.translate('MEETING_PAGE.INIT_ERROR_MESSAGE'),
 				showCancelButton: false,

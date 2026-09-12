@@ -124,92 +124,157 @@
 				</mat-card-header>
 
 				<mat-card-content class="ov-mt-sm">
-					<form [formGroup]="webhookForm" class="webhook-form">
-						<!-- Enable/Disable Toggle -->
-						<h4 class="webhook-section-title">{{ 'EMBEDDED.WEBHOOK_NOTIFICATIONS' | translate }}</h4>
-						<div class="webhook-toggle ov-mt-xs">
-							<span>{{ 'EMBEDDED.ENABLE_WEBHOOKS' | translate }}</span>
-							<mat-slide-toggle
-								formControlName="isEnabled"
-								[matTooltip]="!canEnableWebhooks ? ('EMBEDDED.ENABLE_WEBHOOKS_TOOLTIP' | translate) : ''"
-								[matTooltipDisabled]="canEnableWebhooks"
-							/>
-						</div>
-
-						<!-- Webhook URL -->
-						<h4 class="webhook-section-title">{{ 'EMBEDDED.WEBHOOK_URL' | translate }}</h4>
-						<p class="webhook-description ov-mt-xs">{{ 'EMBEDDED.WEBHOOK_URL_DESC' | translate }}</p>
-						<mat-form-field appearance="outline" class="full-width">
-							<mat-label>{{ 'EMBEDDED.WEBHOOK_URL' | translate }}</mat-label>
-							<input matInput formControlName="url" placeholder="https://your-server.com/webhook" />
-							<mat-icon matSuffix>link</mat-icon>
-							@if (webhookForm.get('url')?.hasError('required')) {
-								<mat-error>{{ 'EMBEDDED.WEBHOOK_URL_REQUIRED' | translate }}</mat-error>
-							}
-							@if (webhookForm.get('url')?.hasError('pattern')) {
-								<mat-error>{{ 'EMBEDDED.WEBHOOK_URL_INVALID' | translate }}</mat-error>
-							}
-						</mat-form-field>
-
-						<!-- Event Configuration -->
-						<!-- <div class="events-section">
-						<h4>Event Types</h4>
-						<p class="events-description">Choose which events should trigger webhook notifications</p>
-
-						<div class="events-grid">
-							<div class="event-group">
-								<h5>Room Events</h5>
-								<mat-slide-toggle formControlName="roomCreated" color="primary">
-									<span class="event-label"> Room Created </span>
-								</mat-slide-toggle>
-								<mat-slide-toggle formControlName="roomDeleted" color="primary">
-									<span class="event-label"> Room Deleted </span>
-								</mat-slide-toggle>
-							</div>
-
-							<div class="event-group">
-								<h5>Participant Events</h5>
-								<mat-slide-toggle formControlName="participantJoined" color="primary">
-									<span class="event-label"> Participant Joined </span>
-								</mat-slide-toggle>
-								<mat-slide-toggle formControlName="participantLeft" color="primary">
-									<span class="event-label"> Participant Left </span>
-								</mat-slide-toggle>
-							</div>
-
-							<div class="event-group">
-								<h5>Recording Events</h5>
-								<mat-slide-toggle formControlName="recordingStarted" color="primary">
-									<span class="event-label"> Recording Started </span>
-								</mat-slide-toggle>
-								<mat-slide-toggle formControlName="recordingFinished" color="primary">
-									<span class="event-label"> Recording Finished </span>
-								</mat-slide-toggle>
+					@if (!apiKeyData()) {
+						<div class="webhook-warning">
+							<div class="warning-card">
+								<mat-icon class="warning-icon">warning</mat-icon>
+								<div class="warning-content">
+									<p class="warning-title">{{ 'EMBEDDED.WEBHOOKS_NO_API_KEY_TITLE' | translate }}</p>
+									<p class="warning-text">{{ 'EMBEDDED.WEBHOOKS_NO_API_KEY_WARNING' | translate }}</p>
+								</div>
 							</div>
 						</div>
-					</div> -->
-					</form>
+					}
+
+					@if (webhooks().length === 0) {
+						<div class="no-webhooks">
+							<mat-icon class="no-webhooks-icon">webhook</mat-icon>
+							<h3>{{ 'EMBEDDED.NO_WEBHOOKS_TITLE' | translate }}</h3>
+							<p>{{ 'EMBEDDED.NO_WEBHOOKS_DESC' | translate }}</p>
+							<button
+								mat-button
+								class="primary-button"
+								(click)="openWebhookEditor()"
+								[disabled]="!canManageWebhooks"
+								[matTooltip]="'EMBEDDED.ENABLE_WEBHOOKS_TOOLTIP' | translate"
+								[matTooltipDisabled]="canManageWebhooks"
+							>
+								<mat-icon>add</mat-icon>
+								{{ 'EMBEDDED.ADD_WEBHOOK' | translate }}
+							</button>
+						</div>
+					} @else {
+						<div class="webhook-toolbar">
+							<span class="webhook-count">
+								{{
+									'EMBEDDED.WEBHOOKS_COUNT'
+										| translate: { active: activeWebhookCount, total: webhooks().length }
+								}}
+							</span>
+							<button
+								mat-button
+								class="primary-button"
+								(click)="openWebhookEditor()"
+								[disabled]="!canManageWebhooks"
+								[matTooltip]="'EMBEDDED.ENABLE_WEBHOOKS_TOOLTIP' | translate"
+								[matTooltipDisabled]="canManageWebhooks"
+							>
+								<mat-icon>add</mat-icon>
+								{{ 'EMBEDDED.ADD_WEBHOOK' | translate }}
+							</button>
+						</div>
+
+						<div class="webhook-list">
+							<div class="webhook-list-header">
+								<span class="col-status">{{ 'EMBEDDED.WEBHOOK_COLUMN_STATUS' | translate }}</span>
+								<span class="col-endpoint">{{ 'EMBEDDED.WEBHOOK_COLUMN_ENDPOINT' | translate }}</span>
+								<span class="col-events">{{ 'EMBEDDED.WEBHOOK_COLUMN_EVENTS' | translate }}</span>
+								<span class="col-room">{{ 'EMBEDDED.WEBHOOK_COLUMN_ROOM' | translate }}</span>
+								<span class="col-actions">{{ 'EMBEDDED.WEBHOOK_COLUMN_ACTIONS' | translate }}</span>
+							</div>
+
+							@for (webhook of webhooks(); track webhook.webhookId) {
+								<div class="webhook-item">
+									<div class="webhook-row">
+										<div class="col-status">
+											<mat-slide-toggle
+												[checked]="webhook.enabled"
+												(change)="toggleWebhookEnabled(webhook, $event.checked)"
+												[matTooltip]="
+													(webhook.enabled
+														? 'EMBEDDED.WEBHOOK_ACTIVE'
+														: 'EMBEDDED.WEBHOOK_PAUSED'
+													) | translate
+												"
+												[aria-label]="
+													(webhook.enabled
+														? 'EMBEDDED.WEBHOOK_ACTIVE'
+														: 'EMBEDDED.WEBHOOK_PAUSED'
+													) | translate
+												"
+											/>
+										</div>
+
+										<div class="col-endpoint">
+											<span class="webhook-url" [matTooltip]="webhook.url">{{
+												webhook.url
+											}}</span>
+											<button
+												mat-icon-button
+												class="copy-url-button"
+												(click)="copyWebhookUrl(webhook)"
+												[matTooltip]="'EMBEDDED.WEBHOOK_COPY_URL' | translate"
+											>
+												<mat-icon>content_copy</mat-icon>
+											</button>
+										</div>
+
+										<div class="col-events">
+											@if (webhook.events?.length) {
+												@for (event of webhook.events; track event) {
+													<span class="webhook-chip">{{ event }}</span>
+												}
+											} @else {
+												<span class="webhook-chip all-events">
+													{{ 'EMBEDDED.WEBHOOK_ALL_EVENTS' | translate }}
+												</span>
+											}
+										</div>
+
+										<div class="col-room">
+											@if (webhook.roomId) {
+												<span class="webhook-chip room-scope" [matTooltip]="webhook.roomId">
+													<mat-icon class="chip-icon">meeting_room</mat-icon>
+													{{ webhook.roomId }}
+												</span>
+											} @else {
+												<span class="webhook-all-rooms">{{
+													'EMBEDDED.WEBHOOK_ALL_ROOMS' | translate
+												}}</span>
+											}
+										</div>
+
+										<div class="col-actions">
+											<button
+												mat-icon-button
+												(click)="openWebhookEditor(webhook)"
+												[matTooltip]="'EMBEDDED.EDIT_WEBHOOK' | translate"
+											>
+												<mat-icon>edit</mat-icon>
+											</button>
+											<button
+												mat-icon-button
+												class="delete-webhook-button"
+												(click)="deleteWebhook(webhook)"
+												[matTooltip]="'EMBEDDED.DELETE_WEBHOOK' | translate"
+											>
+												<mat-icon>delete</mat-icon>
+											</button>
+											<button
+												mat-stroked-button
+												class="test-button"
+												(click)="testWebhook(webhook)"
+											>
+												<mat-icon>send</mat-icon>
+												{{ 'EMBEDDED.WEBHOOK_TEST' | translate }}
+											</button>
+										</div>
+									</div>
+								</div>
+							}
+						</div>
+					}
 				</mat-card-content>
-
-				<mat-card-actions>
-					<button
-						mat-button
-						(click)="saveWebhookConfig()"
-						[disabled]="webhookForm.invalid || !hasWebhookChanges()"
-						class="primary-button"
-					>
-						<mat-icon>save</mat-icon>
-						{{ 'EMBEDDED.SAVE_CONFIG' | translate }}
-					</button>
-					<button
-						mat-stroked-button
-						(click)="testWebhook()"
-						[disabled]="webhookForm.get('url')?.disabled || webhookForm.get('url')?.invalid"
-					>
-						<mat-icon>send</mat-icon>
-						{{ 'EMBEDDED.TEST_WEBHOOK' | translate }}
-					</button>
-				</mat-card-actions>
 			</mat-card>
 		</div>
 	}

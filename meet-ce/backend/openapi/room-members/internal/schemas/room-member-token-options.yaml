@@ -23,3 +23,21 @@ properties:
             The participant display name to use when joining the meeting.
             Required for anonymous guests when `joinMeeting` is true.
         example: 'Alice'
+    participantExternalId:
+        type: string
+        maxLength: 64
+        pattern: '^[A-Za-z0-9_-]+$'
+        description: >
+            Application-defined identifier for the participant when joining the meeting, so the
+            embedding application can correlate the participant with one of its own users.
+            Stored in the token metadata as `externalId`; never interpreted by OpenVidu Meet.
+        example: 'user-42'
+    participantMetadata:
+        type: string
+        maxLength: 2048
+        description: >
+            Opaque application-defined payload attached to the participant when joining the meeting
+            (JSON is recommended). Up to 2048 bytes measured as UTF-8 (not 2048 characters — a
+            multibyte string of exactly 2048 characters can be rejected as too large). Stored in the
+            token metadata as `metadata`; never interpreted by OpenVidu Meet.
+        example: '{"department": "cardiology"}'

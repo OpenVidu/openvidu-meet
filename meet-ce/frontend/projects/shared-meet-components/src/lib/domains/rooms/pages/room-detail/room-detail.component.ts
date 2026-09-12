@@ -26,10 +26,11 @@ import { BreadcrumbComponent, BreadcrumbItem } from '../../../../shared/componen
 import { ScrollPersistDirective } from '../../../../shared/directives/scroll-persist.directive';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
-import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
+import { bulkRemoveMembersDialogPreset, removeMemberDialogPreset } from '../../utils/dialog-presets';
 import { EntityListSnapshot, EntityListState } from '../../../../shared/models/entity-list.model';
 import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
+import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { parseBulkDeleteError } from '../../../../shared/utils/bulk-delete.utils';
 import { decodeToken } from '../../../../shared/utils/token.utils';
@@ -94,7 +95,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 	private readonly recordingService = inject(RecordingService);
 	private readonly recordingActions = inject(RecordingActionsService);
 	private readonly notificationService = inject(NotificationService);
-	private readonly dialogPresetsService = inject(DialogPresetsService);
+	private readonly dialogService = inject(DialogService);
 	private readonly translateService = inject(TranslateService);
 	protected readonly navigationService = inject(NavigationService);
 	private readonly clipboard = inject(Clipboard);
@@ -471,9 +472,14 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		this.notificationService.showSnackbar('Member access link copied to clipboard');
 	}
 
+	copyRoomId() {
+		this.clipboard.copy(this.roomId());
+		this.notificationService.showSnackbar(this.translateService.translate('ROOMS.COMMON.ROOM_ID_COPIED'));
+	}
+
 	private deleteMember(member: MeetRoomMember) {
-		this.notificationService.showDialog({
-			...this.dialogPresetsService.getRemoveMemberDialogPreset(member.name, this.shouldShowMeetingKickWarning()),
+		this.dialogService.showDialog({
+			...removeMemberDialogPreset(this.translateService, member.name, this.shouldShowMeetingKickWarning()),
 			confirmCallback: async () => {
 				try {
 					await this.roomMemberService.deleteRoomMember(this.roomId(), member.memberId);
@@ -530,8 +536,8 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		};
 
 		const count = members.length;
-		this.notificationService.showDialog({
-			...this.dialogPresetsService.getBulkRemoveMembersDialogPreset(count, this.shouldShowMeetingKickWarning()),
+		this.dialogService.showDialog({
+			...bulkRemoveMembersDialogPreset(this.translateService, count, this.shouldShowMeetingKickWarning()),
 			confirmCallback: bulkDeleteCallback
 		});
 	}

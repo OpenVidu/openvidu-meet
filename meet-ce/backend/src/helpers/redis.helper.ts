@@ -14,6 +14,14 @@ export class MeetLock {
 		return `${RedisLockPrefix.BASE}${RedisLockName.RECORDING_ACTIVE}_${roomId}`;
 	}
 
+	static getRecordingStopLock(roomId: string): string {
+		if (!roomId) {
+			throw new Error('roomId must be a non-empty string');
+		}
+
+		return `${RedisLockPrefix.BASE}${RedisLockName.RECORDING_STOP}_${roomId}`;
+	}
+
 	static getRegistryLock(lockName: string): string {
 		if (!lockName) {
 			throw new Error('lockName must be a non-empty string');
@@ -30,6 +38,14 @@ export class MeetLock {
 		return `${RedisLockPrefix.BASE}${RedisLockName.SCHEDULED_TASK}_${taskName}`;
 	}
 
+	static getDurationLimitEndLock(roomId: string): string {
+		if (!roomId) {
+			throw new Error('roomId must be a non-empty string');
+		}
+
+		return `${RedisLockPrefix.BASE}${RedisLockName.MEETING_DURATION_LIMIT_END}_${roomId}`;
+	}
+
 	static getStorageInitializationLock(): string {
 		return `${RedisLockPrefix.BASE}${RedisLockName.STORAGE_INITIALIZATION}`;
 	}
@@ -44,6 +60,10 @@ export class MeetLock {
 		}
 
 		return `${RedisLockPrefix.BASE}${RedisLockName.WEBHOOK}_${webhookEvent.event}_${webhookEvent.id}`;
+	}
+
+	static getWebhookRegistrationLock(): string {
+		return `${RedisLockPrefix.BASE}${RedisLockName.WEBHOOK_REGISTRATION}`;
 	}
 
 	static getAiAssistantLock(roomId: string, capabilityName: string): string {

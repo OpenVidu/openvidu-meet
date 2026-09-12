@@ -10,6 +10,7 @@ import { meetRoomCollectionName } from '../models/mongoose-schemas/room.schema.j
 const roomMigrationV1ToV2Name = generateSchemaMigrationName(meetRoomCollectionName, 1, 2);
 const roomMigrationV2ToV3Name = generateSchemaMigrationName(meetRoomCollectionName, 2, 3);
 const roomMigrationV3ToV4Name = generateSchemaMigrationName(meetRoomCollectionName, 3, 4);
+const roomMigrationV4ToV5Name = generateSchemaMigrationName(meetRoomCollectionName, 4, 5);
 
 const roomMigrationV1ToV2Transform: SchemaTransform<MeetRoomDocument> = (room) => {
 	room.config.captions = { enabled: true };
@@ -100,17 +101,26 @@ const roomMigrationV2ToV3Transform: SchemaTransform<MeetRoomDocument> = (room) =
 	return room;
 };
 
-// v3→v4: rename the role permission keys from the deprecated `can*` spellings to the current
-// moduleAbility scheme, deriving the mapping from MEET_PERMISSION_ALIASES via normalizePermissions()
-// (which also splits canRetrieveRecordings into recordingList/recordingPlay/recordingDownload,
-// granting the whole group whatever the old flag granted). Without this rename the current-keyed Mongoose
-// schema would silently drop every stored permission on the next write (see B1 in the migration plan).
-const roomMigrationV3ToV4Transform: SchemaTransform<MeetRoomDocument> = (room) => {
+// Brings the stored role permissions to the current key set through normalizePermissions(), which does
+// both halves of the job. It renames the deprecated `can*` spellings to the current moduleAbility scheme,
+// deriving the mapping from MEET_PERMISSION_ALIASES (splitting canRetrieveRecordings into
+// recordingList/recordingPlay/recordingDownload, which each inherit whatever the old flag granted), and it
+// fills in the keys added after that rename from the permission each of them inherits
+// (MEET_UNALIASED_PERMISSION_KEYS). Both halves are mandatory because the Mongoose schema is keyed on the
+// current names and marks every one of them required: an unrenamed key is silently dropped on the next
+// write and a missing one fails validation (see B1 in the migration plan).
+//
+// It is idempotent over already-canonical documents, which is why every new permission adds a step
+// running it again instead of extending the previous one: a document already at the previous version
+// would otherwise never be completed with the new key.
+const normalizeRolePermissionsTransform: SchemaTransform<MeetRoomDocument> = (room) => {
 	for (const role of ['moderator', 'speaker'] as const) {
 		const roleConfig = room.roles?.[role];
 
 		if (roleConfig?.permissions) {
-			roleConfig.permissions = normalizePermissions(roleConfig.permissions) as MeetRoomMemberPermissions;
+			roleConfig.permissions = normalizePermissions(roleConfig.permissions, {
+				complete: true
+			}) as MeetRoomMemberPermissions;
 		}
 	}
 
@@ -124,5 +134,6 @@ const roomMigrationV3ToV4Transform: SchemaTransform<MeetRoomDocument> = (room) =
 export const roomMigrations: SchemaMigrationMap<MeetRoomDocument> = new Map([
 	[roomMigrationV1ToV2Name, roomMigrationV1ToV2Transform],
 	[roomMigrationV2ToV3Name, roomMigrationV2ToV3Transform],
-	[roomMigrationV3ToV4Name, roomMigrationV3ToV4Transform]
+	[roomMigrationV3ToV4Name, normalizeRolePermissionsTransform],
+	[roomMigrationV4ToV5Name, normalizeRolePermissionsTransform]
 ]);

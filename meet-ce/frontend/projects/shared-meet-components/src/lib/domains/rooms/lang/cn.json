@@ -15,7 +15,9 @@
       "DELETE_ROOM": "删除房间",
       "SHARE_LINK": "分享链接",
       "MORE_ACTIONS": "更多操作",
-      "VIEW_USER_PROFILE": "查看用户资料"
+      "VIEW_USER_PROFILE": "查看用户资料",
+      "COPY_ROOM_ID": "复制房间 ID",
+      "ROOM_ID_COPIED": "房间 ID 已复制到剪贴板"
     },
     "LIST": {
       "LOADING_TITLE": "正在加载房间",
@@ -154,7 +156,7 @@
       "UPDATE_ROOM": "更新房间",
       "CREATE_ROOM": "创建房间",
       "STEP_ROOM_DETAILS": "房间详情",
-      "STEP_ROOM_FEATURES": "房间功能",
+      "STEP_ROOM_FEATURES": "会议功能",
       "STEP_ROOM_ACCESS": "房间访问",
       "STEP_RECORDING_SETTINGS": "录制设置",
       "STEP_RECORDING_TRIGGER": "录制触发",
@@ -225,11 +227,11 @@
         "MEMBERS_TO_ADD_SUFFIX": "）",
         "EDIT_MEMBER": "编辑成员",
         "REMOVE_MEMBER": "移除成员",
-        "FEATURE_DISABLED_PERMISSION": "在“房间功能”中启用相应功能以配置此权限。"
+        "FEATURE_DISABLED_PERMISSION": "在“会议功能”中启用相应功能以配置此权限。"
       },
       "FEATURES": {
-        "TITLE": "房间功能",
-        "DESCRIPTION": "为您的房间配置附加功能",
+        "TITLE": "会议功能",
+        "DESCRIPTION": "为您的会议配置附加功能",
         "SECURITY": "安全",
         "E2EE": "端到端加密",
         "E2EE_DESC": "为您的会议添加额外的安全保护。会议之外的任何人，即使是拥有服务器访问权限的人，也无法看到或听到对话内容。",
@@ -246,7 +248,31 @@
         "CHAT_DESC": "允许参与者在会议期间发送消息",
         "EXPERIENCE": "体验",
         "VIRTUAL_BACKGROUNDS": "虚拟背景",
-        "VIRTUAL_BACKGROUNDS_DESC": "为参与者启用虚拟背景和模糊效果"
+        "VIRTUAL_BACKGROUNDS_DESC": "为参与者启用虚拟背景和模糊效果",
+        "DEVICES": "设备",
+        "INITIAL_AUDIO": "入会时开启麦克风",
+        "INITIAL_AUDIO_DESC": "参与者入会时麦克风处于开启状态",
+        "INITIAL_AUDIO_NOTE": "（可以随时静音）",
+        "INITIAL_VIDEO": "入会时开启摄像头",
+        "INITIAL_VIDEO_DESC": "参与者入会时摄像头处于开启状态",
+        "INITIAL_VIDEO_NOTE": "（可以随时关闭）",
+        "LIMITS": "限制",
+        "MAX_DURATION": "会议最长时长",
+        "MAX_DURATION_DESC": "达到该时长后会议将自动结束。留空表示不限时长",
+        "MAX_DURATION_LABEL": "分钟",
+        "MAX_DURATION_PLACEHOLDER": "不限",
+        "MAX_DURATION_INVALID": "请输入整数分钟数",
+        "MAX_DURATION_TOO_LOW": "请至少输入 1 分钟",
+        "MAX_DURATION_TOO_HIGH_PREFIX": "请最多输入 ",
+        "MAX_DURATION_TOO_HIGH_SUFFIX": " 分钟",
+        "MAX_PARTICIPANTS": "参与者人数上限",
+        "MAX_PARTICIPANTS_DESC": "可加入会议的最大参与者数量。留空表示不限",
+        "MAX_PARTICIPANTS_LABEL": "人数",
+        "MAX_PARTICIPANTS_PLACEHOLDER": "不限",
+        "MAX_PARTICIPANTS_INVALID": "请输入整数人数",
+        "MAX_PARTICIPANTS_TOO_LOW": "请至少输入 1 人",
+        "MAX_PARTICIPANTS_TOO_HIGH_PREFIX": "请最多输入 ",
+        "MAX_PARTICIPANTS_TOO_HIGH_SUFFIX": " 人"
       },
       "RECORDING_CONFIG": {
         "TITLE": "录制配置",
@@ -277,10 +303,17 @@
         "DESCRIPTION": "选择何时自动开始录制",
         "MANUAL_TITLE": "手动录制",
         "MANUAL_DESC": "需要时手动开始录制",
-        "AUTO1_TITLE": "1 名参与者自动录制",
-        "AUTO1_DESC": "当 1 名参与者加入时自动开始录制",
-        "AUTO2_TITLE": "2 名参与者自动录制",
-        "AUTO2_DESC": "当 2 名参与者加入时自动开始录制"
+        "AUTO_TITLE": "自动录制",
+        "AUTO_DESC": "会议开始后自动开始录制",
+        "AUTOSTART_MODE_LABEL": "录制应在何时开始？",
+        "AUTOSTART_MODE_FIRST_TITLE": "第一位参与者加入时",
+        "AUTOSTART_MODE_FIRST_DESC": "会议开始后立即开始录制",
+        "AUTOSTART_MODE_SECOND_TITLE": "第二位参与者加入时",
+        "AUTOSTART_MODE_SECOND_DESC": "等待另一人加入后才开始录制",
+        "AUTOSTART_MODE_MODERATOR_TITLE": "主持人加入时",
+        "AUTOSTART_MODE_MODERATOR_DESC": "主持人加入或被提升为主持人后立即开始录制",
+        "AUTOSTART_UNREACHABLE_TITLE": "录制触发条件无法达成",
+        "AUTOSTART_UNREACHABLE_MESSAGE": "此触发条件至少需要 ${required} 名参与者才能触发，但房间的人数上限设置为 ${limit}。"
       }
     },
     "ERRORS": {
@@ -350,6 +383,22 @@
         "ACTIVE": "在进行中会议期间无法编辑房间",
         "DEFAULT": "编辑房间设置"
       }
+    },
+    "DIALOGS": {
+      "DELETE_ROOM_TITLE": "删除房间",
+      "DELETE_ROOM_MESSAGE": "确定要删除房间 <b>{roomId}</b> 吗？",
+      "DELETE_ROOMS_TITLE": "删除房间",
+      "DELETE_ROOMS_MESSAGE": "确定要删除 <b>{count}</b> 个房间吗？",
+      "REMOVE_MEMBER_TITLE": "移除成员",
+      "REMOVE_MEMBER_MESSAGE": "确定要将 <b>{memberName}</b> 从此房间移除吗？",
+      "REMOVE_MEMBERS_TITLE": "移除成员",
+      "REMOVE_MEMBERS_MESSAGE_ONE": "确定要将 <b>{count} 位成员</b>从此房间移除吗？",
+      "REMOVE_MEMBERS_MESSAGE_MANY": "确定要将 <b>{count} 位成员</b>从此房间移除吗？",
+      "MEETING_WARNING_TITLE": "会议进行中提醒",
+      "REMOVE_MEMBER_WARNING": "如果该用户正在会议中，将被立即移出。",
+      "REMOVE_MEMBERS_WARNING": "正在会议中的成员将被立即移出。",
+      "DELETE": "删除",
+      "REMOVE": "移除"
     }
   }
 }

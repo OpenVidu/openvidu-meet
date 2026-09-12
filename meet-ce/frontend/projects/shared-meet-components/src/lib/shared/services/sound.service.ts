@@ -1,16 +1,17 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { AssetsService } from './assets.service';
 
 /**
  * Service responsible for managing sound effects within the application.
  */
-@Injectable()
+@Service()
 export class SoundService {
 	private readonly assets = inject(AssetsService);
 
 	private participantJoinedAudio?: HTMLAudioElement;
 	private roleUpgradedAudio?: HTMLAudioElement;
 	private roleDowngradedAudio?: HTMLAudioElement;
+	private meetingEndingSoonAudio?: HTMLAudioElement;
 
 	/**
 	 * Plays a sound to indicate that a participant has joined the meeting.
@@ -34,6 +35,14 @@ export class SoundService {
 	playParticipantRoleDowngradedSound(): void {
 		this.roleDowngradedAudio ??= this.createAudio(this.assets.roleDowngradedSound);
 		this.play(this.roleDowngradedAudio);
+	}
+
+	/**
+	 * Plays a sound to indicate that a duration-limited meeting is about to end.
+	 */
+	playMeetingEndingSoonSound(): void {
+		this.meetingEndingSoonAudio ??= this.createAudio(this.assets.meetingEndingSoonSound);
+		this.play(this.meetingEndingSoonAudio);
 	}
 
 	private createAudio(src: string): HTMLAudioElement {

@@ -57,60 +57,120 @@ export const ensureFixture = async (page: Page): Promise<void> => {
 			'position:fixed;top:-9999px;left:0;width:auto;height:auto;pointer-events:none;margin:0;padding:0;list-style:none;';
 		document.body.appendChild(log);
 
-		(['joined', 'left', 'closed', 'meetingJoined', 'meetingLeft', 'meetingClosed', 'error'] as const).forEach(
-			(name) => {
-				document.addEventListener(
-					name,
-					(ev) => {
-						// Only react to events the testapp re-dispatches on its event sink,
-						// not anything else that happens to share these names.
-						const target = ev.target as Element | null;
+		(
+			[
+				'joined',
+				'left',
+				'closed',
+				'meetingJoined',
+				'meetingLeft',
+				'meetingClosed',
+				'participantJoined',
+				'participantLeft',
+				'mediaAudioStatusChanged',
+				'mediaVideoStatusChanged',
+				'mediaScreenShareStatusChanged',
+				'error'
+			] as const
+		).forEach((name) => {
+			document.addEventListener(
+				name,
+				(ev) => {
+					// Only react to events the testapp re-dispatches on its event sink,
+					// not anything else that happens to share these names.
+					const target = ev.target as Element | null;
 
-						if (!target || target.getAttribute?.('data-testid') !== 'event-sink') return;
+					if (!target || target.getAttribute?.('data-testid') !== 'event-sink') return;
 
-						const li = document.createElement('li');
-						li.className = `event-${name}`;
+					const li = document.createElement('li');
+					li.className = `event-${name}`;
 
-						try {
-							li.textContent = JSON.stringify((ev as CustomEvent).detail ?? {});
-						} catch {
-							li.textContent = '';
-						}
+					try {
+						li.textContent = JSON.stringify((ev as CustomEvent).detail ?? {});
+					} catch {
+						li.textContent = '';
+					}
 
-						log.appendChild(li);
-					},
-					true // capture phase, in case anything stops propagation
-				);
-			}
-		);
+					log.appendChild(li);
+				},
+				true // capture phase, in case anything stops propagation
+			);
+		});
 
 		(window as any).__wcMarkersAttached = true;
 	});
 };
 
+/** Tab of the testapp's controls panel a control lives in. */
+export type ControlsPanel = 'setup' | 'commands';
+
 /**
- * Joins a room by mounting `<openvidu-meet>` directly with the role's
- * anonymous-access URL fetched from the REST API, then driving the WC's own
- * pre-join flow until the meeting is active.
- *
- * @param page - Playwright page.
- * @param roomId - Room ID to join (must already exist; create it with `createRoom`).
- * @param options.role - `'moderator'` or `'speaker'`. Defaults to `'speaker'`.
- * @param options.name - Participant display name (auto-generated when omitted).
+ * Opens a tab of the testapp's controls panel. Setup and Commands are tabs, so a
+ * control is only in the DOM while its tab is open — every helper below opens the
+ * one it needs first. The click is skipped when the tab is already selected.
  */
-export const openMeeting = async (
+export const showControlsPanel = async (page: Page, panel: ControlsPanel): Promise<void> => {
+	const tab = page.getByTestId(`tab-${panel}`);
+
+	if ((await tab.getAttribute('aria-selected')) === 'true') return;
+
+	await tab.click();
+	await expect(tab).toHaveAttribute('aria-selected', 'true');
+};
+
+/**
+ * Picks the embedding integration. The selector is a two-option button group, so
+ * the value is chosen by clicking its option rather than through `selectOption`.
+ */
+export const selectIntegration = async (page: Page, integration: Integration): Promise<void> => {
+	const option = page.getByTestId(`integration-${integration}`);
+
+	if ((await option.getAttribute('aria-pressed')) === 'true') return;
+
+	await option.click();
+	await expect(option).toHaveAttribute('aria-pressed', 'true');
+};
+
+type OpenMeetingOptions = {
+	integration?: Integration;
+	role?: 'moderator' | 'speaker';
+	name?: string;
+	externalId?: string;
+	metadata?: string;
+	/** Sets the `initial-audio-active` attribute/query param. Omitted by default (the room decides). */
+	initialAudioActive?: boolean;
+	/** Sets the `initial-video-active` attribute/query param. Omitted by default (the room decides). */
+	initialVideoActive?: boolean;
+};
+
+/**
+ * Mounts `<openvidu-meet>` with the role's anonymous-access URL fetched from the
+ * REST API and drives the lobby until the media-setup (prejoin) screen renders,
+ * WITHOUT clicking "Join" — the room is not connected yet, so imperative commands
+ * sent from this point on exercise the pre-connect path (`PrejoinTarget`, and the
+ * iframe bridge's `isConnected()` guard). Returns the integration-scoped `meet`
+ * locator factory so callers can keep driving the same page.
+ *
+ * `openMeeting` (below) is this same flow plus the "Join" click.
+ */
+export const openMeetingAtMediaSetup = async (
 	page: Page,
 	roomId: string,
-	options?: {
-		integration?: Integration;
-		role?: 'moderator' | 'speaker';
-		name?: string;
-	}
-): Promise<void> => {
-	const { integration = 'webcomponent', role = 'speaker', name } = options ?? {};
+	options?: OpenMeetingOptions
+): Promise<{ meet: (selector: string) => Locator; participantName: string }> => {
+	const {
+		integration = 'webcomponent',
+		role = 'speaker',
+		name,
+		externalId,
+		metadata,
+		initialAudioActive,
+		initialVideoActive
+	} = options ?? {};
 	const participantName = name ?? `pw-${Math.random().toString(36).substring(2, 9)}`;
 
 	await ensureFixture(page);
+	await showControlsPanel(page, 'setup');
 
 	const room = await getRoom(roomId);
 	const roomUrl = room.access?.anonymous?.[role]?.url;
@@ -122,9 +182,24 @@ export const openMeeting = async (
 	// Drive the Angular testapp's UI: pick the integration, fill the properties
 	// form and click "Apply config" to mount the chosen transport with the
 	// API-issued URL.
-	await page.getByTestId('select-integration').selectOption(integration);
+	await selectIntegration(page, integration);
 	await page.getByTestId('input-roomUrl').fill(roomUrl);
 	await page.getByTestId('input-participantName').fill(participantName);
+
+	if (externalId) {
+		await page.getByTestId('input-participantExternalId').fill(externalId);
+	}
+
+	if (metadata) {
+		await page.getByTestId('input-participantMetadata').fill(metadata);
+	}
+
+	// Tri-state selectors: the empty option omits the attribute, which is not the same request as
+	// setting it to `true` — only a value that is set outranks the room's own `config.initial*Active` default.
+	const toSelectValue = (value: boolean | undefined) => (value === undefined ? '' : String(value));
+	await page.getByTestId('select-initialAudioActive').selectOption(toSelectValue(initialAudioActive));
+	await page.getByTestId('select-initialVideoActive').selectOption(toSelectValue(initialVideoActive));
+
 	await page.getByTestId('btn-apply-config').click();
 
 	// Wait for the chosen transport to mount.
@@ -153,6 +228,27 @@ export const openMeeting = async (
 	}
 
 	await expect(meet('ov-meeting-media-setup')).toBeVisible({ timeout: 15_000 });
+
+	return { meet, participantName };
+};
+
+/**
+ * Joins a room by mounting `<openvidu-meet>` directly with the role's
+ * anonymous-access URL fetched from the REST API, then driving the WC's own
+ * pre-join flow until the meeting is active.
+ *
+ * @param page - Playwright page.
+ * @param roomId - Room ID to join (must already exist; create it with `createRoom`).
+ * @param options.role - `'moderator'` or `'speaker'`. Defaults to `'speaker'`.
+ * @param options.name - Participant display name (auto-generated when omitted).
+ * @param options.externalId - Value for the `participant-external-id` attribute (app↔Meet correlation key).
+ * @param options.metadata - Value for the `participant-metadata` attribute (opaque app payload).
+ * @param options.initialAudioActive - Sets the `initial-audio-active` attribute/query param.
+ * @param options.initialVideoActive - Sets the `initial-video-active` attribute/query param.
+ */
+export const openMeeting = async (page: Page, roomId: string, options?: OpenMeetingOptions): Promise<void> => {
+	const { meet } = await openMeetingAtMediaSetup(page, roomId, options);
+
 	await meet('#join-button').click();
 	// Gate on the live stage, not on the host component: `ov-meeting-view` exists from the first
 	// render (device setup, prejoin, …), so waiting for it would return before the room is
@@ -204,40 +300,116 @@ export const leaveMeeting = async (
 
 // ─── Imperative commands (driven through the testapp's buttons) ─────────────
 //
-// The testapp's "Imperative API" section wires each button to the matching
-// method on the WC reference, so clicking them exercises the same code path
-// a real host would use.
+// The testapp's Commands tab wires each button to the matching method on the WC
+// reference, so clicking them exercises the same code path a real host would use.
 // ────────────────────────────────────────────────────────────────────────────
 
 /** Clicks the testapp's `leaveRoom()` button. */
 export const leaveRoomCommand = async (page: Page): Promise<void> => {
+	await showControlsPanel(page, 'commands');
 	await page.getByTestId('btn-leave-room').click();
 };
 
 /** Clicks the testapp's `endMeeting()` button. */
 export const endMeetingCommand = async (page: Page): Promise<void> => {
+	await showControlsPanel(page, 'commands');
 	await page.getByTestId('btn-end-meeting').click();
+};
+
+/** Sets the participant identity every command addressing one participant reads from. */
+const fillParticipantIdentity = async (page: Page, participantIdentity: string): Promise<void> => {
+	await page.getByTestId('input-participant-identity').fill(participantIdentity);
 };
 
 /** Fills the participant identity and clicks the testapp's `kickParticipant()` button. */
 export const kickParticipantCommand = async (page: Page, participantIdentity: string): Promise<void> => {
-	await page.getByTestId('input-kick-identity').fill(participantIdentity);
+	await showControlsPanel(page, 'commands');
+	await fillParticipantIdentity(page, participantIdentity);
 	await page.getByTestId('btn-kick-participant').click();
+};
+
+/** A device a moderation mute turns off. */
+export type MuteMedia = 'audio' | 'video' | 'screenShare';
+
+const MUTE_SWITCH_TESTID: Record<MuteMedia, string> = {
+	audio: 'input-mute-audio',
+	video: 'input-mute-video',
+	screenShare: 'input-mute-screen-share'
+};
+
+/**
+ * Leaves exactly the given devices selected in the shared mute switches the two
+ * moderation-mute buttons below read from, so a single command can carry any combination.
+ */
+const selectMuteMedia = async (page: Page, media: MuteMedia | MuteMedia[]): Promise<void> => {
+	const selected = new Set(Array.isArray(media) ? media : [media]);
+
+	for (const device of Object.keys(MUTE_SWITCH_TESTID) as MuteMedia[]) {
+		await page.getByTestId(MUTE_SWITCH_TESTID[device]).setChecked(selected.has(device));
+	}
+};
+
+/** Fills the participant identity, picks the devices and clicks the testapp's `participantMute()` button. */
+export const participantMuteCommand = async (
+	page: Page,
+	participantIdentity: string,
+	media: MuteMedia | MuteMedia[]
+): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+	await fillParticipantIdentity(page, participantIdentity);
+	await selectMuteMedia(page, media);
+	await page.getByTestId('btn-participant-mute').click();
+};
+
+/** Picks the devices and clicks the testapp's `participantMuteAll()` button. */
+export const participantMuteAllCommand = async (page: Page, media: MuteMedia | MuteMedia[]): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+	await selectMuteMedia(page, media);
+	await page.getByTestId('btn-participant-mute-all').click();
+};
+
+/** Sets the shared `active` selector the three media-toggle buttons below read from. */
+const selectMediaActive = async (page: Page, active?: boolean): Promise<void> => {
+	await page.getByTestId('select-media-active').selectOption(active === undefined ? '' : String(active));
+};
+
+/** Clicks the testapp's `mediaToggleAudio()` button. Omitted `active` = toggle. */
+export const mediaToggleAudioCommand = async (page: Page, active?: boolean): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+	await selectMediaActive(page, active);
+	await page.getByTestId('btn-media-toggle-audio').click();
+};
+
+/** Clicks the testapp's `mediaToggleVideo()` button. Omitted `active` = toggle. */
+export const mediaToggleVideoCommand = async (page: Page, active?: boolean): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+	await selectMediaActive(page, active);
+	await page.getByTestId('btn-media-toggle-video').click();
+};
+
+/** Clicks the testapp's `mediaToggleScreenShare()` button. Omitted `active` = toggle. */
+export const mediaToggleScreenShareCommand = async (page: Page, active?: boolean): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+	await selectMediaActive(page, active);
+	await page.getByTestId('btn-media-toggle-screen-share').click();
 };
 
 /** Clicks the testapp's deprecated `leaveRoom()` button. Removed in 3.12.0. */
 export const leaveRoomLegacyCommand = async (page: Page): Promise<void> => {
+	await showControlsPanel(page, 'commands');
 	await page.getByTestId('btn-legacy-leave-room').click();
 };
 
 /** Clicks the testapp's deprecated `endMeeting()` button. Removed in 3.12.0. */
 export const endMeetingLegacyCommand = async (page: Page): Promise<void> => {
+	await showControlsPanel(page, 'commands');
 	await page.getByTestId('btn-legacy-end-meeting').click();
 };
 
 /** Fills the participant identity and clicks the testapp's deprecated `kickParticipant()` button. Removed in 3.12.0. */
 export const kickParticipantLegacyCommand = async (page: Page, participantIdentity: string): Promise<void> => {
-	await page.getByTestId('input-kick-identity').fill(participantIdentity);
+	await showControlsPanel(page, 'commands');
+	await page.getByTestId('input-participant-identity').fill(participantIdentity);
 	await page.getByTestId('btn-legacy-kick-participant').click();
 };
 
@@ -268,6 +440,22 @@ export const expectEvent = async (
 	const locator = eventLocator(page, eventName);
 	await expect(locator).toHaveCount(count, { timeout });
 	return locator;
+};
+
+/**
+ * Reads the participant identity out of the page's `joined` event marker — the value the moderation
+ * commands address a participant by, which is derived from the display name rather than equal to it.
+ */
+export const joinedParticipantIdentity = async (page: Page): Promise<string> => {
+	const joined = await expectEvent(page, EmbeddedEventName.JOINED);
+	const payload = (await joined.textContent()) ?? '';
+	const identity = payload.match(/"participantIdentity"\s*:\s*"([^"]+)"/)?.[1];
+
+	if (!identity) {
+		throw new Error(`No participantIdentity in the joined event payload: ${payload}`);
+	}
+
+	return identity;
 };
 
 /**
