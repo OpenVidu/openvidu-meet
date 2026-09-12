@@ -890,12 +890,13 @@ export class RoomService {
 
 		// Authenticated user
 		if (user) {
-			const isAdmin = user.role === MeetUserRole.ADMIN;
-			const { owner, access, roles } = await this.getMeetRoom(roomId, ['owner', 'access', 'roles']);
-			const isOwner = owner === user.userId;
+			if (user.role === MeetUserRole.ADMIN) {
+				return roomMemberService.getAllPermissions();
+			}
 
-			// Admins and owners have all permissions
-			if (isAdmin || isOwner) {
+			const { owner, access, roles } = await this.getMeetRoom(roomId, ['owner', 'access', 'roles']);
+
+			if (owner === user.userId) {
 				return roomMemberService.getAllPermissions();
 			}
 
