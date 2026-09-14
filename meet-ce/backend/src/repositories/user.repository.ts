@@ -206,11 +206,11 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 
 	/**
 	 * Deletes multiple users by their userIds.
+	 * Does not fail if none of them is found: a user deleted meanwhile by someone else is gone all the same.
 	 *
 	 * @param userIds - Array of user identifiers
-	 * @throws Error if no users were found or could not be deleted
 	 */
 	deleteByUserIds(userIds: string[]): Promise<void> {
-		return this.deleteMany({ userId: { $in: userIds } });
+		return this.deleteMany({ userId: { $in: userIds } }, false);
 	}
 }
