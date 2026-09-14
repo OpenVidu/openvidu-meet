@@ -3,7 +3,14 @@ on:
   push:
     branches: ['**']
     tags-ignore: ['**']
+    paths: &wc-unit-test-paths
+      - 'meet-ce/frontend/webcomponent/**'
+      - 'meet-ce/frontend/projects/shared-meet-components/**'
+      - 'meet-ce/typings/**'
+      - 'meet.sh'
+      - '.github/workflows/wc-unit-test.yaml'
   pull_request:
+    paths: *wc-unit-test-paths
   workflow_dispatch:
 
 concurrency:

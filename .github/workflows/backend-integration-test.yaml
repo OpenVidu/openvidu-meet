@@ -3,15 +3,15 @@ on:
   push:
     branches: ['**']
     tags-ignore: ['**']
-    paths:
+    paths: &backend-integration-test-paths
       - 'meet-ce/backend/src/**'
       - 'meet-ce/backend/package.json'
-      - 'pnpm-lock.yaml'
       - 'meet-ce/backend/tests/**'
+      - 'meet-ce/typings/**'
+      - 'pnpm-lock.yaml'
       - '.github/workflows/backend-integration-test.yaml'
   pull_request:
-    paths:
-      - 'meet-ce/backend/src/**'
+    paths: *backend-integration-test-paths
   workflow_dispatch:
     inputs:
       use-aws:

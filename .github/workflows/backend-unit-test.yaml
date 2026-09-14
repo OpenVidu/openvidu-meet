@@ -3,7 +3,14 @@ on:
   push:
     branches: ['**']
     tags-ignore: ['**']
+    paths: &backend-unit-test-paths
+      - 'meet-ce/backend/**'
+      - 'meet-ce/typings/**'
+      - 'pnpm-lock.yaml'
+      - 'meet.sh'
+      - '.github/workflows/backend-unit-test.yaml'
   pull_request:
+    paths: *backend-unit-test-paths
   workflow_dispatch:
 
 concurrency:

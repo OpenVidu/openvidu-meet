@@ -4,12 +4,14 @@ on:
   push:
     branches: ['**']
     tags-ignore: ['**']
-    paths:
+    paths: &frontend-e2e-test-paths
       - 'meet-ce/frontend/**'
       - 'meet-ce/backend/**'
+      - 'meet-ce/typings/**'
       - 'meet.sh'
       - '.github/workflows/frontend-e2e-test.yaml'
   pull_request:
+    paths: *frontend-e2e-test-paths
   workflow_dispatch:
 
 concurrency:

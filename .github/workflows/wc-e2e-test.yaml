@@ -3,7 +3,16 @@ on:
   push:
     branches: ['**']
     tags-ignore: ['**']
+    paths: &wc-e2e-test-paths
+      - 'meet-ce/frontend/webcomponent/**'
+      - 'meet-ce/frontend/projects/shared-meet-components/**'
+      - 'meet-ce/backend/**'
+      - 'meet-ce/typings/**'
+      - 'testapp/**'
+      - 'meet.sh'
+      - '.github/workflows/wc-e2e-test.yaml'
   pull_request:
+    paths: *wc-e2e-test-paths
   workflow_dispatch:
 
 concurrency:

@@ -4,11 +4,13 @@ on:
   push:
     branches: ['**']
     tags-ignore: ['**']
-    paths:
+    paths: &frontend-unit-test-paths
       - 'meet-ce/frontend/**'
+      - 'meet-ce/typings/**'
       - 'meet.sh'
       - '.github/workflows/frontend-unit-test.yaml'
   pull_request:
+    paths: *frontend-unit-test-paths
   workflow_dispatch:
 
 concurrency:
