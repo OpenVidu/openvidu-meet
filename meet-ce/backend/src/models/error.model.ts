@@ -427,6 +427,10 @@ export const errorInvalidWebhookUrl = (url: string, reason: string): OpenViduMee
 	return new OpenViduMeetError('Webhook Error', `Webhook URL '${url}' is invalid: ${reason}`, 400);
 };
 
+export const errorWebhookDestinationNotAllowed = (url: string, reason: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Webhook Error', `Webhook URL '${url}' is not allowed: ${reason}`, 400);
+};
+
 export const errorApiKeyNotConfiguredForWebhooks = (): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Webhook Error',

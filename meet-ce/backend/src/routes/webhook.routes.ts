@@ -4,7 +4,10 @@ import { Router } from 'express';
 import * as webhookCtrl from '../controllers/webhook.controller.js';
 import { accessTokenValidator, apiKeyValidator, withAuth } from '../middlewares/auth.middleware.js';
 import { apiLimiter } from '../middlewares/rate-limit.middleware.js';
-import { validateWebhookOptionsReq } from '../middlewares/request-validators/webhook-validator.middleware.js';
+import {
+	validateWebhookDestination,
+	validateWebhookOptionsReq
+} from '../middlewares/request-validators/webhook-validator.middleware.js';
 
 export const webhookRouter: Router = Router();
 webhookRouter.use(bodyParser.urlencoded({ extended: true }));
@@ -18,6 +21,7 @@ webhookRouter.post(
 	'/',
 	withAuth(apiKeyValidator, accessTokenValidator(MeetUserRole.ADMIN)),
 	validateWebhookOptionsReq,
+	validateWebhookDestination,
 	webhookCtrl.createWebhook
 );
 webhookRouter.get('/', withAuth(apiKeyValidator, accessTokenValidator(MeetUserRole.ADMIN)), webhookCtrl.getWebhooks);
@@ -30,6 +34,7 @@ webhookRouter.put(
 	'/:webhookId',
 	withAuth(apiKeyValidator, accessTokenValidator(MeetUserRole.ADMIN)),
 	validateWebhookOptionsReq,
+	validateWebhookDestination,
 	webhookCtrl.updateWebhook
 );
 webhookRouter.delete(
