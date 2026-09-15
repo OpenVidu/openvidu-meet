@@ -5,6 +5,7 @@ import type { Model, QueryFilter, Require_id, UpdateQuery } from 'mongoose';
 import { DocumentNotFoundError } from '../models/database.model.js';
 import type { DocumentOnlyField, PaginatedResult, PaginationCursor } from '../models/database.model.js';
 import { LoggerService } from '../services/logger.service.js';
+import { decodePaginationCursor, encodePaginationCursor } from '../utils/pagination-cursor.utils.js';
 
 /**
  * Base repository providing common CRUD operations for MongoDB entities.
@@ -122,7 +123,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 
 		// Parse and apply pagination cursor if provided
 		if (nextPageToken) {
-			const cursor = this.decodeCursor(nextPageToken);
+			const cursor = decodePaginationCursor(nextPageToken);
 			this.applyCursorToFilter(filter, cursor, sortField, sortOrder);
 		}
 
@@ -153,7 +154,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 		// Generate next page token (encode last document's sort field value and _id)
 		const nextToken =
 			hasMore && resultDocuments.length > 0
-				? this.encodeCursor(resultDocuments[resultDocuments.length - 1], sortField)
+				? encodePaginationCursor(resultDocuments[resultDocuments.length - 1], sortField)
 				: undefined;
 
 		return {
@@ -468,50 +469,6 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 		}
 
 		return Object.getPrototypeOf(value) === Object.prototype;
-	}
-
-	/**
-	 * Encodes a cursor for pagination.
-	 * Creates a base64-encoded token containing the last document's sort field value and _id.
-	 * Handles undefined/null values by converting them to null for consistent serialization.
-	 *
-	 * @param document - The last document from the current page
-	 * @param sortField - The field used for sorting
-	 * @returns Base64-encoded cursor token
-	 */
-	protected encodeCursor(document: Require_id<TDocument>, sortField: string): string {
-		const fieldValue = document[sortField as keyof Require_id<TDocument>];
-
-		const cursor: PaginationCursor = {
-			// Convert undefined to null for JSON serialization
-			fieldValue: fieldValue === undefined ? null : fieldValue,
-			id: String(document._id)
-		};
-
-		return Buffer.from(JSON.stringify(cursor)).toString('base64');
-	}
-
-	/**
-	 * Decodes a pagination cursor token.
-	 *
-	 * @param token - The base64-encoded cursor token
-	 * @returns Decoded cursor object with fieldValue and id
-	 * @throws Error if the token is invalid or malformed
-	 */
-	protected decodeCursor(token: string): PaginationCursor {
-		try {
-			const decoded = Buffer.from(token, 'base64').toString('utf-8');
-			const parsed: unknown = JSON.parse(decoded);
-
-			if (typeof parsed !== 'object' || parsed === null || !('fieldValue' in parsed) || !('id' in parsed)) {
-				throw new Error('Invalid cursor format');
-			}
-
-			return parsed as PaginationCursor;
-		} catch (error) {
-			this.logger.debug('Failed to decode pagination cursor:', error);
-			throw new Error('Invalid pagination token', { cause: error });
-		}
 	}
 
 	/**
