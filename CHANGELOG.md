@@ -151,8 +151,9 @@ Both command and event name sets are accepted regardless of `MEET_MODE`.
 - Deleting a recording could fail on an error payload with missing fields.
 - Re-entering a meeting in the same web component instance wiped or froze the entry attributes.
 - The web component could not find its bundle when the host application served the loader from its own origin.
-- A room's `autoDeletionDate` could be set so far in the future that it was never honored, leaving the
-  room stuck forever. It now has an upper limit.
+- A room's `autoDeletionDate` could be set so far in the future that it was never honored, leaving the room stuck forever. It now has an upper limit.
+- `DELETE /rooms` reset the connection instead of answering when `roomIds` grew large enough to exceed
+  the runtime's header size limit. Now roomIds are limited to 100
 
 #### UI
 
