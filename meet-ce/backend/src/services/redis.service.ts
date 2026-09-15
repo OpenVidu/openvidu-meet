@@ -252,15 +252,15 @@ export class RedisService extends EventEmitter {
 	 *
 	 * @param {string} key - The key to set
 	 * @param {string} value - The value to set
-	 * @param {number} [ttlSeconds] - Optional TTL in seconds
+	 * @param {number} [ttlMs] - Optional TTL in milliseconds
 	 * @returns {Promise<boolean>} - True if the key was set, false if it already existed
 	 */
-	async setIfNotExists(key: string, value: string, ttlSeconds?: number): Promise<boolean> {
+	async setIfNotExists(key: string, value: string, ttlMs?: number): Promise<boolean> {
 		try {
 			let result: string | null;
 
-			if (ttlSeconds) {
-				result = await this.redisPublisher.set(key, value, 'EX', ttlSeconds, 'NX');
+			if (ttlMs) {
+				result = await this.redisPublisher.set(key, value, 'PX', ttlMs, 'NX');
 			} else {
 				result = (await this.redisPublisher.setnx(key, value)) ? 'OK' : null;
 			}
@@ -276,12 +276,12 @@ export class RedisService extends EventEmitter {
 	 * Sets an expiration time on an existing key.
 	 *
 	 * @param {string} key - The key to set expiration on
-	 * @param {number} ttlSeconds - TTL in seconds
+	 * @param {number} ttlMs - TTL in milliseconds
 	 * @returns {Promise<boolean>} - True if expiration was set successfully
 	 */
-	async setExpiration(key: string, ttlSeconds: number): Promise<boolean> {
+	async setExpiration(key: string, ttlMs: number): Promise<boolean> {
 		try {
-			const result = await this.redisPublisher.expire(key, ttlSeconds);
+			const result = await this.redisPublisher.pexpire(key, ttlMs);
 			return result === 1;
 		} catch (error) {
 			this.logger.error(`Error setting expiration in Redis for key '${key}'`, error);
