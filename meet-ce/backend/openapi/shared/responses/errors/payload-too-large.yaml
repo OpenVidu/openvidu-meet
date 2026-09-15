@@ -1,0 +1,8 @@
+description: 'Payload Too Large: the request body exceeds the 100 KB limit'
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/error.yaml'
+        example:
+            error: 'Payload Too Large'
+            message: 'Request body exceeds the limit of 102400 bytes'
