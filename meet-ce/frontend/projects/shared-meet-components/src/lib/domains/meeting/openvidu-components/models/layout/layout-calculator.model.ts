@@ -8,13 +8,10 @@ import {
 	ExtendedLayoutOptions,
 	LAYOUT_CONSTANTS,
 	LayoutAlignment,
-	LayoutArea,
 	LayoutBox,
 	LayoutCalculationResult,
 	LayoutRow
 } from './layout-types.model';
-
-const RATIO_EPSILON = 1e-9;
 
 interface BigAreaPlacement {
 	bigWidth: number;
@@ -50,27 +47,22 @@ export class LayoutCalculator {
 			containerHeight = LAYOUT_CONSTANTS.DEFAULT_VIDEO_HEIGHT,
 			alignItems = LayoutAlignment.CENTER,
 			bigAlignItems = LayoutAlignment.CENTER,
-			smallAlignItems = LayoutAlignment.CENTER,
 			maxWidth = Infinity,
 			maxHeight = Infinity,
-			smallMaxWidth = Infinity,
-			smallMaxHeight = Infinity,
+			stripMaxSize = Infinity,
 			bigMaxWidth = Infinity,
 			bigMaxHeight = Infinity,
-			scaleLastRow = true,
-			bigScaleLastRow = true
 		} = opts;
 
 		const categorized = this.categorizeElements(elements);
-		const { big: bigOnes, normal: normalOnes, small: smallOnes } = categorized;
+		const { big: bigOnes, normal: normalOnes } = categorized;
 
-		const areas: LayoutCalculationResult['areas'] = { big: null, normal: null, small: null };
+		const areas: LayoutCalculationResult['areas'] = { big: null, normal: null };
 		let bigBoxes: LayoutBox[] = [];
 		let normalBoxes: LayoutBox[] = [];
-		let smallBoxes: LayoutBox[] = [];
 
 		const hasBig = bigOnes.length > 0;
-		const hasOthers = normalOnes.length + smallOnes.length > 0;
+		const hasOthers = normalOnes.length > 0;
 
 		if (hasBig && hasOthers) {
 			const isTall = containerHeight / containerWidth > this.getVideoRatio(bigOnes[0]);
@@ -87,11 +79,12 @@ export class LayoutCalculator {
 				bigMaxHeight,
 				minRatio,
 				maxRatio,
-				smallMaxWidth,
-				smallMaxHeight,
+				maxWidth,
+				maxHeight,
+				stripMaxSize,
 				bigFirst,
 				bigOnes,
-				othersCount: normalOnes.length + smallOnes.length
+				othersCount: normalOnes.length
 			});
 
 			const { bigWidth, bigHeight, offsetTop, offsetLeft, bigOffsetTop, bigOffsetLeft, showBigFirst } = placement;
@@ -131,33 +124,31 @@ export class LayoutCalculator {
 					maxRatio: bigMaxRatio,
 					alignItems: bigAlignItems,
 					maxWidth: bigMaxWidth,
-					maxHeight: bigMaxHeight,
-					scaleLastRow: bigScaleLastRow
+					maxHeight: bigMaxHeight
 				},
 				bigOnes
 			);
 		}
 
 		if (areas.normal) {
-			const placed = this.placeNormalArea(areas.normal, {
-				smallOnes,
-				normalOnes,
-				containerWidth,
-				smallMaxWidth,
-				smallMaxHeight,
-				fixedRatio,
-				minRatio,
-				maxRatio,
-				maxWidth,
-				maxHeight,
-				scaleLastRow,
-				alignItems: areas.big ? smallAlignItems : alignItems
-			});
-			smallBoxes = placed.smallBoxes;
-			normalBoxes = placed.normalBoxes;
+			normalBoxes = this.calculateBoxesForArea(
+				{
+					containerWidth: areas.normal.width,
+					containerHeight: areas.normal.height,
+					offsetLeft: areas.normal.left,
+					offsetTop: areas.normal.top,
+					fixedRatio,
+					minRatio,
+					maxRatio,
+					alignItems,
+					maxWidth,
+					maxHeight
+				},
+				normalOnes
+			);
 		}
 
-		const boxes = this.reconstructBoxesInOrder(categorized, bigBoxes, normalBoxes, smallBoxes);
+		const boxes = this.reconstructBoxesInOrder(categorized, bigBoxes, normalBoxes);
 		return { boxes, areas };
 	}
 
@@ -211,6 +202,14 @@ export class LayoutCalculator {
 			tWidth = Math.min(maxWidth, tWidth);
 			tHeight = Math.min(maxHeight, tHeight);
 
+			// A size cap can break the ratio the clamp above just agreed on. Shrink the other side
+			// back into range: growing it would break the cap instead.
+			if (tHeight / tWidth > maxRatio) {
+				tHeight = tWidth * maxRatio;
+			} else if (tHeight / tWidth < minRatio) {
+				tWidth = tHeight / minRatio;
+			}
+
 			const area = tWidth * tHeight * count;
 
 			// Accept if first iteration, strictly larger area, or same area with fewer stragglers in the last row.
@@ -255,8 +254,7 @@ export class LayoutCalculator {
 			offsetTop = 0,
 			alignItems = LayoutAlignment.CENTER,
 			maxWidth = Infinity,
-			maxHeight = Infinity,
-			scaleLastRow = true
+			maxHeight = Infinity
 		} = opts;
 
 		const ratios = elements.map((element) => element.height / element.width);
@@ -291,154 +289,42 @@ export class LayoutCalculator {
 			row.height = dimensions.targetHeight;
 		}
 
-		// Shrink overflowing rows; count rows that still have room to grow.
+		// A row of elements wider than the area is scaled down to fit it.
 		let totalRowHeight = 0;
-		let remainingShortRows = 0;
 
 		for (const row of rows) {
 			if (row.width > containerWidth) {
 				row.height = Math.floor(row.height * (containerWidth / row.width));
 				row.width = containerWidth;
-			} else if (row.width < containerWidth && row.height < maxHeight) {
-				remainingShortRows += 1;
 			}
 
 			totalRowHeight += row.height;
 		}
 
-		if (scaleLastRow && totalRowHeight < containerHeight && remainingShortRows > 0) {
-			let remainingHeightDiff = containerHeight - totalRowHeight;
-			totalRowHeight = 0;
-
-			for (const row of rows) {
-				if (row.width < containerWidth) {
-					let extraHeight = remainingHeightDiff / remainingShortRows;
-
-					if (extraHeight / row.height > (containerWidth - row.width) / row.width) {
-						extraHeight = Math.floor(((containerWidth - row.width) / row.width) * row.height);
-					}
-
-					row.width += Math.floor((extraHeight / row.height) * row.width);
-					row.height += extraHeight;
-					remainingHeightDiff -= extraHeight;
-					remainingShortRows -= 1;
-				}
-
-				totalRowHeight += row.height;
-			}
-		}
-
-		const baseRatio = dimensions.targetHeight / dimensions.targetWidth;
+		// Every element keeps the same size: a last row with fewer of them is centred, not grown,
+		// so a straggler does not read as the featured one.
 		let y = this.alignmentOffset(alignItems, containerHeight, totalRowHeight);
 		const boxes: LayoutBox[] = [];
 
 		for (const row of rows) {
 			let x = this.alignmentOffset(alignItems, containerWidth, row.width);
-			const rowHeight = row.height;
 
 			for (const ratio of row.ratios) {
-				let targetWidth: number;
-
-				if (fixedRatio) {
-					targetWidth = Math.floor(rowHeight / ratio);
-				} else if (Math.abs(rowHeight / dimensions.targetWidth - baseRatio) > RATIO_EPSILON) {
-					// Row was grown — scale width to match the new height while preserving the dimensions ratio.
-					targetWidth = Math.floor((dimensions.targetWidth / dimensions.targetHeight) * rowHeight);
-				} else {
-					targetWidth = dimensions.targetWidth;
-				}
+				const targetWidth = fixedRatio ? Math.floor(row.height / ratio) : dimensions.targetWidth;
 
 				boxes.push({
 					left: x + offsetLeft,
 					top: y + offsetTop,
 					width: targetWidth,
-					height: rowHeight
+					height: row.height
 				});
 				x += targetWidth;
 			}
 
-			y += rowHeight;
+			y += row.height;
 		}
 
 		return boxes;
-	}
-
-	private placeNormalArea(
-		area: LayoutArea,
-		opts: {
-			smallOnes: ElementDimensions[];
-			normalOnes: ElementDimensions[];
-			containerWidth: number;
-			smallMaxWidth: number;
-			smallMaxHeight: number;
-			fixedRatio: boolean;
-			minRatio: number;
-			maxRatio: number;
-			maxWidth: number;
-			maxHeight: number;
-			scaleLastRow: boolean;
-			alignItems: LayoutAlignment;
-		}
-	): { smallBoxes: LayoutBox[]; normalBoxes: LayoutBox[] } {
-		const {
-			smallOnes,
-			normalOnes,
-			containerWidth,
-			smallMaxWidth,
-			smallMaxHeight,
-			fixedRatio,
-			minRatio,
-			maxRatio,
-			maxWidth,
-			maxHeight,
-			scaleLastRow,
-			alignItems
-		} = opts;
-
-		let currentTop = area.top;
-		let remainingHeight = area.height;
-		let smallBoxes: LayoutBox[] = [];
-		let normalBoxes: LayoutBox[] = [];
-
-		if (smallOnes.length > 0) {
-			const tentativeCols =
-				smallMaxWidth === Infinity ? smallOnes.length : Math.max(1, Math.floor(containerWidth / smallMaxWidth));
-			const displayCols = Math.max(1, Math.min(smallOnes.length, tentativeCols));
-			const computedWidth = smallMaxWidth === Infinity ? Math.floor(containerWidth / displayCols) : smallMaxWidth;
-			const computedHeight = smallMaxHeight === Infinity ? computedWidth : smallMaxHeight;
-			const rowWidth = displayCols * computedWidth;
-			const rowOffset = Math.floor(Math.max(0, containerWidth - rowWidth) / 2);
-
-			smallBoxes = smallOnes.map((_element, idx) => ({
-				left: area.left + (idx % displayCols) * computedWidth + rowOffset,
-				top: currentTop,
-				width: computedWidth,
-				height: computedHeight
-			}));
-			currentTop += computedHeight;
-			remainingHeight -= computedHeight;
-		}
-
-		if (normalOnes.length > 0) {
-			normalBoxes = this.calculateBoxesForArea(
-				{
-					containerWidth: area.width,
-					containerHeight: Math.max(0, remainingHeight),
-					offsetLeft: area.left,
-					offsetTop: currentTop,
-					fixedRatio,
-					minRatio,
-					maxRatio,
-					alignItems,
-					maxWidth,
-					maxHeight,
-					scaleLastRow
-				},
-				normalOnes
-			);
-		}
-
-		return { smallBoxes, normalBoxes };
 	}
 
 	/**
@@ -458,8 +344,9 @@ export class LayoutCalculator {
 		bigMaxHeight: number;
 		minRatio: number;
 		maxRatio: number;
-		smallMaxWidth: number;
-		smallMaxHeight: number;
+		maxWidth: number;
+		maxHeight: number;
+		stripMaxSize: number;
 		bigFirst: BigFirstOption;
 		bigOnes: ElementDimensions[];
 		othersCount: number;
@@ -477,8 +364,9 @@ export class LayoutCalculator {
 			bigMaxHeight,
 			minRatio,
 			maxRatio,
-			smallMaxWidth,
-			smallMaxHeight,
+			maxWidth,
+			maxHeight,
+			stripMaxSize,
 			bigFirst,
 			bigOnes,
 			othersCount
@@ -487,8 +375,31 @@ export class LayoutCalculator {
 		let bigWidth = isTall ? containerWidth : Math.floor(containerWidth * bigPercentage);
 		let bigHeight = isTall ? Math.floor(containerHeight * bigPercentage) : containerHeight;
 
+		const ratio0 = bigOnes[0].height / bigOnes[0].width;
+
+		// The most the big elements could ever fill, ratio clamps included. Any area beyond this is
+		// a margin around them that no element can use, so it belongs to the others instead.
+		const fillable = bigFixedRatio
+			? this.getBestDimensions(
+					ratio0,
+					ratio0,
+					containerWidth,
+					containerHeight,
+					bigOnes.length,
+					bigMaxWidth,
+					bigMaxHeight
+				)
+			: this.getBestDimensions(
+					bigMinRatio,
+					bigMaxRatio,
+					containerWidth,
+					containerHeight,
+					bigOnes.length,
+					bigMaxWidth,
+					bigMaxHeight
+				);
+
 		if (minBigPercentage > 0) {
-			const ratio0 = bigOnes[0].height / bigOnes[0].width;
 			const bigDimensions = bigFixedRatio
 				? this.getBestDimensions(ratio0, ratio0, bigWidth, bigHeight, bigOnes.length, bigMaxWidth, bigMaxHeight)
 				: this.getBestDimensions(
@@ -506,38 +417,48 @@ export class LayoutCalculator {
 					containerHeight * minBigPercentage,
 					Math.min(bigHeight, bigDimensions.targetHeight * bigDimensions.targetRows)
 				);
-				const smallDimensions = this.getBestDimensions(
+				const otherDimensions = this.getBestDimensions(
 					minRatio,
 					maxRatio,
 					containerWidth,
 					containerHeight - bigHeight,
 					othersCount,
-					smallMaxWidth,
-					smallMaxHeight
+					maxWidth,
+					maxHeight
 				);
 				bigHeight = Math.max(
 					bigHeight,
-					containerHeight - smallDimensions.targetRows * smallDimensions.targetHeight
+					containerHeight - otherDimensions.targetRows * otherDimensions.targetHeight
 				);
 			} else {
 				bigWidth = Math.max(
 					containerWidth * minBigPercentage,
 					Math.min(bigWidth, bigDimensions.targetWidth * bigDimensions.targetCols)
 				);
-				const smallDimensions = this.getBestDimensions(
+				const otherDimensions = this.getBestDimensions(
 					minRatio,
 					maxRatio,
 					containerWidth - bigWidth,
 					containerHeight,
 					othersCount,
-					smallMaxWidth,
-					smallMaxHeight
+					maxWidth,
+					maxHeight
 				);
 				bigWidth = Math.max(
 					bigWidth,
-					containerWidth - smallDimensions.targetCols * smallDimensions.targetWidth
+					containerWidth - otherDimensions.targetCols * otherDimensions.targetWidth
 				);
 			}
+		}
+
+		// The strip of others never takes more than `stripMaxSize` from the big element, and the big
+		// element never keeps more than it can fill: what neither can use stays around them.
+		if (isTall) {
+			bigHeight = Math.max(bigHeight, containerHeight - stripMaxSize);
+			bigHeight = Math.min(bigHeight, fillable.targetHeight * fillable.targetRows);
+		} else {
+			bigWidth = Math.max(bigWidth, containerWidth - stripMaxSize);
+			bigWidth = Math.min(bigWidth, fillable.targetWidth * fillable.targetCols);
 		}
 
 		const offsetTop = isTall ? bigHeight : 0;
@@ -565,7 +486,6 @@ export class LayoutCalculator {
 	private categorizeElements(elements: ElementDimensions[]): CategorizedElements {
 		const big: ElementDimensions[] = [];
 		const normal: ElementDimensions[] = [];
-		const small: ElementDimensions[] = [];
 		const categories: ElementCategory[] = new Array(elements.length);
 
 		for (let i = 0; i < elements.length; i++) {
@@ -574,16 +494,13 @@ export class LayoutCalculator {
 			if (el.big) {
 				big.push(el);
 				categories[i] = 'big';
-			} else if (el.small) {
-				small.push(el);
-				categories[i] = 'small';
 			} else {
 				normal.push(el);
 				categories[i] = 'normal';
 			}
 		}
 
-		return { big, normal, small, categories };
+		return { big, normal, categories };
 	}
 
 	/**
@@ -592,13 +509,11 @@ export class LayoutCalculator {
 	private reconstructBoxesInOrder(
 		categorized: CategorizedElements,
 		bigBoxes: LayoutBox[],
-		normalBoxes: LayoutBox[],
-		smallBoxes: LayoutBox[]
+		normalBoxes: LayoutBox[]
 	): LayoutBox[] {
 		const sources: Record<ElementCategory, { boxes: LayoutBox[]; idx: number }> = {
 			big: { boxes: bigBoxes, idx: 0 },
-			normal: { boxes: normalBoxes, idx: 0 },
-			small: { boxes: smallBoxes, idx: 0 }
+			normal: { boxes: normalBoxes, idx: 0 }
 		};
 
 		const result: LayoutBox[] = new Array(categorized.categories.length);

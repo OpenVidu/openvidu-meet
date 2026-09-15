@@ -1,5 +1,11 @@
 // Re-export all public types and constants for backward compatibility
-export { LAYOUT_CONSTANTS, LayoutAlignment, LayoutClass, SidenavMode } from './layout-types.model';
+export {
+	LAYOUT_CONSTANTS,
+	LayoutAlignment,
+	LayoutClass,
+	SidenavMode,
+	VIEWPORT_LAYOUT_PROFILES
+} from './layout-types.model';
 export type {
 	BestDimensions,
 	BigFirstOption,
@@ -7,8 +13,10 @@ export type {
 	ExtendedLayoutOptions,
 	LayoutArea,
 	LayoutBox,
+	LayoutProfile,
 	LayoutRow,
-	OpenViduLayoutOptions
+	OpenViduLayoutOptions,
+	ViewportProfile
 } from './layout-types.model';
 
 import { LayoutCalculator } from './layout-calculator.model';
@@ -123,7 +131,6 @@ export class OpenViduLayout {
 	private describeElement(element: HTMLElement): ElementDimensions {
 		const dims = this.getChildDims(element);
 		dims.big = element.classList.contains(this.opts.bigClass);
-		dims.small = element.classList.contains(LayoutClass.SMALL_ELEMENT);
 		return dims;
 	}
 

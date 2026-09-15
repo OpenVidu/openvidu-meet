@@ -89,3 +89,111 @@ export const runScreenShareRotationCycles = async (
 		await Promise.all([toggleMicrophone(byName[activeSpeaker]), toggleMicrophone(byName[silentParticipant])]);
 	}
 };
+
+/** Box of a video the grid lays out, with the intrinsic size of the track it is showing. */
+export interface GridVideoFraming {
+	left: number;
+	top: number;
+	width: number;
+	height: number;
+	videoWidth: number;
+	videoHeight: number;
+}
+
+/**
+ * Measures the videos the grid is laying out. The floating local tile keeps its own geometry and is
+ * left out, the same way the layout engine skips it.
+ */
+export const getGridVideoFraming = async (page: Page): Promise<GridVideoFraming[]> =>
+	page.$$eval('#layout > *:not(.OV_ignored):not(.OV_floating) video.OV_video-element', (videos) =>
+		videos.map((video) => {
+			const { left, top, width, height } = video.getBoundingClientRect();
+
+			return {
+				left,
+				top,
+				width,
+				height,
+				videoWidth: (video as HTMLVideoElement).videoWidth,
+				videoHeight: (video as HTMLVideoElement).videoHeight
+			};
+		})
+	);
+
+/**
+ * Gap between the pinned tile and the strip of the others, along the axis that splits them. A tight
+ * layout leaves none: the room the pinned tile cannot fill belongs to the strip.
+ */
+export const gapBesidePinnedTile = (tiles: GridVideoFraming[]): number => {
+	const pinned = tiles.reduce((widest, tile) => (tile.width > widest.width ? tile : widest), tiles[0]);
+	const others = tiles.filter((tile) => tile !== pinned);
+	const besidePinned = others.every((tile) => tile.left >= pinned.left + pinned.width - 1);
+
+	return besidePinned
+		? Math.min(...others.map((tile) => tile.left)) - (pinned.left + pinned.width)
+		: Math.min(...others.map((tile) => tile.top)) - (pinned.top + pinned.height);
+};
+
+/**
+ * Share of the camera that `object-fit: cover` cuts away to fill the tile: a tile taller than the
+ * camera loses its sides, a wider one loses its top and bottom.
+ */
+export const croppedShare = ({ width, height, videoWidth, videoHeight }: GridVideoFraming): number => {
+	const tileRatio = height / width;
+	const cameraRatio = videoHeight / videoWidth;
+
+	return tileRatio > cameraRatio ? 1 - cameraRatio / tileRatio : 1 - tileRatio / cameraRatio;
+};
+
+/** Box of the shared screen inside the grid, with the size of the layout container around it. */
+export interface SharedScreenFraming {
+	width: number;
+	height: number;
+	videoWidth: number;
+	videoHeight: number;
+	containerWidth: number;
+	containerHeight: number;
+}
+
+export const getSharedScreenFraming = async (page: Page): Promise<SharedScreenFraming | null> =>
+	page.evaluate(() => {
+		const video = document.querySelector<HTMLVideoElement>(
+			'#layout > *:not(.OV_ignored):not(.OV_floating) .screen-source video.OV_video-element, ' +
+				'#layout > *.OV_screen:not(.OV_ignored):not(.OV_floating) video.OV_video-element'
+		);
+		const container = document.querySelector<HTMLElement>('#layout');
+
+		if (!video || !container) return null;
+
+		const box = video.getBoundingClientRect();
+		const containerBox = container.getBoundingClientRect();
+
+		return {
+			width: box.width,
+			height: box.height,
+			videoWidth: video.videoWidth,
+			videoHeight: video.videoHeight,
+			containerWidth: containerBox.width,
+			containerHeight: containerBox.height
+		};
+	});
+
+/**
+ * How much of the room the container allows the shared screen actually uses. `object-fit: contain`
+ * paints it at the largest size that fits its box, so this compares that width against the width it
+ * would reach with the whole container to itself.
+ */
+export const paintedShareOfContainer = ({
+	width,
+	height,
+	videoWidth,
+	videoHeight,
+	containerWidth,
+	containerHeight
+}: SharedScreenFraming): number => {
+	const contentRatio = videoHeight / videoWidth;
+	const paintedWidth = (boxWidth: number, boxHeight: number) =>
+		boxHeight / boxWidth > contentRatio ? boxWidth : boxHeight / contentRatio;
+
+	return paintedWidth(width, height) / paintedWidth(containerWidth, containerHeight);
+};

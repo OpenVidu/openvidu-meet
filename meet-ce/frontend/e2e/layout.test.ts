@@ -1,5 +1,10 @@
 import { expect, test } from '@playwright/test';
 import {
+	croppedShare,
+	gapBesidePinnedTile,
+	getGridVideoFraming,
+	getSharedScreenFraming,
+	paintedShareOfContainer,
 	runScreenShareRotationCycles,
 	selectMosaicLayout,
 	selectSmartMosaicLayout,
@@ -217,6 +222,144 @@ test.describe('Layout E2E Tests', () => {
 
 				await removeParticipant('remote-a');
 				await expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(1, { timeout: 20_000 });
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+	});
+
+	test.describe('Camera framing', () => {
+		// A tile taller than the camera loses its sides to `object-fit: cover`.
+		const MAX_TILE_RATIO = 3 / 4;
+		const RATIO_TOLERANCE = 0.02;
+		const MAX_CROPPED_SHARE = 0.26;
+
+		test('should never render a camera in a tile taller than 4:3', async ({ browser }) => {
+			const { pages, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [
+					{ name: 'viewer', audioEnabled: false },
+					{ name: 'remote-a', headless: true, audioEnabled: false },
+					{ name: 'remote-b', headless: true, audioEnabled: false }
+				]
+			});
+			const [pageA] = pages;
+
+			const expectFramedCameras = async (expectedTiles: number) => {
+				await expect
+					.poll(async () => (await getGridVideoFraming(pageA)).length, { timeout: 20_000 })
+					.toBe(expectedTiles);
+
+				for (const framing of await getGridVideoFraming(pageA)) {
+					expect(framing.videoWidth).toBeGreaterThan(0);
+					expect(framing.height / framing.width).toBeLessThanOrEqual(MAX_TILE_RATIO + RATIO_TOLERANCE);
+					expect(croppedShare(framing)).toBeLessThanOrEqual(MAX_CROPPED_SHARE);
+				}
+			};
+
+			try {
+				await selectMosaicLayout(pageA);
+
+				// The local camera floats as soon as a remote joins, so the grid holds the remotes.
+				await waitForRemoteStream(pageA, 2);
+				await expectFramedCameras(2);
+
+				await addParticipant({ name: 'remote-c', headless: true, audioEnabled: false });
+				await waitForRemoteStream(pageA, 3);
+				await expectFramedCameras(3);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+	});
+
+	test.describe('Pinned participant framing', () => {
+		// The pinned tile stops where its own shape stops, and the strip starts there: the room the
+		// pinned tile cannot fill belongs to the others, not to a gap between them.
+		const MAX_GAP = 24;
+
+		test('should leave no gap between the pinned participant and the strip', async ({ browser }) => {
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [
+					{ name: 'viewer', audioEnabled: false },
+					{ name: 'remote-a', headless: true, audioEnabled: false },
+					{ name: 'remote-b', headless: true, audioEnabled: false },
+					{ name: 'remote-c', headless: true, audioEnabled: false }
+				]
+			});
+			const [pageA] = pages;
+
+			try {
+				await selectMosaicLayout(pageA);
+				await waitForRemoteStream(pageA, 3);
+
+				await toggleStreamPin(pageA, '.OV_stream.remote.camera-source');
+				await expect(pageA.locator('.OV_big')).toHaveCount(1, { timeout: 15_000 });
+
+				await expect
+					.poll(
+						async () => {
+							const tiles = await getGridVideoFraming(pageA);
+
+							return tiles.length === 3 ? gapBesidePinnedTile(tiles) : Number.MAX_SAFE_INTEGER;
+						},
+						{ timeout: 15_000 }
+					)
+					.toBeLessThanOrEqual(MAX_GAP);
+
+				const tiles = await getGridVideoFraming(pageA);
+				const pinned = tiles.reduce((widest, tile) => (tile.width > widest.width ? tile : widest), tiles[0]);
+				const [first, ...rest] = tiles.filter((tile) => tile !== pinned);
+
+				for (const tile of rest) {
+					expect(Math.abs(tile.width - first.width)).toBeLessThanOrEqual(2);
+					expect(Math.abs(tile.height - first.height)).toBeLessThanOrEqual(2);
+				}
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+	});
+
+	test.describe('Shared screen framing', () => {
+		// `contain` never crops the shared content, so what matters is how much of the room the
+		// container allows it actually uses.
+		const MIN_PAINTED_SHARE = 0.88;
+
+		test('should give the shared screen the room the camera strip does not need', async ({ browser }) => {
+			const { pages, byName, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [
+					{ name: 'viewer', audioEnabled: false },
+					{ name: 'sharer', headless: true, audioEnabled: false },
+					{ name: 'remote-b', headless: true, audioEnabled: false }
+				]
+			});
+			const [pageA] = pages;
+
+			try {
+				await selectMosaicLayout(pageA);
+				await waitForRemoteStream(pageA, 2);
+
+				await startScreensharing(byName['sharer']);
+				await expect(pageA.locator('.OV_stream.remote.screen-source')).toHaveCount(1, {
+					timeout: 20_000
+				});
+
+				await expect
+					.poll(
+						async () => {
+							const framing = await getSharedScreenFraming(pageA);
+
+							return framing && framing.videoWidth > 0 ? paintedShareOfContainer(framing) : 0;
+						},
+						{ timeout: 20_000 }
+					)
+					.toBeGreaterThan(MIN_PAINTED_SHARE);
 			} finally {
 				await removeAllParticipants();
 			}
@@ -613,7 +756,7 @@ test.describe('Layout E2E Tests', () => {
 
 				try {
 					// Wait for both remotes to be live before adjusting the slider
-					await waitForRemoteStream(pageA, 2, { audioCount: 2});
+					await waitForRemoteStream(pageA, 2, { audioCount: 2 });
 
 					// Set limit to 1 so the indicator appears in topbar mode initially
 					await setSmartMosaicSliderValue(pageA, 1);

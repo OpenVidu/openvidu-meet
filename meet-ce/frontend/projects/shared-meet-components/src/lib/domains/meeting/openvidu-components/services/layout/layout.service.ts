@@ -1,5 +1,13 @@
 import { effect, inject, Service } from '@angular/core';
-import { LayoutAlignment, LayoutClass, OpenViduLayout, OpenViduLayoutOptions } from '../../models/layout/layout.model';
+import {
+	LAYOUT_CONSTANTS,
+	LayoutAlignment,
+	LayoutClass,
+	OpenViduLayout,
+	OpenViduLayoutOptions,
+	VIEWPORT_LAYOUT_PROFILES,
+	ViewportProfile
+} from '../../models/layout/layout.model';
 import { ViewportService } from '../viewport/viewport.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';
@@ -59,123 +67,38 @@ export class BaseLayoutService {
 	 * @returns Layout options adjusted to the current viewport
 	 */
 	protected getOptions(): OpenViduLayoutOptions {
-		const ratios = this.getResponsiveRatios();
-		const percentages = this.getResponsivePercentages();
+		const profile = VIEWPORT_LAYOUT_PROFILES[this.getViewportProfile()];
 
 		return {
-			maxRatio: ratios.maxRatio,
-			minRatio: ratios.minRatio,
+			...profile,
 			fixedRatio: false,
 			bigClass: LayoutClass.BIG_ELEMENT,
-			smallClass: LayoutClass.SMALL_ELEMENT,
 			ignoredClass: LayoutClass.IGNORED_ELEMENT,
-			bigPercentage: percentages.bigPercentage,
-			minBigPercentage: percentages.minBigPercentage,
 			bigFixedRatio: false,
-			bigMaxRatio: ratios.bigMaxRatio,
-			bigMinRatio: ratios.bigMinRatio,
 			bigFirst: true,
 			animate: true,
 			alignItems: LayoutAlignment.CENTER,
 			bigAlignItems: LayoutAlignment.CENTER,
-			smallAlignItems: LayoutAlignment.CENTER,
 			maxWidth: Infinity,
 			maxHeight: Infinity,
-			smallMaxWidth: Infinity,
-			smallMaxHeight: 80,
+			stripMaxSize: LAYOUT_CONSTANTS.STRIP_MAX_SIZE,
 			bigMaxWidth: Infinity,
-			bigMaxHeight: Infinity,
-			scaleLastRow: true,
-			bigScaleLastRow: true
+			bigMaxHeight: Infinity
 		};
 	}
 
-	protected getResponsiveRatios() {
-		const isMobile = this.viewportSrv.isMobile();
-		const isTablet = this.viewportSrv.isTablet();
+	protected getViewportProfile(): ViewportProfile {
 		const isPortrait = this.viewportSrv.isPortrait();
 
-		if (isMobile && isPortrait) {
-			return {
-				maxRatio: 5 / 4,
-				minRatio: 4 / 5,
-				bigMaxRatio: 5 / 4,
-				bigMinRatio: 3 / 4
-			};
+		if (this.viewportSrv.isMobile()) {
+			return isPortrait ? 'mobilePortrait' : 'mobileLandscape';
 		}
 
-		if (isMobile) {
-			return {
-				maxRatio: 16 / 9,
-				minRatio: 3 / 4,
-				bigMaxRatio: 16 / 9,
-				bigMinRatio: 4 / 3
-			};
+		if (this.viewportSrv.isTablet()) {
+			return isPortrait ? 'tabletPortrait' : 'tabletLandscape';
 		}
 
-		if (isTablet && isPortrait) {
-			return {
-				maxRatio: 4 / 3,
-				minRatio: 3 / 5,
-				bigMaxRatio: 4 / 3,
-				bigMinRatio: 9 / 16
-			};
-		}
-
-		if (isTablet) {
-			return {
-				maxRatio: 16 / 9,
-				minRatio: 2 / 3,
-				bigMaxRatio: 16 / 9,
-				bigMinRatio: 9 / 16
-			};
-		}
-
-		return {
-			maxRatio: 16 / 9,
-			minRatio: 9 / 16,
-			bigMaxRatio: 16 / 9,
-			bigMinRatio: 9 / 16
-		};
-	}
-
-	protected getResponsivePercentages() {
-		const isMobile = this.viewportSrv.isMobile();
-		const isTablet = this.viewportSrv.isTablet();
-		const isPortrait = this.viewportSrv.isPortrait();
-
-		if (isMobile && isPortrait) {
-			return {
-				bigPercentage: 0.85,
-				minBigPercentage: 0.7
-			};
-		}
-
-		if (isMobile) {
-			return {
-				bigPercentage: 0.82,
-				minBigPercentage: 0.65
-			};
-		}
-
-		if (isTablet && isPortrait) {
-			return {
-				bigPercentage: 0.83,
-				minBigPercentage: 0.6
-			};
-		}
-
-		if (isTablet) {
-			return {
-				bigPercentage: 0.81,
-				minBigPercentage: 0.55
-			};
-		}
-
-		return {
-			bigPercentage: 0.8,
-			minBigPercentage: 0.5
-		};
+		return 'desktop';
 	}
 
 	protected updateLayoutOptions(): void {
