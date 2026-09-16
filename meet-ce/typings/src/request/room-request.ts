@@ -7,7 +7,9 @@ import { MeetRoomAutoDeletionPolicy } from '../database/room.entity.js';
  */
 export interface MeetRoomOptions {
 	/**
-	 * Name of the room
+	 * Display name of the room. It does not need to be unique. Maximum 50 characters, with surrounding
+	 * whitespace removed and repeated whitespace collapsed.
+	 * Optional: omitting it creates the room with the default name `Room`.
 	 */
 	roomName?: string;
 	/**

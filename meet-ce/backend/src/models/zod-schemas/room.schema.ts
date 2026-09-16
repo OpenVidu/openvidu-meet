@@ -383,13 +383,14 @@ const RoomAccessConfigSchema: z.ZodType<MeetRoomAccessConfig> = z.object({
 // The largest time value a Date can hold: ECMAScript caps it at 100 million days from the epoch
 const LATEST_REPRESENTABLE_DATE = 8_640_000_000_000_000;
 
+const DEFAULT_ROOM_NAME = 'Room';
+
 export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 	roomName: z
 		.string()
 		.max(50, 'roomName cannot exceed 50 characters')
-		.transform((value) => MeetRoomHelper.sanitizeRoomName(value))
-		.optional()
-		.default('Room'),
+		.nullish()
+		.transform((value) => MeetRoomHelper.sanitizeRoomName(value ?? '') || DEFAULT_ROOM_NAME),
 	autoDeletionDate: z
 		.number()
 		.positive('autoDeletionDate must be a positive integer')
