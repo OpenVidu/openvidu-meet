@@ -72,9 +72,15 @@ export class RoomService {
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService
 	) {}
 
+	private roomMemberService?: RoomMemberService;
+
 	private async getRoomMemberService(): Promise<RoomMemberService> {
-		const { RoomMemberService } = await import('./room-member.service.js');
-		return container.get(RoomMemberService);
+		if (!this.roomMemberService) {
+			const { RoomMemberService } = await import('./room-member.service.js');
+			this.roomMemberService = container.get(RoomMemberService);
+		}
+
+		return this.roomMemberService;
 	}
 
 	/**
