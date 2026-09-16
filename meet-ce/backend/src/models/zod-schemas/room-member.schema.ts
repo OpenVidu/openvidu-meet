@@ -21,6 +21,7 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { z } from 'zod';
+import { invalidRegexPatternReason } from '../../utils/string-match-filter.utils.js';
 
 /**
  * Shared fields validation schema for RoomMember entity
@@ -187,14 +188,10 @@ export const RoomMemberFiltersSchema = z
 	})
 	.superRefine((data, ctx) => {
 		if (data.nameMatchMode === TextMatchMode.REGEX && data.name) {
-			try {
-				new RegExp(String(data.name));
-			} catch {
-				ctx.addIssue({
-					code: 'custom',
-					path: ['name'],
-					message: 'Invalid regular expression pattern'
-				});
+			const reason = invalidRegexPatternReason(data.name);
+
+			if (reason) {
+				ctx.addIssue({ code: 'custom', path: ['name'], message: reason });
 			}
 		}
 	});
