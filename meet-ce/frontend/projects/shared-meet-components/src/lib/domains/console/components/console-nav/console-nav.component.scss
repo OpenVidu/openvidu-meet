@@ -12,6 +12,7 @@ mat-sidenav-container {
 
 mat-toolbar {
 	@extend %ov-nav-toolbar;
+	@extend %meet-toolbar;
 }
 
 .icon-division {
