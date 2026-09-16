@@ -155,6 +155,8 @@ Both command and event name sets are accepted.
 
 - A meeting that filled up while a participant was joining reported a generic connection error.
 - The local video disappeared from the layout when the last remote participant left.
+- A virtual background or blur froze for other participants when the sending window was minimized or
+  covered, in Firefox and Safari.
 - A participant who joined with a device turned off could not turn it on.
 - The stop control in the toolbar and in the recording panel was disabled until a recording was active.
 - Abandoned wizard state leaked into the next room, and a failed save reset the form.
