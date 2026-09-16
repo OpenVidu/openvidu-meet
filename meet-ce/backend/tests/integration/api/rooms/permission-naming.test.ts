@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import type { MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
 import { MeetRoomMemberRole, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
 import type { Express } from 'express';
@@ -62,12 +62,11 @@ const putSpeakerPermissions = (roomId: string, permissions: Record<string, boole
 		.send({ roles: { speaker: { permissions } } });
 
 /**
- * Contract of the MEET_MODE permission surface: in `compatibility` (the default) requests accept
- * any mix of the deprecated and the current keys (contradictions are a 422) and responses carry
- * BOTH key sets; with `MEET_MODE='3.9.0'` the deprecated keys are neither accepted nor served.
- * This whole suite is removed in 3.12.0 together with the compatibility mode.
+ * Contract of the permission-name surface: requests accept any mix of the deprecated and the
+ * current keys (contradictions are a 422) and responses carry BOTH key sets. This whole suite is
+ * removed in 3.12.0 together with the deprecated keys.
  */
-describe('Permission naming (MEET_MODE)', () => {
+describe('Permission naming', () => {
 	let roomId: string;
 
 	beforeAll(async () => {
@@ -77,11 +76,10 @@ describe('Permission naming (MEET_MODE)', () => {
 	});
 
 	afterAll(async () => {
-		delete process.env.MEET_MODE;
 		await deleteAllRooms();
 	});
 
-	describe('compatibility mode (default): dual acceptance on input', () => {
+	describe('Dual acceptance on input', () => {
 		it('should accept a deprecated-keyed roles update and store it under the current keys', async () => {
 			const response = await putSpeakerPermissions(roomId, { canRecord: true });
 			expect(response.status).toBe(200);
@@ -142,7 +140,7 @@ describe('Permission naming (MEET_MODE)', () => {
 		});
 	});
 
-	describe('compatibility mode (default): both key sets on output', () => {
+	describe('Both key sets on output', () => {
 		beforeAll(async () => {
 			// Deterministic state: full grant except downloads.
 			const response = await putSpeakerPermissions(roomId, {
@@ -153,10 +151,9 @@ describe('Permission naming (MEET_MODE)', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should serve both key sets, with a Deprecation header', async () => {
+		it('should serve both key sets', async () => {
 			const response = await rawGetRoom(roomId);
 			expect(response.status).toBe(200);
-			expect(response.headers.deprecation).toBe('true');
 
 			const permissions = response.body.roles.speaker.permissions;
 
@@ -186,7 +183,6 @@ describe('Permission naming (MEET_MODE)', () => {
 					customPermissions: { canRecord: true }
 				});
 			expect(createResponse.status).toBe(201);
-			expect(createResponse.headers.deprecation).toBe('true');
 			// The partial custom overlay carries both spellings of the single key it overrides.
 			expect(createResponse.body.customPermissions).toEqual({ recordingControl: true, canRecord: true });
 			expect(createResponse.body.effectivePermissions.recordingControl).toBe(true);
@@ -209,91 +205,9 @@ describe('Permission naming (MEET_MODE)', () => {
 		});
 	});
 
-	describe("MEET_MODE '3.9.0': the deprecated surface is off", () => {
-		beforeAll(() => {
-			process.env.MEET_MODE = '3.9.0';
-		});
-
-		afterAll(() => {
-			delete process.env.MEET_MODE;
-		});
-
-		it('should serve only the current key set, without a Deprecation header', async () => {
-			const response = await rawGetRoom(roomId);
-			expect(response.status).toBe(200);
-			expect(response.headers.deprecation).toBeUndefined();
-
-			const permissions = response.body.roles.speaker.permissions;
-
-			for (const key of DEPRECATED_KEYS) {
-				expect(permissions).not.toHaveProperty(key);
-			}
-
-			for (const key of CURRENT_KEYS) {
-				expect(typeof permissions[key]).toBe('boolean');
-			}
-		});
-
-		it('should reject a deprecated key with 422 naming its replacement', async () => {
-			const response = await putSpeakerPermissions(roomId, { canRecord: true });
-			expect(response.status).toBe(422);
-
-			const details = JSON.stringify(response.body.details ?? response.body);
-			expect(details).toContain('canRecord');
-			expect(details).toContain('recordingControl');
-		});
-
-		it('should reject the deprecated split flag naming the whole replacement group', async () => {
-			const response = await putSpeakerPermissions(roomId, { canRetrieveRecordings: true });
-			expect(response.status).toBe(422);
-
-			const details = JSON.stringify(response.body.details ?? response.body);
-			expect(details).toContain('recordingList');
-			expect(details).toContain('recordingPlay');
-			expect(details).toContain('recordingDownload');
-		});
-
-		it('should keep accepting the current keys', async () => {
-			const response = await putSpeakerPermissions(roomId, { recordingControl: true });
-			expect(response.status).toBe(200);
-
-			const roomResponse = await rawGetRoom(roomId);
-			expect(roomResponse.body.roles.speaker.permissions.recordingControl).toBe(true);
-		});
-
-		it('should serialize member permissions with only the current key set too', async () => {
-			const createResponse = await request(app)
-				.post(`${roomsPath()}/${roomId}/members`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-				.set('x-extrafields', 'effectivePermissions')
-				.send({
-					name: 'Strict Mode Member',
-					baseRole: MeetRoomMemberRole.SPEAKER,
-					customPermissions: { recordingControl: true }
-				});
-			expect(createResponse.status).toBe(201);
-			expect(createResponse.headers.deprecation).toBeUndefined();
-			expect(createResponse.body.customPermissions).toEqual({ recordingControl: true });
-
-			for (const key of DEPRECATED_KEYS) {
-				expect(createResponse.body.effectivePermissions).not.toHaveProperty(key);
-			}
-
-			const memberId = createResponse.body.memberId as string;
-			const getResponse = await request(app)
-				.get(`${roomsPath()}/${roomId}/members/${memberId}`)
-				.query({ extraFields: 'effectivePermissions' })
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
-			expect(getResponse.status).toBe(200);
-			expect(getResponse.headers.deprecation).toBeUndefined();
-			expect(getResponse.body.effectivePermissions.recordingControl).toBe(true);
-			expect(getResponse.body.effectivePermissions).not.toHaveProperty('canRecord');
-		});
-	});
-
 	// Tokens are our own artifacts, not API requests: one minted before the rename carries the
-	// deprecated permission keys inside its metadata and must keep validating in BOTH modes —
-	// rejecting it would kick every meeting in progress (see MeetTokenPermissionsSchema).
+	// deprecated permission keys inside its metadata and must keep validating; rejecting it would
+	// kick every meeting in progress.
 	describe('Tokens minted with the deprecated permission keys', () => {
 		const mintDeprecatedKeyedToken = async (): Promise<string> => {
 			const tokenService = container.get(TokenService);
@@ -314,20 +228,7 @@ describe('Permission naming (MEET_MODE)', () => {
 				.get(`${roomsPath()}/${roomId}`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, `Bearer ${token}`);
 
-		afterEach(() => {
-			delete process.env.MEET_MODE;
-		});
-
-		it('should accept a deprecated-keyed token in compatibility mode', async () => {
-			const token = await mintDeprecatedKeyedToken();
-			const response = await getRoomWithMemberToken(token);
-			expect(response.status).toBe(200);
-			expect(response.body.roomId).toBe(roomId);
-		});
-
-		it("should accept a deprecated-keyed token with MEET_MODE '3.9.0' (tokens are exempt)", async () => {
-			process.env.MEET_MODE = '3.9.0';
-
+		it('should accept a deprecated-keyed token', async () => {
 			const token = await mintDeprecatedKeyedToken();
 			const response = await getRoomWithMemberToken(token);
 			expect(response.status).toBe(200);

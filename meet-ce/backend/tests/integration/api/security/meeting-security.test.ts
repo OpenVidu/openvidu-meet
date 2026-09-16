@@ -21,7 +21,6 @@ import {
 	joinFakeParticipant,
 	updateParticipantMetadata
 } from '../../../helpers/livekit-cli-helpers.js';
-import { describeInCompatibilityMode } from '../../../helpers/meet-mode-helpers.js';
 import {
 	createAssistant,
 	deleteAllRooms,
@@ -256,7 +255,7 @@ describe('Meeting API Security Tests', () => {
 	// signal: an ignored deprecated key would leave the moderator default in place and the request
 	// would succeed. Every request here is rejected before its controller, so the meeting and its
 	// participant are left untouched.
-	describeInCompatibilityMode('Deprecated permission spellings', () => {
+	describe('Deprecated permission spellings', () => {
 		it('should deny ending the meeting when canEndMeeting is denied', async () => {
 			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
 				canEndMeeting: false

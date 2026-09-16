@@ -2,18 +2,12 @@ type: object
 description: |
     Permissions of a room member.
 
-    Which key sets the API speaks is a **deployment-wide** setting: the `MEET_MODE` environment variable of the
-    server, with two values.
-
-    - **`compatibility`** (the default): the former `can*` spellings remain available alongside the new keys.
-      Requests accept any mix of both key sets — a deprecated key that contradicts what its replacements say
-      (for `canRetrieveRecordings`, the AND of its group) is rejected with a `422` — and responses (and
-      webhooks) carry **both** key sets, so integrations can migrate endpoint by endpoint: an object read from
-      the API is always accepted back unchanged. Responses carrying the deprecated names include a
-      `Deprecation: true` header. When updating a permission, change **both** spellings of it (or strip one
-      key set first): a stale spelling contradicting the edit produces a `422`.
-    - **`3.9.0`**: only the new keys exist. A request using a deprecated key is rejected with a `422` naming its
-      replacement, and responses and webhooks carry only the new keys.
+    The former `can*` spellings remain available alongside the new keys. Requests accept any mix of both key
+    sets (a deprecated key that contradicts what its replacements say, for `canRetrieveRecordings` the AND of
+    its group, is rejected with a `422`) and responses (and webhooks) carry **both** key sets, so integrations
+    can migrate endpoint by endpoint: an object read from the API is always accepted back unchanged. When
+    updating a permission, change **both** spellings of it (or strip one key set first): a stale spelling
+    contradicting the edit produces a `422`.
 
     The rename itself:
 
@@ -27,8 +21,8 @@ description: |
     permissions are partial objects, so an omitted key keeps the value the role or the member already had. No
     permission is ever derived from another one.
 
-    The examples in this reference show only the new keys; a `compatibility` deployment adds the deprecated
-    spellings next to them. The `compatibility` mode and the deprecated keys are removed in **3.12.0**.
+    The examples in this reference show only the new keys; responses add the deprecated spellings next to
+    them. The deprecated keys are removed in **3.12.0**.
 properties:
     recordingControl:
         type: boolean

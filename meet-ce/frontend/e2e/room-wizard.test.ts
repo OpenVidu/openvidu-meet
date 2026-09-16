@@ -201,7 +201,7 @@ test.describe('Room wizard E2E Tests', () => {
 	// ── Role permissions round-trip (wizard -> API) ─────────────────────────────
 
 	// `participantMute` is a permission with no deprecated `can*` spelling and `recordingControl` is
-	// one with an alias, so flipping both covers each half of the compatibility-mode wire.
+	// one with an alias, so flipping both covers each half of the dual-naming wire.
 	const FLIPPED_PERMISSIONS = ['participantMute', 'recordingControl'] as const;
 
 	test('create mode: role permissions switched off reach the created room', async ({ page }) => {

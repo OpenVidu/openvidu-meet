@@ -68,23 +68,19 @@ All 14 permission flags are being renamed to a clearer scheme — e.g. `canRecor
 `MEET_PERMISSION_ALIASES` in the typings package is the one place that maps each old name to its new
 name — never hardcode a pair anywhere else.
 
-Which key sets the API speaks is a **deployment-wide** setting: the `MEET_MODE` environment variable
-(`src/environment.ts`, validated at boot), with two values. It is read lazily (per request/parse, not
-frozen at import) so the integration tests can exercise both modes against one in-process app by
-flipping `process.env.MEET_MODE`.
+Both key sets are live at once, on every deployment, until 3.12.0:
 
-- **`compatibility` (the default)**: requests accept old names, new names, or a mix — everything gets
-  normalized to the new names before business logic runs, and a request sending both spellings of the
-  same permission with conflicting values is a `422` naming both, never a silent "one wins".
-  Responses and webhook payloads carry **both** key sets, so integrations migrate endpoint by
-  endpoint; any response carrying old names also gets a `Deprecation: true` header. There's no
-  `Sunset` header, because that needs a real calendar date and 3.12.0 is only a release number.
-- **`'3.9.0'`**: the old names are gone from the API — a request using one is a `422` naming its
-  replacement (not silently stripped: a stripped key would just read as "denied"), and responses and
-  webhooks carry only the new names.
+- **Input**: requests accept old names, new names, or a mix. Everything gets normalized to the new
+  names before business logic runs, and a request sending both spellings of the same permission with
+  conflicting values is a `422` naming both, never a silent "one wins".
+- **Output**: responses and webhook payloads carry **both** key sets, so integrations migrate endpoint
+  by endpoint and an object read from the API is always accepted back unchanged. There is no
+  `Deprecation` or `Sunset` header: with every response carrying both sets it would discriminate
+  nothing, and `Sunset` needs a real calendar date while 3.12.0 is only a release number.
 
-The serialization goes through `helpers/permission-naming.helper.ts`; several response paths bypass
-the more obvious `applyFieldFilters` helper, so don't assume that one already covers it.
+The serialization goes through `helpers/permission-naming.helper.ts` (shared by the REST controllers
+and `webhook-dispatcher.service.ts`); several response paths bypass the more obvious
+`applyFieldFilters` helper, so don't assume that one already covers it.
 - **Recording access used to be one permission, now it's three.** Viewing the list of recordings,
   playing one back, and downloading one are now separate permissions (`recordingList`,
   `recordingPlay`, `recordingDownload`). The old flag (`canRetrieveRecordings`) still works and now
@@ -100,8 +96,7 @@ the more obvious `applyFieldFilters` helper, so don't assume that one already co
   previous step would never reach them.
 - **Login tokens carry permissions too.** Renaming a permission doesn't invalidate tokens already
   issued — that would kick everyone out of an ongoing meeting — so decoding a token normalizes old
-  names to new ones instead, in **both** modes (`MeetTokenPermissionsSchema`): tokens are our own
-  artifacts, not API requests, so `MEET_MODE='3.9.0'` must not reject one issued before the switch.
+  names to new ones instead, through the same `MeetPermissionsSchema` the API uses.
 
 Full migration plan: `../openvidu-competitors/meet-update-plan/api-naming-migration-phase.md`.
 

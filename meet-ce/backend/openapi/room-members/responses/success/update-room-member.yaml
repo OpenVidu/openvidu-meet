@@ -1,7 +1,4 @@
 description: Room member updated successfully
-headers:
-    Deprecation:
-        $ref: '../../../shared/headers/deprecation.yaml'
 content:
     application/json:
         schema:

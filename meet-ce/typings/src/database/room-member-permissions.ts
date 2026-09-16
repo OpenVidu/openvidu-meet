@@ -1,10 +1,9 @@
 /**
  * List of permissions for a room member, keyed with the current `moduleAbility` scheme (module
  * first, no `can` prefix). This is the shape the API stores and, from 3.9.0 on, the one it speaks.
- * While a deployment runs in **compatibility mode** (`MEET_MODE=compatibility`, the default) the
- * deprecated `can*` spellings ({@link MeetRoomMemberDeprecatedPermissions}) are still accepted on
- * input and served alongside these keys on output — see {@link MEET_PERMISSION_ALIASES} for the
- * mapping.
+ * Until 3.12.0 the deprecated `can*` spellings ({@link MeetRoomMemberDeprecatedPermissions}) are
+ * still accepted on input and served alongside these keys on output; see
+ * {@link MEET_PERMISSION_ALIASES} for the mapping.
  *
  * `canRetrieveRecordings` was **split into three** keys (`recordingList`, `recordingPlay`,
  * `recordingDownload`): enumerating recordings, playing one and downloading a copy are different
@@ -102,10 +101,9 @@ export interface MeetRoomMemberPermissions {
 }
 
 /**
- * The deprecated `can*` spellings of {@link MeetRoomMemberPermissions}. In compatibility mode
- * (`MEET_MODE=compatibility`) requests may still use these keys (they are normalized through
- * {@link MEET_PERMISSION_ALIASES}) and responses carry them alongside the current keys; with
- * `MEET_MODE='3.9.0'` they are neither accepted nor served.
+ * The deprecated `can*` spellings of {@link MeetRoomMemberPermissions}. Requests may still use these
+ * keys (they are normalized through {@link MEET_PERMISSION_ALIASES}) and responses carry them
+ * alongside the current keys.
  *
  * @deprecated Use the current keys of {@link MeetRoomMemberPermissions}. Removed in 3.12.0.
  */
@@ -199,8 +197,8 @@ export interface MeetRoomMemberDeprecatedPermissions {
  * a module that is fully split like `recording`, the verb always precedes the object, and the keys
  * stay flat — never nested per module.
  *
- * The deprecated keys keep working while `MEET_MODE=compatibility` — accepted on input, served on
- * output alongside the current keys — until they are **removed in 3.12.0**.
+ * The deprecated keys keep working (accepted on input, served on output alongside the current
+ * keys) until they are **removed in 3.12.0**.
  */
 export const MEET_PERMISSION_ALIASES = {
 	canRecord: ['recordingControl'],
@@ -253,8 +251,8 @@ const UNALIASED_PERMISSION_DEFAULTS = {
 /**
  * Permission keys that have **no** deprecated `can*` spelling, because they were introduced after
  * the rename froze that surface. They are part of the contract like any other key, they simply never
- * appear in {@link MEET_PERMISSION_ALIASES}, in a compatibility-mode response or in a request that
- * uses the deprecated spellings — a client that only knows the `can*` names cannot express them.
+ * appear in {@link MEET_PERMISSION_ALIASES} nor in a request that uses the deprecated spellings: a
+ * client that only knows the `can*` names cannot express them.
  *
  * The deprecated set stays frozen at its 14 keys until 3.12.0: a capability that did not exist in
  * 3.8.0 never gets a `can*` name invented for it. Every permission added from now on belongs here.
@@ -296,7 +294,7 @@ type _AssertAliasMapCoversPermissions = _RequireTrue<
  * Every deprecated permission key, in the order they are documented.
  *
  * Removed in **3.12.0** together with the deprecated aliases. Not tagged `@deprecated` on purpose:
- * the backend enforces `no-deprecated` as an error and every compatibility-mode code path (request
+ * the backend enforces `no-deprecated` as an error and every dual-naming code path (request
  * normalization, response serialization, the schema migrations) legitimately calls the alias
  * helpers until the window closes.
  */
@@ -446,7 +444,7 @@ function applyUnaliasedPermissionDefaults(
 
 /**
  * Derives the deprecated `can*` spellings of a permission object keyed with the current names, for
- * compatibility-mode responses and webhooks. Keys with no boolean value are omitted.
+ * responses and webhooks. Keys with no boolean value are omitted.
  *
  * A **split** alias collapses with AND: `canRetrieveRecordings` is true only when list, play and
  * download are all granted, and is omitted when any of the three is missing from the input. The old
@@ -491,8 +489,7 @@ export function toDeprecatedPermissions(
  * means the input is unambiguous and safe to {@link normalizePermissions}.
  *
  * An alias equal to what {@link toDeprecatedPermissions} derives from the supplied current keys is
- * redundant, not a conflict — a compatibility-mode response echoed back unchanged is always valid
- * input. Everything else is checked key by key: `{ canRetrieveRecordings: true, recordingDownload:
+ * redundant, not a conflict: a served response echoed back unchanged is always valid input. Everything else is checked key by key: `{ canRetrieveRecordings: true, recordingDownload:
  * false }` is reported (the alias grants the whole group), and so is a stale
  * `canRetrieveRecordings: false` next to an all-true group — resolving that silently would leave
  * granted a permission the caller meant to revoke.

@@ -303,7 +303,7 @@ describe('findPermissionAliasConflicts', () => {
 
 	it('should accept a split alias that matches the AND of its complete group', () => {
 		// The shape the server itself serializes for a partial recording grant: the alias is
-		// redundant, and rejecting it would 422 the echo of a compatibility-mode response.
+		// redundant, and rejecting it would 422 the echo of a served response.
 		expect(
 			findPermissionAliasConflicts({
 				canRetrieveRecordings: false,

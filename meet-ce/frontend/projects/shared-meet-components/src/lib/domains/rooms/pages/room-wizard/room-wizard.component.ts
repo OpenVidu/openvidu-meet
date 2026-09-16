@@ -156,8 +156,7 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 	}
 
 	/**
-	 * In compatibility mode the API serves each role's permissions under the current keys *and* the
-	 * deprecated `can*` ones. The wizard edits only the current keys and sends the whole object back on
+	 * The API serves each role's permissions under the current keys *and* the deprecated `can*` ones. The wizard edits only the current keys and sends the whole object back on
 	 * update, so a permission the user flips would reach the API contradicting its own alias and the
 	 * update would be rejected as a whole — the deprecated half is dropped here instead. Removed in 3.12.0.
 	 */

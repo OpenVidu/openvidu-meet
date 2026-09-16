@@ -17,7 +17,6 @@ import {
 	expectValidStartRecordingResponse
 } from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
-import { describeInCompatibilityMode } from '../../../helpers/meet-mode-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
@@ -132,7 +131,7 @@ describe('Recording API Security Tests', () => {
 			expectMeetError(response, errorInsufficientPermissions());
 		});
 
-		describeInCompatibilityMode('Deprecated permission spellings', () => {
+		describe('Deprecated permission spellings', () => {
 			it('should deny starting a recording when canRecord is denied', async () => {
 				roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
 					canRecord: false
@@ -1477,7 +1476,7 @@ describe('Recording API Security Tests', () => {
 		// The deprecated retrieval flag stands for three gates at once, so denying it has to close
 		// listing, playback and download together: a rename reaching only one of them leaves the
 		// other two open. Only the denial discriminates, since the member's base role is MODERATOR.
-		describeInCompatibilityMode('Deprecated permission spellings', () => {
+		describe('Deprecated permission spellings', () => {
 			it('should close listing, playback and download when canRetrieveRecordings is denied', async () => {
 				roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
 					canRetrieveRecordings: false

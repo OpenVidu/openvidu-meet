@@ -129,11 +129,9 @@ backend serves it at `<basePath>/`.
 
 ## Gotchas
 
-- **The library reads only the new-style permission names.** The backend's `MEET_MODE` deployment
-  variable decides what responses carry: in `compatibility` mode (the default) permission objects
-  include both the new keys and the deprecated `can*` ones, and with `MEET_MODE='3.9.0'` only the new
-  keys — either way the new keys are always present, so the library needs no request header and never
-  looks at the `can*` spellings. It must not **echo them back** either: a permission object read from
+- **The library reads only the new-style permission names.** Permission objects served by the
+  backend include both the new keys and the deprecated `can*` ones until 3.12.0, so the new keys are
+  always present and the library never looks at the `can*` spellings. It must not **echo them back** either: a permission object read from
   the API and posted again after flipping one key would carry the old spelling contradicting the new
   value, and the whole request is rejected with a 422 (this is why the room wizard normalizes the
   roles it loads in edit mode). Cached room-member tokens can still carry old-style permission

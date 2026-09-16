@@ -972,8 +972,8 @@ describe('Room Members API Tests', () => {
 			const participantMetadata = JSON.parse(participant.metadata || '{}');
 			expect(participantMetadata).toHaveProperty('roomId', roomId);
 			expect(participantMetadata).toHaveProperty('badge', MeetRoomMemberUIBadge.MODERATOR);
-			// Participant metadata carries only the current keys; roomRoles came off the wire, which in
-			// compatibility mode also carries the deprecated aliases.
+			// Participant metadata carries only the current keys; roomRoles came off the wire, which
+			// also carries the deprecated aliases.
 			expect(participantMetadata).toHaveProperty(
 				'permissions',
 				normalizePermissions(roomRoles.moderator.permissions)

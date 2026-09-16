@@ -1,12 +1,14 @@
-import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import type { MeetRoom, MeetRoomMember, MeetRoomMemberPermissions, MeetRoomRoles } from '@openvidu-meet/typings';
-import type { Response } from 'express';
-import { PermissionNamingHelper, withDeprecatedPermissionAliases } from '../../src/helpers/permission-naming.helper.js';
+import {
+	memberToWire,
+	roomToWire,
+	withDeprecatedPermissionAliases
+} from '../../src/helpers/permission-naming.helper.js';
 
-// withDeprecatedPermissionAliases() is the single serializer shared by the REST exit points
-// (PermissionNamingHelper) and the outgoing webhook payloads (WebhookDispatcherService.
-// roomToWirePermissions guards on the same isCompatibilityMode() and delegates here) — the webhook
-// service itself cannot be imported standalone, its module graph is cyclic outside the DI container.
+// withDeprecatedPermissionAliases() is the single serializer shared by the REST exit points and the
+// outgoing webhook payloads (WebhookDispatcherService delegates to roomToWire). The webhook service
+// itself cannot be imported standalone: its module graph is cyclic outside the DI container.
 
 const moderatorPermissions: MeetRoomMemberPermissions = {
 	recordingControl: true,
@@ -55,35 +57,12 @@ const asWireRoles = (roles: MeetRoomRoles) =>
 		speaker: { permissions: WirePermissions };
 	};
 
-interface FakeResponse {
-	res: Response;
-	headers: Record<string, string>;
-}
-
-const buildResponse = (): FakeResponse => {
-	const headers: Record<string, string> = {};
-	const res = {
-		headersSent: false,
-		set: (name: string, value: string) => {
-			headers[name] = value;
-		}
-	} as unknown as Response;
-
-	return { res, headers };
-};
-
 /**
- * MEET_MODE contract of the wire serializer shared by REST responses and webhook payloads
- * (meetingStarted/meetingEnded ship the whole MeetRoom through the same function): in
- * `compatibility` permissions carry BOTH key sets and the response is stamped with
- * `Deprecation: true`; with `'3.9.0'` they carry only the current keys and no header. This whole
- * suite is removed in 3.12.0 together with the compatibility mode.
+ * Contract of the wire serializer shared by REST responses and webhook payloads
+ * (meetingStarted/meetingEnded ship the whole MeetRoom through the same function): permissions
+ * carry BOTH key sets. This whole suite is removed in 3.12.0 together with the deprecated spellings.
  */
-describe('Wire permission naming (MEET_MODE)', () => {
-	afterEach(() => {
-		delete process.env.MEET_MODE;
-	});
-
+describe('Wire permission naming', () => {
 	describe('withDeprecatedPermissionAliases (shared by REST and webhooks)', () => {
 		it('should add the deprecated spellings next to the current keys', () => {
 			const wire = withDeprecatedPermissionAliases(moderatorPermissions) as WirePermissions;
@@ -109,69 +88,39 @@ describe('Wire permission naming (MEET_MODE)', () => {
 		});
 	});
 
-	describe('compatibility mode (default)', () => {
-		it('should serialize room roles with both key sets and stamp Deprecation', () => {
-			const { res, headers } = buildResponse();
+	describe('REST exit points', () => {
+		it('should serialize room roles with both key sets', () => {
 			const room = { roomId: 'naming-room', roles: buildRoles() } as unknown as MeetRoom;
 
-			const wire = asWireRoles(PermissionNamingHelper.roomToWire(room, res).roles!);
+			const wire = asWireRoles(roomToWire(room).roles!);
 
 			expect(wire.moderator.permissions.canRecord).toBe(true);
 			expect(wire.speaker.permissions.recordingControl).toBe(false);
 			expect(wire.speaker.permissions.canRecord).toBe(false);
-			expect(headers.Deprecation).toBe('true');
 		});
 
-		it('should serialize member permissions with both key sets and stamp Deprecation', () => {
-			const { res, headers } = buildResponse();
+		it('should serialize member permissions with both key sets', () => {
 			const member = {
 				memberId: 'naming-member',
 				customPermissions: { recordingControl: true },
 				effectivePermissions: { ...speakerPermissions }
 			} as unknown as MeetRoomMember;
 
-			const wire = PermissionNamingHelper.memberToWire(member, res) as unknown as {
+			const wire = memberToWire(member) as unknown as {
 				customPermissions: WirePermissions;
 				effectivePermissions: WirePermissions;
 			};
 
 			expect(wire.customPermissions).toEqual({ recordingControl: true, canRecord: true });
 			expect(wire.effectivePermissions.canRetrieveRecordings).toBe(false);
-			expect(headers.Deprecation).toBe('true');
 		});
 
-		it('should not stamp Deprecation on objects without permission fields', () => {
-			const { res, headers } = buildResponse();
+		it('should pass objects without permission fields through untouched', () => {
 			const room = { roomId: 'naming-room' } as unknown as MeetRoom;
 			const member = { memberId: 'naming-member' } as unknown as MeetRoomMember;
 
-			expect(PermissionNamingHelper.roomToWire(room, res)).toBe(room);
-			expect(PermissionNamingHelper.memberToWire(member, res)).toBe(member);
-			expect(headers.Deprecation).toBeUndefined();
-		});
-	});
-
-	describe("MEET_MODE '3.9.0'", () => {
-		beforeEach(() => {
-			process.env.MEET_MODE = '3.9.0';
-		});
-
-		it('should pass everything through untouched, without Deprecation', () => {
-			const { res, headers } = buildResponse();
-			const room = { roomId: 'naming-room', roles: buildRoles() } as unknown as MeetRoom;
-			const member = {
-				memberId: 'naming-member',
-				effectivePermissions: { ...moderatorPermissions }
-			} as unknown as MeetRoomMember;
-
-			const wireRoom = PermissionNamingHelper.roomToWire(room, res);
-			const wireMember = PermissionNamingHelper.memberToWire(member, res);
-
-			// The mode branch is the identity: same objects, no deprecated spellings added.
-			expect(wireRoom).toBe(room);
-			expect(wireMember).toBe(member);
-			expect(asWireRoles(wireRoom.roles!).moderator.permissions).not.toHaveProperty('canRecord');
-			expect(headers.Deprecation).toBeUndefined();
+			expect(roomToWire(room)).toBe(room);
+			expect(memberToWire(member)).toEqual(member);
 		});
 	});
 });

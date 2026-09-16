@@ -9,7 +9,6 @@ import type {
 import {
 	findPermissionAliasConflicts,
 	MEET_DEPRECATED_PERMISSION_KEYS,
-	MEET_PERMISSION_ALIASES,
 	MEET_PERMISSION_KEYS,
 	MEET_ROOM_MEMBER_EXTRA_FIELDS,
 	MEET_ROOM_MEMBER_FIELDS,
@@ -22,7 +21,6 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { z } from 'zod';
-import { isCompatibilityMode } from '../../environment.js';
 
 /**
  * Shared fields validation schema for RoomMember entity
@@ -74,13 +72,10 @@ const extraFieldsSchema = z
 
 const RoomMemberRoleSchema: z.ZodType<MeetRoomMemberRole> = z.enum(MeetRoomMemberRole);
 
-// The permission shape declares both key sets (deprecated `can*` and current `moduleAbility`),
-// derived from MEET_PERMISSION_ALIASES so a future alias is a typings change alone. Which of them a
-// request may actually use is decided per parse by MEET_MODE — declaring the deprecated keys even in
-// '3.9.0' mode is what lets that mode *reject* them with a pointed message instead of silently
-// stripping them (a stripped permission would just read as denied). Every key is optional at the
+// Both key sets (deprecated `can*` and current `moduleAbility`) are declared, derived from
+// MEET_PERMISSION_ALIASES so a future alias is a typings change alone. Every key is optional at the
 // shape level: requiredness (every permission key defined after normalization) only applies to the
-// full schemas and is enforced in their superRefine. The deprecated branch is removed in 3.12.0.
+// full schema and is enforced in its superRefine. The deprecated half is removed in 3.12.0.
 const dualNamingPermissionShape = (): Record<string, z.ZodOptional<z.ZodBoolean>> => {
 	const shape: Record<string, z.ZodOptional<z.ZodBoolean>> = {};
 
@@ -106,23 +101,6 @@ const addPermissionConflictIssues = (input: Record<string, unknown>, ctx: z.Refi
 	}
 };
 
-// With MEET_MODE '3.9.0' the deprecated spellings are not part of the API any more; each one present
-// is rejected naming its replacement, so a not-yet-migrated caller gets told exactly what to send.
-const addDeprecatedKeyRejectionIssues = (input: Record<string, unknown>, ctx: z.RefinementCtx): void => {
-	for (const deprecatedKey of MEET_DEPRECATED_PERMISSION_KEYS) {
-		if (input[deprecatedKey] === undefined) {
-			continue;
-		}
-
-		const replacements = MEET_PERMISSION_ALIASES[deprecatedKey].map((key) => `'${key}'`).join(', ');
-		ctx.addIssue({
-			code: 'custom',
-			path: [deprecatedKey],
-			message: `'${deprecatedKey}' is not accepted when MEET_MODE is '3.9.0'; use ${replacements}`
-		});
-	}
-};
-
 // Completeness: every current key must be defined once deprecated spellings are expanded.
 const addMissingPermissionIssues = (input: Record<string, unknown>, ctx: z.RefinementCtx): void => {
 	const normalized = normalizePermissions(input, { complete: true });
@@ -138,15 +116,9 @@ const addMissingPermissionIssues = (input: Record<string, unknown>, ctx: z.Refin
 	}
 };
 
-// MEET_MODE is consulted inside superRefine (per parse, not per import) so one in-process app can be
-// exercised in both modes by the tests; in production the mode never changes after boot.
-const permissionsShapeSchema = (options: { complete: boolean; alwaysAcceptDeprecated?: boolean }) =>
+const permissionsShapeSchema = (options: { complete: boolean }) =>
 	z.object(dualNamingPermissionShape()).superRefine((input, ctx) => {
-		if (options.alwaysAcceptDeprecated || isCompatibilityMode()) {
-			addPermissionConflictIssues(input, ctx);
-		} else {
-			addDeprecatedKeyRejectionIssues(input, ctx);
-		}
+		addPermissionConflictIssues(input, ctx);
 
 		if (options.complete) {
 			addMissingPermissionIssues(input, ctx);
@@ -160,14 +132,6 @@ export const MeetPermissionsSchema: z.ZodType<MeetRoomMemberPermissions> = permi
 export const PartialMeetPermissionsSchema: z.ZodType<Partial<MeetRoomMemberPermissions>> = permissionsShapeSchema({
 	complete: false
 }).transform((input) => normalizePermissions(input));
-
-// Tokens are our own artifacts, not API requests: one issued before a deployment switched to
-// MEET_MODE '3.9.0' still carries the deprecated keys, and rejecting it would kick every ongoing
-// meeting. Token metadata therefore always normalizes both spellings, regardless of mode.
-export const MeetTokenPermissionsSchema: z.ZodType<MeetRoomMemberPermissions> = permissionsShapeSchema({
-	complete: true,
-	alwaysAcceptDeprecated: true
-}).transform((input) => normalizePermissions(input, { complete: true }) as MeetRoomMemberPermissions);
 
 export const RoomMemberOptionsSchema: z.ZodType<MeetRoomMemberOptions> = z
 	.object({
@@ -341,7 +305,7 @@ export const RoomMemberTokenMetadataSchema: z.ZodType<MeetRoomMemberTokenMetadat
 	roomId: z.string(),
 	memberId: z.string().optional(),
 	userId: z.string().optional(),
-	permissions: MeetTokenPermissionsSchema,
+	permissions: MeetPermissionsSchema,
 	badge: z.enum(MeetRoomMemberUIBadge),
 	isPromotedModerator: z.boolean().optional(),
 	livekitUrl: z.url('LiveKit URL must be a valid URL').optional(),

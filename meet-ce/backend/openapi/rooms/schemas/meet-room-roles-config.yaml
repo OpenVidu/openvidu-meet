@@ -40,8 +40,6 @@ description: |
     Both moderator and speaker fields are optional. If not specified, current permissions will be maintained.
     For permissions, only specify the ones you want to change.
 
-    On a `compatibility` deployment (the default `MEET_MODE`, removed in **3.12.0**), permission keys are
-    accepted under their current names or their deprecated `can*` spellings (see
-    [MeetPermissions](#/schemas/MeetPermissions)); sending both spellings of the same permission with
-    contradicting values is rejected with a `422`. With `MEET_MODE='3.9.0'` the deprecated spellings are
-    rejected.
+    Permission keys are accepted under their current names or their deprecated `can*` spellings, removed in
+    **3.12.0** (see [MeetPermissions](#/schemas/MeetPermissions)); sending both spellings of the same permission
+    with contradicting values is rejected with a `422`.

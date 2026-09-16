@@ -15,9 +15,6 @@ the [REST API reference][3.9-api].
 
 ### Upgrade notes
 
-- `MEET_MODE` selects which permission keys the API accepts. It defaults to `compatibility`, which
-  accepts and serves both key sets; `MEET_MODE=3.9.0` accepts only the current ones. It does not
-  affect the embedded API.
 - A permission object read from the API carries both key sets. Writing it back after changing only
   the deprecated half of an alias pair returns `422`. The unchanged object, or one carrying only
   the changed keys, is accepted.
@@ -28,9 +25,8 @@ the [REST API reference][3.9-api].
 
 ### Deprecated
 
-The names below still work in this release and are removed in **3.12.0**. Responses that carry
-deprecated permission keys also return the header `Deprecation: true`, and carry both key sets
-while `MEET_MODE` is `compatibility`.
+The names below still work in this release and are removed in **3.12.0**. Requests accept either
+key set, and responses and webhooks carry both.
 
 | Deprecated permission        | Replacement                                           |
 | ---------------------------- | ----------------------------------------------------- |
@@ -58,7 +54,7 @@ while `MEET_MODE` is `compatibility`.
 | `left`            | `meetingLeft`     | event   |
 | `closed`          | `meetingClosed`   | event   |
 
-Both command and event name sets are accepted regardless of `MEET_MODE`.
+Both command and event name sets are accepted.
 
 ### Added
 

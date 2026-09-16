@@ -17,9 +17,9 @@ import {
 
 /**
  * A permission object as the e2e suites send it over the wire: the current keys, the deprecated
- * `can*` spellings, or a mix — everything a `MEET_MODE=compatibility` deployment accepts. The suites
- * seed data with the deprecated spellings on purpose, simulating a 3.8.0 integrator, which keeps the
- * old wire covered end-to-end for free. When the compatibility mode is removed in 3.12.0, the
+ * `can*` spellings, or a mix, everything the API accepts. The suites seed data with the deprecated
+ * spellings on purpose, simulating a 3.8.0 integrator, which keeps the old wire covered end-to-end
+ * for free. When the deprecated spellings are removed in 3.12.0, the
  * deprecated half of this type goes away and every seeding literal still using a `can*` key must
  * flip to its current spelling (grep for the deprecated keys under e2e/).
  */

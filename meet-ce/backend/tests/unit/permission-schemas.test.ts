@@ -1,9 +1,8 @@
-import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import { MEET_PERMISSION_KEYS } from '@openvidu-meet/typings';
 import { withDeprecatedPermissionAliases } from '../../src/helpers/permission-naming.helper.js';
 import {
 	MeetPermissionsSchema,
-	MeetTokenPermissionsSchema,
 	PartialMeetPermissionsSchema
 } from '../../src/models/zod-schemas/room-member.schema.js';
 
@@ -46,12 +45,11 @@ const fullCurrentInput = {
 };
 
 /**
- * Contract of the permission schemas per MEET_MODE: in `compatibility` (the default) any mix of key
- * sets is accepted and contradictions fail validation; with `'3.9.0'` a deprecated key is rejected
- * naming its replacement. Completeness only applies to the full schemas, and the parsed output is
- * always keyed with the current names. Removed in 3.12.0 together with the compatibility mode.
+ * Contract of the permission schemas: any mix of key sets is accepted and contradictions fail
+ * validation. Completeness only applies to the full schema, and the parsed output is always keyed
+ * with the current names. The deprecated half is removed in 3.12.0.
  */
-describe('MeetPermissionsSchema (full, compatibility mode)', () => {
+describe('MeetPermissionsSchema (full)', () => {
 	it('should accept a full deprecated input and normalize it to every current key', () => {
 		const result = MeetPermissionsSchema.safeParse(fullDeprecatedInput);
 		expect(result.success).toBe(true);
@@ -97,7 +95,7 @@ describe('MeetPermissionsSchema (full, compatibility mode)', () => {
 	});
 });
 
-describe('PartialMeetPermissionsSchema (partial, compatibility mode)', () => {
+describe('PartialMeetPermissionsSchema (partial)', () => {
 	it('should accept a partial deprecated input and normalize the keys it carries', () => {
 		const result = PartialMeetPermissionsSchema.safeParse({ canRecord: true, canWriteChat: false });
 		expect(result.success).toBe(true);
@@ -133,68 +131,18 @@ describe('PartialMeetPermissionsSchema (partial, compatibility mode)', () => {
 
 /**
  * GET → PUT round-trip: both permission-carrying PUT endpoints (member customPermissions and room
- * roles) validate with PartialMeetPermissionsSchema, so the wire shape the server produces in
- * compatibility mode must always parse back to the stored permissions. The deprecated split flag
+ * roles) validate with PartialMeetPermissionsSchema, so the wire shape the server produces must
+ * always parse back to the stored permissions. The deprecated split flag
  * collapses with AND, so a partial recording grant is the shape where the served alias disagrees
  * with part of its group. Removed in 3.12.0 together with the deprecated aliases.
  */
-describe('Compatibility-mode round-trip (served permissions echoed back)', () => {
+describe('Round-trip (served permissions echoed back)', () => {
 	it('should accept its own wire output when the recording grant is partial', () => {
 		const stored = { ...fullCurrentInput, recordingDownload: false };
 		const result = PartialMeetPermissionsSchema.safeParse(withDeprecatedPermissionAliases(stored));
 
 		expect(result.success).toBe(true);
 		expect(result.data).toEqual(stored);
-	});
-});
-
-describe("Permission schemas with MEET_MODE '3.9.0'", () => {
-	beforeAll(() => {
-		process.env.MEET_MODE = '3.9.0';
-	});
-
-	afterAll(() => {
-		delete process.env.MEET_MODE;
-	});
-
-	it('should accept a full current-keyed input', () => {
-		const result = MeetPermissionsSchema.safeParse(fullCurrentInput);
-		expect(result.success).toBe(true);
-		expect(result.data).toEqual(fullCurrentInput);
-	});
-
-	it('should reject a deprecated key naming its replacement', () => {
-		const result = PartialMeetPermissionsSchema.safeParse({ canRecord: true });
-		expect(result.success).toBe(false);
-
-		const issue = result.error!.issues.find((candidate) => candidate.path.includes('canRecord'));
-		expect(issue).toBeDefined();
-		expect(issue!.message).toContain('recordingControl');
-	});
-
-	it('should reject the deprecated split flag naming the whole replacement group', () => {
-		const result = PartialMeetPermissionsSchema.safeParse({ canRetrieveRecordings: true });
-		expect(result.success).toBe(false);
-
-		const issue = result.error!.issues.find((candidate) => candidate.path.includes('canRetrieveRecordings'));
-		expect(issue).toBeDefined();
-		expect(issue!.message).toContain('recordingList');
-		expect(issue!.message).toContain('recordingPlay');
-		expect(issue!.message).toContain('recordingDownload');
-	});
-
-	it('should reject a deprecated key even when its replacement is present and agrees', () => {
-		const result = PartialMeetPermissionsSchema.safeParse({ canRecord: true, recordingControl: true });
-		expect(result.success).toBe(false);
-	});
-
-	it('should keep normalizing deprecated keys in token metadata (tokens are not API requests)', () => {
-		// A token issued before the deployment switched modes still carries the deprecated keys;
-		// rejecting it would kick every ongoing meeting.
-		const result = MeetTokenPermissionsSchema.safeParse(fullDeprecatedInput);
-		expect(result.success).toBe(true);
-		expect(result.data!.recordingControl).toBe(true);
-		expect(Object.keys(result.data!).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
 	});
 });
 
@@ -221,7 +169,7 @@ describe('Permissions introduced after the rename', () => {
 	});
 
 	it('should complete meetingRead in the token of a meeting in progress', () => {
-		const result = MeetTokenPermissionsSchema.safeParse(currentInputWithoutMeetingRead);
+		const result = MeetPermissionsSchema.safeParse(currentInputWithoutMeetingRead);
 		expect(result.success).toBe(true);
 		expect(result.data!.meetingRead).toBe(true);
 	});

@@ -78,7 +78,7 @@ describe('Meetings API Tests', () => {
 			expect(metadata).toHaveProperty('isPromotedModerator', true);
 
 			// Participant metadata carries only the current keys; the room roles came off the wire,
-			// which in compatibility mode also carries the deprecated aliases.
+			// which also carries the deprecated aliases.
 			const moderatorPermissions = normalizePermissions(roomData.room.roles.moderator.permissions);
 			const speakerPermissions = normalizePermissions(roomData.room.roles.speaker.permissions);
 			expect(metadata).toHaveProperty('permissions', moderatorPermissions);
