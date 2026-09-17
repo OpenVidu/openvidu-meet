@@ -1,46 +1,59 @@
-/config/security:
-    get:
-        operationId: getSecurityConfig
-        summary: Get security config
-        description: >
-            Retrieves the security config for the OpenVidu Meet application.
-        tags:
-            - Internal API - Global Config
-        responses:
-            '200':
-                $ref: './responses/success/get-security-config.yaml'
-            '429':
-                $ref: '../shared/responses/errors/too-many-requests.yaml'
-            '500':
-                $ref: '../shared/responses/errors/internal-server.yaml'
-    put:
-        operationId: updateSecurityConfig
-        summary: Update security config
-        description: >
-            Updates the security config for the OpenVidu Meet application.
-
-
-            **Access token roles**: `admin`.
-        tags:
-            - Internal API - Global Config
-        security:
-            - accessTokenHeader: []
-        requestBody:
-            $ref: './requests/update-security-config.yaml'
-        responses:
-            '200':
-                $ref: './responses/success/update-security-config.yaml'
-            '401':
-                $ref: '../shared/responses/errors/unauthorized.yaml'
-            '403':
-                $ref: '../shared/responses/errors/forbidden.yaml'
-            '422':
-                $ref: '../shared/responses/errors/validation.yaml'
-            '429':
-                $ref: '../shared/responses/errors/too-many-requests.yaml'
-            '500':
-                $ref: '../shared/responses/errors/internal-server.yaml'
-
+# The security config endpoints are withdrawn from the server until the OAuth login that needs them
+# ships: see meet-ce/backend/src/routes/global-config.routes.ts.
+#
+# /config/security:
+#     get:
+#         operationId: getSecurityConfig
+#         summary: Get security config
+#         description: >
+#             Retrieves the security config for the OpenVidu Meet application, including the credentials of the
+#             configured OAuth providers.
+#
+#
+#             **Access token roles**: `admin`.
+#         tags:
+#             - Internal API - Global Config
+#         security:
+#             - accessTokenHeader: []
+#         responses:
+#             '200':
+#                 $ref: './responses/success/get-security-config.yaml'
+#             '401':
+#                 $ref: '../shared/responses/errors/unauthorized.yaml'
+#             '403':
+#                 $ref: '../shared/responses/errors/forbidden.yaml'
+#             '429':
+#                 $ref: '../shared/responses/errors/too-many-requests.yaml'
+#             '500':
+#                 $ref: '../shared/responses/errors/internal-server.yaml'
+#     put:
+#         operationId: updateSecurityConfig
+#         summary: Update security config
+#         description: >
+#             Updates the security config for the OpenVidu Meet application.
+#
+#
+#             **Access token roles**: `admin`.
+#         tags:
+#             - Internal API - Global Config
+#         security:
+#             - accessTokenHeader: []
+#         requestBody:
+#             $ref: './requests/update-security-config.yaml'
+#         responses:
+#             '200':
+#                 $ref: './responses/success/update-security-config.yaml'
+#             '401':
+#                 $ref: '../shared/responses/errors/unauthorized.yaml'
+#             '403':
+#                 $ref: '../shared/responses/errors/forbidden.yaml'
+#             '422':
+#                 $ref: '../shared/responses/errors/validation.yaml'
+#             '429':
+#                 $ref: '../shared/responses/errors/too-many-requests.yaml'
+#             '500':
+#                 $ref: '../shared/responses/errors/internal-server.yaml'
+#
 /config/rooms/appearance:
     get:
         operationId: getRoomsAppearanceConfig

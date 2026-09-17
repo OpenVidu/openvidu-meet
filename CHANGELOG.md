@@ -171,8 +171,7 @@ Both command and event name sets are accepted.
   unused. Every webhook is answered.
 - Two object merge helpers accepted prototype-chain keys, and temporary passwords were generated from a
   non-cryptographic random source.
-- Ending a meeting that was never recorded logged a warning about releasing a recording lock nobody had
-  taken. The lock is only released when it is held.
+- Ending a meeting that was never recorded logged a warning about releasing a recording lock nobody had  taken. The lock is only released when it is held
 
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html
 [3.9-meetings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/meetingGet
