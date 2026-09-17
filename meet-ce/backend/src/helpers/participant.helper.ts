@@ -5,14 +5,30 @@ import type {
 	MeetParticipantJoinedPayload,
 	MeetParticipantLeftPayload,
 	MeetParticipantPayload,
+	MeetRoomMemberPermissions,
 	MeetRoomMemberTokenMetadata
 } from '@openvidu-meet/typings';
-import { LeftEventReason, MeetRoomMemberRole, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
+import {
+	LeftEventReason,
+	MeetRoomMemberRole,
+	MeetRoomMemberUIBadge,
+	normalizePermissions
+} from '@openvidu-meet/typings';
 import type { ParticipantInfo, Room } from 'livekit-server-sdk';
 import { container } from '../config/dependency-injector.config.js';
+import { errorParticipantNotRoomMember } from '../models/error.model.js';
 import { RoomMemberTokenMetadataSchema } from '../models/zod-schemas/room-member.schema.js';
 import { RoomService } from '../services/room.service.js';
 import { MeetRoomHelper } from './room.helper.js';
+
+/**
+ * The Meet token metadata a participant carries, plus the permissions a promotion set aside to
+ * restore on demotion. The extra field lives outside the token schema, which strips what it does
+ * not declare.
+ */
+export interface ParticipantMeetingMetadata extends MeetRoomMemberTokenMetadata {
+	originalPermissions?: MeetRoomMemberPermissions;
+}
 
 export class MeetParticipantHelper {
 	private constructor() {
@@ -239,18 +255,72 @@ export class MeetParticipantHelper {
 	 *
 	 * @param participant - The LiveKit participant to inspect.
 	 */
-	private static parseMeetingMetadata(participant: ParticipantInfo): MeetRoomMemberTokenMetadata | undefined {
+	private static parseMeetingMetadata(participant: ParticipantInfo): ParticipantMeetingMetadata | undefined {
 		if (!participant.metadata) {
 			return undefined;
 		}
 
 		try {
-			const parsed: unknown = JSON.parse(participant.metadata);
-			const { success, data } = RoomMemberTokenMetadataSchema.safeParse(parsed);
-			return success ? data : undefined;
+			const raw = JSON.parse(participant.metadata) as ParticipantMeetingMetadata;
+			const { success, data } = RoomMemberTokenMetadataSchema.safeParse(raw);
+
+			if (!success) {
+				return undefined;
+			}
+
+			return {
+				...raw,
+				...data,
+				// A promotion recorded before the permission-key rename stored originalPermissions under
+				// the deprecated names, which the token schema does not reach; normalize it so a later
+				// demotion restores the current keys instead of feeding deprecated ones back into grants.
+				...(raw.originalPermissions
+					? {
+							originalPermissions: normalizePermissions(raw.originalPermissions, {
+								complete: true
+							}) as MeetRoomMemberPermissions
+						}
+					: {})
+			};
 		} catch {
 			return undefined;
 		}
+	}
+
+	/**
+	 * Same as {@link parseMeetingMetadata}, for moderation: the target identity comes from the
+	 * request URL and can name any live participant, so one Meet did not admit is an expected
+	 * conflict, not an unexpected error.
+	 *
+	 * @param participant - The LiveKit participant to inspect.
+	 * @param roomId - The room the participant is in, for the error message.
+	 */
+	static requireMeetingMetadata(participant: ParticipantInfo, roomId: string): ParticipantMeetingMetadata {
+		const metadata = MeetParticipantHelper.parseMeetingMetadata(participant);
+
+		if (!metadata) {
+			throw errorParticipantNotRoomMember(participant.identity, roomId);
+		}
+
+		return metadata;
+	}
+
+	/**
+	 * Same as {@link requireMeetingMetadata}, for the two paths reached only through a room member
+	 * token the caller already holds: invalid metadata there means that participant's own record is
+	 * corrupted, not an unrecognized guest, so it fails as an ordinary error instead of a moderation
+	 * conflict.
+	 *
+	 * @param participant - The LiveKit participant to inspect.
+	 */
+	static parseOwnMeetingMetadata(participant: ParticipantInfo): ParticipantMeetingMetadata {
+		const metadata = MeetParticipantHelper.parseMeetingMetadata(participant);
+
+		if (!metadata) {
+			throw new Error(`Invalid room member token metadata for participant '${participant.identity}'`);
+		}
+
+		return metadata;
 	}
 
 	/**

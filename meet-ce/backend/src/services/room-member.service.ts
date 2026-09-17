@@ -17,7 +17,6 @@ import {
 	MeetRoomMemberUIBadge,
 	MeetRoomStatus,
 	MeetUserRole,
-	normalizePermissions,
 	TrackSource
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
@@ -27,6 +26,7 @@ import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
+import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import {
 	errorAnonymousAccessDisabled,
@@ -70,10 +70,6 @@ interface ResolvedPermissionSource {
 	name?: string;
 	permissions: MeetRoomMemberPermissions;
 	badge?: MeetRoomMemberUIBadge;
-}
-
-interface ParticipantMeetingMetadata extends MeetRoomMemberTokenMetadata {
-	originalPermissions?: MeetRoomMemberPermissions;
 }
 
 /**
@@ -602,7 +598,7 @@ export class RoomMemberService {
 			const participant = await this.getParticipantFromMeeting(roomId, participantIdentity!);
 			participantName = participant.name || participantName;
 
-			const participantMetadata = this.parseParticipantMeetingMetadata(participant.metadata);
+			const participantMetadata = MeetParticipantHelper.parseOwnMeetingMetadata(participant);
 			const isCurrentlyPromotedModerator = participantMetadata.isPromotedModerator === true;
 
 			let metadataToApply: string;
@@ -908,7 +904,7 @@ export class RoomMemberService {
 		participantIdentity: string
 	): Promise<MeetRoomMemberTokenMetadata> {
 		const participant = await this.getParticipantFromMeeting(roomId, participantIdentity);
-		const participantMetadata = this.parseParticipantMeetingMetadata(participant.metadata);
+		const participantMetadata = MeetParticipantHelper.parseOwnMeetingMetadata(participant);
 
 		return {
 			iat: Date.now(),
@@ -1073,7 +1069,7 @@ export class RoomMemberService {
 		try {
 			const { roles } = await this.roomService.getMeetRoom(roomId, ['roles']);
 			const participant = await this.getParticipantFromMeeting(roomId, participantIdentity);
-			const metadata = this.parseParticipantMeetingMetadata(participant.metadata);
+			const metadata = MeetParticipantHelper.requireMeetingMetadata(participant, roomId);
 
 			if (action === MeetParticipantModerationAction.UPGRADE) {
 				if (metadata.badge !== MeetRoomMemberUIBadge.OTHER) {
@@ -1253,27 +1249,6 @@ export class RoomMemberService {
 	protected async getParticipantFromMeeting(roomId: string, participantIdentity: string): Promise<ParticipantInfo> {
 		this.logger.debug(`Fetching participant '${participantIdentity}' from room '${roomId}'`);
 		return this.livekitService.getParticipant(roomId, participantIdentity);
-	}
-
-	protected parseParticipantMeetingMetadata(metadata: string): ParticipantMeetingMetadata {
-		const parsed = JSON.parse(metadata || '{}') as ParticipantMeetingMetadata;
-		const normalized = this.tokenService.parseRoomMemberTokenMetadata(JSON.stringify(parsed));
-
-		return {
-			...parsed,
-			...normalized,
-			// A promotion recorded before the permission-key rename stored originalPermissions under
-			// the deprecated names (it lives outside the token metadata schema, so the line above does not
-			// touch it); normalize here so a later demotion restores the current keys instead of feeding
-			// deprecated-keyed permissions back into grants and metadata.
-			...(parsed.originalPermissions
-				? {
-						originalPermissions: normalizePermissions(parsed.originalPermissions, {
-							complete: true
-						}) as MeetRoomMemberPermissions
-					}
-				: {})
-		};
 	}
 
 	/**

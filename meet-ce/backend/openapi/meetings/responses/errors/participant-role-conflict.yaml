@@ -14,3 +14,8 @@ content:
                 value:
                     error: 'Participant Error'
                     message: 'Participant "alice_smith" in room "room_123" cannot be demoted because they are not a promoted moderator'
+            not_a_meet_participant:
+                summary: Participant did not join through OpenVidu Meet
+                value:
+                    error: 'Participant Error'
+                    message: "Participant 'transcriber_bot' in room 'room_123' cannot be moderated because they did not join through OpenVidu Meet"

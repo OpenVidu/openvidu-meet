@@ -411,6 +411,14 @@ export const errorParticipantNotFound = (participantIdentity: string, roomId: st
 	);
 };
 
+export const errorParticipantNotRoomMember = (participantIdentity: string, roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Participant Error',
+		`Participant '${participantIdentity}' in room '${roomId}' cannot be moderated because they did not join through OpenVidu Meet`,
+		409
+	);
+};
+
 export const errorParticipantCannotBePromotedToModerator = (
 	participantIdentity: string,
 	roomId: string

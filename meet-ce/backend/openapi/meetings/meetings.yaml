@@ -233,6 +233,8 @@
             Requires the `participantPromote` permission.
 
 
+            Only participants that joined through OpenVidu Meet can be moderated.
+
             An `upgrade` reaches the `when_moderator_joins` recording auto-start trigger: in a room configured
             with it, the recording starts on its own once this request has returned, unless it was already
             stopped by hand during this meeting.
