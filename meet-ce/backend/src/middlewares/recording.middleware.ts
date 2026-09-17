@@ -20,6 +20,7 @@ import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomService } from '../services/room.service.js';
 import { RecordingQueryWithFields } from '../types/recording-projection.types.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
+import type { AuthValidator } from './auth.middleware.js';
 import {
 	accessTokenValidator,
 	allowAnonymous,
@@ -64,11 +65,18 @@ export const withRecordingStartAllowed = async (req: Request, res: Response, nex
 /**
  * Middleware to configure authentication for retrieving recording based on the provided recording secret.
  *
- * - If a valid recordingSecret is provided in the query, access is granted according to the secret type.
- * - If no recordingSecret is provided, the default authentication logic is applied, i.e., API key, user and room member token access.
+ * - A public recordingSecret authenticates on its own.
+ * - A private recordingSecret authenticates nobody: the caller still needs one of the usual
+ *   credentials. What it grants is the permission check, waived in `authorizeRecordingAccess`.
+ * - Without a recordingSecret, API key, room member token and user access token all apply.
  */
 export const setupRecordingAuthentication = async (req: Request, res: Response, next: NextFunction) => {
 	const recordingSecret = req.query.recordingSecret as string;
+	const authValidators: AuthValidator[] = [
+		apiKeyValidator,
+		roomMemberTokenValidator,
+		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)
+	];
 
 	// If a recording secret is provided, validate it against the stored secrets
 	// and apply the appropriate authentication logic.
@@ -78,8 +86,6 @@ export const setupRecordingAuthentication = async (req: Request, res: Response, 
 
 			const recordingService = container.get(RecordingService);
 			const recordingSecrets = await recordingService.getRecordingAccessSecrets(recordingId);
-
-			const authValidators = [];
 
 			switch (recordingSecret) {
 				case recordingSecrets.publicAccessSecret: {
@@ -92,35 +98,22 @@ export const setupRecordingAuthentication = async (req: Request, res: Response, 
 						return rejectRequestFromMeetError(res, errorAnonymousAccessDisabled(roomId, 'recording'));
 					}
 
-					// Public access secret allows anonymous access
-					authValidators.push(allowAnonymous);
-					break;
+					// Anonymous access replaces the credentials instead of joining them: a stale token
+					// left in the caller's browser must not break a public link.
+					return withAuth(allowAnonymous)(req, res, next);
 				}
 
 				case recordingSecrets.privateAccessSecret:
-					// Private access secret requires authentication
-					authValidators.push(
-						accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)
-					);
 					break;
 				default:
 					// Invalid secret provided
 					return rejectRequestFromMeetError(res, errorInvalidRecordingSecret(recordingId));
 			}
-
-			return withAuth(...authValidators)(req, res, next);
 		} catch (error) {
 			return handleError(res, error, 'retrieving recording secrets');
 		}
 	}
 
-	// If no recording secret is provided, we proceed with the default authentication logic.
-	// This will allow API key, user and room member token access.
-	const authValidators = [
-		apiKeyValidator,
-		roomMemberTokenValidator,
-		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)
-	];
 	return withAuth(...authValidators)(req, res, next);
 };
 

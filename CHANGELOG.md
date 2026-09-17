@@ -147,6 +147,8 @@ Both command and event name sets are accepted.
   second recording to be started on the same room.
 - The auto-start latch outlived its own meeting.
 - Deleting a recording could fail on an error payload with missing fields.
+- A private recording share link rejected every credential but a user access token, so an API key or a
+  room member token was answered `401` on a recording it could otherwise read.
 - Re-entering a meeting in the same web component instance wiped or froze the entry attributes.
 - The web component could not find its bundle when the host application served the loader from its own origin.
 - A room's `autoDeletionDate` could be set so far in the future that it was never honored, leaving the room stuck forever. It now has an upper limit.

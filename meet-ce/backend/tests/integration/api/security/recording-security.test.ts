@@ -2,6 +2,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/glob
 import { MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
+import type { Response } from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import {
@@ -523,38 +524,6 @@ describe('Recording API Security Tests', () => {
 					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
 				expectMeetError(response, errorInsufficientPermissions());
 			});
-
-			it('should succeed when using public access secret and user is not authenticated', async () => {
-				const secret = await getRecordingAccessSecret(recordingId, false);
-				const response = await request(app)
-					.get(`${RECORDINGS_PATH}/${recordingId}`)
-					.query({ recordingSecret: secret });
-				expect(response.status).toBe(200);
-			});
-
-			it('should fail when using private access secret and user is not authenticated', async () => {
-				const secret = await getRecordingAccessSecret(recordingId, true);
-				const response = await request(app)
-					.get(`${RECORDINGS_PATH}/${recordingId}`)
-					.query({ recordingSecret: secret });
-				expectMeetError(response, errorUnauthorized());
-			});
-
-			it('should succeed when using private access secret and user is authenticated', async () => {
-				const secret = await getRecordingAccessSecret(recordingId, true);
-				const response = await request(app)
-					.get(`${RECORDINGS_PATH}/${recordingId}`)
-					.query({ recordingSecret: secret })
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
-				expect(response.status).toBe(200);
-			});
-
-			it('should fail when using invalid access secret', async () => {
-				const response = await request(app)
-					.get(`${RECORDINGS_PATH}/${recordingId}`)
-					.query({ recordingSecret: 'invalidSecret' });
-				expectMeetError(response, errorInvalidRecordingSecret(recordingId));
-			});
 		});
 
 		describe('Delete Recording Tests', () => {
@@ -1057,38 +1026,6 @@ describe('Recording API Security Tests', () => {
 					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
 					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
 				expectMeetError(response, errorInsufficientPermissions());
-			});
-
-			it('should succeed when using public access secret and user is not authenticated', async () => {
-				const secret = await getRecordingAccessSecret(recordingId, false);
-				const response = await request(app)
-					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
-					.query({ recordingSecret: secret });
-				expect(response.status).toBe(200);
-			});
-
-			it('should fail when using private access secret and user is not authenticated', async () => {
-				const secret = await getRecordingAccessSecret(recordingId, true);
-				const response = await request(app)
-					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
-					.query({ recordingSecret: secret });
-				expectMeetError(response, errorUnauthorized());
-			});
-
-			it('should succeed when using private access secret and user is authenticated', async () => {
-				const secret = await getRecordingAccessSecret(recordingId, true);
-				const response = await request(app)
-					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
-					.query({ recordingSecret: secret })
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken);
-				expect(response.status).toBe(200);
-			});
-
-			it('should fail when using invalid access secret', async () => {
-				const response = await request(app)
-					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
-					.query({ recordingSecret: 'invalidSecret' });
-				expectMeetError(response, errorInvalidRecordingSecret(recordingId));
 			});
 		});
 
@@ -1649,46 +1586,188 @@ describe('Recording API Security Tests', () => {
 		});
 	});
 
-	describe('Access Secret Recording Resource Operations', () => {
+	describe('Recording Access Secret Authentication', () => {
+		type Credential = 'none' | 'apiKey' | 'adminToken' | 'outsiderToken' | 'memberToken';
+		type Secret = 'none' | 'public' | 'private' | 'invalid';
+
 		let roomData: RoomData;
 		let roomId: string;
 		let recordingId: string;
-		let recordingSecret: string;
+		let roomMember: RoomMemberData;
+		let publicSecret: string;
+		let privateSecret: string;
+
+		const OPERATIONS: [string, (id: string) => string][] = [
+			['getRecording', (id) => `${RECORDINGS_PATH}/${id}`],
+			['getRecordingMedia', (id) => `${RECORDINGS_PATH}/${id}/media`],
+			['downloadRecording', (id) => `${RECORDINGS_PATH}/${id}/download`]
+		];
+
+		const MATRIX: [Secret, Credential, number][] = [
+			['none', 'none', 401],
+			['none', 'apiKey', 200],
+			['none', 'adminToken', 200],
+			['none', 'outsiderToken', 403],
+			['none', 'memberToken', 200],
+
+			['public', 'none', 200],
+			['public', 'apiKey', 200],
+			['public', 'adminToken', 200],
+			['public', 'outsiderToken', 200],
+			['public', 'memberToken', 200],
+
+			['private', 'none', 401],
+			['private', 'apiKey', 200],
+			['private', 'adminToken', 200],
+			['private', 'outsiderToken', 200],
+			['private', 'memberToken', 200],
+
+			['invalid', 'none', 400],
+			['invalid', 'apiKey', 400],
+			['invalid', 'adminToken', 400],
+			['invalid', 'outsiderToken', 400],
+			['invalid', 'memberToken', 400]
+		];
+
+		const secretValue = (secret: Secret): string | undefined => {
+			switch (secret) {
+				case 'public':
+					return publicSecret;
+				case 'private':
+					return privateSecret;
+				case 'invalid':
+					return 'invalidSecret';
+				default:
+					return undefined;
+			}
+		};
+
+		const credentialHeader = (credential: Credential): [string, string] | undefined => {
+			switch (credential) {
+				case 'apiKey':
+					return [INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY];
+				case 'adminToken':
+					return [INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken];
+				case 'outsiderToken':
+					return [INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken];
+				case 'memberToken':
+					return [INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken];
+				default:
+					return undefined;
+			}
+		};
+
+		const read = async (path: string, secret: Secret, credential: Credential): Promise<Response> => {
+			const req = request(app).get(path);
+			const recordingSecret = secretValue(secret);
+			const header = credentialHeader(credential);
+
+			if (recordingSecret) {
+				req.query({ recordingSecret });
+			}
+
+			if (header) {
+				req.set(header[0], header[1]);
+			}
+
+			return await req;
+		};
+
+		const recordingPath = () => `${RECORDINGS_PATH}/${recordingId}`;
 
 		beforeAll(async () => {
-			// Ensure no recordings exist before starting tests
 			await deleteAllRecordings();
 
 			roomData = await setupSingleRoomWithRecording(true);
 			roomId = roomData.room.roomId;
 			recordingId = roomData.recordingId!;
 
-			// End the meeting
-			await disconnectFakeParticipants();
-			await endMeeting(roomId, roomData.moderatorToken);
+			const member = await setupRoomMember(roomId, {
+				name: 'Matrix Guest',
+				baseRole: MeetRoomMemberRole.MODERATOR
+			});
+			roomMember = await updateRoomMemberPermissions(roomId, member.member.memberId, {
+				recordingPlay: true,
+				recordingDownload: true
+			});
 
-			recordingSecret = await getRecordingAccessSecret(recordingId, false);
+			publicSecret = await getRecordingAccessSecret(recordingId, false);
+			privateSecret = await getRecordingAccessSecret(recordingId, true);
+		});
 
-			// Disable anonymous recording access for the room
-			await updateRoomAccessConfig(roomId, {
-				anonymous: {
-					recording: {
-						enabled: false
+		describe('with anonymous recording access enabled', () => {
+			describe.each(OPERATIONS)('%s', (_operation, buildPath) => {
+				it.each(MATRIX)(
+					'answers a %s secret carrying a %s credential with %i',
+					async (secret, credential, status) => {
+						const response = await read(buildPath(recordingId), secret, credential);
+						expect(response.status).toBe(status);
 					}
-				}
+				);
+			});
+
+			it('keeps every credential that works without a secret working with a private one', async () => {
+				expect((await read(recordingPath(), 'none', 'apiKey')).status).toBe(200);
+				expect((await read(recordingPath(), 'none', 'memberToken')).status).toBe(200);
+
+				expect((await read(recordingPath(), 'private', 'apiKey')).status).toBe(200);
+				expect((await read(recordingPath(), 'private', 'memberToken')).status).toBe(200);
+			});
+
+			it('lets a private secret hand the recording to a user with no access to the room', async () => {
+				expectMeetError(await read(recordingPath(), 'none', 'outsiderToken'), errorInsufficientPermissions());
+				expect((await read(recordingPath(), 'private', 'outsiderToken')).status).toBe(200);
+			});
+
+			it('answers an unrecognised secret with the invalid-secret error before reading the credential', async () => {
+				expectMeetError(
+					await read(recordingPath(), 'invalid', 'none'),
+					errorInvalidRecordingSecret(recordingId)
+				);
+				expectMeetError(
+					await read(recordingPath(), 'invalid', 'apiKey'),
+					errorInvalidRecordingSecret(recordingId)
+				);
 			});
 		});
 
-		it('should fail to get recording when using public access secret and anonymous recording access is disabled', async () => {
-			const response = await request(app).get(`${RECORDINGS_PATH}/${recordingId}`).query({ recordingSecret });
-			expectMeetError(response, errorAnonymousAccessDisabled(roomId, 'recording'));
-		});
+		describe('with anonymous recording access disabled', () => {
+			beforeAll(async () => {
+				await disconnectFakeParticipants();
+				await endMeeting(roomId, roomData.moderatorToken);
+				await updateRoomAccessConfig(roomId, {
+					anonymous: {
+						recording: {
+							enabled: false
+						}
+					}
+				});
 
-		it('should fail to get recording media when using public access secret and anonymous recording access is disabled', async () => {
-			const response = await request(app)
-				.get(`${RECORDINGS_PATH}/${recordingId}/media`)
-				.query({ recordingSecret });
-			expectMeetError(response, errorAnonymousAccessDisabled(roomId, 'recording'));
+				// The access write bumps rolesUpdatedAt, which invalidates the member tokens issued before it
+				roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
+					recordingPlay: true,
+					recordingDownload: true
+				});
+			});
+
+			it.each<Credential>(['none', 'apiKey', 'adminToken', 'outsiderToken', 'memberToken'])(
+				'refuses the public access secret carrying a %s credential',
+				async (credential) => {
+					const response = await read(recordingPath(), 'public', credential);
+					expectMeetError(response, errorAnonymousAccessDisabled(roomId, 'recording'));
+				}
+			);
+
+			it('still serves the recording to the credentials that do not need the secret', async () => {
+				expect((await read(recordingPath(), 'none', 'apiKey')).status).toBe(200);
+				expect((await read(recordingPath(), 'none', 'adminToken')).status).toBe(200);
+				expect((await read(recordingPath(), 'none', 'memberToken')).status).toBe(200);
+			});
+
+			it('leaves the private access secret unaffected', async () => {
+				expect((await read(recordingPath(), 'private', 'adminToken')).status).toBe(200);
+				expectMeetError(await read(recordingPath(), 'private', 'none'), errorUnauthorized());
+			});
 		});
 	});
 });
