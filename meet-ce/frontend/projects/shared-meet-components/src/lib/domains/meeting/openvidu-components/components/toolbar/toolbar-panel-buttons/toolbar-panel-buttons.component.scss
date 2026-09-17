@@ -53,11 +53,10 @@
 	}
 }
 
-// Global styles for the collapsible panels menu
-::ng-deep .cdk-overlay-pane {
+::ng-deep .cdk-overlay-pane:has(.panels-menu) {
 	width: auto !important;
 }
-::ng-deep .cdk-overlay-connected-position-bounding-box {
+::ng-deep .cdk-overlay-connected-position-bounding-box:has(.panels-menu) {
 	right: 0 !important;
 }
 .panels-menu,
