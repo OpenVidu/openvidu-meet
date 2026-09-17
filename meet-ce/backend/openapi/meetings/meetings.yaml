@@ -103,9 +103,10 @@
         summary: Mute all participants
         description: >
             Turns off the devices of all participant in the current meeting.
-            This action affects all participants in the meeting, excluding the moderators.
-            Only `false` is accepted: moderation never turns a
-            remote device on, and each participant may turn theirs back on afterwards.
+            This action excludes the moderators and the caller.
+
+            Only `false` is accepted: moderation
+            never turns a remote device on, and each participant may turn theirs back on afterwards.
 
 
             Requires the `participantMute` permission.

@@ -1,4 +1,5 @@
-description: Successfully muted the devices of every participant except the moderators
+description: >
+    Successfully muted the devices of every participant except the moderators and the caller.
 content:
     application/json:
         schema:

@@ -18,7 +18,8 @@ properties:
                         format: uri
                         example: 'http://localhost:6080/room/room-123?secret=123456'
                         description: >
-                            The URL for anonymous moderators to access the room.
+                            The URL for anonymous moderators to access the room. Present only when the
+                            caller holds the `roomShareAccessLinks` permission, removed otherwise.
             speaker:
                 type: object
                 properties:
@@ -32,7 +33,8 @@ properties:
                         format: uri
                         example: 'http://localhost:6080/room/room-123?secret=654321'
                         description: >
-                            The URL for anonymous speakers to access the room.
+                            The URL for anonymous speakers to access the room. Present only when the
+                            caller holds the `roomShareAccessLinks` permission, removed otherwise.
             recording:
                 type: object
                 properties:
@@ -46,7 +48,8 @@ properties:
                         format: uri
                         example: 'http://localhost:6080/room/room-123?secret=987654'
                         description: >
-                            The URL for anonymous access to the room's recordings.
+                            The URL for anonymous access to the room's recordings. Present only when the
+                            caller holds the `roomShareAccessLinks` permission, removed otherwise.
     user:
         type: object
         properties:
