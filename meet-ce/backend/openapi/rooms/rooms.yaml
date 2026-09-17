@@ -4,6 +4,8 @@
         summary: Create a room
         description: |
             Creates a new OpenVidu Meet room using the provided data and returns the room details along with the generated participant URLs.
+
+            **Access token roles**: `admin`, `room_manager`.
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -37,6 +39,8 @@
             By default, rooms are sorted by creation date, newest first.
 
             > Only rooms accessible to the authenticated user are returned when using the `accessTokenHeader` authentication method.
+
+            **Access token roles**: `admin`, `room_manager`, `room_member`.
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -85,6 +89,8 @@
               - The operation may fail if deletion is not permitted
 
             > Only rooms the authenticated user can manage are affected when using the `accessTokenHeader` authentication method.
+
+            **Access token roles**: `admin`, `room_manager`.
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -119,6 +125,8 @@
         summary: Get a room
         description: |
             Retrieves the details of an OpenVidu Meet room by its room ID.
+
+            **Access token roles**: `admin`, `room_manager`, `room_member`.
 
         tags:
             - OpenVidu Meet - Rooms
@@ -157,6 +165,8 @@
               - The room may be deleted or closed immediately
               - Deletion may be scheduled to occur after the meeting ends
               - The operation may fail if deletion is not allowed
+
+            **Access token roles**: `admin`, `room_manager`.
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -195,6 +205,9 @@
         summary: Get room config
         description: >
             Retrieves the config of an OpenVidu Meet room with the specified room ID.
+
+
+            **Access token roles**: `admin`, `room_manager`, `room_member`.
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -223,6 +236,9 @@
         summary: Update room config
         description: >
             Updates the config of an OpenVidu Meet room with the specified room ID.
+
+
+            **Access token roles**: `admin`, `room_manager`.
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -258,6 +274,9 @@
         description: >
             Updates the status of an OpenVidu Meet room with the specified room ID.
             This can be used to open or close the room for new participants.
+
+
+            **Access token roles**: `admin`, `room_manager`.
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -297,6 +316,8 @@
 
             You can customize permissions for moderator and/or speaker roles.
             Only specify the permissions you want to change from the current configuration.
+
+            **Access token roles**: `admin`, `room_manager`.
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -334,6 +355,8 @@
 
             This allows you to enable or disable access for users and/or
             for anonymous guests using a predefined role (moderator/speaker/recording).
+
+            **Access token roles**: `admin`, `room_manager`.
         tags:
             - OpenVidu Meet - Rooms
         security:

@@ -18,6 +18,9 @@
         summary: Update security config
         description: >
             Updates the security config for the OpenVidu Meet application.
+
+
+            **Access token roles**: `admin`.
         tags:
             - Internal API - Global Config
         security:
@@ -64,6 +67,9 @@
         summary: Update rooms appearance config
         description: >
             Updates the appearance config for rooms in the OpenVidu Meet application.
+
+
+            **Access token roles**: `admin`.
         tags:
             - Internal API - Global Config
         security:

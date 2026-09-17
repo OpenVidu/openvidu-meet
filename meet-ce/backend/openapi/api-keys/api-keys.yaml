@@ -7,6 +7,8 @@
 
             > **Note:** Only one API key can be created in the system.
             > If an API key already exists, it will be replaced with the new one.
+
+            **Access token roles**: `admin`.
         tags:
             - Internal API - API Keys
         security:
@@ -30,6 +32,8 @@
 
             > **Note:** Only one API key can exist in the system.
             > If no API key exists, an empty array will be returned.
+
+            **Access token roles**: `admin`.
         tags:
             - Internal API - API Keys
         security:
@@ -50,6 +54,9 @@
         summary: Delete API keys
         description: >
             Deletes the existing API keys.
+
+
+            **Access token roles**: `admin`.
         tags:
             - Internal API - API Keys
         security:

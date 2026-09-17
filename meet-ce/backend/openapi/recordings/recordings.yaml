@@ -70,6 +70,8 @@
             > **Note:**
             > - When using `accessTokenHeader` authentication: Only recordings the authenticated user has access to will be returned.
             > - When using `roomMemberTokenHeader` authentication: The `roomId` filter is ignored and only recordings associated with the room included in the token will be returned.
+
+            **Access token roles**: `admin`, `room_manager`, `room_member`.
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -116,6 +118,8 @@
             > **Note:**
             > - When using `accessTokenHeader` authentication: Only deletes recordings the authenticated user has access to.
             > - When using `roomMemberTokenHeader` authentication: Only deletes recordings associated with the room included in the token.
+
+            **Access token roles**: `admin`, `room_manager`, `room_member`.
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -154,6 +158,8 @@
             > **Note:**
             > - When using `accessTokenHeader` authentication: Only includes recordings the authenticated user has access to.
             > - When using `roomMemberTokenHeader` authentication: Only includes recordings associated with the room included in the token.
+
+            **Access token roles**: `admin`, `room_manager`, `room_member`.
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -200,6 +206,9 @@
 
 
             Requires the `recordingPlay` permission, or a valid `recordingSecret` for the recording.
+
+
+            **Access token roles**: `admin`, `room_manager`, `room_member`.
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -238,6 +247,8 @@
 
             > ⚠️ **Note:** The recording will only be deleted if it exists and is not in progress
             > (i.e., not in a state such as `active`, `starting`, or `ending`).
+
+            **Access token roles**: `admin`, `room_manager`, `room_member`.
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -275,6 +286,8 @@
             for video playback without downloading the entire file.
 
             Requires the `recordingPlay` permission, or a valid `recordingSecret` for the recording.
+
+            **Access token roles**: `admin`, `room_manager`, `room_member`.
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -359,6 +372,8 @@
             recording — anyone who can play it back can also capture it through other means. What this
             permission split actually controls is whether the product **offers** a download (this endpoint and
             the bulk ZIP export), not whether the video file itself can be copied.
+
+            **Access token roles**: `admin`, `room_manager`, `room_member`.
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -452,6 +467,8 @@
 
             > **Note:** If `privateAccess=false` (accessible by anyone), public URL generation requires `access.anonymous.recording.enabled=true` in the room configuration.
             > Otherwise, a 403 error is returned.
+
+            **Access token roles**: `admin`, `room_manager`, `room_member`.
         tags:
             - OpenVidu Meet - Recordings
         security:

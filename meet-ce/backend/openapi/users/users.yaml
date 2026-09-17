@@ -7,6 +7,8 @@
 
             The userId must be unique. If a user with the specified userId already exists,
             the request will fail with a conflict error.
+
+            **Access token roles**: `admin`.
         tags:
             - OpenVidu Meet - Users
         security:
@@ -38,6 +40,8 @@
             Retrieves a paginated list of all users in the system.
 
             By default, the users are sorted by registration date in descending order (newest first).
+
+            **Access token roles**: `admin`, `room_manager`.
         tags:
             - OpenVidu Meet - Users
         security:
@@ -73,6 +77,8 @@
         summary: Bulk delete users
         description: |
             Deletes multiple users at once by their userIds.
+
+            **Access token roles**: `admin`.
         tags:
             - OpenVidu Meet - Users
         security:
@@ -101,6 +107,9 @@
         summary: Get a user
         description: >
             Retrieves the details of a specific user by their userId.
+
+
+            **Access token roles**: `admin`, `room_manager`.
         tags:
             - OpenVidu Meet - Users
         security:
@@ -131,6 +140,8 @@
             associated with this user.
 
             > **Note:** Cannot delete your own user account or the root admin user.
+
+            **Access token roles**: `admin`.
         tags:
             - OpenVidu Meet - Users
         security:
@@ -159,6 +170,8 @@
             Allows an admin to reset the password of a specific user.
 
             > **Note:** Cannot reset your own password using this endpoint. Use the `change-password` endpoint instead.
+
+            **Access token roles**: `admin`.
         tags:
             - OpenVidu Meet - Users
         security:
@@ -193,6 +206,8 @@
             Allows an admin to change the role of a specific user.
 
             > **Note:** Cannot change your own role or the role of the root admin user.
+
+            **Access token roles**: `admin`.
         tags:
             - OpenVidu Meet - Users
         security:

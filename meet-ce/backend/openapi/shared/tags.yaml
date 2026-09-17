@@ -5,7 +5,9 @@
 - name: OpenVidu Meet - Room Members
   description: Operations related to managing members within OpenVidu Meet rooms
 - name: OpenVidu Meet - Meetings
-  description: Operations related to managing the live meetings running in OpenVidu Meet rooms
+  description: >
+      Operations related to managing the live meetings running in OpenVidu Meet rooms. They take no user
+      access token: authenticate them with an API key or a room member token.
 - name: OpenVidu Meet - Recordings
   description: Operations related to managing OpenVidu Meet recordings
 - name: OpenVidu Meet - Webhooks

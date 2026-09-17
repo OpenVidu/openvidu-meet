@@ -8,6 +8,8 @@
 
             The delivery can be narrowed with `events` (only these event types) and `roomId`
             (only events of this room); omitting them delivers every event.
+
+            **Access token roles**: `admin`.
         tags:
             - OpenVidu Meet - Webhooks
         security:
@@ -37,6 +39,9 @@
         summary: Get all webhooks
         description: >
             Retrieves the list of all registered webhooks.
+
+
+            **Access token roles**: `admin`.
         tags:
             - OpenVidu Meet - Webhooks
         security:
@@ -59,6 +64,9 @@
         summary: Get a webhook
         description: >
             Retrieves the details of a registered webhook by its webhook ID.
+
+
+            **Access token roles**: `admin`.
         tags:
             - OpenVidu Meet - Webhooks
         security:
@@ -85,6 +93,9 @@
         description: >
             Updates the definition of a registered webhook by its webhook ID. The definition is
             replaced as a whole: an omitted optional field is cleared, not preserved.
+
+
+            **Access token roles**: `admin`.
         tags:
             - OpenVidu Meet - Webhooks
         security:
@@ -116,6 +127,9 @@
         summary: Delete a webhook
         description: >
             Deletes a registered webhook. Events stop being delivered to its URL immediately.
+
+
+            **Access token roles**: `admin`.
         tags:
             - OpenVidu Meet - Webhooks
         security:
@@ -154,6 +168,8 @@
             `{ "message": "This is a test webhook event" }`. A receiver that validates incoming
             `event` values strictly against that enum should still accept `testEvent` as a
             recognized, benign test delivery rather than reject it.
+
+            **Access token roles**: `admin`.
         tags:
             - OpenVidu Meet - Webhooks
         security:
