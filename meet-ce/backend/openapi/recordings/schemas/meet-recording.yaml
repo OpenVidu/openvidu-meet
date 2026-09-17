@@ -1,4 +1,9 @@
 type: object
+required:
+    - recordingId
+    - roomId
+    - roomName
+    - status
 properties:
     recordingId:
         type: string
@@ -80,32 +85,32 @@ properties:
         example: 'room-123--XX445.mp4'
         description: The name of the recording file.
     startDate:
-        type: [number, 'null']
+        type: number
         example: 1620000000000
         description: >
             The date when the recording started to record media (milliseconds since the Unix epoch).
             It is absent while the recording has not started yet (`starting` status) and on
             recordings that ended without recording anything (`failed` and `aborted` statuses).
     endDate:
-        type: [number, 'null']
+        type: number
         example: 1620000003600
-        description: The date when the recording was stopped (milliseconds since the Unix epoch).
+        description: The date when the recording was stopped (milliseconds since the Unix epoch). Absent until the recording ends.
     duration:
-        type: [number, 'null']
+        type: number
         example: 3.6
-        description: The duration of the recording in seconds.
+        description: The duration of the recording in seconds. Absent until the recording ends.
     size:
-        type: [number, 'null']
+        type: number
         example: 1024
-        description: The size of the recording file in bytes.
+        description: The size of the recording file in bytes. Absent until the recording ends.
     errorCode:
-        type: [number, 'null']
+        type: number
         example: 100
-        description: The error code of the recording.
+        description: The error code of the recording. Present only when the recording failed.
     error:
-        type: [string, 'null']
-        description: The error message of the recording.
+        type: string
+        description: The error message of the recording. Present only when the recording failed.
     details:
-        type: [string, 'null']
+        type: string
         example: 'Stopped using API'
-        description: Additional details about the recording.
+        description: Additional details about the recording. Present only when the recording ended.

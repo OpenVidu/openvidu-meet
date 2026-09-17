@@ -1,0 +1,8 @@
+description: 'Bad Request: the request body could not be parsed as JSON'
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/error.yaml'
+        example:
+            error: 'Bad Request'
+            message: 'Malformed body'

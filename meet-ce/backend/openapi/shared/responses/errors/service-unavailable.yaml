@@ -1,0 +1,8 @@
+description: 'Service Unavailable: LiveKit or the blob storage provider is unreachable'
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/error.yaml'
+        example:
+            error: 'LiveKit Error'
+            message: 'LiveKit is not available'

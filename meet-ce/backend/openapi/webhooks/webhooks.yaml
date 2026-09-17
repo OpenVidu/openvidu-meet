@@ -8,6 +8,10 @@ recordingStarted:
             > A recording in the `starting` status carries no `startDate`: it has not recorded anything
             > yet. The [`recordingUpdated`](#/webhooks/recordingUpdatedWebhook) webhook reports it when
             > the recording becomes `active`.
+            >
+            > The payload is the [`MeetRecording`](#/schemas/MeetRecording) entity. At this point it
+            > never carries `endDate`, `duration`, `size`, `errorCode`, `error` or `details`: those
+            > only appear once the recording ends.
         operationId: recordingStartedWebhook
         parameters:
             - $ref: ./parameters/x-timestamp.yaml
@@ -26,7 +30,7 @@ recordingStarted:
                                   data:
                                       type: object
                                       allOf:
-                                          - $ref: ../recordings/schemas/recording-base.yaml
+                                          - $ref: ../recordings/schemas/meet-recording.yaml
                                           - properties:
                                                 status:
                                                     enum: [starting, active]
@@ -42,6 +46,10 @@ recordingUpdated:
             This webhook is triggered when a recording update occurs.
 
             > This update can be due to a change in the recording status (e.g., from `starting` to `active`).
+            >
+            > The payload is the [`MeetRecording`](#/schemas/MeetRecording) entity. As with
+            > [`recordingStarted`](#/webhooks/recordingStartedWebhook), it never carries `endDate`,
+            > `duration`, `size`, `errorCode`, `error` or `details`.
         operationId: recordingUpdatedWebhook
         parameters:
             - $ref: ./parameters/x-timestamp.yaml
@@ -60,7 +68,7 @@ recordingUpdated:
                                   data:
                                       type: object
                                       allOf:
-                                          - $ref: ../recordings/schemas/recording-base.yaml
+                                          - $ref: ../recordings/schemas/meet-recording.yaml
                                           - properties:
                                                 status:
                                                     enum: [active, ending]
@@ -77,8 +85,13 @@ recordingEnded:
 
             > The recording can end due to various reasons, such as a participant stopping the recording
             > or the recording reaching its maximum duration.
-            > A recording that ended without ever recording media (`failed` and `aborted` statuses)
-            > carries no `startDate`, `duration` or `size`.
+            >
+            > The payload is the [`MeetRecording`](#/schemas/MeetRecording) entity. `endDate` is present
+            > except when the recording ended without ever recording media (`failed` and `aborted`
+            > statuses, alongside a missing `startDate`); `duration` and `size` are present only when
+            > the recording actually produced a file. `errorCode` and `error` are present only when
+            > `status` is `failed`. `details` accompanies any ending status when the server has extra
+            > context to add (for example, `"Stopped using API"`).
         operationId: recordingEndedWebhook
         parameters:
             - $ref: ./parameters/x-timestamp.yaml
@@ -96,31 +109,12 @@ recordingEnded:
                                       example: recordingEnded
                                   data:
                                       type: object
-                                      required:
-                                          - endDate
-                                          - details
                                       allOf:
-                                          - $ref: ../recordings/schemas/recording-base.yaml
+                                          - $ref: ../recordings/schemas/meet-recording.yaml
                                           - properties:
                                                 status:
                                                     enum: [complete, failed, aborted, limit_reached]
                                                     example: complete
-                                                endDate:
-                                                    type: number
-                                                    description: The date when the recording ended (milliseconds since the Unix epoch).
-                                                    example: 1620000003600
-                                                duration:
-                                                    type: number
-                                                    description: The duration of the recording in seconds.
-                                                    example: 3.6
-                                                size:
-                                                    type: number
-                                                    description: The size of the recording file in bytes.
-                                                    example: 1024
-                                                details:
-                                                    type: string
-                                                    description: Additional details about the recording.
-                                                    example: Stopped using API
         responses:
             '200':
                 $ref: ./responses/success/webhook-success.yaml

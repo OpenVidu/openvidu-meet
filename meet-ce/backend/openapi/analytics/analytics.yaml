@@ -16,6 +16,8 @@
                 $ref: './responses/success/get-analytics.yaml'
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden-invalid-token-subject.yaml'
             '429':
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':

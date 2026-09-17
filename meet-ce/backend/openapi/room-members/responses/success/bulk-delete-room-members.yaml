@@ -29,5 +29,5 @@ content:
             message: "All room members deleted successfully"
             deleted:
                 - 'alice_smith'
-                - 'ext:abc123'
+                - 'guest-a1b2c3d4e5'
             failed: []

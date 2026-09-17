@@ -34,11 +34,11 @@ content:
                     message: '2 room member(s) could not be deleted'
                     deleted:
                         - 'alice_smith'
-                        - 'ext:abc123'
+                        - 'guest-a1b2c3d4e5'
                     failed:
                         - memberId: 'bob_jones'
                           error: 'Room member not found'
-                        - memberId: 'ext:def456'
+                        - memberId: 'guest-f6g7h8i9j0'
                           error: 'Room member not found'
 
             no_deletion_performed:

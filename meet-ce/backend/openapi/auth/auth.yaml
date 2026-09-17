@@ -11,6 +11,8 @@
         responses:
             '200':
                 $ref: './responses/success/user-login.yaml'
+            '400':
+                $ref: '../shared/responses/errors/malformed-body.yaml'
             '404':
                 $ref: './responses/errors/invalid-credentials.yaml'
             '422':

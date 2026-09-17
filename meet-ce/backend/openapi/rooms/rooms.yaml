@@ -19,6 +19,8 @@
         responses:
             '201':
                 $ref: './responses/success/create-room.yaml'
+            '400':
+                $ref: '../shared/responses/errors/malformed-body.yaml'
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
@@ -119,6 +121,8 @@
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
 /rooms/{roomId}:
     get:
         operationId: getRoom
@@ -199,6 +203,8 @@
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
 /rooms/{roomId}/config:
     get:
         operationId: getRoomConfig
@@ -251,6 +257,8 @@
         responses:
             '200':
                 $ref: './responses/success/update-room-config.yaml'
+            '400':
+                $ref: '../shared/responses/errors/malformed-body.yaml'
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
@@ -293,6 +301,8 @@
                 $ref: './responses/success/update-room-status.yaml'
             '202':
                 $ref: './responses/success/room-schedule-closure.yaml'
+            '400':
+                $ref: '../shared/responses/errors/malformed-body.yaml'
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
@@ -330,6 +340,8 @@
         responses:
             '200':
                 $ref: './responses/success/update-room-roles.yaml'
+            '400':
+                $ref: '../shared/responses/errors/malformed-body.yaml'
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
@@ -369,6 +381,8 @@
         responses:
             '200':
                 $ref: './responses/success/update-room-access.yaml'
+            '400':
+                $ref: '../shared/responses/errors/malformed-body.yaml'
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':

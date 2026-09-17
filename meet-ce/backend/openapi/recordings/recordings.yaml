@@ -34,11 +34,14 @@
             - roomMemberTokenHeader: []
         parameters:
             - $ref: './parameters/recording-x-fields-header.yaml'
+            - $ref: './parameters/recording-fields.yaml'
         requestBody:
             $ref: './requests/start-recording.yaml'
         responses:
             '201':
                 $ref: './responses/success/start-recording.yaml'
+            '400':
+                $ref: '../shared/responses/errors/malformed-body.yaml'
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
@@ -55,6 +58,8 @@
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
 
     get:
         operationId: getRecordings
@@ -143,6 +148,8 @@
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
 
 /recordings/download:
     get:
@@ -196,6 +203,8 @@
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
 
 /recordings/{recordingId}:
     get:
@@ -274,6 +283,8 @@
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
 /recordings/{recordingId}/media:
     get:
         operationId: getRecordingMedia
@@ -354,6 +365,8 @@
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
 /recordings/{recordingId}/download:
     get:
         operationId: downloadRecording
@@ -383,9 +396,10 @@
         parameters:
             - $ref: './parameters/recording-id.yaml'
             - $ref: './parameters/recording-secret.yaml'
+            - $ref: './parameters/recording-range.yaml'
         responses:
             '200':
-                description: Successfully downloaded the recording media
+                description: Successfully downloaded the full recording media
                 headers:
                     Accept-Ranges:
                         $ref: './headers/accept-ranges.yaml'
@@ -393,6 +407,36 @@
                         $ref: './headers/content-length.yaml'
                     Cache-Control:
                         $ref: './headers/cache-control.yaml'
+                    Content-Disposition:
+                        description: >
+                            Indicates that the response is a file download. The filename is the recording's
+                            filename, falling back to `<recordingId>.mp4`.
+                        schema:
+                            type: string
+                            example: attachment; filename="room-123--EG_XYZ--XX445.mp4"
+                content:
+                    video/mp4:
+                        schema:
+                            type: string
+                            format: binary
+            '206':
+                description: Successfully downloaded a partial range of the recording media
+                headers:
+                    Accept-Ranges:
+                        $ref: './headers/accept-ranges.yaml'
+                    Content-Length:
+                        $ref: './headers/content-length.yaml'
+                    Cache-Control:
+                        $ref: './headers/cache-control.yaml'
+                    Content-Range:
+                        $ref: './headers/content-range.yaml'
+                    Content-Disposition:
+                        description: >
+                            Indicates that the response is a file download. The filename is the recording's
+                            filename, falling back to `<recordingId>.mp4`.
+                        schema:
+                            type: string
+                            example: attachment; filename="room-123--EG_XYZ--XX445.mp4"
                 content:
                     video/mp4:
                         schema:
@@ -408,12 +452,23 @@
                 $ref: './responses/errors/recording-not-found.yaml'
             '409':
                 $ref: './responses/errors/recording-not-streamable.yaml'
+            '416':
+                description: Requested range not satisfiable
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../shared/schemas/error.yaml'
+                        example:
+                            error: Recording Error
+                            message: 'Recording "room-123--EG_XYZ--XX445" range not satisfiable. File size: 123456789'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
             '429':
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
 /recordings/{recordingId}/stop:
     post:
         operationId: stopRecording
@@ -435,6 +490,7 @@
         parameters:
             - $ref: './parameters/recording-id.yaml'
             - $ref: './parameters/recording-x-fields-header.yaml'
+            - $ref: './parameters/recording-fields.yaml'
         responses:
             '202':
                 $ref: './responses/success/stop-recording.yaml'
@@ -452,6 +508,8 @@
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
 /recordings/{recordingId}/url:
     get:
         operationId: getRecordingUrl

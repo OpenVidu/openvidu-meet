@@ -7,4 +7,4 @@ description: >
 required: false
 schema:
     type: string
-example: 'extraFields=effectivePermissions'
+example: 'effectivePermissions'

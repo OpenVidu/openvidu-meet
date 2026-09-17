@@ -8,7 +8,7 @@ content:
                 summary: Room member does not exist in the specified room
                 value:
                     error: 'Room Member Error'
-                    message: 'Room member "abc123" does not exist in room "room_123"'
+                    message: 'Room member "abc123" not found in room "room_123"'
             room_not_found:
                 summary: Room does not exist
                 value:

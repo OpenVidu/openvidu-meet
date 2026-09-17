@@ -6,4 +6,4 @@ description: >
 required: false
 schema:
     type: string
-example: 'fields=accessUrl,baseRole'
+example: 'accessUrl,baseRole'

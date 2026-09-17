@@ -34,8 +34,12 @@
                 $ref: '../../meetings/responses/errors/room-closed.yaml'
             '422':
                 $ref: '../../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../../shared/responses/errors/service-unavailable.yaml'
 
 /rooms/{roomId}/members/token/refresh:
     post:
@@ -59,5 +63,11 @@
                 $ref: '../../shared/responses/errors/forbidden.yaml'
             '404':
                 $ref: '../../meetings/responses/errors/room-participant-not-found.yaml'
+            '422':
+                $ref: '../../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../../shared/responses/errors/service-unavailable.yaml'

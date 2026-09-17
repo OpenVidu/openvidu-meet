@@ -4,6 +4,8 @@ content:
     application/json:
         schema:
             type: object
+            required:
+                - roomId
             properties:
                 roomId:
                     type: string

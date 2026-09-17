@@ -7,3 +7,4 @@ schema:
     enum:
         - name
         - registrationDate
+    default: registrationDate

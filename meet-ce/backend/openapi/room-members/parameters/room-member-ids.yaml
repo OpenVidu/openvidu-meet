@@ -6,4 +6,4 @@ description: >
     Each ID should correspond to an existing member in the room.
 schema:
     type: string
-example: 'alice_smith,ext:abc123'
+example: 'alice_smith,guest-a1b2c3d4e5'

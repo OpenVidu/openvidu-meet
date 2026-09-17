@@ -15,6 +15,8 @@
         responses:
             '201':
                 $ref: './responses/success/create-ai-assistant.yaml'
+            '400':
+                $ref: '../shared/responses/errors/malformed-body.yaml'
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':

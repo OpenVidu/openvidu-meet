@@ -13,4 +13,4 @@ content:
                 summary: Room not found
                 value:
                     error: 'Room Error'
-                    message: "Room 'room-123' not found"
+                    message: "Room 'room-123' does not exist"

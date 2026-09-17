@@ -261,7 +261,7 @@ MeetRecordingVideoEncodingOptions:
               Video bitrate in kbps
         keyFrameInterval:
             type: number
-            minimum: 0
+            minimum: 1
             example: 4
             description: |
               Keyframe interval in seconds

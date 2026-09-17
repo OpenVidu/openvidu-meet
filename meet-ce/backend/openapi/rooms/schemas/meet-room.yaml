@@ -68,9 +68,8 @@ properties:
             <br/><br/>
 
             **Excluded from responses by default to reduce payload size.**
-            To include it in the response:
-            - **POST/PUT requests:** use the `X-ExtraFields: config` header
-            - **Other requests:** use either the `extraFields=config` query parameter or the `X-ExtraFields: config` header
+            To include it in the response, use either the `extraFields=config` query parameter or the
+            `X-ExtraFields: config` header, on every request including POST/PUT.
         $ref: ./meet-room-config.yaml#/MeetRoomConfig
     # maxParticipants:
     #     type: integer

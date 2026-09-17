@@ -12,6 +12,8 @@ content:
                     items:
                         type: object
                         properties:
+                            roomId:
+                                type: string
                             successCode:
                                 type: string
                                 enum:

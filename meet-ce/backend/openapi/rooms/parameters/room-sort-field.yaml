@@ -8,3 +8,4 @@ schema:
         - creationDate
         - roomName
         - autoDeletionDate
+    default: creationDate

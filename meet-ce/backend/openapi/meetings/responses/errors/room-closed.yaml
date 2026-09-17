@@ -1,8 +1,16 @@
-description: Room closed
+description: Room closed or meeting full
 content:
     application/json:
         schema:
             $ref: '../../../shared/schemas/error.yaml'
-        example:
-            error: 'Room Error'
-            message: Room 'room_123' is closed and cannot be joined
+        examples:
+            room_closed:
+                summary: Room Closed Example
+                value:
+                    error: 'Room Error'
+                    message: Room 'room_123' is closed and cannot be joined
+            meeting_full:
+                summary: Meeting Full Example
+                value:
+                    error: 'Room Error'
+                    message: Room 'room_123' has reached its maximum number of participants

@@ -8,11 +8,13 @@ content:
                 userId:
                     type: string
                     pattern: '^[a-z0-9_]+$'
+                    minLength: 5
+                    maxLength: 20
                     example: 'alice_smith'
                     description: |
                         The unique identifier for the new user. This must be unique across all users.
 
-                        Validation: Must contain only lowercase letters, numbers, and underscores.
+                        Validation: 5 to 20 characters, only lowercase letters, numbers, and underscores.
                 name:
                     type: string
                     maxLength: 50

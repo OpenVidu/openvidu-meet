@@ -8,7 +8,7 @@ content:
                 summary: Invalid room secret
                 value:
                     error: 'Room Error'
-                    message: 'Secret "123456" is not recognized for room "room-123"'
+                    message: "Provided secret is not recognized for room 'room-123'"
             participant_name_required:
                 summary: Missing participant name when joining anonymously
                 value:

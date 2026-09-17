@@ -16,6 +16,10 @@
                 $ref: './responses/success/get-me.yaml'
             '401':
                 $ref: '../../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../../shared/responses/errors/forbidden-invalid-token-subject.yaml'
+            '429':
+                $ref: '../../shared/responses/errors/too-many-requests.yaml'
 /users/change-password:
     post:
         operationId: changeUserPassword
@@ -40,5 +44,7 @@
                 $ref: '../../shared/responses/errors/unauthorized.yaml'
             '422':
                 $ref: '../../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../../shared/responses/errors/internal-server.yaml'

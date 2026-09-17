@@ -7,9 +7,12 @@ content:
             properties:
                 userId:
                     type: string
+                    pattern: '^[a-z0-9_]+$'
                     example: 'alice_smith'
                     description: |
                         The unique identifier for a user. This field should be provided when adding a user as a member.
+
+                        Validation: only lowercase letters, numbers, and underscores.
 
                         If provided:
                         - The member will be associated with the Meet user account identified by this userId.
@@ -22,6 +25,7 @@ content:
                         If both are provided, a validation error will be returned.
                 name:
                     type: string
+                    minLength: 1
                     maxLength: 50
                     example: 'Alice Smith'
                     description: |

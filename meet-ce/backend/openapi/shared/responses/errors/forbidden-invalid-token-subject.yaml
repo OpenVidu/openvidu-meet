@@ -1,0 +1,8 @@
+description: Forbidden - the access token's subject no longer exists
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/error.yaml'
+        example:
+            error: Authorization Error
+            message: 'Invalid token subject'

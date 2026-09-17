@@ -74,9 +74,8 @@ properties:
             <br/><br/>
 
             **Excluded from responses by default to reduce payload size.**
-            To include it in the response:
-            - **POST/PUT requests:** use the `X-ExtraFields: effectivePermissions` header
-            - **Other requests:** use either the `extraFields=effectivePermissions` query parameter or the `X-ExtraFields: effectivePermissions` header
+            To include it in the response, use either the `extraFields=effectivePermissions` query parameter or
+            the `X-ExtraFields: effectivePermissions` header, on every request including POST/PUT.
     permissionsUpdatedAt:
         type: number
         example: 1620000000000

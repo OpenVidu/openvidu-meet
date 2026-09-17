@@ -22,10 +22,14 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '404':
                 $ref: './responses/errors/no-active-meeting.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
             '429':
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
     delete:
         operationId: meetingEnd
         summary: End a meeting
@@ -51,10 +55,14 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '404':
                 $ref: '../rooms/responses/errors/room-not-found.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
             '429':
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
 /meetings/{roomId}/participants:
     get:
         operationId: participantList
@@ -81,10 +89,14 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '404':
                 $ref: './responses/errors/no-active-meeting.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
             '429':
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
 /meetings/{roomId}/participants/media:
     put:
         operationId: participantMuteAll
@@ -109,6 +121,8 @@
         responses:
             '200':
                 $ref: './responses/success/mute-all-participants-media.yaml'
+            '400':
+                $ref: '../shared/responses/errors/malformed-body.yaml'
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
@@ -123,6 +137,8 @@
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
 /meetings/{roomId}/participants/{participantIdentity}:
     get:
         operationId: participantGet
@@ -148,10 +164,14 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '404':
                 $ref: './responses/errors/room-participant-not-found.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
             '429':
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
     delete:
         operationId: participantKick
         summary: Kick a participant
@@ -177,10 +197,14 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '404':
                 $ref: './responses/errors/room-participant-not-found.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
             '429':
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
 /meetings/{roomId}/participants/{participantIdentity}/media:
     put:
         operationId: participantMute
@@ -205,6 +229,8 @@
         responses:
             '200':
                 $ref: './responses/success/mute-participant-media.yaml'
+            '400':
+                $ref: '../shared/responses/errors/malformed-body.yaml'
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
@@ -221,6 +247,8 @@
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
 /meetings/{roomId}/participants/{participantIdentity}/role:
     put:
         operationId: participantRoleUpdate
@@ -267,3 +295,5 @@
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
