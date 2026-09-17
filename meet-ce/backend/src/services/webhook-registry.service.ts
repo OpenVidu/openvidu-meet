@@ -38,19 +38,29 @@ export class WebhookRegistryService {
 
 	/**
 	 * Registers the webhook a fresh deployment is configured to start with
-	 * (`MEET_INITIAL_WEBHOOK_ENABLED` / `MEET_INITIAL_WEBHOOK_URL`). Called by storage
-	 * initialization, so it only ever runs on a deployment whose storage is empty.
+	 * (`MEET_INITIAL_WEBHOOK_ENABLED` / `MEET_INITIAL_WEBHOOK_URL`). Skips when that URL is already
+	 * registered, so a storage initialization that runs again on a seeded deployment does not
+	 * register it a second time.
 	 *
 	 * The entry starts enabled only when an initial API key is also configured: the HMAC signature
 	 * secret is the deployment's first API key, so without one every delivery would fail.
 	 */
 	async initializeDefaultWebhook(): Promise<void> {
-		if (!MEET_ENV.INITIAL_WEBHOOK_URL) {
+		const initialWebhookUrl = MEET_ENV.INITIAL_WEBHOOK_URL;
+
+		if (!initialWebhookUrl) {
+			return;
+		}
+
+		const existingWebhooks = await this.webhookRepository.findAll();
+
+		if (existingWebhooks.some((webhook) => webhook.url === initialWebhookUrl)) {
+			this.logger.info('Initial webhook already registered, skipping initial webhook registration');
 			return;
 		}
 
 		const webhook = await this.createWebhook({
-			url: MEET_ENV.INITIAL_WEBHOOK_URL,
+			url: initialWebhookUrl,
 			enabled: MEET_ENV.INITIAL_WEBHOOK_ENABLED === 'true' && !!MEET_ENV.INITIAL_API_KEY
 		});
 		this.logger.info(`Initial webhook '${webhook.webhookId}' registered from environment configuration`);

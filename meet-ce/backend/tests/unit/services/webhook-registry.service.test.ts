@@ -1,9 +1,10 @@
-import { describe, expect, it } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import type { MeetWebhook, MeetWebhookOptions } from '@openvidu-meet/typings';
 import { randomUUID } from 'crypto';
 import { LockAcquisitionError } from 'redlock-universal';
 import '../../../src/config/dependency-injector.config.js';
 import { setInternalConfig } from '../../../src/config/internal-config.js';
+import { MEET_ENV } from '../../../src/environment.js';
 import { OpenViduMeetError } from '../../../src/models/error.model.js';
 import { RedisDistributedLock, type RedisRedlock } from '../../../src/models/redis-lock.model.js';
 import type { LoggerService } from '../../../src/services/logger.service.js';
@@ -22,6 +23,10 @@ class FakeWebhookRepository {
 
 	async count(): Promise<number> {
 		return this.documents.length;
+	}
+
+	async findAll(): Promise<MeetWebhook[]> {
+		return this.documents;
 	}
 
 	async create(webhook: MeetWebhook): Promise<MeetWebhook> {
@@ -114,5 +119,62 @@ describe('WebhookRegistryService.createWebhook (registration count-then-create r
 
 		expect(results.map((result) => result.status)).toEqual(['fulfilled', 'fulfilled', 'fulfilled']);
 		expect(repository.documents).toHaveLength(3);
+	});
+});
+
+/**
+ * S3 (MEET-API-CONTRACT-AUDIT-FINDINGS.md): storage initialization runs again whenever
+ * MEET_NAME_ID stops matching the stored project id, and the initial webhook was registered
+ * unconditionally every time, unlike the admin user and API key initialisers.
+ */
+describe('WebhookRegistryService.initializeDefaultWebhook (repeated storage initialization)', () => {
+	const initialUrl = 'https://initial.example.com/hook';
+	const originalUrl = MEET_ENV.INITIAL_WEBHOOK_URL;
+
+	const seededService = (repository: FakeWebhookRepository) =>
+		new WebhookRegistryService(
+			...([noopLogger, repository, {}, realMutexOverFakeRedis()] as unknown as ConstructorParameters<
+				typeof WebhookRegistryService
+			>)
+		);
+
+	beforeEach(() => {
+		MEET_ENV.INITIAL_WEBHOOK_URL = initialUrl;
+	});
+
+	afterEach(() => {
+		MEET_ENV.INITIAL_WEBHOOK_URL = originalUrl;
+	});
+
+	it('registers the configured webhook on a deployment that has none', async () => {
+		const repository = new FakeWebhookRepository();
+
+		await seededService(repository).initializeDefaultWebhook();
+
+		expect(repository.documents).toHaveLength(1);
+		expect(repository.documents[0].url).toBe(initialUrl);
+	});
+
+	it('does not register the same URL twice', async () => {
+		const repository = new FakeWebhookRepository();
+		const service = seededService(repository);
+
+		await service.initializeDefaultWebhook();
+		await service.initializeDefaultWebhook();
+
+		expect(repository.documents).toHaveLength(1);
+	});
+
+	it('still registers when the deployment only has webhooks pointing elsewhere', async () => {
+		const repository = new FakeWebhookRepository();
+		const service = seededService(repository);
+
+		await service.createWebhook({ url: 'https://elsewhere.example.com/hook' });
+		await service.initializeDefaultWebhook();
+
+		expect(repository.documents.map((webhook) => webhook.url)).toEqual([
+			'https://elsewhere.example.com/hook',
+			initialUrl
+		]);
 	});
 });
