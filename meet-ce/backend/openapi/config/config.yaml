@@ -47,17 +47,14 @@
         summary: Get rooms appearance config
         description: >
             Retrieves the appearance config for rooms in the OpenVidu Meet application.
+
+
+            The join screen reads it before any session exists, so this operation takes no credential.
         tags:
             - Internal API - Global Config
-        security:
-            - accessTokenHeader: []
         responses:
             '200':
                 $ref: './responses/success/get-appearance-config.yaml'
-            '401':
-                $ref: '../shared/responses/errors/unauthorized.yaml'
-            '403':
-                $ref: '../shared/responses/errors/forbidden.yaml'
             '429':
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
@@ -97,13 +94,14 @@
         description: >
             Retrieves the captions configuration from the environment variable MEET_CAPTIONS_ENABLED.
             This endpoint returns whether captions are enabled in the system.
+
+
+            The join screen reads it before any session exists, so this operation takes no credential.
         tags:
             - Internal API - Global Config
         responses:
             '200':
                 $ref: './responses/success/get-captions-config.yaml'
-            '401':
-                $ref: '../shared/responses/errors/unauthorized.yaml'
             '429':
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
