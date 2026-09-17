@@ -9,8 +9,10 @@ import { DocumentNotFoundError } from '../models/database.model.js';
 import {
 	errorMaxWebhooksReached,
 	errorWebhookCreationInProgress,
-	errorWebhookNotFound
+	errorWebhookNotFound,
+	OpenViduMeetError
 } from '../models/error.model.js';
+import { MeetWebhookOptionsSchema } from '../models/zod-schemas/webhook.schema.js';
 import { WebhookRepository } from '../repositories/webhook.repository.js';
 import { LoggerService } from './logger.service.js';
 import { MutexService } from './mutex.service.js';
@@ -37,23 +39,51 @@ export class WebhookRegistryService {
 	) {}
 
 	/**
-	 * Registers the webhook a fresh deployment is configured to start with
-	 * (`MEET_INITIAL_WEBHOOK_ENABLED` / `MEET_INITIAL_WEBHOOK_URL`). Called by storage
-	 * initialization, so it only ever runs on a deployment whose storage is empty.
+	 * Registers the webhook the deployment is configured to start with
+	 * (`MEET_INITIAL_WEBHOOK_ENABLED` / `MEET_INITIAL_WEBHOOK_URL`) on a deployment that has no
+	 * webhook at all, the way the API key is seeded. Runs on every start, so a value the registry
+	 * refuses is logged and skipped instead of stopping the start.
 	 *
 	 * The entry starts enabled only when an initial API key is also configured: the HMAC signature
 	 * secret is the deployment's first API key, so without one every delivery would fail.
 	 */
 	async initializeDefaultWebhook(): Promise<void> {
-		if (!MEET_ENV.INITIAL_WEBHOOK_URL) {
+		const initialWebhookUrl = MEET_ENV.INITIAL_WEBHOOK_URL;
+
+		if (!initialWebhookUrl) {
 			return;
 		}
 
-		const webhook = await this.createWebhook({
-			url: MEET_ENV.INITIAL_WEBHOOK_URL,
+		const existingWebhooks = await this.webhookRepository.count();
+
+		if (existingWebhooks > 0) {
+			this.logger.info('Webhook already registered, skipping initial webhook registration');
+			return;
+		}
+
+		const options = MeetWebhookOptionsSchema.safeParse({
+			url: initialWebhookUrl,
 			enabled: MEET_ENV.INITIAL_WEBHOOK_ENABLED === 'true' && !!MEET_ENV.INITIAL_API_KEY
 		});
-		this.logger.info(`Initial webhook '${webhook.webhookId}' registered from environment configuration`);
+
+		if (!options.success) {
+			const issues = options.error.issues.map((issue) => issue.message).join(', ');
+			this.logger.warn(
+				`Initial webhook URL '${initialWebhookUrl}' is invalid (${issues}); skipping initial webhook registration`
+			);
+			return;
+		}
+
+		try {
+			const webhook = await this.createWebhook(options.data);
+			this.logger.info(`Initial webhook '${webhook.webhookId}' registered from environment configuration`);
+		} catch (error) {
+			if (!(error instanceof OpenViduMeetError)) {
+				throw error;
+			}
+
+			this.logger.warn(`Initial webhook registration refused (${error.message}); skipping it`);
+		}
 	}
 
 	/**

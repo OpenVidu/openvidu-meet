@@ -119,75 +119,75 @@
       },
       "ITEMS": {
         "meetingJoin": {
-          "LABEL": "Pode entrar na reunião",
+          "LABEL": "Entrar",
           "DESCRIPTION": "Permitir entrar na reunião"
         },
         "meetingRead": {
-          "LABEL": "Pode consultar a reunião",
+          "LABEL": "Consultar",
           "DESCRIPTION": "Permitir consultar o estado ao vivo da reunião e os seus participantes sem entrar"
         },
         "meetingEnd": {
-          "LABEL": "Pode encerrar a reunião",
+          "LABEL": "Encerrar",
           "DESCRIPTION": "Permitir encerrar a reunião para todos os participantes"
         },
         "participantPromote": {
-          "LABEL": "Pode tornar moderador",
+          "LABEL": "Tornar moderador",
           "DESCRIPTION": "Permitir promover participantes à função de moderador"
         },
         "participantKick": {
-          "LABEL": "Pode expulsar participantes",
+          "LABEL": "Expulsar participantes",
           "DESCRIPTION": "Permitir remover participantes da reunião"
         },
         "participantMute": {
-          "LABEL": "Pode silenciar participantes",
+          "LABEL": "Silenciar participantes",
           "DESCRIPTION": "Permitir desligar o microfone, a câmara ou a partilha de ecrã de outros participantes"
         },
         "roomShareAccessLinks": {
-          "LABEL": "Pode compartilhar links de acesso",
+          "LABEL": "Compartilhar links de acesso",
           "DESCRIPTION": "Permitir compartilhar links de convite com outras pessoas"
         },
         "mediaPublishVideo": {
-          "LABEL": "Pode publicar vídeo",
+          "LABEL": "Publicar vídeo",
           "DESCRIPTION": "Permitir compartilhar vídeo da câmera"
         },
         "mediaPublishAudio": {
-          "LABEL": "Pode publicar áudio",
+          "LABEL": "Publicar áudio",
           "DESCRIPTION": "Permitir compartilhar áudio do microfone"
         },
         "mediaShareScreen": {
-          "LABEL": "Pode compartilhar tela",
+          "LABEL": "Compartilhar tela",
           "DESCRIPTION": "Permitir compartilhar a área de trabalho ou abas do navegador"
         },
         "mediaChangeVirtualBackground": {
-          "LABEL": "Pode alterar o fundo virtual",
+          "LABEL": "Alterar fundo virtual",
           "DESCRIPTION": "Permitir alterar o fundo virtual"
         },
         "recordingControl": {
-          "LABEL": "Pode gravar",
+          "LABEL": "Gravar",
           "DESCRIPTION": "Permitir iniciar e parar gravações"
         },
         "recordingList": {
-          "LABEL": "Pode listar gravações",
+          "LABEL": "Listar gravações",
           "DESCRIPTION": "Permitir listar gravações"
         },
         "recordingPlay": {
-          "LABEL": "Pode reproduzir gravações",
+          "LABEL": "Reproduzir gravações",
           "DESCRIPTION": "Permitir reproduzir gravações"
         },
         "recordingDownload": {
-          "LABEL": "Pode baixar gravações",
+          "LABEL": "Baixar gravações",
           "DESCRIPTION": "Permitir baixar gravações"
         },
         "recordingDelete": {
-          "LABEL": "Pode excluir gravações",
+          "LABEL": "Excluir gravações",
           "DESCRIPTION": "Permitir excluir gravações"
         },
         "chatRead": {
-          "LABEL": "Pode ler o chat",
+          "LABEL": "Ler",
           "DESCRIPTION": "Permitir ler mensagens do chat"
         },
         "chatWrite": {
-          "LABEL": "Pode escrever no chat",
+          "LABEL": "Escrever",
           "DESCRIPTION": "Permitir enviar mensagens no chat"
         }
       }

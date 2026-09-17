@@ -3,12 +3,15 @@ import { SecurityConfig } from '@openvidu-meet/typings';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	getSecurityConfig,
+	getSecurityConfigAnonymously,
 	restoreDefaultGlobalConfig,
 	startTestServer,
 	updateSecurityConfig
 } from '../../../helpers/request-helpers.js';
 
-describe('Security Config API Tests', () => {
+// The security config routes are commented out in global-config.routes.ts until the OAuth login that
+// needs them ships. The suite keeps the contract it must satisfy when they come back.
+describe.skip('Security Config API Tests', () => {
 	beforeAll(async () => {
 		await startTestServer();
 	});
@@ -71,6 +74,12 @@ describe('Security Config API Tests', () => {
 			const response = await getSecurityConfig();
 			expect(response.status).toBe(200);
 			expect(response.body).toEqual(defaultConfig);
+		});
+
+		it('should reject an anonymous read, which would expose the OAuth provider credentials', async () => {
+			const response = await getSecurityConfigAnonymously();
+			expect(response.status).toBe(401);
+			expect(response.body).not.toHaveProperty('authentication');
 		});
 	});
 });

@@ -7,6 +7,9 @@
             When using the anonymous recording secret, generated tokens only allow retrieval of room recordings.
             When a previous room member token is provided via `X-Room-Member-Token`, the endpoint can regenerate
             a join token while preserving participant identity.
+
+
+            **Access token roles**: `admin`, `room_manager`, `room_member`, when the request body carries no `secret`.
         tags:
             - Internal API - Room Members
         security:

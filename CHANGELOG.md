@@ -116,6 +116,8 @@ Both command and event name sets are accepted.
 #### Deployment
 
 - Rate limits for token issuance, API requests and static assets were raised.
+- `MEET_INITIAL_ADMIN_USER`, `MEET_INITIAL_API_KEY` and `MEET_INITIAL_WEBHOOK_URL` seed their item on every
+  start while the deployment has none, instead of on the first start only.
 
 ### Fixed
 
@@ -150,11 +152,15 @@ Both command and event name sets are accepted.
 - A room's `autoDeletionDate` could be set so far in the future that it was never honored, leaving the room stuck forever. It now has an upper limit.
 - `DELETE /rooms` reset the connection instead of answering when `roomIds` grew large enough to exceed
   the runtime's header size limit. Now roomIds are limited to 100
+- [`POST /rooms`][3.9-create-room] answered `500` when `roomName` was empty or only whitespace. An empty,
+  blank or `null` name is treated as no name given and the room is created with the default name `Room`.
 
 #### UI
 
 - A meeting that filled up while a participant was joining reported a generic connection error.
 - The local video disappeared from the layout when the last remote participant left.
+- A virtual background or blur froze for other participants when the sending window was minimized or
+  covered, in Firefox and Safari.
 - A participant who joined with a device turned off could not turn it on.
 - The stop control in the toolbar and in the recording panel was disabled until a recording was active.
 - Abandoned wizard state leaked into the next room, and a failed save reset the form.
@@ -167,6 +173,10 @@ Both command and event name sets are accepted.
   unused. Every webhook is answered.
 - Two object merge helpers accepted prototype-chain keys, and temporary passwords were generated from a
   non-cryptographic random source.
+- Ending a meeting that was never recorded logged a warning about releasing a recording lock nobody had  taken. The lock is only released when it is held
+- A `MEET_NAME_ID` different from the one stored deleted the global configuration on start and registered
+  the initial webhook again, failing the start once the webhook cap was reached. The configuration is kept,
+  the webhook is registered once, and a `MEET_INITIAL_WEBHOOK_URL` the registry refuses is logged and skipped.
 
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html
 [3.9-meetings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/meetingGet
@@ -180,5 +190,6 @@ Both command and event name sets are accepted.
 [3.9-room-config]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/schemas/MeetRoomConfig
 [3.9-permissions]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/schemas/MeetPermissions
 [3.9-recording]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/schemas/MeetRecording
+[3.9-create-room]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/createRoom
 [3.9-start-recording]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/startRecording
 [3.9-stop-recording]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/stopRecording

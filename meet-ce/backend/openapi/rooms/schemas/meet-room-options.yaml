@@ -1,23 +1,25 @@
 type: object
 properties:
     roomName:
-        type: [string, 'null']
+        type: string
         maxLength: 50
         example: 'room'
         default: 'Room'
         description: |
             The display name of the room, used to identify it in a user-friendly way. This value does not need to be unique.
 
-            Maximum length: 50 characters. If not provided, the default value "Room" will be used.
+            Maximum length: 50 characters. Surrounding whitespace is removed and repeated whitespace is collapsed.
+
+            The property is optional: omitting it creates the room with the default name "Room".
     autoDeletionDate:
-        type: [number, 'null']
+        type: number
         maximum: 8640000000000000
         example: 1900000000000
         description: |
             The timestamp (in milliseconds since the Unix epoch) specifying when the room will be automatically deleted.
             This must be at least one hour in the future and no later than the latest date a timestamp can represent.
 
-            After this time, the room is closed to new participants and scheduled for deletion. 
+            After this time, the room is closed to new participants and scheduled for deletion.
             It will be removed after the last participant leaves (graceful deletion).
 
             If not set, the room remains active until manually deleted.

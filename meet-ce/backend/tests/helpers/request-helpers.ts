@@ -188,7 +188,18 @@ export const deleteAllWebhooks = async () => {
 	);
 };
 
-export const getSecurityConfig = async () => {
+export const getSecurityConfig = async (accessToken?: string) => {
+	checkAppIsRunning();
+
+	const token = accessToken ?? (await loginRootAdmin()).accessToken;
+	const response = await request(app)
+		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/security`))
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, token)
+		.send();
+	return response;
+};
+
+export const getSecurityConfigAnonymously = async () => {
 	checkAppIsRunning();
 
 	const response = await request(app)

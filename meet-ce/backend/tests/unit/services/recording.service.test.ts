@@ -10,15 +10,24 @@ import { RecordingService } from '../../../src/services/recording.service.js';
 const noopLogger = { info: () => {}, warn: () => {}, debug: () => {}, error: () => {}, verbose: () => {} };
 
 class FakeLiveKitService {
+	egressQueries = 0;
+
 	constructor(private inProgress: Partial<EgressInfo>[]) {}
 
 	async getInProgressRecordingsEgress(): Promise<EgressInfo[]> {
+		this.egressQueries++;
 		return this.inProgress as EgressInfo[];
 	}
 }
 
 class FakeMutexService {
 	released: string[] = [];
+
+	constructor(private held = true) {}
+
+	async lockRegistryExists(): Promise<boolean> {
+		return this.held;
+	}
 
 	async releaseWithRegistry(key: string): Promise<void> {
 		this.released.push(key);
@@ -85,6 +94,34 @@ describe('RecordingService.releaseRecordingLockIfNoEgress — B3: STARTING egres
 	});
 });
 
+/**
+ * S6 (MEET-API-CONTRACT-AUDIT-FINDINGS.md): every meeting end asks for the release, so a room that
+ * never recorded used to reach the registry and log a WARN for a lock nobody ever took.
+ */
+describe('RecordingService.releaseRecordingLockIfNoEgress - S6: a lock nobody holds is not released', () => {
+	it('returns before querying LiveKit or the registry when the lock is not held', async () => {
+		const livekit = new FakeLiveKitService([]);
+		const mutex = new FakeMutexService(false);
+		const service = buildService(livekit, mutex);
+
+		await service.releaseRecordingLockIfNoEgress('room-1');
+
+		expect(livekit.egressQueries).toBe(0);
+		expect(mutex.released).toEqual([]);
+	});
+
+	it('still releases a held lock', async () => {
+		const livekit = new FakeLiveKitService([]);
+		const mutex = new FakeMutexService();
+		const service = buildService(livekit, mutex);
+
+		await service.releaseRecordingLockIfNoEgress('room-1');
+
+		expect(livekit.egressQueries).toBe(1);
+		expect(mutex.released).toEqual([expect.stringContaining('room-1')]);
+	});
+});
+
 const ROOM_ID = 'room-1';
 const MEETING_ID = 'RM_meeting_1';
 
@@ -110,6 +147,10 @@ class FakeLockMutexService {
 
 	async acquireWithRegistry(key: string): Promise<object> {
 		return { key };
+	}
+
+	async lockRegistryExists(): Promise<boolean> {
+		return true;
 	}
 
 	async releaseWithRegistry(key: string): Promise<void> {

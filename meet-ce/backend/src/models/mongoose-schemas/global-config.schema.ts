@@ -101,10 +101,6 @@ const MeetGlobalConfigSchema = new Schema<MeetGlobalConfigDocument>(
 			required: true,
 			default: INTERNAL_CONFIG.GLOBAL_CONFIG_SCHEMA_VERSION
 		},
-		projectId: {
-			type: String,
-			required: true
-		},
 		securityConfig: {
 			type: SecurityConfigSchema,
 			required: true
@@ -118,9 +114,6 @@ const MeetGlobalConfigSchema = new Schema<MeetGlobalConfigDocument>(
 		versionKey: false
 	}
 );
-
-// Create indexes for efficient querying
-MeetGlobalConfigSchema.index({ projectId: 1 }, { unique: true });
 
 export const meetGlobalConfigCollectionName = 'MeetGlobalConfig';
 

@@ -5,5 +5,7 @@ content:
         schema:
             type: object
             properties:
-                config:
+                roles:
                     $ref: '../schemas/meet-room-roles-config.yaml'
+            required:
+                - roles

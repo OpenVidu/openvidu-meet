@@ -119,75 +119,75 @@
       },
       "ITEMS": {
         "meetingJoin": {
-          "LABEL": "Può partecipare alla riunione",
+          "LABEL": "Partecipare",
           "DESCRIPTION": "Consenti di partecipare alla riunione"
         },
         "meetingRead": {
-          "LABEL": "Può consultare la riunione",
+          "LABEL": "Consultare",
           "DESCRIPTION": "Consenti di consultare lo stato in tempo reale della riunione e dei suoi partecipanti senza parteciparvi"
         },
         "meetingEnd": {
-          "LABEL": "Può terminare la riunione",
+          "LABEL": "Terminare",
           "DESCRIPTION": "Consenti di terminare la riunione per tutti i partecipanti"
         },
         "participantPromote": {
-          "LABEL": "Può nominare moderatore",
+          "LABEL": "Nominare moderatore",
           "DESCRIPTION": "Consenti di promuovere i partecipanti al ruolo di moderatore"
         },
         "participantKick": {
-          "LABEL": "Può espellere i partecipanti",
+          "LABEL": "Espellere i partecipanti",
           "DESCRIPTION": "Consenti di rimuovere i partecipanti dalla riunione"
         },
         "participantMute": {
-          "LABEL": "Può silenziare i partecipanti",
+          "LABEL": "Silenziare i partecipanti",
           "DESCRIPTION": "Consenti di disattivare microfono, videocamera o condivisione schermo degli altri partecipanti"
         },
         "roomShareAccessLinks": {
-          "LABEL": "Può condividere i link di accesso",
+          "LABEL": "Condividere i link di accesso",
           "DESCRIPTION": "Consenti di condividere i link di invito con altri"
         },
         "mediaPublishVideo": {
-          "LABEL": "Può pubblicare il video",
+          "LABEL": "Pubblicare il video",
           "DESCRIPTION": "Consenti di condividere il video della telecamera"
         },
         "mediaPublishAudio": {
-          "LABEL": "Può pubblicare l'audio",
+          "LABEL": "Pubblicare l'audio",
           "DESCRIPTION": "Consenti di condividere l'audio del microfono"
         },
         "mediaShareScreen": {
-          "LABEL": "Può condividere lo schermo",
+          "LABEL": "Condividere lo schermo",
           "DESCRIPTION": "Consenti di condividere il desktop o le schede del browser"
         },
         "mediaChangeVirtualBackground": {
-          "LABEL": "Può cambiare lo sfondo virtuale",
+          "LABEL": "Cambiare lo sfondo virtuale",
           "DESCRIPTION": "Consenti di cambiare lo sfondo virtuale"
         },
         "recordingControl": {
-          "LABEL": "Può registrare",
+          "LABEL": "Registrare",
           "DESCRIPTION": "Consenti di avviare e interrompere le registrazioni"
         },
         "recordingList": {
-          "LABEL": "Può elencare le registrazioni",
+          "LABEL": "Elencare le registrazioni",
           "DESCRIPTION": "Consenti di elencare le registrazioni"
         },
         "recordingPlay": {
-          "LABEL": "Può riprodurre le registrazioni",
+          "LABEL": "Riprodurre le registrazioni",
           "DESCRIPTION": "Consenti di riprodurre le registrazioni"
         },
         "recordingDownload": {
-          "LABEL": "Può scaricare le registrazioni",
+          "LABEL": "Scaricare le registrazioni",
           "DESCRIPTION": "Consenti di scaricare le registrazioni"
         },
         "recordingDelete": {
-          "LABEL": "Può eliminare le registrazioni",
+          "LABEL": "Eliminare le registrazioni",
           "DESCRIPTION": "Consenti di eliminare le registrazioni"
         },
         "chatRead": {
-          "LABEL": "Può leggere la chat",
+          "LABEL": "Leggere",
           "DESCRIPTION": "Consenti di leggere i messaggi della chat"
         },
         "chatWrite": {
-          "LABEL": "Può scrivere nella chat",
+          "LABEL": "Scrivere",
           "DESCRIPTION": "Consenti di inviare messaggi nella chat"
         }
       }

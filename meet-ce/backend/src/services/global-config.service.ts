@@ -1,6 +1,5 @@
 import type { GlobalConfig, MeetAppearanceConfig, SecurityConfig } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { MEET_ENV } from '../environment.js';
 import { GlobalConfigRepository } from '../repositories/global-config.repository.js';
 import { LoggerService } from './logger.service.js';
 
@@ -16,13 +15,18 @@ export class GlobalConfigService {
 	) {}
 
 	/**
-	 * Initializes the global configuration with default values.
-	 * This should only be called during system initialization if no config exists.
+	 * Creates the global configuration with default values when the deployment has none.
 	 */
 	async initializeGlobalConfig(): Promise<void> {
 		try {
-			const defaultConfig = this.getDefaultConfig();
-			await this.globalConfigRepository.create(defaultConfig);
+			const existingConfig = await this.globalConfigRepository.get();
+
+			if (existingConfig) {
+				this.logger.info('Global config already initialized, skipping global config initialization');
+				return;
+			}
+
+			await this.globalConfigRepository.create(this.getDefaultConfig());
 			this.logger.info('Global config initialized with default values');
 		} catch (error) {
 			this.logger.error('Error initializing global config:', error);
@@ -141,7 +145,6 @@ export class GlobalConfigService {
 	 */
 	protected getDefaultConfig(): GlobalConfig {
 		const defaultConfig: GlobalConfig = {
-			projectId: MEET_ENV.NAME_ID,
 			securityConfig: {
 				authentication: {
 					oauthProviders: []

@@ -172,7 +172,13 @@ verifyPathExists(webcomponentLoaderPath, 'Webcomponent loader');
 verifyPathExists(webcomponentEsmBundlePath, 'Webcomponent ESM bundle');
 verifyPathExists(frontendHtmlPath, 'Index HTML file');
 verifyPathExists(publicApiHtmlFilePath, 'Public API documentation');
-verifyPathExists(internalApiHtmlFilePath, 'Internal API documentation');
+
+// The internal docs route is only registered in development (see server.ts); production never
+// builds this file and never serves the route, so its absence there is not a problem to warn about.
+if (isDev) {
+	verifyPathExists(internalApiHtmlFilePath, 'Internal API documentation');
+}
+
 verifyPathExists(packageJsonPath, 'Backend package.json');
 
 if (isDev) {

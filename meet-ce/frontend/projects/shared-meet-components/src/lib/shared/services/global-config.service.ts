@@ -1,5 +1,5 @@
 import { inject, Service, signal } from '@angular/core';
-import { MeetAppearanceConfig, SecurityConfig } from '@openvidu-meet/typings';
+import { MeetAppearanceConfig } from '@openvidu-meet/typings';
 import { HttpService } from './http.service';
 import { LoggerService } from './logger.service';
 import type { ILogger } from '../models/logger.model';
@@ -23,15 +23,19 @@ export class GlobalConfigService {
 
 	constructor() {}
 
-	async getSecurityConfig(): Promise<SecurityConfig> {
-		const path = `${this.GLOBAL_CONFIG_API}/security`;
-		return await this.httpService.getRequest<SecurityConfig>(path);
-	}
-
-	async saveSecurityConfig(config: SecurityConfig) {
-		const path = `${this.GLOBAL_CONFIG_API}/security`;
-		await this.httpService.putRequest(path, config);
-	}
+	// No screen reads or writes the global security config yet: the console only edits appearance, and
+	// the GET requires an administrator because it returns the OAuth provider credentials. These two
+	// stay commented, with `SecurityConfig` out of the imports, until the OAuth login needs them.
+	//
+	// async getSecurityConfig(): Promise<SecurityConfig> {
+	// 	const path = `${this.GLOBAL_CONFIG_API}/security`;
+	// 	return await this.httpService.getRequest<SecurityConfig>(path);
+	// }
+	//
+	// async saveSecurityConfig(config: SecurityConfig) {
+	// 	const path = `${this.GLOBAL_CONFIG_API}/security`;
+	// 	await this.httpService.putRequest(path, config);
+	// }
 
 	async getRoomsAppearanceConfig(): Promise<{ appearance: MeetAppearanceConfig }> {
 		const path = `${this.GLOBAL_CONFIG_API}/rooms/appearance`;

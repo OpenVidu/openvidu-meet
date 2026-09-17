@@ -4,6 +4,9 @@
         summary: Get authenticated user
         description: >
             Retrieves the details of the authenticated user.
+
+
+            **Access token roles**: `admin`, `room_manager`, `room_member`.
         tags:
             - Internal API - Users
         security:
@@ -19,6 +22,9 @@
         summary: Change user password
         description: >
             Allows the authenticated user to change their password.
+
+
+            **Access token roles**: `admin`, `room_manager`, `room_member`.
         tags:
             - Internal API - Users
         security:

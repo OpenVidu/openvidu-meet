@@ -20,8 +20,8 @@ paths:
         $ref: './users/internal/users.yaml#/~1users~1me'
     /users/change-password:
         $ref: './users/internal/users.yaml#/~1users~1change-password'
-    /config/security:
-        $ref: './config/config.yaml#/~1config~1security'
+    # /config/security:
+    #     $ref: './config/config.yaml#/~1config~1security'
     /config/rooms/appearance:
         $ref: './config/config.yaml#/~1config~1rooms~1appearance'
     /config/captions:

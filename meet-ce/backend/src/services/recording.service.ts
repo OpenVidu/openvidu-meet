@@ -765,19 +765,26 @@ export class RecordingService {
 	}
 
 	/**
-	 * Releases the active recording lock for a specified room, but only if there are no in-progress
-	 * recording egress operations.
+	 * Releases the active recording lock for a specified room, but only if the lock is held and
+	 * there are no in-progress recording egress operations.
 	 *
-	 * This method first checks for any ongoing recording egress for the room, in any in-progress
-	 * state (STARTING, ACTIVE or ENDING) — not just ACTIVE: a duplicate/stale `egress_ended` for a
-	 * previous egress arriving while a new one is still STARTING must not release the lock a
-	 * concurrent request could then re-acquire, starting a second recording.
-	 * If any is found, the lock isn't released as recording is still considered active.
-	 * Otherwise, it proceeds to release the mutex lock associated with the room's recording.
+	 * Every meeting end asks for this release, recorded or not, so a room that never took the lock
+	 * returns before reaching LiveKit or the lock registry.
+	 *
+	 * The egress check covers any in-progress state (STARTING, ACTIVE or ENDING), not just ACTIVE:
+	 * a duplicate/stale `egress_ended` for a previous egress arriving while a new one is still
+	 * STARTING must not release the lock a concurrent request could then re-acquire, starting a
+	 * second recording.
 	 */
 	async releaseRecordingLockIfNoEgress(roomId: string): Promise<void> {
 		if (roomId) {
 			const lockName = MeetLock.getRecordingActiveLock(roomId);
+
+			if (!(await this.mutexService.lockRegistryExists(lockName))) {
+				this.logger.verbose(`No recording active lock held for room '${roomId}'`);
+				return;
+			}
+
 			const egress = await this.livekitService.getInProgressRecordingsEgress(roomId);
 
 			if (egress.length > 0) {

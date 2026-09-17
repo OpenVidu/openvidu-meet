@@ -88,14 +88,4 @@ export class GlobalConfigRepository extends BaseRepository<GlobalConfig, MeetGlo
 		// Get the first (and only) document from the collection
 		return this.findOne({}, fields);
 	}
-
-	/**
-	 * Deletes the global configuration.
-	 *
-	 * WARNING: This will remove the global config document from the database.
-	 * Use with caution.
-	 */
-	delete(): Promise<void> {
-		return this.deleteMany({});
-	}
 }

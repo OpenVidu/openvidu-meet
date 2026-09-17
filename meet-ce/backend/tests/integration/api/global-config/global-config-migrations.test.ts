@@ -11,6 +11,8 @@ import {
 import { MigrationService } from '../../../../src/services/migration.service.js';
 import { startTestServer } from '../../../helpers/request-helpers.js';
 
+type InsertedId = Awaited<ReturnType<typeof MeetGlobalConfigModel.collection.insertOne>>['insertedId'];
+
 // Legacy document builders used by integration tests.
 // When GLOBAL_CONFIG_SCHEMA_VERSION increases, add one builder per legacy version that
 // must still be migrated to the current one.
@@ -56,6 +58,21 @@ const buildLegacyGlobalConfigV2 = (projectId: string) => ({
 	}
 });
 
+const buildLegacyGlobalConfigV3 = (projectId: string) => ({
+	schemaVersion: 3,
+	projectId,
+	securityConfig: {
+		authentication: {
+			oauthProviders: []
+		}
+	},
+	roomsConfig: {
+		appearance: {
+			themes: []
+		}
+	}
+});
+
 /**
  * Single assertion function for migrated global config documents in integration tests.
  * This ensures all fields are validated consistently across test cases, and serves
@@ -63,10 +80,9 @@ const buildLegacyGlobalConfigV2 = (projectId: string) => ({
  * config document (regardless of the original version).
  * Keep this aligned with the CURRENT global config schema (not intermediate versions).
  */
-const expectMigratedGlobalConfigToCurrentVersion = (migratedConfig: Record<string, unknown>, projectId: string) => {
+const expectMigratedGlobalConfigToCurrentVersion = (migratedConfig: Record<string, unknown>) => {
 	expect(migratedConfig).toMatchObject({
 		schemaVersion: INTERNAL_CONFIG.GLOBAL_CONFIG_SCHEMA_VERSION,
-		projectId,
 		securityConfig: {
 			authentication: {
 				oauthProviders: []
@@ -84,6 +100,7 @@ const expectMigratedGlobalConfigToCurrentVersion = (migratedConfig: Record<strin
 	// Webhooks became a resource of their own; the startup step migrates the URL before the schema
 	// migration drops the field (see WebhookMigration in migrations/webhooks-migration.ts)
 	expect(migratedConfig).not.toHaveProperty('webhooksConfig');
+	expect(migratedConfig).not.toHaveProperty('projectId');
 };
 
 describe('GlobalConfig Schema Migrations', () => {
@@ -163,11 +180,34 @@ describe('GlobalConfig Schema Migrations', () => {
 			});
 			expect(migratedConfig).not.toHaveProperty('webhooksConfig');
 		});
+
+		it('should transform global config schema from v3 to v4 dropping the project id', () => {
+			const migrationName = generateSchemaMigrationName(meetGlobalConfigCollectionName, 3, 4);
+			const transform = globalConfigMigrations.get(migrationName);
+			expect(transform).toBeDefined();
+
+			const configV3 = buildLegacyGlobalConfigV3('project_v3') as unknown as MeetGlobalConfigDocument;
+
+			const migratedConfig = transform!(configV3);
+			expect(migratedConfig).toMatchObject({
+				securityConfig: {
+					authentication: {
+						oauthProviders: []
+					}
+				},
+				roomsConfig: {
+					appearance: {
+						themes: []
+					}
+				}
+			});
+			expect(migratedConfig).not.toHaveProperty('projectId');
+		});
 	});
 
 	describe('GlobalConfig Migration Integration', () => {
 		let migrationService: MigrationService;
-		const testProjectIds: string[] = [];
+		const testDocumentIds: InsertedId[] = [];
 
 		beforeAll(async () => {
 			await startTestServer();
@@ -175,7 +215,7 @@ describe('GlobalConfig Schema Migrations', () => {
 		});
 
 		afterAll(async () => {
-			await MeetGlobalConfigModel.collection.deleteMany({ projectId: { $in: testProjectIds } });
+			await MeetGlobalConfigModel.collection.deleteMany({ _id: { $in: testDocumentIds } });
 		});
 
 		/**
@@ -184,19 +224,21 @@ describe('GlobalConfig Schema Migrations', () => {
 		 */
 		it.each([
 			{ fromVersion: 1, buildDocument: buildLegacyGlobalConfigV1 },
-			{ fromVersion: 2, buildDocument: buildLegacyGlobalConfigV2 }
+			{ fromVersion: 2, buildDocument: buildLegacyGlobalConfigV2 },
+			{ fromVersion: 3, buildDocument: buildLegacyGlobalConfigV3 }
 		])(
 			'should migrate a legacy global config document from v$fromVersion to current version',
 			async ({ buildDocument }) => {
-				const legacyProjectId = `legacy_project_${Date.now()}`;
-				testProjectIds.push(legacyProjectId);
+				const { insertedId } = await MeetGlobalConfigModel.collection.insertOne(
+					buildDocument(`legacy_project_${Date.now()}`)
+				);
+				testDocumentIds.push(insertedId);
 
-				await MeetGlobalConfigModel.collection.insertOne(buildDocument(legacyProjectId));
 				await migrationService.runMigrations();
 
-				const migratedConfig = await MeetGlobalConfigModel.collection.findOne({ projectId: legacyProjectId });
+				const migratedConfig = await MeetGlobalConfigModel.collection.findOne({ _id: insertedId });
 				expect(migratedConfig).toBeTruthy();
-				expectMigratedGlobalConfigToCurrentVersion(migratedConfig as Record<string, unknown>, legacyProjectId);
+				expectMigratedGlobalConfigToCurrentVersion(migratedConfig as Record<string, unknown>);
 			}
 		);
 	});

@@ -3,6 +3,16 @@ description: |
     The OpenVidu Meet REST API provides a comprehensive set of endpoints for integrating real-time video
     conferencing capabilities into your applications.
 
+    ## User roles
+
+    A user access token carries the role of the user it was issued for: `admin`, `room_manager` or
+    `room_member`. Each operation lists the roles it accepts under **Access token roles**, and a token from
+    any other role is rejected with a `403` before any permission is evaluated. An API key and a room member
+    token are not subject to this gate.
+
+    The meeting operations (`/meetings/...`) take no user access token at all: authenticate them with an API
+    key or a room member token.
+
     ## Permissions
 
     Every operation on a room's live meeting and on its recordings is gated by one room member permission,

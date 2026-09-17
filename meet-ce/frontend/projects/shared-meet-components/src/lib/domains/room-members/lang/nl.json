@@ -119,75 +119,75 @@
       },
       "ITEMS": {
         "meetingJoin": {
-          "LABEL": "Kan deelnemen aan meeting",
+          "LABEL": "Deelnemen",
           "DESCRIPTION": "Deelnemen aan de meeting toestaan"
         },
         "meetingRead": {
-          "LABEL": "Kan meeting bekijken",
+          "LABEL": "Bekijken",
           "DESCRIPTION": "De live status van de meeting en de deelnemers bekijken zonder deel te nemen toestaan"
         },
         "meetingEnd": {
-          "LABEL": "Kan meeting beëindigen",
+          "LABEL": "Beëindigen",
           "DESCRIPTION": "De meeting voor alle deelnemers beëindigen toestaan"
         },
         "participantPromote": {
-          "LABEL": "Kan moderator maken",
+          "LABEL": "Moderator maken",
           "DESCRIPTION": "Deelnemers promoveren tot de rol van moderator toestaan"
         },
         "participantKick": {
-          "LABEL": "Kan deelnemers verwijderen",
+          "LABEL": "Deelnemers verwijderen",
           "DESCRIPTION": "Deelnemers uit de meeting verwijderen toestaan"
         },
         "participantMute": {
-          "LABEL": "Kan deelnemers dempen",
+          "LABEL": "Deelnemers dempen",
           "DESCRIPTION": "Microfoon, camera of schermdeling van andere deelnemers uitschakelen toestaan"
         },
         "roomShareAccessLinks": {
-          "LABEL": "Kan toegangslinks delen",
+          "LABEL": "Toegangslinks delen",
           "DESCRIPTION": "Uitnodigingslinks met anderen delen toestaan"
         },
         "mediaPublishVideo": {
-          "LABEL": "Kan video publiceren",
+          "LABEL": "Video publiceren",
           "DESCRIPTION": "Cameravideo delen toestaan"
         },
         "mediaPublishAudio": {
-          "LABEL": "Kan audio publiceren",
+          "LABEL": "Audio publiceren",
           "DESCRIPTION": "Microfoonaudio delen toestaan"
         },
         "mediaShareScreen": {
-          "LABEL": "Kan scherm delen",
+          "LABEL": "Scherm delen",
           "DESCRIPTION": "Bureaublad of browsertabbladen delen toestaan"
         },
         "mediaChangeVirtualBackground": {
-          "LABEL": "Kan virtuele achtergrond wijzigen",
+          "LABEL": "Virtuele achtergrond wijzigen",
           "DESCRIPTION": "De virtuele achtergrond wijzigen toestaan"
         },
         "recordingControl": {
-          "LABEL": "Kan opnemen",
+          "LABEL": "Opnemen",
           "DESCRIPTION": "Opnames starten en stoppen toestaan"
         },
         "recordingList": {
-          "LABEL": "Kan opnames weergeven",
+          "LABEL": "Opnames weergeven",
           "DESCRIPTION": "Opnames weergeven toestaan"
         },
         "recordingPlay": {
-          "LABEL": "Kan opnames afspelen",
+          "LABEL": "Opnames afspelen",
           "DESCRIPTION": "Opnames afspelen toestaan"
         },
         "recordingDownload": {
-          "LABEL": "Kan opnames downloaden",
+          "LABEL": "Opnames downloaden",
           "DESCRIPTION": "Opnames downloaden toestaan"
         },
         "recordingDelete": {
-          "LABEL": "Kan opnames verwijderen",
+          "LABEL": "Opnames verwijderen",
           "DESCRIPTION": "Opnames verwijderen toestaan"
         },
         "chatRead": {
-          "LABEL": "Kan chat lezen",
+          "LABEL": "Lezen",
           "DESCRIPTION": "Chatberichten lezen toestaan"
         },
         "chatWrite": {
-          "LABEL": "Kan chat schrijven",
+          "LABEL": "Schrijven",
           "DESCRIPTION": "Chatberichten versturen toestaan"
         }
       }

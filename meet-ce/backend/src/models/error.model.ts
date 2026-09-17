@@ -411,6 +411,14 @@ export const errorParticipantNotFound = (participantIdentity: string, roomId: st
 	);
 };
 
+export const errorParticipantNotRoomMember = (participantIdentity: string, roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Participant Error',
+		`Participant '${participantIdentity}' in room '${roomId}' cannot be moderated because they did not join through OpenVidu Meet`,
+		409
+	);
+};
+
 export const errorParticipantCannotBePromotedToModerator = (
 	participantIdentity: string,
 	roomId: string
@@ -455,6 +463,10 @@ export const errorAiAssistantCannotBeStopped = (roomId: string): OpenViduMeetErr
 
 export const errorInvalidWebhookUrl = (url: string, reason: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Webhook Error', `Webhook URL '${url}' is invalid: ${reason}`, 400);
+};
+
+export const errorWebhookDestinationNotAllowed = (url: string, reason: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Webhook Error', `Webhook URL '${url}' is not allowed: ${reason}`, 400);
 };
 
 export const errorApiKeyNotConfiguredForWebhooks = (): OpenViduMeetError => {

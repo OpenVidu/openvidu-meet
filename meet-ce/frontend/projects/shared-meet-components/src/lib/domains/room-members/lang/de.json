@@ -119,75 +119,75 @@
       },
       "ITEMS": {
         "meetingJoin": {
-          "LABEL": "Kann am Meeting teilnehmen",
+          "LABEL": "Teilnehmen",
           "DESCRIPTION": "Erlaubt das Beitreten zum Meeting"
         },
         "meetingRead": {
-          "LABEL": "Kann Meeting einsehen",
+          "LABEL": "Einsehen",
           "DESCRIPTION": "Erlaubt das Einsehen des Live-Status des Meetings und seiner Teilnehmer, ohne beizutreten"
         },
         "meetingEnd": {
-          "LABEL": "Kann Meeting beenden",
+          "LABEL": "Beenden",
           "DESCRIPTION": "Erlaubt das Beenden des Meetings für alle Teilnehmer"
         },
         "participantPromote": {
-          "LABEL": "Kann zum Moderator machen",
+          "LABEL": "Zum Moderator machen",
           "DESCRIPTION": "Erlaubt das Hochstufen von Teilnehmern zur Moderatorenrolle"
         },
         "participantKick": {
-          "LABEL": "Kann Teilnehmer entfernen",
+          "LABEL": "Teilnehmer entfernen",
           "DESCRIPTION": "Erlaubt das Entfernen von Teilnehmern aus dem Meeting"
         },
         "participantMute": {
-          "LABEL": "Kann Teilnehmer stummschalten",
+          "LABEL": "Teilnehmer stummschalten",
           "DESCRIPTION": "Erlaubt das Ausschalten von Mikrofon, Kamera oder Bildschirmfreigabe anderer Teilnehmer"
         },
         "roomShareAccessLinks": {
-          "LABEL": "Kann Zugangslinks teilen",
+          "LABEL": "Zugangslinks teilen",
           "DESCRIPTION": "Erlaubt das Teilen von Einladungslinks mit anderen"
         },
         "mediaPublishVideo": {
-          "LABEL": "Kann Video übertragen",
+          "LABEL": "Video übertragen",
           "DESCRIPTION": "Erlaubt das Teilen des Kameravideos"
         },
         "mediaPublishAudio": {
-          "LABEL": "Kann Audio übertragen",
+          "LABEL": "Audio übertragen",
           "DESCRIPTION": "Erlaubt das Teilen des Mikrofon-Audios"
         },
         "mediaShareScreen": {
-          "LABEL": "Kann Bildschirm teilen",
+          "LABEL": "Bildschirm teilen",
           "DESCRIPTION": "Erlaubt das Teilen des Desktops oder von Browser-Tabs"
         },
         "mediaChangeVirtualBackground": {
-          "LABEL": "Kann virtuellen Hintergrund ändern",
+          "LABEL": "Virtuellen Hintergrund ändern",
           "DESCRIPTION": "Erlaubt das Ändern des virtuellen Hintergrunds"
         },
         "recordingControl": {
-          "LABEL": "Kann aufzeichnen",
+          "LABEL": "Aufzeichnen",
           "DESCRIPTION": "Erlaubt das Starten und Stoppen von Aufnahmen"
         },
         "recordingList": {
-          "LABEL": "Kann Aufnahmen auflisten",
+          "LABEL": "Aufnahmen auflisten",
           "DESCRIPTION": "Erlaubt das Auflisten von Aufnahmen"
         },
         "recordingPlay": {
-          "LABEL": "Kann Aufnahmen abspielen",
+          "LABEL": "Aufnahmen abspielen",
           "DESCRIPTION": "Erlaubt das Abspielen von Aufnahmen"
         },
         "recordingDownload": {
-          "LABEL": "Kann Aufnahmen herunterladen",
+          "LABEL": "Aufnahmen herunterladen",
           "DESCRIPTION": "Erlaubt das Herunterladen von Aufnahmen"
         },
         "recordingDelete": {
-          "LABEL": "Kann Aufnahmen löschen",
+          "LABEL": "Aufnahmen löschen",
           "DESCRIPTION": "Erlaubt das Löschen von Aufnahmen"
         },
         "chatRead": {
-          "LABEL": "Kann Chat lesen",
+          "LABEL": "Lesen",
           "DESCRIPTION": "Erlaubt das Lesen von Chat-Nachrichten"
         },
         "chatWrite": {
-          "LABEL": "Kann Chat schreiben",
+          "LABEL": "Schreiben",
           "DESCRIPTION": "Erlaubt das Senden von Chat-Nachrichten"
         }
       }
