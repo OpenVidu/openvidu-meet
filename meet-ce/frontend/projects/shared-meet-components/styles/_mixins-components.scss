@@ -24,7 +24,7 @@
 // Mixin for consistent buttons
 @mixin ov-button-base {
 	@include layout.ov-theme-transition;
-	border-radius: var(--ov-meet-button-border-radius);
+	border-radius: var(--ov-meet-button-border-radius) !important;
 	font-weight: var(--ov-meet-button-font-weight);
 	transition:
 		var(--ov-meet-button-transition),
