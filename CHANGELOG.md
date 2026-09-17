@@ -165,6 +165,8 @@ Both command and event name sets are accepted.
 - The stop control in the toolbar and in the recording panel was disabled until a recording was active.
 - Abandoned wizard state leaked into the next room, and a failed save reset the form.
 - The wizard sent back the deprecated permission keys it had read.
+- The participant panel's moderation menu was clipped at the right edge of the window. A toolbar
+  style overrode Angular Material's overlay positioning for every menu in the app.
 
 #### Deployment
 
