@@ -119,75 +119,75 @@
       },
       "ITEMS": {
         "meetingJoin": {
-          "LABEL": "会議に参加可能",
+          "LABEL": "参加",
           "DESCRIPTION": "会議への参加を許可します"
         },
         "meetingRead": {
-          "LABEL": "会議を参照可能",
+          "LABEL": "参照",
           "DESCRIPTION": "参加せずに会議のライブ状態と参加者の参照を許可します"
         },
         "meetingEnd": {
-          "LABEL": "会議を終了可能",
+          "LABEL": "終了",
           "DESCRIPTION": "すべての参加者の会議を終了することを許可します"
         },
         "participantPromote": {
-          "LABEL": "モデレーターに指定可能",
+          "LABEL": "モデレーターに指定",
           "DESCRIPTION": "参加者をモデレーターロールに昇格させることを許可します"
         },
         "participantKick": {
-          "LABEL": "参加者を退出させ可能",
+          "LABEL": "参加者を退出させる",
           "DESCRIPTION": "会議から参加者を退出させることを許可します"
         },
         "participantMute": {
-          "LABEL": "参加者をミュート可能",
+          "LABEL": "参加者をミュート",
           "DESCRIPTION": "他の参加者のマイク、カメラ、画面共有をオフにすることを許可します"
         },
         "roomShareAccessLinks": {
-          "LABEL": "アクセスリンクを共有可能",
+          "LABEL": "アクセスリンクの共有",
           "DESCRIPTION": "他の人と招待リンクを共有することを許可します"
         },
         "mediaPublishVideo": {
-          "LABEL": "ビデオを公開可能",
+          "LABEL": "ビデオの公開",
           "DESCRIPTION": "カメラのビデオ共有を許可します"
         },
         "mediaPublishAudio": {
-          "LABEL": "オーディオを公開可能",
+          "LABEL": "オーディオの公開",
           "DESCRIPTION": "マイクのオーディオ共有を許可します"
         },
         "mediaShareScreen": {
-          "LABEL": "画面を共有可能",
+          "LABEL": "画面の共有",
           "DESCRIPTION": "デスクトップまたはブラウザタブの共有を許可します"
         },
         "mediaChangeVirtualBackground": {
-          "LABEL": "仮想背景を変更可能",
+          "LABEL": "仮想背景の変更",
           "DESCRIPTION": "仮想背景の変更を許可します"
         },
         "recordingControl": {
-          "LABEL": "録画可能",
+          "LABEL": "録画",
           "DESCRIPTION": "録画の開始と停止を許可します"
         },
         "recordingList": {
-          "LABEL": "録画を一覧表示可能",
+          "LABEL": "録画の一覧表示",
           "DESCRIPTION": "録画の一覧表示を許可します"
         },
         "recordingPlay": {
-          "LABEL": "録画を再生可能",
+          "LABEL": "録画の再生",
           "DESCRIPTION": "録画の再生を許可します"
         },
         "recordingDownload": {
-          "LABEL": "録画をダウンロード可能",
+          "LABEL": "録画のダウンロード",
           "DESCRIPTION": "録画のダウンロードを許可します"
         },
         "recordingDelete": {
-          "LABEL": "録画を削除可能",
+          "LABEL": "録画の削除",
           "DESCRIPTION": "録画の削除を許可します"
         },
         "chatRead": {
-          "LABEL": "チャットを読み取り可能",
+          "LABEL": "読み取り",
           "DESCRIPTION": "チャットメッセージの読み取りを許可します"
         },
         "chatWrite": {
-          "LABEL": "チャットに書き込み可能",
+          "LABEL": "書き込み",
           "DESCRIPTION": "チャットメッセージの送信を許可します"
         }
       }
