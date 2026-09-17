@@ -30,61 +30,6 @@ describe('Global Config API Security Tests', () => {
 		await deleteAllUsers();
 	});
 
-	describe('Update Security Config Tests', () => {
-		const securityConfig = {
-			authentication: {
-				allowUserCreation: true,
-				oauthProviders: []
-			}
-		};
-
-		it('should fail when request includes API key', async () => {
-			const response = await request(app)
-				.put(`${CONFIG_PATH}/security`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-				.send(securityConfig);
-			expectMeetError(response, errorUnauthorized());
-		});
-
-		it('should succeed when user is authenticated as ADMIN', async () => {
-			const response = await request(app)
-				.put(`${CONFIG_PATH}/security`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken)
-				.send(securityConfig);
-			expect(response.status).toBe(200);
-
-			await restoreDefaultGlobalConfig();
-		});
-
-		it('should fail when user is authenticated as ROOM_MANAGER', async () => {
-			const response = await request(app)
-				.put(`${CONFIG_PATH}/security`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken)
-				.send(securityConfig);
-			expectMeetError(response, errorInsufficientPermissions());
-		});
-
-		it('should fail when user is authenticated as ROOM_MEMBER', async () => {
-			const response = await request(app)
-				.put(`${CONFIG_PATH}/security`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
-				.send(securityConfig);
-			expectMeetError(response, errorInsufficientPermissions());
-		});
-
-		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).put(`${CONFIG_PATH}/security`).send(securityConfig);
-			expectMeetError(response, errorUnauthorized());
-		});
-	});
-
-	describe('Get Security Config Tests', () => {
-		it('should succeed when user is not authenticated', async () => {
-			const response = await request(app).get(`${CONFIG_PATH}/security`);
-			expect(response.status).toBe(200);
-		});
-	});
-
 	describe('Update Rooms Appearance Config Tests', () => {
 		const appearanceConfig = {
 			appearance: {

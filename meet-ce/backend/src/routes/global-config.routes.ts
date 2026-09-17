@@ -13,7 +13,7 @@ configRouter.use(apiLimiter);
 
 // Security config. The stored config only holds OAuth provider credentials, and no OAuth login exists
 // yet, so both routes stay out of the surface: nothing writes them and nothing may read the secrets.
-// Restoring them also restores the `validateUpdateSecurityConfigReq` import.
+// Restoring them also restores the `validateUpdateSecurityConfigReq` import and their security tests.
 // configRouter.put(
 // 	'/security',
 // 	withAuth(accessTokenValidator(MeetUserRole.ADMIN)),
