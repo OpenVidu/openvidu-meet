@@ -25,10 +25,6 @@ class FakeWebhookRepository {
 		return this.documents.length;
 	}
 
-	async findAll(): Promise<MeetWebhook[]> {
-		return this.documents;
-	}
-
 	async create(webhook: MeetWebhook): Promise<MeetWebhook> {
 		await new Promise((resolve) => setTimeout(resolve, 10));
 		this.documents.push(webhook);
@@ -123,11 +119,10 @@ describe('WebhookRegistryService.createWebhook (registration count-then-create r
 });
 
 /**
- * S3 (MEET-API-CONTRACT-AUDIT-FINDINGS.md): storage initialization runs again whenever
- * MEET_NAME_ID stops matching the stored project id, and the initial webhook was registered
- * unconditionally every time, unlike the admin user and API key initialisers.
+ * Storage initialization runs on every start, so the seed must leave an already-seeded deployment
+ * alone and must not stop the start over a value the registry refuses.
  */
-describe('WebhookRegistryService.initializeDefaultWebhook (repeated storage initialization)', () => {
+describe('WebhookRegistryService.initializeDefaultWebhook (runs on every start)', () => {
 	const initialUrl = 'https://initial.example.com/hook';
 	const originalUrl = MEET_ENV.INITIAL_WEBHOOK_URL;
 
@@ -165,16 +160,44 @@ describe('WebhookRegistryService.initializeDefaultWebhook (repeated storage init
 		expect(repository.documents).toHaveLength(1);
 	});
 
-	it('still registers when the deployment only has webhooks pointing elsewhere', async () => {
+	it('leaves a deployment that already registered a webhook of its own alone', async () => {
 		const repository = new FakeWebhookRepository();
 		const service = seededService(repository);
 
 		await service.createWebhook({ url: 'https://elsewhere.example.com/hook' });
 		await service.initializeDefaultWebhook();
 
-		expect(repository.documents.map((webhook) => webhook.url)).toEqual([
-			'https://elsewhere.example.com/hook',
-			initialUrl
-		]);
+		expect(repository.documents.map((webhook) => webhook.url)).toEqual(['https://elsewhere.example.com/hook']);
+	});
+
+	it('skips a URL that is not http(s) instead of failing the start', async () => {
+		MEET_ENV.INITIAL_WEBHOOK_URL = 'ftp://initial.example.com/hook';
+		const repository = new FakeWebhookRepository();
+
+		await expect(seededService(repository).initializeDefaultWebhook()).resolves.toBeUndefined();
+
+		expect(repository.documents).toHaveLength(0);
+	});
+
+	it('skips a registration the registry refuses instead of failing the start', async () => {
+		const repository = new FakeWebhookRepository();
+		const service = new WebhookRegistryService(
+			...([noopLogger, repository, {}, { withRetryLock: async () => null }] as unknown as ConstructorParameters<
+				typeof WebhookRegistryService
+			>)
+		);
+
+		await expect(service.initializeDefaultWebhook()).resolves.toBeUndefined();
+
+		expect(repository.documents).toHaveLength(0);
+	});
+
+	it('still fails the start on an error that is not a registration refusal', async () => {
+		const repository = new FakeWebhookRepository();
+		repository.create = async () => {
+			throw new Error('database unavailable');
+		};
+
+		await expect(seededService(repository).initializeDefaultWebhook()).rejects.toThrow('database unavailable');
 	});
 });

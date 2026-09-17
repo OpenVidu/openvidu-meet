@@ -7,8 +7,6 @@ import { MeetAppearanceConfig } from './room-config.js';
  * `/webhooks` on the public API).
  */
 export interface GlobalConfig {
-	/** The projectId is used to identify the project in which the OpenVidu Meet instance is running. */
-	projectId: string;
 	/** Security configuration. See {@link SecurityConfig} for details. */
 	securityConfig: SecurityConfig;
 	/** Rooms configuration. See {@link MeetAppearanceConfig} for details. */

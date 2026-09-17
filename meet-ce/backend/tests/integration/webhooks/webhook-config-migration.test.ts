@@ -415,6 +415,18 @@ describe('Webhook Config Migration Integration Tests', () => {
 			expect(webhooks[0].enabled).toBe(true);
 		});
 
+		it('should not register it on a deployment that already has a webhook', async () => {
+			await deleteAllWebhooks();
+			await createWebhook({ url: 'https://elsewhere.example.com/hook' });
+			MEET_ENV.INITIAL_WEBHOOK_URL = 'https://initial.example.com/hook';
+
+			await webhookRegistryService.initializeDefaultWebhook();
+
+			const webhooks = await listWebhooks();
+			expect(webhooks.length).toBe(1);
+			expect(webhooks[0].url).toBe('https://elsewhere.example.com/hook');
+		});
+
 		it('should be a no-op without an initial webhook URL', async () => {
 			await deleteAllWebhooks();
 			MEET_ENV.INITIAL_WEBHOOK_URL = '';

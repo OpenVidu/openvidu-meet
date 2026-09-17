@@ -9,6 +9,7 @@ import {
 
 const globalConfigMigrationV1ToV2Name = generateSchemaMigrationName(meetGlobalConfigCollectionName, 1, 2);
 const globalConfigMigrationV2ToV3Name = generateSchemaMigrationName(meetGlobalConfigCollectionName, 2, 3);
+const globalConfigMigrationV3ToV4Name = generateSchemaMigrationName(meetGlobalConfigCollectionName, 3, 4);
 
 const globalConfigMigrationV1ToV2Transform: SchemaTransform<MeetGlobalConfigDocument> = (globalConfig) => {
 	const legacyAuthentication = globalConfig.securityConfig.authentication as unknown as {
@@ -36,11 +37,20 @@ const globalConfigMigrationV2ToV3Transform: SchemaTransform<MeetGlobalConfigDocu
 	return globalConfig;
 };
 
+const globalConfigMigrationV3ToV4Transform: SchemaTransform<MeetGlobalConfigDocument> = (globalConfig) => {
+	const legacyGlobalConfig = globalConfig as unknown as { projectId?: unknown };
+
+	delete legacyGlobalConfig.projectId;
+
+	return globalConfig;
+};
+
 /**
  * Schema migrations for MeetGlobalConfig.
  * Key format: schema_{collection}_v{from}_to_v{to}
  */
 export const globalConfigMigrations: SchemaMigrationMap<MeetGlobalConfigDocument> = new Map([
 	[globalConfigMigrationV1ToV2Name, globalConfigMigrationV1ToV2Transform],
-	[globalConfigMigrationV2ToV3Name, globalConfigMigrationV2ToV3Transform]
+	[globalConfigMigrationV2ToV3Name, globalConfigMigrationV2ToV3Transform],
+	[globalConfigMigrationV3ToV4Name, globalConfigMigrationV3ToV4Transform]
 ]);

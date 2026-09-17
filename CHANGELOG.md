@@ -116,6 +116,8 @@ Both command and event name sets are accepted.
 #### Deployment
 
 - Rate limits for token issuance, API requests and static assets were raised.
+- `MEET_INITIAL_ADMIN_USER`, `MEET_INITIAL_API_KEY` and `MEET_INITIAL_WEBHOOK_URL` seed their item on every
+  start while the deployment has none, instead of on the first start only.
 
 ### Fixed
 
@@ -172,6 +174,9 @@ Both command and event name sets are accepted.
 - Two object merge helpers accepted prototype-chain keys, and temporary passwords were generated from a
   non-cryptographic random source.
 - Ending a meeting that was never recorded logged a warning about releasing a recording lock nobody had  taken. The lock is only released when it is held
+- A `MEET_NAME_ID` different from the one stored deleted the global configuration on start and registered
+  the initial webhook again, failing the start once the webhook cap was reached. The configuration is kept,
+  the webhook is registered once, and a `MEET_INITIAL_WEBHOOK_URL` the registry refuses is logged and skipped.
 
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html
 [3.9-meetings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/meetingGet
