@@ -4,9 +4,13 @@
         summary: Generate room member token
         description: >
             Generates a token for a user to access an OpenVidu Meet room and its resources.
-            When using the anonymous recording secret, generated tokens only allow retrieval of room recordings.
-            When a previous room member token is provided via `X-Room-Member-Token`, the endpoint can regenerate
-            a join token while preserving participant identity.
+
+
+            A `secret` in the request body authenticates on its own: one of the room's access secrets, or the
+            `memberId` of an identified guest. The anonymous recording secret yields a token that only allows
+            retrieval of room recordings. Without a `secret` a user access token is required.
+            `X-Room-Member-Token` is not a credential here, but an optional hint that preserves the participant
+            identity when regenerating a join token.
 
 
             **Access token roles**: `admin`, `room_manager`, `room_member`, when the request body carries no `secret`.
@@ -14,7 +18,7 @@
             - Internal API - Room Members
         security:
             - accessTokenHeader: []
-            - roomMemberTokenHeader: []
+            - {}
         parameters:
             - $ref: '../../rooms/parameters/room-id-path.yaml'
         requestBody:
