@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { GlobalConfigService } from '../../../../shared/services/global-config.service';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { DialogService } from '../../../../shared/services/dialog.service';
@@ -30,6 +31,9 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 	selector: 'ov-meeting',
 	templateUrl: './meeting.component.html',
 	styleUrls: ['./meeting.component.scss'],
+	host: {
+		'[class.ov-video-fit-contain]': "videoObjectFit() === 'contain'"
+	},
 	imports: [
 		OpenViduComponentsUiModule,
 		NgTemplateOutlet,
@@ -52,6 +56,7 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	protected soundService = inject(SoundService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
 	private readonly translateService = inject(TranslateService);
+	private readonly globalConfigService = inject(GlobalConfigService);
 
 	// Template reference for custom participant panel item
 	protected participantItem = contentChild.required(MeetingParticipantItemComponent);
@@ -84,6 +89,7 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	hasRecordings = this.meetingContextService.hasRecordings;
 	skipLobby = this.meetingContextService.skipLobby;
 	skipPrejoin = this.meetingContextService.skipPrejoin;
+	videoObjectFit = this.globalConfigService.videoObjectFit;
 
 	/** Handed to the meeting view, which calls it when the participant commits to joining. */
 	protected readonly generateJoinToken = () => this.lobbyService.generateJoinToken();

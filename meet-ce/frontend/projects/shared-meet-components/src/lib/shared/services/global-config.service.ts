@@ -4,6 +4,13 @@ import { HttpService } from './http.service';
 import { LoggerService } from './logger.service';
 import type { ILogger } from '../models/logger.model';
 
+export type MeetingVideoObjectFit = 'cover' | 'contain';
+
+interface MeetingLayoutConfig {
+	forceMosaicLayout: boolean;
+	videoObjectFit: MeetingVideoObjectFit;
+}
+
 @Service()
 export class GlobalConfigService {
 	protected readonly GLOBAL_CONFIG_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/config`;
@@ -17,9 +24,13 @@ export class GlobalConfigService {
 		themes: []
 	});
 	private readonly _captionsGlobalEnabled = signal<boolean>(false);
+	private readonly _forceMosaicLayout = signal<boolean>(false);
+	private readonly _videoObjectFit = signal<MeetingVideoObjectFit>('cover');
 
 	readonly roomAppearanceConfig = this._roomAppearanceConfig.asReadonly();
 	readonly captionsGlobalEnabled = this._captionsGlobalEnabled.asReadonly();
+	readonly forceMosaicLayout = this._forceMosaicLayout.asReadonly();
+	readonly videoObjectFit = this._videoObjectFit.asReadonly();
 
 	constructor() {}
 
@@ -58,6 +69,17 @@ export class GlobalConfigService {
 		}
 	}
 
+	async loadMeetingLayoutConfig(): Promise<void> {
+		try {
+			const { forceMosaicLayout, videoObjectFit } = await this.getMeetingLayoutConfig();
+			this._forceMosaicLayout.set(forceMosaicLayout);
+			this._videoObjectFit.set(videoObjectFit === 'contain' ? 'contain' : 'cover');
+		} catch (error) {
+			this.log.e('Error loading meeting layout config:', error);
+			throw error;
+		}
+	}
+
 	async saveRoomsAppearanceConfig(config: MeetAppearanceConfig) {
 		const path = `${this.GLOBAL_CONFIG_API}/rooms/appearance`;
 		await this.httpService.putRequest(path, { appearance: config });
@@ -66,5 +88,10 @@ export class GlobalConfigService {
 	private async getCaptionsConfig(): Promise<{ enabled: boolean }> {
 		const path = `${this.GLOBAL_CONFIG_API}/captions`;
 		return await this.httpService.getRequest<{ enabled: boolean }>(path);
+	}
+
+	private async getMeetingLayoutConfig(): Promise<MeetingLayoutConfig> {
+		const path = `${this.GLOBAL_CONFIG_API}/meeting-layout`;
+		return await this.httpService.getRequest<MeetingLayoutConfig>(path);
 	}
 }

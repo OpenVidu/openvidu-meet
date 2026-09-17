@@ -259,6 +259,11 @@ export class MeetingLobbyService {
 	 * `participant-name` param; when none is available the lobby is shown as usual.
 	 */
 	async joinWithoutLobby(): Promise<void> {
+		if (this.roomClosed() || !this.canJoinMeeting()) {
+			this.log.w('Cannot skip the lobby: the room is closed or joining is not allowed. Showing the lobby.');
+			return;
+		}
+
 		const form = this._participantForm();
 
 		if (!form.getRawValue().name?.trim()) {

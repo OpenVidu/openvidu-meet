@@ -102,3 +102,22 @@
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+
+/config/meeting-layout:
+    get:
+        operationId: meetingLayoutConfigGet
+        summary: Get meeting layout config
+        description: >
+            Retrieves the meeting layout configuration from the environment variables
+            MEET_FORCE_MOSAIC_LAYOUT and MEET_VIDEO_OBJECT_FIT.
+        tags:
+            - Internal API - Global Config
+        responses:
+            '200':
+                $ref: './responses/success/get-meeting-layout-config.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'

@@ -36,3 +36,4 @@ config/config.yaml:
   security-defined:
     - '#/~1config~1security/get'
     - '#/~1config~1captions/get'
+    - '#/~1config~1meeting-layout/get'

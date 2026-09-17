@@ -217,6 +217,15 @@ export const getCaptionsConfig = async () => {
 	return response;
 };
 
+export const getMeetingLayoutConfig = async () => {
+	checkAppIsRunning();
+
+	const response = await request(app)
+		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/meeting-layout`))
+		.send();
+	return response;
+};
+
 export const restoreDefaultGlobalConfig = async () => {
 	const configService = container.get(GlobalConfigService);
 	const defaultGlobalConfig = configService['getDefaultConfig']();

@@ -1,0 +1,5 @@
+description: Successfully retrieved meeting layout config
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/global-meeting-layout-config.yaml'

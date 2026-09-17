@@ -76,3 +76,18 @@ export const getCaptionsConfig = (_req: Request, res: Response) => {
 		handleError(res, error, 'getting captions config');
 	}
 };
+
+export const getMeetingLayoutConfig = (_req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+
+	logger.verbose('Getting meeting layout config');
+
+	try {
+		return res.status(200).json({
+			forceMosaicLayout: MEET_ENV.FORCE_MOSAIC_LAYOUT === 'true',
+			videoObjectFit: MEET_ENV.VIDEO_OBJECT_FIT === 'contain' ? 'contain' : 'cover'
+		});
+	} catch (error) {
+		handleError(res, error, 'getting meeting layout config');
+	}
+};

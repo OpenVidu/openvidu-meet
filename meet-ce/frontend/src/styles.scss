@@ -27,6 +27,6 @@ body {
 	color: var(--ov-meet-text-on-background);
 }
 
-video {
+.ov-video-fit-contain video {
 	object-fit: contain !important;
 }

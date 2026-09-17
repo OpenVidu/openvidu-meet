@@ -104,6 +104,9 @@ export const MEET_ENV = {
 	// Live Captions configuration
 	CAPTIONS_ENABLED: process.env.MEET_CAPTIONS_ENABLED || 'false',
 
+	FORCE_MOSAIC_LAYOUT: process.env.MEET_FORCE_MOSAIC_LAYOUT || 'false',
+	VIDEO_OBJECT_FIT: process.env.MEET_VIDEO_OBJECT_FIT || 'cover',
+
 	// Deployment configuration
 	MODULES_FILE: process.env.MODULES_FILE || undefined,
 	MODULE_NAME: process.env.MODULE_NAME || 'openviduMeet',

@@ -21,7 +21,9 @@ describe('MeetingEntryService.prepare (resets the previous room feature state)',
 			'setRoomSecret',
 			'loadRoomSecretFromStorage',
 			'setE2eeKey',
-			'loadE2eeKeyFromStorage'
+			'loadE2eeKeyFromStorage',
+			'setSkipLobby',
+			'setSkipPrejoin'
 		]);
 		const roomMemberContextService = jasmine.createSpyObj<RoomMemberContextService>('RoomMemberContextService', [
 			'setParticipantExternalId',

@@ -10,6 +10,7 @@ import { MeetingEventsService } from '../meeting-events/meeting-events.service';
 import { ViewportService } from '../viewport/viewport.service';
 import { BaseLayoutService } from './layout.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
+import { GlobalConfigService } from '../../../../../shared/services/global-config.service';
 import { MeetStorageService } from '../../../../../shared/services/storage.service';
 
 @Service()
@@ -18,6 +19,7 @@ export class SmartLayoutService extends BaseLayoutService {
 	private readonly meetingEventsService = inject(MeetingEventsService);
 	private readonly viewportService = inject(ViewportService);
 	private readonly storageService = inject(MeetStorageService);
+	private readonly globalConfigService = inject(GlobalConfigService);
 	private readonly INITIAL_VISIBLE_PARTICIPANTS_COUNT = 4;
 	readonly MIN_VISIBLE_REMOTE_PARTICIPANTS = 1;
 	readonly MAX_VISIBLE_REMOTE_PARTICIPANTS_LIMIT = 6;
@@ -26,13 +28,15 @@ export class SmartLayoutService extends BaseLayoutService {
 	private readonly MIN_SPEAKING_DURATION_MS = 2000;
 	private readonly SPEAKING_GRACE_PERIOD_MS = 3000;
 
-	private readonly _layoutMode = signal<SmartLayoutMode>(SmartLayoutMode.MOSAIC);
-	readonly layoutMode = this._layoutMode.asReadonly();
+	private readonly _layoutMode = signal<SmartLayoutMode>(SmartLayoutMode.SMART_MOSAIC);
+	readonly layoutMode = computed(() =>
+		this.globalConfigService.forceMosaicLayout() ? SmartLayoutMode.MOSAIC : this._layoutMode()
+	);
 
 	private readonly _maxVisibleRemoteParticipants = signal<number>(this.INITIAL_VISIBLE_PARTICIPANTS_COUNT);
 	readonly maxVisibleRemoteParticipants = this._maxVisibleRemoteParticipants.asReadonly();
 
-	readonly isSmartLayoutEnabled = computed(() => this._layoutMode() === SmartLayoutMode.SMART_MOSAIC);
+	readonly isSmartLayoutEnabled = computed(() => this.layoutMode() === SmartLayoutMode.SMART_MOSAIC);
 
 	private readonly _speakerPriorityOrder = signal<string[]>([]);
 
@@ -55,6 +59,12 @@ export class SmartLayoutService extends BaseLayoutService {
 	private readonly smartLayoutUpdateEffect = effect(() => {
 		if (this.isSmartLayoutEnabled()) {
 			this.update();
+		}
+	});
+
+	private readonly forcedMosaicLayoutUpdateEffect = effect(() => {
+		if (this.globalConfigService.forceMosaicLayout()) {
+			untracked(() => this.update());
 		}
 	});
 
@@ -98,7 +108,7 @@ export class SmartLayoutService extends BaseLayoutService {
 	}
 
 	private setupStoragePersistence(): void {
-		effect(() => this.storageService.setLayoutMode(this.layoutMode()));
+		effect(() => this.storageService.setLayoutMode(this._layoutMode()));
 		effect(() => this.storageService.setMaxVisibleRemoteParticipants(this.maxVisibleRemoteParticipants()));
 	}
 

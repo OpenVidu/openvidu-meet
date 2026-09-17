@@ -32,7 +32,7 @@ const DEFAULT_FEATURES: RoomFeatures = {
 	showParticipantList: true,
 	showSettings: true,
 	showThemeSelector: true,
-	showLayoutSelector: false,
+	showLayoutSelector: true,
 	showShareAccessLinks: false,
 	showEndMeeting: false,
 	showMakeModerator: false,
@@ -63,7 +63,8 @@ export class RoomFeatureService {
 			this.roomConfig(),
 			this.permissions(),
 			this.globalConfigService.roomAppearanceConfig(),
-			this.globalConfigService.captionsGlobalEnabled()
+			this.globalConfigService.captionsGlobalEnabled(),
+			this.globalConfigService.forceMosaicLayout()
 		)
 	);
 
@@ -104,9 +105,10 @@ export class RoomFeatureService {
 	}
 
 	protected async loadGlobalFeatureConfigs(): Promise<void> {
-		const [appearanceResult, captionsResult] = await Promise.allSettled([
+		const [appearanceResult, captionsResult, meetingLayoutResult] = await Promise.allSettled([
 			this.globalConfigService.loadRoomsAppearanceConfig(),
-			this.globalConfigService.loadCaptionsConfig()
+			this.globalConfigService.loadCaptionsConfig(),
+			this.globalConfigService.loadMeetingLayoutConfig()
 		]);
 
 		if (appearanceResult.status === 'rejected') {
@@ -115,6 +117,10 @@ export class RoomFeatureService {
 
 		if (captionsResult.status === 'rejected') {
 			this.log.e('Could not load captions config for features:', captionsResult.reason);
+		}
+
+		if (meetingLayoutResult.status === 'rejected') {
+			this.log.e('Could not load meeting layout config for features:', meetingLayoutResult.reason);
 		}
 	}
 
@@ -125,7 +131,8 @@ export class RoomFeatureService {
 		roomConfig?: MeetRoomConfig,
 		permissions?: MeetRoomMemberPermissions,
 		appearanceConfig?: MeetAppearanceConfig,
-		captionsGlobalEnabled = false
+		captionsGlobalEnabled = false,
+		forceMosaicLayout = false
 	): RoomFeatures {
 		const features = structuredClone(DEFAULT_FEATURES);
 
@@ -139,6 +146,10 @@ export class RoomFeatureService {
 
 		if (appearanceConfig) {
 			FeatureCalculator.applyAppearanceConfig(features, appearanceConfig);
+		}
+
+		if (forceMosaicLayout) {
+			features.showLayoutSelector = false;
 		}
 
 		this.log.d('Calculated features', features);

@@ -1,0 +1,16 @@
+type: object
+properties:
+    forceMosaicLayout:
+        type: boolean
+        description: Indicates whether meetings always use the mosaic layout and hide the layout selector
+        example: false
+    videoObjectFit:
+        type: string
+        enum:
+            - cover
+            - contain
+        description: CSS object-fit applied to the meeting videos
+        example: cover
+required:
+    - forceMosaicLayout
+    - videoObjectFit

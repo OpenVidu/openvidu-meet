@@ -26,6 +26,8 @@ paths:
         $ref: './config/config.yaml#/~1config~1rooms~1appearance'
     /config/captions:
         $ref: './config/config.yaml#/~1config~1captions'
+    /config/meeting-layout:
+        $ref: './config/config.yaml#/~1config~1meeting-layout'
     /rooms/{roomId}/members/token:
         $ref: './room-members/internal/room-members.yaml#/~1rooms~1{roomId}~1members~1token'
     /rooms/{roomId}/members/token/refresh:
