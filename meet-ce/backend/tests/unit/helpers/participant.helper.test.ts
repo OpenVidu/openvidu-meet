@@ -229,13 +229,17 @@ describe('MeetParticipantHelper.extractLeftReason', () => {
 		expect(MeetParticipantHelper.extractLeftReason(DisconnectReason.MIGRATION)).toBe(LeftEventReason.UNKNOWN);
 	});
 
-	it('never produces MEETING_ENDED_BY_SELF: no disconnect reason carries who ended the meeting', () => {
+	it('never produces the client-only reasons: no disconnect reason says who ended the meeting, or that time did', () => {
 		const everyDisconnectReason = Object.values(DisconnectReason).filter(
 			(value): value is DisconnectReason => typeof value === 'number'
 		);
-		const reachable = new Set(everyDisconnectReason.map((reason) => MeetParticipantHelper.extractLeftReason(reason)));
+		// Widened on purpose: the narrow return type of extractLeftReason would reject the lookup below
+		const reachable: Set<LeftEventReason> = new Set(
+			everyDisconnectReason.map((reason) => MeetParticipantHelper.extractLeftReason(reason))
+		);
 
 		expect(reachable.has(LeftEventReason.MEETING_ENDED_BY_SELF)).toBe(false);
+		expect(reachable.has(LeftEventReason.MEETING_ENDED_BY_DURATION_LIMIT)).toBe(false);
 		expect(reachable).toEqual(
 			new Set([
 				LeftEventReason.VOLUNTARY_LEAVE,

@@ -55,6 +55,18 @@ export interface MeetWebhookTestEvent {
 }
 
 /**
+ * The {@link LeftEventReason} values a `participantLeft` webhook can carry.
+ *
+ * The server derives the reason from the media server's disconnect reason, which says that the
+ * meeting ended but not who ended it, nor whether the duration limit did. Those two distinctions
+ * exist only on the client, so they reach the embedded `meetingLeft` event and never a webhook.
+ */
+export type MeetParticipantLeaveReason = Exclude<
+	LeftEventReason,
+	LeftEventReason.MEETING_ENDED_BY_SELF | LeftEventReason.MEETING_ENDED_BY_DURATION_LIMIT
+>;
+
+/**
  * A participant that has left a meeting, as carried by the
  * {@link MeetWebhookEventType.PARTICIPANT_LEFT} webhook event.
  *
@@ -67,8 +79,8 @@ export interface MeetParticipantDeparturePayload extends MeetParticipantPayload 
 	leaveDate: number;
 	/** Duration in seconds the participant stayed in the meeting */
 	durationSeconds: number;
-	/** Reason why the participant left the meeting. See {@link LeftEventReason} for details */
-	leaveReason: LeftEventReason;
+	/** Reason why the participant left the meeting. See {@link MeetParticipantLeaveReason} for details */
+	leaveReason: MeetParticipantLeaveReason;
 }
 
 /**

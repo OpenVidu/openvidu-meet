@@ -3,6 +3,7 @@ import type {
 	MeetParticipantDeparturePayload,
 	MeetParticipantInfo,
 	MeetParticipantJoinedPayload,
+	MeetParticipantLeaveReason,
 	MeetParticipantLeftPayload,
 	MeetParticipantPayload,
 	MeetRoomMemberPermissions,
@@ -192,7 +193,7 @@ export class MeetParticipantHelper {
 	 *
 	 * @param reason - The LiveKit disconnect reason.
 	 */
-	static extractLeftReason(reason: DisconnectReason): LeftEventReason {
+	static extractLeftReason(reason: DisconnectReason): MeetParticipantLeaveReason {
 		switch (reason) {
 			case DisconnectReason.CLIENT_INITIATED:
 				return LeftEventReason.VOLUNTARY_LEAVE;
