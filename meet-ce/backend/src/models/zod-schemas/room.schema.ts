@@ -335,9 +335,9 @@ const RoomDeletionPolicyWithRecordingsSchema: z.ZodType<MeetRoomDeletionPolicyWi
 	MeetRoomDeletionPolicyWithRecordings
 );
 
-const RoomAutoDeletionPolicySchema: z.ZodType<MeetRoomAutoDeletionPolicy> = z.object({
-	withMeeting: RoomDeletionPolicyWithMeetingSchema,
-	withRecordings: RoomDeletionPolicyWithRecordingsSchema
+const RoomAutoDeletionPolicySchema: z.ZodType<MeetRoomAutoDeletionPolicy, unknown> = z.object({
+	withMeeting: RoomDeletionPolicyWithMeetingSchema.default(MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS),
+	withRecordings: RoomDeletionPolicyWithRecordingsSchema.default(MeetRoomDeletionPolicyWithRecordings.CLOSE)
 });
 
 const RoomRolesConfigSchema: z.ZodType<MeetRoomRolesConfig> = z.object({

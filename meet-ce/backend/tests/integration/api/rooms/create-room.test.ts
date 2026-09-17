@@ -95,6 +95,31 @@ describe('Room API Tests', () => {
 			expectExtraFieldsInResponse(room);
 		});
 
+		it('Should create a room when sending a partial autoDeletionPolicy', async () => {
+			const createWithPolicy = async (autoDeletionPolicy: Record<string, string>) => {
+				const response = await request(app)
+					.post(ROOMS_PATH)
+					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+					.send({
+						roomName: 'Partial Policy Room',
+						autoDeletionDate: validAutoDeletionDate,
+						autoDeletionPolicy
+					})
+					.expect(201);
+				return response.body.autoDeletionPolicy;
+			};
+
+			expect(await createWithPolicy({ withMeeting: MeetRoomDeletionPolicyWithMeeting.FORCE })).toEqual({
+				withMeeting: MeetRoomDeletionPolicyWithMeeting.FORCE,
+				withRecordings: MeetRoomDeletionPolicyWithRecordings.CLOSE
+			});
+
+			expect(await createWithPolicy({ withRecordings: MeetRoomDeletionPolicyWithRecordings.FORCE })).toEqual({
+				withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
+				withRecordings: MeetRoomDeletionPolicyWithRecordings.FORCE
+			});
+		});
+
 		it('Should create a room when sending partial config', async () => {
 			const payload = {
 				roomName: 'Partial Config Room',
