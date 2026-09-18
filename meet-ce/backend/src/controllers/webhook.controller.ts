@@ -1,9 +1,11 @@
 import type { MeetWebhookOptions } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { handleError } from '../models/error.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { WebhookRegistryService } from '../services/webhook-registry.service.js';
+import { getBaseUrl } from '../utils/url.utils.js';
 
 export const createWebhook = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -14,6 +16,7 @@ export const createWebhook = async (req: Request, res: Response) => {
 
 	try {
 		const webhook = await webhookRegistryService.createWebhook(options);
+		res.set('Location', `${getBaseUrl()}${INTERNAL_CONFIG.API_BASE_PATH_V1}/webhooks/${webhook.webhookId}`);
 		return res.status(201).json(webhook);
 	} catch (error) {
 		handleError(res, error, 'creating webhook');

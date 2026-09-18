@@ -77,6 +77,8 @@ describe('Webhooks API Tests (CRUD)', () => {
 			expect(webhook.events).toBeUndefined();
 			expect(webhook.roomId).toBeUndefined();
 			expect(webhook.creationDate).toBeLessThanOrEqual(Date.now());
+
+			expect(response.headers.location).toContain(`/webhooks/${webhook.webhookId}`);
 		});
 
 		it('should register a webhook with event and room filters', async () => {
