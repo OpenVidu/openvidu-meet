@@ -73,8 +73,9 @@ const displayValueOf = (input: unknown): string => {
  * empty')`, `z.url('Must be a valid URL')`, `.refine(..., { message })`) always take
  * precedence over this map and are unaffected.
  *
- * Must run before the first request is parsed; the error map is consulted at parse time,
- * so schemas built at import time are covered regardless of module evaluation order.
+ * Must run before the first validation error is read; the error map is consulted when
+ * `error` is read, not when the schema is built, so schemas built at import time are
+ * covered regardless of module evaluation order.
  */
 export const configureZodErrorMessages = (): void => {
 	z.config({

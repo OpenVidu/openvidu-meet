@@ -31,6 +31,7 @@ const jestConfig = {
 	testMatch: ['**/?(*.)+(spec|test).[tj]s?(x)'],
 	moduleFileExtensions: ['js', 'ts', 'json', 'node'],
 	testEnvironment: 'node',
+	setupFiles: ['zod/compile'],
 	extensionsToTreatAsEsm: ['.ts'],
 	moduleNameMapper: {
 		'^@openvidu-meet/typings$': '<rootDir>/../typings/src/index.ts',

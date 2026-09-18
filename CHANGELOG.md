@@ -94,6 +94,10 @@ Both command and event name sets are accepted.
 
 ### Improved
 
+#### Integration
+
+- REST API requests validate through precompiled schemas, reducing response times.
+
 #### UI
 
 - Screen shares can be zoomed with two fingers on touch devices.

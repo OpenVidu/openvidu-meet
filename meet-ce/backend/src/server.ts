@@ -1,3 +1,4 @@
+import 'zod/compile';
 import chalk from 'chalk';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
