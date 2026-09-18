@@ -29,7 +29,7 @@ post '/webhook' do
     end
   end
   
-  unless webhook_event_valid?(body, headers)
+  unless webhook_event_valid?(body_content, headers)
     puts 'Invalid webhook signature'
     status 401
     return 'Invalid webhook signature'
@@ -40,7 +40,9 @@ post '/webhook' do
   ''
 end
 
-def webhook_event_valid?(body, headers)
+# `raw_body` is the request body exactly as received. Signing `body.to_json` instead would
+# re-encode it, and nothing guarantees the result matches the bytes the server signed.
+def webhook_event_valid?(raw_body, headers)
   signature = headers['x-signature'] 
   timestamp_str = headers['x-timestamp']
   return false if signature.nil? || timestamp_str.nil?
@@ -55,7 +57,7 @@ def webhook_event_valid?(body, headers)
   diff_time = current - timestamp
   return false if diff_time >= MAX_WEBHOOK_AGE 
 
-  signed_payload = "#{timestamp}.#{body.to_json}" 
+  signed_payload = "#{timestamp}.#{raw_body}"
 
   expected = OpenSSL::HMAC.hexdigest('SHA256', OPENVIDU_MEET_API_KEY, signed_payload) 
 

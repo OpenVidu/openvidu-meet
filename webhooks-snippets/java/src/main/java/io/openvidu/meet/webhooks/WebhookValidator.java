@@ -9,7 +9,10 @@ public class WebhookValidator {
     private static final long MAX_WEBHOOK_AGE = 120 * 1000; // 2 minutes in milliseconds
     private static final String OPENVIDU_MEET_API_KEY = "meet-api-key";
 
-    public boolean isWebhookEventValid(Object body, Map<String, String> headers) {
+    // `rawBody` is the request body exactly as received (see the `@RequestBody String` in the
+    // controller). Signing a re-serialized object instead is not guaranteed to reproduce the
+    // bytes the server signed.
+    public boolean isWebhookEventValid(String rawBody, Map<String, String> headers) {
         String signature = headers.get("x-signature"); 
         String ts = headers.get("x-timestamp");
         if (signature == null || ts == null) return false;
@@ -28,7 +31,7 @@ public class WebhookValidator {
             return false;
         }
 
-        String signedPayload = timestamp + "." + body.toString(); 
+        String signedPayload = timestamp + "." + rawBody;
 
         try {
             Mac mac = Mac.getInstance("HmacSHA256");

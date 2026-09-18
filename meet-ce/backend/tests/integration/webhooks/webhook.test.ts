@@ -14,11 +14,10 @@ import {
 	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
 	MeetRoomMemberUIBadge,
-	MeetWebhookEvent,
 	MeetWebhookEventType
 } from '@openvidu-meet/typings';
 import { Request, Response } from 'express';
-import http from 'http';
+import crypto from 'crypto';
 import { WebhookEvent } from 'livekit-server-sdk';
 import { container } from '../../../src/config/dependency-injector.config.js';
 import { lkWebhookHandler } from '../../../src/controllers/livekit-webhook.controller.js';
@@ -37,6 +36,7 @@ import {
 	deleteAllRooms,
 	deleteAllWebhooks,
 	deleteRoom,
+	getApiKeys,
 	endMeeting,
 	restoreDefaultGlobalConfig,
 	sleep,
@@ -58,6 +58,8 @@ import {
 
 describe('Webhook Integration Tests', () => {
 	let receivedWebhooks: ReceivedWebhook[] = [];
+	// The deployment's first API key, which is the secret the dispatcher signs with.
+	let apiKey: string;
 
 	const defaultRoomConfig: MeetRoomConfig = {
 		recording: {
@@ -77,10 +79,13 @@ describe('Webhook Integration Tests', () => {
 		await startTestServer();
 
 		// Start test server for webhooks
-		await startWebhookServer(5080, (req: Request) => {
+		apiKey = (await getApiKeys()).body[0].key;
+
+		await startWebhookServer(5080, (req) => {
 			receivedWebhooks.push({
 				headers: req.headers,
-				body: req.body
+				body: req.body,
+				rawBody: req.rawBody
 			});
 		});
 	});
@@ -102,9 +107,14 @@ describe('Webhook Integration Tests', () => {
 		await deleteAllWebhooks();
 	});
 
-	const expectValidSignature = (webhook: { headers: http.IncomingHttpHeaders; body: MeetWebhookEvent }) => {
-		expect(webhook.headers['x-signature']).toBeDefined();
-		expect(webhook.headers['x-timestamp']).toBeDefined();
+	// Recomputed over the received bytes, never over a re-serialization of the parsed body: that is
+	// the whole point of the signature, and the only way this suite notices if the wire format drifts.
+	const expectValidSignature = (webhook: ReceivedWebhook) => {
+		const timestamp = webhook.headers['x-timestamp'];
+		expect(timestamp).toBeDefined();
+
+		const expected = crypto.createHmac('sha256', apiKey).update(`${timestamp}.${webhook.rawBody}`).digest('hex');
+		expect(webhook.headers['x-signature']).toBe(expected);
 	};
 
 	describe('Webhook sending', () => {

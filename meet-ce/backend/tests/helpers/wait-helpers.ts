@@ -447,7 +447,7 @@ export const waitForAllRecordingsToStop = async (
 
 // ─── WEBHOOK WAIT HELPERS ─────────────────────────────────────────────────────
 
-export type ReceivedWebhook = { headers: http.IncomingHttpHeaders; body: MeetWebhookEvent };
+export type ReceivedWebhook = { headers: http.IncomingHttpHeaders; body: MeetWebhookEvent; rawBody: string };
 
 /**
  * Waits until at least one webhook of the given event type appears in

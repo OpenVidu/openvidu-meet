@@ -6,13 +6,21 @@ const OPENVIDU_MEET_API_KEY = "meet-api-key";
 const MAX_WEBHOOK_AGE = 120 * 1000; // 2 minutes in milliseconds
 
 const app = express();
-app.use(express.json());
+// Keep the body exactly as received: the signature covers those bytes, and re-serializing the
+// parsed object is not guaranteed to reproduce them.
+app.use(
+    express.json({
+        verify: (req, _res, buf) => {
+            req.rawBody = buf.toString("utf8");
+        },
+    })
+);
 
 app.post("/webhook", (req, res) => {
     const body = req.body;
     const headers = req.headers;
 
-    if (!isWebhookEventValid(body, headers)) {
+    if (!isWebhookEventValid(req.rawBody, headers)) {
         console.error("Invalid webhook signature");
         return res.status(401).send("Invalid webhook signature");
     }
@@ -25,7 +33,7 @@ app.listen(SERVER_PORT, () =>
     console.log("Webhook server listening on port " + SERVER_PORT)
 );
 
-function isWebhookEventValid(body, headers) {
+function isWebhookEventValid(rawBody, headers) {
     const signature = headers["x-signature"];
     const timestamp = parseInt(headers["x-timestamp"], 10);
 
@@ -40,7 +48,7 @@ function isWebhookEventValid(body, headers) {
         return false;
     }
 
-    const signedPayload = `${timestamp}.${JSON.stringify(body)}`;
+    const signedPayload = `${timestamp}.${rawBody}`;
     const expectedSignature = crypto
         .createHmac("sha256", OPENVIDU_MEET_API_KEY)
         .update(signedPayload, "utf8")

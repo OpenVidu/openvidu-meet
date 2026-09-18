@@ -256,15 +256,26 @@ export const setupMultiRecordingsTestContext = async (
 	return testContext;
 };
 
+/** An incoming webhook request together with the exact body bytes it carried. */
+export type RawBodyRequest = Request & { rawBody: string };
+
 export const startWebhookServer = async (
 	port: number,
-	webhookReceivedCallback: (event: Request) => void
+	webhookReceivedCallback: (event: RawBodyRequest) => void
 ): Promise<void> => {
 	const app = express();
-	app.use(express.json());
+	// The signature covers the bytes as sent, so the receiver keeps them: re-serializing the parsed
+	// body is not guaranteed to reproduce them, which is the mistake the published recipes must avoid.
+	app.use(
+		express.json({
+			verify: (req, _res, buf) => {
+				(req as RawBodyRequest).rawBody = buf.toString('utf8');
+			}
+		})
+	);
 
 	app.post('/webhook', (req: Request, res: Response) => {
-		webhookReceivedCallback(req);
+		webhookReceivedCallback(req as RawBodyRequest);
 		res.status(200).send({ success: true });
 	});
 

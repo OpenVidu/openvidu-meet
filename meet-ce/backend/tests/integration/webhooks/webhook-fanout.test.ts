@@ -9,6 +9,7 @@ import { container } from '../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG, setInternalConfig } from '../../../src/config/internal-config.js';
 import { WebhookDispatcherService } from '../../../src/services/webhook-dispatcher.service.js';
 import { createWebhook, deleteAllWebhooks, sleep, startTestServer } from '../../helpers/request-helpers.js';
+import type { RawBodyRequest } from '../../helpers/test-scenarios.js';
 import type { ReceivedWebhook } from '../../helpers/wait-helpers.js';
 import { waitForWebhookEvent } from '../../helpers/wait-helpers.js';
 
@@ -27,12 +28,18 @@ interface WebhookReceiver {
 
 const startReceiver = async (): Promise<WebhookReceiver> => {
 	const app = express();
-	app.use(express.json());
+	app.use(
+		express.json({
+			verify: (req, _res, buf) => {
+				(req as RawBodyRequest).rawBody = buf.toString('utf8');
+			}
+		})
+	);
 
 	const received: ReceivedWebhook[] = [];
 
 	app.post('/hook', (req: Request, res: Response) => {
-		received.push({ headers: req.headers, body: req.body });
+		received.push({ headers: req.headers, body: req.body, rawBody: (req as RawBodyRequest).rawBody });
 		res.status(200).send({ success: true });
 	});
 
