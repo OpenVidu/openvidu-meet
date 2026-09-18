@@ -33,7 +33,7 @@ describe('RecordingActionsService', () => {
 			'bulkDeleteRecordings',
 			'downloadRecordingsAsZip'
 		]);
-		notificationService = jasmine.createSpyObj<NotificationService>('NotificationService', ['showSnackbar']);
+		notificationService = jasmine.createSpyObj<NotificationService>('NotificationService', ['showMessage']);
 		dialogService = jasmine.createSpyObj<DialogService>('DialogService', ['showDialog']);
 		dialogService.showDialog.and.callFake((options) => {
 			confirmDialog = options.confirmCallback as () => Promise<void>;
@@ -81,7 +81,7 @@ describe('RecordingActionsService', () => {
 
 		expect(recordingService.deleteRecording).toHaveBeenCalledWith('r2');
 		expect(listIds()).toEqual(['r1', 'r3']);
-		expect(notificationService.showSnackbar).toHaveBeenCalledWith('RECORDINGS.ERRORS.RECORDING_DELETED');
+		expect(notificationService.showMessage).toHaveBeenCalledWith('RECORDINGS.ERRORS.RECORDING_DELETED');
 	});
 
 	it('bulk delete removes the deleted recordings and reports the count', async () => {
@@ -91,7 +91,7 @@ describe('RecordingActionsService', () => {
 		await confirmDialog();
 
 		expect(listIds()).toEqual(['r3']);
-		expect(notificationService.showSnackbar).toHaveBeenCalledWith(
+		expect(notificationService.showMessage).toHaveBeenCalledWith(
 			'2 RECORDINGS.ERRORS.RECORDINGS_DELETED_SUFFIX_PLURAL'
 		);
 	});
@@ -105,7 +105,7 @@ describe('RecordingActionsService', () => {
 		await confirmDialog();
 
 		expect(listIds()).toEqual(['r2', 'r3']);
-		const message = notificationService.showSnackbar.calls.mostRecent().args[0];
+		const message = notificationService.showMessage.calls.mostRecent().args[0];
 		expect(message).toContain('1 RECORDINGS.ERRORS.RECORDINGS_DELETED_DOT_SUFFIX_SINGULAR');
 		expect(message).toContain('1 RECORDINGS.ERRORS.RECORDINGS_FAILED_SUFFIX_SINGULAR');
 	});
@@ -117,6 +117,6 @@ describe('RecordingActionsService', () => {
 		await expectAsync(confirmDialog()).toBeResolved();
 
 		expect(listIds()).toEqual(['r1', 'r2', 'r3']);
-		expect(notificationService.showSnackbar).toHaveBeenCalledWith('RECORDINGS.ERRORS.DELETE_RECORDINGS_FAILED');
+		expect(notificationService.showMessage).toHaveBeenCalledWith('RECORDINGS.ERRORS.DELETE_RECORDINGS_FAILED');
 	});
 });

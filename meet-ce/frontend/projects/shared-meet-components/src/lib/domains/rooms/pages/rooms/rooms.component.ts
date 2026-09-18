@@ -121,7 +121,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 		initialFilters: this.initialFilters(),
 		fetchPage: (filters, nextPageToken) => this.fetchRoomsPage(filters, nextPageToken),
 		onLoadError: (error) => {
-			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.LOADING_ROOMS'));
+			this.notificationService.showMessage(this.translateService.translate('ROOMS.ERRORS.LOADING_ROOMS'));
 			this.log.e('Error loading rooms:', error);
 		}
 	});
@@ -238,7 +238,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 		try {
 			await this.navigationService.navigateTo('/rooms/new');
 		} catch (error) {
-			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.CREATING_ROOM'));
+			this.notificationService.showMessage(this.translateService.translate('ROOMS.ERRORS.CREATING_ROOM'));
 			this.log.e('Error creating room:', error);
 			return;
 		}
@@ -252,7 +252,9 @@ export class RoomsComponent implements OnInit, OnDestroy {
 		try {
 			await this.navigationService.navigateTo(`/rooms/${room.roomId}/edit`);
 		} catch (error) {
-			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.NAVIGATING_ROOM_CONFIG'));
+			this.notificationService.showMessage(
+				this.translateService.translate('ROOMS.ERRORS.NAVIGATING_ROOM_CONFIG')
+			);
 			this.log.e('Error navigating to room config:', error);
 		}
 	}
@@ -270,7 +272,9 @@ export class RoomsComponent implements OnInit, OnDestroy {
 		try {
 			await this.navigationService.navigateTo(`/rooms/${roomId}`);
 		} catch (error) {
-			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.NAVIGATING_ROOM_DETAIL'));
+			this.notificationService.showMessage(
+				this.translateService.translate('ROOMS.ERRORS.NAVIGATING_ROOM_DETAIL')
+			);
 			this.log.e('Error navigating to room detail:', error);
 		}
 	}
@@ -281,9 +285,9 @@ export class RoomsComponent implements OnInit, OnDestroy {
 
 			// Update room in the list
 			this.list.update((rooms) => rooms.map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r)));
-			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.ROOM_REOPENED'));
+			this.notificationService.showMessage(this.translateService.translate('ROOMS.ERRORS.ROOM_REOPENED'));
 		} catch (error) {
-			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.FAILED_REOPEN_ROOM'));
+			this.notificationService.showMessage(this.translateService.translate('ROOMS.ERRORS.FAILED_REOPEN_ROOM'));
 			this.log.e('Error reopening room:', error);
 		}
 	}
@@ -301,9 +305,9 @@ export class RoomsComponent implements OnInit, OnDestroy {
 				updatedRoom.status === MeetRoomStatus.CLOSED
 					? this.translateService.translate('ROOMS.ERRORS.ROOM_CLOSED')
 					: this.translateService.translate('ROOMS.ERRORS.ROOM_SCHEDULED_CLOSE');
-			this.notificationService.showSnackbar(message);
+			this.notificationService.showMessage(message);
 		} catch (error) {
-			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.FAILED_CLOSE_ROOM'));
+			this.notificationService.showMessage(this.translateService.translate('ROOMS.ERRORS.FAILED_CLOSE_ROOM'));
 			this.log.e('Error closing room:', error);
 		}
 	}
@@ -337,7 +341,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 			await this.list.autoLoadIfEmpty();
 		}
 
-		this.notificationService.showSnackbar(this.roomDeletionService.removeRoomIdFromMessage(message));
+		this.notificationService.showMessage(this.roomDeletionService.removeRoomIdFromMessage(message));
 	}
 
 	private bulkDeleteRooms(rooms: MeetRoom[]) {
@@ -351,7 +355,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 				);
 
 				this.handleSuccessfulBulkDeletion(deleted);
-				this.notificationService.showSnackbar(message);
+				this.notificationService.showMessage(message);
 				await this.list.autoLoadIfEmpty();
 			} catch (error: any) {
 				// Check if it's a structured error with failed rooms
@@ -370,11 +374,13 @@ export class RoomsComponent implements OnInit, OnDestroy {
 					if (hasRoomDeletionError) {
 						this.showBulkDeletionErrorDialogWithOptions(failed, errorMessage);
 					} else {
-						this.notificationService.showSnackbar(errorMessage);
+						this.notificationService.showMessage(errorMessage);
 						this.log.e('Error in bulk delete:', failed);
 					}
 				} else {
-					this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.FAILED_DELETE_ROOMS'));
+					this.notificationService.showMessage(
+						this.translateService.translate('ROOMS.ERRORS.FAILED_DELETE_ROOMS')
+					);
 					this.log.e('Error in bulk delete:', error);
 				}
 			}
@@ -445,7 +451,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 				);
 
 				this.handleSuccessfulBulkDeletion(deleted);
-				this.notificationService.showSnackbar(message);
+				this.notificationService.showMessage(message);
 				await this.list.autoLoadIfEmpty();
 			} catch (error: any) {
 				this.log.e('Error in second bulk deletion attempt:', error);
@@ -457,10 +463,12 @@ export class RoomsComponent implements OnInit, OnDestroy {
 
 				if (failed && deleted) {
 					this.handleSuccessfulBulkDeletion(deleted);
-					this.notificationService.showSnackbar(message);
+					this.notificationService.showMessage(message);
 					await this.list.autoLoadIfEmpty();
 				} else {
-					this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.FAILED_DELETE_ROOMS'));
+					this.notificationService.showMessage(
+						this.translateService.translate('ROOMS.ERRORS.FAILED_DELETE_ROOMS')
+					);
 				}
 			}
 		};

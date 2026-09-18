@@ -25,7 +25,7 @@ describe('RoomWizardComponent.createRoomAdvance — B5/F7: a rejected submit des
 	let component: RoomWizardComponent;
 	let wizardService: RoomWizardStateService;
 	let createRoomSpy: jasmine.Spy;
-	let notificationServiceStub: { showSnackbar: jasmine.Spy };
+	let notificationServiceStub: { showMessage: jasmine.Spy };
 	let navigationServiceStub: {
 		navigateToAndInvalidate: jasmine.Spy;
 		invalidateCachedRoute: jasmine.Spy;
@@ -34,7 +34,7 @@ describe('RoomWizardComponent.createRoomAdvance — B5/F7: a rejected submit des
 
 	beforeEach(() => {
 		createRoomSpy = jasmine.createSpy('createRoom');
-		notificationServiceStub = { showSnackbar: jasmine.createSpy('showSnackbar') };
+		notificationServiceStub = { showMessage: jasmine.createSpy('showMessage') };
 		navigationServiceStub = {
 			navigateToAndInvalidate: jasmine.createSpy('navigateToAndInvalidate').and.resolveTo(undefined),
 			invalidateCachedRoute: jasmine.createSpy('invalidateCachedRoute'),
@@ -87,7 +87,7 @@ describe('RoomWizardComponent.createRoomAdvance — B5/F7: a rejected submit des
 	it('surfaces the specific backend rejection reason instead of a generic message', async () => {
 		await component.createRoomAdvance();
 
-		expect(notificationServiceStub.showSnackbar).toHaveBeenCalledWith(
+		expect(notificationServiceStub.showMessage).toHaveBeenCalledWith(
 			jasmine.stringMatching(/maxParticipants|second_participant/)
 		);
 	});

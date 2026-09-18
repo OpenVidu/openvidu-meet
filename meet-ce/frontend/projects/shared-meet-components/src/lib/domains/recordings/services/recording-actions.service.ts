@@ -72,13 +72,13 @@ export class RecordingActionsService {
 				await this.recordingService.deleteRecording(recording.recordingId);
 
 				list.remove((r) => r.recordingId === recording.recordingId);
-				this.notificationService.showSnackbar(
+				this.notificationService.showMessage(
 					this.translateService.translate('RECORDINGS.ERRORS.RECORDING_DELETED')
 				);
 				await list.autoLoadIfEmpty();
 			} catch (error) {
 				log.e('Error deleting recording:', error);
-				this.notificationService.showSnackbar(
+				this.notificationService.showMessage(
 					this.translateService.translate('RECORDINGS.ERRORS.DELETE_FAILED')
 				);
 			}
@@ -97,7 +97,7 @@ export class RecordingActionsService {
 				const { deleted } = await this.recordingService.bulkDeleteRecordings(recordingIds);
 
 				list.remove((r) => deleted.includes(r.recordingId));
-				this.notificationService.showSnackbar(
+				this.notificationService.showMessage(
 					`${deleted.length} ${this.translateService.translate(
 						deleted.length > 1
 							? 'RECORDINGS.ERRORS.RECORDINGS_DELETED_SUFFIX_PLURAL'
@@ -112,7 +112,7 @@ export class RecordingActionsService {
 
 				// Nothing structured to report (401, 500, network drop): plain failure.
 				if (deleted.length === 0 && failed.length === 0) {
-					this.notificationService.showSnackbar(
+					this.notificationService.showMessage(
 						this.translateService.translate('RECORDINGS.ERRORS.DELETE_RECORDINGS_FAILED')
 					);
 					return;
@@ -139,7 +139,7 @@ export class RecordingActionsService {
 					)}`;
 				}
 
-				this.notificationService.showSnackbar(msg.trim());
+				this.notificationService.showMessage(msg.trim());
 				await list.autoLoadIfEmpty();
 			}
 		};

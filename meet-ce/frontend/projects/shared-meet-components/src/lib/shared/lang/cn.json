@@ -1,4 +1,7 @@
 {
+  "NOTIFICATION": {
+    "DISMISS": "关闭"
+  },
   "ERROR": {
     "DEFAULT_TITLE": "错误",
     "BACK": "返回",

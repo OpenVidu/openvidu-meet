@@ -81,7 +81,7 @@ export class UsersComponent implements OnInit, OnDestroy {
 		fetchPage: (filters, nextPageToken) => this.fetchUsersPage(filters, nextPageToken),
 		onLoadError: (error) => {
 			this.log.e('Error loading users:', error);
-			this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.USERS_LOAD_FAILED'));
+			this.notificationService.showMessage(this.translateService.translate('USERS.ERRORS.USERS_LOAD_FAILED'));
 		}
 	});
 
@@ -207,13 +207,15 @@ export class UsersComponent implements OnInit, OnDestroy {
 					await this.userService.deleteUser(user.userId);
 
 					this.list.remove((u) => u.userId === user.userId);
-					this.notificationService.showSnackbar(
+					this.notificationService.showMessage(
 						`${this.translateService.translate('USERS.ERRORS.USER_DELETED_PREFIX')}${user.name}${this.translateService.translate('USERS.ERRORS.USER_DELETED_SUFFIX')}`
 					);
 					await this.list.autoLoadIfEmpty();
 				} catch (error) {
 					this.log.e('Error deleting user:', error);
-					this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.USER_DELETE_FAILED'));
+					this.notificationService.showMessage(
+						this.translateService.translate('USERS.ERRORS.USER_DELETE_FAILED')
+					);
 				}
 			}
 		});
@@ -226,7 +228,7 @@ export class UsersComponent implements OnInit, OnDestroy {
 				const { deleted } = await this.userService.bulkDeleteUsers(userIds);
 
 				this.list.remove((u) => deleted.includes(u.userId));
-				this.notificationService.showSnackbar(
+				this.notificationService.showMessage(
 					`${deleted.length} ${this.translateService.translate(deleted.length > 1 ? 'USERS.ERRORS.USERS_DELETED_SUFFIX_PLURAL' : 'USERS.ERRORS.USERS_DELETED_SUFFIX_SINGULAR')}`
 				);
 				await this.list.autoLoadIfEmpty();
@@ -237,7 +239,9 @@ export class UsersComponent implements OnInit, OnDestroy {
 
 				// Nothing structured to report (401, 500, network drop): plain failure.
 				if (deleted.length === 0 && failed.length === 0) {
-					this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.USERS_DELETE_FAILED'));
+					this.notificationService.showMessage(
+						this.translateService.translate('USERS.ERRORS.USERS_DELETE_FAILED')
+					);
 					return;
 				}
 
@@ -254,7 +258,7 @@ export class UsersComponent implements OnInit, OnDestroy {
 					message += `${failed.length} ${this.translateService.translate(failed.length > 1 ? 'USERS.ERRORS.USERS_FAILED_SUFFIX_PLURAL' : 'USERS.ERRORS.USERS_FAILED_SUFFIX_SINGULAR')}`;
 				}
 
-				this.notificationService.showSnackbar(message.trim());
+				this.notificationService.showMessage(message.trim());
 				await this.list.autoLoadIfEmpty();
 			}
 		};
@@ -270,7 +274,9 @@ export class UsersComponent implements OnInit, OnDestroy {
 		try {
 			await this.navigateToUserProfile(userId);
 		} catch (error) {
-			this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.USER_PROFILE_NAVIGATION_FAILED'));
+			this.notificationService.showMessage(
+				this.translateService.translate('USERS.ERRORS.USER_PROFILE_NAVIGATION_FAILED')
+			);
 			this.log.e('Error navigating to user profile:', error);
 		}
 	}

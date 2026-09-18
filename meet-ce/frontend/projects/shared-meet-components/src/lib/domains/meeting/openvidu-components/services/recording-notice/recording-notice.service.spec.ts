@@ -2,7 +2,6 @@ import { Overlay } from '@angular/cdk/overlay';
 import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { NotificationService } from '../../../../../shared/services/notification.service';
 import { RecordingState, RecordingStateInfo } from '../../models/recording.model';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
@@ -61,7 +60,6 @@ describe('RecordingNoticeService', () => {
 				},
 				// The real notification service is exercised here through its caller; only its
 				// Material collaborators, which this never reaches, are stubbed out.
-				{ provide: MatSnackBar, useValue: {} },
 				{ provide: MatDialog, useValue: {} },
 				{ provide: Overlay, useValue: {} }
 			]

@@ -129,7 +129,7 @@ export class ConfigComponent implements OnInit {
 			await this.loadAppearanceConfig();
 		} catch (error) {
 			console.error('Error during component initialization:', error);
-			this.notificationService.showSnackbar(this.translateService.translate('CONFIG.ERRORS.LOAD_FAILED'));
+			this.notificationService.showMessage(this.translateService.translate('CONFIG.ERRORS.LOAD_FAILED'));
 		} finally {
 			this.isLoading.set(false);
 		}
@@ -320,7 +320,7 @@ export class ConfigComponent implements OnInit {
 
 	async onSaveAppearanceConfig(): Promise<void> {
 		if (this.appearanceForm.invalid) {
-			this.notificationService.showSnackbar(this.translateService.translate('CONFIG.ERRORS.FIX_FORM'));
+			this.notificationService.showMessage(this.translateService.translate('CONFIG.ERRORS.FIX_FORM'));
 			return;
 		}
 
@@ -332,11 +332,11 @@ export class ConfigComponent implements OnInit {
 			};
 
 			await this.configService.saveRoomsAppearanceConfig(appearanceConfig);
-			this.notificationService.showSnackbar(this.translateService.translate('CONFIG.ERRORS.SAVED'));
+			this.notificationService.showMessage(this.translateService.translate('CONFIG.ERRORS.SAVED'));
 			this.storeInitialValues();
 		} catch (error) {
 			console.error('Error saving appearance config:', error);
-			this.notificationService.showSnackbar(this.translateService.translate('CONFIG.ERRORS.SAVE_FAILED'));
+			this.notificationService.showMessage(this.translateService.translate('CONFIG.ERRORS.SAVE_FAILED'));
 		}
 	}
 

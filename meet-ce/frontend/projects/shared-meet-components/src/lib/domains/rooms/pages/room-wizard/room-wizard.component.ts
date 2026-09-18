@@ -213,7 +213,7 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 			await this.navigationService.redirectTo(path);
 		} catch (error) {
 			const errorMessage = `${this.translateService.translate('ROOMS.ERRORS.FAILED_CREATE_ROOM_NAMED_PREFIX')}${roomName}`;
-			this.notificationService.showSnackbar(errorMessage);
+			this.notificationService.showMessage(errorMessage);
 			console.error(errorMessage, error);
 		} finally {
 			this.wizardService.resetWizard();
@@ -252,7 +252,7 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 				// room's detail so the changes are reflected. The route change destroys this
 				// component, which resets the wizard on its own (see ngOnDestroy).
 				await this.navigationService.navigateToAndInvalidate(`/rooms/${this.roomId}`, 'rooms', undefined, true);
-				this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.ROOM_UPDATED'));
+				this.notificationService.showMessage(this.translateService.translate('ROOMS.ERRORS.ROOM_UPDATED'));
 			} else {
 				// Create new room
 				const { roomId, access } = await this.roomService.createRoom(roomOptions, {
@@ -284,7 +284,7 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 				(isEditMode
 					? this.translateService.translate('ROOMS.ERRORS.FAILED_UPDATE_ROOM')
 					: this.translateService.translate('ROOMS.ERRORS.FAILED_CREATE_ROOM'));
-			this.notificationService.showSnackbar(errorMessage);
+			this.notificationService.showMessage(errorMessage);
 			console.error(errorMessage, error);
 
 			if (isEditMode && this.roomId) {
@@ -315,7 +315,7 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 				.filter((_, i) => results[i].status === 'rejected')
 				.map((m) => m.userId || m.name)
 				.join(', ');
-			this.notificationService.showSnackbar(
+			this.notificationService.showMessage(
 				`${this.translateService.translate('ROOMS.ERRORS.ROOM_CREATED_MEMBERS_FAILED_PREFIX')}${failed.length}${this.translateService.translate('ROOMS.ERRORS.ROOM_CREATED_MEMBERS_FAILED_MIDDLE')}${failedIds}`
 			);
 			console.warn('Failed to add members:', failed);

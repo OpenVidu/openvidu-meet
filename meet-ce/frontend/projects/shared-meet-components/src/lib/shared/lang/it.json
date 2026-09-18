@@ -1,4 +1,7 @@
 {
+  "NOTIFICATION": {
+    "DISMISS": "Chiudi"
+  },
   "ERROR": {
     "DEFAULT_TITLE": "Errore",
     "BACK": "Indietro",

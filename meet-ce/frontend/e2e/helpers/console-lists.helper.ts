@@ -12,8 +12,8 @@ const SEARCH_INPUT = '#search-input';
 const LOAD_MORE_BUTTON = '#load-more-btn';
 const BULK_DELETE_BUTTON = '#bulk-delete-btn';
 const CONFIRM_DIALOG_BUTTON = '.confirm-button';
-/** `panelClass` set by NotificationService.showSnackbar. Snackbars auto-dismiss after 3s. */
-const SNACKBAR = '.custom-snackbar';
+/** A notification raised by `NotificationService.showMessage`, which auto-dismisses after 4s. */
+const MESSAGE_NOTIFICATION = '.ov-notification[data-kind="message"]';
 
 /**
  * One row per listed entity. Keyed on the selection *cell*, which every row renders exactly once —
@@ -67,8 +67,8 @@ export const confirmDialog = async (page: Page): Promise<void> => {
 };
 
 /** Asserts a notification is shown. Kept text-agnostic: the message is localized. */
-export const expectSnackbar = async (page: Page): Promise<void> => {
-	await expect(page.locator(SNACKBAR).first()).toBeVisible({ timeout: 10_000 });
+export const expectNotification = async (page: Page): Promise<void> => {
+	await expect(page.locator(MESSAGE_NOTIFICATION).first()).toBeVisible({ timeout: 10_000 });
 };
 
 /** Selects the given rows by clicking their per-row checkbox, then confirms the bulk delete. */

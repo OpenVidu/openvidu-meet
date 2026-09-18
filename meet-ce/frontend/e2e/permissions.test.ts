@@ -488,7 +488,7 @@ test.describe('Permissions E2E Tests', () => {
 	// ── Live permission and role updates (participant already in the meeting) ─────────
 
 	test.describe('Live permission and role updates', () => {
-		/** Asserts the "permissions updated" snackbar the participant receives. */
+		/** Asserts the "permissions updated" notification the participant receives. */
 		const expectPermissionsUpdatedNotification = async (page: Page): Promise<void> => {
 			await expect(page.getByText('Your permissions have been updated')).toBeVisible({ timeout: 10_000 });
 		};

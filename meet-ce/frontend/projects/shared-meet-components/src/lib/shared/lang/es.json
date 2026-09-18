@@ -1,4 +1,7 @@
 {
+  "NOTIFICATION": {
+    "DISMISS": "Descartar"
+  },
   "ERROR": {
     "DEFAULT_TITLE": "Error",
     "BACK": "Atrás",

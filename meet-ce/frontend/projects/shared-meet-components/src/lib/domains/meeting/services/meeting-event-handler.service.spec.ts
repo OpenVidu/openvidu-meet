@@ -106,7 +106,7 @@ describe('MeetingEventHandlerService', () => {
 			TestBed.tick();
 		});
 
-		notificationService = jasmine.createSpyObj<NotificationService>('NotificationService', ['showSnackbar']);
+		notificationService = jasmine.createSpyObj<NotificationService>('NotificationService', ['showMessage']);
 		meetingEndingSoon = jasmine.createSpyObj<MeetingEndingSoonService>('MeetingEndingSoonService', [
 			'trackMeetingEnd'
 		]);
@@ -271,7 +271,7 @@ describe('MeetingEventHandlerService', () => {
 			expect(mediaControl.setMicrophoneEnabled).not.toHaveBeenCalled();
 			expect(mediaControl.setCameraEnabled).not.toHaveBeenCalled();
 			expect(mediaControl.setScreenShareEnabled).not.toHaveBeenCalled();
-			expect(notificationService.showSnackbar).not.toHaveBeenCalled();
+			expect(notificationService.showMessage).not.toHaveBeenCalled();
 		});
 
 		it('notifies the local participant with a snackbar', async () => {
@@ -279,7 +279,7 @@ describe('MeetingEventHandlerService', () => {
 
 			await muteFromModerator({ audioActive: false });
 
-			expect(notificationService.showSnackbar).toHaveBeenCalledOnceWith('MODERATION.MUTED_BY_MODERATOR');
+			expect(notificationService.showMessage).toHaveBeenCalledOnceWith('MODERATION.MUTED_BY_MODERATOR');
 		});
 
 		it('shows exactly one snackbar even when several devices are muted at once', async () => {
@@ -288,7 +288,7 @@ describe('MeetingEventHandlerService', () => {
 
 			await muteFromModerator({ audioActive: false, videoActive: false, screenShareActive: false });
 
-			expect(notificationService.showSnackbar).toHaveBeenCalledTimes(1);
+			expect(notificationService.showMessage).toHaveBeenCalledTimes(1);
 		});
 	});
 

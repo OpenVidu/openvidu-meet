@@ -487,7 +487,7 @@ test.describe('Participants E2E Tests', () => {
 			}
 		});
 
-		test('should notify the muted participant with a snackbar', async ({ browser }) => {
+		test('should notify the muted participant with a notification', async ({ browser }) => {
 			const { byName, removeAllParticipants } = await joinModeratorAndSpeaker(browser);
 
 			try {

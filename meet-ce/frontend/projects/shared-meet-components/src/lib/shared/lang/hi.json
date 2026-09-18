@@ -1,4 +1,7 @@
 {
+  "NOTIFICATION": {
+    "DISMISS": "बंद करें"
+  },
   "ERROR": {
     "DEFAULT_TITLE": "त्रुटि",
     "BACK": "वापस",

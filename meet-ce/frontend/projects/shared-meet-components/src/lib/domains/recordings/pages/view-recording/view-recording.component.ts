@@ -4,7 +4,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingInfo } from '@openvidu-meet/typings';
@@ -34,7 +33,6 @@ import { RecordingUiUtils } from '../../utils/ui';
 		DatePipe,
 		MatProgressSpinnerModule,
 		MatTooltipModule,
-		MatSnackBarModule,
 		RecordingVideoPlayerComponent,
 		TranslatePipe
 	]
@@ -131,7 +129,7 @@ export class ViewRecordingComponent implements OnInit {
 		const deleteCallback = async () => {
 			try {
 				await this.recordingService.deleteRecording(this.recordingId);
-				this.notificationService.showSnackbar(
+				this.notificationService.showMessage(
 					this.translateService.translate('RECORDINGS.ERRORS.RECORDING_DELETED')
 				);
 
@@ -139,7 +137,7 @@ export class ViewRecordingComponent implements OnInit {
 				await this.navigationService.goToRoomRecordings(recording.roomId);
 			} catch (error) {
 				console.error('Error deleting recording:', error);
-				this.notificationService.showSnackbar(
+				this.notificationService.showMessage(
 					this.translateService.translate('RECORDINGS.ERRORS.DELETE_FAILED')
 				);
 			}

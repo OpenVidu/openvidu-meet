@@ -72,7 +72,7 @@ export class RoomRecordingsComponent implements OnInit {
 		initialFilters: this.initialFilters(),
 		fetchPage: (filters, nextPageToken) => this.fetchRecordingsPage(filters, nextPageToken),
 		onLoadError: (error) => {
-			this.notificationService.showSnackbar(
+			this.notificationService.showMessage(
 				this.translateService.translate('RECORDINGS.ERRORS.LOAD_RECORDINGS_FAILED')
 			);
 			this.log.e('Error loading recordings:', error);

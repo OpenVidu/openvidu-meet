@@ -88,7 +88,7 @@ export class EmbeddedComponent implements OnInit {
 			}
 		} catch (error) {
 			console.error('Error loading API key data:', error);
-			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.LOAD_API_FAILED'));
+			this.notificationService.showMessage(this.translateService.translate('EMBEDDED.ERRORS.LOAD_API_FAILED'));
 			this.apiKeyData.set(undefined);
 		}
 	}
@@ -98,10 +98,10 @@ export class EmbeddedComponent implements OnInit {
 			const newApiKey = await this.apiKeyService.generateApiKey();
 			this.apiKeyData.set(newApiKey);
 			this.showApiKey.set(true);
-			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.API_GENERATED'));
+			this.notificationService.showMessage(this.translateService.translate('EMBEDDED.ERRORS.API_GENERATED'));
 		} catch (error) {
 			console.error('Error generating API key:', error);
-			this.notificationService.showSnackbar(
+			this.notificationService.showMessage(
 				this.translateService.translate('EMBEDDED.ERRORS.API_GENERATE_FAILED')
 			);
 		}
@@ -120,7 +120,7 @@ export class EmbeddedComponent implements OnInit {
 
 		if (apiKey) {
 			this.clipboard.copy(apiKey.key);
-			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.API_COPIED'));
+			this.notificationService.showMessage(this.translateService.translate('EMBEDDED.ERRORS.API_COPIED'));
 		}
 	}
 
@@ -129,10 +129,10 @@ export class EmbeddedComponent implements OnInit {
 			await this.apiKeyService.deleteApiKeys();
 			this.apiKeyData.set(undefined);
 			this.showApiKey.set(false);
-			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.API_REVOKED'));
+			this.notificationService.showMessage(this.translateService.translate('EMBEDDED.ERRORS.API_REVOKED'));
 		} catch (error) {
 			console.error('Error revoking API key:', error);
-			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.API_REVOKE_FAILED'));
+			this.notificationService.showMessage(this.translateService.translate('EMBEDDED.ERRORS.API_REVOKE_FAILED'));
 		}
 	}
 
@@ -156,7 +156,7 @@ export class EmbeddedComponent implements OnInit {
 			this.webhooks.set(await this.webhookService.getWebhooks());
 		} catch (error) {
 			console.error('Error loading webhooks:', error);
-			this.notificationService.showSnackbar(
+			this.notificationService.showMessage(
 				this.translateService.translate('EMBEDDED.ERRORS.LOAD_WEBHOOKS_FAILED')
 			);
 		}
@@ -178,7 +178,7 @@ export class EmbeddedComponent implements OnInit {
 
 	copyWebhookUrl(webhook: MeetWebhook) {
 		this.clipboard.copy(webhook.url);
-		this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_URL_COPIED'));
+		this.notificationService.showMessage(this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_URL_COPIED'));
 	}
 
 	async toggleWebhookEnabled(webhook: MeetWebhook, enabled: boolean) {
@@ -192,7 +192,7 @@ export class EmbeddedComponent implements OnInit {
 			await this.loadWebhooks();
 		} catch (error) {
 			console.error('Error updating webhook:', error);
-			this.notificationService.showSnackbar(
+			this.notificationService.showMessage(
 				this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_SAVE_FAILED')
 			);
 			await this.loadWebhooks();
@@ -205,12 +205,12 @@ export class EmbeddedComponent implements OnInit {
 			confirmCallback: async () => {
 				try {
 					await this.webhookService.deleteWebhook(webhook.webhookId);
-					this.notificationService.showSnackbar(
+					this.notificationService.showMessage(
 						this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_DELETED')
 					);
 				} catch (error) {
 					console.error('Error deleting webhook:', error);
-					this.notificationService.showSnackbar(
+					this.notificationService.showMessage(
 						this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_DELETE_FAILED')
 					);
 				}
@@ -223,10 +223,10 @@ export class EmbeddedComponent implements OnInit {
 	async testWebhook(webhook: MeetWebhook) {
 		try {
 			await this.webhookService.testWebhook(webhook.webhookId);
-			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.TEST_SENT'));
+			this.notificationService.showMessage(this.translateService.translate('EMBEDDED.ERRORS.TEST_SENT'));
 		} catch (error: any) {
 			const errorMessage = error.error?.message || error.message || 'Unknown error';
-			this.notificationService.showSnackbar(
+			this.notificationService.showMessage(
 				`${this.translateService.translate('EMBEDDED.ERRORS.TEST_FAILED')} ${errorMessage}`
 			);
 			console.error(`Error sending test webhook. ${errorMessage}`);

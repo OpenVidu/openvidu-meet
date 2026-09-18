@@ -7,7 +7,6 @@
 		"ENDING_SOON_TITLE": "まもなく会議が終了します",
 		"ENDING_SOON_ONE_MINUTE": "会議はあと約1分で終了します",
 		"ENDING_SOON_MANY_MINUTES": "会議はあと約{minutes}分で終了します",
-		"ENDING_SOON_DISMISS": "閉じる",
 		"ENDING_SOON_BADGE_LABEL": "終了まで",
 		"ENDING_SOON_BADGE_ENDING": "まもなく終了",
 		"E2EE_BADGE_LABEL": "暗号化",

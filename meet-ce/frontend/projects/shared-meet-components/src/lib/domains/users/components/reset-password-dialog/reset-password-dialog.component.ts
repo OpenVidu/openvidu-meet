@@ -70,7 +70,7 @@ export class ResetPasswordDialogComponent {
 		this.clipboard.copy(password);
 		this.copied.set(true);
 		setTimeout(() => this.copied.set(false), 2000);
-		this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.PASSWORD_COPIED'));
+		this.notificationService.showMessage(this.translateService.translate('USERS.ERRORS.PASSWORD_COPIED'));
 	}
 
 	async confirm() {
@@ -82,13 +82,13 @@ export class ResetPasswordDialogComponent {
 
 		try {
 			await this.userService.resetUserPassword(this.data.user.userId, password);
-			this.notificationService.showSnackbar(
+			this.notificationService.showMessage(
 				`${this.translateService.translate('USERS.ERRORS.PASSWORD_RESET_SUCCESS')} ${this.data.user.name}`
 			);
 			this.dialogRef.close(true);
 		} catch (error) {
 			console.error('Error while resetting password', error);
-			this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.PASSWORD_RESET_FAILED'));
+			this.notificationService.showMessage(this.translateService.translate('USERS.ERRORS.PASSWORD_RESET_FAILED'));
 		} finally {
 			clearTimeout(delayLoader);
 			this.isSaving.set(false);

@@ -86,7 +86,9 @@ export class RoomDeletionService {
 				const errorMessage = this.removeRoomIdFromMessage(error.error.message);
 				this.showDeletionErrorDialogWithOptions(roomId, errorMessage, log, onSuccess);
 			} else {
-				this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.FAILED_DELETE_ROOM'));
+				this.notificationService.showMessage(
+					this.translateService.translate('ROOMS.ERRORS.FAILED_DELETE_ROOM')
+				);
 				log.e('Error deleting room:', error);
 			}
 		}
@@ -110,7 +112,9 @@ export class RoomDeletionService {
 				);
 				await onSuccess({ roomId, successCode, message, room });
 			} catch (error) {
-				this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.FAILED_DELETE_ROOM'));
+				this.notificationService.showMessage(
+					this.translateService.translate('ROOMS.ERRORS.FAILED_DELETE_ROOM')
+				);
 				log.e('Error in second deletion attempt:', error);
 			}
 		};

@@ -2,7 +2,6 @@ import { Overlay } from '@angular/cdk/overlay';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { NotificationService } from '../../../../../shared/services/notification.service';
 import { SoundService } from '../../../../../shared/services/sound.service';
 import { MeetingEndingSoonService } from './meeting-ending-soon.service';
@@ -22,7 +21,8 @@ describe('MeetingEndingSoonService', () => {
 			.notifications()
 			.find((notification) => notification.kind === 'meeting-ending-soon');
 
-		return announcement?.messageParams?.['minutes'] as number | undefined;
+		const message = announcement?.message;
+		return typeof message === 'object' ? (message.params?.['minutes'] as number | undefined) : undefined;
 	};
 
 	beforeEach(() => {
@@ -42,7 +42,6 @@ describe('MeetingEndingSoonService', () => {
 				{ provide: SoundService, useValue: soundService },
 				// The real notification service is under test here through its caller; only its
 				// Material collaborators, which this never reaches, are stubbed out.
-				{ provide: MatSnackBar, useValue: {} },
 				{ provide: MatDialog, useValue: {} },
 				{ provide: Overlay, useValue: {} }
 			]

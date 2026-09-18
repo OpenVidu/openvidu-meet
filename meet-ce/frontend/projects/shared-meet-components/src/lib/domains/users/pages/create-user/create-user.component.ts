@@ -75,7 +75,7 @@ export class CreateUserComponent {
 		this.clipboard.copy(password);
 		this.copied.set(true);
 		setTimeout(() => this.copied.set(false), 2000);
-		this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.PASSWORD_COPIED'));
+		this.notificationService.showMessage(this.translateService.translate('USERS.ERRORS.PASSWORD_COPIED'));
 	}
 
 	async onSubmit() {
@@ -89,11 +89,11 @@ export class CreateUserComponent {
 
 		try {
 			await this.userService.createUser({ userId: userId!, name: name!, role: role!, password: password! });
-			this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.USER_CREATED_SUCCESS'));
+			this.notificationService.showMessage(this.translateService.translate('USERS.ERRORS.USER_CREATED_SUCCESS'));
 			await this.navigationService.navigateToAndInvalidate('/users', 'users');
 		} catch (error: any) {
 			console.error('Error creating user:', error);
-			this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.USER_CREATE_FAILED'));
+			this.notificationService.showMessage(this.translateService.translate('USERS.ERRORS.USER_CREATE_FAILED'));
 		} finally {
 			clearTimeout(delayLoader);
 			this.isSaving.set(false);

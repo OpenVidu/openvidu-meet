@@ -530,11 +530,12 @@ export const expectNoMuteAllButton = async (page: Page, media: MuteMedia = 'audi
 };
 
 /**
- * Asserts that the local participant sees the snackbar `NotificationService` shows when a moderator
- * mute lands: the only notice of it, since the API sends no message the muted device is a target of.
+ * Asserts that the local participant sees the notification `NotificationService` shows when a
+ * moderator mute lands: the only notice of it, since the API sends no message the muted device is a
+ * target of.
  */
 export const expectMutedByModeratorNotification = async (page: Page): Promise<void> => {
-	await expect(page.locator('.custom-snackbar')).toBeVisible({ timeout: 10_000 });
+	await expect(page.locator('.ov-notification[data-kind="message"]')).toBeVisible({ timeout: 10_000 });
 };
 
 // ─── Participants panel: badge assertions ─────────────────────────────────────

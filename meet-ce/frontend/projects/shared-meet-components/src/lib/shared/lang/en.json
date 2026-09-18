@@ -1,4 +1,7 @@
 {
+  "NOTIFICATION": {
+    "DISMISS": "Dismiss"
+  },
   "ERROR": {
     "DEFAULT_TITLE": "Error",
     "BACK": "Back",

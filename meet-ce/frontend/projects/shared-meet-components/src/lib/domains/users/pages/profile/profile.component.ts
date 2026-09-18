@@ -120,7 +120,7 @@ export class ProfileComponent implements OnInit {
 			}
 		} catch (error) {
 			console.error('Error loading profile:', error);
-			this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.PROFILE_LOAD_FAILED'));
+			this.notificationService.showMessage(this.translateService.translate('USERS.ERRORS.PROFILE_LOAD_FAILED'));
 			await this.navigationService.navigateTo('/users', {}, true);
 		} finally {
 			this.isLoading.set(false);
@@ -191,7 +191,9 @@ export class ProfileComponent implements OnInit {
 			this.showNewPassword.set(false);
 			this.showConfirmPassword.set(false);
 
-			this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.PASSWORD_UPDATED_SUCCESS'));
+			this.notificationService.showMessage(
+				this.translateService.translate('USERS.ERRORS.PASSWORD_UPDATED_SUCCESS')
+			);
 		} catch (error) {
 			console.error('Error changing password:', error);
 
@@ -199,9 +201,13 @@ export class ProfileComponent implements OnInit {
 				const control = this.changePasswordForm.get('currentPassword');
 				control?.setErrors({ invalidPassword: true });
 				control?.markAsTouched();
-				this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.CURRENT_PASSWORD_INCORRECT'));
+				this.notificationService.showMessage(
+					this.translateService.translate('USERS.ERRORS.CURRENT_PASSWORD_INCORRECT')
+				);
 			} else {
-				this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.PASSWORD_UPDATE_FAILED'));
+				this.notificationService.showMessage(
+					this.translateService.translate('USERS.ERRORS.PASSWORD_UPDATE_FAILED')
+				);
 			}
 		} finally {
 			clearTimeout(delayLoader);
@@ -259,13 +265,15 @@ export class ProfileComponent implements OnInit {
 			confirmCallback: async () => {
 				try {
 					await this.userService.deleteUser(user.userId);
-					this.notificationService.showSnackbar(
+					this.notificationService.showMessage(
 						`${this.translateService.translate('USERS.ERRORS.USER_DELETED_PREFIX')}${user.name}${this.translateService.translate('USERS.ERRORS.USER_DELETED_SUFFIX')}`
 					);
 					await this.navigationService.navigateToAndInvalidate('/users', 'users', {}, true);
 				} catch (error) {
 					console.error('Error deleting user:', error);
-					this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.USER_DELETE_FAILED'));
+					this.notificationService.showMessage(
+						this.translateService.translate('USERS.ERRORS.USER_DELETE_FAILED')
+					);
 				}
 			}
 		});
@@ -277,9 +285,11 @@ export class ProfileComponent implements OnInit {
 		const control = this.changePasswordForm.get('currentPassword');
 
 		if (control?.errors && control.touched) {
-			if (control.errors['required']) return this.translateService.translate('USERS.ERRORS.CURRENT_PASSWORD_REQUIRED');
+			if (control.errors['required'])
+				return this.translateService.translate('USERS.ERRORS.CURRENT_PASSWORD_REQUIRED');
 
-			if (control.errors['invalidPassword']) return this.translateService.translate('USERS.ERRORS.CURRENT_PASSWORD_INCORRECT');
+			if (control.errors['invalidPassword'])
+				return this.translateService.translate('USERS.ERRORS.CURRENT_PASSWORD_INCORRECT');
 		}
 
 		return null;
@@ -306,9 +316,11 @@ export class ProfileComponent implements OnInit {
 		const control = this.changePasswordForm.get('confirmPassword');
 
 		if (control?.touched && control?.errors) {
-			if (control.errors['required']) return this.translateService.translate('USERS.ERRORS.CONFIRM_PASSWORD_REQUIRED');
+			if (control.errors['required'])
+				return this.translateService.translate('USERS.ERRORS.CONFIRM_PASSWORD_REQUIRED');
 
-			if (control.errors['passwordMismatch']) return this.translateService.translate('USERS.ERRORS.CONFIRM_PASSWORD_MISMATCH');
+			if (control.errors['passwordMismatch'])
+				return this.translateService.translate('USERS.ERRORS.CONFIRM_PASSWORD_MISMATCH');
 		}
 
 		return null;

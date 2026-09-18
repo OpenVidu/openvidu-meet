@@ -11,24 +11,22 @@
 		</span>
 
 		<div class="notification-body">
-			@if (notification.titleKey) {
-				<span class="notification-title">{{ notification.titleKey | translate }}</span>
+			@if (notification.title) {
+				<span class="notification-title">{{ notification.title }}</span>
 			}
-			<span class="notification-message">
-				{{ notification.messageKey | translate: notification.messageParams }}
-			</span>
-
-			@if (notification.action; as action) {
-				<button type="button" class="notification-action" (click)="run(notification)">
-					{{ action.labelKey | translate }}
-				</button>
-			}
+			<span class="notification-message">{{ notification.message }}</span>
 		</div>
+
+		@if (notification.action; as action) {
+			<button type="button" class="notification-action" (click)="run(notification)">
+				{{ action.label }}
+			</button>
+		}
 
 		<button
 			type="button"
 			class="notification-dismiss"
-			[attr.aria-label]="notification.dismissLabelKey | translate"
+			[attr.aria-label]="'NOTIFICATION.DISMISS' | translate"
 			(click)="dismiss(notification.id)"
 		>
 			<mat-icon>close</mat-icon>

@@ -87,10 +87,12 @@ export class MeetingEndingSoonService {
 			kind: 'meeting-ending-soon',
 			icon: 'schedule',
 			tone: 'warning',
-			titleKey: 'ROOM.ENDING_SOON_TITLE',
-			messageKey: minutes === 1 ? 'ROOM.ENDING_SOON_ONE_MINUTE' : 'ROOM.ENDING_SOON_MANY_MINUTES',
-			messageParams: { minutes },
-			dismissLabelKey: 'ROOM.ENDING_SOON_DISMISS',
+			placement: 'pinned',
+			title: { key: 'ROOM.ENDING_SOON_TITLE' },
+			message: {
+				key: minutes === 1 ? 'ROOM.ENDING_SOON_ONE_MINUTE' : 'ROOM.ENDING_SOON_MANY_MINUTES',
+				params: { minutes }
+			},
 			durationMs: MeetingEndingSoonService.NOTICE_DURATION_MS
 		});
 		this.soundService.playMeetingEndingSoonSound();

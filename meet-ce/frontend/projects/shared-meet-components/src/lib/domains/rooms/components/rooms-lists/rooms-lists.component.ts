@@ -442,7 +442,7 @@ export class RoomsListsComponent implements OnInit {
 
 	copyRoomId(room: MeetRoom) {
 		this.clipboard.copy(room.roomId);
-		this.notificationService.showSnackbar(this.translateService.translate('ROOMS.COMMON.ROOM_ID_COPIED'));
+		this.notificationService.showMessage(this.translateService.translate('ROOMS.COMMON.ROOM_ID_COPIED'));
 	}
 
 	editRoom(room: MeetRoom) {

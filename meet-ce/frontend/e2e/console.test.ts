@@ -5,7 +5,7 @@ import {
 	bulkDelete,
 	clearSearchAndExpectAtLeast,
 	confirmDialog,
-	expectSnackbar,
+	expectNotification,
 	failBulkDelete,
 	gotoConsolePage,
 	gotoRoomDetail,
@@ -288,7 +288,7 @@ test.describe('Console bulk delete failure E2E Tests', () => {
 
 		// The failure must surface as a notification — never be swallowed by an error thrown while
 		// parsing an unstructured response — and the rows must remain.
-		await expectSnackbar(page);
+		await expectNotification(page);
 		await expect(page.locator(`[id="select-user-${users[0].userId}"]`)).toBeVisible();
 	});
 });

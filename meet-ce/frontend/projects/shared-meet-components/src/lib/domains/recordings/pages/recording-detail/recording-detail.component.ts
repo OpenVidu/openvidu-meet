@@ -139,7 +139,9 @@ export class RecordingDetailComponent implements OnInit {
 			}
 		} catch (error) {
 			this.log.e('Error loading recording details:', error);
-			this.notificationService.showSnackbar(this.translateService.translate('RECORDINGS.ERRORS.LOAD_DETAILS_FAILED'));
+			this.notificationService.showMessage(
+				this.translateService.translate('RECORDINGS.ERRORS.LOAD_DETAILS_FAILED')
+			);
 			await this.navigationService.navigateTo('/recordings');
 		}
 	}
@@ -155,20 +157,24 @@ export class RecordingDetailComponent implements OnInit {
 
 	copyRecordingId() {
 		this.clipboard.copy(this.recordingId());
-		this.notificationService.showSnackbar(this.translateService.translate('RECORDINGS.ERRORS.RECORDING_ID_COPIED'));
+		this.notificationService.showMessage(this.translateService.translate('RECORDINGS.ERRORS.RECORDING_ID_COPIED'));
 	}
 
 	async deleteRecording() {
 		const deleteCallback = async () => {
 			try {
 				await this.recordingService.deleteRecording(this.recordingId());
-				this.notificationService.showSnackbar(this.translateService.translate('RECORDINGS.ERRORS.RECORDING_DELETED'));
+				this.notificationService.showMessage(
+					this.translateService.translate('RECORDINGS.ERRORS.RECORDING_DELETED')
+				);
 
 				// After deletion, navigate back to the recordings page (refreshed so the deleted recording is gone)
 				await this.navigationService.navigateToAndInvalidate('/recordings', 'recordings');
 			} catch (error) {
 				console.error('Error deleting recording:', error);
-				this.notificationService.showSnackbar(this.translateService.translate('RECORDINGS.ERRORS.DELETE_FAILED'));
+				this.notificationService.showMessage(
+					this.translateService.translate('RECORDINGS.ERRORS.DELETE_FAILED')
+				);
 			}
 		};
 

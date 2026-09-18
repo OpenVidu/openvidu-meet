@@ -1,4 +1,7 @@
 {
+  "NOTIFICATION": {
+    "DISMISS": "閉じる"
+  },
   "ERROR": {
     "DEFAULT_TITLE": "エラー",
     "BACK": "戻る",

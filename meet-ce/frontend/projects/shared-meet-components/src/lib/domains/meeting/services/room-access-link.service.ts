@@ -109,7 +109,7 @@ export class RoomAccessLinkService {
 		}
 
 		this.clipboard.copy(speakerLink);
-		this.notificationService.showSnackbar('Room access link copied to clipboard');
+		this.notificationService.showMessage('Room access link copied to clipboard');
 	}
 
 	clear(): void {

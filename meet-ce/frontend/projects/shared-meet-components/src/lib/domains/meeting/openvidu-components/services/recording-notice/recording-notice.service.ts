@@ -18,22 +18,22 @@ const ANNOUNCEMENTS = {
 	started: {
 		icon: 'radio_button_checked',
 		tone: 'alert' as const,
-		titleKey: 'ROOM.RECORDING_STARTED_TITLE',
-		messageKey: 'ROOM.RECORDING_STARTED_MESSAGE',
+		title: { key: 'ROOM.RECORDING_STARTED_TITLE' },
+		message: { key: 'ROOM.RECORDING_STARTED_MESSAGE' },
 		durationMs: NOTICE_DURATION_MS
 	},
 	stopped: {
 		icon: 'radio_button_checked',
 		tone: 'neutral' as const,
-		titleKey: 'ROOM.RECORDING_STOPPED_TITLE',
-		messageKey: 'ROOM.RECORDING_STOPPED_MESSAGE',
+		title: { key: 'ROOM.RECORDING_STOPPED_TITLE' },
+		message: { key: 'ROOM.RECORDING_STOPPED_MESSAGE' },
 		durationMs: NOTICE_DURATION_MS
 	},
 	'waiting-for-media': {
 		icon: 'hourglass_top',
 		tone: 'neutral' as const,
-		titleKey: 'ROOM.RECORDING_WAITING_MEDIA_TITLE',
-		messageKey: 'ROOM.RECORDING_WAITING_MEDIA_MESSAGE'
+		title: { key: 'ROOM.RECORDING_WAITING_MEDIA_TITLE' },
+		message: { key: 'ROOM.RECORDING_WAITING_MEDIA_MESSAGE' }
 	}
 };
 
@@ -99,7 +99,7 @@ export class RecordingNoticeService {
 		this.dismiss();
 		this.shownId = this.notificationService.showNotification({
 			kind: `recording-${announcement}`,
-			dismissLabelKey: 'PANEL.CLOSE',
+			placement: 'pinned',
 			...ANNOUNCEMENTS[announcement]
 		});
 	}

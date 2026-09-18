@@ -1,4 +1,7 @@
 {
+  "NOTIFICATION": {
+    "DISMISS": "Dispensar"
+  },
   "ERROR": {
     "DEFAULT_TITLE": "Erro",
     "BACK": "Voltar",

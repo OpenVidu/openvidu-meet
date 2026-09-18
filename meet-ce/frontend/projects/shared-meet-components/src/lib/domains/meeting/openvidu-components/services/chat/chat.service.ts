@@ -94,12 +94,13 @@ export class ChatService {
 		this.shownId = this.notificationService.showNotification({
 			kind: 'chat-message',
 			icon: 'chat',
-			messageKey: 'PANEL.CHAT.MESSAGE_SENT_NOTIFICATION',
-			messageParams: { name: participantName.toUpperCase() },
-			dismissLabelKey: 'PANEL.CLOSE',
+			message: {
+				key: 'PANEL.CHAT.MESSAGE_SENT_NOTIFICATION',
+				params: { name: participantName.toUpperCase() }
+			},
 			durationMs: CHAT_NOTIFICATION_DURATION_MS,
 			action: {
-				labelKey: 'PANEL.CHAT.OPEN_CHAT',
+				label: { key: 'PANEL.CHAT.OPEN_CHAT' },
 				run: () => this.panelService.togglePanel(PanelType.CHAT)
 			}
 		});

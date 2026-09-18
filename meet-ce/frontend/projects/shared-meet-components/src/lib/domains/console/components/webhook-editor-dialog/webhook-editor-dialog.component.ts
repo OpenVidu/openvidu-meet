@@ -122,11 +122,11 @@ export class WebhookEditorDialogComponent {
 				await this.webhookService.createWebhook(options);
 			}
 
-			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_SAVED'));
+			this.notificationService.showMessage(this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_SAVED'));
 			this.dialogRef.close(true);
 		} catch (error: any) {
 			const errorMessage = error.error?.message || error.message || '';
-			this.notificationService.showSnackbar(
+			this.notificationService.showMessage(
 				`${this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_SAVE_FAILED')} ${errorMessage}`.trim()
 			);
 		} finally {

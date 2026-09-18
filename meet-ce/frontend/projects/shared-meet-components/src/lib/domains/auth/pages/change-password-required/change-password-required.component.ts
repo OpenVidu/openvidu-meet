@@ -152,7 +152,9 @@ export class ChangePasswordRequiredComponent implements OnInit {
 			}
 
 			this.sessionStorageService.removeMustChangePasswordRequired();
-			this.notificationService.showSnackbar(this.translateService.translate('AUTH.CHANGE_PASSWORD.ERRORS.UPDATE_SUCCESS'));
+			this.notificationService.showMessage(
+				this.translateService.translate('AUTH.CHANGE_PASSWORD.ERRORS.UPDATE_SUCCESS')
+			);
 
 			const redirectTo = this.redirectTo();
 
@@ -166,10 +168,14 @@ export class ChangePasswordRequiredComponent implements OnInit {
 				const control = this.changePasswordForm.get('currentPassword');
 				control?.setErrors({ invalidPassword: true });
 				control?.markAsTouched();
-				this.notificationService.showSnackbar(this.translateService.translate('AUTH.CHANGE_PASSWORD.ERRORS.CURRENT_INCORRECT'));
+				this.notificationService.showMessage(
+					this.translateService.translate('AUTH.CHANGE_PASSWORD.ERRORS.CURRENT_INCORRECT')
+				);
 			} else {
 				console.error('Error changing password:', error);
-				this.notificationService.showSnackbar(this.translateService.translate('AUTH.CHANGE_PASSWORD.ERRORS.UPDATE_FAILED'));
+				this.notificationService.showMessage(
+					this.translateService.translate('AUTH.CHANGE_PASSWORD.ERRORS.UPDATE_FAILED')
+				);
 			}
 		} finally {
 			clearTimeout(delayLoader);

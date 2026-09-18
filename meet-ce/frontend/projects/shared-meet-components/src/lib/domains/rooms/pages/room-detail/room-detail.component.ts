@@ -107,7 +107,6 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 	/** Scroll position to restore on the page container (set when restoring cached state). */
 	protected scrollToRestore = 0;
 
-
 	currentUserId = signal<string>('');
 	currentUserRole = signal<MeetUserRole | undefined>(undefined);
 	canViewUserProfiles = computed(
@@ -146,7 +145,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		fetchPage: (filters, nextPageToken) => this.fetchMembersPage(filters, nextPageToken),
 		onLoadError: (error) => {
 			this.log.e('Error loading room members:', error);
-			this.notificationService.showSnackbar('Failed to load room members');
+			this.notificationService.showMessage('Failed to load room members');
 		}
 	});
 
@@ -165,7 +164,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		fetchPage: (filters, nextPageToken) => this.fetchRecordingsPage(filters, nextPageToken),
 		onLoadError: (error) => {
 			this.log.e('Error loading recordings:', error);
-			this.notificationService.showSnackbar('Failed to load recordings');
+			this.notificationService.showMessage('Failed to load recordings');
 		}
 	});
 
@@ -308,7 +307,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 			await Promise.all(tabLoads);
 		} catch (error) {
 			this.log.e('Error loading room details:', error);
-			this.notificationService.showSnackbar(
+			this.notificationService.showMessage(
 				this.translateService.translate('ROOMS.ERRORS.FAILED_LOAD_ROOM_DETAILS')
 			);
 			await this.navigationService.navigateTo('/rooms');
@@ -348,9 +347,9 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		try {
 			const updatedRoom = await this.roomService.updateRoomStatus(this.roomId(), MeetRoomStatus.OPEN);
 			this.room.set(updatedRoom);
-			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.ROOM_REOPENED'));
+			this.notificationService.showMessage(this.translateService.translate('ROOMS.ERRORS.ROOM_REOPENED'));
 		} catch (error) {
-			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.FAILED_REOPEN_ROOM'));
+			this.notificationService.showMessage(this.translateService.translate('ROOMS.ERRORS.FAILED_REOPEN_ROOM'));
 			this.log.e('Error reopening room:', error);
 		}
 	}
@@ -366,9 +365,9 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 				updatedRoom.status === MeetRoomStatus.CLOSED
 					? this.translateService.translate('ROOMS.ERRORS.ROOM_CLOSED')
 					: this.translateService.translate('ROOMS.ERRORS.ROOM_SCHEDULED_CLOSE');
-			this.notificationService.showSnackbar(message);
+			this.notificationService.showMessage(message);
 		} catch (error) {
-			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.FAILED_CLOSE_ROOM'));
+			this.notificationService.showMessage(this.translateService.translate('ROOMS.ERRORS.FAILED_CLOSE_ROOM'));
 			this.log.e('Error closing room:', error);
 		}
 	}
@@ -400,7 +399,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 			await this.navigationService.navigateToAndInvalidate('/rooms', 'rooms');
 		}
 
-		this.notificationService.showSnackbar(this.roomDeletionService.removeRoomIdFromMessage(message));
+		this.notificationService.showMessage(this.roomDeletionService.removeRoomIdFromMessage(message));
 	}
 
 	// --- Room Members management ---
@@ -469,12 +468,12 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 
 	private copyMemberLink(member: MeetRoomMember) {
 		this.clipboard.copy(member.accessUrl);
-		this.notificationService.showSnackbar('Member access link copied to clipboard');
+		this.notificationService.showMessage('Member access link copied to clipboard');
 	}
 
 	copyRoomId() {
 		this.clipboard.copy(this.roomId());
-		this.notificationService.showSnackbar(this.translateService.translate('ROOMS.COMMON.ROOM_ID_COPIED'));
+		this.notificationService.showMessage(this.translateService.translate('ROOMS.COMMON.ROOM_ID_COPIED'));
 	}
 
 	private deleteMember(member: MeetRoomMember) {
@@ -485,11 +484,11 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 					await this.roomMemberService.deleteRoomMember(this.roomId(), member.memberId);
 
 					this.memberList.remove((m) => m.memberId === member.memberId);
-					this.notificationService.showSnackbar(`Member "${member.name}" removed successfully`);
+					this.notificationService.showMessage(`Member "${member.name}" removed successfully`);
 					await this.memberList.autoLoadIfEmpty();
 				} catch (error) {
 					this.log.e('Error removing member:', error);
-					this.notificationService.showSnackbar('Failed to remove member');
+					this.notificationService.showMessage('Failed to remove member');
 				}
 			}
 		});
@@ -502,7 +501,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 				const { deleted } = await this.roomMemberService.bulkDeleteRoomMembers(this.roomId(), memberIds);
 
 				this.memberList.remove((m) => deleted.includes(m.memberId));
-				this.notificationService.showSnackbar(
+				this.notificationService.showMessage(
 					`${deleted.length} member${deleted.length > 1 ? 's' : ''} removed successfully`
 				);
 				await this.memberList.autoLoadIfEmpty();
@@ -513,7 +512,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 
 				// Nothing structured to report (401, 500, network drop): plain failure.
 				if (deleted.length === 0 && failed.length === 0) {
-					this.notificationService.showSnackbar('Failed to remove members');
+					this.notificationService.showMessage('Failed to remove members');
 					return;
 				}
 
@@ -530,7 +529,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 					msg += `${failed.length} member${failed.length > 1 ? 's' : ''} could not be removed.`;
 				}
 
-				this.notificationService.showSnackbar(msg.trim());
+				this.notificationService.showMessage(msg.trim());
 				await this.memberList.autoLoadIfEmpty();
 			}
 		};
@@ -583,7 +582,9 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		try {
 			await this.navigationService.navigateTo(`/recordings/${recordingId}`);
 		} catch (error) {
-			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.NAVIGATING_RECORDING_DETAIL'));
+			this.notificationService.showMessage(
+				this.translateService.translate('ROOMS.ERRORS.NAVIGATING_RECORDING_DETAIL')
+			);
 			this.log.e('Error navigating to recording detail:', error);
 		}
 	}

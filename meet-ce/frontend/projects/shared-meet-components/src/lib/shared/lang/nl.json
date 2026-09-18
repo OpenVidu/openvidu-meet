@@ -1,4 +1,7 @@
 {
+  "NOTIFICATION": {
+    "DISMISS": "Sluiten"
+  },
   "ERROR": {
     "DEFAULT_TITLE": "Fout",
     "BACK": "Terug",

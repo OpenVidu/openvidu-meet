@@ -41,7 +41,9 @@ export class AddRoomMemberComponent implements OnInit {
 		const roomId = this.route.snapshot.paramMap.get('room-id');
 
 		if (!roomId) {
-			this.notificationService.showSnackbar(this.translateService.translate('ROOM_MEMBERS.ERRORS.ROOM_ID_REQUIRED'));
+			this.notificationService.showMessage(
+				this.translateService.translate('ROOM_MEMBERS.ERRORS.ROOM_ID_REQUIRED')
+			);
 			this.navigationService.navigateTo('/rooms');
 			return;
 		}
@@ -71,7 +73,7 @@ export class AddRoomMemberComponent implements OnInit {
 			}
 		} catch (error) {
 			console.error(error);
-			this.notificationService.showSnackbar(
+			this.notificationService.showMessage(
 				this.translateService.translate('ROOM_MEMBERS.ERRORS.ROOM_DATA_LOAD_FAILED')
 			);
 		}
@@ -91,28 +93,26 @@ export class AddRoomMemberComponent implements OnInit {
 					baseRole: options.baseRole,
 					customPermissions: options.customPermissions ?? {} // Send empty object to clear custom permissions if they were removed in the UI
 				});
-				this.notificationService.showSnackbar(
+				this.notificationService.showMessage(
 					this.translateService.translate('ROOM_MEMBERS.ERRORS.MEMBER_UPDATED_SUCCESS')
 				);
 			} else {
 				// Add mode: create new member
 				await this.roomMemberService.createRoomMember(this.roomId, options);
-				this.notificationService.showSnackbar(
+				this.notificationService.showMessage(
 					this.translateService.translate('ROOM_MEMBERS.ERRORS.MEMBER_ADDED_SUCCESS')
 				);
 			}
 
 			// Invalidate the room detail so its members tab reloads with the new/updated member
-			await this.navigationService.navigateToAndInvalidate(
-				`/rooms/${this.roomId}`,
-				`rooms/${this.roomId}`,
-				{ tab: 'members' }
-			);
+			await this.navigationService.navigateToAndInvalidate(`/rooms/${this.roomId}`, `rooms/${this.roomId}`, {
+				tab: 'members'
+			});
 		} catch (error) {
 			const msg = this.isEditMode()
 				? this.translateService.translate('ROOM_MEMBERS.ERRORS.MEMBER_UPDATE_FAILED')
 				: this.translateService.translate('ROOM_MEMBERS.ERRORS.MEMBER_ADD_FAILED');
-			this.notificationService.showSnackbar(msg);
+			this.notificationService.showMessage(msg);
 			console.error(error);
 		} finally {
 			clearTimeout(delayLoader);

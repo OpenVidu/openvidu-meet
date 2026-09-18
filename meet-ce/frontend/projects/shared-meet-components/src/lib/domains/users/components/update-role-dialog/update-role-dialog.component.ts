@@ -81,13 +81,13 @@ export class UpdateRoleDialogComponent {
 
 		try {
 			const updatedUser = await this.userService.updateUserRole(this.data.user.userId, this.selectedRole());
-			this.notificationService.showSnackbar(
+			this.notificationService.showMessage(
 				`${this.translateService.translate('USERS.ERRORS.ROLE_UPDATED_PREFIX')} ${updatedUser.name} ${this.translateService.translate('USERS.ERRORS.ROLE_UPDATED_TO')} ${UsersUiUtils.getRoleLabel(updatedUser.role)}`
 			);
 			this.dialogRef.close(updatedUser);
 		} catch (error) {
 			console.error('Error while updating user role', error);
-			this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.ROLE_UPDATE_FAILED'));
+			this.notificationService.showMessage(this.translateService.translate('USERS.ERRORS.ROLE_UPDATE_FAILED'));
 		} finally {
 			clearTimeout(delayLoader);
 			this.isSaving.set(false);

@@ -267,7 +267,7 @@ export class MeetingEventHandlerService {
 		}
 
 		if (controls.length > 0) {
-			this.notificationService.showSnackbar(this.translateService.translate('MODERATION.MUTED_BY_MODERATOR'));
+			this.notificationService.showMessage(this.translateService.translate('MODERATION.MUTED_BY_MODERATOR'));
 		}
 
 		const results = await Promise.allSettled(controls);
@@ -467,7 +467,7 @@ export class MeetingEventHandlerService {
 			};
 			await this.roomMemberContextService.generateToken(roomId, tokenOptions);
 
-			this.notificationService.showSnackbar('Your permissions have been updated');
+			this.notificationService.showMessage('Your permissions have been updated');
 		} catch (error) {
 			console.error('Error regenerating room member token after permissions update:', error);
 			await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
@@ -509,7 +509,7 @@ export class MeetingEventHandlerService {
 		const message = isPromotedModerator
 			? 'You have been promoted to moderator'
 			: 'Your moderator role has been removed';
-		this.notificationService.showSnackbar(message);
+		this.notificationService.showMessage(message);
 
 		if (isPromotedModerator) {
 			this.soundService.playParticipantRoleUpgradedSound();

@@ -1,5 +1,6 @@
-// Geometry, colours and motion come from the application's design tokens, which the meeting theme
-// defines. A screen that uses this outlet without those tokens gets the layout but not the palette.
+// Geometry, colours and motion come from the runtime theme tokens, which `MeetingThemeService`
+// publishes on the document root, so a notification reads in the theme in force wherever it is shown
+// and follows it when the reader switches.
 :host {
 	display: flex;
 	flex-direction: column;
@@ -8,7 +9,8 @@
 
 .ov-notification {
 	display: flex;
-	align-items: flex-start;
+	// Glyph, copy, action and close read as one row, centred on each other whatever the copy's height.
+	align-items: center;
 	// The notification is a hit target even when the host hangs it over a layer that lets clicks
 	// through, which is how it can be closed without the layer swallowing the stage underneath.
 	pointer-events: auto;
@@ -64,7 +66,6 @@
 	gap: 4px;
 	flex-grow: 1;
 	min-width: 0;
-	padding-top: 4px;
 }
 
 .notification-title {
@@ -81,16 +82,18 @@
 }
 
 .notification-action {
-	align-self: flex-start;
-	margin-top: 2px;
+	flex-shrink: 0;
 	padding: 0;
 	border: none;
 	background: transparent;
-	color: var(--ov-primary-action-color, var(--ov-text-primary-color));
-	font: inherit;
+	// Reads on the card in both themes, which the action-colour tokens (near-white, near-black) do not.
+	color: var(--ov-text-primary-color);
+	font-family: inherit;
+	font-size: 14px;
 	font-weight: 600;
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
+	white-space: nowrap;
 	cursor: pointer;
 
 	&:hover {
@@ -105,7 +108,7 @@
 	flex-shrink: 0;
 	width: 40px;
 	height: 40px;
-	margin: -4px -4px 0 0;
+	margin-right: -4px;
 	padding: 0;
 	border: none;
 	border-radius: 50%;

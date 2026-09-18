@@ -82,7 +82,7 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 		initialFilters: this.initialFilters(),
 		fetchPage: (filters, nextPageToken) => this.fetchRecordingsPage(filters, nextPageToken),
 		onLoadError: (error) => {
-			this.notificationService.showSnackbar(
+			this.notificationService.showMessage(
 				this.translateService.translate('RECORDINGS.ERRORS.LOAD_RECORDINGS_FAILED')
 			);
 			this.log.e('Error loading recordings:', error);
@@ -127,7 +127,7 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 		try {
 			await this.navigationService.navigateTo(`/recordings/${recordingId}`);
 		} catch (error) {
-			this.notificationService.showSnackbar(
+			this.notificationService.showMessage(
 				this.translateService.translate('RECORDINGS.ERRORS.NAVIGATE_DETAIL_FAILED')
 			);
 			this.log.e('Error navigating to recording detail:', error);
