@@ -333,7 +333,10 @@ export class RedisService extends EventEmitter {
 	async addToSet(key: string, member: string, ttlMs?: number): Promise<number> {
 		try {
 			if (ttlMs !== undefined) {
-				const [added] = await this.redisPublisher.multi().sadd(key, member).pexpire(key, ttlMs).exec() as [[Error | null, number], unknown];
+				const [added] = (await this.redisPublisher.multi().sadd(key, member).pexpire(key, ttlMs).exec()) as [
+					[Error | null, number],
+					unknown
+				];
 				return added[1];
 			}
 
@@ -374,6 +377,10 @@ export class RedisService extends EventEmitter {
 
 	cleanup() {
 		this.logger.verbose('Cleaning up Redis connections');
+		// Detach the connect/error/end handlers from the client itself before quitting: `quit()` can
+		// still surface a stray `error` while the socket finishes closing, and with `isConnected` about
+		// to be reset to false, onError would misread it as a failed initial connection and exit(1).
+		this.redisPublisher.removeAllListeners();
 		void this.redisPublisher.quit();
 		this.removeAllListeners();
 		this.isConnected = false;
