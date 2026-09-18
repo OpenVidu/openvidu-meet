@@ -50,24 +50,20 @@ export class ErrorComponent implements OnInit {
 	}
 
 	/**
-	 * Sets the back button text based on the application mode and user authentication
+	 * Shows the back button only where it leads somewhere, and names it after where it leads.
+	 *
+	 * A leave-redirect URL takes the caller out of the error screen in every mode. Without one, the
+	 * web component tells its host to tear the embed down and the SPA navigates to the console, but
+	 * an iframe can do neither: it has no host listening this early and no internal route to fall
+	 * back to, so the button would do nothing at all.
 	 */
 	async setBackButtonText() {
-		const isStandaloneMode = !this.runtimeConfigService.isWebcomponentMode();
 		const redirection = this.leaveRedirect.getLeaveRedirectURL();
-		const isAuthenticated = await this.authService.isUserAuthenticated();
+		const isSpa = !this.runtimeConfigService.isEmbeddedMode();
+		const goesToConsole = isSpa && !redirection && (await this.authService.isUserAuthenticated());
 
-		// If in standalone mode without redirection and user is not authenticated,
-		// hide back button (user has no where to go back to)
-		if (isStandaloneMode && !redirection && !isAuthenticated) {
-			this.showBackButton.set(false);
-			return;
-		}
-
-		this.showBackButton.set(true);
-		this.backButtonTextKey.set(
-			isStandaloneMode && !redirection && isAuthenticated ? 'ERROR.BACK_TO_CONSOLE' : 'ERROR.ACCEPT'
-		);
+		this.showBackButton.set(!!redirection || this.runtimeConfigService.isWebcomponentMode() || goesToConsole);
+		this.backButtonTextKey.set(goesToConsole ? 'ERROR.BACK_TO_CONSOLE' : 'ERROR.ACCEPT');
 	}
 
 	/**
