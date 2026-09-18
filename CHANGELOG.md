@@ -9,19 +9,11 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 ## 3.9.0 (unreleased)
 
-The permission, command and event names introduced in this release run alongside the previous
-ones, which keep working until 3.12.0. Endpoints, payloads and webhook events are documented in
-the [REST API reference][3.9-api].
-
-### Upgrade notes
-
-- A permission object read from the API carries both key sets. Writing it back after changing only
-  the deprecated half of an alias pair returns `422`. The unchanged object, or one carrying only
-  the changed keys, is accepted.
+This release deprecates the old permissions, commands and events, and adds a new set of them. The new and old names run alongside each other for compatibility **until 3.12.0**, when the old names are removed.
 
 ### Breaking changes
 
-**None.** No endpoint, attribute, command or event was removed.
+**None.**
 
 ### Deprecated
 
@@ -102,85 +94,44 @@ Both command and event name sets are accepted.
 
 ### Improved
 
-#### Integration
-
-- The web component loader imports the bundle lazily.
-
 #### UI
 
-- Joining a meeting asks for the camera and the microphone in a single browser permission prompt.
-- The floating or docked choice for the local video tile is remembered per browser.
-- Meeting layout improvements.
 - Screen shares can be zoomed with two fingers on touch devices.
+- Meeting layout improvements.
+- Device permissions are requested in a single prompt.
+- The floating or docked choice for the local video tile is remembered per browser.
 
 #### Deployment
 
 - Rate limits for token issuance, API requests and static assets were raised.
-- `MEET_INITIAL_ADMIN_USER`, `MEET_INITIAL_API_KEY` and `MEET_INITIAL_WEBHOOK_URL` seed their item on every
-  start while the deployment has none, instead of on the first start only.
+- `MEET_INITIAL_ADMIN_USER`, `MEET_INITIAL_API_KEY` and `MEET_INITIAL_WEBHOOK_URL` seed their item on every start while the deployment has none, instead of on the first start only.
 
 ### Fixed
 
 #### Integration
 
-- A participant could grant themselves moderator permissions by modifying their own role and identity data.
-  Roles and permissions are decided by the server alone.
-- `chatWrite` was enforced in the interface only. It is enforced at the media server, at join time and when
-  permissions change mid-meeting.
-- Revoking a member's media permissions mid-meeting did not reach the media server, so the participant kept
-  publishing.
-- Ended meetings could stay marked as running, which blocked duration limits and room configuration changes
-  from taking effect.
+- A participant could grant themselves moderator permissions by modifying their own role and identity data. Roles and permissions are decided by the server alone.
+- `chatWrite` permission was enforced in the interface only. It is enforced at the media server, at join time and when permissions change mid-meeting.
+- Revoking a member's media permissions mid-meeting did not reach the media server, so the participant kept publishing.
+- Ended meetings could stay marked as running, which blocked duration limits and room configuration changes from taking effect.
 - A stale reconnect could reopen a closed room.
-- Transferring room ownership while deleting a user could lose the transfer to a race.
-- A recording's [`startDate`][3.9-recording] was the moment the recording was requested, not the moment it
-  started recording media. It is the first recorded frame, and is absent from a recording that never reached
-  one.
-- [`POST /recordings`][3.9-start-recording] waited for the recording to become active and answered `503` after
-  20 seconds otherwise, cancelling a recording that was only waiting for somebody to publish. It answers `201`
-  as soon as the media server accepts the recording.
-- [`POST /recordings/{recordingId}/stop`][3.9-stop-recording] answered `409` for a recording that was still
-  starting, while cancelling it anyway. It answers `202`, and the recording ends `aborted` without a file.
-- Stopping a recording could race a concurrent stop, and a recording that was starting or ending was not
-  counted as in progress when the lock was released.
-- The per-room recording lock was released while a recording waited for its first track, which allowed a
-  second recording to be started on the same room.
-- The auto-start latch outlived its own meeting.
+- A recording's [`startDate`][3.9-recording] was the moment the recording was requested, not the moment it started recording media.
+- [`POST /recordings`][3.9-start-recording] waited 20 seconds until the meeting has participants publishing media. Now there is no timeout.
 - Deleting a recording could fail on an error payload with missing fields.
-- A private recording share link rejected every credential but a user access token, so an API key or a
-  room member token was answered `401` on a recording it could otherwise read.
 - Re-entering a meeting in the same web component instance wiped or froze the entry attributes.
-- The web component could not find its bundle when the host application served the loader from its own origin.
 - A room's `autoDeletionDate` could be set so far in the future that it was never honored, leaving the room stuck forever. It now has an upper limit.
-- `DELETE /rooms` reset the connection instead of answering when `roomIds` grew large enough to exceed
-  the runtime's header size limit. Now roomIds are limited to 100
-- [`POST /rooms`][3.9-create-room] answered `500` when `roomName` was empty or only whitespace. An empty,
-  blank or `null` name is treated as no name given and the room is created with the default name `Room`.
+- `DELETE /rooms` reset the connection instead of answering when `roomIds` grew large enough to exceed the runtime's header size limit. Now roomIds are limited to 100
+- [`POST /rooms`][3.9-create-room] failed when `roomName` was empty. Now, default value `Room` is used when `roomName` is empty, blank or `null`.
 
 #### UI
 
-- A meeting that filled up while a participant was joining reported a generic connection error.
 - The local video disappeared from the layout when the last remote participant left.
-- A virtual background or blur froze for other participants when the sending window was minimized or
-  covered, in Firefox and Safari.
-- A participant who joined with a device turned off could not turn it on.
-- The stop control in the toolbar and in the recording panel was disabled until a recording was active.
+- A virtual background or blur froze for other participants when the sending window was minimized or covered, in Firefox and Safari.
 - Abandoned wizard state leaked into the next room, and a failed save reset the form.
-- The wizard sent back the deprecated permission keys it had read.
-- The participant panel's moderation menu was clipped at the right edge of the window. A toolbar
-  style overrode Angular Material's overlay positioning for every menu in the app.
 
 #### Deployment
 
-- A LiveKit webhook for a room Meet does not own was never answered, so its connection, file descriptor
-  and memory were held for good. A deployment driving LiveKit directly grew without bound with Meet
-  unused. Every webhook is answered.
-- Two object merge helpers accepted prototype-chain keys, and temporary passwords were generated from a
-  non-cryptographic random source.
-- Ending a meeting that was never recorded logged a warning about releasing a recording lock nobody had  taken. The lock is only released when it is held
-- A `MEET_NAME_ID` different from the one stored deleted the global configuration on start and registered
-  the initial webhook again, failing the start once the webhook cap was reached. The configuration is kept,
-  the webhook is registered once, and a `MEET_INITIAL_WEBHOOK_URL` the registry refuses is logged and skipped.
+- Unanswered webhooks caused active connections to grow continuously. Every webhook is answered.
 
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html
 [3.9-meetings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/meetingGet
