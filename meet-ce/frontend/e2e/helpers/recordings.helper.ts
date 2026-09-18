@@ -1,6 +1,6 @@
-import { MeetRecordingInfo, MeetRecordingStatus, MeetRoomMemberRole } from '@openvidu-meet/typings';
+import { MeetRecordingInfo, MeetRecordingStatus, MeetRoomMemberRole, MeetRoomStatus } from '@openvidu-meet/typings';
 import { expect, type Browser, type Page } from '@playwright/test';
-import { getRoomRecordings } from './meet-api.helper';
+import { getRoomRecordings, getRoomStatus } from './meet-api.helper';
 import { openMoreOptionsMenu, toggleActivitiesPanel } from './panels.helper';
 import { joinParticipants } from './participant-management.helper';
 import { expectVisible } from './ui-utils.helper';
@@ -283,6 +283,14 @@ export const recordRoom = async (browser: Browser, roomId: string): Promise<Meet
 		return recording;
 	} finally {
 		await removeAllParticipants();
+		// The meeting outlives its last participant by the departure timeout, and a room with an
+		// active meeting rejects any change to its configuration.
+		await expect
+			.poll(() => getRoomStatus(roomId), {
+				timeout: 40_000,
+				message: 'Meeting did not end after the recorder left'
+			})
+			.not.toBe(MeetRoomStatus.ACTIVE_MEETING);
 	}
 };
 

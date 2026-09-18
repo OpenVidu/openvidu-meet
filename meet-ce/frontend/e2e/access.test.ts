@@ -360,9 +360,10 @@ test.describe('Access E2E Tests', () => {
 		}
 	];
 
-	// Per-recording share links (public / private secret). A share secret grants view access on its
-	// own — regardless of the access method's canRetrieveRecordings — so these always show the
-	// recording. Combined-access cases append the room access secret to the share link.
+	// Per-recording share links (public / private secret). A share secret waives the access method's
+	// canRetrieveRecordings, so these always show the recording: a public secret needs no credential at
+	// all, a private one is served to any caller the room already identifies, which a room access
+	// secret is enough for. Combined-access cases append the room access secret to the share link.
 	const recordingShareScenarios: Scenario[] = [
 		{
 			title: 'public shared link opens without login',
@@ -419,8 +420,21 @@ test.describe('Access E2E Tests', () => {
 			getUrl: () => withRoomSecret(publicRecordingUrl, secretOf(guestNoRetrieve.accessUrl))
 		},
 		{
+			title: 'anonymous speaker without canRetrieveRecordings via private share link',
+			kind: 'anonymous',
+			outcome: 'shown',
+			getUrl: () => withRoomSecret(privateRecordingUrl, secretOf(room.access.anonymous.speaker.url)),
+			gateSpeakerRetrieve: true
+		},
+		{
+			title: 'identified guest without canRetrieveRecordings via private share link',
+			kind: 'anonymous',
+			outcome: 'shown',
+			getUrl: () => withRoomSecret(privateRecordingUrl, secretOf(guestNoRetrieve.accessUrl))
+		},
+		{
 			title: 'non-member user via anonymous speaker link without canRetrieveRecordings via private share link',
-			kind: 'login',
+			kind: 'preauth',
 			outcome: 'shown',
 			getUrl: () => withRoomSecret(privateRecordingUrl, secretOf(room.access.anonymous.speaker.url)),
 			getUser: () => nonMemberUser,
@@ -436,7 +450,7 @@ test.describe('Access E2E Tests', () => {
 		},
 		{
 			title: 'non-member user via identified guest link without canRetrieveRecordings via private share link',
-			kind: 'login',
+			kind: 'preauth',
 			outcome: 'shown',
 			getUrl: () => withRoomSecret(privateRecordingUrl, secretOf(guestNoRetrieve.accessUrl)),
 			getUser: () => nonMemberUser
@@ -450,7 +464,7 @@ test.describe('Access E2E Tests', () => {
 		},
 		{
 			title: 'member user without canRetrieveRecordings via anonymous speaker link without canRetrieveRecordings via private share link',
-			kind: 'login',
+			kind: 'preauth',
 			outcome: 'shown',
 			getUrl: () => withRoomSecret(privateRecordingUrl, secretOf(room.access.anonymous.speaker.url)),
 			getUser: () => memberNoRetrieve,
@@ -466,7 +480,7 @@ test.describe('Access E2E Tests', () => {
 		},
 		{
 			title: 'member user without canRetrieveRecordings via identified guest link without canRetrieveRecordings via private share link',
-			kind: 'login',
+			kind: 'preauth',
 			outcome: 'shown',
 			getUrl: () => withRoomSecret(privateRecordingUrl, secretOf(guestNoRetrieve.accessUrl)),
 			getUser: () => memberNoRetrieve

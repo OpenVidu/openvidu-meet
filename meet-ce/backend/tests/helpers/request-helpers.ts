@@ -1,4 +1,4 @@
-import { expect } from '@jest/globals';
+import { afterAll, expect } from '@jest/globals';
 import {
 	MeetAppearanceConfig,
 	MeetAssistantCapabilityName,
@@ -38,7 +38,9 @@ import { createApp, registerDependencies } from '../../src/server.js';
 import { ApiKeyService } from '../../src/services/api-key.service.js';
 import { GlobalConfigService } from '../../src/services/global-config.service.js';
 import { RecordingService } from '../../src/services/recording.service.js';
+import { RedisService } from '../../src/services/redis.service.js';
 import { RoomScheduledTasksService } from '../../src/services/room-scheduled-tasks.service.js';
+import { MongoDBService } from '../../src/services/storage/mongodb.service.js';
 import { getBasePath } from '../../src/utils/html-dynamic-base-path.utils.js';
 import {
 	waitForActiveRecordingEgress,
@@ -79,6 +81,17 @@ export const startTestServer = async (): Promise<Express> => {
 	await initializeEagerServices();
 	return app;
 };
+
+// Every test file runs in the same process and starts its own server. Without this, each one leaves
+// its Mongo pool and its Redis client behind and the run starves on the last files.
+afterAll(async () => {
+	if (!app) {
+		return;
+	}
+
+	container.get(RedisService).cleanup();
+	await container.get(MongoDBService).disconnect();
+});
 
 // API KEY HELPERS
 
