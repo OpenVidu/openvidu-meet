@@ -21,10 +21,7 @@ content:
                                 type: string
                             error:
                                 type: string
-                                description: Name of the error
-                            message:
-                                type: string
-                                description: Description of the error
+                                description: A message explaining why the deletion failed.
         example:
             message: "All users deleted successfully"
             deleted:

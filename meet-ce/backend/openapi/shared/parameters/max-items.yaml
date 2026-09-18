@@ -1,8 +1,11 @@
 name: maxItems
 in: query
 required: false
-description: Specifies the maximum number of items to return per page. The default value is 10, and the maximum allowed is 100.
+description: >
+    Maximum number of items to return per page. Values above 100 are capped to 100 rather than rejected, and
+    `pagination.maxItems` echoes the value actually applied. Zero, a negative value and a non-numeric one are
+    answered with `422`.
 schema:
     type: integer
     default: 10
-    maximum: 100
+    minimum: 1

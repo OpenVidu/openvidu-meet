@@ -7,3 +7,5 @@ content:
             properties:
                 access:
                     $ref: '../schemas/meet-room-access-config.yaml'
+            required:
+                - access

@@ -11,5 +11,5 @@ properties:
     maxItems:
         type: integer
         description: >
-            Maximum number of items returned in a single response page.
-            Corresponds to the `maxItems` query parameter in the request.
+            Maximum number of items returned in a single response page. It is the `maxItems` query parameter of
+            the request after the cap, so a request asking for more than 100 reads 100 back here.

@@ -1,4 +1,5 @@
 description: New room config
+required: true
 content:
     application/json:
         schema:
@@ -6,6 +7,8 @@ content:
             properties:
                 config:
                     $ref: '../schemas/meet-room-config.yaml#/MeetRoomConfig'
+            required:
+                - config
         example:
             config:
                 recording:

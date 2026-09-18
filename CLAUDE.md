@@ -121,6 +121,13 @@ frontend). Two details matter when things look stale:
 change a user or an integrator can observe gets its line in the unreleased release in the same
 commit that makes it. Internal refactors, tests and build work do not.
 
+**Documentation-only changes never get a line**, however visible the document is: correcting the
+OpenAPI, a TSDoc or a website page so it finally describes behaviour the server already had changes
+nothing a reader can observe in the product. The changelog records what the software does
+differently, not what we finally wrote down about it. The same goes for a fix to a feature of the
+unreleased version itself: there is no previous release it differs from, so it belongs to that
+feature's existing entry, not to a `Fixed` line of its own.
+
 A release uses these sections, in this order, omitting the empty ones:
 
 `Upgrade notes` → `Breaking changes` → `Deprecated` → `Added` → `Improved` → `Fixed`
