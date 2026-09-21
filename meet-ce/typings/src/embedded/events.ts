@@ -35,15 +35,18 @@ export enum EmbeddedEventName {
 	 */
 	PARTICIPANT_LEFT = 'participantLeft',
 	/**
-	 * Event emitted to the local participant when their microphone state changes.
+	 * Event emitted to the local participant when their microphone state changes. Emitted from the
+	 * prejoin screen onwards, before `meetingJoined`.
 	 */
 	MEDIA_AUDIO_STATUS_CHANGED = 'mediaAudioStatusChanged',
 	/**
-	 * Event emitted to the local participant when their camera state changes.
+	 * Event emitted to the local participant when their camera state changes. Emitted from the
+	 * prejoin screen onwards, before `meetingJoined`.
 	 */
 	MEDIA_VIDEO_STATUS_CHANGED = 'mediaVideoStatusChanged',
 	/**
-	 * Event emitted to the local participant when their screen share state changes.
+	 * Event emitted to the local participant when their screen share state changes. Emitted from the
+	 * prejoin screen onwards, before `meetingJoined`.
 	 */
 	MEDIA_SCREEN_SHARE_STATUS_CHANGED = 'mediaScreenShareStatusChanged',
 	/**
