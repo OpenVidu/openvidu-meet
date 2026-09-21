@@ -6,9 +6,15 @@ import { StreamLayoutStateService } from '../layout/stream-layout-state.service'
 import type { ScreenShareCaptureOptions } from '../livekit';
 import { Track, VideoPresets } from '../livekit';
 import { LocalMediaIntentService } from '../local-media-intent/local-media-intent.service';
+import { acquireDevice, switchDevice } from '../local-track/device-acquisition';
 import { LocalTrackService } from '../local-track/local-track.service';
 import { ParticipantService } from '../participant/participant.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
+import { NotificationService } from '../../../../../shared/services/notification.service';
+import type { ILogger } from '../../../../../shared/models/logger.model';
+
+/** Long enough to read which device failed and why, short enough not to sit on top of the meeting. */
+const NOTICE_DURATION_MS = 10_000;
 
 /**
  * The single point where local media control resolves the prejoin-vs-room duality. Toggling and
@@ -40,14 +46,15 @@ interface LocalMediaTarget {
 class RoomTarget implements LocalMediaTarget {
 	constructor(
 		private readonly participant: ParticipantModel,
-		private readonly deviceService: DeviceService
+		private readonly deviceService: DeviceService,
+		private readonly log: ILogger
 	) {}
 
 	async setCameraEnabled(enabled: boolean): Promise<void> {
 		const options = cameraCaptureOptions(this.deviceService.cameraSelected()?.device);
 
 		try {
-			await this.participant.setCameraEnabled(enabled, options);
+			await acquireDevice(() => this.participant.setCameraEnabled(enabled, options), this.log);
 			this.participant.bump();
 		} finally {
 			if (enabled) await this.deviceService.syncDevicesAfterAcquisition([Track.Kind.Video]);
@@ -58,7 +65,7 @@ class RoomTarget implements LocalMediaTarget {
 		const options = microphoneCaptureOptions(this.deviceService.microphoneSelected()?.device);
 
 		try {
-			await this.participant.setMicrophoneEnabled(enabled, options);
+			await acquireDevice(() => this.participant.setMicrophoneEnabled(enabled, options), this.log);
 			this.participant.bump();
 		} finally {
 			if (enabled) await this.deviceService.syncDevicesAfterAcquisition([Track.Kind.Audio]);
@@ -66,13 +73,23 @@ class RoomTarget implements LocalMediaTarget {
 	}
 
 	async switchCamera(deviceId: string): Promise<void> {
-		await this.participant.switchCamera(deviceId);
-		this.participant.bump();
+		const currentDeviceId = this.participant.getCameraTrack()?.mediaStreamTrack.getSettings().deviceId;
+
+		try {
+			await switchDevice((id) => this.participant.switchCamera(id), deviceId, currentDeviceId, this.log);
+		} finally {
+			this.participant.bump();
+		}
 	}
 
 	async switchMicrophone(deviceId: string): Promise<void> {
-		await this.participant.switchMicrophone(deviceId);
-		this.participant.bump();
+		const currentDeviceId = this.participant.getMicrophoneTrack()?.mediaStreamTrack.getSettings().deviceId;
+
+		try {
+			await switchDevice((id) => this.participant.switchMicrophone(id), deviceId, currentDeviceId, this.log);
+		} finally {
+			this.participant.bump();
+		}
 	}
 }
 
@@ -103,7 +120,8 @@ class PrejoinTarget implements LocalMediaTarget {
  * Facade for local media control: the toggles/switches for camera, microphone and
  * screen share. Extracted from ParticipantService so that service can shrink to the participant
  * registry + connect(). A call to setCameraEnabled/setMicrophoneEnabled always represents user/app
- * intent, which is recorded here.
+ * intent, which is recorded here for as long as it stands: an intent the device could not fulfil is
+ * forgotten again, and the participant is told which device could not be started.
  *
  * Screen share is room-only (no prejoin equivalent), so it is handled directly rather than through
  * the {@link LocalMediaTarget} Strategy.
@@ -117,6 +135,7 @@ export class LocalMediaControlService {
 	private readonly deviceService = inject(DeviceService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
 	private readonly mediaIntent = inject(LocalMediaIntentService);
+	private readonly notificationService = inject(NotificationService);
 	private readonly log = inject(LoggerService).get('LocalMediaControlService');
 
 	/**
@@ -126,7 +145,7 @@ export class LocalMediaControlService {
 	 */
 	private get target(): LocalMediaTarget {
 		const local = this.participantService.localParticipant();
-		return local ? new RoomTarget(local, this.deviceService) : new PrejoinTarget(this.localTrackService);
+		return local ? new RoomTarget(local, this.deviceService, this.log) : new PrejoinTarget(this.localTrackService);
 	}
 
 	/**
@@ -135,8 +154,18 @@ export class LocalMediaControlService {
 	async setCameraEnabled(enabled: boolean): Promise<void> {
 		// Single writer of the camera intent. Recorded BEFORE acting, because opening a camera that was
 		// never acquired reads the intent to decide whether the fresh track starts muted.
+		const previous = this.mediaIntent.cameraEnabled();
 		this.mediaIntent.setCameraEnabled(enabled);
-		await this.target.setCameraEnabled(enabled);
+
+		try {
+			await this.target.setCameraEnabled(enabled);
+		} catch (error) {
+			this.mediaIntent.setCameraEnabled(previous);
+
+			if (enabled) this.reportUnavailable(Track.Kind.Video);
+
+			throw error;
+		}
 	}
 
 	/**
@@ -144,22 +173,42 @@ export class LocalMediaControlService {
 	 */
 	async setMicrophoneEnabled(enabled: boolean): Promise<void> {
 		// Single writer of the microphone intent; recorded before acting, as above.
+		const previous = this.mediaIntent.microphoneEnabled();
 		this.mediaIntent.setMicrophoneEnabled(enabled);
-		await this.target.setMicrophoneEnabled(enabled);
+
+		try {
+			await this.target.setMicrophoneEnabled(enabled);
+		} catch (error) {
+			this.mediaIntent.setMicrophoneEnabled(previous);
+
+			if (enabled) this.reportUnavailable(Track.Kind.Audio);
+
+			throw error;
+		}
 	}
 
 	/**
 	 * Switches the active camera track used in this room to the given device id.
 	 */
 	async switchCamera(deviceId: string): Promise<void> {
-		await this.target.switchCamera(deviceId);
+		try {
+			await this.target.switchCamera(deviceId);
+		} catch (error) {
+			this.reportUnavailable(Track.Kind.Video);
+			throw error;
+		}
 	}
 
 	/**
 	 * Switches the active microphone track used in this room to the given device id.
 	 */
 	async switchMicrophone(deviceId: string): Promise<void> {
-		await this.target.switchMicrophone(deviceId);
+		try {
+			await this.target.switchMicrophone(deviceId);
+		} catch (error) {
+			this.reportUnavailable(Track.Kind.Audio);
+			throw error;
+		}
 	}
 
 	/**
@@ -219,6 +268,18 @@ export class LocalMediaControlService {
 		}
 
 		localParticipant?.bump();
+	}
+
+	private reportUnavailable(kind: Track.Kind): void {
+		const camera = kind === Track.Kind.Video;
+
+		this.notificationService.showNotification({
+			kind: 'device-unavailable',
+			icon: camera ? 'videocam_off' : 'mic_off',
+			tone: 'alert',
+			message: { key: camera ? 'ERRORS.CAMERA_UNAVAILABLE' : 'ERRORS.MICROPHONE_UNAVAILABLE' },
+			durationMs: NOTICE_DURATION_MS
+		});
 	}
 
 	private getScreenCaptureOptions(): ScreenShareCaptureOptions {

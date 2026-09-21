@@ -152,8 +152,9 @@
 		"CONNECTION": "Connection lost",
 		"RECONNECT": "Oops! Trying to reconnect to the meeting...",
 		"DISCONNECT": "You have been disconnected",
-		"TOGGLE_CAMERA": "There was an error toggling camera",
-		"TOGGLE_MICROPHONE": "There was an error toggling microphone",
+		"CAMERA_UNAVAILABLE": "Your camera could not be started. Another application may be using it.",
+		"MICROPHONE_UNAVAILABLE": "Your microphone could not be started. Another application may be using it.",
+		"DEVICES_UNAVAILABLE": "Your camera and microphone could not be started. Another application may be using them.",
 		"E2EE_ERROR_TITLE": "Encryption key error",
 		"E2EE_ERROR_CONTENT": "This participant is using a different encryption key. Video cannot be displayed.",
 		"GENERIC": "An unexpected error occurred. Please try again."

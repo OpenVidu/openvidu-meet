@@ -27,26 +27,37 @@ class FakeLocalTrack {
 	mediaStreamTrack: FakeMediaStreamTrack;
 	/** Constraints each restartTrack() was asked for, so a device switch can be inspected. */
 	readonly restartOptions: Array<VideoCaptureOptions | AudioCaptureOptions | undefined> = [];
-	private restarts = 0;
+	/** Stands for the browser opening the device: throws like `getUserMedia` for a device it cannot open. */
+	openDevice: (deviceId: string) => void = () => {};
 
-	constructor(readonly kind: Track.Kind) {
-		this.mediaStreamTrack = new FakeMediaStreamTrack(`mst-${kind}`);
+	constructor(
+		readonly kind: Track.Kind,
+		deviceId = `${kind}-1`
+	) {
+		this.mediaStreamTrack = new FakeMediaStreamTrack(deviceId);
 	}
 
 	async mute(): Promise<void> {
 		this.isMuted = true;
 	}
 
+	/** Re-acquires the device first, exactly like the real camera track, so it can fail and stay muted. */
 	async unmute(): Promise<void> {
+		this.openDevice(this.mediaStreamTrack.deviceId);
 		this.isMuted = false;
 	}
 
-	/** Swaps the capture track in place, exactly like the real one — the object identity survives. */
+	/**
+	 * Swaps the capture track in place, exactly like the real one: the object identity survives, and
+	 * the current capture is stopped before the new device is opened, so a device that cannot be
+	 * opened leaves the track with a dead capture.
+	 */
 	async restartTrack(options?: VideoCaptureOptions | AudioCaptureOptions): Promise<void> {
 		this.restartOptions.push(options);
 		this.mediaStreamTrack.stop();
-		this.restarts++;
-		this.mediaStreamTrack = new FakeMediaStreamTrack(`mst-${this.kind}-restart-${this.restarts}`);
+		const deviceId = requestedDevice(options) ?? this.mediaStreamTrack.deviceId;
+		this.openDevice(deviceId);
+		this.mediaStreamTrack = new FakeMediaStreamTrack(deviceId);
 	}
 
 	stop(): void {}
@@ -58,11 +69,44 @@ class FakeMediaStreamTrack {
 	enabled = true;
 	readyState: 'live' | 'ended' = 'live';
 
-	constructor(readonly id: string) {}
+	constructor(readonly deviceId: string) {}
+
+	getSettings(): { deviceId: string } {
+		return { deviceId: this.deviceId };
+	}
 
 	stop(): void {
 		this.readyState = 'ended';
 	}
+}
+
+const requestedDevice = (options?: VideoCaptureOptions | AudioCaptureOptions): string | undefined => {
+	const constraint = options?.deviceId as { exact?: string; ideal?: string } | undefined;
+	return constraint?.exact ?? constraint?.ideal;
+};
+
+const deviceStillStarting = () => Object.assign(new Error('Timeout starting video source'), { name: 'AbortError' });
+const deviceHeldByAnotherApp = () =>
+	Object.assign(new Error('Could not start video source'), { name: 'NotReadableError' });
+
+/**
+ * Runs an acquisition to completion under the mocked clock, releasing whatever timer it waits on.
+ * An acquisition that backs off before trying the device again would otherwise never be let through.
+ */
+async function settle<T>(promise: Promise<T>): Promise<T> {
+	let pending = true;
+
+	void promise.then(
+		() => (pending = false),
+		() => (pending = false)
+	);
+
+	for (let i = 0; i < 50 && pending; i++) {
+		await Promise.resolve();
+		jasmine.clock().tick(50);
+	}
+
+	return promise;
 }
 
 describe('LocalTrackService', () => {
@@ -373,12 +417,35 @@ describe('LocalTrackService', () => {
 			expect(service.cameraTrack()).toBe(asTrack(fresh) as LocalVideoTrack);
 		});
 
-		it('surfaces a failed restart to the caller', async () => {
-			const failure = new Error('NotReadableError');
-			spyOn(video, 'restartTrack').and.rejectWith(failure);
+		it('stays on the current camera when the chosen one is held by another application', async () => {
+			const failure = deviceHeldByAnotherApp();
+
+			video.openDevice = (deviceId) => {
+				if (deviceId === 'cam-2') throw failure;
+			};
+
 			service.setLocalTracks([asTrack(video)]);
 
 			await expectAsync(service.switchCamera('cam-2')).toBeRejectedWith(failure);
+
+			// livekit-client stops the current capture before opening the chosen device, so without
+			// going back the participant is left with a dead camera behind a control that says on.
+			expect(video.mediaStreamTrack.readyState).toBe('live');
+			expect(video.mediaStreamTrack.deviceId).toBe('video-1');
+			expect(service.cameraEnabled()).toBeTrue();
+		});
+
+		it('stays on the current microphone when the chosen one is held by another application', async () => {
+			audio.openDevice = (deviceId) => {
+				if (deviceId === 'mic-2') throw deviceHeldByAnotherApp();
+			};
+
+			service.setLocalTracks([asTrack(audio)]);
+
+			await expectAsync(service.switchMicrophone('mic-2')).toBeRejected();
+
+			expect(audio.mediaStreamTrack.readyState).toBe('live');
+			expect(service.microphoneMediaStreamTrack()).toBe(asMediaStreamTrack(audio.mediaStreamTrack));
 		});
 
 		it('opens the requested microphone when no microphone track exists yet', async () => {
@@ -408,6 +475,90 @@ describe('LocalTrackService', () => {
 			// them enabled shows a preview that is on and displays nothing.
 			expect(service.cameraEnabled()).toBeFalse();
 			expect(service.microphoneEnabled()).toBeFalse();
+		});
+	});
+	// Windows + Chrome reject a camera request with AbortError ("Timeout starting video source")
+	// while the OS is still releasing the device from its previous consumer; the very same request
+	// succeeds a few hundred milliseconds later. Reported upstream as OpenVidu/openvidu#855.
+	describe('a camera the OS has not finished releasing', () => {
+		const RELEASE_MS = 300;
+
+		let cameraFreeAt: number;
+
+		beforeEach(() => {
+			jasmine.clock().install();
+			jasmine.clock().mockDate(new Date(0));
+			cameraFreeAt = Date.now() + RELEASE_MS;
+
+			video.openDevice = () => {
+				if (Date.now() < cameraFreeAt) throw deviceStillStarting();
+			};
+
+			livekitSdkService.createLocalTracks.and.callFake(async (options) => {
+				const tracks: LocalTrack[] = [];
+
+				if (options.video) {
+					video.openDevice('video-1');
+					tracks.push(asTrack(video));
+				}
+
+				if (options.audio) tracks.push(asTrack(audio));
+
+				return tracks;
+			});
+		});
+
+		afterEach(() => jasmine.clock().uninstall());
+
+		it('opens the camera once the device is free', async () => {
+			const tracks = await settle(service.createLocalTracks());
+
+			expect(tracks).toContain(asTrack(video));
+		});
+
+		it('keeps the microphone that did open', async () => {
+			const tracks = await settle(service.createLocalTracks());
+
+			expect(tracks).toContain(asTrack(audio));
+		});
+
+		it('gives up with the devices it could open when the camera never frees', async () => {
+			cameraFreeAt = Infinity;
+
+			service.setLocalTracks(await settle(service.createLocalTracks()));
+
+			expect(service.microphoneEnabled()).toBeTrue();
+			expect(service.cameraEnabled()).toBeFalse();
+		});
+
+		// Turning the camera off stops the capture to switch the camera light off, so turning it back
+		// on reopens the device just released: the same race, on the most repeated action of a call.
+		it('turns the camera back on once the device is free', async () => {
+			video.isMuted = true;
+			service.setLocalTracks([asTrack(video)]);
+
+			await settle(service.setVideoTrackEnabled(true));
+
+			expect(service.cameraEnabled()).toBeTrue();
+		});
+
+		it('leaves the camera off, and says so, when the device never frees', async () => {
+			cameraFreeAt = Infinity;
+			video.isMuted = true;
+			service.setLocalTracks([asTrack(video)]);
+
+			await expectAsync(settle(service.setVideoTrackEnabled(true))).toBeRejected();
+
+			expect(service.cameraEnabled()).toBeFalse();
+		});
+
+		it('switches to the chosen camera once the device is free', async () => {
+			service.setLocalTracks([asTrack(video)]);
+
+			await settle(service.switchCamera('cam-2'));
+
+			expect(video.mediaStreamTrack.deviceId).toBe('cam-2');
+			expect(video.mediaStreamTrack.readyState).toBe('live');
 		});
 	});
 });

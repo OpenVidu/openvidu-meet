@@ -56,9 +56,15 @@ export class AudioDevicesComponent {
 		event.stopPropagation();
 		this.microphoneStatusChanging.set(true);
 		const enabled = !this.isMicrophoneEnabled();
-		await this.localMediaControlService.setMicrophoneEnabled(enabled);
-		this.microphoneStatusChanging.set(false);
-		this.onAudioEnabledChanged.emit(enabled);
+
+		try {
+			await this.localMediaControlService.setMicrophoneEnabled(enabled);
+			this.onAudioEnabledChanged.emit(enabled);
+		} catch (error) {
+			this.log.e('Error toggling microphone', error);
+		} finally {
+			this.microphoneStatusChanging.set(false);
+		}
 	}
 
 	async onMicrophoneSelected(event: { value: CustomDevice }) {

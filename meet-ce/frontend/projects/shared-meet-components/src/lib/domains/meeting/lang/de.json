@@ -152,8 +152,9 @@
 		"CONNECTION": "Verbindung verloren",
 		"RECONNECT": "Verbindung zum Meeting wird wiederhergestellt...",
 		"DISCONNECT": "Sie wurden getrennt",
-		"TOGGLE_CAMERA": "Es gab einen Fehler beim Umschalten der Kamera",
-		"TOGGLE_MICROPHONE": "Es ist ein Fehler beim Umschalten des Mikrofons aufgetreten",
+		"CAMERA_UNAVAILABLE": "Die Kamera konnte nicht gestartet werden. Möglicherweise wird sie von einer anderen Anwendung verwendet.",
+		"MICROPHONE_UNAVAILABLE": "Das Mikrofon konnte nicht gestartet werden. Möglicherweise wird es von einer anderen Anwendung verwendet.",
+		"DEVICES_UNAVAILABLE": "Kamera und Mikrofon konnten nicht gestartet werden. Möglicherweise werden sie von einer anderen Anwendung verwendet.",
 		"E2EE_ERROR_TITLE": "Fehler beim Verschlüsselungsschlüssel",
 		"E2EE_ERROR_CONTENT": "Dieser Teilnehmer verwendet einen anderen Verschlüsselungsschlüssel. Video kann nicht angezeigt werden.",
 		"GENERIC": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut."

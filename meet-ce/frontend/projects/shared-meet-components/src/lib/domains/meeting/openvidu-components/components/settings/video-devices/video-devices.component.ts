@@ -55,9 +55,15 @@ export class VideoDevicesComponent {
 		event.stopPropagation();
 		this.cameraStatusChanging.set(true);
 		const enabled = !this.isCameraEnabled();
-		await this.localMediaControlService.setCameraEnabled(enabled);
-		this.onVideoEnabledChanged.emit(enabled);
-		this.cameraStatusChanging.set(false);
+
+		try {
+			await this.localMediaControlService.setCameraEnabled(enabled);
+			this.onVideoEnabledChanged.emit(enabled);
+		} catch (error) {
+			this.log.e('Error toggling camera', error);
+		} finally {
+			this.cameraStatusChanging.set(false);
+		}
 	}
 
 	async onCameraSelected(event: { value: CustomDevice }) {

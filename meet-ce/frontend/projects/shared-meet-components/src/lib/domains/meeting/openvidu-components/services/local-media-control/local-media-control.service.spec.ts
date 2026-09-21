@@ -1,10 +1,11 @@
 import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '../../../../../shared/services/logger.service';
+import { NotificationService } from '../../../../../shared/services/notification.service';
 import { ParticipantModel } from '../../models/participant.model';
 import { DeviceService } from '../device/device.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
-import { Track } from '../livekit';
+import { LocalVideoTrack, Track } from '../livekit';
 import { LocalMediaIntentService } from '../local-media-intent/local-media-intent.service';
 import { LocalTrackService } from '../local-track/local-track.service';
 import { ParticipantService } from '../participant/participant.service';
@@ -18,6 +19,34 @@ class LoggerServiceStub {
 	}
 }
 
+const deviceStillStarting = () => Object.assign(new Error('Timeout starting video source'), { name: 'AbortError' });
+const deviceHeldByAnotherApp = () =>
+	Object.assign(new Error('Could not start video source'), { name: 'NotReadableError' });
+
+/** A published camera track, as far as a device switch needs to know it: the device it captures. */
+const cameraTrackOn = (deviceId: string) =>
+	({ mediaStreamTrack: { getSettings: () => ({ deviceId }) } }) as unknown as LocalVideoTrack;
+
+/**
+ * Runs an acquisition to completion under the mocked clock, releasing whatever timer it waits on.
+ * An acquisition that backs off before trying the device again would otherwise never be let through.
+ */
+async function settle<T>(promise: Promise<T>): Promise<T> {
+	let pending = true;
+
+	void promise.then(
+		() => (pending = false),
+		() => (pending = false)
+	);
+
+	for (let i = 0; i < 50 && pending; i++) {
+		await Promise.resolve();
+		jasmine.clock().tick(50);
+	}
+
+	return promise;
+}
+
 describe('LocalMediaControlService', () => {
 	let service: LocalMediaControlService;
 	let localParticipant: WritableSignal<ParticipantModel | undefined>;
@@ -27,23 +56,34 @@ describe('LocalMediaControlService', () => {
 		cameraSelected: WritableSignal<CustomDevice | undefined>;
 		microphoneSelected: WritableSignal<CustomDevice | undefined>;
 	};
-	let mediaIntent: jasmine.SpyObj<LocalMediaIntentService>;
+	let mediaIntent: LocalMediaIntentService;
+	let notificationService: jasmine.SpyObj<NotificationService>;
 
 	beforeEach(() => {
 		localParticipant = signal<ParticipantModel | undefined>(undefined);
 		participant = jasmine.createSpyObj<ParticipantModel>('ParticipantModel', [
 			'setCameraEnabled',
 			'setMicrophoneEnabled',
+			'switchCamera',
+			'switchMicrophone',
+			'getCameraTrack',
+			'getMicrophoneTrack',
 			'bump'
 		]);
 		participant.setCameraEnabled.and.resolveTo(undefined);
 		participant.setMicrophoneEnabled.and.resolveTo(undefined);
+		participant.switchCamera.and.resolveTo();
+		participant.switchMicrophone.and.resolveTo();
+		participant.getCameraTrack.and.returnValue(undefined);
+		participant.getMicrophoneTrack.and.returnValue(undefined);
 		localTrackService = jasmine.createSpyObj<LocalTrackService>('LocalTrackService', [
 			'setVideoTrackEnabled',
-			'setAudioTrackEnabled'
+			'setAudioTrackEnabled',
+			'switchCamera'
 		]);
 		localTrackService.setVideoTrackEnabled.and.resolveTo();
 		localTrackService.setAudioTrackEnabled.and.resolveTo();
+		localTrackService.switchCamera.and.resolveTo();
 		deviceService = Object.assign(
 			jasmine.createSpyObj<DeviceService>('DeviceService', ['syncDevicesAfterAcquisition']),
 			{
@@ -52,32 +92,42 @@ describe('LocalMediaControlService', () => {
 			}
 		);
 		deviceService.syncDevicesAfterAcquisition.and.resolveTo();
-		mediaIntent = jasmine.createSpyObj<LocalMediaIntentService>('LocalMediaIntentService', [
-			'setCameraEnabled',
-			'setMicrophoneEnabled'
-		]);
+		notificationService = jasmine.createSpyObj<NotificationService>('NotificationService', ['showNotification']);
 
 		TestBed.configureTestingModule({
 			providers: [
 				provideZonelessChangeDetection(),
 				LocalMediaControlService,
+				LocalMediaIntentService,
 				{ provide: LoggerService, useClass: LoggerServiceStub },
 				{ provide: LocalTrackService, useValue: localTrackService },
 				{ provide: ParticipantService, useValue: { localParticipant } as unknown as ParticipantService },
 				{ provide: DeviceService, useValue: deviceService },
 				{ provide: StreamLayoutStateService, useValue: {} },
-				{ provide: LocalMediaIntentService, useValue: mediaIntent }
+				{ provide: NotificationService, useValue: notificationService }
 			]
 		});
 
 		service = TestBed.inject(LocalMediaControlService);
+		mediaIntent = TestBed.inject(LocalMediaIntentService);
 	});
+
+	const cameraUnavailableNotice = () =>
+		notificationService.showNotification.calls
+			.allArgs()
+			.some(([options]) => (options.message as { key: string }).key === 'ERRORS.CAMERA_UNAVAILABLE');
 
 	describe('before the room is connected', () => {
 		it('records the intent before touching the prejoin tracks', async () => {
+			mediaIntent.setCameraEnabled(false);
+			let intentWhileActing: boolean | undefined;
+			localTrackService.setVideoTrackEnabled.and.callFake(async () => {
+				intentWhileActing = mediaIntent.cameraEnabled();
+			});
+
 			await service.setCameraEnabled(true);
 
-			expect(mediaIntent.setCameraEnabled).toHaveBeenCalledBefore(localTrackService.setVideoTrackEnabled);
+			expect(intentWhileActing).toBeTrue();
 			expect(localTrackService.setVideoTrackEnabled).toHaveBeenCalledWith(true);
 		});
 
@@ -86,6 +136,31 @@ describe('LocalMediaControlService', () => {
 			await service.setMicrophoneEnabled(true);
 
 			expect(deviceService.syncDevicesAfterAcquisition).not.toHaveBeenCalled();
+		});
+
+		it('forgets an intent the camera could not fulfil', async () => {
+			mediaIntent.setCameraEnabled(false);
+			localTrackService.setVideoTrackEnabled.and.rejectWith(deviceHeldByAnotherApp());
+
+			await expectAsync(service.setCameraEnabled(true)).toBeRejected();
+
+			expect(mediaIntent.cameraEnabled()).toBeFalse();
+		});
+
+		it('tells the participant when the camera could not be started', async () => {
+			localTrackService.setVideoTrackEnabled.and.rejectWith(deviceHeldByAnotherApp());
+
+			await expectAsync(service.setCameraEnabled(true)).toBeRejected();
+
+			expect(cameraUnavailableNotice()).toBeTrue();
+		});
+
+		it('tells the participant when the chosen camera could not be opened', async () => {
+			localTrackService.switchCamera.and.rejectWith(deviceHeldByAnotherApp());
+
+			await expectAsync(service.switchCamera('cam-2')).toBeRejected();
+
+			expect(cameraUnavailableNotice()).toBeTrue();
 		});
 	});
 
@@ -145,6 +220,113 @@ describe('LocalMediaControlService', () => {
 			await service.setMicrophoneEnabled(false);
 
 			expect(deviceService.syncDevicesAfterAcquisition).not.toHaveBeenCalled();
+		});
+
+		it('forgets an intent the camera could not fulfil', async () => {
+			mediaIntent.setCameraEnabled(false);
+			participant.setCameraEnabled.and.rejectWith(deviceHeldByAnotherApp());
+
+			await expectAsync(service.setCameraEnabled(true)).toBeRejected();
+
+			expect(mediaIntent.cameraEnabled()).toBeFalse();
+		});
+
+		it('does not insist on a camera another application holds, and says so', async () => {
+			participant.setCameraEnabled.and.rejectWith(deviceHeldByAnotherApp());
+
+			await expectAsync(service.setCameraEnabled(true)).toBeRejected();
+
+			expect(participant.setCameraEnabled).toHaveBeenCalledTimes(1);
+			expect(cameraUnavailableNotice()).toBeTrue();
+		});
+
+		it('says nothing when turning the camera on works', async () => {
+			await service.setCameraEnabled(true);
+
+			expect(notificationService.showNotification).not.toHaveBeenCalled();
+		});
+
+		describe('switching the camera', () => {
+			beforeEach(() => {
+				participant.getCameraTrack.and.returnValue(cameraTrackOn('cam-1'));
+			});
+
+			it('goes back to the current camera when the chosen one is held by another application', async () => {
+				const failure = deviceHeldByAnotherApp();
+				participant.switchCamera.and.callFake(async (deviceId: string) => {
+					if (deviceId === 'cam-2') throw failure;
+				});
+
+				await expectAsync(service.switchCamera('cam-2')).toBeRejectedWith(failure);
+
+				// livekit-client stops the current capture before opening the chosen device, and a
+				// failed switch leaves the track pointed at the device that could not be opened.
+				expect(participant.switchCamera.calls.allArgs()).toEqual([['cam-2'], ['cam-1']]);
+				expect(participant.bump).toHaveBeenCalled();
+				expect(cameraUnavailableNotice()).toBeTrue();
+			});
+
+			it('says nothing when the switch works', async () => {
+				await service.switchCamera('cam-2');
+
+				expect(participant.switchCamera).toHaveBeenCalledOnceWith('cam-2');
+				expect(notificationService.showNotification).not.toHaveBeenCalled();
+			});
+		});
+
+		// Windows + Chrome reject a camera request with AbortError ("Timeout starting video source")
+		// while the OS is still releasing the device from its previous consumer; the very same request
+		// succeeds a few hundred milliseconds later. Turning the camera off stops the capture to switch
+		// the camera light off, so turning it back on is exactly that request.
+		describe('a camera the OS has not finished releasing', () => {
+			const RELEASE_MS = 300;
+
+			let cameraFreeAt: number;
+
+			beforeEach(() => {
+				jasmine.clock().install();
+				jasmine.clock().mockDate(new Date(0));
+				cameraFreeAt = Date.now() + RELEASE_MS;
+
+				const openCamera = async () => {
+					if (Date.now() < cameraFreeAt) throw deviceStillStarting();
+				};
+
+				participant.setCameraEnabled.and.callFake(async (enabled: boolean) => {
+					if (enabled) await openCamera();
+
+					return undefined;
+				});
+				participant.switchCamera.and.callFake(openCamera);
+			});
+
+			afterEach(() => jasmine.clock().uninstall());
+
+			it('turns the camera back on once the device is free', async () => {
+				await settle(service.setCameraEnabled(true));
+
+				expect(participant.bump).toHaveBeenCalled();
+				expect(mediaIntent.cameraEnabled()).toBeTrue();
+				expect(notificationService.showNotification).not.toHaveBeenCalled();
+			});
+
+			it('gives up, and says so, when the device never frees', async () => {
+				cameraFreeAt = Infinity;
+
+				await expectAsync(settle(service.setCameraEnabled(true))).toBeRejected();
+
+				expect(participant.bump).not.toHaveBeenCalled();
+				expect(cameraUnavailableNotice()).toBeTrue();
+			});
+
+			it('switches to the chosen camera once the device is free', async () => {
+				participant.getCameraTrack.and.returnValue(cameraTrackOn('cam-1'));
+
+				await settle(service.switchCamera('cam-2'));
+
+				expect(participant.switchCamera.calls.allArgs()).toEqual([['cam-2'], ['cam-2']]);
+				expect(notificationService.showNotification).not.toHaveBeenCalled();
+			});
 		});
 	});
 });

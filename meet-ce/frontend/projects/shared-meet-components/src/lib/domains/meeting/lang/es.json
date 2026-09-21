@@ -152,8 +152,9 @@
 		"CONNECTION": "Sin conexión",
 		"RECONNECT": "Intentando reconectar a la reunión...",
 		"DISCONNECT": "Te has desconectado",
-		"TOGGLE_CAMERA": "Hubo un error cambiando la cámara",
-		"TOGGLE_MICROPHONE": "Hubo un error cambiando el micrófono",
+		"CAMERA_UNAVAILABLE": "No se pudo iniciar la cámara. Es posible que otra aplicación la esté usando.",
+		"MICROPHONE_UNAVAILABLE": "No se pudo iniciar el micrófono. Es posible que otra aplicación lo esté usando.",
+		"DEVICES_UNAVAILABLE": "No se pudieron iniciar la cámara y el micrófono. Es posible que otra aplicación los esté usando.",
 		"E2EE_ERROR_TITLE": "Error de clave de cifrado",
 		"E2EE_ERROR_CONTENT": "Este participante está utilizando una clave de cifrado diferente. No se puede mostrar el vídeo.",
 		"GENERIC": "Se produjo un error inesperado. Inténtalo de nuevo."

@@ -152,8 +152,9 @@
 		"CONNECTION": "连接丢失",
 		"RECONNECT": "正在尝试重新连接会议...",
 		"DISCONNECT": "您已断开连接",
-		"TOGGLE_CAMERA": "切换相机时出现错误",
-		"TOGGLE_MICROPHONE": "切换麦克风时出现错误",
+		"CAMERA_UNAVAILABLE": "无法启动相机。可能有其他应用正在使用它。",
+		"MICROPHONE_UNAVAILABLE": "无法启动麦克风。可能有其他应用正在使用它。",
+		"DEVICES_UNAVAILABLE": "无法启动相机和麦克风。可能有其他应用正在使用它们。",
 		"E2EE_ERROR_TITLE": "加密密钥错误",
 		"E2EE_ERROR_CONTENT": "此参与者使用了不同的加密密钥。无法显示视频。",
 		"GENERIC": "发生意外错误。请重试。"

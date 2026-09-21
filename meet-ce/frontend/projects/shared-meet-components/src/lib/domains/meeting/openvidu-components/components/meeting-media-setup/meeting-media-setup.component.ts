@@ -10,6 +10,8 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
+import { LocalTrack, Track } from '../../services/livekit';
+import { LocalMediaIntentService } from '../../services/local-media-intent/local-media-intent.service';
 import { LocalMediaStateService } from '../../services/local-media-state/local-media-state.service';
 import { LocalTrackService } from '../../services/local-track/local-track.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
@@ -57,6 +59,7 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	private readonly deviceSrv = inject(DeviceService);
 	private readonly localTrackService = inject(LocalTrackService);
 	private readonly localMediaState = inject(LocalMediaStateService);
+	private readonly mediaIntent = inject(LocalMediaIntentService);
 
 	readonly errorMessage = signal<string | undefined>(undefined);
 	readonly isLoading = signal(true);
@@ -116,7 +119,7 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	});
 
 	async ngOnInit() {
-		await this.initializeDevicesWithRetry();
+		await this.initializeDevices();
 		this.isLoading.set(false);
 		this.localTrackService.setPrejoinActive(true);
 	}
@@ -209,48 +212,55 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 		}, 100);
 	}
 
-	/**
-	 * Enhanced error handling with better UX
-	 */
 	private handleError(error: any) {
 		this.log.e('PreJoin component error:', error);
-		this.errorMessage.set(error.message || 'An unexpected error occurred');
+		this.errorMessage.set(error.message || this.translateService.translate('ERRORS.GENERIC'));
+	}
+
+	private async initializeDevices(): Promise<void> {
+		try {
+			const tracks = await this.localTrackService.createLocalTracks();
+			this.localTrackService.setLocalTracks(tracks);
+
+			// The mic-activity monitor starts automatically: setLocalTracks above populated the
+			// local-media state, whose signal the MicActivityService effect follows.
+
+			const failure = this.deviceFailureMessage(tracks);
+
+			if (failure) this.errorMessage.set(failure);
+
+			// Restore previously selected virtual background in prejoin when possible.
+			// Skip restore when the user is not allowed to use virtual backgrounds.
+			// Keep prejoin usable even if restore fails.
+			if (this.showBackgroundsButton()) {
+				try {
+					await this.virtualBackgroundService.applyBackgroundFromStorage();
+				} catch (error) {
+					this.log.w('Failed to restore virtual background from storage in prejoin:', error);
+				}
+			}
+		} catch (error) {
+			this.handleError(error);
+		}
 	}
 
 	/**
-	 * Improved device initialization with error handling
+	 * The message for a device the participant asked for and the browser did not hand over, so a
+	 * camera that failed to start is not left looking like a camera the participant turned off.
+	 * A device the machine does not have is not a failure, and neither is one nobody asked for.
 	 */
-	private async initializeDevicesWithRetry(maxRetries = 3): Promise<void> {
-		for (let attempt = 1; attempt <= maxRetries; attempt++) {
-			try {
-				const tracks = await this.localTrackService.createLocalTracks();
-				this.localTrackService.setLocalTracks(tracks);
+	private deviceFailureMessage(tracks: LocalTrack[]): string | undefined {
+		const closed = (kind: Track.Kind) => !tracks.some((track) => track.kind === kind);
+		const camera = this.deviceSrv.hasVideoDevices() && this.mediaIntent.cameraEnabled() && closed(Track.Kind.Video);
+		const microphone =
+			this.deviceSrv.hasAudioDevices() && this.mediaIntent.microphoneEnabled() && closed(Track.Kind.Audio);
 
-				// The mic-activity monitor starts automatically: setLocalTracks above populated the
-				// local-media state, whose signal the MicActivityService effect follows.
+		if (camera && microphone) return this.translateService.translate('ERRORS.DEVICES_UNAVAILABLE');
 
-				// Restore previously selected virtual background in prejoin when possible.
-				// Skip restore when the user is not allowed to use virtual backgrounds.
-				// Keep prejoin usable even if restore fails.
-				if (this.showBackgroundsButton()) {
-					try {
-						await this.virtualBackgroundService.applyBackgroundFromStorage();
-					} catch (error) {
-						this.log.w('Failed to restore virtual background from storage in prejoin:', error);
-					}
-				}
+		if (camera) return this.translateService.translate('ERRORS.CAMERA_UNAVAILABLE');
 
-				return; // Success, exit retry loop
-			} catch (error) {
-				this.log.w(`Device initialization attempt ${attempt} failed:`, error);
+		if (microphone) return this.translateService.translate('ERRORS.MICROPHONE_UNAVAILABLE');
 
-				if (attempt === maxRetries) {
-					this.handleError(error);
-				} else {
-					// Wait before retrying
-					await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
-				}
-			}
-		}
+		return undefined;
 	}
 }

@@ -13,6 +13,7 @@ import {
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { LocalMediaIntentService } from '../local-media-intent/local-media-intent.service';
 import { VideoTrackProcessorService } from '../track-processor/video-track-processor.service';
+import { acquireDevice, switchDevice } from './device-acquisition';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 
@@ -219,7 +220,7 @@ export class LocalTrackService {
 	 */
 	private async requestTracks(options: CreateLocalTracksOptions): Promise<LocalTrack[]> {
 		try {
-			return await this.livekitSdkService.createLocalTracks(options);
+			return await this.createTracks(options);
 		} catch (error) {
 			const denied = MediaDeviceFailure.getFailure(error) === MediaDeviceFailure.PermissionDenied;
 
@@ -234,12 +235,16 @@ export class LocalTrackService {
 		}
 	}
 
+	private createTracks(options: CreateLocalTracksOptions): Promise<LocalTrack[]> {
+		return acquireDevice(() => this.livekitSdkService.createLocalTracks(options), this.log);
+	}
+
 	private async requestTracksDeviceByDevice(options: CreateLocalTracksOptions): Promise<LocalTrack[]> {
 		const tracks: LocalTrack[] = [];
 
 		for (const deviceOptions of [{ video: options.video }, { audio: options.audio }]) {
 			try {
-				tracks.push(...(await this.livekitSdkService.createLocalTracks(deviceOptions)));
+				tracks.push(...(await this.createTracks(deviceOptions)));
 			} catch (error) {
 				this.log.w('Failed to create a local track, the device may be busy:', error);
 			}
@@ -285,7 +290,7 @@ export class LocalTrackService {
 		}
 
 		if (track) {
-			await track.unmute();
+			await acquireDevice(() => track.unmute(), this.log);
 			this.notifyTracksMutated();
 			return;
 		}
@@ -346,19 +351,19 @@ export class LocalTrackService {
 	}
 
 	/**
-	 * Switches the prejoin camera to the given device. See {@link switchDevice}.
+	 * Switches the prejoin camera to the given device. See {@link switchTrack}.
 	 * @internal
 	 */
 	async switchCamera(deviceId: string): Promise<void> {
-		await this.switchDevice(Track.Kind.Video, deviceId);
+		await this.switchTrack(Track.Kind.Video, deviceId);
 	}
 
 	/**
-	 * Switches the prejoin microphone to the given device. See {@link switchDevice}.
+	 * Switches the prejoin microphone to the given device. See {@link switchTrack}.
 	 * @internal
 	 */
 	async switchMicrophone(deviceId: string): Promise<void> {
-		await this.switchDevice(Track.Kind.Audio, deviceId);
+		await this.switchTrack(Track.Kind.Audio, deviceId);
 	}
 
 	/**
@@ -367,7 +372,7 @@ export class LocalTrackService {
 	 * background processor is restarted onto the new capture. Without a track of that kind (the
 	 * device was off, or could not be opened) the requested device is opened as a fresh track.
 	 */
-	private async switchDevice(kind: Track.Kind, deviceId: string): Promise<void> {
+	private async switchTrack(kind: Track.Kind, deviceId: string): Promise<void> {
 		const track = this._localTracks().find((t) => t.kind === kind);
 
 		if (!track) {
@@ -375,9 +380,11 @@ export class LocalTrackService {
 			return;
 		}
 
-		try {
-			await this.restartTrack(track, deviceId);
+		const currentDeviceId = track.mediaStreamTrack.getSettings().deviceId;
 
+		try {
+			await switchDevice((id) => this.restartTrack(track, id), deviceId, currentDeviceId, this.log);
+		} finally {
 			if (!this.shouldBeOpen(kind)) {
 				// mute() returns early on an already-muted track, which would leave the capture that
 				// restartTrack just re-acquired open behind a UI that says off. Unmuting re-acquires it.
@@ -386,10 +393,6 @@ export class LocalTrackService {
 			}
 
 			this.notifyTracksMutated();
-			this.log.d(`${kind} switched to device`, deviceId);
-		} catch (error) {
-			this.log.e(`Failed to switch the ${kind} device:`, error);
-			throw error;
 		}
 	}
 

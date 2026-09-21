@@ -404,12 +404,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			await this.localMediaControlService.setMicrophoneEnabled(!isMicrophoneEnabled);
 		} catch (error: unknown) {
 			this.log.e('There was an error toggling microphone:', (error as any).code, (error as any).message);
-			this.dialogService.showDialog({
-				title: this.translateService.translate('ERRORS.TOGGLE_MICROPHONE'),
-				message: this.translateService.translate('ERRORS.GENERIC'),
-				showCancelButton: false,
-				confirmText: this.translateService.translate('PANEL.CLOSE')
-			});
 		} finally {
 			this.microphoneMuteChanging.set(false);
 		}
@@ -430,12 +424,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			await this.localMediaControlService.setCameraEnabled(!isCameraEnabled);
 		} catch (error) {
 			this.log.e('There was an error toggling camera:', (error as any).code, (error as any).message);
-			this.dialogService.showDialog({
-				title: this.translateService.translate('ERRORS.TOGGLE_CAMERA'),
-				message: this.translateService.translate('ERRORS.GENERIC'),
-				showCancelButton: false,
-				confirmText: this.translateService.translate('PANEL.CLOSE')
-			});
 		} finally {
 			this.cameraMuteChanging.set(false);
 		}

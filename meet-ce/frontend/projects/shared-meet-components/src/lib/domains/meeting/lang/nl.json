@@ -152,8 +152,9 @@
 		"CONNECTION": "Verbinding verloren",
 		"RECONNECT": "Proberen opnieuw verbinding te maken met de meeting...",
 		"DISCONNECT": "Je bent losgekoppeld",
-		"TOGGLE_CAMERA": "Er is een fout opgetreden bij het overschakelen naar een andere camera",
-		"TOGGLE_MICROPHONE": "Er is een fout opgetreden bij het overschakelen naar een microfoon",
+		"CAMERA_UNAVAILABLE": "De camera kon niet worden gestart. Mogelijk gebruikt een andere toepassing deze.",
+		"MICROPHONE_UNAVAILABLE": "De microfoon kon niet worden gestart. Mogelijk gebruikt een andere toepassing deze.",
+		"DEVICES_UNAVAILABLE": "De camera en microfoon konden niet worden gestart. Mogelijk gebruikt een andere toepassing deze.",
 		"E2EE_ERROR_TITLE": "Versleutelingssleutelfout",
 		"E2EE_ERROR_CONTENT": "Deze deelnemer gebruikt een andere beveiligingssleutel. Video kan niet worden weergegeven.",
 		"GENERIC": "Er is een onverwachte fout opgetreden. Probeer het opnieuw."
