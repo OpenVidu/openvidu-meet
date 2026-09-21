@@ -11,3 +11,8 @@ content:
                     type: string
                     description: >
                         The new access token to authenticate the user in subsequent requests.
+                refreshToken:
+                    type: string
+                    description: >
+                        A new refresh token, replacing the one just used. Only present when
+                        refresh-token rotation is enabled in the deployment.

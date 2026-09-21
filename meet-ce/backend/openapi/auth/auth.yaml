@@ -49,6 +49,8 @@
                 $ref: './responses/success/refresh-token.yaml'
             '400':
                 $ref: './responses/errors/invalid-refresh-token.yaml'
+            '403':
+                $ref: './responses/errors/refresh-forbidden.yaml'
             '429':
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':

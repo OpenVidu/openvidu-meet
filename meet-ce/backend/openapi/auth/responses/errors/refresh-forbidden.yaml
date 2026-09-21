@@ -1,0 +1,16 @@
+description: Forbidden - The refresh token is valid but cannot be exchanged for an access token
+content:
+    application/json:
+        schema:
+            $ref: ../../../shared/schemas/error.yaml
+        examples:
+            invalid_token_subject:
+                summary: The user the token was issued for no longer exists
+                value:
+                    error: Authorization Error
+                    message: 'Invalid token subject'
+            password_change_required:
+                summary: The user must change their password before getting a new access token
+                value:
+                    error: Authorization Error
+                    message: 'Password change required. Please change your password before accessing other resources.'
