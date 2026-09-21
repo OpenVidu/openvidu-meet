@@ -16,7 +16,7 @@ import {
 } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslatePipe } from '../../pipes/translate.pipe';
-import { LocalMediaStateService } from '../../services/local-media-state/local-media-state.service';
+import { LocalMediaService } from '../../services/local-media/local-media.service';
 import { MicActivityService } from '../../services/mic-activity/mic-activity.service';
 
 type MicAlertKind = 'system-muted' | 'muted-speaking';
@@ -39,7 +39,7 @@ export class MicStatusAlertComponent implements AfterViewInit, OnDestroy {
 	private readonly popupTpl = viewChild<TemplateRef<unknown>>('popupTpl');
 
 	/** Whether the microphone is enabled in-app (i.e. not muted by the user). */
-	private readonly micEnabled = inject(LocalMediaStateService).microphoneEnabled;
+	private readonly micEnabled = inject(LocalMediaService).microphone.enabled;
 
 	private readonly micActivity = inject(MicActivityService);
 	private readonly overlay = inject(Overlay);

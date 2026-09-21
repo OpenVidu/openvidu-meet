@@ -1,14 +1,13 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '../../../../../shared/services/logger.service';
+import { NotificationService } from '../../../../../shared/services/notification.service';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
-import { LocalTrack, Track } from '../../services/livekit';
+import { LocalAudioTrack, LocalTrack, LocalVideoTrack, Track } from '../../services/livekit';
 import { LivekitSdkService } from '../../services/livekit/livekit-sdk.service';
-import { LocalMediaIntentService } from '../../services/local-media-intent/local-media-intent.service';
-import { LocalMediaStateService } from '../../services/local-media-state/local-media-state.service';
-import { LocalTrackService } from '../../services/local-track/local-track.service';
+import { LocalMediaService } from '../../services/local-media/local-media.service';
 import { VideoTrackProcessorService } from '../../services/track-processor/video-track-processor.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
@@ -23,9 +22,17 @@ class LoggerServiceStub {
 
 class FakeLocalTrack {
 	isMuted = false;
-	readonly mediaStreamTrack = { enabled: true, stop: () => {} };
+	readonly mediaStreamTrack = { enabled: true, readyState: 'live', stop: () => {} };
 
 	constructor(readonly kind: Track.Kind) {}
+
+	on(): this {
+		return this;
+	}
+
+	off(): this {
+		return this;
+	}
 
 	async mute(): Promise<void> {
 		this.isMuted = true;
@@ -64,11 +71,11 @@ async function settle<T>(promise: Promise<T>): Promise<T> {
 /**
  * What the prejoin does with a camera that fails to open. The media layer is the real one, because
  * what is under test is precisely how far an acquisition failure travels: the screen only reacts to
- * what LocalTrackService hands back.
+ * what LocalMediaService hands back.
  */
 describe('MeetingMediaSetupComponent', () => {
 	let component: MeetingMediaSetupComponent;
-	let localTrackService: LocalTrackService;
+	let localMedia: LocalMediaService;
 	let livekitSdkService: jasmine.SpyObj<LivekitSdkService>;
 	let audio: FakeLocalTrack;
 	let video: FakeLocalTrack;
@@ -76,6 +83,8 @@ describe('MeetingMediaSetupComponent', () => {
 	let cameraFreeAt: number;
 
 	const asTrack = (track: FakeLocalTrack) => track as unknown as LocalTrack;
+	const asCamera = (track: FakeLocalTrack) => track as unknown as LocalVideoTrack;
+	const asMicrophone = (track: FakeLocalTrack) => track as unknown as LocalAudioTrack;
 
 	beforeEach(() => {
 		audio = new FakeLocalTrack(Track.Kind.Audio);
@@ -101,7 +110,7 @@ describe('MeetingMediaSetupComponent', () => {
 		TestBed.configureTestingModule({
 			providers: [
 				provideZonelessChangeDetection(),
-				LocalTrackService,
+				LocalMediaService,
 				{ provide: LoggerService, useClass: LoggerServiceStub },
 				{ provide: LivekitSdkService, useValue: livekitSdkService },
 				{
@@ -115,13 +124,6 @@ describe('MeetingMediaSetupComponent', () => {
 					} as unknown as DeviceService
 				},
 				{
-					provide: LocalMediaIntentService,
-					useValue: {
-						cameraEnabled: signal(true),
-						microphoneEnabled: signal(true)
-					} as unknown as LocalMediaIntentService
-				},
-				{
 					provide: VideoTrackProcessorService,
 					useValue: {
 						isBackgroundProcessorSupported: signal(false),
@@ -129,8 +131,8 @@ describe('MeetingMediaSetupComponent', () => {
 					} as unknown as VideoTrackProcessorService
 				},
 				{
-					provide: LocalMediaStateService,
-					useValue: { cameraEnabled: signal(false) } as unknown as LocalMediaStateService
+					provide: NotificationService,
+					useValue: { showNotification: () => 0 } as unknown as NotificationService
 				},
 				{
 					provide: MeetingUiConfigService,
@@ -162,7 +164,7 @@ describe('MeetingMediaSetupComponent', () => {
 		TestBed.overrideComponent(MeetingMediaSetupComponent, { set: { template: '', imports: [], styles: [] } });
 
 		component = TestBed.createComponent(MeetingMediaSetupComponent).componentInstance;
-		localTrackService = TestBed.inject(LocalTrackService);
+		localMedia = TestBed.inject(LocalMediaService);
 
 		jasmine.clock().install();
 		jasmine.clock().mockDate(new Date(0));
@@ -176,20 +178,31 @@ describe('MeetingMediaSetupComponent', () => {
 
 		await settle(component.ngOnInit());
 
-		expect(localTrackService.getLocalTracks()).toEqual([asTrack(video), asTrack(audio)]);
+		expect(localMedia.camera.track()).toBe(asCamera(video));
+		expect(localMedia.microphone.track()).toBe(asMicrophone(audio));
 		expect(component.errorMessage()).toBeUndefined();
 	});
 
 	it('tells the participant when the camera could not be opened', async () => {
 		await settle(component.ngOnInit());
 
-		expect(component.errorMessage()).toBeTruthy();
+		expect(component.errorMessage()).toBe('ERRORS.CAMERA_UNAVAILABLE');
 	});
 
 	it('stays usable with the microphone that did open', async () => {
 		await settle(component.ngOnInit());
 
 		expect(component.isLoading()).toBeFalse();
-		expect(localTrackService.getLocalTracks()).toEqual([asTrack(audio)]);
+		expect(localMedia.camera.track()).toBeUndefined();
+		expect(localMedia.microphone.track()).toBe(asMicrophone(audio));
+	});
+
+	it('shows the devices the owner opened, not a copy of them', async () => {
+		cameraFreeAt = 0;
+
+		await settle(component.ngOnInit());
+
+		expect(component.videoTrack()).toBe(asCamera(video));
+		expect(component.isVideoEnabled()).toBeTrue();
 	});
 });

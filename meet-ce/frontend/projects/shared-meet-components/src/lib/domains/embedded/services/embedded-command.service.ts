@@ -1,10 +1,10 @@
 import { inject, Service } from '@angular/core';
 import { EmbeddedCommandName, MeetParticipantMuteOptions, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import {
-	LocalMediaControlService,
-	LocalMediaStateService,
-	LocalTrackService,
-	MeetingLiveKitService
+	LocalMediaService,
+	MeetingLiveKitService,
+	MeetingPhaseService,
+	ScreenShareService
 } from '../../meeting/openvidu-components';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
@@ -28,9 +28,9 @@ export class EmbeddedCommandService {
 	private readonly meetingContextService = inject(MeetingContextService);
 	private readonly roomMemberContextService = inject(RoomMemberContextService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
-	private readonly localMediaControlService = inject(LocalMediaControlService);
-	private readonly localMediaState = inject(LocalMediaStateService);
-	private readonly localTrackService = inject(LocalTrackService);
+	private readonly localMedia = inject(LocalMediaService);
+	private readonly screenShare = inject(ScreenShareService);
+	private readonly meetingPhase = inject(MeetingPhaseService);
 	private readonly log = inject(LoggerService).get('EmbeddedCommandService');
 
 	async meetingEnd(): Promise<void> {
@@ -91,25 +91,19 @@ export class EmbeddedCommandService {
 
 	async mediaToggleAudio(active?: boolean): Promise<void> {
 		await this.run(EmbeddedCommandName.MEDIA_TOGGLE_AUDIO, 'mediaPublishAudio', () =>
-			this.localMediaControlService.setMicrophoneEnabled(
-				this.resolveToggle(active, this.localMediaState.microphoneEnabled())
-			)
+			this.localMedia.setMicrophoneEnabled(this.resolveToggle(active, this.localMedia.microphone.enabled()))
 		);
 	}
 
 	async mediaToggleVideo(active?: boolean): Promise<void> {
 		await this.run(EmbeddedCommandName.MEDIA_TOGGLE_VIDEO, 'mediaPublishVideo', () =>
-			this.localMediaControlService.setCameraEnabled(
-				this.resolveToggle(active, this.localMediaState.cameraEnabled())
-			)
+			this.localMedia.setCameraEnabled(this.resolveToggle(active, this.localMedia.camera.enabled()))
 		);
 	}
 
 	async mediaToggleScreenShare(active?: boolean): Promise<void> {
 		await this.run(EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE, 'mediaShareScreen', () =>
-			this.localMediaControlService.setScreenShareEnabled(
-				this.resolveToggle(active, this.localMediaState.screenShareEnabled())
-			)
+			this.screenShare.setEnabled(this.resolveToggle(active, this.screenShare.enabled()))
 		);
 	}
 
@@ -130,7 +124,7 @@ export class EmbeddedCommandService {
 
 		const allowed =
 			this.meetingLiveKitService.isSessionActive() ||
-			(PREJOIN_CAPABLE_COMMANDS.has(command) && this.localTrackService.prejoinActive());
+			(PREJOIN_CAPABLE_COMMANDS.has(command) && this.meetingPhase.phase() === 'prejoin');
 
 		if (!allowed) {
 			this.log.w(`${command} rejected: not available in the current meeting phase`);

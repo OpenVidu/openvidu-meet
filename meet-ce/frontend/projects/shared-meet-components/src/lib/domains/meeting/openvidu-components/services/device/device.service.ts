@@ -107,9 +107,7 @@ export class DeviceService implements OnDestroy {
 	 * Filter out invalid or default devices
 	 */
 	private filterValidDevices(devices: MediaDeviceInfo[]): MediaDeviceInfo[] {
-		return devices.filter(
-			(d) => d.label && d.deviceId && d.deviceId !== 'default'
-		);
+		return devices.filter((d) => d.label && d.deviceId && d.deviceId !== 'default');
 	}
 
 	/**
@@ -319,28 +317,6 @@ export class DeviceService implements OnDestroy {
 		this.microphoneSelected.set(device);
 		this.storageSrv.setAudioDevice(device);
 		this.log.d('Microphone selected:', device.label);
-	}
-
-	/**
-	 * Check if video track needs to be updated
-	 */
-	needUpdateVideoTrack(newDevice: CustomDevice): boolean {
-		const current = this.cameraSelected();
-		return (
-			current?.device !== newDevice.device ||
-			current?.label !== newDevice.label
-		);
-	}
-
-	/**
-	 * Check if audio track needs to be updated
-	 */
-	needUpdateAudioTrack(newDevice: CustomDevice): boolean {
-		const current = this.microphoneSelected();
-		return (
-			current?.device !== newDevice.device ||
-			current?.label !== newDevice.label
-		);
 	}
 
 	/**

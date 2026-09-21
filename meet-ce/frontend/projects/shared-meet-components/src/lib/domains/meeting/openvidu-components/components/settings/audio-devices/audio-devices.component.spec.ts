@@ -3,8 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '../../../../../../shared/services/logger.service';
 import { CustomDevice } from '../../../models/device.model';
 import { DeviceService } from '../../../services/device/device.service';
-import { LocalMediaControlService } from '../../../services/local-media-control/local-media-control.service';
-import { LocalMediaStateService } from '../../../services/local-media-state/local-media-state.service';
+import { LocalMediaService } from '../../../services/local-media/local-media.service';
 import { AudioDevicesComponent } from './audio-devices.component';
 
 class LoggerServiceStub {
@@ -15,19 +14,19 @@ class LoggerServiceStub {
 
 describe('AudioDevicesComponent', () => {
 	let component: AudioDevicesComponent;
-	let localMediaControlService: jasmine.SpyObj<LocalMediaControlService>;
+	let localMedia: { setMicrophoneEnabled: jasmine.Spy; microphone: { enabled: ReturnType<typeof signal<boolean>> } };
 
 	beforeEach(() => {
-		localMediaControlService = jasmine.createSpyObj<LocalMediaControlService>('LocalMediaControlService', [
-			'setMicrophoneEnabled',
-			'switchMicrophone'
-		]);
+		localMedia = {
+			setMicrophoneEnabled: jasmine.createSpy('setMicrophoneEnabled'),
+			microphone: { enabled: signal(false) }
+		};
 
 		TestBed.configureTestingModule({
 			providers: [
 				provideZonelessChangeDetection(),
 				{ provide: LoggerService, useClass: LoggerServiceStub },
-				{ provide: LocalMediaControlService, useValue: localMediaControlService },
+				{ provide: LocalMediaService, useValue: localMedia as unknown as LocalMediaService },
 				{
 					provide: DeviceService,
 					useValue: {
@@ -35,10 +34,6 @@ describe('AudioDevicesComponent', () => {
 						microphoneSelected: signal<CustomDevice | undefined>(undefined),
 						hasAudioDevices: signal(true)
 					} as unknown as DeviceService
-				},
-				{
-					provide: LocalMediaStateService,
-					useValue: { microphoneEnabled: signal(false) } as unknown as LocalMediaStateService
 				}
 			]
 		});
@@ -48,7 +43,7 @@ describe('AudioDevicesComponent', () => {
 	});
 
 	it('is ready for the next toggle when the microphone could not be started', async () => {
-		localMediaControlService.setMicrophoneEnabled.and.rejectWith(new Error('NotReadableError'));
+		localMedia.setMicrophoneEnabled.and.rejectWith(new Error('NotReadableError'));
 
 		await expectAsync(component.toggleMic(new MouseEvent('click'))).toBeResolved();
 

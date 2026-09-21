@@ -34,6 +34,7 @@ export * from './directives/template/openvidu-components-angular.directive.modul
 export * from './models/data-topic.model';
 export * from './models/device.model';
 export * from './models/lang.model';
+export * from './models/meeting-view-state.model';
 export * from './models/layout/layout.model';
 export * from './models/layout/smart-layout.model';
 export * from './models/panel.model';
@@ -50,14 +51,14 @@ export * from './pipes/translate.pipe';
 export * from './services/chat/chat.service';
 export * from './services/e2ee/e2ee.service';
 export * from './services/layout/smart-layout.service';
-export * from './services/local-media-control/local-media-control.service';
-export * from './services/local-media-intent/local-media-intent.service';
-export * from './services/local-media-state/local-media-state.service';
-export * from './services/local-track/local-track.service';
+export * from './services/local-media/local-device';
+export * from './services/local-media/local-media.service';
+export * from './services/meeting-phase/meeting-phase.service';
 export * from './services/meeting-ending-soon/meeting-ending-soon.service';
 export * from './services/meeting-livekit/meeting-livekit.service';
 export * from './services/panel/panel.service';
 export * from './services/participant/participant.service';
+export * from './services/screen-share/screen-share.service';
 export * from './services/storage/storage.service';
 export * from './services/template/template-registry.service';
 export * from './services/theme/meeting-theme.service';
@@ -69,4 +70,3 @@ export * from './openvidu-components-angular-ui.module';
 export * from './openvidu-components-angular.module';
 
 export * from './services/livekit';
-

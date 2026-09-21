@@ -10,10 +10,8 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
-import { LocalTrack, Track } from '../../services/livekit';
-import { LocalMediaIntentService } from '../../services/local-media-intent/local-media-intent.service';
-import { LocalMediaStateService } from '../../services/local-media-state/local-media-state.service';
-import { LocalTrackService } from '../../services/local-track/local-track.service';
+import type { LocalDevice } from '../../services/local-media/local-device';
+import { LocalMediaService } from '../../services/local-media/local-media.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
 import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
@@ -57,9 +55,7 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	readonly onReadyToJoin = output<void>();
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly deviceSrv = inject(DeviceService);
-	private readonly localTrackService = inject(LocalTrackService);
-	private readonly localMediaState = inject(LocalMediaStateService);
-	private readonly mediaIntent = inject(LocalMediaIntentService);
+	private readonly localMedia = inject(LocalMediaService);
 
 	readonly errorMessage = signal<string | undefined>(undefined);
 	readonly isLoading = signal(true);
@@ -75,13 +71,8 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 
 	readonly showBackgroundPanel = signal(false);
 
-	/** Preview track, read from the media layer so a device switch or a fresh camera lands here too. */
-	readonly videoTrack = this.localTrackService.cameraTrack;
-	/**
-	 * Single source of truth for the camera state, so a host `mediaToggleVideo` command lands on this
-	 * screen too — it used to be a local snapshot only the local click could move.
-	 */
-	readonly isVideoEnabled = this.localMediaState.cameraEnabled;
+	readonly videoTrack = this.localMedia.camera.track;
+	readonly isVideoEnabled = this.localMedia.camera.enabled;
 	readonly hasVideoDevices = this.deviceSrv.hasVideoDevices;
 
 	/**
@@ -100,7 +91,6 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	private readonly translateService = inject(MeetingTranslateService);
 	protected readonly viewportService = inject(ViewportService);
 	private log: ILogger = inject(LoggerService).get('MeetingMediaSetupComponent');
-	private shouldRemoveTracksWhenComponentIsDestroyed = true;
 
 	private readonly errorEffect = effect(() => {
 		const currentError = this.error();
@@ -121,20 +111,10 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	async ngOnInit() {
 		await this.initializeDevices();
 		this.isLoading.set(false);
-		this.localTrackService.setPrejoinActive(true);
 	}
 
-	async ngOnDestroy() {
+	ngOnDestroy() {
 		this.cdkSrv.setSelector('body');
-		this.localTrackService.setPrejoinActive(false);
-
-		if (this.shouldRemoveTracksWhenComponentIsDestroyed) {
-			// Stop and release the prejoin tracks. Clearing the track signal drops the local-media
-			// state to `undefined`, which detaches the mic-activity monitor automatically.
-			// On join (shouldRemove=false) the tracks are kept — connect() publishes them and releases
-			// the reference instead, so monitoring hands off to the connected participant seamlessly.
-			this.localTrackService.removeLocalTracks();
-		}
 	}
 
 	onDeviceSelectorClicked() {
@@ -146,11 +126,7 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	join() {
 		const participantName = this.participantName().trim();
 
-		// Clear any previous errors
 		this.errorMessage.set(undefined);
-
-		// Mark tracks as permanent for avoiding to be removed in ngOnDestroy
-		this.shouldRemoveTracksWhenComponentIsDestroyed = false;
 
 		// Assign participant name to the observable if it is defined
 		if (participantName) {
@@ -176,8 +152,6 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	}
 
 	audioDeviceChanged(device: CustomDevice) {
-		// The device switch replaced the underlying MediaStreamTrack; the mic-activity monitor
-		// re-clones automatically via the local-media state — see LocalTrackService.switchMicrophone.
 		this.log.d('Audio device changed to:', device);
 		this.onAudioDeviceChanged.emit(device);
 	}
@@ -219,13 +193,9 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 
 	private async initializeDevices(): Promise<void> {
 		try {
-			const tracks = await this.localTrackService.createLocalTracks();
-			this.localTrackService.setLocalTracks(tracks);
+			await this.localMedia.acquire();
 
-			// The mic-activity monitor starts automatically: setLocalTracks above populated the
-			// local-media state, whose signal the MicActivityService effect follows.
-
-			const failure = this.deviceFailureMessage(tracks);
+			const failure = this.deviceFailureMessage();
 
 			if (failure) this.errorMessage.set(failure);
 
@@ -249,11 +219,10 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	 * camera that failed to start is not left looking like a camera the participant turned off.
 	 * A device the machine does not have is not a failure, and neither is one nobody asked for.
 	 */
-	private deviceFailureMessage(tracks: LocalTrack[]): string | undefined {
-		const closed = (kind: Track.Kind) => !tracks.some((track) => track.kind === kind);
-		const camera = this.deviceSrv.hasVideoDevices() && this.mediaIntent.cameraEnabled() && closed(Track.Kind.Video);
-		const microphone =
-			this.deviceSrv.hasAudioDevices() && this.mediaIntent.microphoneEnabled() && closed(Track.Kind.Audio);
+	private deviceFailureMessage(): string | undefined {
+		const closed = (device: LocalDevice) => device.wanted() && !device.track();
+		const camera = this.deviceSrv.hasVideoDevices() && closed(this.localMedia.camera);
+		const microphone = this.deviceSrv.hasAudioDevices() && closed(this.localMedia.microphone);
 
 		if (camera && microphone) return this.translateService.translate('ERRORS.DEVICES_UNAVAILABLE');
 

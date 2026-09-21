@@ -25,6 +25,7 @@ import {
 	Room,
 	RoomEvent,
 	Track,
+	TrackEvent,
 	TrackPublication,
 	VideoPresets
 } from 'livekit-client';
@@ -103,6 +104,7 @@ export {
 	SwitchBackgroundProcessorOptions,
 	TextStreamReader,
 	Track,
+	TrackEvent,
 	TrackPublication,
 	TrackPublishOptions,
 	VideoCaptureOptions,

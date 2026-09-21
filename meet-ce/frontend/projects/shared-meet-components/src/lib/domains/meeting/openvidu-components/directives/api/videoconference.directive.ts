@@ -1,10 +1,7 @@
 import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
 import { AvailableLangs, LangOption } from '../../models/lang.model';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
-import {
-	InitialMediaState,
-	LocalMediaIntentService
-} from '../../services/local-media-intent/local-media-intent.service';
+import { InitialMediaState, LocalMediaService } from '../../services/local-media/local-media.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 
 /**
@@ -239,7 +236,6 @@ export class LangOptionsDirective implements OnDestroy {
 	}
 }
 
-
 /**
  * The **participantName** directive sets the participant name. It can be useful for aplications which doesn't need the prejoin page.
  *
@@ -366,7 +362,7 @@ export class InitialMediaStateDirective {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly mediaIntent = inject(LocalMediaIntentService);
+	private readonly localMedia = inject(LocalMediaService);
 	private readonly initialMediaStateEffect = effect(() => {
 		this.update(this.initialMediaState());
 	});
@@ -378,7 +374,7 @@ export class InitialMediaStateDirective {
 	 * @ignore
 	 */
 	update(state: InitialMediaState) {
-		this.mediaIntent.applyInitialState(state);
+		this.localMedia.applyInitialState(state);
 	}
 }
 

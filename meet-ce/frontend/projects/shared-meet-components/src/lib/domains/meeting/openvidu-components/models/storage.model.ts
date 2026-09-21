@@ -24,6 +24,6 @@ export enum MediaStorageKeys {
  * across all tabs of the same origin.
  *
  * The camera/microphone enabled state is deliberately NOT here, nor anywhere else in storage: it is
- * per-entry intent held in memory by `LocalMediaIntentService`.
+ * per-entry intent held in memory by `LocalMediaService`.
  */
 export const TAB_SPECIFIC_KEYS: ReadonlySet<MediaStorageKeys> = new Set([MediaStorageKeys.PARTICIPANT_NAME]);

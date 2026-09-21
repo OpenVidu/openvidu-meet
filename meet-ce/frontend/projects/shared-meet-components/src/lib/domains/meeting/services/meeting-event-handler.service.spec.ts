@@ -19,9 +19,8 @@ import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
 import {
-	LocalMediaControlService,
-	LocalMediaIntentService,
-	LocalMediaStateService,
+	LocalMediaService,
+	ScreenShareService,
 	MeetingEndingSoonService,
 	ParticipantLeftReason
 } from '../openvidu-components';
@@ -43,7 +42,13 @@ interface MediaMutedHandler {
 describe('MeetingEventHandlerService', () => {
 	let service: MeetingEventHandlerService;
 	let eventBus: EmbeddedEventBusService;
-	let mediaControl: jasmine.SpyObj<LocalMediaControlService>;
+	let localMedia: {
+		setMicrophoneEnabled: jasmine.Spy;
+		setCameraEnabled: jasmine.Spy;
+		microphone: { enabled: WritableSignal<boolean>; wanted: WritableSignal<boolean> };
+		camera: { enabled: WritableSignal<boolean>; wanted: WritableSignal<boolean> };
+	};
+	let screenShare: { setEnabled: jasmine.Spy; enabled: WritableSignal<boolean> };
 	let notificationService: jasmine.SpyObj<NotificationService>;
 	let meetingEndingSoon: jasmine.SpyObj<MeetingEndingSoonService>;
 	let soundService: jasmine.SpyObj<SoundService>;
@@ -85,26 +90,30 @@ describe('MeetingEventHandlerService', () => {
 		navigationServiceStub = {
 			goToDisconnected: jasmine.createSpy('goToDisconnected').and.resolveTo(undefined)
 		};
-		mediaControl = jasmine.createSpyObj<LocalMediaControlService>('LocalMediaControlService', [
-			'setMicrophoneEnabled',
-			'setCameraEnabled',
-			'setScreenShareEnabled'
-		]);
-		mediaControl.setMicrophoneEnabled.and.callFake(async (enabled: boolean) => {
-			microphoneEnabled.set(enabled);
-			TestBed.tick();
-		});
-		mediaControl.setCameraEnabled.and.callFake(async (enabled: boolean) => {
-			cameraEnabled.set(enabled);
-			TestBed.tick();
-		});
+		localMedia = {
+			setMicrophoneEnabled: jasmine.createSpy('setMicrophoneEnabled').and.callFake(async (enabled: boolean) => {
+				localMedia.microphone.wanted.set(enabled);
+				microphoneEnabled.set(enabled);
+				TestBed.tick();
+			}),
+			setCameraEnabled: jasmine.createSpy('setCameraEnabled').and.callFake(async (enabled: boolean) => {
+				localMedia.camera.wanted.set(enabled);
+				cameraEnabled.set(enabled);
+				TestBed.tick();
+			}),
+			microphone: { enabled: microphoneEnabled, wanted: signal(true) },
+			camera: { enabled: cameraEnabled, wanted: signal(true) }
+		};
 
 		// Unpublishing is what turns the state off, and the status effect flushes while the handler
 		// is still awaiting it — that is what would re-attribute the stop if it were notified late.
-		mediaControl.setScreenShareEnabled.and.callFake(async (enabled: boolean) => {
-			screenShareEnabled.set(enabled);
-			TestBed.tick();
-		});
+		screenShare = {
+			setEnabled: jasmine.createSpy('setEnabled').and.callFake(async (enabled: boolean) => {
+				screenShareEnabled.set(enabled);
+				TestBed.tick();
+			}),
+			enabled: screenShareEnabled
+		};
 
 		notificationService = jasmine.createSpyObj<NotificationService>('NotificationService', ['showMessage']);
 		meetingEndingSoon = jasmine.createSpyObj<MeetingEndingSoonService>('MeetingEndingSoonService', [
@@ -122,13 +131,9 @@ describe('MeetingEventHandlerService', () => {
 				provideZonelessChangeDetection(),
 				MeetingEventHandlerService,
 				EmbeddedEventBusService,
-				LocalMediaIntentService,
 				{ provide: LoggerService, useClass: LoggerServiceStub },
-				{ provide: LocalMediaControlService, useValue: mediaControl },
-				{
-					provide: LocalMediaStateService,
-					useValue: { microphoneEnabled, cameraEnabled, screenShareEnabled }
-				},
+				{ provide: LocalMediaService, useValue: localMedia },
+				{ provide: ScreenShareService, useValue: screenShare },
 				{ provide: RuntimeConfigService, useValue: { isEmbeddedMode: () => true } },
 				{ provide: MeetingContextService, useValue: meetingContextStub },
 				{ provide: MeetingStateService, useValue: { clear: () => {} } },
@@ -182,15 +187,15 @@ describe('MeetingEventHandlerService', () => {
 			]);
 		});
 
-		// The control service is the single writer of the media intent, so a forced mute has to go
-		// through it for the device to stay closed when its next track is created.
-		it('turns the microphone off through the media control service', async () => {
+		// The media owner is the single writer of the intent, so a forced mute has to go through it
+		// for the device to stay closed when its next track is created.
+		it('turns the microphone off through the media owner', async () => {
 			seedMediaStatus();
 
 			await muteFromModerator({ audioActive: false });
 
-			expect(mediaControl.setMicrophoneEnabled).toHaveBeenCalledOnceWith(false);
-			expect(mediaControl.setCameraEnabled).not.toHaveBeenCalled();
+			expect(localMedia.setMicrophoneEnabled).toHaveBeenCalledOnceWith(false);
+			expect(localMedia.setCameraEnabled).not.toHaveBeenCalled();
 		});
 
 		it('attributes the camera mute to the moderator and turns the camera off', async () => {
@@ -208,7 +213,7 @@ describe('MeetingEventHandlerService', () => {
 					payload: { active: false, origin: MeetEventOrigin.MODERATOR }
 				}
 			]);
-			expect(mediaControl.setCameraEnabled).toHaveBeenCalledOnceWith(false);
+			expect(localMedia.setCameraEnabled).toHaveBeenCalledOnceWith(false);
 		});
 
 		// A LiveKit track mute leaves the publication in place, so everyone would keep seeing the
@@ -220,7 +225,7 @@ describe('MeetingEventHandlerService', () => {
 			await muteFromModerator({ screenShareActive: false });
 			TestBed.tick();
 
-			expect(mediaControl.setScreenShareEnabled).toHaveBeenCalledOnceWith(false);
+			expect(screenShare.setEnabled).toHaveBeenCalledOnceWith(false);
 			expect(eventBus.events()).toEqual([
 				{
 					event: EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED,
@@ -240,9 +245,9 @@ describe('MeetingEventHandlerService', () => {
 				EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED,
 				EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED
 			]);
-			expect(mediaControl.setMicrophoneEnabled).toHaveBeenCalledOnceWith(false);
-			expect(mediaControl.setScreenShareEnabled).toHaveBeenCalledOnceWith(false);
-			expect(mediaControl.setCameraEnabled).not.toHaveBeenCalled();
+			expect(localMedia.setMicrophoneEnabled).toHaveBeenCalledOnceWith(false);
+			expect(screenShare.setEnabled).toHaveBeenCalledOnceWith(false);
+			expect(localMedia.setCameraEnabled).not.toHaveBeenCalled();
 		});
 
 		// LiveKit already muted every requested track server-side, so a failing device control must
@@ -251,13 +256,13 @@ describe('MeetingEventHandlerService', () => {
 			screenShareEnabled.set(true);
 			seedMediaStatus();
 			spyOn(console, 'warn');
-			mediaControl.setMicrophoneEnabled.and.rejectWith(new Error('device busy'));
+			localMedia.setMicrophoneEnabled.and.rejectWith(new Error('device busy'));
 
 			await muteFromModerator({ audioActive: false, videoActive: false, screenShareActive: false });
 			TestBed.tick();
 
-			expect(mediaControl.setCameraEnabled).toHaveBeenCalledOnceWith(false);
-			expect(mediaControl.setScreenShareEnabled).toHaveBeenCalledOnceWith(false);
+			expect(localMedia.setCameraEnabled).toHaveBeenCalledOnceWith(false);
+			expect(screenShare.setEnabled).toHaveBeenCalledOnceWith(false);
 			expect(console.warn).toHaveBeenCalledTimes(1);
 		});
 
@@ -268,9 +273,9 @@ describe('MeetingEventHandlerService', () => {
 			TestBed.tick();
 
 			expect(eventBus.events()).toEqual([]);
-			expect(mediaControl.setMicrophoneEnabled).not.toHaveBeenCalled();
-			expect(mediaControl.setCameraEnabled).not.toHaveBeenCalled();
-			expect(mediaControl.setScreenShareEnabled).not.toHaveBeenCalled();
+			expect(localMedia.setMicrophoneEnabled).not.toHaveBeenCalled();
+			expect(localMedia.setCameraEnabled).not.toHaveBeenCalled();
+			expect(screenShare.setEnabled).not.toHaveBeenCalled();
 			expect(notificationService.showMessage).not.toHaveBeenCalled();
 		});
 
@@ -320,7 +325,7 @@ describe('MeetingEventHandlerService', () => {
 			receiveMuteSignal();
 			await Promise.resolve();
 
-			expect(mediaControl.setMicrophoneEnabled).toHaveBeenCalledWith(false);
+			expect(localMedia.setMicrophoneEnabled).toHaveBeenCalledWith(false);
 		});
 
 		// `participantMute` is the only thing standing between a speaker and everyone's microphone,
@@ -331,7 +336,7 @@ describe('MeetingEventHandlerService', () => {
 			receiveMuteSignal({ identity: 'speaker1' });
 			await Promise.resolve();
 
-			expect(mediaControl.setMicrophoneEnabled).not.toHaveBeenCalled();
+			expect(localMedia.setMicrophoneEnabled).not.toHaveBeenCalled();
 			expect(eventBus.events()).toEqual([]);
 		});
 	});
