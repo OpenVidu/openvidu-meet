@@ -1,7 +1,7 @@
 description: |
     Webhook received and processed successfully.
 
-    > **Important:** Webhook endpoints must return HTTP 200 OK promptly to acknowledge receipt.
-    > Any processing should be done asynchronously after responding.
+    > **Important:** Webhook endpoints must answer with any 2xx status promptly to acknowledge
+    > receipt. Any processing should be done asynchronously after responding.
     >
-    > Non-200 responses or timeouts will trigger retries according to the webhook delivery policy.
+    > Any other status, or a timeout, will trigger retries according to the webhook delivery policy.
