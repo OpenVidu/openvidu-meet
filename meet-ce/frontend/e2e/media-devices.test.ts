@@ -327,7 +327,7 @@ test.describe('Media Devices E2E Tests', () => {
 			const beforeDeviceId = await getFirstVideoTrackDeviceId(page);
 			const callsBefore = await getGetUserMediaCallCount(page);
 
-			// Selecting the already-active device must short-circuit (needUpdateVideoTrack): no new
+			// Selecting the already-active device must short-circuit: no new
 			// getUserMedia and no track churn. The menu is already open from getVideoDeviceOptions().
 			await page.locator(`#option-${active.label}`).click();
 			await page.waitForTimeout(500);

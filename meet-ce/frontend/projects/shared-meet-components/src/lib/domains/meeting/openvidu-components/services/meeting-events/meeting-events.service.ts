@@ -204,10 +204,9 @@ export class MeetingEventsService {
 	}
 
 	/**
-	 * Keeps the local participant model in sync with its own track publications. Local tracks can be
-	 * (un)published out of band — a device switch, a re-acquisition after a device error — so bump
-	 * the model to re-evaluate the local-media state (and thus MicActivityService) whenever a local
-	 * publication changes.
+	 * Keeps the local participant model in sync with its own track publications, which the layout
+	 * reads through it: a local track can be (un)published out of band, so the model is bumped
+	 * whenever a local publication changes.
 	 */
 	private subscribeToLocalTrackPublished(room: Room) {
 		const bumpLocal = () => this.participantService.updateLocalParticipant();

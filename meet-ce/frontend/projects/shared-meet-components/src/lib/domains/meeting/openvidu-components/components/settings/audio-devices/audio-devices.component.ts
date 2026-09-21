@@ -7,8 +7,7 @@ import { CustomDevice } from '../../../models/device.model';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { MicStatusAlertComponent } from '../../mic-status-alert/mic-status-alert.component';
 import { DeviceService } from '../../../services/device/device.service';
-import { LocalMediaControlService } from '../../../services/local-media-control/local-media-control.service';
-import { LocalMediaStateService } from '../../../services/local-media-state/local-media-state.service';
+import { LocalMediaService } from '../../../services/local-media/local-media.service';
 import { LoggerService } from '../../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../../shared/models/logger.model';
 
@@ -27,8 +26,7 @@ export class AudioDevicesComponent {
 	readonly onAudioEnabledChanged = output<boolean>();
 
 	readonly microphoneStatusChanging = signal(false);
-	/** Single source of truth for the device state — valid in prejoin and in the meeting alike. */
-	readonly isMicrophoneEnabled = inject(LocalMediaStateService).microphoneEnabled;
+	readonly isMicrophoneEnabled = inject(LocalMediaService).microphone.enabled;
 	private log: ILogger = {
 		d: () => {},
 		v: () => {},
@@ -42,7 +40,7 @@ export class AudioDevicesComponent {
 	protected readonly hasAudioDevices: Signal<boolean>;
 
 	private readonly deviceSrv = inject(DeviceService);
-	private readonly localMediaControlService = inject(LocalMediaControlService);
+	private readonly localMedia = inject(LocalMediaService);
 	private readonly loggerSrv = inject(LoggerService);
 
 	constructor() {
@@ -56,18 +54,24 @@ export class AudioDevicesComponent {
 		event.stopPropagation();
 		this.microphoneStatusChanging.set(true);
 		const enabled = !this.isMicrophoneEnabled();
-		await this.localMediaControlService.setMicrophoneEnabled(enabled);
-		this.microphoneStatusChanging.set(false);
-		this.onAudioEnabledChanged.emit(enabled);
+
+		try {
+			await this.localMedia.setMicrophoneEnabled(enabled);
+			this.onAudioEnabledChanged.emit(enabled);
+		} catch (error) {
+			this.log.e('Error toggling microphone', error);
+		} finally {
+			this.microphoneStatusChanging.set(false);
+		}
 	}
 
 	async onMicrophoneSelected(event: { value: CustomDevice }) {
 		try {
 			const device: CustomDevice = event?.value;
 
-			if (this.deviceSrv.needUpdateAudioTrack(device)) {
+			if (device.device !== this.microphoneSelected()?.device) {
 				this.microphoneStatusChanging.set(true);
-				await this.localMediaControlService.switchMicrophone(device.device);
+				await this.localMedia.switchMicrophone(device.device);
 				this.deviceSrv.setMicSelected(device.device);
 				const selectedMicrophone = this.microphoneSelected();
 

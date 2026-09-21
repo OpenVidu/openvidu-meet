@@ -33,9 +33,8 @@ import type {
 	Room
 } from '../openvidu-components';
 import {
-	LocalMediaControlService,
-	LocalMediaIntentService,
-	LocalMediaStateService,
+	LocalMediaService,
+	ScreenShareService,
 	MeetingEndingSoonService,
 	ParticipantLeftReason,
 	RoomEvent,
@@ -67,9 +66,8 @@ export class MeetingEventHandlerService {
 	protected soundService = inject(SoundService);
 	protected runtimeConfigService = inject(RuntimeConfigService);
 	protected translateService = inject(TranslateService);
-	protected localMediaState = inject(LocalMediaStateService);
-	protected localMediaControl = inject(LocalMediaControlService);
-	protected mediaIntent = inject(LocalMediaIntentService);
+	protected localMedia = inject(LocalMediaService);
+	protected screenShare = inject(ScreenShareService);
 	protected meetingEndingSoon = inject(MeetingEndingSoonService);
 
 	// ============================================
@@ -183,13 +181,13 @@ export class MeetingEventHandlerService {
 	 * untracked, being inputs to the decision rather than triggers.
 	 */
 	private readonly localMediaStatusEffect = effect(() => {
-		const microphone = this.localMediaState.microphoneEnabled();
-		const camera = this.localMediaState.cameraEnabled();
-		const screenShare = this.localMediaState.screenShareEnabled();
+		const microphone = this.localMedia.microphone.enabled();
+		const camera = this.localMedia.camera.enabled();
+		const screenShare = this.screenShare.enabled();
 
 		untracked(() => {
-			this.notifyMediaStatus(Track.Source.Microphone, microphone, this.mediaIntent.microphoneEnabled());
-			this.notifyMediaStatus(Track.Source.Camera, camera, this.mediaIntent.cameraEnabled());
+			this.notifyMediaStatus(Track.Source.Microphone, microphone, this.localMedia.microphone.wanted());
+			this.notifyMediaStatus(Track.Source.Camera, camera, this.localMedia.camera.wanted());
 			// A screen share has no intent to disagree with: it is on exactly while its track is published.
 			this.notifyMediaStatus(Track.Source.ScreenShare, screenShare);
 		});
@@ -253,17 +251,17 @@ export class MeetingEventHandlerService {
 
 		if (media.audioActive === false) {
 			this.notifyMediaStatus(Track.Source.Microphone, false, false, MeetEventOrigin.MODERATOR);
-			controls.push(this.localMediaControl.setMicrophoneEnabled(false));
+			controls.push(this.localMedia.setMicrophoneEnabled(false));
 		}
 
 		if (media.videoActive === false) {
 			this.notifyMediaStatus(Track.Source.Camera, false, false, MeetEventOrigin.MODERATOR);
-			controls.push(this.localMediaControl.setCameraEnabled(false));
+			controls.push(this.localMedia.setCameraEnabled(false));
 		}
 
 		if (media.screenShareActive === false) {
 			this.notifyMediaStatus(Track.Source.ScreenShare, false, false, MeetEventOrigin.MODERATOR);
-			controls.push(this.localMediaControl.setScreenShareEnabled(false));
+			controls.push(this.screenShare.setEnabled(false));
 		}
 
 		if (controls.length > 0) {

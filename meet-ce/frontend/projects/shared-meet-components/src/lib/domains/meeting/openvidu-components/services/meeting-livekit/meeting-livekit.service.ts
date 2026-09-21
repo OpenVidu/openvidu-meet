@@ -8,7 +8,6 @@ import { LoggerService } from '../../../../../shared/services/logger.service';
 import { CAMERA_CAPTURE_DEFAULTS, MICROPHONE_CAPTURE_DEFAULTS } from '../../models/media-capture.model';
 import { MeetingConnectError } from '../../models/meeting-connect-error.model';
 import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
-import { DeviceService } from '../device/device.service';
 import {
 	ConnectionError,
 	ConnectionErrorReason,
@@ -25,11 +24,10 @@ import { LivekitSdkService } from '../livekit/livekit-sdk.service';
  * Owns the live meeting connection end to end: the LiveKit Room lifecycle (create / connect /
  * disconnect / teardown), its E2EE setup (worker + key provider), the connection token and why a
  * join failed. Nothing outside subscribes or unsubscribes Room listeners on its behalf. Local media
- * capture lives separately in LocalTrackService.
+ * capture lives separately in LocalMediaService.
  */
 @Service()
 export class MeetingLiveKitService {
-	private readonly deviceService = inject(DeviceService);
 	private readonly configService = inject(MeetingUiConfigService);
 	private readonly livekitSdkService = inject(LivekitSdkService);
 	private readonly assets = inject(AssetsService);

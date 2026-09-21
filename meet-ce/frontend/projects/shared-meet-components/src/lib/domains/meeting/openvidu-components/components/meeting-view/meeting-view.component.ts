@@ -50,7 +50,6 @@ import {
 } from '../../directives/template/openvidu-components-angular.directive';
 import { CustomDevice } from '../../models/device.model';
 import { LangOption } from '../../models/lang.model';
-import { MeetingViewPhase } from '../../models/meeting-view-state.model';
 import {
 	ActivitiesPanelStatusEvent,
 	ChatPanelStatusEvent,
@@ -72,8 +71,8 @@ import type { Room } from '../../services/livekit';
 import { MeetingEndingSoonService } from '../../services/meeting-ending-soon/meeting-ending-soon.service';
 import { RecordingNoticeService } from '../../services/recording-notice/recording-notice.service';
 import { MeetingEventsService } from '../../services/meeting-events/meeting-events.service';
-import { LocalMediaIntentService } from '../../services/local-media-intent/local-media-intent.service';
-import { LocalTrackService } from '../../services/local-track/local-track.service';
+import { LocalMediaService } from '../../services/local-media/local-media.service';
+import { MeetingPhaseService } from '../../services/meeting-phase/meeting-phase.service';
 import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
@@ -139,8 +138,8 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly storageSrv = inject(MediaStorageService);
 	private readonly deviceSrv = inject(DeviceService);
-	private readonly mediaIntent = inject(LocalMediaIntentService);
-	private readonly localTrackService = inject(LocalTrackService);
+	private readonly localMedia = inject(LocalMediaService);
+	private readonly meetingPhase = inject(MeetingPhaseService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly dialogService = inject(DialogService);
 	private readonly libService = inject(MeetingUiConfigService);
@@ -324,7 +323,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	// and it is only reachable after a successful connect, i.e. strictly later than ngAfterViewInit.
 	// Reordering the phases so that 'live' can be entered earlier breaks it.
 	/** @internal */
-	readonly phase = signal<MeetingViewPhase>('loading');
+	readonly phase = this.meetingPhase.phase;
 
 	/** @internal - error details from token operations */
 	readonly tokenError = signal<{ name: string; message: string } | undefined>(undefined);
@@ -476,7 +475,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 
 		const prevPhase = untracked(() => this.phase());
 		this.tokenError.set(error);
-		this.phase.set('error');
+		this.meetingPhase.set('error');
 
 		// Open dialog only when user is already in the session (not on prejoin)
 		if (prevPhase !== 'prejoin' && prevPhase !== 'loading') {
@@ -545,12 +544,8 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 
 		this.participantService.clear();
 		this.deviceSrv.clear();
-		// No-op after a successful join, when the tracks were handed over to the participant. It
-		// matters when the connection failed midway: the acquired camera/microphone would otherwise
-		// stay open with nobody holding them, and a later join would try to publish dead tracks.
-		this.localTrackService.removeLocalTracks();
-		// Per entry: the next meeting resolves its own instead of inheriting this one's toggles.
-		this.mediaIntent.reset();
+		this.localMedia.release();
+		this.meetingPhase.set('loading');
 	}
 
 	/**
@@ -610,7 +605,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	_onParticipantLeft(event: ParticipantLeftEvent) {
 		this.onParticipantLeft.emit(event);
 		// showPrejoin stays false to prevent track creation before navigation
-		this.phase.set('disconnected');
+		this.meetingPhase.set('disconnected');
 	}
 
 	// ── Private helpers ───────────────────────────────────────────────────────
@@ -622,7 +617,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	private _transitionAfterDevicesReady(): void {
 		if (this.libService.showPrejoin()) {
 			this.log.d('Devices ready, showing prejoin');
-			this.phase.set('prejoin');
+			this.meetingPhase.set('prejoin');
 		} else {
 			this.log.d('Devices ready, no prejoin, joining directly');
 			void this._requestTokenAndConnect();
@@ -645,7 +640,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	private async _requestTokenAndConnect(): Promise<void> {
 		if (this.phase() === 'connecting' || this.phase() === 'live') return;
 
-		this.phase.set('connecting');
+		this.meetingPhase.set('connecting');
 		this.meetingLiveKitService.init();
 
 		let token: string;
@@ -680,7 +675,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 				name: this.translateService.translate('ERRORS.TOKEN_TITLE'),
 				message: error?.message ?? String(error)
 			});
-			this.phase.set('error');
+			this.meetingPhase.set('error');
 			return;
 		}
 
@@ -714,11 +709,12 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 		});
 
 		try {
+			await this.localMedia.acquire();
 			await this.participantService.connect();
 			// Send room created after participant connect for avoiding to send incomplete room payload
 			this.onRoomCreated.emit(room);
 
-			this.phase.set('live');
+			this.meetingPhase.set('live');
 
 			const localParticipant = this.participantService.localParticipant();
 

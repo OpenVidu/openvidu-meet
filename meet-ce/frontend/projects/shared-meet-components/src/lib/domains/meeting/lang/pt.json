@@ -152,8 +152,9 @@
 		"CONNECTION": "Ligação perdida",
 		"RECONNECT": "A tentar restabelecer a ligação à reunião...",
 		"DISCONNECT": "Você foi desconectado",
-		"TOGGLE_CAMERA": "Houve um erro ao alternar a câmara",
-		"TOGGLE_MICROPHONE": "Houve um erro ao alternar microphone",
+		"CAMERA_UNAVAILABLE": "Não foi possível iniciar a câmara. Outra aplicação pode estar a utilizá-la.",
+		"MICROPHONE_UNAVAILABLE": "Não foi possível iniciar o microfone. Outra aplicação pode estar a utilizá-lo.",
+		"DEVICES_UNAVAILABLE": "Não foi possível iniciar a câmara e o microfone. Outra aplicação pode estar a utilizá-los.",
 		"E2EE_ERROR_TITLE": "Erro de chave de criptografia",
 		"E2EE_ERROR_CONTENT": "Este participante está usando uma chave de criptografia diferente. O vídeo não pode ser exibido.",
 		"GENERIC": "Ocorreu um erro inesperado. Tente novamente."

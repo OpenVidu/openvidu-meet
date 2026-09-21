@@ -1,9 +1,10 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
-	LocalMediaControlService,
-	LocalMediaStateService,
-	LocalTrackService,
+	LocalMediaService,
+	MeetingPhaseService,
+	MeetingViewPhase,
+	ScreenShareService,
 	MeetingLiveKitService
 } from '../../meeting/openvidu-components';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
@@ -35,9 +36,15 @@ const IDENTITY = 'participant-1';
 describe('EmbeddedCommandService', () => {
 	let service: EmbeddedCommandService;
 	let moderationService: jasmine.SpyObj<MeetingModerationService>;
-	let mediaControlService: jasmine.SpyObj<LocalMediaControlService>;
+	let localMedia: {
+		setMicrophoneEnabled: jasmine.Spy;
+		setCameraEnabled: jasmine.Spy;
+		microphone: { enabled: ReturnType<typeof signal<boolean>> };
+		camera: { enabled: ReturnType<typeof signal<boolean>> };
+	};
+	let screenShare: { setEnabled: jasmine.Spy; enabled: ReturnType<typeof signal<boolean>> };
 	let liveKitService: { isSessionActive: ReturnType<typeof signal<boolean>>; disconnect: jasmine.Spy };
-	let prejoinActive: ReturnType<typeof signal<boolean>>;
+	let phase: ReturnType<typeof signal<MeetingViewPhase>>;
 	let hasPermission: jasmine.Spy;
 	let logger: LoggerServiceStub;
 	let roomId: ReturnType<typeof signal<string | undefined>>;
@@ -58,25 +65,24 @@ describe('EmbeddedCommandService', () => {
 		moderationService.muteParticipant.and.resolveTo();
 		moderationService.muteAllParticipants.and.resolveTo();
 
-		mediaControlService = jasmine.createSpyObj<LocalMediaControlService>('LocalMediaControlService', [
-			'setMicrophoneEnabled',
-			'setCameraEnabled',
-			'setScreenShareEnabled'
-		]);
-		mediaControlService.setMicrophoneEnabled.and.resolveTo();
-		mediaControlService.setCameraEnabled.and.resolveTo();
-		mediaControlService.setScreenShareEnabled.and.resolveTo();
+		microphoneEnabled = signal(true);
+		cameraEnabled = signal(true);
+		screenShareEnabled = signal(false);
+		localMedia = {
+			setMicrophoneEnabled: jasmine.createSpy('setMicrophoneEnabled').and.resolveTo(),
+			setCameraEnabled: jasmine.createSpy('setCameraEnabled').and.resolveTo(),
+			microphone: { enabled: microphoneEnabled },
+			camera: { enabled: cameraEnabled }
+		};
+		screenShare = { setEnabled: jasmine.createSpy('setEnabled').and.resolveTo(), enabled: screenShareEnabled };
 
 		liveKitService = {
 			isSessionActive: signal(true),
 			disconnect: jasmine.createSpy('disconnect').and.resolveTo()
 		};
-		prejoinActive = signal(false);
+		phase = signal<MeetingViewPhase>('live');
 		hasPermission = jasmine.createSpy('hasPermission').and.returnValue(true);
 		roomId = signal<string | undefined>(ROOM_ID);
-		microphoneEnabled = signal(true);
-		cameraEnabled = signal(true);
-		screenShareEnabled = signal(false);
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -84,22 +90,15 @@ describe('EmbeddedCommandService', () => {
 				EmbeddedCommandService,
 				{ provide: LoggerService, useClass: LoggerServiceStub },
 				{ provide: MeetingModerationService, useValue: moderationService },
-				{ provide: LocalMediaControlService, useValue: mediaControlService },
+				{ provide: LocalMediaService, useValue: localMedia as unknown as LocalMediaService },
+				{ provide: ScreenShareService, useValue: screenShare as unknown as ScreenShareService },
 				{ provide: MeetingLiveKitService, useValue: liveKitService as unknown as MeetingLiveKitService },
-				{ provide: LocalTrackService, useValue: { prejoinActive } as unknown as LocalTrackService },
+				{ provide: MeetingPhaseService, useValue: { phase } as unknown as MeetingPhaseService },
 				{
 					provide: RoomMemberContextService,
 					useValue: { hasPermission } as unknown as RoomMemberContextService
 				},
-				{ provide: MeetingContextService, useValue: { roomId } as unknown as MeetingContextService },
-				{
-					provide: LocalMediaStateService,
-					useValue: {
-						microphoneEnabled,
-						cameraEnabled,
-						screenShareEnabled
-					} as unknown as LocalMediaStateService
-				}
+				{ provide: MeetingContextService, useValue: { roomId } as unknown as MeetingContextService }
 			]
 		});
 
@@ -110,47 +109,47 @@ describe('EmbeddedCommandService', () => {
 	describe('phase gating', () => {
 		it('runs mediaToggleAudio on the prejoin screen (no session yet)', async () => {
 			liveKitService.isSessionActive.set(false);
-			prejoinActive.set(true);
+			phase.set('prejoin');
 
 			await service.mediaToggleAudio(false);
 
-			expect(mediaControlService.setMicrophoneEnabled).toHaveBeenCalledOnceWith(false);
+			expect(localMedia.setMicrophoneEnabled).toHaveBeenCalledOnceWith(false);
 		});
 
 		it('runs mediaToggleVideo on the prejoin screen (no session yet)', async () => {
 			liveKitService.isSessionActive.set(false);
-			prejoinActive.set(true);
+			phase.set('prejoin');
 
 			await service.mediaToggleVideo(false);
 
-			expect(mediaControlService.setCameraEnabled).toHaveBeenCalledOnceWith(false);
+			expect(localMedia.setCameraEnabled).toHaveBeenCalledOnceWith(false);
 		});
 
 		it('rejects mediaToggleAudio when neither the session nor the prejoin screen is active', async () => {
 			liveKitService.isSessionActive.set(false);
-			prejoinActive.set(false);
+			phase.set('loading');
 
 			await service.mediaToggleAudio(true);
 
-			expect(mediaControlService.setMicrophoneEnabled).not.toHaveBeenCalled();
+			expect(localMedia.setMicrophoneEnabled).not.toHaveBeenCalled();
 		});
 
 		it('rejects mediaToggleVideo when neither the session nor the prejoin screen is active', async () => {
 			liveKitService.isSessionActive.set(false);
-			prejoinActive.set(false);
+			phase.set('loading');
 
 			await service.mediaToggleVideo(true);
 
-			expect(mediaControlService.setCameraEnabled).not.toHaveBeenCalled();
+			expect(localMedia.setCameraEnabled).not.toHaveBeenCalled();
 		});
 
 		it('rejects mediaToggleScreenShare on the prejoin screen', async () => {
 			liveKitService.isSessionActive.set(false);
-			prejoinActive.set(true);
+			phase.set('prejoin');
 
 			await service.mediaToggleScreenShare(true);
 
-			expect(mediaControlService.setScreenShareEnabled).not.toHaveBeenCalled();
+			expect(screenShare.setEnabled).not.toHaveBeenCalled();
 		});
 
 		it('rejects meetingEnd with no active session, even with the permission', async () => {
@@ -194,7 +193,7 @@ describe('EmbeddedCommandService', () => {
 		it('runs mediaToggleScreenShare while the session is active', async () => {
 			await service.mediaToggleScreenShare(true);
 
-			expect(mediaControlService.setScreenShareEnabled).toHaveBeenCalledOnceWith(true);
+			expect(screenShare.setEnabled).toHaveBeenCalledOnceWith(true);
 		});
 
 		it('re-evaluates the phase on every command, not just the first', async () => {
@@ -259,7 +258,7 @@ describe('EmbeddedCommandService', () => {
 			await service.mediaToggleAudio(false);
 
 			expect(hasPermission).toHaveBeenCalledWith('mediaPublishAudio');
-			expect(mediaControlService.setMicrophoneEnabled).not.toHaveBeenCalled();
+			expect(localMedia.setMicrophoneEnabled).not.toHaveBeenCalled();
 		});
 
 		it('rejects mediaToggleVideo without the mediaPublishVideo permission', async () => {
@@ -268,7 +267,7 @@ describe('EmbeddedCommandService', () => {
 			await service.mediaToggleVideo(false);
 
 			expect(hasPermission).toHaveBeenCalledWith('mediaPublishVideo');
-			expect(mediaControlService.setCameraEnabled).not.toHaveBeenCalled();
+			expect(localMedia.setCameraEnabled).not.toHaveBeenCalled();
 		});
 
 		it('rejects mediaToggleScreenShare without the mediaShareScreen permission', async () => {
@@ -277,7 +276,7 @@ describe('EmbeddedCommandService', () => {
 			await service.mediaToggleScreenShare(true);
 
 			expect(hasPermission).toHaveBeenCalledWith('mediaShareScreen');
-			expect(mediaControlService.setScreenShareEnabled).not.toHaveBeenCalled();
+			expect(screenShare.setEnabled).not.toHaveBeenCalled();
 		});
 
 		it('meetingLeave requires no permission: any participant may leave', async () => {
@@ -342,7 +341,7 @@ describe('EmbeddedCommandService', () => {
 		it('mediaToggleAudio passes an explicit active flag through', async () => {
 			await service.mediaToggleAudio(false);
 
-			expect(mediaControlService.setMicrophoneEnabled).toHaveBeenCalledOnceWith(false);
+			expect(localMedia.setMicrophoneEnabled).toHaveBeenCalledOnceWith(false);
 		});
 
 		it('mediaToggleAudio without a flag inverts the current microphone state', async () => {
@@ -350,7 +349,7 @@ describe('EmbeddedCommandService', () => {
 
 			await service.mediaToggleAudio();
 
-			expect(mediaControlService.setMicrophoneEnabled).toHaveBeenCalledOnceWith(true);
+			expect(localMedia.setMicrophoneEnabled).toHaveBeenCalledOnceWith(true);
 		});
 
 		// A6 (MEET-BRANCH-AUDIT-FINDINGS.md): the webcomponent's element methods are a JS API, not a
@@ -361,7 +360,7 @@ describe('EmbeddedCommandService', () => {
 
 			await (service.mediaToggleAudio as (active?: unknown) => Promise<void>)('false');
 
-			expect(mediaControlService.setMicrophoneEnabled).toHaveBeenCalledOnceWith(false);
+			expect(localMedia.setMicrophoneEnabled).toHaveBeenCalledOnceWith(false);
 		});
 
 		it('mediaToggleVideo without a flag inverts the current camera state', async () => {
@@ -369,7 +368,7 @@ describe('EmbeddedCommandService', () => {
 
 			await service.mediaToggleVideo();
 
-			expect(mediaControlService.setCameraEnabled).toHaveBeenCalledOnceWith(false);
+			expect(localMedia.setCameraEnabled).toHaveBeenCalledOnceWith(false);
 		});
 
 		it('mediaToggleScreenShare without a flag inverts the current screen share state', async () => {
@@ -377,7 +376,7 @@ describe('EmbeddedCommandService', () => {
 
 			await service.mediaToggleScreenShare();
 
-			expect(mediaControlService.setScreenShareEnabled).toHaveBeenCalledOnceWith(true);
+			expect(screenShare.setEnabled).toHaveBeenCalledOnceWith(true);
 		});
 	});
 
@@ -389,7 +388,7 @@ describe('EmbeddedCommandService', () => {
 		});
 
 		it('a failing media toggle is logged, not propagated to the host', async () => {
-			mediaControlService.setMicrophoneEnabled.and.rejectWith(new Error('boom'));
+			localMedia.setMicrophoneEnabled.and.rejectWith(new Error('boom'));
 
 			await expectAsync(service.mediaToggleAudio(false)).toBeResolved();
 		});

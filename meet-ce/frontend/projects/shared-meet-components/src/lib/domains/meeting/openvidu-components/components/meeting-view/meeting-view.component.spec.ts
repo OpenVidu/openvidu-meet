@@ -5,8 +5,7 @@ import { DialogService } from '../../../../../shared/services/dialog.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
-import { LocalMediaIntentService } from '../../services/local-media-intent/local-media-intent.service';
-import { LocalTrackService } from '../../services/local-track/local-track.service';
+import { LocalMediaService } from '../../services/local-media/local-media.service';
 import { MeetingEndingSoonService } from '../../services/meeting-ending-soon/meeting-ending-soon.service';
 import { MeetingEventsService } from '../../services/meeting-events/meeting-events.service';
 import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
@@ -134,12 +133,8 @@ describe('MeetingViewComponent', () => {
 					} as unknown as MediaStorageService
 				},
 				{
-					provide: LocalMediaIntentService,
-					useValue: { reset: () => {} } as unknown as LocalMediaIntentService
-				},
-				{
-					provide: LocalTrackService,
-					useValue: { removeLocalTracks: () => {} } as unknown as LocalTrackService
+					provide: LocalMediaService,
+					useValue: { acquire: () => Promise.resolve(), release: () => {} } as unknown as LocalMediaService
 				},
 				{ provide: MeetingEventsService, useValue: { bindRoom: () => {} } as unknown as MeetingEventsService },
 				{

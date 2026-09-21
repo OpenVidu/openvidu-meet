@@ -152,8 +152,9 @@
 		"CONNECTION": "Connexion perdue",
 		"RECONNECT": "Oups ! Tentative de reconnexion à la réunion...",
 		"DISCONNECT": "Vous avez été déconnecté",
-		"TOGGLE_CAMERA": "There was an error toggle camera",
-		"TOGGLE_MICROPHONE": "There was an error toggling microphone",
+		"CAMERA_UNAVAILABLE": "Impossible de démarrer la caméra. Une autre application l'utilise peut-être.",
+		"MICROPHONE_UNAVAILABLE": "Impossible de démarrer le microphone. Une autre application l'utilise peut-être.",
+		"DEVICES_UNAVAILABLE": "Impossible de démarrer la caméra et le microphone. Une autre application les utilise peut-être.",
 		"E2EE_ERROR_TITLE": "Erreur de clé de chiffrement",
 		"E2EE_ERROR_CONTENT": "Ce participant utilise une clé de chiffrement différente. La vidéo ne peut pas être affichée.",
 		"GENERIC": "Une erreur inattendue s'est produite. Veuillez réessayer."

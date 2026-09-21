@@ -38,8 +38,8 @@ import { DocumentService } from '../../services/document/document.service';
 import { Room } from '../../services/livekit';
 import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
 import { PanelService } from '../../services/panel/panel.service';
-import { LocalMediaControlService } from '../../services/local-media-control/local-media-control.service';
-import { LocalMediaStateService } from '../../services/local-media-state/local-media-state.service';
+import { LocalMediaService } from '../../services/local-media/local-media.service';
+import { ScreenShareService } from '../../services/screen-share/screen-share.service';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { PlatformService } from '../../services/platform/platform.service';
 import { RecordingService } from '../../services/recording/recording.service';
@@ -74,8 +74,8 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly chatService = inject(ChatService);
 	private readonly panelService = inject(PanelService);
 	private readonly participantService = inject(ParticipantService);
-	private readonly localMediaControlService = inject(LocalMediaControlService);
-	private readonly localMediaState = inject(LocalMediaStateService);
+	private readonly localMedia = inject(LocalMediaService);
+	private readonly screenShare = inject(ScreenShareService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly deviceService = inject(DeviceService);
 	private readonly dialogService = inject(DialogService);
@@ -148,15 +148,15 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * Local media state, read from its single owner. These used to be local signals synced against
 	 * the participant by an effect that also compared the previous value by hand.
 	 */
-	readonly isScreenShareEnabled = this.localMediaState.screenShareEnabled;
+	readonly isScreenShareEnabled = this.screenShare.enabled;
 	/**
 	 * @ignore
 	 */
-	readonly isCameraEnabled = this.localMediaState.cameraEnabled;
+	readonly isCameraEnabled = this.localMedia.camera.enabled;
 	/**
 	 * @ignore
 	 */
-	readonly isMicrophoneEnabled = this.localMediaState.microphoneEnabled;
+	readonly isMicrophoneEnabled = this.localMedia.microphone.enabled;
 	/**
 	 * @ignore
 	 * Read straight off the connection owner instead of mirroring `RoomEvent.Reconnecting`/`Reconnected`
@@ -401,15 +401,9 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 		try {
 			this.microphoneMuteChanging.set(false);
 			const isMicrophoneEnabled = this.isMicrophoneEnabled();
-			await this.localMediaControlService.setMicrophoneEnabled(!isMicrophoneEnabled);
+			await this.localMedia.setMicrophoneEnabled(!isMicrophoneEnabled);
 		} catch (error: unknown) {
 			this.log.e('There was an error toggling microphone:', (error as any).code, (error as any).message);
-			this.dialogService.showDialog({
-				title: this.translateService.translate('ERRORS.TOGGLE_MICROPHONE'),
-				message: this.translateService.translate('ERRORS.GENERIC'),
-				showCancelButton: false,
-				confirmText: this.translateService.translate('PANEL.CLOSE')
-			});
 		} finally {
 			this.microphoneMuteChanging.set(false);
 		}
@@ -427,15 +421,9 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 				this.panelService.togglePanel(PanelType.BACKGROUND_EFFECTS);
 			}
 
-			await this.localMediaControlService.setCameraEnabled(!isCameraEnabled);
+			await this.localMedia.setCameraEnabled(!isCameraEnabled);
 		} catch (error) {
 			this.log.e('There was an error toggling camera:', (error as any).code, (error as any).message);
-			this.dialogService.showDialog({
-				title: this.translateService.translate('ERRORS.TOGGLE_CAMERA'),
-				message: this.translateService.translate('ERRORS.GENERIC'),
-				showCancelButton: false,
-				confirmText: this.translateService.translate('PANEL.CLOSE')
-			});
 		} finally {
 			this.cameraMuteChanging.set(false);
 		}
@@ -446,14 +434,14 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 */
 	async toggleScreenShare() {
 		const isScreenShareEnabled = this.isScreenShareEnabled();
-		await this.localMediaControlService.setScreenShareEnabled(!isScreenShareEnabled);
+		await this.screenShare.setEnabled(!isScreenShareEnabled);
 	}
 
 	/**
 	 * @ignore
 	 */
 	async replaceScreenTrack() {
-		await this.localMediaControlService.switchScreenShare();
+		await this.screenShare.switch();
 	}
 
 	/**

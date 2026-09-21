@@ -6,8 +6,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { CustomDevice } from '../../../models/device.model';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { DeviceService } from '../../../services/device/device.service';
-import { LocalMediaControlService } from '../../../services/local-media-control/local-media-control.service';
-import { LocalMediaStateService } from '../../../services/local-media-state/local-media-state.service';
+import { LocalMediaService } from '../../../services/local-media/local-media.service';
 import { LoggerService } from '../../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../../shared/models/logger.model';
 
@@ -26,8 +25,7 @@ export class VideoDevicesComponent {
 	readonly onVideoEnabledChanged = output<boolean>();
 
 	readonly cameraStatusChanging = signal(false);
-	/** Single source of truth for the device state — valid in prejoin and in the meeting alike. */
-	readonly isCameraEnabled = inject(LocalMediaStateService).cameraEnabled;
+	readonly isCameraEnabled = inject(LocalMediaService).camera.enabled;
 
 	protected readonly cameras: WritableSignal<CustomDevice[]>;
 	protected readonly cameraSelected: WritableSignal<CustomDevice | undefined>;
@@ -41,7 +39,7 @@ export class VideoDevicesComponent {
 	};
 
 	private readonly deviceSrv = inject(DeviceService);
-	private readonly localMediaControlService = inject(LocalMediaControlService);
+	private readonly localMedia = inject(LocalMediaService);
 	private readonly loggerSrv = inject(LoggerService);
 
 	constructor() {
@@ -55,19 +53,24 @@ export class VideoDevicesComponent {
 		event.stopPropagation();
 		this.cameraStatusChanging.set(true);
 		const enabled = !this.isCameraEnabled();
-		await this.localMediaControlService.setCameraEnabled(enabled);
-		this.onVideoEnabledChanged.emit(enabled);
-		this.cameraStatusChanging.set(false);
+
+		try {
+			await this.localMedia.setCameraEnabled(enabled);
+			this.onVideoEnabledChanged.emit(enabled);
+		} catch (error) {
+			this.log.e('Error toggling camera', error);
+		} finally {
+			this.cameraStatusChanging.set(false);
+		}
 	}
 
 	async onCameraSelected(event: { value: CustomDevice }) {
 		try {
 			const device: CustomDevice = event?.value;
 
-			// Is New deviceId different from the old one?
-			if (this.deviceSrv.needUpdateVideoTrack(device)) {
+			if (device.device !== this.cameraSelected()?.device) {
 				this.cameraStatusChanging.set(true);
-				await this.localMediaControlService.switchCamera(device.device);
+				await this.localMedia.switchCamera(device.device);
 				this.deviceSrv.setCameraSelected(device.device);
 				const selectedCamera = this.cameraSelected();
 

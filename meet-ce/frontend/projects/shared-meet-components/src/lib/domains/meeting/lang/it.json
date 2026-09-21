@@ -152,8 +152,9 @@
 		"CONNECTION": "Connessione persa",
 		"RECONNECT": "Oops! Si sta cercando di riconnettersi alla riunione...",
 		"DISCONNECT": "Sei stato disconnesso",
-		"TOGGLE_CAMERA": "Si è verificato un errore nell'attivazione della telecamera",
-		"TOGGLE_MICROPHONE": "Si è verificato un errore nell'attivazione del microfono",
+		"CAMERA_UNAVAILABLE": "Non è stato possibile avviare la telecamera. Potrebbe essere in uso da un'altra applicazione.",
+		"MICROPHONE_UNAVAILABLE": "Non è stato possibile avviare il microfono. Potrebbe essere in uso da un'altra applicazione.",
+		"DEVICES_UNAVAILABLE": "Non è stato possibile avviare la telecamera e il microfono. Potrebbero essere in uso da un'altra applicazione.",
 		"E2EE_ERROR_TITLE": "Errore della chiave di crittografia",
 		"E2EE_ERROR_CONTENT": "Questo partecipante sta utilizzando una chiave di crittografia diversa. Il video non può essere visualizzato.",
 		"GENERIC": "Si è verificato un errore imprevisto. Riprova."
