@@ -55,7 +55,8 @@ Both command and event name sets are accepted.
 - [Meetings API][3.9-meetings] under `/api/v1/meetings`: read a live meeting, end it, list and read its
   participants, and kick or promote them. It accepts API keys and room member tokens, and reading uses the new
   [`meetingRead`][3.9-permissions] permission.
-- A member with the new [`participantMute`][3.9-permissions] permission, disabled by default, can mute a
+- A member with the new [`participantMute`][3.9-permissions] permission, granted to the moderator role of
+  rooms created from this release on (speakers need it granted explicitly), can mute a
   participant's microphone, camera or screen share, one at a time or everyone at once, over the meetings API
   ([`participantMute`][3.9-participant-mute], [`participantMuteAll`][3.9-participant-mute-all]) or with the
   embedded commands of the same names. A moderator cannot be muted, and muting everyone leaves the caller
