@@ -16,43 +16,46 @@ export enum EmbeddedCommandName {
 	MEETING_LEAVE = 'meetingLeave',
 	/**
 	 * Ends the current meeting for all participants.
-	 * @moderator
+	 * @permission meetingEnd
 	 */
 	MEETING_END = 'meetingEnd',
 	/**
 	 * Kicks a participant from the meeting.
-	 * @moderator
+	 * @permission participantKick
 	 */
 	PARTICIPANT_KICK = 'participantKick',
 	/**
 	 * Turns off a participant's microphone, camera or screen share. The participant may turn the
 	 * device back on.
-	 * @moderator
+	 * @permission participantMute
 	 */
 	PARTICIPANT_MUTE = 'participantMute',
 	/**
 	 * Turns off the microphone, camera or screen share of every participant except the moderators and
 	 * the caller. Each participant may turn their devices back on.
-	 * @moderator
+	 * @permission participantMute
 	 */
 	PARTICIPANT_MUTE_ALL = 'participantMuteAll',
 	/**
 	 * Toggles the local participant's microphone, or sets it when `active` is provided.
+	 * @permission mediaPublishAudio
 	 * @prejoin Works from the prejoin screen onwards, before the meeting is joined.
 	 */
 	MEDIA_TOGGLE_AUDIO = 'mediaToggleAudio',
 	/**
 	 * Toggles the local participant's camera, or sets it when `active` is provided.
+	 * @permission mediaPublishVideo
 	 * @prejoin Works from the prejoin screen onwards, before the meeting is joined.
 	 */
 	MEDIA_TOGGLE_VIDEO = 'mediaToggleVideo',
 	/**
 	 * Toggles the local participant's screen share, or sets it when `active` is provided.
+	 * @permission mediaShareScreen
 	 */
 	MEDIA_TOGGLE_SCREEN_SHARE = 'mediaToggleScreenShare',
 	/**
 	 * Ends the current meeting for all participants.
-	 * @moderator
+	 * @permission meetingEnd
 	 * @deprecated Renamed to `meetingEnd` ({@link EmbeddedCommandName.MEETING_END}). Removed in 3.12.0.
 	 */
 	END_MEETING = 'endMeeting',
@@ -63,7 +66,7 @@ export enum EmbeddedCommandName {
 	LEAVE_ROOM = 'leaveRoom',
 	/**
 	 * Kicks a participant from the meeting.
-	 * @moderator
+	 * @permission participantKick
 	 * @deprecated Renamed to `participantKick` ({@link EmbeddedCommandName.PARTICIPANT_KICK}). Removed in 3.12.0.
 	 */
 	KICK_PARTICIPANT = 'kickParticipant'

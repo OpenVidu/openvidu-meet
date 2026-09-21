@@ -47,7 +47,9 @@ or through the folder's `index.ts`).
   - `scripts/generate-webcomponent-docs.js` parses the JSDoc of the enums in `src/embedded/` to
     generate `docs/webcomponent/{attributes,commands,events}.md`. It reads the raw text, so keep the
     `/** … */` block directly above each enum member and keep one member per line. Tags like
-    `@required`, `@moderator`, `@prejoin` and `@category` are meaningful to that generator. Only
+    `@required`, `@permission`, `@prejoin` and `@category` are meaningful to that generator. A
+    command's `@permission` must name the same key `EmbeddedCommandService.run()` checks, since it
+    is published as the command's gate. Only
     **`@private`** members are excluded from the generated tables; **`@deprecated`** members are listed
     and marked deprecated, so a host still calling one can find it in the reference. The generator
     prints what it excluded.

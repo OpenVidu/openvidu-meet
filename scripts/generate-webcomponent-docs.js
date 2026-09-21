@@ -185,6 +185,10 @@ class WebComponentDocGenerator {
                     const deprecatedComment = commentLines.find(c => c.includes('@deprecated'));
                     const deprecatedText = deprecatedComment ? deprecatedComment.replace(/^@deprecated\s*/, '') : '';
 
+                    // The permission a command is gated on, as EmbeddedCommandService.run() checks it
+                    const permissionComment = commentLines.find(c => c.includes('@permission'));
+                    const permissionMatch = permissionComment ? permissionComment.match(/@permission\s+(\w+)/) : null;
+
                     currentItem = {
                         name: match[1],
                         value: match[2],
@@ -192,7 +196,7 @@ class WebComponentDocGenerator {
                         isPrivate: commentLines.some(c => c.includes('@private')),
                         isDeprecated: commentLines.some(c => c.includes('@deprecated')),
                         deprecatedText: deprecatedText,
-                        isModerator: commentLines.some(c => c.includes('@moderator')),
+                        permission: permissionMatch ? permissionMatch[1] : null,
                         isPrejoin: commentLines.some(c => c.includes('@prejoin')),
                         isRequired: commentLines.some(c => c.includes('@required')),
                         requiredText: requiredText
@@ -323,8 +327,8 @@ class WebComponentDocGenerator {
         const commandEnum = enums.find(e => e.name === 'EmbeddedCommandName');
         if (!commandEnum) return '';
 
-        let markdown = '| Method | Command | Description | Parameters | Access Level | Restriction |\n';
-        markdown += '|--------|---------|-------------|------------|--------------|-------------|\n';
+        let markdown = '| Method | Description | Parameters | Permission | Restriction |\n';
+        markdown += '|--------|-------------|------------|------------|-------------|\n';
 
         for (const item of commandEnum.items) {
             if (!this.isPublic(item, 'command')) continue;
@@ -334,13 +338,11 @@ class WebComponentDocGenerator {
             const canonicalName = item.isDeprecated ? aliasMap[item.name] : undefined;
             const payload = payloads[canonicalName || item.name];
 
-            // Generate method name from command name and payload
-            const methodName = this.generateMethodName(item.name, item.value, payload);
+            const methodName = this.generateMethodName(item.value, payload);
 
             const params = payload ? this.formatMethodParameters(payload.type) : '-';
 
-            // Determine access level based on @moderator annotation
-            const accessLevel = this.getAccessLevel(item);
+            const permission = this.getPermission(item);
 
             const restriction = this.getRestriction(item);
 
@@ -348,23 +350,18 @@ class WebComponentDocGenerator {
                 ? this.getDeprecationDescription(item, aliasMap, commandEnum.items)
                 : (item.description || 'No description available');
 
-            markdown += `| \`${methodName}\` | \`${item.value}\` | ${description} | ${params} | ${accessLevel} | ${restriction} |\n`;
+            markdown += `| \`${methodName}\` | ${description} | ${params} | ${permission} | ${restriction} |\n`;
         }
 
         return markdown;
     }
 
     /**
-     * Generates method name and signature from command enum
+     * Builds the method signature from the command string itself, which is the name the
+     * webcomponent exposes and the name an iframe host posts, so the table cannot state two
+     * different names for one command.
      */
-    generateMethodName(commandName, commandValue, payload) {
-        // Convert COMMAND_NAME to camelCase method name
-        const methodName = commandName
-            .toLowerCase()
-            .split('_')
-            .map((word, index) => index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1))
-            .join('');
-
+    generateMethodName(methodName, payload) {
         // If there's no payload or payload is void, no parameters needed
         if (!payload || payload.type === 'void') {
             return `${methodName}()`;
@@ -398,10 +395,11 @@ class WebComponentDocGenerator {
     }
 
     /**
-     * Determines the access level of a command based on its @moderator annotation
+     * The permission the local participant needs for a command to run. It is the permission itself
+     * that is checked, never the role holding it, so a speaker granted `participantMute` may mute.
      */
-    getAccessLevel(item) {
-        return item.isModerator ? 'Moderator' : 'All';
+    getPermission(item) {
+        return item.permission ? `\`${item.permission}\`` : 'None';
     }
 
     /**
