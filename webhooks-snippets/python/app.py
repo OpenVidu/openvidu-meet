@@ -1,6 +1,5 @@
 import hashlib
 import hmac
-import json
 import time
 from flask import Flask, request
 
@@ -13,18 +12,20 @@ app = Flask(__name__)
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    body = request.get_json()
+    # Keep the body exactly as received: the signature covers those bytes, and re-serializing
+    # the parsed object is not guaranteed to reproduce them.
+    raw_body = request.get_data(as_text=True)
     headers = request.headers
 
-    if not is_webhook_event_valid(body, headers):
+    if not is_webhook_event_valid(raw_body, headers):
         print("Invalid webhook signature")
         return "Invalid webhook signature", 401
 
-    print("Webhook received:", body)
+    print("Webhook received:", request.get_json())
     return "", 200
 
 
-def is_webhook_event_valid(body, headers):
+def is_webhook_event_valid(raw_body, headers):
     signature = headers.get("x-signature")
     timestamp_str = headers.get("x-timestamp")
     if not signature or not timestamp_str:
@@ -40,8 +41,7 @@ def is_webhook_event_valid(body, headers):
     if diff_time >= MAX_WEBHOOK_AGE:
         return False
 
-    json_body = json.dumps(body, separators=(",", ":"))
-    signed_payload = str(timestamp) + "." + json_body
+    signed_payload = str(timestamp) + "." + raw_body
 
     expected = hmac.new(
         OPENVIDU_MEET_API_KEY.encode("utf-8"),

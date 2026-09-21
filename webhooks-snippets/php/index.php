@@ -15,13 +15,13 @@ if ($requestMethod === 'POST' && $requestPath === '/webhook') {
 
 function handleWebhook()
 {
-    $body    = json_decode(file_get_contents('php://input'), true) ?? [];
+    // Keep the body exactly as received: the signature covers those bytes, and re-encoding the
+    // decoded value is not guaranteed to reproduce them.
+    $rawBody = file_get_contents('php://input');
+    $body    = json_decode($rawBody, true) ?? [];
     $headers = array_change_key_case(getallheaders(), CASE_LOWER);
 
-    // Convert header keys to lowercase for consistent access
-    $headers = array_change_key_case($headers, CASE_LOWER);
-
-    if (!isWebhookEventValid($body, $headers)) {
+    if (!isWebhookEventValid($rawBody, $headers)) {
         http_response_code(401);
         echo "Invalid webhook signature\n";
         return;
@@ -33,7 +33,7 @@ function handleWebhook()
     error_log($msg); // Log to server console
 }
 
-function isWebhookEventValid($body, $headers)
+function isWebhookEventValid($rawBody, $headers)
 {
     $signature = $headers['x-signature'] ?? null;
     $timestampStr = $headers['x-timestamp'] ?? null;
@@ -52,7 +52,7 @@ function isWebhookEventValid($body, $headers)
         return false;
     }
 
-    $signedPayload = $timestamp . '.' . json_encode($body, JSON_UNESCAPED_SLASHES);
+    $signedPayload = $timestamp . '.' . $rawBody;
 
     $expected = hash_hmac('sha256', $signedPayload, OPENVIDU_MEET_API_KEY);
 
