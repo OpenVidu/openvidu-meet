@@ -2,7 +2,7 @@ name: Range
 in: header
 required: false
 description: |
-    This endpoint supports the `Range` header to request a specific byte range of the recording file.  
+    This endpoint supports the `Range` header to request a specific byte range of the recording file.
     Use the format `bytes=start-end`, where `start` is the starting byte (required) and `end` is the ending byte (optional).
 
     Examples:
@@ -10,5 +10,8 @@ description: |
       - `bytes=1000-`: Requests from byte 1000 to the end of the file.
 
     This allows efficient partial downloads and resume capabilities for large files.
+
+    That single form is the only one accepted. A suffix range (`bytes=-1024`), a list of ranges
+    (`bytes=0-1023,2048-3071`) and any unit other than `bytes` are rejected with `422`.
 schema:
     type: string
