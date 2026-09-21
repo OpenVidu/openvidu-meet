@@ -526,7 +526,7 @@
             It can be restricted to OpenVidu Meet users only, or made accessible by anyone with the link,
             depending on the `privateAccess` query parameter.
 
-            > **Note:** If `privateAccess=false` (accessible by anyone), public URL generation requires `access.anonymous.recording.enabled=true` in the room configuration.
+            > **Note:** If `privateAccess` is `false` or omitted (accessible by anyone), public URL generation requires `access.anonymous.recording.enabled=true` in the room configuration.
             > Otherwise, a 403 error is returned.
 
             **Access token roles**: `admin`, `room_manager`, `room_member`.

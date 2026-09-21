@@ -3,7 +3,10 @@ in: query
 description: >
     Specifies whether the generated recording URL is restricted to OpenVidu Meet users (`true`),
     meaning only logged-in users can view or download the recording, or accessible by anyone with the
-    link without logging in (`false`).
+    link without logging in (`false`). Omitting it is the same as sending `false`: it asks for a
+    public link, which is a `403` when the room has `access.anonymous.recording.enabled` set to
+    `false`.
 required: false
 schema:
     type: boolean
+    default: false
