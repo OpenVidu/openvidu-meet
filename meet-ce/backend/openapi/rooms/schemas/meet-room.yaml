@@ -67,7 +67,7 @@ properties:
             Room configuration (chat, recording, virtual background, e2ee, captions).
             <br/><br/>
 
-            **Excluded from responses by default to reduce payload size.**
+            **Excluded from REST responses by default to reduce payload size.**
             To include it in the response, use either the `extraFields=config` query parameter or the
             `X-ExtraFields: config` header, on every request including POST/PUT.
         $ref: ./meet-room-config.yaml#/MeetRoomConfig
@@ -82,7 +82,7 @@ properties:
             Roles for the room. Defines the complete permissions for moderator and speaker roles.
             <br/><br/>
 
-            **Excluded from responses by default to reduce payload size.**
+            **Excluded from REST responses by default to reduce payload size.**
             To include it in the response:
             - **POST/PUT requests:** use the `X-ExtraFields: roles` header
             - **Other requests:** use either the `extraFields=roles` query parameter or the `X-ExtraFields: roles` header

@@ -123,7 +123,8 @@ meetingStarted:
     post:
         summary: Meeting started
         description: >
-            This webhook is triggered when a meeting starts.
+            This webhook is triggered when a meeting starts. The payload always carries the room's
+            `config` and `roles`, which REST responses exclude by default.
         operationId: meetingStartedWebhook
         parameters:
             - $ref: ./parameters/x-timestamp.yaml
@@ -149,7 +150,8 @@ meetingEnded:
     post:
         summary: Meeting ended
         description: >
-            This webhook is triggered when a meeting ends.
+            This webhook is triggered when a meeting ends. The payload always carries the room's
+            `config` and `roles`, which REST responses exclude by default.
         operationId: meetingEndedWebhook
         parameters:
             - $ref: ./parameters/x-timestamp.yaml
