@@ -171,6 +171,37 @@ describe('Webhook Integration Tests', () => {
 			expectValidSignature(meetingStartedWebhook);
 		});
 
+		// An all-ASCII payload cannot tell a receiver that hashes the bytes as received from one that
+		// hashes a re-serialization of the parsed body: both produce the same string. Only a payload
+		// carrying non-ASCII text does, and room names, participant names and metadata are free text.
+		it('should sign the bytes as sent when the payload carries non-ASCII text', async () => {
+			const roomName = 'Sala de reunión 🎥';
+			const { room } = await setupSingleRoom(true, roomName);
+
+			const meetingStartedWebhook = await waitForWebhookEvent(
+				receivedWebhooks,
+				MeetWebhookEventType.MEETING_STARTED,
+				{ roomId: room.roomId }
+			);
+
+			expect((meetingStartedWebhook.body.data as MeetRoom).roomName).toBe(roomName);
+			expect(meetingStartedWebhook.rawBody).toContain(roomName);
+			expectValidSignature(meetingStartedWebhook);
+
+			// The same document as the escaping JSON encoders emit by default (Python's `json.dumps`,
+			// PHP's `json_encode`): different bytes, so it can never reproduce the digest. This is the
+			// mistake the published recipes made, and what makes them reject genuine deliveries.
+			const asciiEscaped = meetingStartedWebhook.rawBody.replace(
+				/[^\x00-\x7f]/g,
+				(char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`
+			);
+			const escapedDigest = crypto
+				.createHmac('sha256', apiKey)
+				.update(`${meetingStartedWebhook.headers['x-timestamp']}.${asciiEscaped}`)
+				.digest('hex');
+			expect(meetingStartedWebhook.headers['x-signature']).not.toBe(escapedDigest);
+		});
+
 		it('should send meeting_ended webhook when meeting is closed', async () => {
 			const context = await setupSingleRoom(true);
 			const roomData = context.room;
