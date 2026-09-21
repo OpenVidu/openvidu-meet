@@ -110,7 +110,7 @@ export class App {
 	readonly initialVideoActive = input(undefined, { transform: optionalBooleanAttribute });
 	readonly e2eeKey = input<string | undefined>(undefined);
 	readonly leaveRedirectUrl = input<string | undefined>(undefined);
-	readonly showOnlyRecordings = input<boolean>(false);
+	readonly showOnlyRecordings = input(false, { transform: booleanAttribute });
 	readonly showRecording = input<string | undefined>(undefined);
 
 	// ── Host outputs (element events) ────────────────────────────────────────

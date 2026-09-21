@@ -13,7 +13,7 @@ import {
 	openWebcomponentWithAttributes,
 	type WebComponentAttributes
 } from '../helpers/webcomponent-attributes.helper';
-import { waitForPageRedirect, wcLocator } from '../helpers/webcomponent.helper';
+import { waitForPageRedirect, wcHost, wcLocator } from '../helpers/webcomponent.helper';
 
 // ─── WebComponent attribute coverage ────────────────────────────────────────
 //
@@ -358,6 +358,44 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 					[EmbeddedAttribute.ROOM_URL]: accessUrl,
 					[EmbeddedAttribute.SHOW_ONLY_RECORDINGS]: 'true'
 				});
+
+				await expect(wcLocator(page, 'ov-recording-lists, .recordings-list')).toBeVisible({
+					timeout: 15_000
+				});
+				await expect(wcLocator(page, '#participant-name-input')).toHaveCount(0);
+			});
+
+			// The two tests below drive the raw HTML attribute directly (`setAttribute`), unlike the
+			// JS-property path every other test in this file goes through via the testapp's bindings.
+			// `show-only-recordings` is boolean-attribute typed, so its two string forms must follow the
+			// standard HTML convention: `"false"` is off, and a bare attribute is on.
+			test('should not redirect to the recordings page when show-only-recordings="false" is set as a raw attribute', async ({
+				page
+			}) => {
+				await openWebcomponentWithAttributes(page, {
+					[EmbeddedAttribute.ROOM_URL]: accessUrl
+				});
+
+				await wcHost(page).evaluate(
+					(el, attr) => el.setAttribute(attr, 'false'),
+					EmbeddedAttribute.SHOW_ONLY_RECORDINGS
+				);
+
+				await expect(wcLocator(page, '#participant-name-input')).toBeVisible({ timeout: 15_000 });
+				await expect(wcLocator(page, 'ov-recording-lists, .recordings-list')).toHaveCount(0);
+			});
+
+			test('should redirect to the recordings page when show-only-recordings is set as a bare raw attribute', async ({
+				page
+			}) => {
+				await openWebcomponentWithAttributes(page, {
+					[EmbeddedAttribute.ROOM_URL]: accessUrl
+				});
+
+				await wcHost(page).evaluate(
+					(el, attr) => el.setAttribute(attr, ''),
+					EmbeddedAttribute.SHOW_ONLY_RECORDINGS
+				);
 
 				await expect(wcLocator(page, 'ov-recording-lists, .recordings-list')).toBeVisible({
 					timeout: 15_000

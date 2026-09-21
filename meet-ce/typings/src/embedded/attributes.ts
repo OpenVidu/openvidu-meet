@@ -58,7 +58,9 @@ export enum EmbeddedAttribute {
 	 */
 	LEAVE_REDIRECT_URL = 'leave-redirect-url',
 	/**
-	 * Whether to show only recordings instead of live meetings.
+	 * Whether to show only recordings instead of live meetings. Follows the standard HTML
+	 * boolean-attribute convention: a bare attribute or any value other than `"false"` is `true`;
+	 * `"false"` and an absent attribute are `false`.
 	 */
 	SHOW_ONLY_RECORDINGS = 'show-only-recordings',
 	/**

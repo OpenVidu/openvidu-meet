@@ -125,6 +125,7 @@ registered on both receives it twice.
 - [`POST /recordings`][3.9-start-recording] waited 20 seconds until the meeting has participants publishing media. Now there is no timeout.
 - Deleting a recording could fail on an error payload with missing fields.
 - Re-entering a meeting in the same web component instance wiped or froze the entry attributes.
+- `show-only-recordings` set as an HTML attribute ignored its value: `"false"` opened the recordings list and a bare attribute did nothing. It now follows the standard boolean-attribute convention.
 - A room's `autoDeletionDate` could be set so far in the future that it was never honored, leaving the room stuck forever. It now has an upper limit.
 - `DELETE /rooms` reset the connection instead of answering when `roomIds` grew large enough to exceed the runtime's header size limit. Now roomIds are limited to 100
 - [`POST /rooms`][3.9-create-room] failed when `roomName` was empty. Now, default value `Room` is used when `roomName` is empty, blank or `null`.
