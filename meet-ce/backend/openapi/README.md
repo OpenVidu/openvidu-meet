@@ -45,9 +45,7 @@ entry file references them.
 The `webhooks/` folder serves double duty: the outgoing webhook **events**
 (the OpenAPI 3.1 `webhooks:` section) live in `webhooks.yaml`, and the public
 `/webhooks` **resource** (registering the endpoints those events are delivered
-to) lives in `webhooks-api.yaml`. The legacy single-URL webhook
-**configuration** (the `/config/webhooks` endpoints) still lives in `config/`
-until the console switches to the resource.
+to) lives in `webhooks-api.yaml`.
 
 ### File naming
 
