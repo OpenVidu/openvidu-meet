@@ -4,6 +4,9 @@ description: >
     Comma-separated list of additional room member fields to include in the response that are excluded by default to reduce payload size.
     <br/><br/>
     These fields are included even if not listed in the `fields` query parameter or `X-Fields` header.
+    <br/><br/>
+    Names that are not extra room member fields are ignored. A list with no usable name is treated
+    as if the parameter had been omitted, so the fields excluded by default stay out of the response.
 required: false
 schema:
     type: string

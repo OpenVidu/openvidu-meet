@@ -3,6 +3,11 @@ in: header
 description: >
     Comma-separated list of **Room Member** fields to include in the response.
     Use this header as an alternative to the `fields` query parameter.
+    <br/><br/>
+    Its value is read exactly like that parameter: names that are not room member fields are
+    ignored, and so are the extra fields (ask for those through `X-ExtraFields`). A list with no
+    usable name is treated as if the header had been omitted, so the response carries the default
+    set of fields.
 required: false
 schema:
     type: string

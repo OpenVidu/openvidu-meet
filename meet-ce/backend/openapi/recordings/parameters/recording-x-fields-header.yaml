@@ -5,6 +5,9 @@ description: >
     Use this header to request only the data you need, reducing payload size and improving performance.
 
     When combined with the `fields` query parameter, values are merged (union of unique fields).
+    <br/><br/>
+    Names that are not recording fields are ignored. A list with no usable name is treated as if
+    the header had been omitted, so the response carries the full recording.
 
 required: false
 schema:

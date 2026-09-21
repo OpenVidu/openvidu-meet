@@ -3,6 +3,10 @@ in: query
 description: >
     Specifies which fields to include in the response for the room resource.
     Provide a comma-separated list of field names.
+    <br/><br/>
+    Names that are not room fields are ignored, and so are the extra fields (ask for those through
+    `extraFields`). A list with no usable name is treated as if the parameter had been omitted, so
+    the response carries the default set of fields.
 required: false
 schema:
     type: string
