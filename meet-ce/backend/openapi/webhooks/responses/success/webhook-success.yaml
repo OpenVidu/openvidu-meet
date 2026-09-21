@@ -5,3 +5,10 @@ description: |
     > receipt. Any processing should be done asynchronously after responding.
     >
     > Any other status, or a timeout, will trigger retries according to the webhook delivery policy.
+
+    **Delivery policy.** Each request is given 5 seconds to answer. A timeout, a non-2xx status or a
+    connection error is retried up to 5 times, waiting 0.3 s before the first retry and doubling
+    the wait for each one after it (0.3 s, 0.6 s, 1.2 s, 2.4 s, 4.8 s). Once the last attempt
+    fails the event is dropped: it is not stored and there is no way to ask for it again, so a
+    receiver that was down misses the events sent while it was. Endpoints are delivered to
+    concurrently and retried independently, so a slow or failing one never holds up the others.
