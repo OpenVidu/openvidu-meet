@@ -1,8 +1,26 @@
-description: Forbidden - Insufficient Permissions
+description: Forbidden - The credential is valid but the request is not allowed
 content:
     application/json:
         schema:
             $ref: '../../schemas/error.yaml'
-        example:
-            error: Authorization Error
-            message: 'Insufficient permissions to access this resource'
+        examples:
+            insufficient_permissions:
+                summary: The role or the room permissions of the caller do not cover the operation
+                value:
+                    error: Authorization Error
+                    message: 'Insufficient permissions to access this resource'
+            invalid_token_subject:
+                summary: The user the access token was issued for no longer exists
+                value:
+                    error: Authorization Error
+                    message: 'Invalid token subject'
+            invalid_api_key_subject:
+                summary: The user the API key belongs to no longer exists
+                value:
+                    error: Authorization Error
+                    message: 'Invalid API key subject. The user associated with the API key does not exist'
+            password_change_required:
+                summary: The user must change their password before reaching any other endpoint
+                value:
+                    error: Authorization Error
+                    message: 'Password change required. Please change your password before accessing other resources.'
