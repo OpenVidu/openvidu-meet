@@ -46,7 +46,8 @@ key set, and responses and webhooks carry both.
 | `left`            | `meetingLeft`     | event   |
 | `closed`          | `meetingClosed`   | event   |
 
-Both command and event name sets are accepted.
+Both command name sets are accepted. Every event is emitted under both names, so a listener
+registered on both receives it twice.
 
 ### Added
 
