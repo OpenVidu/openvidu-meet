@@ -31,8 +31,8 @@ export enum EmbeddedCommandName {
 	 */
 	PARTICIPANT_MUTE = 'participantMute',
 	/**
-	 * Turns off the microphone, camera or screen share of every participant except the moderators.
-	 * Each participant may turn their devices back on.
+	 * Turns off the microphone, camera or screen share of every participant except the moderators and
+	 * the caller. Each participant may turn their devices back on.
 	 * @moderator
 	 */
 	PARTICIPANT_MUTE_ALL = 'participantMuteAll',
