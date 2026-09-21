@@ -1,4 +1,6 @@
 import { inject, Service } from '@angular/core';
+import { acquireDevice, switchDevice } from '../../models/device-acquisition.model';
+import { isCapturing, LocalDevice } from '../../models/local-device.model';
 import { cameraCaptureOptions, microphoneCaptureOptions } from '../../models/media-capture.model';
 import type { ParticipantModel } from '../../models/participant.model';
 import { DeviceService } from '../device/device.service';
@@ -6,8 +8,6 @@ import type { CreateLocalTracksOptions, LocalAudioTrack, LocalTrack, LocalVideoT
 import { MediaDeviceFailure, Track } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { VideoTrackProcessorService } from '../track-processor/video-track-processor.service';
-import { acquireDevice, switchDevice } from './device-acquisition';
-import { isCapturing, LocalDevice } from './local-device';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { NotificationService } from '../../../../../shared/services/notification.service';
 

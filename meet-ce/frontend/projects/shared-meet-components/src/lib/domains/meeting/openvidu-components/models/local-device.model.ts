@@ -1,6 +1,6 @@
 import { computed, Signal, signal } from '@angular/core';
-import type { LocalTrack } from '../livekit';
-import { Track, TrackEvent } from '../livekit';
+import type { LocalTrack } from '../services/livekit';
+import { Track, TrackEvent } from '../services/livekit';
 
 /** Whether the track is delivering media right now: not muted, and its capture still running. */
 export const isCapturing = (track: LocalTrack): boolean =>

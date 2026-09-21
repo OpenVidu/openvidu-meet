@@ -1,4 +1,4 @@
-import type { ILogger } from '../../../../../shared/models/logger.model';
+import type { ILogger } from '../../../../shared/models/logger.model';
 
 /** How long a device that answered "still starting" is given to finish being released. */
 export const DEVICE_RELEASE_MS = 400;

@@ -34,6 +34,7 @@ export * from './directives/template/openvidu-components-angular.directive.modul
 export * from './models/data-topic.model';
 export * from './models/device.model';
 export * from './models/lang.model';
+export * from './models/local-device.model';
 export * from './models/meeting-view-state.model';
 export * from './models/layout/layout.model';
 export * from './models/layout/smart-layout.model';
@@ -51,7 +52,6 @@ export * from './pipes/translate.pipe';
 export * from './services/chat/chat.service';
 export * from './services/e2ee/e2ee.service';
 export * from './services/layout/smart-layout.service';
-export * from './services/local-media/local-device';
 export * from './services/local-media/local-media.service';
 export * from './services/meeting-phase/meeting-phase.service';
 export * from './services/meeting-ending-soon/meeting-ending-soon.service';
