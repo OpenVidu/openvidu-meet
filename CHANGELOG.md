@@ -135,7 +135,6 @@ registered on both receives it twice.
 - The local video disappeared from the layout when the last remote participant left.
 - A virtual background or blur froze for other participants when the sending window was minimized or covered, in Firefox and Safari.
 - Abandoned wizard state leaked into the next room, and a failed save reset the form.
-- A camera or microphone the system had not finished releasing failed to start, with a generic dialog or no message at all, and a failed device switch left the camera dead. The device is asked for again, a failed switch keeps the current device, and a notice names the device that could not be started.
 
 #### Deployment
 
