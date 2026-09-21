@@ -6,7 +6,8 @@ import { MeetParticipantMuteOptions } from '../request/meeting-request.js';
  * Canonical names follow the `moduleAction` scheme (module first, then an imperative verb), so a
  * module's commands sort and autocomplete together. The former action-first names are kept as
  * `@deprecated` aliases that forward to the canonical command, and are removed in **3.12.0**.
- * They are excluded from the generated documentation so new integrations only see canonical names.
+ * They are listed and marked deprecated in the generated documentation so a host still calling one
+ * can find it in the reference.
  */
 export enum EmbeddedCommandName {
 	/**

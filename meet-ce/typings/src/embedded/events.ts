@@ -6,8 +6,8 @@ import { MeetParticipantPayload } from '../response/participant-response.js';
  * Canonical names follow the `moduleEvent` scheme (module first, past tense). The former bare names
  * are kept as `@deprecated` aliases and are removed in **3.12.0**: until then **both** names are
  * dispatched for every lifecycle transition, so a host listening to the old and the new name is
- * called twice. They are excluded from the generated documentation so new integrations only see
- * canonical names.
+ * called twice. They are listed and marked deprecated in the generated documentation so a host
+ * still listening for one can find it in the reference.
  * @category Communication
  */
 export enum EmbeddedEventName {

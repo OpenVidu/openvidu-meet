@@ -47,9 +47,10 @@ or through the folder's `index.ts`).
   - `scripts/generate-webcomponent-docs.js` parses the JSDoc of the enums in `src/embedded/` to
     generate `docs/webcomponent/{attributes,commands,events}.md`. It reads the raw text, so keep the
     `/** … */` block directly above each enum member and keep one member per line. Tags like
-    `@required`, `@moderator`, `@prejoin` and `@category` are meaningful to that generator, and so is
-    **`@deprecated`**: a member carrying it is **excluded** from the generated tables (like `@private`),
-    so the public docs only ever show canonical names. The generator prints what it excluded.
+    `@required`, `@moderator`, `@prejoin` and `@category` are meaningful to that generator. Only
+    **`@private`** members are excluded from the generated tables; **`@deprecated`** members are listed
+    and marked deprecated, so a host still calling one can find it in the reference. The generator
+    prints what it excluded.
   - `{@link Other}` references are used throughout; keep them valid when renaming.
 - Domain entity types describe the **API/domain shape**, not the persistence shape. Mongo-only fields
   (`_id`, `schemaVersion`) stay in the backend's document types and are stripped before responses.
