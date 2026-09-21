@@ -327,6 +327,10 @@
             You can customize permissions for moderator and/or speaker roles.
             Only specify the permissions you want to change from the current configuration.
 
+            The effective permissions of every existing member are recomputed from the new roles,
+            and every room member token issued before the write stops being accepted (`401`),
+            so its holder needs a new one.
+
             **Access token roles**: `admin`, `room_manager`.
         tags:
             - OpenVidu Meet - Rooms
@@ -367,6 +371,9 @@
 
             This allows you to enable or disable access for users and/or
             for anonymous guests using a predefined role (moderator/speaker/recording).
+
+            Every room member token issued before the write stops being accepted (`401`),
+            so its holder needs a new one.
 
             **Access token roles**: `admin`, `room_manager`.
         tags:
