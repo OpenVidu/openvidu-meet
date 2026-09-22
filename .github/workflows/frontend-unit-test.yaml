@@ -6,6 +6,7 @@ on:
     tags-ignore: ['**']
     paths: &frontend-unit-test-paths
       - 'meet-ce/frontend/**'
+      - '!meet-ce/frontend/webcomponent/**'
       - 'meet-ce/typings/**'
       - 'meet.sh'
       - '.github/workflows/frontend-unit-test.yaml'

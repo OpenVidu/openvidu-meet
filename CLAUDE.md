@@ -69,10 +69,11 @@ Tests (each domain's `CLAUDE.md` documents what they cover):
 ./meet.sh test-unit-backend       # Jest
 ./meet.sh test-unit-frontend      # Karma, shared-meet-components
 ./meet.sh test-unit-webcomponent  # Jest
-./meet.sh test-e2e-frontend       # Playwright: spa + webcomponent projects
+./meet.sh test-e2e-frontend       # Playwright: spa project only
 ./meet.sh test-e2e-webcomponent   # Playwright: webcomponent project only
 ./meet.sh lint-backend            # ESLint, fails on any warning
 ./meet.sh lint-frontend
+./meet.sh lint-webcomponent       # ESLint, webcomponent/src + webcomponent/tests only
 ```
 
 CI-friendly flags on any command: `--skip-install`, `--skip-typings`, `--skip-build`.

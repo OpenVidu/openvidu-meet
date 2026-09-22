@@ -121,6 +121,9 @@ show_help() {
   echo -e "  ${BLUE}lint-frontend${NC}"
   echo "    Run ESLint over the frontend project (fails on any error or warning)"
   echo
+  echo -e "  ${BLUE}lint-webcomponent${NC}"
+  echo "    Run ESLint over the webcomponent project only (fails on any error or warning)"
+  echo
   echo -e "  ${BLUE}test-e2e-webcomponent${NC}"
   echo "    Run end-to-end tests for the webcomponent project (Playwright '--project=webcomponent')"
   echo -e "    ${YELLOW}Options:${NC} --force-install-browsers    Force reinstall of Playwright browsers"
@@ -333,6 +336,21 @@ lint_frontend() {
 
   echo -e "${GREEN}Running ESLint on the frontend...${NC}"
   pnpm --filter @openvidu-meet/frontend run lint
+}
+
+# Run ESLint over the webcomponent project only (webcomponent/src + webcomponent/tests), so a
+# webcomponent-only change gets linted without pulling in the frontend/library sources lint-frontend
+# also covers.
+lint_webcomponent() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Linting WebComponent (ESLint)${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  install_dependencies
+
+  echo -e "${GREEN}Running ESLint on the webcomponent...${NC}"
+  pnpm --filter @openvidu-meet/frontend run lint:webcomponent
 }
 
 # Run unit tests for the frontend shared-meet-components library (Karma)
@@ -1025,6 +1043,9 @@ main() {
       ;;
     lint-frontend)
       lint_frontend
+      ;;
+    lint-webcomponent)
+      lint_webcomponent
       ;;
     test-e2e-webcomponent)
       test_e2e_webcomponent "$@"

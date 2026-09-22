@@ -6,6 +6,7 @@ on:
     tags-ignore: ['**']
     paths: &frontend-e2e-test-paths
       - 'meet-ce/frontend/**'
+      - '!meet-ce/frontend/webcomponent/**'
       - 'meet-ce/backend/**'
       - 'meet-ce/typings/**'
       - 'meet.sh'

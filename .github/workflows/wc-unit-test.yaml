@@ -55,6 +55,10 @@ jobs:
       - name: Run tests
         run: ./meet.sh test-unit-webcomponent --skip-install
 
+      - name: Run ESLint
+        if: always()
+        run: ./meet.sh lint-webcomponent --skip-install
+
       - name: Clean up
         if: always()
         uses: OpenVidu/actions/cleanup@070fb73fda8fe7a08e28991b1c2d276f12a009ef # v1.0.22
