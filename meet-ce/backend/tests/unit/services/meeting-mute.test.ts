@@ -7,6 +7,7 @@ import type { ParticipantInfo, Room } from 'livekit-server-sdk';
 // starts the graph: importing MeetingService first leaves it uninitialized when RoomMemberService
 // declares its `@inject(MeetingService)` constructor.
 import '../../../src/config/dependency-injector.config.js';
+import { errorRoomNotFound } from '../../../src/models/error.model.js';
 import type { FrontendEventService } from '../../../src/services/frontend-event.service.js';
 import type { LiveKitService } from '../../../src/services/livekit.service.js';
 import type { LoggerService } from '../../../src/services/logger.service.js';
@@ -184,6 +185,32 @@ describe('MeetingService mute', () => {
 		expect(frontendEventService.sendParticipantMediaMutedSignal).toHaveBeenCalledWith(ROOM_ID, ['participant-2'], {
 			videoActive: false
 		});
+	});
+
+	it('tells nobody their devices are off when every mute failed', async () => {
+		const other = {
+			...speakerWith([{ ...camera, sid: 'cam-sid-2' }]),
+			identity: 'participant-2'
+		} as ParticipantInfo;
+		livekitService.listStandardParticipants.mockResolvedValue([speakerWith([camera]), other]);
+		livekitService.mutePublishedTrack.mockImplementation(async () => {
+			throw new Error('participant left');
+		});
+
+		await meetingService.muteAllParticipants(ROOM_ID, { videoActive: false });
+
+		expect(frontendEventService.sendParticipantMediaMutedSignal).not.toHaveBeenCalled();
+	});
+
+	it('answers the meeting-scoped 404 when the room has no live meeting', async () => {
+		livekitService.getRoom.mockRejectedValue(errorRoomNotFound(ROOM_ID) as never);
+		livekitService.listStandardParticipants.mockResolvedValue([speakerWith([microphone])]);
+
+		await expect(meetingService.muteAllParticipants(ROOM_ID, { audioActive: false })).rejects.toMatchObject({
+			statusCode: 404,
+			message: `Room '${ROOM_ID}' has no active meeting`
+		});
+		expect(livekitService.mutePublishedTrack).not.toHaveBeenCalled();
 	});
 
 	// The signal latches the participant's intent off and ends their screen share, so it must not

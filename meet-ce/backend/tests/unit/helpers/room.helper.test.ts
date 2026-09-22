@@ -57,3 +57,27 @@ describe('MeetRoomHelper.meetingRemainingMs', () => {
 		});
 	});
 });
+
+describe('MeetRoomHelper.sanitizeRoomId', () => {
+	it('keeps only letters, digits, hyphens and underscores', () => {
+		expect(MeetRoomHelper.sanitizeRoomId('a b/c_d-1!')).toBe('abc_d-1');
+	});
+});
+
+describe('MeetRoomHelper field stripping', () => {
+	const deleteFieldByPath = (entity: Record<string, unknown>, path: string) =>
+		(
+			MeetRoomHelper as unknown as {
+				deleteFieldByPath: (entity: Record<string, unknown>, path: string) => void;
+			}
+		).deleteFieldByPath(entity, path);
+
+	it('leaves the prototype chain alone for a path that walks into it', () => {
+		const prototype = { secret: 'kept' };
+		const entity = Object.create(prototype) as Record<string, unknown>;
+
+		deleteFieldByPath(entity, '__proto__.secret');
+
+		expect(prototype.secret).toBe('kept');
+	});
+});

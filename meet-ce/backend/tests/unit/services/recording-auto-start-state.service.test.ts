@@ -16,6 +16,7 @@ const noopLogger = { info: () => {}, warn: () => {}, debug: () => {}, error: () 
 
 class FakeRedisService {
 	store = new Map<string, string>();
+	refreshedKeys: string[] = [];
 
 	async get(key: string): Promise<string | null> {
 		return this.store.get(key) ?? null;
@@ -30,7 +31,8 @@ class FakeRedisService {
 		return this.store.delete(key) ? 1 : 0;
 	}
 
-	async setExpiration(): Promise<boolean> {
+	async setExpiration(key: string): Promise<boolean> {
+		this.refreshedKeys.push(key);
 		return true;
 	}
 }
@@ -80,6 +82,34 @@ describe("RecordingAutoStartStateService.activateAutoStart — B2: a late room_f
 	});
 });
 
+describe('RecordingAutoStartStateService.isDisabled (a flag only speaks for the meeting that set it)', () => {
+	it('does not block a later meeting with the flag an earlier one left behind', async () => {
+		const service = buildService(new FakeRedisService());
+		await service.markDisabled('room-1', 'sid-old');
+
+		expect(await service.isDisabled('room-1', 'sid-new')).toBe(false);
+	});
+
+	it('does not block a room with the flag of another room', async () => {
+		const service = buildService(new FakeRedisService());
+		await service.markDisabled('room-1', 'sid-N');
+
+		expect(await service.isDisabled('room-2', 'sid-N')).toBe(false);
+	});
+
+	it('refreshes the flag only when it is the one being read', async () => {
+		const redis = new FakeRedisService();
+		const service = buildService(redis);
+		await service.markDisabled('room-1', 'sid-N');
+
+		await service.isDisabled('room-1', 'sid-other');
+		expect(redis.refreshedKeys).toEqual([]);
+
+		await service.isDisabled('room-1', 'sid-N');
+		expect(redis.refreshedKeys).toEqual([...redis.store.keys()]);
+	});
+});
+
 /**
  * B10 (MEET-BRANCH-AUDIT-FINDINGS.md): a promotion evaluates the threshold with the triggering
  * participant already in the listing, under the role LiveKit has not published back yet. The
@@ -115,6 +145,13 @@ describe('RecordingAutoStartStateService.hasReachedAutoStartThreshold — the ca
 		expect(service.hasReachedAutoStartThreshold('room-1', whenSecondParticipantJoins, joiner, [joiner])).toBe(
 			false
 		);
+	});
+
+	it('does not count the participants the preset does not name', () => {
+		const joiner = participant('speaker-1', MeetRoomMemberUIBadge.OTHER);
+		const listing = [participant('speaker-2', MeetRoomMemberUIBadge.OTHER)];
+
+		expect(service.hasReachedAutoStartThreshold('room-1', whenModeratorJoins, joiner, listing)).toBe(false);
 	});
 
 	it('counts a candidate the listing has not caught up with yet', () => {

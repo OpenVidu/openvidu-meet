@@ -40,6 +40,20 @@ describe.each([
 		);
 	});
 
+	it('accepts a pattern sitting exactly on the length limit', () => {
+		expect(issueFor(schema, withPattern('a'.repeat(100)), field)).toBeUndefined();
+	});
+
+	it('accepts a quantifier sitting exactly on the PCRE ceiling', () => {
+		expect(issueFor(schema, withPattern('a{1,65535}'), field)).toBeUndefined();
+	});
+
+	it('rejects a multi-digit upper bound above the ceiling', () => {
+		expect(issueFor(schema, withPattern('a{1,70000}'), field)).toBe(
+			'Regular expression quantifiers cannot exceed 65535'
+		);
+	});
+
 	it('rejects a pattern that does not compile', () => {
 		expect(issueFor(schema, withPattern('('), field)).toBe('Invalid regular expression pattern');
 	});

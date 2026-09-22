@@ -101,6 +101,19 @@ describe('WebhookRegistryService.createWebhook (registration count-then-create r
 		}
 	});
 
+	it('registers a webhook the caller said nothing about as enabled', async () => {
+		const repository = new FakeWebhookRepository();
+		const service = new WebhookRegistryService(
+			...([noopLogger, repository, {}, realMutexOverFakeRedis()] as unknown as ConstructorParameters<
+				typeof WebhookRegistryService
+			>)
+		);
+
+		const webhook = await service.createWebhook({ url: 'https://example.com/hook' });
+
+		expect(webhook.enabled).toBe(true);
+	});
+
 	it('waits for a registration in progress instead of turning the caller away', async () => {
 		const repository = new FakeWebhookRepository();
 		const service = new WebhookRegistryService(
@@ -125,6 +138,8 @@ describe('WebhookRegistryService.createWebhook (registration count-then-create r
 describe('WebhookRegistryService.initializeDefaultWebhook (runs on every start)', () => {
 	const initialUrl = 'https://initial.example.com/hook';
 	const originalUrl = MEET_ENV.INITIAL_WEBHOOK_URL;
+	const originalEnabled = MEET_ENV.INITIAL_WEBHOOK_ENABLED;
+	const originalApiKey = MEET_ENV.INITIAL_API_KEY;
 
 	const seededService = (repository: FakeWebhookRepository) =>
 		new WebhookRegistryService(
@@ -139,6 +154,23 @@ describe('WebhookRegistryService.initializeDefaultWebhook (runs on every start)'
 
 	afterEach(() => {
 		MEET_ENV.INITIAL_WEBHOOK_URL = originalUrl;
+		MEET_ENV.INITIAL_WEBHOOK_ENABLED = originalEnabled;
+		MEET_ENV.INITIAL_API_KEY = originalApiKey;
+	});
+
+	// A webhook is delivered signed with the API key, so one cannot be enabled without a key to sign with.
+	it.each([
+		['enabled when the deployment asked for it and can sign it', 'true', 'initial-api-key', true],
+		['disabled when no API key can sign its deliveries', 'true', '', false],
+		['disabled when the deployment did not ask for it', 'false', 'initial-api-key', false]
+	])('registers it %s', async (_case, enabled, apiKey, expected) => {
+		MEET_ENV.INITIAL_WEBHOOK_ENABLED = enabled;
+		MEET_ENV.INITIAL_API_KEY = apiKey;
+		const repository = new FakeWebhookRepository();
+
+		await seededService(repository).initializeDefaultWebhook();
+
+		expect(repository.documents[0].enabled).toBe(expected);
 	});
 
 	it('registers the configured webhook on a deployment that has none', async () => {

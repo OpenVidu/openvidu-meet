@@ -144,9 +144,10 @@ class FakeStartLiveKitService {
 
 class FakeLockMutexService {
 	released: string[] = [];
+	acquirable = true;
 
-	async acquireWithRegistry(key: string): Promise<object> {
-		return { key };
+	async acquireWithRegistry(key: string): Promise<object | null> {
+		return this.acquirable ? { key } : null;
 	}
 
 	async lockRegistryExists(): Promise<boolean> {
@@ -160,6 +161,7 @@ class FakeLockMutexService {
 
 class FakeAutoStartState {
 	reads: [string, string][] = [];
+	thresholdReached = true;
 
 	constructor(private disabled: boolean) {}
 
@@ -169,7 +171,7 @@ class FakeAutoStartState {
 	}
 
 	hasReachedAutoStartThreshold(): boolean {
-		return true;
+		return this.thresholdReached;
 	}
 }
 
@@ -264,5 +266,76 @@ describe('RecordingService.startRecording — B8: the deliberate-stop latch is r
 		);
 
 		expect(startArgs).toEqual([ROOM_ID, undefined, MEETING_ID]);
+	});
+});
+
+describe('RecordingService.startRecording (the guards that say no)', () => {
+	it('answers 409 without asking LiveKit for an egress when the room is already recording', async () => {
+		const { service, livekit, mutex } = buildStartService(false);
+		mutex.acquirable = false;
+
+		await expect(service.startRecording(ROOM_ID)).rejects.toMatchObject({ statusCode: 409 });
+
+		expect(livekit.composites).toEqual([]);
+	});
+});
+
+describe('RecordingService.startAutoRecordingIfNeeded (the guards that say no)', () => {
+	const autoStartMode = MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS;
+
+	const buildAutoStartService = (config: unknown, latchDisabled = false) => {
+		const { service, latch } = buildStartService(latchDisabled);
+		(service as unknown as { getRoomService: () => Promise<unknown> }).getRoomService = async () => ({
+			getMeetRoom: async () => ({ config })
+		});
+
+		const starts: unknown[][] = [];
+		service.startRecording = async (...args) => {
+			starts.push(args);
+			return { recordingId: 'rec-1' } as Awaited<ReturnType<RecordingService['startRecording']>>;
+		};
+
+		const start = () =>
+			service.startAutoRecordingIfNeeded(
+				{ name: ROOM_ID, sid: MEETING_ID } as Room,
+				{ identity: 'participant-1' } as ParticipantInfo
+			);
+
+		return { start, starts, latch };
+	};
+
+	it.each([
+		['recording is off for the room', { enabled: false, autoStart: autoStartMode }, { enabled: false }],
+		['the room does not auto-start', { enabled: true, autoStart: null }, { enabled: false }],
+		['the meeting is end-to-end encrypted', { enabled: true, autoStart: autoStartMode }, { enabled: true }]
+	])('does not start a recording when %s', async (_case, recording, e2ee) => {
+		const { start, starts } = buildAutoStartService({ recording, e2ee });
+
+		await start();
+
+		expect(starts).toEqual([]);
+	});
+
+	it('does not start again after a deliberate stop in the same meeting', async () => {
+		const { start, starts } = buildAutoStartService(
+			{ recording: { enabled: true, autoStart: autoStartMode }, e2ee: { enabled: false } },
+			true
+		);
+
+		await start();
+
+		expect(starts).toEqual([]);
+	});
+
+	it('does not start before the meeting reaches the threshold of the configured preset', async () => {
+		const { start, starts, latch } = buildAutoStartService({
+			recording: { enabled: true, autoStart: autoStartMode },
+			e2ee: { enabled: false }
+		});
+		latch.thresholdReached = false;
+
+		await start();
+
+		expect(starts).toEqual([]);
 	});
 });

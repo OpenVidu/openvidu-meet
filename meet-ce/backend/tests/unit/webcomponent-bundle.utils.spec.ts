@@ -1,4 +1,4 @@
-import { afterAll, describe, expect, it } from '@jest/globals';
+import { afterAll, describe, expect, it, jest } from '@jest/globals';
 import crypto from 'crypto';
 import fs from 'fs';
 import os from 'os';
@@ -76,10 +76,14 @@ describe('webcomponent-bundle.utils - ETag with content-hash sidecar', () => {
 		expect(getWebcomponentBundleEtag(file)).toBe(`"${sha256(content)}"`);
 	});
 
-	it('ignores a malformed sidecar and recomputes', () => {
-		const content = 'bundle-malformed-sidecar';
+	it.each([
+		['is not a hash at all', 'not-a-valid-sha256'],
+		['carries something before the hash', `zz${'a'.repeat(64)}`],
+		['carries something after the hash', `${'a'.repeat(64)}zz`]
+	])('ignores a sidecar whose first word %s and recomputes', (_case, sidecar) => {
+		const content = `bundle-malformed-sidecar-${sidecar}`;
 		const file = makeBundle(content);
-		fs.writeFileSync(`${file}.sha256`, 'not-a-valid-sha256');
+		fs.writeFileSync(`${file}.sha256`, sidecar);
 
 		expect(getWebcomponentBundleEtag(file)).toBe(`"${sha256(content)}"`);
 	});
@@ -88,11 +92,43 @@ describe('webcomponent-bundle.utils - ETag with content-hash sidecar', () => {
 		expect(getWebcomponentBundleEtag(path.join(os.tmpdir(), `ov-meet-missing-${process.pid}.js`))).toBeNull();
 	});
 
+	it('returns null when the bundle path is not a readable file', () => {
+		expect(getWebcomponentBundleEtag(os.tmpdir())).toBeNull();
+	});
+
 	it('returns the cached ETag on repeated reads of an unchanged bundle', () => {
 		const file = makeBundle('bundle-cached');
 		const first = getWebcomponentBundleEtag(file);
 
 		expect(getWebcomponentBundleEtag(file)).toBe(first);
+	});
+
+	it('hashes an unchanged bundle once, however many requests ask for its ETag', () => {
+		const file = makeBundle('bundle-hashed-once');
+		const readFileSync = jest.spyOn(fs, 'readFileSync');
+
+		try {
+			getWebcomponentBundleEtag(file);
+			getWebcomponentBundleEtag(file);
+			getWebcomponentBundleEtag(file);
+
+			expect(readFileSync.mock.calls.filter(([read]) => read === file)).toHaveLength(1);
+		} finally {
+			readFileSync.mockRestore();
+		}
+	});
+
+	it('hashes the bundle again when it changes under the same path', () => {
+		const file = makeBundle('bundle-before-redeploy');
+		const before = getWebcomponentBundleEtag(file);
+
+		const content = 'bundle-after-redeploy';
+		fs.writeFileSync(file, content);
+		const later = new Date(Date.now() + 60_000);
+		fs.utimesSync(file, later, later);
+
+		expect(getWebcomponentBundleEtag(file)).toBe(`"${sha256(content)}"`);
+		expect(getWebcomponentBundleEtag(file)).not.toBe(before);
 	});
 });
 

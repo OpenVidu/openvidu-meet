@@ -107,7 +107,7 @@ describe('Room member migration v1 → v2', () => {
 		} as unknown as MeetRoomMemberDocument;
 
 		// Nothing to inherit from: the member keeps deferring to its role for the new permission.
-		expect(roomMemberV1ToV2(untouched).customPermissions).toEqual({ chatWrite: false });
+		expect(roomMemberV1ToV2(untouched).customPermissions).toStrictEqual({ chatWrite: false });
 
 		const overriding = {
 			memberId: 'member-456',
@@ -120,6 +120,16 @@ describe('Room member migration v1 → v2', () => {
 });
 
 describe('Room member migration v2 → v3', () => {
+	it('should leave an overlay that already decides the read permission as it is', () => {
+		const migrated = roomMemberV2ToV3({
+			memberId: 'member-123',
+			customPermissions: { meetingJoin: true, meetingRead: false },
+			effectivePermissions: Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true]))
+		} as unknown as MeetRoomMemberDocument);
+
+		expect(migrated.customPermissions).toStrictEqual({ meetingJoin: true, meetingRead: false });
+	});
+
 	it('should complete effectivePermissions already keyed with the current names', () => {
 		const effectivePermissions = Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true]));
 		delete effectivePermissions.participantMute;

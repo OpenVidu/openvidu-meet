@@ -141,10 +141,15 @@ class FakeRoomScheduledTasksService {
 
 class FakeRoomRepository {
 	updatePartialCalls: Array<{ roomId: string; fields: unknown }> = [];
+	deletedRoomIds: string[] = [];
 
 	async updatePartial(roomId: string, fields: unknown) {
 		this.updatePartialCalls.push({ roomId, fields });
 		return { roomId, ...(fields as object) };
+	}
+
+	async deleteByRoomId(roomId: string) {
+		this.deletedRoomIds.push(roomId);
 	}
 }
 
@@ -299,29 +304,81 @@ describe('LivekitWebhookService duration-limit timer wiring', () => {
  * other used a double that ignored the sid, and the synthetic `Room` between them type-checked.
  */
 describe('LivekitWebhookService.handleRoomFinished (force-end attribution reaches the webhook)', () => {
-	const buildFinishedService = (redis: FakeRedisService) => {
+	const buildFinishedService = (redis: FakeRedisService, meetingEndAction = MeetingEndAction.NONE) => {
 		const webhookDispatcherService = new FakeWebhookDispatcherService();
+		const roomRepository = new FakeRoomRepository();
+		const cleanups: string[] = [];
+		const record = (name: string) => async (roomId: string) => {
+			cleanups.push(`${name}(${roomId})`);
+		};
 		const service = new TestableRoomLifecycleService(
 			...([
-				{ reactivateAutoRecording: async () => {}, releaseRecordingLockIfNoEgress: async () => {} },
+				{
+					reactivateAutoRecording: async () => {},
+					releaseRecordingLockIfNoEgress: record('releaseRecordingLockIfNoEgress'),
+					deleteAllRoomRecordings: record('deleteAllRoomRecordings')
+				},
 				{},
 				new FakeLiveKitService(),
-				{ getMeetRoom: async () => ({ roomId: 'room-1', meetingEndAction: MeetingEndAction.NONE }) },
-				new FakeRoomRepository(),
+				{ getMeetRoom: async () => ({ roomId: 'room-1', meetingEndAction }) },
+				roomRepository,
 				webhookDispatcherService,
 				{},
-				{ cleanupParticipantNames: async () => {} },
-				{ removeRoomFromAllUsers: async () => {} },
-				{},
-				{ cleanupState: async () => {} },
+				{ cleanupParticipantNames: record('cleanupParticipantNames') },
+				{ removeRoomFromAllUsers: record('removeRoomFromAllUsers') },
+				{ deleteAllByRoomId: record('deleteAllByRoomId') },
+				{ cleanupState: record('cleanupState') },
 				{},
 				redis,
 				new FakeLogger()
 			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
 		);
 
-		return { service, webhookDispatcherService };
+		return { service, webhookDispatcherService, roomRepository, cleanups };
 	};
+
+	it('reopens the room and runs every cleanup when the meeting ends normally', async () => {
+		const { service, roomRepository, cleanups } = buildFinishedService(new FakeRedisService());
+
+		await service.handleRoomFinished({ name: 'room-1', sid: 'sid-1' });
+
+		expect(roomRepository.updatePartialCalls).toEqual([
+			{ roomId: 'room-1', fields: { status: MeetRoomStatus.OPEN } }
+		]);
+		expect(cleanups.sort()).toEqual([
+			'cleanupParticipantNames(room-1)',
+			'cleanupState(room-1)',
+			'releaseRecordingLockIfNoEgress(room-1)',
+			'removeRoomFromAllUsers(room-1)'
+		]);
+	});
+
+	it('closes the room and forgets the end action when it was scheduled to close', async () => {
+		const { service, roomRepository } = buildFinishedService(new FakeRedisService(), MeetingEndAction.CLOSE);
+
+		await service.handleRoomFinished({ name: 'room-1', sid: 'sid-1' });
+
+		expect(roomRepository.updatePartialCalls).toEqual([
+			{
+				roomId: 'room-1',
+				fields: { status: MeetRoomStatus.CLOSED, meetingEndAction: MeetingEndAction.NONE }
+			}
+		]);
+	});
+
+	it('deletes the room, its members and its recordings when it was scheduled for deletion', async () => {
+		const { service, roomRepository, cleanups } = buildFinishedService(
+			new FakeRedisService(),
+			MeetingEndAction.DELETE
+		);
+
+		await service.handleRoomFinished({ name: 'room-1', sid: 'sid-1' });
+
+		expect(roomRepository.deletedRoomIds).toEqual(['room-1']);
+		expect(roomRepository.updatePartialCalls).toEqual([]);
+		expect(cleanups).toContain('deleteAllRoomRecordings(room-1)');
+		expect(cleanups).toContain('deleteAllByRoomId(room-1)');
+	});
 
 	it('attributes the end to the duration limit for a caller that knows only the room', async () => {
 		const redis = new FakeRedisService();

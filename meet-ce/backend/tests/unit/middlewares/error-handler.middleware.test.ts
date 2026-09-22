@@ -1,5 +1,5 @@
-import { beforeAll, describe, expect, it } from '@jest/globals';
-import express from 'express';
+import { beforeAll, describe, expect, it, jest } from '@jest/globals';
+import express, { type NextFunction, type Request, type Response } from 'express';
 import request from 'supertest';
 import { registerDependencies } from '../../../src/config/dependency-injector.config.js';
 import { globalErrorHandler } from '../../../src/middlewares/error-handler.middleware.js';
@@ -45,6 +45,17 @@ describe('globalErrorHandler', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual({ error: 'Bad Request', message: 'Malformed body' });
+	});
+
+	it('leaves an error raised after the response started to Express, instead of writing a second one', () => {
+		const next = jest.fn() as NextFunction;
+		const res = { headersSent: true, status: jest.fn() } as unknown as Response;
+		const failure = new Error('connection reset while streaming a recording');
+
+		globalErrorHandler(failure, {} as Request, res, next);
+
+		expect(next).toHaveBeenCalledWith(failure);
+		expect(res.status).not.toHaveBeenCalled();
 	});
 
 	it('masks any other error as a 500 without leaking its message', async () => {
