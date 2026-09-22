@@ -44,7 +44,7 @@ key set, and responses and webhooks carry both.
 | `kickParticipant` | `participantKick` | command |
 | `joined`          | `meetingJoined`   | event   |
 | `left`            | `meetingLeft`     | event   |
-| `closed`          | `meetingClosed`   | event   |
+| `closed`          | `viewClosed`      | event   |
 
 Both command name sets are accepted. Every event is emitted under both names, so a listener
 registered on both receives it twice.

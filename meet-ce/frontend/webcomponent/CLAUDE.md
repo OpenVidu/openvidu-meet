@@ -63,7 +63,7 @@ events are re-dispatched on the outer element.
   `config.initial*Active`, unset defers to it), `e2ee-key`, `leave-redirect-url`,
   `show-only-recordings`, `show-recording`. Either `room-url` or `recording-url` is required.
 - **Events** (`CustomEvent`, `detail` = payload): `meetingJoined`, `meetingLeft` (with
-  `LeftEventReason`), `meetingClosed`, `mediaAudioStatusChanged`/`mediaVideoStatusChanged`/
+  `LeftEventReason`), `viewClosed`, `mediaAudioStatusChanged`/`mediaVideoStatusChanged`/
   `mediaScreenShareStatusChanged` (local participant only, payload `{active, origin}`),
   `participantJoined`/`participantLeft` (**remote**
   participants only; payload `{ roomId, participant: MeetParticipantPayload }` — identity,

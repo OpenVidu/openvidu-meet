@@ -15,8 +15,9 @@
  *   module).
  * - A token belongs to **exactly one** module, and no token may be a prefix of another (prefix
  *   matching would turn ambiguous).
- * - Reserved meanings: `broadcast` is RTMP egress only, `reaction` is the emoji overlay only, and
- *   chat content is `message`/`messages` only.
+ * - Reserved meanings: `broadcast` is RTMP egress only, `reaction` is the emoji overlay only,
+ *   chat content is `message`/`messages` only, and `view` is the embedded application surface a
+ *   host mounts (not the meeting running inside it, which is `meeting`).
  *
  * The list covers the implemented modules and the ones the API studies already commit to
  * (`lobby`, `hand`, `breakout`, `notes`, `whiteboard`, `file`, `reaction`, `broadcast`), so a
@@ -28,6 +29,7 @@ export const MEET_API_MODULES = [
 	'participant',
 	'media',
 	'recording',
+	'view',
 	'broadcast',
 	'lobby',
 	'chat',

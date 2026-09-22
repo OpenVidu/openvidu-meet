@@ -20,10 +20,6 @@ export enum EmbeddedEventName {
 	 */
 	MEETING_LEFT = 'meetingLeft',
 	/**
-	 * Event emitted when the application is closed.
-	 */
-	MEETING_CLOSED = 'meetingClosed',
-	/**
 	 * Event emitted when a remote participant joins the meeting. Only live transitions are
 	 * notified: participants already in the meeting when the local one joins are not replayed.
 	 * The local participant's own join is notified through `meetingJoined` instead.
@@ -50,6 +46,13 @@ export enum EmbeddedEventName {
 	 */
 	MEDIA_SCREEN_SHARE_STATUS_CHANGED = 'mediaScreenShareStatusChanged',
 	/**
+	 * Event emitted when the participant dismisses the post-meeting, lobby, error or recording
+	 * screen, ending their interaction with the embedded application. The meeting itself may still
+	 * be running for the other participants; the host application uses this event to take its view
+	 * back or route the participant elsewhere.
+	 */
+	VIEW_CLOSED = 'viewClosed',
+	/**
 	 * Event emitted when the local participant joins the meeting.
 	 * @deprecated Renamed to `meetingJoined` ({@link EmbeddedEventName.MEETING_JOINED}). Removed in 3.12.0.
 	 */
@@ -60,8 +63,8 @@ export enum EmbeddedEventName {
 	 */
 	LEFT = 'left',
 	/**
-	 * Event emitted when the application is closed.
-	 * @deprecated Renamed to `meetingClosed` ({@link EmbeddedEventName.MEETING_CLOSED}). Removed in 3.12.0.
+	 * Event emitted when the participant closes the embedded application view.
+	 * @deprecated Renamed to `viewClosed` ({@link EmbeddedEventName.VIEW_CLOSED}). Removed in 3.12.0.
 	 */
 	CLOSED = 'closed'
 }
@@ -195,7 +198,7 @@ export interface EmbeddedEventPayloads {
 export const EMBEDDED_EVENT_ALIASES = {
 	[EmbeddedEventName.JOINED]: EmbeddedEventName.MEETING_JOINED,
 	[EmbeddedEventName.LEFT]: EmbeddedEventName.MEETING_LEFT,
-	[EmbeddedEventName.CLOSED]: EmbeddedEventName.MEETING_CLOSED
+	[EmbeddedEventName.CLOSED]: EmbeddedEventName.VIEW_CLOSED
 } as const satisfies Readonly<Partial<Record<EmbeddedEventName, EmbeddedEventName>>>;
 
 /**
@@ -244,14 +247,6 @@ export interface EmbeddedMeetingJoinedEvent {
 export interface EmbeddedMeetingLeftEvent {
 	event: EmbeddedEventName.MEETING_LEFT;
 	payload: EmbeddedEventPayloadFor<EmbeddedEventName.MEETING_LEFT>;
-}
-
-/**
- * Event message emitted when the application closes (no payload).
- * @category Communication
- */
-export interface EmbeddedMeetingClosedEvent {
-	event: EmbeddedEventName.MEETING_CLOSED;
 }
 
 /**
@@ -305,6 +300,14 @@ export interface EmbeddedMediaScreenShareStatusChangedEvent {
 }
 
 /**
+ * Event message emitted when the participant closes the embedded application view (no payload).
+ * @category Communication
+ */
+export interface EmbeddedViewClosedEvent {
+	event: EmbeddedEventName.VIEW_CLOSED;
+}
+
+/**
  * Event message emitted when the local participant joins the meeting.
  * @category Communication
  * @deprecated Use {@link EmbeddedMeetingJoinedEvent}. Removed in 3.12.0.
@@ -325,9 +328,9 @@ export interface EmbeddedLeftEvent {
 }
 
 /**
- * Event message emitted when the application closes (no payload).
+ * Event message emitted when the participant closes the embedded application view (no payload).
  * @category Communication
- * @deprecated Use {@link EmbeddedMeetingClosedEvent}. Removed in 3.12.0.
+ * @deprecated Use {@link EmbeddedViewClosedEvent}. Removed in 3.12.0.
  */
 export interface EmbeddedClosedEvent {
 	event: EmbeddedEventName.CLOSED;
@@ -343,12 +346,12 @@ export interface EmbeddedClosedEvent {
 export type EmbeddedEvent =
 	| EmbeddedMeetingJoinedEvent
 	| EmbeddedMeetingLeftEvent
-	| EmbeddedMeetingClosedEvent
 	| EmbeddedParticipantJoinedEvent
 	| EmbeddedParticipantLeftEvent
 	| EmbeddedMediaAudioStatusChangedEvent
 	| EmbeddedMediaVideoStatusChangedEvent
 	| EmbeddedMediaScreenShareStatusChangedEvent
+	| EmbeddedViewClosedEvent
 	| EmbeddedJoinedEvent
 	| EmbeddedLeftEvent
 	| EmbeddedClosedEvent;

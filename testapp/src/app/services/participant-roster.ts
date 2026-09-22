@@ -34,7 +34,7 @@ export class ParticipantRosterService {
 				break;
 
 			case EmbeddedEventName.MEETING_LEFT:
-			case EmbeddedEventName.MEETING_CLOSED:
+			case EmbeddedEventName.VIEW_CLOSED:
 				this.clear();
 				break;
 		}

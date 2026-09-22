@@ -119,19 +119,19 @@ export class App {
 	// to both receives the event twice until the alias is removed in 3.12.0.
 	readonly meetingJoined = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEETING_JOINED>>();
 	readonly meetingLeft = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEETING_LEFT>>();
-	readonly meetingClosed = output<void>();
 	readonly participantJoined = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_JOINED>>();
 	readonly participantLeft = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_LEFT>>();
 	readonly mediaAudioStatusChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED>>();
 	readonly mediaVideoStatusChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED>>();
 	readonly mediaScreenShareStatusChanged =
 		output<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED>>();
+	readonly viewClosed = output<void>();
 
 	/** @deprecated Renamed to `meetingJoined`. Removed in 3.12.0. Dispatched alongside it. */
 	readonly joined = output<EmbeddedEventPayloadFor<EmbeddedEventName.JOINED>>();
 	/** @deprecated Renamed to `meetingLeft`. Removed in 3.12.0. Dispatched alongside it. */
 	readonly left = output<EmbeddedEventPayloadFor<EmbeddedEventName.LEFT>>();
-	/** @deprecated Renamed to `meetingClosed`. Removed in 3.12.0. Dispatched alongside it. */
+	/** @deprecated Renamed to `viewClosed`. Removed in 3.12.0. Dispatched alongside it. */
 	readonly closed = output<void>();
 
 	// ── Derived state ────────────────────────────────────────────────────────
@@ -313,13 +313,10 @@ export class App {
 	// only ever handles canonical names; emitting the deprecated output alongside the canonical
 	// one is this method's job, not the bus's.
 	private handleWebComponentEvent(embeddedEvent: EmbeddedEvent): void {
-		// The closed events carry no payload, so they are handled before the destructuring below
+		// The view-closed events carry no payload, so they are handled before the destructuring below
 		// (the deprecated CLOSED never actually reaches here — the bus is canonical-only).
-		if (
-			embeddedEvent.event === EmbeddedEventName.MEETING_CLOSED ||
-			embeddedEvent.event === EmbeddedEventName.CLOSED
-		) {
-			this.meetingClosed.emit();
+		if (embeddedEvent.event === EmbeddedEventName.VIEW_CLOSED || embeddedEvent.event === EmbeddedEventName.CLOSED) {
+			this.viewClosed.emit();
 			this.closed.emit();
 			return;
 		}

@@ -92,7 +92,8 @@ token.
 - **REST**: live meeting state is a sub-resource of `/meetings/{roomId}`; only durable artifacts
   and platform groups are top-level (see `MEET_API_REST_GROUPS`). Collections plural, singletons
   singular. `operationId` = `moduleAction`.
-- **Reserved words**: `broadcast` = RTMP only, `reaction` = emoji only, `message(s)` = chat only.
+- **Reserved words**: `broadcast` = RTMP only, `reaction` = emoji only, `message(s)` = chat only,
+  `view` = the embedded application surface a host mounts (the meeting inside it is `meeting`).
 - **Known exceptions** the lint allows on purpose: the 3.8.0 deprecated aliases (derived from the
   alias maps, gone in 3.12.0) and the wrapper's `ready` event (outside the scheme, pending
   sign-off). `lobbyKnocked`/`participantKnocked` will be a deliberate cross-module alias when the

@@ -8,7 +8,7 @@ import { LoggerService } from '../../../shared/services/logger.service';
  * webcomponent as public DOM `CustomEvent`s, the iframe bridge as `postMessage`s.
  *
  * The queue only ever carries **canonical** event names (`meetingJoined`/`meetingLeft`/
- * `meetingClosed`); each shell is responsible for also dispatching the deprecated 3.8.0 name
+ * `viewClosed`); each shell is responsible for also dispatching the deprecated 3.8.0 name
  * (`joined`/`left`/`closed`) alongside it until the alias is removed in 3.12.0, so a host
  * listening to both receives the event twice. Each is part of the host contract and must not be
  * lost — Angular effects read only the latest value when they flush, so same-tick emits on a

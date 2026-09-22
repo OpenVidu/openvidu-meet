@@ -73,12 +73,12 @@ describe('Embedded event names', () => {
 			[
 				'meetingJoined',
 				'meetingLeft',
-				'meetingClosed',
 				'participantJoined',
 				'participantLeft',
 				'mediaAudioStatusChanged',
 				'mediaVideoStatusChanged',
 				'mediaScreenShareStatusChanged',
+				'viewClosed',
 				'joined',
 				'left',
 				'closed'
@@ -107,7 +107,7 @@ describe('Embedded event names', () => {
 	it('should find the deprecated alias of every canonical event, so both can be dispatched', () => {
 		expect(deprecatedEmbeddedEventAliasOf(EmbeddedEventName.MEETING_JOINED)).toBe(EmbeddedEventName.JOINED);
 		expect(deprecatedEmbeddedEventAliasOf(EmbeddedEventName.MEETING_LEFT)).toBe(EmbeddedEventName.LEFT);
-		expect(deprecatedEmbeddedEventAliasOf(EmbeddedEventName.MEETING_CLOSED)).toBe(EmbeddedEventName.CLOSED);
+		expect(deprecatedEmbeddedEventAliasOf(EmbeddedEventName.VIEW_CLOSED)).toBe(EmbeddedEventName.CLOSED);
 	});
 
 	it('should report no alias for a name that is already deprecated', () => {
