@@ -38,9 +38,11 @@ describe('MeetingLobbyService', () => {
 		meetingUI: () => { showJoinMeeting: boolean; showShareAccessLinks: boolean };
 	};
 	let e2eeEnabled: boolean;
+	let speakerPublicLink: string | undefined;
 
 	beforeEach(() => {
 		e2eeEnabled = false;
+		speakerPublicLink = undefined;
 		roomService = jasmine.createSpyObj<RoomService>('RoomService', ['getRoom', 'loadRoomConfig']);
 		roomService.getRoom.and.callFake(
 			async () =>
@@ -96,7 +98,7 @@ describe('MeetingLobbyService', () => {
 				{ provide: RoomMemberContextService, useValue: roomMemberContext },
 				{ provide: E2eeService, useValue: e2eeService },
 				{ provide: MeetingContextService, useValue: meetingContextStub },
-				{ provide: RoomAccessLinkService, useValue: { speakerPublicLink: () => undefined } },
+				{ provide: RoomAccessLinkService, useValue: { speakerPublicLink: () => speakerPublicLink } },
 				{ provide: RecordingService, useValue: { listRecordings: async () => ({ recordings: [] }) } },
 				{
 					provide: AuthService,
@@ -122,6 +124,112 @@ describe('MeetingLobbyService', () => {
 	function joinTokenOptions(): MeetRoomMemberTokenOptions {
 		return roomMemberContext.generateToken.calls.mostRecent().args[1];
 	}
+
+	// Everything the lobby screen renders comes from these computeds: the room's name, whether it
+	// still accepts anyone, whether a key is needed, and the name and link fields.
+	describe('what the lobby shows', () => {
+		it('exposes the room it loaded', async () => {
+			await service.initialize();
+
+			expect(service.roomName()).toBe('Room One');
+			expect(service.roomClosed()).toBeFalse();
+			expect(service.hasRoomE2EEEnabled()).toBeFalse();
+			expect(service.canJoinMeeting()).toBeTrue();
+		});
+
+		it('reports a closed room as closed', async () => {
+			roomService.getRoom.and.resolveTo({
+				roomId: ROOM_ID,
+				roomName: 'Room One',
+				status: MeetRoomStatus.CLOSED,
+				config: { e2ee: { enabled: false } }
+			} as never);
+
+			await service.initialize();
+
+			expect(service.roomClosed()).toBeTrue();
+		});
+
+		it('asks for the key of an encrypted room', async () => {
+			e2eeEnabled = true;
+
+			await service.initialize();
+
+			expect(service.hasRoomE2EEEnabled()).toBeTrue();
+			expect(service.showE2EEKeyInput()).toBeTrue();
+		});
+
+		it('does not ask for a key the access url already carried', async () => {
+			e2eeEnabled = true;
+			meetingContextStub.e2eeKey = () => 'passphrase';
+			meetingContextStub.isE2eeKeyFromUrl = () => true;
+
+			await service.initialize();
+			service.setParticipantName('Ana');
+
+			expect(service.showE2EEKeyInput()).toBeFalse();
+			expect(service.e2eeKeyValue()).toBe('passphrase');
+		});
+
+		it('trims the name and the key before anything else sees them', async () => {
+			e2eeEnabled = true;
+			await service.initialize();
+
+			service.setParticipantName('  Ana  ');
+			service.setE2eeKey('  passphrase  ');
+
+			expect(service.participantName()).toBe('Ana');
+			expect(service.e2eeKeyValue()).toBe('passphrase');
+		});
+
+		it('has no name to join with while the field holds only spaces', async () => {
+			await service.initialize();
+
+			service.setParticipantName('   ');
+
+			expect(service.participantName()).toBe('');
+		});
+
+		it('leaves the name field alone when the participant is the one naming themselves', async () => {
+			await service.initialize();
+
+			expect(service.isParticipantNameDisabled()).toBeFalse();
+		});
+
+		it('locks the name field when the membership already names the participant', async () => {
+			roomMemberContext.memberName.and.returnValue('Ana');
+
+			await service.initialize();
+			await Promise.resolve();
+
+			expect(service.isParticipantNameDisabled()).toBeTrue();
+			expect(service.participantName()).toBe('Ana');
+		});
+
+		it('has no access url to share until one exists', async () => {
+			await service.initialize();
+
+			expect(service.roomAccessUrl()).toBe('');
+			expect(service.showShareLink()).toBeFalse();
+		});
+
+		it('offers the access url to a participant allowed to share it', async () => {
+			speakerPublicLink = 'https://meet.example.com/room/room1?secret=abc';
+			meetingContextStub.meetingUI = () => ({ showJoinMeeting: true, showShareAccessLinks: true });
+
+			await service.initialize();
+
+			expect(service.roomAccessUrl()).toBe(speakerPublicLink);
+			expect(service.showShareLink()).toBeTrue();
+		});
+
+		it('refuses to open a lobby for no room', async () => {
+			meetingContextStub.roomId = () => '';
+
+			await expectAsync(service.initialize()).toBeRejected();
+			expect(service.roomName()).toBeUndefined();
+		});
+	});
 
 	describe('clearing the lobby', () => {
 		it('grants access to the prejoin without minting a token', async () => {

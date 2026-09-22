@@ -37,6 +37,11 @@ describe('SidenavLayoutDirective', () => {
 	let panelService: PanelService;
 	let layoutUpdateSpy: jasmine.Spy;
 
+	/** Registering one skips the directive's own debounced layout pass (see the tests that call it). */
+	const withToolbarTemplate = () => {
+		TestBed.inject(TemplateRegistryService).toolbar.set({} as never);
+	};
+
 	const createFixture = () => {
 		fixture = TestBed.createComponent(HostComponent);
 		host = fixture.componentInstance;
@@ -113,7 +118,7 @@ describe('SidenavLayoutDirective', () => {
 	});
 
 	it('leaves the container height alone when a toolbar template is registered', () => {
-		TestBed.inject(TemplateRegistryService).toolbar.set({} as never);
+		withToolbarTemplate();
 		createFixture();
 
 		const container: HTMLElement = fixture.nativeElement.querySelector('mat-sidenav-container');
@@ -137,6 +142,87 @@ describe('SidenavLayoutDirective', () => {
 
 		await waitFor(() => host.sidenavLayout().mode() === SidenavMode.OVER);
 		expect(host.sidenavLayout().hasBackdrop()).toBeTrue();
+	});
+
+	// Material gives no width while the drawer animates, so the directive follows the transition on
+	// a timer and stops when the drawer reports it arrived. Without that the grid keeps the size it
+	// had before the panel opened.
+	//
+	// These tests register a toolbar template first: with none, the directive queues a layout pass
+	// of its own on a 100ms debounce, and that pass would stand in for the ones under test here.
+	it('recomputes the layout when the sidenav reports it opened or closed', async () => {
+		withToolbarTemplate();
+		createFixture();
+		await fixture.whenStable();
+		layoutUpdateSpy.calls.reset();
+
+		// Material's openedChange is an async EventEmitter, so the pass lands on the next turn.
+		host.sidenav().openedChange.emit(true);
+		await waitFor(() => layoutUpdateSpy.calls.any());
+
+		expect(layoutUpdateSpy).toHaveBeenCalledTimes(1);
+	});
+
+	// Switching to or from the settings panel is the width change with no event to follow: Material
+	// re-measures it only while `autosize` is on, so the directive recomputes on a timer until its
+	// cap rather than waiting for a report that never comes.
+	it('recomputes the layout repeatedly while the sidenav changes width, then leaves it alone', async () => {
+		withToolbarTemplate();
+		createFixture();
+		panelService.togglePanel(PanelType.CHAT);
+		fixture.detectChanges();
+		// The drawer reports it opened one turn later, which stops the passes of that opening.
+		await delay(100);
+		layoutUpdateSpy.calls.reset();
+
+		panelService.togglePanel(PanelType.SETTINGS);
+		fixture.detectChanges();
+
+		await waitFor(() => layoutUpdateSpy.calls.count() >= 4);
+
+		// Capped, so the passes stop on their own.
+		await delay(900);
+		const settled = layoutUpdateSpy.calls.count();
+		await delay(200);
+
+		expect(layoutUpdateSpy.calls.count()).toBe(settled);
+	});
+
+	it('stops listening for viewport changes once destroyed', () => {
+		createFixture();
+		fixture.destroy();
+		layoutUpdateSpy.calls.reset();
+
+		window.dispatchEvent(new Event('resize'));
+
+		expect(layoutUpdateSpy).not.toHaveBeenCalled();
+	});
+
+	it('drops the layout pass it had queued when it is destroyed before running it', async () => {
+		createFixture();
+		layoutUpdateSpy.calls.reset();
+
+		fixture.destroy();
+		await delay(300);
+
+		expect(layoutUpdateSpy).not.toHaveBeenCalled();
+	});
+
+	it('stops the passes that were still running when it was destroyed', async () => {
+		withToolbarTemplate();
+		createFixture();
+		panelService.togglePanel(PanelType.CHAT);
+		fixture.detectChanges();
+		await delay(100);
+		panelService.togglePanel(PanelType.SETTINGS);
+		fixture.detectChanges();
+		await waitFor(() => layoutUpdateSpy.calls.count() >= 4);
+
+		fixture.destroy();
+		layoutUpdateSpy.calls.reset();
+		await delay(300);
+
+		expect(layoutUpdateSpy).not.toHaveBeenCalled();
 	});
 
 	it('stops updating the layout once destroyed', async () => {

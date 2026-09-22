@@ -1,6 +1,6 @@
 import { MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
 import { LocalParticipant, RemoteParticipant, Track, TrackPublication } from '../services/livekit';
-import { ParticipantModel } from './participant.model';
+import { ParticipantModel, ParticipantViewStateReader } from './participant.model';
 
 interface FakePublicationInit {
 	trackSid: string;
@@ -68,8 +68,8 @@ const fakeLiveKitParticipant = (options: FakeParticipantOptions = {}): FakeLiveK
 	return fake;
 };
 
-const modelFor = (fake: FakeLiveKitParticipant): ParticipantModel =>
-	new ParticipantModel({ participant: fake as unknown as LocalParticipant | RemoteParticipant });
+const modelFor = (fake: FakeLiveKitParticipant, viewState?: ParticipantViewStateReader): ParticipantModel =>
+	new ParticipantModel({ participant: fake as unknown as LocalParticipant | RemoteParticipant, viewState });
 
 describe('ParticipantModel', () => {
 	describe('streams()', () => {
@@ -96,6 +96,70 @@ describe('ParticipantModel', () => {
 			expect(streams[0].videoTrack).toBe(camera);
 			expect(streams[0].audioTrack).toBe(mic);
 			expect(streams[0].streamId).toBe('camera-alice');
+		});
+
+		// The tracks arrive in whatever order LiveKit publishes them, and a stream that grabs the
+		// wrong one puts the screen share in the camera tile, or mutes the wrong audio.
+		it('gives each stream its own publication, whatever order they were published in', () => {
+			const screenVideo = screenPublication();
+			const mic = micPublication();
+			const camera = cameraPublication();
+			const screenAudio = screenAudioPublication();
+			const participant = modelFor(
+				fakeLiveKitParticipant({ publications: [screenVideo, mic, camera, screenAudio] })
+			);
+
+			const [cameraStream, screenStream] = participant.streams();
+
+			expect(cameraStream.videoTrack).toBe(camera);
+			expect(cameraStream.audioTrack).toBe(mic);
+			expect(screenStream.videoTrack).toBe(screenVideo);
+			expect(screenStream.audioTrack).toBe(screenAudio);
+		});
+
+		// Pinning, floating and a moderator's mute are per viewer, so a model built without that
+		// state (a participant nobody is rendering yet) must not claim any of them.
+		it('claims no pin, no float and no forced mute without per-viewer state', () => {
+			const participant = modelFor(
+				fakeLiveKitParticipant({ publications: [cameraPublication(), screenPublication()] })
+			);
+
+			expect(
+				participant.streams().map(({ isPinned, isFloating, isMutedForcibly }) => ({
+					isPinned,
+					isFloating,
+					isMutedForcibly
+				}))
+			).toEqual([
+				{ isPinned: false, isFloating: false, isMutedForcibly: false },
+				{ isPinned: false, isFloating: false, isMutedForcibly: false }
+			]);
+		});
+
+		it('reads pin, float and forced mute from the per-viewer state, per stream', () => {
+			const viewState: ParticipantViewStateReader = {
+				isStreamPinned: (streamId) => streamId === 'TR_screen',
+				isStreamFloating: (streamId) => streamId === 'camera-alice',
+				isCameraStreamMuted: (sid) => sid === 'PA_alice',
+				isScreenStreamMuted: () => false
+			};
+			const participant = modelFor(
+				fakeLiveKitParticipant({ publications: [cameraPublication(), screenPublication()] }),
+				viewState
+			);
+
+			const [cameraStream, screenStream] = participant.streams();
+
+			expect({
+				isPinned: cameraStream.isPinned,
+				isFloating: cameraStream.isFloating,
+				isMutedForcibly: cameraStream.isMutedForcibly
+			}).toEqual({ isPinned: false, isFloating: true, isMutedForcibly: true });
+			expect({
+				isPinned: screenStream.isPinned,
+				isFloating: screenStream.isFloating,
+				isMutedForcibly: screenStream.isMutedForcibly
+			}).toEqual({ isPinned: true, isFloating: false, isMutedForcibly: false });
 		});
 
 		it('keeps the camera streamId stable when the camera track is republished with a new SID', () => {

@@ -1,6 +1,11 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MeetRecordingAutoStartMode } from '@openvidu-meet/typings';
+import {
+	MEET_PERMISSION_KEYS,
+	MeetRecordingAutoStartMode,
+	MeetRecordingLayout,
+	MeetRoomMemberPermissions
+} from '@openvidu-meet/typings';
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
 import { WizardStepId } from '../models/wizard.model';
 import { RoomWizardStateService } from './wizard-state.service';
@@ -196,5 +201,74 @@ describe('RoomWizardStateService.getStepById (initial media state controls)', ()
 
 		expect(roomConfigControls().initialAudioActive.value).toBe(false);
 		expect(roomConfigControls().initialVideoActive.value).toBe(false);
+	});
+});
+
+/**
+ * The wizard is where a room's permissions and configuration are decided, and it proposes them
+ * before the user reads a single toggle: whatever these defaults say is what most rooms are
+ * created with. They are meant to match the room the backend creates when nobody configures one,
+ * which is a claim that has to be held somewhere.
+ */
+describe('RoomWizardStateService.initializeWizard (the room it proposes)', () => {
+	let service: RoomWizardStateService;
+
+	const everyPermission = (granted: boolean): MeetRoomMemberPermissions =>
+		MEET_PERMISSION_KEYS.reduce(
+			(permissions, key) => ({ ...permissions, [key]: granted }),
+			{} as MeetRoomMemberPermissions
+		);
+
+	beforeEach(() => {
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				RoomWizardStateService,
+				{ provide: TranslateService, useValue: { translate: (key: string) => key } }
+			]
+		});
+		service = TestBed.inject(RoomWizardStateService);
+		service.initializeWizard(false);
+	});
+
+	it('proposes a moderator who may do everything and a speaker who may not moderate', () => {
+		expect(service.roomOptions().roles).toEqual({
+			moderator: { permissions: everyPermission(true) },
+			speaker: {
+				permissions: {
+					...everyPermission(true),
+					recordingControl: false,
+					recordingDelete: false,
+					roomShareAccessLinks: false,
+					participantPromote: false,
+					participantKick: false,
+					participantMute: false,
+					meetingEnd: false
+				}
+			}
+		});
+	});
+
+	it('proposes recording, chat, captions and virtual backgrounds on, and end-to-end encryption off', () => {
+		expect(service.roomOptions().config).toEqual({
+			recording: { enabled: true, layout: MeetRecordingLayout.GRID },
+			chat: { enabled: true },
+			virtualBackground: { enabled: true },
+			e2ee: { enabled: false },
+			captions: { enabled: true },
+			initialAudioActive: true,
+			initialVideoActive: true
+		});
+	});
+
+	it('proposes a room anyone with a link can join, and no access for registered users', () => {
+		expect(service.roomOptions().access).toEqual({
+			anonymous: {
+				moderator: { enabled: true },
+				speaker: { enabled: true },
+				recording: { enabled: true }
+			},
+			user: { enabled: false }
+		});
 	});
 });

@@ -118,6 +118,71 @@ describe('DeviceService', () => {
 	});
 
 	/**
+	 * `default` is not a device: it is the browser's alias for whatever the system picks, and it
+	 * duplicates a real entry that is also in the list. Offering it means a device menu with the
+	 * same microphone twice, one of which silently follows the system.
+	 */
+	describe('what counts as a device', () => {
+		it("keeps the real devices and drops the browser's aliases and unlabelled entries", async () => {
+			livekitSdkService.getLocalDevices.and.resolveTo([
+				{ kind: 'videoinput', label: 'Webcam', deviceId: 'cam-1', groupId: 'g1' },
+				{ kind: 'videoinput', label: 'Default camera', deviceId: 'default', groupId: 'g1' },
+				{ kind: 'videoinput', label: '', deviceId: 'cam-2', groupId: 'g2' },
+				{ kind: 'audioinput', label: 'Headset', deviceId: 'mic-1', groupId: 'g3' },
+				{ kind: 'audioinput', label: 'Default microphone', deviceId: 'default', groupId: 'g3' },
+				{ kind: 'audioinput', label: 'No id', deviceId: '', groupId: 'g4' }
+			] as MediaDeviceInfo[]);
+
+			await service.initializeDevices();
+
+			expect(service.cameras().map((c) => c.device)).toEqual(['cam-1']);
+			expect(service.microphones().map((m) => m.device)).toEqual(['mic-1']);
+		});
+	});
+
+	/**
+	 * Cameras and microphones are plugged and unplugged mid-meeting, and browsers report a single
+	 * hotplug as a burst of events.
+	 */
+	describe('following the devices of the machine', () => {
+		it('refreshes the list once for a burst of device changes', async () => {
+			await service.initializeDevices();
+			livekitSdkService.getLocalDevices.calls.reset();
+			livekitSdkService.getLocalDevices.and.resolveTo(LABELLED_DEVICES);
+
+			navigator.mediaDevices.dispatchEvent(new Event('devicechange'));
+			navigator.mediaDevices.dispatchEvent(new Event('devicechange'));
+			navigator.mediaDevices.dispatchEvent(new Event('devicechange'));
+			await delay(500);
+
+			expect(livekitSdkService.getLocalDevices).toHaveBeenCalledTimes(1);
+			expect(service.cameras().map((c) => c.label)).toEqual(['Webcam']);
+		});
+
+		it('stops following them once the meeting is over', async () => {
+			await service.initializeDevices();
+			livekitSdkService.getLocalDevices.calls.reset();
+
+			service.ngOnDestroy();
+			navigator.mediaDevices.dispatchEvent(new Event('devicechange'));
+			await delay(500);
+
+			expect(livekitSdkService.getLocalDevices).not.toHaveBeenCalled();
+		});
+
+		it('drops a refresh that was still pending when the meeting ended', async () => {
+			await service.initializeDevices();
+			livekitSdkService.getLocalDevices.calls.reset();
+
+			navigator.mediaDevices.dispatchEvent(new Event('devicechange'));
+			service.ngOnDestroy();
+			await delay(500);
+
+			expect(livekitSdkService.getLocalDevices).not.toHaveBeenCalled();
+		});
+	});
+
+	/**
 	 * The selection is aligned with the device the browser actually opened, which need not be the
 	 * stored preference or the first in the list. A later re-enumeration (a hotplug, another
 	 * acquisition) must not undo that alignment.
@@ -164,3 +229,7 @@ describe('DeviceService', () => {
 		});
 	});
 });
+
+function delay(ms: number): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}

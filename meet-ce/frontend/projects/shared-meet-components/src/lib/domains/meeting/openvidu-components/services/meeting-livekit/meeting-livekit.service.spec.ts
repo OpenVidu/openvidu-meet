@@ -4,6 +4,7 @@ import type { MeetMeetingInfo } from '@openvidu-meet/typings';
 import { AssetsService } from '../../../../../shared/services/assets.service';
 import { HttpService } from '../../../../../shared/services/http.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
+import { CAMERA_CAPTURE_DEFAULTS, MICROPHONE_CAPTURE_DEFAULTS } from '../../models/media-capture.model';
 import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { DeviceService } from '../device/device.service';
 import { ConnectionError, ConnectionState, Room, RoomEvent } from '../livekit';
@@ -95,6 +96,42 @@ describe('MeetingLiveKitService', () => {
 		});
 
 		service = TestBed.inject(MeetingLiveKitService);
+	});
+
+	/**
+	 * These are measured decisions, not defaults: adaptive stream and dynacast are what keep a
+	 * meeting from sending video nobody is looking at, and stopping the microphone track on mute
+	 * would buy no privacy (a clone stays open to warn about speaking while muted) at the price of a
+	 * getUserMedia, and a Bluetooth profile switch, on every unmute.
+	 */
+	describe('the room it creates', () => {
+		const roomOptions = () => livekitSdkService.createRoom.calls.mostRecent().args[0]!;
+
+		it('subscribes and publishes only what is being watched', () => {
+			service.init();
+
+			expect(roomOptions().adaptiveStream).toBeTrue();
+			expect(roomOptions().dynacast).toBeTrue();
+		});
+
+		it('keeps the microphone track open while muted', () => {
+			service.init();
+
+			expect(roomOptions().publishDefaults?.stopMicTrackOnMute).toBeFalse();
+		});
+
+		it('captures with the shared profiles rather than the SDK defaults', () => {
+			service.init();
+
+			expect(roomOptions().audioCaptureDefaults).toEqual(MICROPHONE_CAPTURE_DEFAULTS);
+			expect(roomOptions().videoCaptureDefaults).toEqual(CAMERA_CAPTURE_DEFAULTS);
+		});
+
+		it('creates a room without encryption when no key was given', () => {
+			service.init();
+
+			expect(roomOptions().encryption).toBeUndefined();
+		});
 	});
 
 	describe('connection state', () => {
@@ -389,9 +426,7 @@ describe('MeetingLiveKitService', () => {
 			livekitSdkService.connectRoom.and.rejectWith(livekitFailure);
 			httpService.getRequest.and.rejectWith(new Error('unreachable'));
 
-			await expectAsync(service.connect()).toBeRejectedWith(
-				jasmine.objectContaining({ cause: livekitFailure })
-			);
+			await expectAsync(service.connect()).toBeRejectedWith(jasmine.objectContaining({ cause: livekitFailure }));
 		});
 	});
 });

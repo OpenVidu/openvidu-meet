@@ -89,6 +89,24 @@ describe('MeetingEndingSoonService', () => {
 			expect(soundService.playMeetingEndingSoonSound).toHaveBeenCalledTimes(1);
 		});
 
+		// The window is inclusive at both ends: a meeting exactly five minutes from its end is
+		// already inside it, and one whose end has arrived is past announcing anything.
+		it('announces a meeting sitting exactly on the edge of the notice window', () => {
+			service.trackMeetingEnd(endsIn(NOTICE_WINDOW_MS));
+
+			expect(service.remainingMs()).toBe(NOTICE_WINDOW_MS);
+			expect(announcedMinutes()).toBe(5);
+			expect(soundService.playMeetingEndingSoonSound).toHaveBeenCalledTimes(1);
+		});
+
+		it('says nothing about a meeting whose end has just come', () => {
+			service.trackMeetingEnd(endsIn(0));
+
+			expect(service.remainingMs()).toBeUndefined();
+			expect(announcedMinutes()).toBeUndefined();
+			expect(soundService.playMeetingEndingSoonSound).not.toHaveBeenCalled();
+		});
+
 		it('announces at once a meeting shorter than the whole notice window', () => {
 			service.trackMeetingEnd(endsIn(60_000));
 
