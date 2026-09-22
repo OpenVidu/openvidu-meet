@@ -5,6 +5,10 @@ on:
     tags-ignore: ['**']
     paths: &backend-unit-test-paths
       - 'meet-ce/backend/**'
+      # Suites this job does not run, and the helpers only they use.
+      - '!meet-ce/backend/tests/integration/**'
+      - '!meet-ce/backend/tests/helpers/**'
+      - '!meet-ce/backend/tests/interfaces/**'
       - 'meet-ce/typings/**'
       - 'pnpm-lock.yaml'
       - 'meet.sh'

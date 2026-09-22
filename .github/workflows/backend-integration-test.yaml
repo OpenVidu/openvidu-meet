@@ -6,7 +6,9 @@ on:
     paths: &backend-integration-test-paths
       - 'meet-ce/backend/src/**'
       - 'meet-ce/backend/package.json'
-      - 'meet-ce/backend/tests/**'
+      - 'meet-ce/backend/tests/integration/**'
+      - 'meet-ce/backend/tests/helpers/**'
+      - 'meet-ce/backend/tests/interfaces/**'
       - 'meet-ce/typings/**'
       - 'pnpm-lock.yaml'
       - '.github/workflows/backend-integration-test.yaml'

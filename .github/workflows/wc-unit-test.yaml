@@ -5,7 +5,9 @@ on:
     tags-ignore: ['**']
     paths: &wc-unit-test-paths
       - 'meet-ce/frontend/webcomponent/**'
+      - '!meet-ce/frontend/webcomponent/tests/e2e/**'
       - 'meet-ce/frontend/projects/shared-meet-components/**'
+      - '!meet-ce/frontend/projects/**/*.spec.ts'
       - 'meet-ce/typings/**'
       - 'meet.sh'
       - '.github/workflows/wc-unit-test.yaml'

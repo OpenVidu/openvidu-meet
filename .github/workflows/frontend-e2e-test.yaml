@@ -7,7 +7,10 @@ on:
     paths: &frontend-e2e-test-paths
       - 'meet-ce/frontend/**'
       - '!meet-ce/frontend/webcomponent/**'
+      - '!meet-ce/frontend/projects/**/*.spec.ts'
       - 'meet-ce/backend/**'
+      # Nothing under tests/ is shipped in the server these suites run against.
+      - '!meet-ce/backend/tests/**'
       - 'meet-ce/typings/**'
       - 'meet.sh'
       - '.github/workflows/frontend-e2e-test.yaml'
