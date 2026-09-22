@@ -9,6 +9,10 @@ import { EmbeddedCommandName, EmbeddedEventName } from '@openvidu-meet/typings';
 // Mirrors the real impl (the custom-element wrapper): canonical methods plus the deprecated
 // spellings, which the loader must keep proxying for the whole deprecation window.
 class FakeImpl extends HTMLElement {
+	// Like Angular Elements, the attribute and the property feed one input and the last write wins.
+	static readonly observedAttributes = ['show-only-recordings'];
+	showOnlyRecordings: unknown = false;
+
 	meetingEnd = jest.fn();
 	meetingLeave = jest.fn();
 	participantKick = jest.fn();
@@ -20,6 +24,10 @@ class FakeImpl extends HTMLElement {
 	endMeeting = jest.fn();
 	leaveRoom = jest.fn();
 	kickParticipant = jest.fn();
+
+	attributeChangedCallback(_name: string, _previous: string | null, value: string | null): void {
+		this.showOnlyRecordings = value !== null && value !== 'false';
+	}
 }
 customElements.define('openvidu-meet-impl', FakeImpl);
 
@@ -41,11 +49,12 @@ type Loader = HTMLElement & {
 	kickParticipant(id: string): void;
 	roomUrl?: string;
 	recordingUrl?: string;
+	showOnlyRecordings?: boolean;
 	_meetServerEsmUrl(): string | null;
 };
 
 // Flush microtasks (connectedCallback awaits loadImpl) + one macrotask
-// (MutationObserver / setTimeout-based work).
+// (setTimeout-based work).
 const flush = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
 
 // Wait past the loader's deferred-teardown grace window (TEARDOWN_GRACE_MS = 10 ms)
@@ -212,6 +221,31 @@ describe('openvidu-meet lazy loader', () => {
 			await flush();
 
 			expect(implOf(el).getAttribute('room-url')).toBe('https://example/pre');
+		});
+
+		// Both kinds feed the same impl input, so the one the host wrote last wins whichever kind it is.
+		it('lets an attribute written after a property win', async () => {
+			const el = createLoader();
+			el.showOnlyRecordings = false;
+
+			document.body.appendChild(el);
+			el.setAttribute('show-only-recordings', '');
+
+			await flush();
+
+			expect(implOf(el).showOnlyRecordings).toBe(true);
+		});
+
+		it('lets a property written after an attribute win', async () => {
+			const el = createLoader();
+			el.setAttribute('show-only-recordings', '');
+
+			document.body.appendChild(el);
+			el.showOnlyRecordings = false;
+
+			await flush();
+
+			expect(implOf(el).showOnlyRecordings).toBe(false);
 		});
 	});
 

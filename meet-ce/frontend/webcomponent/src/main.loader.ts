@@ -2,82 +2,51 @@ import { EmbeddedAttribute, EmbeddedCommandName, EmbeddedEventName } from '@open
 import { computeServerUrl } from 'projects/shared-meet-components/src/lib/shared/utils/url.utils';
 
 /**
- * Lazy loader for `<openvidu-meet>`.
+ * Lazy loader for `<openvidu-meet>`: the tiny bundle served at the stable url `<basePath>/v1/openvidu-meet.js`.
  *
- * This is the tiny (~KB) bundle served at the STABLE url `<basePath>/v1/openvidu-meet.js`.
- * It registers `<openvidu-meet>` immediately without pulling in Angular/LiveKit, so a host page's
- * `<script src>` costs almost nothing. The heavy ~5.8 MB bundle is `import()`ed only when an
- * `<openvidu-meet>` element actually connects to the DOM — deferring the parse until the meeting is
- * really used, with zero changes required in the host page.
+ * It registers `<openvidu-meet>` without loading Angular and `import()`s the heavy ESM the first time an
+ * element connects. The ESM registers the real Angular Elements element as `openvidu-meet-impl` (through
+ * {@link bootstrapOpenViduMeet}, its own auto-define suppressed by `__OV_MEET_SKIP_AUTODEFINE__`) and the
+ * loader delegates to an inner `<openvidu-meet-impl>`: attributes and properties are forwarded, imperative
+ * calls are buffered until it exists, and its events are re-dispatched on the loader.
  *
- * Mechanics (see MEET-WC-API-V2-PROPOSAL §5.3):
- *  - The heavy ESM registers the REAL Angular Elements element under the internal tag
- *    `openvidu-meet-impl` (via the exported {@link bootstrapOpenViduMeet}, suppressing its own
- *    auto-define with the `__OV_MEET_SKIP_AUTODEFINE__` flag).
- *  - This loader delegates to an inner `<openvidu-meet-impl>`: properties + attributes are mirrored,
- *    imperative calls made before load are buffered and replayed, and events are re-dispatched onto
- *    the loader so listeners on `<openvidu-meet>` keep working.
- *
- * The delegated surface is derived from `@openvidu-meet/typings` (single source of truth).
+ * The delegated surface comes from `@openvidu-meet/typings`.
  */
 
 declare global {
-	// Set before importing the heavy bundle so it skips its own `openvidu-meet`
-	// auto-registration; the loader registers `openvidu-meet-impl` instead.
-	// `var` is required: `declare global` only augments globalThis through var bindings.
+	// `declare global` only augments globalThis through `var` bindings.
 	var __OV_MEET_SKIP_AUTODEFINE__: boolean | undefined;
 }
 
 const LOADER_TAG = 'openvidu-meet';
 const IMPL_TAG = 'openvidu-meet-impl';
 
-// Grace period before tearing the inner meeting down after the loader leaves the
-// DOM. A DOM *move* (re-parenting) fires disconnectedCallback then connectedCallback
-// synchronously within the same DOM operation, so the reconnect cancels this timer
-// before it can run and the live meeting is preserved untouched — mirroring Angular
-// Elements' own ~10 ms destroy grace. Only a genuine removal (no reconnect) lets it
-// fire and tears the meeting down.
+// A DOM move fires disconnectedCallback and connectedCallback synchronously, so the reconnect cancels the
+// teardown within this window and the live meeting survives. Only a genuine removal lets it fire.
 const TEARDOWN_GRACE_MS = 10;
 
-/** kebab-case attribute → camelCase JS property (e.g. `room-url` → `roomUrl`). */
 const toCamel = (kebab: string): string => kebab.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
 
-// Public delegation surface, from the typings registry.
+// The deprecated 3.8.0 spellings of commands and events stay proxied here until they leave the typings
+// in 3.12.0; nothing needs to change on this side then.
 const ATTRIBUTES: readonly string[] = Object.values(EmbeddedAttribute);
 const PROPERTIES: readonly string[] = ATTRIBUTES.map(toCamel);
-// meetingEnd, meetingLeave, participantKick + the deprecated 3.8.0 aliases, which the wrapper
-// still implements. Deriving from the enum means the aliases stop being proxied the day they
-// leave the typings in 3.12.0, with no edit here.
 const METHODS: readonly string[] = Object.values(EmbeddedCommandName);
-// Only NON-composed embedded events need bridging (see _upgrade). The wrapper's
-// `ready` is dispatched `composed`, so it crosses the shadow boundary to
-// <openvidu-meet> on its own — listing it here would only add a dead bridge
-// listener that the composed-guard always skips. Also includes the deprecated 3.8.0 event
-// aliases (joined/left/closed), which the app dispatches alongside their canonical twin until
-// they leave the typings in 3.12.0.
 const EVENTS: readonly string[] = Object.values(EmbeddedEventName);
 
 const ESM_FILENAME = 'openvidu-meet.esm.js';
-// Where the backend serves the heavy bundle, relative to the deployment base url.
 const ESM_PATH = `v1/${ESM_FILENAME}`;
 
-// Resolve the sibling heavy ESM url from this script's own `src`, captured
-// synchronously at load (`document.currentScript` is only valid during initial
-// classic-script execution). Served at `.../v1/openvidu-meet.js`, so the sibling
-// resolves to `.../v1/openvidu-meet.esm.js`.
+// `document.currentScript` is only set while this script runs, so its url is captured now.
 const loaderSrc = (document.currentScript as HTMLScriptElement | null)?.src;
 const SIBLING_ESM_URL = new URL(ESM_FILENAME, loaderSrc || window.location.href).href;
 
 type ImplModule = { bootstrapOpenViduMeet: (tag: string) => Promise<void> };
 
-// The bundle normally sits next to this script. It does not when the host serves the loader
-// from somewhere else — a reverse proxy that only forwards `/openvidu-meet.js`, a copy in the
-// host's own assets, a bundler that inlined it — so fall back to the Meet server the element
-// already points at, which is the deployment that has to serve the matching bundle anyway.
-//
-// The fallback url is read only once the sibling has actually failed, not up front: a host that
-// binds `room-url` through a framework sets it right after the element connects, so asking for it
-// before the first request would find nothing.
+// The bundle sits next to this script unless the host serves the loader from somewhere else (a proxy that
+// forwards only `/openvidu-meet.js`, a copy in its own assets); then the Meet server the element points at
+// has it. That url is resolved only once the sibling has failed: a host that binds `room-url` through a
+// framework sets it right after the element connects.
 const importEsm = async (meetServerEsmUrl: () => string | null): Promise<ImplModule> => {
 	try {
 		return (await import(SIBLING_ESM_URL)) as ImplModule;
@@ -96,13 +65,7 @@ const importEsm = async (meetServerEsmUrl: () => string | null): Promise<ImplMod
 	}
 };
 
-// Load the heavy bundle once (shared across every loader instance) and register
-// the internal implementation tag.
-let implReady: Promise<void> | null = null;
-
 const importImpl = async (meetServerEsmUrl: () => string | null): Promise<void> => {
-	// Already registered (e.g. the ESM was imported directly, or a previous load
-	// already ran): nothing to import or bootstrap. Keeps this idempotent.
 	if (customElements.get(IMPL_TAG)) return;
 
 	globalThis.__OV_MEET_SKIP_AUTODEFINE__ = true;
@@ -110,17 +73,14 @@ const importImpl = async (meetServerEsmUrl: () => string | null): Promise<void> 
 	await mod.bootstrapOpenViduMeet(IMPL_TAG);
 };
 
-// Memoized so the heavy bundle loads at most once per page. On failure the cached
-// promise is CLEARED so a later reconnect can retry — otherwise a single transient
-// import error (network blip, 5xx) would leave a permanently-rejected promise and
-// break every <openvidu-meet> on the page for good.
+// Loaded once per page. A failed load is forgotten so a retry or a later reconnect imports again.
+let implReady: Promise<void> | null = null;
+
 const loadImpl = (meetServerEsmUrl: () => string | null): Promise<void> => {
-	if (!implReady) {
-		implReady = importImpl(meetServerEsmUrl).catch((err) => {
-			implReady = null;
-			throw err;
-		});
-	}
+	implReady ??= importImpl(meetServerEsmUrl).catch((err) => {
+		implReady = null;
+		throw err;
+	});
 
 	return implReady;
 };
@@ -149,10 +109,8 @@ const LOADER_STYLES = `
 	.ov-loader-retry:hover { background: rgba(127, 127, 127, 0.12); }
 `;
 
-// One CSSStyleSheet shared by every loader instance via `adoptedStyleSheets`,
-// instead of cloning an identical <style> element into each shadow root. Falls
-// back to a per-instance <style> where constructable stylesheets aren't available
-// (very old engines / some jsdom versions).
+// Shared by every instance through `adoptedStyleSheets`; engines without constructable stylesheets get a
+// <style> element per shadow root instead.
 let sharedStyleSheet: CSSStyleSheet | null = null;
 
 try {
@@ -163,16 +121,20 @@ try {
 }
 
 type ImplElement = HTMLElement & Record<string, unknown>;
+type ImplWrite = (impl: ImplElement) => void;
 type DeferredCall = { method: string; args: unknown[] };
 
 class OpenViduMeetLoader extends HTMLElement {
-	// Not marked `private` so the dynamically-defined property accessors/methods
-	// below (outside the class body) can reach them.
+	static readonly observedAttributes = ATTRIBUTES;
+
+	// Not `private` so the accessors and methods defined on the prototype below can reach them.
 	_impl: ImplElement | null = null;
 	_props: Record<string, unknown> = {};
+	// The host's last write per input, attribute or property: that is all a mounted impl needs, as it
+	// feeds both into the same input and the last one wins there too.
+	readonly _writes = new Map<string, ImplWrite>();
 	_deferred: DeferredCall[] = [];
 	readonly _handlerMap = new Map<string, Map<(payload: unknown) => void, EventListener>>();
-	_attrObserver: MutationObserver | null = null;
 	_placeholder: HTMLElement | null = null;
 	_teardownTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -191,41 +153,41 @@ class OpenViduMeetLoader extends HTMLElement {
 		this._showLoading();
 	}
 
-	async connectedCallback(): Promise<void> {
-		// A pending teardown means we just left the DOM: this reconnect is the tail
-		// of a move (re-parenting), so cancel it and keep the live meeting intact.
+	attributeChangedCallback(name: string): void {
+		const value = this.getAttribute(name);
+
+		this._write(toCamel(name), (impl) => {
+			if (value === null) impl.removeAttribute(name);
+			else impl.setAttribute(name, value);
+		});
+	}
+
+	connectedCallback(): void {
 		if (this._teardownTimer !== null) {
 			clearTimeout(this._teardownTimer);
 			this._teardownTimer = null;
 		}
 
-		// Impl already mounted (preserved across a move): nothing to load or rebuild.
-		if (this._impl) return;
-
-		await this._load();
+		if (!this._impl) void this._load();
 	}
 
 	disconnectedCallback(): void {
-		// Defer teardown so a DOM move (disconnect immediately followed by reconnect)
-		// preserves the live meeting; only a genuine removal lets it fire. See
-		// TEARDOWN_GRACE_MS.
 		if (this._teardownTimer !== null) return;
 
 		this._teardownTimer = setTimeout(() => {
 			this._teardownTimer = null;
-			this._attrObserver?.disconnect();
-			this._attrObserver = null;
-			// Drop the inner element so Angular tears the meeting down; a later
-			// reconnect rebuilds it via _upgrade().
 			this._impl?.remove();
 			this._impl = null;
 		}, TEARDOWN_GRACE_MS);
 	}
 
-	// Load the heavy bundle and hand off to the impl. On failure the spinner is
-	// swapped for a retryable error state (rather than spinning forever);
-	// `loadImpl()` clears its memoized promise on failure, so the retry (or a later
-	// reconnect) re-imports.
+	_write(input: string, write: ImplWrite): void {
+		this._writes.delete(input);
+		this._writes.set(input, write);
+
+		if (this._impl) write(this._impl);
+	}
+
 	async _load(): Promise<void> {
 		try {
 			await loadImpl(() => this._meetServerEsmUrl());
@@ -236,9 +198,6 @@ class OpenViduMeetLoader extends HTMLElement {
 		}
 	}
 
-	// The heavy bundle on the Meet server this element points at, derived from `room-url` /
-	// `recording-url` the same way the app derives the server it calls. Null before the host has
-	// set either, where the sibling url is the only candidate.
 	_meetServerEsmUrl(): string | null {
 		const roomUrl = (this._props['roomUrl'] as string) || this.getAttribute(EmbeddedAttribute.ROOM_URL);
 		const recordingUrl =
@@ -250,7 +209,6 @@ class OpenViduMeetLoader extends HTMLElement {
 		return serverUrl ? `${serverUrl}/${ESM_PATH}` : null;
 	}
 
-	// ── Placeholder states ───────────────────────────────────────────────────────
 	_showLoading(): void {
 		const placeholder = document.createElement('div');
 		placeholder.className = 'ov-loader';
@@ -261,8 +219,6 @@ class OpenViduMeetLoader extends HTMLElement {
 	}
 
 	_showError(): void {
-		// Swap the spinner for a retryable error state so a failed load (a transient
-		// network / 5xx blip, or a hard misconfiguration) doesn't spin forever.
 		this._placeholder?.remove();
 
 		const box = document.createElement('div');
@@ -289,7 +245,6 @@ class OpenViduMeetLoader extends HTMLElement {
 		this._placeholder = box;
 	}
 
-	// ── on / once / off (mirrors wrapper.ts, listeners live on the loader) ──────
 	on(eventName: EmbeddedEventName, callback: (payload: unknown) => void): this {
 		const listener: EventListener = (e: Event) => callback((e as CustomEvent).detail);
 
@@ -333,20 +288,13 @@ class OpenViduMeetLoader extends HTMLElement {
 		return this;
 	}
 
-	// ── Handoff ─────────────────────────────────────────────────────────────────
 	_upgrade(): void {
 		if (this._impl || !this.isConnected) return;
 
 		const impl = document.createElement(IMPL_TAG) as ImplElement;
 
-		// 1. Bridge the impl's events onto the loader (before connecting it) so
-		//    listeners on <openvidu-meet> fire. Only NON-composed events need this:
-		//    a `composed` event (e.g. the wrapper's `ready`) is dispatched inside the
-		//    loader's shadow root, so the host <openvidu-meet> becomes an AT_TARGET
-		//    node in the event path (its shadow-adjusted target retargets to the
-		//    host). AT_TARGET invokes bubble-phase listeners too, regardless of
-		//    `bubbles`, so the event already reaches listeners on <openvidu-meet> on
-		//    its own — re-dispatching it here would deliver it twice.
+		// A composed event already reaches the loader's listeners on its own, as the shadow host is in
+		// its path; re-dispatching it would deliver it twice.
 		for (const name of EVENTS) {
 			impl.addEventListener(name, (e: Event) => {
 				const ce = e as CustomEvent;
@@ -357,38 +305,13 @@ class OpenViduMeetLoader extends HTMLElement {
 			});
 		}
 
-		// 2. Copy attributes set on the loader before the bundle loaded.
-		for (const attr of Array.from(this.attributes)) {
-			impl.setAttribute(attr.name, attr.value);
-		}
+		for (const write of this._writes.values()) write(impl);
 
-		// 3. Apply properties set on the loader before the bundle loaded.
-		for (const [key, value] of Object.entries(this._props)) {
-			impl[key] = value;
-		}
-
-		// 4. Mount and reveal.
 		this.shadowRoot!.appendChild(impl);
 		this._placeholder?.remove();
 		this._placeholder = null;
 		this._impl = impl;
 
-		// 5. Mirror later attribute changes on the loader to the impl.
-		this._attrObserver = new MutationObserver((records) => {
-			for (const record of records) {
-				const name = record.attributeName;
-
-				if (record.type !== 'attributes' || !name) continue;
-
-				const value = this.getAttribute(name);
-
-				if (value === null) impl.removeAttribute(name);
-				else impl.setAttribute(name, value);
-			}
-		});
-		this._attrObserver.observe(this, { attributes: true });
-
-		// 6. Replay imperative calls buffered before the bundle loaded.
 		for (const { method, args } of this._deferred) {
 			(impl[method] as ((...a: unknown[]) => unknown) | undefined)?.(...args);
 		}
@@ -397,8 +320,6 @@ class OpenViduMeetLoader extends HTMLElement {
 	}
 }
 
-// Proxy the input properties (roomUrl, participantName, …): store pre-load, then
-// forward to the inner element once it exists.
 for (const prop of PROPERTIES) {
 	Object.defineProperty(OpenViduMeetLoader.prototype, prop, {
 		configurable: true,
@@ -408,15 +329,14 @@ for (const prop of PROPERTIES) {
 		},
 		set(this: OpenViduMeetLoader, value: unknown) {
 			this._props[prop] = value;
-
-			if (this._impl) this._impl[prop] = value;
+			this._write(prop, (impl) => {
+				impl[prop] = value;
+			});
 		}
 	});
 }
 
-// Proxy the imperative methods (canonical commands and their deprecated aliases, removed in
-// 3.12.0): delegate once the inner element exists, otherwise buffer for replay in _upgrade().
-// The buffered call keeps the name it was made with — resolving an alias is the wrapper's job.
+// Buffered calls keep the name they were made with: resolving a deprecated alias is the impl's job.
 for (const method of METHODS) {
 	Object.defineProperty(OpenViduMeetLoader.prototype, method, {
 		configurable: true,

@@ -365,15 +365,19 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await expect(wcLocator(page, '#participant-name-input')).toHaveCount(0);
 			});
 
-			// The two tests below drive the raw HTML attribute directly (`setAttribute`), unlike the
-			// JS-property path every other test in this file goes through via the testapp's bindings.
-			// `show-only-recordings` is boolean-attribute typed, so its two string forms must follow the
-			// standard HTML convention: `"false"` is off, and a bare attribute is on.
-			test('should not redirect to the recordings page when show-only-recordings="false" is set as a raw attribute', async ({
+			// These two drive the raw HTML attribute with `setAttribute`, whose two string forms follow the
+			// HTML convention: `"false"` is off and a bare attribute is on. Each starts from the view the
+			// attribute has to leave, so an attribute that never reaches the element fails the test.
+			test('should leave the recordings page when show-only-recordings="false" is set as a raw attribute', async ({
 				page
 			}) => {
 				await openWebcomponentWithAttributes(page, {
-					[EmbeddedAttribute.ROOM_URL]: accessUrl
+					[EmbeddedAttribute.ROOM_URL]: accessUrl,
+					[EmbeddedAttribute.SHOW_ONLY_RECORDINGS]: 'true'
+				});
+
+				await expect(wcLocator(page, 'ov-recording-lists, .recordings-list')).toBeVisible({
+					timeout: 15_000
 				});
 
 				await wcHost(page).evaluate(
@@ -391,6 +395,8 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await openWebcomponentWithAttributes(page, {
 					[EmbeddedAttribute.ROOM_URL]: accessUrl
 				});
+
+				await expect(wcLocator(page, '#participant-name-input')).toBeVisible({ timeout: 15_000 });
 
 				await wcHost(page).evaluate(
 					(el, attr) => el.setAttribute(attr, ''),
