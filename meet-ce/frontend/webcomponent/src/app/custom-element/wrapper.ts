@@ -9,7 +9,8 @@ import type { App } from '../app';
 export function createOpenViduMeetElementClass(
 	NgElementConstructor: CustomElementConstructor
 ): CustomElementConstructor {
-	return class extends (NgElementConstructor as any) {
+	// Declared, not returned as a class expression: mutation testing does not instrument inside one.
+	class OpenViduMeetElement extends (NgElementConstructor as any) {
 		// Keyed by the caller's handler, so `off()` can find the wrapper it was registered with.
 		private readonly _handlerMap = new Map<string, Map<(...args: never[]) => unknown, EventListener>>();
 
@@ -144,5 +145,7 @@ export function createOpenViduMeetElementClass(
 			const instance = strategy?.componentRef?.instance as App | undefined;
 			return instance ?? null;
 		}
-	} as unknown as CustomElementConstructor;
+	}
+
+	return OpenViduMeetElement as unknown as CustomElementConstructor;
 }

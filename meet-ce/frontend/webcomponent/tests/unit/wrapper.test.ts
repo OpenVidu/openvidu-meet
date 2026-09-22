@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import type { MeetParticipantMuteOptions } from '@openvidu-meet/typings';
 import { createOpenViduMeetElementClass } from '../../src/app/custom-element/wrapper';
 
 // Minimal stand-in for the Angular Elements base class produced by `createCustomElement()`.
@@ -10,13 +11,29 @@ import { createOpenViduMeetElementClass } from '../../src/app/custom-element/wra
 class FakeNgElementBase extends HTMLElement {
 	// Assigned per test to the component instance the imperative methods should delegate to.
 	ngElementStrategy: { componentRef: { instance: unknown } } | undefined;
-	connectedCallback(): void {}
+	// Angular Elements creates and renders the component in its own connectedCallback.
+	baseConnections = 0;
+
+	connectedCallback(): void {
+		this.baseConnections++;
+	}
 
 	disconnectedCallback(): void {}
 }
 
+// `disconnectedCallback` is optional on the base class, so the wrapper must not assume it.
+class BaseWithoutDisconnect extends HTMLElement {
+	connectedCallback(): void {}
+}
+
 const TAG = 'openvidu-meet-wrapper-test';
 customElements.define(TAG, createOpenViduMeetElementClass(FakeNgElementBase as unknown as CustomElementConstructor));
+
+const TAG_WITHOUT_DISCONNECT = 'openvidu-meet-wrapper-test-partial-base';
+customElements.define(
+	TAG_WITHOUT_DISCONNECT,
+	createOpenViduMeetElementClass(BaseWithoutDisconnect as unknown as CustomElementConstructor)
+);
 
 // The component only implements the canonical names; the deprecated element methods are expected
 // to route through their canonical twin, so a missing `endMeeting` here is deliberate.
@@ -24,15 +41,26 @@ interface ComponentInstance {
 	meetingEnd: jest.Mock;
 	meetingLeave: jest.Mock;
 	participantKick: jest.Mock;
+	participantMute: jest.Mock;
+	participantMuteAll: jest.Mock;
+	mediaToggleAudio: jest.Mock;
+	mediaToggleVideo: jest.Mock;
+	mediaToggleScreenShare: jest.Mock;
 }
 
 interface TestableElement extends FakeNgElementBase {
 	on(eventName: string, callback: (detail: unknown) => void): TestableElement;
 	once(eventName: string, callback: (detail: unknown) => void): TestableElement;
 	off(eventName: string, callback?: (detail: unknown) => void): TestableElement;
+	_handlerMap: Map<string, Map<unknown, EventListener>>;
 	meetingEnd(): void;
 	meetingLeave(): void;
 	participantKick(participantIdentity: string): void;
+	participantMute(participantIdentity: string, media: MeetParticipantMuteOptions): void;
+	participantMuteAll(media: MeetParticipantMuteOptions): void;
+	mediaToggleAudio(active?: boolean): void;
+	mediaToggleVideo(active?: boolean): void;
+	mediaToggleScreenShare(active?: boolean): void;
 	endMeeting(): void;
 	leaveRoom(): void;
 	kickParticipant(participantIdentity: string): void;
@@ -43,8 +71,21 @@ const createElement = (): TestableElement => document.createElement(TAG) as Test
 const componentInstance = (): ComponentInstance => ({
 	meetingEnd: jest.fn(),
 	meetingLeave: jest.fn(),
-	participantKick: jest.fn()
+	participantKick: jest.fn(),
+	participantMute: jest.fn(),
+	participantMuteAll: jest.fn(),
+	mediaToggleAudio: jest.fn(),
+	mediaToggleVideo: jest.fn(),
+	mediaToggleScreenShare: jest.fn()
 });
+
+const withComponent = (): [TestableElement, ComponentInstance] => {
+	const el = createElement();
+	const instance = componentInstance();
+	el.ngElementStrategy = { componentRef: { instance } };
+
+	return [el, instance];
+};
 
 describe('openvidu-meet custom element', () => {
 	afterEach(() => {
@@ -89,14 +130,35 @@ describe('openvidu-meet custom element', () => {
 		});
 
 		describe('off()', () => {
-			it('removes only the given callback when one is provided', () => {
+			it('removes only the given callback, and keeps removing them one at a time', () => {
 				const callback = jest.fn();
+				const other = jest.fn();
 				el.on('joined', callback);
-				el.off('joined', callback);
+				el.on('joined', other);
 
+				el.off('joined', callback);
 				el.dispatchEvent(new CustomEvent('joined', { detail: {} }));
 
 				expect(callback).not.toHaveBeenCalled();
+				expect(other).toHaveBeenCalledTimes(1);
+
+				el.off('joined', other);
+				el.dispatchEvent(new CustomEvent('joined', { detail: {} }));
+
+				expect(other).toHaveBeenCalledTimes(1);
+			});
+
+			// A host that subscribes per meeting would otherwise keep every callback of every past
+			// meeting alive for as long as the element is on the page.
+			it('keeps no bookkeeping for the callbacks it removed', () => {
+				const callback = jest.fn();
+				el.on('joined', callback);
+				el.on('left', callback);
+
+				el.off('joined', callback);
+				el.off('left');
+
+				expect(el._handlerMap.size).toBe(0);
 			});
 
 			it('removes every callback for the event when none is provided', () => {
@@ -114,11 +176,33 @@ describe('openvidu-meet custom element', () => {
 
 			it('does nothing when the event has no registered callbacks', () => {
 				expect(() => el.off('joined')).not.toThrow();
+				expect(el.off('joined', jest.fn())).toBe(el);
 			});
 		});
 	});
 
 	describe('lifecycle', () => {
+		it('lets the Angular Elements base connect, so the component is created and rendered', () => {
+			const el = createElement();
+
+			document.body.appendChild(el);
+
+			expect(el.baseConnections).toBe(1);
+		});
+
+		it('disconnects from a base class that does not implement disconnectedCallback', () => {
+			const el = document.createElement(TAG_WITHOUT_DISCONNECT) as TestableElement;
+			const callback = jest.fn();
+			el.on('joined', callback);
+			document.body.appendChild(el);
+
+			expect(() => el.remove()).not.toThrow();
+
+			el.dispatchEvent(new CustomEvent('joined', { detail: {} }));
+
+			expect(callback).not.toHaveBeenCalled();
+		});
+
 		it('dispatches a composed, non-bubbling "ready" event once connected', async () => {
 			const el = createElement();
 			const ready = new Promise<CustomEvent>((resolve) => {
@@ -144,49 +228,39 @@ describe('openvidu-meet custom element', () => {
 			el.dispatchEvent(new CustomEvent('joined', { detail: {} }));
 
 			expect(callback).not.toHaveBeenCalled();
+			expect(el._handlerMap.size).toBe(0);
 		});
 	});
 
 	describe('imperative commands', () => {
-		it('meetingEnd() delegates to the Angular component instance', () => {
-			const el = createElement();
-			const instance = componentInstance();
-			el.ngElementStrategy = { componentRef: { instance } };
+		const mute: MeetParticipantMuteOptions = { audioActive: false };
 
-			el.meetingEnd();
+		// Every command the element publishes, with the arguments the component must receive
+		// untouched: the element is a transport, it decides nothing.
+		const commands: [keyof ComponentInstance, (el: TestableElement) => void, unknown[]][] = [
+			['meetingEnd', (el) => el.meetingEnd(), []],
+			['meetingLeave', (el) => el.meetingLeave(), []],
+			['participantKick', (el) => el.participantKick('participant-1'), ['participant-1']],
+			['participantMute', (el) => el.participantMute('participant-1', mute), ['participant-1', mute]],
+			['participantMuteAll', (el) => el.participantMuteAll(mute), [mute]],
+			['mediaToggleAudio', (el) => el.mediaToggleAudio(false), [false]],
+			['mediaToggleVideo', (el) => el.mediaToggleVideo(true), [true]],
+			['mediaToggleScreenShare', (el) => el.mediaToggleScreenShare(false), [false]]
+		];
 
-			expect(instance.meetingEnd).toHaveBeenCalledTimes(1);
+		it.each(commands)('%s() reaches the Angular component instance as it was called', (name, call, args) => {
+			const [el, instance] = withComponent();
+
+			call(el);
+
+			expect(instance[name]).toHaveBeenCalledWith(...args);
 		});
 
-		it('meetingLeave() delegates to the Angular component instance', () => {
-			const el = createElement();
-			const instance = componentInstance();
-			el.ngElementStrategy = { componentRef: { instance } };
-
-			el.meetingLeave();
-
-			expect(instance.meetingLeave).toHaveBeenCalledTimes(1);
-		});
-
-		it('participantKick() passes the participant identity to the Angular component instance', () => {
-			const el = createElement();
-			const instance = componentInstance();
-			el.ngElementStrategy = { componentRef: { instance } };
-
-			el.participantKick('participant-1');
-
-			expect(instance.participantKick).toHaveBeenCalledWith('participant-1');
-		});
-
-		it('are no-ops when the Angular component instance is not yet available', () => {
+		it.each(commands)('%s() is a no-op while the Angular component instance is missing', (_name, call) => {
 			const el = createElement();
 			el.ngElementStrategy = undefined;
 
-			expect(() => {
-				el.meetingEnd();
-				el.meetingLeave();
-				el.participantKick('participant-1');
-			}).not.toThrow();
+			expect(() => call(el)).not.toThrow();
 		});
 	});
 
@@ -194,9 +268,7 @@ describe('openvidu-meet custom element', () => {
 	// component method, so the deprecation window is behaviour-preserving rather than a promise.
 	describe('deprecated command aliases', () => {
 		it('endMeeting() reaches the component through meetingEnd()', () => {
-			const el = createElement();
-			const instance = componentInstance();
-			el.ngElementStrategy = { componentRef: { instance } };
+			const [el, instance] = withComponent();
 
 			el.endMeeting();
 
@@ -204,9 +276,7 @@ describe('openvidu-meet custom element', () => {
 		});
 
 		it('leaveRoom() reaches the component through meetingLeave()', () => {
-			const el = createElement();
-			const instance = componentInstance();
-			el.ngElementStrategy = { componentRef: { instance } };
+			const [el, instance] = withComponent();
 
 			el.leaveRoom();
 
@@ -214,9 +284,7 @@ describe('openvidu-meet custom element', () => {
 		});
 
 		it('kickParticipant() reaches the component through participantKick(), identity intact', () => {
-			const el = createElement();
-			const instance = componentInstance();
-			el.ngElementStrategy = { componentRef: { instance } };
+			const [el, instance] = withComponent();
 
 			el.kickParticipant('participant-1');
 

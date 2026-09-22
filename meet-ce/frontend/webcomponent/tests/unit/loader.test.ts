@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { EmbeddedCommandName, EmbeddedEventName } from '@openvidu-meet/typings';
+import { EmbeddedAttribute, EmbeddedCommandName, EmbeddedEventName } from '@openvidu-meet/typings';
 
 // The loader `import()`s the heavy ESM only when the internal `openvidu-meet-impl`
 // tag is NOT yet defined. By registering a lightweight stand-in for that tag BEFORE
@@ -8,6 +8,10 @@ import { EmbeddedCommandName, EmbeddedEventName } from '@openvidu-meet/typings';
 // jsdom without pulling in Angular / LiveKit / the 5.6 MB bundle.
 // Mirrors the real impl (the custom-element wrapper): canonical methods plus the deprecated
 // spellings, which the loader must keep proxying for the whole deprecation window.
+// Set by the test that needs an impl bundle older than the loader: one the host calls a command
+// the bundle does not have.
+let commandMissingFromImpl: string | null = null;
+
 class FakeImpl extends HTMLElement {
 	// Like Angular Elements, the attribute and the property feed one input and the last write wins.
 	static readonly observedAttributes = ['show-only-recordings'];
@@ -24,6 +28,12 @@ class FakeImpl extends HTMLElement {
 	endMeeting = jest.fn();
 	leaveRoom = jest.fn();
 	kickParticipant = jest.fn();
+
+	constructor() {
+		super();
+
+		if (commandMissingFromImpl) delete (this as unknown as Record<string, unknown>)[commandMissingFromImpl];
+	}
 
 	attributeChangedCallback(_name: string, _previous: string | null, value: string | null): void {
 		this.showOnlyRecordings = value !== null && value !== 'false';
@@ -50,6 +60,7 @@ type Loader = HTMLElement & {
 	roomUrl?: string;
 	recordingUrl?: string;
 	showOnlyRecordings?: boolean;
+	_handlerMap: Map<string, Map<unknown, EventListener>>;
 	_meetServerEsmUrl(): string | null;
 };
 
@@ -68,10 +79,17 @@ const implOf = (el: Loader): FakeImpl => el.shadowRoot!.querySelector('openvidu-
 describe('openvidu-meet lazy loader', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
+		commandMissingFromImpl = null;
 	});
 
 	it('registers <openvidu-meet> immediately (no Angular needed)', () => {
 		expect(customElements.get('openvidu-meet')).toBeDefined();
+	});
+
+	// jsdom has no constructable stylesheets, so what runs here is the <style> fallback the loader
+	// keeps for engines without them.
+	it('styles its shadow root, so the placeholder and the impl fill the host box', () => {
+		expect(createLoader().shadowRoot!.querySelector('style')!.textContent).toContain('ov-loader-spinner');
 	});
 
 	it('shows a loading placeholder before the impl mounts, then swaps it for the impl', async () => {
@@ -104,6 +122,21 @@ describe('openvidu-meet lazy loader', () => {
 
 			expect(onReady).toHaveBeenCalledTimes(1);
 			expect((onReady.mock.calls[0][0] as CustomEvent).detail).toEqual({ ok: 1 });
+		});
+
+		// Same reason as `ready` above, for an event the loader does listen for: it must not add a
+		// second delivery of an event that already reaches the host on its own.
+		it('delivers a composed embedded event once', async () => {
+			const el = createLoader();
+			document.body.appendChild(el);
+			await flush();
+
+			const cb = jest.fn();
+			el.on('joined', cb);
+
+			implOf(el).dispatchEvent(new CustomEvent('joined', { composed: true, bubbles: false, detail: {} }));
+
+			expect(cb).toHaveBeenCalledTimes(1);
 		});
 
 		it('forwards non-composed embedded events through the .on() API', async () => {
@@ -154,6 +187,91 @@ describe('openvidu-meet lazy loader', () => {
 
 			expect(cb).not.toHaveBeenCalled();
 		});
+
+		it('removes one callback at a time, leaving the others subscribed', async () => {
+			const el = createLoader();
+			document.body.appendChild(el);
+			await flush();
+
+			const first = jest.fn();
+			const second = jest.fn();
+			el.on('joined', first);
+			el.on('joined', second);
+
+			el.off('joined', first);
+			implOf(el).dispatchEvent(new CustomEvent('joined', { bubbles: false, detail: {} }));
+
+			expect(first).not.toHaveBeenCalled();
+			expect(second).toHaveBeenCalledTimes(1);
+
+			el.off('joined', second);
+			implOf(el).dispatchEvent(new CustomEvent('joined', { bubbles: false, detail: {} }));
+
+			expect(second).toHaveBeenCalledTimes(1);
+		});
+
+		it('delivers a once() subscription exactly one event and then drops it', async () => {
+			const el = createLoader();
+			document.body.appendChild(el);
+			await flush();
+
+			const cb = jest.fn();
+			el.once('joined', cb);
+
+			implOf(el).dispatchEvent(new CustomEvent('joined', { bubbles: false, detail: { n: 1 } }));
+			implOf(el).dispatchEvent(new CustomEvent('joined', { bubbles: false, detail: { n: 2 } }));
+
+			expect(cb).toHaveBeenCalledTimes(1);
+			expect(cb).toHaveBeenCalledWith({ n: 1 });
+		});
+
+		it('removes every callback of an event when off() is given none, and only that event', async () => {
+			const el = createLoader();
+			document.body.appendChild(el);
+			await flush();
+
+			const first = jest.fn();
+			const second = jest.fn();
+			const other = jest.fn();
+			el.on('joined', first);
+			el.on('joined', second);
+			el.on('left', other);
+
+			el.off('joined');
+
+			implOf(el).dispatchEvent(new CustomEvent('joined', { bubbles: false, detail: {} }));
+			implOf(el).dispatchEvent(new CustomEvent('left', { bubbles: false, detail: {} }));
+
+			expect(first).not.toHaveBeenCalled();
+			expect(second).not.toHaveBeenCalled();
+			expect(other).toHaveBeenCalledTimes(1);
+		});
+
+		it('takes off() for an event nothing subscribed to', async () => {
+			const el = createLoader();
+			document.body.appendChild(el);
+			await flush();
+
+			expect(el.off('joined')).toBe(el);
+			expect(el.off('joined', jest.fn())).toBe(el);
+		});
+
+		// A host that subscribes per meeting would otherwise keep every callback of every past
+		// meeting alive for as long as the element is on the page.
+		it('keeps no bookkeeping for a callback it has removed', async () => {
+			const el = createLoader();
+			document.body.appendChild(el);
+			await flush();
+
+			const cb = jest.fn();
+			el.on('joined', cb);
+			el.on('left', cb);
+
+			el.off('joined', cb);
+			el.off('left');
+
+			expect(el._handlerMap.size).toBe(0);
+		});
 	});
 
 	describe('command delegation', () => {
@@ -201,6 +319,22 @@ describe('openvidu-meet lazy loader', () => {
 			// alias is the wrapper's job, one layer down.
 			expect(implOf(el).leaveRoom).toHaveBeenCalledTimes(1);
 			expect(implOf(el).meetingLeave).not.toHaveBeenCalled();
+		});
+
+		// The loader may be newer than the bundle the server hands it (a host that pins the loader
+		// url, a cached bundle): a command the bundle does not have is dropped, not thrown.
+		it('drops a buffered call the impl turns out not to implement', async () => {
+			commandMissingFromImpl = 'meetingEnd';
+
+			const el = createLoader();
+			el.meetingEnd();
+			el.meetingLeave();
+
+			document.body.appendChild(el);
+			await flush();
+
+			expect(implOf(el).meetingEnd).toBeUndefined();
+			expect(implOf(el).meetingLeave).toHaveBeenCalledTimes(1);
 		});
 
 		it('applies properties set before the bundle loaded', async () => {
@@ -265,6 +399,37 @@ describe('openvidu-meet lazy loader', () => {
 		});
 	});
 
+	// The loader is the element the host holds: frameworks write its inputs as properties and read
+	// them back, and a host that serialises it must not find the command names among its own keys.
+	describe('the proxied surface on the element', () => {
+		const toCamel = (kebab: string): string => kebab.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+
+		it('declares the inputs as redefinable enumerable accessors and the commands as hidden methods', () => {
+			const descriptors = Object.getOwnPropertyDescriptors(Object.getPrototypeOf(createLoader()));
+
+			for (const attribute of Object.values(EmbeddedAttribute)) {
+				expect(descriptors[toCamel(attribute)]).toMatchObject({ configurable: true, enumerable: true });
+			}
+
+			for (const command of Object.values(EmbeddedCommandName)) {
+				expect(descriptors[command]).toMatchObject({ configurable: true, enumerable: false });
+			}
+		});
+
+		it('reads a property back from the buffer before the impl mounts, and from the impl after', async () => {
+			const el = createLoader();
+			el.roomUrl = 'https://example/before';
+
+			expect(el.roomUrl).toBe('https://example/before');
+
+			document.body.appendChild(el);
+			await flush();
+			(implOf(el) as unknown as { roomUrl?: string }).roomUrl = 'https://example/after';
+
+			expect(el.roomUrl).toBe('https://example/after');
+		});
+	});
+
 	describe('disconnect / reconnect', () => {
 		it('preserves the live impl across a DOM move (re-parenting) so the meeting survives', async () => {
 			const el = createLoader();
@@ -276,10 +441,12 @@ describe('openvidu-meet lazy loader', () => {
 			// Move to a different parent: the custom-element disconnect + reconnect
 			// reactions fire synchronously within appendChild, so the deferred
 			// teardown is cancelled before it can run and the same impl is kept.
+			// Asserting past the grace window is what tells a cancelled teardown from a
+			// pending one: without the cancel the impl is still there a tick later.
 			const other = document.createElement('div');
 			document.body.appendChild(other);
 			other.appendChild(el);
-			await flush();
+			await flushGrace();
 
 			expect(implOf(el)).toBe(first);
 		});
@@ -306,6 +473,31 @@ describe('openvidu-meet lazy loader', () => {
 			const second = implOf(el);
 			expect(second).toBeInstanceOf(FakeImpl);
 			expect(second).not.toBe(first);
+
+			// The element is bound to the rebuilt impl: commands reach it instead of queueing.
+			el.meetingEnd();
+			expect(second.meetingEnd).toHaveBeenCalledTimes(1);
+		});
+
+		// A host framework that mounts, unmounts and remounts in the same turn (or a moved element
+		// whose bundle is still loading) runs both callbacks before the first load resolves.
+		it('mounts a single impl when it is reconnected while the bundle is still loading', async () => {
+			const el = createLoader();
+			document.body.appendChild(el);
+			el.remove();
+			document.body.appendChild(el);
+			await flushGrace();
+
+			expect(el.shadowRoot!.querySelectorAll('openvidu-meet-impl')).toHaveLength(1);
+		});
+
+		it('mounts nothing into an element removed while the bundle was loading', async () => {
+			const el = createLoader();
+			document.body.appendChild(el);
+			el.remove();
+			await flushGrace();
+
+			expect(el.shadowRoot!.querySelector('openvidu-meet-impl')).toBeNull();
 		});
 	});
 
