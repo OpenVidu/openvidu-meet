@@ -54,7 +54,7 @@ export enum EmbeddedAttribute {
 	E2EE_KEY = 'e2ee-key',
 	/**
 	 * URL to redirect to when leaving OpenVidu Meet. Redirection happens when the participant
-	 * dismisses the post-meeting, lobby, error or recording screen, right after the
+	 * dismisses the post-meeting, join, error or recording screen, right after the
 	 * **`viewClosed` event** fires.
 	 */
 	LEAVE_REDIRECT_URL = 'leave-redirect-url',
@@ -92,7 +92,7 @@ export interface WebComponentPropertyValues {
 	initialVideoActive?: boolean;
 	/** Secret key for end-to-end encryption (E2EE). When provided the participant joins using E2EE. */
 	e2eeKey?: string;
-	/** URL to redirect to when the participant dismisses the post-meeting, lobby, error or recording screen, after `viewClosed` fires. */
+	/** URL to redirect to when the participant dismisses the post-meeting, join, error or recording screen, after `viewClosed` fires. */
 	leaveRedirectUrl?: string;
 	/** When true, shows only recordings instead of live meetings. */
 	showOnlyRecordings?: boolean;

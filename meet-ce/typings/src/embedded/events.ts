@@ -46,7 +46,7 @@ export enum EmbeddedEventName {
 	 */
 	MEDIA_SCREEN_SHARE_STATUS_CHANGED = 'mediaScreenShareStatusChanged',
 	/**
-	 * Event emitted when the participant dismisses the post-meeting, lobby, error or recording
+	 * Event emitted when the participant dismisses the post-meeting, join, error or recording
 	 * screen, ending their interaction with the embedded application. The meeting itself may still
 	 * be running for the other participants; the host application uses this event to take its view
 	 * back or route the participant elsewhere.
