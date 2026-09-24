@@ -9,7 +9,9 @@ import { ConnectionQuality, RemoteParticipant, Room, RoomEvent, Track } from '..
 import { DialogService } from '../../../../../shared/services/dialog.service';
 import { ChatService } from '../chat/chat.service';
 import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
+import { E2eeService } from '../e2ee/e2ee.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
+import { LocalMediaService } from '../local-media/local-media.service';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
 import { ParticipantService } from '../participant/participant.service';
 import { RecordingService } from '../recording/recording.service';
@@ -508,5 +510,86 @@ describe('MeetingEventsService (the room events it binds to)', () => {
 		emit(RoomEvent.ConnectionQualityChanged, ConnectionQuality.Poor, { sid: 'PA_ana' });
 
 		expect(participantService.setConnectionQuality).toHaveBeenCalledWith('PA_ana', ConnectionQuality.Poor);
+	});
+});
+
+describe('MeetingEventsService (remote roster across a full reconnect)', () => {
+	let participantService: ParticipantService;
+	let emit: (event: RoomEvent, ...args: unknown[]) => void;
+	let roomRoster: Map<string, RemoteParticipant>;
+
+	const remote = (sid: string, identity: string): RemoteParticipant =>
+		({ sid, identity, name: identity }) as unknown as RemoteParticipant;
+
+	beforeEach(() => {
+		roomRoster = new Map();
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				{
+					provide: StreamLayoutStateService,
+					useValue: jasmine.createSpyObj<StreamLayoutStateService>('StreamLayoutStateService', [
+						'clearParticipantViewState',
+						'dockLocalCameraVideo',
+						'floatLocalCameraVideo'
+					])
+				},
+				{ provide: E2eeService, useValue: { decryptOrMask: async (name: string) => name } },
+				{ provide: LocalMediaService, useValue: {} },
+				{ provide: LoggerService, useClass: LoggerServiceStub },
+				{
+					provide: DialogService,
+					useValue: jasmine.createSpyObj('DialogService', ['showBlockingDialog', 'closeBlockingDialog'])
+				},
+				{
+					provide: MeetingLiveKitService,
+					useValue: {
+						getRoomName: () => 'room',
+						hasRemoteParticipant: (p: RemoteParticipant) => roomRoster.get(p.identity) === p
+					}
+				},
+				{ provide: MeetingTranslateService, useValue: { translate: (key: string) => key } },
+				{ provide: ChatService, useValue: {} },
+				{ provide: MeetingUiConfigService, useValue: {} },
+				{ provide: RecordingService, useValue: {} },
+				{ provide: MeetStorageService, useValue: { getLocalTileFloating: () => null } }
+			]
+		});
+
+		participantService = TestBed.inject(ParticipantService);
+		const doubles = fakeRoom();
+		emit = doubles.emit;
+		TestBed.inject(MeetingEventsService).bindRoom(doubles.room, {
+			onRoomReconnecting: () => {},
+			onRoomReconnected: () => {},
+			onParticipantLeft: () => {}
+		});
+	});
+
+	it('does not bring back a participant who left while a full reconnect was restoring the roster', async () => {
+		const alice = remote('PA_alice', 'alice');
+		const ghost = remote('PA_ghost', 'ghost');
+		roomRoster.set('alice', alice).set('ghost', ghost);
+		emit(RoomEvent.ParticipantConnected, alice);
+		emit(RoomEvent.ParticipantConnected, ghost);
+
+		// livekit-client's full reconnect unwinds every remote, then applies the fresh JoinResponse,
+		// whose ParticipantConnected events it holds back until Reconnected. A departure in between
+		// is emitted at once, before the join it undoes.
+		roomRoster.clear();
+		emit(RoomEvent.ParticipantDisconnected, alice);
+		emit(RoomEvent.ParticipantDisconnected, ghost);
+		emit(RoomEvent.Reconnecting);
+		const rejoinedAlice = remote('PA_alice', 'alice');
+		const rejoinedGhost = remote('PA_ghost', 'ghost');
+		roomRoster.set('alice', rejoinedAlice).set('ghost', rejoinedGhost);
+		roomRoster.delete('ghost');
+		emit(RoomEvent.ParticipantDisconnected, rejoinedGhost);
+		emit(RoomEvent.Reconnected);
+		emit(RoomEvent.ParticipantConnected, rejoinedAlice);
+		emit(RoomEvent.ParticipantConnected, rejoinedGhost);
+		await flushMicrotasks();
+
+		expect(participantService.remoteParticipants().map((p) => p.identity)).toEqual(['alice']);
 	});
 });

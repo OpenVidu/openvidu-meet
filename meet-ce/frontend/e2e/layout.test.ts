@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Browser, type Page } from '@playwright/test';
 import {
 	croppedShare,
 	gapBesidePinnedTile,
@@ -14,7 +14,11 @@ import { startScreensharing, stopScreensharing, toggleMicrophone } from './helpe
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { leaveMeeting, openMeeting } from './helpers/meeting-navigation.helper';
 import { closeSettingsPanel, openLayoutSettingsPanel } from './helpers/panels.helper';
-import { disconnectAllBrowserFakeParticipants, joinParticipants } from './helpers/participant-management.helper';
+import {
+	disconnectAllBrowserFakeParticipants,
+	joinParticipants,
+	tapSignalling
+} from './helpers/participant-management.helper';
 import {
 	getVisibleRemoteParticipantNames,
 	toggleStreamPin,
@@ -1137,6 +1141,43 @@ test.describe('Layout E2E Tests', () => {
 						},
 						20_000
 					);
+				} finally {
+					await removeAllParticipants();
+				}
+			});
+
+			const joinViewerAndTwoRemotes = async (page: Page, browser: Browser) => {
+				await openMeeting(page, accessUrl, { name: 'viewer' });
+				return joinParticipants(browser, {
+					roomId,
+					accessUrl,
+					skipRemoteStreamCheck: true,
+					participants: [
+						{ name: 'remote-a', headless: true, audioEnabled: false },
+						{ name: 'remote-b', headless: true, audioEnabled: false }
+					]
+				});
+			};
+
+			test('should drop a participant who leaves while the viewer is fully reconnecting', async ({
+				page,
+				browser
+			}) => {
+				const signalling = await tapSignalling(page);
+				const { byName, removeAllParticipants } = await joinViewerAndTwoRemotes(page, browser);
+
+				try {
+					await waitForVisibleRemoteParticipants(page, { count: 2 });
+
+					const rejoin = await signalling.requestFullReconnect();
+					const remoteA = rejoin.otherParticipants.find((p) => p.name === 'remote-a');
+					expect(remoteA).toBeDefined();
+
+					await leaveMeeting(byName['remote-a']);
+					await expect.poll(() => signalling.departures).toContain(remoteA!.identity);
+					signalling.completeReconnect();
+
+					await waitForVisibleRemoteParticipants(page, { count: 1, includes: ['remote-b'] }, 15_000);
 				} finally {
 					await removeAllParticipants();
 				}

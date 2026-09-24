@@ -246,6 +246,10 @@ export class ParticipantService {
 	 * @internal
 	 */
 	addRemoteParticipant(participant: RemoteParticipant) {
+		// LiveKit replays the events it held back during a reconnect once it is over, including the
+		// join of a participant who has left in the meantime.
+		if (!this.meetingLiveKitService.hasRemoteParticipant(participant)) return;
+
 		const remotes = this._remoteParticipants();
 		const existing = remotes.find((p) => p.sid === participant.sid);
 

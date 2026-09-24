@@ -8,6 +8,7 @@ import { LoggerService } from '../../../../../shared/services/logger.service';
 import { CAMERA_CAPTURE_DEFAULTS, MICROPHONE_CAPTURE_DEFAULTS } from '../../models/media-capture.model';
 import { MeetingConnectError } from '../../models/meeting-connect-error.model';
 import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
+import type { RemoteParticipant } from '../livekit';
 import {
 	ConnectionError,
 	ConnectionErrorReason,
@@ -347,6 +348,13 @@ export class MeetingLiveKitService {
 	 */
 	isInitialized(): boolean {
 		return !!this.room;
+	}
+
+	/**
+	 * Whether the current room holds this very participant, not an earlier one under its identity.
+	 */
+	hasRemoteParticipant(participant: RemoteParticipant): boolean {
+		return this.room?.remoteParticipants.get(participant.identity) === participant;
 	}
 
 	/**

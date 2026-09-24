@@ -1,5 +1,20 @@
+import {
+	JoinResponse,
+	LeaveRequest,
+	LeaveRequest_Action,
+	ParticipantInfo_State,
+	SignalResponse
+} from '@livekit/protocol';
 import { MeetRoomMemberRole, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
-import { Browser, chromium, expect, type BrowserContext, type Locator, type Page } from '@playwright/test';
+import {
+	Browser,
+	chromium,
+	expect,
+	type BrowserContext,
+	type Locator,
+	type Page,
+	type WebSocketRoute
+} from '@playwright/test';
 import { existsSync, rmSync } from 'fs';
 import path from 'path';
 import { startScreensharing } from './media-controls.helper';
@@ -366,6 +381,76 @@ export const disconnectAllBrowserFakeParticipants = async (): Promise<void> => {
 	}
 
 	browserFakeParticipants.clear();
+};
+
+// ─── LiveKit signalling ───────────────────────────────────────────────────────
+
+export type SignallingTap = {
+	/** Identities the server has told the client are gone. */
+	departures: string[];
+	/**
+	 * Sends the client the leave a server uses to make it rejoin (`action: RECONNECT`), which puts the
+	 * SDK through a full reconnect, and holds that reconnect open once its JoinResponse is delivered:
+	 * every later server message except participant updates waits for `completeReconnect`. Resolves
+	 * with the JoinResponse.
+	 */
+	requestFullReconnect: () => Promise<JoinResponse>;
+	completeReconnect: () => void;
+};
+
+/**
+ * Proxies the page's LiveKit signalling sockets so the test can speak as the server. Must be installed
+ * before the page joins.
+ */
+export const tapSignalling = async (page: Page): Promise<SignallingTap> => {
+	const sockets: WebSocketRoute[] = [];
+	const departures: string[] = [];
+	const held: (string | Buffer)[] = [];
+	let onRejoin: ((join: JoinResponse) => void) | undefined;
+	let holding = false;
+
+	await page.routeWebSocket(/\/rtc(\/v1)?\?/, (client) => {
+		sockets.push(client);
+		client.connectToServer().onMessage((message) => {
+			const signal = typeof message === 'string' ? undefined : SignalResponse.fromBinary(message).message;
+
+			if (holding && signal?.case !== 'update') {
+				held.push(message);
+				return;
+			}
+
+			client.send(message);
+
+			if (signal?.case === 'join' && onRejoin) {
+				holding = true;
+				onRejoin(signal.value);
+				onRejoin = undefined;
+			}
+
+			if (signal?.case === 'update') {
+				departures.push(
+					...signal.value.participants
+						.filter((p) => p.state === ParticipantInfo_State.DISCONNECTED)
+						.map((p) => p.identity)
+				);
+			}
+		});
+	});
+
+	return {
+		departures,
+		requestFullReconnect: () => {
+			const rejoined = new Promise<JoinResponse>((resolve) => (onRejoin = resolve));
+			const leave = new LeaveRequest({ canReconnect: true, action: LeaveRequest_Action.RECONNECT });
+			const signal = new SignalResponse({ message: { case: 'leave', value: leave } });
+			sockets.at(-1)!.send(Buffer.from(signal.toBinary()));
+			return rejoined;
+		},
+		completeReconnect: () => {
+			holding = false;
+			held.splice(0).forEach((message) => sockets.at(-1)!.send(message));
+		}
+	};
 };
 
 // ─── Participants panel: lookup ───────────────────────────────────────────────
