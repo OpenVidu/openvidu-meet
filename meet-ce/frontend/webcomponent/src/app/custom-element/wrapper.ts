@@ -2,9 +2,8 @@ import { EmbeddedEventName, EmbeddedEventPayloadFor, MeetParticipantMuteOptions 
 import type { App } from '../app';
 
 /**
- * Wraps the Angular Elements base class to add: the imperative command methods (plus the
- * deprecated 3.8.0 spellings of the renamed ones), the convenience event API (on/once/off),
- * and a `ready` CustomEvent dispatched after first render.
+ * Wraps the Angular Elements base class to add the imperative command methods (plus the
+ * deprecated 3.8.0 spellings of the renamed ones) and the convenience event API (on/once/off).
  */
 export function createOpenViduMeetElementClass(
 	NgElementConstructor: CustomElementConstructor
@@ -13,17 +12,6 @@ export function createOpenViduMeetElementClass(
 	class OpenViduMeetElement extends (NgElementConstructor as any) {
 		// Keyed by the caller's handler, so `off()` can find the wrapper it was registered with.
 		private readonly _handlerMap = new Map<string, Map<(...args: never[]) => unknown, EventListener>>();
-
-		connectedCallback(): void {
-			super.connectedCallback();
-			const el = this as unknown as HTMLElement;
-			// Two microtask ticks let Angular Elements initialize and complete first render.
-			Promise.resolve().then(() =>
-				Promise.resolve().then(() => {
-					el.dispatchEvent(new CustomEvent('ready', { bubbles: false, composed: true, detail: {} }));
-				})
-			);
-		}
 
 		disconnectedCallback(): void {
 			super.disconnectedCallback?.();

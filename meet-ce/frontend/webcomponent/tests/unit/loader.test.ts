@@ -104,28 +104,9 @@ describe('openvidu-meet lazy loader', () => {
 	});
 
 	describe('event forwarding', () => {
-		// The wrapper dispatches `ready` as `composed: true, bubbles: false` inside the
-		// loader's shadow root. Because it is `composed`, the host <openvidu-meet>
-		// becomes an AT_TARGET node in the event path, so its listeners fire NATIVELY
-		// (AT_TARGET invokes bubble-phase listeners regardless of `bubbles`). The
-		// loader deliberately does NOT re-dispatch composed events — this test guards
-		// against a regression that would deliver `ready` twice.
-		it('delivers the composed "ready" event to listeners on <openvidu-meet> exactly once', async () => {
-			const el = createLoader();
-			const onReady = jest.fn();
-			el.addEventListener('ready', onReady);
-
-			document.body.appendChild(el);
-			await flush();
-
-			implOf(el).dispatchEvent(new CustomEvent('ready', { composed: true, bubbles: false, detail: { ok: 1 } }));
-
-			expect(onReady).toHaveBeenCalledTimes(1);
-			expect((onReady.mock.calls[0][0] as CustomEvent).detail).toEqual({ ok: 1 });
-		});
-
-		// Same reason as `ready` above, for an event the loader does listen for: it must not add a
-		// second delivery of an event that already reaches the host on its own.
+		// A composed event dispatched inside the loader's shadow root already reaches listeners on
+		// <openvidu-meet> natively, as the host is AT_TARGET in its path (bubble-phase listeners fire
+		// there regardless of `bubbles`). The loader must not add a second delivery.
 		it('delivers a composed embedded event once', async () => {
 			const el = createLoader();
 			document.body.appendChild(el);

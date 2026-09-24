@@ -15,7 +15,7 @@
 
 This document provides a comprehensive overview of the test suite for the OpenVidu Meet Web Component, a reusable custom HTML element that embeds the full OpenVidu Meet application in any web page. The web component is built with **Angular Elements** (`@angular/elements`): the published `<openvidu-meet>` element is a custom element whose Angular `App` component renders the full app inside a shadow root. The test suite includes both end-to-end (E2E) and unit tests to ensure the reliability and correctness of the web component's functionality, attributes, commands, and events.
 
-The unit tests cover the framework-agnostic logic that lives in this project — the custom-element wrapper's public API (`on`/`once`/`off`, `ready`, imperative commands). Integrated behavior of the Angular `App` shell (rendering, bootstrap flows, service wiring) is exercised by the E2E suite rather than by unit tests, since it would otherwise require a full Angular TestBed setup.
+The unit tests cover the framework-agnostic logic that lives in this project — the custom-element wrapper's public API (`on`/`once`/`off`, imperative commands). Integrated behavior of the Angular `App` shell (rendering, bootstrap flows, service wiring) is exercised by the E2E suite rather than by unit tests, since it would otherwise require a full Angular TestBed setup.
 
 ---
 
@@ -81,7 +81,7 @@ The test suite provides comprehensive coverage across all major web component fe
 | **E2E - E2EE UI** | 1 | 7 | End-to-end encryption UI elements, key input, encrypted badge, room restrictions |
 | **E2E - Recording Access** | 1 | 6 | Recording visibility, access control (admin/moderator/speaker), playback permissions |
 | **E2E - Custom Layout** | 1 | 19 | Layout customization, branding, logo injection, theme colors, hide toolbar elements |
-| **Unit - Element wrapper** | 1 | 12 | Custom element `on`/`once`/`off`, `ready` event, listener cleanup, `endMeeting`/`leaveRoom`/`kickParticipant` delegation |
+| **Unit - Element wrapper** | 1 | 12 | Custom element `on`/`once`/`off`, listener cleanup, `endMeeting`/`leaveRoom`/`kickParticipant` delegation |
 
 ### Total Coverage
 
@@ -195,7 +195,6 @@ custom-element wrapper, so it stays fast and requires no Angular runtime.
 Custom-element public API added on top of Angular Elements (`src/app/custom-element/wrapper.ts`),
 exercised against a stub base class so no Angular runtime is needed:
 - `on` / `once` / `off` event subscription semantics and chaining
-- `ready` CustomEvent dispatched after connection (non-bubbling, composed)
 - Listener cleanup on `disconnectedCallback`
 - `endMeeting` / `leaveRoom` / `kickParticipant` delegation to the Angular component instance, and safe no-ops before it exists
 

@@ -203,20 +203,6 @@ describe('openvidu-meet custom element', () => {
 			expect(callback).not.toHaveBeenCalled();
 		});
 
-		it('dispatches a composed, non-bubbling "ready" event once connected', async () => {
-			const el = createElement();
-			const ready = new Promise<CustomEvent>((resolve) => {
-				el.addEventListener('ready', (e) => resolve(e as CustomEvent), { once: true });
-			});
-
-			document.body.appendChild(el);
-			const event = await ready;
-
-			expect(event.bubbles).toBe(false);
-			expect(event.composed).toBe(true);
-			expect(event.detail).toEqual({});
-		});
-
 		it('removes all registered callbacks when disconnected from the DOM', () => {
 			const el = createElement();
 			const callback = jest.fn();

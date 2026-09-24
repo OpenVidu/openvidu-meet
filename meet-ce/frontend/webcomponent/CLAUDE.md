@@ -69,7 +69,7 @@ events are re-dispatched on the outer element.
   participants only; payload `{ roomId, participant: MeetParticipantPayload }` — identity,
   correlation fields and role; live transitions only, no replay of participants already present,
   no media state, and no client-side departure reason — the authoritative one travels on the
-  `participantLeft` webhook), plus a `ready` event dispatched by the wrapper after first render.
+  `participantLeft` webhook).
   The 3.8.0 spellings (`joined`, `left`, `closed`) are dispatched **alongside** their
   canonical twin until **3.12.0** — a host listening to both names receives the event twice.
   `EmbeddedEventBusService`'s queue only ever carries canonical names; `src/app/app.ts` emits both
