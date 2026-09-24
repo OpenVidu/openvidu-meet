@@ -548,3 +548,257 @@ export const dragStream = async (page: Page, selector: string, targetX: number, 
 	await page.mouse.move(targetX, targetY, { steps: 10 });
 	await page.mouse.up();
 };
+
+// ─── Media flow ─────────────────────────────────────────────────────────────
+
+type PeerConnectionWindow = Window & { __peerConnections?: RTCPeerConnection[] };
+
+/** Must run before navigation: records every RTCPeerConnection so the media-flow helpers below can read its stats. */
+export const capturePeerConnections = async (page: Page): Promise<void> => {
+	await page.addInitScript(() => {
+		const connections: RTCPeerConnection[] = [];
+		(window as PeerConnectionWindow).__peerConnections = connections;
+		const Original = window.RTCPeerConnection;
+		window.RTCPeerConnection = class extends Original {
+			constructor(...args: ConstructorParameters<typeof RTCPeerConnection>) {
+				super(...args);
+				connections.push(this);
+			}
+		};
+	});
+};
+
+type MediaSnapshot = {
+	/** `framesReceived` of every remote video, keyed by the id of the track that carries it. */
+	receivedFrames: Record<string, number>;
+	/** `framesEncoded` of every local video layer. */
+	encodedFrames: Record<string, number>;
+	/**
+	 * Remote camera and screen tiles on screen: the track their `<video>` plays, the frames it has
+	 * presented, and whether it is playing an enabled live track at all.
+	 */
+	tiles: { label: string; trackId?: string; presentedFrames: number; isPlaying: boolean }[];
+};
+
+const snapshotMedia = (page: Page): Promise<MediaSnapshot> =>
+	page.evaluate(async () => {
+		const snapshot: MediaSnapshot = { receivedFrames: {}, encodedFrames: {}, tiles: [] };
+		const connections = (window as PeerConnectionWindow).__peerConnections ?? [];
+
+		for (const connection of connections.filter((c) => c.connectionState !== 'closed')) {
+			(await connection.getStats()).forEach((report) => {
+				if (report.type === 'inbound-rtp' && report.kind === 'video') {
+					snapshot.receivedFrames[report.trackIdentifier] = report.framesReceived;
+				}
+
+				if (report.type === 'outbound-rtp' && report.kind === 'video') {
+					snapshot.encodedFrames[report.id] = report.framesEncoded;
+				}
+			});
+		}
+
+		for (const tile of Array.from(document.querySelectorAll<HTMLElement>('.OV_stream.remote'))) {
+			const box = tile.getBoundingClientRect();
+			const style = window.getComputedStyle(tile);
+			const isShown =
+				box.width > 0 &&
+				box.height > 0 &&
+				style.display !== 'none' &&
+				style.visibility !== 'hidden' &&
+				style.opacity !== '0' &&
+				!tile.classList.contains('no-size');
+
+			if (!isShown) continue;
+
+			const name = tile.querySelector('#participant-name')?.textContent?.trim() ?? '';
+			const video = tile.querySelector('video');
+			const track = (video?.srcObject as MediaStream | null)?.getVideoTracks()[0];
+			snapshot.tiles.push({
+				label: tile.classList.contains('screen-source') ? `${name} (screen)` : name,
+				trackId: track?.id,
+				presentedFrames: video?.getVideoPlaybackQuality().totalVideoFrames ?? 0,
+				isPlaying: !!video && !video.paused && track?.readyState === 'live' && track.enabled
+			});
+		}
+
+		return snapshot;
+	});
+
+const snapshotsOneSecondApart = async (page: Page): Promise<[MediaSnapshot, MediaSnapshot]> => {
+	const before = await snapshotMedia(page);
+	await page.waitForTimeout(1_000);
+	return [before, await snapshotMedia(page)];
+};
+
+const grownKeys = (before: Record<string, number>, after: Record<string, number>): string[] =>
+	Object.keys(after).filter((key) => after[key] > (before[key] ?? 0));
+
+/**
+ * Waits until every remote tile on screen presents new frames of an enabled track and no remote video
+ * arrives without a tile to show it. A frozen or black tile and a hidden camera that keeps streaming
+ * both keep it waiting.
+ */
+export const expectOnlyVisibleRemoteVideosPlaying = async (page: Page, timeout = 10_000): Promise<void> => {
+	await expect
+		.poll(
+			async () => {
+				const [before, after] = await snapshotsOneSecondApart(page);
+				const received = grownKeys(before.receivedFrames, after.receivedFrames);
+				const shown = new Set(after.tiles.map((tile) => tile.trackId));
+				const presentedBefore = (label: string, trackId?: string) =>
+					before.tiles.find((tile) => tile.label === label && tile.trackId === trackId)?.presentedFrames ?? 0;
+
+				return {
+					stalledTiles: after.tiles
+						.filter(
+							(tile) =>
+								!tile.isPlaying || tile.presentedFrames <= presentedBefore(tile.label, tile.trackId)
+						)
+						.map((tile) => tile.label),
+					videosWithoutTile: received.filter((trackId) => !shown.has(trackId)).length
+				};
+			},
+			{ timeout }
+		)
+		.toEqual({ stalledTiles: [], videosWithoutTile: 0 });
+};
+
+/**
+ * Waits until the page is subscribed to exactly `count` remote videos, flowing or paused. Checks that a
+ * hidden camera is not received only mean something once it has been subscribed. A subscribed track is
+ * the only video section of the remote description that carries an `msid`: LiveKit keeps spare ones.
+ */
+export const waitForSubscribedRemoteVideos = async (page: Page, count: number): Promise<void> => {
+	await expect
+		.poll(
+			() =>
+				page.evaluate(
+					() =>
+						((window as PeerConnectionWindow).__peerConnections ?? [])
+							.filter((connection) => connection.connectionState !== 'closed')
+							.flatMap((connection) =>
+								(connection.remoteDescription?.sdp ?? '').split(/\r?\nm=/).slice(1)
+							)
+							.filter((section) => section.startsWith('video') && section.includes('\na=msid:')).length
+				),
+			{ timeout: 20_000 }
+		)
+		.toBe(count);
+};
+
+/** Number of remote videos that delivered frames during a one-second window. */
+export const countFlowingRemoteVideos = async (page: Page): Promise<number> => {
+	const [before, after] = await snapshotsOneSecondApart(page);
+	return grownKeys(before.receivedFrames, after.receivedFrames).length;
+};
+
+/** Number of local video layers encoded during a one-second window: 0 once no viewer wants any of them. */
+export const countEncodedVideoLayers = async (page: Page): Promise<number> => {
+	const [before, after] = await snapshotsOneSecondApart(page);
+	return grownKeys(before.encodedFrames, after.encodedFrames).length;
+};
+
+export type RemoteAudioReport = { tracks: number; interruptions: string[] };
+
+type AudioRecorderWindow = typeof window & { __stopAudioRecording: () => RemoteAudioReport };
+
+/**
+ * Checks every remote `<audio>` once per second until `stop`: the same element has to keep playing a live
+ * track that received packets and concealed less than a quarter of that second. `stop` resolves with
+ * how many audio tracks were seen and every failed check as `<participant>:<source> <reason> at <n>s`.
+ */
+export const recordRemoteAudio = async (page: Page): Promise<{ stop: () => Promise<RemoteAudioReport> }> => {
+	await page.evaluate(() => {
+		type AudioStats = { packetsReceived: number; totalSamplesReceived: number; concealedSamples: number };
+		type Reading = { element: HTMLAudioElement; packets: number; samples: number; concealed: number };
+		const maxConcealedShare = 0.25;
+		const readings = new Map<string, Reading>();
+		const seen = new Set<string>();
+		const interruptions: string[] = [];
+		const startedAt = performance.now();
+		let timer: number | undefined;
+		let stopped = false;
+
+		const interruption = (previous: Reading, current: Reading, track?: MediaStreamTrack): string | undefined => {
+			if (previous.element !== current.element) return 'replaced';
+
+			if (current.element.paused || current.element.muted || track?.readyState !== 'live' || !track.enabled) {
+				return 'not playing';
+			}
+
+			if (current.packets <= previous.packets) return 'no packets';
+
+			if (current.concealed - previous.concealed > (current.samples - previous.samples) * maxConcealedShare) {
+				return 'concealed';
+			}
+
+			return undefined;
+		};
+
+		const check = async () => {
+			const audioStats = new Map<string, AudioStats>();
+			const connections = (window as PeerConnectionWindow).__peerConnections ?? [];
+
+			for (const connection of connections.filter((c) => c.connectionState !== 'closed')) {
+				(await connection.getStats()).forEach((report) => {
+					if (report.type === 'inbound-rtp' && report.kind === 'audio') {
+						audioStats.set(report.trackIdentifier, report);
+					}
+				});
+			}
+
+			if (stopped) return;
+
+			const second = Math.round((performance.now() - startedAt) / 1_000);
+			const present = new Set<string>();
+
+			for (const element of Array.from(document.querySelectorAll<HTMLAudioElement>('audio[data-participant]'))) {
+				const key = `${element.dataset['participant']}:${element.dataset['source']}`;
+				const track = (element.srcObject as MediaStream | null)?.getAudioTracks()[0];
+				const stats = track && audioStats.get(track.id);
+				const current = {
+					element,
+					packets: stats?.packetsReceived ?? 0,
+					samples: stats?.totalSamplesReceived ?? 0,
+					concealed: stats?.concealedSamples ?? 0
+				};
+				const previous = readings.get(key);
+				const reason = previous && interruption(previous, current, track);
+
+				if (reason) interruptions.push(`${key} ${reason} at ${second}s`);
+
+				readings.set(key, current);
+				present.add(key);
+				seen.add(key);
+			}
+
+			for (const key of readings.keys()) {
+				if (present.has(key)) continue;
+
+				interruptions.push(`${key} removed at ${second}s`);
+				readings.delete(key);
+			}
+
+			timer = window.setTimeout(check, 1_000);
+		};
+
+		(window as AudioRecorderWindow).__stopAudioRecording = () => {
+			stopped = true;
+			window.clearTimeout(timer);
+			return { tracks: seen.size, interruptions };
+		};
+
+		void check();
+	});
+
+	return { stop: () => page.evaluate(() => (window as AudioRecorderWindow).__stopAudioRecording()) };
+};
+
+/** Playwright cannot hide a tab, so the document reports the given state and fires `visibilitychange`. */
+export const setTabVisibility = async (page: Page, state: DocumentVisibilityState): Promise<void> => {
+	await page.evaluate((visibility) => {
+		Object.defineProperty(document, 'visibilityState', { get: () => visibility, configurable: true });
+		Object.defineProperty(document, 'hidden', { get: () => visibility === 'hidden', configurable: true });
+		document.dispatchEvent(new Event('visibilitychange'));
+	}, state);
+};

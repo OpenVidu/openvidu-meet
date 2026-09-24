@@ -10,19 +10,28 @@ import {
 	selectSmartMosaicLayout,
 	setSmartMosaicSliderValue
 } from './helpers/layout.helper';
-import { startScreensharing, stopScreensharing, toggleMicrophone } from './helpers/media-controls.helper';
+import { startScreensharing, stopScreensharing, toggleCamera, toggleMicrophone } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { leaveMeeting, openMeeting } from './helpers/meeting-navigation.helper';
-import { closeSettingsPanel, openLayoutSettingsPanel } from './helpers/panels.helper';
+import { closeSettingsPanel, openLayoutSettingsPanel, toggleParticipantsPanel } from './helpers/panels.helper';
 import {
 	disconnectAllBrowserFakeParticipants,
+	expectMediaState,
+	getParticipantIdByName,
 	joinParticipants,
 	tapSignalling
 } from './helpers/participant-management.helper';
 import {
+	capturePeerConnections,
+	countEncodedVideoLayers,
+	countFlowingRemoteVideos,
+	expectOnlyVisibleRemoteVideosPlaying,
 	getVisibleRemoteParticipantNames,
+	recordRemoteAudio,
+	setTabVisibility,
 	toggleStreamPin,
 	waitForRemoteStream,
+	waitForSubscribedRemoteVideos,
 	waitForVisibleRemoteParticipants
 } from './helpers/stream.helper';
 import { expectHidden, expectVisible } from './helpers/ui-utils.helper';
@@ -481,6 +490,309 @@ test.describe('Layout E2E Tests', () => {
 
 					await waitForRemoteStream(pageA, 3, { audioCount: 3 });
 					await expectHidden(pageA, 'ov-hidden-participants-indicator');
+				} finally {
+					await removeAllParticipants();
+				}
+			});
+		});
+
+		test.describe('Media of hidden participants', () => {
+			const openObserver = async (page: Page, visibleLimit: number) => {
+				await capturePeerConnections(page);
+				await openMeeting(page, accessUrl, { name: 'observer', audioEnabled: false });
+				await setSmartMosaicSliderValue(page, visibleLimit);
+				await closeSettingsPanel(page);
+			};
+
+			/** Joins the remotes and waits until the observer has subscribed to every one of them. */
+			const joinRemotes = async (
+				observer: Page,
+				browser: Browser,
+				remotes: { talking?: string[]; silent?: string[] }
+			) => {
+				const participants = [
+					...(remotes.talking ?? []).map((name) => ({ name, headless: true })),
+					...(remotes.silent ?? []).map((name) => ({ name, headless: true, audioEnabled: false }))
+				];
+				const joined = await joinParticipants(browser, {
+					roomId,
+					accessUrl,
+					skipRemoteStreamCheck: true,
+					participants
+				});
+				await expect(observer.locator('audio[data-participant]')).toHaveCount(participants.length, {
+					timeout: 20_000
+				});
+				await waitForSubscribedRemoteVideos(observer, participants.length);
+				return joined;
+			};
+
+			/** Waits for these remote tiles and checks that exactly their videos are playing. */
+			const expectTilesPlaying = async (
+				observer: Page,
+				tiles: { count: number; includes?: string[]; excludes?: string[] }
+			) => {
+				await waitForVisibleRemoteParticipants(observer, tiles, 30_000);
+				await expectOnlyVisibleRemoteVideosPlaying(observer);
+			};
+
+			test('should not receive the camera video of the participants that join beyond the visible limit', async ({
+				page,
+				browser
+			}) => {
+				await openObserver(page, 1);
+				const { removeAllParticipants } = await joinRemotes(page, browser, {
+					silent: ['remote-a', 'remote-b', 'remote-c']
+				});
+
+				try {
+					await expectTilesPlaying(page, { count: 1 });
+
+					await setSmartMosaicSliderValue(page, 4);
+					await expectTilesPlaying(page, { count: 3 });
+				} finally {
+					await removeAllParticipants();
+				}
+			});
+
+			test('should pause every camera video in a background tab and resume only the visible ones when it returns', async ({
+				page,
+				browser
+			}) => {
+				await openObserver(page, 1);
+				const { removeAllParticipants } = await joinRemotes(page, browser, {
+					silent: ['remote-a', 'remote-b', 'remote-c']
+				});
+
+				try {
+					await expectTilesPlaying(page, { count: 1 });
+					await setSmartMosaicSliderValue(page, 4);
+					await expectTilesPlaying(page, { count: 3 });
+
+					await setTabVisibility(page, 'hidden');
+					await expect.poll(() => countFlowingRemoteVideos(page), { timeout: 10_000 }).toBe(0);
+					await setTabVisibility(page, 'visible');
+					await expectOnlyVisibleRemoteVideosPlaying(page);
+
+					await setSmartMosaicSliderValue(page, 1);
+					await expectTilesPlaying(page, { count: 1 });
+
+					await setTabVisibility(page, 'hidden');
+					await expect.poll(() => countFlowingRemoteVideos(page), { timeout: 10_000 }).toBe(0);
+					await setTabVisibility(page, 'visible');
+					await expectOnlyVisibleRemoteVideosPlaying(page);
+				} finally {
+					await removeAllParticipants();
+				}
+			});
+
+			test('should play the camera of every active speaker who takes the only visible slot', async ({
+				page,
+				browser
+			}) => {
+				test.setTimeout(120_000);
+				await openObserver(page, 1);
+				const { byName, removeAllParticipants } = await joinRemotes(page, browser, {
+					talking: ['remote-a', 'remote-b'],
+					silent: ['remote-c']
+				});
+
+				try {
+					await expectTilesPlaying(page, { count: 1, excludes: ['remote-c'] });
+
+					for (let swap = 0; swap < 3; swap++) {
+						const [speaker] = await getVisibleRemoteParticipantNames(page);
+						const nextSpeaker = speaker === 'remote-a' ? 'remote-b' : 'remote-a';
+
+						await toggleMicrophone(byName[speaker]);
+						await expectTilesPlaying(page, { count: 1, includes: [nextSpeaker] });
+						await toggleMicrophone(byName[speaker]);
+					}
+				} finally {
+					await removeAllParticipants();
+				}
+			});
+
+			test('should play the camera of the hidden participant who takes the slot of one who leaves', async ({
+				page,
+				browser
+			}) => {
+				await openObserver(page, 1);
+				const { byName, removeAllParticipants } = await joinRemotes(page, browser, {
+					talking: ['remote-a'],
+					silent: ['remote-b']
+				});
+
+				try {
+					await expectTilesPlaying(page, { count: 1, includes: ['remote-a'] });
+
+					await leaveMeeting(byName['remote-a']);
+					await expectTilesPlaying(page, { count: 1, includes: ['remote-b'] });
+				} finally {
+					await removeAllParticipants();
+				}
+			});
+
+			test('should play the shared screen of a hidden participant without receiving their camera', async ({
+				page,
+				browser
+			}) => {
+				await openObserver(page, 1);
+				const { byName, removeAllParticipants } = await joinRemotes(page, browser, {
+					talking: ['remote-a'],
+					silent: ['remote-b']
+				});
+
+				try {
+					await expectTilesPlaying(page, { count: 1, includes: ['remote-a'] });
+
+					await startScreensharing(byName['remote-b']);
+					await expectTilesPlaying(page, {
+						count: 2,
+						includes: ['remote-a', 'remote-b (screen)'],
+						excludes: ['remote-b']
+					});
+
+					await stopScreensharing(byName['remote-b']);
+					await expectTilesPlaying(page, { count: 1, includes: ['remote-a'] });
+				} finally {
+					await removeAllParticipants();
+				}
+			});
+
+			test('should play the camera of a hidden participant who turned it off and on before being shown', async ({
+				page,
+				browser
+			}) => {
+				await openObserver(page, 1);
+				const { byName, removeAllParticipants } = await joinRemotes(page, browser, {
+					talking: ['remote-a'],
+					silent: ['remote-b']
+				});
+
+				try {
+					await expectTilesPlaying(page, { count: 1, includes: ['remote-a'] });
+					await toggleParticipantsPanel(page);
+					const hiddenId = await getParticipantIdByName(page, 'remote-b');
+
+					await toggleCamera(byName['remote-b']);
+					await expectMediaState(page, hiddenId, 'video', 'off');
+					await toggleCamera(byName['remote-b']);
+					await expectMediaState(page, hiddenId, 'video', 'active');
+					await expectOnlyVisibleRemoteVideosPlaying(page);
+
+					await toggleMicrophone(byName['remote-a']);
+					await toggleMicrophone(byName['remote-b']);
+					await expectTilesPlaying(page, { count: 1, includes: ['remote-b'] });
+				} finally {
+					await removeAllParticipants();
+				}
+			});
+
+			test('should receive every camera in mosaic and only the visible ones back in smart mosaic', async ({
+				page,
+				browser
+			}) => {
+				await openObserver(page, 1);
+				const { removeAllParticipants } = await joinRemotes(page, browser, {
+					silent: ['remote-a', 'remote-b', 'remote-c']
+				});
+
+				try {
+					await expectTilesPlaying(page, { count: 1 });
+
+					await selectMosaicLayout(page);
+					await expectTilesPlaying(page, { count: 3 });
+
+					await selectSmartMosaicLayout(page);
+					await expectTilesPlaying(page, { count: 1 });
+				} finally {
+					await removeAllParticipants();
+				}
+			});
+
+			test('should keep the cameras of hidden participants paused after a full reconnect', async ({
+				page,
+				browser
+			}) => {
+				const signalling = await tapSignalling(page);
+				await openObserver(page, 1);
+				const { removeAllParticipants } = await joinRemotes(page, browser, {
+					silent: ['remote-a', 'remote-b', 'remote-c']
+				});
+
+				try {
+					await expectTilesPlaying(page, { count: 1 });
+
+					await signalling.requestFullReconnect();
+					signalling.completeReconnect();
+					await waitForSubscribedRemoteVideos(page, 3);
+					await expectTilesPlaying(page, { count: 1 });
+				} finally {
+					await removeAllParticipants();
+				}
+			});
+
+			test('should play a camera that no viewer was receiving as soon as one shows it', async ({
+				page,
+				browser
+			}) => {
+				test.setTimeout(120_000);
+				await openObserver(page, 1);
+				const { byName, removeAllParticipants } = await joinRemotes(page, browser, {
+					silent: ['other-observer']
+				});
+				const publisher = await browser.newPage();
+
+				try {
+					await setSmartMosaicSliderValue(byName['other-observer'], 1);
+					await capturePeerConnections(publisher);
+					await openMeeting(publisher, accessUrl, { name: 'publisher', audioEnabled: false });
+					await page.bringToFront();
+					await waitForSubscribedRemoteVideos(page, 2);
+
+					await expectTilesPlaying(page, { count: 1, includes: ['other-observer'] });
+					await waitForVisibleRemoteParticipants(byName['other-observer'], {
+						count: 1,
+						includes: ['observer']
+					});
+					await expect.poll(() => countEncodedVideoLayers(publisher), { timeout: 20_000 }).toBe(0);
+
+					await setSmartMosaicSliderValue(page, 4);
+					await expectTilesPlaying(page, { count: 2, includes: ['publisher'] });
+				} finally {
+					await removeAllParticipants();
+					await publisher.close();
+				}
+			});
+
+			test('should play the audio of every participant without gaps while their cameras are paused and shown', async ({
+				page,
+				browser
+			}) => {
+				test.setTimeout(120_000);
+				await openObserver(page, 1);
+				const { removeAllParticipants } = await joinRemotes(page, browser, {
+					talking: ['remote-a', 'remote-b', 'remote-c']
+				});
+
+				try {
+					await expectTilesPlaying(page, { count: 1 });
+					const audio = await recordRemoteAudio(page);
+
+					await setSmartMosaicSliderValue(page, 4);
+					await expectTilesPlaying(page, { count: 3 });
+
+					await setSmartMosaicSliderValue(page, 1);
+					await expectTilesPlaying(page, { count: 1 });
+
+					await selectMosaicLayout(page);
+					await expectTilesPlaying(page, { count: 3 });
+
+					await selectSmartMosaicLayout(page);
+					await expectTilesPlaying(page, { count: 1 });
+
+					expect(await audio.stop()).toEqual({ tracks: 3, interruptions: [] });
 				} finally {
 					await removeAllParticipants();
 				}
