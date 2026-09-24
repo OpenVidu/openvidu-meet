@@ -217,8 +217,8 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 				const el = this.getLocalCameraDrag()?.element.nativeElement as HTMLElement | undefined;
 				el?.style.removeProperty('--ov-min-w');
 				el?.style.removeProperty('--ov-min-h');
-				// Drop the float-time inline `transition: none` so the grid renderer's own
-				// transition stamping animates the tile back into the layout.
+				// Drop the float-time inline `transition: none` so the grid's own transition
+				// animates the tile back into the layout.
 				el?.style.removeProperty('transition');
 				this.resetDragPosition();
 				this.layoutService.update();
@@ -513,7 +513,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	 * Animates the just-floated tile from its grid slot to the bottom-right corner using the FLIP
 	 * technique on the CDK drag transform only.
 	 *
-	 * Why not let the grid renderer's `transition: all 0.1s linear` handle it (previous behavior):
+	 * Why not let the grid's `transition: all 0.1s linear` handle it (previous behavior):
 	 * that eased top/left/width/height AND the transform at once — two opposing coordinate-system
 	 * animations that mostly cancel out, forcing a reflow on every frame (dropped frames, visible
 	 * stutter) and easing every later programmatic placement and pointer drag. Instead: transitions
@@ -527,7 +527,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 		if (!drag || !el) return;
 
-		// Neutralize the renderer's inherited `transition: all` before any placement.
+		// Turn transitions off before any placement.
 		el.style.setProperty('transition', 'none');
 		this.moveStreamToBottomRight(drag);
 

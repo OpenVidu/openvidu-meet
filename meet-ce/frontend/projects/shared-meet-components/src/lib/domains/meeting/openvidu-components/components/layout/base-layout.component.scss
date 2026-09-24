@@ -14,13 +14,17 @@
 }
 
 /**
- * Separation between tiles. The renderer subtracts an element's own margin from the box the
- * calculator gave it, so a margin here opens a gap without the tiles overflowing their boxes.
- * Same selector the engine uses to pick what it positions: a floating or ignored tile is not
- * part of the grid and keeps its own geometry.
+ * What the layout engine positions: the same selector it uses, so a floating or ignored tile keeps
+ * its own geometry. The engine writes each box and this moves the element there, for elements
+ * projected into the grid too.
  */
+#layout > ::ng-deep *:not(.OV_floating):not(.OV_ignored) {
+	transition: all 0.1s linear;
+}
+
+/** The box the engine writes already leaves the gap between tiles, so it must hold their padding. */
 #layout > *:not(.OV_floating):not(.OV_ignored) {
-	margin: 0.25%;
+	box-sizing: border-box;
 }
 
 .layout {
@@ -53,8 +57,6 @@
 	min-width: 0px;
 	min-height: 0px;
 	padding: 1px;
-	transition-duration: 0.1s;
-	transition-timing-function: ease-in-out;
 }
 
 .OV_publisher .OV_video-element,
@@ -75,7 +77,7 @@
 
 .OV_floating {
 	// Width/height use CSS custom properties so the resize feature can override them
-	// while !important still beats the layout renderer's inline styles.
+	// while !important still beats the inline styles the layout engine writes.
 	// The fallbacks are the minimum allowed size (160px wide), so a freshly floated
 	// tile starts as small as possible until the user resizes it.
 	position: relative;

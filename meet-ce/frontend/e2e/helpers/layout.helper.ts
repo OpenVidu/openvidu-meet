@@ -145,6 +145,66 @@ export const croppedShare = ({ width, height, videoWidth, videoHeight }: GridVid
 	return tileRatio > cameraRatio ? 1 - cameraRatio / tileRatio : 1 - tileRatio / cameraRatio;
 };
 
+interface Box {
+	left: number;
+	top: number;
+	right: number;
+	bottom: number;
+}
+
+/** Tiles of the grid as the participant sees them, with the box of the grid around them. */
+export const getGridTiles = async (page: Page): Promise<{ grid: Box; tiles: Box[] }> =>
+	page.evaluate(() => {
+		const box = (element: Element) => {
+			const { left, top, right, bottom } = element.getBoundingClientRect();
+			return { left, top, right, bottom };
+		};
+
+		return {
+			grid: box(document.querySelector('#layout')!),
+			tiles: [...document.querySelectorAll('#layout > *:not(.OV_ignored):not(.OV_floating) .OV_stream')].map(box)
+		};
+	});
+
+/**
+ * How the tiles share the grid: the gap from each tile to the next one on its right and below it,
+ * the tiles that overlap another, and the ones that cross the edge of the grid.
+ */
+export const tileSpacing = ({ grid, tiles }: { grid: Box; tiles: Box[] }) => {
+	const overlap = (a: number, b: number, c: number, d: number) => Math.min(b, d) - Math.max(a, c);
+	const nearest = (gaps: number[]) => (gaps.length > 0 ? [Math.min(...gaps)] : []);
+
+	return {
+		gaps: tiles.flatMap((a) => [
+			...nearest(
+				tiles
+					.filter((b) => b.left >= a.right - 1 && overlap(a.top, a.bottom, b.top, b.bottom) > 0)
+					.map((b) => b.left - a.right)
+			),
+			...nearest(
+				tiles
+					.filter((b) => b.top >= a.bottom - 1 && overlap(a.left, a.right, b.left, b.right) > 0)
+					.map((b) => b.top - a.bottom)
+			)
+		]),
+		overlapping: tiles.filter((a) =>
+			tiles.some(
+				(b) =>
+					b !== a &&
+					overlap(a.left, a.right, b.left, b.right) > 1 &&
+					overlap(a.top, a.bottom, b.top, b.bottom) > 1
+			)
+		).length,
+		outside: tiles.filter(
+			(tile) =>
+				tile.left < grid.left - 1 ||
+				tile.top < grid.top - 1 ||
+				tile.right > grid.right + 1 ||
+				tile.bottom > grid.bottom + 1
+		).length
+	};
+};
+
 /** Simulcast layers of a camera as LiveKit publishes them: 180p, 360p and the capture resolution. */
 export type CameraLayer = 'low' | 'medium' | 'high';
 

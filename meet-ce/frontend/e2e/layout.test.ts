@@ -4,13 +4,15 @@ import {
 	cameraLayerOf,
 	croppedShare,
 	gapBesidePinnedTile,
+	getGridTiles,
 	getGridVideoFraming,
 	getSharedScreenFraming,
 	paintedShareOfContainer,
 	runScreenShareRotationCycles,
 	selectMosaicLayout,
 	selectSmartMosaicLayout,
-	setSmartMosaicSliderValue
+	setSmartMosaicSliderValue,
+	tileSpacing
 } from './helpers/layout.helper';
 import { startScreensharing, stopScreensharing, toggleCamera, toggleMicrophone } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
@@ -283,6 +285,50 @@ test.describe('Layout E2E Tests', () => {
 				await addParticipant({ name: 'remote-c', headless: true, audioEnabled: false });
 				await waitForRemoteStream(pageA, 3);
 				await expectFramedCameras(3);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+	});
+
+	test.describe('Tile spacing', () => {
+		// Half a percent of the grid's width between two tiles, plus the 1px padding of each.
+		const expectedGap = (gridWidth: number) => gridWidth * 0.005 + 2;
+
+		test('should separate the tiles by the same gap without overlapping or leaving the grid', async ({
+			browser
+		}) => {
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [
+					{ name: 'viewer', audioEnabled: false },
+					{ name: 'remote-a', headless: true, audioEnabled: false },
+					{ name: 'remote-b', headless: true, audioEnabled: false },
+					{ name: 'remote-c', headless: true, audioEnabled: false }
+				]
+			});
+			const [pageA] = pages;
+
+			try {
+				await selectMosaicLayout(pageA);
+				await closeSettingsPanel(pageA);
+				await waitForRemoteStream(pageA, 3);
+
+				await expect(async () => {
+					const layout = await getGridTiles(pageA);
+					const { gaps, overlapping, outside } = tileSpacing(layout);
+
+					const gap = expectedGap(layout.grid.right - layout.grid.left);
+
+					expect(layout.tiles).toHaveLength(3);
+					expect({ overlapping, outside }).toEqual({ overlapping: 0, outside: 0 });
+					expect(gaps.length).toBeGreaterThan(0);
+
+					for (const measured of gaps) {
+						expect(Math.abs(measured - gap)).toBeLessThanOrEqual(1);
+					}
+				}).toPass({ timeout: 15_000 });
 			} finally {
 				await removeAllParticipants();
 			}

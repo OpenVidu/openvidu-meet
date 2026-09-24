@@ -1,5 +1,5 @@
 /**
- * Small DOM helpers shared by the layout calculator and renderer.
+ * Small DOM helpers of the layout engine.
  * Kept as plain functions so they can be tree-shaken and reused without instantiating a class.
  *
  * @internal

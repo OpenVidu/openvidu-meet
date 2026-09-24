@@ -4,8 +4,7 @@
 export enum LayoutClass {
 	BIG_ELEMENT = 'OV_big',
 	IGNORED_ELEMENT = 'OV_ignored',
-	FLOATING_ELEMENT = 'OV_floating',
-	CLASS_NAME = 'layout'
+	FLOATING_ELEMENT = 'OV_floating'
 }
 
 /**
@@ -126,8 +125,8 @@ export const LAYOUT_CONSTANTS = {
 	DEFAULT_MIN_RATIO: 9 / 16,
 	DEFAULT_BIG_PERCENTAGE: 0.8,
 	STRIP_MAX_SIZE: 220,
-	ANIMATION_DURATION: '0.1s',
-	ANIMATION_EASING: 'linear'
+	/** Space left around every element, as a share of the container width. */
+	ELEMENT_MARGIN: 0.0025
 } as const;
 
 /**
@@ -140,8 +139,6 @@ export interface OpenViduLayoutOptions {
 	minRatio: number;
 	/** If true, aspect ratio is maintained and minRatio/maxRatio are ignored */
 	fixedRatio: boolean;
-	/** Whether to animate transitions */
-	animate: boolean;
 	/** Class for elements that should be sized bigger */
 	bigClass: string;
 	/** Class for elements that should be ignored */

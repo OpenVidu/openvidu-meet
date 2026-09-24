@@ -21,8 +21,7 @@ export type {
 
 import { LayoutCalculator } from './layout-calculator.model';
 import { LayoutDimensionsCache } from './layout-dimensions-cache.model';
-import { elementHeight, elementWidth, readStyle, readStyleNumber } from './layout-dom.util';
-import { LayoutRenderer } from './layout-renderer.model';
+import { elementHeight, elementWidth, readStyle, readStyleNumber, writeStyles } from './layout-dom.util';
 import {
 	ElementDimensions,
 	ExtendedLayoutOptions,
@@ -43,7 +42,6 @@ export class OpenViduLayout {
 
 	private dimensionsCache: LayoutDimensionsCache;
 	private calculator: LayoutCalculator;
-	private renderer: LayoutRenderer;
 
 	/**
 	 * Pending animation-frame handle. Coalesces bursts of updateLayout calls (resize, mutation,
@@ -54,7 +52,6 @@ export class OpenViduLayout {
 	constructor() {
 		this.dimensionsCache = new LayoutDimensionsCache();
 		this.calculator = new LayoutCalculator(this.dimensionsCache);
-		this.renderer = new LayoutRenderer();
 	}
 
 	updateLayout(container: HTMLElement, opts: OpenViduLayoutOptions): void {
@@ -124,8 +121,19 @@ export class OpenViduLayout {
 		const children = Array.from(this.layoutContainer.querySelectorAll<HTMLElement>(selector));
 		const elements = children.map((element) => this.describeElement(element));
 
-		const layout = this.calculator.calculateLayout(extendedOpts, elements);
-		this.renderer.renderLayout(this.layoutContainer, layout.boxes, children, this.opts.animate);
+		const { boxes } = this.calculator.calculateLayout(extendedOpts, elements);
+		const margin = containerWidth * LAYOUT_CONSTANTS.ELEMENT_MARGIN;
+
+		children.forEach((child, index) => {
+			const { left, top, width, height } = boxes[index];
+			writeStyles(child, {
+				position: 'absolute',
+				left: `${left + margin}px`,
+				top: `${top + margin}px`,
+				width: `${width - 2 * margin}px`,
+				height: `${height - 2 * margin}px`
+			});
+		});
 	}
 
 	private describeElement(element: HTMLElement): ElementDimensions {

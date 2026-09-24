@@ -76,7 +76,6 @@ export class BaseLayoutService {
 			ignoredClass: LayoutClass.IGNORED_ELEMENT,
 			bigFixedRatio: false,
 			bigFirst: true,
-			animate: true,
 			alignItems: LayoutAlignment.CENTER,
 			bigAlignItems: LayoutAlignment.CENTER,
 			maxWidth: Infinity,
