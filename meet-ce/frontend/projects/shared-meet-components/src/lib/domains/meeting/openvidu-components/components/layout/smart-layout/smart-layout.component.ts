@@ -18,6 +18,7 @@ import { ParticipantModel, ParticipantStream } from '../../../models/participant
 import { SmartLayoutService } from '../../../services/layout/smart-layout.service';
 import { ParticipantService } from '../../../services/participant/participant.service';
 import { Track } from '../../../services/livekit';
+import { HiddenCameraPause } from '../../../services/livekit/hidden-camera-pause';
 import { HiddenParticipantsIndicatorComponent } from '../../hidden-participants-indicator/hidden-participants-indicator.component';
 import { BaseLayoutComponent } from '../base-layout.component';
 
@@ -113,7 +114,6 @@ export class SmartLayoutComponent implements OnDestroy {
 	private readonly visibleState = computed(() => {
 		const order = this.displayedCameraOrder();
 		const allRemotes = this.remoteParticipants();
-		const isSmart = this.isSmartLayoutActive();
 		const targetIds = new Set<string>(order);
 		const streams: ParticipantStream[] = [];
 
@@ -128,17 +128,13 @@ export class SmartLayoutComponent implements OnDestroy {
 			if (p) streams.push(...p.streams());
 		}
 
-		if (isSmart) {
-			// Non-displayed screen-sharing participants: add their screen stream only
-			// so their video is rendered without occupying a camera slot.
-			// (Their screen audio is handled by the persistent audio layer regardless.)
-			for (const p of allRemotes) {
-				if (!targetIds.has(p.identity) && p.isScreenShareEnabled) {
-					const screen = p.streams().find((s) => s.isScreenStream);
+		// Hidden participants keep their screen share on screen without taking a camera slot.
+		for (const p of allRemotes) {
+			if (targetIds.has(p.identity) || !p.isScreenShareEnabled) continue;
 
-					if (screen) streams.push(screen);
-				}
-			}
+			const screen = p.streams().find((s) => s.isScreenStream);
+
+			if (screen) streams.push(screen);
 		}
 
 		return { streams, targetIds };
@@ -257,8 +253,25 @@ export class SmartLayoutComponent implements OnDestroy {
 		untracked(() => this.layoutService.removeDisconnectedSpeakers(currentIds));
 	});
 
+	/** Camera tracks of the remote participants the layout does not render. */
+	private readonly hiddenCameraTracks = computed(() => {
+		const { targetIds } = this.visibleState();
+		return this.remoteParticipants()
+			.filter((p) => !targetIds.has(p.identity))
+			.map((p) => p.streams().find((s) => s.isCameraStream)?.videoTrack?.track);
+	});
+
+	private readonly hiddenCameraPause = new HiddenCameraPause();
+
+	/** Pauses the camera video of the participants the layout does not render. */
+	private readonly hiddenCamerasEffect = effect(() => {
+		const hidden = this.hiddenCameraTracks();
+		untracked(() => this.hiddenCameraPause.pauseOnly(hidden));
+	});
+
 	ngOnDestroy(): void {
 		this.cleanupAudioElements(new Set());
+		this.hiddenCameraPause.release();
 		this.layoutService.setRailHiddenParticipants(undefined);
 	}
 
