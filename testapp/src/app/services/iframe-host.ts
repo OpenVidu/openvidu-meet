@@ -15,12 +15,12 @@ export type IframeLifecycleHandler = (event: EmbeddedEvent) => void;
  * integration tutorial):
  *
  * - validates that inbound events come from the iframe's origin;
- * - relays `joined/left/closed` to the caller;
- * - sends `meetingEnd/meetingLeave/participantKick/participantMute` commands (and the
- *   deprecated 3.8.0 spellings, so both wire formats stay exercised).
+ * - relays every event the iframe posts to the caller;
+ * - sends the embedded commands (and the deprecated 3.8.0 spellings, so both wire formats
+ *   stay exercised).
  *
  * The embedded app resolves the trusted host origin on its own (from
- * `ancestorOrigins`/`referrer`), so no `READY`/`INITIALIZE` handshake is needed.
+ * `ancestorOrigins`/`referrer`), so the host sends commands without any prior handshake.
  *
  * It exposes the SAME public API as the `<openvidu-meet>` element, so the testapp
  * (and the e2e suite) drive both integrations identically — only the transport differs.

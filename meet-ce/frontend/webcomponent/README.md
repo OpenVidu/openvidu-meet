@@ -84,6 +84,12 @@ generated type/manifest artifacts were removed in favor of this single deliverab
     console.log('Participant left:', e.detail.participant.participantIdentity);
   });
 
+  // The participant asked to close OpenVidu Meet (from the end, join, error or recording
+  // screen): the host takes its space back. The meeting may still run for the others.
+  meet.addEventListener('embeddedCloseRequested', () => {
+    meet.remove();
+  });
+
   // The 3.8.0 event names ('joined', 'left', 'closed') are dispatched alongside the
   // canonical ones above until 3.12.0 — listening to both delivers the event twice.
 

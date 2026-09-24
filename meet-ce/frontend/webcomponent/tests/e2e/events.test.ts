@@ -111,8 +111,8 @@ for (const integration of INTEGRATIONS) {
 			});
 		});
 
-		test.describe('CLOSED Event', () => {
-			test('should receive closed event after leaving as moderator', async ({ page }) => {
+		test.describe('EMBEDDED_CLOSE_REQUESTED Event', () => {
+			test('should receive embeddedCloseRequested after leaving as moderator', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.JOINED);
 
@@ -120,10 +120,12 @@ for (const integration of INTEGRATIONS) {
 				await expectEvent(page, EmbeddedEventName.LEFT);
 
 				await meetLocator(page, integration, '#back-btn').click();
-				await expect(eventLocator(page, EmbeddedEventName.CLOSED).first()).toBeVisible({ timeout: 5_000 });
+				await expect(eventLocator(page, EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED).first()).toBeVisible({
+					timeout: 5_000
+				});
 			});
 
-			test('should receive closed event after ending meeting', async ({ page }) => {
+			test('should receive embeddedCloseRequested after ending meeting', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.JOINED);
 
@@ -131,7 +133,9 @@ for (const integration of INTEGRATIONS) {
 				await expectEvent(page, EmbeddedEventName.LEFT);
 
 				await meetLocator(page, integration, '#back-btn').click();
-				await expect(eventLocator(page, EmbeddedEventName.CLOSED).first()).toBeVisible({ timeout: 5_000 });
+				await expect(eventLocator(page, EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED).first()).toBeVisible({
+					timeout: 5_000
+				});
 			});
 		});
 

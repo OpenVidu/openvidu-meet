@@ -411,7 +411,7 @@ export class NavigationService {
 	// ── High-level navigation intents ─────────────────────────────────────
 	//
 	// Each centralizes the WC-vs-SPA branch once (SPA: Angular Router; WC: the
-	// WcRouterService, or `closed` to end a flow), so callers never branch on mode.
+	// WcRouterService, or `embeddedCloseRequested` to end a flow), so callers never branch on mode.
 
 	/**
 	 * End the current flow. Embedded modes always emit `embeddedCloseRequested` first so the
