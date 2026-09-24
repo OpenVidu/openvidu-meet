@@ -64,7 +64,7 @@ export const ensureFixture = async (page: Page): Promise<void> => {
 				'closed',
 				'meetingJoined',
 				'meetingLeft',
-				'viewClosed',
+				'embeddedCloseRequested',
 				'participantJoined',
 				'participantLeft',
 				'mediaAudioStatusChanged',

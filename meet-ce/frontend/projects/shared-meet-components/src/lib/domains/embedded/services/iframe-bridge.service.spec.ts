@@ -416,14 +416,14 @@ describe('IframeBridgeService', () => {
 			]);
 		});
 
-		it('relays VIEW_CLOSED and its deprecated CLOSED alias', () => {
+		it('relays EMBEDDED_CLOSE_REQUESTED and its deprecated CLOSED alias', () => {
 			startBridge();
 
-			eventBus.emit({ event: EmbeddedEventName.VIEW_CLOSED });
+			eventBus.emit({ event: EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED });
 			TestBed.tick();
 
 			const relayed = postMessageSpy.calls.allArgs().map(([msg]) => msg.event);
-			expect(relayed).toEqual([EmbeddedEventName.VIEW_CLOSED, EmbeddedEventName.CLOSED]);
+			expect(relayed).toEqual([EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED, EmbeddedEventName.CLOSED]);
 		});
 
 		it('buffers events emitted before the bridge starts, then flushes canonical and legacy once it does', () => {
@@ -453,14 +453,14 @@ describe('IframeBridgeService', () => {
 				event: EmbeddedEventName.MEETING_JOINED,
 				payload: { roomId: ROOM_ID, participantIdentity: IDENTITY }
 			});
-			eventBus.emit({ event: EmbeddedEventName.VIEW_CLOSED });
+			eventBus.emit({ event: EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED });
 			TestBed.tick();
 
 			const relayed = postMessageSpy.calls.allArgs().map(([msg]) => msg.event);
 			expect(relayed).toEqual([
 				EmbeddedEventName.MEETING_JOINED,
 				EmbeddedEventName.JOINED,
-				EmbeddedEventName.VIEW_CLOSED,
+				EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED,
 				EmbeddedEventName.CLOSED
 			]);
 		});

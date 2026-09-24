@@ -9,15 +9,16 @@
  *
  * Rules for the tokens (charter §"Module"):
  *
- * - A **singular, single-word** lowerCamelCase noun. A concept that would need two words is not a
- *   module — fold it into the closest existing one and put the extra word in the action/ability
- *   (virtual background → `media` as `mediaChangeVirtualBackground`, not a `virtualBackground`
- *   module).
+ * - A **singular, single-word** lowerCamelCase noun (`embedded`, named after the embedded mode, is
+ *   the one adjective). A concept that would need two words is not a module — fold it into the
+ *   closest existing one and put the extra word in the action/ability (virtual background →
+ *   `media` as `mediaChangeVirtualBackground`, not a `virtualBackground` module).
  * - A token belongs to **exactly one** module, and no token may be a prefix of another (prefix
  *   matching would turn ambiguous).
  * - Reserved meanings: `broadcast` is RTMP egress only, `reaction` is the emoji overlay only,
- *   chat content is `message`/`messages` only, and `view` is the embedded application surface a
- *   host mounts (not the meeting running inside it, which is `meeting`).
+ *   chat content is `message`/`messages` only, and `embedded` is the OpenVidu Meet element or
+ *   iframe a host mounts (not the meeting running inside it, which is `meeting`): every event
+ *   about that element, not about the meeting, its participants or their media, starts with it.
  *
  * The list covers the implemented modules and the ones the API studies already commit to
  * (`lobby`, `hand`, `breakout`, `notes`, `whiteboard`, `file`, `reaction`, `broadcast`), so a
@@ -29,7 +30,7 @@ export const MEET_API_MODULES = [
 	'participant',
 	'media',
 	'recording',
-	'view',
+	'embedded',
 	'broadcast',
 	'lobby',
 	'chat',

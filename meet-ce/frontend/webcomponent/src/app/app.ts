@@ -125,13 +125,13 @@ export class App {
 	readonly mediaVideoStatusChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED>>();
 	readonly mediaScreenShareStatusChanged =
 		output<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED>>();
-	readonly viewClosed = output<void>();
+	readonly embeddedCloseRequested = output<void>();
 
 	/** @deprecated Renamed to `meetingJoined`. Removed in 3.12.0. Dispatched alongside it. */
 	readonly joined = output<EmbeddedEventPayloadFor<EmbeddedEventName.JOINED>>();
 	/** @deprecated Renamed to `meetingLeft`. Removed in 3.12.0. Dispatched alongside it. */
 	readonly left = output<EmbeddedEventPayloadFor<EmbeddedEventName.LEFT>>();
-	/** @deprecated Renamed to `viewClosed`. Removed in 3.12.0. Dispatched alongside it. */
+	/** @deprecated Renamed to `embeddedCloseRequested`. Removed in 3.12.0. Dispatched alongside it. */
 	readonly closed = output<void>();
 
 	// ── Derived state ────────────────────────────────────────────────────────
@@ -313,10 +313,13 @@ export class App {
 	// only ever handles canonical names; emitting the deprecated output alongside the canonical
 	// one is this method's job, not the bus's.
 	private handleWebComponentEvent(embeddedEvent: EmbeddedEvent): void {
-		// The view-closed events carry no payload, so they are handled before the destructuring below
+		// The close-request events carry no payload, so they are handled before the destructuring below
 		// (the deprecated CLOSED never actually reaches here — the bus is canonical-only).
-		if (embeddedEvent.event === EmbeddedEventName.VIEW_CLOSED || embeddedEvent.event === EmbeddedEventName.CLOSED) {
-			this.viewClosed.emit();
+		if (
+			embeddedEvent.event === EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED ||
+			embeddedEvent.event === EmbeddedEventName.CLOSED
+		) {
+			this.embeddedCloseRequested.emit();
 			this.closed.emit();
 			return;
 		}

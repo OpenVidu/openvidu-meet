@@ -37,14 +37,14 @@ key set, and responses and webhooks carry both.
 | `canWriteChat`               | `chatWrite`                                           |
 | `canShareAccessLinks`        | `roomShareAccessLinks`                                |
 
-| Deprecated        | Replacement       | Kind    |
-| ----------------- | ----------------- | ------- |
-| `endMeeting`      | `meetingEnd`      | command |
-| `leaveRoom`       | `meetingLeave`    | command |
-| `kickParticipant` | `participantKick` | command |
-| `joined`          | `meetingJoined`   | event   |
-| `left`            | `meetingLeft`     | event   |
-| `closed`          | `viewClosed`      | event   |
+| Deprecated        | Replacement              | Kind    |
+| ----------------- | ------------------------ | ------- |
+| `endMeeting`      | `meetingEnd`             | command |
+| `leaveRoom`       | `meetingLeave`           | command |
+| `kickParticipant` | `participantKick`        | command |
+| `joined`          | `meetingJoined`          | event   |
+| `left`            | `meetingLeft`            | event   |
+| `closed`          | `embeddedCloseRequested` | event   |
 
 Both command name sets are accepted. Every event is emitted under both names, so a listener
 registered on both receives it twice.

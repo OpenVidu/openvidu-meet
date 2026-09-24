@@ -476,7 +476,7 @@ for (const integration of INTEGRATIONS) {
 				await expect(meetingLeft).toContainText(LeftEventReason.VOLUNTARY_LEAVE);
 			});
 
-			test('should dispatch both closed and viewClosed after leaving', async ({ page }) => {
+			test('should dispatch both closed and embeddedCloseRequested after leaving', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.JOINED);
 
@@ -485,7 +485,7 @@ for (const integration of INTEGRATIONS) {
 
 				await meetLocator(page, integration, '#back-btn').click();
 				await expect(eventLocator(page, EmbeddedEventName.CLOSED).first()).toBeVisible({ timeout: 5_000 });
-				await expect(eventLocator(page, EmbeddedEventName.VIEW_CLOSED).first()).toBeVisible({
+				await expect(eventLocator(page, EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED).first()).toBeVisible({
 					timeout: 5_000
 				});
 			});

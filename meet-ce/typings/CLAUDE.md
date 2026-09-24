@@ -76,13 +76,15 @@ every surface. `src/api-registry.ts` is the registry (`MEET_API_MODULES`, `MEET_
 `./meet.sh lint-backend`, CI-gated) fails on any identifier that doesn't start with a registered
 token.
 
-- **Module token**: a singular, single-word lowerCamelCase noun, registered exactly once, never a
-  prefix of another token. A concept needing two words is not a module — fold it into the closest
-  one and put the extra word in the action (`mediaChangeVirtualBackground`, not a
-  `virtualBackground` module).
+- **Module token**: a singular, single-word lowerCamelCase noun (`embedded`, named after the
+  embedded mode, is the one adjective), registered exactly once, never a prefix of another token.
+  A concept needing two words is not a module — fold it into the closest one and put the extra
+  word in the action (`mediaChangeVirtualBackground`, not a `virtualBackground` module).
 - **Command** `moduleAction`: module first, then an imperative verb (`meetingLeave`,
   `participantKick`); bulk variants suffix `All`. **Event/webhook** `moduleEvent`: module first,
-  past tense (`meetingJoined`, `recordingEnded`), same string on both surfaces.
+  past tense (`meetingJoined`, `recordingEnded`), same string on both surfaces. An event that asks
+  the host to act ends in `Requested` (`embeddedCloseRequested`), never in an imperative verb,
+  which would read as a command.
 - **Permission** `moduleAbility`: flat boolean, no `can` prefix, **flat forever** (nesting is
   rejected, not deferred — the prefix already groups). `Admin` is the only administrative verb
   (never `Manage`); a fully split module (like `recording`) has no `Admin`. **Split rather than
@@ -93,10 +95,12 @@ token.
   and platform groups are top-level (see `MEET_API_REST_GROUPS`). Collections plural, singletons
   singular. `operationId` = `moduleAction`.
 - **Reserved words**: `broadcast` = RTMP only, `reaction` = emoji only, `message(s)` = chat only,
-  `view` = the embedded application surface a host mounts (the meeting inside it is `meeting`).
+  `embedded` = the OpenVidu Meet element or iframe a host mounts (the meeting inside it is
+  `meeting`). Every event about that element, not about the meeting, its participants or their
+  media, starts with `embedded`, so a host finds all of them under one prefix.
 - **Known exceptions** the lint allows on purpose: the 3.8.0 deprecated aliases (derived from the
-  alias maps, gone in 3.12.0) and the wrapper's `ready` event (outside the scheme, pending
-  sign-off). `lobbyKnocked`/`participantKnocked` will be a deliberate cross-module alias when the
+  alias maps, gone in 3.12.0) and the wrapper's `ready` event (shipped in 3.8.0 outside the scheme;
+  it falls under the `embedded` rule, rename pending). `lobbyKnocked`/`participantKnocked` will be a deliberate cross-module alias when the
   lobby module lands.
 
 ## Change discipline

@@ -46,12 +46,12 @@ export enum EmbeddedEventName {
 	 */
 	MEDIA_SCREEN_SHARE_STATUS_CHANGED = 'mediaScreenShareStatusChanged',
 	/**
-	 * Event emitted when the participant dismisses the post-meeting, join, error or recording
-	 * screen, ending their interaction with the embedded application. The meeting itself may still
-	 * be running for the other participants; the host application uses this event to take its view
-	 * back or route the participant elsewhere.
+	 * Event emitted when the participant asks to close OpenVidu Meet by dismissing the post-meeting,
+	 * join, error or recording screen. The host application responds by removing the embedded
+	 * element or routing the participant elsewhere; the meeting itself may still be running for the
+	 * other participants.
 	 */
-	VIEW_CLOSED = 'viewClosed',
+	EMBEDDED_CLOSE_REQUESTED = 'embeddedCloseRequested',
 	/**
 	 * Event emitted when the local participant joins the meeting.
 	 * @deprecated Renamed to `meetingJoined` ({@link EmbeddedEventName.MEETING_JOINED}). Removed in 3.12.0.
@@ -63,8 +63,8 @@ export enum EmbeddedEventName {
 	 */
 	LEFT = 'left',
 	/**
-	 * Event emitted when the participant closes the embedded application view.
-	 * @deprecated Renamed to `viewClosed` ({@link EmbeddedEventName.VIEW_CLOSED}). Removed in 3.12.0.
+	 * Event emitted when the participant asks to close OpenVidu Meet.
+	 * @deprecated Renamed to `embeddedCloseRequested` ({@link EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED}). Removed in 3.12.0.
 	 */
 	CLOSED = 'closed'
 }
@@ -198,7 +198,7 @@ export interface EmbeddedEventPayloads {
 export const EMBEDDED_EVENT_ALIASES = {
 	[EmbeddedEventName.JOINED]: EmbeddedEventName.MEETING_JOINED,
 	[EmbeddedEventName.LEFT]: EmbeddedEventName.MEETING_LEFT,
-	[EmbeddedEventName.CLOSED]: EmbeddedEventName.VIEW_CLOSED
+	[EmbeddedEventName.CLOSED]: EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED
 } as const satisfies Readonly<Partial<Record<EmbeddedEventName, EmbeddedEventName>>>;
 
 /**
@@ -300,11 +300,11 @@ export interface EmbeddedMediaScreenShareStatusChangedEvent {
 }
 
 /**
- * Event message emitted when the participant closes the embedded application view (no payload).
+ * Event message emitted when the participant asks to close OpenVidu Meet (no payload).
  * @category Communication
  */
-export interface EmbeddedViewClosedEvent {
-	event: EmbeddedEventName.VIEW_CLOSED;
+export interface EmbeddedCloseRequestedEvent {
+	event: EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED;
 }
 
 /**
@@ -328,9 +328,9 @@ export interface EmbeddedLeftEvent {
 }
 
 /**
- * Event message emitted when the participant closes the embedded application view (no payload).
+ * Event message emitted when the participant asks to close OpenVidu Meet (no payload).
  * @category Communication
- * @deprecated Use {@link EmbeddedViewClosedEvent}. Removed in 3.12.0.
+ * @deprecated Use {@link EmbeddedCloseRequestedEvent}. Removed in 3.12.0.
  */
 export interface EmbeddedClosedEvent {
 	event: EmbeddedEventName.CLOSED;
@@ -351,7 +351,7 @@ export type EmbeddedEvent =
 	| EmbeddedMediaAudioStatusChangedEvent
 	| EmbeddedMediaVideoStatusChangedEvent
 	| EmbeddedMediaScreenShareStatusChangedEvent
-	| EmbeddedViewClosedEvent
+	| EmbeddedCloseRequestedEvent
 	| EmbeddedJoinedEvent
 	| EmbeddedLeftEvent
 	| EmbeddedClosedEvent;
