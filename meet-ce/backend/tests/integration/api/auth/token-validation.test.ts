@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet/typings';
 import { Express } from 'express';
+import { AccessToken } from 'livekit-server-sdk';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
@@ -51,6 +52,20 @@ describe('Token Validation Tests', () => {
 		await deleteAllUsers();
 	});
 
+	/**
+	 * A token this server signed itself, carrying a metadata claim it cannot read back. Only a
+	 * hand-built token gets there: every token the product issues serialises its own metadata.
+	 */
+	const signTokenWithMetadata = async (metadata: string): Promise<string> => {
+		const token = new AccessToken(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET, {
+			identity: testUsers.roomManager.user.userId,
+			ttl: '1m',
+			metadata
+		});
+
+		return `Bearer ${await token.toJwt()}`;
+	};
+
 	describe('Access Token Tests', () => {
 		it('should succeed when providing valid access token', async () => {
 			const response = await request(app)
@@ -61,7 +76,9 @@ describe('Token Validation Tests', () => {
 
 		it('should succeed when providing valid access token through query param without bearer prefix', async () => {
 			const accessTokenQuery = testUsers.roomManager.accessToken.replace('Bearer ', '');
-			const response = await request(app).get(`${INTERNAL_USERS_PATH}/me`).query({ accessToken: accessTokenQuery });
+			const response = await request(app)
+				.get(`${INTERNAL_USERS_PATH}/me`)
+				.query({ accessToken: accessTokenQuery });
 			expect(response.status).toBe(200);
 		});
 
@@ -109,6 +126,15 @@ describe('Token Validation Tests', () => {
 			const response = await request(app)
 				.get(`${INTERNAL_USERS_PATH}/me`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, userData.accessToken);
+			expect(response.status).toBe(401);
+			expect(response.body).toHaveProperty('message');
+			expect(response.body.message).toContain('Invalid token');
+		});
+
+		it('should fail when access token metadata is not readable', async () => {
+			const response = await request(app)
+				.get(`${INTERNAL_USERS_PATH}/me`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, await signTokenWithMetadata('not-json'));
 			expect(response.status).toBe(401);
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('Invalid token');
@@ -316,6 +342,15 @@ describe('Token Validation Tests', () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, 'Bearer invalidtoken');
+			expect(response.status).toBe(401);
+			expect(response.body).toHaveProperty('message');
+			expect(response.body.message).toContain('Invalid token');
+		});
+
+		it('should fail when room member token metadata is not readable', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, await signTokenWithMetadata('not-json'));
 			expect(response.status).toBe(401);
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('Invalid token');

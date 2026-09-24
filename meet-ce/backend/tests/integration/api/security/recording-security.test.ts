@@ -8,6 +8,7 @@ import { MEET_ENV } from '../../../../src/environment.js';
 import {
 	errorAnonymousAccessDisabled,
 	errorInsufficientPermissions,
+	errorInvalidApiKey,
 	errorInvalidRecordingSecret,
 	errorRecordingsZipEmpty,
 	errorUnauthorized
@@ -86,6 +87,14 @@ describe('Recording API Security Tests', () => {
 				.send({ roomId: roomData.room.roomId })
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 			expect(response.status).toBe(201);
+		});
+
+		it('should fail when request includes an invalid API key', async () => {
+			const response = await request(app)
+				.post(RECORDINGS_PATH)
+				.send({ roomId: roomData.room.roomId })
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, 'invalid-key');
+			expectMeetError(response, errorInvalidApiKey());
 		});
 
 		it('should fail when using access token', async () => {

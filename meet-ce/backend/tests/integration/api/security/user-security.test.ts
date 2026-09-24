@@ -4,7 +4,11 @@ import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { errorInsufficientPermissions, errorUnauthorized } from '../../../../src/models/error.model.js';
+import {
+	errorInsufficientPermissions,
+	errorInvalidApiKey,
+	errorUnauthorized
+} from '../../../../src/models/error.model.js';
 import { expectMeetError } from '../../../helpers/assertion-helpers.js';
 import {
 	changePassword,
@@ -53,6 +57,14 @@ describe('User API Security Tests', () => {
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send(getNewUserData());
 			expect(response.status).toBe(201);
+		});
+
+		it('should fail when using an invalid API key', async () => {
+			const response = await request(app)
+				.post(USERS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, 'invalid-key')
+				.send(getNewUserData());
+			expectMeetError(response, errorInvalidApiKey());
 		});
 
 		it('should succeed when user is authenticated as root admin', async () => {

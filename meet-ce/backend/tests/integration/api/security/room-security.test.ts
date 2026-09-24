@@ -3,7 +3,11 @@ import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { errorInsufficientPermissions, errorUnauthorized } from '../../../../src/models/error.model.js';
+import {
+	errorInsufficientPermissions,
+	errorInvalidApiKey,
+	errorUnauthorized
+} from '../../../../src/models/error.model.js';
 import { expectBulkDenied, expectMeetError } from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRooms,
@@ -64,6 +68,14 @@ describe('Room API Security Tests', () => {
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
 				.send({});
 			expectMeetError(response, errorInsufficientPermissions());
+		});
+
+		it('should fail when request includes an invalid API key', async () => {
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, 'invalid-key')
+				.send({});
+			expectMeetError(response, errorInvalidApiKey());
 		});
 
 		it('should fail when user is not authenticated', async () => {
