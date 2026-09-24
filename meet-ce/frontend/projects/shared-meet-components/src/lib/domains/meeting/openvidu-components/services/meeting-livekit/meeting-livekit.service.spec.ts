@@ -9,6 +9,7 @@ import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { DeviceService } from '../device/device.service';
 import { ConnectionError, ConnectionState, Room, RoomEvent } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
+import { PlatformService } from '../platform/platform.service';
 import { MeetingLiveKitService } from './meeting-livekit.service';
 
 class LoggerServiceStub {
@@ -107,11 +108,22 @@ describe('MeetingLiveKitService', () => {
 	describe('the room it creates', () => {
 		const roomOptions = () => livekitSdkService.createRoom.calls.mostRecent().args[0]!;
 
+		const onPhone = (isPhone: boolean) =>
+			spyOn(TestBed.inject(PlatformService), 'isPhysicalMobileDevice').and.returnValue(isPhone);
+
 		it('subscribes and publishes only what is being watched', () => {
+			onPhone(false);
 			service.init();
 
 			expect(roomOptions().adaptiveStream).toBeTrue();
 			expect(roomOptions().dynacast).toBeTrue();
+		});
+
+		it('sizes what a phone subscribes to by its tiles, not by the density of its screen', () => {
+			onPhone(true);
+			service.init();
+
+			expect(roomOptions().adaptiveStream).toEqual({ pixelDensity: 1 });
 		});
 
 		it('keeps the microphone track open while muted', () => {

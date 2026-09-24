@@ -103,7 +103,7 @@ registered on both receives it twice.
 #### UI
 
 - Screen shares can be zoomed with two fingers on touch devices.
-- Meeting layout improvements.
+- Meeting layout performance improvements.
 - Device permissions are requested in a single prompt.
 - The floating or docked choice for the local video tile is remembered per browser.
 

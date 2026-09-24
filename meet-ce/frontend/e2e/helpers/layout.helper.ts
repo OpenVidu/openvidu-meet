@@ -145,6 +145,19 @@ export const croppedShare = ({ width, height, videoWidth, videoHeight }: GridVid
 	return tileRatio > cameraRatio ? 1 - cameraRatio / tileRatio : 1 - tileRatio / cameraRatio;
 };
 
+/** Simulcast layers of a camera as LiveKit publishes them: 180p, 360p and the capture resolution. */
+export type CameraLayer = 'low' | 'medium' | 'high';
+
+/** Layer a received camera video belongs to, from the height it arrives at. */
+export const cameraLayerOf = (videoHeight: number): CameraLayer =>
+	videoHeight <= 180 ? 'low' : videoHeight <= 360 ? 'medium' : 'high';
+
+/**
+ * Smallest layer that covers a tile of this height in CSS pixels. The SFU answers a request with the
+ * lowest layer that reaches 90% of the height asked for.
+ */
+export const cameraLayerCovering = (tileHeight: number): CameraLayer => cameraLayerOf(tileHeight * 0.9);
+
 /** Box of the shared screen inside the grid, with the size of the layout container around it. */
 export interface SharedScreenFraming {
 	width: number;

@@ -20,6 +20,7 @@ import {
 	RoomOptions
 } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
+import { PlatformService } from '../platform/platform.service';
 
 /**
  * Owns the live meeting connection end to end: the LiveKit Room lifecycle (create / connect /
@@ -33,6 +34,7 @@ export class MeetingLiveKitService {
 	private readonly livekitSdkService = inject(LivekitSdkService);
 	private readonly assets = inject(AssetsService);
 	private readonly httpService = inject(HttpService);
+	private readonly platformService = inject(PlatformService);
 
 	private room: Room | undefined = undefined;
 	private keyProvider: ExternalE2EEKeyProvider | undefined;
@@ -122,7 +124,9 @@ export class MeetingLiveKitService {
 		}
 
 		const roomOptions: RoomOptions = {
-			adaptiveStream: true,
+			// livekit-client asks for twice the size of a tile on screens denser than 2x, which on a
+			// phone is the capture layer for every tile, however small.
+			adaptiveStream: this.platformService.isPhysicalMobileDevice() ? { pixelDensity: 1 } : true,
 			dynacast: true,
 			audioCaptureDefaults: { ...MICROPHONE_CAPTURE_DEFAULTS },
 			videoCaptureDefaults: { ...CAMERA_CAPTURE_DEFAULTS },

@@ -1,5 +1,7 @@
-import { expect, test, type Browser, type Page } from '@playwright/test';
+import { devices, expect, test, type Browser, type Page } from '@playwright/test';
 import {
+	cameraLayerCovering,
+	cameraLayerOf,
 	croppedShare,
 	gapBesidePinnedTile,
 	getGridVideoFraming,
@@ -375,6 +377,105 @@ test.describe('Layout E2E Tests', () => {
 					.toBeGreaterThan(MIN_PAINTED_SHARE);
 			} finally {
 				await removeAllParticipants();
+			}
+		});
+	});
+
+	test.describe('Camera layer of each tile', () => {
+		/** Waits until every tile of the grid receives the smallest camera layer that covers it. */
+		const expectTilesOnTheLayerTheyNeed = async (viewer: Page, tiles: number) => {
+			await expect
+				.poll(
+					async () => {
+						const framing = await getGridVideoFraming(viewer);
+
+						return {
+							tiles: framing.length,
+							mismatches: framing
+								.filter((tile) => cameraLayerOf(tile.videoHeight) !== cameraLayerCovering(tile.height))
+								.map(
+									(tile) =>
+										`${Math.round(tile.width)}x${Math.round(tile.height)} tile on ${tile.videoHeight}p`
+								)
+						};
+					},
+					{ timeout: 20_000 }
+				)
+				.toEqual({ tiles, mismatches: [] });
+		};
+
+		const openPhoneViewer = async (browser: Browser): Promise<Page> => {
+			const phone = await (await browser.newContext(devices['Pixel 7'])).newPage();
+			await capturePeerConnections(phone);
+			await openMeeting(phone, accessUrl, { name: 'phone', audioEnabled: false });
+			return phone;
+		};
+
+		const joinRemotes = (browser: Browser, names: string[]) =>
+			joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				skipRemoteStreamCheck: true,
+				participants: names.map((name) => ({ name, headless: true, audioEnabled: false }))
+			});
+
+		test('should receive the smallest camera layer that covers each tile of a desktop grid', async ({
+			page,
+			browser
+		}) => {
+			await openMeeting(page, accessUrl, { name: 'viewer', audioEnabled: false });
+			const { addParticipant, removeAllParticipants } = await joinRemotes(browser, ['remote-a']);
+
+			try {
+				await waitForRemoteStream(page, 1);
+				await expectTilesOnTheLayerTheyNeed(page, 1);
+
+				await Promise.all(
+					['remote-b', 'remote-c'].map((name) =>
+						addParticipant({ name, headless: true, audioEnabled: false })
+					)
+				);
+				await waitForRemoteStream(page, 3);
+				await expectTilesOnTheLayerTheyNeed(page, 3);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should receive on a phone the camera layer its tiles show, not one sized for its pixel density', async ({
+			browser
+		}) => {
+			const phone = await openPhoneViewer(browser);
+			const { addParticipant, removeAllParticipants } = await joinRemotes(browser, ['remote-a']);
+
+			try {
+				await waitForRemoteStream(phone, 1);
+				await expectTilesOnTheLayerTheyNeed(phone, 1);
+
+				await addParticipant({ name: 'remote-b', headless: true, audioEnabled: false });
+				await waitForRemoteStream(phone, 2);
+				await expectTilesOnTheLayerTheyNeed(phone, 2);
+			} finally {
+				await removeAllParticipants();
+				await phone.context().close();
+			}
+		});
+
+		test('should pause the cameras a phone receives while its tab is in the background', async ({ browser }) => {
+			const phone = await openPhoneViewer(browser);
+			const { removeAllParticipants } = await joinRemotes(browser, ['remote-a', 'remote-b']);
+
+			try {
+				await waitForRemoteStream(phone, 2);
+				await expectOnlyVisibleRemoteVideosPlaying(phone);
+
+				await setTabVisibility(phone, 'hidden');
+				await expect.poll(() => countFlowingRemoteVideos(phone), { timeout: 10_000 }).toBe(0);
+				await setTabVisibility(phone, 'visible');
+				await expectOnlyVisibleRemoteVideosPlaying(phone);
+			} finally {
+				await removeAllParticipants();
+				await phone.context().close();
 			}
 		});
 	});
