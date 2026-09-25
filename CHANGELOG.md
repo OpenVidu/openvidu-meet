@@ -139,6 +139,7 @@ registered on both receives it twice.
 #### Deployment
 
 - Unanswered webhooks caused active connections to grow continuously. Every webhook is answered.
+- The `openvidu/openvidu-meet` Docker image resolved its dependencies anew on every build instead of installing the versions in the lockfile. It now installs the locked versions.
 
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html
 [3.9-meetings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/meetingGet

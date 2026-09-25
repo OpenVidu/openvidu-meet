@@ -68,11 +68,13 @@ RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 
 WORKDIR /app
 
-COPY package.json pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY meet-ce/typings/package.json ./meet-ce/typings/
 COPY meet-ce/backend/package.json ./meet-ce/backend/
 
-RUN pnpm install --prod --filter @openvidu-meet/backend --filter @openvidu-meet/typings
+# Installs the backend's production dependencies exactly as locked. With the hoisted linker, a plain
+# install may re-resolve them, and a filtered or frozen one adds those of every project in the lockfile.
+RUN pnpm --config.inject-workspace-packages=true --filter @openvidu-meet/backend deploy --prod /deploy
 
 # ====================================================
 # Stage 3: production
@@ -83,19 +85,15 @@ RUN apk add --no-cache tzdata
 
 WORKDIR /opt/openvidu-meet
 
-# Copy the production dependencies
-COPY --from=prod-deps --chown=node:node /app/node_modules ./node_modules
-COPY --from=prod-deps --chown=node:node /app/meet-ce/backend/node_modules ./meet-ce/backend/node_modules
+# Copy the production dependencies, completing the typings package with its build output
+COPY --from=prod-deps --chown=node:node /deploy/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/meet-ce/typings/dist ./node_modules/@openvidu-meet/typings/dist
 
 # Copy the compiled backend
 COPY --from=builder --chown=node:node /app/meet-ce/backend/dist ./meet-ce/backend/dist
 COPY --from=builder --chown=node:node /app/meet-ce/backend/public ./meet-ce/backend/public
 COPY --from=builder --chown=node:node /app/meet-ce/backend/package.json ./meet-ce/backend/package.json
 COPY --from=builder --chown=node:node /app/meet-ce/backend/info.json ./meet-ce/backend/info.json
-
-# Copy typings
-COPY --from=builder --chown=node:node /app/meet-ce/typings/dist ./meet-ce/typings/dist
-COPY --from=builder --chown=node:node /app/meet-ce/typings/package.json ./meet-ce/typings/package.json
 
 # Copy entrypoint script
 COPY --chmod=755 meet-ce/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
