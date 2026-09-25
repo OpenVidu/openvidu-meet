@@ -18,6 +18,7 @@
 					cdkDragBoundary="#layout-container"
 					[cdkDragDisabled]="!stream.isFloating"
 					[cdkDragFreeDragPosition]="stream.isFloating ? currentDragPosition() : ZERO_DRAG_POSITION"
+					(cdkDragReleased)="onDragReleased($event)"
 				>
 					<ng-container *ngTemplateOutlet="streamTemplate(); context: { $implicit: stream }" />
 					@if (stream.isFloating) {

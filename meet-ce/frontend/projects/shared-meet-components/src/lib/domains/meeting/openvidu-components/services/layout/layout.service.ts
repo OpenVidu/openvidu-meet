@@ -55,6 +55,7 @@ export class BaseLayoutService {
 	clear() {
 		this.openviduLayout?.destroy();
 		this.openviduLayout = undefined;
+		this.layoutContainer = undefined;
 	}
 
 	/**

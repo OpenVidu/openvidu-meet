@@ -6,7 +6,6 @@ import {
 	computed,
 	contentChild,
 	contentChildren,
-	DestroyRef,
 	effect,
 	inject,
 	input,
@@ -18,7 +17,6 @@ import {
 	viewChildren,
 	ViewContainerRef
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LayoutAdditionalElementsDirective } from '../../directives/template/internals.directive';
 import { ParticipantStream } from '../../models/participant.model';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
@@ -43,7 +41,6 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private readonly participantService = inject(ParticipantService);
 	private readonly directiveService = inject(MeetingUiConfigService);
 	private readonly templateRegistry = inject(TemplateRegistryService);
-	private readonly destroyRef = inject(DestroyRef);
 
 	// ── View queries ─────────────────────────────────────────────────────────────
 
@@ -261,7 +258,6 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		this.lastLayoutHeight = rect.height;
 		this.listenToLayoutDomChanges(container);
 		this.listenToResizeLayout(container);
-		this.listenToCdkDrag();
 	}
 
 	ngOnDestroy(): void {
@@ -284,6 +280,14 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	 */
 	trackParticipantElement(_: number, stream: ParticipantStream): string {
 		return `${stream.participant.identity}-${stream.streamId}`;
+	}
+
+	/** Called from the template when the user drops a local tile, floating or not. */
+	onDragReleased(event: CdkDragRelease): void {
+		if (!this.isLocalFloating()) return;
+
+		// Sync signal with the actual post-drag transform so CD never resets it.
+		this.setDragPosition(this.getActualDragPosition(event.source.element.nativeElement), event.source);
 	}
 
 	/** Called from the template when the user presses on a corner resize handle. */
@@ -398,20 +402,6 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		});
 
 		this.resizeObserver.observe(container);
-	}
-
-	private listenToCdkDrag(): void {
-		const onRelease = (event: CdkDragRelease<any>): void => {
-			if (!this.isLocalFloating()) return;
-
-			const el = event.source.element.nativeElement as HTMLElement;
-			// Sync signal with the actual post-drag transform so CD never resets it.
-			this.setDragPosition(this.getActualDragPosition(el), event.source);
-		};
-
-		this.localParticipantDrags().forEach((drag) =>
-			drag.released.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(onRelease)
-		);
 	}
 
 	// ── Private: drag helpers ─────────────────────────────────────────────────────

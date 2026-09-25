@@ -52,12 +52,6 @@ export class SmartLayoutService extends BaseLayoutService {
 	private speakingStartTimes = new Map<string, number>();
 	private speakingStopTimes = new Map<string, number>();
 
-	private readonly smartLayoutUpdateEffect = effect(() => {
-		if (this.isSmartLayoutEnabled()) {
-			this.update();
-		}
-	});
-
 	/**
 	 * Speaker tracking runs in **every** layout mode, not just Smart Mosaic.
 	 * Keeping the priority list warm in Mosaic mode means a user who was already

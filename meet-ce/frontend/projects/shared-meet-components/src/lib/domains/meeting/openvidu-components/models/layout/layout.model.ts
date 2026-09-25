@@ -91,10 +91,6 @@ export class OpenViduLayout {
 
 		if (readStyle(this.layoutContainer, 'display') === 'none') return;
 
-		if (!this.layoutContainer.id) {
-			this.layoutContainer.id = `OV_${this.cheapUUID()}`;
-		}
-
 		const containerWidth =
 			elementWidth(this.layoutContainer) -
 			readStyleNumber(this.layoutContainer, 'border-left') -
@@ -109,7 +105,7 @@ export class OpenViduLayout {
 		if (containerWidth <= 0 || containerHeight <= 0) return;
 
 		const extendedOpts: ExtendedLayoutOptions = { ...this.opts, containerWidth, containerHeight };
-		const selector = `#${this.layoutContainer.id}>*:not(.${LayoutClass.IGNORED_ELEMENT}):not(.${LayoutClass.FLOATING_ELEMENT})`;
+		const selector = `:scope > *:not(.${LayoutClass.IGNORED_ELEMENT}):not(.${LayoutClass.FLOATING_ELEMENT})`;
 		const children = Array.from(this.layoutContainer.querySelectorAll<HTMLElement>(selector));
 		const isBig = children.map((child) => child.classList.contains(this.opts.bigClass));
 		const { boxes } = this.calculator.calculateLayout(
@@ -138,13 +134,5 @@ export class OpenViduLayout {
 		return video?.videoWidth && video.videoHeight
 			? video.videoHeight / video.videoWidth
 			: LAYOUT_CONSTANTS.DEFAULT_VIDEO_HEIGHT / LAYOUT_CONSTANTS.DEFAULT_VIDEO_WIDTH;
-	}
-
-	private cheapUUID(): string {
-		if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-			return crypto.randomUUID();
-		}
-
-		return Math.floor(Math.random() * 100000000).toString();
 	}
 }

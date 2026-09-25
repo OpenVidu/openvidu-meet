@@ -83,7 +83,6 @@ describe('OpenViduLayout', () => {
 	beforeEach(() => {
 		layout = new OpenViduLayout();
 		container = document.createElement('div');
-		container.id = 'layout-under-test';
 		container.style.position = 'relative';
 		container.style.width = `${CONTAINER.width}px`;
 		container.style.height = `${CONTAINER.height}px`;
@@ -102,6 +101,16 @@ describe('OpenViduLayout', () => {
 		await nextFrame();
 
 		expectPaintedOn(tiles, container, expectedBoxes(3));
+	});
+
+	it('lays out a container without an id and leaves it without one', async () => {
+		const tiles = [addTile(), addTile()];
+
+		layout.updateLayout(container, OPTIONS);
+		await nextFrame();
+
+		expectPaintedOn(tiles, container, expectedBoxes(2));
+		expect(container.id).toBe('');
 	});
 
 	it('leaves floating and ignored elements where they are', async () => {
