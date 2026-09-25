@@ -3,6 +3,7 @@
 	"version": "3.9.0-dev",
 	"private": true,
 	"description": "OpenVidu Meet Monorepo",
+	"packageManager": "pnpm@11.8.0",
 	"scripts": {
 		"build": "pnpm run build:typings && pnpm run build:backend && pnpm run build:shared-components && pnpm run build:frontend && pnpm run build:webcomponent",
 		"clean": "rm -f pnpm-lock.yaml && pnpm --filter @openvidu-meet/backend run clean && pnpm --filter @openvidu-meet/frontend run clean",

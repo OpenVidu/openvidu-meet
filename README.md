@@ -47,7 +47,7 @@ The REST API is described with OpenAPI 3.1 and split in two: a **public API** (`
 ## Prerequisites
 
 - **Node.js** `24.15.0` or later (Angular 22 requires `^22.22.3 || ^24.15.0 || >=26`). CI and the Docker image both pin `24.15.0`.
-- **pnpm** — CI and the Docker image pin `11.8.0`; `./meet.sh` offers to install it globally if it is missing.
+- **pnpm** `11.8.0`, pinned by `packageManager` in the root `package.json` and followed by CI and the Docker build. `./meet.sh` offers to install it globally if it is missing.
 - **Backing services**: OpenVidu Meet needs **LiveKit**, **MongoDB**, **Redis** and an **S3-compatible object store** (or Azure Blob Storage / Google Cloud Storage). It refuses to start without MongoDB.
 
 The simplest way to get all of them locally is the [OpenVidu local deployment](https://github.com/OpenVidu/openvidu-local-deployment), which is also what CI uses. The default values in [meet-ce/backend/src/environment.ts](meet-ce/backend/src/environment.ts) already match it, so no configuration is needed:

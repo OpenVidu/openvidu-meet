@@ -1,13 +1,11 @@
 # ====================================================
 # Stage 1: builder
 # ====================================================
-FROM node:24.15.0 AS builder
+# Runs on the build host's platform: its output is platform-independent, so it is built once for every target
+FROM --platform=$BUILDPLATFORM node:24.15.0 AS builder
 
-# Define pnpm version as build argument with default value
-ARG PNPM_VERSION=11.8.0
-
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+# Install pnpm, at the version the root package.json pins in `packageManager`
+RUN corepack enable
 
 WORKDIR /app
 
@@ -55,57 +53,46 @@ ARG BASE_HREF=/
 RUN pnpm install --frozen-lockfile && \
     ./meet.sh build --skip-install --base-href=${BASE_HREF}
 
-# Clean up development dependencies and unnecessary files
-# Keep backend node_modules for production stage
-RUN rm -rf node_modules \
-    meet-ce/frontend \
-    meet-ce/backend/src \
-    meet-ce/backend/openapi \
-    meet-ce/backend/index.ts \
-    meet-ce/typings/src
+# ====================================================
+# Stage 2: production dependencies
+# ====================================================
+# Runs on each target platform, so that native modules are installed for the platform they run on
+FROM node:24.15.0-alpine AS prod-deps
+
+# Install pnpm, at the version the root package.json pins in `packageManager`
+RUN corepack enable
+
+WORKDIR /app
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY meet-ce/typings/package.json ./meet-ce/typings/
+COPY meet-ce/backend/package.json ./meet-ce/backend/
+
+# Installs the backend's production dependencies exactly as locked. With the hoisted linker, a plain
+# install may re-resolve them, and a filtered or frozen one adds those of every project in the lockfile.
+RUN pnpm --config.inject-workspace-packages=true --filter @openvidu-meet/backend deploy --prod /deploy
 
 # ====================================================
-# Stage 2: production
+# Stage 3: production
 # ====================================================
 FROM node:24.15.0-alpine AS production
 
-# Define pnpm version as build argument with default value
-ARG PNPM_VERSION=11.8.0
-
-# Set pnpm version as environment variable (available at runtime)
-ENV PNPM_VERSION=${PNPM_VERSION}
-
-# Install bash (required by meet.sh which uses bash arrays)
-RUN apk add --no-cache bash tzdata
-
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+RUN apk add --no-cache tzdata
 
 WORKDIR /opt/openvidu-meet
 
-#Copy main package.json and pnpm-workspace.yaml
-COPY --from=builder --chown=node:node /app/meet.sh ./
-COPY --from=builder --chown=node:node /app/package.json ./
-COPY --from=builder --chown=node:node /app/pnpm-workspace.yaml ./
+# Copy the production dependencies, completing the typings package with its build output
+COPY --from=prod-deps --chown=node:node /deploy/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/meet-ce/typings/dist ./node_modules/@openvidu-meet/typings/dist
 
-# Copy the compiled backend with all node_modules from builder
+# Copy the compiled backend
 COPY --from=builder --chown=node:node /app/meet-ce/backend/dist ./meet-ce/backend/dist
 COPY --from=builder --chown=node:node /app/meet-ce/backend/public ./meet-ce/backend/public
 COPY --from=builder --chown=node:node /app/meet-ce/backend/package.json ./meet-ce/backend/package.json
 COPY --from=builder --chown=node:node /app/meet-ce/backend/info.json ./meet-ce/backend/info.json
 
-# Copy typings
-COPY --from=builder --chown=node:node /app/meet-ce/typings/dist ./meet-ce/typings/dist
-COPY --from=builder --chown=node:node /app/meet-ce/typings/package.json ./meet-ce/typings/package.json
-
 # Copy entrypoint script
-COPY meet-ce/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-
-RUN pnpm install --prod --filter @openvidu-meet/backend --filter @openvidu-meet/typings
-
-# Set permissions
-RUN chmod +x /usr/local/bin/entrypoint.sh && \
-	chmod +x meet.sh
+COPY --chmod=755 meet-ce/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 # Switch to non-root user
 USER node
@@ -114,7 +101,7 @@ USER node
 ENV NODE_ENV=production
 
 # Expose port
-EXPOSE $SERVER_PORT
+EXPOSE 6080
 
 # Start the application
 CMD ["/usr/local/bin/entrypoint.sh"]
