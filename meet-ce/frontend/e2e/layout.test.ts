@@ -7,6 +7,7 @@ import {
 	getGridTiles,
 	getGridVideoFraming,
 	getSharedScreenFraming,
+	gridShareOf,
 	paintedShareOfContainer,
 	runScreenShareRotationCycles,
 	selectMosaicLayout,
@@ -38,7 +39,7 @@ import {
 	waitForSubscribedRemoteVideos,
 	waitForVisibleRemoteParticipants
 } from './helpers/stream.helper';
-import { expectHidden, expectVisible } from './helpers/ui-utils.helper';
+import { expectHidden, expectVisible, resumeRenderingFrames, stopRenderingFrames } from './helpers/ui-utils.helper';
 
 test.describe('Layout E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -329,6 +330,46 @@ test.describe('Layout E2E Tests', () => {
 						expect(Math.abs(measured - gap)).toBeLessThanOrEqual(1);
 					}
 				}).toPass({ timeout: 15_000 });
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+	});
+
+	test.describe('New tiles', () => {
+		test('should not let a tile the layout has not placed yet cover the grid', async ({ browser }) => {
+			const { pages, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [
+					{ name: 'viewer', audioEnabled: false },
+					{ name: 'remote-a', headless: true, audioEnabled: false }
+				]
+			});
+			const [pageA] = pages;
+
+			try {
+				await selectMosaicLayout(pageA);
+				await closeSettingsPanel(pageA);
+				await waitForRemoteStream(pageA, 1);
+
+				// The layout places tiles from an animation frame, so without frames a new tile stays
+				// wherever the browser puts it on insertion.
+				await stopRenderingFrames(pageA);
+				await addParticipant({ name: 'remote-b', headless: true, audioEnabled: false });
+				await expect(pageA.locator('#layout .OV_stream.remote')).toHaveCount(2, { timeout: 15_000 });
+
+				const unplacedShares: number[] = [];
+
+				for (let sample = 0; sample < 10; sample++) {
+					unplacedShares.push(await gridShareOf(pageA, 'remote-b'));
+					await pageA.waitForTimeout(100);
+				}
+
+				expect(Math.max(...unplacedShares)).toBeLessThan(0.01);
+
+				await resumeRenderingFrames(pageA);
+				await expect.poll(() => gridShareOf(pageA, 'remote-b'), { timeout: 10_000 }).toBeGreaterThan(0.2);
 			} finally {
 				await removeAllParticipants();
 			}

@@ -205,6 +205,20 @@ export const tileSpacing = ({ grid, tiles }: { grid: Box; tiles: Box[] }) => {
 	};
 };
 
+/** Share of the grid that the tile of the named participant covers. */
+export const gridShareOf = async (page: Page, name: string): Promise<number> =>
+	page.evaluate((participant) => {
+		const grid = document.querySelector('#layout')!.getBoundingClientRect();
+		const tile = [...document.querySelectorAll('#layout .OV_stream')].find(
+			(stream) => stream.querySelector('#participant-name')?.textContent?.trim() === participant
+		);
+
+		if (!tile) return 0;
+
+		const { width, height } = tile.getBoundingClientRect();
+		return (width * height) / (grid.width * grid.height);
+	}, name);
+
 /** Simulcast layers of a camera as LiveKit publishes them: 180p, 360p and the capture resolution. */
 export type CameraLayer = 'low' | 'medium' | 'high';
 

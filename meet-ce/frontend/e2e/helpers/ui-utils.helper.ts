@@ -145,12 +145,13 @@ export const expectCopiedText = async (page: Page, expectedText: string, timeout
 // ─── Screenshot / image comparison ──────────────────────────────────────────
 
 /**
- * Takes a screenshot of the first `.OV_video-element` on the page.
+ * Takes a screenshot of the first `.OV_video-element` on the page. Fades still running are finished
+ * first, so the capture shows the video and not the background it fades in over.
  */
 export const captureVideoElementScreenshot = async (page: Page): Promise<Buffer> => {
 	const videoLocator = page.locator('.OV_video-element').first();
 	await expect(videoLocator).toBeVisible({ timeout: 5_000 });
-	return await videoLocator.screenshot({ timeout: 10_000 });
+	return await videoLocator.screenshot({ timeout: 10_000, animations: 'disabled' });
 };
 
 /**

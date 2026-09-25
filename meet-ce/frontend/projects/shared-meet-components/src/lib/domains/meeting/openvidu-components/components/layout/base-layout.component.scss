@@ -15,10 +15,12 @@
 
 /**
  * What the layout engine positions: the same selector it uses, so a floating or ignored tile keeps
- * its own geometry. The engine writes each box and this moves the element there, for elements
- * projected into the grid too.
+ * its own geometry. Out of the flow from the moment it is inserted, an element the engine has not
+ * placed yet takes no room instead of covering the grid; the engine then writes its box and the
+ * transition moves it there. For elements projected into the grid too.
  */
 #layout > ::ng-deep *:not(.OV_floating):not(.OV_ignored) {
+	position: absolute;
 	transition: all 0.1s linear;
 }
 

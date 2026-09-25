@@ -1180,7 +1180,7 @@ test.describe('Stream E2E Tests', () => {
 			const [pageA, pageB] = pages;
 
 			try {
-				// Wait for exactly 1 remote stream (placeholder with no-size may still be in DOM briefly)
+				// Wait for exactly 1 remote stream
 				await expect(pageA.locator('.OV_stream.remote')).toHaveCount(1, { timeout: 10_000 });
 				await expect(pageA.locator('.OV_stream.remote .OV_media-element')).toHaveCount(1);
 

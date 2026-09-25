@@ -1,10 +1,4 @@
 :host {
-	/* Fixes layout bug. The OV_root is created with the entire layout width and it has a weird UX behaviour */
-	.no-size {
-		height: 0px !important;
-		width: 0px !important;
-	}
-
 	.participant-name-container {
 		background-color: var(--ov-secondary-action-color);
 		padding: 3px 6px;
