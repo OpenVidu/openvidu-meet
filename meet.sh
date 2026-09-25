@@ -534,18 +534,12 @@ select_edition() {
   esac
 }
 
-# Helper: Add common commands (typings, docs)
+# Helper: Add common commands (typings)
 add_common_dev_commands() {
   # Typings watcher. It generates the typings-ready.flag file when done for other watchers to wait on.
   CMD_NAMES+=("typings-ce")
   CMD_COLORS+=("bgGreen.black")
   CMD_COMMANDS+=("./scripts/dev/watch-typings.sh ce")
-
-  # shared-meet-components watcher
-  CMD_NAMES+=("shared-meet-components")
-  CMD_COLORS+=("bgYellow.dark")
-  CMD_COMMANDS+=("pnpm --filter @openvidu-meet/frontend run lib:serve")
-
 }
 
 add_optional_commands() {
@@ -569,8 +563,6 @@ add_optional_commands() {
 
 # Helper: Add CE-specific commands (backend, frontend)
 add_ce_commands() {
-  local shared_meet_components_path="$1"
-
   # REST API docs watcher
   CMD_NAMES+=("rest-api-docs")
   CMD_COLORS+=("bgGray")
@@ -581,15 +573,22 @@ add_ce_commands() {
   CMD_COLORS+=("cyan")
   CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:backend'")
 
-  # Run frontend after shared-meet-components is ready
+  # Run frontend
   CMD_NAMES+=("frontend")
   CMD_COLORS+=("magenta")
-  CMD_COMMANDS+=("wait-on ${shared_meet_components_path} && sleep 1 && node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:frontend'")
+  CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:frontend'")
 }
 
-# Helper: Add PRO-specific commands (backend-pro, backend-ce-watch, frontend-pro)
+# Helper: Add PRO-specific commands (shared-meet-components, backend-pro, backend-ce-watch, frontend-pro)
 add_pro_commands() {
-  local shared_meet_components_path="$1"
+  local shared_meet_components_path="meet-ce/frontend/projects/shared-meet-components/dist/package.json"
+
+  # frontend-pro resolves the library from its compiled dist, whereas the CE frontend compiles it from source.
+  # Removing the previous build's package.json makes frontend-pro wait for a fresh one.
+  rm -f "${shared_meet_components_path}"
+  CMD_NAMES+=("shared-meet-components")
+  CMD_COLORS+=("bgYellow.dark")
+  CMD_COMMANDS+=("pnpm --filter @openvidu-meet/frontend run lib:serve")
 
   # Run backend-pro
   CMD_NAMES+=("backend-pro")
@@ -615,15 +614,11 @@ add_pro_commands() {
 # Helper: Launch all development watchers using concurrently
 launch_dev_watchers() {
   local edition="$1"
-  local shared_meet_components_path="$2"
 
   echo -e "${YELLOW}⏳ Launching all development watchers...${NC}"
   echo -e "${BLUE}Edition: ${edition}${NC}"
   echo -e "${BLUE}Processes: ${#CMD_NAMES[@]}${NC}"
   echo
-
-  # Clean up shared-meet-components package.json to ensure wait-on works
-  rm -rf "${shared_meet_components_path}"
 
   # Build concurrently arguments from arrays
   local names_arg=$(IFS=,; echo "${CMD_NAMES[*]}")
@@ -664,15 +659,12 @@ dev() {
   local edition=${SELECTED_EDITION:-ce}
   echo
 
-  # Define paths
-  local shared_meet_components_path="meet-ce/frontend/projects/shared-meet-components/dist/package.json"
-
   # Initialize command arrays
   CMD_NAMES=()
   CMD_COLORS=()
   CMD_COMMANDS=()
 
-  # Add common commands (typings, shared-meet-components)
+  # Add common commands (typings)
   add_common_dev_commands
 
   # Add optional commands (testapp, webcomponent)
@@ -680,13 +672,13 @@ dev() {
 
   # Add edition-specific commands
   if [ "$edition" = "pro" ]; then
-    add_pro_commands "$shared_meet_components_path"
+    add_pro_commands
   else
-    add_ce_commands "$shared_meet_components_path"
+    add_ce_commands
   fi
 
   # Launch all watchers
-  launch_dev_watchers "$edition" "$shared_meet_components_path"
+  launch_dev_watchers "$edition"
 }
 
 # Start OpenVidu Meet services in prod or ci mode

@@ -55,7 +55,7 @@ ordering). `./meet.sh help` lists all commands.
 
 ```bash
 ./meet.sh install                 # pnpm install for the whole workspace
-./meet.sh dev                     # all watchers (typings, library, backend, frontend, API docs)
+./meet.sh dev                     # all watchers (typings, backend, frontend, API docs)
 ./meet.sh dev --testapp           # + testapp on :5080 and webhook bridge on :5081
 ./meet.sh dev --webcomponent      # + webcomponent bundle watcher
 ./meet.sh build                   # full build, correct order
@@ -82,8 +82,9 @@ The app is served at <http://localhost:6080/meet> in dev (backend port `6080`, b
 
 ## Development mode mechanics
 
-`./meet.sh dev` runs watchers under `concurrently` (typings, shared library, REST API docs, backend,
-frontend). Two details matter when things look stale:
+`./meet.sh dev` runs watchers under `concurrently` (typings, REST API docs, backend, frontend). The
+CE frontend compiles the library from source, so there is no library watcher; PRO adds one because
+it consumes the library's `dist`. Two details matter when things look stale:
 
 - The typings watcher writes `meet-ce/typings/dist/typings-ready.flag`; every other watcher runs
   behind `scripts/dev/watch-with-typings-guard.mjs`, which waits for that flag and restarts its

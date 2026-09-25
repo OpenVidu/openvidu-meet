@@ -12,8 +12,10 @@ write goes in the library; the shell only composes it. See the root `CLAUDE.md` 
 
 The library is consumed through the TS path alias `@openvidu-meet/shared-components` →
 `projects/shared-meet-components/src/public-api.ts`, so the app builds from library **source** and you
-usually do not need `lib:build`. Everything public must be re-exported through the domain barrels up
-to `public-api.ts` (shared first, then domains) or PRO/webcomponent cannot see it.
+usually do not need `lib:build`. Only `lib:build` (part of `./meet.sh build`) emits the library's
+declarations, so declaration errors such as TS4029 surface there and not in `./meet.sh dev`.
+Everything public must be re-exported through the domain barrels up to `public-api.ts` (shared first,
+then domains) or PRO/webcomponent cannot see it.
 
 ## Library structure
 

@@ -90,11 +90,11 @@ The recommended way to develop is the integrated development mode, which runs al
 
 It starts:
 
-- **Typings** — `tsc --watch` over the shared type definitions
-- **Shared Meet Components** — the Angular library, watch build
-- **Backend** — Node.js server with auto-restart and a parallel type-checker
-- **Frontend** — Angular watch build, output written straight into the backend's `public/frontend`
-- **REST API docs** — regenerated from the OpenAPI specs on change
+- **Typings**: `tsc --watch` over the shared type definitions
+- **Backend**: Node.js server with auto-restart and a parallel type-checker
+- **Frontend**: Angular watch build that compiles the Shared Meet Components library from source,
+  output written straight into the backend's `public/frontend`
+- **REST API docs**: regenerated from the OpenAPI specs on change
 
 Optional flags:
 
