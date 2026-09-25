@@ -2,15 +2,11 @@ import { LayoutDimensionsCache } from './layout-dimensions-cache.model';
 import {
 	BestDimensions,
 	BigFirstOption,
-	CategorizedElements,
-	ElementCategory,
-	ElementDimensions,
 	ExtendedLayoutOptions,
 	LAYOUT_CONSTANTS,
 	LayoutAlignment,
 	LayoutBox,
-	LayoutCalculationResult,
-	LayoutRow
+	LayoutCalculationResult
 } from './layout-types.model';
 
 interface BigAreaPlacement {
@@ -32,14 +28,17 @@ interface BigAreaPlacement {
 export class LayoutCalculator {
 	constructor(private dimensionsCache: LayoutDimensionsCache) {}
 
-	calculateLayout(opts: ExtendedLayoutOptions, elements: ElementDimensions[]): LayoutCalculationResult {
+	/**
+	 * Boxes of the elements in container order. `isBig[i]` puts element `i` in the big area, and
+	 * `bigVideoRatio`, the height / width of the first big element's video, decides whether the others
+	 * go below it or beside it.
+	 */
+	calculateLayout(opts: ExtendedLayoutOptions, isBig: boolean[], bigVideoRatio: number): LayoutCalculationResult {
 		const {
 			maxRatio = LAYOUT_CONSTANTS.DEFAULT_MAX_RATIO,
 			minRatio = LAYOUT_CONSTANTS.DEFAULT_MIN_RATIO,
-			fixedRatio = false,
 			bigPercentage = LAYOUT_CONSTANTS.DEFAULT_BIG_PERCENTAGE,
 			minBigPercentage = 0,
-			bigFixedRatio = false,
 			bigMaxRatio = LAYOUT_CONSTANTS.DEFAULT_MAX_RATIO,
 			bigMinRatio = LAYOUT_CONSTANTS.DEFAULT_MIN_RATIO,
 			bigFirst = true,
@@ -51,28 +50,27 @@ export class LayoutCalculator {
 			maxHeight = Infinity,
 			stripMaxSize = Infinity,
 			bigMaxWidth = Infinity,
-			bigMaxHeight = Infinity,
+			bigMaxHeight = Infinity
 		} = opts;
 
-		const categorized = this.categorizeElements(elements);
-		const { big: bigOnes, normal: normalOnes } = categorized;
+		const bigCount = isBig.filter(Boolean).length;
+		const othersCount = isBig.length - bigCount;
 
 		const areas: LayoutCalculationResult['areas'] = { big: null, normal: null };
 		let bigBoxes: LayoutBox[] = [];
 		let normalBoxes: LayoutBox[] = [];
 
-		const hasBig = bigOnes.length > 0;
-		const hasOthers = normalOnes.length > 0;
+		const hasBig = bigCount > 0;
+		const hasOthers = othersCount > 0;
 
 		if (hasBig && hasOthers) {
-			const isTall = containerHeight / containerWidth > this.getVideoRatio(bigOnes[0]);
+			const isTall = containerHeight / containerWidth > bigVideoRatio;
 			const placement = this.computeBigAreaPlacement({
 				isTall,
 				containerWidth,
 				containerHeight,
 				bigPercentage,
 				minBigPercentage,
-				bigFixedRatio,
 				bigMinRatio,
 				bigMaxRatio,
 				bigMaxWidth,
@@ -83,8 +81,8 @@ export class LayoutCalculator {
 				maxHeight,
 				stripMaxSize,
 				bigFirst,
-				bigOnes,
-				othersCount: normalOnes.length
+				bigCount,
+				othersCount
 			});
 
 			const { bigWidth, bigHeight, offsetTop, offsetLeft, bigOffsetTop, bigOffsetLeft, showBigFirst } = placement;
@@ -119,14 +117,13 @@ export class LayoutCalculator {
 					containerHeight: areas.big.height,
 					offsetLeft: areas.big.left,
 					offsetTop: areas.big.top,
-					fixedRatio: bigFixedRatio,
 					minRatio: bigMinRatio,
 					maxRatio: bigMaxRatio,
 					alignItems: bigAlignItems,
 					maxWidth: bigMaxWidth,
 					maxHeight: bigMaxHeight
 				},
-				bigOnes
+				bigCount
 			);
 		}
 
@@ -137,18 +134,17 @@ export class LayoutCalculator {
 					containerHeight: areas.normal.height,
 					offsetLeft: areas.normal.left,
 					offsetTop: areas.normal.top,
-					fixedRatio,
 					minRatio,
 					maxRatio,
 					alignItems,
 					maxWidth,
 					maxHeight
 				},
-				normalOnes
+				othersCount
 			);
 		}
 
-		const boxes = this.reconstructBoxesInOrder(categorized, bigBoxes, normalBoxes);
+		const boxes = this.inContainerOrder(isBig, bigBoxes, normalBoxes);
 		return { boxes, areas };
 	}
 
@@ -242,12 +238,11 @@ export class LayoutCalculator {
 
 	private calculateBoxesForArea(
 		opts: Partial<ExtendedLayoutOptions & { offsetLeft: number; offsetTop: number }>,
-		elements: ElementDimensions[]
+		count: number
 	): LayoutBox[] {
 		const {
 			maxRatio = LAYOUT_CONSTANTS.DEFAULT_MAX_RATIO,
 			minRatio = LAYOUT_CONSTANTS.DEFAULT_MIN_RATIO,
-			fixedRatio = false,
 			containerWidth = LAYOUT_CONSTANTS.DEFAULT_VIDEO_WIDTH,
 			containerHeight = LAYOUT_CONSTANTS.DEFAULT_VIDEO_HEIGHT,
 			offsetLeft = 0,
@@ -257,74 +252,32 @@ export class LayoutCalculator {
 			maxHeight = Infinity
 		} = opts;
 
-		const ratios = elements.map((element) => element.height / element.width);
-		const count = ratios.length;
-
-		const dimensions = fixedRatio
-			? this.getBestDimensions(
-					ratios[0] ?? LAYOUT_CONSTANTS.DEFAULT_MIN_RATIO,
-					ratios[0] ?? LAYOUT_CONSTANTS.DEFAULT_MIN_RATIO,
-					containerWidth,
-					containerHeight,
-					count,
-					maxWidth,
-					maxHeight
-				)
-			: this.getBestDimensions(minRatio, maxRatio, containerWidth, containerHeight, count, maxWidth, maxHeight);
-
-		// Bucket elements into rows of `dimensions.targetCols`.
-		const rows: LayoutRow[] = [];
-
-		for (let i = 0; i < count; i++) {
-			const ratio = ratios[i];
-
-			if (i % dimensions.targetCols === 0) {
-				rows.push({ ratios: [], width: 0, height: 0 });
-			}
-
-			const row = rows[rows.length - 1];
-			const widthForElement = fixedRatio ? dimensions.targetHeight / ratio : dimensions.targetWidth;
-			row.ratios.push(ratio);
-			row.width += widthForElement;
-			row.height = dimensions.targetHeight;
-		}
-
-		// A row of elements wider than the area is scaled down to fit it.
-		let totalRowHeight = 0;
-
-		for (const row of rows) {
-			if (row.width > containerWidth) {
-				row.height = Math.floor(row.height * (containerWidth / row.width));
-				row.width = containerWidth;
-			}
-
-			totalRowHeight += row.height;
-		}
+		const { targetCols, targetRows, targetWidth, targetHeight } = this.getBestDimensions(
+			minRatio,
+			maxRatio,
+			containerWidth,
+			containerHeight,
+			count,
+			maxWidth,
+			maxHeight
+		);
 
 		// Every element keeps the same size: a last row with fewer of them is centred, not grown,
 		// so a straggler does not read as the featured one.
-		let y = this.alignmentOffset(alignItems, containerHeight, totalRowHeight);
-		const boxes: LayoutBox[] = [];
+		const top = offsetTop + this.alignmentOffset(alignItems, containerHeight, targetRows * targetHeight);
 
-		for (const row of rows) {
-			let x = this.alignmentOffset(alignItems, containerWidth, row.width);
+		return Array.from({ length: count }, (_, index) => {
+			const row = Math.floor(index / targetCols);
+			const inRow = Math.min(targetCols, count - row * targetCols);
+			const left = offsetLeft + this.alignmentOffset(alignItems, containerWidth, inRow * targetWidth);
 
-			for (const ratio of row.ratios) {
-				const targetWidth = fixedRatio ? Math.floor(row.height / ratio) : dimensions.targetWidth;
-
-				boxes.push({
-					left: x + offsetLeft,
-					top: y + offsetTop,
-					width: targetWidth,
-					height: row.height
-				});
-				x += targetWidth;
-			}
-
-			y += row.height;
-		}
-
-		return boxes;
+			return {
+				left: left + (index % targetCols) * targetWidth,
+				top: top + row * targetHeight,
+				width: targetWidth,
+				height: targetHeight
+			};
+		});
 	}
 
 	/**
@@ -337,7 +290,6 @@ export class LayoutCalculator {
 		containerHeight: number;
 		bigPercentage: number;
 		minBigPercentage: number;
-		bigFixedRatio: boolean;
 		bigMinRatio: number;
 		bigMaxRatio: number;
 		bigMaxWidth: number;
@@ -348,7 +300,7 @@ export class LayoutCalculator {
 		maxHeight: number;
 		stripMaxSize: number;
 		bigFirst: BigFirstOption;
-		bigOnes: ElementDimensions[];
+		bigCount: number;
 		othersCount: number;
 	}): BigAreaPlacement {
 		const {
@@ -357,7 +309,6 @@ export class LayoutCalculator {
 			containerHeight,
 			bigPercentage,
 			minBigPercentage,
-			bigFixedRatio,
 			bigMinRatio,
 			bigMaxRatio,
 			bigMaxWidth,
@@ -368,49 +319,35 @@ export class LayoutCalculator {
 			maxHeight,
 			stripMaxSize,
 			bigFirst,
-			bigOnes,
+			bigCount,
 			othersCount
 		} = opts;
 
 		let bigWidth = isTall ? containerWidth : Math.floor(containerWidth * bigPercentage);
 		let bigHeight = isTall ? Math.floor(containerHeight * bigPercentage) : containerHeight;
 
-		const ratio0 = bigOnes[0].height / bigOnes[0].width;
-
 		// The most the big elements could ever fill, ratio clamps included. Any area beyond this is
 		// a margin around them that no element can use, so it belongs to the others instead.
-		const fillable = bigFixedRatio
-			? this.getBestDimensions(
-					ratio0,
-					ratio0,
-					containerWidth,
-					containerHeight,
-					bigOnes.length,
-					bigMaxWidth,
-					bigMaxHeight
-				)
-			: this.getBestDimensions(
-					bigMinRatio,
-					bigMaxRatio,
-					containerWidth,
-					containerHeight,
-					bigOnes.length,
-					bigMaxWidth,
-					bigMaxHeight
-				);
+		const fillable = this.getBestDimensions(
+			bigMinRatio,
+			bigMaxRatio,
+			containerWidth,
+			containerHeight,
+			bigCount,
+			bigMaxWidth,
+			bigMaxHeight
+		);
 
 		if (minBigPercentage > 0) {
-			const bigDimensions = bigFixedRatio
-				? this.getBestDimensions(ratio0, ratio0, bigWidth, bigHeight, bigOnes.length, bigMaxWidth, bigMaxHeight)
-				: this.getBestDimensions(
-						bigMinRatio,
-						bigMaxRatio,
-						bigWidth,
-						bigHeight,
-						bigOnes.length,
-						bigMaxWidth,
-						bigMaxHeight
-					);
+			const bigDimensions = this.getBestDimensions(
+				bigMinRatio,
+				bigMaxRatio,
+				bigWidth,
+				bigHeight,
+				bigCount,
+				bigMaxWidth,
+				bigMaxHeight
+			);
 
 			if (isTall) {
 				bigHeight = Math.max(
@@ -479,51 +416,11 @@ export class LayoutCalculator {
 		return { bigWidth, bigHeight, offsetTop, offsetLeft, bigOffsetTop, bigOffsetLeft, showBigFirst };
 	}
 
-	/**
-	 * Single pass through `elements` puts each one in exactly one bucket and stamps its
-	 * category. The category stamps are what makes reconstruction O(N).
-	 */
-	private categorizeElements(elements: ElementDimensions[]): CategorizedElements {
-		const big: ElementDimensions[] = [];
-		const normal: ElementDimensions[] = [];
-		const categories: ElementCategory[] = new Array(elements.length);
+	private inContainerOrder(isBig: boolean[], bigBoxes: LayoutBox[], normalBoxes: LayoutBox[]): LayoutBox[] {
+		let nextBig = 0;
+		let nextNormal = 0;
 
-		for (let i = 0; i < elements.length; i++) {
-			const el = elements[i];
-
-			if (el.big) {
-				big.push(el);
-				categories[i] = 'big';
-			} else {
-				normal.push(el);
-				categories[i] = 'normal';
-			}
-		}
-
-		return { big, normal, categories };
-	}
-
-	/**
-	 * Reconstruct boxes in original element order in O(N) using per-category cursors.
-	 */
-	private reconstructBoxesInOrder(
-		categorized: CategorizedElements,
-		bigBoxes: LayoutBox[],
-		normalBoxes: LayoutBox[]
-	): LayoutBox[] {
-		const sources: Record<ElementCategory, { boxes: LayoutBox[]; idx: number }> = {
-			big: { boxes: bigBoxes, idx: 0 },
-			normal: { boxes: normalBoxes, idx: 0 }
-		};
-
-		const result: LayoutBox[] = new Array(categorized.categories.length);
-
-		for (let i = 0; i < categorized.categories.length; i++) {
-			const src = sources[categorized.categories[i]];
-			result[i] = src.boxes[src.idx++];
-		}
-
-		return result;
+		return isBig.map((big) => (big ? bigBoxes[nextBig++] : normalBoxes[nextNormal++]));
 	}
 
 	private alignmentOffset(alignment: LayoutAlignment, container: number, content: number): number {
@@ -536,9 +433,5 @@ export class LayoutCalculator {
 			default:
 				return (container - content) / 2;
 		}
-	}
-
-	private getVideoRatio(element: ElementDimensions): number {
-		return element.height / element.width;
 	}
 }

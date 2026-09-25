@@ -972,6 +972,22 @@ test.describe('Stream E2E Tests', () => {
 			await page.close();
 		});
 
+		test('should stop growing the floating video at 90% of the layout width', async ({ page }) => {
+			await openMeeting(page, accessUrl);
+			await floatStream(page);
+			await getSettledBoundingBox(page, '.local_participant:has(.OV_stream_video.local)');
+
+			// From the bottom-right corner where it floats, the NW handle can pull it across the whole layout.
+			const handle = await page.locator('.OV_floating .resize-handle.resize-nw').first().boundingBox();
+			await resizeStream(page, 'resize-nw', -handle!.x, -handle!.y);
+
+			const box = await getSettledBoundingBox(page, '.local_participant:has(.OV_stream_video.local)');
+			const layout = await getElementBoundingBox(page, '#layout');
+			expect(box.width).toBeCloseTo(layout!.width * 0.9, -1);
+
+			await page.close();
+		});
+
 		test('should RESET the floating video size to default after dock and re-float', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 			await floatStream(page);
@@ -1180,7 +1196,7 @@ test.describe('Stream E2E Tests', () => {
 			const [pageA, pageB] = pages;
 
 			try {
-				// Wait for exactly 1 remote stream (placeholder with no-size may still be in DOM briefly)
+				// Wait for exactly 1 remote stream
 				await expect(pageA.locator('.OV_stream.remote')).toHaveCount(1, { timeout: 10_000 });
 				await expect(pageA.locator('.OV_stream.remote .OV_media-element')).toHaveCount(1);
 

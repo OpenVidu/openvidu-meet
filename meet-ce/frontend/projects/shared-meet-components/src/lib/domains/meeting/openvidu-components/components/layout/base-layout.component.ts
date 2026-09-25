@@ -6,7 +6,6 @@ import {
 	computed,
 	contentChild,
 	contentChildren,
-	DestroyRef,
 	effect,
 	inject,
 	input,
@@ -18,7 +17,6 @@ import {
 	viewChildren,
 	ViewContainerRef
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LayoutAdditionalElementsDirective } from '../../directives/template/internals.directive';
 import { ParticipantStream } from '../../models/participant.model';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
@@ -43,7 +41,6 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private readonly participantService = inject(ParticipantService);
 	private readonly directiveService = inject(MeetingUiConfigService);
 	private readonly templateRegistry = inject(TemplateRegistryService);
-	private readonly destroyRef = inject(DestroyRef);
 
 	// ── View queries ─────────────────────────────────────────────────────────────
 
@@ -163,6 +160,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private resizeDirection = '';
 	private resizeStartClientX = 0;
 	private resizeStartWidth = 0;
+	private resizeMaxWidth = 0;
 	private resizeDragStartPos: { x: number; y: number } = this.ZERO_DRAG_POSITION;
 	/** Cached CDK drag instance for the duration of a resize gesture (avoids per-event DOM lookup). */
 	private resizingDrag: CdkDrag | undefined;
@@ -217,8 +215,8 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 				const el = this.getLocalCameraDrag()?.element.nativeElement as HTMLElement | undefined;
 				el?.style.removeProperty('--ov-min-w');
 				el?.style.removeProperty('--ov-min-h');
-				// Drop the float-time inline `transition: none` so the grid renderer's own
-				// transition stamping animates the tile back into the layout.
+				// Drop the float-time inline `transition: none` so the grid's own transition
+				// animates the tile back into the layout.
 				el?.style.removeProperty('transition');
 				this.resetDragPosition();
 				this.layoutService.update();
@@ -260,7 +258,6 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		this.lastLayoutHeight = rect.height;
 		this.listenToLayoutDomChanges(container);
 		this.listenToResizeLayout(container);
-		this.listenToCdkDrag();
 	}
 
 	ngOnDestroy(): void {
@@ -285,6 +282,14 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		return `${stream.participant.identity}-${stream.streamId}`;
 	}
 
+	/** Called from the template when the user drops a local tile, floating or not. */
+	onDragReleased(event: CdkDragRelease): void {
+		if (!this.isLocalFloating()) return;
+
+		// Sync signal with the actual post-drag transform so CD never resets it.
+		this.setDragPosition(this.getActualDragPosition(event.source.element.nativeElement), event.source);
+	}
+
 	/** Called from the template when the user presses on a corner resize handle. */
 	onResizeStart(event: PointerEvent, direction: string): void {
 		event.preventDefault();
@@ -298,6 +303,8 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		this.resizeDirection = direction;
 		this.resizeStartClientX = event.clientX;
 		this.resizeStartWidth = this.resizingDrag.element.nativeElement.getBoundingClientRect().width;
+		const container = this.layoutContainer()?.element?.nativeElement;
+		this.resizeMaxWidth = container ? container.getBoundingClientRect().width * 0.9 : 800;
 		this.resizeDragStartPos = { ...this.currentDragPosition() };
 
 		document.addEventListener('pointermove', this.boundResizeMove);
@@ -310,15 +317,12 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		if (!this.isResizing || !this.resizingDrag) return;
 
 		const deltaX = event.clientX - this.resizeStartClientX;
-		const container = this.layoutContainer()?.element?.nativeElement;
-		const maxWidth = container ? container.getBoundingClientRect().width * 0.9 : 800;
-
 		const rawWidth =
 			this.resizeDirection === 'se' || this.resizeDirection === 'ne'
 				? this.resizeStartWidth + deltaX
 				: this.resizeStartWidth - deltaX;
 
-		const newWidth = Math.max(this.MIN_RESIZE_WIDTH, Math.min(maxWidth, rawWidth));
+		const newWidth = Math.max(this.MIN_RESIZE_WIDTH, Math.min(this.resizeMaxWidth, rawWidth));
 		const newHeight = newWidth / this.ASPECT_RATIO;
 		const widthChange = newWidth - this.resizeStartWidth;
 
@@ -398,20 +402,6 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		});
 
 		this.resizeObserver.observe(container);
-	}
-
-	private listenToCdkDrag(): void {
-		const onRelease = (event: CdkDragRelease<any>): void => {
-			if (!this.isLocalFloating()) return;
-
-			const el = event.source.element.nativeElement as HTMLElement;
-			// Sync signal with the actual post-drag transform so CD never resets it.
-			this.setDragPosition(this.getActualDragPosition(el), event.source);
-		};
-
-		this.localParticipantDrags().forEach((drag) =>
-			drag.released.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(onRelease)
-		);
 	}
 
 	// ── Private: drag helpers ─────────────────────────────────────────────────────
@@ -513,7 +503,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	 * Animates the just-floated tile from its grid slot to the bottom-right corner using the FLIP
 	 * technique on the CDK drag transform only.
 	 *
-	 * Why not let the grid renderer's `transition: all 0.1s linear` handle it (previous behavior):
+	 * Why not let the grid's `transition: all 0.1s linear` handle it (previous behavior):
 	 * that eased top/left/width/height AND the transform at once — two opposing coordinate-system
 	 * animations that mostly cancel out, forcing a reflow on every frame (dropped frames, visible
 	 * stutter) and easing every later programmatic placement and pointer drag. Instead: transitions
@@ -527,7 +517,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 		if (!drag || !el) return;
 
-		// Neutralize the renderer's inherited `transition: all` before any placement.
+		// Turn transitions off before any placement.
 		el.style.setProperty('transition', 'none');
 		this.moveStreamToBottomRight(drag);
 

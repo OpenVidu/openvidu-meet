@@ -133,6 +133,7 @@ registered on both receives it twice.
 #### UI
 
 - The local video disappeared from the layout when the last remote participant left.
+- The first meeting a browser opened saved its layout and number of visible participants as the participant's choice. They are saved only when the participant changes them in the settings panel.
 - A virtual background or blur froze for other participants when the sending window was minimized or covered, in Firefox and Safari.
 - Abandoned wizard state leaked into the next room, and a failed save reset the form.
 

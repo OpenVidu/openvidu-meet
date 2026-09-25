@@ -80,8 +80,7 @@ export const waitForRemoteStream = async (
 							rect.height > 0 &&
 							style.display !== 'none' &&
 							style.visibility !== 'hidden' &&
-							style.opacity !== '0' &&
-							!stream.classList.contains('no-size')
+							style.opacity !== '0'
 						);
 					});
 
@@ -151,8 +150,7 @@ export const getVisibleRemoteParticipantNames = async (page: Page): Promise<stri
 					rect.height > 0 &&
 					style.display !== 'none' &&
 					style.visibility !== 'hidden' &&
-					style.opacity !== '0' &&
-					!element.classList.contains('no-size')
+					style.opacity !== '0'
 				);
 			})
 			.map((stream) => stream.querySelector('#participant-name-container')?.textContent?.trim() ?? '')
@@ -605,8 +603,7 @@ const snapshotMedia = (page: Page): Promise<MediaSnapshot> =>
 				box.height > 0 &&
 				style.display !== 'none' &&
 				style.visibility !== 'hidden' &&
-				style.opacity !== '0' &&
-				!tile.classList.contains('no-size');
+				style.opacity !== '0';
 
 			if (!isShown) continue;
 

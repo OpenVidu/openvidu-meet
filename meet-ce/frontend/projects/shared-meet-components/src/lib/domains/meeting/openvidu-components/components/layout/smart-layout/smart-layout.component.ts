@@ -13,7 +13,7 @@ import {
 	viewChild
 } from '@angular/core';
 import { LayoutAdditionalElementsDirective } from '../../../directives/template/internals.directive';
-import { sameIdentityOrder } from '../../../models/layout/smart-layout.model';
+import { keepMosaicOrder, sameIdentityOrder, swapInPlace } from '../../../models/layout/smart-layout.model';
 import { ParticipantModel, ParticipantStream } from '../../../models/participant.model';
 import { SmartLayoutService } from '../../../services/layout/smart-layout.service';
 import { ParticipantService } from '../../../services/participant/participant.service';
@@ -75,30 +75,13 @@ export class SmartLayoutComponent implements OnDestroy {
 	 */
 	private readonly displayedCameraOrder = computed<string[]>(
 		() => {
-			const allRemotes = this.remoteParticipants();
-			const isSmart = this.isSmartLayoutActive();
+			const allIds = this.remoteParticipants().map((p) => p.identity);
 			const previous = untracked(() => this._displayedCameraOrder());
 
-			if (!isSmart) {
-				// Mosaic mode: preserve previous order across smart↔mosaic transitions so existing
-				// DOM nodes keep their positions. Newcomers are appended at the end.
-				const allIds = allRemotes.map((p) => p.identity);
-				const allIdSet = new Set(allIds);
-				const mosaicOrder = previous.filter((id) => allIdSet.has(id));
-				const orderSet = new Set(mosaicOrder);
+			if (!this.isSmartLayoutActive()) return keepMosaicOrder(previous, allIds);
 
-				for (const p of allRemotes) {
-					if (!orderSet.has(p.identity)) mosaicOrder.push(p.identity);
-				}
-
-				return mosaicOrder;
-			}
-
-			const availableIds = new Set(allRemotes.map((p) => p.identity));
-			const toDisplayIds = this.layoutService.computeParticipantsToDisplay(availableIds);
-			// In-place swaps: departing participants are replaced by arriving ones at the same index,
-			// so Angular @for sees INSERT+REMOVE instead of MOVE.
-			return this.syncDisplayOrder(previous, toDisplayIds, availableIds);
+			const availableIds = new Set(allIds);
+			return swapInPlace(previous, this.layoutService.computeParticipantsToDisplay(availableIds), availableIds);
 		},
 		// A fresh array holding the same order is not a change: without this, every active-speaker
 		// event would hand the layout a new stream list and cost a full re-layout.
@@ -185,42 +168,6 @@ export class SmartLayoutComponent implements OnDestroy {
 
 		untracked(() => this.layoutService.setRailHiddenParticipants(summary));
 	});
-
-	/**
-	 * Returns a new identity order applying in-place replacements:
-	 * each departing participant (present in `previousOrder` but absent from `targetIds`)
-	 * is replaced by an arriving one at the same index, keeping all others at stable positions.
-	 *
-	 * @param previousOrder - Ordered identity list from the previous evaluation.
-	 * @param targetIds - Identities that should be visible after this update.
-	 * @param availableIds - Identities of all currently connected participants.
-	 */
-	private syncDisplayOrder(previousOrder: string[], targetIds: Set<string>, availableIds: Set<string>): string[] {
-		const order = previousOrder.filter((id) => availableIds.has(id));
-		const currentSet = new Set(order);
-
-		const departing = order.filter((id) => !targetIds.has(id));
-		const arriving = [...targetIds].filter((id) => !currentSet.has(id));
-
-		for (const dep of departing) {
-			const replacement = arriving.shift();
-			const idx = order.indexOf(dep);
-
-			if (idx === -1) continue;
-
-			if (replacement) {
-				order[idx] = replacement;
-			} else {
-				order.splice(idx, 1);
-			}
-		}
-
-		for (const arr of arriving) {
-			if (order.length < targetIds.size) order.push(arr);
-		}
-
-		return order;
-	}
 
 	/**
 	 * Persistent `<audio>` elements for every remote audio track (camera + screen-share).

@@ -4,13 +4,16 @@ import {
 	cameraLayerOf,
 	croppedShare,
 	gapBesidePinnedTile,
+	getGridTiles,
 	getGridVideoFraming,
 	getSharedScreenFraming,
+	gridShareOf,
 	paintedShareOfContainer,
 	runScreenShareRotationCycles,
 	selectMosaicLayout,
 	selectSmartMosaicLayout,
-	setSmartMosaicSliderValue
+	setSmartMosaicSliderValue,
+	tileSpacing
 } from './helpers/layout.helper';
 import { startScreensharing, stopScreensharing, toggleCamera, toggleMicrophone } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
@@ -36,7 +39,7 @@ import {
 	waitForSubscribedRemoteVideos,
 	waitForVisibleRemoteParticipants
 } from './helpers/stream.helper';
-import { expectHidden, expectVisible } from './helpers/ui-utils.helper';
+import { expectHidden, expectVisible, resumeRenderingFrames, stopRenderingFrames } from './helpers/ui-utils.helper';
 
 test.describe('Layout E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -87,6 +90,45 @@ test.describe('Layout E2E Tests', () => {
 			await expect(page.locator('.participant-count-container')).toBeVisible();
 			await page.locator('#layout-mosaic').click();
 			await expectHidden(page, '.participant-count-container');
+		});
+	});
+
+	test.describe('Layout preferences', () => {
+		test('should remember the layout the participant chose in their next meeting', async ({ page }) => {
+			await openMeeting(page, accessUrl);
+			await setSmartMosaicSliderValue(page, 3);
+			await selectMosaicLayout(page);
+			await leaveMeeting(page);
+
+			const nextMeeting = await page.context().newPage();
+			await openMeeting(nextMeeting, accessUrl);
+			await openLayoutSettingsPanel(nextMeeting);
+			await expect(nextMeeting.locator('#layout-mosaic')).toContainClass('mat-mdc-radio-checked');
+			await selectSmartMosaicLayout(nextMeeting);
+			await expect(nextMeeting.locator('.participant-count-value')).toHaveText('3');
+			await leaveMeeting(nextMeeting);
+		});
+
+		test('should keep following the default layout until the participant changes it', async ({ page, browser }) => {
+			await openMeeting(page, accessUrl);
+			await openLayoutSettingsPanel(page);
+			await expect(page.locator('.participant-count-value')).toHaveText('4');
+			await leaveMeeting(page);
+
+			// A phone shows 2 by default: the same browser storage opening there stands for a default
+			// that changed since the participant's last meeting.
+			const phone = await (
+				await browser.newContext({ ...devices['Pixel 7'], storageState: await page.context().storageState() })
+			).newPage();
+
+			try {
+				await openMeeting(phone, accessUrl, { name: 'phone' });
+				await openLayoutSettingsPanel(phone);
+				await expect(phone.locator('#layout-smart-mosaic')).toContainClass('mat-mdc-radio-checked');
+				await expect(phone.locator('.participant-count-value')).toHaveText('2');
+			} finally {
+				await phone.context().close();
+			}
 		});
 	});
 
@@ -283,6 +325,90 @@ test.describe('Layout E2E Tests', () => {
 				await addParticipant({ name: 'remote-c', headless: true, audioEnabled: false });
 				await waitForRemoteStream(pageA, 3);
 				await expectFramedCameras(3);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+	});
+
+	test.describe('Tile spacing', () => {
+		// Half a percent of the grid's width between two tiles, plus the 1px padding of each.
+		const expectedGap = (gridWidth: number) => gridWidth * 0.005 + 2;
+
+		test('should separate the tiles by the same gap without overlapping or leaving the grid', async ({
+			browser
+		}) => {
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [
+					{ name: 'viewer', audioEnabled: false },
+					{ name: 'remote-a', headless: true, audioEnabled: false },
+					{ name: 'remote-b', headless: true, audioEnabled: false },
+					{ name: 'remote-c', headless: true, audioEnabled: false }
+				]
+			});
+			const [pageA] = pages;
+
+			try {
+				await selectMosaicLayout(pageA);
+				await closeSettingsPanel(pageA);
+				await waitForRemoteStream(pageA, 3);
+
+				await expect(async () => {
+					const layout = await getGridTiles(pageA);
+					const { gaps, overlapping, outside } = tileSpacing(layout);
+
+					const gap = expectedGap(layout.grid.right - layout.grid.left);
+
+					expect(layout.tiles).toHaveLength(3);
+					expect({ overlapping, outside }).toEqual({ overlapping: 0, outside: 0 });
+					expect(gaps.length).toBeGreaterThan(0);
+
+					for (const measured of gaps) {
+						expect(Math.abs(measured - gap)).toBeLessThanOrEqual(1);
+					}
+				}).toPass({ timeout: 15_000 });
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+	});
+
+	test.describe('New tiles', () => {
+		test('should not let a tile the layout has not placed yet cover the grid', async ({ browser }) => {
+			const { pages, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [
+					{ name: 'viewer', audioEnabled: false },
+					{ name: 'remote-a', headless: true, audioEnabled: false }
+				]
+			});
+			const [pageA] = pages;
+
+			try {
+				await selectMosaicLayout(pageA);
+				await closeSettingsPanel(pageA);
+				await waitForRemoteStream(pageA, 1);
+
+				// The layout places tiles from an animation frame, so without frames a new tile stays
+				// wherever the browser puts it on insertion.
+				await stopRenderingFrames(pageA);
+				await addParticipant({ name: 'remote-b', headless: true, audioEnabled: false });
+				await expect(pageA.locator('#layout .OV_stream.remote')).toHaveCount(2, { timeout: 15_000 });
+
+				const unplacedShares: number[] = [];
+
+				for (let sample = 0; sample < 10; sample++) {
+					unplacedShares.push(await gridShareOf(pageA, 'remote-b'));
+					await pageA.waitForTimeout(100);
+				}
+
+				expect(Math.max(...unplacedShares)).toBeLessThan(0.01);
+
+				await resumeRenderingFrames(pageA);
+				await expect.poll(() => gridShareOf(pageA, 'remote-b'), { timeout: 10_000 }).toBeGreaterThan(0.2);
 			} finally {
 				await removeAllParticipants();
 			}

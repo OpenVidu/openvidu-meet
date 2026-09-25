@@ -45,7 +45,6 @@ export class StreamComponent implements OnDestroy {
 	readonly showParticipantName = this.libService.displayParticipantNameSignal;
 	readonly showAudioDetection = this.libService.displayAudioDetectionSignal;
 	readonly showVideoControls = this.libService.streamVideoControlsSignal;
-	readonly showVideo = signal(false);
 	readonly isFullscreen = signal(false);
 	readonly mouseHovering = signal(false);
 
@@ -74,7 +73,6 @@ export class StreamComponent implements OnDestroy {
 	 * @ignore
 	 */
 	hoveringTimeout: ReturnType<typeof setTimeout> | undefined;
-	private showVideoTimeout: ReturnType<typeof setTimeout> | undefined;
 	/** True while the pointer is over the video controls; suppresses the auto-hide timer. */
 	private isOverControls = false;
 
@@ -84,18 +82,6 @@ export class StreamComponent implements OnDestroy {
 	readonly streamContainerQuery = viewChild('streamContainer', { read: ElementRef });
 
 	private readonly HOVER_TIMEOUT = 2000;
-	private readonly NO_SIZE_TIMEOUT = 100;
-	private readonly querySyncEffect = effect(() => {
-		if (this.streamContainerQuery()) {
-			if (this.showVideoTimeout) {
-				clearTimeout(this.showVideoTimeout);
-			}
-
-			this.showVideoTimeout = setTimeout(() => {
-				this.showVideo.set(true);
-			}, this.NO_SIZE_TIMEOUT);
-		}
-	});
 
 	/** Element the native mousemove listener is currently attached to (the @if recreates it). */
 	private hoverBoundElement: HTMLElement | undefined;
@@ -121,10 +107,6 @@ export class StreamComponent implements OnDestroy {
 	});
 
 	ngOnDestroy() {
-		if (this.showVideoTimeout) {
-			clearTimeout(this.showVideoTimeout);
-		}
-
 		if (this.hoveringTimeout) {
 			clearTimeout(this.hoveringTimeout);
 		}

@@ -52,12 +52,6 @@ export class SmartLayoutService extends BaseLayoutService {
 	private speakingStartTimes = new Map<string, number>();
 	private speakingStopTimes = new Map<string, number>();
 
-	private readonly smartLayoutUpdateEffect = effect(() => {
-		if (this.isSmartLayoutEnabled()) {
-			this.update();
-		}
-	});
-
 	/**
 	 * Speaker tracking runs in **every** layout mode, not just Smart Mosaic.
 	 * Keeping the priority list warm in Mosaic mode means a user who was already
@@ -78,11 +72,9 @@ export class SmartLayoutService extends BaseLayoutService {
 
 		if (isMobileOrTablet) this._maxVisibleRemoteParticipants.set(2);
 
-		// Persist the user's layout preferences across sessions (stored preferences override the
-		// viewport-based default above).
+		// A preference the participant saved overrides the viewport-based default above.
 		this.loadLayoutModeFromStorage();
 		this.loadMaxVisibleParticipantsFromStorage();
-		this.setupStoragePersistence();
 	}
 
 	private loadLayoutModeFromStorage(): void {
@@ -97,11 +89,6 @@ export class SmartLayoutService extends BaseLayoutService {
 		if (storedCount) this.setMaxVisibleRemoteParticipants(storedCount);
 	}
 
-	private setupStoragePersistence(): void {
-		effect(() => this.storageService.setLayoutMode(this.layoutMode()));
-		effect(() => this.storageService.setMaxVisibleRemoteParticipants(this.maxVisibleRemoteParticipants()));
-	}
-
 	setLayoutMode(mode: SmartLayoutMode): void {
 		if (!Object.values(SmartLayoutMode).includes(mode)) {
 			this.log.w(`Invalid layout mode: ${mode}`);
@@ -111,6 +98,7 @@ export class SmartLayoutService extends BaseLayoutService {
 		if (this._layoutMode() === mode) return;
 
 		this._layoutMode.set(mode);
+		this.storageService.setLayoutMode(mode);
 		this.update();
 	}
 
@@ -125,6 +113,7 @@ export class SmartLayoutService extends BaseLayoutService {
 		if (this._maxVisibleRemoteParticipants() === count) return;
 
 		this._maxVisibleRemoteParticipants.set(count);
+		this.storageService.setMaxVisibleRemoteParticipants(count);
 
 		if (this.isSmartLayoutEnabled()) this.update();
 	}

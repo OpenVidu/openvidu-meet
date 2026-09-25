@@ -9,27 +9,18 @@ export {
 export type {
 	BestDimensions,
 	BigFirstOption,
-	ElementDimensions,
 	ExtendedLayoutOptions,
 	LayoutArea,
 	LayoutBox,
 	LayoutProfile,
-	LayoutRow,
 	OpenViduLayoutOptions,
 	ViewportProfile
 } from './layout-types.model';
 
 import { LayoutCalculator } from './layout-calculator.model';
 import { LayoutDimensionsCache } from './layout-dimensions-cache.model';
-import { elementHeight, elementWidth, readStyle, readStyleNumber } from './layout-dom.util';
-import { LayoutRenderer } from './layout-renderer.model';
-import {
-	ElementDimensions,
-	ExtendedLayoutOptions,
-	LAYOUT_CONSTANTS,
-	LayoutClass,
-	OpenViduLayoutOptions
-} from './layout-types.model';
+import { elementHeight, elementWidth, readStyle, readStyleNumber, writeStyles } from './layout-dom.util';
+import { ExtendedLayoutOptions, LAYOUT_CONSTANTS, LayoutClass, OpenViduLayoutOptions } from './layout-types.model';
 
 /**
  * OpenViduLayout orchestrates layout calculation and rendering.
@@ -43,7 +34,6 @@ export class OpenViduLayout {
 
 	private dimensionsCache: LayoutDimensionsCache;
 	private calculator: LayoutCalculator;
-	private renderer: LayoutRenderer;
 
 	/**
 	 * Pending animation-frame handle. Coalesces bursts of updateLayout calls (resize, mutation,
@@ -54,7 +44,6 @@ export class OpenViduLayout {
 	constructor() {
 		this.dimensionsCache = new LayoutDimensionsCache();
 		this.calculator = new LayoutCalculator(this.dimensionsCache);
-		this.renderer = new LayoutRenderer();
 	}
 
 	updateLayout(container: HTMLElement, opts: OpenViduLayoutOptions): void {
@@ -102,10 +91,6 @@ export class OpenViduLayout {
 
 		if (readStyle(this.layoutContainer, 'display') === 'none') return;
 
-		if (!this.layoutContainer.id) {
-			this.layoutContainer.id = `OV_${this.cheapUUID()}`;
-		}
-
 		const containerWidth =
 			elementWidth(this.layoutContainer) -
 			readStyleNumber(this.layoutContainer, 'border-left') -
@@ -120,39 +105,34 @@ export class OpenViduLayout {
 		if (containerWidth <= 0 || containerHeight <= 0) return;
 
 		const extendedOpts: ExtendedLayoutOptions = { ...this.opts, containerWidth, containerHeight };
-		const selector = `#${this.layoutContainer.id}>*:not(.${LayoutClass.IGNORED_ELEMENT}):not(.${LayoutClass.FLOATING_ELEMENT})`;
+		const selector = `:scope > *:not(.${LayoutClass.IGNORED_ELEMENT}):not(.${LayoutClass.FLOATING_ELEMENT})`;
 		const children = Array.from(this.layoutContainer.querySelectorAll<HTMLElement>(selector));
-		const elements = children.map((element) => this.describeElement(element));
+		const isBig = children.map((child) => child.classList.contains(this.opts.bigClass));
+		const { boxes } = this.calculator.calculateLayout(
+			extendedOpts,
+			isBig,
+			this.videoRatio(children[isBig.indexOf(true)])
+		);
+		const margin = containerWidth * LAYOUT_CONSTANTS.ELEMENT_MARGIN;
 
-		const layout = this.calculator.calculateLayout(extendedOpts, elements);
-		this.renderer.renderLayout(this.layoutContainer, layout.boxes, children, this.opts.animate);
+		children.forEach((child, index) => {
+			const { left, top, width, height } = boxes[index];
+			writeStyles(child, {
+				position: 'absolute',
+				left: `${left + margin}px`,
+				top: `${top + margin}px`,
+				width: `${width - 2 * margin}px`,
+				height: `${height - 2 * margin}px`
+			});
+		});
 	}
 
-	private describeElement(element: HTMLElement): ElementDimensions {
-		const dims = this.getChildDims(element);
-		dims.big = element.classList.contains(this.opts.bigClass);
-		return dims;
-	}
+	/** Height / width of the video an element shows, or of the default one while it has none. */
+	private videoRatio(element: HTMLElement | undefined): number {
+		const video = element?.querySelector('video');
 
-	private getChildDims(child: HTMLElement): ElementDimensions {
-		const video =
-			child instanceof HTMLVideoElement ? child : (child.querySelector('video') as HTMLVideoElement | null);
-
-		if (video && video.videoHeight && video.videoWidth) {
-			return { height: video.videoHeight, width: video.videoWidth };
-		}
-
-		return {
-			height: LAYOUT_CONSTANTS.DEFAULT_VIDEO_HEIGHT,
-			width: LAYOUT_CONSTANTS.DEFAULT_VIDEO_WIDTH
-		};
-	}
-
-	private cheapUUID(): string {
-		if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-			return crypto.randomUUID();
-		}
-
-		return Math.floor(Math.random() * 100000000).toString();
+		return video?.videoWidth && video.videoHeight
+			? video.videoHeight / video.videoWidth
+			: LAYOUT_CONSTANTS.DEFAULT_VIDEO_HEIGHT / LAYOUT_CONSTANTS.DEFAULT_VIDEO_WIDTH;
 	}
 }
