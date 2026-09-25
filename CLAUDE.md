@@ -168,8 +168,9 @@ the OpenAPI sources already use for their own cross-references: `#/operations/<o
 ## Tests, CI and docs
 
 - GitHub workflows in `.github/workflows/` are path-filtered per package (backend unit/integration,
-  frontend unit/e2e, webcomponent unit/e2e) and run on a self-hosted runner with Node `24.15.0` and
-  pnpm `11.8.0` (same pins as `meet-ce/docker/Dockerfile`).
+  frontend unit/e2e, webcomponent unit/e2e) and run on a self-hosted runner with Node `24.15.0` (same
+  pin as `meet-ce/docker/Dockerfile`) and pnpm `11.8.0`. pnpm is pinned by `packageManager` in the root
+  `package.json`, which the Docker build follows; `pnpm/action-setup` fails if its `version` differs.
   Most jobs watch `meet.sh` because CI calls it, so dev-mode logic lives in `scripts/dev/dev.sh`
   (sourced only by `./meet.sh dev`), which no workflow watches. Markdown and `nodemon*.json` never
   trigger a job.

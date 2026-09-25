@@ -3,11 +3,8 @@
 # ====================================================
 FROM node:24.15.0 AS builder
 
-# Define pnpm version as build argument with default value
-ARG PNPM_VERSION=11.8.0
-
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+# Install pnpm, at the version the root package.json pins in `packageManager`
+RUN corepack enable
 
 WORKDIR /app
 
@@ -60,11 +57,8 @@ RUN pnpm install --frozen-lockfile && \
 # ====================================================
 FROM node:24.15.0-alpine AS prod-deps
 
-# Define pnpm version as build argument with default value
-ARG PNPM_VERSION=11.8.0
-
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+# Install pnpm, at the version the root package.json pins in `packageManager`
+RUN corepack enable
 
 WORKDIR /app
 
