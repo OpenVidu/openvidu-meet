@@ -93,6 +93,45 @@ test.describe('Layout E2E Tests', () => {
 		});
 	});
 
+	test.describe('Layout preferences', () => {
+		test('should remember the layout the participant chose in their next meeting', async ({ page }) => {
+			await openMeeting(page, accessUrl);
+			await setSmartMosaicSliderValue(page, 3);
+			await selectMosaicLayout(page);
+			await leaveMeeting(page);
+
+			const nextMeeting = await page.context().newPage();
+			await openMeeting(nextMeeting, accessUrl);
+			await openLayoutSettingsPanel(nextMeeting);
+			await expect(nextMeeting.locator('#layout-mosaic')).toContainClass('mat-mdc-radio-checked');
+			await selectSmartMosaicLayout(nextMeeting);
+			await expect(nextMeeting.locator('.participant-count-value')).toHaveText('3');
+			await leaveMeeting(nextMeeting);
+		});
+
+		test('should keep following the default layout until the participant changes it', async ({ page, browser }) => {
+			await openMeeting(page, accessUrl);
+			await openLayoutSettingsPanel(page);
+			await expect(page.locator('.participant-count-value')).toHaveText('4');
+			await leaveMeeting(page);
+
+			// A phone shows 2 by default: the same browser storage opening there stands for a default
+			// that changed since the participant's last meeting.
+			const phone = await (
+				await browser.newContext({ ...devices['Pixel 7'], storageState: await page.context().storageState() })
+			).newPage();
+
+			try {
+				await openMeeting(phone, accessUrl, { name: 'phone' });
+				await openLayoutSettingsPanel(phone);
+				await expect(phone.locator('#layout-smart-mosaic')).toContainClass('mat-mdc-radio-checked');
+				await expect(phone.locator('.participant-count-value')).toHaveText('2');
+			} finally {
+				await phone.context().close();
+			}
+		});
+	});
+
 	test.describe('Mosaic Layout', () => {
 		test('should display all remote participants in mosaic layout without filtering', async ({ browser }) => {
 			const { pages, removeAllParticipants } = await joinParticipants(browser, {
