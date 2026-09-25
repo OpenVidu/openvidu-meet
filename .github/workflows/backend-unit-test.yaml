@@ -13,6 +13,8 @@ on:
       - 'pnpm-lock.yaml'
       - 'meet.sh'
       - '.github/workflows/backend-unit-test.yaml'
+      - '!**/*.md'
+      - '!meet-ce/backend/nodemon*.json'
   pull_request:
     paths: *backend-unit-test-paths
   workflow_dispatch:

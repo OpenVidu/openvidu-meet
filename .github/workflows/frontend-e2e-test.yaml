@@ -14,6 +14,8 @@ on:
       - 'meet-ce/typings/**'
       - 'meet.sh'
       - '.github/workflows/frontend-e2e-test.yaml'
+      - '!**/*.md'
+      - '!meet-ce/backend/nodemon*.json'
   pull_request:
     paths: *frontend-e2e-test-paths
   workflow_dispatch:

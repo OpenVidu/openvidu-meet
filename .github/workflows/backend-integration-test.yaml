@@ -12,6 +12,7 @@ on:
       - 'meet-ce/typings/**'
       - 'pnpm-lock.yaml'
       - '.github/workflows/backend-integration-test.yaml'
+      - '!**/*.md'
   pull_request:
     paths: *backend-integration-test-paths
   workflow_dispatch:

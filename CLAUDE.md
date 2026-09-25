@@ -170,6 +170,9 @@ the OpenAPI sources already use for their own cross-references: `#/operations/<o
 - GitHub workflows in `.github/workflows/` are path-filtered per package (backend unit/integration,
   frontend unit/e2e, webcomponent unit/e2e) and run on a self-hosted runner with Node `24.15.0` and
   pnpm `11.8.0` (same pins as `meet-ce/docker/Dockerfile`).
+  Most jobs watch `meet.sh` because CI calls it, so dev-mode logic lives in `scripts/dev/dev.sh`
+  (sourced only by `./meet.sh dev`), which no workflow watches. Markdown and `nodemon*.json` never
+  trigger a job.
 - Backend integration tests and all Playwright suites need real infrastructure (LiveKit, MongoDB,
   Redis, S3/MinIO). They are not runnable from a bare checkout — say so instead of reporting a pass.
 - Generated documentation:

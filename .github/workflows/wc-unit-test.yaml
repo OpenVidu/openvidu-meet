@@ -11,6 +11,7 @@ on:
       - 'meet-ce/typings/**'
       - 'meet.sh'
       - '.github/workflows/wc-unit-test.yaml'
+      - '!**/*.md'
   pull_request:
     paths: *wc-unit-test-paths
   workflow_dispatch:
