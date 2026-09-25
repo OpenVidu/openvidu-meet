@@ -160,3 +160,13 @@
 **/**/webcomponent/dist/
 **/**/frontend/dist/
 **/**/frontend/.angular/
+meet-ce/frontend/src/assets/livekit/
+meet-ce/frontend/src/assets/mediapipe/wasm/
+
+# ====================================================
+# LOCAL-ONLY DIRECTORIES
+# ====================================================
+meet-pro/
+screenshots/
+videos/
+.claude/

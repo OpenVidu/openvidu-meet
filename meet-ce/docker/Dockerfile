@@ -55,15 +55,6 @@ ARG BASE_HREF=/
 RUN pnpm install --frozen-lockfile && \
     ./meet.sh build --skip-install --base-href=${BASE_HREF}
 
-# Clean up development dependencies and unnecessary files
-# Keep backend node_modules for production stage
-RUN rm -rf node_modules \
-    meet-ce/frontend \
-    meet-ce/backend/src \
-    meet-ce/backend/openapi \
-    meet-ce/backend/index.ts \
-    meet-ce/typings/src
-
 # ====================================================
 # Stage 2: production
 # ====================================================
@@ -114,7 +105,7 @@ USER node
 ENV NODE_ENV=production
 
 # Expose port
-EXPOSE $SERVER_PORT
+EXPOSE 6080
 
 # Start the application
 CMD ["/usr/local/bin/entrypoint.sh"]
