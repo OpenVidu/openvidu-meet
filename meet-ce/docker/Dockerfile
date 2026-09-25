@@ -56,30 +56,38 @@ RUN pnpm install --frozen-lockfile && \
     ./meet.sh build --skip-install --base-href=${BASE_HREF}
 
 # ====================================================
-# Stage 2: production
+# Stage 2: production dependencies
 # ====================================================
-FROM node:24.15.0-alpine AS production
+FROM node:24.15.0-alpine AS prod-deps
 
 # Define pnpm version as build argument with default value
 ARG PNPM_VERSION=11.8.0
 
-# Set pnpm version as environment variable (available at runtime)
-ENV PNPM_VERSION=${PNPM_VERSION}
-
-# Install bash (required by meet.sh which uses bash arrays)
-RUN apk add --no-cache bash tzdata
-
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 
+WORKDIR /app
+
+COPY package.json pnpm-workspace.yaml ./
+COPY meet-ce/typings/package.json ./meet-ce/typings/
+COPY meet-ce/backend/package.json ./meet-ce/backend/
+
+RUN pnpm install --prod --filter @openvidu-meet/backend --filter @openvidu-meet/typings
+
+# ====================================================
+# Stage 3: production
+# ====================================================
+FROM node:24.15.0-alpine AS production
+
+RUN apk add --no-cache tzdata
+
 WORKDIR /opt/openvidu-meet
 
-#Copy main package.json and pnpm-workspace.yaml
-COPY --from=builder --chown=node:node /app/meet.sh ./
-COPY --from=builder --chown=node:node /app/package.json ./
-COPY --from=builder --chown=node:node /app/pnpm-workspace.yaml ./
+# Copy the production dependencies
+COPY --from=prod-deps --chown=node:node /app/node_modules ./node_modules
+COPY --from=prod-deps --chown=node:node /app/meet-ce/backend/node_modules ./meet-ce/backend/node_modules
 
-# Copy the compiled backend with all node_modules from builder
+# Copy the compiled backend
 COPY --from=builder --chown=node:node /app/meet-ce/backend/dist ./meet-ce/backend/dist
 COPY --from=builder --chown=node:node /app/meet-ce/backend/public ./meet-ce/backend/public
 COPY --from=builder --chown=node:node /app/meet-ce/backend/package.json ./meet-ce/backend/package.json
@@ -90,13 +98,7 @@ COPY --from=builder --chown=node:node /app/meet-ce/typings/dist ./meet-ce/typing
 COPY --from=builder --chown=node:node /app/meet-ce/typings/package.json ./meet-ce/typings/package.json
 
 # Copy entrypoint script
-COPY meet-ce/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-
-RUN pnpm install --prod --filter @openvidu-meet/backend --filter @openvidu-meet/typings
-
-# Set permissions
-RUN chmod +x /usr/local/bin/entrypoint.sh && \
-	chmod +x meet.sh
+COPY --chmod=755 meet-ce/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 # Switch to non-root user
 USER node

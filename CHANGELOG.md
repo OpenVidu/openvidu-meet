@@ -111,6 +111,7 @@ registered on both receives it twice.
 
 - Rate limits for token issuance, API requests and static assets were raised.
 - `MEET_INITIAL_ADMIN_USER`, `MEET_INITIAL_API_KEY` and `MEET_INITIAL_WEBHOOK_URL` seed their item on every start while the deployment has none, instead of on the first start only.
+- The `openvidu/openvidu-meet` Docker image is 41% smaller and no longer contains pnpm, bash or `meet.sh`.
 
 ### Fixed
 

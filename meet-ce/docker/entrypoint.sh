@@ -35,8 +35,8 @@ if [ -n "${MODULES_FILE}" ]; then
     . "${MODULES_FILE}"
 fi
 
-cd /opt/openvidu-meet || { echo "Can't cd into /opt/openvidu-meet"; exit 1; }
-./meet.sh start --prod --skip-install --skip-build &
+cd /opt/openvidu-meet/meet-ce/backend || { echo "Can't cd into /opt/openvidu-meet/meet-ce/backend"; exit 1; }
+node dist/src/server.js &
 
 # Save the PID of the Node.js process
 node_pid=$!
