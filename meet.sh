@@ -624,8 +624,8 @@ launch_dev_watchers() {
   local names_arg=$(IFS=,; echo "${CMD_NAMES[*]}")
   local colors_arg=$(IFS=,; echo "${CMD_COLORS[*]}")
 
-  # Execute all commands concurrently
-  pnpm exec concurrently -k \
+  # Not through `pnpm exec`: on Ctrl+C it returns before the watchers stop, so their output lands after the prompt
+  ./node_modules/.bin/concurrently -k \
     --names "$names_arg" \
     --prefix-colors "$colors_arg" \
     "${CMD_COMMANDS[@]}"
