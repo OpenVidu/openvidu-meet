@@ -30,15 +30,6 @@ export enum LayoutAlignment {
 export type BigFirstOption = boolean | 'column' | 'row';
 
 /**
- * Element dimensions interface
- */
-export interface ElementDimensions {
-	height: number;
-	width: number;
-	big?: boolean;
-}
-
-/**
  * Layout area definition
  */
 export interface LayoutArea {
@@ -52,15 +43,6 @@ export interface LayoutArea {
  * Layout box positioning. Alias kept for backwards compatibility with the public surface.
  */
 export type LayoutBox = LayoutArea;
-
-/**
- * Row structure for layout calculations
- */
-export interface LayoutRow {
-	ratios: number[];
-	width: number;
-	height: number;
-}
 
 /**
  * Best dimensions calculation result
@@ -99,23 +81,6 @@ export interface LayoutAreas {
 }
 
 /**
- * Element category used to route each element through the right layout area.
- * @internal
- */
-export type ElementCategory = 'big' | 'normal';
-
-/**
- * Categorized elements by type. `categories[i]` is the category assigned to the
- * original element at index `i` — used for O(N) reconstruction in original order.
- * @internal
- */
-export interface CategorizedElements {
-	big: ElementDimensions[];
-	normal: ElementDimensions[];
-	categories: ElementCategory[];
-}
-
-/**
  * Layout configuration constants
  */
 export const LAYOUT_CONSTANTS = {
@@ -137,8 +102,6 @@ export interface OpenViduLayoutOptions {
 	maxRatio: number;
 	/** The widest ratio that will be used (16x9 by default) */
 	minRatio: number;
-	/** If true, aspect ratio is maintained and minRatio/maxRatio are ignored */
-	fixedRatio: boolean;
 	/** Class for elements that should be sized bigger */
 	bigClass: string;
 	/** Class for elements that should be ignored */
@@ -147,8 +110,6 @@ export interface OpenViduLayoutOptions {
 	bigPercentage: number;
 	/** Minimum percentage for big space to scale down whitespace */
 	minBigPercentage: number;
-	/** Fixed ratio for big elements */
-	bigFixedRatio: boolean;
 	/** Narrowest ratio for big elements */
 	bigMaxRatio: number;
 	/** Widest ratio for big elements */

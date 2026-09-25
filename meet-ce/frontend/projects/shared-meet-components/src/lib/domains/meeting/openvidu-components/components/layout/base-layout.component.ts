@@ -163,6 +163,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private resizeDirection = '';
 	private resizeStartClientX = 0;
 	private resizeStartWidth = 0;
+	private resizeMaxWidth = 0;
 	private resizeDragStartPos: { x: number; y: number } = this.ZERO_DRAG_POSITION;
 	/** Cached CDK drag instance for the duration of a resize gesture (avoids per-event DOM lookup). */
 	private resizingDrag: CdkDrag | undefined;
@@ -298,6 +299,8 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		this.resizeDirection = direction;
 		this.resizeStartClientX = event.clientX;
 		this.resizeStartWidth = this.resizingDrag.element.nativeElement.getBoundingClientRect().width;
+		const container = this.layoutContainer()?.element?.nativeElement;
+		this.resizeMaxWidth = container ? container.getBoundingClientRect().width * 0.9 : 800;
 		this.resizeDragStartPos = { ...this.currentDragPosition() };
 
 		document.addEventListener('pointermove', this.boundResizeMove);
@@ -310,15 +313,12 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		if (!this.isResizing || !this.resizingDrag) return;
 
 		const deltaX = event.clientX - this.resizeStartClientX;
-		const container = this.layoutContainer()?.element?.nativeElement;
-		const maxWidth = container ? container.getBoundingClientRect().width * 0.9 : 800;
-
 		const rawWidth =
 			this.resizeDirection === 'se' || this.resizeDirection === 'ne'
 				? this.resizeStartWidth + deltaX
 				: this.resizeStartWidth - deltaX;
 
-		const newWidth = Math.max(this.MIN_RESIZE_WIDTH, Math.min(maxWidth, rawWidth));
+		const newWidth = Math.max(this.MIN_RESIZE_WIDTH, Math.min(this.resizeMaxWidth, rawWidth));
 		const newHeight = newWidth / this.ASPECT_RATIO;
 		const widthChange = newWidth - this.resizeStartWidth;
 

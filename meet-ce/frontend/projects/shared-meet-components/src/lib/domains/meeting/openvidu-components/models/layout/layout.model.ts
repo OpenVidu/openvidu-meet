@@ -9,12 +9,10 @@ export {
 export type {
 	BestDimensions,
 	BigFirstOption,
-	ElementDimensions,
 	ExtendedLayoutOptions,
 	LayoutArea,
 	LayoutBox,
 	LayoutProfile,
-	LayoutRow,
 	OpenViduLayoutOptions,
 	ViewportProfile
 } from './layout-types.model';
@@ -22,13 +20,7 @@ export type {
 import { LayoutCalculator } from './layout-calculator.model';
 import { LayoutDimensionsCache } from './layout-dimensions-cache.model';
 import { elementHeight, elementWidth, readStyle, readStyleNumber, writeStyles } from './layout-dom.util';
-import {
-	ElementDimensions,
-	ExtendedLayoutOptions,
-	LAYOUT_CONSTANTS,
-	LayoutClass,
-	OpenViduLayoutOptions
-} from './layout-types.model';
+import { ExtendedLayoutOptions, LAYOUT_CONSTANTS, LayoutClass, OpenViduLayoutOptions } from './layout-types.model';
 
 /**
  * OpenViduLayout orchestrates layout calculation and rendering.
@@ -119,9 +111,12 @@ export class OpenViduLayout {
 		const extendedOpts: ExtendedLayoutOptions = { ...this.opts, containerWidth, containerHeight };
 		const selector = `#${this.layoutContainer.id}>*:not(.${LayoutClass.IGNORED_ELEMENT}):not(.${LayoutClass.FLOATING_ELEMENT})`;
 		const children = Array.from(this.layoutContainer.querySelectorAll<HTMLElement>(selector));
-		const elements = children.map((element) => this.describeElement(element));
-
-		const { boxes } = this.calculator.calculateLayout(extendedOpts, elements);
+		const isBig = children.map((child) => child.classList.contains(this.opts.bigClass));
+		const { boxes } = this.calculator.calculateLayout(
+			extendedOpts,
+			isBig,
+			this.videoRatio(children[isBig.indexOf(true)])
+		);
 		const margin = containerWidth * LAYOUT_CONSTANTS.ELEMENT_MARGIN;
 
 		children.forEach((child, index) => {
@@ -136,24 +131,13 @@ export class OpenViduLayout {
 		});
 	}
 
-	private describeElement(element: HTMLElement): ElementDimensions {
-		const dims = this.getChildDims(element);
-		dims.big = element.classList.contains(this.opts.bigClass);
-		return dims;
-	}
+	/** Height / width of the video an element shows, or of the default one while it has none. */
+	private videoRatio(element: HTMLElement | undefined): number {
+		const video = element?.querySelector('video');
 
-	private getChildDims(child: HTMLElement): ElementDimensions {
-		const video =
-			child instanceof HTMLVideoElement ? child : (child.querySelector('video') as HTMLVideoElement | null);
-
-		if (video && video.videoHeight && video.videoWidth) {
-			return { height: video.videoHeight, width: video.videoWidth };
-		}
-
-		return {
-			height: LAYOUT_CONSTANTS.DEFAULT_VIDEO_HEIGHT,
-			width: LAYOUT_CONSTANTS.DEFAULT_VIDEO_WIDTH
-		};
+		return video?.videoWidth && video.videoHeight
+			? video.videoHeight / video.videoWidth
+			: LAYOUT_CONSTANTS.DEFAULT_VIDEO_HEIGHT / LAYOUT_CONSTANTS.DEFAULT_VIDEO_WIDTH;
 	}
 
 	private cheapUUID(): string {

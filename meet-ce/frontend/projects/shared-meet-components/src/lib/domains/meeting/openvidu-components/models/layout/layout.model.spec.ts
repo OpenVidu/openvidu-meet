@@ -12,10 +12,8 @@ import {
 
 const OPTIONS: OpenViduLayoutOptions = {
 	...VIEWPORT_LAYOUT_PROFILES.desktop,
-	fixedRatio: false,
 	bigClass: LayoutClass.BIG_ELEMENT,
 	ignoredClass: LayoutClass.IGNORED_ELEMENT,
-	bigFixedRatio: false,
 	bigFirst: true,
 	alignItems: LayoutAlignment.CENTER,
 	bigAlignItems: LayoutAlignment.CENTER,
@@ -29,18 +27,15 @@ const OPTIONS: OpenViduLayoutOptions = {
 const CONTAINER = { width: 1000, height: 500 };
 
 /**
- * Where `count` elements with no video belong, in the order they are in the container: the box the
+ * Where `count` elements, none of them big, belong in the order they are in the container: the box the
  * calculator gives each one, less the margin the layout leaves around it.
  */
 const expectedBoxes = (count: number): LayoutBox[] => {
 	const margin = CONTAINER.width * LAYOUT_CONSTANTS.ELEMENT_MARGIN;
 	const { boxes } = new LayoutCalculator(new LayoutDimensionsCache()).calculateLayout(
 		{ ...OPTIONS, containerWidth: CONTAINER.width, containerHeight: CONTAINER.height },
-		Array.from({ length: count }, () => ({
-			width: LAYOUT_CONSTANTS.DEFAULT_VIDEO_WIDTH,
-			height: LAYOUT_CONSTANTS.DEFAULT_VIDEO_HEIGHT,
-			big: false
-		}))
+		Array.from({ length: count }, () => false),
+		LAYOUT_CONSTANTS.DEFAULT_VIDEO_HEIGHT / LAYOUT_CONSTANTS.DEFAULT_VIDEO_WIDTH
 	);
 
 	return boxes.map(({ left, top, width, height }) => ({
@@ -132,6 +127,59 @@ describe('OpenViduLayout', () => {
 
 		const readTiles = readStyle.calls.allArgs().filter(([element]) => tiles.includes(element as HTMLElement));
 		expect(readTiles.length).toBe(0);
+	});
+
+	describe('with a big element', () => {
+		const readVideos: number[] = [];
+
+		/** A tile holding a video of the given size, which records every time its size is read. */
+		const addVideoTile = (width: number, height: number, className = ''): HTMLElement => {
+			const tile = addTile(className);
+			const video = tile.appendChild(document.createElement('video'));
+			const index = container.children.length - 1;
+			const read = (value: number) => () => (readVideos.push(index), value);
+			Object.defineProperty(video, 'videoWidth', { get: read(width) });
+			Object.defineProperty(video, 'videoHeight', { get: read(height) });
+			return tile;
+		};
+
+		const placeWhenDone = async (tiles: HTMLElement[]) => {
+			layout.updateLayout(container, OPTIONS);
+			await waitFor(() => tiles.every((tile) => tile.style.width !== ''));
+			return tiles.map((tile) => paintedBox(tile, container));
+		};
+
+		beforeEach(() => (readVideos.length = 0));
+
+		it('reads the video size of the first big element only', async () => {
+			await placeWhenDone([
+				addVideoTile(1280, 720),
+				addVideoTile(1920, 1080, LayoutClass.BIG_ELEMENT),
+				addVideoTile(1280, 720, LayoutClass.BIG_ELEMENT),
+				addVideoTile(1280, 720)
+			]);
+
+			expect(new Set(readVideos)).toEqual(new Set([1]));
+		});
+
+		it('lays the others below it when its video is wider than the container, beside it otherwise', async () => {
+			// The other tiles hold portrait videos and one comes first, so the shape can only come from the
+			// big one's video.
+			const [firstWide, wide, lastWide] = await placeWhenDone([
+				addVideoTile(480, 1000),
+				addVideoTile(1920, 800, LayoutClass.BIG_ELEMENT),
+				addVideoTile(480, 1000)
+			]);
+			expect([firstWide, lastWide].every((tile) => tile.top >= wide.top + wide.height - 1)).toBeTrue();
+
+			container.replaceChildren();
+			const [firstScreen, screen, lastScreen] = await placeWhenDone([
+				addVideoTile(480, 1000),
+				addVideoTile(1280, 720, LayoutClass.BIG_ELEMENT),
+				addVideoTile(480, 1000)
+			]);
+			expect([firstScreen, lastScreen].every((tile) => tile.left >= screen.left + screen.width - 1)).toBeTrue();
+		});
 	});
 });
 
