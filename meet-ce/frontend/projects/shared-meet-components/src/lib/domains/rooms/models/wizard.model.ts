@@ -5,11 +5,9 @@ import { FormGroup } from '@angular/forms';
  */
 export enum WizardStepId {
 	ROOM_DETAILS = 'roomDetails',
-	ROOM_CONFIG = 'roomConfig',
-	ROOM_ACCESS = 'roomAccess',
+	MEETING = 'meeting',
 	RECORDING = 'recording',
-	RECORDING_TRIGGER = 'recordingTrigger',
-	RECORDING_LAYOUT = 'recordingLayout'
+	ROOM_ACCESS = 'roomAccess'
 }
 
 /**
@@ -19,8 +17,6 @@ export interface WizardStep<TStepId extends WizardStepId = WizardStepId, TFormGr
 	id: TStepId;
 	label: string;
 	isCompleted: boolean;
-	isActive: boolean;
-	isVisible: boolean;
 	formGroup: TFormGroup;
 }
 

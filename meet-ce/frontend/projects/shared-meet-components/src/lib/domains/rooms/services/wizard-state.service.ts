@@ -16,12 +16,11 @@ import { deepMerge, DeepPartial } from '../../../shared/utils/object.utils';
 import { WizardNavigationConfig, WizardStepId } from '../models';
 import {
 	AnyWizardStep,
-	autoStartToTriggerFormValue,
 	MAX_DURATION_MINUTES_LIMIT,
 	MAX_PARTICIPANTS_LIMIT,
 	MIN_DURATION_MINUTES_LIMIT,
 	MIN_PARTICIPANTS_LIMIT,
-	RecordingEnabledOption,
+	RecordingTrigger,
 	RoomAccessPermissionsControls,
 	RoomDetailsFormGroup
 } from '../models/wizard-forms.model';
@@ -115,13 +114,12 @@ export class RoomWizardStateService {
 
 	// Signals for reactive state management
 	private _steps = signal<AnyWizardStep[]>([]);
-	private _visibleSteps = computed(() => this._steps().filter((step) => step.isVisible));
 	private _currentStepIndex = signal<number>(0);
 	private _isInitialized = signal<boolean>(false);
 	private _editMode = signal<boolean>(false);
 	private _roomOptions = signal<MeetRoomOptions>(deepMerge({}, DEFAULT_ROOM_OPTIONS));
 	private _pendingMembers = signal<MeetRoomMemberOptions[]>([]);
-	private _recordingStateBeforeE2EE = signal<RecordingEnabledOption | undefined>(undefined);
+	private _recordingStateBeforeE2EE = signal<boolean | undefined>(undefined);
 	private _e2eeStateBeforeRecording = signal<boolean | undefined>(undefined);
 
 	public readonly steps = this._steps.asReadonly();
@@ -129,14 +127,7 @@ export class RoomWizardStateService {
 	public readonly isInitialized = this._isInitialized.asReadonly();
 	public readonly editMode = this._editMode.asReadonly();
 	public readonly currentStep = computed<AnyWizardStep | undefined>(() => {
-		const visibleSteps = this._visibleSteps();
-		const currentIndex = this._currentStepIndex();
-
-		if (currentIndex < 0 || currentIndex >= visibleSteps.length) {
-			return undefined;
-		}
-
-		return visibleSteps[currentIndex];
+		return this._steps()[this._currentStepIndex()];
 	});
 	public readonly roomOptions = this._roomOptions.asReadonly();
 	public readonly pendingMembers = this._pendingMembers.asReadonly();
@@ -165,7 +156,7 @@ export class RoomWizardStateService {
 
 	/** Step ids to flag in the step indicator while {@link recordingAutoStartUnreachable} holds. */
 	public readonly stepsWithAutoStartWarning = computed<WizardStepId[]>(() =>
-		this.recordingAutoStartUnreachable() ? [WizardStepId.ROOM_CONFIG, WizardStepId.RECORDING_TRIGGER] : []
+		this.recordingAutoStartUnreachable() ? [WizardStepId.MEETING, WizardStepId.RECORDING] : []
 	);
 
 	/**
@@ -208,16 +199,12 @@ export class RoomWizardStateService {
 		this._roomOptions.set(initialRoomOptions);
 		this._pendingMembers.set([]);
 
-		const recordingTriggerFormValue = autoStartToTriggerFormValue(initialRoomOptions.config!.recording!.autoStart);
-
 		// Define wizard steps
 		const baseSteps: AnyWizardStep[] = [
 			{
 				id: WizardStepId.ROOM_DETAILS,
 				label: this.translateService.translate('ROOMS.WIZARD.STEP_ROOM_DETAILS'),
 				isCompleted: editMode, // In edit mode, mark as completed but not editable
-				isActive: !editMode, // Start with roomDetails step active in create mode
-				isVisible: true,
 				formGroup: this.formBuilder.group(
 					{
 						roomName: this.formBuilder.nonNullable.control<string | undefined>(
@@ -289,33 +276,9 @@ export class RoomWizardStateService {
 				)
 			},
 			{
-				id: WizardStepId.ROOM_ACCESS,
-				label: this.translateService.translate('ROOMS.WIZARD.STEP_ROOM_ACCESS'),
+				id: WizardStepId.MEETING,
+				label: this.translateService.translate('ROOMS.WIZARD.STEP_MEETING'),
 				isCompleted: editMode,
-				isActive: editMode, // Start with Room Access step active in edit mode
-				isVisible: true,
-				formGroup: this.formBuilder.group({
-					anonymousModeratorEnabled: this.formBuilder.nonNullable.control(
-						initialRoomOptions.access!.anonymous!.moderator!.enabled
-					),
-					anonymousSpeakerEnabled: this.formBuilder.nonNullable.control(
-						initialRoomOptions.access!.anonymous!.speaker!.enabled
-					),
-					userEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.access!.user!.enabled),
-					moderator: this.formBuilder.group({
-						...this.buildPermissionsFormConfig(initialRoomOptions.roles!.moderator!.permissions)
-					}),
-					speaker: this.formBuilder.group({
-						...this.buildPermissionsFormConfig(initialRoomOptions.roles!.speaker!.permissions)
-					})
-				})
-			},
-			{
-				id: WizardStepId.ROOM_CONFIG,
-				label: this.translateService.translate('ROOMS.WIZARD.STEP_ROOM_FEATURES'),
-				isCompleted: editMode,
-				isActive: false,
-				isVisible: true,
 				formGroup: this.formBuilder.group({
 					chatEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.chat!.enabled),
 					virtualBackgroundEnabled: this.formBuilder.nonNullable.control(
@@ -350,13 +313,17 @@ export class RoomWizardStateService {
 			},
 			{
 				id: WizardStepId.RECORDING,
-				label: this.translateService.translate('ROOMS.WIZARD.STEP_RECORDING_SETTINGS'),
-				isCompleted: editMode, // In edit mode, all editable steps are completed
-				isActive: false,
-				isVisible: true,
+				label: this.translateService.translate('ROOMS.WIZARD.STEP_RECORDING'),
+				isCompleted: editMode,
 				formGroup: this.formBuilder.group({
-					recordingEnabled: this.formBuilder.nonNullable.control<RecordingEnabledOption>(
-						initialRoomOptions.config!.recording!.enabled ? 'enabled' : 'disabled'
+					recordingEnabled: this.formBuilder.nonNullable.control(
+						initialRoomOptions.config!.recording!.enabled
+					),
+					trigger: this.formBuilder.nonNullable.control<RecordingTrigger>(
+						initialRoomOptions.config!.recording!.autoStart ?? 'manual'
+					),
+					layout: this.formBuilder.nonNullable.control(
+						initialRoomOptions.config!.recording!.layout ?? MeetRecordingLayout.GRID
 					),
 					anonymousRecordingEnabled: this.formBuilder.nonNullable.control(
 						initialRoomOptions.access!.anonymous!.recording!.enabled
@@ -364,36 +331,29 @@ export class RoomWizardStateService {
 				})
 			},
 			{
-				id: WizardStepId.RECORDING_TRIGGER,
-				label: this.translateService.translate('ROOMS.WIZARD.STEP_RECORDING_TRIGGER'),
-				isCompleted: editMode, // In edit mode, all editable steps are completed
-				isActive: false,
-				isVisible: false, // Initially hidden, will be shown based on recording settings
+				id: WizardStepId.ROOM_ACCESS,
+				label: this.translateService.translate('ROOMS.WIZARD.STEP_ROOM_ACCESS'),
+				isCompleted: editMode,
 				formGroup: this.formBuilder.group({
-					triggerMode: this.formBuilder.nonNullable.control(recordingTriggerFormValue.triggerMode),
-					autoStartMode: this.formBuilder.nonNullable.control(recordingTriggerFormValue.autoStartMode)
-				})
-			},
-			{
-				id: WizardStepId.RECORDING_LAYOUT,
-				label: this.translateService.translate('ROOMS.WIZARD.STEP_RECORDING_LAYOUT'),
-				isCompleted: editMode, // In edit mode, all editable steps are completed
-				isActive: false,
-				isVisible: false, // Initially hidden, will be shown based on recording settings
-				formGroup: this.formBuilder.group({
-					layout: this.formBuilder.nonNullable.control(
-						initialRoomOptions.config!.recording!.layout ?? MeetRecordingLayout.GRID
-					)
+					anonymousModeratorEnabled: this.formBuilder.nonNullable.control(
+						initialRoomOptions.access!.anonymous!.moderator!.enabled
+					),
+					anonymousSpeakerEnabled: this.formBuilder.nonNullable.control(
+						initialRoomOptions.access!.anonymous!.speaker!.enabled
+					),
+					userEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.access!.user!.enabled),
+					moderator: this.formBuilder.group({
+						...this.buildPermissionsFormConfig(initialRoomOptions.roles!.moderator!.permissions)
+					}),
+					speaker: this.formBuilder.group({
+						...this.buildPermissionsFormConfig(initialRoomOptions.roles!.speaker!.permissions)
+					})
 				})
 			}
 		];
 
 		this._steps.set(baseSteps);
-		const initialStepIndex = editMode ? 1 : 0; // Skip roomDetails step in edit mode
-		this._currentStepIndex.set(initialStepIndex);
-
-		// Update step visibility after index is set
-		this.updateStepsVisibility();
+		this._currentStepIndex.set(editMode ? 1 : 0); // Skip roomDetails step in edit mode
 		this._isInitialized.set(true);
 	}
 
@@ -419,115 +379,40 @@ export class RoomWizardStateService {
 		const updatedOptions = deepMerge(deepMerge({}, currentOptions), stepData);
 
 		this._roomOptions.set(updatedOptions);
-		this.updateStepsVisibility();
-	}
-
-	/**
-	 * Updates the visibility of wizard steps based on current room options.
-	 * For example, recording-related steps are only visible when recording is enabled.
-	 */
-	private updateStepsVisibility(): void {
-		const currentSteps = this._steps();
-		const currentOptions = this._roomOptions();
-
-		const recordingEnabled = currentOptions.config?.recording?.enabled ?? false;
-
-		// Update recording steps visibility based on recordingEnabled
-		const updatedSteps = currentSteps.map((step) => {
-			if (step.id === WizardStepId.RECORDING_LAYOUT || step.id === WizardStepId.RECORDING_TRIGGER) {
-				return {
-					...step,
-					isVisible: recordingEnabled // Only show if recording is enabled
-				};
-			}
-
-			return step;
-		});
-		this._steps.set(updatedSteps);
 	}
 
 	goToNextStep(): boolean {
 		const currentIndex = this._currentStepIndex();
-		const visibleSteps = this._visibleSteps();
+		const steps = this._steps();
 
-		if (currentIndex < visibleSteps.length - 1) {
-			// Mark current step as completed
-			const currentStep = visibleSteps[currentIndex];
-			currentStep.isCompleted = true;
-			currentStep.isActive = false;
+		if (currentIndex >= steps.length - 1) return false;
 
-			// Activate next step
-			const nextStep = visibleSteps[currentIndex + 1];
-			nextStep.isActive = true;
-
-			this._currentStepIndex.set(currentIndex + 1);
-			const steps = this._steps();
-			this._steps.set([...steps]); // Trigger reactivity
-			return true;
-		}
-
-		return false;
+		steps[currentIndex].isCompleted = true;
+		this._steps.set([...steps]); // Trigger reactivity
+		this._currentStepIndex.set(currentIndex + 1);
+		return true;
 	}
 
 	goToPreviousStep(): boolean {
-		const currentIndex = this._currentStepIndex();
-		const visibleSteps = this._visibleSteps();
-
-		if (currentIndex > 0) {
-			// Deactivate current step
-			const currentStep = visibleSteps[currentIndex];
-			currentStep.isActive = false;
-
-			// Activate previous step
-			const previousStep = visibleSteps[currentIndex - 1];
-			previousStep.isActive = true;
-
-			this._currentStepIndex.set(currentIndex - 1);
-			const steps = this._steps();
-			this._steps.set([...steps]); // Trigger reactivity
-			return true;
-		}
-
-		return false;
+		return this.goToStep(this._currentStepIndex() - 1);
 	}
 
 	goToStep(targetIndex: number): boolean {
-		const currentIndex = this._currentStepIndex();
-
-		if (targetIndex === currentIndex) {
-			return false; // No change if the target index is the same as current
+		if (targetIndex === this._currentStepIndex() || targetIndex < 0 || targetIndex >= this._steps().length) {
+			return false;
 		}
 
-		const visibleSteps = this._visibleSteps();
-
-		if (targetIndex >= 0 && targetIndex < visibleSteps.length) {
-			// Deactivate current step
-			const currentStep = this.currentStep();
-
-			if (currentStep) {
-				currentStep.isActive = false;
-			}
-
-			// Activate target step
-			const targetStep = visibleSteps[targetIndex];
-			targetStep.isActive = true;
-
-			this._currentStepIndex.set(targetIndex);
-			const steps = this._steps();
-			this._steps.set([...steps]); // Trigger reactivity
-			return true;
-		}
-
-		return false;
+		this._currentStepIndex.set(targetIndex);
+		return true;
 	}
 
 	/**
-	 * Navigates to a step identified by its WizardStepId, if visible.
+	 * Navigates to a step identified by its WizardStepId.
 	 * @param stepId - The ID of the step to navigate to
 	 * @returns true if navigation succeeded, false otherwise
 	 */
 	goToStepById(stepId: WizardStepId): boolean {
-		const targetIndex = this._visibleSteps().findIndex((step) => step.id === stepId);
+		const targetIndex = this._steps().findIndex((step) => step.id === stepId);
 
 		if (targetIndex === -1) return false;
 
@@ -536,12 +421,12 @@ export class RoomWizardStateService {
 
 	getNavigationConfig(): WizardNavigationConfig {
 		const currentIndex = this._currentStepIndex();
-		const visibleSteps = this._visibleSteps();
+		const steps = this._steps();
 		const isFirstStep = currentIndex === 0;
-		const isLastStep = currentIndex === visibleSteps.length - 1;
+		const isLastStep = currentIndex === steps.length - 1;
 
 		const isEditMode = this._editMode();
-		const isSomeStepInvalid = visibleSteps.some((step) => step.formGroup.invalid);
+		const isSomeStepInvalid = steps.some((step) => step.formGroup.invalid);
 
 		return {
 			showPrevious: !isFirstStep,
@@ -579,11 +464,11 @@ export class RoomWizardStateService {
 		return controls;
 	}
 
-	setRecordingStateBeforeE2EE(value: RecordingEnabledOption): void {
+	setRecordingStateBeforeE2EE(value: boolean): void {
 		this._recordingStateBeforeE2EE.set(value);
 	}
 
-	getRecordingStateBeforeE2EE(): RecordingEnabledOption | undefined {
+	getRecordingStateBeforeE2EE(): boolean | undefined {
 		return this._recordingStateBeforeE2EE();
 	}
 

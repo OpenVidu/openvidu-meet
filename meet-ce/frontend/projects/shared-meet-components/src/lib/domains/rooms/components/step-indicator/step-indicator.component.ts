@@ -26,7 +26,6 @@ export class StepIndicatorComponent {
 
 	stepClick = output<{ index: number; step: WizardStep }>();
 
-	visibleSteps = computed<WizardStep[]>(() => this.steps().filter((step) => step.isVisible));
 	private breakpointObserver = inject(BreakpointObserver);
 	layoutType = toSignal(
 		this.breakpointObserver
@@ -53,12 +52,12 @@ export class StepIndicatorComponent {
 		if (this.allowNavigation()) {
 			const index = event.selectedIndex;
 
-			if (index < 0 || index >= this.visibleSteps().length) {
+			if (index < 0 || index >= this.steps().length) {
 				console.warn('Invalid step index:', index);
 				return;
 			}
 
-			const step = this.visibleSteps()[index];
+			const step = this.steps()[index];
 			this.stepClick.emit({ index, step });
 		} else {
 			console.warn('Navigation is not allowed. Step click ignored:', event.selectedIndex);
@@ -72,7 +71,7 @@ export class StepIndicatorComponent {
 	 * `[hasError]` is the one binding it does honor for a custom error indicator, gated by the
 	 * `showError` global option this app already sets — so this is the actual seam, not `state`.
 	 * Also covers a step that's already valid on its own but fell out of sync with a *different*
-	 * step's later change (e.g. Room Config's limit vs. Recording Trigger's mode) via stepWarnings.
+	 * step's later change (e.g. the Meeting participant limit vs. the Recording trigger) via stepWarnings.
 	 */
 	stepHasError(step: WizardStep): boolean {
 		return step.formGroup.invalid || this.stepWarnings().includes(step.id);

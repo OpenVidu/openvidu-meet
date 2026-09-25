@@ -41,165 +41,87 @@
 		margin-bottom: var(--ov-meet-spacing-md);
 
 		.recording-form {
-			.e2ee-info-section {
-				@include design-tokens.ov-warning-panel;
-				margin-bottom: var(--ov-meet-spacing-lg);
-			}
-
-			.options-grid {
-				@include design-tokens.ov-grid-responsive(260px);
-				gap: var(--ov-meet-spacing-md);
-
-				&.disabled-grid {
-					pointer-events: none;
-					opacity: 0.5;
-				}
-			}
-
-			.anonymous-access-row {
-				display: flex;
-				align-items: center;
-				justify-content: space-between;
-				gap: var(--ov-meet-spacing-sm);
-				padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
-				border-radius: var(--ov-meet-radius-sm);
-				border: 1px solid var(--ov-meet-border-secondary);
-				background: var(--ov-meet-surface-variant);
-				margin-top: var(--ov-meet-spacing-md);
-				transition: background-color var(--ov-meet-transition-fast);
-
-				&:hover {
-					background: var(--ov-meet-surface-hover);
-				}
-
-				.permission-info {
-					display: flex;
-					align-items: center;
-					gap: var(--ov-meet-spacing-sm);
-					flex: 1;
-					min-width: 0;
-
-					.permission-icon {
-						@include design-tokens.ov-icon(md);
-						color: var(--ov-meet-icon-primary);
-						flex-shrink: 0;
-
-						&.anonymous-icon {
-							color: var(--ov-meet-icon-settings);
-						}
-					}
-
-					.permission-text {
-						display: flex;
-						flex-direction: column;
-						gap: 2px;
-
-						.permission-label {
-							font-size: var(--ov-meet-font-size-md);
-							font-weight: var(--ov-meet-font-weight-medium);
-							color: var(--ov-meet-text-primary);
-							line-height: var(--ov-meet-line-height-tight);
-						}
-
-						.permission-description {
-							font-size: var(--ov-meet-font-size-sm);
-							color: var(--ov-meet-text-secondary);
-							line-height: var(--ov-meet-line-height-normal);
-						}
-					}
-				}
-
-				.permission-toggle {
-					flex-shrink: 0;
-				}
-			}
-
-			.access-selection-section {
-				padding: var(--ov-meet-spacing-lg) var(--ov-meet-spacing-lg) 0 var(--ov-meet-spacing-lg);
-				overflow: hidden;
-
-				.access-header {
-					display: flex;
-					align-items: flex-start;
-					gap: var(--ov-meet-spacing-sm);
-					margin-bottom: var(--ov-meet-spacing-lg);
-
-					.access-icon {
-						@include design-tokens.ov-icon(md);
-						color: var(--ov-meet-icon-security);
-						margin-top: var(--ov-meet-spacing-xs);
-					}
-
-					.access-title-group {
-						flex: 1;
-
-						.access-title {
-							margin: 0 0 var(--ov-meet-spacing-xs) 0;
-							font-size: var(--ov-meet-font-size-lg);
-							font-weight: var(--ov-meet-font-weight-medium);
-							color: var(--ov-meet-text-primary);
-							line-height: var(--ov-meet-line-height-tight);
-						}
-
-						.access-description {
-							margin: 0;
-							font-size: var(--ov-meet-font-size-sm);
-							color: var(--ov-meet-text-secondary);
-							line-height: var(--ov-meet-line-height-normal);
-						}
-					}
-				}
-
-				.access-selector {
-					width: 100%;
-
-					::ng-deep {
-						.mat-mdc-form-field-flex {
-							align-items: center;
-						}
-
-						.mat-mdc-select-value {
-							color: var(--ov-meet-text-primary);
-						}
-
-						.mat-mdc-form-field-outline {
-							color: var(--ov-meet-border-color-medium);
-						}
-
-						.mat-mdc-form-field-focus-overlay {
-							background-color: var(--ov-meet-color-primary-alpha-10);
-						}
-
-						.mat-mdc-form-field.mat-focused .mat-mdc-form-field-outline {
-							color: var(--ov-meet-color-primary);
-						}
-					}
-
-					.access-option {
-						display: flex;
-						flex-direction: column;
-						padding: var(--ov-meet-spacing-xs) 0;
-
-						.access-label {
-							font-size: var(--ov-meet-font-size-sm);
-							font-weight: var(--ov-meet-font-weight-medium);
-							color: var(--ov-meet-text-primary);
-							line-height: var(--ov-meet-line-height-tight);
-						}
-
-						.access-desc {
-							font-size: var(--ov-meet-font-size-xs);
-							color: var(--ov-meet-text-secondary);
-							line-height: var(--ov-meet-line-height-normal);
-							margin-top: var(--ov-meet-spacing-xxs);
-						}
-					}
-				}
-			}
+			display: flex;
+			flex-direction: column;
+			gap: var(--ov-meet-spacing-lg);
 		}
 	}
 
-	// Responsive Design
+	.e2ee-info-section,
+	.autostart-unreachable-section {
+		@include design-tokens.ov-warning-panel;
+	}
+
+	@include design-tokens.ov-settings-rows;
+
+	.trigger-field {
+		flex-shrink: 0;
+		width: 240px;
+	}
+
+	.layout-options {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: var(--ov-meet-spacing-sm);
+	}
+
+	.layout-tile {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--ov-meet-spacing-xs);
+		padding: var(--ov-meet-spacing-sm);
+		text-align: center;
+		border: 1px solid var(--ov-meet-border-secondary);
+		border-radius: var(--ov-meet-radius-sm);
+		background: var(--ov-meet-surface-variant);
+		cursor: pointer;
+		transition:
+			background-color var(--ov-meet-transition-fast),
+			border-color var(--ov-meet-transition-fast);
+
+		&:hover {
+			background: var(--ov-meet-surface-hover);
+		}
+
+		&.selected {
+			border-color: var(--ov-meet-color-primary);
+			box-shadow: 0 0 0 1px var(--ov-meet-color-primary);
+			background: color-mix(in srgb, var(--ov-meet-color-primary) 8%, var(--ov-meet-surface-variant));
+		}
+
+		&:has(.layout-radio:focus-visible) {
+			outline: 2px solid var(--ov-meet-color-primary);
+			outline-offset: 2px;
+		}
+
+		.layout-radio {
+			position: absolute;
+			opacity: 0;
+			pointer-events: none;
+		}
+
+		.layout-image {
+			width: 100%;
+			height: 132px;
+			object-fit: contain;
+		}
+
+		.layout-title {
+			font-size: var(--ov-meet-font-size-md);
+			font-weight: var(--ov-meet-font-weight-medium);
+			color: var(--ov-meet-text-primary);
+			line-height: var(--ov-meet-line-height-tight);
+		}
+
+		.layout-description {
+			font-size: var(--ov-meet-font-size-sm);
+			color: var(--ov-meet-text-secondary);
+			line-height: var(--ov-meet-line-height-normal);
+		}
+	}
+
 	@include design-tokens.ov-mobile-down {
 		.step-header {
 			flex-direction: column;
@@ -213,41 +135,12 @@
 			}
 		}
 
-		.step-content .recording-form {
-			.options-grid {
-				grid-template-columns: 1fr;
-				gap: var(--ov-meet-spacing-sm);
-			}
-
-			.access-selection-section {
-				margin-top: var(--ov-meet-spacing-lg);
-				padding: var(--ov-meet-spacing-md);
-
-				.access-header {
-					flex-direction: column;
-					text-align: center;
-					gap: var(--ov-meet-spacing-sm);
-
-					.access-icon {
-						align-self: center;
-						margin-top: 0;
-					}
-				}
-			}
+		.layout-options {
+			grid-template-columns: 1fr;
 		}
 	}
 
 	@include design-tokens.ov-tablet-down {
 		padding: var(--ov-meet-spacing-xs);
-
-		.step-content .recording-form {
-			.options-grid {
-				gap: var(--ov-meet-spacing-sm);
-			}
-
-			.access-selection-section {
-				padding: var(--ov-meet-spacing-md);
-			}
-		}
 	}
 }

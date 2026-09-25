@@ -12,14 +12,14 @@ import {
 	MAX_PARTICIPANTS_LIMIT,
 	MIN_DURATION_MINUTES_LIMIT,
 	MIN_PARTICIPANTS_LIMIT,
-	RoomConfigFormGroup,
-	RoomConfigFormValue
+	MeetingConfigFormGroup,
+	MeetingConfigFormValue
 } from '../../../../models/wizard-forms.model';
 import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services';
 
 @Component({
-	selector: 'ov-room-config',
+	selector: 'ov-meeting-config',
 	imports: [
 		ReactiveFormsModule,
 		MatFormFieldModule,
@@ -28,10 +28,10 @@ import { RoomWizardStateService } from '../../../../services';
 		MatSlideToggleModule,
 		TranslatePipe
 	],
-	templateUrl: './room-config.component.html',
-	styleUrl: './room-config.component.scss'
+	templateUrl: './meeting-config.component.html',
+	styleUrl: './meeting-config.component.scss'
 })
-export class RoomConfigComponent {
+export class MeetingConfigComponent {
 	private wizardService = inject(RoomWizardStateService);
 
 	readonly minParticipantsLimit = MIN_PARTICIPANTS_LIMIT;
@@ -42,23 +42,23 @@ export class RoomConfigComponent {
 	/** Set when the configured recording trigger can never fire at this participant limit. */
 	autoStartWarningMessage = this.wizardService.recordingAutoStartWarningMessage;
 
-	roomConfigForm: RoomConfigFormGroup;
+	meetingForm: MeetingConfigFormGroup;
 
 	constructor() {
-		const roomConfigStep = this.wizardService.getStepById(WizardStepId.ROOM_CONFIG);
+		const meetingStep = this.wizardService.getStepById(WizardStepId.MEETING);
 
-		if (!roomConfigStep) {
-			throw new Error('roomConfig step not found in wizard state');
+		if (!meetingStep) {
+			throw new Error('meeting step not found in wizard state');
 		}
 
-		this.roomConfigForm = roomConfigStep.formGroup;
+		this.meetingForm = meetingStep.formGroup;
 
-		this.roomConfigForm.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {
+		this.meetingForm.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {
 			this.saveFormData(value);
 		});
 	}
 
-	private saveFormData(formValue: Partial<RoomConfigFormValue>): void {
+	private saveFormData(formValue: Partial<MeetingConfigFormValue>): void {
 		const stepData: Partial<MeetRoomOptions> = {
 			config: {
 				chat: {
@@ -76,11 +76,11 @@ export class RoomConfigComponent {
 				initialAudioActive: formValue.initialAudioActive ?? true,
 				initialVideoActive: formValue.initialVideoActive ?? true,
 				maxParticipants: this.normalizedLimit(
-					this.roomConfigForm.controls.maxParticipants,
+					this.meetingForm.controls.maxParticipants,
 					formValue.maxParticipants
 				),
 				maxDurationMinutes: this.normalizedLimit(
-					this.roomConfigForm.controls.maxDurationMinutes,
+					this.meetingForm.controls.maxDurationMinutes,
 					formValue.maxDurationMinutes
 				)
 			}
@@ -107,7 +107,7 @@ export class RoomConfigComponent {
 
 	onE2EEToggleChange(event: MatSlideToggleChange): void {
 		const isEnabled = event.checked;
-		this.roomConfigForm.patchValue({
+		this.meetingForm.patchValue({
 			e2eeEnabled: isEnabled
 		});
 
@@ -118,18 +118,16 @@ export class RoomConfigComponent {
 		const recordingForm = recordingStep.formGroup;
 
 		if (isEnabled) {
-			// Save the current recording state before disabling it
-			const currentRecordingValue = recordingForm.controls.recordingEnabled.value;
-
-			// Only save if it's not already 'disabled' (to preserve user's original choice)
-			if (currentRecordingValue !== 'disabled') {
-				this.wizardService.setRecordingStateBeforeE2EE(currentRecordingValue);
+			// Save the current recording state before disabling it, only when it is on, to preserve the
+			// user's original choice
+			if (recordingForm.controls.recordingEnabled.value) {
+				this.wizardService.setRecordingStateBeforeE2EE(true);
 			}
 
 			// Disable recording automatically
 			recordingForm.patchValue(
 				{
-					recordingEnabled: 'disabled'
+					recordingEnabled: false
 				},
 				{ emitEvent: true }
 			);
@@ -156,7 +154,7 @@ export class RoomConfigComponent {
 				this.wizardService.updateStepData({
 					config: {
 						recording: {
-							enabled: previousRecordingState === 'enabled'
+							enabled: previousRecordingState
 						}
 					}
 				});
@@ -169,32 +167,32 @@ export class RoomConfigComponent {
 
 	onChatToggleChange(event: MatSlideToggleChange): void {
 		const isEnabled = event.checked;
-		this.roomConfigForm.patchValue({ chatEnabled: isEnabled });
+		this.meetingForm.patchValue({ chatEnabled: isEnabled });
 	}
 
 	onVirtualBackgroundToggleChange(event: MatSlideToggleChange): void {
 		const isEnabled = event.checked;
-		this.roomConfigForm.patchValue({ virtualBackgroundEnabled: isEnabled });
+		this.meetingForm.patchValue({ virtualBackgroundEnabled: isEnabled });
 	}
 
 	onCaptionsToggleChange(event: MatSlideToggleChange): void {
 		const isEnabled = event.checked;
-		this.roomConfigForm.patchValue({ captionsEnabled: isEnabled });
+		this.meetingForm.patchValue({ captionsEnabled: isEnabled });
 	}
 
 	get chatEnabled(): boolean {
-		return this.roomConfigForm.value.chatEnabled ?? false;
+		return this.meetingForm.value.chatEnabled ?? false;
 	}
 
 	get virtualBackgroundEnabled(): boolean {
-		return this.roomConfigForm.value.virtualBackgroundEnabled ?? false;
+		return this.meetingForm.value.virtualBackgroundEnabled ?? false;
 	}
 
 	get e2eeEnabled(): boolean {
-		return this.roomConfigForm.value.e2eeEnabled ?? false;
+		return this.meetingForm.value.e2eeEnabled ?? false;
 	}
 
 	get captionsEnabled(): boolean {
-		return this.roomConfigForm.value.captionsEnabled ?? false;
+		return this.meetingForm.value.captionsEnabled ?? false;
 	}
 }

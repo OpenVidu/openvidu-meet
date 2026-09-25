@@ -48,8 +48,10 @@ applies everywhere; the file extension follows the format.
 
 Most scenes are single static pages, but **live scenes** (`live: true`) drive a real
 multi-participant meeting — `e2ee-wrong-key` (the wrong-key lockout, in an E2EE room),
-`layout-settings` (the Mosaic / Smart Mosaic modes and visible-participants slider) and
-`layout-grid` (6 participants — Smart Mosaic's default 4 visible slots leave a "+1" badge — with the participants panel open).
+`layout-settings` (the Mosaic / Smart Mosaic modes and visible-participants slider),
+`layout-grid` (6 participants — Smart Mosaic's default 4 visible slots leave a "+1" badge — with the participants panel open) and
+`meeting-ending-soon` (a room with a 6-minute duration limit: about a minute after the meeting
+starts, the status rail counts down and the pinned "Meeting ending soon" notice shows for 12 s).
 
 **Each participant runs in its own browser** (one `chromium.launch` per person), because a single
 browser can only feed one fake-camera file to all its tabs. Each browser is launched with
@@ -85,13 +87,13 @@ The default run produces **38 WebP images** (19 scenes × 2 themes):
 ```
 auth/      login
 console/   overview · overview-empty · embedded · config · error
-meeting/   disconnected · e2ee-wrong-key · layout-settings · layout-grid
+meeting/   disconnected · e2ee-wrong-key · layout-settings · layout-grid · meeting-ending-soon
 rooms/     rooms-empty · rooms-3rooms · rooms-new · rooms-detail · rooms-edit
 recordings/recordings
 users/     users · users-new · profile
 ```
 
-`e2ee-wrong-key`, `layout-settings` and `layout-grid` are live multi-participant scenes (see
+`e2ee-wrong-key`, `layout-settings`, `layout-grid` and `meeting-ending-soon` are live multi-participant scenes (see
 "Live meeting scenes & the sample webcam" above); they need the app running plus ffmpeg for the
 sample webcam. Drop them with an explicit `--scenes` list if you only want the static pages.
 
@@ -118,6 +120,7 @@ sample webcam. Drop them with an explicit `--scenes` list if you only want the s
 | `e2ee-wrong-key` | meeting | `/room/:id` (live, ×3; wrong-key participant's view) | anon (REST-seeded E2EE room) | **own E2EE room** | `.encryption-warning` |
 | `layout-settings` | meeting | `/room/:id` (live, ×2) | anon (REST-seeded room) | **own room** | `.participant-slider` |
 | `layout-grid` | meeting | `/room/:id` (live, ×6; 4 visible + "+1" badge, participants panel) | anon (REST-seeded room) | **own room** | `ov-participants-panel` |
+| `meeting-ending-soon` | meeting | `/room/:id` (live, ×3; ~1 min wait for the notice) | anon (REST-seeded room, `maxDurationMinutes: 6`) | **own room** | `.ending-soon-chip` |
 
 ## Full UI route map (source: `domains/<domain>/routes/*.routes.ts`)
 

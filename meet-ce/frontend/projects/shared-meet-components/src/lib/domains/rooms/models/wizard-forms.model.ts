@@ -28,7 +28,7 @@ export type RoomDetailsFormGroup = FormGroup<{
 	autoDeletionPolicyWithRecordings: FormControl<MeetRoomDeletionPolicyWithRecordings>;
 }>;
 
-// Form value and group types for the room config step
+// Form value and group types for the meeting step
 
 /**
  * Bounds the meeting-limit inputs validate against, mirroring the `MEETING_MIN`/`MEETING_MAX`
@@ -40,7 +40,7 @@ export const MAX_PARTICIPANTS_LIMIT = 30;
 export const MIN_DURATION_MINUTES_LIMIT = 1;
 export const MAX_DURATION_MINUTES_LIMIT = 1_440;
 
-export interface RoomConfigFormValue {
+export interface MeetingConfigFormValue {
 	chatEnabled: boolean;
 	virtualBackgroundEnabled: boolean;
 	e2eeEnabled: boolean;
@@ -52,7 +52,7 @@ export interface RoomConfigFormValue {
 	maxDurationMinutes: number | null;
 }
 
-export type RoomConfigFormGroup = FormGroup<{
+export type MeetingConfigFormGroup = FormGroup<{
 	chatEnabled: FormControl<boolean>;
 	virtualBackgroundEnabled: FormControl<boolean>;
 	e2eeEnabled: FormControl<boolean>;
@@ -87,74 +87,23 @@ export type RoomAccessFormGroup = FormGroup<{
 	speaker: RoomAccessRolePermissionsFormGroup;
 }>;
 
-// Form value and group types for the recording config step
+// Form value and group types for the recording step
 
-export type RecordingEnabledOption = 'enabled' | 'disabled';
+/** When recording starts: by hand, or automatically at one of the `config.recording.autoStart` presets. */
+export type RecordingTrigger = 'manual' | MeetRecordingAutoStartMode;
 
 export interface RecordingFormValue {
-	recordingEnabled: RecordingEnabledOption;
+	recordingEnabled: boolean;
+	trigger: RecordingTrigger;
+	layout: MeetRecordingLayout;
 	anonymousRecordingEnabled: boolean;
 }
 
 export type RecordingFormGroup = FormGroup<{
-	recordingEnabled: FormControl<RecordingEnabledOption>;
-	anonymousRecordingEnabled: FormControl<boolean>;
-}>;
-
-// Form value and group types for the recording trigger step
-//
-// The trigger is a two-level decision: the top-level card picks manual vs. automatic, and only
-// when automatic is chosen does a second, secondary choice appear for the participant threshold.
-// `autoStartMode` is kept in the form even while `triggerMode` is `manual`, so a user who switches
-// to automatic and back keeps their previous threshold selection instead of losing it.
-
-export type RecordingTriggerMode = 'manual' | 'auto';
-
-export interface RecordingTriggerFormValue {
-	triggerMode: RecordingTriggerMode;
-	autoStartMode: MeetRecordingAutoStartMode;
-}
-
-export type RecordingTriggerFormGroup = FormGroup<{
-	triggerMode: FormControl<RecordingTriggerMode>;
-	autoStartMode: FormControl<MeetRecordingAutoStartMode>;
-}>;
-
-/**
- * Maps a persisted `config.recording.autoStart` value to the wizard's two-level trigger selection:
- * the top-level manual/automatic mode, and the threshold to preselect if the user switches to
- * automatic (defaults to the first-participant threshold).
- */
-export function autoStartToTriggerFormValue(
-	autoStart: MeetRecordingAutoStartMode | null | undefined
-): RecordingTriggerFormValue {
-	return {
-		triggerMode: autoStart ? 'auto' : 'manual',
-		autoStartMode: autoStart ?? MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS
-	};
-}
-
-/**
- * Maps the wizard's two-level trigger selection back to the persisted `config.recording.autoStart`
- * value. `manual` maps to `null` (not `undefined`) so the wizard's own deep-merge of step data can
- * distinguish "explicitly turned off" from "field not touched by this step". Takes the full,
- * non-partial form value (e.g. `getRawValue()`) so a field missing from a `valueChanges` emission
- * (which types as `Partial`, e.g. while a control is disabled) can't be mistaken for "manual".
- */
-export function triggerFormValueToAutoStart(formValue: RecordingTriggerFormValue): MeetRecordingAutoStartMode | null {
-	if (formValue.triggerMode !== 'auto') return null;
-
-	return formValue.autoStartMode;
-}
-
-// Form value and group types for the recording layout step
-
-export interface RecordingLayoutFormValue {
-	layout: MeetRecordingLayout;
-}
-
-export type RecordingLayoutFormGroup = FormGroup<{
+	recordingEnabled: FormControl<boolean>;
+	trigger: FormControl<RecordingTrigger>;
 	layout: FormControl<MeetRecordingLayout>;
+	anonymousRecordingEnabled: FormControl<boolean>;
 }>;
 
 /**
@@ -162,11 +111,9 @@ export type RecordingLayoutFormGroup = FormGroup<{
  */
 export type WizardStepFormGroupMap = {
 	[WizardStepId.ROOM_DETAILS]: RoomDetailsFormGroup;
-	[WizardStepId.ROOM_CONFIG]: RoomConfigFormGroup;
-	[WizardStepId.ROOM_ACCESS]: RoomAccessFormGroup;
+	[WizardStepId.MEETING]: MeetingConfigFormGroup;
 	[WizardStepId.RECORDING]: RecordingFormGroup;
-	[WizardStepId.RECORDING_TRIGGER]: RecordingTriggerFormGroup;
-	[WizardStepId.RECORDING_LAYOUT]: RecordingLayoutFormGroup;
+	[WizardStepId.ROOM_ACCESS]: RoomAccessFormGroup;
 };
 
 /**

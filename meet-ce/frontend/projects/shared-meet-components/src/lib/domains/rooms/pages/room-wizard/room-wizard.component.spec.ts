@@ -18,7 +18,7 @@ const UNREACHABLE_AUTO_START_MESSAGE =
  * B5 / F7 (MEET-BRANCH-AUDIT-FINDINGS.md): nothing client-side stops the wizard from building the
  * exact combination the backend's 422 rejects (`maxParticipants:1` + a second-participant recording
  * trigger), and on that rejection `createRoomAdvance()`'s `finally` resets the wizard unconditionally
- * while its `catch` shows a fixed generic message — the user loses all six steps of input with no
+ * while its `catch` shows a fixed generic message — the user loses all the wizard input with no
  * hint which fields conflicted.
  */
 describe('RoomWizardComponent.createRoomAdvance — B5/F7: a rejected submit destroys all wizard input', () => {

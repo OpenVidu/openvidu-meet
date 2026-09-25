@@ -8,7 +8,7 @@
 		[attr.data-layout]="layoutType()"
 		(selectionChange)="onStepClick($event)"
 	>
-		@for (step of visibleSteps(); track step.id; let i = $index) {
+		@for (step of steps(); track step.id) {
 			<mat-step
 				[stepControl]="step.formGroup"
 				[hasError]="stepHasError(step)"

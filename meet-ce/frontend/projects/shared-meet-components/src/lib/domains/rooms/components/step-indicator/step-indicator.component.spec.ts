@@ -16,11 +16,9 @@ describe('StepIndicatorComponent.stepHasError — the actual seam Material consu
 
 	function buildStep(overrides: Partial<WizardStep> = {}): WizardStep {
 		return {
-			id: WizardStepId.ROOM_CONFIG,
+			id: WizardStepId.MEETING,
 			label: 'Step',
 			isCompleted: false,
-			isActive: false,
-			isVisible: true,
 			formGroup: new FormGroup({}),
 			...overrides
 		};
@@ -44,16 +42,16 @@ describe('StepIndicatorComponent.stepHasError — the actual seam Material consu
 	});
 
 	it('is true when the step is flagged via stepWarnings despite its own form being valid', () => {
-		const step = buildStep({ id: WizardStepId.RECORDING_TRIGGER });
+		const step = buildStep({ id: WizardStepId.RECORDING });
 		expect(component.stepHasError(step)).toBe(false);
 
-		fixture.componentRef.setInput('stepWarnings', [WizardStepId.RECORDING_TRIGGER]);
+		fixture.componentRef.setInput('stepWarnings', [WizardStepId.RECORDING]);
 		expect(component.stepHasError(step)).toBe(true);
 	});
 
 	it('does not flag a step of a different id present in stepWarnings', () => {
-		const step = buildStep({ id: WizardStepId.RECORDING_TRIGGER });
-		fixture.componentRef.setInput('stepWarnings', [WizardStepId.ROOM_CONFIG]);
+		const step = buildStep({ id: WizardStepId.RECORDING });
+		fixture.componentRef.setInput('stepWarnings', [WizardStepId.MEETING]);
 		expect(component.stepHasError(step)).toBe(false);
 	});
 });

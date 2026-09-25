@@ -31,7 +31,7 @@ describe('RoomWizardStateService.initializeWizard (stale state does not leak acr
 	});
 
 	it('does not leak a stale autoStart selection into a brand-new create-mode session', () => {
-		// First "session": the user reaches the recording-trigger step and picks a threshold...
+		// First "session": the user reaches the recording trigger and picks a threshold...
 		service.initializeWizard(false);
 		service.updateStepData({
 			config: { recording: { autoStart: MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS } }
@@ -131,6 +131,76 @@ describe('RoomWizardStateService.recordingAutoStartUnreachable (cross-field guar
 
 		expect(service.recordingAutoStartUnreachable()).toBe(false);
 	});
+
+	it('flags the two steps that hold each side of the conflict', () => {
+		service.updateStepData({
+			config: {
+				maxParticipants: 1,
+				recording: { autoStart: MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS }
+			}
+		});
+
+		expect(service.stepsWithAutoStartWarning()).toEqual([WizardStepId.MEETING, WizardStepId.RECORDING]);
+	});
+});
+
+/**
+ * One step per concept of the product: the room itself, the meetings held in it, their recording,
+ * and who may do what. Room access comes last because its permissions depend on the features the
+ * earlier steps turn on.
+ */
+describe('RoomWizardStateService.initializeWizard (steps)', () => {
+	let service: RoomWizardStateService;
+
+	beforeEach(() => {
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				RoomWizardStateService,
+				{ provide: TranslateService, useValue: { translate: (key: string) => key } }
+			]
+		});
+		service = TestBed.inject(RoomWizardStateService);
+	});
+
+	it('orders the steps room details, meeting, recording, room access', () => {
+		service.initializeWizard(false);
+
+		expect(service.steps().map((step) => step.id)).toEqual([
+			WizardStepId.ROOM_DETAILS,
+			WizardStepId.MEETING,
+			WizardStepId.RECORDING,
+			WizardStepId.ROOM_ACCESS
+		]);
+		expect(service.currentStep()?.id).toBe(WizardStepId.ROOM_DETAILS);
+	});
+
+	it('opens an edited room on the Meeting step, since the room details cannot change', () => {
+		service.initializeWizard(true, { roomName: 'Existing room' });
+
+		expect(service.currentStep()?.id).toBe(WizardStepId.MEETING);
+	});
+
+	it('prefills the whole recording step, trigger and layout included, from the edited room', () => {
+		service.initializeWizard(true, {
+			roomName: 'Existing room',
+			config: {
+				recording: {
+					enabled: true,
+					autoStart: MeetRecordingAutoStartMode.WHEN_MODERATOR_JOINS,
+					layout: MeetRecordingLayout.SPEAKER
+				}
+			},
+			access: { anonymous: { recording: { enabled: false } } }
+		});
+
+		expect(service.getStepById(WizardStepId.RECORDING)!.formGroup.getRawValue()).toEqual({
+			recordingEnabled: true,
+			trigger: MeetRecordingAutoStartMode.WHEN_MODERATOR_JOINS,
+			layout: MeetRecordingLayout.SPEAKER,
+			anonymousRecordingEnabled: false
+		});
+	});
 });
 
 describe('RoomWizardStateService.getStepById (maxDurationMinutes control bounds)', () => {
@@ -149,7 +219,7 @@ describe('RoomWizardStateService.getStepById (maxDurationMinutes control bounds)
 	});
 
 	const maxDurationMinutesControl = () =>
-		service.getStepById(WizardStepId.ROOM_CONFIG)!.formGroup.controls.maxDurationMinutes;
+		service.getStepById(WizardStepId.MEETING)!.formGroup.controls.maxDurationMinutes;
 
 	it('rejects a duration below one minute, which no limit can express', () => {
 		maxDurationMinutesControl().setValue(0);
@@ -184,13 +254,13 @@ describe('RoomWizardStateService.getStepById (initial media state controls)', ()
 		service = TestBed.inject(RoomWizardStateService);
 	});
 
-	const roomConfigControls = () => service.getStepById(WizardStepId.ROOM_CONFIG)!.formGroup.controls;
+	const meetingControls = () => service.getStepById(WizardStepId.MEETING)!.formGroup.controls;
 
 	it('starts a create-mode session with both devices active, matching the backend creation default', () => {
 		service.initializeWizard(false);
 
-		expect(roomConfigControls().initialAudioActive.value).toBe(true);
-		expect(roomConfigControls().initialVideoActive.value).toBe(true);
+		expect(meetingControls().initialAudioActive.value).toBe(true);
+		expect(meetingControls().initialVideoActive.value).toBe(true);
 	});
 
 	it('prefills the toggles from the edited room rather than the creation default', () => {
@@ -199,8 +269,8 @@ describe('RoomWizardStateService.getStepById (initial media state controls)', ()
 			config: { initialAudioActive: false, initialVideoActive: false }
 		});
 
-		expect(roomConfigControls().initialAudioActive.value).toBe(false);
-		expect(roomConfigControls().initialVideoActive.value).toBe(false);
+		expect(meetingControls().initialAudioActive.value).toBe(false);
+		expect(meetingControls().initialVideoActive.value).toBe(false);
 	});
 });
 

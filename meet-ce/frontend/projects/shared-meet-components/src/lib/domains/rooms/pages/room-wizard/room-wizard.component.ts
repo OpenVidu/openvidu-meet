@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, ElementRef, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -23,11 +23,9 @@ import { WizardStep, WizardStepId } from '../../models/wizard.model';
 import { RoomService } from '../../services/room.service';
 import { RoomWizardStateService } from '../../services/wizard-state.service';
 import { RoomBasicCreationComponent } from '../room-basic-creation/room-basic-creation.component';
+import { MeetingConfigComponent } from './steps/meeting-config/meeting-config.component';
 import { RecordingConfigComponent } from './steps/recording-config/recording-config.component';
-import { RecordingLayoutComponent } from './steps/recording-layout/recording-layout.component';
-import { RecordingTriggerComponent } from './steps/recording-trigger/recording-trigger.component';
 import { RoomAccessComponent } from './steps/room-access/room-access.component';
-import { RoomConfigComponent } from './steps/room-config/room-config.component';
 import { RoomWizardRoomDetailsComponent } from './steps/room-details/room-details.component';
 
 @Component({
@@ -41,11 +39,9 @@ import { RoomWizardRoomDetailsComponent } from './steps/room-details/room-detail
 		MatSlideToggleModule,
 		RoomBasicCreationComponent,
 		RoomWizardRoomDetailsComponent,
-		RoomAccessComponent,
+		MeetingConfigComponent,
 		RecordingConfigComponent,
-		RecordingTriggerComponent,
-		RecordingLayoutComponent,
-		RoomConfigComponent,
+		RoomAccessComponent,
 		TranslatePipe
 	],
 	templateUrl: './room-wizard.component.html',
@@ -74,6 +70,14 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 	currentStepIndex = this.wizardService.currentStepIndex;
 	navigationConfig = computed(() => this.wizardService.getNavigationConfig());
 	protected readonly WizardStepId = WizardStepId;
+
+	private readonly stepContent = viewChild<ElementRef<HTMLElement>>('stepContent');
+
+	// Every step renders in the same scrolling card, so each one would open where the last was left
+	private readonly scrollToTopOnStepChange = effect(() => {
+		this.currentStepIndex();
+		this.stepContent()?.nativeElement.scrollTo({ top: 0 });
+	});
 
 	async ngOnInit() {
 		// Detect edit mode from route
@@ -295,7 +299,7 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 			}
 
 			// A failed room creation never partially applies, so there's nothing to refresh: stay
-			// on the wizard with its six steps of input intact instead of discarding them, so the
+			// on the wizard with all its input intact instead of discarding it, so the
 			// user can fix whatever the message above flagged and resubmit.
 		} finally {
 			// Deactivate loading state

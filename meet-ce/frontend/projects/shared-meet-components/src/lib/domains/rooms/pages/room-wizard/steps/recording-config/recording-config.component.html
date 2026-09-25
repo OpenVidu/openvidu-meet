@@ -3,8 +3,8 @@
 	<header class="step-header">
 		<mat-icon class="ov-recording-icon step-icon">video_library</mat-icon>
 		<div class="step-title-group">
-			<h3 class="step-title">{{ 'ROOMS.WIZARD.RECORDING_CONFIG.TITLE' | translate }}</h3>
-			<p class="step-description">{{ 'ROOMS.WIZARD.RECORDING_CONFIG.DESCRIPTION' | translate }}</p>
+			<h3 class="step-title">{{ 'ROOMS.WIZARD.RECORDING.TITLE' | translate }}</h3>
+			<p class="step-description">{{ 'ROOMS.WIZARD.RECORDING.DESCRIPTION' | translate }}</p>
 		</div>
 	</header>
 
@@ -17,47 +17,129 @@
 					<div class="warning-card">
 						<mat-icon class="warning-icon">warning</mat-icon>
 						<div class="warning-content">
-							<p class="warning-title">{{ 'ROOMS.WIZARD.RECORDING_CONFIG.RESTRICTIONS' | translate }}</p>
+							<p class="warning-title">{{ 'ROOMS.WIZARD.RECORDING.RESTRICTIONS' | translate }}</p>
 							<p class="warning-text">
-								{{ 'ROOMS.WIZARD.RECORDING_CONFIG.E2EE_WARNING_PREFIX' | translate }}<b>{{ 'ROOMS.WIZARD.RECORDING_CONFIG.E2EE_WARNING_BOLD' | translate }}</b>{{ 'ROOMS.WIZARD.RECORDING_CONFIG.E2EE_WARNING_SUFFIX' | translate }}
+								{{ 'ROOMS.WIZARD.RECORDING.E2EE_WARNING_PREFIX' | translate
+								}}<b>{{ 'ROOMS.WIZARD.RECORDING.E2EE_WARNING_BOLD' | translate }}</b
+								>{{ 'ROOMS.WIZARD.RECORDING.E2EE_WARNING_SUFFIX' | translate }}
 							</p>
 						</div>
 					</div>
 				</div>
 			}
 
-			<!-- Options Cards -->
-			<div class="options-grid">
-				@for (option of recordingOptions; track option.id) {
-					<ov-selectable-card
-						[option]="option"
-						[selectedValue]="selectedValue"
-						[allowMultiSelect]="false"
-						[showSelectionIndicator]="true"
-						[showRecommendedBadge]="option.recommended ?? false"
-						(optionSelected)="onOptionSelect($event)"
-					/>
-				}
+			<div class="feature-row" id="recording-enabled">
+				<div class="feature-info">
+					<mat-icon class="feature-icon">video_library</mat-icon>
+					<div class="feature-text">
+						<span class="feature-label">{{
+							'ROOMS.WIZARD.RECORDING.ALLOW_RECORDING_TITLE' | translate
+						}}</span>
+						<span class="feature-description">{{
+							'ROOMS.WIZARD.RECORDING.ALLOW_RECORDING_DESC' | translate
+						}}</span>
+					</div>
+				</div>
+				<mat-slide-toggle
+					formControlName="recordingEnabled"
+					color="primary"
+					class="feature-toggle"
+					(change)="onRecordingToggleChange($event)"
+				/>
 			</div>
 
-			<!-- Anonymous Recording Access -->
 			@if (isRecordingEnabled) {
-				<div class="anonymous-access-row">
-					<div class="permission-info">
-						<mat-icon class="permission-icon anonymous-icon">no_accounts</mat-icon>
-						<div class="permission-text">
-							<span class="permission-label">{{ 'ROOMS.WIZARD.RECORDING_CONFIG.ANONYMOUS_ACCESS_LABEL' | translate }}</span>
-							<span class="permission-description">{{
-								'ROOMS.WIZARD.RECORDING_CONFIG.ANONYMOUS_ACCESS_DESC' | translate
-							}}</span>
-						</div>
+				<!-- ── Trigger ──────────────────────────────── -->
+				<section class="settings-section fade-in" id="recording-trigger-section">
+					<div class="section-header">
+						<mat-icon class="section-icon">play_circle</mat-icon>
+						<span class="section-label">{{ 'ROOMS.WIZARD.RECORDING_TRIGGER.TITLE' | translate }}</span>
 					</div>
-					<mat-slide-toggle
-						formControlName="anonymousRecordingEnabled"
-						color="primary"
-						class="permission-toggle"
-					/>
-				</div>
+
+					<div class="feature-row field-row">
+						<div class="feature-info">
+							<mat-icon class="feature-icon">schedule</mat-icon>
+							<div class="feature-text">
+								<span class="feature-label">{{
+									'ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_MODE_LABEL' | translate
+								}}</span>
+								<span class="feature-description">{{ selectedTriggerDescription }}</span>
+							</div>
+						</div>
+						<mat-form-field appearance="outline" class="trigger-field" subscriptSizing="dynamic">
+							<mat-select formControlName="trigger">
+								@for (option of triggerOptions; track option.value) {
+									<mat-option [value]="option.value">{{ option.title }}</mat-option>
+								}
+							</mat-select>
+						</mat-form-field>
+					</div>
+
+					@if (autoStartWarningMessage(); as message) {
+						<div class="autostart-unreachable-section fade-in">
+							<div class="warning-card">
+								<mat-icon class="warning-icon">warning</mat-icon>
+								<div class="warning-content">
+									<p class="warning-title">
+										{{ 'ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_UNREACHABLE_TITLE' | translate }}
+									</p>
+									<p class="warning-text">{{ message }}</p>
+								</div>
+							</div>
+						</div>
+					}
+				</section>
+
+				<!-- ── Layout ───────────────────────────────── -->
+				<section class="settings-section fade-in" id="recording-layout-section">
+					<div class="section-header">
+						<mat-icon class="section-icon">dashboard</mat-icon>
+						<span class="section-label">{{ 'ROOMS.WIZARD.RECORDING_LAYOUT.TITLE' | translate }}</span>
+					</div>
+
+					<div class="layout-options" role="radiogroup">
+						@for (option of layoutOptions(); track option.value) {
+							<label class="layout-tile" [class.selected]="option.value === selectedLayout">
+								<input
+									type="radio"
+									class="layout-radio"
+									formControlName="layout"
+									[value]="option.value"
+								/>
+								<img class="layout-image" [src]="option.imageUrl" alt="" />
+								<span class="layout-title">{{ option.title }}</span>
+								<span class="layout-description">{{ option.description }}</span>
+							</label>
+						}
+					</div>
+				</section>
+
+				<!-- ── Sharing ──────────────────────────────── -->
+				<section class="settings-section fade-in" id="recording-sharing-section">
+					<div class="section-header">
+						<mat-icon class="section-icon">share</mat-icon>
+						<span class="section-label">{{ 'ROOMS.WIZARD.RECORDING.SHARING' | translate }}</span>
+					</div>
+
+					<div class="feature-row" id="recording-anonymous-access">
+						<div class="feature-info">
+							<mat-icon class="feature-icon">no_accounts</mat-icon>
+							<div class="feature-text">
+								<span class="feature-label">{{
+									'ROOMS.WIZARD.RECORDING.ANONYMOUS_ACCESS_LABEL' | translate
+								}}</span>
+								<span class="feature-description">{{
+									'ROOMS.WIZARD.RECORDING.ANONYMOUS_ACCESS_DESC' | translate
+								}}</span>
+							</div>
+						</div>
+						<mat-slide-toggle
+							formControlName="anonymousRecordingEnabled"
+							color="primary"
+							class="feature-toggle"
+						/>
+					</div>
+				</section>
 			}
 		</form>
 	</main>

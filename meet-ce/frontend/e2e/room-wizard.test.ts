@@ -1,3 +1,4 @@
+import { MeetRecordingAutoStartMode, MeetRecordingLayout } from '@openvidu-meet/typings';
 import { expect, test, type Page } from '@playwright/test';
 import { authenticate, createReadyUser, type ReadyUser } from './helpers/auth.helper';
 import {
@@ -14,17 +15,16 @@ import {
  *
  * Verifies that role permissions which only make sense when a room feature is enabled become
  * disabled (and cannot be toggled on) in the "Room Access" step when that feature is turned off in
- * the "Meeting Features" step — and are restored when the feature is turned back on ("keep as-is"):
+ * the "Meeting" step — and are restored when the feature is turned back on ("keep as-is"):
  *   - Chat feature off        -> chatRead / chatWrite disabled for both roles.
  *   - Virtual background off  -> mediaChangeVirtualBackground disabled for both roles.
  *
- * The wizard's step order is Room Details -> Room Access -> Meeting Features, so these specs visit
- * Room Access first, hop forward to Meeting Features to set a toggle, then step back to Room Access
- * to assert on the role-permission switches.
+ * The wizard's step order is Room Details -> Meeting -> Recording -> Room Access, so these specs set
+ * a toggle in Meeting, then jump forward to Room Access to assert on the role-permission switches.
  *
  * The round-trip specs at the end then finish the wizard — in create and in edit mode — and read the
- * room back through the API, which is what proves a permission switched off in the UI actually
- * reaches the stored role instead of being dropped on the way.
+ * room back through the API, which is what proves a value set in the UI actually reaches the stored
+ * room instead of being dropped on the way.
  */
 test.describe('Room wizard E2E Tests', () => {
 	const createdUserIds: string[] = [];
@@ -51,20 +51,35 @@ test.describe('Room wizard E2E Tests', () => {
 	// ── Wizard navigation helpers ──────────────────────────────────────────────
 
 	/**
-	 * Opens the create wizard, switches to advanced (multi-step) mode and advances to the
-	 * "Meeting Features" step (Room Details -> Room Access -> Meeting Features).
+	 * Clicks a step in the stepper header. Clicking the header instead of walking "next" avoids racing
+	 * the navigation bar, which is re-rendered on every step change.
 	 */
-	const openWizardAtFeatures = async (page: Page): Promise<void> => {
+	const gotoStep = async (page: Page, index: number): Promise<void> => {
+		await page.locator('.wizard-stepper .mat-step-header').nth(index).click();
+	};
+
+	/** Opens the create wizard in advanced (multi-step) mode, on the "Room Details" step. */
+	const openAdvancedWizard = async (page: Page): Promise<void> => {
 		await page.goto(`${MEET_BASE_URL}/rooms/new`, { waitUntil: 'domcontentloaded' });
-		await page.locator('#wizard-advanced-mode-btn').click(); // basic -> advanced (Room Details)
-		await page.locator('#wizard-next-btn').click(); // Room Details -> Room Access
-		await page.locator('#wizard-next-btn').click(); // Room Access -> Meeting Features
+		await page.locator('#wizard-advanced-mode-btn').click();
+	};
+
+	/** Moves to the "Meeting" step, the second one. */
+	const gotoMeeting = async (page: Page): Promise<void> => {
+		await gotoStep(page, 1);
 		await expect(page.locator('#room-feature-chat')).toBeVisible();
 	};
 
-	/** Steps back from "Meeting Features" to the "Room Access" step. */
+	/** Opens the create wizard on the "Meeting" step. */
+	const openWizardAtMeeting = async (page: Page): Promise<void> => {
+		await openAdvancedWizard(page);
+		await gotoMeeting(page);
+	};
+
+	/** Moves to the "Room Access" step, the last one, where the create/update button lives. */
 	const gotoRoomAccess = async (page: Page): Promise<void> => {
-		await page.locator('#wizard-previous-btn').click();
+		await page.locator('.wizard-stepper .mat-step-header').last().click();
+		await expect(page.locator('#wizard-finish-btn')).toBeVisible();
 		// The role-permission toggles live in (collapsed) expansion panels, so they are attached but
 		// not visible — waiting for one confirms the Room Access step has rendered.
 		await expect(page.locator('#moderator-permission-meetingJoin')).toBeAttached();
@@ -97,15 +112,6 @@ test.describe('Room wizard E2E Tests', () => {
 		await expect(toggle).toHaveAttribute('aria-checked', String(enabled));
 	};
 
-	/**
-	 * Jumps to the wizard's last step, where the create/update button lives. Clicking the stepper header
-	 * instead of walking "next" avoids racing the navigation bar, which is re-rendered on every step change.
-	 */
-	const gotoLastStep = async (page: Page): Promise<void> => {
-		await page.locator('.wizard-stepper .mat-step-header').last().click();
-		await expect(page.locator('#wizard-finish-btn')).toBeVisible();
-	};
-
 	/** Sets a room-feature toggle to the desired state, clicking only when it needs to change. */
 	const setFeature = async (page: Page, featureId: string, enabled: boolean): Promise<void> => {
 		const toggle = page.locator(`#${featureId} button`);
@@ -121,7 +127,7 @@ test.describe('Room wizard E2E Tests', () => {
 	// ── Tests ───────────────────────────────────────────────────────────────────
 
 	test('features enabled: dependent role permissions are interactive', async ({ page }) => {
-		await openWizardAtFeatures(page);
+		await openWizardAtMeeting(page);
 		// Chat and virtual background are enabled by default.
 		await gotoRoomAccess(page);
 
@@ -133,7 +139,7 @@ test.describe('Room wizard E2E Tests', () => {
 	});
 
 	test('chat disabled: chat role permissions are disabled and cannot be enabled', async ({ page }) => {
-		await openWizardAtFeatures(page);
+		await openWizardAtMeeting(page);
 		await setFeature(page, 'room-feature-chat', false);
 		await gotoRoomAccess(page);
 
@@ -146,7 +152,7 @@ test.describe('Room wizard E2E Tests', () => {
 	});
 
 	test('virtual background disabled: its role permission is disabled', async ({ page }) => {
-		await openWizardAtFeatures(page);
+		await openWizardAtMeeting(page);
 		await setFeature(page, 'room-feature-virtual-background', false);
 		await gotoRoomAccess(page);
 
@@ -170,7 +176,7 @@ test.describe('Room wizard E2E Tests', () => {
 			'recordingDelete'
 		] as const;
 
-		await openWizardAtFeatures(page);
+		await openWizardAtMeeting(page);
 		await gotoRoomAccess(page);
 
 		for (const role of ROLES) {
@@ -181,21 +187,32 @@ test.describe('Room wizard E2E Tests', () => {
 	});
 
 	test('re-enabling a feature restores its role permissions', async ({ page }) => {
-		await openWizardAtFeatures(page);
+		await openWizardAtMeeting(page);
 		await setFeature(page, 'room-feature-chat', false);
 
 		await gotoRoomAccess(page);
 		await expect(permissionSwitch(page, 'moderator', 'chatWrite')).toBeDisabled();
 		await expect(permissionSwitch(page, 'speaker', 'chatWrite')).toBeDisabled();
 
-		// Forward to Meeting Features again and turn chat on.
-		await page.locator('#wizard-next-btn').click();
-		await expect(page.locator('#room-feature-chat')).toBeVisible();
+		// Back to Meeting and turn chat on.
+		await gotoMeeting(page);
 		await setFeature(page, 'room-feature-chat', true);
 
 		await gotoRoomAccess(page);
 		await expect(permissionSwitch(page, 'moderator', 'chatWrite')).toBeEnabled();
 		await expect(permissionSwitch(page, 'speaker', 'chatWrite')).toBeEnabled();
+	});
+
+	test('every step opens at its top, wherever the previous one was scrolled to', async ({ page }) => {
+		await openWizardAtMeeting(page);
+		const card = page.locator('section.step-content');
+		await card.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+		await expect.poll(() => card.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+
+		await gotoStep(page, 2);
+		await expect(page.locator('#recording-enabled')).toBeVisible();
+
+		expect(await card.evaluate((el) => el.scrollTop)).toBe(0);
 	});
 
 	// ── Role permissions round-trip (wizard -> API) ─────────────────────────────
@@ -205,10 +222,9 @@ test.describe('Room wizard E2E Tests', () => {
 	const FLIPPED_PERMISSIONS = ['participantMute', 'recordingControl'] as const;
 
 	test('create mode: role permissions switched off reach the created room', async ({ page }) => {
-		await page.goto(`${MEET_BASE_URL}/rooms/new`, { waitUntil: 'domcontentloaded' });
-		await page.locator('#wizard-advanced-mode-btn').click();
+		await openAdvancedWizard(page);
 		await page.locator('input[formcontrolname="roomName"]').fill('wizard-role-create');
-		await page.locator('#wizard-next-btn').click(); // Room Details -> Room Access
+		await gotoRoomAccess(page);
 
 		await openRolePermissions(page, 'moderator');
 
@@ -216,7 +232,6 @@ test.describe('Room wizard E2E Tests', () => {
 			await setPermission(page, 'moderator', key, false);
 		}
 
-		await gotoLastStep(page);
 		await page.locator('#wizard-finish-btn').click();
 
 		// Creating redirects to the new room's lobby, which is where its id becomes readable.
@@ -236,13 +251,13 @@ test.describe('Room wizard E2E Tests', () => {
 		createdRoomIds.push(room.roomId);
 
 		await page.goto(`${MEET_BASE_URL}/rooms/${room.roomId}/edit`, { waitUntil: 'domcontentloaded' });
+		await gotoRoomAccess(page);
 		await openRolePermissions(page, 'moderator');
 
 		for (const key of FLIPPED_PERMISSIONS) {
 			await setPermission(page, 'moderator', key, false);
 		}
 
-		await gotoLastStep(page);
 		await page.locator('#wizard-finish-btn').click();
 		await page.waitForURL(`**/rooms/${room.roomId}`);
 
@@ -256,16 +271,14 @@ test.describe('Room wizard E2E Tests', () => {
 	// ── Initial media state round-trip (wizard -> API) ──────────────────────────
 
 	test('create mode: initial media toggled off reaches the created room', async ({ page }) => {
-		await page.goto(`${MEET_BASE_URL}/rooms/new`, { waitUntil: 'domcontentloaded' });
-		await page.locator('#wizard-advanced-mode-btn').click();
+		await openAdvancedWizard(page);
 		await page.locator('input[formcontrolname="roomName"]').fill('wizard-initial-media-create');
-		await page.locator('#wizard-next-btn').click(); // Room Details -> Room Access
-		await page.locator('#wizard-next-btn').click(); // Room Access -> Meeting Features
+		await gotoMeeting(page);
 
 		await setFeature(page, 'room-feature-initial-audio', false);
 		await setFeature(page, 'room-feature-initial-video', false);
 
-		await gotoLastStep(page);
+		await gotoRoomAccess(page);
 		await page.locator('#wizard-finish-btn').click();
 
 		await page.waitForURL(/\/room\/[^/?]+/);
@@ -285,8 +298,8 @@ test.describe('Room wizard E2E Tests', () => {
 		});
 		createdRoomIds.push(room.roomId);
 
+		// An edited room opens on the Meeting step.
 		await page.goto(`${MEET_BASE_URL}/rooms/${room.roomId}/edit`, { waitUntil: 'domcontentloaded' });
-		await page.locator('#wizard-next-btn').click(); // Room Access -> Meeting Features
 
 		await expect(page.locator('#room-feature-initial-audio button')).toHaveAttribute('aria-checked', 'false');
 		await expect(page.locator('#room-feature-initial-video button')).toHaveAttribute('aria-checked', 'false');
@@ -294,7 +307,7 @@ test.describe('Room wizard E2E Tests', () => {
 		await setFeature(page, 'room-feature-initial-audio', true);
 		await setFeature(page, 'room-feature-initial-video', true);
 
-		await gotoLastStep(page);
+		await gotoRoomAccess(page);
 		await page.locator('#wizard-finish-btn').click();
 		await page.waitForURL(`**/rooms/${room.roomId}`);
 
@@ -302,5 +315,30 @@ test.describe('Room wizard E2E Tests', () => {
 
 		expect(config.initialAudioActive).toBe(true);
 		expect(config.initialVideoActive).toBe(true);
+	});
+
+	// ── Recording round-trip (wizard -> API) ────────────────────────────────────
+
+	test('create mode: the recording trigger and layout reach the created room', async ({ page }) => {
+		await openAdvancedWizard(page);
+		await page.locator('input[formcontrolname="roomName"]').fill('wizard-recording-create');
+		await gotoStep(page, 2);
+
+		// Trigger and layout are sections of the Recording step; their options keep a fixed order.
+		await page.locator('#recording-trigger-section mat-select').click();
+		await page.locator('mat-option').nth(3).click(); // A moderator joins
+		await page.locator('#recording-layout-section .layout-tile').nth(1).click(); // Speaker
+
+		await gotoRoomAccess(page);
+		await page.locator('#wizard-finish-btn').click();
+
+		await page.waitForURL(/\/room\/[^/?]+/);
+		const roomId = /\/room\/([^/?]+)/.exec(page.url())![1];
+		createdRoomIds.push(roomId);
+
+		const { recording } = await getRoomConfig(roomId);
+
+		expect(recording.autoStart).toBe(MeetRecordingAutoStartMode.WHEN_MODERATOR_JOINS);
+		expect(recording.layout).toBe(MeetRecordingLayout.SPEAKER);
 	});
 });

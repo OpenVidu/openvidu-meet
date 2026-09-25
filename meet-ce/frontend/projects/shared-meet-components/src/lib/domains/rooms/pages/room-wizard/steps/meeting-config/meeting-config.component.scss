@@ -1,0 +1,89 @@
+@use '_design-tokens.scss';
+
+.meeting-config-step {
+	@include design-tokens.ov-page-content;
+	@include design-tokens.ov-container;
+
+	justify-content: center;
+
+	.step-header {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--ov-meet-spacing-sm);
+		margin-bottom: var(--ov-meet-spacing-lg);
+
+		.step-icon {
+			@include design-tokens.ov-icon(xl);
+			color: var(--ov-meet-icon-settings);
+			margin-top: var(--ov-meet-spacing-xs);
+		}
+
+		.step-title-group {
+			flex: 1;
+
+			.step-title {
+				margin: 0 0 var(--ov-meet-spacing-sm) 0;
+				font-size: var(--ov-meet-font-size-xl);
+				font-weight: var(--ov-meet-font-weight-medium);
+				color: var(--ov-meet-text-primary);
+				line-height: var(--ov-meet-line-height-tight);
+			}
+
+			.step-description {
+				margin: 0;
+				font-size: var(--ov-meet-font-size-md);
+				color: var(--ov-meet-text-secondary);
+				line-height: var(--ov-meet-line-height-normal);
+			}
+		}
+	}
+
+	.step-content {
+		margin-bottom: var(--ov-meet-spacing-md);
+
+		.config-form {
+			display: flex;
+			flex-direction: column;
+			gap: var(--ov-meet-spacing-lg);
+		}
+	}
+
+	@include design-tokens.ov-settings-rows;
+
+	.limit-field {
+		flex-shrink: 0;
+		width: 150px;
+	}
+
+	.limit-error {
+		margin: 0;
+		padding: 0 var(--ov-meet-spacing-md);
+		font-size: var(--ov-meet-font-size-sm);
+		color: var(--ov-meet-color-error);
+	}
+
+	.e2ee-info-section {
+		@include design-tokens.ov-warning-panel;
+	}
+
+	.autostart-unreachable-section {
+		@include design-tokens.ov-warning-panel;
+	}
+}
+
+// Responsive design
+@media (max-width: 768px) {
+	.meeting-config-step {
+		.step-header {
+			.step-title-group {
+				.step-title {
+					font-size: var(--ov-meet-font-size-lg);
+				}
+
+				.step-description {
+					font-size: var(--ov-meet-font-size-sm);
+				}
+			}
+		}
+	}
+}

@@ -31,7 +31,7 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
 
 /**
  * Role permissions that only make sense when a given room feature is enabled. When the feature is
- * turned off in the Meeting Features step, these permissions are force-disabled in the Role permissions
+ * turned off in the Meeting step, these permissions are force-disabled in the Role permissions
  * section — they would have no effect in a room without that feature, and the user must not be able to
  * grant them. Angular's native enable()/disable() preserves each control's value, so re-enabling the
  * feature restores the permission exactly as the user left it ("keep as-is").
@@ -92,7 +92,7 @@ export class RoomAccessComponent implements OnInit {
 
 		// Disable role permissions whose room feature is off before wiring valueChanges, so the
 		// disable() calls (emitEvent: false) don't trigger a save. The feature flags can't change while
-		// this step is mounted — the Meeting Features step is a sibling @switch case that isn't rendered at
+		// this step is mounted — the Meeting step is a sibling @switch case that isn't rendered at
 		// the same time — so applying the constraint once here is enough.
 		this.applyFeatureConstraints();
 
@@ -115,7 +115,7 @@ export class RoomAccessComponent implements OnInit {
 
 	/**
 	 * Enables/disables each role's feature-dependent permission controls to match the room features
-	 * selected in the previous step. Uses the reactive form's own enable()/disable() so the control
+	 * selected in the Meeting step. Uses the reactive form's own enable()/disable() so the control
 	 * value is preserved across toggles and the bound mat-slide-toggle greys out automatically.
 	 */
 	private applyFeatureConstraints(): void {

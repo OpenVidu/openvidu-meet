@@ -128,7 +128,11 @@ const ALL_SCENES = [
 	// panel (Mosaic / Smart Mosaic + visible-participants slider); `layout-grid` shows the adaptive
 	// grid with 6 participants (4 visible remotes + a "+1" hidden badge) and the participants panel.
 	{ id: 'layout-settings', live: true, shots: [{ domain: 'meeting', base: 'layout-settings' }] },
-	{ id: 'layout-grid', live: true, shots: [{ domain: 'meeting', base: 'layout-grid' }] }
+	{ id: 'layout-grid', live: true, shots: [{ domain: 'meeting', base: 'layout-grid' }] },
+
+	// Duration limit (live, room with `config.maxDurationMinutes`): the meeting enters its last five
+	// minutes, so the status rail counts down and the pinned "Meeting ending soon" notice is up.
+	{ id: 'meeting-ending-soon', live: true, shots: [{ domain: 'meeting', base: 'meeting-ending-soon' }] }
 ];
 
 if (has('list')) {
@@ -157,11 +161,11 @@ async function listRooms(token) {
 	if (!res.ok) throw new Error(`listRooms failed: ${res.status}`);
 	return (await res.json()).rooms ?? [];
 }
-async function createRoom(token, roomName) {
+async function createRoom(token, roomName, config) {
 	const res = await fetch(`${API}/rooms`, {
 		method: 'POST',
 		headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-		body: JSON.stringify({ roomName })
+		body: JSON.stringify({ roomName, config })
 	});
 	if (!res.ok) throw new Error(`createRoom('${roomName}') failed: ${res.status} ${await res.text()}`);
 	return await res.json();
@@ -432,16 +436,16 @@ async function captureE2eeWrongKey(token, shot) {
 	}
 }
 
-// Shared driver for the smart-layout scenes: seeds a plain room, joins `count` participants (each a
-// distinct person from the roster, in its own browser), runs `afterJoin(viewer)` to set up the
-// shot, then captures the first participant's view per theme.
-async function captureLayoutScene(token, shot, { count, afterJoin }) {
+// Shared driver for the plain-room live scenes: seeds a room (with `config`, if given), joins `count`
+// participants (each a distinct person from the roster, in its own browser), runs `afterJoin(viewer)`
+// to set up the shot, then captures the first participant's view per theme.
+async function captureLayoutScene(token, shot, { count, config, afterJoin }) {
 	const roster = rosterFor(count);
 	const ATTEMPTS = 2; // joining several participants is timing-sensitive; one retry absorbs races
 	for (const theme of THEMES) {
 		for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
 			console.log(`[${theme}] ${shot.base} (live, ${count} participants)${attempt > 1 ? ` — retry ${attempt}` : ''}`);
-			const room = await createRoom(token, 'Team Meeting');
+			const room = await createRoom(token, 'Team Meeting', config);
 			const url = room.access.anonymous.moderator.url;
 			const browsers = [];
 			try {
@@ -501,6 +505,18 @@ const captureLayoutGrid = (token, shot) =>
 			await viewer.waitForSelector('ov-hidden-participants-indicator', { state: 'visible', timeout: TIMEOUT });
 			await viewer.locator('#participants-panel-btn').click();
 			await viewer.waitForSelector('ov-participants-panel', { state: 'visible', timeout: TIMEOUT });
+		}
+	});
+
+// A six-minute meeting enters its last five minutes one minute after it starts, when the notice
+// appears for everyone already in it. The notice stays 12 s, so the shot is taken as soon as it shows.
+const captureMeetingEndingSoon = (token, shot) =>
+	captureLayoutScene(token, shot, {
+		count: 3,
+		config: { maxDurationMinutes: 6 },
+		afterJoin: async (viewer) => {
+			await viewer.getByText('Meeting ending soon').waitFor({ state: 'visible', timeout: 90_000 });
+			await viewer.waitForSelector('.ending-soon-chip', { state: 'visible', timeout: TIMEOUT });
 		}
 	});
 
@@ -566,7 +582,8 @@ try {
 		const liveRunners = {
 			'e2ee-wrong-key': captureE2eeWrongKey,
 			'layout-settings': captureLayoutSettings,
-			'layout-grid': captureLayoutGrid
+			'layout-grid': captureLayoutGrid,
+			'meeting-ending-soon': captureMeetingEndingSoon
 		};
 		for (const scene of liveScenes) {
 			const run = liveRunners[scene.id];

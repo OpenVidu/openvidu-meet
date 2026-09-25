@@ -1,39 +1,39 @@
-<div class="room-config-step fade-in">
+<div class="meeting-config-step fade-in">
 	<!-- Header Section -->
 	<header class="step-header">
 		<mat-icon class="ov-room-icon step-icon">video_chat</mat-icon>
 		<div class="step-title-group">
-			<h3 class="step-title">{{ 'ROOMS.WIZARD.FEATURES.TITLE' | translate }}</h3>
-			<p class="step-description">{{ 'ROOMS.WIZARD.FEATURES.DESCRIPTION' | translate }}</p>
+			<h3 class="step-title">{{ 'ROOMS.WIZARD.MEETING.TITLE' | translate }}</h3>
+			<p class="step-description">{{ 'ROOMS.WIZARD.MEETING.DESCRIPTION' | translate }}</p>
 		</div>
 	</header>
 
 	<!-- Form Section -->
 	<main class="step-content">
-		<form [formGroup]="roomConfigForm" class="config-form">
-			<!-- ── Limits ───────────────────────────────── -->
-			<div class="feature-category">
-				<div class="category-header">
-					<mat-icon class="category-icon">timer</mat-icon>
-					<span class="category-label">{{ 'ROOMS.WIZARD.FEATURES.LIMITS' | translate }}</span>
+		<form [formGroup]="meetingForm" class="config-form">
+			<!-- ── Configuration ────────────────────────── -->
+			<div class="settings-section">
+				<div class="section-header">
+					<mat-icon class="section-icon">tune</mat-icon>
+					<span class="section-label">{{ 'ROOMS.WIZARD.MEETING.CONFIGURATION' | translate }}</span>
 				</div>
 				<div class="config-grid">
 					<!-- Participant limit -->
 					<div class="feature-row-wrapper">
-						<div class="feature-row limit-row" id="room-feature-max-participants">
+						<div class="feature-row field-row" id="room-feature-max-participants">
 							<div class="feature-info">
 								<mat-icon class="feature-icon">group</mat-icon>
 								<div class="feature-text">
 									<span class="feature-label">{{
-										'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS' | translate
+										'ROOMS.WIZARD.MEETING.MAX_PARTICIPANTS' | translate
 									}}</span>
 									<span class="feature-description">{{
-										'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_DESC' | translate
+										'ROOMS.WIZARD.MEETING.MAX_PARTICIPANTS_DESC' | translate
 									}}</span>
 								</div>
 							</div>
 							<mat-form-field appearance="outline" class="limit-field" subscriptSizing="dynamic">
-								<mat-label>{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_LABEL' | translate }}</mat-label>
+								<mat-label>{{ 'ROOMS.WIZARD.MEETING.MAX_PARTICIPANTS_LABEL' | translate }}</mat-label>
 								<input
 									matInput
 									type="number"
@@ -41,25 +41,25 @@
 									[max]="maxParticipantsLimit"
 									step="1"
 									formControlName="maxParticipants"
-									[placeholder]="'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_PLACEHOLDER' | translate"
+									[placeholder]="'ROOMS.WIZARD.MEETING.MAX_PARTICIPANTS_PLACEHOLDER' | translate"
 									[attr.aria-describedby]="
-										roomConfigForm.controls.maxParticipants.invalid
+										meetingForm.controls.maxParticipants.invalid
 											? 'max-participants-error'
 											: null
 									"
 								/>
 							</mat-form-field>
 						</div>
-						@if (roomConfigForm.controls.maxParticipants.invalid) {
+						@if (meetingForm.controls.maxParticipants.invalid) {
 							<p class="limit-error" id="max-participants-error" role="alert">
-								@if (roomConfigForm.controls.maxParticipants.hasError('min')) {
-									{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_TOO_LOW' | translate }}
-								} @else if (roomConfigForm.controls.maxParticipants.hasError('max')) {
-									{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_TOO_HIGH_PREFIX' | translate
+								@if (meetingForm.controls.maxParticipants.hasError('min')) {
+									{{ 'ROOMS.WIZARD.MEETING.MAX_PARTICIPANTS_TOO_LOW' | translate }}
+								} @else if (meetingForm.controls.maxParticipants.hasError('max')) {
+									{{ 'ROOMS.WIZARD.MEETING.MAX_PARTICIPANTS_TOO_HIGH_PREFIX' | translate
 									}}{{ maxParticipantsLimit
-									}}{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_TOO_HIGH_SUFFIX' | translate }}
+									}}{{ 'ROOMS.WIZARD.MEETING.MAX_PARTICIPANTS_TOO_HIGH_SUFFIX' | translate }}
 								} @else {
-									{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_INVALID' | translate }}
+									{{ 'ROOMS.WIZARD.MEETING.MAX_PARTICIPANTS_INVALID' | translate }}
 								}
 							</p>
 						}
@@ -81,20 +81,20 @@
 
 					<!-- Meeting duration limit -->
 					<div class="feature-row-wrapper">
-						<div class="feature-row limit-row" id="room-feature-max-duration">
+						<div class="feature-row field-row" id="room-feature-max-duration">
 							<div class="feature-info">
 								<mat-icon class="feature-icon">hourglass_bottom</mat-icon>
 								<div class="feature-text">
 									<span class="feature-label">{{
-										'ROOMS.WIZARD.FEATURES.MAX_DURATION' | translate
+										'ROOMS.WIZARD.MEETING.MAX_DURATION' | translate
 									}}</span>
 									<span class="feature-description">{{
-										'ROOMS.WIZARD.FEATURES.MAX_DURATION_DESC' | translate
+										'ROOMS.WIZARD.MEETING.MAX_DURATION_DESC' | translate
 									}}</span>
 								</div>
 							</div>
 							<mat-form-field appearance="outline" class="limit-field" subscriptSizing="dynamic">
-								<mat-label>{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_LABEL' | translate }}</mat-label>
+								<mat-label>{{ 'ROOMS.WIZARD.MEETING.MAX_DURATION_LABEL' | translate }}</mat-label>
 								<input
 									matInput
 									type="number"
@@ -102,50 +102,41 @@
 									[max]="maxDurationMinutesLimit"
 									step="1"
 									formControlName="maxDurationMinutes"
-									[placeholder]="'ROOMS.WIZARD.FEATURES.MAX_DURATION_PLACEHOLDER' | translate"
+									[placeholder]="'ROOMS.WIZARD.MEETING.MAX_DURATION_PLACEHOLDER' | translate"
 									[attr.aria-describedby]="
-										roomConfigForm.controls.maxDurationMinutes.invalid
+										meetingForm.controls.maxDurationMinutes.invalid
 											? 'max-duration-error'
 											: null
 									"
 								/>
 							</mat-form-field>
 						</div>
-						@if (roomConfigForm.controls.maxDurationMinutes.invalid) {
+						@if (meetingForm.controls.maxDurationMinutes.invalid) {
 							<p class="limit-error" id="max-duration-error" role="alert">
-								@if (roomConfigForm.controls.maxDurationMinutes.hasError('min')) {
-									{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_TOO_LOW' | translate }}
-								} @else if (roomConfigForm.controls.maxDurationMinutes.hasError('max')) {
-									{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_TOO_HIGH_PREFIX' | translate
+								@if (meetingForm.controls.maxDurationMinutes.hasError('min')) {
+									{{ 'ROOMS.WIZARD.MEETING.MAX_DURATION_TOO_LOW' | translate }}
+								} @else if (meetingForm.controls.maxDurationMinutes.hasError('max')) {
+									{{ 'ROOMS.WIZARD.MEETING.MAX_DURATION_TOO_HIGH_PREFIX' | translate
 									}}{{ maxDurationMinutesLimit
-									}}{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_TOO_HIGH_SUFFIX' | translate }}
+									}}{{ 'ROOMS.WIZARD.MEETING.MAX_DURATION_TOO_HIGH_SUFFIX' | translate }}
 								} @else {
-									{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_INVALID' | translate }}
+									{{ 'ROOMS.WIZARD.MEETING.MAX_DURATION_INVALID' | translate }}
 								}
 							</p>
 						}
 					</div>
-				</div>
-			</div>
 
-			<!-- ── Devices ──────────────────────────────── -->
-			<div class="feature-category">
-				<div class="category-header">
-					<mat-icon class="category-icon">perm_camera_mic</mat-icon>
-					<span class="category-label">{{ 'ROOMS.WIZARD.FEATURES.DEVICES' | translate }}</span>
-				</div>
-				<div class="config-grid">
 					<!-- Initial microphone state -->
 					<div class="feature-row" id="room-feature-initial-audio">
 						<div class="feature-info">
 							<mat-icon class="feature-icon">mic</mat-icon>
 							<div class="feature-text">
 								<span class="feature-label">{{
-									'ROOMS.WIZARD.FEATURES.INITIAL_AUDIO' | translate
+									'ROOMS.WIZARD.MEETING.INITIAL_AUDIO' | translate
 								}}</span>
 								<span class="feature-description">
-									{{ 'ROOMS.WIZARD.FEATURES.INITIAL_AUDIO_DESC' | translate }}
-									<em>{{ 'ROOMS.WIZARD.FEATURES.INITIAL_AUDIO_NOTE' | translate }}</em>
+									{{ 'ROOMS.WIZARD.MEETING.INITIAL_AUDIO_DESC' | translate }}
+									<em>{{ 'ROOMS.WIZARD.MEETING.INITIAL_AUDIO_NOTE' | translate }}</em>
 								</span>
 							</div>
 						</div>
@@ -158,11 +149,11 @@
 							<mat-icon class="feature-icon">videocam</mat-icon>
 							<div class="feature-text">
 								<span class="feature-label">{{
-									'ROOMS.WIZARD.FEATURES.INITIAL_VIDEO' | translate
+									'ROOMS.WIZARD.MEETING.INITIAL_VIDEO' | translate
 								}}</span>
 								<span class="feature-description">
-									{{ 'ROOMS.WIZARD.FEATURES.INITIAL_VIDEO_DESC' | translate }}
-									<em>{{ 'ROOMS.WIZARD.FEATURES.INITIAL_VIDEO_NOTE' | translate }}</em>
+									{{ 'ROOMS.WIZARD.MEETING.INITIAL_VIDEO_DESC' | translate }}
+									<em>{{ 'ROOMS.WIZARD.MEETING.INITIAL_VIDEO_NOTE' | translate }}</em>
 								</span>
 							</div>
 						</div>
@@ -171,22 +162,22 @@
 				</div>
 			</div>
 
-			<!-- ── Security ─────────────────────────────── -->
-			<div class="feature-category">
-				<div class="category-header">
-					<mat-icon class="category-icon">security</mat-icon>
-					<span class="category-label">{{ 'ROOMS.WIZARD.FEATURES.SECURITY' | translate }}</span>
+			<!-- ── Features ─────────────────────────────── -->
+			<div class="settings-section">
+				<div class="section-header">
+					<mat-icon class="section-icon">auto_awesome</mat-icon>
+					<span class="section-label">{{ 'ROOMS.WIZARD.MEETING.FEATURES' | translate }}</span>
 				</div>
 				<div class="config-grid">
 					<!-- End-to-End Encryption -->
 					<div class="feature-row-wrapper">
-						<div class="feature-row e2ee-row">
+						<div class="feature-row" id="room-feature-e2ee">
 							<div class="feature-info">
 								<mat-icon class="feature-icon">lock</mat-icon>
 								<div class="feature-text">
-									<span class="feature-label">{{ 'ROOMS.WIZARD.FEATURES.E2EE' | translate }}</span>
+									<span class="feature-label">{{ 'ROOMS.WIZARD.MEETING.E2EE' | translate }}</span>
 									<span class="feature-description">{{
-										'ROOMS.WIZARD.FEATURES.E2EE_DESC' | translate
+										'ROOMS.WIZARD.MEETING.E2EE_DESC' | translate
 									}}</span>
 								</div>
 							</div>
@@ -203,26 +194,26 @@
 									<mat-icon class="warning-icon">warning</mat-icon>
 									<div class="warning-content">
 										<p class="warning-title">
-											{{ 'ROOMS.WIZARD.FEATURES.RESTRICTIONS' | translate }}
+											{{ 'ROOMS.WIZARD.MEETING.RESTRICTIONS' | translate }}
 										</p>
 										<ul class="restrictions-list">
 											<li>
 												{{
-													'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_ALL_PARTICIPANTS'
+													'ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_ALL_PARTICIPANTS'
 														| translate
 												}}<span class="restriction-detail">{{
-													'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_INCORRECT_KEY' | translate
+													'ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_INCORRECT_KEY' | translate
 												}}</span>
 											</li>
 											<li>
 												{{
-													'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_RECORDING_PREFIX'
+													'ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_RECORDING_PREFIX'
 														| translate
 												}}<b>{{
-													'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_RECORDING_BOLD' | translate
+													'ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_RECORDING_BOLD' | translate
 												}}</b
 												>{{
-													'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_RECORDING_SUFFIX'
+													'ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_RECORDING_SUFFIX'
 														| translate
 												}}
 											</li>
@@ -232,24 +223,15 @@
 							</div>
 						}
 					</div>
-				</div>
-			</div>
 
-			<!-- ── Communication ────────────────────────── -->
-			<div class="feature-category">
-				<div class="category-header">
-					<mat-icon class="category-icon">forum</mat-icon>
-					<span class="category-label">{{ 'ROOMS.WIZARD.FEATURES.COMMUNICATION' | translate }}</span>
-				</div>
-				<div class="config-grid">
 					<!-- Captions -->
-					<div class="feature-row">
+					<div class="feature-row" id="room-feature-captions">
 						<div class="feature-info">
 							<mat-icon class="feature-icon">closed_caption</mat-icon>
 							<div class="feature-text">
-								<span class="feature-label">{{ 'ROOMS.WIZARD.FEATURES.CAPTIONS' | translate }}</span>
+								<span class="feature-label">{{ 'ROOMS.WIZARD.MEETING.CAPTIONS' | translate }}</span>
 								<span class="feature-description">{{
-									'ROOMS.WIZARD.FEATURES.CAPTIONS_DESC' | translate
+									'ROOMS.WIZARD.MEETING.CAPTIONS_DESC' | translate
 								}}</span>
 							</div>
 						</div>
@@ -266,9 +248,9 @@
 						<div class="feature-info">
 							<mat-icon class="feature-icon">chat</mat-icon>
 							<div class="feature-text">
-								<span class="feature-label">{{ 'ROOMS.WIZARD.FEATURES.CHAT' | translate }}</span>
+								<span class="feature-label">{{ 'ROOMS.WIZARD.MEETING.CHAT' | translate }}</span>
 								<span class="feature-description">{{
-									'ROOMS.WIZARD.FEATURES.CHAT_DESC' | translate
+									'ROOMS.WIZARD.MEETING.CHAT_DESC' | translate
 								}}</span>
 							</div>
 						</div>
@@ -279,26 +261,17 @@
 							class="feature-toggle"
 						/>
 					</div>
-				</div>
-			</div>
 
-			<!-- ── Experience ───────────────────────────── -->
-			<div class="feature-category">
-				<div class="category-header">
-					<mat-icon class="category-icon">auto_awesome</mat-icon>
-					<span class="category-label">{{ 'ROOMS.WIZARD.FEATURES.EXPERIENCE' | translate }}</span>
-				</div>
-				<div class="config-grid">
 					<!-- Virtual Backgrounds -->
 					<div class="feature-row" id="room-feature-virtual-background">
 						<div class="feature-info">
 							<mat-icon class="feature-icon material-symbols-outlined">background_replace</mat-icon>
 							<div class="feature-text">
 								<span class="feature-label">{{
-									'ROOMS.WIZARD.FEATURES.VIRTUAL_BACKGROUNDS' | translate
+									'ROOMS.WIZARD.MEETING.VIRTUAL_BACKGROUNDS' | translate
 								}}</span>
 								<span class="feature-description">{{
-									'ROOMS.WIZARD.FEATURES.VIRTUAL_BACKGROUNDS_DESC' | translate
+									'ROOMS.WIZARD.MEETING.VIRTUAL_BACKGROUNDS_DESC' | translate
 								}}</span>
 							</div>
 						</div>

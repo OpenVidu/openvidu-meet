@@ -25,7 +25,7 @@
 			}
 
 			<main class="wizard-content">
-				<section class="step-content ov-surface">
+				<section #stepContent class="step-content ov-surface">
 					@if (isCreatingRoom()) {
 						<!-- Room Creation Loading State -->
 						<div class="room-creation-loading">
@@ -67,20 +67,14 @@
 								@case (WizardStepId.ROOM_DETAILS) {
 									<ov-room-details />
 								}
-								@case (WizardStepId.ROOM_CONFIG) {
-									<ov-room-config />
-								}
-								@case (WizardStepId.ROOM_ACCESS) {
-									<ov-room-access />
+								@case (WizardStepId.MEETING) {
+									<ov-meeting-config />
 								}
 								@case (WizardStepId.RECORDING) {
 									<ov-recording-config />
 								}
-								@case (WizardStepId.RECORDING_TRIGGER) {
-									<ov-recording-trigger />
-								}
-								@case (WizardStepId.RECORDING_LAYOUT) {
-									<ov-recording-layout />
+								@case (WizardStepId.ROOM_ACCESS) {
+									<ov-room-access />
 								}
 							}
 						}
