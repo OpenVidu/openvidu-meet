@@ -1,7 +1,8 @@
 # ====================================================
 # Stage 1: builder
 # ====================================================
-FROM node:24.15.0 AS builder
+# Runs on the build host's platform: its output is platform-independent, so it is built once for every target
+FROM --platform=$BUILDPLATFORM node:24.15.0 AS builder
 
 # Install pnpm, at the version the root package.json pins in `packageManager`
 RUN corepack enable
@@ -55,6 +56,7 @@ RUN pnpm install --frozen-lockfile && \
 # ====================================================
 # Stage 2: production dependencies
 # ====================================================
+# Runs on each target platform, so that native modules are installed for the platform they run on
 FROM node:24.15.0-alpine AS prod-deps
 
 # Install pnpm, at the version the root package.json pins in `packageManager`
