@@ -11,15 +11,19 @@ import {
 } from '@openvidu-meet/typings';
 import { Schema, model } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
+import type { BroadcastDestinationUrls } from '../broadcast.model.js';
 import type { DocumentOnlyField } from '../database.model.js';
 import type { SchemaMigratableDocument } from '../migration.model.js';
 import { MeetRoomMemberPermissionsSchema } from './room-member.schema.js';
 
 /**
  * Mongoose Document interface for rooms.
- * Extends the MeetRoom interface with schemaVersion for migration tracking.
+ * Extends the MeetRoom interface with schemaVersion for migration tracking and the real URL of each
+ * broadcast destination, which the domain model only carries redacted.
  */
-export interface MeetRoomDocument extends MeetRoom, SchemaMigratableDocument {}
+export interface MeetRoomDocument extends MeetRoom, SchemaMigratableDocument {
+	broadcastDestinationUrls: BroadcastDestinationUrls;
+}
 
 /**
  * Type for fields in MeetRoomDocument that are not present in MeetRoom domain model.
@@ -30,7 +34,10 @@ export type MeetRoomDocumentOnlyField = DocumentOnlyField<MeetRoomDocument, Meet
  * List of fields that exist only in the MeetRoomDocument and not in the MeetRoom domain model.
  * IMPORTANT: Update this list if new document-only fields are added to the MeetRoomDocument interface
  */
-export const MEET_ROOM_DOCUMENT_ONLY_FIELDS = ['schemaVersion'] as const satisfies readonly MeetRoomDocumentOnlyField[];
+export const MEET_ROOM_DOCUMENT_ONLY_FIELDS = [
+	'schemaVersion',
+	'broadcastDestinationUrls'
+] as const satisfies readonly MeetRoomDocumentOnlyField[];
 
 /**
  * Sub-schema for auto-deletion policy.
@@ -45,6 +52,45 @@ const MeetRoomAutoDeletionPolicySchema = new Schema(
 		withRecordings: {
 			type: String,
 			enum: Object.values(MeetRoomDeletionPolicyWithRecordings),
+			required: true
+		}
+	},
+	{ _id: false }
+);
+
+/**
+ * Sub-schema for a broadcast destination. Its `url` is the redacted one; the real URL lives in the
+ * document's `broadcastDestinationUrls`, by destination id.
+ */
+const MeetBroadcastDestinationSchema = new Schema(
+	{
+		id: {
+			type: String,
+			required: true
+		},
+		name: {
+			type: String,
+			required: true
+		},
+		url: {
+			type: String,
+			required: true
+		}
+	},
+	{ _id: false }
+);
+
+/**
+ * Sub-schema broadcast configuration.
+ */
+const MeetBroadcastConfigSchema = new Schema(
+	{
+		enabled: {
+			type: Boolean,
+			required: true
+		},
+		destinations: {
+			type: [MeetBroadcastDestinationSchema],
 			required: true
 		}
 	},
@@ -312,6 +358,10 @@ const MeetRoomConfigSchema = new Schema(
 			type: MeetRecordingConfigSchema,
 			required: true
 		},
+		broadcast: {
+			type: MeetBroadcastConfigSchema,
+			required: true
+		},
 		virtualBackground: {
 			type: MeetVirtualBackgroundConfigSchema,
 			required: true
@@ -346,6 +396,11 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>(
 			type: Number,
 			required: true,
 			default: INTERNAL_CONFIG.ROOM_SCHEMA_VERSION
+		},
+		broadcastDestinationUrls: {
+			type: Schema.Types.Mixed,
+			required: true,
+			default: () => ({})
 		},
 		roomId: {
 			type: String,

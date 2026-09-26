@@ -1,4 +1,6 @@
 import type {
+	MeetBroadcastInfo,
+	MeetBroadcastUpdatedPayload,
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantMuteOptions,
 	MeetParticipantPermissionsUpdatedPayload,
@@ -42,6 +44,30 @@ export class FrontendEventService {
 		};
 		const options: SendDataOptions = {
 			topic: MeetSignalType.MEET_RECORDING_UPDATED,
+			...(participantSid ? { destinationSids: [participantSid] } : {})
+		};
+
+		await this.sendSignal(roomId, payload, options);
+	}
+
+	/**
+	 * Sends a signal to notify participants about the latest live broadcast state in a room, or one
+	 * participant who just joined it.
+	 */
+	async sendBroadcastUpdatedSignal(
+		roomId: string,
+		broadcastInfo: MeetBroadcastInfo,
+		participantSid?: string
+	): Promise<void> {
+		this.logger.debug(`Sending broadcast updated signal for room '${roomId}'`);
+
+		const payload: MeetBroadcastUpdatedPayload = {
+			roomId,
+			broadcast: broadcastInfo,
+			timestamp: Date.now()
+		};
+		const options: SendDataOptions = {
+			topic: MeetSignalType.MEET_BROADCAST_UPDATED,
 			...(participantSid ? { destinationSids: [participantSid] } : {})
 		};
 

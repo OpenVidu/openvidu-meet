@@ -28,6 +28,7 @@ import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import { BroadcastHelper } from '../helpers/broadcast.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import {
 	errorDeletingRoom,
@@ -112,6 +113,9 @@ export class RoomService {
 			recordingPlay: true,
 			recordingDownload: true,
 			recordingDelete: true,
+			broadcastControl: true,
+			broadcastAddDestinations: true,
+			broadcastEditDestinations: true,
 			meetingJoin: true,
 			meetingRead: true,
 			roomShareAccessLinks: true,
@@ -137,6 +141,9 @@ export class RoomService {
 			recordingPlay: true,
 			recordingDownload: true,
 			recordingDelete: false,
+			broadcastControl: false,
+			broadcastAddDestinations: false,
+			broadcastEditDestinations: false,
 			meetingJoin: true,
 			meetingRead: true,
 			roomShareAccessLinks: false,
@@ -184,6 +191,10 @@ export class RoomService {
 			}
 		};
 
+		const roomConfig = config as MeetRoomConfig;
+		const broadcastDestinations = BroadcastHelper.reconcileRoomDestinations({}, roomConfig.broadcast.destinations);
+		roomConfig.broadcast.destinations = broadcastDestinations.destinations;
+
 		const now = Date.now();
 		const meetRoom: MeetRoom = {
 			roomId,
@@ -193,14 +204,14 @@ export class RoomService {
 			// maxParticipants,
 			autoDeletionDate,
 			autoDeletionPolicy: autoDeletionDate ? autoDeletionPolicy : undefined,
-			config: config as MeetRoomConfig,
+			config: roomConfig,
 			roles: roomRoles,
 			access: accessConfig,
 			status: MeetRoomStatus.OPEN,
 			rolesUpdatedAt: now,
 			meetingEndAction: MeetingEndAction.NONE
 		};
-		const createdRoom = await this.roomRepository.create(meetRoom);
+		const createdRoom = await this.roomRepository.create(meetRoom, broadcastDestinations.urls);
 		this.logger.info(`Room '${createdRoom.roomId}' created`);
 		return createdRoom;
 	}
@@ -256,14 +267,23 @@ export class RoomService {
 		// Merge existing config with new config (partial update)
 		const updatedConfig = merge({}, room.config, config);
 
-		// Disable recording if E2EE is enabled
-		if (updatedConfig.e2ee.enabled && updatedConfig.recording.enabled) {
+		// The destination list is replaced as a whole, never merged entry by entry, and its saved
+		// URLs are the only ones the room knows: a redacted URL sent back keeps the saved one.
+		const savedUrls = await this.roomRepository.findBroadcastDestinationUrls(roomId);
+		const broadcastDestinations = config.broadcast
+			? BroadcastHelper.reconcileRoomDestinations(savedUrls, config.broadcast.destinations)
+			: { destinations: room.config.broadcast.destinations, urls: savedUrls };
+		updatedConfig.broadcast.destinations = broadcastDestinations.destinations;
+
+		// E2EE excludes every server-side composition of the meeting
+		if (updatedConfig.e2ee.enabled) {
 			updatedConfig.recording.enabled = false;
+			updatedConfig.broadcast.enabled = false;
 		}
 
 		this.validateRecordingAutoStartIsReachable(updatedConfig);
 
-		return this.roomRepository.updatePartial(roomId, { config: updatedConfig });
+		return this.roomRepository.updateConfig(roomId, updatedConfig, broadcastDestinations.urls);
 	}
 
 	/**

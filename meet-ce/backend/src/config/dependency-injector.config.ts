@@ -38,6 +38,8 @@ import type { StorageKeyBuilder, StorageProvider } from '../services/storage/sto
 import { WebhookMigration } from '../migrations/webhooks-migration.js';
 import { AiAssistantService } from '../services/ai-assistant.service.js';
 import { AnalyticsService } from '../services/analytics.service.js';
+import { BroadcastStateService } from '../services/broadcast-state.service.js';
+import { BroadcastService } from '../services/broadcast.service.js';
 import { FrontendEventService } from '../services/frontend-event.service.js';
 import { LivekitWebhookService } from '../services/livekit-webhook.service.js';
 import { LiveKitService } from '../services/livekit.service.js';
@@ -153,6 +155,8 @@ const domainModule = new ContainerModule(({ bind }) => {
 	bind(LiveKitService).toSelf().inSingletonScope();
 	bind(RecordingAutoStartStateService).toSelf().inSingletonScope();
 	bind(RecordingService).toSelf().inSingletonScope();
+	bind(BroadcastStateService).toSelf().inSingletonScope();
+	bind(BroadcastService).toSelf().inSingletonScope();
 	bind(RoomService).toSelf().inSingletonScope();
 	bind(MeetingService).toSelf().inSingletonScope();
 	bind(ParticipantNameService).toSelf().inSingletonScope();
