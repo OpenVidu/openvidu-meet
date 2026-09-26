@@ -1,0 +1,33 @@
+description: Successfully started the live broadcast
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/meet-broadcast.yaml'
+        example:
+            broadcastId: 'EG_XYZ'
+            roomId: 'room-123'
+            roomName: 'room'
+            status: 'starting'
+            destinations:
+                - id: 'kX9pL2mQ7a'
+                  name: 'YouTube'
+                  url: 'rtmp://a.rtmp.youtube.com/live2/********'
+                  source: 'room'
+                  status: 'connecting'
+                - id: 'b3Nq8ZrT1c'
+                  name: 'Twitch'
+                  url: 'rtmp://live.twitch.tv/app/********'
+                  source: 'room'
+                  status: 'stopped'
+                - id: 'p7Rt4WqM2z'
+                  name: 'Own media server'
+                  url: 'rtmp://media.example.com/live/********'
+                  source: 'meeting'
+                  status: 'connecting'
+headers:
+    Location:
+        description: URL of the broadcast
+        schema:
+            type: string
+            format: uri
+        example: https://example.com/api/v1/meetings/room-123/broadcasts/EG_XYZ

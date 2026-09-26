@@ -24,8 +24,8 @@ tests work without a build. Real builds do not.
 
 | Path | Contents |
 | ---- | -------- |
-| `src/database/` | Persisted domain entities and their enums: `user.entity`, `room.entity`, `room-member.entity`, `recording.entity`, `api-key.entity`, `global-config.entity`, plus `room-config` and `room-member-permissions` |
-| `src/request/` | REST request bodies / query options (`room-request`, `room-member-request`, `user-request`) |
+| `src/database/` | Persisted domain entities and their enums: `user.entity`, `room.entity`, `room-member.entity`, `recording.entity`, `broadcast.entity`, `api-key.entity`, `global-config.entity`, plus `room-config` and `room-member-permissions` |
+| `src/request/` | REST request bodies / query options (`room-request`, `room-member-request`, `broadcast-request`, `user-request`) |
 | `src/response/` | REST response shapes and the generic query helpers: `field-projection`, `sort-pagination`, `extra-field`, `text-match`, per-entity `*-response` |
 | `src/embedded/` | The **public embedding API**: `attributes.ts`, `commands.ts`, `events.ts` |
 | `src/webhook.ts` | Outgoing webhook event types and payloads |

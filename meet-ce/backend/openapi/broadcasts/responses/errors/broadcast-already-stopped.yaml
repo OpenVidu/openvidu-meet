@@ -1,0 +1,9 @@
+description: >
+    Conflict: the broadcast is already stopped
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        example:
+            error: 'Broadcast Error'
+            message: "Broadcast 'EG_XYZ' is already stopped"

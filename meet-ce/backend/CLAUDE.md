@@ -33,7 +33,7 @@ code is organized.
 Two OpenAPI specs, two base paths (`src/config/internal-config.ts`):
 
 - **Public** `/api/v1`: the documented, supported, backwards-compatible surface: `users`, `rooms`
-  (incl. room members), `meetings`, `recordings`, `webhooks`. Docs at `<basePath>/api/v1/docs`.
+  (incl. room members), `meetings` (incl. broadcasts), `recordings`, `webhooks`. Docs at `<basePath>/api/v1/docs`.
 - **Internal** `/internal-api/v1`: consumed by our own frontend/webcomponent, no compatibility
   promise: `auth`, `api-keys`, `config`, `analytics`, `ai`, plus internal room/user
   routes. Docs only served in `NODE_ENV=development`.
@@ -83,11 +83,19 @@ conflicting pair, tokens normalized). The code rules behind it:
   recognize, so a missed entry reads as `false` instead of raising an error. It also needs a
   migration **step of its own** that re-runs the permission normalization (`room` v4→v5 and
   `roomMember` v2→v3 for `participantMute`, v5→v6 / v3→v4 for `participantHandLower`, v6→v7 / v4→v5
-  for `participantReactionSend`): documents already at the previous version are up to date as far as
-  the runner is concerned, so extending the previous step would never reach them.
+  for `participantReactionSend`, v7→v8 / v5→v6 for the broadcast permissions): documents already at
+  the previous version are up to date as far as the runner is concerned, so extending the previous
+  step would never reach them.
 - Decoding a token normalizes old names through the same `MeetPermissionsSchema` the API uses.
 
 The plan behind it: `../openvidu-competitors/meet-update-plan/api-naming-migration-phase.md`.
+
+Live broadcast keeps two kinds of state apart: the real destination URLs, stream key included, live
+only in the document-only room field `broadcastDestinationUrls` (stripped in
+`RoomRepository.toDomain()`); the domain and every API response carry the redacted URL, and
+`BroadcastHelper` matches LiveKit's own redacted `streamResults` against them. The running broadcast
+is a Redis record (`BroadcastStateService`, one per room, 24h TTL) mutated only under the room's
+broadcast lock, so any replica can answer the egress webhooks or a request.
 
 ## Cross-cutting infrastructure
 
@@ -108,9 +116,9 @@ The plan behind it: `../openvidu-competitors/meet-update-plan/api-naming-migrati
   resort and is registered after every route.
 - **Distributed coordination**: `MutexService` (redlock-universal via `models/redis-lock.model.ts`).
   Meet runs multi-replica (OpenVidu High Availability, see the `deployment` spec): any garbage
-  collection, migration or recording state transition must be lock-guarded. Lock TTLs cap at 24h.
-  Cross-replica state lives in Redis keys, never in process memory; there is no pub/sub channel
-  between replicas.
+  collection, migration, recording or broadcast state transition must be lock-guarded. Lock TTLs cap
+  at 24h. Cross-replica state lives in Redis keys, never in process memory; there is no pub/sub
+  channel between replicas.
 - **Scheduled tasks**: `TaskSchedulerService` + `*-scheduled-tasks.service.ts` (cron). Intervals,
   batch sizes and concurrency limits are all constants in `config/internal-config.ts`; reuse them
   instead of hardcoding numbers, and use `utils/concurrency.utils.ts` (`runConcurrently`) for fan-out.

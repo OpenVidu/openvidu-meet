@@ -5,6 +5,7 @@ required:
     - startDate
     - participantCount
     - recordingActive
+    - broadcastActive
 properties:
     roomId:
         type: string
@@ -40,6 +41,11 @@ properties:
         example: false
         description: >
             Whether a recording is currently in progress in the meeting.
+    broadcastActive:
+        type: boolean
+        example: false
+        description: >
+            Whether a live broadcast is currently in progress in the meeting.
     maxParticipants:
         type: number
         example: 10

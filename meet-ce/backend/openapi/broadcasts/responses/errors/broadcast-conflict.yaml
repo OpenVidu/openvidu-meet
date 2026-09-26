@@ -1,0 +1,10 @@
+description: >
+    Conflict: the meeting is already being broadcast, has no participants to broadcast, or its
+    broadcast is being changed by another request
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        example:
+            error: 'Broadcast Error'
+            message: "Room 'room-123' is already being broadcast"

@@ -2,9 +2,10 @@ MeetRoomConfig:
     type: object
     description: >
         Config of a room. A config update merges with the stored config, so an omitted top-level field keeps
-        its current value. The nested objects (`chat`, `recording`, `virtualBackground`, `e2ee`, `captions`,
-        `raiseHand`, `reactions`) merge field by field too, but each one requires its own `enabled` whenever it is
-        sent at all: a request that carries `recording` without `recording.enabled` is rejected with a `422`.
+        its current value. The nested objects (`chat`, `recording`, `broadcast`, `virtualBackground`, `e2ee`,
+        `captions`, `raiseHand`, `reactions`) merge field by field too, but each one requires its own `enabled`
+        whenever it is sent at all: a request that carries `recording` without `recording.enabled` is rejected
+        with a `422`.
     properties:
         maxParticipants:
             type: [integer, 'null']
@@ -58,6 +59,9 @@ MeetRoomConfig:
         recording:
             $ref: '#/MeetRecordingConfig'
             description: Config for recording the room.
+        broadcast:
+            $ref: '#/MeetBroadcastConfig'
+            description: Config for broadcasting the room's meetings live.
         virtualBackground:
             $ref: '#/MeetVirtualBackgroundConfig'
             description: Config for virtual background in the room.
@@ -139,6 +143,54 @@ MeetRecordingConfig:
             oneOf:
                 - $ref: '#/MeetRecordingEncodingPreset'
                 - $ref: '#/MeetRecordingEncodingOptions'
+MeetBroadcastConfig:
+    type: object
+    required:
+        - enabled
+    properties:
+        enabled:
+            type: boolean
+            default: false
+            example: true
+            description: >
+                If true, the room's meetings can be broadcast live to RTMP destinations by anyone holding
+                the `broadcastControl` permission. Enabling it requires at least one destination.
+        destinations:
+            type: array
+            maxItems: 5
+            default: []
+            description: >
+                The destinations a broadcast streams to by default, at most 5. A config update replaces the
+                whole list: a destination is kept when it comes back with its `id`, changed when it comes
+                back with a different `name` or a full `url`, and removed when it is left out. Sending
+                `destinations` requires sending `broadcast.enabled` alongside it.
+            items:
+                $ref: '#/MeetBroadcastDestination'
+MeetBroadcastDestination:
+    type: object
+    required:
+        - name
+        - url
+    properties:
+        id:
+            type: string
+            example: 'kX9pL2mQ7a'
+            description: >
+                Identifier the server assigns when the destination is saved. Sent back on a config update
+                to keep the destination; absent on a new one.
+        name:
+            type: string
+            maxLength: 50
+            example: 'YouTube'
+            description: A label for the destination, shown to participants.
+        url:
+            type: string
+            format: uri
+            example: 'rtmp://a.rtmp.youtube.com/live2/********'
+            description: >
+                The RTMP or RTMPS URL of the destination, stream key included, as `rtmp://host/app/key`. The
+                stream key is a secret: every response replaces it with `********`, and a config update that
+                sends the redacted URL back keeps the stored key. A new destination needs the full URL.
 MeetVirtualBackgroundConfig:
     type: object
     required:
@@ -161,7 +213,7 @@ MeetE2EEConfig:
             description: >
                 If true, the room will have End-to-End Encryption (E2EE) enabled.<br/>
                 This ensures that the media streams are encrypted from the sender to the receiver, providing enhanced privacy and security for the participants.<br/>
-                **Enabling E2EE will disable the recording feature for the room**.
+                **Enabling E2EE will disable the recording and live broadcast features for the room**.
 MeetCaptionsConfig:
     type: object
     required:
