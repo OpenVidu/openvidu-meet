@@ -1,3 +1,4 @@
+import { MeetBroadcastInfo } from '../database/broadcast.entity.js';
 import { MeetRecordingStatus } from '../database/recording.entity.js';
 import { MeetReaction } from '../reaction.js';
 import { MeetParticipantInfo, MeetParticipantPayload } from '../response/participant-response.js';
@@ -74,6 +75,22 @@ export enum EmbeddedEventName {
 	 * `meetingJoined`.
 	 */
 	RECORDING_STATUS_CHANGED = 'recordingStatusChanged',
+	/**
+	 * Event emitted to every participant when a live broadcast of the meeting starts. A participant
+	 * who joins while a broadcast is running receives it on joining, so the host can always show that
+	 * the meeting is being streamed.
+	 */
+	BROADCAST_STARTED = 'broadcastStarted',
+	/**
+	 * Event emitted to every participant when a running broadcast changes: it goes active, or one
+	 * of its destinations connects, fails, stops or is added.
+	 */
+	BROADCAST_UPDATED = 'broadcastUpdated',
+	/**
+	 * Event emitted to every participant when the live broadcast of the meeting ends, normally or
+	 * because it failed.
+	 */
+	BROADCAST_ENDED = 'broadcastEnded',
 	/**
 	 * Event emitted when the participant asks to close OpenVidu Meet by dismissing the post-meeting,
 	 * join, error or recording screen. The host application responds by removing the embedded
@@ -241,6 +258,19 @@ export interface EmbeddedEventPayloads {
 		status: MeetRecordingStatus;
 	};
 	/**
+	 * Payload for the {@link EmbeddedEventName.BROADCAST_STARTED} event: the broadcast as it starts.
+	 */
+	[EmbeddedEventName.BROADCAST_STARTED]: MeetBroadcastInfo;
+	/**
+	 * Payload for the {@link EmbeddedEventName.BROADCAST_UPDATED} event: the broadcast after the change.
+	 */
+	[EmbeddedEventName.BROADCAST_UPDATED]: MeetBroadcastInfo;
+	/**
+	 * Payload for the {@link EmbeddedEventName.BROADCAST_ENDED} event: the broadcast in its final
+	 * state, with its end date, duration and error if it failed.
+	 */
+	[EmbeddedEventName.BROADCAST_ENDED]: MeetBroadcastInfo;
+	/**
 	 * Payload for the {@link EmbeddedEventName.JOINED} event.
 	 * @deprecated Use {@link EmbeddedEventName.MEETING_JOINED}. Removed in 3.12.0.
 	 */
@@ -405,6 +435,36 @@ export interface EmbeddedRecordingStatusChangedEvent {
 }
 
 /**
+ * Event message emitted when a live broadcast of the meeting starts: the event name plus its
+ * payload, derived from {@link EmbeddedEventPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedBroadcastStartedEvent {
+	event: EmbeddedEventName.BROADCAST_STARTED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.BROADCAST_STARTED>;
+}
+
+/**
+ * Event message emitted when a running broadcast changes: the event name plus its payload, derived
+ * from {@link EmbeddedEventPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedBroadcastUpdatedEvent {
+	event: EmbeddedEventName.BROADCAST_UPDATED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.BROADCAST_UPDATED>;
+}
+
+/**
+ * Event message emitted when the live broadcast of the meeting ends: the event name plus its
+ * payload, derived from {@link EmbeddedEventPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedBroadcastEndedEvent {
+	event: EmbeddedEventName.BROADCAST_ENDED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.BROADCAST_ENDED>;
+}
+
+/**
  * Event message emitted when the participant asks to close OpenVidu Meet (no payload).
  * @category Communication
  */
@@ -460,6 +520,9 @@ export type EmbeddedEvent =
 	| EmbeddedMediaVideoStatusChangedEvent
 	| EmbeddedMediaScreenShareStatusChangedEvent
 	| EmbeddedRecordingStatusChangedEvent
+	| EmbeddedBroadcastStartedEvent
+	| EmbeddedBroadcastUpdatedEvent
+	| EmbeddedBroadcastEndedEvent
 	| EmbeddedCloseRequestedEvent
 	| EmbeddedJoinedEvent
 	| EmbeddedLeftEvent
