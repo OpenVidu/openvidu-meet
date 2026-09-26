@@ -211,6 +211,24 @@ export class MeetCommandsService {
 		this.log.command('participantReactionSend', `("${reaction}")`);
 	}
 
+	// ── Live broadcast ──────────────────────────────────────────────────────
+
+	broadcastStart(): void {
+		this.dispatch(
+			() => this.iframeHost.broadcastStart(),
+			(element) => element.broadcastStart()
+		);
+		this.log.command('broadcastStart', '()');
+	}
+
+	broadcastStop(): void {
+		this.dispatch(
+			() => this.iframeHost.broadcastStop(),
+			(element) => element.broadcastStop()
+		);
+		this.log.command('broadcastStop', '()');
+	}
+
 	// ── Deprecated 3.8.0 spellings ──────────────────────────────────────────
 	// Same actions under the old names, so the e2e can prove a host that never
 	// migrates keeps working until 3.12.0.

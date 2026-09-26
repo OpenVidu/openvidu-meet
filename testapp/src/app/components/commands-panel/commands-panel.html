@@ -195,6 +195,31 @@
 
 	<section class="ta-card">
 		<div class="ta-card__header">
+			<h2>Live broadcast</h2>
+			<span class="ta-hint">to the room's destinations</span>
+		</div>
+		<div class="ta-row">
+			<button
+				id="broadcast-start-btn"
+				class="ta-btn ta-btn--grow"
+				data-testid="btn-broadcast-start"
+				(click)="commands.broadcastStart()"
+			>
+				broadcastStart()
+			</button>
+			<button
+				id="broadcast-stop-btn"
+				class="ta-btn ta-btn--grow"
+				data-testid="btn-broadcast-stop"
+				(click)="commands.broadcastStop()"
+			>
+				broadcastStop()
+			</button>
+		</div>
+	</section>
+
+	<section class="ta-card">
+		<div class="ta-card__header">
 			<h2>Raise hand</h2>
 			<span class="ta-hint">participantHandLower() uses the identity above, or the own hand</span>
 		</div>

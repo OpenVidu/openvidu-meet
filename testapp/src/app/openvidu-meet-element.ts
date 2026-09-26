@@ -30,6 +30,8 @@ export interface OpenViduMeetElement extends HTMLElement {
 	participantHandLower(participantIdentity?: string): void;
 	participantHandLowerAll(): void;
 	participantReactionSend(reaction: MeetReaction): void;
+	broadcastStart(): void;
+	broadcastStop(): void;
 	/** @deprecated Renamed to `meetingEnd()`. Removed in 3.12.0. Declared so the e2e can drive it. */
 	endMeeting(): void;
 	/** @deprecated Renamed to `meetingLeave()`. Removed in 3.12.0. Declared so the e2e can drive it. */
