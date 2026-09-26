@@ -4,6 +4,7 @@ import {
 	EmbeddedCommandName,
 	EmbeddedEventName,
 	LeftEventReason,
+	MeetBroadcastStatus,
 	MeetParticipantModerationAction,
 	MeetReaction,
 	MeetRecordingStatus,
@@ -56,7 +57,9 @@ describe('IframeBridgeService', () => {
 			'participantHandRaise',
 			'participantHandLower',
 			'participantHandLowerAll',
-			'participantReactionSend'
+			'participantReactionSend',
+			'broadcastStart',
+			'broadcastStop'
 		]);
 		commandService.meetingEnd.and.resolveTo();
 		commandService.meetingLeave.and.resolveTo();
@@ -73,6 +76,8 @@ describe('IframeBridgeService', () => {
 		commandService.participantHandLower.and.resolveTo();
 		commandService.participantHandLowerAll.and.resolveTo();
 		commandService.participantReactionSend.and.resolveTo();
+		commandService.broadcastStart.and.resolveTo();
+		commandService.broadcastStop.and.resolveTo();
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -184,6 +189,22 @@ describe('IframeBridgeService', () => {
 			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_KICK });
 
 			expect(commandService.participantKick).not.toHaveBeenCalled();
+		});
+
+		it('forwards BROADCAST_START to the manager', () => {
+			startBridge();
+
+			postFromHost({ command: EmbeddedCommandName.BROADCAST_START });
+
+			expect(commandService.broadcastStart).toHaveBeenCalledTimes(1);
+		});
+
+		it('forwards BROADCAST_STOP to the manager', () => {
+			startBridge();
+
+			postFromHost({ command: EmbeddedCommandName.BROADCAST_STOP });
+
+			expect(commandService.broadcastStop).toHaveBeenCalledTimes(1);
 		});
 
 		it('ignores malformed messages (no command)', () => {
@@ -606,6 +627,24 @@ describe('IframeBridgeService', () => {
 
 			expect(postMessageSpy.calls.allArgs()).toEqual([
 				[{ event: EmbeddedEventName.PARTICIPANT_ROLE_CHANGED, payload }, PARENT_ORIGIN]
+			]);
+		});
+
+		it('relays BROADCAST_STARTED once: an event born after 3.8.0 has no deprecated alias', () => {
+			startBridge();
+			const payload = {
+				broadcastId: 'bc1',
+				roomId: ROOM_ID,
+				roomName: 'Room 1',
+				status: MeetBroadcastStatus.ACTIVE,
+				destinations: []
+			};
+
+			eventBus.emit({ event: EmbeddedEventName.BROADCAST_STARTED, payload });
+			TestBed.tick();
+
+			expect(postMessageSpy.calls.allArgs()).toEqual([
+				[{ event: EmbeddedEventName.BROADCAST_STARTED, payload }, PARENT_ORIGIN]
 			]);
 		});
 

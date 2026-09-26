@@ -1,0 +1,215 @@
+import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import type { MeetBroadcastDestination, MeetRoom, MeetRoomOptions } from '@openvidu-meet/typings';
+import { MEET_BROADCAST_REDACTED_STREAM_KEY } from '@openvidu-meet/typings';
+import { Express } from 'express';
+import request from 'supertest';
+import { container } from '../../../../src/config/dependency-injector.config.js';
+import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
+import { MEET_ENV } from '../../../../src/environment.js';
+import {
+	errorBroadcastRedactedDestinationUrl,
+	errorBroadcastUnknownDestination
+} from '../../../../src/models/error.model.js';
+import { RoomRepository } from '../../../../src/repositories/room.repository.js';
+import { expectMeetError, expectValidationError } from '../../../helpers/assertion-helpers.js';
+import {
+	createRoom,
+	deleteAllRooms,
+	getFullPath,
+	getRoom,
+	getRoomConfig,
+	getRooms,
+	startTestServer,
+	updateRoomConfig
+} from '../../../helpers/request-helpers.js';
+
+const ROOMS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`);
+
+const RTMP_HOST = 'rtmps://a.rtmp.youtube.com/live2';
+const REDACTED_URL = `${RTMP_HOST}/${MEET_BROADCAST_REDACTED_STREAM_KEY}`;
+const destination = (key: string) => ({ name: `Destination ${key}`, url: `${RTMP_HOST}/${key}-stream-key` });
+
+const storedUrls = (roomId: string) => container.get(RoomRepository).findBroadcastDestinationUrls(roomId);
+
+describe('Broadcast Room Configuration Tests', () => {
+	let app: Express;
+
+	beforeAll(async () => {
+		app = await startTestServer();
+	});
+
+	const createRoomRequest = (options: MeetRoomOptions) =>
+		request(app).post(ROOMS_PATH).set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY).send(options);
+
+	afterEach(async () => {
+		await deleteAllRooms();
+	});
+
+	const createBroadcastRoom = (keys: string[]): Promise<MeetRoom> =>
+		createRoom(
+			{
+				roomName: 'broadcast-config',
+				config: { broadcast: { enabled: true, destinations: keys.map(destination) } }
+			},
+			undefined,
+			{ xExtraFields: 'config' }
+		);
+
+	describe('Create Room Tests', () => {
+		it('should create a room with broadcast disabled and no destinations by default', async () => {
+			const room = await createRoom({ roomName: 'defaults' }, undefined, { xExtraFields: 'config' });
+
+			expect(room.config.broadcast).toEqual({ enabled: false, destinations: [] });
+			expect(await storedUrls(room.roomId)).toEqual({});
+		});
+
+		it('should assign an id to each destination and never serve its stream key', async () => {
+			const room = await createBroadcastRoom(['a', 'b']);
+			const { destinations } = room.config.broadcast;
+
+			expect(destinations).toEqual([
+				{ id: expect.any(String), name: 'Destination a', url: REDACTED_URL },
+				{ id: expect.any(String), name: 'Destination b', url: REDACTED_URL }
+			]);
+			expect(destinations[0].id).not.toBe(destinations[1].id);
+			expect(await storedUrls(room.roomId)).toEqual({
+				[destinations[0].id!]: destination('a').url,
+				[destinations[1].id!]: destination('b').url
+			});
+
+			for (const response of [
+				await getRoom(room.roomId, undefined, 'config'),
+				await getRooms({ maxItems: 10 }, { xExtraFields: 'config' }),
+				await getRoomConfig(room.roomId)
+			]) {
+				expect(response.status).toBe(200);
+				expect(JSON.stringify(response.body)).not.toContain('stream-key');
+			}
+		});
+
+		it('should reject enabling broadcast without destinations, more than five destinations and a non-RTMP URL', async () => {
+			const noDestinations = await createRoomRequest({
+				roomName: 'x',
+				config: { broadcast: { enabled: true, destinations: [] } }
+			});
+			expectValidationError(
+				noDestinations,
+				'config.broadcast.destinations',
+				'At least one destination is required while broadcast is enabled'
+			);
+
+			const tooMany = await createRoomRequest({
+				roomName: 'x',
+				config: { broadcast: { enabled: true, destinations: ['a', 'b', 'c', 'd', 'e', 'f'].map(destination) } }
+			});
+			expectValidationError(tooMany, 'config.broadcast.destinations', 'Cannot have more than 5 destinations');
+
+			const httpUrl = await createRoomRequest({
+				roomName: 'x',
+				config: {
+					broadcast: { enabled: true, destinations: [{ name: 'Web', url: 'https://youtube.com/live' }] }
+				}
+			});
+			expectValidationError(
+				httpUrl,
+				'config.broadcast.destinations.0.url',
+				'Destination url must be an rtmp:// or rtmps:// URL'
+			);
+		});
+
+		it('should disable broadcast when end-to-end encryption is enabled', async () => {
+			const room = await createRoom(
+				{
+					roomName: 'e2ee',
+					config: { e2ee: { enabled: true }, broadcast: { enabled: true, destinations: [destination('a')] } }
+				},
+				undefined,
+				{ xExtraFields: 'config' }
+			);
+
+			expect(room.config.broadcast.enabled).toBe(false);
+			expect(room.config.broadcast.destinations).toHaveLength(1);
+		});
+	});
+
+	describe('Update Room Config Tests', () => {
+		it('should keep the saved URL of a destination echoed back redacted and replace a full one', async () => {
+			const room = await createBroadcastRoom(['a', 'b']);
+			const [a, b] = room.config.broadcast.destinations as Required<MeetBroadcastDestination>[];
+
+			const response = await updateRoomConfig(room.roomId, {
+				broadcast: {
+					enabled: true,
+					destinations: [
+						{ id: a.id, name: 'A renamed', url: a.url },
+						{ id: b.id, name: b.name, url: `${RTMP_HOST}/b-new-key` },
+						destination('c')
+					]
+				}
+			});
+
+			expect(response.status).toBe(200);
+			const { destinations } = response.body.broadcast;
+			expect(destinations).toEqual([
+				{ id: a.id, name: 'A renamed', url: REDACTED_URL },
+				{ id: b.id, name: b.name, url: REDACTED_URL },
+				{ id: expect.any(String), name: 'Destination c', url: REDACTED_URL }
+			]);
+			expect(await storedUrls(room.roomId)).toEqual({
+				[a.id]: destination('a').url,
+				[b.id]: `${RTMP_HOST}/b-new-key`,
+				[destinations[2].id]: destination('c').url
+			});
+		});
+
+		it('should drop the destinations left out of the list, together with their URLs', async () => {
+			const room = await createBroadcastRoom(['a', 'b']);
+			const [, b] = room.config.broadcast.destinations as Required<MeetBroadcastDestination>[];
+
+			const response = await updateRoomConfig(room.roomId, {
+				broadcast: { enabled: true, destinations: [{ id: b.id, name: b.name, url: b.url }] }
+			});
+
+			expect(response.status).toBe(200);
+			expect(response.body.broadcast.destinations).toEqual([{ id: b.id, name: b.name, url: REDACTED_URL }]);
+			expect(await storedUrls(room.roomId)).toEqual({ [b.id]: destination('b').url });
+		});
+
+		it('should keep the destinations when the update leaves the broadcast block out', async () => {
+			const room = await createBroadcastRoom(['a']);
+
+			const response = await updateRoomConfig(room.roomId, { chat: { enabled: false } });
+
+			expect(response.status).toBe(200);
+			expect(response.body.broadcast).toEqual(room.config.broadcast);
+			expect(Object.keys(await storedUrls(room.roomId))).toEqual([room.config.broadcast.destinations[0].id]);
+		});
+
+		it('should reject an unknown destination id and a new destination sent with a redacted URL', async () => {
+			const room = await createBroadcastRoom(['a']);
+
+			expectMeetError(
+				await updateRoomConfig(room.roomId, {
+					broadcast: { enabled: true, destinations: [{ id: 'nope', name: 'Nope', url: REDACTED_URL }] }
+				}),
+				errorBroadcastUnknownDestination('nope')
+			);
+			expectMeetError(
+				await updateRoomConfig(room.roomId, {
+					broadcast: { enabled: true, destinations: [{ name: 'New', url: REDACTED_URL }] }
+				}),
+				errorBroadcastRedactedDestinationUrl()
+			);
+		});
+
+		it('should disable broadcast when end-to-end encryption gets enabled', async () => {
+			const room = await createBroadcastRoom(['a']);
+
+			const response = await updateRoomConfig(room.roomId, { e2ee: { enabled: true } });
+
+			expect(response.status).toBe(200);
+			expect(response.body.broadcast.enabled).toBe(false);
+			expect(response.body.recording.enabled).toBe(false);
+		});
+	});
+});

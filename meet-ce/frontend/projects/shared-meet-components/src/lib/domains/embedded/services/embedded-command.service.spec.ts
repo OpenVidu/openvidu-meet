@@ -3,6 +3,7 @@ import { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { TestBed } from '@angular/core/testing';
 import { MeetParticipantModerationAction, MeetReaction } from '@openvidu-meet/typings';
 import {
+	BroadcastStateService,
 	LocalMediaService,
 	MeetingPhaseService,
 	MeetingViewPhase,
@@ -12,6 +13,7 @@ import {
 	MeetingLiveKitService
 } from '../../meeting/openvidu-components';
 import { RecordingService as RecordingStateService } from '../../meeting/openvidu-components/services/recording/recording.service';
+import { BroadcastService } from '../../meeting/services/broadcast.service';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { MeetingHandService } from '../../meeting/services/meeting-hand.service';
 import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
@@ -34,6 +36,7 @@ const ROOM_ID = 'room1';
 const IDENTITY = 'participant-1';
 const RECORDING_ID = 'rec-1';
 const STARTED_RECORDING_ID = 'rec-new';
+const BROADCAST_ID = 'bc1';
 
 /**
  * The command × phase × permission matrix of the embedded command bridge. Both transports (the
@@ -59,6 +62,8 @@ describe('EmbeddedCommandService', () => {
 	let recordingStatus: ReturnType<typeof signal<RecordingStateInfo>>;
 	let setRecordingStarting: jasmine.Spy;
 	let liveKitService: { isSessionActive: ReturnType<typeof signal<boolean>>; disconnect: jasmine.Spy };
+	let broadcastService: jasmine.SpyObj<BroadcastService>;
+	let runningBroadcast: ReturnType<typeof signal<{ broadcastId: string } | undefined>>;
 	let phase: ReturnType<typeof signal<MeetingViewPhase>>;
 	let hasPermission: jasmine.Spy;
 	let logger: LoggerServiceStub;
@@ -128,6 +133,13 @@ describe('EmbeddedCommandService', () => {
 			isSessionActive: signal(true),
 			disconnect: jasmine.createSpy('disconnect').and.resolveTo()
 		};
+		broadcastService = jasmine.createSpyObj<BroadcastService>('BroadcastService', [
+			'startBroadcast',
+			'stopBroadcast'
+		]);
+		broadcastService.startBroadcast.and.resolveTo();
+		broadcastService.stopBroadcast.and.resolveTo();
+		runningBroadcast = signal<{ broadcastId: string } | undefined>({ broadcastId: BROADCAST_ID });
 		phase = signal<MeetingViewPhase>('live');
 		hasPermission = jasmine.createSpy('hasPermission').and.returnValue(true);
 		roomId = signal<string | undefined>(ROOM_ID);
@@ -153,7 +165,12 @@ describe('EmbeddedCommandService', () => {
 					provide: RoomMemberContextService,
 					useValue: { hasPermission } as unknown as RoomMemberContextService
 				},
-				{ provide: MeetingContextService, useValue: { roomId } as unknown as MeetingContextService }
+				{ provide: MeetingContextService, useValue: { roomId } as unknown as MeetingContextService },
+				{ provide: BroadcastService, useValue: broadcastService },
+				{
+					provide: BroadcastStateService,
+					useValue: { broadcast: runningBroadcast } as unknown as BroadcastStateService
+				}
 			]
 		});
 
@@ -261,6 +278,22 @@ describe('EmbeddedCommandService', () => {
 			await service.meetingLeave();
 
 			expect(liveKitService.disconnect).not.toHaveBeenCalled();
+		});
+
+		it('rejects broadcastStart with no active session', async () => {
+			liveKitService.isSessionActive.set(false);
+
+			await service.broadcastStart();
+
+			expect(broadcastService.startBroadcast).not.toHaveBeenCalled();
+		});
+
+		it('rejects broadcastStop with no active session', async () => {
+			liveKitService.isSessionActive.set(false);
+
+			await service.broadcastStop();
+
+			expect(broadcastService.stopBroadcast).not.toHaveBeenCalled();
 		});
 
 		it('runs meetingEnd while the session is active (covers reconnecting)', async () => {
@@ -457,6 +490,24 @@ describe('EmbeddedCommandService', () => {
 			expect(recordingService.stopRecording).not.toHaveBeenCalled();
 		});
 
+		it('rejects broadcastStart without the broadcastControl permission', async () => {
+			hasPermission.and.returnValue(false);
+
+			await service.broadcastStart();
+
+			expect(hasPermission).toHaveBeenCalledWith('broadcastControl');
+			expect(broadcastService.startBroadcast).not.toHaveBeenCalled();
+		});
+
+		it('gates broadcastStop on the same broadcastControl permission', async () => {
+			hasPermission.and.returnValue(false);
+
+			await service.broadcastStop();
+
+			expect(hasPermission).toHaveBeenCalledWith('broadcastControl');
+			expect(broadcastService.stopBroadcast).not.toHaveBeenCalled();
+		});
+
 		it('meetingLeave requires no permission: any participant may leave', async () => {
 			hasPermission.and.returnValue(false);
 
@@ -480,6 +531,34 @@ describe('EmbeddedCommandService', () => {
 	});
 
 	describe('command actions', () => {
+		it('broadcastStart starts the broadcast of the current meeting with the room destinations', async () => {
+			await service.broadcastStart();
+
+			expect(broadcastService.startBroadcast).toHaveBeenCalledOnceWith(ROOM_ID);
+		});
+
+		it('broadcastStart is rejected when the room id is undefined', async () => {
+			roomId.set(undefined);
+
+			await service.broadcastStart();
+
+			expect(broadcastService.startBroadcast).not.toHaveBeenCalled();
+		});
+
+		it('broadcastStop stops the broadcast the meeting was told about', async () => {
+			await service.broadcastStop();
+
+			expect(broadcastService.stopBroadcast).toHaveBeenCalledOnceWith(ROOM_ID, BROADCAST_ID);
+		});
+
+		it('broadcastStop is rejected while no broadcast is running', async () => {
+			runningBroadcast.set(undefined);
+
+			await service.broadcastStop();
+
+			expect(broadcastService.stopBroadcast).not.toHaveBeenCalled();
+		});
+
 		it('meetingEnd ends the current meeting by its room id', async () => {
 			await service.meetingEnd();
 
@@ -635,6 +714,12 @@ describe('EmbeddedCommandService', () => {
 	});
 
 	describe('error boundary', () => {
+		it('a failing broadcast command is logged, not propagated to the host', async () => {
+			broadcastService.startBroadcast.and.rejectWith(new Error('boom'));
+
+			await expectAsync(service.broadcastStart()).toBeResolved();
+		});
+
 		it('a failing action is logged, not propagated to the host', async () => {
 			moderationService.endMeeting.and.rejectWith(new Error('boom'));
 

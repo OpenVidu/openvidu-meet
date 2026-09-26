@@ -1,4 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
+import type { MeetBroadcastInfo } from '@openvidu-meet/typings';
 import { MeetReaction, MeetSignalType } from '@openvidu-meet/typings';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
@@ -63,5 +64,51 @@ describe('FrontendEventService reaction signal', () => {
 				options: { topic: MeetSignalType.MEET_PARTICIPANT_REACTION_SENT }
 			}
 		]);
+	});
+});
+
+/**
+ * The broadcast state goes to the whole room when it changes, and to one participant alone when
+ * they join a meeting that is already live.
+ */
+describe('FrontendEventService.sendBroadcastUpdatedSignal', () => {
+	const broadcast = { broadcastId: 'EG_1', roomId: 'room-1', status: 'active' } as MeetBroadcastInfo;
+
+	it('broadcasts to every participant by default', async () => {
+		const sent: { roomName: string; data: object; options: object }[] = [];
+		const livekit = {
+			sendData: async (roomName: string, data: object, options: object) => {
+				sent.push({ roomName, data, options });
+			}
+		};
+		const service = new FrontendEventService(
+			...([noopLogger, livekit] as unknown as ConstructorParameters<typeof FrontendEventService>)
+		);
+
+		await service.sendBroadcastUpdatedSignal('room-1', broadcast);
+
+		expect(sent).toEqual([
+			{
+				roomName: 'room-1',
+				data: { roomId: 'room-1', broadcast, timestamp: expect.any(Number) },
+				options: { topic: MeetSignalType.MEET_BROADCAST_UPDATED }
+			}
+		]);
+	});
+
+	it('addresses a joining participant alone when given their sid', async () => {
+		const calls: { destinationSids?: string[] }[] = [];
+		const livekit = {
+			sendData: async (_room: string, _data: unknown, options: { destinationSids?: string[] }) => {
+				calls.push(options);
+			}
+		};
+		const service = new FrontendEventService(
+			...([noopLogger, livekit] as unknown as ConstructorParameters<typeof FrontendEventService>)
+		);
+
+		await service.sendBroadcastUpdatedSignal('room-1', broadcast, 'PA_late');
+
+		expect(calls).toEqual([expect.objectContaining({ destinationSids: ['PA_late'] })]);
 	});
 });

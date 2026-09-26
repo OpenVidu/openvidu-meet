@@ -365,7 +365,8 @@ describe('LivekitWebhookService.handleRoomFinished (force-end attribution reache
 				{ cleanupState: record('cleanupState') },
 				{},
 				redis,
-				new FakeLogger()
+				new FakeLogger(),
+				{ cleanupRoom: record('cleanupRoom') }
 			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
 		);
 
@@ -382,6 +383,7 @@ describe('LivekitWebhookService.handleRoomFinished (force-end attribution reache
 		]);
 		expect(cleanups.sort()).toEqual([
 			'cleanupParticipantNames(room-1)',
+			'cleanupRoom(room-1)',
 			'cleanupState(room-1)',
 			'releaseRecordingLockIfNoEgress(room-1)',
 			'removeRoomFromAllUsers(room-1)'

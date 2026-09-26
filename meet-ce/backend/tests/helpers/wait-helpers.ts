@@ -1,4 +1,5 @@
 import {
+	MeetBroadcastInfo,
 	MeetParticipantInfo,
 	MeetRecordingInfo,
 	MeetRecordingStatus,
@@ -13,6 +14,7 @@ import { MeetParticipantHelper } from '../../src/helpers/participant.helper.js';
 import { RecordingRepository } from '../../src/repositories/recording.repository.js';
 import { RoomMemberRepository } from '../../src/repositories/room-member.repository.js';
 import { RoomRepository } from '../../src/repositories/room.repository.js';
+import { BroadcastService } from '../../src/services/broadcast.service.js';
 import { LiveKitService } from '../../src/services/livekit.service.js';
 
 // ─── CONFIGURATION ───────────────────────────────────────────────────────────
@@ -512,4 +514,29 @@ export const waitForWebhookCount = async (
 		timeoutMs: options?.timeoutMs ?? DEFAULT_WEBHOOK_TIMEOUT_MS,
 		errorMessage: options?.errorMessage ?? `Expected at least ${count} matching webhooks within the timeout`
 	});
+};
+
+/**
+ * Waits until the broadcast of a room, as the API serves it, satisfies `predicate`. Broadcast
+ * statuses are written by the deployment processing the real egress webhooks, not by the
+ * in-process test app; both read the same Redis.
+ */
+export const waitForBroadcast = async (
+	roomId: string,
+	predicate: (broadcast: MeetBroadcastInfo | undefined) => boolean,
+	description: string,
+	timeoutMs = DEFAULT_RECORDING_TIMEOUT_MS
+): Promise<MeetBroadcastInfo | undefined> => {
+	const broadcastService = container.get(BroadcastService);
+	let broadcast: MeetBroadcastInfo | undefined;
+
+	await pollUntil(
+		async () => {
+			[broadcast] = await broadcastService.getBroadcasts(roomId);
+			return predicate(broadcast);
+		},
+		{ timeoutMs, errorMessage: `The broadcast of room '${roomId}' never ${description}` }
+	);
+
+	return broadcast;
 };

@@ -1,6 +1,7 @@
 import {
 	EmbeddedEventName,
 	LeftEventReason,
+	MeetBroadcastStatus,
 	MeetEventOrigin,
 	MeetParticipantJoinedPayload,
 	MeetParticipantLeftPayload,
@@ -11,9 +12,12 @@ import {
 } from '@openvidu-meet/typings';
 import { expect, Locator, test } from '@playwright/test';
 import { INTEGRATIONS, meetLocator } from '../helpers/webcomponent.helper';
+import { createRtmpSink, deleteRtmpSinks } from '../helpers/broadcast-sink.helper';
 import { createRoom, deleteRooms, updateParticipantRole, waitForMeetingParticipant } from '../helpers/meet-api.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import {
+	broadcastStartCommand,
+	broadcastStopCommand,
 	endMeetingCommand,
 	eventLocator,
 	eventPayloadField,
@@ -49,6 +53,7 @@ for (const integration of INTEGRATIONS) {
 
 		test.afterAll(async () => {
 			await deleteRooms(createdRoomIds);
+			await deleteRtmpSinks();
 		});
 
 		test.describe('JOINED Event', () => {
@@ -678,6 +683,46 @@ for (const integration of INTEGRATIONS) {
 		// 3.8.0 host still listens for). This block is the canonical-name counterpart:
 		// it proves the dual dispatch actually reaches a host listening for the new
 		// names too, for both transports — nothing end-to-end asserted that before.
+		// The room streams to an RTMP ingress of the LiveKit deployment under test, the one sink the
+		// egress can reach here; the stream key never comes back from the API.
+		test.describe('BROADCAST_* Events', () => {
+			let broadcastRoomId: string;
+			let sinkUrl: string;
+
+			test.beforeEach(async () => {
+				sinkUrl = await createRtmpSink(`events-${integration}`);
+				({ roomId: broadcastRoomId } = await createRoom({
+					config: { broadcast: { enabled: true, destinations: [{ name: 'Sink', url: sinkUrl }] } }
+				}));
+				createdRoomIds.push(broadcastRoomId);
+			});
+
+			test('should emit broadcastStarted, broadcastUpdated as it streams and broadcastEnded, with the stream key hidden', async ({
+				page
+			}) => {
+				await openMeeting(page, broadcastRoomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
+
+				await broadcastStartCommand(page);
+
+				const started = await expectEvent(page, EmbeddedEventName.BROADCAST_STARTED);
+				await expect(started).toContainText(`"roomId":"${broadcastRoomId}"`);
+				await expect(started).toContainText(`"status":"${MeetBroadcastStatus.STARTING}"`);
+				await expect(started).toContainText('/********"');
+				await expect(started).not.toContainText(sinkUrl.split('/').pop()!);
+
+				const streaming = eventLocator(page, EmbeddedEventName.BROADCAST_UPDATED).filter({
+					hasText: `"status":"${MeetBroadcastStatus.ACTIVE}"`
+				});
+				await expect(streaming.first()).toBeAttached({ timeout: 40_000 });
+
+				await broadcastStopCommand(page);
+
+				const ended = await expectEvent(page, EmbeddedEventName.BROADCAST_ENDED, { timeout: 30_000 });
+				await expect(ended).toContainText(`"status":"${MeetBroadcastStatus.COMPLETE}"`);
+			});
+		});
+
 		test.describe('Canonical/Legacy Dual Dispatch', () => {
 			test('should dispatch both joined and meetingJoined for the same transition', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });

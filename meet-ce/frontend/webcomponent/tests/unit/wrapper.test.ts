@@ -54,6 +54,8 @@ interface ComponentInstance {
 	participantHandLower: jest.Mock;
 	participantHandLowerAll: jest.Mock;
 	participantReactionSend: jest.Mock;
+	broadcastStart: jest.Mock;
+	broadcastStop: jest.Mock;
 }
 
 interface TestableElement extends FakeNgElementBase {
@@ -76,6 +78,8 @@ interface TestableElement extends FakeNgElementBase {
 	participantHandLower(participantIdentity?: string): void;
 	participantHandLowerAll(): void;
 	participantReactionSend(reaction: string): void;
+	broadcastStart(): void;
+	broadcastStop(): void;
 	endMeeting(): void;
 	leaveRoom(): void;
 	kickParticipant(participantIdentity: string): void;
@@ -98,7 +102,9 @@ const componentInstance = (): ComponentInstance => ({
 	participantHandRaise: jest.fn(),
 	participantHandLower: jest.fn(),
 	participantHandLowerAll: jest.fn(),
-	participantReactionSend: jest.fn()
+	participantReactionSend: jest.fn(),
+	broadcastStart: jest.fn(),
+	broadcastStop: jest.fn()
 });
 
 const withComponent = (): [TestableElement, ComponentInstance] => {
@@ -264,7 +270,9 @@ describe('openvidu-meet custom element', () => {
 			['participantHandRaise', (el) => el.participantHandRaise(), []],
 			['participantHandLower', (el) => el.participantHandLower('participant-1'), ['participant-1']],
 			['participantHandLowerAll', (el) => el.participantHandLowerAll(), []],
-			['participantReactionSend', (el) => el.participantReactionSend('thumbs_up'), ['thumbs_up']]
+			['participantReactionSend', (el) => el.participantReactionSend('thumbs_up'), ['thumbs_up']],
+			['broadcastStart', (el) => el.broadcastStart(), []],
+			['broadcastStop', (el) => el.broadcastStop(), []]
 		];
 
 		it.each(commands)('%s() reaches the Angular component instance as it was called', (name, call, args) => {

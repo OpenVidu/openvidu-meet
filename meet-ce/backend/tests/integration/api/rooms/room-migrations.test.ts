@@ -144,6 +144,9 @@ const expectedCurrentModeratorPermissions = {
 	recordingPlay: true,
 	recordingDownload: true,
 	recordingDelete: true,
+	broadcastControl: false,
+	broadcastAddDestinations: false,
+	broadcastEditDestinations: false,
 	meetingJoin: true,
 	meetingRead: true,
 	roomShareAccessLinks: true,
@@ -167,6 +170,9 @@ const expectedCurrentSpeakerPermissions = {
 	recordingPlay: true,
 	recordingDownload: true,
 	recordingDelete: false,
+	broadcastControl: false,
+	broadcastAddDestinations: false,
+	broadcastEditDestinations: false,
 	meetingJoin: true,
 	meetingRead: true,
 	roomShareAccessLinks: false,
@@ -205,6 +211,7 @@ const expectMigratedRoomToCurrentVersion = (migratedRoom: Record<string, unknown
 				layout: MeetRecordingLayout.GRID,
 				encoding: MeetRecordingEncodingPreset.H264_720P_30
 			},
+			broadcast: { enabled: false, destinations: [] },
 			virtualBackground: { enabled: true },
 			e2ee: { enabled: false },
 			captions: {

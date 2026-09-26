@@ -1,6 +1,7 @@
 import {
 	MEET_DEPRECATED_PERMISSION_KEYS,
 	MEET_PERMISSION_KEYS,
+	MEET_UNALIASED_PERMISSION_KEYS,
 	MeetRoomMemberPermissions
 } from '@openvidu-meet/typings';
 import { decodeToken } from './token.utils';
@@ -37,12 +38,14 @@ describe('decodeToken', () => {
 		const permissions = permissionsOf(buildToken({ roomId: 'room-1', permissions: deprecatedPermissions }));
 
 		// A key the deprecated surface cannot name is completed, not granted: `meetingRead` takes
-		// the value of the `meetingJoin` that used to gate it, `participantMute` and `participantHandLower`
-		// their own default.
+		// the value of the `meetingJoin` that used to gate it, `participantReactionSend` its own
+		// `true` default, every other born-after-the-rename key its own `false` default.
+		const unaliased: readonly string[] = MEET_UNALIASED_PERMISSION_KEYS;
+
 		for (const key of MEET_PERMISSION_KEYS) {
 			expect(permissions[key])
 				.withContext(key)
-				.toBe(key !== 'participantMute' && key !== 'participantHandLower');
+				.toBe(key === 'meetingRead' || key === 'participantReactionSend' || !unaliased.includes(key));
 		}
 
 		for (const key of MEET_DEPRECATED_PERMISSION_KEYS) {

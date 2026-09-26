@@ -117,6 +117,69 @@ describe('Meeting API Security Tests', () => {
 		});
 	});
 
+	describe('Broadcast Tests', () => {
+		const startBroadcastWith = (set: [string, string]) =>
+			request(app)
+				.post(`${MEETINGS_PATH}/${roomId}/broadcasts`)
+				.set(...set)
+				.send({});
+
+		it('should pass the authentication when request includes API key', async () => {
+			const response = await startBroadcastWith([INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY]);
+			// Broadcast is disabled in the room, which is a permission-layer answer, not an authentication one
+			expect(response.status).toBe(403);
+			expect(response.body.error).toBe('Broadcast Error');
+		});
+
+		it('should fail when using access token', async () => {
+			const response = await startBroadcastWith([INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, rootAdminAccessToken]);
+			expectMeetError(response, errorUnauthorized());
+		});
+
+		it('should fail when using room member token without broadcastControl permission', async () => {
+			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
+				broadcastControl: false
+			});
+
+			const response = await startBroadcastWith([
+				INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER,
+				roomMember.memberToken
+			]);
+			expectMeetError(response, errorInsufficientPermissions());
+		});
+
+		it('should fail to add a destination with broadcastControl but without broadcastAddDestinations', async () => {
+			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
+				broadcastControl: true,
+				broadcastAddDestinations: false
+			});
+
+			const response = await request(app)
+				.post(`${MEETINGS_PATH}/${roomId}/broadcasts/EG_none/destinations`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken)
+				.send({ name: 'Extra', url: 'rtmp://rtmp-sink.invalid/live/key' });
+			expectMeetError(response, errorInsufficientPermissions());
+		});
+
+		it('should list the broadcasts with any room member token that may read the meeting', async () => {
+			const response = await request(app)
+				.get(`${MEETINGS_PATH}/${roomId}/broadcasts`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.speakerToken);
+			expect(response.status).toBe(200);
+			expect(response.body).toEqual({ broadcasts: [] });
+		});
+
+		it('should fail when using room member token from a different room', async () => {
+			const newRoomData = await setupSingleRoom();
+
+			const response = await startBroadcastWith([
+				INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER,
+				newRoomData.moderatorToken
+			]);
+			expectMeetError(response, errorInsufficientPermissions());
+		});
+	});
+
 	describe('Update Participant in Meeting Tests', () => {
 		const action = MeetParticipantModerationAction.UPGRADE;
 
