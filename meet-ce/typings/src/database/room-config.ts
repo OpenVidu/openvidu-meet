@@ -48,6 +48,10 @@ export interface MeetRoomConfig {
 	 */
 	recording: MeetRecordingConfig;
 	/**
+	 * Configuration for live broadcast feature. See {@link MeetBroadcastConfig} for details.
+	 */
+	broadcast: MeetBroadcastConfig;
+	/**
 	 * Configuration for virtual backgrounds feature. See {@link MeetVirtualBackgroundConfig} for details.
 	 */
 	virtualBackground: MeetVirtualBackgroundConfig;
@@ -157,6 +161,60 @@ export const MEET_RECORDING_AUTO_START_PRESETS: Record<MeetRecordingAutoStartMod
  */
 export const minParticipantsForAutoStart = (mode: MeetRecordingAutoStartMode): number =>
 	MEET_RECORDING_AUTO_START_PRESETS[mode].minParticipants;
+
+/**
+ * Interface representing the config for live broadcasts (RTMP streaming) in a room.
+ */
+export interface MeetBroadcastConfig {
+	/**
+	 * Indicates if live broadcast is enabled in the room. Forced to `false` while end-to-end
+	 * encryption is enabled, which excludes broadcast the same way it excludes recording.
+	 */
+	enabled: boolean;
+	/**
+	 * The room's default destinations: where a meeting streams when it goes live. At most
+	 * {@link MEET_BROADCAST_MAX_DESTINATIONS}, and at least one while `enabled` is `true`. In the
+	 * meeting, a participant with the `broadcastControl` permission streams to all of them or to a
+	 * subset, and with `broadcastAddDestinations` or `broadcastEditDestinations` adds or changes
+	 * destinations for that meeting only: the list saved here never changes from inside a meeting.
+	 * See {@link MeetBroadcastDestination} for details.
+	 */
+	destinations: MeetBroadcastDestination[];
+}
+
+/**
+ * A destination saved in a room's config: a name and the RTMP(S) URL the platform issued, stream
+ * key included.
+ */
+export interface MeetBroadcastDestination {
+	/**
+	 * Identifier assigned by the server when the destination is saved. Always present when served,
+	 * omitted when adding a destination. On an update, a destination sent with its `id` is the saved
+	 * one (and keeps its saved URL, see `url`), while one sent without `id` is new.
+	 */
+	id?: string;
+	/** Display name of the destination, such as the channel or platform it streams to */
+	name: string;
+	/**
+	 * Full `rtmp://` or `rtmps://` URL to stream to, stream key included. The stream key is a
+	 * secret, so it is never served: responses carry the URL with its last path segment replaced by
+	 * {@link MEET_BROADCAST_REDACTED_STREAM_KEY} and without query string. An update that sends a
+	 * destination with its `id` and that redacted URL (a response echoed back) keeps the saved URL;
+	 * any other URL replaces it.
+	 */
+	url: string;
+}
+
+/**
+ * Maximum number of destinations a room's config, and a broadcast, may hold.
+ */
+export const MEET_BROADCAST_MAX_DESTINATIONS = 5;
+
+/**
+ * Placeholder that replaces the stream key (the last path segment) of a destination URL when it is
+ * served. See {@link MeetBroadcastDestination.url}.
+ */
+export const MEET_BROADCAST_REDACTED_STREAM_KEY = '********';
 
 /**
  * Interface representing the config for chat in a room.

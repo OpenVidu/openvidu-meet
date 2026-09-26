@@ -94,6 +94,17 @@ export enum EmbeddedCommandName {
 	 */
 	RECORDING_STOP = 'recordingStop',
 	/**
+	 * Starts a live broadcast of the meeting to every destination saved in the room's config. The
+	 * room must have live broadcast enabled, and the meeting must have no broadcast running.
+	 * @permission broadcastControl
+	 */
+	BROADCAST_START = 'broadcastStart',
+	/**
+	 * Stops the live broadcast of the meeting, to every destination at once.
+	 * @permission broadcastControl
+	 */
+	BROADCAST_STOP = 'broadcastStop',
+	/**
 	 * Ends the current meeting for all participants.
 	 * @permission meetingEnd
 	 * @deprecated Renamed to `meetingEnd` ({@link EmbeddedCommandName.MEETING_END}). Removed in 3.12.0.
@@ -207,6 +218,14 @@ export interface EmbeddedCommandPayloads {
 	 * Payload for the {@link EmbeddedCommandName.RECORDING_STOP} command.
 	 */
 	[EmbeddedCommandName.RECORDING_STOP]: void;
+	/**
+	 * Payload for the {@link EmbeddedCommandName.BROADCAST_START} command.
+	 */
+	[EmbeddedCommandName.BROADCAST_START]: void;
+	/**
+	 * Payload for the {@link EmbeddedCommandName.BROADCAST_STOP} command.
+	 */
+	[EmbeddedCommandName.BROADCAST_STOP]: void;
 	/**
 	 * Payload for the {@link EmbeddedCommandName.END_MEETING} command.
 	 * @deprecated Use {@link EmbeddedCommandName.MEETING_END}. Removed in 3.12.0.
@@ -435,6 +454,22 @@ export interface EmbeddedRecordingStopCommand {
 }
 
 /**
+ * Command message for {@link EmbeddedCommandName.BROADCAST_START} (no payload).
+ * @category Communication
+ */
+export interface EmbeddedBroadcastStartCommand {
+	command: EmbeddedCommandName.BROADCAST_START;
+}
+
+/**
+ * Command message for {@link EmbeddedCommandName.BROADCAST_STOP} (no payload).
+ * @category Communication
+ */
+export interface EmbeddedBroadcastStopCommand {
+	command: EmbeddedCommandName.BROADCAST_STOP;
+}
+
+/**
  * Discriminated union of every command message the host can send to the embedded app; narrow on
  * `command`. In the iframe integration this is the object posted verbatim over `postMessage`.
  * Includes the deprecated aliases, which hosts written against 3.8.0 still send.
@@ -456,6 +491,8 @@ export type EmbeddedCommand =
 	| EmbeddedMediaToggleScreenShareCommand
 	| EmbeddedRecordingStartCommand
 	| EmbeddedRecordingStopCommand
+	| EmbeddedBroadcastStartCommand
+	| EmbeddedBroadcastStopCommand
 	| EmbeddedEndMeetingCommand
 	| EmbeddedLeaveRoomCommand
 	| EmbeddedKickParticipantCommand;

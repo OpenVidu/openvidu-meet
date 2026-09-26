@@ -1,4 +1,5 @@
 export * from './api-key.entity.js';
+export * from './broadcast.entity.js';
 export * from './global-config.entity.js';
 export * from './recording.entity.js';
 export * from './room-config.js';

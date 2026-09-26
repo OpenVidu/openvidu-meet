@@ -31,6 +31,35 @@ export interface MeetRoomMemberPermissions {
 	 */
 	recordingDelete: boolean;
 	/**
+	 * Can start and stop live broadcasts of the meeting: go live to the room's destinations, all of
+	 * them or a subset, and stop or restart any of them.
+	 *
+	 * Introduced after the rename, so it has no deprecated `can*` spelling (see
+	 * {@link MEET_UNALIASED_PERMISSION_KEYS}). It is independent of every other permission: a request
+	 * that omits it leaves it at whatever the role or the member already had. Only a set completed
+	 * from scratch, which is what a stored document migrated from before 3.10.0 and a token issued
+	 * back then go through, starts it at `false` (see {@link UNALIASED_PERMISSION_DEFAULTS}).
+	 */
+	broadcastControl: boolean;
+	/**
+	 * Can add destinations to a broadcast, for that meeting only, besides the room's saved ones.
+	 * Only effective together with `broadcastControl`: adding a destination is part of starting or
+	 * running the broadcast, so the server rejects it without that permission.
+	 *
+	 * Introduced after the rename, so it has no deprecated `can*` spelling; same completion rule as
+	 * `broadcastControl`.
+	 */
+	broadcastAddDestinations: boolean;
+	/**
+	 * Can change the URL or the name of one of the room's destinations for that meeting only; the
+	 * room's config keeps its saved values. Only effective together with `broadcastControl`, like
+	 * `broadcastAddDestinations`.
+	 *
+	 * Introduced after the rename, so it has no deprecated `can*` spelling; same completion rule as
+	 * `broadcastControl`.
+	 */
+	broadcastEditDestinations: boolean;
+	/**
 	 * Can join the meeting.
 	 */
 	meetingJoin: boolean;
@@ -265,12 +294,18 @@ export const MEET_PERMISSION_ALIASES = {
  *   moderation capability no earlier permission decided.
  * - `participantReactionSend` ← `true`: reacting is taking part, like raising one's own hand, not
  *   a power over others, and the room config `reactions.enabled` is what turns it off for everyone.
+ * - `broadcastControl`, `broadcastAddDestinations`, `broadcastEditDestinations` ← `false`: streaming
+ *   a meeting to the outside is a new power that no deployment decided on before 3.10.0. Deliberately
+ *   not derived from `recordingControl`: keeping a copy and publishing live are different powers.
  */
 const UNALIASED_PERMISSION_DEFAULTS = {
 	meetingRead: 'meetingJoin',
 	participantMute: false,
 	participantHandLower: false,
-	participantReactionSend: true
+	participantReactionSend: true,
+	broadcastControl: false,
+	broadcastAddDestinations: false,
+	broadcastEditDestinations: false
 } as const satisfies Readonly<
 	Partial<Record<keyof MeetRoomMemberPermissions, keyof MeetRoomMemberPermissions | boolean>>
 >;

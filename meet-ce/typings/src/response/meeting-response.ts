@@ -22,6 +22,8 @@ export interface MeetMeetingInfo {
 	participantCount: number;
 	/** Whether a recording is currently in progress in the meeting. */
 	recordingActive: boolean;
+	/** Whether a live broadcast is currently in progress in the meeting. */
+	broadcastActive: boolean;
 	/**
 	 * Participant cap in force for this meeting, or `undefined` when it admits unlimited participants.
 	 * Taken from the room's `maxParticipants` when the meeting started, so it does not change mid-meeting.
