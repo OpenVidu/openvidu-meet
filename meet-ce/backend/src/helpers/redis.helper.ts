@@ -22,6 +22,18 @@ export class MeetLock {
 		return `${RedisLockPrefix.BASE}${RedisLockName.RECORDING_STOP}_${roomId}`;
 	}
 
+	/**
+	 * Serializes every change to a room's broadcast: starting or stopping it, changing its
+	 * destinations and applying what LiveKit reports about it.
+	 */
+	static getBroadcastLock(roomId: string): string {
+		if (!roomId) {
+			throw new Error('roomId must be a non-empty string');
+		}
+
+		return `${RedisLockPrefix.BASE}${RedisLockName.BROADCAST}_${roomId}`;
+	}
+
 	static getRegistryLock(lockName: string): string {
 		if (!lockName) {
 			throw new Error('lockName must be a non-empty string');

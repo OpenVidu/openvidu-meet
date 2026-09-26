@@ -473,6 +473,19 @@ export class LiveKitService {
 		}
 	}
 
+	/**
+	 * Adds and removes stream URLs of a running egress. LiveKit needs the URLs as they were given,
+	 * not as it reports them (redacted).
+	 */
+	async updateStream(egressId: string, addUrls: string[], removeUrls: string[]): Promise<EgressInfo> {
+		try {
+			return await this.lk.egress.updateStream(egressId, addUrls, removeUrls);
+		} catch (error) {
+			this.logger.error(`Error updating the stream URLs of egress '${egressId}'`, error);
+			throw internalError(`updating the destinations of egress '${egressId}'`);
+		}
+	}
+
 	async stopEgress(egressId: string): Promise<EgressInfo> {
 		try {
 			this.logger.info(`Stopping egress '${egressId}'`);

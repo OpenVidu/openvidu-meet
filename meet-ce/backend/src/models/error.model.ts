@@ -1,4 +1,5 @@
 import type { MeetRoomDeletionErrorCode, MeetRoomMemberRole } from '@openvidu-meet/typings';
+import { MEET_BROADCAST_MAX_DESTINATIONS } from '@openvidu-meet/typings';
 import type { Response } from 'express';
 import type { z } from 'zod';
 import { container } from '../config/dependency-injector.config.js';
@@ -245,6 +246,80 @@ export const errorRecordingsZipEmpty = (): OpenViduMeetError => {
 		'None of the provided recordings are available for ZIP download',
 		400
 	);
+};
+
+// Broadcast errors
+
+export const errorBroadcastDisabled = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Broadcast Error', `Live broadcast is disabled for room '${roomId}'`, 403);
+};
+
+export const errorBroadcastNotFound = (broadcastId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Broadcast Error', `Broadcast '${broadcastId}' not found`, 404);
+};
+
+export const errorBroadcastAlreadyStarted = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Broadcast Error', `Room '${roomId}' is already being broadcast`, 409);
+};
+
+export const errorBroadcastAlreadyStopped = (broadcastId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Broadcast Error', `Broadcast '${broadcastId}' is already stopped`, 409);
+};
+
+export const errorBroadcastNotActive = (broadcastId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Broadcast Error',
+		`Broadcast '${broadcastId}' is not running, so its destinations cannot change`,
+		409
+	);
+};
+
+export const errorBroadcastUpdateInProgress = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Broadcast Error',
+		`The broadcast of room '${roomId}' is already being changed by another request`,
+		409
+	);
+};
+
+export const errorBroadcastRoomHasNoParticipants = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Broadcast Error', `Room '${roomId}' has no participants to broadcast`, 409);
+};
+
+export const errorBroadcastDestinationNotFound = (destinationId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Broadcast Error', `Destination '${destinationId}' not found`, 404);
+};
+
+export const errorBroadcastUnknownDestination = (destinationId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Broadcast Error',
+		`Destination '${destinationId}' is not one of the room's destinations`,
+		422
+	);
+};
+
+export const errorBroadcastRedactedDestinationUrl = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Broadcast Error',
+		'A new destination needs its full URL, stream key included; a redacted URL only keeps a saved destination',
+		422
+	);
+};
+
+export const errorBroadcastDuplicateDestination = (redactedUrl: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Broadcast Error', `Two destinations stream to '${redactedUrl}'`, 422);
+};
+
+export const errorBroadcastDestinationLimit = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Broadcast Error',
+		`A broadcast cannot have more than ${MEET_BROADCAST_MAX_DESTINATIONS} destinations`,
+		422
+	);
+};
+
+export const errorBroadcastNoDestinations = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Broadcast Error', 'A broadcast needs at least one destination to stream to', 422);
 };
 
 const isMatchingError = (error: OpenViduMeetError, originalError: OpenViduMeetError): boolean => {

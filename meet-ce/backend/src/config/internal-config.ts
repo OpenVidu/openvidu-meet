@@ -51,6 +51,10 @@ export const INTERNAL_CONFIG = {
 	RECORDING_STALE_GRACE_PERIOD: '5m' as StringValue, // Maximum allowed time since the last recording update before marking it as stale
 	RECORDING_AUTO_START_DISABLED_TTL: '24h' as StringValue, // Redis TTL for the per-room "auto-start disabled after a manual stop" flag; cleared on room_finished and refreshed on every hit, this is only a last-resort safety net against leaked flags
 
+	// Live broadcast state shared across replicas
+	BROADCAST_STATE_TTL: '24h' as StringValue, // Redis TTL for the per-room live broadcast (capped at the 24h max meeting duration); deleted when the broadcast ends or the meeting finishes, this is only a last-resort safety net
+	BROADCAST_LOCK_TTL: '30s' as StringValue, // Redis Lock TTL while a request or an egress webhook changes a room's broadcast; released as soon as it finishes, so the TTL only bounds a change stuck in LiveKit
+
 	// Additional intervals
 	MIN_ROOM_AUTO_DELETE_DURATION: '1h' as StringValue, // Minimum duration before a room can be auto-deleted
 	MEETING_EMPTY_TIMEOUT: (process.env.MEETING_EMPTY_TIMEOUT || '20s') as StringValue, // Seconds to keep the meeting (LK room) open until the first participant joins
@@ -117,8 +121,8 @@ export const INTERNAL_CONFIG = {
 	GLOBAL_CONFIG_SCHEMA_VERSION: 4 as SchemaVersion, // MIGRATION_REV: 1789642617602
 	USER_SCHEMA_VERSION: 2 as SchemaVersion, // MIGRATION_REV: 1774181859233
 	API_KEY_SCHEMA_VERSION: 1 as SchemaVersion, // MIGRATION_REV: 1771328577054
-	ROOM_SCHEMA_VERSION: 7 as SchemaVersion, // MIGRATION_REV: 1791557539043
-	ROOM_MEMBER_SCHEMA_VERSION: 5 as SchemaVersion, // MIGRATION_REV: 1791557539043
+	ROOM_SCHEMA_VERSION: 8 as SchemaVersion, // MIGRATION_REV: 1792057733783
+	ROOM_MEMBER_SCHEMA_VERSION: 6 as SchemaVersion, // MIGRATION_REV: 1792057733783
 	RECORDING_SCHEMA_VERSION: 3 as SchemaVersion, // MIGRATION_REV: 1781616231619
 	WEBHOOK_SCHEMA_VERSION: 1 as SchemaVersion // MIGRATION_REV: 1786634401242
 };

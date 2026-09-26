@@ -5,6 +5,7 @@ import type { EgressInfo, ParticipantInfo, Room, WebhookEvent } from 'livekit-se
 import { WebhookReceiver } from 'livekit-server-sdk';
 import { container } from '../config/dependency-injector.config.js';
 import { MEET_ENV } from '../environment.js';
+import { BroadcastHelper } from '../helpers/broadcast.helper.js';
 import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
@@ -13,6 +14,7 @@ import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { AiAssistantService } from './ai-assistant.service.js';
+import { BroadcastService } from './broadcast.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
@@ -42,7 +44,8 @@ export class LivekitWebhookService {
 		@inject(AiAssistantService) protected aiAssistantService: AiAssistantService,
 		@inject(TokenService) protected tokenService: TokenService,
 		@inject(RedisService) protected redisService: RedisService,
-		@inject(LoggerService) protected logger: LoggerService
+		@inject(LoggerService) protected logger: LoggerService,
+		@inject(BroadcastService) protected broadcastService: BroadcastService
 	) {
 		this.webhookReceiver = new WebhookReceiver(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
 	}
@@ -129,7 +132,7 @@ export class LivekitWebhookService {
 	 * @param room - Information about the room that was created.
 	 */
 	async handleEgressStarted(egressInfo: EgressInfo) {
-		await this.processRecordingEgress(egressInfo, 'started');
+		await this.processEgress(egressInfo, 'started');
 	}
 
 	/**
@@ -138,7 +141,7 @@ export class LivekitWebhookService {
 	 * @param egressInfo - Information about the updated recording egress.
 	 */
 	async handleEgressUpdated(egressInfo: EgressInfo) {
-		await this.processRecordingEgress(egressInfo, 'updated');
+		await this.processEgress(egressInfo, 'updated');
 	}
 
 	/**
@@ -147,7 +150,20 @@ export class LivekitWebhookService {
 	 * @param egressInfo - Information about the ended recording egress.
 	 */
 	async handleEgressEnded(egressInfo: EgressInfo) {
-		await this.processRecordingEgress(egressInfo, 'ended');
+		await this.processEgress(egressInfo, 'ended');
+	}
+
+	/**
+	 * Routes an egress event to the feature that owns the egress: a stream-only egress is a live
+	 * broadcast, a file-only one a recording.
+	 */
+	protected async processEgress(egressInfo: EgressInfo, webhookAction: 'started' | 'updated' | 'ended') {
+		if (BroadcastHelper.isBroadcastEgress(egressInfo)) {
+			await this.broadcastService.handleEgressEvent(egressInfo, webhookAction);
+			return;
+		}
+
+		await this.processRecordingEgress(egressInfo, webhookAction);
 	}
 
 	/**
@@ -173,14 +189,21 @@ export class LivekitWebhookService {
 				await this.meetingPresenceService.upsertUserInRoom(userId, room.name, participant.identity);
 			}
 
-			const recording = await this.findRecordingInProgress(room.name);
+			const [recording, broadcast] = await Promise.all([
+				this.findRecordingInProgress(room.name),
+				this.broadcastService.findActiveBroadcast(room.name)
+			]);
 
 			if (recording) {
 				await this.frontendEventService.sendRecordingUpdatedSignal(room.name, recording, participant.sid);
 			}
+
+			if (broadcast) {
+				await this.frontendEventService.sendBroadcastUpdatedSignal(room.name, broadcast, participant.sid);
+			}
 		} catch (error) {
 			this.logger.error(
-				`Error sending recording state on participant join for room '${room.name}' and participant '${participant.identity}'`,
+				`Error sending recording and broadcast state on participant join for room '${room.name}' and participant '${participant.identity}'`,
 				error
 			);
 		}
@@ -355,6 +378,7 @@ export class LivekitWebhookService {
 				this.meetingPresenceService.removeRoomFromAllUsers(roomId),
 				this.roomMemberService.cleanupParticipantNames(roomId),
 				this.recordingService.releaseRecordingLockIfNoEgress(roomId),
+				this.broadcastService.cleanupRoom(roomId),
 				this.aiAssistantService.cleanupState(roomId)
 			);
 			await Promise.all(tasks);

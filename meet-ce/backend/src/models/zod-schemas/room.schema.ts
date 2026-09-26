@@ -38,6 +38,7 @@ import { z } from 'zod';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import { MeetRoomHelper } from '../../helpers/room.helper.js';
 import { invalidRegexPatternReason } from '../../utils/string-match-filter.utils.js';
+import { BroadcastConfigSchema } from './broadcast.schema.js';
 import { PartialMeetPermissionsSchema } from './room-member.schema.js';
 
 export const nonEmptySanitizedRoomId = (fieldName: string) =>
@@ -273,6 +274,7 @@ const UpdateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 		initialAudioActive: initialMediaActiveSchema,
 		initialVideoActive: initialMediaActiveSchema,
 		recording: RecordingConfigSchema.optional(),
+		broadcast: BroadcastConfigSchema.optional(),
 		chat: ChatConfigSchema.optional(),
 		virtualBackground: VirtualBackgroundConfigSchema.optional(),
 		e2ee: E2EEConfigSchema.optional(),
@@ -282,10 +284,17 @@ const UpdateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data: Partial<MeetRoomConfig>) => {
-		// Automatically disable recording when E2EE is enabled
+		// Automatically disable recording and broadcast when E2EE is enabled
 		if (data.e2ee?.enabled && data.recording?.enabled) {
 			data.recording = {
 				...data.recording,
+				enabled: false
+			};
+		}
+
+		if (data.e2ee?.enabled && data.broadcast?.enabled) {
+			data.broadcast = {
+				...data.broadcast,
 				enabled: false
 			};
 		}
@@ -311,6 +320,7 @@ const CreateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 			layout: MeetRecordingLayout.GRID,
 			encoding: MeetRecordingEncodingPreset.H264_720P_30
 		})),
+		broadcast: BroadcastConfigSchema.optional().default(() => ({ enabled: false, destinations: [] })),
 		chat: ChatConfigSchema.optional().default(() => ({ enabled: true })),
 		virtualBackground: VirtualBackgroundConfigSchema.optional().default(() => ({ enabled: true })),
 		e2ee: E2EEConfigSchema.optional().default(() => ({ enabled: false })),
@@ -330,10 +340,17 @@ const CreateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 			data.recording.encoding = MeetRecordingEncodingPreset.H264_720P_30;
 		}
 
-		// Automatically disable recording when E2EE is enabled
+		// Automatically disable recording and broadcast when E2EE is enabled
 		if (data.e2ee.enabled && data.recording.enabled) {
 			data.recording = {
 				...data.recording,
+				enabled: false
+			};
+		}
+
+		if (data.e2ee.enabled && data.broadcast.enabled) {
+			data.broadcast = {
+				...data.broadcast,
 				enabled: false
 			};
 		}
@@ -443,6 +460,7 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 			layout: MeetRecordingLayout.GRID,
 			encoding: MeetRecordingEncodingPreset.H264_720P_30
 		},
+		broadcast: { enabled: false, destinations: [] },
 		chat: { enabled: true },
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false },

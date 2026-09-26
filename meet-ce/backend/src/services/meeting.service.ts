@@ -30,6 +30,7 @@ import {
 	OpenViduMeetError
 } from '../models/error.model.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
+import { BroadcastService } from './broadcast.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
@@ -55,7 +56,8 @@ export class MeetingService {
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
 		@inject(WebhookDispatcherService) protected webhookDispatcherService: WebhookDispatcherService,
-		@inject(MutexService) protected mutexService: MutexService
+		@inject(MutexService) protected mutexService: MutexService,
+		@inject(BroadcastService) protected broadcastService: BroadcastService
 	) {}
 
 	/**
@@ -69,11 +71,12 @@ export class MeetingService {
 		// the former counts non-hidden participants (not Meet's kind-STANDARD filter, so it could
 		// diverge from the /participants listing) and the latter flips for ANY egress on the room,
 		// not just Meet recordings.
-		const [room, [participants, activeRecordings]] = await this.withActiveMeetingRoom(
+		const [room, [participants, activeRecordings, broadcastActive]] = await this.withActiveMeetingRoom(
 			roomId,
 			Promise.all([
 				this.getStandardParticipants(roomId),
-				this.livekitService.getInProgressRecordingsEgress(roomId)
+				this.livekitService.getInProgressRecordingsEgress(roomId),
+				this.broadcastService.isBroadcastActive(roomId)
 			])
 		);
 
@@ -85,6 +88,7 @@ export class MeetingService {
 			endDate: MeetRoomHelper.extractMeetingEndDateFromMetadata(room.metadata),
 			participantCount: participants.length,
 			recordingActive: activeRecordings.length > 0,
+			broadcastActive,
 			// The cap LiveKit is enforcing right now, stamped on the room at creation from
 			// `config.maxParticipants`: the database holds what the *next* meeting will get.
 			maxParticipants: room.maxParticipants || undefined

@@ -1,5 +1,6 @@
 import type {
 	MeetApiKey,
+	MeetBroadcastInfo,
 	MeetMeetingEndedPayload,
 	MeetParticipantJoinedPayload,
 	MeetParticipantLeftPayload,
@@ -164,6 +165,46 @@ export class WebhookDispatcherService {
 			MeetWebhookEventType.RECORDING_ENDED,
 			recordingInfo,
 			`Recording ID: ${recordingInfo.recordingId}`
+		);
+	}
+
+	/**
+	 * Sends a webhook notification when a live broadcast has started.
+	 *
+	 * @param broadcastInfo - The broadcast, with its destinations and their statuses
+	 */
+	sendBroadcastStartedWebhook(broadcastInfo: MeetBroadcastInfo) {
+		this.sendWebhookEventInBackground(
+			MeetWebhookEventType.BROADCAST_STARTED,
+			broadcastInfo,
+			`Broadcast ID: ${broadcastInfo.broadcastId}`
+		);
+	}
+
+	/**
+	 * Sends a webhook notification when a live broadcast has changed: it went active, or one of
+	 * its destinations connected, failed, stopped or was added.
+	 *
+	 * @param broadcastInfo - The broadcast after the change
+	 */
+	sendBroadcastUpdatedWebhook(broadcastInfo: MeetBroadcastInfo) {
+		this.sendWebhookEventInBackground(
+			MeetWebhookEventType.BROADCAST_UPDATED,
+			broadcastInfo,
+			`Broadcast ID: ${broadcastInfo.broadcastId}`
+		);
+	}
+
+	/**
+	 * Sends a webhook notification when a live broadcast has ended.
+	 *
+	 * @param broadcastInfo - The broadcast in its final state
+	 */
+	sendBroadcastEndedWebhook(broadcastInfo: MeetBroadcastInfo) {
+		this.sendWebhookEventInBackground(
+			MeetWebhookEventType.BROADCAST_ENDED,
+			broadcastInfo,
+			`Broadcast ID: ${broadcastInfo.broadcastId}`
 		);
 	}
 
