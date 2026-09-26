@@ -159,6 +159,7 @@
       "STEP_MEETING": "Riunione",
       "STEP_ROOM_ACCESS": "Accesso alla stanza",
       "STEP_RECORDING": "Registrazione",
+      "STEP_BROADCAST": "Diretta streaming",
       "BACK": "Indietro",
       "BACK_TO_SIMPLE_MODE": "Torna alla modalità semplice",
       "CANCEL_ARIA": "Annulla la procedura guidata e torna alla pagina precedente",
@@ -225,7 +226,8 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Modifica membro",
         "REMOVE_MEMBER": "Rimuovi membro",
-        "FEATURE_DISABLED_PERMISSION": "Abilita la funzionalità corrispondente nel passaggio Riunione per configurare questa autorizzazione."
+        "FEATURE_DISABLED_PERMISSION": "Abilita la funzionalità corrispondente nel passaggio Riunione per configurare questa autorizzazione.",
+        "DEPENDENT_PERMISSION_DISABLED": "Concedi prima il permesso da cui dipende questo per configurarlo."
       },
       "MEETING": {
         "TITLE": "Riunione",
@@ -308,6 +310,39 @@
         "AUTOSTART_MODE_MODERATOR_DESC": "Si avvia non appena un moderatore si unisce o viene promosso",
         "AUTOSTART_UNREACHABLE_TITLE": "Attivatore di registrazione non raggiungibile",
         "AUTOSTART_UNREACHABLE_MESSAGE": "Questo attivatore richiede almeno ${required} partecipanti per scattare, ma il limite di partecipanti della sala è impostato su ${limit}."
+      },
+      "BROADCAST": {
+        "TITLE": "Diretta streaming",
+        "DESCRIPTION": "Scegli se le riunioni di questa stanza possono essere trasmesse in diretta su YouTube, Twitch o qualsiasi server RTMP",
+        "RESTRICTIONS": "Restrizioni",
+        "E2EE_WARNING_PREFIX": "La diretta streaming ",
+        "E2EE_WARNING_BOLD": "non è disponibile",
+        "E2EE_WARNING_SUFFIX": " mentre la crittografia end-to-end è attiva. Se consenti la diretta, la crittografia verrà disattivata automaticamente per questa stanza.",
+        "ALLOW_BROADCAST_TITLE": "Consenti diretta streaming",
+        "ALLOW_BROADCAST_DESC": "I partecipanti con permesso possono trasmettere la riunione su piattaforme esterne mentre si svolge.",
+        "DEFAULT_DESTINATIONS": "Destinazioni predefinite",
+        "DESTINATIONS_COUNT": "{count} di {max}",
+        "DESTINATIONS_DESC": "Quando la riunione va in diretta, può essere trasmessa a tutte queste destinazioni o solo a quelle scelte in quel momento.",
+        "NO_DESTINATIONS": "Aggiungi almeno una destinazione per consentire la diretta streaming.",
+        "ADD_DESTINATION": "Aggiungi destinazione",
+        "NEW_DESTINATION": "Nuova destinazione",
+        "EDIT_DESTINATION": "Modifica destinazione",
+        "NAME_LABEL": "Nome",
+        "URL_LABEL": "URL dello stream",
+        "URL_HINT": "Incolla l'URL rtmp:// o rtmps:// fornito dalla piattaforma, chiave dello stream inclusa.",
+        "URL_RECOGNISED": "Riconosciuto come {platform}.",
+        "URL_KEEP_KEY": "Lascia l'URL così com'è per conservare la chiave dello stream salvata, oppure incollane una nuova per sostituirla.",
+        "URL_INVALID": "Inserisci un URL rtmp:// o rtmps://",
+        "NAME_REQUIRED": "Inserisci un nome",
+        "ADD": "Aggiungi",
+        "SAVE": "Salva",
+        "CANCEL": "Annulla",
+        "EDIT": "Modifica",
+        "REMOVE": "Rimuovi",
+        "KEYS_HIDDEN": "Fino a {max} destinazioni. Le chiavi dello stream restano nascoste una volta salvate.",
+        "COST_NOTE": "Ogni destinazione è uno stream separato inviato dal tuo server, circa {mbps} Mbps di upload ciascuno a 720p. Con queste {count} destinazioni, una diretta usa circa {total} Mbps finché la riunione è in onda.",
+        "PERMISSIONS_HINT": "Chi può andare in diretta, scegliere le destinazioni o aggiungerne altre si imposta per ruolo in",
+        "PERMISSIONS_LINK": "Accesso alla stanza"
       }
     },
     "ERRORS": {

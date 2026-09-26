@@ -15,6 +15,7 @@ import { CaptionsStatus, InitialMediaRequest, RoomFeatures } from '../models/fea
 export class FeatureCalculator {
 	static applyRoomConfig(features: RoomFeatures, roomConfig: MeetRoomConfig, captionsGlobalEnabled: boolean): void {
 		features.showStartStopRecording = roomConfig.recording.enabled;
+		features.showBroadcastControls = roomConfig.broadcast.enabled;
 		features.showChat = roomConfig.chat.enabled;
 		features.showBackgrounds = roomConfig.virtualBackground.enabled;
 		const captionsStatus = this.computeCaptionsStatus(roomConfig.captions, captionsGlobalEnabled);
@@ -29,6 +30,16 @@ export class FeatureCalculator {
 		if (features.showStartStopRecording) {
 			features.showStartStopRecording = permissions.recordingControl;
 		}
+
+		// Broadcast: broadcastControl gates the whole activity; the destination permissions only add
+		// to it, so neither is offered on its own.
+		if (features.showBroadcastControls) {
+			features.showBroadcastControls = permissions.broadcastControl;
+		}
+
+		features.showBroadcastAddDestinations = features.showBroadcastControls && permissions.broadcastAddDestinations;
+		features.showBroadcastEditDestinations =
+			features.showBroadcastControls && permissions.broadcastEditDestinations;
 
 		// Chat: chatRead gates the whole panel; chatWrite gates the message input within it.
 		if (features.showChat) {

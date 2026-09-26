@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -18,7 +18,7 @@ import { take } from 'rxjs';
 import { AuthService } from '../../../../../auth/services/auth.service';
 import { MemberFormDialogComponent } from '../../../../../room-members/components/member-form-dialog/member-form-dialog.component';
 import { MemberFormDialogData } from '../../../../../room-members/models/member-form.model';
-import { PERMISSION_GROUPS } from '../../../../../room-members/models/permissions.model';
+import { PERMISSION_GROUPS, PermissionItem } from '../../../../../room-members/models/permissions.model';
 import { RoomMemberUiUtils } from '../../../../../room-members/utils/ui';
 import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
 import {
@@ -47,8 +47,18 @@ const FEATURE_DEPENDENT_PERMISSIONS: {
 	{
 		permissionKeys: ['mediaChangeVirtualBackground'],
 		isEnabled: (config) => config?.virtualBackground?.enabled ?? false
+	},
+	{
+		permissionKeys: ['broadcastControl', 'broadcastAddDestinations', 'broadcastEditDestinations'],
+		isEnabled: (config) => config?.broadcast?.enabled ?? false
 	}
 ];
+
+// A permission that depends on another (see PermissionItem.dependsOn), by role form.
+const DEPENDENT_PERMISSIONS = PERMISSION_GROUPS.flatMap((group) => group.permissions).filter(
+	(permission): permission is PermissionItem & { dependsOn: keyof MeetRoomMemberPermissions } =>
+		permission.dependsOn !== undefined
+);
 
 @Component({
 	selector: 'ov-room-access',
@@ -68,6 +78,7 @@ export class RoomAccessComponent implements OnInit {
 	private wizardService = inject(RoomWizardStateService);
 	private dialog = inject(MatDialog);
 	private authService = inject(AuthService);
+	private readonly destroyRef = inject(DestroyRef);
 
 	currentUserId = signal('');
 
@@ -95,6 +106,7 @@ export class RoomAccessComponent implements OnInit {
 		// this step is mounted — the Meeting step is a sibling @switch case that isn't rendered at
 		// the same time — so applying the constraint once here is enough.
 		this.applyFeatureConstraints();
+		this.applyPermissionDependencies();
 
 		this.roomAccessForm.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {
 			this.saveFormData(value);
@@ -144,9 +156,45 @@ export class RoomAccessComponent implements OnInit {
 		}
 	}
 
+	/**
+	 * Keeps each dependent permission usable only while the permission it depends on is granted to
+	 * the same role, in the same preserve-the-value way as the feature constraints. The feature
+	 * constraint wins: a dependent stays off while its feature is off, whatever its parent says.
+	 */
+	private applyPermissionDependencies(): void {
+		for (const roleForm of [this.moderatorForm, this.speakerForm]) {
+			for (const { key, dependsOn } of DEPENDENT_PERMISSIONS) {
+				const parent = roleForm.controls[dependsOn];
+				const dependent = roleForm.controls[key];
+
+				const sync = (granted: boolean) => {
+					if (granted && !this.featureDisabledPermissions.has(key)) {
+						dependent.enable({ emitEvent: false });
+					} else {
+						dependent.disable({ emitEvent: false });
+					}
+				};
+
+				sync(parent.value);
+				parent.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(sync);
+			}
+		}
+	}
+
 	/** Whether this permission's toggle is disabled because the room feature it depends on is off. */
 	isPermissionFeatureDisabled(key: keyof MeetRoomMemberPermissions): boolean {
 		return this.featureDisabledPermissions.has(key);
+	}
+
+	/** The reason a permission's toggle is disabled, as a translation key, or `''` while it is usable. */
+	disabledReasonKey(roleForm: RoomAccessRolePermissionsFormGroup, permission: PermissionItem): string {
+		if (this.isPermissionFeatureDisabled(permission.key)) {
+			return 'ROOMS.WIZARD.ACCESS.FEATURE_DISABLED_PERMISSION';
+		}
+
+		return permission.dependsOn && roleForm.controls[permission.key].disabled
+			? 'ROOMS.WIZARD.ACCESS.DEPENDENT_PERMISSION_DISABLED'
+			: '';
 	}
 
 	openAddMemberDialog(): void {

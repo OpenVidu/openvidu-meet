@@ -3,20 +3,30 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { BroadcastRequestedEvent } from '../../../models/broadcast.model';
 import { PanelType } from '../../../models/panel.model';
 import { RecordingStartRequestedEvent, RecordingStopRequestedEvent } from '../../../models/recording.model';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { MeetingUiConfigService } from '../../../services/config/meeting-ui-config.service';
 import { PanelService } from '../../../services/panel/panel.service';
+import { BroadcastActivityComponent } from './broadcast-activity/broadcast-activity.component';
 import { RecordingActivityComponent } from './recording-activity/recording-activity.component';
 
 /**
  * The **ActivitiesPanelComponent** is the component that allows showing the activities panel.
- * This panel shows the recording activity.
+ * This panel shows the recording and the live broadcast activities.
  */
 @Component({
 	selector: 'ov-activities-panel',
-	imports: [MatButtonModule, MatExpansionModule, MatIconModule, MatTooltipModule, TranslatePipe, RecordingActivityComponent],
+	imports: [
+		MatButtonModule,
+		MatExpansionModule,
+		MatIconModule,
+		MatTooltipModule,
+		TranslatePipe,
+		RecordingActivityComponent,
+		BroadcastActivityComponent
+	],
 	templateUrl: './activities-panel.component.html',
 	styleUrls: ['../panel.component.scss', './activities-panel.component.scss']
 })
@@ -41,6 +51,12 @@ export class ActivitiesPanelComponent {
 	onViewRecordingsClicked = output<void>();
 
 	/**
+	 * Fired whenever the user asks something of the live broadcast: going live, stopping it, adding
+	 * a destination or starting and stopping one. See {@link BroadcastRequestedEvent}.
+	 */
+	onBroadcastRequested = output<BroadcastRequestedEvent>();
+
+	/**
 	 * @internal
 	 */
 	private readonly libService = inject(MeetingUiConfigService);
@@ -53,6 +69,10 @@ export class ActivitiesPanelComponent {
 	 * @internal
 	 */
 	readonly showRecordingActivity = this.libService.recordingActivitySignal;
+	/**
+	 * @internal
+	 */
+	readonly showBroadcastActivity = this.libService.broadcastActivitySignal;
 
 	/**
 	 * @internal
@@ -72,5 +92,4 @@ export class ActivitiesPanelComponent {
 	close() {
 		this.panelService.togglePanel(PanelType.ACTIVITIES);
 	}
-
 }

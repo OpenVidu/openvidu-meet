@@ -30,6 +30,23 @@
 				</div>
 			}
 
+			@if (showBroadcastChip()) {
+				<div
+					id="broadcast-tag"
+					class="status-chip broadcast-chip"
+					[class.clickable]="canOpenActivitiesPanel()"
+					(click)="openBroadcastActivityPanel()"
+				>
+					<mat-icon class="status-chip-icon broadcast-icon">sensors</mat-icon>
+					<span class="status-chip-value">LIVE</span>
+					@if (isBroadcastStarting()) {
+						<span class="status-chip-label folds">{{ 'ROOM.BROADCAST_BADGE_STARTING' | translate }}</span>
+					} @else if (broadcastElapsed(); as elapsed) {
+						<span class="status-chip-label">{{ elapsed | date: 'H:mm:ss' }}</span>
+					}
+				</div>
+			}
+
 			@if (isEndingSoon()) {
 				<div
 					id="meeting-ending-soon"

@@ -258,6 +258,14 @@ export class IframeBridgeService {
 				break;
 			}
 
+			case EmbeddedCommandName.BROADCAST_START:
+				await this.commandService.broadcastStart();
+				break;
+
+			case EmbeddedCommandName.BROADCAST_STOP:
+				await this.commandService.broadcastStop();
+				break;
+
 			default:
 				break;
 		}

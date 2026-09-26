@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -16,6 +16,12 @@ import {
 	MeetingConfigFormValue
 } from '../../../../models/wizard-forms.model';
 import { WizardStepId } from '../../../../models/wizard.model';
+import { E2EEExclusiveFeature } from '../../../../services/wizard-state.service';
+
+const E2EE_EXCLUSIVE_FEATURES: { feature: E2EEExclusiveFeature; stepId: WizardStepId; control: string }[] = [
+	{ feature: 'recording', stepId: WizardStepId.RECORDING, control: 'recordingEnabled' },
+	{ feature: 'broadcast', stepId: WizardStepId.BROADCAST, control: 'broadcastEnabled' }
+];
 import { RoomWizardStateService } from '../../../../services';
 
 @Component({
@@ -117,58 +123,35 @@ export class MeetingConfigComponent {
 			e2eeEnabled: isEnabled
 		});
 
-		const recordingStep = this.wizardService.getStepById(WizardStepId.RECORDING);
+		// Encryption excludes every server-side composition of the meeting: turning it on turns
+		// recording and live broadcast off, remembering what they were so turning it off restores them.
+		for (const { feature, stepId, control } of E2EE_EXCLUSIVE_FEATURES) {
+			const step = this.wizardService.getStepById(stepId);
 
-		if (!recordingStep) return;
+			if (!step) continue;
 
-		const recordingForm = recordingStep.formGroup;
+			const featureControl = (step.formGroup as FormGroup).get(control) as FormControl<boolean>;
 
-		if (isEnabled) {
-			// Save the current recording state before disabling it, only when it is on, to preserve the
-			// user's original choice
-			if (recordingForm.controls.recordingEnabled.value) {
-				this.wizardService.setRecordingStateBeforeE2EE(true);
+			if (isEnabled) {
+				if (featureControl.value) {
+					this.wizardService.rememberFeatureStateBeforeE2EE(feature, true);
+				}
+
+				this.setFeatureEnabled(feature, featureControl, false);
+				continue;
 			}
 
-			// Disable recording automatically
-			recordingForm.patchValue(
-				{
-					recordingEnabled: false
-				},
-				{ emitEvent: true }
-			);
+			const previousState = this.wizardService.takeFeatureStateBeforeE2EE(feature);
 
-			this.wizardService.updateStepData({
-				config: {
-					recording: {
-						enabled: false
-					}
-				}
-			});
-		} else {
-			// Restore the previous recording state when E2EE is disabled
-			const previousRecordingState = this.wizardService.getRecordingStateBeforeE2EE();
-
-			if (previousRecordingState !== undefined) {
-				recordingForm.patchValue(
-					{
-						recordingEnabled: previousRecordingState
-					},
-					{ emitEvent: true }
-				);
-
-				this.wizardService.updateStepData({
-					config: {
-						recording: {
-							enabled: previousRecordingState
-						}
-					}
-				});
-
-				// Clear the saved state
-				this.wizardService.clearRecordingStateBeforeE2EE();
+			if (previousState !== undefined) {
+				this.setFeatureEnabled(feature, featureControl, previousState);
 			}
 		}
+	}
+
+	private setFeatureEnabled(feature: E2EEExclusiveFeature, control: FormControl<boolean>, enabled: boolean): void {
+		control.patchValue(enabled, { emitEvent: true });
+		this.wizardService.updateStepData({ config: { [feature]: { enabled } } });
 	}
 
 	onChatToggleChange(event: MatSlideToggleChange): void {

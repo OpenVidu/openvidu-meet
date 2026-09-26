@@ -1,0 +1,520 @@
+:host {
+	// ── The row: identity plus live state, all that stays visible while the accordion is shut ──
+	.broadcast-row {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		min-width: 0;
+		flex-grow: 1;
+	}
+
+	.broadcast-tile {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		width: 40px;
+		height: 40px;
+		border-radius: var(--ov-surface-radius);
+		background-color: var(--ov-secondary-action-color);
+		color: var(--ov-text-surface-color);
+
+		mat-icon {
+			font-size: 20px;
+			width: 20px;
+			height: 20px;
+		}
+
+		// The broadcast colour means streaming right now; recording keeps solid red for itself.
+		&.live {
+			background-color: var(--ov-broadcast-color);
+			color: #ffffff;
+		}
+
+		&.pending {
+			color: var(--ov-warn-color);
+		}
+
+		&.failed {
+			color: var(--ov-error-color);
+		}
+	}
+
+	.broadcast-identity {
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+		min-width: 0;
+		flex-grow: 1;
+	}
+
+	.broadcast-name {
+		margin: 0;
+		font-size: 14px;
+		font-weight: 600;
+		color: var(--ov-text-surface-color);
+	}
+
+	.broadcast-status {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		margin: 0;
+		font-size: 12px;
+		line-height: 1.25;
+		color: var(--ov-text-secondary-color);
+	}
+
+	.live-dot {
+		flex-shrink: 0;
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background-color: var(--ov-broadcast-accent-color);
+		animation: ov-broadcast-activity-pulse 1.2s ease-in-out infinite;
+	}
+
+	.status-separator {
+		opacity: 0.55;
+	}
+
+	.broadcast-elapsed {
+		color: var(--ov-text-surface-color);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.broadcast-failures {
+		color: var(--ov-warn-color);
+	}
+
+	// Starting and stopping are a rule under the row, so the body never jumps.
+	.broadcast-progress {
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		height: 2px;
+		overflow: hidden;
+		background-color: color-mix(in srgb, var(--ov-text-secondary-color) 25%, transparent);
+	}
+
+	.broadcast-progress-bar {
+		display: block;
+		width: 30%;
+		height: 100%;
+		background-color: var(--ov-warn-color);
+		animation: ov-broadcast-activity-sweep 1.4s ease-in-out infinite;
+	}
+
+	// ── The body ──────────────────────────────────────────────────────────────
+	.broadcast-body {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		padding: 16px 10px 12px;
+	}
+
+	.broadcast-note,
+	.broadcast-failure {
+		display: flex;
+		align-items: flex-start;
+		gap: 11px;
+		padding: 13px 14px;
+		border-radius: var(--ov-surface-radius);
+	}
+
+	.broadcast-note {
+		background-color: var(--ov-secondary-action-color);
+		color: var(--ov-text-surface-color);
+	}
+
+	.broadcast-failure {
+		background-color: color-mix(in srgb, var(--ov-error-color) 12%, transparent);
+		border: 1px solid color-mix(in srgb, var(--ov-error-color) 40%, transparent);
+		color: var(--ov-text-surface-color);
+	}
+
+	.broadcast-note-icon,
+	.broadcast-failure-icon {
+		flex-shrink: 0;
+		margin-top: 1px;
+		font-size: 20px;
+		width: 20px;
+		height: 20px;
+	}
+
+	.broadcast-failure-icon {
+		color: var(--ov-error-color);
+	}
+
+	.broadcast-note-body {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		min-width: 0;
+	}
+
+	.broadcast-note-title {
+		font-size: 13px;
+		font-weight: 600;
+		line-height: 1.35;
+	}
+
+	.broadcast-note-message {
+		font-size: 11.5px;
+		line-height: 1.5;
+		overflow-wrap: anywhere;
+		text-wrap: pretty;
+	}
+
+	.broadcast-note .broadcast-note-message {
+		opacity: 0.88;
+	}
+
+	.broadcast-note.single-line {
+		align-items: center;
+
+		.broadcast-note-message {
+			font-size: 13px;
+			opacity: 1;
+		}
+	}
+
+	.broadcast-permission,
+	.broadcast-hint,
+	.cost-note {
+		display: flex;
+		align-items: flex-start;
+		gap: 8px;
+		margin: 0;
+		padding: 0 3px;
+		font-size: 11.5px;
+		line-height: 1.5;
+		color: var(--ov-text-secondary-color);
+		text-wrap: pretty;
+	}
+
+	.broadcast-permission-icon,
+	.cost-note-icon {
+		flex-shrink: 0;
+		margin-top: 1px;
+		font-size: 16px;
+		width: 16px;
+		height: 16px;
+	}
+
+	.cost-note-icon {
+		color: var(--ov-warn-color);
+
+		&.inline {
+			font-size: 14px;
+			width: 14px;
+			height: 14px;
+			margin-top: 0;
+			vertical-align: text-bottom;
+		}
+	}
+
+	// ── Destinations ──────────────────────────────────────────────────────────
+	.destinations-caption,
+	.destinations-footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+	}
+
+	.caption {
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--ov-text-secondary-color);
+
+		&.accent {
+			color: var(--ov-broadcast-accent-color);
+		}
+	}
+
+	.caption-detail {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 12px;
+		color: var(--ov-text-secondary-color);
+	}
+
+	.destination-list {
+		display: flex;
+		flex-direction: column;
+		border: 1px solid var(--ov-border-color);
+		border-radius: var(--ov-surface-radius);
+		overflow: hidden;
+	}
+
+	.destination-row {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-height: 50px;
+		padding: 4px 4px 4px 12px;
+		box-sizing: border-box;
+
+		& + .destination-row,
+		& + .destination-editor,
+		.destination-editor + & {
+			border-top: 1px solid color-mix(in srgb, var(--ov-border-color) 60%, transparent);
+		}
+	}
+
+	.destination-pick {
+		flex-grow: 1;
+		min-width: 0;
+	}
+
+	.destination-pick-body {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		min-width: 0;
+	}
+
+	.destination-text {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		flex-grow: 1;
+		min-width: 0;
+	}
+
+	.destination-name {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--ov-text-surface-color);
+
+		&.muted {
+			color: var(--ov-text-secondary-color);
+		}
+	}
+
+	.destination-detail {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 12px;
+		color: var(--ov-text-secondary-color);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+
+		&.failed {
+			color: var(--ov-error-color);
+			white-space: normal;
+		}
+	}
+
+	.pill {
+		padding: 1px 7px;
+		border-radius: 9px;
+		background-color: var(--ov-secondary-action-color);
+		font-size: 10.5px;
+		font-weight: 500;
+		color: var(--ov-text-surface-color);
+	}
+
+	.destination-action {
+		flex-shrink: 0;
+		color: var(--ov-text-secondary-color);
+	}
+
+	.destination-text-action,
+	.add-destination {
+		flex-shrink: 0;
+		color: var(--ov-broadcast-accent-color);
+		font-size: 13px;
+		font-weight: 500;
+
+		mat-icon {
+			font-size: 18px;
+			width: 18px;
+			height: 18px;
+		}
+	}
+
+	.add-destination {
+		margin-left: -8px;
+	}
+
+	// ── The inline editor for a destination of this meeting ───────────────────
+	.destination-editor {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		padding: 12px 12px 14px;
+		background-color: color-mix(in srgb, var(--ov-background-color) 40%, var(--ov-surface-color));
+	}
+
+	.destination-editor-header {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.field-label {
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--ov-text-surface-color);
+	}
+
+	.field-input {
+		height: 40px;
+		padding: 0 10px;
+		box-sizing: border-box;
+		border: 1px solid var(--ov-border-color);
+		border-radius: var(--ov-surface-radius);
+		background-color: var(--ov-background-color);
+		color: var(--ov-text-surface-color);
+		font: inherit;
+		font-size: 13.5px;
+
+		&:focus {
+			outline: none;
+			border-color: var(--ov-broadcast-accent-color);
+			box-shadow: 0 0 0 1px var(--ov-broadcast-accent-color);
+		}
+	}
+
+	.field-error {
+		font-size: 11.5px;
+		color: var(--ov-error-color);
+	}
+
+	.destination-editor-hint {
+		margin: 0;
+		font-size: 11.5px;
+		line-height: 1.5;
+		color: var(--ov-text-secondary-color);
+	}
+
+	.destination-editor-actions {
+		display: flex;
+		gap: 8px;
+		margin-top: 2px;
+
+		button {
+			flex-grow: 1;
+			height: 36px;
+			border-radius: var(--ov-surface-radius);
+			font-size: 13px;
+			font-weight: 500;
+		}
+
+		.editor-submit {
+			background-color: var(--ov-broadcast-color);
+			color: #ffffff;
+		}
+
+		button[mat-stroked-button] {
+			border: 1px solid var(--ov-border-color);
+			color: var(--ov-text-surface-color);
+		}
+	}
+
+	// ── The actions, always last ──────────────────────────────────────────────
+	.broadcast-actions {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		margin-top: 8px;
+
+		button {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			width: 100%;
+			height: 44px;
+			border-radius: var(--ov-surface-radius);
+			font-size: 14px;
+			font-weight: 600;
+		}
+
+		mat-icon {
+			font-size: 18px;
+			width: 18px;
+			height: 18px;
+			margin: 0;
+		}
+	}
+
+	#go-live-btn,
+	#retry-broadcast-btn {
+		background-color: var(--ov-broadcast-color);
+		color: #ffffff;
+	}
+
+	#stop-broadcast-btn {
+		background-color: var(--ov-error-color);
+		color: #ffffff;
+	}
+
+	#reset-broadcast-status-btn {
+		background-color: transparent;
+		border: 1px solid var(--ov-border-color);
+		color: var(--ov-text-surface-color);
+	}
+
+	.busy-spinner {
+		flex-shrink: 0;
+		box-sizing: border-box;
+		width: 16px;
+		height: 16px;
+		border: 2px solid currentColor;
+		border-top-color: transparent;
+		border-radius: 50%;
+		animation: ov-broadcast-activity-spin 0.8s linear infinite;
+	}
+
+	.is-busy,
+	.broadcast-actions button[disabled] {
+		background-color: var(--ov-disabled-background) !important;
+		color: var(--ov-text-disabled-color) !important;
+		cursor: not-allowed;
+	}
+
+	mat-expansion-panel {
+		margin: 0 0 5px 0;
+	}
+
+	@keyframes ov-broadcast-activity-pulse {
+		50% {
+			opacity: 0.25;
+		}
+	}
+
+	@keyframes ov-broadcast-activity-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	@keyframes ov-broadcast-activity-sweep {
+		0% {
+			transform: translateX(-110%);
+		}
+		100% {
+			transform: translateX(340%);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.live-dot,
+		.broadcast-progress-bar,
+		.busy-spinner {
+			animation: none;
+		}
+	}
+}

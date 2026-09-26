@@ -2,6 +2,7 @@ import { computed, inject, Service, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, ValidationErrors, Validators } from '@angular/forms';
 import {
 	MEET_ROOM_MEMBER_PERMISSIONS_FIELDS,
+	MeetBroadcastDestination,
 	MeetRecordingLayout,
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
@@ -16,6 +17,7 @@ import { deepMerge, DeepPartial } from '../../../shared/utils/object.utils';
 import { WizardNavigationConfig, WizardStepId } from '../models';
 import {
 	AnyWizardStep,
+	BroadcastFormGroup,
 	MAX_DURATION_MINUTES_LIMIT,
 	MAX_PARTICIPANTS_LIMIT,
 	MIN_DURATION_MINUTES_LIMIT,
@@ -32,6 +34,9 @@ const DEFAULT_MODERATOR_PERMISSIONS: MeetRoomMemberPermissions = {
 	recordingPlay: true,
 	recordingDownload: true,
 	recordingDelete: true,
+	broadcastControl: true,
+	broadcastAddDestinations: true,
+	broadcastEditDestinations: true,
 	meetingJoin: true,
 	meetingRead: true,
 	roomShareAccessLinks: true,
@@ -55,6 +60,9 @@ const DEFAULT_SPEAKER_PERMISSIONS: MeetRoomMemberPermissions = {
 	recordingPlay: true,
 	recordingDownload: true,
 	recordingDelete: false,
+	broadcastControl: false,
+	broadcastAddDestinations: false,
+	broadcastEditDestinations: false,
 	meetingJoin: true,
 	meetingRead: true,
 	roomShareAccessLinks: false,
@@ -78,6 +86,7 @@ const DEFAULT_CONFIG: MeetRoomConfig = {
 		enabled: true,
 		layout: MeetRecordingLayout.GRID
 	},
+	broadcast: { enabled: false, destinations: [] },
 	chat: { enabled: true },
 	virtualBackground: { enabled: true },
 	e2ee: { enabled: false },
@@ -109,6 +118,16 @@ const DEFAULT_ROOM_OPTIONS: MeetRoomOptions = {
 	}
 };
 
+/** The features that end-to-end encryption excludes: enabling one turns the other off. */
+export type E2EEExclusiveFeature = 'recording' | 'broadcast';
+
+// Live broadcast needs somewhere to stream to, so enabling it without a destination is an
+// incomplete step, not a valid room.
+const broadcastDestinationsValidator = (control: AbstractControl): ValidationErrors | null => {
+	const { broadcastEnabled, destinations } = (control as BroadcastFormGroup).getRawValue();
+	return broadcastEnabled && destinations.length === 0 ? { destinationsRequired: true } : null;
+};
+
 /**
  * Service to manage the state of the room creation wizard.
  * Handles step navigation, form data management, and room options building.
@@ -125,8 +144,10 @@ export class RoomWizardStateService {
 	private _editMode = signal<boolean>(false);
 	private _roomOptions = signal<MeetRoomOptions>(deepMerge({}, DEFAULT_ROOM_OPTIONS));
 	private _pendingMembers = signal<MeetRoomMemberOptions[]>([]);
-	private _recordingStateBeforeE2EE = signal<boolean | undefined>(undefined);
-	private _e2eeStateBeforeRecording = signal<boolean | undefined>(undefined);
+	// What a feature was set to before E2EE turned it off, and what E2EE was before a feature turned
+	// it off, so undoing the toggle gives the user back what they had chosen.
+	private _featureStateBeforeE2EE = signal<Partial<Record<E2EEExclusiveFeature, boolean>>>({});
+	private _e2eeStateBeforeFeature = signal<Partial<Record<E2EEExclusiveFeature, boolean>>>({});
 
 	public readonly steps = this._steps.asReadonly();
 	public readonly currentStepIndex = this._currentStepIndex.asReadonly();
@@ -343,6 +364,22 @@ export class RoomWizardStateService {
 				})
 			},
 			{
+				id: WizardStepId.BROADCAST,
+				label: this.translateService.translate('ROOMS.WIZARD.STEP_BROADCAST'),
+				isCompleted: editMode,
+				formGroup: this.formBuilder.group(
+					{
+						broadcastEnabled: this.formBuilder.nonNullable.control(
+							initialRoomOptions.config!.broadcast!.enabled
+						),
+						destinations: this.formBuilder.nonNullable.control<MeetBroadcastDestination[]>(
+							initialRoomOptions.config!.broadcast!.destinations
+						)
+					},
+					{ validators: [broadcastDestinationsValidator] }
+				)
+			},
+			{
 				id: WizardStepId.ROOM_ACCESS,
 				label: this.translateService.translate('ROOMS.WIZARD.STEP_ROOM_ACCESS'),
 				isCompleted: editMode,
@@ -476,28 +513,26 @@ export class RoomWizardStateService {
 		return controls;
 	}
 
-	setRecordingStateBeforeE2EE(value: boolean): void {
-		this._recordingStateBeforeE2EE.set(value);
+	rememberFeatureStateBeforeE2EE(feature: E2EEExclusiveFeature, value: boolean): void {
+		this._featureStateBeforeE2EE.update((states) => ({ ...states, [feature]: value }));
 	}
 
-	getRecordingStateBeforeE2EE(): boolean | undefined {
-		return this._recordingStateBeforeE2EE();
+	/** The state remembered for the feature, forgotten once taken. */
+	takeFeatureStateBeforeE2EE(feature: E2EEExclusiveFeature): boolean | undefined {
+		const value = this._featureStateBeforeE2EE()[feature];
+		this._featureStateBeforeE2EE.update(({ [feature]: _taken, ...rest }) => rest);
+		return value;
 	}
 
-	clearRecordingStateBeforeE2EE(): void {
-		this._recordingStateBeforeE2EE.set(undefined);
+	rememberE2EEStateBeforeFeature(feature: E2EEExclusiveFeature, value: boolean): void {
+		this._e2eeStateBeforeFeature.update((states) => ({ ...states, [feature]: value }));
 	}
 
-	setE2EEStateBeforeRecording(value: boolean): void {
-		this._e2eeStateBeforeRecording.set(value);
-	}
-
-	getE2EEStateBeforeRecording(): boolean | undefined {
-		return this._e2eeStateBeforeRecording();
-	}
-
-	clearE2EEStateBeforeRecording(): void {
-		this._e2eeStateBeforeRecording.set(undefined);
+	/** The E2EE state remembered when the feature turned it off, forgotten once taken. */
+	takeE2EEStateBeforeFeature(feature: E2EEExclusiveFeature): boolean | undefined {
+		const value = this._e2eeStateBeforeFeature()[feature];
+		this._e2eeStateBeforeFeature.update(({ [feature]: _taken, ...rest }) => rest);
+		return value;
 	}
 
 	/**
@@ -528,8 +563,8 @@ export class RoomWizardStateService {
 	resetWizard(): void {
 		this._isInitialized.set(false);
 		this._editMode.set(false);
-		this._recordingStateBeforeE2EE.set(undefined);
-		this._e2eeStateBeforeRecording.set(undefined);
+		this._featureStateBeforeE2EE.set({});
+		this._e2eeStateBeforeFeature.set({});
 		this._roomOptions.set(deepMerge({}, DEFAULT_ROOM_OPTIONS));
 		this._steps.set([]);
 		this._currentStepIndex.set(0);

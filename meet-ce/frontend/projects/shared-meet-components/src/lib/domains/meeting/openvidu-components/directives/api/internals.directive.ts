@@ -210,6 +210,97 @@ export class StartStopRecordingButtonsDirective implements OnDestroy {
 
 /**
  * @internal
+ * The **broadcastActivityControls** directive shows or hides the controls of the live broadcast activity: going
+ * live, stopping, and starting or stopping a destination. Without them the activity only reports.
+ *
+ * Default: `true`
+ *
+ * It is only available for {@link MeetingViewComponent}.
+ *
+ * @example
+ * <ov-meeting-view [broadcastActivityControls]="false"></ov-meeting-view>
+ */
+@Directive({
+	selector: 'ov-meeting-view[broadcastActivityControls]'
+})
+export class BroadcastActivityControlsDirective implements OnDestroy {
+	readonly broadcastActivityControls = input<boolean | undefined>(undefined);
+
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(MeetingUiConfigService);
+	private readonly controlsEffect = effect(() => {
+		this.libService.updateBroadcastActivityConfig({ controls: this.broadcastActivityControls() ?? true });
+	});
+
+	ngOnDestroy(): void {
+		this.libService.updateBroadcastActivityConfig({ controls: true });
+	}
+}
+
+/**
+ * @internal
+ * The **broadcastActivityAddDestinations** directive shows or hides adding destinations for the meeting in the
+ * live broadcast activity.
+ *
+ * Default: `true`
+ *
+ * It is only available for {@link MeetingViewComponent}.
+ *
+ * @example
+ * <ov-meeting-view [broadcastActivityAddDestinations]="false"></ov-meeting-view>
+ */
+@Directive({
+	selector: 'ov-meeting-view[broadcastActivityAddDestinations]'
+})
+export class BroadcastActivityAddDestinationsDirective implements OnDestroy {
+	readonly broadcastActivityAddDestinations = input<boolean | undefined>(undefined);
+
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(MeetingUiConfigService);
+	private readonly addDestinationsEffect = effect(() => {
+		this.libService.updateBroadcastActivityConfig({
+			addDestinations: this.broadcastActivityAddDestinations() ?? true
+		});
+	});
+
+	ngOnDestroy(): void {
+		this.libService.updateBroadcastActivityConfig({ addDestinations: true });
+	}
+}
+
+/**
+ * @internal
+ * The **broadcastActivityEditDestinations** directive shows or hides changing a room destination for the meeting
+ * in the live broadcast activity.
+ *
+ * Default: `true`
+ *
+ * It is only available for {@link MeetingViewComponent}.
+ *
+ * @example
+ * <ov-meeting-view [broadcastActivityEditDestinations]="false"></ov-meeting-view>
+ */
+@Directive({
+	selector: 'ov-meeting-view[broadcastActivityEditDestinations]'
+})
+export class BroadcastActivityEditDestinationsDirective implements OnDestroy {
+	readonly broadcastActivityEditDestinations = input<boolean | undefined>(undefined);
+
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(MeetingUiConfigService);
+	private readonly editDestinationsEffect = effect(() => {
+		this.libService.updateBroadcastActivityConfig({
+			editDestinations: this.broadcastActivityEditDestinations() ?? true
+		});
+	});
+
+	ngOnDestroy(): void {
+		this.libService.updateBroadcastActivityConfig({ editDestinations: true });
+	}
+}
+
+/**
+ * @internal
  * The **recordingActivityViewRecordingsButton** directive allows to show/hide the view recordings button in the recording activity panel.
  *
  * Default: `false`

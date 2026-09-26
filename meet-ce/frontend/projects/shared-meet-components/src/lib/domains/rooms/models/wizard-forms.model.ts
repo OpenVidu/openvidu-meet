@@ -1,5 +1,6 @@
 import { FormControl, FormGroup } from '@angular/forms';
 import {
+	MeetBroadcastDestination,
 	MeetRecordingAutoStartMode,
 	MeetRecordingLayout,
 	MeetRoomDeletionPolicyWithMeeting,
@@ -110,6 +111,18 @@ export type RecordingFormGroup = FormGroup<{
 	anonymousRecordingEnabled: FormControl<boolean>;
 }>;
 
+// Form value and group types for the live broadcast step
+
+export interface BroadcastFormValue {
+	broadcastEnabled: boolean;
+	destinations: MeetBroadcastDestination[];
+}
+
+export type BroadcastFormGroup = FormGroup<{
+	broadcastEnabled: FormControl<boolean>;
+	destinations: FormControl<MeetBroadcastDestination[]>;
+}>;
+
 /**
  * Mapping of wizard step identifiers to their corresponding form groups
  */
@@ -117,6 +130,7 @@ export type WizardStepFormGroupMap = {
 	[WizardStepId.ROOM_DETAILS]: RoomDetailsFormGroup;
 	[WizardStepId.MEETING]: MeetingConfigFormGroup;
 	[WizardStepId.RECORDING]: RecordingFormGroup;
+	[WizardStepId.BROADCAST]: BroadcastFormGroup;
 	[WizardStepId.ROOM_ACCESS]: RoomAccessFormGroup;
 };
 

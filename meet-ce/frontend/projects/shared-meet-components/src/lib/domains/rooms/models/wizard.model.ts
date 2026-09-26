@@ -7,6 +7,7 @@ export enum WizardStepId {
 	ROOM_DETAILS = 'roomDetails',
 	MEETING = 'meeting',
 	RECORDING = 'recording',
+	BROADCAST = 'broadcast',
 	ROOM_ACCESS = 'roomAccess'
 }
 

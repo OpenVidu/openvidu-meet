@@ -115,6 +115,7 @@
         "MEETING": "Meeting",
         "MEDIA": "Media",
         "RECORDINGS": "Opnames",
+        "BROADCAST": "Live-uitzending",
         "CHAT": "Chat"
       },
       "ITEMS": {
@@ -189,6 +190,18 @@
         "recordingDelete": {
           "LABEL": "Opnames verwijderen",
           "DESCRIPTION": "Opnames verwijderen toestaan"
+        },
+        "broadcastControl": {
+          "LABEL": "Live gaan",
+          "DESCRIPTION": "Staat toe live-uitzendingen naar de bestemmingen van de ruimte te starten en te stoppen, alle of slechts enkele"
+        },
+        "broadcastAddDestinations": {
+          "LABEL": "Bestemmingen toevoegen",
+          "DESCRIPTION": "Staat toe een vergadering naar extra URL's uit te zenden naast de bestemmingen van de ruimte. Vereist \"Live gaan\""
+        },
+        "broadcastEditDestinations": {
+          "LABEL": "Bestemmingen bewerken",
+          "DESCRIPTION": "Staat toe de URL of naam van een bestemming voor één vergadering te wijzigen, zonder de bestemmingen van de ruimte aan te passen. Vereist \"Live gaan\""
         },
         "chatRead": {
           "LABEL": "Lezen",

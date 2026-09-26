@@ -57,8 +57,20 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.recording-chip .recording-dot {
+	.recording-chip .recording-dot,
+	.broadcast-chip .broadcast-icon {
 		animation: none;
+	}
+}
+
+.broadcast-chip {
+	&.clickable {
+		@include chip.status-chip-interactive;
+	}
+
+	.broadcast-icon {
+		color: var(--ov-broadcast-accent-color);
+		animation: ov-recording-pulse 1.2s ease-in-out infinite;
 	}
 }
 

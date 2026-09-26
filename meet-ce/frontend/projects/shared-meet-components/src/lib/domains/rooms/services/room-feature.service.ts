@@ -1,6 +1,7 @@
 import { computed, effect, inject, Service, signal, untracked } from '@angular/core';
 import {
 	MeetAppearanceConfig,
+	MeetBroadcastConfig,
 	MeetRecordingConfig,
 	MeetRoomConfig,
 	MeetRoomMemberPermissions
@@ -23,6 +24,9 @@ const DEFAULT_FEATURES: RoomFeatures = {
 	showScreenShare: true,
 	showStartStopRecording: true,
 	showViewRecordings: true,
+	showBroadcastControls: true,
+	showBroadcastAddDestinations: true,
+	showBroadcastEditDestinations: true,
 	showFullscreen: true,
 	showBackgrounds: true,
 	showCaptionsControls: true,
@@ -79,6 +83,9 @@ export class RoomFeatureService {
 
 	/** The room's recording configuration (trigger, layout), for UI that needs to describe it. */
 	public readonly recordingConfig = computed<MeetRecordingConfig | undefined>(() => this.roomConfig()?.recording);
+
+	/** The room's live broadcast configuration (its saved destinations), for the activity that offers them. */
+	public readonly broadcastConfig = computed<MeetBroadcastConfig | undefined>(() => this.roomConfig()?.broadcast);
 
 	/**
 	 * Loads global feature configuration once the service is ready for requests.
