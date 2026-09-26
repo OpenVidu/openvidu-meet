@@ -139,6 +139,14 @@ export class IframeHostService {
 		this.post({ command: EmbeddedCommandName.PARTICIPANT_REACTION_SEND, payload: { reaction } });
 	}
 
+	broadcastStart(): void {
+		this.post({ command: EmbeddedCommandName.BROADCAST_START });
+	}
+
+	broadcastStop(): void {
+		this.post({ command: EmbeddedCommandName.BROADCAST_STOP });
+	}
+
 	// ── Deprecated command names ────────────────────────────────────────────
 	// These post the OLD wire strings on purpose: they are how the e2e checks that a host
 	// still on 3.8.0 keeps working. They are not forwarders to the canonical methods, since
