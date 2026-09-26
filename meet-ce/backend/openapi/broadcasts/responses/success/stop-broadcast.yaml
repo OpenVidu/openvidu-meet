@@ -1,0 +1,18 @@
+description: The broadcast is being stopped
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/meet-broadcast.yaml'
+        example:
+            broadcastId: 'EG_XYZ'
+            roomId: 'room-123'
+            roomName: 'room'
+            status: 'ending'
+            startDate: 1620000000000
+            destinations:
+                - id: 'kX9pL2mQ7a'
+                  name: 'YouTube'
+                  url: 'rtmp://a.rtmp.youtube.com/live2/********'
+                  source: 'room'
+                  status: 'active'
+                  startDate: 1620000000000

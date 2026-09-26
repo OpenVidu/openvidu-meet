@@ -15,7 +15,7 @@ description: |
 
     ## Permissions
 
-    Every operation on a room's live meeting and on its recordings is gated by one room member permission,
+    Every operation on a room's live meeting, on its broadcasts and on its recordings is gated by one room member permission,
     named in the operation's own description and listed in the `MeetPermissions` schema. A caller without it
     gets a `403`.
 

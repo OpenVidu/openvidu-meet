@@ -1,0 +1,11 @@
+description: >
+    Validation error: the body is malformed, or the destinations cannot be streamed to (an id
+    the room does not have, a new destination without its full URL, two destinations with the
+    same URL, more than 5 destinations, or none at all)
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        example:
+            error: 'Broadcast Error'
+            message: "A broadcast cannot have more than 5 destinations"

@@ -1,0 +1,24 @@
+description: The broadcast, with the status of each destination
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/meet-broadcast.yaml'
+        example:
+            broadcastId: 'EG_XYZ'
+            roomId: 'room-123'
+            roomName: 'room'
+            status: 'active'
+            startDate: 1620000000000
+            destinations:
+                - id: 'kX9pL2mQ7a'
+                  name: 'YouTube'
+                  url: 'rtmp://a.rtmp.youtube.com/live2/********'
+                  source: 'room'
+                  status: 'active'
+                  startDate: 1620000000000
+                - id: 'b3Nq8ZrT1c'
+                  name: 'Twitch'
+                  url: 'rtmp://live.twitch.tv/app/********'
+                  source: 'room'
+                  status: 'failed'
+                  error: 'connection refused'

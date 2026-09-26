@@ -1,0 +1,65 @@
+type: object
+required:
+    - id
+    - name
+    - url
+    - source
+    - status
+properties:
+    id:
+        type: string
+        example: 'kX9pL2mQ7a'
+        description: >
+            The unique identifier of the destination. A room destination keeps the `id` it has in the
+            room's config; a destination added for the meeting gets its own.
+    name:
+        type: string
+        example: 'YouTube'
+        description: The label of the destination, shown to participants.
+    url:
+        type: string
+        example: 'rtmp://a.rtmp.youtube.com/live2/********'
+        description: >
+            The RTMP URL streamed to, with the stream key replaced by `********`: the key never leaves
+            the server.
+    source:
+        type: string
+        enum: ['room', 'meeting']
+        example: 'room'
+        description: >
+            Where the destination comes from: `room` for one saved in the room's config, `meeting` for one
+            added for this meeting only.
+    edited:
+        type: boolean
+        example: false
+        description: >
+            Present, and `true`, on a room destination whose name or URL was changed for this meeting
+            only. The room's config keeps its saved values.
+    status:
+        type: string
+        enum: ['connecting', 'active', 'stopped', 'failed']
+        example: 'active'
+        description: >
+            Whether the destination receives the stream: `connecting` until it does, `active` while it
+            does, `stopped` when it is not being streamed to (stopped, or not chosen when the broadcast
+            started), `failed` when the media server could not deliver to it.
+    error:
+        type: string
+        example: 'connection refused'
+        description: Why the destination failed. Present only when `status` is `failed`.
+    startDate:
+        type: number
+        example: 1620000000000
+        description: >
+            The date when the destination started to receive media (milliseconds since the Unix epoch).
+            Absent until it does.
+    endDate:
+        type: number
+        example: 1620000003600
+        description: >
+            The date when the stream to the destination ended (milliseconds since the Unix epoch).
+            Absent while it runs.
+    duration:
+        type: number
+        example: 3.6
+        description: How long the destination received media, in seconds. Absent while it runs.

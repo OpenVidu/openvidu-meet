@@ -1,0 +1,27 @@
+description: The broadcasts of the live meeting
+content:
+    application/json:
+        schema:
+            type: object
+            required:
+                - broadcasts
+            properties:
+                broadcasts:
+                    type: array
+                    description: The broadcast running in the meeting, or none.
+                    items:
+                        $ref: '../../schemas/meet-broadcast.yaml'
+        example:
+            broadcasts:
+                - broadcastId: 'EG_XYZ'
+                  roomId: 'room-123'
+                  roomName: 'room'
+                  status: 'active'
+                  startDate: 1620000000000
+                  destinations:
+                      - id: 'kX9pL2mQ7a'
+                        name: 'YouTube'
+                        url: 'rtmp://a.rtmp.youtube.com/live2/********'
+                        source: 'room'
+                        status: 'active'
+                        startDate: 1620000000000

@@ -1,0 +1,15 @@
+description: Whether the broadcast streams to the destination
+required: true
+content:
+    application/json:
+        schema:
+            type: object
+            required:
+                - active
+            properties:
+                active:
+                    type: boolean
+                    example: false
+                    description: >
+                        `false` stops streaming to the destination; `true` streams to it again, whether it
+                        was left out when the broadcast started, stopped since, or failed to connect.

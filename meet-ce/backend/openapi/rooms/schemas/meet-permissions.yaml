@@ -47,6 +47,27 @@ properties:
         type: boolean
         example: false
         description: Can delete recordings.
+    broadcastControl:
+        type: boolean
+        example: false
+        description: >
+            Can start and stop the live broadcast of the meeting, choose which of the room's destinations it
+            streams to, and stop or restart any of them while it runs. Has no deprecated `can*` equivalent.
+            A room created from 3.10.0 on grants it to the moderator role and denies it to the speaker role
+            by default; a room or member that existed before 3.10.0 starts without it.
+    broadcastAddDestinations:
+        type: boolean
+        example: false
+        description: >
+            Can add destinations to a broadcast, for that meeting only, besides the room's saved ones. Only
+            effective together with `broadcastControl`. Same defaults and history as `broadcastControl`.
+    broadcastEditDestinations:
+        type: boolean
+        example: false
+        description: >
+            Can change the name or the URL of one of the room's destinations for the meeting being
+            broadcast, without touching the room's config. Only effective together with `broadcastControl`.
+            Same defaults and history as `broadcastControl`.
     meetingJoin:
         type: boolean
         example: true

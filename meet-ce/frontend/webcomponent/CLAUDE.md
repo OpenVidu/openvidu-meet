@@ -66,12 +66,17 @@ events are re-dispatched on the outer element.
 - `participantJoined` is built a microtask after LiveKit announces the participant, because its
   `joinDate` is read from the participant info LiveKit holds. `participantLeft` maps the LiveKit
   disconnect reason with the same `participantLeaveReasonOf()` the webhook uses.
+- `broadcastStarted`/`broadcastUpdated`/`broadcastEnded` relay the server's broadcast signal as-is:
+  the first signal this client hears of a broadcast is always `broadcastStarted`, for a late joiner
+  too, and destination URLs come redacted.
 - Methods: every command runs through `EmbeddedCommandService.run()`, which enforces the permission
   and which commands work from the prejoin screen. `src/app/custom-element/wrapper.ts` adds the
   `on()` / `once()` / `off()` listener API and keeps the 3.8.0 method names as aliases that forward
   to the canonical method, so `src/app/app.ts` and `EmbeddedCommandService` only declare canonical
   names. The iframe bridge accepts both wire names through `resolveEmbeddedCommandName()` and applies
   no gating of its own, so both transports accept and reject identically.
+- `broadcastStart()` streams to every destination saved in the room; `broadcastStop()` targets the
+  broadcast the meeting was told about. Both need `broadcastControl`.
 - No `.d.ts` is published; hosts declare the subset they use (see
   `testapp/src/app/openvidu-meet-element.ts`).
 - `src/main.wc.ts`: `bootstrapOpenViduMeet(tagName?)` creates the Angular application, flips

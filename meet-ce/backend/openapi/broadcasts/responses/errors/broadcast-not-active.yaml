@@ -1,0 +1,9 @@
+description: >
+    Conflict: the broadcast is not running, or is being changed by another request
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        example:
+            error: 'Broadcast Error'
+            message: "Broadcast 'EG_XYZ' is not running, so its destinations cannot change"

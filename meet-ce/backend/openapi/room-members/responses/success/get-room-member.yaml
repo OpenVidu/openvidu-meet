@@ -46,6 +46,9 @@ content:
                         recordingPlay: true
                         recordingDownload: true
                         recordingDelete: true
+                        broadcastControl: true
+                        broadcastAddDestinations: true
+                        broadcastEditDestinations: true
                         meetingJoin: true
                         meetingRead: true
                         roomShareAccessLinks: true
