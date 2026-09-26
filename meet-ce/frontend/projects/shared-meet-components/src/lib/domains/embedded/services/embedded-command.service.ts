@@ -7,12 +7,14 @@ import {
 	MeetRoomMemberPermissions
 } from '@openvidu-meet/typings';
 import {
+	BroadcastStateService,
 	LocalMediaService,
 	MeetingLiveKitService,
 	MeetingPhaseService,
 	ScreenShareService
 } from '../../meeting/openvidu-components';
 import { RecordingService as RecordingStateService } from '../../meeting/openvidu-components/services/recording/recording.service';
+import { BroadcastService } from '../../meeting/services/broadcast.service';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { MeetingHandService } from '../../meeting/services/meeting-hand.service';
 import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
@@ -45,6 +47,8 @@ export class EmbeddedCommandService {
 	private readonly recordingState = inject(RecordingStateService);
 	private readonly handService = inject(MeetingHandService);
 	private readonly reactionsService = inject(MeetingReactionsService);
+	private readonly broadcastService = inject(BroadcastService);
+	private readonly broadcastState = inject(BroadcastStateService);
 	private readonly log = inject(LoggerService).get('EmbeddedCommandService');
 	private lastRecordingStart: Promise<void> | undefined;
 
@@ -195,6 +199,33 @@ export class EmbeddedCommandService {
 	private async startRecording(roomId: string): Promise<void> {
 		const { recordingId } = await this.recordingService.startRecording(roomId);
 		this.recordingState.setRecordingStarting(recordingId);
+	}
+
+	async broadcastStart(): Promise<void> {
+		await this.run(EmbeddedCommandName.BROADCAST_START, 'broadcastControl', async () => {
+			const roomId = this.meetingContextService.roomId();
+
+			if (!roomId) {
+				this.log.w('broadcastStart() called but room id is undefined');
+				return;
+			}
+
+			await this.broadcastService.startBroadcast(roomId);
+		});
+	}
+
+	async broadcastStop(): Promise<void> {
+		await this.run(EmbeddedCommandName.BROADCAST_STOP, 'broadcastControl', async () => {
+			const roomId = this.meetingContextService.roomId();
+			const broadcastId = this.broadcastState.broadcast()?.broadcastId;
+
+			if (!roomId || !broadcastId) {
+				this.log.w('broadcastStop() called but no broadcast is running');
+				return;
+			}
+
+			await this.broadcastService.stopBroadcast(roomId, broadcastId);
+		});
 	}
 
 	/** Anything other than an actual boolean (e.g. a webcomponent attribute string) means "toggle". */

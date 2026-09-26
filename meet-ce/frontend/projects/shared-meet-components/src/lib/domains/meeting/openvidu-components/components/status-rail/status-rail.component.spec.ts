@@ -8,6 +8,7 @@ import { HiddenParticipantsSummary } from '../../models/layout/smart-layout.mode
 import { PanelType } from '../../models/panel.model';
 import { ReactionCount } from '../../models/reaction.model';
 import { RecordingState, RecordingStateInfo } from '../../models/recording.model';
+import { BroadcastStateService } from '../../services/broadcast/broadcast-state.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import { MeetingEndingSoonService } from '../../services/meeting-ending-soon/meeting-ending-soon.service';
@@ -25,6 +26,9 @@ describe('StatusRailComponent', () => {
 	let meetingStartedAt: ReturnType<typeof signal<number | undefined>>;
 	let remainingMs: ReturnType<typeof signal<number | undefined>>;
 	let recordingStatus: ReturnType<typeof signal<RecordingStateInfo>>;
+	let isBroadcastInProgress: ReturnType<typeof signal<boolean>>;
+	let isBroadcastStarting: ReturnType<typeof signal<boolean>>;
+	let broadcastElapsed: ReturnType<typeof signal<Date>>;
 	let hiddenParticipants: ReturnType<typeof signal<HiddenParticipantsSummary | undefined>>;
 	let e2eeKey: ReturnType<typeof signal<string>>;
 	let raisedHands: ReturnType<typeof signal<{ identity: string }[]>>;
@@ -35,6 +39,9 @@ describe('StatusRailComponent', () => {
 		meetingStartedAt = signal<number | undefined>(undefined);
 		remainingMs = signal<number | undefined>(undefined);
 		recordingStatus = signal<RecordingStateInfo>({ status: RecordingState.STOPPED });
+		isBroadcastInProgress = signal(false);
+		isBroadcastStarting = signal(false);
+		broadcastElapsed = signal(new Date(0, 0, 0, 0, 0, 0));
 		hiddenParticipants = signal<HiddenParticipantsSummary | undefined>(undefined);
 		e2eeKey = signal('');
 		raisedHands = signal<{ identity: string }[]>([]);
@@ -53,6 +60,10 @@ describe('StatusRailComponent', () => {
 				{ provide: MeetingContextService, useValue: { meetingStartedAt } },
 				{ provide: MeetingEndingSoonService, useValue: { remainingMs } },
 				{ provide: RecordingService, useValue: { recordingStatus } },
+				{
+					provide: BroadcastStateService,
+					useValue: { isInProgress: isBroadcastInProgress, isStarting: isBroadcastStarting, elapsed: broadcastElapsed }
+				},
 				{ provide: SmartLayoutService, useValue: { railHiddenParticipants: hiddenParticipants } },
 				{
 					provide: MeetingUiConfigService,
@@ -109,6 +120,21 @@ describe('StatusRailComponent', () => {
 
 		expect(find('#meeting-ending-soon')?.textContent).toContain('4:59');
 		expect(find('#meeting-elapsed-time')?.classList).toContain('folds');
+	});
+
+	it('shows the broadcast chip while live, folding its label while it is still starting', async () => {
+		isBroadcastStarting.set(true);
+		isBroadcastInProgress.set(true);
+		await render();
+
+		expect(find('#broadcast-tag')?.textContent).toContain('LIVE');
+		expect(find('#broadcast-tag .status-chip-label')?.classList).toContain('folds');
+
+		isBroadcastStarting.set(false);
+		broadcastElapsed.set(new Date(0, 0, 0, 0, 3, 40));
+		await render();
+
+		expect(find('#broadcast-tag')?.textContent).toContain('0:03:40');
 	});
 
 	it('asks for a second row only once its chips no longer fit in one', async () => {

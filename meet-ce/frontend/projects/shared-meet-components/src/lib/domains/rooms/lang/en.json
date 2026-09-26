@@ -159,6 +159,7 @@
       "STEP_MEETING": "Meeting",
       "STEP_ROOM_ACCESS": "Room Access",
       "STEP_RECORDING": "Recording",
+      "STEP_BROADCAST": "Live broadcast",
       "BACK": "Back",
       "BACK_TO_SIMPLE_MODE": "Back to simple mode",
       "CANCEL_ARIA": "Cancel wizard and return to previous page",
@@ -225,7 +226,8 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Edit member",
         "REMOVE_MEMBER": "Remove member",
-        "FEATURE_DISABLED_PERMISSION": "Enable the related feature in the Meeting step to configure this permission."
+        "FEATURE_DISABLED_PERMISSION": "Enable the related feature in the Meeting step to configure this permission.",
+        "DEPENDENT_PERMISSION_DISABLED": "Grant the permission this one depends on to configure it."
       },
       "MEETING": {
         "TITLE": "Meeting",
@@ -308,6 +310,39 @@
         "AUTOSTART_MODE_MODERATOR_DESC": "Starts as soon as a moderator joins or is promoted",
         "AUTOSTART_UNREACHABLE_TITLE": "Recording trigger unreachable",
         "AUTOSTART_UNREACHABLE_MESSAGE": "This trigger needs at least ${required} participants to fire, but the room's participant limit is set to ${limit}."
+      },
+      "BROADCAST": {
+        "TITLE": "Live broadcast",
+        "DESCRIPTION": "Choose whether the meetings in this room can be streamed live to YouTube, Twitch or any RTMP server",
+        "RESTRICTIONS": "Restrictions",
+        "E2EE_WARNING_PREFIX": "Live broadcast is ",
+        "E2EE_WARNING_BOLD": "unavailable",
+        "E2EE_WARNING_SUFFIX": " while end-to-end encryption is enabled. If you allow live broadcast, encryption will be automatically disabled for this room.",
+        "ALLOW_BROADCAST_TITLE": "Allow live broadcast",
+        "ALLOW_BROADCAST_DESC": "Participants with permission can stream the meeting to external platforms while it happens.",
+        "DEFAULT_DESTINATIONS": "Default destinations",
+        "DESTINATIONS_COUNT": "{count} of {max}",
+        "DESTINATIONS_DESC": "When the meeting goes live, it can stream to all of these or only to the ones chosen at that moment.",
+        "NO_DESTINATIONS": "Add at least one destination to allow live broadcast.",
+        "ADD_DESTINATION": "Add destination",
+        "NEW_DESTINATION": "New destination",
+        "EDIT_DESTINATION": "Edit destination",
+        "NAME_LABEL": "Name",
+        "URL_LABEL": "Stream URL",
+        "URL_HINT": "Paste the rtmp:// or rtmps:// URL your platform gives you, stream key included.",
+        "URL_RECOGNISED": "Recognised as {platform}.",
+        "URL_KEEP_KEY": "Leave the URL as it is to keep the saved stream key, or paste a new one to replace it.",
+        "URL_INVALID": "Enter an rtmp:// or rtmps:// URL",
+        "NAME_REQUIRED": "Enter a name",
+        "ADD": "Add",
+        "SAVE": "Save",
+        "CANCEL": "Cancel",
+        "EDIT": "Edit",
+        "REMOVE": "Remove",
+        "KEYS_HIDDEN": "Up to {max} destinations. Stream keys stay hidden once saved.",
+        "COST_NOTE": "Every destination is a separate stream sent from your server, about {mbps} Mbps of upload each at 720p. With these {count} destinations, a broadcast uses about {total} Mbps while the meeting is live.",
+        "PERMISSIONS_HINT": "Who can go live, choose destinations or add others is set per role in",
+        "PERMISSIONS_LINK": "Room Access"
       }
     },
     "ERRORS": {

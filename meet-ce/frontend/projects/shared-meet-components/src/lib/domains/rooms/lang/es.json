@@ -159,6 +159,7 @@
       "STEP_MEETING": "Reunión",
       "STEP_ROOM_ACCESS": "Acceso a la sala",
       "STEP_RECORDING": "Grabación",
+      "STEP_BROADCAST": "Emisión en directo",
       "BACK": "Atrás",
       "BACK_TO_SIMPLE_MODE": "Volver al modo simple",
       "CANCEL_ARIA": "Cancelar el asistente y volver a la página anterior",
@@ -225,7 +226,8 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Editar miembro",
         "REMOVE_MEMBER": "Eliminar miembro",
-        "FEATURE_DISABLED_PERMISSION": "Habilita la función correspondiente en el paso Reunión para configurar este permiso."
+        "FEATURE_DISABLED_PERMISSION": "Habilita la función correspondiente en el paso Reunión para configurar este permiso.",
+        "DEPENDENT_PERMISSION_DISABLED": "Concede el permiso del que depende este para poder configurarlo."
       },
       "MEETING": {
         "TITLE": "Reunión",
@@ -308,6 +310,39 @@
         "AUTOSTART_MODE_MODERATOR_DESC": "Empieza en cuanto se une o se promociona un moderador",
         "AUTOSTART_UNREACHABLE_TITLE": "Disparador de grabación inalcanzable",
         "AUTOSTART_UNREACHABLE_MESSAGE": "Este disparador necesita al menos ${required} participantes para activarse, pero el límite de participantes de la sala está fijado en ${limit}."
+      },
+      "BROADCAST": {
+        "TITLE": "Emisión en directo",
+        "DESCRIPTION": "Elige si las reuniones de esta sala pueden emitirse en directo a YouTube, Twitch o cualquier servidor RTMP",
+        "RESTRICTIONS": "Restricciones",
+        "E2EE_WARNING_PREFIX": "La emisión en directo ",
+        "E2EE_WARNING_BOLD": "no está disponible",
+        "E2EE_WARNING_SUFFIX": " mientras el cifrado de extremo a extremo esté activado. Si permites la emisión en directo, el cifrado se desactivará automáticamente en esta sala.",
+        "ALLOW_BROADCAST_TITLE": "Permitir emisión en directo",
+        "ALLOW_BROADCAST_DESC": "Los participantes con permiso pueden emitir la reunión a plataformas externas mientras se celebra.",
+        "DEFAULT_DESTINATIONS": "Destinos por defecto",
+        "DESTINATIONS_COUNT": "{count} de {max}",
+        "DESTINATIONS_DESC": "Cuando la reunión se emita en directo, podrá enviarse a todos estos destinos o solo a los elegidos en ese momento.",
+        "NO_DESTINATIONS": "Añade al menos un destino para permitir la emisión en directo.",
+        "ADD_DESTINATION": "Añadir destino",
+        "NEW_DESTINATION": "Nuevo destino",
+        "EDIT_DESTINATION": "Editar destino",
+        "NAME_LABEL": "Nombre",
+        "URL_LABEL": "URL de emisión",
+        "URL_HINT": "Pega la URL rtmp:// o rtmps:// que te da la plataforma, con la clave de emisión incluida.",
+        "URL_RECOGNISED": "Reconocido como {platform}.",
+        "URL_KEEP_KEY": "Deja la URL como está para conservar la clave de emisión guardada, o pega una nueva para sustituirla.",
+        "URL_INVALID": "Introduce una URL rtmp:// o rtmps://",
+        "NAME_REQUIRED": "Introduce un nombre",
+        "ADD": "Añadir",
+        "SAVE": "Guardar",
+        "CANCEL": "Cancelar",
+        "EDIT": "Editar",
+        "REMOVE": "Eliminar",
+        "KEYS_HIDDEN": "Hasta {max} destinos. Las claves de emisión quedan ocultas una vez guardadas.",
+        "COST_NOTE": "Cada destino es una emisión independiente enviada desde tu servidor, de unos {mbps} Mbps de subida a 720p. Con estos {count} destinos, una emisión consume unos {total} Mbps mientras la reunión está en directo.",
+        "PERMISSIONS_HINT": "Quién puede emitir, elegir destinos o añadir otros se define por rol en",
+        "PERMISSIONS_LINK": "Acceso a la sala"
       }
     },
     "ERRORS": {

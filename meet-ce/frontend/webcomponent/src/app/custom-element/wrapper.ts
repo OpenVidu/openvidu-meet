@@ -142,6 +142,14 @@ export function createOpenViduMeetElementClass(
 			this._getComponentInstance()?.participantReactionSend(reaction);
 		}
 
+		broadcastStart(): void {
+			this._getComponentInstance()?.broadcastStart();
+		}
+
+		broadcastStop(): void {
+			this._getComponentInstance()?.broadcastStop();
+		}
+
 		// ── Deprecated method aliases ────────────────────────────────────────
 		// Kept on the element (the public surface) rather than on the component, and routed
 		// through the canonical method so both spellings share exactly one path.

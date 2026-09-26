@@ -7,6 +7,8 @@ export interface PermissionItem {
 	/** i18n key — resolve with the `translate` pipe at render. */
 	description: string;
 	icon: string;
+	/** A permission that only takes effect together with this other one, which the UI disables it without. */
+	dependsOn?: keyof MeetRoomMemberPermissions;
 }
 
 export interface PermissionGroup {
@@ -142,6 +144,32 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.recordingDelete.LABEL',
 				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.recordingDelete.DESCRIPTION',
 				icon: 'delete'
+			}
+		]
+	},
+	{
+		label: 'ROOM_MEMBERS.PERMISSIONS.GROUPS.BROADCAST',
+		icon: 'sensors',
+		permissions: [
+			{
+				key: 'broadcastControl',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.broadcastControl.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.broadcastControl.DESCRIPTION',
+				icon: 'sensors'
+			},
+			{
+				key: 'broadcastAddDestinations',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.broadcastAddDestinations.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.broadcastAddDestinations.DESCRIPTION',
+				icon: 'add_link',
+				dependsOn: 'broadcastControl'
+			},
+			{
+				key: 'broadcastEditDestinations',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.broadcastEditDestinations.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.broadcastEditDestinations.DESCRIPTION',
+				icon: 'edit',
+				dependsOn: 'broadcastControl'
 			}
 		]
 	},

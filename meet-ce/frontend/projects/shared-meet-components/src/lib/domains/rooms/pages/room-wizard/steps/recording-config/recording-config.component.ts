@@ -139,7 +139,7 @@ export class RecordingConfigComponent {
 
 			if (e2eeEnabled) {
 				// Save the E2EE state before disabling it
-				this.wizardService.setE2EEStateBeforeRecording(true);
+				this.wizardService.rememberE2EEStateBeforeFeature('recording', true);
 
 				// Disable E2EE when enabling recording
 				meetingStep.formGroup.patchValue(
@@ -159,7 +159,7 @@ export class RecordingConfigComponent {
 			}
 		} else {
 			// Disabling recording: restore E2EE state if it was saved
-			const previousE2EEState = this.wizardService.getE2EEStateBeforeRecording();
+			const previousE2EEState = this.wizardService.takeE2EEStateBeforeFeature('recording');
 
 			if (previousE2EEState !== undefined) {
 				meetingStep.formGroup.patchValue(
@@ -176,9 +176,6 @@ export class RecordingConfigComponent {
 						}
 					}
 				});
-
-				// Clear the saved state
-				this.wizardService.clearE2EEStateBeforeRecording();
 			}
 		}
 	}

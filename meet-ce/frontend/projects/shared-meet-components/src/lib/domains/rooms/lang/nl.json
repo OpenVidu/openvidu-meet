@@ -159,6 +159,7 @@
       "STEP_MEETING": "Meeting",
       "STEP_ROOM_ACCESS": "Kamertoegang",
       "STEP_RECORDING": "Opname",
+      "STEP_BROADCAST": "Live-uitzending",
       "BACK": "Terug",
       "BACK_TO_SIMPLE_MODE": "Terug naar de eenvoudige modus",
       "CANCEL_ARIA": "Wizard annuleren en terugkeren naar de vorige pagina",
@@ -225,7 +226,8 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Lid bewerken",
         "REMOVE_MEMBER": "Lid verwijderen",
-        "FEATURE_DISABLED_PERMISSION": "Schakel de betreffende functie in bij de stap Meeting om deze machtiging te configureren."
+        "FEATURE_DISABLED_PERMISSION": "Schakel de betreffende functie in bij de stap Meeting om deze machtiging te configureren.",
+        "DEPENDENT_PERMISSION_DISABLED": "Verleen eerst de toestemming waarvan deze afhangt om deze in te stellen."
       },
       "MEETING": {
         "TITLE": "Meeting",
@@ -308,6 +310,39 @@
         "AUTOSTART_MODE_MODERATOR_DESC": "Start zodra een moderator deelneemt of wordt gepromoveerd",
         "AUTOSTART_UNREACHABLE_TITLE": "Opnametrigger onbereikbaar",
         "AUTOSTART_UNREACHABLE_MESSAGE": "Deze trigger heeft minstens ${required} deelnemers nodig om af te gaan, maar de deelnemerslimiet van de kamer is ingesteld op ${limit}."
+      },
+      "BROADCAST": {
+        "TITLE": "Live-uitzending",
+        "DESCRIPTION": "Kies of de vergaderingen in deze ruimte live kunnen worden uitgezonden naar YouTube, Twitch of een andere RTMP-server",
+        "RESTRICTIONS": "Beperkingen",
+        "E2EE_WARNING_PREFIX": "Live-uitzending is ",
+        "E2EE_WARNING_BOLD": "niet beschikbaar",
+        "E2EE_WARNING_SUFFIX": " zolang end-to-end-versleuteling is ingeschakeld. Als u live-uitzending toestaat, wordt de versleuteling voor deze ruimte automatisch uitgeschakeld.",
+        "ALLOW_BROADCAST_TITLE": "Live-uitzending toestaan",
+        "ALLOW_BROADCAST_DESC": "Deelnemers met toestemming kunnen de vergadering tijdens het verloop uitzenden naar externe platforms.",
+        "DEFAULT_DESTINATIONS": "Standaardbestemmingen",
+        "DESTINATIONS_COUNT": "{count} van {max}",
+        "DESTINATIONS_DESC": "Wanneer de vergadering live gaat, kan die naar al deze bestemmingen worden uitgezonden of alleen naar de op dat moment gekozen bestemmingen.",
+        "NO_DESTINATIONS": "Voeg minstens één bestemming toe om live-uitzending toe te staan.",
+        "ADD_DESTINATION": "Bestemming toevoegen",
+        "NEW_DESTINATION": "Nieuwe bestemming",
+        "EDIT_DESTINATION": "Bestemming bewerken",
+        "NAME_LABEL": "Naam",
+        "URL_LABEL": "Stream-URL",
+        "URL_HINT": "Plak de rtmp://- of rtmps://-URL van uw platform, inclusief streamsleutel.",
+        "URL_RECOGNISED": "Herkend als {platform}.",
+        "URL_KEEP_KEY": "Laat de URL ongewijzigd om de opgeslagen streamsleutel te behouden, of plak een nieuwe om die te vervangen.",
+        "URL_INVALID": "Voer een rtmp://- of rtmps://-URL in",
+        "NAME_REQUIRED": "Voer een naam in",
+        "ADD": "Toevoegen",
+        "SAVE": "Opslaan",
+        "CANCEL": "Annuleren",
+        "EDIT": "Bewerken",
+        "REMOVE": "Verwijderen",
+        "KEYS_HIDDEN": "Maximaal {max} bestemmingen. Streamsleutels blijven verborgen zodra ze zijn opgeslagen.",
+        "COST_NOTE": "Elke bestemming is een aparte stream vanaf uw server, ongeveer {mbps} Mbps upload per stuk bij 720p. Met deze {count} bestemmingen gebruikt een uitzending ongeveer {total} Mbps zolang de vergadering live is.",
+        "PERMISSIONS_HINT": "Wie live mag gaan, bestemmingen kiest of andere toevoegt, wordt per rol ingesteld onder",
+        "PERMISSIONS_LINK": "Toegang tot de ruimte"
       }
     },
     "ERRORS": {

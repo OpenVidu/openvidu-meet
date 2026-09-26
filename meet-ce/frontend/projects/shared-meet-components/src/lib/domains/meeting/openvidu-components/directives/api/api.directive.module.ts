@@ -1,6 +1,12 @@
 import { NgModule } from '@angular/core';
-import { ActivitiesPanelRecordingActivityDirective } from './activities-panel.directive';
 import {
+    ActivitiesPanelBroadcastActivityDirective,
+    ActivitiesPanelRecordingActivityDirective
+} from './activities-panel.directive';
+import {
+    BroadcastActivityAddDestinationsDirective,
+    BroadcastActivityControlsDirective,
+    BroadcastActivityEditDestinationsDirective,
     E2EEKeyDirective,
     FallbackLogoDirective,
     LayoutRemoteParticipantsDirective,
@@ -75,6 +81,10 @@ const directives = [
 	ParticipantPanelItemMuteButtonDirective,
 	ParticipantNameDirective,
 	ActivitiesPanelRecordingActivityDirective,
+	ActivitiesPanelBroadcastActivityDirective,
+	BroadcastActivityControlsDirective,
+	BroadcastActivityAddDestinationsDirective,
+	BroadcastActivityEditDestinationsDirective,
 	LayoutRemoteParticipantsDirective,
 	StartStopRecordingButtonsDirective,
 	RecordingActivityViewRecordingsButtonDirective,
