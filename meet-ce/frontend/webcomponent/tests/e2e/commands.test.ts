@@ -10,6 +10,7 @@ import {
 } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { INTEGRATIONS, meetLocator, wcLocator } from '../helpers/webcomponent.helper';
+import { createRtmpSink, deleteRtmpSinks } from '../helpers/broadcast-sink.helper';
 import { createRoom, deleteRooms, getRecording } from '../helpers/meet-api.helper';
 import {
 	expectPrejoinCameraEnabled,
@@ -18,6 +19,8 @@ import {
 	expectToolbarMicEnabled
 } from '../helpers/media-controls.helper';
 import {
+	broadcastStartCommand,
+	broadcastStopCommand,
 	endMeetingCommand,
 	endMeetingLegacyCommand,
 	eventLocator,
@@ -66,6 +69,7 @@ for (const integration of INTEGRATIONS) {
 
 		test.afterAll(async () => {
 			await deleteRooms(createdRoomIds);
+			await deleteRtmpSinks();
 		});
 
 		test.describe('LEAVE_ROOM Command', () => {
@@ -925,6 +929,45 @@ for (const integration of INTEGRATIONS) {
 		// The btn-legacy-* testapp buttons exist since F4 but nothing exercised them
 		// end-to-end until now: this closes that gap by pressing each deprecated
 		// command name and asserting the same real behavior as its canonical twin.
+		// The room streams to an RTMP ingress of the LiveKit deployment under test, the one sink the
+		// egress can reach here; the stream key never comes back from the API.
+		test.describe('BROADCAST Commands', () => {
+			let broadcastRoomId: string;
+			let sinkUrl: string;
+
+			test.beforeEach(async () => {
+				sinkUrl = await createRtmpSink(`commands-${integration}`);
+				({ roomId: broadcastRoomId } = await createRoom({
+					config: { broadcast: { enabled: true, destinations: [{ name: 'Sink', url: sinkUrl }] } }
+				}));
+				createdRoomIds.push(broadcastRoomId);
+			});
+
+			test('should start the broadcast to the room destinations and stop it', async ({ page }) => {
+				await openMeeting(page, broadcastRoomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
+
+				await broadcastStartCommand(page);
+				await expectEvent(page, EmbeddedEventName.BROADCAST_STARTED);
+				await expect(meetLocator(page, integration, '#broadcast-tag')).toBeVisible({ timeout: 40_000 });
+
+				await broadcastStopCommand(page);
+				await expectEvent(page, EmbeddedEventName.BROADCAST_ENDED, { timeout: 30_000 });
+				await expect(meetLocator(page, integration, '#broadcast-tag')).toBeHidden();
+			});
+
+			test('should not start a broadcast for a speaker who lacks broadcastControl', async ({ page }) => {
+				await openMeeting(page, broadcastRoomId, { integration, role: 'speaker' });
+				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
+
+				await broadcastStartCommand(page);
+
+				await page.waitForTimeout(3_000);
+				await expect(eventLocator(page, EmbeddedEventName.BROADCAST_STARTED)).toHaveCount(0);
+				await expect(meetLocator(page, integration, '#broadcast-tag')).toHaveCount(0);
+			});
+		});
+
 		test.describe('Deprecated Command Aliases', () => {
 			test('should disconnect via the deprecated leaveRoom() alias', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });

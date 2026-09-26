@@ -39,6 +39,8 @@ describe('Embedded command names', () => {
 				'mediaToggleScreenShare',
 				'recordingStart',
 				'recordingStop',
+				'broadcastStart',
+				'broadcastStop',
 				'endMeeting',
 				'leaveRoom',
 				'kickParticipant'
@@ -89,6 +91,9 @@ describe('Embedded event names', () => {
 				'mediaVideoStatusChanged',
 				'mediaScreenShareStatusChanged',
 				'recordingStatusChanged',
+				'broadcastStarted',
+				'broadcastUpdated',
+				'broadcastEnded',
 				'embeddedCloseRequested',
 				'joined',
 				'left',

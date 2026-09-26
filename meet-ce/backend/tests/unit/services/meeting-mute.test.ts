@@ -12,6 +12,7 @@ import type { FrontendEventService } from '../../../src/services/frontend-event.
 import type { LiveKitService } from '../../../src/services/livekit.service.js';
 import type { LoggerService } from '../../../src/services/logger.service.js';
 import { MeetingService } from '../../../src/services/meeting.service.js';
+import type { BroadcastService } from '../../../src/services/broadcast.service.js';
 import type { MutexService } from '../../../src/services/mutex.service.js';
 import type { RequestSessionService } from '../../../src/services/request-session.service.js';
 import type { RoomService } from '../../../src/services/room.service.js';
@@ -86,7 +87,8 @@ describe('MeetingService mute', () => {
 			frontendEventService as unknown as FrontendEventService,
 			requestSessionService as unknown as RequestSessionService,
 			{} as unknown as WebhookDispatcherService,
-			{} as unknown as MutexService
+			{} as unknown as MutexService,
+			{} as unknown as BroadcastService
 		);
 	});
 

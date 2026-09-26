@@ -61,6 +61,7 @@ describe('E2EE Room Configuration Tests', () => {
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
 					e2ee: { enabled: true },
+					broadcast: { enabled: false, destinations: [] },
 					captions: { enabled: true },
 					raiseHand: { enabled: true },
 					reactions: { enabled: true }
@@ -103,6 +104,7 @@ describe('E2EE Room Configuration Tests', () => {
 						chat: { enabled: true },
 						virtualBackground: { enabled: true },
 						e2ee: { enabled: false },
+						broadcast: { enabled: false, destinations: [] },
 						captions: { enabled: true },
 						raiseHand: { enabled: true },
 						reactions: { enabled: true }
@@ -143,6 +145,7 @@ describe('E2EE Room Configuration Tests', () => {
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
 					e2ee: 'invalid-e2ee', // Should be an object
+					broadcast: { enabled: false, destinations: [] },
 					captions: { enabled: true },
 					raiseHand: { enabled: true },
 					reactions: { enabled: true }
@@ -168,6 +171,7 @@ describe('E2EE Room Configuration Tests', () => {
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
 					e2ee: { enabled: 'yes' }, // Should be a boolean
+					broadcast: { enabled: false, destinations: [] },
 					captions: { enabled: true },
 					raiseHand: { enabled: true },
 					reactions: { enabled: true }
@@ -203,6 +207,7 @@ describe('E2EE Room Configuration Tests', () => {
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: true },
+				broadcast: { enabled: false, destinations: [] },
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
 				reactions: { enabled: true }
@@ -228,6 +233,7 @@ describe('E2EE Room Configuration Tests', () => {
 						chat: { enabled: true },
 						virtualBackground: { enabled: true },
 						e2ee: { enabled: true },
+						broadcast: { enabled: false, destinations: [] },
 						captions: { enabled: true },
 						raiseHand: { enabled: true },
 						reactions: { enabled: true }
@@ -247,6 +253,7 @@ describe('E2EE Room Configuration Tests', () => {
 						chat: { enabled: true },
 						virtualBackground: { enabled: true },
 						e2ee: { enabled: false },
+						broadcast: { enabled: false, destinations: [] },
 						captions: { enabled: true },
 						raiseHand: { enabled: true },
 						reactions: { enabled: true }

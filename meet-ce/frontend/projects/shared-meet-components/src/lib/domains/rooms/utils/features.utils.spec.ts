@@ -23,6 +23,7 @@ describe('FeatureCalculator.applyPermissions', () => {
 	const buildFeatures = (): RoomFeatures =>
 		({
 			showStartStopRecording: true,
+			showBroadcastControls: true,
 			showChat: true,
 			showReactions: true,
 			showBackgrounds: true
@@ -73,6 +74,24 @@ describe('FeatureCalculator.applyPermissions', () => {
 		).toBeTrue();
 	});
 
+	it('should gate the broadcast controls on broadcastControl alone, never on the recording keys', () => {
+		expect(featuresFor({ broadcastControl: false }).showBroadcastControls).toBeFalse();
+		expect(featuresFor({ recordingControl: false }).showBroadcastControls).toBeTrue();
+	});
+
+	it('should offer the destination permissions only together with broadcastControl', () => {
+		const granted = featuresFor();
+		expect(granted.showBroadcastAddDestinations).toBeTrue();
+		expect(granted.showBroadcastEditDestinations).toBeTrue();
+
+		const noControl = featuresFor({ broadcastControl: false });
+		expect(noControl.showBroadcastAddDestinations).toBeFalse();
+		expect(noControl.showBroadcastEditDestinations).toBeFalse();
+
+		expect(featuresFor({ broadcastAddDestinations: false }).showBroadcastAddDestinations).toBeFalse();
+		expect(featuresFor({ broadcastEditDestinations: false }).showBroadcastEditDestinations).toBeFalse();
+	});
+
 	it('should keep showViewRecordings on recordingList even when play and download are denied', () => {
 		const features = featuresFor({ recordingPlay: false, recordingDownload: false });
 
@@ -82,6 +101,7 @@ describe('FeatureCalculator.applyPermissions', () => {
 	it('should not gate permissions whose room feature is already off', () => {
 		const features = buildFeatures();
 		features.showStartStopRecording = false;
+		features.showBroadcastControls = false;
 		features.showChat = false;
 		features.showReactions = false;
 		features.showBackgrounds = false;
@@ -89,6 +109,8 @@ describe('FeatureCalculator.applyPermissions', () => {
 		FeatureCalculator.applyPermissions(features, buildPermissions());
 
 		expect(features.showStartStopRecording).toBeFalse();
+		expect(features.showBroadcastControls).toBeFalse();
+		expect(features.showBroadcastAddDestinations).toBeFalse();
 		expect(features.showChat).toBeFalse();
 		expect(features.showReactions).toBeFalse();
 		expect(features.showBackgrounds).toBeFalse();
