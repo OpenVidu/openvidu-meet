@@ -29,6 +29,25 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - Reactions, in the meeting and through the embedded command `participantReactionSend` and the embedded event
   `participantReactionSent`, with the `participantReactionSend` permission to send them and the room config
   `reactions.enabled` to turn them off.
+- [Broadcasts API][3.10-broadcasts] under `/api/v1/meetings/{roomId}/broadcasts`: stream a live meeting to
+  up to five RTMP destinations at once, read the broadcast and the status of each destination, stop it, add a
+  destination for that meeting only, and stop or restart any of them. Starting and stopping use the new
+  [`broadcastControl`][3.10-permissions] permission, adding a destination `broadcastAddDestinations`, and
+  changing a room destination for one meeting `broadcastEditDestinations`, all three granted to the moderator
+  role of rooms created from this release on. The embedded API gets the `broadcastStart` and `broadcastStop`
+  commands and the `broadcastStarted`, `broadcastUpdated` and `broadcastEnded` events, the webhooks
+  [`broadcastStarted`][3.10-broadcast-started], [`broadcastUpdated`][3.10-broadcast-updated] and
+  [`broadcastEnded`][3.10-broadcast-ended] report the same, and the [meeting info][3.10-meetings] carries
+  `broadcastActive`.
+- Rooms save the destinations a broadcast streams to by default in [`config.broadcast`][3.10-room-config].
+  Every response replaces the stream key of a destination URL with `********`, and a redacted URL sent back
+  keeps the saved key.
+
+#### UI
+
+- The room wizard gets a Broadcast step to save the room's default RTMP destinations, the meeting's activities
+  panel a Live broadcast activity to go live to them, add one for the meeting, and stop or restart each, and
+  the status rail a `LIVE` chip with the time on air.
 
 #### Deployment
 
@@ -276,3 +295,11 @@ registered on both receives it twice.
 [3.9-recording-ended]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/webhooks/recordingEndedWebhook
 [3.9-bulk-delete-recordings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/bulkDeleteRecordings
 [3.9-download-recordings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/downloadRecordings
+
+[3.10-broadcasts]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/broadcastStart
+[3.10-permissions]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/schemas/MeetPermissions
+[3.10-room-config]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/schemas/MeetRoomConfig
+[3.10-meetings]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/meetingGet
+[3.10-broadcast-started]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/broadcastStartedWebhook
+[3.10-broadcast-updated]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/broadcastUpdatedWebhook
+[3.10-broadcast-ended]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/broadcastEndedWebhook
