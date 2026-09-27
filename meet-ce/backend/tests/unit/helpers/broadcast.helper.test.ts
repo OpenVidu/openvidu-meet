@@ -83,6 +83,28 @@ const expectStatus = (fn: () => unknown, statusCode: number) => {
 	throw new Error(`Expected a ${statusCode} error`);
 };
 
+describe('BroadcastHelper.redactRoomOptions', () => {
+	it('redacts the destination URLs and leaves the rest of the options as they are', () => {
+		const options = {
+			roomName: 'Room',
+			config: {
+				chat: { enabled: true },
+				broadcast: { enabled: true, destinations: [{ name: 'YouTube', url: YOUTUBE }] }
+			}
+		};
+
+		expect(BroadcastHelper.redactRoomOptions(options)).toEqual({
+			roomName: 'Room',
+			config: {
+				chat: { enabled: true },
+				broadcast: { enabled: true, destinations: [{ name: 'YouTube', url: REDACTED_YOUTUBE }] }
+			}
+		});
+		expect(options.config.broadcast.destinations[0].url).toBe(YOUTUBE);
+		expect(BroadcastHelper.redactRoomOptions({ roomName: 'Room' })).toEqual({ roomName: 'Room' });
+	});
+});
+
 describe('BroadcastHelper.redactStreamUrl', () => {
 	it('replaces the stream key and drops the query string, keeping scheme, host and path', () => {
 		expect(BroadcastHelper.redactStreamUrl(YOUTUBE)).toBe(REDACTED_YOUTUBE);

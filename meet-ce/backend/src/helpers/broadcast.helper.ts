@@ -7,7 +7,8 @@ import type {
 	MeetBroadcastInfo,
 	MeetBroadcastStartDestination,
 	MeetRecordingLayout,
-	MeetRoomMemberPermissions
+	MeetRoomMemberPermissions,
+	MeetRoomOptions
 } from '@openvidu-meet/typings';
 import {
 	MEET_BROADCAST_MAX_DESTINATIONS,
@@ -51,6 +52,19 @@ export class BroadcastHelper {
 		const segments = (pathname || '/').split('/');
 		segments[BroadcastHelper.streamKeyIndex(segments)] = MEET_BROADCAST_REDACTED_STREAM_KEY;
 		return `${protocol}//${host}${segments.join('/')}`;
+	}
+
+	/** Room options fit for a log line: the broadcast destinations with their stream keys redacted. */
+	static redactRoomOptions(options: MeetRoomOptions): MeetRoomOptions {
+		const broadcast = options.config?.broadcast;
+
+		if (!broadcast) return options;
+
+		const destinations = broadcast.destinations.map((destination) => ({
+			...destination,
+			url: BroadcastHelper.redactStreamUrl(destination.url)
+		}));
+		return { ...options, config: { ...options.config, broadcast: { ...broadcast, destinations } } };
 	}
 
 	static isRedactedStreamUrl(url: string): boolean {
