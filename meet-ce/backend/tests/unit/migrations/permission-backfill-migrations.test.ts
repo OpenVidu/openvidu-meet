@@ -162,13 +162,13 @@ describe('Room migration v7 → v8', () => {
 		expect(migrated.roles.speaker.permissions.broadcastAddDestinations).toBe(false);
 	});
 
-	it('should give the room a disabled broadcast config with no destinations, and no destination URLs', () => {
+	it('should give the room a disabled broadcast config in the grid layout with no destinations, and no destination URLs', () => {
 		const migrated = roomV7ToV8({
 			...roomDocument(v7Permissions(), v7Permissions()),
 			config: { recording: { enabled: true } }
 		} as unknown as MeetRoomDocument);
 
-		expect(migrated.config.broadcast).toEqual({ enabled: false, destinations: [] });
+		expect(migrated.config.broadcast).toEqual({ enabled: false, destinations: [], layout: 'grid' });
 		expect(migrated.broadcastDestinationUrls).toEqual({});
 		expect(migrated.config.recording).toEqual({ enabled: true });
 	});

@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import type { MeetBroadcastDestination, MeetRoom, MeetRoomOptions } from '@openvidu-meet/typings';
-import { MEET_BROADCAST_REDACTED_STREAM_KEY } from '@openvidu-meet/typings';
+import { MEET_BROADCAST_REDACTED_STREAM_KEY, MeetRecordingLayout } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
 import { container } from '../../../../src/config/dependency-injector.config.js';
@@ -59,8 +59,44 @@ describe('Broadcast Room Configuration Tests', () => {
 		it('should create a room with broadcast disabled and no destinations by default', async () => {
 			const room = await createRoom({ roomName: 'defaults' }, undefined, { xExtraFields: 'config' });
 
-			expect(room.config.broadcast).toEqual({ enabled: false, destinations: [] });
+			expect(room.config.broadcast).toEqual({
+				enabled: false,
+				destinations: [],
+				layout: MeetRecordingLayout.GRID
+			});
 			expect(await storedUrls(room.roomId)).toEqual({});
+		});
+
+		it('should stream in the grid layout unless the room chooses another one', async () => {
+			const grid = await createBroadcastRoom(['a']);
+			expect(grid.config.broadcast.layout).toBe(MeetRecordingLayout.GRID);
+
+			const speaker = await createRoom(
+				{
+					roomName: 'broadcast-speaker',
+					config: {
+						broadcast: {
+							enabled: true,
+							destinations: [destination('a')],
+							layout: MeetRecordingLayout.SINGLE_SPEAKER
+						}
+					}
+				},
+				undefined,
+				{ xExtraFields: 'config' }
+			);
+			expect(speaker.config.broadcast.layout).toBe(MeetRecordingLayout.SINGLE_SPEAKER);
+		});
+
+		it('should reject a layout that is not one of the recording layouts', async () => {
+			const response = await createRoomRequest({
+				roomName: 'bad-layout',
+				config: {
+					broadcast: { enabled: false, destinations: [], layout: 'mosaic' as MeetRecordingLayout }
+				}
+			});
+
+			expectValidationError(response, 'config.broadcast.layout', 'Invalid enum value');
 		});
 
 		it('should assign an id to each destination and never serve its stream key', async () => {
@@ -173,6 +209,21 @@ describe('Broadcast Room Configuration Tests', () => {
 			expect(response.status).toBe(200);
 			expect(response.body.broadcast.destinations).toEqual([{ id: b.id, name: b.name, url: REDACTED_URL }]);
 			expect(await storedUrls(room.roomId)).toEqual({ [b.id]: destination('b').url });
+		});
+
+		it('should change the layout and keep it when a later update leaves it out', async () => {
+			const room = await createBroadcastRoom(['a']);
+			const { destinations } = room.config.broadcast;
+
+			const changed = await updateRoomConfig(room.roomId, {
+				broadcast: { enabled: true, destinations, layout: MeetRecordingLayout.SPEAKER }
+			});
+			expect(changed.status).toBe(200);
+			expect(changed.body.broadcast.layout).toBe(MeetRecordingLayout.SPEAKER);
+
+			const kept = await updateRoomConfig(room.roomId, { broadcast: { enabled: false, destinations } });
+			expect(kept.status).toBe(200);
+			expect(kept.body.broadcast.layout).toBe(MeetRecordingLayout.SPEAKER);
 		});
 
 		it('should keep the destinations when the update leaves the broadcast block out', async () => {

@@ -295,7 +295,7 @@
         "SPEAKER_TITLE": "Vista de ponente",
         "SPEAKER_DESC": "Resalta al ponente activo con los demás participantes debajo",
         "SINGLE_SPEAKER_TITLE": "Vista de ponente único",
-        "SINGLE_SPEAKER_DESC": "Muestra solo al ponente activo en la grabación"
+        "SINGLE_SPEAKER_DESC": "Muestra solo al ponente activo"
       },
       "RECORDING_TRIGGER": {
         "TITLE": "Activador",

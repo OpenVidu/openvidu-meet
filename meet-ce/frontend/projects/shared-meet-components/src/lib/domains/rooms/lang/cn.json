@@ -295,7 +295,7 @@
         "SPEAKER_TITLE": "发言者布局",
         "SPEAKER_DESC": "突出显示当前发言者，其他参与者显示在下方",
         "SINGLE_SPEAKER_TITLE": "单一发言者",
-        "SINGLE_SPEAKER_DESC": "在录像中仅显示当前发言者"
+        "SINGLE_SPEAKER_DESC": "仅显示当前发言者"
       },
       "RECORDING_TRIGGER": {
         "TITLE": "触发",

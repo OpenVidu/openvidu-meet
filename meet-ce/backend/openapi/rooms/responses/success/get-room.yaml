@@ -63,6 +63,7 @@ content:
                         broadcast:
                             enabled: false
                             destinations: []
+                            layout: grid
                         virtualBackground:
                             enabled: true
                         e2ee:
@@ -98,6 +99,7 @@ content:
                         broadcast:
                             enabled: false
                             destinations: []
+                            layout: grid
                         virtualBackground:
                             enabled: true
                         e2ee:

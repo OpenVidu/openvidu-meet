@@ -166,6 +166,21 @@ MeetBroadcastConfig:
                 `destinations` requires sending `broadcast.enabled` alongside it.
             items:
                 $ref: '#/MeetBroadcastDestination'
+        layout:
+            type: string
+            enum:
+                - grid
+                - speaker
+                - single-speaker
+            default: grid
+            example: grid
+            description: |
+                Defines the layout of the meeting as it is streamed, with the same options as the recording layout:
+                - `grid`: All participants are shown in a grid layout.
+                - `speaker`: The active speaker is shown prominently, with other participants in smaller thumbnails.
+                - `single-speaker`: Only the active speaker is shown.
+
+                Config updates merge with the stored config, so an omitted layout keeps its current value.
 MeetBroadcastDestination:
     type: object
     required:

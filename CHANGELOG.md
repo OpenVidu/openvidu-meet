@@ -39,13 +39,14 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   [`broadcastStarted`][3.10-broadcast-started], [`broadcastUpdated`][3.10-broadcast-updated] and
   [`broadcastEnded`][3.10-broadcast-ended] report the same, and the [meeting info][3.10-meetings] carries
   `broadcastActive`.
-- Rooms save the destinations a broadcast streams to by default in [`config.broadcast`][3.10-room-config].
+- Rooms save the destinations a broadcast streams to by default, and the layout it streams in, in
+  [`config.broadcast`][3.10-room-config].
   Every response replaces the stream key of a destination URL with `********`, and a redacted URL sent back
   keeps the saved key.
 
 #### UI
 
-- The room wizard gets a Broadcast step to save the room's default RTMP destinations, the meeting's activities
+- The room wizard gets a Broadcast step to save the room's default RTMP destinations and layout, the meeting's activities
   panel a Live broadcast activity to go live to them, add one for the meeting, and stop or restart each, and
   the status rail a `LIVE` chip with the time on air.
 

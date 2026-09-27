@@ -295,7 +295,7 @@
         "SPEAKER_TITLE": "Sprecher-Layout",
         "SPEAKER_DESC": "Den aktiven Sprecher hervorheben, mit anderen Teilnehmern darunter",
         "SINGLE_SPEAKER_TITLE": "Einzelner Sprecher",
-        "SINGLE_SPEAKER_DESC": "Nur den aktiven Sprecher in der Aufnahme anzeigen"
+        "SINGLE_SPEAKER_DESC": "Nur den aktiven Sprecher anzeigen"
       },
       "RECORDING_TRIGGER": {
         "TITLE": "Auslöser",

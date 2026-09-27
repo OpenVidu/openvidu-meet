@@ -86,7 +86,7 @@ const DEFAULT_CONFIG: MeetRoomConfig = {
 		enabled: true,
 		layout: MeetRecordingLayout.GRID
 	},
-	broadcast: { enabled: false, destinations: [] },
+	broadcast: { enabled: false, destinations: [], layout: MeetRecordingLayout.GRID },
 	chat: { enabled: true },
 	virtualBackground: { enabled: true },
 	e2ee: { enabled: false },
@@ -374,6 +374,9 @@ export class RoomWizardStateService {
 						),
 						destinations: this.formBuilder.nonNullable.control<MeetBroadcastDestination[]>(
 							initialRoomOptions.config!.broadcast!.destinations
+						),
+						layout: this.formBuilder.nonNullable.control(
+							initialRoomOptions.config!.broadcast!.layout ?? MeetRecordingLayout.GRID
 						)
 					},
 					{ validators: [broadcastDestinationsValidator] }

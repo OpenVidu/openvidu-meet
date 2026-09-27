@@ -295,7 +295,7 @@
         "SPEAKER_TITLE": "Speaker Layout",
         "SPEAKER_DESC": "Highlight the active speaker with other participants below",
         "SINGLE_SPEAKER_TITLE": "Single Speaker",
-        "SINGLE_SPEAKER_DESC": "Show only the active speaker in the recording"
+        "SINGLE_SPEAKER_DESC": "Show only the active speaker"
       },
       "RECORDING_TRIGGER": {
         "TITLE": "Trigger",

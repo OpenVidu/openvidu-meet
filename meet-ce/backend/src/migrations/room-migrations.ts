@@ -144,12 +144,12 @@ const roomMigrationV6ToV7Transform: SchemaTransform<MeetRoomDocument> = (room) =
 	return normalizeRolePermissionsTransform(room);
 };
 
-// v8 adds the live broadcast feature. It arrives disabled, with no destinations and therefore no
-// destination URLs, and its permissions complete to `false` through the same normalization every
-// new permission gets (see UNALIASED_PERMISSION_DEFAULTS in the typings).
+// v8 adds the live broadcast feature. It arrives disabled, in the grid layout, with no destinations
+// and therefore no destination URLs, and its permissions complete to `false` through the same
+// normalization every new permission gets (see UNALIASED_PERMISSION_DEFAULTS in the typings).
 const roomMigrationV7ToV8Transform: SchemaTransform<MeetRoomDocument> = (room) => {
 	normalizeRolePermissionsTransform(room);
-	room.config.broadcast ??= { enabled: false, destinations: [] };
+	room.config.broadcast ??= { enabled: false, destinations: [], layout: MeetRecordingLayout.GRID };
 	room.broadcastDestinationUrls ??= {};
 	return room;
 };

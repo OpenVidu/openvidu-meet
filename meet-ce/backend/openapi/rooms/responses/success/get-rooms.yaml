@@ -328,6 +328,7 @@ content:
                               broadcast:
                                   enabled: false
                                   destinations: []
+                                  layout: grid
                               chat:
                                   enabled: false
                               virtualBackground:

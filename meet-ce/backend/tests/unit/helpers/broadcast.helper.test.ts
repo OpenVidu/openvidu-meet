@@ -6,7 +6,8 @@ import {
 	MEET_PERMISSION_KEYS,
 	MeetBroadcastDestinationSource,
 	MeetBroadcastDestinationStatus,
-	MeetBroadcastStatus
+	MeetBroadcastStatus,
+	MeetRecordingLayout
 } from '@openvidu-meet/typings';
 import type { EgressInfo } from 'livekit-server-sdk';
 import { BroadcastHelper } from '../../../src/helpers/broadcast.helper.js';
@@ -65,6 +66,7 @@ const record = (
 	roomId: 'room-1',
 	roomName: 'Room',
 	status: MeetBroadcastStatus.STARTING,
+	layout: MeetRecordingLayout.GRID,
 	destinations,
 	...overrides
 });

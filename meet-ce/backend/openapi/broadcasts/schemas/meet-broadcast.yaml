@@ -4,6 +4,7 @@ required:
     - roomId
     - roomName
     - status
+    - layout
     - destinations
 properties:
     broadcastId:
@@ -26,6 +27,11 @@ properties:
             The status of the broadcast. It is `starting` until the media server composes the
             meeting's media, `active` while it streams, `ending` once asked to stop, and one of
             `complete`, `failed`, `aborted` or `limit_reached` once it has ended.
+    layout:
+        type: string
+        enum: ['grid', 'speaker', 'single-speaker']
+        example: 'grid'
+        description: The layout of the meeting as it is streamed, taken from the room's config when the broadcast started.
     destinations:
         type: array
         description: >

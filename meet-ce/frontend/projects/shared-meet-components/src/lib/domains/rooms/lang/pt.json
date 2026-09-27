@@ -295,7 +295,7 @@
         "SPEAKER_TITLE": "Esquema do orador",
         "SPEAKER_DESC": "Destacar o orador ativo com os outros participantes abaixo",
         "SINGLE_SPEAKER_TITLE": "Orador único",
-        "SINGLE_SPEAKER_DESC": "Mostrar apenas o orador ativo na gravação"
+        "SINGLE_SPEAKER_DESC": "Mostrar apenas o orador ativo"
       },
       "RECORDING_TRIGGER": {
         "TITLE": "Acionador",

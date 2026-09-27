@@ -295,7 +295,7 @@
         "SPEAKER_TITLE": "स्पीकर लेआउट",
         "SPEAKER_DESC": "सक्रिय स्पीकर को नीचे अन्य सदस्यों के साथ हाइलाइट करें",
         "SINGLE_SPEAKER_TITLE": "एकल स्पीकर",
-        "SINGLE_SPEAKER_DESC": "रिकॉर्डिंग में केवल सक्रिय स्पीकर दिखाएं"
+        "SINGLE_SPEAKER_DESC": "केवल सक्रिय स्पीकर दिखाएं"
       },
       "RECORDING_TRIGGER": {
         "TITLE": "ट्रिगर",

@@ -92,6 +92,11 @@ const MeetBroadcastConfigSchema = new Schema(
 		destinations: {
 			type: [MeetBroadcastDestinationSchema],
 			required: true
+		},
+		layout: {
+			type: String,
+			enum: Object.values(MeetRecordingLayout),
+			required: true
 		}
 	},
 	{ _id: false }

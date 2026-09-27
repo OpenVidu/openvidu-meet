@@ -97,21 +97,7 @@
 						<span class="section-label">{{ 'ROOMS.WIZARD.RECORDING_LAYOUT.TITLE' | translate }}</span>
 					</div>
 
-					<div class="layout-options" role="radiogroup">
-						@for (option of layoutOptions(); track option.value) {
-							<label class="layout-tile" [class.selected]="option.value === selectedLayout">
-								<input
-									type="radio"
-									class="layout-radio"
-									formControlName="layout"
-									[value]="option.value"
-								/>
-								<img class="layout-image" [src]="option.imageUrl" alt="" />
-								<span class="layout-title">{{ option.title }}</span>
-								<span class="layout-description">{{ option.description }}</span>
-							</label>
-						}
-					</div>
+					<ov-layout-picker [control]="recordingForm.controls.layout" />
 				</section>
 
 				<!-- ── Sharing ──────────────────────────────── -->

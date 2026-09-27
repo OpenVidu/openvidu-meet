@@ -8,6 +8,7 @@ content:
             roomId: 'room-123'
             roomName: 'room'
             status: 'starting'
+            layout: 'grid'
             destinations:
                 - id: 'kX9pL2mQ7a'
                   name: 'YouTube'

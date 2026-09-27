@@ -295,7 +295,7 @@
         "SPEAKER_TITLE": "Disposition intervenant",
         "SPEAKER_DESC": "Mettre en avant l'intervenant actif avec les autres participants en dessous",
         "SINGLE_SPEAKER_TITLE": "Intervenant unique",
-        "SINGLE_SPEAKER_DESC": "N'afficher que l'intervenant actif dans l'enregistrement"
+        "SINGLE_SPEAKER_DESC": "N'afficher que l'intervenant actif"
       },
       "RECORDING_TRIGGER": {
         "TITLE": "Déclencheur",

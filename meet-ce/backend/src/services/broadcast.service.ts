@@ -12,7 +12,7 @@ import {
 	MeetRecordingLayout
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import type { EgressInfo, RoomCompositeOptions } from 'livekit-server-sdk';
+import type { EgressInfo } from 'livekit-server-sdk';
 import { StreamOutput, StreamProtocol } from 'livekit-server-sdk';
 import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
@@ -41,10 +41,7 @@ import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 
 type EgressWebhookAction = 'started' | 'updated' | 'ended';
 
-const COMPOSITE_OPTIONS: RoomCompositeOptions = {
-	layout: MeetRecordingLayout.GRID,
-	encodingOptions: EncodingConverter.toLivekit(MeetRecordingEncodingPreset.H264_720P_30)
-};
+const ENCODING_OPTIONS = EncodingConverter.toLivekit(MeetRecordingEncodingPreset.H264_720P_30);
 const RUNNING_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE];
 const EGRESS_WEBHOOK_LOCK_ATTEMPTS = 10;
 const EGRESS_WEBHOOK_LOCK_RETRY_DELAY_MS = 300;
@@ -95,12 +92,12 @@ export class BroadcastService {
 				options.destinations,
 				permissions
 			);
-			const egress = await this.livekitService.startRoomComposite(
-				roomId,
-				this.toStreamOutput(destinations),
-				COMPOSITE_OPTIONS
-			);
-			const record = BroadcastHelper.createRecord(egress, { roomId, roomName }, destinations);
+			const layout = config.broadcast.layout ?? MeetRecordingLayout.GRID;
+			const egress = await this.livekitService.startRoomComposite(roomId, this.toStreamOutput(destinations), {
+				layout,
+				encodingOptions: ENCODING_OPTIONS
+			});
+			const record = BroadcastHelper.createRecord(egress, { roomId, roomName }, layout, destinations);
 			await this.broadcastState.save(record);
 
 			this.logger.info(`Broadcast '${record.broadcastId}' started for room '${roomId}'`);

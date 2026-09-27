@@ -7,6 +7,7 @@ import {
 	loweredHandAttributes,
 	MeetBroadcastInfo,
 	MeetBroadcastStatus,
+	MeetRecordingLayout,
 	MeetBroadcastUpdatedPayload,
 	MeetEventOrigin,
 	MeetParticipantInfo,
@@ -116,6 +117,7 @@ describe('MeetingEventHandlerService', () => {
 		roomId: 'room1',
 		roomName: 'Room 1',
 		status: MeetBroadcastStatus.ACTIVE,
+		layout: MeetRecordingLayout.GRID,
 		destinations: [],
 		...overrides
 	});

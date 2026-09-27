@@ -116,11 +116,13 @@ export type RecordingFormGroup = FormGroup<{
 export interface BroadcastFormValue {
 	broadcastEnabled: boolean;
 	destinations: MeetBroadcastDestination[];
+	layout: MeetRecordingLayout;
 }
 
 export type BroadcastFormGroup = FormGroup<{
 	broadcastEnabled: FormControl<boolean>;
 	destinations: FormControl<MeetBroadcastDestination[]>;
+	layout: FormControl<MeetRecordingLayout>;
 }>;
 
 /**
