@@ -47,8 +47,9 @@ describe('isRedactedStreamUrl', () => {
 		expect(isRedactedStreamUrl('rtmp://a.rtmp.youtube.com/live2/********')).toBeTrue();
 	});
 
-	it('ignores anything after the key', () => {
+	it('ignores anything after the key, a trailing slash included', () => {
 		expect(isRedactedStreamUrl('rtmps://live-api-s.facebook.com:443/rtmp/********?ds=1')).toBeTrue();
+		expect(isRedactedStreamUrl('rtmp://media.example.com/live/********/')).toBeTrue();
 	});
 
 	it('takes a real key as not redacted', () => {

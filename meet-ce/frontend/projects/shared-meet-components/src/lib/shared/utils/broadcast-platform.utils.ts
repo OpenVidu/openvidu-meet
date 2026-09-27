@@ -41,7 +41,14 @@ export function detectBroadcastPlatform(url: string): BroadcastPlatform {
 	return PLATFORM_RULES.find(([, matches]) => matches(host))?.[0] ?? 'other';
 }
 
-/** Whether a destination URL is served redacted, its stream key replaced by the placeholder. */
+/**
+ * Whether a destination URL is served redacted: its stream key, the last non-empty path segment,
+ * replaced by the placeholder.
+ */
 export function isRedactedStreamUrl(url: string): boolean {
-	return url.split(/[?#]/)[0].split('/').pop() === MEET_BROADCAST_REDACTED_STREAM_KEY;
+	const segments = url
+		.split(/[?#]/)[0]
+		.split('/')
+		.filter((segment) => segment !== '');
+	return segments.at(-1) === MEET_BROADCAST_REDACTED_STREAM_KEY;
 }

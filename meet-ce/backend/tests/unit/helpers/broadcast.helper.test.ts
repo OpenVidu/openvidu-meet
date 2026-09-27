@@ -89,6 +89,13 @@ describe('BroadcastHelper.redactStreamUrl', () => {
 		expect(BroadcastHelper.redactStreamUrl(TWITCH)).toBe('rtmps://live.twitch.tv:443/app/********');
 	});
 
+	it('masks the stream key before a trailing slash', () => {
+		expect(BroadcastHelper.redactStreamUrl('rtmp://stream.example.com/live/secret-key/')).toBe(
+			'rtmp://stream.example.com/live/********/'
+		);
+		expect(BroadcastHelper.isRedactedStreamUrl('rtmp://stream.example.com/live/********/')).toBe(true);
+	});
+
 	it('masks the only segment when the URL has no application path', () => {
 		expect(BroadcastHelper.redactStreamUrl('rtmp://stream.example.com')).toBe('rtmp://stream.example.com/********');
 		expect(BroadcastHelper.redactStreamUrl('rtmp://stream.example.com/key')).toBe(
