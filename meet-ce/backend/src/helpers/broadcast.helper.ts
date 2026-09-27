@@ -42,18 +42,25 @@ export class BroadcastHelper {
 	}
 
 	/**
-	 * The URL as the API serves it: its stream key (the last path segment) replaced by
-	 * {@link MEET_BROADCAST_REDACTED_STREAM_KEY} and its query string dropped.
+	 * The URL as the API serves it: its stream key (the last non-empty path segment, a trailing
+	 * slash notwithstanding) replaced by {@link MEET_BROADCAST_REDACTED_STREAM_KEY}, and its query
+	 * string dropped.
 	 */
 	static redactStreamUrl(url: string): string {
 		const { protocol, host, pathname } = new URL(url);
 		const segments = (pathname || '/').split('/');
-		segments[segments.length - 1] = MEET_BROADCAST_REDACTED_STREAM_KEY;
+		segments[BroadcastHelper.streamKeyIndex(segments)] = MEET_BROADCAST_REDACTED_STREAM_KEY;
 		return `${protocol}//${host}${segments.join('/')}`;
 	}
 
 	static isRedactedStreamUrl(url: string): boolean {
-		return url.split(/[?#]/)[0].split('/').pop() === MEET_BROADCAST_REDACTED_STREAM_KEY;
+		const segments = url.split(/[?#]/)[0].split('/');
+		return segments[BroadcastHelper.streamKeyIndex(segments)] === MEET_BROADCAST_REDACTED_STREAM_KEY;
+	}
+
+	private static streamKeyIndex(segments: string[]): number {
+		const index = segments.findLastIndex((segment) => segment !== '');
+		return index > 0 ? index : segments.length - 1;
 	}
 
 	/**
