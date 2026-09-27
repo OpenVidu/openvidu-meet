@@ -6,9 +6,10 @@ import {
 	MeetBroadcastDestinationSource,
 	MeetBroadcastDestinationStatus,
 	MeetBroadcastStatus,
+	MeetRecordingLayout,
 	MeetWebhookEventType
 } from '@openvidu-meet/typings';
-import type { EgressInfo, StreamOutput } from 'livekit-server-sdk';
+import type { EgressInfo, RoomCompositeOptions, StreamOutput } from 'livekit-server-sdk';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
@@ -46,6 +47,7 @@ const runningRecord = (): BroadcastRecord => ({
 	roomId: ROOM_ID,
 	roomName: 'Room',
 	status: MeetBroadcastStatus.ACTIVE,
+	layout: MeetRecordingLayout.GRID,
 	startDate: 1000,
 	destinations: [
 		{ id: 'a', name: 'A', url: REAL_URLS.a, source: MeetBroadcastDestinationSource.ROOM, status: 'active' },
@@ -56,7 +58,7 @@ const runningRecord = (): BroadcastRecord => ({
 class FakeLiveKitService {
 	participants = true;
 	egressList: EgressInfo[] = [];
-	startCalls: { roomName: string; urls: string[] }[] = [];
+	startCalls: { roomName: string; urls: string[]; layout?: string }[] = [];
 	stopCalls: string[] = [];
 	updateCalls: { egressId: string; add: string[]; remove: string[] }[] = [];
 	nextEgress: EgressInfo = egressWith({});
@@ -65,8 +67,12 @@ class FakeLiveKitService {
 		return this.participants;
 	}
 
-	async startRoomComposite(roomName: string, output: StreamOutput): Promise<EgressInfo> {
-		this.startCalls.push({ roomName, urls: output.urls });
+	async startRoomComposite(
+		roomName: string,
+		output: StreamOutput,
+		options: RoomCompositeOptions
+	): Promise<EgressInfo> {
+		this.startCalls.push({ roomName, urls: output.urls, layout: options.layout });
 		return this.nextEgress;
 	}
 
@@ -115,6 +121,7 @@ class FakeBroadcastStateService {
 
 class FakeRoomService {
 	enabled = true;
+	layout = MeetRecordingLayout.SPEAKER;
 	permissions = allPermissions();
 
 	async getMeetRoom() {
@@ -123,6 +130,7 @@ class FakeRoomService {
 			config: {
 				broadcast: {
 					enabled: this.enabled,
+					layout: this.layout,
 					destinations: [
 						{ id: 'a', name: 'A', url: REDACTED },
 						{ id: 'b', name: 'B', url: REDACTED }
@@ -206,7 +214,10 @@ describe('BroadcastService', () => {
 		it('starts a stream egress to the chosen destinations and keeps their real URLs server-side', async () => {
 			const info = await service.startBroadcast(ROOM_ID, { destinations: [{ id: 'a' }] });
 
-			expect(livekit.startCalls).toEqual([{ roomName: ROOM_ID, urls: [REAL_URLS.a] }]);
+			expect(livekit.startCalls).toEqual([
+				{ roomName: ROOM_ID, urls: [REAL_URLS.a], layout: MeetRecordingLayout.SPEAKER }
+			]);
+			expect(info.layout).toBe(MeetRecordingLayout.SPEAKER);
 			expect(info.destinations.map(({ id, status, url }) => `${id}:${status}:${url}`)).toEqual([
 				`a:connecting:${REDACTED}`,
 				`b:stopped:${REDACTED}`

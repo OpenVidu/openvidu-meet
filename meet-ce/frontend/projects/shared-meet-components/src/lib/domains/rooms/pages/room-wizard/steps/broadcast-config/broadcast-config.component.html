@@ -147,6 +147,16 @@
 					</div>
 				</section>
 
+				<!-- ── Layout ───────────────────────────────── -->
+				<section class="settings-section fade-in" id="broadcast-layout-section">
+					<div class="section-header">
+						<mat-icon class="section-icon">dashboard</mat-icon>
+						<span class="section-label">{{ 'ROOMS.WIZARD.RECORDING_LAYOUT.TITLE' | translate }}</span>
+					</div>
+
+					<ov-layout-picker [control]="broadcastForm.controls.layout" />
+				</section>
+
 				<p class="permissions-hint">
 					<mat-icon class="permissions-hint-icon">manage_accounts</mat-icon>
 					<span>{{ 'ROOMS.WIZARD.BROADCAST.PERMISSIONS_HINT' | translate }}</span>

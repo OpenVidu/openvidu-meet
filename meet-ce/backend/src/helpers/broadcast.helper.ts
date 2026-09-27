@@ -6,6 +6,7 @@ import type {
 	MeetBroadcastDestinationOptions,
 	MeetBroadcastInfo,
 	MeetBroadcastStartDestination,
+	MeetRecordingLayout,
 	MeetRoomMemberPermissions
 } from '@openvidu-meet/typings';
 import {
@@ -204,6 +205,7 @@ export class BroadcastHelper {
 	static createRecord(
 		egress: EgressInfo,
 		room: { roomId: string; roomName: string },
+		layout: MeetRecordingLayout,
 		destinations: MeetBroadcastDestinationInfo[]
 	): BroadcastRecord {
 		return BroadcastHelper.withEgressInfo(
@@ -212,6 +214,7 @@ export class BroadcastHelper {
 				roomId: room.roomId,
 				roomName: room.roomName,
 				status: MeetBroadcastStatus.STARTING,
+				layout,
 				destinations
 			},
 			egress

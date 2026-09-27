@@ -295,7 +295,7 @@
         "SPEAKER_TITLE": "Layout relatore",
         "SPEAKER_DESC": "Evidenzia il relatore attivo con gli altri partecipanti in basso",
         "SINGLE_SPEAKER_TITLE": "Relatore singolo",
-        "SINGLE_SPEAKER_DESC": "Mostra solo il relatore attivo nella registrazione"
+        "SINGLE_SPEAKER_DESC": "Mostra solo il relatore attivo"
       },
       "RECORDING_TRIGGER": {
         "TITLE": "Attivazione",

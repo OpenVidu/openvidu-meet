@@ -211,7 +211,7 @@ const expectMigratedRoomToCurrentVersion = (migratedRoom: Record<string, unknown
 				layout: MeetRecordingLayout.GRID,
 				encoding: MeetRecordingEncodingPreset.H264_720P_30
 			},
-			broadcast: { enabled: false, destinations: [] },
+			broadcast: { enabled: false, destinations: [], layout: MeetRecordingLayout.GRID },
 			virtualBackground: { enabled: true },
 			e2ee: { enabled: false },
 			captions: {

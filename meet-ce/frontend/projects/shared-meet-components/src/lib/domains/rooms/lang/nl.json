@@ -295,7 +295,7 @@
         "SPEAKER_TITLE": "Sprekerindeling",
         "SPEAKER_DESC": "Markeer de actieve spreker met de andere deelnemers eronder",
         "SINGLE_SPEAKER_TITLE": "Enkele spreker",
-        "SINGLE_SPEAKER_DESC": "Toon alleen de actieve spreker in de opname"
+        "SINGLE_SPEAKER_DESC": "Toon alleen de actieve spreker"
       },
       "RECORDING_TRIGGER": {
         "TITLE": "Trigger",

@@ -9,7 +9,8 @@ import {
 	MEET_BROADCAST_REDACTED_STREAM_KEY,
 	MeetBroadcastDestinationSource,
 	MeetBroadcastDestinationStatus,
-	MeetBroadcastStatus
+	MeetBroadcastStatus,
+	MeetRecordingLayout
 } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
@@ -102,6 +103,7 @@ describe('Broadcasts API Tests', () => {
 			expect(broadcast.status).toBe(MeetBroadcastStatus.STARTING);
 			expect(broadcast.roomId).toBe(roomData.room.roomId);
 			expect(broadcast.roomName).toBe('BROADCAST_ROOM');
+			expect(broadcast.layout).toBe(MeetRecordingLayout.GRID);
 			expect(broadcast.destinations).toEqual(
 				(await roomDestinationIds(roomData)).map((id, index) => ({
 					id,

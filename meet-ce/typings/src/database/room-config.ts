@@ -180,6 +180,12 @@ export interface MeetBroadcastConfig {
 	 * See {@link MeetBroadcastDestination} for details.
 	 */
 	destinations: MeetBroadcastDestination[];
+	/**
+	 * Layout of the meeting as it is streamed, the same layouts a recording uses. See
+	 * {@link MeetRecordingLayout} for details. Defaults to `grid`; config updates deep-merge with the
+	 * stored config, so omitting this field keeps its current value.
+	 */
+	layout?: MeetRecordingLayout;
 }
 
 /**

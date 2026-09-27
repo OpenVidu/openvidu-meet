@@ -1,14 +1,14 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MeetRecordingAutoStartMode, MeetRecordingLayout } from '@openvidu-meet/typings';
+import { MeetRecordingAutoStartMode } from '@openvidu-meet/typings';
 import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
+import { LayoutPickerComponent } from '../../../../components/layout-picker/layout-picker.component';
 import { TranslateService } from '../../../../../../shared/services/i18n/translate.service';
-import { ThemeService } from '../../../../../../shared/services/theme.service';
 import { RecordingFormGroup, RecordingFormValue, RecordingTrigger } from '../../../../models/wizard-forms.model';
 import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services/wizard-state.service';
@@ -19,13 +19,6 @@ interface TriggerOption {
 	description: string;
 }
 
-interface LayoutOption {
-	value: MeetRecordingLayout;
-	title: string;
-	description: string;
-	imageUrl: string;
-}
-
 @Component({
 	selector: 'ov-recording-config',
 	imports: [
@@ -34,6 +27,7 @@ interface LayoutOption {
 		MatIconModule,
 		MatSelectModule,
 		MatSlideToggleModule,
+		LayoutPickerComponent,
 		TranslatePipe
 	],
 	templateUrl: './recording-config.component.html',
@@ -42,7 +36,6 @@ interface LayoutOption {
 export class RecordingConfigComponent {
 	private wizardService = inject(RoomWizardStateService);
 	private readonly translateService = inject(TranslateService);
-	private readonly theme = inject(ThemeService).currentTheme;
 
 	recordingForm: RecordingFormGroup;
 
@@ -71,27 +64,6 @@ export class RecordingConfigComponent {
 			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_MODE_MODERATOR_DESC')
 		}
 	];
-
-	layoutOptions = computed<LayoutOption[]>(() => [
-		{
-			value: MeetRecordingLayout.GRID,
-			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_LAYOUT.GRID_TITLE'),
-			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_LAYOUT.GRID_DESC'),
-			imageUrl: `./assets/layouts/grid_${this.theme()}.png`
-		},
-		{
-			value: MeetRecordingLayout.SPEAKER,
-			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_LAYOUT.SPEAKER_TITLE'),
-			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_LAYOUT.SPEAKER_DESC'),
-			imageUrl: `./assets/layouts/speaker_${this.theme()}.png`
-		},
-		{
-			value: MeetRecordingLayout.SINGLE_SPEAKER,
-			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_LAYOUT.SINGLE_SPEAKER_TITLE'),
-			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_LAYOUT.SINGLE_SPEAKER_DESC'),
-			imageUrl: `./assets/layouts/single_speaker_${this.theme()}.png`
-		}
-	]);
 
 	constructor() {
 		const recordingStep = this.wizardService.getStepById(WizardStepId.RECORDING);
@@ -187,10 +159,6 @@ export class RecordingConfigComponent {
 	get selectedTriggerDescription(): string {
 		const trigger = this.recordingForm.controls.trigger.value;
 		return this.triggerOptions.find((option) => option.value === trigger)?.description ?? '';
-	}
-
-	get selectedLayout(): MeetRecordingLayout {
-		return this.recordingForm.controls.layout.value;
 	}
 
 	get isE2EEEnabled(): boolean {

@@ -1,3 +1,5 @@
+import type { MeetRecordingLayout } from './recording.entity.js';
+
 /**
  * A live broadcast of a meeting: its composited audio and video streamed to one or more RTMP(S)
  * destinations at once. A broadcast is ephemeral: it exists while the meeting is being streamed and
@@ -13,6 +15,8 @@ export interface MeetBroadcastInfo {
 	roomName: string;
 	/** Current status of the broadcast. See {@link MeetBroadcastStatus} for details */
 	status: MeetBroadcastStatus;
+	/** Layout of the meeting as it is streamed, taken from the room's config when the broadcast started */
+	layout: MeetRecordingLayout;
 	/**
 	 * Every destination of the broadcast with its own status: the room's saved destinations (the
 	 * ones not chosen when the broadcast started are listed as `stopped`) plus the ones added for

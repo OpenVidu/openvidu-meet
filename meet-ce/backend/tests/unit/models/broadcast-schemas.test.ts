@@ -12,6 +12,19 @@ const issues = (result: { success: boolean; error?: { issues: Array<{ path: unkn
 const destination = (key: string) => ({ name: `Dest ${key}`, url: `rtmp://mtx/live/${key}` });
 
 describe('BroadcastConfigSchema', () => {
+	it('accepts the recording layouts and leaves an omitted layout to the stored one', () => {
+		expect(BroadcastConfigSchema.safeParse({ enabled: false, destinations: [], layout: 'speaker' }).success).toBe(
+			true
+		);
+		expect(BroadcastConfigSchema.parse({ enabled: false, destinations: [] })).toEqual({
+			enabled: false,
+			destinations: []
+		});
+		expect(BroadcastConfigSchema.safeParse({ enabled: false, destinations: [], layout: 'mosaic' }).success).toBe(
+			false
+		);
+	});
+
 	it('accepts rtmp and rtmps destinations, with or without a saved id, and trims the name', () => {
 		const result = BroadcastConfigSchema.safeParse({
 			enabled: true,

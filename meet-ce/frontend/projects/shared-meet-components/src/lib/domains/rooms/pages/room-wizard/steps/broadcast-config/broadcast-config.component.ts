@@ -10,6 +10,7 @@ import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/sl
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MEET_BROADCAST_MAX_DESTINATIONS, MeetBroadcastDestination } from '@openvidu-meet/typings';
 import { PlatformIconComponent } from '../../../../../../shared/components/platform-icon/platform-icon.component';
+import { LayoutPickerComponent } from '../../../../components/layout-picker/layout-picker.component';
 import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
 import {
 	BROADCAST_PLATFORM_LABELS,
@@ -52,6 +53,7 @@ const rtmpUrlValidator = (control: AbstractControl<string>): ValidationErrors | 
 		MatSlideToggleModule,
 		MatTooltipModule,
 		PlatformIconComponent,
+		LayoutPickerComponent,
 		TranslatePipe
 	],
 	templateUrl: './broadcast-config.component.html',
@@ -207,7 +209,8 @@ export class BroadcastConfigComponent {
 			config: {
 				broadcast: {
 					enabled: formValue.broadcastEnabled,
-					destinations: formValue.destinations
+					destinations: formValue.destinations,
+					layout: formValue.layout
 				}
 			}
 		});

@@ -359,7 +359,7 @@ test.describe('Room wizard E2E Tests', () => {
 		await page.locator('#broadcast-destination-save-btn').click();
 	};
 
-	test('create mode: the broadcast destinations reach the created room, their stream keys hidden', async ({
+	test('create mode: the broadcast destinations and layout reach the created room, the stream keys hidden', async ({
 		page
 	}) => {
 		await openAdvancedWizard(page);
@@ -369,6 +369,7 @@ test.describe('Room wizard E2E Tests', () => {
 		await setFeature(page, 'broadcast-enabled', true);
 		await addBroadcastDestination(page, 'YouTube', 'rtmp://a.rtmp.youtube.com/live2/abcd-1234');
 		await expect(page.locator('#broadcast-destination-0')).toContainText('YouTube');
+		await page.locator('#broadcast-layout-section .layout-tile').nth(1).click(); // Speaker
 
 		await gotoRoomAccess(page);
 		await page.locator('#wizard-finish-btn').click();
@@ -380,6 +381,7 @@ test.describe('Room wizard E2E Tests', () => {
 		const { broadcast } = await getRoomConfig(roomId);
 
 		expect(broadcast.enabled).toBe(true);
+		expect(broadcast.layout).toBe(MeetRecordingLayout.SPEAKER);
 		expect(broadcast.destinations).toEqual([
 			expect.objectContaining({ name: 'YouTube', url: 'rtmp://a.rtmp.youtube.com/live2/********' })
 		]);

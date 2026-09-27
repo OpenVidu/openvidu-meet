@@ -1,0 +1,70 @@
+@use '_design-tokens.scss';
+
+.layout-options {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: var(--ov-meet-spacing-sm);
+}
+
+.layout-tile {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--ov-meet-spacing-xs);
+	padding: var(--ov-meet-spacing-sm);
+	text-align: center;
+	border: 1px solid var(--ov-meet-border-secondary);
+	border-radius: var(--ov-meet-radius-sm);
+	background: var(--ov-meet-surface-variant);
+	cursor: pointer;
+	transition:
+		background-color var(--ov-meet-transition-fast),
+		border-color var(--ov-meet-transition-fast);
+
+	&:hover {
+		background: var(--ov-meet-surface-hover);
+	}
+
+	&.selected {
+		border-color: var(--ov-meet-color-primary);
+		box-shadow: 0 0 0 1px var(--ov-meet-color-primary);
+		background: color-mix(in srgb, var(--ov-meet-color-primary) 8%, var(--ov-meet-surface-variant));
+	}
+
+	&:has(.layout-radio:focus-visible) {
+		outline: 2px solid var(--ov-meet-color-primary);
+		outline-offset: 2px;
+	}
+
+	.layout-radio {
+		position: absolute;
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	.layout-image {
+		width: 100%;
+		height: 132px;
+		object-fit: contain;
+	}
+
+	.layout-title {
+		font-size: var(--ov-meet-font-size-md);
+		font-weight: var(--ov-meet-font-weight-medium);
+		color: var(--ov-meet-text-primary);
+		line-height: var(--ov-meet-line-height-tight);
+	}
+
+	.layout-description {
+		font-size: var(--ov-meet-font-size-sm);
+		color: var(--ov-meet-text-secondary);
+		line-height: var(--ov-meet-line-height-normal);
+	}
+}
+
+@include design-tokens.ov-mobile-down {
+	.layout-options {
+		grid-template-columns: 1fr;
+	}
+}

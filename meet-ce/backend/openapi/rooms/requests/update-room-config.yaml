@@ -16,6 +16,7 @@ content:
                     encoding: H264_720P_30
                 broadcast:
                     enabled: true
+                    layout: speaker
                     destinations:
                         - name: YouTube
                           url: rtmp://a.rtmp.youtube.com/live2/abcd-1234-efgh-5678

@@ -7,6 +7,7 @@ import {
 	MeetBroadcastStatus,
 	MeetParticipantModerationAction,
 	MeetReaction,
+	MeetRecordingLayout,
 	MeetRecordingStatus,
 	MeetRoomMemberRole
 } from '@openvidu-meet/typings';
@@ -637,6 +638,7 @@ describe('IframeBridgeService', () => {
 				roomId: ROOM_ID,
 				roomName: 'Room 1',
 				status: MeetBroadcastStatus.ACTIVE,
+				layout: MeetRecordingLayout.GRID,
 				destinations: []
 			};
 

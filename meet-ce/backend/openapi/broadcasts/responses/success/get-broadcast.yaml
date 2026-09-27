@@ -8,6 +8,7 @@ content:
             roomId: 'room-123'
             roomName: 'room'
             status: 'active'
+            layout: 'grid'
             startDate: 1620000000000
             destinations:
                 - id: 'kX9pL2mQ7a'

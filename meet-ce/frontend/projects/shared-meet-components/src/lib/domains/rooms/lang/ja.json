@@ -295,7 +295,7 @@
         "SPEAKER_TITLE": "スピーカーレイアウト",
         "SPEAKER_DESC": "アクティブなスピーカーを強調表示し、他の参加者をその下に表示します",
         "SINGLE_SPEAKER_TITLE": "シングルスピーカー",
-        "SINGLE_SPEAKER_DESC": "録画にはアクティブなスピーカーのみを表示します"
+        "SINGLE_SPEAKER_DESC": "アクティブなスピーカーのみを表示します"
       },
       "RECORDING_TRIGGER": {
         "TITLE": "トリガー",

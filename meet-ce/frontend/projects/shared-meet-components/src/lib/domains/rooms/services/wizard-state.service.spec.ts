@@ -205,16 +205,17 @@ describe('RoomWizardStateService.initializeWizard (steps)', () => {
 		});
 	});
 
-	it('prefills the broadcast step, destinations included, from the edited room', () => {
+	it('prefills the broadcast step, destinations and layout included, from the edited room', () => {
 		const destinations = [{ id: 'dest1', name: 'YouTube', url: 'rtmp://a.rtmp.youtube.com/live2/********' }];
 		service.initializeWizard(true, {
 			roomName: 'Existing room',
-			config: { broadcast: { enabled: true, destinations } }
+			config: { broadcast: { enabled: true, destinations, layout: MeetRecordingLayout.SPEAKER } }
 		});
 
 		expect(service.getStepById(WizardStepId.BROADCAST)!.formGroup.getRawValue()).toEqual({
 			broadcastEnabled: true,
-			destinations
+			destinations,
+			layout: MeetRecordingLayout.SPEAKER
 		});
 	});
 });
@@ -384,7 +385,7 @@ describe('RoomWizardStateService.initializeWizard (the room it proposes)', () =>
 	it('proposes recording, chat, captions and virtual backgrounds on, and live broadcast and end-to-end encryption off', () => {
 		expect(service.roomOptions().config).toEqual({
 			recording: { enabled: true, layout: MeetRecordingLayout.GRID },
-			broadcast: { enabled: false, destinations: [] },
+			broadcast: { enabled: false, destinations: [], layout: MeetRecordingLayout.GRID },
 			chat: { enabled: true },
 			virtualBackground: { enabled: true },
 			e2ee: { enabled: false },

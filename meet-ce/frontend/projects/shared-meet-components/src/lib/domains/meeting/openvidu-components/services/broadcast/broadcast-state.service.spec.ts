@@ -5,7 +5,8 @@ import {
 	MeetBroadcastDestinationSource,
 	MeetBroadcastDestinationStatus,
 	MeetBroadcastInfo,
-	MeetBroadcastStatus
+	MeetBroadcastStatus,
+	MeetRecordingLayout
 } from '@openvidu-meet/typings';
 import { BroadcastStateService } from './broadcast-state.service';
 
@@ -24,6 +25,7 @@ describe('BroadcastStateService', () => {
 		roomId: 'room1',
 		roomName: 'Room 1',
 		status: MeetBroadcastStatus.ACTIVE,
+		layout: MeetRecordingLayout.GRID,
 		destinations: [],
 		...overrides
 	});
