@@ -205,8 +205,9 @@ export interface MeetBroadcastDestination {
 	 * Full `rtmp://` or `rtmps://` URL to stream to, stream key included. The stream key is a
 	 * secret, so it is never served: responses carry the URL with its last path segment replaced by
 	 * {@link MEET_BROADCAST_REDACTED_STREAM_KEY} and without query string. An update that sends a
-	 * destination with its `id` and that redacted URL (a response echoed back) keeps the saved URL;
-	 * any other URL replaces it.
+	 * destination with its `id` and that redacted URL exactly as served (a response echoed back)
+	 * keeps the saved URL; a full URL replaces it, and a redacted URL with any other change is
+	 * rejected, since there is no stream key to go with it.
 	 */
 	url: string;
 }

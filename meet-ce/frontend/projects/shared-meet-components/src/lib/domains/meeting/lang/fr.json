@@ -192,6 +192,7 @@
 			"URL_HINT": "Collez l'URL rtmp:// ou rtmps://, clé de diffusion incluse. Elle ne sert que pour cette réunion.",
 			"EDIT_HINT": "Seule cette réunion utilise la modification. La salle conserve {name} tel qu'enregistré.",
 			"URL_INVALID": "Saisissez une URL rtmp:// ou rtmps://",
+			"URL_KEY_REQUIRED": "Une URL modifiée a besoin de sa clé de diffusion : collez l'URL complète",
 			"NAME_REQUIRED": "Saisissez un nom",
 			"ADD": "Ajouter",
 			"SAVE": "Enregistrer",

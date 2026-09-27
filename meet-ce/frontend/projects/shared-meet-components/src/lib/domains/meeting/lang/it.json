@@ -192,6 +192,7 @@
 			"URL_HINT": "Incolla l'URL rtmp:// o rtmps://, chiave dello stream inclusa. Vale solo per questa riunione.",
 			"EDIT_HINT": "Solo questa riunione usa la modifica. La stanza mantiene {name} come salvato.",
 			"URL_INVALID": "Inserisci un URL rtmp:// o rtmps://",
+			"URL_KEY_REQUIRED": "Un URL modificato richiede la chiave dello stream: incolla l'URL completo",
 			"NAME_REQUIRED": "Inserisci un nome",
 			"ADD": "Aggiungi",
 			"SAVE": "Salva",

@@ -1,8 +1,10 @@
+import { FormControl } from '@angular/forms';
 import {
 	BroadcastPlatform,
 	detectBroadcastPlatform,
 	extractBroadcastHost,
-	isRedactedStreamUrl
+	isRedactedStreamUrl,
+	servedUrlValidator
 } from './broadcast-platform.utils';
 
 /**
@@ -54,5 +56,24 @@ describe('isRedactedStreamUrl', () => {
 
 	it('takes a real key as not redacted', () => {
 		expect(isRedactedStreamUrl('rtmp://a.rtmp.youtube.com/live2/abcd-1234')).toBeFalse();
+	});
+});
+
+describe('servedUrlValidator', () => {
+	const SERVED = 'rtmp://a.rtmp.youtube.com/live2/********';
+	const errorsFor = (url: string, served: string | undefined) =>
+		new FormControl(url, { nonNullable: true, validators: servedUrlValidator(() => served) }).errors;
+
+	it('accepts the redacted URL exactly as it was served, which keeps the saved stream key', () => {
+		expect(errorsFor(SERVED, SERVED)).toBeNull();
+	});
+
+	it('accepts any full URL, which replaces the saved one', () => {
+		expect(errorsFor('rtmp://other.example.com/live/new-key', SERVED)).toBeNull();
+	});
+
+	it('asks for the stream key when a redacted URL changes host, or has no saved URL behind it', () => {
+		expect(errorsFor('rtmp://other.example.com/live2/********', SERVED)).toEqual({ streamKeyRequired: true });
+		expect(errorsFor(SERVED, undefined)).toEqual({ streamKeyRequired: true });
 	});
 });

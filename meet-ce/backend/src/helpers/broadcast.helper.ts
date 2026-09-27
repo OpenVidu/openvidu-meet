@@ -146,8 +146,7 @@ export class BroadcastHelper {
 			if (!destination) throw errorBroadcastUnknownDestination(request.id);
 
 			destination.status = MeetBroadcastDestinationStatus.CONNECTING;
-			const url =
-				request.url && !BroadcastHelper.isRedactedStreamUrl(request.url) ? request.url : destination.url;
+			const url = request.url ? BroadcastHelper.resolveUrl(request.url, destination.url) : destination.url;
 			const name = request.name ?? destination.name;
 
 			if (url !== destination.url || name !== destination.name) {
@@ -193,10 +192,7 @@ export class BroadcastHelper {
 		const destinations = incoming.map(({ id, name, url }) => {
 			if (id && !savedUrls[id]) throw errorBroadcastUnknownDestination(id);
 
-			const realUrl = BroadcastHelper.isRedactedStreamUrl(url) ? id && savedUrls[id] : url;
-
-			if (!realUrl) throw errorBroadcastRedactedDestinationUrl();
-
+			const realUrl = BroadcastHelper.resolveUrl(url, id && savedUrls[id]);
 			const destinationId = id ?? uid(DESTINATION_ID_LENGTH);
 
 			if (urls[destinationId]) throw errorBroadcastDuplicateDestination(BroadcastHelper.redactStreamUrl(realUrl));
@@ -287,6 +283,20 @@ export class BroadcastHelper {
 				url: BroadcastHelper.redactStreamUrl(destination.url)
 			}))
 		};
+	}
+
+	/**
+	 * The real URL a destination URL stands for. A redacted URL keeps the saved one, but only as it
+	 * was served: with any other change there is no stream key to go with it.
+	 */
+	private static resolveUrl(url: string, savedUrl: string | undefined): string {
+		if (!BroadcastHelper.isRedactedStreamUrl(url)) return url;
+
+		if (!savedUrl || BroadcastHelper.redactStreamUrl(url) !== BroadcastHelper.redactStreamUrl(savedUrl)) {
+			throw errorBroadcastRedactedDestinationUrl();
+		}
+
+		return savedUrl;
 	}
 
 	private static toMeetingDestination(options: MeetBroadcastDestinationOptions): MeetBroadcastDestinationInfo {

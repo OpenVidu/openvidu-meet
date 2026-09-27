@@ -192,6 +192,7 @@
 			"URL_HINT": "Pega la URL rtmp:// o rtmps://, con la clave de emisión incluida. Solo se usa en esta reunión.",
 			"EDIT_HINT": "Solo esta reunión usa el cambio. La sala conserva {name} tal y como se guardó.",
 			"URL_INVALID": "Introduce una URL rtmp:// o rtmps://",
+			"URL_KEY_REQUIRED": "Una URL cambiada necesita su clave de emisión: pega la URL completa",
 			"NAME_REQUIRED": "Introduce un nombre",
 			"ADD": "Añadir",
 			"SAVE": "Guardar",

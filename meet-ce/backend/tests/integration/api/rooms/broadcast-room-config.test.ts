@@ -236,8 +236,20 @@ describe('Broadcast Room Configuration Tests', () => {
 			expect(Object.keys(await storedUrls(room.roomId))).toEqual([room.config.broadcast.destinations[0].id]);
 		});
 
-		it('should reject an unknown destination id and a new destination sent with a redacted URL', async () => {
+		it('should reject an unknown destination id and a redacted URL for a new destination or with another host', async () => {
 			const room = await createBroadcastRoom(['a']);
+			const [saved] = room.config.broadcast.destinations;
+
+			expectMeetError(
+				await updateRoomConfig(room.roomId, {
+					broadcast: {
+						enabled: true,
+						destinations: [{ ...saved, url: saved.url.replace('a.rtmp.youtube.com', 'b.rtmp.youtube.com') }]
+					}
+				}),
+				errorBroadcastRedactedDestinationUrl()
+			);
+			expect(await storedUrls(room.roomId)).toEqual({ [saved.id!]: destination('a').url });
 
 			expectMeetError(
 				await updateRoomConfig(room.roomId, {

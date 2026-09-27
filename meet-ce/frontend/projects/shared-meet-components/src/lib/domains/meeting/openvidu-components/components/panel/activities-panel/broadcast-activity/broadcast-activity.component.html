@@ -405,7 +405,12 @@
 			spellcheck="false"
 		/>
 		@if (destinationForm.controls.url.touched && destinationForm.controls.url.invalid) {
-			<span class="field-error">{{ 'PANEL.BROADCAST.URL_INVALID' | translate }}</span>
+			<span class="field-error">{{
+				(destinationForm.controls.url.hasError('streamKeyRequired')
+					? 'PANEL.BROADCAST.URL_KEY_REQUIRED'
+					: 'PANEL.BROADCAST.URL_INVALID'
+				) | translate
+			}}</span>
 		}
 		<p class="destination-editor-hint">
 			@if (detectedPlatform() !== 'other') {

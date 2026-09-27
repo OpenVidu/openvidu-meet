@@ -20,6 +20,7 @@ import { BROADCAST_MBPS_PER_DESTINATION } from '../../../../../../../shared/mode
 import {
 	BROADCAST_PLATFORM_LABELS,
 	detectBroadcastPlatform,
+	servedUrlValidator,
 	extractBroadcastHost
 } from '../../../../../../../shared/utils/broadcast-platform.utils';
 import { MeetingContextService } from '../../../../../services/meeting-context.service';
@@ -197,8 +198,10 @@ export class BroadcastActivityComponent {
 	readonly editor = signal<EditorTarget>(null);
 	readonly destinationForm = this.formBuilder.nonNullable.group({
 		name: ['', [Validators.required, Validators.maxLength(50)]],
-		url: ['', [Validators.required, rtmpUrlValidator]]
+		url: ['', [Validators.required, rtmpUrlValidator, servedUrlValidator(() => this.servedUrl())]]
 	});
+	/** The URL the room destination being edited was saved with, as the room serves it: redacted. */
+	private readonly servedUrl = signal<string | undefined>(undefined);
 	private readonly editedUrl = toSignal(this.destinationForm.controls.url.valueChanges, { initialValue: '' });
 	readonly detectedPlatform = computed(() => detectBroadcastPlatform(this.editedUrl()));
 	readonly detectedPlatformLabel = computed(() => BROADCAST_PLATFORM_LABELS[this.detectedPlatform()]);
@@ -254,11 +257,13 @@ export class BroadcastActivityComponent {
 	}
 
 	openAdd(): void {
+		this.servedUrl.set(undefined);
 		this.destinationForm.reset({ name: '', url: '' });
 		this.editor.set('new');
 	}
 
 	openEdit(destination: PlannedDestination): void {
+		this.servedUrl.set(this.roomDestinations().find(({ id }) => id === destination.id)?.url);
 		this.destinationForm.reset({ name: destination.name, url: destination.url });
 		this.editor.set({ id: destination.id });
 	}
