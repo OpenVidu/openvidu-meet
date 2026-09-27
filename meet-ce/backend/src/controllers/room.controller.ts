@@ -12,6 +12,7 @@ import type {
 import { MeetRoomDeletionSuccessCode } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
+import { BroadcastHelper } from '../helpers/broadcast.helper.js';
 import { roomToWire, rolesToWire } from '../helpers/permission-naming.helper.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
@@ -34,7 +35,7 @@ export const createRoom = async (req: Request, res: Response) => {
 	};
 
 	try {
-		logger.verbose(`Creating room with options '${JSON.stringify(options)}'`);
+		logger.verbose(`Creating room with options '${JSON.stringify(BroadcastHelper.redactRoomOptions(options))}'`);
 
 		let room = await roomService.createMeetRoom(options);
 		room = MeetRoomHelper.applyFieldFilters(room, fields, extraFields);
