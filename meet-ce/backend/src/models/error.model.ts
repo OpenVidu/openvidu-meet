@@ -293,7 +293,7 @@ export const errorBroadcastUnknownDestination = (destinationId: string): OpenVid
 export const errorBroadcastRedactedDestinationUrl = (): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Broadcast Error',
-		'A new destination needs its full URL, stream key included; a redacted URL only keeps a saved destination',
+		'A changed or new destination needs its full URL, stream key included; a redacted URL only keeps a saved destination URL exactly as it was served',
 		422
 	);
 };

@@ -1,3 +1,4 @@
+import type { ValidatorFn } from '@angular/forms';
 import { MEET_BROADCAST_REDACTED_STREAM_KEY } from '@openvidu-meet/typings';
 
 /** A streaming platform Meet shows its own icon for, told apart by the host of the RTMP URL. */
@@ -52,3 +53,14 @@ export function isRedactedStreamUrl(url: string): boolean {
 		.filter((segment) => segment !== '');
 	return segments.at(-1) === MEET_BROADCAST_REDACTED_STREAM_KEY;
 }
+
+/**
+ * A redacted URL only stands for the URL a destination was served with: the server has no stream
+ * key to go with any other, so a changed host or path needs the full URL.
+ */
+export const servedUrlValidator =
+	(servedUrl: () => string | undefined): ValidatorFn =>
+	(control) => {
+		const url = (control.value as string).trim();
+		return isRedactedStreamUrl(url) && url !== servedUrl() ? { streamKeyRequired: true } : null;
+	};

@@ -40,8 +40,9 @@ content:
                                 description: >
                                     The RTMP or RTMPS URL, stream key included. Required on a new destination.
                                     On a room destination, the saved URL is kept when this one is omitted or
-                                    redacted (`********` in place of the key), and replaced for this meeting
-                                    otherwise.
+                                    sent redacted exactly as served (`********` in place of the key), and
+                                    replaced for this meeting by a full URL. A redacted URL with any other
+                                    change is rejected with a `422`.
         example:
             destinations:
                 - id: 'kX9pL2mQ7a'

@@ -218,6 +218,10 @@
 					destinationForm.controls.url.hasError('rtmpUrl')
 				) {
 					<mat-error>{{ 'ROOMS.WIZARD.BROADCAST.URL_INVALID' | translate }}</mat-error>
+				} @else if (destinationForm.controls.url.hasError('streamKeyRequired')) {
+					<mat-error id="broadcast-destination-url-key-required">{{
+						'ROOMS.WIZARD.BROADCAST.URL_KEY_REQUIRED' | translate
+					}}</mat-error>
 				}
 			</mat-form-field>
 		</div>

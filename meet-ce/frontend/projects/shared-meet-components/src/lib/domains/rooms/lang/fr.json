@@ -333,6 +333,7 @@
         "URL_RECOGNISED": "Reconnu comme {platform}.",
         "URL_KEEP_KEY": "Laissez l'URL telle quelle pour conserver la clé de diffusion enregistrée, ou collez-en une nouvelle pour la remplacer.",
         "URL_INVALID": "Saisissez une URL rtmp:// ou rtmps://",
+        "URL_KEY_REQUIRED": "Une URL modifiée a besoin de sa clé de diffusion : collez l'URL complète",
         "NAME_REQUIRED": "Saisissez un nom",
         "ADD": "Ajouter",
         "SAVE": "Enregistrer",

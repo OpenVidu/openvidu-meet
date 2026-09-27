@@ -333,6 +333,7 @@
         "URL_RECOGNISED": "Reconhecido como {platform}.",
         "URL_KEEP_KEY": "Deixe a URL como está para manter a chave de transmissão salva, ou cole uma nova para substituí-la.",
         "URL_INVALID": "Insira uma URL rtmp:// ou rtmps://",
+        "URL_KEY_REQUIRED": "Uma URL alterada precisa da chave de transmissão: cole a URL completa",
         "NAME_REQUIRED": "Insira um nome",
         "ADD": "Adicionar",
         "SAVE": "Salvar",

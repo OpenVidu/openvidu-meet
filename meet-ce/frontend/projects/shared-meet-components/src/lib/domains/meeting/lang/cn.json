@@ -192,6 +192,7 @@
 			"URL_HINT": "粘贴 rtmp:// 或 rtmps:// 地址，包含推流密钥。仅用于本次会议。",
 			"EDIT_HINT": "该更改仅用于本次会议。房间保留已保存的 {name}。",
 			"URL_INVALID": "请输入 rtmp:// 或 rtmps:// 地址",
+			"URL_KEY_REQUIRED": "修改后的地址需要推流密钥：请粘贴完整地址",
 			"NAME_REQUIRED": "请输入名称",
 			"ADD": "添加",
 			"SAVE": "保存",

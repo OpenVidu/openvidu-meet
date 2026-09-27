@@ -15,7 +15,8 @@ import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
 import {
 	BROADCAST_PLATFORM_LABELS,
 	detectBroadcastPlatform,
-	isRedactedStreamUrl
+	isRedactedStreamUrl,
+	servedUrlValidator
 } from '../../../../../../shared/utils/broadcast-platform.utils';
 import { BROADCAST_MBPS_PER_DESTINATION } from '../../../../../../shared/models/broadcast.model';
 import { BroadcastFormGroup, BroadcastFormValue } from '../../../../models/wizard-forms.model';
@@ -69,8 +70,10 @@ export class BroadcastConfigComponent {
 
 	readonly destinationForm = this.formBuilder.nonNullable.group({
 		name: ['', [Validators.required, Validators.maxLength(DESTINATION_NAME_MAX_LENGTH)]],
-		url: ['', [Validators.required, rtmpUrlValidator]]
+		url: ['', [Validators.required, rtmpUrlValidator, servedUrlValidator(() => this.servedUrl())]]
 	});
+	/** The URL the destination being edited was served with, redacted when it is a saved one. */
+	private readonly servedUrl = signal<string | undefined>(undefined);
 
 	readonly editingIndex = signal<number | null>(NOT_EDITING);
 	readonly destinations = signal<MeetBroadcastDestination[]>([]);
@@ -84,7 +87,9 @@ export class BroadcastConfigComponent {
 	readonly detectedPlatform = computed(() => detectBroadcastPlatform(this.editedUrl()));
 	readonly detectedPlatformLabel = computed(() => BROADCAST_PLATFORM_LABELS[this.detectedPlatform()]);
 	/** Editing a saved destination: its URL comes redacted and keeps its stream key unless replaced. */
-	readonly keepsSavedKey = computed(() => isRedactedStreamUrl(this.editedUrl()));
+	readonly keepsSavedKey = computed(
+		() => isRedactedStreamUrl(this.editedUrl()) && this.editedUrl().trim() === this.servedUrl()
+	);
 
 	constructor() {
 		const broadcastStep = this.wizardService.getStepById(WizardStepId.BROADCAST);
@@ -117,12 +122,14 @@ export class BroadcastConfigComponent {
 	}
 
 	openAdd(): void {
+		this.servedUrl.set(undefined);
 		this.destinationForm.reset({ name: '', url: '' });
 		this.editingIndex.set(NEW_DESTINATION);
 	}
 
 	openEdit(index: number): void {
 		const { name, url } = this.destinations()[index];
+		this.servedUrl.set(url);
 		this.destinationForm.reset({ name, url });
 		this.editingIndex.set(index);
 	}

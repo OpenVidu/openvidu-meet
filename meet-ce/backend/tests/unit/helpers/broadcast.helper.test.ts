@@ -223,6 +223,19 @@ describe('BroadcastHelper.resolveStartDestinations', () => {
 		expect(unchanged.edited).toBeUndefined();
 	});
 
+	it('rejects a redacted URL that is not the one the destination was served with', () => {
+		expectStatus(
+			() =>
+				BroadcastHelper.resolveStartDestinations(
+					room,
+					urls,
+					[{ id: 'a', url: 'rtmp://other-server/live/********' }],
+					permissions()
+				),
+			422
+		);
+	});
+
 	it('adds a destination for this meeting with the add permission', () => {
 		const destinations = BroadcastHelper.resolveStartDestinations(
 			room,
@@ -303,6 +316,19 @@ describe('BroadcastHelper.reconcileRoomDestinations', () => {
 			{ id: 'a', name: 'A renamed', url: 'rtmp://mtx/live/********' },
 			{ id: 'b', name: 'B', url: 'rtmp://mtx/live/********' }
 		]);
+	});
+
+	it('rejects a redacted URL echoed back with another host or path, which has no stream key to keep', () => {
+		for (const url of [
+			'rtmp://other/live/********',
+			'rtmp://mtx/other-app/********',
+			'rtmps://mtx/live/********'
+		]) {
+			expectStatus(
+				() => BroadcastHelper.reconcileRoomDestinations(savedUrls, [{ id: 'a', name: 'A', url }]),
+				422
+			);
+		}
 	});
 
 	it('assigns an id to a new destination and drops the ones left out', () => {

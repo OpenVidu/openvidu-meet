@@ -333,6 +333,7 @@
         "URL_RECOGNISED": "Riconosciuto come {platform}.",
         "URL_KEEP_KEY": "Lascia l'URL così com'è per conservare la chiave dello stream salvata, oppure incollane una nuova per sostituirla.",
         "URL_INVALID": "Inserisci un URL rtmp:// o rtmps://",
+        "URL_KEY_REQUIRED": "Un URL modificato richiede la chiave dello stream: incolla l'URL completo",
         "NAME_REQUIRED": "Inserisci un nome",
         "ADD": "Aggiungi",
         "SAVE": "Salva",
