@@ -14,6 +14,7 @@ import {
 import { inject, injectable } from 'inversify';
 import type { EgressInfo } from 'livekit-server-sdk';
 import { StreamOutput, StreamProtocol } from 'livekit-server-sdk';
+import type { StringValue } from 'ms';
 import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { BroadcastHelper } from '../helpers/broadcast.helper.js';
@@ -43,8 +44,7 @@ type EgressWebhookAction = 'started' | 'updated' | 'ended';
 
 const ENCODING_OPTIONS = EncodingConverter.toLivekit(MeetRecordingEncodingPreset.H264_720P_30);
 const RUNNING_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE];
-const EGRESS_WEBHOOK_LOCK_ATTEMPTS = 10;
-const EGRESS_WEBHOOK_LOCK_RETRY_DELAY_MS = 300;
+const LOCK_RETRY_DELAY_MS = 250;
 
 /**
  * Live broadcasts of a meeting: the room-composite egress recording already runs, with RTMP
@@ -255,37 +255,41 @@ export class BroadcastService {
 	}
 
 	/**
-	 * Runs a webhook's change to a room's broadcast, waiting for the room's broadcast lock rather
-	 * than failing: the `egress_started` of a broadcast can reach a replica before the request that
-	 * started it has saved the broadcast.
+	 * Runs a webhook's change to a room's broadcast once no other change holds the room's
+	 * broadcast lock, waiting as long as one can hold it: the webhook carries LiveKit's latest
+	 * state of the egress, which nothing else would apply if it were dropped.
 	 */
 	protected async withWebhookLock(roomId: string, webhook: string, task: () => Promise<void>): Promise<void> {
-		const handled = await this.mutexService.withRetryLock(
-			MeetLock.getBroadcastLock(roomId),
-			ms(INTERNAL_CONFIG.BROADCAST_LOCK_TTL),
-			async () => {
-				await task();
-				return true;
-			},
-			EGRESS_WEBHOOK_LOCK_ATTEMPTS,
-			EGRESS_WEBHOOK_LOCK_RETRY_DELAY_MS
-		);
+		const handled = await this.waitForBroadcastLock(roomId, INTERNAL_CONFIG.BROADCAST_LOCK_TTL, async () => {
+			await task();
+			return true;
+		});
 
 		if (handled === null) {
 			this.logger.warn(`Could not process ${webhook} for the broadcast of room '${roomId}': it stayed locked`);
 		}
 	}
 
+	/**
+	 * Runs a request's change to a room's broadcast once no other change holds the room's
+	 * broadcast lock, answering 409 only when one holds it for longer than a request waits.
+	 */
 	protected async withBroadcastLock<T>(roomId: string, task: () => Promise<T>): Promise<T> {
-		const result = await this.mutexService.withLock(
-			MeetLock.getBroadcastLock(roomId),
-			ms(INTERNAL_CONFIG.BROADCAST_LOCK_TTL),
-			task
-		);
+		const result = await this.waitForBroadcastLock(roomId, INTERNAL_CONFIG.BROADCAST_REQUEST_LOCK_WAIT, task);
 
 		if (result === null) throw errorBroadcastUpdateInProgress(roomId);
 
 		return result;
+	}
+
+	protected waitForBroadcastLock<T>(roomId: string, wait: StringValue, task: () => Promise<T>): Promise<T | null> {
+		return this.mutexService.withRetryLock(
+			MeetLock.getBroadcastLock(roomId),
+			ms(INTERNAL_CONFIG.BROADCAST_LOCK_TTL),
+			task,
+			Math.ceil(ms(wait) / LOCK_RETRY_DELAY_MS),
+			LOCK_RETRY_DELAY_MS
+		);
 	}
 
 	/**
