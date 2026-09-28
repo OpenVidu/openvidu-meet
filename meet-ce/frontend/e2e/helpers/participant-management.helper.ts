@@ -3,6 +3,7 @@ import {
 	LeaveRequest,
 	LeaveRequest_Action,
 	ParticipantInfo_State,
+	SignalRequest,
 	SignalResponse
 } from '@livekit/protocol';
 import { MeetRoomMemberRole, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
@@ -449,6 +450,72 @@ export const tapSignalling = async (page: Page): Promise<SignallingTap> => {
 		completeReconnect: () => {
 			holding = false;
 			held.splice(0).forEach((message) => sockets.at(-1)!.send(message));
+		}
+	};
+};
+
+export type NetworkOutage = {
+	/** Resolves once the client has given its signalling socket up and started resuming. */
+	clientResuming: Promise<void>;
+	/** Brings the network back. Resolves with how the server took the client back. */
+	restore: () => Promise<'reconnect' | 'join'>;
+};
+
+/**
+ * Takes the page offline the way a network drop does: nothing gets closed and WebRTC media keeps
+ * flowing, but the page stops hearing the server, which keeps writing into the old socket. Waits for
+ * any negotiation in flight to finish first, since a lost answer makes the SDK rejoin from scratch.
+ */
+export const cutNetwork = async (page: Page): Promise<NetworkOutage> => {
+	const cdp = await page.context().newCDPSession(page);
+	let latestSocket: string | undefined;
+	let lastNegotiationAt = Date.now();
+	let onSocket: (() => void) | undefined;
+	let onHandshake: ((handshake: 'reconnect' | 'join') => void) | undefined;
+	const isNegotiation = (signal: { case?: string }) =>
+		['offer', 'answer', 'mediaSectionsRequirement'].includes(signal.case ?? '');
+
+	cdp.on('Network.webSocketCreated', ({ requestId, url }) => {
+		if (!/\/rtc(\/v1)?\?/.test(url)) return;
+
+		latestSocket = requestId;
+		onSocket?.();
+	});
+	cdp.on('Network.webSocketFrameSent', ({ requestId, response }) => {
+		if (requestId !== latestSocket || response.opcode !== 2) return;
+
+		if (isNegotiation(SignalRequest.fromBinary(Buffer.from(response.payloadData, 'base64')).message)) {
+			lastNegotiationAt = Date.now();
+		}
+	});
+	cdp.on('Network.webSocketFrameReceived', ({ requestId, response }) => {
+		if (requestId !== latestSocket || response.opcode !== 2) return;
+
+		const signal = SignalResponse.fromBinary(Buffer.from(response.payloadData, 'base64')).message;
+
+		if (isNegotiation(signal)) lastNegotiationAt = Date.now();
+
+		if (signal.case === 'reconnect' || signal.case === 'join') onHandshake?.(signal.case);
+	});
+
+	const conditions = (offline: boolean) =>
+		cdp.send('Network.emulateNetworkConditions', {
+			offline,
+			latency: 0,
+			downloadThroughput: -1,
+			uploadThroughput: -1
+		});
+
+	await cdp.send('Network.enable');
+	await expect.poll(() => Date.now() - lastNegotiationAt, { timeout: 20_000 }).toBeGreaterThan(2_000);
+	await conditions(true);
+
+	return {
+		clientResuming: new Promise((resolve) => (onSocket = resolve)),
+		restore: async () => {
+			const handshake = new Promise<'reconnect' | 'join'>((resolve) => (onHandshake = resolve));
+			await conditions(false);
+			return handshake;
 		}
 	};
 };

@@ -28,7 +28,7 @@ allowBuilds:
   unrs-resolver: true
 
 overrides:
-  livekit-client: 2.22.3
+  livekit-client: github:OpenVidu/client-sdk-js#v2.22.3-openvidu.1
 
 strictPeerDependencies: false
 autoInstallPeers: true

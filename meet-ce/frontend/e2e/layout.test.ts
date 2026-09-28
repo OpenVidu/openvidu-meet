@@ -20,6 +20,7 @@ import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-
 import { leaveMeeting, openMeeting } from './helpers/meeting-navigation.helper';
 import { closeSettingsPanel, openLayoutSettingsPanel, toggleParticipantsPanel } from './helpers/panels.helper';
 import {
+	cutNetwork,
 	disconnectAllBrowserFakeParticipants,
 	expectMediaState,
 	getParticipantIdByName,
@@ -1745,6 +1746,28 @@ test.describe('Layout E2E Tests', () => {
 					await leaveMeeting(byName['remote-a']);
 					await expect.poll(() => signalling.departures).toContain(remoteA!.identity);
 					signalling.completeReconnect();
+
+					await waitForVisibleRemoteParticipants(page, { count: 1, includes: ['remote-b'] }, 15_000);
+				} finally {
+					await removeAllParticipants();
+				}
+			});
+
+			test('should drop a participant who leaves while the viewer is resuming its connection', async ({
+				page,
+				browser
+			}) => {
+				test.setTimeout(120_000);
+				const { byName, removeAllParticipants } = await joinViewerAndTwoRemotes(page, browser);
+
+				try {
+					await waitForVisibleRemoteParticipants(page, { count: 2 });
+
+					const outage = await cutNetwork(page);
+					await leaveMeeting(byName['remote-a']);
+					await waitForVisibleRemoteParticipants(byName['remote-b'], { count: 1, excludes: ['remote-a'] });
+					await outage.clientResuming;
+					expect(await outage.restore()).toBe('reconnect');
 
 					await waitForVisibleRemoteParticipants(page, { count: 1, includes: ['remote-b'] }, 15_000);
 				} finally {
