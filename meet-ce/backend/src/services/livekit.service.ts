@@ -486,16 +486,6 @@ export class LiveKitService {
 		}
 	}
 
-	async stopEgress(egressId: string): Promise<EgressInfo> {
-		try {
-			this.logger.info(`Stopping egress '${egressId}'`);
-			return await this.lk.egress.stopEgress(egressId);
-		} catch (error) {
-			this.logger.error(`Error stopping egress '${egressId}'`, error);
-			throw internalError(`stopping egress '${egressId}'`);
-		}
-	}
-
 	/**
 	 * Stops an egress that may have ended already. Whether it still runs cannot be checked
 	 * beforehand, since LiveKit can end it between the check and the stop, so LiveKit's answer that
@@ -503,6 +493,7 @@ export class LiveKitService {
 	 */
 	async stopEgressIfRunning(egressId: string): Promise<EgressInfo | undefined> {
 		try {
+			this.logger.info(`Stopping egress '${egressId}'`);
 			return await this.lk.egress.stopEgress(egressId);
 		} catch (error) {
 			const { status } = (error ?? {}) as { status?: number };

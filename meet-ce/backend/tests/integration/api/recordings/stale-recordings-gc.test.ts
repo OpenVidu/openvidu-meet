@@ -27,7 +27,7 @@ describe('Stale Recordings GC Tests', () => {
 	let roomExistsMock: SpiedFunction<(roomName: string) => Promise<boolean>>;
 	let roomHasParticipantsMock: SpiedFunction<(roomName: string) => Promise<boolean>>;
 	let getInProgressRecordingsEgressMock: SpiedFunction<(roomName?: string) => Promise<EgressInfo[]>>;
-	let stopEgressMock: SpiedFunction<(egressId: string) => Promise<EgressInfo>>;
+	let stopEgressMock: SpiedFunction<(egressId: string) => Promise<EgressInfo | undefined>>;
 	let evaluateAndAbortStaleRecordingMock: SpiedFunction<(recording: MeetRecordingInfo) => Promise<boolean>>;
 	let getEgressMock: SpiedFunction<(roomName?: string, egressId?: string) => Promise<EgressInfo[]>>;
 	let finishRecordingMock: SpiedFunction<(recording: MeetRecordingInfo) => Promise<boolean>>;
@@ -55,7 +55,7 @@ describe('Stale Recordings GC Tests', () => {
 		roomExistsMock = jest.spyOn(livekitService, 'roomExists');
 		roomHasParticipantsMock = jest.spyOn(livekitService, 'roomHasParticipants');
 		getInProgressRecordingsEgressMock = jest.spyOn(livekitService, 'getInProgressRecordingsEgress');
-		stopEgressMock = jest.spyOn(livekitService, 'stopEgress');
+		stopEgressMock = jest.spyOn(livekitService, 'stopEgressIfRunning');
 		evaluateAndAbortStaleRecordingMock = jest.spyOn(
 			recordingTaskScheduler as never,
 			'evaluateAndAbortStaleRecording'
@@ -193,7 +193,7 @@ describe('Stale Recordings GC Tests', () => {
 			// Execute evaluateAndAbortStaleRecording
 			const result = await recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording);
 
-			// Verify that the recording was ended through the reporting path without calling stopEgress
+			// Verify that the recording was ended through the reporting path without stopping the egress
 			expect(result).toBe(true);
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
 			expect(getEgressMock).toHaveBeenCalledWith(roomId, 'EG_test');

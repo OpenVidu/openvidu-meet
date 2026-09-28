@@ -115,7 +115,9 @@ export class BroadcastService {
 
 			if (!RUNNING_STATUSES.includes(record.status)) throw errorBroadcastAlreadyStopped(broadcastId);
 
-			const egress = await this.livekitService.stopEgress(broadcastId);
+			const egress = await this.livekitService.stopEgressIfRunning(broadcastId);
+
+			if (!egress) throw errorBroadcastAlreadyStopped(broadcastId);
 
 			this.logger.info(`Broadcast '${broadcastId}' stopped for room '${roomId}'`);
 			return this.persistAndNotify(BroadcastHelper.withEgressInfo(record, egress), 'updated');

@@ -310,7 +310,7 @@ export class RecordingScheduledTasksService {
 				`Room '${roomId}' does not exist or has no participants and recording '${recordingId}' is stale, stopping it`
 			);
 
-			await this.livekitService.stopEgress(egressId);
+			await this.livekitService.stopEgressIfRunning(egressId);
 			this.logger.info(`Successfully stopped stale recording '${recordingId}'`);
 			return true;
 		} catch (error) {

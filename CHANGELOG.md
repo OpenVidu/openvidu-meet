@@ -94,6 +94,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   number of `recordingIds`, and a long list failed with a server or proxy error. They now accept up to 100 distinct ids
   and answer `422` to more, and the recording lists disable ZIP download and bulk delete beyond 100 selected
   recordings.
+- [`POST /recordings/{recordingId}/stop`][3.10-stop-recording] answered 500 when the recording ended while the stop was
+  being processed. It answers 409, as for any recording already stopped.
 - A recording ended by the stale-recordings clean-up sent no [`recordingEnded`][3.9-recording-ended] webhook and stayed
   in progress in the meeting and for the embedded event `recordingStatusChanged`. Its end is now reported like any
   other, once.
@@ -297,6 +299,7 @@ registered on both receives it twice.
 [3.9-bulk-delete-recordings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/bulkDeleteRecordings
 [3.9-download-recordings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/downloadRecordings
 
+[3.10-stop-recording]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/stopRecording
 [3.10-broadcasts]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/broadcastStart
 [3.10-permissions]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/schemas/MeetPermissions
 [3.10-room-config]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/schemas/MeetRoomConfig
