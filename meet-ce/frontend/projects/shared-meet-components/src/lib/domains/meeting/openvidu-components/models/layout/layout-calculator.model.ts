@@ -1,4 +1,3 @@
-import { LayoutDimensionsCache } from './layout-dimensions-cache.model';
 import {
 	BestDimensions,
 	BigFirstOption,
@@ -26,8 +25,6 @@ interface BigAreaPlacement {
  * @internal
  */
 export class LayoutCalculator {
-	constructor(private dimensionsCache: LayoutDimensionsCache) {}
-
 	/**
 	 * Boxes of the elements in container order. `isBig[i]` puts element `i` in the big area, and
 	 * `bigVideoRatio`, the height / width of the first big element's video, decides whether the others
@@ -157,21 +154,6 @@ export class LayoutCalculator {
 		maxWidth: number,
 		maxHeight: number
 	): BestDimensions {
-		const cacheKey = LayoutDimensionsCache.generateKey(
-			minRatio,
-			maxRatio,
-			width,
-			height,
-			count,
-			maxWidth,
-			maxHeight
-		);
-		const cached = this.dimensionsCache.get(cacheKey);
-
-		if (cached) {
-			return cached;
-		}
-
 		let maxArea: number | undefined;
 		let targetCols = 1;
 		let targetRows = 1;
@@ -223,7 +205,7 @@ export class LayoutCalculator {
 			}
 		}
 
-		const result: BestDimensions = {
+		return {
 			maxArea: maxArea ?? 0,
 			targetCols,
 			targetRows,
@@ -231,9 +213,6 @@ export class LayoutCalculator {
 			targetWidth,
 			ratio: targetWidth > 0 ? targetHeight / targetWidth : 0
 		};
-
-		this.dimensionsCache.set(cacheKey, result);
-		return result;
 	}
 
 	private calculateBoxesForArea(

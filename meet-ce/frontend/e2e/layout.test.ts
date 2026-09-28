@@ -31,6 +31,7 @@ import {
 	countEncodedVideoLayers,
 	countFlowingRemoteVideos,
 	expectOnlyVisibleRemoteVideosPlaying,
+	floatStream,
 	getVisibleRemoteParticipantNames,
 	recordRemoteAudio,
 	setTabVisibility,
@@ -372,6 +373,35 @@ test.describe('Layout E2E Tests', () => {
 			} finally {
 				await removeAllParticipants();
 			}
+		});
+	});
+
+	test.describe('Grid bounds', () => {
+		test('should keep the whole grid on the screen of a 320px-wide phone', async ({ browser }) => {
+			const phone = await (await browser.newContext(devices['iPhone SE'])).newPage();
+
+			try {
+				await openMeeting(phone, accessUrl, { name: 'phone' });
+				const screenWidth = await phone.evaluate(() => window.innerWidth);
+				const { grid, tiles } = await getGridTiles(phone);
+
+				expect(tiles.length).toBe(1);
+				expect(
+					[grid.right, ...tiles.map((tile) => tile.right)].every((right) => right <= screenWidth + 1)
+				).toBe(true);
+			} finally {
+				await phone.context().close();
+			}
+		});
+
+		test('should give the grid the same room whether the local video floats or is docked', async ({ page }) => {
+			await openMeeting(page, accessUrl);
+			const docked = (await getGridTiles(page)).grid;
+
+			await floatStream(page);
+
+			await expect(page.locator('.local_participant.OV_floating')).toBeVisible();
+			await expect.poll(async () => (await getGridTiles(page)).grid).toEqual(docked);
 		});
 	});
 

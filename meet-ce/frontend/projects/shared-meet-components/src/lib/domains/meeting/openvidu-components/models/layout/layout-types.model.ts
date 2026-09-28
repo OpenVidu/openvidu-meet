@@ -173,7 +173,7 @@ export const VIEWPORT_LAYOUT_PROFILES: Record<ViewportProfile, LayoutProfile> = 
 		maxRatio: 16 / 9,
 		minRatio: 3 / 4,
 		bigMaxRatio: 16 / 9,
-		bigMinRatio: 4 / 3,
+		bigMinRatio: 9 / 16,
 		bigPercentage: 0.82,
 		minBigPercentage: 0.65
 	},

@@ -1,5 +1,4 @@
 import { LayoutCalculator } from './layout-calculator.model';
-import { LayoutDimensionsCache } from './layout-dimensions-cache.model';
 import {
 	LAYOUT_CONSTANTS,
 	LayoutAlignment,
@@ -28,22 +27,25 @@ const CONTAINER = { width: 1000, height: 500 };
 
 /**
  * Where `count` elements, none of them big, belong in the order they are in the container: the box the
- * calculator gives each one, less the margin the layout leaves around it.
+ * calculator gives each one, less the margin the layout leaves around it, on whole pixels.
  */
 const expectedBoxes = (count: number): LayoutBox[] => {
 	const margin = CONTAINER.width * LAYOUT_CONSTANTS.ELEMENT_MARGIN;
-	const { boxes } = new LayoutCalculator(new LayoutDimensionsCache()).calculateLayout(
+	const { boxes } = new LayoutCalculator().calculateLayout(
 		{ ...OPTIONS, containerWidth: CONTAINER.width, containerHeight: CONTAINER.height },
 		Array.from({ length: count }, () => false),
 		LAYOUT_CONSTANTS.DEFAULT_VIDEO_HEIGHT / LAYOUT_CONSTANTS.DEFAULT_VIDEO_WIDTH
 	);
 
-	return boxes.map(({ left, top, width, height }) => ({
-		left: left + margin,
-		top: top + margin,
-		width: width - 2 * margin,
-		height: height - 2 * margin
-	}));
+	return boxes.map(({ left, top, width, height }) => {
+		const [x, y] = [Math.round(left + margin), Math.round(top + margin)];
+		return {
+			left: x,
+			top: y,
+			width: Math.round(left + width - margin) - x,
+			height: Math.round(top + height - margin) - y
+		};
+	});
 };
 
 /** Where the element is painted, relative to the container. */
@@ -101,6 +103,21 @@ describe('OpenViduLayout', () => {
 		await nextFrame();
 
 		expectPaintedOn(tiles, container, expectedBoxes(3));
+	});
+
+	it('places every tile on whole pixels', async () => {
+		container.style.width = '1003px';
+		const tiles = [addTile(), addTile(), addTile()];
+
+		layout.updateLayout(container, OPTIONS);
+		await nextFrame();
+
+		for (const tile of tiles) {
+			const { left, top, width, height } = tile.style;
+			expect([left, top, width, height].every((value) => Number.isInteger(parseFloat(value))))
+				.withContext(`${left} ${top} ${width} ${height}`)
+				.toBeTrue();
+		}
 	});
 
 	it('lays out a container without an id and leaves it without one', async () => {

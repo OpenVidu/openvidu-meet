@@ -1,5 +1,4 @@
 import { LayoutCalculator } from './layout-calculator.model';
-import { LayoutDimensionsCache } from './layout-dimensions-cache.model';
 import { ExtendedLayoutOptions, LayoutAlignment, LayoutBox } from './layout-types.model';
 
 /** Boxes are floored to whole pixels row by row, so a clamp can be met with sub-pixel slack. */
@@ -56,7 +55,7 @@ describe('LayoutCalculator', () => {
 	let calculator: LayoutCalculator;
 
 	beforeEach(() => {
-		calculator = new LayoutCalculator(new LayoutDimensionsCache());
+		calculator = new LayoutCalculator();
 	});
 
 	const boxesFor = (count: number, overrides: Partial<ExtendedLayoutOptions> = {}): LayoutBox[] =>
@@ -270,26 +269,6 @@ describe('LayoutCalculator', () => {
 
 			expect(capped[0].width).toBeCloseTo(uncapped[0].width, 5);
 			expect(capped[0].width).toBeGreaterThan(220);
-		});
-	});
-
-	describe('dimensions cache', () => {
-		it('returns the same result for a repeated request', () => {
-			const cache = new LayoutDimensionsCache();
-			const cached = new LayoutCalculator(cache);
-			const first = cached.getBestDimensions(9 / 16, 3 / 4, 1280, 650, 3, Infinity, Infinity);
-			const second = cached.getBestDimensions(9 / 16, 3 / 4, 1280, 650, 3, Infinity, Infinity);
-
-			expect(second).toBe(first);
-		});
-
-		it('does not reuse a result across different ratios', () => {
-			const cache = new LayoutDimensionsCache();
-			const cached = new LayoutCalculator(cache);
-			const capped = cached.getBestDimensions(9 / 16, 3 / 4, 1280, 650, 3, Infinity, Infinity);
-			const uncapped = cached.getBestDimensions(9 / 16, 16 / 9, 1280, 650, 3, Infinity, Infinity);
-
-			expect(uncapped.targetHeight).not.toBe(capped.targetHeight);
 		});
 	});
 });

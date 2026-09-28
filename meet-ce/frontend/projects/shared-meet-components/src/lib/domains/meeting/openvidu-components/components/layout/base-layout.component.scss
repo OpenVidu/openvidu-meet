@@ -7,12 +7,6 @@
 	height: 100%;
 }
 
-.withMargin {
-	margin: 0px 5px;
-	max-height: calc(100% - 5px) !important;
-	height: calc(100% - 5px) !important;
-}
-
 /**
  * What the layout engine positions: the same selector it uses, so a floating or ignored tile keeps
  * its own geometry. Out of the flow from the moment it is inserted, an element the engine has not
@@ -35,12 +29,10 @@
 	right: 0;
 	top: 0;
 	bottom: 0;
-	min-width: 350px !important;
 	min-height: 100%;
 	width: inherit;
 	height: -webkit-fill-available;
 	height: -moz-available;
-	overflow: none;
 }
 
 .OV_root,

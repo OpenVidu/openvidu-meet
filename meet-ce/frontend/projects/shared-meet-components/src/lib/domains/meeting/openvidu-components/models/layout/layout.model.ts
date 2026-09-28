@@ -18,7 +18,6 @@ export type {
 } from './layout-types.model';
 
 import { LayoutCalculator } from './layout-calculator.model';
-import { LayoutDimensionsCache } from './layout-dimensions-cache.model';
 import { elementHeight, elementWidth, readStyle, readStyleNumber, writeStyles } from './layout-dom.util';
 import { ExtendedLayoutOptions, LAYOUT_CONSTANTS, LayoutClass, OpenViduLayoutOptions } from './layout-types.model';
 
@@ -32,19 +31,13 @@ export class OpenViduLayout {
 	private layoutContainer!: HTMLElement;
 	private opts!: OpenViduLayoutOptions;
 
-	private dimensionsCache: LayoutDimensionsCache;
-	private calculator: LayoutCalculator;
+	private readonly calculator = new LayoutCalculator();
 
 	/**
 	 * Pending animation-frame handle. Coalesces bursts of updateLayout calls (resize, mutation,
 	 * sidenav animation, signal-driven re-renders) into a single layout pass per frame.
 	 */
 	private pendingFrame: number | null = null;
-
-	constructor() {
-		this.dimensionsCache = new LayoutDimensionsCache();
-		this.calculator = new LayoutCalculator(this.dimensionsCache);
-	}
 
 	updateLayout(container: HTMLElement, opts: OpenViduLayoutOptions): void {
 		this.layoutContainer = container;
@@ -56,10 +49,6 @@ export class OpenViduLayout {
 		this.updateLayout(container, opts);
 	}
 
-	clearCache(): void {
-		this.dimensionsCache.clear();
-	}
-
 	/**
 	 * Cancel any pending layout pass. Safe to call multiple times.
 	 */
@@ -68,8 +57,6 @@ export class OpenViduLayout {
 			cancelAnimationFrame(this.pendingFrame);
 			this.pendingFrame = null;
 		}
-
-		this.dimensionsCache.clear();
 	}
 
 	/**
@@ -115,14 +102,20 @@ export class OpenViduLayout {
 		);
 		const margin = containerWidth * LAYOUT_CONSTANTS.ELEMENT_MARGIN;
 
+		// Whole pixels: WebKit blends the edge of a video whose box starts or ends mid-pixel. Rounding
+		// each edge, not each size, keeps neighbouring tiles sharing the same gap.
 		children.forEach((child, index) => {
-			const { left, top, width, height } = boxes[index];
+			const box = boxes[index];
+			const left = Math.round(box.left + margin);
+			const top = Math.round(box.top + margin);
+			const right = Math.round(box.left + box.width - margin);
+			const bottom = Math.round(box.top + box.height - margin);
 			writeStyles(child, {
 				position: 'absolute',
-				left: `${left + margin}px`,
-				top: `${top + margin}px`,
-				width: `${width - 2 * margin}px`,
-				height: `${height - 2 * margin}px`
+				left: `${left}px`,
+				top: `${top}px`,
+				width: `${right - left}px`,
+				height: `${bottom - top}px`
 			});
 		});
 	}

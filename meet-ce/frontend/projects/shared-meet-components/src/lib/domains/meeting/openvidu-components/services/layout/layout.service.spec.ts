@@ -1,7 +1,6 @@
 import { computed, provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { LayoutCalculator } from '../../models/layout/layout-calculator.model';
-import { LayoutDimensionsCache } from '../../models/layout/layout-dimensions-cache.model';
 import {
 	ExtendedLayoutOptions,
 	LAYOUT_CONSTANTS,
@@ -33,7 +32,8 @@ const CONTAINERS = {
 	desktopShortWide: { width: 1886, height: 775 },
 	tabletLandscape: { width: 1024, height: 646 },
 	tabletPortrait: { width: 768, height: 902 },
-	mobileLandscape: { width: 844, height: 320 },
+	// A landscape phone under the 768px breakpoint, such as an iPhone SE.
+	mobileLandscape: { width: 667, height: 305 },
 	mobilePortrait: { width: 390, height: 730 }
 };
 
@@ -149,7 +149,7 @@ describe('BaseLayoutService viewport profiles', () => {
 		});
 
 		service = TestBed.runInInjectionContext(() => new TestableLayoutService());
-		calculator = new LayoutCalculator(new LayoutDimensionsCache());
+		calculator = new LayoutCalculator();
 	});
 
 	const on = (device: keyof typeof CONTAINERS): OpenViduLayoutOptions => {
@@ -298,13 +298,20 @@ describe('BaseLayoutService viewport profiles', () => {
 		});
 
 		it('keeps the cameras big enough to make out a face', () => {
-			for (const device of devices) {
+			// A landscape phone gives its little height to the shared screen instead.
+			for (const device of devices.filter((device) => device !== 'mobileLandscape')) {
 				for (let participants = 1; participants <= 3; participants++) {
 					for (const box of withSharedScreen(device, participants).cameraBoxes) {
 						expect(box.height).toBeGreaterThan(120);
 					}
 				}
 			}
+		});
+
+		it('spans a landscape phone instead of standing in a portrait box', () => {
+			const { screen } = withSharedScreen('mobileLandscape', 1);
+
+			expect(paintedWidth(screen) / paintedWidth(CONTAINERS.mobileLandscape)).toBeGreaterThan(0.95);
 		});
 
 		it('leaves no gap between itself and the camera strip', () => {

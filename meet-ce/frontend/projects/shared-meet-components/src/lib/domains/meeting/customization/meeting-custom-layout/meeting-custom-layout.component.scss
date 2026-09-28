@@ -4,85 +4,8 @@
 	height: 100%;
 }
 
-.remote-participant {
-	height: -webkit-fill-available;
-	height: -moz-available;
-}
-
-.container {
-	height: 100%;
-}
-
 .withFooter {
 	height: calc(100% - var(--ov-footer-height, 250px)) !important;
-}
-
-.withMargin {
-	margin: 0px 5px;
-	max-height: calc(100% - 5px) !important;
-	height: calc(100% - 5px) !important;
-}
-
-.layout {
-	position: relative;
-	left: 0;
-	right: 0;
-	top: 0;
-	bottom: 0;
-	min-width: 350px !important;
-	min-height: 100%;
-	width: inherit;
-	height: -webkit-fill-available;
-	height: -moz-available;
-	overflow: none;
-}
-
-.OV_root,
-.OV_root * {
-	color: #ffffff;
-	margin: 0;
-	padding: 0;
-	border: 0;
-	font-size: 100%;
-	vertical-align: baseline;
-}
-
-.OV_publisher,
-.OV_subscriber {
-	position: relative;
-	min-width: 0px;
-	min-height: 0px;
-	padding: 1px;
-	transition-duration: 0.1s;
-	transition-timing-function: ease-in-out;
-}
-
-.OV_publisher .OV_video-element,
-.OV_subscriber .OV_video-element {
-	display: block;
-	position: absolute;
-	width: 100%;
-	height: 100%;
-	-webkit-transform-origin: 0 0;
-	transform-origin: 0 0;
-}
-
-.OV_ignored {
-	display: none;
-	width: 0px !important;
-	height: 0px !important;
-}
-
-.OV_floating {
-	width: 230px !important;
-	height: 130px !important;
-	// position: absolute !important;
-	bottom: 0 !important;
-	right: 0 !important;
-	top: 0 !important;
-	left: 0 !important;
-	z-index: 999 !important;
-	cursor: move;
 }
 
 .main-share-room-access-link-container {
@@ -102,18 +25,5 @@
 	.main-share-room-access-link {
 		pointer-events: all;
 		max-width: 100%;
-	}
-}
-
-.fade-in-delayed-more {
-	animation: fadeIn 0.5s ease-in 0.9s both;
-}
-
-@keyframes fadeIn {
-	from {
-		opacity: 0;
-	}
-	to {
-		opacity: 1;
 	}
 }
