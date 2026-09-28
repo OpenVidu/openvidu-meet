@@ -29,6 +29,7 @@ import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helper
 import {
 	addBroadcastDestination,
 	deleteAllRooms,
+	deleteRoom,
 	generateRoomMemberToken,
 	getBroadcast,
 	getBroadcasts,
@@ -41,7 +42,7 @@ import {
 	updateRoomRoles
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
-import { waitForBroadcast, waitForMeetingToStart } from '../../../helpers/wait-helpers.js';
+import { waitForBroadcast, waitForMeetingToStart, waitForNoActiveEgress } from '../../../helpers/wait-helpers.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
 
 const MEETINGS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings`);
@@ -340,6 +341,16 @@ describe('Broadcasts API Tests', () => {
 			await disconnectFakeParticipants();
 
 			await waitForBroadcast(roomId, (broadcast) => broadcast === undefined, 'ended with the meeting');
+		});
+
+		it('should stop a broadcast still starting when its room is deleted, leaving no egress behind', async () => {
+			const roomData = await setupMeetingRoom(broadcastConfig(['a']));
+			const { roomId } = roomData.room;
+			await startBroadcast(roomId);
+
+			await deleteRoom(roomId, { withMeeting: 'force', withRecordings: 'force' });
+
+			await waitForNoActiveEgress(roomId, 15_000);
 		});
 	});
 });

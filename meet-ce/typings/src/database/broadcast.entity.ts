@@ -55,7 +55,7 @@ export enum MeetBroadcastStatus {
 	COMPLETE = 'complete',
 	/** The broadcast failed due to an error */
 	FAILED = 'failed',
-	/** The broadcast was aborted by the system */
+	/** The broadcast ended before streaming anything: stopped, or its meeting ended, while it was still starting */
 	ABORTED = 'aborted',
 	/** The broadcast could not continue because the system limit was reached */
 	LIMIT_REACHED = 'limit_reached'

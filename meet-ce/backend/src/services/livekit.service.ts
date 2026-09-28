@@ -496,6 +496,27 @@ export class LiveKitService {
 	}
 
 	/**
+	 * Stops an egress that may have ended already. Whether it still runs cannot be checked
+	 * beforehand, since LiveKit can end it between the check and the stop, so LiveKit's answer that
+	 * there is nothing to stop is taken as the outcome: `undefined` instead of an error.
+	 */
+	async stopEgressIfRunning(egressId: string): Promise<EgressInfo | undefined> {
+		try {
+			return await this.lk.egress.stopEgress(egressId);
+		} catch (error) {
+			const { status } = (error ?? {}) as { status?: number };
+
+			if (status === 404 || status === 412) {
+				this.logger.debug(`Egress '${egressId}' had already ended`);
+				return undefined;
+			}
+
+			this.logger.error(`Error stopping egress '${egressId}'`, error);
+			throw internalError(`stopping egress '${egressId}'`);
+		}
+	}
+
+	/**
 	 * Retrieves a list of egress information based on the provided options.
 	 *
 	 * @param {ListEgressOptions} options - The options to filter the egress list.
