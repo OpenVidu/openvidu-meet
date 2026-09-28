@@ -317,7 +317,7 @@ export class RecordingScheduledTasksService {
 			// Abort the recording
 			await Promise.all([
 				this.recordingService.updateRecordingStatus(recordingId, MeetRecordingStatus.ABORTED),
-				this.livekitService.stopEgress(egressId)
+				this.livekitService.stopEgressIfRunning(egressId)
 			]);
 
 			this.logger.info(`Successfully aborted stale recording '${recordingId}'`);

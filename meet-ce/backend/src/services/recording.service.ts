@@ -220,7 +220,11 @@ export class RecordingService {
 					// every replica before the egress_ended webhook releases the recording-active lock.
 					await this.recAutoStartStateService.markDisabled(roomId, egress.roomId);
 
-					const egressInfo = await this.livekitService.stopEgress(egressId);
+					const egressInfo = await this.livekitService.stopEgressIfRunning(egressId);
+
+					if (!egressInfo) {
+						throw errorRecordingAlreadyStopped(recordingId);
+					}
 
 					this.logger.info(`Recording stopped successfully for room '${roomId}'`);
 					return await RecordingHelper.toRecordingInfo(egressInfo);
@@ -497,7 +501,7 @@ export class RecordingService {
 
 						try {
 							this.logger.verbose(`Stopping active recording '${recordingId}'`);
-							await this.livekitService.stopEgress(egressInfo.egressId);
+							await this.livekitService.stopEgressIfRunning(egressInfo.egressId);
 							// Wait a bit for recording to fully stop
 							await new Promise((resolve) => setTimeout(resolve, 1000));
 

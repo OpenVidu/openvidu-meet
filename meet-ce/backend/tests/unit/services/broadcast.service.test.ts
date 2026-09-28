@@ -62,7 +62,6 @@ class FakeLiveKitService {
 	stopCalls: string[] = [];
 	stopFails = false;
 	alreadyEnded = false;
-	stopIfRunningCalls: string[] = [];
 	updateCalls: { egressId: string; add: string[]; remove: string[] }[] = [];
 	nextEgress: EgressInfo = egressWith({});
 
@@ -79,16 +78,8 @@ class FakeLiveKitService {
 		return this.nextEgress;
 	}
 
-	async stopEgress(egressId: string): Promise<EgressInfo> {
-		this.stopCalls.push(egressId);
-
-		if (this.stopFails) throw new Error('egress unreachable');
-
-		return this.nextEgress;
-	}
-
 	async stopEgressIfRunning(egressId: string): Promise<EgressInfo | undefined> {
-		this.stopIfRunningCalls.push(egressId);
+		this.stopCalls.push(egressId);
 
 		if (this.stopFails) throw new Error('egress unreachable');
 
@@ -300,6 +291,15 @@ describe('BroadcastService', () => {
 			await expectStatus(service.stopBroadcast(ROOM_ID, 'EG_1'), 409);
 			expect(livekit.stopCalls).toEqual([]);
 		});
+
+		it('answers 409 when LiveKit ended the egress just before the stop, leaving the record to its webhook', async () => {
+			await state.save(runningRecord());
+			livekit.alreadyEnded = true;
+
+			await expectStatus(service.stopBroadcast(ROOM_ID, 'EG_1'), 409);
+			expect(state.records.get(ROOM_ID)?.status).toBe(MeetBroadcastStatus.ACTIVE);
+			expect(webhooks.events).toEqual([]);
+		});
 	});
 
 	describe('updateDestination', () => {
@@ -439,7 +439,7 @@ describe('BroadcastService', () => {
 
 			await service.cleanupRoom(ROOM_ID);
 
-			expect(livekit.stopIfRunningCalls).toEqual(['EG_1']);
+			expect(livekit.stopCalls).toEqual(['EG_1']);
 			expect(state.records.has(ROOM_ID)).toBe(false);
 			expect(webhooks.events).toEqual([{ type: MeetWebhookEventType.BROADCAST_ENDED, status: 'aborted' }]);
 		});
