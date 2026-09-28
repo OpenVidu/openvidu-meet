@@ -97,6 +97,24 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	}
 
 	/**
+	 * Transitions a room from `open` to `active_meeting`, atomically. A `room_started` webhook can
+	 * arrive late or out of order (a LiveKit retry, or a reconciliation pass racing a `room_finished`
+	 * for the same room), so the write is conditioned on the room still being `open` rather than
+	 * writing `active_meeting` unconditionally: a stale event then changes nothing instead of
+	 * resurrecting a room that already moved on.
+	 *
+	 * @param roomId - The unique room identifier
+	 * @returns The updated room with enriched URLs, or `null` if the room was not `open`
+	 */
+	activateMeeting(roomId: string): Promise<MeetRoom | null> {
+		return this.updatePartialOne(
+			{ roomId, status: MeetRoomStatus.OPEN },
+			{ status: MeetRoomStatus.ACTIVE_MEETING },
+			{ throwIfNotFound: false }
+		);
+	}
+
+	/**
 	 * Replaces an existing room with new data.
 	 * URLs are stored in the database without the base URL.
 	 *

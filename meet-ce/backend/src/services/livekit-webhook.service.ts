@@ -239,9 +239,9 @@ export class LivekitWebhookService {
 	 *
 	 * A closed room is left closed and its LiveKit room deleted instead of reactivated: a still-valid
 	 * room-member token can make LiveKit auto-create it again on a raw reconnect, bypassing Meet's own
-	 * closed-room check. Otherwise, arms the timer that ends the meeting at its room's duration limit
-	 * (when the room declares one), updates the room status to ACTIVE_MEETING and sends a webhook
-	 * notification indicating that the meeting has started.
+	 * closed-room check. Otherwise, the room transitions to ACTIVE_MEETING only if it is still OPEN
+	 * (a late or reordered event otherwise leaves it untouched), and only then arms the timer that
+	 * ends the meeting at its room's duration limit and sends the meeting-started webhook.
 	 *
 	 * @param {Room} room - The room object that has started.
 	 */
@@ -251,7 +251,7 @@ export class LivekitWebhookService {
 		try {
 			this.logger.info(`Processing room_started event for room '${roomId}'`);
 
-			const { status, config } = await this.roomService.getMeetRoom(roomId, ['status', 'config']);
+			const { status } = await this.roomService.getMeetRoom(roomId, ['status']);
 
 			if (status === MeetRoomStatus.CLOSED) {
 				this.logger.warn(
@@ -262,15 +262,21 @@ export class LivekitWebhookService {
 				return;
 			}
 
-			if (config.maxDurationMinutes) {
-				const roomScheduledTasksService = await this.getRoomScheduledTasksService();
-				roomScheduledTasksService.scheduleMeetingEndAtDurationLimit(room, config.maxDurationMinutes);
+			// Transition to ACTIVE_MEETING only if the room is still OPEN: a late or reordered
+			// room_started event must not resurrect a room that has already moved on.
+			const updatedRoom = await this.roomRepository.activateMeeting(roomId);
+
+			if (!updatedRoom) {
+				this.logger.warn(
+					`Room '${roomId}' received room_started for meeting '${meetingId}' while not open; ignoring the stale event.`
+				);
+				return;
 			}
 
-			// Update Meet room status to ACTIVE_MEETING
-			const updatedRoom = await this.roomRepository.updatePartial(roomId, {
-				status: MeetRoomStatus.ACTIVE_MEETING
-			});
+			if (updatedRoom.config.maxDurationMinutes) {
+				const roomScheduledTasksService = await this.getRoomScheduledTasksService();
+				roomScheduledTasksService.scheduleMeetingEndAtDurationLimit(room, updatedRoom.config.maxDurationMinutes);
+			}
 
 			// Send webhook notification
 			this.webhookDispatcherService.sendMeetingStartedWebhook(updatedRoom);

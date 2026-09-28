@@ -118,7 +118,7 @@ class FakeLogger {
 class FakeRoomService {
 	constructor(
 		private status: MeetRoomStatus,
-		private maxDurationMinutes?: number
+		readonly maxDurationMinutes?: number
 	) {}
 
 	async getMeetRoom() {
@@ -142,10 +142,23 @@ class FakeRoomScheduledTasksService {
 class FakeRoomRepository {
 	updatePartialCalls: Array<{ roomId: string; fields: unknown }> = [];
 	deletedRoomIds: string[] = [];
+	activateMeetingCalls: string[] = [];
+	/** Mirrors `activateMeeting`'s real contract: `null` simulates the room no longer being OPEN. */
+	activateMeetingResult: { config: { maxDurationMinutes?: number } } | null = { config: {} };
 
 	async updatePartial(roomId: string, fields: unknown) {
 		this.updatePartialCalls.push({ roomId, fields });
 		return { roomId, ...(fields as object) };
+	}
+
+	async activateMeeting(roomId: string) {
+		this.activateMeetingCalls.push(roomId);
+
+		if (!this.activateMeetingResult) {
+			return null;
+		}
+
+		return { roomId, status: MeetRoomStatus.ACTIVE_MEETING, ...this.activateMeetingResult };
 	}
 
 	async deleteByRoomId(roomId: string) {
@@ -185,6 +198,7 @@ class TestableRoomLifecycleService extends LivekitWebhookService {
 
 const buildRoomStartedService = (roomService: FakeRoomService) => {
 	const roomRepository = new FakeRoomRepository();
+	roomRepository.activateMeetingResult = { config: { maxDurationMinutes: roomService.maxDurationMinutes } };
 	const livekitService = new FakeLiveKitService();
 	const webhookDispatcherService = new FakeWebhookDispatcherService();
 	const service = new TestableRoomLifecycleService(
@@ -217,7 +231,7 @@ describe('LivekitWebhookService.handleRoomStarted (closed rooms are not reactiva
 
 		await service.handleRoomStarted({ name: 'room-1', sid: 'sid-1' } as unknown as Room);
 
-		expect(roomRepository.updatePartialCalls).toEqual([]);
+		expect(roomRepository.activateMeetingCalls).toEqual([]);
 		expect(webhookDispatcherService.sendMeetingStartedWebhookCalls).toEqual([]);
 		expect(livekitService.deleteRoomCalls).toEqual(['room-1']);
 	});
@@ -229,11 +243,23 @@ describe('LivekitWebhookService.handleRoomStarted (closed rooms are not reactiva
 
 		await service.handleRoomStarted({ name: 'room-1', sid: 'sid-1' } as unknown as Room);
 
-		expect(roomRepository.updatePartialCalls).toEqual([
-			{ roomId: 'room-1', fields: { status: MeetRoomStatus.ACTIVE_MEETING } }
-		]);
+		expect(roomRepository.activateMeetingCalls).toEqual(['room-1']);
 		expect(webhookDispatcherService.sendMeetingStartedWebhookCalls).toHaveLength(1);
 		expect(livekitService.deleteRoomCalls).toEqual([]);
+	});
+
+	// G2: a late or reordered room_started (a LiveKit retry, or the reconciler racing room_finished)
+	// must not resurrect a room that moved on between the CLOSED check and the atomic write.
+	it('ignores a stale room_started when the room is no longer open by the time of the atomic write', async () => {
+		const { service, roomRepository, webhookDispatcherService } = buildRoomStartedService(
+			new FakeRoomService(MeetRoomStatus.OPEN)
+		);
+		roomRepository.activateMeetingResult = null;
+
+		await service.handleRoomStarted({ name: 'room-1', sid: 'sid-1' } as unknown as Room);
+
+		expect(roomRepository.activateMeetingCalls).toEqual(['room-1']);
+		expect(webhookDispatcherService.sendMeetingStartedWebhookCalls).toEqual([]);
 	});
 });
 
@@ -265,6 +291,15 @@ describe('LivekitWebhookService duration-limit timer wiring', () => {
 
 	it('arms nothing for a closed room, whose resurrected LiveKit room is deleted instead', async () => {
 		const { service } = buildRoomStartedService(new FakeRoomService(MeetRoomStatus.CLOSED, 30));
+
+		await service.handleRoomStarted(startedRoom);
+
+		expect(service.roomScheduledTasks.scheduled).toEqual([]);
+	});
+
+	it('arms nothing for a stale event that does not transition the room', async () => {
+		const { service, roomRepository } = buildRoomStartedService(new FakeRoomService(MeetRoomStatus.OPEN, 30));
+		roomRepository.activateMeetingResult = null;
 
 		await service.handleRoomStarted(startedRoom);
 
