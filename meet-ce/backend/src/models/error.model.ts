@@ -277,7 +277,7 @@ export const errorBroadcastNotActive = (broadcastId: string): OpenViduMeetError 
 export const errorBroadcastUpdateInProgress = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Broadcast Error',
-		`The broadcast of room '${roomId}' is already being changed by another request`,
+		`The broadcast of room '${roomId}' stayed busy with another change`,
 		409
 	);
 };

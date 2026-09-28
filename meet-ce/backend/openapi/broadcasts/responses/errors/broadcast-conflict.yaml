@@ -1,6 +1,6 @@
 description: >
     Conflict: the meeting is already being broadcast, has no participants to broadcast, or its
-    broadcast is being changed by another request
+    broadcast was held by another change for too long
 content:
     application/json:
         schema:

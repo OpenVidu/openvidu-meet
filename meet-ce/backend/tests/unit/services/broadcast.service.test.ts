@@ -97,14 +97,17 @@ class FakeLiveKitService {
 }
 
 class FakeMutexService {
-	locked = false;
+	busyAttempts = 0;
+	attempts: number[] = [];
 
-	async withLock<T>(_key: string, _ttl: number, callback: () => Promise<T>): Promise<T | null> {
-		return this.locked ? null : callback();
-	}
-
-	async withRetryLock<T>(_key: string, _ttl: number, callback: () => Promise<T>): Promise<T | null> {
-		return this.locked ? null : callback();
+	async withRetryLock<T>(
+		_key: string,
+		_ttl: number,
+		callback: () => Promise<T>,
+		maxAttempts: number
+	): Promise<T | null> {
+		this.attempts.push(maxAttempts);
+		return this.busyAttempts >= maxAttempts ? null : callback();
 	}
 }
 
@@ -256,9 +259,18 @@ describe('BroadcastService', () => {
 			expect(info.destinations.every(({ status }) => status === 'connecting')).toBe(true);
 		});
 
-		it('answers 409 while another request holds the room lock', async () => {
-			mutex.locked = true;
+		it('waits for another change of the broadcast to finish instead of answering 409', async () => {
+			mutex.busyAttempts = 3;
+
+			await service.startBroadcast(ROOM_ID, {});
+
+			expect(livekit.startCalls).toHaveLength(1);
+		});
+
+		it('answers 409 when another change holds the room lock for longer than a request waits', async () => {
+			mutex.busyAttempts = Infinity;
 			await expectStatus(service.startBroadcast(ROOM_ID, {}), 409);
+			expect(livekit.startCalls).toEqual([]);
 		});
 
 		it('enforces the destination permissions of the caller', async () => {
@@ -413,9 +425,20 @@ describe('BroadcastService', () => {
 			expect(frontend.signals[0].destinations[0].url).toBe(REDACTED);
 		});
 
+		it('outwaits a change that a request would give up on, so the latest state is not dropped', async () => {
+			await state.save(runningRecord());
+			mutex.busyAttempts = Infinity;
+			await expectStatus(service.updateDestination(ROOM_ID, 'EG_1', 'a', { active: false }), 409);
+			mutex.busyAttempts = mutex.attempts[0];
+
+			await service.handleEgressEvent(egressWith({ status: EgressStatus.EGRESS_ENDING }), 'updated');
+
+			expect(state.records.get(ROOM_ID)?.status).toBe(MeetBroadcastStatus.ENDING);
+		});
+
 		it('gives up quietly when the room lock never frees', async () => {
 			await state.save(runningRecord());
-			mutex.locked = true;
+			mutex.busyAttempts = Infinity;
 
 			await expect(service.handleEgressEvent(egressWith({}), 'updated')).resolves.toBeUndefined();
 			expect(frontend.signals).toEqual([]);
