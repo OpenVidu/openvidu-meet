@@ -148,12 +148,22 @@
 		overflow: hidden;
 		background-color: transparent;
 		border-radius: var(--ov-video-radius);
-		border: 2px solid var(--ov-background-color);
-		box-sizing: border-box;
+
+		// A box-shadow on .OV_stream itself paints behind the video (z-index 889), which fills the
+		// whole box now that no border reserves an edge for it to show through. Painting the ring on
+		// its own layer above the video keeps it visible without reserving anything permanently.
+		&::after {
+			content: '';
+			position: absolute;
+			inset: 0;
+			z-index: 900;
+			pointer-events: none;
+			border-radius: inherit;
+			box-shadow: inset 0 0 0 2px transparent;
+		}
 	}
 
-	.OV_stream.speaking {
-		border-color: var(--ov-accent-action-color);
+	.OV_stream.speaking::after {
+		box-shadow: inset 0 0 0 2px var(--ov-accent-action-color);
 	}
-
 }
