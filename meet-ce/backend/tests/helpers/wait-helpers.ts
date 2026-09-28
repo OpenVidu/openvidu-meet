@@ -540,3 +540,13 @@ export const waitForBroadcast = async (
 
 	return broadcast;
 };
+
+/** Waits until LiveKit runs no egress in the room, whichever feature started it. */
+export const waitForNoActiveEgress = async (roomId: string, timeoutMs = DEFAULT_RECORDING_TIMEOUT_MS) => {
+	const livekitService = container.get(LiveKitService);
+
+	await pollUntil(async () => (await livekitService.getEgress(roomId, undefined, true)).length === 0, {
+		timeoutMs,
+		errorMessage: `An egress kept running in room '${roomId}'`
+	});
+};

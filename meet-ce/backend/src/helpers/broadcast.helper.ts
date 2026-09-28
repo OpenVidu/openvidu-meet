@@ -253,7 +253,7 @@ export class BroadcastHelper {
 
 			return { ...destination, ...BroadcastHelper.toDestinationState(stream) };
 		});
-		const startDate = BroadcastHelper.extractStartDate(egress);
+		const startDate = BroadcastHelper.extractStartDate(egress) ?? record.startDate;
 		const endDate = BroadcastHelper.nsToMs(egress.endedAt);
 
 		return {
@@ -271,7 +271,8 @@ export class BroadcastHelper {
 
 	/**
 	 * The record of a broadcast whose meeting has finished without LiveKit's final word: it is over,
-	 * and so is every stream it still had open.
+	 * and so is every stream it still had open. It keeps an ending LiveKit already reported, and
+	 * one that never streamed anything was aborted, which carries no dates.
 	 */
 	static withMeetingEnded(record: BroadcastRecord, endDate = Date.now()): BroadcastRecord {
 		const destinations = record.destinations.map((destination) =>
@@ -279,13 +280,26 @@ export class BroadcastHelper {
 				? { ...destination, status: MeetBroadcastDestinationStatus.STOPPED, endDate }
 				: destination
 		);
+		const status = BroadcastHelper.isInProgress(record.status) ? undefined : record.status;
 
+		if (!record.startDate || status === MeetBroadcastStatus.ABORTED) {
+			return {
+				...record,
+				destinations,
+				status: status ?? MeetBroadcastStatus.ABORTED,
+				startDate: undefined,
+				endDate: undefined,
+				duration: undefined
+			};
+		}
+
+		const ended = record.endDate ?? endDate;
 		return {
 			...record,
 			destinations,
-			status: MeetBroadcastStatus.COMPLETE,
-			endDate,
-			duration: record.startDate ? Math.round((endDate - record.startDate) / 1000) : undefined
+			status: status ?? MeetBroadcastStatus.COMPLETE,
+			endDate: ended,
+			duration: Math.round((ended - record.startDate) / 1000)
 		};
 	}
 

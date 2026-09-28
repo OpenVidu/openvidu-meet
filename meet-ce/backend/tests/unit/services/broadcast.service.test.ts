@@ -60,6 +60,9 @@ class FakeLiveKitService {
 	egressList: EgressInfo[] = [];
 	startCalls: { roomName: string; urls: string[]; layout?: string }[] = [];
 	stopCalls: string[] = [];
+	stopFails = false;
+	alreadyEnded = false;
+	stopIfRunningCalls: string[] = [];
 	updateCalls: { egressId: string; add: string[]; remove: string[] }[] = [];
 	nextEgress: EgressInfo = egressWith({});
 
@@ -78,7 +81,18 @@ class FakeLiveKitService {
 
 	async stopEgress(egressId: string): Promise<EgressInfo> {
 		this.stopCalls.push(egressId);
+
+		if (this.stopFails) throw new Error('egress unreachable');
+
 		return this.nextEgress;
+	}
+
+	async stopEgressIfRunning(egressId: string): Promise<EgressInfo | undefined> {
+		this.stopIfRunningCalls.push(egressId);
+
+		if (this.stopFails) throw new Error('egress unreachable');
+
+		return this.alreadyEnded ? undefined : this.nextEgress;
 	}
 
 	async updateStream(egressId: string, add: string[], remove: string[]): Promise<EgressInfo> {
@@ -417,6 +431,57 @@ describe('BroadcastService', () => {
 			expect(state.records.has(ROOM_ID)).toBe(false);
 			expect(webhooks.events).toEqual([{ type: MeetWebhookEventType.BROADCAST_ENDED, status: 'complete' }]);
 			expect(frontend.signals[0].destinations.map(({ status }) => status)).toEqual(['stopped', 'stopped']);
+		});
+
+		it('stops an egress still starting, which would outlive the room, and reports the broadcast aborted', async () => {
+			await state.save({ ...runningRecord(), status: MeetBroadcastStatus.STARTING, startDate: undefined });
+			livekit.nextEgress = egressWith({ status: EgressStatus.EGRESS_ABORTED });
+
+			await service.cleanupRoom(ROOM_ID);
+
+			expect(livekit.stopIfRunningCalls).toEqual(['EG_1']);
+			expect(state.records.has(ROOM_ID)).toBe(false);
+			expect(webhooks.events).toEqual([{ type: MeetWebhookEventType.BROADCAST_ENDED, status: 'aborted' }]);
+		});
+
+		it('settles with what LiveKit last reported, so a destination that just connected still counts', async () => {
+			await state.save({ ...runningRecord(), startDate: undefined });
+			livekit.nextEgress = egressWith({
+				status: EgressStatus.EGRESS_ENDING,
+				streamResults: [
+					{
+						url: 'rtmp://mtx/live/{aaa...aaa}',
+						status: StreamInfo_Status.ACTIVE,
+						startedAt: 5_000_000_000n,
+						endedAt: 0n
+					}
+				] as unknown as EgressInfo['streamResults']
+			});
+
+			await service.cleanupRoom(ROOM_ID);
+
+			expect(webhooks.events).toEqual([{ type: MeetWebhookEventType.BROADCAST_ENDED, status: 'complete' }]);
+		});
+
+		it('takes an egress LiveKit already ended as ended, and settles with what LiveKit reports of it', async () => {
+			await state.save(runningRecord());
+			livekit.alreadyEnded = true;
+			livekit.egressList = [egressWith({ status: EgressStatus.EGRESS_COMPLETE })];
+
+			await service.cleanupRoom(ROOM_ID);
+
+			expect(state.records.has(ROOM_ID)).toBe(false);
+			expect(webhooks.events).toEqual([{ type: MeetWebhookEventType.BROADCAST_ENDED, status: 'complete' }]);
+		});
+
+		it('still settles the broadcast when the egress cannot be stopped', async () => {
+			await state.save(runningRecord());
+			livekit.stopFails = true;
+
+			await service.cleanupRoom(ROOM_ID);
+
+			expect(state.records.has(ROOM_ID)).toBe(false);
+			expect(webhooks.events).toEqual([{ type: MeetWebhookEventType.BROADCAST_ENDED, status: 'complete' }]);
 		});
 
 		it('does nothing for a room without a broadcast', async () => {

@@ -222,14 +222,34 @@ export class BroadcastService {
 	/**
 	 * Settles the broadcast of a meeting that has finished. Normally the broadcast's own
 	 * `egress_ended` already did; this covers a meeting that ended without it reaching the server,
-	 * so the participants and the webhooks still learn that the broadcast is over.
+	 * so the participants and the webhooks still learn that the broadcast is over. It stops the
+	 * egress too: closing the room ends a broadcast that streams, not one still starting, which
+	 * would join after the room is gone, create it again and wait minutes for media.
 	 */
 	async cleanupRoom(roomId: string): Promise<void> {
 		await this.withWebhookLock(roomId, 'room_finished', async () => {
 			const record = await this.broadcastState.find(roomId);
 
-			if (record) await this.persistAndNotify(BroadcastHelper.withMeetingEnded(record), 'ended');
+			if (!record) return;
+
+			const egress = await this.endEgress(roomId, record.broadcastId);
+			const latest = egress ? BroadcastHelper.withEgressInfo(record, egress) : record;
+			await this.persistAndNotify(BroadcastHelper.withMeetingEnded(latest), 'ended');
 		});
+	}
+
+	/**
+	 * Ends the egress unless LiveKit already did, without failing the caller if it cannot. Returns
+	 * the latest egress LiveKit reported, if it reported any.
+	 */
+	protected async endEgress(roomId: string, egressId: string): Promise<EgressInfo | undefined> {
+		try {
+			const stopped = await this.livekitService.stopEgressIfRunning(egressId);
+			return stopped ?? (await this.livekitService.getEgress(roomId, egressId))[0];
+		} catch (error) {
+			this.logger.warn(`Could not end the egress '${egressId}' of room '${roomId}'`, error);
+			return undefined;
+		}
 	}
 
 	/**

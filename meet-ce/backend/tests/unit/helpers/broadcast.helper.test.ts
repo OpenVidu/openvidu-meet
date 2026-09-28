@@ -398,6 +398,15 @@ describe('BroadcastHelper.reconcileRoomDestinations', () => {
 });
 
 describe('BroadcastHelper.withEgressInfo', () => {
+	it('keeps a start date it already knows when a snapshot carries none', () => {
+		const updated = BroadcastHelper.withEgressInfo(
+			record([destination({})], { status: MeetBroadcastStatus.ACTIVE, startDate: 10_000 }),
+			egress({ status: EgressStatus.EGRESS_ENDING })
+		);
+
+		expect(updated.startDate).toBe(10_000);
+	});
+
 	const yt = destination({ id: 'yt', url: 'rtmp://mtx/live/youtube-KEY-AAAAAAAA' });
 	const tw = destination({ id: 'tw', name: 'Twitch', url: 'rtmp://mtx/live/twitch-KEY-BBBBBBBB' });
 
@@ -553,6 +562,30 @@ describe('BroadcastHelper.withMeetingEnded', () => {
 		expect(ended).toMatchObject({ status: 'complete', endDate: 70_000, duration: 60 });
 		expect(ended.destinations.map(({ status }) => status)).toEqual(['stopped', 'failed']);
 		expect(ended.destinations[0].endDate).toBe(70_000);
+	});
+
+	it('keeps the ending LiveKit already reported, like the abort of a broadcast stopped while starting', () => {
+		const ended = BroadcastHelper.withMeetingEnded(
+			record([destination({ status: MeetBroadcastDestinationStatus.CONNECTING })], {
+				status: MeetBroadcastStatus.ABORTED,
+				startDate: 10_000
+			}),
+			70_000
+		);
+
+		expect(ended).toMatchObject({ status: 'aborted', startDate: undefined, endDate: undefined });
+	});
+
+	it('reports a broadcast that never streamed as aborted, with no end date nor duration', () => {
+		const ended = BroadcastHelper.withMeetingEnded(
+			record([destination({ status: MeetBroadcastDestinationStatus.CONNECTING })]),
+			70_000
+		);
+
+		expect(ended.status).toBe('aborted');
+		expect(ended.endDate).toBeUndefined();
+		expect(ended.duration).toBeUndefined();
+		expect(ended.destinations[0].status).toBe('stopped');
 	});
 });
 
