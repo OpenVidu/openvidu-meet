@@ -1,6 +1,6 @@
 {
 	"name": "openvidu-meet-workspace",
-	"version": "3.9.0",
+	"version": "3.10.0-dev",
 	"private": true,
 	"description": "OpenVidu Meet Monorepo",
 	"packageManager": "pnpm@11.8.0",
