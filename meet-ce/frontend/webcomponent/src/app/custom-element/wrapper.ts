@@ -108,6 +108,14 @@ export function createOpenViduMeetElementClass(
 			this._getComponentInstance()?.mediaToggleScreenShare(active);
 		}
 
+		recordingStart(): void {
+			this._getComponentInstance()?.recordingStart();
+		}
+
+		recordingStop(): void {
+			this._getComponentInstance()?.recordingStop();
+		}
+
 		// ── Deprecated method aliases ────────────────────────────────────────
 		// Kept on the element (the public surface) rather than on the component, and routed
 		// through the canonical method so both spellings share exactly one path.

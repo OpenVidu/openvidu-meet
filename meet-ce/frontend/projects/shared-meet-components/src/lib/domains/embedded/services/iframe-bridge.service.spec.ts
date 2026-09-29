@@ -1,6 +1,6 @@
 import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { EmbeddedCommandName, EmbeddedEventName, LeftEventReason } from '@openvidu-meet/typings';
+import { EmbeddedCommandName, EmbeddedEventName, LeftEventReason, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { EmbeddedCommandService } from './embedded-command.service';
 import { EmbeddedEventBusService } from './embedded-event-bus.service';
@@ -41,7 +41,9 @@ describe('IframeBridgeService', () => {
 			'participantMuteAll',
 			'mediaToggleAudio',
 			'mediaToggleVideo',
-			'mediaToggleScreenShare'
+			'mediaToggleScreenShare',
+			'recordingStart',
+			'recordingStop'
 		]);
 		commandService.meetingEnd.and.resolveTo();
 		commandService.meetingLeave.and.resolveTo();
@@ -51,6 +53,8 @@ describe('IframeBridgeService', () => {
 		commandService.mediaToggleAudio.and.resolveTo();
 		commandService.mediaToggleVideo.and.resolveTo();
 		commandService.mediaToggleScreenShare.and.resolveTo();
+		commandService.recordingStart.and.resolveTo();
+		commandService.recordingStop.and.resolveTo();
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -336,6 +340,24 @@ describe('IframeBridgeService', () => {
 		});
 	});
 
+	describe('recording commands (host → app)', () => {
+		it('forwards RECORDING_START to the manager', () => {
+			startBridge();
+
+			postFromHost({ command: EmbeddedCommandName.RECORDING_START });
+
+			expect(commandService.recordingStart).toHaveBeenCalledTimes(1);
+		});
+
+		it('forwards RECORDING_STOP to the manager', () => {
+			startBridge();
+
+			postFromHost({ command: EmbeddedCommandName.RECORDING_STOP });
+
+			expect(commandService.recordingStop).toHaveBeenCalledTimes(1);
+		});
+	});
+
 	// A host page written against 3.8.0 keeps posting the old strings. They must reach the same
 	// canonical handler, unchanged, for the whole deprecation window.
 	describe('deprecated command names (host → app)', () => {
@@ -424,6 +446,18 @@ describe('IframeBridgeService', () => {
 
 			const relayed = postMessageSpy.calls.allArgs().map(([msg]) => msg.event);
 			expect(relayed).toEqual([EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED, EmbeddedEventName.CLOSED]);
+		});
+
+		it('relays RECORDING_STATUS_CHANGED once, since it has no deprecated alias', () => {
+			startBridge();
+
+			const payload = { recordingId: 'rec-1', status: MeetRecordingStatus.ACTIVE };
+			eventBus.emit({ event: EmbeddedEventName.RECORDING_STATUS_CHANGED, payload });
+			TestBed.tick();
+
+			expect(postMessageSpy.calls.allArgs()).toEqual([
+				[{ event: EmbeddedEventName.RECORDING_STATUS_CHANGED, payload }, PARENT_ORIGIN]
+			]);
 		});
 
 		it('buffers events emitted before the bridge starts, then flushes canonical and legacy once it does', () => {
