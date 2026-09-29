@@ -196,5 +196,3 @@ the OpenAPI sources already use for their own cross-references: `#/operations/<o
   and the naming charter) and `api-naming-migration-phase.md` (the phase plan, its decisions and its
   register of verified barriers). Do **not** copy them here: duplicates diverged once already. That
   repo is already a folder of `openvidu-meet.code-workspace`.
-- The root `README.md` predates the `meet-ce/` reorganization and still shows Angular 20 and
-  top-level `frontend/`, `backend/`. Trust the tree, not the README.

@@ -130,7 +130,7 @@ show_help() {
   echo -e "             ${NC} --skip-install-browsers     Skip Playwright browsers installation"
   echo
   echo -e "  ${BLUE}test-e2e-frontend${NC}"
-  echo "    Run end-to-end tests for the frontend project (Playwright, both 'spa' and 'webcomponent' projects)"
+  echo "    Run end-to-end tests for the frontend project (Playwright '--project=spa')"
   echo -e "    ${YELLOW}Options:${NC} --force-install-browsers    Force reinstall of Playwright browsers"
   echo -e "             ${NC} --skip-install-browsers     Skip Playwright browsers installation"
   echo
