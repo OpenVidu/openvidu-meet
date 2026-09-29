@@ -1,6 +1,6 @@
 {
 	"name": "meet-demo",
-	"version": "3.9.0-dev",
+	"version": "3.9.0",
 	"main": "src/index.js",
 	"type": "module",
 	"scripts": {
