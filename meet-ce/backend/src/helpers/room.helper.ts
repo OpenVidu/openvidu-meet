@@ -170,13 +170,14 @@ export class MeetRoomHelper {
 
 	/**
 	 * Builds the metadata OpenVidu Meet embeds in a LiveKit room when it creates it: the creator
-	 * mark, the room options and, for a room that declares a duration limit, the deadline of the
-	 * meeting that starts with that very creation, `nowMs` being its start.
+	 * mark, the room options, the start of the meeting that starts with that very creation, `nowMs`,
+	 * and, for a room that declares a duration limit, that meeting's deadline.
 	 */
 	static toLivekitRoomMetadata(room: MeetRoom, nowMs: number): string {
 		const { maxDurationMinutes } = room.config;
 		return JSON.stringify({
 			createdBy: MEET_ENV.NAME_ID,
+			startDate: nowMs,
 			endDate: maxDurationMinutes ? nowMs + maxDurationMinutes * 60_000 : undefined,
 			roomOptions: this.toRoomOptions(room)
 		});
@@ -210,6 +211,19 @@ export class MeetRoomHelper {
 	}
 
 	/**
+	 * Extracts the instant the running meeting started, which OpenVidu Meet embeds in a LiveKit
+	 * room's metadata when it creates the room (see `RoomService.createLivekitRoom`). Being shared
+	 * state, it is the one start every participant counts the meeting's time from.
+	 *
+	 * @param metadata - The raw LiveKit room metadata.
+	 * @returns The start in milliseconds since the epoch, or undefined if the metadata is absent,
+	 * malformed or was not written by OpenVidu Meet.
+	 */
+	static extractMeetingStartDateFromMetadata(metadata?: string): number | undefined {
+		return this.extractTimestampFromMetadata(metadata, 'startDate');
+	}
+
+	/**
 	 * Extracts the instant at which the running meeting reaches its room's duration limit, which
 	 * OpenVidu Meet embeds in a LiveKit room's metadata when it creates the room for a room that
 	 * declares a limit (see `RoomService.createLivekitRoom`). Being shared state, it is the one
@@ -220,8 +234,15 @@ export class MeetRoomHelper {
 	 * malformed, was not written by OpenVidu Meet or declares no deadline.
 	 */
 	static extractMeetingEndDateFromMetadata(metadata?: string): number | undefined {
-		const endDate = this.parseMetadata(metadata)?.endDate;
-		return typeof endDate === 'number' && Number.isFinite(endDate) ? endDate : undefined;
+		return this.extractTimestampFromMetadata(metadata, 'endDate');
+	}
+
+	private static extractTimestampFromMetadata(
+		metadata: string | undefined,
+		key: 'startDate' | 'endDate'
+	): number | undefined {
+		const timestamp = this.parseMetadata(metadata)?.[key];
+		return typeof timestamp === 'number' && Number.isFinite(timestamp) ? timestamp : undefined;
 	}
 
 	private static parseMetadata(metadata?: string): Record<string, unknown> | undefined {

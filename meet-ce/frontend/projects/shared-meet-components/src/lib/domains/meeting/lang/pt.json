@@ -11,6 +11,7 @@
 		"ENDING_SOON_BADGE_ENDING": "Encerrando",
 		"E2EE_BADGE_LABEL": "Criptografada",
 		"E2EE_BADGE_TOOLTIP": "Esta reunião é criptografada de ponta a ponta",
+		"ELAPSED_BADGE_TOOLTIP": "Tempo desde o início da reunião",
 		"RECORDING_BADGE_STARTING": "Iniciando",
 		"RECORDING_STARTED_TITLE": "Esta reunião está a ser gravada",
 		"RECORDING_STARTED_MESSAGE": "A partir de agora, o seu áudio, o seu vídeo e tudo o que partilhar são capturados.",

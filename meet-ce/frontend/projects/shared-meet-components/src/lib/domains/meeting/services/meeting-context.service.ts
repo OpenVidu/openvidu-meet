@@ -26,6 +26,7 @@ export class MeetingContextService {
 	private readonly _hasRecordings = signal<boolean>(false);
 	private readonly _isActiveMeeting = signal<boolean>(false);
 	private readonly _endedBySelf = signal<boolean>(false);
+	private readonly _meetingStartedAt = signal<number | undefined>(undefined);
 	private readonly _meetingEndsAt = signal<number | undefined>(undefined);
 
 	/** Readonly signal for the current room ID */
@@ -42,6 +43,11 @@ export class MeetingContextService {
 	readonly hasRecordings = this._hasRecordings.asReadonly();
 	/** Readonly signal for whether this participant is the one who ended the meeting for everyone */
 	readonly endedBySelf = this._endedBySelf.asReadonly();
+	/**
+	 * Readonly signal for the instant the meeting started, in this device's clock, or `undefined`
+	 * for a meeting whose room Meet did not create
+	 */
+	readonly meetingStartedAt = this._meetingStartedAt.asReadonly();
 	/**
 	 * Readonly signal for the instant the meeting is force-ended at its room's duration limit, in
 	 * this device's clock, or `undefined` for a meeting running under no limit
@@ -142,6 +148,10 @@ export class MeetingContextService {
 		this._endedBySelf.set(true);
 	}
 
+	setMeetingStartedAt(startedAt: number | undefined): void {
+		this._meetingStartedAt.set(startedAt);
+	}
+
 	setMeetingEndsAt(endsAt: number | undefined): void {
 		this._meetingEndsAt.set(endsAt);
 	}
@@ -175,6 +185,7 @@ export class MeetingContextService {
 		this._hasRecordings.set(false);
 		this._isActiveMeeting.set(false);
 		this._endedBySelf.set(false);
+		this._meetingStartedAt.set(undefined);
 		this._meetingEndsAt.set(undefined);
 	}
 }

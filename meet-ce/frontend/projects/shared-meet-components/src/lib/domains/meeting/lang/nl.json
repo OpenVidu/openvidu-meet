@@ -11,6 +11,7 @@
 		"ENDING_SOON_BADGE_ENDING": "Wordt beëindigd",
 		"E2EE_BADGE_LABEL": "Versleuteld",
 		"E2EE_BADGE_TOOLTIP": "Deze meeting is end-to-end versleuteld",
+		"ELAPSED_BADGE_TOOLTIP": "Tijd sinds het begin van de meeting",
 		"RECORDING_BADGE_STARTING": "Wordt gestart",
 		"RECORDING_STARTED_TITLE": "Deze vergadering wordt opgenomen",
 		"RECORDING_STARTED_MESSAGE": "Vanaf nu worden uw audio, uw video en alles wat u deelt vastgelegd.",

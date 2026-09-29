@@ -207,8 +207,9 @@ export class RoomService {
 	 * Creates a LiveKit room for the specified Meet Room.
 	 *
 	 * This method creates a LiveKit room with the specified room name and metadata.
-	 * The metadata includes the room options from the Meet Room and, when the room limits the
-	 * meeting duration, the deadline every participant counts down to.
+	 * The metadata includes the room options from the Meet Room, the start every participant counts
+	 * the meeting's time from and, when the room limits the meeting duration, the deadline every
+	 * participant counts down to.
 	 **/
 	async createLivekitRoom(roomId: string): Promise<Room> {
 		const existingRoom = await this.livekitService.findRoom(roomId);

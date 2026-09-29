@@ -2,6 +2,7 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { DialogService } from '../../../../../shared/services/dialog.service';
+import { MeetingContextService } from '../../../services/meeting-context.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
@@ -161,6 +162,10 @@ describe('MeetingViewComponent', () => {
 				{
 					provide: MeetingEndingSoonService,
 					useValue: { remainingMs: signal(undefined) } as unknown as MeetingEndingSoonService
+				},
+				{
+					provide: MeetingContextService,
+					useValue: { meetingStartedAt: signal(undefined) } as unknown as MeetingContextService
 				},
 				{
 					provide: SmartLayoutService,

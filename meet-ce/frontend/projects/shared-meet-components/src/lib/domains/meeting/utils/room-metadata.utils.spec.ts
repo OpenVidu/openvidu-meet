@@ -1,4 +1,20 @@
-import { hasReachedMeetingEnd, parseMeetingEndDate } from './room-metadata.utils';
+import { hasReachedMeetingEnd, parseMeetingEndDate, parseMeetingStartDate } from './room-metadata.utils';
+
+describe('parseMeetingStartDate', () => {
+	it('reads the start the backend wrote at room creation', () => {
+		const metadata = JSON.stringify({ createdBy: 'openvidu-meet', startDate: 1_700_000_000_000, roomOptions: {} });
+
+		expect(parseMeetingStartDate(metadata)).toBe(1_700_000_000_000);
+	});
+
+	it('returns undefined for metadata that carries no usable start', () => {
+		expect(parseMeetingStartDate(undefined)).toBeUndefined();
+		expect(parseMeetingStartDate('{"createdBy":"openvidu-meet"}')).toBeUndefined();
+		expect(parseMeetingStartDate('{"startDate":"1700000000000"}')).toBeUndefined();
+		expect(parseMeetingStartDate('not json at all')).toBeUndefined();
+		expect(parseMeetingStartDate('null')).toBeUndefined();
+	});
+});
 
 describe('parseMeetingEndDate', () => {
 	// Mirrors what the backend writes into the LiveKit room metadata at room creation.

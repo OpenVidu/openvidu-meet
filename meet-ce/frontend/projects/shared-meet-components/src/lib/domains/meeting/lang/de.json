@@ -11,6 +11,7 @@
 		"ENDING_SOON_BADGE_ENDING": "Wird beendet",
 		"E2EE_BADGE_LABEL": "Verschlüsselt",
 		"E2EE_BADGE_TOOLTIP": "Dieses Meeting ist Ende-zu-Ende-verschlüsselt",
+		"ELAPSED_BADGE_TOOLTIP": "Zeit seit Beginn des Meetings",
 		"RECORDING_BADGE_STARTING": "Wird gestartet",
 		"RECORDING_STARTED_TITLE": "Dieses Meeting wird aufgezeichnet",
 		"RECORDING_STARTED_MESSAGE": "Ab jetzt werden Ihr Audio, Ihr Video und alles, was Sie teilen, aufgezeichnet.",

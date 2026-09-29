@@ -11,6 +11,7 @@
 		"ENDING_SOON_BADGE_ENDING": "まもなく終了",
 		"E2EE_BADGE_LABEL": "暗号化",
 		"E2EE_BADGE_TOOLTIP": "この会議はエンドツーエンドで暗号化されています",
+		"ELAPSED_BADGE_TOOLTIP": "会議開始からの経過時間",
 		"RECORDING_BADGE_STARTING": "開始中",
 		"RECORDING_STARTED_TITLE": "このミーティングは録画されています",
 		"RECORDING_STARTED_MESSAGE": "これ以降、あなたの音声、映像、共有した内容はすべて録画されます。",

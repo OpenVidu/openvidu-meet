@@ -23,6 +23,7 @@ import { NotificationsComponent } from '../../../../../shared/components/notific
 import { DialogService } from '../../../../../shared/services/dialog.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 import { LoggerService } from '../../../../../shared/services/logger.service';
+import { MeetingContextService } from '../../../services/meeting-context.service';
 import { SidenavLayoutDirective } from '../../directives/layout/sidenav-layout.directive';
 import {
 	LayoutAdditionalElementsDirective,
@@ -149,6 +150,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	private readonly meetingEventsService = inject(MeetingEventsService);
 	private readonly translateService = inject(MeetingTranslateService);
 	private readonly meetingEndingSoonService = inject(MeetingEndingSoonService);
+	private readonly meetingContext = inject(MeetingContextService);
 	// Injected for its own sake: it watches the recording state and announces it to the room, and
 	// this is the view that hosts the notifications it raises.
 	private readonly recordingNoticeService = inject(RecordingNoticeService);
@@ -156,6 +158,23 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	private readonly recordingService = inject(RecordingService);
 	protected readonly viewportService = inject(ViewportService);
 	readonly templateRegistry = inject(TemplateRegistryService);
+
+	private readonly now = signal(Date.now());
+	private readonly clockHandle = setInterval(() => this.now.set(Date.now()), 1000);
+
+	/** `H:mm:ss` since the meeting started, or nothing for a meeting whose start is unknown. */
+	protected readonly meetingElapsedTime = computed(() => {
+		const startedAt = this.meetingContext.meetingStartedAt();
+
+		if (startedAt === undefined) return undefined;
+
+		const totalSeconds = Math.max(0, Math.floor((this.now() - startedAt) / 1000));
+		const hours = Math.floor(totalSeconds / 3600);
+		const minutes = Math.floor((totalSeconds % 3600) / 60);
+		const seconds = totalSeconds % 60;
+
+		return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+	});
 
 	private readonly endingSoonRemainingMs = this.meetingEndingSoonService.remainingMs;
 
@@ -213,6 +232,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 
 	protected readonly showStatusRail = computed(
 		() =>
+			this.meetingElapsedTime() !== undefined ||
 			this.showRecordingChip() ||
 			this.isEndingSoon() ||
 			this.isE2eeActive() ||
@@ -534,6 +554,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	}
 
 	async ngOnDestroy() {
+		clearInterval(this.clockHandle);
 		this.destroyed = true;
 
 		if (this.shouldDisconnectRoomWhenComponentIsDestroyed) {

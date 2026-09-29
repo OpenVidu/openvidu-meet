@@ -62,6 +62,7 @@ describe('MeetingEventHandlerService', () => {
 		endedBySelf: () => boolean;
 		markMeetingEndedBySelf: jasmine.Spy;
 		meetingEndsAt: () => number | undefined;
+		setMeetingStartedAt: jasmine.Spy;
 		setMeetingEndsAt: jasmine.Spy;
 		roomId: () => string;
 		clearMeetingContext: jasmine.Spy;
@@ -81,6 +82,7 @@ describe('MeetingEventHandlerService', () => {
 				endedBySelf.set(true);
 			}),
 			meetingEndsAt: () => meetingEndsAt(),
+			setMeetingStartedAt: jasmine.createSpy('setMeetingStartedAt'),
 			setMeetingEndsAt: jasmine.createSpy('setMeetingEndsAt').and.callFake((endsAt?: number) => {
 				meetingEndsAt.set(endsAt);
 			}),
@@ -342,14 +344,15 @@ describe('MeetingEventHandlerService', () => {
 	});
 
 	/**
-	 * The meeting's deadline is shared state, written into the LiveKit room metadata, so it reaches
-	 * late joiners and reconnectors too. It is stamped in server time, which is why it is shifted by
-	 * the skew measured from the room member token before anything counts down to it.
+	 * The meeting's start and deadline are shared state, written into the LiveKit room metadata, so
+	 * they reach late joiners and reconnectors too. They are stamped in server time, which is why they
+	 * are shifted by the skew measured from the room member token before anything counts from them.
 	 */
-	describe('meeting deadline', () => {
+	describe('meeting start and deadline', () => {
+		const startDate = Date.UTC(2026, 8, 3, 11, 0, 0);
 		const endDate = Date.UTC(2026, 8, 3, 12, 0, 0);
-		const meetMetadata = (deadline?: number) =>
-			JSON.stringify({ createdBy: 'openvidu-meet', endDate: deadline, roomOptions: {} });
+		const meetMetadata = (deadline?: number, start = startDate) =>
+			JSON.stringify({ createdBy: 'openvidu-meet', startDate: start, endDate: deadline, roomOptions: {} });
 
 		/** Simulates joining a room whose metadata is `metadata`, and returns its change listener. */
 		function joinRoom(metadata?: string): (metadata: string) => void {
@@ -384,6 +387,20 @@ describe('MeetingEventHandlerService', () => {
 			joinRoom(meetMetadata(endDate));
 
 			expect(meetingEndingSoon.trackMeetingEnd).toHaveBeenCalledOnceWith(endDate - 2_000);
+		});
+
+		it('publishes the start, shifted the same way, to the meeting context, with or without a deadline', () => {
+			serverTimeSkewMs.set(2_000);
+
+			joinRoom(meetMetadata(undefined));
+
+			expect(meetingContextStub.setMeetingStartedAt).toHaveBeenCalledOnceWith(startDate - 2_000);
+		});
+
+		it("publishes no start for a room whose metadata is not Meet's", () => {
+			joinRoom(undefined);
+
+			expect(meetingContextStub.setMeetingStartedAt).toHaveBeenCalledOnceWith(undefined);
 		});
 
 		it('tracks nothing when the meeting declares no end', () => {

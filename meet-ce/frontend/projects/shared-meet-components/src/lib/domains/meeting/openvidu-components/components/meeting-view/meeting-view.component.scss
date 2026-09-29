@@ -77,6 +77,10 @@
 	}
 }
 
+.elapsed-chip .status-chip-icon {
+	color: var(--ov-text-secondary-color);
+}
+
 .e2ee-chip .status-chip-icon {
 	color: var(--ov-success-color);
 }

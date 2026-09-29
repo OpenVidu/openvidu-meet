@@ -130,12 +130,7 @@ describe('Meetings API Tests', () => {
 			expect(response.status).toBe(200);
 
 			const meeting = response.body as MeetMeetingInfo;
-			expect(meeting.endDate).toBeDefined();
-			// The two dates are separate clock readings, Meet's when it created the room and
-			// LiveKit's own, which it reports in whole seconds: the limit apart, give or take that.
-			const durationMs = meeting.endDate! - meeting.startDate;
-			expect(durationMs).toBeGreaterThan(MAX_DURATION_MINUTES * 60_000 - 2_000);
-			expect(durationMs).toBeLessThan(MAX_DURATION_MINUTES * 60_000 + 2_000);
+			expect(meeting.endDate! - meeting.startDate).toBe(MAX_DURATION_MINUTES * 60_000);
 		});
 
 		it('should fail with 404 when the room has no active meeting', async () => {

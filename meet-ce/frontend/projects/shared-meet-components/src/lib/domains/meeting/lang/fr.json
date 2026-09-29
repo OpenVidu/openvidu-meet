@@ -11,6 +11,7 @@
 		"ENDING_SOON_BADGE_ENDING": "Fin en cours",
 		"E2EE_BADGE_LABEL": "Chiffrée",
 		"E2EE_BADGE_TOOLTIP": "Cette réunion est chiffrée de bout en bout",
+		"ELAPSED_BADGE_TOOLTIP": "Temps écoulé depuis le début de la réunion",
 		"RECORDING_BADGE_STARTING": "Démarrage",
 		"RECORDING_STARTED_TITLE": "Cette réunion est en cours d’enregistrement",
 		"RECORDING_STARTED_MESSAGE": "À partir de maintenant, votre audio, votre vidéo et tout ce que vous partagez sont enregistrés.",

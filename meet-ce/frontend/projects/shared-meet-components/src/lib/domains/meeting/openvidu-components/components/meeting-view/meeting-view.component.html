@@ -50,6 +50,17 @@
 			<!-- Meeting-wide status stays visible even when the host renders no toolbar. -->
 			@if (showStatusRail()) {
 				<div id="status-rail" class="status-rail">
+					@if (meetingElapsedTime(); as elapsed) {
+						<div
+							id="meeting-elapsed-time"
+							class="status-chip elapsed-chip"
+							[matTooltip]="'ROOM.ELAPSED_BADGE_TOOLTIP' | translate"
+						>
+							<mat-icon class="status-chip-icon">timer</mat-icon>
+							<span class="status-chip-value">{{ elapsed }}</span>
+						</div>
+					}
+
 					@if (showRecordingChip()) {
 						<div
 							id="recording-tag"

@@ -43,7 +43,7 @@ import {
 } from '../openvidu-components';
 import { toEmbeddedParticipantPayload } from '../utils/embedded-participant.utils';
 import { toMediaStatusChangedEvent } from '../utils/media-status-event.utils';
-import { hasReachedMeetingEnd, parseMeetingEndDate } from '../utils/room-metadata.utils';
+import { hasReachedMeetingEnd, parseMeetingEndDate, parseMeetingStartDate } from '../utils/room-metadata.utils';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingStateService } from './meeting-state.service';
 
@@ -152,21 +152,24 @@ export class MeetingEventHandlerService {
 		});
 
 		// LiveKit seeds the room metadata silently when the join response lands and only emits the
-		// changes that follow, so the deadline is read here as well as listened for.
+		// changes that follow, so the start and the deadline are read here as well as listened for.
 		this.handleRoomMetadataChanged(room.metadata);
 		room.on(RoomEvent.RoomMetadataChanged, (metadata: string) => this.handleRoomMetadataChanged(metadata));
 	}
 
 	/**
-	 * Hands the meeting's deadline to {@link MeetingEndingSoonService}, converted from the server
-	 * clock the metadata carries it in to this device's, so the countdown is right however far off
-	 * this device's own clock is.
+	 * Hands the meeting's start to the meeting context and its deadline to
+	 * {@link MeetingEndingSoonService}, both converted from the server clock the metadata carries
+	 * them in to this device's, so the elapsed time and the countdown are right however far off this
+	 * device's own clock is.
 	 */
 	private handleRoomMetadataChanged(metadata?: string): void {
-		const endDate = parseMeetingEndDate(metadata);
 		const skewMs = this.roomMemberContextService.serverTimeSkewMs();
-		const endsAt = endDate === undefined ? undefined : endDate - skewMs;
+		const toDeviceClock = (serverMs: number | undefined) =>
+			serverMs === undefined ? undefined : serverMs - skewMs;
+		const endsAt = toDeviceClock(parseMeetingEndDate(metadata));
 
+		this.meetingContext.setMeetingStartedAt(toDeviceClock(parseMeetingStartDate(metadata)));
 		this.meetingContext.setMeetingEndsAt(endsAt);
 		this.meetingEndingSoon.trackMeetingEnd(endsAt);
 	}

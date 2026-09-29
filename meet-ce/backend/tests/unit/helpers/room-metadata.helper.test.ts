@@ -32,6 +32,14 @@ describe('MeetRoomHelper.toLivekitRoomMetadata', () => {
 		expect(MeetRoomHelper.extractMeetingEndDateFromMetadata(metadata)).toBeUndefined();
 	});
 
+	it('writes the start of the meeting the room creation starts, with or without a duration limit', () => {
+		const limited = MeetRoomHelper.toLivekitRoomMetadata(meetRoom(30), nowMs);
+		const unlimited = MeetRoomHelper.toLivekitRoomMetadata(meetRoom(), nowMs);
+
+		expect(MeetRoomHelper.extractMeetingStartDateFromMetadata(limited)).toBe(nowMs);
+		expect(MeetRoomHelper.extractMeetingStartDateFromMetadata(unlimited)).toBe(nowMs);
+	});
+
 	it('marks the room as created by Meet and carries its options', () => {
 		const metadata = MeetRoomHelper.toLivekitRoomMetadata(meetRoom(30), nowMs);
 
@@ -125,5 +133,31 @@ describe('MeetRoomHelper.extractMeetingEndDateFromMetadata', () => {
 		// Metadata is writable through the LiveKit API by anyone holding its keys, and an infinite
 		// deadline would be a meeting no limit ever ends.
 		expect(MeetRoomHelper.extractMeetingEndDateFromMetadata('{"endDate":1e999}')).toBeUndefined();
+	});
+});
+
+// `startDate` is what `GET /meetings/{roomId}` reports and every participant counts the meeting's
+// time from. Anything it cannot trust must read as absent, so the API falls back to the LiveKit room
+// creation time.
+describe('MeetRoomHelper.extractMeetingStartDateFromMetadata', () => {
+	const meetMetadata = (startDate: unknown): string =>
+		JSON.stringify({ createdBy: 'openvidu-meet', startDate, roomOptions: {} });
+
+	it('extracts the start written by Meet at room creation', () => {
+		expect(MeetRoomHelper.extractMeetingStartDateFromMetadata(meetMetadata(1_700_000_000_000))).toBe(
+			1_700_000_000_000
+		);
+	});
+
+	it('returns undefined when the metadata carries no start', () => {
+		// A room Meet created before it wrote the key.
+		expect(MeetRoomHelper.extractMeetingStartDateFromMetadata('{"createdBy":"openvidu-meet"}')).toBeUndefined();
+		expect(MeetRoomHelper.extractMeetingStartDateFromMetadata(undefined)).toBeUndefined();
+	});
+
+	it('returns undefined when the start is not a usable number', () => {
+		expect(MeetRoomHelper.extractMeetingStartDateFromMetadata(meetMetadata('1700000000000'))).toBeUndefined();
+		expect(MeetRoomHelper.extractMeetingStartDateFromMetadata(meetMetadata(null))).toBeUndefined();
+		expect(MeetRoomHelper.extractMeetingStartDateFromMetadata('{"startDate":1e999}')).toBeUndefined();
 	});
 });

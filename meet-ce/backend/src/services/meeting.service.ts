@@ -58,7 +58,8 @@ export class MeetingService {
 		return {
 			roomId,
 			roomName: await this.resolveRoomName(room),
-			startDate: Number(room.creationTime) * 1000,
+			startDate:
+				MeetRoomHelper.extractMeetingStartDateFromMetadata(room.metadata) ?? Number(room.creationTime) * 1000,
 			endDate: MeetRoomHelper.extractMeetingEndDateFromMetadata(room.metadata),
 			participantCount: participants.length,
 			recordingActive: activeRecordings.length > 0,

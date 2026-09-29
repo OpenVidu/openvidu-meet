@@ -86,8 +86,8 @@ registered on both receives it twice.
 
 #### UI
 
-- A status rail above the meeting layout (recording, duration countdown, encryption, hidden participants),
-  and notices when a recording starts and stops.
+- A status rail above the meeting layout (elapsed meeting time, recording, duration countdown, encryption,
+  hidden participants), and notices when a recording starts and stops.
 - A participant who speaks while muted is told, and so is one whose microphone the operating system has
   muted rather than Meet.
 - Media controls in the participants panel: the microphone, camera and screen share state of every
