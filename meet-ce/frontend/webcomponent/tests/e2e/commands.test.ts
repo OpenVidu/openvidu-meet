@@ -1,7 +1,13 @@
-import { LeftEventReason, MeetEventOrigin, MeetWebhookEventType, EmbeddedEventName } from '@openvidu-meet/typings';
+import {
+	EmbeddedEventName,
+	LeftEventReason,
+	MeetEventOrigin,
+	MeetRecordingStatus,
+	MeetWebhookEventType
+} from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { INTEGRATIONS, meetLocator, wcLocator } from '../helpers/webcomponent.helper';
-import { createRoom, deleteRooms } from '../helpers/meet-api.helper';
+import { createRoom, deleteRooms, getRecording } from '../helpers/meet-api.helper';
 import {
 	expectPrejoinCameraEnabled,
 	expectPrejoinMicEnabled,
@@ -12,6 +18,7 @@ import {
 	endMeetingCommand,
 	endMeetingLegacyCommand,
 	eventLocator,
+	eventPayloadField,
 	expectEvent,
 	expectWebhook,
 	joinedParticipantIdentity,
@@ -26,7 +33,10 @@ import {
 	openMeeting,
 	openMeetingAtMediaSetup,
 	participantMuteAllCommand,
-	participantMuteCommand
+	participantMuteCommand,
+	recordingStartCommand,
+	recordingStatusLocator,
+	recordingStopCommand
 } from '../helpers/testapp.helper';
 
 // The command/event API is identical across embedding transports — only the
@@ -349,6 +359,76 @@ for (const integration of INTEGRATIONS) {
 
 				await moderatorContext.close();
 				await speakerContext.close();
+			});
+		});
+
+		test.describe('RECORDING_START / RECORDING_STOP Commands', () => {
+			test('should start and stop a recording, reporting each status to the host', async ({ page }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				await recordingStartCommand(page);
+
+				const active = recordingStatusLocator(page, MeetRecordingStatus.ACTIVE);
+				await expect(active).toHaveCount(1, { timeout: 20_000 });
+				const recordingId = await eventPayloadField(active, 'recordingId');
+				expect((await getRecording(recordingId)).roomId).toBe(roomId);
+
+				await recordingStopCommand(page);
+
+				const complete = recordingStatusLocator(page, MeetRecordingStatus.COMPLETE);
+				await expect(complete).toHaveCount(1, { timeout: 20_000 });
+				await expect(complete).toContainText(recordingId);
+				await expectWebhook(page, MeetWebhookEventType.RECORDING_ENDED);
+			});
+
+			// The server reports a new recording some time after accepting it: a stop sent before that
+			// must still end the recording the start created, which LiveKit aborts when it has captured
+			// nothing yet.
+			test('should stop a recording asked to stop right after starting', async ({ page }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				await recordingStartCommand(page);
+				await recordingStopCommand(page);
+
+				const ended = eventLocator(page, EmbeddedEventName.RECORDING_STATUS_CHANGED).filter({
+					hasText: /"status":"(complete|aborted)"/
+				});
+				await expect(ended).toHaveCount(1, { timeout: 30_000 });
+				await expectWebhook(page, MeetWebhookEventType.RECORDING_ENDED);
+			});
+
+			// The permission is editable per role, so a speaker can be handed the command without being
+			// handed the permission. The moderator's join is the barrier: a start that had gone through
+			// would have been reported long before it completes.
+			test('should not start a recording for a speaker who lacks the recordingControl permission', async ({
+				page,
+				browser
+			}) => {
+				await openMeeting(page, roomId, { integration, role: 'speaker' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				await recordingStartCommand(page);
+
+				const moderatorContext = await browser.newContext();
+				const moderatorPage = await moderatorContext.newPage();
+				await openMeeting(moderatorPage, roomId, { role: 'moderator' });
+				await expectEvent(moderatorPage, EmbeddedEventName.JOINED);
+
+				await expect(eventLocator(page, EmbeddedEventName.RECORDING_STATUS_CHANGED)).toHaveCount(0);
+
+				await recordingStartCommand(moderatorPage);
+				await expect(recordingStatusLocator(page, MeetRecordingStatus.ACTIVE)).toHaveCount(1, {
+					timeout: 20_000
+				});
+
+				await recordingStopCommand(moderatorPage);
+				await expect(recordingStatusLocator(moderatorPage, MeetRecordingStatus.COMPLETE)).toHaveCount(1, {
+					timeout: 20_000
+				});
+
+				await moderatorContext.close();
 			});
 		});
 

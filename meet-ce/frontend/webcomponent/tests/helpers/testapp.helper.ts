@@ -1,4 +1,4 @@
-import { MeetWebhookEventType, EmbeddedEventName } from '@openvidu-meet/typings';
+import { EmbeddedEventName, MeetRecordingStatus, MeetWebhookEventType } from '@openvidu-meet/typings';
 import { expect, Locator, Page } from '@playwright/test';
 import { MEET_TESTAPP_URL } from '../config';
 import { Integration, meetLocator } from './webcomponent.helper';
@@ -46,59 +46,48 @@ export const ensureFixture = async (page: Page): Promise<void> => {
 	// Inject hidden `.event-{name}` markers, driven by document-level listeners
 	// that pick up the lifecycle CustomEvents the testapp re-dispatches on its
 	// event sink. Both integrations (webcomponent + iframe) emit through that same
-	// sink, so the markers are transport-agnostic.
-	await page.evaluate(() => {
-		const log = document.createElement('ul');
-		log.id = '__wc-event-markers';
-		// Positioned off-viewport (top:-9999px) but with real dimensions, so
-		// Playwright's `toBeVisible()` passes on each `<li>` (it requires a
-		// non-zero CSS box). `pointer-events:none` keeps it inert.
-		log.style.cssText =
-			'position:fixed;top:-9999px;left:0;width:auto;height:auto;pointer-events:none;margin:0;padding:0;list-style:none;';
-		document.body.appendChild(log);
+	// sink, so the markers are transport-agnostic. The names come from the typings,
+	// so an event added there gets its marker without touching this fixture.
+	await page.evaluate(
+		(eventNames) => {
+			const log = document.createElement('ul');
+			log.id = '__wc-event-markers';
+			// Positioned off-viewport (top:-9999px) but with real dimensions, so
+			// Playwright's `toBeVisible()` passes on each `<li>` (it requires a
+			// non-zero CSS box). `pointer-events:none` keeps it inert.
+			log.style.cssText =
+				'position:fixed;top:-9999px;left:0;width:auto;height:auto;pointer-events:none;margin:0;padding:0;list-style:none;';
+			document.body.appendChild(log);
 
-		(
-			[
-				'joined',
-				'left',
-				'closed',
-				'meetingJoined',
-				'meetingLeft',
-				'embeddedCloseRequested',
-				'participantJoined',
-				'participantLeft',
-				'mediaAudioStatusChanged',
-				'mediaVideoStatusChanged',
-				'mediaScreenShareStatusChanged',
-				'error'
-			] as const
-		).forEach((name) => {
-			document.addEventListener(
-				name,
-				(ev) => {
-					// Only react to events the testapp re-dispatches on its event sink,
-					// not anything else that happens to share these names.
-					const target = ev.target as Element | null;
+			eventNames.forEach((name) => {
+				document.addEventListener(
+					name,
+					(ev) => {
+						// Only react to events the testapp re-dispatches on its event sink,
+						// not anything else that happens to share these names.
+						const target = ev.target as Element | null;
 
-					if (!target || target.getAttribute?.('data-testid') !== 'event-sink') return;
+						if (!target || target.getAttribute?.('data-testid') !== 'event-sink') return;
 
-					const li = document.createElement('li');
-					li.className = `event-${name}`;
+						const li = document.createElement('li');
+						li.className = `event-${name}`;
 
-					try {
-						li.textContent = JSON.stringify((ev as CustomEvent).detail ?? {});
-					} catch {
-						li.textContent = '';
-					}
+						try {
+							li.textContent = JSON.stringify((ev as CustomEvent).detail ?? {});
+						} catch {
+							li.textContent = '';
+						}
 
-					log.appendChild(li);
-				},
-				true // capture phase, in case anything stops propagation
-			);
-		});
+						log.appendChild(li);
+					},
+					true // capture phase, in case anything stops propagation
+				);
+			});
 
-		(window as any).__wcMarkersAttached = true;
-	});
+			(window as any).__wcMarkersAttached = true;
+		},
+		[...Object.values(EmbeddedEventName), 'error']
+	);
 };
 
 /** Tab of the testapp's controls panel a control lives in. */
@@ -394,6 +383,18 @@ export const mediaToggleScreenShareCommand = async (page: Page, active?: boolean
 	await page.getByTestId('btn-media-toggle-screen-share').click();
 };
 
+/** Clicks the testapp's `recordingStart()` button. */
+export const recordingStartCommand = async (page: Page): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+	await page.getByTestId('btn-recording-start').click();
+};
+
+/** Clicks the testapp's `recordingStop()` button. */
+export const recordingStopCommand = async (page: Page): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+	await page.getByTestId('btn-recording-stop').click();
+};
+
 /** Clicks the testapp's deprecated `leaveRoom()` button. Removed in 3.12.0. */
 export const leaveRoomLegacyCommand = async (page: Page): Promise<void> => {
 	await showControlsPanel(page, 'commands');
@@ -424,6 +425,12 @@ export const kickParticipantLegacyCommand = async (page: Page, participantIdenti
 /** Locator for a `.event-{name}` DOM marker. */
 export const eventLocator = (page: Page, eventName: EmbeddedEventName): Locator => page.locator(`.event-${eventName}`);
 
+/** The names of the events the page has received, in the order they arrived. */
+export const eventSequence = (page: Page): Promise<string[]> =>
+	page
+		.locator('#__wc-event-markers li')
+		.evaluateAll((markers) => markers.map((marker) => marker.className.slice('event-'.length)));
+
 /** Locator for a `.webhook-{name}` DOM marker. */
 export const webhookLocator = (page: Page, webhookName: MeetWebhookEventType): Locator =>
 	page.locator(`.webhook-${webhookName}`);
@@ -446,17 +453,26 @@ export const expectEvent = async (
  * Reads the participant identity out of the page's `joined` event marker — the value the moderation
  * commands address a participant by, which is derived from the display name rather than equal to it.
  */
-export const joinedParticipantIdentity = async (page: Page): Promise<string> => {
-	const joined = await expectEvent(page, EmbeddedEventName.JOINED);
-	const payload = (await joined.textContent()) ?? '';
-	const identity = payload.match(/"participantIdentity"\s*:\s*"([^"]+)"/)?.[1];
+export const joinedParticipantIdentity = async (page: Page): Promise<string> =>
+	eventPayloadField(await expectEvent(page, EmbeddedEventName.JOINED), 'participantIdentity');
 
-	if (!identity) {
-		throw new Error(`No participantIdentity in the joined event payload: ${payload}`);
+/**
+ * Reads a string field out of an event marker's JSON payload.
+ */
+export const eventPayloadField = async (event: Locator, field: string): Promise<string> => {
+	const payload = (await event.textContent()) ?? '';
+	const value = payload.match(new RegExp(`"${field}"\\s*:\\s*"([^"]+)"`))?.[1];
+
+	if (!value) {
+		throw new Error(`No ${field} in the event payload: ${payload}`);
 	}
 
-	return identity;
+	return value;
 };
+
+/** The `.event-recordingStatusChanged` markers carrying the given status. */
+export const recordingStatusLocator = (page: Page, status: MeetRecordingStatus): Locator =>
+	eventLocator(page, EmbeddedEventName.RECORDING_STATUS_CHANGED).filter({ hasText: `"status":"${status}"` });
 
 /**
  * Asserts that exactly `count` `.webhook-{name}` markers exist, then returns the locator.

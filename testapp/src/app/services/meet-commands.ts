@@ -137,6 +137,24 @@ export class MeetCommandsService {
 		this.log.command('mediaToggleScreenShare', `(${active ?? ''})`);
 	}
 
+	// ── Recording ───────────────────────────────────────────────────────────
+
+	recordingStart(): void {
+		this.dispatch(
+			() => this.iframeHost.recordingStart(),
+			(element) => element.recordingStart()
+		);
+		this.log.command('recordingStart', '()');
+	}
+
+	recordingStop(): void {
+		this.dispatch(
+			() => this.iframeHost.recordingStop(),
+			(element) => element.recordingStop()
+		);
+		this.log.command('recordingStop', '()');
+	}
+
 	// ── Deprecated 3.8.0 spellings ──────────────────────────────────────────
 	// Same actions under the old names, so the e2e can prove a host that never
 	// migrates keeps working until 3.12.0.
