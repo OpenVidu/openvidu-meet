@@ -7,7 +7,7 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - **UI**: the meeting and the console, what a person using Meet sees.
 - **Deployment**: configuration, limits and running the server.
 
-## 3.9.0 (unreleased)
+## 3.9.0
 
 This release deprecates the old permissions, commands and events, and adds a new set of them. The new and old names run alongside each other for compatibility **until 3.12.0**, when the old names are removed.
 
