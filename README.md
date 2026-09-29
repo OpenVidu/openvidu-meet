@@ -1,6 +1,6 @@
 # OpenVidu Meet
 
-OpenVidu Meet is a fully featured, self-hosted video conferencing application built with Angular, Node.js and [LiveKit](https://livekit.io/). It ships as part of an OpenVidu deployment and provides user accounts and login, granular roles and per-room permissions, room management, recordings, analytics and webhooks.
+OpenVidu Meet is a fully featured, self-hosted video conferencing application: a ready-to-use alternative to Zoom, Google Meet or Jitsi Meet that runs on your own servers and needs no code to deploy. It is built with Angular, Node.js and [LiveKit](https://livekit.io/), ships as part of an OpenVidu deployment, and provides user accounts and login, granular roles and per-room permissions, room management, recordings, analytics and webhooks.
 
 It can also be **embedded** into third-party web applications — either as the `<openvidu-meet>` web component or inside an `<iframe>` — so the host application can build its own business layer on top of the meeting.
 
