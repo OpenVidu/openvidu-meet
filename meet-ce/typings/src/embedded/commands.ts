@@ -54,6 +54,16 @@ export enum EmbeddedCommandName {
 	 */
 	MEDIA_TOGGLE_SCREEN_SHARE = 'mediaToggleScreenShare',
 	/**
+	 * Starts recording the meeting. Its progress is reported by the `recordingStatusChanged` event.
+	 * @permission recordingControl
+	 */
+	RECORDING_START = 'recordingStart',
+	/**
+	 * Stops the recording in progress.
+	 * @permission recordingControl
+	 */
+	RECORDING_STOP = 'recordingStop',
+	/**
 	 * Ends the current meeting for all participants.
 	 * @permission meetingEnd
 	 * @deprecated Renamed to `meetingEnd` ({@link EmbeddedCommandName.MEETING_END}). Removed in 3.12.0.
@@ -129,6 +139,14 @@ export interface EmbeddedCommandPayloads {
 	[EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE]: {
 		active?: boolean;
 	};
+	/**
+	 * Payload for the {@link EmbeddedCommandName.RECORDING_START} command.
+	 */
+	[EmbeddedCommandName.RECORDING_START]: void;
+	/**
+	 * Payload for the {@link EmbeddedCommandName.RECORDING_STOP} command.
+	 */
+	[EmbeddedCommandName.RECORDING_STOP]: void;
 	/**
 	 * Payload for the {@link EmbeddedCommandName.END_MEETING} command.
 	 * @deprecated Use {@link EmbeddedCommandName.MEETING_END}. Removed in 3.12.0.
@@ -264,12 +282,6 @@ export interface EmbeddedKickParticipantCommand {
 }
 
 /**
- * Discriminated union of every command message the host can send to the embedded app; narrow on
- * `command`. In the iframe integration this is the object posted verbatim over `postMessage`.
- * Includes the deprecated aliases, which hosts written against 3.8.0 still send.
- * @category Communication
- */
-/**
  * Command message for {@link EmbeddedCommandName.MEDIA_TOGGLE_AUDIO}: the command name plus its
  * optional payload (omitted payload or `active` = toggle), derived from
  * {@link EmbeddedCommandPayloadFor}.
@@ -299,6 +311,28 @@ export interface EmbeddedMediaToggleScreenShareCommand {
 	payload?: EmbeddedCommandPayloadFor<EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE>;
 }
 
+/**
+ * Command message for {@link EmbeddedCommandName.RECORDING_START} (no payload).
+ * @category Communication
+ */
+export interface EmbeddedRecordingStartCommand {
+	command: EmbeddedCommandName.RECORDING_START;
+}
+
+/**
+ * Command message for {@link EmbeddedCommandName.RECORDING_STOP} (no payload).
+ * @category Communication
+ */
+export interface EmbeddedRecordingStopCommand {
+	command: EmbeddedCommandName.RECORDING_STOP;
+}
+
+/**
+ * Discriminated union of every command message the host can send to the embedded app; narrow on
+ * `command`. In the iframe integration this is the object posted verbatim over `postMessage`.
+ * Includes the deprecated aliases, which hosts written against 3.8.0 still send.
+ * @category Communication
+ */
 export type EmbeddedCommand =
 	| EmbeddedMeetingLeaveCommand
 	| EmbeddedMeetingEndCommand
@@ -308,6 +342,8 @@ export type EmbeddedCommand =
 	| EmbeddedMediaToggleAudioCommand
 	| EmbeddedMediaToggleVideoCommand
 	| EmbeddedMediaToggleScreenShareCommand
+	| EmbeddedRecordingStartCommand
+	| EmbeddedRecordingStopCommand
 	| EmbeddedEndMeetingCommand
 	| EmbeddedLeaveRoomCommand
 	| EmbeddedKickParticipantCommand;
