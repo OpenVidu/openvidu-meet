@@ -28,7 +28,7 @@ export const expandBroadcastActivity = async (page: Page): Promise<void> => {
 	await ensureActivitiesPanelOpen(page);
 	await expectVisible(page, BROADCAST_ACTIVITY);
 
-	if (!(await page.locator(`${BROADCAST_ACTIVITY} .broadcast-body`).isVisible())) {
+	if (!(await page.locator(`${BROADCAST_ACTIVITY} .activity-body`).isVisible())) {
 		await page.locator(`${BROADCAST_ACTIVITY} mat-expansion-panel-header`).click();
 	}
 };
@@ -98,7 +98,7 @@ export const expectBroadcastNotice = async (
 /** Asserts that the activity shows the broadcast but offers nothing to do about it. */
 export const expectNoBroadcastControls = async (page: Page): Promise<void> => {
 	await expandBroadcastActivity(page);
-	await expect(page.locator(`${BROADCAST_ACTIVITY} .broadcast-permission`)).toBeVisible();
+	await expect(page.locator(`${BROADCAST_ACTIVITY} .activity-permission`)).toBeVisible();
 	await expect(page.locator(GO_LIVE_BUTTON)).toHaveCount(0);
 	await expect(page.locator(STOP_BROADCAST_BUTTON)).toHaveCount(0);
 };
