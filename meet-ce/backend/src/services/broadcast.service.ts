@@ -45,6 +45,7 @@ type EgressWebhookAction = 'started' | 'updated' | 'ended';
 const ENCODING_OPTIONS = EncodingConverter.toLivekit(MeetRecordingEncodingPreset.H264_720P_30);
 const RUNNING_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE];
 const LOCK_RETRY_DELAY_MS = 250;
+const EGRESS_LOST_ERROR = 'The egress service stopped responding';
 
 /**
  * Live broadcasts of a meeting: the room-composite egress recording already runs, with RTMP
@@ -236,7 +237,29 @@ export class BroadcastService {
 
 			const egress = await this.endEgress(roomId, record.broadcastId);
 			const latest = egress ? BroadcastHelper.withEgressInfo(record, egress) : record;
-			await this.persistAndNotify(BroadcastHelper.withMeetingEnded(latest), 'ended');
+			await this.persistAndNotify(BroadcastHelper.withEnded(latest), 'ended');
+		});
+	}
+
+	/**
+	 * The egress of a broadcast leaves the room only after LiveKit reports it ended. One that leaves
+	 * while the broadcast is still in progress and no longer answers died with its egress service,
+	 * which LiveKit never reports: it keeps listing the egress as in progress forever. The broadcast
+	 * is ended here instead, as failed, so the room can go live again.
+	 */
+	async handleEgressParticipantLeft(roomId: string, egressId: string): Promise<void> {
+		await this.withWebhookLock(roomId, `participant_left of egress '${egressId}'`, async () => {
+			const record = await this.broadcastState.find(roomId);
+
+			if (record?.broadcastId !== egressId || !BroadcastHelper.isInProgress(record.status)) return;
+
+			if (await this.livekitService.isEgressReachable(egressId)) return;
+
+			this.logger.warn(`The egress of broadcast '${egressId}' in room '${roomId}' stopped responding`);
+			await this.persistAndNotify(
+				BroadcastHelper.withEnded({ ...record, status: MeetBroadcastStatus.FAILED, error: EGRESS_LOST_ERROR }),
+				'ended'
+			);
 		});
 	}
 

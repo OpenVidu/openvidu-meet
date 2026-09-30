@@ -546,9 +546,9 @@ describe('BroadcastHelper.withEgressInfo', () => {
 	});
 });
 
-describe('BroadcastHelper.withMeetingEnded', () => {
+describe('BroadcastHelper.withEnded', () => {
 	it('closes the broadcast and every open stream at the given instant', () => {
-		const ended = BroadcastHelper.withMeetingEnded(
+		const ended = BroadcastHelper.withEnded(
 			record(
 				[
 					destination({ id: 'live', status: MeetBroadcastDestinationStatus.ACTIVE }),
@@ -565,7 +565,7 @@ describe('BroadcastHelper.withMeetingEnded', () => {
 	});
 
 	it('keeps the ending LiveKit already reported, like the abort of a broadcast stopped while starting', () => {
-		const ended = BroadcastHelper.withMeetingEnded(
+		const ended = BroadcastHelper.withEnded(
 			record([destination({ status: MeetBroadcastDestinationStatus.CONNECTING })], {
 				status: MeetBroadcastStatus.ABORTED,
 				startDate: 10_000
@@ -577,7 +577,7 @@ describe('BroadcastHelper.withMeetingEnded', () => {
 	});
 
 	it('reports a broadcast that never streamed as aborted, with no end date nor duration', () => {
-		const ended = BroadcastHelper.withMeetingEnded(
+		const ended = BroadcastHelper.withEnded(
 			record([destination({ status: MeetBroadcastDestinationStatus.CONNECTING })]),
 			70_000
 		);

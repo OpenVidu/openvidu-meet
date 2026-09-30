@@ -509,6 +509,22 @@ export class LiveKitService {
 	}
 
 	/**
+	 * Whether an egress service still handles the egress. LiveKit keeps listing an egress whose
+	 * service died as in progress, so only a call routed to the egress tells: it is lost when no
+	 * egress service answers for it. An update that changes nothing is that call: a streaming
+	 * egress applies it as a no-op, any other refuses it, and either answer proves a service has it.
+	 */
+	async isEgressReachable(egressId: string): Promise<boolean> {
+		try {
+			await this.lk.egress.updateStream(egressId, [], []);
+			return true;
+		} catch (error) {
+			const { status } = (error ?? {}) as { status?: number };
+			return status !== 503;
+		}
+	}
+
+	/**
 	 * Retrieves a list of egress information based on the provided options.
 	 *
 	 * @param {ListEgressOptions} options - The options to filter the egress list.

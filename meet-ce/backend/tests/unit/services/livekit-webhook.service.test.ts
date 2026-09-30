@@ -1,6 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
+import { ParticipantInfo_Kind } from '@livekit/protocol';
 import { MeetingEndAction, MeetMeetingEndedReason, MeetRoomStatus } from '@openvidu-meet/typings';
-import type { Room } from 'livekit-server-sdk';
+import type { ParticipantInfo, Room } from 'livekit-server-sdk';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
@@ -445,5 +446,42 @@ describe('LivekitWebhookService.handleRoomFinished (force-end attribution reache
 		await service.handleRoomFinished({ name: 'room-1', sid: 'sid-NEW' });
 
 		expect(webhookDispatcherService.sendMeetingEndedWebhookReasons).toEqual([undefined]);
+	});
+});
+
+describe('LivekitWebhookService.handleParticipantLeft (an egress leaving the room)', () => {
+	it('hands the departure to the broadcast and treats it as no participant of the meeting', async () => {
+		const departures: { roomId: string; egressId: string }[] = [];
+		const released: string[] = [];
+		const service = new LivekitWebhookService(
+			...([
+				{},
+				{},
+				{},
+				{},
+				{},
+				{},
+				{},
+				{ releaseParticipantName: async (_roomId: string, name: string) => released.push(name) },
+				{},
+				{},
+				{},
+				{},
+				new FakeRedisService(),
+				new FakeLogger(),
+				{
+					handleEgressParticipantLeft: async (roomId: string, egressId: string) =>
+						departures.push({ roomId, egressId })
+				}
+			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
+		);
+
+		await service.handleParticipantLeft(
+			{ name: 'room-1' } as Room,
+			{ identity: 'EG_1', name: 'EG_1', kind: ParticipantInfo_Kind.EGRESS } as ParticipantInfo
+		);
+
+		expect(departures).toEqual([{ roomId: 'room-1', egressId: 'EG_1' }]);
+		expect(released).toEqual([]);
 	});
 });
