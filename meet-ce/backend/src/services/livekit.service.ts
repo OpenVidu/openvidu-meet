@@ -1,5 +1,4 @@
 import type { AgentDispatch, ParticipantPermission } from '@livekit/protocol';
-import { ParticipantInfo_Kind } from '@livekit/protocol';
 import { inject, injectable } from 'inversify';
 import type {
 	CreateOptions,
@@ -15,7 +14,7 @@ import type {
 import { DataPacket_Kind, EgressStatus, LiveKitAPI } from 'livekit-server-sdk';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
-import { RecordingHelper } from '../helpers/recording.helper.js';
+import { EgressHelper } from '../helpers/egress.helper.js';
 import {
 	errorLivekitNotAvailable,
 	errorParticipantNotFound,
@@ -198,8 +197,16 @@ export class LiveKitService {
 	 * LiveKit's Twirp errors carry the HTTP status (404) and a twirp code ('not_found').
 	 */
 	private isNotFoundError(error: unknown): boolean {
-		const err = error as { status?: number; code?: string } | null;
-		return err?.status === 404 || err?.code === 'not_found';
+		const { status, code } = this.asTwirpError(error);
+		return status === 404 || code === 'not_found';
+	}
+
+	/**
+	 * The HTTP status, twirp code and message of an error LiveKit's API answered with; empty for
+	 * any other error.
+	 */
+	private asTwirpError(error: unknown): { status?: number; code?: string; message?: string } {
+		return error ?? {};
 	}
 
 	/**
@@ -246,17 +253,6 @@ export class LiveKitService {
 			this.logger.error(`Error listing participants for room '${roomName}'`, error);
 			throw internalError(`listing participants for room '${roomName}'`);
 		}
-	}
-
-	/**
-	 * Lists the standard participants (web clients) currently in a LiveKit room, filtering out its
-	 * internal participants (egress, ingress, agents) from the API surface.
-	 *
-	 * @param roomName - The name of the room to list participants from
-	 */
-	async listStandardParticipants(roomName: string): Promise<ParticipantInfo[]> {
-		const participants = await this.listRoomParticipants(roomName);
-		return participants.filter((participant) => this.isStandardParticipant(participant));
 	}
 
 	async participantExists(roomName: string, participantIdentity: string): Promise<boolean> {
@@ -496,7 +492,7 @@ export class LiveKitService {
 			this.logger.info(`Stopping egress '${egressId}'`);
 			return await this.lk.egress.stopEgress(egressId);
 		} catch (error) {
-			const { status } = (error ?? {}) as { status?: number };
+			const { status } = this.asTwirpError(error);
 
 			if (status === 404 || status === 412) {
 				this.logger.debug(`Egress '${egressId}' had already ended`);
@@ -519,8 +515,7 @@ export class LiveKitService {
 			await this.lk.egress.updateStream(egressId, [], []);
 			return true;
 		} catch (error) {
-			const { status } = (error ?? {}) as { status?: number };
-			return status !== 503;
+			return this.asTwirpError(error).status !== 503;
 		}
 	}
 
@@ -540,13 +535,7 @@ export class LiveKitService {
 			};
 			return await this.lk.egress.listEgress(options);
 		} catch (error) {
-			const err = error as { code?: string; status?: number; message?: string } | null;
-
-			if (
-				err?.code === 'not_found' ||
-				err?.status === 404 ||
-				(typeof err?.message === 'string' && err.message.includes('egress does not exist'))
-			) {
+			if (this.isNotFoundError(error) || this.asTwirpError(error).message?.includes('egress does not exist')) {
 				return [];
 			}
 
@@ -570,7 +559,7 @@ export class LiveKitService {
 		}
 
 		// Filter the egress array to include only recording egress
-		return egressArray.filter((egress) => RecordingHelper.isRecordingEgress(egress));
+		return egressArray.filter((egress) => EgressHelper.isFileEgress(egress));
 	}
 
 	/**
@@ -596,13 +585,5 @@ export class LiveKitService {
 			this.logger.error(`Error getting in-progress recordings for room '${roomName}'`, error);
 			throw internalError(`getting in-progress egress for room '${roomName}'`);
 		}
-	}
-
-	/**
-	 * Checks if a participant is a standard participant (web clients).
-	 * @param participant
-	 */
-	isStandardParticipant(participant: ParticipantInfo): boolean {
-		return participant.kind === ParticipantInfo_Kind.STANDARD;
 	}
 }

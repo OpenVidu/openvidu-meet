@@ -175,14 +175,6 @@ describe('BroadcastHelper.matchesReportedStreamUrl', () => {
 	});
 });
 
-describe('BroadcastHelper.isBroadcastEgress', () => {
-	it('is a stream-only egress, never a recording', () => {
-		expect(BroadcastHelper.isBroadcastEgress(egress({ streamResults: [stream({})] }))).toBe(true);
-		expect(BroadcastHelper.isBroadcastEgress(egress({ fileResults: [{}] } as Partial<EgressInfo>))).toBe(false);
-		expect(BroadcastHelper.isBroadcastEgress(egress({}))).toBe(false);
-	});
-});
-
 describe('BroadcastHelper.resolveStartDestinations', () => {
 	const room = [
 		{ id: 'a', name: 'A', url: 'rtmp://mtx/live/********' },

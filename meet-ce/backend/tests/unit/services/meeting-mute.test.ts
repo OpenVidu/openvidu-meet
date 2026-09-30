@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { TrackSource } from '@livekit/protocol';
+import { ParticipantInfo_Kind, TrackSource } from '@livekit/protocol';
 import type { MeetParticipantMuteOptions, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { MEET_PERMISSION_KEYS, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
 import type { ParticipantInfo, Room } from 'livekit-server-sdk';
@@ -39,6 +39,7 @@ const participantWith = (
 	({
 		identity: IDENTITY,
 		name: 'Participant One',
+		kind: ParticipantInfo_Kind.STANDARD,
 		tracks,
 		metadata: JSON.stringify({ iat: Date.now(), roomId: ROOM_ID, permissions: allPermissions, badge })
 	}) as unknown as ParticipantInfo;
@@ -54,9 +55,8 @@ const screenShareAudio = { sid: 'screen-audio-sid', source: TrackSource.SCREEN_S
 describe('MeetingService mute', () => {
 	let livekitService: {
 		getParticipant: jest.Mock<(roomId: string, identity: string) => Promise<ParticipantInfo>>;
-		isStandardParticipant: jest.Mock<(participant: ParticipantInfo) => boolean>;
 		mutePublishedTrack: jest.Mock<(roomId: string, identity: string, trackSid: string) => Promise<void>>;
-		listStandardParticipants: jest.Mock<(roomId: string) => Promise<ParticipantInfo[]>>;
+		listRoomParticipants: jest.Mock<(roomId: string) => Promise<ParticipantInfo[]>>;
 		getRoom: jest.Mock<(roomId: string) => Promise<Room>>;
 	};
 	let frontendEventService: {
@@ -72,9 +72,8 @@ describe('MeetingService mute', () => {
 	beforeEach(() => {
 		livekitService = {
 			getParticipant: jest.fn(),
-			isStandardParticipant: jest.fn(() => true),
 			mutePublishedTrack: jest.fn(async () => {}),
-			listStandardParticipants: jest.fn(async () => []),
+			listRoomParticipants: jest.fn(async () => []),
 			getRoom: jest.fn(async () => ({ name: ROOM_ID }) as Room)
 		};
 		frontendEventService = { sendParticipantMediaMutedSignal: jest.fn(async () => {}) };
@@ -132,8 +131,10 @@ describe('MeetingService mute', () => {
 	});
 
 	it('hides LiveKit internal participants behind a 404', async () => {
-		livekitService.getParticipant.mockResolvedValue(speakerWith([microphone]));
-		livekitService.isStandardParticipant.mockReturnValue(false);
+		livekitService.getParticipant.mockResolvedValue({
+			...speakerWith([microphone]),
+			kind: ParticipantInfo_Kind.EGRESS
+		} as ParticipantInfo);
 
 		await expect(meetingService.muteParticipant(ROOM_ID, IDENTITY, { audioActive: false })).rejects.toMatchObject({
 			statusCode: 404
@@ -146,7 +147,7 @@ describe('MeetingService mute', () => {
 			...participantWith(MeetRoomMemberUIBadge.MODERATOR, [microphone]),
 			identity: 'moderator-1'
 		} as ParticipantInfo;
-		livekitService.listStandardParticipants.mockResolvedValue([speakerWith([microphone]), moderator]);
+		livekitService.listRoomParticipants.mockResolvedValue([speakerWith([microphone]), moderator]);
 
 		await meetingService.muteAllParticipants(ROOM_ID, { audioActive: false });
 
@@ -162,7 +163,7 @@ describe('MeetingService mute', () => {
 	// devices, whatever role they hold.
 	it('leaves the caller out of a mute-everyone', async () => {
 		const other = { ...speakerWith([microphone]), identity: 'participant-2' } as ParticipantInfo;
-		livekitService.listStandardParticipants.mockResolvedValue([speakerWith([microphone]), other]);
+		livekitService.listRoomParticipants.mockResolvedValue([speakerWith([microphone]), other]);
 		requestSessionService.getParticipantIdentity.mockReturnValue(IDENTITY);
 
 		await meetingService.muteAllParticipants(ROOM_ID, { audioActive: false });
@@ -179,7 +180,7 @@ describe('MeetingService mute', () => {
 			...speakerWith([{ ...camera, sid: 'cam-sid-2' }]),
 			identity: 'participant-2'
 		} as ParticipantInfo;
-		livekitService.listStandardParticipants.mockResolvedValue([speakerWith([camera]), other]);
+		livekitService.listRoomParticipants.mockResolvedValue([speakerWith([camera]), other]);
 		livekitService.mutePublishedTrack.mockImplementation(async (_roomId, identity) => {
 			if (identity === IDENTITY) throw new Error('participant left');
 		});
@@ -198,7 +199,7 @@ describe('MeetingService mute', () => {
 			...speakerWith([{ ...camera, sid: 'cam-sid-2' }]),
 			identity: 'participant-2'
 		} as ParticipantInfo;
-		livekitService.listStandardParticipants.mockResolvedValue([speakerWith([camera]), other]);
+		livekitService.listRoomParticipants.mockResolvedValue([speakerWith([camera]), other]);
 		livekitService.mutePublishedTrack.mockImplementation(async () => {
 			throw new Error('participant left');
 		});
@@ -210,7 +211,7 @@ describe('MeetingService mute', () => {
 
 	it('answers the meeting-scoped 404 when the room has no live meeting', async () => {
 		livekitService.getRoom.mockRejectedValue(errorRoomNotFound(ROOM_ID) as never);
-		livekitService.listStandardParticipants.mockResolvedValue([speakerWith([microphone])]);
+		livekitService.listRoomParticipants.mockResolvedValue([speakerWith([microphone])]);
 
 		await expect(meetingService.muteAllParticipants(ROOM_ID, { audioActive: false })).rejects.toMatchObject({
 			statusCode: 404,

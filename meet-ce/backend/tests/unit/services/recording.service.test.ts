@@ -138,7 +138,7 @@ class FakeStartLiveKitService {
 		return [];
 	}
 
-	async listStandardParticipants(): Promise<ParticipantInfo[]> {
+	async listRoomParticipants(): Promise<ParticipantInfo[]> {
 		return [];
 	}
 }

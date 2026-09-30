@@ -19,6 +19,7 @@ import { uid } from 'uid';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { EncodingConverter } from '../helpers/encoding-converter.helper.js';
+import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import {
@@ -150,12 +151,12 @@ export class RecordingService {
 			}
 
 			const autoStartConfig = RecordingHelper.getAutoStartConfig(recording.autoStart);
-			const participants = await this.livekitService.listStandardParticipants(roomId);
+			const participants = await this.livekitService.listRoomParticipants(roomId);
 			const thresholdReached = this.recAutoStartStateService.hasReachedAutoStartThreshold(
 				roomId,
 				autoStartConfig,
 				candidate,
-				participants
+				participants.filter((participant) => MeetParticipantHelper.isStandardParticipant(participant))
 			);
 
 			if (!thresholdReached) return;
