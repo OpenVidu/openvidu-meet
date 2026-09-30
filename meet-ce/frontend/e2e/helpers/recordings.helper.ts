@@ -106,7 +106,7 @@ export const waitForRecordingStarted = async (page: Page, timeoutMs = 40_000): P
 
 				if (status === 'FAILED') {
 					const errorMessage = await page
-						.locator(`${RECORDING_ACTIVITY} .recording-note-message`)
+						.locator(`${RECORDING_ACTIVITY} .activity-note-message`)
 						.first()
 						.innerText()
 						.catch(() => 'unknown recording error');

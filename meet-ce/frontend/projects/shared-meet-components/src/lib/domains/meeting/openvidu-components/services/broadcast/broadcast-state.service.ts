@@ -1,13 +1,12 @@
 import { computed, Service, signal } from '@angular/core';
 import { MeetBroadcastInfo, MeetBroadcastStatus } from '@openvidu-meet/typings';
+import { ElapsedClock } from '../../../../../shared/utils/elapsed-clock';
 import {
 	BroadcastRequestState,
 	BroadcastRequestStatus,
 	isBroadcastInProgress,
 	isDestinationStreaming
 } from '../../models/broadcast.model';
-
-const zeroElapsed = () => new Date(0, 0, 0, 0, 0, 0);
 
 /**
  * The live broadcast of the meeting as the server last reported it, plus what the local
@@ -16,11 +15,9 @@ const zeroElapsed = () => new Date(0, 0, 0, 0, 0, 0);
  */
 @Service()
 export class BroadcastStateService {
-	private timer: ReturnType<typeof setInterval> | undefined;
-
+	private readonly clock = new ElapsedClock();
 	private readonly _broadcast = signal<MeetBroadcastInfo | undefined>(undefined);
 	private readonly _request = signal<BroadcastRequestState>({ status: 'idle' });
-	private readonly _elapsed = signal(zeroElapsed());
 
 	/** The broadcast, while it runs or right after it failed; `undefined` once it ended normally. */
 	readonly broadcast = this._broadcast.asReadonly();
@@ -29,7 +26,7 @@ export class BroadcastStateService {
 	 * How long the broadcast has been live, as a `Date` offset from zero so it can be formatted with
 	 * the `date` pipe. Not the moment it started.
 	 */
-	readonly elapsed = this._elapsed.asReadonly();
+	readonly elapsed = this.clock.elapsed;
 
 	readonly isLive = computed(() => this._broadcast()?.status === MeetBroadcastStatus.ACTIVE);
 	readonly isStarting = computed(
@@ -75,21 +72,10 @@ export class BroadcastStateService {
 	}
 
 	private trackElapsed(startDate: number | undefined): void {
-		clearInterval(this.timer);
-		this.timer = undefined;
-
 		if (startDate === undefined) {
-			this._elapsed.set(zeroElapsed());
-			return;
+			this.clock.stop();
+		} else {
+			this.clock.start(startDate);
 		}
-
-		const update = () => {
-			const elapsed = zeroElapsed();
-			elapsed.setSeconds(Math.max(0, Math.floor((Date.now() - startDate) / 1000)));
-			this._elapsed.set(elapsed);
-		};
-
-		update();
-		this.timer = setInterval(update, 1000);
 	}
 }

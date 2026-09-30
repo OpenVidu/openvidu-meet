@@ -1,0 +1,122 @@
+:host {
+	// ── The row: identity plus live state, all that stays visible while the accordion is shut ──
+	.activity-row {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		min-width: 0;
+		flex-grow: 1;
+	}
+
+	.activity-tile {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		width: 40px;
+		height: 40px;
+		border-radius: var(--ov-surface-radius);
+		background-color: var(--ov-secondary-action-color);
+		color: var(--ov-text-surface-color);
+
+		mat-icon {
+			font-size: 20px;
+			width: 20px;
+			height: 20px;
+		}
+
+		// The activity's own colour, solid, means it is running right now, and nothing else does.
+		&.live {
+			background-color: var(--ov-activity-accent, var(--ov-error-color));
+			color: #ffffff;
+		}
+
+		&.pending {
+			color: var(--ov-warn-color);
+		}
+
+		&.failed {
+			color: var(--ov-error-color);
+		}
+	}
+
+	.activity-identity {
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+		min-width: 0;
+		flex-grow: 1;
+	}
+
+	.activity-name {
+		margin: 0;
+		font-size: 14px;
+		font-weight: 600;
+		color: var(--ov-text-surface-color);
+	}
+
+	.activity-status {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		margin: 0;
+		font-size: 12px;
+		line-height: 1.25;
+		color: var(--ov-text-secondary-color);
+	}
+
+	.activity-status-detail {
+		color: var(--ov-warn-color);
+	}
+
+	.activity-elapsed {
+		color: var(--ov-text-surface-color);
+		font-variant-numeric: tabular-nums;
+	}
+
+	// Starting and stopping are a rule under the row, so the body never jumps.
+	.activity-progress {
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		height: 2px;
+		overflow: hidden;
+		background-color: color-mix(in srgb, var(--ov-text-secondary-color) 25%, transparent);
+	}
+
+	.activity-progress-bar {
+		display: block;
+		width: 30%;
+		height: 100%;
+		background-color: var(--ov-warn-color);
+		animation: ov-activity-sweep 1.4s ease-in-out infinite;
+	}
+
+	// ── The body the activity projects ────────────────────────────────────────
+	.activity-body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-activity-body-gap, 0);
+		padding: 16px 10px 12px;
+	}
+
+	mat-expansion-panel {
+		margin: 0 0 5px 0;
+	}
+
+	@keyframes ov-activity-sweep {
+		0% {
+			transform: translateX(-110%);
+		}
+		100% {
+			transform: translateX(340%);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.activity-progress-bar {
+			animation: none;
+		}
+	}
+}

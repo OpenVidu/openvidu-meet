@@ -291,7 +291,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	recordingStatus = this.recordingService.recordingStatus.asReadonly();
+	recordingStatus = this.recordingService.recordingStatus;
 
 	/**
 	 * @ignore

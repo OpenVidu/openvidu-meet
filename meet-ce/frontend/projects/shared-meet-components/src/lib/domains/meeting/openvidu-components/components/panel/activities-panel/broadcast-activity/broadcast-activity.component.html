@@ -1,370 +1,322 @@
-<mat-expansion-panel
-	(opened)="setPanelOpened(true)"
-	(closed)="setPanelOpened(false)"
+<ov-activity-item
 	[expanded]="expanded()"
-	[class.no-body]="!isPanelOpened()"
+	icon="sensors"
+	titleKey="PANEL.BROADCAST.TITLE"
+	[statusKey]="statusKey()"
+	[state]="state()"
+	[detail]="
+		phase() === 'live' && failedCount() > 0
+			? ('PANEL.BROADCAST.FAILED_COUNT' | translate: { count: failedCount() })
+			: undefined
+	"
+	[elapsed]="elapsed()"
+	statusId="broadcast-status"
+	[status]="phase()"
 >
-	<mat-expansion-panel-header>
-		<div class="broadcast-row">
-			<div
-				class="broadcast-tile"
-				[class.live]="phase() === 'live'"
-				[class.pending]="phase() === 'starting' || phase() === 'ending'"
-				[class.failed]="phase() === 'failed'"
-			>
-				@if (phase() === 'failed') {
-					<mat-icon>error_outline</mat-icon>
-				} @else {
-					<mat-icon>sensors</mat-icon>
-				}
-			</div>
-
-			<div class="broadcast-identity">
-				<h3 class="broadcast-name">{{ 'PANEL.BROADCAST.TITLE' | translate }}</h3>
-				<p class="broadcast-status" id="broadcast-status" [attr.data-status]="phase()">
-					@if (phase() === 'live') {
-						<span class="live-dot" aria-hidden="true"></span>
-					}
-					<span>{{ statusKey() | translate }}</span>
-					@if (phase() === 'live' && failedCount() > 0) {
-						<span class="status-separator" aria-hidden="true">&middot;</span>
-						<span class="broadcast-failures">{{
-							'PANEL.BROADCAST.FAILED_COUNT' | translate: { count: failedCount() }
-						}}</span>
-					}
-					@if (phase() === 'live' && elapsed(); as elapsedTime) {
-						<span class="status-separator" aria-hidden="true">&middot;</span>
-						<span class="broadcast-elapsed">{{ elapsedTime | date: 'H:mm:ss' }}</span>
-					}
-				</p>
+	<!-- While live, what that means for everyone in the room. -->
+	@if (phase() === 'live') {
+		<div class="activity-note" role="status">
+			<mat-icon class="activity-note-icon">sensors</mat-icon>
+			<div class="activity-note-body">
+				<span class="activity-note-title">{{ 'PANEL.BROADCAST.IN_PROGRESS_TITLE' | translate }}</span>
+				<span class="activity-note-message">{{
+					(streamingCount() === 1
+						? 'PANEL.BROADCAST.IN_PROGRESS_MESSAGE_ONE'
+						: 'PANEL.BROADCAST.IN_PROGRESS_MESSAGE'
+					) | translate: { count: streamingCount() }
+				}}</span>
 			</div>
 		</div>
+	}
 
-		@if (phase() === 'starting' || phase() === 'ending') {
-			<span class="broadcast-progress" aria-hidden="true"><span class="broadcast-progress-bar"></span></span>
-		}
-	</mat-expansion-panel-header>
+	@if (phase() === 'starting') {
+		<div class="activity-note single-line">
+			<mat-icon class="activity-note-icon">hourglass_top</mat-icon>
+			<span class="activity-note-message">{{
+				(streamingCount() === 1 ? 'PANEL.BROADCAST.STARTING_MESSAGE_ONE' : 'PANEL.BROADCAST.STARTING_MESSAGE')
+					| translate: { count: streamingCount() }
+			}}</span>
+		</div>
+	}
 
-	@if (isPanelOpened()) {
-		<div class="broadcast-body">
-			<!-- While live, what that means for everyone in the room. -->
-			@if (phase() === 'live') {
-				<div class="broadcast-note" role="status">
-					<mat-icon class="broadcast-note-icon">sensors</mat-icon>
-					<div class="broadcast-note-body">
-						<span class="broadcast-note-title">{{ 'PANEL.BROADCAST.IN_PROGRESS_TITLE' | translate }}</span>
-						<span class="broadcast-note-message">{{
-							(streamingCount() === 1
-								? 'PANEL.BROADCAST.IN_PROGRESS_MESSAGE_ONE'
-								: 'PANEL.BROADCAST.IN_PROGRESS_MESSAGE'
-							) | translate: { count: streamingCount() }
-						}}</span>
-					</div>
-				</div>
-			}
-
-			@if (phase() === 'starting') {
-				<div class="broadcast-note single-line">
-					<mat-icon class="broadcast-note-icon">hourglass_top</mat-icon>
-					<span class="broadcast-note-message">{{
-						(streamingCount() === 1
-							? 'PANEL.BROADCAST.STARTING_MESSAGE_ONE'
-							: 'PANEL.BROADCAST.STARTING_MESSAGE'
-						) | translate: { count: streamingCount() }
-					}}</span>
-				</div>
-			}
-
-			<!-- The same slot, escalated: the only red in this panel. -->
-			@if (phase() === 'failed') {
-				<div class="broadcast-failure" role="alert">
-					<mat-icon class="broadcast-failure-icon">error_outline</mat-icon>
-					<div class="broadcast-note-body">
-						<span class="broadcast-note-title">{{
-							(broadcast() ? 'PANEL.BROADCAST.ERROR_STARTING' : 'PANEL.BROADCAST.ERROR_REQUEST')
-								| translate
-						}}</span>
-						@if (failure()) {
-							<span class="broadcast-note-message">{{ failure() }}</span>
-						}
-					</div>
-				</div>
-			}
-
-			@if (!showControls()) {
-				<p class="broadcast-permission">
-					<mat-icon class="broadcast-permission-icon">lock</mat-icon>
-					<span>{{ 'PANEL.BROADCAST.MODERATORS_ONLY' | translate }}</span>
-				</p>
-			}
-
-			<!-- ── Before going live: choose where to stream ─────────────── -->
-			@if (phase() === 'idle' && showControls()) {
-				<div class="destinations-caption">
-					<span class="caption" id="broadcast-planned-caption">{{
-						'PANEL.BROADCAST.STREAM_TO' | translate
-					}}</span>
-					<span class="caption-detail">{{
-						'PANEL.BROADCAST.SELECTED_COUNT'
-							| translate: { selected: selectedCount(), total: plannedDestinations().length }
-					}}</span>
-				</div>
-
-				<div class="destination-list" role="group" aria-labelledby="broadcast-planned-caption">
-					@for (destination of plannedDestinations(); track destination.id) {
-						@if (isEditingDestination(destination.id)) {
-							<ng-container *ngTemplateOutlet="destinationEditor" />
-						} @else {
-							<div class="destination-row" [attr.id]="'broadcast-planned-' + destination.id">
-								<mat-checkbox
-									class="destination-pick"
-									[checked]="destination.selected"
-									[disabled]="destination.source === destinationSource.MEETING"
-									(change)="toggleSelected(destination.id, $event.checked)"
-								>
-									<span class="destination-pick-body">
-										<ov-platform-icon [platform]="platformOf(destination.url)" [size]="28" />
-										<span class="destination-text">
-											<span class="destination-name">
-												{{ destination.name }}
-												@if (destination.source === destinationSource.MEETING) {
-													<span class="pill">{{
-														'PANEL.BROADCAST.THIS_MEETING' | translate
-													}}</span>
-												} @else if (destination.edited) {
-													<span class="pill">{{ 'PANEL.BROADCAST.EDITED' | translate }}</span>
-												}
-											</span>
-											<span class="destination-detail">
-												{{ hostOf(destination.url) }}
-												@if (destination.edited) {
-													&middot; {{ 'PANEL.BROADCAST.THIS_MEETING_ONLY' | translate }}
-												}
-											</span>
-										</span>
-									</span>
-								</mat-checkbox>
-								@if (destination.source === destinationSource.MEETING) {
-									<button
-										mat-icon-button
-										type="button"
-										class="destination-action"
-										[matTooltip]="'PANEL.BROADCAST.REMOVE' | translate"
-										(click)="removeMeetingDestination(destination.id)"
-									>
-										<mat-icon>delete</mat-icon>
-									</button>
-								} @else if (showEditDestinations()) {
-									<button
-										mat-icon-button
-										type="button"
-										class="destination-action"
-										[matTooltip]="'PANEL.BROADCAST.EDIT_FOR_MEETING' | translate"
-										(click)="openEdit(destination)"
-									>
-										<mat-icon>edit</mat-icon>
-									</button>
-								}
-							</div>
-						}
-					}
-					@if (editorTarget() === 'new') {
-						<ng-container *ngTemplateOutlet="destinationEditor" />
-					}
-				</div>
-
-				<div class="destinations-footer">
-					@if (canAddDestination()) {
-						<button
-							mat-button
-							type="button"
-							id="broadcast-add-destination-btn"
-							class="add-destination"
-							(click)="openAdd()"
-						>
-							<mat-icon>add</mat-icon>
-							<span>{{ 'PANEL.BROADCAST.ADD_DESTINATION' | translate }}</span>
-						</button>
-					}
-					<span class="caption-detail">{{
-						'PANEL.BROADCAST.DESTINATIONS_COUNT'
-							| translate: { count: plannedDestinations().length, max: maxDestinations }
-					}}</span>
-				</div>
-
-				@if (selectedCount() > 0) {
-					<p class="cost-note">
-						<mat-icon class="cost-note-icon">network_check</mat-icon>
-						<span>{{
-							(selectedCount() === 1 ? 'PANEL.BROADCAST.COST_NOTE_ONE' : 'PANEL.BROADCAST.COST_NOTE')
-								| translate: { mbps: mbpsPerDestination, count: selectedCount(), total: plannedMbps() }
-						}}</span>
-					</p>
+	<!-- The same slot, escalated: the only red in this panel. -->
+	@if (phase() === 'failed') {
+		<div class="activity-failure" role="alert">
+			<mat-icon class="activity-failure-icon">error_outline</mat-icon>
+			<div class="activity-note-body">
+				<span class="activity-note-title">{{
+					(broadcast() ? 'PANEL.BROADCAST.ERROR_STARTING' : 'PANEL.BROADCAST.ERROR_REQUEST') | translate
+				}}</span>
+				@if (failure()) {
+					<span class="activity-note-message">{{ failure() }}</span>
 				}
-			}
+			</div>
+		</div>
+	}
 
-			<!-- ── While live: every destination and how it is doing ────────── -->
-			@if (isRunning() || (phase() === 'failed' && broadcast())) {
-				<div class="destinations-caption">
-					<span class="caption" id="broadcast-live-caption">{{
-						'PANEL.BROADCAST.DESTINATIONS' | translate
-					}}</span>
-					@if (phase() === 'live') {
-						<span class="caption-detail">
-							{{ 'PANEL.BROADCAST.LIVE_COUNT' | translate: { count: streamingCount() } }}
-							<span class="status-separator" aria-hidden="true">&middot;</span>
-							<mat-icon class="cost-note-icon inline" aria-hidden="true">network_check</mat-icon>
-							{{ 'PANEL.BROADCAST.UPLOAD_ESTIMATE' | translate: { mbps: liveMbps() } }}
-						</span>
-					}
-				</div>
+	@if (!showControls()) {
+		<p class="activity-permission">
+			<mat-icon class="activity-permission-icon">lock</mat-icon>
+			<span>{{ 'PANEL.BROADCAST.MODERATORS_ONLY' | translate }}</span>
+		</p>
+	}
 
-				<div class="destination-list" role="list" aria-labelledby="broadcast-live-caption">
-					@for (destination of broadcastDestinations(); track destination.id) {
-						<div
-							class="destination-row"
-							role="listitem"
-							[attr.id]="'broadcast-destination-' + destination.id"
-							[attr.data-status]="destination.status"
+	<!-- ── Before going live: choose where to stream ─────────────── -->
+	@if (phase() === 'idle' && showControls()) {
+		<div class="destinations-caption">
+			<span class="caption" id="broadcast-planned-caption">{{ 'PANEL.BROADCAST.STREAM_TO' | translate }}</span>
+			<span class="caption-detail">{{
+				'PANEL.BROADCAST.SELECTED_COUNT'
+					| translate: { selected: selectedCount(), total: plannedDestinations().length }
+			}}</span>
+		</div>
+
+		<div class="destination-list" role="group" aria-labelledby="broadcast-planned-caption">
+			@for (destination of plannedDestinations(); track destination.id) {
+				@if (isEditingDestination(destination.id)) {
+					<ng-container *ngTemplateOutlet="destinationEditor" />
+				} @else {
+					<div class="destination-row" [attr.id]="'broadcast-planned-' + destination.id">
+						<mat-checkbox
+							class="destination-pick"
+							[checked]="destination.selected"
+							[disabled]="destination.source === destinationSource.MEETING"
+							(change)="toggleSelected(destination.id, $event.checked)"
 						>
-							<ov-platform-icon [platform]="platformOf(destination.url)" [size]="28" />
-							<span class="destination-text">
-								<span
-									class="destination-name"
-									[class.muted]="destination.status === destinationStatus.STOPPED"
-								>
-									{{ destination.name }}
-									@if (destination.source === destinationSource.MEETING) {
-										<span class="pill">{{ 'PANEL.BROADCAST.THIS_MEETING' | translate }}</span>
-									} @else if (destination.edited) {
-										<span class="pill">{{ 'PANEL.BROADCAST.EDITED' | translate }}</span>
-									}
-								</span>
-								<span
-									class="destination-detail"
-									[class.failed]="destination.status === destinationStatus.FAILED"
-								>
-									@if (destination.status === destinationStatus.ACTIVE) {
-										<span class="live-dot" aria-hidden="true"></span>
-									}
-									{{ statusKeyOf(destination) | translate }}
-									@if (destination.status === destinationStatus.FAILED && destination.error) {
-										&middot; {{ destination.error }}
-									}
+							<span class="destination-pick-body">
+								<ov-platform-icon [platform]="platformOf(destination.url)" [size]="28" />
+								<span class="destination-text">
+									<span class="destination-name">
+										{{ destination.name }}
+										@if (destination.source === destinationSource.MEETING) {
+											<span class="pill">{{ 'PANEL.BROADCAST.THIS_MEETING' | translate }}</span>
+										} @else if (destination.edited) {
+											<span class="pill">{{ 'PANEL.BROADCAST.EDITED' | translate }}</span>
+										}
+									</span>
+									<span class="destination-detail">
+										{{ hostOf(destination.url) }}
+										@if (destination.edited) {
+											&middot; {{ 'PANEL.BROADCAST.THIS_MEETING_ONLY' | translate }}
+										}
+									</span>
 								</span>
 							</span>
-							@if (showControls() && isRunning()) {
-								@if (isStreaming(destination)) {
-									<button
-										mat-icon-button
-										type="button"
-										class="destination-action"
-										[matTooltip]="
-											'PANEL.BROADCAST.STOP_DESTINATION' | translate: { name: destination.name }
-										"
-										[attr.aria-label]="
-											'PANEL.BROADCAST.STOP_DESTINATION' | translate: { name: destination.name }
-										"
-										(click)="stopDestination(destination)"
-									>
-										<mat-icon>stop_circle</mat-icon>
-									</button>
-								} @else {
-									<button
-										mat-button
-										type="button"
-										class="destination-text-action"
-										(click)="startDestination(destination)"
-									>
-										<mat-icon>{{
-											destination.status === destinationStatus.FAILED ? 'refresh' : 'play_arrow'
-										}}</mat-icon>
-										<span>{{
-											(destination.status === destinationStatus.FAILED
-												? 'PANEL.BROADCAST.RETRY_DESTINATION'
-												: 'PANEL.BROADCAST.START_DESTINATION'
-											) | translate
-										}}</span>
-									</button>
-								}
-							}
-						</div>
-					}
-					@if (editorTarget() === 'new' && isRunning()) {
-						<ng-container *ngTemplateOutlet="destinationEditor" />
-					}
-				</div>
+						</mat-checkbox>
+						@if (destination.source === destinationSource.MEETING) {
+							<button
+								mat-icon-button
+								type="button"
+								class="destination-action"
+								[matTooltip]="'PANEL.BROADCAST.REMOVE' | translate"
+								(click)="removeMeetingDestination(destination.id)"
+							>
+								<mat-icon>delete</mat-icon>
+							</button>
+						} @else if (showEditDestinations()) {
+							<button
+								mat-icon-button
+								type="button"
+								class="destination-action"
+								[matTooltip]="'PANEL.BROADCAST.EDIT_FOR_MEETING' | translate"
+								(click)="openEdit(destination)"
+							>
+								<mat-icon>edit</mat-icon>
+							</button>
+						}
+					</div>
+				}
+			}
+			@if (editorTarget() === 'new') {
+				<ng-container *ngTemplateOutlet="destinationEditor" />
+			}
+		</div>
 
-				@if (isRunning() && showControls()) {
-					<div class="destinations-footer">
-						@if (canAddDestination()) {
+		<div class="destinations-footer">
+			@if (canAddDestination()) {
+				<button
+					mat-button
+					type="button"
+					id="broadcast-add-destination-btn"
+					class="add-destination"
+					(click)="openAdd()"
+				>
+					<mat-icon>add</mat-icon>
+					<span>{{ 'PANEL.BROADCAST.ADD_DESTINATION' | translate }}</span>
+				</button>
+			}
+			<span class="caption-detail">{{
+				'PANEL.BROADCAST.DESTINATIONS_COUNT'
+					| translate: { count: plannedDestinations().length, max: maxDestinations }
+			}}</span>
+		</div>
+
+		@if (selectedCount() > 0) {
+			<p class="cost-note activity-hint">
+				<mat-icon class="cost-note-icon activity-hint-icon">network_check</mat-icon>
+				<span>{{
+					(selectedCount() === 1 ? 'PANEL.BROADCAST.COST_NOTE_ONE' : 'PANEL.BROADCAST.COST_NOTE')
+						| translate: { mbps: mbpsPerDestination, count: selectedCount(), total: plannedMbps() }
+				}}</span>
+			</p>
+		}
+	}
+
+	<!-- ── While live: every destination and how it is doing ────────── -->
+	@if (isRunning() || (phase() === 'failed' && broadcast())) {
+		<div class="destinations-caption">
+			<span class="caption" id="broadcast-live-caption">{{ 'PANEL.BROADCAST.DESTINATIONS' | translate }}</span>
+			@if (phase() === 'live') {
+				<span class="caption-detail">
+					{{ 'PANEL.BROADCAST.LIVE_COUNT' | translate: { count: streamingCount() } }}
+					<span class="status-separator" aria-hidden="true">&middot;</span>
+					<mat-icon class="cost-note-icon inline" aria-hidden="true">network_check</mat-icon>
+					{{ 'PANEL.BROADCAST.UPLOAD_ESTIMATE' | translate: { mbps: liveMbps() } }}
+				</span>
+			}
+		</div>
+
+		<div class="destination-list" role="list" aria-labelledby="broadcast-live-caption">
+			@for (destination of broadcastDestinations(); track destination.id) {
+				<div
+					class="destination-row"
+					role="listitem"
+					[attr.id]="'broadcast-destination-' + destination.id"
+					[attr.data-status]="destination.status"
+				>
+					<ov-platform-icon [platform]="platformOf(destination.url)" [size]="28" />
+					<span class="destination-text">
+						<span class="destination-name" [class.muted]="destination.status === destinationStatus.STOPPED">
+							{{ destination.name }}
+							@if (destination.source === destinationSource.MEETING) {
+								<span class="pill">{{ 'PANEL.BROADCAST.THIS_MEETING' | translate }}</span>
+							} @else if (destination.edited) {
+								<span class="pill">{{ 'PANEL.BROADCAST.EDITED' | translate }}</span>
+							}
+						</span>
+						<span
+							class="destination-detail"
+							[class.failed]="destination.status === destinationStatus.FAILED"
+						>
+							@if (destination.status === destinationStatus.ACTIVE) {
+								<span class="live-dot" aria-hidden="true"></span>
+							}
+							{{ statusKeyOf(destination) | translate }}
+							@if (destination.status === destinationStatus.FAILED && destination.error) {
+								&middot; {{ destination.error }}
+							}
+						</span>
+					</span>
+					@if (showControls() && isRunning()) {
+						@if (isStreaming(destination)) {
+							<button
+								mat-icon-button
+								type="button"
+								class="destination-action"
+								[matTooltip]="
+									'PANEL.BROADCAST.STOP_DESTINATION' | translate: { name: destination.name }
+								"
+								[attr.aria-label]="
+									'PANEL.BROADCAST.STOP_DESTINATION' | translate: { name: destination.name }
+								"
+								(click)="stopDestination(destination)"
+							>
+								<mat-icon>stop_circle</mat-icon>
+							</button>
+						} @else {
 							<button
 								mat-button
 								type="button"
-								id="broadcast-add-destination-btn"
-								class="add-destination"
-								(click)="openAdd()"
+								class="destination-text-action"
+								(click)="startDestination(destination)"
 							>
-								<mat-icon>add</mat-icon>
-								<span>{{ 'PANEL.BROADCAST.ADD_DESTINATION' | translate }}</span>
-							</button>
-						}
-						<span class="caption-detail">{{
-							'PANEL.BROADCAST.DESTINATIONS_COUNT'
-								| translate: { count: broadcastDestinations().length, max: maxDestinations }
-						}}</span>
-					</div>
-				}
-			}
-
-			@if (showControls()) {
-				<div class="broadcast-actions">
-					@switch (phase()) {
-						@case ('idle') {
-							@if (!hasRoomTracksPublished()) {
-								<p class="broadcast-hint">{{ 'PANEL.BROADCAST.NO_TRACKS' | translate }}</p>
-							}
-							<button mat-flat-button id="go-live-btn" [disabled]="!canGoLive()" (click)="goLive()">
-								<mat-icon>sensors</mat-icon>
+								<mat-icon>{{
+									destination.status === destinationStatus.FAILED ? 'refresh' : 'play_arrow'
+								}}</mat-icon>
 								<span>{{
-									(selectedCount() === 1 ? 'PANEL.BROADCAST.GO_LIVE_ONE' : 'PANEL.BROADCAST.GO_LIVE')
-										| translate: { count: selectedCount() }
+									(destination.status === destinationStatus.FAILED
+										? 'PANEL.BROADCAST.RETRY_DESTINATION'
+										: 'PANEL.BROADCAST.START_DESTINATION'
+									) | translate
 								}}</span>
-							</button>
-						}
-						@case ('starting') {
-							<button mat-flat-button id="stop-broadcast-btn" (click)="stop()">
-								<mat-icon>stop_circle</mat-icon>
-								<span>{{ 'PANEL.BROADCAST.STOP_BROADCAST' | translate }}</span>
-							</button>
-						}
-						@case ('live') {
-							<button mat-flat-button id="stop-broadcast-btn" (click)="stop()">
-								<mat-icon>stop_circle</mat-icon>
-								<span>{{ 'PANEL.BROADCAST.STOP_BROADCAST' | translate }}</span>
-							</button>
-						}
-						@case ('ending') {
-							<button mat-flat-button class="is-busy" disabled>
-								<span class="busy-spinner" aria-hidden="true"></span>
-								<span>{{ 'PANEL.BROADCAST.STOPPING' | translate }}</span>
-							</button>
-						}
-						@case ('failed') {
-							<button mat-flat-button id="retry-broadcast-btn" (click)="retry()">
-								<mat-icon>refresh</mat-icon>
-								<span>{{ 'PANEL.BROADCAST.TRY_AGAIN' | translate }}</span>
-							</button>
-							<button mat-stroked-button id="reset-broadcast-status-btn" (click)="dismissFailure()">
-								<span>{{ 'PANEL.BROADCAST.DISMISS' | translate }}</span>
 							</button>
 						}
 					}
 				</div>
 			}
+			@if (editorTarget() === 'new' && isRunning()) {
+				<ng-container *ngTemplateOutlet="destinationEditor" />
+			}
+		</div>
+
+		@if (isRunning() && showControls()) {
+			<div class="destinations-footer">
+				@if (canAddDestination()) {
+					<button
+						mat-button
+						type="button"
+						id="broadcast-add-destination-btn"
+						class="add-destination"
+						(click)="openAdd()"
+					>
+						<mat-icon>add</mat-icon>
+						<span>{{ 'PANEL.BROADCAST.ADD_DESTINATION' | translate }}</span>
+					</button>
+				}
+				<span class="caption-detail">{{
+					'PANEL.BROADCAST.DESTINATIONS_COUNT'
+						| translate: { count: broadcastDestinations().length, max: maxDestinations }
+				}}</span>
+			</div>
+		}
+	}
+
+	@if (showControls()) {
+		<div class="activity-actions">
+			@switch (phase()) {
+				@case ('idle') {
+					@if (!hasRoomTracksPublished()) {
+						<p class="activity-hint">{{ 'PANEL.BROADCAST.NO_TRACKS' | translate }}</p>
+					}
+					<button mat-flat-button id="go-live-btn" [disabled]="!canGoLive()" (click)="goLive()">
+						<mat-icon>sensors</mat-icon>
+						<span>{{
+							(selectedCount() === 1 ? 'PANEL.BROADCAST.GO_LIVE_ONE' : 'PANEL.BROADCAST.GO_LIVE')
+								| translate: { count: selectedCount() }
+						}}</span>
+					</button>
+				}
+				@case ('starting') {
+					<button mat-flat-button id="stop-broadcast-btn" (click)="stop()">
+						<mat-icon>stop_circle</mat-icon>
+						<span>{{ 'PANEL.BROADCAST.STOP_BROADCAST' | translate }}</span>
+					</button>
+				}
+				@case ('live') {
+					<button mat-flat-button id="stop-broadcast-btn" (click)="stop()">
+						<mat-icon>stop_circle</mat-icon>
+						<span>{{ 'PANEL.BROADCAST.STOP_BROADCAST' | translate }}</span>
+					</button>
+				}
+				@case ('ending') {
+					<button mat-flat-button class="is-busy" disabled>
+						<span class="busy-spinner" aria-hidden="true"></span>
+						<span>{{ 'PANEL.BROADCAST.STOPPING' | translate }}</span>
+					</button>
+				}
+				@case ('failed') {
+					<button mat-flat-button id="retry-broadcast-btn" (click)="retry()">
+						<mat-icon>refresh</mat-icon>
+						<span>{{ 'PANEL.BROADCAST.TRY_AGAIN' | translate }}</span>
+					</button>
+					<button mat-stroked-button id="reset-broadcast-status-btn" (click)="dismissFailure()">
+						<span>{{ 'PANEL.BROADCAST.DISMISS' | translate }}</span>
+					</button>
+				}
+			}
 		</div>
 	}
-</mat-expansion-panel>
+</ov-activity-item>
 
 <ng-template #destinationEditor>
 	<form

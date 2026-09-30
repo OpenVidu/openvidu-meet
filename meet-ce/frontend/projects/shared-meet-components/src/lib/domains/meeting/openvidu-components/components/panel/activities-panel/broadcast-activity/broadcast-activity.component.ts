@@ -1,9 +1,8 @@
-import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -39,6 +38,7 @@ import { BroadcastStateService } from '../../../../services/broadcast/broadcast-
 import { MeetingUiConfigService } from '../../../../services/config/meeting-ui-config.service';
 import { MeetingLiveKitService } from '../../../../services/meeting-livekit/meeting-livekit.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
+import { ActivityItemComponent, ActivityState } from '../activity-item/activity-item.component';
 
 /** A destination as the activity offers it before going live: the room's, possibly changed for this meeting, or added for it. */
 interface PlannedDestination extends MeetBroadcastDestinationOptions {
@@ -59,6 +59,14 @@ const STATUS_KEYS: Record<BroadcastPhase, string> = {
 	failed: 'PANEL.BROADCAST.STATUS_FAILED'
 };
 
+const ACTIVITY_STATES: Record<BroadcastPhase, ActivityState> = {
+	idle: 'idle',
+	starting: 'pending',
+	live: 'live',
+	ending: 'pending',
+	failed: 'failed'
+};
+
 const DESTINATION_STATUS_KEYS: Record<MeetBroadcastDestinationStatus, string> = {
 	[MeetBroadcastDestinationStatus.CONNECTING]: 'PANEL.BROADCAST.DEST_CONNECTING',
 	[MeetBroadcastDestinationStatus.ACTIVE]: 'PANEL.BROADCAST.DEST_LIVE',
@@ -74,12 +82,11 @@ const DESTINATION_STATUS_KEYS: Record<MeetBroadcastDestinationStatus, string> = 
 @Component({
 	selector: 'ov-broadcast-activity',
 	imports: [
-		DatePipe,
+		ActivityItemComponent,
 		NgTemplateOutlet,
 		ReactiveFormsModule,
 		MatButtonModule,
 		MatCheckboxModule,
-		MatExpansionModule,
 		MatFormFieldModule,
 		MatIconModule,
 		MatInputModule,
@@ -88,7 +95,7 @@ const DESTINATION_STATUS_KEYS: Record<MeetBroadcastDestinationStatus, string> = 
 		TranslatePipe
 	],
 	templateUrl: './broadcast-activity.component.html',
-	styleUrls: ['./broadcast-activity.component.scss', '../activities-panel.component.scss']
+	styleUrls: ['../activity-shared.scss', './broadcast-activity.component.scss']
 })
 export class BroadcastActivityComponent {
 	private readonly uiConfig = inject(MeetingUiConfigService);
@@ -108,11 +115,6 @@ export class BroadcastActivityComponent {
 	 * destination or starting and stopping one. See {@link BroadcastRequestedEvent}.
 	 */
 	onBroadcastRequested = output<BroadcastRequestedEvent>();
-
-	/**
-	 * @internal
-	 */
-	readonly isPanelOpened = signal(false);
 
 	readonly maxDestinations = MEET_BROADCAST_MAX_DESTINATIONS;
 	readonly mbpsPerDestination = BROADCAST_MBPS_PER_DESTINATION;
@@ -136,6 +138,7 @@ export class BroadcastActivityComponent {
 		return this.broadcastState.isStarting() ? 'starting' : 'idle';
 	});
 	readonly statusKey = computed(() => STATUS_KEYS[this.phase()]);
+	readonly state = computed<ActivityState>(() => ACTIVITY_STATES[this.phase()]);
 	readonly isRunning = computed(() => this.phase() === 'starting' || this.phase() === 'live');
 
 	/** The broadcast's destinations while it runs, or those of the failed attempt. */
@@ -203,13 +206,6 @@ export class BroadcastActivityComponent {
 		this.participantService.remoteParticipants();
 		this.hasRoomTracksPublished.set(this.meetingLiveKitService.hasRoomTracksPublished());
 	});
-
-	/**
-	 * @internal
-	 */
-	setPanelOpened(value: boolean) {
-		this.isPanelOpened.set(value);
-	}
 
 	platformOf(url: string) {
 		return detectBroadcastPlatform(url);
