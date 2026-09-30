@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRecordingLayout, MeetRoom } from '@openvidu-meet/typings';
+import { MeetRecordingEncodingPreset, MeetRecordingLayout, MeetRoom } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
@@ -61,7 +61,12 @@ describe('E2EE Room Configuration Tests', () => {
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
 					e2ee: { enabled: true },
-					broadcast: { enabled: false, destinations: [], layout: MeetRecordingLayout.GRID },
+					broadcast: {
+						enabled: false,
+						destinations: [],
+						layout: MeetRecordingLayout.GRID,
+						encoding: MeetRecordingEncodingPreset.H264_720P_30
+					},
 					captions: { enabled: true },
 					raiseHand: { enabled: true },
 					reactions: { enabled: true }
@@ -104,7 +109,12 @@ describe('E2EE Room Configuration Tests', () => {
 						chat: { enabled: true },
 						virtualBackground: { enabled: true },
 						e2ee: { enabled: false },
-						broadcast: { enabled: false, destinations: [], layout: MeetRecordingLayout.GRID },
+						broadcast: {
+							enabled: false,
+							destinations: [],
+							layout: MeetRecordingLayout.GRID,
+							encoding: MeetRecordingEncodingPreset.H264_720P_30
+						},
 						captions: { enabled: true },
 						raiseHand: { enabled: true },
 						reactions: { enabled: true }
@@ -145,7 +155,12 @@ describe('E2EE Room Configuration Tests', () => {
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
 					e2ee: 'invalid-e2ee', // Should be an object
-					broadcast: { enabled: false, destinations: [], layout: MeetRecordingLayout.GRID },
+					broadcast: {
+						enabled: false,
+						destinations: [],
+						layout: MeetRecordingLayout.GRID,
+						encoding: MeetRecordingEncodingPreset.H264_720P_30
+					},
 					captions: { enabled: true },
 					raiseHand: { enabled: true },
 					reactions: { enabled: true }
@@ -171,7 +186,12 @@ describe('E2EE Room Configuration Tests', () => {
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
 					e2ee: { enabled: 'yes' }, // Should be a boolean
-					broadcast: { enabled: false, destinations: [], layout: MeetRecordingLayout.GRID },
+					broadcast: {
+						enabled: false,
+						destinations: [],
+						layout: MeetRecordingLayout.GRID,
+						encoding: MeetRecordingEncodingPreset.H264_720P_30
+					},
 					captions: { enabled: true },
 					raiseHand: { enabled: true },
 					reactions: { enabled: true }
@@ -207,7 +227,12 @@ describe('E2EE Room Configuration Tests', () => {
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: true },
-				broadcast: { enabled: false, destinations: [], layout: MeetRecordingLayout.GRID },
+				broadcast: {
+					enabled: false,
+					destinations: [],
+					layout: MeetRecordingLayout.GRID,
+					encoding: MeetRecordingEncodingPreset.H264_720P_30
+				},
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
 				reactions: { enabled: true }
@@ -233,7 +258,12 @@ describe('E2EE Room Configuration Tests', () => {
 						chat: { enabled: true },
 						virtualBackground: { enabled: true },
 						e2ee: { enabled: true },
-						broadcast: { enabled: false, destinations: [], layout: MeetRecordingLayout.GRID },
+						broadcast: {
+							enabled: false,
+							destinations: [],
+							layout: MeetRecordingLayout.GRID,
+							encoding: MeetRecordingEncodingPreset.H264_720P_30
+						},
 						captions: { enabled: true },
 						raiseHand: { enabled: true },
 						reactions: { enabled: true }
@@ -253,7 +283,12 @@ describe('E2EE Room Configuration Tests', () => {
 						chat: { enabled: true },
 						virtualBackground: { enabled: true },
 						e2ee: { enabled: false },
-						broadcast: { enabled: false, destinations: [], layout: MeetRecordingLayout.GRID },
+						broadcast: {
+							enabled: false,
+							destinations: [],
+							layout: MeetRecordingLayout.GRID,
+							encoding: MeetRecordingEncodingPreset.H264_720P_30
+						},
 						captions: { enabled: true },
 						raiseHand: { enabled: true },
 						reactions: { enabled: true }

@@ -5,6 +5,7 @@ required:
     - roomName
     - status
     - layout
+    - encoding
     - destinations
 properties:
     broadcastId:
@@ -32,6 +33,12 @@ properties:
         enum: ['grid', 'speaker', 'single-speaker']
         example: 'grid'
         description: The layout of the meeting as it is streamed, taken from the room's config when the broadcast started.
+    encoding:
+        oneOf:
+            - $ref: '../../rooms/schemas/meet-room-config.yaml#/MeetRecordingEncodingPreset'
+            - $ref: '../../rooms/schemas/meet-room-config.yaml#/MeetRecordingEncodingOptions'
+        example: 'H264_720P_30'
+        description: The encoding of the stream, taken from the room's config when the broadcast started.
     destinations:
         type: array
         description: >

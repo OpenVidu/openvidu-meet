@@ -6,6 +6,7 @@ import {
 	MeetBroadcastDestinationSource,
 	MeetBroadcastDestinationStatus,
 	MeetBroadcastStatus,
+	MeetRecordingEncodingPreset,
 	MeetRecordingLayout
 } from '@openvidu-meet/typings';
 import type { EgressInfo } from 'livekit-server-sdk';
@@ -61,6 +62,7 @@ const record = (
 	roomName: 'Room',
 	status: MeetBroadcastStatus.STARTING,
 	layout: MeetRecordingLayout.GRID,
+	encoding: MeetRecordingEncodingPreset.H264_720P_30,
 	destinations,
 	...overrides
 });

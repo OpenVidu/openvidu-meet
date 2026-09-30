@@ -10,7 +10,8 @@ import {
 import { z } from 'zod';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import { invalidRegexPatternReason } from '../../utils/string-match-filter.utils.js';
-import { encodingValidator, nonEmptySanitizedRoomId } from './room.schema.js';
+import { encodingValidator } from './recording-encoding.schema.js';
+import { nonEmptySanitizedRoomId } from './room.schema.js';
 
 /**
  * Shared fields validation schema for Recording entity

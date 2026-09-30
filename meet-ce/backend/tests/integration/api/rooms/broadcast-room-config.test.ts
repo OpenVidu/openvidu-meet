@@ -1,6 +1,10 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import type { MeetBroadcastDestination, MeetRoom, MeetRoomOptions } from '@openvidu-meet/typings';
-import { MEET_BROADCAST_REDACTED_STREAM_KEY, MeetRecordingLayout } from '@openvidu-meet/typings';
+import {
+	MEET_BROADCAST_REDACTED_STREAM_KEY,
+	MeetRecordingEncodingPreset,
+	MeetRecordingLayout
+} from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
 import { container } from '../../../../src/config/dependency-injector.config.js';
@@ -62,7 +66,8 @@ describe('Broadcast Room Configuration Tests', () => {
 			expect(room.config.broadcast).toEqual({
 				enabled: false,
 				destinations: [],
-				layout: MeetRecordingLayout.GRID
+				layout: MeetRecordingLayout.GRID,
+				encoding: MeetRecordingEncodingPreset.H264_720P_30
 			});
 			expect(await storedUrls(room.roomId)).toEqual({});
 		});

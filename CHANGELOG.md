@@ -39,8 +39,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   [`broadcastStarted`][3.10-broadcast-started], [`broadcastUpdated`][3.10-broadcast-updated] and
   [`broadcastEnded`][3.10-broadcast-ended] report the same, and the [meeting info][3.10-meetings] carries
   `broadcastActive`.
-- Rooms save the destinations a broadcast streams to by default, and the layout it streams in, in
-  [`config.broadcast`][3.10-room-config].
+- Rooms save the destinations a broadcast streams to by default, and the layout and encoding it streams
+  with, in [`config.broadcast`][3.10-room-config].
   Every response replaces the stream key of a destination URL with `********`, and a redacted URL sent back
   keeps the saved key.
 

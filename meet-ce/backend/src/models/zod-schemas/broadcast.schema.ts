@@ -7,6 +7,7 @@ import type {
 } from '@openvidu-meet/typings';
 import { MEET_BROADCAST_MAX_DESTINATIONS, MeetRecordingLayout } from '@openvidu-meet/typings';
 import { z } from 'zod';
+import { encodingValidator } from './recording-encoding.schema.js';
 
 const DESTINATION_NAME_MAX_LENGTH = 50;
 const DESTINATION_URL_MAX_LENGTH = 2048;
@@ -38,7 +39,8 @@ export const BroadcastConfigSchema: z.ZodType<MeetBroadcastConfig> = z
 	.object({
 		enabled: z.boolean(),
 		destinations: destinationListSchema(BroadcastDestinationSchema),
-		layout: z.enum(MeetRecordingLayout).optional()
+		layout: z.enum(MeetRecordingLayout).optional(),
+		encoding: encodingValidator.optional()
 	})
 	.refine((config) => !config.enabled || config.destinations.length > 0, {
 		message: 'At least one destination is required while broadcast is enabled',

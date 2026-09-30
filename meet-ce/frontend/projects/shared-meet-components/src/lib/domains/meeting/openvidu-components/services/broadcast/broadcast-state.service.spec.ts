@@ -6,6 +6,7 @@ import {
 	MeetBroadcastDestinationStatus,
 	MeetBroadcastInfo,
 	MeetBroadcastStatus,
+	MeetRecordingEncodingPreset,
 	MeetRecordingLayout
 } from '@openvidu-meet/typings';
 import { BroadcastStateService } from './broadcast-state.service';
@@ -26,6 +27,7 @@ describe('BroadcastStateService', () => {
 		roomName: 'Room 1',
 		status: MeetBroadcastStatus.ACTIVE,
 		layout: MeetRecordingLayout.GRID,
+		encoding: MeetRecordingEncodingPreset.H264_720P_30,
 		destinations: [],
 		...overrides
 	});

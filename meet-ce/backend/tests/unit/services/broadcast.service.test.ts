@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it } from '@jest/globals';
-import { EgressStatus, StreamInfo_Status } from '@livekit/protocol';
+import { EgressStatus, EncodingOptionsPreset, StreamInfo_Status } from '@livekit/protocol';
 import type { MeetBroadcastInfo, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import {
 	MEET_PERMISSION_KEYS,
 	MeetBroadcastDestinationSource,
 	MeetBroadcastDestinationStatus,
 	MeetBroadcastStatus,
+	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
 	MeetWebhookEventType
 } from '@openvidu-meet/typings';
@@ -48,6 +49,7 @@ const runningRecord = (): BroadcastRecord => ({
 	roomName: 'Room',
 	status: MeetBroadcastStatus.ACTIVE,
 	layout: MeetRecordingLayout.GRID,
+	encoding: MeetRecordingEncodingPreset.H264_720P_30,
 	startDate: 1000,
 	destinations: [
 		{ id: 'a', name: 'A', url: REAL_URLS.a, source: MeetBroadcastDestinationSource.ROOM, status: 'active' },
@@ -58,7 +60,7 @@ const runningRecord = (): BroadcastRecord => ({
 class FakeLiveKitService {
 	participants = true;
 	egressList: EgressInfo[] = [];
-	startCalls: { roomName: string; urls: string[]; layout?: string }[] = [];
+	startCalls: { roomName: string; urls: string[]; layout?: string; encodingOptions?: unknown }[] = [];
 	stopCalls: string[] = [];
 	stopFails = false;
 	alreadyEnded = false;
@@ -76,7 +78,12 @@ class FakeLiveKitService {
 		output: StreamOutput,
 		options: RoomCompositeOptions
 	): Promise<EgressInfo> {
-		this.startCalls.push({ roomName, urls: output.urls, layout: options.layout });
+		this.startCalls.push({
+			roomName,
+			urls: output.urls,
+			layout: options.layout,
+			encodingOptions: options.encodingOptions
+		});
 		return this.nextEgress;
 	}
 
@@ -137,6 +144,7 @@ class FakeBroadcastStateService {
 class FakeRoomService {
 	enabled = true;
 	layout = MeetRecordingLayout.SPEAKER;
+	encoding = MeetRecordingEncodingPreset.H264_1080P_30;
 	permissions = allPermissions();
 
 	async getMeetRoom() {
@@ -146,6 +154,7 @@ class FakeRoomService {
 				broadcast: {
 					enabled: this.enabled,
 					layout: this.layout,
+					encoding: this.encoding,
 					destinations: [
 						{ id: 'a', name: 'A', url: REDACTED },
 						{ id: 'b', name: 'B', url: REDACTED }
@@ -230,9 +239,15 @@ describe('BroadcastService', () => {
 			const info = await service.startBroadcast(ROOM_ID, { destinations: [{ id: 'a' }] });
 
 			expect(livekit.startCalls).toEqual([
-				{ roomName: ROOM_ID, urls: [REAL_URLS.a], layout: MeetRecordingLayout.SPEAKER }
+				{
+					roomName: ROOM_ID,
+					urls: [REAL_URLS.a],
+					layout: MeetRecordingLayout.SPEAKER,
+					encodingOptions: EncodingOptionsPreset.H264_1080P_30
+				}
 			]);
 			expect(info.layout).toBe(MeetRecordingLayout.SPEAKER);
+			expect(info.encoding).toBe(MeetRecordingEncodingPreset.H264_1080P_30);
 			expect(info.destinations.map(({ id, status, url }) => `${id}:${status}:${url}`)).toEqual([
 				`a:connecting:${REDACTED}`,
 				`b:stopped:${REDACTED}`

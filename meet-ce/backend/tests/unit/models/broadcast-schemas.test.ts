@@ -25,6 +25,15 @@ describe('BroadcastConfigSchema', () => {
 		);
 	});
 
+	it('accepts the recording encodings, as a preset or as options', () => {
+		expect(
+			BroadcastConfigSchema.safeParse({ enabled: false, destinations: [], encoding: 'H264_1080P_30' }).success
+		).toBe(true);
+		expect(BroadcastConfigSchema.safeParse({ enabled: false, destinations: [], encoding: 'H264_8K' }).success).toBe(
+			false
+		);
+	});
+
 	it('accepts rtmp and rtmps destinations, with or without a saved id, and trims the name', () => {
 		const result = BroadcastConfigSchema.safeParse({
 			enabled: true,
