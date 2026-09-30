@@ -15,14 +15,13 @@ import {
 	MeetingConfigFormGroup,
 	MeetingConfigFormValue
 } from '../../../../models/wizard-forms.model';
-import { WizardStepId } from '../../../../models/wizard.model';
-import { E2EEExclusiveFeature } from '../../../../services/wizard-state.service';
+import { E2EEExclusiveFeature, WizardStepId } from '../../../../models/wizard.model';
+import { RoomWizardStateService } from '../../../../services';
 
 const E2EE_EXCLUSIVE_FEATURES: { feature: E2EEExclusiveFeature; stepId: WizardStepId; control: string }[] = [
 	{ feature: 'recording', stepId: WizardStepId.RECORDING, control: 'recordingEnabled' },
 	{ feature: 'broadcast', stepId: WizardStepId.BROADCAST, control: 'broadcastEnabled' }
 ];
-import { RoomWizardStateService } from '../../../../services';
 
 @Component({
 	selector: 'ov-meeting-config',

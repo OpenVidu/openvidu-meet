@@ -18,7 +18,11 @@ import { take } from 'rxjs';
 import { AuthService } from '../../../../../auth/services/auth.service';
 import { MemberFormDialogComponent } from '../../../../../room-members/components/member-form-dialog/member-form-dialog.component';
 import { MemberFormDialogData } from '../../../../../room-members/models/member-form.model';
-import { PERMISSION_GROUPS, PermissionItem } from '../../../../../room-members/models/permissions.model';
+import {
+	DEPENDENT_PERMISSIONS,
+	PERMISSION_GROUPS,
+	PermissionItem
+} from '../../../../../room-members/models/permissions.model';
 import { RoomMemberUiUtils } from '../../../../../room-members/utils/ui';
 import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
 import {
@@ -53,12 +57,6 @@ const FEATURE_DEPENDENT_PERMISSIONS: {
 		isEnabled: (config) => config?.broadcast?.enabled ?? false
 	}
 ];
-
-// A permission that depends on another (see PermissionItem.dependsOn), by role form.
-const DEPENDENT_PERMISSIONS = PERMISSION_GROUPS.flatMap((group) => group.permissions).filter(
-	(permission): permission is PermissionItem & { dependsOn: keyof MeetRoomMemberPermissions } =>
-		permission.dependsOn !== undefined
-);
 
 @Component({
 	selector: 'ov-room-access',

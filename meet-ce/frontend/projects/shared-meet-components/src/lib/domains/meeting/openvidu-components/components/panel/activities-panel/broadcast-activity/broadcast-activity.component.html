@@ -54,10 +54,10 @@
 					<div class="broadcast-note-body">
 						<span class="broadcast-note-title">{{ 'PANEL.BROADCAST.IN_PROGRESS_TITLE' | translate }}</span>
 						<span class="broadcast-note-message">{{
-							(liveCount() === 1
+							(streamingCount() === 1
 								? 'PANEL.BROADCAST.IN_PROGRESS_MESSAGE_ONE'
 								: 'PANEL.BROADCAST.IN_PROGRESS_MESSAGE'
-							) | translate: { count: liveCount() }
+							) | translate: { count: streamingCount() }
 						}}</span>
 					</div>
 				</div>
@@ -67,10 +67,10 @@
 				<div class="broadcast-note single-line">
 					<mat-icon class="broadcast-note-icon">hourglass_top</mat-icon>
 					<span class="broadcast-note-message">{{
-						(liveCount() === 1
+						(streamingCount() === 1
 							? 'PANEL.BROADCAST.STARTING_MESSAGE_ONE'
 							: 'PANEL.BROADCAST.STARTING_MESSAGE'
-						) | translate: { count: liveCount() }
+						) | translate: { count: streamingCount() }
 					}}</span>
 				</div>
 			}
@@ -106,12 +106,12 @@
 					}}</span>
 					<span class="caption-detail">{{
 						'PANEL.BROADCAST.SELECTED_COUNT'
-							| translate: { selected: selectedCount(), total: planned().length }
+							| translate: { selected: selectedCount(), total: plannedDestinations().length }
 					}}</span>
 				</div>
 
 				<div class="destination-list" role="group" aria-labelledby="broadcast-planned-caption">
-					@for (destination of planned(); track destination.id) {
+					@for (destination of plannedDestinations(); track destination.id) {
 						@if (editor() !== null && editor() !== 'new' && $any(editor()).id === destination.id) {
 							<ng-container *ngTemplateOutlet="destinationEditor" />
 						} @else {
@@ -119,7 +119,7 @@
 								<mat-checkbox
 									class="destination-pick"
 									[checked]="destination.selected"
-									[disabled]="destination.source === 'meeting'"
+									[disabled]="destination.source === destinationSource.MEETING"
 									(change)="toggleSelected(destination.id, $event.checked)"
 								>
 									<span class="destination-pick-body">
@@ -127,7 +127,7 @@
 										<span class="destination-text">
 											<span class="destination-name">
 												{{ destination.name }}
-												@if (destination.source === 'meeting') {
+												@if (destination.source === destinationSource.MEETING) {
 													<span class="pill">{{
 														'PANEL.BROADCAST.THIS_MEETING' | translate
 													}}</span>
@@ -144,13 +144,13 @@
 										</span>
 									</span>
 								</mat-checkbox>
-								@if (destination.source === 'meeting') {
+								@if (destination.source === destinationSource.MEETING) {
 									<button
 										mat-icon-button
 										type="button"
 										class="destination-action"
 										[matTooltip]="'PANEL.BROADCAST.REMOVE' | translate"
-										(click)="removeExtra(destination.id)"
+										(click)="removeMeetingDestination(destination.id)"
 									>
 										<mat-icon>delete</mat-icon>
 									</button>
@@ -188,7 +188,7 @@
 					}
 					<span class="caption-detail">{{
 						'PANEL.BROADCAST.DESTINATIONS_COUNT'
-							| translate: { count: planned().length, max: maxDestinations }
+							| translate: { count: plannedDestinations().length, max: maxDestinations }
 					}}</span>
 				</div>
 
@@ -211,7 +211,7 @@
 					}}</span>
 					@if (phase() === 'live') {
 						<span class="caption-detail">
-							{{ 'PANEL.BROADCAST.LIVE_COUNT' | translate: { count: liveCount() } }}
+							{{ 'PANEL.BROADCAST.LIVE_COUNT' | translate: { count: streamingCount() } }}
 							<span class="status-separator" aria-hidden="true">&middot;</span>
 							<mat-icon class="cost-note-icon inline" aria-hidden="true">network_check</mat-icon>
 							{{ 'PANEL.BROADCAST.UPLOAD_ESTIMATE' | translate: { mbps: liveMbps() } }}
@@ -220,7 +220,7 @@
 				</div>
 
 				<div class="destination-list" role="list" aria-labelledby="broadcast-live-caption">
-					@for (destination of liveDestinations(); track destination.id) {
+					@for (destination of broadcastDestinations(); track destination.id) {
 						<div
 							class="destination-row"
 							role="listitem"
@@ -234,7 +234,7 @@
 									[class.muted]="destination.status === destinationStatus.STOPPED"
 								>
 									{{ destination.name }}
-									@if (destination.source === 'meeting') {
+									@if (destination.source === destinationSource.MEETING) {
 										<span class="pill">{{ 'PANEL.BROADCAST.THIS_MEETING' | translate }}</span>
 									} @else if (destination.edited) {
 										<span class="pill">{{ 'PANEL.BROADCAST.EDITED' | translate }}</span>
@@ -265,7 +265,7 @@
 										[attr.aria-label]="
 											'PANEL.BROADCAST.STOP_DESTINATION' | translate: { name: destination.name }
 										"
-										(click)="setDestinationActive(destination, false)"
+										(click)="stopDestination(destination)"
 									>
 										<mat-icon>stop_circle</mat-icon>
 									</button>
@@ -274,7 +274,7 @@
 										mat-button
 										type="button"
 										class="destination-text-action"
-										(click)="setDestinationActive(destination, true)"
+										(click)="startDestination(destination)"
 									>
 										<mat-icon>{{
 											destination.status === destinationStatus.FAILED ? 'refresh' : 'play_arrow'
@@ -311,7 +311,7 @@
 						}
 						<span class="caption-detail">{{
 							'PANEL.BROADCAST.DESTINATIONS_COUNT'
-								| translate: { count: liveDestinations().length, max: maxDestinations }
+								| translate: { count: broadcastDestinations().length, max: maxDestinations }
 						}}</span>
 					</div>
 				}
@@ -379,7 +379,7 @@
 				{{
 					editor() === 'new'
 						? ('PANEL.BROADCAST.NEW_DESTINATION' | translate)
-						: ('PANEL.BROADCAST.EDIT_DESTINATION' | translate: { name: editingName() })
+						: ('PANEL.BROADCAST.EDIT_DESTINATION' | translate: { name: editedDestinationName() })
 				}}
 			</span>
 		</div>
@@ -418,7 +418,7 @@
 			}
 			{{
 				(editor() === 'new' ? 'PANEL.BROADCAST.URL_HINT' : 'PANEL.BROADCAST.EDIT_HINT')
-					| translate: { name: editingName() }
+					| translate: { name: editedDestinationName() }
 			}}
 		</p>
 		<div class="destination-editor-actions">

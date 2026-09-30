@@ -22,7 +22,7 @@ import { fromEvent } from 'rxjs';
 import { FallbackLogoDirective } from '../../directives/api/internals.directive';
 import { ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../directives/template/internals.directive';
 import { ChatMessage } from '../../models/chat.model';
-import { PanelType } from '../../models/panel.model';
+import { PanelActivitiesOptions, PanelType } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantLeftReason } from '../../models/participant.model';
 import {
 	RecordingStartRequestedEvent,
@@ -475,7 +475,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 */
 	openRecordingActivityPanel() {
 		if (this.showActivitiesPanelButton() && !this.isActivitiesOpened()) {
-			this.panelService.togglePanel(PanelType.ACTIVITIES, 'recording');
+			this.panelService.togglePanel(PanelType.ACTIVITIES, PanelActivitiesOptions.RECORDING);
 		}
 	}
 

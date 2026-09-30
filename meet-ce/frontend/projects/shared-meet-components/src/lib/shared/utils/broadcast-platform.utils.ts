@@ -1,19 +1,6 @@
 import type { ValidatorFn } from '@angular/forms';
 import { isRedactedStreamUrl } from '@openvidu-meet/typings';
-
-/** A streaming platform Meet shows its own icon for, told apart by the host of the RTMP URL. */
-export type BroadcastPlatform = 'youtube' | 'facebook' | 'instagram' | 'x' | 'vimeo' | 'twitch' | 'kick' | 'other';
-
-export const BROADCAST_PLATFORM_LABELS: Record<BroadcastPlatform, string> = {
-	youtube: 'YouTube',
-	facebook: 'Facebook',
-	instagram: 'Instagram',
-	x: 'X',
-	vimeo: 'Vimeo',
-	twitch: 'Twitch',
-	kick: 'Kick',
-	other: 'RTMP server'
-};
+import type { BroadcastPlatform } from '../models/broadcast.model';
 
 const isHostOf = (host: string, domain: string): boolean => host === domain || host.endsWith(`.${domain}`);
 

@@ -4,7 +4,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { BroadcastRequestedEvent } from '../../../models/broadcast.model';
-import { PanelType } from '../../../models/panel.model';
+import { PanelActivitiesOptions, PanelType } from '../../../models/panel.model';
 import { RecordingStartRequestedEvent, RecordingStopRequestedEvent } from '../../../models/recording.model';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { MeetingUiConfigService } from '../../../services/config/meeting-ui-config.service';
@@ -65,6 +65,10 @@ export class ActivitiesPanelComponent {
 	 * @internal
 	 */
 	readonly expandedPanel = signal('');
+	/**
+	 * @internal
+	 */
+	readonly activitiesOptions = PanelActivitiesOptions;
 	/**
 	 * @internal
 	 */

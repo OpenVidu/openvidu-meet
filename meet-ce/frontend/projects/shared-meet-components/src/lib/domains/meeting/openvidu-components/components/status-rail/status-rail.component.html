@@ -18,7 +18,7 @@
 					id="recording-tag"
 					class="status-chip recording-chip"
 					[class.clickable]="canOpenActivitiesPanel()"
-					(click)="openRecordingActivityPanel()"
+					(click)="openActivitiesPanel(activitiesOptions.RECORDING)"
 				>
 					<span class="recording-dot"></span>
 					<span class="status-chip-value">REC</span>
@@ -35,7 +35,7 @@
 					id="broadcast-tag"
 					class="status-chip broadcast-chip"
 					[class.clickable]="canOpenActivitiesPanel()"
-					(click)="openBroadcastActivityPanel()"
+					(click)="openActivitiesPanel(activitiesOptions.BROADCAST)"
 				>
 					<mat-icon class="status-chip-icon broadcast-icon">sensors</mat-icon>
 					<span class="status-chip-value">LIVE</span>

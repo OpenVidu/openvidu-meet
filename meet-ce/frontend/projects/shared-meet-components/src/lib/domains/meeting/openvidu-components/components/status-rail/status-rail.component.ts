@@ -4,7 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetingContextService } from '../../../services/meeting-context.service';
 import { MeetingReactionsService } from '../../../services/meeting-reactions.service';
-import { PanelType } from '../../models/panel.model';
+import { PanelActivitiesOptions, PanelType } from '../../models/panel.model';
 import { REACTION_EMOJI } from '../../models/reaction.model';
 import { RecordingState } from '../../models/recording.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
@@ -121,6 +121,7 @@ export class StatusRailComponent implements OnDestroy {
 	protected readonly reactionEmoji = REACTION_EMOJI;
 
 	protected readonly canOpenActivitiesPanel = this.uiConfig.activitiesPanelButtonSignal;
+	protected readonly activitiesOptions = PanelActivitiesOptions;
 
 	protected readonly canOpenParticipantsPanel = this.uiConfig.participantsPanelButtonSignal;
 
@@ -159,16 +160,10 @@ export class StatusRailComponent implements OnDestroy {
 		this.panelService.togglePanel(PanelType.PARTICIPANTS);
 	}
 
-	protected openRecordingActivityPanel(): void {
+	protected openActivitiesPanel(activity: PanelActivitiesOptions): void {
 		if (!this.canOpenActivitiesPanel() || this.panelService.isActivitiesPanelOpened()) return;
 
-		this.panelService.togglePanel(PanelType.ACTIVITIES, 'recording');
-	}
-
-	protected openBroadcastActivityPanel(): void {
-		if (!this.canOpenActivitiesPanel() || this.panelService.isActivitiesPanelOpened()) return;
-
-		this.panelService.togglePanel(PanelType.ACTIVITIES, 'broadcast');
+		this.panelService.togglePanel(PanelType.ACTIVITIES, activity);
 	}
 
 	private measureRows(): void {

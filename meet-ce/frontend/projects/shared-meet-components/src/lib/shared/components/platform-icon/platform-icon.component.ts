@@ -1,6 +1,6 @@
 import { Component, computed, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { BROADCAST_PLATFORM_LABELS, BroadcastPlatform } from '../../utils/broadcast-platform.utils';
+import { BROADCAST_PLATFORM_LABELS, BroadcastPlatform } from '../../models/broadcast.model';
 
 // Each platform's official logo, taken unmodified from its brand kit, and the tile it sits on.
 const INSTAGRAM_GLYPH =

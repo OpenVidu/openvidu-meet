@@ -7,7 +7,6 @@ import {
 	handRaiseDateOf,
 	LeftEventReason,
 	MeetBroadcastInfo,
-	MeetBroadcastStatus,
 	MeetBroadcastUpdatedPayload,
 	MeetEventOrigin,
 	MeetParticipantAttribute,
@@ -46,6 +45,8 @@ import type {
 	Room
 } from '../openvidu-components';
 import {
+	BROADCAST_REQUEST_STATUS_BY_ACTION,
+	isBroadcastInProgress,
 	BroadcastStateService,
 	LocalMediaService,
 	ScreenShareService,
@@ -602,9 +603,7 @@ export class MeetingEventHandlerService {
 	 * in flight and what was refused. The server's own answer arrives as a broadcast signal.
 	 */
 	onBroadcastRequested = async (event: BroadcastRequestedEvent): Promise<void> => {
-		this.broadcastState.setRequest(
-			event.action === 'start' ? 'starting' : event.action === 'stop' ? 'stopping' : 'updating'
-		);
+		this.broadcastState.setRequest(BROADCAST_REQUEST_STATUS_BY_ACTION[event.action]);
 
 		try {
 			await this.runBroadcastRequest(event);
@@ -798,13 +797,8 @@ export class MeetingEventHandlerService {
 		}
 
 		const { broadcast } = event;
-		const inProgress = [
-			MeetBroadcastStatus.STARTING,
-			MeetBroadcastStatus.ACTIVE,
-			MeetBroadcastStatus.ENDING
-		].includes(broadcast.status);
 
-		if (!inProgress) {
+		if (!isBroadcastInProgress(broadcast.status)) {
 			this.knownBroadcastId = undefined;
 			this.eventBus.emit({ event: EmbeddedEventName.BROADCAST_ENDED, payload: broadcast });
 			return;

@@ -1,10 +1,13 @@
 import { computed, Service, signal } from '@angular/core';
-import { MeetBroadcastDestinationStatus, MeetBroadcastInfo, MeetBroadcastStatus } from '@openvidu-meet/typings';
-import { BroadcastRequestState, BroadcastRequestStatus } from '../../models/broadcast.model';
+import { MeetBroadcastInfo, MeetBroadcastStatus } from '@openvidu-meet/typings';
+import {
+	BroadcastRequestState,
+	BroadcastRequestStatus,
+	isBroadcastInProgress,
+	isDestinationStreaming
+} from '../../models/broadcast.model';
 
-const IN_PROGRESS = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE, MeetBroadcastStatus.ENDING];
-const STREAMING = [MeetBroadcastDestinationStatus.CONNECTING, MeetBroadcastDestinationStatus.ACTIVE];
-const NO_ELAPSED = () => new Date(0, 0, 0, 0, 0, 0);
+const zeroElapsed = () => new Date(0, 0, 0, 0, 0, 0);
 
 /**
  * The live broadcast of the meeting as the server last reported it, plus what the local
@@ -17,7 +20,7 @@ export class BroadcastStateService {
 
 	private readonly _broadcast = signal<MeetBroadcastInfo | undefined>(undefined);
 	private readonly _request = signal<BroadcastRequestState>({ status: 'idle' });
-	private readonly _elapsed = signal(NO_ELAPSED());
+	private readonly _elapsed = signal(zeroElapsed());
 
 	/** The broadcast, while it runs or right after it failed; `undefined` once it ended normally. */
 	readonly broadcast = this._broadcast.asReadonly();
@@ -41,13 +44,13 @@ export class BroadcastStateService {
 		return status === MeetBroadcastStatus.FAILED || status === MeetBroadcastStatus.LIMIT_REACHED;
 	});
 	readonly streamingDestinationCount = computed(
-		() => this._broadcast()?.destinations.filter(({ status }) => STREAMING.includes(status)).length ?? 0
+		() => this._broadcast()?.destinations.filter(isDestinationStreaming).length ?? 0
 	);
 
 	/** Takes what the server reports; it answers whatever request was pending. */
 	setBroadcast(broadcast: MeetBroadcastInfo): void {
-		const keeps = IN_PROGRESS.includes(broadcast.status) || broadcast.status === MeetBroadcastStatus.FAILED;
-		this._broadcast.set(keeps ? broadcast : undefined);
+		const shouldKeep = isBroadcastInProgress(broadcast.status) || broadcast.status === MeetBroadcastStatus.FAILED;
+		this._broadcast.set(shouldKeep ? broadcast : undefined);
 		this._request.set({ status: 'idle' });
 		this.trackElapsed(broadcast.status === MeetBroadcastStatus.ACTIVE ? broadcast.startDate : undefined);
 	}
@@ -76,12 +79,12 @@ export class BroadcastStateService {
 		this.timer = undefined;
 
 		if (startDate === undefined) {
-			this._elapsed.set(NO_ELAPSED());
+			this._elapsed.set(zeroElapsed());
 			return;
 		}
 
 		const update = () => {
-			const elapsed = NO_ELAPSED();
+			const elapsed = zeroElapsed();
 			elapsed.setSeconds(Math.max(0, Math.floor((Date.now() - startDate) / 1000)));
 			this._elapsed.set(elapsed);
 		};
