@@ -3,9 +3,11 @@ import type {
 	MeetBroadcastDestinationOptions,
 	MeetBroadcastDestinationUpdateOptions,
 	MeetBroadcastInfo,
-	MeetBroadcastStartOptions
+	MeetBroadcastStartOptions,
+	MeetRoomMemberPermissions
 } from '@openvidu-meet/typings';
 import {
+	MeetBroadcastDestinationSource,
 	MeetBroadcastDestinationStatus,
 	MeetBroadcastStatus,
 	MeetRecordingEncodingPreset,
@@ -31,7 +33,8 @@ import {
 	errorBroadcastNotActive,
 	errorBroadcastNotFound,
 	errorBroadcastRoomHasNoParticipants,
-	errorBroadcastUpdateInProgress
+	errorBroadcastUpdateInProgress,
+	errorInsufficientPermissions
 } from '../models/error.model.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { BroadcastStateService } from './broadcast-state.service.js';
@@ -43,7 +46,6 @@ import { RoomService } from './room.service.js';
 import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 
 const ENCODING_OPTIONS = EncodingConverter.toLivekit(MeetRecordingEncodingPreset.H264_720P_30);
-const RUNNING_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE];
 const LOCK_RETRY_DELAY_MS = 250;
 const EGRESS_LOST_ERROR = 'The egress service stopped responding';
 
@@ -72,8 +74,10 @@ export class BroadcastService {
 	 * own status from then on.
 	 */
 	async startBroadcast(roomId: string, options: MeetBroadcastStartOptions): Promise<MeetBroadcastInfo> {
-		return this.withBroadcastLock(roomId, async () => {
-			await this.rejectIfBroadcastInProgress(roomId);
+		return this.withRequestLock(roomId, async () => {
+			await this.dropStaleBroadcast(roomId);
+
+			if (await this.broadcastState.find(roomId)) throw errorBroadcastAlreadyStarted(roomId);
 
 			const { roomName, config } = await this.roomService.getMeetRoom(roomId, ['roomName', 'config']);
 
@@ -90,9 +94,9 @@ export class BroadcastService {
 			const destinations = BroadcastHelper.resolveStartDestinations(
 				config.broadcast.destinations,
 				destinationUrls,
-				options.destinations,
-				permissions
+				options.destinations
 			);
+			this.assertDestinationPermissions(destinations, permissions);
 			const layout = config.broadcast.layout ?? MeetRecordingLayout.GRID;
 			const egress = await this.livekitService.startRoomComposite(roomId, this.toStreamOutput(destinations), {
 				layout,
@@ -111,10 +115,10 @@ export class BroadcastService {
 	 * settles the final state and clears it.
 	 */
 	async stopBroadcast(roomId: string, broadcastId: string): Promise<MeetBroadcastInfo> {
-		return this.withBroadcastLock(roomId, async () => {
+		return this.withRequestLock(roomId, async () => {
 			const record = await this.getRecord(roomId, broadcastId);
 
-			if (!RUNNING_STATUSES.includes(record.status)) throw errorBroadcastAlreadyStopped(broadcastId);
+			if (!BroadcastHelper.isRunning(record.status)) throw errorBroadcastAlreadyStopped(broadcastId);
 
 			const egress = await this.livekitService.stopEgressIfRunning(broadcastId);
 
@@ -155,7 +159,7 @@ export class BroadcastService {
 		broadcastId: string,
 		options: MeetBroadcastDestinationOptions
 	): Promise<MeetBroadcastInfo> {
-		return this.withBroadcastLock(roomId, async () => {
+		return this.withRequestLock(roomId, async () => {
 			const record = await this.getRunningRecord(roomId, broadcastId);
 			const destinations = BroadcastHelper.addDestination(record.destinations, options);
 			const egress = await this.livekitService.updateStream(broadcastId, [options.url], []);
@@ -179,7 +183,7 @@ export class BroadcastService {
 		destinationId: string,
 		{ active }: MeetBroadcastDestinationUpdateOptions
 	): Promise<MeetBroadcastInfo> {
-		return this.withBroadcastLock(roomId, async () => {
+		return this.withRequestLock(roomId, async () => {
 			const record = await this.getRunningRecord(roomId, broadcastId);
 			const destination = record.destinations.find(({ id }) => id === destinationId);
 
@@ -283,7 +287,7 @@ export class BroadcastService {
 	 * state of the egress, which nothing else would apply if it were dropped.
 	 */
 	protected async withWebhookLock(roomId: string, webhook: string, task: () => Promise<void>): Promise<void> {
-		const handled = await this.waitForBroadcastLock(roomId, INTERNAL_CONFIG.BROADCAST_LOCK_TTL, async () => {
+		const handled = await this.withBroadcastLock(roomId, INTERNAL_CONFIG.BROADCAST_LOCK_TTL, async () => {
 			await task();
 			return true;
 		});
@@ -297,15 +301,19 @@ export class BroadcastService {
 	 * Runs a request's change to a room's broadcast once no other change holds the room's
 	 * broadcast lock, answering 409 only when one holds it for longer than a request waits.
 	 */
-	protected async withBroadcastLock<T>(roomId: string, task: () => Promise<T>): Promise<T> {
-		const result = await this.waitForBroadcastLock(roomId, INTERNAL_CONFIG.BROADCAST_REQUEST_LOCK_WAIT, task);
+	protected async withRequestLock<T>(roomId: string, task: () => Promise<T>): Promise<T> {
+		const result = await this.withBroadcastLock(roomId, INTERNAL_CONFIG.BROADCAST_REQUEST_LOCK_WAIT, task);
 
 		if (result === null) throw errorBroadcastUpdateInProgress(roomId);
 
 		return result;
 	}
 
-	protected waitForBroadcastLock<T>(roomId: string, wait: StringValue, task: () => Promise<T>): Promise<T | null> {
+	/**
+	 * Runs a change to a room's broadcast once its broadcast lock is free, giving up as `null` when
+	 * the lock stays taken for longer than `wait`.
+	 */
+	protected withBroadcastLock<T>(roomId: string, wait: StringValue, task: () => Promise<T>): Promise<T | null> {
 		return this.mutexService.withRetryLock(
 			MeetLock.getBroadcastLock(roomId),
 			ms(INTERNAL_CONFIG.BROADCAST_LOCK_TTL),
@@ -316,23 +324,36 @@ export class BroadcastService {
 	}
 
 	/**
-	 * A room broadcasts one thing at a time. A saved broadcast whose egress LiveKit no longer
-	 * reports as in progress ended without its `egress_ended` reaching this server, so it is
-	 * dropped instead of blocking the room until its TTL.
+	 * Forgets a saved broadcast whose egress LiveKit no longer reports in progress: it ended without
+	 * its `egress_ended` reaching this server, and would block the room until its TTL otherwise.
 	 */
-	protected async rejectIfBroadcastInProgress(roomId: string): Promise<void> {
+	protected async dropStaleBroadcast(roomId: string): Promise<void> {
 		const record = await this.broadcastState.find(roomId);
 
-		if (!record || !BroadcastHelper.isInProgress(record.status)) return;
+		if (!record) return;
 
 		const [egress] = await this.livekitService.getEgress(roomId, record.broadcastId);
 
-		if (egress && BroadcastHelper.isInProgress(EgressHelper.toStatus(egress.status, MeetBroadcastStatus))) {
-			throw errorBroadcastAlreadyStarted(roomId);
-		}
+		if (egress && BroadcastHelper.isInProgress(EgressHelper.toStatus(egress.status, MeetBroadcastStatus))) return;
 
 		this.logger.warn(`Dropping the stale broadcast '${record.broadcastId}' of room '${roomId}'`);
 		await this.broadcastState.delete(roomId);
+	}
+
+	/**
+	 * Adding a destination for this meeting, and changing a room destination for it, each need their
+	 * own permission on top of `broadcastControl`.
+	 */
+	protected assertDestinationPermissions(
+		destinations: MeetBroadcastDestinationInfo[],
+		permissions: MeetRoomMemberPermissions
+	): void {
+		const adds = destinations.some(({ source }) => source === MeetBroadcastDestinationSource.MEETING);
+		const edits = destinations.some(({ edited }) => edited);
+
+		if ((adds && !permissions.broadcastAddDestinations) || (edits && !permissions.broadcastEditDestinations)) {
+			throw errorInsufficientPermissions();
+		}
 	}
 
 	protected async getRecord(roomId: string, broadcastId: string): Promise<BroadcastRecord> {
@@ -346,7 +367,7 @@ export class BroadcastService {
 	protected async getRunningRecord(roomId: string, broadcastId: string): Promise<BroadcastRecord> {
 		const record = await this.getRecord(roomId, broadcastId);
 
-		if (!RUNNING_STATUSES.includes(record.status)) throw errorBroadcastNotActive(broadcastId);
+		if (!BroadcastHelper.isRunning(record.status)) throw errorBroadcastNotActive(broadcastId);
 
 		return record;
 	}

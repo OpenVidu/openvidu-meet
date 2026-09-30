@@ -7,7 +7,6 @@ import type {
 	MeetBroadcastInfo,
 	MeetBroadcastStartDestination,
 	MeetRecordingLayout,
-	MeetRoomMemberPermissions,
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
 import {
@@ -19,22 +18,20 @@ import {
 } from '@openvidu-meet/typings';
 import type { EgressInfo } from 'livekit-server-sdk';
 import { uid } from 'uid';
-import type { BroadcastDestinationUrls, BroadcastRecord } from '../models/broadcast.model.js';
+import type { BroadcastDestinationUrls, BroadcastRecord, DestinationState } from '../models/broadcast.model.js';
 import {
 	errorBroadcastDestinationLimit,
 	errorBroadcastDuplicateDestination,
 	errorBroadcastNoDestinations,
 	errorBroadcastRedactedDestinationUrl,
-	errorBroadcastUnknownDestination,
-	errorInsufficientPermissions
+	errorBroadcastUnknownDestination
 } from '../models/error.model.js';
 import { EgressHelper } from './egress.helper.js';
 
 const DESTINATION_ID_LENGTH = 10;
 const IN_PROGRESS_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE, MeetBroadcastStatus.ENDING];
+const RUNNING_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE];
 const STREAMING_STATUSES = [MeetBroadcastDestinationStatus.CONNECTING, MeetBroadcastDestinationStatus.ACTIVE];
-
-type DestinationState = Pick<MeetBroadcastDestinationInfo, 'status' | 'error' | 'startDate' | 'endDate' | 'duration'>;
 
 export class BroadcastHelper {
 	private constructor() {
@@ -93,8 +90,14 @@ export class BroadcastHelper {
 		return reportedKey === '{...}' || reportedKey === `{${key.slice(0, 3)}...${key.slice(-3)}}`;
 	}
 
+	/** Whether the broadcast is still the room's current one: not over yet, if only just ending. */
 	static isInProgress(status: MeetBroadcastStatus): boolean {
 		return IN_PROGRESS_STATUSES.includes(status);
+	}
+
+	/** Whether the broadcast can still be stopped or have its destinations changed. */
+	static isRunning(status: MeetBroadcastStatus): boolean {
+		return RUNNING_STATUSES.includes(status);
 	}
 
 	static isStreaming(destination: MeetBroadcastDestinationInfo): boolean {
@@ -105,14 +108,12 @@ export class BroadcastHelper {
 	 * The destinations a broadcast starts with: every room destination, streaming to the ones the
 	 * request names (to all of them when it names none) and holding the rest as `stopped`, plus the
 	 * destinations the request adds for this meeting. Naming a room destination with a different
-	 * URL or name changes it for this meeting only. Both departures from the room's list need their
-	 * own permission on top of `broadcastControl`.
+	 * URL or name changes it for this meeting only, which marks it `edited`.
 	 */
 	static resolveStartDestinations(
 		roomDestinations: MeetBroadcastDestination[],
 		roomDestinationUrls: BroadcastDestinationUrls,
-		requested: MeetBroadcastStartDestination[] | undefined,
-		permissions: MeetRoomMemberPermissions
+		requested: MeetBroadcastStartDestination[] | undefined
 	): MeetBroadcastDestinationInfo[] {
 		const destinations: MeetBroadcastDestinationInfo[] = roomDestinations.map((destination) => ({
 			id: destination.id!,
@@ -123,25 +124,10 @@ export class BroadcastHelper {
 		}));
 
 		for (const request of requested ?? []) {
-			if (!request.id) {
-				if (!permissions.broadcastAddDestinations) throw errorInsufficientPermissions();
-
+			if (request.id) {
+				BroadcastHelper.startRoomDestination(destinations, request);
+			} else {
 				destinations.push(BroadcastHelper.toMeetingDestination({ name: request.name!, url: request.url! }));
-				continue;
-			}
-
-			const destination = destinations.find(({ id }) => id === request.id);
-
-			if (!destination) throw errorBroadcastUnknownDestination(request.id);
-
-			destination.status = MeetBroadcastDestinationStatus.CONNECTING;
-			const url = request.url ? BroadcastHelper.resolveUrl(request.url, destination.url) : destination.url;
-			const name = request.name ?? destination.name;
-
-			if (url !== destination.url || name !== destination.name) {
-				if (!permissions.broadcastEditDestinations) throw errorInsufficientPermissions();
-
-				Object.assign(destination, { url, name, edited: true });
 			}
 		}
 
@@ -311,6 +297,27 @@ export class BroadcastHelper {
 			source: MeetBroadcastDestinationSource.MEETING,
 			status: MeetBroadcastDestinationStatus.CONNECTING
 		};
+	}
+
+	/**
+	 * Streams to the room destination the request names, under the name and URL the request gives
+	 * it for this meeting.
+	 */
+	private static startRoomDestination(
+		destinations: MeetBroadcastDestinationInfo[],
+		request: MeetBroadcastStartDestination
+	): void {
+		const destination = destinations.find(({ id }) => id === request.id);
+
+		if (!destination) throw errorBroadcastUnknownDestination(request.id!);
+
+		const url = request.url ? BroadcastHelper.resolveUrl(request.url, destination.url) : destination.url;
+		const name = request.name ?? destination.name;
+		destination.status = MeetBroadcastDestinationStatus.CONNECTING;
+
+		if (url !== destination.url || name !== destination.name) {
+			Object.assign(destination, { url, name, edited: true });
+		}
 	}
 
 	/**

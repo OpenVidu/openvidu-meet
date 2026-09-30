@@ -1,9 +1,8 @@
 import { describe, expect, it } from '@jest/globals';
 import type { StreamInfo } from '@livekit/protocol';
 import { EgressStatus, StreamInfo_Status } from '@livekit/protocol';
-import type { MeetBroadcastDestinationInfo, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import type { MeetBroadcastDestinationInfo } from '@openvidu-meet/typings';
 import {
-	MEET_PERMISSION_KEYS,
 	MeetBroadcastDestinationSource,
 	MeetBroadcastDestinationStatus,
 	MeetBroadcastStatus,
@@ -17,11 +16,6 @@ import { OpenViduMeetError } from '../../../src/models/error.model.js';
 const YOUTUBE = 'rtmp://a.rtmp.youtube.com/live2/abcd-efgh-ijkl';
 const TWITCH = 'rtmps://live.twitch.tv:443/app/live_123456_XyZ?bandwidthtest=true';
 const REDACTED_YOUTUBE = 'rtmp://a.rtmp.youtube.com/live2/********';
-
-const permissions = (overrides: Partial<MeetRoomMemberPermissions> = {}): MeetRoomMemberPermissions => ({
-	...(Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true])) as unknown as MeetRoomMemberPermissions),
-	...overrides
-});
 
 const stream = (overrides: Partial<StreamInfo>): StreamInfo =>
 	({
@@ -183,7 +177,7 @@ describe('BroadcastHelper.resolveStartDestinations', () => {
 	const urls = { a: 'rtmp://mtx/live/aaaKEYaaa', b: 'rtmp://mtx/live/bbbKEYbbb' };
 
 	it('streams to every room destination when the request names none', () => {
-		const destinations = BroadcastHelper.resolveStartDestinations(room, urls, undefined, permissions());
+		const destinations = BroadcastHelper.resolveStartDestinations(room, urls, undefined);
 
 		expect(destinations).toEqual([
 			{ id: 'a', name: 'A', url: urls.a, source: 'room', status: 'connecting' },
@@ -192,18 +186,15 @@ describe('BroadcastHelper.resolveStartDestinations', () => {
 	});
 
 	it('keeps the room destinations left out as stopped, so they can be started later', () => {
-		const destinations = BroadcastHelper.resolveStartDestinations(room, urls, [{ id: 'b' }], permissions());
+		const destinations = BroadcastHelper.resolveStartDestinations(room, urls, [{ id: 'b' }]);
 
 		expect(destinations.map(({ id, status }) => `${id}:${status}`)).toEqual(['a:stopped', 'b:connecting']);
 	});
 
-	it('changes a room destination for this meeting only with the edit permission', () => {
-		const [edited] = BroadcastHelper.resolveStartDestinations(
-			room,
-			urls,
-			[{ id: 'a', name: 'Client channel', url: 'rtmp://mtx/live/clientKEY' }],
-			permissions()
-		);
+	it('changes a room destination for this meeting only, and marks it as edited', () => {
+		const [edited] = BroadcastHelper.resolveStartDestinations(room, urls, [
+			{ id: 'a', name: 'Client channel', url: 'rtmp://mtx/live/clientKEY' }
+		]);
 
 		expect(edited).toEqual({
 			id: 'a',
@@ -213,25 +204,12 @@ describe('BroadcastHelper.resolveStartDestinations', () => {
 			status: 'connecting',
 			edited: true
 		});
-		expectStatus(
-			() =>
-				BroadcastHelper.resolveStartDestinations(
-					room,
-					urls,
-					[{ id: 'a', name: 'Client channel' }],
-					permissions({ broadcastEditDestinations: false })
-				),
-			403
-		);
 	});
 
 	it('does not count a redacted URL or the saved name as an edit', () => {
-		const [unchanged] = BroadcastHelper.resolveStartDestinations(
-			room,
-			urls,
-			[{ id: 'a', name: 'A', url: 'rtmp://mtx/live/********' }],
-			permissions({ broadcastEditDestinations: false })
-		);
+		const [unchanged] = BroadcastHelper.resolveStartDestinations(room, urls, [
+			{ id: 'a', name: 'A', url: 'rtmp://mtx/live/********' }
+		]);
 
 		expect(unchanged.url).toBe(urls.a);
 		expect(unchanged.edited).toBeUndefined();
@@ -240,23 +218,18 @@ describe('BroadcastHelper.resolveStartDestinations', () => {
 	it('rejects a redacted URL that is not the one the destination was served with', () => {
 		expectStatus(
 			() =>
-				BroadcastHelper.resolveStartDestinations(
-					room,
-					urls,
-					[{ id: 'a', url: 'rtmp://other-server/live/********' }],
-					permissions()
-				),
+				BroadcastHelper.resolveStartDestinations(room, urls, [
+					{ id: 'a', url: 'rtmp://other-server/live/********' }
+				]),
 			422
 		);
 	});
 
-	it('adds a destination for this meeting with the add permission', () => {
-		const destinations = BroadcastHelper.resolveStartDestinations(
-			room,
-			urls,
-			[{ id: 'a' }, { name: 'Extra', url: 'rtmp://mtx/live/extraKEY' }],
-			permissions()
-		);
+	it('adds a destination for this meeting', () => {
+		const destinations = BroadcastHelper.resolveStartDestinations(room, urls, [
+			{ id: 'a' },
+			{ name: 'Extra', url: 'rtmp://mtx/live/extraKEY' }
+		]);
 
 		expect(destinations[2]).toEqual({
 			id: expect.any(String),
@@ -265,28 +238,19 @@ describe('BroadcastHelper.resolveStartDestinations', () => {
 			source: 'meeting',
 			status: 'connecting'
 		});
-		expectStatus(
-			() =>
-				BroadcastHelper.resolveStartDestinations(
-					room,
-					urls,
-					[{ name: 'Extra', url: 'rtmp://mtx/live/extraKEY' }],
-					permissions({ broadcastAddDestinations: false })
-				),
-			403
-		);
 	});
 
 	it('rejects an unknown room destination, a redacted URL for a new one, duplicates and the cap', () => {
-		expectStatus(() => BroadcastHelper.resolveStartDestinations(room, urls, [{ id: 'zzz' }], permissions()), 422);
+		expectStatus(() => BroadcastHelper.resolveStartDestinations(room, urls, [{ id: 'zzz' }]), 422);
 		expectStatus(
 			() =>
-				BroadcastHelper.resolveStartDestinations(
-					room,
-					urls,
-					[{ name: 'New', url: 'rtmp://mtx/live/********' }],
-					permissions()
-				),
+				BroadcastHelper.resolveStartDestinations(room, urls, [
+					{ name: 'New', url: 'rtmp://mtx/live/********' }
+				]),
+			422
+		);
+		expectStatus(
+			() => BroadcastHelper.resolveStartDestinations(room, urls, [{ name: 'Same as A', url: urls.a }]),
 			422
 		);
 		expectStatus(
@@ -294,25 +258,14 @@ describe('BroadcastHelper.resolveStartDestinations', () => {
 				BroadcastHelper.resolveStartDestinations(
 					room,
 					urls,
-					[{ name: 'Same as A', url: urls.a }],
-					permissions()
-				),
-			422
-		);
-		expectStatus(
-			() =>
-				BroadcastHelper.resolveStartDestinations(
-					room,
-					urls,
-					['c', 'd', 'e', 'f'].map((key) => ({ name: key, url: `rtmp://mtx/live/${key}` })),
-					permissions()
+					['c', 'd', 'e', 'f'].map((key) => ({ name: key, url: `rtmp://mtx/live/${key}` }))
 				),
 			422
 		);
 	});
 
 	it('needs at least one destination to stream to', () => {
-		expectStatus(() => BroadcastHelper.resolveStartDestinations([], {}, undefined, permissions()), 422);
+		expectStatus(() => BroadcastHelper.resolveStartDestinations([], {}, undefined), 422);
 	});
 });
 
