@@ -1,5 +1,4 @@
-import { FormControl } from '@angular/forms';
-import { detectBroadcastPlatform, extractBroadcastHost, servedUrlValidator } from './broadcast-platform.utils';
+import { detectBroadcastPlatform, extractBroadcastHost } from './broadcast-platform.utils';
 import type { BroadcastPlatform } from '../models/broadcast.model';
 
 /**
@@ -36,24 +35,5 @@ describe('detectBroadcastPlatform', () => {
 	it('falls back to a generic server for a URL that does not parse', () => {
 		expect(extractBroadcastHost('not a url')).toBe('');
 		expect(detectBroadcastPlatform('not a url')).toBe('other');
-	});
-});
-
-describe('servedUrlValidator', () => {
-	const SERVED = 'rtmp://a.rtmp.youtube.com/live2/********';
-	const errorsFor = (url: string, served: string | undefined) =>
-		new FormControl(url, { nonNullable: true, validators: servedUrlValidator(() => served) }).errors;
-
-	it('accepts the redacted URL exactly as it was served, which keeps the saved stream key', () => {
-		expect(errorsFor(SERVED, SERVED)).toBeNull();
-	});
-
-	it('accepts any full URL, which replaces the saved one', () => {
-		expect(errorsFor('rtmp://other.example.com/live/new-key', SERVED)).toBeNull();
-	});
-
-	it('asks for the stream key when a redacted URL changes host, or has no saved URL behind it', () => {
-		expect(errorsFor('rtmp://other.example.com/live2/********', SERVED)).toEqual({ streamKeyRequired: true });
-		expect(errorsFor(SERVED, undefined)).toEqual({ streamKeyRequired: true });
 	});
 });

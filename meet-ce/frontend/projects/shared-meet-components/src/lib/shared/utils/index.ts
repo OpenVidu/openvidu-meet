@@ -5,4 +5,5 @@ export * from './navigation-error.util';
 export * from './object.utils';
 export * from './token.utils';
 export * from './url.utils';
+export * from './broadcast-destination-editor';
 export * from './broadcast-platform.utils';
