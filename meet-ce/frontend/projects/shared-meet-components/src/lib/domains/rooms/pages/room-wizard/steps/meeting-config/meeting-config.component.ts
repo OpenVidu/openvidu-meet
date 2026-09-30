@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -15,13 +15,8 @@ import {
 	MeetingConfigFormGroup,
 	MeetingConfigFormValue
 } from '../../../../models/wizard-forms.model';
-import { E2EEExclusiveFeature, WizardStepId } from '../../../../models/wizard.model';
+import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services';
-
-const E2EE_EXCLUSIVE_FEATURES: { feature: E2EEExclusiveFeature; stepId: WizardStepId; control: string }[] = [
-	{ feature: 'recording', stepId: WizardStepId.RECORDING, control: 'recordingEnabled' },
-	{ feature: 'broadcast', stepId: WizardStepId.BROADCAST, control: 'broadcastEnabled' }
-];
 
 @Component({
 	selector: 'ov-meeting-config',
@@ -117,40 +112,8 @@ export class MeetingConfigComponent {
 	}
 
 	onE2EEToggleChange(event: MatSlideToggleChange): void {
-		const isEnabled = event.checked;
-		this.meetingForm.patchValue({
-			e2eeEnabled: isEnabled
-		});
-
-		// Encryption excludes every server-side composition of the meeting: turning it on turns
-		// recording and live broadcast off, remembering what they were so turning it off restores them.
-		for (const { feature, stepId, control } of E2EE_EXCLUSIVE_FEATURES) {
-			const step = this.wizardService.getStepById(stepId);
-
-			if (!step) continue;
-
-			const featureControl = (step.formGroup as FormGroup).get(control) as FormControl<boolean>;
-
-			if (isEnabled) {
-				if (featureControl.value) {
-					this.wizardService.rememberFeatureStateBeforeE2EE(feature, true);
-				}
-
-				this.setFeatureEnabled(feature, featureControl, false);
-				continue;
-			}
-
-			const previousState = this.wizardService.takeFeatureStateBeforeE2EE(feature);
-
-			if (previousState !== undefined) {
-				this.setFeatureEnabled(feature, featureControl, previousState);
-			}
-		}
-	}
-
-	private setFeatureEnabled(feature: E2EEExclusiveFeature, control: FormControl<boolean>, enabled: boolean): void {
-		control.patchValue(enabled, { emitEvent: true });
-		this.wizardService.updateStepData({ config: { [feature]: { enabled } } });
+		this.meetingForm.patchValue({ e2eeEnabled: event.checked });
+		this.wizardService.setE2EEEnabled(event.checked);
 	}
 
 	onChatToggleChange(event: MatSlideToggleChange): void {

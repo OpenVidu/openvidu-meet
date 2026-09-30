@@ -1,7 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AbstractControl, FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,6 +10,7 @@ import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/sl
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MEET_BROADCAST_MAX_DESTINATIONS, MeetBroadcastDestination } from '@openvidu-meet/typings';
 import { PlatformIconComponent } from '../../../../../../shared/components/platform-icon/platform-icon.component';
+import { E2eeExclusionWarningComponent } from '../../../../components/e2ee-exclusion-warning/e2ee-exclusion-warning.component';
 import { LayoutPickerComponent } from '../../../../components/layout-picker/layout-picker.component';
 import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
 import { DestinationEditor } from '../../../../../../shared/utils/broadcast-destination-editor';
@@ -35,6 +36,7 @@ const NEW_DESTINATION = -1;
 		MatSlideToggleModule,
 		MatTooltipModule,
 		PlatformIconComponent,
+		E2eeExclusionWarningComponent,
 		LayoutPickerComponent,
 		TranslatePipe
 	],
@@ -81,8 +83,7 @@ export class BroadcastConfigComponent {
 	}
 
 	get isE2EEEnabled(): boolean {
-		const meetingStep = this.wizardService.getStepById(WizardStepId.MEETING);
-		return meetingStep?.formGroup.controls.e2eeEnabled.value ?? false;
+		return this.wizardService.isE2EEEnabled();
 	}
 
 	platformOf(url: string) {
@@ -136,31 +137,7 @@ export class BroadcastConfigComponent {
 	}
 
 	onBroadcastToggleChange(event: MatSlideToggleChange): void {
-		const meetingStep = this.wizardService.getStepById(WizardStepId.MEETING);
-
-		if (!meetingStep) return;
-
-		const e2eeControl = meetingStep.formGroup.controls.e2eeEnabled;
-
-		if (event.checked) {
-			if (e2eeControl.value) {
-				this.wizardService.rememberE2EEStateBeforeFeature('broadcast', true);
-				this.setE2EEEnabled(e2eeControl, false);
-			}
-
-			return;
-		}
-
-		const previousE2EEState = this.wizardService.takeE2EEStateBeforeFeature('broadcast');
-
-		if (previousE2EEState !== undefined) {
-			this.setE2EEEnabled(e2eeControl, previousE2EEState);
-		}
-	}
-
-	private setE2EEEnabled(control: AbstractControl<boolean>, enabled: boolean): void {
-		control.patchValue(enabled, { emitEvent: true });
-		this.wizardService.updateStepData({ config: { e2ee: { enabled } } });
+		this.wizardService.setFeatureEnabled('broadcast', event.checked);
 	}
 
 	private setDestinations(destinations: MeetBroadcastDestination[]): void {

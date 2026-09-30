@@ -47,10 +47,6 @@
 		}
 	}
 
-	.e2ee-info-section {
-		@include design-tokens.ov-warning-panel;
-	}
-
 	@include design-tokens.ov-settings-rows;
 
 	.section-header .section-count {

@@ -13,19 +13,7 @@
 		<form [formGroup]="recordingForm" class="recording-form">
 			<!-- E2EE Conflict Warning -->
 			@if (isE2EEEnabled) {
-				<div class="e2ee-info-section fade-in">
-					<div class="warning-card">
-						<mat-icon class="warning-icon">warning</mat-icon>
-						<div class="warning-content">
-							<p class="warning-title">{{ 'ROOMS.WIZARD.RECORDING.RESTRICTIONS' | translate }}</p>
-							<p class="warning-text">
-								{{ 'ROOMS.WIZARD.RECORDING.E2EE_WARNING_PREFIX' | translate
-								}}<b>{{ 'ROOMS.WIZARD.RECORDING.E2EE_WARNING_BOLD' | translate }}</b
-								>{{ 'ROOMS.WIZARD.RECORDING.E2EE_WARNING_SUFFIX' | translate }}
-							</p>
-						</div>
-					</div>
-				</div>
+				<ov-e2ee-exclusion-warning keys="ROOMS.WIZARD.RECORDING" />
 			}
 
 			<div class="feature-row" id="recording-enabled">
