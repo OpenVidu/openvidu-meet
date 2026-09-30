@@ -18,9 +18,11 @@ import type { StringValue } from 'ms';
 import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { BroadcastHelper } from '../helpers/broadcast.helper.js';
+import { EgressHelper } from '../helpers/egress.helper.js';
 import { EncodingConverter } from '../helpers/encoding-converter.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import type { BroadcastRecord } from '../models/broadcast.model.js';
+import type { EgressWebhookAction } from '../models/egress.model.js';
 import {
 	errorBroadcastAlreadyStarted,
 	errorBroadcastAlreadyStopped,
@@ -39,8 +41,6 @@ import { LoggerService } from './logger.service.js';
 import { MutexService } from './mutex.service.js';
 import { RoomService } from './room.service.js';
 import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
-
-type EgressWebhookAction = 'started' | 'updated' | 'ended';
 
 const ENCODING_OPTIONS = EncodingConverter.toLivekit(MeetRecordingEncodingPreset.H264_720P_30);
 const RUNNING_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE];
@@ -327,7 +327,7 @@ export class BroadcastService {
 
 		const [egress] = await this.livekitService.getEgress(roomId, record.broadcastId);
 
-		if (egress && BroadcastHelper.isInProgress(BroadcastHelper.extractStatus(egress.status))) {
+		if (egress && BroadcastHelper.isInProgress(EgressHelper.toStatus(egress.status, MeetBroadcastStatus))) {
 			throw errorBroadcastAlreadyStarted(roomId);
 		}
 

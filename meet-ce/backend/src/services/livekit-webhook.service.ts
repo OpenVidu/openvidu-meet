@@ -6,10 +6,11 @@ import type { EgressInfo, ParticipantInfo, Room, WebhookEvent } from 'livekit-se
 import { WebhookReceiver } from 'livekit-server-sdk';
 import { container } from '../config/dependency-injector.config.js';
 import { MEET_ENV } from '../environment.js';
-import { BroadcastHelper } from '../helpers/broadcast.helper.js';
+import { EgressHelper } from '../helpers/egress.helper.js';
 import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
+import type { EgressWebhookAction } from '../models/egress.model.js';
 import { RedisKeyName } from '../models/redis.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
@@ -158,8 +159,8 @@ export class LivekitWebhookService {
 	 * Routes an egress event to the feature that owns the egress: a stream-only egress is a live
 	 * broadcast, a file-only one a recording.
 	 */
-	protected async processEgress(egressInfo: EgressInfo, webhookAction: 'started' | 'updated' | 'ended') {
-		if (BroadcastHelper.isBroadcastEgress(egressInfo)) {
+	protected async processEgress(egressInfo: EgressInfo, webhookAction: EgressWebhookAction) {
+		if (EgressHelper.isStreamEgress(egressInfo)) {
 			await this.broadcastService.handleEgressEvent(egressInfo, webhookAction);
 			return;
 		}
@@ -174,8 +175,7 @@ export class LivekitWebhookService {
 	 * @param participant - Information about the newly joined participant.
 	 */
 	async handleParticipantJoined(room: Room, participant: ParticipantInfo) {
-		// Skip if the participant is not a standard participant
-		if (!this.livekitService.isStandardParticipant(participant)) return;
+		if (!MeetParticipantHelper.isStandardParticipant(participant)) return;
 
 		// The room's recording may be configured to start by itself.
 		void this.recordingService.startAutoRecordingIfNeeded(room, participant);
@@ -435,11 +435,8 @@ export class LivekitWebhookService {
 	 * @param webhookAction - The type of webhook action to handle. Can be 'started', 'updated', or 'ended'.
 	 * @returns A promise that resolves when all processing tasks are completed.
 	 */
-	protected async processRecordingEgress(
-		egressInfo: EgressInfo,
-		webhookAction: 'started' | 'updated' | 'ended'
-	): Promise<void> {
-		if (!RecordingHelper.isRecordingEgress(egressInfo)) return;
+	protected async processRecordingEgress(egressInfo: EgressInfo, webhookAction: EgressWebhookAction): Promise<void> {
+		if (!EgressHelper.isFileEgress(egressInfo)) return;
 
 		this.logger.debug(`Processing recording_${webhookAction} webhook for egress: ${egressInfo.egressId}.`);
 

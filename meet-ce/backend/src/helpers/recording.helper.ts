@@ -1,4 +1,3 @@
-import { EgressStatus } from '@livekit/protocol';
 import { MeetRecordingLayout, MeetRecordingStatus, MEET_RECORDING_AUTO_START_PRESETS } from '@openvidu-meet/typings';
 import type {
 	MeetRecordingAutoStartMode,
@@ -11,6 +10,7 @@ import type {
 import type { EgressInfo } from 'livekit-server-sdk';
 import { container } from '../config/dependency-injector.config.js';
 import { RoomService } from '../services/room.service.js';
+import { EgressHelper } from './egress.helper.js';
 import { EncodingConverter } from './encoding-converter.helper.js';
 import { applyHttpFieldFiltering } from './field-filter.helper.js';
 
@@ -34,7 +34,7 @@ export class RecordingHelper {
 	}
 
 	static async toRecordingInfo(egressInfo: EgressInfo): Promise<MeetRecordingInfo> {
-		const status = RecordingHelper.extractOpenViduStatus(egressInfo.status);
+		const status = EgressHelper.toStatus(egressInfo.status, MeetRecordingStatus);
 		const size = RecordingHelper.extractSize(egressInfo);
 		// const outputMode = RecordingHelper.extractOutputMode(egressInfo);
 		const duration = RecordingHelper.extractDuration(egressInfo);
@@ -42,7 +42,7 @@ export class RecordingHelper {
 		const endDateMs = RecordingHelper.extractEndDate(egressInfo);
 		const filename = RecordingHelper.extractFilename(egressInfo);
 		const recordingId = RecordingHelper.extractRecordingIdFromEgress(egressInfo);
-		const { roomName: roomId, errorCode, error, details } = egressInfo;
+		const { roomName: roomId } = egressInfo;
 		const layout = RecordingHelper.extractRecordingLayout(egressInfo);
 		const encoding = RecordingHelper.extractRecordingEncoding(egressInfo);
 		const roomService = container.get(RoomService);
@@ -61,20 +61,8 @@ export class RecordingHelper {
 			endDate: endDateMs,
 			duration,
 			size,
-			errorCode: errorCode ? Number(errorCode) : undefined,
-			error: error ? String(error) : undefined,
-			details: details ? String(details) : undefined
+			...EgressHelper.extractError(egressInfo)
 		};
-	}
-
-	/**
-	 * Checks if the egress is for recording.
-	 * @param egress - The egress information.
-	 * @returns A boolean indicating if the egress is for recording.
-	 */
-	static isRecordingEgress(egress: EgressInfo): boolean {
-		const { streamResults = [], fileResults = [] } = egress;
-		return fileResults.length > 0 && streamResults.length === 0;
 	}
 
 	/**
@@ -94,27 +82,6 @@ export class RecordingHelper {
 			MeetRecordingStatus.LIMIT_REACHED
 		].includes(status);
 		return isFinished;
-	}
-
-	static extractOpenViduStatus(status: EgressStatus | undefined): MeetRecordingStatus {
-		switch (status) {
-			case EgressStatus.EGRESS_STARTING:
-				return MeetRecordingStatus.STARTING;
-			case EgressStatus.EGRESS_ACTIVE:
-				return MeetRecordingStatus.ACTIVE;
-			case EgressStatus.EGRESS_ENDING:
-				return MeetRecordingStatus.ENDING;
-			case EgressStatus.EGRESS_COMPLETE:
-				return MeetRecordingStatus.COMPLETE;
-			case EgressStatus.EGRESS_FAILED:
-				return MeetRecordingStatus.FAILED;
-			case EgressStatus.EGRESS_ABORTED:
-				return MeetRecordingStatus.ABORTED;
-			case EgressStatus.EGRESS_LIMIT_REACHED:
-				return MeetRecordingStatus.LIMIT_REACHED;
-			default:
-				return MeetRecordingStatus.FAILED;
-		}
 	}
 
 	/**
@@ -226,26 +193,17 @@ export class RecordingHelper {
 	}
 
 	/**
-	 * Extracts the duration from the given egress information.
-	 * If the duration is not available, it returns 0.
-	 * @param egressInfo The egress information containing the file results.
-	 * @returns The duration in milliseconds.
+	 * The duration of the recorded file, in seconds, once LiveKit has measured it.
 	 */
 	static extractDuration(egressInfo: EgressInfo): number | undefined {
-		const duration = this.toSeconds(Number(egressInfo.fileResults?.[0]?.duration ?? 0));
-		return duration !== 0 ? duration : undefined;
+		return EgressHelper.nsToSeconds(egressInfo.fileResults?.[0]?.duration);
 	}
 
 	/**
-	 * Extracts the endedAt value from the given EgressInfo object and converts it to milliseconds.
-	 * If the endedAt value is not provided, it defaults to 0.
-	 *
-	 * @param egressInfo - The EgressInfo object containing the endedAt value.
-	 * @returns The endedAt value converted to milliseconds.
+	 * The instant the recording ended, in milliseconds since the epoch, once it has.
 	 */
 	static extractEndDate(egressInfo: EgressInfo): number | undefined {
-		const endDateMs = this.toMilliseconds(Number(egressInfo.endedAt ?? 0));
-		return endDateMs !== 0 ? endDateMs : undefined;
+		return EgressHelper.nsToMs(egressInfo.endedAt);
 	}
 
 	/**
@@ -264,13 +222,11 @@ export class RecordingHelper {
 
 		if (startedAt === endedAt) return undefined;
 
-		const startDateMs = this.toMilliseconds(Number(startedAt ?? 0));
-		return startDateMs !== 0 ? startDateMs : undefined;
+		return EgressHelper.nsToMs(startedAt);
 	}
 
 	static extractUpdatedDate(egressInfo: EgressInfo): number | undefined {
-		const updatedAt = egressInfo.updatedAt;
-		return updatedAt ? this.toMilliseconds(Number(updatedAt)) : undefined;
+		return EgressHelper.nsToMs(egressInfo.updatedAt);
 	}
 
 	/**
@@ -283,15 +239,5 @@ export class RecordingHelper {
 	static extractSize(egressInfo: EgressInfo): number | undefined {
 		const size = Number(egressInfo.fileResults?.[0]?.size ?? 0);
 		return size !== 0 ? size : undefined;
-	}
-
-	private static toSeconds(nanoseconds: number): number {
-		const nanosecondsToSeconds = 1 / 1_000_000_000;
-		return nanoseconds * nanosecondsToSeconds;
-	}
-
-	private static toMilliseconds(nanoseconds: number): number {
-		const nanosecondsToMilliseconds = 1 / 1_000_000;
-		return nanoseconds * nanosecondsToMilliseconds;
 	}
 }

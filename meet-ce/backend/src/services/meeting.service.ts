@@ -400,7 +400,8 @@ export class MeetingService {
 	 * @returns
 	 */
 	async getStandardParticipants(roomId: string): Promise<ParticipantInfo[]> {
-		return this.livekitService.listStandardParticipants(roomId);
+		const participants = await this.livekitService.listRoomParticipants(roomId);
+		return participants.filter((participant) => MeetParticipantHelper.isStandardParticipant(participant));
 	}
 
 	/**

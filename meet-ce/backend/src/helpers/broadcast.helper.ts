@@ -1,5 +1,5 @@
 import type { StreamInfo } from '@livekit/protocol';
-import { EgressStatus, StreamInfo_Status } from '@livekit/protocol';
+import { StreamInfo_Status } from '@livekit/protocol';
 import type {
 	MeetBroadcastDestination,
 	MeetBroadcastDestinationInfo,
@@ -28,10 +28,9 @@ import {
 	errorBroadcastUnknownDestination,
 	errorInsufficientPermissions
 } from '../models/error.model.js';
+import { EgressHelper } from './egress.helper.js';
 
 const DESTINATION_ID_LENGTH = 10;
-const NS_PER_MS = 1_000_000n;
-const NS_PER_SECOND = 1_000_000_000n;
 const IN_PROGRESS_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE, MeetBroadcastStatus.ENDING];
 const STREAMING_STATUSES = [MeetBroadcastDestinationStatus.CONNECTING, MeetBroadcastDestinationStatus.ACTIVE];
 
@@ -92,30 +91,6 @@ export class BroadcastHelper {
 		const key = realUrl.slice(keyStart);
 		const reportedKey = reportedUrl.slice(keyStart);
 		return reportedKey === '{...}' || reportedKey === `{${key.slice(0, 3)}...${key.slice(-3)}}`;
-	}
-
-	static isBroadcastEgress(egress: EgressInfo): boolean {
-		const { streamResults = [], fileResults = [] } = egress;
-		return streamResults.length > 0 && fileResults.length === 0;
-	}
-
-	static extractStatus(status: EgressStatus | undefined): MeetBroadcastStatus {
-		switch (status) {
-			case EgressStatus.EGRESS_STARTING:
-				return MeetBroadcastStatus.STARTING;
-			case EgressStatus.EGRESS_ACTIVE:
-				return MeetBroadcastStatus.ACTIVE;
-			case EgressStatus.EGRESS_ENDING:
-				return MeetBroadcastStatus.ENDING;
-			case EgressStatus.EGRESS_COMPLETE:
-				return MeetBroadcastStatus.COMPLETE;
-			case EgressStatus.EGRESS_ABORTED:
-				return MeetBroadcastStatus.ABORTED;
-			case EgressStatus.EGRESS_LIMIT_REACHED:
-				return MeetBroadcastStatus.LIMIT_REACHED;
-			default:
-				return MeetBroadcastStatus.FAILED;
-		}
 	}
 
 	static isInProgress(status: MeetBroadcastStatus): boolean {
@@ -254,18 +229,16 @@ export class BroadcastHelper {
 			return { ...destination, ...BroadcastHelper.toDestinationState(stream) };
 		});
 		const startDate = BroadcastHelper.extractStartDate(egress) ?? record.startDate;
-		const endDate = BroadcastHelper.nsToMs(egress.endedAt);
+		const endDate = EgressHelper.nsToMs(egress.endedAt);
 
 		return {
 			...record,
 			destinations,
-			status: BroadcastHelper.extractStatus(egress.status),
+			status: EgressHelper.toStatus(egress.status, MeetBroadcastStatus),
 			startDate,
 			endDate,
-			duration: startDate && endDate ? Math.round((endDate - startDate) / 1000) : undefined,
-			errorCode: egress.errorCode || undefined,
-			error: egress.error || undefined,
-			details: egress.details || undefined
+			duration: startDate && endDate ? (endDate - startDate) / 1000 : undefined,
+			...EgressHelper.extractError(egress)
 		};
 	}
 
@@ -300,7 +273,7 @@ export class BroadcastHelper {
 			destinations,
 			status: status ?? MeetBroadcastStatus.COMPLETE,
 			endDate: ended,
-			duration: Math.round((ended - record.startDate) / 1000)
+			duration: (ended - record.startDate) / 1000
 		};
 	}
 
@@ -363,19 +336,19 @@ export class BroadcastHelper {
 	private static isEndedAttempt(destination: MeetBroadcastDestinationInfo, stream: StreamInfo): boolean {
 		return (
 			!BroadcastHelper.isStreaming(destination) &&
-			(BroadcastHelper.nsToMs(stream.startedAt) ?? 0) <= (destination.endDate ?? 0)
+			(EgressHelper.nsToMs(stream.startedAt) ?? 0) <= (destination.endDate ?? 0)
 		);
 	}
 
 	private static toDestinationState(stream: StreamInfo): DestinationState {
-		const startDate = BroadcastHelper.nsToMs(stream.startedAt);
+		const startDate = EgressHelper.nsToMs(stream.startedAt);
 
 		return {
 			status: BroadcastHelper.toDestinationStatus(stream, startDate),
 			error: stream.error || undefined,
 			startDate,
-			endDate: BroadcastHelper.nsToMs(stream.endedAt),
-			duration: stream.duration > 0n ? Number(stream.duration / NS_PER_SECOND) : undefined
+			endDate: EgressHelper.nsToMs(stream.endedAt),
+			duration: EgressHelper.nsToSeconds(stream.duration)
 		};
 	}
 
@@ -399,12 +372,8 @@ export class BroadcastHelper {
 
 		if (starts.length === 0) return undefined;
 
-		return BroadcastHelper.nsToMs(
+		return EgressHelper.nsToMs(
 			starts.reduce((earliest, startedAt) => (startedAt < earliest ? startedAt : earliest))
 		);
-	}
-
-	private static nsToMs(value: bigint): number | undefined {
-		return value > 0n ? Number(value / NS_PER_MS) : undefined;
 	}
 }
