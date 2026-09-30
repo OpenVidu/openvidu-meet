@@ -5,11 +5,14 @@ import type {
 	MeetBroadcastDestinationUpdateOptions,
 	MeetBroadcastStartOptions
 } from '@openvidu-meet/typings';
-import { MEET_BROADCAST_MAX_DESTINATIONS, MeetRecordingLayout } from '@openvidu-meet/typings';
+import {
+	MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH,
+	MEET_BROADCAST_MAX_DESTINATIONS,
+	MeetRecordingLayout
+} from '@openvidu-meet/typings';
 import { z } from 'zod';
 import { encodingValidator } from './recording-encoding.schema.js';
 
-const DESTINATION_NAME_MAX_LENGTH = 50;
 const DESTINATION_URL_MAX_LENGTH = 2048;
 
 const destinationIdSchema = z.string().trim().min(1, 'Destination id cannot be empty');
@@ -18,7 +21,10 @@ const destinationNameSchema = z
 	.string()
 	.trim()
 	.min(1, 'Destination name is required')
-	.max(DESTINATION_NAME_MAX_LENGTH, `Destination name cannot exceed ${DESTINATION_NAME_MAX_LENGTH} characters`);
+	.max(
+		MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH,
+		`Destination name cannot exceed ${MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH} characters`
+	);
 
 const destinationUrlSchema = z
 	.url({ protocol: /^rtmps?$/, error: 'Destination url must be an rtmp:// or rtmps:// URL' })

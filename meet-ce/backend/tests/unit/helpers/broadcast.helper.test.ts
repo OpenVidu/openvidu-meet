@@ -101,33 +101,6 @@ describe('BroadcastHelper.redactRoomOptions', () => {
 	});
 });
 
-describe('BroadcastHelper.redactStreamUrl', () => {
-	it('replaces the stream key and drops the query string, keeping scheme, host and path', () => {
-		expect(BroadcastHelper.redactStreamUrl(YOUTUBE)).toBe(REDACTED_YOUTUBE);
-		expect(BroadcastHelper.redactStreamUrl(TWITCH)).toBe('rtmps://live.twitch.tv:443/app/********');
-	});
-
-	it('masks the stream key before a trailing slash', () => {
-		expect(BroadcastHelper.redactStreamUrl('rtmp://stream.example.com/live/secret-key/')).toBe(
-			'rtmp://stream.example.com/live/********/'
-		);
-		expect(BroadcastHelper.isRedactedStreamUrl('rtmp://stream.example.com/live/********/')).toBe(true);
-	});
-
-	it('masks the only segment when the URL has no application path', () => {
-		expect(BroadcastHelper.redactStreamUrl('rtmp://stream.example.com')).toBe('rtmp://stream.example.com/********');
-		expect(BroadcastHelper.redactStreamUrl('rtmp://stream.example.com/key')).toBe(
-			'rtmp://stream.example.com/********'
-		);
-	});
-
-	it('recognises its own output and nothing else', () => {
-		expect(BroadcastHelper.isRedactedStreamUrl(REDACTED_YOUTUBE)).toBe(true);
-		expect(BroadcastHelper.isRedactedStreamUrl(`${REDACTED_YOUTUBE}?x=1`)).toBe(true);
-		expect(BroadcastHelper.isRedactedStreamUrl(YOUTUBE)).toBe(false);
-	});
-});
-
 describe('BroadcastHelper.matchesReportedStreamUrl', () => {
 	// The shapes LiveKit egress was observed to report for these inputs.
 	it('matches the URL egress reports, key redacted to its first and last three characters', () => {

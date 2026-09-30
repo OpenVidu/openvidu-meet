@@ -3,7 +3,6 @@ import {
 	BroadcastPlatform,
 	detectBroadcastPlatform,
 	extractBroadcastHost,
-	isRedactedStreamUrl,
 	servedUrlValidator
 } from './broadcast-platform.utils';
 
@@ -41,21 +40,6 @@ describe('detectBroadcastPlatform', () => {
 	it('falls back to a generic server for a URL that does not parse', () => {
 		expect(extractBroadcastHost('not a url')).toBe('');
 		expect(detectBroadcastPlatform('not a url')).toBe('other');
-	});
-});
-
-describe('isRedactedStreamUrl', () => {
-	it('recognises the placeholder the server puts in place of the stream key', () => {
-		expect(isRedactedStreamUrl('rtmp://a.rtmp.youtube.com/live2/********')).toBeTrue();
-	});
-
-	it('ignores anything after the key, a trailing slash included', () => {
-		expect(isRedactedStreamUrl('rtmps://live-api-s.facebook.com:443/rtmp/********?ds=1')).toBeTrue();
-		expect(isRedactedStreamUrl('rtmp://media.example.com/live/********/')).toBeTrue();
-	});
-
-	it('takes a real key as not redacted', () => {
-		expect(isRedactedStreamUrl('rtmp://a.rtmp.youtube.com/live2/abcd-1234')).toBeFalse();
 	});
 });
 

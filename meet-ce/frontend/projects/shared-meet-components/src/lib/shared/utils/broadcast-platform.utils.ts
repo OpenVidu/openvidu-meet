@@ -1,5 +1,5 @@
 import type { ValidatorFn } from '@angular/forms';
-import { MEET_BROADCAST_REDACTED_STREAM_KEY } from '@openvidu-meet/typings';
+import { isRedactedStreamUrl } from '@openvidu-meet/typings';
 
 /** A streaming platform Meet shows its own icon for, told apart by the host of the RTMP URL. */
 export type BroadcastPlatform = 'youtube' | 'facebook' | 'instagram' | 'x' | 'vimeo' | 'twitch' | 'kick' | 'other';
@@ -40,18 +40,6 @@ export function extractBroadcastHost(url: string): string {
 export function detectBroadcastPlatform(url: string): BroadcastPlatform {
 	const host = extractBroadcastHost(url).toLowerCase();
 	return PLATFORM_RULES.find(([, matches]) => matches(host))?.[0] ?? 'other';
-}
-
-/**
- * Whether a destination URL is served redacted: its stream key, the last non-empty path segment,
- * replaced by the placeholder.
- */
-export function isRedactedStreamUrl(url: string): boolean {
-	const segments = url
-		.split(/[?#]/)[0]
-		.split('/')
-		.filter((segment) => segment !== '');
-	return segments.at(-1) === MEET_BROADCAST_REDACTED_STREAM_KEY;
 }
 
 /**

@@ -230,6 +230,40 @@ export const MEET_BROADCAST_MAX_DESTINATIONS = 5;
 export const MEET_BROADCAST_REDACTED_STREAM_KEY = '********';
 
 /**
+ * Maximum length of a broadcast destination's name.
+ */
+export const MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH = 50;
+
+/**
+ * A destination URL as the API serves it: its stream key (the last non-empty path segment, a
+ * trailing slash notwithstanding) replaced by {@link MEET_BROADCAST_REDACTED_STREAM_KEY}, and its
+ * query string dropped.
+ */
+export const redactStreamUrl = (url: string): string => {
+	const { protocol, host, pathname } = new URL(url);
+	const segments = (pathname || '/').split('/');
+	segments[streamKeyIndex(segments)] = MEET_BROADCAST_REDACTED_STREAM_KEY;
+	return `${protocol}//${host}${segments.join('/')}`;
+};
+
+/**
+ * Whether a destination URL is one the API served, with its stream key replaced by
+ * {@link MEET_BROADCAST_REDACTED_STREAM_KEY}, rather than a full URL.
+ */
+export const isRedactedStreamUrl = (url: string): boolean => {
+	const segments = url.split(/[?#]/)[0].split('/');
+	return segments[streamKeyIndex(segments)] === MEET_BROADCAST_REDACTED_STREAM_KEY;
+};
+
+const streamKeyIndex = (segments: string[]): number => {
+	for (let index = segments.length - 1; index > 0; index--) {
+		if (segments[index] !== '') return index;
+	}
+
+	return segments.length - 1;
+};
+
+/**
  * Interface representing the config for chat in a room.
  */
 export interface MeetChatConfig {

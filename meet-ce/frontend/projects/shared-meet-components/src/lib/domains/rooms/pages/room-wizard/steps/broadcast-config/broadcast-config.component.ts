@@ -8,22 +8,24 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MEET_BROADCAST_MAX_DESTINATIONS, MeetBroadcastDestination } from '@openvidu-meet/typings';
+import {
+	isRedactedStreamUrl,
+	MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH,
+	MEET_BROADCAST_MAX_DESTINATIONS,
+	MeetBroadcastDestination
+} from '@openvidu-meet/typings';
 import { PlatformIconComponent } from '../../../../../../shared/components/platform-icon/platform-icon.component';
 import { LayoutPickerComponent } from '../../../../components/layout-picker/layout-picker.component';
 import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
 import {
 	BROADCAST_PLATFORM_LABELS,
 	detectBroadcastPlatform,
-	isRedactedStreamUrl,
 	servedUrlValidator
 } from '../../../../../../shared/utils/broadcast-platform.utils';
 import { BROADCAST_MBPS_PER_DESTINATION } from '../../../../../../shared/models/broadcast.model';
 import { BroadcastFormGroup, BroadcastFormValue } from '../../../../models/wizard-forms.model';
 import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services/wizard-state.service';
-
-const DESTINATION_NAME_MAX_LENGTH = 50;
 
 /** No destination being edited; `-1` is a new one, any other index the destination at that position. */
 const NOT_EDITING = null;
@@ -68,8 +70,9 @@ export class BroadcastConfigComponent {
 	readonly maxDestinations = MEET_BROADCAST_MAX_DESTINATIONS;
 	readonly mbpsPerDestination = BROADCAST_MBPS_PER_DESTINATION;
 
+	protected readonly nameMaxLength = MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH;
 	readonly destinationForm = this.formBuilder.nonNullable.group({
-		name: ['', [Validators.required, Validators.maxLength(DESTINATION_NAME_MAX_LENGTH)]],
+		name: ['', [Validators.required, Validators.maxLength(MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH)]],
 		url: ['', [Validators.required, rtmpUrlValidator, servedUrlValidator(() => this.servedUrl())]]
 	});
 	/** The URL the destination being edited was served with, redacted when it is a saved one. */
