@@ -117,6 +117,11 @@
 	@include layout.ov-theme-transition;
 }
 
+%ov-broadcast-icon {
+	color: var(--ov-meet-icon-broadcast) !important;
+	@include layout.ov-theme-transition;
+}
+
 %ov-users {
 	color: var(--ov-meet-icon-users) !important;
 	overflow: none;
