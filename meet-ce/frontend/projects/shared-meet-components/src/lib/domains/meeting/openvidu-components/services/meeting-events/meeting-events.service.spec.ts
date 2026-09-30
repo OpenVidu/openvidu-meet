@@ -193,6 +193,7 @@ describe('MeetingEventsService (reconnection view state)', () => {
 	let remotes: ParticipantModel[];
 	let callbacks: MeetingEventCallbacks;
 	let dialogService: jasmine.SpyObj<DialogService>;
+	let recordingService: jasmine.SpyObj<RecordingService>;
 
 	beforeEach(() => {
 		remotes = [];
@@ -211,6 +212,7 @@ describe('MeetingEventsService (reconnection view state)', () => {
 			'showBlockingDialog',
 			'closeBlockingDialog'
 		]);
+		recordingService = jasmine.createSpyObj<RecordingService>('RecordingService', ['setRecordingStopped']);
 
 		const participantServiceStub = {
 			addRemoteParticipant: () => remotes.push({} as ParticipantModel),
@@ -244,7 +246,7 @@ describe('MeetingEventsService (reconnection view state)', () => {
 				{ provide: MeetingTranslateService, useValue: { translate: (key: string) => key } },
 				{ provide: ChatService, useValue: {} },
 				{ provide: MeetingUiConfigService, useValue: {} },
-				{ provide: RecordingService, useValue: {} },
+				{ provide: RecordingService, useValue: recordingService },
 				{ provide: MeetStorageService, useValue: meetStorageService }
 			]
 		});
@@ -350,6 +352,21 @@ describe('MeetingEventsService (reconnection view state)', () => {
 
 		expect(streamLayoutService.floatLocalCameraVideo).not.toHaveBeenCalled();
 	});
+	// The recording state is shared by every meeting the page joins, and the one it leaves can go on
+	// recording without it.
+	it('forgets the recording of a room once disconnected from it', () => {
+		emit(RoomEvent.Disconnected, undefined);
+
+		expect(recordingService.setRecordingStopped).toHaveBeenCalledTimes(1);
+	});
+
+	it('keeps the recording across a reconnect', () => {
+		emit(RoomEvent.Reconnecting);
+		emit(RoomEvent.Reconnected);
+
+		expect(recordingService.setRecordingStopped).not.toHaveBeenCalled();
+	});
+
 	it('tells the participant the connection is lost, with nothing to answer', () => {
 		emit(RoomEvent.Reconnecting);
 

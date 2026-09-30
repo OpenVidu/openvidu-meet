@@ -375,6 +375,7 @@ export class MeetingEventsService {
 		room.on(RoomEvent.Disconnected, async (reason: DisconnectReason | undefined) => {
 			this.reconnectInProgress = false;
 			this._activeSpeakers.set([]);
+			this.recordingService.setRecordingStopped();
 			this.dialogService.closeBlockingDialog();
 			const participantLeftEvent: ParticipantLeftEvent = {
 				roomName: this.meetingLiveKitService.getRoomName(),

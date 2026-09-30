@@ -16,6 +16,13 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - Embedded commands `recordingStart` and `recordingStop`, gated by `recordingControl`, and the embedded event
   `recordingStatusChanged`, carrying `{ recordingId, status }` to every participant.
 
+### Fixed
+
+#### UI
+
+- After leaving a meeting that was being recorded, joining another meeting with the same `<openvidu-meet>`
+  element showed that recording as still in progress. The recording indicator starts over with each meeting.
+
 ## 3.9.0
 
 This release deprecates the old permissions, commands and events, and adds a new set of them. The new and old names run alongside each other for compatibility **until 3.12.0**, when the old names are removed.
