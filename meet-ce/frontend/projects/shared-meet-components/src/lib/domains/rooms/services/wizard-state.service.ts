@@ -14,7 +14,7 @@ import {
 } from '@openvidu-meet/typings';
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
 import { deepMerge, DeepPartial } from '../../../shared/utils/object.utils';
-import { E2EEExclusiveFeature, WizardNavigationConfig, WizardStepId } from '../models';
+import { E2EE_EXCLUSIVE_FEATURES, E2EEExclusiveFeature, WizardNavigationConfig, WizardStepId } from '../models';
 import {
 	AnyWizardStep,
 	BroadcastFormGroup,
@@ -143,8 +143,9 @@ export class RoomWizardStateService {
 	private _pendingMembers = signal<MeetRoomMemberOptions[]>([]);
 	// What a feature was set to before E2EE turned it off, and what E2EE was before a feature turned
 	// it off, so undoing the toggle gives the user back what they had chosen.
-	private _featureStateBeforeE2EE = signal<Partial<Record<E2EEExclusiveFeature, boolean>>>({});
-	private _e2eeStateBeforeFeature = signal<Partial<Record<E2EEExclusiveFeature, boolean>>>({});
+	// Which excluded features E2EE turned off, and which features turned E2EE off, to put them back.
+	private readonly featuresOnBeforeE2EE = new Set<E2EEExclusiveFeature>();
+	private readonly e2eeOnBeforeFeature = new Set<E2EEExclusiveFeature>();
 
 	public readonly steps = this._steps.asReadonly();
 	public readonly currentStepIndex = this._currentStepIndex.asReadonly();
@@ -513,26 +514,72 @@ export class RoomWizardStateService {
 		return controls;
 	}
 
-	rememberFeatureStateBeforeE2EE(feature: E2EEExclusiveFeature, value: boolean): void {
-		this._featureStateBeforeE2EE.update((states) => ({ ...states, [feature]: value }));
+	isE2EEEnabled(): boolean {
+		return this.e2eeEnabledControl()?.value ?? false;
 	}
 
-	/** The state remembered for the feature, forgotten once taken. */
-	takeFeatureStateBeforeE2EE(feature: E2EEExclusiveFeature): boolean | undefined {
-		const value = this._featureStateBeforeE2EE()[feature];
-		this._featureStateBeforeE2EE.update(({ [feature]: _taken, ...rest }) => rest);
-		return value;
+	/**
+	 * Turns a feature end-to-end encryption excludes on or off. Turning it on turns E2EE off,
+	 * remembering that it was on; turning it off puts E2EE back as it was.
+	 */
+	setFeatureEnabled(feature: E2EEExclusiveFeature, enabled: boolean): void {
+		if (enabled) {
+			if (this.isE2EEEnabled()) {
+				this.e2eeOnBeforeFeature.add(feature);
+				this.patchE2EE(false);
+			}
+
+			return;
+		}
+
+		if (this.e2eeOnBeforeFeature.delete(feature)) {
+			this.patchE2EE(true);
+		}
 	}
 
-	rememberE2EEStateBeforeFeature(feature: E2EEExclusiveFeature, value: boolean): void {
-		this._e2eeStateBeforeFeature.update((states) => ({ ...states, [feature]: value }));
+	/**
+	 * Turns end-to-end encryption on or off. Turning it on turns off every feature it excludes,
+	 * remembering which were on; turning it off puts those back.
+	 */
+	setE2EEEnabled(enabled: boolean): void {
+		for (const feature of E2EE_EXCLUSIVE_FEATURES) {
+			const control = this.featureEnabledControl(feature);
+
+			if (!control) continue;
+
+			if (enabled) {
+				if (control.value) {
+					this.featuresOnBeforeE2EE.add(feature);
+				}
+
+				this.patchFeature(feature, control, false);
+			} else if (this.featuresOnBeforeE2EE.delete(feature)) {
+				this.patchFeature(feature, control, true);
+			}
+		}
 	}
 
-	/** The E2EE state remembered when the feature turned it off, forgotten once taken. */
-	takeE2EEStateBeforeFeature(feature: E2EEExclusiveFeature): boolean | undefined {
-		const value = this._e2eeStateBeforeFeature()[feature];
-		this._e2eeStateBeforeFeature.update(({ [feature]: _taken, ...rest }) => rest);
-		return value;
+	private e2eeEnabledControl(): FormControl<boolean> | undefined {
+		return this.getStepById(WizardStepId.MEETING)?.formGroup.controls.e2eeEnabled;
+	}
+
+	private featureEnabledControl(feature: E2EEExclusiveFeature): FormControl<boolean> | undefined {
+		switch (feature) {
+			case 'recording':
+				return this.getStepById(WizardStepId.RECORDING)?.formGroup.controls.recordingEnabled;
+			case 'broadcast':
+				return this.getStepById(WizardStepId.BROADCAST)?.formGroup.controls.broadcastEnabled;
+		}
+	}
+
+	private patchE2EE(enabled: boolean): void {
+		this.e2eeEnabledControl()?.patchValue(enabled, { emitEvent: true });
+		this.updateStepData({ config: { e2ee: { enabled } } });
+	}
+
+	private patchFeature(feature: E2EEExclusiveFeature, control: FormControl<boolean>, enabled: boolean): void {
+		control.patchValue(enabled, { emitEvent: true });
+		this.updateStepData({ config: { [feature]: { enabled } } });
 	}
 
 	/**
@@ -563,8 +610,8 @@ export class RoomWizardStateService {
 	resetWizard(): void {
 		this._isInitialized.set(false);
 		this._editMode.set(false);
-		this._featureStateBeforeE2EE.set({});
-		this._e2eeStateBeforeFeature.set({});
+		this.featuresOnBeforeE2EE.clear();
+		this.e2eeOnBeforeFeature.clear();
 		this._roomOptions.set(deepMerge({}, DEFAULT_ROOM_OPTIONS));
 		this._steps.set([]);
 		this._currentStepIndex.set(0);

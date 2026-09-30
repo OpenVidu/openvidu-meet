@@ -7,6 +7,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MeetRecordingAutoStartMode } from '@openvidu-meet/typings';
 import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
+import { E2eeExclusionWarningComponent } from '../../../../components/e2ee-exclusion-warning/e2ee-exclusion-warning.component';
 import { LayoutPickerComponent } from '../../../../components/layout-picker/layout-picker.component';
 import { TranslateService } from '../../../../../../shared/services/i18n/translate.service';
 import { RecordingFormGroup, RecordingFormValue, RecordingTrigger } from '../../../../models/wizard-forms.model';
@@ -27,6 +28,7 @@ interface TriggerOption {
 		MatIconModule,
 		MatSelectModule,
 		MatSlideToggleModule,
+		E2eeExclusionWarningComponent,
 		LayoutPickerComponent,
 		TranslatePipe
 	],
@@ -100,56 +102,7 @@ export class RecordingConfigComponent {
 	}
 
 	onRecordingToggleChange(event: MatSlideToggleChange): void {
-		const meetingStep = this.wizardService.getStepById(WizardStepId.MEETING);
-
-		if (!meetingStep) return;
-
-		// Handle E2EE state when recording changes
-		if (event.checked) {
-			// Enabling recording: save E2EE state and disable it if needed
-			const e2eeEnabled = meetingStep.formGroup.controls.e2eeEnabled.value;
-
-			if (e2eeEnabled) {
-				// Save the E2EE state before disabling it
-				this.wizardService.rememberE2EEStateBeforeFeature('recording', true);
-
-				// Disable E2EE when enabling recording
-				meetingStep.formGroup.patchValue(
-					{
-						e2eeEnabled: false
-					},
-					{ emitEvent: true }
-				);
-
-				this.wizardService.updateStepData({
-					config: {
-						e2ee: {
-							enabled: false
-						}
-					}
-				});
-			}
-		} else {
-			// Disabling recording: restore E2EE state if it was saved
-			const previousE2EEState = this.wizardService.takeE2EEStateBeforeFeature('recording');
-
-			if (previousE2EEState !== undefined) {
-				meetingStep.formGroup.patchValue(
-					{
-						e2eeEnabled: previousE2EEState
-					},
-					{ emitEvent: true }
-				);
-
-				this.wizardService.updateStepData({
-					config: {
-						e2ee: {
-							enabled: previousE2EEState
-						}
-					}
-				});
-			}
-		}
+		this.wizardService.setFeatureEnabled('recording', event.checked);
 	}
 
 	get isRecordingEnabled(): boolean {
@@ -162,7 +115,6 @@ export class RecordingConfigComponent {
 	}
 
 	get isE2EEEnabled(): boolean {
-		const meetingStep = this.wizardService.getStepById(WizardStepId.MEETING);
-		return meetingStep?.formGroup.controls.e2eeEnabled.value ?? false;
+		return this.wizardService.isE2EEEnabled();
 	}
 }

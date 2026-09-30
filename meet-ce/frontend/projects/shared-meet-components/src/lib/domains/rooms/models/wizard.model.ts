@@ -6,6 +6,8 @@ import { FormGroup } from '@angular/forms';
 /** The features that end-to-end encryption excludes: enabling one turns the other off. */
 export type E2EEExclusiveFeature = 'recording' | 'broadcast';
 
+export const E2EE_EXCLUSIVE_FEATURES: E2EEExclusiveFeature[] = ['recording', 'broadcast'];
+
 export enum WizardStepId {
 	ROOM_DETAILS = 'roomDetails',
 	MEETING = 'meeting',
