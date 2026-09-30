@@ -9,11 +9,12 @@ import type {
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
 import {
+	isRedactedStreamUrl,
 	MEET_BROADCAST_MAX_DESTINATIONS,
-	MEET_BROADCAST_REDACTED_STREAM_KEY,
 	MeetBroadcastDestinationSource,
 	MeetBroadcastDestinationStatus,
-	MeetBroadcastStatus
+	MeetBroadcastStatus,
+	redactStreamUrl
 } from '@openvidu-meet/typings';
 import type { EgressInfo } from 'livekit-server-sdk';
 import { uid } from 'uid';
@@ -37,18 +38,6 @@ export class BroadcastHelper {
 		// Prevent instantiation of this utility class
 	}
 
-	/**
-	 * The URL as the API serves it: its stream key (the last non-empty path segment, a trailing
-	 * slash notwithstanding) replaced by {@link MEET_BROADCAST_REDACTED_STREAM_KEY}, and its query
-	 * string dropped.
-	 */
-	static redactStreamUrl(url: string): string {
-		const { protocol, host, pathname } = new URL(url);
-		const segments = (pathname || '/').split('/');
-		segments[BroadcastHelper.streamKeyIndex(segments)] = MEET_BROADCAST_REDACTED_STREAM_KEY;
-		return `${protocol}//${host}${segments.join('/')}`;
-	}
-
 	/** Room options fit for a log line: the broadcast destinations with their stream keys redacted. */
 	static redactRoomOptions(options: MeetRoomOptions): MeetRoomOptions {
 		const broadcast = options.config?.broadcast;
@@ -57,19 +46,9 @@ export class BroadcastHelper {
 
 		const destinations = broadcast.destinations.map((destination) => ({
 			...destination,
-			url: BroadcastHelper.redactStreamUrl(destination.url)
+			url: redactStreamUrl(destination.url)
 		}));
 		return { ...options, config: { ...options.config, broadcast: { ...broadcast, destinations } } };
-	}
-
-	static isRedactedStreamUrl(url: string): boolean {
-		const segments = url.split(/[?#]/)[0].split('/');
-		return segments[BroadcastHelper.streamKeyIndex(segments)] === MEET_BROADCAST_REDACTED_STREAM_KEY;
-	}
-
-	private static streamKeyIndex(segments: string[]): number {
-		const index = segments.findLastIndex((segment) => segment !== '');
-		return index > 0 ? index : segments.length - 1;
 	}
 
 	/**
@@ -169,10 +148,10 @@ export class BroadcastHelper {
 			const realUrl = BroadcastHelper.resolveUrl(url, id && savedUrls[id]);
 			const destinationId = id ?? uid(DESTINATION_ID_LENGTH);
 
-			if (urls[destinationId]) throw errorBroadcastDuplicateDestination(BroadcastHelper.redactStreamUrl(realUrl));
+			if (urls[destinationId]) throw errorBroadcastDuplicateDestination(redactStreamUrl(realUrl));
 
 			urls[destinationId] = realUrl;
-			return { id: destinationId, name, url: BroadcastHelper.redactStreamUrl(realUrl) };
+			return { id: destinationId, name, url: redactStreamUrl(realUrl) };
 		});
 
 		BroadcastHelper.validateDestinationSet(Object.values(urls));
@@ -268,7 +247,7 @@ export class BroadcastHelper {
 			...record,
 			destinations: record.destinations.map((destination) => ({
 				...destination,
-				url: BroadcastHelper.redactStreamUrl(destination.url)
+				url: redactStreamUrl(destination.url)
 			}))
 		};
 	}
@@ -278,9 +257,9 @@ export class BroadcastHelper {
 	 * was served: with any other change there is no stream key to go with it.
 	 */
 	private static resolveUrl(url: string, savedUrl: string | undefined): string {
-		if (!BroadcastHelper.isRedactedStreamUrl(url)) return url;
+		if (!isRedactedStreamUrl(url)) return url;
 
-		if (!savedUrl || BroadcastHelper.redactStreamUrl(url) !== BroadcastHelper.redactStreamUrl(savedUrl)) {
+		if (!savedUrl || redactStreamUrl(url) !== redactStreamUrl(savedUrl)) {
 			throw errorBroadcastRedactedDestinationUrl();
 		}
 
@@ -288,7 +267,7 @@ export class BroadcastHelper {
 	}
 
 	private static toMeetingDestination(options: MeetBroadcastDestinationOptions): MeetBroadcastDestinationInfo {
-		if (BroadcastHelper.isRedactedStreamUrl(options.url)) throw errorBroadcastRedactedDestinationUrl();
+		if (isRedactedStreamUrl(options.url)) throw errorBroadcastRedactedDestinationUrl();
 
 		return {
 			id: uid(DESTINATION_ID_LENGTH),
@@ -329,7 +308,7 @@ export class BroadcastHelper {
 
 		const duplicate = urls.find((url, index) => urls.indexOf(url) !== index);
 
-		if (duplicate) throw errorBroadcastDuplicateDestination(BroadcastHelper.redactStreamUrl(duplicate));
+		if (duplicate) throw errorBroadcastDuplicateDestination(redactStreamUrl(duplicate));
 	}
 
 	/**

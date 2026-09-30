@@ -11,6 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
 	MEET_BROADCAST_MAX_DESTINATIONS,
+	MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH,
 	MeetBroadcastDestinationInfo,
 	MeetBroadcastDestinationStatus,
 	MeetBroadcastStartDestination
@@ -195,9 +196,10 @@ export class BroadcastActivityComponent {
 		() => this.selectedCount() > 0 && this.hasRoomTracksPublished() && this.request().status !== 'starting'
 	);
 
+	protected readonly nameMaxLength = MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH;
 	readonly editor = signal<EditorTarget>(null);
 	readonly destinationForm = this.formBuilder.nonNullable.group({
-		name: ['', [Validators.required, Validators.maxLength(50)]],
+		name: ['', [Validators.required, Validators.maxLength(MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH)]],
 		url: ['', [Validators.required, rtmpUrlValidator, servedUrlValidator(() => this.servedUrl())]]
 	});
 	/** The URL the room destination being edited was saved with, as the room serves it: redacted. */

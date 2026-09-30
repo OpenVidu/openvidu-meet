@@ -390,7 +390,7 @@
 			id="broadcast-destination-name"
 			class="field-input"
 			formControlName="name"
-			maxlength="50"
+			[attr.maxlength]="nameMaxLength"
 			autocomplete="off"
 		/>
 		@if (destinationForm.controls.name.touched && destinationForm.controls.name.invalid) {

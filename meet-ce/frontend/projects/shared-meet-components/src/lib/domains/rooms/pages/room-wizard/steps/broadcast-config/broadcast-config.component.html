@@ -193,7 +193,7 @@
 		<div class="destination-editor-fields">
 			<mat-form-field appearance="outline" class="destination-name-field" subscriptSizing="dynamic">
 				<mat-label>{{ 'ROOMS.WIZARD.BROADCAST.NAME_LABEL' | translate }}</mat-label>
-				<input matInput id="broadcast-destination-name" formControlName="name" [maxlength]="50" />
+				<input matInput id="broadcast-destination-name" formControlName="name" [maxlength]="nameMaxLength" />
 				@if (destinationForm.controls.name.hasError('required')) {
 					<mat-error>{{ 'ROOMS.WIZARD.BROADCAST.NAME_REQUIRED' | translate }}</mat-error>
 				}
