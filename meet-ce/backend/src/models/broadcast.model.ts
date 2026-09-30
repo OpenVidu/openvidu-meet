@@ -1,4 +1,4 @@
-import type { MeetBroadcastInfo } from '@openvidu-meet/typings';
+import type { MeetBroadcastDestinationInfo, MeetBroadcastInfo } from '@openvidu-meet/typings';
 
 /**
  * The live broadcast of a room as the server keeps it in Redis while it runs: the shape the API
@@ -15,3 +15,11 @@ export type BroadcastRecord = MeetBroadcastInfo;
  * the redacted URL.
  */
 export type BroadcastDestinationUrls = Record<string, string>;
+
+/**
+ * What a destination takes from the LiveKit stream that serves it, on top of its own identity.
+ */
+export type DestinationState = Pick<
+	MeetBroadcastDestinationInfo,
+	'status' | 'error' | 'startDate' | 'endDate' | 'duration'
+>;

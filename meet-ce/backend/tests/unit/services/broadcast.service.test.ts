@@ -286,6 +286,11 @@ describe('BroadcastService', () => {
 				service.startBroadcast(ROOM_ID, { destinations: [{ name: 'Extra', url: 'rtmp://mtx/live/x' }] }),
 				403
 			);
+
+			roomService.permissions = allPermissions({ broadcastEditDestinations: false });
+			await expectStatus(service.startBroadcast(ROOM_ID, { destinations: [{ id: 'a', name: 'Renamed' }] }), 403);
+			await service.startBroadcast(ROOM_ID, { destinations: [{ id: 'a', name: 'A' }] });
+			expect(livekit.startCalls).toHaveLength(1);
 		});
 	});
 
