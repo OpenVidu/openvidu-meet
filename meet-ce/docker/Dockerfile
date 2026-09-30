@@ -75,7 +75,7 @@ RUN pnpm --config.inject-workspace-packages=true --filter @openvidu-meet/backend
 # ====================================================
 # Stage 3: production
 # ====================================================
-FROM node:24.15.0-alpine AS production
+FROM node:24-alpine AS production
 
 RUN apk add --no-cache tzdata
 
