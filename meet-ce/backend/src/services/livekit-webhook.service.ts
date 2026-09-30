@@ -1,3 +1,4 @@
+import { ParticipantInfo_Kind } from '@livekit/protocol';
 import type { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { MeetingEndAction, MeetMeetingEndedReason, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
@@ -225,15 +226,26 @@ export class LivekitWebhookService {
 	}
 
 	/**
-	 * Handles the 'participant_left' event by gathering relevant room and participant information,
-	 * and releasing any reserved participant names.
+	 * Handles the 'participant_left' event of the participants Meet cares about: a person leaving the
+	 * meeting, and an egress leaving the room.
 	 * @param room - Information about the room where the participant left.
 	 * @param participant - Information about the participant who left.
 	 */
 	async handleParticipantLeft(room: Room, participant: ParticipantInfo) {
-		// Skip if the participant is not a standard participant
-		if (!this.livekitService.isStandardParticipant(participant)) return;
+		switch (participant.kind) {
+			case ParticipantInfo_Kind.STANDARD:
+				await this.handleMeetingParticipantLeft(room, participant);
+				break;
+			case ParticipantInfo_Kind.EGRESS:
+				await this.broadcastService.handleEgressParticipantLeft(room.name, participant.identity);
+				break;
+		}
+	}
 
+	/**
+	 * Reports a person's departure from the meeting and releases their reserved participant name.
+	 */
+	protected async handleMeetingParticipantLeft(room: Room, participant: ParticipantInfo) {
 		try {
 			const payload = await MeetParticipantHelper.toParticipantLeftPayload(room, participant, Date.now());
 			this.webhookDispatcherService.sendParticipantLeftWebhook(payload);

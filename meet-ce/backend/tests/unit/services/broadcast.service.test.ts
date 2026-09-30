@@ -62,6 +62,8 @@ class FakeLiveKitService {
 	stopCalls: string[] = [];
 	stopFails = false;
 	alreadyEnded = false;
+	reachable = true;
+	probeCalls: string[] = [];
 	updateCalls: { egressId: string; add: string[]; remove: string[] }[] = [];
 	nextEgress: EgressInfo = egressWith({});
 
@@ -93,6 +95,11 @@ class FakeLiveKitService {
 
 	async getEgress(): Promise<EgressInfo[]> {
 		return this.egressList;
+	}
+
+	async isEgressReachable(egressId: string): Promise<boolean> {
+		this.probeCalls.push(egressId);
+		return this.reachable;
 	}
 }
 
@@ -442,6 +449,40 @@ describe('BroadcastService', () => {
 
 			await expect(service.handleEgressEvent(egressWith({}), 'updated')).resolves.toBeUndefined();
 			expect(frontend.signals).toEqual([]);
+		});
+	});
+
+	describe('handleEgressParticipantLeft', () => {
+		it('ends the broadcast as failed when its egress leaves the room and no longer answers', async () => {
+			await state.save(runningRecord());
+			livekit.reachable = false;
+
+			await service.handleEgressParticipantLeft(ROOM_ID, 'EG_1');
+
+			expect(state.records.has(ROOM_ID)).toBe(false);
+			expect(webhooks.events).toEqual([{ type: MeetWebhookEventType.BROADCAST_ENDED, status: 'failed' }]);
+			expect(frontend.signals[0]).toMatchObject({ status: 'failed', error: expect.any(String) });
+			expect(frontend.signals[0].destinations.map(({ status }) => status)).toEqual(['stopped', 'stopped']);
+		});
+
+		it('leaves the broadcast alone while its egress still answers', async () => {
+			await state.save(runningRecord());
+
+			await service.handleEgressParticipantLeft(ROOM_ID, 'EG_1');
+
+			expect(livekit.probeCalls).toEqual(['EG_1']);
+			expect(state.records.get(ROOM_ID)?.status).toBe(MeetBroadcastStatus.ACTIVE);
+			expect(webhooks.events).toEqual([]);
+		});
+
+		it('does not even probe an egress that is not the running broadcast, like a recording', async () => {
+			await state.save(runningRecord());
+			livekit.reachable = false;
+
+			await service.handleEgressParticipantLeft(ROOM_ID, 'EG_RECORDING');
+
+			expect(livekit.probeCalls).toEqual([]);
+			expect(state.records.get(ROOM_ID)?.status).toBe(MeetBroadcastStatus.ACTIVE);
 		});
 	});
 

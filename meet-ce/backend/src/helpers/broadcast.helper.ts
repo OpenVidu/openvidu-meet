@@ -270,11 +270,12 @@ export class BroadcastHelper {
 	}
 
 	/**
-	 * The record of a broadcast whose meeting has finished without LiveKit's final word: it is over,
-	 * and so is every stream it still had open. It keeps an ending LiveKit already reported, and
-	 * one that never streamed anything was aborted, which carries no dates.
+	 * The record of a broadcast LiveKit will say nothing more about, because its meeting finished or
+	 * its egress died: it is over, and so is every stream it still had open. It keeps an ending it
+	 * already has, and one that never streamed anything carries no dates and, without an ending of
+	 * its own, was aborted.
 	 */
-	static withMeetingEnded(record: BroadcastRecord, endDate = Date.now()): BroadcastRecord {
+	static withEnded(record: BroadcastRecord, endDate = Date.now()): BroadcastRecord {
 		const destinations = record.destinations.map((destination) =>
 			BroadcastHelper.isStreaming(destination)
 				? { ...destination, status: MeetBroadcastDestinationStatus.STOPPED, endDate }
