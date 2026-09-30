@@ -103,7 +103,7 @@
 							}
 						}
 
-						@if (editingIndex() === -1) {
+						@if (isAddingNew()) {
 							<ng-container *ngTemplateOutlet="destinationEditor" />
 						}
 
@@ -120,7 +120,7 @@
 							</button>
 						}
 
-						@if (destinations().length === 0 && editingIndex() === null) {
+						@if (destinations().length === 0 && !isEditorOpen()) {
 							<p class="destinations-empty" id="broadcast-destinations-required" role="alert">
 								{{ 'ROOMS.WIZARD.BROADCAST.NO_DESTINATIONS' | translate }}
 							</p>
@@ -177,24 +177,27 @@
 
 <ng-template #destinationEditor>
 	<form
-		[formGroup]="destinationForm"
+		[formGroup]="editor.form"
 		class="destination-editor"
 		id="broadcast-destination-editor"
 		(ngSubmit)="submitDestination()"
 	>
 		<span class="destination-editor-title">
 			{{
-				(editingIndex() === -1
-					? 'ROOMS.WIZARD.BROADCAST.NEW_DESTINATION'
-					: 'ROOMS.WIZARD.BROADCAST.EDIT_DESTINATION'
-				) | translate
+				(isAddingNew() ? 'ROOMS.WIZARD.BROADCAST.NEW_DESTINATION' : 'ROOMS.WIZARD.BROADCAST.EDIT_DESTINATION')
+					| translate
 			}}
 		</span>
 		<div class="destination-editor-fields">
 			<mat-form-field appearance="outline" class="destination-name-field" subscriptSizing="dynamic">
 				<mat-label>{{ 'ROOMS.WIZARD.BROADCAST.NAME_LABEL' | translate }}</mat-label>
-				<input matInput id="broadcast-destination-name" formControlName="name" [maxlength]="nameMaxLength" />
-				@if (destinationForm.controls.name.hasError('required')) {
+				<input
+					matInput
+					id="broadcast-destination-name"
+					formControlName="name"
+					[maxlength]="editor.nameMaxLength"
+				/>
+				@if (editor.form.controls.name.hasError('required')) {
 					<mat-error>{{ 'ROOMS.WIZARD.BROADCAST.NAME_REQUIRED' | translate }}</mat-error>
 				}
 			</mat-form-field>
@@ -203,7 +206,7 @@
 				<ov-platform-icon
 					matPrefix
 					class="destination-url-platform"
-					[platform]="detectedPlatform()"
+					[platform]="editor.platform()"
 					[size]="26"
 				/>
 				<input
@@ -213,12 +216,9 @@
 					autocomplete="off"
 					spellcheck="false"
 				/>
-				@if (
-					destinationForm.controls.url.hasError('required') ||
-					destinationForm.controls.url.hasError('rtmpUrl')
-				) {
+				@if (editor.form.controls.url.hasError('required') || editor.form.controls.url.hasError('rtmpUrl')) {
 					<mat-error>{{ 'ROOMS.WIZARD.BROADCAST.URL_INVALID' | translate }}</mat-error>
-				} @else if (destinationForm.controls.url.hasError('streamKeyRequired')) {
+				} @else if (editor.form.controls.url.hasError('streamKeyRequired')) {
 					<mat-error id="broadcast-destination-url-key-required">{{
 						'ROOMS.WIZARD.BROADCAST.URL_KEY_REQUIRED' | translate
 					}}</mat-error>
@@ -227,11 +227,11 @@
 		</div>
 		<div class="destination-editor-footer">
 			<p class="destination-editor-hint">
-				@if (keepsSavedKey()) {
+				@if (editor.keepsSavedKey()) {
 					{{ 'ROOMS.WIZARD.BROADCAST.URL_KEEP_KEY' | translate }}
 				} @else {
-					@if (detectedPlatform() !== 'other') {
-						{{ 'ROOMS.WIZARD.BROADCAST.URL_RECOGNISED' | translate: { platform: detectedPlatformLabel() } }}
+					@if (editor.platform() !== 'other') {
+						{{ 'ROOMS.WIZARD.BROADCAST.URL_RECOGNISED' | translate: { platform: editor.platformLabel() } }}
 					}
 					{{ 'ROOMS.WIZARD.BROADCAST.URL_HINT' | translate }}
 				}
@@ -240,7 +240,7 @@
 				{{ 'ROOMS.WIZARD.BROADCAST.CANCEL' | translate }}
 			</button>
 			<button mat-flat-button type="submit" id="broadcast-destination-save-btn" color="primary">
-				{{ (editingIndex() === -1 ? 'ROOMS.WIZARD.BROADCAST.ADD' : 'ROOMS.WIZARD.BROADCAST.SAVE') | translate }}
+				{{ (isAddingNew() ? 'ROOMS.WIZARD.BROADCAST.ADD' : 'ROOMS.WIZARD.BROADCAST.SAVE') | translate }}
 			</button>
 		</div>
 	</form>

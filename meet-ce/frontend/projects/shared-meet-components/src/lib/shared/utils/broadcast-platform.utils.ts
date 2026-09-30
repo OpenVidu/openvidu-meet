@@ -1,5 +1,3 @@
-import type { ValidatorFn } from '@angular/forms';
-import { isRedactedStreamUrl } from '@openvidu-meet/typings';
 import type { BroadcastPlatform } from '../models/broadcast.model';
 
 const isHostOf = (host: string, domain: string): boolean => host === domain || host.endsWith(`.${domain}`);
@@ -28,14 +26,3 @@ export function detectBroadcastPlatform(url: string): BroadcastPlatform {
 	const host = extractBroadcastHost(url).toLowerCase();
 	return PLATFORM_RULES.find(([, matches]) => matches(host))?.[0] ?? 'other';
 }
-
-/**
- * A redacted URL only stands for the URL a destination was served with: the server has no stream
- * key to go with any other, so a changed host or path needs the full URL.
- */
-export const servedUrlValidator =
-	(servedUrl: () => string | undefined): ValidatorFn =>
-	(control) => {
-		const url = (control.value as string).trim();
-		return isRedactedStreamUrl(url) && url !== servedUrl() ? { streamKeyRequired: true } : null;
-	};

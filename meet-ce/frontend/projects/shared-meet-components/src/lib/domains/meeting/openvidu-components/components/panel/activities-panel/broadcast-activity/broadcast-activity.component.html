@@ -112,7 +112,7 @@
 
 				<div class="destination-list" role="group" aria-labelledby="broadcast-planned-caption">
 					@for (destination of plannedDestinations(); track destination.id) {
-						@if (editor() !== null && editor() !== 'new' && $any(editor()).id === destination.id) {
+						@if (isEditingDestination(destination.id)) {
 							<ng-container *ngTemplateOutlet="destinationEditor" />
 						} @else {
 							<div class="destination-row" [attr.id]="'broadcast-planned-' + destination.id">
@@ -168,7 +168,7 @@
 							</div>
 						}
 					}
-					@if (editor() === 'new') {
+					@if (editorTarget() === 'new') {
 						<ng-container *ngTemplateOutlet="destinationEditor" />
 					}
 				</div>
@@ -290,7 +290,7 @@
 							}
 						</div>
 					}
-					@if (editor() === 'new' && isRunning()) {
+					@if (editorTarget() === 'new' && isRunning()) {
 						<ng-container *ngTemplateOutlet="destinationEditor" />
 					}
 				</div>
@@ -368,16 +368,16 @@
 
 <ng-template #destinationEditor>
 	<form
-		[formGroup]="destinationForm"
+		[formGroup]="editor.form"
 		class="destination-editor"
 		id="broadcast-destination-editor"
 		(ngSubmit)="submitEditor()"
 	>
 		<div class="destination-editor-header">
-			<ov-platform-icon [platform]="detectedPlatform()" [size]="28" />
+			<ov-platform-icon [platform]="editor.platform()" [size]="28" />
 			<span class="caption accent">
 				{{
-					editor() === 'new'
+					editorTarget() === 'new'
 						? ('PANEL.BROADCAST.NEW_DESTINATION' | translate)
 						: ('PANEL.BROADCAST.EDIT_DESTINATION' | translate: { name: editedDestinationName() })
 				}}
@@ -390,10 +390,10 @@
 			id="broadcast-destination-name"
 			class="field-input"
 			formControlName="name"
-			[attr.maxlength]="nameMaxLength"
+			[attr.maxlength]="editor.nameMaxLength"
 			autocomplete="off"
 		/>
-		@if (destinationForm.controls.name.touched && destinationForm.controls.name.invalid) {
+		@if (editor.form.controls.name.touched && editor.form.controls.name.invalid) {
 			<span class="field-error">{{ 'PANEL.BROADCAST.NAME_REQUIRED' | translate }}</span>
 		}
 		<label class="field-label" for="broadcast-destination-url">{{ 'PANEL.BROADCAST.URL_LABEL' | translate }}</label>
@@ -404,26 +404,26 @@
 			autocomplete="off"
 			spellcheck="false"
 		/>
-		@if (destinationForm.controls.url.touched && destinationForm.controls.url.invalid) {
+		@if (editor.form.controls.url.touched && editor.form.controls.url.invalid) {
 			<span class="field-error">{{
-				(destinationForm.controls.url.hasError('streamKeyRequired')
+				(editor.form.controls.url.hasError('streamKeyRequired')
 					? 'PANEL.BROADCAST.URL_KEY_REQUIRED'
 					: 'PANEL.BROADCAST.URL_INVALID'
 				) | translate
 			}}</span>
 		}
 		<p class="destination-editor-hint">
-			@if (detectedPlatform() !== 'other') {
-				{{ 'PANEL.BROADCAST.URL_RECOGNISED' | translate: { platform: detectedPlatformLabel() } }}
+			@if (editor.platform() !== 'other') {
+				{{ 'PANEL.BROADCAST.URL_RECOGNISED' | translate: { platform: editor.platformLabel() } }}
 			}
 			{{
-				(editor() === 'new' ? 'PANEL.BROADCAST.URL_HINT' : 'PANEL.BROADCAST.EDIT_HINT')
+				(editorTarget() === 'new' ? 'PANEL.BROADCAST.URL_HINT' : 'PANEL.BROADCAST.EDIT_HINT')
 					| translate: { name: editedDestinationName() }
 			}}
 		</p>
 		<div class="destination-editor-actions">
 			<button mat-flat-button type="submit" id="broadcast-destination-save-btn" class="editor-submit">
-				{{ (editor() === 'new' ? 'PANEL.BROADCAST.ADD' : 'PANEL.BROADCAST.SAVE') | translate }}
+				{{ (editorTarget() === 'new' ? 'PANEL.BROADCAST.ADD' : 'PANEL.BROADCAST.SAVE') | translate }}
 			</button>
 			<button mat-stroked-button type="button" id="broadcast-destination-cancel-btn" (click)="closeEditor()">
 				{{ 'PANEL.BROADCAST.CANCEL' | translate }}

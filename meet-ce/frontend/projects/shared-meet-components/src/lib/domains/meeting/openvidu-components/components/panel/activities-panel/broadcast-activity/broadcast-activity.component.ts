@@ -1,7 +1,6 @@
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatExpansionModule } from '@angular/material/expansion';
@@ -11,7 +10,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
 	MEET_BROADCAST_MAX_DESTINATIONS,
-	MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH,
 	MeetBroadcastDestinationInfo,
 	MeetBroadcastDestinationOptions,
 	MeetBroadcastDestinationSource,
@@ -21,13 +19,12 @@ import {
 import { PlatformIconComponent } from '../../../../../../../shared/components/platform-icon/platform-icon.component';
 import {
 	BROADCAST_MBPS_PER_DESTINATION,
-	BROADCAST_PLATFORM_LABELS,
 	broadcastUploadMbps
 } from '../../../../../../../shared/models/broadcast.model';
+import { DestinationEditor } from '../../../../../../../shared/utils/broadcast-destination-editor';
 import {
 	detectBroadcastPlatform,
-	extractBroadcastHost,
-	servedUrlValidator
+	extractBroadcastHost
 } from '../../../../../../../shared/utils/broadcast-platform.utils';
 import { MeetingContextService } from '../../../../../services/meeting-context.service';
 import {
@@ -67,19 +64,6 @@ const DESTINATION_STATUS_KEYS: Record<MeetBroadcastDestinationStatus, string> = 
 	[MeetBroadcastDestinationStatus.ACTIVE]: 'PANEL.BROADCAST.DEST_LIVE',
 	[MeetBroadcastDestinationStatus.STOPPED]: 'PANEL.BROADCAST.DEST_STOPPED',
 	[MeetBroadcastDestinationStatus.FAILED]: 'PANEL.BROADCAST.DEST_FAILED'
-};
-
-const rtmpUrlValidator = (control: AbstractControl<string>): ValidationErrors | null => {
-	const value = control.value.trim();
-
-	if (!value) return null;
-
-	try {
-		const { protocol } = new URL(value);
-		return protocol === 'rtmp:' || protocol === 'rtmps:' ? null : { rtmpUrl: true };
-	} catch {
-		return { rtmpUrl: true };
-	}
 };
 
 /**
@@ -197,7 +181,7 @@ export class BroadcastActivityComponent {
 	readonly plannedMbps = computed(() => broadcastUploadMbps(this.selectedCount()));
 	readonly canAddDestination = computed(() => {
 		const count = this.isRunning() ? this.broadcastDestinations().length : this.plannedDestinations().length;
-		return this.showAddDestinations() && this.editor() === null && count < this.maxDestinations;
+		return this.showAddDestinations() && this.editorTarget() === null && count < this.maxDestinations;
 	});
 
 	readonly hasRoomTracksPublished = signal(false);
@@ -205,19 +189,10 @@ export class BroadcastActivityComponent {
 		() => this.selectedCount() > 0 && this.hasRoomTracksPublished() && this.pendingRequest().status !== 'starting'
 	);
 
-	protected readonly nameMaxLength = MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH;
-	readonly editor = signal<EditorTarget>(null);
-	readonly destinationForm = this.formBuilder.nonNullable.group({
-		name: ['', [Validators.required, Validators.maxLength(MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH)]],
-		url: ['', [Validators.required, rtmpUrlValidator, servedUrlValidator(() => this.servedUrl())]]
-	});
-	/** The URL the room destination being edited was saved with, as the room serves it: redacted. */
-	private readonly servedUrl = signal<string | undefined>(undefined);
-	private readonly editedUrl = toSignal(this.destinationForm.controls.url.valueChanges, { initialValue: '' });
-	readonly detectedPlatform = computed(() => detectBroadcastPlatform(this.editedUrl()));
-	readonly detectedPlatformLabel = computed(() => BROADCAST_PLATFORM_LABELS[this.detectedPlatform()]);
+	readonly editor = new DestinationEditor(this.formBuilder);
+	readonly editorTarget = signal<EditorTarget>(null);
 	readonly editedDestinationName = computed(() => {
-		const target = this.editor();
+		const target = this.editorTarget();
 		return target && target !== 'new'
 			? (this.plannedDestinations().find(({ id }) => id === target.id)?.name ?? '')
 			: '';
@@ -265,30 +240,30 @@ export class BroadcastActivityComponent {
 	}
 
 	openAdd(): void {
-		this.servedUrl.set(undefined);
-		this.destinationForm.reset({ name: '', url: '' });
-		this.editor.set('new');
+		this.editor.open();
+		this.editorTarget.set('new');
 	}
 
 	openEdit(destination: PlannedDestination): void {
-		this.servedUrl.set(this.roomDestinations().find(({ id }) => id === destination.id)?.url);
-		this.destinationForm.reset({ name: destination.name, url: destination.url });
-		this.editor.set({ id: destination.id });
+		const saved = this.roomDestinations().find(({ id }) => id === destination.id);
+		this.editor.open({ name: destination.name, url: destination.url }, saved?.url);
+		this.editorTarget.set({ id: destination.id });
 	}
 
 	closeEditor(): void {
-		this.editor.set(null);
+		this.editorTarget.set(null);
+	}
+
+	isEditingDestination(id: string): boolean {
+		const target = this.editorTarget();
+		return target !== null && target !== 'new' && target.id === id;
 	}
 
 	submitEditor(): void {
-		if (this.destinationForm.invalid) {
-			this.destinationForm.markAllAsTouched();
-			return;
-		}
+		const target = this.editorTarget();
+		const destination = this.editor.submit();
 
-		const target = this.editor();
-		const { name, url } = this.destinationForm.getRawValue();
-		const destination = { name: name.trim(), url: url.trim() };
+		if (!destination) return;
 
 		if (target === 'new' && this.isRunning()) {
 			this.emitRequest({ action: 'addDestination', broadcastId: this.broadcast()!.broadcastId, destination });
