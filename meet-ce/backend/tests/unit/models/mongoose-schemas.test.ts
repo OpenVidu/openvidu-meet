@@ -60,6 +60,7 @@ const roomPaths = {
 	'config.broadcast': 'Embedded required',
 	'config.broadcast.enabled': 'Boolean required',
 	'config.broadcast.layout': 'String required',
+	'config.broadcast.encoding': 'Mixed required',
 	'config.broadcast.destinations': 'Array required',
 	'config.broadcast.destinations.id': 'String required',
 	'config.broadcast.destinations.name': 'String required',

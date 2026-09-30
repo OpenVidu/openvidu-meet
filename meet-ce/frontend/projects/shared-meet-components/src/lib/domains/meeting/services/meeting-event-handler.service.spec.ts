@@ -7,6 +7,7 @@ import {
 	loweredHandAttributes,
 	MeetBroadcastInfo,
 	MeetBroadcastStatus,
+	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
 	MeetBroadcastUpdatedPayload,
 	MeetEventOrigin,
@@ -118,6 +119,7 @@ describe('MeetingEventHandlerService', () => {
 		roomName: 'Room 1',
 		status: MeetBroadcastStatus.ACTIVE,
 		layout: MeetRecordingLayout.GRID,
+		encoding: MeetRecordingEncodingPreset.H264_720P_30,
 		destinations: [],
 		...overrides
 	});

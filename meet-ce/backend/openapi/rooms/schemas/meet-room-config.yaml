@@ -181,6 +181,14 @@ MeetBroadcastConfig:
                 - `single-speaker`: Only the active speaker is shown.
 
                 Config updates merge with the stored config, so an omitted layout keeps its current value.
+        encoding:
+            oneOf:
+                - $ref: '#/MeetRecordingEncodingPreset'
+                - $ref: '#/MeetRecordingEncodingOptions'
+            default: H264_720P_30
+            description: >
+                Encoding of the stream, with the same presets and options as the recording encoding.
+                Config updates merge with the stored config, so an omitted encoding keeps its current value.
 MeetBroadcastDestination:
     type: object
     required:

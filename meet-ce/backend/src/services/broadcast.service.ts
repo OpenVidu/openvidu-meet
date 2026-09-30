@@ -45,7 +45,6 @@ import { MutexService } from './mutex.service.js';
 import { RoomService } from './room.service.js';
 import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 
-const ENCODING_OPTIONS = EncodingConverter.toLivekit(MeetRecordingEncodingPreset.H264_720P_30);
 const LOCK_RETRY_DELAY_MS = 250;
 const EGRESS_LOST_ERROR = 'The egress service stopped responding';
 
@@ -98,11 +97,17 @@ export class BroadcastService {
 			);
 			this.assertDestinationPermissions(destinations, permissions);
 			const layout = config.broadcast.layout ?? MeetRecordingLayout.GRID;
+			const encoding = config.broadcast.encoding ?? MeetRecordingEncodingPreset.H264_720P_30;
 			const egress = await this.livekitService.startRoomComposite(roomId, this.toStreamOutput(destinations), {
 				layout,
-				encodingOptions: ENCODING_OPTIONS
+				encodingOptions: EncodingConverter.toLivekit(encoding)
 			});
-			const record = BroadcastHelper.createRecord(egress, { roomId, roomName }, layout, destinations);
+			const record = BroadcastHelper.createRecord(
+				egress,
+				{ roomId, roomName },
+				{ layout, encoding },
+				destinations
+			);
 			await this.broadcastState.save(record);
 
 			this.logger.info(`Broadcast '${record.broadcastId}' started for room '${roomId}'`);

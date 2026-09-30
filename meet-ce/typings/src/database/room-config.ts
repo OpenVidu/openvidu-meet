@@ -186,6 +186,12 @@ export interface MeetBroadcastConfig {
 	 * stored config, so omitting this field keeps its current value.
 	 */
 	layout?: MeetRecordingLayout;
+	/**
+	 * Encoding of the stream, the same presets and options a recording uses: a preset for common
+	 * scenarios, or detailed options for fine-grained control. Defaults to `H264_720P_30`; config
+	 * updates deep-merge with the stored config, so omitting this field keeps its current value.
+	 */
+	encoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
 }
 
 /**

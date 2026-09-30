@@ -1,4 +1,8 @@
-import type { MeetRecordingLayout } from './recording.entity.js';
+import type {
+	MeetRecordingEncodingOptions,
+	MeetRecordingEncodingPreset,
+	MeetRecordingLayout
+} from './recording.entity.js';
 
 /**
  * A live broadcast of a meeting: its composited audio and video streamed to one or more RTMP(S)
@@ -17,6 +21,11 @@ export interface MeetBroadcastInfo {
 	status: MeetBroadcastStatus;
 	/** Layout of the meeting as it is streamed, taken from the room's config when the broadcast started */
 	layout: MeetRecordingLayout;
+	/**
+	 * Encoding of the stream, a preset or detailed options, taken from the room's config when the
+	 * broadcast started. See {@link MeetRecordingEncodingPreset} and {@link MeetRecordingEncodingOptions}
+	 */
+	encoding: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
 	/**
 	 * Every destination of the broadcast with its own status: the room's saved destinations (the
 	 * ones not chosen when the broadcast started are listed as `stopped`) plus the ones added for

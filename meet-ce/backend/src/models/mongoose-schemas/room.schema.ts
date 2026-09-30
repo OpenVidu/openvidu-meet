@@ -1,5 +1,4 @@
-import type {
-	MeetRoom} from '@openvidu-meet/typings';
+import type { MeetRoom } from '@openvidu-meet/typings';
 import {
 	MeetRecordingAutoStartMode,
 	MeetRecordingLayout,
@@ -96,6 +95,10 @@ const MeetBroadcastConfigSchema = new Schema(
 		layout: {
 			type: String,
 			enum: Object.values(MeetRecordingLayout),
+			required: true
+		},
+		encoding: {
+			type: Schema.Types.Mixed,
 			required: true
 		}
 	},

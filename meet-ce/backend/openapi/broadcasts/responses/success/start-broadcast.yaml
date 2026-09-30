@@ -9,6 +9,7 @@ content:
             roomName: 'room'
             status: 'starting'
             layout: 'grid'
+            encoding: 'H264_720P_30'
             destinations:
                 - id: 'kX9pL2mQ7a'
                   name: 'YouTube'

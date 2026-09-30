@@ -64,6 +64,7 @@ content:
                             enabled: false
                             destinations: []
                             layout: grid
+                            encoding: H264_720P_30
                         virtualBackground:
                             enabled: true
                         e2ee:
@@ -100,6 +101,7 @@ content:
                             enabled: false
                             destinations: []
                             layout: grid
+                            encoding: H264_720P_30
                         virtualBackground:
                             enabled: true
                         e2ee:

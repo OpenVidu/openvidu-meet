@@ -168,7 +168,12 @@ describe('Room migration v7 → v8', () => {
 			config: { recording: { enabled: true } }
 		} as unknown as MeetRoomDocument);
 
-		expect(migrated.config.broadcast).toEqual({ enabled: false, destinations: [], layout: 'grid' });
+		expect(migrated.config.broadcast).toEqual({
+			enabled: false,
+			destinations: [],
+			layout: 'grid',
+			encoding: 'H264_720P_30'
+		});
 		expect(migrated.broadcastDestinationUrls).toEqual({});
 		expect(migrated.config.recording).toEqual({ enabled: true });
 	});

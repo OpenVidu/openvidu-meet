@@ -9,6 +9,7 @@ content:
             roomName: 'room'
             status: 'ending'
             layout: 'grid'
+            encoding: 'H264_720P_30'
             startDate: 1620000000000
             destinations:
                 - id: 'kX9pL2mQ7a'

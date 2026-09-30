@@ -7,6 +7,7 @@ import {
 	MeetBroadcastStatus,
 	MeetParticipantModerationAction,
 	MeetReaction,
+	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
 	MeetRecordingStatus,
 	MeetRoomMemberRole
@@ -639,6 +640,7 @@ describe('IframeBridgeService', () => {
 				roomName: 'Room 1',
 				status: MeetBroadcastStatus.ACTIVE,
 				layout: MeetRecordingLayout.GRID,
+				encoding: MeetRecordingEncodingPreset.H264_720P_30,
 				destinations: []
 			};
 
