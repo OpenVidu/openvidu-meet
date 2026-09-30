@@ -192,3 +192,10 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 		]
 	}
 ];
+
+export type DependentPermissionItem = PermissionItem & { dependsOn: keyof MeetRoomMemberPermissions };
+
+/** The permissions that only make sense with another one granted (see {@link PermissionItem.dependsOn}). */
+export const DEPENDENT_PERMISSIONS: DependentPermissionItem[] = PERMISSION_GROUPS.flatMap(
+	(group) => group.permissions
+).filter((permission): permission is DependentPermissionItem => permission.dependsOn !== undefined);

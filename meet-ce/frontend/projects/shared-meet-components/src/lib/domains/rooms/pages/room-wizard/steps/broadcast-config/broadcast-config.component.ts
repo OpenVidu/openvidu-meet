@@ -17,12 +17,12 @@ import {
 import { PlatformIconComponent } from '../../../../../../shared/components/platform-icon/platform-icon.component';
 import { LayoutPickerComponent } from '../../../../components/layout-picker/layout-picker.component';
 import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
+import { detectBroadcastPlatform, servedUrlValidator } from '../../../../../../shared/utils/broadcast-platform.utils';
 import {
+	BROADCAST_MBPS_PER_DESTINATION,
 	BROADCAST_PLATFORM_LABELS,
-	detectBroadcastPlatform,
-	servedUrlValidator
-} from '../../../../../../shared/utils/broadcast-platform.utils';
-import { BROADCAST_MBPS_PER_DESTINATION } from '../../../../../../shared/models/broadcast.model';
+	broadcastUploadMbps
+} from '../../../../../../shared/models/broadcast.model';
 import { BroadcastFormGroup, BroadcastFormValue } from '../../../../models/wizard-forms.model';
 import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services/wizard-state.service';
@@ -80,7 +80,7 @@ export class BroadcastConfigComponent {
 
 	readonly editingIndex = signal<number | null>(NOT_EDITING);
 	readonly destinations = signal<MeetBroadcastDestination[]>([]);
-	readonly estimatedMbps = computed(() => this.destinations().length * this.mbpsPerDestination);
+	readonly estimatedMbps = computed(() => broadcastUploadMbps(this.destinations().length));
 	readonly canAddDestination = computed(
 		() => this.editingIndex() === NOT_EDITING && this.destinations().length < this.maxDestinations
 	);

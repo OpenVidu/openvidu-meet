@@ -1,10 +1,6 @@
 import { FormControl } from '@angular/forms';
-import {
-	BroadcastPlatform,
-	detectBroadcastPlatform,
-	extractBroadcastHost,
-	servedUrlValidator
-} from './broadcast-platform.utils';
+import { detectBroadcastPlatform, extractBroadcastHost, servedUrlValidator } from './broadcast-platform.utils';
+import type { BroadcastPlatform } from '../models/broadcast.model';
 
 /**
  * The platform icon is chosen from the RTMP host alone: the stream key never leaves the server and

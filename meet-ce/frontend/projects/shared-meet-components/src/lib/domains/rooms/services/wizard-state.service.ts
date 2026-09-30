@@ -14,7 +14,7 @@ import {
 } from '@openvidu-meet/typings';
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
 import { deepMerge, DeepPartial } from '../../../shared/utils/object.utils';
-import { WizardNavigationConfig, WizardStepId } from '../models';
+import { E2EEExclusiveFeature, WizardNavigationConfig, WizardStepId } from '../models';
 import {
 	AnyWizardStep,
 	BroadcastFormGroup,
@@ -117,9 +117,6 @@ const DEFAULT_ROOM_OPTIONS: MeetRoomOptions = {
 		}
 	}
 };
-
-/** The features that end-to-end encryption excludes: enabling one turns the other off. */
-export type E2EEExclusiveFeature = 'recording' | 'broadcast';
 
 // Live broadcast needs somewhere to stream to, so enabling it without a destination is an
 // incomplete step, not a valid room.

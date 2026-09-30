@@ -1,4 +1,5 @@
 import { effect, inject, Service } from '@angular/core';
+import { MeetBroadcastStatus } from '@openvidu-meet/typings';
 import { NotificationService } from '../../../../../shared/services/notification.service';
 import { BroadcastStateService } from '../broadcast/broadcast-state.service';
 
@@ -37,7 +38,8 @@ export class BroadcastNoticeService {
 
 	private readonly announceEffect = effect(() => {
 		// Ending is still streaming, and a start that never made it does not count as one.
-		const isLive = this.broadcastState.isLive() || this.broadcastState.broadcast()?.status === 'ending';
+		const isLive =
+			this.broadcastState.isLive() || this.broadcastState.broadcast()?.status === MeetBroadcastStatus.ENDING;
 
 		if (isLive === this.wasLive) return;
 
