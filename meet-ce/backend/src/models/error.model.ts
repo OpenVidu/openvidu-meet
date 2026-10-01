@@ -311,7 +311,11 @@ export const errorBroadcastRedactedDestinationUrl = (): OpenViduMeetError => {
 };
 
 export const errorBroadcastDuplicateDestination = (redactedUrl: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Broadcast Error', `Two destinations stream to '${redactedUrl}'`, 422);
+	return new OpenViduMeetError(
+		'Broadcast Error',
+		`Duplicate destination: '${redactedUrl}' is already used by another destination`,
+		422
+	);
 };
 
 export const errorBroadcastDestinationLimit = (): OpenViduMeetError => {
