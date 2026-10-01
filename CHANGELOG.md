@@ -85,6 +85,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - The `joinDate` of the embedded event `participantJoined` was the moment the join reached the browser, by the
   browser's clock, and the one of `participantLeft` was rounded down to the second. Both now carry the `joinDate` of
   the [`participantJoined`][3.9-participant-joined] webhook.
+- [`POST /recordings`][3.10-start-recording] answered 500 when no egress service was available to record. It answers
+  503.
 - [`POST /recordings/{recordingId}/stop`][3.10-stop-recording] answered 500 when the recording ended while the stop was
   being processed. It answers 409, as for any recording already stopped.
 - A recording whose egress service died stayed in progress for good: stopping it answered 500 and starting another one
@@ -273,6 +275,7 @@ registered on both receives it twice.
 [3.9-start-recording]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/startRecording
 [3.9-stop-recording]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/stopRecording
 
+[3.10-start-recording]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/startRecording
 [3.10-stop-recording]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/stopRecording
 [3.10-recording-ended]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/recordingEndedWebhook
 [3.10-broadcasts]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/broadcastStart

@@ -1,0 +1,16 @@
+description: 'Service Unavailable: LiveKit is unreachable, or no egress service is available to record or broadcast'
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/error.yaml'
+        examples:
+            livekit_unavailable:
+                summary: LiveKit is unreachable
+                value:
+                    error: 'LiveKit Error'
+                    message: 'LiveKit is not available'
+            egress_unavailable:
+                summary: No egress service takes the recording or the broadcast
+                value:
+                    error: 'LiveKit Error'
+                    message: 'No egress service is available'

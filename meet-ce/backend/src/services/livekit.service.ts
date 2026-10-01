@@ -16,6 +16,7 @@ import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { EgressHelper } from '../helpers/egress.helper.js';
 import {
+	errorEgressNotAvailable,
 	errorLivekitNotAvailable,
 	errorParticipantNotFound,
 	errorRoomNotFound,
@@ -206,6 +207,15 @@ export class LiveKitService {
 	 */
 	private asTwirpError(error: unknown): { status?: number; code?: string; message?: string } {
 		return error ?? {};
+	}
+
+	/**
+	 * The error to answer for a failed call to an egress. LiveKit answers 503 when no egress service
+	 * takes the call, which for a start comes only after this client has given up waiting.
+	 */
+	private toEgressError(error: unknown, operation: string): OpenViduMeetError {
+		const unavailable = this.asTwirpError(error).status === 503 || (error as Error | null)?.name === 'TimeoutError';
+		return unavailable ? errorEgressNotAvailable() : internalError(operation);
 	}
 
 	/**
@@ -464,7 +474,7 @@ export class LiveKitService {
 			return await this.lk.egress.startRoomCompositeEgress(roomName, output, options);
 		} catch (error) {
 			this.logger.error(`Error starting Room Composite Egress for room '${roomName}'`, error);
-			throw internalError(`starting Room Composite Egress for room '${roomName}'`);
+			throw this.toEgressError(error, `starting Room Composite Egress for room '${roomName}'`);
 		}
 	}
 
@@ -477,7 +487,7 @@ export class LiveKitService {
 			return await this.lk.egress.updateStream(egressId, addUrls, removeUrls);
 		} catch (error) {
 			this.logger.error(`Error updating the stream URLs of egress '${egressId}'`, error);
-			throw internalError(`updating the destinations of egress '${egressId}'`);
+			throw this.toEgressError(error, `updating the destinations of egress '${egressId}'`);
 		}
 	}
 
