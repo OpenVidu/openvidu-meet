@@ -37,7 +37,7 @@
 					[class.clickable]="canOpenActivitiesPanel()"
 					(click)="openActivitiesPanel(activitiesOptions.BROADCAST)"
 				>
-					<mat-icon class="status-chip-icon broadcast-icon">sensors</mat-icon>
+					<mat-icon class="status-chip-icon">sensors</mat-icon>
 					<span class="status-chip-value">LIVE</span>
 					@if (isBroadcastStarting()) {
 						<span class="status-chip-label folds">{{ 'ROOM.BROADCAST_BADGE_STARTING' | translate }}</span>
