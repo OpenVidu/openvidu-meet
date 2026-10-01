@@ -18,6 +18,7 @@ import {
 } from '@openvidu-meet/typings';
 import type { EgressInfo } from 'livekit-server-sdk';
 import { uid } from 'uid';
+import { isDeepStrictEqual } from 'util';
 import type { BroadcastDestinationUrls, BroadcastRecord, DestinationState } from '../models/broadcast.model.js';
 import {
 	errorBroadcastDestinationLimit,
@@ -240,6 +241,14 @@ export class BroadcastHelper {
 			endDate: ended,
 			duration: (ended - record.startDate) / 1000
 		};
+	}
+
+	/**
+	 * Whether two records of a broadcast say the same as the server keeps them, where a field
+	 * without a value is a field the record does not have.
+	 */
+	static isSameRecord(a: BroadcastRecord, b: BroadcastRecord): boolean {
+		return isDeepStrictEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 	}
 
 	static toBroadcastInfo(record: BroadcastRecord): MeetBroadcastInfo {
