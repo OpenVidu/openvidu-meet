@@ -114,6 +114,12 @@
 		color: var(--ov-meet-text-secondary);
 	}
 
+	.add-destination,
+	.destination-editor-footer button,
+	.link-button {
+		@include design-tokens.ov-button-base;
+	}
+
 	.add-destination {
 		align-self: flex-start;
 		color: var(--ov-meet-color-primary);
