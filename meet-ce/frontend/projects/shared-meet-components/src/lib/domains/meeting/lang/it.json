@@ -195,6 +195,8 @@
 			"URL_KEY_REQUIRED": "Un URL modificato richiede la chiave dello stream: incolla l'URL completo",
 			"NAME_REQUIRED": "Inserisci un nome",
 			"ADD": "Aggiungi",
+			"GO_LIVE_NOW": "Vai in diretta",
+			"DESTINATION_NOT_ADDED": "La destinazione non è stata aggiunta",
 			"SAVE": "Salva",
 			"CANCEL": "Annulla",
 			"REMOVE": "Rimuovi",

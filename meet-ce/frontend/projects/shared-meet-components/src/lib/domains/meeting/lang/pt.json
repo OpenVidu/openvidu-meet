@@ -195,6 +195,8 @@
 			"URL_KEY_REQUIRED": "Uma URL alterada precisa da chave de transmissão: cole a URL completa",
 			"NAME_REQUIRED": "Insira um nome",
 			"ADD": "Adicionar",
+			"GO_LIVE_NOW": "Entrar ao vivo",
+			"DESTINATION_NOT_ADDED": "O destino não foi adicionado",
 			"SAVE": "Salvar",
 			"CANCEL": "Cancelar",
 			"REMOVE": "Remover",

@@ -195,6 +195,8 @@
 			"URL_KEY_REQUIRED": "変更した URL にはストリームキーが必要です。完全な URL を貼り付けてください",
 			"NAME_REQUIRED": "名前を入力してください",
 			"ADD": "追加",
+			"GO_LIVE_NOW": "ライブ配信を開始",
+			"DESTINATION_NOT_ADDED": "配信先を追加できませんでした",
 			"SAVE": "保存",
 			"CANCEL": "キャンセル",
 			"REMOVE": "削除",

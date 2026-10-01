@@ -55,16 +55,17 @@ describe('DestinationEditor', () => {
 		expect(editor.submit()).toEqual({ name: 'Main channel', url: 'rtmp://a.rtmp.youtube.com/live2/key' });
 	});
 
-	it("shows the server's refusal of the URL until the URL is changed", () => {
+	it("keeps the server's refusal until the destination is edited, and lets it be submitted again", () => {
 		editor.open({ name: 'Sink', url: 'rtmp://a.rtmp.youtube.com/live2/key' });
-		editor.rejectUrl('Duplicate destination');
+		editor.rejection.set('Duplicate destination');
 
-		expect(editor.form.controls.url.getError('rejected')).toBe('Duplicate destination');
-		expect(editor.submit()).toBeUndefined();
+		expect(editor.submit()).toEqual({ name: 'Sink', url: 'rtmp://a.rtmp.youtube.com/live2/key' });
+		expect(editor.rejection()).toBeUndefined();
 
+		editor.rejection.set('Duplicate destination');
 		editor.form.controls.url.setValue('rtmp://a.rtmp.youtube.com/live2/other-key');
 
-		expect(editor.form.controls.url.hasError('rejected')).toBeFalse();
+		expect(editor.rejection()).toBeUndefined();
 	});
 
 	it('tells the platform of the URL as it is typed', () => {

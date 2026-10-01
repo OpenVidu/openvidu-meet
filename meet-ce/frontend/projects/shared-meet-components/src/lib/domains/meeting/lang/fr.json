@@ -195,6 +195,8 @@
 			"URL_KEY_REQUIRED": "Une URL modifiée a besoin de sa clé de diffusion : collez l'URL complète",
 			"NAME_REQUIRED": "Saisissez un nom",
 			"ADD": "Ajouter",
+			"GO_LIVE_NOW": "Passer en direct",
+			"DESTINATION_NOT_ADDED": "La destination n'a pas été ajoutée",
 			"SAVE": "Enregistrer",
 			"CANCEL": "Annuler",
 			"REMOVE": "Supprimer",

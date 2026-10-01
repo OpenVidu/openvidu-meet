@@ -74,6 +74,7 @@ test.describe('Live broadcast E2E Tests', () => {
 
 		await expect(page.locator('#broadcast-destination-url-rejected')).toContainText('Duplicate destination');
 		await expect(page.locator('#broadcast-destination-editor')).toBeVisible();
+		await expect(page.locator('#broadcast-destination-save-btn')).toHaveText('Retry');
 		await expectBroadcastPhase(page, 'live');
 	});
 

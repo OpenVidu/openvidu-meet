@@ -199,6 +199,16 @@ export class BroadcastActivityComponent {
 	readonly editorTarget = signal<EditorTarget>(null);
 	/** A destination added to the running broadcast that the server has not answered yet. */
 	readonly addingDestination = signal(false);
+	/** Adding a destination to the running broadcast takes it live at once, so the editor says so. */
+	readonly submitLabelKey = computed(() => {
+		if (this.editorTarget() !== 'new') return 'PANEL.BROADCAST.SAVE';
+
+		if (!this.isRunning()) return 'PANEL.BROADCAST.ADD';
+
+		return this.editor.rejection() === undefined
+			? 'PANEL.BROADCAST.GO_LIVE_NOW'
+			: 'PANEL.BROADCAST.RETRY_DESTINATION';
+	});
 	readonly editedDestinationName = computed(() => {
 		const target = this.editorTarget();
 		return target && target !== 'new'
@@ -219,7 +229,7 @@ export class BroadcastActivityComponent {
 		this.addingDestination.set(false);
 
 		if (request.status === 'failed') {
-			this.editor.rejectUrl(request.error ?? '');
+			this.editor.rejection.set(request.error ?? '');
 			this.broadcastState.dismissFailure();
 		} else {
 			this.closeEditor();

@@ -48,6 +48,8 @@ export class DestinationEditor {
 	readonly platformLabel: Signal<string>;
 	/** A saved destination whose URL is still the redacted one it was served with keeps its stream key. */
 	readonly keepsSavedKey: Signal<boolean>;
+	/** Why the server refused the destination last submitted, until it is edited or submitted again. */
+	readonly rejection = signal<string | undefined>(undefined);
 
 	/** The URL the destination being edited was served with, redacted when it is a saved one. */
 	private readonly servedUrl = signal<string | undefined>(undefined);
@@ -61,6 +63,7 @@ export class DestinationEditor {
 		this.platform = computed(() => detectBroadcastPlatform(url()));
 		this.platformLabel = computed(() => BROADCAST_PLATFORM_LABELS[this.platform()]);
 		this.keepsSavedKey = computed(() => isRedactedStreamUrl(url()) && url().trim() === this.servedUrl());
+		this.form.valueChanges.subscribe(() => this.rejection.set(undefined));
 	}
 
 	/** Starts editing the given destination, or a new one; `servedUrl` is the saved URL as it was served. */
@@ -69,14 +72,10 @@ export class DestinationEditor {
 		this.form.reset(destination);
 	}
 
-	/** Shows the server's refusal of the URL under its field, until the URL is changed. */
-	rejectUrl(message: string): void {
-		this.form.controls.url.setErrors({ rejected: message });
-		this.form.controls.url.markAsTouched();
-	}
-
 	/** The destination as edited, trimmed, once it is valid; otherwise marks the fields and yields nothing. */
 	submit(): MeetBroadcastDestinationOptions | undefined {
+		this.rejection.set(undefined);
+
 		if (this.form.invalid) {
 			this.form.markAllAsTouched();
 			return undefined;
