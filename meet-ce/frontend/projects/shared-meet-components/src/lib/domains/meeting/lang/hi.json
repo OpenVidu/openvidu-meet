@@ -190,7 +190,7 @@
 			"URL_LABEL": "स्ट्रीम URL",
 			"URL_RECOGNISED": "{platform} के रूप में पहचाना गया।",
 			"URL_HINT": "स्ट्रीम कुंजी सहित rtmp:// या rtmps:// URL पेस्ट करें। यह केवल इस मीटिंग के लिए उपयोग होगा।",
-			"URL_INVALID": "rtmp:// या rtmps:// URL दर्ज करें",
+			"URL_INVALID": "rtmp://host/app/key के रूप में rtmp:// या rtmps:// URL दर्ज करें",
 			"URL_KEY_REQUIRED": "बदले गए URL के लिए स्ट्रीम कुंजी चाहिए: पूरा URL पेस्ट करें",
 			"NAME_REQUIRED": "नाम दर्ज करें",
 			"ADD": "जोड़ें",

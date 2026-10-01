@@ -332,7 +332,7 @@
         "URL_HINT": "プラットフォームから提供された rtmp:// または rtmps:// の URL を、ストリームキーを含めて貼り付けてください。",
         "URL_RECOGNISED": "{platform} として認識しました。",
         "URL_KEEP_KEY": "保存済みのストリームキーを維持するには URL をそのままにし、置き換えるには新しい URL を貼り付けてください。",
-        "URL_INVALID": "rtmp:// または rtmps:// の URL を入力してください",
+        "URL_INVALID": "rtmp://host/app/key 形式の rtmp:// または rtmps:// の URL を入力してください",
         "URL_KEY_REQUIRED": "変更した URL にはストリームキーが必要です。完全な URL を貼り付けてください",
         "NAME_REQUIRED": "名前を入力してください",
         "ADD": "追加",

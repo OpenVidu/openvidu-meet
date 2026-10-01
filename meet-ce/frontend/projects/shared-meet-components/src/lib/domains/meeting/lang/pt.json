@@ -190,7 +190,7 @@
 			"URL_LABEL": "URL da transmissão",
 			"URL_RECOGNISED": "Reconhecido como {platform}.",
 			"URL_HINT": "Cole a URL rtmp:// ou rtmps://, com a chave de transmissão incluída. Ela vale apenas para esta reunião.",
-			"URL_INVALID": "Insira uma URL rtmp:// ou rtmps://",
+			"URL_INVALID": "Insira uma URL rtmp:// ou rtmps:// no formato rtmp://host/app/key",
 			"URL_KEY_REQUIRED": "Uma URL alterada precisa da chave de transmissão: cole a URL completa",
 			"NAME_REQUIRED": "Insira um nome",
 			"ADD": "Adicionar",

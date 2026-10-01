@@ -69,6 +69,18 @@ describe('BroadcastConfigSchema', () => {
 		);
 	});
 
+	it('rejects a URL the media server would refuse: no app, no stream key, or a trailing slash', () => {
+		for (const url of ['rtmp://mtx', 'rtmp://mtx/key-without-app', 'rtmp://mtx/live/key/']) {
+			expect(
+				issues(BroadcastConfigSchema.safeParse({ enabled: true, destinations: [{ name: 'X', url }] }))
+			).toEqual([
+				'destinations.0.url: Destination url must have the form rtmp(s)://{host}(/{path})/{app}/{stream_key}'
+			]);
+		}
+
+		expect(AddBroadcastDestinationReqSchema.safeParse({ name: 'X', url: 'rtmp://mtx/key' }).success).toBe(false);
+	});
+
 	it('leaves the destination list out when omitted, since the room decides whether broadcast can be on', () => {
 		expect(BroadcastConfigSchema.parse({ enabled: true })).toEqual({ enabled: true });
 		expect(BroadcastConfigSchema.safeParse({ enabled: true, destinations: [] }).success).toBe(true);

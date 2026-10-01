@@ -332,7 +332,7 @@
         "URL_HINT": "Plak de rtmp://- of rtmps://-URL van uw platform, inclusief streamsleutel.",
         "URL_RECOGNISED": "Herkend als {platform}.",
         "URL_KEEP_KEY": "Laat de URL ongewijzigd om de opgeslagen streamsleutel te behouden, of plak een nieuwe om die te vervangen.",
-        "URL_INVALID": "Voer een rtmp://- of rtmps://-URL in",
+        "URL_INVALID": "Voer een rtmp://- of rtmps://-URL in van de vorm rtmp://host/app/key",
         "URL_KEY_REQUIRED": "Een gewijzigde URL heeft zijn streamsleutel nodig: plak de volledige URL",
         "NAME_REQUIRED": "Voer een naam in",
         "ADD": "Toevoegen",

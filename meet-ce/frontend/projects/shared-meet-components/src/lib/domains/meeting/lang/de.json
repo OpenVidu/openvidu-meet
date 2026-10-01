@@ -190,7 +190,7 @@
 			"URL_LABEL": "Stream-URL",
 			"URL_RECOGNISED": "Erkannt als {platform}.",
 			"URL_HINT": "Fügen Sie die rtmp://- oder rtmps://-URL einschließlich Stream-Schlüssel ein. Sie gilt nur für dieses Meeting.",
-			"URL_INVALID": "Geben Sie eine rtmp://- oder rtmps://-URL ein",
+			"URL_INVALID": "Geben Sie eine rtmp://- oder rtmps://-URL der Form rtmp://host/app/key ein",
 			"URL_KEY_REQUIRED": "Eine geänderte URL braucht ihren Stream-Schlüssel: Fügen Sie die vollständige URL ein",
 			"NAME_REQUIRED": "Geben Sie einen Namen ein",
 			"ADD": "Hinzufügen",

@@ -190,7 +190,7 @@
 			"URL_LABEL": "Stream URL",
 			"URL_RECOGNISED": "Recognised as {platform}.",
 			"URL_HINT": "Paste the rtmp:// or rtmps:// URL, stream key included. It is used for this meeting only.",
-			"URL_INVALID": "Enter an rtmp:// or rtmps:// URL",
+			"URL_INVALID": "Enter an rtmp:// or rtmps:// URL of the form rtmp://host/app/key",
 			"URL_KEY_REQUIRED": "A changed URL needs its stream key: paste the full URL",
 			"NAME_REQUIRED": "Enter a name",
 			"ADD": "Add",

@@ -6,6 +6,7 @@ import type {
 	MeetBroadcastStartOptions
 } from '@openvidu-meet/typings';
 import {
+	isValidStreamUrl,
 	MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH,
 	MEET_BROADCAST_FIELDS,
 	MEET_BROADCAST_MAX_DESTINATIONS,
@@ -30,7 +31,8 @@ const destinationNameSchema = z
 
 const destinationUrlSchema = z
 	.url({ protocol: /^rtmps?$/, error: 'Destination url must be an rtmp:// or rtmps:// URL' })
-	.max(DESTINATION_URL_MAX_LENGTH, `Destination url cannot exceed ${DESTINATION_URL_MAX_LENGTH} characters`);
+	.max(DESTINATION_URL_MAX_LENGTH, `Destination url cannot exceed ${DESTINATION_URL_MAX_LENGTH} characters`)
+	.refine(isValidStreamUrl, 'Destination url must have the form rtmp(s)://{host}(/{path})/{app}/{stream_key}');
 
 const destinationListSchema = <T extends z.ZodType>(item: T) =>
 	z
