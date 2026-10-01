@@ -199,10 +199,6 @@
           "LABEL": "Aggiungere destinazioni",
           "DESCRIPTION": "Consente di trasmettere una riunione a URL aggiuntivi oltre alle destinazioni della stanza. Richiede \"Andare in diretta\""
         },
-        "broadcastEditDestinations": {
-          "LABEL": "Modificare destinazioni",
-          "DESCRIPTION": "Consente di cambiare URL o nome di una destinazione solo per una riunione, lasciando invariate le destinazioni della stanza. Richiede \"Andare in diretta\""
-        },
         "chatRead": {
           "LABEL": "Leggere",
           "DESCRIPTION": "Consenti di leggere i messaggi della chat"

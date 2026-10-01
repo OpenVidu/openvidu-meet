@@ -181,40 +181,6 @@ describe('BroadcastHelper.resolveStartDestinations', () => {
 		expect(destinations.map(({ id, status }) => `${id}:${status}`)).toEqual(['a:stopped', 'b:connecting']);
 	});
 
-	it('changes a room destination for this meeting only, and marks it as edited', () => {
-		const [edited] = BroadcastHelper.resolveStartDestinations(room, urls, [
-			{ id: 'a', name: 'Client channel', url: 'rtmp://mtx/live/clientKEY' }
-		]);
-
-		expect(edited).toEqual({
-			id: 'a',
-			name: 'Client channel',
-			url: 'rtmp://mtx/live/clientKEY',
-			source: 'room',
-			status: 'connecting',
-			edited: true
-		});
-	});
-
-	it('does not count a redacted URL or the saved name as an edit', () => {
-		const [unchanged] = BroadcastHelper.resolveStartDestinations(room, urls, [
-			{ id: 'a', name: 'A', url: 'rtmp://mtx/live/********' }
-		]);
-
-		expect(unchanged.url).toBe(urls.a);
-		expect(unchanged.edited).toBeUndefined();
-	});
-
-	it('rejects a redacted URL that is not the one the destination was served with', () => {
-		expectStatus(
-			() =>
-				BroadcastHelper.resolveStartDestinations(room, urls, [
-					{ id: 'a', url: 'rtmp://other-server/live/********' }
-				]),
-			422
-		);
-	});
-
 	it('adds a destination for this meeting', () => {
 		const destinations = BroadcastHelper.resolveStartDestinations(room, urls, [
 			{ id: 'a' },

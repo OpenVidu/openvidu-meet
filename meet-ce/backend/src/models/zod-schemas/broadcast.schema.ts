@@ -59,8 +59,8 @@ const BroadcastStartDestinationSchema = z
 		name: destinationNameSchema.optional(),
 		url: destinationUrlSchema.optional()
 	})
-	.refine((destination) => destination.id || (destination.name && destination.url), {
-		message: 'A destination needs the id of a room destination, or a name and a url'
+	.refine(({ id, name, url }) => (id ? !name && !url : Boolean(name && url)), {
+		message: 'A destination is either the id of a room destination alone, or a name and a url'
 	});
 
 export const StartBroadcastReqSchema: z.ZodType<MeetBroadcastStartOptions> = z.object({

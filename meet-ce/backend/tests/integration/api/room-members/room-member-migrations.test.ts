@@ -58,7 +58,6 @@ const expectedCurrentEffectivePermissions = {
 	recordingDelete: false,
 	broadcastControl: false,
 	broadcastAddDestinations: false,
-	broadcastEditDestinations: false,
 	meetingJoin: true,
 	meetingRead: true,
 	roomShareAccessLinks: false,

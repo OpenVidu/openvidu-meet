@@ -8,10 +8,10 @@
             Requires the `broadcastControl` permission, and a room whose config has `broadcast.enabled`.
 
             By default the broadcast streams to every destination saved in the room's config. The request
-            body may narrow that to some of them, change the name or the URL of one for this meeting only
-            (which requires the `broadcastEditDestinations` permission), or add destinations the room does
-            not have (which requires the `broadcastAddDestinations` permission). A broadcast streams to at
-            most 5 destinations, and never to the same URL twice.
+            body may narrow that to some of them, or add destinations the room does not have for this
+            meeting only (which requires the `broadcastAddDestinations` permission). A room destination
+            is streamed to as saved. A broadcast streams to at most 5 destinations, and never to the same
+            URL twice.
 
             The request completes as soon as the media server accepts the broadcast, which is returned in
             the `starting` status with every chosen destination `connecting`. It becomes `active` once the

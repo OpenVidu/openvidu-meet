@@ -42,7 +42,13 @@ export const goLiveFromActivitiesPanel = async (page: Page): Promise<void> => {
 	await button.click();
 };
 
-/** Adds a destination to the running broadcast from the activity's editor. */
+/** Leaves a room destination out of the broadcast the activity is about to start. */
+export const untickPlannedDestination = async (page: Page, destinationId: string): Promise<void> => {
+	await expandBroadcastActivity(page);
+	await page.locator(`#broadcast-planned-${destinationId} input[type="checkbox"]`).uncheck();
+};
+
+/** Adds a destination for the meeting from the activity's editor: to the running broadcast, or to the next one. */
 export const addDestinationFromActivitiesPanel = async (page: Page, name: string, url: string): Promise<void> => {
 	await expandBroadcastActivity(page);
 	await page.locator('#broadcast-add-destination-btn').click();

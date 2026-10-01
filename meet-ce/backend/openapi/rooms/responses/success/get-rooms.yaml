@@ -130,7 +130,6 @@ content:
                                       recordingDelete: true
                                       broadcastControl: true
                                       broadcastAddDestinations: true
-                                      broadcastEditDestinations: true
                                       meetingJoin: true
                                       meetingRead: true
                                       roomShareAccessLinks: true
@@ -155,7 +154,6 @@ content:
                                       recordingDelete: false
                                       broadcastControl: false
                                       broadcastAddDestinations: false
-                                      broadcastEditDestinations: false
                                       meetingJoin: true
                                       meetingRead: true
                                       roomShareAccessLinks: false
@@ -233,7 +231,6 @@ content:
                                       recordingDelete: false
                                       broadcastControl: false
                                       broadcastAddDestinations: false
-                                      broadcastEditDestinations: false
                                       meetingJoin: true
                                       meetingRead: true
                                       roomShareAccessLinks: true
@@ -258,7 +255,6 @@ content:
                                       recordingDelete: false
                                       broadcastControl: false
                                       broadcastAddDestinations: false
-                                      broadcastEditDestinations: false
                                       meetingJoin: true
                                       meetingRead: true
                                       roomShareAccessLinks: false

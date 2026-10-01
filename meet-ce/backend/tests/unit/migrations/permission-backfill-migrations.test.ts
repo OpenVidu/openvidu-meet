@@ -145,7 +145,6 @@ describe('Room migration v7 → v8', () => {
 		const permissions = Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true]));
 		delete permissions.broadcastControl;
 		delete permissions.broadcastAddDestinations;
-		delete permissions.broadcastEditDestinations;
 		return permissions;
 	};
 

@@ -354,19 +354,15 @@ export class BroadcastService {
 	}
 
 	/**
-	 * Adding a destination for this meeting, and changing a room destination for it, each need their
-	 * own permission on top of `broadcastControl`.
+	 * Adding a destination for this meeting needs its own permission on top of `broadcastControl`.
 	 */
 	protected assertDestinationPermissions(
 		destinations: MeetBroadcastDestinationInfo[],
 		permissions: MeetRoomMemberPermissions
 	): void {
 		const adds = destinations.some(({ source }) => source === MeetBroadcastDestinationSource.MEETING);
-		const edits = destinations.some(({ edited }) => edited);
 
-		if ((adds && !permissions.broadcastAddDestinations) || (edits && !permissions.broadcastEditDestinations)) {
-			throw errorInsufficientPermissions();
-		}
+		if (adds && !permissions.broadcastAddDestinations) throw errorInsufficientPermissions();
 	}
 
 	protected async getRecord(roomId: string, broadcastId: string): Promise<BroadcastRecord> {

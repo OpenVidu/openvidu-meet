@@ -6,7 +6,6 @@ import {
 import {
     BroadcastActivityAddDestinationsDirective,
     BroadcastActivityControlsDirective,
-    BroadcastActivityEditDestinationsDirective,
     E2EEKeyDirective,
     FallbackLogoDirective,
     LayoutRemoteParticipantsDirective,
@@ -86,7 +85,6 @@ const directives = [
 	ActivitiesPanelBroadcastActivityDirective,
 	BroadcastActivityControlsDirective,
 	BroadcastActivityAddDestinationsDirective,
-	BroadcastActivityEditDestinationsDirective,
 	LayoutRemoteParticipantsDirective,
 	StartStopRecordingButtonsDirective,
 	RecordingActivityViewRecordingsButtonDirective,

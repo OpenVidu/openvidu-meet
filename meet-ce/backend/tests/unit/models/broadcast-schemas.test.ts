@@ -92,12 +92,21 @@ describe('StartBroadcastReqSchema', () => {
 		expect(StartBroadcastReqSchema.safeParse({}).success).toBe(true);
 	});
 
-	it('accepts room destinations by id, edited ones and new ones', () => {
-		const result = StartBroadcastReqSchema.safeParse({
-			destinations: [{ id: 'a' }, { id: 'b', name: 'B for this meeting' }, destination('c')]
-		});
+	it('accepts room destinations by id and new ones by name and url', () => {
+		const result = StartBroadcastReqSchema.safeParse({ destinations: [{ id: 'a' }, destination('c')] });
 
 		expect(result.success).toBe(true);
+	});
+
+	it('rejects a room destination sent with a name or a url, since a meeting cannot change it', () => {
+		const message = 'A destination is either the id of a room destination alone, or a name and a url';
+
+		expect(issues(StartBroadcastReqSchema.safeParse({ destinations: [{ id: 'a', name: 'Renamed' }] }))).toEqual([
+			`destinations.0: ${message}`
+		]);
+		expect(issues(StartBroadcastReqSchema.safeParse({ destinations: [{ id: 'a', ...destination('x') }] }))).toEqual(
+			[`destinations.0: ${message}`]
+		);
 	});
 
 	it('rejects an empty list, more than five entries and an entry naming neither an id nor a url', () => {
@@ -108,7 +117,7 @@ describe('StartBroadcastReqSchema', () => {
 			StartBroadcastReqSchema.safeParse({ destinations: ['a', 'b', 'c', 'd', 'e', 'f'].map(destination) }).success
 		).toBe(false);
 		expect(issues(StartBroadcastReqSchema.safeParse({ destinations: [{ name: 'No url' }] }))).toEqual([
-			'destinations.0: A destination needs the id of a room destination, or a name and a url'
+			'destinations.0: A destination is either the id of a room destination alone, or a name and a url'
 		]);
 	});
 });

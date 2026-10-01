@@ -79,17 +79,10 @@ describe('FeatureCalculator.applyPermissions', () => {
 		expect(featuresFor({ recordingControl: false }).showBroadcastControls).toBeTrue();
 	});
 
-	it('should offer the destination permissions only together with broadcastControl', () => {
-		const granted = featuresFor();
-		expect(granted.showBroadcastAddDestinations).toBeTrue();
-		expect(granted.showBroadcastEditDestinations).toBeTrue();
-
-		const noControl = featuresFor({ broadcastControl: false });
-		expect(noControl.showBroadcastAddDestinations).toBeFalse();
-		expect(noControl.showBroadcastEditDestinations).toBeFalse();
-
+	it('should offer adding destinations only together with broadcastControl', () => {
+		expect(featuresFor().showBroadcastAddDestinations).toBeTrue();
+		expect(featuresFor({ broadcastControl: false }).showBroadcastAddDestinations).toBeFalse();
 		expect(featuresFor({ broadcastAddDestinations: false }).showBroadcastAddDestinations).toBeFalse();
-		expect(featuresFor({ broadcastEditDestinations: false }).showBroadcastEditDestinations).toBeFalse();
 	});
 
 	it('should keep showViewRecordings on recordingList even when play and download are denied', () => {

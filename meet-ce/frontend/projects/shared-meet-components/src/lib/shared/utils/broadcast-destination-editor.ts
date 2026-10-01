@@ -36,7 +36,7 @@ export const servedUrlValidator =
 
 /**
  * The form both places that edit a broadcast destination share: the wizard, for the room's saved
- * destinations, and the activity, for those of the meeting. It validates the name and the RTMP URL,
+ * destinations, and the activity, for the ones added for a meeting. It validates the name and the RTMP URL,
  * tells which platform the URL streams to as it is typed, and knows when a saved destination keeps
  * its stream key. Created in an injection context, since it reads the URL as a signal.
  */

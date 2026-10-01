@@ -199,10 +199,6 @@
           "LABEL": "添加目标",
           "DESCRIPTION": "允许在房间目标之外将会议推流到额外的地址。需要“开始直播”"
         },
-        "broadcastEditDestinations": {
-          "LABEL": "编辑目标",
-          "DESCRIPTION": "允许仅为一次会议更改某个目标的地址或名称，房间的目标保持不变。需要“开始直播”"
-        },
         "chatRead": {
           "LABEL": "阅读",
           "DESCRIPTION": "允许阅读聊天消息"

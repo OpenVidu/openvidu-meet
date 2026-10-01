@@ -175,8 +175,8 @@ export interface MeetBroadcastConfig {
 	 * The room's default destinations: where a meeting streams when it goes live. At most
 	 * {@link MEET_BROADCAST_MAX_DESTINATIONS}, and at least one while `enabled` is `true`. In the
 	 * meeting, a participant with the `broadcastControl` permission streams to all of them or to a
-	 * subset, and with `broadcastAddDestinations` or `broadcastEditDestinations` adds or changes
-	 * destinations for that meeting only: the list saved here never changes from inside a meeting.
+	 * subset, and with `broadcastAddDestinations` adds destinations for that meeting only: the list
+	 * saved here never changes from inside a meeting.
 	 * See {@link MeetBroadcastDestination} for details.
 	 */
 	destinations: MeetBroadcastDestination[];
