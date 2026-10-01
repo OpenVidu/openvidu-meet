@@ -1,7 +1,21 @@
+import type { MeetBroadcastStartOptions } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { errorBroadcastDisabled, handleError, rejectRequestFromMeetError } from '../models/error.model.js';
 import { RoomService } from '../services/room.service.js';
+import { withRoomPermission } from './room.middleware.js';
+
+/**
+ * Middleware to require `broadcastAddDestinations` from a start request that adds a destination for
+ * the meeting, which is any entry without the `id` of a room destination.
+ */
+export const withAddDestinationsPermissionToStart = (req: Request, res: Response, next: NextFunction) => {
+	const { destinations } = req.body as MeetBroadcastStartOptions;
+
+	if (!destinations?.some(({ id }) => !id)) return next();
+
+	return withRoomPermission('broadcastAddDestinations')(req, res, next);
+};
 
 /**
  * Middleware to ensure the room allows live broadcasts before one is started.

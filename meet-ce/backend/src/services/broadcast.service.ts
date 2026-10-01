@@ -3,11 +3,9 @@ import type {
 	MeetBroadcastDestinationOptions,
 	MeetBroadcastDestinationUpdateOptions,
 	MeetBroadcastInfo,
-	MeetBroadcastStartOptions,
-	MeetRoomMemberPermissions
+	MeetBroadcastStartOptions
 } from '@openvidu-meet/typings';
 import {
-	MeetBroadcastDestinationSource,
 	MeetBroadcastDestinationStatus,
 	MeetBroadcastStatus,
 	MeetRecordingEncodingPreset,
@@ -30,12 +28,10 @@ import {
 	errorBroadcastAlreadyStarted,
 	errorBroadcastAlreadyStopped,
 	errorBroadcastDestinationNotFound,
-	errorBroadcastDisabled,
 	errorBroadcastNotActive,
 	errorBroadcastNotFound,
 	errorBroadcastRoomHasNoParticipants,
-	errorBroadcastUpdateInProgress,
-	errorInsufficientPermissions
+	errorBroadcastUpdateInProgress
 } from '../models/error.model.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { BroadcastStateService } from './broadcast-state.service.js';
@@ -76,24 +72,19 @@ export class BroadcastService {
 		return this.withRequestLock(roomId, async () => {
 			if (await this.findLiveRecord(roomId)) throw errorBroadcastAlreadyStarted(roomId);
 
-			const { roomName, config } = await this.roomService.getMeetRoom(roomId, ['roomName', 'config']);
-
-			if (!config.broadcast.enabled) throw errorBroadcastDisabled(roomId);
-
 			if (!(await this.livekitService.roomHasParticipants(roomId))) {
 				throw errorBroadcastRoomHasNoParticipants(roomId);
 			}
 
-			const [destinationUrls, permissions] = await Promise.all([
-				this.roomRepository.findBroadcastDestinationUrls(roomId),
-				this.roomService.getAuthenticatedRoomMemberPermissions(roomId)
+			const [{ roomName, config }, destinationUrls] = await Promise.all([
+				this.roomService.getMeetRoom(roomId, ['roomName', 'config']),
+				this.roomRepository.findBroadcastDestinationUrls(roomId)
 			]);
 			const destinations = BroadcastHelper.resolveStartDestinations(
 				config.broadcast.destinations,
 				destinationUrls,
 				options.destinations
 			);
-			this.assertDestinationPermissions(destinations, permissions);
 			const layout = config.broadcast.layout ?? MeetRecordingLayout.GRID;
 			const encoding = config.broadcast.encoding ?? MeetRecordingEncodingPreset.H264_720P_30;
 			const egress = await this.livekitService.startRoomComposite(roomId, this.toStreamOutput(destinations), {
@@ -351,18 +342,6 @@ export class BroadcastService {
 		this.logger.warn(`Dropping the stale broadcast '${record.broadcastId}' of room '${roomId}'`);
 		await this.broadcastState.delete(roomId);
 		return undefined;
-	}
-
-	/**
-	 * Adding a destination for this meeting needs its own permission on top of `broadcastControl`.
-	 */
-	protected assertDestinationPermissions(
-		destinations: MeetBroadcastDestinationInfo[],
-		permissions: MeetRoomMemberPermissions
-	): void {
-		const adds = destinations.some(({ source }) => source === MeetBroadcastDestinationSource.MEETING);
-
-		if (adds && !permissions.broadcastAddDestinations) throw errorInsufficientPermissions();
 	}
 
 	protected async getRecord(roomId: string, broadcastId: string): Promise<BroadcastRecord> {

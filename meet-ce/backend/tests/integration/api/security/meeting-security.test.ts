@@ -11,6 +11,7 @@ import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import {
+	errorBroadcastDisabled,
 	errorInsufficientPermissions,
 	errorInvalidToken,
 	errorUnauthorized
@@ -118,11 +119,11 @@ describe('Meeting API Security Tests', () => {
 	});
 
 	describe('Broadcast Tests', () => {
-		const startBroadcastWith = (set: [string, string]) =>
+		const startBroadcastWith = (set: [string, string], body: object = {}) =>
 			request(app)
 				.post(`${MEETINGS_PATH}/${roomId}/broadcasts`)
 				.set(...set)
-				.send({});
+				.send(body);
 
 		it('should pass the authentication when request includes API key', async () => {
 			const response = await startBroadcastWith([INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY]);
@@ -159,6 +160,27 @@ describe('Meeting API Security Tests', () => {
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken)
 				.send({ name: 'Extra', url: 'rtmp://rtmp-sink.invalid/live/key' });
 			expectMeetError(response, errorInsufficientPermissions());
+		});
+
+		it('should fail to start with a destination for the meeting without broadcastAddDestinations', async () => {
+			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
+				broadcastControl: true,
+				broadcastAddDestinations: false
+			});
+			const memberHeader: [string, string] = [INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken];
+
+			expectMeetError(
+				await startBroadcastWith(memberHeader, {
+					destinations: [{ name: 'Extra', url: 'rtmp://rtmp-sink.invalid/live/key' }]
+				}),
+				errorInsufficientPermissions()
+			);
+			// Naming only room destinations needs no more than broadcastControl, so the request goes on to
+			// the room's own checks: this room has live broadcast disabled.
+			expectMeetError(
+				await startBroadcastWith(memberHeader, { destinations: [{ id: 'room-destination' }] }),
+				errorBroadcastDisabled(roomId)
+			);
 		});
 
 		it('should list the broadcasts with any room member token that may read the meeting', async () => {

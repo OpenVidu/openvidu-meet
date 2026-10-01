@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as broadcastCtrl from '../controllers/broadcast.controller.js';
 import { apiKeyValidator, roomMemberTokenValidator, withAuth } from '../middlewares/auth.middleware.js';
-import { withBroadcastEnabled } from '../middlewares/broadcast.middleware.js';
+import { withAddDestinationsPermissionToStart, withBroadcastEnabled } from '../middlewares/broadcast.middleware.js';
 import {
 	validateAddBroadcastDestinationReq,
 	validateStartBroadcastReq,
@@ -22,6 +22,7 @@ broadcastRouter.post(
 	withValidRoomId,
 	validateStartBroadcastReq,
 	withRoomPermission('broadcastControl'),
+	withAddDestinationsPermissionToStart,
 	withBroadcastEnabled,
 	broadcastCtrl.startBroadcast
 );
