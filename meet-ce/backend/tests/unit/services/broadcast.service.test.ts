@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, it } from '@jest/globals';
 import { EgressStatus, EncodingOptionsPreset, StreamInfo_Status } from '@livekit/protocol';
-import type { MeetBroadcastInfo, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import type { MeetBroadcastInfo } from '@openvidu-meet/typings';
 import {
-	MEET_PERMISSION_KEYS,
 	MeetBroadcastDestinationSource,
 	MeetBroadcastDestinationStatus,
 	MeetBroadcastStatus,
@@ -22,11 +21,6 @@ const ROOM_ID = 'room-1';
 const REAL_URLS = { a: 'rtmp://mtx/live/aaaKEYaaa', b: 'rtmp://mtx/live/bbbKEYbbb' };
 const REDACTED = 'rtmp://mtx/live/********';
 const noopLogger = { info: () => {}, warn: () => {}, debug: () => {}, error: () => {}, verbose: () => {} };
-
-const allPermissions = (overrides: Partial<MeetRoomMemberPermissions> = {}): MeetRoomMemberPermissions => ({
-	...(Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true])) as unknown as MeetRoomMemberPermissions),
-	...overrides
-});
 
 const egressWith = (overrides: Partial<EgressInfo>): EgressInfo =>
 	({
@@ -142,17 +136,15 @@ class FakeBroadcastStateService {
 }
 
 class FakeRoomService {
-	enabled = true;
 	layout = MeetRecordingLayout.SPEAKER;
 	encoding = MeetRecordingEncodingPreset.H264_1080P_30;
-	permissions = allPermissions();
 
 	async getMeetRoom() {
 		return {
 			roomName: 'Room',
 			config: {
 				broadcast: {
-					enabled: this.enabled,
+					enabled: true,
 					layout: this.layout,
 					encoding: this.encoding,
 					destinations: [
@@ -162,10 +154,6 @@ class FakeRoomService {
 				}
 			}
 		};
-	}
-
-	async getAuthenticatedRoomMemberPermissions(): Promise<MeetRoomMemberPermissions> {
-		return this.permissions;
 	}
 }
 
@@ -256,11 +244,7 @@ describe('BroadcastService', () => {
 			expect(info.status).toBe(MeetBroadcastStatus.STARTING);
 		});
 
-		it('refuses a room with broadcast disabled, without participants, or already broadcasting', async () => {
-			roomService.enabled = false;
-			await expectStatus(service.startBroadcast(ROOM_ID, {}), 403);
-
-			roomService.enabled = true;
+		it('refuses a room without participants, or already broadcasting', async () => {
 			livekit.participants = false;
 			await expectStatus(service.startBroadcast(ROOM_ID, {}), 409);
 
@@ -293,18 +277,6 @@ describe('BroadcastService', () => {
 			mutex.busyAttempts = Infinity;
 			await expectStatus(service.startBroadcast(ROOM_ID, {}), 409);
 			expect(livekit.startCalls).toEqual([]);
-		});
-
-		it('refuses a destination for this meeting without broadcastAddDestinations, but streams to the room ones', async () => {
-			roomService.permissions = allPermissions({ broadcastAddDestinations: false });
-			await expectStatus(
-				service.startBroadcast(ROOM_ID, { destinations: [{ name: 'Extra', url: 'rtmp://mtx/live/x' }] }),
-				403
-			);
-			expect(livekit.startCalls).toEqual([]);
-
-			await service.startBroadcast(ROOM_ID, { destinations: [{ id: 'a' }] });
-			expect(livekit.startCalls).toHaveLength(1);
 		});
 	});
 
