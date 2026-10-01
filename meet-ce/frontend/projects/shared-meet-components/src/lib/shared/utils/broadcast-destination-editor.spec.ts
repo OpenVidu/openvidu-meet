@@ -57,9 +57,9 @@ describe('DestinationEditor', () => {
 
 	it("shows the server's refusal of the URL until the URL is changed", () => {
 		editor.open({ name: 'Sink', url: 'rtmp://a.rtmp.youtube.com/live2/key' });
-		editor.rejectUrl('Two destinations stream to the same URL');
+		editor.rejectUrl('Duplicate destination');
 
-		expect(editor.form.controls.url.getError('rejected')).toBe('Two destinations stream to the same URL');
+		expect(editor.form.controls.url.getError('rejected')).toBe('Duplicate destination');
 		expect(editor.submit()).toBeUndefined();
 
 		editor.form.controls.url.setValue('rtmp://a.rtmp.youtube.com/live2/other-key');

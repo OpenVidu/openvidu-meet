@@ -72,7 +72,7 @@ test.describe('Live broadcast E2E Tests', () => {
 
 		await addDestinationFromActivitiesPanel(page, 'Sink again', sinkUrl);
 
-		await expect(page.locator('#broadcast-destination-url-rejected')).toContainText('Two destinations stream to');
+		await expect(page.locator('#broadcast-destination-url-rejected')).toContainText('Duplicate destination');
 		await expect(page.locator('#broadcast-destination-editor')).toBeVisible();
 		await expectBroadcastPhase(page, 'live');
 	});
