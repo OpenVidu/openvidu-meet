@@ -195,7 +195,7 @@ export class BroadcastHelper {
 		});
 		const startDate = BroadcastHelper.extractStartDate(egress) ?? record.startDate;
 		const status = BroadcastHelper.toStatus(egress, startDate);
-		const endDate = EgressHelper.nsToMs(egress.endedAt);
+		const endDate = startDate ? EgressHelper.nsToMs(egress.endedAt) : undefined;
 
 		return {
 			...record,
@@ -305,13 +305,18 @@ export class BroadcastHelper {
 		if (duplicate) throw errorBroadcastDuplicateDestination(redactStreamUrl(duplicate));
 	}
 
+	/** Stops the destinations still streaming, dating the end only of those media reached. */
 	private static stopStreaming(
 		destinations: MeetBroadcastDestinationInfo[],
 		endDate: number | undefined
 	): MeetBroadcastDestinationInfo[] {
 		return destinations.map((destination) =>
 			BroadcastHelper.isStreaming(destination)
-				? { ...destination, status: MeetBroadcastDestinationStatus.STOPPED, endDate }
+				? {
+						...destination,
+						status: MeetBroadcastDestinationStatus.STOPPED,
+						endDate: destination.startDate ? endDate : undefined
+					}
 				: destination
 		);
 	}
@@ -332,15 +337,24 @@ export class BroadcastHelper {
 	}
 
 	private static toDestinationState(stream: StreamInfo): DestinationState {
-		const startDate = EgressHelper.nsToMs(stream.startedAt);
+		const received = BroadcastHelper.hasReceivedMedia(stream);
+		const startDate = received ? EgressHelper.nsToMs(stream.startedAt) : undefined;
 
 		return {
 			status: BroadcastHelper.toDestinationStatus(stream, startDate),
 			error: stream.error || undefined,
 			startDate,
-			endDate: EgressHelper.nsToMs(stream.endedAt),
+			endDate: received ? EgressHelper.nsToMs(stream.endedAt) : undefined,
 			duration: EgressHelper.nsToSeconds(stream.duration)
 		};
+	}
+
+	/**
+	 * Whether media reached the stream. Egress stamps `startedAt` when a stream connects, and a
+	 * stream that ends without ever connecting gets its end time as `startedAt` too.
+	 */
+	private static hasReceivedMedia(stream: StreamInfo): boolean {
+		return stream.startedAt > 0n && stream.startedAt !== stream.endedAt;
 	}
 
 	private static toDestinationStatus(stream: StreamInfo, startDate?: number): MeetBroadcastDestinationStatus {
@@ -368,7 +382,9 @@ export class BroadcastHelper {
 	 * accepts the request, before anything is streamed.
 	 */
 	private static extractStartDate(egress: EgressInfo): number | undefined {
-		const starts = egress.streamResults.map(({ startedAt }) => startedAt).filter((startedAt) => startedAt > 0n);
+		const starts = egress.streamResults
+			.filter((stream) => BroadcastHelper.hasReceivedMedia(stream))
+			.map(({ startedAt }) => startedAt);
 
 		if (starts.length === 0) return undefined;
 

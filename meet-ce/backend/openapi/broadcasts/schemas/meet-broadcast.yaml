@@ -56,7 +56,9 @@ properties:
     endDate:
         type: number
         example: 1620000003600
-        description: The date when the broadcast ended (milliseconds since the Unix epoch). Absent until it ends.
+        description: >
+            The date when the broadcast ended (milliseconds since the Unix epoch). Absent until it ends,
+            and on a broadcast that never streamed anything.
     duration:
         type: number
         example: 3.6

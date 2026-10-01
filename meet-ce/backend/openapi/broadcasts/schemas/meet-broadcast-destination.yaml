@@ -46,13 +46,13 @@ properties:
         example: 1620000000000
         description: >
             The date when the destination started to receive media (milliseconds since the Unix epoch).
-            Absent until it does.
+            Absent until it does, and on a destination it never reached.
     endDate:
         type: number
         example: 1620000003600
         description: >
             The date when the stream to the destination ended (milliseconds since the Unix epoch).
-            Absent while it runs.
+            Absent while it runs, and on a destination media never reached.
     duration:
         type: number
         example: 3.6
