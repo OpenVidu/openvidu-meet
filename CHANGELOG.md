@@ -87,6 +87,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   the [`participantJoined`][3.9-participant-joined] webhook.
 - [`POST /recordings/{recordingId}/stop`][3.10-stop-recording] answered 500 when the recording ended while the stop was
   being processed. It answers 409, as for any recording already stopped.
+- A recording whose egress service died stayed in progress for good: stopping it answered 500 and starting another one
+  in the room 409. It ends as `failed`, with its [`recordingEnded`][3.10-recording-ended] webhook, and the room can
+  record again.
 
 #### UI
 
@@ -271,6 +274,7 @@ registered on both receives it twice.
 [3.9-stop-recording]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/stopRecording
 
 [3.10-stop-recording]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/stopRecording
+[3.10-recording-ended]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/recordingEndedWebhook
 [3.10-broadcasts]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/broadcastStart
 [3.10-permissions]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/schemas/MeetPermissions
 [3.10-room-config]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/schemas/MeetRoomConfig

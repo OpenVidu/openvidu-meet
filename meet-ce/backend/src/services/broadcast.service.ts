@@ -25,6 +25,7 @@ import { EncodingConverter } from '../helpers/encoding-converter.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import type { BroadcastRecord } from '../models/broadcast.model.js';
 import type { EgressWebhookAction } from '../models/egress.model.js';
+import { EGRESS_LOST_ERROR } from '../models/egress.model.js';
 import {
 	errorBroadcastAlreadyStarted,
 	errorBroadcastAlreadyStopped,
@@ -46,7 +47,6 @@ import { RoomService } from './room.service.js';
 import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 
 const LOCK_RETRY_DELAY_MS = 250;
-const EGRESS_LOST_ERROR = 'The egress service stopped responding';
 
 /**
  * Live broadcasts of a meeting: the room-composite egress recording already runs, with RTMP

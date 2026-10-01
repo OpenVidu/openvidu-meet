@@ -11,6 +11,7 @@ import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import type { EgressWebhookAction } from '../models/egress.model.js';
+import { EGRESS_LOST_ERROR } from '../models/egress.model.js';
 import { RedisKeyName } from '../models/redis.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
@@ -160,12 +161,14 @@ export class LivekitWebhookService {
 	 * broadcast, a file-only one a recording.
 	 */
 	protected async processEgress(egressInfo: EgressInfo, webhookAction: EgressWebhookAction) {
-		if (EgressHelper.isStreamEgress(egressInfo)) {
-			await this.broadcastService.handleEgressEvent(egressInfo, webhookAction);
-			return;
+		switch (EgressHelper.outputOf(egressInfo)) {
+			case 'stream':
+				await this.broadcastService.handleEgressEvent(egressInfo, webhookAction);
+				break;
+			case 'file':
+				await this.processRecordingEgress(egressInfo, webhookAction);
+				break;
 		}
-
-		await this.processRecordingEgress(egressInfo, webhookAction);
 	}
 
 	/**
@@ -237,9 +240,49 @@ export class LivekitWebhookService {
 				await this.handleMeetingParticipantLeft(room, participant);
 				break;
 			case ParticipantInfo_Kind.EGRESS:
-				await this.broadcastService.handleEgressParticipantLeft(room.name, participant.identity);
+				await this.handleEgressParticipantLeft(room.name, participant.identity);
 				break;
 		}
+	}
+
+	/**
+	 * Routes the departure of an egress, whose identity is its egress id, to the feature that owns
+	 * the egress, like {@link processEgress}.
+	 */
+	protected async handleEgressParticipantLeft(roomId: string, egressId: string) {
+		const [egress] = await this.livekitService.getEgress(roomId, egressId);
+
+		if (!egress) return;
+
+		switch (EgressHelper.outputOf(egress)) {
+			case 'stream':
+				await this.broadcastService.handleEgressParticipantLeft(roomId, egressId);
+				break;
+			case 'file':
+				await this.handleRecordingEgressLeft(egress);
+				break;
+		}
+	}
+
+	/**
+	 * The egress of a recording leaves the room only after LiveKit reports it ended. One that leaves
+	 * while its recording is still in progress and no longer answers died with its egress service,
+	 * which LiveKit never reports: it keeps listing the egress as in progress forever. The recording
+	 * is ended here instead, as failed, so the room can record again.
+	 */
+	protected async handleRecordingEgressLeft(egress: EgressInfo) {
+		const recordingId = RecordingHelper.extractRecordingIdFromEgress(egress);
+		const recording = await this.recordingRepository.findByRecordingId(recordingId);
+
+		if (!recording || !RecordingHelper.isInProgress(recording.status)) return;
+
+		if (await this.livekitService.isEgressReachable(egress.egressId)) return;
+
+		this.logger.warn(`The egress of recording '${recordingId}' in room '${recording.roomId}' stopped responding`);
+		await this.applyRecordingChange(
+			{ ...recording, status: MeetRecordingStatus.FAILED, error: EGRESS_LOST_ERROR, endDate: Date.now() },
+			'ended'
+		);
 	}
 
 	/**
@@ -436,57 +479,52 @@ export class LivekitWebhookService {
 	 * @returns A promise that resolves when all processing tasks are completed.
 	 */
 	protected async processRecordingEgress(egressInfo: EgressInfo, webhookAction: EgressWebhookAction): Promise<void> {
-		if (!EgressHelper.isFileEgress(egressInfo)) return;
-
 		this.logger.debug(`Processing recording_${webhookAction} webhook for egress: ${egressInfo.egressId}.`);
 
 		try {
-			const recordingInfo: MeetRecordingInfo = await RecordingHelper.toRecordingInfo(egressInfo);
+			const recordingInfo = await RecordingHelper.toRecordingInfo(egressInfo);
 			const { roomId, recordingId, status } = recordingInfo;
 
 			this.logger.debug(`Recording '${recordingId}' in room '${roomId}' status: '${status}'`);
-
-			// Common task for all webhook types: save/update recording metadata in MongoDB
-			let recordingTask: Promise<unknown>;
-
-			if (webhookAction === 'started') {
-				// Create new recording with auto-generated access secrets
-				recordingTask = this.recordingRepository.create(recordingInfo);
-			} else {
-				// Update existing recording
-				recordingTask = this.recordingRepository.replace(recordingInfo);
-			}
-
-			const commonTasks = [recordingTask];
-			const specificTasks: Promise<unknown>[] = [];
-
-			// Send webhook notification
-			switch (webhookAction) {
-				case 'started':
-					specificTasks.push(this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo));
-					this.webhookDispatcherService.sendRecordingStartedWebhook(recordingInfo);
-					break;
-				case 'updated':
-					this.webhookDispatcherService.sendRecordingUpdatedWebhook(recordingInfo);
-					specificTasks.push(this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo));
-					break;
-				case 'ended':
-					specificTasks.push(
-						this.recordingService.releaseRecordingLockIfNoEgress(roomId),
-						this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo)
-					);
-					this.webhookDispatcherService.sendRecordingEndedWebhook(recordingInfo);
-					break;
-			}
-
-			// Wait for all promises to resolve
-			await Promise.all([...commonTasks, ...specificTasks]);
+			await this.applyRecordingChange(recordingInfo, webhookAction);
 		} catch (error) {
 			this.logger.error(
 				`Error processing recording_${webhookAction} webhook for egress '${egressInfo.egressId}'`,
 				error
 			);
 		}
+	}
+
+	/**
+	 * Saves a change of a recording, then tells the room's participants and the webhooks about it.
+	 * Saved first, since the room's recording lock is released only once no recording of the room
+	 * is in progress in Meet either.
+	 */
+	protected async applyRecordingChange(recording: MeetRecordingInfo, action: EgressWebhookAction): Promise<void> {
+		const { roomId } = recording;
+
+		if (action === 'started') {
+			await this.recordingRepository.create(recording);
+		} else {
+			await this.recordingRepository.replace(recording);
+		}
+
+		const tasks = [this.frontendEventService.sendRecordingUpdatedSignal(roomId, recording)];
+
+		switch (action) {
+			case 'started':
+				this.webhookDispatcherService.sendRecordingStartedWebhook(recording);
+				break;
+			case 'updated':
+				this.webhookDispatcherService.sendRecordingUpdatedWebhook(recording);
+				break;
+			case 'ended':
+				this.webhookDispatcherService.sendRecordingEndedWebhook(recording);
+				tasks.push(this.recordingService.releaseRecordingLockIfNoEgress(roomId));
+				break;
+		}
+
+		await Promise.all(tasks);
 	}
 
 	/**

@@ -16,8 +16,16 @@ export class EgressHelper {
 		// Prevent instantiation of this utility class
 	}
 
-	static isStreamEgress(egress: EgressInfo): boolean {
-		return EgressHelper.outputOf(egress) === 'stream';
+	/**
+	 * What the egress writes, which tells the feature that owns it: streams for a broadcast, a file
+	 * for a recording. Neither for an egress that writes both or nothing.
+	 */
+	static outputOf({ streamResults = [], fileResults = [] }: EgressInfo): 'stream' | 'file' | undefined {
+		if (streamResults.length > 0 && fileResults.length === 0) return 'stream';
+
+		if (fileResults.length > 0 && streamResults.length === 0) return 'file';
+
+		return undefined;
 	}
 
 	static isFileEgress(egress: EgressInfo): boolean {
@@ -63,13 +71,5 @@ export class EgressHelper {
 	/** A LiveKit duration as seconds, or none while LiveKit has not measured it. */
 	static nsToSeconds(value: bigint | undefined): number | undefined {
 		return value ? Number(value) / NS_PER_SECOND : undefined;
-	}
-
-	private static outputOf({ streamResults = [], fileResults = [] }: EgressInfo): 'stream' | 'file' | undefined {
-		if (streamResults.length > 0 && fileResults.length === 0) return 'stream';
-
-		if (fileResults.length > 0 && streamResults.length === 0) return 'file';
-
-		return undefined;
 	}
 }

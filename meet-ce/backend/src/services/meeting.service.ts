@@ -35,6 +35,7 @@ import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { MutexService } from './mutex.service.js';
+import { RecordingService } from './recording.service.js';
 import { RequestSessionService } from './request-session.service.js';
 import { RoomService } from './room.service.js';
 import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
@@ -57,7 +58,8 @@ export class MeetingService {
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
 		@inject(WebhookDispatcherService) protected webhookDispatcherService: WebhookDispatcherService,
 		@inject(MutexService) protected mutexService: MutexService,
-		@inject(BroadcastService) protected broadcastService: BroadcastService
+		@inject(BroadcastService) protected broadcastService: BroadcastService,
+		@inject(RecordingService) protected recordingService: RecordingService
 	) {}
 
 	/**
@@ -75,7 +77,7 @@ export class MeetingService {
 			roomId,
 			Promise.all([
 				this.getStandardParticipants(roomId),
-				this.livekitService.getInProgressRecordingsEgress(roomId),
+				this.recordingService.getInProgressEgresses(roomId),
 				this.broadcastService.isBroadcastActive(roomId)
 			])
 		);

@@ -21,18 +21,18 @@ describe('EgressHelper output', () => {
 		const streaming = egress({ streamResults: [{}] } as Partial<EgressInfo>);
 		const recording = egress({ fileResults: [{}] } as Partial<EgressInfo>);
 
-		expect(EgressHelper.isStreamEgress(streaming)).toBe(true);
+		expect(EgressHelper.outputOf(streaming)).toBe('stream');
 		expect(EgressHelper.isFileEgress(streaming)).toBe(false);
+		expect(EgressHelper.outputOf(recording)).toBe('file');
 		expect(EgressHelper.isFileEgress(recording)).toBe(true);
-		expect(EgressHelper.isStreamEgress(recording)).toBe(false);
 	});
 
 	it('is neither for an egress with no output yet, or with both', () => {
 		const empty = egress({});
 		const both = egress({ streamResults: [{}], fileResults: [{}] } as Partial<EgressInfo>);
 
-		expect([EgressHelper.isStreamEgress(empty), EgressHelper.isFileEgress(empty)]).toEqual([false, false]);
-		expect([EgressHelper.isStreamEgress(both), EgressHelper.isFileEgress(both)]).toEqual([false, false]);
+		expect([EgressHelper.outputOf(empty), EgressHelper.isFileEgress(empty)]).toEqual([undefined, false]);
+		expect([EgressHelper.outputOf(both), EgressHelper.isFileEgress(both)]).toEqual([undefined, false]);
 	});
 });
 

@@ -1,10 +1,13 @@
 import { describe, expect, it } from '@jest/globals';
 import { ParticipantInfo_Kind } from '@livekit/protocol';
-import { MeetingEndAction, MeetMeetingEndedReason, MeetRoomStatus } from '@openvidu-meet/typings';
+import type { MeetRecordingInfo } from '@openvidu-meet/typings';
+import { MeetingEndAction, MeetMeetingEndedReason, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
 import type { ParticipantInfo, Room } from 'livekit-server-sdk';
+import { EgressInfo, EgressStatus } from 'livekit-server-sdk';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
+import { EGRESS_LOST_ERROR } from '../../../src/models/egress.model.js';
 import { LivekitWebhookService } from '../../../src/services/livekit-webhook.service.js';
 import type { RoomScheduledTasksService } from '../../../src/services/room-scheduled-tasks.service.js';
 
@@ -450,18 +453,43 @@ describe('LivekitWebhookService.handleRoomFinished (force-end attribution reache
 });
 
 describe('LivekitWebhookService.handleParticipantLeft (an egress leaving the room)', () => {
-	it('hands the departure to the broadcast and treats it as no participant of the meeting', async () => {
+	const RECORDING_ID = 'room-1--EG_1--uid1';
+	const broadcastEgress = new EgressInfo({ egressId: 'EG_1', roomName: 'room-1', streamResults: [{}] });
+	const recordingEgress = new EgressInfo({
+		egressId: 'EG_1',
+		roomName: 'room-1',
+		status: EgressStatus.EGRESS_ACTIVE,
+		fileResults: [{ filename: 'room-1--uid1.mp4' }]
+	});
+
+	const buildEgressLeftService = (
+		egress: EgressInfo,
+		{ recordingStatus = MeetRecordingStatus.ACTIVE, reachable = false } = {}
+	) => {
+		const events: string[] = [];
 		const departures: { roomId: string; egressId: string }[] = [];
 		const released: string[] = [];
+		const saved: MeetRecordingInfo[] = [];
+		const ended: MeetRecordingInfo[] = [];
 		const service = new LivekitWebhookService(
 			...([
+				{ releaseRecordingLockIfNoEgress: async () => events.push('lock released') },
+				{
+					findByRecordingId: async (recordingId: string) => ({
+						recordingId,
+						roomId: 'room-1',
+						status: recordingStatus
+					}),
+					replace: async (recording: MeetRecordingInfo) => {
+						events.push('saved');
+						saved.push(recording);
+					}
+				},
+				{ getEgress: async () => [egress], isEgressReachable: async () => reachable },
 				{},
 				{},
-				{},
-				{},
-				{},
-				{},
-				{},
+				{ sendRecordingEndedWebhook: (recording: MeetRecordingInfo) => ended.push(recording) },
+				{ sendRecordingUpdatedSignal: async () => events.push('signal') },
 				{ releaseParticipantName: async (_roomId: string, name: string) => released.push(name) },
 				{},
 				{},
@@ -475,13 +503,52 @@ describe('LivekitWebhookService.handleParticipantLeft (an egress leaving the roo
 				}
 			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
 		);
+		const leave = () =>
+			service.handleParticipantLeft(
+				{ name: 'room-1' } as Room,
+				{ identity: 'EG_1', name: 'EG_1', kind: ParticipantInfo_Kind.EGRESS } as ParticipantInfo
+			);
 
-		await service.handleParticipantLeft(
-			{ name: 'room-1' } as Room,
-			{ identity: 'EG_1', name: 'EG_1', kind: ParticipantInfo_Kind.EGRESS } as ParticipantInfo
-		);
+		return { leave, events, departures, released, saved, ended };
+	};
+
+	it('hands the departure of a broadcast egress to the broadcast, as no participant of the meeting', async () => {
+		const { leave, departures, released, saved } = buildEgressLeftService(broadcastEgress);
+
+		await leave();
 
 		expect(departures).toEqual([{ roomId: 'room-1', egressId: 'EG_1' }]);
 		expect(released).toEqual([]);
+		expect(saved).toEqual([]);
+	});
+
+	it('ends as failed a recording in progress whose egress no longer answers, saved before its lock is released', async () => {
+		const { leave, events, departures, saved, ended } = buildEgressLeftService(recordingEgress);
+
+		await leave();
+
+		const failed = expect.objectContaining({
+			recordingId: RECORDING_ID,
+			status: MeetRecordingStatus.FAILED,
+			error: EGRESS_LOST_ERROR,
+			endDate: expect.any(Number)
+		});
+		expect(saved).toEqual([failed]);
+		expect(ended).toEqual([failed]);
+		expect(events).toContain('signal');
+		expect(events.indexOf('saved')).toBeLessThan(events.indexOf('lock released'));
+		expect(departures).toEqual([]);
+	});
+
+	it.each([
+		['its egress still answers', { reachable: true }],
+		['the recording has already ended', { recordingStatus: MeetRecordingStatus.COMPLETE }]
+	])('leaves the recording alone when %s', async (_case, state) => {
+		const { leave, events, ended } = buildEgressLeftService(recordingEgress, state);
+
+		await leave();
+
+		expect(events).toEqual([]);
+		expect(ended).toEqual([]);
 	});
 });
