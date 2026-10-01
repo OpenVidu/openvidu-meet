@@ -1,15 +1,27 @@
 import type {
 	MeetBroadcastDestinationOptions,
 	MeetBroadcastDestinationUpdateOptions,
+	MeetBroadcastField,
+	MeetBroadcastInfo,
 	MeetBroadcastStartOptions
 } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import { applyHttpFieldFiltering } from '../helpers/field-filter.helper.js';
 import { handleError } from '../models/error.model.js';
 import { BroadcastService } from '../services/broadcast.service.js';
 import { LoggerService } from '../services/logger.service.js';
 import { getBaseUrl } from '../utils/url.utils.js';
+
+/** The broadcast limited to the fields the request asked for, or whole when it asked for none. */
+const withRequestedFields = (res: Response, broadcast: MeetBroadcastInfo): MeetBroadcastInfo => {
+	const { fields } = res.locals.validatedQuery as { fields?: MeetBroadcastField[] };
+	return applyHttpFieldFiltering(broadcast, fields, undefined, []);
+};
+
+const broadcastLocation = (roomId: string, broadcastId: string): string =>
+	`${getBaseUrl()}${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/broadcasts/${broadcastId}`;
 
 export const startBroadcast = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -21,11 +33,8 @@ export const startBroadcast = async (req: Request, res: Response) => {
 		logger.info(`Starting broadcast in room '${roomId}'`);
 		const broadcast = await broadcastService.startBroadcast(roomId, options);
 
-		res.set(
-			'Location',
-			`${getBaseUrl()}${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/broadcasts/${broadcast.broadcastId}`
-		);
-		return res.status(201).json(broadcast);
+		res.set('Location', broadcastLocation(roomId, broadcast.broadcastId));
+		return res.status(201).json(withRequestedFields(res, broadcast));
 	} catch (error) {
 		handleError(res, error, `starting broadcast in room '${roomId}'`);
 	}
@@ -39,7 +48,8 @@ export const stopBroadcast = async (req: Request, res: Response) => {
 	try {
 		logger.info(`Stopping broadcast '${broadcastId}' in room '${roomId}'`);
 		const broadcast = await broadcastService.stopBroadcast(roomId, broadcastId);
-		return res.status(202).json(broadcast);
+		res.set('Location', broadcastLocation(roomId, broadcastId));
+		return res.status(202).json(withRequestedFields(res, broadcast));
 	} catch (error) {
 		handleError(res, error, `stopping broadcast '${broadcastId}' in room '${roomId}'`);
 	}
@@ -51,7 +61,7 @@ export const getBroadcasts = async (req: Request, res: Response) => {
 
 	try {
 		const broadcasts = await broadcastService.getBroadcasts(roomId);
-		return res.status(200).json({ broadcasts });
+		return res.status(200).json({ broadcasts: broadcasts.map((broadcast) => withRequestedFields(res, broadcast)) });
 	} catch (error) {
 		handleError(res, error, `getting broadcasts of room '${roomId}'`);
 	}
@@ -63,7 +73,7 @@ export const getBroadcast = async (req: Request, res: Response) => {
 
 	try {
 		const broadcast = await broadcastService.getBroadcast(roomId, broadcastId);
-		return res.status(200).json(broadcast);
+		return res.status(200).json(withRequestedFields(res, broadcast));
 	} catch (error) {
 		handleError(res, error, `getting broadcast '${broadcastId}' of room '${roomId}'`);
 	}
@@ -78,7 +88,7 @@ export const addBroadcastDestination = async (req: Request, res: Response) => {
 	try {
 		logger.info(`Adding a destination to broadcast '${broadcastId}' in room '${roomId}'`);
 		const broadcast = await broadcastService.addDestination(roomId, broadcastId, options);
-		return res.status(200).json(broadcast);
+		return res.status(200).json(withRequestedFields(res, broadcast));
 	} catch (error) {
 		handleError(res, error, `adding a destination to broadcast '${broadcastId}' in room '${roomId}'`);
 	}
@@ -93,7 +103,7 @@ export const updateBroadcastDestination = async (req: Request, res: Response) =>
 	try {
 		logger.info(`Updating destination '${destinationId}' of broadcast '${broadcastId}' in room '${roomId}'`);
 		const broadcast = await broadcastService.updateDestination(roomId, broadcastId, destinationId, options);
-		return res.status(200).json(broadcast);
+		return res.status(200).json(withRequestedFields(res, broadcast));
 	} catch (error) {
 		handleError(
 			res,

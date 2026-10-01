@@ -7,10 +7,12 @@ import type {
 } from '@openvidu-meet/typings';
 import {
 	MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH,
+	MEET_BROADCAST_FIELDS,
 	MEET_BROADCAST_MAX_DESTINATIONS,
 	MeetRecordingLayout
 } from '@openvidu-meet/typings';
 import { z } from 'zod';
+import { fieldListSchema } from './field-selection.schema.js';
 import { encodingValidator } from './recording-encoding.schema.js';
 
 const DESTINATION_URL_MAX_LENGTH = 2048;
@@ -67,6 +69,10 @@ export const StartBroadcastReqSchema: z.ZodType<MeetBroadcastStartOptions> = z.o
 export const AddBroadcastDestinationReqSchema: z.ZodType<MeetBroadcastDestinationOptions> = z.object({
 	name: destinationNameSchema,
 	url: destinationUrlSchema
+});
+
+export const BroadcastFieldsQuerySchema = z.object({
+	fields: fieldListSchema(MEET_BROADCAST_FIELDS)
 });
 
 export const UpdateBroadcastDestinationReqSchema: z.ZodType<MeetBroadcastDestinationUpdateOptions> = z.object({
