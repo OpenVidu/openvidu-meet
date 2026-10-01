@@ -199,10 +199,6 @@
           "LABEL": "Ajouter des destinations",
           "DESCRIPTION": "Permet de diffuser une réunion vers des URL supplémentaires en plus des destinations de la salle. Nécessite « Passer en direct »"
         },
-        "broadcastEditDestinations": {
-          "LABEL": "Modifier les destinations",
-          "DESCRIPTION": "Permet de changer l'URL ou le nom d'une destination pour une seule réunion, sans toucher aux destinations de la salle. Nécessite « Passer en direct »"
-        },
         "chatRead": {
           "LABEL": "Lire",
           "DESCRIPTION": "Autoriser à lire les messages du chat"

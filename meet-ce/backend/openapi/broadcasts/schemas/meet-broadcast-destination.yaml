@@ -29,12 +29,6 @@ properties:
         description: >
             Where the destination comes from: `room` for one saved in the room's config, `meeting` for one
             added for this meeting only.
-    edited:
-        type: boolean
-        example: false
-        description: >
-            Present, and `true`, on a room destination whose name or URL was changed for this meeting
-            only. The room's config keeps its saved values.
     status:
         type: string
         enum: ['connecting', 'active', 'stopped', 'failed']

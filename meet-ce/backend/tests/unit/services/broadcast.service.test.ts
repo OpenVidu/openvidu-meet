@@ -295,16 +295,15 @@ describe('BroadcastService', () => {
 			expect(livekit.startCalls).toEqual([]);
 		});
 
-		it('enforces the destination permissions of the caller', async () => {
+		it('refuses a destination for this meeting without broadcastAddDestinations, but streams to the room ones', async () => {
 			roomService.permissions = allPermissions({ broadcastAddDestinations: false });
 			await expectStatus(
 				service.startBroadcast(ROOM_ID, { destinations: [{ name: 'Extra', url: 'rtmp://mtx/live/x' }] }),
 				403
 			);
+			expect(livekit.startCalls).toEqual([]);
 
-			roomService.permissions = allPermissions({ broadcastEditDestinations: false });
-			await expectStatus(service.startBroadcast(ROOM_ID, { destinations: [{ id: 'a', name: 'Renamed' }] }), 403);
-			await service.startBroadcast(ROOM_ID, { destinations: [{ id: 'a', name: 'A' }] });
+			await service.startBroadcast(ROOM_ID, { destinations: [{ id: 'a' }] });
 			expect(livekit.startCalls).toHaveLength(1);
 		});
 	});

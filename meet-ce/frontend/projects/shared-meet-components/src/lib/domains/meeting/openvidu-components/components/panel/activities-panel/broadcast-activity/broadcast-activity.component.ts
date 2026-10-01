@@ -40,16 +40,12 @@ import { MeetingLiveKitService } from '../../../../services/meeting-livekit/meet
 import { ParticipantService } from '../../../../services/participant/participant.service';
 import { ActivityItemComponent, ActivityState } from '../activity-item/activity-item.component';
 
-/** A destination as the activity offers it before going live: the room's, possibly changed for this meeting, or added for it. */
+/** A destination as the activity offers it before going live: one of the room's, or one added for this meeting. */
 interface PlannedDestination extends MeetBroadcastDestinationOptions {
 	id: string;
 	source: MeetBroadcastDestinationSource;
 	selected: boolean;
-	edited: boolean;
 }
-
-/** Which destination the inline editor is for: a new one, or the planned one with that id. */
-type EditorTarget = { id: string } | 'new' | null;
 
 const STATUS_KEYS: Record<BroadcastPhase, string> = {
 	idle: 'PANEL.BROADCAST.STATUS_NOT_LIVE',
@@ -124,7 +120,6 @@ export class BroadcastActivityComponent {
 	readonly broadcast = this.broadcastState.broadcast;
 	readonly elapsed = this.broadcastState.elapsed;
 	readonly showControls = this.uiConfig.broadcastActivityControlsSignal;
-	readonly showEditDestinations = this.uiConfig.broadcastActivityEditDestinationsSignal;
 	private readonly pendingRequest = this.broadcastState.request;
 	private readonly showAddDestinations = this.uiConfig.broadcastActivityAddDestinationsSignal;
 
@@ -156,38 +151,32 @@ export class BroadcastActivityComponent {
 		() => this.pendingRequest().error ?? this.broadcast()?.error ?? this.broadcast()?.details
 	);
 
-	// Before going live: the room's destinations, all chosen unless unticked, with the changes and
-	// additions made for this meeting.
+	// Before going live: the room's destinations, all chosen unless unticked, with the additions made
+	// for this meeting.
 	private readonly roomDestinations = computed(() => this.meetingContext.broadcastConfig()?.destinations ?? []);
 	private readonly unselectedIds = signal(new Set<string>());
-	private readonly roomDestinationEdits = signal(new Map<string, MeetBroadcastDestinationOptions>());
 	private readonly meetingDestinations = signal<({ id: string } & MeetBroadcastDestinationOptions)[]>([]);
 	private nextMeetingDestinationId = 0;
 
 	readonly plannedDestinations = computed<PlannedDestination[]>(() => [
-		...this.roomDestinations().map((destination) => {
-			const edit = this.roomDestinationEdits().get(destination.id!);
-			return {
-				id: destination.id!,
-				name: edit?.name ?? destination.name,
-				url: edit?.url ?? destination.url,
-				source: MeetBroadcastDestinationSource.ROOM,
-				selected: !this.unselectedIds().has(destination.id!),
-				edited: edit !== undefined
-			};
-		}),
+		...this.roomDestinations().map(({ id, name, url }) => ({
+			id: id!,
+			name,
+			url,
+			source: MeetBroadcastDestinationSource.ROOM,
+			selected: !this.unselectedIds().has(id!)
+		})),
 		...this.meetingDestinations().map((destination) => ({
 			...destination,
 			source: MeetBroadcastDestinationSource.MEETING,
-			selected: true,
-			edited: false
+			selected: true
 		}))
 	]);
 	readonly selectedCount = computed(() => this.plannedDestinations().filter(({ selected }) => selected).length);
 	readonly plannedMbps = computed(() => broadcastUploadMbps(this.selectedCount()));
 	readonly canAddDestination = computed(() => {
 		const count = this.isRunning() ? this.broadcastDestinations().length : this.plannedDestinations().length;
-		return this.showAddDestinations() && this.editorTarget() === null && count < this.maxDestinations;
+		return this.showAddDestinations() && !this.editorOpen() && count < this.maxDestinations;
 	});
 
 	readonly hasRoomTracksPublished = signal(false);
@@ -196,24 +185,16 @@ export class BroadcastActivityComponent {
 	);
 
 	readonly editor = new DestinationEditor(this.formBuilder);
-	readonly editorTarget = signal<EditorTarget>(null);
+	readonly editorOpen = signal(false);
 	/** A destination added to the running broadcast that the server has not answered yet. */
 	readonly addingDestination = signal(false);
 	/** Adding a destination to the running broadcast takes it live at once, so the editor says so. */
 	readonly submitLabelKey = computed(() => {
-		if (this.editorTarget() !== 'new') return 'PANEL.BROADCAST.SAVE';
-
 		if (!this.isRunning()) return 'PANEL.BROADCAST.ADD';
 
 		return this.editor.rejection() === undefined
 			? 'PANEL.BROADCAST.GO_LIVE_NOW'
 			: 'PANEL.BROADCAST.RETRY_DESTINATION';
-	});
-	readonly editedDestinationName = computed(() => {
-		const target = this.editorTarget();
-		return target && target !== 'new'
-			? (this.plannedDestinations().find(({ id }) => id === target.id)?.name ?? '')
-			: '';
 	});
 
 	/**
@@ -272,46 +253,29 @@ export class BroadcastActivityComponent {
 
 	openAdd(): void {
 		this.editor.open();
-		this.editorTarget.set('new');
-	}
-
-	openEdit(destination: PlannedDestination): void {
-		const saved = this.roomDestinations().find(({ id }) => id === destination.id);
-		this.editor.open({ name: destination.name, url: destination.url }, saved?.url);
-		this.editorTarget.set({ id: destination.id });
+		this.editorOpen.set(true);
 	}
 
 	closeEditor(): void {
 		this.addingDestination.set(false);
-		this.editorTarget.set(null);
-	}
-
-	isEditingDestination(id: string): boolean {
-		const target = this.editorTarget();
-		return target !== null && target !== 'new' && target.id === id;
+		this.editorOpen.set(false);
 	}
 
 	submitEditor(): void {
-		const target = this.editorTarget();
 		const destination = this.editor.submit();
 
 		if (!destination) return;
 
-		if (target === 'new' && this.isRunning()) {
+		if (this.isRunning()) {
 			this.addingDestination.set(true);
 			this.emitRequest({ action: 'addDestination', broadcastId: this.broadcast()!.broadcastId, destination });
 			return;
 		}
 
-		if (target === 'new') {
-			this.meetingDestinations.update((destinations) => [
-				...destinations,
-				{ id: `meeting-${this.nextMeetingDestinationId++}`, ...destination }
-			]);
-		} else if (target) {
-			this.applyRoomDestinationEdit(target.id, destination);
-		}
-
+		this.meetingDestinations.update((destinations) => [
+			...destinations,
+			{ id: `meeting-${this.nextMeetingDestinationId++}`, ...destination }
+		]);
 		this.closeEditor();
 	}
 
@@ -322,12 +286,12 @@ export class BroadcastActivityComponent {
 	goLive(): void {
 		const planned = this.plannedDestinations();
 		const unchanged = planned.every(
-			({ source, selected, edited }) => source === MeetBroadcastDestinationSource.ROOM && selected && !edited
+			({ source, selected }) => source === MeetBroadcastDestinationSource.ROOM && selected
 		);
 		const destinations: MeetBroadcastStartDestination[] = planned
 			.filter(({ selected }) => selected)
-			.map(({ id, name, url, source, edited }) =>
-				source === MeetBroadcastDestinationSource.MEETING ? { name, url } : edited ? { id, name, url } : { id }
+			.map(({ id, name, url, source }) =>
+				source === MeetBroadcastDestinationSource.MEETING ? { name, url } : { id }
 			);
 
 		this.emitRequest({ action: 'start', destinations: unchanged ? undefined : destinations });
@@ -373,21 +337,6 @@ export class BroadcastActivityComponent {
 			broadcastId: this.broadcast()!.broadcastId,
 			destinationId: destination.id,
 			active
-		});
-	}
-
-	private applyRoomDestinationEdit(id: string, edit: MeetBroadcastDestinationOptions): void {
-		const saved = this.roomDestinations().find((destination) => destination.id === id);
-		this.roomDestinationEdits.update((edits) => {
-			const next = new Map(edits);
-
-			if (saved && saved.name === edit.name && saved.url === edit.url) {
-				next.delete(id);
-			} else {
-				next.set(id, edit);
-			}
-
-			return next;
 		});
 	}
 

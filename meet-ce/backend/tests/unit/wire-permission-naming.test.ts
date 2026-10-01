@@ -18,7 +18,6 @@ const moderatorPermissions: MeetRoomMemberPermissions = {
 	recordingDelete: true,
 	broadcastControl: true,
 	broadcastAddDestinations: true,
-	broadcastEditDestinations: true,
 	meetingJoin: true,
 	meetingRead: true,
 	roomShareAccessLinks: true,

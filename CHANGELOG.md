@@ -32,13 +32,12 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - [Broadcasts API][3.10-broadcasts] under `/api/v1/meetings/{roomId}/broadcasts`: stream a live meeting to
   up to five RTMP destinations at once, read the broadcast and the status of each destination, stop it, add a
   destination for that meeting only, and stop or restart any of them. Starting and stopping use the new
-  [`broadcastControl`][3.10-permissions] permission, adding a destination `broadcastAddDestinations`, and
-  changing a room destination for one meeting `broadcastEditDestinations`, all three granted to the moderator
-  role of rooms created from this release on. The embedded API gets the `broadcastStart` and `broadcastStop`
-  commands and the `broadcastStarted`, `broadcastUpdated` and `broadcastEnded` events, the webhooks
-  [`broadcastStarted`][3.10-broadcast-started], [`broadcastUpdated`][3.10-broadcast-updated] and
-  [`broadcastEnded`][3.10-broadcast-ended] report the same, and the [meeting info][3.10-meetings] carries
-  `broadcastActive`.
+  [`broadcastControl`][3.10-permissions] permission and adding a destination `broadcastAddDestinations`, both
+  granted to the moderator role of rooms created from this release on. The embedded API gets the
+  `broadcastStart` and `broadcastStop` commands and the `broadcastStarted`, `broadcastUpdated` and
+  `broadcastEnded` events, the webhooks [`broadcastStarted`][3.10-broadcast-started],
+  [`broadcastUpdated`][3.10-broadcast-updated] and [`broadcastEnded`][3.10-broadcast-ended] report the same,
+  and the [meeting info][3.10-meetings] carries `broadcastActive`.
 - Rooms save the destinations a broadcast streams to by default, and the layout and encoding it streams
   with, in [`config.broadcast`][3.10-room-config].
   Every response replaces the stream key of a destination URL with `********`, and a redacted URL sent back

@@ -60,13 +60,6 @@ properties:
         description: >
             Can add destinations to a broadcast, for that meeting only, besides the room's saved ones. Only
             effective together with `broadcastControl`. Same defaults and history as `broadcastControl`.
-    broadcastEditDestinations:
-        type: boolean
-        example: false
-        description: >
-            Can change the name or the URL of one of the room's destinations for the meeting being
-            broadcast, without touching the room's config. Only effective together with `broadcastControl`.
-            Same defaults and history as `broadcastControl`.
     meetingJoin:
         type: boolean
         example: true

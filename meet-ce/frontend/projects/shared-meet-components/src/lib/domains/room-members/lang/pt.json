@@ -199,10 +199,6 @@
           "LABEL": "Adicionar destinos",
           "DESCRIPTION": "Permite transmitir uma reunião para URLs adicionais além dos destinos da sala. Requer \"Entrar ao vivo\""
         },
-        "broadcastEditDestinations": {
-          "LABEL": "Editar destinos",
-          "DESCRIPTION": "Permite alterar a URL ou o nome de um destino apenas para uma reunião, mantendo os destinos da sala como estão. Requer \"Entrar ao vivo\""
-        },
         "chatRead": {
           "LABEL": "Ler",
           "DESCRIPTION": "Permitir ler mensagens do chat"

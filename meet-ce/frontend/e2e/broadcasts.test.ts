@@ -11,7 +11,8 @@ import {
 	expectNoBroadcastControls,
 	goLiveFromActivitiesPanel,
 	stopBroadcastFromActivitiesPanel,
-	toggleBroadcastFromToolbar
+	toggleBroadcastFromToolbar,
+	untickPlannedDestination
 } from './helpers/broadcasts.helper';
 import {
 	createRoomAndGetAnonymousAccessUrl,
@@ -62,6 +63,22 @@ test.describe('Live broadcast E2E Tests', () => {
 		await expectBroadcastNotice(page, 'stopped');
 		await expectBroadcastPhase(page, 'idle', 30_000);
 		await expectNoBroadcastBadge(page);
+	});
+
+	test('should let a room destination be left out but not changed, and go live to one added for the meeting', async ({
+		page
+	}) => {
+		const extraUrl = await createRtmpSink('spa-extra');
+		await openMeeting(page, moderatorUrl);
+
+		await addDestinationFromActivitiesPanel(page, 'Extra', extraUrl);
+		await expect(page.locator(`#broadcast-planned-${destinationId} .destination-action`)).toHaveCount(0);
+		await untickPlannedDestination(page, destinationId);
+		await goLiveFromActivitiesPanel(page);
+
+		await expectBroadcastPhase(page, 'live', 40_000);
+		await expectDestinationStatus(page, destinationId, MeetBroadcastDestinationStatus.STOPPED);
+		await expect(page.locator('#broadcast-activity .destination-row[data-status="active"]')).toHaveCount(1);
 	});
 
 	test('should keep a destination the server refuses in its editor, with the broadcast still live', async ({

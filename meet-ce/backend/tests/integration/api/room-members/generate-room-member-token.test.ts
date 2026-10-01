@@ -51,7 +51,6 @@ const allPermissions: MeetRoomMemberPermissions = {
 	recordingDelete: true,
 	broadcastControl: true,
 	broadcastAddDestinations: true,
-	broadcastEditDestinations: true,
 	meetingJoin: true,
 	meetingRead: true,
 	roomShareAccessLinks: true,
@@ -77,7 +76,6 @@ const recordingReadOnlyPermissions: MeetRoomMemberPermissions = {
 	recordingDelete: false,
 	broadcastControl: false,
 	broadcastAddDestinations: false,
-	broadcastEditDestinations: false,
 	meetingJoin: false,
 	meetingRead: false,
 	roomShareAccessLinks: false,
@@ -103,7 +101,6 @@ const noPermissions: MeetRoomMemberPermissions = {
 	recordingDelete: false,
 	broadcastControl: false,
 	broadcastAddDestinations: false,
-	broadcastEditDestinations: false,
 	meetingJoin: false,
 	meetingRead: false,
 	roomShareAccessLinks: false,
@@ -402,7 +399,6 @@ describe('Room Members API Tests', () => {
 					recordingDelete: true,
 					broadcastControl: true,
 					broadcastAddDestinations: true,
-					broadcastEditDestinations: true,
 					participantKick: true
 				}
 			});
@@ -523,7 +519,6 @@ describe('Room Members API Tests', () => {
 					recordingDelete: true,
 					broadcastControl: true,
 					broadcastAddDestinations: true,
-					broadcastEditDestinations: true,
 					meetingJoin: false,
 					mediaPublishVideo: false,
 					mediaPublishAudio: false,
@@ -567,7 +562,6 @@ describe('Room Members API Tests', () => {
 					recordingDelete: true,
 					broadcastControl: true,
 					broadcastAddDestinations: true,
-					broadcastEditDestinations: true,
 					roomShareAccessLinks: true,
 					participantPromote: true,
 					participantKick: true,

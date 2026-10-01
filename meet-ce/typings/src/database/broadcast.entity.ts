@@ -85,11 +85,6 @@ export interface MeetBroadcastDestinationInfo {
 	url: string;
 	/** Where the destination comes from. See {@link MeetBroadcastDestinationSource} for details */
 	source: MeetBroadcastDestinationSource;
-	/**
-	 * `true` when a room destination streams to a different URL, or under a different name, than
-	 * the room has saved, for this meeting only. Absent for destinations added in the meeting
-	 */
-	edited?: boolean;
 	/** Current status of the destination. See {@link MeetBroadcastDestinationStatus} for details */
 	status: MeetBroadcastDestinationStatus;
 	/** Error message if the destination failed (if available) */

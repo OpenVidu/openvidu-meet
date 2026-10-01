@@ -199,10 +199,6 @@
           "LABEL": "Ziele hinzufügen",
           "DESCRIPTION": "Erlaubt, ein Meeting zusätzlich zu den Zielen des Raums an weitere URLs zu übertragen. Erfordert „Live gehen“"
         },
-        "broadcastEditDestinations": {
-          "LABEL": "Ziele bearbeiten",
-          "DESCRIPTION": "Erlaubt, URL oder Namen eines Ziels nur für ein Meeting zu ändern, ohne die Ziele des Raums anzutasten. Erfordert „Live gehen“"
-        },
         "chatRead": {
           "LABEL": "Lesen",
           "DESCRIPTION": "Erlaubt das Lesen von Chat-Nachrichten"

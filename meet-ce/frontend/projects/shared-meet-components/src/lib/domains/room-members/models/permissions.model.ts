@@ -163,13 +163,6 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.broadcastAddDestinations.DESCRIPTION',
 				icon: 'add_link',
 				dependsOn: 'broadcastControl'
-			},
-			{
-				key: 'broadcastEditDestinations',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.broadcastEditDestinations.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.broadcastEditDestinations.DESCRIPTION',
-				icon: 'edit',
-				dependsOn: 'broadcastControl'
 			}
 		]
 	},

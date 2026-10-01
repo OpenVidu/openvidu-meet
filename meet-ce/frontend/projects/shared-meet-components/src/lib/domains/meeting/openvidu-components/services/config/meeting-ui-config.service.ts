@@ -50,7 +50,6 @@ interface BroadcastActivityConfig {
 	enabled: boolean;
 	controls: boolean;
 	addDestinations: boolean;
-	editDestinations: boolean;
 }
 
 /**
@@ -115,8 +114,7 @@ export class MeetingUiConfigService {
 	private readonly broadcastActivityConfig = signal<BroadcastActivityConfig>({
 		enabled: true,
 		controls: true,
-		addDestinations: true,
-		editDestinations: true
+		addDestinations: true
 	});
 
 	// Individual configs that don't fit into groups
@@ -164,7 +162,6 @@ export class MeetingUiConfigService {
 	readonly broadcastActivitySignal = computed(() => this.broadcastActivityConfig().enabled);
 	readonly broadcastActivityControlsSignal = computed(() => this.broadcastActivityConfig().controls);
 	readonly broadcastActivityAddDestinationsSignal = computed(() => this.broadcastActivityConfig().addDestinations);
-	readonly broadcastActivityEditDestinationsSignal = computed(() => this.broadcastActivityConfig().editDestinations);
 	readonly layoutRemoteParticipantsSignal = this.layoutRemoteParticipantsConfig.asReadonly();
 
 	// ============================================

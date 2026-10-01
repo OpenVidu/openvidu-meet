@@ -73,61 +73,40 @@
 
 		<div class="destination-list" role="group" aria-labelledby="broadcast-planned-caption">
 			@for (destination of plannedDestinations(); track destination.id) {
-				@if (isEditingDestination(destination.id)) {
-					<ng-container *ngTemplateOutlet="destinationEditor" />
-				} @else {
-					<div class="destination-row" [attr.id]="'broadcast-planned-' + destination.id">
-						<mat-checkbox
-							class="destination-pick"
-							[checked]="destination.selected"
-							[disabled]="destination.source === destinationSource.MEETING"
-							(change)="toggleSelected(destination.id, $event.checked)"
-						>
-							<span class="destination-pick-body">
-								<ov-platform-icon [platform]="platformOf(destination.url)" [size]="28" />
-								<span class="destination-text">
-									<span class="destination-name">
-										{{ destination.name }}
-										@if (destination.source === destinationSource.MEETING) {
-											<span class="pill">{{ 'PANEL.BROADCAST.THIS_MEETING' | translate }}</span>
-										} @else if (destination.edited) {
-											<span class="pill">{{ 'PANEL.BROADCAST.EDITED' | translate }}</span>
-										}
-									</span>
-									<span class="destination-detail">
-										{{ hostOf(destination.url) }}
-										@if (destination.edited) {
-											&middot; {{ 'PANEL.BROADCAST.THIS_MEETING_ONLY' | translate }}
-										}
-									</span>
+				<div class="destination-row" [attr.id]="'broadcast-planned-' + destination.id">
+					<mat-checkbox
+						class="destination-pick"
+						[checked]="destination.selected"
+						[disabled]="destination.source === destinationSource.MEETING"
+						(change)="toggleSelected(destination.id, $event.checked)"
+					>
+						<span class="destination-pick-body">
+							<ov-platform-icon [platform]="platformOf(destination.url)" [size]="28" />
+							<span class="destination-text">
+								<span class="destination-name">
+									{{ destination.name }}
+									@if (destination.source === destinationSource.MEETING) {
+										<span class="pill">{{ 'PANEL.BROADCAST.THIS_MEETING' | translate }}</span>
+									}
 								</span>
+								<span class="destination-detail">{{ hostOf(destination.url) }}</span>
 							</span>
-						</mat-checkbox>
-						@if (destination.source === destinationSource.MEETING) {
-							<button
-								mat-icon-button
-								type="button"
-								class="destination-action"
-								[matTooltip]="'PANEL.BROADCAST.REMOVE' | translate"
-								(click)="removeMeetingDestination(destination.id)"
-							>
-								<mat-icon>delete</mat-icon>
-							</button>
-						} @else if (showEditDestinations()) {
-							<button
-								mat-icon-button
-								type="button"
-								class="destination-action"
-								[matTooltip]="'PANEL.BROADCAST.EDIT_FOR_MEETING' | translate"
-								(click)="openEdit(destination)"
-							>
-								<mat-icon>edit</mat-icon>
-							</button>
-						}
-					</div>
-				}
+						</span>
+					</mat-checkbox>
+					@if (destination.source === destinationSource.MEETING) {
+						<button
+							mat-icon-button
+							type="button"
+							class="destination-action"
+							[matTooltip]="'PANEL.BROADCAST.REMOVE' | translate"
+							(click)="removeMeetingDestination(destination.id)"
+						>
+							<mat-icon>delete</mat-icon>
+						</button>
+					}
+				</div>
 			}
-			@if (editorTarget() === 'new') {
+			@if (editorOpen()) {
 				<ng-container *ngTemplateOutlet="destinationEditor" />
 			}
 		</div>
@@ -190,8 +169,6 @@
 							{{ destination.name }}
 							@if (destination.source === destinationSource.MEETING) {
 								<span class="pill">{{ 'PANEL.BROADCAST.THIS_MEETING' | translate }}</span>
-							} @else if (destination.edited) {
-								<span class="pill">{{ 'PANEL.BROADCAST.EDITED' | translate }}</span>
 							}
 						</span>
 						<span
@@ -244,7 +221,7 @@
 					}
 				</div>
 			}
-			@if (editorTarget() === 'new' && isRunning()) {
+			@if (editorOpen() && isRunning()) {
 				<ng-container *ngTemplateOutlet="destinationEditor" />
 			}
 		</div>
@@ -327,13 +304,7 @@
 	>
 		<div class="destination-editor-header">
 			<ov-platform-icon [platform]="editor.platform()" [size]="28" />
-			<span class="caption accent">
-				{{
-					editorTarget() === 'new'
-						? ('PANEL.BROADCAST.NEW_DESTINATION' | translate)
-						: ('PANEL.BROADCAST.EDIT_DESTINATION' | translate: { name: editedDestinationName() })
-				}}
-			</span>
+			<span class="caption accent">{{ 'PANEL.BROADCAST.NEW_DESTINATION' | translate }}</span>
 		</div>
 		<label class="field-label" for="broadcast-destination-name">{{
 			'PANEL.BROADCAST.NAME_LABEL' | translate
@@ -379,10 +350,7 @@
 				@if (editor.platform() !== 'other') {
 					{{ 'PANEL.BROADCAST.URL_RECOGNISED' | translate: { platform: editor.platformLabel() } }}
 				}
-				{{
-					(editorTarget() === 'new' ? 'PANEL.BROADCAST.URL_HINT' : 'PANEL.BROADCAST.EDIT_HINT')
-						| translate: { name: editedDestinationName() }
-				}}
+				{{ 'PANEL.BROADCAST.URL_HINT' | translate }}
 			</p>
 		}
 		<div class="destination-editor-actions">

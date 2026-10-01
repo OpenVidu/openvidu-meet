@@ -31,15 +31,13 @@ export class FeatureCalculator {
 			features.showStartStopRecording = permissions.recordingControl;
 		}
 
-		// Broadcast: broadcastControl gates the whole activity; the destination permissions only add
-		// to it, so neither is offered on its own.
+		// Broadcast: broadcastControl gates the whole activity; adding destinations only adds to it, so
+		// it is not offered on its own.
 		if (features.showBroadcastControls) {
 			features.showBroadcastControls = permissions.broadcastControl;
 		}
 
 		features.showBroadcastAddDestinations = features.showBroadcastControls && permissions.broadcastAddDestinations;
-		features.showBroadcastEditDestinations =
-			features.showBroadcastControls && permissions.broadcastEditDestinations;
 
 		// Chat: chatRead gates the whole panel; chatWrite gates the message input within it.
 		if (features.showChat) {

@@ -199,10 +199,6 @@
           "LABEL": "Bestemmingen toevoegen",
           "DESCRIPTION": "Staat toe een vergadering naar extra URL's uit te zenden naast de bestemmingen van de ruimte. Vereist \"Live gaan\""
         },
-        "broadcastEditDestinations": {
-          "LABEL": "Bestemmingen bewerken",
-          "DESCRIPTION": "Staat toe de URL of naam van een bestemming voor één vergadering te wijzigen, zonder de bestemmingen van de ruimte aan te passen. Vereist \"Live gaan\""
-        },
         "chatRead": {
           "LABEL": "Lezen",
           "DESCRIPTION": "Chatberichten lezen toestaan"

@@ -1,7 +1,7 @@
 description: >
     Validation error: the body is malformed, or the destinations cannot be streamed to (an id
-    the room does not have, a new destination without its full URL, two destinations with the
-    same URL, more than 5 destinations, or none at all)
+    the room does not have, an id sent together with a name or a URL, a new destination without
+    its full URL, two destinations with the same URL, more than 5 destinations, or none at all)
 content:
     application/json:
         schema:

@@ -51,15 +51,6 @@ export interface MeetRoomMemberPermissions {
 	 */
 	broadcastAddDestinations: boolean;
 	/**
-	 * Can change the URL or the name of one of the room's destinations for that meeting only; the
-	 * room's config keeps its saved values. Only effective together with `broadcastControl`, like
-	 * `broadcastAddDestinations`.
-	 *
-	 * Introduced after the rename, so it has no deprecated `can*` spelling; same completion rule as
-	 * `broadcastControl`.
-	 */
-	broadcastEditDestinations: boolean;
-	/**
 	 * Can join the meeting.
 	 */
 	meetingJoin: boolean;
@@ -294,7 +285,7 @@ export const MEET_PERMISSION_ALIASES = {
  *   moderation capability no earlier permission decided.
  * - `participantReactionSend` ← `true`: reacting is taking part, like raising one's own hand, not
  *   a power over others, and the room config `reactions.enabled` is what turns it off for everyone.
- * - `broadcastControl`, `broadcastAddDestinations`, `broadcastEditDestinations` ← `false`: streaming
+ * - `broadcastControl`, `broadcastAddDestinations` ← `false`: streaming
  *   a meeting to the outside is a new power that no deployment decided on before 3.10.0. Deliberately
  *   not derived from `recordingControl`: keeping a copy and publishing live are different powers.
  */
@@ -304,8 +295,7 @@ const UNALIASED_PERMISSION_DEFAULTS = {
 	participantHandLower: false,
 	participantReactionSend: true,
 	broadcastControl: false,
-	broadcastAddDestinations: false,
-	broadcastEditDestinations: false
+	broadcastAddDestinations: false
 } as const satisfies Readonly<
 	Partial<Record<keyof MeetRoomMemberPermissions, keyof MeetRoomMemberPermissions | boolean>>
 >;

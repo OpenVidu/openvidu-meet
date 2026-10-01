@@ -131,17 +131,17 @@ describe('Broadcasts API Tests', () => {
 			]);
 		});
 
-		it('should change a room destination and add one for this meeting only, flagging both', async () => {
+		it('should add a destination for this meeting only, next to the room destination', async () => {
 			const roomData = await setupMeetingRoom(broadcastConfig(['a']));
 			const [idA] = await roomDestinationIds(roomData);
 
 			const response = await startBroadcast(roomData.room.roomId, {
-				destinations: [{ id: idA, name: 'A for this meeting' }, destination('extra')]
+				destinations: [{ id: idA }, destination('extra')]
 			});
 
 			expect(response.status).toBe(201);
 			expect(response.body.destinations).toEqual([
-				expect.objectContaining({ id: idA, name: 'A for this meeting', source: 'room', edited: true }),
+				expect.objectContaining({ id: idA, name: 'Destination a', url: REDACTED_URL, source: 'room' }),
 				expect.objectContaining({ name: 'Destination extra', url: REDACTED_URL, source: 'meeting' })
 			]);
 			expect(response.body.destinations[1].id).not.toBe(idA);
@@ -162,7 +162,7 @@ describe('Broadcasts API Tests', () => {
 			expectMeetError(second, errorBroadcastAlreadyStarted(roomId));
 		});
 
-		it('should refuse to start when broadcast is disabled, the meeting has no participants or a destination is unknown', async () => {
+		it('should refuse to start when broadcast is disabled, the meeting has no participants, or a destination is unknown or changed', async () => {
 			const disabledRoom = await setupMeetingRoom({ broadcast: { enabled: false, destinations: [] } });
 			expectMeetError(
 				await startBroadcast(disabledRoom.room.roomId),
@@ -178,6 +178,12 @@ describe('Broadcasts API Tests', () => {
 			const roomData = await setupMeetingRoom(broadcastConfig(['a']));
 			const unknown = await startBroadcast(roomData.room.roomId, { destinations: [{ id: 'nope' }] });
 			expect(unknown.status).toBe(422);
+
+			const [idA] = await roomDestinationIds(roomData);
+			const changed = await startBroadcast(roomData.room.roomId, {
+				destinations: [{ id: idA, name: 'Renamed' }]
+			});
+			expect(changed.status).toBe(422);
 		});
 
 		it('should return 503 when no egress service takes the broadcast, leaving the room free to go live', async () => {
@@ -197,7 +203,7 @@ describe('Broadcasts API Tests', () => {
 			expect((await startBroadcast(roomId)).status).toBe(201);
 		});
 
-		it('should require broadcastControl, and the destination permissions for extras and edits', async () => {
+		it('should require broadcastControl, and broadcastAddDestinations for a destination of this meeting', async () => {
 			// Roles are settled before the meeting starts, which is when they can still change.
 			const roomData = await setupSingleRoom(false, 'BROADCAST_ROOM', broadcastConfig(['a']));
 			const { roomId } = roomData.room;
@@ -205,8 +211,7 @@ describe('Broadcasts API Tests', () => {
 				moderator: {
 					permissions: {
 						...roomData.room.roles.moderator.permissions,
-						broadcastAddDestinations: false,
-						broadcastEditDestinations: false
+						broadcastAddDestinations: false
 					}
 				}
 			});
@@ -226,10 +231,6 @@ describe('Broadcasts API Tests', () => {
 			expectMeetError(await startBroadcast(roomId, {}, speakerToken), errorInsufficientPermissions());
 			expectMeetError(
 				await startBroadcast(roomId, { destinations: [destination('extra')] }, moderatorWithoutExtras),
-				errorInsufficientPermissions()
-			);
-			expectMeetError(
-				await startBroadcast(roomId, { destinations: [{ id: idA, name: 'Renamed' }] }, moderatorWithoutExtras),
 				errorInsufficientPermissions()
 			);
 

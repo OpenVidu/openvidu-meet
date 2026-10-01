@@ -26,7 +26,6 @@ const DEFAULT_FEATURES: RoomFeatures = {
 	showViewRecordings: true,
 	showBroadcastControls: true,
 	showBroadcastAddDestinations: true,
-	showBroadcastEditDestinations: true,
 	showFullscreen: true,
 	showBackgrounds: true,
 	showCaptionsControls: true,

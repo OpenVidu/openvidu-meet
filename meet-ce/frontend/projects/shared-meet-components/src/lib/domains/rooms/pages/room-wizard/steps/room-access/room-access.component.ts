@@ -53,7 +53,7 @@ const FEATURE_DEPENDENT_PERMISSIONS: {
 		isEnabled: (config) => config?.virtualBackground?.enabled ?? false
 	},
 	{
-		permissionKeys: ['broadcastControl', 'broadcastAddDestinations', 'broadcastEditDestinations'],
+		permissionKeys: ['broadcastControl', 'broadcastAddDestinations'],
 		isEnabled: (config) => config?.broadcast?.enabled ?? false
 	}
 ];

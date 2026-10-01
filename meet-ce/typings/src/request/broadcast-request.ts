@@ -14,20 +14,19 @@ export interface MeetBroadcastStartOptions {
 }
 
 /**
- * A destination to stream to when a broadcast starts:
+ * A destination to stream to when a broadcast starts, in one of two forms:
  *
- * - `id` alone: one of the room's saved destinations, streamed to as saved.
- * - `id` with `name` or `url`: that room destination with the given values for this meeting only;
- *   the room keeps what it has saved. Requires the `broadcastEditDestinations` permission.
- * - No `id`: a destination for this meeting only, so `name` and `url` are required. Requires the
+ * - `id` alone: one of the room's saved destinations, streamed to as saved. A room destination is
+ *   never changed for a meeting.
+ * - `name` and `url`, without `id`: a destination for this meeting only. Requires the
  *   `broadcastAddDestinations` permission.
  */
 export interface MeetBroadcastStartDestination {
-	/** Identifier of one of the room's destinations */
+	/** Identifier of one of the room's destinations. Sent alone */
 	id?: string;
-	/** Display name of the destination */
+	/** Display name of a destination for this meeting only. Sent with `url`, without `id` */
 	name?: string;
-	/** Full `rtmp://` or `rtmps://` URL to stream to, stream key included */
+	/** Full `rtmp://` or `rtmps://` URL to stream to, stream key included. Sent with `name`, without `id` */
 	url?: string;
 }
 

@@ -85,8 +85,7 @@ export class BroadcastHelper {
 	/**
 	 * The destinations a broadcast starts with: every room destination, streaming to the ones the
 	 * request names (to all of them when it names none) and holding the rest as `stopped`, plus the
-	 * destinations the request adds for this meeting. Naming a room destination with a different
-	 * URL or name changes it for this meeting only, which marks it `edited`.
+	 * destinations the request adds for this meeting.
 	 */
 	static resolveStartDestinations(
 		roomDestinations: MeetBroadcastDestination[],
@@ -103,7 +102,7 @@ export class BroadcastHelper {
 
 		for (const request of requested ?? []) {
 			if (request.id) {
-				BroadcastHelper.startRoomDestination(destinations, request);
+				BroadcastHelper.startRoomDestination(destinations, request.id);
 			} else {
 				destinations.push(BroadcastHelper.toMeetingDestination({ name: request.name!, url: request.url! }));
 			}
@@ -286,25 +285,12 @@ export class BroadcastHelper {
 		};
 	}
 
-	/**
-	 * Streams to the room destination the request names, under the name and URL the request gives
-	 * it for this meeting.
-	 */
-	private static startRoomDestination(
-		destinations: MeetBroadcastDestinationInfo[],
-		request: MeetBroadcastStartDestination
-	): void {
-		const destination = destinations.find(({ id }) => id === request.id);
+	private static startRoomDestination(destinations: MeetBroadcastDestinationInfo[], destinationId: string): void {
+		const destination = destinations.find(({ id }) => id === destinationId);
 
-		if (!destination) throw errorBroadcastUnknownDestination(request.id!);
+		if (!destination) throw errorBroadcastUnknownDestination(destinationId);
 
-		const url = request.url ? BroadcastHelper.resolveUrl(request.url, destination.url) : destination.url;
-		const name = request.name ?? destination.name;
 		destination.status = MeetBroadcastDestinationStatus.CONNECTING;
-
-		if (url !== destination.url || name !== destination.name) {
-			Object.assign(destination, { url, name, edited: true });
-		}
 	}
 
 	/**

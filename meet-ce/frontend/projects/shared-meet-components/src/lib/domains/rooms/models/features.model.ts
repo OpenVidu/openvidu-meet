@@ -48,10 +48,6 @@ export interface RoomFeatures {
 	 * Indicates if adding destinations for the meeting to a broadcast is shown in the UI
 	 */
 	showBroadcastAddDestinations: boolean;
-	/**
-	 * Indicates if changing a room destination for the meeting is shown in the UI
-	 */
-	showBroadcastEditDestinations: boolean;
 
 	/**
 	 * Indicates if the fullscreen control is shown in the UI

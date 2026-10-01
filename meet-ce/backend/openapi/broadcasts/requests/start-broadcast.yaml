@@ -13,41 +13,33 @@ content:
                     description: >
                         The destinations of this broadcast. When present, only the room destinations named
                         by their `id` are streamed to; the room's other destinations are reported as
-                        `stopped` and can be started later. A room destination sent with a `name` or a
-                        full `url` is changed for this meeting only, which requires the
-                        `broadcastEditDestinations` permission. An entry without an `id` is a new
-                        destination for this meeting only, which requires the `broadcastAddDestinations`
-                        permission. A broadcast streams to at most 5 destinations, and never to the same
-                        URL twice.
+                        `stopped` and can be started later. A room destination is streamed to as saved, so
+                        its `id` is sent alone. An entry without an `id` is a new destination for this
+                        meeting only, which requires the `broadcastAddDestinations` permission. A
+                        broadcast streams to at most 5 destinations, and never to the same URL twice.
                     items:
                         type: object
                         properties:
                             id:
                                 type: string
                                 example: 'kX9pL2mQ7a'
-                                description: The `id` of one of the destinations saved in the room's config.
+                                description: >
+                                    The `id` of one of the destinations saved in the room's config. Sent
+                                    alone: a room destination is never changed for a meeting.
                             name:
                                 type: string
                                 maxLength: 50
                                 example: 'YouTube'
-                                description: >
-                                    The label of the destination. Required on a new destination; on a room
-                                    destination, a different label than the saved one is an edit.
+                                description: The label of a new destination. Required on it, together with `url`.
                             url:
                                 type: string
                                 format: uri
                                 example: 'rtmp://a.rtmp.youtube.com/live2/abcd-1234-efgh-5678'
                                 description: >
-                                    The RTMP or RTMPS URL, stream key included. Required on a new destination.
-                                    On a room destination, the saved URL is kept when this one is omitted or
-                                    sent redacted exactly as served (`********` in place of the key), and
-                                    replaced for this meeting by a full URL. A redacted URL with any other
-                                    change is rejected with a `422`.
+                                    The RTMP or RTMPS URL of a new destination, stream key included.
+                                    Required on it, together with `name`.
         example:
             destinations:
                 - id: 'kX9pL2mQ7a'
-                - id: 'b3Nq8ZrT1c'
-                  name: 'YouTube (backup channel)'
-                  url: 'rtmp://a.rtmp.youtube.com/live2/wxyz-9876-stuv-5432'
                 - name: 'Own media server'
                   url: 'rtmp://media.example.com/live/stream-key'

@@ -359,6 +359,30 @@ test.describe('Room wizard E2E Tests', () => {
 		await page.locator('#broadcast-destination-save-btn').click();
 	};
 
+	test('broadcast: its two role permissions follow the feature', async ({ page }) => {
+		await openAdvancedWizard(page);
+		await gotoRoomAccess(page);
+
+		// A new room starts without live broadcast, which takes its role permissions with it.
+		for (const role of ROLES) {
+			await expect(permissionSwitch(page, role, 'broadcastControl')).toBeDisabled();
+			await expect(permissionSwitch(page, role, 'broadcastAddDestinations')).toBeDisabled();
+		}
+
+		await gotoBroadcast(page);
+		await setFeature(page, 'broadcast-enabled', true);
+		await gotoRoomAccess(page);
+
+		for (const role of ROLES) {
+			await expect(page.locator(`[id^="${role}-permission-broadcast"]`)).toHaveCount(2);
+			await expect(permissionSwitch(page, role, 'broadcastControl')).toBeEnabled();
+		}
+
+		// Adding a destination needs going live, which the speaker lacks by default.
+		await expect(permissionSwitch(page, 'moderator', 'broadcastAddDestinations')).toBeEnabled();
+		await expect(permissionSwitch(page, 'speaker', 'broadcastAddDestinations')).toBeDisabled();
+	});
+
 	test('create mode: the broadcast destinations and layout reach the created room, the stream keys hidden', async ({
 		page
 	}) => {
