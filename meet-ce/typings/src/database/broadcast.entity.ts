@@ -37,7 +37,7 @@ export interface MeetBroadcastInfo {
 	 * Absent while the broadcast is starting, and on broadcasts that never streamed anything
 	 */
 	startDate?: number;
-	/** Timestamp in milliseconds since epoch when the broadcast ended (if available) */
+	/** Timestamp in milliseconds since epoch when the broadcast ended. Absent until it ends, and on a broadcast that never streamed anything */
 	endDate?: number;
 	/** Duration in seconds of the broadcast (if available) */
 	duration?: number;
@@ -89,9 +89,9 @@ export interface MeetBroadcastDestinationInfo {
 	status: MeetBroadcastDestinationStatus;
 	/** Error message if the destination failed (if available) */
 	error?: string;
-	/** Timestamp in milliseconds since epoch when the destination started to receive media (if available) */
+	/** Timestamp in milliseconds since epoch when the destination started to receive media. Absent until it does, and on a destination it never reached */
 	startDate?: number;
-	/** Timestamp in milliseconds since epoch when the destination stopped receiving media (if available) */
+	/** Timestamp in milliseconds since epoch when the destination stopped receiving media. Absent while it receives it, and on a destination it never reached */
 	endDate?: number;
 	/** Duration in seconds the destination received media (if available) */
 	duration?: number;
