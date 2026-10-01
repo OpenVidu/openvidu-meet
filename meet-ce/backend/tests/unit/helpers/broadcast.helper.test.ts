@@ -456,6 +456,33 @@ describe('BroadcastHelper.withEgressInfo', () => {
 		expect(updated.destinations[0]).toMatchObject({ status: 'stopped', duration: 60 });
 	});
 
+	it('stops a destination still connecting when the egress ended, and leaves a failed one failed', () => {
+		const failed = destination({ id: 'tw', url: tw.url, status: MeetBroadcastDestinationStatus.FAILED });
+		const updated = BroadcastHelper.withEgressInfo(
+			record([yt, failed], { status: MeetBroadcastStatus.ENDING }),
+			egress({
+				status: EgressStatus.EGRESS_COMPLETE,
+				endedAt: 61_000_000_000n,
+				streamResults: [stream({ url: 'rtmp://mtx/live/{you...AAA}' })]
+			})
+		);
+
+		expect(updated.destinations[0]).toMatchObject({ status: 'stopped', endDate: 61_000 });
+		expect(updated.destinations[1]).toEqual(failed);
+	});
+
+	it('leaves a destination connecting while the egress is only ending', () => {
+		const updated = BroadcastHelper.withEgressInfo(
+			record([yt], { status: MeetBroadcastStatus.ACTIVE }),
+			egress({
+				status: EgressStatus.EGRESS_ENDING,
+				streamResults: [stream({ url: 'rtmp://mtx/live/{you...AAA}' })]
+			})
+		);
+
+		expect(updated.destinations[0].status).toBe(MeetBroadcastDestinationStatus.CONNECTING);
+	});
+
 	it('carries the egress error of a failed broadcast', () => {
 		const updated = BroadcastHelper.withEgressInfo(
 			record([yt]),

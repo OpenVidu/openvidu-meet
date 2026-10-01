@@ -184,7 +184,8 @@ export class BroadcastHelper {
 	 * the status the server gave it (`stopped` when it was not chosen, `connecting` right after being
 	 * added); one with a stream takes the stream's state, unless the destination already ended and
 	 * the stream is that same attempt: egress webhooks can carry a snapshot older than the response
-	 * that ended it, and must not revive it.
+	 * that ended it, and must not revive it. An egress that ended streams nowhere, so a destination
+	 * still connecting or streaming in its last snapshot is stopped when the egress ended.
 	 */
 	static withEgressInfo(record: BroadcastRecord, egress: EgressInfo): BroadcastRecord {
 		const destinations = record.destinations.map((destination) => {
@@ -194,13 +195,16 @@ export class BroadcastHelper {
 
 			return { ...destination, ...BroadcastHelper.toDestinationState(stream) };
 		});
+		const status = EgressHelper.toStatus(egress.status, MeetBroadcastStatus);
 		const startDate = BroadcastHelper.extractStartDate(egress) ?? record.startDate;
 		const endDate = EgressHelper.nsToMs(egress.endedAt);
 
 		return {
 			...record,
-			destinations,
-			status: EgressHelper.toStatus(egress.status, MeetBroadcastStatus),
+			destinations: BroadcastHelper.isInProgress(status)
+				? destinations
+				: BroadcastHelper.stopStreaming(destinations, endDate),
+			status,
 			startDate,
 			endDate,
 			duration: startDate && endDate ? (endDate - startDate) / 1000 : undefined,
@@ -215,11 +219,7 @@ export class BroadcastHelper {
 	 * its own, was aborted.
 	 */
 	static withEnded(record: BroadcastRecord, endDate = Date.now()): BroadcastRecord {
-		const destinations = record.destinations.map((destination) =>
-			BroadcastHelper.isStreaming(destination)
-				? { ...destination, status: MeetBroadcastDestinationStatus.STOPPED, endDate }
-				: destination
-		);
+		const destinations = BroadcastHelper.stopStreaming(record.destinations, endDate);
 		const status = BroadcastHelper.isInProgress(record.status) ? undefined : record.status;
 
 		if (!record.startDate || status === MeetBroadcastStatus.ABORTED) {
@@ -318,6 +318,17 @@ export class BroadcastHelper {
 		const duplicate = urls.find((url, index) => urls.indexOf(url) !== index);
 
 		if (duplicate) throw errorBroadcastDuplicateDestination(redactStreamUrl(duplicate));
+	}
+
+	private static stopStreaming(
+		destinations: MeetBroadcastDestinationInfo[],
+		endDate: number | undefined
+	): MeetBroadcastDestinationInfo[] {
+		return destinations.map((destination) =>
+			BroadcastHelper.isStreaming(destination)
+				? { ...destination, status: MeetBroadcastDestinationStatus.STOPPED, endDate }
+				: destination
+		);
 	}
 
 	/**
