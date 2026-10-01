@@ -84,6 +84,10 @@ export class RecordingHelper {
 		return isFinished;
 	}
 
+	static isInProgress(status: MeetRecordingStatus): boolean {
+		return [MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE, MeetRecordingStatus.ENDING].includes(status);
+	}
+
 	/**
 	 * Extracts the OpenVidu output mode based on the provided egress information.
 	 * If the egress information contains roomComposite, it returns RecordingOutputMode.COMPOSED.

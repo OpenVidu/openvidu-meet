@@ -14,6 +14,7 @@ import type { LoggerService } from '../../../src/services/logger.service.js';
 import { MeetingService } from '../../../src/services/meeting.service.js';
 import type { BroadcastService } from '../../../src/services/broadcast.service.js';
 import type { MutexService } from '../../../src/services/mutex.service.js';
+import type { RecordingService } from '../../../src/services/recording.service.js';
 import type { RequestSessionService } from '../../../src/services/request-session.service.js';
 import type { RoomService } from '../../../src/services/room.service.js';
 import type { WebhookDispatcherService } from '../../../src/services/webhook-dispatcher.service.js';
@@ -87,7 +88,8 @@ describe('MeetingService mute', () => {
 			requestSessionService as unknown as RequestSessionService,
 			{} as unknown as WebhookDispatcherService,
 			{} as unknown as MutexService,
-			{} as unknown as BroadcastService
+			{} as unknown as BroadcastService,
+			{} as unknown as RecordingService
 		);
 	});
 

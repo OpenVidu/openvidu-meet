@@ -13,3 +13,9 @@ export interface EgressError {
 	error?: string;
 	details?: string;
 }
+
+/**
+ * The error a recording or a broadcast ends with when the egress service running it dies, which
+ * LiveKit never reports.
+ */
+export const EGRESS_LOST_ERROR = 'The egress service stopped responding';
