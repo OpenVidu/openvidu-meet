@@ -74,9 +74,7 @@ export class BroadcastService {
 	 */
 	async startBroadcast(roomId: string, options: MeetBroadcastStartOptions): Promise<MeetBroadcastInfo> {
 		return this.withRequestLock(roomId, async () => {
-			await this.dropStaleBroadcast(roomId);
-
-			if (await this.broadcastState.find(roomId)) throw errorBroadcastAlreadyStarted(roomId);
+			if (await this.findLiveRecord(roomId)) throw errorBroadcastAlreadyStarted(roomId);
 
 			const { roomName, config } = await this.roomService.getMeetRoom(roomId, ['roomName', 'config']);
 
@@ -335,20 +333,24 @@ export class BroadcastService {
 	}
 
 	/**
-	 * Forgets a saved broadcast whose egress LiveKit no longer reports in progress: it ended without
-	 * its `egress_ended` reaching this server, and would block the room until its TTL otherwise.
+	 * The saved broadcast of the room whose egress LiveKit still reports in progress. One LiveKit no
+	 * longer does ended without its `egress_ended` reaching this server, and is forgotten here so it
+	 * does not block the room until its TTL.
 	 */
-	protected async dropStaleBroadcast(roomId: string): Promise<void> {
+	protected async findLiveRecord(roomId: string): Promise<BroadcastRecord | undefined> {
 		const record = await this.broadcastState.find(roomId);
 
-		if (!record) return;
+		if (!record) return undefined;
 
 		const [egress] = await this.livekitService.getEgress(roomId, record.broadcastId);
 
-		if (egress && BroadcastHelper.isInProgress(EgressHelper.toStatus(egress.status, MeetBroadcastStatus))) return;
+		if (egress && BroadcastHelper.isInProgress(EgressHelper.toStatus(egress.status, MeetBroadcastStatus))) {
+			return record;
+		}
 
 		this.logger.warn(`Dropping the stale broadcast '${record.broadcastId}' of room '${roomId}'`);
 		await this.broadcastState.delete(roomId);
+		return undefined;
 	}
 
 	/**
