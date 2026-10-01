@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { afterAll, afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import type {
 	MeetBroadcastDestination,
 	MeetBroadcastInfo,
@@ -13,6 +13,7 @@ import {
 	MeetRecordingLayout
 } from '@openvidu-meet/typings';
 import { Express } from 'express';
+import { EgressClient, ServerError } from 'livekit-server-sdk';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import {
@@ -21,6 +22,7 @@ import {
 	errorBroadcastDisabled,
 	errorBroadcastNotFound,
 	errorBroadcastRoomHasNoParticipants,
+	errorEgressNotAvailable,
 	errorInsufficientPermissions
 } from '../../../../src/models/error.model.js';
 import { expectMeetError } from '../../../helpers/assertion-helpers.js';
@@ -176,6 +178,23 @@ describe('Broadcasts API Tests', () => {
 			const roomData = await setupMeetingRoom(broadcastConfig(['a']));
 			const unknown = await startBroadcast(roomData.room.roomId, { destinations: [{ id: 'nope' }] });
 			expect(unknown.status).toBe(422);
+		});
+
+		it('should return 503 when no egress service takes the broadcast, leaving the room free to go live', async () => {
+			const roomData = await setupMeetingRoom(broadcastConfig(['a']));
+			const { roomId } = roomData.room;
+			const startEgress = jest
+				.spyOn(EgressClient.prototype, 'startRoomCompositeEgress')
+				.mockRejectedValueOnce(
+					new ServerError('Service Unavailable', 'twirp error unknown: no response from servers', 503)
+				);
+
+			const response = await startBroadcast(roomId);
+			startEgress.mockRestore();
+
+			expectMeetError(response, errorEgressNotAvailable());
+			expect((await getBroadcasts(roomId)).body.broadcasts).toEqual([]);
+			expect((await startBroadcast(roomId)).status).toBe(201);
 		});
 
 		it('should require broadcastControl, and the destination permissions for extras and edits', async () => {

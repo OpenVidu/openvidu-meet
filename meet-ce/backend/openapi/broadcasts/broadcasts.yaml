@@ -53,7 +53,7 @@
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
             '503':
-                $ref: '../shared/responses/errors/service-unavailable.yaml'
+                $ref: '../shared/responses/errors/egress-unavailable.yaml'
     get:
         operationId: broadcastList
         summary: Get the broadcasts of a meeting
@@ -206,7 +206,7 @@
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
             '503':
-                $ref: '../shared/responses/errors/service-unavailable.yaml'
+                $ref: '../shared/responses/errors/egress-unavailable.yaml'
 
 /meetings/{roomId}/broadcasts/{broadcastId}/destinations/{destinationId}:
     put:
@@ -251,4 +251,4 @@
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
             '503':
-                $ref: '../shared/responses/errors/service-unavailable.yaml'
+                $ref: '../shared/responses/errors/egress-unavailable.yaml'
