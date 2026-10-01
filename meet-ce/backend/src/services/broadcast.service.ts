@@ -215,6 +215,8 @@ export class BroadcastService {
 
 	/**
 	 * Applies an `egress_started`, `egress_updated` or `egress_ended` webhook of a broadcast egress.
+	 * An update that changes nothing is dropped: LiveKit reports every change a request makes
+	 * again, after the request already saved and notified it.
 	 */
 	async handleEgressEvent(egress: EgressInfo, action: EgressWebhookAction): Promise<void> {
 		await this.withWebhookLock(egress.roomName, `egress_${action} of egress '${egress.egressId}'`, async () => {
@@ -227,7 +229,11 @@ export class BroadcastService {
 				return;
 			}
 
-			await this.persistAndNotify(BroadcastHelper.withEgressInfo(record, egress), action);
+			const updated = BroadcastHelper.withEgressInfo(record, egress);
+
+			if (action === 'updated' && BroadcastHelper.isSameRecord(record, updated)) return;
+
+			await this.persistAndNotify(updated, action);
 		});
 	}
 

@@ -452,6 +452,17 @@ describe('BroadcastService', () => {
 			expect(frontend.signals[0].destinations[0].url).toBe(REDACTED);
 		});
 
+		it('drops an egress_updated that changes nothing, as LiveKit sends after a request made the change', async () => {
+			await state.save(runningRecord());
+			livekit.nextEgress = egressWith({ status: EgressStatus.EGRESS_ENDING });
+			await service.stopBroadcast(ROOM_ID, 'EG_1');
+
+			await service.handleEgressEvent(egressWith({ status: EgressStatus.EGRESS_ENDING }), 'updated');
+
+			expect(webhooks.events).toEqual([{ type: MeetWebhookEventType.BROADCAST_UPDATED, status: 'ending' }]);
+			expect(frontend.signals).toHaveLength(1);
+		});
+
 		it('outwaits a change that a request would give up on, so the latest state is not dropped', async () => {
 			await state.save(runningRecord());
 			mutex.busyAttempts = Infinity;
