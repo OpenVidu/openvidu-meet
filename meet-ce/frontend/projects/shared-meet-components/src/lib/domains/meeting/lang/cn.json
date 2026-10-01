@@ -195,6 +195,8 @@
 			"URL_KEY_REQUIRED": "修改后的地址需要推流密钥：请粘贴完整地址",
 			"NAME_REQUIRED": "请输入名称",
 			"ADD": "添加",
+			"GO_LIVE_NOW": "开始直播",
+			"DESTINATION_NOT_ADDED": "未能添加目标",
 			"SAVE": "保存",
 			"CANCEL": "取消",
 			"REMOVE": "删除",

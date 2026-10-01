@@ -195,6 +195,8 @@
 			"URL_KEY_REQUIRED": "Una URL cambiada necesita su clave de emisión: pega la URL completa",
 			"NAME_REQUIRED": "Introduce un nombre",
 			"ADD": "Añadir",
+			"GO_LIVE_NOW": "Emitir",
+			"DESTINATION_NOT_ADDED": "No se añadió el destino",
 			"SAVE": "Guardar",
 			"CANCEL": "Cancelar",
 			"REMOVE": "Eliminar",

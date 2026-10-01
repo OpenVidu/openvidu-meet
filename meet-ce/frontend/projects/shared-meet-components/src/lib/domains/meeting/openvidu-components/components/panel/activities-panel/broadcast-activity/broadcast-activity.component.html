@@ -356,11 +356,7 @@
 			autocomplete="off"
 			spellcheck="false"
 		/>
-		@if (editor.form.controls.url.hasError('rejected')) {
-			<span class="field-error" id="broadcast-destination-url-rejected" role="alert">{{
-				editor.form.controls.url.getError('rejected') || ('PANEL.BROADCAST.ERROR_REQUEST' | translate)
-			}}</span>
-		} @else if (editor.form.controls.url.touched && editor.form.controls.url.invalid) {
+		@if (editor.form.controls.url.touched && editor.form.controls.url.invalid) {
 			<span class="field-error">{{
 				(editor.form.controls.url.hasError('streamKeyRequired')
 					? 'PANEL.BROADCAST.URL_KEY_REQUIRED'
@@ -368,15 +364,27 @@
 				) | translate
 			}}</span>
 		}
-		<p class="destination-editor-hint">
-			@if (editor.platform() !== 'other') {
-				{{ 'PANEL.BROADCAST.URL_RECOGNISED' | translate: { platform: editor.platformLabel() } }}
-			}
-			{{
-				(editorTarget() === 'new' ? 'PANEL.BROADCAST.URL_HINT' : 'PANEL.BROADCAST.EDIT_HINT')
-					| translate: { name: editedDestinationName() }
-			}}
-		</p>
+		@if (editor.rejection() !== undefined) {
+			<div class="activity-failure" id="broadcast-destination-url-rejected" role="alert">
+				<mat-icon class="activity-failure-icon">error_outline</mat-icon>
+				<div class="activity-note-body">
+					<span class="activity-note-title">{{ 'PANEL.BROADCAST.DESTINATION_NOT_ADDED' | translate }}</span>
+					<span class="activity-note-message">{{
+						editor.rejection() || ('PANEL.BROADCAST.ERROR_REQUEST' | translate)
+					}}</span>
+				</div>
+			</div>
+		} @else {
+			<p class="destination-editor-hint">
+				@if (editor.platform() !== 'other') {
+					{{ 'PANEL.BROADCAST.URL_RECOGNISED' | translate: { platform: editor.platformLabel() } }}
+				}
+				{{
+					(editorTarget() === 'new' ? 'PANEL.BROADCAST.URL_HINT' : 'PANEL.BROADCAST.EDIT_HINT')
+						| translate: { name: editedDestinationName() }
+				}}
+			</p>
+		}
 		<div class="destination-editor-actions">
 			<button
 				mat-flat-button
@@ -385,7 +393,7 @@
 				class="editor-submit"
 				[disabled]="addingDestination()"
 			>
-				{{ (editorTarget() === 'new' ? 'PANEL.BROADCAST.ADD' : 'PANEL.BROADCAST.SAVE') | translate }}
+				{{ submitLabelKey() | translate }}
 			</button>
 			<button mat-stroked-button type="button" id="broadcast-destination-cancel-btn" (click)="closeEditor()">
 				{{ 'PANEL.BROADCAST.CANCEL' | translate }}

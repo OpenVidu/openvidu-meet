@@ -195,6 +195,8 @@
 			"URL_KEY_REQUIRED": "A changed URL needs its stream key: paste the full URL",
 			"NAME_REQUIRED": "Enter a name",
 			"ADD": "Add",
+			"GO_LIVE_NOW": "Go live",
+			"DESTINATION_NOT_ADDED": "The destination was not added",
 			"SAVE": "Save",
 			"CANCEL": "Cancel",
 			"REMOVE": "Remove",

@@ -195,6 +195,8 @@
 			"URL_KEY_REQUIRED": "Eine geänderte URL braucht ihren Stream-Schlüssel: Fügen Sie die vollständige URL ein",
 			"NAME_REQUIRED": "Geben Sie einen Namen ein",
 			"ADD": "Hinzufügen",
+			"GO_LIVE_NOW": "Live gehen",
+			"DESTINATION_NOT_ADDED": "Das Ziel wurde nicht hinzugefügt",
 			"SAVE": "Speichern",
 			"CANCEL": "Abbrechen",
 			"REMOVE": "Entfernen",

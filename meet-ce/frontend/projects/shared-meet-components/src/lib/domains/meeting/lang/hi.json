@@ -195,6 +195,8 @@
 			"URL_KEY_REQUIRED": "बदले गए URL के लिए स्ट्रीम कुंजी चाहिए: पूरा URL पेस्ट करें",
 			"NAME_REQUIRED": "नाम दर्ज करें",
 			"ADD": "जोड़ें",
+			"GO_LIVE_NOW": "लाइव जाएँ",
+			"DESTINATION_NOT_ADDED": "गंतव्य नहीं जोड़ा गया",
 			"SAVE": "सहेजें",
 			"CANCEL": "रद्द करें",
 			"REMOVE": "हटाएँ",
