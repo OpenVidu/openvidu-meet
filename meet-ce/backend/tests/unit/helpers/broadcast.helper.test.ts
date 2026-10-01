@@ -358,6 +358,26 @@ describe('BroadcastHelper.withEgressInfo', () => {
 		});
 	});
 
+	it('keeps the broadcast starting while LiveKit reports the egress active but no destination has media', () => {
+		const connecting = BroadcastHelper.withEgressInfo(
+			record([yt]),
+			egress({
+				status: EgressStatus.EGRESS_ACTIVE,
+				streamResults: [stream({ url: 'rtmp://mtx/live/{you...AAA}' })]
+			})
+		);
+		const live = BroadcastHelper.withEgressInfo(
+			connecting,
+			egress({
+				status: EgressStatus.EGRESS_ACTIVE,
+				streamResults: [stream({ url: 'rtmp://mtx/live/{you...AAA}', startedAt: 2_000_000_000n })]
+			})
+		);
+
+		expect(connecting).toMatchObject({ status: 'starting', startDate: undefined });
+		expect(live).toMatchObject({ status: 'active', startDate: 2000 });
+	});
+
 	it('reports a stream that egress lists but has not started yet as connecting', () => {
 		const updated = BroadcastHelper.withEgressInfo(
 			record([yt]),

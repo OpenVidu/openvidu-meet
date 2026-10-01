@@ -15,7 +15,7 @@
 
             The request completes as soon as the media server accepts the broadcast, which is returned in
             the `starting` status with every chosen destination `connecting`. It becomes `active` once the
-            meeting's media is composed, and each destination then reports its own status; the broadcast
+            first destination receives media, and each destination reports its own status; the broadcast
             keeps running while at least one of them streams. Follow the transitions through the
             [`broadcastUpdated`](#/webhooks/broadcastUpdatedWebhook) webhook or by
             [fetching the broadcast](#/operations/broadcastGet).

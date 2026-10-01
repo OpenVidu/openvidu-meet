@@ -195,8 +195,8 @@ export class BroadcastHelper {
 
 			return { ...destination, ...BroadcastHelper.toDestinationState(stream) };
 		});
-		const status = EgressHelper.toStatus(egress.status, MeetBroadcastStatus);
 		const startDate = BroadcastHelper.extractStartDate(egress) ?? record.startDate;
+		const status = BroadcastHelper.toStatus(egress, startDate);
 		const endDate = EgressHelper.nsToMs(egress.endedAt);
 
 		return {
@@ -367,6 +367,15 @@ export class BroadcastHelper {
 			default:
 				return startDate ? MeetBroadcastDestinationStatus.ACTIVE : MeetBroadcastDestinationStatus.CONNECTING;
 		}
+	}
+
+	/**
+	 * LiveKit reports the egress active as soon as it composes the meeting, before any destination
+	 * connects; the broadcast is starting until media first reaches one.
+	 */
+	private static toStatus(egress: EgressInfo, startDate: number | undefined): MeetBroadcastStatus {
+		const status = EgressHelper.toStatus(egress.status, MeetBroadcastStatus);
+		return status === MeetBroadcastStatus.ACTIVE && !startDate ? MeetBroadcastStatus.STARTING : status;
 	}
 
 	/**
