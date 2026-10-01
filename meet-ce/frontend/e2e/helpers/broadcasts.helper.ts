@@ -1,6 +1,6 @@
 import { MeetBroadcastDestinationStatus } from '@openvidu-meet/typings';
 import { expect, type Page } from '@playwright/test';
-import { toggleActivitiesPanel } from './panels.helper';
+import { openMoreOptionsMenu, toggleActivitiesPanel } from './panels.helper';
 import { expectVisible } from './ui-utils.helper';
 
 const ACTIVITIES_CONTAINER = '#activities-container';
@@ -49,6 +49,15 @@ export const addDestinationFromActivitiesPanel = async (page: Page, name: string
 	await page.locator('#broadcast-destination-name').fill(name);
 	await page.locator('#broadcast-destination-url').fill(url);
 	await page.locator('#broadcast-destination-save-btn').click();
+};
+
+/** Goes live, or stops the broadcast, from the toolbar's more-options menu. */
+export const toggleBroadcastFromToolbar = async (page: Page): Promise<void> => {
+	await openMoreOptionsMenu(page);
+
+	const button = page.locator('#broadcast-btn');
+	await expect(button).toBeEnabled();
+	await button.click();
 };
 
 /** Stops the broadcast from the activity. */

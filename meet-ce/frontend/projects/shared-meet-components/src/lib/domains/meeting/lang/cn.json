@@ -48,6 +48,8 @@
 		"BACKGROUND": "背景效果",
 		"START_RECORDING": "开始录音",
 		"STOP_RECORDING": "停止录制",
+		"START_BROADCAST": "开始直播",
+		"STOP_BROADCAST": "停止直播",
 		"SETTINGS": "设置",
 		"LEAVE": "离开会议",
 		"PARTICIPANTS": "参与者",

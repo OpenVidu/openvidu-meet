@@ -48,6 +48,8 @@
 		"BACKGROUND": "Effets de fond",
 		"START_RECORDING": "démarrer l'enregistrement",
 		"STOP_RECORDING": "Arrêter l'enregistrement",
+		"START_BROADCAST": "Démarrer la diffusion en direct",
+		"STOP_BROADCAST": "Arrêter la diffusion en direct",
 		"SETTINGS": "Paramètres",
 		"LEAVE": "Quitter la réunion",
 		"PARTICIPANTS": "Participants",

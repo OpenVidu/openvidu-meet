@@ -48,6 +48,8 @@
 		"BACKGROUND": "背景効果",
 		"START_RECORDING": "録画開始",
 		"STOP_RECORDING": "録画の停止",
+		"START_BROADCAST": "ライブ配信を開始",
+		"STOP_BROADCAST": "ライブ配信を停止",
 		"SETTINGS": "設定",
 		"LEAVE": "会議から退出する",
 		"PARTICIPANTS": "参加者",
