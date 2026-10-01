@@ -11,6 +11,7 @@ import { container } from '../../../../src/config/dependency-injector.config.js'
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import {
+	errorBroadcastEnabledWithoutDestinations,
 	errorBroadcastRedactedDestinationUrl,
 	errorBroadcastUnknownDestination
 } from '../../../../src/models/error.model.js';
@@ -128,16 +129,26 @@ describe('Broadcast Room Configuration Tests', () => {
 			}
 		});
 
-		it('should reject enabling broadcast without destinations, more than five destinations and a non-RTMP URL', async () => {
-			const noDestinations = await createRoomRequest({
-				roomName: 'x',
-				config: { broadcast: { enabled: true, destinations: [] } }
-			});
-			expectValidationError(
-				noDestinations,
-				'config.broadcast.destinations',
-				'At least one destination is required while broadcast is enabled'
+		it('should create a room with broadcast disabled and no destinations when the block leaves them out', async () => {
+			const room = await createRoom(
+				{ roomName: 'no-list', config: { broadcast: { enabled: false } } },
+				undefined,
+				{
+					xExtraFields: 'config'
+				}
 			);
+
+			expect(room.config.broadcast.destinations).toEqual([]);
+			expect(await storedUrls(room.roomId)).toEqual({});
+		});
+
+		it('should reject enabling broadcast without destinations, more than five destinations and a non-RTMP URL', async () => {
+			for (const broadcast of [{ enabled: true, destinations: [] }, { enabled: true }]) {
+				expectMeetError(
+					await createRoomRequest({ roomName: 'x', config: { broadcast } }),
+					errorBroadcastEnabledWithoutDestinations()
+				);
+			}
 
 			const tooMany = await createRoomRequest({
 				roomName: 'x',
@@ -216,19 +227,54 @@ describe('Broadcast Room Configuration Tests', () => {
 			expect(await storedUrls(room.roomId)).toEqual({ [b.id]: destination('b').url });
 		});
 
-		it('should change the layout and keep it when a later update leaves it out', async () => {
-			const room = await createBroadcastRoom(['a']);
-			const { destinations } = room.config.broadcast;
+		it('should change only the layout, keeping the destinations the update leaves out', async () => {
+			const room = await createBroadcastRoom(['a', 'b']);
+			const savedUrls = await storedUrls(room.roomId);
 
 			const changed = await updateRoomConfig(room.roomId, {
-				broadcast: { enabled: true, destinations, layout: MeetRecordingLayout.SPEAKER }
+				broadcast: { enabled: true, layout: MeetRecordingLayout.SPEAKER }
 			});
-			expect(changed.status).toBe(200);
-			expect(changed.body.broadcast.layout).toBe(MeetRecordingLayout.SPEAKER);
 
-			const kept = await updateRoomConfig(room.roomId, { broadcast: { enabled: false, destinations } });
+			expect(changed.status).toBe(200);
+			expect(changed.body.broadcast).toEqual({ ...room.config.broadcast, layout: MeetRecordingLayout.SPEAKER });
+			expect(await storedUrls(room.roomId)).toEqual(savedUrls);
+
+			const kept = await updateRoomConfig(room.roomId, { broadcast: { enabled: true } });
 			expect(kept.status).toBe(200);
 			expect(kept.body.broadcast.layout).toBe(MeetRecordingLayout.SPEAKER);
+		});
+
+		it('should turn broadcast off and on again without losing the destinations or their stream keys', async () => {
+			const room = await createBroadcastRoom(['a']);
+			const savedUrls = await storedUrls(room.roomId);
+
+			const off = await updateRoomConfig(room.roomId, { broadcast: { enabled: false } });
+			expect(off.status).toBe(200);
+			expect(off.body.broadcast).toEqual({ ...room.config.broadcast, enabled: false });
+
+			const on = await updateRoomConfig(room.roomId, { broadcast: { enabled: true } });
+			expect(on.status).toBe(200);
+			expect(on.body.broadcast).toEqual(room.config.broadcast);
+			expect(await storedUrls(room.roomId)).toEqual(savedUrls);
+		});
+
+		it('should refuse to enable broadcast in a room with no destinations, sent or saved', async () => {
+			const room = await createRoom({ roomName: 'empty' });
+
+			expectMeetError(
+				await updateRoomConfig(room.roomId, { broadcast: { enabled: true } }),
+				errorBroadcastEnabledWithoutDestinations()
+			);
+
+			const withList = await updateRoomConfig(room.roomId, {
+				broadcast: { enabled: true, destinations: [destination('a')] }
+			});
+			expect(withList.status).toBe(200);
+
+			expectMeetError(
+				await updateRoomConfig(room.roomId, { broadcast: { enabled: true, destinations: [] } }),
+				errorBroadcastEnabledWithoutDestinations()
+			);
 		});
 
 		it('should keep the destinations when the update leaves the broadcast block out', async () => {

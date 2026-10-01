@@ -3,6 +3,7 @@ import type {
 	MeetRoomAccess,
 	MeetRoomAccessConfig,
 	MeetRoomConfig,
+	MeetRoomConfigOptions,
 	MeetRoomField,
 	MeetRoomMemberPermissions,
 	MeetRoomOptions,
@@ -31,6 +32,7 @@ import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { BroadcastHelper } from '../helpers/broadcast.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import {
+	errorBroadcastEnabledWithoutDestinations,
 	errorDeletingRoom,
 	errorRoomActiveMeeting,
 	errorRoomNotFound,
@@ -96,6 +98,7 @@ export class RoomService {
 		const { roomName, autoDeletionDate, autoDeletionPolicy, config, roles, access } = roomOptions;
 
 		this.validateRecordingAutoStartIsReachable(config ?? {});
+		this.validateBroadcastHasDestinations(config ?? {});
 
 		// Generate a unique room ID based on the room name
 		const roomIdPrefix = MeetRoomHelper.createRoomIdPrefixFromRoomName(roomName!) || 'room';
@@ -254,7 +257,7 @@ export class RoomService {
 	 * @param config - Partial config with the fields to update
 	 * @returns A Promise that resolves to the updated MeetRoom object
 	 */
-	async updateMeetRoomConfig(roomId: string, config: Partial<MeetRoomConfig>): Promise<MeetRoom> {
+	async updateMeetRoomConfig(roomId: string, config: MeetRoomConfigOptions): Promise<MeetRoom> {
 		const room = await this.getMeetRoom(roomId, ['config', 'status']);
 
 		if (room.status === MeetRoomStatus.ACTIVE_MEETING) {
@@ -268,8 +271,9 @@ export class RoomService {
 		// The destination list is replaced as a whole, never merged entry by entry, and its saved
 		// URLs are the only ones the room knows: a redacted URL sent back keeps the saved one.
 		const savedUrls = await this.roomRepository.findBroadcastDestinationUrls(roomId);
-		const broadcastDestinations = config.broadcast
-			? BroadcastHelper.reconcileRoomDestinations(savedUrls, config.broadcast.destinations)
+		const sentDestinations = config.broadcast?.destinations;
+		const broadcastDestinations = sentDestinations
+			? BroadcastHelper.reconcileRoomDestinations(savedUrls, sentDestinations)
 			: { destinations: room.config.broadcast.destinations, urls: savedUrls };
 		updatedConfig.broadcast.destinations = broadcastDestinations.destinations;
 
@@ -280,6 +284,7 @@ export class RoomService {
 		}
 
 		this.validateRecordingAutoStartIsReachable(updatedConfig);
+		this.validateBroadcastHasDestinations(updatedConfig);
 
 		return this.roomRepository.updateConfig(roomId, updatedConfig, broadcastDestinations.urls);
 	}
@@ -288,7 +293,7 @@ export class RoomService {
 	 * Checks if a recording `autoStart` property is reachable.
 	 * @throws Error when maxParticipants is lower than the required participants for auto start recording.
 	 */
-	protected validateRecordingAutoStartIsReachable(config: Partial<MeetRoomConfig>): void {
+	protected validateRecordingAutoStartIsReachable(config: MeetRoomConfigOptions): void {
 		const { maxParticipants } = config;
 		const autoStart = config.recording?.autoStart;
 
@@ -299,6 +304,15 @@ export class RoomService {
 
 		if (maxParticipants < minParticipantsAutoStart) {
 			throw errorUnreachableRecordingAutoStart(autoStart, maxParticipants, minParticipantsAutoStart);
+		}
+	}
+
+	/**
+	 * Checks that a config enabling live broadcast leaves it at least one destination, sent or saved.
+	 */
+	protected validateBroadcastHasDestinations(config: MeetRoomConfigOptions): void {
+		if (config.broadcast?.enabled && !config.broadcast.destinations?.length) {
+			throw errorBroadcastEnabledWithoutDestinations();
 		}
 	}
 

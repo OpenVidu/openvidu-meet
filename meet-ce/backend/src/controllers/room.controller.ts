@@ -1,6 +1,6 @@
 import type {
 	MeetRoomAccessConfig,
-	MeetRoomConfig,
+	MeetRoomConfigOptions,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomExtraField,
@@ -252,7 +252,7 @@ export const getRoomConfig = async (req: Request, res: Response) => {
 export const updateRoomConfig = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
-	const { config } = req.body as { config: Partial<MeetRoomConfig> };
+	const { config } = req.body as { config: MeetRoomConfigOptions };
 	const { roomId } = req.params as Record<string, string>;
 
 	logger.verbose(`Updating room config for room '${roomId}'`);

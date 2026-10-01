@@ -43,7 +43,7 @@ export class BroadcastHelper {
 	static redactRoomOptions(options: MeetRoomOptions): MeetRoomOptions {
 		const broadcast = options.config?.broadcast;
 
-		if (!broadcast) return options;
+		if (!broadcast?.destinations) return options;
 
 		const destinations = broadcast.destinations.map((destination) => ({
 			...destination,

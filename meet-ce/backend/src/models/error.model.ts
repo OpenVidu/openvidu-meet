@@ -318,6 +318,14 @@ export const errorBroadcastDestinationLimit = (): OpenViduMeetError => {
 	);
 };
 
+export const errorBroadcastEnabledWithoutDestinations = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Broadcast Error',
+		'At least one destination is required while broadcast is enabled',
+		422
+	);
+};
+
 export const errorBroadcastNoDestinations = (): OpenViduMeetError => {
 	return new OpenViduMeetError('Broadcast Error', 'A broadcast needs at least one destination to stream to', 422);
 };
