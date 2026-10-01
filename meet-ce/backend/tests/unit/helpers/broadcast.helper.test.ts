@@ -121,11 +121,26 @@ describe('BroadcastHelper.matchesReportedStreamUrl', () => {
 		).toBe(true);
 	});
 
-	it('matches a short key reported as {...} and an unredacted echo', () => {
-		expect(BroadcastHelper.matchesReportedStreamUrl('rtmp://mtx:1935/live/k', 'rtmp://mtx:1935/live/{...}')).toBe(
-			true
-		);
+	it('matches a short key, of which egress shows a third at each end, and an unredacted echo', () => {
+		const reported = (key: string, shape: string) =>
+			BroadcastHelper.matchesReportedStreamUrl(`rtmp://mtx:1935/live/${key}`, `rtmp://mtx:1935/live/${shape}`);
+
+		expect(reported('ab', '{...}')).toBe(true);
+		expect(reported('test', '{t...t}')).toBe(true);
+		expect(reported('k?x=1', '{k...1}')).toBe(true);
+		expect(reported('abcdef', '{ab...ef}')).toBe(true);
+		expect(reported('abcdefgh', '{ab...gh}')).toBe(true);
+		expect(reported('abcdefghi', '{abc...ghi}')).toBe(true);
 		expect(BroadcastHelper.matchesReportedStreamUrl(YOUTUBE, YOUTUBE)).toBe(true);
+	});
+
+	it('does not match a stream whose key egress shows differently, short or not', () => {
+		const reported = (key: string, shape: string) =>
+			BroadcastHelper.matchesReportedStreamUrl(`rtmp://mtx:1935/live/${key}`, `rtmp://mtx:1935/live/${shape}`);
+
+		expect(reported('test', '{...}')).toBe(false);
+		expect(reported('test', '{tes...est}')).toBe(false);
+		expect(reported('ab', '{a...b}')).toBe(false);
 	});
 
 	it('does not match another destination on the same host', () => {

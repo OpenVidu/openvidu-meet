@@ -54,19 +54,18 @@ export class BroadcastHelper {
 
 	/**
 	 * Whether the URL LiveKit reports for a stream is `realUrl`. Egress never echoes a URL as given:
-	 * everything after the last `/` (stream key and query string) comes back as
-	 * `{first three...last three}`, or `{...}` for a short key.
+	 * everything after the last `/` (stream key and query string) comes back with only a third of
+	 * it at each end, three characters at most, as `{abc...xyz}`, `{ab...yz}`, `{a...z}`, or `{...}`
+	 * for a key shorter than three.
 	 */
 	static matchesReportedStreamUrl(realUrl: string, reportedUrl: string): boolean {
 		if (reportedUrl === realUrl) return true;
 
 		const keyStart = realUrl.lastIndexOf('/') + 1;
-
-		if (!reportedUrl.startsWith(realUrl.slice(0, keyStart))) return false;
-
 		const key = realUrl.slice(keyStart);
-		const reportedKey = reportedUrl.slice(keyStart);
-		return reportedKey === '{...}' || reportedKey === `{${key.slice(0, 3)}...${key.slice(-3)}}`;
+		const shown = Math.min(3, Math.floor(key.length / 3));
+		const reportedKey = shown === 0 ? '{...}' : `{${key.slice(0, shown)}...${key.slice(-shown)}}`;
+		return reportedUrl === realUrl.slice(0, keyStart) + reportedKey;
 	}
 
 	/** Whether the broadcast is still the room's current one: not over yet, if only just ending. */
