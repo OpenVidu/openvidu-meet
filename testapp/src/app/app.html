@@ -126,7 +126,7 @@
 		</button>
 	</header>
 
-	<div class="ta-body">
+	<div class="ta-body" [class.ta-body--console-side]="consolePreferences.position() === 'side'">
 		<!-- ── Controls panel ────────────────────────────────────────────────── -->
 		<aside class="ta-controls" [class.ta-controls--collapsed]="sidebarCollapsed()" data-testid="controls-panel">
 			@if (sidebarCollapsed()) {
@@ -205,52 +205,50 @@
 		</aside>
 
 		<!-- ── Meet area (webcomponent OR iframe, per the selected integration) ── -->
-		<main class="ta-meet">
-			<div class="ta-stage" data-testid="meet-area">
-				@if (mounted()) { @switch (integration()) { @case ('webcomponent') {
-				<openvidu-meet
-					#meetRef
-					[roomUrl]="config.applied()?.roomUrl"
-					[recordingUrl]="config.applied()?.recordingUrl"
-					[participantName]="config.applied()?.participantName"
-					[participantExternalId]="config.applied()?.participantExternalId"
-					[participantMetadata]="config.applied()?.participantMetadata"
-					[initialAudioActive]="config.applied()?.initialAudioActive"
-					[initialVideoActive]="config.applied()?.initialVideoActive"
-					[e2eeKey]="config.applied()?.e2eeKey"
-					[leaveRedirectUrl]="config.applied()?.leaveRedirectUrl"
-					[showOnlyRecordings]="config.applied()?.showOnlyRecordings"
-					[showRecording]="config.applied()?.showRecording"
-					(joined)="handleEmbeddedEvent('joined', $event)"
-					(left)="handleEmbeddedEvent('left', $event)"
-					(closed)="handleEmbeddedEvent('closed', $event)"
-					(meetingJoined)="handleEmbeddedEvent('meetingJoined', $event)"
-					(meetingLeft)="handleEmbeddedEvent('meetingLeft', $event)"
-					(embeddedCloseRequested)="handleEmbeddedEvent('embeddedCloseRequested', $event)"
-					(participantJoined)="handleEmbeddedEvent('participantJoined', $event)"
-					(participantLeft)="handleEmbeddedEvent('participantLeft', $event)"
-					(mediaAudioStatusChanged)="handleEmbeddedEvent('mediaAudioStatusChanged', $event)"
-					(mediaVideoStatusChanged)="handleEmbeddedEvent('mediaVideoStatusChanged', $event)"
-					(mediaScreenShareStatusChanged)="
-									handleEmbeddedEvent('mediaScreenShareStatusChanged', $event)
-								"
-					data-testid="openvidu-meet"
-				></openvidu-meet>
-				} @case ('iframe') {
-				<iframe
-					#meetIframe
-					class="ta-iframe"
-					data-testid="meet-iframe"
-					[src]="safeIframeSrc()"
-					allow="camera; microphone; display-capture; fullscreen; autoplay; compute-pressure"
-				></iframe>
-				} } } @else {
-				<p class="ta-stage__empty ta-hint">Set a room URL in Setup, then apply to mount the embedded app.</p>
-				}
-			</div>
-
-			<app-console-dock />
+		<main class="ta-stage" data-testid="meet-area">
+			@if (mounted()) { @switch (integration()) { @case ('webcomponent') {
+			<openvidu-meet
+				#meetRef
+				[roomUrl]="config.applied()?.roomUrl"
+				[recordingUrl]="config.applied()?.recordingUrl"
+				[participantName]="config.applied()?.participantName"
+				[participantExternalId]="config.applied()?.participantExternalId"
+				[participantMetadata]="config.applied()?.participantMetadata"
+				[initialAudioActive]="config.applied()?.initialAudioActive"
+				[initialVideoActive]="config.applied()?.initialVideoActive"
+				[e2eeKey]="config.applied()?.e2eeKey"
+				[leaveRedirectUrl]="config.applied()?.leaveRedirectUrl"
+				[showOnlyRecordings]="config.applied()?.showOnlyRecordings"
+				[showRecording]="config.applied()?.showRecording"
+				(joined)="handleEmbeddedEvent('joined', $event)"
+				(left)="handleEmbeddedEvent('left', $event)"
+				(closed)="handleEmbeddedEvent('closed', $event)"
+				(meetingJoined)="handleEmbeddedEvent('meetingJoined', $event)"
+				(meetingLeft)="handleEmbeddedEvent('meetingLeft', $event)"
+				(embeddedCloseRequested)="handleEmbeddedEvent('embeddedCloseRequested', $event)"
+				(participantJoined)="handleEmbeddedEvent('participantJoined', $event)"
+				(participantLeft)="handleEmbeddedEvent('participantLeft', $event)"
+				(mediaAudioStatusChanged)="handleEmbeddedEvent('mediaAudioStatusChanged', $event)"
+				(mediaVideoStatusChanged)="handleEmbeddedEvent('mediaVideoStatusChanged', $event)"
+				(mediaScreenShareStatusChanged)="
+								handleEmbeddedEvent('mediaScreenShareStatusChanged', $event)
+							"
+				data-testid="openvidu-meet"
+			></openvidu-meet>
+			} @case ('iframe') {
+			<iframe
+				#meetIframe
+				class="ta-iframe"
+				data-testid="meet-iframe"
+				[src]="safeIframeSrc()"
+				allow="camera; microphone; display-capture; fullscreen; autoplay; compute-pressure"
+			></iframe>
+			} } } @else {
+			<p class="ta-stage__empty ta-hint">Set a room URL in Setup, then apply to mount the embedded app.</p>
+			}
 		</main>
+
+		<app-console-dock />
 	</div>
 
 	<!-- Integration-agnostic event sink: both transports re-dispatch lifecycle

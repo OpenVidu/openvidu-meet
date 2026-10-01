@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { EventLogService, LogEntry, LogEntryKind } from '../../services/event-log';
+import { ConsolePosition, ConsolePreferencesService } from '../../services/console-preferences';
+import { EventLogService, LOG_ENTRY_KINDS, LogEntry, LogEntryKind } from '../../services/event-log';
 
 /** A log entry plus what the console needs to render it. */
 interface ConsoleRow extends LogEntry {
@@ -18,13 +19,18 @@ const KIND_TAGS: Record<LogEntryKind, string> = {
 	info: 'INFO'
 };
 
-/** Chip order in the bar, which is also the order kinds were introduced in the log. */
-const KINDS = Object.keys(KIND_TAGS) as LogEntryKind[];
+/**
+ * The dock's extent along the axis it resizes on: height at the bottom, width at the side.
+ * `stageMin` is the room kept for the meeting, however far the drag goes: the top bar plus a
+ * usable stage above the dock, or the controls panel plus a usable stage beside it.
+ */
+const SIZES: Record<ConsolePosition, { initial: number; min: number; stageMin: number }> = {
+	bottom: { initial: 236, min: 120, stageMin: 220 },
+	side: { initial: 400, min: 280, stageMin: 880 }
+};
 
-const DEFAULT_HEIGHT = 236;
-const MIN_HEIGHT = 120;
-/** Leaves the top bar plus a usable stage above the dock, however far the drag goes. */
-const MIN_STAGE_HEIGHT = 220;
+/** Pixels a key press moves the grip. */
+const NUDGE = 24;
 
 /** Only structured details are worth expanding; plain reasons already fit on the row. */
 const prettyPayload = (detail: string): string | null => {
@@ -57,16 +63,16 @@ const toRow = (entry: LogEntry): ConsoleRow => ({
 })
 export class ConsoleDock {
 	protected readonly log = inject(EventLogService);
+	protected readonly preferences = inject(ConsolePreferencesService);
 
+	protected readonly side = computed(() => this.preferences.position() === 'side');
 	protected readonly collapsed = signal(false);
-	protected readonly height = signal(DEFAULT_HEIGHT);
-	/** Kinds currently shown. Several can be on at once; all of them by default. */
-	protected readonly shownKinds = signal<ReadonlySet<LogEntryKind>>(new Set(KINDS));
+	protected readonly size = signal(SIZES[this.preferences.position()].initial);
 	protected readonly query = signal('');
 	protected readonly expandedId = signal<number | null>(null);
 
 	protected readonly rows = computed<ConsoleRow[]>(() => {
-		const shownKinds = this.shownKinds();
+		const shownKinds = this.preferences.shownKinds();
 		const query = this.query().trim().toLowerCase();
 
 		return this.log
@@ -81,13 +87,13 @@ export class ConsoleDock {
 			.map(toRow);
 	});
 
-	protected readonly everyKindShown = computed(() => this.shownKinds().size === KINDS.length);
+	protected readonly everyKindShown = computed(() => this.preferences.shownKinds().size === LOG_ENTRY_KINDS.length);
 
 	protected readonly chips = computed(() => {
 		const counts = this.log.counts();
-		const shownKinds = this.shownKinds();
+		const shownKinds = this.preferences.shownKinds();
 
-		return KINDS.map((kind) => ({
+		return LOG_ENTRY_KINDS.map((kind) => ({
 			kind,
 			label: KIND_TAGS[kind].toLowerCase(),
 			count: counts[kind],
@@ -101,14 +107,20 @@ export class ConsoleDock {
 		return newest ? toRow(newest) : undefined;
 	});
 
-	// ── Resizing ────────────────────────────────────────────────────────────
+	// ── Layout ──────────────────────────────────────────────────────────────
+
+	protected togglePosition(): void {
+		this.preferences.togglePosition();
+		this.size.set(SIZES[this.preferences.position()].initial);
+	}
+
 	// Pointer capture keeps the drag on the grip, so the move and up handlers stay
 	// on the element itself instead of on the document.
 
-	private dragOrigin: { y: number; height: number } | null = null;
+	private dragOrigin: { pointer: number; size: number } | null = null;
 
 	protected startResize(event: PointerEvent): void {
-		this.dragOrigin = { y: event.clientY, height: this.height() };
+		this.dragOrigin = { pointer: this.pointerAlongAxis(event), size: this.size() };
 		(event.target as HTMLElement).setPointerCapture(event.pointerId);
 		event.preventDefault();
 	}
@@ -116,7 +128,10 @@ export class ConsoleDock {
 	protected resize(event: PointerEvent): void {
 		if (!this.dragOrigin) return;
 
-		this.setHeight(this.dragOrigin.height + (this.dragOrigin.y - event.clientY));
+		const travelled = this.pointerAlongAxis(event) - this.dragOrigin.pointer;
+
+		// The bottom dock grows as the pointer moves up, the side one as it moves right.
+		this.setSize(this.dragOrigin.size + (this.side() ? travelled : -travelled));
 	}
 
 	protected endResize(event: PointerEvent): void {
@@ -126,34 +141,24 @@ export class ConsoleDock {
 		(event.target as HTMLElement).releasePointerCapture(event.pointerId);
 	}
 
-	protected nudgeHeight(delta: number, event: Event): void {
+	protected nudgeSize(event: KeyboardEvent): void {
+		const [grow, shrink] = this.side() ? ['ArrowRight', 'ArrowLeft'] : ['ArrowUp', 'ArrowDown'];
+
+		if (event.key !== grow && event.key !== shrink) return;
+
 		event.preventDefault();
-		this.setHeight(this.height() + delta);
+		this.setSize(this.size() + (event.key === grow ? NUDGE : -NUDGE));
 	}
 
-	private setHeight(height: number): void {
-		const max = Math.max(MIN_HEIGHT, window.innerHeight - MIN_STAGE_HEIGHT);
-		this.height.set(Math.min(Math.max(height, MIN_HEIGHT), max));
+	private pointerAlongAxis(event: PointerEvent): number {
+		return this.side() ? event.clientX : event.clientY;
 	}
 
-	// ── Filtering ───────────────────────────────────────────────────────────
+	private setSize(size: number): void {
+		const { min, stageMin } = SIZES[this.preferences.position()];
+		const viewport = this.side() ? window.innerWidth : window.innerHeight;
 
-	protected toggleKind(kind: LogEntryKind): void {
-		this.shownKinds.update((shown) => {
-			const next = new Set(shown);
-
-			if (next.has(kind)) {
-				next.delete(kind);
-			} else {
-				next.add(kind);
-			}
-
-			return next;
-		});
-	}
-
-	protected showEveryKind(): void {
-		this.shownKinds.set(new Set(KINDS));
+		this.size.set(Math.min(Math.max(size, min), Math.max(min, viewport - stageMin)));
 	}
 
 	protected toggleExpanded(row: ConsoleRow): void {

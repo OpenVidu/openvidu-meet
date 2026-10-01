@@ -1,6 +1,6 @@
 :host {
 	display: block;
-	flex-shrink: 0;
+	min-height: 0;
 }
 
 .ta-console {
@@ -95,11 +95,11 @@
 	display: flex;
 	align-items: center;
 	gap: 6px;
-	margin-left: auto;
 }
 
 .ta-console__search {
 	width: 200px;
+	margin-left: auto;
 	height: 26px;
 	padding: 0 9px;
 	background: var(--ta-field);
@@ -291,4 +291,104 @@
 	color: var(--ta-text-2);
 	white-space: pre-wrap;
 	word-break: break-word;
+}
+
+/* ── Docked at the side ─────────────────────────────────────────────────────── */
+
+.ta-console--side {
+	height: 100%;
+	border-top: 0;
+	border-right: 1px solid var(--ta-line);
+}
+
+.ta-console--side.ta-console--collapsed {
+	width: 52px;
+}
+
+.ta-console--side .ta-console__grip {
+	top: 0;
+	bottom: 0;
+	left: auto;
+	right: -3px;
+	width: 7px;
+	height: auto;
+	cursor: ew-resize;
+}
+
+/* The bar stacks: title and actions, then the chips, then the search. */
+
+.ta-console--side .ta-console__bar {
+	flex-wrap: wrap;
+	row-gap: 8px;
+	height: auto;
+	padding: 8px 12px;
+}
+
+.ta-console--side .ta-console__actions {
+	order: 1;
+	margin-left: auto;
+}
+
+.ta-console--side .ta-console__chips {
+	order: 2;
+	flex: 1 0 100%;
+	flex-wrap: wrap;
+}
+
+.ta-console--side .ta-console__search {
+	order: 3;
+	flex: 1 0 100%;
+	margin-left: 0;
+}
+
+.ta-console--side .ta-console__chevron {
+	transform: rotate(-90deg);
+}
+
+.ta-console--side .ta-console__tip {
+	display: none;
+}
+
+/* Collapsed, the dock is a rail like the controls panel's. */
+
+.ta-console--side.ta-console--collapsed .ta-console__bar {
+	flex-direction: column;
+	flex-wrap: nowrap;
+	padding: 10px 0;
+}
+
+.ta-console--side.ta-console--collapsed .ta-console__bar h2,
+.ta-console--side.ta-console--collapsed .ta-console__count {
+	margin: 0;
+	writing-mode: vertical-rl;
+}
+
+.ta-console--side.ta-console--collapsed .ta-console__latest {
+	display: none;
+}
+
+.ta-console--side.ta-console--collapsed .ta-console__chevron {
+	transform: rotate(90deg);
+}
+
+/* A row has no room for its detail beside the name, so the detail takes a second line. */
+
+.ta-console--side .ta-log-entry__row {
+	flex-wrap: wrap;
+	row-gap: 2px;
+	height: auto;
+	padding: 5px 12px;
+}
+
+.ta-console--side .ta-log-entry__name {
+	flex: 1 1 0;
+	width: auto;
+}
+
+.ta-console--side .ta-log-entry__detail {
+	flex: 1 0 100%;
+}
+
+.ta-console--side .ta-log-entry__payload {
+	margin-left: 12px;
 }

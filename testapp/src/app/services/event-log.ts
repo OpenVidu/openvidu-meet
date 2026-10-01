@@ -1,11 +1,14 @@
 import { computed, Injectable, signal } from '@angular/core';
 
+/** Every kind, in the order the console lists its filter chips. */
+export const LOG_ENTRY_KINDS = ['command', 'event', 'webhook', 'warning', 'info'] as const;
+
 /**
  * Where a log line came from. The console renders one colour rail and one filter
  * chip per kind, so a line's kind is decided at the call site rather than parsed
  * back out of its text.
  */
-export type LogEntryKind = 'command' | 'event' | 'webhook' | 'warning' | 'info';
+export type LogEntryKind = (typeof LOG_ENTRY_KINDS)[number];
 
 /** One line of the console. `detail` is the payload rendered next to the name. */
 export interface LogEntry {

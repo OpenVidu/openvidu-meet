@@ -11,9 +11,20 @@
 }
 
 .ta-body {
-	display: flex;
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	grid-template-rows: minmax(0, 1fr) auto;
+	grid-template-areas:
+		'controls stage'
+		'controls console';
 	flex-grow: 1;
 	min-height: 0;
+}
+
+.ta-body--console-side {
+	grid-template-columns: auto auto minmax(0, 1fr);
+	grid-template-rows: minmax(0, 1fr);
+	grid-template-areas: 'controls console stage';
 }
 
 /* ── Top bar ───────────────────────────────────────────────────────────────── */
@@ -103,6 +114,7 @@
 	display: flex;
 	flex-direction: column;
 	flex-shrink: 0;
+	grid-area: controls;
 	width: 340px;
 	min-height: 0;
 	background: var(--ta-panel);
@@ -172,20 +184,17 @@ app-commands-panel {
 
 /* ── Meet area ─────────────────────────────────────────────────────────────── */
 
-.ta-meet {
-	display: flex;
-	flex-direction: column;
-	flex-grow: 1;
-	min-width: 0;
-	min-height: 0;
-}
-
 .ta-stage {
 	display: flex;
 	flex-direction: column;
-	flex-grow: 1;
+	grid-area: stage;
+	min-width: 0;
 	min-height: 0;
 	overflow: hidden;
+}
+
+app-console-dock {
+	grid-area: console;
 }
 
 .ta-stage__empty {
