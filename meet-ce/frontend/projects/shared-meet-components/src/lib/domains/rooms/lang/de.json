@@ -332,7 +332,7 @@
         "URL_HINT": "Fügen Sie die rtmp://- oder rtmps://-URL Ihrer Plattform ein, einschließlich Stream-Schlüssel.",
         "URL_RECOGNISED": "Erkannt als {platform}.",
         "URL_KEEP_KEY": "Lassen Sie die URL unverändert, um den gespeicherten Stream-Schlüssel zu behalten, oder fügen Sie eine neue ein, um ihn zu ersetzen.",
-        "URL_INVALID": "Geben Sie eine rtmp://- oder rtmps://-URL ein",
+        "URL_INVALID": "Geben Sie eine rtmp://- oder rtmps://-URL der Form rtmp://host/app/key ein",
         "URL_KEY_REQUIRED": "Eine geänderte URL braucht ihren Stream-Schlüssel: Fügen Sie die vollständige URL ein",
         "NAME_REQUIRED": "Geben Sie einen Namen ein",
         "ADD": "Hinzufügen",

@@ -17,4 +17,6 @@ content:
                     type: string
                     format: uri
                     example: 'rtmp://media.example.com/live/stream-key'
-                    description: The RTMP or RTMPS URL of the destination, stream key included.
+                    description: >
+                        The RTMP or RTMPS URL of the destination, stream key included, of the form
+                        `rtmp(s)://{host}(/{path})/{app}/{stream_key}`.

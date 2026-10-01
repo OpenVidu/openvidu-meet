@@ -17,6 +17,12 @@ describe('rtmpUrlValidator', () => {
 		expect(errorsFor('https://youtube.com/live')).toEqual({ rtmpUrl: true });
 		expect(errorsFor('not a url')).toEqual({ rtmpUrl: true });
 	});
+
+	it('rejects an rtmp URL without app or stream key, which the media server refuses', () => {
+		expect(errorsFor('rtmp://a.rtmp.youtube.com')).toEqual({ rtmpUrl: true });
+		expect(errorsFor('rtmp://a.rtmp.youtube.com/key-without-app')).toEqual({ rtmpUrl: true });
+		expect(errorsFor('rtmp://a.rtmp.youtube.com/live2/key/')).toEqual({ rtmpUrl: true });
+	});
 });
 
 describe('servedUrlValidator', () => {

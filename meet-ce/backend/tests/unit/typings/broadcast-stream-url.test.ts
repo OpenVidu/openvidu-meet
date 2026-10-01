@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { isRedactedStreamUrl, redactStreamUrl } from '@openvidu-meet/typings';
+import { isRedactedStreamUrl, isValidStreamUrl, redactStreamUrl } from '@openvidu-meet/typings';
 
 const YOUTUBE = 'rtmp://a.rtmp.youtube.com/live2/abcd-efgh-ijkl';
 const TWITCH = 'rtmps://live.twitch.tv:443/app/live_123456_XyZ?bandwidthtest=true';
@@ -27,5 +27,23 @@ describe('redactStreamUrl and isRedactedStreamUrl', () => {
 		expect(isRedactedStreamUrl(REDACTED_YOUTUBE)).toBe(true);
 		expect(isRedactedStreamUrl(`${REDACTED_YOUTUBE}?x=1`)).toBe(true);
 		expect(isRedactedStreamUrl(YOUTUBE)).toBe(false);
+	});
+});
+
+describe('isValidStreamUrl', () => {
+	it('accepts the form the media server streams to: host, optional path, app and stream key', () => {
+		expect(isValidStreamUrl(YOUTUBE)).toBe(true);
+		expect(isValidStreamUrl(TWITCH)).toBe(true);
+		expect(isValidStreamUrl('rtmp://media.example.com:1935/path/to/app/key')).toBe(true);
+		expect(isValidStreamUrl('rtmp://media.example.com/app/key live=1')).toBe(true);
+		expect(isValidStreamUrl(REDACTED_YOUTUBE)).toBe(true);
+	});
+
+	it('refuses a URL without app or stream key, ending in a slash, or of another scheme', () => {
+		expect(isValidStreamUrl('rtmp://media.example.com')).toBe(false);
+		expect(isValidStreamUrl('rtmp://media.example.com/key-without-app')).toBe(false);
+		expect(isValidStreamUrl('rtmp://media.example.com/live/key/')).toBe(false);
+		expect(isValidStreamUrl('rtmp://media.example.com/live/')).toBe(false);
+		expect(isValidStreamUrl('http://media.example.com/live/key')).toBe(false);
 	});
 });

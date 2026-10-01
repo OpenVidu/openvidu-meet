@@ -3,13 +3,17 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, FormGroup, ValidatorFn, Validators } from '@angular/forms';
 import {
 	isRedactedStreamUrl,
+	isValidStreamUrl,
 	MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH,
 	MeetBroadcastDestinationOptions
 } from '@openvidu-meet/typings';
 import { BROADCAST_PLATFORM_LABELS, BroadcastPlatform } from '../models/broadcast.model';
 import { detectBroadcastPlatform } from './broadcast-platform.utils';
 
-/** An `rtmp://` or `rtmps://` URL; an empty value is left to the required check. */
+/**
+ * An `rtmp://` or `rtmps://` URL with an app and a stream key, the form the media server streams to;
+ * an empty value is left to the required check.
+ */
 export const rtmpUrlValidator: ValidatorFn = (control) => {
 	const value = (control.value as string).trim();
 
@@ -17,7 +21,7 @@ export const rtmpUrlValidator: ValidatorFn = (control) => {
 
 	try {
 		const { protocol } = new URL(value);
-		return protocol === 'rtmp:' || protocol === 'rtmps:' ? null : { rtmpUrl: true };
+		return (protocol === 'rtmp:' || protocol === 'rtmps:') && isValidStreamUrl(value) ? null : { rtmpUrl: true };
 	} catch {
 		return { rtmpUrl: true };
 	}

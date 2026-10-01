@@ -190,7 +190,7 @@
 			"URL_LABEL": "推流地址",
 			"URL_RECOGNISED": "识别为 {platform}。",
 			"URL_HINT": "粘贴 rtmp:// 或 rtmps:// 地址，包含推流密钥。仅用于本次会议。",
-			"URL_INVALID": "请输入 rtmp:// 或 rtmps:// 地址",
+			"URL_INVALID": "请输入 rtmp://host/app/key 格式的 rtmp:// 或 rtmps:// 地址",
 			"URL_KEY_REQUIRED": "修改后的地址需要推流密钥：请粘贴完整地址",
 			"NAME_REQUIRED": "请输入名称",
 			"ADD": "添加",

@@ -234,6 +234,15 @@ export const MEET_BROADCAST_REDACTED_STREAM_KEY = '********';
  */
 export const MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH = 50;
 
+const STREAM_URL_FORMAT = /^rtmps?:\/\/.*\/.*\/[^\s/]+( live=1)?$/;
+
+/**
+ * Whether a destination URL has the form the media server streams to,
+ * `rtmp(s)://{host}(/{path})/{app}/{stream_key}`, optionally followed by ` live=1`. The stream key
+ * is what follows the last `/`, so a URL ending in `/` has none.
+ */
+export const isValidStreamUrl = (url: string): boolean => STREAM_URL_FORMAT.test(url);
+
 /**
  * A destination URL as the API serves it: its stream key (the last non-empty path segment, a
  * trailing slash notwithstanding) replaced by {@link MEET_BROADCAST_REDACTED_STREAM_KEY}, and its

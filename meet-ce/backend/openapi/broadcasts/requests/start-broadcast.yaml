@@ -36,8 +36,9 @@ content:
                                 format: uri
                                 example: 'rtmp://a.rtmp.youtube.com/live2/abcd-1234-efgh-5678'
                                 description: >
-                                    The RTMP or RTMPS URL of a new destination, stream key included.
-                                    Required on it, together with `name`.
+                                    The RTMP or RTMPS URL of a new destination, stream key included, of
+                                    the form `rtmp(s)://{host}(/{path})/{app}/{stream_key}`. Required on it,
+                                    together with `name`.
         example:
             destinations:
                 - id: 'kX9pL2mQ7a'

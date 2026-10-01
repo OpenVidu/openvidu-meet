@@ -332,7 +332,7 @@
         "URL_HINT": "अपने प्लेटफ़ॉर्म द्वारा दिया गया rtmp:// या rtmps:// URL, स्ट्रीम कुंजी सहित, पेस्ट करें।",
         "URL_RECOGNISED": "{platform} के रूप में पहचाना गया।",
         "URL_KEEP_KEY": "सहेजी गई स्ट्रीम कुंजी रखने के लिए URL को वैसा ही रहने दें, या उसे बदलने के लिए नया URL पेस्ट करें।",
-        "URL_INVALID": "rtmp:// या rtmps:// URL दर्ज करें",
+        "URL_INVALID": "rtmp://host/app/key के रूप में rtmp:// या rtmps:// URL दर्ज करें",
         "URL_KEY_REQUIRED": "बदले गए URL के लिए स्ट्रीम कुंजी चाहिए: पूरा URL पेस्ट करें",
         "NAME_REQUIRED": "नाम दर्ज करें",
         "ADD": "जोड़ें",

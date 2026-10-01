@@ -190,7 +190,7 @@
 			"URL_LABEL": "Stream-URL",
 			"URL_RECOGNISED": "Herkend als {platform}.",
 			"URL_HINT": "Plak de rtmp://- of rtmps://-URL, inclusief streamsleutel. Die geldt alleen voor deze vergadering.",
-			"URL_INVALID": "Voer een rtmp://- of rtmps://-URL in",
+			"URL_INVALID": "Voer een rtmp://- of rtmps://-URL in van de vorm rtmp://host/app/key",
 			"URL_KEY_REQUIRED": "Een gewijzigde URL heeft zijn streamsleutel nodig: plak de volledige URL",
 			"NAME_REQUIRED": "Voer een naam in",
 			"ADD": "Toevoegen",

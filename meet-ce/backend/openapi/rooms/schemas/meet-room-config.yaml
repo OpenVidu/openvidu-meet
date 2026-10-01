@@ -212,8 +212,9 @@ MeetBroadcastDestination:
             format: uri
             example: 'rtmp://a.rtmp.youtube.com/live2/********'
             description: >
-                The RTMP or RTMPS URL of the destination, stream key included, as `rtmp://host/app/key`. The
-                stream key is a secret: every response replaces it with `********`, and a config update that
+                The RTMP or RTMPS URL of the destination, stream key included, of the form
+                `rtmp(s)://{host}(/{path})/{app}/{stream_key}`, optionally followed by ` live=1`; any other
+                form, a URL ending in `/` among them, is rejected with a `422`. The stream key is a secret: every response replaces it with `********`, and a config update that
                 sends the redacted URL back exactly as served keeps the stored key. A new destination, and a
                 changed host or path, need the full URL: a redacted URL with any other change is rejected
                 with a `422`.

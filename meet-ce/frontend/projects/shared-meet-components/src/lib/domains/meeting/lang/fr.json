@@ -190,7 +190,7 @@
 			"URL_LABEL": "URL de diffusion",
 			"URL_RECOGNISED": "Reconnu comme {platform}.",
 			"URL_HINT": "Collez l'URL rtmp:// ou rtmps://, clé de diffusion incluse. Elle ne sert que pour cette réunion.",
-			"URL_INVALID": "Saisissez une URL rtmp:// ou rtmps://",
+			"URL_INVALID": "Saisissez une URL rtmp:// ou rtmps:// de la forme rtmp://host/app/key",
 			"URL_KEY_REQUIRED": "Une URL modifiée a besoin de sa clé de diffusion : collez l'URL complète",
 			"NAME_REQUIRED": "Saisissez un nom",
 			"ADD": "Ajouter",
