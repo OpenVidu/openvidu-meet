@@ -16,6 +16,7 @@ import { Express } from 'express';
 import { EgressClient, ServerError } from 'livekit-server-sdk';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
+import { MEET_ENV } from '../../../../src/environment.js';
 import {
 	errorBroadcastAlreadyStarted,
 	errorBroadcastDestinationLimit,
@@ -236,6 +237,61 @@ describe('Broadcasts API Tests', () => {
 
 			const allowed = await startBroadcast(roomId, { destinations: [{ id: idA }] }, moderatorWithoutExtras);
 			expect(allowed.status).toBe(201);
+		});
+	});
+
+	describe('Broadcast Fields Tests', () => {
+		const asApiKey = (req: request.Test) => req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+
+		it('should limit every broadcast response to the fields the query and the X-Fields header ask for', async () => {
+			// A real sink keeps the broadcast running through every request below.
+			const sinkUrl = await createRtmpSink('fields');
+			const roomData = await setupMeetingRoom({
+				broadcast: { enabled: true, destinations: [{ name: 'Sink', url: sinkUrl }, destination('b')] }
+			});
+			const { roomId } = roomData.room;
+			const [idSink, idB] = await roomDestinationIds(roomData);
+			const broadcastsPath = `${MEETINGS_PATH}/${roomId}/broadcasts`;
+
+			const started = await asApiKey(request(app).post(`${broadcastsPath}?fields=broadcastId,status,bogus`)).send(
+				{
+					destinations: [{ id: idSink }]
+				}
+			);
+			expect(started.status).toBe(201);
+			expect(started.body).toEqual({ broadcastId: expect.any(String), status: MeetBroadcastStatus.STARTING });
+			const { broadcastId } = started.body;
+			const broadcastPath = `${broadcastsPath}/${broadcastId}`;
+
+			const fetched = await asApiKey(request(app).get(`${broadcastPath}?fields=status`)).set(
+				'X-Fields',
+				'roomId'
+			);
+			expect(fetched.status).toBe(200);
+			expect(Object.keys(fetched.body).sort()).toEqual(['roomId', 'status']);
+
+			const listed = await asApiKey(request(app).get(broadcastsPath)).set('X-Fields', 'broadcastId');
+			expect(listed.body).toEqual({ broadcasts: [{ broadcastId }] });
+
+			const updated = await asApiKey(
+				request(app).put(`${broadcastPath}/destinations/${idB}?fields=destinations`)
+			).send({ active: true });
+			expect(updated.status).toBe(200);
+			expect(Object.keys(updated.body)).toEqual(['destinations']);
+
+			const added = await asApiKey(request(app).post(`${broadcastPath}/destinations?fields=destinations`)).send(
+				destination('c')
+			);
+			expect(added.status).toBe(200);
+			expect(Object.keys(added.body)).toEqual(['destinations']);
+
+			const unknownOnly = await asApiKey(request(app).get(`${broadcastPath}?fields=bogus`));
+			expect(unknownOnly.body).toMatchObject({ broadcastId, roomId, destinations: expect.any(Array) });
+
+			const stopped = await asApiKey(request(app).post(`${broadcastPath}/stop`)).set('X-Fields', 'status');
+			expect(stopped.status).toBe(202);
+			expect(stopped.body).toEqual({ status: MeetBroadcastStatus.ENDING });
+			expect(stopped.headers.location).toContain(`/meetings/${roomId}/broadcasts/${broadcastId}`);
 		});
 	});
 

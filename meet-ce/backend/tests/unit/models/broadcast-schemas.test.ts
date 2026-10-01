@@ -1,10 +1,13 @@
 import { describe, expect, it } from '@jest/globals';
+import { MEET_BROADCAST_FIELDS } from '@openvidu-meet/typings';
 import {
 	AddBroadcastDestinationReqSchema,
 	BroadcastConfigSchema,
+	BroadcastFieldsQuerySchema,
 	StartBroadcastReqSchema,
 	UpdateBroadcastDestinationReqSchema
 } from '../../../src/models/zod-schemas/broadcast.schema.js';
+import { mergeFieldsHeaderIntoQuery } from '../../../src/models/zod-schemas/field-selection.schema.js';
 
 const issues = (result: { success: boolean; error?: { issues: Array<{ path: unknown[]; message: string }> } }) =>
 	result.error!.issues.map(({ path, message }) => `${path.join('.')}: ${message}`);
@@ -123,5 +126,25 @@ describe('AddBroadcastDestinationReqSchema and UpdateBroadcastDestinationReqSche
 		expect(AddBroadcastDestinationReqSchema.safeParse({ url: 'rtmp://mtx/live/x' }).success).toBe(false);
 		expect(UpdateBroadcastDestinationReqSchema.safeParse({ active: false }).success).toBe(true);
 		expect(UpdateBroadcastDestinationReqSchema.safeParse({ active: 'yes' }).success).toBe(false);
+	});
+});
+
+describe('BroadcastFieldsQuerySchema', () => {
+	const fieldsOf = (fields?: string) => BroadcastFieldsQuerySchema.parse({ fields }).fields;
+
+	it('keeps the broadcast fields asked for, once each, and ignores any other name', () => {
+		expect(fieldsOf('status, broadcastId,status,streamKey')).toEqual(['status', 'broadcastId']);
+	});
+
+	it('reads a list with no broadcast field, or no list, as every field', () => {
+		expect(fieldsOf('streamKey,,')).toBeUndefined();
+		expect(fieldsOf(undefined)).toBeUndefined();
+	});
+
+	it('adds the fields of the X-Fields header to those of the query', () => {
+		const query: Record<string, unknown> = { fields: 'status' };
+		mergeFieldsHeaderIntoQuery({ 'x-fields': 'destinations,status,bogus' }, query, MEET_BROADCAST_FIELDS);
+
+		expect(fieldsOf(query.fields as string)).toEqual(['status', 'destinations']);
 	});
 });

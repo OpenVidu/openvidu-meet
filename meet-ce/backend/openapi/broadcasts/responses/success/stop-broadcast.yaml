@@ -18,3 +18,10 @@ content:
                   source: 'room'
                   status: 'active'
                   startDate: 1620000000000
+headers:
+    Location:
+        description: URL of the broadcast
+        schema:
+            type: string
+            format: uri
+        example: https://example.com/api/v1/meetings/room-123/broadcasts/EG_XYZ

@@ -29,6 +29,8 @@
             - roomMemberTokenHeader: []
         parameters:
             - $ref: '../rooms/parameters/room-id-path.yaml'
+            - $ref: './parameters/broadcast-x-fields-header.yaml'
+            - $ref: './parameters/broadcast-fields.yaml'
         requestBody:
             $ref: './requests/start-broadcast.yaml'
         responses:
@@ -70,6 +72,8 @@
             - roomMemberTokenHeader: []
         parameters:
             - $ref: '../rooms/parameters/room-id-path.yaml'
+            - $ref: './parameters/broadcast-x-fields-header.yaml'
+            - $ref: './parameters/broadcast-fields.yaml'
         responses:
             '200':
                 $ref: './responses/success/get-broadcasts.yaml'
@@ -104,6 +108,8 @@
         parameters:
             - $ref: '../rooms/parameters/room-id-path.yaml'
             - $ref: './parameters/broadcast-id-path.yaml'
+            - $ref: './parameters/broadcast-x-fields-header.yaml'
+            - $ref: './parameters/broadcast-fields.yaml'
         responses:
             '200':
                 $ref: './responses/success/get-broadcast.yaml'
@@ -142,6 +148,8 @@
         parameters:
             - $ref: '../rooms/parameters/room-id-path.yaml'
             - $ref: './parameters/broadcast-id-path.yaml'
+            - $ref: './parameters/broadcast-x-fields-header.yaml'
+            - $ref: './parameters/broadcast-fields.yaml'
         responses:
             '202':
                 $ref: './responses/success/stop-broadcast.yaml'
@@ -182,6 +190,8 @@
         parameters:
             - $ref: '../rooms/parameters/room-id-path.yaml'
             - $ref: './parameters/broadcast-id-path.yaml'
+            - $ref: './parameters/broadcast-x-fields-header.yaml'
+            - $ref: './parameters/broadcast-fields.yaml'
         requestBody:
             $ref: './requests/add-broadcast-destination.yaml'
         responses:
@@ -227,6 +237,8 @@
             - $ref: '../rooms/parameters/room-id-path.yaml'
             - $ref: './parameters/broadcast-id-path.yaml'
             - $ref: './parameters/destination-id-path.yaml'
+            - $ref: './parameters/broadcast-x-fields-header.yaml'
+            - $ref: './parameters/broadcast-fields.yaml'
         requestBody:
             $ref: './requests/update-broadcast-destination.yaml'
         responses:

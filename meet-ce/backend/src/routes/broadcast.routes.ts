@@ -4,6 +4,7 @@ import { apiKeyValidator, roomMemberTokenValidator, withAuth } from '../middlewa
 import { withAddDestinationsPermissionToStart, withBroadcastEnabled } from '../middlewares/broadcast.middleware.js';
 import {
 	validateAddBroadcastDestinationReq,
+	validateBroadcastFieldsReq,
 	validateStartBroadcastReq,
 	validateUpdateBroadcastDestinationReq
 } from '../middlewares/request-validators/broadcast-validator.middleware.js';
@@ -20,6 +21,7 @@ broadcastRouter.post(
 	'/',
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
+	validateBroadcastFieldsReq,
 	validateStartBroadcastReq,
 	withRoomPermission('broadcastControl'),
 	withAddDestinationsPermissionToStart,
@@ -30,6 +32,7 @@ broadcastRouter.get(
 	'/',
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
+	validateBroadcastFieldsReq,
 	withRoomPermission('meetingRead'),
 	broadcastCtrl.getBroadcasts
 );
@@ -37,6 +40,7 @@ broadcastRouter.get(
 	'/:broadcastId',
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
+	validateBroadcastFieldsReq,
 	withRoomPermission('meetingRead'),
 	broadcastCtrl.getBroadcast
 );
@@ -44,6 +48,7 @@ broadcastRouter.post(
 	'/:broadcastId/stop',
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
+	validateBroadcastFieldsReq,
 	withRoomPermission('broadcastControl'),
 	broadcastCtrl.stopBroadcast
 );
@@ -51,6 +56,7 @@ broadcastRouter.post(
 	'/:broadcastId/destinations',
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
+	validateBroadcastFieldsReq,
 	validateAddBroadcastDestinationReq,
 	withRoomPermission('broadcastControl'),
 	withRoomPermission('broadcastAddDestinations'),
@@ -60,6 +66,7 @@ broadcastRouter.put(
 	'/:broadcastId/destinations/:destinationId',
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
+	validateBroadcastFieldsReq,
 	validateUpdateBroadcastDestinationReq,
 	withRoomPermission('broadcastControl'),
 	broadcastCtrl.updateBroadcastDestination
