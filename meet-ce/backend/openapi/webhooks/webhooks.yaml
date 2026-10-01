@@ -125,8 +125,8 @@ broadcastStarted:
         description: |
             This webhook is triggered when a live broadcast starts.
 
-            > The broadcast is in the `starting` status until the media server composes the meeting's
-            > media, with every chosen destination `connecting`. A broadcast in the `starting` status
+            > The broadcast is in the `starting` status until the first destination receives media,
+            > with every chosen destination `connecting`. A broadcast in the `starting` status
             > carries no `startDate`: nothing has been streamed yet. The
             > [`broadcastUpdated`](#/webhooks/broadcastUpdatedWebhook) webhook reports it when it
             > becomes `active` and as each destination connects.

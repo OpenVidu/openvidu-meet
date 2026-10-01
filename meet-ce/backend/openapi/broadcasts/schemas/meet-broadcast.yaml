@@ -25,9 +25,9 @@ properties:
         enum: ['starting', 'active', 'ending', 'complete', 'failed', 'aborted', 'limit_reached']
         example: 'active'
         description: >
-            The status of the broadcast. It is `starting` until the media server composes the
-            meeting's media, `active` while it streams, `ending` once asked to stop, and one of
-            `complete`, `failed`, `aborted` or `limit_reached` once it has ended.
+            The status of the broadcast. It is `starting` until the first destination receives media,
+            `active` from then on, `ending` once asked to stop, and one of `complete`, `failed`,
+            `aborted` or `limit_reached` once it has ended.
     layout:
         type: string
         enum: ['grid', 'speaker', 'single-speaker']
