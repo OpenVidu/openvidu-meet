@@ -69,6 +69,12 @@ export class DestinationEditor {
 		this.form.reset(destination);
 	}
 
+	/** Shows the server's refusal of the URL under its field, until the URL is changed. */
+	rejectUrl(message: string): void {
+		this.form.controls.url.setErrors({ rejected: message });
+		this.form.controls.url.markAsTouched();
+	}
+
 	/** The destination as edited, trimmed, once it is valid; otherwise marks the fields and yields nothing. */
 	submit(): MeetBroadcastDestinationOptions | undefined {
 		if (this.form.invalid) {

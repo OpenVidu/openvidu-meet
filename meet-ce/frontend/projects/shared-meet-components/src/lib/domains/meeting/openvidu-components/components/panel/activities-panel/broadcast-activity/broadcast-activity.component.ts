@@ -129,7 +129,9 @@ export class BroadcastActivityComponent {
 	private readonly showAddDestinations = this.uiConfig.broadcastActivityAddDestinationsSignal;
 
 	readonly phase = computed<BroadcastPhase>(() => {
-		if (this.broadcastState.hasFailed() || this.pendingRequest().status === 'failed') return 'failed';
+		const requestFailed = this.pendingRequest().status === 'failed' && !this.addingDestination();
+
+		if (this.broadcastState.hasFailed() || requestFailed) return 'failed';
 
 		if (this.broadcastState.isEnding()) return 'ending';
 
@@ -194,11 +196,33 @@ export class BroadcastActivityComponent {
 
 	readonly editor = new DestinationEditor(this.formBuilder);
 	readonly editorTarget = signal<EditorTarget>(null);
+	/** A destination added to the running broadcast that the server has not answered yet. */
+	readonly addingDestination = signal(false);
 	readonly editedDestinationName = computed(() => {
 		const target = this.editorTarget();
 		return target && target !== 'new'
 			? (this.plannedDestinations().find(({ id }) => id === target.id)?.name ?? '')
 			: '';
+	});
+
+	/**
+	 * Keeps the editor of a destination added to the running broadcast open until the server
+	 * answers: it closes once the destination is in, and a refusal shows under the URL instead of
+	 * as a failure of the broadcast, which goes on streaming.
+	 */
+	private readonly addedDestinationEffect = effect(() => {
+		const request = this.pendingRequest();
+
+		if (!this.addingDestination() || request.status === 'updating') return;
+
+		this.addingDestination.set(false);
+
+		if (request.status === 'failed') {
+			this.editor.rejectUrl(request.error ?? '');
+			this.broadcastState.dismissFailure();
+		} else {
+			this.closeEditor();
+		}
 	});
 
 	private readonly roomTracksPublishedEffect = effect(() => {
@@ -247,6 +271,7 @@ export class BroadcastActivityComponent {
 	}
 
 	closeEditor(): void {
+		this.addingDestination.set(false);
 		this.editorTarget.set(null);
 	}
 
@@ -262,8 +287,12 @@ export class BroadcastActivityComponent {
 		if (!destination) return;
 
 		if (target === 'new' && this.isRunning()) {
+			this.addingDestination.set(true);
 			this.emitRequest({ action: 'addDestination', broadcastId: this.broadcast()!.broadcastId, destination });
-		} else if (target === 'new') {
+			return;
+		}
+
+		if (target === 'new') {
 			this.meetingDestinations.update((destinations) => [
 				...destinations,
 				{ id: `meeting-${this.nextMeetingDestinationId++}`, ...destination }

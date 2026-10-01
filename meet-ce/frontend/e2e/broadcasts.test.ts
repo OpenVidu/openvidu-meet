@@ -1,7 +1,8 @@
 import { MeetBroadcastDestinationStatus } from '@openvidu-meet/typings';
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { createRtmpSink, deleteRtmpSinks } from './helpers/broadcast-sink.helper';
 import {
+	addDestinationFromActivitiesPanel,
 	expectBroadcastBadgeVisible,
 	expectBroadcastNotice,
 	expectBroadcastPhase,
@@ -26,12 +27,13 @@ import { openMeeting } from './helpers/meeting-navigation.helper';
  */
 test.describe('Live broadcast E2E Tests', () => {
 	let roomId: string;
+	let sinkUrl: string;
 	let destinationId: string;
 	let moderatorUrl: string;
 	let speakerUrl: string;
 
 	test.beforeEach(async () => {
-		const sinkUrl = await createRtmpSink('spa');
+		sinkUrl = await createRtmpSink('spa');
 		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl({
 			config: { broadcast: { enabled: true, destinations: [{ name: 'Sink', url: sinkUrl }] } }
 		});
@@ -59,6 +61,20 @@ test.describe('Live broadcast E2E Tests', () => {
 		await expectBroadcastNotice(page, 'stopped');
 		await expectBroadcastPhase(page, 'idle', 30_000);
 		await expectNoBroadcastBadge(page);
+	});
+
+	test('should keep a destination the server refuses in its editor, with the broadcast still live', async ({
+		page
+	}) => {
+		await openMeeting(page, moderatorUrl);
+		await goLiveFromActivitiesPanel(page);
+		await expectBroadcastPhase(page, 'live', 40_000);
+
+		await addDestinationFromActivitiesPanel(page, 'Sink again', sinkUrl);
+
+		await expect(page.locator('#broadcast-destination-url-rejected')).toContainText('Two destinations stream to');
+		await expect(page.locator('#broadcast-destination-editor')).toBeVisible();
+		await expectBroadcastPhase(page, 'live');
 	});
 
 	test('should show a participant without broadcastControl the live broadcast, but no controls', async ({ page }) => {
