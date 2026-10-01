@@ -42,6 +42,15 @@ export const goLiveFromActivitiesPanel = async (page: Page): Promise<void> => {
 	await button.click();
 };
 
+/** Adds a destination to the running broadcast from the activity's editor. */
+export const addDestinationFromActivitiesPanel = async (page: Page, name: string, url: string): Promise<void> => {
+	await expandBroadcastActivity(page);
+	await page.locator('#broadcast-add-destination-btn').click();
+	await page.locator('#broadcast-destination-name').fill(name);
+	await page.locator('#broadcast-destination-url').fill(url);
+	await page.locator('#broadcast-destination-save-btn').click();
+};
+
 /** Stops the broadcast from the activity. */
 export const stopBroadcastFromActivitiesPanel = async (page: Page): Promise<void> => {
 	await expandBroadcastActivity(page);

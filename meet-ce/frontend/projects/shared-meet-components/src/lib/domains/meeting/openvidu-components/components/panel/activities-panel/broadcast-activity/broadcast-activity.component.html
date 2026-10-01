@@ -356,7 +356,11 @@
 			autocomplete="off"
 			spellcheck="false"
 		/>
-		@if (editor.form.controls.url.touched && editor.form.controls.url.invalid) {
+		@if (editor.form.controls.url.hasError('rejected')) {
+			<span class="field-error" id="broadcast-destination-url-rejected" role="alert">{{
+				editor.form.controls.url.getError('rejected') || ('PANEL.BROADCAST.ERROR_REQUEST' | translate)
+			}}</span>
+		} @else if (editor.form.controls.url.touched && editor.form.controls.url.invalid) {
 			<span class="field-error">{{
 				(editor.form.controls.url.hasError('streamKeyRequired')
 					? 'PANEL.BROADCAST.URL_KEY_REQUIRED'
@@ -374,7 +378,13 @@
 			}}
 		</p>
 		<div class="destination-editor-actions">
-			<button mat-flat-button type="submit" id="broadcast-destination-save-btn" class="editor-submit">
+			<button
+				mat-flat-button
+				type="submit"
+				id="broadcast-destination-save-btn"
+				class="editor-submit"
+				[disabled]="addingDestination()"
+			>
 				{{ (editorTarget() === 'new' ? 'PANEL.BROADCAST.ADD' : 'PANEL.BROADCAST.SAVE') | translate }}
 			</button>
 			<button mat-stroked-button type="button" id="broadcast-destination-cancel-btn" (click)="closeEditor()">

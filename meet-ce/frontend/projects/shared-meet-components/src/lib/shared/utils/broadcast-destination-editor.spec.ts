@@ -55,6 +55,18 @@ describe('DestinationEditor', () => {
 		expect(editor.submit()).toEqual({ name: 'Main channel', url: 'rtmp://a.rtmp.youtube.com/live2/key' });
 	});
 
+	it("shows the server's refusal of the URL until the URL is changed", () => {
+		editor.open({ name: 'Sink', url: 'rtmp://a.rtmp.youtube.com/live2/key' });
+		editor.rejectUrl('Two destinations stream to the same URL');
+
+		expect(editor.form.controls.url.getError('rejected')).toBe('Two destinations stream to the same URL');
+		expect(editor.submit()).toBeUndefined();
+
+		editor.form.controls.url.setValue('rtmp://a.rtmp.youtube.com/live2/other-key');
+
+		expect(editor.form.controls.url.hasError('rejected')).toBeFalse();
+	});
+
 	it('tells the platform of the URL as it is typed', () => {
 		editor.open();
 		editor.form.controls.url.setValue('rtmps://live.twitch.tv:443/app/key');
