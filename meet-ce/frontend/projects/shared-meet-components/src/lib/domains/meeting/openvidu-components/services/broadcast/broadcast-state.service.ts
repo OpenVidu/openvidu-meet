@@ -1,5 +1,5 @@
 import { computed, Service, signal } from '@angular/core';
-import { MeetBroadcastInfo, MeetBroadcastStatus } from '@openvidu-meet/typings';
+import { MeetBroadcastDestinationStatus, MeetBroadcastInfo, MeetBroadcastStatus } from '@openvidu-meet/typings';
 import { ElapsedClock } from '../../../../../shared/utils/elapsed-clock';
 import {
 	BroadcastRequestState,
@@ -42,6 +42,12 @@ export class BroadcastStateService {
 	});
 	readonly streamingDestinationCount = computed(
 		() => this._broadcast()?.destinations.filter(isDestinationStreaming).length ?? 0
+	);
+	/** The destinations media has reached, not those still connecting. */
+	readonly liveDestinationCount = computed(
+		() =>
+			this._broadcast()?.destinations.filter(({ status }) => status === MeetBroadcastDestinationStatus.ACTIVE)
+				.length ?? 0
 	);
 
 	/** Takes what the server reports; it answers whatever request was pending. */

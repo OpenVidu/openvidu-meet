@@ -100,11 +100,12 @@ describe('BroadcastStateService', () => {
 		expect(service.isLive()).toBeTrue();
 	});
 
-	it('counts the destinations still streaming', () => {
+	it('counts the destinations still streaming, and of them those media has reached', () => {
 		const { CONNECTING, ACTIVE, STOPPED, FAILED } = MeetBroadcastDestinationStatus;
 		service.setBroadcast(broadcast({ destinations: [CONNECTING, ACTIVE, STOPPED, FAILED].map(destination) }));
 
 		expect(service.streamingDestinationCount()).toBe(2);
+		expect(service.liveDestinationCount()).toBe(1);
 	});
 
 	it('clocks the time live from the start the server reports, once a second', () => {

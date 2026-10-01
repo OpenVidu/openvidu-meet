@@ -146,11 +146,12 @@ export class BroadcastActivityComponent {
 	/** The broadcast's destinations while it runs, or those of the failed attempt. */
 	readonly broadcastDestinations = computed(() => this.broadcast()?.destinations ?? []);
 	readonly streamingCount = this.broadcastState.streamingDestinationCount;
+	readonly liveCount = this.broadcastState.liveDestinationCount;
 	readonly failedCount = computed(
 		() =>
 			this.broadcastDestinations().filter(({ status }) => status === MeetBroadcastDestinationStatus.FAILED).length
 	);
-	readonly liveMbps = computed(() => broadcastUploadMbps(this.streamingCount()));
+	readonly liveMbps = computed(() => broadcastUploadMbps(this.liveCount()));
 	readonly failure = computed(
 		() => this.pendingRequest().error ?? this.broadcast()?.error ?? this.broadcast()?.details
 	);

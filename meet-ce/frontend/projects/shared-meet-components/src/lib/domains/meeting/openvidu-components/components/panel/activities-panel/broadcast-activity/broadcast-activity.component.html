@@ -20,10 +20,10 @@
 			<div class="activity-note-body">
 				<span class="activity-note-title">{{ 'PANEL.BROADCAST.IN_PROGRESS_TITLE' | translate }}</span>
 				<span class="activity-note-message">{{
-					(streamingCount() === 1
+					(liveCount() === 1
 						? 'PANEL.BROADCAST.IN_PROGRESS_MESSAGE_ONE'
 						: 'PANEL.BROADCAST.IN_PROGRESS_MESSAGE'
-					) | translate: { count: streamingCount() }
+					) | translate: { count: liveCount() }
 				}}</span>
 			</div>
 		</div>
@@ -168,7 +168,7 @@
 			<span class="caption" id="broadcast-live-caption">{{ 'PANEL.BROADCAST.DESTINATIONS' | translate }}</span>
 			@if (phase() === 'live') {
 				<span class="caption-detail">
-					{{ 'PANEL.BROADCAST.LIVE_COUNT' | translate: { count: streamingCount() } }}
+					{{ 'PANEL.BROADCAST.LIVE_COUNT' | translate: { count: liveCount() } }}
 					<span class="status-separator" aria-hidden="true">&middot;</span>
 					<mat-icon class="cost-note-icon inline" aria-hidden="true">network_check</mat-icon>
 					{{ 'PANEL.BROADCAST.UPLOAD_ESTIMATE' | translate: { mbps: liveMbps() } }}
