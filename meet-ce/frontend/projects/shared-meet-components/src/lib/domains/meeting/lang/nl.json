@@ -48,6 +48,8 @@
 		"BACKGROUND": "Achtergrondeffecten",
 		"START_RECORDING": "Start opname",
 		"STOP_RECORDING": "Stop opname",
+		"START_BROADCAST": "Livestream starten",
+		"STOP_BROADCAST": "Livestream stoppen",
 		"SETTINGS": "Instellingen",
 		"LEAVE": "Verlaat de meeting",
 		"PARTICIPANTS": "Deelnemers",

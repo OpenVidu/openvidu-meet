@@ -48,6 +48,8 @@
 		"BACKGROUND": "Background effects",
 		"START_RECORDING": "Start recording",
 		"STOP_RECORDING": "Stop recording",
+		"START_BROADCAST": "Start live broadcast",
+		"STOP_BROADCAST": "Stop live broadcast",
 		"SETTINGS": "Settings",
 		"LEAVE": "Leave the meeting",
 		"PARTICIPANTS": "Participants",

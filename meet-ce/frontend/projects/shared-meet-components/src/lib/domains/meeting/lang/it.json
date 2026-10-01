@@ -48,6 +48,8 @@
 		"BACKGROUND": "Effetti di sfondo",
 		"START_RECORDING": "Avvia registrazione",
 		"STOP_RECORDING": "Interrompi registrazione",
+		"START_BROADCAST": "Avvia la diretta",
+		"STOP_BROADCAST": "Interrompi la diretta",
 		"SETTINGS": "Impostazioni",
 		"LEAVE": "Abbandona la riunione",
 		"PARTICIPANTS": "Partecipanti",

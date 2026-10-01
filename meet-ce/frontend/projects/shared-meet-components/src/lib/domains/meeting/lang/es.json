@@ -48,6 +48,8 @@
 		"BACKGROUND": "Efectos de fondo",
 		"START_RECORDING": "Iniciar grabación",
 		"STOP_RECORDING": "Detener grabación",
+		"START_BROADCAST": "Iniciar emisión en directo",
+		"STOP_BROADCAST": "Detener emisión en directo",
 		"SETTINGS": "Configuración",
 		"LEAVE": "Salir de la reunión",
 		"PARTICIPANTS": "Participantes",

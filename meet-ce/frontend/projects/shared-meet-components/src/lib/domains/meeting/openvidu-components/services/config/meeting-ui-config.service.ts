@@ -19,6 +19,7 @@ interface ToolbarConfig {
 	backgroundEffects: boolean;
 	recording: boolean;
 	viewRecordings: boolean;
+	broadcast: boolean;
 	brandingLogo: string;
 	additionalButtonsPosition: ToolbarAdditionalButtonsPosition;
 }
@@ -93,6 +94,7 @@ export class MeetingUiConfigService {
 		backgroundEffects: true,
 		recording: true,
 		viewRecordings: false,
+		broadcast: true,
 		brandingLogo: '',
 		additionalButtonsPosition: ToolbarAdditionalButtonsPosition.AFTER_MENU
 	});
@@ -154,6 +156,7 @@ export class MeetingUiConfigService {
 	readonly toolbarAdditionalButtonsPositionSignal = computed(() => this.toolbarConfig().additionalButtonsPosition);
 	readonly backgroundEffectsButtonSignal = computed(() => this.toolbarConfig().backgroundEffects);
 	readonly recordingButtonSignal = computed(() => this.toolbarConfig().recording);
+	readonly broadcastButtonSignal = computed(() => this.toolbarConfig().broadcast);
 	readonly toolbarViewRecordingsButtonSignal = computed(() => this.toolbarConfig().viewRecordings);
 	readonly recordingActivitySignal = computed(() => this.recordingActivityConfig().enabled);
 	readonly recordingActivityStartStopRecordingButtonSignal = computed(() => this.recordingActivityConfig().startStopButton);

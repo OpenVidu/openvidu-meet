@@ -10,7 +10,8 @@ import {
 	expectNoBroadcastBadge,
 	expectNoBroadcastControls,
 	goLiveFromActivitiesPanel,
-	stopBroadcastFromActivitiesPanel
+	stopBroadcastFromActivitiesPanel,
+	toggleBroadcastFromToolbar
 } from './helpers/broadcasts.helper';
 import {
 	createRoomAndGetAnonymousAccessUrl,
@@ -76,6 +77,18 @@ test.describe('Live broadcast E2E Tests', () => {
 		await expect(page.locator('#broadcast-destination-editor')).toBeVisible();
 		await expect(page.locator('#broadcast-destination-save-btn')).toHaveText('Retry');
 		await expectBroadcastPhase(page, 'live');
+	});
+
+	test('should go live and stop from the toolbar', async ({ page }) => {
+		await openMeeting(page, moderatorUrl);
+
+		await toggleBroadcastFromToolbar(page);
+		await expectBroadcastPhase(page, 'live', 40_000);
+		await expectBroadcastBadgeVisible(page);
+
+		await toggleBroadcastFromToolbar(page);
+		await expectBroadcastPhase(page, 'idle', 30_000);
+		await expectNoBroadcastBadge(page);
 	});
 
 	test('should show a participant without broadcastControl the live broadcast, but no controls', async ({ page }) => {
