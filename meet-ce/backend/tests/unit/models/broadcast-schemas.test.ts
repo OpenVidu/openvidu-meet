@@ -44,7 +44,7 @@ describe('BroadcastConfigSchema', () => {
 		});
 
 		expect(result.success).toBe(true);
-		expect(result.data?.destinations[0]).toEqual({
+		expect(result.data?.destinations?.[0]).toEqual({
 			id: 'abc',
 			name: 'YouTube',
 			url: 'rtmps://a.rtmp.youtube.com/live2/key'
@@ -66,14 +66,9 @@ describe('BroadcastConfigSchema', () => {
 		);
 	});
 
-	it('requires at least one destination while enabled, and allows none while disabled', () => {
-		expect(BroadcastConfigSchema.safeParse({ enabled: false, destinations: [] }).success).toBe(true);
-
-		const result = BroadcastConfigSchema.safeParse({ enabled: true, destinations: [] });
-		expect(result.success).toBe(false);
-		expect(issues(result)).toEqual([
-			'destinations: At least one destination is required while broadcast is enabled'
-		]);
+	it('leaves the destination list out when omitted, since the room decides whether broadcast can be on', () => {
+		expect(BroadcastConfigSchema.parse({ enabled: true })).toEqual({ enabled: true });
+		expect(BroadcastConfigSchema.safeParse({ enabled: true, destinations: [] }).success).toBe(true);
 	});
 
 	it('caps the destinations at five', () => {

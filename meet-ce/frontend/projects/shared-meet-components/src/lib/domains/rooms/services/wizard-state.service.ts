@@ -369,7 +369,7 @@ export class RoomWizardStateService {
 							initialRoomOptions.config!.broadcast!.enabled
 						),
 						destinations: this.formBuilder.nonNullable.control<MeetBroadcastDestination[]>(
-							initialRoomOptions.config!.broadcast!.destinations
+							initialRoomOptions.config!.broadcast!.destinations ?? []
 						),
 						layout: this.formBuilder.nonNullable.control(
 							initialRoomOptions.config!.broadcast!.layout ?? MeetRecordingLayout.GRID

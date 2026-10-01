@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
-	MeetRoomConfig,
+	MeetRoomConfigOptions,
 	MeetRoomMemberOptions,
 	MeetRoomMemberPermissions,
 	MeetRoomOptions,
@@ -42,7 +42,7 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
  */
 const FEATURE_DEPENDENT_PERMISSIONS: {
 	permissionKeys: (keyof MeetRoomMemberPermissions)[];
-	isEnabled: (config: Partial<MeetRoomConfig> | undefined) => boolean;
+	isEnabled: (config: MeetRoomConfigOptions | undefined) => boolean;
 }[] = [
 	{
 		permissionKeys: ['chatRead', 'chatWrite'],

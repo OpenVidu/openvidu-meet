@@ -8,7 +8,7 @@ import type {
 	MeetRoomAccessConfig,
 	MeetRoomAutoDeletionPolicy,
 	MeetRoomCaptionsConfig,
-	MeetRoomConfig,
+	MeetRoomConfigOptions,
 	MeetRoomExtraField,
 	MeetRoomField,
 	MeetRoomOptions,
@@ -147,7 +147,7 @@ export const AppearanceConfigSchema: z.ZodType<MeetAppearanceConfig> = z.object(
  * Schema for updating room config (partial updates allowed)
  * Used when updating an existing room's config - missing fields keep their current values
  */
-const UpdateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
+const UpdateRoomConfigSchema: z.ZodType<MeetRoomConfigOptions> = z
 	.object({
 		maxParticipants: maxParticipantsSchema,
 		maxDurationMinutes: maxDurationMinutesSchema,
@@ -163,7 +163,7 @@ const UpdateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 		reactions: ReactionsConfigSchema.optional()
 		// appearance: AppearanceConfigSchema,
 	})
-	.transform((data: Partial<MeetRoomConfig>) => {
+	.transform((data: MeetRoomConfigOptions) => {
 		// Automatically disable recording and broadcast when E2EE is enabled
 		if (data.e2ee?.enabled && data.recording?.enabled) {
 			data.recording = {
@@ -189,7 +189,7 @@ const UpdateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
  * IMPORTANT: Using functions in .default() to avoid shared mutable state.
  * Each call creates a new object instance instead of reusing the same reference.
  */
-const CreateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
+const CreateRoomConfigSchema: z.ZodType<MeetRoomConfigOptions> = z
 	.object({
 		maxParticipants: maxParticipantsSchema,
 		maxDurationMinutes: maxDurationMinutesSchema,
@@ -225,6 +225,7 @@ const CreateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 			data.recording.encoding = MeetRecordingEncodingPreset.H264_720P_30;
 		}
 
+		data.broadcast.destinations ??= [];
 		data.broadcast.layout ??= MeetRecordingLayout.GRID;
 		data.broadcast.encoding ??= MeetRecordingEncodingPreset.H264_720P_30;
 

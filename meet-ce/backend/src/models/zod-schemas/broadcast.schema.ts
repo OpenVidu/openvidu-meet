@@ -1,5 +1,5 @@
 import type {
-	MeetBroadcastConfig,
+	MeetBroadcastConfigOptions,
 	MeetBroadcastDestination,
 	MeetBroadcastDestinationOptions,
 	MeetBroadcastDestinationUpdateOptions,
@@ -41,17 +41,12 @@ const BroadcastDestinationSchema: z.ZodType<MeetBroadcastDestination> = z.object
 	url: destinationUrlSchema
 });
 
-export const BroadcastConfigSchema: z.ZodType<MeetBroadcastConfig> = z
-	.object({
-		enabled: z.boolean(),
-		destinations: destinationListSchema(BroadcastDestinationSchema),
-		layout: z.enum(MeetRecordingLayout).optional(),
-		encoding: encodingValidator.optional()
-	})
-	.refine((config) => !config.enabled || config.destinations.length > 0, {
-		message: 'At least one destination is required while broadcast is enabled',
-		path: ['destinations']
-	});
+export const BroadcastConfigSchema: z.ZodType<MeetBroadcastConfigOptions> = z.object({
+	enabled: z.boolean(),
+	destinations: destinationListSchema(BroadcastDestinationSchema).optional(),
+	layout: z.enum(MeetRecordingLayout).optional(),
+	encoding: encodingValidator.optional()
+});
 
 const BroadcastStartDestinationSchema = z
 	.object({

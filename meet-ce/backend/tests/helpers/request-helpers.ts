@@ -16,7 +16,7 @@ import {
 	MeetRecordingStatus,
 	MeetRoom,
 	MeetRoomAccessConfig,
-	MeetRoomConfig,
+	MeetRoomConfigOptions,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomExtraField,
@@ -569,7 +569,7 @@ export const getRoomConfig = async (roomId: string): Promise<Response> => {
 		.send();
 };
 
-export const updateRoomConfig = async (roomId: string, config: Partial<MeetRoomConfig>) => {
+export const updateRoomConfig = async (roomId: string, config: MeetRoomConfigOptions) => {
 	checkAppIsRunning();
 
 	return await request(app)
