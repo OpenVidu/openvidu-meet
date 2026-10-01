@@ -69,23 +69,16 @@ add_common_dev_commands() {
   CMD_COMMANDS+=("./scripts/dev/watch-typings.sh ce")
 }
 
-add_optional_commands() {
-  local include_testapp="$1"
-  local include_webcomponent="$2"
+add_testapp_commands() {
+  # Testapp (Angular UI + webhook bridge on :5080/:5081)
+  CMD_NAMES+=("testapp")
+  CMD_COLORS+=("bgMagenta.white")
+  CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:testapp'")
 
-  # Webcomponent testapp (Angular UI + webhook bridge on :5080/:5081)
-  if [ "$include_testapp" = true ]; then
-    CMD_NAMES+=("testapp")
-    CMD_COLORS+=("bgMagenta.white")
-    CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:testapp'")
-  fi
-
-  # Webcomponent bundle watcher
-  if [ "$include_webcomponent" = true ]; then
-    CMD_NAMES+=("webcomponent")
-    CMD_COLORS+=("bgBlue.white")
-    CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:webcomponent'")
-  fi
+  # The testapp loads the webcomponent bundle the backend serves, so it must be rebuilt alongside
+  CMD_NAMES+=("webcomponent")
+  CMD_COLORS+=("bgBlue.white")
+  CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:webcomponent'")
 }
 
 # Helper: Add CE-specific commands (backend, frontend)
@@ -161,15 +154,11 @@ launch_dev_watchers() {
 # Start development mode with watchers
 dev() {
   local include_testapp=false
-  local include_webcomponent=false
 
   for arg in "$@"; do
     case "$arg" in
       --testapp)
         include_testapp=true
-        ;;
-      --webcomponent)
-        include_webcomponent=true
         ;;
     esac
   done
@@ -194,8 +183,9 @@ dev() {
   # Add common commands (typings)
   add_common_dev_commands
 
-  # Add optional commands (testapp, webcomponent)
-  add_optional_commands "$include_testapp" "$include_webcomponent"
+  if [ "$include_testapp" = true ]; then
+    add_testapp_commands
+  fi
 
   # Add edition-specific commands
   if [ "$edition" = "pro" ]; then

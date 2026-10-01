@@ -136,8 +136,7 @@ show_help() {
   echo
   echo -e "  ${BLUE}dev${NC}"
   echo "    Start development mode with watchers"
-  echo -e "    ${YELLOW}Options:${NC} --testapp            Include webcomponent testapp + webhook bridge (:5080/:5081)"
-  echo -e "             ${NC} --webcomponent       Include webcomponent watcher"
+  echo -e "    ${YELLOW}Options:${NC} --testapp            Include testapp + webhook bridge (:5080/:5081) and webcomponent watcher"
   echo
   echo -e "  ${BLUE}start${NC}"
   echo "    Start OpenVidu Meet in production or CI mode"
@@ -849,7 +848,7 @@ main() {
       test_e2e_frontend "$@"
       ;;
     dev)
-      # "$@" must be forwarded: dev() parses its own --testapp / --webcomponent flags,
+      # "$@" must be forwarded: dev() parses its own --testapp flag,
       # and parse_global_flags above silently ignores unknown arguments.
       source ./scripts/dev/dev.sh
       dev "$@"

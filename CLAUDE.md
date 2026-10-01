@@ -56,8 +56,7 @@ ordering). `./meet.sh help` lists all commands.
 ```bash
 ./meet.sh install                 # pnpm install for the whole workspace
 ./meet.sh dev                     # all watchers (typings, backend, frontend, API docs)
-./meet.sh dev --testapp           # + testapp on :5080 and webhook bridge on :5081
-./meet.sh dev --webcomponent      # + webcomponent bundle watcher
+./meet.sh dev --testapp           # + testapp on :5080, webhook bridge on :5081, webcomponent bundle watcher
 ./meet.sh build                   # full build, correct order
 ./meet.sh start --prod            # run the built app
 ./meet.sh start-testapp           # testapp only (:5080 + :5081), for the embedding e2e suites

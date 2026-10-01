@@ -1,20 +1,14 @@
 /**
  * dev.js
  *
- * Development script that:
- *   1. Starts `ng build --watch --configuration=wc` (Angular WC build in watch mode)
- *   2. Waits for the first successful build (dist/wc/browser/main.js to appear)
- *   3. Runs post-build scripts (concat-wc.js + deploy-to-backend.js)
- *   4. Starts the testapp on port 4200 via `ng serve`
- *   5. Watches the WC bundle: after every rebuild it re-runs the post-build chain
- *      so the fresh bundle is deployed into the testapp. The Angular dev server
- *      reloads the page when the deployed bundle changes.
+ * Rebuilds the webcomponent bundle on every change and deploys it into the
+ * backend's public/webcomponent/, which is what every embedding host loads:
+ *   1. Starts `ng build --watch --configuration=wc`
+ *   2. After every build of dist/wc/browser/main.js, runs the post-build chain
+ *      (concat-wc.js + deploy-to-backend.js)
  *
  * Usage (from webcomponent/):
  *   pnpm run dev
- *
- * URL:
- *   http://localhost:4200  ← testapp (ng serve)
  */
 
 const { spawn, spawnSync } = require('child_process');
@@ -22,12 +16,7 @@ const fs = require('fs');
 const path = require('path');
 
 const rootDir = path.resolve(__dirname, '..');
-// The testapp was moved to the repo root (../../../testapp from webcomponent/).
-const testappDir = path.resolve(rootDir, '..', '..', '..', 'testapp');
 const mainJs = path.join(rootDir, 'dist', 'wc', 'browser', 'main.js');
-
-// Ports
-const TESTAPP_PORT = 4200;
 
 // ─── Resolve binaries ────────────────────────────────────────────────────────
 
@@ -45,15 +34,8 @@ const resolveBin = (name, startDir) => {
   }
 };
 
-// Resolve Angular CLI binaries (may be hoisted to workspace root by pnpm)
+// Resolve the Angular CLI binary (may be hoisted to workspace root by pnpm)
 const ngBin = resolveBin('ng', rootDir);
-const testappNgBin = (() => {
-  try {
-    return resolveBin('ng', testappDir);
-  } catch {
-    return ngBin;
-  }
-})();
 
 // ─── Post-build chain ────────────────────────────────────────────────────────
 
@@ -87,7 +69,6 @@ const runPostBuild = () => {
 
 let debounceTimer = null;
 let lastMtime = 0;
-let testappProcess = null;
 
 const schedulePostBuild = () => {
   if (!fs.existsSync(mainJs)) return;
@@ -114,7 +95,7 @@ const startWatchingDist = () => {
   console.log('[dev] Watching dist/wc/browser/ for main.js changes...\n');
 };
 
-// ─── Wait for first build, then boot testapp ─────────────────────────────────
+// ─── Wait for first build ─────────────────────────────────
 
 const waitForFirstBuild = (callback) => {
   if (fs.existsSync(mainJs)) {
@@ -128,24 +109,6 @@ const waitForFirstBuild = (callback) => {
       callback();
     }
   }, 1000);
-};
-
-const startTestapp = () => {
-  console.log(`[dev] Starting testapp on http://localhost:${TESTAPP_PORT}...\n`);
-  testappProcess = spawn(testappNgBin, ['serve', '--port', String(TESTAPP_PORT)], {
-    cwd: testappDir,
-    stdio: 'inherit',
-  });
-
-  testappProcess.on('error', (err) => {
-    console.error('[dev] testapp ng serve error:', err.message);
-  });
-
-  testappProcess.on('exit', (code) => {
-    if (code !== null && code !== 0) {
-      console.error(`[dev] testapp ng serve exited with code ${code}`);
-    }
-  });
 };
 
 // ─── Main ────────────────────────────────────────────────────────────────────
@@ -167,7 +130,6 @@ waitForFirstBuild(() => {
     console.error('[dev] Initial post-build failed. Fix errors and re-run.');
     process.exit(1);
   }
-  startTestapp();
   startWatchingDist();
 });
 
@@ -176,7 +138,6 @@ waitForFirstBuild(() => {
 const cleanup = () => {
   clearTimeout(debounceTimer);
   if (wcBuild) wcBuild.kill('SIGTERM');
-  if (testappProcess) testappProcess.kill('SIGTERM');
   process.exit(0);
 };
 

@@ -25,7 +25,7 @@ cd openvidu-meet
 
 The application is available at [http://localhost:6080/meet](http://localhost:6080/meet) (log in with `admin` / `admin`), and the REST API documentation at [http://localhost:6080/meet/api/v1/docs](http://localhost:6080/meet/api/v1/docs).
 
-`./meet.sh dev` runs every watcher with hot reload. Add `--testapp` to also start the embedding test application on `:5080` (webhook bridge on `:5081`), or `--webcomponent` to also rebuild the web component bundle.
+`./meet.sh dev` runs every watcher with hot reload. Add `--testapp` to also start the embedding test application on `:5080` (webhook bridge on `:5081`) and rebuild the web component bundle it loads.
 
 To change the configuration, override variables in `meet-ce/backend/.env.dev`. The full list, with defaults, is in [meet-ce/backend/src/environment.ts](meet-ce/backend/src/environment.ts).
 
