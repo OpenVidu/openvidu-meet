@@ -4,6 +4,8 @@ import {
 	MEET_PERMISSION_KEYS,
 	MeetParticipantJoinedPayload,
 	MeetParticipantLeftPayload,
+	MeetParticipantModerationAction,
+	MeetParticipantRoleChangedPayload,
 	MeetRecordingEncodingPreset,
 	MeetRecordingInfo,
 	MeetRecordingLayout,
@@ -40,7 +42,8 @@ import {
 	endMeeting,
 	restoreDefaultGlobalConfig,
 	sleep,
-	startTestServer
+	startTestServer,
+	updateParticipant
 } from '../../helpers/request-helpers.js';
 import {
 	setupSingleRoom,
@@ -337,6 +340,53 @@ describe('Webhook Integration Tests', () => {
 			expect(payload.participant.role).toBe(MeetRoomMemberRole.SPEAKER);
 
 			expectValidSignature(participantLeftWebhook);
+		});
+
+		it('should send participantRoleChanged webhooks when a participant is promoted and demoted', async () => {
+			const context = await setupSingleRoom(true);
+			const roomData = context.room;
+			const participantIdentity = 'TEST_PARTICIPANT';
+
+			// The CLI participant joins without Meet metadata; stamp it as a speaker joining through Meet.
+			await updateParticipantMetadata(roomData.roomId, participantIdentity, {
+				iat: Date.now(),
+				roomId: roomData.roomId,
+				permissions: roomData.roles.speaker.permissions,
+				badge: MeetRoomMemberUIBadge.OTHER,
+				externalId: 'crm-user_42'
+			});
+
+			const isRoleChange = (webhook: ReceivedWebhook) =>
+				webhook.body.event === MeetWebhookEventType.PARTICIPANT_ROLE_CHANGED;
+			const roleChangedPayloads = async (count: number) => {
+				await waitForWebhookCount(receivedWebhooks, isRoleChange, count);
+				const webhooks = receivedWebhooks.filter(isRoleChange);
+				webhooks.forEach(expectValidSignature);
+				return webhooks.map((webhook) => webhook.body.data as MeetParticipantRoleChangedPayload);
+			};
+
+			await updateParticipant(
+				roomData.roomId,
+				participantIdentity,
+				MeetParticipantModerationAction.UPGRADE,
+				context.moderatorToken
+			);
+			const [promotion] = await roleChangedPayloads(1);
+			expect(promotion.roomId).toBe(roomData.roomId);
+			expect(promotion.roomName).toBe(roomData.roomName);
+			expect(promotion.participant.participantIdentity).toBe(participantIdentity);
+			expect(promotion.participant.role).toBe(MeetRoomMemberRole.MODERATOR);
+			expect(promotion.participant.externalId).toBe('crm-user_42');
+
+			await updateParticipant(
+				roomData.roomId,
+				participantIdentity,
+				MeetParticipantModerationAction.DOWNGRADE,
+				context.moderatorToken
+			);
+			const [, demotion] = await roleChangedPayloads(2);
+			expect(demotion.participant.participantIdentity).toBe(participantIdentity);
+			expect(demotion.participant.role).toBe(MeetRoomMemberRole.SPEAKER);
 		});
 
 		it('should send recordingStarted, recordingUpdated and recordingEnded webhooks when recording is started and stopped', async () => {

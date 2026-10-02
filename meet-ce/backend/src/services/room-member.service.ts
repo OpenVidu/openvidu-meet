@@ -63,6 +63,7 @@ import { RequestSessionService } from './request-session.service.js';
 import { RoomService } from './room.service.js';
 import { TokenService } from './token.service.js';
 import { UserService } from './user.service.js';
+import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 
 interface ResolvedPermissionSource {
 	memberId?: string;
@@ -88,7 +89,8 @@ export class RoomMemberService {
 		@inject(TokenService) protected tokenService: TokenService,
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
 		@inject(MeetingService) protected meetingService: MeetingService,
-		@inject(RecordingService) protected recordingService: RecordingService
+		@inject(RecordingService) protected recordingService: RecordingService,
+		@inject(WebhookDispatcherService) protected webhookDispatcherService: WebhookDispatcherService
 	) {}
 
 	/**
@@ -1053,8 +1055,9 @@ export class RoomMemberService {
 	 * - `UPGRADE`: promotes an eligible participant to moderator by merging moderator permissions.
 	 * - `DOWNGRADE`: reverts a promoted moderator to their original permissions.
 	 *
-	 * After updating participant metadata in LiveKit, it sends a targeted role-updated signal
-	 * so the affected participant can refresh their token and notify the UI.
+	 * After updating participant metadata in LiveKit, it reports the change through the
+	 * `participantRoleChanged` webhook and sends a targeted role-updated signal so the affected
+	 * participant can refresh their token and notify the UI.
 	 *
 	 * @param roomId - The ID of the room where the participant is connected.
 	 * @param participantIdentity - The LiveKit identity of the participant to moderate.
@@ -1067,7 +1070,7 @@ export class RoomMemberService {
 		action: MeetParticipantModerationAction
 	): Promise<void> {
 		try {
-			const { roles } = await this.roomService.getMeetRoom(roomId, ['roles']);
+			const { roles, roomName } = await this.roomService.getMeetRoom(roomId, ['roles', 'roomName']);
 			const participant = await this.getParticipantFromMeeting(roomId, participantIdentity);
 			const metadata = MeetParticipantHelper.requireMeetingMetadata(participant, roomId);
 
@@ -1105,6 +1108,12 @@ export class RoomMemberService {
 				JSON.stringify(metadata),
 				permission
 			);
+
+			this.webhookDispatcherService.sendParticipantRoleChangedWebhook({
+				roomId,
+				roomName,
+				participant: MeetParticipantHelper.toParticipantPayload(updatedParticipant)
+			});
 
 			if (action === MeetParticipantModerationAction.UPGRADE) {
 				void this.reevaluateRecordingAutoStart(roomId, updatedParticipant);

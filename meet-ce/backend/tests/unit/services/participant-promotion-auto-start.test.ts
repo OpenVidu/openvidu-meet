@@ -17,6 +17,7 @@ import type { RecordingService } from '../../../src/services/recording.service.j
 import { RoomMemberService } from '../../../src/services/room-member.service.js';
 import type { RoomService } from '../../../src/services/room.service.js';
 import type { TokenService } from '../../../src/services/token.service.js';
+import type { WebhookDispatcherService } from '../../../src/services/webhook-dispatcher.service.js';
 
 /**
  * B10 (MEET-BRANCH-AUDIT-FINDINGS.md): the auto-start was evaluated only from the
@@ -99,7 +100,8 @@ describe('RoomMemberService.updateParticipantRole — B10: a promotion re-evalua
 				} as unknown as TokenService,
 				{},
 				{},
-				recordingService as unknown as RecordingService
+				recordingService as unknown as RecordingService,
+				{ sendParticipantRoleChangedWebhook: () => {} } as unknown as WebhookDispatcherService
 			] as unknown as ConstructorParameters<typeof RoomMemberService>)
 		);
 	});

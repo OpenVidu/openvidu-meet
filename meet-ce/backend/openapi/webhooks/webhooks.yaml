@@ -224,3 +224,30 @@ participantLeft:
         responses:
             '200':
                 $ref: ./responses/success/webhook-success.yaml
+
+participantRoleChanged:
+    post:
+        summary: Participant role changed
+        description: >
+            This webhook is triggered when a participant in a meeting is promoted to moderator or
+            demoted back to their original role.
+        operationId: participantRoleChangedWebhook
+        parameters:
+            - $ref: ./parameters/x-timestamp.yaml
+            - $ref: ./parameters/x-signature.yaml
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        allOf:
+                            - $ref: ./schemas/webhook-base-event.yaml
+                            - properties:
+                                  event:
+                                      example: participantRoleChanged
+                                  data:
+                                      $ref: ./schemas/meet-participant-role-changed-event.yaml
+        responses:
+            '200':
+                $ref: ./responses/success/webhook-success.yaml
