@@ -254,7 +254,10 @@
 		"STOP_ALL_SCREEN_SHARES_NONE": "Personne ne partage son écran"
 	},
 	"MODERATION": {
-		"MUTED_BY_MODERATOR": "Un modérateur a désactivé l'un de vos appareils"
+		"MUTED_BY_MODERATOR": "Un modérateur a désactivé l'un de vos appareils",
+		"PROMOTED_TO_MODERATOR": "Vous avez été promu modérateur",
+		"MODERATOR_ROLE_REMOVED": "Votre rôle de modérateur a été retiré",
+		"PERMISSIONS_UPDATED": "Vos autorisations ont été mises à jour"
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "Vous avez quitté la réunion",

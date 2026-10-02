@@ -382,6 +382,8 @@ describe('MeetingEventHandlerService', () => {
 		it('tells the host the local participant was returned to the speaker role', async () => {
 			await receiveRoleUpdate('alice', MeetRoomMemberUIBadge.OTHER);
 
+			expect(notificationService.showMessage).toHaveBeenCalledOnceWith('MODERATION.MODERATOR_ROLE_REMOVED');
+
 			expect(eventBus.events()).toEqual([
 				{
 					event: EmbeddedEventName.PARTICIPANT_ROLE_CHANGED,
@@ -427,7 +429,7 @@ describe('MeetingEventHandlerService', () => {
 
 			await receiveRoleUpdate('alice', MeetRoomMemberUIBadge.MODERATOR);
 
-			expect(notificationService.showMessage).toHaveBeenCalledOnceWith('You have been promoted to moderator');
+			expect(notificationService.showMessage).toHaveBeenCalledOnceWith('MODERATION.PROMOTED_TO_MODERATOR');
 			expect(eventBus.events()).toEqual([]);
 		});
 	});

@@ -254,7 +254,10 @@
 		"STOP_ALL_SCREEN_SHARES_NONE": "Niemand teilt seinen Bildschirm"
 	},
 	"MODERATION": {
-		"MUTED_BY_MODERATOR": "Ein Moderator hat eines Ihrer Geräte ausgeschaltet"
+		"MUTED_BY_MODERATOR": "Ein Moderator hat eines Ihrer Geräte ausgeschaltet",
+		"PROMOTED_TO_MODERATOR": "Sie wurden zum Moderator hochgestuft",
+		"MODERATOR_ROLE_REMOVED": "Ihre Moderatorrolle wurde entfernt",
+		"PERMISSIONS_UPDATED": "Ihre Berechtigungen wurden aktualisiert"
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "Sie haben das Meeting verlassen",

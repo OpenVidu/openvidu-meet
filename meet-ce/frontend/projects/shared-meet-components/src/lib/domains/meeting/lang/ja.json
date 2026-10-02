@@ -254,7 +254,10 @@
 		"STOP_ALL_SCREEN_SHARES_NONE": "誰も画面を共有していません"
 	},
 	"MODERATION": {
-		"MUTED_BY_MODERATOR": "モデレーターがあなたのデバイスの1つをオフにしました"
+		"MUTED_BY_MODERATOR": "モデレーターがあなたのデバイスの1つをオフにしました",
+		"PROMOTED_TO_MODERATOR": "モデレーターに昇格しました",
+		"MODERATOR_ROLE_REMOVED": "モデレーターの役割が解除されました",
+		"PERMISSIONS_UPDATED": "権限が更新されました"
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "会議を退出しました",

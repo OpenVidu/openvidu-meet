@@ -254,7 +254,10 @@
 		"STOP_ALL_SCREEN_SHARES_NONE": "没有人在共享屏幕"
 	},
 	"MODERATION": {
-		"MUTED_BY_MODERATOR": "主持人已关闭您的一个设备"
+		"MUTED_BY_MODERATOR": "主持人已关闭您的一个设备",
+		"PROMOTED_TO_MODERATOR": "您已被提升为主持人",
+		"MODERATOR_ROLE_REMOVED": "您的主持人角色已被移除",
+		"PERMISSIONS_UPDATED": "您的权限已更新"
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "您已离开会议",

@@ -506,7 +506,7 @@ export class MeetingEventHandlerService {
 			};
 			await this.roomMemberContextService.generateToken(roomId, tokenOptions);
 
-			this.notificationService.showMessage('Your permissions have been updated');
+			this.notificationService.showMessage(this.translateService.translate('MODERATION.PERMISSIONS_UPDATED'));
 		} catch (error) {
 			console.error('Error regenerating room member token after permissions update:', error);
 			await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
@@ -545,10 +545,10 @@ export class MeetingEventHandlerService {
 	}
 
 	private showParticipantRoleUpdatedNotification(isPromotedModerator: boolean): void {
-		const message = isPromotedModerator
-			? 'You have been promoted to moderator'
-			: 'Your moderator role has been removed';
-		this.notificationService.showMessage(message);
+		const messageKey = isPromotedModerator
+			? 'MODERATION.PROMOTED_TO_MODERATOR'
+			: 'MODERATION.MODERATOR_ROLE_REMOVED';
+		this.notificationService.showMessage(this.translateService.translate(messageKey));
 
 		if (isPromotedModerator) {
 			this.soundService.playParticipantRoleUpgradedSound();

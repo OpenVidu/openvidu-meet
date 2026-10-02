@@ -254,7 +254,10 @@
 		"STOP_ALL_SCREEN_SHARES_NONE": "कोई भी स्क्रीन साझा नहीं कर रहा"
 	},
 	"MODERATION": {
-		"MUTED_BY_MODERATOR": "एक मॉडरेटर ने आपका एक डिवाइस बंद कर दिया"
+		"MUTED_BY_MODERATOR": "एक मॉडरेटर ने आपका एक डिवाइस बंद कर दिया",
+		"PROMOTED_TO_MODERATOR": "आपको मॉडरेटर बनाया गया है",
+		"MODERATOR_ROLE_REMOVED": "आपकी मॉडरेटर भूमिका हटा दी गई है",
+		"PERMISSIONS_UPDATED": "आपकी अनुमतियाँ अपडेट कर दी गई हैं"
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "आपने मीटिंग छोड़ दी",
