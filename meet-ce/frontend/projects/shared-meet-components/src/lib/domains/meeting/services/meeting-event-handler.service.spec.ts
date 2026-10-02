@@ -6,9 +6,12 @@ import {
 	MeetEventOrigin,
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantMuteOptions,
+	MeetParticipantRoleUpdatedPayload,
 	MeetRecordingInfo,
 	MeetRecordingStatus,
 	MeetRecordingUpdatedPayload,
+	MeetRoomMemberRole,
+	MeetRoomMemberUIBadge,
 	MeetSignalPayload,
 	MeetSignalType
 } from '@openvidu-meet/typings';
@@ -49,6 +52,11 @@ interface MediaMutedHandler {
 	handleParticipantMediaMuted(payload: MeetParticipantMediaMutedPayload): Promise<void>;
 }
 
+/** Reaches the handler every server signal goes through, to wait for what it does. */
+interface MeetSignalHandler {
+	handleMeetSignal(signal: MeetSignal): Promise<void>;
+}
+
 describe('MeetingEventHandlerService', () => {
 	let service: MeetingEventHandlerService;
 	let eventBus: EmbeddedEventBusService;
@@ -80,7 +88,8 @@ describe('MeetingEventHandlerService', () => {
 		roomId: () => string;
 		clearMeetingContext: jasmine.Spy;
 	};
-	let navigationServiceStub: { goToDisconnected: jasmine.Spy };
+	let navigationServiceStub: { goToDisconnected: jasmine.Spy; redirectToErrorPage: jasmine.Spy };
+	let refreshToken: jasmine.Spy;
 
 	beforeEach(() => {
 		microphoneEnabled = signal(true);
@@ -106,8 +115,10 @@ describe('MeetingEventHandlerService', () => {
 			clearMeetingContext: jasmine.createSpy('clearMeetingContext')
 		};
 		navigationServiceStub = {
-			goToDisconnected: jasmine.createSpy('goToDisconnected').and.resolveTo(undefined)
+			goToDisconnected: jasmine.createSpy('goToDisconnected').and.resolveTo(undefined),
+			redirectToErrorPage: jasmine.createSpy('redirectToErrorPage').and.resolveTo(undefined)
 		};
+		refreshToken = jasmine.createSpy('refreshToken').and.resolveTo(undefined);
 		localMedia = {
 			setMicrophoneEnabled: jasmine.createSpy('setMicrophoneEnabled').and.callFake(async (enabled: boolean) => {
 				localMedia.microphone.wanted.set(enabled);
@@ -155,10 +166,13 @@ describe('MeetingEventHandlerService', () => {
 				{ provide: RuntimeConfigService, useValue: { isEmbeddedMode: () => isEmbeddedMode } },
 				{ provide: MeetingEventsService, useValue: { meetSignals$: meetSignals.asObservable() } },
 				{ provide: MeetingContextService, useValue: meetingContextStub },
-				{ provide: MeetingStateService, useValue: { clear: () => {} } },
+				{
+					provide: MeetingStateService,
+					useValue: { clear: () => {}, localParticipant: () => ({ identity: 'alice' }) }
+				},
 				{ provide: RoomFeatureService, useValue: {} },
 				{ provide: RecordingService, useValue: {} },
-				{ provide: RoomMemberContextService, useValue: { serverTimeSkewMs } },
+				{ provide: RoomMemberContextService, useValue: { serverTimeSkewMs, refreshToken } },
 				{ provide: NavigationService, useValue: navigationServiceStub },
 				{ provide: NotificationService, useValue: notificationService },
 				{ provide: MeetingEndingSoonService, useValue: meetingEndingSoon },
@@ -336,6 +350,85 @@ describe('MeetingEventHandlerService', () => {
 			await Promise.resolve();
 
 			expect(localMedia.setMicrophoneEnabled).toHaveBeenCalledWith(false);
+		});
+	});
+
+	describe('role changed', () => {
+		function receiveRoleUpdate(participantIdentity: string, newBadge: MeetRoomMemberUIBadge): Promise<void> {
+			const payload: MeetParticipantRoleUpdatedPayload = {
+				roomId: 'room1',
+				participantIdentity,
+				newBadge,
+				timestamp: 0
+			};
+			return (service as unknown as MeetSignalHandler).handleMeetSignal({
+				topic: MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED,
+				payload
+			});
+		}
+
+		it('tells the host the local participant was promoted to moderator', async () => {
+			await receiveRoleUpdate('alice', MeetRoomMemberUIBadge.MODERATOR);
+
+			expect(refreshToken).toHaveBeenCalledOnceWith('room1');
+			expect(eventBus.events()).toEqual([
+				{
+					event: EmbeddedEventName.PARTICIPANT_ROLE_CHANGED,
+					payload: { roomId: 'room1', participantIdentity: 'alice', role: MeetRoomMemberRole.MODERATOR }
+				}
+			]);
+		});
+
+		it('tells the host the local participant was returned to the speaker role', async () => {
+			await receiveRoleUpdate('alice', MeetRoomMemberUIBadge.OTHER);
+
+			expect(eventBus.events()).toEqual([
+				{
+					event: EmbeddedEventName.PARTICIPANT_ROLE_CHANGED,
+					payload: { roomId: 'room1', participantIdentity: 'alice', role: MeetRoomMemberRole.SPEAKER }
+				}
+			]);
+		});
+
+		// A host reacting to the event (e.g. by sending a moderator command) must find the new
+		// permissions already in place.
+		it('waits for the refreshed token before telling the host', async () => {
+			let completeRefresh!: () => void;
+			refreshToken.and.returnValue(new Promise<void>((resolve) => (completeRefresh = resolve)));
+
+			const handled = receiveRoleUpdate('alice', MeetRoomMemberUIBadge.MODERATOR);
+			await Promise.resolve();
+			expect(eventBus.events()).toEqual([]);
+
+			completeRefresh();
+			await handled;
+			expect(eventBus.events().length).toBe(1);
+		});
+
+		it('tells the host nothing when the token cannot be refreshed', async () => {
+			spyOn(console, 'error');
+			refreshToken.and.rejectWith(new Error('access revoked'));
+
+			await receiveRoleUpdate('alice', MeetRoomMemberUIBadge.MODERATOR);
+
+			expect(eventBus.events()).toEqual([]);
+			expect(navigationServiceStub.redirectToErrorPage).toHaveBeenCalled();
+		});
+
+		it('ignores a role change addressed to another participant', async () => {
+			await receiveRoleUpdate('bob', MeetRoomMemberUIBadge.MODERATOR);
+
+			expect(refreshToken).not.toHaveBeenCalled();
+			expect(eventBus.events()).toEqual([]);
+		});
+
+		it('only notifies the participant, not a host, outside the embedded modes', async () => {
+			isEmbeddedMode = false;
+
+			await receiveRoleUpdate('alice', MeetRoomMemberUIBadge.MODERATOR);
+
+			expect(notificationService.showMessage).toHaveBeenCalledOnceWith('You have been promoted to moderator');
+			expect(eventBus.events()).toEqual([]);
 		});
 	});
 

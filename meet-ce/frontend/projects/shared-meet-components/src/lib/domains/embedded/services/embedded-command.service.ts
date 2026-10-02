@@ -1,5 +1,10 @@
 import { inject, Service } from '@angular/core';
-import { EmbeddedCommandName, MeetParticipantMuteOptions, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import {
+	EmbeddedCommandName,
+	MeetParticipantModerationAction,
+	MeetParticipantMuteOptions,
+	MeetRoomMemberPermissions
+} from '@openvidu-meet/typings';
 import {
 	LocalMediaService,
 	MeetingLiveKitService,
@@ -91,6 +96,19 @@ export class EmbeddedCommandService {
 			}
 
 			await this.meetingModerationService.muteAllParticipants(roomId, media);
+		});
+	}
+
+	async participantUpdateRole(participantIdentity: string, action: MeetParticipantModerationAction): Promise<void> {
+		await this.run(EmbeddedCommandName.PARTICIPANT_UPDATE_ROLE, 'participantPromote', async () => {
+			const roomId = this.meetingContextService.roomId();
+
+			if (!participantIdentity || !roomId) {
+				this.log.w('participantUpdateRole() called without a participant identity or room id');
+				return;
+			}
+
+			await this.meetingModerationService.changeParticipantRole(roomId, participantIdentity, action);
 		});
 	}
 

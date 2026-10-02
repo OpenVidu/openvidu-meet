@@ -10,8 +10,8 @@ import {
 	MeetParticipantRoleUpdatedPayload,
 	MeetRecordingStatus,
 	MeetRecordingUpdatedPayload,
+	MeetRoomMemberRole,
 	MeetRoomMemberTokenOptions,
-	MeetRoomMemberUIBadge,
 	MeetSignalType
 } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
@@ -46,7 +46,7 @@ import {
 	MeetingEventsService,
 	MeetSignal
 } from '../openvidu-components/services/meeting-events/meeting-events.service';
-import { toEmbeddedParticipantPayload } from '../utils/embedded-participant.utils';
+import { toEmbeddedParticipantPayload, toParticipantRole } from '../utils/embedded-participant.utils';
 import { toMediaStatusChangedEvent } from '../utils/media-status-event.utils';
 import { hasReachedMeetingEnd, parseMeetingEndDate, parseMeetingStartDate } from '../utils/room-metadata.utils';
 import { MeetingContextService } from './meeting-context.service';
@@ -415,7 +415,7 @@ export class MeetingEventHandlerService {
 
 	/**
 	 * Handles role updated event for the local participant by refreshing the room member token to get updated permissions.
-	 * Also shows a notification to the user about their new role.
+	 * Then notifies the user and, in embedded modes, the host about their new role.
 	 *
 	 * @param event Participant role updated event payload
 	 */
@@ -431,8 +431,15 @@ export class MeetingEventHandlerService {
 			// Refresh room member token to get updated permissions based on new role
 			await this.roomMemberContextService.refreshToken(roomId);
 
-			const isPromotedModerator = newBadge === MeetRoomMemberUIBadge.MODERATOR;
-			this.showParticipantRoleUpdatedNotification(isPromotedModerator);
+			const role = toParticipantRole(newBadge);
+			this.showParticipantRoleUpdatedNotification(role === MeetRoomMemberRole.MODERATOR);
+
+			if (this.runtimeConfigService.isEmbeddedMode()) {
+				this.eventBus.emit({
+					event: EmbeddedEventName.PARTICIPANT_ROLE_CHANGED,
+					payload: { roomId, participantIdentity, role }
+				});
+			}
 		} catch (error) {
 			console.error('Error refreshing room member token after role update:', error);
 			await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);

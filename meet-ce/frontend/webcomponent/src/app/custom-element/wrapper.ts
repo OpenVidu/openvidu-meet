@@ -1,4 +1,9 @@
-import { EmbeddedEventName, EmbeddedEventPayloadFor, MeetParticipantMuteOptions } from '@openvidu-meet/typings';
+import {
+	EmbeddedEventName,
+	EmbeddedEventPayloadFor,
+	MeetParticipantModerationAction,
+	MeetParticipantMuteOptions
+} from '@openvidu-meet/typings';
 import type { App } from '../app';
 
 /**
@@ -94,6 +99,10 @@ export function createOpenViduMeetElementClass(
 
 		participantMuteAll(media: MeetParticipantMuteOptions): void {
 			this._getComponentInstance()?.participantMuteAll(media);
+		}
+
+		participantUpdateRole(participantIdentity: string, action: MeetParticipantModerationAction): void {
+			this._getComponentInstance()?.participantUpdateRole(participantIdentity, action);
 		}
 
 		mediaToggleAudio(active?: boolean): void {

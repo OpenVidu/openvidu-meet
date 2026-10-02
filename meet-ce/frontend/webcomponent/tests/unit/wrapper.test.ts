@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import type { MeetParticipantMuteOptions } from '@openvidu-meet/typings';
+import { MeetParticipantModerationAction } from '@openvidu-meet/typings';
 import { createOpenViduMeetElementClass } from '../../src/app/custom-element/wrapper';
 
 // Minimal stand-in for the Angular Elements base class produced by `createCustomElement()`.
@@ -43,6 +44,7 @@ interface ComponentInstance {
 	participantKick: jest.Mock;
 	participantMute: jest.Mock;
 	participantMuteAll: jest.Mock;
+	participantUpdateRole: jest.Mock;
 	mediaToggleAudio: jest.Mock;
 	mediaToggleVideo: jest.Mock;
 	mediaToggleScreenShare: jest.Mock;
@@ -60,6 +62,7 @@ interface TestableElement extends FakeNgElementBase {
 	participantKick(participantIdentity: string): void;
 	participantMute(participantIdentity: string, media: MeetParticipantMuteOptions): void;
 	participantMuteAll(media: MeetParticipantMuteOptions): void;
+	participantUpdateRole(participantIdentity: string, action: MeetParticipantModerationAction): void;
 	mediaToggleAudio(active?: boolean): void;
 	mediaToggleVideo(active?: boolean): void;
 	mediaToggleScreenShare(active?: boolean): void;
@@ -78,6 +81,7 @@ const componentInstance = (): ComponentInstance => ({
 	participantKick: jest.fn(),
 	participantMute: jest.fn(),
 	participantMuteAll: jest.fn(),
+	participantUpdateRole: jest.fn(),
 	mediaToggleAudio: jest.fn(),
 	mediaToggleVideo: jest.fn(),
 	mediaToggleScreenShare: jest.fn(),
@@ -235,6 +239,11 @@ describe('openvidu-meet custom element', () => {
 			['participantKick', (el) => el.participantKick('participant-1'), ['participant-1']],
 			['participantMute', (el) => el.participantMute('participant-1', mute), ['participant-1', mute]],
 			['participantMuteAll', (el) => el.participantMuteAll(mute), [mute]],
+			[
+				'participantUpdateRole',
+				(el) => el.participantUpdateRole('participant-1', MeetParticipantModerationAction.UPGRADE),
+				['participant-1', MeetParticipantModerationAction.UPGRADE]
+			],
 			['mediaToggleAudio', (el) => el.mediaToggleAudio(false), [false]],
 			['mediaToggleVideo', (el) => el.mediaToggleVideo(true), [true]],
 			['mediaToggleScreenShare', (el) => el.mediaToggleScreenShare(false), [false]],

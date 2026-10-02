@@ -18,6 +18,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - Embedded attributes and URL parameters `language`, which sets the initial meeting language (a BCP 47
   language tag, or `auto` for the browser's) over the participant's stored preference without replacing it,
   and `show-language-selector`, which hides the language selectors when `false`.
+- Embedded command `participantUpdateRole`, gated by `participantPromote`, promotes a participant to moderator or
+  demotes them back. Every role change is reported as the [`participantRoleChanged`][3.10-participant-role-changed]
+  webhook and as the embedded event of the same name to the affected participant.
 
 ### Improved
 
@@ -171,6 +174,7 @@ registered on both receives it twice.
 - Unanswered webhooks caused active connections to grow continuously. Every webhook is answered.
 - The `openvidu/openvidu-meet` Docker image resolved its dependencies anew on every build instead of installing the versions in the lockfile. It now installs the locked versions.
 
+[3.10-participant-role-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantRoleChangedWebhook
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html
 [3.9-meetings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/meetingGet
 [3.9-webhooks-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/webhookList

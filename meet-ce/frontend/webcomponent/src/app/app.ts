@@ -35,6 +35,7 @@ import {
 	EmbeddedEventPayloadFor,
 	LeftEventReason,
 	type EmbeddedEvent,
+	type MeetParticipantModerationAction,
 	type MeetParticipantMuteOptions,
 	type WebComponentPropertyValues
 } from '@openvidu-meet/typings';
@@ -124,6 +125,7 @@ export class App {
 	readonly meetingLeft = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEETING_LEFT>>();
 	readonly participantJoined = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_JOINED>>();
 	readonly participantLeft = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_LEFT>>();
+	readonly participantRoleChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_ROLE_CHANGED>>();
 	readonly mediaAudioStatusChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED>>();
 	readonly mediaVideoStatusChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED>>();
 	readonly mediaScreenShareStatusChanged =
@@ -302,6 +304,10 @@ export class App {
 		return this.commandService.participantMuteAll(media);
 	}
 
+	participantUpdateRole(participantIdentity: string, action: MeetParticipantModerationAction): Promise<void> {
+		return this.commandService.participantUpdateRole(participantIdentity, action);
+	}
+
 	mediaToggleAudio(active?: boolean): Promise<void> {
 		return this.commandService.mediaToggleAudio(active);
 	}
@@ -354,6 +360,9 @@ export class App {
 				break;
 			case EmbeddedEventName.PARTICIPANT_LEFT:
 				this.participantLeft.emit(payload);
+				break;
+			case EmbeddedEventName.PARTICIPANT_ROLE_CHANGED:
+				this.participantRoleChanged.emit(payload);
 				break;
 			case EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED:
 				this.mediaAudioStatusChanged.emit(payload);
