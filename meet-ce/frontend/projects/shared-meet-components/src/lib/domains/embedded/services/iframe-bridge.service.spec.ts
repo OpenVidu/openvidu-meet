@@ -193,20 +193,29 @@ describe('IframeBridgeService', () => {
 			expect(commandService.participantKick).not.toHaveBeenCalled();
 		});
 
-		it('forwards BROADCAST_START to the manager', () => {
+		it('forwards BROADCAST_START to the manager, with the destinations asked for', () => {
 			startBridge();
+			const destinations = [{ destinationId: 'dest-a' }];
 
 			postFromHost({ command: EmbeddedCommandName.BROADCAST_START });
+			postFromHost({ command: EmbeddedCommandName.BROADCAST_START, payload: { destinations } });
 
-			expect(commandService.broadcastStart).toHaveBeenCalledTimes(1);
+			expect(commandService.broadcastStart.calls.allArgs()).toEqual([
+				[{ destinations: undefined }],
+				[{ destinations }]
+			]);
 		});
 
-		it('forwards BROADCAST_STOP to the manager', () => {
+		it('forwards BROADCAST_STOP to the manager, with the broadcasts asked for', () => {
 			startBridge();
 
 			postFromHost({ command: EmbeddedCommandName.BROADCAST_STOP });
+			postFromHost({ command: EmbeddedCommandName.BROADCAST_STOP, payload: { broadcastIds: ['bc1'] } });
 
-			expect(commandService.broadcastStop).toHaveBeenCalledTimes(1);
+			expect(commandService.broadcastStop.calls.allArgs()).toEqual([
+				[{ broadcastIds: undefined }],
+				[{ broadcastIds: ['bc1'] }]
+			]);
 		});
 
 		it('ignores malformed messages (no command)', () => {
@@ -639,9 +648,10 @@ describe('IframeBridgeService', () => {
 				roomId: ROOM_ID,
 				roomName: 'Room 1',
 				status: MeetBroadcastStatus.ACTIVE,
+				name: 'YouTube',
+				url: 'rtmp://a.rtmp.youtube.com/live2/********',
 				layout: MeetRecordingLayout.GRID,
-				encoding: MeetRecordingEncodingPreset.H264_720P_30,
-				destinations: []
+				encoding: MeetRecordingEncodingPreset.H264_720P_30
 			};
 
 			eventBus.emit({ event: EmbeddedEventName.BROADCAST_STARTED, payload });

@@ -1,9 +1,9 @@
 description: >
-    Not found: no broadcast with that identifier runs in the meeting
+    Not found: no broadcast with that identifier is in progress in the meeting
 content:
     application/json:
         schema:
             $ref: '../../../shared/schemas/error.yaml'
         example:
             error: 'Broadcast Error'
-            message: "Broadcast 'EG_XYZ' not found"
+            message: "Broadcast 'room-123--kX9pL2mQ7a' not found"

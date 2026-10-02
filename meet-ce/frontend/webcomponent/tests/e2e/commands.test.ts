@@ -943,7 +943,7 @@ for (const integration of INTEGRATIONS) {
 				createdRoomIds.push(broadcastRoomId);
 			});
 
-			test('should start the broadcast to the room destinations and stop it', async ({ page }) => {
+			test('should start a broadcast to each room destination and stop them', async ({ page }) => {
 				await openMeeting(page, broadcastRoomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
 

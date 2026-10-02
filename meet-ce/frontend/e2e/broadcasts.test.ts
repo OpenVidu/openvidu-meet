@@ -1,4 +1,3 @@
-import { MeetBroadcastDestinationStatus } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { createRtmpSink, deleteRtmpSinks } from './helpers/broadcast-sink.helper';
 import {
@@ -18,14 +17,15 @@ import {
 	createRoomAndGetAnonymousAccessUrl,
 	deleteRooms,
 	getRoomConfig,
-	startBroadcast
+	startBroadcasts
 } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-navigation.helper';
 
 /**
- * The live broadcast as the room sees it: the activity a moderator goes live from, the LIVE chip
- * everyone gets, and what a participant without the permission is left with. The room streams to
- * an RTMP ingress of the LiveKit deployment under test, the one sink the egress can reach here.
+ * The live broadcasts as the room sees them: the activity a moderator goes live from, one broadcast
+ * per destination, the LIVE chip everyone gets, and what a participant without the permission is
+ * left with. The room streams to an RTMP ingress of the LiveKit deployment under test, the one sink
+ * the egress can reach here.
  */
 test.describe('Live broadcast E2E Tests', () => {
 	let roomId: string;
@@ -55,7 +55,7 @@ test.describe('Live broadcast E2E Tests', () => {
 
 		await goLiveFromActivitiesPanel(page);
 		await expectBroadcastPhase(page, 'live', 40_000);
-		await expectDestinationStatus(page, destinationId, MeetBroadcastDestinationStatus.ACTIVE);
+		await expectDestinationStatus(page, destinationId, 'live');
 		await expectBroadcastBadgeVisible(page);
 		await expectBroadcastNotice(page, 'started');
 
@@ -72,16 +72,16 @@ test.describe('Live broadcast E2E Tests', () => {
 		await openMeeting(page, moderatorUrl);
 
 		await addDestinationFromActivitiesPanel(page, 'Extra', extraUrl);
-		await expect(page.locator(`#broadcast-planned-${destinationId} .destination-action`)).toHaveCount(0);
+		await expect(page.locator(`#broadcast-destination-${destinationId} .destination-action`)).toHaveCount(0);
 		await untickPlannedDestination(page, destinationId);
 		await goLiveFromActivitiesPanel(page);
 
 		await expectBroadcastPhase(page, 'live', 40_000);
-		await expectDestinationStatus(page, destinationId, MeetBroadcastDestinationStatus.STOPPED);
-		await expect(page.locator('#broadcast-activity .destination-row[data-status="active"]')).toHaveCount(1);
+		await expectDestinationStatus(page, destinationId, 'stopped');
+		await expect(page.locator('#broadcast-activity .destination-row[data-status="live"]')).toHaveCount(1);
 	});
 
-	test('should keep a destination the server refuses in its editor, with the broadcast still live', async ({
+	test('should keep a destination the server refuses in its editor, with the meeting still live', async ({
 		page
 	}) => {
 		await openMeeting(page, moderatorUrl);
@@ -90,7 +90,7 @@ test.describe('Live broadcast E2E Tests', () => {
 
 		await addDestinationFromActivitiesPanel(page, 'Sink again', sinkUrl);
 
-		await expect(page.locator('#broadcast-destination-url-rejected')).toContainText('Duplicate destination');
+		await expect(page.locator('#broadcast-destination-url-rejected')).toContainText('already being broadcast');
 		await expect(page.locator('#broadcast-destination-editor')).toBeVisible();
 		await expect(page.locator('#broadcast-destination-save-btn')).toHaveText('Retry');
 		await expectBroadcastPhase(page, 'live');
@@ -110,7 +110,7 @@ test.describe('Live broadcast E2E Tests', () => {
 
 	test('should show a participant without broadcastControl the live broadcast, but no controls', async ({ page }) => {
 		await openMeeting(page, speakerUrl);
-		await startBroadcast(roomId);
+		await startBroadcasts(roomId);
 
 		await expectBroadcastBadgeVisible(page);
 		await expectNoBroadcastControls(page);

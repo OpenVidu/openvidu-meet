@@ -317,12 +317,11 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 
 	/**
 	 * @ignore
-	 * A broadcast the server runs, starting or live: the toolbar stops it.
+	 * Broadcasts the server runs, starting or live: the toolbar stops them.
 	 */
-	readonly isBroadcastRunning = computed(() => {
-		const broadcast = this.broadcastState.broadcast();
-		return !!broadcast && isBroadcastRunning(broadcast.status);
-	});
+	readonly isBroadcastRunning = computed(() =>
+		this.broadcastState.inProgress().some(({ status }) => isBroadcastRunning(status))
+	);
 
 	/**
 	 * @ignore
@@ -541,15 +540,15 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 
 	/**
 	 * @ignore
-	 * Goes live to the room's destinations, or stops the broadcast. Going live, or a broadcast that
-	 * failed, opens the broadcast activity, where its destinations and any failure show.
+	 * Goes live to the room's destinations, one broadcast each, or stops every broadcast. Going live,
+	 * or a broadcast that failed, opens the broadcast activity, where the destinations and any
+	 * failure show.
 	 */
 	toggleBroadcast() {
 		const roomId = this.meetingLiveKitService.getRoomName();
-		const broadcast = this.broadcastState.broadcast();
 
-		if (broadcast && this.isBroadcastRunning()) {
-			this.onBroadcastRequested.emit({ action: 'stop', roomId, broadcastId: broadcast.broadcastId });
+		if (this.isBroadcastRunning()) {
+			this.onBroadcastRequested.emit({ action: 'stop', roomId });
 			return;
 		}
 

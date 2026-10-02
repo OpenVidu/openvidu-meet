@@ -8,22 +8,26 @@ content:
             properties:
                 broadcasts:
                     type: array
-                    description: The broadcast running in the meeting, or none.
+                    description: The broadcasts in progress in the meeting, one per destination, or none.
                     items:
                         $ref: '../../schemas/meet-broadcast.yaml'
         example:
             broadcasts:
-                - broadcastId: 'EG_XYZ'
+                - broadcastId: 'room-123--kX9pL2mQ7a'
                   roomId: 'room-123'
                   roomName: 'room'
                   status: 'active'
+                  name: 'YouTube'
+                  url: 'rtmp://a.rtmp.youtube.com/live2/********'
+                  destinationId: 'kX9pL2mQ7a'
                   layout: 'grid'
                   encoding: 'H264_720P_30'
                   startDate: 1620000000000
-                  destinations:
-                      - id: 'kX9pL2mQ7a'
-                        name: 'YouTube'
-                        url: 'rtmp://a.rtmp.youtube.com/live2/********'
-                        source: 'room'
-                        status: 'active'
-                        startDate: 1620000000000
+                - broadcastId: 'room-123--p7Rt4WqM2z'
+                  roomId: 'room-123'
+                  roomName: 'room'
+                  status: 'starting'
+                  name: 'Own media server'
+                  url: 'rtmp://media.example.com/live/********'
+                  layout: 'grid'
+                  encoding: 'H264_720P_30'

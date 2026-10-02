@@ -172,11 +172,11 @@ export interface MeetBroadcastConfig {
 	 */
 	enabled: boolean;
 	/**
-	 * The room's default destinations: where a meeting streams when it goes live. At most
-	 * {@link MEET_BROADCAST_MAX_DESTINATIONS}, and at least one while `enabled` is `true`. In the
-	 * meeting, a participant with the `broadcastControl` permission streams to all of them or to a
-	 * subset, and with `broadcastAddDestinations` adds destinations for that meeting only: the list
-	 * saved here never changes from inside a meeting.
+	 * The room's default destinations: where a meeting streams when it goes live, one broadcast per
+	 * destination. At most {@link MEET_BROADCAST_MAX_DESTINATIONS}, and at least one while `enabled`
+	 * is `true`. In the meeting, a participant with the `broadcastControl` permission starts a
+	 * broadcast to any of them, and with `broadcastAddDestinations` to a destination given for that
+	 * meeting only: the list saved here never changes from inside a meeting.
 	 * See {@link MeetBroadcastDestination} for details.
 	 */
 	destinations: MeetBroadcastDestination[];
@@ -219,7 +219,8 @@ export interface MeetBroadcastDestination {
 }
 
 /**
- * Maximum number of destinations a room's config, and a broadcast, may hold.
+ * Maximum number of destinations a room's config may hold, and of broadcasts a meeting may run at
+ * once.
  */
 export const MEET_BROADCAST_MAX_DESTINATIONS = 5;
 

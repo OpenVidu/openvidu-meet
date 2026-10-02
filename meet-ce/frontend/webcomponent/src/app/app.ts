@@ -35,6 +35,8 @@ import {
 	EmbeddedEventPayloadFor,
 	LeftEventReason,
 	type EmbeddedEvent,
+	type MeetBroadcastStartOptions,
+	type MeetBroadcastStopOptions,
 	type MeetParticipantModerationAction,
 	type MeetParticipantMuteOptions,
 	type MeetReaction,
@@ -350,12 +352,12 @@ export class App {
 		return this.commandService.participantReactionSend(reaction);
 	}
 
-	broadcastStart(): Promise<void> {
-		return this.commandService.broadcastStart();
+	broadcastStart(options?: MeetBroadcastStartOptions): Promise<void> {
+		return this.commandService.broadcastStart(options);
 	}
 
-	broadcastStop(): Promise<void> {
-		return this.commandService.broadcastStop();
+	broadcastStop(options?: MeetBroadcastStopOptions): Promise<void> {
+		return this.commandService.broadcastStop(options);
 	}
 
 	// ── Internal ─────────────────────────────────────────────────────────────

@@ -15,8 +15,8 @@ export const enum RedisKeyName {
 	// Marks that a room's recording was deliberately stopped during the current meeting, so the
 	// recording auto-start must not fire again until the meeting ends.
 	RECORDING_AUTO_START_DISABLED = `${REDIS_KEY_PREFIX}recording_auto_start_disabled:`,
-	// Holds the live broadcast of a room (destinations with their real URLs and their statuses)
-	// while it runs, so every replica serves and updates the same broadcast.
+	// Holds the live broadcasts of a room (one per destination, with their real URLs and their
+	// statuses) while they run, so every replica serves and updates the same broadcasts.
 	BROADCAST = `${REDIS_KEY_PREFIX}broadcast:`,
 	// Marks that the current meeting was force-ended for exceeding its room's duration limit rather
 	// than by a moderator (the stored value is the meeting's LiveKit room sid), so room_finished can

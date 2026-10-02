@@ -1,42 +1,28 @@
 import { inject, Service } from '@angular/core';
-import { MeetBroadcastDestinationOptions, MeetBroadcastInfo, MeetBroadcastStartOptions } from '@openvidu-meet/typings';
+import { MeetBroadcastInfo, MeetBroadcastStartOptions, MeetBroadcastStopOptions } from '@openvidu-meet/typings';
 import { HttpService } from '../../../shared/services/http.service';
 
 /**
- * The live broadcast API of a meeting: `/meetings/{roomId}/broadcasts`.
+ * The live broadcast API of a meeting: `/meetings/{roomId}/broadcasts`, one broadcast per destination.
  */
 @Service()
 export class BroadcastService {
 	private readonly httpService = inject(HttpService);
 
-	startBroadcast(roomId: string, options: MeetBroadcastStartOptions = {}): Promise<MeetBroadcastInfo> {
-		return this.httpService.postRequest(this.broadcastsPath(roomId), options);
-	}
-
-	stopBroadcast(roomId: string, broadcastId: string): Promise<MeetBroadcastInfo> {
-		return this.httpService.postRequest(`${this.broadcastsPath(roomId)}/${broadcastId}/stop`, {});
-	}
-
-	addDestination(
-		roomId: string,
-		broadcastId: string,
-		destination: MeetBroadcastDestinationOptions
-	): Promise<MeetBroadcastInfo> {
-		return this.httpService.postRequest(`${this.broadcastsPath(roomId)}/${broadcastId}/destinations`, destination);
-	}
-
-	updateDestination(
-		roomId: string,
-		broadcastId: string,
-		destinationId: string,
-		active: boolean
-	): Promise<MeetBroadcastInfo> {
-		return this.httpService.putRequest(
-			`${this.broadcastsPath(roomId)}/${broadcastId}/destinations/${destinationId}`,
-			{
-				active
-			}
+	async startBroadcasts(roomId: string, options: MeetBroadcastStartOptions = {}): Promise<MeetBroadcastInfo[]> {
+		const { broadcasts } = await this.httpService.postRequest<{ broadcasts: MeetBroadcastInfo[] }>(
+			this.broadcastsPath(roomId),
+			options
 		);
+		return broadcasts;
+	}
+
+	async stopBroadcasts(roomId: string, options: MeetBroadcastStopOptions = {}): Promise<MeetBroadcastInfo[]> {
+		const { broadcasts } = await this.httpService.postRequest<{ broadcasts: MeetBroadcastInfo[] }>(
+			`${this.broadcastsPath(roomId)}/stop`,
+			options
+		);
+		return broadcasts;
 	}
 
 	private broadcastsPath(roomId: string): string {

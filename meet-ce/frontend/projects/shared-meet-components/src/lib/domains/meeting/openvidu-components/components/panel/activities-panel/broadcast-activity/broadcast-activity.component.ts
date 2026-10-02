@@ -9,18 +9,20 @@ import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
 	MEET_BROADCAST_MAX_DESTINATIONS,
-	MeetBroadcastDestinationInfo,
-	MeetBroadcastDestinationOptions,
-	MeetBroadcastDestinationSource,
-	MeetBroadcastDestinationStatus,
-	MeetBroadcastStartDestination
+	MeetBroadcastInfo,
+	MeetBroadcastStartDestination,
+	MeetBroadcastStatus,
+	redactStreamUrl
 } from '@openvidu-meet/typings';
 import { PlatformIconComponent } from '../../../../../../../shared/components/platform-icon/platform-icon.component';
 import {
 	BROADCAST_MBPS_PER_DESTINATION,
 	broadcastUploadMbps
 } from '../../../../../../../shared/models/broadcast.model';
-import { DestinationEditor } from '../../../../../../../shared/utils/broadcast-destination-editor';
+import {
+	BroadcastDestinationDraft,
+	DestinationEditor
+} from '../../../../../../../shared/utils/broadcast-destination-editor';
 import {
 	detectBroadcastPlatform,
 	extractBroadcastHost
@@ -30,8 +32,7 @@ import {
 	BroadcastPhase,
 	BroadcastRequest,
 	BroadcastRequestedEvent,
-	isBroadcastRunning,
-	isDestinationStreaming
+	isBroadcastRunning
 } from '../../../../models/broadcast.model';
 import { TranslatePipe } from '../../../../pipes/translate.pipe';
 import { BroadcastStateService } from '../../../../services/broadcast/broadcast-state.service';
@@ -40,11 +41,24 @@ import { MeetingLiveKitService } from '../../../../services/meeting-livekit/meet
 import { ParticipantService } from '../../../../services/participant/participant.service';
 import { ActivityItemComponent, ActivityState } from '../activity-item/activity-item.component';
 
-/** A destination as the activity offers it before going live: one of the room's, or one added for this meeting. */
-interface PlannedDestination extends MeetBroadcastDestinationOptions {
-	id: string;
-	source: MeetBroadcastDestinationSource;
+/** How a destination row is doing, from the broadcast to it or from what was just asked. */
+type RowStatus = 'connecting' | 'live' | 'stopping' | 'stopped' | 'failed';
+
+/**
+ * A destination as the activity lists it: one of the room's, or one given for this meeting, with
+ * the broadcast to it when there is one.
+ */
+interface DestinationRow {
+	/** The room destination's id, or the redacted URL of a destination given for the meeting */
+	key: string;
+	name: string;
+	url: string;
+	source: 'room' | 'meeting';
+	broadcast?: MeetBroadcastInfo;
+	/** How to start a broadcast to it; absent when this client does not know the full URL */
+	start?: MeetBroadcastStartDestination;
 	selected: boolean;
+	status: RowStatus;
 }
 
 const STATUS_KEYS: Record<BroadcastPhase, string> = {
@@ -63,17 +77,28 @@ const ACTIVITY_STATES: Record<BroadcastPhase, ActivityState> = {
 	failed: 'failed'
 };
 
-const DESTINATION_STATUS_KEYS: Record<MeetBroadcastDestinationStatus, string> = {
-	[MeetBroadcastDestinationStatus.CONNECTING]: 'PANEL.BROADCAST.DEST_CONNECTING',
-	[MeetBroadcastDestinationStatus.ACTIVE]: 'PANEL.BROADCAST.DEST_LIVE',
-	[MeetBroadcastDestinationStatus.STOPPED]: 'PANEL.BROADCAST.DEST_STOPPED',
-	[MeetBroadcastDestinationStatus.FAILED]: 'PANEL.BROADCAST.DEST_FAILED'
+const ROW_STATUS_BY_BROADCAST: Record<MeetBroadcastStatus, RowStatus> = {
+	[MeetBroadcastStatus.STARTING]: 'connecting',
+	[MeetBroadcastStatus.ACTIVE]: 'live',
+	[MeetBroadcastStatus.ENDING]: 'stopping',
+	[MeetBroadcastStatus.COMPLETE]: 'stopped',
+	[MeetBroadcastStatus.ABORTED]: 'stopped',
+	[MeetBroadcastStatus.FAILED]: 'failed',
+	[MeetBroadcastStatus.LIMIT_REACHED]: 'failed'
+};
+
+const ROW_STATUS_KEYS: Record<RowStatus, string> = {
+	connecting: 'PANEL.BROADCAST.DEST_CONNECTING',
+	live: 'PANEL.BROADCAST.DEST_LIVE',
+	stopping: 'PANEL.BROADCAST.STATUS_STOPPING',
+	stopped: 'PANEL.BROADCAST.DEST_STOPPED',
+	failed: 'PANEL.BROADCAST.DEST_FAILED'
 };
 
 /**
- * The **BroadcastActivityComponent** shows the live broadcast of the meeting: where it streams,
- * how each destination is doing, and the controls to go live, stop, and change destinations for
- * this meeting.
+ * The **BroadcastActivityComponent** shows the live broadcasts of the meeting, one per
+ * destination: where it streams, how each destination is doing, and the controls to go live, stop,
+ * and stream to one more destination for this meeting.
  */
 @Component({
 	selector: 'ov-broadcast-activity',
@@ -107,30 +132,36 @@ export class BroadcastActivityComponent {
 	expanded = input(false);
 
 	/**
-	 * Fired whenever the user asks something of the broadcast: going live, stopping it, adding a
-	 * destination or starting and stopping one. See {@link BroadcastRequestedEvent}.
+	 * Fired whenever the user asks something of the broadcasts: going live, stopping, or starting
+	 * and stopping the stream to one destination. See {@link BroadcastRequestedEvent}.
 	 */
 	onBroadcastRequested = output<BroadcastRequestedEvent>();
 
 	readonly maxDestinations = MEET_BROADCAST_MAX_DESTINATIONS;
 	readonly mbpsPerDestination = BROADCAST_MBPS_PER_DESTINATION;
-	readonly destinationStatus = MeetBroadcastDestinationStatus;
-	readonly destinationSource = MeetBroadcastDestinationSource;
 
-	readonly broadcast = this.broadcastState.broadcast;
 	readonly elapsed = this.broadcastState.elapsed;
 	readonly showControls = this.uiConfig.broadcastActivityControlsSignal;
 	private readonly pendingRequest = this.broadcastState.request;
 	private readonly showAddDestinations = this.uiConfig.broadcastActivityAddDestinationsSignal;
 
+	/** A refusal of what was last asked, shown until dismissed; one of a destination being added shows in its editor. */
+	readonly requestError = computed(() =>
+		this.pendingRequest().status === 'failed' && !this.addingDestination()
+			? (this.pendingRequest().error ?? '')
+			: undefined
+	);
 	readonly phase = computed<BroadcastPhase>(() => {
-		const requestFailed = this.pendingRequest().status === 'failed' && !this.addingDestination();
-
-		if (this.broadcastState.hasFailed() || requestFailed) return 'failed';
-
-		if (this.broadcastState.isEnding()) return 'ending';
+		if (
+			this.broadcastState.hasFailed() ||
+			(this.requestError() !== undefined && !this.broadcastState.isInProgress())
+		) {
+			return 'failed';
+		}
 
 		if (this.broadcastState.isLive()) return 'live';
+
+		if (this.broadcastState.isEnding()) return 'ending';
 
 		return this.broadcastState.isStarting() ? 'starting' : 'idle';
 	});
@@ -138,44 +169,70 @@ export class BroadcastActivityComponent {
 	readonly state = computed<ActivityState>(() => ACTIVITY_STATES[this.phase()]);
 	readonly isRunning = computed(() => this.phase() === 'starting' || this.phase() === 'live');
 
-	/** The broadcast's destinations while it runs, or those of the failed attempt. */
-	readonly broadcastDestinations = computed(() => this.broadcast()?.destinations ?? []);
 	readonly streamingCount = this.broadcastState.streamingDestinationCount;
 	readonly liveCount = this.broadcastState.liveDestinationCount;
-	readonly failedCount = computed(
-		() =>
-			this.broadcastDestinations().filter(({ status }) => status === MeetBroadcastDestinationStatus.FAILED).length
-	);
+	readonly failedCount = computed(() => this.broadcastState.failed().length);
 	readonly liveMbps = computed(() => broadcastUploadMbps(this.liveCount()));
-	readonly failure = computed(
-		() => this.pendingRequest().error ?? this.broadcast()?.error ?? this.broadcast()?.details
-	);
+	readonly failure = computed(() => {
+		const [failed] = this.broadcastState.failed();
+		return this.requestError() || failed?.error || failed?.details;
+	});
 
-	// Before going live: the room's destinations, all chosen unless unticked, with the additions made
-	// for this meeting.
+	// The room's destinations, all chosen unless unticked, with the ones given for this meeting
+	// from this client, whose full URL only this client knows.
 	private readonly roomDestinations = computed(() => this.meetingContext.broadcastConfig()?.destinations ?? []);
 	private readonly unselectedIds = signal(new Set<string>());
-	private readonly meetingDestinations = signal<({ id: string } & MeetBroadcastDestinationOptions)[]>([]);
-	private nextMeetingDestinationId = 0;
+	private readonly meetingDestinations = signal<BroadcastDestinationDraft[]>([]);
+	/** The destinations a start was asked for and the server has not reported yet. */
+	private readonly pendingKeys = signal(new Set<string>());
 
-	readonly plannedDestinations = computed<PlannedDestination[]>(() => [
-		...this.roomDestinations().map(({ id, name, url }) => ({
-			id: id!,
-			name,
-			url,
-			source: MeetBroadcastDestinationSource.ROOM,
-			selected: !this.unselectedIds().has(id!)
-		})),
-		...this.meetingDestinations().map((destination) => ({
-			...destination,
-			source: MeetBroadcastDestinationSource.MEETING,
-			selected: true
-		}))
-	]);
-	readonly selectedCount = computed(() => this.plannedDestinations().filter(({ selected }) => selected).length);
+	readonly rows = computed<DestinationRow[]>(() => {
+		const broadcasts = this.broadcastState.broadcasts();
+		const meetingBroadcasts = broadcasts.filter(({ destinationId }) => !destinationId);
+		const local = this.meetingDestinations();
+
+		return [
+			...this.roomDestinations().map(({ id, name, url }) =>
+				this.toRow({
+					key: id!,
+					name,
+					url,
+					source: 'room',
+					broadcast: broadcasts.find(({ destinationId }) => destinationId === id),
+					start: { destinationId: id },
+					selected: !this.unselectedIds().has(id!)
+				})
+			),
+			...meetingBroadcasts.map((broadcast) => {
+				const own = local.find(({ url }) => redactStreamUrl(url) === broadcast.url);
+				return this.toRow({
+					key: broadcast.url,
+					name: broadcast.name,
+					url: broadcast.url,
+					source: 'meeting',
+					broadcast,
+					start: own && { name: own.name, url: own.url },
+					selected: true
+				});
+			}),
+			...local
+				.filter(({ url }) => !meetingBroadcasts.some((broadcast) => broadcast.url === redactStreamUrl(url)))
+				.map(({ name, url }) =>
+					this.toRow({
+						key: redactStreamUrl(url),
+						name,
+						url,
+						source: 'meeting',
+						start: { name, url },
+						selected: true
+					})
+				)
+		];
+	});
+	readonly selectedCount = computed(() => this.rows().filter(({ selected }) => selected).length);
 	readonly plannedMbps = computed(() => broadcastUploadMbps(this.selectedCount()));
 	readonly canAddDestination = computed(() => {
-		const count = this.isRunning() ? this.broadcastDestinations().length : this.plannedDestinations().length;
+		const count = this.isRunning() ? this.streamingCount() : this.selectedCount();
 		return this.showAddDestinations() && !this.editorOpen() && count < this.maxDestinations;
 	});
 
@@ -186,9 +243,9 @@ export class BroadcastActivityComponent {
 
 	readonly editor = new DestinationEditor(this.formBuilder);
 	readonly editorOpen = signal(false);
-	/** A destination added to the running broadcast that the server has not answered yet. */
+	/** A destination given for the meeting while live, whose start the server has not answered yet. */
 	readonly addingDestination = signal(false);
-	/** Adding a destination to the running broadcast takes it live at once, so the editor says so. */
+	/** Adding a destination while live streams to it at once, so the editor says so. */
 	readonly submitLabelKey = computed(() => {
 		if (!this.isRunning()) return 'PANEL.BROADCAST.ADD';
 
@@ -198,22 +255,33 @@ export class BroadcastActivityComponent {
 	});
 
 	/**
-	 * Keeps the editor of a destination added to the running broadcast open until the server
-	 * answers: it closes once the destination is in, and a refusal shows under the URL instead of
-	 * as a failure of the broadcast, which goes on streaming.
+	 * Keeps the editor of a destination added while live open until the server answers: it closes
+	 * once the broadcast is in, and a refusal shows under the URL instead of as a failure of the
+	 * meeting's broadcasts, which go on streaming.
 	 */
 	private readonly addedDestinationEffect = effect(() => {
 		const request = this.pendingRequest();
 
-		if (!this.addingDestination() || request.status === 'updating') return;
+		if (!this.addingDestination() || request.status === 'starting') return;
 
 		this.addingDestination.set(false);
 
 		if (request.status === 'failed') {
+			const { url } = this.editor.form.getRawValue();
+			this.meetingDestinations.update((destinations) =>
+				destinations.filter((destination) => destination.url !== url.trim())
+			);
 			this.editor.rejection.set(request.error ?? '');
 			this.broadcastState.dismissFailure();
 		} else {
 			this.closeEditor();
+		}
+	});
+
+	/** Nothing is pending once the server has answered every start asked for. */
+	private readonly pendingEffect = effect(() => {
+		if (this.pendingRequest().status !== 'starting') {
+			this.pendingKeys.set(new Set());
 		}
 	});
 
@@ -231,20 +299,23 @@ export class BroadcastActivityComponent {
 		return extractBroadcastHost(url);
 	}
 
-	statusKeyOf(destination: MeetBroadcastDestinationInfo): string {
-		return DESTINATION_STATUS_KEYS[destination.status];
+	statusKeyOf(row: DestinationRow): string {
+		return ROW_STATUS_KEYS[row.status];
 	}
 
-	readonly isStreaming = isDestinationStreaming;
+	/** Whether the row's broadcast can be stopped. */
+	isStreaming(row: DestinationRow): boolean {
+		return !!row.broadcast && isBroadcastRunning(row.broadcast.status);
+	}
 
-	toggleSelected(id: string, selected: boolean): void {
+	toggleSelected(key: string, selected: boolean): void {
 		this.unselectedIds.update((ids) => {
 			const next = new Set(ids);
 
 			if (selected) {
-				next.delete(id);
+				next.delete(key);
 			} else {
-				next.add(id);
+				next.add(key);
 			}
 
 			return next;
@@ -266,78 +337,67 @@ export class BroadcastActivityComponent {
 
 		if (!destination) return;
 
+		this.meetingDestinations.update((destinations) => [...destinations, destination]);
+
 		if (this.isRunning()) {
 			this.addingDestination.set(true);
-			this.emitRequest({ action: 'addDestination', broadcastId: this.broadcast()!.broadcastId, destination });
+			this.startTo([destination], [redactStreamUrl(destination.url)]);
 			return;
 		}
 
-		this.meetingDestinations.update((destinations) => [
-			...destinations,
-			{ id: `meeting-${this.nextMeetingDestinationId++}`, ...destination }
-		]);
 		this.closeEditor();
 	}
 
-	removeMeetingDestination(id: string): void {
-		this.meetingDestinations.update((destinations) => destinations.filter((destination) => destination.id !== id));
+	removeMeetingDestination(key: string): void {
+		this.meetingDestinations.update((destinations) =>
+			destinations.filter(({ url }) => redactStreamUrl(url) !== key)
+		);
 	}
 
+	/** Streams to every chosen destination not streamed to yet, one broadcast each. */
 	goLive(): void {
-		const planned = this.plannedDestinations();
-		const unchanged = planned.every(
-			({ source, selected }) => source === MeetBroadcastDestinationSource.ROOM && selected
+		const rows = this.rows().filter(({ selected, broadcast, start }) => selected && !broadcast && start);
+		this.startTo(
+			rows.map(({ start }) => start!),
+			rows.map(({ key }) => key)
 		);
-		const destinations: MeetBroadcastStartDestination[] = planned
-			.filter(({ selected }) => selected)
-			.map(({ id, name, url, source }) =>
-				source === MeetBroadcastDestinationSource.MEETING ? { name, url } : { id }
-			);
-
-		this.emitRequest({ action: 'start', destinations: unchanged ? undefined : destinations });
 	}
 
 	stop(): void {
-		this.emitRequest({ action: 'stop', broadcastId: this.broadcast()!.broadcastId });
+		this.emitRequest({ action: 'stop' });
 	}
 
-	startDestination(destination: MeetBroadcastDestinationInfo): void {
-		this.setDestinationActive(destination, true);
+	startRow(row: DestinationRow): void {
+		if (row.start) this.startTo([row.start], [row.key]);
 	}
 
-	stopDestination(destination: MeetBroadcastDestinationInfo): void {
-		this.setDestinationActive(destination, false);
+	stopRow(row: DestinationRow): void {
+		if (row.broadcast) this.emitRequest({ action: 'stop', broadcastIds: [row.broadcast.broadcastId] });
 	}
 
-	/**
-	 * Clears the failure and asks again for what failed: a start that never made it is asked for
-	 * again, while a running broadcast whose request failed just goes on.
-	 */
+	/** Clears the failures and goes live again to the chosen destinations. */
 	retry(): void {
-		const wasRunning = this.isBroadcastRunningOnServer();
 		this.dismissFailure();
-
-		if (!wasRunning) {
-			this.goLive();
-		}
+		this.goLive();
 	}
 
 	dismissFailure(): void {
 		this.broadcastState.dismissFailure();
+		this.pendingKeys.set(new Set());
 	}
 
-	private isBroadcastRunningOnServer(): boolean {
-		const status = this.broadcast()?.status;
-		return status !== undefined && isBroadcastRunning(status);
+	private startTo(destinations: MeetBroadcastStartDestination[], keys: string[]): void {
+		this.pendingKeys.update((pending) => new Set([...pending, ...keys]));
+		this.emitRequest({ action: 'start', destinations });
 	}
 
-	private setDestinationActive(destination: MeetBroadcastDestinationInfo, active: boolean): void {
-		this.emitRequest({
-			action: 'updateDestination',
-			broadcastId: this.broadcast()!.broadcastId,
-			destinationId: destination.id,
-			active
-		});
+	private toRow(row: Omit<DestinationRow, 'status'>): DestinationRow {
+		const status = row.broadcast
+			? ROW_STATUS_BY_BROADCAST[row.broadcast.status]
+			: this.pendingKeys().has(row.key)
+				? 'connecting'
+				: 'stopped';
+		return { ...row, status };
 	}
 
 	private emitRequest(request: BroadcastRequest): void {

@@ -1,10 +1,11 @@
 description: >
-    Conflict: the meeting is already being broadcast, has no participants to broadcast, or its
-    broadcast was held by another change for too long
+    Conflict: the meeting already streams to a destination asked for, or to every room destination when
+    none is asked for, has no participants to broadcast, or its broadcasts were held by another change for
+    too long
 content:
     application/json:
         schema:
             $ref: '../../../shared/schemas/error.yaml'
         example:
             error: 'Broadcast Error'
-            message: "Room 'room-123' is already being broadcast"
+            message: "Destination 'rtmp://a.rtmp.youtube.com/live2/********' is already being broadcast"

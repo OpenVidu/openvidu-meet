@@ -1,26 +1,23 @@
-import type {
-	MeetBroadcastDestinationInfo,
-	MeetBroadcastDestinationOptions,
-	MeetBroadcastStartDestination
-} from '@openvidu-meet/typings';
-import { MeetBroadcastDestinationStatus, MeetBroadcastStatus } from '@openvidu-meet/typings';
+import type { MeetBroadcastInfo, MeetBroadcastStartDestination } from '@openvidu-meet/typings';
+import { MeetBroadcastStatus } from '@openvidu-meet/typings';
 import type { DistributiveOmit } from '../../../../shared/utils/object.utils';
 
 /**
  * What the live broadcast activity asks of the meeting: the one output it emits, narrowed on
- * `action`. The panel never calls the API itself, the meeting page answers each request.
+ * `action`. A meeting runs one broadcast per destination, so a request names the destinations to
+ * start streaming to, or the broadcasts to stop; naming none means every room destination not
+ * streamed to yet, or every running broadcast. The panel never calls the API itself, the meeting
+ * page answers each request.
  */
 export type BroadcastRequestedEvent =
 	| { action: 'start'; roomId: string; destinations?: MeetBroadcastStartDestination[] }
-	| { action: 'stop'; roomId: string; broadcastId: string }
-	| { action: 'addDestination'; roomId: string; broadcastId: string; destination: MeetBroadcastDestinationOptions }
-	| { action: 'updateDestination'; roomId: string; broadcastId: string; destinationId: string; active: boolean };
+	| { action: 'stop'; roomId: string; broadcastIds?: string[] };
 
 /**
- * What the local participant last asked of the broadcast while the server has not answered, or
- * that the answer was a refusal. The server's own answer arrives as a broadcast signal and clears it.
+ * What the local participant last asked of the broadcasts while the server has not answered, or
+ * that the answer was a refusal.
  */
-export type BroadcastRequestStatus = 'idle' | 'starting' | 'stopping' | 'updating' | 'failed';
+export type BroadcastRequestStatus = 'idle' | 'starting' | 'stopping' | 'failed';
 
 export interface BroadcastRequestState {
 	status: BroadcastRequestStatus;
@@ -33,24 +30,30 @@ export type BroadcastRequest = DistributiveOmit<BroadcastRequestedEvent, 'roomId
 /** What the local participant is told while each kind of request is in flight. */
 export const BROADCAST_REQUEST_STATUS_BY_ACTION: Record<BroadcastRequestedEvent['action'], BroadcastRequestStatus> = {
 	start: 'starting',
-	stop: 'stopping',
-	addDestination: 'updating',
-	updateDestination: 'updating'
+	stop: 'stopping'
 };
 
-/** The broadcast as the activity shows it: what the row says and offers depends on the phase alone. */
+/** The meeting's broadcasts as the activity shows them: what the row says and offers depends on the phase alone. */
 export type BroadcastPhase = 'idle' | 'starting' | 'live' | 'ending' | 'failed';
 
 const IN_PROGRESS_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE, MeetBroadcastStatus.ENDING];
 const RUNNING_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE];
-const STREAMING_STATUSES = [MeetBroadcastDestinationStatus.CONNECTING, MeetBroadcastDestinationStatus.ACTIVE];
+const FAILED_STATUSES = [MeetBroadcastStatus.FAILED, MeetBroadcastStatus.LIMIT_REACHED];
 
-/** Whether the broadcast is still the meeting's current one: not over yet, if only just ending. */
+/** Whether the broadcast is still one of the meeting's current ones: not over yet, if only just ending. */
 export const isBroadcastInProgress = (status: MeetBroadcastStatus): boolean => IN_PROGRESS_STATUSES.includes(status);
 
-/** Whether the broadcast can still be stopped or have its destinations changed. */
+/** Whether the broadcast can still be stopped. */
 export const isBroadcastRunning = (status: MeetBroadcastStatus): boolean => RUNNING_STATUSES.includes(status);
 
-/** Whether the destination is streamed to, whether or not media has reached it yet. */
-export const isDestinationStreaming = ({ status }: MeetBroadcastDestinationInfo): boolean =>
-	STREAMING_STATUSES.includes(status);
+/** Whether the broadcast ended in a failure the activity should say something about. */
+export const hasBroadcastFailed = (status: MeetBroadcastStatus): boolean => FAILED_STATUSES.includes(status);
+
+/**
+ * What tells the broadcasts to one destination from those to another: the room destination they
+ * stream to, or the URL of a destination given for the meeting.
+ */
+export const broadcastDestinationKey = ({
+	destinationId,
+	url
+}: Pick<MeetBroadcastInfo, 'destinationId' | 'url'>): string => destinationId ?? url;

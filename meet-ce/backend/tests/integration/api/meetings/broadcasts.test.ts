@@ -5,13 +5,7 @@ import type {
 	MeetMeetingInfo,
 	MeetRoomConfig
 } from '@openvidu-meet/typings';
-import {
-	MEET_BROADCAST_REDACTED_STREAM_KEY,
-	MeetBroadcastDestinationSource,
-	MeetBroadcastDestinationStatus,
-	MeetBroadcastStatus,
-	MeetRecordingLayout
-} from '@openvidu-meet/typings';
+import { MEET_BROADCAST_REDACTED_STREAM_KEY, MeetBroadcastStatus, MeetRecordingLayout } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import { EgressClient, ServerError } from 'livekit-server-sdk';
 import request from 'supertest';
@@ -19,6 +13,7 @@ import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import {
 	errorBroadcastAlreadyStarted,
+	errorBroadcastDestinationInUse,
 	errorBroadcastDestinationLimit,
 	errorBroadcastDisabled,
 	errorBroadcastNotFound,
@@ -30,7 +25,6 @@ import { expectMeetError } from '../../../helpers/assertion-helpers.js';
 import { createRtmpSink, deleteRtmpSinks } from '../../../helpers/broadcast-sink.helper.js';
 import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
-	addBroadcastDestination,
 	deleteAllRooms,
 	deleteRoom,
 	generateRoomMemberToken,
@@ -38,20 +32,24 @@ import {
 	getBroadcasts,
 	getFullPath,
 	getRoomConfig,
-	startBroadcast,
+	startBroadcasts,
 	startTestServer,
-	stopBroadcast,
-	updateBroadcastDestination,
+	stopBroadcasts,
 	updateRoomRoles
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
-import { waitForBroadcast, waitForMeetingToStart, waitForNoActiveEgress } from '../../../helpers/wait-helpers.js';
+import {
+	waitForBroadcast,
+	waitForBroadcasts,
+	waitForMeetingToStart,
+	waitForNoActiveEgress
+} from '../../../helpers/wait-helpers.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
 
 const MEETINGS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings`);
 
-// A destination nothing listens on: the broadcast still starts, and a failed destination is a
-// status like any other. The lifecycle test streams to a real sink alongside it.
+// A destination nothing listens on: the broadcast still starts, and fails on its own once the media
+// server gives up on it. The lifecycle test streams to a real sink alongside it.
 const RTMP_HOST = 'rtmp://rtmp-sink.invalid:1935/live';
 const destination = (key: string) => ({ name: `Destination ${key}`, url: `${RTMP_HOST}/${key}-stream-key` });
 const REDACTED_URL = `${RTMP_HOST}/${MEET_BROADCAST_REDACTED_STREAM_KEY}`;
@@ -60,8 +58,16 @@ const broadcastConfig = (keys: string[]): Partial<MeetRoomConfig> => ({
 	broadcast: { enabled: true, destinations: keys.map(destination) }
 });
 
-const isRunning = (broadcast?: MeetBroadcastInfo) =>
-	broadcast?.status === MeetBroadcastStatus.ACTIVE || broadcast?.status === MeetBroadcastStatus.STARTING;
+type StartDestination = { destinationId: string } | { name: string; url: string };
+
+/** Starts one broadcast and answers it alongside the response. */
+const startOne = async (roomId: string, target: StartDestination, roomMemberToken?: string) => {
+	const response = await startBroadcasts(roomId, { destinations: [target] }, roomMemberToken);
+	return { response, broadcast: response.body.broadcasts?.[0] as MeetBroadcastInfo };
+};
+
+const stopOne = (roomId: string, broadcastId: string, roomMemberToken?: string) =>
+	stopBroadcasts(roomId, { broadcastIds: [broadcastId] }, roomMemberToken);
 
 describe('Broadcasts API Tests', () => {
 	let app: Express;
@@ -93,65 +99,77 @@ describe('Broadcasts API Tests', () => {
 		const { body } = await getRoomConfig(roomData.room.roomId);
 		return body.broadcast.destinations.map(({ id }: MeetBroadcastDestination) => id);
 	};
+
 	describe('Start Broadcast Tests', () => {
-		it('should start a broadcast to every room destination with the moderator token', async () => {
+		it('should start a broadcast to a room destination with the moderator token', async () => {
 			const roomData = await setupMeetingRoom(broadcastConfig(['a', 'b']));
-
-			const response = await startBroadcast(roomData.room.roomId, {}, roomData.moderatorToken);
-
-			expect(response.status).toBe(201);
-			expect(response.headers.location).toContain(
-				`/meetings/${roomData.room.roomId}/broadcasts/${response.body.broadcastId}`
-			);
-			const broadcast = response.body as MeetBroadcastInfo;
-			expect(broadcast.status).toBe(MeetBroadcastStatus.STARTING);
-			expect(broadcast.roomId).toBe(roomData.room.roomId);
-			expect(broadcast.roomName).toBe('BROADCAST_ROOM');
-			expect(broadcast.layout).toBe(MeetRecordingLayout.GRID);
-			expect(broadcast.destinations).toEqual(
-				(await roomDestinationIds(roomData)).map((id, index) => ({
-					id,
-					name: `Destination ${['a', 'b'][index]}`,
-					url: REDACTED_URL,
-					source: MeetBroadcastDestinationSource.ROOM,
-					status: MeetBroadcastDestinationStatus.CONNECTING
-				}))
-			);
-		});
-
-		it('should stream to the chosen room destinations only, keeping the others stopped', async () => {
-			const roomData = await setupMeetingRoom(broadcastConfig(['a', 'b']));
-			const [, idB] = await roomDestinationIds(roomData);
-
-			const response = await startBroadcast(roomData.room.roomId, { destinations: [{ id: idB }] });
-
-			expect(response.status).toBe(201);
-			expect(response.body.destinations.map((d: { status: string }) => d.status)).toEqual([
-				MeetBroadcastDestinationStatus.STOPPED,
-				MeetBroadcastDestinationStatus.CONNECTING
-			]);
-		});
-
-		it('should add a destination for this meeting only, next to the room destination', async () => {
-			const roomData = await setupMeetingRoom(broadcastConfig(['a']));
 			const [idA] = await roomDestinationIds(roomData);
 
-			const response = await startBroadcast(roomData.room.roomId, {
-				destinations: [{ id: idA }, destination('extra')]
+			const response = await startBroadcasts(
+				roomData.room.roomId,
+				{ destinations: [{ destinationId: idA }] },
+				roomData.moderatorToken
+			);
+
+			expect(response.status).toBe(201);
+			expect(response.body).toEqual({
+				broadcasts: [
+					{
+						broadcastId: expect.stringMatching(new RegExp(`^${roomData.room.roomId}--`)),
+						roomId: roomData.room.roomId,
+						roomName: 'BROADCAST_ROOM',
+						status: MeetBroadcastStatus.STARTING,
+						name: 'Destination a',
+						url: REDACTED_URL,
+						destinationId: idA,
+						layout: MeetRecordingLayout.GRID,
+						encoding: expect.any(String)
+					}
+				]
+			});
+		});
+
+		it('should start one broadcast per destination in one request, the room ones and one for this meeting', async () => {
+			const roomData = await setupMeetingRoom(broadcastConfig(['a', 'b']));
+			const { roomId } = roomData.room;
+			const [idA, idB] = await roomDestinationIds(roomData);
+
+			const response = await startBroadcasts(roomId, {
+				destinations: [{ destinationId: idA }, { destinationId: idB }, destination('extra')]
 			});
 
 			expect(response.status).toBe(201);
-			expect(response.body.destinations).toEqual([
-				expect.objectContaining({ id: idA, name: 'Destination a', url: REDACTED_URL, source: 'room' }),
-				expect.objectContaining({ name: 'Destination extra', url: REDACTED_URL, source: 'meeting' })
+			const started = response.body.broadcasts as MeetBroadcastInfo[];
+			expect(started.map(({ name, destinationId }) => [name, destinationId])).toEqual([
+				['Destination a', idA],
+				['Destination b', idB],
+				['Destination extra', undefined]
 			]);
-			expect(response.body.destinations[1].id).not.toBe(idA);
+			expect(new Set(started.map(({ broadcastId }) => broadcastId)).size).toBe(3);
+			const listed = await getBroadcasts(roomId, roomData.speakerToken);
+			expect(listed.body.broadcasts.map(({ broadcastId }: MeetBroadcastInfo) => broadcastId)).toEqual(
+				started.map(({ broadcastId }) => broadcastId)
+			);
 		});
 
-		it('should report the broadcast as active in the meeting info and reject a second start', async () => {
+		it('should start every room destination not streamed to yet when the request names none', async () => {
+			const roomData = await setupMeetingRoom(broadcastConfig(['a', 'b']));
+			const { roomId } = roomData.room;
+			const [idA, idB] = await roomDestinationIds(roomData);
+			await startOne(roomId, { destinationId: idA });
+
+			const rest = await startBroadcasts(roomId);
+
+			expect(rest.status).toBe(201);
+			expect(rest.body.broadcasts.map(({ destinationId }: MeetBroadcastInfo) => destinationId)).toEqual([idB]);
+			expectMeetError(await startBroadcasts(roomId), errorBroadcastAlreadyStarted(roomId));
+		});
+
+		it('should report the meeting as broadcast and refuse a second broadcast to the same destination', async () => {
 			const roomData = await setupMeetingRoom(broadcastConfig(['a']));
 			const { roomId } = roomData.room;
-			await startBroadcast(roomId);
+			const [idA] = await roomDestinationIds(roomData);
+			await startOne(roomId, { destinationId: idA });
 
 			const meeting = await request(app)
 				.get(`${MEETINGS_PATH}/${roomId}`)
@@ -159,32 +177,53 @@ describe('Broadcasts API Tests', () => {
 			expect(meeting.status).toBe(200);
 			expect((meeting.body as MeetMeetingInfo).broadcastActive).toBe(true);
 
-			const second = await startBroadcast(roomId);
-			expectMeetError(second, errorBroadcastAlreadyStarted(roomId));
+			expectMeetError(
+				(await startOne(roomId, { destinationId: idA })).response,
+				errorBroadcastDestinationInUse(REDACTED_URL)
+			);
+			expectMeetError(
+				(await startOne(roomId, destination('a'))).response,
+				errorBroadcastDestinationInUse(REDACTED_URL)
+			);
 		});
 
-		it('should refuse to start when broadcast is disabled, the meeting has no participants, or a destination is unknown or changed', async () => {
+		it('should refuse to start when broadcast is disabled, the meeting has no participants, or a destination is unknown, malformed or repeated', async () => {
 			const disabledRoom = await setupMeetingRoom({ broadcast: { enabled: false, destinations: [] } });
 			expectMeetError(
-				await startBroadcast(disabledRoom.room.roomId),
+				(await startOne(disabledRoom.room.roomId, destination('x'))).response,
 				errorBroadcastDisabled(disabledRoom.room.roomId)
 			);
 
 			const idleRoom = await setupSingleRoom(false, 'IDLE', broadcastConfig(['a']));
 			expectMeetError(
-				await startBroadcast(idleRoom.room.roomId),
+				await startBroadcasts(idleRoom.room.roomId),
 				errorBroadcastRoomHasNoParticipants(idleRoom.room.roomId)
 			);
 
 			const roomData = await setupMeetingRoom(broadcastConfig(['a']));
-			const unknown = await startBroadcast(roomData.room.roomId, { destinations: [{ id: 'nope' }] });
-			expect(unknown.status).toBe(422);
-
+			const { roomId } = roomData.room;
 			const [idA] = await roomDestinationIds(roomData);
-			const changed = await startBroadcast(roomData.room.roomId, {
-				destinations: [{ id: idA, name: 'Renamed' }]
-			});
-			expect(changed.status).toBe(422);
+			const refused = [
+				{ destinations: [{ destinationId: 'nope' }] },
+				{ destinations: [{ destinationId: idA, name: 'Renamed' }] },
+				{ destinations: [] },
+				{ destinations: [{ name: 'Redacted', url: REDACTED_URL }] },
+				{ destinations: [{ destinationId: idA }, { name: 'Same as a', url: destination('a').url }] }
+			];
+
+			for (const options of refused) {
+				expect((await startBroadcasts(roomId, options)).status).toBe(422);
+			}
+
+			expect((await getBroadcasts(roomId)).body.broadcasts).toEqual([]);
+		});
+
+		it('should cap a meeting at five destinations at once', async () => {
+			const roomData = await setupMeetingRoom(broadcastConfig(['a', 'b', 'c', 'd', 'e']));
+			const { roomId } = roomData.room;
+
+			expect((await startBroadcasts(roomId)).body.broadcasts).toHaveLength(5);
+			expectMeetError((await startOne(roomId, destination('f'))).response, errorBroadcastDestinationLimit());
 		});
 
 		it('should return 503 when no egress service takes the broadcast, leaving the room free to go live', async () => {
@@ -196,12 +235,12 @@ describe('Broadcasts API Tests', () => {
 					new ServerError('Service Unavailable', 'twirp error unknown: no response from servers', 503)
 				);
 
-			const response = await startBroadcast(roomId);
+			const response = await startBroadcasts(roomId);
 			startEgress.mockRestore();
 
 			expectMeetError(response, errorEgressNotAvailable());
 			expect((await getBroadcasts(roomId)).body.broadcasts).toEqual([]);
-			expect((await startBroadcast(roomId)).status).toBe(201);
+			expect((await startBroadcasts(roomId)).status).toBe(201);
 		});
 
 		it('should require broadcastControl, and broadcastAddDestinations for a destination of this meeting', async () => {
@@ -229,13 +268,21 @@ describe('Broadcasts API Tests', () => {
 			await waitForMeetingToStart(roomId);
 			const [idA] = await roomDestinationIds(roomData);
 
-			expectMeetError(await startBroadcast(roomId, {}, speakerToken), errorInsufficientPermissions());
+			expectMeetError(await startBroadcasts(roomId, {}, speakerToken), errorInsufficientPermissions());
 			expectMeetError(
-				await startBroadcast(roomId, { destinations: [destination('extra')] }, moderatorWithoutExtras),
+				await startBroadcasts(
+					roomId,
+					{ destinations: [{ destinationId: idA }, destination('extra')] },
+					moderatorWithoutExtras
+				),
 				errorInsufficientPermissions()
 			);
 
-			const allowed = await startBroadcast(roomId, { destinations: [{ id: idA }] }, moderatorWithoutExtras);
+			const allowed = await startBroadcasts(
+				roomId,
+				{ destinations: [{ destinationId: idA }] },
+				moderatorWithoutExtras
+			);
 			expect(allowed.status).toBe(201);
 		});
 	});
@@ -247,20 +294,19 @@ describe('Broadcasts API Tests', () => {
 			// A real sink keeps the broadcast running through every request below.
 			const sinkUrl = await createRtmpSink('fields');
 			const roomData = await setupMeetingRoom({
-				broadcast: { enabled: true, destinations: [{ name: 'Sink', url: sinkUrl }, destination('b')] }
+				broadcast: { enabled: true, destinations: [{ name: 'Sink', url: sinkUrl }] }
 			});
 			const { roomId } = roomData.room;
-			const [idSink, idB] = await roomDestinationIds(roomData);
 			const broadcastsPath = `${MEETINGS_PATH}/${roomId}/broadcasts`;
 
 			const started = await asApiKey(request(app).post(`${broadcastsPath}?fields=broadcastId,status,bogus`)).send(
-				{
-					destinations: [{ id: idSink }]
-				}
+				{}
 			);
 			expect(started.status).toBe(201);
-			expect(started.body).toEqual({ broadcastId: expect.any(String), status: MeetBroadcastStatus.STARTING });
-			const { broadcastId } = started.body;
+			expect(started.body).toEqual({
+				broadcasts: [{ broadcastId: expect.any(String), status: MeetBroadcastStatus.STARTING }]
+			});
+			const [{ broadcastId }] = started.body.broadcasts;
 			const broadcastPath = `${broadcastsPath}/${broadcastId}`;
 
 			const fetched = await asApiKey(request(app).get(`${broadcastPath}?fields=status`)).set(
@@ -273,156 +319,131 @@ describe('Broadcasts API Tests', () => {
 			const listed = await asApiKey(request(app).get(broadcastsPath)).set('X-Fields', 'broadcastId');
 			expect(listed.body).toEqual({ broadcasts: [{ broadcastId }] });
 
-			const updated = await asApiKey(
-				request(app).put(`${broadcastPath}/destinations/${idB}?fields=destinations`)
-			).send({ active: true });
-			expect(updated.status).toBe(200);
-			expect(Object.keys(updated.body)).toEqual(['destinations']);
-
-			const added = await asApiKey(request(app).post(`${broadcastPath}/destinations?fields=destinations`)).send(
-				destination('c')
-			);
-			expect(added.status).toBe(200);
-			expect(Object.keys(added.body)).toEqual(['destinations']);
-
 			const unknownOnly = await asApiKey(request(app).get(`${broadcastPath}?fields=bogus`));
-			expect(unknownOnly.body).toMatchObject({ broadcastId, roomId, destinations: expect.any(Array) });
+			expect(unknownOnly.body).toMatchObject({ broadcastId, roomId, url: expect.any(String) });
 
-			const stopped = await asApiKey(request(app).post(`${broadcastPath}/stop`)).set('X-Fields', 'status');
-			expect(stopped.status).toBe(202);
-			expect(stopped.body).toEqual({ status: MeetBroadcastStatus.ENDING });
-			expect(stopped.headers.location).toContain(`/meetings/${roomId}/broadcasts/${broadcastId}`);
+			const stopped = await asApiKey(request(app).post(`${broadcastsPath}/stop`))
+				.set('X-Fields', 'status')
+				.send({ broadcastIds: [broadcastId] });
+			expect(stopped.status).toBe(200);
+			expect(stopped.body).toEqual({ broadcasts: [{ status: expect.stringMatching(/^(complete|aborted)$/) }] });
 		});
 	});
 
 	describe('Broadcast Lifecycle Tests', () => {
-		it('should go active, report each destination, accept destination changes and end when stopped', async () => {
+		it('should go active with media, fail on its own when the destination is unreachable, and end when stopped', async () => {
 			const sinkUrl = await createRtmpSink('a');
 			const roomData = await setupMeetingRoom({
 				broadcast: { enabled: true, destinations: [{ name: 'Destination a', url: sinkUrl }, destination('b')] }
 			});
 			const { roomId } = roomData.room;
-			const [idA, idB] = await roomDestinationIds(roomData);
-			const { broadcastId } = (await startBroadcast(roomId)).body;
+			const [, idB] = await roomDestinationIds(roomData);
+			const [broadcastA, broadcastB] = (await startBroadcasts(roomId)).body.broadcasts as MeetBroadcastInfo[];
 
+			// The reachable destination streams; the unreachable one fails on its own without taking
+			// the other down.
 			const active = await waitForBroadcast(
 				roomId,
+				broadcastA.broadcastId,
 				(broadcast) => broadcast?.status === MeetBroadcastStatus.ACTIVE,
 				'went active'
 			);
-			expect(active?.broadcastId).toBe(broadcastId);
-			// The reachable destination streams; the unreachable one fails on its own without taking
-			// the broadcast down. The broadcast starts with the first destination that receives media.
-			const streaming = await waitForBroadcast(
-				roomId,
-				(broadcast) =>
-					broadcast?.destinations[0].status === MeetBroadcastDestinationStatus.ACTIVE &&
-					broadcast.destinations[1].status === MeetBroadcastDestinationStatus.FAILED,
-				'reported the sink as active and the unreachable destination as failed'
-			);
-			expect(streaming?.destinations[0].startDate).toBeGreaterThan(0);
-			expect(streaming?.startDate).toBe(streaming?.destinations[0].startDate);
-			expect(streaming?.destinations[1].error).toBeTruthy();
-
-			const listed = await getBroadcasts(roomId, roomData.speakerToken);
-			expect(listed.status).toBe(200);
-			expect(listed.body.broadcasts).toHaveLength(1);
-			expect(listed.body.broadcasts[0].broadcastId).toBe(broadcastId);
-			const single = await getBroadcast(roomId, broadcastId, roomData.speakerToken);
-			expect(single.status).toBe(200);
-			expect(
-				single.body.destinations.every((d: { url: string }) =>
-					d.url.endsWith(`/${MEET_BROADCAST_REDACTED_STREAM_KEY}`)
-				)
-			).toBe(true);
-
-			const retried = await updateBroadcastDestination(roomId, broadcastId, idB, { active: true });
-			expect(retried.status).toBe(200);
-			expect(retried.body.destinations[1].status).toBe(MeetBroadcastDestinationStatus.CONNECTING);
-
-			const added = await addBroadcastDestination(
-				roomId,
-				broadcastId,
-				{ name: 'Destination c', url: await createRtmpSink('c') },
-				roomData.moderatorToken
-			);
-			expect(added.status).toBe(200);
-			expect(added.body.destinations).toHaveLength(3);
-			expect(added.body.destinations[2]).toMatchObject({
-				source: 'meeting',
-				status: 'connecting',
-				url: expect.stringContaining(MEET_BROADCAST_REDACTED_STREAM_KEY)
-			});
+			expect(active?.startDate).toBeGreaterThan(0);
 			await waitForBroadcast(
 				roomId,
-				(broadcast) => broadcast?.destinations[2].status === MeetBroadcastDestinationStatus.ACTIVE,
+				broadcastB.broadcastId,
+				(broadcast) => broadcast === undefined,
+				'failed and left the list'
+			);
+			expect((await getBroadcast(roomId, broadcastB.broadcastId)).status).toBe(404);
+
+			const single = await getBroadcast(roomId, broadcastA.broadcastId, roomData.speakerToken);
+			expect(single.status).toBe(200);
+			expect(single.body.url).toContain(`/${MEET_BROADCAST_REDACTED_STREAM_KEY}`);
+			expect(single.body.url).not.toContain(sinkUrl.split('/').pop());
+
+			// The failed destination can be streamed to again, as a new broadcast, alongside one for
+			// this meeting.
+			const more = await startBroadcasts(
+				roomId,
+				{ destinations: [{ destinationId: idB }, { name: 'Destination c', url: await createRtmpSink('c') }] },
+				roomData.moderatorToken
+			);
+			expect(more.status).toBe(201);
+			const [retried, added] = more.body.broadcasts as MeetBroadcastInfo[];
+			expect(retried.broadcastId).not.toBe(broadcastB.broadcastId);
+			await waitForBroadcast(
+				roomId,
+				added.broadcastId,
+				(broadcast) => broadcast?.status === MeetBroadcastStatus.ACTIVE,
 				'streamed to the destination added for this meeting'
 			);
 
-			const stoppedA = await updateBroadcastDestination(roomId, broadcastId, idA, { active: false });
+			const stoppedA = await stopOne(roomId, broadcastA.broadcastId, roomData.moderatorToken);
 			expect(stoppedA.status).toBe(200);
-			expect(stoppedA.body.destinations[0].status).toBe(MeetBroadcastDestinationStatus.STOPPED);
-			expect(stoppedA.body.status).toBe(MeetBroadcastStatus.ACTIVE);
-
-			const stopped = await stopBroadcast(roomId, broadcastId, roomData.moderatorToken);
-			expect(stopped.status).toBe(202);
-			expect(stopped.body.status).toBe(MeetBroadcastStatus.ENDING);
-
-			await waitForBroadcast(roomId, (broadcast) => broadcast === undefined, 'ended');
-			expect((await getBroadcasts(roomId)).body.broadcasts).toEqual([]);
-			expectMeetError(await stopBroadcast(roomId, broadcastId), errorBroadcastNotFound(broadcastId));
-		});
-
-		it('should cap a broadcast at five destinations and refuse a duplicate URL', async () => {
-			const roomData = await setupMeetingRoom(broadcastConfig(['a', 'b', 'c', 'd']));
-			const { roomId } = roomData.room;
-			const { broadcastId } = (await startBroadcast(roomId)).body;
-
-			expect((await addBroadcastDestination(roomId, broadcastId, destination('e'))).status).toBe(200);
+			expect(stoppedA.body.broadcasts).toEqual([
+				expect.objectContaining({
+					status: MeetBroadcastStatus.COMPLETE,
+					startDate: active?.startDate,
+					endDate: expect.any(Number),
+					duration: expect.any(Number)
+				})
+			]);
 			expectMeetError(
-				await addBroadcastDestination(roomId, broadcastId, destination('f')),
-				errorBroadcastDestinationLimit()
+				await stopOne(roomId, broadcastA.broadcastId),
+				errorBroadcastNotFound(broadcastA.broadcastId)
 			);
 
-			const duplicate = await addBroadcastDestination(roomId, broadcastId, destination('a'));
-			expect(duplicate.status).toBe(422);
+			const stoppedRest = await stopBroadcasts(roomId);
+			expect(stoppedRest.status).toBe(200);
+			expect(stoppedRest.body.broadcasts.map(({ broadcastId }: MeetBroadcastInfo) => broadcastId).sort()).toEqual(
+				[retried.broadcastId, added.broadcastId].sort()
+			);
+
+			await waitForBroadcasts(roomId, (broadcasts) => broadcasts.length === 0, 'all ended');
+			await waitForNoActiveEgress(roomId, 30_000);
+			expect((await stopBroadcasts(roomId)).body).toEqual({ broadcasts: [] });
 		});
 
-		it('should gate destination changes on broadcastControl and adding on broadcastAddDestinations', async () => {
+		it('should abort a broadcast stopped before any media reached its destination', async () => {
 			const roomData = await setupMeetingRoom(broadcastConfig(['a']));
 			const { roomId } = roomData.room;
-			const [idA] = await roomDestinationIds(roomData);
-			const { broadcastId } = (await startBroadcast(roomId)).body;
+			const { broadcast } = await startOne(roomId, { destinationId: (await roomDestinationIds(roomData))[0] });
+
+			const stopped = await stopOne(roomId, broadcast.broadcastId);
+
+			expect(stopped.status).toBe(200);
+			expect(stopped.body.broadcasts[0]).toMatchObject({ status: MeetBroadcastStatus.ABORTED });
+			expect(stopped.body.broadcasts[0].startDate).toBeUndefined();
+			expect(stopped.body.broadcasts[0].endDate).toBeUndefined();
+		});
+
+		it('should gate stopping on broadcastControl', async () => {
+			const roomData = await setupMeetingRoom(broadcastConfig(['a']));
+			const { roomId } = roomData.room;
+			const { broadcast } = await startOne(roomId, { destinationId: (await roomDestinationIds(roomData))[0] });
 
 			expectMeetError(
-				await updateBroadcastDestination(roomId, broadcastId, idA, { active: false }, roomData.speakerToken),
-				errorInsufficientPermissions()
-			);
-			expectMeetError(
-				await addBroadcastDestination(roomId, broadcastId, destination('x'), roomData.speakerToken),
-				errorInsufficientPermissions()
-			);
-			expectMeetError(
-				await stopBroadcast(roomId, broadcastId, roomData.speakerToken),
+				await stopOne(roomId, broadcast.broadcastId, roomData.speakerToken),
 				errorInsufficientPermissions()
 			);
 		});
 
-		it('should end the broadcast when the meeting ends', async () => {
+		it('should end the broadcasts when the meeting ends', async () => {
 			const roomData = await setupMeetingRoom(broadcastConfig(['a']));
 			const { roomId } = roomData.room;
-			await startBroadcast(roomId);
-			await waitForBroadcast(roomId, isRunning, 'started');
+			await startBroadcasts(roomId);
+			await waitForBroadcasts(roomId, (broadcasts) => broadcasts.length === 1, 'started');
 
 			await disconnectFakeParticipants();
 
-			await waitForBroadcast(roomId, (broadcast) => broadcast === undefined, 'ended with the meeting');
+			await waitForBroadcasts(roomId, (broadcasts) => broadcasts.length === 0, 'ended with the meeting');
 		});
 
 		it('should stop a broadcast still starting when its room is deleted, leaving no egress behind', async () => {
 			const roomData = await setupMeetingRoom(broadcastConfig(['a']));
 			const { roomId } = roomData.room;
-			await startBroadcast(roomId);
+			await startBroadcasts(roomId);
 
 			await deleteRoom(roomId, { withMeeting: 'force', withRecordings: 'force' });
 

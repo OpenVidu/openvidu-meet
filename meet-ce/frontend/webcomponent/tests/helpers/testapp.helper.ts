@@ -450,7 +450,7 @@ export const participantReactionSendCommand = async (page: Page, reaction: MeetR
 		.click();
 };
 
-/** Clicks the testapp's `broadcastStart()` button: the room's saved destinations, all of them. */
+/** Clicks the testapp's `broadcastStart()` button: one broadcast per destination saved in the room. */
 export const broadcastStartCommand = async (page: Page): Promise<void> => {
 	await showControlsPanel(page, 'commands');
 	await page.getByTestId('btn-broadcast-start').click();

@@ -2,8 +2,6 @@ import type { StreamInfo } from '@livekit/protocol';
 import { StreamInfo_Status } from '@livekit/protocol';
 import type {
 	MeetBroadcastDestination,
-	MeetBroadcastDestinationInfo,
-	MeetBroadcastDestinationOptions,
 	MeetBroadcastInfo,
 	MeetBroadcastStartDestination,
 	MeetRoomOptions
@@ -11,28 +9,26 @@ import type {
 import {
 	isRedactedStreamUrl,
 	MEET_BROADCAST_MAX_DESTINATIONS,
-	MeetBroadcastDestinationSource,
-	MeetBroadcastDestinationStatus,
 	MeetBroadcastStatus,
 	redactStreamUrl
 } from '@openvidu-meet/typings';
 import type { EgressInfo } from 'livekit-server-sdk';
 import { uid } from 'uid';
 import { isDeepStrictEqual } from 'util';
-import type { BroadcastDestinationUrls, BroadcastRecord, DestinationState } from '../models/broadcast.model.js';
+import type { BroadcastDestinationUrls, BroadcastRecord, BroadcastTarget } from '../models/broadcast.model.js';
+import type { EgressError } from '../models/egress.model.js';
 import {
+	errorBroadcastDestinationInUse,
 	errorBroadcastDestinationLimit,
 	errorBroadcastDuplicateDestination,
-	errorBroadcastNoDestinations,
 	errorBroadcastRedactedDestinationUrl,
 	errorBroadcastUnknownDestination
 } from '../models/error.model.js';
 import { EgressHelper } from './egress.helper.js';
 
-const DESTINATION_ID_LENGTH = 10;
+const ID_LENGTH = 10;
 const IN_PROGRESS_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE, MeetBroadcastStatus.ENDING];
 const RUNNING_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE];
-const STREAMING_STATUSES = [MeetBroadcastDestinationStatus.CONNECTING, MeetBroadcastDestinationStatus.ACTIVE];
 
 export class BroadcastHelper {
 	private constructor() {
@@ -52,81 +48,65 @@ export class BroadcastHelper {
 		return { ...options, config: { ...options.config, broadcast: { ...broadcast, destinations } } };
 	}
 
-	/**
-	 * Whether the URL LiveKit reports for a stream is `realUrl`. Egress never echoes a URL as given:
-	 * everything after the last `/` (stream key and query string) comes back with only a third of
-	 * it at each end, three characters at most, as `{abc...xyz}`, `{ab...yz}`, `{a...z}`, or `{...}`
-	 * for a key shorter than three.
-	 */
-	static matchesReportedStreamUrl(realUrl: string, reportedUrl: string): boolean {
-		if (reportedUrl === realUrl) return true;
-
-		const keyStart = realUrl.lastIndexOf('/') + 1;
-		const key = realUrl.slice(keyStart);
-		const shown = Math.min(3, Math.floor(key.length / 3));
-		const reportedKey = shown === 0 ? '{...}' : `{${key.slice(0, shown)}...${key.slice(-shown)}}`;
-		return reportedUrl === realUrl.slice(0, keyStart) + reportedKey;
-	}
-
-	/** Whether the broadcast is still the room's current one: not over yet, if only just ending. */
+	/** Whether the broadcast is still one of the room's current ones: not over yet, if only just ending. */
 	static isInProgress(status: MeetBroadcastStatus): boolean {
 		return IN_PROGRESS_STATUSES.includes(status);
 	}
 
-	/** Whether the broadcast can still be stopped or have its destinations changed. */
+	/** Whether the broadcast can still be stopped, and keeps the meeting's stream going. */
 	static isRunning(status: MeetBroadcastStatus): boolean {
 		return RUNNING_STATUSES.includes(status);
 	}
 
-	static isStreaming(destination: MeetBroadcastDestinationInfo): boolean {
-		return STREAMING_STATUSES.includes(destination.status);
-	}
-
 	/**
-	 * The destinations a broadcast starts with: every room destination, streaming to the ones the
-	 * request names (to all of them when it names none) and holding the rest as `stopped`, plus the
-	 * destinations the request adds for this meeting.
+	 * The destinations a start request names, with their real URLs: the room's, streamed to as
+	 * saved, and those given for this meeting with their full URL. A request that names none
+	 * streams to every room destination the meeting is not streaming to yet.
 	 */
-	static resolveStartDestinations(
+	static resolveTargets(
 		roomDestinations: MeetBroadcastDestination[],
 		roomDestinationUrls: BroadcastDestinationUrls,
+		inProgress: BroadcastRecord[],
 		requested: MeetBroadcastStartDestination[] | undefined
-	): MeetBroadcastDestinationInfo[] {
-		const destinations: MeetBroadcastDestinationInfo[] = roomDestinations.map((destination) => ({
-			id: destination.id!,
-			name: destination.name,
-			url: roomDestinationUrls[destination.id!],
-			source: MeetBroadcastDestinationSource.ROOM,
-			status: requested ? MeetBroadcastDestinationStatus.STOPPED : MeetBroadcastDestinationStatus.CONNECTING
-		}));
+	): BroadcastTarget[] {
+		const streamed = new Set(inProgress.map(({ destinationId }) => destinationId));
+		const destinations: MeetBroadcastStartDestination[] =
+			requested ??
+			roomDestinations.filter(({ id }) => !streamed.has(id)).map(({ id }) => ({ destinationId: id }));
 
-		for (const request of requested ?? []) {
-			if (request.id) {
-				BroadcastHelper.startRoomDestination(destinations, request.id);
-			} else {
-				destinations.push(BroadcastHelper.toMeetingDestination({ name: request.name!, url: request.url! }));
+		return destinations.map(({ destinationId, name, url }) => {
+			if (destinationId) {
+				const destination = roomDestinations.find(({ id }) => id === destinationId);
+
+				if (!destination) throw errorBroadcastUnknownDestination(destinationId);
+
+				return { destinationId, name: destination.name, url: roomDestinationUrls[destinationId] };
 			}
-		}
 
-		BroadcastHelper.validateDestinationSet(destinations.map(({ url }) => url));
+			if (isRedactedStreamUrl(url!)) throw errorBroadcastRedactedDestinationUrl();
 
-		if (!destinations.some((destination) => BroadcastHelper.isStreaming(destination))) {
-			throw errorBroadcastNoDestinations();
-		}
-
-		return destinations;
+			return { name: name!, url: url! };
+		});
 	}
 
 	/**
-	 * The destinations of a running broadcast after adding one for this meeting.
+	 * Whether the meeting can take these broadcasts on top of the ones in progress: at most
+	 * {@link MEET_BROADCAST_MAX_DESTINATIONS} run at once, and two streams to one ingest would be
+	 * closed by the platform, so a URL is streamed to once.
 	 */
-	static addDestination(
-		destinations: MeetBroadcastDestinationInfo[],
-		options: MeetBroadcastDestinationOptions
-	): MeetBroadcastDestinationInfo[] {
-		const added = [...destinations, BroadcastHelper.toMeetingDestination(options)];
-		BroadcastHelper.validateDestinationSet(added.map(({ url }) => url));
-		return added;
+	static validateNewBroadcasts(inProgress: BroadcastRecord[], targets: BroadcastTarget[]): void {
+		if (inProgress.length + targets.length > MEET_BROADCAST_MAX_DESTINATIONS) {
+			throw errorBroadcastDestinationLimit();
+		}
+
+		const urls = targets.map(({ url }) => url);
+		const duplicate = urls.find((url, index) => urls.indexOf(url) !== index);
+
+		if (duplicate) throw errorBroadcastDuplicateDestination(redactStreamUrl(duplicate));
+
+		const inUse = urls.find((url) => inProgress.some((record) => record.url === url));
+
+		if (inUse) throw errorBroadcastDestinationInUse(redactStreamUrl(inUse));
 	}
 
 	/**
@@ -145,7 +125,7 @@ export class BroadcastHelper {
 			if (id && !savedUrls[id]) throw errorBroadcastUnknownDestination(id);
 
 			const realUrl = BroadcastHelper.resolveUrl(url, id && savedUrls[id]);
-			const destinationId = id ?? uid(DESTINATION_ID_LENGTH);
+			const destinationId = id ?? uid(ID_LENGTH);
 
 			if (urls[destinationId]) throw errorBroadcastDuplicateDestination(redactStreamUrl(realUrl));
 
@@ -153,92 +133,75 @@ export class BroadcastHelper {
 			return { id: destinationId, name, url: redactStreamUrl(realUrl) };
 		});
 
-		BroadcastHelper.validateDestinationSet(Object.values(urls));
+		if (destinations.length > MEET_BROADCAST_MAX_DESTINATIONS) throw errorBroadcastDestinationLimit();
+
+		const realUrls = Object.values(urls);
+		const duplicate = realUrls.find((url, index) => realUrls.indexOf(url) !== index);
+
+		if (duplicate) throw errorBroadcastDuplicateDestination(redactStreamUrl(duplicate));
+
 		return { destinations, urls };
 	}
 
+	/**
+	 * The record of a broadcast the egress just took: its stream is the last one the egress
+	 * reports, since each URL is added to the egress on its own, in a call of its own.
+	 */
 	static createRecord(
 		egress: EgressInfo,
 		room: { roomId: string; roomName: string },
-		{ layout, encoding }: Pick<BroadcastRecord, 'layout' | 'encoding'>,
-		destinations: MeetBroadcastDestinationInfo[]
+		target: BroadcastTarget,
+		{ layout, encoding }: Pick<BroadcastRecord, 'layout' | 'encoding'>
 	): BroadcastRecord {
 		return BroadcastHelper.withEgressInfo(
 			{
-				broadcastId: egress.egressId,
+				broadcastId: `${room.roomId}--${uid(ID_LENGTH)}`,
 				roomId: room.roomId,
 				roomName: room.roomName,
 				status: MeetBroadcastStatus.STARTING,
+				name: target.name,
+				url: target.url,
+				destinationId: target.destinationId,
 				layout,
 				encoding,
-				destinations
+				egressId: egress.egressId,
+				streamIndex: Math.max(egress.streamResults.length - 1, 0)
 			},
 			egress
 		);
 	}
 
 	/**
-	 * The record updated with what LiveKit reports. A destination without a matching stream keeps
-	 * the status the server gave it (`stopped` when it was not chosen, `connecting` right after being
-	 * added); one with a stream takes the stream's state, unless the destination already ended and
-	 * the stream is that same attempt: egress webhooks can carry a snapshot older than the response
-	 * that ended it, and must not revive it. An egress that ended streams nowhere, so a destination
-	 * still connecting or streaming in its last snapshot is stopped when the egress ended.
+	 * The record updated with what LiveKit reports of its stream. A snapshot without the stream
+	 * (egress webhooks can carry one older than the response that added it) leaves the record as
+	 * it is. An egress that ended streams nowhere, so a broadcast still open in its last snapshot
+	 * ends with it.
 	 */
 	static withEgressInfo(record: BroadcastRecord, egress: EgressInfo): BroadcastRecord {
-		const destinations = record.destinations.map((destination) => {
-			const stream = BroadcastHelper.findCurrentStream(egress.streamResults, destination.url);
+		const stream = egress.streamResults[record.streamIndex];
+		const updated = stream ? BroadcastHelper.withStream(record, stream, egress) : record;
+		const egressStatus = EgressHelper.toStatus(egress.status, MeetBroadcastStatus);
 
-			if (!stream || BroadcastHelper.isEndedAttempt(destination, stream)) return destination;
+		if (BroadcastHelper.isInProgress(egressStatus) || !BroadcastHelper.isInProgress(updated.status)) {
+			return updated;
+		}
 
-			return { ...destination, ...BroadcastHelper.toDestinationState(stream) };
-		});
-		const startDate = BroadcastHelper.extractStartDate(egress) ?? record.startDate;
-		const status = BroadcastHelper.toStatus(egress, startDate);
-		const endDate = startDate ? EgressHelper.nsToMs(egress.endedAt) : undefined;
-
-		return {
-			...record,
-			destinations: BroadcastHelper.isInProgress(status)
-				? destinations
-				: BroadcastHelper.stopStreaming(destinations, endDate),
-			status,
-			startDate,
-			endDate,
-			duration: startDate && endDate ? (endDate - startDate) / 1000 : undefined,
-			...EgressHelper.extractError(egress)
-		};
+		return BroadcastHelper.settle(
+			updated,
+			egressStatus,
+			EgressHelper.nsToMs(egress.endedAt),
+			EgressHelper.extractError(egress)
+		);
 	}
 
 	/**
-	 * The record of a broadcast LiveKit will say nothing more about, because its meeting finished or
-	 * its egress died: it is over, and so is every stream it still had open. It keeps an ending it
-	 * already has, and one that never streamed anything carries no dates and, without an ending of
-	 * its own, was aborted.
+	 * The record of a broadcast LiveKit will say nothing more about, because its meeting finished
+	 * or its egress died: it is over. It keeps an ending it already has, and one that never
+	 * streamed anything carries no dates and, without an ending of its own, was aborted.
 	 */
 	static withEnded(record: BroadcastRecord, endDate = Date.now()): BroadcastRecord {
-		const destinations = BroadcastHelper.stopStreaming(record.destinations, endDate);
-		const status = BroadcastHelper.isInProgress(record.status) ? undefined : record.status;
-
-		if (!record.startDate || status === MeetBroadcastStatus.ABORTED) {
-			return {
-				...record,
-				destinations,
-				status: status ?? MeetBroadcastStatus.ABORTED,
-				startDate: undefined,
-				endDate: undefined,
-				duration: undefined
-			};
-		}
-
-		const ended = record.endDate ?? endDate;
-		return {
-			...record,
-			destinations,
-			status: status ?? MeetBroadcastStatus.COMPLETE,
-			endDate: ended,
-			duration: (ended - record.startDate) / 1000
-		};
+		const status = BroadcastHelper.isInProgress(record.status) ? MeetBroadcastStatus.COMPLETE : record.status;
+		return BroadcastHelper.settle(record, status, endDate);
 	}
 
 	/**
@@ -249,14 +212,15 @@ export class BroadcastHelper {
 		return isDeepStrictEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 	}
 
-	static toBroadcastInfo(record: BroadcastRecord): MeetBroadcastInfo {
-		return {
-			...record,
-			destinations: record.destinations.map((destination) => ({
-				...destination,
-				url: redactStreamUrl(destination.url)
-			}))
-		};
+	/** The records with the given ones replacing their previous versions. */
+	static replace(records: BroadcastRecord[], updated: BroadcastRecord[]): BroadcastRecord[] {
+		return records.map((record) => updated.find(({ broadcastId }) => broadcastId === record.broadcastId) ?? record);
+	}
+
+	static toBroadcastInfo({ egressId, streamIndex, ...info }: BroadcastRecord): MeetBroadcastInfo {
+		void egressId;
+		void streamIndex;
+		return { ...info, url: redactStreamUrl(info.url) };
 	}
 
 	/**
@@ -273,123 +237,74 @@ export class BroadcastHelper {
 		return savedUrl;
 	}
 
-	private static toMeetingDestination(options: MeetBroadcastDestinationOptions): MeetBroadcastDestinationInfo {
-		if (isRedactedStreamUrl(options.url)) throw errorBroadcastRedactedDestinationUrl();
-
-		return {
-			id: uid(DESTINATION_ID_LENGTH),
-			name: options.name,
-			url: options.url,
-			source: MeetBroadcastDestinationSource.MEETING,
-			status: MeetBroadcastDestinationStatus.CONNECTING
-		};
-	}
-
-	private static startRoomDestination(destinations: MeetBroadcastDestinationInfo[], destinationId: string): void {
-		const destination = destinations.find(({ id }) => id === destinationId);
-
-		if (!destination) throw errorBroadcastUnknownDestination(destinationId);
-
-		destination.status = MeetBroadcastDestinationStatus.CONNECTING;
-	}
-
 	/**
-	 * Two destinations with the same URL would be two streams to one ingest, which the platform
-	 * closes, so a URL may appear once.
+	 * The record as its stream reports it. Egress stamps `startedAt` when the stream connects, and
+	 * a stream that ends without ever connecting gets its end time as `startedAt` too, so only a
+	 * stream that started before it ended received media. A start the record already knows is kept
+	 * when the snapshot carries none, which an older snapshot can.
 	 */
-	private static validateDestinationSet(urls: string[]): void {
-		if (urls.length > MEET_BROADCAST_MAX_DESTINATIONS) throw errorBroadcastDestinationLimit();
-
-		const duplicate = urls.find((url, index) => urls.indexOf(url) !== index);
-
-		if (duplicate) throw errorBroadcastDuplicateDestination(redactStreamUrl(duplicate));
-	}
-
-	/** Stops the destinations still streaming, dating the end only of those media reached. */
-	private static stopStreaming(
-		destinations: MeetBroadcastDestinationInfo[],
-		endDate: number | undefined
-	): MeetBroadcastDestinationInfo[] {
-		return destinations.map((destination) =>
-			BroadcastHelper.isStreaming(destination)
-				? {
-						...destination,
-						status: MeetBroadcastDestinationStatus.STOPPED,
-						endDate: destination.startDate ? endDate : undefined
-					}
-				: destination
-		);
-	}
-
-	/**
-	 * Egress appends a new stream entry each time a URL is added and keeps the finished ones, so
-	 * the last match is the attempt that is current.
-	 */
-	private static findCurrentStream(streams: StreamInfo[], url: string): StreamInfo | undefined {
-		return streams.filter((stream) => BroadcastHelper.matchesReportedStreamUrl(url, stream.url)).at(-1);
-	}
-
-	private static isEndedAttempt(destination: MeetBroadcastDestinationInfo, stream: StreamInfo): boolean {
-		return (
-			!BroadcastHelper.isStreaming(destination) &&
-			(EgressHelper.nsToMs(stream.startedAt) ?? 0) <= (destination.endDate ?? 0)
-		);
-	}
-
-	private static toDestinationState(stream: StreamInfo): DestinationState {
-		const received = BroadcastHelper.hasReceivedMedia(stream);
-		const startDate = received ? EgressHelper.nsToMs(stream.startedAt) : undefined;
-
-		return {
-			status: BroadcastHelper.toDestinationStatus(stream, startDate),
-			error: stream.error || undefined,
+	private static withStream(record: BroadcastRecord, stream: StreamInfo, egress: EgressInfo): BroadcastRecord {
+		const received = stream.startedAt > 0n && stream.startedAt !== stream.endedAt;
+		const startDate = received ? EgressHelper.nsToMs(stream.startedAt) : record.startDate;
+		const endDate = startDate ? EgressHelper.nsToMs(stream.endedAt) : undefined;
+		const dates = {
 			startDate,
-			endDate: received ? EgressHelper.nsToMs(stream.endedAt) : undefined,
-			duration: EgressHelper.nsToSeconds(stream.duration)
+			endDate,
+			duration: startDate && endDate ? (endDate - startDate) / 1000 : undefined
 		};
-	}
+		const error = stream.error || undefined;
 
-	/**
-	 * Whether media reached the stream. Egress stamps `startedAt` when a stream connects, and a
-	 * stream that ends without ever connecting gets its end time as `startedAt` too.
-	 */
-	private static hasReceivedMedia(stream: StreamInfo): boolean {
-		return stream.startedAt > 0n && stream.startedAt !== stream.endedAt;
-	}
-
-	private static toDestinationStatus(stream: StreamInfo, startDate?: number): MeetBroadcastDestinationStatus {
 		switch (stream.status) {
 			case StreamInfo_Status.FAILED:
-				return MeetBroadcastDestinationStatus.FAILED;
+				return { ...record, ...dates, status: MeetBroadcastStatus.FAILED, error };
 			case StreamInfo_Status.FINISHED:
-				return MeetBroadcastDestinationStatus.STOPPED;
+				return {
+					...record,
+					...dates,
+					status: startDate ? MeetBroadcastStatus.COMPLETE : MeetBroadcastStatus.ABORTED,
+					error
+				};
 			default:
-				return startDate ? MeetBroadcastDestinationStatus.ACTIVE : MeetBroadcastDestinationStatus.CONNECTING;
+				return { ...record, ...dates, status: BroadcastHelper.toOpenStatus(egress, startDate), error };
 		}
 	}
 
 	/**
-	 * LiveKit reports the egress active as soon as it composes the meeting, before any destination
-	 * connects; the broadcast is starting until media first reaches one.
+	 * The status of a broadcast whose stream is open. LiveKit reports the egress active as soon as
+	 * it composes the meeting, before the destination connects: the broadcast is starting until
+	 * media first reaches it.
 	 */
-	private static toStatus(egress: EgressInfo, startDate: number | undefined): MeetBroadcastStatus {
-		const status = EgressHelper.toStatus(egress.status, MeetBroadcastStatus);
-		return status === MeetBroadcastStatus.ACTIVE && !startDate ? MeetBroadcastStatus.STARTING : status;
+	private static toOpenStatus(egress: EgressInfo, startDate: number | undefined): MeetBroadcastStatus {
+		const egressStatus = EgressHelper.toStatus(egress.status, MeetBroadcastStatus);
+
+		if (egressStatus === MeetBroadcastStatus.ENDING) return MeetBroadcastStatus.ENDING;
+
+		return startDate ? MeetBroadcastStatus.ACTIVE : MeetBroadcastStatus.STARTING;
 	}
 
 	/**
-	 * When media first reached a destination. The egress's own `startedAt` is stamped when LiveKit
-	 * accepts the request, before anything is streamed.
+	 * The record ended with the given status at the given instant, unless it already has an end: a
+	 * broadcast that never streamed anything carries no dates and, if it was to be complete, was
+	 * aborted instead.
 	 */
-	private static extractStartDate(egress: EgressInfo): number | undefined {
-		const starts = egress.streamResults
-			.filter((stream) => BroadcastHelper.hasReceivedMedia(stream))
-			.map(({ startedAt }) => startedAt);
+	private static settle(
+		record: BroadcastRecord,
+		status: MeetBroadcastStatus,
+		endDate: number | undefined,
+		error: EgressError = {}
+	): BroadcastRecord {
+		if (!record.startDate || status === MeetBroadcastStatus.ABORTED) {
+			return {
+				...record,
+				...error,
+				status: status === MeetBroadcastStatus.COMPLETE ? MeetBroadcastStatus.ABORTED : status,
+				startDate: undefined,
+				endDate: undefined,
+				duration: undefined
+			};
+		}
 
-		if (starts.length === 0) return undefined;
-
-		return EgressHelper.nsToMs(
-			starts.reduce((earliest, startedAt) => (startedAt < earliest ? startedAt : earliest))
-		);
+		const ended = record.endDate ?? endDate ?? Date.now();
+		return { ...record, ...error, status, endDate: ended, duration: (ended - record.startDate) / 1000 };
 	}
 }

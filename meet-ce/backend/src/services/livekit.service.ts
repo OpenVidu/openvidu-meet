@@ -480,12 +480,20 @@ export class LiveKitService {
 
 	/**
 	 * Adds and removes stream URLs of a running egress. LiveKit needs the URLs as they were given,
-	 * not as it reports them (redacted).
+	 * not as it reports them (redacted). An egress that ended since it was last seen takes no
+	 * update, which LiveKit answers as a precondition failure: `undefined` instead of an error.
 	 */
-	async updateStream(egressId: string, addUrls: string[], removeUrls: string[]): Promise<EgressInfo> {
+	async updateStream(egressId: string, addUrls: string[], removeUrls: string[]): Promise<EgressInfo | undefined> {
 		try {
 			return await this.lk.egress.updateStream(egressId, addUrls, removeUrls);
 		} catch (error) {
+			const { status } = this.asTwirpError(error);
+
+			if (status === 404 || status === 412) {
+				this.logger.debug(`Egress '${egressId}' had already ended`);
+				return undefined;
+			}
+
 			this.logger.error(`Error updating the stream URLs of egress '${egressId}'`, error);
 			throw this.toEgressError(error, `updating the destinations of egress '${egressId}'`);
 		}

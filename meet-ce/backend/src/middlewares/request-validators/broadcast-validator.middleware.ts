@@ -2,10 +2,9 @@ import { MEET_BROADCAST_FIELDS } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import {
-	AddBroadcastDestinationReqSchema,
 	BroadcastFieldsQuerySchema,
 	StartBroadcastReqSchema,
-	UpdateBroadcastDestinationReqSchema
+	StopBroadcastReqSchema
 } from '../../models/zod-schemas/broadcast.schema.js';
 import { mergeFieldsHeaderIntoQuery } from '../../models/zod-schemas/field-selection.schema.js';
 
@@ -38,19 +37,8 @@ export const validateStartBroadcastReq = (req: Request, res: Response, next: Nex
 	next();
 };
 
-export const validateAddBroadcastDestinationReq = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = AddBroadcastDestinationReqSchema.safeParse(req.body);
-
-	if (!success) {
-		return rejectUnprocessableRequest(res, error);
-	}
-
-	req.body = data;
-	next();
-};
-
-export const validateUpdateBroadcastDestinationReq = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = UpdateBroadcastDestinationReqSchema.safeParse(req.body);
+export const validateStopBroadcastReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = StopBroadcastReqSchema.safeParse(req.body ?? {});
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);

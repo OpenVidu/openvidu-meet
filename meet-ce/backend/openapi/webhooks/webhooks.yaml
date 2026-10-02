@@ -123,13 +123,13 @@ broadcastStarted:
     post:
         summary: Broadcast started
         description: |
-            This webhook is triggered when a live broadcast starts.
+            This webhook is triggered when a live broadcast starts, one per destination the meeting
+            streams to.
 
-            > The broadcast is in the `starting` status until the first destination receives media,
-            > with every chosen destination `connecting`. A broadcast in the `starting` status
-            > carries no `startDate`: nothing has been streamed yet. The
+            > The broadcast is in the `starting` status until its destination receives media, and
+            > carries no `startDate` meanwhile: nothing has been streamed yet. The
             > [`broadcastUpdated`](#/webhooks/broadcastUpdatedWebhook) webhook reports it when it
-            > becomes `active` and as each destination connects.
+            > becomes `active`.
             >
             > The payload is the [`MeetBroadcast`](#/schemas/MeetBroadcast) entity. At this point it
             > never carries `endDate`, `duration`, `errorCode`, `error` or `details`: those only appear
@@ -167,9 +167,8 @@ broadcastUpdated:
         description: |
             This webhook is triggered when a live broadcast changes while it runs.
 
-            > The change can be in the broadcast status (from `starting` to `active`, or to `ending` once
-            > asked to stop) or in its destinations: one connects, fails, is stopped or started again, or
-            > is added for the meeting.
+            > The change is in the broadcast status: from `starting` to `active` once media reaches its
+            > destination, or to `ending` while the media server stops it.
             >
             > The payload is the [`MeetBroadcast`](#/schemas/MeetBroadcast) entity. As with
             > [`broadcastStarted`](#/webhooks/broadcastStartedWebhook), it never carries `endDate`,
@@ -207,8 +206,8 @@ broadcastEnded:
         description: |
             This webhook is triggered when a live broadcast ends.
 
-            > The broadcast can end because it was stopped, because its last streaming destination was
-            > stopped or failed, or because the meeting ended.
+            > The broadcast can end because it was stopped, because its destination rejected or lost the
+            > stream, or because the meeting ended. The other broadcasts of the meeting go on.
             >
             > The payload is the [`MeetBroadcast`](#/schemas/MeetBroadcast) entity. `endDate` is present
             > except when the broadcast ended without ever streaming media (alongside a missing

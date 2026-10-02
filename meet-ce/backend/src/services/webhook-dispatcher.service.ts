@@ -171,7 +171,7 @@ export class WebhookDispatcherService {
 	/**
 	 * Sends a webhook notification when a live broadcast has started.
 	 *
-	 * @param broadcastInfo - The broadcast, with its destinations and their statuses
+	 * @param broadcastInfo - The broadcast as it starts
 	 */
 	sendBroadcastStartedWebhook(broadcastInfo: MeetBroadcastInfo) {
 		this.sendWebhookEventInBackground(
@@ -182,8 +182,8 @@ export class WebhookDispatcherService {
 	}
 
 	/**
-	 * Sends a webhook notification when a live broadcast has changed: it went active, or one of
-	 * its destinations connected, failed, stopped or was added.
+	 * Sends a webhook notification when a live broadcast has changed: it went active, or it started
+	 * ending.
 	 *
 	 * @param broadcastInfo - The broadcast after the change
 	 */

@@ -1,4 +1,3 @@
-import { MeetBroadcastDestinationStatus } from '@openvidu-meet/typings';
 import { expect, type Page } from '@playwright/test';
 import { openMoreOptionsMenu, toggleActivitiesPanel } from './panels.helper';
 import { expectVisible } from './ui-utils.helper';
@@ -13,6 +12,9 @@ const NOTIFICATION = '.ov-notification';
 
 /** The phases the activity reports through `data-status`. */
 export type BroadcastPhase = 'idle' | 'starting' | 'live' | 'ending' | 'failed';
+
+/** How the activity reports each destination row through `data-status`. */
+export type DestinationRowStatus = 'connecting' | 'live' | 'stopping' | 'stopped' | 'failed';
 
 const ensureActivitiesPanelOpen = async (page: Page): Promise<void> => {
 	if (!(await page.locator(ACTIVITIES_CONTAINER).isVisible())) {
@@ -42,13 +44,13 @@ export const goLiveFromActivitiesPanel = async (page: Page): Promise<void> => {
 	await button.click();
 };
 
-/** Leaves a room destination out of the broadcast the activity is about to start. */
+/** Leaves a room destination out of the broadcasts the activity is about to start. */
 export const untickPlannedDestination = async (page: Page, destinationId: string): Promise<void> => {
 	await expandBroadcastActivity(page);
-	await page.locator(`#broadcast-planned-${destinationId} input[type="checkbox"]`).uncheck();
+	await page.locator(`#broadcast-destination-${destinationId} input[type="checkbox"]`).uncheck();
 };
 
-/** Adds a destination for the meeting from the activity's editor: to the running broadcast, or to the next one. */
+/** Adds a destination for the meeting from the activity's editor: streamed to at once while live, or planned. */
 export const addDestinationFromActivitiesPanel = async (page: Page, name: string, url: string): Promise<void> => {
 	await expandBroadcastActivity(page);
 	await page.locator('#broadcast-add-destination-btn').click();
@@ -57,7 +59,7 @@ export const addDestinationFromActivitiesPanel = async (page: Page, name: string
 	await page.locator('#broadcast-destination-save-btn').click();
 };
 
-/** Goes live, or stops the broadcast, from the toolbar's more-options menu. */
+/** Goes live, or stops every broadcast, from the toolbar's more-options menu. */
 export const toggleBroadcastFromToolbar = async (page: Page): Promise<void> => {
 	await openMoreOptionsMenu(page);
 
@@ -66,7 +68,7 @@ export const toggleBroadcastFromToolbar = async (page: Page): Promise<void> => {
 	await button.click();
 };
 
-/** Stops the broadcast from the activity. */
+/** Stops every broadcast from the activity. */
 export const stopBroadcastFromActivitiesPanel = async (page: Page): Promise<void> => {
 	await expandBroadcastActivity(page);
 
@@ -83,11 +85,11 @@ export const expectBroadcastPhase = async (page: Page, phase: BroadcastPhase, ti
 	await expect(page.locator(BROADCAST_STATUS)).toHaveAttribute('data-status', phase, { timeout: timeoutMs });
 };
 
-/** Asserts what the activity reports of one destination of the running broadcast. */
+/** Asserts what the activity reports of one room destination. */
 export const expectDestinationStatus = async (
 	page: Page,
 	destinationId: string,
-	status: MeetBroadcastDestinationStatus,
+	status: DestinationRowStatus,
 	timeoutMs = 30_000
 ): Promise<void> => {
 	await expect(page.locator(`#broadcast-destination-${destinationId}`)).toHaveAttribute('data-status', status, {
@@ -119,7 +121,7 @@ export const expectBroadcastNotice = async (
 	});
 };
 
-/** Asserts that the activity shows the broadcast but offers nothing to do about it. */
+/** Asserts that the activity shows the broadcasts but offers nothing to do about them. */
 export const expectNoBroadcastControls = async (page: Page): Promise<void> => {
 	await expandBroadcastActivity(page);
 	await expect(page.locator(`${BROADCAST_ACTIVITY} .activity-permission`)).toBeVisible();

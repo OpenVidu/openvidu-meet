@@ -1,16 +1,5 @@
-import type {
-	MeetBroadcastDestinationInfo,
-	MeetBroadcastDestinationOptions,
-	MeetBroadcastDestinationUpdateOptions,
-	MeetBroadcastInfo,
-	MeetBroadcastStartOptions
-} from '@openvidu-meet/typings';
-import {
-	MeetBroadcastDestinationStatus,
-	MeetBroadcastStatus,
-	MeetRecordingEncodingPreset,
-	MeetRecordingLayout
-} from '@openvidu-meet/typings';
+import type { MeetBroadcastInfo, MeetBroadcastStartOptions, MeetBroadcastStopOptions } from '@openvidu-meet/typings';
+import { MeetBroadcastStatus, MeetRecordingEncodingPreset, MeetRecordingLayout } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { EgressInfo } from 'livekit-server-sdk';
 import { StreamOutput, StreamProtocol } from 'livekit-server-sdk';
@@ -21,14 +10,11 @@ import { BroadcastHelper } from '../helpers/broadcast.helper.js';
 import { EgressHelper } from '../helpers/egress.helper.js';
 import { EncodingConverter } from '../helpers/encoding-converter.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
-import type { BroadcastRecord } from '../models/broadcast.model.js';
-import type { EgressWebhookAction } from '../models/egress.model.js';
+import type { BroadcastRecord, BroadcastTarget } from '../models/broadcast.model.js';
 import { EGRESS_LOST_ERROR } from '../models/egress.model.js';
 import {
 	errorBroadcastAlreadyStarted,
 	errorBroadcastAlreadyStopped,
-	errorBroadcastDestinationNotFound,
-	errorBroadcastNotActive,
 	errorBroadcastNotFound,
 	errorBroadcastRoomHasNoParticipants,
 	errorBroadcastUpdateInProgress
@@ -45,10 +31,12 @@ import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 const LOCK_RETRY_DELAY_MS = 250;
 
 /**
- * Live broadcasts of a meeting: the room-composite egress recording already runs, with RTMP
- * destinations instead of a file. Every change to a room's broadcast, from a request or from an
+ * Live broadcasts of a meeting, one per destination. They run on the room-composite egress the
+ * recording already uses, with RTMP destinations instead of a file: the first broadcast of a
+ * meeting starts the egress and the next ones join it, so the meeting is composed once and
+ * delivered to every destination. Every change to a room's broadcasts, from a request or from an
  * egress webhook, runs under the room's broadcast lock and goes through {@link BroadcastStateService},
- * so the replicas of a deployment see one broadcast per room.
+ * so the replicas of a deployment see the same broadcasts.
  */
 @injectable()
 export class BroadcastService {
@@ -64,13 +52,14 @@ export class BroadcastService {
 	) {}
 
 	/**
-	 * Starts streaming the meeting. The request completes as soon as LiveKit accepts the egress: the
-	 * broadcast is `starting` until media reaches a destination, and each destination reports its
-	 * own status from then on.
+	 * Starts streaming the meeting to each destination asked for, one broadcast each, or to every
+	 * room destination not streamed to yet. Either every broadcast starts or none does. The request
+	 * completes as soon as LiveKit accepts the streams: each broadcast is `starting` until media
+	 * reaches its destination.
 	 */
-	async startBroadcast(roomId: string, options: MeetBroadcastStartOptions): Promise<MeetBroadcastInfo> {
+	async startBroadcasts(roomId: string, { destinations }: MeetBroadcastStartOptions): Promise<MeetBroadcastInfo[]> {
 		return this.withRequestLock(roomId, async () => {
-			if (await this.findLiveRecord(roomId)) throw errorBroadcastAlreadyStarted(roomId);
+			const records = await this.findLiveRecords(roomId);
 
 			if (!(await this.livekitService.roomHasParticipants(roomId))) {
 				throw errorBroadcastRoomHasNoParticipants(roomId);
@@ -80,191 +69,233 @@ export class BroadcastService {
 				this.roomService.getMeetRoom(roomId, ['roomName', 'config']),
 				this.roomRepository.findBroadcastDestinationUrls(roomId)
 			]);
-			const destinations = BroadcastHelper.resolveStartDestinations(
+			const targets = BroadcastHelper.resolveTargets(
 				config.broadcast.destinations,
 				destinationUrls,
-				options.destinations
-			);
-			const layout = config.broadcast.layout ?? MeetRecordingLayout.GRID;
-			const encoding = config.broadcast.encoding ?? MeetRecordingEncodingPreset.H264_720P_30;
-			const egress = await this.livekitService.startRoomComposite(roomId, this.toStreamOutput(destinations), {
-				layout,
-				encodingOptions: EncodingConverter.toLivekit(encoding)
-			});
-			const record = BroadcastHelper.createRecord(
-				egress,
-				{ roomId, roomName },
-				{ layout, encoding },
+				records,
 				destinations
 			);
-			await this.broadcastState.save(record);
 
-			this.logger.info(`Broadcast '${record.broadcastId}' started for room '${roomId}'`);
-			return BroadcastHelper.toBroadcastInfo(record);
+			if (targets.length === 0) throw errorBroadcastAlreadyStarted(roomId);
+
+			BroadcastHelper.validateNewBroadcasts(records, targets);
+
+			const { started, egress } = await this.addStreams(
+				{ roomId, roomName },
+				records.find(({ status }) => BroadcastHelper.isRunning(status)),
+				targets,
+				{
+					layout: config.broadcast.layout ?? MeetRecordingLayout.GRID,
+					encoding: config.broadcast.encoding ?? MeetRecordingEncodingPreset.H264_720P_30
+				}
+			);
+			const updated = this.withEgress([...records, ...started], egress);
+			await this.saveAndNotify(roomId, records, updated);
+
+			const startedIds = new Set(started.map(({ broadcastId }) => broadcastId));
+			this.logger.info(`Broadcasts '${[...startedIds].join("', '")}' started for room '${roomId}'`);
+			return updated
+				.filter(({ broadcastId }) => startedIds.has(broadcastId))
+				.map((record) => BroadcastHelper.toBroadcastInfo(record));
 		});
 	}
 
 	/**
-	 * Stops the broadcast to every destination at once. LiveKit's `egress_ended` webhook then
-	 * settles the final state and clears it.
+	 * Stops the given broadcasts, or every running one: the stream to each destination ends at
+	 * once, and the egress ends by itself with its last stream. LiveKit's answers settle the final
+	 * states. The broadcasts stopped before a failure are saved as stopped all the same.
 	 */
-	async stopBroadcast(roomId: string, broadcastId: string): Promise<MeetBroadcastInfo> {
+	async stopBroadcasts(roomId: string, { broadcastIds }: MeetBroadcastStopOptions): Promise<MeetBroadcastInfo[]> {
 		return this.withRequestLock(roomId, async () => {
-			const record = await this.getRecord(roomId, broadcastId);
+			const records = await this.broadcastState.find(roomId);
+			const targets = broadcastIds
+				? [...new Set(broadcastIds)].map((broadcastId) => this.findRunningRecord(records, broadcastId))
+				: records.filter(({ status }) => BroadcastHelper.isRunning(status));
+			let updated = records;
 
-			if (!BroadcastHelper.isRunning(record.status)) throw errorBroadcastAlreadyStopped(broadcastId);
+			try {
+				for (const target of targets) {
+					const egress =
+						(await this.livekitService.updateStream(target.egressId, [], [target.url])) ??
+						(await this.livekitService.getEgress(roomId, target.egressId))[0];
 
-			const egress = await this.livekitService.stopEgressIfRunning(broadcastId);
+					if (egress) updated = this.withEgress(updated, egress);
 
-			if (!egress) throw errorBroadcastAlreadyStopped(broadcastId);
+					const latest = updated.find(({ broadcastId }) => broadcastId === target.broadcastId)!;
+					updated = BroadcastHelper.replace(updated, [BroadcastHelper.withEnded(latest)]);
+				}
+			} finally {
+				await this.saveAndNotify(roomId, records, updated);
+			}
 
-			this.logger.info(`Broadcast '${broadcastId}' stopped for room '${roomId}'`);
-			return this.persistAndNotify(BroadcastHelper.withEgressInfo(record, egress), 'updated');
+			const stoppedIds = new Set(targets.map(({ broadcastId }) => broadcastId));
+			this.logger.info(`Broadcasts '${[...stoppedIds].join("', '")}' stopped for room '${roomId}'`);
+			return updated
+				.filter(({ broadcastId }) => stoppedIds.has(broadcastId))
+				.map((record) => BroadcastHelper.toBroadcastInfo(record));
 		});
 	}
 
+	/**
+	 * The broadcasts in progress in the room: what a participant joining now has to be told about,
+	 * and what makes the meeting's `broadcastActive`.
+	 */
 	async getBroadcasts(roomId: string): Promise<MeetBroadcastInfo[]> {
-		const record = await this.broadcastState.find(roomId);
-		return record ? [BroadcastHelper.toBroadcastInfo(record)] : [];
+		return (await this.broadcastState.find(roomId)).map((record) => BroadcastHelper.toBroadcastInfo(record));
 	}
 
 	async getBroadcast(roomId: string, broadcastId: string): Promise<MeetBroadcastInfo> {
-		return BroadcastHelper.toBroadcastInfo(await this.getRecord(roomId, broadcastId));
-	}
+		const record = (await this.broadcastState.find(roomId)).find(
+			(candidate) => candidate.broadcastId === broadcastId
+		);
 
-	/**
-	 * The broadcast running in the room, if any: what a participant joining now has to be told
-	 * about, and what makes the meeting's `broadcastActive`.
-	 */
-	async findActiveBroadcast(roomId: string): Promise<MeetBroadcastInfo | null> {
-		const record = await this.broadcastState.find(roomId);
-		return record && BroadcastHelper.isInProgress(record.status) ? BroadcastHelper.toBroadcastInfo(record) : null;
+		if (!record) throw errorBroadcastNotFound(broadcastId);
+
+		return BroadcastHelper.toBroadcastInfo(record);
 	}
 
 	async isBroadcastActive(roomId: string): Promise<boolean> {
-		return (await this.findActiveBroadcast(roomId)) !== null;
+		return (await this.broadcastState.find(roomId)).length > 0;
 	}
 
 	/**
-	 * Adds a destination for this meeting to a running broadcast and starts streaming to it.
+	 * Applies an `egress_started`, `egress_updated` or `egress_ended` webhook of an egress that
+	 * streams the room to its broadcasts. What changes nothing is dropped: LiveKit reports every
+	 * change a request makes again, after the request already saved and notified it.
 	 */
-	async addDestination(
-		roomId: string,
-		broadcastId: string,
-		options: MeetBroadcastDestinationOptions
-	): Promise<MeetBroadcastInfo> {
-		return this.withRequestLock(roomId, async () => {
-			const record = await this.getRunningRecord(roomId, broadcastId);
-			const destinations = BroadcastHelper.addDestination(record.destinations, options);
-			const egress = await this.livekitService.updateStream(broadcastId, [options.url], []);
+	async handleEgressEvent(egress: EgressInfo): Promise<void> {
+		await this.withWebhookLock(egress.roomName, `an event of egress '${egress.egressId}'`, async () => {
+			const records = await this.broadcastState.find(egress.roomName);
 
-			this.logger.info(`Destination added to broadcast '${broadcastId}' of room '${roomId}'`);
-			return this.persistAndNotify(
-				BroadcastHelper.withEgressInfo({ ...record, destinations }, egress),
-				'updated'
-			);
-		});
-	}
-
-	/**
-	 * Starts or stops the stream to one destination of a running broadcast. Starting a `failed` or
-	 * `stopped` destination is a new attempt against the same URL; stopping the last destination
-	 * still streaming ends the whole broadcast, through LiveKit's own `egress_ended`.
-	 */
-	async updateDestination(
-		roomId: string,
-		broadcastId: string,
-		destinationId: string,
-		{ active }: MeetBroadcastDestinationUpdateOptions
-	): Promise<MeetBroadcastInfo> {
-		return this.withRequestLock(roomId, async () => {
-			const record = await this.getRunningRecord(roomId, broadcastId);
-			const destination = record.destinations.find(({ id }) => id === destinationId);
-
-			if (!destination) throw errorBroadcastDestinationNotFound(destinationId);
-
-			if (active === BroadcastHelper.isStreaming(destination)) return BroadcastHelper.toBroadcastInfo(record);
-
-			const egress = active
-				? await this.livekitService.updateStream(broadcastId, [destination.url], [])
-				: await this.livekitService.updateStream(broadcastId, [], [destination.url]);
-			const destinations = record.destinations.map((candidate) =>
-				candidate.id === destinationId ? this.toRequestedState(candidate, active) : candidate
-			);
-
-			this.logger.info(
-				`Destination '${destinationId}' ${active ? 'started' : 'stopped'} in broadcast '${broadcastId}' of room '${roomId}'`
-			);
-			return this.persistAndNotify(
-				BroadcastHelper.withEgressInfo({ ...record, destinations }, egress),
-				'updated'
-			);
-		});
-	}
-
-	/**
-	 * Applies an `egress_started`, `egress_updated` or `egress_ended` webhook of a broadcast egress.
-	 * An update that changes nothing is dropped: LiveKit reports every change a request makes
-	 * again, after the request already saved and notified it.
-	 */
-	async handleEgressEvent(egress: EgressInfo, action: EgressWebhookAction): Promise<void> {
-		await this.withWebhookLock(egress.roomName, `egress_${action} of egress '${egress.egressId}'`, async () => {
-			const record = await this.broadcastState.find(egress.roomName);
-
-			if (record?.broadcastId !== egress.egressId) {
+			if (!records.some((record) => record.egressId === egress.egressId)) {
 				this.logger.debug(
-					`Ignoring egress_${action} for egress '${egress.egressId}': it is not the broadcast of room '${egress.roomName}'`
+					`Ignoring the event of egress '${egress.egressId}': it streams no broadcast of room '${egress.roomName}'`
 				);
 				return;
 			}
 
-			const updated = BroadcastHelper.withEgressInfo(record, egress);
-
-			if (action === 'updated' && BroadcastHelper.isSameRecord(record, updated)) return;
-
-			await this.persistAndNotify(updated, action);
+			await this.saveAndNotify(egress.roomName, records, this.withEgress(records, egress));
 		});
 	}
 
 	/**
-	 * Settles the broadcast of a meeting that has finished. Normally the broadcast's own
+	 * Settles the broadcasts of a meeting that has finished. Normally their egress's own
 	 * `egress_ended` already did; this covers a meeting that ended without it reaching the server,
-	 * so the participants and the webhooks still learn that the broadcast is over. It stops the
-	 * egress too: closing the room ends a broadcast that streams, not one still starting, which
+	 * so the participants and the webhooks still learn that the broadcasts are over. It stops the
+	 * egress too: closing the room ends an egress that streams, not one still starting, which
 	 * would join after the room is gone, create it again and wait minutes for media.
 	 */
 	async cleanupRoom(roomId: string): Promise<void> {
 		await this.withWebhookLock(roomId, 'room_finished', async () => {
-			const record = await this.broadcastState.find(roomId);
+			const records = await this.broadcastState.find(roomId);
 
-			if (!record) return;
+			if (records.length === 0) return;
 
-			const egress = await this.endEgress(roomId, record.broadcastId);
-			const latest = egress ? BroadcastHelper.withEgressInfo(record, egress) : record;
-			await this.persistAndNotify(BroadcastHelper.withEnded(latest), 'ended');
+			let latest = records;
+
+			for (const egressId of new Set(records.map((record) => record.egressId))) {
+				const egress = await this.endEgress(roomId, egressId);
+
+				if (egress) latest = this.withEgress(latest, egress);
+			}
+
+			await this.saveAndNotify(
+				roomId,
+				records,
+				latest.map((record) => BroadcastHelper.withEnded(record))
+			);
 		});
 	}
 
 	/**
 	 * The egress of a broadcast leaves the room only after LiveKit reports it ended. One that leaves
-	 * while the broadcast is still in progress and no longer answers died with its egress service,
-	 * which LiveKit never reports: it keeps listing the egress as in progress forever. The broadcast
-	 * is ended here instead, as failed, so the room can go live again.
+	 * while its broadcasts are still in progress and no longer answers died with its egress service,
+	 * which LiveKit never reports: it keeps listing the egress as in progress forever. The broadcasts
+	 * are ended here instead, as failed, so the room can go live again.
 	 */
 	async handleEgressParticipantLeft(roomId: string, egressId: string): Promise<void> {
 		await this.withWebhookLock(roomId, `participant_left of egress '${egressId}'`, async () => {
-			const record = await this.broadcastState.find(roomId);
+			const records = await this.broadcastState.find(roomId);
 
-			if (record?.broadcastId !== egressId || !BroadcastHelper.isInProgress(record.status)) return;
+			if (!records.some((record) => record.egressId === egressId)) return;
 
 			if (await this.livekitService.isEgressReachable(egressId)) return;
 
-			this.logger.warn(`The egress of broadcast '${egressId}' in room '${roomId}' stopped responding`);
-			await this.persistAndNotify(
-				BroadcastHelper.withEnded({ ...record, status: MeetBroadcastStatus.FAILED, error: EGRESS_LOST_ERROR }),
-				'ended'
+			this.logger.warn(`The egress '${egressId}' streaming room '${roomId}' stopped responding`);
+			const lost = records.map((record) =>
+				record.egressId === egressId
+					? BroadcastHelper.withEnded({
+							...record,
+							status: MeetBroadcastStatus.FAILED,
+							error: EGRESS_LOST_ERROR
+						})
+					: record
 			);
+			await this.saveAndNotify(roomId, records, lost);
 		});
+	}
+
+	/**
+	 * Adds each target to the egress already streaming the meeting, or starts the egress with the
+	 * first one, one URL per call so each broadcast knows the position of its stream. A target that
+	 * fails withdraws the streams added before it, so the request starts every broadcast or none.
+	 */
+	protected async addStreams(
+		room: { roomId: string; roomName: string },
+		host: BroadcastRecord | undefined,
+		targets: BroadcastTarget[],
+		roomSettings: Pick<BroadcastRecord, 'layout' | 'encoding'>
+	): Promise<{ started: BroadcastRecord[]; egress: EgressInfo }> {
+		const started: BroadcastRecord[] = [];
+		let egress: EgressInfo | undefined;
+
+		try {
+			for (const target of targets) {
+				const joined = host && (await this.livekitService.updateStream(host.egressId, [target.url], []));
+				const settings = joined && host ? host : roomSettings;
+				egress = joined ?? (await this.startEgress(room.roomId, target.url, settings));
+				host = BroadcastHelper.createRecord(egress, room, target, settings);
+				started.push(host);
+			}
+		} catch (error) {
+			await this.withdraw(started);
+			throw error;
+		}
+
+		return { started, egress: egress! };
+	}
+
+	/** Takes back the streams of broadcasts that will not be kept, without failing the caller. */
+	protected async withdraw(records: BroadcastRecord[]): Promise<void> {
+		for (const { broadcastId, egressId, url } of records) {
+			try {
+				await this.livekitService.updateStream(egressId, [], [url]);
+			} catch (error) {
+				this.logger.warn(`Could not withdraw the stream of broadcast '${broadcastId}'`, error);
+			}
+		}
+	}
+
+	protected findRunningRecord(records: BroadcastRecord[], broadcastId: string): BroadcastRecord {
+		const record = records.find((candidate) => candidate.broadcastId === broadcastId);
+
+		if (!record) throw errorBroadcastNotFound(broadcastId);
+
+		if (!BroadcastHelper.isRunning(record.status)) throw errorBroadcastAlreadyStopped(broadcastId);
+
+		return record;
+	}
+
+	protected startEgress(
+		roomId: string,
+		url: string,
+		{ layout, encoding }: Pick<BroadcastRecord, 'layout' | 'encoding'>
+	): Promise<EgressInfo> {
+		return this.livekitService.startRoomComposite(
+			roomId,
+			new StreamOutput({ protocol: StreamProtocol.RTMP, urls: [url] }),
+			{ layout, encodingOptions: EncodingConverter.toLivekit(encoding) }
+		);
 	}
 
 	/**
@@ -282,7 +313,7 @@ export class BroadcastService {
 	}
 
 	/**
-	 * Runs a webhook's change to a room's broadcast once no other change holds the room's
+	 * Runs a webhook's change to a room's broadcasts once no other change holds the room's
 	 * broadcast lock, waiting as long as one can hold it: the webhook carries LiveKit's latest
 	 * state of the egress, which nothing else would apply if it were dropped.
 	 */
@@ -293,12 +324,12 @@ export class BroadcastService {
 		});
 
 		if (handled === null) {
-			this.logger.warn(`Could not process ${webhook} for the broadcast of room '${roomId}': it stayed locked`);
+			this.logger.warn(`Could not process ${webhook} for the broadcasts of room '${roomId}': they stayed locked`);
 		}
 	}
 
 	/**
-	 * Runs a request's change to a room's broadcast once no other change holds the room's
+	 * Runs a request's change to a room's broadcasts once no other change holds the room's
 	 * broadcast lock, answering 409 only when one holds it for longer than a request waits.
 	 */
 	protected async withRequestLock<T>(roomId: string, task: () => Promise<T>): Promise<T> {
@@ -310,8 +341,8 @@ export class BroadcastService {
 	}
 
 	/**
-	 * Runs a change to a room's broadcast once its broadcast lock is free, giving up as `null` when
-	 * the lock stays taken for longer than `wait`.
+	 * Runs a change to a room's broadcasts once its broadcast lock is free, giving up as `null`
+	 * when the lock stays taken for longer than `wait`.
 	 */
 	protected withBroadcastLock<T>(roomId: string, wait: StringValue, task: () => Promise<T>): Promise<T | null> {
 		return this.mutexService.withRetryLock(
@@ -324,84 +355,67 @@ export class BroadcastService {
 	}
 
 	/**
-	 * The saved broadcast of the room whose egress LiveKit still reports in progress. One LiveKit no
-	 * longer does ended without its `egress_ended` reaching this server, and is forgotten here so it
-	 * does not block the room until its TTL.
+	 * The saved broadcasts of the room whose egress LiveKit still reports in progress. Those of an
+	 * egress LiveKit no longer does ended without their `egress_ended` reaching this server: they are
+	 * settled here with what LiveKit last reported, so they do not block the room until their TTL.
 	 */
-	protected async findLiveRecord(roomId: string): Promise<BroadcastRecord | undefined> {
-		const record = await this.broadcastState.find(roomId);
+	protected async findLiveRecords(roomId: string): Promise<BroadcastRecord[]> {
+		const records = await this.broadcastState.find(roomId);
+		let live = records;
 
-		if (!record) return undefined;
+		for (const egressId of new Set(records.map((record) => record.egressId))) {
+			const [egress] = await this.livekitService.getEgress(roomId, egressId);
 
-		const [egress] = await this.livekitService.getEgress(roomId, record.broadcastId);
+			if (egress && BroadcastHelper.isInProgress(EgressHelper.toStatus(egress.status, MeetBroadcastStatus))) {
+				continue;
+			}
 
-		if (egress && BroadcastHelper.isInProgress(EgressHelper.toStatus(egress.status, MeetBroadcastStatus))) {
-			return record;
+			this.logger.warn(`Settling the stale broadcasts of egress '${egressId}' in room '${roomId}'`);
+			live = live.map((record) =>
+				record.egressId === egressId
+					? BroadcastHelper.withEnded(egress ? BroadcastHelper.withEgressInfo(record, egress) : record)
+					: record
+			);
 		}
 
-		this.logger.warn(`Dropping the stale broadcast '${record.broadcastId}' of room '${roomId}'`);
-		await this.broadcastState.delete(roomId);
-		return undefined;
+		if (live !== records) await this.saveAndNotify(roomId, records, live);
+
+		return live.filter(({ status }) => BroadcastHelper.isInProgress(status));
 	}
 
-	protected async getRecord(roomId: string, broadcastId: string): Promise<BroadcastRecord> {
-		const record = await this.broadcastState.find(roomId);
-
-		if (record?.broadcastId !== broadcastId) throw errorBroadcastNotFound(broadcastId);
-
-		return record;
-	}
-
-	protected async getRunningRecord(roomId: string, broadcastId: string): Promise<BroadcastRecord> {
-		const record = await this.getRecord(roomId, broadcastId);
-
-		if (!BroadcastHelper.isRunning(record.status)) throw errorBroadcastNotActive(broadcastId);
-
-		return record;
+	/** The records with those of the egress updated with what LiveKit reports of it. */
+	protected withEgress(records: BroadcastRecord[], egress: EgressInfo): BroadcastRecord[] {
+		return records.map((record) =>
+			record.egressId === egress.egressId ? BroadcastHelper.withEgressInfo(record, egress) : record
+		);
 	}
 
 	/**
-	 * Saves the broadcast while it is in progress and forgets it once it is over, then tells the
-	 * participants and the webhooks. Every change notifies, whether a request or LiveKit made it.
+	 * Saves the broadcasts still in progress, forgetting the ones that are over, then tells the
+	 * participants and the webhooks about each broadcast that changed: as started when it is new,
+	 * as ended when it is over. Every change notifies, whether a request or LiveKit made it.
 	 */
-	protected async persistAndNotify(record: BroadcastRecord, action: EgressWebhookAction): Promise<MeetBroadcastInfo> {
-		const inProgress = BroadcastHelper.isInProgress(record.status);
+	protected async saveAndNotify(roomId: string, before: BroadcastRecord[], after: BroadcastRecord[]): Promise<void> {
+		await this.broadcastState.save(
+			roomId,
+			after.filter(({ status }) => BroadcastHelper.isInProgress(status))
+		);
 
-		if (inProgress) {
-			await this.broadcastState.save(record);
-		} else {
-			await this.broadcastState.delete(record.roomId);
+		for (const record of after) {
+			const previous = before.find(({ broadcastId }) => broadcastId === record.broadcastId);
+
+			if (previous && BroadcastHelper.isSameRecord(previous, record)) continue;
+
+			const info = BroadcastHelper.toBroadcastInfo(record);
+			await this.frontendEventService.sendBroadcastUpdatedSignal(roomId, info);
+
+			if (!BroadcastHelper.isInProgress(record.status)) {
+				this.webhookDispatcherService.sendBroadcastEndedWebhook(info);
+			} else if (!previous) {
+				this.webhookDispatcherService.sendBroadcastStartedWebhook(info);
+			} else {
+				this.webhookDispatcherService.sendBroadcastUpdatedWebhook(info);
+			}
 		}
-
-		const info = BroadcastHelper.toBroadcastInfo(record);
-		await this.frontendEventService.sendBroadcastUpdatedSignal(record.roomId, info);
-
-		if (!inProgress) {
-			this.webhookDispatcherService.sendBroadcastEndedWebhook(info);
-		} else if (action === 'started') {
-			this.webhookDispatcherService.sendBroadcastStartedWebhook(info);
-		} else {
-			this.webhookDispatcherService.sendBroadcastUpdatedWebhook(info);
-		}
-
-		return info;
-	}
-
-	protected toRequestedState(
-		destination: MeetBroadcastDestinationInfo,
-		active: boolean
-	): MeetBroadcastDestinationInfo {
-		return {
-			...destination,
-			status: active ? MeetBroadcastDestinationStatus.CONNECTING : MeetBroadcastDestinationStatus.STOPPED,
-			error: undefined
-		};
-	}
-
-	protected toStreamOutput(destinations: MeetBroadcastDestinationInfo[]): StreamOutput {
-		return new StreamOutput({
-			protocol: StreamProtocol.RTMP,
-			urls: destinations.filter((destination) => BroadcastHelper.isStreaming(destination)).map(({ url }) => url)
-		});
 	}
 }

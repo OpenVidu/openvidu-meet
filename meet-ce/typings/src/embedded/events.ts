@@ -76,18 +76,18 @@ export enum EmbeddedEventName {
 	 */
 	RECORDING_STATUS_CHANGED = 'recordingStatusChanged',
 	/**
-	 * Event emitted to every participant when a live broadcast of the meeting starts. A participant
-	 * who joins while a broadcast is running receives it on joining, so the host can always show that
-	 * the meeting is being streamed.
+	 * Event emitted to every participant when a live broadcast of the meeting starts, one per
+	 * destination. A participant who joins while broadcasts are running receives one event per
+	 * running broadcast on joining, so the host can always show that the meeting is being streamed.
 	 */
 	BROADCAST_STARTED = 'broadcastStarted',
 	/**
-	 * Event emitted to every participant when a running broadcast changes: it goes active, or one
-	 * of its destinations connects, fails, stops or is added.
+	 * Event emitted to every participant when a running broadcast changes: it goes active once media
+	 * reaches its destination, or it starts ending.
 	 */
 	BROADCAST_UPDATED = 'broadcastUpdated',
 	/**
-	 * Event emitted to every participant when the live broadcast of the meeting ends, normally or
+	 * Event emitted to every participant when a live broadcast of the meeting ends, normally or
 	 * because it failed.
 	 */
 	BROADCAST_ENDED = 'broadcastEnded',

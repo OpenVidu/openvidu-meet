@@ -38,9 +38,9 @@ export enum MeetWebhookEventType {
 	RECORDING_UPDATED = 'recordingUpdated',
 	/** Emitted when a recording ends */
 	RECORDING_ENDED = 'recordingEnded',
-	/** Emitted when a live broadcast starts in a room */
+	/** Emitted when a live broadcast starts in a room, one per destination */
 	BROADCAST_STARTED = 'broadcastStarted',
-	/** Emitted when a live broadcast is updated: it goes active, or one of its destinations changes status */
+	/** Emitted when a live broadcast is updated: it goes active once media reaches its destination, or it starts ending */
 	BROADCAST_UPDATED = 'broadcastUpdated',
 	/** Emitted when a live broadcast ends */
 	BROADCAST_ENDED = 'broadcastEnded'

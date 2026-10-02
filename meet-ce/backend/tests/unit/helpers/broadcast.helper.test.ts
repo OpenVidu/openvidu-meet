@@ -1,14 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 import type { StreamInfo } from '@livekit/protocol';
 import { EgressStatus, StreamInfo_Status } from '@livekit/protocol';
-import type { MeetBroadcastDestinationInfo } from '@openvidu-meet/typings';
-import {
-	MeetBroadcastDestinationSource,
-	MeetBroadcastDestinationStatus,
-	MeetBroadcastStatus,
-	MeetRecordingEncodingPreset,
-	MeetRecordingLayout
-} from '@openvidu-meet/typings';
+import { MeetBroadcastStatus, MeetRecordingEncodingPreset, MeetRecordingLayout } from '@openvidu-meet/typings';
 import type { EgressInfo } from 'livekit-server-sdk';
 import { BroadcastHelper } from '../../../src/helpers/broadcast.helper.js';
 import type { BroadcastRecord } from '../../../src/models/broadcast.model.js';
@@ -20,7 +13,7 @@ const REDACTED_YOUTUBE = 'rtmp://a.rtmp.youtube.com/live2/********';
 
 const stream = (overrides: Partial<StreamInfo>): StreamInfo =>
 	({
-		url: '',
+		url: 'rtmp://mtx/live/{abc...xyz}',
 		status: StreamInfo_Status.ACTIVE,
 		startedAt: 0n,
 		endedAt: 0n,
@@ -33,7 +26,7 @@ const egress = (overrides: Partial<EgressInfo>): EgressInfo =>
 	({
 		egressId: 'EG_1',
 		roomName: 'room-1',
-		status: EgressStatus.EGRESS_STARTING,
+		status: EgressStatus.EGRESS_ACTIVE,
 		startedAt: 0n,
 		endedAt: 0n,
 		errorCode: 0,
@@ -44,26 +37,18 @@ const egress = (overrides: Partial<EgressInfo>): EgressInfo =>
 		...overrides
 	}) as unknown as EgressInfo;
 
-const destination = (overrides: Partial<MeetBroadcastDestinationInfo>): MeetBroadcastDestinationInfo => ({
-	id: 'd1',
-	name: 'YouTube',
-	url: YOUTUBE,
-	source: MeetBroadcastDestinationSource.ROOM,
-	status: MeetBroadcastDestinationStatus.CONNECTING,
-	...overrides
-});
-
-const record = (
-	destinations: MeetBroadcastDestinationInfo[],
-	overrides: Partial<BroadcastRecord> = {}
-): BroadcastRecord => ({
-	broadcastId: 'EG_1',
+const record = (overrides: Partial<BroadcastRecord> = {}): BroadcastRecord => ({
+	broadcastId: 'bc-1',
 	roomId: 'room-1',
 	roomName: 'Room',
 	status: MeetBroadcastStatus.STARTING,
+	name: 'YouTube',
+	url: YOUTUBE,
+	destinationId: 'd1',
 	layout: MeetRecordingLayout.GRID,
 	encoding: MeetRecordingEncodingPreset.H264_720P_30,
-	destinations,
+	egressId: 'EG_1',
+	streamIndex: 0,
 	...overrides
 });
 
@@ -101,127 +86,76 @@ describe('BroadcastHelper.redactRoomOptions', () => {
 	});
 });
 
-describe('BroadcastHelper.matchesReportedStreamUrl', () => {
-	// The shapes LiveKit egress was observed to report for these inputs.
-	it('matches the URL egress reports, key redacted to its first and last three characters', () => {
-		expect(
-			BroadcastHelper.matchesReportedStreamUrl(
-				'rtmp://mtx:1935/live/youtube-KEY-AAAAAAAA',
-				'rtmp://mtx:1935/live/{you...AAA}'
-			)
-		).toBe(true);
-	});
-
-	it('treats the query string as part of the key, like egress does', () => {
-		expect(
-			BroadcastHelper.matchesReportedStreamUrl(
-				'rtmp://mtx:1935/live/twitch-KEY-BBBBBBBB?param=secretvalue',
-				'rtmp://mtx:1935/live/{twi...lue}'
-			)
-		).toBe(true);
-	});
-
-	it('matches a short key, of which egress shows a third at each end, and an unredacted echo', () => {
-		const reported = (key: string, shape: string) =>
-			BroadcastHelper.matchesReportedStreamUrl(`rtmp://mtx:1935/live/${key}`, `rtmp://mtx:1935/live/${shape}`);
-
-		expect(reported('ab', '{...}')).toBe(true);
-		expect(reported('test', '{t...t}')).toBe(true);
-		expect(reported('k?x=1', '{k...1}')).toBe(true);
-		expect(reported('abcdef', '{ab...ef}')).toBe(true);
-		expect(reported('abcdefgh', '{ab...gh}')).toBe(true);
-		expect(reported('abcdefghi', '{abc...ghi}')).toBe(true);
-		expect(BroadcastHelper.matchesReportedStreamUrl(YOUTUBE, YOUTUBE)).toBe(true);
-	});
-
-	it('does not match a stream whose key egress shows differently, short or not', () => {
-		const reported = (key: string, shape: string) =>
-			BroadcastHelper.matchesReportedStreamUrl(`rtmp://mtx:1935/live/${key}`, `rtmp://mtx:1935/live/${shape}`);
-
-		expect(reported('test', '{...}')).toBe(false);
-		expect(reported('test', '{tes...est}')).toBe(false);
-		expect(reported('ab', '{a...b}')).toBe(false);
-	});
-
-	it('does not match another destination on the same host', () => {
-		expect(
-			BroadcastHelper.matchesReportedStreamUrl(
-				'rtmp://mtx:1935/live/youtube-KEY-AAAAAAAA',
-				'rtmp://mtx:1935/live/{fac...DDD}'
-			)
-		).toBe(false);
-		expect(
-			BroadcastHelper.matchesReportedStreamUrl(
-				'rtmp://mtx:1935/live/youtube-KEY-AAAAAAAA',
-				'rtmp://other/live/{you...AAA}'
-			)
-		).toBe(false);
-	});
-});
-
-describe('BroadcastHelper.resolveStartDestinations', () => {
+describe('BroadcastHelper.resolveTargets', () => {
 	const room = [
 		{ id: 'a', name: 'A', url: 'rtmp://mtx/live/********' },
 		{ id: 'b', name: 'B', url: 'rtmp://mtx/live/********' }
 	];
 	const urls = { a: 'rtmp://mtx/live/aaaKEYaaa', b: 'rtmp://mtx/live/bbbKEYbbb' };
 
-	it('streams to every room destination when the request names none', () => {
-		const destinations = BroadcastHelper.resolveStartDestinations(room, urls, undefined);
-
-		expect(destinations).toEqual([
-			{ id: 'a', name: 'A', url: urls.a, source: 'room', status: 'connecting' },
-			{ id: 'b', name: 'B', url: urls.b, source: 'room', status: 'connecting' }
-		]);
-	});
-
-	it('keeps the room destinations left out as stopped, so they can be started later', () => {
-		const destinations = BroadcastHelper.resolveStartDestinations(room, urls, [{ id: 'b' }]);
-
-		expect(destinations.map(({ id, status }) => `${id}:${status}`)).toEqual(['a:stopped', 'b:connecting']);
-	});
-
-	it('adds a destination for this meeting', () => {
-		const destinations = BroadcastHelper.resolveStartDestinations(room, urls, [
-			{ id: 'a' },
+	it('streams to the room destinations named, as saved, and to those given for this meeting', () => {
+		expect(
+			BroadcastHelper.resolveTargets(
+				room,
+				urls,
+				[],
+				[{ destinationId: 'b' }, { name: 'Extra', url: 'rtmp://mtx/live/extraKEY' }]
+			)
+		).toEqual([
+			{ destinationId: 'b', name: 'B', url: urls.b },
 			{ name: 'Extra', url: 'rtmp://mtx/live/extraKEY' }
 		]);
-
-		expect(destinations[2]).toEqual({
-			id: expect.any(String),
-			name: 'Extra',
-			url: 'rtmp://mtx/live/extraKEY',
-			source: 'meeting',
-			status: 'connecting'
-		});
 	});
 
-	it('rejects an unknown room destination, a redacted URL for a new one, duplicates and the cap', () => {
-		expectStatus(() => BroadcastHelper.resolveStartDestinations(room, urls, [{ id: 'zzz' }]), 422);
+	it('streams to every room destination not streamed to yet when the request names none', () => {
+		expect(
+			BroadcastHelper.resolveTargets(room, urls, [], undefined).map(({ destinationId }) => destinationId)
+		).toEqual(['a', 'b']);
+		expect(
+			BroadcastHelper.resolveTargets(room, urls, [record({ destinationId: 'a', url: urls.a })], undefined)
+		).toEqual([{ destinationId: 'b', name: 'B', url: urls.b }]);
+	});
+
+	it('rejects an unknown room destination and a redacted URL, which has no stream key', () => {
+		expectStatus(() => BroadcastHelper.resolveTargets(room, urls, [], [{ destinationId: 'zzz' }]), 422);
 		expectStatus(
-			() =>
-				BroadcastHelper.resolveStartDestinations(room, urls, [
-					{ name: 'New', url: 'rtmp://mtx/live/********' }
-				]),
+			() => BroadcastHelper.resolveTargets(room, urls, [], [{ name: 'New', url: 'rtmp://mtx/live/********' }]),
 			422
 		);
-		expectStatus(
-			() => BroadcastHelper.resolveStartDestinations(room, urls, [{ name: 'Same as A', url: urls.a }]),
-			422
-		);
+	});
+});
+
+describe('BroadcastHelper.validateNewBroadcasts', () => {
+	const inProgress = (urls: string[]) => urls.map((url, index) => record({ broadcastId: `bc-${index}`, url }));
+	const targets = (urls: string[]) => urls.map((url) => ({ name: url, url }));
+
+	it('lets a meeting stream to five destinations at once, each once', () => {
+		expect(() =>
+			BroadcastHelper.validateNewBroadcasts(
+				inProgress(['a', 'b', 'c']),
+				targets(['rtmp://mtx/live/d', 'rtmp://mtx/live/e'])
+			)
+		).not.toThrow();
 		expectStatus(
 			() =>
-				BroadcastHelper.resolveStartDestinations(
-					room,
-					urls,
-					['c', 'd', 'e', 'f'].map((key) => ({ name: key, url: `rtmp://mtx/live/${key}` }))
+				BroadcastHelper.validateNewBroadcasts(
+					inProgress(['a', 'b', 'c', 'd']),
+					targets(['rtmp://mtx/live/e', 'rtmp://mtx/live/f'])
 				),
 			422
 		);
-	});
-
-	it('needs at least one destination to stream to', () => {
-		expectStatus(() => BroadcastHelper.resolveStartDestinations([], {}, undefined), 422);
+		expectStatus(
+			() => BroadcastHelper.validateNewBroadcasts([], targets(['rtmp://mtx/live/a', 'rtmp://mtx/live/a'])),
+			422
+		);
+		expectStatus(
+			() =>
+				BroadcastHelper.validateNewBroadcasts(
+					inProgress(['rtmp://mtx/live/a']),
+					targets(['rtmp://mtx/live/a'])
+				),
+			409
+		);
 	});
 });
 
@@ -264,7 +198,7 @@ describe('BroadcastHelper.reconcileRoomDestinations', () => {
 		expect(urls).toEqual({ [destinations[0].id!]: 'rtmp://mtx/live/cccKEYccc' });
 	});
 
-	it('rejects an unknown id, a new destination without its full URL, a repeated id and a repeated URL', () => {
+	it('rejects an unknown id, a new destination without its full URL, a repeated id, a repeated URL and the cap', () => {
 		expectStatus(
 			() =>
 				BroadcastHelper.reconcileRoomDestinations(savedUrls, [
@@ -295,33 +229,99 @@ describe('BroadcastHelper.reconcileRoomDestinations', () => {
 				]),
 			422
 		);
+		expectStatus(
+			() =>
+				BroadcastHelper.reconcileRoomDestinations(
+					{},
+					['c', 'd', 'e', 'f', 'g', 'h'].map((key) => ({ name: key, url: `rtmp://mtx/live/${key}` }))
+				),
+			422
+		);
+	});
+});
+
+describe('BroadcastHelper.createRecord', () => {
+	it('takes the last stream the egress reports as its own, since each URL is added on its own', () => {
+		const created = BroadcastHelper.createRecord(
+			egress({
+				egressId: 'EG_2',
+				streamResults: [stream({ startedAt: 1_000_000_000n }), stream({})]
+			}),
+			{ roomId: 'room-1', roomName: 'Room' },
+			{ name: 'Extra', url: 'rtmp://mtx/live/extraKEY' },
+			{ layout: MeetRecordingLayout.SPEAKER, encoding: MeetRecordingEncodingPreset.H264_1080P_30 }
+		);
+
+		expect(created).toEqual({
+			broadcastId: expect.stringMatching(/^room-1--/),
+			roomId: 'room-1',
+			roomName: 'Room',
+			status: MeetBroadcastStatus.STARTING,
+			name: 'Extra',
+			url: 'rtmp://mtx/live/extraKEY',
+			destinationId: undefined,
+			layout: MeetRecordingLayout.SPEAKER,
+			encoding: MeetRecordingEncodingPreset.H264_1080P_30,
+			egressId: 'EG_2',
+			streamIndex: 1,
+			startDate: undefined,
+			endDate: undefined,
+			duration: undefined,
+			error: undefined
+		});
 	});
 });
 
 describe('BroadcastHelper.withEgressInfo', () => {
-	it('keeps a start date it already knows when a snapshot carries none', () => {
+	it('reads its own stream by position, whatever the others say', () => {
 		const updated = BroadcastHelper.withEgressInfo(
-			record([destination({})], { status: MeetBroadcastStatus.ACTIVE, startDate: 10_000 }),
-			egress({ status: EgressStatus.EGRESS_ENDING })
+			record({ streamIndex: 1 }),
+			egress({
+				streamResults: [
+					stream({ status: StreamInfo_Status.FAILED, error: 'Failed to connect' }),
+					stream({ startedAt: 2_000_000_000n })
+				]
+			})
 		);
 
-		expect(updated.startDate).toBe(10_000);
+		expect(updated).toMatchObject({ status: 'active', startDate: 2000, error: undefined });
 	});
 
-	const yt = destination({ id: 'yt', url: 'rtmp://mtx/live/youtube-KEY-AAAAAAAA' });
-	const tw = destination({ id: 'tw', name: 'Twitch', url: 'rtmp://mtx/live/twitch-KEY-BBBBBBBB' });
+	it('keeps the broadcast starting while LiveKit reports the egress active but no media has reached the destination', () => {
+		const connecting = BroadcastHelper.withEgressInfo(record(), egress({ streamResults: [stream({})] }));
+		const live = BroadcastHelper.withEgressInfo(
+			connecting,
+			egress({ streamResults: [stream({ startedAt: 2_000_000_000n })] })
+		);
 
-	it('maps each stream to its destination whatever order egress lists them in', () => {
+		expect(connecting).toMatchObject({ status: 'starting', startDate: undefined });
+		expect(live).toMatchObject({ status: 'active', startDate: 2000 });
+	});
+
+	it('keeps a start it already knows when a snapshot of its stream carries none', () => {
 		const updated = BroadcastHelper.withEgressInfo(
-			record([yt, tw]),
+			record({ status: MeetBroadcastStatus.ACTIVE, startDate: 10_000 }),
+			egress({ streamResults: [stream({})] })
+		);
+
+		expect(updated).toMatchObject({ status: 'active', startDate: 10_000 });
+	});
+
+	it('leaves the record as it is when a snapshot does not carry its stream yet', () => {
+		const current = record({ status: MeetBroadcastStatus.ACTIVE, startDate: 10_000, streamIndex: 2 });
+
+		expect(BroadcastHelper.withEgressInfo(current, egress({ streamResults: [stream({})] }))).toEqual(current);
+	});
+
+	it('fails with its stream, undated when no media ever reached the destination', () => {
+		// Egress stamps a stream that never connects with its end time as start time.
+		const updated = BroadcastHelper.withEgressInfo(
+			record(),
 			egress({
-				status: EgressStatus.EGRESS_ACTIVE,
 				streamResults: [
-					stream({ url: 'rtmp://mtx/live/{twi...BBB}', startedAt: 2_000_000_000n }),
 					stream({
-						url: 'rtmp://mtx/live/{you...AAA}',
 						status: StreamInfo_Status.FAILED,
-						error: 'Failed to connect',
+						error: 'Connection refused',
 						startedAt: 1_000_000_000n,
 						endedAt: 1_000_000_000n
 					})
@@ -329,83 +329,7 @@ describe('BroadcastHelper.withEgressInfo', () => {
 			})
 		);
 
-		expect(updated.status).toBe(MeetBroadcastStatus.ACTIVE);
-		expect(updated.destinations[0]).toMatchObject({ id: 'yt', status: 'failed', error: 'Failed to connect' });
-		expect(updated.destinations[1]).toMatchObject({
-			id: 'tw',
-			status: 'active',
-			startDate: 2000,
-			error: undefined
-		});
-	});
-
-	it('keeps the broadcast starting while LiveKit reports the egress active but no destination has media', () => {
-		const connecting = BroadcastHelper.withEgressInfo(
-			record([yt]),
-			egress({
-				status: EgressStatus.EGRESS_ACTIVE,
-				streamResults: [stream({ url: 'rtmp://mtx/live/{you...AAA}' })]
-			})
-		);
-		const live = BroadcastHelper.withEgressInfo(
-			connecting,
-			egress({
-				status: EgressStatus.EGRESS_ACTIVE,
-				streamResults: [stream({ url: 'rtmp://mtx/live/{you...AAA}', startedAt: 2_000_000_000n })]
-			})
-		);
-
-		expect(connecting).toMatchObject({ status: 'starting', startDate: undefined });
-		expect(live).toMatchObject({ status: 'active', startDate: 2000 });
-	});
-
-	it('reports a stream that egress lists but has not started yet as connecting', () => {
-		const updated = BroadcastHelper.withEgressInfo(
-			record([yt]),
-			egress({ streamResults: [stream({ url: 'rtmp://mtx/live/{you...AAA}' })] })
-		);
-
-		expect(updated.destinations[0].status).toBe(MeetBroadcastDestinationStatus.CONNECTING);
-		expect(updated.startDate).toBeUndefined();
-	});
-
-	it('takes the earliest stream start as the broadcast start, never the egress request time', () => {
-		const updated = BroadcastHelper.withEgressInfo(
-			record([yt, tw]),
-			egress({
-				status: EgressStatus.EGRESS_ACTIVE,
-				startedAt: 500_000_000n,
-				streamResults: [
-					stream({ url: 'rtmp://mtx/live/{you...AAA}', startedAt: 3_000_000_000n }),
-					stream({ url: 'rtmp://mtx/live/{twi...BBB}', startedAt: 2_000_000_000n })
-				]
-			})
-		);
-
-		expect(updated.startDate).toBe(2000);
-	});
-
-	it('dates neither a stream that ended without ever connecting nor the broadcast from it', () => {
-		// Egress stamps a stream that never connects with its end time as start time.
-		const updated = BroadcastHelper.withEgressInfo(
-			record([yt, tw]),
-			egress({
-				status: EgressStatus.EGRESS_ACTIVE,
-				streamResults: [
-					stream({
-						url: 'rtmp://mtx/live/{you...AAA}',
-						status: StreamInfo_Status.FAILED,
-						error: 'Connection refused',
-						startedAt: 1_000_000_000n,
-						endedAt: 1_000_000_000n
-					}),
-					stream({ url: 'rtmp://mtx/live/{twi...BBB}', startedAt: 2_000_000_000n })
-				]
-			})
-		);
-
-		expect(updated.startDate).toBe(2000);
-		expect(updated.destinations[0]).toMatchObject({
+		expect(updated).toMatchObject({
 			status: 'failed',
 			error: 'Connection refused',
 			startDate: undefined,
@@ -414,194 +338,156 @@ describe('BroadcastHelper.withEgressInfo', () => {
 		});
 	});
 
-	it('gives a broadcast none of whose destinations ever connected no dates', () => {
-		const neverConnected = (url: string) =>
-			stream({ url, status: StreamInfo_Status.FAILED, startedAt: 6_000_000_000n, endedAt: 6_000_000_000n });
+	it('completes with its stream, dated and measured in seconds, while the egress goes on for the others', () => {
 		const updated = BroadcastHelper.withEgressInfo(
-			record([yt, tw]),
+			record({ status: MeetBroadcastStatus.ACTIVE, startDate: 1000 }),
 			egress({
-				status: EgressStatus.EGRESS_FAILED,
-				endedAt: 6_000_000_000n,
-				error: 'Failed to connect',
-				streamResults: [
-					neverConnected('rtmp://mtx/live/{you...AAA}'),
-					neverConnected('rtmp://mtx/live/{twi...BBB}')
-				]
-			})
-		);
-
-		expect(updated).toMatchObject({
-			status: 'failed',
-			startDate: undefined,
-			endDate: undefined,
-			duration: undefined
-		});
-		expect(updated.destinations.map(({ status, startDate, endDate }) => [status, startDate, endDate])).toEqual([
-			['failed', undefined, undefined],
-			['failed', undefined, undefined]
-		]);
-	});
-
-	it('follows the latest attempt when a destination was re-added, and converts durations to seconds', () => {
-		const updated = BroadcastHelper.withEgressInfo(
-			record([yt]),
-			egress({
-				status: EgressStatus.EGRESS_ACTIVE,
 				streamResults: [
 					stream({
-						url: 'rtmp://mtx/live/{you...AAA}',
-						status: StreamInfo_Status.FINISHED,
-						startedAt: 1_000_000_000n,
-						endedAt: 21_000_000_000n,
-						duration: 20_000_000_000n
-					}),
-					stream({ url: 'rtmp://mtx/live/{you...AAA}', startedAt: 30_000_000_000n })
-				]
-			})
-		);
-
-		expect(updated.destinations[0]).toMatchObject({ status: 'active', startDate: 30_000, endDate: undefined });
-	});
-
-	it('keeps a destination that was never streamed to as the server left it', () => {
-		const stopped = destination({ id: 'tw', url: tw.url, status: MeetBroadcastDestinationStatus.STOPPED });
-		const updated = BroadcastHelper.withEgressInfo(
-			record([yt, stopped]),
-			egress({ streamResults: [stream({ url: 'rtmp://mtx/live/{you...AAA}', startedAt: 1_000_000_000n })] })
-		);
-
-		expect(updated.destinations[1]).toEqual(stopped);
-	});
-
-	it('does not revive a destination that ended when a webhook carries an older snapshot of it', () => {
-		const ended = destination({
-			id: 'yt',
-			url: yt.url,
-			status: MeetBroadcastDestinationStatus.STOPPED,
-			startDate: 1000,
-			endDate: 5000
-		});
-		const updated = BroadcastHelper.withEgressInfo(
-			record([ended], { status: MeetBroadcastStatus.ENDING }),
-			egress({
-				status: EgressStatus.EGRESS_ENDING,
-				streamResults: [stream({ url: 'rtmp://mtx/live/{you...AAA}', startedAt: 1_000_000_000n })]
-			})
-		);
-
-		expect(updated.destinations[0].status).toBe(MeetBroadcastDestinationStatus.STOPPED);
-	});
-
-	it('settles the final state from a finished egress', () => {
-		const updated = BroadcastHelper.withEgressInfo(
-			record([yt], { status: MeetBroadcastStatus.ACTIVE }),
-			egress({
-				status: EgressStatus.EGRESS_COMPLETE,
-				endedAt: 61_000_000_000n,
-				streamResults: [
-					stream({
-						url: 'rtmp://mtx/live/{you...AAA}',
 						status: StreamInfo_Status.FINISHED,
 						startedAt: 1_000_000_000n,
 						endedAt: 61_000_000_000n,
 						duration: 60_000_000_000n
-					})
+					}),
+					stream({ startedAt: 5_000_000_000n })
 				]
 			})
 		);
 
 		expect(updated).toMatchObject({ status: 'complete', startDate: 1000, endDate: 61_000, duration: 60 });
-		expect(updated.destinations[0]).toMatchObject({ status: 'stopped', duration: 60 });
 	});
 
-	it('stops a destination still connecting when the egress ended, undated since no media reached it, and leaves a failed one failed', () => {
-		const failed = destination({ id: 'tw', url: tw.url, status: MeetBroadcastDestinationStatus.FAILED });
+	it('is aborted when its stream finished before any media reached the destination', () => {
 		const updated = BroadcastHelper.withEgressInfo(
-			record([yt, failed], { status: MeetBroadcastStatus.ENDING }),
+			record(),
+			egress({
+				streamResults: [
+					stream({ status: StreamInfo_Status.FINISHED, startedAt: 3_000_000_000n, endedAt: 3_000_000_000n })
+				]
+			})
+		);
+
+		expect(updated).toMatchObject({ status: 'aborted', startDate: undefined, endDate: undefined });
+	});
+
+	it('is ending while its stream is open and the egress is ending', () => {
+		const updated = BroadcastHelper.withEgressInfo(
+			record({ status: MeetBroadcastStatus.ACTIVE, startDate: 1000 }),
+			egress({ status: EgressStatus.EGRESS_ENDING, streamResults: [stream({ startedAt: 1_000_000_000n })] })
+		);
+
+		expect(updated.status).toBe(MeetBroadcastStatus.ENDING);
+	});
+
+	it('ends with the egress when its stream was still open, dated by the egress end', () => {
+		const updated = BroadcastHelper.withEgressInfo(
+			record({ status: MeetBroadcastStatus.ACTIVE, startDate: 1000 }),
 			egress({
 				status: EgressStatus.EGRESS_COMPLETE,
 				endedAt: 61_000_000_000n,
-				streamResults: [stream({ url: 'rtmp://mtx/live/{you...AAA}' })]
+				details: 'Stopped using API',
+				streamResults: [stream({ startedAt: 1_000_000_000n })]
 			})
 		);
 
-		expect(updated.destinations[0]).toMatchObject({ status: 'stopped', endDate: undefined });
-		expect(updated.destinations[1]).toEqual(failed);
+		expect(updated).toMatchObject({
+			status: 'complete',
+			startDate: 1000,
+			endDate: 61_000,
+			duration: 60,
+			details: 'Stopped using API'
+		});
 	});
 
-	it('leaves a destination connecting while the egress is only ending', () => {
-		const updated = BroadcastHelper.withEgressInfo(
-			record([yt], { status: MeetBroadcastStatus.ACTIVE }),
+	it('carries the egress error when the egress failed with its stream still open, and is aborted when it never streamed', () => {
+		const failed = BroadcastHelper.withEgressInfo(
+			record({ status: MeetBroadcastStatus.ACTIVE, startDate: 1000 }),
 			egress({
-				status: EgressStatus.EGRESS_ENDING,
-				streamResults: [stream({ url: 'rtmp://mtx/live/{you...AAA}' })]
+				status: EgressStatus.EGRESS_FAILED,
+				endedAt: 6_000_000_000n,
+				errorCode: 500,
+				error: 'boom',
+				streamResults: [stream({ startedAt: 1_000_000_000n })]
+			})
+		);
+		const aborted = BroadcastHelper.withEgressInfo(
+			record(),
+			egress({ status: EgressStatus.EGRESS_COMPLETE, endedAt: 6_000_000_000n, streamResults: [stream({})] })
+		);
+
+		expect(failed).toMatchObject({ status: 'failed', errorCode: 500, error: 'boom', endDate: 6000, duration: 5 });
+		expect(aborted).toMatchObject({ status: 'aborted', startDate: undefined, endDate: undefined });
+	});
+
+	it('leaves a broadcast its stream already ended alone when the egress ends later', () => {
+		const ended = record({
+			status: MeetBroadcastStatus.FAILED,
+			error: 'Connection refused',
+			streamIndex: 0
+		});
+		const updated = BroadcastHelper.withEgressInfo(
+			ended,
+			egress({
+				status: EgressStatus.EGRESS_COMPLETE,
+				endedAt: 61_000_000_000n,
+				streamResults: [
+					stream({
+						status: StreamInfo_Status.FAILED,
+						error: 'Connection refused',
+						startedAt: 1_000_000_000n,
+						endedAt: 1_000_000_000n
+					})
+				]
 			})
 		);
 
-		expect(updated.destinations[0].status).toBe(MeetBroadcastDestinationStatus.CONNECTING);
-	});
-
-	it('carries the egress error of a failed broadcast', () => {
-		const updated = BroadcastHelper.withEgressInfo(
-			record([yt]),
-			egress({ status: EgressStatus.EGRESS_FAILED, errorCode: 500, error: 'boom', details: 'more' })
-		);
-
-		expect(updated).toMatchObject({ status: 'failed', errorCode: 500, error: 'boom', details: 'more' });
+		expect(updated).toMatchObject({ status: 'failed', error: 'Connection refused', endDate: undefined });
 	});
 });
 
 describe('BroadcastHelper.withEnded', () => {
-	it('closes the broadcast and every open stream at the given instant', () => {
+	it('completes a live broadcast at the given instant', () => {
 		const ended = BroadcastHelper.withEnded(
-			record(
-				[
-					destination({ id: 'live', status: MeetBroadcastDestinationStatus.ACTIVE, startDate: 20_000 }),
-					destination({ id: 'off', status: MeetBroadcastDestinationStatus.FAILED })
-				],
-				{ status: MeetBroadcastStatus.ACTIVE, startDate: 10_000 }
-			),
+			record({ status: MeetBroadcastStatus.ACTIVE, startDate: 10_000 }),
 			70_000
 		);
 
 		expect(ended).toMatchObject({ status: 'complete', endDate: 70_000, duration: 60 });
-		expect(ended.destinations.map(({ status }) => status)).toEqual(['stopped', 'failed']);
-		expect(ended.destinations[0].endDate).toBe(70_000);
 	});
 
-	it('keeps the ending LiveKit already reported, like the abort of a broadcast stopped while starting', () => {
-		const ended = BroadcastHelper.withEnded(
-			record([destination({ status: MeetBroadcastDestinationStatus.CONNECTING })], {
-				status: MeetBroadcastStatus.ABORTED,
-				startDate: 10_000
-			}),
-			70_000
-		);
-
-		expect(ended).toMatchObject({ status: 'aborted', startDate: undefined, endDate: undefined });
+	it('keeps the ending a broadcast already has, dating a failure that had streamed', () => {
+		expect(
+			BroadcastHelper.withEnded(record({ status: MeetBroadcastStatus.ABORTED, startDate: 10_000 }), 70_000)
+		).toMatchObject({ status: 'aborted', startDate: undefined, endDate: undefined });
+		expect(
+			BroadcastHelper.withEnded(record({ status: MeetBroadcastStatus.FAILED, startDate: 10_000 }), 70_000)
+		).toMatchObject({ status: 'failed', startDate: 10_000, endDate: 70_000, duration: 60 });
 	});
 
 	it('reports a broadcast that never streamed as aborted, with no end date nor duration', () => {
-		const ended = BroadcastHelper.withEnded(
-			record([destination({ status: MeetBroadcastDestinationStatus.CONNECTING })]),
-			70_000
-		);
-
-		expect(ended.status).toBe('aborted');
-		expect(ended.endDate).toBeUndefined();
-		expect(ended.duration).toBeUndefined();
-		expect(ended.destinations[0].status).toBe('stopped');
+		expect(BroadcastHelper.withEnded(record(), 70_000)).toMatchObject({
+			status: 'aborted',
+			endDate: undefined,
+			duration: undefined
+		});
 	});
 });
 
 describe('BroadcastHelper.toBroadcastInfo', () => {
-	it('redacts every destination URL and nothing else', () => {
-		const info = BroadcastHelper.toBroadcastInfo(record([destination({}), destination({ id: 'd2', url: TWITCH })]));
-
-		expect(info.destinations.map(({ url }) => url)).toEqual([
-			REDACTED_YOUTUBE,
+	it('redacts the URL and keeps where the broadcast runs to the server', () => {
+		expect(BroadcastHelper.toBroadcastInfo(record())).toEqual({
+			broadcastId: 'bc-1',
+			roomId: 'room-1',
+			roomName: 'Room',
+			status: 'starting',
+			name: 'YouTube',
+			url: REDACTED_YOUTUBE,
+			destinationId: 'd1',
+			layout: 'grid',
+			encoding: 'H264_720P_30'
+		});
+		expect(BroadcastHelper.toBroadcastInfo(record({ url: TWITCH })).url).toBe(
 			'rtmps://live.twitch.tv:443/app/********'
-		]);
-		expect(info.destinations[0]).toMatchObject({ id: 'd1', name: 'YouTube', source: 'room', status: 'connecting' });
+		);
 	});
 });

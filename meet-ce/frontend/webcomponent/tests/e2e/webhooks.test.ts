@@ -232,10 +232,10 @@ test.describe('Webhooks E2E Tests', () => {
 		const started = startedWebhook.data as MeetBroadcastInfo;
 		expect(started.roomId).toBe(broadcastRoomId);
 		expect(started.status).toBe(MeetBroadcastStatus.STARTING);
-		expect(started.destinations[0].url).toContain('/********');
-		expect(started.destinations[0].url).not.toContain(sinkUrl.split('/').pop()!);
+		expect(started.url).toContain('/********');
+		expect(started.url).not.toContain(sinkUrl.split('/').pop()!);
 
-		// The broadcast is updated as it goes active and again as each destination connects.
+		// The broadcast is updated as it goes active.
 		await expect(webhookLocator(page, MeetWebhookEventType.BROADCAST_UPDATED).first()).toBeAttached({
 			timeout: 40_000
 		});

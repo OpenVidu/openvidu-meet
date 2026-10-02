@@ -6,9 +6,9 @@ import { RedisKeyName } from '../models/redis.model.js';
 import { RedisService } from './redis.service.js';
 
 /**
- * Keeps the broadcast running in each room, shared across replicas through Redis: the request that
- * starts it, the egress webhooks that move it along and the requests that change its destinations
- * may each land on a different backend instance. One room holds at most one broadcast.
+ * Keeps the broadcasts running in each room, shared across replicas through Redis: the requests
+ * that start and stop them and the egress webhooks that move them along may each land on a
+ * different backend instance.
  */
 @injectable()
 export class BroadcastStateService {
@@ -16,17 +16,19 @@ export class BroadcastStateService {
 
 	constructor(@inject(RedisService) protected redisService: RedisService) {}
 
-	async save(record: BroadcastRecord): Promise<void> {
-		await this.redisService.set(this.getKey(record.roomId), JSON.stringify(record), this.TTL_MS);
+	/** Saves the broadcasts of the room; none left forgets the room. */
+	async save(roomId: string, records: BroadcastRecord[]): Promise<void> {
+		if (records.length === 0) {
+			await this.redisService.delete(this.getKey(roomId));
+			return;
+		}
+
+		await this.redisService.set(this.getKey(roomId), JSON.stringify(records), this.TTL_MS);
 	}
 
-	async find(roomId: string): Promise<BroadcastRecord | null> {
+	async find(roomId: string): Promise<BroadcastRecord[]> {
 		const value = await this.redisService.get(this.getKey(roomId));
-		return value ? (JSON.parse(value) as BroadcastRecord) : null;
-	}
-
-	async delete(roomId: string): Promise<void> {
-		await this.redisService.delete(this.getKey(roomId));
+		return value ? (JSON.parse(value) as BroadcastRecord[]) : [];
 	}
 
 	private getKey(roomId: string): string {
