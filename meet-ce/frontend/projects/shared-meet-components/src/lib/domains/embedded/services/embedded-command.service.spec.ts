@@ -1,14 +1,19 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
+import { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { TestBed } from '@angular/core/testing';
 import {
 	LocalMediaService,
 	MeetingPhaseService,
 	MeetingViewPhase,
+	RecordingState,
+	RecordingStateInfo,
 	ScreenShareService,
 	MeetingLiveKitService
 } from '../../meeting/openvidu-components';
+import { RecordingService as RecordingStateService } from '../../meeting/openvidu-components/services/recording/recording.service';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
+import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { EmbeddedCommandService } from './embedded-command.service';
@@ -24,6 +29,8 @@ class LoggerServiceStub {
 
 const ROOM_ID = 'room1';
 const IDENTITY = 'participant-1';
+const RECORDING_ID = 'rec-1';
+const STARTED_RECORDING_ID = 'rec-new';
 
 /**
  * The command × phase × permission matrix of the embedded command bridge. Both transports (the
@@ -43,6 +50,9 @@ describe('EmbeddedCommandService', () => {
 		camera: { enabled: ReturnType<typeof signal<boolean>> };
 	};
 	let screenShare: { setEnabled: jasmine.Spy; enabled: ReturnType<typeof signal<boolean>> };
+	let recordingService: jasmine.SpyObj<RecordingService>;
+	let recordingStatus: ReturnType<typeof signal<RecordingStateInfo>>;
+	let setRecordingStarting: jasmine.Spy;
 	let liveKitService: { isSessionActive: ReturnType<typeof signal<boolean>>; disconnect: jasmine.Spy };
 	let phase: ReturnType<typeof signal<MeetingViewPhase>>;
 	let hasPermission: jasmine.Spy;
@@ -76,6 +86,23 @@ describe('EmbeddedCommandService', () => {
 		};
 		screenShare = { setEnabled: jasmine.createSpy('setEnabled').and.resolveTo(), enabled: screenShareEnabled };
 
+		recordingService = jasmine.createSpyObj<RecordingService>('RecordingService', [
+			'startRecording',
+			'stopRecording'
+		]);
+		recordingService.startRecording.and.resolveTo({ recordingId: STARTED_RECORDING_ID } as MeetRecordingInfo);
+		recordingService.stopRecording.and.resolveTo();
+		recordingStatus = signal<RecordingStateInfo>({
+			id: RECORDING_ID,
+			status: RecordingState.STARTED,
+			elapsed: new Date(0)
+		});
+		setRecordingStarting = jasmine
+			.createSpy('setRecordingStarting')
+			.and.callFake((id: string) =>
+				recordingStatus.set({ id, status: RecordingState.STARTING, elapsed: new Date(0) })
+			);
+
 		liveKitService = {
 			isSessionActive: signal(true),
 			disconnect: jasmine.createSpy('disconnect').and.resolveTo()
@@ -92,6 +119,11 @@ describe('EmbeddedCommandService', () => {
 				{ provide: MeetingModerationService, useValue: moderationService },
 				{ provide: LocalMediaService, useValue: localMedia as unknown as LocalMediaService },
 				{ provide: ScreenShareService, useValue: screenShare as unknown as ScreenShareService },
+				{ provide: RecordingService, useValue: recordingService },
+				{
+					provide: RecordingStateService,
+					useValue: { recordingStatus, setRecordingStarting } as unknown as RecordingStateService
+				},
 				{ provide: MeetingLiveKitService, useValue: liveKitService as unknown as MeetingLiveKitService },
 				{ provide: MeetingPhaseService, useValue: { phase } as unknown as MeetingPhaseService },
 				{
@@ -174,6 +206,22 @@ describe('EmbeddedCommandService', () => {
 			await service.participantMute(IDENTITY, { audioActive: false });
 
 			expect(moderationService.muteParticipant).not.toHaveBeenCalled();
+		});
+
+		it('rejects recordingStart with no active session', async () => {
+			liveKitService.isSessionActive.set(false);
+
+			await service.recordingStart();
+
+			expect(recordingService.startRecording).not.toHaveBeenCalled();
+		});
+
+		it('rejects recordingStop with no active session', async () => {
+			liveKitService.isSessionActive.set(false);
+
+			await service.recordingStop();
+
+			expect(recordingService.stopRecording).not.toHaveBeenCalled();
 		});
 
 		it('rejects meetingLeave with no active session (disconnect would be a no-op anyway)', async () => {
@@ -279,6 +327,24 @@ describe('EmbeddedCommandService', () => {
 			expect(screenShare.setEnabled).not.toHaveBeenCalled();
 		});
 
+		it('rejects recordingStart without the recordingControl permission', async () => {
+			hasPermission.and.returnValue(false);
+
+			await service.recordingStart();
+
+			expect(hasPermission).toHaveBeenCalledWith('recordingControl');
+			expect(recordingService.startRecording).not.toHaveBeenCalled();
+		});
+
+		it('rejects recordingStop without the recordingControl permission', async () => {
+			hasPermission.and.returnValue(false);
+
+			await service.recordingStop();
+
+			expect(hasPermission).toHaveBeenCalledWith('recordingControl');
+			expect(recordingService.stopRecording).not.toHaveBeenCalled();
+		});
+
 		it('meetingLeave requires no permission: any participant may leave', async () => {
 			hasPermission.and.returnValue(false);
 
@@ -338,6 +404,66 @@ describe('EmbeddedCommandService', () => {
 			);
 		});
 
+		it('recordingStart starts a recording of the current meeting by its room id', async () => {
+			await service.recordingStart();
+
+			expect(recordingService.startRecording).toHaveBeenCalledOnceWith(ROOM_ID);
+		});
+
+		it('recordingStart is rejected when the room id is undefined', async () => {
+			roomId.set(undefined);
+
+			await service.recordingStart();
+
+			expect(recordingService.startRecording).not.toHaveBeenCalled();
+		});
+
+		it('recordingStart hands the recording it created to the recording state', async () => {
+			await service.recordingStart();
+
+			expect(setRecordingStarting).toHaveBeenCalledOnceWith(STARTED_RECORDING_ID);
+		});
+
+		// The server reports the new recording some time after accepting it, so a host that stops right
+		// away would otherwise find nothing to stop while the recording goes on.
+		it('recordingStop sent right after recordingStart stops the recording that start created', async () => {
+			recordingStatus.set({ status: RecordingState.STOPPED, elapsed: new Date(0) });
+			let accept!: (info: MeetRecordingInfo) => void;
+			recordingService.startRecording.and.returnValue(new Promise((resolve) => (accept = resolve)));
+
+			const start = service.recordingStart();
+			const stop = service.recordingStop();
+			accept({ recordingId: STARTED_RECORDING_ID } as MeetRecordingInfo);
+			await Promise.all([start, stop]);
+
+			expect(recordingService.stopRecording).toHaveBeenCalledOnceWith(STARTED_RECORDING_ID);
+		});
+
+		it('recordingStop after a start that failed finds nothing to stop', async () => {
+			recordingStatus.set({ status: RecordingState.STOPPED, elapsed: new Date(0) });
+			recordingService.startRecording.and.rejectWith(new Error('recording disabled'));
+
+			await service.recordingStart();
+			await service.recordingStop();
+
+			expect(recordingService.stopRecording).not.toHaveBeenCalled();
+		});
+
+		it('recordingStop stops the recording in progress by its id', async () => {
+			await service.recordingStop();
+
+			expect(recordingService.stopRecording).toHaveBeenCalledOnceWith(RECORDING_ID);
+		});
+
+		it('recordingStop is rejected, with a warning, when no recording is in progress', async () => {
+			recordingStatus.set({ status: RecordingState.STOPPED, elapsed: new Date(0) });
+
+			await service.recordingStop();
+
+			expect(recordingService.stopRecording).not.toHaveBeenCalled();
+			expect(logger.warn).toHaveBeenCalledWith('recordingStop() called but no recording is in progress');
+		});
+
 		it('mediaToggleAudio passes an explicit active flag through', async () => {
 			await service.mediaToggleAudio(false);
 
@@ -385,6 +511,13 @@ describe('EmbeddedCommandService', () => {
 			moderationService.endMeeting.and.rejectWith(new Error('boom'));
 
 			await expectAsync(service.meetingEnd()).toBeResolved();
+		});
+
+		it('a failing recording start is logged, not propagated to the host', async () => {
+			recordingService.startRecording.and.rejectWith(new Error('boom'));
+
+			await expectAsync(service.recordingStart()).toBeResolved();
+			expect(logger.error).toHaveBeenCalled();
 		});
 
 		it('a failing media toggle is logged, not propagated to the host', async () => {

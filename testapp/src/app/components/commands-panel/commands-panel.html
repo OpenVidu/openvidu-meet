@@ -151,6 +151,30 @@
 		</button>
 	</section>
 
+	<section class="ta-card">
+		<div class="ta-card__header">
+			<h2>Recording</h2>
+		</div>
+		<div class="ta-row">
+			<button
+				id="recording-start-btn"
+				class="ta-btn ta-btn--grow"
+				data-testid="btn-recording-start"
+				(click)="commands.recordingStart()"
+			>
+				recordingStart()
+			</button>
+			<button
+				id="recording-stop-btn"
+				class="ta-btn ta-btn--grow"
+				data-testid="btn-recording-stop"
+				(click)="commands.recordingStop()"
+			>
+				recordingStop()
+			</button>
+		</div>
+	</section>
+
 	<section class="ta-card" data-testid="section-event-api">
 		<div class="ta-card__header">
 			<h2>Listeners</h2>

@@ -1,10 +1,13 @@
-import { LeftEventReason, EmbeddedEventName, MeetEventOrigin } from '@openvidu-meet/typings';
+import { EmbeddedEventName, LeftEventReason, MeetEventOrigin, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { INTEGRATIONS, meetLocator } from '../helpers/webcomponent.helper';
 import { createRoom, deleteRooms } from '../helpers/meet-api.helper';
+import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import {
 	endMeetingCommand,
 	eventLocator,
+	eventPayloadField,
+	eventSequence,
 	expectEvent,
 	joinedParticipantIdentity,
 	leaveMeeting,
@@ -14,7 +17,8 @@ import {
 	mediaToggleVideoCommand,
 	openMeeting,
 	openMeetingAtMediaSetup,
-	participantMuteCommand
+	participantMuteCommand,
+	recordingStatusLocator
 } from '../helpers/testapp.helper';
 
 // Events carry the same names/payloads regardless of transport; run every spec
@@ -136,6 +140,75 @@ for (const integration of INTEGRATIONS) {
 				await expect(eventLocator(page, EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED).first()).toBeVisible({
 					timeout: 5_000
 				});
+			});
+		});
+
+		test.describe('RECORDING_STATUS_CHANGED Event', () => {
+			// The status reaches everyone in the meeting, not only whoever started the recording.
+			test('should report the recording status to a participant who did not start it', async ({
+				page,
+				browser
+			}) => {
+				await openMeeting(page, roomId, { integration, role: 'speaker' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				const moderatorContext = await browser.newContext();
+				const moderatorPage = await moderatorContext.newPage();
+				await openMeeting(moderatorPage, roomId, { role: 'moderator' });
+				await expectEvent(moderatorPage, EmbeddedEventName.JOINED);
+
+				await startRecording(moderatorPage);
+
+				const active = recordingStatusLocator(page, MeetRecordingStatus.ACTIVE);
+				await expect(active).toHaveCount(1, { timeout: 20_000 });
+				const recordingId = await eventPayloadField(active, 'recordingId');
+				await expect(recordingStatusLocator(moderatorPage, MeetRecordingStatus.ACTIVE)).toContainText(
+					recordingId
+				);
+
+				await stopRecording(moderatorPage);
+
+				await expect(recordingStatusLocator(page, MeetRecordingStatus.COMPLETE)).toContainText(recordingId, {
+					timeout: 20_000
+				});
+
+				await moderatorContext.close();
+			});
+
+			test('should report the current status, once and after meetingJoined, to a participant who joins while recording', async ({
+				page,
+				browser
+			}) => {
+				const moderatorContext = await browser.newContext();
+				const moderatorPage = await moderatorContext.newPage();
+				await openMeeting(moderatorPage, roomId, { role: 'moderator' });
+				await startRecording(moderatorPage);
+				await expect(recordingStatusLocator(moderatorPage, MeetRecordingStatus.ACTIVE)).toHaveCount(1, {
+					timeout: 20_000
+				});
+
+				await openMeeting(page, roomId, { integration, role: 'speaker' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				const status = await expectEvent(page, EmbeddedEventName.RECORDING_STATUS_CHANGED);
+				await expect(status).toContainText(`"status":"${MeetRecordingStatus.ACTIVE}"`);
+				const lifecycle = (await eventSequence(page)).filter(
+					(name) =>
+						name === EmbeddedEventName.MEETING_JOINED || name === EmbeddedEventName.RECORDING_STATUS_CHANGED
+				);
+				expect(lifecycle).toEqual([
+					EmbeddedEventName.MEETING_JOINED,
+					EmbeddedEventName.RECORDING_STATUS_CHANGED
+				]);
+
+				await stopRecording(moderatorPage);
+
+				await expect(recordingStatusLocator(page, MeetRecordingStatus.COMPLETE)).toHaveCount(1, {
+					timeout: 20_000
+				});
+				await expect(recordingStatusLocator(page, MeetRecordingStatus.ACTIVE)).toHaveCount(1);
+
+				await moderatorContext.close();
 			});
 		});
 

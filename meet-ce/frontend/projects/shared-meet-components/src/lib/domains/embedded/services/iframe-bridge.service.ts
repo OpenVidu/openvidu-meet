@@ -199,6 +199,14 @@ export class IframeBridgeService {
 				await this.commandService.mediaToggleScreenShare(this.extractActivePayload(message));
 				break;
 
+			case EmbeddedCommandName.RECORDING_START:
+				await this.commandService.recordingStart();
+				break;
+
+			case EmbeddedCommandName.RECORDING_STOP:
+				await this.commandService.recordingStop();
+				break;
+
 			default:
 				break;
 		}

@@ -1,3 +1,4 @@
+import { MeetRecordingStatus } from '../database/recording.entity.js';
 import { MeetParticipantPayload } from '../response/participant-response.js';
 
 /**
@@ -45,6 +46,13 @@ export enum EmbeddedEventName {
 	 * prejoin screen onwards, before `meetingJoined`.
 	 */
 	MEDIA_SCREEN_SHARE_STATUS_CHANGED = 'mediaScreenShareStatusChanged',
+	/**
+	 * Event emitted to every participant when the status of the meeting's recording changes, whoever
+	 * started or stopped it. Each recording's statuses are reported in order, each at most once, and a
+	 * participant joining a meeting that is being recorded receives its current status right after
+	 * `meetingJoined`.
+	 */
+	RECORDING_STATUS_CHANGED = 'recordingStatusChanged',
 	/**
 	 * Event emitted when the participant asks to close OpenVidu Meet by dismissing the post-meeting,
 	 * join, error or recording screen. The host application responds by removing the embedded
@@ -176,6 +184,14 @@ export interface EmbeddedEventPayloads {
 		origin: MeetEventOrigin;
 	};
 	/**
+	 * Payload for the {@link EmbeddedEventName.RECORDING_STATUS_CHANGED} event.
+	 * `status` is the recording's new status (see {@link MeetRecordingStatus}).
+	 */
+	[EmbeddedEventName.RECORDING_STATUS_CHANGED]: {
+		recordingId: string;
+		status: MeetRecordingStatus;
+	};
+	/**
 	 * Payload for the {@link EmbeddedEventName.JOINED} event.
 	 * @deprecated Use {@link EmbeddedEventName.MEETING_JOINED}. Removed in 3.12.0.
 	 */
@@ -300,6 +316,16 @@ export interface EmbeddedMediaScreenShareStatusChangedEvent {
 }
 
 /**
+ * Event message emitted when the status of the meeting's recording changes: the event name plus its
+ * payload, derived from {@link EmbeddedEventPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedRecordingStatusChangedEvent {
+	event: EmbeddedEventName.RECORDING_STATUS_CHANGED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.RECORDING_STATUS_CHANGED>;
+}
+
+/**
  * Event message emitted when the participant asks to close OpenVidu Meet (no payload).
  * @category Communication
  */
@@ -351,6 +377,7 @@ export type EmbeddedEvent =
 	| EmbeddedMediaAudioStatusChangedEvent
 	| EmbeddedMediaVideoStatusChangedEvent
 	| EmbeddedMediaScreenShareStatusChangedEvent
+	| EmbeddedRecordingStatusChangedEvent
 	| EmbeddedCloseRequestedEvent
 	| EmbeddedJoinedEvent
 	| EmbeddedLeftEvent

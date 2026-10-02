@@ -69,7 +69,9 @@ events are re-dispatched on the outer element.
   participants only; payload `{ roomId, participant: MeetParticipantPayload }` — identity,
   correlation fields and role; live transitions only, no replay of participants already present,
   no media state, and no client-side departure reason — the authoritative one travels on the
-  `participantLeft` webhook).
+  `participantLeft` webhook), `recordingStatusChanged` (everyone; payload `{ recordingId, status }`
+  with a `MeetRecordingStatus`; a recording's statuses only move forward, each at most once, and the
+  current one is reported right after `meetingJoined` on joining mid-recording).
   The 3.8.0 spellings (`joined`, `left`, `closed`) are dispatched **alongside** their
   canonical twin until **3.12.0** — a host listening to both names receives the event twice.
   `EmbeddedEventBusService`'s queue only ever carries canonical names; `src/app/app.ts` emits both
@@ -79,7 +81,9 @@ events are re-dispatched on the outer element.
   `participantMute(identity, media)`, `participantMuteAll(media)` (moderation is one-way: `media`
   only accepts `false` values, e.g. `{audioActive: false}`, and never applies to a moderator),
   `mediaToggleAudio(active?)`, `mediaToggleVideo(active?)`, `mediaToggleScreenShare(active?)`
-  (omitted = toggle), and the convenience listener API `on()` / `once()` / `off()` added in
+  (omitted = toggle), `recordingStart()` / `recordingStop()` (gated by `recordingControl`; the stop
+  targets the recording the meeting currently knows, after waiting for a start still in flight), and
+  the convenience listener API `on()` / `once()` / `off()` added in
   `src/app/custom-element/wrapper.ts`. Every command runs through `EmbeddedCommandService.run()`,
   which enforces the permission and, internally, which commands work from the prejoin screen — the
   audio/video toggles do, the rest are rejected (with a log) until the meeting is connected. The

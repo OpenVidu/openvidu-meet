@@ -114,6 +114,9 @@ const ALL_FLOWS = [
 	// speech transcription, which the fake tone-audio camera can't produce.
 	{ id: 'enable-captions', kind: 'live', domain: 'meeting', roomName: 'Live Captions Demo', count: 2,
 		roomConfig: { captions: { enabled: true } }, drive: driveEnableCaptions },
+	// start-recording: 2-person meeting where the filmed moderator opens more options and clicks Start
+	// recording; the take starts inside the meeting and eases a zoom onto those two clicks.
+	{ id: 'start-recording', kind: 'live', domain: 'recordings', roomName: 'Product Demo', count: 2, drive: driveStartRecording },
 	// anon: starts logged OUT (it IS the login) — no reused session, no room seeding.
 	{ id: 'login', kind: 'ui', anon: true, domain: 'auth', drive: driveLogin },
 	{ id: 'create-room', kind: 'ui', domain: 'rooms', drive: driveCreateRoom },
@@ -285,6 +288,16 @@ function installCursor() {
 	else build();
 }
 
+// ---------- Focus effect state ----------
+// Playwright's WebM starts when the filmed page is created, so a wall-clock stamp taken just before
+// that (videoT0) turns Date.now() into a position in the take. Flows that opt in with
+// clickSelector({ zoom: true }) leave their clicks here for the post-processing step.
+let videoT0 = 0;
+let videoTrimStart = 0;
+const focusClicks = [];
+const elapsed = () => (Date.now() - videoT0) / 1000;
+const startVideoHere = (lead = 0.3) => { videoTrimStart = Math.max(0, elapsed() - lead); };
+
 // ---------- Cursor motion helpers ----------
 let cursorPos = { x: Math.round(WIDTH / 2), y: Math.round(HEIGHT / 2) };
 const easeInOutQuad = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
@@ -315,14 +328,20 @@ async function moveCursor(page, x, y, { duration } = {}) {
 }
 // Glides to an element's centre, then performs a real click (dispatches the mouse events the
 // injected cursor animates). Uses locator.click for actionability so the click is reliable.
-async function clickSelector(page, selector, opts = {}) {
+// `zoom: true` also logs the click for the focus effect (zoom + soft background blur, applied in
+// post by renderFocusVideo); `focusOn` is a selector of a larger region to keep sharp instead of
+// the target itself (e.g. the whole menu a menu item belongs to).
+async function clickSelector(page, selector, { zoom = false, focusOn, ...motion } = {}) {
 	const el = page.locator(selector).first();
 	await el.waitFor({ state: 'visible', timeout: TIMEOUT });
 	await el.scrollIntoViewIfNeeded().catch(() => {});
 	const box = await el.boundingBox();
-	if (box) await moveCursor(page, box.x + box.width / 2, box.y + box.height / 2, opts);
+	const glideAt = elapsed();
+	if (box) await moveCursor(page, box.x + box.width / 2, box.y + box.height / 2, motion);
 	await page.waitForTimeout(P(120));
+	const focusBox = focusOn ? await page.locator(focusOn).first().boundingBox() : null;
 	await el.click({ delay: 70 });
+	if (zoom && box) focusClicks.push({ glideAt, clickAt: elapsed(), box: focusBox ?? box });
 	await page.waitForTimeout(P(220));
 }
 // Glides to a field and focuses it, clears any prefilled value (e.g. the room wizard defaults to
@@ -410,7 +429,8 @@ async function newParticipant(theme, file, { record = false, cursor = false, aut
 	});
 	await context.addInitScript((t) => { try { localStorage.setItem('ovMeet-theme', t); } catch {} }, theme);
 	if (cursor) await context.addInitScript(installCursor);
-	return { browser, context, page: await context.newPage() };
+	const createdAt = Date.now();
+	return { browser, context, page: await context.newPage(), createdAt };
 }
 // Fast (non-filmed) join used for background participants: fill lobby name, then join.
 async function joinMeeting(page, url, { name } = {}) {
@@ -497,9 +517,90 @@ async function playCaptionScript(page, sentences, speakerName, color) {
 	}
 }
 
+// ---------- Focus effect: zoom in on a click, softly blurring everything around it ----------
+const FOCUS_ZOOM = 1.7; // magnification at the peak
+const FOCUS_IN = 0.8; // seconds to ease in, from the moment the cursor starts gliding to the target
+const FOCUS_OUT = 0.9; // seconds to ease back out
+const FOCUS_HOLD = 1.5; // seconds to stay zoomed after the last click
+const FOCUS_BLUR = 4; // gaussian sigma of the background at the peak
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+// A span eases a zoom onto `box` between `start` and `end` (seconds into the clip) while the rest of
+// the frame softly blurs. The clicks a flow logged become one span covering all of them.
+function spansFromClicks(clicks, trimStart) {
+	if (!clicks.length) return [];
+	const x0 = Math.min(...clicks.map((c) => c.box.x));
+	const y0 = Math.min(...clicks.map((c) => c.box.y));
+	const x1 = Math.max(...clicks.map((c) => c.box.x + c.box.width));
+	const y1 = Math.max(...clicks.map((c) => c.box.y + c.box.height));
+	return [{
+		start: Math.max(0, clicks[0].glideAt - trimStart - 0.15),
+		end: clicks.at(-1).clickAt - trimStart + FOCUS_HOLD,
+		zoom: FOCUS_ZOOM,
+		box: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 }
+	}];
+}
+
+// Re-encodes a video from `trimStart` on, applying the focus spans one after another (they must not
+// overlap). Each span fades a blurred copy of the frame in everywhere except a feathered window on
+// its box, so the target stays sharp, and eases the zoom with the same smoothstep ramp, so the two
+// move together. Times in the filters are seconds into the trimmed clip.
+function renderFocusVideo(src, outPath, trimStart, spans) {
+	const encode = ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', String(CRF), '-pix_fmt', 'yuv420p',
+		'-r', String(FPS), '-movflags', '+faststart', '-an'];
+	if (!spans.length) {
+		execFileSync('ffmpeg', ['-y', '-ss', String(trimStart), '-i', src, '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', ...encode, outPath], { stdio: 'ignore' });
+		return;
+	}
+	spans = [...spans].sort((a, b) => a.start - b.start);
+	const duration = Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', src]).toString()) - trimStart;
+	const ramp = (t, span, n) => {
+		const [r, sm] = [2 * n, 2 * n + 1];
+		return `st(${r},clip(min((${t}-${span.start})/${FOCUS_IN},(${span.end}-${t})/${FOCUS_OUT}),0,1));st(${sm},ld(${r})*ld(${r})*(3-2*ld(${r})))`;
+	};
+	const inputs = ['-ss', String(trimStart), '-i', src];
+	const graph = [`[0:v]fps=${FPS},setpts=PTS-STARTPTS,format=gbrp[v0]`];
+	const centers = [];
+
+	spans.forEach((span, n) => {
+		const { x, y, width, height } = span.box;
+		const [fx, fy] = [x + width / 2, y + height / 2];
+		const [rx, ry] = [width / 2 + 120, height / 2 + 100];
+		// The zoom window stays inside the frame, so a target near an edge sits off-centre rather than cropped.
+		centers.push([clamp(fx, WIDTH / (2 * span.zoom), WIDTH - WIDTH / (2 * span.zoom)), clamp(fy, HEIGHT / (2 * span.zoom), HEIGHT - HEIGHT / (2 * span.zoom))]);
+
+		const mask = `${VIDEO_TMP}/focus-mask-${n}.png`;
+		const superellipse = `pow(pow(abs((X-${fx})/${rx}),4)+pow(abs((Y-${fy})/${ry}),4),0.25)`;
+		execFileSync('ffmpeg', ['-y', '-f', 'lavfi', '-i', `color=c=black:s=${WIDTH}x${HEIGHT},format=gray,geq=lum='255*clip((1.3-${superellipse})/0.5,0,1)'`,
+			'-frames:v', '1', mask], { stdio: 'ignore' });
+		inputs.push('-loop', '1', '-framerate', String(FPS), '-t', String(duration), '-i', mask);
+
+		graph.push(
+			`[v${n}]split=3[a${n}][b${n}][c${n}]`,
+			`[b${n}]gblur=sigma=${FOCUS_BLUR}:steps=2[blur${n}]`,
+			`[a${n}][blur${n}]blend=all_expr='${ramp('T', span, 0)};A*(1-ld(1))+B*ld(1)'[dim${n}]`,
+			`[${n + 1}:v]format=gbrp[mask${n}]`,
+			`[dim${n}][c${n}][mask${n}]maskedmerge[v${n + 1}]`
+		);
+	});
+
+	// Between two spans the zoom is back at 1, so switching the centre at their midpoint is invisible.
+	const at = (axis) => centers.reduceRight((rest, c, n) => (rest === null ? `${c[axis] * 2}` : `if(lt(on/${FPS},${(spans[n].end + spans[n + 1].start) / 2}),${c[axis] * 2},${rest})`), null);
+	const zoomExpr = spans.map((span, n) => ramp(`on/${FPS}`, span, n)).join(';') + ';1' + spans.map((span, n) => `+(${span.zoom}-1)*ld(${2 * n + 1})`).join('');
+	graph.push(`[v${spans.length}]format=yuv420p,scale=${WIDTH * 2}:${HEIGHT * 2}:flags=bicubic,zoompan=` +
+		`z='${zoomExpr}':x='clip(${at(0)}-iw/zoom/2,0,iw-iw/zoom)':y='clip(${at(1)}-ih/zoom/2,0,ih-ih/zoom)':` +
+		`d=1:s=${WIDTH}x${HEIGHT}:fps=${FPS}[out]`);
+
+	execFileSync('ffmpeg', ['-y', ...inputs, '-filter_complex', graph.join(';'), '-map', '[out]', '-t', String(duration), ...encode, outPath], { stdio: 'ignore' });
+}
+
 // ---------- ffmpeg transcode (WebM -> requested format) ----------
-function transcodeVideo(srcWebm, relNoExt) {
+function transcodeVideo(srcWebm, relNoExt, { trimStart = 0, clicks = [] } = {}) {
 	const outPath = `${OUT}/${relNoExt}.${EXT}`;
+	if (FORMAT === 'mp4' && (trimStart > 0 || clicks.length)) {
+		renderFocusVideo(srcWebm, outPath, trimStart, spansFromClicks(clicks, trimStart));
+		return `${relNoExt}.${EXT}`;
+	}
 	let args;
 	if (FORMAT === 'webm') {
 		args = ['-y', '-i', srcWebm, '-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', String(CRF), '-r', String(FPS), '-an', outPath];
@@ -697,6 +798,24 @@ async function driveEnableCaptions(page, url, roster) {
 	await page.waitForTimeout(P(1600)); // hold on the final caption
 }
 
+// Start-recording (live, 2 ppl): the clip begins inside the meeting. The moderator opens more options
+// and clicks Start recording, both with the zoom + blur focus; the Activities panel then shows the
+// recording going from starting to active.
+async function driveStartRecording(page, url, roster) {
+	await joinMeeting(page, url, { name: roster[0].name });
+	await remoteTiles(page, 1);
+	await parkCursor(page);
+	await page.waitForTimeout(P(1800)); // settle the 2-person layout
+	startVideoHere();
+	await page.waitForTimeout(P(900));
+	await clickSelector(page, '#more-options-btn', { zoom: true });
+	await page.waitForSelector('.mat-mdc-menu-content', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(500));
+	await clickSelector(page, '#recording-btn', { zoom: true, focusOn: '.mat-mdc-menu-panel' });
+	await page.waitForSelector('ov-recording-activity', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(5500)); // linger on the recording state (starting -> active)
+}
+
 // Room-lifecycle (authed + own camera): create a room from the empty overview, join it publishing
 // the fake camera, then start recording — one continuous take. mark(name) stamps the elapsed time
 // at each phase boundary so the runner can split the take into three clips. ctx.addParticipant()
@@ -846,9 +965,12 @@ async function runLiveFlow(token, flow, theme) {
 			rec = await newParticipant(theme, roster[0].file, { record: true, cursor: true });
 			video = rec.page.video();
 			cursorPos = { x: Math.round(WIDTH / 2), y: Math.round(HEIGHT / 2) };
+			videoT0 = rec.createdAt;
+			videoTrimStart = 0;
+			focusClicks.length = 0;
 			await flow.drive(rec.page, url, roster);
 			await rec.context.close(); // finalizes the video file
-			const out = transcodeVideo(await video.path(), rel);
+			const out = transcodeVideo(await video.path(), rel, { trimStart: videoTrimStart, clicks: focusClicks });
 			try { unlinkSync(await video.path()); } catch {}
 			written.push(out);
 			console.log(`  ✓ ${out}`);
@@ -918,6 +1040,18 @@ async function runRoomLifecycle(token, flow, theme, preRoomIds, preRecIds) {
 			await cleanToolData(token, preRoomIds, preRecIds); // leave no trace (room + recordings)
 		}
 	}
+}
+
+// ---------- Refocus: add focus spans to a video that is already recorded ----------
+// node record.mjs --refocus clip.mp4 --spans '[{"start":8.3,"end":10.9,"zoom":1.8,"box":{"x":1556,"y":70,"width":344,"height":300}}]'
+// writes <out>/clip.mp4 with the spans applied, without recording again. Times are seconds into the clip.
+if (flag('refocus', null)) {
+	const src = String(flag('refocus'));
+	await mkdir(OUT, { recursive: true });
+	await mkdir(VIDEO_TMP, { recursive: true });
+	renderFocusVideo(src, `${OUT}/${src.split('/').pop()}`, 0, JSON.parse(String(flag('spans', '[]'))));
+	console.log(`✓ ${OUT}/${src.split('/').pop()}`);
+	process.exit(0);
 }
 
 // ---------- Main ----------

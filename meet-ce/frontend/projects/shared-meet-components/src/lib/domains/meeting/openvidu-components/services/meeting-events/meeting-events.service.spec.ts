@@ -1,6 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MeetRecordingStatus, MeetSignalType } from '@openvidu-meet/typings';
+import { MeetParticipantMediaMutedPayload, MeetRecordingStatus, MeetSignalType } from '@openvidu-meet/typings';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { MeetStorageService } from '../../../../../shared/services/storage.service';
 import { DataTopic } from '../../models/data-topic.model';
@@ -16,7 +16,7 @@ import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.servic
 import { ParticipantService } from '../participant/participant.service';
 import { RecordingService } from '../recording/recording.service';
 import { MeetingTranslateService } from '../translate/meeting-translate.service';
-import { MeetingEventCallbacks, MeetingEventsService } from './meeting-events.service';
+import { MeetingEventCallbacks, MeetingEventsService, MeetSignal } from './meeting-events.service';
 
 class LoggerServiceStub {
 	get() {
@@ -105,6 +105,48 @@ describe('MeetingEventsService', () => {
 			expect(recordingService.setRecordingStopped).not.toHaveBeenCalled();
 		});
 
+		it('relays a server-sent signal to its subscribers, recording updates included', async () => {
+			const relayed: MeetSignal[] = [];
+			service.meetSignals$.subscribe((meetSignal) => relayed.push(meetSignal));
+			const mute: MeetParticipantMediaMutedPayload = {
+				roomId: 'room1',
+				media: { audioActive: false },
+				timestamp: 0
+			};
+
+			await receive(MeetSignalType.MEET_RECORDING_UPDATED, recordingUpdate);
+			await receive(MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED, mute);
+
+			expect(relayed).toEqual([
+				{ topic: MeetSignalType.MEET_RECORDING_UPDATED, payload: recordingUpdate as never },
+				{ topic: MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED, payload: mute }
+			]);
+		});
+
+		// `participantMute` is the only thing standing between a speaker and everyone's microphone.
+		it('does not relay a signal a participant forged', async () => {
+			const relayed: MeetSignal[] = [];
+			service.meetSignals$.subscribe((meetSignal) => relayed.push(meetSignal));
+
+			await receive(
+				MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED,
+				{ roomId: 'room1', media: { audioActive: false }, timestamp: 0 },
+				storedParticipant
+			);
+
+			expect(relayed).toEqual([]);
+		});
+
+		it('does not relay chat or unknown topics', async () => {
+			const relayed: MeetSignal[] = [];
+			service.meetSignals$.subscribe((meetSignal) => relayed.push(meetSignal));
+
+			await receive(DataTopic.CHAT, { message: 'hello' }, storedParticipant);
+			await receive('something_else', { message: 'hello' });
+
+			expect(relayed).toEqual([]);
+		});
+
 		it('still delivers chat messages relayed from a known participant', async () => {
 			await receive(DataTopic.CHAT, { message: 'hello' }, storedParticipant);
 
@@ -151,6 +193,7 @@ describe('MeetingEventsService (reconnection view state)', () => {
 	let remotes: ParticipantModel[];
 	let callbacks: MeetingEventCallbacks;
 	let dialogService: jasmine.SpyObj<DialogService>;
+	let recordingService: jasmine.SpyObj<RecordingService>;
 
 	beforeEach(() => {
 		remotes = [];
@@ -169,6 +212,7 @@ describe('MeetingEventsService (reconnection view state)', () => {
 			'showBlockingDialog',
 			'closeBlockingDialog'
 		]);
+		recordingService = jasmine.createSpyObj<RecordingService>('RecordingService', ['setRecordingStopped']);
 
 		const participantServiceStub = {
 			addRemoteParticipant: () => remotes.push({} as ParticipantModel),
@@ -202,7 +246,7 @@ describe('MeetingEventsService (reconnection view state)', () => {
 				{ provide: MeetingTranslateService, useValue: { translate: (key: string) => key } },
 				{ provide: ChatService, useValue: {} },
 				{ provide: MeetingUiConfigService, useValue: {} },
-				{ provide: RecordingService, useValue: {} },
+				{ provide: RecordingService, useValue: recordingService },
 				{ provide: MeetStorageService, useValue: meetStorageService }
 			]
 		});
@@ -308,6 +352,21 @@ describe('MeetingEventsService (reconnection view state)', () => {
 
 		expect(streamLayoutService.floatLocalCameraVideo).not.toHaveBeenCalled();
 	});
+	// The recording state is shared by every meeting the page joins, and the one it leaves can go on
+	// recording without it.
+	it('forgets the recording of a room once disconnected from it', () => {
+		emit(RoomEvent.Disconnected, undefined);
+
+		expect(recordingService.setRecordingStopped).toHaveBeenCalledTimes(1);
+	});
+
+	it('keeps the recording across a reconnect', () => {
+		emit(RoomEvent.Reconnecting);
+		emit(RoomEvent.Reconnected);
+
+		expect(recordingService.setRecordingStopped).not.toHaveBeenCalled();
+	});
+
 	it('tells the participant the connection is lost, with nothing to answer', () => {
 		emit(RoomEvent.Reconnecting);
 

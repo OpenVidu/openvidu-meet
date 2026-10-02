@@ -98,6 +98,23 @@ test.describe('Room Features E2E Tests', () => {
 
 			await leaveMeeting(page, { role: 'moderator' });
 		});
+
+		// One element joins meeting after meeting, and the one it leaves can go on recording without it.
+		test('should not carry a recording into the next meeting joined with the same element', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'moderator' });
+			await startRecording(page);
+			await expect(wcLocator(page, '#recording-tag')).toBeVisible({ timeout: 20_000 });
+			await leaveMeeting(page, { role: 'moderator' });
+
+			const { roomId: nextRoomId } = await createRoom();
+			createdRoomIds.push(nextRoomId);
+			await openMeeting(page, nextRoomId, { role: 'moderator' });
+
+			await expect(wcLocator(page, '#meeting-elapsed-time')).toBeVisible();
+			await expect(wcLocator(page, '#recording-tag')).toBeHidden();
+
+			await leaveMeeting(page, { role: 'moderator' });
+		});
 	});
 
 	test.describe('UI Panels and Components', () => {
