@@ -64,24 +64,22 @@
 		>
 			participantKick()
 		</button>
-		<div class="ta-row">
-			<button
-				id="participant-promote-btn"
-				class="ta-btn ta-btn--grow"
-				data-testid="btn-participant-update-role-upgrade"
-				(click)="commands.participantUpdateRole(ModerationAction.UPGRADE)"
-			>
-				participantUpdateRole(upgrade)
-			</button>
-			<button
-				id="participant-demote-btn"
-				class="ta-btn ta-btn--grow"
-				data-testid="btn-participant-update-role-downgrade"
-				(click)="commands.participantUpdateRole(ModerationAction.DOWNGRADE)"
-			>
-				participantUpdateRole(downgrade)
-			</button>
-		</div>
+		<button
+			id="participant-promote-btn"
+			class="ta-btn"
+			data-testid="btn-participant-update-role-upgrade"
+			(click)="commands.participantUpdateRole(ModerationAction.UPGRADE)"
+		>
+			participantUpdateRole(upgrade)
+		</button>
+		<button
+			id="participant-demote-btn"
+			class="ta-btn"
+			data-testid="btn-participant-update-role-downgrade"
+			(click)="commands.participantUpdateRole(ModerationAction.DOWNGRADE)"
+		>
+			participantUpdateRole(downgrade)
+		</button>
 		<div class="ta-field">
 			<label class="ta-arg-label">Devices the two mute commands turn off, any combination</label>
 			<div class="ta-switch-field">
