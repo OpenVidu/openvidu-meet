@@ -175,7 +175,35 @@
 				<span class="ta-log-entry__detail">{{ row.detail }}</span>
 			</button>
 			@if (expandedId() === row.id && row.payload) {
-			<pre class="ta-log-entry__payload ta-mono">{{ row.payload }}</pre>
+			<div class="ta-log-entry__expanded">
+				<button
+					class="ta-icon-btn ta-icon-btn--sm ta-log-entry__copy"
+					[class.ta-icon-btn--on]="copiedId() === row.id"
+					[attr.aria-label]="copiedId() === row.id ? 'Payload copied' : 'Copy payload'"
+					[title]="copiedId() === row.id ? 'Copied' : 'Copy payload'"
+					data-testid="btn-copy-payload"
+					(click)="copyPayload(row)"
+				>
+					<svg
+						width="13"
+						height="13"
+						viewBox="0 0 16 16"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.4"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						@if (copiedId() === row.id) {
+						<polyline points="3,8.5 6.5,12 13,4.5"></polyline>
+						} @else {
+						<rect x="5.75" y="5.75" width="8.5" height="8.5" rx="1.5"></rect>
+						<path d="M10.25 3.75v-1a1 1 0 0 0-1-1h-6.5a1 1 0 0 0-1 1v6.5a1 1 0 0 0 1 1h1"></path>
+						}
+					</svg>
+				</button>
+				<pre class="ta-log-entry__payload ta-mono">{{ row.payload }}</pre>
+			</div>
 			}
 		</li>
 		} @empty {

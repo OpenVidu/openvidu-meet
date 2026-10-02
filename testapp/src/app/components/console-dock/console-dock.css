@@ -280,9 +280,21 @@
 	white-space: nowrap;
 }
 
-.ta-log-entry__payload {
+.ta-log-entry__expanded {
+	position: relative;
 	margin: 0 12px 10px 108px;
-	padding: 10px 12px;
+}
+
+.ta-log-entry__copy {
+	position: absolute;
+	top: 6px;
+	right: 6px;
+	background: var(--ta-field);
+}
+
+.ta-log-entry__payload {
+	margin: 0;
+	padding: 10px 40px 10px 12px;
 	background: var(--ta-field);
 	border: 1px solid var(--ta-line);
 	border-radius: var(--ta-radius);
@@ -389,6 +401,6 @@
 	flex: 1 0 100%;
 }
 
-.ta-console--side .ta-log-entry__payload {
+.ta-console--side .ta-log-entry__expanded {
 	margin-left: 12px;
 }

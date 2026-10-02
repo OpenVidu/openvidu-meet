@@ -32,6 +32,9 @@ const SIZES: Record<ConsolePosition, { initial: number; min: number; stageMin: n
 /** Pixels a key press moves the grip. */
 const NUDGE = 24;
 
+/** How long a copy button shows its confirmation. */
+const COPIED_FEEDBACK_MS = 1500;
+
 /** Only structured details are worth expanding; plain reasons already fit on the row. */
 const prettyPayload = (detail: string): string | null => {
 	if (!detail.startsWith('{') && !detail.startsWith('[')) return null;
@@ -70,6 +73,7 @@ export class ConsoleDock {
 	protected readonly size = signal(SIZES[this.preferences.position()].initial);
 	protected readonly query = signal('');
 	protected readonly expandedId = signal<number | null>(null);
+	protected readonly copiedId = signal<number | null>(null);
 
 	protected readonly rows = computed<ConsoleRow[]>(() => {
 		const shownKinds = this.preferences.shownKinds();
@@ -165,6 +169,17 @@ export class ConsoleDock {
 		if (!row.payload) return;
 
 		this.expandedId.update((id) => (id === row.id ? null : row.id));
+	}
+
+	protected async copyPayload(row: ConsoleRow): Promise<void> {
+		try {
+			await navigator.clipboard.writeText(row.payload ?? '');
+		} catch {
+			return;
+		}
+
+		this.copiedId.set(row.id);
+		setTimeout(() => this.copiedId.update((id) => (id === row.id ? null : id)), COPIED_FEEDBACK_MS);
 	}
 
 	protected copyVisible(): void {
