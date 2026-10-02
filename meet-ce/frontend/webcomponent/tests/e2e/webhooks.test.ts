@@ -2,6 +2,8 @@ import {
 	LeftEventReason,
 	MeetParticipantJoinedPayload,
 	MeetParticipantLeftPayload,
+	MeetParticipantModerationAction,
+	MeetParticipantRoleChangedPayload,
 	MeetRecordingInfo,
 	MeetRecordingStatus,
 	MeetRoomMemberRole,
@@ -11,7 +13,14 @@ import {
 import { expect, test } from '@playwright/test';
 import { createRoom, deleteRooms, getRecording, getRoom } from '../helpers/meet-api.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
-import { endMeetingCommand, expectWebhook, leaveMeeting, openMeeting } from '../helpers/testapp.helper';
+import {
+	endMeetingCommand,
+	expectWebhook,
+	joinedParticipantIdentity,
+	leaveMeeting,
+	openMeeting,
+	participantUpdateRoleCommand
+} from '../helpers/testapp.helper';
 import { getWebhookFromStorage } from '../helpers/ui-utils.helper';
 
 test.describe('Webhooks E2E Tests', () => {
@@ -96,6 +105,43 @@ test.describe('Webhooks E2E Tests', () => {
 		expect(leftPayload.participant.durationSeconds).toBeGreaterThanOrEqual(0);
 		expect(leftPayload.participant.externalId).toBe(speakerExternalId);
 		expect(leftPayload.participant.metadata).toBe(speakerMetadata);
+
+		await speakerContext.close();
+	});
+
+	test('should receive participantRoleChanged webhooks when a participant is promoted and demoted', async ({
+		page,
+		browser
+	}) => {
+		await openMeeting(page, roomId, { role: 'moderator' });
+
+		const speakerContext = await browser.newContext();
+		const speakerPage = await speakerContext.newPage();
+		await openMeeting(speakerPage, roomId, { role: 'speaker', externalId: 'crm-user_42' });
+		const speakerIdentity = await joinedParticipantIdentity(speakerPage);
+
+		const roleChangedPayload = async (matchIndex: number) =>
+			(
+				await getWebhookFromStorage(page, roomId, MeetWebhookEventType.PARTICIPANT_ROLE_CHANGED, {
+					matchIndex
+				})
+			).data as MeetParticipantRoleChangedPayload;
+
+		await participantUpdateRoleCommand(page, speakerIdentity, MeetParticipantModerationAction.UPGRADE);
+		await expectWebhook(page, MeetWebhookEventType.PARTICIPANT_ROLE_CHANGED);
+
+		const promotion = await roleChangedPayload(0);
+		expect(promotion.roomId).toBe(roomId);
+		expect(promotion.participant.participantIdentity).toBe(speakerIdentity);
+		expect(promotion.participant.role).toBe(MeetRoomMemberRole.MODERATOR);
+		expect(promotion.participant.externalId).toBe('crm-user_42');
+
+		await participantUpdateRoleCommand(page, speakerIdentity, MeetParticipantModerationAction.DOWNGRADE);
+		await expectWebhook(page, MeetWebhookEventType.PARTICIPANT_ROLE_CHANGED, { count: 2 });
+
+		const demotion = await roleChangedPayload(1);
+		expect(demotion.participant.participantIdentity).toBe(speakerIdentity);
+		expect(demotion.participant.role).toBe(MeetRoomMemberRole.SPEAKER);
 
 		await speakerContext.close();
 	});
