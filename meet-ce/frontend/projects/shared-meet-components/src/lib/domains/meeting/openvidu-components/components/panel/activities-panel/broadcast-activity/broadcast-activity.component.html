@@ -40,12 +40,13 @@
 	}
 
 	<!-- The same slot, escalated: the only red in this panel. -->
-	@if (phase() === 'failed') {
+	@if (phase() === 'failed' || requestError() !== undefined) {
 		<div class="activity-failure" role="alert">
 			<mat-icon class="activity-failure-icon">error_outline</mat-icon>
 			<div class="activity-note-body">
 				<span class="activity-note-title">{{
-					(broadcast() ? 'PANEL.BROADCAST.ERROR_STARTING' : 'PANEL.BROADCAST.ERROR_REQUEST') | translate
+					(requestError() === undefined ? 'PANEL.BROADCAST.ERROR_STARTING' : 'PANEL.BROADCAST.ERROR_REQUEST')
+						| translate
 				}}</span>
 				@if (failure()) {
 					<span class="activity-note-message">{{ failure() }}</span>
@@ -66,40 +67,43 @@
 		<div class="destinations-caption">
 			<span class="caption" id="broadcast-planned-caption">{{ 'PANEL.BROADCAST.STREAM_TO' | translate }}</span>
 			<span class="caption-detail">{{
-				'PANEL.BROADCAST.SELECTED_COUNT'
-					| translate: { selected: selectedCount(), total: plannedDestinations().length }
+				'PANEL.BROADCAST.SELECTED_COUNT' | translate: { selected: selectedCount(), total: rows().length }
 			}}</span>
 		</div>
 
 		<div class="destination-list" role="group" aria-labelledby="broadcast-planned-caption">
-			@for (destination of plannedDestinations(); track destination.id) {
-				<div class="destination-row" [attr.id]="'broadcast-planned-' + destination.id">
+			@for (row of rows(); track row.key) {
+				<div
+					class="destination-row"
+					[attr.id]="'broadcast-destination-' + row.key"
+					[attr.data-status]="row.status"
+				>
 					<mat-checkbox
 						class="destination-pick"
-						[checked]="destination.selected"
-						[disabled]="destination.source === destinationSource.MEETING"
-						(change)="toggleSelected(destination.id, $event.checked)"
+						[checked]="row.selected"
+						[disabled]="row.source === 'meeting'"
+						(change)="toggleSelected(row.key, $event.checked)"
 					>
 						<span class="destination-pick-body">
-							<ov-platform-icon [platform]="platformOf(destination.url)" [size]="28" />
+							<ov-platform-icon [platform]="platformOf(row.url)" [size]="28" />
 							<span class="destination-text">
 								<span class="destination-name">
-									{{ destination.name }}
-									@if (destination.source === destinationSource.MEETING) {
+									{{ row.name }}
+									@if (row.source === 'meeting') {
 										<span class="pill">{{ 'PANEL.BROADCAST.THIS_MEETING' | translate }}</span>
 									}
 								</span>
-								<span class="destination-detail">{{ hostOf(destination.url) }}</span>
+								<span class="destination-detail">{{ hostOf(row.url) }}</span>
 							</span>
 						</span>
 					</mat-checkbox>
-					@if (destination.source === destinationSource.MEETING) {
+					@if (row.source === 'meeting') {
 						<button
 							mat-icon-button
 							type="button"
 							class="destination-action"
 							[matTooltip]="'PANEL.BROADCAST.REMOVE' | translate"
-							(click)="removeMeetingDestination(destination.id)"
+							(click)="removeMeetingDestination(row.key)"
 						>
 							<mat-icon>delete</mat-icon>
 						</button>
@@ -125,8 +129,7 @@
 				</button>
 			}
 			<span class="caption-detail">{{
-				'PANEL.BROADCAST.DESTINATIONS_COUNT'
-					| translate: { count: plannedDestinations().length, max: maxDestinations }
+				'PANEL.BROADCAST.DESTINATIONS_COUNT' | translate: { count: rows().length, max: maxDestinations }
 			}}</span>
 		</div>
 
@@ -142,7 +145,7 @@
 	}
 
 	<!-- ── While live: every destination and how it is doing ────────── -->
-	@if (isRunning() || (phase() === 'failed' && broadcast())) {
+	@if (phase() !== 'idle') {
 		<div class="destinations-caption">
 			<span class="caption" id="broadcast-live-caption">{{ 'PANEL.BROADCAST.DESTINATIONS' | translate }}</span>
 			@if (phase() === 'live') {
@@ -156,62 +159,48 @@
 		</div>
 
 		<div class="destination-list" role="list" aria-labelledby="broadcast-live-caption">
-			@for (destination of broadcastDestinations(); track destination.id) {
+			@for (row of rows(); track row.key) {
 				<div
 					class="destination-row"
 					role="listitem"
-					[attr.id]="'broadcast-destination-' + destination.id"
-					[attr.data-status]="destination.status"
+					[attr.id]="'broadcast-destination-' + row.key"
+					[attr.data-status]="row.status"
 				>
-					<ov-platform-icon [platform]="platformOf(destination.url)" [size]="28" />
+					<ov-platform-icon [platform]="platformOf(row.url)" [size]="28" />
 					<span class="destination-text">
-						<span class="destination-name" [class.muted]="destination.status === destinationStatus.STOPPED">
-							{{ destination.name }}
-							@if (destination.source === destinationSource.MEETING) {
+						<span class="destination-name" [class.muted]="row.status === 'stopped'">
+							{{ row.name }}
+							@if (row.source === 'meeting') {
 								<span class="pill">{{ 'PANEL.BROADCAST.THIS_MEETING' | translate }}</span>
 							}
 						</span>
-						<span
-							class="destination-detail"
-							[class.failed]="destination.status === destinationStatus.FAILED"
-						>
-							@if (destination.status === destinationStatus.ACTIVE) {
+						<span class="destination-detail" [class.failed]="row.status === 'failed'">
+							@if (row.status === 'live') {
 								<span class="live-dot" aria-hidden="true"></span>
 							}
-							{{ statusKeyOf(destination) | translate }}
-							@if (destination.status === destinationStatus.FAILED && destination.error) {
-								&middot; {{ destination.error }}
+							{{ statusKeyOf(row) | translate }}
+							@if (row.status === 'failed' && row.broadcast?.error) {
+								&middot; {{ row.broadcast?.error }}
 							}
 						</span>
 					</span>
 					@if (showControls() && isRunning()) {
-						@if (isStreaming(destination)) {
+						@if (isStreaming(row)) {
 							<button
 								mat-icon-button
 								type="button"
 								class="destination-action"
-								[matTooltip]="
-									'PANEL.BROADCAST.STOP_DESTINATION' | translate: { name: destination.name }
-								"
-								[attr.aria-label]="
-									'PANEL.BROADCAST.STOP_DESTINATION' | translate: { name: destination.name }
-								"
-								(click)="stopDestination(destination)"
+								[matTooltip]="'PANEL.BROADCAST.STOP_DESTINATION' | translate: { name: row.name }"
+								[attr.aria-label]="'PANEL.BROADCAST.STOP_DESTINATION' | translate: { name: row.name }"
+								(click)="stopRow(row)"
 							>
 								<mat-icon>stop_circle</mat-icon>
 							</button>
-						} @else {
-							<button
-								mat-button
-								type="button"
-								class="destination-text-action"
-								(click)="startDestination(destination)"
-							>
-								<mat-icon>{{
-									destination.status === destinationStatus.FAILED ? 'refresh' : 'play_arrow'
-								}}</mat-icon>
+						} @else if (row.start && row.status !== 'connecting' && row.status !== 'stopping') {
+							<button mat-button type="button" class="destination-text-action" (click)="startRow(row)">
+								<mat-icon>{{ row.status === 'failed' ? 'refresh' : 'play_arrow' }}</mat-icon>
 								<span>{{
-									(destination.status === destinationStatus.FAILED
+									(row.status === 'failed'
 										? 'PANEL.BROADCAST.RETRY_DESTINATION'
 										: 'PANEL.BROADCAST.START_DESTINATION'
 									) | translate
@@ -241,8 +230,7 @@
 					</button>
 				}
 				<span class="caption-detail">{{
-					'PANEL.BROADCAST.DESTINATIONS_COUNT'
-						| translate: { count: broadcastDestinations().length, max: maxDestinations }
+					'PANEL.BROADCAST.DESTINATIONS_COUNT' | translate: { count: streamingCount(), max: maxDestinations }
 				}}</span>
 			</div>
 		}

@@ -34,12 +34,12 @@ export interface MeetRecordingUpdatedPayload {
 
 /**
  * Payload for MEET_BROADCAST_UPDATED signal,
- * containing the latest live broadcast state for a room.
+ * containing the latest state of one live broadcast of a room.
  */
 export interface MeetBroadcastUpdatedPayload {
 	/** ID of the room whose broadcast state has changed */
 	roomId: string;
-	/** Latest broadcast state for the room */
+	/** Latest state of the broadcast that changed */
 	broadcast: MeetBroadcastInfo;
 	/** Timestamp in milliseconds when the update occurred */
 	timestamp: number;

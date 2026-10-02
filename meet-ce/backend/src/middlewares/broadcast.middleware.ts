@@ -6,13 +6,14 @@ import { RoomService } from '../services/room.service.js';
 import { withRoomPermission } from './room.middleware.js';
 
 /**
- * Middleware to require `broadcastAddDestinations` from a start request that adds a destination for
- * the meeting, which is any entry without the `id` of a room destination.
+ * Middleware to require `broadcastAddDestinations` from a start request that streams to a
+ * destination given for the meeting, which is any entry without the `destinationId` of a room
+ * destination.
  */
 export const withAddDestinationsPermissionToStart = (req: Request, res: Response, next: NextFunction) => {
 	const { destinations } = req.body as MeetBroadcastStartOptions;
 
-	if (!destinations?.some(({ id }) => !id)) return next();
+	if (!destinations?.some(({ destinationId }) => !destinationId)) return next();
 
 	return withRoomPermission('broadcastAddDestinations')(req, res, next);
 };

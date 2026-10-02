@@ -163,7 +163,7 @@ export class LivekitWebhookService {
 	protected async processEgress(egressInfo: EgressInfo, webhookAction: EgressWebhookAction) {
 		switch (EgressHelper.outputOf(egressInfo)) {
 			case 'stream':
-				await this.broadcastService.handleEgressEvent(egressInfo, webhookAction);
+				await this.broadcastService.handleEgressEvent(egressInfo);
 				break;
 			case 'file':
 				await this.processRecordingEgress(egressInfo, webhookAction);
@@ -193,16 +193,16 @@ export class LivekitWebhookService {
 				await this.meetingPresenceService.upsertUserInRoom(userId, room.name, participant.identity);
 			}
 
-			const [recording, broadcast] = await Promise.all([
+			const [recording, broadcasts] = await Promise.all([
 				this.findRecordingInProgress(room.name),
-				this.broadcastService.findActiveBroadcast(room.name)
+				this.broadcastService.getBroadcasts(room.name)
 			]);
 
 			if (recording) {
 				await this.frontendEventService.sendRecordingUpdatedSignal(room.name, recording, participant.sid);
 			}
 
-			if (broadcast) {
+			for (const broadcast of broadcasts) {
 				await this.frontendEventService.sendBroadcastUpdatedSignal(room.name, broadcast, participant.sid);
 			}
 		} catch (error) {
@@ -353,7 +353,10 @@ export class LivekitWebhookService {
 
 			if (updatedRoom.config.maxDurationMinutes) {
 				const roomScheduledTasksService = await this.getRoomScheduledTasksService();
-				roomScheduledTasksService.scheduleMeetingEndAtDurationLimit(room, updatedRoom.config.maxDurationMinutes);
+				roomScheduledTasksService.scheduleMeetingEndAtDurationLimit(
+					room,
+					updatedRoom.config.maxDurationMinutes
+				);
 			}
 
 			// Send webhook notification

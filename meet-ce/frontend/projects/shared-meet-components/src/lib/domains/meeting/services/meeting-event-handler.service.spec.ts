@@ -118,9 +118,11 @@ describe('MeetingEventHandlerService', () => {
 		roomId: 'room1',
 		roomName: 'Room 1',
 		status: MeetBroadcastStatus.ACTIVE,
+		name: 'YouTube',
+		url: 'rtmp://a.rtmp.youtube.com/live2/********',
+		destinationId: 'dest1',
 		layout: MeetRecordingLayout.GRID,
 		encoding: MeetRecordingEncodingPreset.H264_720P_30,
-		destinations: [],
 		...overrides
 	});
 
@@ -203,15 +205,11 @@ describe('MeetingEventHandlerService', () => {
 		]);
 
 		broadcastService = jasmine.createSpyObj<BroadcastService>('BroadcastService', [
-			'startBroadcast',
-			'stopBroadcast',
-			'addDestination',
-			'updateDestination'
+			'startBroadcasts',
+			'stopBroadcasts'
 		]);
-		broadcastService.startBroadcast.and.resolveTo(liveBroadcast());
-		broadcastService.stopBroadcast.and.resolveTo(liveBroadcast({ status: MeetBroadcastStatus.ENDING }));
-		broadcastService.addDestination.and.resolveTo(liveBroadcast());
-		broadcastService.updateDestination.and.resolveTo(liveBroadcast());
+		broadcastService.startBroadcasts.and.resolveTo([liveBroadcast()]);
+		broadcastService.stopBroadcasts.and.resolveTo([liveBroadcast({ status: MeetBroadcastStatus.COMPLETE })]);
 		broadcastState = jasmine.createSpyObj<BroadcastStateService>('BroadcastStateService', ['setRequest']);
 
 		TestBed.configureTestingModule({
@@ -1346,7 +1344,7 @@ describe('MeetingEventHandlerService', () => {
 			expect(hostEvents()).toEqual([EmbeddedEventName.BROADCAST_STARTED, EmbeddedEventName.BROADCAST_UPDATED]);
 		});
 
-		it('reports the end of the broadcast, and the next one as a fresh start', async () => {
+		it('reports the end of a broadcast, and the next one as a fresh start', async () => {
 			seedMediaStatus();
 
 			receiveBroadcastSignal(liveBroadcast());
@@ -1358,6 +1356,23 @@ describe('MeetingEventHandlerService', () => {
 				EmbeddedEventName.BROADCAST_STARTED,
 				EmbeddedEventName.BROADCAST_ENDED,
 				EmbeddedEventName.BROADCAST_STARTED
+			]);
+		});
+
+		it('follows each broadcast of the meeting on its own, one per destination', async () => {
+			seedMediaStatus();
+
+			receiveBroadcastSignal(liveBroadcast({ broadcastId: 'bc1', status: MeetBroadcastStatus.STARTING }));
+			receiveBroadcastSignal(liveBroadcast({ broadcastId: 'bc2', status: MeetBroadcastStatus.STARTING }));
+			receiveBroadcastSignal(liveBroadcast({ broadcastId: 'bc1' }));
+			receiveBroadcastSignal(liveBroadcast({ broadcastId: 'bc2', status: MeetBroadcastStatus.FAILED }));
+			await Promise.resolve();
+
+			expect(hostEvents()).toEqual([
+				EmbeddedEventName.BROADCAST_STARTED,
+				EmbeddedEventName.BROADCAST_STARTED,
+				EmbeddedEventName.BROADCAST_UPDATED,
+				EmbeddedEventName.BROADCAST_ENDED
 			]);
 		});
 
@@ -1389,41 +1404,40 @@ describe('MeetingEventHandlerService', () => {
 			spyOn(console, 'error');
 		});
 
-		it('marks the request in flight and leaves the outcome to the server signal', async () => {
+		it('starts the destinations asked for in one request, and settles the request once answered', async () => {
+			const destinations = [
+				{ destinationId: 'dest1' },
+				{ name: 'Backup', url: 'rtmp://media.example.com/live/key' }
+			];
+
+			await service.onBroadcastRequested({ action: 'start', roomId: 'room1', destinations });
 			await service.onBroadcastRequested({ action: 'start', roomId: 'room1' });
 
-			expect(broadcastState.setRequest).toHaveBeenCalledOnceWith('starting');
-			expect(broadcastService.startBroadcast).toHaveBeenCalledOnceWith('room1', { destinations: undefined });
+			expect(broadcastService.startBroadcasts.calls.allArgs()).toEqual([
+				['room1', { destinations }],
+				['room1', { destinations: undefined }]
+			]);
+			expect(broadcastState.setRequest.calls.allArgs()).toEqual([['starting'], ['idle'], ['starting'], ['idle']]);
 		});
 
-		it('routes each request to its API call', async () => {
-			const destination = { name: 'Backup', url: 'rtmp://media.example.com/live/key' };
+		it('stops the broadcasts asked for, or every running one, in one request', async () => {
+			await service.onBroadcastRequested({ action: 'stop', roomId: 'room1', broadcastIds: ['bc1', 'bc2'] });
+			await service.onBroadcastRequested({ action: 'stop', roomId: 'room1' });
 
-			await service.onBroadcastRequested({ action: 'stop', roomId: 'room1', broadcastId: 'bc1' });
-			await service.onBroadcastRequested({
-				action: 'addDestination',
-				roomId: 'room1',
-				broadcastId: 'bc1',
-				destination
-			});
-			await service.onBroadcastRequested({
-				action: 'updateDestination',
-				roomId: 'room1',
-				broadcastId: 'bc1',
-				destinationId: 'dest1',
-				active: false
-			});
-
-			expect(broadcastService.stopBroadcast).toHaveBeenCalledOnceWith('room1', 'bc1');
-			expect(broadcastService.addDestination).toHaveBeenCalledOnceWith('room1', 'bc1', destination);
-			expect(broadcastService.updateDestination).toHaveBeenCalledOnceWith('room1', 'bc1', 'dest1', false);
-			expect(broadcastState.setRequest.calls.allArgs()).toEqual([['stopping'], ['updating'], ['updating']]);
+			expect(broadcastService.stopBroadcasts.calls.allArgs()).toEqual([
+				['room1', { broadcastIds: ['bc1', 'bc2'] }],
+				['room1', { broadcastIds: undefined }]
+			]);
 		});
 
 		it('reports a refused request with the reason the server gave', async () => {
-			broadcastService.startBroadcast.and.rejectWith({ error: { message: 'Broadcast is disabled' } });
+			broadcastService.startBroadcasts.and.rejectWith({ error: { message: 'Broadcast is disabled' } });
 
-			await service.onBroadcastRequested({ action: 'start', roomId: 'room1' });
+			await service.onBroadcastRequested({
+				action: 'start',
+				roomId: 'room1',
+				destinations: [{ destinationId: 'd' }]
+			});
 
 			expect(broadcastState.setRequest).toHaveBeenCalledWith('failed', 'Broadcast is disabled');
 		});

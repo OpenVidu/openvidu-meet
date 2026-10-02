@@ -1,27 +1,27 @@
-description: The broadcast is being stopped
+description: The broadcasts stopped, in their final state
 content:
     application/json:
         schema:
-            $ref: '../../schemas/meet-broadcast.yaml'
+            type: object
+            required:
+                - broadcasts
+            properties:
+                broadcasts:
+                    type: array
+                    description: The broadcasts stopped, or none when the meeting had no broadcast running.
+                    items:
+                        $ref: '../../schemas/meet-broadcast.yaml'
         example:
-            broadcastId: 'EG_XYZ'
-            roomId: 'room-123'
-            roomName: 'room'
-            status: 'ending'
-            layout: 'grid'
-            encoding: 'H264_720P_30'
-            startDate: 1620000000000
-            destinations:
-                - id: 'kX9pL2mQ7a'
+            broadcasts:
+                - broadcastId: 'room-123--kX9pL2mQ7a'
+                  roomId: 'room-123'
+                  roomName: 'room'
+                  status: 'complete'
                   name: 'YouTube'
                   url: 'rtmp://a.rtmp.youtube.com/live2/********'
-                  source: 'room'
-                  status: 'active'
+                  destinationId: 'kX9pL2mQ7a'
+                  layout: 'grid'
+                  encoding: 'H264_720P_30'
                   startDate: 1620000000000
-headers:
-    Location:
-        description: URL of the broadcast
-        schema:
-            type: string
-            format: uri
-        example: https://example.com/api/v1/meetings/room-123/broadcasts/EG_XYZ
+                  endDate: 1620000003600
+                  duration: 3.6

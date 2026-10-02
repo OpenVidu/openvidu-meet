@@ -6,7 +6,6 @@ import {
 	handLoweredByOf,
 	handRaiseDateOf,
 	LeftEventReason,
-	MeetBroadcastInfo,
 	MeetBroadcastUpdatedPayload,
 	MeetEventOrigin,
 	MeetParticipantAttribute,
@@ -598,35 +597,26 @@ export class MeetingEventHandlerService {
 	};
 
 	/**
-	 * Answers the activities panel's requests to the broadcast API, keeping the panel told what is
-	 * in flight and what was refused. The server's own answer arrives as a broadcast signal.
+	 * Answers the activities panel's requests to the broadcast API, keeping the panel told what is in
+	 * flight and what was refused. The state of each broadcast arrives as a broadcast signal.
 	 */
 	onBroadcastRequested = async (event: BroadcastRequestedEvent): Promise<void> => {
 		this.broadcastState.setRequest(BROADCAST_REQUEST_STATUS_BY_ACTION[event.action]);
 
 		try {
 			await this.runBroadcastRequest(event);
+			this.broadcastState.setRequest('idle');
 		} catch (error) {
 			console.error(`Error on broadcast request '${event.action}':`, error);
 			this.broadcastState.setRequest('failed', this.extractErrorMessage(error));
 		}
 	};
 
-	private runBroadcastRequest(event: BroadcastRequestedEvent): Promise<MeetBroadcastInfo> {
-		switch (event.action) {
-			case 'start':
-				return this.broadcastService.startBroadcast(event.roomId, { destinations: event.destinations });
-			case 'stop':
-				return this.broadcastService.stopBroadcast(event.roomId, event.broadcastId);
-			case 'addDestination':
-				return this.broadcastService.addDestination(event.roomId, event.broadcastId, event.destination);
-			case 'updateDestination':
-				return this.broadcastService.updateDestination(
-					event.roomId,
-					event.broadcastId,
-					event.destinationId,
-					event.active
-				);
+	private async runBroadcastRequest(event: BroadcastRequestedEvent): Promise<void> {
+		if (event.action === 'start') {
+			await this.broadcastService.startBroadcasts(event.roomId, { destinations: event.destinations });
+		} else {
+			await this.broadcastService.stopBroadcasts(event.roomId, { broadcastIds: event.broadcastIds });
 		}
 	}
 
@@ -784,9 +774,9 @@ export class MeetingEventHandlerService {
 		}
 	}
 
-	// The broadcast this client has been told about, so its first signal reads as a start (for a
-	// late joiner too) and the rest as updates, until the one that ends it.
-	private knownBroadcastId: string | undefined;
+	// The broadcasts this client has been told about, so the first signal of each reads as a start
+	// (for a late joiner too) and the rest as updates, until the one that ends it.
+	private readonly knownBroadcastIds = new Set<string>();
 
 	private handleBroadcastUpdated(event: MeetBroadcastUpdatedPayload): void {
 		const roomId = this.meetingContext.roomId();
@@ -798,13 +788,13 @@ export class MeetingEventHandlerService {
 		const { broadcast } = event;
 
 		if (!isBroadcastInProgress(broadcast.status)) {
-			this.knownBroadcastId = undefined;
+			this.knownBroadcastIds.delete(broadcast.broadcastId);
 			this.eventBus.emit({ event: EmbeddedEventName.BROADCAST_ENDED, payload: broadcast });
 			return;
 		}
 
-		const isNew = this.knownBroadcastId !== broadcast.broadcastId;
-		this.knownBroadcastId = broadcast.broadcastId;
+		const isNew = !this.knownBroadcastIds.has(broadcast.broadcastId);
+		this.knownBroadcastIds.add(broadcast.broadcastId);
 		this.eventBus.emit({
 			event: isNew ? EmbeddedEventName.BROADCAST_STARTED : EmbeddedEventName.BROADCAST_UPDATED,
 			payload: broadcast

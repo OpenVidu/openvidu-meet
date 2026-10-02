@@ -1,6 +1,8 @@
 import { inject, Service } from '@angular/core';
 import {
 	EmbeddedCommandName,
+	MeetBroadcastStartOptions,
+	MeetBroadcastStopOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetReaction,
@@ -8,6 +10,7 @@ import {
 } from '@openvidu-meet/typings';
 import {
 	BroadcastStateService,
+	isBroadcastRunning,
 	LocalMediaService,
 	MeetingLiveKitService,
 	MeetingPhaseService,
@@ -201,7 +204,7 @@ export class EmbeddedCommandService {
 		this.recordingState.setRecordingStarting(recordingId);
 	}
 
-	async broadcastStart(): Promise<void> {
+	async broadcastStart(options: MeetBroadcastStartOptions = {}): Promise<void> {
 		await this.run(EmbeddedCommandName.BROADCAST_START, 'broadcastControl', async () => {
 			const roomId = this.meetingContextService.roomId();
 
@@ -210,21 +213,21 @@ export class EmbeddedCommandService {
 				return;
 			}
 
-			await this.broadcastService.startBroadcast(roomId);
+			await this.broadcastService.startBroadcasts(roomId, options);
 		});
 	}
 
-	async broadcastStop(): Promise<void> {
+	async broadcastStop(options: MeetBroadcastStopOptions = {}): Promise<void> {
 		await this.run(EmbeddedCommandName.BROADCAST_STOP, 'broadcastControl', async () => {
 			const roomId = this.meetingContextService.roomId();
-			const broadcastId = this.broadcastState.broadcast()?.broadcastId;
+			const running = this.broadcastState.inProgress().filter(({ status }) => isBroadcastRunning(status));
 
-			if (!roomId || !broadcastId) {
+			if (!roomId || running.length === 0) {
 				this.log.w('broadcastStop() called but no broadcast is running');
 				return;
 			}
 
-			await this.broadcastService.stopBroadcast(roomId, broadcastId);
+			await this.broadcastService.stopBroadcasts(roomId, options);
 		});
 	}
 

@@ -1,9 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
-	MeetBroadcastDestinationInfo,
-	MeetBroadcastDestinationSource,
-	MeetBroadcastDestinationStatus,
 	MeetBroadcastInfo,
 	MeetBroadcastStatus,
 	MeetRecordingEncodingPreset,
@@ -13,9 +10,8 @@ import { BroadcastStateService } from './broadcast-state.service';
 
 /**
  * The LIVE chip and the broadcast activity read this state, so what is pinned here is what they
- * show: a running or failed broadcast stays, a finished one is forgotten, the clock follows the start
- * the server reports and stops with the broadcast, and a pending request is answered by whatever the
- * server says next.
+ * show: a running or failed broadcast stays, a finished one is forgotten, the clock follows the
+ * first start the server reports among the broadcasts still live and stops with the last of them.
  */
 describe('BroadcastStateService', () => {
 	const NOW = 1_700_000_000_000;
@@ -26,20 +22,15 @@ describe('BroadcastStateService', () => {
 		roomId: 'room1',
 		roomName: 'Room 1',
 		status: MeetBroadcastStatus.ACTIVE,
+		name: 'YouTube',
+		url: 'rtmp://media.example.com/live/********',
+		destinationId: 'dest-1',
 		layout: MeetRecordingLayout.GRID,
 		encoding: MeetRecordingEncodingPreset.H264_720P_30,
-		destinations: [],
 		...overrides
 	});
 
-	const destination = (status: MeetBroadcastDestinationStatus): MeetBroadcastDestinationInfo => ({
-		id: `dest-${status}`,
-		name: status,
-		url: 'rtmp://media.example.com/live/********',
-		source: MeetBroadcastDestinationSource.ROOM,
-		status
-	});
-
+	const statuses = () => service.broadcasts().map(({ broadcastId, status }) => `${broadcastId}:${status}`);
 	const elapsedSeconds = () => service.elapsed().getMinutes() * 60 + service.elapsed().getSeconds();
 
 	beforeEach(() => {
@@ -61,69 +52,90 @@ describe('BroadcastStateService', () => {
 
 		service.setBroadcast(broadcast());
 		expect(service.isLive()).toBeTrue();
+		expect(statuses()).toEqual(['bc1:active']);
 
 		service.setBroadcast(broadcast({ status: MeetBroadcastStatus.ENDING }));
 		expect(service.isEnding()).toBeTrue();
 
 		service.setBroadcast(broadcast({ status: MeetBroadcastStatus.COMPLETE }));
-		expect(service.broadcast()).toBeUndefined();
+		expect(service.broadcasts()).toEqual([]);
 		expect(service.isInProgress()).toBeFalse();
+	});
+
+	it('is live while any broadcast is, and counts the destinations streamed to and reached', () => {
+		service.setBroadcast(
+			broadcast({ broadcastId: 'bc1', destinationId: 'd1', status: MeetBroadcastStatus.STARTING })
+		);
+		service.setBroadcast(broadcast({ broadcastId: 'bc2', destinationId: 'd2' }));
+		service.setBroadcast(
+			broadcast({ broadcastId: 'bc3', destinationId: 'd3', status: MeetBroadcastStatus.FAILED })
+		);
+
+		expect(service.isLive()).toBeTrue();
+		expect(service.hasFailed()).toBeFalse();
+		expect(service.streamingDestinationCount()).toBe(2);
+		expect(service.liveDestinationCount()).toBe(1);
+		expect(service.failed().map(({ broadcastId }) => broadcastId)).toEqual(['bc3']);
 	});
 
 	it('keeps a failed broadcast, so the activity can say why, until the failure is dismissed', () => {
 		service.setBroadcast(broadcast({ status: MeetBroadcastStatus.FAILED, error: 'Egress failed' }));
 		expect(service.hasFailed()).toBeTrue();
-		expect(service.broadcast()?.error).toBe('Egress failed');
+		expect(service.failed()[0].error).toBe('Egress failed');
 
 		service.dismissFailure();
-		expect(service.broadcast()).toBeUndefined();
+		expect(service.broadcasts()).toEqual([]);
 		expect(service.hasFailed()).toBeFalse();
 	});
 
-	it('answers a pending request with whatever the server reports next', () => {
+	it('replaces the failed broadcast to a destination with the next attempt at it', () => {
+		service.setBroadcast(broadcast({ broadcastId: 'bc1', status: MeetBroadcastStatus.FAILED }));
+		service.setBroadcast(
+			broadcast({ broadcastId: 'bc-meeting', destinationId: undefined, status: MeetBroadcastStatus.FAILED })
+		);
+
+		service.setBroadcast(broadcast({ broadcastId: 'bc2', status: MeetBroadcastStatus.STARTING }));
+		service.setBroadcast(
+			broadcast({ broadcastId: 'bc-meeting-2', destinationId: undefined, status: MeetBroadcastStatus.STARTING })
+		);
+
+		expect(statuses()).toEqual(['bc2:starting', 'bc-meeting-2:starting']);
+	});
+
+	it('keeps a request pending until it is answered, and dismissing a refusal keeps the broadcasts', () => {
+		service.setBroadcast(broadcast());
 		service.setRequest('starting');
 		expect(service.isStarting()).toBeTrue();
 
-		service.setBroadcast(broadcast());
-		expect(service.request()).toEqual({ status: 'idle' });
-		expect(service.isStarting()).toBeFalse();
-		expect(service.isLive()).toBeTrue();
-	});
-
-	it('dismissing a refused request keeps the broadcast it was about', () => {
-		service.setBroadcast(broadcast());
 		service.setRequest('failed', 'Destination limit reached');
-
 		service.dismissFailure();
 
 		expect(service.request()).toEqual({ status: 'idle' });
 		expect(service.isLive()).toBeTrue();
 	});
 
-	it('counts the destinations still streaming, and of them those media has reached', () => {
-		const { CONNECTING, ACTIVE, STOPPED, FAILED } = MeetBroadcastDestinationStatus;
-		service.setBroadcast(broadcast({ destinations: [CONNECTING, ACTIVE, STOPPED, FAILED].map(destination) }));
-
-		expect(service.streamingDestinationCount()).toBe(2);
-		expect(service.liveDestinationCount()).toBe(1);
-	});
-
-	it('clocks the time live from the start the server reports, once a second', () => {
-		service.setBroadcast(broadcast({ startDate: NOW - 5_000 }));
+	it('clocks the time live from the first broadcast still live, once a second', () => {
+		service.setBroadcast(broadcast({ broadcastId: 'bc1', destinationId: 'd1', startDate: NOW - 5_000 }));
+		service.setBroadcast(broadcast({ broadcastId: 'bc2', destinationId: 'd2', startDate: NOW - 2_000 }));
 		expect(elapsedSeconds()).toBe(5);
 
 		jasmine.clock().tick(1_000);
 		expect(elapsedSeconds()).toBe(6);
+
+		service.setBroadcast(
+			broadcast({ broadcastId: 'bc1', destinationId: 'd1', status: MeetBroadcastStatus.COMPLETE })
+		);
+		expect(elapsedSeconds()).toBe(3);
 	});
 
-	it('does not run the clock before the broadcast is live', () => {
+	it('does not run the clock before a broadcast is live', () => {
 		service.setBroadcast(broadcast({ status: MeetBroadcastStatus.STARTING, startDate: NOW - 5_000 }));
 		jasmine.clock().tick(1_000);
 
 		expect(elapsedSeconds()).toBe(0);
 	});
 
-	it('stops the clock with the broadcast', () => {
+	it('stops the clock with the last live broadcast', () => {
 		service.setBroadcast(broadcast({ startDate: NOW - 5_000 }));
 		service.setBroadcast(broadcast({ status: MeetBroadcastStatus.COMPLETE, startDate: NOW - 5_000 }));
 		jasmine.clock().tick(3_000);

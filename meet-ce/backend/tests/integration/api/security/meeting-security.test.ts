@@ -149,20 +149,7 @@ describe('Meeting API Security Tests', () => {
 			expectMeetError(response, errorInsufficientPermissions());
 		});
 
-		it('should fail to add a destination with broadcastControl but without broadcastAddDestinations', async () => {
-			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
-				broadcastControl: true,
-				broadcastAddDestinations: false
-			});
-
-			const response = await request(app)
-				.post(`${MEETINGS_PATH}/${roomId}/broadcasts/EG_none/destinations`)
-				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken)
-				.send({ name: 'Extra', url: 'rtmp://rtmp-sink.invalid/live/key' });
-			expectMeetError(response, errorInsufficientPermissions());
-		});
-
-		it('should fail to start with a destination for the meeting without broadcastAddDestinations', async () => {
+		it('should fail to start to a destination of this meeting without broadcastAddDestinations', async () => {
 			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
 				broadcastControl: true,
 				broadcastAddDestinations: false
@@ -171,14 +158,17 @@ describe('Meeting API Security Tests', () => {
 
 			expectMeetError(
 				await startBroadcastWith(memberHeader, {
-					destinations: [{ name: 'Extra', url: 'rtmp://rtmp-sink.invalid/live/key' }]
+					destinations: [
+						{ destinationId: 'room-destination' },
+						{ name: 'Extra', url: 'rtmp://rtmp-sink.invalid/live/key' }
+					]
 				}),
 				errorInsufficientPermissions()
 			);
-			// Naming only room destinations needs no more than broadcastControl, so the request goes on to
-			// the room's own checks: this room has live broadcast disabled.
+			// Room destinations need no more than broadcastControl, so the request goes on to the
+			// room's own checks: this room has live broadcast disabled.
 			expectMeetError(
-				await startBroadcastWith(memberHeader, { destinations: [{ id: 'room-destination' }] }),
+				await startBroadcastWith(memberHeader, { destinations: [{ destinationId: 'room-destination' }] }),
 				errorBroadcastDisabled(roomId)
 			);
 		});

@@ -1,7 +1,0 @@
-name: destinationId
-in: path
-required: true
-description: The unique identifier of the destination within the broadcast.
-schema:
-    type: string
-example: 'kX9pL2mQ7a'

@@ -39,7 +39,8 @@ export class BroadcastNoticeService {
 	private readonly announceEffect = effect(() => {
 		// Ending is still streaming, and a start that never made it does not count as one.
 		const isLive =
-			this.broadcastState.isLive() || this.broadcastState.broadcast()?.status === MeetBroadcastStatus.ENDING;
+			this.broadcastState.isLive() ||
+			this.broadcastState.inProgress().some(({ status }) => status === MeetBroadcastStatus.ENDING);
 
 		if (isLive === this.wasLive) return;
 

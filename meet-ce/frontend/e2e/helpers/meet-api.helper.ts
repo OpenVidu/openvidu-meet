@@ -467,8 +467,8 @@ export const requestRecording = (roomId: string): Promise<Response> =>
 		body: JSON.stringify({ roomId })
 	});
 
-/** Starts the live broadcast of the room's meeting to its saved destinations, as a host application would. */
-export const startBroadcast = async (roomId: string): Promise<MeetBroadcastInfo> => {
+/** Starts a live broadcast of the room's meeting to each of its saved destinations, as a host application would. */
+export const startBroadcasts = async (roomId: string): Promise<MeetBroadcastInfo[]> => {
 	const response = await fetch(withApiPath(`/meetings/${encodeURIComponent(roomId)}/broadcasts`), {
 		method: 'POST',
 		headers: { 'x-api-key': API_KEY, 'Content-Type': 'application/json' },
@@ -476,9 +476,9 @@ export const startBroadcast = async (roomId: string): Promise<MeetBroadcastInfo>
 	});
 
 	const responseText = await response.text();
-	assertOk(response, responseText, 'start broadcast');
+	assertOk(response, responseText, 'start broadcasts');
 
-	return JSON.parse(responseText) as MeetBroadcastInfo;
+	return (JSON.parse(responseText) as { broadcasts: MeetBroadcastInfo[] }).broadcasts;
 };
 
 /**

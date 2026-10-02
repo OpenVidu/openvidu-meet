@@ -4,13 +4,14 @@ required:
     - roomId
     - roomName
     - status
+    - name
+    - url
     - layout
     - encoding
-    - destinations
 properties:
     broadcastId:
         type: string
-        example: 'EG_XYZ'
+        example: 'room-123--kX9pL2mQ7a'
         description: The unique identifier of the broadcast.
     roomId:
         type: string
@@ -25,34 +26,42 @@ properties:
         enum: ['starting', 'active', 'ending', 'complete', 'failed', 'aborted', 'limit_reached']
         example: 'active'
         description: >
-            The status of the broadcast. It is `starting` until the first destination receives media,
-            `active` from then on, `ending` once asked to stop, and one of `complete`, `failed`,
+            The status of the broadcast. It is `starting` until the destination receives media, `active`
+            from then on, `ending` while the media server stops it, and one of `complete`, `failed`,
             `aborted` or `limit_reached` once it has ended.
+    name:
+        type: string
+        example: 'YouTube'
+        description: The label of the destination streamed to, shown to participants.
+    url:
+        type: string
+        example: 'rtmp://a.rtmp.youtube.com/live2/********'
+        description: >
+            The RTMP URL streamed to, with the stream key replaced by `********`: the key never leaves
+            the server.
+    destinationId:
+        type: string
+        example: 'kX9pL2mQ7a'
+        description: >
+            The `id` the destination has in the room's config. Absent on a broadcast to a destination
+            given for this meeting only.
     layout:
         type: string
         enum: ['grid', 'speaker', 'single-speaker']
         example: 'grid'
-        description: The layout of the meeting as it is streamed, taken from the room's config when the broadcast started.
+        description: The layout of the meeting as it is streamed, taken from the room's config when the meeting went live.
     encoding:
         oneOf:
             - $ref: '../../rooms/schemas/meet-room-config.yaml#/MeetRecordingEncodingPreset'
             - $ref: '../../rooms/schemas/meet-room-config.yaml#/MeetRecordingEncodingOptions'
         example: 'H264_720P_30'
-        description: The encoding of the stream, taken from the room's config when the broadcast started.
-    destinations:
-        type: array
-        description: >
-            The destinations of the broadcast, each with its own status. A broadcast keeps running
-            while at least one of them streams.
-        items:
-            $ref: './meet-broadcast-destination.yaml'
+        description: The encoding of the stream, taken from the room's config when the meeting went live.
     startDate:
         type: number
         example: 1620000000000
         description: >
-            The date when the broadcast started to stream media (milliseconds since the Unix epoch),
-            that is, when the first destination received it. Absent while no destination has, and on
-            broadcasts that never streamed anything.
+            The date when media started to reach the destination (milliseconds since the Unix epoch).
+            Absent while it has not, and on a broadcast that never streamed anything.
     endDate:
         type: number
         example: 1620000003600
@@ -66,9 +75,10 @@ properties:
     errorCode:
         type: number
         example: 100
-        description: The error code of the broadcast. Present only when the broadcast failed.
+        description: The error code of the broadcast. Present only when the media server failed.
     error:
         type: string
+        example: 'Failed to connect: connection refused'
         description: The error message of the broadcast. Present only when the broadcast failed.
     details:
         type: string

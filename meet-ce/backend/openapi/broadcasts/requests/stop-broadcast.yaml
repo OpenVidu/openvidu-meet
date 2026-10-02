@@ -1,0 +1,19 @@
+description: >
+    The broadcasts to stop. An empty body, or no body, stops every running broadcast of the meeting.
+required: false
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                broadcastIds:
+                    type: array
+                    minItems: 1
+                    maxItems: 5
+                    description: The identifiers of the broadcasts to stop.
+                    items:
+                        type: string
+                        example: 'room-123--kX9pL2mQ7a'
+        example:
+            broadcastIds:
+                - 'room-123--kX9pL2mQ7a'

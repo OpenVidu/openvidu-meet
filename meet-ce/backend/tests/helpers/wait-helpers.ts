@@ -517,28 +517,42 @@ export const waitForWebhookCount = async (
 };
 
 /**
- * Waits until the broadcast of a room, as the API serves it, satisfies `predicate`. Broadcast
+ * Waits until the broadcasts of a room, as the API serves them, satisfy `predicate`. Broadcast
  * statuses are written by the deployment processing the real egress webhooks, not by the
  * in-process test app; both read the same Redis.
  */
+export const waitForBroadcasts = async (
+	roomId: string,
+	predicate: (broadcasts: MeetBroadcastInfo[]) => boolean,
+	description: string,
+	timeoutMs = DEFAULT_RECORDING_TIMEOUT_MS
+): Promise<MeetBroadcastInfo[]> => {
+	const broadcastService = container.get(BroadcastService);
+	let broadcasts: MeetBroadcastInfo[] = [];
+
+	await pollUntil(
+		async () => {
+			broadcasts = await broadcastService.getBroadcasts(roomId);
+			return predicate(broadcasts);
+		},
+		{ timeoutMs, errorMessage: `The broadcasts of room '${roomId}' never ${description}` }
+	);
+
+	return broadcasts;
+};
+
+/** Waits until the given broadcast of a room satisfies `predicate`, `undefined` once it is over. */
 export const waitForBroadcast = async (
 	roomId: string,
+	broadcastId: string,
 	predicate: (broadcast: MeetBroadcastInfo | undefined) => boolean,
 	description: string,
 	timeoutMs = DEFAULT_RECORDING_TIMEOUT_MS
 ): Promise<MeetBroadcastInfo | undefined> => {
-	const broadcastService = container.get(BroadcastService);
-	let broadcast: MeetBroadcastInfo | undefined;
-
-	await pollUntil(
-		async () => {
-			[broadcast] = await broadcastService.getBroadcasts(roomId);
-			return predicate(broadcast);
-		},
-		{ timeoutMs, errorMessage: `The broadcast of room '${roomId}' never ${description}` }
-	);
-
-	return broadcast;
+	const find = (broadcasts: MeetBroadcastInfo[]) =>
+		broadcasts.find((broadcast) => broadcast.broadcastId === broadcastId);
+	const broadcasts = await waitForBroadcasts(roomId, (list) => predicate(find(list)), description, timeoutMs);
+	return find(broadcasts);
 };
 
 /** Waits until LiveKit runs no egress in the room, whichever feature started it. */

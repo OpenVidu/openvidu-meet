@@ -92,10 +92,13 @@ The plan behind it: `../openvidu-competitors/meet-update-plan/api-naming-migrati
 
 Live broadcast keeps two kinds of state apart: the real destination URLs, stream key included, live
 only in the document-only room field `broadcastDestinationUrls` (stripped in
-`RoomRepository.toDomain()`); the domain and every API response carry the redacted URL, and
-`BroadcastHelper` matches LiveKit's own redacted `streamResults` against them. The running broadcast
-is a Redis record (`BroadcastStateService`, one per room, 24h TTL) mutated only under the room's
-broadcast lock, so any replica can answer the egress webhooks or a request.
+`RoomRepository.toDomain()`); the domain and every API response carry the redacted URL. A
+broadcast is one destination: the broadcasts of a meeting share one room-composite egress, which
+the first one starts and the next ones join through `updateStream`, one URL per call. LiveKit
+reports streams redacted and in no reliable order, so each `BroadcastRecord` keeps the position of
+its stream in `streamResults` (`streamIndex`), which egress appends to and never reorders. The
+running broadcasts are a Redis list (`BroadcastStateService`, one per room, 24h TTL) mutated only
+under the room's broadcast lock, so any replica can answer the egress webhooks or a request.
 
 ## Cross-cutting infrastructure
 

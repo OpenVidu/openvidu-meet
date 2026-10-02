@@ -1,87 +1,116 @@
 import { computed, Service, signal } from '@angular/core';
-import { MeetBroadcastDestinationStatus, MeetBroadcastInfo, MeetBroadcastStatus } from '@openvidu-meet/typings';
+import { MeetBroadcastInfo, MeetBroadcastStatus } from '@openvidu-meet/typings';
 import { ElapsedClock } from '../../../../../shared/utils/elapsed-clock';
 import {
+	broadcastDestinationKey,
 	BroadcastRequestState,
 	BroadcastRequestStatus,
-	isBroadcastInProgress,
-	isDestinationStreaming
+	hasBroadcastFailed,
+	isBroadcastInProgress
 } from '../../models/broadcast.model';
 
 /**
- * The live broadcast of the meeting as the server last reported it, plus what the local
- * participant has asked of it and is still waiting for. The status rail's LIVE chip and the
- * activity both read it.
+ * The live broadcasts of the meeting as the server last reported them, one per destination, plus
+ * what the local participant has asked of them and is still waiting for. The status rail's LIVE
+ * chip and the activity both read it.
  */
 @Service()
 export class BroadcastStateService {
 	private readonly clock = new ElapsedClock();
-	private readonly _broadcast = signal<MeetBroadcastInfo | undefined>(undefined);
+	private readonly _broadcasts = signal<MeetBroadcastInfo[]>([]);
 	private readonly _request = signal<BroadcastRequestState>({ status: 'idle' });
+	private clockedStart: number | undefined;
 
-	/** The broadcast, while it runs or right after it failed; `undefined` once it ended normally. */
-	readonly broadcast = this._broadcast.asReadonly();
+	/**
+	 * The broadcasts in progress, plus the failed ones kept until the failure is dismissed; a
+	 * broadcast that ended normally is forgotten.
+	 */
+	readonly broadcasts = this._broadcasts.asReadonly();
 	readonly request = this._request.asReadonly();
 	/**
-	 * How long the broadcast has been live, as a `Date` offset from zero so it can be formatted with
+	 * How long the meeting has been live, as a `Date` offset from zero so it can be formatted with
 	 * the `date` pipe. Not the moment it started.
 	 */
 	readonly elapsed = this.clock.elapsed;
 
-	readonly isLive = computed(() => this._broadcast()?.status === MeetBroadcastStatus.ACTIVE);
+	readonly inProgress = computed(() => this._broadcasts().filter(({ status }) => isBroadcastInProgress(status)));
+	readonly failed = computed(() => this._broadcasts().filter(({ status }) => hasBroadcastFailed(status)));
+	readonly isLive = computed(() => this._broadcasts().some(({ status }) => status === MeetBroadcastStatus.ACTIVE));
 	readonly isStarting = computed(
-		() => this._broadcast()?.status === MeetBroadcastStatus.STARTING || this._request().status === 'starting'
+		() =>
+			this._broadcasts().some(({ status }) => status === MeetBroadcastStatus.STARTING) ||
+			this._request().status === 'starting'
 	);
 	readonly isEnding = computed(
-		() => this._broadcast()?.status === MeetBroadcastStatus.ENDING || this._request().status === 'stopping'
+		() =>
+			this._broadcasts().some(({ status }) => status === MeetBroadcastStatus.ENDING) ||
+			this._request().status === 'stopping'
 	);
 	readonly isInProgress = computed(() => this.isStarting() || this.isLive() || this.isEnding());
-	readonly hasFailed = computed(() => {
-		const status = this._broadcast()?.status;
-		return status === MeetBroadcastStatus.FAILED || status === MeetBroadcastStatus.LIMIT_REACHED;
-	});
-	readonly streamingDestinationCount = computed(
-		() => this._broadcast()?.destinations.filter(isDestinationStreaming).length ?? 0
-	);
+	/** Nothing streams and something failed: what the activity reports as a failure to go live. */
+	readonly hasFailed = computed(() => this.inProgress().length === 0 && this.failed().length > 0);
+	/** The destinations streamed to, whether or not media has reached them yet. */
+	readonly streamingDestinationCount = computed(() => this.inProgress().length);
 	/** The destinations media has reached, not those still connecting. */
 	readonly liveDestinationCount = computed(
-		() =>
-			this._broadcast()?.destinations.filter(({ status }) => status === MeetBroadcastDestinationStatus.ACTIVE)
-				.length ?? 0
+		() => this._broadcasts().filter(({ status }) => status === MeetBroadcastStatus.ACTIVE).length
 	);
 
-	/** Takes what the server reports; it answers whatever request was pending. */
+	/**
+	 * Takes what the server reports of one broadcast. A new attempt at a destination replaces the
+	 * failed one kept for it.
+	 */
 	setBroadcast(broadcast: MeetBroadcastInfo): void {
-		const shouldKeep = isBroadcastInProgress(broadcast.status) || broadcast.status === MeetBroadcastStatus.FAILED;
-		this._broadcast.set(shouldKeep ? broadcast : undefined);
-		this._request.set({ status: 'idle' });
-		this.trackElapsed(broadcast.status === MeetBroadcastStatus.ACTIVE ? broadcast.startDate : undefined);
+		const key = broadcastDestinationKey(broadcast);
+		const keep = isBroadcastInProgress(broadcast.status) || hasBroadcastFailed(broadcast.status);
+
+		this._broadcasts.update((broadcasts) => {
+			const known = broadcasts.some(({ broadcastId }) => broadcastId === broadcast.broadcastId);
+			const placed = known
+				? broadcasts.map((other) => (other.broadcastId === broadcast.broadcastId ? broadcast : other))
+				: [...broadcasts, broadcast];
+
+			return placed.filter((other) =>
+				other === broadcast
+					? keep
+					: !(hasBroadcastFailed(other.status) && broadcastDestinationKey(other) === key)
+			);
+		});
+		this.trackElapsed();
 	}
 
 	setRequest(status: BroadcastRequestStatus, error?: string): void {
 		this._request.set({ status, error });
 	}
 
-	/** Forgets a failure, of the broadcast or of a request, so the activity offers to start again. */
+	/** Forgets the failures, of broadcasts and of requests, so the activity offers to start again. */
 	dismissFailure(): void {
-		if (this.hasFailed()) {
-			this._broadcast.set(undefined);
-		}
-
+		this._broadcasts.update((broadcasts) => broadcasts.filter(({ status }) => !hasBroadcastFailed(status)));
 		this._request.set({ status: 'idle' });
 	}
 
 	reset(): void {
-		this._broadcast.set(undefined);
+		this._broadcasts.set([]);
 		this._request.set({ status: 'idle' });
-		this.trackElapsed(undefined);
+		this.trackElapsed();
 	}
 
-	private trackElapsed(startDate: number | undefined): void {
-		if (startDate === undefined) {
+	/** Clocks the meeting from the first broadcast that went live among those still live. */
+	private trackElapsed(): void {
+		const starts = this._broadcasts()
+			.filter(({ status }) => status === MeetBroadcastStatus.ACTIVE)
+			.map(({ startDate }) => startDate)
+			.filter((startDate): startDate is number => startDate !== undefined);
+		const start = starts.length > 0 ? Math.min(...starts) : undefined;
+
+		if (start === this.clockedStart) return;
+
+		this.clockedStart = start;
+
+		if (start === undefined) {
 			this.clock.stop();
 		} else {
-			this.clock.start(startDate);
+			this.clock.start(start);
 		}
 	}
 }

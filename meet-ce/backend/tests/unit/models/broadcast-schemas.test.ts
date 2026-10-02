@@ -1,11 +1,10 @@
 import { describe, expect, it } from '@jest/globals';
 import { MEET_BROADCAST_FIELDS } from '@openvidu-meet/typings';
 import {
-	AddBroadcastDestinationReqSchema,
 	BroadcastConfigSchema,
 	BroadcastFieldsQuerySchema,
 	StartBroadcastReqSchema,
-	UpdateBroadcastDestinationReqSchema
+	StopBroadcastReqSchema
 } from '../../../src/models/zod-schemas/broadcast.schema.js';
 import { mergeFieldsHeaderIntoQuery } from '../../../src/models/zod-schemas/field-selection.schema.js';
 
@@ -78,7 +77,9 @@ describe('BroadcastConfigSchema', () => {
 			]);
 		}
 
-		expect(AddBroadcastDestinationReqSchema.safeParse({ name: 'X', url: 'rtmp://mtx/key' }).success).toBe(false);
+		expect(
+			StartBroadcastReqSchema.safeParse({ destinations: [{ name: 'X', url: 'rtmp://mtx/key' }] }).success
+		).toBe(false);
 	});
 
 	it('leaves the destination list out when omitted, since the room decides whether broadcast can be on', () => {
@@ -97,29 +98,30 @@ describe('BroadcastConfigSchema', () => {
 	});
 });
 
-describe('StartBroadcastReqSchema', () => {
-	it('accepts an empty body, meaning every room destination', () => {
-		expect(StartBroadcastReqSchema.safeParse({}).success).toBe(true);
+describe('StartBroadcastReqSchema and StopBroadcastReqSchema', () => {
+	const message = 'A destination is either the destinationId of a room destination alone, or a name and a url';
+
+	it('accept an empty body, meaning every room destination not streamed to yet, or every running broadcast', () => {
+		expect(StartBroadcastReqSchema.parse({})).toEqual({});
+		expect(StopBroadcastReqSchema.parse({})).toEqual({});
 	});
 
-	it('accepts room destinations by id and new ones by name and url', () => {
-		const result = StartBroadcastReqSchema.safeParse({ destinations: [{ id: 'a' }, destination('c')] });
-
-		expect(result.success).toBe(true);
+	it('accept room destinations by id and destinations for the meeting by name and url', () => {
+		expect(
+			StartBroadcastReqSchema.safeParse({ destinations: [{ destinationId: 'a' }, destination('c')] }).success
+		).toBe(true);
 	});
 
-	it('rejects a room destination sent with a name or a url, since a meeting cannot change it', () => {
-		const message = 'A destination is either the id of a room destination alone, or a name and a url';
-
-		expect(issues(StartBroadcastReqSchema.safeParse({ destinations: [{ id: 'a', name: 'Renamed' }] }))).toEqual([
-			`destinations.0: ${message}`
-		]);
-		expect(issues(StartBroadcastReqSchema.safeParse({ destinations: [{ id: 'a', ...destination('x') }] }))).toEqual(
-			[`destinations.0: ${message}`]
-		);
+	it('reject a room destination sent with a name or a url, since a meeting cannot change it', () => {
+		expect(
+			issues(StartBroadcastReqSchema.safeParse({ destinations: [{ destinationId: 'a', name: 'Renamed' }] }))
+		).toEqual([`destinations.0: ${message}`]);
+		expect(
+			issues(StartBroadcastReqSchema.safeParse({ destinations: [{ destinationId: 'a', ...destination('x') }] }))
+		).toEqual([`destinations.0: ${message}`]);
 	});
 
-	it('rejects an empty list, more than five entries and an entry naming neither an id nor a url', () => {
+	it('reject an empty list, more than five entries and an entry naming neither an id nor a url', () => {
 		expect(issues(StartBroadcastReqSchema.safeParse({ destinations: [] }))).toEqual([
 			'destinations: At least one destination is required'
 		]);
@@ -127,17 +129,12 @@ describe('StartBroadcastReqSchema', () => {
 			StartBroadcastReqSchema.safeParse({ destinations: ['a', 'b', 'c', 'd', 'e', 'f'].map(destination) }).success
 		).toBe(false);
 		expect(issues(StartBroadcastReqSchema.safeParse({ destinations: [{ name: 'No url' }] }))).toEqual([
-			'destinations.0: A destination is either the id of a room destination alone, or a name and a url'
+			`destinations.0: ${message}`
 		]);
-	});
-});
-
-describe('AddBroadcastDestinationReqSchema and UpdateBroadcastDestinationReqSchema', () => {
-	it('need a name and an rtmp(s) url to add, and a boolean active flag to update', () => {
-		expect(AddBroadcastDestinationReqSchema.safeParse(destination('x')).success).toBe(true);
-		expect(AddBroadcastDestinationReqSchema.safeParse({ url: 'rtmp://mtx/live/x' }).success).toBe(false);
-		expect(UpdateBroadcastDestinationReqSchema.safeParse({ active: false }).success).toBe(true);
-		expect(UpdateBroadcastDestinationReqSchema.safeParse({ active: 'yes' }).success).toBe(false);
+		expect(issues(StopBroadcastReqSchema.safeParse({ broadcastIds: [] }))).toEqual([
+			'broadcastIds: At least one broadcast id is required'
+		]);
+		expect(StopBroadcastReqSchema.safeParse({ broadcastIds: [''] }).success).toBe(false);
 	});
 });
 
@@ -155,8 +152,8 @@ describe('BroadcastFieldsQuerySchema', () => {
 
 	it('adds the fields of the X-Fields header to those of the query', () => {
 		const query: Record<string, unknown> = { fields: 'status' };
-		mergeFieldsHeaderIntoQuery({ 'x-fields': 'destinations,status,bogus' }, query, MEET_BROADCAST_FIELDS);
+		mergeFieldsHeaderIntoQuery({ 'x-fields': 'url,status,bogus' }, query, MEET_BROADCAST_FIELDS);
 
-		expect(fieldsOf(query.fields as string)).toEqual(['status', 'destinations']);
+		expect(fieldsOf(query.fields as string)).toEqual(['status', 'url']);
 	});
 });

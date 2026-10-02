@@ -5,7 +5,7 @@ import {
 	isRedactedStreamUrl,
 	isValidStreamUrl,
 	MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH,
-	MeetBroadcastDestinationOptions
+	MeetBroadcastDestination
 } from '@openvidu-meet/typings';
 import { BROADCAST_PLATFORM_LABELS, BroadcastPlatform } from '../models/broadcast.model';
 import { detectBroadcastPlatform } from './broadcast-platform.utils';
@@ -37,6 +37,9 @@ export const servedUrlValidator =
 		const url = (control.value as string).trim();
 		return isRedactedStreamUrl(url) && url !== servedUrl() ? { streamKeyRequired: true } : null;
 	};
+
+/** A destination as it is edited: its name and its URL. */
+export type BroadcastDestinationDraft = Pick<MeetBroadcastDestination, 'name' | 'url'>;
 
 /**
  * The form both places that edit a broadcast destination share: the wizard, for the room's saved
@@ -71,13 +74,13 @@ export class DestinationEditor {
 	}
 
 	/** Starts editing the given destination, or a new one; `servedUrl` is the saved URL as it was served. */
-	open(destination: MeetBroadcastDestinationOptions = { name: '', url: '' }, servedUrl?: string): void {
+	open(destination: BroadcastDestinationDraft = { name: '', url: '' }, servedUrl?: string): void {
 		this.servedUrl.set(servedUrl);
 		this.form.reset(destination);
 	}
 
 	/** The destination as edited, trimmed, once it is valid; otherwise marks the fields and yields nothing. */
-	submit(): MeetBroadcastDestinationOptions | undefined {
+	submit(): BroadcastDestinationDraft | undefined {
 		this.rejection.set(undefined);
 
 		if (this.form.invalid) {

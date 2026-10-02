@@ -51,14 +51,10 @@ paths:
         $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}~1hand'
     /meetings/{roomId}/broadcasts:
         $ref: './broadcasts/broadcasts.yaml#/~1meetings~1{roomId}~1broadcasts'
+    /meetings/{roomId}/broadcasts/stop:
+        $ref: './broadcasts/broadcasts.yaml#/~1meetings~1{roomId}~1broadcasts~1stop'
     /meetings/{roomId}/broadcasts/{broadcastId}:
         $ref: './broadcasts/broadcasts.yaml#/~1meetings~1{roomId}~1broadcasts~1{broadcastId}'
-    /meetings/{roomId}/broadcasts/{broadcastId}/stop:
-        $ref: './broadcasts/broadcasts.yaml#/~1meetings~1{roomId}~1broadcasts~1{broadcastId}~1stop'
-    /meetings/{roomId}/broadcasts/{broadcastId}/destinations:
-        $ref: './broadcasts/broadcasts.yaml#/~1meetings~1{roomId}~1broadcasts~1{broadcastId}~1destinations'
-    /meetings/{roomId}/broadcasts/{broadcastId}/destinations/{destinationId}:
-        $ref: './broadcasts/broadcasts.yaml#/~1meetings~1{roomId}~1broadcasts~1{broadcastId}~1destinations~1{destinationId}'
     /recordings:
         $ref: './recordings/recordings.yaml#/~1recordings'
     /recordings/download:
@@ -105,8 +101,6 @@ components:
             $ref: ./recordings/schemas/meet-recording.yaml
         MeetBroadcast:
             $ref: ./broadcasts/schemas/meet-broadcast.yaml
-        MeetBroadcastDestination:
-            $ref: ./broadcasts/schemas/meet-broadcast-destination.yaml
         MeetWebhook:
             $ref: ./webhooks/schemas/meet-webhook-endpoint.yaml
         MeetWebhookEvent:

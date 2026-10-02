@@ -1,9 +1,8 @@
 import type {
 	MeetBroadcastConfigOptions,
 	MeetBroadcastDestination,
-	MeetBroadcastDestinationOptions,
-	MeetBroadcastDestinationUpdateOptions,
-	MeetBroadcastStartOptions
+	MeetBroadcastStartOptions,
+	MeetBroadcastStopOptions
 } from '@openvidu-meet/typings';
 import {
 	isValidStreamUrl,
@@ -54,12 +53,12 @@ export const BroadcastConfigSchema: z.ZodType<MeetBroadcastConfigOptions> = z.ob
 
 const BroadcastStartDestinationSchema = z
 	.object({
-		id: destinationIdSchema.optional(),
+		destinationId: destinationIdSchema.optional(),
 		name: destinationNameSchema.optional(),
 		url: destinationUrlSchema.optional()
 	})
-	.refine(({ id, name, url }) => (id ? !name && !url : Boolean(name && url)), {
-		message: 'A destination is either the id of a room destination alone, or a name and a url'
+	.refine(({ destinationId, name, url }) => (destinationId ? !name && !url : Boolean(name && url)), {
+		message: 'A destination is either the destinationId of a room destination alone, or a name and a url'
 	});
 
 export const StartBroadcastReqSchema: z.ZodType<MeetBroadcastStartOptions> = z.object({
@@ -68,15 +67,14 @@ export const StartBroadcastReqSchema: z.ZodType<MeetBroadcastStartOptions> = z.o
 		.optional()
 });
 
-export const AddBroadcastDestinationReqSchema: z.ZodType<MeetBroadcastDestinationOptions> = z.object({
-	name: destinationNameSchema,
-	url: destinationUrlSchema
+export const StopBroadcastReqSchema: z.ZodType<MeetBroadcastStopOptions> = z.object({
+	broadcastIds: z
+		.array(z.string().trim().min(1, 'Broadcast id cannot be empty'))
+		.min(1, 'At least one broadcast id is required')
+		.max(MEET_BROADCAST_MAX_DESTINATIONS, `Cannot stop more than ${MEET_BROADCAST_MAX_DESTINATIONS} broadcasts`)
+		.optional()
 });
 
 export const BroadcastFieldsQuerySchema = z.object({
 	fields: fieldListSchema(MEET_BROADCAST_FIELDS)
-});
-
-export const UpdateBroadcastDestinationReqSchema: z.ZodType<MeetBroadcastDestinationUpdateOptions> = z.object({
-	active: z.boolean()
 });
