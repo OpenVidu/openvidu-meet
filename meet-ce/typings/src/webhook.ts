@@ -27,6 +27,8 @@ export enum MeetWebhookEventType {
 	PARTICIPANT_JOINED = 'participantJoined',
 	/** Emitted when a participant leaves a meeting */
 	PARTICIPANT_LEFT = 'participantLeft',
+	/** Emitted when a participant in a meeting is promoted to moderator or demoted back to their original role */
+	PARTICIPANT_ROLE_CHANGED = 'participantRoleChanged',
 	/** Emitted when a recording starts in a room */
 	RECORDING_STARTED = 'recordingStarted',
 	/** Emitted when a recording is updated */
@@ -124,10 +126,27 @@ export interface MeetParticipantLeftPayload extends MeetParticipantJoinedPayload
 }
 
 /**
+ * Payload for the {@link MeetWebhookEventType.PARTICIPANT_ROLE_CHANGED} webhook event.
+ */
+export interface MeetParticipantRoleChangedPayload {
+	/** Identifier of the room where the participant's role changed */
+	roomId: string;
+	/** Name of the room where the participant's role changed */
+	roomName: string;
+	/** The participant whose role changed, carrying the new role. See {@link MeetParticipantPayload} for details */
+	participant: MeetParticipantPayload;
+}
+
+/**
  * Payload for OpenVidu Meet webhook events.
  * Depending on the event type, the payload can be {@link MeetRecordingInfo}, {@link MeetRoom},
- * {@link MeetMeetingEndedPayload}, {@link MeetParticipantJoinedPayload} or
- * {@link MeetParticipantLeftPayload}.
+ * {@link MeetMeetingEndedPayload}, {@link MeetParticipantJoinedPayload},
+ * {@link MeetParticipantLeftPayload} or {@link MeetParticipantRoleChangedPayload}.
  */
 export type MeetWebhookPayload =
-	MeetRecordingInfo | MeetRoom | MeetMeetingEndedPayload | MeetParticipantJoinedPayload | MeetParticipantLeftPayload;
+	| MeetRecordingInfo
+	| MeetRoom
+	| MeetMeetingEndedPayload
+	| MeetParticipantJoinedPayload
+	| MeetParticipantLeftPayload
+	| MeetParticipantRoleChangedPayload;

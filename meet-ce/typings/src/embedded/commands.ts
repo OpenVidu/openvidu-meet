@@ -1,4 +1,5 @@
 import { MeetParticipantMuteOptions } from '../request/meeting-request.js';
+import { MeetParticipantModerationAction } from '../request/room-member-request.js';
 
 /**
  * All available commands that can be sent to the embedded OpenVidu Meet application.
@@ -36,6 +37,12 @@ export enum EmbeddedCommandName {
 	 * @permission participantMute
 	 */
 	PARTICIPANT_MUTE_ALL = 'participantMuteAll',
+	/**
+	 * Promotes a participant to moderator (`upgrade`) or returns a promoted one to their original role
+	 * (`downgrade`). The participant is told through the `participantRoleChanged` event.
+	 * @permission participantPromote
+	 */
+	PARTICIPANT_UPDATE_ROLE = 'participantUpdateRole',
 	/**
 	 * Toggles the local participant's microphone, or sets it when `active` is provided.
 	 * @permission mediaPublishAudio
@@ -117,6 +124,14 @@ export interface EmbeddedCommandPayloads {
 	 */
 	[EmbeddedCommandName.PARTICIPANT_MUTE_ALL]: {
 		media: MeetParticipantMuteOptions;
+	};
+	/**
+	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_UPDATE_ROLE} command.
+	 * `action` is the change to apply (see {@link MeetParticipantModerationAction}).
+	 */
+	[EmbeddedCommandName.PARTICIPANT_UPDATE_ROLE]: {
+		participantIdentity: string;
+		action: MeetParticipantModerationAction;
 	};
 	/**
 	 * Payload for the {@link EmbeddedCommandName.MEDIA_TOGGLE_AUDIO} command.
@@ -253,6 +268,16 @@ export interface EmbeddedParticipantMuteAllCommand {
 }
 
 /**
+ * Command message for {@link EmbeddedCommandName.PARTICIPANT_UPDATE_ROLE}: the command name plus its
+ * payload, derived from {@link EmbeddedCommandPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedParticipantUpdateRoleCommand {
+	command: EmbeddedCommandName.PARTICIPANT_UPDATE_ROLE;
+	payload: EmbeddedCommandPayloadFor<EmbeddedCommandName.PARTICIPANT_UPDATE_ROLE>;
+}
+
+/**
  * Command message for {@link EmbeddedCommandName.END_MEETING} (no payload).
  * @category Communication
  * @deprecated Use {@link EmbeddedMeetingEndCommand}. Removed in 3.12.0.
@@ -339,6 +364,7 @@ export type EmbeddedCommand =
 	| EmbeddedParticipantKickCommand
 	| EmbeddedParticipantMuteCommand
 	| EmbeddedParticipantMuteAllCommand
+	| EmbeddedParticipantUpdateRoleCommand
 	| EmbeddedMediaToggleAudioCommand
 	| EmbeddedMediaToggleVideoCommand
 	| EmbeddedMediaToggleScreenShareCommand
