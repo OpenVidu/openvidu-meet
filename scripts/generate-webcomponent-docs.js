@@ -97,7 +97,7 @@ class WebComponentDocGenerator {
             );
         }
 
-        return resolved.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
+        return resolved;
     }
 
     /**
@@ -327,8 +327,8 @@ class WebComponentDocGenerator {
         const commandEnum = enums.find(e => e.name === 'EmbeddedCommandName');
         if (!commandEnum) return '';
 
-        let markdown = '| Method | Description | Parameters | Permission | Restriction |\n';
-        markdown += '|--------|-------------|------------|------------|-------------|\n';
+        let markdown = '| Method | Description | Permission | Restriction |\n';
+        markdown += '|--------|-------------|------------|-------------|\n';
 
         for (const item of commandEnum.items) {
             if (!this.isPublic(item, 'command')) continue;
@@ -338,9 +338,7 @@ class WebComponentDocGenerator {
             const canonicalName = item.isDeprecated ? aliasMap[item.name] : undefined;
             const payload = payloads[canonicalName || item.name];
 
-            const methodName = this.generateMethodName(item.value, payload);
-
-            const params = payload ? this.formatMethodParameters(payload.type) : '-';
+            const signature = this.generateSignature(item.value, payload);
 
             const permission = this.getPermission(item);
 
@@ -350,7 +348,7 @@ class WebComponentDocGenerator {
                 ? this.getDeprecationDescription(item, aliasMap, commandEnum.items)
                 : (item.description || 'No description available');
 
-            markdown += `| \`${methodName}\` | ${description} | ${params} | ${permission} | ${restriction} |\n`;
+            markdown += `| ${signature} | ${description} | ${permission} | ${restriction} |\n`;
         }
 
         return markdown;
@@ -359,39 +357,40 @@ class WebComponentDocGenerator {
     /**
      * Builds the method signature from the command string itself, which is the name the
      * webcomponent exposes and the name an iframe host posts, so the table cannot state two
-     * different names for one command.
+     * different names for one command. Each parameter carries its type, and a long signature
+     * puts one parameter per line (an object type one member per line), so the code block never
+     * grows wider than its longest parameter. Returned as a code block for the table cell.
      */
-    generateMethodName(methodName, payload) {
-        // If there's no payload or payload is void, no parameters needed
-        if (!payload || payload.type === 'void') {
-            return `${methodName}()`;
+    generateSignature(methodName, payload) {
+        const fields = payload && payload.type.includes('{')
+            ? this.parseFields(payload.type).map(([key, value]) => [key, this.resolveTypeNames(value, key)])
+            : [];
+        const oneLine = `${methodName}(${fields.map(([key, type]) => `${key}: ${type}`).join(', ')})`;
+        let lines = [oneLine];
+
+        if (oneLine.length > 42) {
+            const parameters = fields.flatMap(([key, type], index) =>
+                this.fieldLines(key, type, 1, index < fields.length - 1 ? ',' : '')
+            );
+            lines = [`${methodName}(`, ...parameters, ')'];
         }
 
-        // Extract parameter names from payload type
-        if (payload.type.includes('{') && payload.type.includes('}')) {
-            // Remove comments (both single-line // and multi-line /* */)
-            const cleanedType = payload.type
-                .replace(/\/\*[\s\S]*?\*\//g, '') // Remove /* */ comments
-                .replace(/\/\/.*$/gm, ''); // Remove // comments
+        return this.codeBlock(lines);
+    }
 
-            const properties = cleanedType
-                .replace(/[{}]/g, '')
-                .split(';')
-                .map(prop => prop.trim())
-                .filter(prop => prop && !prop.startsWith('//') && !prop.startsWith('/*'))
-                .map(prop => {
-                    const [key] = prop.split(':').map(s => s.trim());
-                    return key;
-                })
-                .filter(key => key); // Remove empty keys
-
-            if (properties.length > 0) {
-                return `${methodName}(${properties.join(', ')})`;
-            }
-        }
-
-        // Fallback: no parameters
-        return `${methodName}()`;
+    /**
+     * Splits an object type into its `[name, type]` fields, comments removed.
+     */
+    parseFields(type) {
+        return type
+            .replace(/\/\*[\s\S]*?\*\//g, '') // Remove /* */ comments
+            .replace(/\/\/.*$/gm, '') // Remove // comments
+            .replace(/[{}]/g, '')
+            .split(';')
+            .map(prop => prop.trim())
+            .filter(prop => prop)
+            .map(prop => [prop.slice(0, prop.indexOf(':')).trim(), prop.slice(prop.indexOf(':') + 1).trim()])
+            .filter(([key, value]) => key && value);
     }
 
     /**
@@ -517,67 +516,72 @@ class WebComponentDocGenerator {
     }
 
     /**
-     * Formats payload type information for display in events table
+     * Inline code for a table cell, written with backticks. A literal `|` would split the cell and
+     * an escaped one shows its backslash inside a markdown code span, so text holding a pipe is
+     * written as HTML with the characters that matter escaped as entities.
+     */
+    inlineCode(text) {
+        if (!text.includes('|')) {
+            return `\`${text}\``;
+        }
+
+        return `<code>${this.escapeHtml(text)}</code>`;
+    }
+
+    /**
+     * Escapes the characters of a table cell that HTML or the table itself would take for syntax.
+     */
+    escapeHtml(text) {
+        return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\|/g, '&#124;');
+    }
+
+    /**
+     * Formats the payload type of an event for its table cell: one `name`: `type` per line. Plain
+     * inline code, not a preformatted block, so a long union wraps with the cell instead of
+     * widening the whole table.
      */
     formatPayload(type) {
         if (type === 'void' || type === '{}') {
             return 'None';
         }
 
-        // Handle object types
         if (type.includes('{') && type.includes('}')) {
-            const properties = type
-                .replace(/[{}]/g, '')
-                .split(';')
-                .map(prop => prop.trim())
-                .filter(prop => prop)
-                .map(prop => {
-                    const [key, value] = prop.split(':').map(s => s.trim());
-                    return `"${key}": "${this.resolveTypeNames(value, key)}"`;
-                });
+            const fields = this.parseFields(type).flatMap(([key, value]) =>
+                this.fieldLines(key, this.resolveTypeNames(value, key), 1, ';')
+            );
 
-            if (properties.length > 0) {
-                const tab = '&nbsp;&nbsp;&nbsp;&nbsp;';
-                const jsonContent = '{ <br>' + tab + properties.join(',<br>' + tab) + '<br>}';
-                return `<pre><code>${jsonContent}</code></pre>`;
-            } else {
-                return '<pre><code>{}</code></pre>';
-            }
+            return this.codeBlock(fields.length > 0 ? ['{', ...fields, '}'] : ['object']);
         }
 
-        return `\`${this.resolveTypeNames(type, type)}\``;
+        return this.inlineCode(this.resolveTypeNames(type, type));
     }
 
     /**
-     * Formats method parameters for display
+     * Lays one `name: type` field out in lines: an object type one member per line, a long union one
+     * member per line after a `|`, anything else on its own line. `ending` closes the field.
      */
-    formatMethodParameters(type) {
-        if (type === 'void') {
-            return '-';
+    fieldLines(name, type, depth, ending) {
+        const pad = '    '.repeat(depth);
+
+        if (type.startsWith('{')) {
+            const members = this.parseFields(type).flatMap(([key, value]) => this.fieldLines(key, value, depth + 1, ';'));
+            return [`${pad}${name}: {`, ...members, `${pad}}${ending}`];
         }
 
-        // Handle object types
-        if (type.includes('{') && type.includes('}')) {
-            // Remove comments (both single-line // and multi-line /* */)
-            const cleanedType = type
-                .replace(/\/\*[\s\S]*?\*\//g, '') // Remove /* */ comments
-                .replace(/\/\/.*$/gm, ''); // Remove // comments
-
-            const properties = cleanedType
-                .replace(/[{}]/g, '')
-                .split(';')
-                .map(prop => prop.trim())
-                .filter(prop => prop && !prop.startsWith('//') && !prop.startsWith('/*'))
-                .map(prop => {
-                    const [key, value] = prop.split(':').map(s => s.trim());
-                    return value ? `• \`${key}\`: \`${this.resolveTypeNames(value, key)}\`` : undefined;
-                })
-                .filter(param => param); // Remove malformed parameters
-
-            return properties.length > 0 ? properties.join('<br>') : 'object';
+        const alternatives = type.split(' | ');
+        if (alternatives.length > 1 && `${pad}${name}: ${type}${ending}`.length > 40) {
+            return [`${pad}${name}:`, ...alternatives.map((alternative, index) =>
+                `${pad}    | ${alternative}${index === alternatives.length - 1 ? ending : ''}`)];
         }
 
-        return `\`${this.resolveTypeNames(type, type)}\``;
+        return [`${pad}${name}: ${type}${ending}`];
+    }
+
+    /**
+     * A code block for a table cell: one line per entry, indentation kept.
+     */
+    codeBlock(lines) {
+        return `<pre><code>${lines.map(line => this.escapeHtml(line)).join('<br>')}</code></pre>`;
     }
 
     /**
