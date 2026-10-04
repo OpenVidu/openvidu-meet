@@ -6,8 +6,13 @@ import {
 	MeetEventOrigin,
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantMuteOptions,
+	MeetRecordingInfo,
+	MeetRecordingStatus,
+	MeetRecordingUpdatedPayload,
+	MeetSignalPayload,
 	MeetSignalType
 } from '@openvidu-meet/typings';
+import { Subject } from 'rxjs';
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
@@ -22,8 +27,13 @@ import {
 	LocalMediaService,
 	ScreenShareService,
 	MeetingEndingSoonService,
-	ParticipantLeftReason
+	ParticipantLeftReason,
+	ParticipantModel
 } from '../openvidu-components';
+import {
+	MeetingEventsService,
+	MeetSignal
+} from '../openvidu-components/services/meeting-events/meeting-events.service';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingEventHandlerService } from './meeting-event-handler.service';
 import { MeetingStateService } from './meeting-state.service';
@@ -58,12 +68,15 @@ describe('MeetingEventHandlerService', () => {
 	let endedBySelf: WritableSignal<boolean>;
 	let meetingEndsAt: WritableSignal<number | undefined>;
 	let serverTimeSkewMs: WritableSignal<number>;
+	let isEmbeddedMode: boolean;
+	let meetSignals: Subject<MeetSignal>;
 	let meetingContextStub: {
 		endedBySelf: () => boolean;
 		markMeetingEndedBySelf: jasmine.Spy;
 		meetingEndsAt: () => number | undefined;
 		setMeetingStartedAt: jasmine.Spy;
 		setMeetingEndsAt: jasmine.Spy;
+		setHasRecordings: jasmine.Spy;
 		roomId: () => string;
 		clearMeetingContext: jasmine.Spy;
 	};
@@ -76,6 +89,8 @@ describe('MeetingEventHandlerService', () => {
 		endedBySelf = signal(false);
 		meetingEndsAt = signal<number | undefined>(undefined);
 		serverTimeSkewMs = signal(0);
+		isEmbeddedMode = true;
+		meetSignals = new Subject<MeetSignal>();
 		meetingContextStub = {
 			endedBySelf: () => endedBySelf(),
 			markMeetingEndedBySelf: jasmine.createSpy('markMeetingEndedBySelf').and.callFake(() => {
@@ -86,6 +101,7 @@ describe('MeetingEventHandlerService', () => {
 			setMeetingEndsAt: jasmine.createSpy('setMeetingEndsAt').and.callFake((endsAt?: number) => {
 				meetingEndsAt.set(endsAt);
 			}),
+			setHasRecordings: jasmine.createSpy('setHasRecordings'),
 			roomId: () => 'room1',
 			clearMeetingContext: jasmine.createSpy('clearMeetingContext')
 		};
@@ -136,7 +152,8 @@ describe('MeetingEventHandlerService', () => {
 				{ provide: LoggerService, useClass: LoggerServiceStub },
 				{ provide: LocalMediaService, useValue: localMedia },
 				{ provide: ScreenShareService, useValue: screenShare },
-				{ provide: RuntimeConfigService, useValue: { isEmbeddedMode: () => true } },
+				{ provide: RuntimeConfigService, useValue: { isEmbeddedMode: () => isEmbeddedMode } },
+				{ provide: MeetingEventsService, useValue: { meetSignals$: meetSignals.asObservable() } },
 				{ provide: MeetingContextService, useValue: meetingContextStub },
 				{ provide: MeetingStateService, useValue: { clear: () => {} } },
 				{ provide: RoomFeatureService, useValue: {} },
@@ -158,6 +175,11 @@ describe('MeetingEventHandlerService', () => {
 	function seedMediaStatus(): void {
 		TestBed.tick();
 		eventBus.drain();
+	}
+
+	/** Delivers a server signal the way the bound room relays it. */
+	function receiveSignal(topic: MeetSignalType, payload: MeetSignalPayload): void {
+		meetSignals.next({ topic, payload });
 	}
 
 	function muteFromModerator(media: MeetParticipantMuteOptions): Promise<void> {
@@ -299,47 +321,189 @@ describe('MeetingEventHandlerService', () => {
 		});
 	});
 
-	describe('signal sender', () => {
-		function receiveMuteSignal(from?: { identity: string }): void {
-			let onData: ((...args: unknown[]) => void) | undefined;
-			const room = {
-				on: (event: string, handler: (...args: unknown[]) => void) => {
-					if (event === 'dataReceived') onData = handler;
-				}
-			};
-			service.setupRoomListeners(room as never);
+	// The bound room only relays what the server itself sent (MeetingEventsService discards a
+	// packet relayed from a participant), so a signal arriving here carries the server's authority.
+	describe('server signals', () => {
+		it('mutes on the moderator mute signal', async () => {
+			seedMediaStatus();
+
 			const payload: MeetParticipantMediaMutedPayload = {
 				roomId: 'room1',
 				media: { audioActive: false },
 				timestamp: 0
 			};
-			onData!(
-				new TextEncoder().encode(JSON.stringify(payload)),
-				from,
-				undefined,
-				MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED
-			);
-		}
-
-		it('mutes when the server sent the signal', async () => {
-			seedMediaStatus();
-
-			receiveMuteSignal();
+			receiveSignal(MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED, payload);
 			await Promise.resolve();
 
 			expect(localMedia.setMicrophoneEnabled).toHaveBeenCalledWith(false);
 		});
+	});
 
-		// `participantMute` is the only thing standing between a speaker and everyone's microphone,
-		// and `chatWrite` already lets them publish data on any topic.
-		it('ignores a signal relayed from another participant', async () => {
-			seedMediaStatus();
+	/**
+	 * The recording's status reaches every participant as a server signal carrying the whole
+	 * recording; the host is told of each status the signal brings, once, and none before it knows the
+	 * participant joined.
+	 */
+	describe('recording status', () => {
+		function receiveRecordingStatus(status: MeetRecordingStatus, recordingId = 'rec-1', roomId = 'room1'): void {
+			const payload: MeetRecordingUpdatedPayload = {
+				roomId,
+				recording: { recordingId, roomId, roomName: roomId, status } as MeetRecordingInfo,
+				timestamp: 0
+			};
+			receiveSignal(MeetSignalType.MEET_RECORDING_UPDATED, payload);
+		}
 
-			receiveMuteSignal({ identity: 'speaker1' });
-			await Promise.resolve();
+		function notifiedStatuses(): { recordingId: string; status: MeetRecordingStatus }[] {
+			return eventBus
+				.events()
+				.filter((event) => event.event === EmbeddedEventName.RECORDING_STATUS_CHANGED)
+				.map(
+					(event) =>
+						('payload' in event ? event.payload : undefined) as {
+							recordingId: string;
+							status: MeetRecordingStatus;
+						}
+				);
+		}
 
-			expect(localMedia.setMicrophoneEnabled).not.toHaveBeenCalled();
-			expect(eventBus.events()).toEqual([]);
+		function joinMeeting(): void {
+			service.onParticipantConnected({ roomName: 'room1', identity: 'alice' } as ParticipantModel);
+		}
+
+		function leaveMeeting(): Promise<void> {
+			return service.onParticipantLeft({
+				roomName: 'room1',
+				participantName: 'Alice',
+				identity: 'alice',
+				reason: ParticipantLeftReason.LEAVE
+			});
+		}
+
+		describe('in the meeting', () => {
+			beforeEach(() => {
+				joinMeeting();
+				eventBus.drain();
+			});
+
+			for (const status of Object.values(MeetRecordingStatus)) {
+				it(`notifies the host of a recording that is '${status}'`, () => {
+					receiveRecordingStatus(status);
+
+					expect(notifiedStatuses()).toEqual([{ recordingId: 'rec-1', status }]);
+				});
+			}
+
+			it('notifies every status transition, in order', () => {
+				receiveRecordingStatus(MeetRecordingStatus.STARTING);
+				receiveRecordingStatus(MeetRecordingStatus.ACTIVE);
+				receiveRecordingStatus(MeetRecordingStatus.ENDING);
+				receiveRecordingStatus(MeetRecordingStatus.COMPLETE);
+
+				expect(notifiedStatuses().map(({ status }) => status)).toEqual([
+					MeetRecordingStatus.STARTING,
+					MeetRecordingStatus.ACTIVE,
+					MeetRecordingStatus.ENDING,
+					MeetRecordingStatus.COMPLETE
+				]);
+			});
+
+			// The server repeats the current status to a participant who joins mid-recording or reconnects.
+			it('does not repeat a status the host already knows', () => {
+				receiveRecordingStatus(MeetRecordingStatus.ACTIVE);
+				receiveRecordingStatus(MeetRecordingStatus.ACTIVE);
+
+				expect(notifiedStatuses().length).toBe(1);
+			});
+
+			// The server repeats the current status on join and relays egress webhooks that can arrive late.
+			it('never walks a recording back to an earlier status', () => {
+				receiveRecordingStatus(MeetRecordingStatus.ACTIVE);
+				receiveRecordingStatus(MeetRecordingStatus.STARTING);
+				receiveRecordingStatus(MeetRecordingStatus.ENDING);
+				receiveRecordingStatus(MeetRecordingStatus.ACTIVE);
+				receiveRecordingStatus(MeetRecordingStatus.COMPLETE);
+				receiveRecordingStatus(MeetRecordingStatus.ENDING);
+				receiveRecordingStatus(MeetRecordingStatus.FAILED);
+
+				expect(notifiedStatuses().map(({ status }) => status)).toEqual([
+					MeetRecordingStatus.ACTIVE,
+					MeetRecordingStatus.ENDING,
+					MeetRecordingStatus.COMPLETE
+				]);
+			});
+
+			it('tells a new recording apart from the previous one in the same status', () => {
+				receiveRecordingStatus(MeetRecordingStatus.ACTIVE, 'rec-1');
+				receiveRecordingStatus(MeetRecordingStatus.ACTIVE, 'rec-2');
+
+				expect(notifiedStatuses().map(({ recordingId }) => recordingId)).toEqual(['rec-1', 'rec-2']);
+			});
+
+			it('starts over on the next entry, once the host knows it joined again', async () => {
+				receiveRecordingStatus(MeetRecordingStatus.ACTIVE);
+				await leaveMeeting();
+				eventBus.drain();
+
+				receiveRecordingStatus(MeetRecordingStatus.ACTIVE);
+				expect(notifiedStatuses()).toEqual([]);
+
+				joinMeeting();
+				expect(notifiedStatuses().length).toBe(1);
+			});
+
+			it("ignores another room's recording", () => {
+				receiveRecordingStatus(MeetRecordingStatus.ACTIVE, 'rec-1', 'room2');
+
+				expect(notifiedStatuses()).toEqual([]);
+			});
+
+			it('marks the meeting as having recordings once one completes', () => {
+				receiveRecordingStatus(MeetRecordingStatus.ACTIVE);
+				expect(meetingContextStub.setHasRecordings).not.toHaveBeenCalled();
+
+				receiveRecordingStatus(MeetRecordingStatus.COMPLETE);
+				expect(meetingContextStub.setHasRecordings).toHaveBeenCalledOnceWith(true);
+			});
+
+			it('tells the host nothing outside the embedded modes, but still tracks the recordings', () => {
+				isEmbeddedMode = false;
+
+				receiveRecordingStatus(MeetRecordingStatus.COMPLETE);
+
+				expect(eventBus.events()).toEqual([]);
+				expect(meetingContextStub.setHasRecordings).toHaveBeenCalledOnceWith(true);
+			});
+		});
+
+		// The server repeats the current status from the participant_joined webhook, while the
+		// participant is still connecting.
+		describe('on joining', () => {
+			it('reports a recording already underway right after meetingJoined', () => {
+				receiveRecordingStatus(MeetRecordingStatus.ACTIVE);
+				expect(eventBus.events()).toEqual([]);
+
+				joinMeeting();
+
+				expect(eventBus.events().map(({ event }) => event)).toEqual([
+					EmbeddedEventName.MEETING_JOINED,
+					EmbeddedEventName.RECORDING_STATUS_CHANGED
+				]);
+				expect(notifiedStatuses()).toEqual([{ recordingId: 'rec-1', status: MeetRecordingStatus.ACTIVE }]);
+			});
+
+			it('reports only the furthest status each recording reached while joining', () => {
+				receiveRecordingStatus(MeetRecordingStatus.STARTING, 'rec-1');
+				receiveRecordingStatus(MeetRecordingStatus.ACTIVE, 'rec-1');
+				receiveRecordingStatus(MeetRecordingStatus.STARTING, 'rec-2');
+
+				joinMeeting();
+
+				expect(notifiedStatuses()).toEqual([
+					{ recordingId: 'rec-1', status: MeetRecordingStatus.ACTIVE },
+					{ recordingId: 'rec-2', status: MeetRecordingStatus.STARTING }
+				]);
+			});
 		});
 	});
 

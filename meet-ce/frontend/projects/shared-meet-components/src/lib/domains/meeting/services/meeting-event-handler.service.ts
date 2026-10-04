@@ -1,6 +1,8 @@
 import { Injectable, effect, inject, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
 	EmbeddedEventName,
+	EmbeddedEventPayloadFor,
 	LeftEventReason,
 	MeetEventOrigin,
 	MeetParticipantMediaMutedPayload,
@@ -23,7 +25,6 @@ import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
 import type {
-	DataPacket_Kind,
 	LocalParticipant,
 	ParticipantLeftEvent,
 	ParticipantModel,
@@ -41,11 +42,25 @@ import {
 	Track,
 	parseParticipantMetadata
 } from '../openvidu-components';
+import {
+	MeetingEventsService,
+	MeetSignal
+} from '../openvidu-components/services/meeting-events/meeting-events.service';
 import { toEmbeddedParticipantPayload } from '../utils/embedded-participant.utils';
 import { toMediaStatusChangedEvent } from '../utils/media-status-event.utils';
 import { hasReachedMeetingEnd, parseMeetingEndDate, parseMeetingStartDate } from '../utils/room-metadata.utils';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingStateService } from './meeting-state.service';
+
+const RECORDING_STATUS_ORDER: Record<MeetRecordingStatus, number> = {
+	[MeetRecordingStatus.STARTING]: 0,
+	[MeetRecordingStatus.ACTIVE]: 1,
+	[MeetRecordingStatus.ENDING]: 2,
+	[MeetRecordingStatus.COMPLETE]: 3,
+	[MeetRecordingStatus.FAILED]: 3,
+	[MeetRecordingStatus.ABORTED]: 3,
+	[MeetRecordingStatus.LIMIT_REACHED]: 3
+};
 
 /**
  * Service that handles all LiveKit/OpenVidu room events.
@@ -70,6 +85,18 @@ export class MeetingEventHandlerService {
 	protected screenShare = inject(ScreenShareService);
 	protected meetingEndingSoon = inject(MeetingEndingSoonService);
 
+	constructor() {
+		// The server signals flow from the moment the room is bound, before it connects, so what the
+		// server sends a participant on joining (the recording in progress) is not missed.
+		inject(MeetingEventsService)
+			.meetSignals$.pipe(takeUntilDestroyed())
+			.subscribe((meetSignal) =>
+				this.handleMeetSignal(meetSignal).catch((error) =>
+					console.warn(`Failed to handle the '${meetSignal.topic}' signal`, error)
+				)
+			);
+	}
+
 	// ============================================
 	// PUBLIC METHODS - Room Event Handlers
 	// ============================================
@@ -81,59 +108,6 @@ export class MeetingEventHandlerService {
 	 * @param room The LiveKit Room instance
 	 */
 	setupRoomListeners(room: Room): void {
-		room.on(
-			RoomEvent.DataReceived,
-			async (payload: Uint8Array, participant?: RemoteParticipant, _kind?: DataPacket_Kind, topic?: string) => {
-				// Only process topics that this handler is responsible for
-				const relevantTopics: string[] = [
-					MeetSignalType.MEET_RECORDING_UPDATED,
-					MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED,
-					MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED,
-					MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED
-				];
-
-				if (!topic || !relevantTopics.includes(topic)) {
-					return;
-				}
-
-				// These signals carry moderation authority, so only the server may send them: a packet
-				// relayed from a participant arrives with that participant, one sent by the server does not.
-				if (participant) {
-					return;
-				}
-
-				try {
-					const event = JSON.parse(new TextDecoder().decode(payload));
-
-					switch (topic) {
-						case MeetSignalType.MEET_RECORDING_UPDATED:
-							this.handleRecordingUpdated(event as MeetRecordingUpdatedPayload);
-							break;
-
-						case MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED: {
-							const roleUpdateEvent = event as MeetParticipantRoleUpdatedPayload;
-							await this.handleParticipantRoleUpdated(roleUpdateEvent);
-							break;
-						}
-
-						case MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED: {
-							const permissionsUpdateEvent = event as MeetParticipantPermissionsUpdatedPayload;
-							await this.handleParticipantPermissionsUpdated(permissionsUpdateEvent);
-							break;
-						}
-
-						case MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED: {
-							const mediaMutedEvent = event as MeetParticipantMediaMutedPayload;
-							await this.handleParticipantMediaMuted(mediaMutedEvent);
-							break;
-						}
-					}
-				} catch (error) {
-					console.warn(`Failed to parse data message for topic: ${topic}`, error);
-				}
-			}
-		);
-
 		room.on(
 			RoomEvent.ParticipantMetadataChanged,
 			(_prevMetadata: string | undefined, participant: LocalParticipant | RemoteParticipant) => {
@@ -176,6 +150,9 @@ export class MeetingEventHandlerService {
 
 	// What the host has been told about each local device's status in the current entry.
 	private mediaStatusLedger: Partial<Record<EmbeddedEventName, boolean>> = {};
+	// The furthest status each recording has reached in the current entry.
+	private recordingStatusLedger = new Map<string, MeetRecordingStatus>();
+	private meetingJoinedNotified = false;
 
 	/**
 	 * Notifies the host of the local participant's media status (embedded modes only) from the state
@@ -320,8 +297,9 @@ export class MeetingEventHandlerService {
 
 	/**
 	 * Forwards the participant-connected event to the host as a `meetingJoined` lifecycle event
-	 * (embedded modes only). The bus only ever queues the canonical name; each shell is
-	 * responsible for also dispatching the deprecated `joined` alias alongside it.
+	 * (embedded modes only), followed by the status of every recording the meeting already has. The
+	 * bus only ever queues the canonical name; each shell is responsible for also dispatching the
+	 * deprecated `joined` alias alongside it.
 	 */
 	onParticipantConnected = (event: ParticipantModel): void => {
 		if (!this.runtimeConfigService.isEmbeddedMode()) {
@@ -335,6 +313,11 @@ export class MeetingEventHandlerService {
 				participantIdentity: event.identity
 			}
 		});
+		this.meetingJoinedNotified = true;
+
+		for (const [recordingId, status] of this.recordingStatusLedger) {
+			this.eventBus.emit({ event: EmbeddedEventName.RECORDING_STATUS_CHANGED, payload: { recordingId, status } });
+		}
 	};
 
 	/**
@@ -362,6 +345,8 @@ export class MeetingEventHandlerService {
 		this.meetingState.clear();
 		// Per entry: the next one starts up again, against its own initial state.
 		this.mediaStatusLedger = {};
+		this.recordingStatusLedger.clear();
+		this.meetingJoinedNotified = false;
 
 		// Notify the host that the local participant left (embedded modes only; the bus is drained there).
 		if (this.runtimeConfigService.isEmbeddedMode()) {
@@ -408,6 +393,26 @@ export class MeetingEventHandlerService {
 	// PRIVATE METHODS - Event Handlers
 	// ============================================
 
+	private async handleMeetSignal({ topic, payload }: MeetSignal): Promise<void> {
+		switch (topic) {
+			case MeetSignalType.MEET_RECORDING_UPDATED:
+				this.handleRecordingUpdated(payload as MeetRecordingUpdatedPayload);
+				break;
+
+			case MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED:
+				await this.handleParticipantRoleUpdated(payload as MeetParticipantRoleUpdatedPayload);
+				break;
+
+			case MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED:
+				await this.handleParticipantPermissionsUpdated(payload as MeetParticipantPermissionsUpdatedPayload);
+				break;
+
+			case MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED:
+				await this.handleParticipantMediaMuted(payload as MeetParticipantMediaMutedPayload);
+				break;
+		}
+	}
+
 	/**
 	 * Handles role updated event for the local participant by refreshing the room member token to get updated permissions.
 	 * Also shows a notification to the user about their new role.
@@ -441,8 +446,34 @@ export class MeetingEventHandlerService {
 			return;
 		}
 
-		if (event.recording.status === MeetRecordingStatus.COMPLETE) {
+		const { recordingId, status } = event.recording;
+
+		if (status === MeetRecordingStatus.COMPLETE) {
 			this.meetingContext.setHasRecordings(true);
+		}
+
+		this.notifyRecordingStatus({ recordingId, status });
+	}
+
+	/**
+	 * Notifies the host of the recording's status (embedded modes only) only when it moves that
+	 * recording forward: the server repeats the current status to a participant who joins
+	 * mid-recording or reconnects, and the egress webhooks it relays can arrive late. That repeat
+	 * reaches a joining participant before `meetingJoined` does, so until then the status is only
+	 * recorded, for {@link onParticipantConnected} to report.
+	 */
+	private notifyRecordingStatus(payload: EmbeddedEventPayloadFor<EmbeddedEventName.RECORDING_STATUS_CHANGED>): void {
+		if (!this.runtimeConfigService.isEmbeddedMode()) return;
+
+		const { recordingId, status } = payload;
+		const known = this.recordingStatusLedger.get(recordingId);
+
+		if (known !== undefined && RECORDING_STATUS_ORDER[status] <= RECORDING_STATUS_ORDER[known]) return;
+
+		this.recordingStatusLedger.set(recordingId, status);
+
+		if (this.meetingJoinedNotified) {
+			this.eventBus.emit({ event: EmbeddedEventName.RECORDING_STATUS_CHANGED, payload });
 		}
 	}
 

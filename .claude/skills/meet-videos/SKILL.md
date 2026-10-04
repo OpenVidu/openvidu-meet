@@ -93,6 +93,36 @@ recording into one clip per segment (accurate output-seeking with ffmpeg `-ss`/`
 room-lifecycle flow also needs a logged-in session AND its own camera, so it runs in a
 fake-camera browser with the reused `storageState` applied (`newParticipant({ authed: true })`).
 
+## Focus effect: zoom and soft blur on what matters
+
+A flow can make its important clicks stand out. `clickSelector(page, sel, { zoom: true })` logs the
+click (when the cursor starts gliding, when it clicks, and the target's box); `focusOn: '<selector>'`
+swaps in a larger region to keep sharp, such as the whole menu a menu item belongs to. After the take,
+`renderFocusVideo()` re-encodes it with ffmpeg and applies **focus spans**: for each one, a smoothstep
+ramp eases a zoom (`zoom`, default `FOCUS_ZOOM`) onto its `box` while a blurred copy of the frame
+(`FOCUS_BLUR`) fades in everywhere except a feathered window on that box. Zoom and blur share the
+ramp, so they move together. Spans run one after another and must not overlap; between two of them
+the zoom is back at 1, so the centre switches unseen. The logged clicks become one span.
+
+Time is the wall clock of the filmed page (`videoT0`, stamped just before `newPage()`), which is what
+Playwright's WebM counts from. `startVideoHere()` trims the clip to begin inside the meeting rather
+than on the lobby. Only mp4 gets the effect; flows that log no clicks are encoded as before. Tuning
+lives in the `FOCUS_*` constants.
+
+**Refocus a clip that is already recorded** (no new take): pass explicit spans, in seconds into the
+clip and in frame pixels, to add zooms the flow did not log, for instance onto a panel or a toast that
+appears after the clicks. The result is written to `--out` under the same name.
+
+```bash
+node .claude/skills/meet-videos/record.mjs --refocus clip.mp4 --crf 18 --spans \
+  '[{"start":8.3,"end":10.9,"zoom":1.8,"box":{"x":1556,"y":70,"width":344,"height":300}},
+    {"start":11.1,"end":13.4,"zoom":2.0,"box":{"x":16,"y":8,"width":360,"height":120}}]'
+```
+
+Each pass re-encodes the clip, so use a low `--crf` (18) to keep the first pass's quality. Measure a
+`box` on a full-resolution frame (`ffmpeg -ss <t> -i clip.mp4 -frames:v 1 frame.png`), and read the
+start and end times off a contact sheet (`fps=2,tile=4x4`).
+
 ## Live flows & the sample webcam (shared with meet-screenshots)
 
 The meeting flows drive a real multi-participant meeting. **Each participant runs in its own
@@ -130,13 +160,14 @@ just that theme (`--themes dark`).
 
 `<out>/<domain>/<flow-id>-<theme>.<ext>` (folder = frontend domain, file = flow + theme; `<ext>`
 follows `--format`). Split flows append the segment name: `<flow-id>-<segment>-<theme>.<ext>`.
-Default `--out` is `./videos`. A default run produces **16 MP4s** (5 single-clip flows × 2 themes +
+Default `--out` is `./videos`. A default run produces **18 MP4s** (6 single-clip flows × 2 themes +
 the 3-segment room-lifecycle flow × 2 themes):
 
 ```
 auth/      login-{light,dark}
 meeting/   live-meeting-{light,dark} · join-meeting-{light,dark}
 meeting/   room-lifecycle-{create,join,record}-{light,dark}   (one take, split into 3 clips)
+recordings/ start-recording-{light,dark}
 rooms/     create-room-{light,dark} · create-room-wizard-{light,dark}
 console/   console-tour-{light,dark}
 ```
@@ -149,6 +180,7 @@ console/   console-tour-{light,dark}
 | `live-meeting` | live (4 ppl) | meeting | Filmed viewer joins a seeded room with 3 others → toggles mic off/on → toggles camera off/on → opens Chat, types & sends a message → opens the Participants panel → closes it, ending on the grid. The hero clip. |
 | `join-meeting` | live (3 ppl) | meeting | Two participants already in the room; the filmed viewer walks the lobby: types a display name → clicks the name submit → device-preview prejoin → clicks **Join** → lands in the populated room. |
 | `enable-captions` | live (2 ppl) | meeting | Filmed moderator + one remote participant. The moderator clicks the toolbar **captions button** to turn live captions ON, then the remote participant "speaks" — captions stream in word-by-word (interim → final) at the bottom. Live captions are backend-gated (`MEET_CAPTIONS_ENABLED`), so the room is created with `config.captions.enabled=true`, the filmed page stubs `GET /config/captions` + `POST`/`DELETE /ai/assistants` (mirrors the e2e `mockCaptionsBackend`), and caption text is injected into `MeetingCaptionsService._captions` via the dev-build Angular debug API (`window.ng`) — the fake tone-audio camera produces no real transcription. Requires the **non-optimized development** build on :6080 (window.ng + unmangled identifiers). |
+| `start-recording` | live (2 ppl) | recordings | Filmed moderator in a 2-person meeting; the clip starts inside the meeting. The cursor clicks **More options** (`#more-options-btn`) then **Start recording** (`#recording-btn`), both with the zoom + soft blur focus (`focusOn: '.mat-mdc-menu-panel'` keeps the whole menu sharp); the Activities panel then shows the recording go from starting to active. Used by the recording management page on openvidu.io. |
 | `create-room` | ui (admin) | rooms | Rooms list → clicks **Create Room** → basic wizard → clears the default "Room" and types "Product Demo Room" → clicks **Create Room**. |
 | `create-room-wizard` | ui (admin) | rooms | Rooms list → **Create Room** → **Advanced setup** → walks every wizard step: types the name, types the participant (10) and duration (60) limits in Meeting, picks **First participant joins** in the trigger select of Recording and the **Speaker** layout tile, lingers on Room Access → **Create Room**. Selectors: `#wizard-advanced-mode-btn`, `#wizard-next-btn`, `#wizard-finish-btn`, step roots `.room-details-step` / `.meeting-config-step` / `.recording-config-step` / `.room-access-step`, recording sections `#recording-trigger-section mat-select` / `#recording-layout-section`, limits `#room-feature-max-participants input` / `#room-feature-max-duration input`. |
 | `console-tour` | ui (admin) | console | Overview → clicks each side-nav item (Rooms → Recordings → Users → Configuration) → back to Overview, lingering on each screen. Uses 3 seeded demo rooms so lists are populated. |

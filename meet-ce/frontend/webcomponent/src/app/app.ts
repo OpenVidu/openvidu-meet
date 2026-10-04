@@ -125,6 +125,7 @@ export class App {
 	readonly mediaVideoStatusChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED>>();
 	readonly mediaScreenShareStatusChanged =
 		output<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED>>();
+	readonly recordingStatusChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.RECORDING_STATUS_CHANGED>>();
 	readonly embeddedCloseRequested = output<void>();
 
 	/** @deprecated Renamed to `meetingJoined`. Removed in 3.12.0. Dispatched alongside it. */
@@ -308,6 +309,14 @@ export class App {
 		return this.commandService.mediaToggleScreenShare(active);
 	}
 
+	recordingStart(): Promise<void> {
+		return this.commandService.recordingStart();
+	}
+
+	recordingStop(): Promise<void> {
+		return this.commandService.recordingStop();
+	}
+
 	// ── Internal ─────────────────────────────────────────────────────────────
 	// The bus only ever queues canonical events (see EmbeddedEventBusService), so this switch
 	// only ever handles canonical names; emitting the deprecated output alongside the canonical
@@ -349,6 +358,9 @@ export class App {
 				break;
 			case EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED:
 				this.mediaScreenShareStatusChanged.emit(payload);
+				break;
+			case EmbeddedEventName.RECORDING_STATUS_CHANGED:
+				this.recordingStatusChanged.emit(payload);
 				break;
 		}
 	}

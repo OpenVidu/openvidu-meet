@@ -46,6 +46,8 @@ interface ComponentInstance {
 	mediaToggleAudio: jest.Mock;
 	mediaToggleVideo: jest.Mock;
 	mediaToggleScreenShare: jest.Mock;
+	recordingStart: jest.Mock;
+	recordingStop: jest.Mock;
 }
 
 interface TestableElement extends FakeNgElementBase {
@@ -61,6 +63,8 @@ interface TestableElement extends FakeNgElementBase {
 	mediaToggleAudio(active?: boolean): void;
 	mediaToggleVideo(active?: boolean): void;
 	mediaToggleScreenShare(active?: boolean): void;
+	recordingStart(): void;
+	recordingStop(): void;
 	endMeeting(): void;
 	leaveRoom(): void;
 	kickParticipant(participantIdentity: string): void;
@@ -76,7 +80,9 @@ const componentInstance = (): ComponentInstance => ({
 	participantMuteAll: jest.fn(),
 	mediaToggleAudio: jest.fn(),
 	mediaToggleVideo: jest.fn(),
-	mediaToggleScreenShare: jest.fn()
+	mediaToggleScreenShare: jest.fn(),
+	recordingStart: jest.fn(),
+	recordingStop: jest.fn()
 });
 
 const withComponent = (): [TestableElement, ComponentInstance] => {
@@ -231,7 +237,9 @@ describe('openvidu-meet custom element', () => {
 			['participantMuteAll', (el) => el.participantMuteAll(mute), [mute]],
 			['mediaToggleAudio', (el) => el.mediaToggleAudio(false), [false]],
 			['mediaToggleVideo', (el) => el.mediaToggleVideo(true), [true]],
-			['mediaToggleScreenShare', (el) => el.mediaToggleScreenShare(false), [false]]
+			['mediaToggleScreenShare', (el) => el.mediaToggleScreenShare(false), [false]],
+			['recordingStart', (el) => el.recordingStart(), []],
+			['recordingStop', (el) => el.recordingStop(), []]
 		];
 
 		it.each(commands)('%s() reaches the Angular component instance as it was called', (name, call, args) => {
