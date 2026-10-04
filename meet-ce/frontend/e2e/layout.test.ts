@@ -334,8 +334,8 @@ test.describe('Layout E2E Tests', () => {
 	});
 
 	test.describe('Tile spacing', () => {
-		// Half a percent of the grid's width between two tiles, plus the 1px padding of each.
-		const expectedGap = (gridWidth: number) => gridWidth * 0.005 + 2;
+		// Half a percent of the grid's width between two tiles: the tiles have no padding of their own.
+		const expectedGap = (gridWidth: number) => gridWidth * 0.005;
 
 		test('should separate the tiles by the same gap without overlapping or leaving the grid', async ({
 			browser
