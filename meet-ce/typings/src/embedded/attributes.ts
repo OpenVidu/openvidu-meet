@@ -48,6 +48,18 @@ export enum EmbeddedAttribute {
 	 */
 	INITIAL_VIDEO_ACTIVE = 'initial-video-active',
 	/**
+	 * Language the interface starts in, as a language tag: `en` (English), `es` (Spanish), `de`
+	 * (German), `fr` (French), `zh` (Chinese, Simplified), `hi` (Hindi), `it` (Italian), `ja`
+	 * (Japanese), `nl` (Dutch) or `pt` (Portuguese, European). Case is ignored and a regional variant
+	 * uses its language: `es-ES` is `es`, `pt-BR` is `pt` and `zh-CN` is `zh`.
+	 *
+	 * It **takes precedence over the language the participant chose before**, without replacing it:
+	 * the participant can still switch language from the interface, and leaving the attribute out
+	 * brings back their own choice. An unsupported value is ignored, with a warning in the browser
+	 * console.
+	 */
+	LANGUAGE = 'language',
+	/**
 	 * Secret key for end-to-end encryption (E2EE).
 	 * If provided, the participant will join the meeting using E2EE key.
 	 */
@@ -90,6 +102,8 @@ export interface WebComponentPropertyValues {
 	initialAudioActive?: boolean;
 	/** Initial camera state (they may activate it later). Set: wins over `config.initialVideoActive`; omitted: the room decides. */
 	initialVideoActive?: boolean;
+	/** Language the interface starts in: `en`, `es`, `de`, `fr`, `zh`, `hi`, `it`, `ja`, `nl` or `pt`, regional variants included (`pt-BR` is `pt`). Wins over the participant's previous choice without replacing it; they can still switch. */
+	language?: string;
 	/** Secret key for end-to-end encryption (E2EE). When provided the participant joins using E2EE. */
 	e2eeKey?: string;
 	/** URL to redirect to when the participant dismisses the post-meeting, join, error or recording screen, after `embeddedCloseRequested` fires. */
