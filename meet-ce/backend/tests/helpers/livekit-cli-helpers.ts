@@ -12,26 +12,37 @@ const fakeParticipantsProcesses = new Map<string, ChildProcess>();
 const fakeParticipantRooms = new Set<string>();
 
 /**
- * Adds a fake participant to a LiveKit room for testing purposes.
+ * Adds a fake participant to a LiveKit room for testing purposes. Joining again with an identity
+ * already in use reconnects it, replacing the previous session.
  *
  * @param roomId The ID of the room to join
  * @param participantIdentity The identity for the fake participant
+ * @param metadata The metadata claim to join with, as a room member token carries it
  */
-export const joinFakeParticipant = async (roomId: string, participantIdentity: string) => {
+export const joinFakeParticipant = async (roomId: string, participantIdentity: string, metadata?: string) => {
 	await ensureLivekitCliInstalled();
+	const processKey = `${roomId}-${participantIdentity}`;
+	fakeParticipantsProcesses.get(processKey)?.kill();
+
+	const metadataArgs = metadata ? ['--metadata', metadata] : [];
 	const process = spawnLivekitCliProcess([
 		'room',
 		'join',
 		'--identity',
 		participantIdentity,
+		...metadataArgs,
 		'--publish-demo',
 		roomId
 	]);
 
 	// Store the process to be able to terminate it later
-	fakeParticipantsProcesses.set(`${roomId}-${participantIdentity}`, process);
+	fakeParticipantsProcesses.set(processKey, process);
 	fakeParticipantRooms.add(roomId);
 	await waitForParticipantToConnect(roomId, participantIdentity);
+
+	if (metadata) {
+		await waitForParticipantToUpdateMetadata(roomId, participantIdentity, JSON.parse(metadata));
+	}
 };
 
 /**
