@@ -19,8 +19,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   language tag, or `auto` for the browser's) over the participant's stored preference without replacing it,
   and `show-language-selector`, which hides the language selectors when `false`.
 - Embedded command `participantUpdateRole`, gated by `participantPromote`, promotes a participant to moderator or
-  demotes them back. Every role change is reported as the [`participantRoleChanged`][3.10-participant-role-changed]
-  webhook and as the embedded event of the same name to the affected participant.
+  demotes them back. Every promotion and demotion is reported as the
+  [`participantRoleChanged`][3.10-participant-role-changed] webhook and as the embedded event of the same name to the
+  affected participant.
 
 ### Improved
 
