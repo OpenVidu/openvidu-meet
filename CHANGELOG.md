@@ -30,6 +30,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 - After leaving a meeting that was being recorded, joining another meeting with the same `<openvidu-meet>`
   element showed that recording as still in progress. The recording indicator starts over with each meeting.
+- The language selector listed Chinese as 中国 ("China") and Dutch by its English name. They read 中文 and
+  Nederlands.
 
 ## 3.9.0
 

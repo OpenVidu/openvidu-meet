@@ -11,11 +11,11 @@ export const DEFAULT_LANGUAGE_OPTIONS: LangOption[] = [
 	{ name: 'Español', lang: 'es' },
 	{ name: 'Deutsch', lang: 'de' },
 	{ name: 'Français', lang: 'fr' },
-	{ name: '中国', lang: 'cn' },
+	{ name: '中文', lang: 'cn' },
 	{ name: 'हिन्दी', lang: 'hi' },
 	{ name: 'Italiano', lang: 'it' },
 	{ name: '日本語', lang: 'ja' },
-	{ name: 'Dutch', lang: 'nl' },
+	{ name: 'Nederlands', lang: 'nl' },
 	{ name: 'Português', lang: 'pt' }
 ];
 
