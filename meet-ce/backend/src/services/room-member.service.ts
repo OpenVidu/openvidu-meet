@@ -22,11 +22,13 @@ import {
 import { inject, injectable } from 'inversify';
 import type { ParticipantInfo } from 'livekit-server-sdk';
 import merge from 'lodash.merge';
+import ms from 'ms';
 import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { MeetParticipantHelper } from '../helpers/participant.helper.js';
+import { MeetLock } from '../helpers/redis.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import {
 	errorAnonymousAccessDisabled,
@@ -37,6 +39,7 @@ import {
 	errorParticipantCannotBeDemotedFromModerator,
 	errorParticipantCannotBePromotedToModerator,
 	errorParticipantNameRequiredForMeetingJoin,
+	errorParticipantUpdateInProgress,
 	errorRoomClosed,
 	errorRoomMemberAlreadyExists,
 	errorRoomMemberCannotBeOwnerOrAdmin,
@@ -57,6 +60,7 @@ import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { MeetingService } from './meeting.service.js';
+import { MutexService } from './mutex.service.js';
 import { ParticipantNameService } from './participant-name.service.js';
 import { ParticipantTokenRevocationService } from './participant-token-revocation.service.js';
 import { RecordingService } from './recording.service.js';
@@ -93,7 +97,8 @@ export class RoomMemberService {
 		@inject(RecordingService) protected recordingService: RecordingService,
 		@inject(WebhookDispatcherService) protected webhookDispatcherService: WebhookDispatcherService,
 		@inject(ParticipantTokenRevocationService)
-		protected participantTokenRevocationService: ParticipantTokenRevocationService
+		protected participantTokenRevocationService: ParticipantTokenRevocationService,
+		@inject(MutexService) protected mutexService: MutexService
 	) {}
 
 	/**
@@ -600,35 +605,39 @@ export class RoomMemberService {
 				`Regenerating room member token for participant '${participantIdentity}' in room '${roomId}'`
 			);
 
-			const participant = await this.getParticipantFromMeeting(roomId, participantIdentity!);
-			participantName = participant.name || participantName;
+			participantName = await this.withParticipantMetadataLock(roomId, participantIdentity!, async () => {
+				const participant = await this.getParticipantFromMeeting(roomId, participantIdentity!);
+				const participantMetadata = MeetParticipantHelper.parseOwnMeetingMetadata(participant);
+				const isCurrentlyPromotedModerator = participantMetadata.isPromotedModerator === true;
 
-			const participantMetadata = MeetParticipantHelper.parseOwnMeetingMetadata(participant);
-			const isCurrentlyPromotedModerator = participantMetadata.isPromotedModerator === true;
+				let metadataToApply: string;
 
-			let metadataToApply: string;
+				if (isCurrentlyPromotedModerator && tokenMetadata.badge === MeetRoomMemberUIBadge.OTHER) {
+					const mergedPermissions = this.mergePermissions(
+						tokenMetadata.permissions,
+						roles[MeetRoomMemberRole.MODERATOR].permissions
+					);
 
-			if (isCurrentlyPromotedModerator && tokenMetadata.badge === MeetRoomMemberUIBadge.OTHER) {
-				const mergedPermissions = this.mergePermissions(
-					tokenMetadata.permissions,
-					roles[MeetRoomMemberRole.MODERATOR].permissions
+					// Keep current promotion status while refreshing to new non-moderator base permissions.
+					participantMetadata.originalPermissions = tokenMetadata.permissions;
+					participantMetadata.permissions = mergedPermissions;
+
+					tokenMetadata.permissions = mergedPermissions;
+					tokenMetadata.badge = MeetRoomMemberUIBadge.MODERATOR;
+					tokenMetadata.isPromotedModerator = true;
+
+					metadataToApply = JSON.stringify(participantMetadata);
+				} else {
+					metadataToApply = JSON.stringify(tokenMetadata);
+				}
+
+				const permission = this.buildLiveParticipantPermission(
+					participant.permission,
+					tokenMetadata.permissions
 				);
-
-				// Keep current promotion status while refreshing to new non-moderator base permissions.
-				participantMetadata.originalPermissions = tokenMetadata.permissions;
-				participantMetadata.permissions = mergedPermissions;
-
-				tokenMetadata.permissions = mergedPermissions;
-				tokenMetadata.badge = MeetRoomMemberUIBadge.MODERATOR;
-				tokenMetadata.isPromotedModerator = true;
-
-				metadataToApply = JSON.stringify(participantMetadata);
-			} else {
-				metadataToApply = JSON.stringify(tokenMetadata);
-			}
-
-			const permission = this.buildLiveParticipantPermission(participant.permission, tokenMetadata.permissions);
-			await this.livekitService.updateParticipant(roomId, participant.identity, metadataToApply, permission);
+				await this.livekitService.updateParticipant(roomId, participant.identity, metadataToApply, permission);
+				return participant.name || participantName;
+			});
 		}
 
 		const livekitPermissions = this.getLiveKitPermissions(roomId, tokenMetadata.permissions);
@@ -1074,44 +1083,54 @@ export class RoomMemberService {
 	): Promise<void> {
 		try {
 			const { roles, roomName } = await this.roomService.getMeetRoom(roomId, ['roles', 'roomName']);
-			const participant = await this.getParticipantFromMeeting(roomId, participantIdentity);
-			const metadata = MeetParticipantHelper.requireMeetingMetadata(participant, roomId);
-
-			if (action === MeetParticipantModerationAction.UPGRADE) {
-				if (metadata.badge !== MeetRoomMemberUIBadge.OTHER) {
-					throw errorParticipantCannotBePromotedToModerator(participantIdentity, roomId);
-				}
-
-				metadata.originalPermissions = metadata.permissions;
-				metadata.permissions = this.mergePermissions(
-					metadata.permissions,
-					roles[MeetRoomMemberRole.MODERATOR].permissions
-				);
-				metadata.badge = MeetRoomMemberUIBadge.MODERATOR;
-				metadata.isPromotedModerator = true;
-			} else {
-				if (
-					metadata.badge !== MeetRoomMemberUIBadge.MODERATOR ||
-					!metadata.isPromotedModerator ||
-					!metadata.originalPermissions
-				) {
-					throw errorParticipantCannotBeDemotedFromModerator(participantIdentity, roomId);
-				}
-
-				metadata.permissions = metadata.originalPermissions;
-				metadata.badge = MeetRoomMemberUIBadge.OTHER;
-				metadata.isPromotedModerator = undefined;
-				delete metadata.originalPermissions;
-			}
-
-			const permission = this.buildLiveParticipantPermission(participant.permission, metadata.permissions);
-			const updatedParticipant = await this.livekitService.updateParticipant(
+			const { metadata, updatedParticipant } = await this.withParticipantMetadataLock(
 				roomId,
 				participantIdentity,
-				JSON.stringify(metadata),
-				permission
+				async () => {
+					const participant = await this.getParticipantFromMeeting(roomId, participantIdentity);
+					const metadata = MeetParticipantHelper.requireMeetingMetadata(participant, roomId);
+
+					if (action === MeetParticipantModerationAction.UPGRADE) {
+						if (metadata.badge !== MeetRoomMemberUIBadge.OTHER) {
+							throw errorParticipantCannotBePromotedToModerator(participantIdentity, roomId);
+						}
+
+						metadata.originalPermissions = metadata.permissions;
+						metadata.permissions = this.mergePermissions(
+							metadata.permissions,
+							roles[MeetRoomMemberRole.MODERATOR].permissions
+						);
+						metadata.badge = MeetRoomMemberUIBadge.MODERATOR;
+						metadata.isPromotedModerator = true;
+					} else {
+						if (
+							metadata.badge !== MeetRoomMemberUIBadge.MODERATOR ||
+							!metadata.isPromotedModerator ||
+							!metadata.originalPermissions
+						) {
+							throw errorParticipantCannotBeDemotedFromModerator(participantIdentity, roomId);
+						}
+
+						metadata.permissions = metadata.originalPermissions;
+						metadata.badge = MeetRoomMemberUIBadge.OTHER;
+						metadata.isPromotedModerator = undefined;
+						delete metadata.originalPermissions;
+					}
+
+					const permission = this.buildLiveParticipantPermission(
+						participant.permission,
+						metadata.permissions
+					);
+					const updatedParticipant = await this.livekitService.updateParticipant(
+						roomId,
+						participantIdentity,
+						JSON.stringify(metadata),
+						permission
+					);
+					await this.participantTokenRevocationService.revokeIssuedTokens(roomId, participantIdentity);
+					return { metadata, updatedParticipant };
+				}
 			);
-			await this.participantTokenRevocationService.revokeIssuedTokens(roomId, participantIdentity);
 
 			this.webhookDispatcherService.sendParticipantRoleChangedWebhook({
 				roomId,
@@ -1135,6 +1154,31 @@ export class RoomMemberService {
 			);
 			throw error;
 		}
+	}
+
+	/**
+	 * Runs a read-modify-write of a participant's LiveKit metadata while holding their lock, so a role
+	 * change and a token regeneration cannot overwrite each other's update. A writer that finds the
+	 * lock taken waits for it; one that keeps finding it taken is refused.
+	 */
+	protected async withParticipantMetadataLock<T>(
+		roomId: string,
+		participantIdentity: string,
+		update: () => Promise<T>
+	): Promise<T> {
+		const result = await this.mutexService.withRetryLock(
+			MeetLock.getParticipantMetadataLock(roomId, participantIdentity),
+			ms(INTERNAL_CONFIG.PARTICIPANT_METADATA_LOCK_TTL),
+			update,
+			INTERNAL_CONFIG.PARTICIPANT_METADATA_LOCK_MAX_ATTEMPTS,
+			ms(INTERNAL_CONFIG.PARTICIPANT_METADATA_LOCK_RETRY_DELAY)
+		);
+
+		if (result === null) {
+			throw errorParticipantUpdateInProgress(participantIdentity, roomId);
+		}
+
+		return result;
 	}
 
 	/**

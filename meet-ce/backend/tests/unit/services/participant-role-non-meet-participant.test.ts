@@ -82,7 +82,8 @@ describe('RoomMemberService.updateParticipantRole - S2: a participant Meet did n
 				{},
 				{ startAutoRecordingIfNeeded: async () => {} },
 				webhookDispatcherService as unknown as WebhookDispatcherService,
-				{ revokeIssuedTokens: async () => {} }
+				{ revokeIssuedTokens: async () => {} },
+				{ withRetryLock: (_key: string, _ttl: number, update: () => Promise<unknown>) => update() }
 			] as unknown as ConstructorParameters<typeof RoomMemberService>)
 		);
 	});

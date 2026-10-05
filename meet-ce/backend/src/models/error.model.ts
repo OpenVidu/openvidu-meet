@@ -419,6 +419,14 @@ export const errorParticipantNotRoomMember = (participantIdentity: string, roomI
 	);
 };
 
+export const errorParticipantUpdateInProgress = (participantIdentity: string, roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Participant Error',
+		`Participant '${participantIdentity}' in room '${roomId}' is already being updated`,
+		409
+	);
+};
+
 export const errorParticipantCannotBePromotedToModerator = (
 	participantIdentity: string,
 	roomId: string

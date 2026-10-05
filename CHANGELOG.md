@@ -38,6 +38,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   [`participantMuteAll`][3.9-participant-mute-all], `updateRoomMember` and the embedded commands that use them
   answered with an error when the notice to the affected participants could not be delivered, although the change
   was already applied. They now succeed.
+- Two simultaneous [`participantRoleUpdate`][3.10-participant-role-update] requests for the same participant both
+  succeeded, and a promotion made while the participant's token was being regenerated could be undone by it. Both
+  now apply one after the other, so the second promotion answers `409`.
 
 #### UI
 

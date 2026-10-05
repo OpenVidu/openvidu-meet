@@ -37,6 +37,9 @@ export const INTERNAL_CONFIG = {
 	MEETING_MAX_PARTICIPANTS_LIMIT: 30, // Highest value config.maxParticipants may be set to
 	MEETING_MIN_DURATION_MINUTES_LIMIT: 1, // Lowest value config.maxDurationMinutes may be set to; 0 would be indistinguishable from the null that means no limit
 	MEETING_MAX_DURATION_MINUTES_LIMIT: 1_440, // Highest value config.maxDurationMinutes may be set to (1 day)
+	PARTICIPANT_METADATA_LOCK_TTL: '10s' as StringValue, // Redis lock TTL serializing the read-modify-write of a participant's LiveKit metadata (role change, token regeneration); released as soon as the write lands
+	PARTICIPANT_METADATA_LOCK_RETRY_DELAY: '100ms' as StringValue, // Delay between attempts to take a participant's metadata lock held by another writer
+	PARTICIPANT_METADATA_LOCK_MAX_ATTEMPTS: 30, // ~3s budget before the write is refused with a 409
 
 	// Timing and cleanup settings for recording lifecycle management
 	RECORDING_ACTIVE_LOCK_TTL: '24h' as StringValue, // Redis Lock TTL for active recording in a room (capped at the 24h max supported by the distributed-lock engine; the real lifecycle is governed by the orphaned-locks GC, this is only a last-resort safety net)
