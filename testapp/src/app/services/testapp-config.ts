@@ -10,6 +10,7 @@ export interface MeetEmbedConfig {
 	participantMetadata?: string;
 	initialAudioActive?: boolean;
 	initialVideoActive?: boolean;
+	language?: string;
 	e2eeKey?: string;
 	leaveRedirectUrl?: string;
 	showRecording?: string;
@@ -36,6 +37,7 @@ export class TestappConfigStore {
 	readonly showOnlyRecordings = signal(false);
 	readonly initialAudioActive = signal<TriState>('');
 	readonly initialVideoActive = signal<TriState>('');
+	readonly language = signal('');
 
 	private readonly draft = computed(() => ({
 		roomUrl: this.roomUrl(),
@@ -48,7 +50,8 @@ export class TestappConfigStore {
 		showRecording: this.showRecording(),
 		showOnlyRecordings: this.showOnlyRecordings(),
 		initialAudioActive: this.initialAudioActive(),
-		initialVideoActive: this.initialVideoActive()
+		initialVideoActive: this.initialVideoActive(),
+		language: this.language()
 	}));
 
 	private readonly appliedDraft = signal<string | null>(null);
@@ -74,6 +77,7 @@ export class TestappConfigStore {
 			participantMetadata: optional(draft.participantMetadata),
 			initialAudioActive: toOptionalBoolean(draft.initialAudioActive),
 			initialVideoActive: toOptionalBoolean(draft.initialVideoActive),
+			language: optional(draft.language),
 			e2eeKey: optional(draft.e2eeKey),
 			leaveRedirectUrl: optional(draft.leaveRedirectUrl),
 			showRecording: optional(draft.showRecording),

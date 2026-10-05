@@ -130,6 +130,8 @@ type OpenMeetingOptions = {
 	initialAudioActive?: boolean;
 	/** Sets the `initial-video-active` attribute/query param. Omitted by default (the room decides). */
 	initialVideoActive?: boolean;
+	/** Sets the `language` attribute/query param. Omitted by default (the participant chooses). */
+	language?: string;
 };
 
 /**
@@ -154,7 +156,8 @@ export const openMeetingAtMediaSetup = async (
 		externalId,
 		metadata,
 		initialAudioActive,
-		initialVideoActive
+		initialVideoActive,
+		language
 	} = options ?? {};
 	const participantName = name ?? `pw-${Math.random().toString(36).substring(2, 9)}`;
 
@@ -188,6 +191,7 @@ export const openMeetingAtMediaSetup = async (
 	const toSelectValue = (value: boolean | undefined) => (value === undefined ? '' : String(value));
 	await page.getByTestId('select-initialAudioActive').selectOption(toSelectValue(initialAudioActive));
 	await page.getByTestId('select-initialVideoActive').selectOption(toSelectValue(initialVideoActive));
+	await page.getByTestId('input-language').fill(language ?? '');
 
 	await page.getByTestId('btn-apply-config').click();
 
@@ -234,6 +238,7 @@ export const openMeetingAtMediaSetup = async (
  * @param options.metadata - Value for the `participant-metadata` attribute (opaque app payload).
  * @param options.initialAudioActive - Sets the `initial-audio-active` attribute/query param.
  * @param options.initialVideoActive - Sets the `initial-video-active` attribute/query param.
+ * @param options.language - Sets the `language` attribute/query param.
  */
 export const openMeeting = async (page: Page, roomId: string, options?: OpenMeetingOptions): Promise<void> => {
 	const { meet } = await openMeetingAtMediaSetup(page, roomId, options);

@@ -106,6 +106,22 @@
 				/>
 			</div>
 			<div class="ta-field">
+				<label for="language">language</label>
+				<input
+					id="language"
+					type="text"
+					list="language-options"
+					placeholder="participant's choice"
+					data-testid="input-language"
+					[(ngModel)]="config.language"
+				/>
+				<datalist id="language-options">
+					@for (lang of languages; track lang) {
+					<option [value]="lang"></option>
+					}
+				</datalist>
+			</div>
+			<div class="ta-field">
 				<label for="initialAudioActive">initialAudioActive</label>
 				<select
 					id="initialAudioActive"
