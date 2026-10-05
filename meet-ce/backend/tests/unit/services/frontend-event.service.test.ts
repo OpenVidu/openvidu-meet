@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 import type { MeetRoom } from '@openvidu-meet/typings';
-import { MeetSignalType } from '@openvidu-meet/typings';
+import { MeetRoomMemberUIBadge, MeetSignalType } from '@openvidu-meet/typings';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
@@ -13,6 +13,12 @@ class FakeLiveKitService {
 
 	async sendData(roomName: string, rawData: unknown, options: { topic?: string }): Promise<void> {
 		this.calls.push({ roomName, rawData, topic: options.topic });
+	}
+}
+
+class UnreachableLiveKitService extends FakeLiveKitService {
+	override async sendData(): Promise<void> {
+		throw new Error('LiveKit unreachable');
 	}
 }
 
@@ -40,5 +46,31 @@ describe('FrontendEventService.sendRoomConfigUpdatedSignal', () => {
 				topic: MeetSignalType.MEET_ROOM_CONFIG_UPDATED
 			}
 		]);
+	});
+});
+
+/**
+ * A signal reports a change the server has already applied, so failing to deliver it must not turn
+ * that change into an error for whoever made it.
+ */
+describe('FrontendEventService signals that cannot be delivered', () => {
+	const service = buildService(new UnreachableLiveKitService());
+
+	it('resolves the role updated signal', async () => {
+		await expect(
+			service.sendParticipantRoleUpdatedSignal('room-1', 'participant-1', MeetRoomMemberUIBadge.MODERATOR)
+		).resolves.toBeUndefined();
+	});
+
+	it('resolves the permissions updated signal', async () => {
+		await expect(
+			service.sendParticipantPermissionsUpdatedSignal('room-1', 'participant-1')
+		).resolves.toBeUndefined();
+	});
+
+	it('resolves the media muted signal', async () => {
+		await expect(
+			service.sendParticipantMediaMutedSignal('room-1', ['participant-1'], { audioActive: false })
+		).resolves.toBeUndefined();
 	});
 });

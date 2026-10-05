@@ -37,22 +37,17 @@ export class FrontendEventService {
 	): Promise<void> {
 		this.logger.debug(`Sending recording updated signal for room '${roomId}'`);
 
-		try {
-			const payload: MeetRecordingUpdatedPayload = {
-				roomId,
-				recording: recordingInfo,
-				timestamp: Date.now()
-			};
+		const payload: MeetRecordingUpdatedPayload = {
+			roomId,
+			recording: recordingInfo,
+			timestamp: Date.now()
+		};
+		const options: SendDataOptions = {
+			topic: MeetSignalType.MEET_RECORDING_UPDATED,
+			...(participantSid ? { destinationSids: [participantSid] } : {})
+		};
 
-			const options: SendDataOptions = {
-				topic: MeetSignalType.MEET_RECORDING_UPDATED,
-				...(participantSid ? { destinationSids: [participantSid] } : {})
-			};
-
-			await this.sendSignal(roomId, payload, options);
-		} catch (error) {
-			this.logger.warn(`Error sending recording updated signal for room '${roomId}'`, error);
-		}
+		await this.sendSignal(roomId, payload, options);
 	}
 
 	/**
@@ -61,21 +56,16 @@ export class FrontendEventService {
 	async sendRoomConfigUpdatedSignal(roomId: string, updatedRoom: MeetRoom): Promise<void> {
 		this.logger.debug(`Sending room config updated signal for room '${roomId}'`);
 
-		try {
-			const payload: MeetRoomConfigUpdatedPayload = {
-				roomId,
-				config: updatedRoom.config,
-				timestamp: Date.now()
-			};
+		const payload: MeetRoomConfigUpdatedPayload = {
+			roomId,
+			config: updatedRoom.config,
+			timestamp: Date.now()
+		};
+		const options: SendDataOptions = {
+			topic: MeetSignalType.MEET_ROOM_CONFIG_UPDATED
+		};
 
-			const options: SendDataOptions = {
-				topic: MeetSignalType.MEET_ROOM_CONFIG_UPDATED
-			};
-
-			await this.sendSignal(roomId, payload, options);
-		} catch (error) {
-			this.logger.warn(`Error sending room config updated signal for room '${roomId}'`, error);
-		}
+		await this.sendSignal(roomId, payload, options);
 	}
 
 	/**
@@ -156,11 +146,16 @@ export class FrontendEventService {
 	}
 
 	/**
-	 * Generic method to send signals to the frontend
+	 * Sends a signal to the frontend. A signal tells clients about a change the server has already
+	 * applied, so a delivery failure is logged and never fails the operation that caused it.
 	 */
-
 	protected async sendSignal(roomId: string, rawData: MeetSignalPayload, options: SendDataOptions): Promise<void> {
 		this.logger.verbose(`Notifying participants in room ${roomId}: "${options.topic}".`);
-		await this.livekitService.sendData(roomId, rawData, options);
+
+		try {
+			await this.livekitService.sendData(roomId, rawData, options);
+		} catch (error) {
+			this.logger.warn(`Error sending signal "${options.topic}" to room '${roomId}'`, error);
+		}
 	}
 }
