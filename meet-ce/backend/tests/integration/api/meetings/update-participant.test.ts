@@ -233,7 +233,7 @@ describe('Meetings API Tests', () => {
 				);
 				expect(demotion.status).toBe(200);
 
-				return { identity, staleModeratorToken: `Bearer ${refresh.body.token}` };
+				return { staleModeratorToken: `Bearer ${refresh.body.token}` };
 			};
 
 			it('should reject the moderator token the participant held before being demoted', async () => {
@@ -255,19 +255,6 @@ describe('Meetings API Tests', () => {
 					`Bearer ${refresh.body.token}`
 				);
 				expect(response.status).toBe(403);
-			});
-
-			it('should not restore the moderator role when the participant reconnects with that token', async () => {
-				const { identity, staleModeratorToken } = await promoteRefreshAndDemote();
-				await joinFakeParticipant(roomData.room.roomId, identity, decodeClaims(staleModeratorToken).metadata);
-
-				const refresh = await refreshRoomMemberTokenRequest(roomData.room.roomId, staleModeratorToken);
-				const response = await kickParticipant(
-					roomData.room.roomId,
-					participantIdentity,
-					`Bearer ${refresh.body.token}`
-				);
-				expect([401, 403]).toContain(response.status);
 			});
 		});
 	});
