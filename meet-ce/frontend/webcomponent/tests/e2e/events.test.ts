@@ -8,7 +8,7 @@ import {
 } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { INTEGRATIONS, meetLocator } from '../helpers/webcomponent.helper';
-import { createRoom, deleteRooms } from '../helpers/meet-api.helper';
+import { createRoom, deleteRooms, updateParticipantRole, waitForMeetingParticipant } from '../helpers/meet-api.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import {
 	endMeetingCommand,
@@ -363,6 +363,22 @@ for (const integration of INTEGRATIONS) {
 				await expect(eventLocator(moderatorPage, EmbeddedEventName.PARTICIPANT_ROLE_CHANGED)).toHaveCount(0);
 
 				await moderatorContext.close();
+			});
+
+			test('should tell a participant promoted while still joining', async ({ page }) => {
+				const { meet, participantName } = await openMeetingAtMediaSetup(page, roomId, {
+					integration,
+					role: 'speaker'
+				});
+				await meet('#join-button').click();
+
+				const identity = await waitForMeetingParticipant(roomId, participantName);
+				await updateParticipantRole(roomId, identity, MeetParticipantModerationAction.UPGRADE);
+
+				const roleChanged = await expectEvent(page, EmbeddedEventName.PARTICIPANT_ROLE_CHANGED, {
+					timeout: 15_000
+				});
+				await expect(roleChanged).toContainText(`"role":"${MeetRoomMemberRole.MODERATOR}"`);
 			});
 		});
 

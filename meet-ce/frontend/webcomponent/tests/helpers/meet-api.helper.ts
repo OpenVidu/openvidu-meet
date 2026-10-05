@@ -1,4 +1,6 @@
 import {
+	MeetParticipantModerationAction,
+	MeetParticipantPayload,
 	MeetRecordingInfo,
 	MeetRoom,
 	MeetRoomMember,
@@ -102,6 +104,71 @@ export const createRoomMember = async (roomId: string, options: MeetRoomMemberOp
 	assertOk(response, responseText, 'create room member');
 
 	return JSON.parse(responseText) as MeetRoomMember;
+};
+
+// ─── Meeting operations ─────────────────────────────────────────────────────
+
+/**
+ * Lists the participants of the meeting in a room via the Meet API, or none while no meeting is running.
+ */
+export const listMeetingParticipants = async (roomId: string): Promise<MeetParticipantPayload[]> => {
+	const response = await fetch(withApiPath(`/meetings/${encodeURIComponent(roomId)}/participants`), {
+		method: 'GET',
+		headers: { 'x-api-key': MEET_API_KEY }
+	});
+
+	if (response.status === 404) return [];
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'list meeting participants');
+
+	return (JSON.parse(responseText) as { participants: MeetParticipantPayload[] }).participants;
+};
+
+/**
+ * Waits until the media server lists a participant with the given name, which happens as soon as
+ * their client is admitted, before it has finished joining, and returns their identity.
+ */
+export const waitForMeetingParticipant = async (roomId: string, participantName: string): Promise<string> => {
+	const deadline = Date.now() + 15_000;
+
+	while (Date.now() < deadline) {
+		const participant = (await listMeetingParticipants(roomId)).find(
+			(candidate) => candidate.participantName === participantName
+		);
+
+		if (participant) return participant.participantIdentity;
+
+		await new Promise((resolve) => setTimeout(resolve, 50));
+	}
+
+	throw new Error(`Participant '${participantName}' never appeared in the meeting of room ${roomId}`);
+};
+
+/**
+ * Promotes or demotes a meeting participant via the Meet API.
+ */
+export const updateParticipantRole = async (
+	roomId: string,
+	participantIdentity: string,
+	action: MeetParticipantModerationAction
+): Promise<void> => {
+	const response = await fetch(
+		withApiPath(
+			`/meetings/${encodeURIComponent(roomId)}/participants/${encodeURIComponent(participantIdentity)}/role`
+		),
+		{
+			method: 'PUT',
+			headers: {
+				'Content-Type': 'application/json',
+				'x-api-key': MEET_API_KEY
+			},
+			body: JSON.stringify({ action })
+		}
+	);
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'update participant role');
 };
 
 // ─── Recording operations ──────────────────────────────────────────────────────
