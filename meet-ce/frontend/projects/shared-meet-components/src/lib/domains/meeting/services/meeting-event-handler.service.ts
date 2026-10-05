@@ -85,6 +85,12 @@ export class MeetingEventHandlerService {
 	protected screenShare = inject(ScreenShareService);
 	protected meetingEndingSoon = inject(MeetingEndingSoonService);
 
+	/**
+	 * Role and permission signals each replace the room member token, so they are applied one at a
+	 * time, in the order they arrived: otherwise a slower refresh could install an older role.
+	 */
+	private tokenUpdates = Promise.resolve();
+
 	constructor() {
 		// The server signals flow from the moment the room is bound, before it connects, so what the
 		// server sends a participant on joining (the recording in progress) is not missed.
@@ -400,11 +406,15 @@ export class MeetingEventHandlerService {
 				break;
 
 			case MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED:
-				await this.handleParticipantRoleUpdated(payload as MeetParticipantRoleUpdatedPayload);
+				await this.inArrivalOrder(() =>
+					this.handleParticipantRoleUpdated(payload as MeetParticipantRoleUpdatedPayload)
+				);
 				break;
 
 			case MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED:
-				await this.handleParticipantPermissionsUpdated(payload as MeetParticipantPermissionsUpdatedPayload);
+				await this.inArrivalOrder(() =>
+					this.handleParticipantPermissionsUpdated(payload as MeetParticipantPermissionsUpdatedPayload)
+				);
 				break;
 
 			case MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED:
@@ -444,6 +454,12 @@ export class MeetingEventHandlerService {
 			console.error('Error refreshing room member token after role update:', error);
 			await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
 		}
+	}
+
+	private inArrivalOrder(tokenUpdate: () => Promise<void>): Promise<void> {
+		const applied = this.tokenUpdates.then(tokenUpdate);
+		this.tokenUpdates = applied.catch(() => undefined);
+		return applied;
 	}
 
 	private handleRecordingUpdated(event: MeetRecordingUpdatedPayload): void {

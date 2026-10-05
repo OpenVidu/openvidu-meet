@@ -43,6 +43,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 - After leaving a meeting that was being recorded, joining another meeting with the same `<openvidu-meet>`
   element showed that recording as still in progress. The recording indicator starts over with each meeting.
+- A participant promoted and demoted in quick succession, or whose permissions changed right after their role, could
+  be left with the permissions of the earlier change. The changes are now applied in the order they happen.
 - The notices a participant sees when promoted to moderator, demoted or given updated permissions were always in
   English. They now follow the selected language.
 
