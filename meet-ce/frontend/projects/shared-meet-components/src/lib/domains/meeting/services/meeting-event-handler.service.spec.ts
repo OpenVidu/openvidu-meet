@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
@@ -415,6 +416,40 @@ describe('MeetingEventHandlerService', () => {
 
 			expect(eventBus.events()).toEqual([]);
 			expect(navigationServiceStub.redirectToErrorPage).toHaveBeenCalled();
+		});
+
+		it('keeps the participant in the meeting when the refresh fails for a network error', async () => {
+			spyOn(console, 'error');
+			refreshToken.and.rejectWith(new HttpErrorResponse({ status: 0, statusText: 'Unknown Error' }));
+
+			await receiveRoleUpdate('alice', MeetRoomMemberUIBadge.MODERATOR);
+
+			expect(navigationServiceStub.redirectToErrorPage).not.toHaveBeenCalled();
+		});
+
+		// Promoted and demoted back in quick succession: the refresh started for the promotion can
+		// answer after the one started for the demotion.
+		it('reports the last role change when the refresh of an earlier one answers last', async () => {
+			const pendingRefreshes: Array<() => void> = [];
+			refreshToken.and.callFake(() => new Promise<void>((resolve) => pendingRefreshes.push(resolve)));
+			const settle = () => new Promise<void>((resolve) => setTimeout(resolve));
+
+			const handled = Promise.all([
+				receiveRoleUpdate('alice', MeetRoomMemberUIBadge.MODERATOR),
+				receiveRoleUpdate('alice', MeetRoomMemberUIBadge.OTHER)
+			]);
+			await settle();
+
+			while (pendingRefreshes.length > 0) {
+				pendingRefreshes.pop()!();
+				await settle();
+			}
+
+			await handled;
+			expect(eventBus.events().at(-1)).toEqual({
+				event: EmbeddedEventName.PARTICIPANT_ROLE_CHANGED,
+				payload: { roomId: 'room1', participantIdentity: 'alice', role: MeetRoomMemberRole.SPEAKER }
+			});
 		});
 
 		it('ignores a role change addressed to another participant', async () => {
