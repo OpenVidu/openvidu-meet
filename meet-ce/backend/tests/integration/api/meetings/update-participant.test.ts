@@ -22,8 +22,10 @@ import {
 import {
 	deleteAllRooms,
 	generateRoomMemberToken,
+	generateRoomMemberTokenRequest,
 	kickParticipant,
 	refreshRoomMemberTokenRequest,
+	sleep,
 	startTestServer,
 	updateParticipant
 } from '../../../helpers/request-helpers.js';
@@ -196,20 +198,20 @@ describe('Meetings API Tests', () => {
 			expect(response.body.message).toContain('cannot be demoted');
 		});
 
+		const decodeClaims = (token: string) => jwtDecode<ClaimGrants>(token.replace('Bearer ', ''));
+
+		const joinAsSpeaker = async () => {
+			const speakerToken = await generateRoomMemberToken(roomData.room.roomId, {
+				secret: roomData.speakerSecret,
+				joinMeeting: true,
+				participantName: 'Promoted Speaker'
+			});
+			const { sub: identity, metadata } = decodeClaims(speakerToken);
+			await joinFakeParticipant(roomData.room.roomId, identity!, metadata);
+			return { identity: identity!, speakerToken };
+		};
+
 		describe('after a demotion', () => {
-			const decodeClaims = (token: string) => jwtDecode<ClaimGrants>(token.replace('Bearer ', ''));
-
-			const joinAsSpeaker = async () => {
-				const speakerToken = await generateRoomMemberToken(roomData.room.roomId, {
-					secret: roomData.speakerSecret,
-					joinMeeting: true,
-					participantName: 'Promoted Speaker'
-				});
-				const { sub: identity, metadata } = decodeClaims(speakerToken);
-				await joinFakeParticipant(roomData.room.roomId, identity!, metadata);
-				return { identity: identity!, speakerToken };
-			};
-
 			const promoteRefreshAndDemote = async () => {
 				const { roomId } = roomData.room;
 				const { identity, speakerToken } = await joinAsSpeaker();
@@ -255,6 +257,72 @@ describe('Meetings API Tests', () => {
 					`Bearer ${refresh.body.token}`
 				);
 				expect(response.status).toBe(403);
+			});
+		});
+
+		describe('concurrent changes', () => {
+			it('should promote a participant once when two moderators promote them at the same time', async () => {
+				const { identity } = await joinAsSpeaker();
+
+				const responses = await Promise.all([
+					updateParticipant(
+						roomData.room.roomId,
+						identity,
+						MeetParticipantModerationAction.UPGRADE,
+						roomData.moderatorToken
+					),
+					updateParticipant(
+						roomData.room.roomId,
+						identity,
+						MeetParticipantModerationAction.UPGRADE,
+						roomData.moderatorToken
+					)
+				]);
+
+				expect(responses.map((response) => response.status).sort()).toEqual([200, 409]);
+			});
+
+			it('should keep a promotion applied while the participant was regenerating their token', async () => {
+				const { roomId } = roomData.room;
+				const { identity, speakerToken } = await joinAsSpeaker();
+
+				const writeToLiveKit = livekitService.updateParticipant.bind(livekitService);
+				let regenerationWriting!: () => void;
+				const regenerationRead = new Promise<void>((resolve) => (regenerationWriting = resolve));
+				let releaseRegenerationWrite!: () => void;
+				const regenerationWriteReleased = new Promise<void>((resolve) => (releaseRegenerationWrite = resolve));
+				jest.spyOn(livekitService, 'updateParticipant').mockImplementationOnce(async (...args) => {
+					regenerationWriting();
+					await regenerationWriteReleased;
+					return writeToLiveKit(...args);
+				});
+
+				const regeneration = generateRoomMemberTokenRequest(
+					roomId,
+					{ secret: roomData.speakerSecret, joinMeeting: true },
+					undefined,
+					speakerToken
+				);
+				await regenerationRead;
+
+				const promotion = updateParticipant(
+					roomId,
+					identity,
+					MeetParticipantModerationAction.UPGRADE,
+					roomData.moderatorToken
+				);
+				// A fix that serializes the two writes makes the promotion wait for the held one.
+				await Promise.race([promotion, sleep('1s')]);
+				releaseRegenerationWrite();
+
+				expect((await promotion).status).toBe(200);
+				expect((await regeneration).status).toBe(200);
+
+				const participant = await livekitService.getParticipant(roomId, identity);
+				expect(JSON.parse(participant.metadata)).toMatchObject({
+					badge: MeetRoomMemberUIBadge.MODERATOR,
+					isPromotedModerator: true
+				});
 			});
 		});
 	});
