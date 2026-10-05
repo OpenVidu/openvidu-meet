@@ -4,30 +4,30 @@
       "CANCEL": "Cancelar",
       "SEARCH": "Pesquisar",
       "ADD_MEMBER": "Adicionar membro",
-      "USER": "Usuário",
+      "USER": "Utilizador",
       "IDENTIFIED_GUEST": "Convidado identificado",
       "MODERATOR": "Moderador",
       "SPEAKER": "Orador"
     },
     "FORM": {
-      "TYPE_USER": "Usuário",
+      "TYPE_USER": "Utilizador",
       "TYPE_IDENTIFIED_GUEST": "Convidado identificado",
-      "USER_ID_LABEL": "ID do usuário",
-      "USER_ID_PLACEHOLDER": "Pesquise um usuário por nome ou ID...",
-      "USER_ID_HINT": "Comece a digitar para pesquisar usuários",
-      "NO_USERS_FOUND": "Nenhum usuário encontrado",
-      "GUEST_INFO": "Convidados identificados não são usuários do OpenVidu Meet. Após serem adicionados, eles receberão um link exclusivo para acessar esta sala. Você pode copiar esse link na lista de membros.",
+      "USER_ID_LABEL": "ID do utilizador",
+      "USER_ID_PLACEHOLDER": "Pesquise um utilizador por nome ou ID...",
+      "USER_ID_HINT": "Comece a escrever para pesquisar utilizadores",
+      "NO_USERS_FOUND": "Nenhum utilizador encontrado",
+      "GUEST_INFO": "Os convidados identificados não são utilizadores do OpenVidu Meet. Depois de adicionados, recebem uma ligação exclusiva para aceder a esta sala. Pode copiar essa ligação na lista de membros.",
       "MEMBER_NAME_LABEL": "Nome do membro",
-      "MEMBER_NAME_PLACEHOLDER": "Insira um nome de exibição...",
-      "MEMBER_NAME_HINT": "Um nome de exibição para o convidado",
+      "MEMBER_NAME_PLACEHOLDER": "Introduza um nome a apresentar...",
+      "MEMBER_NAME_HINT": "Um nome a apresentar para o convidado",
       "BASE_ROLE_LABEL": "Função base",
-      "BASE_ROLE_HINT": "A função base determina as permissões padrão",
+      "BASE_ROLE_HINT": "A função base determina as permissões predefinidas",
       "CUSTOM_PERMISSIONS_TITLE": "Permissões personalizadas",
-      "CUSTOM_PERMISSIONS_DESCRIPTION": "Substituir as permissões padrão da função",
-      "CUSTOM_PERMISSIONS_HINT": "Estas permissões substituem os padrões da função selecionada. Deixe os botões na posição padrão para herdar as permissões da função.",
+      "CUSTOM_PERMISSIONS_DESCRIPTION": "Substituir as permissões predefinidas da função",
+      "CUSTOM_PERMISSIONS_HINT": "Estas permissões substituem as predefinições da função selecionada. Deixe os interruptores na posição predefinida para herdar as permissões da função.",
       "UPDATE_MEMBER": "Atualizar membro",
       "ADD_MEMBER": "Adicionar membro",
-      "DISABLED_REASON_ADMIN": "Usuários administradores não podem ser adicionados como membros",
+      "DISABLED_REASON_ADMIN": "Os utilizadores administradores não podem ser adicionados como membros",
       "DISABLED_REASON_OWNER": "O proprietário da sala não pode ser adicionado como membro"
     },
     "FORM_DIALOG": {
@@ -35,12 +35,12 @@
       "TITLE_ADD": "Adicionar membro"
     },
     "LIST": {
-      "EMPTY_TITLE": "Nenhum membro ainda",
+      "EMPTY_TITLE": "Ainda não há membros",
       "EMPTY_SUBTITLE": "Esta sala não tem nenhum membro atribuído.",
       "SEARCH_MEMBERS": "Pesquisar membros",
       "SEARCH_BY_NAME": "Pesquisar por nome do membro",
       "CLEAR_SEARCH": "Limpar pesquisa",
-      "MATCH_CASE_INSENSITIVE": "Não diferenciar maiúsculas de minúsculas",
+      "MATCH_CASE_INSENSITIVE": "Não distinguir maiúsculas de minúsculas",
       "CASE_INSENSITIVE_LABEL": "Aa",
       "MATCH_MODE_PREFIX": "Modo de correspondência: ",
       "FILTER_MEMBERS": "Filtrar membros",
@@ -54,27 +54,27 @@
       "TYPE": "Tipo",
       "FILTERS_LABEL": "Filtros:",
       "CLEAR_ALL": "Limpar tudo",
-      "LOADING_MEMBERS": "Carregando membros...",
-      "EMPTY_FILTER_TITLE": "Nenhum membro corresponde à sua pesquisa",
-      "EMPTY_FILTER_SUBTITLE": "Tente ajustar ou limpar seus filtros para ver mais membros.",
+      "LOADING_MEMBERS": "A carregar membros...",
+      "EMPTY_FILTER_TITLE": "Nenhum membro corresponde à pesquisa",
+      "EMPTY_FILTER_SUBTITLE": "Experimente ajustar ou limpar os filtros para ver mais membros.",
       "CLEAR_FILTERS": "Limpar filtros",
       "COLUMN_MEMBER": "Membro",
       "COLUMN_ROLE": "Função",
       "COLUMN_TYPE": "Tipo",
       "COLUMN_ADDED": "Adicionado",
       "COLUMN_ACTIONS": "Ações",
-      "VIEW_USER_PROFILE": "Ver perfil do usuário",
-      "COPY_ACCESS_LINK": "Copiar link de acesso",
+      "VIEW_USER_PROFILE": "Ver perfil do utilizador",
+      "COPY_ACCESS_LINK": "Copiar ligação de acesso",
       "EDIT_MEMBER": "Editar membro",
       "REMOVE_MEMBER": "Remover membro",
       "LOAD_MORE_MEMBERS": "Carregar mais membros",
-      "MATCH_MODE_STARTS_WITH": "Começa com",
+      "MATCH_MODE_STARTS_WITH": "Começa por",
       "MATCH_MODE_CONTAINS": "Contém",
       "MATCH_MODE_EXACT": "Correspondência exata",
       "MATCH_MODE_REGEX": "Regex",
       "ROLE_FILTER_ALL": "Todas as funções",
       "TYPE_FILTER_ALL": "Todos os tipos",
-      "TYPE_USER": "Usuário",
+      "TYPE_USER": "Utilizador",
       "TYPE_IDENTIFIED_GUEST": "Convidado identificado",
       "ROLE_CHIP_PREFIX": "Função: ",
       "TYPE_CHIP_PREFIX": "Tipo: "
@@ -83,12 +83,12 @@
       "TITLE_EDIT": "Editar membro da sala",
       "TITLE_ADD": "Adicionar membro da sala",
       "SUBTITLE_EDIT": "Atualize as permissões deste membro da sala.",
-      "SUBTITLE_ADD": "Conceda acesso a um usuário ou a um convidado identificado para esta sala.",
+      "SUBTITLE_ADD": "Conceda acesso a esta sala a um utilizador ou a um convidado identificado.",
       "CARD_TITLE": "Configuração do membro",
-      "CARD_SUBTITLE_EDIT_USER": "Atualize as permissões do usuário para esta sala",
+      "CARD_SUBTITLE_EDIT_USER": "Atualize as permissões do utilizador para esta sala",
       "CARD_SUBTITLE_EDIT_GUEST": "Atualize as permissões do convidado identificado para esta sala",
-      "CARD_SUBTITLE_ADD_USER": "Selecione um usuário e configure suas permissões",
-      "CARD_SUBTITLE_ADD_GUEST": "Selecione um nome para o convidado e configure suas permissões"
+      "CARD_SUBTITLE_ADD_USER": "Selecione um utilizador e configure as respetivas permissões",
+      "CARD_SUBTITLE_ADD_GUEST": "Selecione um nome para o convidado e configure as respetivas permissões"
     },
     "ERRORS": {
       "FIELD_REQUIRED": "Este campo é obrigatório",
@@ -107,13 +107,13 @@
       "SPEAKER": "Orador"
     },
     "MEMBER_TYPE": {
-      "USER": "Usuário",
+      "USER": "Utilizador",
       "GUEST": "Convidado identificado"
     },
     "PERMISSIONS": {
       "GROUPS": {
         "MEETING": "Reunião",
-        "MEDIA": "Mídia",
+        "MEDIA": "Multimédia",
         "RECORDINGS": "Gravações",
         "CHAT": "Chat"
       },
@@ -124,11 +124,11 @@
         },
         "meetingRead": {
           "LABEL": "Consultar",
-          "DESCRIPTION": "Permitir consultar o estado ao vivo da reunião e os seus participantes sem entrar"
+          "DESCRIPTION": "Permitir consultar o estado em direto da reunião e os seus participantes sem entrar"
         },
         "meetingEnd": {
-          "LABEL": "Encerrar",
-          "DESCRIPTION": "Permitir encerrar a reunião para todos os participantes"
+          "LABEL": "Terminar",
+          "DESCRIPTION": "Permitir terminar a reunião para todos os participantes"
         },
         "participantPromote": {
           "LABEL": "Tornar moderador",
@@ -143,20 +143,20 @@
           "DESCRIPTION": "Permitir desligar o microfone, a câmara ou a partilha de ecrã de outros participantes"
         },
         "roomShareAccessLinks": {
-          "LABEL": "Compartilhar links de acesso",
-          "DESCRIPTION": "Permitir compartilhar links de convite com outras pessoas"
+          "LABEL": "Partilhar ligações de acesso",
+          "DESCRIPTION": "Permitir partilhar ligações de convite com outras pessoas"
         },
         "mediaPublishVideo": {
           "LABEL": "Publicar vídeo",
-          "DESCRIPTION": "Permitir compartilhar vídeo da câmera"
+          "DESCRIPTION": "Permitir partilhar o vídeo da câmara"
         },
         "mediaPublishAudio": {
           "LABEL": "Publicar áudio",
-          "DESCRIPTION": "Permitir compartilhar áudio do microfone"
+          "DESCRIPTION": "Permitir partilhar o áudio do microfone"
         },
         "mediaShareScreen": {
-          "LABEL": "Compartilhar tela",
-          "DESCRIPTION": "Permitir compartilhar a área de trabalho ou abas do navegador"
+          "LABEL": "Partilhar ecrã",
+          "DESCRIPTION": "Permitir partilhar o ambiente de trabalho ou separadores do navegador"
         },
         "mediaChangeVirtualBackground": {
           "LABEL": "Alterar fundo virtual",
@@ -175,12 +175,12 @@
           "DESCRIPTION": "Permitir reproduzir gravações"
         },
         "recordingDownload": {
-          "LABEL": "Baixar gravações",
-          "DESCRIPTION": "Permitir baixar gravações"
+          "LABEL": "Transferir gravações",
+          "DESCRIPTION": "Permitir transferir gravações"
         },
         "recordingDelete": {
-          "LABEL": "Excluir gravações",
-          "DESCRIPTION": "Permitir excluir gravações"
+          "LABEL": "Eliminar gravações",
+          "DESCRIPTION": "Permitir eliminar gravações"
         },
         "chatRead": {
           "LABEL": "Ler",

@@ -1,44 +1,44 @@
 {
   "AUTH": {
     "COMMON": {
-      "SHOW_PASSWORD": "Mostrar senha",
-      "HIDE_PASSWORD": "Ocultar senha"
+      "SHOW_PASSWORD": "Mostrar palavra-passe",
+      "HIDE_PASSWORD": "Ocultar palavra-passe"
     },
     "LOGIN": {
-      "TITLE": "Entrar",
-      "SUBTITLE": "Insira suas credenciais para acessar o OpenVidu Meet",
-      "USER_ID": "ID do usuário",
-      "USER_ID_PLACEHOLDER": "Insira seu ID de usuário",
-      "PASSWORD": "Senha",
-      "PASSWORD_PLACEHOLDER": "Insira sua senha",
-      "SUBMIT": "Entrar",
-      "ERROR_TOO_MANY_ATTEMPTS": "Muitas tentativas de login. Tente novamente mais tarde",
-      "ERROR_INVALID_CREDENTIALS": "ID de usuário ou senha inválidos"
+      "TITLE": "Iniciar sessão",
+      "SUBTITLE": "Introduza as suas credenciais para aceder ao OpenVidu Meet",
+      "USER_ID": "ID de utilizador",
+      "USER_ID_PLACEHOLDER": "Introduza o seu ID de utilizador",
+      "PASSWORD": "Palavra-passe",
+      "PASSWORD_PLACEHOLDER": "Introduza a sua palavra-passe",
+      "SUBMIT": "Iniciar sessão",
+      "ERROR_TOO_MANY_ATTEMPTS": "Demasiadas tentativas de início de sessão. Tente novamente mais tarde",
+      "ERROR_INVALID_CREDENTIALS": "ID de utilizador ou palavra-passe inválidos"
     },
     "CHANGE_PASSWORD": {
-      "TITLE": "Atualize sua senha",
-      "SUBTITLE": "Você deve atualizar sua senha antes de continuar.",
-      "BANNER_TITLE": "Atualização de senha necessária",
-      "BANNER_DESC": "Sua senha foi criada ou redefinida recentemente. Defina uma nova senha para continuar.",
-      "CURRENT_PASSWORD": "Senha atual",
-      "CURRENT_PASSWORD_PLACEHOLDER": "Insira sua senha atual",
-      "NEW_PASSWORD": "Nova senha",
-      "NEW_PASSWORD_PLACEHOLDER": "Crie uma senha forte e segura",
+      "TITLE": "Atualize a sua palavra-passe",
+      "SUBTITLE": "Tem de atualizar a sua palavra-passe antes de continuar.",
+      "BANNER_TITLE": "É necessário atualizar a palavra-passe",
+      "BANNER_DESC": "A sua palavra-passe foi criada ou reposta recentemente. Defina uma nova palavra-passe para continuar.",
+      "CURRENT_PASSWORD": "Palavra-passe atual",
+      "CURRENT_PASSWORD_PLACEHOLDER": "Introduza a sua palavra-passe atual",
+      "NEW_PASSWORD": "Nova palavra-passe",
+      "NEW_PASSWORD_PLACEHOLDER": "Crie uma palavra-passe forte e segura",
       "PASSWORD_MIN_HINT": "Mínimo de 5 caracteres",
-      "CONFIRM_PASSWORD": "Confirmar nova senha",
-      "CONFIRM_PASSWORD_PLACEHOLDER": "Repita sua nova senha",
-      "SUBMIT": "Atualizar senha",
+      "CONFIRM_PASSWORD": "Confirmar nova palavra-passe",
+      "CONFIRM_PASSWORD_PLACEHOLDER": "Repita a sua nova palavra-passe",
+      "SUBMIT": "Atualizar palavra-passe",
       "ERRORS": {
-        "CURRENT_REQUIRED": "A senha atual é obrigatória",
-        "CURRENT_INCORRECT": "A senha atual está incorreta",
-        "NEW_REQUIRED": "A nova senha é obrigatória",
-        "NEW_MIN_PREFIX": "A senha deve ter pelo menos ",
+        "CURRENT_REQUIRED": "A palavra-passe atual é obrigatória",
+        "CURRENT_INCORRECT": "A palavra-passe atual está incorreta",
+        "NEW_REQUIRED": "A nova palavra-passe é obrigatória",
+        "NEW_MIN_PREFIX": "A palavra-passe deve ter pelo menos ",
         "NEW_MIN_SUFFIX": " caracteres",
-        "NEW_SAME": "A nova senha deve ser diferente da senha atual",
-        "CONFIRM_REQUIRED": "Confirme sua senha",
-        "CONFIRM_MISMATCH": "As senhas não coincidem",
-        "UPDATE_SUCCESS": "Senha atualizada com sucesso",
-        "UPDATE_FAILED": "Falha ao atualizar a senha"
+        "NEW_SAME": "A nova palavra-passe deve ser diferente da palavra-passe atual",
+        "CONFIRM_REQUIRED": "Confirme a sua palavra-passe",
+        "CONFIRM_MISMATCH": "As palavras-passe não coincidem",
+        "UPDATE_SUCCESS": "Palavra-passe atualizada com sucesso",
+        "UPDATE_FAILED": "Falha ao atualizar a palavra-passe"
       }
     }
   }

@@ -18,6 +18,12 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - Embedded attribute and URL parameter `language`, a BCP 47 language tag that sets the initial meeting
   language over the participant's stored preference without replacing it.
 
+### Improved
+
+#### UI
+
+- Portuguese (`pt`) is European Portuguese throughout the interface.
+
 ### Fixed
 
 #### UI
