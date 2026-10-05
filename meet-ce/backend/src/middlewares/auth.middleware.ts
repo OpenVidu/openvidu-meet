@@ -18,6 +18,7 @@ import { RoomMemberRepository } from '../repositories/room-member.repository.js'
 import { RoomRepository } from '../repositories/room.repository.js';
 import { ApiKeyService } from '../services/api-key.service.js';
 import { LoggerService } from '../services/logger.service.js';
+import { ParticipantTokenRevocationService } from '../services/participant-token-revocation.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { TokenService } from '../services/token.service.js';
 import { UserService } from '../services/user.service.js';
@@ -220,6 +221,12 @@ export const roomMemberTokenValidator: AuthValidator = {
 			// Always validate room role/access updates for any room member token
 			if (!room || iat < room.rolesUpdatedAt) {
 				throw new Error('Token has outdated permissions');
+			}
+
+			const tokenRevocationService = container.get(ParticipantTokenRevocationService);
+
+			if (participantIdentity && (await tokenRevocationService.isRevoked(roomId, participantIdentity, iat))) {
+				throw new Error('Token was issued before the participant role changed');
 			}
 
 			// If the token has a memberId, validate that permissions haven't been updated after token issuance

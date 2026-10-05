@@ -28,6 +28,12 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 ### Fixed
 
+#### Integration
+
+- A room member token issued before its participant was promoted or demoted through
+  [`participantRoleUpdate`][3.10-participant-role-update] or `participantUpdateRole` stayed valid until it expired,
+  so a demoted participant kept their moderator permissions. It is now rejected.
+
 #### UI
 
 - After leaving a meeting that was being recorded, joining another meeting with the same `<openvidu-meet>`
@@ -177,6 +183,7 @@ registered on both receives it twice.
 - The `openvidu/openvidu-meet` Docker image resolved its dependencies anew on every build instead of installing the versions in the lockfile. It now installs the locked versions.
 
 [3.10-participant-role-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantRoleChangedWebhook
+[3.10-participant-role-update]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantRoleUpdate
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html
 [3.9-meetings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/meetingGet
 [3.9-webhooks-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/webhookList

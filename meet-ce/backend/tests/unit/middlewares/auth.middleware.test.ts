@@ -58,11 +58,12 @@ let userService: UserService;
 let roomRepository: RoomRepository;
 let roomMemberRepository: RoomMemberRepository;
 let requestSessionService: RequestSessionService;
+const redisService = { get: async () => null } as unknown as RedisService;
 
 beforeAll(() => {
 	registerDependencies();
 	// The unit job has no Redis, and RedisService exits the process when it cannot connect.
-	container.rebind(RedisService).toConstantValue({} as RedisService);
+	container.rebind(RedisService).toConstantValue(redisService);
 	logger = container.get(LoggerService);
 	apiKeyService = container.get(ApiKeyService);
 	tokenService = container.get(TokenService);
@@ -177,6 +178,7 @@ describe('the validators, against a change made in the same millisecond as the t
 		jest.spyOn(tokenService, 'verifyToken').mockResolvedValue({ sub: 'user-1', metadata: '{}' } as never);
 		jest.spyOn(requestSessionService, 'setUser').mockImplementation(() => {});
 		jest.spyOn(requestSessionService, 'setRoomMemberTokenInfo').mockImplementation(() => {});
+		jest.spyOn(redisService, 'get').mockResolvedValue(null);
 	});
 
 	describe('accessTokenValidator', () => {
@@ -279,6 +281,7 @@ describe('the validators, against a change made in the same millisecond as the t
 			rolesUpdatedAt: number;
 			permissionsUpdatedAt: number;
 			roleUpdatedAt: number;
+			participantTokensRevokedAt: number;
 		}): Promise<void> => {
 			jest.spyOn(tokenService, 'parseRoomMemberTokenMetadata').mockReturnValue(metadata as never);
 			jest.spyOn(roomRepository, 'findByRoomId').mockResolvedValue({
@@ -288,13 +291,19 @@ describe('the validators, against a change made in the same millisecond as the t
 				permissionsUpdatedAt: updates.permissionsUpdatedAt
 			} as MeetRoomMember);
 			jest.spyOn(userService, 'getUser').mockResolvedValue(user({ roleUpdatedAt: updates.roleUpdatedAt }));
+			jest.spyOn(redisService, 'get').mockResolvedValue(String(updates.participantTokensRevokedAt));
 
 			return roomMemberTokenValidator.validate(roomMemberTokenRequest());
 		};
 
-		const sameInstant = { rolesUpdatedAt: ISSUED_AT, permissionsUpdatedAt: ISSUED_AT, roleUpdatedAt: ISSUED_AT };
+		const sameInstant = {
+			rolesUpdatedAt: ISSUED_AT,
+			permissionsUpdatedAt: ISSUED_AT,
+			roleUpdatedAt: ISSUED_AT,
+			participantTokensRevokedAt: ISSUED_AT
+		};
 
-		it('accepts a token issued in the very millisecond the room, the membership and the role changed', async () => {
+		it('accepts a token issued in the very millisecond the room, the membership, the role and the participant role changed', async () => {
 			await validateWith(sameInstant);
 
 			expect(requestSessionService.setRoomMemberTokenInfo).toHaveBeenCalledWith(metadata as never, 'user-1');
@@ -333,6 +342,12 @@ describe('the validators, against a change made in the same millisecond as the t
 			await expect(validateWith({ ...sameInstant, roleUpdatedAt: ISSUED_AT + 1 })).rejects.toMatchObject({
 				statusCode: 401
 			});
+		});
+
+		it("refuses a token older than the participant's last role change in the meeting", async () => {
+			await expect(
+				validateWith({ ...sameInstant, participantTokensRevokedAt: ISSUED_AT + 1 })
+			).rejects.toMatchObject({ statusCode: 401 });
 		});
 	});
 

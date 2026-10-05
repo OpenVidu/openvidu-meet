@@ -101,7 +101,8 @@ describe('RoomMemberService.updateParticipantRole — B10: a promotion re-evalua
 				{},
 				{},
 				recordingService as unknown as RecordingService,
-				{ sendParticipantRoleChangedWebhook: () => {} } as unknown as WebhookDispatcherService
+				{ sendParticipantRoleChangedWebhook: () => {} } as unknown as WebhookDispatcherService,
+				{ revokeIssuedTokens: async () => {} }
 			] as unknown as ConstructorParameters<typeof RoomMemberService>)
 		);
 	});

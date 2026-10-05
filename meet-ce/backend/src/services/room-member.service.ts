@@ -58,6 +58,7 @@ import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { MeetingService } from './meeting.service.js';
 import { ParticipantNameService } from './participant-name.service.js';
+import { ParticipantTokenRevocationService } from './participant-token-revocation.service.js';
 import { RecordingService } from './recording.service.js';
 import { RequestSessionService } from './request-session.service.js';
 import { RoomService } from './room.service.js';
@@ -90,7 +91,9 @@ export class RoomMemberService {
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
 		@inject(MeetingService) protected meetingService: MeetingService,
 		@inject(RecordingService) protected recordingService: RecordingService,
-		@inject(WebhookDispatcherService) protected webhookDispatcherService: WebhookDispatcherService
+		@inject(WebhookDispatcherService) protected webhookDispatcherService: WebhookDispatcherService,
+		@inject(ParticipantTokenRevocationService)
+		protected participantTokenRevocationService: ParticipantTokenRevocationService
 	) {}
 
 	/**
@@ -1055,9 +1058,9 @@ export class RoomMemberService {
 	 * - `UPGRADE`: promotes an eligible participant to moderator by merging moderator permissions.
 	 * - `DOWNGRADE`: reverts a promoted moderator to their original permissions.
 	 *
-	 * After updating participant metadata in LiveKit, it reports the change through the
-	 * `participantRoleChanged` webhook and sends a targeted role-updated signal so the affected
-	 * participant can refresh their token and notify the UI.
+	 * After updating participant metadata in LiveKit, it revokes the room member tokens the participant
+	 * was issued until then, reports the change through the `participantRoleChanged` webhook and sends
+	 * a targeted role-updated signal so the affected participant can refresh their token and notify the UI.
 	 *
 	 * @param roomId - The ID of the room where the participant is connected.
 	 * @param participantIdentity - The LiveKit identity of the participant to moderate.
@@ -1108,6 +1111,7 @@ export class RoomMemberService {
 				JSON.stringify(metadata),
 				permission
 			);
+			await this.participantTokenRevocationService.revokeIssuedTokens(roomId, participantIdentity);
 
 			this.webhookDispatcherService.sendParticipantRoleChangedWebhook({
 				roomId,
