@@ -108,6 +108,7 @@ export class App {
 	// precedence over it. A plain `input(true, …)` cannot tell those two apart.
 	readonly initialAudioActive = input(undefined, { transform: optionalBooleanAttribute });
 	readonly initialVideoActive = input(undefined, { transform: optionalBooleanAttribute });
+	readonly language = input<string | undefined>(undefined);
 	readonly e2eeKey = input<string | undefined>(undefined);
 	readonly leaveRedirectUrl = input<string | undefined>(undefined);
 	readonly showOnlyRecordings = input(false, { transform: booleanAttribute });
@@ -144,6 +145,7 @@ export class App {
 		participantMetadata: this.participantMetadata(),
 		initialAudioActive: this.initialAudioActive(),
 		initialVideoActive: this.initialVideoActive(),
+		language: this.language(),
 		e2eeKey: this.e2eeKey(),
 		leaveRedirectUrl: this.leaveRedirectUrl(),
 		showOnlyRecordings: this.showOnlyRecordings(),

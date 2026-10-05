@@ -31,6 +31,7 @@ export interface MeetingRoute {
 		participantMetadata?: string;
 		initialAudioActive?: boolean;
 		initialVideoActive?: boolean;
+		language?: string;
 		leaveRedirectUrl?: string;
 	};
 }

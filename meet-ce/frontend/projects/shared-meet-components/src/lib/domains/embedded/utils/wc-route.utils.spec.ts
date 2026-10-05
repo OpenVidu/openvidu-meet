@@ -12,6 +12,7 @@ const BASE_INPUTS: Required<WebComponentPropertyValues> = {
 	participantMetadata: '',
 	initialAudioActive: true,
 	initialVideoActive: true,
+	language: '',
 	e2eeKey: '',
 	leaveRedirectUrl: '',
 	showOnlyRecordings: false,
@@ -66,12 +67,13 @@ describe('wcRouteFromAttributes', () => {
 		expect(route.name).toBe(WcRouteName.INVALID);
 	});
 
-	it('resolves meeting from room-url, carrying secret/e2ee/name/leaveRedirectUrl', () => {
+	it('resolves meeting from room-url, carrying secret/e2ee/name/language/leaveRedirectUrl', () => {
 		const route = wcRouteFromAttributes(
 			inputs({
 				roomUrl: 'https://x/room/r1?secret=sec',
 				e2eeKey: 'k',
 				participantName: 'Alice',
+				language: 'es',
 				leaveRedirectUrl: 'https://back'
 			})
 		);
@@ -83,6 +85,7 @@ describe('wcRouteFromAttributes', () => {
 					secret: 'sec',
 					e2eeKey: 'k',
 					participantName: 'Alice',
+					language: 'es',
 					leaveRedirectUrl: 'https://back'
 				})
 			})

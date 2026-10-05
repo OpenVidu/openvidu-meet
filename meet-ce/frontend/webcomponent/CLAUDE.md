@@ -60,7 +60,8 @@ events are re-dispatched on the outer element.
 - **Attributes/properties** — kebab-case attribute ⇄ camelCase property: `room-url`,
   `recording-url`, `participant-name`, `participant-external-id`, `participant-metadata`,
   `initial-audio-active`, `initial-video-active` (tri-state: set values outrank the room's
-  `config.initial*Active`, unset defers to it), `e2ee-key`, `leave-redirect-url`,
+  `config.initial*Active`, unset defers to it), `language` (BCP 47 tag, region variants
+  fall back to the language; outranks the participant's stored language without overwriting it), `e2ee-key`, `leave-redirect-url`,
   `show-only-recordings`, `show-recording`. Either `room-url` or `recording-url` is required.
 - **Events** (`CustomEvent`, `detail` = payload): `meetingJoined`, `meetingLeft` (with
   `LeftEventReason`), `embeddedCloseRequested`, `mediaAudioStatusChanged`/`mediaVideoStatusChanged`/

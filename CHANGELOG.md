@@ -15,6 +15,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 - Embedded commands `recordingStart` and `recordingStop`, gated by `recordingControl`, and the embedded event
   `recordingStatusChanged`, carrying `{ recordingId, status }` to every participant.
+- Embedded attribute and URL parameter `language`, a BCP 47 language tag that sets the initial meeting
+  language over the participant's stored preference without replacing it.
 
 ### Fixed
 

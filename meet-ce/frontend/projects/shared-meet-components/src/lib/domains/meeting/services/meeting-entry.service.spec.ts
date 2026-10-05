@@ -1,5 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { LanguageService } from '../../../shared/services/i18n/language.service';
 import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomAccessService } from '../../rooms/services/room-access.service';
@@ -10,6 +11,7 @@ import { MeetingEntryService } from './meeting-entry.service';
 describe('MeetingEntryService.prepare (resets the previous room feature state)', () => {
 	let service: MeetingEntryService;
 	let roomFeatureService: jasmine.SpyObj<RoomFeatureService>;
+	let languageService: jasmine.SpyObj<LanguageService>;
 
 	beforeEach(() => {
 		roomFeatureService = jasmine.createSpyObj<RoomFeatureService>('RoomFeatureService', [
@@ -30,6 +32,7 @@ describe('MeetingEntryService.prepare (resets the previous room feature state)',
 			'loadParticipantNameFromStorage'
 		]);
 		const roomAccessService = jasmine.createSpyObj<RoomAccessService>('RoomAccessService', ['validateAccess']);
+		languageService = jasmine.createSpyObj<LanguageService>('LanguageService', ['setEmbeddedLanguage']);
 		const leaveRedirectService = jasmine.createSpyObj<LeaveRedirectService>('LeaveRedirectService', [
 			'handleLeaveRedirectUrl'
 		]);
@@ -42,7 +45,8 @@ describe('MeetingEntryService.prepare (resets the previous room feature state)',
 				{ provide: RoomMemberContextService, useValue: roomMemberContextService },
 				{ provide: RoomAccessService, useValue: roomAccessService },
 				{ provide: RoomFeatureService, useValue: roomFeatureService },
-				{ provide: LeaveRedirectService, useValue: leaveRedirectService }
+				{ provide: LeaveRedirectService, useValue: leaveRedirectService },
+				{ provide: LanguageService, useValue: languageService }
 			]
 		});
 		service = TestBed.inject(MeetingEntryService);
@@ -57,5 +61,14 @@ describe('MeetingEntryService.prepare (resets the previous room feature state)',
 
 		expect(roomFeatureService.reset).toHaveBeenCalled();
 		expect(roomFeatureService.setInitialMediaRequest).toHaveBeenCalled();
+	});
+
+	// An entry without the language gives the choice back, so a language imposed by a previous
+	// mount does not outlive it.
+	it('imposes the requested language on every entry, and releases it when none is requested', () => {
+		service.prepare({ roomId: 'room-a', language: 'es' });
+		service.prepare({ roomId: 'room-b' });
+
+		expect(languageService.setEmbeddedLanguage.calls.allArgs()).toEqual([['es'], [undefined]]);
 	});
 });
