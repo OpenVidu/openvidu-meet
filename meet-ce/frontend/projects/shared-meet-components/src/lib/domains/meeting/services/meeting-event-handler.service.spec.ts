@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
@@ -85,7 +84,7 @@ describe('MeetingEventHandlerService', () => {
 		roomId: () => string;
 		clearMeetingContext: jasmine.Spy;
 	};
-	let navigationServiceStub: { goToDisconnected: jasmine.Spy; redirectToErrorPage: jasmine.Spy };
+	let navigationServiceStub: { goToDisconnected: jasmine.Spy };
 	let refreshToken: jasmine.Spy;
 
 	beforeEach(() => {
@@ -112,8 +111,7 @@ describe('MeetingEventHandlerService', () => {
 			clearMeetingContext: jasmine.createSpy('clearMeetingContext')
 		};
 		navigationServiceStub = {
-			goToDisconnected: jasmine.createSpy('goToDisconnected').and.resolveTo(undefined),
-			redirectToErrorPage: jasmine.createSpy('redirectToErrorPage').and.resolveTo(undefined)
+			goToDisconnected: jasmine.createSpy('goToDisconnected').and.resolveTo(undefined)
 		};
 		refreshToken = jasmine.createSpy('refreshToken').and.resolveTo(undefined);
 		localMedia = {
@@ -173,7 +171,18 @@ describe('MeetingEventHandlerService', () => {
 				},
 				{ provide: RoomFeatureService, useValue: {} },
 				{ provide: RecordingService, useValue: {} },
-				{ provide: RoomMemberContextService, useValue: { serverTimeSkewMs, refreshToken } },
+				{
+					provide: RoomMemberContextService,
+					useValue: {
+						serverTimeSkewMs,
+						refreshToken,
+						updateTokenInMeeting: (update: () => Promise<string>) =>
+							update().then(
+								() => true,
+								() => false
+							)
+					}
+				},
 				{ provide: NavigationService, useValue: navigationServiceStub },
 				{ provide: NotificationService, useValue: notificationService },
 				{ provide: MeetingEndingSoonService, useValue: meetingEndingSoon },
@@ -469,27 +478,15 @@ describe('MeetingEventHandlerService', () => {
 			expect(eventBus.events()).toEqual([roleChanged(MeetRoomMemberRole.MODERATOR)]);
 		});
 
-		it('tells the host nothing when the token cannot be refreshed', async () => {
-			spyOn(console, 'error');
-			refreshToken.and.rejectWith(new Error('access revoked'));
+		it('tells the participant and the host nothing when the token cannot be refreshed', async () => {
+			refreshToken.and.rejectWith(new Error('unreachable'));
 
 			connect();
 			changeLocalMetadata(promotedMetadata);
 			await settle();
 
+			expect(notificationService.showMessage).not.toHaveBeenCalled();
 			expect(eventBus.events()).toEqual([]);
-			expect(navigationServiceStub.redirectToErrorPage).toHaveBeenCalled();
-		});
-
-		it('keeps the participant in the meeting when the refresh fails for a network error', async () => {
-			spyOn(console, 'error');
-			refreshToken.and.rejectWith(new HttpErrorResponse({ status: 0, statusText: 'Unknown Error' }));
-
-			connect();
-			changeLocalMetadata(promotedMetadata);
-			await settle();
-
-			expect(navigationServiceStub.redirectToErrorPage).not.toHaveBeenCalled();
 		});
 
 		// Promoted and demoted back in quick succession: the demotion arrives while the refresh started

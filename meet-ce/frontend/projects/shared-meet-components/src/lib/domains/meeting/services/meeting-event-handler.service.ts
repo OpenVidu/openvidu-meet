@@ -13,7 +13,6 @@ import {
 	MeetRoomMemberTokenOptions,
 	MeetSignalType
 } from '@openvidu-meet/typings';
-import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { NotificationService } from '../../../shared/services/notification.service';
@@ -454,11 +453,11 @@ export class MeetingEventHandlerService {
 			return;
 		}
 
-		try {
-			await this.roomMemberContextService.refreshToken(roomId);
-		} catch (error) {
-			console.error('Error refreshing room member token after role update:', error);
-			await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
+		const refreshed = await this.roomMemberContextService.updateTokenInMeeting(() =>
+			this.roomMemberContextService.refreshToken(roomId)
+		);
+
+		if (!refreshed) {
 			return;
 		}
 
@@ -530,18 +529,16 @@ export class MeetingEventHandlerService {
 			return;
 		}
 
-		try {
-			const roomSecret = this.meetingContext.roomSecret();
-			const tokenOptions: MeetRoomMemberTokenOptions = {
-				secret: roomSecret,
-				joinMeeting: true
-			};
-			await this.roomMemberContextService.generateToken(roomId, tokenOptions);
+		const tokenOptions: MeetRoomMemberTokenOptions = {
+			secret: this.meetingContext.roomSecret(),
+			joinMeeting: true
+		};
+		const regenerated = await this.roomMemberContextService.updateTokenInMeeting(() =>
+			this.roomMemberContextService.generateToken(roomId, tokenOptions)
+		);
 
+		if (regenerated) {
 			this.notificationService.showMessage(this.translateService.translate('MODERATION.PERMISSIONS_UPDATED'));
-		} catch (error) {
-			console.error('Error regenerating room member token after permissions update:', error);
-			await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
 		}
 	}
 

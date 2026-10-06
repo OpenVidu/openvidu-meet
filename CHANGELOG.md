@@ -50,6 +50,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   be left with the permissions of the earlier change. The changes are now applied in the order they happen.
 - A participant promoted to moderator or demoted while still joining a meeting kept the permissions of the role they
   joined with. They now get the new role's permissions, and its notice, once in the meeting.
+- A participant whose room member token could not be renewed for a moment, because the server was unreachable or
+  failing, was taken out of the meeting to an access-revoked error page. They now stay in the meeting, and only losing
+  access to the room takes them out.
 - The notices a participant sees when promoted to moderator, demoted or given updated permissions were always in
   English. They now follow the selected language.
 

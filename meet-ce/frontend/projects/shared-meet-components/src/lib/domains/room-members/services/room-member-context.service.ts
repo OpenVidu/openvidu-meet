@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject, Service, signal } from '@angular/core';
 import {
 	MeetRoomMember,
@@ -25,6 +26,10 @@ export class RoomMemberContextService {
 	protected readonly TOKEN_REFRESH_BUFFER_MS = 60 * 1000;
 	protected readonly TOKEN_REFRESH_MIN_DELAY_MS = 5 * 1000;
 	protected readonly TOKEN_REFRESH_JITTER_MS = 10 * 1000;
+	protected readonly TOKEN_UPDATE_MAX_ATTEMPTS = 6;
+	protected readonly TOKEN_UPDATE_FIRST_RETRY_DELAY_MS = 1000;
+	/** The answers by which the server says this member no longer has access, as opposed to failing. */
+	protected readonly ACCESS_DENIED_STATUSES = [401, 403, 404];
 	private tokenRefreshTimeoutId?: ReturnType<typeof setTimeout>;
 
 	/**
@@ -182,6 +187,48 @@ export class RoomMemberContextService {
 	}
 
 	/**
+	 * Replaces, through `update`, the token of a participant who is in a meeting. Being unable to reach
+	 * the server, or the server failing, does not take the participant out of the meeting: the update
+	 * is retried with a growing delay and, if it never applies, the current token stays. Only an answer
+	 * that the member no longer has access sends them to the error page.
+	 *
+	 * @param update - Requests the new token, e.g. {@link refreshToken}
+	 * @returns Whether the token was replaced
+	 */
+	async updateTokenInMeeting(update: () => Promise<string>): Promise<boolean> {
+		const currentToken = this._roomMemberToken();
+
+		for (let attempt = 1; ; attempt++) {
+			try {
+				await update();
+				return true;
+			} catch (error) {
+				if (error instanceof HttpErrorResponse && this.ACCESS_DENIED_STATUSES.includes(error.status)) {
+					this.log.e('Room member access was revoked:', error);
+					await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
+					return false;
+				}
+
+				if (attempt === this.TOKEN_UPDATE_MAX_ATTEMPTS) {
+					this.log.w('Room member token could not be updated, the current one stays:', error);
+					return false;
+				}
+
+				await this.wait(this.TOKEN_UPDATE_FIRST_RETRY_DELAY_MS * 2 ** (attempt - 1));
+
+				// The participant left the meeting, or the token was replaced, while waiting.
+				if (this._roomMemberToken() !== currentToken) {
+					return false;
+				}
+			}
+		}
+	}
+
+	protected wait(delayMs: number): Promise<void> {
+		return new Promise((resolve) => setTimeout(resolve, delayMs));
+	}
+
+	/**
 	 * Updates the room member context based on the provided token.
 	 *
 	 * @param token - The room member token
@@ -235,14 +282,10 @@ export class RoomMemberContextService {
 		const refreshAtMs = expirationMs - this.TOKEN_REFRESH_BUFFER_MS - jitterMs;
 		const delayMs = Math.max(this.TOKEN_REFRESH_MIN_DELAY_MS, refreshAtMs - Date.now());
 
-		this.tokenRefreshTimeoutId = setTimeout(async () => {
-			try {
-				await this.refreshToken(roomId);
-			} catch (error) {
-				this.log.e('Error refreshing room member token automatically:', error);
-				await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
-			}
-		}, delayMs);
+		this.tokenRefreshTimeoutId = setTimeout(
+			() => void this.updateTokenInMeeting(() => this.refreshToken(roomId)),
+			delayMs
+		);
 	}
 
 	/**

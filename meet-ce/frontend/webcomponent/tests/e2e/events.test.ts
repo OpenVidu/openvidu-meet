@@ -380,6 +380,26 @@ for (const integration of INTEGRATIONS) {
 				});
 				await expect(roleChanged).toContainText(`"role":"${MeetRoomMemberRole.MODERATOR}"`);
 			});
+
+			test('should keep a promoted participant in the meeting while their new token cannot be fetched', async ({
+				page
+			}) => {
+				await openMeeting(page, roomId, { integration, role: 'speaker' });
+				const identity = await joinedParticipantIdentity(page);
+
+				let unreachableRefreshes = 2;
+				await page.route('**/members/token/refresh', (route) =>
+					unreachableRefreshes-- > 0 ? route.abort('internetdisconnected') : route.continue()
+				);
+				await updateParticipantRole(roomId, identity, MeetParticipantModerationAction.UPGRADE);
+
+				const roleChanged = await expectEvent(page, EmbeddedEventName.PARTICIPANT_ROLE_CHANGED, {
+					timeout: 15_000
+				});
+				await expect(roleChanged).toContainText(`"role":"${MeetRoomMemberRole.MODERATOR}"`);
+				expect(unreachableRefreshes).toBeLessThan(0);
+				await expect(eventLocator(page, EmbeddedEventName.MEETING_LEFT)).toHaveCount(0);
+			});
 		});
 
 		// These events describe the LOCAL participant's devices and are derived from the media state,
