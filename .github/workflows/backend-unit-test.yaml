@@ -15,6 +15,7 @@ on:
       - '.github/workflows/backend-unit-test.yaml'
       - '!**/*.md'
       - '!meet-ce/backend/nodemon*.json'
+      - '!meet-ce/frontend/**'
   pull_request:
     paths: *backend-unit-test-paths
   workflow_dispatch:

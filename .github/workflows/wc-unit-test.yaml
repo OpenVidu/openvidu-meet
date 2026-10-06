@@ -12,6 +12,7 @@ on:
       - 'meet.sh'
       - '.github/workflows/wc-unit-test.yaml'
       - '!**/*.md'
+      - '!meet-ce/backend/**'
   pull_request:
     paths: *wc-unit-test-paths
   workflow_dispatch:

@@ -12,6 +12,7 @@ on:
       - 'meet.sh'
       - '.github/workflows/frontend-unit-test.yaml'
       - '!**/*.md'
+      - '!meet-ce/backend/**'
   pull_request:
     paths: *frontend-unit-test-paths
   workflow_dispatch:

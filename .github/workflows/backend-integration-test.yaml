@@ -13,6 +13,7 @@ on:
       - 'pnpm-lock.yaml'
       - '.github/workflows/backend-integration-test.yaml'
       - '!**/*.md'
+      - '!meet-ce/frontend/**'
   pull_request:
     paths: *backend-integration-test-paths
   workflow_dispatch:
