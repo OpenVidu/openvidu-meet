@@ -1,6 +1,6 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { inject, Injector, Service, signal } from '@angular/core';
+import { computed, inject, Injector, Service, signal } from '@angular/core';
 import { NotificationsComponent } from '../components/notifications/notifications.component';
 import { NotificationOptions, NotificationText, ShownNotification } from '../models/notification.model';
 
@@ -29,12 +29,16 @@ export class NotificationService {
 	private cornerStack: OverlayRef | undefined;
 
 	private readonly _notifications = signal<ShownNotification[]>([]);
+	private readonly hostedCornerStacks = signal(0);
 
 	/**
 	 * The notifications currently on screen, oldest first. Rendered by the `ov-notifications` outlets,
 	 * each of which takes the ones stacked where it is.
 	 */
 	readonly notifications = this._notifications.asReadonly();
+
+	/** Whether a screen places the corner stack in its own layout, which the floating one then gives way to. */
+	readonly cornerStackHosted = computed(() => this.hostedCornerStacks() > 0);
 
 	/**
 	 * Shows a notification and returns its id, which the caller keeps to take it away again. One with
@@ -67,6 +71,12 @@ export class NotificationService {
 	/** A line of text in the corner, for anything a screen has nowhere of its own to say. */
 	showMessage(message: NotificationText): number {
 		return this.showNotification({ kind: 'message', icon: 'info', message, durationMs: MESSAGE_DURATION_MS });
+	}
+
+	/** Held by a corner outlet a screen places in its own layout, for as long as it is on screen. */
+	hostCornerStack(): () => void {
+		this.hostedCornerStacks.update((count) => count + 1);
+		return () => this.hostedCornerStacks.update((count) => count - 1);
 	}
 
 	/** Takes a notification away. Dismissing one that is already gone does nothing. */
@@ -102,8 +112,8 @@ export class NotificationService {
 			positionStrategy: this.overlay.position().global().top(CORNER_STACK_OFFSET).right(CORNER_STACK_OFFSET),
 			maxWidth: `min(${CORNER_STACK_MAX_WIDTH}, calc(100vw - 2 * ${CORNER_STACK_OFFSET}))`
 		});
-		this.cornerStack
-			.attach(new ComponentPortal(NotificationsComponent, null, this.injector))
-			.setInput('placement', 'corner');
+		const outlet = this.cornerStack.attach(new ComponentPortal(NotificationsComponent, null, this.injector));
+		outlet.setInput('placement', 'corner');
+		outlet.setInput('floating', true);
 	}
 }

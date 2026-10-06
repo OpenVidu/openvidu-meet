@@ -29,6 +29,14 @@
 	width: 360px;
 	max-width: calc(100% - 32px);
 	pointer-events: none;
+
+	// Sized like the floating corner stack it stands in for: as wide as its longest notification.
+	&.corner {
+		left: auto;
+		right: 16px;
+		width: max-content;
+		max-width: min(360px, calc(100% - 32px));
+	}
 }
 
 .status-rail {
@@ -259,6 +267,8 @@
 	}
 
 	.notice-layer {
+		// Over the sidenav container, which these widths stack at 1000.
+		z-index: 1001;
 		left: 8px;
 		right: 8px;
 		width: auto;

@@ -68,6 +68,8 @@ type BrowserFakeParticipant = {
 
 const AUDIO_ASSETS_DIR = path.resolve(__dirname, '../assets/audio');
 const DEFAULT_HEADLESS_AUDIO_FILE = 'continuous_speech.wav';
+/** A one-line message, which a meeting stacks in its corner under the status rail. */
+const MEETING_MESSAGE_NOTIFICATION = '.notice-layer.corner .ov-notification[data-kind="message"]';
 const browserFakeParticipants = new Map<string, BrowserFakeParticipant>();
 
 // ─── Internal helpers ─────────────────────────────────────────────────────
@@ -687,7 +689,7 @@ export const expectNoMuteAllButton = async (page: Page, media: MuteMedia = 'audi
  * target of.
  */
 export const expectMutedByModeratorNotification = async (page: Page): Promise<void> => {
-	await expect(page.locator('.ov-notification[data-kind="message"]')).toBeVisible({ timeout: 10_000 });
+	await expect(page.locator(MEETING_MESSAGE_NOTIFICATION)).toBeVisible({ timeout: 10_000 });
 };
 
 // ─── Participants panel: badge assertions ─────────────────────────────────────
@@ -891,7 +893,7 @@ export const expectHandRaisedNotice = async (page: Page, message: string | false
  * Asserts the notice a participant gets when a moderator lowers their hand.
  */
 export const expectHandLoweredByModeratorNotification = async (page: Page): Promise<void> => {
-	await expect(page.locator('.ov-notification[data-kind="message"]')).toContainText('lowered your hand', {
+	await expect(page.locator(MEETING_MESSAGE_NOTIFICATION)).toContainText('lowered your hand', {
 		timeout: 10_000
 	});
 };
