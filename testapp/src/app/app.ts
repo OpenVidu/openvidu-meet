@@ -176,6 +176,7 @@ export class App {
 		// iframe transport carries the same three states as the webcomponent one.
 		set(EmbeddedAttribute.INITIAL_AUDIO_ACTIVE, this.config.initialAudioActive());
 		set(EmbeddedAttribute.INITIAL_VIDEO_ACTIVE, this.config.initialVideoActive());
+		set(EmbeddedAttribute.LANGUAGE, this.config.language());
 
 		if (this.config.showOnlyRecordings()) {
 			url.searchParams.set(EmbeddedAttribute.SHOW_ONLY_RECORDINGS, 'true');

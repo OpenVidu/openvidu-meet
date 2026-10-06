@@ -15,6 +15,7 @@ const TEXT_INPUT_TESTIDS: ReadonlyArray<[EmbeddedAttribute, string]> = [
 	[EmbeddedAttribute.RECORDING_URL, 'input-recordingUrl'],
 	[EmbeddedAttribute.PARTICIPANT_NAME, 'input-participantName'],
 	[EmbeddedAttribute.E2EE_KEY, 'input-e2eeKey'],
+	[EmbeddedAttribute.LANGUAGE, 'input-language'],
 	[EmbeddedAttribute.LEAVE_REDIRECT_URL, 'input-leaveRedirectUrl'],
 	[EmbeddedAttribute.SHOW_RECORDING, 'input-showRecording']
 ];

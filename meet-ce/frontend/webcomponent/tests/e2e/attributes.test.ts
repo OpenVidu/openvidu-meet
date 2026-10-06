@@ -1,5 +1,5 @@
 import { EmbeddedAttribute } from '@openvidu-meet/typings';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { createRoom, deleteRooms, getRecordingUrl, listRecordingsByRoomId } from '../helpers/meet-api.helper';
 import {
 	expectPrejoinCameraEnabled,
@@ -251,6 +251,75 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 
 				await expectPrejoinMicEnabled(page, 'webcomponent', true, { timeout: 10_000 });
 				await expectPrejoinCameraEnabled(page, 'webcomponent', false, { timeout: 10_000 });
+			});
+		});
+
+		test.describe('with language', () => {
+			let languageRoomId: string;
+			let languageAccessUrl: string;
+
+			test.beforeAll(async () => {
+				const room = await createRoom();
+				createdRoomIds.push(room.roomId);
+				languageRoomId = room.roomId;
+				languageAccessUrl = room.access.anonymous.moderator.url;
+			});
+
+			const pickLanguage = async (meet: (selector: string) => Locator, code: string): Promise<void> => {
+				await meet('ov-lang-selector button').click();
+				await meet(`#lang-opt-${code}`).click();
+			};
+
+			test('should start in the requested language and let the participant change it', async ({ page }) => {
+				const { meet } = await openMeetingAtMediaSetup(page, languageRoomId, {
+					role: 'moderator',
+					language: 'es'
+				});
+				await expect(meet('#join-button')).toHaveText('Unirme ahora');
+
+				await pickLanguage(meet, 'de');
+				await expect(meet('#join-button')).toHaveText('Meeting beitreten');
+			});
+
+			// The language selector floats over the testapp header, so each step leaves the meeting
+			// before the next remount.
+			test('should win over the participant preference without replacing it', async ({ page }) => {
+				const { meet } = await openMeetingAtMediaSetup(page, languageRoomId, { role: 'moderator' });
+				await pickLanguage(meet, 'de');
+				await expect(meet('#join-button')).toHaveText('Meeting beitreten');
+				await meet('#join-button').click();
+				await expect(meet('#layout-container')).toBeVisible({ timeout: 15_000 });
+				await leaveMeeting(page);
+
+				await openMeetingAtMediaSetup(page, languageRoomId, { role: 'moderator', language: 'es' });
+				await expect(meet('#join-button')).toHaveText('Unirme ahora');
+				await meet('#join-button').click();
+				await expect(meet('#layout-container')).toBeVisible({ timeout: 15_000 });
+				await leaveMeeting(page);
+
+				await openMeetingAtMediaSetup(page, languageRoomId, { role: 'moderator' });
+				await expect(meet('#join-button')).toHaveText('Meeting beitreten');
+			});
+
+			test('should ignore an unsupported language', async ({ page }) => {
+				await openWebcomponentWithAttributes(page, {
+					[EmbeddedAttribute.ROOM_URL]: languageAccessUrl,
+					[EmbeddedAttribute.PARTICIPANT_NAME]: 'Alice',
+					[EmbeddedAttribute.LANGUAGE]: 'xx'
+				});
+				await wcLocator(page, '#participant-name-submit').click();
+
+				await expect(wcLocator(page, '#join-button')).toHaveText('Join meeting', { timeout: 15_000 });
+			});
+
+			test('should resolve a region variant on the iframe transport', async ({ page }) => {
+				const { meet } = await openMeetingAtMediaSetup(page, languageRoomId, {
+					integration: 'iframe',
+					role: 'moderator',
+					language: 'es-ES'
+				});
+
+				await expect(meet('#join-button')).toHaveText('Unirme ahora');
 			});
 		});
 

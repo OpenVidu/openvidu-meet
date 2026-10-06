@@ -181,11 +181,11 @@ export class LangDirective implements OnDestroy {
  * { name: 'Español', lang: 'es' },
  * { name: 'Deutsch', lang: 'de' },
  * { name: 'Français', lang: 'fr' },
- * { name: '中国', lang: 'cn' },
+ * { name: '中文', lang: 'cn' },
  * { name: 'हिन्दी', lang: 'hi' },
  * { name: 'Italiano', lang: 'it' },
- * { name: 'やまと', lang: 'ja' },
- * { name: 'Dutch', lang: 'nl' },
+ * { name: '日本語', lang: 'ja' },
+ * { name: 'Nederlands', lang: 'nl' },
  * { name: 'Português', lang: 'pt' }
  * ]```
  *

@@ -1,5 +1,6 @@
 import { Service, inject } from '@angular/core';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
+import { LanguageService } from '../../../shared/services/i18n/language.service';
 import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomAccessService } from '../../rooms/services/room-access.service';
@@ -31,6 +32,8 @@ export interface MeetingEntryParams {
 	initialAudioActive?: boolean;
 	/** Join with the camera active (initial state only; the participant may deactivate it afterwards). Defaults to true. */
 	initialVideoActive?: boolean;
+	/** Initial UI language asked by the embedding application, as a BCP 47 tag (never persisted). */
+	language?: string;
 	/** Optional leave-redirect URL passed to {@link LeaveRedirectService}. */
 	leaveRedirectUrl?: string;
 	/** Request a redirect to `/recording/<id>` instead of the meeting. */
@@ -70,6 +73,7 @@ export class MeetingEntryService {
 	private readonly roomAccessService = inject(RoomAccessService);
 	private readonly roomFeatureService = inject(RoomFeatureService);
 	private readonly leaveRedirect = inject(LeaveRedirectService);
+	private readonly languageService = inject(LanguageService);
 
 	/**
 	 * Populates meeting/room-member context from the supplied params and returns
@@ -93,7 +97,8 @@ export class MeetingEntryService {
 		participantExternalId,
 		participantMetadata,
 		initialAudioActive,
-		initialVideoActive
+		initialVideoActive,
+		language
 	}: MeetingEntryParams): MeetingEntryDecision {
 		this.leaveRedirect.handleLeaveRedirectUrl(leaveRedirectUrl);
 
@@ -115,6 +120,8 @@ export class MeetingEntryService {
 			audioActive: initialAudioActive,
 			videoActive: initialVideoActive
 		});
+
+		this.languageService.setEmbeddedLanguage(language);
 
 		// Prefer the caller-supplied secret (URL/input); otherwise restore the one
 		// persisted on this origin. Keeping the fallback here means every adapter

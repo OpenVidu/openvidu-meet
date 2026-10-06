@@ -78,3 +78,70 @@ describe('TranslateService', () => {
 		expect(service.translateDefault('PANEL.CHAT.TITLE')).toBe('Chat');
 	});
 });
+
+/**
+ * The embedding application can ask for a language. It outranks the participant's stored preference
+ * without ever being written over it, and the participant can still pick another one.
+ */
+describe('LanguageService', () => {
+	let languageService: LanguageService;
+	let storage: jasmine.SpyObj<MeetStorageService>;
+
+	beforeEach(() => {
+		storage = jasmine.createSpyObj<MeetStorageService>('MeetStorageService', ['getLang', 'setLang']);
+		storage.getLang.and.returnValue('de');
+
+		TestBed.configureTestingModule({
+			providers: [provideZonelessChangeDetection(), { provide: MeetStorageService, useValue: storage }]
+		});
+		languageService = TestBed.inject(LanguageService);
+	});
+
+	it('starts from the stored preference', () => {
+		expect(languageService.selectedLanguage().lang).toBe('de');
+	});
+
+	it('serves the requested language over the stored preference, without persisting it', () => {
+		languageService.setEmbeddedLanguage('es');
+
+		expect(languageService.selectedLanguage().lang).toBe('es');
+		expect(storage.setLang).not.toHaveBeenCalled();
+	});
+
+	it('restores the stored preference once no language is requested', () => {
+		languageService.setEmbeddedLanguage('es');
+		languageService.setEmbeddedLanguage(undefined);
+
+		expect(languageService.selectedLanguage().lang).toBe('de');
+	});
+
+	it('lets the participant pick another language over the requested one, and remembers that pick', () => {
+		languageService.setEmbeddedLanguage('es');
+		languageService.setLanguage('it');
+
+		expect(languageService.selectedLanguage().lang).toBe('it');
+		expect(storage.setLang).toHaveBeenCalledWith('it');
+	});
+
+	it('accepts any case and falls back from a region variant to its language', () => {
+		const resolve = (tag: string) => {
+			languageService.setEmbeddedLanguage(tag);
+			return languageService.selectedLanguage().lang;
+		};
+
+		expect(resolve('ES')).toBe('es');
+		expect(resolve('pt-BR')).toBe('pt');
+		expect(resolve('ja_JP')).toBe('ja');
+		expect(resolve('zh-CN')).toBe('cn');
+		expect(resolve('zh-Hans')).toBe('cn');
+	});
+
+	it('ignores an unsupported language, leaving the stored preference', () => {
+		spyOn(console, 'warn');
+
+		languageService.setEmbeddedLanguage('xx');
+
+		expect(languageService.selectedLanguage().lang).toBe('de');
+		expect(console.warn).toHaveBeenCalled();
+	});
+});

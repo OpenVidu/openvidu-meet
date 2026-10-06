@@ -21,6 +21,7 @@ export const extractRoomMeetingParamsGuard: CanActivateFn = (route: ActivatedRou
 		participantMetadata,
 		initialAudioActive,
 		initialVideoActive,
+		language,
 		leaveRedirectUrl,
 		showOnlyRecordings,
 		showRecording,
@@ -39,6 +40,7 @@ export const extractRoomMeetingParamsGuard: CanActivateFn = (route: ActivatedRou
 		// while either explicit value outranks it.
 		initialAudioActive: parseOptionalBoolean(initialAudioActive),
 		initialVideoActive: parseOptionalBoolean(initialVideoActive),
+		language,
 		showRecording,
 		showOnlyRecordings: showOnlyRecordings === 'true'
 	});
