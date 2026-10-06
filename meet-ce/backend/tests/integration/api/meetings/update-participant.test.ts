@@ -11,6 +11,8 @@ import type { ClaimGrants } from 'livekit-server-sdk';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
+import { MutexService } from '../../../../src/services/mutex.service.js';
+import { MeetLock } from '../../../../src/helpers/redis.helper.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	disconnectFakeParticipants,
@@ -21,6 +23,7 @@ import {
 	deleteAllRooms,
 	generateRoomMemberToken,
 	generateRoomMemberTokenRequest,
+	getMeetingParticipant,
 	kickParticipant,
 	refreshRoomMemberTokenRequest,
 	sleep,
@@ -302,6 +305,57 @@ describe('Meetings API Tests', () => {
 					badge: MeetRoomMemberUIBadge.MODERATOR,
 					isPromotedModerator: true
 				});
+			});
+
+			it('should give a participant who regenerates their token during a promotion a token that is accepted', async () => {
+				const { roomId } = roomData.room;
+				const { identity, speakerToken } = await joinAsSpeaker();
+
+				const writeToLiveKit = livekitService.updateParticipant.bind(livekitService);
+				let promotionWriting!: () => void;
+				const promotionHoldsLock = new Promise<void>((resolve) => (promotionWriting = resolve));
+				let releasePromotionWrite!: () => void;
+				const promotionWriteReleased = new Promise<void>((resolve) => (releasePromotionWrite = resolve));
+				jest.spyOn(livekitService, 'updateParticipant').mockImplementationOnce(async (...args) => {
+					promotionWriting();
+					await promotionWriteReleased;
+					return writeToLiveKit(...args);
+				});
+
+				const promotion = updateParticipant(
+					roomId,
+					identity,
+					MeetParticipantModerationAction.UPGRADE,
+					roomData.moderatorToken
+				);
+				await promotionHoldsLock;
+
+				const mutexService = container.get(MutexService);
+				const lock = mutexService.withRetryLock.bind(mutexService);
+				let regenerationWaiting!: () => void;
+				const regenerationQueued = new Promise<void>((resolve) => (regenerationWaiting = resolve));
+				const lockSpy = jest.spyOn(mutexService, 'withRetryLock').mockImplementation((key, ...rest) => {
+					if (key === MeetLock.getParticipantMetadataLock(roomId, identity)) regenerationWaiting();
+
+					return lock(key, ...rest);
+				});
+
+				const regeneration = generateRoomMemberTokenRequest(
+					roomId,
+					{ secret: roomData.speakerSecret, joinMeeting: true },
+					undefined,
+					speakerToken
+				);
+				await regenerationQueued;
+				releasePromotionWrite();
+
+				expect((await promotion).status).toBe(200);
+				const regenerated = await regeneration;
+				lockSpy.mockRestore();
+				expect(regenerated.status).toBe(200);
+
+				const response = await getMeetingParticipant(roomId, identity, `Bearer ${regenerated.body.token}`);
+				expect(response.status).toBe(200);
 			});
 		});
 	});

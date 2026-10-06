@@ -606,6 +606,8 @@ export class RoomMemberService {
 			);
 
 			participantName = await this.withParticipantMetadataLock(roomId, participantIdentity!, async () => {
+				// Issued after any role change that held the lock first, so the change does not revoke it.
+				tokenMetadata.iat = Date.now();
 				const participant = await this.getParticipantFromMeeting(roomId, participantIdentity!);
 				const participantMetadata = MeetParticipantHelper.parseOwnMeetingMetadata(participant);
 				const isCurrentlyPromotedModerator = participantMetadata.isPromotedModerator === true;
