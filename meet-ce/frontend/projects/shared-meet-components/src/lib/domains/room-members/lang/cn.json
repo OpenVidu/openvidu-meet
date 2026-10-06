@@ -142,6 +142,10 @@
           "LABEL": "静音参与者",
           "DESCRIPTION": "允许关闭其他参与者的麦克风、摄像头或屏幕共享"
         },
+        "participantHandLower": {
+          "LABEL": "放下手",
+          "DESCRIPTION": "允许放下其他参会者举起的手，可逐个或一次性放下"
+        },
         "roomShareAccessLinks": {
           "LABEL": "共享访问链接",
           "DESCRIPTION": "允许与他人共享邀请链接"

@@ -242,6 +242,8 @@
         "E2EE_RESTRICTION_RECORDING_SUFFIX": " enquanto a encriptação estiver ativada.",
         "CAPTIONS": "Legendas em direto",
         "CAPTIONS_DESC": "Ative a transcrição em direto para apresentar legendas durante a reunião",
+        "HAND": "Levantar a mão",
+        "HAND_DESC": "Permite aos participantes levantar a mão para pedir a palavra",
         "CHAT": "Chat",
         "CHAT_DESC": "Permitir que os participantes enviem mensagens durante a reunião",
         "VIRTUAL_BACKGROUNDS": "Fundos virtuais",

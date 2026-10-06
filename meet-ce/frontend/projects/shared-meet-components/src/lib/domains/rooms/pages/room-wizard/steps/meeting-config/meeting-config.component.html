@@ -43,9 +43,7 @@
 									formControlName="maxParticipants"
 									[placeholder]="'ROOMS.WIZARD.MEETING.MAX_PARTICIPANTS_PLACEHOLDER' | translate"
 									[attr.aria-describedby]="
-										meetingForm.controls.maxParticipants.invalid
-											? 'max-participants-error'
-											: null
+										meetingForm.controls.maxParticipants.invalid ? 'max-participants-error' : null
 									"
 								/>
 							</mat-form-field>
@@ -104,9 +102,7 @@
 									formControlName="maxDurationMinutes"
 									[placeholder]="'ROOMS.WIZARD.MEETING.MAX_DURATION_PLACEHOLDER' | translate"
 									[attr.aria-describedby]="
-										meetingForm.controls.maxDurationMinutes.invalid
-											? 'max-duration-error'
-											: null
+										meetingForm.controls.maxDurationMinutes.invalid ? 'max-duration-error' : null
 									"
 								/>
 							</mat-form-field>
@@ -198,23 +194,18 @@
 										</p>
 										<ul class="restrictions-list">
 											<li>
-												{{
-													'ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_ALL_PARTICIPANTS'
-														| translate
+												{{ 'ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_ALL_PARTICIPANTS' | translate
 												}}<span class="restriction-detail">{{
 													'ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_INCORRECT_KEY' | translate
 												}}</span>
 											</li>
 											<li>
-												{{
-													'ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_RECORDING_PREFIX'
-														| translate
+												{{ 'ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_RECORDING_PREFIX' | translate
 												}}<b>{{
 													'ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_RECORDING_BOLD' | translate
 												}}</b
 												>{{
-													'ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_RECORDING_SUFFIX'
-														| translate
+													'ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_RECORDING_SUFFIX' | translate
 												}}
 											</li>
 										</ul>
@@ -238,6 +229,25 @@
 						<mat-slide-toggle
 							[checked]="captionsEnabled"
 							(change)="onCaptionsToggleChange($event)"
+							color="primary"
+							class="feature-toggle"
+						/>
+					</div>
+
+					<!-- Raise hand -->
+					<div class="feature-row" id="room-feature-hand">
+						<div class="feature-info">
+							<mat-icon class="feature-icon">front_hand</mat-icon>
+							<div class="feature-text">
+								<span class="feature-label">{{ 'ROOMS.WIZARD.MEETING.HAND' | translate }}</span>
+								<span class="feature-description">{{
+									'ROOMS.WIZARD.MEETING.HAND_DESC' | translate
+								}}</span>
+							</div>
+						</div>
+						<mat-slide-toggle
+							[checked]="raiseHandEnabled"
+							(change)="onRaiseHandToggleChange($event)"
 							color="primary"
 							class="feature-toggle"
 						/>

@@ -278,6 +278,17 @@
 		"MODERATOR_ROLE_REMOVED": "आपकी मॉडरेटर भूमिका हटा दी गई है",
 		"PERMISSIONS_UPDATED": "आपकी अनुमतियाँ अपडेट कर दी गई हैं"
 	},
+	"HAND": {
+		"RAISE": "हाथ उठाएँ",
+		"LOWER": "हाथ नीचे करें",
+		"RAISED_TOOLTIP": "हाथ उठा हुआ है",
+		"RAISED_NOTIFICATION": "{name} ने हाथ उठाया",
+		"RAISED_NOTIFICATION_MANY": "{name} और {count} अन्य ने हाथ उठाया",
+		"LOWER_PARTICIPANT": "हाथ नीचे करें",
+		"LOWER_ALL": "सभी हाथ नीचे करें",
+		"RAISED_COUNT": "उठे हुए हाथ",
+		"LOWERED_BY_MODERATOR": "एक मॉडरेटर ने आपका हाथ नीचे कर दिया"
+	},
 	"END_MEETING": {
 		"LEFT_TITLE": "आपने मीटिंग छोड़ दी",
 		"LEFT_MESSAGE": "आपने सफलतापूर्वक मीटिंग छोड़ दी है",

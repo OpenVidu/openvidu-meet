@@ -99,16 +99,30 @@
 						</div>
 					}
 
-					@if (railHiddenParticipants(); as hidden) {
-						<ov-hidden-participants-indicator
-							class="status-rail-end"
-							mode="topbar"
-							[class.inert]="!canOpenParticipantsPanel()"
-							[count]="hidden.count"
-							[hiddenParticipantNames]="hidden.names"
-							(clicked)="openParticipantsPanel()"
-						/>
-					}
+					<div class="status-rail-end">
+						@if (raisedHandCount(); as count) {
+							<div
+								id="raised-hands-chip"
+								class="status-chip raised-hands-chip"
+								[class.clickable]="canOpenParticipantsPanel()"
+								[matTooltip]="'HAND.RAISED_COUNT' | translate"
+								(click)="openParticipantsPanel()"
+							>
+								<mat-icon class="status-chip-icon material-symbols-outlined">front_hand</mat-icon>
+								<span class="status-chip-value">{{ count }}</span>
+							</div>
+						}
+
+						@if (railHiddenParticipants(); as hidden) {
+							<ov-hidden-participants-indicator
+								mode="topbar"
+								[class.inert]="!canOpenParticipantsPanel()"
+								[count]="hidden.count"
+								[hiddenParticipantNames]="hidden.names"
+								(clicked)="openParticipantsPanel()"
+							/>
+						}
+					</div>
 				</div>
 			}
 

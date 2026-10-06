@@ -278,6 +278,17 @@
 		"MODERATOR_ROLE_REMOVED": "Uw rol als moderator is ingetrokken",
 		"PERMISSIONS_UPDATED": "Uw rechten zijn bijgewerkt"
 	},
+	"HAND": {
+		"RAISE": "Hand opsteken",
+		"LOWER": "Hand laten zakken",
+		"RAISED_TOOLTIP": "Hand opgestoken",
+		"RAISED_NOTIFICATION": "{name} heeft de hand opgestoken",
+		"RAISED_NOTIFICATION_MANY": "{name} en {count} anderen hebben de hand opgestoken",
+		"LOWER_PARTICIPANT": "Hand laten zakken",
+		"LOWER_ALL": "Alle handen laten zakken",
+		"RAISED_COUNT": "Opgestoken handen",
+		"LOWERED_BY_MODERATOR": "Een moderator heeft je hand laten zakken"
+	},
 	"END_MEETING": {
 		"LEFT_TITLE": "U heeft de meeting verlaten",
 		"LEFT_MESSAGE": "U heeft de meeting succesvol verlaten",

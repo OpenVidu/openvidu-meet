@@ -1,0 +1,9 @@
+@if (visible()) {
+	<div class="panel-bulk-actions" id="panel-hand-actions">
+		<span class="bulk-label">{{ 'HAND.RAISED_COUNT' | translate }} ({{ raisedHandCount() }})</span>
+		<button mat-flat-button class="lower-all-btn" id="lower-all-hands-btn" (click)="onLowerAllHandsClick()">
+			<mat-icon class="material-symbols-outlined">do_not_touch</mat-icon>
+			{{ 'HAND.LOWER_ALL' | translate }}
+		</button>
+	</div>
+}

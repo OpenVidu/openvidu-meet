@@ -1,6 +1,11 @@
-import { MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
+import {
+	loweredHandAttributes,
+	MeetEventOrigin,
+	MeetRoomMemberUIBadge,
+	raisedHandAttributes
+} from '@openvidu-meet/typings';
 import { LocalParticipant, RemoteParticipant, Track, TrackPublication } from '../services/livekit';
-import { ParticipantModel, ParticipantViewStateReader } from './participant.model';
+import { ParticipantModel, ParticipantViewStateReader, raisedHandQueue } from './participant.model';
 
 interface FakePublicationInit {
 	trackSid: string;
@@ -35,6 +40,7 @@ interface FakeParticipantOptions {
 	isCameraEnabled?: boolean;
 	isMicrophoneEnabled?: boolean;
 	isScreenShareEnabled?: boolean;
+	attributes?: Record<string, string>;
 }
 
 interface FakeLiveKitParticipant {
@@ -47,6 +53,7 @@ interface FakeLiveKitParticipant {
 	isCameraEnabled: boolean;
 	isMicrophoneEnabled: boolean;
 	isScreenShareEnabled: boolean;
+	attributes: Record<string, string>;
 	getTrackPublications(): TrackPublication[];
 }
 
@@ -61,6 +68,7 @@ const fakeLiveKitParticipant = (options: FakeParticipantOptions = {}): FakeLiveK
 		isCameraEnabled: options.isCameraEnabled ?? false,
 		isMicrophoneEnabled: options.isMicrophoneEnabled ?? false,
 		isScreenShareEnabled: options.isScreenShareEnabled ?? false,
+		attributes: options.attributes ?? {},
 		getTrackPublications() {
 			return this.publications;
 		}
@@ -269,6 +277,35 @@ describe('ParticipantModel', () => {
 
 			participant.setDecryptedName('Alice');
 			expect(participant.name).toBe('Alice');
+		});
+	});
+
+	describe('raised hand', () => {
+		it('reads the raise timestamp from the attributes the server writes', () => {
+			const fake = fakeLiveKitParticipant({ attributes: raisedHandAttributes(1700) });
+			const participant = modelFor(fake);
+
+			expect(participant.handRaiseDate).toBe(1700);
+			expect(participant.isHandRaised).toBeTrue();
+
+			fake.attributes = loweredHandAttributes(MeetEventOrigin.MODERATOR);
+			participant.bump();
+
+			expect(participant.handRaiseDate).toBeUndefined();
+			expect(participant.isHandRaised).toBeFalse();
+		});
+
+		it('queues the raised hands by raise time, breaking ties by identity', () => {
+			const participants = [
+				modelFor(fakeLiveKitParticipant({ identity: 'carol', attributes: raisedHandAttributes(300) })),
+				modelFor(fakeLiveKitParticipant({ identity: 'dave' })),
+				modelFor(fakeLiveKitParticipant({ identity: 'bob', attributes: raisedHandAttributes(100) })),
+				modelFor(fakeLiveKitParticipant({ identity: 'alice', attributes: raisedHandAttributes(100) }))
+			];
+
+			const queue = raisedHandQueue(participants, (participant) => participant.handRaiseDate);
+
+			expect(queue.map((participant) => participant.identity)).toEqual(['alice', 'bob', 'carol']);
 		});
 	});
 

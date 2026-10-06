@@ -20,6 +20,7 @@ export class FeatureCalculator {
 		const captionsStatus = this.computeCaptionsStatus(roomConfig.captions, captionsGlobalEnabled);
 		features.showCaptionsControls = captionsStatus !== 'HIDDEN';
 		features.showCaptionsControlsDisabled = captionsStatus === 'DISABLED_WITH_WARNING';
+		features.showRaiseHand = roomConfig.raiseHand.enabled;
 	}
 
 	static applyPermissions(features: RoomFeatures, permissions: MeetRoomMemberPermissions): void {

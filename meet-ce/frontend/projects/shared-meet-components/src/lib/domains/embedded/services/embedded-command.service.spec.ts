@@ -13,6 +13,7 @@ import {
 } from '../../meeting/openvidu-components';
 import { RecordingService as RecordingStateService } from '../../meeting/openvidu-components/services/recording/recording.service';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
+import { MeetingHandService } from '../../meeting/services/meeting-hand.service';
 import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
@@ -52,6 +53,7 @@ describe('EmbeddedCommandService', () => {
 	};
 	let screenShare: { setEnabled: jasmine.Spy; enabled: ReturnType<typeof signal<boolean>> };
 	let recordingService: jasmine.SpyObj<RecordingService>;
+	let handService: jasmine.SpyObj<MeetingHandService>;
 	let recordingStatus: ReturnType<typeof signal<RecordingStateInfo>>;
 	let setRecordingStarting: jasmine.Spy;
 	let liveKitService: { isSessionActive: ReturnType<typeof signal<boolean>>; disconnect: jasmine.Spy };
@@ -95,6 +97,19 @@ describe('EmbeddedCommandService', () => {
 		]);
 		recordingService.startRecording.and.resolveTo({ recordingId: STARTED_RECORDING_ID } as MeetRecordingInfo);
 		recordingService.stopRecording.and.resolveTo();
+
+		handService = jasmine.createSpyObj<MeetingHandService>('MeetingHandService', [
+			'raise',
+			'lower',
+			'lowerAll',
+			'isOwn'
+		]);
+		handService.raise.and.resolveTo();
+		handService.lower.and.resolveTo();
+		handService.lowerAll.and.resolveTo();
+		handService.isOwn.and.callFake(
+			(participantIdentity?: string) => !participantIdentity || participantIdentity === IDENTITY
+		);
 		recordingStatus = signal<RecordingStateInfo>({
 			id: RECORDING_ID,
 			status: RecordingState.STARTED,
@@ -123,6 +138,7 @@ describe('EmbeddedCommandService', () => {
 				{ provide: LocalMediaService, useValue: localMedia as unknown as LocalMediaService },
 				{ provide: ScreenShareService, useValue: screenShare as unknown as ScreenShareService },
 				{ provide: RecordingService, useValue: recordingService },
+				{ provide: MeetingHandService, useValue: handService },
 				{
 					provide: RecordingStateService,
 					useValue: { recordingStatus, setRecordingStarting } as unknown as RecordingStateService
@@ -318,6 +334,57 @@ describe('EmbeddedCommandService', () => {
 
 			expect(hasPermission).toHaveBeenCalledWith('participantPromote');
 			expect(moderationService.changeParticipantRole).not.toHaveBeenCalled();
+		});
+
+		// Raising and lowering one's own hand is never gated: the room toggle is the server's to enforce.
+		it('raises the own hand without checking any permission', async () => {
+			hasPermission.and.returnValue(false);
+
+			await service.participantHandRaise();
+
+			expect(hasPermission).not.toHaveBeenCalled();
+			expect(handService.raise).toHaveBeenCalledTimes(1);
+		});
+
+		it('lowers the own hand without checking any permission, naming nobody or oneself', async () => {
+			hasPermission.and.returnValue(false);
+
+			await service.participantHandLower();
+			await service.participantHandLower(IDENTITY);
+
+			expect(hasPermission).not.toHaveBeenCalled();
+			expect(handService.lower).toHaveBeenCalledTimes(2);
+			expect(handService.lower).toHaveBeenCalledWith(IDENTITY);
+		});
+
+		it('gates lowering another participant hand on participantHandLower', async () => {
+			await service.participantHandLower('participant-2');
+
+			expect(hasPermission).toHaveBeenCalledWith('participantHandLower');
+			expect(handService.lower).toHaveBeenCalledOnceWith('participant-2');
+		});
+
+		it('rejects lowering another participant hand without participantHandLower', async () => {
+			hasPermission.and.returnValue(false);
+
+			await service.participantHandLower('participant-2');
+
+			expect(handService.lower).not.toHaveBeenCalled();
+		});
+
+		it('gates participantHandLowerAll on participantHandLower', async () => {
+			await service.participantHandLowerAll();
+
+			expect(hasPermission).toHaveBeenCalledWith('participantHandLower');
+			expect(handService.lowerAll).toHaveBeenCalledTimes(1);
+		});
+
+		it('rejects a hand command before the meeting is connected', async () => {
+			liveKitService.isSessionActive.set(false);
+
+			await service.participantHandRaise();
+
+			expect(handService.raise).not.toHaveBeenCalled();
 		});
 
 		it('rejects mediaToggleAudio without the mediaPublishAudio permission', async () => {

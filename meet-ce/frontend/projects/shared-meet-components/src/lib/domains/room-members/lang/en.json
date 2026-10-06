@@ -142,6 +142,10 @@
           "LABEL": "Mute participant",
           "DESCRIPTION": "Allow turning off other participants' microphone, camera or screen share"
         },
+        "participantHandLower": {
+          "LABEL": "Lower hands",
+          "DESCRIPTION": "Allow lowering other participants' raised hands, one at a time or all at once"
+        },
         "roomShareAccessLinks": {
           "LABEL": "Share access links",
           "DESCRIPTION": "Allow sharing invite links with others"

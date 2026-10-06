@@ -1,5 +1,5 @@
 import { Service, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
-import { ParticipantModel, ParticipantProperties } from '../../models/participant.model';
+import { ParticipantModel, ParticipantProperties, raisedHandQueue } from '../../models/participant.model';
 import { E2eeService } from '../e2ee/e2ee.service';
 import type { DataPublishOptions, LocalParticipant, Participant, RemoteParticipant } from '../livekit';
 import { ConnectionQuality, Track } from '../livekit';
@@ -41,6 +41,25 @@ export class ParticipantService {
 	readonly hasRemoteEncryptionErrorsSignal = computed(() =>
 		this._remoteParticipants().some((participant) => participant.hasEncryptionError)
 	);
+	/**
+	 * The participants with a raised hand, the local one included, in the order they raised it. Every
+	 * client derives it from the same server-written attribute, so the queue reads the same everywhere.
+	 */
+	readonly raisedHands = computed(() => {
+		const local = this._localParticipant();
+		const participants = local ? [local, ...this._remoteParticipants()] : this._remoteParticipants();
+		return raisedHandQueue(participants, (participant) => participant.handRaiseDate);
+	});
+	/** The 1-based queue position of every raised hand, by participant identity. */
+	readonly handQueuePositions = computed(
+		() => new Map(this.raisedHands().map((participant, index) => [participant.identity, index + 1]))
+	);
+	/** The remote participants with their raised hands first, in queue order, then the rest in join order. */
+	readonly remoteParticipantsByHand = computed(() => {
+		const remotes = this._remoteParticipants();
+		const raised = raisedHandQueue(remotes, (participant) => participant.handRaiseDate);
+		return [...raised, ...remotes.filter((participant) => !participant.isHandRaised)];
+	});
 
 	/**
 	 * @internal

@@ -225,6 +225,9 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	/** Published by the smart layout, which cannot render into the rail itself. */
 	protected readonly railHiddenParticipants = this.smartLayoutService.railHiddenParticipants;
 
+	/** Every raised hand, whether or not the layout shows its tile. */
+	protected readonly raisedHandCount = computed(() => this.participantService.raisedHands().length);
+
 	protected readonly canOpenParticipantsPanel = this.libService.participantsPanelButtonSignal;
 
 	protected readonly showStatusRail = computed(
@@ -233,6 +236,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 			this.showRecordingChip() ||
 			this.isEndingSoon() ||
 			this.isE2eeActive() ||
+			this.raisedHandCount() > 0 ||
 			this.railHiddenParticipants() !== undefined
 	);
 

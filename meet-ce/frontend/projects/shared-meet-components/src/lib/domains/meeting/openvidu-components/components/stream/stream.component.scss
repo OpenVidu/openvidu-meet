@@ -121,6 +121,20 @@
 		border-radius: 20px;
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 
+		#hand-raised {
+			display: inline-flex;
+			align-items: center;
+			gap: 2px;
+			color: var(--ov-meet-hand-color);
+			font-size: 13px;
+			font-weight: 600;
+
+			mat-icon {
+				font-size: 20px;
+				width: 20px;
+				height: 20px;
+			}
+		}
 		#mic-off,
 		#muted-forcibly,
 		#pinned {
@@ -165,5 +179,30 @@
 
 	.OV_stream.speaking::after {
 		box-shadow: inset 0 0 0 2px var(--ov-accent-action-color);
+	}
+
+	.OV_stream.hand-raised::after {
+		background-color: color-mix(in srgb, var(--ov-meet-hand-color) 10%, transparent);
+		box-shadow: inset 0 0 0 4px var(--ov-meet-hand-color);
+		animation: ov-hand-raised-pulse 1.4s ease-out 2;
+	}
+
+	@keyframes ov-hand-raised-pulse {
+		from {
+			box-shadow:
+				inset 0 0 0 4px var(--ov-meet-hand-color),
+				inset 0 0 0 4px color-mix(in srgb, var(--ov-meet-hand-color) 60%, transparent);
+		}
+		to {
+			box-shadow:
+				inset 0 0 0 4px var(--ov-meet-hand-color),
+				inset 0 0 0 28px transparent;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.OV_stream.hand-raised::after {
+			animation: none;
+		}
 	}
 }

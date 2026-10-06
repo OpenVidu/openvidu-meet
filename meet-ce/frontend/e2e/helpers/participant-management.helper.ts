@@ -799,3 +799,99 @@ export const expectKickButton = async (page: Page, participantId: string): Promi
 export const expectNoKickButton = async (page: Page, participantId: string): Promise<void> => {
 	await expectMenuItem(page, participantId, `#kick-participant-btn-${participantId}`, false);
 };
+
+// ─── Raise hand ───────────────────────────────────────────────────────────────
+
+/**
+ * Raises or lowers the local participant's hand from the toolbar.
+ */
+export const toggleHand = async (page: Page): Promise<void> => {
+	await page.locator('#raise-hand-button').click({ timeout: 10_000 });
+};
+
+/**
+ * Asserts the toolbar shows the local participant's hand as raised or not.
+ */
+export const expectHandRaised = async (page: Page, raised: boolean): Promise<void> => {
+	const button = page.locator('#raise-hand-button');
+	await (raised
+		? expect(button).toHaveClass(/active/, { timeout: 10_000 })
+		: expect(button).not.toHaveClass(/active/, { timeout: 10_000 }));
+};
+
+/**
+ * Asserts the participants panel shows the given participant's hand as raised.
+ */
+export const expectHandBadge = async (page: Page, participantId: string): Promise<void> => {
+	await expect(page.locator(`#hand-badge-${participantId}`)).toBeVisible({ timeout: 10_000 });
+};
+
+/**
+ * Asserts the camera tile of the named participant shows their hand at `position` in the queue.
+ */
+export const expectTileHandPosition = async (page: Page, participantName: string, position: number): Promise<void> => {
+	const tile = page
+		.locator('.OV_stream_video.camera-source')
+		.filter({ has: page.locator('#participant-name', { hasText: new RegExp(`^${participantName}$`) }) });
+	await expect(tile.locator('#hand-raised .hand-position')).toHaveText(String(position), { timeout: 10_000 });
+};
+
+/**
+ * Asserts the participants panel shows no raised hand for the given participant.
+ */
+export const expectNoHandBadge = async (page: Page, participantId: string): Promise<void> => {
+	await expect(page.locator(`#hand-badge-${participantId}`)).toHaveCount(0, { timeout: 10_000 });
+};
+
+/**
+ * Asserts the status rail counts `count` raised hands, or shows no raised-hands chip when there are none.
+ */
+export const expectRaisedHandsChip = async (page: Page, count: number): Promise<void> => {
+	const chip = page.locator('#raised-hands-chip');
+	await (count === 0
+		? expect(chip).toHaveCount(0, { timeout: 10_000 })
+		: expect(chip.locator('.status-chip-value')).toHaveText(String(count), { timeout: 10_000 }));
+};
+
+/**
+ * Lowers a participant's hand from their row menu.
+ */
+export const lowerParticipantHand = async (page: Page, participantId: string): Promise<void> => {
+	await pickFromParticipantMenu(page, participantId, `#lower-hand-btn-${participantId}`);
+};
+
+/**
+ * Asserts that the row menu offers no way to lower the given participant's hand.
+ */
+export const expectNoLowerHandButton = async (page: Page, participantId: string): Promise<void> => {
+	await expectMenuItem(page, participantId, `#lower-hand-btn-${participantId}`, false);
+};
+
+/**
+ * Lowers every raised hand from the participants panel.
+ */
+export const lowerAllHands = async (page: Page): Promise<void> => {
+	await page.locator('#lower-all-hands-btn').click({ timeout: 10_000 });
+};
+
+/**
+ * Asserts the raised-hand notice a holder of `participantHandLower` is shown: none, or a single one
+ * reading `message`.
+ */
+export const expectHandRaisedNotice = async (page: Page, message: string | false): Promise<void> => {
+	const notice = page.locator('.ov-notification[data-kind="hand-raised"]');
+	await expect(notice).toHaveCount(message === false ? 0 : 1, { timeout: 5_000 });
+
+	if (message !== false) {
+		await expect(notice.locator('.notification-message')).toHaveText(message, { timeout: 5_000 });
+	}
+};
+
+/**
+ * Asserts the notice a participant gets when a moderator lowers their hand.
+ */
+export const expectHandLoweredByModeratorNotification = async (page: Page): Promise<void> => {
+	await expect(page.locator('.ov-notification[data-kind="message"]')).toContainText('lowered your hand', {
+		timeout: 10_000
+	});
+};

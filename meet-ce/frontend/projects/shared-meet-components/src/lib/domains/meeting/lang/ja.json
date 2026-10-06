@@ -278,6 +278,17 @@
 		"MODERATOR_ROLE_REMOVED": "モデレーターの役割が解除されました",
 		"PERMISSIONS_UPDATED": "権限が更新されました"
 	},
+	"HAND": {
+		"RAISE": "挙手する",
+		"LOWER": "手を下ろす",
+		"RAISED_TOOLTIP": "挙手中",
+		"RAISED_NOTIFICATION": "{name} さんが挙手しました",
+		"RAISED_NOTIFICATION_MANY": "{name} さんと他 {count} 人が挙手しました",
+		"LOWER_PARTICIPANT": "手を下ろす",
+		"LOWER_ALL": "すべての手を下ろす",
+		"RAISED_COUNT": "挙手中の参加者",
+		"LOWERED_BY_MODERATOR": "モデレーターがあなたの手を下ろしました"
+	},
 	"END_MEETING": {
 		"LEFT_TITLE": "会議を退出しました",
 		"LEFT_MESSAGE": "会議から正常に退出しました",

@@ -4,6 +4,12 @@
 	background-color: var(--ov-accent-action-color);
 }
 
+// Raise hand wears its own colour wherever it shows: the tile, the rail, the panel and here.
+#raise-hand-button.active {
+	background-color: var(--ov-meet-hand-color);
+	color: var(--ov-meet-text-on-hand);
+}
+
 #captions-button.mat-mdc-button-disabled {
 	opacity: 0.5;
 }

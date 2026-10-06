@@ -1,0 +1,30 @@
+@use '../panel-strip';
+
+:host {
+	display: block;
+}
+
+// Tinted like a raised hand's row, so the strip reads as part of the queue it acts on.
+.panel-bulk-actions {
+	background-color: color-mix(in srgb, var(--ov-meet-hand-color) 12%, var(--ov-surface-color));
+}
+
+// A labelled button rather than an icon: it acts on every hand, the viewer's own included. Shaped
+// like the status rail chips and the activity panel buttons: the surface radius, not a pill.
+.lower-all-btn {
+	--mat-button-filled-container-color: var(--ov-meet-hand-color);
+	--mat-button-filled-label-text-color: var(--ov-meet-text-on-hand);
+	--mat-button-filled-container-height: 28px;
+	--mat-button-filled-container-shape: var(--ov-surface-radius);
+	--mat-button-filled-horizontal-padding: 12px;
+	--mat-button-filled-icon-spacing: 8px;
+	--mat-button-filled-label-text-size: 13px;
+	--mat-button-filled-label-text-weight: 600;
+	flex-shrink: 0;
+
+	mat-icon {
+		font-size: 16px;
+		width: 16px;
+		height: 16px;
+	}
+}

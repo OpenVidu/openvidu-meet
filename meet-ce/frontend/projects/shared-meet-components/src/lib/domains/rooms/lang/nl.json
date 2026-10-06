@@ -242,6 +242,8 @@
         "E2EE_RESTRICTION_RECORDING_SUFFIX": " wanneer versleuteling is ingeschakeld.",
         "CAPTIONS": "Live ondertiteling",
         "CAPTIONS_DESC": "Schakel live transcriptie in om ondertiteling tijdens de meeting weer te geven",
+        "HAND": "Hand opsteken",
+        "HAND_DESC": "Laat deelnemers hun hand opsteken om het woord te vragen",
         "CHAT": "Chat",
         "CHAT_DESC": "Sta deelnemers toe om tijdens de meeting berichten te sturen",
         "VIRTUAL_BACKGROUNDS": "Virtuele achtergronden",

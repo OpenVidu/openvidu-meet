@@ -65,11 +65,13 @@
 
 		<!-- Panel Before Local Participant: the invitation heads the panel because it is about the
 		     room, not about anyone in the list. Embedded mode leaves it out: there, link sharing is
-		     the host app's job -->
+		     the host app's job. The raised hands strip follows, above your own row, because lowering
+		     every hand lowers yours too -->
 		<div *ovParticipantPanelBeforeLocalParticipant>
 			@if (!isEmbeddedMode()) {
 				<ng-content select="ov-meeting-invite-panel" />
 			}
+			<ov-meeting-raised-hands-strip />
 		</div>
 
 		<!-- Panel After Local Participant: the panel-wide moderation strip heads the remote list,

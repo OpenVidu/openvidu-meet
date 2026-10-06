@@ -242,6 +242,8 @@
         "E2EE_RESTRICTION_RECORDING_SUFFIX": "。",
         "CAPTIONS": "ライブ字幕",
         "CAPTIONS_DESC": "ライブ文字起こしを有効にして、会議中に字幕を表示します",
+        "HAND": "挙手",
+        "HAND_DESC": "参加者が発言を求めて挙手できるようにします",
         "CHAT": "チャット",
         "CHAT_DESC": "会議中に参加者がメッセージを送信できるようにします",
         "VIRTUAL_BACKGROUNDS": "仮想背景",

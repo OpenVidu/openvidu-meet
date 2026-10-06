@@ -142,6 +142,10 @@
           "LABEL": "参加者をミュート",
           "DESCRIPTION": "他の参加者のマイク、カメラ、画面共有をオフにすることを許可します"
         },
+        "participantHandLower": {
+          "LABEL": "手を下ろす",
+          "DESCRIPTION": "他の参加者の挙手を、個別またはまとめて下ろせるようにします"
+        },
         "roomShareAccessLinks": {
           "LABEL": "アクセスリンクの共有",
           "DESCRIPTION": "他の人と招待リンクを共有することを許可します"

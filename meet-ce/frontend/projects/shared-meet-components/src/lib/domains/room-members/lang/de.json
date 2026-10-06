@@ -142,6 +142,10 @@
           "LABEL": "Teilnehmer stummschalten",
           "DESCRIPTION": "Erlaubt das Ausschalten von Mikrofon, Kamera oder Bildschirmfreigabe anderer Teilnehmer"
         },
+        "participantHandLower": {
+          "LABEL": "Hände senken",
+          "DESCRIPTION": "Erlaubt, die gehobenen Hände anderer Teilnehmender zu senken, einzeln oder alle auf einmal"
+        },
         "roomShareAccessLinks": {
           "LABEL": "Zugangslinks teilen",
           "DESCRIPTION": "Erlaubt das Teilen von Einladungslinks mit anderen"

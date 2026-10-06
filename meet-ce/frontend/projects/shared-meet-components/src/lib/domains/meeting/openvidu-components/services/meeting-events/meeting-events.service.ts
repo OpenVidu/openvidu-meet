@@ -92,6 +92,7 @@ export class MeetingEventsService {
 		this.subscribeToLocalTrackPublished(room);
 		this.subscribeToParticipantDisconnected(room);
 		this.subscribeToParticipantNameChanged(room);
+		this.subscribeToParticipantAttributesChanged(room);
 		this.subscribeToDataMessage(room);
 		this.subscribeToReconnection(room, callbacks);
 		this.subscribeToConnectionQualityChanged(room);
@@ -202,6 +203,19 @@ export class MeetingEventsService {
 		room.on(RoomEvent.ParticipantNameChanged, (_name: string, participant: Participant) => {
 			this.refreshParticipantState(participant);
 		});
+	}
+
+	/**
+	 * The Meet server writes attributes (the raised hand) onto the LiveKit participant object, so the
+	 * model is bumped for the reactive getters reading them to repaint.
+	 */
+	private subscribeToParticipantAttributesChanged(room: Room) {
+		room.on(
+			RoomEvent.ParticipantAttributesChanged,
+			(_changedAttributes: Record<string, string>, participant: Participant) => {
+				this.refreshParticipantState(participant);
+			}
+		);
 	}
 
 	/**

@@ -242,6 +242,8 @@
         "E2EE_RESTRICTION_RECORDING_SUFFIX": " while encryption is enabled.",
         "CAPTIONS": "Live captions",
         "CAPTIONS_DESC": "Enable live transcription to display captions during the meeting",
+        "HAND": "Raise hand",
+        "HAND_DESC": "Let participants raise their hand to ask for a turn",
         "CHAT": "Chat",
         "CHAT_DESC": "Allow participants to send messages during the meeting",
         "VIRTUAL_BACKGROUNDS": "Virtual Backgrounds",

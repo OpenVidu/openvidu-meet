@@ -242,6 +242,8 @@
         "E2EE_RESTRICTION_RECORDING_SUFFIX": "。",
         "CAPTIONS": "实时字幕",
         "CAPTIONS_DESC": "启用实时转录，在会议期间显示字幕",
+        "HAND": "举手",
+        "HAND_DESC": "允许参会者举手请求发言",
         "CHAT": "聊天",
         "CHAT_DESC": "允许参与者在会议期间发送消息",
         "VIRTUAL_BACKGROUNDS": "虚拟背景",

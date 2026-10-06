@@ -63,6 +63,7 @@ describe('RoomWizardStateService.initializeWizard (stale state does not leak acr
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
 				captions: { enabled: true },
+				raiseHand: { enabled: true },
 				recording: { enabled: false }
 			}
 		});
@@ -313,6 +314,7 @@ describe('RoomWizardStateService.initializeWizard (the room it proposes)', () =>
 					participantPromote: false,
 					participantKick: false,
 					participantMute: false,
+					participantHandLower: false,
 					meetingEnd: false
 				}
 			}
@@ -326,6 +328,7 @@ describe('RoomWizardStateService.initializeWizard (the room it proposes)', () =>
 			virtualBackground: { enabled: true },
 			e2ee: { enabled: false },
 			captions: { enabled: true },
+			raiseHand: { enabled: true },
 			initialAudioActive: true,
 			initialVideoActive: true
 		});

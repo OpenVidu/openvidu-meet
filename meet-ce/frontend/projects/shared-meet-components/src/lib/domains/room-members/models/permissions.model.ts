@@ -60,6 +60,12 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 				icon: 'mic_off'
 			},
 			{
+				key: 'participantHandLower',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantHandLower.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantHandLower.DESCRIPTION',
+				icon: 'do_not_touch'
+			},
+			{
 				key: 'roomShareAccessLinks',
 				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.roomShareAccessLinks.LABEL',
 				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.roomShareAccessLinks.DESCRIPTION',

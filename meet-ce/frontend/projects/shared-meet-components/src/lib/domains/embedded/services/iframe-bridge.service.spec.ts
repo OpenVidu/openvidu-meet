@@ -51,7 +51,10 @@ describe('IframeBridgeService', () => {
 			'mediaToggleVideo',
 			'mediaToggleScreenShare',
 			'recordingStart',
-			'recordingStop'
+			'recordingStop',
+			'participantHandRaise',
+			'participantHandLower',
+			'participantHandLowerAll'
 		]);
 		commandService.meetingEnd.and.resolveTo();
 		commandService.meetingLeave.and.resolveTo();
@@ -64,6 +67,9 @@ describe('IframeBridgeService', () => {
 		commandService.mediaToggleScreenShare.and.resolveTo();
 		commandService.recordingStart.and.resolveTo();
 		commandService.recordingStop.and.resolveTo();
+		commandService.participantHandRaise.and.resolveTo();
+		commandService.participantHandLower.and.resolveTo();
+		commandService.participantHandLowerAll.and.resolveTo();
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -413,6 +419,43 @@ describe('IframeBridgeService', () => {
 			postFromHost({ command: EmbeddedCommandName.RECORDING_STOP });
 
 			expect(commandService.recordingStop).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe('hand commands', () => {
+		it('forwards PARTICIPANT_HAND_RAISE', () => {
+			startBridge();
+
+			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_HAND_RAISE });
+
+			expect(commandService.participantHandRaise).toHaveBeenCalledTimes(1);
+		});
+
+		it('forwards PARTICIPANT_HAND_LOWER with the participant it names', () => {
+			startBridge();
+
+			postFromHost({
+				command: EmbeddedCommandName.PARTICIPANT_HAND_LOWER,
+				payload: { participantIdentity: 'bob' }
+			});
+
+			expect(commandService.participantHandLower).toHaveBeenCalledOnceWith('bob');
+		});
+
+		it('forwards PARTICIPANT_HAND_LOWER without payload as the own hand', () => {
+			startBridge();
+
+			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_HAND_LOWER });
+
+			expect(commandService.participantHandLower).toHaveBeenCalledOnceWith(undefined);
+		});
+
+		it('forwards PARTICIPANT_HAND_LOWER_ALL', () => {
+			startBridge();
+
+			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL });
+
+			expect(commandService.participantHandLowerAll).toHaveBeenCalledTimes(1);
 		});
 	});
 

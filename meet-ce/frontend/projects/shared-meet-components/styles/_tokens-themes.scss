@@ -41,6 +41,10 @@
 
 	// === PARTICIPANT AVATAR LETTER - LIGHT THEME ===
 	--ov-meet-avatar-text-color: #1f2937;
+
+	// === RAISED HAND - LIGHT THEME ===
+	--ov-meet-hand-color: #f5a524;
+	--ov-meet-text-on-hand: #231600;
 }
 
 // === DARK THEME ===
@@ -85,6 +89,10 @@
 
 	// === PARTICIPANT AVATAR LETTER - DARK THEME ===
 	--ov-meet-avatar-text-color: #1f2937;
+
+	// === RAISED HAND - DARK THEME ===
+	--ov-meet-hand-color: #f5a524;
+	--ov-meet-text-on-hand: #231600;
 }
 
 // NOTE: this module intentionally emits NO CSS (see the note in _tokens-core.scss).

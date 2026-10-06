@@ -47,15 +47,21 @@ export class NotificationService {
 
 		const id = ++this.lastNotificationId;
 		this._notifications.update((notifications) => [...notifications, { ...options, id }]);
-
-		if (options.durationMs !== undefined) {
-			this.notificationTimers.set(
-				id,
-				setTimeout(() => this.dismissNotification(id), options.durationMs)
-			);
-		}
-
+		this.scheduleDismissal(id, options.durationMs);
 		return id;
+	}
+
+	/**
+	 * Rewrites a notification that is still on screen, where it stands in its stack, and starts its
+	 * time on screen over. One that is already gone stays gone.
+	 */
+	updateNotification(id: number, options: NotificationOptions): void {
+		if (!this._notifications().some((notification) => notification.id === id)) return;
+
+		this._notifications.update((notifications) =>
+			notifications.map((notification) => (notification.id === id ? { ...options, id } : notification))
+		);
+		this.scheduleDismissal(id, options.durationMs);
 	}
 
 	/** A line of text in the corner, for anything a screen has nowhere of its own to say. */
@@ -65,14 +71,24 @@ export class NotificationService {
 
 	/** Takes a notification away. Dismissing one that is already gone does nothing. */
 	dismissNotification(id: number): void {
-		const timer = this.notificationTimers.get(id);
-
-		if (timer !== undefined) {
-			clearTimeout(timer);
-			this.notificationTimers.delete(id);
-		}
-
+		this.cancelDismissal(id);
 		this._notifications.update((notifications) => notifications.filter((notification) => notification.id !== id));
+	}
+
+	private scheduleDismissal(id: number, durationMs: number | undefined): void {
+		this.cancelDismissal(id);
+
+		if (durationMs !== undefined) {
+			this.notificationTimers.set(
+				id,
+				setTimeout(() => this.dismissNotification(id), durationMs)
+			);
+		}
+	}
+
+	private cancelDismissal(id: number): void {
+		clearTimeout(this.notificationTimers.get(id));
+		this.notificationTimers.delete(id);
 	}
 
 	/**

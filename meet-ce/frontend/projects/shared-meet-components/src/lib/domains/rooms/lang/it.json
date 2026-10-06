@@ -242,6 +242,8 @@
         "E2EE_RESTRICTION_RECORDING_SUFFIX": " quando la crittografia è abilitata.",
         "CAPTIONS": "Sottotitoli in tempo reale",
         "CAPTIONS_DESC": "Abilita la trascrizione in tempo reale per visualizzare i sottotitoli durante la riunione",
+        "HAND": "Alza la mano",
+        "HAND_DESC": "Consente ai partecipanti di alzare la mano per chiedere la parola",
         "CHAT": "Chat",
         "CHAT_DESC": "Consenti ai partecipanti di inviare messaggi durante la riunione",
         "VIRTUAL_BACKGROUNDS": "Sfondi virtuali",

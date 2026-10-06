@@ -42,8 +42,14 @@
 .status-rail-end {
 	display: flex;
 	align-items: center;
+	gap: 8px;
 	margin-left: auto;
 	min-width: 0;
+
+	ov-hidden-participants-indicator {
+		display: flex;
+		min-width: 0;
+	}
 }
 
 .status-chip {
@@ -83,6 +89,20 @@
 
 .e2ee-chip .status-chip-icon {
 	color: var(--ov-success-color);
+}
+
+.raised-hands-chip {
+	background-color: var(--ov-meet-hand-color);
+	border-color: var(--ov-meet-hand-color);
+
+	&.clickable {
+		@include chip.status-chip-interactive;
+	}
+
+	.status-chip-icon,
+	.status-chip-value {
+		color: var(--ov-meet-text-on-hand);
+	}
 }
 
 // Calm while there is time to act: only the icon carries the warn colour.

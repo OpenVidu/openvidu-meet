@@ -142,6 +142,10 @@
           "LABEL": "Couper le micro des participants",
           "DESCRIPTION": "Autoriser à couper le microphone, la caméra ou le partage d'écran des autres participants"
         },
+        "participantHandLower": {
+          "LABEL": "Baisser les mains",
+          "DESCRIPTION": "Permet de baisser les mains levées des autres participants, une par une ou toutes à la fois"
+        },
         "roomShareAccessLinks": {
           "LABEL": "Partager des liens d'accès",
           "DESCRIPTION": "Autoriser à partager des liens d'invitation avec d'autres personnes"

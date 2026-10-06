@@ -56,6 +56,10 @@ export interface RoomFeatures {
 	 * Indicates if the captions controls are shown but disabled in the UI, with a warning that captions are globally disabled
 	 */
 	showCaptionsControlsDisabled: boolean;
+	/**
+	 * Indicates if the raise hand control is shown in the UI
+	 */
+	showRaiseHand: boolean;
 
 	/**
 	 * Indicates if the chat panel is shown in the UI

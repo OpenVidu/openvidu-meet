@@ -19,6 +19,7 @@ import { RuntimeConfigService } from '../../../../shared/services/runtime-config
 import { SoundService } from '../../../../shared/services/sound.service';
 import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
 import { MeetingParticipantItemComponent } from '../../customization/meeting-participant-item/meeting-participant-item.component';
+import { MeetingRaisedHandsStripComponent } from '../../customization/meeting-raised-hands-strip/meeting-raised-hands-strip.component';
 import { MeetingThemeMode, MeetingThemeService, OpenViduComponentsUiModule, Room } from '../../openvidu-components';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
@@ -35,7 +36,8 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 		NgTemplateOutlet,
 		MatIconModule,
 		MatProgressSpinnerModule,
-		MeetingLobbyComponent
+		MeetingLobbyComponent,
+		MeetingRaisedHandsStripComponent
 	],
 	providers: [MeetingLobbyService, MeetingEventHandlerService]
 })

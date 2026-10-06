@@ -13,6 +13,7 @@ import {
 } from '../../meeting/openvidu-components';
 import { RecordingService as RecordingStateService } from '../../meeting/openvidu-components/services/recording/recording.service';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
+import { MeetingHandService } from '../../meeting/services/meeting-hand.service';
 import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
@@ -40,6 +41,7 @@ export class EmbeddedCommandService {
 	private readonly meetingPhase = inject(MeetingPhaseService);
 	private readonly recordingService = inject(RecordingService);
 	private readonly recordingState = inject(RecordingStateService);
+	private readonly handService = inject(MeetingHandService);
 	private readonly log = inject(LoggerService).get('EmbeddedCommandService');
 	private lastRecordingStart: Promise<void> | undefined;
 
@@ -157,6 +159,23 @@ export class EmbeddedCommandService {
 
 			await this.recordingService.stopRecording(recordingId);
 		});
+	}
+
+	async participantHandRaise(): Promise<void> {
+		await this.run(EmbeddedCommandName.PARTICIPANT_HAND_RAISE, null, () => this.handService.raise());
+	}
+
+	async participantHandLower(participantIdentity?: string): Promise<void> {
+		const permission = this.handService.isOwn(participantIdentity) ? null : 'participantHandLower';
+		await this.run(EmbeddedCommandName.PARTICIPANT_HAND_LOWER, permission, () =>
+			this.handService.lower(participantIdentity)
+		);
+	}
+
+	async participantHandLowerAll(): Promise<void> {
+		await this.run(EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL, 'participantHandLower', () =>
+			this.handService.lowerAll()
+		);
 	}
 
 	private async startRecording(roomId: string): Promise<void> {
