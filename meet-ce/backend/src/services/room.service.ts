@@ -47,7 +47,6 @@ import type {
 	RoomQueryWithProjection
 } from '../types/room-projection.types.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
-import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { RecordingService } from './recording.service.js';
@@ -57,7 +56,7 @@ import type { RoomMemberService } from './room-member.service.js';
 /**
  * Service for managing OpenVidu Meet rooms.
  *
- * This service provides methods to create, list, retrieve, delete, and send signals to OpenVidu rooms.
+ * This service provides methods to create, list, retrieve and delete OpenVidu rooms.
  * It uses the LiveKitService to interact with the underlying LiveKit rooms.
  */
 @injectable()
@@ -68,7 +67,6 @@ export class RoomService {
 		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
 		@inject(RecordingService) protected recordingService: RecordingService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
-		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService
 	) {}
 
@@ -261,12 +259,7 @@ export class RoomService {
 
 		this.validateRecordingAutoStartIsReachable(updatedConfig);
 
-		const updatedRoom = await this.roomRepository.updatePartial(roomId, { config: updatedConfig });
-		// Send signal to frontend.
-		// Note: Rooms updates are not allowed during active meetings, so we don't need to send an immediate update signal to participants,
-		// as they will receive the updated config when they join the meeting or when the meeting is restarted.
-		// await this.frontendEventService.sendRoomConfigUpdatedSignal(roomId, updatedRoom);
-		return updatedRoom;
+		return this.roomRepository.updatePartial(roomId, { config: updatedConfig });
 	}
 
 	/**

@@ -4,8 +4,6 @@ import type {
 	MeetParticipantPermissionsUpdatedPayload,
 	MeetRecordingInfo,
 	MeetRecordingUpdatedPayload,
-	MeetRoom,
-	MeetRoomConfigUpdatedPayload,
 	MeetSignalPayload
 } from '@openvidu-meet/typings';
 import { MeetSignalType } from '@openvidu-meet/typings';
@@ -43,24 +41,6 @@ export class FrontendEventService {
 		const options: SendDataOptions = {
 			topic: MeetSignalType.MEET_RECORDING_UPDATED,
 			...(participantSid ? { destinationSids: [participantSid] } : {})
-		};
-
-		await this.sendSignal(roomId, payload, options);
-	}
-
-	/**
-	 * Sends a signal to notify participants in a room about updated room config.
-	 */
-	async sendRoomConfigUpdatedSignal(roomId: string, updatedRoom: MeetRoom): Promise<void> {
-		this.logger.debug(`Sending room config updated signal for room '${roomId}'`);
-
-		const payload: MeetRoomConfigUpdatedPayload = {
-			roomId,
-			config: updatedRoom.config,
-			timestamp: Date.now()
-		};
-		const options: SendDataOptions = {
-			topic: MeetSignalType.MEET_ROOM_CONFIG_UPDATED
 		};
 
 		await this.sendSignal(roomId, payload, options);
