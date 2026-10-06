@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 import type { MeetRoom } from '@openvidu-meet/typings';
-import { MeetRoomMemberUIBadge, MeetSignalType } from '@openvidu-meet/typings';
+import { MeetSignalType } from '@openvidu-meet/typings';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
@@ -55,12 +55,6 @@ describe('FrontendEventService.sendRoomConfigUpdatedSignal', () => {
  */
 describe('FrontendEventService signals that cannot be delivered', () => {
 	const service = buildService(new UnreachableLiveKitService());
-
-	it('resolves the role updated signal', async () => {
-		await expect(
-			service.sendParticipantRoleUpdatedSignal('room-1', 'participant-1', MeetRoomMemberUIBadge.MODERATOR)
-		).resolves.toBeUndefined();
-	});
 
 	it('resolves the permissions updated signal', async () => {
 		await expect(

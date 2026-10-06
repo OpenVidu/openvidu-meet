@@ -2,12 +2,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
+	EmbeddedEvent,
 	EmbeddedEventName,
 	LeftEventReason,
 	MeetEventOrigin,
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantMuteOptions,
-	MeetParticipantRoleUpdatedPayload,
 	MeetRecordingInfo,
 	MeetRecordingStatus,
 	MeetRecordingUpdatedPayload,
@@ -32,7 +32,8 @@ import {
 	ScreenShareService,
 	MeetingEndingSoonService,
 	ParticipantLeftReason,
-	ParticipantModel
+	ParticipantModel,
+	RoomEvent
 } from '../openvidu-components';
 import {
 	MeetingEventsService,
@@ -51,11 +52,6 @@ class LoggerServiceStub {
 /** Reaches the protected signal handler the moderator mute lands on. */
 interface MediaMutedHandler {
 	handleParticipantMediaMuted(payload: MeetParticipantMediaMutedPayload): Promise<void>;
-}
-
-/** Reaches the handler every server signal goes through, to wait for what it does. */
-interface MeetSignalHandler {
-	handleMeetSignal(signal: MeetSignal): Promise<void>;
 }
 
 describe('MeetingEventHandlerService', () => {
@@ -169,7 +165,11 @@ describe('MeetingEventHandlerService', () => {
 				{ provide: MeetingContextService, useValue: meetingContextStub },
 				{
 					provide: MeetingStateService,
-					useValue: { clear: () => {}, localParticipant: () => ({ identity: 'alice' }) }
+					useValue: {
+						clear: () => {},
+						localParticipant: () => ({ identity: 'alice' }),
+						remoteParticipants: () => []
+					}
 				},
 				{ provide: RoomFeatureService, useValue: {} },
 				{ provide: RecordingService, useValue: {} },
@@ -354,43 +354,103 @@ describe('MeetingEventHandlerService', () => {
 		});
 	});
 
+	/**
+	 * A promotion or demotion reaches the local participant as their own LiveKit metadata, which the
+	 * connection hands over on joining and keeps up to date.
+	 */
 	describe('role changed', () => {
-		function receiveRoleUpdate(participantIdentity: string, newBadge: MeetRoomMemberUIBadge): Promise<void> {
-			const payload: MeetParticipantRoleUpdatedPayload = {
-				roomId: 'room1',
-				participantIdentity,
-				newBadge,
-				timestamp: 0
+		const speakerMetadata = JSON.stringify({ badge: MeetRoomMemberUIBadge.OTHER });
+		const promotedMetadata = JSON.stringify({ badge: MeetRoomMemberUIBadge.MODERATOR, isPromotedModerator: true });
+		const moderatorMetadata = JSON.stringify({ badge: MeetRoomMemberUIBadge.MODERATOR });
+		let localParticipant: { identity: string; metadata: string };
+		let onParticipantMetadataChanged: (prevMetadata: string | undefined, participant: unknown) => void;
+
+		/** Connects as alice with `metadata`, the metadata LiveKit holds for her when the meeting connects. */
+		function connect(metadata = speakerMetadata): void {
+			localParticipant = { identity: 'alice', metadata };
+			service.setupRoomListeners({
+				localParticipant,
+				on: (event: string, handler: typeof onParticipantMetadataChanged) => {
+					if (event === RoomEvent.ParticipantMetadataChanged) onParticipantMetadataChanged = handler;
+				}
+			} as never);
+		}
+
+		function changeLocalMetadata(metadata: string): void {
+			localParticipant.metadata = metadata;
+			onParticipantMetadataChanged(undefined, localParticipant);
+		}
+
+		const settle = () => new Promise<void>((resolve) => setTimeout(resolve));
+
+		function roleChanged(role: MeetRoomMemberRole): EmbeddedEvent {
+			return {
+				event: EmbeddedEventName.PARTICIPANT_ROLE_CHANGED,
+				payload: { roomId: 'room1', participantIdentity: 'alice', role }
 			};
-			return (service as unknown as MeetSignalHandler).handleMeetSignal({
-				topic: MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED,
-				payload
-			});
 		}
 
 		it('tells the host the local participant was promoted to moderator', async () => {
-			await receiveRoleUpdate('alice', MeetRoomMemberUIBadge.MODERATOR);
+			connect();
+			changeLocalMetadata(promotedMetadata);
+			await settle();
 
 			expect(refreshToken).toHaveBeenCalledOnceWith('room1');
-			expect(eventBus.events()).toEqual([
-				{
-					event: EmbeddedEventName.PARTICIPANT_ROLE_CHANGED,
-					payload: { roomId: 'room1', participantIdentity: 'alice', role: MeetRoomMemberRole.MODERATOR }
-				}
-			]);
+			expect(eventBus.events()).toEqual([roleChanged(MeetRoomMemberRole.MODERATOR)]);
 		});
 
 		it('tells the host the local participant was returned to the speaker role', async () => {
-			await receiveRoleUpdate('alice', MeetRoomMemberUIBadge.OTHER);
+			connect();
+			changeLocalMetadata(promotedMetadata);
+			await settle();
+			eventBus.drain();
 
-			expect(notificationService.showMessage).toHaveBeenCalledOnceWith('MODERATION.MODERATOR_ROLE_REMOVED');
+			changeLocalMetadata(speakerMetadata);
+			await settle();
 
-			expect(eventBus.events()).toEqual([
-				{
-					event: EmbeddedEventName.PARTICIPANT_ROLE_CHANGED,
-					payload: { roomId: 'room1', participantIdentity: 'alice', role: MeetRoomMemberRole.SPEAKER }
-				}
-			]);
+			expect(notificationService.showMessage).toHaveBeenCalledWith('MODERATION.MODERATOR_ROLE_REMOVED');
+			expect(eventBus.events()).toEqual([roleChanged(MeetRoomMemberRole.SPEAKER)]);
+		});
+
+		it('tells a participant promoted while still joining', async () => {
+			connect(promotedMetadata);
+			await settle();
+
+			expect(refreshToken).toHaveBeenCalledOnceWith('room1');
+			expect(eventBus.events()).toEqual([roleChanged(MeetRoomMemberRole.MODERATOR)]);
+		});
+
+		it('says nothing when the base role of the participant changes', async () => {
+			connect();
+			changeLocalMetadata(moderatorMetadata);
+			await settle();
+
+			expect(refreshToken).not.toHaveBeenCalled();
+			expect(notificationService.showMessage).not.toHaveBeenCalled();
+			expect(eventBus.events()).toEqual([]);
+		});
+
+		it('says nothing when a promoted participant gets moderator as their base role', async () => {
+			connect();
+			changeLocalMetadata(promotedMetadata);
+			await settle();
+			eventBus.drain();
+			notificationService.showMessage.calls.reset();
+
+			changeLocalMetadata(moderatorMetadata);
+			await settle();
+
+			expect(notificationService.showMessage).not.toHaveBeenCalled();
+			expect(eventBus.events()).toEqual([]);
+		});
+
+		it('ignores the metadata of a remote participant', async () => {
+			connect();
+			onParticipantMetadataChanged(undefined, { identity: 'bob', metadata: promotedMetadata });
+			await settle();
+
+			expect(refreshToken).not.toHaveBeenCalled();
+			expect(eventBus.events()).toEqual([]);
 		});
 
 		// A host reacting to the event (e.g. by sending a moderator command) must find the new
@@ -399,20 +459,23 @@ describe('MeetingEventHandlerService', () => {
 			let completeRefresh!: () => void;
 			refreshToken.and.returnValue(new Promise<void>((resolve) => (completeRefresh = resolve)));
 
-			const handled = receiveRoleUpdate('alice', MeetRoomMemberUIBadge.MODERATOR);
-			await Promise.resolve();
+			connect();
+			changeLocalMetadata(promotedMetadata);
+			await settle();
 			expect(eventBus.events()).toEqual([]);
 
 			completeRefresh();
-			await handled;
-			expect(eventBus.events().length).toBe(1);
+			await settle();
+			expect(eventBus.events()).toEqual([roleChanged(MeetRoomMemberRole.MODERATOR)]);
 		});
 
 		it('tells the host nothing when the token cannot be refreshed', async () => {
 			spyOn(console, 'error');
 			refreshToken.and.rejectWith(new Error('access revoked'));
 
-			await receiveRoleUpdate('alice', MeetRoomMemberUIBadge.MODERATOR);
+			connect();
+			changeLocalMetadata(promotedMetadata);
+			await settle();
 
 			expect(eventBus.events()).toEqual([]);
 			expect(navigationServiceStub.redirectToErrorPage).toHaveBeenCalled();
@@ -422,22 +485,23 @@ describe('MeetingEventHandlerService', () => {
 			spyOn(console, 'error');
 			refreshToken.and.rejectWith(new HttpErrorResponse({ status: 0, statusText: 'Unknown Error' }));
 
-			await receiveRoleUpdate('alice', MeetRoomMemberUIBadge.MODERATOR);
+			connect();
+			changeLocalMetadata(promotedMetadata);
+			await settle();
 
 			expect(navigationServiceStub.redirectToErrorPage).not.toHaveBeenCalled();
 		});
 
-		// Promoted and demoted back in quick succession: the refresh started for the promotion can
-		// answer after the one started for the demotion.
-		it('reports the last role change when the refresh of an earlier one answers last', async () => {
+		// Promoted and demoted back in quick succession: the demotion arrives while the refresh started
+		// for the promotion is still pending.
+		it('reports the last role change when the demotion arrives before the promotion is applied', async () => {
 			const pendingRefreshes: Array<() => void> = [];
 			refreshToken.and.callFake(() => new Promise<void>((resolve) => pendingRefreshes.push(resolve)));
-			const settle = () => new Promise<void>((resolve) => setTimeout(resolve));
 
-			const handled = Promise.all([
-				receiveRoleUpdate('alice', MeetRoomMemberUIBadge.MODERATOR),
-				receiveRoleUpdate('alice', MeetRoomMemberUIBadge.OTHER)
-			]);
+			connect();
+			changeLocalMetadata(promotedMetadata);
+			await settle();
+			changeLocalMetadata(speakerMetadata);
 			await settle();
 
 			while (pendingRefreshes.length > 0) {
@@ -445,15 +509,24 @@ describe('MeetingEventHandlerService', () => {
 				await settle();
 			}
 
-			await handled;
-			expect(eventBus.events().at(-1)).toEqual({
-				event: EmbeddedEventName.PARTICIPANT_ROLE_CHANGED,
-				payload: { roomId: 'room1', participantIdentity: 'alice', role: MeetRoomMemberRole.SPEAKER }
-			});
+			expect(eventBus.events().at(-1)).toEqual(roleChanged(MeetRoomMemberRole.SPEAKER));
 		});
 
-		it('ignores a role change addressed to another participant', async () => {
-			await receiveRoleUpdate('bob', MeetRoomMemberUIBadge.MODERATOR);
+		it('starts every entry as the role the participant joined with', async () => {
+			connect();
+			changeLocalMetadata(promotedMetadata);
+			await settle();
+			await service.onParticipantLeft({
+				roomName: 'room1',
+				participantName: 'Alice',
+				identity: 'alice',
+				reason: ParticipantLeftReason.LEAVE
+			});
+			eventBus.drain();
+			refreshToken.calls.reset();
+
+			connect();
+			await settle();
 
 			expect(refreshToken).not.toHaveBeenCalled();
 			expect(eventBus.events()).toEqual([]);
@@ -462,7 +535,9 @@ describe('MeetingEventHandlerService', () => {
 		it('only notifies the participant, not a host, outside the embedded modes', async () => {
 			isEmbeddedMode = false;
 
-			await receiveRoleUpdate('alice', MeetRoomMemberUIBadge.MODERATOR);
+			connect();
+			changeLocalMetadata(promotedMetadata);
+			await settle();
 
 			expect(notificationService.showMessage).toHaveBeenCalledOnceWith('MODERATION.PROMOTED_TO_MODERATOR');
 			expect(eventBus.events()).toEqual([]);
@@ -653,6 +728,7 @@ describe('MeetingEventHandlerService', () => {
 			let onMetadataChanged: ((metadata: string) => void) | undefined;
 			const room = {
 				metadata,
+				localParticipant: { identity: 'alice' },
 				on: (event: string, handler: (...args: unknown[]) => void) => {
 					if (event === 'roomMetadataChanged') onMetadataChanged = handler as (metadata: string) => void;
 				}

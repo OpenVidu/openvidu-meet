@@ -4,14 +4,12 @@ import {
 	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberUIBadge,
-	MeetSignalType,
 	normalizePermissions
 } from '@openvidu-meet/typings';
 import { jwtDecode } from 'jwt-decode';
 import type { ClaimGrants } from 'livekit-server-sdk';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
@@ -69,9 +67,6 @@ describe('Meetings API Tests', () => {
 		});
 
 		it('should update participant role from speaker to moderator', async () => {
-			const frontendEventService = container.get(FrontendEventService);
-			const sendSignalSpy = jest.spyOn(frontendEventService as any, 'sendSignal');
-
 			await setParticipantMetadata(roomData, MeetRoomMemberRole.SPEAKER);
 
 			const response = await updateParticipant(
@@ -98,22 +93,6 @@ describe('Meetings API Tests', () => {
 			const speakerPermissions = normalizePermissions(roomData.room.roles.speaker.permissions);
 			expect(metadata).toHaveProperty('permissions', moderatorPermissions);
 			expect(metadata).toHaveProperty('originalPermissions', speakerPermissions);
-
-			// Verify sendSignal method has been called once
-			expect(sendSignalSpy).toHaveBeenCalledTimes(1);
-			expect(sendSignalSpy).toHaveBeenCalledWith(
-				roomData.room.roomId,
-				{
-					roomId: roomData.room.roomId,
-					participantIdentity,
-					newBadge: MeetRoomMemberUIBadge.MODERATOR,
-					timestamp: expect.any(Number)
-				},
-				{
-					topic: MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED,
-					destinationIdentities: [participantIdentity]
-				}
-			);
 		});
 
 		it('should downgrade participant role from promoted moderator to original permissions', async () => {

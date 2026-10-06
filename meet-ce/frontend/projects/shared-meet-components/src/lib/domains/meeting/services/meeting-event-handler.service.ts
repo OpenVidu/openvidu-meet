@@ -7,7 +7,6 @@ import {
 	MeetEventOrigin,
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantPermissionsUpdatedPayload,
-	MeetParticipantRoleUpdatedPayload,
 	MeetRecordingStatus,
 	MeetRecordingUpdatedPayload,
 	MeetRoomMemberRole,
@@ -86,8 +85,8 @@ export class MeetingEventHandlerService {
 	protected meetingEndingSoon = inject(MeetingEndingSoonService);
 
 	/**
-	 * Role and permission signals each replace the room member token, so they are applied one at a
-	 * time, in the order they arrived: otherwise a slower refresh could install an older role.
+	 * Role changes and permission signals each replace the room member token, so they are applied one
+	 * at a time, in the order they arrived: otherwise a slower refresh could install an older role.
 	 */
 	private tokenUpdates = Promise.resolve();
 
@@ -118,6 +117,10 @@ export class MeetingEventHandlerService {
 			RoomEvent.ParticipantMetadataChanged,
 			(_prevMetadata: string | undefined, participant: LocalParticipant | RemoteParticipant) => {
 				this.handleParticipantMetadataChanged(participant.identity, participant.metadata);
+
+				if (participant === room.localParticipant) {
+					this.syncLocalRole(room.localParticipant);
+				}
 			}
 		);
 
@@ -131,9 +134,11 @@ export class MeetingEventHandlerService {
 			this.onRemoteParticipantDisconnected(participant);
 		});
 
-		// LiveKit seeds the room metadata silently when the join response lands and only emits the
-		// changes that follow, so the start and the deadline are read here as well as listened for.
+		// What the join response brought and what changed while connecting landed before these listeners
+		// existed (LiveKit even seeds the room metadata silently), so the meeting's start and deadline and
+		// the local participant's role are read here as well as listened for.
 		this.handleRoomMetadataChanged(room.metadata);
+		this.syncLocalRole(room.localParticipant);
 		room.on(RoomEvent.RoomMetadataChanged, (metadata: string) => this.handleRoomMetadataChanged(metadata));
 	}
 
@@ -159,6 +164,8 @@ export class MeetingEventHandlerService {
 	// The furthest status each recording has reached in the current entry.
 	private recordingStatusLedger = new Map<string, MeetRecordingStatus>();
 	private meetingJoinedNotified = false;
+	// Whether the local participant's metadata said they were promoted to moderator, in the current entry.
+	private localPromotedModerator = false;
 
 	/**
 	 * Notifies the host of the local participant's media status (embedded modes only) from the state
@@ -353,6 +360,7 @@ export class MeetingEventHandlerService {
 		this.mediaStatusLedger = {};
 		this.recordingStatusLedger.clear();
 		this.meetingJoinedNotified = false;
+		this.localPromotedModerator = false;
 
 		// Notify the host that the local participant left (embedded modes only; the bus is drained there).
 		if (this.runtimeConfigService.isEmbeddedMode()) {
@@ -405,12 +413,6 @@ export class MeetingEventHandlerService {
 				this.handleRecordingUpdated(payload as MeetRecordingUpdatedPayload);
 				break;
 
-			case MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED:
-				await this.inArrivalOrder(() =>
-					this.handleParticipantRoleUpdated(payload as MeetParticipantRoleUpdatedPayload)
-				);
-				break;
-
 			case MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED:
 				await this.inArrivalOrder(() =>
 					this.handleParticipantPermissionsUpdated(payload as MeetParticipantPermissionsUpdatedPayload)
@@ -423,36 +425,50 @@ export class MeetingEventHandlerService {
 		}
 	}
 
-	/**
-	 * Handles role updated event for the local participant by refreshing the room member token to get updated permissions.
-	 * Then notifies the user and, in embedded modes, the host about their new role.
-	 *
-	 * @param event Participant role updated event payload
-	 */
-	private async handleParticipantRoleUpdated(event: MeetParticipantRoleUpdatedPayload): Promise<void> {
-		const { roomId, participantIdentity, newBadge } = event;
-		const local = this.meetingState.localParticipant();
+	private syncLocalRole(participant: LocalParticipant): void {
+		this.inArrivalOrder(() => this.handleLocalParticipantRole(participant)).catch((error) =>
+			console.warn('Failed to apply the local participant role', error)
+		);
+	}
 
-		if (!roomId || !local || local.identity !== participantIdentity) {
+	/**
+	 * Applies a promotion or demotion the local participant's metadata carries: refreshes the room
+	 * member token, which holds the permissions, then notifies the participant and, in embedded modes,
+	 * the host about the role now in effect.
+	 */
+	private async handleLocalParticipantRole(participant: LocalParticipant): Promise<void> {
+		const metadata = parseParticipantMetadata(participant.metadata);
+		const roomId = this.meetingContext.roomId();
+
+		if (!metadata || !roomId) {
+			return;
+		}
+
+		const promoted = Boolean(metadata.isPromotedModerator);
+		const role = toParticipantRole(metadata.badge);
+		const wasPromoted = this.localPromotedModerator;
+		this.localPromotedModerator = promoted;
+
+		// A promotion that gives way to a base role that is moderator itself leaves the role as it was.
+		if (promoted === wasPromoted || (!promoted && role === MeetRoomMemberRole.MODERATOR)) {
 			return;
 		}
 
 		try {
-			// Refresh room member token to get updated permissions based on new role
 			await this.roomMemberContextService.refreshToken(roomId);
-
-			const role = toParticipantRole(newBadge);
-			this.showParticipantRoleUpdatedNotification(role === MeetRoomMemberRole.MODERATOR);
-
-			if (this.runtimeConfigService.isEmbeddedMode()) {
-				this.eventBus.emit({
-					event: EmbeddedEventName.PARTICIPANT_ROLE_CHANGED,
-					payload: { roomId, participantIdentity, role }
-				});
-			}
 		} catch (error) {
 			console.error('Error refreshing room member token after role update:', error);
 			await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
+			return;
+		}
+
+		this.showParticipantRoleUpdatedNotification(promoted);
+
+		if (this.runtimeConfigService.isEmbeddedMode()) {
+			this.eventBus.emit({
+				event: EmbeddedEventName.PARTICIPANT_ROLE_CHANGED,
+				payload: { roomId, participantIdentity: participant.identity, role }
+			});
 		}
 	}
 

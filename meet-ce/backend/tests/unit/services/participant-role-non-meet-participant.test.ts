@@ -10,7 +10,6 @@ import type { ParticipantInfo } from 'livekit-server-sdk';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see meeting-mute.test.ts).
 import '../../../src/config/dependency-injector.config.js';
-import type { FrontendEventService } from '../../../src/services/frontend-event.service.js';
 import type { LiveKitService } from '../../../src/services/livekit.service.js';
 import type { LoggerService } from '../../../src/services/logger.service.js';
 import { RoomMemberService } from '../../../src/services/room-member.service.js';
@@ -74,7 +73,7 @@ describe('RoomMemberService.updateParticipantRole - S2: a participant Meet did n
 				{ getMeetRoom: async () => ({ roles }) } as unknown as RoomService,
 				{},
 				{},
-				{ sendParticipantRoleUpdatedSignal: async () => {} } as unknown as FrontendEventService,
+				{},
 				livekitService as unknown as LiveKitService,
 				// The metadata is validated against the real token schema, in MeetParticipantHelper.
 				{} as unknown as TokenService,

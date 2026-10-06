@@ -34,8 +34,9 @@ export enum EmbeddedEventName {
 	PARTICIPANT_LEFT = 'participantLeft',
 	/**
 	 * Event emitted to the local participant when they are promoted to moderator or returned to their
-	 * original role, once the permissions of the new role are in effect. The other participants are
-	 * not notified.
+	 * original role, once the permissions of the new role are in effect. A change made while the
+	 * participant is still joining is reported after `meetingJoined`. The other participants are not
+	 * notified.
 	 */
 	PARTICIPANT_ROLE_CHANGED = 'participantRoleChanged',
 	/**

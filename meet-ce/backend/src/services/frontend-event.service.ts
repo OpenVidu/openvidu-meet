@@ -2,12 +2,10 @@ import type {
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantMuteOptions,
 	MeetParticipantPermissionsUpdatedPayload,
-	MeetParticipantRoleUpdatedPayload,
 	MeetRecordingInfo,
 	MeetRecordingUpdatedPayload,
 	MeetRoom,
 	MeetRoomConfigUpdatedPayload,
-	MeetRoomMemberUIBadge,
 	MeetSignalPayload
 } from '@openvidu-meet/typings';
 import { MeetSignalType } from '@openvidu-meet/typings';
@@ -66,32 +64,6 @@ export class FrontendEventService {
 		};
 
 		await this.sendSignal(roomId, payload, options);
-	}
-
-	/**
-	 * Sends a signal to notify a participant that their role has been updated, including the new badge they received.
-	 */
-	async sendParticipantRoleUpdatedSignal(
-		roomId: string,
-		participantIdentity: string,
-		newBadge: MeetRoomMemberUIBadge
-	): Promise<void> {
-		this.logger.debug(
-			`Sending participant role updated signal for participant '${participantIdentity}' in room '${roomId}'`
-		);
-
-		const signalPayload: MeetParticipantRoleUpdatedPayload = {
-			roomId,
-			participantIdentity,
-			newBadge,
-			timestamp: Date.now()
-		};
-		const signalOptions: SendDataOptions = {
-			topic: MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED,
-			destinationIdentities: [participantIdentity]
-		};
-
-		await this.sendSignal(roomId, signalPayload, signalOptions);
 	}
 
 	/**
