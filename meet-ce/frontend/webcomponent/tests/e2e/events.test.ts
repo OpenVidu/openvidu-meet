@@ -16,6 +16,8 @@ import {
 	eventPayloadField,
 	eventSequence,
 	expectEvent,
+	participantHandChangedLocator,
+	participantHandRaiseCommand,
 	joinedParticipantIdentity,
 	leaveMeeting,
 	leaveRoomCommand,
@@ -217,6 +219,55 @@ for (const integration of INTEGRATIONS) {
 				await expect(recordingStatusLocator(page, MeetRecordingStatus.ACTIVE)).toHaveCount(1);
 
 				await moderatorContext.close();
+			});
+		});
+
+		test.describe('PARTICIPANT_HAND_CHANGED Event', () => {
+			test('should replay the raised hands in queue order, after meetingJoined, to a participant who joins later', async ({
+				page,
+				browser
+			}) => {
+				const contexts = [];
+				const identities: string[] = [];
+
+				for (const name of ['First', 'Second']) {
+					const context = await browser.newContext();
+					const speakerPage = await context.newPage();
+					await openMeeting(speakerPage, roomId, { role: 'speaker', name });
+					const identity = await joinedParticipantIdentity(speakerPage);
+					await participantHandRaiseCommand(speakerPage);
+					await expect(participantHandChangedLocator(speakerPage, identity, true)).toHaveCount(1, {
+						timeout: 15_000
+					});
+					identities.push(identity);
+					contexts.push(context);
+				}
+
+				await openMeeting(page, roomId, { integration, role: 'speaker', name: 'Late' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				const hands = await expectEvent(page, EmbeddedEventName.PARTICIPANT_HAND_CHANGED, {
+					count: 2,
+					timeout: 15_000
+				});
+				await expect(hands.nth(0)).toContainText(identities[0]);
+				await expect(hands.nth(0)).toContainText('"queuePosition":1');
+				await expect(hands.nth(1)).toContainText(identities[1]);
+				await expect(hands.nth(1)).toContainText('"queuePosition":2');
+
+				const lifecycle = (await eventSequence(page)).filter(
+					(name) =>
+						name === EmbeddedEventName.MEETING_JOINED || name === EmbeddedEventName.PARTICIPANT_HAND_CHANGED
+				);
+				expect(lifecycle).toEqual([
+					EmbeddedEventName.MEETING_JOINED,
+					EmbeddedEventName.PARTICIPANT_HAND_CHANGED,
+					EmbeddedEventName.PARTICIPANT_HAND_CHANGED
+				]);
+
+				for (const context of contexts) {
+					await context.close();
+				}
 			});
 		});
 

@@ -421,6 +421,25 @@ export const recordingStopCommand = async (page: Page): Promise<void> => {
 	await page.getByTestId('btn-recording-stop').click();
 };
 
+/** Clicks the testapp's `participantHandRaise()` button. */
+export const participantHandRaiseCommand = async (page: Page): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+	await page.getByTestId('btn-participant-hand-raise').click();
+};
+
+/** Clicks the testapp's `participantHandLower()` button, naming `participantIdentity` or, left blank, the own hand. */
+export const participantHandLowerCommand = async (page: Page, participantIdentity = ''): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+	await fillParticipantIdentity(page, participantIdentity);
+	await page.getByTestId('btn-participant-hand-lower').click();
+};
+
+/** Clicks the testapp's `participantHandLowerAll()` button. */
+export const participantHandLowerAllCommand = async (page: Page): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+	await page.getByTestId('btn-participant-hand-lower-all').click();
+};
+
 /** Clicks the testapp's deprecated `leaveRoom()` button. Removed in 3.12.0. */
 export const leaveRoomLegacyCommand = async (page: Page): Promise<void> => {
 	await showControlsPanel(page, 'commands');
@@ -495,6 +514,12 @@ export const eventPayloadField = async (event: Locator, field: string): Promise<
 
 	return value;
 };
+
+/** The `.event-participantHandChanged` markers about `participantIdentity` reporting the hand `raised` or not. */
+export const participantHandChangedLocator = (page: Page, participantIdentity: string, raised: boolean): Locator =>
+	eventLocator(page, EmbeddedEventName.PARTICIPANT_HAND_CHANGED)
+		.filter({ hasText: `"participantIdentity":"${participantIdentity}"` })
+		.filter({ hasText: `"raised":${raised}` });
 
 /** The `.event-recordingStatusChanged` markers carrying the given status. */
 export const recordingStatusLocator = (page: Page, status: MeetRecordingStatus): Locator =>

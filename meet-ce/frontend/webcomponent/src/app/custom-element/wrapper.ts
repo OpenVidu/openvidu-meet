@@ -125,6 +125,18 @@ export function createOpenViduMeetElementClass(
 			this._getComponentInstance()?.recordingStop();
 		}
 
+		participantHandRaise(): void {
+			this._getComponentInstance()?.participantHandRaise();
+		}
+
+		participantHandLower(participantIdentity?: string): void {
+			this._getComponentInstance()?.participantHandLower(participantIdentity);
+		}
+
+		participantHandLowerAll(): void {
+			this._getComponentInstance()?.participantHandLowerAll();
+		}
+
 		// ── Deprecated method aliases ────────────────────────────────────────
 		// Kept on the element (the public surface) rather than on the component, and routed
 		// through the canonical method so both spellings share exactly one path.
