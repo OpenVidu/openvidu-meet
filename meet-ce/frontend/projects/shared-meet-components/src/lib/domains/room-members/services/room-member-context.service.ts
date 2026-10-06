@@ -14,6 +14,9 @@ import { RoomMemberService } from './room-member.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { MeetStorageService } from '../../../shared/services/storage.service';
 
+/** The answers by which the server says a room member no longer has access, as opposed to failing. */
+export const ACCESS_DENIED_STATUSES = [401, 403, 404];
+
 @Service()
 export class RoomMemberContextService {
 	protected roomMemberService = inject(RoomMemberService);
@@ -28,8 +31,6 @@ export class RoomMemberContextService {
 	protected readonly TOKEN_REFRESH_JITTER_MS = 10 * 1000;
 	protected readonly TOKEN_UPDATE_MAX_ATTEMPTS = 6;
 	protected readonly TOKEN_UPDATE_FIRST_RETRY_DELAY_MS = 1000;
-	/** The answers by which the server says this member no longer has access, as opposed to failing. */
-	protected readonly ACCESS_DENIED_STATUSES = [401, 403, 404];
 	private tokenRefreshTimeoutId?: ReturnType<typeof setTimeout>;
 
 	/**
@@ -203,7 +204,7 @@ export class RoomMemberContextService {
 				await update();
 				return true;
 			} catch (error) {
-				if (error instanceof HttpErrorResponse && this.ACCESS_DENIED_STATUSES.includes(error.status)) {
+				if (error instanceof HttpErrorResponse && ACCESS_DENIED_STATUSES.includes(error.status)) {
 					this.log.e('Room member access was revoked:', error);
 					await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
 					return false;
