@@ -48,6 +48,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   element showed that recording as still in progress. The recording indicator starts over with each meeting.
 - A participant promoted and demoted in quick succession, or whose permissions changed right after their role, could
   be left with the permissions of the earlier change. The changes are now applied in the order they happen.
+- A participant promoted and demoted several times in a row got one notice per change, stacked over the meeting. Only
+  the notice of their current role is shown now.
 - A participant promoted to moderator or demoted while still joining a meeting kept the permissions of the role they
   joined with. They now get the new role's permissions, and its notice, once in the meeting.
 - A participant whose room member token could not be renewed for a moment, because the server was unreachable or

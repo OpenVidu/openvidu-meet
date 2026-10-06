@@ -165,6 +165,8 @@ export class MeetingEventHandlerService {
 	private meetingJoinedNotified = false;
 	// Whether the local participant's metadata said they were promoted to moderator, in the current entry.
 	private localPromotedModerator = false;
+	// The notice of the role now in effect: a newer role change replaces it rather than stacking on it.
+	private roleNoticeId?: number;
 
 	/**
 	 * Notifies the host of the local participant's media status (embedded modes only) from the state
@@ -577,7 +579,12 @@ export class MeetingEventHandlerService {
 		const messageKey = isPromotedModerator
 			? 'MODERATION.PROMOTED_TO_MODERATOR'
 			: 'MODERATION.MODERATOR_ROLE_REMOVED';
-		this.notificationService.showMessage(this.translateService.translate(messageKey));
+
+		if (this.roleNoticeId !== undefined) {
+			this.notificationService.dismissNotification(this.roleNoticeId);
+		}
+
+		this.roleNoticeId = this.notificationService.showMessage(this.translateService.translate(messageKey));
 
 		if (isPromotedModerator) {
 			this.soundService.playParticipantRoleUpgradedSound();

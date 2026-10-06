@@ -139,7 +139,10 @@ describe('MeetingEventHandlerService', () => {
 			enabled: screenShareEnabled
 		};
 
-		notificationService = jasmine.createSpyObj<NotificationService>('NotificationService', ['showMessage']);
+		notificationService = jasmine.createSpyObj<NotificationService>('NotificationService', [
+			'showMessage',
+			'dismissNotification'
+		]);
 		meetingEndingSoon = jasmine.createSpyObj<MeetingEndingSoonService>('MeetingEndingSoonService', [
 			'trackMeetingEnd'
 		]);
@@ -427,6 +430,19 @@ describe('MeetingEventHandlerService', () => {
 
 			expect(refreshToken).toHaveBeenCalledOnceWith('room1');
 			expect(eventBus.events()).toEqual([roleChanged(MeetRoomMemberRole.MODERATOR)]);
+		});
+
+		it('replaces the notice of the previous role change instead of stacking another', async () => {
+			notificationService.showMessage.and.returnValues(1, 2);
+
+			connect();
+			changeLocalMetadata(promotedMetadata);
+			await settle();
+			changeLocalMetadata(speakerMetadata);
+			await settle();
+
+			expect(notificationService.dismissNotification).toHaveBeenCalledOnceWith(1);
+			expect(notificationService.showMessage).toHaveBeenCalledTimes(2);
 		});
 
 		it('says nothing when the base role of the participant changes', async () => {
