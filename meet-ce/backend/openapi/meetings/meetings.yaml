@@ -253,7 +253,7 @@
 /meetings/{roomId}/participants/{participantIdentity}/role:
     put:
         operationId: participantRoleUpdate
-        summary: Update participant role in a meeting
+        summary: Update participant role
         description: >
             Applies a moderation action to a participant in the current meeting.
             Supported actions are `upgrade` (promote to moderator) and `downgrade` (restore original permissions).
