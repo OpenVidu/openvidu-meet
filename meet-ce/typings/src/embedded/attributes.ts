@@ -17,8 +17,7 @@ export enum EmbeddedAttribute {
 	 */
 	PARTICIPANT_NAME = 'participant-name',
 	/**
-	 * Application-defined identifier for the local participant, so the embedding application can
-	 * correlate the participant with one of its own users.
+	 * Identifier of the local participant in your own application, to correlate it with your users.
 	 * Up to 64 characters (letters, digits, `_` and `-`). Never interpreted by OpenVidu Meet.
 	 */
 	PARTICIPANT_EXTERNAL_ID = 'participant-external-id',
@@ -28,35 +27,23 @@ export enum EmbeddedAttribute {
 	 */
 	PARTICIPANT_METADATA = 'participant-metadata',
 	/**
-	 * Join the meeting with the microphone active. This is the participant's initial state only:
-	 * they may mute afterwards.
-	 *
-	 * Setting it — to either value — **takes precedence over the room's own
-	 * `config.initialAudioActive`**; leaving it out means "no opinion", so the room's value applies
-	 * (and `true` when the room has none either). The `mediaPublishAudio` permission is not part of
-	 * that chain: it is a capability, and a denial always wins.
+	 * Join the meeting with the microphone active (`true`) or not (`false`). It **overrides the room's
+	 * `config.initialAudioActive`**; if omitted, the room's value applies. The participant can change it
+	 * afterwards, and a denied `mediaPublishAudio` permission always wins.
 	 */
 	INITIAL_AUDIO_ACTIVE = 'initial-audio-active',
 	/**
-	 * Join the meeting with the camera active. This is the participant's initial state only: they
-	 * may deactivate it afterwards.
-	 *
-	 * Setting it — to either value — **takes precedence over the room's own
-	 * `config.initialVideoActive`**; leaving it out means "no opinion", so the room's value applies
-	 * (and `true` when the room has none either). The `mediaPublishVideo` permission is not part of
-	 * that chain: it is a capability, and a denial always wins.
+	 * Join the meeting with the camera active (`true`) or not (`false`). It **overrides the room's
+	 * `config.initialVideoActive`**; if omitted, the room's value applies. The participant can change it
+	 * afterwards, and a denied `mediaPublishVideo` permission always wins.
 	 */
 	INITIAL_VIDEO_ACTIVE = 'initial-video-active',
 	/**
-	 * Language the interface starts in, as a language tag: `en` (English), `es` (Spanish), `de`
-	 * (German), `fr` (French), `zh` (Chinese, Simplified), `hi` (Hindi), `it` (Italian), `ja`
-	 * (Japanese), `nl` (Dutch) or `pt` (Portuguese, European). Case is ignored and a regional variant
-	 * uses its language: `es-ES` is `es`, `pt-BR` is `pt` and `zh-CN` is `zh`.
+	 * Language the interface starts in: `en`, `es`, `de`, `fr`, `zh` (Simplified), `hi`, `it`, `ja`,
+	 * `nl` or `pt` (European). A regional variant uses its language (`pt-BR` is `pt`).
 	 *
-	 * It **takes precedence over the language the participant chose before**, without replacing it:
-	 * the participant can still switch language from the interface, and leaving the attribute out
-	 * brings back their own choice. An unsupported value is ignored, with a warning in the browser
-	 * console.
+	 * It **overrides the participant's previous choice**, which they can still change. An unsupported
+	 * value is ignored.
 	 */
 	LANGUAGE = 'language',
 	/**
@@ -65,15 +52,13 @@ export enum EmbeddedAttribute {
 	 */
 	E2EE_KEY = 'e2ee-key',
 	/**
-	 * URL to redirect to when leaving OpenVidu Meet. Redirection happens when the participant
-	 * dismisses the post-meeting, join, error or recording screen, right after the
-	 * **`embeddedCloseRequested` event** fires.
+	 * URL to redirect to when the participant dismisses the post-meeting, join, error or recording
+	 * screen, right after the **`embeddedCloseRequested` event** fires.
 	 */
 	LEAVE_REDIRECT_URL = 'leave-redirect-url',
 	/**
-	 * Whether to show only recordings instead of live meetings. Follows the standard HTML
-	 * boolean-attribute convention: a bare attribute or any value other than `"false"` is `true`;
-	 * `"false"` and an absent attribute are `false`.
+	 * Show only the recordings instead of the live meeting. A bare attribute or any value other than
+	 * `"false"` is `true`.
 	 */
 	SHOW_ONLY_RECORDINGS = 'show-only-recordings',
 	/**
