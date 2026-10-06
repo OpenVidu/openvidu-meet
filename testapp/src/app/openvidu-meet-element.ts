@@ -25,6 +25,9 @@ export interface OpenViduMeetElement extends HTMLElement {
 	mediaToggleScreenShare(active?: boolean): void;
 	recordingStart(): void;
 	recordingStop(): void;
+	participantHandRaise(): void;
+	participantHandLower(participantIdentity?: string): void;
+	participantHandLowerAll(): void;
 	/** @deprecated Renamed to `meetingEnd()`. Removed in 3.12.0. Declared so the e2e can drive it. */
 	endMeeting(): void;
 	/** @deprecated Renamed to `meetingLeave()`. Removed in 3.12.0. Declared so the e2e can drive it. */
