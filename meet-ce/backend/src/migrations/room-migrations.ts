@@ -11,6 +11,7 @@ const roomMigrationV1ToV2Name = generateSchemaMigrationName(meetRoomCollectionNa
 const roomMigrationV2ToV3Name = generateSchemaMigrationName(meetRoomCollectionName, 2, 3);
 const roomMigrationV3ToV4Name = generateSchemaMigrationName(meetRoomCollectionName, 3, 4);
 const roomMigrationV4ToV5Name = generateSchemaMigrationName(meetRoomCollectionName, 4, 5);
+const roomMigrationV5ToV6Name = generateSchemaMigrationName(meetRoomCollectionName, 5, 6);
 
 const roomMigrationV1ToV2Transform: SchemaTransform<MeetRoomDocument> = (room) => {
 	room.config.captions = { enabled: true };
@@ -127,6 +128,13 @@ const normalizeRolePermissionsTransform: SchemaTransform<MeetRoomDocument> = (ro
 	return room;
 };
 
+// v6 adds the raise hand feature: its room config toggle, on like every other feature's, and its
+// `participantHandLower` permission, completed by the same normalization as the previous steps.
+const roomMigrationV5ToV6Transform: SchemaTransform<MeetRoomDocument> = (room) => {
+	room.config.raiseHand = { enabled: true };
+	return normalizeRolePermissionsTransform(room);
+};
+
 /**
  * Schema migrations for MeetRoom.
  * Key format: schema_{collection}_v{from}_to_v{to}
@@ -135,5 +143,6 @@ export const roomMigrations: SchemaMigrationMap<MeetRoomDocument> = new Map([
 	[roomMigrationV1ToV2Name, roomMigrationV1ToV2Transform],
 	[roomMigrationV2ToV3Name, roomMigrationV2ToV3Transform],
 	[roomMigrationV3ToV4Name, normalizeRolePermissionsTransform],
-	[roomMigrationV4ToV5Name, normalizeRolePermissionsTransform]
+	[roomMigrationV4ToV5Name, normalizeRolePermissionsTransform],
+	[roomMigrationV5ToV6Name, roomMigrationV5ToV6Transform]
 ]);

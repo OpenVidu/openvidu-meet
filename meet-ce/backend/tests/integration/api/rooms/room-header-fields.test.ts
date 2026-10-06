@@ -68,7 +68,8 @@ describe('Room Header Fields Tests', () => {
 				chat: { enabled: false },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
-				captions: { enabled: true }
+				captions: { enabled: true },
+				raiseHand: { enabled: true }
 			};
 
 			await createRoom({ roomName: 'header-extrafields-test', config: customConfig });
@@ -160,7 +161,8 @@ describe('Room Header Fields Tests', () => {
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
-				captions: { enabled: true }
+				captions: { enabled: true },
+				raiseHand: { enabled: true }
 			};
 
 			const createdRoom = await createRoom({

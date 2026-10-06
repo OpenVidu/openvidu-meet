@@ -74,6 +74,7 @@ describe('Webhook Integration Tests', () => {
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false },
 		captions: { enabled: true },
+		raiseHand: { enabled: true },
 		initialAudioActive: true,
 		initialVideoActive: true
 	};

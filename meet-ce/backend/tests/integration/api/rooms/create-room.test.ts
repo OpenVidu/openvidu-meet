@@ -81,7 +81,8 @@ describe('Room API Tests', () => {
 					chat: { enabled: false },
 					virtualBackground: { enabled: true },
 					e2ee: { enabled: true },
-					captions: { enabled: false }
+					captions: { enabled: false },
+					raiseHand: { enabled: true }
 				}
 			};
 
@@ -130,7 +131,8 @@ describe('Room API Tests', () => {
 					},
 					captions: {
 						enabled: true
-					}
+					},
+					raiseHand: { enabled: true }
 				}
 			};
 
@@ -145,7 +147,8 @@ describe('Room API Tests', () => {
 				chat: { enabled: true }, // Default value
 				virtualBackground: { enabled: true }, // Default value
 				e2ee: { enabled: false }, // Default value
-				captions: { enabled: true }
+				captions: { enabled: true },
+				raiseHand: { enabled: true }
 			};
 			expectValidRoom(room, 'Partial Config Room', {
 				roomIdPrefix: 'partial_config_room',
@@ -185,7 +188,8 @@ describe('Room API Tests', () => {
 				chat: { enabled: false },
 				virtualBackground: { enabled: false },
 				e2ee: { enabled: false }, // Default value
-				captions: { enabled: true } // Default value
+				captions: { enabled: true }, // Default value
+				raiseHand: { enabled: true }
 			};
 			expectValidRoom(room, 'Partial Config Room', {
 				roomIdPrefix: 'partial_config_room',
@@ -447,7 +451,8 @@ describe('Room API Tests', () => {
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
-				captions: { enabled: true }
+				captions: { enabled: true },
+				raiseHand: { enabled: true }
 			};
 			expectValidRoom(room, 'Room without encoding', { roomIdPrefix: 'room_without_encoding' });
 			expectExtraFieldsInResponse(room);
@@ -481,7 +486,8 @@ describe('Room API Tests', () => {
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
-				captions: { enabled: true }
+				captions: { enabled: true },
+				raiseHand: { enabled: true }
 			};
 			expectValidRoom(room, '1080p Preset Room', { roomIdPrefix: '1080p_preset_room' });
 			const response = await getRoom(room.roomId, undefined, 'config');
@@ -513,7 +519,8 @@ describe('Room API Tests', () => {
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
-				captions: { enabled: true }
+				captions: { enabled: true },
+				raiseHand: { enabled: true }
 			};
 			expectValidRoom(room, 'Portrait 720p Room', { roomIdPrefix: 'portrait_720p_room' });
 			const response = await getRoom(room.roomId, undefined, 'config');
@@ -575,7 +582,8 @@ describe('Room API Tests', () => {
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
-				captions: { enabled: true }
+				captions: { enabled: true },
+				raiseHand: { enabled: true }
 			};
 			expectValidRoom(room, 'Full Advanced Encoding Room', { roomIdPrefix: 'full_advanced_encoding_room' });
 			const response = await getRoom(room.roomId, undefined, 'config');

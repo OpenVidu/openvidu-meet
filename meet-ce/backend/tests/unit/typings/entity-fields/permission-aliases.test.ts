@@ -51,7 +51,7 @@ describe('Permission alias map', () => {
 	it('should keep the permissions born after the rename out of the deprecated surface', () => {
 		// They are contract keys like any other, they simply have no `can*` spelling: a deployment
 		// must never invent one, so they appear in neither direction of the alias map.
-		expect(MEET_UNALIASED_PERMISSION_KEYS).toEqual(['meetingRead', 'participantMute']);
+		expect(MEET_UNALIASED_PERMISSION_KEYS).toEqual(['meetingRead', 'participantMute', 'participantHandLower']);
 
 		for (const permissionKey of MEET_UNALIASED_PERMISSION_KEYS) {
 			expect(MEET_PERMISSION_KEYS).toContain(permissionKey);
@@ -175,18 +175,21 @@ describe('normalizePermissions', () => {
 		expect(normalizePermissions({ meetingJoin: true }, { complete: true })).toEqual({
 			meetingJoin: true,
 			meetingRead: true,
-			participantMute: false
+			participantMute: false,
+			participantHandLower: false
 		});
 		expect(normalizePermissions({ meetingJoin: false }, { complete: true })).toEqual({
 			meetingJoin: false,
 			meetingRead: false,
-			participantMute: false
+			participantMute: false,
+			participantHandLower: false
 		});
 		// The deprecated spelling cannot name it either, and reaches it through meetingJoin.
 		expect(normalizePermissions({ canJoinMeeting: true }, { complete: true })).toEqual({
 			meetingJoin: true,
 			meetingRead: true,
-			participantMute: false
+			participantMute: false,
+			participantHandLower: false
 		});
 	});
 
@@ -194,10 +197,24 @@ describe('normalizePermissions', () => {
 	it('should default participantMute to false, never take it from participantKick', () => {
 		expect(normalizePermissions({ participantKick: true }, { complete: true })).toEqual({
 			participantKick: true,
-			participantMute: false
+			participantMute: false,
+			participantHandLower: false
 		});
 		expect(normalizePermissions({ participantMute: true }, { complete: true })).toEqual({
-			participantMute: true
+			participantMute: true,
+			participantHandLower: false
+		});
+	});
+
+	// participantHandLower is implied by nothing either: a moderation capability no earlier permission decided.
+	it('should default participantHandLower to false, never take it from participantMute', () => {
+		expect(normalizePermissions({ participantMute: true }, { complete: true })).toEqual({
+			participantMute: true,
+			participantHandLower: false
+		});
+		expect(normalizePermissions({ participantHandLower: true }, { complete: true })).toEqual({
+			participantMute: false,
+			participantHandLower: true
 		});
 	});
 
@@ -205,7 +222,8 @@ describe('normalizePermissions', () => {
 		expect(normalizePermissions({ meetingJoin: true, meetingRead: false }, { complete: true })).toEqual({
 			meetingJoin: true,
 			meetingRead: false,
-			participantMute: false
+			participantMute: false,
+			participantHandLower: false
 		});
 		expect(normalizePermissions({ meetingRead: true })).toEqual({ meetingRead: true });
 	});
@@ -254,7 +272,8 @@ describe('toDeprecatedPermissions', () => {
 		>;
 		expect(normalizePermissions(toDeprecatedPermissions(current), { complete: true })).toEqual({
 			...current,
-			participantMute: false
+			participantMute: false,
+			participantHandLower: false
 		});
 	});
 

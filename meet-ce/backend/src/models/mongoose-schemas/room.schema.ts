@@ -131,6 +131,19 @@ const MeetCaptionsConfigSchema = new Schema(
 );
 
 /**
+ * Sub-schema for raise hand configuration.
+ */
+const MeetRaiseHandConfigSchema = new Schema(
+	{
+		enabled: {
+			type: Boolean,
+			required: true
+		}
+	},
+	{ _id: false }
+);
+
+/**
  * Sub-schema for room theme configuration.
  */
 const MeetRoomThemeSchema = new Schema(
@@ -296,6 +309,10 @@ const MeetRoomConfigSchema = new Schema(
 		},
 		captions: {
 			type: MeetCaptionsConfigSchema,
+			required: true
+		},
+		raiseHand: {
+			type: MeetRaiseHandConfigSchema,
 			required: true
 		}
 	},

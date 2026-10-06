@@ -5,6 +5,7 @@ allOf:
           - audioActive
           - videoActive
           - screenShareActive
+          - handRaised
       properties:
           audioActive:
               type: boolean
@@ -22,3 +23,15 @@ allOf:
               example: false
               description: >
                   Whether the participant is currently sharing their screen.
+          handRaised:
+              type: boolean
+              example: false
+              description: >
+                  Whether the participant's hand is currently raised.
+          handRaiseDate:
+              type: number
+              example: 1620000000000
+              description: >
+                  When the participant raised their hand (milliseconds since the Unix epoch),
+                  present while it is raised. Raised hands are queued in ascending order of this
+                  value.

@@ -59,7 +59,7 @@ describe('RoomMemberService.updateParticipantRole — B10: a promotion re-evalua
 	let livekitService: {
 		getParticipant: jest.Mock<(roomId: string, identity: string) => Promise<ParticipantInfo>>;
 		updateParticipant: jest.Mock<
-			(roomId: string, identity: string, metadata: string, permission?: unknown) => Promise<ParticipantInfo>
+			(roomId: string, identity: string, update: { metadata?: string }) => Promise<ParticipantInfo>
 		>;
 		getRoom: jest.Mock<(roomId: string) => Promise<Room>>;
 	};
@@ -79,7 +79,7 @@ describe('RoomMemberService.updateParticipantRole — B10: a promotion re-evalua
 				async () => ({ identity: IDENTITY, metadata: metadataInLiveKit }) as ParticipantInfo
 			),
 			updateParticipant: jest.fn(
-				async (_roomId, identity, metadata) => ({ identity, metadata }) as ParticipantInfo
+				async (_roomId, identity, { metadata }) => ({ identity, metadata }) as ParticipantInfo
 			),
 			getRoom: jest.fn(async () => ({ name: ROOM_ID, sid: MEETING_ID }) as Room)
 		};

@@ -3,6 +3,7 @@ import type {
 	MeetMeetingEndedPayload,
 	MeetParticipantJoinedPayload,
 	MeetParticipantLeftPayload,
+	MeetParticipantHandChangedPayload,
 	MeetParticipantRoleChangedPayload,
 	MeetRecordingInfo,
 	MeetRoom,
@@ -99,6 +100,19 @@ export class WebhookDispatcherService {
 	sendParticipantRoleChangedWebhook(payload: MeetParticipantRoleChangedPayload) {
 		this.sendWebhookEventInBackground(
 			MeetWebhookEventType.PARTICIPANT_ROLE_CHANGED,
+			payload,
+			`Room ID: ${payload.roomId}, Participant: ${payload.participant.participantIdentity}`
+		);
+	}
+
+	/**
+	 * Sends a webhook notification when a participant's hand is raised or lowered.
+	 *
+	 * @param payload - The participant's snapshot, the room, the new hand state and who changed it
+	 */
+	sendParticipantHandChangedWebhook(payload: MeetParticipantHandChangedPayload) {
+		this.sendWebhookEventInBackground(
+			MeetWebhookEventType.PARTICIPANT_HAND_CHANGED,
 			payload,
 			`Room ID: ${payload.roomId}, Participant: ${payload.participant.participantIdentity}`
 		);

@@ -35,6 +35,7 @@ const fullCurrentInput = {
 	participantPromote: false,
 	participantKick: false,
 	participantMute: false,
+	participantHandLower: false,
 	meetingEnd: false,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,

@@ -45,7 +45,7 @@ describe('RoomMemberService.updateParticipantRole - S2: a participant Meet did n
 	let livekitService: {
 		getParticipant: jest.Mock<(roomId: string, identity: string) => Promise<ParticipantInfo>>;
 		updateParticipant: jest.Mock<
-			(roomId: string, identity: string, metadata: string, permission?: unknown) => Promise<ParticipantInfo>
+			(roomId: string, identity: string, update: { metadata?: string }) => Promise<ParticipantInfo>
 		>;
 	};
 	let webhookDispatcherService: { sendParticipantRoleChangedWebhook: jest.Mock };
@@ -61,7 +61,7 @@ describe('RoomMemberService.updateParticipantRole - S2: a participant Meet did n
 				async () => ({ identity: IDENTITY, metadata: metadataInLiveKit }) as ParticipantInfo
 			),
 			updateParticipant: jest.fn(
-				async (_roomId, identity, metadata) => ({ identity, metadata }) as ParticipantInfo
+				async (_roomId, identity, { metadata }) => ({ identity, metadata }) as ParticipantInfo
 			)
 		};
 		webhookDispatcherService = { sendParticipantRoleChangedWebhook: jest.fn() };
@@ -114,7 +114,7 @@ describe('RoomMemberService.updateParticipantRole - S2: a participant Meet did n
 		await promote();
 
 		expect(livekitService.updateParticipant).toHaveBeenCalledTimes(1);
-		expect(JSON.parse(livekitService.updateParticipant.mock.calls[0]![2])).toMatchObject({
+		expect(JSON.parse(livekitService.updateParticipant.mock.calls[0]![2].metadata!)).toMatchObject({
 			badge: MeetRoomMemberUIBadge.MODERATOR,
 			isPromotedModerator: true
 		});

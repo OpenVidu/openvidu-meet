@@ -154,6 +154,26 @@ export const withRoomPermission = (permission: keyof MeetRoomMemberPermissions) 
 };
 
 /**
+ * Like {@link withRoomPermission}, except that a participant acting on themselves needs no
+ * permission: the permission gates acting on another participant.
+ *
+ * @param permission The permission to check when the target is not the caller.
+ */
+export const withRoomPermissionForOthers = (permission: keyof MeetRoomMemberPermissions) => {
+	const checkPermission = withRoomPermission(permission);
+
+	return (req: Request, res: Response, next: NextFunction) => {
+		const callerIdentity = container.get(RequestSessionService).getParticipantIdentity();
+
+		if (callerIdentity && callerIdentity === req.params.participantIdentity) {
+			return next();
+		}
+
+		return checkPermission(req, res, next);
+	};
+};
+
+/**
  * Middleware to authorize management of a room.
  *
  * - Checks if the authenticated user is an admin or the owner of the room.

@@ -1,5 +1,6 @@
 import { DisconnectReason, TrackSource } from '@livekit/protocol';
 import type {
+	MeetParticipantHandChangedPayload,
 	MeetParticipantDeparturePayload,
 	MeetParticipantInfo,
 	MeetParticipantJoinedPayload,
@@ -10,6 +11,7 @@ import type {
 	MeetRoomMemberTokenMetadata
 } from '@openvidu-meet/typings';
 import {
+	handRaiseDateOf,
 	LeftEventReason,
 	MeetRoomMemberRole,
 	MeetRoomMemberUIBadge,
@@ -77,6 +79,29 @@ export class MeetParticipantHelper {
 	}
 
 	/**
+	 * Builds the payload of the `participantHandChanged` webhook: the room, the participant's live snapshot,
+	 * which carries the new hand state, and who changed it.
+	 *
+	 * @param room - The LiveKit room the participant is in.
+	 * @param participant - The LiveKit participant whose hand changed, as acknowledged by LiveKit.
+	 * @param origin - Who changed it.
+	 */
+	static async toParticipantHandChangedPayload(
+		room: Room,
+		participant: ParticipantInfo,
+		origin: MeetParticipantHandChangedPayload['origin']
+	): Promise<MeetParticipantHandChangedPayload> {
+		const { roomId, roomName } = await MeetParticipantHelper.resolveRoomIdentity(room);
+
+		return {
+			roomId,
+			roomName,
+			participant: MeetParticipantHelper.toParticipantInfo(participant),
+			origin
+		};
+	}
+
+	/**
 	 * Converts a LiveKit participant into the payload the `participantLeft` webhook carries: the
 	 * join-time form extended with how and when the participant left.
 	 *
@@ -122,16 +147,30 @@ export class MeetParticipantHelper {
 
 	/**
 	 * Converts a LiveKit participant into the live {@link MeetParticipantInfo} snapshot that
-	 * live-introspection surfaces serve: the lifecycle payload extended with the media state read
-	 * from the participant's currently published tracks.
+	 * live-introspection surfaces serve and state-change webhooks carry: the lifecycle payload
+	 * extended with the media state read from the participant's currently published tracks and the
+	 * hand state read from its attributes.
 	 *
 	 * @param participant - The LiveKit participant to convert.
 	 */
 	static toParticipantInfo(participant: ParticipantInfo): MeetParticipantInfo {
+		const handRaiseDate = handRaiseDateOf(participant.attributes);
+
 		return {
 			...MeetParticipantHelper.toParticipantPayload(participant),
-			...MeetParticipantHelper.extractMediaState(participant)
+			...MeetParticipantHelper.extractMediaState(participant),
+			handRaised: handRaiseDate !== undefined,
+			...(handRaiseDate !== undefined && { handRaiseDate })
 		};
+	}
+
+	/**
+	 * Whether a participant's hand is raised, read from the attributes the server writes.
+	 *
+	 * @param participant - The LiveKit participant to inspect.
+	 */
+	static isHandRaised(participant: ParticipantInfo): boolean {
+		return handRaiseDateOf(participant.attributes) !== undefined;
 	}
 
 	/**

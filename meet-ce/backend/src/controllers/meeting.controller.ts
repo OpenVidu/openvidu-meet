@@ -1,4 +1,8 @@
-import type { MeetParticipantModerationAction, MeetParticipantMuteOptions } from '@openvidu-meet/typings';
+import type {
+	MeetParticipantHandOptions,
+	MeetParticipantModerationAction,
+	MeetParticipantMuteOptions
+} from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { handleError } from '../models/error.model.js';
@@ -121,6 +125,38 @@ export const muteAllParticipantsMedia = async (req: Request, res: Response) => {
 		res.status(200).json({ message: `Media of participants in meeting in room '${roomId}' muted` });
 	} catch (error) {
 		handleError(res, error, `muting media of participants in room '${roomId}'`);
+	}
+};
+
+export const updateParticipantHand = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const meetingService = container.get(MeetingService);
+	const { roomId, participantIdentity } = req.params as Record<string, string>;
+	const { raised } = req.body as MeetParticipantHandOptions;
+	const action = raised ? 'raised' : 'lowered';
+
+	try {
+		logger.verbose(`Hand of participant '${participantIdentity}' in room '${roomId}' ${action}`);
+		await meetingService.updateParticipantHand(roomId, participantIdentity, raised);
+		res.status(200).json({
+			message: `Hand of participant '${participantIdentity}' ${action} in meeting in room '${roomId}'`
+		});
+	} catch (error) {
+		handleError(res, error, `updating hand of participant '${participantIdentity}' in room '${roomId}'`);
+	}
+};
+
+export const lowerAllHands = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const meetingService = container.get(MeetingService);
+	const { roomId } = req.params as Record<string, string>;
+
+	try {
+		logger.verbose(`Lowering every hand in room '${roomId}'`);
+		await meetingService.lowerAllHands(roomId);
+		res.status(200).json({ message: `Hands of participants in meeting in room '${roomId}' lowered` });
+	} catch (error) {
+		handleError(res, error, `lowering hands in room '${roomId}'`);
 	}
 };
 

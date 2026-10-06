@@ -251,3 +251,30 @@ participantRoleChanged:
         responses:
             '200':
                 $ref: ./responses/success/webhook-success.yaml
+
+participantHandChanged:
+    post:
+        summary: Participant hand changed
+        description: >
+            This webhook is triggered when a participant raises or lowers their hand, or a moderator
+            lowers it.
+        operationId: participantHandChangedWebhook
+        parameters:
+            - $ref: ./parameters/x-timestamp.yaml
+            - $ref: ./parameters/x-signature.yaml
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        allOf:
+                            - $ref: ./schemas/webhook-base-event.yaml
+                            - properties:
+                                  event:
+                                      example: participantHandChanged
+                                  data:
+                                      $ref: ./schemas/meet-participant-hand-changed-event.yaml
+        responses:
+            '200':
+                $ref: ./responses/success/webhook-success.yaml

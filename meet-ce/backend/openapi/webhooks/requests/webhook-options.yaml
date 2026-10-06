@@ -27,6 +27,7 @@ content:
                             - participantJoined
                             - participantLeft
                             - participantRoleChanged
+                            - participantHandChanged
                             - recordingStarted
                             - recordingUpdated
                             - recordingEnded

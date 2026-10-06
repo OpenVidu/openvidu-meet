@@ -1,0 +1,16 @@
+description: Hand conflict
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        examples:
+            not_own_hand:
+                summary: Only its owner raises a hand
+                value:
+                    error: 'Participant Error'
+                    message: "Participant 'alice_smith' in room 'room_123' cannot have their hand raised by someone else"
+            hand_change_in_progress:
+                summary: Another change to the same hand is still being applied
+                value:
+                    error: 'Participant Error'
+                    message: "The hand of participant 'alice_smith' in room 'room_123' is already being changed, please retry"

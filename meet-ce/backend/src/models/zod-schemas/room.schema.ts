@@ -2,6 +2,7 @@ import type {
 	MeetAppearanceConfig,
 	MeetChatConfig,
 	MeetE2EEConfig,
+	MeetRaiseHandConfig,
 	MeetRecordingConfig,
 	MeetRecordingEncodingOptions,
 	MeetRoomAccessConfig,
@@ -224,6 +225,10 @@ const CaptionsConfigSchema: z.ZodType<MeetRoomCaptionsConfig> = z.object({
 	enabled: z.boolean()
 });
 
+const RaiseHandConfigSchema: z.ZodType<MeetRaiseHandConfig> = z.object({
+	enabled: z.boolean()
+});
+
 const ThemeModeSchema: z.ZodType<MeetRoomThemeMode> = z.enum(MeetRoomThemeMode);
 
 const hexColorSchema = z
@@ -266,7 +271,8 @@ const UpdateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 		chat: ChatConfigSchema.optional(),
 		virtualBackground: VirtualBackgroundConfigSchema.optional(),
 		e2ee: E2EEConfigSchema.optional(),
-		captions: CaptionsConfigSchema.optional()
+		captions: CaptionsConfigSchema.optional(),
+		raiseHand: RaiseHandConfigSchema.optional()
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data: Partial<MeetRoomConfig>) => {
@@ -302,7 +308,8 @@ const CreateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 		chat: ChatConfigSchema.optional().default(() => ({ enabled: true })),
 		virtualBackground: VirtualBackgroundConfigSchema.optional().default(() => ({ enabled: true })),
 		e2ee: E2EEConfigSchema.optional().default(() => ({ enabled: false })),
-		captions: CaptionsConfigSchema.optional().default(() => ({ enabled: true }))
+		captions: CaptionsConfigSchema.optional().default(() => ({ enabled: true })),
+		raiseHand: RaiseHandConfigSchema.optional().default(() => ({ enabled: true }))
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data) => {
@@ -433,6 +440,7 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false },
 		captions: { enabled: true },
+		raiseHand: { enabled: true },
 		initialAudioActive: true,
 		initialVideoActive: true
 	}),

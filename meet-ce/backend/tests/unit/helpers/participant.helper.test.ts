@@ -3,9 +3,12 @@ import { DisconnectReason, TrackSource } from '@livekit/protocol';
 import type { MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import {
 	LeftEventReason,
+	loweredHandAttributes,
 	MEET_PERMISSION_KEYS,
+	MeetEventOrigin,
 	MeetRoomMemberRole,
-	MeetRoomMemberUIBadge
+	MeetRoomMemberUIBadge,
+	raisedHandAttributes
 } from '@openvidu-meet/typings';
 import type { ParticipantInfo } from 'livekit-server-sdk';
 import { MeetParticipantHelper } from '../../../src/helpers/participant.helper.js';
@@ -101,8 +104,23 @@ describe('MeetParticipantHelper.toParticipantInfo', () => {
 			joinDate: 1_620_000_000_000,
 			audioActive: true,
 			videoActive: false,
-			screenShareActive: true
+			screenShareActive: true,
+			handRaised: false
 		});
+	});
+
+	it('reads the raised hand and its timestamp from the attributes the server writes', () => {
+		const raised = MeetParticipantHelper.toParticipantInfo(
+			participantWith({ attributes: raisedHandAttributes(1_620_000_000_000) })
+		);
+		expect(raised.handRaised).toBe(true);
+		expect(raised.handRaiseDate).toBe(1_620_000_000_000);
+
+		const lowered = MeetParticipantHelper.toParticipantInfo(
+			participantWith({ attributes: loweredHandAttributes(MeetEventOrigin.MODERATOR) })
+		);
+		expect(lowered.handRaised).toBe(false);
+		expect(lowered).not.toHaveProperty('handRaiseDate');
 	});
 
 	it('omits the correlation fields and downgrades to speaker for a participant without Meet metadata', () => {

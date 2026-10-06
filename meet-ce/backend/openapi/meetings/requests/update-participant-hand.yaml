@@ -1,0 +1,16 @@
+description: Hand state
+required: true
+content:
+    application/json:
+        schema:
+            type: object
+            required:
+                - raised
+            properties:
+                raised:
+                    type: boolean
+                    description: >
+                        `true` raises the hand, `false` lowers it. Only the participant's own hand can be
+                        raised; lowering another participant's hand requires the `participantHandLower`
+                        permission.
+                    example: true

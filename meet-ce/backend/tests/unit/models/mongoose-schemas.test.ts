@@ -62,6 +62,8 @@ const roomPaths = {
 	'config.e2ee.enabled': 'Boolean required',
 	'config.captions': 'Embedded required',
 	'config.captions.enabled': 'Boolean required',
+	'config.raiseHand': 'Embedded required',
+	'config.raiseHand.enabled': 'Boolean required',
 	roles: 'Embedded required',
 	'roles.moderator.permissions': 'Embedded required',
 	...permissionPaths('roles.moderator.permissions', 'Boolean required'),

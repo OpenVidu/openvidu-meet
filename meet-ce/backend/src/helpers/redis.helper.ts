@@ -89,4 +89,16 @@ export class MeetLock {
 
 		return `${RedisLockPrefix.BASE}${RedisLockName.PARTICIPANT_METADATA}_${roomId}_${participantIdentity}`;
 	}
+
+	static getHandLock(roomId: string, participantIdentity: string): string {
+		if (!roomId) {
+			throw new Error('roomId must be a non-empty string');
+		}
+
+		if (!participantIdentity) {
+			throw new Error('participantIdentity must be a non-empty string');
+		}
+
+		return `${RedisLockPrefix.BASE}${RedisLockName.HAND}_${roomId}_${participantIdentity}`;
+	}
 }

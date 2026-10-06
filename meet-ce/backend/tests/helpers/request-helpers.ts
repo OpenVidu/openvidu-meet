@@ -2,6 +2,7 @@ import { afterAll, expect } from '@jest/globals';
 import {
 	MeetAppearanceConfig,
 	MeetAssistantCapabilityName,
+	MeetParticipantHandOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetPermissionsInput,
@@ -964,6 +965,35 @@ export const muteAllParticipantsMedia = async (
 		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/participants/media`))
 		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
 		.send(media);
+	return response;
+};
+
+export const updateParticipantHand = async (
+	roomId: string,
+	participantIdentity: string,
+	hand: MeetParticipantHandOptions,
+	roomMemberToken: string
+) => {
+	checkAppIsRunning();
+
+	const response = await request(app)
+		.put(
+			getFullPath(
+				`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}/hand`
+			)
+		)
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
+		.send(hand);
+	return response;
+};
+
+export const lowerAllHands = async (roomId: string, hand: MeetParticipantHandOptions, roomMemberToken: string) => {
+	checkAppIsRunning();
+
+	const response = await request(app)
+		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/participants/hand`))
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
+		.send(hand);
 	return response;
 };
 
