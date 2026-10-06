@@ -1,7 +1,7 @@
 import { MeetRecordingInfo } from './database/recording.entity.js';
 import { MeetRoom } from './database/room.entity.js';
-import { LeftEventReason } from './embedded/events.js';
-import { MeetParticipantPayload } from './response/participant-response.js';
+import { LeftEventReason, MeetEventOrigin } from './embedded/events.js';
+import { MeetParticipantInfo, MeetParticipantPayload } from './response/participant-response.js';
 
 /**
  * Interface representing a webhook event emitted by OpenVidu Meet.
@@ -29,6 +29,8 @@ export enum MeetWebhookEventType {
 	PARTICIPANT_LEFT = 'participantLeft',
 	/** Emitted when a participant in a meeting is promoted to moderator or demoted back to their original role */
 	PARTICIPANT_ROLE_CHANGED = 'participantRoleChanged',
+	/** Emitted when a participant's hand is raised or lowered */
+	PARTICIPANT_HAND_CHANGED = 'participantHandChanged',
 	/** Emitted when a recording starts in a room */
 	RECORDING_STARTED = 'recordingStarted',
 	/** Emitted when a recording is updated */
@@ -138,10 +140,21 @@ export interface MeetParticipantRoleChangedPayload {
 }
 
 /**
+ * Payload for the {@link MeetWebhookEventType.PARTICIPANT_HAND_CHANGED} webhook event.
+ */
+export interface MeetParticipantHandChangedPayload extends MeetParticipantJoinedPayload {
+	/** The participant whose hand changed, carrying the new hand state. See {@link MeetParticipantInfo} for details */
+	participant: MeetParticipantInfo;
+	/** Who lowered the hand, the participant or a moderator; a raise always originates from the participant */
+	origin: MeetEventOrigin.PARTICIPANT | MeetEventOrigin.MODERATOR;
+}
+
+/**
  * Payload for OpenVidu Meet webhook events.
  * Depending on the event type, the payload can be {@link MeetRecordingInfo}, {@link MeetRoom},
  * {@link MeetMeetingEndedPayload}, {@link MeetParticipantJoinedPayload},
- * {@link MeetParticipantLeftPayload} or {@link MeetParticipantRoleChangedPayload}.
+ * {@link MeetParticipantLeftPayload}, {@link MeetParticipantRoleChangedPayload} or
+ * {@link MeetParticipantHandChangedPayload}.
  */
 export type MeetWebhookPayload =
 	| MeetRecordingInfo
@@ -149,4 +162,5 @@ export type MeetWebhookPayload =
 	| MeetMeetingEndedPayload
 	| MeetParticipantJoinedPayload
 	| MeetParticipantLeftPayload
-	| MeetParticipantRoleChangedPayload;
+	| MeetParticipantRoleChangedPayload
+	| MeetParticipantHandChangedPayload;

@@ -22,6 +22,10 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   demotes them back. Every promotion and demotion is reported as the
   [`participantRoleChanged`][3.10-participant-role-changed] webhook and as the embedded event of the same name to the
   affected participant.
+- Raise hand, in the meeting and through the REST API, the embedded commands `participantHandRaise`,
+  `participantHandLower` and `participantHandLowerAll` and the embedded event and webhook `participantHandChanged`,
+  with the `participantHandLower` permission to lower other participants' hands and the room config
+  `raiseHand.enabled` to turn it off.
 
 ### Improved
 

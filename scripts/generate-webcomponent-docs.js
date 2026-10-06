@@ -18,7 +18,8 @@ class WebComponentDocGenerator {
 
     /**
      * Indexes the flat exported interfaces and the string enums of the typings package by name,
-     * rendered inline ("{ a?: false; b: string }" / "'x' | 'y'"). An interface whose body still
+     * rendered inline ("{ a?: false; b: string }" / "'x' | 'y'"), and each enum member by its
+     * qualified name ("Enum.MEMBER" / "'x'"). An interface whose body still
      * contains braces after comment stripping is not indexed: a reference to it must fail the
      * generation rather than render truncated.
      */
@@ -42,9 +43,11 @@ class WebComponentDocGenerator {
 
             for (const match of content.matchAll(/export enum (\w+)\s*{([^}]*)}/g)) {
                 const [, name, body] = match;
-                const values = [...body.matchAll(/=\s*'([^']+)'/g)].map(([, value]) => `'${value}'`);
+                const members = [...body.matchAll(/(\w+)\s*=\s*'([^']+)'/g)];
 
-                if (values.length > 0) this.typeIndex.set(name, values.join(' | '));
+                for (const [, member, value] of members) this.typeIndex.set(`${name}.${member}`, `'${value}'`);
+
+                if (members.length > 0) this.typeIndex.set(name, members.map(([, , value]) => `'${value}'`).join(' | '));
             }
         }
 
@@ -71,7 +74,7 @@ class WebComponentDocGenerator {
         ]);
         const index = this.getTypeIndex();
         const seen = new Set();
-        let resolved = type;
+        let resolved = type.replace(/\b\w+\.\w+\b/g, (member) => index.get(member) ?? member);
         let changed = true;
 
         while (changed) {

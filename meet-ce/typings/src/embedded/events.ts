@@ -40,6 +40,12 @@ export enum EmbeddedEventName {
 	 */
 	PARTICIPANT_ROLE_CHANGED = 'participantRoleChanged',
 	/**
+	 * Event emitted to every participant when a participant's hand is raised or lowered, by
+	 * themselves or by a moderator. A participant joining a meeting with raised hands receives one
+	 * event per raised hand, in queue order, right after `meetingJoined`.
+	 */
+	PARTICIPANT_HAND_CHANGED = 'participantHandChanged',
+	/**
 	 * Event emitted to the local participant when their microphone state changes. Emitted from the
 	 * prejoin screen onwards, before `meetingJoined`.
 	 */
@@ -175,6 +181,19 @@ export interface EmbeddedEventPayloads {
 		roomId: string;
 		participantIdentity: string;
 		role: MeetRoomMemberRole;
+	};
+	/**
+	 * Payload for the {@link EmbeddedEventName.PARTICIPANT_HAND_CHANGED} event.
+	 * `queuePosition` is the 1-based position of the hand among the raised ones, present while
+	 * `raised` is `true`. `origin` says who lowered the hand, the participant or a moderator; a raise
+	 * always originates from the participant.
+	 */
+	[EmbeddedEventName.PARTICIPANT_HAND_CHANGED]: {
+		roomId: string;
+		participant: MeetParticipantPayload;
+		raised: boolean;
+		queuePosition?: number;
+		origin: MeetEventOrigin.PARTICIPANT | MeetEventOrigin.MODERATOR;
 	};
 	/**
 	 * Payload for the {@link EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED} event.
@@ -313,6 +332,16 @@ export interface EmbeddedParticipantRoleChangedEvent {
 }
 
 /**
+ * Event message emitted when a participant's hand is raised or lowered: the event name plus its
+ * payload, derived from {@link EmbeddedEventPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedParticipantHandChangedEvent {
+	event: EmbeddedEventName.PARTICIPANT_HAND_CHANGED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_HAND_CHANGED>;
+}
+
+/**
  * Event message emitted to the local participant when their microphone state changes: the event
  * name plus its payload, derived from {@link EmbeddedEventPayloadFor}.
  * @category Communication
@@ -402,6 +431,7 @@ export type EmbeddedEvent =
 	| EmbeddedParticipantJoinedEvent
 	| EmbeddedParticipantLeftEvent
 	| EmbeddedParticipantRoleChangedEvent
+	| EmbeddedParticipantHandChangedEvent
 	| EmbeddedMediaAudioStatusChangedEvent
 	| EmbeddedMediaVideoStatusChangedEvent
 	| EmbeddedMediaScreenShareStatusChangedEvent

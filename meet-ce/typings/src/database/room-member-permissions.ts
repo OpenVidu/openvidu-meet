@@ -71,6 +71,17 @@ export interface MeetRoomMemberPermissions {
 	 */
 	participantMute: boolean;
 	/**
+	 * Can lower another participant's raised hand, one at a time or all at once. Raising and
+	 * lowering one's own hand is never gated.
+	 *
+	 * Introduced after the rename, so it has no deprecated `can*` spelling (see
+	 * {@link MEET_UNALIASED_PERMISSION_KEYS}). It is independent of every other permission: a request
+	 * that omits it leaves it at whatever the role or the member already had. Only a set completed
+	 * from scratch, which is what a stored document migrated from before 3.10.0 and a token issued
+	 * back then go through, starts it at `false` (see {@link UNALIASED_PERMISSION_DEFAULTS}).
+	 */
+	participantHandLower: boolean;
+	/**
 	 * Can end the meeting for all participants.
 	 */
 	meetingEnd: boolean;
@@ -240,10 +251,13 @@ export const MEET_PERMISSION_ALIASES = {
  * - `participantMute` ← `false`: a moderation capability nothing hands out unasked. Deliberately
  *   not derived from `participantKick` — removing someone from a meeting and silencing their
  *   microphone are different powers, and a deployment that granted one never decided on the other.
+ * - `participantHandLower` ← `false`, for the same reason: lowering someone else's hand is a
+ *   moderation capability no earlier permission decided.
  */
 const UNALIASED_PERMISSION_DEFAULTS = {
 	meetingRead: 'meetingJoin',
-	participantMute: false
+	participantMute: false,
+	participantHandLower: false
 } as const satisfies Readonly<
 	Partial<Record<keyof MeetRoomMemberPermissions, keyof MeetRoomMemberPermissions | boolean>>
 >;

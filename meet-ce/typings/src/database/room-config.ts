@@ -59,6 +59,10 @@ export interface MeetRoomConfig {
 	 * Configuration for captions feature. See {@link MeetRoomCaptionsConfig} for details.
 	 */
 	captions: MeetRoomCaptionsConfig;
+	/**
+	 * Configuration for the raise hand feature. See {@link MeetRaiseHandConfig} for details.
+	 */
+	raiseHand: MeetRaiseHandConfig;
 	// appearance: MeetAppearanceConfig;
 }
 
@@ -186,6 +190,17 @@ export interface MeetE2EEConfig {
 export interface MeetRoomCaptionsConfig {
 	/**
 	 * Indicates if captions are enabled in the room
+	 */
+	enabled: boolean;
+}
+
+/**
+ * Interface representing the config for the raise hand feature in a room.
+ */
+export interface MeetRaiseHandConfig {
+	/**
+	 * Indicates if participants can raise their hand in the room. The server rejects a raise while
+	 * it is `false`.
 	 */
 	enabled: boolean;
 }

@@ -33,9 +33,10 @@ export interface MeetParticipantPayload {
 
 /**
  * Live snapshot of a participant in an ongoing meeting: {@link MeetParticipantPayload} extended
- * with the current media state. This is the shape live-introspection surfaces serve
- * (`GET /meetings/{roomId}/participants`), where LiveKit reports the participant's actual tracks —
- * unlike lifecycle events, whose timing makes these flags meaningless.
+ * with the current media and hand state. It is the shape `GET /meetings/{roomId}/participants`
+ * serves and the webhooks reporting a state change in the meeting, such as `participantHandChanged`,
+ * carry: at those moments LiveKit reports the participant's actual tracks, unlike lifecycle events,
+ * whose timing makes the media flags meaningless.
  */
 export interface MeetParticipantInfo extends MeetParticipantPayload {
 	/** Whether the participant's microphone is currently publishing (present and not muted). */
@@ -44,4 +45,11 @@ export interface MeetParticipantInfo extends MeetParticipantPayload {
 	videoActive: boolean;
 	/** Whether the participant is currently sharing their screen. */
 	screenShareActive: boolean;
+	/** Whether the participant's hand is currently raised. */
+	handRaised: boolean;
+	/**
+	 * Timestamp when the participant raised their hand (milliseconds since epoch), present while it
+	 * is raised. Raised hands are queued in ascending order of this value.
+	 */
+	handRaiseDate?: number;
 }
