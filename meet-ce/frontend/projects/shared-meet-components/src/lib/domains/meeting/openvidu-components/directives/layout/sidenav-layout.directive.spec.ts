@@ -48,6 +48,16 @@ describe('SidenavLayoutDirective', () => {
 		fixture.detectChanges();
 	};
 
+	/**
+	 * Opening the drawer moves the content margin, which queues a settle pass that stops whatever
+	 * transition is being followed when it runs. Waiting for it keeps it from cutting the next one short.
+	 */
+	const openChatAndSettle = async () => {
+		panelService.togglePanel(PanelType.CHAT);
+		fixture.detectChanges();
+		await waitUntilQuiet(layoutUpdateSpy, 500);
+	};
+
 	beforeEach(() => {
 		layoutUpdateSpy = jasmine.createSpy('update');
 
@@ -169,10 +179,7 @@ describe('SidenavLayoutDirective', () => {
 	it('recomputes the layout repeatedly while the sidenav changes width, then leaves it alone', async () => {
 		withToolbarTemplate();
 		createFixture();
-		panelService.togglePanel(PanelType.CHAT);
-		fixture.detectChanges();
-		// The drawer reports it opened one turn later, which stops the passes of that opening.
-		await delay(100);
+		await openChatAndSettle();
 		layoutUpdateSpy.calls.reset();
 
 		panelService.togglePanel(PanelType.SETTINGS);
@@ -211,9 +218,8 @@ describe('SidenavLayoutDirective', () => {
 	it('stops the passes that were still running when it was destroyed', async () => {
 		withToolbarTemplate();
 		createFixture();
-		panelService.togglePanel(PanelType.CHAT);
-		fixture.detectChanges();
-		await delay(100);
+		await openChatAndSettle();
+		layoutUpdateSpy.calls.reset();
 		panelService.togglePanel(PanelType.SETTINGS);
 		fixture.detectChanges();
 		await waitFor(() => layoutUpdateSpy.calls.count() >= 4);
@@ -256,6 +262,26 @@ async function waitFor(condition: () => boolean, timeoutMs = 2000): Promise<void
 		}
 
 		await delay(20);
+	}
+}
+
+/** Resolves once the spy has gone `quietMs` without a call. */
+async function waitUntilQuiet(spy: jasmine.Spy, quietMs: number, timeoutMs = 3000): Promise<void> {
+	const start = performance.now();
+	let count = spy.calls.count();
+	let lastCallAt = start;
+
+	while (performance.now() - lastCallAt < quietMs) {
+		if (performance.now() - start > timeoutMs) {
+			throw new Error('Timed out waiting for the spy to go quiet');
+		}
+
+		await delay(20);
+
+		if (spy.calls.count() !== count) {
+			count = spy.calls.count();
+			lastCallAt = performance.now();
+		}
 	}
 }
 
