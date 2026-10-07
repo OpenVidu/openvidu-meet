@@ -1,5 +1,6 @@
 import { inject, Service, signal } from '@angular/core';
 import { AvailableLangs, LangOption } from '../../models/lang.model';
+import { DEFAULT_LANG } from '../../models/translation-bundle.model';
 import { MeetStorageService } from '../storage.service';
 
 /**
@@ -21,6 +22,8 @@ export const DEFAULT_LANGUAGE_OPTIONS: LangOption[] = [
 
 const LANGUAGE_SUBTAG_ALIASES: Record<string, AvailableLangs> = { zh: 'cn' };
 
+const BROWSER_LANGUAGE_TAG = 'auto';
+
 /**
  * Single source of truth for the user's selected language across the whole application.
  *
@@ -30,7 +33,8 @@ const LANGUAGE_SUBTAG_ALIASES: Record<string, AvailableLangs> = { zh: 'cn' };
  * language* is shared, persisted under the existing storage key for backward compatibility.
  *
  * An embedding application can ask for a language ({@link setEmbeddedLanguage}): it outranks the stored
- * preference without replacing it, and the participant can still pick another one.
+ * preference without replacing it, and the participant can still pick another one unless the
+ * application also hides the selectors ({@link setSelectorHidden}).
  */
 @Service()
 export class LanguageService {
@@ -41,6 +45,11 @@ export class LanguageService {
 
 	/** Currently selected language option. Scope translation stores react to this. */
 	readonly selectedLanguage = signal<LangOption>(DEFAULT_LANGUAGE_OPTIONS[0]);
+
+	private readonly _selectorHidden = signal(false);
+
+	/** Whether the embedding application hid the language selectors. */
+	readonly selectorHidden = this._selectorHidden.asReadonly();
 
 	constructor() {
 		this.selectedLanguage.set(this.resolveStoredLanguage());
@@ -72,17 +81,28 @@ export class LanguageService {
 	}
 
 	/**
-	 * Selects the language asked by the embedding application, a BCP 47 tag, without persisting it, or
-	 * restores the stored preference when `tag` is undefined. An unavailable language is ignored.
+	 * Selects the language asked by the embedding application, a BCP 47 tag or `auto` for the
+	 * browser's, without persisting it, or restores the stored preference when `tag` is undefined. An
+	 * unavailable language is ignored.
 	 */
 	setEmbeddedLanguage(tag?: string): void {
-		const option = this.findOption(tag);
+		const option = tag?.toLowerCase() === BROWSER_LANGUAGE_TAG ? this.findBrowserOption() : this.findOption(tag);
 
 		if (tag && !option) {
 			console.warn(`[OpenVidu Meet] Unsupported language "${tag}" ignored.`);
 		}
 
 		this.selectedLanguage.set(option ?? this.resolveStoredLanguage());
+	}
+
+	setSelectorHidden(hidden: boolean): void {
+		this._selectorHidden.set(hidden);
+	}
+
+	/** The first available language among the browser's preferred ones, or the default language. */
+	private findBrowserOption(): LangOption | undefined {
+		const tags = navigator.languages?.length ? navigator.languages : [navigator.language];
+		return tags.map((tag) => this.findOption(tag)).find(Boolean) ?? this.findOption(DEFAULT_LANG);
 	}
 
 	/** Matches a BCP 47 tag (`es`, `pt-BR`, `zh_Hans`) by its exact code first, then by its language subtag. */

@@ -29,6 +29,7 @@ import { LangSelectorComponent } from '../../settings/lang-selector/lang-selecto
 import { ParticipantNameInputComponent } from '../../settings/participant-name-input/participant-name-input.component';
 import { ThemeSelectorComponent } from '../../settings/theme-selector/theme-selector.component';
 import { VideoDevicesComponent } from '../../settings/video-devices/video-devices.component';
+import { LanguageService } from '../../../../../../shared/services/i18n/language.service';
 
 /**
  * @internal
@@ -76,6 +77,7 @@ export class SettingsPanelComponent implements OnInit {
 	readonly showCameraControls = this.libService.showCameraControlsSignal;
 	readonly showMicrophoneControls = this.libService.showMicrophoneControlsSignal;
 	readonly showThemeSelector = this.libService.showThemeSelectorSignal;
+	readonly langSelectorHidden = inject(LanguageService).selectorHidden;
 	readonly selectedOption = signal<PanelSettingsOptions>(PanelSettingsOptions.GENERAL);
 
 	/**

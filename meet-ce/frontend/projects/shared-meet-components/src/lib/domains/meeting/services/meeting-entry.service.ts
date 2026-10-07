@@ -34,6 +34,8 @@ export interface MeetingEntryParams {
 	initialVideoActive?: boolean;
 	/** Initial UI language asked by the embedding application, as a BCP 47 tag (never persisted). */
 	language?: string;
+	/** Hide the language selectors, so the participant cannot change the language. */
+	hideLanguageSelector?: boolean;
 	/** Optional leave-redirect URL passed to {@link LeaveRedirectService}. */
 	leaveRedirectUrl?: string;
 	/** Request a redirect to `/recording/<id>` instead of the meeting. */
@@ -98,7 +100,8 @@ export class MeetingEntryService {
 		participantMetadata,
 		initialAudioActive,
 		initialVideoActive,
-		language
+		language,
+		hideLanguageSelector = false
 	}: MeetingEntryParams): MeetingEntryDecision {
 		this.leaveRedirect.handleLeaveRedirectUrl(leaveRedirectUrl);
 
@@ -122,6 +125,7 @@ export class MeetingEntryService {
 		});
 
 		this.languageService.setEmbeddedLanguage(language);
+		this.languageService.setSelectorHidden(hideLanguageSelector);
 
 		// Prefer the caller-supplied secret (URL/input); otherwise restore the one
 		// persisted on this origin. Keeping the fallback here means every adapter
