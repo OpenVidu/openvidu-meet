@@ -1,8 +1,7 @@
 name: Backend Unit Tests
 on:
   push:
-    branches: ['**']
-    tags-ignore: ['**']
+    branches: [main]
     paths: &backend-unit-test-paths
       - 'meet-ce/backend/**'
       # Suites this job does not run, and the helpers only they use.

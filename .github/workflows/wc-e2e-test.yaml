@@ -1,8 +1,7 @@
 name: WebComponent E2E Tests
 on:
   push:
-    branches: ['**']
-    tags-ignore: ['**']
+    branches: [main]
     paths: &wc-e2e-test-paths
       - 'meet-ce/frontend/webcomponent/**'
       - '!meet-ce/frontend/webcomponent/tests/unit/**'
