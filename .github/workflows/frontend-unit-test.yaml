@@ -26,7 +26,7 @@ permissions:
 jobs:
   unit-test:
     name: Frontend Unit Tests
-    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
+    runs-on: ubuntu-24.04
     env:
       PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
     steps:
@@ -52,7 +52,3 @@ jobs:
       - name: Run ESLint
         if: always()
         run: ./meet.sh lint-frontend --skip-install
-
-      - name: Clean up
-        if: always()
-        uses: OpenVidu/actions/cleanup@070fb73fda8fe7a08e28991b1c2d276f12a009ef # v1.0.22

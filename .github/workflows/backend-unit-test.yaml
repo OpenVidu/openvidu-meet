@@ -30,7 +30,7 @@ permissions:
 jobs:
   unit-test:
     name: Backend Unit Tests
-    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
+    runs-on: ubuntu-24.04
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -71,7 +71,3 @@ jobs:
       - name: Run ESLint
         if: always()
         run: ./meet.sh lint-backend --skip-install
-
-      - name: Clean up
-        if: always()
-        uses: OpenVidu/actions/cleanup@070fb73fda8fe7a08e28991b1c2d276f12a009ef # v1.0.22
