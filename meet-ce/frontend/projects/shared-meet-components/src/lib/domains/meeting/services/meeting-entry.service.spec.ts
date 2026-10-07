@@ -32,7 +32,10 @@ describe('MeetingEntryService.prepare (resets the previous room feature state)',
 			'loadParticipantNameFromStorage'
 		]);
 		const roomAccessService = jasmine.createSpyObj<RoomAccessService>('RoomAccessService', ['validateAccess']);
-		languageService = jasmine.createSpyObj<LanguageService>('LanguageService', ['setEmbeddedLanguage']);
+		languageService = jasmine.createSpyObj<LanguageService>('LanguageService', [
+			'setEmbeddedLanguage',
+			'setSelectorVisible'
+		]);
 		const leaveRedirectService = jasmine.createSpyObj<LeaveRedirectService>('LeaveRedirectService', [
 			'handleLeaveRedirectUrl'
 		]);
@@ -70,5 +73,12 @@ describe('MeetingEntryService.prepare (resets the previous room feature state)',
 		service.prepare({ roomId: 'room-b' });
 
 		expect(languageService.setEmbeddedLanguage.calls.allArgs()).toEqual([['es'], [undefined]]);
+	});
+
+	it('hides the language selectors on every entry that turns them off, and shows them on one that does not', () => {
+		service.prepare({ roomId: 'room-a', showLanguageSelector: false });
+		service.prepare({ roomId: 'room-b' });
+
+		expect(languageService.setSelectorVisible.calls.allArgs()).toEqual([[false], [true]]);
 	});
 });

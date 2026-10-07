@@ -122,6 +122,18 @@
 				</datalist>
 			</div>
 			<div class="ta-field">
+				<label for="showLanguageSelector">showLanguageSelector</label>
+				<select
+					id="showLanguageSelector"
+					data-testid="select-showLanguageSelector"
+					[(ngModel)]="config.showLanguageSelector"
+				>
+					<option value="">omitted (shown)</option>
+					<option value="true">true</option>
+					<option value="false">false</option>
+				</select>
+			</div>
+			<div class="ta-field">
 				<label for="initialAudioActive">initialAudioActive</label>
 				<select
 					id="initialAudioActive"

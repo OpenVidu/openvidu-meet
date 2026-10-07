@@ -40,12 +40,18 @@ export enum EmbeddedAttribute {
 	INITIAL_VIDEO_ACTIVE = 'initial-video-active',
 	/**
 	 * Language the interface starts in: `en`, `es`, `de`, `fr`, `zh` (Simplified), `hi`, `it`, `ja`,
-	 * `nl` or `pt` (European). A regional variant uses its language (`pt-BR` is `pt`).
+	 * `nl` or `pt` (European). A regional variant uses its language (`pt-BR` is `pt`). `auto` uses the
+	 * browser's preferred languages, and English when none is available.
 	 *
-	 * It **overrides the participant's previous choice**, which they can still change. An unsupported
-	 * value is ignored.
+	 * It **overrides the participant's previous choice**, which they can still change unless
+	 * `show-language-selector` is `false`. An unsupported value is ignored.
 	 */
 	LANGUAGE = 'language',
+	/**
+	 * Show the language selectors (`true` by default). `"false"` hides them, so the participant cannot
+	 * change the language.
+	 */
+	SHOW_LANGUAGE_SELECTOR = 'show-language-selector',
 	/**
 	 * Secret key for end-to-end encryption (E2EE).
 	 * If provided, the participant will join the meeting using E2EE key.
@@ -87,8 +93,10 @@ export interface WebComponentPropertyValues {
 	initialAudioActive?: boolean;
 	/** Initial camera state (they may activate it later). Set: wins over `config.initialVideoActive`; omitted: the room decides. */
 	initialVideoActive?: boolean;
-	/** Language the interface starts in: `en`, `es`, `de`, `fr`, `zh`, `hi`, `it`, `ja`, `nl` or `pt`, regional variants included (`pt-BR` is `pt`). Wins over the participant's previous choice without replacing it; they can still switch. */
+	/** Language the interface starts in: `en`, `es`, `de`, `fr`, `zh`, `hi`, `it`, `ja`, `nl` or `pt`, regional variants included (`pt-BR` is `pt`), or `auto` for the browser's language. Wins over the participant's previous choice without replacing it. */
 	language?: string;
+	/** Show the language selectors (default `true`); `false` hides them so the participant cannot change the language. */
+	showLanguageSelector?: boolean;
 	/** Secret key for end-to-end encryption (E2EE). When provided the participant joins using E2EE. */
 	e2eeKey?: string;
 	/** URL to redirect to when the participant dismisses the post-meeting, join, error or recording screen, after `embeddedCloseRequested` fires. */

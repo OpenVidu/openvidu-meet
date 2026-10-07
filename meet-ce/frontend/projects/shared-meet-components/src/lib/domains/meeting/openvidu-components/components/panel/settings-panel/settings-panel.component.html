@@ -82,15 +82,17 @@
 							<ov-participant-name-input />
 						</div>
 					</div>
-					<div class="language-section">
-						<mat-list>
-							<mat-list-item class="lang-selector">
-								<mat-icon matListItemIcon>translate</mat-icon>
-								<div matListItemTitle>{{ 'PANEL.SETTINGS.LANGUAGE' | translate }}</div>
-								<ov-lang-selector matListItemMeta (onLangChanged)="onLangChanged.emit($event)" />
-							</mat-list-item>
-						</mat-list>
-					</div>
+					@if (langSelectorVisible()) {
+						<div class="language-section">
+							<mat-list>
+								<mat-list-item class="lang-selector">
+									<mat-icon matListItemIcon>translate</mat-icon>
+									<div matListItemTitle>{{ 'PANEL.SETTINGS.LANGUAGE' | translate }}</div>
+									<ov-lang-selector matListItemMeta (onLangChanged)="onLangChanged.emit($event)" />
+								</mat-list-item>
+							</mat-list>
+						</div>
+					}
 					@if (showThemeSelector()) {
 						<div class="theme-section">
 							<mat-list>

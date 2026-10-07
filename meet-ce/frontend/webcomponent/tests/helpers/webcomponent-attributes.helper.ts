@@ -66,7 +66,8 @@ export const openWebcomponentWithAttributes = async (
 	// different requests, and only the latter outranks the room's own `config.initial*Active` default.
 	const TRI_STATE_TESTIDS: ReadonlyArray<[EmbeddedAttribute, string]> = [
 		[EmbeddedAttribute.INITIAL_AUDIO_ACTIVE, 'select-initialAudioActive'],
-		[EmbeddedAttribute.INITIAL_VIDEO_ACTIVE, 'select-initialVideoActive']
+		[EmbeddedAttribute.INITIAL_VIDEO_ACTIVE, 'select-initialVideoActive'],
+		[EmbeddedAttribute.SHOW_LANGUAGE_SELECTOR, 'select-showLanguageSelector']
 	];
 
 	for (const [property, testId] of TRI_STATE_TESTIDS) {

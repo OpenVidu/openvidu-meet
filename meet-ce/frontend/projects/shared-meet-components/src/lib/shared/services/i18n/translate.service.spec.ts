@@ -80,8 +80,9 @@ describe('TranslateService', () => {
 });
 
 /**
- * The embedding application can ask for a language. It outranks the participant's stored preference
- * without ever being written over it, and the participant can still pick another one.
+ * The embedding application can ask for a language, or for the browser's. It outranks the
+ * participant's stored preference without ever being written over it, and the participant can still
+ * pick another one unless the application hides the selectors.
  */
 describe('LanguageService', () => {
 	let languageService: LanguageService;
@@ -143,5 +144,47 @@ describe('LanguageService', () => {
 
 		expect(languageService.selectedLanguage().lang).toBe('de');
 		expect(console.warn).toHaveBeenCalled();
+	});
+
+	describe('auto', () => {
+		const browserPrefers = (languages: string[], language = languages[0]) => {
+			spyOnProperty(navigator, 'languages').and.returnValue(languages);
+			spyOnProperty(navigator, 'language').and.returnValue(language);
+		};
+
+		it("serves the first of the browser's preferred languages that is available", () => {
+			browserPrefers(['ko-KR', 'fr-CA', 'en-US']);
+
+			languageService.setEmbeddedLanguage('auto');
+
+			expect(languageService.selectedLanguage().lang).toBe('fr');
+			expect(storage.setLang).not.toHaveBeenCalled();
+		});
+
+		it('falls back to English over the stored preference when none of them is available', () => {
+			browserPrefers(['ko-KR', 'th']);
+
+			languageService.setEmbeddedLanguage('AUTO');
+
+			expect(languageService.selectedLanguage().lang).toBe('en');
+		});
+
+		it('reads the single browser language when the list is not available', () => {
+			browserPrefers([], 'zh-TW');
+
+			languageService.setEmbeddedLanguage('auto');
+
+			expect(languageService.selectedLanguage().lang).toBe('cn');
+		});
+	});
+
+	it('shows the selectors unless the embedding application turns them off', () => {
+		expect(languageService.selectorVisible()).toBeTrue();
+
+		languageService.setSelectorVisible(false);
+		expect(languageService.selectorVisible()).toBeFalse();
+
+		languageService.setSelectorVisible(true);
+		expect(languageService.selectorVisible()).toBeTrue();
 	});
 });

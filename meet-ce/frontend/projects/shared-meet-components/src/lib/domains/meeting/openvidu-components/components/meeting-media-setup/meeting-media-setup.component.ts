@@ -21,6 +21,7 @@ import { BackgroundEffectsPanelComponent } from '../panel/background-effects-pan
 import { AudioDevicesComponent } from '../settings/audio-devices/audio-devices.component';
 import { LangSelectorComponent } from '../settings/lang-selector/lang-selector.component';
 import { VideoDevicesComponent } from '../settings/video-devices/video-devices.component';
+import { LanguageService } from '../../../../../shared/services/i18n/language.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 
@@ -68,6 +69,7 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	readonly showMicrophoneControls = this.libService.showMicrophoneControlsSignal;
 	readonly showBackgroundsButton = this.libService.backgroundEffectsButtonSignal;
 	readonly showLogo = this.libService.displayLogoSignal;
+	readonly langSelectorVisible = inject(LanguageService).selectorVisible;
 
 	readonly showBackgroundPanel = signal(false);
 

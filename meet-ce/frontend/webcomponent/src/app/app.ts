@@ -109,6 +109,8 @@ export class App {
 	readonly initialAudioActive = input(undefined, { transform: optionalBooleanAttribute });
 	readonly initialVideoActive = input(undefined, { transform: optionalBooleanAttribute });
 	readonly language = input<string | undefined>(undefined);
+	// Tri-state like the two above: unset keeps the selectors, only an explicit `false` hides them.
+	readonly showLanguageSelector = input(undefined, { transform: optionalBooleanAttribute });
 	readonly e2eeKey = input<string | undefined>(undefined);
 	readonly leaveRedirectUrl = input<string | undefined>(undefined);
 	readonly showOnlyRecordings = input(false, { transform: booleanAttribute });
@@ -146,6 +148,7 @@ export class App {
 		initialAudioActive: this.initialAudioActive(),
 		initialVideoActive: this.initialVideoActive(),
 		language: this.language(),
+		showLanguageSelector: this.showLanguageSelector(),
 		e2eeKey: this.e2eeKey(),
 		leaveRedirectUrl: this.leaveRedirectUrl(),
 		showOnlyRecordings: this.showOnlyRecordings(),

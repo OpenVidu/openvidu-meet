@@ -132,6 +132,8 @@ type OpenMeetingOptions = {
 	initialVideoActive?: boolean;
 	/** Sets the `language` attribute/query param. Omitted by default (the participant chooses). */
 	language?: string;
+	/** Sets the `show-language-selector` attribute/query param. Omitted by default (shown). */
+	showLanguageSelector?: boolean;
 };
 
 /**
@@ -157,7 +159,8 @@ export const openMeetingAtMediaSetup = async (
 		metadata,
 		initialAudioActive,
 		initialVideoActive,
-		language
+		language,
+		showLanguageSelector
 	} = options ?? {};
 	const participantName = name ?? `pw-${Math.random().toString(36).substring(2, 9)}`;
 
@@ -192,6 +195,7 @@ export const openMeetingAtMediaSetup = async (
 	await page.getByTestId('select-initialAudioActive').selectOption(toSelectValue(initialAudioActive));
 	await page.getByTestId('select-initialVideoActive').selectOption(toSelectValue(initialVideoActive));
 	await page.getByTestId('input-language').fill(language ?? '');
+	await page.getByTestId('select-showLanguageSelector').selectOption(toSelectValue(showLanguageSelector));
 
 	await page.getByTestId('btn-apply-config').click();
 
@@ -239,6 +243,7 @@ export const openMeetingAtMediaSetup = async (
  * @param options.initialAudioActive - Sets the `initial-audio-active` attribute/query param.
  * @param options.initialVideoActive - Sets the `initial-video-active` attribute/query param.
  * @param options.language - Sets the `language` attribute/query param.
+ * @param options.showLanguageSelector - Sets the `show-language-selector` attribute/query param.
  */
 export const openMeeting = async (page: Page, roomId: string, options?: OpenMeetingOptions): Promise<void> => {
 	const { meet } = await openMeetingAtMediaSetup(page, roomId, options);

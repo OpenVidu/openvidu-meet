@@ -2,14 +2,15 @@
 	<ov-landscape-warning />
 } @else {
 	<div class="prejoin-container" id="prejoin-container" [class.mobile]="viewportService.isMobile()" [class.name-error]="!!errorMessage()">
-		<!-- Top Language Toolbar -->
-		<div class="top-toolbar">
+		@if (langSelectorVisible()) {
+			<div class="top-toolbar">
 				<ov-lang-selector
 					[compact]="false"
 					class="language-selector"
 					(onLangChanged)="onLangChanged.emit($event)"
 				/>
 			</div>
+		}
 
 		<!-- Loading State -->
 		@if (isLoading()) {
