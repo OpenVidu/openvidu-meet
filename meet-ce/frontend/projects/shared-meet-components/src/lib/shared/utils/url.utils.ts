@@ -71,7 +71,7 @@ export const extractParams = (route: {
 		initialAudioActive: queryParams[EmbeddedAttribute.INITIAL_AUDIO_ACTIVE],
 		initialVideoActive: queryParams[EmbeddedAttribute.INITIAL_VIDEO_ACTIVE],
 		language: queryParams[EmbeddedAttribute.LANGUAGE],
-		hideLanguageSelector: queryParams[EmbeddedAttribute.HIDE_LANGUAGE_SELECTOR],
+		showLanguageSelector: queryParams[EmbeddedAttribute.SHOW_LANGUAGE_SELECTOR],
 		leaveRedirectUrl: queryParams[EmbeddedAttribute.LEAVE_REDIRECT_URL],
 		showOnlyRecordings: queryParams[EmbeddedAttribute.SHOW_ONLY_RECORDINGS] || 'false',
 		showRecording: queryParams[EmbeddedAttribute.SHOW_RECORDING],

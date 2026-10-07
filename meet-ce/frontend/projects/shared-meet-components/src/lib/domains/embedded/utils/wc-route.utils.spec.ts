@@ -13,7 +13,7 @@ const BASE_INPUTS: Required<WebComponentPropertyValues> = {
 	initialAudioActive: true,
 	initialVideoActive: true,
 	language: '',
-	hideLanguageSelector: false,
+	showLanguageSelector: true,
 	e2eeKey: '',
 	leaveRedirectUrl: '',
 	showOnlyRecordings: false,
@@ -75,7 +75,7 @@ describe('wcRouteFromAttributes', () => {
 				e2eeKey: 'k',
 				participantName: 'Alice',
 				language: 'es',
-				hideLanguageSelector: true,
+				showLanguageSelector: false,
 				leaveRedirectUrl: 'https://back'
 			})
 		);
@@ -88,7 +88,7 @@ describe('wcRouteFromAttributes', () => {
 					e2eeKey: 'k',
 					participantName: 'Alice',
 					language: 'es',
-					hideLanguageSelector: true,
+					showLanguageSelector: false,
 					leaveRedirectUrl: 'https://back'
 				})
 			})

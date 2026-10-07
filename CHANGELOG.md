@@ -17,7 +17,7 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   `recordingStatusChanged`, carrying `{ recordingId, status }` to every participant.
 - Embedded attributes and URL parameters `language`, which sets the initial meeting language (a BCP 47
   language tag, or `auto` for the browser's) over the participant's stored preference without replacing it,
-  and `hide-language-selector`, which hides the language selectors.
+  and `show-language-selector`, which hides the language selectors when `false`.
 
 ### Improved
 

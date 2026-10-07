@@ -77,7 +77,7 @@ export class SettingsPanelComponent implements OnInit {
 	readonly showCameraControls = this.libService.showCameraControlsSignal;
 	readonly showMicrophoneControls = this.libService.showMicrophoneControlsSignal;
 	readonly showThemeSelector = this.libService.showThemeSelectorSignal;
-	readonly langSelectorHidden = inject(LanguageService).selectorHidden;
+	readonly langSelectorVisible = inject(LanguageService).selectorVisible;
 	readonly selectedOption = signal<PanelSettingsOptions>(PanelSettingsOptions.GENERAL);
 
 	/**

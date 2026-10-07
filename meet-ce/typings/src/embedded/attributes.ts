@@ -44,14 +44,14 @@ export enum EmbeddedAttribute {
 	 * browser's preferred languages, and English when none is available.
 	 *
 	 * It **overrides the participant's previous choice**, which they can still change unless
-	 * `hide-language-selector` is set. An unsupported value is ignored.
+	 * `show-language-selector` is `false`. An unsupported value is ignored.
 	 */
 	LANGUAGE = 'language',
 	/**
-	 * Hide the language selectors, so the participant cannot change the language. A bare attribute or
-	 * any value other than `"false"` is `true`.
+	 * Show the language selectors (`true` by default). `"false"` hides them, so the participant cannot
+	 * change the language.
 	 */
-	HIDE_LANGUAGE_SELECTOR = 'hide-language-selector',
+	SHOW_LANGUAGE_SELECTOR = 'show-language-selector',
 	/**
 	 * Secret key for end-to-end encryption (E2EE).
 	 * If provided, the participant will join the meeting using E2EE key.
@@ -95,8 +95,8 @@ export interface WebComponentPropertyValues {
 	initialVideoActive?: boolean;
 	/** Language the interface starts in: `en`, `es`, `de`, `fr`, `zh`, `hi`, `it`, `ja`, `nl` or `pt`, regional variants included (`pt-BR` is `pt`), or `auto` for the browser's language. Wins over the participant's previous choice without replacing it. */
 	language?: string;
-	/** When true, hides the language selectors so the participant cannot change the language. */
-	hideLanguageSelector?: boolean;
+	/** Show the language selectors (default `true`); `false` hides them so the participant cannot change the language. */
+	showLanguageSelector?: boolean;
 	/** Secret key for end-to-end encryption (E2EE). When provided the participant joins using E2EE. */
 	e2eeKey?: string;
 	/** URL to redirect to when the participant dismisses the post-meeting, join, error or recording screen, after `embeddedCloseRequested` fires. */

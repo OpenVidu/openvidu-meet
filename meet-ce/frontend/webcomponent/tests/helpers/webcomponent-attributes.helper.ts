@@ -55,20 +55,19 @@ export const openWebcomponentWithAttributes = async (
 		await page.getByTestId(testId).fill(filled);
 	}
 
-	const CHECKBOX_TESTIDS: ReadonlyArray<[EmbeddedAttribute, string]> = [
-		[EmbeddedAttribute.SHOW_ONLY_RECORDINGS, 'input-showOnlyRecordings'],
-		[EmbeddedAttribute.HIDE_LANGUAGE_SELECTOR, 'input-hideLanguageSelector']
-	];
+	const checkbox = page.getByTestId('input-showOnlyRecordings');
+	const showOnlyRecordings = toBoolean(attributes[EmbeddedAttribute.SHOW_ONLY_RECORDINGS]);
 
-	for (const [property, testId] of CHECKBOX_TESTIDS) {
-		await page.getByTestId(testId).setChecked(toBoolean(attributes[property]));
+	if ((await checkbox.isChecked()) !== showOnlyRecordings) {
+		await checkbox.click();
 	}
 
 	// Tri-state in the form ('' = attribute omitted): omitting it and setting it to `true` are
 	// different requests, and only the latter outranks the room's own `config.initial*Active` default.
 	const TRI_STATE_TESTIDS: ReadonlyArray<[EmbeddedAttribute, string]> = [
 		[EmbeddedAttribute.INITIAL_AUDIO_ACTIVE, 'select-initialAudioActive'],
-		[EmbeddedAttribute.INITIAL_VIDEO_ACTIVE, 'select-initialVideoActive']
+		[EmbeddedAttribute.INITIAL_VIDEO_ACTIVE, 'select-initialVideoActive'],
+		[EmbeddedAttribute.SHOW_LANGUAGE_SELECTOR, 'select-showLanguageSelector']
 	];
 
 	for (const [property, testId] of TRI_STATE_TESTIDS) {

@@ -62,7 +62,8 @@ events are re-dispatched on the outer element.
   `initial-audio-active`, `initial-video-active` (tri-state: set values outrank the room's
   `config.initial*Active`, unset defers to it), `language` (BCP 47 tag, region variants
   fall back to the language, `auto` reads `navigator.languages` with English as fallback; outranks the
-  participant's stored language without overwriting it), `hide-language-selector`, `e2ee-key`, `leave-redirect-url`,
+  participant's stored language without overwriting it), `show-language-selector` (tri-state, only `false`
+  hides the language selectors), `e2ee-key`, `leave-redirect-url`,
   `show-only-recordings`, `show-recording`. Either `room-url` or `recording-url` is required.
 - **Events** (`CustomEvent`, `detail` = payload): `meetingJoined`, `meetingLeft` (with
   `LeftEventReason`), `embeddedCloseRequested`, `mediaAudioStatusChanged`/`mediaVideoStatusChanged`/

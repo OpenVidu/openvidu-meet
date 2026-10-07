@@ -177,13 +177,10 @@ export class App {
 		set(EmbeddedAttribute.INITIAL_AUDIO_ACTIVE, this.config.initialAudioActive());
 		set(EmbeddedAttribute.INITIAL_VIDEO_ACTIVE, this.config.initialVideoActive());
 		set(EmbeddedAttribute.LANGUAGE, this.config.language());
+		set(EmbeddedAttribute.SHOW_LANGUAGE_SELECTOR, this.config.showLanguageSelector());
 
 		if (this.config.showOnlyRecordings()) {
 			url.searchParams.set(EmbeddedAttribute.SHOW_ONLY_RECORDINGS, 'true');
-		}
-
-		if (this.config.hideLanguageSelector()) {
-			url.searchParams.set(EmbeddedAttribute.HIDE_LANGUAGE_SELECTOR, 'true');
 		}
 
 		return { src: url.toString(), origin: url.origin };

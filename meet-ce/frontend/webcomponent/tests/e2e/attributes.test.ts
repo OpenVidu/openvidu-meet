@@ -323,11 +323,11 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await expect(meet('#join-button')).toHaveText('Unirme ahora');
 			});
 
-			test('should hide both language selectors when hide-language-selector is set', async ({ page }) => {
+			test('should hide both language selectors when show-language-selector is false', async ({ page }) => {
 				const { meet } = await openMeetingAtMediaSetup(page, languageRoomId, {
 					role: 'moderator',
 					language: 'es',
-					hideLanguageSelector: true
+					showLanguageSelector: false
 				});
 				await expect(meet('#join-button')).toHaveText('Unirme ahora');
 				await expect(meet('ov-lang-selector')).toHaveCount(0);
@@ -344,7 +344,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				const { meet } = await openMeetingAtMediaSetup(page, languageRoomId, {
 					integration: 'iframe',
 					role: 'moderator',
-					hideLanguageSelector: true
+					showLanguageSelector: false
 				});
 
 				await expect(meet('#join-button')).toBeVisible();

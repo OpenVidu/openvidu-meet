@@ -11,7 +11,7 @@ export interface MeetEmbedConfig {
 	initialAudioActive?: boolean;
 	initialVideoActive?: boolean;
 	language?: string;
-	hideLanguageSelector?: boolean;
+	showLanguageSelector?: boolean;
 	e2eeKey?: string;
 	leaveRedirectUrl?: string;
 	showRecording?: string;
@@ -39,7 +39,7 @@ export class TestappConfigStore {
 	readonly initialAudioActive = signal<TriState>('');
 	readonly initialVideoActive = signal<TriState>('');
 	readonly language = signal('');
-	readonly hideLanguageSelector = signal(false);
+	readonly showLanguageSelector = signal<TriState>('');
 
 	private readonly draft = computed(() => ({
 		roomUrl: this.roomUrl(),
@@ -54,7 +54,7 @@ export class TestappConfigStore {
 		initialAudioActive: this.initialAudioActive(),
 		initialVideoActive: this.initialVideoActive(),
 		language: this.language(),
-		hideLanguageSelector: this.hideLanguageSelector()
+		showLanguageSelector: this.showLanguageSelector()
 	}));
 
 	private readonly appliedDraft = signal<string | null>(null);
@@ -81,7 +81,7 @@ export class TestappConfigStore {
 			initialAudioActive: toOptionalBoolean(draft.initialAudioActive),
 			initialVideoActive: toOptionalBoolean(draft.initialVideoActive),
 			language: optional(draft.language),
-			hideLanguageSelector: draft.hideLanguageSelector,
+			showLanguageSelector: toOptionalBoolean(draft.showLanguageSelector),
 			e2eeKey: optional(draft.e2eeKey),
 			leaveRedirectUrl: optional(draft.leaveRedirectUrl),
 			showRecording: optional(draft.showRecording),

@@ -34,7 +34,7 @@ const BROWSER_LANGUAGE_TAG = 'auto';
  *
  * An embedding application can ask for a language ({@link setEmbeddedLanguage}): it outranks the stored
  * preference without replacing it, and the participant can still pick another one unless the
- * application also hides the selectors ({@link setSelectorHidden}).
+ * application also hides the selectors ({@link setSelectorVisible}).
  */
 @Service()
 export class LanguageService {
@@ -46,10 +46,10 @@ export class LanguageService {
 	/** Currently selected language option. Scope translation stores react to this. */
 	readonly selectedLanguage = signal<LangOption>(DEFAULT_LANGUAGE_OPTIONS[0]);
 
-	private readonly _selectorHidden = signal(false);
+	private readonly _selectorVisible = signal(true);
 
-	/** Whether the embedding application hid the language selectors. */
-	readonly selectorHidden = this._selectorHidden.asReadonly();
+	/** Whether the language selectors are shown, which the embedding application can turn off. */
+	readonly selectorVisible = this._selectorVisible.asReadonly();
 
 	constructor() {
 		this.selectedLanguage.set(this.resolveStoredLanguage());
@@ -95,8 +95,8 @@ export class LanguageService {
 		this.selectedLanguage.set(option ?? this.resolveStoredLanguage());
 	}
 
-	setSelectorHidden(hidden: boolean): void {
-		this._selectorHidden.set(hidden);
+	setSelectorVisible(visible: boolean): void {
+		this._selectorVisible.set(visible);
 	}
 
 	/** The first available language among the browser's preferred ones, or the default language. */

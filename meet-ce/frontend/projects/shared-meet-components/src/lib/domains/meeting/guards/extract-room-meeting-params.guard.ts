@@ -22,7 +22,7 @@ export const extractRoomMeetingParamsGuard: CanActivateFn = (route: ActivatedRou
 		initialAudioActive,
 		initialVideoActive,
 		language,
-		hideLanguageSelector,
+		showLanguageSelector,
 		leaveRedirectUrl,
 		showOnlyRecordings,
 		showRecording,
@@ -42,7 +42,7 @@ export const extractRoomMeetingParamsGuard: CanActivateFn = (route: ActivatedRou
 		initialAudioActive: parseOptionalBoolean(initialAudioActive),
 		initialVideoActive: parseOptionalBoolean(initialVideoActive),
 		language,
-		hideLanguageSelector: parseOptionalBoolean(hideLanguageSelector) ?? false,
+		showLanguageSelector: parseOptionalBoolean(showLanguageSelector),
 		showRecording,
 		showOnlyRecordings: showOnlyRecordings === 'true'
 	});

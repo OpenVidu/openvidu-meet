@@ -2,7 +2,7 @@
 	<ov-landscape-warning />
 } @else {
 	<div class="prejoin-container" id="prejoin-container" [class.mobile]="viewportService.isMobile()" [class.name-error]="!!errorMessage()">
-		@if (!langSelectorHidden()) {
+		@if (langSelectorVisible()) {
 			<div class="top-toolbar">
 				<ov-lang-selector
 					[compact]="false"

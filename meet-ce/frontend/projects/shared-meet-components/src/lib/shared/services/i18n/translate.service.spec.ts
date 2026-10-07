@@ -178,13 +178,13 @@ describe('LanguageService', () => {
 		});
 	});
 
-	it('hides the selectors only while the embedding application asks', () => {
-		expect(languageService.selectorHidden()).toBeFalse();
+	it('shows the selectors unless the embedding application turns them off', () => {
+		expect(languageService.selectorVisible()).toBeTrue();
 
-		languageService.setSelectorHidden(true);
-		expect(languageService.selectorHidden()).toBeTrue();
+		languageService.setSelectorVisible(false);
+		expect(languageService.selectorVisible()).toBeFalse();
 
-		languageService.setSelectorHidden(false);
-		expect(languageService.selectorHidden()).toBeFalse();
+		languageService.setSelectorVisible(true);
+		expect(languageService.selectorVisible()).toBeTrue();
 	});
 });

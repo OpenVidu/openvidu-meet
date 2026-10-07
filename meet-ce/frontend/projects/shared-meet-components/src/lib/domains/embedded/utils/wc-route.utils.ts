@@ -67,7 +67,7 @@ export const wcRouteFromAttributes = (inputs: WebComponentPropertyValues): WcRou
 				initialAudioActive: inputs.initialAudioActive,
 				initialVideoActive: inputs.initialVideoActive,
 				language: inputs.language || undefined,
-				hideLanguageSelector: inputs.hideLanguageSelector,
+				showLanguageSelector: inputs.showLanguageSelector,
 				leaveRedirectUrl: inputs.leaveRedirectUrl || undefined
 			}
 		};

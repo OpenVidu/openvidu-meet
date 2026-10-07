@@ -69,7 +69,7 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	readonly showMicrophoneControls = this.libService.showMicrophoneControlsSignal;
 	readonly showBackgroundsButton = this.libService.backgroundEffectsButtonSignal;
 	readonly showLogo = this.libService.displayLogoSignal;
-	readonly langSelectorHidden = inject(LanguageService).selectorHidden;
+	readonly langSelectorVisible = inject(LanguageService).selectorVisible;
 
 	readonly showBackgroundPanel = signal(false);
 
