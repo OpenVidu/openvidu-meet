@@ -182,6 +182,10 @@ export class App {
 			url.searchParams.set(EmbeddedAttribute.SHOW_ONLY_RECORDINGS, 'true');
 		}
 
+		if (this.config.hideLanguageSelector()) {
+			url.searchParams.set(EmbeddedAttribute.HIDE_LANGUAGE_SELECTOR, 'true');
+		}
+
 		return { src: url.toString(), origin: url.origin };
 	}
 

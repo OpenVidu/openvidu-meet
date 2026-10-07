@@ -7,6 +7,7 @@ import {
 	expectToolbarCameraEnabled,
 	expectToolbarMicEnabled
 } from '../helpers/media-controls.helper';
+import { openMoreOptionsMenu } from '../helpers/panels.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import { endMeetingCommand, leaveMeeting, openMeeting, openMeetingAtMediaSetup } from '../helpers/testapp.helper';
 import {
@@ -320,6 +321,73 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				});
 
 				await expect(meet('#join-button')).toHaveText('Unirme ahora');
+			});
+
+			test('should hide both language selectors when hide-language-selector is set', async ({ page }) => {
+				const { meet } = await openMeetingAtMediaSetup(page, languageRoomId, {
+					role: 'moderator',
+					language: 'es',
+					hideLanguageSelector: true
+				});
+				await expect(meet('#join-button')).toHaveText('Unirme ahora');
+				await expect(meet('ov-lang-selector')).toHaveCount(0);
+
+				await meet('#join-button').click();
+				await expect(meet('#layout-container')).toBeVisible({ timeout: 15_000 });
+				await openMoreOptionsMenu(page);
+				await meet('#toolbar-settings-btn').click();
+				await expect(meet('ov-settings-panel')).toBeVisible();
+				await expect(meet('ov-lang-selector')).toHaveCount(0);
+			});
+
+			test('should hide the language selector on the iframe transport', async ({ page }) => {
+				const { meet } = await openMeetingAtMediaSetup(page, languageRoomId, {
+					integration: 'iframe',
+					role: 'moderator',
+					hideLanguageSelector: true
+				});
+
+				await expect(meet('#join-button')).toBeVisible();
+				await expect(meet('ov-lang-selector')).toHaveCount(0);
+			});
+
+			test.describe('auto, in a German browser', () => {
+				test.use({ locale: 'de-DE' });
+
+				test("should start in the browser's language", async ({ page }) => {
+					const { meet } = await openMeetingAtMediaSetup(page, languageRoomId, {
+						role: 'moderator',
+						language: 'auto'
+					});
+
+					await expect(meet('#join-button')).toHaveText('Meeting beitreten');
+				});
+
+				test("should start in the browser's language on the iframe transport", async ({ page }) => {
+					const { meet } = await openMeetingAtMediaSetup(page, languageRoomId, {
+						integration: 'iframe',
+						role: 'moderator',
+						language: 'auto'
+					});
+
+					await expect(meet('#join-button')).toHaveText('Meeting beitreten');
+				});
+			});
+
+			test.describe('auto, in a browser whose language is not available', () => {
+				test.use({ locale: 'ko-KR' });
+
+				test('should fall back to English over the participant preference', async ({ page }) => {
+					const { meet } = await openMeetingAtMediaSetup(page, languageRoomId, { role: 'moderator' });
+					await pickLanguage(meet, 'de');
+					await expect(meet('#join-button')).toHaveText('Meeting beitreten');
+					await meet('#join-button').click();
+					await expect(meet('#layout-container')).toBeVisible({ timeout: 15_000 });
+					await leaveMeeting(page);
+
+					await openMeetingAtMediaSetup(page, languageRoomId, { role: 'moderator', language: 'auto' });
+					await expect(meet('#join-button')).toHaveText('Join meeting');
+				});
 			});
 		});
 

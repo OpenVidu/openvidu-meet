@@ -16,7 +16,7 @@ import { RoomBrowser } from '../room-browser/room-browser';
 })
 export class SetupPanel {
 	protected readonly config = inject(TestappConfigStore);
-	protected readonly languages = ['en', 'es', 'de', 'fr', 'zh', 'hi', 'it', 'ja', 'nl', 'pt'];
+	protected readonly languages = ['auto', 'en', 'es', 'de', 'fr', 'zh', 'hi', 'it', 'ja', 'nl', 'pt'];
 
 	/** Emitted when the user asks for the current draft to be mounted. */
 	readonly apply = output<void>();

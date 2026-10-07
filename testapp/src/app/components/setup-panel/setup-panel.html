@@ -121,6 +121,16 @@
 					}
 				</datalist>
 			</div>
+			<div class="ta-switch-field">
+				<label for="hideLanguageSelector">hideLanguageSelector</label>
+				<input
+					id="hideLanguageSelector"
+					class="ta-switch"
+					type="checkbox"
+					data-testid="input-hideLanguageSelector"
+					[(ngModel)]="config.hideLanguageSelector"
+				/>
+			</div>
 			<div class="ta-field">
 				<label for="initialAudioActive">initialAudioActive</label>
 				<select

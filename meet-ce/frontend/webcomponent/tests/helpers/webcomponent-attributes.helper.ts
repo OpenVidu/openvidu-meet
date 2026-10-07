@@ -55,11 +55,13 @@ export const openWebcomponentWithAttributes = async (
 		await page.getByTestId(testId).fill(filled);
 	}
 
-	const checkbox = page.getByTestId('input-showOnlyRecordings');
-	const showOnlyRecordings = toBoolean(attributes[EmbeddedAttribute.SHOW_ONLY_RECORDINGS]);
+	const CHECKBOX_TESTIDS: ReadonlyArray<[EmbeddedAttribute, string]> = [
+		[EmbeddedAttribute.SHOW_ONLY_RECORDINGS, 'input-showOnlyRecordings'],
+		[EmbeddedAttribute.HIDE_LANGUAGE_SELECTOR, 'input-hideLanguageSelector']
+	];
 
-	if ((await checkbox.isChecked()) !== showOnlyRecordings) {
-		await checkbox.click();
+	for (const [property, testId] of CHECKBOX_TESTIDS) {
+		await page.getByTestId(testId).setChecked(toBoolean(attributes[property]));
 	}
 
 	// Tri-state in the form ('' = attribute omitted): omitting it and setting it to `true` are
