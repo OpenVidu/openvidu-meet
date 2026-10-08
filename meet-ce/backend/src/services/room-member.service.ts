@@ -660,7 +660,8 @@ export class RoomMemberService {
 	 * @param roomId - The ID of the room
 	 * @param previousToken - The previous room member token to refresh
 	 * @returns A promise that resolves to the new refreshed token
-	 * @throws Error if the previous token is invalid, expired, or if the participant is not found in the meeting
+	 * @throws Error if the previous token is invalid, expired, or if the participant is not found in the meeting,
+	 * and a 409 if a change to the participant's role keeps their metadata locked for too long
 	 */
 	async refreshRoomMemberToken(roomId: string, previousToken: string): Promise<string> {
 		const { participantIdentity, participantName } = await this.getValidatedRoomMemberTokenContext(
@@ -672,7 +673,9 @@ export class RoomMemberService {
 			throw errorInvalidToken();
 		}
 
-		const tokenMetadata = await this.buildTokenMetadataFromParticipant(roomId, participantIdentity);
+		const tokenMetadata = await this.withParticipantMetadataLock(roomId, participantIdentity, () =>
+			this.buildTokenMetadataFromParticipant(roomId, participantIdentity)
+		);
 		const livekitPermissions = this.getLiveKitPermissions(roomId, tokenMetadata.permissions);
 		return this.tokenService.generateRoomMemberToken({
 			tokenMetadata,
@@ -1151,9 +1154,9 @@ export class RoomMemberService {
 	}
 
 	/**
-	 * Runs a read-modify-write of a participant's LiveKit metadata while holding their lock, so a role
-	 * change and a token regeneration cannot overwrite each other's update. A writer that finds the
-	 * lock taken waits for it; one that keeps finding it taken is refused.
+	 * Runs a read, or a read-modify-write, of a participant's LiveKit metadata while holding their lock,
+	 * so a role change, a token regeneration and a token refresh never act on each other's half-applied
+	 * update. A caller that finds the lock taken waits for it; one that keeps finding it taken is refused.
 	 */
 	protected async withParticipantMetadataLock<T>(
 		roomId: string,

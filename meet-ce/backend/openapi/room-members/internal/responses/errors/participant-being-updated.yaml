@@ -1,0 +1,11 @@
+description: The participant's role is being changed and the change did not finish in time
+content:
+    application/json:
+        schema:
+            $ref: '../../../../shared/schemas/error.yaml'
+        examples:
+            being_updated:
+                summary: Participant is being updated by another request
+                value:
+                    error: 'Participant Error'
+                    message: "Participant 'alice_smith' in room 'room_123' is already being updated"

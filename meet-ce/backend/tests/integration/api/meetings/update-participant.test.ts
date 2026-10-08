@@ -379,6 +379,49 @@ describe('Meetings API Tests', () => {
 				const response = await getMeetingParticipant(roomId, identity, `Bearer ${regenerated.body.token}`);
 				expect(response.status).toBe(200);
 			});
+
+			it('should not refresh a token with permissions read before a demotion that landed meanwhile', async () => {
+				const { roomId } = roomData.room;
+				const { identity, speakerToken } = await joinAsSpeaker();
+				await updateParticipant(
+					roomId,
+					identity,
+					MeetParticipantModerationAction.UPGRADE,
+					roomData.moderatorToken
+				);
+
+				const readFromLiveKit = livekitService.getParticipant.bind(livekitService);
+				let refreshReading!: () => void;
+				const refreshRead = new Promise<void>((resolve) => (refreshReading = resolve));
+				let releaseRefreshRead!: () => void;
+				const refreshReadReleased = new Promise<void>((resolve) => (releaseRefreshRead = resolve));
+				jest.spyOn(livekitService, 'getParticipant').mockImplementationOnce(async (...args) => {
+					const participant = await readFromLiveKit(...args);
+					refreshReading();
+					await refreshReadReleased;
+					return participant;
+				});
+
+				const refresh = refreshRoomMemberTokenRequest(roomId, speakerToken);
+				await refreshRead;
+
+				const demotion = updateParticipant(
+					roomId,
+					identity,
+					MeetParticipantModerationAction.DOWNGRADE,
+					roomData.moderatorToken
+				);
+				// A fix that serializes the refresh with the demotion makes the demotion wait for the held read.
+				await Promise.race([demotion, sleep('1s')]);
+				releaseRefreshRead();
+
+				expect((await demotion).status).toBe(200);
+				const refreshed = await refresh;
+				expect(refreshed.status).toBe(200);
+
+				const response = await kickParticipant(roomId, participantIdentity, `Bearer ${refreshed.body.token}`);
+				expect(response.status).toBe(401);
+			});
 		});
 	});
 
