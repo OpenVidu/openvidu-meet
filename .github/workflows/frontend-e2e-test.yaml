@@ -45,10 +45,10 @@ jobs:
           version: 11.8.0
 
       - name: Install safe-chain
-        uses: OpenVidu/actions/install-safe-chain@070fb73fda8fe7a08e28991b1c2d276f12a009ef # v1.0.22
+        uses: OpenVidu/actions/install-safe-chain@41526ed83a611649aa1cddc11cd58ec1e88c859e # v1.0.23
 
       - name: Setup OpenVidu Local Deployment
-        uses: OpenVidu/actions/start-openvidu-local-deployment@070fb73fda8fe7a08e28991b1c2d276f12a009ef # v1.0.22
+        uses: OpenVidu/actions/start-openvidu-local-deployment@41526ed83a611649aa1cddc11cd58ec1e88c859e # v1.0.23
         with:
           ref-openvidu-local-deployment: development
           pre_startup_commands: |
@@ -62,7 +62,7 @@ jobs:
             chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
 
       - name: Build and Start OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@070fb73fda8fe7a08e28991b1c2d276f12a009ef # v1.0.22
+        uses: OpenVidu/actions/start-openvidu-meet@41526ed83a611649aa1cddc11cd58ec1e88c859e # v1.0.23
 
       # Playwright only transpiles, so this is the sole type-check the e2e suites ever get
       # (same hole test:types closes for the backend's tests/**).
@@ -125,4 +125,4 @@ jobs:
 
       - name: Cleanup
         if: always()
-        uses: OpenVidu/actions/cleanup@070fb73fda8fe7a08e28991b1c2d276f12a009ef # v1.0.22
+        uses: OpenVidu/actions/cleanup@41526ed83a611649aa1cddc11cd58ec1e88c859e # v1.0.23
