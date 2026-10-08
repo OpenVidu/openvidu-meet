@@ -125,7 +125,7 @@ const ALL_SCENES = [
 	{ id: 'e2ee-wrong-key', live: true, shots: [{ domain: 'meeting', base: 'e2ee-wrong-key' }] },
 
 	// Smart-layout scenes (live, plain rooms). `layout-settings` opens the grid-layout settings
-	// panel (Mosaic / Smart Mosaic + visible-participants slider); `layout-grid` shows the adaptive
+	// panel (Mosaic / Smart Mosaic + visible-participants count); `layout-grid` shows the adaptive
 	// grid with 6 participants (4 visible remotes + a "+1" hidden badge) and the participants panel.
 	{ id: 'layout-settings', live: true, shots: [{ domain: 'meeting', base: 'layout-settings' }] },
 	{ id: 'layout-grid', live: true, shots: [{ domain: 'meeting', base: 'layout-grid' }] },
@@ -485,14 +485,14 @@ async function captureLayoutScene(token, shot, { count, config, afterJoin }) {
 	}
 }
 
-// Grid-layout settings panel: shows the Mosaic / Smart Mosaic modes and the visible-participants slider.
+// Grid-layout settings panel: shows the Mosaic / Smart Mosaic modes and the visible-participants count.
 const captureLayoutSettings = (token, shot) =>
 	captureLayoutScene(token, shot, {
 		count: 2,
 		afterJoin: async (viewer) => {
 			await openLayoutSettings(viewer);
 			await viewer.waitForSelector('#layout-smart-mosaic', { state: 'visible', timeout: TIMEOUT });
-			await viewer.waitForSelector('.participant-slider', { state: 'visible', timeout: TIMEOUT });
+			await viewer.waitForSelector('.participant-count-options', { state: 'visible', timeout: TIMEOUT });
 		}
 	});
 

@@ -32,7 +32,7 @@ import {
 	ParticipantPanelBeforeLocalParticipantDirective,
 	ParticipantsPanelHeaderActionsDirective,
 	PreJoinDirective,
-	SettingsPanelGeneralAdditionalElementsDirective,
+	SettingsPanelLayoutDirective,
 	ToolbarMoreOptionsAdditionalMenuItemsDirective
 } from '../../directives/template/internals.directive';
 import {
@@ -126,7 +126,6 @@ import { ToolbarComponent } from '../toolbar/toolbar.component';
 		ParticipantPanelItemComponent,
 		SmartLayoutComponent,
 		StreamComponent,
-		SettingsPanelGeneralAdditionalElementsDirective,
 		NgTemplateOutlet
 	],
 	templateUrl: './meeting-view.component.html',
@@ -211,9 +210,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	 * Egress takes a few seconds to come up, and until it does there is no elapsed time to show.
 	 * The chip goes up anyway, so asking for a recording is never met with silence.
 	 */
-	protected readonly isRecordingStarting = computed(
-		() => this.recordingStatus().status === RecordingState.STARTING
-	);
+	protected readonly isRecordingStarting = computed(() => this.recordingStatus().status === RecordingState.STARTING);
 
 	protected readonly showRecordingChip = computed(() => this.isRecordingStarting() || this.isRecording());
 
@@ -277,9 +274,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 		ParticipantPanelAfterLocalParticipantDirective
 	);
 	readonly externalLayoutAdditionalElements = contentChild(LayoutAdditionalElementsDirective);
-	readonly externalSettingsPanelGeneralAdditionalElements = contentChild(
-		SettingsPanelGeneralAdditionalElementsDirective
-	);
+	readonly externalSettingsPanelLayout = contentChild(SettingsPanelLayoutDirective);
 	readonly externalToolbarMoreOptionsAdditionalMenuItems = contentChild(
 		ToolbarMoreOptionsAdditionalMenuItemsDirective
 	);
@@ -527,6 +522,15 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 				}
 			});
 		}
+	});
+
+	/**
+	 * @internal
+	 * The Layout tab of the settings panel follows its projected template, which the host can add or
+	 * remove at any time, unlike the slots registered once in setupTemplates().
+	 */
+	private readonly settingsPanelLayoutEffect = effect(() => {
+		this.templateRegistry.settingsPanelLayout.set(this.externalSettingsPanelLayout()?.template);
 	});
 
 	// Close background effects panel and remove background if the button is disabled
@@ -822,8 +826,5 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 		const layoutAdditional = this.externalLayoutAdditionalElements();
 		r.layoutAdditionalElements.set(layoutAdditional?.template);
 		r.layoutAdditionalElementsSlot.set(layoutAdditional?.slot() ?? 'default');
-
-		// Settings panel extensions
-		r.settingsPanelGeneralAdditionalElements.set(this.externalSettingsPanelGeneralAdditionalElements()?.template);
 	}
 }

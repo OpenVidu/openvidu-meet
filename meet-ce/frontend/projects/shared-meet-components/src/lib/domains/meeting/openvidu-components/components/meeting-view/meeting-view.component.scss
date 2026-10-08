@@ -204,11 +204,6 @@
 	z-index: 1;
 }
 
-.big {
-	width: 650px;
-	max-width: 100%;
-}
-
 .mat-drawer.mat-drawer-side {
 	z-index: 0 !important;
 }
@@ -258,11 +253,6 @@
 		width: 100% !important;
 		max-width: 100% !important;
 		z-index: 1002 !important;
-	}
-
-	.big {
-		width: 100% !important;
-		max-width: 100% !important;
 	}
 
 	::ng-deep .mat-drawer-backdrop.mat-drawer-shown {

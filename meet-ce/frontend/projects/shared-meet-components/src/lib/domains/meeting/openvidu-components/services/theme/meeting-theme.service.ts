@@ -43,10 +43,6 @@ export class MeetingThemeService {
 	// this service used to run later, from the meeting component's constructor, and overrode that
 	// decision with its own fallback.
 
-	getAllThemes(): MeetingThemeMode[] {
-		return Object.values(MeetingThemeMode);
-	}
-
 	/**
 	 * Gets the current theme mode
 	 */

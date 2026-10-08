@@ -48,7 +48,7 @@ applies everywhere; the file extension follows the format.
 
 Most scenes are single static pages, but **live scenes** (`live: true`) drive a real
 multi-participant meeting — `e2ee-wrong-key` (the wrong-key lockout, in an E2EE room),
-`layout-settings` (the Mosaic / Smart Mosaic modes and visible-participants slider),
+`layout-settings` (the Mosaic / Smart Mosaic modes and visible-participants count),
 `layout-grid` (6 participants — Smart Mosaic's default 4 visible slots leave a "+1" badge — with the participants panel open) and
 `meeting-ending-soon` (a room with a 6-minute duration limit: about a minute after the meeting
 starts, the status rail counts down and the pinned "Meeting ending soon" notice shows for 12 s).
@@ -118,7 +118,7 @@ sample webcam. Drop them with an explicit `--scenes` list if you only want the s
 | `room-detail` | rooms | `/rooms/:id` | login | **3 rooms** | `h1` = seeded room name |
 | `room-edit` | rooms | `/rooms/:id/edit` | admin/user | **3 rooms** | `.wizard-header` |
 | `e2ee-wrong-key` | meeting | `/room/:id` (live, ×3; wrong-key participant's view) | anon (REST-seeded E2EE room) | **own E2EE room** | `.encryption-warning` |
-| `layout-settings` | meeting | `/room/:id` (live, ×2) | anon (REST-seeded room) | **own room** | `.participant-slider` |
+| `layout-settings` | meeting | `/room/:id` (live, ×2) | anon (REST-seeded room) | **own room** | `.participant-count-options` |
 | `layout-grid` | meeting | `/room/:id` (live, ×6; 4 visible + "+1" badge, participants panel) | anon (REST-seeded room) | **own room** | `ov-participants-panel` |
 | `meeting-ending-soon` | meeting | `/room/:id` (live, ×3; ~1 min wait for the notice) | anon (REST-seeded room, `maxDurationMinutes: 6`) | **own room** | `.ending-soon-chip` |
 

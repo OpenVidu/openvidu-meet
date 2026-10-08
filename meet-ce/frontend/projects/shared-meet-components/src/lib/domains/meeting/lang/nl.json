@@ -27,7 +27,8 @@
 	},
 	"DEVICES": {
 		"NO_VIDEO_DEVICE": "Videoapparaat niet gevonden",
-		"NO_AUDIO_DEVICE": "Audioapparaat niet gevonden"
+		"NO_AUDIO_DEVICE": "Audioapparaat niet gevonden",
+		"CHECK_DEVICE": "Controleer of het is aangesloten en of de browser het mag gebruiken."
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Audio dempen",
@@ -106,13 +107,23 @@
 		},
 		"SETTINGS": {
 			"TITLE": "Instellingen",
+			"AUDIO_VIDEO": "Audio en video",
+			"LAYOUT": "Indeling",
 			"GENERAL": "Algemeen",
+			"CAMERA": "Camera",
+			"CAMERA_OFF": "Je camera staat uit",
+			"BACKGROUND": "Achtergrond",
+			"MICROPHONE": "Microfoon",
+			"MICROPHONE_LEVEL": "Microfoonniveau",
+			"MICROPHONE_LEVEL_HINT": "Praat om te controleren of anderen je horen",
+			"MICROPHONE_OFF": "Je microfoon staat uit",
 			"DISPLAY_NAME": "Weergavenaam",
-			"VIDEO": "Video",
-			"AUDIO": "Audio",
+			"DISPLAY_NAME_HINT": "Gekozen toen je deelnam aan de vergadering",
+			"DISPLAY_NAME_LOCKED": "Kan tijdens de vergadering niet worden gewijzigd",
 			"LANGUAGE": "Taal",
-			"DISABLED_VIDEO": "Geen video",
-			"THEME": "Thema"
+			"THEME": "Thema",
+			"THEME_LIGHT": "Licht",
+			"THEME_DARK": "Donker"
 		},
 		"BACKGROUND": {
 			"TITLE": "Achtergrondeffecten",
@@ -221,15 +232,23 @@
 		"ADJUST_LAYOUT": "Indeling aanpassen"
 	},
 	"LAYOUT_SETTINGS": {
-		"TITLE": "Indelingsinstellingen",
+		"INTRO": "Kies hoe mensen op je scherm worden gerangschikt. Alleen jouw weergave verandert.",
 		"MODE_ARIA": "Indelingsmodus selecteren",
 		"MOSAIC": "Mozaïek",
-		"MOSAIC_DESC": "Toont alle deelnemers in één raster",
+		"MOSAIC_DESC": "Iedereen, in gelijke tegels",
 		"SMART_MOSAIC": "Slim mozaïek",
-		"SMART_MOSAIC_DESC": "Toont een beperkt aantal actieve deelnemers",
-		"COUNT_LABEL": "Aantal zichtbare deelnemers",
-		"COUNT_HELPER": "Kies hoeveel externe deelnemers in het raster worden getoond",
-		"COUNT_ARIA": "Aantal weer te geven deelnemers"
+		"SMART_MOSAIC_DESC": "Sprekers eerst, de rest gegroepeerd",
+		"COUNT_LABEL": "Zichtbare deelnemers",
+		"COUNT_EXCLUDES_YOU": "Jij niet meegeteld",
+		"COUNT_SMART_ONLY": "Alleen slim mozaïek",
+		"COUNT_HELPER": "Wie spreekt, komt automatisch in beeld. De rest wordt gegroepeerd onder +N.",
+		"COUNT_DISABLED_HELPER": "Kies slim mozaïek om te beperken hoeveel mensen tegelijk worden getoond.",
+		"COUNT_ARIA": "Aantal weer te geven deelnemers",
+		"OWN_VIDEO": "Je video",
+		"OWN_VIDEO_FLOATING": "Zwevend",
+		"OWN_VIDEO_DOCKED": "In het raster",
+		"OWN_VIDEO_HELPER": "Zwevend houdt je video boven de indeling, waar je hem kunt slepen en van grootte kunt veranderen.",
+		"OWN_VIDEO_PINNED_HELPER": "Maak je video los om hem te laten zweven of in het raster te plaatsen."
 	},
 	"HIDDEN_PARTICIPANTS": {
 		"ONE_MORE": "andere deelnemer",

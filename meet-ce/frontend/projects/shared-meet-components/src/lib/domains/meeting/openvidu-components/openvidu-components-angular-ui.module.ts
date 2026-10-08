@@ -24,7 +24,6 @@ import { LandscapeWarningComponent } from './components/landscape-warning/landsc
 import { RecordingActivityComponent } from './components/panel/activities-panel/recording-activity/recording-activity.component';
 import { AudioDevicesComponent } from './components/settings/audio-devices/audio-devices.component';
 import { LangSelectorComponent } from './components/settings/lang-selector/lang-selector.component';
-import { ParticipantNameInputComponent } from './components/settings/participant-name-input/participant-name-input.component';
 import { ThemeSelectorComponent } from './components/settings/theme-selector/theme-selector.component';
 import { VideoDevicesComponent } from './components/settings/video-devices/video-devices.component';
 import { ParticipantAvatarComponent } from './components/participant-avatar/participant-avatar.component';
@@ -49,7 +48,6 @@ const publicComponents = [
 		LandscapeWarningComponent,
 		AudioDevicesComponent,
 		LangSelectorComponent,
-		ParticipantNameInputComponent,
 		ThemeSelectorComponent,
 		VideoDevicesComponent,
 		ParticipantAvatarComponent,

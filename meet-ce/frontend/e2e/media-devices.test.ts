@@ -84,7 +84,7 @@ test.describe('Media Devices E2E Tests', () => {
 			await openMeeting(page, accessUrl);
 
 			await openSettingsPanel(page);
-			await page.locator('#video-opt').click();
+			await page.locator('#audio-video-opt').click();
 			await expect(page.locator('ov-video-devices-select')).toBeVisible();
 
 			const videoDropdown = page.locator('#video-dropdown');
@@ -158,12 +158,8 @@ test.describe('Media Devices E2E Tests', () => {
 			await openMeeting(noMediaPage, accessUrl, { skipPrejoinMediaCheck: true });
 
 			await openSettingsPanel(noMediaPage);
-			await noMediaPage.locator('#video-opt').click();
-			await expect(noMediaPage.locator('ov-video-devices-select')).toBeVisible();
+			await noMediaPage.locator('#audio-video-opt').click();
 			await expect(noMediaPage.locator('#no-video-device-message')).toBeVisible();
-
-			await noMediaPage.locator('#audio-opt').click();
-			await expect(noMediaPage.locator('ov-audio-devices-select')).toBeVisible();
 			await expect(noMediaPage.locator('#no-audio-device-message')).toBeVisible();
 		});
 	});

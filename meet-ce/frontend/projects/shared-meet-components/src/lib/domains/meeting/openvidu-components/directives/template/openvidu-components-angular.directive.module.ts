@@ -21,7 +21,7 @@ import {
 	ParticipantsPanelHeaderActionsDirective,
 	PreJoinDirective,
 	LeaveButtonDirective,
-	SettingsPanelGeneralAdditionalElementsDirective,
+	SettingsPanelLayoutDirective,
 	ToolbarMoreOptionsAdditionalMenuItemsDirective
 } from './internals.directive';
 
@@ -45,7 +45,7 @@ const directives = [
 	ParticipantPanelAfterLocalParticipantDirective,
 	LayoutAdditionalElementsDirective,
 	ParticipantPanelParticipantBadgeDirective,
-	SettingsPanelGeneralAdditionalElementsDirective,
+	SettingsPanelLayoutDirective,
 	ToolbarMoreOptionsAdditionalMenuItemsDirective
 ];
 

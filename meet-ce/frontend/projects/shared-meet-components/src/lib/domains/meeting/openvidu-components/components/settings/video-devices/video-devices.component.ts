@@ -1,12 +1,18 @@
-import { Component, inject, input, output, Signal, signal, WritableSignal } from '@angular/core';
+import { Component, computed, inject, input, output, Signal, signal, WritableSignal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { AvatarView } from '../../../models/avatar-view.model';
 import { CustomDevice } from '../../../models/device.model';
+import { PanelType } from '../../../models/panel.model';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
+import { MeetingUiConfigService } from '../../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../../services/device/device.service';
 import { LocalMediaService } from '../../../services/local-media/local-media.service';
+import { PanelService } from '../../../services/panel/panel.service';
+import { ParticipantService } from '../../../services/participant/participant.service';
+import { VideoElementComponent } from '../../video-element/video-element.component';
 import { LoggerService } from '../../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../../shared/models/logger.model';
 
@@ -15,17 +21,33 @@ import type { ILogger } from '../../../../../../shared/models/logger.model';
  */
 @Component({
 	selector: 'ov-video-devices-select',
-	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe],
+	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe, VideoElementComponent],
 	templateUrl: './video-devices.component.html',
-	styleUrl: './video-devices.component.scss'
+	styleUrl: './video-devices.component.scss',
+	host: { '[class.compact]': 'compact()' }
 })
 export class VideoDevicesComponent {
 	readonly compact = input(false);
 	readonly onVideoDeviceChanged = output<CustomDevice>();
 	readonly onVideoEnabledChanged = output<boolean>();
 
+	private readonly deviceSrv = inject(DeviceService);
+	private readonly localMedia = inject(LocalMediaService);
+	private readonly panelService = inject(PanelService);
+	private readonly loggerSrv = inject(LoggerService);
+	private readonly localParticipant = inject(ParticipantService).localParticipant;
+
 	readonly cameraStatusChanging = signal(false);
-	readonly isCameraEnabled = inject(LocalMediaService).camera.enabled;
+	readonly isCameraEnabled = this.localMedia.camera.enabled;
+	readonly videoTrack = this.localMedia.camera.track;
+	readonly showBackgroundsButton = inject(MeetingUiConfigService).backgroundEffectsButtonSignal;
+	readonly previewAvatar = computed<AvatarView>(() => ({
+		show: !this.isCameraEnabled(),
+		name: this.localParticipant()?.name ?? '',
+		color: this.localParticipant()?.colorProfile ?? '',
+		isSpeaking: false,
+		hasEncryptionError: false
+	}));
 
 	protected readonly cameras: WritableSignal<CustomDevice[]>;
 	protected readonly cameraSelected: WritableSignal<CustomDevice | undefined>;
@@ -37,10 +59,6 @@ export class VideoDevicesComponent {
 		w: () => {},
 		e: () => {}
 	};
-
-	private readonly deviceSrv = inject(DeviceService);
-	private readonly localMedia = inject(LocalMediaService);
-	private readonly loggerSrv = inject(LoggerService);
 
 	constructor() {
 		this.log = this.loggerSrv.get('VideoDevicesComponent');
@@ -83,5 +101,9 @@ export class VideoDevicesComponent {
 		} finally {
 			this.cameraStatusChanging.set(false);
 		}
+	}
+
+	openBackgroundEffects() {
+		this.panelService.togglePanel(PanelType.BACKGROUND_EFFECTS);
 	}
 }

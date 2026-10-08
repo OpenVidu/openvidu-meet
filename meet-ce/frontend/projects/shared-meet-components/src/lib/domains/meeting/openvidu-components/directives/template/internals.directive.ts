@@ -189,23 +189,14 @@ export class ParticipantPanelParticipantBadgeDirective {
 }
 
 /**
- * The ***ovSettingsPanelGeneralAdditionalElements** directive allows you to inject custom HTML or Angular templates
- * into the general section of the settings panel.
- * This enables you to add custom controls, information, or UI elements to extend the settings panel functionality.
+ * The ***ovSettingsPanelLayout** directive provides the content of the settings panel's Layout tab.
+ * The tab is shown only while this template is projected.
  *
  * Usage example:
  * ```html
  * <ov-meeting-view>
- *   <ng-container *ovSettingsPanelGeneralAdditionalElements>
- *     <div class="custom-settings-section">
- *       <mat-list>
- *         <mat-list-item>
- *           <mat-icon matListItemIcon>tune</mat-icon>
- *           <div matListItemTitle>Custom Setting</div>
- *           <mat-slide-toggle matListItemMeta [(ngModel)]="customSetting"></mat-slide-toggle>
- *         </mat-list-item>
- *       </mat-list>
- *     </div>
+ *   <ng-container *ovSettingsPanelLayout>
+ *     <my-layout-settings />
  *   </ng-container>
  * </ov-meeting-view>
  * ```
@@ -213,9 +204,9 @@ export class ParticipantPanelParticipantBadgeDirective {
  * @internal
  */
 @Directive({
-	selector: '[ovSettingsPanelGeneralAdditionalElements]'
+	selector: '[ovSettingsPanelLayout]'
 })
-export class SettingsPanelGeneralAdditionalElementsDirective {
+export class SettingsPanelLayoutDirective {
 	public template = inject(TemplateRef<any>);
 	public container = inject(ViewContainerRef);
 }

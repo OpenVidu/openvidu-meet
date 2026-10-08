@@ -27,7 +27,8 @@
 	},
 	"DEVICES": {
 		"NO_VIDEO_DEVICE": "ビデオデバイスが見つかりません",
-		"NO_AUDIO_DEVICE": "オーディオデバイスが見つかりません"
+		"NO_AUDIO_DEVICE": "オーディオデバイスが見つかりません",
+		"CHECK_DEVICE": "接続されていること、およびブラウザーに使用が許可されていることを確認してください。"
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "オーディオをミュートする",
@@ -106,13 +107,23 @@
 		},
 		"SETTINGS": {
 			"TITLE": "設定",
+			"AUDIO_VIDEO": "音声とビデオ",
+			"LAYOUT": "レイアウト",
 			"GENERAL": "全般的",
+			"CAMERA": "カメラ",
+			"CAMERA_OFF": "カメラはオフです",
+			"BACKGROUND": "背景",
+			"MICROPHONE": "マイク",
+			"MICROPHONE_LEVEL": "マイクの音量",
+			"MICROPHONE_LEVEL_HINT": "話して、他の参加者に聞こえるか確認してください",
+			"MICROPHONE_OFF": "マイクはオフです",
 			"DISPLAY_NAME": "表示名",
-			"VIDEO": "ビデオ",
-			"AUDIO": "オーディオ",
+			"DISPLAY_NAME_HINT": "会議への参加時に設定されました",
+			"DISPLAY_NAME_LOCKED": "会議中は変更できません",
 			"LANGUAGE": "言語",
-			"DISABLED_VIDEO": "ビデオを無効にする",
-			"THEME": "テーマ"
+			"THEME": "テーマ",
+			"THEME_LIGHT": "ライト",
+			"THEME_DARK": "ダーク"
 		},
 		"BACKGROUND": {
 			"TITLE": "背景効果",
@@ -221,15 +232,23 @@
 		"ADJUST_LAYOUT": "レイアウトを調整"
 	},
 	"LAYOUT_SETTINGS": {
-		"TITLE": "レイアウト設定",
+		"INTRO": "画面上での参加者の並べ方を選択します。変わるのはあなたの表示だけです。",
 		"MODE_ARIA": "レイアウトモードを選択",
 		"MOSAIC": "モザイク",
-		"MOSAIC_DESC": "すべての参加者を統一されたグリッドに表示します",
+		"MOSAIC_DESC": "全員を同じ大きさで表示",
 		"SMART_MOSAIC": "スマートモザイク",
-		"SMART_MOSAIC_DESC": "アクティブな参加者を一定数まで表示します",
-		"COUNT_LABEL": "表示する参加者数",
-		"COUNT_HELPER": "グリッドに表示するリモート参加者の人数を選択してください",
-		"COUNT_ARIA": "表示する参加者数"
+		"SMART_MOSAIC_DESC": "発言者を優先し、残りはまとめて表示",
+		"COUNT_LABEL": "表示する参加者",
+		"COUNT_EXCLUDES_YOU": "自分を除く",
+		"COUNT_SMART_ONLY": "スマートモザイクのみ",
+		"COUNT_HELPER": "発言している人は自動的に表示されます。残りの人は +N にまとめられます。",
+		"COUNT_DISABLED_HELPER": "同時に表示する人数を制限するには、スマートモザイクを選択してください。",
+		"COUNT_ARIA": "表示する参加者数",
+		"OWN_VIDEO": "自分のビデオ",
+		"OWN_VIDEO_FLOATING": "フロート",
+		"OWN_VIDEO_DOCKED": "グリッド内",
+		"OWN_VIDEO_HELPER": "フロートでは、自分のビデオがレイアウトの上に表示され、ドラッグやサイズ変更ができます。",
+		"OWN_VIDEO_PINNED_HELPER": "フロートまたはグリッドに戻すには、自分のビデオのピン留めを解除してください。"
 	},
 	"HIDDEN_PARTICIPANTS": {
 		"ONE_MORE": "人の他の参加者",

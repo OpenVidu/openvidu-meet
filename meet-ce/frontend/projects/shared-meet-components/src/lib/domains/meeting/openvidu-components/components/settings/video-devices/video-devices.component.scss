@@ -1,49 +1,101 @@
-@use '../selector-shared' as shared;
+@use '../selector-shared' as controls;
 
 :host {
+	display: block;
+}
+
+:host(.compact) {
 	display: flex;
 	align-items: center;
 	height: 100%;
+}
 
-	.video-device-selector {
-		@include shared.device-selector-base();
+.video-device-selector {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
 
-		// Video-specific overrides for compact mode
-		&.compact {
-			.unified-device-button {
-				.toggle-section {
-					display: flex-end; // Video-specific styling
-				}
-			}
-		}
+	&.compact {
+		flex-direction: row;
+		align-items: center;
+		width: 100%;
 
-		// Video-specific overrides for normal mode
-		// &:not(.compact) {
-		// 	.normal-device-selector {
-		// 		.device-input-selector {
-		// 			&:not(.disabled) {
-		// 				.selector-button {
-		// 					// Video-specific hover effect with box-shadow
-		// 					&:hover:not([disabled]) {
-		// 						background-color: var(--ov-surface-color) !important;
-		// 						border-color: var(--ov-primary-action-color);
-		// 					}
-		// 				}
-		// 			}
-		// 		}
-		// 	}
-		// }
+		@include controls.compact-device-button();
 	}
 }
 
-// Include shared device menu styles
-@include shared.device-menu-styles();
-
-// Video-specific additional styles
-::ng-deep .mdc-text-field--filled:not(.mdc-text-field--disabled) .mdc-line-ripple::after {
-	border-bottom-color: var(--ov-primary-action-color) !important;
+.device-switch-row {
+	@include controls.switch-row();
 }
 
-::ng-deep .mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled):not(.mat-mdc-option-multiple) {
-	background-color: var(--ov-selection-color) !important;
+.camera-preview {
+	position: relative;
+	isolation: isolate;
+	aspect-ratio: 16 / 9;
+	overflow: hidden;
+	border-radius: var(--ov-video-radius);
+	background: var(--ov-video-background);
+
+	ov-video-element {
+		position: absolute;
+		inset: 0;
+	}
 }
+
+.camera-off-caption {
+	position: absolute;
+	z-index: 890;
+	left: 0;
+	right: 0;
+	bottom: 12px;
+	text-align: center;
+	font-size: 13px;
+	color: #ffffff;
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.background-button {
+	position: absolute;
+	z-index: 890;
+	left: 10px;
+	bottom: 10px;
+	height: 32px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 0 12px 0 10px;
+	border: none;
+	border-radius: 16px;
+	background: rgba(31, 32, 32, 0.72);
+	color: #ffffff;
+	font: inherit;
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+
+	mat-icon {
+		@include controls.icon(18px);
+	}
+
+	&:hover {
+		background: rgba(31, 32, 32, 0.88);
+	}
+
+	&:focus-visible {
+		@include controls.focus-ring();
+	}
+}
+
+.device-field {
+	@include controls.field();
+
+	&.off {
+		opacity: 0.55;
+	}
+}
+
+.no-device-notice {
+	@include controls.notice();
+}
+
+@include controls.menu('device-menu');

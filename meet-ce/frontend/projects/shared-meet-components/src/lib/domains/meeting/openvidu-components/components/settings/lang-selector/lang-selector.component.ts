@@ -2,7 +2,6 @@ import { Component, effect, inject, input, OnInit, output } from '@angular/core'
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { AvailableLangs, LangOption } from '../../../models/lang.model';
 import { MeetingTranslateService } from '../../../services/translate/meeting-translate.service';
 
@@ -11,15 +10,14 @@ import { MeetingTranslateService } from '../../../services/translate/meeting-tra
  */
 @Component({
 	selector: 'ov-lang-selector',
-	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule],
+	imports: [MatButtonModule, MatIconModule, MatMenuModule],
 	templateUrl: './lang-selector.component.html',
-	styleUrl: './lang-selector.component.scss'
+	styleUrl: './lang-selector.component.scss',
+	host: { '[class.field]': "variant() === 'field'" }
 })
 export class LangSelectorComponent implements OnInit {
-	/**
-	 * @internal
-	 */
-	readonly compact = input(false);
+	/** `button` is the prejoin's language button; `field` fills the width of a settings form. */
+	readonly variant = input<'button' | 'field'>('button');
 	readonly onLangChanged = output<LangOption>();
 	languages: LangOption[] = [];
 	private readonly translateService = inject(MeetingTranslateService);

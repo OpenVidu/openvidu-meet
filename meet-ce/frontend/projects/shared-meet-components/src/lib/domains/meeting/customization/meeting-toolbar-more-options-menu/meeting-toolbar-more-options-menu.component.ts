@@ -4,7 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
-import { PanelService, PanelType, ViewportService } from '../../openvidu-components';
+import { PanelService, PanelSettingsOptions, PanelType, ViewportService } from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
 
 /**
@@ -25,10 +25,7 @@ export class MeetingToolbarMoreOptionsMenuComponent {
 	isMobileView = this.viewportService.isMobile;
 	showLayoutSelector = computed(() => this.meetingContextService.meetingUI().showLayoutSelector);
 
-	/**
-	 * Opens the settings panel to allow users to change grid layout
-	 */
 	onOpenSettings(): void {
-		this.panelService.togglePanel(PanelType.SETTINGS);
+		this.panelService.togglePanel(PanelType.SETTINGS, PanelSettingsOptions.LAYOUT);
 	}
 }

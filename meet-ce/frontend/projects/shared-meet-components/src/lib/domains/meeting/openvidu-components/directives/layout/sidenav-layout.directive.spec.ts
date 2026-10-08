@@ -18,9 +18,7 @@ import { SidenavLayoutDirective } from './sidenav-layout.directive';
 			[style.width.px]="containerWidth()"
 			[hasBackdrop]="sidenavLayout.hasBackdrop()"
 		>
-			<mat-sidenav [mode]="sidenavLayout.mode()" [class.big]="sidenavLayout.isSettingsPanelOpened()">
-				panel
-			</mat-sidenav>
+			<mat-sidenav [mode]="sidenavLayout.mode()"> panel </mat-sidenav>
 			<mat-sidenav-content>content</mat-sidenav-content>
 		</mat-sidenav-container>
 	`
@@ -56,6 +54,14 @@ describe('SidenavLayoutDirective', () => {
 		panelService.togglePanel(PanelType.CHAT);
 		fixture.detectChanges();
 		await waitUntilQuiet(layoutUpdateSpy, 500);
+	};
+
+	/**
+	 * Without CSS transitions, as in this suite, Material reports the start and the end of an
+	 * animation together. Reporting only the start stands for a transition still running.
+	 */
+	const startDrawerAnimation = () => {
+		host.sidenav()._animationStarted.next(undefined);
 	};
 
 	beforeEach(() => {
@@ -101,20 +107,6 @@ describe('SidenavLayoutDirective', () => {
 		createFixture();
 
 		expect(host.sidenav().opened).toBeTrue();
-	});
-
-	it('reports the settings panel, which is the one that widens the sidenav', () => {
-		createFixture();
-
-		expect(host.sidenavLayout().isSettingsPanelOpened()).toBeFalse();
-
-		panelService.togglePanel(PanelType.SETTINGS);
-		fixture.detectChanges();
-		expect(host.sidenavLayout().isSettingsPanelOpened()).toBeTrue();
-
-		panelService.togglePanel(PanelType.CHAT);
-		fixture.detectChanges();
-		expect(host.sidenavLayout().isSettingsPanelOpened()).toBeFalse();
 	});
 
 	it('gives the container the full height when no toolbar template is registered', async () => {
@@ -173,17 +165,13 @@ describe('SidenavLayoutDirective', () => {
 		expect(layoutUpdateSpy).toHaveBeenCalledTimes(1);
 	});
 
-	// Switching to or from the settings panel is the width change with no event to follow: Material
-	// re-measures it only while `autosize` is on, so the directive recomputes on a timer until its
-	// cap rather than waiting for a report that never comes.
-	it('recomputes the layout repeatedly while the sidenav changes width, then leaves it alone', async () => {
+	it('recomputes the layout repeatedly while the sidenav animates, then leaves it alone', async () => {
 		withToolbarTemplate();
 		createFixture();
 		await openChatAndSettle();
 		layoutUpdateSpy.calls.reset();
 
-		panelService.togglePanel(PanelType.SETTINGS);
-		fixture.detectChanges();
+		startDrawerAnimation();
 
 		await waitFor(() => layoutUpdateSpy.calls.count() >= 4);
 
@@ -220,8 +208,7 @@ describe('SidenavLayoutDirective', () => {
 		createFixture();
 		await openChatAndSettle();
 		layoutUpdateSpy.calls.reset();
-		panelService.togglePanel(PanelType.SETTINGS);
-		fixture.detectChanges();
+		startDrawerAnimation();
 		await waitFor(() => layoutUpdateSpy.calls.count() >= 4);
 
 		fixture.destroy();
@@ -234,10 +221,9 @@ describe('SidenavLayoutDirective', () => {
 	it('stops updating the layout once destroyed', async () => {
 		createFixture();
 
-		// Switching to/from SETTINGS starts the interval that follows the sidenav animation.
-		panelService.togglePanel(PanelType.SETTINGS);
-		fixture.detectChanges();
 		panelService.togglePanel(PanelType.CHAT);
+		fixture.detectChanges();
+		panelService.closePanel();
 		fixture.detectChanges();
 		await waitFor(() => layoutUpdateSpy.calls.any());
 

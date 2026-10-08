@@ -27,7 +27,8 @@
 	},
 	"DEVICES": {
 		"NO_VIDEO_DEVICE": "Video-Gerät nicht gefunden",
-		"NO_AUDIO_DEVICE": "Audio-Gerät nicht gefunden"
+		"NO_AUDIO_DEVICE": "Audio-Gerät nicht gefunden",
+		"CHECK_DEVICE": "Prüfen Sie, ob es angeschlossen ist und der Browser es verwenden darf."
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Stummschalten des Audios",
@@ -106,13 +107,23 @@
 		},
 		"SETTINGS": {
 			"TITLE": "Einstellungen",
+			"AUDIO_VIDEO": "Audio & Video",
+			"LAYOUT": "Layout",
 			"GENERAL": "Allgemein",
+			"CAMERA": "Kamera",
+			"CAMERA_OFF": "Ihre Kamera ist aus",
+			"BACKGROUND": "Hintergrund",
+			"MICROPHONE": "Mikrofon",
+			"MICROPHONE_LEVEL": "Mikrofonpegel",
+			"MICROPHONE_LEVEL_HINT": "Sprechen Sie, um zu prüfen, ob andere Sie hören",
+			"MICROPHONE_OFF": "Ihr Mikrofon ist aus",
 			"DISPLAY_NAME": "Anzeigename",
-			"VIDEO": "Video",
-			"AUDIO": "Audio",
+			"DISPLAY_NAME_HINT": "Beim Beitreten zur Besprechung gewählt",
+			"DISPLAY_NAME_LOCKED": "Kann während der Besprechung nicht geändert werden",
 			"LANGUAGE": "Sprache",
-			"DISABLED_VIDEO": "Video deaktiviert",
-			"THEME": "Thema"
+			"THEME": "Thema",
+			"THEME_LIGHT": "Hell",
+			"THEME_DARK": "Dunkel"
 		},
 		"BACKGROUND": {
 			"TITLE": "Hintergrund-Effekte",
@@ -221,15 +232,23 @@
 		"ADJUST_LAYOUT": "Layout anpassen"
 	},
 	"LAYOUT_SETTINGS": {
-		"TITLE": "Layout-Einstellungen",
+		"INTRO": "Wählen Sie, wie Personen auf Ihrem Bildschirm angeordnet werden. Nur Ihre Ansicht ändert sich.",
 		"MODE_ARIA": "Layout-Modus auswählen",
 		"MOSAIC": "Mosaik",
-		"MOSAIC_DESC": "Zeigt alle Teilnehmer in einem einheitlichen Raster",
+		"MOSAIC_DESC": "Alle in gleich großen Kacheln",
 		"SMART_MOSAIC": "Smart-Mosaik",
-		"SMART_MOSAIC_DESC": "Zeigt eine begrenzte Anzahl aktiver Teilnehmer",
-		"COUNT_LABEL": "Anzahl der sichtbaren Teilnehmer",
-		"COUNT_HELPER": "Wählen Sie, wie viele entfernte Teilnehmer im Raster angezeigt werden",
-		"COUNT_ARIA": "Anzahl der anzuzeigenden Teilnehmer"
+		"SMART_MOSAIC_DESC": "Sprecher zuerst, der Rest gruppiert",
+		"COUNT_LABEL": "Sichtbare Teilnehmer",
+		"COUNT_EXCLUDES_YOU": "Ohne Sie",
+		"COUNT_SMART_ONLY": "Nur Smart-Mosaik",
+		"COUNT_HELPER": "Wer spricht, wird automatisch eingeblendet. Der Rest wird unter +N zusammengefasst.",
+		"COUNT_DISABLED_HELPER": "Wählen Sie Smart-Mosaik, um zu begrenzen, wie viele Personen gleichzeitig angezeigt werden.",
+		"COUNT_ARIA": "Anzahl der anzuzeigenden Teilnehmer",
+		"OWN_VIDEO": "Ihr Video",
+		"OWN_VIDEO_FLOATING": "Schwebend",
+		"OWN_VIDEO_DOCKED": "Im Raster",
+		"OWN_VIDEO_HELPER": "Schwebend bleibt Ihr Video über dem Layout, wo Sie es verschieben und in der Größe ändern können.",
+		"OWN_VIDEO_PINNED_HELPER": "Lösen Sie Ihr Video, um es schweben zu lassen oder einzubinden."
 	},
 	"HIDDEN_PARTICIPANTS": {
 		"ONE_MORE": "weiterer Teilnehmer",

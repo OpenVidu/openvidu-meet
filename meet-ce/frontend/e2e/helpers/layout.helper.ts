@@ -4,42 +4,40 @@ import { openLayoutSettingsPanel } from './panels.helper';
 import { waitForVisibleRemoteParticipants } from './stream.helper';
 
 /**
- * Selects the mosaic layout radio button.
+ * Opens the Layout tab of the settings panel unless it is already on screen.
  */
-export const selectMosaicLayout = async (page: Page): Promise<void> => {
-	if (!(await page.locator('.settings-container').isVisible())) {
+const ensureLayoutSettingsVisible = async (page: Page): Promise<void> => {
+	if (!(await page.locator('#layout-mosaic').isVisible())) {
 		await openLayoutSettingsPanel(page);
 	}
+};
 
+/**
+ * Selects the mosaic layout.
+ */
+export const selectMosaicLayout = async (page: Page): Promise<void> => {
+	await ensureLayoutSettingsVisible(page);
 	await page.locator('#layout-mosaic').click();
 };
 
 /**
- * Selects the smart mosaic layout radio button.
+ * Selects the smart mosaic layout.
  */
 export const selectSmartMosaicLayout = async (page: Page): Promise<void> => {
-	if (!(await page.locator('.settings-container').isVisible())) {
-		await openLayoutSettingsPanel(page);
-	}
-
+	await ensureLayoutSettingsVisible(page);
 	await page.locator('#layout-smart-mosaic').click();
 };
 
 /**
- * Sets the Smart Mosaic participant count slider to a specific value.
+ * Sets how many remote participants Smart Mosaic shows.
  * @param targetValue - Target participant count (1-6)
  */
-export const setSmartMosaicSliderValue = async (page: Page, targetValue: number): Promise<void> => {
-	if (!(await page.locator('.settings-container').isVisible())) {
-		await openLayoutSettingsPanel(page);
-	}
+export const setSmartMosaicParticipantCount = async (page: Page, targetValue: number): Promise<void> => {
+	await ensureLayoutSettingsVisible(page);
 
-	const sliderInput = page.locator('.participant-slider input[matSliderThumb]');
-	const participantCountValue = page.locator('.participant-count-container .participant-count-value');
-	await expect(sliderInput).toBeVisible();
-	await sliderInput.focus();
-	await sliderInput.fill(targetValue.toString());
-	await expect(participantCountValue).toHaveText(String(targetValue), { timeout: 5_000 });
+	const option = page.locator(`#participant-count-${targetValue}`);
+	await option.click();
+	await expect(option).toHaveAttribute('aria-checked', 'true', { timeout: 5_000 });
 };
 
 /**

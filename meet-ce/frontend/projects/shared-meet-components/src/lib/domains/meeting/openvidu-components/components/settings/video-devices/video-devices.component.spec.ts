@@ -3,7 +3,10 @@ import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '../../../../../../shared/services/logger.service';
 import { CustomDevice } from '../../../models/device.model';
 import { DeviceService } from '../../../services/device/device.service';
+import { MeetingUiConfigService } from '../../../services/config/meeting-ui-config.service';
 import { LocalMediaService } from '../../../services/local-media/local-media.service';
+import { PanelService } from '../../../services/panel/panel.service';
+import { ParticipantService } from '../../../services/participant/participant.service';
 import { VideoDevicesComponent } from './video-devices.component';
 
 class LoggerServiceStub {
@@ -40,7 +43,10 @@ describe('VideoDevicesComponent', () => {
 				provideZonelessChangeDetection(),
 				{ provide: LoggerService, useClass: LoggerServiceStub },
 				{ provide: LocalMediaService, useValue: localMedia as unknown as LocalMediaService },
-				{ provide: DeviceService, useValue: deviceService }
+				{ provide: DeviceService, useValue: deviceService },
+				{ provide: PanelService, useValue: {} },
+				{ provide: ParticipantService, useValue: { localParticipant: signal(undefined) } },
+				{ provide: MeetingUiConfigService, useValue: { backgroundEffectsButtonSignal: signal(false) } }
 			]
 		});
 		TestBed.overrideComponent(VideoDevicesComponent, { set: { template: '', imports: [], styles: [] } });

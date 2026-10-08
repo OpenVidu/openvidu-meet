@@ -1,4 +1,4 @@
-import { Component, inject, input, output, Signal, signal, WritableSignal } from '@angular/core';
+import { Component, computed, inject, input, output, Signal, signal, WritableSignal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -8,8 +8,11 @@ import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { MicStatusAlertComponent } from '../../mic-status-alert/mic-status-alert.component';
 import { DeviceService } from '../../../services/device/device.service';
 import { LocalMediaService } from '../../../services/local-media/local-media.service';
+import { MicActivityService } from '../../../services/mic-activity/mic-activity.service';
 import { LoggerService } from '../../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../../shared/models/logger.model';
+
+const LEVEL_BARS = 24;
 
 /**
  * @internal
@@ -18,7 +21,8 @@ import type { ILogger } from '../../../../../../shared/models/logger.model';
 	selector: 'ov-audio-devices-select',
 	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe, MicStatusAlertComponent],
 	templateUrl: './audio-devices.component.html',
-	styleUrl: './audio-devices.component.scss'
+	styleUrl: './audio-devices.component.scss',
+	host: { '[class.compact]': 'compact()' }
 })
 export class AudioDevicesComponent {
 	readonly compact = input(false);
@@ -27,6 +31,11 @@ export class AudioDevicesComponent {
 
 	readonly microphoneStatusChanging = signal(false);
 	readonly isMicrophoneEnabled = inject(LocalMediaService).microphone.enabled;
+
+	private readonly micLevel = inject(MicActivityService).level;
+	readonly levelBars = Array.from({ length: LEVEL_BARS });
+	readonly litLevelBars = computed(() => (this.isMicrophoneEnabled() ? Math.round(this.micLevel() * LEVEL_BARS) : 0));
+
 	private log: ILogger = {
 		d: () => {},
 		v: () => {},

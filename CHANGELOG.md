@@ -27,6 +27,10 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 #### UI
 
+- The meeting settings panel takes the width of the other panels and groups its options in three tabs: Audio &
+  video, with a camera preview, on and off switches and a microphone level meter; Layout, which More options >
+  Adjust layout opens directly and which also sets the own video floating or in the grid; and General.
+
 ### Fixed
 
 #### Integration
