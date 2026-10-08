@@ -28,7 +28,9 @@
 			<h2>Participant</h2>
 		</div>
 		<div class="ta-field">
-			<label class="ta-arg-label" for="participant-identity-input">Target identity, used by kick and mute</label>
+			<label class="ta-arg-label" for="participant-identity-input"
+				>Target identity, used by kick, role and mute</label
+			>
 			<input
 				id="participant-identity-input"
 				type="text"
@@ -61,6 +63,22 @@
 			(click)="commands.participantKick()"
 		>
 			participantKick()
+		</button>
+		<button
+			id="participant-promote-btn"
+			class="ta-btn"
+			data-testid="btn-participant-update-role-upgrade"
+			(click)="commands.participantUpdateRole(ModerationAction.UPGRADE)"
+		>
+			participantUpdateRole(upgrade)
+		</button>
+		<button
+			id="participant-demote-btn"
+			class="ta-btn"
+			data-testid="btn-participant-update-role-downgrade"
+			(click)="commands.participantUpdateRole(ModerationAction.DOWNGRADE)"
+		>
+			participantUpdateRole(downgrade)
 		</button>
 		<div class="ta-field">
 			<label class="ta-arg-label">Devices the two mute commands turn off, any combination</label>

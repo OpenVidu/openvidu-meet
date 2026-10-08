@@ -137,8 +137,8 @@ export class ToolbarMediaButtonsComponent {
 	// Viewport service for responsive behavior
 	private viewportService = inject(ViewportService);
 
-	// Computed properties for responsive button grouping
-	readonly isMobileView = computed(() => this.viewportService.isMobile());
+	// The compact toolbar follows the width, like the panel buttons, so a narrow desktop window gets it too.
+	readonly isMobileView = computed(() => this.viewportService.isMobileView());
 
 	// Essential buttons that always stay visible
 	readonly showCameraButtonDirect = computed(() => this.showCameraButton());
@@ -147,7 +147,7 @@ export class ToolbarMediaButtonsComponent {
 
 	// Screenshare button - visible on tablet+ or when already active
 	readonly showScreenshareButtonDirect = computed(
-		() => this.showScreenshareButton() && (!this.isMobileView() || this.isScreenShareEnabled())
+		() => this.showScreenshareButton() && (!this.viewportService.isMobile() || this.isScreenShareEnabled())
 	);
 
 	// More options button - always visible

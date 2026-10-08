@@ -26,6 +26,7 @@ content:
                             - meetingEnded
                             - participantJoined
                             - participantLeft
+                            - participantRoleChanged
                             - recordingStarted
                             - recordingUpdated
                             - recordingEnded

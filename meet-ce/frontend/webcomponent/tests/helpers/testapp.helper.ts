@@ -1,4 +1,9 @@
-import { EmbeddedEventName, MeetRecordingStatus, MeetWebhookEventType } from '@openvidu-meet/typings';
+import {
+	EmbeddedEventName,
+	MeetParticipantModerationAction,
+	MeetRecordingStatus,
+	MeetWebhookEventType
+} from '@openvidu-meet/typings';
 import { expect, Locator, Page } from '@playwright/test';
 import { MEET_TESTAPP_URL } from '../config';
 import { Integration, meetLocator } from './webcomponent.helper';
@@ -325,6 +330,17 @@ export const kickParticipantCommand = async (page: Page, participantIdentity: st
 	await showControlsPanel(page, 'commands');
 	await fillParticipantIdentity(page, participantIdentity);
 	await page.getByTestId('btn-kick-participant').click();
+};
+
+/** Fills the participant identity and clicks the testapp's `participantUpdateRole()` button for `action`. */
+export const participantUpdateRoleCommand = async (
+	page: Page,
+	participantIdentity: string,
+	action: MeetParticipantModerationAction
+): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+	await fillParticipantIdentity(page, participantIdentity);
+	await page.getByTestId(`btn-participant-update-role-${action}`).click();
 };
 
 /** A device a moderation mute turns off. */

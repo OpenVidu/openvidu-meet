@@ -10,13 +10,13 @@ import type { ParticipantInfo, Room } from 'livekit-server-sdk';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see meeting-mute.test.ts).
 import '../../../src/config/dependency-injector.config.js';
-import type { FrontendEventService } from '../../../src/services/frontend-event.service.js';
 import type { LiveKitService } from '../../../src/services/livekit.service.js';
 import type { LoggerService } from '../../../src/services/logger.service.js';
 import type { RecordingService } from '../../../src/services/recording.service.js';
 import { RoomMemberService } from '../../../src/services/room-member.service.js';
 import type { RoomService } from '../../../src/services/room.service.js';
 import type { TokenService } from '../../../src/services/token.service.js';
+import type { WebhookDispatcherService } from '../../../src/services/webhook-dispatcher.service.js';
 
 /**
  * B10 (MEET-BRANCH-AUDIT-FINDINGS.md): the auto-start was evaluated only from the
@@ -92,14 +92,17 @@ describe('RoomMemberService.updateParticipantRole — B10: a promotion re-evalua
 				{ getMeetRoom: async () => ({ roles }) } as unknown as RoomService,
 				{},
 				{},
-				{ sendParticipantRoleUpdatedSignal: async () => {} } as unknown as FrontendEventService,
+				{},
 				livekitService as unknown as LiveKitService,
 				{
 					parseRoomMemberTokenMetadata: (metadata: string) => JSON.parse(metadata)
 				} as unknown as TokenService,
 				{},
 				{},
-				recordingService as unknown as RecordingService
+				recordingService as unknown as RecordingService,
+				{ sendParticipantRoleChangedWebhook: () => {} } as unknown as WebhookDispatcherService,
+				{ revokeIssuedTokens: async () => {} },
+				{ withRetryLock: (_key: string, _ttl: number, update: () => Promise<unknown>) => update() }
 			] as unknown as ConstructorParameters<typeof RoomMemberService>)
 		);
 	});

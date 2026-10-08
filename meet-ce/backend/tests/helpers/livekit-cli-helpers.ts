@@ -16,14 +16,17 @@ const fakeParticipantRooms = new Set<string>();
  *
  * @param roomId The ID of the room to join
  * @param participantIdentity The identity for the fake participant
+ * @param metadata The metadata claim to join with, as a room member token carries it
  */
-export const joinFakeParticipant = async (roomId: string, participantIdentity: string) => {
+export const joinFakeParticipant = async (roomId: string, participantIdentity: string, metadata?: string) => {
 	await ensureLivekitCliInstalled();
+	const metadataArgs = metadata ? ['--metadata', metadata] : [];
 	const process = spawnLivekitCliProcess([
 		'room',
 		'join',
 		'--identity',
 		participantIdentity,
+		...metadataArgs,
 		'--publish-demo',
 		roomId
 	]);
@@ -32,6 +35,10 @@ export const joinFakeParticipant = async (roomId: string, participantIdentity: s
 	fakeParticipantsProcesses.set(`${roomId}-${participantIdentity}`, process);
 	fakeParticipantRooms.add(roomId);
 	await waitForParticipantToConnect(roomId, participantIdentity);
+
+	if (metadata) {
+		await waitForParticipantToUpdateMetadata(roomId, participantIdentity, JSON.parse(metadata));
+	}
 };
 
 /**

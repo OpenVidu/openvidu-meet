@@ -1,5 +1,10 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { EmbeddedEventName, EmbeddedEventPayloadFor, MeetParticipantMuteOptions } from '@openvidu-meet/typings';
+import {
+	EmbeddedEventName,
+	EmbeddedEventPayloadFor,
+	MeetParticipantModerationAction,
+	MeetParticipantMuteOptions
+} from '@openvidu-meet/typings';
 import { Integration, TriState, toOptionalBoolean } from '../models';
 import type { OpenViduMeetElement } from '../openvidu-meet-element';
 import { EventLogService } from './event-log';
@@ -21,7 +26,7 @@ export class MeetCommandsService {
 	private readonly iframeHost = inject(IframeHostService);
 	private readonly log = inject(EventLogService);
 
-	/** Participant addressed by `participantKick()` and `participantMute()`. */
+	/** Participant addressed by `participantKick()`, `participantUpdateRole()` and `participantMute()`. */
 	readonly participantIdentity = signal('');
 	/** Devices the two moderation-mute commands turn off; any combination is a valid request. */
 	readonly muteAudio = signal(true);
@@ -81,6 +86,18 @@ export class MeetCommandsService {
 			(element) => element.participantKick(identity)
 		);
 		this.log.command('participantKick', `("${identity}")`);
+	}
+
+	participantUpdateRole(action: MeetParticipantModerationAction): void {
+		const identity = this.requireIdentity('participantUpdateRole');
+
+		if (!identity) return;
+
+		this.dispatch(
+			() => this.iframeHost.participantUpdateRole(identity, action),
+			(element) => element.participantUpdateRole(identity, action)
+		);
+		this.log.command('participantUpdateRole', `("${identity}", "${action}")`);
 	}
 
 	participantMute(): void {

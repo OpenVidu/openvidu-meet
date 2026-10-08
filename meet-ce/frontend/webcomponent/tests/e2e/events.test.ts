@@ -1,7 +1,14 @@
-import { EmbeddedEventName, LeftEventReason, MeetEventOrigin, MeetRecordingStatus } from '@openvidu-meet/typings';
+import {
+	EmbeddedEventName,
+	LeftEventReason,
+	MeetEventOrigin,
+	MeetParticipantModerationAction,
+	MeetRecordingStatus,
+	MeetRoomMemberRole
+} from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { INTEGRATIONS, meetLocator } from '../helpers/webcomponent.helper';
-import { createRoom, deleteRooms } from '../helpers/meet-api.helper';
+import { createRoom, deleteRooms, updateParticipantRole, waitForMeetingParticipant } from '../helpers/meet-api.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import {
 	endMeetingCommand,
@@ -18,6 +25,7 @@ import {
 	openMeeting,
 	openMeetingAtMediaSetup,
 	participantMuteCommand,
+	participantUpdateRoleCommand,
 	recordingStatusLocator
 } from '../helpers/testapp.helper';
 
@@ -326,6 +334,71 @@ for (const integration of INTEGRATIONS) {
 				await expect(left).toContainText('crm-user_42');
 
 				await speakerContext.close();
+			});
+		});
+
+		// The role describes the LOCAL participant, like their devices do: neither the moderator who
+		// changed it nor anyone else in the meeting hears about it.
+		test.describe('PARTICIPANT_ROLE_CHANGED Event', () => {
+			test('should tell only the participant whose role changed', async ({ page, browser }) => {
+				await openMeeting(page, roomId, { integration, role: 'speaker', name: 'Promoted' });
+				const promotedIdentity = await joinedParticipantIdentity(page);
+
+				const moderatorContext = await browser.newContext();
+				const moderatorPage = await moderatorContext.newPage();
+				await openMeeting(moderatorPage, roomId, { role: 'moderator' });
+				await expectEvent(moderatorPage, EmbeddedEventName.JOINED);
+
+				await participantUpdateRoleCommand(
+					moderatorPage,
+					promotedIdentity,
+					MeetParticipantModerationAction.UPGRADE
+				);
+
+				const roleChanged = await expectEvent(page, EmbeddedEventName.PARTICIPANT_ROLE_CHANGED);
+				await expect(roleChanged).toContainText(`"roomId":"${roomId}"`);
+				await expect(roleChanged).toContainText(`"participantIdentity":"${promotedIdentity}"`);
+				await expect(roleChanged).toContainText(`"role":"${MeetRoomMemberRole.MODERATOR}"`);
+
+				await expect(eventLocator(moderatorPage, EmbeddedEventName.PARTICIPANT_ROLE_CHANGED)).toHaveCount(0);
+
+				await moderatorContext.close();
+			});
+
+			test('should tell a participant promoted while still joining', async ({ page }) => {
+				const { meet, participantName } = await openMeetingAtMediaSetup(page, roomId, {
+					integration,
+					role: 'speaker'
+				});
+				await meet('#join-button').click();
+
+				const identity = await waitForMeetingParticipant(roomId, participantName);
+				await updateParticipantRole(roomId, identity, MeetParticipantModerationAction.UPGRADE);
+
+				const roleChanged = await expectEvent(page, EmbeddedEventName.PARTICIPANT_ROLE_CHANGED, {
+					timeout: 15_000
+				});
+				await expect(roleChanged).toContainText(`"role":"${MeetRoomMemberRole.MODERATOR}"`);
+			});
+
+			test('should keep a promoted participant in the meeting while their new token cannot be fetched', async ({
+				page
+			}) => {
+				await openMeeting(page, roomId, { integration, role: 'speaker' });
+				const identity = await joinedParticipantIdentity(page);
+
+				let unreachableRefreshes = 2;
+				await page.route('**/members/token/refresh', (route) =>
+					unreachableRefreshes-- > 0 ? route.abort('internetdisconnected') : route.continue()
+				);
+				await updateParticipantRole(roomId, identity, MeetParticipantModerationAction.UPGRADE);
+
+				const roleChanged = await expectEvent(page, EmbeddedEventName.PARTICIPANT_ROLE_CHANGED, {
+					timeout: 15_000
+				});
+				await expect(roleChanged).toContainText(`"role":"${MeetRoomMemberRole.MODERATOR}"`);
+				expect(unreachableRefreshes).toBeLessThan(0);
+				await expect(eventLocator(page, EmbeddedEventName.MEETING_LEFT)).toHaveCount(0);
 			});
 		});
 

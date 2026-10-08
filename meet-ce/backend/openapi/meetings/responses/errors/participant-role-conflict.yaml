@@ -14,6 +14,11 @@ content:
                 value:
                     error: 'Participant Error'
                     message: 'Participant "alice_smith" in room "room_123" cannot be demoted because they are not a promoted moderator'
+            being_updated:
+                summary: Participant is already being updated by another request
+                value:
+                    error: 'Participant Error'
+                    message: "Participant 'alice_smith' in room 'room_123' is already being updated"
             not_a_meet_participant:
                 summary: Participant did not join through OpenVidu Meet
                 value:

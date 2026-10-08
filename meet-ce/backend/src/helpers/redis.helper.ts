@@ -77,4 +77,16 @@ export class MeetLock {
 
 		return `${RedisLockPrefix.BASE}${RedisLockName.AI_ASSISTANT}_${roomId}_${capabilityName}`;
 	}
+
+	static getParticipantMetadataLock(roomId: string, participantIdentity: string): string {
+		if (!roomId) {
+			throw new Error('roomId must be a non-empty string');
+		}
+
+		if (!participantIdentity) {
+			throw new Error('participantIdentity must be a non-empty string');
+		}
+
+		return `${RedisLockPrefix.BASE}${RedisLockName.PARTICIPANT_METADATA}_${roomId}_${participantIdentity}`;
+	}
 }

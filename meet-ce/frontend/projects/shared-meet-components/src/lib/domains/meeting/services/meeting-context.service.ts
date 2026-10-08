@@ -65,8 +65,8 @@ export class MeetingContextService {
 	/** Readonly signal for room appearance configuration from global settings */
 	readonly meetingAppearance = this.globalConfigService.roomAppearanceConfig;
 
-	/** Readonly signal for whether the device is mobile */
-	readonly isMobile = this.viewportService.isMobile;
+	/** Readonly signal for whether the window is narrow enough for the mobile toolbar, on any device */
+	readonly isMobile = this.viewportService.isMobileView;
 
 	/**
 	 * Sets the room ID in context

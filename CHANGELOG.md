@@ -18,6 +18,10 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - Embedded attributes and URL parameters `language`, which sets the initial meeting language (a BCP 47
   language tag, or `auto` for the browser's) over the participant's stored preference without replacing it,
   and `show-language-selector`, which hides the language selectors when `false`.
+- Embedded command `participantUpdateRole`, gated by `participantPromote`, promotes a participant to moderator or
+  demotes them back. Every promotion and demotion is reported as the
+  [`participantRoleChanged`][3.10-participant-role-changed] webhook and as the embedded event of the same name to the
+  affected participant.
 
 ### Improved
 
@@ -25,10 +29,36 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 ### Fixed
 
+#### Integration
+
+- A room member token issued before its participant was demoted through
+  [`participantRoleUpdate`][3.10-participant-role-update] or `participantUpdateRole` stayed valid until it expired,
+  so they kept their moderator permissions. It is now rejected.
+- [`participantRoleUpdate`][3.10-participant-role-update], [`participantMute`][3.9-participant-mute],
+  [`participantMuteAll`][3.9-participant-mute-all], `updateRoomMember` and the embedded commands that use them
+  answered with an error when the notice to the affected participants could not be delivered, although the change
+  was already applied. They now succeed.
+- Two simultaneous [`participantRoleUpdate`][3.10-participant-role-update] requests for the same participant both
+  succeeded, and a promotion made while the participant's token was being regenerated could be undone by it. Both
+  now apply one after the other, so the second promotion answers `409`.
+
 #### UI
 
 - After leaving a meeting that was being recorded, joining another meeting with the same `<openvidu-meet>`
   element showed that recording as still in progress. The recording indicator starts over with each meeting.
+- A participant promoted and demoted in quick succession, or whose permissions changed right after their role, could
+  be left with the permissions of the earlier change. The changes are now applied in the order they happen.
+- A participant promoted and demoted several times in a row got one notice per change, stacked over the meeting. Only
+  the notice of their current role is shown now.
+- A participant promoted to moderator or demoted while still joining a meeting kept the permissions of the role they
+  joined with. They now get the new role's permissions, and its notice, once in the meeting.
+- A participant whose room member token could not be renewed for a moment, because the server was unreachable or
+  failing, was taken out of the meeting to an access-revoked error page. They now stay in the meeting, and only losing
+  access to the room takes them out.
+- The notices a participant sees when promoted to moderator, demoted or given updated permissions were always in
+  English. They now follow the selected language.
+- In a narrow desktop browser window, the meeting toolbar overflowed the screen and hid some of its buttons. A window
+  narrower than 768 px now gets the compact toolbar a phone gets.
 
 #### Deployment
 
@@ -171,6 +201,8 @@ registered on both receives it twice.
 - Unanswered webhooks caused active connections to grow continuously. Every webhook is answered.
 - The `openvidu/openvidu-meet` Docker image resolved its dependencies anew on every build instead of installing the versions in the lockfile. It now installs the locked versions.
 
+[3.10-participant-role-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantRoleChangedWebhook
+[3.10-participant-role-update]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantRoleUpdate
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html
 [3.9-meetings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/meetingGet
 [3.9-webhooks-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/webhookList

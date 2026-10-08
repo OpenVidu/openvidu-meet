@@ -67,6 +67,8 @@
                 $ref: '../../shared/responses/errors/forbidden.yaml'
             '404':
                 $ref: '../../meetings/responses/errors/room-participant-not-found.yaml'
+            '409':
+                $ref: './responses/errors/participant-being-updated.yaml'
             '422':
                 $ref: '../../shared/responses/errors/validation.yaml'
             '429':

@@ -15,4 +15,5 @@ MeetWebhookEvent:
                       - meetingEnded
                       - participantJoined
                       - participantLeft
+                      - participantRoleChanged
                   example: recordingStarted

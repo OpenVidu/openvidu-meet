@@ -254,7 +254,10 @@
 		"STOP_ALL_SCREEN_SHARES_NONE": "Niemand deelt zijn scherm"
 	},
 	"MODERATION": {
-		"MUTED_BY_MODERATOR": "Een moderator heeft een van uw apparaten uitgeschakeld"
+		"MUTED_BY_MODERATOR": "Een moderator heeft een van uw apparaten uitgeschakeld",
+		"PROMOTED_TO_MODERATOR": "U bent gepromoveerd tot moderator",
+		"MODERATOR_ROLE_REMOVED": "Uw rol als moderator is ingetrokken",
+		"PERMISSIONS_UPDATED": "Uw rechten zijn bijgewerkt"
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "U heeft de meeting verlaten",

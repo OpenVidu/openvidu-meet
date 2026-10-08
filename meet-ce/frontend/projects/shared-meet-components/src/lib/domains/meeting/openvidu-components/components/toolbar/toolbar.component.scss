@@ -104,6 +104,10 @@
 
 	/* Styles for screens <= 850px */
 	@media (max-width: 850px) {
+		.toolbar-container {
+			gap: 24px;
+		}
+
 		/* Hide logo on smaller screens */
 		#branding-logo {
 			display: none;
@@ -117,7 +121,9 @@
 
 	/* Styles for screens <= 550px */
 	@media (max-width: 550px) {
-		/* Toolbar design adjustments */
+		.toolbar-container {
+			gap: 8px;
+		}
 	}
 }
 

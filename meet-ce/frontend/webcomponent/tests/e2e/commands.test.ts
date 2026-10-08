@@ -2,7 +2,9 @@ import {
 	EmbeddedEventName,
 	LeftEventReason,
 	MeetEventOrigin,
+	MeetParticipantModerationAction,
 	MeetRecordingStatus,
+	MeetRoomMemberRole,
 	MeetWebhookEventType
 } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
@@ -34,6 +36,7 @@ import {
 	openMeetingAtMediaSetup,
 	participantMuteAllCommand,
 	participantMuteCommand,
+	participantUpdateRoleCommand,
 	recordingStartCommand,
 	recordingStatusLocator,
 	recordingStopCommand
@@ -323,6 +326,84 @@ for (const integration of INTEGRATIONS) {
 
 				await expectToolbarMicEnabled(targetPage, 'webcomponent', true);
 				await expect(eventLocator(targetPage, EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED)).toHaveCount(0);
+
+				await moderatorContext.close();
+				await targetContext.close();
+			});
+		});
+
+		test.describe('PARTICIPANT_UPDATE_ROLE Command', () => {
+			test('should promote a speaker to moderator and demote them back', async ({ page, browser }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				const speakerContext = await browser.newContext();
+				const speakerPage = await speakerContext.newPage();
+				await openMeeting(speakerPage, roomId, { role: 'speaker', name: 'Speaker' });
+				const speakerIdentity = await joinedParticipantIdentity(speakerPage);
+
+				await participantUpdateRoleCommand(page, speakerIdentity, MeetParticipantModerationAction.UPGRADE);
+				const roleChanged = eventLocator(speakerPage, EmbeddedEventName.PARTICIPANT_ROLE_CHANGED);
+				await expect(roleChanged).toHaveCount(1, { timeout: 10_000 });
+				await expect(roleChanged.first()).toContainText(`"role":"${MeetRoomMemberRole.MODERATOR}"`);
+
+				await participantUpdateRoleCommand(page, speakerIdentity, MeetParticipantModerationAction.DOWNGRADE);
+				await expect(roleChanged).toHaveCount(2, { timeout: 10_000 });
+				await expect(roleChanged.nth(1)).toContainText(`"role":"${MeetRoomMemberRole.SPEAKER}"`);
+
+				await speakerContext.close();
+			});
+
+			// The event promises the new role is in effect: a command only a moderator may send is
+			// accepted as soon as the promoted participant is told.
+			test('should let the promoted participant end the meeting right after being told', async ({
+				page,
+				browser
+			}) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				const speakerContext = await browser.newContext();
+				const speakerPage = await speakerContext.newPage();
+				await openMeeting(speakerPage, roomId, { role: 'speaker', name: 'Speaker' });
+				const speakerIdentity = await joinedParticipantIdentity(speakerPage);
+
+				await participantUpdateRoleCommand(page, speakerIdentity, MeetParticipantModerationAction.UPGRADE);
+				await expectEvent(speakerPage, EmbeddedEventName.PARTICIPANT_ROLE_CHANGED);
+
+				await endMeetingCommand(speakerPage);
+
+				const moderatorLeft = await expectEvent(page, EmbeddedEventName.LEFT);
+				await expect(moderatorLeft).toContainText(LeftEventReason.MEETING_ENDED);
+
+				await speakerContext.close();
+			});
+
+			// A later moderator mute is the barrier, as in the PARTICIPANT_MUTE permission test: it
+			// reaches the target after anything the speaker's earlier attempt could have caused.
+			test('should not change the role when the caller lacks the participantPromote permission', async ({
+				page,
+				browser
+			}) => {
+				await openMeeting(page, roomId, { integration, role: 'speaker', name: 'Actor' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				const targetContext = await browser.newContext();
+				const targetPage = await targetContext.newPage();
+				await openMeeting(targetPage, roomId, { role: 'speaker', name: 'Target' });
+				const targetIdentity = await joinedParticipantIdentity(targetPage);
+
+				const moderatorContext = await browser.newContext();
+				const moderatorPage = await moderatorContext.newPage();
+				await openMeeting(moderatorPage, roomId, { role: 'moderator' });
+				await expectEvent(moderatorPage, EmbeddedEventName.JOINED);
+
+				await participantUpdateRoleCommand(page, targetIdentity, MeetParticipantModerationAction.UPGRADE);
+
+				await participantMuteCommand(moderatorPage, targetIdentity, 'video');
+				await expectToolbarCameraEnabled(targetPage, 'webcomponent', false, { timeout: 15_000 });
+
+				await expect(eventLocator(targetPage, EmbeddedEventName.PARTICIPANT_ROLE_CHANGED)).toHaveCount(0);
 
 				await moderatorContext.close();
 				await targetContext.close();

@@ -4,16 +4,32 @@ import {
 	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberUIBadge,
-	MeetSignalType,
 	normalizePermissions
 } from '@openvidu-meet/typings';
+import { jwtDecode } from 'jwt-decode';
+import type { ClaimGrants } from 'livekit-server-sdk';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
+import { MutexService } from '../../../../src/services/mutex.service.js';
+import { MeetLock } from '../../../../src/helpers/redis.helper.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
-import { disconnectFakeParticipants, updateParticipantMetadata } from '../../../helpers/livekit-cli-helpers.js';
-import { deleteAllRooms, startTestServer, updateParticipant } from '../../../helpers/request-helpers.js';
+import {
+	disconnectFakeParticipants,
+	joinFakeParticipant,
+	updateParticipantMetadata
+} from '../../../helpers/livekit-cli-helpers.js';
+import {
+	deleteAllRooms,
+	generateRoomMemberToken,
+	generateRoomMemberTokenRequest,
+	getMeetingParticipant,
+	kickParticipant,
+	refreshRoomMemberTokenRequest,
+	sleep,
+	startTestServer,
+	updateParticipant
+} from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
 
@@ -54,9 +70,6 @@ describe('Meetings API Tests', () => {
 		});
 
 		it('should update participant role from speaker to moderator', async () => {
-			const frontendEventService = container.get(FrontendEventService);
-			const sendSignalSpy = jest.spyOn(frontendEventService as any, 'sendSignal');
-
 			await setParticipantMetadata(roomData, MeetRoomMemberRole.SPEAKER);
 
 			const response = await updateParticipant(
@@ -83,22 +96,6 @@ describe('Meetings API Tests', () => {
 			const speakerPermissions = normalizePermissions(roomData.room.roles.speaker.permissions);
 			expect(metadata).toHaveProperty('permissions', moderatorPermissions);
 			expect(metadata).toHaveProperty('originalPermissions', speakerPermissions);
-
-			// Verify sendSignal method has been called once
-			expect(sendSignalSpy).toHaveBeenCalledTimes(1);
-			expect(sendSignalSpy).toHaveBeenCalledWith(
-				roomData.room.roomId,
-				{
-					roomId: roomData.room.roomId,
-					participantIdentity,
-					newBadge: MeetRoomMemberUIBadge.MODERATOR,
-					timestamp: expect.any(Number)
-				},
-				{
-					topic: MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED,
-					destinationIdentities: [participantIdentity]
-				}
-			);
 		});
 
 		it('should downgrade participant role from promoted moderator to original permissions', async () => {
@@ -181,6 +178,250 @@ describe('Meetings API Tests', () => {
 			expect(response.status).toBe(409);
 			expect(response.body.error).toBe('Participant Error');
 			expect(response.body.message).toContain('cannot be demoted');
+		});
+
+		const decodeClaims = (token: string) => jwtDecode<ClaimGrants>(token.replace('Bearer ', ''));
+
+		const joinAsSpeaker = async () => {
+			const speakerToken = await generateRoomMemberToken(roomData.room.roomId, {
+				secret: roomData.speakerSecret,
+				joinMeeting: true,
+				participantName: 'Promoted Speaker'
+			});
+			const { sub: identity, metadata } = decodeClaims(speakerToken);
+			await joinFakeParticipant(roomData.room.roomId, identity!, metadata);
+			return { identity: identity!, speakerToken };
+		};
+
+		it('should keep accepting the token a participant held before being promoted', async () => {
+			const { roomId } = roomData.room;
+			const { identity, speakerToken } = await joinAsSpeaker();
+
+			const promotion = await updateParticipant(
+				roomId,
+				identity,
+				MeetParticipantModerationAction.UPGRADE,
+				roomData.moderatorToken
+			);
+			expect(promotion.status).toBe(200);
+
+			const response = await getMeetingParticipant(roomId, identity, speakerToken);
+			expect(response.status).toBe(200);
+		});
+
+		describe('after a demotion', () => {
+			const promoteRefreshAndDemote = async () => {
+				const { roomId } = roomData.room;
+				const { identity, speakerToken } = await joinAsSpeaker();
+
+				const promotion = await updateParticipant(
+					roomId,
+					identity,
+					MeetParticipantModerationAction.UPGRADE,
+					roomData.moderatorToken
+				);
+				expect(promotion.status).toBe(200);
+
+				const refresh = await refreshRoomMemberTokenRequest(roomId, speakerToken);
+				expect(refresh.status).toBe(200);
+
+				const demotion = await updateParticipant(
+					roomId,
+					identity,
+					MeetParticipantModerationAction.DOWNGRADE,
+					roomData.moderatorToken
+				);
+				expect(demotion.status).toBe(200);
+
+				return { staleModeratorToken: `Bearer ${refresh.body.token}` };
+			};
+
+			it('should reject the moderator token the participant held before being demoted', async () => {
+				const { staleModeratorToken } = await promoteRefreshAndDemote();
+
+				const response = await kickParticipant(roomData.room.roomId, participantIdentity, staleModeratorToken);
+				expect(response.status).toBe(401);
+			});
+
+			it('should refresh that token to the permissions the participant had before the promotion', async () => {
+				const { staleModeratorToken } = await promoteRefreshAndDemote();
+
+				const refresh = await refreshRoomMemberTokenRequest(roomData.room.roomId, staleModeratorToken);
+				expect(refresh.status).toBe(200);
+
+				const response = await kickParticipant(
+					roomData.room.roomId,
+					participantIdentity,
+					`Bearer ${refresh.body.token}`
+				);
+				expect(response.status).toBe(403);
+			});
+		});
+
+		describe('concurrent changes', () => {
+			it('should promote a participant once when two moderators promote them at the same time', async () => {
+				const { identity } = await joinAsSpeaker();
+
+				const responses = await Promise.all([
+					updateParticipant(
+						roomData.room.roomId,
+						identity,
+						MeetParticipantModerationAction.UPGRADE,
+						roomData.moderatorToken
+					),
+					updateParticipant(
+						roomData.room.roomId,
+						identity,
+						MeetParticipantModerationAction.UPGRADE,
+						roomData.moderatorToken
+					)
+				]);
+
+				expect(responses.map((response) => response.status).sort()).toEqual([200, 409]);
+			});
+
+			it('should keep a promotion applied while the participant was regenerating their token', async () => {
+				const { roomId } = roomData.room;
+				const { identity, speakerToken } = await joinAsSpeaker();
+
+				const writeToLiveKit = livekitService.updateParticipant.bind(livekitService);
+				let regenerationWriting!: () => void;
+				const regenerationRead = new Promise<void>((resolve) => (regenerationWriting = resolve));
+				let releaseRegenerationWrite!: () => void;
+				const regenerationWriteReleased = new Promise<void>((resolve) => (releaseRegenerationWrite = resolve));
+				jest.spyOn(livekitService, 'updateParticipant').mockImplementationOnce(async (...args) => {
+					regenerationWriting();
+					await regenerationWriteReleased;
+					return writeToLiveKit(...args);
+				});
+
+				const regeneration = generateRoomMemberTokenRequest(
+					roomId,
+					{ secret: roomData.speakerSecret, joinMeeting: true },
+					undefined,
+					speakerToken
+				);
+				await regenerationRead;
+
+				const promotion = updateParticipant(
+					roomId,
+					identity,
+					MeetParticipantModerationAction.UPGRADE,
+					roomData.moderatorToken
+				);
+				// A fix that serializes the two writes makes the promotion wait for the held one.
+				await Promise.race([promotion, sleep('1s')]);
+				releaseRegenerationWrite();
+
+				expect((await promotion).status).toBe(200);
+				expect((await regeneration).status).toBe(200);
+
+				const participant = await livekitService.getParticipant(roomId, identity);
+				expect(JSON.parse(participant.metadata)).toMatchObject({
+					badge: MeetRoomMemberUIBadge.MODERATOR,
+					isPromotedModerator: true
+				});
+			});
+
+			it('should give a participant who regenerates their token during a demotion a token that is accepted', async () => {
+				const { roomId } = roomData.room;
+				const { identity, speakerToken } = await joinAsSpeaker();
+				await updateParticipant(
+					roomId,
+					identity,
+					MeetParticipantModerationAction.UPGRADE,
+					roomData.moderatorToken
+				);
+
+				const writeToLiveKit = livekitService.updateParticipant.bind(livekitService);
+				let demotionWriting!: () => void;
+				const demotionHoldsLock = new Promise<void>((resolve) => (demotionWriting = resolve));
+				let releaseDemotionWrite!: () => void;
+				const demotionWriteReleased = new Promise<void>((resolve) => (releaseDemotionWrite = resolve));
+				jest.spyOn(livekitService, 'updateParticipant').mockImplementationOnce(async (...args) => {
+					demotionWriting();
+					await demotionWriteReleased;
+					return writeToLiveKit(...args);
+				});
+
+				const demotion = updateParticipant(
+					roomId,
+					identity,
+					MeetParticipantModerationAction.DOWNGRADE,
+					roomData.moderatorToken
+				);
+				await demotionHoldsLock;
+
+				const mutexService = container.get(MutexService);
+				const lock = mutexService.withRetryLock.bind(mutexService);
+				let regenerationWaiting!: () => void;
+				const regenerationQueued = new Promise<void>((resolve) => (regenerationWaiting = resolve));
+				const lockSpy = jest.spyOn(mutexService, 'withRetryLock').mockImplementation((key, ...rest) => {
+					if (key === MeetLock.getParticipantMetadataLock(roomId, identity)) regenerationWaiting();
+
+					return lock(key, ...rest);
+				});
+
+				const regeneration = generateRoomMemberTokenRequest(
+					roomId,
+					{ secret: roomData.speakerSecret, joinMeeting: true },
+					undefined,
+					speakerToken
+				);
+				await regenerationQueued;
+				releaseDemotionWrite();
+
+				expect((await demotion).status).toBe(200);
+				const regenerated = await regeneration;
+				lockSpy.mockRestore();
+				expect(regenerated.status).toBe(200);
+
+				const response = await getMeetingParticipant(roomId, identity, `Bearer ${regenerated.body.token}`);
+				expect(response.status).toBe(200);
+			});
+
+			it('should not refresh a token with permissions read before a demotion that landed meanwhile', async () => {
+				const { roomId } = roomData.room;
+				const { identity, speakerToken } = await joinAsSpeaker();
+				await updateParticipant(
+					roomId,
+					identity,
+					MeetParticipantModerationAction.UPGRADE,
+					roomData.moderatorToken
+				);
+
+				const readFromLiveKit = livekitService.getParticipant.bind(livekitService);
+				let refreshReading!: () => void;
+				const refreshRead = new Promise<void>((resolve) => (refreshReading = resolve));
+				let releaseRefreshRead!: () => void;
+				const refreshReadReleased = new Promise<void>((resolve) => (releaseRefreshRead = resolve));
+				jest.spyOn(livekitService, 'getParticipant').mockImplementationOnce(async (...args) => {
+					const participant = await readFromLiveKit(...args);
+					refreshReading();
+					await refreshReadReleased;
+					return participant;
+				});
+
+				const refresh = refreshRoomMemberTokenRequest(roomId, speakerToken);
+				await refreshRead;
+
+				const demotion = updateParticipant(
+					roomId,
+					identity,
+					MeetParticipantModerationAction.DOWNGRADE,
+					roomData.moderatorToken
+				);
+				// A fix that serializes the refresh with the demotion makes the demotion wait for the held read.
+				await Promise.race([demotion, sleep('1s')]);
+				releaseRefreshRead();
+
+				expect((await demotion).status).toBe(200);
+				const refreshed = await refresh;
+				expect(refreshed.status).toBe(200);
+
+				const response = await kickParticipant(roomId, participantIdentity, `Bearer ${refreshed.body.token}`);
+				expect(response.status).toBe(401);
+			});
 		});
 	});
 

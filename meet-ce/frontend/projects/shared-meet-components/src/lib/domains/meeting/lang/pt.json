@@ -254,7 +254,10 @@
 		"STOP_ALL_SCREEN_SHARES_NONE": "Ninguém está a partilhar o ecrã"
 	},
 	"MODERATION": {
-		"MUTED_BY_MODERATOR": "Um moderador desligou um dos seus dispositivos"
+		"MUTED_BY_MODERATOR": "Um moderador desligou um dos seus dispositivos",
+		"PROMOTED_TO_MODERATOR": "Foi promovido a moderador",
+		"MODERATOR_ROLE_REMOVED": "A sua função de moderador foi removida",
+		"PERMISSIONS_UPDATED": "As suas permissões foram atualizadas"
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "Saiu da reunião",

@@ -74,7 +74,9 @@ events are re-dispatched on the outer element.
   no media state, and no client-side departure reason — the authoritative one travels on the
   `participantLeft` webhook), `recordingStatusChanged` (everyone; payload `{ recordingId, status }`
   with a `MeetRecordingStatus`; a recording's statuses only move forward, each at most once, and the
-  current one is reported right after `meetingJoined` on joining mid-recording).
+  current one is reported right after `meetingJoined` on joining mid-recording),
+  `participantRoleChanged` (**local** participant only, once the refreshed token of the promotion or
+  demotion is in effect; payload `{ roomId, participantIdentity, role }`).
   The 3.8.0 spellings (`joined`, `left`, `closed`) are dispatched **alongside** their
   canonical twin until **3.12.0** — a host listening to both names receives the event twice.
   `EmbeddedEventBusService`'s queue only ever carries canonical names; `src/app/app.ts` emits both
@@ -83,6 +85,7 @@ events are re-dispatched on the outer element.
 - **Methods**: `meetingEnd()`, `meetingLeave()`, `participantKick(identity)`,
   `participantMute(identity, media)`, `participantMuteAll(media)` (moderation is one-way: `media`
   only accepts `false` values, e.g. `{audioActive: false}`, and never applies to a moderator),
+  `participantUpdateRole(identity, action)` (`upgrade` | `downgrade`, gated by `participantPromote`),
   `mediaToggleAudio(active?)`, `mediaToggleVideo(active?)`, `mediaToggleScreenShare(active?)`
   (omitted = toggle), `recordingStart()` / `recordingStop()` (gated by `recordingControl`; the stop
   targets the recording the meeting currently knows, after waiting for a start still in flight), and

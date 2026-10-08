@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MeetParticipantModerationAction } from '@openvidu-meet/typings';
 import { MeetCommandsService } from '../../services/meet-commands';
 import { ParticipantRosterService } from '../../services/participant-roster';
 
@@ -17,4 +18,5 @@ import { ParticipantRosterService } from '../../services/participant-roster';
 export class CommandsPanel {
 	protected readonly commands = inject(MeetCommandsService);
 	protected readonly roster = inject(ParticipantRosterService);
+	protected readonly ModerationAction = MeetParticipantModerationAction;
 }

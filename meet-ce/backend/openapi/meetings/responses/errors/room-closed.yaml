@@ -1,4 +1,4 @@
-description: Room closed or meeting full
+description: Room closed, meeting full, or the participant's role being changed when regenerating their token
 content:
     application/json:
         schema:
@@ -14,3 +14,8 @@ content:
                 value:
                     error: 'Room Error'
                     message: Room 'room_123' has reached its maximum number of participants
+            participant_being_updated:
+                summary: Participant is being updated by another request
+                value:
+                    error: 'Participant Error'
+                    message: "Participant 'alice_smith' in room 'room_123' is already being updated"

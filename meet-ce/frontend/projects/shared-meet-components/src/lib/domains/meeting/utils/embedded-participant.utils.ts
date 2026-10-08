@@ -3,6 +3,9 @@ import { MeetRoomMemberRole, MeetRoomMemberUIBadge } from '@openvidu-meet/typing
 import type { RemoteParticipant } from '../openvidu-components';
 import { parseParticipantMetadata } from '../openvidu-components';
 
+export const toParticipantRole = (badge: MeetRoomMemberUIBadge | undefined): MeetRoomMemberRole =>
+	!badge || badge === MeetRoomMemberUIBadge.OTHER ? MeetRoomMemberRole.SPEAKER : MeetRoomMemberRole.MODERATOR;
+
 /**
  * Builds the {@link MeetParticipantPayload} lifecycle shape for a remote participant — the
  * client-side twin of the backend's `MeetParticipantHelper.toParticipantPayload()`: the
@@ -13,15 +16,13 @@ import { parseParticipantMetadata } from '../openvidu-components';
  */
 export const toEmbeddedParticipantPayload = (participant: RemoteParticipant): MeetParticipantPayload => {
 	const meetingMetadata = parseParticipantMetadata(participant.metadata);
-	const badge = meetingMetadata?.badge;
 
 	return {
 		participantIdentity: participant.identity,
 		participantName: participant.name ?? participant.identity,
 		externalId: meetingMetadata?.externalId,
 		metadata: meetingMetadata?.metadata,
-		role:
-			!badge || badge === MeetRoomMemberUIBadge.OTHER ? MeetRoomMemberRole.SPEAKER : MeetRoomMemberRole.MODERATOR,
+		role: toParticipantRole(meetingMetadata?.badge),
 		joinDate: participant.joinedAt?.getTime() ?? 0
 	};
 };

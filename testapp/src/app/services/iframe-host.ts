@@ -3,6 +3,7 @@ import {
 	EmbeddedCommandName,
 	EmbeddedCommand,
 	EmbeddedEvent,
+	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions
 } from '@openvidu-meet/typings';
 
@@ -83,6 +84,10 @@ export class IframeHostService {
 
 	participantMuteAll(media: MeetParticipantMuteOptions): void {
 		this.post({ command: EmbeddedCommandName.PARTICIPANT_MUTE_ALL, payload: { media } });
+	}
+
+	participantUpdateRole(participantIdentity: string, action: MeetParticipantModerationAction): void {
+		this.post({ command: EmbeddedCommandName.PARTICIPANT_UPDATE_ROLE, payload: { participantIdentity, action } });
 	}
 
 	mediaToggleAudio(active?: boolean): void {

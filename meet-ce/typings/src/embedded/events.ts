@@ -1,4 +1,5 @@
 import { MeetRecordingStatus } from '../database/recording.entity.js';
+import { MeetRoomMemberRole } from '../database/room-member.entity.js';
 import { MeetParticipantPayload } from '../response/participant-response.js';
 
 /**
@@ -31,6 +32,13 @@ export enum EmbeddedEventName {
 	 * The local participant's own departure is notified through `meetingLeft` instead.
 	 */
 	PARTICIPANT_LEFT = 'participantLeft',
+	/**
+	 * Event emitted to the local participant when they are promoted to moderator or returned to their
+	 * original role, once the permissions of the new role are in effect. A change made while the
+	 * participant is still joining is reported after `meetingJoined`. The other participants are not
+	 * notified.
+	 */
+	PARTICIPANT_ROLE_CHANGED = 'participantRoleChanged',
 	/**
 	 * Event emitted to the local participant when their microphone state changes. Emitted from the
 	 * prejoin screen onwards, before `meetingJoined`.
@@ -160,6 +168,15 @@ export interface EmbeddedEventPayloads {
 		participant: MeetParticipantPayload;
 	};
 	/**
+	 * Payload for the {@link EmbeddedEventName.PARTICIPANT_ROLE_CHANGED} event.
+	 * `role` is the local participant's new role (see {@link MeetRoomMemberRole}).
+	 */
+	[EmbeddedEventName.PARTICIPANT_ROLE_CHANGED]: {
+		roomId: string;
+		participantIdentity: string;
+		role: MeetRoomMemberRole;
+	};
+	/**
 	 * Payload for the {@link EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED} event.
 	 * `origin` says who caused the change (see {@link MeetEventOrigin}).
 	 */
@@ -286,6 +303,16 @@ export interface EmbeddedParticipantLeftEvent {
 }
 
 /**
+ * Event message emitted to the local participant when their role changes: the event name plus its
+ * payload, derived from {@link EmbeddedEventPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedParticipantRoleChangedEvent {
+	event: EmbeddedEventName.PARTICIPANT_ROLE_CHANGED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_ROLE_CHANGED>;
+}
+
+/**
  * Event message emitted to the local participant when their microphone state changes: the event
  * name plus its payload, derived from {@link EmbeddedEventPayloadFor}.
  * @category Communication
@@ -374,6 +401,7 @@ export type EmbeddedEvent =
 	| EmbeddedMeetingLeftEvent
 	| EmbeddedParticipantJoinedEvent
 	| EmbeddedParticipantLeftEvent
+	| EmbeddedParticipantRoleChangedEvent
 	| EmbeddedMediaAudioStatusChangedEvent
 	| EmbeddedMediaVideoStatusChangedEvent
 	| EmbeddedMediaScreenShareStatusChangedEvent

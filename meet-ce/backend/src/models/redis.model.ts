@@ -18,7 +18,10 @@ export const enum RedisKeyName {
 	// Marks that the current meeting was force-ended for exceeding its room's duration limit rather
 	// than by a moderator (the stored value is the meeting's LiveKit room sid), so room_finished can
 	// attribute the meetingEnded webhook and the participants' left reason correctly.
-	MEETING_ENDED_REASON = `${REDIS_KEY_PREFIX}meeting_ended_reason:`
+	MEETING_ENDED_REASON = `${REDIS_KEY_PREFIX}meeting_ended_reason:`,
+	// Stores, per meeting participant, when their role last changed: room member tokens they were
+	// issued before that moment are no longer accepted.
+	PARTICIPANT_TOKENS_REVOKED_AT = `${REDIS_KEY_PREFIX}participant_tokens_revoked_at:`
 }
 
 export const enum RedisLockPrefix {
@@ -35,5 +38,6 @@ export const enum RedisLockName {
 	MIGRATION = 'migration',
 	WEBHOOK = 'webhook',
 	WEBHOOK_REGISTRATION = 'webhook_registration',
-	AI_ASSISTANT = 'ai_assistant'
+	AI_ASSISTANT = 'ai_assistant',
+	PARTICIPANT_METADATA = 'participant_metadata'
 }

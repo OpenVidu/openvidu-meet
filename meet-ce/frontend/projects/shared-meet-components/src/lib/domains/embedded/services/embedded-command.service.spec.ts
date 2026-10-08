@@ -1,6 +1,7 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { TestBed } from '@angular/core/testing';
+import { MeetParticipantModerationAction } from '@openvidu-meet/typings';
 import {
 	LocalMediaService,
 	MeetingPhaseService,
@@ -68,12 +69,14 @@ describe('EmbeddedCommandService', () => {
 			'endMeeting',
 			'kickParticipant',
 			'muteParticipant',
-			'muteAllParticipants'
+			'muteAllParticipants',
+			'changeParticipantRole'
 		]);
 		moderationService.endMeeting.and.resolveTo();
 		moderationService.kickParticipant.and.resolveTo();
 		moderationService.muteParticipant.and.resolveTo();
 		moderationService.muteAllParticipants.and.resolveTo();
+		moderationService.changeParticipantRole.and.resolveTo();
 
 		microphoneEnabled = signal(true);
 		cameraEnabled = signal(true);
@@ -224,6 +227,14 @@ describe('EmbeddedCommandService', () => {
 			expect(recordingService.stopRecording).not.toHaveBeenCalled();
 		});
 
+		it('rejects participantUpdateRole with no active session', async () => {
+			liveKitService.isSessionActive.set(false);
+
+			await service.participantUpdateRole(IDENTITY, MeetParticipantModerationAction.UPGRADE);
+
+			expect(moderationService.changeParticipantRole).not.toHaveBeenCalled();
+		});
+
 		it('rejects meetingLeave with no active session (disconnect would be a no-op anyway)', async () => {
 			liveKitService.isSessionActive.set(false);
 
@@ -298,6 +309,15 @@ describe('EmbeddedCommandService', () => {
 
 			expect(hasPermission).toHaveBeenCalledWith('participantMute');
 			expect(moderationService.muteAllParticipants).toHaveBeenCalledOnceWith(ROOM_ID, { videoActive: false });
+		});
+
+		it('rejects participantUpdateRole without the participantPromote permission', async () => {
+			hasPermission.and.returnValue(false);
+
+			await service.participantUpdateRole(IDENTITY, MeetParticipantModerationAction.UPGRADE);
+
+			expect(hasPermission).toHaveBeenCalledWith('participantPromote');
+			expect(moderationService.changeParticipantRole).not.toHaveBeenCalled();
 		});
 
 		it('rejects mediaToggleAudio without the mediaPublishAudio permission', async () => {
@@ -462,6 +482,22 @@ describe('EmbeddedCommandService', () => {
 
 			expect(recordingService.stopRecording).not.toHaveBeenCalled();
 			expect(logger.warn).toHaveBeenCalledWith('recordingStop() called but no recording is in progress');
+		});
+
+		it('participantUpdateRole applies the action to the named participant of the current meeting', async () => {
+			await service.participantUpdateRole(IDENTITY, MeetParticipantModerationAction.DOWNGRADE);
+
+			expect(moderationService.changeParticipantRole).toHaveBeenCalledOnceWith(
+				ROOM_ID,
+				IDENTITY,
+				MeetParticipantModerationAction.DOWNGRADE
+			);
+		});
+
+		it('participantUpdateRole is rejected without a participant identity', async () => {
+			await service.participantUpdateRole('', MeetParticipantModerationAction.UPGRADE);
+
+			expect(moderationService.changeParticipantRole).not.toHaveBeenCalled();
 		});
 
 		it('mediaToggleAudio passes an explicit active flag through', async () => {

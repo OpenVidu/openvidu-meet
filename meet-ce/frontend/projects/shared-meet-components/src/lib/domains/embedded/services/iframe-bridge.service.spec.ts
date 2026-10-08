@@ -1,6 +1,13 @@
 import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { EmbeddedCommandName, EmbeddedEventName, LeftEventReason, MeetRecordingStatus } from '@openvidu-meet/typings';
+import {
+	EmbeddedCommandName,
+	EmbeddedEventName,
+	LeftEventReason,
+	MeetParticipantModerationAction,
+	MeetRecordingStatus,
+	MeetRoomMemberRole
+} from '@openvidu-meet/typings';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { EmbeddedCommandService } from './embedded-command.service';
 import { EmbeddedEventBusService } from './embedded-event-bus.service';
@@ -39,6 +46,7 @@ describe('IframeBridgeService', () => {
 			'participantKick',
 			'participantMute',
 			'participantMuteAll',
+			'participantUpdateRole',
 			'mediaToggleAudio',
 			'mediaToggleVideo',
 			'mediaToggleScreenShare',
@@ -50,6 +58,7 @@ describe('IframeBridgeService', () => {
 		commandService.participantKick.and.resolveTo();
 		commandService.participantMute.and.resolveTo();
 		commandService.participantMuteAll.and.resolveTo();
+		commandService.participantUpdateRole.and.resolveTo();
 		commandService.mediaToggleAudio.and.resolveTo();
 		commandService.mediaToggleVideo.and.resolveTo();
 		commandService.mediaToggleScreenShare.and.resolveTo();
@@ -278,6 +287,55 @@ describe('IframeBridgeService', () => {
 			});
 		});
 
+		describe('participant role command', () => {
+			it('forwards PARTICIPANT_UPDATE_ROLE with the participant identity and the action', () => {
+				startBridge();
+
+				postFromHost({
+					command: EmbeddedCommandName.PARTICIPANT_UPDATE_ROLE,
+					payload: { participantIdentity: IDENTITY, action: MeetParticipantModerationAction.UPGRADE }
+				});
+
+				expect(commandService.participantUpdateRole).toHaveBeenCalledOnceWith(
+					IDENTITY,
+					MeetParticipantModerationAction.UPGRADE
+				);
+			});
+
+			it('ignores PARTICIPANT_UPDATE_ROLE without a participant identity', () => {
+				startBridge();
+
+				postFromHost({
+					command: EmbeddedCommandName.PARTICIPANT_UPDATE_ROLE,
+					payload: { action: MeetParticipantModerationAction.DOWNGRADE }
+				});
+
+				expect(commandService.participantUpdateRole).not.toHaveBeenCalled();
+			});
+
+			it('ignores PARTICIPANT_UPDATE_ROLE without an action', () => {
+				startBridge();
+
+				postFromHost({
+					command: EmbeddedCommandName.PARTICIPANT_UPDATE_ROLE,
+					payload: { participantIdentity: IDENTITY }
+				});
+
+				expect(commandService.participantUpdateRole).not.toHaveBeenCalled();
+			});
+
+			it('ignores PARTICIPANT_UPDATE_ROLE with an action the API does not define', () => {
+				startBridge();
+
+				postFromHost({
+					command: EmbeddedCommandName.PARTICIPANT_UPDATE_ROLE,
+					payload: { participantIdentity: IDENTITY, action: 'moderator' }
+				});
+
+				expect(commandService.participantUpdateRole).not.toHaveBeenCalled();
+			});
+		});
+
 		// The bridge forwards without gating; phase and permission are enforced by EmbeddedCommandService.
 		describe('media toggle commands', () => {
 			it('forwards MEDIA_TOGGLE_AUDIO with its explicit active flag', () => {
@@ -457,6 +515,18 @@ describe('IframeBridgeService', () => {
 
 			expect(postMessageSpy.calls.allArgs()).toEqual([
 				[{ event: EmbeddedEventName.RECORDING_STATUS_CHANGED, payload }, PARENT_ORIGIN]
+			]);
+		});
+
+		it('relays PARTICIPANT_ROLE_CHANGED once, since it has no deprecated alias', () => {
+			startBridge();
+
+			const payload = { roomId: ROOM_ID, participantIdentity: IDENTITY, role: MeetRoomMemberRole.MODERATOR };
+			eventBus.emit({ event: EmbeddedEventName.PARTICIPANT_ROLE_CHANGED, payload });
+			TestBed.tick();
+
+			expect(postMessageSpy.calls.allArgs()).toEqual([
+				[{ event: EmbeddedEventName.PARTICIPANT_ROLE_CHANGED, payload }, PARENT_ORIGIN]
 			]);
 		});
 

@@ -3,6 +3,7 @@ import type {
 	MeetMeetingEndedPayload,
 	MeetParticipantJoinedPayload,
 	MeetParticipantLeftPayload,
+	MeetParticipantRoleChangedPayload,
 	MeetRecordingInfo,
 	MeetRoom,
 	MeetWebhookEvent,
@@ -85,6 +86,19 @@ export class WebhookDispatcherService {
 	sendParticipantLeftWebhook(payload: MeetParticipantLeftPayload) {
 		this.sendWebhookEventInBackground(
 			MeetWebhookEventType.PARTICIPANT_LEFT,
+			payload,
+			`Room ID: ${payload.roomId}, Participant: ${payload.participant.participantIdentity}`
+		);
+	}
+
+	/**
+	 * Sends a webhook notification when a participant is promoted to moderator or demoted back.
+	 *
+	 * @param payload - The participant's snapshot carrying its new role, plus the room it is in
+	 */
+	sendParticipantRoleChangedWebhook(payload: MeetParticipantRoleChangedPayload) {
+		this.sendWebhookEventInBackground(
+			MeetWebhookEventType.PARTICIPANT_ROLE_CHANGED,
 			payload,
 			`Room ID: ${payload.roomId}, Participant: ${payload.participant.participantIdentity}`
 		);

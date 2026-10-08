@@ -254,7 +254,10 @@
 		"STOP_ALL_SCREEN_SHARES_NONE": "Nadie está compartiendo pantalla"
 	},
 	"MODERATION": {
-		"MUTED_BY_MODERATOR": "Un moderador ha apagado uno de tus dispositivos"
+		"MUTED_BY_MODERATOR": "Un moderador ha apagado uno de tus dispositivos",
+		"PROMOTED_TO_MODERATOR": "Te han ascendido a moderador",
+		"MODERATOR_ROLE_REMOVED": "Ya no tienes el rol de moderador",
+		"PERMISSIONS_UPDATED": "Tus permisos se han actualizado"
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "Has salido de la reunión",

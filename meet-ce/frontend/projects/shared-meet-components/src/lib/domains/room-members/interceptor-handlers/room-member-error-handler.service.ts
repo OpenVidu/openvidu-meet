@@ -10,8 +10,9 @@ import {
 	HttpErrorNotifierService
 } from '../../../shared/services/http-error-notifier.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
+import { TokenStorageService } from '../../../shared/services/token-storage.service';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
-import { RoomMemberContextService } from '../services/room-member-context.service';
+import { ACCESS_DENIED_STATUSES, RoomMemberContextService } from '../services/room-member-context.service';
 import { RoomMemberHeaderProviderService } from './room-member-header-provider.service';
 
 /**
@@ -26,6 +27,7 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 	private readonly httpErrorNotifier = inject(HttpErrorNotifierService);
 	private readonly roomMemberHeaderProvider = inject(RoomMemberHeaderProviderService);
 	private readonly navigationService = inject(NavigationService);
+	private readonly tokenStorageService = inject(TokenStorageService);
 
 	/**
 	 * Registers this handler with the error notifier service
@@ -115,9 +117,9 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 				if (error.url?.includes('/members/token')) {
 					console.error('Error regenerating room member token');
 
-					// If token regeneration failed and the auth error handler did not already handle an auth redirect,
-					// redirect to the error page
-					if (!authRedirectHandled) {
+					// Only a refusal means the member lost access, and the auth error handler may already have
+					// redirected for it. Failing to reach the server leaves them where they are.
+					if (ACCESS_DENIED_STATUSES.includes(error.status) && !authRedirectHandled) {
 						console.log('Redirecting to error page...');
 						await this.navigationService.redirectToErrorPage(
 							NavigationErrorReason.ROOM_ACCESS_REVOKED,
@@ -132,7 +134,9 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 				// In that case, let the auth error handler try to recover by delegating the error to it.
 				// Add a flag to the error to indicate that the next available handler should attempt to handle it
 				// (instead of skipping all handlers as is the default behavior when throwing an error).
-				if (error.status === 401) {
+				// Without one, the refusal is about the new room member token itself, revoked in turn by a later
+				// demotion, and the request just fails.
+				if (error.status === 401 && this.tokenStorageService.getAccessToken()) {
 					const continueError: ContinueWithNextHandlerError = {
 						continueWithNextHandler: true,
 						error
