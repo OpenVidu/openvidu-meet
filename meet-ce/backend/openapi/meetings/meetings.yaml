@@ -267,8 +267,8 @@
             The change is reported through the [`participantRoleChanged`](#/webhooks/participantRoleChangedWebhook)
             webhook.
 
-            Every room member token the participant was issued before the change stops being accepted (`401`),
-            so they need a new one.
+            A `downgrade` stops every room member token the participant was issued before it from being
+            accepted (`401`), so they need a new one.
 
             An `upgrade` reaches the `when_moderator_joins` recording auto-start trigger: in a room configured
             with it, the recording starts on its own once this request has returned, unless it was already

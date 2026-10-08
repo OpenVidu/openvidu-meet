@@ -134,8 +134,8 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 				// In that case, let the auth error handler try to recover by delegating the error to it.
 				// Add a flag to the error to indicate that the next available handler should attempt to handle it
 				// (instead of skipping all handlers as is the default behavior when throwing an error).
-				// Without one, the refusal is about the new room member token itself, revoked in turn by another
-				// role change, and the request just fails.
+				// Without one, the refusal is about the new room member token itself, revoked in turn by a later
+				// demotion, and the request just fails.
 				if (error.status === 401 && this.tokenStorageService.getAccessToken()) {
 					const continueError: ContinueWithNextHandlerError = {
 						continueWithNextHandler: true,

@@ -193,6 +193,22 @@ describe('Meetings API Tests', () => {
 			return { identity: identity!, speakerToken };
 		};
 
+		it('should keep accepting the token a participant held before being promoted', async () => {
+			const { roomId } = roomData.room;
+			const { identity, speakerToken } = await joinAsSpeaker();
+
+			const promotion = await updateParticipant(
+				roomId,
+				identity,
+				MeetParticipantModerationAction.UPGRADE,
+				roomData.moderatorToken
+			);
+			expect(promotion.status).toBe(200);
+
+			const response = await getMeetingParticipant(roomId, identity, speakerToken);
+			expect(response.status).toBe(200);
+		});
+
 		describe('after a demotion', () => {
 			const promoteRefreshAndDemote = async () => {
 				const { roomId } = roomData.room;
@@ -307,28 +323,34 @@ describe('Meetings API Tests', () => {
 				});
 			});
 
-			it('should give a participant who regenerates their token during a promotion a token that is accepted', async () => {
+			it('should give a participant who regenerates their token during a demotion a token that is accepted', async () => {
 				const { roomId } = roomData.room;
 				const { identity, speakerToken } = await joinAsSpeaker();
-
-				const writeToLiveKit = livekitService.updateParticipant.bind(livekitService);
-				let promotionWriting!: () => void;
-				const promotionHoldsLock = new Promise<void>((resolve) => (promotionWriting = resolve));
-				let releasePromotionWrite!: () => void;
-				const promotionWriteReleased = new Promise<void>((resolve) => (releasePromotionWrite = resolve));
-				jest.spyOn(livekitService, 'updateParticipant').mockImplementationOnce(async (...args) => {
-					promotionWriting();
-					await promotionWriteReleased;
-					return writeToLiveKit(...args);
-				});
-
-				const promotion = updateParticipant(
+				await updateParticipant(
 					roomId,
 					identity,
 					MeetParticipantModerationAction.UPGRADE,
 					roomData.moderatorToken
 				);
-				await promotionHoldsLock;
+
+				const writeToLiveKit = livekitService.updateParticipant.bind(livekitService);
+				let demotionWriting!: () => void;
+				const demotionHoldsLock = new Promise<void>((resolve) => (demotionWriting = resolve));
+				let releaseDemotionWrite!: () => void;
+				const demotionWriteReleased = new Promise<void>((resolve) => (releaseDemotionWrite = resolve));
+				jest.spyOn(livekitService, 'updateParticipant').mockImplementationOnce(async (...args) => {
+					demotionWriting();
+					await demotionWriteReleased;
+					return writeToLiveKit(...args);
+				});
+
+				const demotion = updateParticipant(
+					roomId,
+					identity,
+					MeetParticipantModerationAction.DOWNGRADE,
+					roomData.moderatorToken
+				);
+				await demotionHoldsLock;
 
 				const mutexService = container.get(MutexService);
 				const lock = mutexService.withRetryLock.bind(mutexService);
@@ -347,9 +369,9 @@ describe('Meetings API Tests', () => {
 					speakerToken
 				);
 				await regenerationQueued;
-				releasePromotionWrite();
+				releaseDemotionWrite();
 
-				expect((await promotion).status).toBe(200);
+				expect((await demotion).status).toBe(200);
 				const regenerated = await regeneration;
 				lockSpy.mockRestore();
 				expect(regenerated.status).toBe(200);

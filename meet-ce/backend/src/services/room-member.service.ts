@@ -606,7 +606,7 @@ export class RoomMemberService {
 			);
 
 			participantName = await this.withParticipantMetadataLock(roomId, participantIdentity!, async () => {
-				// Issued after any role change that held the lock first, so the change does not revoke it.
+				// Issued after any demotion that held the lock first, so the demotion does not revoke it.
 				tokenMetadata.iat = Date.now();
 				const participant = await this.getParticipantFromMeeting(roomId, participantIdentity!);
 				const participantMetadata = MeetParticipantHelper.parseOwnMeetingMetadata(participant);
@@ -1070,8 +1070,9 @@ export class RoomMemberService {
 	 * - `DOWNGRADE`: reverts a promoted moderator to their original permissions.
 	 *
 	 * After updating participant metadata in LiveKit, which is what tells the affected participant to
-	 * refresh their token, it revokes the room member tokens the participant was issued until then and
-	 * reports the change through the `participantRoleChanged` webhook.
+	 * refresh their token, it reports the change through the `participantRoleChanged` webhook. A demotion
+	 * also revokes the room member tokens the participant was issued until then, which still carry the
+	 * moderator permissions.
 	 *
 	 * @param roomId - The ID of the room where the participant is connected.
 	 * @param participantIdentity - The LiveKit identity of the participant to moderate.
@@ -1123,7 +1124,11 @@ export class RoomMemberService {
 					JSON.stringify(metadata),
 					permission
 				);
-				await this.participantTokenRevocationService.revokeIssuedTokens(roomId, participantIdentity);
+
+				if (action === MeetParticipantModerationAction.DOWNGRADE) {
+					await this.participantTokenRevocationService.revokeIssuedTokens(roomId, participantIdentity);
+				}
+
 				return updatedParticipant;
 			});
 

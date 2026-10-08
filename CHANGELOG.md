@@ -31,9 +31,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 #### Integration
 
-- A room member token issued before its participant was promoted or demoted through
+- A room member token issued before its participant was demoted through
   [`participantRoleUpdate`][3.10-participant-role-update] or `participantUpdateRole` stayed valid until it expired,
-  so a demoted participant kept their moderator permissions. It is now rejected.
+  so they kept their moderator permissions. It is now rejected.
 - [`participantRoleUpdate`][3.10-participant-role-update], [`participantMute`][3.9-participant-mute],
   [`participantMuteAll`][3.9-participant-mute-all], `updateRoomMember` and the embedded commands that use them
   answered with an error when the notice to the affected participants could not be delivered, although the change

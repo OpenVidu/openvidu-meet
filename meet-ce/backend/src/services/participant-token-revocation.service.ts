@@ -5,8 +5,8 @@ import { RedisKeyName } from '../models/redis.model.js';
 import { RedisService } from './redis.service.js';
 
 /**
- * Revokes the room member tokens a meeting participant was issued before a change to their role,
- * shared across replicas via Redis. A participant has no database record to stamp when they joined
+ * Revokes the room member tokens a meeting participant was issued before they were demoted from
+ * moderator, shared across replicas via Redis. A participant has no database record to stamp when they joined
  * anonymously, so the revocation is keyed by their LiveKit identity and lasts as long as a token does.
  */
 @injectable()

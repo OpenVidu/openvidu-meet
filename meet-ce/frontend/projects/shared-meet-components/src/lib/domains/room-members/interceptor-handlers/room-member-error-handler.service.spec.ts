@@ -12,7 +12,7 @@ import { RoomMemberInterceptorErrorHandlerService } from './room-member-error-ha
 import { RoomMemberHeaderProviderService } from './room-member-header-provider.service';
 
 /**
- * A role change revokes the room member tokens a participant holds, so a request of theirs can be
+ * A demotion revokes the room member tokens a participant holds, so a request of theirs can be
  * refused even while they are in the meeting. Only the server refusing them a new token takes them out.
  */
 describe('RoomMemberInterceptorErrorHandlerService', () => {
@@ -64,7 +64,7 @@ describe('RoomMemberInterceptorErrorHandlerService', () => {
 		expect(generateToken).toHaveBeenCalledOnceWith('room1', { secret: 'secret', joinMeeting: true });
 	});
 
-	// Another role change can revoke the regenerated token before the retry reaches the server.
+	// A later demotion can revoke the regenerated token before the retry reaches the server.
 	it('fails the request of a participant without an account when the retry is refused too', async () => {
 		const error = await outcome(throwError(() => revoked));
 
