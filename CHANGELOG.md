@@ -57,6 +57,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   access to the room takes them out.
 - The notices a participant sees when promoted to moderator, demoted or given updated permissions were always in
   English. They now follow the selected language.
+- In a narrow desktop browser window, the meeting toolbar overflowed the screen and hid some of its buttons. A window
+  narrower than 768 px now gets the compact toolbar a phone gets.
 
 #### Deployment
 

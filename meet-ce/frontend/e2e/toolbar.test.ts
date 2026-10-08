@@ -49,6 +49,23 @@ test.describe('Toolbar Buttons E2E Tests', () => {
 		await expect(page.locator('.theme-section')).toBeVisible();
 	});
 
+	// A desktop browser in a narrow window has no touch screen, yet needs the compact toolbar a phone gets.
+	test('should keep every toolbar button on screen in a narrow desktop window', async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await openMeeting(page, accessUrl);
+
+		const offScreen = await page.evaluate(() =>
+			[...document.querySelectorAll('#toolbar button')]
+				.map((button) => ({ id: button.id || button.className, box: button.getBoundingClientRect() }))
+				.filter(({ box }) => box.width > 0 && (box.left < 0 || box.right > window.innerWidth))
+				.map(({ id }) => id)
+		);
+		expect(offScreen).toEqual([]);
+
+		await openMoreOptionsMenu(page);
+		await expect(page.locator('.mat-mdc-menu-panel #captions-button')).toBeVisible();
+	});
+
 	// Guards the only two DOM anchors in the app that are addressed by *string* id, both from
 	// `toolbar.component.ts`: `documentService.toggleFullscreen('meeting-stage')` and
 	// `cdkOverlayService.setSelector('#meeting-stage')`. Neither is visible to the compiler, and

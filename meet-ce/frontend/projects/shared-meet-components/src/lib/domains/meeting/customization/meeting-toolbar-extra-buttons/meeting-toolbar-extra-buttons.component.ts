@@ -54,7 +54,7 @@ export class MeetingToolbarExtraButtonsComponent {
 	/** Whether captions are currently enabled by the user */
 	areCaptionsEnabledByUser = this.captionService.areCaptionsEnabledByUser;
 
-	/** Whether the device is mobile (affects button style) */
+	/** Whether the toolbar is in its mobile layout, which puts these buttons in the More options menu */
 	isMobile = this.meetingContextService.isMobile;
 
 	async onCaptionsClick(): Promise<void> {
