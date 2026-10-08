@@ -67,6 +67,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   English. They now follow the selected language.
 - In a narrow desktop browser window, the meeting toolbar overflowed the screen and hid some of its buttons. A window
   narrower than 768 px now gets the compact toolbar a phone gets.
+- The notifications in the top corner of a meeting covered the header of an open side panel, its close button
+  included. They now sit beside the panel, or below its header when the panel fills the screen.
 
 #### Deployment
 
