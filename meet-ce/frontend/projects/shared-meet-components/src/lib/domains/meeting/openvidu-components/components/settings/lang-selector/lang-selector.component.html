@@ -1,13 +1,12 @@
 <div class="language-selector-container">
-	@if (compact()) {
-		<!-- Compact version (icon only) -->
-		<button mat-icon-button [matMenuTriggerFor]="langMenu" class="compact-lang-button" [matTooltip]="'Change language'" disableRipple>
+	@if (variant() === 'field') {
+		<button [matMenuTriggerFor]="langMenu" class="lang-field">
 			<mat-icon>translate</mat-icon>
+			<span class="field-value">{{ langSelected().name }}</span>
+			<mat-icon class="field-chevron">expand_more</mat-icon>
 		</button>
 	} @else {
-		<!-- Full version (with text) -->
 		<button mat-flat-button [matMenuTriggerFor]="langMenu" class="full-lang-button">
-			<!-- <mat-icon class="lang-icon">translate</mat-icon> -->
 			<span class="lang-name">
 				{{ langSelected().name }}
 				<mat-icon class="expand-icon">expand_more</mat-icon>

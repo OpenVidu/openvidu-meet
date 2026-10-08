@@ -9,6 +9,11 @@ import { LocalMediaService } from '../local-media/local-media.service';
 // we measure RMS rather than LiveKit's frequency-based `calculateVolume`. Typical readings:
 // digital silence ~0, quiet room noise (with noise suppression) < 0.01, normal speech ~0.05-0.3.
 const SPEAKING_THRESHOLD = 0.045;
+// The reading that fills the level meter: loud, close speech.
+const FULL_LEVEL_RMS = 0.25;
+// Level changes smaller than this do not show in the meter, so they do not wake whoever reads it:
+// background noise would otherwise re-render the meter on every sample.
+const LEVEL_CHANGE_THRESHOLD = 0.02;
 // Voice must stay above the threshold this long before it counts as speech, so transients (a
 // mouse click on the mute button, a keystroke, a door) do not trigger the warning.
 const SPEAKING_ATTACK_MS = 150;
@@ -20,13 +25,15 @@ const SPEAKING_RELEASE_MS = 1000;
 const SAMPLE_INTERVAL_MS = 50;
 
 /**
- * Monitors the live signal of the local microphone to power the "microphone status" warnings
+ * Monitors the live signal of the local microphone to power the "microphone status" warnings and
+ * the level meter of the settings panel
  */
 @Service()
 export class MicActivityService implements OnDestroy {
 	private readonly _isSpeaking = signal(false);
 	private readonly _systemMuted = signal(false);
 	private readonly _active = signal(false);
+	private readonly _level = signal(0, { equal: (a, b) => Math.abs(a - b) < LEVEL_CHANGE_THRESHOLD });
 
 	/** Whether voice activity is currently detected (with a short release window). */
 	readonly isSpeaking = this._isSpeaking.asReadonly();
@@ -34,6 +41,8 @@ export class MicActivityService implements OnDestroy {
 	readonly systemMuted = this._systemMuted.asReadonly();
 	/** Whether a microphone track is currently being monitored. */
 	readonly active = this._active.asReadonly();
+	/** How loud the microphone captures right now, from 0 (silence) to 1, even while muted in the meeting. */
+	readonly level = this._level.asReadonly();
 
 	private cleanupAnalyser?: () => Promise<void>;
 	private analyser?: AnalyserNode;
@@ -128,6 +137,7 @@ export class MicActivityService implements OnDestroy {
 		this._isSpeaking.set(false);
 		this._systemMuted.set(false);
 		this._active.set(false);
+		this._level.set(0);
 
 		if (cleanupAnalyser) {
 			cleanupAnalyser()
@@ -161,6 +171,7 @@ export class MicActivityService implements OnDestroy {
 		}
 
 		const rms = Math.sqrt(sumSquares / buffer.length);
+		this._level.set(Math.min(1, rms / FULL_LEVEL_RMS));
 
 		// The system-mute state has no reliable event across browsers once tracks are cloned,
 		// so it is refreshed on every read (one sampling period of latency).

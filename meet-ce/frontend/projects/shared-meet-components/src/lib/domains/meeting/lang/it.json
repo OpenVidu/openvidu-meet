@@ -27,7 +27,8 @@
 	},
 	"DEVICES": {
 		"NO_VIDEO_DEVICE": "Dispositivo video non trovato",
-		"NO_AUDIO_DEVICE": "Dispositivo audio non trovato"
+		"NO_AUDIO_DEVICE": "Dispositivo audio non trovato",
+		"CHECK_DEVICE": "Verifica che sia collegato e che il browser sia autorizzato a usarlo."
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Disattiva l'audio",
@@ -106,13 +107,23 @@
 		},
 		"SETTINGS": {
 			"TITLE": "Impostazioni",
+			"AUDIO_VIDEO": "Audio e video",
+			"LAYOUT": "Layout",
 			"GENERAL": "Generale",
+			"CAMERA": "Fotocamera",
+			"CAMERA_OFF": "La tua fotocamera è spenta",
+			"BACKGROUND": "Sfondo",
+			"MICROPHONE": "Microfono",
+			"MICROPHONE_LEVEL": "Livello del microfono",
+			"MICROPHONE_LEVEL_HINT": "Parla per verificare che gli altri ti sentano",
+			"MICROPHONE_OFF": "Il tuo microfono è spento",
 			"DISPLAY_NAME": "Nome visualizzato",
-			"VIDEO": "video",
-			"AUDIO": "Audio",
+			"DISPLAY_NAME_HINT": "Scelto all'ingresso nella riunione",
+			"DISPLAY_NAME_LOCKED": "Non può essere modificato durante la riunione",
 			"LANGUAGE": "Lingua",
-			"DISABLED_VIDEO": "Disattiva il video",
-			"THEME": "Tema"
+			"THEME": "Tema",
+			"THEME_LIGHT": "Chiaro",
+			"THEME_DARK": "Scuro"
 		},
 		"BACKGROUND": {
 			"TITLE": "Effetti di sfondo",
@@ -221,15 +232,23 @@
 		"ADJUST_LAYOUT": "Regola layout"
 	},
 	"LAYOUT_SETTINGS": {
-		"TITLE": "Impostazioni layout",
+		"INTRO": "Scegli come disporre le persone sul tuo schermo. Cambia solo la tua vista.",
 		"MODE_ARIA": "Seleziona la modalità di layout",
 		"MOSAIC": "Mosaico",
-		"MOSAIC_DESC": "Mostra tutti i partecipanti in una griglia unificata",
+		"MOSAIC_DESC": "Tutti, in riquadri uguali",
 		"SMART_MOSAIC": "Mosaico intelligente",
-		"SMART_MOSAIC_DESC": "Mostra un numero limitato di partecipanti attivi",
-		"COUNT_LABEL": "Numero di partecipanti visibili",
-		"COUNT_HELPER": "Scegli quanti partecipanti remoti vengono mostrati nella griglia",
-		"COUNT_ARIA": "Numero di partecipanti da visualizzare"
+		"SMART_MOSAIC_DESC": "Prima chi parla, gli altri raggruppati",
+		"COUNT_LABEL": "Partecipanti visibili",
+		"COUNT_EXCLUDES_YOU": "Escluso te",
+		"COUNT_SMART_ONLY": "Solo Mosaico intelligente",
+		"COUNT_HELPER": "Chi parla compare automaticamente. Gli altri sono raggruppati in +N.",
+		"COUNT_DISABLED_HELPER": "Scegli Mosaico intelligente per limitare quante persone vengono mostrate contemporaneamente.",
+		"COUNT_ARIA": "Numero di partecipanti da visualizzare",
+		"OWN_VIDEO": "Il tuo video",
+		"OWN_VIDEO_FLOATING": "Fluttuante",
+		"OWN_VIDEO_DOCKED": "Nella griglia",
+		"OWN_VIDEO_HELPER": "Fluttuante mantiene il tuo video sopra il layout, dove puoi trascinarlo e ridimensionarlo.",
+		"OWN_VIDEO_PINNED_HELPER": "Rimuovi il blocco del tuo video per farlo fluttuare o inserirlo nella griglia."
 	},
 	"HIDDEN_PARTICIPANTS": {
 		"ONE_MORE": "altro partecipante",

@@ -336,7 +336,8 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await expect(meet('#layout-container')).toBeVisible({ timeout: 15_000 });
 				await openMoreOptionsMenu(page);
 				await meet('#toolbar-settings-btn').click();
-				await expect(meet('ov-settings-panel')).toBeVisible();
+				await meet('#general-opt').click();
+				await expect(meet('#settings-display-name')).toBeVisible();
 				await expect(meet('ov-lang-selector')).toHaveCount(0);
 			});
 

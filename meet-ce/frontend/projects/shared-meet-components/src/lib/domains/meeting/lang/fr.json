@@ -27,7 +27,8 @@
 	},
 	"DEVICES": {
 		"NO_VIDEO_DEVICE": "Appareil vidéo introuvable",
-		"NO_AUDIO_DEVICE": "Appareil audio introuvable"
+		"NO_AUDIO_DEVICE": "Appareil audio introuvable",
+		"CHECK_DEVICE": "Vérifiez qu'il est branché et que le navigateur est autorisé à l'utiliser."
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Mettez votre audio en sourdine",
@@ -106,13 +107,23 @@
 		},
 		"SETTINGS": {
 			"TITLE": "Paramètres",
+			"AUDIO_VIDEO": "Audio et vidéo",
+			"LAYOUT": "Disposition",
 			"GENERAL": "Général",
+			"CAMERA": "Caméra",
+			"CAMERA_OFF": "Votre caméra est désactivée",
+			"BACKGROUND": "Arrière-plan",
+			"MICROPHONE": "Micro",
+			"MICROPHONE_LEVEL": "Niveau du micro",
+			"MICROPHONE_LEVEL_HINT": "Parlez pour vérifier que les autres vous entendent",
+			"MICROPHONE_OFF": "Votre micro est désactivé",
 			"DISPLAY_NAME": "Nom affiché",
-			"VIDEO": "Vidéo",
-			"AUDIO": "l'audio",
+			"DISPLAY_NAME_HINT": "Choisi en rejoignant la réunion",
+			"DISPLAY_NAME_LOCKED": "Il ne peut pas être modifié pendant la réunion",
 			"LANGUAGE": "Langue",
-			"DISABLED_VIDEO": "Désactiver la vidéo",
-			"THEME": "Thème"
+			"THEME": "Thème",
+			"THEME_LIGHT": "Clair",
+			"THEME_DARK": "Sombre"
 		},
 		"BACKGROUND": {
 			"TITLE": "Effets de fond",
@@ -221,15 +232,23 @@
 		"ADJUST_LAYOUT": "Ajuster la disposition"
 	},
 	"LAYOUT_SETTINGS": {
-		"TITLE": "Paramètres de disposition",
+		"INTRO": "Choisissez comment les personnes sont disposées sur votre écran. Seul votre affichage change.",
 		"MODE_ARIA": "Sélectionner le mode de disposition",
 		"MOSAIC": "Mosaïque",
-		"MOSAIC_DESC": "Affiche tous les participants dans une grille unifiée",
+		"MOSAIC_DESC": "Tout le monde, en vignettes égales",
 		"SMART_MOSAIC": "Mosaïque intelligente",
-		"SMART_MOSAIC_DESC": "Affiche un nombre limité de participants actifs",
-		"COUNT_LABEL": "Nombre de participants visibles",
-		"COUNT_HELPER": "Choisissez combien de participants distants sont affichés dans la grille",
-		"COUNT_ARIA": "Nombre de participants à afficher"
+		"SMART_MOSAIC_DESC": "Les intervenants d'abord, les autres regroupés",
+		"COUNT_LABEL": "Participants visibles",
+		"COUNT_EXCLUDES_YOU": "Sans vous compter",
+		"COUNT_SMART_ONLY": "Mosaïque intelligente uniquement",
+		"COUNT_HELPER": "Les personnes qui parlent apparaissent automatiquement. Les autres sont regroupées sous +N.",
+		"COUNT_DISABLED_HELPER": "Choisissez la mosaïque intelligente pour limiter le nombre de personnes affichées à la fois.",
+		"COUNT_ARIA": "Nombre de participants à afficher",
+		"OWN_VIDEO": "Votre vidéo",
+		"OWN_VIDEO_FLOATING": "Flottante",
+		"OWN_VIDEO_DOCKED": "Dans la grille",
+		"OWN_VIDEO_HELPER": "Flottante garde votre vidéo au-dessus de la disposition, où vous pouvez la déplacer et la redimensionner.",
+		"OWN_VIDEO_PINNED_HELPER": "Désépinglez votre vidéo pour la faire flotter ou la replacer."
 	},
 	"HIDDEN_PARTICIPANTS": {
 		"ONE_MORE": "participant de plus",

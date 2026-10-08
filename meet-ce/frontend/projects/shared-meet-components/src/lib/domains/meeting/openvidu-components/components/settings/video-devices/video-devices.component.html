@@ -7,12 +7,14 @@
 				<button
 					mat-flat-button
 					class="toggle-section"
-				[disabled]="!hasVideoDevices() || cameraStatusChanging()"
-				[class.device-enabled]="isCameraEnabled()"
-				[class.device-disabled]="!isCameraEnabled()"
-				(click)="toggleCam($event)"
-				[matTooltip]="isCameraEnabled() ? ('TOOLBAR.STOP_VIDEO' | translate) : ('TOOLBAR.START_VIDEO' | translate)"
-				[matTooltipDisabled]="!hasVideoDevices()"
+					[disabled]="!hasVideoDevices() || cameraStatusChanging()"
+					[class.device-enabled]="isCameraEnabled()"
+					[class.device-disabled]="!isCameraEnabled()"
+					(click)="toggleCam($event)"
+					[matTooltip]="
+						isCameraEnabled() ? ('TOOLBAR.STOP_VIDEO' | translate) : ('TOOLBAR.START_VIDEO' | translate)
+					"
+					[matTooltipDisabled]="!hasVideoDevices()"
 					id="camera-button"
 				>
 					<mat-icon [id]="isCameraEnabled() ? 'videocam' : 'videocam_off'">
@@ -41,43 +43,58 @@
 			</div>
 		}
 	} @else {
-		<!-- Normal Mode - Input-style Selector -->
-		<div class="normal-device-selector">
-			<!-- Device Selector (Input Style) -->
-			@if (isCameraEnabled()) {
-				<div class="device-input-selector">
+		<button
+			role="switch"
+			id="camera-settings-switch"
+			class="device-switch-row"
+			[attr.aria-checked]="isCameraEnabled()"
+			[disabled]="!hasVideoDevices() || cameraStatusChanging()"
+			(click)="toggleCam($event)"
+		>
+			<mat-icon>videocam</mat-icon>
+			<span>{{ 'PANEL.SETTINGS.CAMERA' | translate }}</span>
+			<span class="switch-track"><span class="switch-thumb"></span></span>
+		</button>
+
+		@if (hasVideoDevices()) {
+			<div class="camera-preview">
+				<ov-video-element [videoTrack]="videoTrack()" [isLocal]="true" [avatar]="previewAvatar()" />
+				@if (!isCameraEnabled()) {
+					<span class="camera-off-caption">{{ 'PANEL.SETTINGS.CAMERA_OFF' | translate }}</span>
+				} @else if (showBackgroundsButton()) {
 					<button
-						mat-flat-button
-						id="video-dropdown"
-						class="selector-button"
-						[matMenuTriggerFor]="cameraMenu"
-						[disabled]="cameraStatusChanging() || cameras().length <= 1"
+						id="settings-backgrounds-button"
+						class="background-button"
+						(click)="openBackgroundEffects()"
 					>
-						<mat-icon class="device-icon">videocam</mat-icon>
-						<span class="selected-device-name">{{ cameraSelected()?.label || 'No camera selected' }}</span>
-						@if (cameras().length > 1) {
-							<mat-icon class="dropdown-icon">expand_more</mat-icon>
-						}
+						<mat-icon class="material-symbols-outlined">background_replace</mat-icon>
+						<span>{{ 'PANEL.SETTINGS.BACKGROUND' | translate }}</span>
 					</button>
-				</div>
-			} @else {
-				@if (hasVideoDevices()) {
-					<!-- Disabled state message -->
-					<div class="device-input-selector disabled">
-						<div class="selector-button disabled">
-							<mat-icon class="device-icon">videocam_off</mat-icon>
-							<span class="selected-device-name">{{ 'PANEL.SETTINGS.DISABLED_VIDEO' | translate }}</span>
-						</div>
-					</div>
-				} @else {
-					<!-- No Camera Available -->
-					<div id="no-video-device-message" class="no-device-message">
-						<mat-icon class="warning-icon">warning</mat-icon>
-						<span>{{ 'DEVICES.NO_VIDEO_DEVICE' | translate }}</span>
-					</div>
 				}
-			}
-		</div>
+			</div>
+
+			<button
+				id="video-dropdown"
+				class="device-field"
+				[class.off]="!isCameraEnabled()"
+				[matMenuTriggerFor]="cameraMenu"
+				[disabled]="!isCameraEnabled() || cameraStatusChanging() || cameras().length <= 1"
+			>
+				<mat-icon>videocam</mat-icon>
+				<span class="field-value">{{ cameraSelected()?.label }}</span>
+				@if (cameras().length > 1) {
+					<mat-icon class="field-chevron">expand_more</mat-icon>
+				}
+			</button>
+		} @else {
+			<div id="no-video-device-message" class="no-device-notice">
+				<mat-icon>videocam_off</mat-icon>
+				<div class="notice-text">
+					<span>{{ 'DEVICES.NO_VIDEO_DEVICE' | translate }}</span>
+					<span class="notice-hint">{{ 'DEVICES.CHECK_DEVICE' | translate }}</span>
+				</div>
+			</div>
+		}
 	}
 
 	<!-- Device Selection Menu (Shared) -->

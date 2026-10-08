@@ -1,60 +1,96 @@
-<!-- Grid Layout Configuration Section -->
-@if (showLayoutSelector()) {
-	<div class="layout-section">
-		<div class="section-header">
-			<mat-icon class="section-icon material-symbols-outlined">browse</mat-icon>
-			<h4 class="section-title">{{ 'LAYOUT_SETTINGS.TITLE' | translate }}</h4>
-		</div>
+<p class="layout-intro">{{ 'LAYOUT_SETTINGS.INTRO' | translate }}</p>
 
-		<!-- Layout Mode Selection -->
-		<div class="layout-mode-container">
-			<mat-radio-group
-				class="layout-radio-group"
-				[ngModel]="layoutMode()"
-				(ngModelChange)="onLayoutModeChange($event)"
-				[attr.aria-label]="'LAYOUT_SETTINGS.MODE_ARIA' | translate"
+<div class="layout-modes" role="radiogroup" [attr.aria-label]="'LAYOUT_SETTINGS.MODE_ARIA' | translate">
+	@for (option of modes(); track option.mode) {
+		<button
+			role="radio"
+			class="layout-mode"
+			[id]="option.id"
+			[attr.aria-checked]="layoutMode() === option.mode"
+			(click)="selectMode(option.mode)"
+		>
+			<span class="layout-picture" aria-hidden="true" [style.--layout-picture-columns]="option.columns">
+				@for (tile of option.tiles; track $index) {
+					<span class="layout-picture-tile" [class.hidden-count]="!!tile">{{ tile }}</span>
+				}
+			</span>
+			<span class="layout-mode-footer">
+				<span class="layout-mode-text">
+					<span class="layout-mode-title">{{ option.titleKey | translate }}</span>
+					<span class="layout-mode-description">{{ option.descriptionKey | translate }}</span>
+				</span>
+				<mat-icon class="layout-mode-check">{{
+					layoutMode() === option.mode ? 'check_circle' : 'radio_button_unchecked'
+				}}</mat-icon>
+			</span>
+		</button>
+	}
+</div>
+
+<div class="participant-count" [class.disabled]="!isSmartLayoutEnabled()">
+	<div class="participant-count-header">
+		<span class="participant-count-label">{{ 'LAYOUT_SETTINGS.COUNT_LABEL' | translate }}</span>
+		<span class="participant-count-note">{{
+			(isSmartLayoutEnabled() ? 'LAYOUT_SETTINGS.COUNT_EXCLUDES_YOU' : 'LAYOUT_SETTINGS.COUNT_SMART_ONLY')
+				| translate
+		}}</span>
+	</div>
+	<div
+		class="participant-count-options"
+		role="radiogroup"
+		[attr.aria-label]="'LAYOUT_SETTINGS.COUNT_ARIA' | translate"
+	>
+		@for (count of participantCounts; track count) {
+			<button
+				role="radio"
+				class="segment"
+				[id]="'participant-count-' + count"
+				[attr.aria-checked]="participantCount() === count"
+				[disabled]="!isSmartLayoutEnabled()"
+				(click)="selectParticipantCount(count)"
 			>
-				<mat-radio-button [value]="LayoutMode.MOSAIC" id="layout-mosaic" class="layout-radio-option">
-					<div class="radio-content">
-						<span class="radio-label">{{ 'LAYOUT_SETTINGS.MOSAIC' | translate }}</span>
-						<span class="radio-description">{{ 'LAYOUT_SETTINGS.MOSAIC_DESC' | translate }}</span>
-					</div>
-				</mat-radio-button>
-
-				<mat-radio-button [value]="LayoutMode.SMART_MOSAIC" id="layout-smart-mosaic" class="layout-radio-option">
-					<div class="radio-content">
-						<span class="radio-label">{{ 'LAYOUT_SETTINGS.SMART_MOSAIC' | translate }}</span>
-						<span class="radio-description">{{ 'LAYOUT_SETTINGS.SMART_MOSAIC_DESC' | translate }}</span>
-					</div>
-				</mat-radio-button>
-			</mat-radio-group>
-		</div>
-
-		<!-- Participant Count Selection (only visible in smart layout mode) -->
-		@if (isSmartLayoutEnabled()) {
-			<div class="participant-count-container">
-				<mat-label class="input-label">{{ 'LAYOUT_SETTINGS.COUNT_LABEL' | translate }}</mat-label>
-				<p class="helper-text">{{ 'LAYOUT_SETTINGS.COUNT_HELPER' | translate }}</p>
-				<div class="slider-container">
-					<mat-slider
-						class="participant-slider"
-						[min]="minParticipants"
-						[max]="maxParticipants"
-						[step]="1"
-						[displayWith]="formatLabel"
-						[showTickMarks]="true"
-						discrete
-					>
-						<input
-							matSliderThumb
-							[value]="participantCount()"
-							(valueChange)="onParticipantCountChange($event)"
-							[attr.aria-label]="'LAYOUT_SETTINGS.COUNT_ARIA' | translate"
-						/>
-					</mat-slider>
-					<span class="participant-count-value">{{ participantCount() }}</span>
-				</div>
-			</div>
+				{{ count }}
+			</button>
 		}
 	</div>
-}
+	<p class="participant-count-help">
+		{{
+			(isSmartLayoutEnabled() ? 'LAYOUT_SETTINGS.COUNT_HELPER' : 'LAYOUT_SETTINGS.COUNT_DISABLED_HELPER')
+				| translate
+		}}
+	</p>
+</div>
+
+<div class="own-video" [class.disabled]="isOwnVideoPinned()">
+	<span class="own-video-label">{{ 'LAYOUT_SETTINGS.OWN_VIDEO' | translate }}</span>
+	<div class="own-video-options" role="radiogroup" [attr.aria-label]="'LAYOUT_SETTINGS.OWN_VIDEO' | translate">
+		<button
+			role="radio"
+			class="segment"
+			id="own-video-floating"
+			[attr.aria-checked]="isOwnVideoFloating()"
+			[disabled]="isOwnVideoPinned()"
+			(click)="selectOwnVideoFloating(true)"
+		>
+			<mat-icon class="material-symbols-outlined">pip</mat-icon>
+			<span>{{ 'LAYOUT_SETTINGS.OWN_VIDEO_FLOATING' | translate }}</span>
+		</button>
+		<button
+			role="radio"
+			class="segment"
+			id="own-video-docked"
+			[attr.aria-checked]="!isOwnVideoFloating()"
+			[disabled]="isOwnVideoPinned()"
+			(click)="selectOwnVideoFloating(false)"
+		>
+			<mat-icon class="material-symbols-outlined">grid_view</mat-icon>
+			<span>{{ 'LAYOUT_SETTINGS.OWN_VIDEO_DOCKED' | translate }}</span>
+		</button>
+	</div>
+	<p class="own-video-help">
+		{{
+			(isOwnVideoPinned() ? 'LAYOUT_SETTINGS.OWN_VIDEO_PINNED_HELPER' : 'LAYOUT_SETTINGS.OWN_VIDEO_HELPER')
+				| translate
+		}}
+	</p>
+</div>

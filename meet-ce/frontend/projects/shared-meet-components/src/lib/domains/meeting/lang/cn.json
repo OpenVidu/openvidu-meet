@@ -27,7 +27,8 @@
 	},
 	"DEVICES": {
 		"NO_VIDEO_DEVICE": "未找到视频设备",
-		"NO_AUDIO_DEVICE": "未找到音频设备"
+		"NO_AUDIO_DEVICE": "未找到音频设备",
+		"CHECK_DEVICE": "请检查设备是否已连接，以及浏览器是否有权使用它。"
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "将你的音频静音",
@@ -106,13 +107,23 @@
 		},
 		"SETTINGS": {
 			"TITLE": "设置",
+			"AUDIO_VIDEO": "音频和视频",
+			"LAYOUT": "布局",
 			"GENERAL": "一般的",
+			"CAMERA": "摄像头",
+			"CAMERA_OFF": "你的摄像头已关闭",
+			"BACKGROUND": "背景",
+			"MICROPHONE": "麦克风",
+			"MICROPHONE_LEVEL": "麦克风音量",
+			"MICROPHONE_LEVEL_HINT": "说话以确认其他人能听到你",
+			"MICROPHONE_OFF": "你的麦克风已关闭",
 			"DISPLAY_NAME": "显示名称",
-			"VIDEO": "视频",
-			"AUDIO": "声音的",
+			"DISPLAY_NAME_HINT": "加入会议时设置",
+			"DISPLAY_NAME_LOCKED": "会议期间无法更改",
 			"LANGUAGE": "语",
-			"DISABLED_VIDEO": "没有视频设备",
-			"THEME": "主题"
+			"THEME": "主题",
+			"THEME_LIGHT": "浅色",
+			"THEME_DARK": "深色"
 		},
 		"BACKGROUND": {
 			"TITLE": "背景效果",
@@ -221,15 +232,23 @@
 		"ADJUST_LAYOUT": "调整布局"
 	},
 	"LAYOUT_SETTINGS": {
-		"TITLE": "布局设置",
+		"INTRO": "选择参与者在你屏幕上的排列方式。只会改变你的视图。",
 		"MODE_ARIA": "选择布局模式",
 		"MOSAIC": "平铺",
-		"MOSAIC_DESC": "在统一网格中显示所有参与者",
+		"MOSAIC_DESC": "所有人，同样大小的画面",
 		"SMART_MOSAIC": "智能平铺",
-		"SMART_MOSAIC_DESC": "显示有限数量的活跃参与者",
-		"COUNT_LABEL": "可见参与者数量",
-		"COUNT_HELPER": "选择在网格中显示的远端参与者数量",
-		"COUNT_ARIA": "要显示的参与者数量"
+		"SMART_MOSAIC_DESC": "优先显示发言者，其余归为一组",
+		"COUNT_LABEL": "可见参与者",
+		"COUNT_EXCLUDES_YOU": "不包括你",
+		"COUNT_SMART_ONLY": "仅限智能平铺",
+		"COUNT_HELPER": "正在发言的人会自动显示，其余的人归入 +N。",
+		"COUNT_DISABLED_HELPER": "选择智能平铺以限制同时显示的人数。",
+		"COUNT_ARIA": "要显示的参与者数量",
+		"OWN_VIDEO": "你的视频",
+		"OWN_VIDEO_FLOATING": "悬浮",
+		"OWN_VIDEO_DOCKED": "在网格中",
+		"OWN_VIDEO_HELPER": "悬浮会把你的视频保留在布局上方，你可以拖动并调整大小。",
+		"OWN_VIDEO_PINNED_HELPER": "取消固定你的视频后，才能悬浮或放回网格。"
 	},
 	"HIDDEN_PARTICIPANTS": {
 		"ONE_MORE": "位其他参与者",

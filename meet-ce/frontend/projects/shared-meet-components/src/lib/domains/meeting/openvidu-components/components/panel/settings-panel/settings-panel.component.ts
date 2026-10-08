@@ -1,35 +1,28 @@
 import { NgTemplateOutlet } from '@angular/common';
-import {
-	Component,
-	computed,
-	contentChild,
-	effect,
-	inject,
-	OnInit,
-	output,
-	signal,
-	TemplateRef
-} from '@angular/core';
+import { Component, computed, inject, linkedSignal, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatListModule } from '@angular/material/list';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { SettingsPanelGeneralAdditionalElementsDirective } from '../../../directives/template/internals.directive';
+import { LanguageService } from '../../../../../../shared/services/i18n/language.service';
 import { CustomDevice } from '../../../models/device.model';
 import { LangOption } from '../../../models/lang.model';
 import { PanelSettingsOptions, PanelType } from '../../../models/panel.model';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { MeetingUiConfigService } from '../../../services/config/meeting-ui-config.service';
 import { PanelService } from '../../../services/panel/panel.service';
-import { PlatformService } from '../../../services/platform/platform.service';
-import { ViewportService } from '../../../services/viewport/viewport.service';
+import { ParticipantService } from '../../../services/participant/participant.service';
+import { TemplateRegistryService } from '../../../services/template/template-registry.service';
+import { ParticipantAvatarComponent } from '../../participant-avatar/participant-avatar.component';
 import { AudioDevicesComponent } from '../../settings/audio-devices/audio-devices.component';
 import { LangSelectorComponent } from '../../settings/lang-selector/lang-selector.component';
-import { ParticipantNameInputComponent } from '../../settings/participant-name-input/participant-name-input.component';
 import { ThemeSelectorComponent } from '../../settings/theme-selector/theme-selector.component';
 import { VideoDevicesComponent } from '../../settings/video-devices/video-devices.component';
-import { LanguageService } from '../../../../../../shared/services/i18n/language.service';
+
+interface SettingsTab {
+	option: PanelSettingsOptions;
+	icon: string;
+	labelKey: string;
+}
 
 /**
  * @internal
@@ -38,22 +31,20 @@ import { LanguageService } from '../../../../../../shared/services/i18n/language
 	selector: 'ov-settings-panel',
 	imports: [
 		MatButtonModule,
-		MatFormFieldModule,
 		MatIconModule,
-		MatListModule,
 		MatTooltipModule,
+		NgTemplateOutlet,
 		TranslatePipe,
-		ParticipantNameInputComponent,
+		ParticipantAvatarComponent,
 		LangSelectorComponent,
 		ThemeSelectorComponent,
 		VideoDevicesComponent,
-		AudioDevicesComponent,
-		NgTemplateOutlet
+		AudioDevicesComponent
 	],
 	templateUrl: './settings-panel.component.html',
 	styleUrls: ['../panel.component.scss', './settings-panel.component.scss']
 })
-export class SettingsPanelComponent implements OnInit {
+export class SettingsPanelComponent {
 	onVideoEnabledChanged = output<boolean>();
 	onVideoDeviceChanged = output<CustomDevice>();
 	onAudioEnabledChanged = output<boolean>();
@@ -61,62 +52,54 @@ export class SettingsPanelComponent implements OnInit {
 	onLangChanged = output<LangOption>();
 
 	private readonly panelService = inject(PanelService);
-	private readonly platformService = inject(PlatformService);
 	private readonly libService = inject(MeetingUiConfigService);
-	public readonly viewportService = inject(ViewportService);
 
-	/**
-	 * @internal
-	 * ContentChild for custom elements in general section
-	 */
-	readonly externalGeneralAdditionalElements = contentChild.required(SettingsPanelGeneralAdditionalElementsDirective);
-
-	settingsOptions: typeof PanelSettingsOptions = PanelSettingsOptions;
-	readonly isMobile = signal(false);
-
+	readonly settingsOptions = PanelSettingsOptions;
 	readonly showCameraControls = this.libService.showCameraControlsSignal;
 	readonly showMicrophoneControls = this.libService.showMicrophoneControlsSignal;
 	readonly showThemeSelector = this.libService.showThemeSelectorSignal;
 	readonly langSelectorVisible = inject(LanguageService).selectorVisible;
-	readonly selectedOption = signal<PanelSettingsOptions>(PanelSettingsOptions.GENERAL);
+	readonly layoutTemplate = inject(TemplateRegistryService).settingsPanelLayout;
+	readonly localParticipant = inject(ParticipantService).localParticipant;
 
-	/**
-	 * @internal
-	 * Gets the template for additional elements in general section
-	 */
-	get generalAdditionalElementsTemplate(): TemplateRef<any> | undefined {
-		return this.externalGeneralAdditionalElements()?.template;
-	}
+	readonly tabs = computed<SettingsTab[]>(() => {
+		const tabs: SettingsTab[] = [];
 
-	readonly isCompactView = computed(() => {
-		return this.viewportService.isMobileView() || this.viewportService.isTabletDown();
-	});
-
-	readonly isVerticalLayout = computed(() => {
-		return this.viewportService.isMobileView();
-	});
-
-	readonly shouldHideMenuText = computed(() => {
-		return !this.viewportService.isMobileView() && this.viewportService.isTablet();
-	});
-
-	private readonly panelTogglingEffect = effect(() => {
-		const ev = this.panelService.panelOpened();
-
-		if (ev.panelType === PanelType.SETTINGS && !!ev.subOptionType) {
-			this.selectedOption.set(ev.subOptionType as PanelSettingsOptions);
+		if (this.showCameraControls() || this.showMicrophoneControls()) {
+			tabs.push({
+				option: PanelSettingsOptions.AUDIO_VIDEO,
+				icon: 'videocam',
+				labelKey: 'PANEL.SETTINGS.AUDIO_VIDEO'
+			});
 		}
+
+		if (this.layoutTemplate()) {
+			tabs.push({ option: PanelSettingsOptions.LAYOUT, icon: 'browse', labelKey: 'PANEL.SETTINGS.LAYOUT' });
+		}
+
+		tabs.push({
+			option: PanelSettingsOptions.GENERAL,
+			icon: 'manage_accounts',
+			labelKey: 'PANEL.SETTINGS.GENERAL'
+		});
+		return tabs;
 	});
 
-	ngOnInit() {
-		this.isMobile.set(this.platformService.isMobile());
+	private readonly requestedOption = linkedSignal(() => {
+		const panel = this.panelService.panelOpened();
+		return panel.panelType === PanelType.SETTINGS ? panel.subOptionType : undefined;
+	});
+
+	readonly selectedOption = computed(() => {
+		const tabs = this.tabs();
+		return tabs.find((tab) => tab.option === this.requestedOption())?.option ?? tabs[0].option;
+	});
+
+	select(option: PanelSettingsOptions) {
+		this.requestedOption.set(option);
 	}
 
 	close() {
 		this.panelService.togglePanel(PanelType.SETTINGS);
-	}
-
-	onSelectionChanged(option: PanelSettingsOptions) {
-		this.selectedOption.set(option);
 	}
 }

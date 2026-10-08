@@ -27,7 +27,8 @@
 	},
 	"DEVICES": {
 		"NO_VIDEO_DEVICE": "Dispositivo de vídeo não encontrado",
-		"NO_AUDIO_DEVICE": "Dispositivo de áudio não encontrado"
+		"NO_AUDIO_DEVICE": "Dispositivo de áudio não encontrado",
+		"CHECK_DEVICE": "Verifique se está ligado e se o navegador tem permissão para o utilizar."
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Silenciar o seu áudio",
@@ -106,13 +107,23 @@
 		},
 		"SETTINGS": {
 			"TITLE": "Definições",
+			"AUDIO_VIDEO": "Áudio e vídeo",
+			"LAYOUT": "Esquema",
 			"GENERAL": "Geral",
+			"CAMERA": "Câmara",
+			"CAMERA_OFF": "A sua câmara está desligada",
+			"BACKGROUND": "Fundo",
+			"MICROPHONE": "Microfone",
+			"MICROPHONE_LEVEL": "Nível do microfone",
+			"MICROPHONE_LEVEL_HINT": "Fale para confirmar que os outros o ouvem",
+			"MICROPHONE_OFF": "O seu microfone está desligado",
 			"DISPLAY_NAME": "Nome a apresentar",
-			"VIDEO": "Vídeo",
-			"AUDIO": "Áudio",
+			"DISPLAY_NAME_HINT": "Escolhido ao entrar na reunião",
+			"DISPLAY_NAME_LOCKED": "Não pode ser alterado durante a reunião",
 			"LANGUAGE": "Idioma",
-			"DISABLED_VIDEO": "Vídeo desativado",
-			"THEME": "Tema"
+			"THEME": "Tema",
+			"THEME_LIGHT": "Claro",
+			"THEME_DARK": "Escuro"
 		},
 		"BACKGROUND": {
 			"TITLE": "Efeitos de fundo",
@@ -221,15 +232,23 @@
 		"ADJUST_LAYOUT": "Ajustar esquema"
 	},
 	"LAYOUT_SETTINGS": {
-		"TITLE": "Definições de esquema",
+		"INTRO": "Escolha como as pessoas são dispostas no seu ecrã. Só a sua vista muda.",
 		"MODE_ARIA": "Selecionar modo de esquema",
 		"MOSAIC": "Mosaico",
-		"MOSAIC_DESC": "Mostra todos os participantes numa grelha unificada",
+		"MOSAIC_DESC": "Todos, em mosaicos iguais",
 		"SMART_MOSAIC": "Mosaico inteligente",
-		"SMART_MOSAIC_DESC": "Mostra um número limitado de participantes ativos",
-		"COUNT_LABEL": "Número de participantes visíveis",
-		"COUNT_HELPER": "Escolha quantos participantes remotos são apresentados na grelha",
-		"COUNT_ARIA": "Número de participantes a apresentar"
+		"SMART_MOSAIC_DESC": "Primeiro quem fala, os restantes agrupados",
+		"COUNT_LABEL": "Participantes visíveis",
+		"COUNT_EXCLUDES_YOU": "Sem contar consigo",
+		"COUNT_SMART_ONLY": "Só no mosaico inteligente",
+		"COUNT_HELPER": "Quem fala aparece automaticamente. Os restantes ficam agrupados em +N.",
+		"COUNT_DISABLED_HELPER": "Escolha o mosaico inteligente para limitar quantas pessoas são mostradas de cada vez.",
+		"COUNT_ARIA": "Número de participantes a apresentar",
+		"OWN_VIDEO": "O seu vídeo",
+		"OWN_VIDEO_FLOATING": "Flutuante",
+		"OWN_VIDEO_DOCKED": "Na grelha",
+		"OWN_VIDEO_HELPER": "Flutuante mantém o seu vídeo sobre o esquema, onde o pode arrastar e redimensionar.",
+		"OWN_VIDEO_PINNED_HELPER": "Desafixe o seu vídeo para o fazer flutuar ou o encaixar."
 	},
 	"HIDDEN_PARTICIPANTS": {
 		"ONE_MORE": "participante a mais",

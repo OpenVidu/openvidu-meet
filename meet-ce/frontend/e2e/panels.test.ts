@@ -62,12 +62,13 @@ test.describe('Panels E2E Tests', () => {
 			await expectVisible(page, '.sidenav-menu');
 
 			await page.locator('#general-opt').click();
-			await expectVisible(page, 'ov-participant-name-input');
+			await expectVisible(page, '#settings-display-name');
 
-			await page.locator('#video-opt').click();
+			await page.locator('#layout-opt').click();
+			await expectVisible(page, '#layout-smart-mosaic');
+
+			await page.locator('#audio-video-opt').click();
 			await expectVisible(page, 'ov-video-devices-select');
-
-			await page.locator('#audio-opt').click();
 			await expectVisible(page, 'ov-audio-devices-select');
 		});
 	});

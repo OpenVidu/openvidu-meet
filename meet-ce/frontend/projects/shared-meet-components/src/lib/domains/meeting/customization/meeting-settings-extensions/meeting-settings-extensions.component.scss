@@ -1,154 +1,174 @@
-.layout-section {
-	padding: 0;
-	margin: 0;
+@use '../../openvidu-components/components/settings/selector-shared' as controls;
 
-	.section-header {
+:host {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+	color: var(--ov-text-surface-color);
+}
+
+.layout-intro {
+	margin: 0;
+	font-size: 13px;
+	line-height: 1.45;
+	color: var(--ov-text-secondary-color);
+}
+
+.layout-modes {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px;
+}
+
+.layout-mode {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 8px 8px 10px;
+	border: none;
+	border-radius: calc(var(--ov-surface-radius) + 3px);
+	box-shadow: inset 0 0 0 1px var(--ov-border-color);
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+	transition:
+		box-shadow 0.15s ease,
+		background-color 0.15s ease;
+
+	&:hover:not([aria-checked='true']) {
+		box-shadow: inset 0 0 0 1px var(--ov-text-secondary-color);
+	}
+
+	&:focus-visible {
+		@include controls.focus-ring();
+	}
+
+	&[aria-checked='true'] {
+		box-shadow: inset 0 0 0 2px var(--ov-accent-action-color);
+		background: color-mix(in srgb, var(--ov-accent-action-color) 18%, transparent);
+	}
+}
+
+.layout-picture {
+	height: 84px;
+	display: grid;
+	grid-template-columns: repeat(var(--layout-picture-columns), minmax(0, 1fr));
+	grid-auto-rows: minmax(0, 1fr);
+	gap: 3px;
+	padding: 6px;
+	box-sizing: border-box;
+	border-radius: var(--ov-surface-radius);
+	background: var(--ov-background-color);
+}
+
+.layout-picture-tile {
+	border-radius: 2px;
+	background: var(--ov-border-color);
+
+	&.hidden-count {
 		display: flex;
 		align-items: center;
-		gap: 12px;
-		margin-bottom: 10px;
-		padding: 0 4px;
-
-		.section-icon {
-			color: var(--ov-text-surface-color);
-			font-size: 24px;
-			width: 24px;
-			height: 24px;
-		}
-
-		.section-title {
-			margin: 0;
-			font-size: 16px;
-			font-weight: 500;
-			color: var(--ov-text-surface-color);
-		}
-	}
-
-	.layout-mode-container {
-		.input-label {
-			display: block;
-			font-size: 14px;
-			font-weight: 500;
-			color: var(--ov-text-surface-color);
-			margin-bottom: 12px;
-			padding: 0 4px;
-		}
-
-		.layout-radio-group {
-			display: flex;
-			flex-direction: column;
-
-			.layout-radio-option {
-				padding: 12px;
-				border-radius: 8px;
-				transition: all 0.2s ease;
-				margin: 0;
-
-				.radio-content {
-					display: flex;
-					flex-direction: column;
-					gap: 4px;
-					margin-left: 8px;
-
-					.radio-label {
-						font-size: 14px;
-						font-weight: 500;
-						color: var(--ov-text-surface-color);
-					}
-
-					.radio-description {
-						font-size: 12px;
-						color: var(--ov-text-secondary-color);
-						line-height: 1.4;
-					}
-				}
-			}
-		}
-	}
-
-	.participant-count-container {
-		padding: 16px;
-		border-radius: var(--ov-surface-radius);
-		border: 1px solid var(--ov-border-color);
-
-		.input-label {
-			display: block;
-			font-size: 14px;
-			font-weight: 500;
-			color: var(--ov-text-surface-color);
-			margin-bottom: 16px;
-		}
-
-		.slider-container {
-			display: flex;
-			align-items: center;
-			gap: 16px;
-			margin-bottom: 8px;
-
-			.participant-slider {
-				flex: 1;
-				--mdc-slider-active-track-color: var(--ov-accent-action-color);
-				--mdc-slider-active-track-shape: 9999px;
-				--mdc-slider-disabled-active-track-color: var(--ov-accent-action-color);
-				--mdc-slider-disabled-handle-color: var(--ov-accent-action-color);
-				--mdc-slider-disabled-inactive-track-color: rgba(var(--ov-accent-action-color), 0.2);
-				--mdc-slider-focus-handle-color: var(--ov-accent-action-color);
-				--mdc-slider-handle-color: var(--ov-accent-action-color);
-				--mdc-slider-hover-handle-color: var(--ov-accent-action-color);
-				--mdc-slider-inactive-track-color: rgba(var(--ov-accent-action-color), 0.2);
-				--mdc-slider-inactive-track-shape: 9999px;
-				--mdc-slider-label-container-color: var(--ov-accent-action-color);
-				--mdc-slider-with-overlap-handle-outline-color: var(--ov-accent-action-color);
-				--mdc-slider-with-tick-marks-active-container-color: white;
-				--mdc-slider-with-tick-marks-disabled-container-color: white;
-				--mdc-slider-with-tick-marks-inactive-container-color: rgba(var(--ov-accent-action-color), 0.5);
-			}
-
-			.participant-count-value {
-				min-width: 32px;
-				text-align: center;
-				font-size: 16px;
-				font-weight: 600;
-				color: var(--ov-text-surface-color);
-				padding: 6px 10px;
-				background-color: var(--ov-accent-action-color);
-				border-radius: var(--ov-surface-radius);
-			}
-		}
-
-		.helper-text {
-			margin: 0;
-			font-size: 12px;
-			color: var(--ov-text-secondary-color);
-			line-height: 1.4;
-		}
+		justify-content: center;
+		background: var(--ov-accent-action-color);
+		color: var(--ov-text-surface-color);
+		font-size: 11px;
+		font-weight: 700;
 	}
 }
 
-// Responsive adjustments
-@media (max-width: 768px) {
-	.layout-section {
-		.participant-count-container {
-			padding: 12px;
+.layout-mode-footer {
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+}
 
-			.slider-container {
-				.participant-count-value {
-					min-width: 28px;
-					font-size: 14px;
-					padding: 4px 8px;
-				}
-			}
-		}
+.layout-mode-text {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.layout-mode-title {
+	font-size: 14px;
+	font-weight: 500;
+}
+
+.layout-mode-description {
+	font-size: 12px;
+	line-height: 1.35;
+	color: var(--ov-text-secondary-color);
+}
+
+.layout-mode-check {
+	@include controls.icon();
+	color: var(--ov-text-secondary-color);
+
+	[aria-checked='true'] & {
+		color: var(--ov-text-surface-color);
 	}
 }
 
-// Custom radio button styles for this component
-.layout-radio-option {
-	::ng-deep .mdc-radio {
-		&:hover {
-			.mdc-radio__outer-circle {
-				border-color: none;
-			}
-		}
+.participant-count {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	transition: opacity 0.15s ease;
+
+	&.disabled {
+		opacity: 0.5;
 	}
+}
+
+.participant-count-header {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.participant-count-label {
+	font-size: 14px;
+	font-weight: 500;
+}
+
+.participant-count-note {
+	@include controls.hint();
+}
+
+.participant-count-options {
+	@include controls.segmented();
+}
+
+.participant-count-help {
+	@include controls.hint();
+	margin: 0;
+}
+
+.own-video {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	transition: opacity 0.15s ease;
+
+	&.disabled {
+		opacity: 0.5;
+	}
+}
+
+.own-video-label {
+	font-size: 14px;
+	font-weight: 500;
+}
+
+.own-video-options {
+	@include controls.segmented();
+}
+
+.own-video-help {
+	@include controls.hint();
+	margin: 0;
 }

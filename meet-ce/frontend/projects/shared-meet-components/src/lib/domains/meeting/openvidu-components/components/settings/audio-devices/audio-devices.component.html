@@ -54,55 +54,64 @@
 			</div>
 		}
 	} @else {
-		<!-- Normal Mode - Input Style Selector -->
-		<div class="normal-device-selector">
-			<!-- Input-style Device Selector -->
-			<div class="device-input-selector" [class.disabled]="!hasAudioDevices() || !isMicrophoneEnabled()">
-				<!-- When microphone is enabled -->
-				@if (isMicrophoneEnabled()) {
-					<div class="device-input-selector">
-						<button
-							mat-flat-button
-							id="audio-dropdown"
-							class="selector-button"
-							[disabled]="microphoneStatusChanging() || microphones().length <= 1"
-							[matMenuTriggerFor]="microphoneMenu"
-							[attr.aria-expanded]="false"
-						>
-							<mat-icon class="device-icon">mic</mat-icon>
-							<span class="selected-device-name">{{
-								microphoneSelected()?.label || 'No microphone selected'
-							}}</span>
-							@if (microphones().length > 1) {
-								<mat-icon class="dropdown-icon">expand_more</mat-icon>
-							}
-						</button>
-					</div>
-				} @else {
-					@if (hasAudioDevices()) {
-						<!-- When microphone is disabled -->
-						<div class="device-input-selector disabled">
-							<div class="selector-button disabled">
-								<mat-icon class="device-icon">mic_off</mat-icon>
-								<span class="selected-device-name">
-									{{
-										!hasAudioDevices()
-											? ('DEVICES.NO_AUDIO_DEVICE' | translate)
-											: 'Microphone disabled'
-									}}
-								</span>
-							</div>
-						</div>
-					} @else {
-						<!-- No Microphone Available -->
-						<div id="no-audio-device-message" class="no-device-message">
-							<mat-icon class="warning-icon">warning</mat-icon>
-							<span>{{ 'DEVICES.NO_AUDIO_DEVICE' | translate }}</span>
-						</div>
-					}
+		<button
+			role="switch"
+			id="microphone-settings-switch"
+			class="device-switch-row"
+			[attr.aria-checked]="isMicrophoneEnabled()"
+			[disabled]="!hasAudioDevices() || microphoneStatusChanging()"
+			(click)="toggleMic($event)"
+		>
+			<mat-icon>mic</mat-icon>
+			<span>{{ 'PANEL.SETTINGS.MICROPHONE' | translate }}</span>
+			<span class="switch-track"><span class="switch-thumb"></span></span>
+		</button>
+
+		@if (hasAudioDevices()) {
+			<button
+				id="audio-dropdown"
+				class="device-field"
+				[class.off]="!isMicrophoneEnabled()"
+				[matMenuTriggerFor]="microphoneMenu"
+				[disabled]="!isMicrophoneEnabled() || microphoneStatusChanging() || microphones().length <= 1"
+			>
+				<mat-icon>mic</mat-icon>
+				<span class="field-value">{{ microphoneSelected()?.label }}</span>
+				@if (microphones().length > 1) {
+					<mat-icon class="field-chevron">expand_more</mat-icon>
 				}
+			</button>
+
+			<div
+				class="mic-level"
+				role="meter"
+				aria-valuemin="0"
+				[attr.aria-valuemax]="levelBars.length"
+				[attr.aria-valuenow]="litLevelBars()"
+				[attr.aria-label]="'PANEL.SETTINGS.MICROPHONE_LEVEL' | translate"
+			>
+				<mat-icon>{{ isMicrophoneEnabled() ? 'graphic_eq' : 'mic_off' }}</mat-icon>
+				<div class="mic-level-bars">
+					@for (bar of levelBars; track $index) {
+						<span class="mic-level-bar" [class.lit]="$index < litLevelBars()"></span>
+					}
+				</div>
 			</div>
-		</div>
+			<span class="mic-level-hint">
+				{{
+					(isMicrophoneEnabled() ? 'PANEL.SETTINGS.MICROPHONE_LEVEL_HINT' : 'PANEL.SETTINGS.MICROPHONE_OFF')
+						| translate
+				}}
+			</span>
+		} @else {
+			<div id="no-audio-device-message" class="no-device-notice">
+				<mat-icon>mic_off</mat-icon>
+				<div class="notice-text">
+					<span>{{ 'DEVICES.NO_AUDIO_DEVICE' | translate }}</span>
+					<span class="notice-hint">{{ 'DEVICES.CHECK_DEVICE' | translate }}</span>
+				</div>
+			</div>
+		}
 	}
 
 	<!-- Device Selection Menu (Shared) -->

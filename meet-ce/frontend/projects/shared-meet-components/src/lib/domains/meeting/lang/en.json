@@ -6,7 +6,8 @@
 	},
 	"DEVICES": {
 		"NO_VIDEO_DEVICE": "Video device not found",
-		"NO_AUDIO_DEVICE": "Audio device not found"
+		"NO_AUDIO_DEVICE": "Audio device not found",
+		"CHECK_DEVICE": "Check that it is connected and that the browser is allowed to use it."
 	},
 	"ROOM": {
 		"JOINING": "Joining meeting...",
@@ -106,13 +107,23 @@
 		},
 		"SETTINGS": {
 			"TITLE": "Settings",
+			"AUDIO_VIDEO": "Audio & video",
+			"LAYOUT": "Layout",
 			"GENERAL": "General",
+			"CAMERA": "Camera",
+			"CAMERA_OFF": "Your camera is off",
+			"BACKGROUND": "Background",
+			"MICROPHONE": "Microphone",
+			"MICROPHONE_LEVEL": "Microphone level",
+			"MICROPHONE_LEVEL_HINT": "Speak to check that others can hear you",
+			"MICROPHONE_OFF": "Your microphone is off",
 			"DISPLAY_NAME": "Display name",
-			"VIDEO": "Video",
-			"AUDIO": "Audio",
+			"DISPLAY_NAME_HINT": "Chosen when you joined the meeting",
+			"DISPLAY_NAME_LOCKED": "It cannot be changed during the meeting",
 			"LANGUAGE": "Language",
-			"DISABLED_VIDEO": "Video disabled",
-			"THEME": "Theme"
+			"THEME": "Theme",
+			"THEME_LIGHT": "Light",
+			"THEME_DARK": "Dark"
 		},
 		"BACKGROUND": {
 			"TITLE": "Background effects",
@@ -221,15 +232,23 @@
 		"ADJUST_LAYOUT": "Adjust Layout"
 	},
 	"LAYOUT_SETTINGS": {
-		"TITLE": "Layout settings",
+		"INTRO": "Choose how people are arranged on your screen. Only your view changes.",
 		"MODE_ARIA": "Select layout mode",
 		"MOSAIC": "Mosaic",
-		"MOSAIC_DESC": "Shows all participants in a unified grid",
+		"MOSAIC_DESC": "Everyone, in equal tiles",
 		"SMART_MOSAIC": "Smart Mosaic",
-		"SMART_MOSAIC_DESC": "Shows a limited number of active participants",
-		"COUNT_LABEL": "Number of visible participants",
-		"COUNT_HELPER": "Choose how many remote participants are shown in the grid",
-		"COUNT_ARIA": "Number of participants to display"
+		"SMART_MOSAIC_DESC": "Active speakers first, the rest grouped",
+		"COUNT_LABEL": "Visible participants",
+		"COUNT_EXCLUDES_YOU": "Not counting you",
+		"COUNT_SMART_ONLY": "Smart Mosaic only",
+		"COUNT_HELPER": "People who speak move into view automatically. The rest are grouped under +N.",
+		"COUNT_DISABLED_HELPER": "Choose Smart Mosaic to limit how many people are shown at once.",
+		"COUNT_ARIA": "Number of participants to display",
+		"OWN_VIDEO": "Your video",
+		"OWN_VIDEO_FLOATING": "Floating",
+		"OWN_VIDEO_DOCKED": "In the grid",
+		"OWN_VIDEO_HELPER": "Floating keeps your video over the layout, where you can drag and resize it.",
+		"OWN_VIDEO_PINNED_HELPER": "Unpin your video to float it or dock it."
 	},
 	"HIDDEN_PARTICIPANTS": {
 		"ONE_MORE": "more participant",

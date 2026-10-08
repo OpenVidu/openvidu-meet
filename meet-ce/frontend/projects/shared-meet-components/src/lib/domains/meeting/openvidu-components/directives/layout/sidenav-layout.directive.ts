@@ -14,7 +14,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatSidenav, MatSidenavContainer } from '@angular/material/sidenav';
 import { RuntimeConfigService } from '../../../../../shared/services/runtime-config.service';
 import { SidenavMode } from '../../models/layout/layout.model';
-import { PanelStatusInfo, PanelType } from '../../models/panel.model';
+import { PanelStatusInfo } from '../../models/panel.model';
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
@@ -30,7 +30,7 @@ import { TemplateRegistryService } from '../../services/template/template-regist
  * ```html
  * <mat-sidenav-container ovSidenavLayout #sidenavLayout="ovSidenavLayout"
  *     [hasBackdrop]="sidenavLayout.hasBackdrop()">
- *     <mat-sidenav [mode]="sidenavLayout.mode()" [class.big]="sidenavLayout.isSettingsPanelOpened()">
+ *     <mat-sidenav [mode]="sidenavLayout.mode()">
  * ```
  *
  * The host element is both the drawer container and the element whose width decides SIDE vs OVER,
@@ -52,10 +52,9 @@ export class SidenavLayoutDirective implements OnDestroy {
 	/** Grace period after Material reports a content-margin change, so the transition has settled. */
 	private readonly CONTENT_MARGIN_SETTLE_MS = 250;
 	/**
-	 * Hard stop for the animation-follow interval. The Material drawer transition lasts 400ms; not
-	 * every start path gets a matching stop event (a settings-panel swap at identical width never
-	 * fires `_contentMarginChanges`), so without this cap the 50ms interval would keep forcing a
-	 * layout reflow 20 times per second until the next open/close.
+	 * Hard stop for the animation-follow interval. The Material drawer transition lasts 400ms; if its
+	 * end is never reported, this cap keeps the 50ms interval from forcing a layout reflow 20 times
+	 * per second until the next open/close.
 	 */
 	private readonly LAYOUT_ANIMATION_MAX_MS = 600;
 
@@ -74,12 +73,6 @@ export class SidenavLayoutDirective implements OnDestroy {
 	/** SIDE (pushes the content) or OVER (overlays it), driven by the container width. */
 	readonly mode = this._mode.asReadonly();
 	readonly hasBackdrop = computed(() => this._mode() === SidenavMode.OVER);
-
-	/** The settings panel is wider than every other panel, so the sidenav widens for it. */
-	readonly isSettingsPanelOpened = computed(() => {
-		const panel = this.panelService.panelOpened();
-		return panel.isOpened && panel.panelType === PanelType.SETTINGS;
-	});
 
 	private boundSidenav: MatSidenav | undefined = undefined;
 	private layoutUpdateTimeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -166,22 +159,6 @@ export class SidenavLayoutDirective implements OnDestroy {
 	}
 
 	private applyPanelState(panel: PanelStatusInfo, sidenav: MatSidenav): void {
-		if (sidenav.opened && panel.isOpened) {
-			// Switching between SETTINGS and any other panel changes the sidenav width, and the
-			// container only re-measures the content margin while `autosize` is on. It is turned off
-			// again once the margin has settled (see scheduleContentMarginUpdate).
-			const involvesSettingsPanel =
-				panel.panelType === PanelType.SETTINGS || panel.previousPanelType === PanelType.SETTINGS;
-
-			if (involvesSettingsPanel) {
-				if (!this.container.autosize) {
-					this.container.autosize = true;
-				}
-
-				this.startUpdateLayoutInterval();
-			}
-		}
-
 		if (panel.isOpened !== sidenav.opened) {
 			if (panel.isOpened) {
 				sidenav.open();
@@ -213,11 +190,6 @@ export class SidenavLayoutDirective implements OnDestroy {
 		this.contentMarginUpdateTimeoutId = setTimeout(() => {
 			this.stopUpdateLayoutInterval();
 			this.layoutService.update();
-
-			if (this.container.autosize) {
-				this.container.autosize = false;
-			}
-
 			this.contentMarginUpdateTimeoutId = null;
 		}, this.CONTENT_MARGIN_SETTLE_MS);
 	}

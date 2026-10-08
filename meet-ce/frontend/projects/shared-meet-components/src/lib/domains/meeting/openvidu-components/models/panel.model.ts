@@ -39,9 +39,9 @@ export interface PanelStatusInfo {
  * @internal
  */
 export enum PanelSettingsOptions {
-	GENERAL = 'general',
-	AUDIO = 'audio',
-	VIDEO = 'video'
+	AUDIO_VIDEO = 'audio-video',
+	LAYOUT = 'layout',
+	GENERAL = 'general'
 }
 
 /**

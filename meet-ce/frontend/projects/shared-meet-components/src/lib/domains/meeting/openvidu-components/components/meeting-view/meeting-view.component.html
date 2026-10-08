@@ -124,7 +124,6 @@
 					[mode]="sidenavLayout.mode()"
 					position="end"
 					class="sidenav-menu"
-					[class.big]="sidenavLayout.isSettingsPanelOpened()"
 					fixedInViewport="true"
 					fixedTopGap="0"
 					fixedBottomGap="0"
@@ -219,10 +218,6 @@
 			(onAudioDeviceChanged)="onAudioDeviceChanged.emit($event)"
 			(onAudioEnabledChanged)="onAudioEnabledChanged.emit($event)"
 			(onLangChanged)="onLangChanged.emit($event)"
-		>
-			<ng-container *ovSettingsPanelGeneralAdditionalElements>
-				<ng-container *ngTemplateOutlet="templateRegistry.settingsPanelGeneralAdditionalElements() ?? null" />
-			</ng-container>
-		</ov-settings-panel>
+		/>
 	}
 </ng-template>

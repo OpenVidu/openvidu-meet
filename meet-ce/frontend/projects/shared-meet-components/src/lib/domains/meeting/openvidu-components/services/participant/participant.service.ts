@@ -95,6 +95,19 @@ export class ParticipantService {
 		}
 	}
 
+	/** Floats the local camera video over the layout or docks it into the grid, and remembers the choice. */
+	setLocalCameraFloating(floating: boolean): void {
+		const local = this._localParticipant();
+
+		if (floating) {
+			this.streamLayoutService.floatLocalCameraVideo(local);
+		} else {
+			this.streamLayoutService.dockLocalCameraVideo(local);
+		}
+
+		this.meetStorageService.setLocalTileFloating(floating);
+	}
+
 	/**
 	 * Publishes a new data payload to the room. Data will be forwarded to each participant in the room if the destination field in publishOptions is empty.
 	 * @param data

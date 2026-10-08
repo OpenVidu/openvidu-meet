@@ -1,36 +1,86 @@
-@use '../selector-shared' as shared;
+@use '../selector-shared' as controls;
 
 :host {
+	display: block;
+}
+
+:host(.compact) {
 	display: flex;
 	align-items: center;
 	height: 100%;
+}
 
-	.audio-device-selector {
-		@include shared.device-selector-base();
+.audio-device-selector {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+
+	&.compact {
+		flex-direction: row;
+		align-items: center;
+		width: 100%;
+
+		@include controls.compact-device-button();
 
 		// Positioning context for the mic status warnings (badge + popup). The unified button
 		// itself clips its content (overflow: hidden), so the overlay hangs from this wrapper.
 		.mic-button-anchor {
 			position: relative;
 		}
-
-		// Audio-specific overrides for normal mode
-		// &:not(.compact) {
-		// 	.normal-device-selector {
-		// 		.device-input-selector {
-		// 			&:not(.disabled) {
-		// 				.selector-button {
-		// 					// Audio-specific hover effect (simpler than video)
-		// 					&:hover:not([disabled]) {
-		// 						border-color: var(--ov-primary-action-color, #4285f4);
-		// 					}
-		// 				}
-		// 			}
-		// 		}
-		// 	}
-		// }
 	}
 }
 
-// Include shared device menu styles
-@include shared.device-menu-styles();
+.device-switch-row {
+	@include controls.switch-row();
+}
+
+.device-field {
+	@include controls.field();
+
+	&.off {
+		opacity: 0.55;
+	}
+}
+
+.mic-level {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	height: 36px;
+	padding: 0 12px;
+	border-radius: var(--ov-surface-radius);
+	background: var(--ov-surface-container-color);
+
+	mat-icon {
+		@include controls.icon(18px);
+		color: var(--ov-text-secondary-color);
+	}
+}
+
+.mic-level-bars {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	gap: 3px;
+}
+
+.mic-level-bar {
+	flex: 1 1 0;
+	height: 10px;
+	border-radius: 2px;
+	background: var(--ov-border-color);
+
+	&.lit {
+		background: var(--ov-success-color);
+	}
+}
+
+.mic-level-hint {
+	@include controls.hint();
+}
+
+.no-device-notice {
+	@include controls.notice();
+}
+
+@include controls.menu('device-menu');

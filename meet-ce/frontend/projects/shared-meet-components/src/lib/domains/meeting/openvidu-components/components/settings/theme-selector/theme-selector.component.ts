@@ -1,60 +1,38 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
+import { Component, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
 import { MeetingThemeMode } from '../../../models/theme.model';
+import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { MeetingThemeService } from '../../../services/theme/meeting-theme.service';
 
 @Component({
 	selector: 'ov-theme-selector',
-	imports: [MatButtonModule, MatIconModule, MatMenuModule],
+	imports: [MatIconModule, TranslatePipe],
 	template: `
-		<div class="theme-selector-container">
-			<button
-				mat-flat-button
-				[matMenuTriggerFor]="themeMenu"
-				aria-haspopup="true"
-				aria-label="Select theme"
-				class="theme-selector-button"
-			>
-				<span class="theme-name">
-					{{ currentTheme || 'Select theme' }}
-					<mat-icon class="expand-icon">expand_more</mat-icon>
-				</span>
-			</button>
-
-			<!-- Theme selection menu -->
-			<mat-menu #themeMenu="matMenu" class="theme-menu">
-				@for (theme of predefinedThemes; track theme) {
-					<button
-						mat-menu-item
-						(click)="setTheme(theme)"
-						[attr.id]="'theme-' + theme"
-						[class.selected]="currentTheme === theme"
-						class="theme-option"
-					>
-						@if (currentTheme === theme) {
-							<mat-icon class="check-icon">check</mat-icon>
-						}
-						<span class="theme-option-name">{{ theme }}</span>
-					</button>
-				}
-			</mat-menu>
+		<div class="theme-options" role="radiogroup" [attr.aria-label]="'PANEL.SETTINGS.THEME' | translate">
+			@for (theme of themes; track theme.mode) {
+				<button
+					role="radio"
+					class="segment"
+					[id]="'theme-' + theme.mode"
+					[attr.aria-checked]="currentTheme() === theme.mode"
+					(click)="setTheme(theme.mode)"
+				>
+					<mat-icon>{{ theme.icon }}</mat-icon>
+					<span>{{ theme.labelKey | translate }}</span>
+				</button>
+			}
 		</div>
 	`,
 	styleUrl: './theme-selector.component.scss'
 })
-export class ThemeSelectorComponent implements OnInit {
-	protected predefinedThemes: MeetingThemeMode[] = [];
+export class ThemeSelectorComponent {
 	private readonly themeService = inject(MeetingThemeService);
 
-	ngOnInit() {
-		this.predefinedThemes = this.themeService.getAllThemes();
-	}
-
-	get currentTheme() {
-		return this.themeService.getCurrentTheme();
-	}
+	protected readonly themes = [
+		{ mode: MeetingThemeMode.Light, icon: 'light_mode', labelKey: 'PANEL.SETTINGS.THEME_LIGHT' },
+		{ mode: MeetingThemeMode.Dark, icon: 'dark_mode', labelKey: 'PANEL.SETTINGS.THEME_DARK' }
+	];
+	protected readonly currentTheme = this.themeService.currentTheme;
 
 	setTheme(theme: MeetingThemeMode) {
 		this.themeService.setTheme(theme);

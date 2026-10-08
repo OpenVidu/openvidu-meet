@@ -92,9 +92,11 @@
 			/>
 		</div>
 
-		<ng-container *ovSettingsPanelGeneralAdditionalElements>
-			<ng-content select="ov-meeting-settings-extensions" />
-		</ng-container>
+		@if (features().showLayoutSelector) {
+			<ng-container *ovSettingsPanelLayout>
+				<ng-content select="ov-meeting-settings-extensions" />
+			</ng-container>
+		}
 
 		<!-- Custom layout component -->
 		<ng-container *ovLayout>

@@ -1,175 +1,319 @@
-// Shared styles for device selectors (video and audio)
-// This file contains common styling for both video-devices and audio-devices components
+// Controls shared by the device, language and theme selectors and the settings panel.
 
-@mixin device-selector-base() {
+@mixin hint() {
+	font-size: 12px;
+	line-height: 1.45;
+	color: var(--ov-text-secondary-color);
+}
+
+@mixin icon($size: 20px) {
+	flex-shrink: 0;
+	font-size: $size;
+	width: $size;
+	height: $size;
+}
+
+@mixin focus-ring($offset: 1px) {
+	outline: 2px solid var(--ov-accent-action-color);
+	outline-offset: $offset;
+}
+
+// A full-width button that shows the current choice and opens a menu with the others.
+@mixin field() {
 	display: flex;
 	align-items: center;
+	gap: 12px;
 	width: 100%;
+	height: 48px;
+	padding: 0 12px 0 14px;
+	box-sizing: border-box;
+	border: 1px solid var(--ov-border-color);
+	border-radius: var(--ov-surface-radius);
+	background: transparent;
+	color: var(--ov-text-surface-color);
+	font: inherit;
+	font-size: 14px;
+	text-align: left;
+	cursor: pointer;
+	transition: border-color 0.15s ease;
 
-	// Compact Mode - Unified Button
-	&.compact {
-		.unified-device-button {
-			display: flex;
-			background: var(--ov-primary-action-color);
-			backdrop-filter: blur(20px);
-			border-radius: 12px;
-			overflow: hidden;
-			transition: all 0.2s ease;
+	mat-icon {
+		@include icon();
+		color: var(--ov-text-secondary-color);
+	}
 
-			.toggle-section {
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				min-width: 50px;
-				width: 50px;
-				height: 48px;
-				border: none;
-				background: transparent;
-				border-radius: 0;
-				padding: 0;
-				transition: all 0.2s ease;
+	.field-value {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
 
-				&.device-enabled {
-					color: var(--ov-text-primary-color);
+	.field-chevron {
+		transition: transform 0.2s ease;
+	}
 
-					mat-icon {
-						color: var(--ov-text-primary-color);
-					}
-				}
+	&:hover:not(:disabled) {
+		border-color: var(--ov-text-secondary-color);
+	}
 
-				&.device-disabled {
-					background: var(--ov-error-color);
-					color: var(--ov-text-surface-color);
+	&:focus-visible {
+		@include focus-ring();
+	}
 
-					mat-icon {
-						color: var(--ov-text-surface-color);
-					}
-				}
+	&[aria-expanded='true'] {
+		border-color: var(--ov-text-surface-color);
 
-				mat-icon {
-					font-size: 20px;
-					width: 20px;
-					height: 20px;
-					margin: 0;
-				}
-			}
-
-			.dropdown-section {
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				min-width: 30px;
-				width: 30px;
-				height: 48px;
-				border: none;
-				background: transparent;
-				border-radius: 0;
-				padding: 0;
-				color: var(--ov-text-secondary-color, #666);
-				transition: all 0.2s ease;
-
-				mat-icon {
-					font-size: 16px;
-					width: 16px;
-					height: 16px;
-					margin: 0;
-				}
-			}
+		.field-chevron {
+			transform: rotate(180deg);
 		}
 	}
 
-	// Normal Mode - Input Style Selector
-	&:not(.compact) {
-		.normal-device-selector {
+	&:disabled {
+		cursor: default;
+	}
+}
+
+// A row that toggles a device: its name on the left, the switch on the right.
+@mixin switch-row() {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	height: 44px;
+	padding: 0;
+	border: none;
+	background: none;
+	color: var(--ov-text-surface-color);
+	font: inherit;
+	font-size: 14px;
+	font-weight: 500;
+	text-align: left;
+	cursor: pointer;
+
+	> mat-icon {
+		@include icon();
+		color: var(--ov-text-secondary-color);
+	}
+
+	.switch-track {
+		position: relative;
+		flex-shrink: 0;
+		margin-left: auto;
+		width: 44px;
+		height: 24px;
+		border-radius: 12px;
+		background: var(--ov-border-color);
+		transition: background-color 0.15s ease;
+	}
+
+	.switch-thumb {
+		position: absolute;
+		top: 3px;
+		left: 3px;
+		width: 18px;
+		height: 18px;
+		border-radius: 50%;
+		background: var(--ov-text-secondary-color);
+		transition:
+			transform 0.15s ease,
+			background-color 0.15s ease;
+	}
+
+	&[aria-checked='true'] {
+		.switch-track {
+			background: var(--ov-accent-action-color);
+		}
+
+		.switch-thumb {
+			transform: translateX(20px);
+			background: var(--ov-text-surface-color);
+		}
+	}
+
+	&:focus-visible .switch-track {
+		@include focus-ring(2px);
+	}
+
+	&:disabled {
+		cursor: default;
+		opacity: 0.5;
+	}
+}
+
+// Mutually exclusive options laid side by side; each option is a `.segment` button.
+@mixin segmented() {
+	display: flex;
+	gap: 4px;
+	padding: 4px;
+	border-radius: calc(var(--ov-surface-radius) + 3px);
+	background: var(--ov-background-color);
+
+	.segment {
+		flex: 1 1 0;
+		min-width: 0;
+		height: 40px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+		padding: 0 8px;
+		border: none;
+		border-radius: var(--ov-surface-radius);
+		background: transparent;
+		color: var(--ov-text-secondary-color);
+		font: inherit;
+		font-size: 14px;
+		cursor: pointer;
+		transition:
+			background-color 0.15s ease,
+			color 0.15s ease;
+
+		mat-icon {
+			@include icon();
+		}
+
+		&:hover:not(:disabled):not([aria-checked='true']) {
+			color: var(--ov-text-surface-color);
+		}
+
+		&:focus-visible {
+			@include focus-ring();
+		}
+
+		&[aria-checked='true'] {
+			background: var(--ov-accent-action-color);
+			color: var(--ov-text-surface-color);
+			font-weight: 500;
+		}
+
+		&:disabled {
+			cursor: default;
+		}
+	}
+}
+
+// Takes the place of a device's controls when the device is missing.
+@mixin notice() {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 14px;
+	border-radius: var(--ov-surface-radius);
+	background: var(--ov-surface-container-color);
+	color: var(--ov-text-surface-color);
+	font-size: 14px;
+	font-weight: 500;
+
+	mat-icon {
+		@include icon(22px);
+		color: var(--ov-text-secondary-color);
+	}
+
+	.notice-text {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.notice-hint {
+		@include hint();
+		font-weight: 400;
+	}
+}
+
+// The menu that lists the choices of a field. Menus render in the overlay, outside the component.
+@mixin menu($panel-class) {
+	::ng-deep .#{$panel-class}.mat-mdc-menu-panel {
+		border-radius: calc(var(--ov-surface-radius) + 3px);
+		border: 1px solid var(--ov-border-color);
+		background-color: var(--ov-surface-color);
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+
+		.mat-mdc-menu-item {
+			min-height: 44px;
+			font-size: 14px;
+			color: var(--ov-text-surface-color);
+
+			&:hover {
+				background-color: var(--ov-hover-color);
+			}
+
+			&.selected {
+				background-color: var(--ov-accent-action-color);
+			}
+
+			mat-icon {
+				@include icon();
+			}
+		}
+	}
+}
+
+// The prejoin's camera and microphone buttons: the toggle and the device menu in one pill.
+@mixin compact-device-button() {
+	.unified-device-button {
+		display: flex;
+		background: var(--ov-primary-action-color);
+		backdrop-filter: blur(20px);
+		border-radius: 12px;
+		overflow: hidden;
+		transition: all 0.2s ease;
+
+		.toggle-section {
 			display: flex;
 			align-items: center;
-			gap: 12px;
-			width: 100%;
+			justify-content: center;
+			min-width: 50px;
+			width: 50px;
+			height: 48px;
+			border: none;
+			background: transparent;
+			border-radius: 0;
+			padding: 0;
+			transition: all 0.2s ease;
 
-			.device-input-selector {
-				flex: 1;
+			&.device-enabled {
+				color: var(--ov-text-primary-color);
 
-				&:not(.disabled) {
-					.selector-button {
-						display: flex;
-						align-items: center;
-						gap: 12px;
-						width: 100%;
-						height: 48px;
-						padding: 0 16px;
-						background: var(--ov-surface-color, #ffffff);
-						border: 1px solid var(--ov-secondary-action-color, #e0e0e0);
-						border-radius: 8px;
-						color: var(--ov-text-surface-color);
-						font-size: 14px;
-						font-weight: 500;
-						transition: all 0.2s ease;
-						text-align: left;
-						justify-content: flex-start;
-
-						&[disabled] {
-							background: var(--ov-disabled-background, #f5f5f5);
-							color: var(--ov-disabled-text-color, #999);
-							cursor: not-allowed;
-							border-color: var(--ov-disabled-border-color, #ddd);
-						}
-
-						.device-icon {
-							font-size: 18px;
-							width: 18px;
-							height: 18px;
-							color: var(--ov-text-secondary-color, #666);
-							flex-shrink: 0;
-						}
-
-						.selected-device-name {
-							flex: 1;
-							text-overflow: ellipsis;
-							overflow: hidden;
-						}
-
-						.dropdown-icon {
-							font-size: 18px;
-							width: 18px;
-							height: 18px;
-							color: var(--ov-text-secondary-color, #666);
-							flex-shrink: 0;
-							transition: transform 0.2s ease;
-						}
-
-						&[aria-expanded='true'] .dropdown-icon {
-							transform: rotate(180deg);
-						}
-					}
+				mat-icon {
+					color: var(--ov-text-primary-color);
 				}
+			}
 
-				&.disabled {
-					.selector-button.disabled {
-						display: flex;
-						align-items: center;
-						gap: 12px;
-						height: 48px;
-						padding: 0 16px;
-						background: var(--ov-disabled-background, #f5f5f5);
-						border: 1px solid var(--ov-disabled-border-color, #ddd);
-						border-radius: 8px;
-						color: var(--ov-disabled-text-color, #999);
-						font-size: 14px;
-						cursor: not-allowed;
+			&.device-disabled {
+				background: var(--ov-error-color);
+				color: var(--ov-text-surface-color);
 
-						.device-icon {
-							font-size: 18px;
-							width: 18px;
-							height: 18px;
-							color: var(--ov-error-color, #d32f2f);
-						}
-
-						.selected-device-name {
-							flex: 1;
-							font-style: italic;
-						}
-					}
+				mat-icon {
+					color: var(--ov-text-surface-color);
 				}
+			}
+
+			mat-icon {
+				@include icon();
+				margin: 0;
+			}
+		}
+
+		.dropdown-section {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			min-width: 30px;
+			width: 30px;
+			height: 48px;
+			border: none;
+			background: transparent;
+			border-radius: 0;
+			padding: 0;
+			color: var(--ov-text-secondary-color, #666);
+			transition: all 0.2s ease;
+
+			mat-icon {
+				@include icon(16px);
+				margin: 0;
 			}
 		}
 	}
@@ -180,157 +324,14 @@
 		gap: 6px;
 		padding: 8px 12px;
 		background: var(--ov-primary-action-color);
-		border: 1px solid  var(--ov-warning-color, #ff9800);
+		border: 1px solid var(--ov-warning-color, #ff9800);
 		border-radius: 8px;
 		font-size: 12px;
 		color: var(--ov-text-primary-color);
 
 		.warning-icon {
+			@include icon(16px);
 			color: var(--ov-warning-color, #ff9800);
-			font-size: 16px;
-			width: 16px;
-			height: 16px;
-		}
-	}
-}
-
-// Shared device menu styles
-@mixin device-menu-styles() {
-	::ng-deep .device-menu.mat-mdc-menu-panel {
-		border-radius: 12px;
-		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-		border: 1px solid var(--ov-secondary-action-color, #e0e0e0);
-		overflow: hidden;
-		background-color: var(--ov-surface-color);
-
-		.mat-mdc-menu-item {
-			display: flex;
-			align-items: center;
-			gap: 12px;
-			padding: 12px 16px;
-			transition: background-color 0.2s ease;
-			font-size: 14px;
-			color: var(--ov-text-surface-color);
-
-			&:hover {
-				background-color: var(--ov-hover-color);
-			}
-
-			&.selected {
-				background-color: var(--ov-accent-action-color);
-
-				mat-icon {
-					color: var(--ov-text-surface-color);
-				}
-			}
-
-			mat-icon {
-				font-size: 18px;
-				width: 18px;
-				height: 18px;
-			}
-
-			span {
-				flex: 1;
-				font-weight: 500;
-			}
-		}
-	}
-}
-
-// Selector button mixin
-@mixin selector-button($icon-class, $name-class, $expand-class) {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding: 12px 16px;
-	background: var(--ov-surface-color, #ffffff);
-	border: 1px solid var(--ov-secondary-action-color, #e0e0e0);
-	border-radius: var(--ov-surface-radius, 8px);
-	transition: all 0.2s ease;
-	color: var(--ov-text-primary-color, #333);
-	font-weight: 500;
-	min-width: 150px;
-
-	.#{$name-class} {
-		text-transform: capitalize;
-	}
-
-	&:hover {
-		box-shadow: 0 2px 8px rgba(66, 133, 244, 0.1);
-	}
-
-	.#{$icon-class} {
-		font-size: 18px;
-		width: 18px;
-		height: 18px;
-		color: var(--ov-text-surface-color, #666);
-	}
-
-	.#{$name-class} {
-		font-size: 14px;
-		font-weight: 500;
-		display: inline-block !important;
-		color: var(--ov-text-surface-color) !important;
-	}
-
-	.#{$expand-class} {
-		font-size: 16px;
-		width: 16px;
-		min-width: 16px;
-		height: 16px;
-		min-height: 16px;
-		color: var(--ov-text-secondary-color, #666);
-		transition: transform 0.2s ease;
-		vertical-align: bottom;
-	}
-
-	&[aria-expanded='true'] .#{$expand-class} {
-		transform: rotate(180deg);
-	}
-}
-
-// selector menu mixin
-@mixin selector-menu($option-class, $option-name-class) {
-	border-radius: var(--ov-surface-radius, 8px);
-	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-	border: 1px solid var(--ov-secondary-action-color);
-	overflow: hidden;
-	background: var(--ov-surface-color);
-
-	.#{$option-class} {
-		display: flex;
-		align-items: center;
-		gap: 12px;
-		padding: 12px 16px;
-		transition: background-color 0.2s ease;
-		font-size: 14px;
-		min-height: 48px;
-		color: var(--ov-text-surface-color);
-
-		&:hover {
-			background-color: var(--ov-hover-color);
-		}
-
-		&.selected {
-			background-color: var(--ov-accent-action-color);
-
-			.check-icon {
-				color: var(--ov-text-surface-color);
-			}
-		}
-
-		.check-icon {
-			font-size: 18px;
-			width: 18px;
-			height: 18px;
-		}
-
-		.#{$option-name-class} {
-			text-transform: capitalize;
-
-			flex: 1;
-			font-weight: 500;
 		}
 	}
 }

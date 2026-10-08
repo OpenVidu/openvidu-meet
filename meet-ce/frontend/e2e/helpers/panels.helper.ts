@@ -51,7 +51,7 @@ export const openLayoutSettingsPanel = async (page: Page): Promise<void> => {
 	const gridLayoutSettingsButton = page.locator('#grid-layout-settings-btn');
 	await expect(gridLayoutSettingsButton).toBeVisible();
 	await click(gridLayoutSettingsButton, 5_000);
-	await expect(page.locator('#settings-container')).toBeVisible();
+	await expect(page.locator('#layout-opt')).toHaveAttribute('aria-selected', 'true');
 };
 
 /**
