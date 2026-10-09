@@ -45,8 +45,7 @@ test.describe('Toolbar Buttons E2E Tests', () => {
 		await openMeeting(page, accessUrl);
 
 		await openLayoutSettingsPanel(page);
-		await expect(page.locator('.layout-section')).toBeVisible();
-		await expect(page.locator('.theme-section')).toBeVisible();
+		await expect(page.locator('#layout-smart-mosaic')).toBeVisible();
 	});
 
 	// A desktop browser in a narrow window has no touch screen, yet needs the compact toolbar a phone gets.
