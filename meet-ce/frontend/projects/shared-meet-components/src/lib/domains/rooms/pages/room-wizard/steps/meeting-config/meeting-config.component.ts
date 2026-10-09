@@ -73,6 +73,9 @@ export class MeetingConfigComponent {
 				captions: {
 					enabled: formValue.captionsEnabled ?? false
 				},
+				raiseHand: {
+					enabled: formValue.raiseHandEnabled ?? false
+				},
 				initialAudioActive: formValue.initialAudioActive ?? true,
 				initialVideoActive: formValue.initialVideoActive ?? true,
 				maxParticipants: this.normalizedLimit(
@@ -180,6 +183,10 @@ export class MeetingConfigComponent {
 		this.meetingForm.patchValue({ captionsEnabled: isEnabled });
 	}
 
+	onRaiseHandToggleChange(event: MatSlideToggleChange): void {
+		this.meetingForm.patchValue({ raiseHandEnabled: event.checked });
+	}
+
 	get chatEnabled(): boolean {
 		return this.meetingForm.value.chatEnabled ?? false;
 	}
@@ -194,5 +201,9 @@ export class MeetingConfigComponent {
 
 	get captionsEnabled(): boolean {
 		return this.meetingForm.value.captionsEnabled ?? false;
+	}
+
+	get raiseHandEnabled(): boolean {
+		return this.meetingForm.value.raiseHandEnabled ?? false;
 	}
 }

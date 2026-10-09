@@ -44,6 +44,22 @@ export enum EmbeddedCommandName {
 	 */
 	PARTICIPANT_UPDATE_ROLE = 'participantUpdateRole',
 	/**
+	 * Raises the local participant's hand. Every participant is notified through the
+	 * `participantHandChanged` event. Rejected while the room's `raiseHand.enabled` config is `false`.
+	 */
+	PARTICIPANT_HAND_RAISE = 'participantHandRaise',
+	/**
+	 * Lowers the local participant's hand, or another participant's when `participantIdentity` is
+	 * given. Only lowering someone else's hand needs the permission.
+	 * @permission participantHandLower
+	 */
+	PARTICIPANT_HAND_LOWER = 'participantHandLower',
+	/**
+	 * Lowers every raised hand in the meeting.
+	 * @permission participantHandLower
+	 */
+	PARTICIPANT_HAND_LOWER_ALL = 'participantHandLowerAll',
+	/**
 	 * Toggles the local participant's microphone, or sets it when `active` is provided.
 	 * @permission mediaPublishAudio
 	 * @prejoin Works from the prejoin screen onwards, before the meeting is joined.
@@ -133,6 +149,21 @@ export interface EmbeddedCommandPayloads {
 		participantIdentity: string;
 		action: MeetParticipantModerationAction;
 	};
+	/**
+	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_HAND_RAISE} command.
+	 */
+	[EmbeddedCommandName.PARTICIPANT_HAND_RAISE]: void;
+	/**
+	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_HAND_LOWER} command.
+	 * When `participantIdentity` is omitted, the local participant's own hand is lowered.
+	 */
+	[EmbeddedCommandName.PARTICIPANT_HAND_LOWER]: {
+		participantIdentity?: string;
+	};
+	/**
+	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL} command.
+	 */
+	[EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL]: void;
 	/**
 	 * Payload for the {@link EmbeddedCommandName.MEDIA_TOGGLE_AUDIO} command.
 	 * When `active` is omitted, the microphone state is toggled.
@@ -278,6 +309,33 @@ export interface EmbeddedParticipantUpdateRoleCommand {
 }
 
 /**
+ * Command message for {@link EmbeddedCommandName.PARTICIPANT_HAND_RAISE} (no payload).
+ * @category Communication
+ */
+export interface EmbeddedParticipantHandRaiseCommand {
+	command: EmbeddedCommandName.PARTICIPANT_HAND_RAISE;
+}
+
+/**
+ * Command message for {@link EmbeddedCommandName.PARTICIPANT_HAND_LOWER}: the command name plus its
+ * optional payload (omitted payload or `participantIdentity` = the local participant's own hand),
+ * derived from {@link EmbeddedCommandPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedParticipantHandLowerCommand {
+	command: EmbeddedCommandName.PARTICIPANT_HAND_LOWER;
+	payload?: EmbeddedCommandPayloadFor<EmbeddedCommandName.PARTICIPANT_HAND_LOWER>;
+}
+
+/**
+ * Command message for {@link EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL} (no payload).
+ * @category Communication
+ */
+export interface EmbeddedParticipantHandLowerAllCommand {
+	command: EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL;
+}
+
+/**
  * Command message for {@link EmbeddedCommandName.END_MEETING} (no payload).
  * @category Communication
  * @deprecated Use {@link EmbeddedMeetingEndCommand}. Removed in 3.12.0.
@@ -365,6 +423,9 @@ export type EmbeddedCommand =
 	| EmbeddedParticipantMuteCommand
 	| EmbeddedParticipantMuteAllCommand
 	| EmbeddedParticipantUpdateRoleCommand
+	| EmbeddedParticipantHandRaiseCommand
+	| EmbeddedParticipantHandLowerCommand
+	| EmbeddedParticipantHandLowerAllCommand
 	| EmbeddedMediaToggleAudioCommand
 	| EmbeddedMediaToggleVideoCommand
 	| EmbeddedMediaToggleScreenShareCommand

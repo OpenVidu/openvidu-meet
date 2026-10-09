@@ -10,6 +10,7 @@
 			stream.isCameraStream &&
 			stream.participant.isCameraEnabled
 		"
+		[class.hand-raised]="handPosition()"
 		[class.screen-source]="stream.isScreenStream"
 		[class.camera-source]="stream.isCameraStream"
 		[id]="'stream-' + stream.source + '-' + stream.streamId"
@@ -55,9 +56,15 @@
 
 		@if (
 			!stream.participant.hasEncryptionError &&
-			(!stream.participant.isMicrophoneEnabled || stream.isMutedForcibly || stream.isPinned)
+			(!stream.participant.isMicrophoneEnabled || stream.isMutedForcibly || stream.isPinned || handPosition())
 		) {
 			<div class="status-icons">
+				@if (handPosition(); as position) {
+					<span id="hand-raised">
+						<mat-icon fontIcon="front_hand" />
+						<span class="hand-position">{{ position }}</span>
+					</span>
+				}
 				@if (!stream.participant.isMicrophoneEnabled) {
 					<mat-icon id="mic-off" fontIcon="mic_off" />
 				}

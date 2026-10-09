@@ -47,7 +47,7 @@ export class ParticipantsPanelComponent {
 	/**
 	 * @ignore
 	 */
-	readonly remoteParticipants = this.participantService.remoteParticipants;
+	readonly remoteParticipants = this.participantService.remoteParticipantsByHand;
 	readonly participantCount = computed(() => this.remoteParticipants().length + (this.localParticipant() ? 1 : 0));
 	readonly participantPanelItemTemplate = computed(
 		() => this.templateRegistry.participantPanelItem() ?? this.defaultParticipantPanelItemTemplateQuery()

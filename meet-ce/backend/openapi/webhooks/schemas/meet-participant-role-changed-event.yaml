@@ -15,4 +15,4 @@ properties:
         description: >
             The display name of the room where the participant's role changed.
     participant:
-        $ref: ./meet-participant-payload.yaml
+        $ref: ../../meetings/schemas/meet-participant-info.yaml

@@ -1,0 +1,14 @@
+description: Hand state
+required: true
+content:
+    application/json:
+        schema:
+            type: object
+            required:
+                - raised
+            properties:
+                raised:
+                    type: boolean
+                    enum: [false]
+                    description: Set to `false` to lower every raised hand. Nobody raises a hand but its owner.
+                    example: false

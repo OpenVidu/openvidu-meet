@@ -1,3 +1,24 @@
+<!-- Raise hand button -->
+@if (showHandButton()) {
+	@if (isMobile()) {
+		<button id="raise-hand-button" mat-menu-item (click)="onHandClick()" [disableRipple]="true">
+			<mat-icon class="material-symbols-outlined">front_hand</mat-icon>
+			<span class="button-text">{{ (isHandRaised() ? 'HAND.LOWER' : 'HAND.RAISE') | translate }}</span>
+		</button>
+	} @else {
+		<button
+			id="raise-hand-button"
+			[class]="isHandRaised() ? 'active' : ''"
+			mat-icon-button
+			(click)="onHandClick()"
+			[disableRipple]="true"
+			[matTooltip]="(isHandRaised() ? 'HAND.LOWER' : 'HAND.RAISE') | translate"
+		>
+			<mat-icon class="material-symbols-outlined">front_hand</mat-icon>
+		</button>
+	}
+}
+
 <!-- Captions button -->
 @if (showCaptionsButton()) {
 	@if (isMobile()) {
@@ -14,7 +35,9 @@
 				@if (isCaptionsButtonDisabled()) {
 					{{ 'CAPTIONS.DISABLED_BY_ADMIN_TEXT' | translate }}
 				} @else {
-					{{ areCaptionsEnabledByUser() ? ('CAPTIONS.DISABLE' | translate) : ('CAPTIONS.ENABLE' | translate) }}
+					{{
+						areCaptionsEnabledByUser() ? ('CAPTIONS.DISABLE' | translate) : ('CAPTIONS.ENABLE' | translate)
+					}}
 				}
 			</span>
 		</button>

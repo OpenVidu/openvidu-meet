@@ -1,5 +1,7 @@
 @use 'status-chip' as chip;
 
+$side-panel-width: 380px;
+
 /* ── Phase containers ─────────────────────────────────────────────────────── */
 /* #meeting-view-container hosts every phase; #meeting-stage is the live one. */
 #meeting-view-container,
@@ -29,6 +31,24 @@
 	width: 360px;
 	max-width: calc(100% - 32px);
 	pointer-events: none;
+
+	// Sized like the floating corner stack it stands in for: as wide as its longest notification.
+	&.corner {
+		left: auto;
+		right: calc(16px + var(--ov-open-side-panel-width, 0px));
+		width: max-content;
+		max-width: min(360px, calc(100% - 32px - var(--ov-open-side-panel-width, 0px)));
+	}
+}
+
+// A side panel open beside the meeting keeps the corner notifications on the meeting, to its left.
+#meeting-stage:has(.sidenav-menu.mat-drawer-side.mat-drawer-opened) {
+	--ov-open-side-panel-width: #{$side-panel-width};
+}
+
+// One open over the meeting covers it whole, so the notifications drop below its header.
+#meeting-stage:has(.sidenav-menu.mat-drawer-over.mat-drawer-opened) .notice-layer {
+	top: calc(var(--ov-status-rail-height) + 72px);
 }
 
 .status-rail {
@@ -42,8 +62,14 @@
 .status-rail-end {
 	display: flex;
 	align-items: center;
+	gap: 8px;
 	margin-left: auto;
 	min-width: 0;
+
+	ov-hidden-participants-indicator {
+		display: flex;
+		min-width: 0;
+	}
 }
 
 .status-chip {
@@ -83,6 +109,20 @@
 
 .e2ee-chip .status-chip-icon {
 	color: var(--ov-success-color);
+}
+
+.raised-hands-chip {
+	background-color: var(--ov-meet-hand-color);
+	border-color: var(--ov-meet-hand-color);
+
+	&.clickable {
+		@include chip.status-chip-interactive;
+	}
+
+	.status-chip-icon,
+	.status-chip-value {
+		color: var(--ov-meet-text-on-hand);
+	}
 }
 
 // Calm while there is time to act: only the icon carries the warn colour.
@@ -197,7 +237,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 380px;
+	width: $side-panel-width;
 	background-color: var(--ov-background-color);
 	border-left: none;
 	position: absolute;
@@ -239,6 +279,8 @@
 	}
 
 	.notice-layer {
+		// Over the sidenav container, which these widths stack at 1000.
+		z-index: 1001;
 		left: 8px;
 		right: 8px;
 		width: auto;

@@ -40,7 +40,9 @@ export type NotificationTone = 'alert' | 'warning' | 'neutral';
 /**
  * Which stack the notification joins:
  * - `corner`: the floating one in the top-right corner, which {@link NotificationService} puts up on
- *   its own, so any screen can raise a notification without hosting anything.
+ *   its own, so any screen can raise a notification without hosting anything. A screen that keeps
+ *   something along its top edge places a corner outlet of its own instead, and the floating one
+ *   stays empty while it is on screen.
  * - `pinned`: the one an `ov-notifications` outlet places in the layout, for a screen with somewhere
  *   of its own for them. A screen that hosts no outlet shows nothing.
  */

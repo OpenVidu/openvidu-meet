@@ -1,0 +1,28 @@
+type: object
+required:
+    - roomId
+    - roomName
+    - participant
+    - origin
+properties:
+    roomId:
+        type: string
+        example: 'room-123'
+        description: >
+            The unique identifier of the room the meeting runs in.
+    roomName:
+        type: string
+        example: 'room'
+        description: >
+            The display name of the room the meeting runs in.
+    participant:
+        $ref: ../../meetings/schemas/meet-participant-info.yaml
+    origin:
+        type: string
+        enum:
+            - participant
+            - moderator
+        example: participant
+        description: >
+            Who lowered the hand: the participant themselves or a moderator. A raise always
+            originates from the participant.

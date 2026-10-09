@@ -142,6 +142,10 @@
           "LABEL": "Silenziare i partecipanti",
           "DESCRIPTION": "Consenti di disattivare microfono, videocamera o condivisione schermo degli altri partecipanti"
         },
+        "participantHandLower": {
+          "LABEL": "Abbassa le mani",
+          "DESCRIPTION": "Consente di abbassare le mani alzate degli altri partecipanti, una alla volta o tutte insieme"
+        },
         "roomShareAccessLinks": {
           "LABEL": "Condividere i link di accesso",
           "DESCRIPTION": "Consenti di condividere i link di invito con altri"

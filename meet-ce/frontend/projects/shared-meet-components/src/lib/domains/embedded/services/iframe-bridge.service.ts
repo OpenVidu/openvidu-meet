@@ -228,6 +228,23 @@ export class IframeBridgeService {
 				await this.commandService.recordingStop();
 				break;
 
+			case EmbeddedCommandName.PARTICIPANT_HAND_RAISE:
+				await this.commandService.participantHandRaise();
+				break;
+
+			case EmbeddedCommandName.PARTICIPANT_HAND_LOWER: {
+				const payload = 'payload' in message ? message.payload : undefined;
+				const participantIdentity =
+					payload && 'participantIdentity' in payload ? payload.participantIdentity : undefined;
+
+				await this.commandService.participantHandLower(participantIdentity);
+				break;
+			}
+
+			case EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL:
+				await this.commandService.participantHandLowerAll();
+				break;
+
 			default:
 				break;
 		}

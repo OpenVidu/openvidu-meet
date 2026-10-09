@@ -71,12 +71,20 @@ events are re-dispatched on the outer element.
   `participantJoined`/`participantLeft` (**remote**
   participants only; payload `{ roomId, participant: MeetParticipantPayload }` — identity,
   correlation fields and role; live transitions only, no replay of participants already present,
-  no media state, and no client-side departure reason — the authoritative one travels on the
-  `participantLeft` webhook), `recordingStatusChanged` (everyone; payload `{ recordingId, status }`
+  no media state; `joinDate` is the server's millisecond, read from the participant info LiveKit holds,
+  which is why `participantJoined` is built a microtask after LiveKit announces the participant;
+  `participantLeft` adds `participant.leaveReason`, mapped from the LiveKit disconnect
+  reason by the same `participantLeaveReasonOf()` the webhook uses, but not `leaveDate`/`durationSeconds`,
+  which only the server clock can tell), `recordingStatusChanged` (everyone; payload `{ recordingId, status }`
   with a `MeetRecordingStatus`; a recording's statuses only move forward, each at most once, and the
   current one is reported right after `meetingJoined` on joining mid-recording),
   `participantRoleChanged` (**local** participant only, once the refreshed token of the promotion or
-  demotion is in effect; payload `{ roomId, participantIdentity, role }`).
+  demotion is in effect; payload `{ roomId, participant: MeetParticipantInfo }`),
+  `participantHandChanged` (everyone; payload `{ roomId, participant: MeetParticipantInfo, origin }`;
+  the hand lives in a LiveKit participant attribute the server writes, so every raised hand is
+  reported, in queue order, right after `meetingJoined`; the queue is ordered by
+  `participant.handRaiseDate`, never sent as a position that the next change would make stale).
+  A state-change event carries the live `MeetParticipantInfo` snapshot, like its webhook, minus `roomName`.
   The 3.8.0 spellings (`joined`, `left`, `closed`) are dispatched **alongside** their
   canonical twin until **3.12.0** — a host listening to both names receives the event twice.
   `EmbeddedEventBusService`'s queue only ever carries canonical names; `src/app/app.ts` emits both
@@ -88,7 +96,10 @@ events are re-dispatched on the outer element.
   `participantUpdateRole(identity, action)` (`upgrade` | `downgrade`, gated by `participantPromote`),
   `mediaToggleAudio(active?)`, `mediaToggleVideo(active?)`, `mediaToggleScreenShare(active?)`
   (omitted = toggle), `recordingStart()` / `recordingStop()` (gated by `recordingControl`; the stop
-  targets the recording the meeting currently knows, after waiting for a start still in flight), and
+  targets the recording the meeting currently knows, after waiting for a start still in flight),
+  `participantHandRaise()` / `participantHandLower(identity?)` / `participantHandLowerAll()` (the
+  own hand is never gated; lowering another participant's hand, or every hand, needs
+  `participantHandLower`), and
   the convenience listener API `on()` / `once()` / `off()` added in
   `src/app/custom-element/wrapper.ts`. Every command runs through `EmbeddedCommandService.run()`,
   which enforces the permission and, internally, which commands work from the prejoin screen — the

@@ -38,6 +38,7 @@ const DEFAULT_MODERATOR_PERMISSIONS: MeetRoomMemberPermissions = {
 	participantPromote: true,
 	participantKick: true,
 	participantMute: true,
+	participantHandLower: true,
 	meetingEnd: true,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -59,6 +60,7 @@ const DEFAULT_SPEAKER_PERMISSIONS: MeetRoomMemberPermissions = {
 	participantPromote: false,
 	participantKick: false,
 	participantMute: false,
+	participantHandLower: false,
 	meetingEnd: false,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -78,6 +80,7 @@ const DEFAULT_CONFIG: MeetRoomConfig = {
 	virtualBackground: { enabled: true },
 	e2ee: { enabled: false },
 	captions: { enabled: true },
+	raiseHand: { enabled: true },
 	initialAudioActive: true,
 	initialVideoActive: true
 };
@@ -286,6 +289,9 @@ export class RoomWizardStateService {
 					),
 					e2eeEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.e2ee!.enabled),
 					captionsEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.captions!.enabled),
+					raiseHandEnabled: this.formBuilder.nonNullable.control(
+						initialRoomOptions.config!.raiseHand!.enabled
+					),
 					initialAudioActive: this.formBuilder.nonNullable.control(
 						initialRoomOptions.config!.initialAudioActive!
 					),

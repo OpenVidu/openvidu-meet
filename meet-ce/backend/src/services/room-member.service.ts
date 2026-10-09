@@ -637,7 +637,10 @@ export class RoomMemberService {
 					participant.permission,
 					tokenMetadata.permissions
 				);
-				await this.livekitService.updateParticipant(roomId, participant.identity, metadataToApply, permission);
+				await this.livekitService.updateParticipant(roomId, participant.identity, {
+					metadata: metadataToApply,
+					permission
+				});
 				return participant.name || participantName;
 			});
 		}
@@ -955,6 +958,7 @@ export class RoomMemberService {
 			participantPromote: true,
 			participantKick: true,
 			participantMute: true,
+			participantHandLower: true,
 			meetingEnd: true,
 			mediaPublishVideo: true,
 			mediaPublishAudio: true,
@@ -981,6 +985,7 @@ export class RoomMemberService {
 			participantPromote: false,
 			participantKick: false,
 			participantMute: false,
+			participantHandLower: false,
 			meetingEnd: false,
 			mediaPublishVideo: false,
 			mediaPublishAudio: false,
@@ -1121,12 +1126,10 @@ export class RoomMemberService {
 				}
 
 				const permission = this.buildLiveParticipantPermission(participant.permission, metadata.permissions);
-				const updatedParticipant = await this.livekitService.updateParticipant(
-					roomId,
-					participantIdentity,
-					JSON.stringify(metadata),
+				const updatedParticipant = await this.livekitService.updateParticipant(roomId, participantIdentity, {
+					metadata: JSON.stringify(metadata),
 					permission
-				);
+				});
 
 				if (action === MeetParticipantModerationAction.DOWNGRADE) {
 					await this.participantTokenRevocationService.revokeIssuedTokens(roomId, participantIdentity);
@@ -1138,7 +1141,7 @@ export class RoomMemberService {
 			this.webhookDispatcherService.sendParticipantRoleChangedWebhook({
 				roomId,
 				roomName,
-				participant: MeetParticipantHelper.toParticipantPayload(updatedParticipant)
+				participant: MeetParticipantHelper.toParticipantInfo(updatedParticipant)
 			});
 
 			if (action === MeetParticipantModerationAction.UPGRADE) {

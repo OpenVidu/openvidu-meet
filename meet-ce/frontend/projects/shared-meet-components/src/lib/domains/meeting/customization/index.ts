@@ -3,6 +3,7 @@ export * from './meeting-custom-layout/meeting-custom-layout.component';
 export * from './meeting-invite-panel/meeting-invite-panel.component';
 export * from './meeting-participant-item-content/meeting-participant-item-content.component';
 export * from './meeting-participant-item/meeting-participant-item.component';
+export * from './meeting-raised-hands-strip/meeting-raised-hands-strip.component';
 export * from './meeting-settings-extensions/meeting-settings-extensions.component';
 export * from './meeting-toolbar-copy-link-button/meeting-toolbar-copy-link-button.component';
 export * from './meeting-toolbar-extra-buttons/meeting-toolbar-extra-buttons.component';

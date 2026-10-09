@@ -16,3 +16,17 @@ export interface MeetParticipantMuteOptions {
 	/** Set to `false` to stop the participant's screen share. */
 	screenShareActive?: false;
 }
+
+/**
+ * Whether a participant's hand is raised, as carried by
+ * `PUT /meetings/{roomId}/participants/{participantIdentity}/hand` and its bulk twin
+ * `PUT /meetings/{roomId}/participants/hand`.
+ *
+ * A participant raises and lowers their own hand freely. Lowering another participant's hand
+ * requires the `participantHandLower` permission, and nobody raises a hand but its owner, so a
+ * foreign target and the bulk twin accept `false` only.
+ */
+export interface MeetParticipantHandOptions {
+	/** `true` raises the hand, `false` lowers it. */
+	raised: boolean;
+}

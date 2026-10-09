@@ -623,7 +623,8 @@ describe('Room API Tests', () => {
 				chat: { enabled: false },
 				virtualBackground: { enabled: false },
 				e2ee: { enabled: true },
-				captions: { enabled: false }
+				captions: { enabled: false },
+				raiseHand: { enabled: true }
 			};
 
 			await createRoom({
@@ -664,7 +665,8 @@ describe('Room API Tests', () => {
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
-				captions: { enabled: true }
+				captions: { enabled: true },
+				raiseHand: { enabled: true }
 			};
 
 			const config2 = {
@@ -676,7 +678,8 @@ describe('Room API Tests', () => {
 				chat: { enabled: false },
 				virtualBackground: { enabled: false },
 				e2ee: { enabled: true },
-				captions: { enabled: false }
+				captions: { enabled: false },
+				raiseHand: { enabled: true }
 			};
 
 			await Promise.all([

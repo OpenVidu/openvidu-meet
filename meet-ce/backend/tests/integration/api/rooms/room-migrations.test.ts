@@ -59,7 +59,8 @@ const buildLegacyRoomV2 = (roomId: string) => ({
 		},
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false },
-		captions: { enabled: true }
+		captions: { enabled: true },
+		raiseHand: { enabled: true }
 	},
 	moderatorUrl: `/room/${roomId}?secret=123456`,
 	speakerUrl: `/room/${roomId}?secret=abcdef`
@@ -80,7 +81,8 @@ const buildLegacyRoomV3 = (roomId: string) => ({
 		},
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false },
-		captions: { enabled: true }
+		captions: { enabled: true },
+		raiseHand: { enabled: true }
 	},
 	roles: {
 		moderator: {
@@ -146,6 +148,7 @@ const expectedCurrentModeratorPermissions = {
 	participantPromote: true,
 	participantKick: true,
 	participantMute: false,
+	participantHandLower: false,
 	meetingEnd: true,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -167,6 +170,7 @@ const expectedCurrentSpeakerPermissions = {
 	participantPromote: false,
 	participantKick: false,
 	participantMute: false,
+	participantHandLower: false,
 	meetingEnd: false,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -201,7 +205,8 @@ const expectMigratedRoomToCurrentVersion = (migratedRoom: Record<string, unknown
 			e2ee: { enabled: false },
 			captions: {
 				enabled: true
-			}
+			},
+			raiseHand: { enabled: true }
 		},
 		roles: {
 			moderator: {
@@ -321,7 +326,8 @@ describe('Room Schema Migrations', () => {
 					},
 					virtualBackground: { enabled: true },
 					e2ee: { enabled: false },
-					captions: { enabled: true }
+					captions: { enabled: true },
+					raiseHand: { enabled: true }
 				},
 				moderatorUrl: '/room/room-v2?secret=123456',
 				speakerUrl: '/room/room-v2?secret=abcdef',
@@ -344,7 +350,8 @@ describe('Room Schema Migrations', () => {
 					},
 					virtualBackground: { enabled: true },
 					e2ee: { enabled: false },
-					captions: { enabled: true }
+					captions: { enabled: true },
+					raiseHand: { enabled: true }
 				},
 				roles: {
 					moderator: {

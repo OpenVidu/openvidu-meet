@@ -1,0 +1,9 @@
+description: Successfully lowered every raised hand
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: Hands of participants in meeting in room 'room-123' lowered

@@ -1,7 +1,7 @@
 import { MeetRecordingInfo } from './database/recording.entity.js';
 import { MeetRoom } from './database/room.entity.js';
-import { LeftEventReason } from './embedded/events.js';
-import { MeetParticipantPayload } from './response/participant-response.js';
+import { LeftEventReason, MeetEventOrigin } from './embedded/events.js';
+import { MeetParticipantInfo, MeetParticipantPayload } from './response/participant-response.js';
 
 /**
  * Interface representing a webhook event emitted by OpenVidu Meet.
@@ -29,6 +29,8 @@ export enum MeetWebhookEventType {
 	PARTICIPANT_LEFT = 'participantLeft',
 	/** Emitted when a participant in a meeting is promoted to moderator or demoted back to their original role */
 	PARTICIPANT_ROLE_CHANGED = 'participantRoleChanged',
+	/** Emitted when a participant's hand is raised or lowered */
+	PARTICIPANT_HAND_CHANGED = 'participantHandChanged',
 	/** Emitted when a recording starts in a room */
 	RECORDING_STARTED = 'recordingStarted',
 	/** Emitted when a recording is updated */
@@ -57,16 +59,37 @@ export interface MeetWebhookTestEvent {
 }
 
 /**
- * The {@link LeftEventReason} values a `participantLeft` webhook can carry.
+ * The {@link LeftEventReason} values the `participantLeft` webhook and embedded event can carry.
  *
- * The server derives the reason from the media server's disconnect reason, which says that the
- * meeting ended but not who ended it, nor whether the duration limit did. Those two distinctions
- * exist only on the client, so they reach the embedded `meetingLeft` event and never a webhook.
+ * Both derive the reason from the media server's disconnect reason, which says that the meeting
+ * ended but not who ended it, nor whether the duration limit did. Those two distinctions exist only
+ * on the client of the participant who left, so they reach the embedded `meetingLeft` event alone.
  */
 export type MeetParticipantLeaveReason = Exclude<
 	LeftEventReason,
 	LeftEventReason.MEETING_ENDED_BY_SELF | LeftEventReason.MEETING_ENDED_BY_DURATION_LIMIT
 >;
+
+const LEAVE_REASON_BY_DISCONNECT_REASON: Partial<Record<string, MeetParticipantLeaveReason>> = {
+	CLIENT_INITIATED: LeftEventReason.VOLUNTARY_LEAVE,
+	SIGNAL_CLOSE: LeftEventReason.NETWORK_DISCONNECT,
+	STATE_MISMATCH: LeftEventReason.NETWORK_DISCONNECT,
+	CONNECTION_TIMEOUT: LeftEventReason.NETWORK_DISCONNECT,
+	MEDIA_FAILURE: LeftEventReason.NETWORK_DISCONNECT,
+	SERVER_SHUTDOWN: LeftEventReason.SERVER_SHUTDOWN,
+	PARTICIPANT_REMOVED: LeftEventReason.PARTICIPANT_KICKED,
+	ROOM_DELETED: LeftEventReason.MEETING_ENDED,
+	ROOM_CLOSED: LeftEventReason.MEETING_ENDED,
+	DUPLICATE_IDENTITY: LeftEventReason.DUPLICATE_IDENTITY
+};
+
+/**
+ * The {@link MeetParticipantLeaveReason} of a LiveKit disconnect reason, given by its
+ * `DisconnectReason` name. The `participantLeft` webhook and embedded event both map it here, so
+ * they always agree; a reason with no public equivalent, or none at all, is `unknown`.
+ */
+export const participantLeaveReasonOf = (disconnectReason: string | undefined): MeetParticipantLeaveReason =>
+	LEAVE_REASON_BY_DISCONNECT_REASON[disconnectReason ?? ''] ?? LeftEventReason.UNKNOWN;
 
 /**
  * A participant that has left a meeting, as carried by the
@@ -133,15 +156,26 @@ export interface MeetParticipantRoleChangedPayload {
 	roomId: string;
 	/** Name of the room where the participant's role changed */
 	roomName: string;
-	/** The participant whose role changed, carrying the new role. See {@link MeetParticipantPayload} for details */
-	participant: MeetParticipantPayload;
+	/** The participant whose role changed, carrying the new role. See {@link MeetParticipantInfo} for details */
+	participant: MeetParticipantInfo;
+}
+
+/**
+ * Payload for the {@link MeetWebhookEventType.PARTICIPANT_HAND_CHANGED} webhook event.
+ */
+export interface MeetParticipantHandChangedPayload extends MeetParticipantJoinedPayload {
+	/** The participant whose hand changed, carrying the new hand state. See {@link MeetParticipantInfo} for details */
+	participant: MeetParticipantInfo;
+	/** Who lowered the hand, the participant or a moderator; a raise always originates from the participant */
+	origin: MeetEventOrigin.PARTICIPANT | MeetEventOrigin.MODERATOR;
 }
 
 /**
  * Payload for OpenVidu Meet webhook events.
  * Depending on the event type, the payload can be {@link MeetRecordingInfo}, {@link MeetRoom},
  * {@link MeetMeetingEndedPayload}, {@link MeetParticipantJoinedPayload},
- * {@link MeetParticipantLeftPayload} or {@link MeetParticipantRoleChangedPayload}.
+ * {@link MeetParticipantLeftPayload}, {@link MeetParticipantRoleChangedPayload} or
+ * {@link MeetParticipantHandChangedPayload}.
  */
 export type MeetWebhookPayload =
 	| MeetRecordingInfo
@@ -149,4 +183,5 @@ export type MeetWebhookPayload =
 	| MeetMeetingEndedPayload
 	| MeetParticipantJoinedPayload
 	| MeetParticipantLeftPayload
-	| MeetParticipantRoleChangedPayload;
+	| MeetParticipantRoleChangedPayload
+	| MeetParticipantHandChangedPayload;

@@ -20,6 +20,10 @@ import {
 import { openMeeting } from './helpers/meeting-navigation.helper';
 import { toggleParticipantsPanel } from './helpers/panels.helper';
 import {
+	expectHandBadge,
+	expectHandLoweredByModeratorNotification,
+	expectHandRaised,
+	expectHandRaisedNotice,
 	expectKickButton,
 	expectMakeModeratorButton,
 	expectModerationControls,
@@ -28,7 +32,9 @@ import {
 	expectMuteAllButton,
 	expectMuteButton,
 	expectMutedByModeratorNotification,
+	expectNoHandBadge,
 	expectNoKickButton,
+	expectNoLowerHandButton,
 	expectNoMakeModeratorButton,
 	expectNoModerationControls,
 	expectNoMuteAllButton,
@@ -36,15 +42,20 @@ import {
 	expectNoParticipantBadge,
 	expectNoRemoveModeratorButton,
 	expectParticipantBadge,
+	expectRaisedHandsChip,
 	expectRemoveModeratorButton,
+	expectTileHandPosition,
 	getLocalParticipantId,
 	getParticipantIdByName,
 	joinParticipants,
 	kickParticipant,
+	lowerAllHands,
+	lowerParticipantHand,
 	makeParticipantModerator,
 	muteAllParticipantsMedia,
 	muteParticipantMedia,
 	removeParticipantModerator,
+	toggleHand,
 	type ParticipantConfig
 } from './helpers/participant-management.helper';
 
@@ -533,6 +544,247 @@ test.describe('Participants E2E Tests', () => {
 				// The backend excludes the caller from a bulk mute: muting everyone else must not
 				// reach back to the moderator's own microphone.
 				await expect(moderatorPage.locator('#mic-btn #mic')).toBeVisible();
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+	});
+
+	test.describe('Raise hand (participantHandLower)', () => {
+		// Not "Second Speaker": the row lookup matches names by text, and the local row comes first.
+		const secondSpeakerName = 'Observer';
+
+		const joinModeratorAndSpeakers = (browser: Browser, speakers = [speakerName]) =>
+			joinParticipants(browser, {
+				roomId,
+				participants: [
+					{ name: moderatorName, baseRole: MeetRoomMemberRole.MODERATOR },
+					...speakers.map((name) => ({ name, baseRole: MeetRoomMemberRole.SPEAKER }))
+				]
+			});
+
+		test('should show a raised hand to everyone, in the panel and on the tile, in queue order', async ({
+			browser
+		}) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeakers(browser);
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const speakerPage = byName[speakerName];
+
+				await toggleHand(speakerPage);
+				await expectHandRaised(speakerPage, true);
+				await expectRaisedHandsChip(moderatorPage, 1);
+
+				await moderatorPage.locator('#raised-hands-chip').click();
+				const speakerId = await getParticipantIdByName(moderatorPage, speakerName);
+				await expectHandBadge(moderatorPage, speakerId);
+				await expectTileHandPosition(moderatorPage, speakerName, 1);
+
+				// The queue is ordered by raise time: the moderator's hand goes up second.
+				await toggleHand(moderatorPage);
+				const moderatorId = await getLocalParticipantId(moderatorPage);
+				await expectHandBadge(moderatorPage, moderatorId);
+				await expectTileHandPosition(moderatorPage, moderatorName, 2);
+				await expectRaisedHandsChip(speakerPage, 2);
+
+				await toggleHand(speakerPage);
+				await expectHandRaised(speakerPage, false);
+				await expectNoHandBadge(moderatorPage, speakerId);
+				await expectTileHandPosition(moderatorPage, moderatorName, 1);
+				await expectRaisedHandsChip(moderatorPage, 1);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should list the raised hands first in the participants panel', async ({ browser }) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeakers(browser, [
+				speakerName,
+				secondSpeakerName
+			]);
+
+			try {
+				const moderatorPage = byName[moderatorName];
+
+				await toggleHand(byName[secondSpeakerName]);
+
+				await toggleParticipantsPanel(moderatorPage);
+				const rows = moderatorPage.locator('#remote-participants-container [data-participant-name]');
+				await expect(rows.first()).toHaveAttribute('data-participant-name', secondSpeakerName, {
+					timeout: 10_000
+				});
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should let a moderator lower a participant hand from the row menu, notifying them', async ({
+			browser
+		}) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeakers(browser);
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const speakerPage = byName[speakerName];
+
+				await toggleHand(speakerPage);
+				await toggleParticipantsPanel(moderatorPage);
+				const speakerId = await getParticipantIdByName(moderatorPage, speakerName);
+				await expectHandBadge(moderatorPage, speakerId);
+
+				await lowerParticipantHand(moderatorPage, speakerId);
+
+				await expectHandRaised(speakerPage, false);
+				await expectHandLoweredByModeratorNotification(speakerPage);
+				await expectNoHandBadge(moderatorPage, speakerId);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should not offer lowering hands to a participant without participantHandLower', async ({ browser }) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeakers(browser, [
+				speakerName,
+				secondSpeakerName
+			]);
+
+			try {
+				const speakerPage = byName[speakerName];
+				const otherSpeakerPage = byName[secondSpeakerName];
+
+				await toggleHand(speakerPage);
+				await toggleParticipantsPanel(otherSpeakerPage);
+				const speakerId = await getParticipantIdByName(otherSpeakerPage, speakerName);
+				await expectHandBadge(otherSpeakerPage, speakerId);
+
+				await expectNoLowerHandButton(otherSpeakerPage, speakerId);
+				await expect(otherSpeakerPage.locator('#lower-all-hands-btn')).toHaveCount(0);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should lower every hand at once from the participants panel', async ({ browser }) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeakers(browser, [
+				speakerName,
+				secondSpeakerName
+			]);
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const speakerPage = byName[speakerName];
+				const secondSpeakerPage = byName[secondSpeakerName];
+
+				await toggleHand(speakerPage);
+				await toggleHand(secondSpeakerPage);
+				await toggleParticipantsPanel(moderatorPage);
+				await expectHandBadge(moderatorPage, await getParticipantIdByName(moderatorPage, secondSpeakerName));
+
+				await lowerAllHands(moderatorPage);
+
+				await expectHandRaised(speakerPage, false);
+				await expectHandRaised(secondSpeakerPage, false);
+				await expect(moderatorPage.locator('#lower-all-hands-btn')).toHaveCount(0, { timeout: 10_000 });
+				await expectRaisedHandsChip(moderatorPage, 0);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should head the panel with the lower-all strip only once someone else raises a hand', async ({
+			browser
+		}) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeakers(browser);
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const speakerPage = byName[speakerName];
+
+				await toggleParticipantsPanel(moderatorPage);
+				await toggleHand(moderatorPage);
+				await expect(moderatorPage.locator('#lower-own-hand-btn')).toBeVisible({ timeout: 10_000 });
+				await expect(moderatorPage.locator('#panel-hand-actions')).toHaveCount(0);
+
+				await toggleHand(speakerPage);
+				const strip = moderatorPage.locator('#panel-hand-actions');
+				await expect(strip).toContainText('(2)', { timeout: 10_000 });
+				const stripTop = (await strip.boundingBox())!.y;
+				const localTop = (await moderatorPage.locator('.local-participant-container').boundingBox())!.y;
+				expect(stripTop).toBeLessThan(localTop);
+
+				await moderatorPage.locator('#lower-own-hand-btn').click();
+				await expectHandRaised(moderatorPage, false);
+				await expect(moderatorPage.locator('#lower-own-hand-btn')).toHaveCount(0);
+				await expect(strip).toContainText('(1)', { timeout: 10_000 });
+				await expectHandRaised(speakerPage, true);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should toggle the hand once per press of the R key, announcing it only while it is up', async ({
+			browser
+		}) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeakers(browser);
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const speakerPage = byName[speakerName];
+				const handRequests: (string | null)[] = [];
+				speakerPage.on('request', (request) => {
+					if (request.url().endsWith('/hand')) handRequests.push(request.postData());
+				});
+
+				// Held down, the key repeats.
+				await speakerPage.keyboard.down('r');
+				await expectHandRaised(speakerPage, true);
+				await expectHandRaisedNotice(moderatorPage, `${speakerName} raised their hand`);
+				await speakerPage.keyboard.down('r');
+				await speakerPage.keyboard.up('r');
+
+				await speakerPage.keyboard.press('r');
+				await expectHandRaised(speakerPage, false);
+				await expectHandRaisedNotice(moderatorPage, false);
+				expect(handRequests).toEqual(['{"raised":true}', '{"raised":false}']);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should gather the hands raised together into one notice', async ({ browser }) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeakers(browser, [
+				speakerName,
+				secondSpeakerName
+			]);
+
+			try {
+				const moderatorPage = byName[moderatorName];
+
+				await toggleHand(byName[speakerName]);
+				await expectHandRaisedNotice(moderatorPage, `${speakerName} raised their hand`);
+				await toggleHand(byName[secondSpeakerName]);
+				await expectHandRaisedNotice(moderatorPage, `${speakerName} and 1 more raised their hand`);
+
+				await toggleHand(byName[speakerName]);
+				await expectHandRaisedNotice(moderatorPage, `${secondSpeakerName} raised their hand`);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should hide the raise hand button when the room has the feature off', async ({ browser }) => {
+			const roomWithoutHands = await createRoom({
+				config: { raiseHand: { enabled: false } } as MeetRoom['config']
+			});
+			createdRoomIds.push(roomWithoutHands.roomId);
+			const { byName, removeAllParticipants } = await joinParticipants(browser, {
+				roomId: roomWithoutHands.roomId,
+				participants: [{ name: speakerName, baseRole: MeetRoomMemberRole.SPEAKER }]
+			});
+
+			try {
+				await expect(byName[speakerName].locator('#raise-hand-button')).toHaveCount(0);
 			} finally {
 				await removeAllParticipants();
 			}

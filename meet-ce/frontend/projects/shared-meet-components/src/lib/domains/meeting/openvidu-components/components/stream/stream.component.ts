@@ -67,6 +67,15 @@ export class StreamComponent implements OnDestroy {
 		};
 	});
 
+	/** The raised hand's place in the queue, shown on the camera tile only. */
+	readonly handPosition = computed(() => {
+		const stream = this.stream();
+
+		return stream?.isCameraStream
+			? this.participantService.handQueuePositions().get(stream.participant.identity)
+			: undefined;
+	});
+
 	/**
 	 * @ignore
 	 */

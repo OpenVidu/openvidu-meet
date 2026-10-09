@@ -242,6 +242,8 @@
         "E2EE_RESTRICTION_RECORDING_SUFFIX": " lorsque le chiffrement est activé.",
         "CAPTIONS": "Sous-titres en direct",
         "CAPTIONS_DESC": "Activez la transcription en direct pour afficher les sous-titres pendant la réunion",
+        "HAND": "Lever la main",
+        "HAND_DESC": "Permet aux participants de lever la main pour demander la parole",
         "CHAT": "Chat",
         "CHAT_DESC": "Autorisez les participants à envoyer des messages pendant la réunion",
         "VIRTUAL_BACKGROUNDS": "Arrière-plans virtuels",

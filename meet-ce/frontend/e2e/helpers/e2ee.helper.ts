@@ -36,6 +36,7 @@ export const expectUnmaskedParticipantPanelNames = async (page: Page, expectedCo
  */
 export const expectOwnNameInSettings = async (page: Page, expectedName: string): Promise<void> => {
 	await openSettingsPanel(page);
-	await expect(page.locator('#participant-name-input')).toHaveValue(expectedName);
+	await page.locator('#general-opt').click();
+	await expect(page.locator('#settings-display-name')).toHaveText(expectedName);
 	await closeSettingsPanel(page);
 };

@@ -91,7 +91,8 @@ and `webhook-dispatcher.service.ts`); several response paths bypass the more obv
   rewrote existing data. If you add a new permission, add it to `MEET_PERMISSION_KEYS` too: Mongoose
   silently drops any key it doesn't recognize, so a missed entry means the permission quietly reads as
   `false` instead of raising an error. It also needs a migration **step of its own** (`room` v4→v5,
-  `roomMember` v2→v3 for `participantMute`) that re-runs the same permission normalization: documents
+  `roomMember` v2→v3 for `participantMute`, `room` v5→v6 and `roomMember` v3→v4 for
+  `participantHandLower`) that re-runs the same permission normalization: documents
   already at the previous version are up to date as far as the runner is concerned, so extending the
   previous step would never reach them.
 - **Login tokens carry permissions too.** Renaming a permission doesn't invalidate tokens already

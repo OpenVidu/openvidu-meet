@@ -119,6 +119,9 @@ export class ParticipantPanelItemComponent {
 	/** Emitted when the viewer activates one of the device buttons. */
 	readonly mediaMuteRequested = output<ParticipantMediaKind>();
 
+	/** Emitted when the local participant lowers their own hand from their row. */
+	readonly handLowerRequested = output<void>();
+
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly templateRegistry = inject(TemplateRegistryService);
@@ -150,6 +153,8 @@ export class ParticipantPanelItemComponent {
 	/** Silencing a remote participant is a private preference, so it never applies to yourself. */
 	readonly canMuteLocally = computed(() => !this.isLocalParticipant() && this.showMuteButton());
 	readonly isMutedLocally = computed(() => !!this.participantInput()?.isMutedForcibly);
+	readonly isHandRaised = computed(() => !!this.participantInput()?.isHandRaised);
+	readonly canLowerOwnHand = computed(() => this.isLocalParticipant() && this.isHandRaised());
 	readonly hasMenu = computed(() => this.canMuteLocally() || this.hasExternalElements());
 
 	readonly mediaControls = computed<ParticipantMediaControl[]>(() => {
@@ -183,6 +188,10 @@ export class ParticipantPanelItemComponent {
 
 	requestMediaMute(kind: ParticipantMediaKind) {
 		this.mediaMuteRequested.emit(kind);
+	}
+
+	requestHandLower() {
+		this.handLowerRequested.emit();
 	}
 
 	/**

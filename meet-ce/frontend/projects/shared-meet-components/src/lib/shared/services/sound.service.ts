@@ -12,6 +12,7 @@ export class SoundService {
 	private roleUpgradedAudio?: HTMLAudioElement;
 	private roleDowngradedAudio?: HTMLAudioElement;
 	private meetingEndingSoonAudio?: HTMLAudioElement;
+	private handRaisedAudio?: HTMLAudioElement;
 
 	/**
 	 * Plays a sound to indicate that a participant has joined the meeting.
@@ -43,6 +44,14 @@ export class SoundService {
 	playMeetingEndingSoonSound(): void {
 		this.meetingEndingSoonAudio ??= this.createAudio(this.assets.meetingEndingSoonSound);
 		this.play(this.meetingEndingSoonAudio);
+	}
+
+	/**
+	 * Plays a sound to indicate that a participant has raised their hand.
+	 */
+	playHandRaisedSound(): void {
+		this.handRaisedAudio ??= this.createAudio(this.assets.handRaisedSound);
+		this.play(this.handRaisedAudio);
 	}
 
 	private createAudio(src: string): HTMLAudioElement {

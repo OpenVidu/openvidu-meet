@@ -3,8 +3,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
 	EmbeddedEventName,
 	EmbeddedEventPayloadFor,
+	handLoweredByOf,
+	handRaiseDateOf,
 	LeftEventReason,
 	MeetEventOrigin,
+	MeetParticipantAttribute,
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantPermissionsUpdatedPayload,
 	MeetRecordingStatus,
@@ -13,6 +16,8 @@ import {
 	MeetRoomMemberTokenOptions,
 	MeetSignalType
 } from '@openvidu-meet/typings';
+import type { EmbeddedParticipantHandChangedEvent } from '@openvidu-meet/typings';
+import type { NotificationOptions } from '../../../shared/models/notification.model';
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { NotificationService } from '../../../shared/services/notification.service';
@@ -23,7 +28,9 @@ import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
 import type {
+	DisconnectReason,
 	LocalParticipant,
+	Participant,
 	ParticipantLeftEvent,
 	ParticipantModel,
 	RecordingStartRequestedEvent,
@@ -38,17 +45,38 @@ import {
 	ParticipantLeftReason,
 	RoomEvent,
 	Track,
-	parseParticipantMetadata
+	parseParticipantMetadata,
+	raisedHandQueue
 } from '../openvidu-components';
 import {
 	MeetingEventsService,
 	MeetSignal
 } from '../openvidu-components/services/meeting-events/meeting-events.service';
-import { toEmbeddedParticipantPayload, toParticipantRole } from '../utils/embedded-participant.utils';
+import {
+	toEmbeddedDepartedParticipant,
+	toEmbeddedParticipantInfo,
+	toEmbeddedParticipantPayload,
+	toParticipantRole
+} from '../utils/embedded-participant.utils';
 import { toMediaStatusChangedEvent } from '../utils/media-status-event.utils';
 import { hasReachedMeetingEnd, parseMeetingEndDate, parseMeetingStartDate } from '../utils/room-metadata.utils';
 import { MeetingContextService } from './meeting-context.service';
+import { MeetingHandService } from './meeting-hand.service';
 import { MeetingStateService } from './meeting-state.service';
+
+const HAND_NOTIFICATION_DURATION_MS = 5000;
+
+/** A raised hand the notice on screen announces. */
+interface AnnouncedHand {
+	identity: string;
+	name: string;
+}
+
+/** The raised-hand notice, and the hands it announces in the order they went up. */
+interface HandNotice {
+	id: number;
+	hands: AnnouncedHand[];
+}
 
 const RECORDING_STATUS_ORDER: Record<MeetRecordingStatus, number> = {
 	[MeetRecordingStatus.STARTING]: 0,
@@ -82,6 +110,7 @@ export class MeetingEventHandlerService {
 	protected localMedia = inject(LocalMediaService);
 	protected screenShare = inject(ScreenShareService);
 	protected meetingEndingSoon = inject(MeetingEndingSoonService);
+	protected meetingHand = inject(MeetingHandService);
 
 	/**
 	 * Role changes and permission signals each replace the room member token, so they are applied one
@@ -129,9 +158,16 @@ export class MeetingEventHandlerService {
 			this.onRemoteParticipantConnected(participant);
 		});
 
-		room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
-			this.onRemoteParticipantDisconnected(participant);
+		room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant, reason?: DisconnectReason) => {
+			this.onRemoteParticipantDisconnected(participant, reason);
 		});
+
+		room.on(
+			RoomEvent.ParticipantAttributesChanged,
+			(changedAttributes: Record<string, string>, participant: Participant) => {
+				this.handleParticipantAttributesChanged(changedAttributes, participant);
+			}
+		);
 
 		// What the join response brought and what changed while connecting landed before these listeners
 		// existed (LiveKit even seeds the room metadata silently), so the meeting's start and deadline and
@@ -162,6 +198,15 @@ export class MeetingEventHandlerService {
 	private mediaStatusLedger: Partial<Record<EmbeddedEventName, boolean>> = {};
 	// The furthest status each recording has reached in the current entry.
 	private recordingStatusLedger = new Map<string, MeetRecordingStatus>();
+	// A hand that goes up while the notice is on screen joins it; one that goes down or leaves drops out.
+	private handNotice?: HandNotice;
+
+	// The notice offers to lower the hand, so it goes when the permission to do that does.
+	private readonly handNoticePermissionEffect = effect(() => {
+		if (!this.roomMemberContextService.hasPermission('participantHandLower')) {
+			untracked(() => this.dismissHandNotice());
+		}
+	});
 	private meetingJoinedNotified = false;
 	// Whether the local participant's metadata said they were promoted to moderator, in the current entry.
 	private localPromotedModerator = false;
@@ -274,28 +319,32 @@ export class MeetingEventHandlerService {
 	/**
 	 * Forwards a remote participant's join to the host as a `participantJoined` event (embedded
 	 * modes only). Only live transitions are notified: participants already in the meeting when
-	 * the local one joins are not replayed.
+	 * the local one joins are not replayed. LiveKit announces a participant before it applies the
+	 * participant's info, in the same task, so the event is built a microtask later.
 	 */
 	protected onRemoteParticipantConnected(participant: RemoteParticipant): void {
 		if (!this.runtimeConfigService.isEmbeddedMode()) {
 			return;
 		}
 
-		this.eventBus.emit({
-			event: EmbeddedEventName.PARTICIPANT_JOINED,
-			payload: {
-				roomId: this.meetingContext.roomId() ?? '',
-				participant: toEmbeddedParticipantPayload(participant)
-			}
-		});
+		queueMicrotask(() =>
+			this.eventBus.emit({
+				event: EmbeddedEventName.PARTICIPANT_JOINED,
+				payload: {
+					roomId: this.meetingContext.roomId() ?? '',
+					participant: toEmbeddedParticipantPayload(participant)
+				}
+			})
+		);
 	}
 
 	/**
-	 * Forwards a remote participant's departure to the host as a `participantLeft` event (embedded
-	 * modes only). The departure reason is not part of the payload: it is only known server-side
-	 * and travels on the `participantLeft` webhook.
+	 * Drops a remote participant who leaves from the raised-hand notice, and forwards the departure
+	 * to the host as a `participantLeft` event (embedded modes only), with the reason LiveKit gives.
 	 */
-	protected onRemoteParticipantDisconnected(participant: RemoteParticipant): void {
+	protected onRemoteParticipantDisconnected(participant: RemoteParticipant, reason?: DisconnectReason): void {
+		this.withdrawHand(participant.identity);
+
 		if (!this.runtimeConfigService.isEmbeddedMode()) {
 			return;
 		}
@@ -304,7 +353,7 @@ export class MeetingEventHandlerService {
 			event: EmbeddedEventName.PARTICIPANT_LEFT,
 			payload: {
 				roomId: this.meetingContext.roomId() ?? '',
-				participant: toEmbeddedParticipantPayload(participant)
+				participant: toEmbeddedDepartedParticipant(participant, reason)
 			}
 		});
 	}
@@ -332,7 +381,134 @@ export class MeetingEventHandlerService {
 		for (const [recordingId, status] of this.recordingStatusLedger) {
 			this.eventBus.emit({ event: EmbeddedEventName.RECORDING_STATUS_CHANGED, payload: { recordingId, status } });
 		}
+
+		for (const participant of this.raisedHandQueue()) {
+			this.eventBus.emit(this.participantHandChangedEvent(participant, MeetEventOrigin.PARTICIPANT));
+		}
 	};
+
+	/**
+	 * Reacts to a hand going up or down. The attribute the server wrote says whether the hand is
+	 * raised and who lowered it, so a moderator lower reaches the affected participant, the holders
+	 * of `participantHandLower` and the host without any further exchange.
+	 */
+	private handleParticipantAttributesChanged(
+		changedAttributes: Record<string, string>,
+		participant: Participant
+	): void {
+		if (!(MeetParticipantAttribute.HAND_RAISE_DATE in changedAttributes)) return;
+
+		const raised = handRaiseDateOf(participant.attributes) !== undefined;
+		const origin = raised ? MeetEventOrigin.PARTICIPANT : handLoweredByOf(participant.attributes);
+
+		if (participant.isLocal) {
+			if (origin === MeetEventOrigin.MODERATOR) {
+				this.notificationService.showMessage(this.translateService.translate('HAND.LOWERED_BY_MODERATOR'));
+			}
+		} else if (!raised) {
+			this.withdrawHand(participant.identity);
+		} else if (this.roomMemberContextService.hasPermission('participantHandLower')) {
+			this.announceRaisedHand(participant);
+		}
+
+		if (!this.runtimeConfigService.isEmbeddedMode()) return;
+
+		this.eventBus.emit(this.participantHandChangedEvent(participant, origin));
+	}
+
+	private announceRaisedHand(participant: Participant): void {
+		this.soundService.playHandRaisedSound();
+		const earlier = this.shownHandNotice()?.hands.filter(({ identity }) => identity !== participant.identity);
+		const name = participant.name ?? participant.identity;
+		this.showHandNotice([...(earlier ?? []), { identity: participant.identity, name }]);
+	}
+
+	private withdrawHand(participantIdentity: string): void {
+		const hands = this.shownHandNotice()?.hands ?? [];
+
+		if (!hands.some(({ identity }) => identity === participantIdentity)) return;
+
+		this.showHandNotice(hands.filter(({ identity }) => identity !== participantIdentity));
+	}
+
+	/** The raised-hand notice while it is on screen: it times out, and the participant can close it. */
+	private shownHandNotice(): HandNotice | undefined {
+		const notice = this.handNotice;
+		return notice && this.notificationService.notifications().some(({ id }) => id === notice.id)
+			? notice
+			: undefined;
+	}
+
+	/** Shows the notice for these hands, rewriting the one on screen, or takes it away for none. */
+	private showHandNotice(hands: AnnouncedHand[]): void {
+		if (hands.length === 0) {
+			this.dismissHandNotice();
+			return;
+		}
+
+		const shown = this.shownHandNotice();
+		const options = this.handNoticeOptions(hands);
+
+		if (shown) {
+			this.notificationService.updateNotification(shown.id, options);
+		}
+
+		this.handNotice = { id: shown?.id ?? this.notificationService.showNotification(options), hands };
+	}
+
+	/** One hand is named, with the offer to lower it; several are the first one's name and how many more. */
+	private handNoticeOptions([first, ...others]: AnnouncedHand[]): NotificationOptions {
+		const notice = { kind: 'hand-raised', icon: 'front_hand', durationMs: HAND_NOTIFICATION_DURATION_MS };
+
+		if (others.length > 0) {
+			const params = { name: first.name, count: others.length };
+			return { ...notice, message: { key: 'HAND.RAISED_NOTIFICATION_MANY', params } };
+		}
+
+		return {
+			...notice,
+			message: { key: 'HAND.RAISED_NOTIFICATION', params: { name: first.name } },
+			action: {
+				label: { key: 'HAND.LOWER_PARTICIPANT' },
+				run: () =>
+					void this.meetingHand
+						.lower(first.identity)
+						.catch((error) => console.warn('The hand could not be lowered', error))
+			}
+		};
+	}
+
+	private dismissHandNotice(): void {
+		if (!this.handNotice) return;
+
+		this.notificationService.dismissNotification(this.handNotice.id);
+		this.handNotice = undefined;
+	}
+
+	/** Every raised hand in the meeting in queue order, read straight off the LiveKit participants. */
+	private raisedHandQueue(): Participant[] {
+		const room = this.meetingState.lkRoom();
+
+		if (!room) return [];
+
+		return raisedHandQueue([room.localParticipant, ...room.remoteParticipants.values()], (participant) =>
+			handRaiseDateOf(participant.attributes)
+		);
+	}
+
+	private participantHandChangedEvent(
+		participant: Participant,
+		origin: EmbeddedParticipantHandChangedEvent['payload']['origin']
+	): EmbeddedParticipantHandChangedEvent {
+		return {
+			event: EmbeddedEventName.PARTICIPANT_HAND_CHANGED,
+			payload: {
+				roomId: this.meetingContext.roomId() ?? '',
+				participant: toEmbeddedParticipantInfo(participant),
+				origin
+			}
+		};
+	}
 
 	/**
 	 * Maps the technical leave reason to a {@link LeftEventReason}, clears context, emits the
@@ -360,6 +536,7 @@ export class MeetingEventHandlerService {
 		// Per entry: the next one starts up again, against its own initial state.
 		this.mediaStatusLedger = {};
 		this.recordingStatusLedger.clear();
+		this.handNotice = undefined;
 		this.meetingJoinedNotified = false;
 		this.localPromotedModerator = false;
 
@@ -468,7 +645,7 @@ export class MeetingEventHandlerService {
 		if (this.runtimeConfigService.isEmbeddedMode()) {
 			this.eventBus.emit({
 				event: EmbeddedEventName.PARTICIPANT_ROLE_CHANGED,
-				payload: { roomId, participantIdentity: participant.identity, role }
+				payload: { roomId, participant: toEmbeddedParticipantInfo(participant) }
 			});
 		}
 	}

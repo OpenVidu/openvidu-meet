@@ -1,12 +1,27 @@
 import { TrackSource } from '@livekit/protocol';
-import type { MeetMeetingInfo, MeetParticipantInfo, MeetParticipantMuteOptions } from '@openvidu-meet/typings';
-import { MeetRoomMemberRole } from '@openvidu-meet/typings';
+import type {
+	MeetParticipantHandChangedPayload,
+	MeetMeetingInfo,
+	MeetParticipantInfo,
+	MeetParticipantMuteOptions
+} from '@openvidu-meet/typings';
+import {
+	loweredHandAttributes,
+	MeetEventOrigin,
+	MeetRoomMemberRole,
+	raisedHandAttributes
+} from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { ParticipantInfo, Room } from 'livekit-server-sdk';
+import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetParticipantHelper } from '../helpers/participant.helper.js';
+import { MeetLock } from '../helpers/redis.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import {
+	errorHandDisabled,
+	errorHandNotOwn,
+	errorHandUpdateInProgress,
 	errorNoActiveMeeting,
 	errorParticipantCannotBeMuted,
 	errorParticipantNotFound,
@@ -16,12 +31,15 @@ import { runConcurrently } from '../utils/concurrency.utils.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
+import { MutexService } from './mutex.service.js';
 import { RequestSessionService } from './request-session.service.js';
 import { RoomService } from './room.service.js';
+import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 
 /**
  * Exposes the live state of the meeting running in a room: the introspection surface of the
- * `meeting`/`participant` modules (`GET /meetings/{roomId}` and its participants sub-resource).
+ * `meeting`/`participant` modules (`GET /meetings/{roomId}` and its participants sub-resource) and
+ * the moderation of its participants.
  *
  * A meeting exists exactly as long as its LiveKit room does, so every method translates the room's
  * absence into a meeting-scoped 404.
@@ -33,7 +51,9 @@ export class MeetingService {
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(RoomService) protected roomService: RoomService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
-		@inject(RequestSessionService) protected requestSessionService: RequestSessionService
+		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
+		@inject(WebhookDispatcherService) protected webhookDispatcherService: WebhookDispatcherService,
+		@inject(MutexService) protected mutexService: MutexService
 	) {}
 
 	/**
@@ -88,13 +108,7 @@ export class MeetingService {
 	 * @throws A 404 error when the participant is not in the meeting (or no meeting is active)
 	 */
 	async getParticipant(roomId: string, participantIdentity: string): Promise<MeetParticipantInfo> {
-		const participant = await this.livekitService.getParticipant(roomId, participantIdentity);
-
-		// Hide LiveKit's internal participants (egress, agents) from the API surface.
-		if (!this.livekitService.isStandardParticipant(participant)) {
-			throw errorParticipantNotFound(participantIdentity, roomId);
-		}
-
+		const participant = await this.getStandardParticipant(roomId, participantIdentity);
 		return MeetParticipantHelper.toParticipantInfo(participant);
 	}
 
@@ -112,11 +126,7 @@ export class MeetingService {
 		participantIdentity: string,
 		media: MeetParticipantMuteOptions
 	): Promise<void> {
-		const participant = await this.livekitService.getParticipant(roomId, participantIdentity);
-
-		if (!this.livekitService.isStandardParticipant(participant)) {
-			throw errorParticipantNotFound(participantIdentity, roomId);
-		}
+		const participant = await this.getStandardParticipant(roomId, participantIdentity);
 
 		if (MeetParticipantHelper.extractRole(participant) === MeetRoomMemberRole.MODERATOR) {
 			throw errorParticipantCannotBeMuted(participantIdentity, roomId);
@@ -149,7 +159,7 @@ export class MeetingService {
 		const results = await runConcurrently(
 			targets,
 			(participant) => this.muteParticipantTracks(roomId, participant, media),
-			{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_MUTE_PARTICIPANTS }
+			{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_PARTICIPANT_UPDATES }
 		);
 		const failures = results.filter((result): result is PromiseRejectedResult => result.status === 'rejected');
 		const muted = targets
@@ -166,6 +176,113 @@ export class MeetingService {
 		if (muted.length > 0) {
 			await this.frontendEventService.sendParticipantMediaMutedSignal(roomId, muted, media);
 		}
+	}
+
+	/**
+	 * Raises or lowers a participant's hand in the meeting of a room. Only its owner raises a hand;
+	 * lowering someone else's is a moderator action, recorded as such in the attributes every client
+	 * renders from and in the `participantHandChanged` webhook. A hand already in the requested state is left
+	 * alone, so a repeated raise keeps its place in the queue.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param participantIdentity - The identity of the participant whose hand changes
+	 * @param raised - The requested hand state
+	 * @throws A 404 error when the participant is not in the meeting, a 409 when the caller raises
+	 * someone else's hand or another change to the same hand is still in progress, or a 403 when the
+	 * room has the feature disabled
+	 */
+	async updateParticipantHand(roomId: string, participantIdentity: string, raised: boolean): Promise<void> {
+		const own = participantIdentity === this.requestSessionService.getParticipantIdentity();
+
+		if (raised && !own) {
+			throw errorHandNotOwn(participantIdentity, roomId);
+		}
+
+		const room = await this.getActiveMeetingRoom(roomId);
+		const origin = own ? MeetEventOrigin.PARTICIPANT : MeetEventOrigin.MODERATOR;
+		await this.setHand(room, participantIdentity, raised, origin);
+	}
+
+	/**
+	 * Lowers every raised hand in the meeting of a room, as a moderator action. Best-effort like
+	 * {@link muteAllParticipants}: a participant that leaves while the updates are in flight is
+	 * reported as a warning instead of failing the whole operation.
+	 *
+	 * @param roomId - The ID of the room
+	 * @throws A 404 error when the room has no active meeting
+	 */
+	async lowerAllHands(roomId: string): Promise<void> {
+		const [room, participants] = await this.withActiveMeetingRoom(roomId, this.getStandardParticipants(roomId));
+		const raised = participants.filter((participant) => MeetParticipantHelper.isHandRaised(participant));
+		const results = await runConcurrently(
+			raised,
+			(participant) => this.setHand(room, participant.identity, false, MeetEventOrigin.MODERATOR),
+			{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_PARTICIPANT_UPDATES }
+		);
+		const failures = results.filter((result): result is PromiseRejectedResult => result.status === 'rejected');
+
+		if (failures.length > 0) {
+			this.logger.warn(`Failed to lower ${failures.length} hand(s) in room '${roomId}'`, failures[0].reason);
+		}
+	}
+
+	/**
+	 * Moves a hand to the requested state unless it is already there. The changes to one hand run one
+	 * at a time, so a request arriving while another is in flight reads the state that one leaves
+	 * instead of writing the same change a second time.
+	 */
+	protected async setHand(
+		room: Room,
+		participantIdentity: string,
+		raised: boolean,
+		origin: MeetParticipantHandChangedPayload['origin']
+	): Promise<void> {
+		const done = await this.mutexService.withRetryLock(
+			MeetLock.getHandLock(room.name, participantIdentity),
+			ms(INTERNAL_CONFIG.HAND_LOCK_TTL),
+			async () => {
+				const participant = await this.getStandardParticipant(room.name, participantIdentity);
+
+				if (raised === MeetParticipantHelper.isHandRaised(participant)) {
+					return true;
+				}
+
+				if (raised) {
+					await this.ensureHandEnabled(room.name);
+				}
+
+				await this.writeHand(room, participant, raised, origin);
+				return true;
+			}
+		);
+
+		if (!done) {
+			throw errorHandUpdateInProgress(participantIdentity, room.name);
+		}
+	}
+
+	protected async ensureHandEnabled(roomId: string): Promise<void> {
+		const { config } = await this.roomService.getMeetRoom(roomId, ['config']);
+
+		if (!config.raiseHand.enabled) {
+			throw errorHandDisabled(roomId);
+		}
+	}
+
+	/**
+	 * Writes the hand state into the participant's LiveKit attributes, which every client renders
+	 * from, and reports the change to the webhooks once LiveKit has acknowledged it.
+	 */
+	protected async writeHand(
+		room: Room,
+		participant: ParticipantInfo,
+		raised: boolean,
+		origin: MeetParticipantHandChangedPayload['origin']
+	): Promise<void> {
+		const attributes = raised ? raisedHandAttributes(Date.now()) : loweredHandAttributes(origin);
+		const updated = await this.livekitService.updateParticipant(room.name, participant.identity, { attributes });
+		const payload = await MeetParticipantHelper.toParticipantHandChangedPayload(room, updated, origin);
+		this.webhookDispatcherService.sendParticipantHandChangedWebhook(payload);
 	}
 
 	/**
@@ -258,6 +375,20 @@ export class MeetingService {
 	 */
 	async getStandardParticipants(roomId: string): Promise<ParticipantInfo[]> {
 		return this.livekitService.listStandardParticipants(roomId);
+	}
+
+	/**
+	 * Returns one participant of the meeting of a room, hiding LiveKit's internal participants
+	 * (egress, agents) behind the same 404 an absent participant gets.
+	 */
+	protected async getStandardParticipant(roomId: string, participantIdentity: string): Promise<ParticipantInfo> {
+		const participant = await this.livekitService.getParticipant(roomId, participantIdentity);
+
+		if (!this.livekitService.isStandardParticipant(participant)) {
+			throw errorParticipantNotFound(participantIdentity, roomId);
+		}
+
+		return participant;
 	}
 
 	/**

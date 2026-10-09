@@ -177,7 +177,9 @@ participantJoined:
     post:
         summary: Participant joined
         description: >
-            This webhook is triggered when a participant joins a meeting.
+            This webhook is triggered when a participant joins a meeting. The participant carries
+            no media state (`audioActive`, `videoActive`, `screenShareActive`) because its tracks
+            are not published yet at this point, so the values would not be reliable.
         operationId: participantJoinedWebhook
         parameters:
             - $ref: ./parameters/x-timestamp.yaml
@@ -203,7 +205,9 @@ participantLeft:
     post:
         summary: Participant left
         description: >
-            This webhook is triggered when a participant leaves a meeting.
+            This webhook is triggered when a participant leaves a meeting. The participant carries
+            no media state (`audioActive`, `videoActive`, `screenShareActive`) because its tracks
+            are already gone at this point, so the values would not be reliable.
         operationId: participantLeftWebhook
         parameters:
             - $ref: ./parameters/x-timestamp.yaml
@@ -248,6 +252,33 @@ participantRoleChanged:
                                       example: participantRoleChanged
                                   data:
                                       $ref: ./schemas/meet-participant-role-changed-event.yaml
+        responses:
+            '200':
+                $ref: ./responses/success/webhook-success.yaml
+
+participantHandChanged:
+    post:
+        summary: Participant hand changed
+        description: >
+            This webhook is triggered when a participant raises or lowers their hand, or a moderator
+            lowers it.
+        operationId: participantHandChangedWebhook
+        parameters:
+            - $ref: ./parameters/x-timestamp.yaml
+            - $ref: ./parameters/x-signature.yaml
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        allOf:
+                            - $ref: ./schemas/webhook-base-event.yaml
+                            - properties:
+                                  event:
+                                      example: participantHandChanged
+                                  data:
+                                      $ref: ./schemas/meet-participant-hand-changed-event.yaml
         responses:
             '200':
                 $ref: ./responses/success/webhook-success.yaml

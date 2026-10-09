@@ -1,6 +1,7 @@
 @if (_participant) {
 	<div
 		class="participant-container"
+		[class.hand-raised]="isHandRaised()"
 		[attr.data-participant-id]="_participant.sid"
 		[attr.data-participant-name]="participantDisplayName()"
 	>
@@ -23,6 +24,16 @@
 					[matTooltip]="'PANEL.PARTICIPANTS.MUTED_FOR_YOU' | translate"
 				>
 					<mat-icon class="material-symbols-outlined" fontIcon="volume_off" />
+				</span>
+			}
+
+			@if (isHandRaised()) {
+				<span
+					class="avatar-badge avatar-badge-hand"
+					[id]="'hand-badge-' + _participant.sid"
+					[matTooltip]="'HAND.RAISED_TOOLTIP' | translate"
+				>
+					<mat-icon class="material-symbols-outlined" fontIcon="front_hand" />
 				</span>
 			}
 		</div>
@@ -95,6 +106,18 @@
 					}
 					<ng-container *ngTemplateOutlet="participantPanelItemElementsTemplate()" />
 				</mat-menu>
+			} @else if (canLowerOwnHand()) {
+				<span class="media-slot" [matTooltip]="'HAND.LOWER' | translate">
+					<button
+						mat-icon-button
+						class="participant-menu-btn lower-own-hand-btn"
+						id="lower-own-hand-btn"
+						[attr.aria-label]="'HAND.LOWER' | translate"
+						(click)="requestHandLower()"
+					>
+						<mat-icon class="material-symbols-outlined" fontIcon="do_not_touch" />
+					</button>
+				</span>
 			} @else {
 				<div class="participant-menu-slot"></div>
 			}

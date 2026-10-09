@@ -2,8 +2,8 @@ MeetRoomConfig:
     type: object
     description: >
         Config of a room. A config update merges with the stored config, so an omitted top-level field keeps
-        its current value. The nested objects (`chat`, `recording`, `virtualBackground`, `e2ee`, `captions`)
-        merge field by field too, but each one requires its own `enabled` whenever it is sent at all: a
+        its current value. The nested objects (`chat`, `recording`, `virtualBackground`, `e2ee`, `captions`,
+        `raiseHand`) merge field by field too, but each one requires its own `enabled` whenever it is sent at all: a
         request that carries `recording` without `recording.enabled` is rejected with a `422`.
     properties:
         maxParticipants:
@@ -67,6 +67,9 @@ MeetRoomConfig:
         captions:
             $ref: '#/MeetCaptionsConfig'
             description: Config for live captions in the room.
+        raiseHand:
+            $ref: '#/MeetRaiseHandConfig'
+            description: Config for raising hands in the room.
 MeetChatConfig:
     type: object
     required:
@@ -168,6 +171,18 @@ MeetCaptionsConfig:
             description: >
                 If true, the room will have live captions enabled.<br/>
                 This allows participants to see real-time captions of the all participants' speech during the meeting.<br/>
+MeetRaiseHandConfig:
+    type: object
+    required:
+        - enabled
+    properties:
+        enabled:
+            type: boolean
+            default: true
+            example: true
+            description: >
+                If true, participants can raise their hand during the meeting. The server rejects a raise
+                while it is false.
 MeetRecordingEncodingPreset:
     type: string
     enum:

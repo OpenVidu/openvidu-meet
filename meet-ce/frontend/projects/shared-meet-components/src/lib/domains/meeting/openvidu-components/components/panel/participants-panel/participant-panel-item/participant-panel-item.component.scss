@@ -11,6 +11,12 @@
 		border-radius: var(--ov-surface-radius);
 		transition: background-color 0.15s ease-in-out;
 
+		// Mixed into the surface instead of laid over it, so the hand badge's ring can take the same colour.
+		&.hand-raised {
+			--hand-row-color: color-mix(in srgb, var(--ov-meet-hand-color) 12%, var(--ov-surface-color));
+			background-color: var(--hand-row-color);
+		}
+
 		// The row itself does nothing on click (only the buttons it holds do), so it carries no
 		// hover background. Focus-within stays: it's the only way a keyboard user sees which row
 		// their tab lands in.
@@ -20,7 +26,7 @@
 	}
 
 	// ── Avatar and its corner badges ────────────────────────────────────────────
-	// Both badges report something about the person rather than their media, which is why they live
+	// The badges report something about the person rather than their media, which is why they live
 	// here instead of costing a slot in the row.
 
 	.participant-avatar-slot {
@@ -52,6 +58,23 @@
 	.avatar-badge-muted {
 		left: -5px;
 		background-color: var(--ov-text-secondary-color);
+	}
+
+	.avatar-badge-hand {
+		top: -6px;
+		right: -6px;
+		bottom: auto;
+		width: 18px;
+		height: 18px;
+		background-color: var(--ov-meet-hand-color);
+		box-shadow: 0 0 0 2px var(--hand-row-color);
+
+		mat-icon {
+			font-size: 12px;
+			width: 12px;
+			height: 12px;
+			color: var(--ov-meet-text-on-hand);
+		}
 	}
 
 	// ── Name ────────────────────────────────────────────────────────────────────
@@ -176,6 +199,15 @@
 
 	.participant-menu-btn {
 		color: var(--ov-text-secondary-color);
+	}
+
+	.lower-own-hand-btn {
+		background-color: var(--ov-meet-hand-color);
+		color: var(--ov-meet-text-on-hand);
+
+		&:hover {
+			background-color: color-mix(in srgb, var(--ov-meet-hand-color) 85%, white 15%);
+		}
 	}
 
 	.participant-menu-slot {

@@ -5,6 +5,7 @@
 		[participant]="participant()"
 		[canMuteMedia]="ctx.canMuteMedia"
 		(mediaMuteRequested)="onMediaMuteRequested($event)"
+		(handLowerRequested)="onLowerOwnHandClick()"
 	>
 		<!-- Participant Badge -->
 		<ng-container *ovParticipantPanelParticipantBadge>
@@ -28,6 +29,18 @@
 		@if (ctx.showModerationControls) {
 			<ng-container *ovParticipantPanelItemElements>
 				<div class="moderation-controls" [attr.id]="'moderation-controls-' + participant().sid">
+					@if (ctx.showLowerHandButton) {
+						<button
+							mat-menu-item
+							(click)="onLowerHandClick()"
+							class="lower-hand-btn"
+							[attr.id]="'lower-hand-btn-' + participant().sid"
+						>
+							<mat-icon class="material-symbols-outlined">do_not_touch</mat-icon>
+							<span>{{ 'HAND.LOWER_PARTICIPANT' | translate }}</span>
+						</button>
+					}
+
 					@if (ctx.showMakeModeratorButton) {
 						<button
 							mat-menu-item

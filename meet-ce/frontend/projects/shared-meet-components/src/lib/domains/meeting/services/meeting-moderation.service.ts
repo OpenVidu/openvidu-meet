@@ -1,5 +1,9 @@
 import { inject, Service } from '@angular/core';
-import { MeetParticipantModerationAction, MeetParticipantMuteOptions } from '@openvidu-meet/typings';
+import {
+	MeetParticipantHandOptions,
+	MeetParticipantModerationAction,
+	MeetParticipantMuteOptions
+} from '@openvidu-meet/typings';
 import { HttpService } from '../../../shared/services/http.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 
@@ -63,6 +67,33 @@ export class MeetingModerationService {
 		const path = `${this.MEETINGS_API}/${roomId}/participants/media`;
 		await this.httpService.putRequest(path, media);
 		this.log.d(`Muted media of every participant in room '${roomId}'`);
+	}
+
+	/**
+	 * Raises or lowers a participant's hand. Only the local participant's own hand can be raised;
+	 * lowering another participant's hand requires the `participantHandLower` permission.
+	 *
+	 * @param roomId - The unique identifier of the meeting room
+	 * @param participantIdentity - The identity of the participant whose hand changes
+	 * @param raised - The requested hand state
+	 */
+	async updateParticipantHand(roomId: string, participantIdentity: string, raised: boolean): Promise<void> {
+		const path = `${this.MEETINGS_API}/${roomId}/participants/${participantIdentity}/hand`;
+		const body: MeetParticipantHandOptions = { raised };
+		await this.httpService.putRequest(path, body);
+		this.log.d(`Hand of participant '${participantIdentity}' ${raised ? 'raised' : 'lowered'} in room '${roomId}'`);
+	}
+
+	/**
+	 * Lowers every raised hand in the meeting.
+	 *
+	 * @param roomId - The unique identifier of the meeting room
+	 */
+	async lowerAllHands(roomId: string): Promise<void> {
+		const path = `${this.MEETINGS_API}/${roomId}/participants/hand`;
+		const body: MeetParticipantHandOptions = { raised: false };
+		await this.httpService.putRequest(path, body);
+		this.log.d(`Lowered every hand in room '${roomId}'`);
 	}
 
 	/**

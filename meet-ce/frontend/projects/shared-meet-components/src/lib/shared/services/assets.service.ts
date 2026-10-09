@@ -49,6 +49,11 @@ export class AssetsService {
 		return this.resolve('assets/sounds/role-downgraded.wav');
 	}
 
+	/** Notification played when a participant raises their hand. */
+	get handRaisedSound(): string {
+		return this.resolve('assets/sounds/hand-raised.wav');
+	}
+
 	/** Notification played when a chat message arrives. */
 	get chatMessageSound(): string {
 		return this.resolve('assets/sounds/chat-message.mp3');

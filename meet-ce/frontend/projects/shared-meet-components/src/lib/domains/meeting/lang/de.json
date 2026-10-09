@@ -278,6 +278,17 @@
 		"MODERATOR_ROLE_REMOVED": "Ihre Moderatorrolle wurde entfernt",
 		"PERMISSIONS_UPDATED": "Ihre Berechtigungen wurden aktualisiert"
 	},
+	"HAND": {
+		"RAISE": "Hand heben",
+		"LOWER": "Hand senken",
+		"RAISED_TOOLTIP": "Hand gehoben",
+		"RAISED_NOTIFICATION": "{name} hat die Hand gehoben",
+		"RAISED_NOTIFICATION_MANY": "{name} und {count} weitere haben die Hand gehoben",
+		"LOWER_PARTICIPANT": "Hand senken",
+		"LOWER_ALL": "Alle Hände senken",
+		"RAISED_COUNT": "Gehobene Hände",
+		"LOWERED_BY_MODERATOR": "Ein Moderator hat deine Hand gesenkt"
+	},
 	"END_MEETING": {
 		"LEFT_TITLE": "Sie haben das Meeting verlassen",
 		"LEFT_MESSAGE": "Sie haben das Meeting erfolgreich verlassen",

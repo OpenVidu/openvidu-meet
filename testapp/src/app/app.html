@@ -237,6 +237,7 @@
 								handleEmbeddedEvent('mediaScreenShareStatusChanged', $event)
 							"
 				(recordingStatusChanged)="handleEmbeddedEvent('recordingStatusChanged', $event)"
+				(participantHandChanged)="handleEmbeddedEvent('participantHandChanged', $event)"
 				data-testid="openvidu-meet"
 			></openvidu-meet>
 			} @case ('iframe') {

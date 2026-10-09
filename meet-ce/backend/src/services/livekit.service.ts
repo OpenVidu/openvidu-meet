@@ -306,27 +306,24 @@ export class LiveKitService {
 	}
 
 	/**
-	 * Updates a participant's metadata in a LiveKit room and, optionally, replaces their permission
-	 * grant at the same time. When `permission` is provided and it takes effect immediately without the participant reconnecting.
+	 * Updates a participant in a LiveKit room: their metadata, their permission grant and/or some of
+	 * their attributes. Every change takes effect immediately without the participant reconnecting,
+	 * and LiveKit delivers the new attributes to every client. An attribute set to an empty string is
+	 * removed; attributes not named are left as they are.
 	 *
 	 * @param roomName - The name of the room where the participant is located
 	 * @param participantIdentity - The identity of the participant to update
-	 * @param metadata - The new metadata to set for the participant
-	 * @param permission - Optional complete permission set to apply to the participant
+	 * @param update - The metadata, complete permission set and/or attributes to apply
 	 * @returns The updated participant as acknowledged by LiveKit
 	 * @throws An internal error if there is an issue updating the participant
 	 */
 	async updateParticipant(
 		roomName: string,
 		participantIdentity: string,
-		metadata: string,
-		permission?: Partial<ParticipantPermission>
+		update: { metadata?: string; permission?: Partial<ParticipantPermission>; attributes?: Record<string, string> }
 	): Promise<ParticipantInfo> {
 		try {
-			const participant = await this.lk.room.updateParticipant(roomName, participantIdentity, {
-				metadata,
-				permission
-			});
+			const participant = await this.lk.room.updateParticipant(roomName, participantIdentity, update);
 			this.logger.verbose(`Updated participant '${participantIdentity}' in room '${roomName}'`);
 			return participant;
 		} catch (error) {

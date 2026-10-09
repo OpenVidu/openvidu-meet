@@ -26,6 +26,7 @@ webhooks/webhooks.yaml:
     - '#/participantJoined/post'
     - '#/participantLeft/post'
     - '#/participantRoleChanged/post'
+    - '#/participantHandChanged/post'
 config/schemas/global-security-config.yaml:
   struct:
     - '#/AuthenticationConfig'

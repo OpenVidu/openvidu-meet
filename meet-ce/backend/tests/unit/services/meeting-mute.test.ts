@@ -12,8 +12,10 @@ import type { FrontendEventService } from '../../../src/services/frontend-event.
 import type { LiveKitService } from '../../../src/services/livekit.service.js';
 import type { LoggerService } from '../../../src/services/logger.service.js';
 import { MeetingService } from '../../../src/services/meeting.service.js';
+import type { MutexService } from '../../../src/services/mutex.service.js';
 import type { RequestSessionService } from '../../../src/services/request-session.service.js';
 import type { RoomService } from '../../../src/services/room.service.js';
+import type { WebhookDispatcherService } from '../../../src/services/webhook-dispatcher.service.js';
 
 /**
  * Which tracks a mute request reaches, who is exempt from it and who is told about it. The
@@ -82,7 +84,9 @@ describe('MeetingService mute', () => {
 			livekitService as unknown as LiveKitService,
 			{} as unknown as RoomService,
 			frontendEventService as unknown as FrontendEventService,
-			requestSessionService as unknown as RequestSessionService
+			requestSessionService as unknown as RequestSessionService,
+			{} as unknown as WebhookDispatcherService,
+			{} as unknown as MutexService
 		);
 	});
 

@@ -142,6 +142,10 @@
           "LABEL": "Silenciar participantes",
           "DESCRIPTION": "Permite apagar el micrófono, la cámara o la pantalla compartida de otros participantes"
         },
+        "participantHandLower": {
+          "LABEL": "Bajar manos",
+          "DESCRIPTION": "Permite bajar las manos levantadas de otros participantes, de una en una o todas a la vez"
+        },
         "roomShareAccessLinks": {
           "LABEL": "Compartir enlaces de acceso",
           "DESCRIPTION": "Permite compartir enlaces de invitación con otros"

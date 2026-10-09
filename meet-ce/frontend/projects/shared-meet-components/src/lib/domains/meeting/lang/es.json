@@ -278,6 +278,17 @@
 		"MODERATOR_ROLE_REMOVED": "Ya no tienes el rol de moderador",
 		"PERMISSIONS_UPDATED": "Tus permisos se han actualizado"
 	},
+	"HAND": {
+		"RAISE": "Levantar la mano",
+		"LOWER": "Bajar la mano",
+		"RAISED_TOOLTIP": "Mano levantada",
+		"RAISED_NOTIFICATION": "{name} ha levantado la mano",
+		"RAISED_NOTIFICATION_MANY": "{name} y {count} más han levantado la mano",
+		"LOWER_PARTICIPANT": "Bajar la mano",
+		"LOWER_ALL": "Bajar todas las manos",
+		"RAISED_COUNT": "Manos levantadas",
+		"LOWERED_BY_MODERATOR": "Un moderador ha bajado tu mano"
+	},
 	"END_MEETING": {
 		"LEFT_TITLE": "Has salido de la reunión",
 		"LEFT_MESSAGE": "Has salido de la reunión correctamente",

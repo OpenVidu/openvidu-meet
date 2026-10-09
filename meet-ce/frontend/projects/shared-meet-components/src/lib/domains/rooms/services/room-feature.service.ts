@@ -27,6 +27,7 @@ const DEFAULT_FEATURES: RoomFeatures = {
 	showBackgrounds: true,
 	showCaptionsControls: true,
 	showCaptionsControlsDisabled: false,
+	showRaiseHand: true,
 	showChat: true,
 	showChatInput: true,
 	showParticipantList: true,

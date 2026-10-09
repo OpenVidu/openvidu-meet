@@ -193,6 +193,39 @@
 		</div>
 	</section>
 
+	<section class="ta-card">
+		<div class="ta-card__header">
+			<h2>Raise hand</h2>
+			<span class="ta-hint">participantHandLower() uses the identity above, or the own hand</span>
+		</div>
+		<div class="ta-btn-row">
+			<button
+				id="participant-hand-raise-btn"
+				class="ta-btn ta-btn--grow"
+				data-testid="btn-participant-hand-raise"
+				(click)="commands.participantHandRaise()"
+			>
+				participantHandRaise()
+			</button>
+			<button
+				id="participant-hand-lower-btn"
+				class="ta-btn ta-btn--grow"
+				data-testid="btn-participant-hand-lower"
+				(click)="commands.participantHandLower()"
+			>
+				participantHandLower()
+			</button>
+			<button
+				id="participant-hand-lower-all-btn"
+				class="ta-btn ta-btn--danger"
+				data-testid="btn-participant-hand-lower-all"
+				(click)="commands.participantHandLowerAll()"
+			>
+				participantHandLowerAll()
+			</button>
+		</div>
+	</section>
+
 	<section class="ta-card" data-testid="section-event-api">
 		<div class="ta-card__header">
 			<h2>Listeners</h2>

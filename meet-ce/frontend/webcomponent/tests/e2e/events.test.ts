@@ -2,11 +2,14 @@ import {
 	EmbeddedEventName,
 	LeftEventReason,
 	MeetEventOrigin,
+	MeetParticipantJoinedPayload,
+	MeetParticipantLeftPayload,
 	MeetParticipantModerationAction,
 	MeetRecordingStatus,
-	MeetRoomMemberRole
+	MeetRoomMemberRole,
+	MeetWebhookEventType
 } from '@openvidu-meet/typings';
-import { expect, test } from '@playwright/test';
+import { expect, Locator, test } from '@playwright/test';
 import { INTEGRATIONS, meetLocator } from '../helpers/webcomponent.helper';
 import { createRoom, deleteRooms, updateParticipantRole, waitForMeetingParticipant } from '../helpers/meet-api.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
@@ -16,6 +19,8 @@ import {
 	eventPayloadField,
 	eventSequence,
 	expectEvent,
+	participantHandChangedLocator,
+	participantHandRaiseCommand,
 	joinedParticipantIdentity,
 	leaveMeeting,
 	leaveRoomCommand,
@@ -28,6 +33,7 @@ import {
 	participantUpdateRoleCommand,
 	recordingStatusLocator
 } from '../helpers/testapp.helper';
+import { getWebhookFromStorage } from '../helpers/ui-utils.helper';
 
 // Events carry the same names/payloads regardless of transport; run every spec
 // against both integrations, selecting the mode through the testapp's UI.
@@ -220,6 +226,57 @@ for (const integration of INTEGRATIONS) {
 			});
 		});
 
+		test.describe('PARTICIPANT_HAND_CHANGED Event', () => {
+			test('should replay the raised hands in queue order, after meetingJoined, to a participant who joins later', async ({
+				page,
+				browser
+			}) => {
+				const contexts = [];
+				const identities: string[] = [];
+
+				for (const name of ['First', 'Second']) {
+					const context = await browser.newContext();
+					const speakerPage = await context.newPage();
+					await openMeeting(speakerPage, roomId, { role: 'speaker', name });
+					const identity = await joinedParticipantIdentity(speakerPage);
+					await participantHandRaiseCommand(speakerPage);
+					await expect(participantHandChangedLocator(speakerPage, identity, true)).toHaveCount(1, {
+						timeout: 15_000
+					});
+					identities.push(identity);
+					contexts.push(context);
+				}
+
+				await openMeeting(page, roomId, { integration, role: 'speaker', name: 'Late' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				const hands = await expectEvent(page, EmbeddedEventName.PARTICIPANT_HAND_CHANGED, {
+					count: 2,
+					timeout: 15_000
+				});
+				await expect(hands.nth(0)).toContainText(identities[0]);
+				await expect(hands.nth(1)).toContainText(identities[1]);
+				const [first, second] = (await hands.allTextContents()).map(
+					(payload) => JSON.parse(payload).participant.handRaiseDate
+				);
+				expect(first).toBeLessThan(second);
+
+				const lifecycle = (await eventSequence(page)).filter(
+					(name) =>
+						name === EmbeddedEventName.MEETING_JOINED || name === EmbeddedEventName.PARTICIPANT_HAND_CHANGED
+				);
+				expect(lifecycle).toEqual([
+					EmbeddedEventName.MEETING_JOINED,
+					EmbeddedEventName.PARTICIPANT_HAND_CHANGED,
+					EmbeddedEventName.PARTICIPANT_HAND_CHANGED
+				]);
+
+				for (const context of contexts) {
+					await context.close();
+				}
+			});
+		});
+
 		test.describe('Event Sequences', () => {
 			test('should receive events in correct order: joined -> left', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
@@ -332,6 +389,21 @@ for (const integration of INTEGRATIONS) {
 				const left = await expectEvent(page, EmbeddedEventName.PARTICIPANT_LEFT);
 				await expect(left).toContainText(speakerName);
 				await expect(left).toContainText('crm-user_42');
+				await expect(left).toContainText(`"leaveReason":"${LeftEventReason.VOLUNTARY_LEAVE}"`);
+
+				// Each event carries the participant its webhook carries, minus what only the server knows.
+				const [joinedWebhook, leftWebhook] = await Promise.all([
+					getWebhookFromStorage(page, roomId, MeetWebhookEventType.PARTICIPANT_JOINED, { matchIndex: 1 }),
+					getWebhookFromStorage(page, roomId, MeetWebhookEventType.PARTICIPANT_LEFT)
+				]);
+				const eventParticipant = async (event: Locator) =>
+					JSON.parse((await event.textContent()) ?? '').participant;
+				expect(await eventParticipant(joined)).toEqual(
+					(joinedWebhook.data as MeetParticipantJoinedPayload).participant
+				);
+				expect((leftWebhook.data as MeetParticipantLeftPayload).participant).toMatchObject(
+					await eventParticipant(left)
+				);
 
 				await speakerContext.close();
 			});
@@ -359,6 +431,8 @@ for (const integration of INTEGRATIONS) {
 				await expect(roleChanged).toContainText(`"roomId":"${roomId}"`);
 				await expect(roleChanged).toContainText(`"participantIdentity":"${promotedIdentity}"`);
 				await expect(roleChanged).toContainText(`"role":"${MeetRoomMemberRole.MODERATOR}"`);
+				await expect(roleChanged).toContainText('"audioActive":');
+				await expect(roleChanged).toContainText('"handRaised":false');
 
 				await expect(eventLocator(moderatorPage, EmbeddedEventName.PARTICIPANT_ROLE_CHANGED)).toHaveCount(0);
 

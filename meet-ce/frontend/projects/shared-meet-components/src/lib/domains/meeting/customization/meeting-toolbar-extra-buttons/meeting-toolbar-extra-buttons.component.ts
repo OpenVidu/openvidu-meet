@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, HostListener, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -7,6 +7,7 @@ import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
+import { MeetingHandService } from '../../services/meeting-hand.service';
 import { MeetingToolbarCopyLinkButtonComponent } from '../meeting-toolbar-copy-link-button/meeting-toolbar-copy-link-button.component';
 import { LoggerService } from '../../../../shared/services/logger.service';
 
@@ -30,6 +31,7 @@ import { LoggerService } from '../../../../shared/services/logger.service';
 export class MeetingToolbarExtraButtonsComponent {
 	protected meetingContextService = inject(MeetingContextService);
 	protected captionService = inject(MeetingCaptionsService);
+	protected handService = inject(MeetingHandService);
 	protected runtimeConfigService = inject(RuntimeConfigService);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingToolbarExtraButtons');
@@ -56,6 +58,30 @@ export class MeetingToolbarExtraButtonsComponent {
 
 	/** Whether the toolbar is in its mobile layout, which puts these buttons in the More options menu */
 	isMobile = this.meetingContextService.isMobile;
+
+	/** Whether to show the raise hand button (the room has the feature on) */
+	showHandButton = computed(() => this.meetingContextService.meetingUI().showRaiseHand);
+	/** Whether the local participant's hand is raised */
+	isHandRaised = this.handService.localHandRaised;
+
+	/** `R` raises or lowers the hand once per press, unless the participant is typing somewhere. */
+	@HostListener('document:keydown.r', ['$event'])
+	onHandShortcut(event: Event): void {
+		const { repeat, target } = event as KeyboardEvent & { target: HTMLElement | null };
+		const typing = target?.isContentEditable || target?.matches('input, textarea');
+
+		if (repeat || typing || !this.showHandButton()) return;
+
+		void this.onHandClick();
+	}
+
+	async onHandClick(): Promise<void> {
+		try {
+			await this.handService.toggle();
+		} catch (error) {
+			this.log.e('Error toggling the hand:', error);
+		}
+	}
 
 	async onCaptionsClick(): Promise<void> {
 		if (this.isCaptionsTogglePending()) {

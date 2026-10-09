@@ -24,8 +24,17 @@ import { roomMigrations } from '../../../src/migrations/room-migrations.js';
 
 const roomV3ToV4 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 3, 4))!;
 const roomV4ToV5 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 4, 5))!;
+const roomV5ToV6 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 5, 6))!;
 const roomMemberV1ToV2 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 1, 2))!;
 const roomMemberV2ToV3 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 2, 3))!;
+const roomMemberV3ToV4 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 3, 4))!;
+
+// A permission set as stored right before a key was added: every current key but that one, granted.
+const currentPermissionsWithout = (missingKey: string) => {
+	const permissions = Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true]));
+	delete permissions[missingKey];
+	return permissions;
+};
 
 // A permission set as it was stored before the rename: every deprecated key, granted unless overridden.
 const legacyPermissions = (overrides: Partial<Record<MeetDeprecatedPermissionKey, boolean>> = {}) => {
@@ -86,6 +95,27 @@ describe('Room migration v4 → v5', () => {
 	});
 });
 
+describe('Room migration v5 → v6', () => {
+	it('should add the raise hand config and complete the roles with participantHandLower', () => {
+		const document = {
+			...roomDocument(
+				currentPermissionsWithout('participantHandLower'),
+				currentPermissionsWithout('participantHandLower')
+			),
+			config: { captions: { enabled: true } }
+		} as unknown as MeetRoomDocument;
+
+		const migrated = roomV5ToV6(document);
+
+		expect(migrated.config).toEqual({ captions: { enabled: true }, raiseHand: { enabled: true } });
+		expect(Object.keys(migrated.roles.moderator.permissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
+		// Lowering other people's hands is a moderation capability: an existing room gains it when
+		// someone edits its roles, not when it is migrated.
+		expect(migrated.roles.moderator.permissions.participantHandLower).toBe(false);
+		expect(migrated.roles.speaker.permissions.participantHandLower).toBe(false);
+	});
+});
+
 describe('Room member migration v1 → v2', () => {
 	it('should complete effectivePermissions, which the schema requires in full', () => {
 		const document = {
@@ -116,6 +146,20 @@ describe('Room member migration v1 → v2', () => {
 		} as unknown as MeetRoomMemberDocument;
 
 		expect(roomMemberV1ToV2(overriding).customPermissions).toEqual({ meetingJoin: false, meetingRead: false });
+	});
+});
+
+describe('Room member migration v3 → v4', () => {
+	it('should complete effectivePermissions with participantHandLower and leave the overlay alone', () => {
+		const migrated = roomMemberV3ToV4({
+			memberId: 'member-123',
+			customPermissions: { participantMute: true },
+			effectivePermissions: currentPermissionsWithout('participantHandLower')
+		} as unknown as MeetRoomMemberDocument);
+
+		expect(Object.keys(migrated.effectivePermissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
+		expect(migrated.effectivePermissions.participantHandLower).toBe(false);
+		expect(migrated.customPermissions).toStrictEqual({ participantMute: true });
 	});
 });
 

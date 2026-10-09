@@ -5,6 +5,7 @@ import { LoggerService } from '../../../../shared/services/logger.service';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { ParticipantDisplayProperties, ParticipantModel } from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
+import { MeetingHandService } from '../../services/meeting-hand.service';
 import { MeetingModerationService } from '../../services/meeting-moderation.service';
 import { MeetingParticipantItemContentComponent } from './meeting-participant-item-content.component';
 
@@ -57,10 +58,13 @@ describe('MeetingParticipantItemContentComponent', () => {
 	let fixture: ComponentFixture<MeetingParticipantItemContentComponent>;
 	let granted: Set<keyof MeetRoomMemberPermissions>;
 	let muteParticipant: MeetingModerationService['muteParticipant'];
+	let handService: jasmine.SpyObj<MeetingHandService>;
 
 	beforeEach(async () => {
 		granted = new Set<keyof MeetRoomMemberPermissions>();
 		muteParticipant = () => Promise.resolve();
+		handService = jasmine.createSpyObj<MeetingHandService>('MeetingHandService', ['lower']);
+		handService.lower.and.resolveTo();
 
 		await TestBed.configureTestingModule({
 			imports: [MeetingParticipantItemContentComponent],
@@ -76,6 +80,7 @@ describe('MeetingParticipantItemContentComponent', () => {
 					}
 				},
 				{ provide: MeetingContextService, useValue: { roomId: () => 'room-1' } },
+				{ provide: MeetingHandService, useValue: handService },
 				{
 					provide: MeetingModerationService,
 					useValue: {
@@ -184,5 +189,14 @@ describe('MeetingParticipantItemContentComponent', () => {
 
 			expect(muted).toEqual([{ audioActive: false }, { videoActive: false }, { screenShareActive: false }]);
 		});
+	});
+
+	// Your own hand is never gated: lowering it from your row needs no permission and names nobody.
+	it('lowers the own hand from the local row without any permission', async () => {
+		fixture.componentRef.setInput('participant', participantWith({ isLocal: true }));
+
+		await fixture.componentInstance.onLowerOwnHandClick();
+
+		expect(handService.lower).toHaveBeenCalledOnceWith();
 	});
 });

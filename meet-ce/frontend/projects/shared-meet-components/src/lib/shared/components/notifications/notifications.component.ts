@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, effect, inject, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import {
 	NotificationPlacement,
@@ -39,12 +39,25 @@ export class NotificationsComponent {
 	/** Which of the stacks this outlet renders. */
 	readonly placement = input<NotificationPlacement>('pinned');
 
-	protected readonly notifications = computed<NotificationView[]>(() =>
-		this.notificationService
+	/** Set on the corner stack {@link NotificationService} floats over every screen. */
+	readonly floating = input(false);
+
+	protected readonly notifications = computed<NotificationView[]>(() => {
+		if (this.floating() && this.notificationService.cornerStackHosted()) return [];
+
+		return this.notificationService
 			.notifications()
 			.filter((notification) => (notification.placement ?? 'corner') === this.placement())
-			.map((notification) => this.toView(notification))
-	);
+			.map((notification) => this.toView(notification));
+	});
+
+	constructor() {
+		effect((onCleanup) => {
+			if (this.placement() === 'corner' && !this.floating()) {
+				onCleanup(this.notificationService.hostCornerStack());
+			}
+		});
+	}
 
 	protected dismiss(id: number): void {
 		this.notificationService.dismissNotification(id);

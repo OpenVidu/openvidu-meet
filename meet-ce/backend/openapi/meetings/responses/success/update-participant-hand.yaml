@@ -1,0 +1,9 @@
+description: Successfully updated the participant's hand
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: Hand of participant 'Alice' raised in meeting in room 'room-123'

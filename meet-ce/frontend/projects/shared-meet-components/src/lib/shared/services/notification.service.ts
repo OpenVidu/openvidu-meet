@@ -1,6 +1,6 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { inject, Injector, Service, signal } from '@angular/core';
+import { computed, inject, Injector, Service, signal } from '@angular/core';
 import { NotificationsComponent } from '../components/notifications/notifications.component';
 import { NotificationOptions, NotificationText, ShownNotification } from '../models/notification.model';
 
@@ -29,12 +29,16 @@ export class NotificationService {
 	private cornerStack: OverlayRef | undefined;
 
 	private readonly _notifications = signal<ShownNotification[]>([]);
+	private readonly hostedCornerStacks = signal(0);
 
 	/**
 	 * The notifications currently on screen, oldest first. Rendered by the `ov-notifications` outlets,
 	 * each of which takes the ones stacked where it is.
 	 */
 	readonly notifications = this._notifications.asReadonly();
+
+	/** Whether a screen places the corner stack in its own layout, which the floating one then gives way to. */
+	readonly cornerStackHosted = computed(() => this.hostedCornerStacks() > 0);
 
 	/**
 	 * Shows a notification and returns its id, which the caller keeps to take it away again. One with
@@ -47,15 +51,21 @@ export class NotificationService {
 
 		const id = ++this.lastNotificationId;
 		this._notifications.update((notifications) => [...notifications, { ...options, id }]);
-
-		if (options.durationMs !== undefined) {
-			this.notificationTimers.set(
-				id,
-				setTimeout(() => this.dismissNotification(id), options.durationMs)
-			);
-		}
-
+		this.scheduleDismissal(id, options.durationMs);
 		return id;
+	}
+
+	/**
+	 * Rewrites a notification that is still on screen, where it stands in its stack, and starts its
+	 * time on screen over. One that is already gone stays gone.
+	 */
+	updateNotification(id: number, options: NotificationOptions): void {
+		if (!this._notifications().some((notification) => notification.id === id)) return;
+
+		this._notifications.update((notifications) =>
+			notifications.map((notification) => (notification.id === id ? { ...options, id } : notification))
+		);
+		this.scheduleDismissal(id, options.durationMs);
 	}
 
 	/** A line of text in the corner, for anything a screen has nowhere of its own to say. */
@@ -63,16 +73,32 @@ export class NotificationService {
 		return this.showNotification({ kind: 'message', icon: 'info', message, durationMs: MESSAGE_DURATION_MS });
 	}
 
+	/** Held by a corner outlet a screen places in its own layout, for as long as it is on screen. */
+	hostCornerStack(): () => void {
+		this.hostedCornerStacks.update((count) => count + 1);
+		return () => this.hostedCornerStacks.update((count) => count - 1);
+	}
+
 	/** Takes a notification away. Dismissing one that is already gone does nothing. */
 	dismissNotification(id: number): void {
-		const timer = this.notificationTimers.get(id);
-
-		if (timer !== undefined) {
-			clearTimeout(timer);
-			this.notificationTimers.delete(id);
-		}
-
+		this.cancelDismissal(id);
 		this._notifications.update((notifications) => notifications.filter((notification) => notification.id !== id));
+	}
+
+	private scheduleDismissal(id: number, durationMs: number | undefined): void {
+		this.cancelDismissal(id);
+
+		if (durationMs !== undefined) {
+			this.notificationTimers.set(
+				id,
+				setTimeout(() => this.dismissNotification(id), durationMs)
+			);
+		}
+	}
+
+	private cancelDismissal(id: number): void {
+		clearTimeout(this.notificationTimers.get(id));
+		this.notificationTimers.delete(id);
 	}
 
 	/**
@@ -86,8 +112,8 @@ export class NotificationService {
 			positionStrategy: this.overlay.position().global().top(CORNER_STACK_OFFSET).right(CORNER_STACK_OFFSET),
 			maxWidth: `min(${CORNER_STACK_MAX_WIDTH}, calc(100vw - 2 * ${CORNER_STACK_OFFSET}))`
 		});
-		this.cornerStack
-			.attach(new ComponentPortal(NotificationsComponent, null, this.injector))
-			.setInput('placement', 'corner');
+		const outlet = this.cornerStack.attach(new ComponentPortal(NotificationsComponent, null, this.injector));
+		outlet.setInput('placement', 'corner');
+		outlet.setInput('floating', true);
 	}
 }

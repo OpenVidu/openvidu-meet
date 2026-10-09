@@ -22,8 +22,17 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   demotes them back. Every promotion and demotion is reported as the
   [`participantRoleChanged`][3.10-participant-role-changed] webhook and as the embedded event of the same name to the
   affected participant.
+- Raise hand, in the meeting and through the REST API, the embedded commands `participantHandRaise`,
+  `participantHandLower` and `participantHandLowerAll` and the embedded event and webhook `participantHandChanged`,
+  with the `participantHandLower` permission to lower other participants' hands and the room config
+  `raiseHand.enabled` to turn it off.
 
 ### Improved
+
+#### Integration
+
+- The embedded event `participantLeft` carries the participant's `leaveReason`, the same one the
+  [`participantLeft`][3.9-participant-left] webhook carries.
 
 #### UI
 
@@ -45,6 +54,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - Two simultaneous [`participantRoleUpdate`][3.10-participant-role-update] requests for the same participant both
   succeeded, and a promotion made while the participant's token was being regenerated could be undone by it. Both
   now apply one after the other, so the second promotion answers `409`.
+- The `joinDate` of the embedded event `participantJoined` was the moment the join reached the browser, by the
+  browser's clock, and the one of `participantLeft` was rounded down to the second. Both now carry the `joinDate` of
+  the [`participantJoined`][3.9-participant-joined] webhook.
 
 #### UI
 
@@ -63,6 +75,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   English. They now follow the selected language.
 - In a narrow desktop browser window, the meeting toolbar overflowed the screen and hid some of its buttons. A window
   narrower than 768 px now gets the compact toolbar a phone gets.
+- The notifications in the top corner of a meeting covered the header of an open side panel, its close button
+  included. They now sit beside the panel, or below its header when the panel fills the screen.
 
 #### Deployment
 

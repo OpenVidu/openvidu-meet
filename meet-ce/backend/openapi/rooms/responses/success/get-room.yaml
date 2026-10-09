@@ -66,6 +66,8 @@ content:
                             enabled: false
                         captions:
                             enabled: true
+                        raiseHand:
+                            enabled: true
                     _extraFields:
                         - config
                         - roles
@@ -94,6 +96,8 @@ content:
                             enabled: false
                         captions:
                             enabled: true
+                        raiseHand:
+                            enabled: true
                     roles:
                         moderator:
                             permissions:
@@ -108,6 +112,7 @@ content:
                                 participantPromote: true
                                 participantKick: true
                                 participantMute: true
+                                participantHandLower: true
                                 meetingEnd: true
                                 mediaPublishVideo: true
                                 mediaPublishAudio: true
@@ -128,6 +133,7 @@ content:
                                 participantPromote: false
                                 participantKick: false
                                 participantMute: false
+                                participantHandLower: false
                                 meetingEnd: false
                                 mediaPublishVideo: true
                                 mediaPublishAudio: true

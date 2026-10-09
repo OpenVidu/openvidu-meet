@@ -470,6 +470,7 @@ describe('MeetingEventsService (the room events it binds to)', () => {
 				RoomEvent.ParticipantConnected,
 				RoomEvent.ParticipantDisconnected,
 				RoomEvent.ParticipantNameChanged,
+				RoomEvent.ParticipantAttributesChanged,
 				RoomEvent.TrackPublished,
 				RoomEvent.TrackSubscribed,
 				RoomEvent.TrackUnpublished,

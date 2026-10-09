@@ -278,6 +278,17 @@
 		"MODERATOR_ROLE_REMOVED": "您的主持人角色已被移除",
 		"PERMISSIONS_UPDATED": "您的权限已更新"
 	},
+	"HAND": {
+		"RAISE": "举手",
+		"LOWER": "放下手",
+		"RAISED_TOOLTIP": "已举手",
+		"RAISED_NOTIFICATION": "{name} 举手了",
+		"RAISED_NOTIFICATION_MANY": "{name} 和另外 {count} 人举手了",
+		"LOWER_PARTICIPANT": "放下手",
+		"LOWER_ALL": "放下所有手",
+		"RAISED_COUNT": "举手的参会者",
+		"LOWERED_BY_MODERATOR": "主持人已放下你的手"
+	},
 	"END_MEETING": {
 		"LEFT_TITLE": "您已离开会议",
 		"LEFT_MESSAGE": "您已成功离开会议",

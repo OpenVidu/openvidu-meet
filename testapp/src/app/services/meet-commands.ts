@@ -172,6 +172,34 @@ export class MeetCommandsService {
 		this.log.command('recordingStop', '()');
 	}
 
+	// ── Raise hand ──────────────────────────────────────────────────────────
+
+	participantHandRaise(): void {
+		this.dispatch(
+			() => this.iframeHost.participantHandRaise(),
+			(element) => element.participantHandRaise()
+		);
+		this.log.command('participantHandRaise', '()');
+	}
+
+	/** Lowers the hand of the participant identity above, or the own hand when it is empty. */
+	participantHandLower(): void {
+		const identity = this.participantIdentity().trim() || undefined;
+		this.dispatch(
+			() => this.iframeHost.participantHandLower(identity),
+			(element) => element.participantHandLower(identity)
+		);
+		this.log.command('participantHandLower', identity ? `("${identity}")` : '()');
+	}
+
+	participantHandLowerAll(): void {
+		this.dispatch(
+			() => this.iframeHost.participantHandLowerAll(),
+			(element) => element.participantHandLowerAll()
+		);
+		this.log.command('participantHandLowerAll', '()');
+	}
+
 	// ── Deprecated 3.8.0 spellings ──────────────────────────────────────────
 	// Same actions under the old names, so the e2e can prove a host that never
 	// migrates keeps working until 3.12.0.

@@ -1,19 +1,20 @@
 import { DisconnectReason, TrackSource } from '@livekit/protocol';
 import type {
+	MeetParticipantHandChangedPayload,
 	MeetParticipantDeparturePayload,
 	MeetParticipantInfo,
 	MeetParticipantJoinedPayload,
-	MeetParticipantLeaveReason,
 	MeetParticipantLeftPayload,
 	MeetParticipantPayload,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberTokenMetadata
 } from '@openvidu-meet/typings';
 import {
-	LeftEventReason,
+	handRaiseDateOf,
 	MeetRoomMemberRole,
 	MeetRoomMemberUIBadge,
-	normalizePermissions
+	normalizePermissions,
+	participantLeaveReasonOf
 } from '@openvidu-meet/typings';
 import type { ParticipantInfo, Room } from 'livekit-server-sdk';
 import { container } from '../config/dependency-injector.config.js';
@@ -77,6 +78,29 @@ export class MeetParticipantHelper {
 	}
 
 	/**
+	 * Builds the payload of the `participantHandChanged` webhook: the room, the participant's live snapshot,
+	 * which carries the new hand state, and who changed it.
+	 *
+	 * @param room - The LiveKit room the participant is in.
+	 * @param participant - The LiveKit participant whose hand changed, as acknowledged by LiveKit.
+	 * @param origin - Who changed it.
+	 */
+	static async toParticipantHandChangedPayload(
+		room: Room,
+		participant: ParticipantInfo,
+		origin: MeetParticipantHandChangedPayload['origin']
+	): Promise<MeetParticipantHandChangedPayload> {
+		const { roomId, roomName } = await MeetParticipantHelper.resolveRoomIdentity(room);
+
+		return {
+			roomId,
+			roomName,
+			participant: MeetParticipantHelper.toParticipantInfo(participant),
+			origin
+		};
+	}
+
+	/**
 	 * Converts a LiveKit participant into the payload the `participantLeft` webhook carries: the
 	 * join-time form extended with how and when the participant left.
 	 *
@@ -93,17 +117,13 @@ export class MeetParticipantHelper {
 			...participantPayload,
 			leaveDate,
 			durationSeconds: MeetParticipantHelper.extractDuration(participantPayload.joinDate, leaveDate),
-			leaveReason: MeetParticipantHelper.extractLeftReason(participant.disconnectReason)
+			leaveReason: participantLeaveReasonOf(DisconnectReason[participant.disconnectReason])
 		};
 	}
 
 	/**
-	 * Converts a LiveKit participant into the {@link MeetParticipantPayload} identity shape that
-	 * participant-level lifecycle surfaces (front events and webhooks) carry.
-	 *
-	 * The identity/correlation fields come from the Meet token metadata the participant joined
-	 * with. Live media state is deliberately not part of this shape: lifecycle events fire before
-	 * tracks are published (or after they are torn down) — see {@link toParticipantInfo}.
+	 * Converts a LiveKit participant into the identity-only {@link MeetParticipantPayload} of the
+	 * lifecycle events and webhooks, from the Meet token metadata the participant joined with.
 	 *
 	 * @param participant - The LiveKit participant to convert.
 	 */
@@ -122,16 +142,30 @@ export class MeetParticipantHelper {
 
 	/**
 	 * Converts a LiveKit participant into the live {@link MeetParticipantInfo} snapshot that
-	 * live-introspection surfaces serve: the lifecycle payload extended with the media state read
-	 * from the participant's currently published tracks.
+	 * live-introspection surfaces serve and state-change webhooks carry: the lifecycle payload
+	 * extended with the media state read from the participant's currently published tracks and the
+	 * hand state read from its attributes.
 	 *
 	 * @param participant - The LiveKit participant to convert.
 	 */
 	static toParticipantInfo(participant: ParticipantInfo): MeetParticipantInfo {
+		const handRaiseDate = handRaiseDateOf(participant.attributes);
+
 		return {
 			...MeetParticipantHelper.toParticipantPayload(participant),
-			...MeetParticipantHelper.extractMediaState(participant)
+			...MeetParticipantHelper.extractMediaState(participant),
+			handRaised: handRaiseDate !== undefined,
+			...(handRaiseDate !== undefined && { handRaiseDate })
 		};
+	}
+
+	/**
+	 * Whether a participant's hand is raised, read from the attributes the server writes.
+	 *
+	 * @param participant - The LiveKit participant to inspect.
+	 */
+	static isHandRaised(participant: ParticipantInfo): boolean {
+		return handRaiseDateOf(participant.attributes) !== undefined;
 	}
 
 	/**
@@ -182,38 +216,6 @@ export class MeetParticipantHelper {
 		if (joinDate <= 0) return 0;
 
 		return Math.max(0, Math.round((leaveDate - joinDate) / 1000));
-	}
-
-	/**
-	 * Maps the LiveKit disconnect reason of a participant_left event to the public reason the
-	 * `participantLeft` webhook carries.
-	 *
-	 * The backend cannot tell apart a meeting ended by the departing participant from one ended by
-	 * somebody else, so both map to `MEETING_ENDED`; that nuance is only available client-side.
-	 *
-	 * @param reason - The LiveKit disconnect reason.
-	 */
-	static extractLeftReason(reason: DisconnectReason): MeetParticipantLeaveReason {
-		switch (reason) {
-			case DisconnectReason.CLIENT_INITIATED:
-				return LeftEventReason.VOLUNTARY_LEAVE;
-			case DisconnectReason.SIGNAL_CLOSE:
-			case DisconnectReason.STATE_MISMATCH:
-			case DisconnectReason.CONNECTION_TIMEOUT:
-			case DisconnectReason.MEDIA_FAILURE:
-				return LeftEventReason.NETWORK_DISCONNECT;
-			case DisconnectReason.SERVER_SHUTDOWN:
-				return LeftEventReason.SERVER_SHUTDOWN;
-			case DisconnectReason.PARTICIPANT_REMOVED:
-				return LeftEventReason.PARTICIPANT_KICKED;
-			case DisconnectReason.ROOM_DELETED:
-			case DisconnectReason.ROOM_CLOSED:
-				return LeftEventReason.MEETING_ENDED;
-			case DisconnectReason.DUPLICATE_IDENTITY:
-				return LeftEventReason.DUPLICATE_IDENTITY;
-			default:
-				return LeftEventReason.UNKNOWN;
-		}
 	}
 
 	/**

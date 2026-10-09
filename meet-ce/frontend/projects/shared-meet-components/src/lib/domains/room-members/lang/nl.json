@@ -142,6 +142,10 @@
           "LABEL": "Deelnemers dempen",
           "DESCRIPTION": "Microfoon, camera of schermdeling van andere deelnemers uitschakelen toestaan"
         },
+        "participantHandLower": {
+          "LABEL": "Handen laten zakken",
+          "DESCRIPTION": "Laat opgestoken handen van andere deelnemers zakken, één voor één of allemaal tegelijk"
+        },
         "roomShareAccessLinks": {
           "LABEL": "Toegangslinks delen",
           "DESCRIPTION": "Uitnodigingslinks met anderen delen toestaan"

@@ -14,6 +14,7 @@ import {
 	ParticipantModel
 } from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
+import { MeetingHandService } from '../../services/meeting-hand.service';
 import { MeetingModerationService } from '../../services/meeting-moderation.service';
 import { LoggerService } from '../../../../shared/services/logger.service';
 
@@ -47,6 +48,7 @@ export class MeetingParticipantItemContentComponent {
 	protected meetingModerationService = inject(MeetingModerationService);
 	protected meetingContextService = inject(MeetingContextService);
 	protected roomMemberContextService = inject(RoomMemberContextService);
+	protected meetingHandService = inject(MeetingHandService);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingParticipantItemContent');
 
@@ -66,6 +68,7 @@ export class MeetingParticipantItemContentComponent {
 			showMakeModeratorButton: false,
 			showUnmakeModeratorButton: false,
 			showKickButton: false,
+			showLowerHandButton: false,
 			canMuteMedia: false
 		};
 
@@ -77,11 +80,14 @@ export class MeetingParticipantItemContentComponent {
 		const canMakeModerator = this.roomMemberContextService.hasPermission('participantPromote');
 		const canKickParticipants = this.roomMemberContextService.hasPermission('participantKick');
 		const canMuteParticipants = this.roomMemberContextService.hasPermission('participantMute');
+		const canLowerHands = this.roomMemberContextService.hasPermission('participantHandLower');
 
 		// If the user doesn't have any moderation permissions, no need to compute further.
-		if (!canMakeModerator && !canKickParticipants && !canMuteParticipants) {
+		if (!canMakeModerator && !canKickParticipants && !canMuteParticipants && !canLowerHands) {
 			return displayProperties;
 		}
+
+		displayProperties.showLowerHandButton = canLowerHands && participant.isHandRaised;
 
 		if (participant.isPromotedModerator()) {
 			// Show unmake-moderator and/or kick buttons if the user has the permission and this
@@ -101,11 +107,30 @@ export class MeetingParticipantItemContentComponent {
 
 		// Show the row menu's moderation section if any of its items should be shown.
 		displayProperties.showModerationControls =
+			displayProperties.showLowerHandButton ||
 			displayProperties.showMakeModeratorButton ||
 			displayProperties.showUnmakeModeratorButton ||
 			displayProperties.showKickButton;
 		return displayProperties;
 	});
+
+	async onLowerHandClick(): Promise<void> {
+		if (!this.roomMemberContextService.hasPermission('participantHandLower')) return;
+
+		try {
+			await this.meetingHandService.lower(this.participant().identity);
+		} catch (error) {
+			this.log.e('Error lowering the participant hand:', error);
+		}
+	}
+
+	async onLowerOwnHandClick(): Promise<void> {
+		try {
+			await this.meetingHandService.lower();
+		} catch (error) {
+			this.log.e('Error lowering the own hand:', error);
+		}
+	}
 
 	async onMakeModeratorClick(): Promise<void> {
 		if (!this.roomMemberContextService.hasPermission('participantPromote')) return;

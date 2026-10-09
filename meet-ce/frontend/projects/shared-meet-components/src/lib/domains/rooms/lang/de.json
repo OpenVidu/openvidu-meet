@@ -242,6 +242,8 @@
         "E2EE_RESTRICTION_RECORDING_SUFFIX": ", solange die Verschlüsselung aktiviert ist.",
         "CAPTIONS": "Live-Untertitel",
         "CAPTIONS_DESC": "Aktivieren Sie die Live-Transkription, um während des Meetings Untertitel anzuzeigen",
+        "HAND": "Hand heben",
+        "HAND_DESC": "Teilnehmende können die Hand heben, um sich zu Wort zu melden",
         "CHAT": "Chat",
         "CHAT_DESC": "Teilnehmern erlauben, während des Meetings Nachrichten zu senden",
         "VIRTUAL_BACKGROUNDS": "Virtuelle Hintergründe",
