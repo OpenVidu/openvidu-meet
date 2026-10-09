@@ -251,9 +251,11 @@ for (const integration of INTEGRATIONS) {
 					timeout: 15_000
 				});
 				await expect(hands.nth(0)).toContainText(identities[0]);
-				await expect(hands.nth(0)).toContainText('"queuePosition":1');
 				await expect(hands.nth(1)).toContainText(identities[1]);
-				await expect(hands.nth(1)).toContainText('"queuePosition":2');
+				const [first, second] = (await hands.allTextContents()).map(
+					(payload) => JSON.parse(payload).participant.handRaiseDate
+				);
+				expect(first).toBeLessThan(second);
 
 				const lifecycle = (await eventSequence(page)).filter(
 					(name) =>
@@ -383,6 +385,7 @@ for (const integration of INTEGRATIONS) {
 				const left = await expectEvent(page, EmbeddedEventName.PARTICIPANT_LEFT);
 				await expect(left).toContainText(speakerName);
 				await expect(left).toContainText('crm-user_42');
+				await expect(left).toContainText(`"leaveReason":"${LeftEventReason.VOLUNTARY_LEAVE}"`);
 
 				await speakerContext.close();
 			});
@@ -410,6 +413,8 @@ for (const integration of INTEGRATIONS) {
 				await expect(roleChanged).toContainText(`"roomId":"${roomId}"`);
 				await expect(roleChanged).toContainText(`"participantIdentity":"${promotedIdentity}"`);
 				await expect(roleChanged).toContainText(`"role":"${MeetRoomMemberRole.MODERATOR}"`);
+				await expect(roleChanged).toContainText('"audioActive":');
+				await expect(roleChanged).toContainText('"handRaised":false');
 
 				await expect(eventLocator(moderatorPage, EmbeddedEventName.PARTICIPANT_ROLE_CHANGED)).toHaveCount(0);
 

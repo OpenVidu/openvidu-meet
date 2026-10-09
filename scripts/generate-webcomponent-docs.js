@@ -17,28 +17,32 @@ class WebComponentDocGenerator {
     }
 
     /**
-     * Indexes the flat exported interfaces and the string enums of the typings package by name,
-     * rendered inline ("{ a?: false; b: string }" / "'x' | 'y'"), and each enum member by its
-     * qualified name ("Enum.MEMBER" / "'x'"). An interface whose body still
-     * contains braces after comment stripping is not indexed: a reference to it must fail the
-     * generation rather than render truncated.
+     * Indexes the exported interfaces, the string enums and the `Exclude<>` aliases of those enums of
+     * the typings package by name, rendered inline ("{ a?: false; b: string }" / "'x' | 'y'"), and
+     * each enum member by its qualified name ("Enum.MEMBER" / "'x'"). An interface carries the fields
+     * of the interfaces it extends. One whose body still contains braces after comment stripping, or
+     * that extends one of those, is not indexed: a reference to it must fail the generation rather
+     * than render truncated.
      */
     getTypeIndex() {
         if (this.typeIndex) return this.typeIndex;
 
         this.typeIndex = new Map();
+        this.interfaceFields = new Map();
+        const interfaces = new Map();
+        const exclusions = [];
 
         for (const file of this.collectTypingsFiles(this.typingsRoot)) {
             const content = fs.readFileSync(file, 'utf8')
                 .replace(/\/\*[\s\S]*?\*\//g, '')
                 .replace(/\/\/.*$/gm, '');
 
-            for (const match of content.matchAll(/export interface (\w+)(?:\s+extends\s+[^{]+)?\s*{([^{}]*)}/g)) {
-                const [, name, body] = match;
-                const props = [...body.matchAll(/(\w+\??)\s*:\s*([^;\n]+)/g)]
-                    .map(([, key, type]) => `${key}: ${type.trim()}`);
-
-                if (props.length > 0) this.typeIndex.set(name, `{ ${props.join('; ')} }`);
+            for (const match of content.matchAll(/export interface (\w+)(?:\s+extends\s+([^{]+))?\s*{([^{}]*)}/g)) {
+                const [, name, bases = '', body] = match;
+                interfaces.set(name, {
+                    bases: bases.split(',').map((base) => base.trim()).filter(Boolean),
+                    fields: [...body.matchAll(/(\w+\??)\s*:\s*([^;\n]+)/g)].map(([, key, type]) => [key, type.trim()])
+                });
             }
 
             for (const match of content.matchAll(/export enum (\w+)\s*{([^}]*)}/g)) {
@@ -49,9 +53,56 @@ class WebComponentDocGenerator {
 
                 if (members.length > 0) this.typeIndex.set(name, members.map(([, , value]) => `'${value}'`).join(' | '));
             }
+
+            for (const match of content.matchAll(/export type (\w+)\s*=\s*Exclude<\s*(\w+)\s*,([^>]+)>/g)) {
+                exclusions.push(match.slice(1));
+            }
+        }
+
+        for (const name of interfaces.keys()) {
+            const fields = this.resolveInterfaceFields(name, interfaces);
+
+            if (fields && fields.length > 0) {
+                this.interfaceFields.set(name, fields);
+                this.typeIndex.set(name, this.objectType(fields));
+            }
+        }
+
+        for (const [name, enumName, excluded] of exclusions) {
+            const removed = new Set(excluded.split('|').map((member) => this.typeIndex.get(member.trim())));
+            const values = (this.typeIndex.get(enumName) ?? '').split(' | ').filter((value) => value && !removed.has(value));
+
+            if (values.length > 0) this.typeIndex.set(name, values.join(' | '));
         }
 
         return this.typeIndex;
+    }
+
+    /**
+     * The `[name, type]` fields of an interface, those of the interfaces it extends first; a field it
+     * redeclares keeps the place the base gave it. `undefined` when the interface or a base cannot be
+     * read.
+     */
+    resolveInterfaceFields(name, interfaces) {
+        const declared = interfaces.get(name);
+        if (!declared) return undefined;
+
+        const fields = new Map();
+
+        for (const base of declared.bases) {
+            const baseFields = this.resolveInterfaceFields(base, interfaces);
+            if (!baseFields) return undefined;
+
+            for (const [key, type] of baseFields) fields.set(key.replace('?', ''), [key, type]);
+        }
+
+        for (const [key, type] of declared.fields) fields.set(key.replace('?', ''), [key, type]);
+
+        return [...fields.values()];
+    }
+
+    objectType(fields) {
+        return `{ ${fields.map(([key, type]) => `${key}: ${type}`).join('; ')} }`;
     }
 
     collectTypingsFiles(dir) {
@@ -64,9 +115,10 @@ class WebComponentDocGenerator {
 
     /**
      * Replaces every type name in `type` with its inline shape from the typings, recursively
-     * (an interface may reference an enum). A name that is neither a primitive nor resolvable
-     * aborts the generation: the published reference must never show a type it does not define.
-     * Union pipes are escaped because every rendering lands in a markdown table cell.
+     * (an interface may reference an enum), an `Omit<>` of an interface becoming its remaining
+     * fields. A name that is neither a primitive nor resolvable aborts the generation: the published
+     * reference must never show a type it does not define. Union pipes are escaped because every
+     * rendering lands in a markdown table cell.
      */
     resolveTypeNames(type, context) {
         const PRIMITIVES = new Set([
@@ -74,7 +126,15 @@ class WebComponentDocGenerator {
         ]);
         const index = this.getTypeIndex();
         const seen = new Set();
-        let resolved = type.replace(/\b\w+\.\w+\b/g, (member) => index.get(member) ?? member);
+        let resolved = type
+            .replace(/Omit<\s*(\w+)\s*,([^>]+)>/g, (omit, name, keys) => {
+                const fields = this.interfaceFields.get(name);
+                if (!fields) return omit;
+
+                const omitted = new Set([...keys.matchAll(/'([^']+)'/g)].map(([, key]) => key));
+                return this.objectType(fields.filter(([key]) => !omitted.has(key.replace('?', ''))));
+            })
+            .replace(/\b\w+\.\w+\b/g, (member) => index.get(member) ?? member);
         let changed = true;
 
         while (changed) {

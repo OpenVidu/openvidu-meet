@@ -29,6 +29,11 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 ### Improved
 
+#### Integration
+
+- The embedded event `participantLeft` carries the participant's `leaveReason`, the same one the
+  [`participantLeft`][3.9-participant-left] webhook carries.
+
 #### UI
 
 - The meeting settings panel takes the width of the other panels and groups its options in three tabs: Audio &

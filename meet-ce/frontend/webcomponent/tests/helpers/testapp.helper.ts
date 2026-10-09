@@ -519,7 +519,7 @@ export const eventPayloadField = async (event: Locator, field: string): Promise<
 export const participantHandChangedLocator = (page: Page, participantIdentity: string, raised: boolean): Locator =>
 	eventLocator(page, EmbeddedEventName.PARTICIPANT_HAND_CHANGED)
 		.filter({ hasText: `"participantIdentity":"${participantIdentity}"` })
-		.filter({ hasText: `"raised":${raised}` });
+		.filter({ hasText: `"handRaised":${raised}` });
 
 /** The `.event-recordingStatusChanged` markers carrying the given status. */
 export const recordingStatusLocator = (page: Page, status: MeetRecordingStatus): Locator =>

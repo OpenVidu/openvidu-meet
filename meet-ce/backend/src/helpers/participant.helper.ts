@@ -4,7 +4,6 @@ import type {
 	MeetParticipantDeparturePayload,
 	MeetParticipantInfo,
 	MeetParticipantJoinedPayload,
-	MeetParticipantLeaveReason,
 	MeetParticipantLeftPayload,
 	MeetParticipantPayload,
 	MeetRoomMemberPermissions,
@@ -12,10 +11,10 @@ import type {
 } from '@openvidu-meet/typings';
 import {
 	handRaiseDateOf,
-	LeftEventReason,
 	MeetRoomMemberRole,
 	MeetRoomMemberUIBadge,
-	normalizePermissions
+	normalizePermissions,
+	participantLeaveReasonOf
 } from '@openvidu-meet/typings';
 import type { ParticipantInfo, Room } from 'livekit-server-sdk';
 import { container } from '../config/dependency-injector.config.js';
@@ -118,7 +117,7 @@ export class MeetParticipantHelper {
 			...participantPayload,
 			leaveDate,
 			durationSeconds: MeetParticipantHelper.extractDuration(participantPayload.joinDate, leaveDate),
-			leaveReason: MeetParticipantHelper.extractLeftReason(participant.disconnectReason)
+			leaveReason: participantLeaveReasonOf(DisconnectReason[participant.disconnectReason])
 		};
 	}
 
@@ -217,38 +216,6 @@ export class MeetParticipantHelper {
 		if (joinDate <= 0) return 0;
 
 		return Math.max(0, Math.round((leaveDate - joinDate) / 1000));
-	}
-
-	/**
-	 * Maps the LiveKit disconnect reason of a participant_left event to the public reason the
-	 * `participantLeft` webhook carries.
-	 *
-	 * The backend cannot tell apart a meeting ended by the departing participant from one ended by
-	 * somebody else, so both map to `MEETING_ENDED`; that nuance is only available client-side.
-	 *
-	 * @param reason - The LiveKit disconnect reason.
-	 */
-	static extractLeftReason(reason: DisconnectReason): MeetParticipantLeaveReason {
-		switch (reason) {
-			case DisconnectReason.CLIENT_INITIATED:
-				return LeftEventReason.VOLUNTARY_LEAVE;
-			case DisconnectReason.SIGNAL_CLOSE:
-			case DisconnectReason.STATE_MISMATCH:
-			case DisconnectReason.CONNECTION_TIMEOUT:
-			case DisconnectReason.MEDIA_FAILURE:
-				return LeftEventReason.NETWORK_DISCONNECT;
-			case DisconnectReason.SERVER_SHUTDOWN:
-				return LeftEventReason.SERVER_SHUTDOWN;
-			case DisconnectReason.PARTICIPANT_REMOVED:
-				return LeftEventReason.PARTICIPANT_KICKED;
-			case DisconnectReason.ROOM_DELETED:
-			case DisconnectReason.ROOM_CLOSED:
-				return LeftEventReason.MEETING_ENDED;
-			case DisconnectReason.DUPLICATE_IDENTITY:
-				return LeftEventReason.DUPLICATE_IDENTITY;
-			default:
-				return LeftEventReason.UNKNOWN;
-		}
 	}
 
 	/**

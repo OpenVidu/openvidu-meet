@@ -8,6 +8,7 @@ import {
 	MeetEventOrigin,
 	MeetRoomMemberRole,
 	MeetRoomMemberUIBadge,
+	participantLeaveReasonOf,
 	raisedHandAttributes
 } from '@openvidu-meet/typings';
 import type { ParticipantInfo } from 'livekit-server-sdk';
@@ -203,11 +204,11 @@ describe('MeetParticipantHelper.extractDuration', () => {
 	});
 });
 
-describe('MeetParticipantHelper.extractLeftReason', () => {
+describe('participantLeaveReasonOf', () => {
+	const leaveReasonOf = (reason: DisconnectReason) => participantLeaveReasonOf(DisconnectReason[reason]);
+
 	it('maps a deliberate client disconnect to a voluntary leave', () => {
-		expect(MeetParticipantHelper.extractLeftReason(DisconnectReason.CLIENT_INITIATED)).toBe(
-			LeftEventReason.VOLUNTARY_LEAVE
-		);
+		expect(leaveReasonOf(DisconnectReason.CLIENT_INITIATED)).toBe(LeftEventReason.VOLUNTARY_LEAVE);
 	});
 
 	it('maps every transport-level failure to a network disconnect', () => {
@@ -219,42 +220,35 @@ describe('MeetParticipantHelper.extractLeftReason', () => {
 		];
 
 		for (const reason of networkFailures) {
-			expect(MeetParticipantHelper.extractLeftReason(reason)).toBe(LeftEventReason.NETWORK_DISCONNECT);
+			expect(leaveReasonOf(reason)).toBe(LeftEventReason.NETWORK_DISCONNECT);
 		}
 	});
 
 	it('maps a removal to a kick and a room teardown to a meeting end', () => {
-		expect(MeetParticipantHelper.extractLeftReason(DisconnectReason.PARTICIPANT_REMOVED)).toBe(
-			LeftEventReason.PARTICIPANT_KICKED
-		);
-		expect(MeetParticipantHelper.extractLeftReason(DisconnectReason.ROOM_DELETED)).toBe(
-			LeftEventReason.MEETING_ENDED
-		);
-		expect(MeetParticipantHelper.extractLeftReason(DisconnectReason.ROOM_CLOSED)).toBe(
-			LeftEventReason.MEETING_ENDED
-		);
+		expect(leaveReasonOf(DisconnectReason.PARTICIPANT_REMOVED)).toBe(LeftEventReason.PARTICIPANT_KICKED);
+		expect(leaveReasonOf(DisconnectReason.ROOM_DELETED)).toBe(LeftEventReason.MEETING_ENDED);
+		expect(leaveReasonOf(DisconnectReason.ROOM_CLOSED)).toBe(LeftEventReason.MEETING_ENDED);
 	});
 
 	it('maps the remaining reasons to their own value or to unknown', () => {
-		expect(MeetParticipantHelper.extractLeftReason(DisconnectReason.SERVER_SHUTDOWN)).toBe(
-			LeftEventReason.SERVER_SHUTDOWN
-		);
-		expect(MeetParticipantHelper.extractLeftReason(DisconnectReason.DUPLICATE_IDENTITY)).toBe(
-			LeftEventReason.DUPLICATE_IDENTITY
-		);
+		expect(leaveReasonOf(DisconnectReason.SERVER_SHUTDOWN)).toBe(LeftEventReason.SERVER_SHUTDOWN);
+		expect(leaveReasonOf(DisconnectReason.DUPLICATE_IDENTITY)).toBe(LeftEventReason.DUPLICATE_IDENTITY);
 		// Reasons Meet has no public equivalent for must degrade, never leak a raw LiveKit value.
-		expect(MeetParticipantHelper.extractLeftReason(DisconnectReason.UNKNOWN_REASON)).toBe(LeftEventReason.UNKNOWN);
-		expect(MeetParticipantHelper.extractLeftReason(DisconnectReason.MIGRATION)).toBe(LeftEventReason.UNKNOWN);
+		expect(leaveReasonOf(DisconnectReason.UNKNOWN_REASON)).toBe(LeftEventReason.UNKNOWN);
+		expect(leaveReasonOf(DisconnectReason.MIGRATION)).toBe(LeftEventReason.UNKNOWN);
+	});
+
+	// livekit-client reports no reason for a participant it drops while reconnecting itself.
+	it('reports unknown when LiveKit gives no reason', () => {
+		expect(participantLeaveReasonOf(undefined)).toBe(LeftEventReason.UNKNOWN);
 	});
 
 	it('never produces the client-only reasons: no disconnect reason says who ended the meeting, or that time did', () => {
 		const everyDisconnectReason = Object.values(DisconnectReason).filter(
 			(value): value is DisconnectReason => typeof value === 'number'
 		);
-		// Widened on purpose: the narrow return type of extractLeftReason would reject the lookup below
-		const reachable: Set<LeftEventReason> = new Set(
-			everyDisconnectReason.map((reason) => MeetParticipantHelper.extractLeftReason(reason))
-		);
+		// Widened on purpose: the narrow return type of participantLeaveReasonOf would reject the lookup below
+		const reachable: Set<LeftEventReason> = new Set(everyDisconnectReason.map((reason) => leaveReasonOf(reason)));
 
 		expect(reachable.has(LeftEventReason.MEETING_ENDED_BY_SELF)).toBe(false);
 		expect(reachable.has(LeftEventReason.MEETING_ENDED_BY_DURATION_LIMIT)).toBe(false);

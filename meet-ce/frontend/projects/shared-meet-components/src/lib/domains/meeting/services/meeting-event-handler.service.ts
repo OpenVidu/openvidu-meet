@@ -28,6 +28,7 @@ import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
 import type {
+	DisconnectReason,
 	LocalParticipant,
 	Participant,
 	ParticipantLeftEvent,
@@ -51,7 +52,12 @@ import {
 	MeetingEventsService,
 	MeetSignal
 } from '../openvidu-components/services/meeting-events/meeting-events.service';
-import { toEmbeddedParticipantPayload, toParticipantRole } from '../utils/embedded-participant.utils';
+import {
+	toEmbeddedDepartedParticipant,
+	toEmbeddedParticipantInfo,
+	toEmbeddedParticipantPayload,
+	toParticipantRole
+} from '../utils/embedded-participant.utils';
 import { toMediaStatusChangedEvent } from '../utils/media-status-event.utils';
 import { hasReachedMeetingEnd, parseMeetingEndDate, parseMeetingStartDate } from '../utils/room-metadata.utils';
 import { MeetingContextService } from './meeting-context.service';
@@ -152,8 +158,8 @@ export class MeetingEventHandlerService {
 			this.onRemoteParticipantConnected(participant);
 		});
 
-		room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
-			this.onRemoteParticipantDisconnected(participant);
+		room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant, reason?: DisconnectReason) => {
+			this.onRemoteParticipantDisconnected(participant, reason);
 		});
 
 		room.on(
@@ -331,10 +337,9 @@ export class MeetingEventHandlerService {
 
 	/**
 	 * Drops a remote participant who leaves from the raised-hand notice, and forwards the departure
-	 * to the host as a `participantLeft` event (embedded modes only). The departure reason is not part
-	 * of the payload: it is only known server-side and travels on the `participantLeft` webhook.
+	 * to the host as a `participantLeft` event (embedded modes only), with the reason LiveKit gives.
 	 */
-	protected onRemoteParticipantDisconnected(participant: RemoteParticipant): void {
+	protected onRemoteParticipantDisconnected(participant: RemoteParticipant, reason?: DisconnectReason): void {
 		this.withdrawHand(participant.identity);
 
 		if (!this.runtimeConfigService.isEmbeddedMode()) {
@@ -345,7 +350,7 @@ export class MeetingEventHandlerService {
 			event: EmbeddedEventName.PARTICIPANT_LEFT,
 			payload: {
 				roomId: this.meetingContext.roomId() ?? '',
-				participant: toEmbeddedParticipantPayload(participant)
+				participant: toEmbeddedDepartedParticipant(participant, reason)
 			}
 		});
 	}
@@ -374,11 +379,9 @@ export class MeetingEventHandlerService {
 			this.eventBus.emit({ event: EmbeddedEventName.RECORDING_STATUS_CHANGED, payload: { recordingId, status } });
 		}
 
-		this.raisedHandQueue().forEach((participant, index) =>
-			this.eventBus.emit(
-				this.participantHandChangedEvent(participant, true, MeetEventOrigin.PARTICIPANT, index + 1)
-			)
-		);
+		for (const participant of this.raisedHandQueue()) {
+			this.eventBus.emit(this.participantHandChangedEvent(participant, MeetEventOrigin.PARTICIPANT));
+		}
 	};
 
 	/**
@@ -407,11 +410,7 @@ export class MeetingEventHandlerService {
 
 		if (!this.runtimeConfigService.isEmbeddedMode()) return;
 
-		const queuePosition =
-			this.raisedHandQueue().findIndex((queued) => queued.identity === participant.identity) + 1;
-		this.eventBus.emit(
-			this.participantHandChangedEvent(participant, raised, origin, raised ? queuePosition : undefined)
-		);
+		this.eventBus.emit(this.participantHandChangedEvent(participant, origin));
 	}
 
 	private announceRaisedHand(participant: Participant): void {
@@ -496,17 +495,13 @@ export class MeetingEventHandlerService {
 
 	private participantHandChangedEvent(
 		participant: Participant,
-		raised: boolean,
-		origin: EmbeddedParticipantHandChangedEvent['payload']['origin'],
-		queuePosition: number | undefined
+		origin: EmbeddedParticipantHandChangedEvent['payload']['origin']
 	): EmbeddedParticipantHandChangedEvent {
 		return {
 			event: EmbeddedEventName.PARTICIPANT_HAND_CHANGED,
 			payload: {
 				roomId: this.meetingContext.roomId() ?? '',
-				participant: toEmbeddedParticipantPayload(participant),
-				raised,
-				...(queuePosition !== undefined && { queuePosition }),
+				participant: toEmbeddedParticipantInfo(participant),
 				origin
 			}
 		};
@@ -647,7 +642,7 @@ export class MeetingEventHandlerService {
 		if (this.runtimeConfigService.isEmbeddedMode()) {
 			this.eventBus.emit({
 				event: EmbeddedEventName.PARTICIPANT_ROLE_CHANGED,
-				payload: { roomId, participantIdentity: participant.identity, role }
+				payload: { roomId, participant: toEmbeddedParticipantInfo(participant) }
 			});
 		}
 	}

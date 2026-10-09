@@ -1,7 +1,17 @@
-import type { MeetParticipantPayload } from '@openvidu-meet/typings';
-import { MeetRoomMemberRole, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
+import type {
+	EmbeddedEventName,
+	EmbeddedEventPayloadFor,
+	MeetParticipantInfo,
+	MeetParticipantPayload
+} from '@openvidu-meet/typings';
+import {
+	handRaiseDateOf,
+	MeetRoomMemberRole,
+	MeetRoomMemberUIBadge,
+	participantLeaveReasonOf
+} from '@openvidu-meet/typings';
 import type { Participant } from '../openvidu-components';
-import { parseParticipantMetadata } from '../openvidu-components';
+import { DisconnectReason, parseParticipantMetadata } from '../openvidu-components';
 
 export const toParticipantRole = (badge: MeetRoomMemberUIBadge | undefined): MeetRoomMemberRole =>
 	!badge || badge === MeetRoomMemberUIBadge.OTHER ? MeetRoomMemberRole.SPEAKER : MeetRoomMemberRole.MODERATOR;
@@ -26,3 +36,41 @@ export const toEmbeddedParticipantPayload = (participant: Participant): MeetPart
 		joinDate: participant.joinedAt?.getTime() ?? 0
 	};
 };
+
+/**
+ * Builds the live {@link MeetParticipantInfo} snapshot of a participant, the client-side twin of the
+ * backend's `MeetParticipantHelper.toParticipantInfo()`: its media state read from its published
+ * tracks and its hand from the attributes the server writes.
+ *
+ * @param participant - The LiveKit participant to convert.
+ */
+export const toEmbeddedParticipantInfo = (participant: Participant): MeetParticipantInfo => {
+	const handRaiseDate = handRaiseDateOf(participant.attributes);
+
+	return {
+		...toEmbeddedParticipantPayload(participant),
+		audioActive: participant.isMicrophoneEnabled,
+		videoActive: participant.isCameraEnabled,
+		screenShareActive: participant.isScreenShareEnabled,
+		handRaised: handRaiseDate !== undefined,
+		...(handRaiseDate !== undefined && { handRaiseDate })
+	};
+};
+
+/**
+ * Builds the participant of the embedded `participantLeft` event: the lifecycle shape plus why they
+ * left, mapped from the reason LiveKit gives every client the same way the `participantLeft` webhook
+ * maps it.
+ *
+ * @param participant - The LiveKit participant that left.
+ * @param disconnectReason - The reason LiveKit gave, absent when it gave none.
+ */
+export const toEmbeddedDepartedParticipant = (
+	participant: Participant,
+	disconnectReason: DisconnectReason | undefined
+): EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_LEFT>['participant'] => ({
+	...toEmbeddedParticipantPayload(participant),
+	leaveReason: participantLeaveReasonOf(
+		disconnectReason === undefined ? undefined : DisconnectReason[disconnectReason]
+	)
+});

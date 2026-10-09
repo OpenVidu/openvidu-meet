@@ -1,6 +1,6 @@
 import { MeetRecordingStatus } from '../database/recording.entity.js';
-import { MeetRoomMemberRole } from '../database/room-member.entity.js';
-import { MeetParticipantPayload } from '../response/participant-response.js';
+import { MeetParticipantInfo, MeetParticipantPayload } from '../response/participant-response.js';
+import type { MeetParticipantDeparturePayload } from '../webhook.js';
 
 /**
  * All available events that can be emitted by the embedded OpenVidu Meet application.
@@ -42,7 +42,8 @@ export enum EmbeddedEventName {
 	/**
 	 * Event emitted to every participant when a participant's hand is raised or lowered, by
 	 * themselves or by a moderator. A participant joining a meeting with raised hands receives one
-	 * event per raised hand, in queue order, right after `meetingJoined`.
+	 * event per raised hand, in queue order, right after `meetingJoined`. The queue is ordered by
+	 * `participant.handRaiseDate`.
 	 */
 	PARTICIPANT_HAND_CHANGED = 'participantHandChanged',
 	/**
@@ -164,35 +165,31 @@ export interface EmbeddedEventPayloads {
 	};
 	/**
 	 * Payload for the {@link EmbeddedEventName.PARTICIPANT_LEFT} event.
-	 *
-	 * It carries no departure reason: the authoritative one is only known server-side and travels
-	 * on the `participantLeft` webhook, while the departed participant's own client receives it
-	 * through its local `meetingLeft` event.
+	 * `participant.leaveReason` is why the participant left, the same value the `participantLeft`
+	 * webhook carries. When they left and how long they stayed are on the webhook alone: each client
+	 * would tell them by its own clock.
 	 */
 	[EmbeddedEventName.PARTICIPANT_LEFT]: {
 		roomId: string;
-		participant: MeetParticipantPayload;
+		participant: Omit<MeetParticipantDeparturePayload, 'leaveDate' | 'durationSeconds'>;
 	};
 	/**
 	 * Payload for the {@link EmbeddedEventName.PARTICIPANT_ROLE_CHANGED} event.
-	 * `role` is the local participant's new role (see {@link MeetRoomMemberRole}).
+	 * `participant` is the local participant with the role now in effect (see {@link MeetParticipantInfo}).
 	 */
 	[EmbeddedEventName.PARTICIPANT_ROLE_CHANGED]: {
 		roomId: string;
-		participantIdentity: string;
-		role: MeetRoomMemberRole;
+		participant: MeetParticipantInfo;
 	};
 	/**
 	 * Payload for the {@link EmbeddedEventName.PARTICIPANT_HAND_CHANGED} event.
-	 * `queuePosition` is the 1-based position of the hand among the raised ones, present while
-	 * `raised` is `true`. `origin` says who lowered the hand, the participant or a moderator; a raise
-	 * always originates from the participant.
+	 * `participant.handRaised` is the new hand state (see {@link MeetParticipantInfo}). `origin` says
+	 * who lowered the hand, the participant or a moderator; a raise always originates from the
+	 * participant.
 	 */
 	[EmbeddedEventName.PARTICIPANT_HAND_CHANGED]: {
 		roomId: string;
-		participant: MeetParticipantPayload;
-		raised: boolean;
-		queuePosition?: number;
+		participant: MeetParticipantInfo;
 		origin: MeetEventOrigin.PARTICIPANT | MeetEventOrigin.MODERATOR;
 	};
 	/**

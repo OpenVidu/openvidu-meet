@@ -172,6 +172,10 @@ for (const integration of INTEGRATIONS) {
 				const speakerLeft = await expectEvent(speakerPage, EmbeddedEventName.LEFT);
 				await expect(speakerLeft).toContainText(LeftEventReason.PARTICIPANT_KICKED);
 
+				const left = await expectEvent(page, EmbeddedEventName.PARTICIPANT_LEFT);
+				await expect(left).toContainText(`"participantIdentity":"${speakerIdentity}"`);
+				await expect(left).toContainText(`"leaveReason":"${LeftEventReason.PARTICIPANT_KICKED}"`);
+
 				await speakerContext.close();
 			});
 
@@ -535,7 +539,7 @@ for (const integration of INTEGRATIONS) {
 
 				const raised = participantHandChangedLocator(page, raiserIdentity, true);
 				await expect(raised).toHaveCount(1, { timeout: 15_000 });
-				await expect(raised).toContainText('"queuePosition":1');
+				await expect(raised).toContainText('"handRaiseDate":');
 				await expect(raised).toContainText(MeetEventOrigin.PARTICIPANT);
 				await expect(participantHandChangedLocator(observerPage, raiserIdentity, true)).toHaveCount(1, {
 					timeout: 15_000
@@ -547,7 +551,7 @@ for (const integration of INTEGRATIONS) {
 				const lowered = participantHandChangedLocator(page, raiserIdentity, false);
 				await expect(lowered).toHaveCount(1, { timeout: 15_000 });
 				await expect(lowered).toContainText(MeetEventOrigin.PARTICIPANT);
-				await expect(lowered).not.toContainText('queuePosition');
+				await expect(lowered).not.toContainText('handRaiseDate');
 				await expect(meetLocator(page, integration, '#raise-hand-button')).not.toHaveClass(/active/);
 
 				await observerContext.close();

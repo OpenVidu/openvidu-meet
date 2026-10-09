@@ -564,7 +564,19 @@ describe('IframeBridgeService', () => {
 		it('relays PARTICIPANT_ROLE_CHANGED once, since it has no deprecated alias', () => {
 			startBridge();
 
-			const payload = { roomId: ROOM_ID, participantIdentity: IDENTITY, role: MeetRoomMemberRole.MODERATOR };
+			const payload = {
+				roomId: ROOM_ID,
+				participant: {
+					participantIdentity: IDENTITY,
+					participantName: 'Alice',
+					role: MeetRoomMemberRole.MODERATOR,
+					joinDate: 1_620_000_000_000,
+					audioActive: true,
+					videoActive: false,
+					screenShareActive: false,
+					handRaised: false
+				}
+			};
 			eventBus.emit({ event: EmbeddedEventName.PARTICIPANT_ROLE_CHANGED, payload });
 			TestBed.tick();
 

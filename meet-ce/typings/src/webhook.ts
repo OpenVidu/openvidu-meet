@@ -59,16 +59,37 @@ export interface MeetWebhookTestEvent {
 }
 
 /**
- * The {@link LeftEventReason} values a `participantLeft` webhook can carry.
+ * The {@link LeftEventReason} values the `participantLeft` webhook and embedded event can carry.
  *
- * The server derives the reason from the media server's disconnect reason, which says that the
- * meeting ended but not who ended it, nor whether the duration limit did. Those two distinctions
- * exist only on the client, so they reach the embedded `meetingLeft` event and never a webhook.
+ * Both derive the reason from the media server's disconnect reason, which says that the meeting
+ * ended but not who ended it, nor whether the duration limit did. Those two distinctions exist only
+ * on the client of the participant who left, so they reach the embedded `meetingLeft` event alone.
  */
 export type MeetParticipantLeaveReason = Exclude<
 	LeftEventReason,
 	LeftEventReason.MEETING_ENDED_BY_SELF | LeftEventReason.MEETING_ENDED_BY_DURATION_LIMIT
 >;
+
+const LEAVE_REASON_BY_DISCONNECT_REASON: Partial<Record<string, MeetParticipantLeaveReason>> = {
+	CLIENT_INITIATED: LeftEventReason.VOLUNTARY_LEAVE,
+	SIGNAL_CLOSE: LeftEventReason.NETWORK_DISCONNECT,
+	STATE_MISMATCH: LeftEventReason.NETWORK_DISCONNECT,
+	CONNECTION_TIMEOUT: LeftEventReason.NETWORK_DISCONNECT,
+	MEDIA_FAILURE: LeftEventReason.NETWORK_DISCONNECT,
+	SERVER_SHUTDOWN: LeftEventReason.SERVER_SHUTDOWN,
+	PARTICIPANT_REMOVED: LeftEventReason.PARTICIPANT_KICKED,
+	ROOM_DELETED: LeftEventReason.MEETING_ENDED,
+	ROOM_CLOSED: LeftEventReason.MEETING_ENDED,
+	DUPLICATE_IDENTITY: LeftEventReason.DUPLICATE_IDENTITY
+};
+
+/**
+ * The {@link MeetParticipantLeaveReason} of a LiveKit disconnect reason, given by its
+ * `DisconnectReason` name. The `participantLeft` webhook and embedded event both map it here, so
+ * they always agree; a reason with no public equivalent, or none at all, is `unknown`.
+ */
+export const participantLeaveReasonOf = (disconnectReason: string | undefined): MeetParticipantLeaveReason =>
+	LEAVE_REASON_BY_DISCONNECT_REASON[disconnectReason ?? ''] ?? LeftEventReason.UNKNOWN;
 
 /**
  * A participant that has left a meeting, as carried by the
