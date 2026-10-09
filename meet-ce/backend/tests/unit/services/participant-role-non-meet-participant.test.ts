@@ -61,7 +61,8 @@ describe('RoomMemberService.updateParticipantRole - S2: a participant Meet did n
 				async () => ({ identity: IDENTITY, metadata: metadataInLiveKit }) as ParticipantInfo
 			),
 			updateParticipant: jest.fn(
-				async (_roomId, identity, { metadata }) => ({ identity, metadata }) as ParticipantInfo
+				async (_roomId, identity, { metadata }) =>
+					({ identity, metadata, tracks: [] as ParticipantInfo['tracks'] }) as ParticipantInfo
 			)
 		};
 		webhookDispatcherService = { sendParticipantRoleChangedWebhook: jest.fn() };

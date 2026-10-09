@@ -1141,7 +1141,7 @@ export class RoomMemberService {
 			this.webhookDispatcherService.sendParticipantRoleChangedWebhook({
 				roomId,
 				roomName,
-				participant: MeetParticipantHelper.toParticipantPayload(updatedParticipant)
+				participant: MeetParticipantHelper.toParticipantInfo(updatedParticipant)
 			});
 
 			if (action === MeetParticipantModerationAction.UPGRADE) {

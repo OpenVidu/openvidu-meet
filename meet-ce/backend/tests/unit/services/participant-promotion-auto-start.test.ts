@@ -79,7 +79,8 @@ describe('RoomMemberService.updateParticipantRole — B10: a promotion re-evalua
 				async () => ({ identity: IDENTITY, metadata: metadataInLiveKit }) as ParticipantInfo
 			),
 			updateParticipant: jest.fn(
-				async (_roomId, identity, { metadata }) => ({ identity, metadata }) as ParticipantInfo
+				async (_roomId, identity, { metadata }) =>
+					({ identity, metadata, tracks: [] as ParticipantInfo['tracks'] }) as ParticipantInfo
 			),
 			getRoom: jest.fn(async () => ({ name: ROOM_ID, sid: MEETING_ID }) as Room)
 		};

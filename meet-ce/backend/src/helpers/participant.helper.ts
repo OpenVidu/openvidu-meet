@@ -123,12 +123,8 @@ export class MeetParticipantHelper {
 	}
 
 	/**
-	 * Converts a LiveKit participant into the {@link MeetParticipantPayload} identity shape that
-	 * participant-level lifecycle surfaces (front events and webhooks) carry.
-	 *
-	 * The identity/correlation fields come from the Meet token metadata the participant joined
-	 * with. Live media state is deliberately not part of this shape: lifecycle events fire before
-	 * tracks are published (or after they are torn down) — see {@link toParticipantInfo}.
+	 * Converts a LiveKit participant into the identity-only {@link MeetParticipantPayload} of the
+	 * lifecycle events and webhooks, from the Meet token metadata the participant joined with.
 	 *
 	 * @param participant - The LiveKit participant to convert.
 	 */

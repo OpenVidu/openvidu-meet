@@ -177,7 +177,9 @@ participantJoined:
     post:
         summary: Participant joined
         description: >
-            This webhook is triggered when a participant joins a meeting.
+            This webhook is triggered when a participant joins a meeting. The participant carries
+            no media state (`audioActive`, `videoActive`, `screenShareActive`) because its tracks
+            are not published yet at this point, so the values would not be reliable.
         operationId: participantJoinedWebhook
         parameters:
             - $ref: ./parameters/x-timestamp.yaml
@@ -203,7 +205,9 @@ participantLeft:
     post:
         summary: Participant left
         description: >
-            This webhook is triggered when a participant leaves a meeting.
+            This webhook is triggered when a participant leaves a meeting. The participant carries
+            no media state (`audioActive`, `videoActive`, `screenShareActive`) because its tracks
+            are already gone at this point, so the values would not be reliable.
         operationId: participantLeftWebhook
         parameters:
             - $ref: ./parameters/x-timestamp.yaml

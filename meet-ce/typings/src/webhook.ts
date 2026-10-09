@@ -135,8 +135,8 @@ export interface MeetParticipantRoleChangedPayload {
 	roomId: string;
 	/** Name of the room where the participant's role changed */
 	roomName: string;
-	/** The participant whose role changed, carrying the new role. See {@link MeetParticipantPayload} for details */
-	participant: MeetParticipantPayload;
+	/** The participant whose role changed, carrying the new role. See {@link MeetParticipantInfo} for details */
+	participant: MeetParticipantInfo;
 }
 
 /**

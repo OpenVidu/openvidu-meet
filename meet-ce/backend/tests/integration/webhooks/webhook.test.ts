@@ -378,6 +378,8 @@ describe('Webhook Integration Tests', () => {
 			expect(promotion.participant.participantIdentity).toBe(participantIdentity);
 			expect(promotion.participant.role).toBe(MeetRoomMemberRole.MODERATOR);
 			expect(promotion.participant.externalId).toBe('crm-user_42');
+			expect(promotion.participant.audioActive).toEqual(expect.any(Boolean));
+			expect(promotion.participant.handRaised).toBe(false);
 
 			await updateParticipant(
 				roomData.roomId,

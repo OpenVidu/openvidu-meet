@@ -1,12 +1,12 @@
 import { MeetRoomMemberRole } from '../database/room-member.entity.js';
 
 /**
- * Identity snapshot of a participant in a meeting: the shape participant-level lifecycle surfaces
- * (front events and webhooks such as `participantJoined`/`participantLeft`) carry.
+ * Identity of a participant in a meeting, carried by the lifecycle events and webhooks
+ * (`participantJoined`, `participantLeft`).
  *
- * It deliberately excludes live media state: lifecycle events fire on connect/disconnect, when
- * tracks are not published yet (or are already torn down), so a media flag there would read as
- * "joined muted" for every participant. Live media state belongs to {@link MeetParticipantInfo}.
+ * It has no media state (`audioActive`, `videoActive`, `screenShareActive`) on purpose: these
+ * events fire before the participant publishes its tracks or once they are gone, so the values
+ * would not be reliable. The webhooks that report a state change carry {@link MeetParticipantInfo}.
  */
 export interface MeetParticipantPayload {
 	/** Unique identity of the participant within the meeting. */
@@ -32,11 +32,10 @@ export interface MeetParticipantPayload {
 }
 
 /**
- * Live snapshot of a participant in an ongoing meeting: {@link MeetParticipantPayload} extended
- * with the current media and hand state. It is the shape `GET /meetings/{roomId}/participants`
- * serves and the webhooks reporting a state change in the meeting, such as `participantHandChanged`,
- * carry: at those moments LiveKit reports the participant's actual tracks, unlike lifecycle events,
- * whose timing makes the media flags meaningless.
+ * Live snapshot of a participant in an ongoing meeting: its identity plus its current media and
+ * hand state. Served by `GET /meetings/{roomId}/participants` and carried by the webhooks that
+ * report a state change (`participantRoleChanged`, `participantHandChanged`). See
+ * {@link MeetParticipantPayload} for why the lifecycle webhooks do not carry it.
  */
 export interface MeetParticipantInfo extends MeetParticipantPayload {
 	/** Whether the participant's microphone is currently publishing (present and not muted). */
