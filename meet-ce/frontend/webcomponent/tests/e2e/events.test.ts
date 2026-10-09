@@ -2,11 +2,14 @@ import {
 	EmbeddedEventName,
 	LeftEventReason,
 	MeetEventOrigin,
+	MeetParticipantJoinedPayload,
+	MeetParticipantLeftPayload,
 	MeetParticipantModerationAction,
 	MeetRecordingStatus,
-	MeetRoomMemberRole
+	MeetRoomMemberRole,
+	MeetWebhookEventType
 } from '@openvidu-meet/typings';
-import { expect, test } from '@playwright/test';
+import { expect, Locator, test } from '@playwright/test';
 import { INTEGRATIONS, meetLocator } from '../helpers/webcomponent.helper';
 import { createRoom, deleteRooms, updateParticipantRole, waitForMeetingParticipant } from '../helpers/meet-api.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
@@ -30,6 +33,7 @@ import {
 	participantUpdateRoleCommand,
 	recordingStatusLocator
 } from '../helpers/testapp.helper';
+import { getWebhookFromStorage } from '../helpers/ui-utils.helper';
 
 // Events carry the same names/payloads regardless of transport; run every spec
 // against both integrations, selecting the mode through the testapp's UI.
@@ -386,6 +390,20 @@ for (const integration of INTEGRATIONS) {
 				await expect(left).toContainText(speakerName);
 				await expect(left).toContainText('crm-user_42');
 				await expect(left).toContainText(`"leaveReason":"${LeftEventReason.VOLUNTARY_LEAVE}"`);
+
+				// Each event carries the participant its webhook carries, minus what only the server knows.
+				const [joinedWebhook, leftWebhook] = await Promise.all([
+					getWebhookFromStorage(page, roomId, MeetWebhookEventType.PARTICIPANT_JOINED, { matchIndex: 1 }),
+					getWebhookFromStorage(page, roomId, MeetWebhookEventType.PARTICIPANT_LEFT)
+				]);
+				const eventParticipant = async (event: Locator) =>
+					JSON.parse((await event.textContent()) ?? '').participant;
+				expect(await eventParticipant(joined)).toEqual(
+					(joinedWebhook.data as MeetParticipantJoinedPayload).participant
+				);
+				expect((leftWebhook.data as MeetParticipantLeftPayload).participant).toMatchObject(
+					await eventParticipant(left)
+				);
 
 				await speakerContext.close();
 			});

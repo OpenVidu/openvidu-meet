@@ -30,14 +30,16 @@ import { EmbeddedEventBusService } from '../../embedded/services/embedded-event-
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
-import type { Participant, Room } from '../openvidu-components';
+import type { Participant } from '../openvidu-components';
 import {
+	ConnectionState,
 	DisconnectReason,
 	LocalMediaService,
 	ScreenShareService,
 	MeetingEndingSoonService,
 	ParticipantLeftReason,
 	ParticipantModel,
+	Room,
 	RoomEvent
 } from '../openvidu-components';
 import {
@@ -405,7 +407,6 @@ describe('MeetingEventHandlerService', () => {
 				name: 'Alice',
 				metadata,
 				attributes: {},
-				joinedAt: new Date(1_620_000_000_000),
 				isMicrophoneEnabled: true,
 				isCameraEnabled: false,
 				isScreenShareEnabled: false
@@ -460,7 +461,7 @@ describe('MeetingEventHandlerService', () => {
 							externalId: undefined,
 							metadata: undefined,
 							role: MeetRoomMemberRole.MODERATOR,
-							joinDate: 1_620_000_000_000,
+							joinDate: 0,
 							audioActive: true,
 							videoActive: false,
 							screenShareActive: false,
@@ -797,7 +798,6 @@ describe('MeetingEventHandlerService', () => {
 			isLocal: boolean;
 			metadata: undefined;
 			attributes: Record<string, string>;
-			joinedAt: Date;
 			isMicrophoneEnabled: boolean;
 			isCameraEnabled: boolean;
 			isScreenShareEnabled: boolean;
@@ -813,7 +813,6 @@ describe('MeetingEventHandlerService', () => {
 			isLocal,
 			metadata: undefined,
 			attributes: {},
-			joinedAt: new Date(0),
 			isMicrophoneEnabled: false,
 			isCameraEnabled: true,
 			isScreenShareEnabled: false
@@ -1063,9 +1062,50 @@ describe('MeetingEventHandlerService', () => {
 		});
 	});
 
+	describe('remote participant joined', () => {
+		it('tells the host with the join date of the info LiveKit applies after announcing the participant', async () => {
+			const room = new Room();
+			room.state = ConnectionState.Connected;
+			service.setupRoomListeners(room);
+
+			// LiveKit's own handling of a participant the server announces, so the order is LiveKit's.
+			room['handleParticipantUpdates']([
+				{
+					sid: 'PA_bob',
+					identity: 'bob',
+					name: 'Bob',
+					metadata: '',
+					attributes: {},
+					tracks: [],
+					dataTracks: [],
+					joinedAt: 1_620_000_000n,
+					joinedAtMs: 1_620_000_000_123n
+				} as unknown as Parameters<Participant['updateInfo']>[0]
+			]);
+			await Promise.resolve();
+
+			expect(eventBus.events().filter((event) => event.event === EmbeddedEventName.PARTICIPANT_JOINED)).toEqual([
+				{
+					event: EmbeddedEventName.PARTICIPANT_JOINED,
+					payload: {
+						roomId: 'room1',
+						participant: {
+							participantIdentity: 'bob',
+							participantName: 'Bob',
+							externalId: undefined,
+							metadata: undefined,
+							role: MeetRoomMemberRole.SPEAKER,
+							joinDate: 1_620_000_000_123
+						}
+					}
+				}
+			]);
+		});
+	});
+
 	describe('remote participant left', () => {
 		let onParticipantDisconnected: (participant: unknown, reason?: DisconnectReason) => void;
-		const bob = { identity: 'bob', name: 'Bob', metadata: undefined, attributes: {}, joinedAt: new Date(0) };
+		const bob = { identity: 'bob', name: 'Bob', metadata: undefined, attributes: {} };
 
 		beforeEach(() => {
 			const room = {

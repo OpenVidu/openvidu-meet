@@ -17,10 +17,23 @@ export const toParticipantRole = (badge: MeetRoomMemberUIBadge | undefined): Mee
 	!badge || badge === MeetRoomMemberUIBadge.OTHER ? MeetRoomMemberRole.SPEAKER : MeetRoomMemberRole.MODERATOR;
 
 /**
+ * The join date the server stamped, read like the backend's `MeetParticipantHelper.extractJoinDate()`.
+ * LiveKit's public `joinedAt` cannot serve: it is rounded down to the second, and it is the current
+ * time until LiveKit has applied the participant's info.
+ */
+const joinDateOf = (participant: Participant): number => {
+	const info = participant['participantInfo'];
+	const joinedAtMs = Number(info?.joinedAtMs ?? 0);
+
+	return joinedAtMs > 0 ? joinedAtMs : Number(info?.joinedAt ?? 0) * 1000;
+};
+
+/**
  * Builds the {@link MeetParticipantPayload} lifecycle shape for a participant — the
  * client-side twin of the backend's `MeetParticipantHelper.toParticipantPayload()`: the
  * identity/correlation fields come from the Meet token metadata the participant carries, the role
- * from its badge (`OTHER` or no Meet metadata → speaker), and the join date from LiveKit.
+ * from its badge (`OTHER` or no Meet metadata → speaker), and the join date from the participant
+ * info LiveKit holds, 0 until it has applied it.
  *
  * @param participant - The LiveKit participant to convert.
  */
@@ -33,7 +46,7 @@ export const toEmbeddedParticipantPayload = (participant: Participant): MeetPart
 		externalId: meetingMetadata?.externalId,
 		metadata: meetingMetadata?.metadata,
 		role: toParticipantRole(meetingMetadata?.badge),
-		joinDate: participant.joinedAt?.getTime() ?? 0
+		joinDate: joinDateOf(participant)
 	};
 };
 

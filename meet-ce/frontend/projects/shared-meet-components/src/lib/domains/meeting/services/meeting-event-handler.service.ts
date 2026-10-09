@@ -319,20 +319,23 @@ export class MeetingEventHandlerService {
 	/**
 	 * Forwards a remote participant's join to the host as a `participantJoined` event (embedded
 	 * modes only). Only live transitions are notified: participants already in the meeting when
-	 * the local one joins are not replayed.
+	 * the local one joins are not replayed. LiveKit announces a participant before it applies the
+	 * participant's info, in the same task, so the event is built a microtask later.
 	 */
 	protected onRemoteParticipantConnected(participant: RemoteParticipant): void {
 		if (!this.runtimeConfigService.isEmbeddedMode()) {
 			return;
 		}
 
-		this.eventBus.emit({
-			event: EmbeddedEventName.PARTICIPANT_JOINED,
-			payload: {
-				roomId: this.meetingContext.roomId() ?? '',
-				participant: toEmbeddedParticipantPayload(participant)
-			}
-		});
+		queueMicrotask(() =>
+			this.eventBus.emit({
+				event: EmbeddedEventName.PARTICIPANT_JOINED,
+				payload: {
+					roomId: this.meetingContext.roomId() ?? '',
+					participant: toEmbeddedParticipantPayload(participant)
+				}
+			})
+		);
 	}
 
 	/**

@@ -71,7 +71,9 @@ events are re-dispatched on the outer element.
   `participantJoined`/`participantLeft` (**remote**
   participants only; payload `{ roomId, participant: MeetParticipantPayload }` — identity,
   correlation fields and role; live transitions only, no replay of participants already present,
-  no media state; `participantLeft` adds `participant.leaveReason`, mapped from the LiveKit disconnect
+  no media state; `joinDate` is the server's millisecond, read from the participant info LiveKit holds,
+  which is why `participantJoined` is built a microtask after LiveKit announces the participant;
+  `participantLeft` adds `participant.leaveReason`, mapped from the LiveKit disconnect
   reason by the same `participantLeaveReasonOf()` the webhook uses, but not `leaveDate`/`durationSeconds`,
   which only the server clock can tell), `recordingStatusChanged` (everyone; payload `{ recordingId, status }`
   with a `MeetRecordingStatus`; a recording's statuses only move forward, each at most once, and the

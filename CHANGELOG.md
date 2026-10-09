@@ -54,6 +54,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - Two simultaneous [`participantRoleUpdate`][3.10-participant-role-update] requests for the same participant both
   succeeded, and a promotion made while the participant's token was being regenerated could be undone by it. Both
   now apply one after the other, so the second promotion answers `409`.
+- The `joinDate` of the embedded event `participantJoined` was the moment the join reached the browser, by the
+  browser's clock, and the one of `participantLeft` was rounded down to the second. Both now carry the `joinDate` of
+  the [`participantJoined`][3.9-participant-joined] webhook.
 
 #### UI
 
