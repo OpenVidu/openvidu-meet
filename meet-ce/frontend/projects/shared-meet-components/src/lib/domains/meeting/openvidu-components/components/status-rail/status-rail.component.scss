@@ -1,0 +1,145 @@
+@use 'status-chip' as chip;
+
+:host {
+	display: block;
+}
+
+.status-rail {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	height: var(--ov-status-rail-height);
+	padding: 0 16px;
+}
+
+.status-rail-end {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-left: auto;
+	min-width: 0;
+
+	ov-hidden-participants-indicator {
+		display: flex;
+		min-width: 0;
+	}
+}
+
+.status-chip {
+	@include chip.status-chip;
+}
+
+.recording-chip {
+	&.clickable {
+		@include chip.status-chip-interactive;
+	}
+
+	.recording-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background-color: var(--ov-recording-color, var(--ov-error-color));
+		flex-shrink: 0;
+		animation: ov-recording-pulse 1.2s ease-in-out infinite;
+	}
+}
+
+@keyframes ov-recording-pulse {
+	50% {
+		opacity: 0.25;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.recording-chip .recording-dot {
+		animation: none;
+	}
+}
+
+.elapsed-chip .status-chip-icon {
+	color: var(--ov-text-secondary-color);
+}
+
+.e2ee-chip .status-chip-icon {
+	color: var(--ov-success-color);
+}
+
+.raised-hands-chip {
+	background-color: var(--ov-meet-hand-color);
+	border-color: var(--ov-meet-hand-color);
+
+	&.clickable {
+		@include chip.status-chip-interactive;
+	}
+
+	.status-chip-icon,
+	.status-chip-value {
+		color: var(--ov-meet-text-on-hand);
+	}
+}
+
+// Calm while there is time to act: only the icon carries the warn colour.
+.ending-soon-chip .status-chip-icon {
+	color: var(--ov-warn-color);
+}
+
+// Last minute: the whole chip goes warn.
+.ending-soon-chip.urgent {
+	background-color: var(--ov-warn-color);
+	border-color: var(--ov-warn-color);
+
+	.status-chip-icon,
+	.status-chip-value {
+		color: var(--ov-text-on-warn-color);
+	}
+
+	.status-chip-label {
+		color: color-mix(in srgb, var(--ov-text-on-warn-color) 72%, transparent);
+	}
+}
+
+.status-more {
+	@include chip.status-chip-interactive;
+	display: none;
+	padding: 0 6px;
+	color: var(--ov-text-primary-color);
+	font: inherit;
+}
+
+.status-menu-row {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 16px;
+
+	&.stacked {
+		flex-direction: column;
+		gap: 2px;
+	}
+}
+
+.status-menu-value {
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+.status-menu-detail {
+	font-size: 12px;
+	color: var(--ov-text-secondary-color);
+}
+
+// A phone row keeps one clock, the countdown first once it starts, the recording mark and the raised
+// hands; the menu behind ⋯ holds the rest in full.
+@media only screen and (max-width: 790px) {
+	.folds {
+		display: none;
+	}
+
+	.ending-soon-chip {
+		order: -1;
+	}
+
+	.status-more {
+		display: flex;
+	}
+}

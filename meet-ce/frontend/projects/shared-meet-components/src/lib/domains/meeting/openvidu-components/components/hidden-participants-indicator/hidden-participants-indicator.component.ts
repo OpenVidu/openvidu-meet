@@ -1,5 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
+import { nameHiddenParticipants } from '../../models/layout/smart-layout.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
@@ -13,8 +14,6 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 	styleUrl: './hidden-participants-indicator.component.scss'
 })
 export class HiddenParticipantsIndicatorComponent {
-	private static readonly MAX_NAMES_SHOWN = 3;
-
 	count = input<number>(0);
 	hiddenParticipantNames = input<string[]>([]);
 	clicked = output<void>();
@@ -26,14 +25,5 @@ export class HiddenParticipantsIndicatorComponent {
 		this.count() === 1 ? 'HIDDEN_PARTICIPANTS.ONE_MORE' : 'HIDDEN_PARTICIPANTS.MANY_MORE'
 	);
 
-	/** The first few names, and how many hidden participants are left unnamed after them. */
-	protected hiddenNames = computed(() => {
-		const shown = this.hiddenParticipantNames()
-			.filter(Boolean)
-			.slice(0, HiddenParticipantsIndicatorComponent.MAX_NAMES_SHOWN);
-
-		if (shown.length === 0) return undefined;
-
-		return { shown: shown.join(', '), remaining: this.count() - shown.length };
-	});
+	protected hiddenNames = computed(() => nameHiddenParticipants(this.hiddenParticipantNames(), this.count()));
 }

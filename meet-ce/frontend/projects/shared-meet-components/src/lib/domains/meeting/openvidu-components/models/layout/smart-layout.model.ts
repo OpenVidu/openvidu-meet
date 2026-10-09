@@ -38,6 +38,20 @@ export function sameHiddenParticipantsSummary(
 	return a.count === b.count && sameIdentityOrder(a.names, b.names);
 }
 
+const MAX_HIDDEN_NAMES_SHOWN = 3;
+
+/** The first few hidden names, and how many hidden participants are left unnamed after them. */
+export function nameHiddenParticipants(
+	names: readonly string[],
+	count: number
+): { shown: string; remaining: number } | undefined {
+	const shown = names.filter(Boolean).slice(0, MAX_HIDDEN_NAMES_SHOWN);
+
+	if (shown.length === 0) return undefined;
+
+	return { shown: shown.join(', '), remaining: count - shown.length };
+}
+
 /**
  * Mosaic order: the previous order of whoever is still here, then the newcomers, so a switch between
  * Smart Mosaic and Mosaic keeps every tile where it was.

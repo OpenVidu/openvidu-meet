@@ -1,5 +1,3 @@
-@use 'status-chip' as chip;
-
 $side-panel-width: 380px;
 
 /* ── Phase containers ─────────────────────────────────────────────────────── */
@@ -49,100 +47,6 @@ $side-panel-width: 380px;
 // One open over the meeting covers it whole, so the notifications drop below its header.
 #meeting-stage:has(.sidenav-menu.mat-drawer-over.mat-drawer-opened) .notice-layer {
 	top: calc(var(--ov-status-rail-height) + 72px);
-}
-
-.status-rail {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	height: var(--ov-status-rail-height);
-	padding: 0 16px;
-}
-
-.status-rail-end {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	margin-left: auto;
-	min-width: 0;
-
-	ov-hidden-participants-indicator {
-		display: flex;
-		min-width: 0;
-	}
-}
-
-.status-chip {
-	@include chip.status-chip;
-}
-
-.recording-chip {
-	&.clickable {
-		@include chip.status-chip-interactive;
-	}
-
-	.recording-dot {
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
-		background-color: var(--ov-recording-color, var(--ov-error-color));
-		flex-shrink: 0;
-		animation: ov-recording-pulse 1.2s ease-in-out infinite;
-	}
-}
-
-@keyframes ov-recording-pulse {
-	50% {
-		opacity: 0.25;
-	}
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.recording-chip .recording-dot {
-		animation: none;
-	}
-}
-
-.elapsed-chip .status-chip-icon {
-	color: var(--ov-text-secondary-color);
-}
-
-.e2ee-chip .status-chip-icon {
-	color: var(--ov-success-color);
-}
-
-.raised-hands-chip {
-	background-color: var(--ov-meet-hand-color);
-	border-color: var(--ov-meet-hand-color);
-
-	&.clickable {
-		@include chip.status-chip-interactive;
-	}
-
-	.status-chip-icon,
-	.status-chip-value {
-		color: var(--ov-meet-text-on-hand);
-	}
-}
-
-// Calm while there is time to act: only the icon carries the warn colour.
-.ending-soon-chip .status-chip-icon {
-	color: var(--ov-warn-color);
-}
-
-// Last minute: the whole chip goes warn.
-.ending-soon-chip.urgent {
-	background-color: var(--ov-warn-color);
-	border-color: var(--ov-warn-color);
-
-	.status-chip-icon,
-	.status-chip-value {
-		color: var(--ov-text-on-warn-color);
-	}
-
-	.status-chip-label {
-		color: color-mix(in srgb, var(--ov-text-on-warn-color) 72%, transparent);
-	}
 }
 
 #pre-join-container {
@@ -228,7 +132,7 @@ $side-panel-width: 380px;
 }
 
 /* The status rail is a real row, so the layout gives up its height instead of being covered. */
-#meeting-stage:has(.status-rail) .sidenav-container {
+#meeting-stage:has(ov-status-rail.has-status) .sidenav-container {
 	height: calc(100% - 70px - var(--ov-status-rail-height));
 	min-height: calc(100% - 70px - var(--ov-status-rail-height));
 }
