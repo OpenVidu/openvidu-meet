@@ -6,6 +6,7 @@ import type {
 	ContainerListBlobFlatSegmentResponse
 } from '@azure/storage-blob';
 import { BlobServiceClient } from '@azure/storage-blob';
+import { DefaultAzureCredential } from '@azure/identity';
 import { inject, injectable } from 'inversify';
 import type { Readable } from 'stream';
 import { INTERNAL_CONFIG } from '../../../../config/internal-config.js';
@@ -24,12 +25,24 @@ export class ABSService {
 	private containerClient: ContainerClient;
 
 	constructor(@inject(LoggerService) protected logger: LoggerService) {
-		if (!MEET_ENV.AZURE_ACCOUNT_NAME || !MEET_ENV.AZURE_ACCOUNT_KEY || !MEET_ENV.AZURE_CONTAINER_NAME) {
+		if (!MEET_ENV.AZURE_ACCOUNT_NAME || !MEET_ENV.AZURE_CONTAINER_NAME) {
 			throw new Error('Azure Blob Storage configuration is incomplete');
 		}
 
-		const AZURE_STORAGE_CONNECTION_STRING = `DefaultEndpointsProtocol=https;AccountName=${MEET_ENV.AZURE_ACCOUNT_NAME};AccountKey=${MEET_ENV.AZURE_ACCOUNT_KEY};EndpointSuffix=core.windows.net`;
-		this.blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
+		if (MEET_ENV.AZURE_ACCOUNT_KEY) {
+			const AZURE_STORAGE_CONNECTION_STRING = `DefaultEndpointsProtocol=https;AccountName=${MEET_ENV.AZURE_ACCOUNT_NAME};AccountKey=${MEET_ENV.AZURE_ACCOUNT_KEY};EndpointSuffix=core.windows.net`;
+			this.blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
+		} else {
+			// No account key configured: fall back to Azure AD authentication
+			// (managed identity, workload identity, CLI/env credentials, in
+			// that order) via DefaultAzureCredential, so a VM/pod granted an
+			// RBAC role on the storage account (e.g. "Storage Blob Data
+			// Contributor") can authenticate without ever handling the
+			// account's long-lived, full-account-scope shared key.
+			const serviceUrl = `https://${MEET_ENV.AZURE_ACCOUNT_NAME}.blob.core.windows.net`;
+			this.blobServiceClient = new BlobServiceClient(serviceUrl, new DefaultAzureCredential());
+		}
+
 		this.containerClient = this.blobServiceClient.getContainerClient(MEET_ENV.AZURE_CONTAINER_NAME);
 
 		this.logger.debug('Azure Client initialized');
