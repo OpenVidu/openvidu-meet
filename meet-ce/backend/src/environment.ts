@@ -204,7 +204,12 @@ export const logEnvVars = () => {
 		console.log('Azure Blob Storage Configuration');
 		console.log('---------------------------------------------------------');
 		console.log('AZURE ACCOUNT NAME:', text(MEET_ENV.AZURE_ACCOUNT_NAME));
-		console.log('AZURE ACCOUNT KEY:', credential('****' + MEET_ENV.AZURE_ACCOUNT_KEY.slice(-3)));
+		console.log(
+			'AZURE ACCOUNT KEY:',
+			MEET_ENV.AZURE_ACCOUNT_KEY
+				? credential('****' + MEET_ENV.AZURE_ACCOUNT_KEY.slice(-3))
+				: text('(not set - using Managed Identity / DefaultAzureCredential)')
+		);
 		console.log('AZURE CONTAINER NAME:', text(MEET_ENV.AZURE_CONTAINER_NAME));
 		console.log('---------------------------------------------------------');
 	} else if (MEET_ENV.BLOB_STORAGE_MODE === 'gcs') {
