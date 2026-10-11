@@ -65,7 +65,7 @@ jobs:
           MEET_INITIAL_WEBHOOK_URL: 'http://localhost:5080/webhook'
 
       - name: Start OpenVidu Meet Testapp
-        uses: OpenVidu/actions/start-openvidu-meet-testapp@070fb73fda8fe7a08e28991b1c2d276f12a009ef # v1.0.22
+        uses: OpenVidu/actions/start-openvidu-meet-testapp@41526ed83a611649aa1cddc11cd58ec1e88c859e # v1.0.23
         with:
           skip_install: 'true'
           skip_checkout: 'true'
