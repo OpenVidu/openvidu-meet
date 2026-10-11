@@ -93,7 +93,7 @@ jobs:
             chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
 
       - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@070fb73fda8fe7a08e28991b1c2d276f12a009ef # v1.0.22
+        uses: OpenVidu/actions/start-openvidu-meet@41526ed83a611649aa1cddc11cd58ec1e88c859e # v1.0.23
 
       - name: Run tests
         run: pnpm run ${{ matrix.test-script }}
@@ -328,7 +328,7 @@ jobs:
 
       - name: Setup OpenVidu Meet
         if: env.RUN_PROVIDER == 'true'
-        uses: OpenVidu/actions/start-openvidu-meet@070fb73fda8fe7a08e28991b1c2d276f12a009ef # v1.0.22
+        uses: OpenVidu/actions/start-openvidu-meet@41526ed83a611649aa1cddc11cd58ec1e88c859e # v1.0.23
         env:
           MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
           # ABS variables
