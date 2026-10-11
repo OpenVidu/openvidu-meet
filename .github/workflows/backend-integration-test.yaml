@@ -395,7 +395,7 @@ jobs:
     steps:
       - name: Stop AWS EC2 Runner
         if: ${{ (matrix.storage-provider == 's3' && needs.start-aws-runner-s3.result != 'skipped') || (matrix.storage-provider == 'abs' && needs.start-aws-runner-abs.result != 'skipped') || (matrix.storage-provider == 'gcs' && needs.start-aws-runner-gcs.result != 'skipped') }}
-        uses: OpenVidu/actions/stop-aws-runner@070fb73fda8fe7a08e28991b1c2d276f12a009ef # v1.0.22
+        uses: OpenVidu/actions/stop-aws-runner@41526ed83a611649aa1cddc11cd58ec1e88c859e # v1.0.23
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
