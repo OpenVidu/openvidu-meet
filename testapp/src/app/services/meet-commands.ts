@@ -3,7 +3,8 @@ import {
 	EmbeddedEventName,
 	EmbeddedEventPayloadFor,
 	MeetParticipantModerationAction,
-	MeetParticipantMuteOptions
+	MeetParticipantMuteOptions,
+	MeetReaction
 } from '@openvidu-meet/typings';
 import { Integration, TriState, toOptionalBoolean } from '../models';
 import type { OpenViduMeetElement } from '../openvidu-meet-element';
@@ -198,6 +199,16 @@ export class MeetCommandsService {
 			(element) => element.participantHandLowerAll()
 		);
 		this.log.command('participantHandLowerAll', '()');
+	}
+
+	// ── Reactions ───────────────────────────────────────────────────────────
+
+	participantReactionSend(reaction: MeetReaction): void {
+		this.dispatch(
+			() => this.iframeHost.participantReactionSend(reaction),
+			(element) => element.participantReactionSend(reaction)
+		);
+		this.log.command('participantReactionSend', `("${reaction}")`);
 	}
 
 	// ── Deprecated 3.8.0 spellings ──────────────────────────────────────────

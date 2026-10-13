@@ -4,7 +4,8 @@ import {
 	EmbeddedCommand,
 	EmbeddedEvent,
 	MeetParticipantModerationAction,
-	MeetParticipantMuteOptions
+	MeetParticipantMuteOptions,
+	MeetReaction
 } from '@openvidu-meet/typings';
 
 /** Receives a lifecycle event object posted by the embedded iframe. */
@@ -132,6 +133,10 @@ export class IframeHostService {
 
 	participantHandLowerAll(): void {
 		this.post({ command: EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL });
+	}
+
+	participantReactionSend(reaction: MeetReaction): void {
+		this.post({ command: EmbeddedCommandName.PARTICIPANT_REACTION_SEND, payload: { reaction } });
 	}
 
 	// ── Deprecated command names ────────────────────────────────────────────
