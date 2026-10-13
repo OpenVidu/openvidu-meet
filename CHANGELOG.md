@@ -26,6 +26,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   `participantHandLower` and `participantHandLowerAll` and the embedded event and webhook `participantHandChanged`,
   with the `participantHandLower` permission to lower other participants' hands and the room config
   `raiseHand.enabled` to turn it off.
+- Reactions, in the meeting and through the embedded command `participantReactionSend` and the embedded event
+  `participantReactionSent`, with the `participantReactionSend` permission to send them and the room config
+  `reactions.enabled` to turn them off.
 
 ### Improved
 

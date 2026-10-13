@@ -63,6 +63,10 @@ export interface MeetRoomConfig {
 	 * Configuration for the raise hand feature. See {@link MeetRaiseHandConfig} for details.
 	 */
 	raiseHand: MeetRaiseHandConfig;
+	/**
+	 * Configuration for the reactions feature. See {@link MeetReactionsConfig} for details.
+	 */
+	reactions: MeetReactionsConfig;
 	// appearance: MeetAppearanceConfig;
 }
 
@@ -200,6 +204,17 @@ export interface MeetRoomCaptionsConfig {
 export interface MeetRaiseHandConfig {
 	/**
 	 * Indicates if participants can raise their hand in the room. The server rejects a raise while
+	 * it is `false`.
+	 */
+	enabled: boolean;
+}
+
+/**
+ * Interface representing the config for the reactions feature in a room.
+ */
+export interface MeetReactionsConfig {
+	/**
+	 * Indicates if participants can send reactions in the room. The server rejects a reaction while
 	 * it is `false`.
 	 */
 	enabled: boolean;
