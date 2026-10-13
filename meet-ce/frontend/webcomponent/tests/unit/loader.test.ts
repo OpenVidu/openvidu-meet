@@ -31,6 +31,7 @@ class FakeImpl extends HTMLElement {
 	participantHandRaise = jest.fn();
 	participantHandLower = jest.fn();
 	participantHandLowerAll = jest.fn();
+	participantReactionSend = jest.fn();
 	endMeeting = jest.fn();
 	leaveRoom = jest.fn();
 	kickParticipant = jest.fn();

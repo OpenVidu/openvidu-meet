@@ -143,6 +143,22 @@ test.describe('Room Features E2E Tests', () => {
 			await leaveMeeting(page);
 		});
 
+		test('should leave every key typed in the chat to the chat, the meeting shortcuts included', async ({
+			page
+		}) => {
+			await openMeeting(page, roomId, { role: 'speaker' });
+
+			await wcLocator(page, '#chat-panel-btn').click();
+			const chatInput = wcLocator(page, '#chat-input');
+			await chatInput.pressSequentially('hello there 1');
+
+			await expect(chatInput).toHaveValue('hello there 1');
+			await expect(wcLocator(page, '#raise-hand-button')).not.toHaveClass(/active/);
+			await expect(wcLocator(page, '#reactions-button')).not.toHaveClass(/active/);
+
+			await leaveMeeting(page);
+		});
+
 		test('should show activities panel', async ({ page }) => {
 			await openMeeting(page, roomId, { role: 'moderator' });
 

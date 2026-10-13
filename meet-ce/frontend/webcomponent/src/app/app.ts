@@ -37,6 +37,7 @@ import {
 	type EmbeddedEvent,
 	type MeetParticipantModerationAction,
 	type MeetParticipantMuteOptions,
+	type MeetReaction,
 	type WebComponentPropertyValues
 } from '@openvidu-meet/typings';
 import { ShadowOverlayContainer } from './shadow-dom/overlay-container.service';
@@ -132,6 +133,7 @@ export class App {
 		output<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED>>();
 	readonly recordingStatusChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.RECORDING_STATUS_CHANGED>>();
 	readonly participantHandChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_HAND_CHANGED>>();
+	readonly participantReactionSent = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_REACTION_SENT>>();
 	readonly embeddedCloseRequested = output<void>();
 
 	/** @deprecated Renamed to `meetingJoined`. Removed in 3.12.0. Dispatched alongside it. */
@@ -341,6 +343,10 @@ export class App {
 		return this.commandService.participantHandLowerAll();
 	}
 
+	participantReactionSend(reaction: MeetReaction): Promise<void> {
+		return this.commandService.participantReactionSend(reaction);
+	}
+
 	// ── Internal ─────────────────────────────────────────────────────────────
 	// The bus only ever queues canonical events (see EmbeddedEventBusService), so this switch
 	// only ever handles canonical names; emitting the deprecated output alongside the canonical
@@ -391,6 +397,9 @@ export class App {
 				break;
 			case EmbeddedEventName.PARTICIPANT_HAND_CHANGED:
 				this.participantHandChanged.emit(payload);
+				break;
+			case EmbeddedEventName.PARTICIPANT_REACTION_SENT:
+				this.participantReactionSent.emit(payload);
 				break;
 		}
 	}
