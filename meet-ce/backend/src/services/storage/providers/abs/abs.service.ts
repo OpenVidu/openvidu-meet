@@ -19,6 +19,9 @@ import { LoggerService } from '../../../logger.service.js';
 const hasErrorCode = (error: unknown, code: string): boolean =>
 	typeof error === 'object' && error !== null && 'code' in error && error.code === code;
 
+const hasStatusCode = (error: unknown, statusCode: number): boolean =>
+	typeof error === 'object' && error !== null && 'statusCode' in error && error.statusCode === statusCode;
+
 @injectable()
 export class ABSService {
 	private blobServiceClient: BlobServiceClient;
@@ -316,23 +319,22 @@ export class ABSService {
 
 	/**
 	 * Health check for Azure Blob Storage service and container accessibility.
-	 * Verifies both service connectivity and container existence.
+	 * Lists a blob instead of reading the container properties, which roles without access to blob data
+	 * (Reader, Contributor) can read too.
 	 */
 	async checkHealth(): Promise<{ accessible: boolean; containerExists: boolean }> {
 		try {
-			// Check if we can access the container by checking if it exists
-			const exists = await this.containerClient.exists();
-
-			if (exists) {
-				this.logger.verbose(
-					`ABS health check: service accessible and container '${MEET_ENV.AZURE_CONTAINER_NAME}' exists`
-				);
-				return { accessible: true, containerExists: true };
-			} else {
+			await this.getFirstPage(this.containerClient.listBlobsFlat().byPage({ maxPageSize: 1 }));
+			this.logger.verbose(
+				`ABS health check: service accessible and container '${MEET_ENV.AZURE_CONTAINER_NAME}' exists`
+			);
+			return { accessible: true, containerExists: true };
+		} catch (error) {
+			if (hasStatusCode(error, 404)) {
 				this.logger.error(`ABS container '${MEET_ENV.AZURE_CONTAINER_NAME}' does not exist`);
 				return { accessible: true, containerExists: false };
 			}
-		} catch (error) {
+
 			this.logger.error('ABS health check failed', error);
 			return { accessible: false, containerExists: false };
 		}
