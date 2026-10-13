@@ -290,6 +290,23 @@
 		"RAISED_COUNT": "Opgestoken handen",
 		"LOWERED_BY_MODERATOR": "Een moderator heeft je hand laten zakken"
 	},
+	"REACTIONS": {
+		"BUTTON": "Reacties",
+		"SEND": "Reactie sturen",
+		"LIFETIME": "Iedereen ziet hem {seconds} s",
+		"LIVE": "Live reacties",
+		"REACTED": "{name} reageerde met {reaction}",
+		"NAMES": {
+			"THUMBS_UP": "Duim omhoog",
+			"THUMBS_DOWN": "Duim omlaag",
+			"GRINNING_FACE": "Glimlach",
+			"SLIGHTLY_FROWNING_FACE": "Verdrietig",
+			"CONFUSED_FACE": "Verward",
+			"FACE_WITH_OPEN_MOUTH": "Verrast",
+			"CLAPPING_HANDS": "Applaus",
+			"RED_HEART": "Hart"
+		}
+	},
 	"END_MEETING": {
 		"LEFT_TITLE": "U heeft de meeting verlaten",
 		"LEFT_MESSAGE": "U heeft de meeting succesvol verlaten",

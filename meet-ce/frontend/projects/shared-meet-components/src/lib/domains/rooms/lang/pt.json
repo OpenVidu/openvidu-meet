@@ -244,6 +244,8 @@
         "CAPTIONS_DESC": "Ative a transcrição em direto para apresentar legendas durante a reunião",
         "HAND": "Levantar a mão",
         "HAND_DESC": "Permite aos participantes levantar a mão para pedir a palavra",
+        "REACTIONS": "Reações",
+        "REACTIONS_DESC": "Permite aos participantes enviar emojis que todos veem durante alguns segundos",
         "CHAT": "Chat",
         "CHAT_DESC": "Permitir que os participantes enviem mensagens durante a reunião",
         "VIRTUAL_BACKGROUNDS": "Fundos virtuais",

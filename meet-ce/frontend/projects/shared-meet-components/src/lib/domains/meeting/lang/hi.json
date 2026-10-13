@@ -290,6 +290,23 @@
 		"RAISED_COUNT": "उठे हुए हाथ",
 		"LOWERED_BY_MODERATOR": "एक मॉडरेटर ने आपका हाथ नीचे कर दिया"
 	},
+	"REACTIONS": {
+		"BUTTON": "प्रतिक्रियाएँ",
+		"SEND": "प्रतिक्रिया भेजें",
+		"LIFETIME": "सभी इसे {seconds} सेकंड तक देखते हैं",
+		"LIVE": "लाइव प्रतिक्रियाएँ",
+		"REACTED": "{name} ने {reaction} से प्रतिक्रिया दी",
+		"NAMES": {
+			"THUMBS_UP": "अंगूठा ऊपर",
+			"THUMBS_DOWN": "अंगूठा नीचे",
+			"GRINNING_FACE": "मुस्कान",
+			"SLIGHTLY_FROWNING_FACE": "उदास",
+			"CONFUSED_FACE": "उलझन",
+			"FACE_WITH_OPEN_MOUTH": "हैरानी",
+			"CLAPPING_HANDS": "तालियाँ",
+			"RED_HEART": "दिल"
+		}
+	},
 	"END_MEETING": {
 		"LEFT_TITLE": "आपने मीटिंग छोड़ दी",
 		"LEFT_MESSAGE": "आपने सफलतापूर्वक मीटिंग छोड़ दी है",

@@ -290,6 +290,23 @@
 		"RAISED_COUNT": "Mani alzate",
 		"LOWERED_BY_MODERATOR": "Un moderatore ha abbassato la tua mano"
 	},
+	"REACTIONS": {
+		"BUTTON": "Reazioni",
+		"SEND": "Invia una reazione",
+		"LIFETIME": "Tutti la vedono per {seconds} s",
+		"LIVE": "Reazioni in diretta",
+		"REACTED": "{name} ha reagito con {reaction}",
+		"NAMES": {
+			"THUMBS_UP": "Pollice in su",
+			"THUMBS_DOWN": "Pollice in giù",
+			"GRINNING_FACE": "Sorriso",
+			"SLIGHTLY_FROWNING_FACE": "Tristezza",
+			"CONFUSED_FACE": "Confusione",
+			"FACE_WITH_OPEN_MOUTH": "Sorpresa",
+			"CLAPPING_HANDS": "Applausi",
+			"RED_HEART": "Cuore"
+		}
+	},
 	"END_MEETING": {
 		"LEFT_TITLE": "Hai abbandonato la riunione",
 		"LEFT_MESSAGE": "Hai abbandonato la riunione con successo",

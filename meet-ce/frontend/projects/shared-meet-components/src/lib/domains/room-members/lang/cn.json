@@ -146,6 +146,10 @@
           "LABEL": "放下手",
           "DESCRIPTION": "允许放下其他参会者举起的手，可逐个或一次性放下"
         },
+        "participantReactionSend": {
+          "LABEL": "发送表情回应",
+          "DESCRIPTION": "允许发送所有人都能看到几秒钟的表情回应"
+        },
         "roomShareAccessLinks": {
           "LABEL": "共享访问链接",
           "DESCRIPTION": "允许与他人共享邀请链接"

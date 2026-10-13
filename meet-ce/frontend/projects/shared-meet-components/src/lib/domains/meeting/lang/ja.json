@@ -290,6 +290,23 @@
 		"RAISED_COUNT": "挙手中の参加者",
 		"LOWERED_BY_MODERATOR": "モデレーターがあなたの手を下ろしました"
 	},
+	"REACTIONS": {
+		"BUTTON": "リアクション",
+		"SEND": "リアクションを送信",
+		"LIFETIME": "全員に {seconds} 秒間表示されます",
+		"LIVE": "ライブリアクション",
+		"REACTED": "{name} が {reaction} でリアクションしました",
+		"NAMES": {
+			"THUMBS_UP": "いいね",
+			"THUMBS_DOWN": "よくないね",
+			"GRINNING_FACE": "笑顔",
+			"SLIGHTLY_FROWNING_FACE": "悲しい",
+			"CONFUSED_FACE": "困惑",
+			"FACE_WITH_OPEN_MOUTH": "驚き",
+			"CLAPPING_HANDS": "拍手",
+			"RED_HEART": "ハート"
+		}
+	},
 	"END_MEETING": {
 		"LEFT_TITLE": "会議を退出しました",
 		"LEFT_MESSAGE": "会議から正常に退出しました",

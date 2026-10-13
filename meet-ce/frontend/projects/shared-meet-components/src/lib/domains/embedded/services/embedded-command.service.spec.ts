@@ -1,7 +1,7 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { TestBed } from '@angular/core/testing';
-import { MeetParticipantModerationAction } from '@openvidu-meet/typings';
+import { MeetParticipantModerationAction, MeetReaction } from '@openvidu-meet/typings';
 import {
 	LocalMediaService,
 	MeetingPhaseService,
@@ -15,6 +15,7 @@ import { RecordingService as RecordingStateService } from '../../meeting/openvid
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { MeetingHandService } from '../../meeting/services/meeting-hand.service';
 import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
+import { MeetingReactionsService } from '../../meeting/services/meeting-reactions.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { LoggerService } from '../../../shared/services/logger.service';
@@ -54,6 +55,7 @@ describe('EmbeddedCommandService', () => {
 	let screenShare: { setEnabled: jasmine.Spy; enabled: ReturnType<typeof signal<boolean>> };
 	let recordingService: jasmine.SpyObj<RecordingService>;
 	let handService: jasmine.SpyObj<MeetingHandService>;
+	let reactionsService: jasmine.SpyObj<MeetingReactionsService>;
 	let recordingStatus: ReturnType<typeof signal<RecordingStateInfo>>;
 	let setRecordingStarting: jasmine.Spy;
 	let liveKitService: { isSessionActive: ReturnType<typeof signal<boolean>>; disconnect: jasmine.Spy };
@@ -105,6 +107,7 @@ describe('EmbeddedCommandService', () => {
 			'isOwn'
 		]);
 		handService.raise.and.resolveTo();
+		reactionsService = jasmine.createSpyObj<MeetingReactionsService>('MeetingReactionsService', ['send']);
 		handService.lower.and.resolveTo();
 		handService.lowerAll.and.resolveTo();
 		handService.isOwn.and.callFake(
@@ -139,6 +142,7 @@ describe('EmbeddedCommandService', () => {
 				{ provide: ScreenShareService, useValue: screenShare as unknown as ScreenShareService },
 				{ provide: RecordingService, useValue: recordingService },
 				{ provide: MeetingHandService, useValue: handService },
+				{ provide: MeetingReactionsService, useValue: reactionsService },
 				{
 					provide: RecordingStateService,
 					useValue: { recordingStatus, setRecordingStarting } as unknown as RecordingStateService
@@ -385,6 +389,27 @@ describe('EmbeddedCommandService', () => {
 			await service.participantHandRaise();
 
 			expect(handService.raise).not.toHaveBeenCalled();
+		});
+
+		it('sends a reaction, gated on participantReactionSend', async () => {
+			await service.participantReactionSend(MeetReaction.THUMBS_UP);
+
+			expect(hasPermission).toHaveBeenCalledWith('participantReactionSend');
+			expect(reactionsService.send).toHaveBeenCalledOnceWith(MeetReaction.THUMBS_UP);
+		});
+
+		it('rejects a reaction without participantReactionSend', async () => {
+			hasPermission.and.returnValue(false);
+
+			await service.participantReactionSend(MeetReaction.THUMBS_UP);
+
+			expect(reactionsService.send).not.toHaveBeenCalled();
+		});
+
+		it('rejects a reaction outside the ones the meeting offers', async () => {
+			await service.participantReactionSend('🎉' as MeetReaction);
+
+			expect(reactionsService.send).not.toHaveBeenCalled();
 		});
 
 		it('rejects mediaToggleAudio without the mediaPublishAudio permission', async () => {

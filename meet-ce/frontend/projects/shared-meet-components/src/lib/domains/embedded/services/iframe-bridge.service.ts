@@ -245,6 +245,19 @@ export class IframeBridgeService {
 				await this.commandService.participantHandLowerAll();
 				break;
 
+			case EmbeddedCommandName.PARTICIPANT_REACTION_SEND: {
+				const payload = 'payload' in message ? message.payload : undefined;
+				const reaction = payload && 'reaction' in payload ? payload.reaction : undefined;
+
+				if (!reaction) {
+					this.log.e('participantReactionSend command received without a reaction');
+					return;
+				}
+
+				await this.commandService.participantReactionSend(reaction);
+				break;
+			}
+
 			default:
 				break;
 		}

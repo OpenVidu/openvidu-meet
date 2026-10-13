@@ -4,8 +4,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetingContextService } from '../../../services/meeting-context.service';
+import { MeetingReactionsService } from '../../../services/meeting-reactions.service';
 import { nameHiddenParticipants } from '../../models/layout/smart-layout.model';
 import { PanelType } from '../../models/panel.model';
+import { REACTION_EMOJI } from '../../models/reaction.model';
 import { RecordingState } from '../../models/recording.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
@@ -18,8 +20,8 @@ import { HiddenParticipantsIndicatorComponent } from '../hidden-participants-ind
 
 /**
  * The meeting-wide status above the layout. A phone has room for one clock, the countdown to the
- * meeting's forced end once it starts, the recording mark and the raised hands; a menu lists every
- * status in full.
+ * meeting's forced end once it starts, the recording mark, the raised hands and the leading
+ * reactions; a menu lists every status in full. The reactions sit in the middle of the row.
  */
 @Component({
 	selector: 'ov-status-rail',
@@ -47,6 +49,7 @@ export class StatusRailComponent implements OnDestroy {
 	private readonly uiConfig = inject(MeetingUiConfigService);
 	private readonly panelService = inject(PanelService);
 	private readonly participantService = inject(ParticipantService);
+	private readonly reactionsService = inject(MeetingReactionsService);
 
 	private readonly now = signal(Date.now());
 	private readonly clockHandle = setInterval(() => this.now.set(Date.now()), 1000);
@@ -121,6 +124,10 @@ export class StatusRailComponent implements OnDestroy {
 	/** Every raised hand, whether or not the layout shows its tile. */
 	protected readonly raisedHandCount = computed(() => this.participantService.raisedHands().length);
 
+	/** The class pulse: how many people show each reaction right now, those off the grid included. */
+	protected readonly reactionCounts = this.reactionsService.counts;
+	protected readonly reactionEmoji = REACTION_EMOJI;
+
 	protected readonly canOpenActivitiesPanel = this.uiConfig.activitiesPanelButtonSignal;
 
 	protected readonly canOpenParticipantsPanel = this.uiConfig.participantsPanelButtonSignal;
@@ -132,6 +139,7 @@ export class StatusRailComponent implements OnDestroy {
 			this.showRecordingChip() ||
 			this.isE2eeActive() ||
 			this.raisedHandCount() > 0 ||
+			this.reactionCounts().length > 0 ||
 			this.hiddenParticipants() !== undefined
 	);
 

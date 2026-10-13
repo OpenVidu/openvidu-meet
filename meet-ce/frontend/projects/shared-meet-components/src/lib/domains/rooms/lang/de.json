@@ -244,6 +244,8 @@
         "CAPTIONS_DESC": "Aktivieren Sie die Live-Transkription, um während des Meetings Untertitel anzuzeigen",
         "HAND": "Hand heben",
         "HAND_DESC": "Teilnehmende können die Hand heben, um sich zu Wort zu melden",
+        "REACTIONS": "Reaktionen",
+        "REACTIONS_DESC": "Teilnehmende können Emojis senden, die alle für einige Sekunden sehen",
         "CHAT": "Chat",
         "CHAT_DESC": "Teilnehmern erlauben, während des Meetings Nachrichten zu senden",
         "VIRTUAL_BACKGROUNDS": "Virtuelle Hintergründe",

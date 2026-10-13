@@ -3,6 +3,7 @@ import {
 	EmbeddedCommandName,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
+	MeetReaction,
 	MeetRoomMemberPermissions
 } from '@openvidu-meet/typings';
 import {
@@ -15,6 +16,7 @@ import { RecordingService as RecordingStateService } from '../../meeting/openvid
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { MeetingHandService } from '../../meeting/services/meeting-hand.service';
 import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
+import { MeetingReactionsService } from '../../meeting/services/meeting-reactions.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { LoggerService } from '../../../shared/services/logger.service';
@@ -42,6 +44,7 @@ export class EmbeddedCommandService {
 	private readonly recordingService = inject(RecordingService);
 	private readonly recordingState = inject(RecordingStateService);
 	private readonly handService = inject(MeetingHandService);
+	private readonly reactionsService = inject(MeetingReactionsService);
 	private readonly log = inject(LoggerService).get('EmbeddedCommandService');
 	private lastRecordingStart: Promise<void> | undefined;
 
@@ -176,6 +179,17 @@ export class EmbeddedCommandService {
 		await this.run(EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL, 'participantHandLower', () =>
 			this.handService.lowerAll()
 		);
+	}
+
+	async participantReactionSend(reaction: MeetReaction): Promise<void> {
+		await this.run(EmbeddedCommandName.PARTICIPANT_REACTION_SEND, 'participantReactionSend', async () => {
+			if (!Object.values(MeetReaction).includes(reaction)) {
+				this.log.w(`participantReactionSend() called with '${reaction}', which is not a reaction`);
+				return;
+			}
+
+			this.reactionsService.send(reaction);
+		});
 	}
 
 	private async startRecording(roomId: string): Promise<void> {

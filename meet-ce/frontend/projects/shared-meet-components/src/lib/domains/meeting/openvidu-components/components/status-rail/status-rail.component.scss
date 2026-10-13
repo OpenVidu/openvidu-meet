@@ -12,15 +12,21 @@
 	padding: 0 16px;
 }
 
+// The reactions keep the middle of the row while both sides fit around them; a start too wide for its
+// half pushes them along, and the end gives way first, the hidden participants truncating their label.
+.status-rail-start,
 .status-rail-end {
 	display: flex;
+	flex: 1 1 0;
 	align-items: center;
 	gap: 8px;
-	margin-left: auto;
+}
+
+.status-rail-end {
+	justify-content: flex-end;
 	min-width: 0;
 
 	ov-hidden-participants-indicator {
-		display: flex;
 		min-width: 0;
 	}
 }
@@ -78,6 +84,35 @@
 	}
 }
 
+.reaction-pulse {
+	flex: none;
+	gap: 12px;
+	color: var(--ov-text-primary-color);
+	font: inherit;
+
+	&.clickable {
+		@include chip.status-chip-interactive;
+	}
+
+	.pulse-entry {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+	}
+
+	.pulse-emoji {
+		font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+		font-size: 16px;
+		line-height: 1;
+	}
+}
+
+.reaction-counts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 12px;
+}
+
 // Calm while there is time to act: only the icon carries the warn colour.
 .ending-soon-chip .status-chip-icon {
 	color: var(--ov-warn-color);
@@ -128,10 +163,11 @@
 	color: var(--ov-text-secondary-color);
 }
 
-// A phone row keeps one clock, the countdown first once it starts, the recording mark and the raised
-// hands; the menu behind ⋯ holds the rest in full.
+// A phone row keeps one clock, the countdown first once it starts, the recording mark, the raised
+// hands and the two leading reactions, one on the narrowest; the menu behind ⋯ holds the rest in full.
 @media only screen and (max-width: 790px) {
-	.folds {
+	.folds,
+	.reaction-pulse .pulse-entry:nth-child(n + 3) {
 		display: none;
 	}
 
@@ -141,5 +177,11 @@
 
 	.status-more {
 		display: flex;
+	}
+}
+
+@media only screen and (max-width: 360px) {
+	.reaction-pulse .pulse-entry:nth-child(n + 2) {
+		display: none;
 	}
 }

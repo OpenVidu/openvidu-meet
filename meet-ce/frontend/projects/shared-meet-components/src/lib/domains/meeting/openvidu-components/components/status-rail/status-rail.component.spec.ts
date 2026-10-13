@@ -1,9 +1,12 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MeetReaction } from '@openvidu-meet/typings';
 import { TranslateService } from '../../../../../shared/services/i18n/translate.service';
 import { MeetingContextService } from '../../../services/meeting-context.service';
+import { MeetingReactionsService } from '../../../services/meeting-reactions.service';
 import { HiddenParticipantsSummary } from '../../models/layout/smart-layout.model';
 import { PanelType } from '../../models/panel.model';
+import { ReactionCount } from '../../models/reaction.model';
 import { RecordingState, RecordingStateInfo } from '../../models/recording.model';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
@@ -25,6 +28,7 @@ describe('StatusRailComponent', () => {
 	let hiddenParticipants: ReturnType<typeof signal<HiddenParticipantsSummary | undefined>>;
 	let e2eeKey: ReturnType<typeof signal<string>>;
 	let raisedHands: ReturnType<typeof signal<{ identity: string }[]>>;
+	let reactionCounts: ReturnType<typeof signal<ReactionCount[]>>;
 	let panelService: jasmine.SpyObj<PanelService>;
 
 	beforeEach(async () => {
@@ -34,6 +38,7 @@ describe('StatusRailComponent', () => {
 		hiddenParticipants = signal<HiddenParticipantsSummary | undefined>(undefined);
 		e2eeKey = signal('');
 		raisedHands = signal<{ identity: string }[]>([]);
+		reactionCounts = signal<ReactionCount[]>([]);
 		panelService = jasmine.createSpyObj<PanelService>('PanelService', ['togglePanel', 'isActivitiesPanelOpened']);
 		panelService.isActivitiesPanelOpened.and.returnValue(false);
 
@@ -58,7 +63,8 @@ describe('StatusRailComponent', () => {
 					}
 				},
 				{ provide: PanelService, useValue: panelService },
-				{ provide: ParticipantService, useValue: { raisedHands } }
+				{ provide: ParticipantService, useValue: { raisedHands } },
+				{ provide: MeetingReactionsService, useValue: { counts: reactionCounts } }
 			]
 		}).compileComponents();
 
@@ -113,7 +119,8 @@ describe('StatusRailComponent', () => {
 			'recording-item',
 			'e2ee-item',
 			'raised-hands-item',
-			'hidden-participants-item'
+			'hidden-participants-item',
+			'reactions-item'
 		];
 		meetingStartedAt.set(Date.now() - 55 * 60_000 - 500);
 		remainingMs.set(42_000);
@@ -121,6 +128,10 @@ describe('StatusRailComponent', () => {
 		e2eeKey.set('secret');
 		raisedHands.set([{ identity: 'sarah' }, { identity: 'lucia' }]);
 		hiddenParticipants.set({ count: 4, names: ['Clara', 'Tom', 'Kenji', 'Ana'] });
+		reactionCounts.set([
+			{ reaction: MeetReaction.THUMBS_UP, count: 3 },
+			{ reaction: MeetReaction.CONFUSED_FACE, count: 1 }
+		]);
 		await render();
 
 		const rows = await openStatusMenu();
@@ -132,6 +143,35 @@ describe('StatusRailComponent', () => {
 		expect(rows[4].textContent).toContain('2');
 		expect(rows[5].textContent).toContain('+4');
 		expect(rows[5].textContent).toContain('HIDDEN_PARTICIPANTS.NAMES_AND_MORE');
+		expect(rows[6].textContent).toContain('👍 3');
+		expect(rows[6].textContent).toContain('😕 1');
+	});
+
+	it('shows the class pulse in the middle of the row, most shown reaction first', async () => {
+		reactionCounts.set([
+			{ reaction: MeetReaction.CONFUSED_FACE, count: 2 },
+			{ reaction: MeetReaction.THUMBS_UP, count: 1 }
+		]);
+		await render();
+
+		const rail = find('#status-rail')!;
+		const pulse = find('#reaction-pulse')!;
+		const entries = Array.from(pulse.querySelectorAll('.pulse-entry')).map((entry) =>
+			entry.textContent!.replace(/\s+/g, '')
+		);
+
+		expect(Array.from(rail.children).indexOf(pulse)).toBe(1);
+		expect(entries).toEqual(['😕2', '👍1']);
+		expect(find('#status-rail-more')).not.toBeNull();
+	});
+
+	it('opens the participants panel from the class pulse', async () => {
+		reactionCounts.set([{ reaction: MeetReaction.RED_HEART, count: 1 }]);
+		await render();
+
+		find('#reaction-pulse')!.click();
+
+		expect(panelService.togglePanel).toHaveBeenCalledWith(PanelType.PARTICIPANTS);
 	});
 
 	it('opens the participants panel from the hidden participants row', async () => {

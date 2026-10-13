@@ -46,6 +46,7 @@ export interface MeetingConfigFormValue {
 	e2eeEnabled: boolean;
 	captionsEnabled: boolean;
 	raiseHandEnabled: boolean;
+	reactionsEnabled: boolean;
 	initialAudioActive: boolean;
 	initialVideoActive: boolean;
 	// `null` mirrors the stored "unlimited" value of the meeting limits (an empty input)
@@ -59,6 +60,7 @@ export type MeetingConfigFormGroup = FormGroup<{
 	e2eeEnabled: FormControl<boolean>;
 	captionsEnabled: FormControl<boolean>;
 	raiseHandEnabled: FormControl<boolean>;
+	reactionsEnabled: FormControl<boolean>;
 	initialAudioActive: FormControl<boolean>;
 	initialVideoActive: FormControl<boolean>;
 	maxParticipants: FormControl<number | null>;

@@ -8,7 +8,9 @@ import { RuntimeConfigService } from '../../../../shared/services/runtime-config
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingHandService } from '../../services/meeting-hand.service';
+import { isShortcut } from '../../utils/keyboard-shortcut.utils';
 import { MeetingToolbarCopyLinkButtonComponent } from '../meeting-toolbar-copy-link-button/meeting-toolbar-copy-link-button.component';
+import { MeetingToolbarReactionsButtonComponent } from '../meeting-toolbar-reactions-button/meeting-toolbar-reactions-button.component';
 import { LoggerService } from '../../../../shared/services/logger.service';
 
 /**
@@ -25,6 +27,7 @@ import { LoggerService } from '../../../../shared/services/logger.service';
 		MatMenuModule,
 		MatTooltipModule,
 		MeetingToolbarCopyLinkButtonComponent,
+		MeetingToolbarReactionsButtonComponent,
 		TranslatePipe
 	]
 })
@@ -64,13 +67,13 @@ export class MeetingToolbarExtraButtonsComponent {
 	/** Whether the local participant's hand is raised */
 	isHandRaised = this.handService.localHandRaised;
 
-	/** `R` raises or lowers the hand once per press, unless the participant is typing somewhere. */
+	/** Whether to show the reaction picker (the room has reactions on and the participant may send them) */
+	showReactionsButton = computed(() => this.meetingContextService.meetingUI().showReactions);
+
+	/** `R` raises or lowers the hand once per press. */
 	@HostListener('document:keydown.r', ['$event'])
 	onHandShortcut(event: Event): void {
-		const { repeat, target } = event as KeyboardEvent & { target: HTMLElement | null };
-		const typing = target?.isContentEditable || target?.matches('input, textarea');
-
-		if (repeat || typing || !this.showHandButton()) return;
+		if (!isShortcut(event) || !this.showHandButton()) return;
 
 		void this.onHandClick();
 	}

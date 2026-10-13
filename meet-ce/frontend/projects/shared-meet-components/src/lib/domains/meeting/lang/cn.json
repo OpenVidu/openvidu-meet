@@ -290,6 +290,23 @@
 		"RAISED_COUNT": "举手的参会者",
 		"LOWERED_BY_MODERATOR": "主持人已放下你的手"
 	},
+	"REACTIONS": {
+		"BUTTON": "表情回应",
+		"SEND": "发送表情回应",
+		"LIFETIME": "所有人都会看到 {seconds} 秒",
+		"LIVE": "实时表情回应",
+		"REACTED": "{name} 回应了 {reaction}",
+		"NAMES": {
+			"THUMBS_UP": "赞",
+			"THUMBS_DOWN": "踩",
+			"GRINNING_FACE": "微笑",
+			"SLIGHTLY_FROWNING_FACE": "难过",
+			"CONFUSED_FACE": "困惑",
+			"FACE_WITH_OPEN_MOUTH": "惊讶",
+			"CLAPPING_HANDS": "鼓掌",
+			"RED_HEART": "爱心"
+		}
+	},
 	"END_MEETING": {
 		"LEFT_TITLE": "您已离开会议",
 		"LEFT_MESSAGE": "您已成功离开会议",

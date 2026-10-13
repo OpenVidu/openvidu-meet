@@ -244,6 +244,8 @@
         "CAPTIONS_DESC": "Abilita la trascrizione in tempo reale per visualizzare i sottotitoli durante la riunione",
         "HAND": "Alza la mano",
         "HAND_DESC": "Consente ai partecipanti di alzare la mano per chiedere la parola",
+        "REACTIONS": "Reazioni",
+        "REACTIONS_DESC": "Consente ai partecipanti di inviare emoji che tutti vedono per qualche secondo",
         "CHAT": "Chat",
         "CHAT_DESC": "Consenti ai partecipanti di inviare messaggi durante la riunione",
         "VIRTUAL_BACKGROUNDS": "Sfondi virtuali",

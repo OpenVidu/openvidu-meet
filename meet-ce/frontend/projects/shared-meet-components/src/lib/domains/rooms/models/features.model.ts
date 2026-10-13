@@ -60,6 +60,10 @@ export interface RoomFeatures {
 	 * Indicates if the raise hand control is shown in the UI
 	 */
 	showRaiseHand: boolean;
+	/**
+	 * Indicates if the reaction picker is shown in the UI. The reactions of others show whenever they arrive.
+	 */
+	showReactions: boolean;
 
 	/**
 	 * Indicates if the chat panel is shown in the UI

@@ -21,6 +21,7 @@ export class FeatureCalculator {
 		features.showCaptionsControls = captionsStatus !== 'HIDDEN';
 		features.showCaptionsControlsDisabled = captionsStatus === 'DISABLED_WITH_WARNING';
 		features.showRaiseHand = roomConfig.raiseHand.enabled;
+		features.showReactions = roomConfig.reactions.enabled;
 	}
 
 	static applyPermissions(features: RoomFeatures, permissions: MeetRoomMemberPermissions): void {
@@ -36,6 +37,11 @@ export class FeatureCalculator {
 
 		// The input is writable only when the chat is visible AND the member may write.
 		features.showChatInput = features.showChat && permissions.chatWrite;
+
+		// Reactions
+		if (features.showReactions) {
+			features.showReactions = permissions.participantReactionSend;
+		}
 
 		// Backgrounds
 		if (features.showBackgrounds) {

@@ -15,6 +15,24 @@
 				[attr.aria-label]="'Avatar for ' + participantDisplayName()"
 			/>
 
+			@if (reaction(); as live) {
+				<ov-reaction
+					class="avatar-reaction"
+					role="img"
+					[id]="'reaction-badge-' + _participant.sid"
+					[reaction]="live"
+					[attr.aria-label]="
+						'REACTIONS.REACTED'
+							| translate
+								: {
+										name: participantDisplayName(),
+										reaction: (reactionNameKeys[live.reaction] | translate)
+								  }
+					"
+					[matTooltip]="reactionNameKeys[live.reaction] | translate"
+				/>
+			}
+
 			<ov-connection-quality-indicator variant="badge" [participant]="_participant!" />
 
 			@if (isMutedLocally()) {
