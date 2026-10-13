@@ -27,6 +27,11 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   with the `participantHandLower` permission to lower other participants' hands and the room config
   `raiseHand.enabled` to turn it off.
 
+#### Deployment
+
+- Azure Blob Storage authenticates with the Azure managed identity of the VM or pod running Meet when
+  `MEET_AZURE_ACCOUNT_KEY` is empty.
+
 ### Improved
 
 #### Integration
