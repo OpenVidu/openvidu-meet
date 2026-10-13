@@ -1,5 +1,5 @@
-import type { MeetParticipantHandOptions } from '@openvidu-meet/typings';
-import { MeetParticipantModerationAction } from '@openvidu-meet/typings';
+import type { MeetParticipantHandOptions, MeetParticipantReactionOptions } from '@openvidu-meet/typings';
+import { MeetParticipantModerationAction, MeetReaction } from '@openvidu-meet/typings';
 import { z } from 'zod';
 
 export const UpdateParticipantRoleReqSchema = z.object({
@@ -25,4 +25,8 @@ export const UpdateParticipantHandReqSchema: z.ZodType<MeetParticipantHandOption
 // Nobody raises a hand but its owner, so the bulk form only lowers.
 export const LowerAllHandsReqSchema: z.ZodType<MeetParticipantHandOptions> = z.object({
 	raised: z.literal(false)
+});
+
+export const SendParticipantReactionReqSchema: z.ZodType<MeetParticipantReactionOptions> = z.object({
+	reaction: z.enum(MeetReaction)
 });

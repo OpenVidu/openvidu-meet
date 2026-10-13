@@ -87,6 +87,13 @@ properties:
             one's own hand is never gated. Has no deprecated `can*` equivalent. A room created from 3.10.0 on
             grants it to the moderator role and denies it to the speaker role by default; a room or member
             that existed before 3.10.0 starts without it.
+    participantReactionSend:
+        type: boolean
+        example: true
+        description: >
+            Can send reactions in the meeting. Seeing the reactions of others is never gated. Has no
+            deprecated `can*` equivalent. Granted to the moderator and speaker roles by default, and to every
+            room and member that existed before 3.10.0.
     meetingEnd:
         type: boolean
         example: false

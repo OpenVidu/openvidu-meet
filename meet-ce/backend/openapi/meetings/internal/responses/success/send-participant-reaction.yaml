@@ -1,0 +1,9 @@
+description: Successfully sent the reaction
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: Reaction of participant 'Alice' sent in meeting in room 'room-123'

@@ -38,7 +38,8 @@ describe('Room API Tests', () => {
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
 				captions: { enabled: true },
-				raiseHand: { enabled: true }
+				raiseHand: { enabled: true },
+				reactions: { enabled: true }
 			};
 			expectValidRoom(room, 'Room with Default Layout', {
 				roomIdPrefix: 'room_with_default_layout',
@@ -69,7 +70,8 @@ describe('Room API Tests', () => {
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
 				captions: { enabled: true },
-				raiseHand: { enabled: true }
+				raiseHand: { enabled: true },
+				reactions: { enabled: true }
 			};
 			expectValidRoom(room, 'Speaker Layout Room', {
 				roomIdPrefix: 'speaker_layout_room',
@@ -100,7 +102,8 @@ describe('Room API Tests', () => {
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
 				captions: { enabled: true },
-				raiseHand: { enabled: true }
+				raiseHand: { enabled: true },
+				reactions: { enabled: true }
 			};
 			expectValidRoom(room, 'Single Speaker Layout Room', {
 				roomIdPrefix: 'single_speaker_layout_room',

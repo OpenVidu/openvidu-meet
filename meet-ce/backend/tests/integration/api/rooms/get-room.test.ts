@@ -70,7 +70,8 @@ describe('Room API Tests', () => {
 					virtualBackground: { enabled: false },
 					e2ee: { enabled: false },
 					captions: { enabled: true },
-					raiseHand: { enabled: true }
+					raiseHand: { enabled: true },
+					reactions: { enabled: true }
 				}
 			};
 			// Create a room with custom config
