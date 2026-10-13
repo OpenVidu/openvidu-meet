@@ -6,7 +6,7 @@ import type {
 	ContainerClient,
 	ContainerListBlobFlatSegmentResponse
 } from '@azure/storage-blob';
-import { BlobServiceClient } from '@azure/storage-blob';
+import { BlobServiceClient, StorageSharedKeyCredential } from '@azure/storage-blob';
 import { inject, injectable } from 'inversify';
 import type { Readable } from 'stream';
 import { INTERNAL_CONFIG } from '../../../../config/internal-config.js';
@@ -24,7 +24,6 @@ const hasStatusCode = (error: unknown, statusCode: number): boolean =>
 
 @injectable()
 export class ABSService {
-	private blobServiceClient: BlobServiceClient;
 	private containerClient: ContainerClient;
 
 	constructor(@inject(LoggerService) protected logger: LoggerService) {
@@ -32,15 +31,13 @@ export class ABSService {
 			throw new Error('Azure Blob Storage configuration is incomplete');
 		}
 
-		if (MEET_ENV.AZURE_ACCOUNT_KEY) {
-			const AZURE_STORAGE_CONNECTION_STRING = `DefaultEndpointsProtocol=https;AccountName=${MEET_ENV.AZURE_ACCOUNT_NAME};AccountKey=${MEET_ENV.AZURE_ACCOUNT_KEY};EndpointSuffix=core.windows.net`;
-			this.blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
-		} else {
-			const serviceUrl = `https://${MEET_ENV.AZURE_ACCOUNT_NAME}.blob.core.windows.net`;
-			this.blobServiceClient = new BlobServiceClient(serviceUrl, new ManagedIdentityCredential());
-		}
-
-		this.containerClient = this.blobServiceClient.getContainerClient(MEET_ENV.AZURE_CONTAINER_NAME);
+		const credential = MEET_ENV.AZURE_ACCOUNT_KEY
+			? new StorageSharedKeyCredential(MEET_ENV.AZURE_ACCOUNT_NAME, MEET_ENV.AZURE_ACCOUNT_KEY)
+			: new ManagedIdentityCredential();
+		const serviceUrl = `https://${MEET_ENV.AZURE_ACCOUNT_NAME}.blob.core.windows.net`;
+		this.containerClient = new BlobServiceClient(serviceUrl, credential).getContainerClient(
+			MEET_ENV.AZURE_CONTAINER_NAME
+		);
 
 		this.logger.debug('Azure Client initialized');
 	}
