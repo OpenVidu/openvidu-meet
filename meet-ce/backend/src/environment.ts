@@ -208,7 +208,7 @@ export const logEnvVars = () => {
 			'AZURE ACCOUNT KEY:',
 			MEET_ENV.AZURE_ACCOUNT_KEY
 				? credential('****' + MEET_ENV.AZURE_ACCOUNT_KEY.slice(-3))
-				: text('(not set - using Managed Identity / DefaultAzureCredential)')
+				: text('(not set - using Managed Identity)')
 		);
 		console.log('AZURE CONTAINER NAME:', text(MEET_ENV.AZURE_CONTAINER_NAME));
 		console.log('---------------------------------------------------------');
