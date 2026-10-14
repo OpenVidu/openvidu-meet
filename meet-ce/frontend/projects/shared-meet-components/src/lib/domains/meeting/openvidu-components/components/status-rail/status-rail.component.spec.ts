@@ -17,8 +17,8 @@ import { RecordingService } from '../../services/recording/recording.service';
 import { StatusRailComponent } from './status-rail.component';
 
 /**
- * The two rows of a phone are a media query; what is checked here is what the rail holds and when the
- * participants' row has anything to show.
+ * Where a phone puts each chip is a media query; what is checked here is what the rail holds and when
+ * its chips need a second row.
  */
 describe('StatusRailComponent', () => {
 	let fixture: ComponentFixture<StatusRailComponent>;
@@ -80,8 +80,11 @@ describe('StatusRailComponent', () => {
 		return fixture.nativeElement.querySelector(selector);
 	}
 
-	function hasParticipantRow(): boolean {
-		return fixture.nativeElement.classList.contains('has-participant-status');
+	async function renderAt(width: number): Promise<void> {
+		fixture.nativeElement.style.width = `${width}px`;
+		await render();
+		await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve)));
+		await render();
 	}
 
 	it('takes no row while there is no status to show', async () => {
@@ -97,7 +100,6 @@ describe('StatusRailComponent', () => {
 
 		expect(fixture.nativeElement.classList).toContain('has-status');
 		expect(find('#meeting-elapsed-time')?.textContent).toContain('0:01:0');
-		expect(hasParticipantRow()).toBeFalse();
 	});
 
 	it('shows the countdown next to the elapsed time, which only a phone folds away', async () => {
@@ -109,33 +111,28 @@ describe('StatusRailComponent', () => {
 		expect(find('#meeting-elapsed-time')?.classList).toContain('folds');
 	});
 
-	it('fills the participants row only while hands are raised, reactions shown or people left off the grid', async () => {
+	it('asks for a second row only once its chips no longer fit in one', async () => {
 		meetingStartedAt.set(Date.now());
-		remainingMs.set(42_000);
+		hiddenParticipants.set({ count: 6, names: [] });
+		await renderAt(700);
+
+		expect(fixture.nativeElement.classList).not.toContain('needs-second-row');
+
 		recordingStatus.set({ status: RecordingState.STARTED, elapsed: new Date(0, 0, 0, 0, 12, 5) });
-		e2eeKey.set('secret');
-		await render();
+		raisedHands.set([{ identity: 'sarah' }, { identity: 'lucia' }]);
+		reactionCounts.set([
+			{ reaction: MeetReaction.THUMBS_UP, count: 3 },
+			{ reaction: MeetReaction.CONFUSED_FACE, count: 2 },
+			{ reaction: MeetReaction.THUMBS_DOWN, count: 1 }
+		]);
+		await renderAt(300);
 
 		expect(find('#recording-tag')?.textContent).toContain('0:12:05');
-		expect(hasParticipantRow()).toBeFalse();
+		expect(fixture.nativeElement.classList).toContain('needs-second-row');
 
-		raisedHands.set([{ identity: 'sarah' }]);
-		await render();
-		expect(hasParticipantRow()).toBeTrue();
+		await renderAt(1600);
 
-		raisedHands.set([]);
-		reactionCounts.set([{ reaction: MeetReaction.THUMBS_UP, count: 1 }]);
-		await render();
-		expect(hasParticipantRow()).toBeTrue();
-
-		reactionCounts.set([]);
-		hiddenParticipants.set({ count: 1, names: ['Clara'] });
-		await render();
-		expect(hasParticipantRow()).toBeTrue();
-
-		hiddenParticipants.set(undefined);
-		await render();
-		expect(hasParticipantRow()).toBeFalse();
+		expect(fixture.nativeElement.classList).not.toContain('needs-second-row');
 	});
 
 	it('shows the class pulse in the middle of the row, most shown reaction first', async () => {

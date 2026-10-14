@@ -127,52 +127,58 @@
 	}
 }
 
-// A phone splits the rail in two rows: the meeting's own status on top, and the raised hands, the
-// reactions and the people off the grid below, only while there are any. The reactions keep as many
-// entries as their row has room for, the most shown first.
+// A phone drops the words of its chips. When they still do not fit in one row, the raised hands, the
+// reactions and the people off the grid move to a second one, where the reactions keep as many
+// entries as there is room for, the most shown first.
 @media only screen and (max-width: 790px) {
-	.status-rail {
-		display: grid;
-		grid-template-columns: 1fr auto 1fr;
-		align-content: center;
-		gap: 6px 8px;
-	}
-
-	.status-rail-start {
-		grid-column: 1 / -1;
-	}
-
-	.status-rail-end {
-		display: contents;
-	}
-
-	.raised-hands-chip {
-		grid-area: 2 / 1;
-		justify-self: start;
-	}
-
-	.reaction-pulse {
-		grid-area: 2 / 2;
-		flex-wrap: wrap;
-		justify-content: center;
-		overflow: hidden;
-
-		.pulse-entry {
-			height: 100%;
-		}
-	}
-
-	.status-rail-end ov-hidden-participants-indicator {
-		grid-area: 2 / 3;
-		justify-self: end;
-		min-width: auto;
-	}
-
 	.folds {
 		display: none;
 	}
 
 	.ending-soon-chip {
 		order: -1;
+	}
+
+	.status-rail-end,
+	.status-rail-end ov-hidden-participants-indicator {
+		min-width: auto;
+	}
+
+	:host(.needs-second-row) {
+		.status-rail {
+			display: grid;
+			grid-template-columns: 1fr auto 1fr;
+			align-content: center;
+			gap: 6px 8px;
+		}
+
+		.status-rail-start {
+			grid-column: 1 / -1;
+		}
+
+		.status-rail-end {
+			display: contents;
+		}
+
+		.raised-hands-chip {
+			grid-area: 2 / 1;
+			justify-self: start;
+		}
+
+		.reaction-pulse {
+			grid-area: 2 / 2;
+			flex-wrap: wrap;
+			justify-content: center;
+			overflow: hidden;
+
+			.pulse-entry {
+				height: 100%;
+			}
+		}
+
+		.status-rail-end ov-hidden-participants-indicator {
+			grid-area: 2 / 3;
+			justify-self: end;
+		}
 	}
 }

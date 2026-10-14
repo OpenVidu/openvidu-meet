@@ -863,7 +863,7 @@ test.describe('Participants E2E Tests', () => {
 			}
 		});
 
-		test('should give the raised hands and the reactions a row of their own in the status rail of a phone', async ({
+		test('should keep the status rail of a phone in one row until its chips no longer fit, then move the hands and reactions below', async ({
 			browser
 		}) => {
 			const { byName, removeAllParticipants } = await joinModeratorAndSpeaker(browser);
@@ -871,21 +871,34 @@ test.describe('Participants E2E Tests', () => {
 			try {
 				const moderatorPage = byName[moderatorName];
 				const speakerPage = byName[speakerName];
-				await moderatorPage.setViewportSize({ width: 320, height: 700 });
+				const chipBoxes = () =>
+					Promise.all(
+						['#meeting-elapsed-time', '#raised-hands-chip', '#reaction-pulse'].map(
+							async (chip) => (await moderatorPage.locator(chip).boundingBox())!
+						)
+					);
+				await moderatorPage.setViewportSize({ width: 390, height: 700 });
 
 				await toggleHand(speakerPage);
 				await sendReaction(speakerPage, MeetReaction.THUMBS_UP);
 				await expectRaisedHandsChip(moderatorPage, 1);
 				await expectReactionPulse(moderatorPage, ['👍1']);
 
-				const [clock, hand, pulse] = await Promise.all(
-					['#meeting-elapsed-time', '#raised-hands-chip', '#reaction-pulse'].map((chip) =>
-						moderatorPage.locator(chip).boundingBox()
-					)
-				);
-				expect(hand!.y).toBeGreaterThan(clock!.y + clock!.height);
-				expect(pulse!.y).toBeGreaterThan(clock!.y + clock!.height);
-				expect(hand!.x + hand!.width).toBeLessThanOrEqual(pulse!.x);
+				const [clock, hand, pulse] = await chipBoxes();
+				expect(Math.abs(hand.y - clock.y)).toBeLessThan(2);
+				expect(Math.abs(pulse.y - clock.y)).toBeLessThan(2);
+
+				await moderatorPage.setViewportSize({ width: 220, height: 700 });
+
+				await expect
+					.poll(async () => {
+						const [narrowClock, narrowHand] = await chipBoxes();
+						return narrowHand.y > narrowClock.y + narrowClock.height;
+					})
+					.toBe(true);
+				const [, narrowHand, narrowPulse] = await chipBoxes();
+				expect(Math.abs(narrowPulse.y - narrowHand.y)).toBeLessThan(2);
+				expect(narrowHand.x + narrowHand.width).toBeLessThanOrEqual(narrowPulse.x);
 			} finally {
 				await removeAllParticipants();
 			}

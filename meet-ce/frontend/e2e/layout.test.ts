@@ -700,7 +700,7 @@ test.describe('Layout E2E Tests', () => {
 				}
 			});
 
-			test('should keep the participants left off the grid in the second row of the status rail on a phone', async ({
+			test('should keep the participants left off the grid beside the clock on a phone, without their words', async ({
 				browser
 			}) => {
 				const { pages, removeAllParticipants } = await joinParticipants(browser, {
@@ -726,9 +726,9 @@ test.describe('Layout E2E Tests', () => {
 					await expectHidden(pageA, '#status-rail .participant-count-label');
 					const [clock, hidden] = await Promise.all([
 						pageA.locator('#meeting-elapsed-time').boundingBox(),
-						pageA.locator('#status-rail ov-hidden-participants-indicator').boundingBox()
+						pageA.locator('#status-rail .unified-indicator').boundingBox()
 					]);
-					expect(hidden!.y).toBeGreaterThan(clock!.y + clock!.height);
+					expect(Math.abs(hidden!.y - clock!.y)).toBeLessThan(2);
 				} finally {
 					await removeAllParticipants();
 				}

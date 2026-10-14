@@ -182,7 +182,7 @@ $side-panel-width: 380px;
 		width: 100%;
 	}
 
-	#meeting-stage:has(ov-status-rail.has-participant-status) {
+	#meeting-stage:has(ov-status-rail.needs-second-row) {
 		--ov-status-rail-height: 72px;
 	}
 

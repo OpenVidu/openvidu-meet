@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject, OnDestroy, signal } from '@angular/core';
+import { Component, computed, ElementRef, inject, OnDestroy, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetingContextService } from '../../../services/meeting-context.service';
@@ -17,8 +17,8 @@ import { RecordingService } from '../../services/recording/recording.service';
 import { HiddenParticipantsIndicatorComponent } from '../hidden-participants-indicator/hidden-participants-indicator.component';
 
 /**
- * The meeting-wide status above the layout, with the reactions in the middle of the row. A phone
- * splits it in two rows: the meeting's own status on top, and what its participants do below.
+ * The meeting-wide status above the layout, with the reactions in the middle of the row. When its
+ * chips do not fit in one row, a phone moves what the participants do to a second one.
  */
 @Component({
 	selector: 'ov-status-rail',
@@ -27,7 +27,7 @@ import { HiddenParticipantsIndicatorComponent } from '../hidden-participants-ind
 	styleUrl: './status-rail.component.scss',
 	host: {
 		'[class.has-status]': 'hasStatus()',
-		'[class.has-participant-status]': 'hasParticipantStatus()'
+		'[class.needs-second-row]': 'needsSecondRow()'
 	}
 })
 export class StatusRailComponent implements OnDestroy {
@@ -118,21 +118,32 @@ export class StatusRailComponent implements OnDestroy {
 
 	protected readonly canOpenParticipantsPanel = this.uiConfig.participantsPanelButtonSignal;
 
-	readonly hasParticipantStatus = computed(
-		() => this.raisedHandCount() > 0 || this.reactionCounts().length > 0 || this.hiddenParticipants() !== undefined
-	);
-
 	readonly hasStatus = computed(
 		() =>
 			this.elapsedTime() !== undefined ||
 			this.isEndingSoon() ||
 			this.showRecordingChip() ||
 			this.isE2eeActive() ||
-			this.hasParticipantStatus()
+			this.raisedHandCount() > 0 ||
+			this.reactionCounts().length > 0 ||
+			this.hiddenParticipants() !== undefined
 	);
+
+	readonly needsSecondRow = signal(false);
+
+	private readonly host: HTMLElement = inject(ElementRef).nativeElement;
+	private readonly resizes = new ResizeObserver(() => this.measureRows());
+	private readonly mutations = new MutationObserver(() => this.measureRows());
+
+	constructor() {
+		this.resizes.observe(this.host);
+		this.mutations.observe(this.host, { childList: true, subtree: true, characterData: true });
+	}
 
 	ngOnDestroy(): void {
 		clearInterval(this.clockHandle);
+		this.resizes.disconnect();
+		this.mutations.disconnect();
 	}
 
 	protected openParticipantsPanel(): void {
@@ -146,4 +157,29 @@ export class StatusRailComponent implements OnDestroy {
 
 		this.panelService.togglePanel(PanelType.ACTIVITIES, 'recording');
 	}
+
+	private measureRows(): void {
+		const rail = this.host.querySelector<HTMLElement>('.status-rail');
+		this.needsSecondRow.set(rail !== null && oneRowWidth(rail) > rail.getBoundingClientRect().width);
+	}
+}
+
+/**
+ * The width the rail's chips take side by side. Every chip keeps its width in either row except the
+ * reactions, which a second row cuts short, so each group is summed from what it holds.
+ */
+function oneRowWidth(rail: HTMLElement): number {
+	return rowWidth(rail, (group) => rowWidth(group, (chip) => chip.getBoundingClientRect().width));
+}
+
+function rowWidth(element: Element, childWidth: (child: Element) => number): number {
+	const style = getComputedStyle(element);
+	const children = Array.from(element.children).filter((child) => getComputedStyle(child).display !== 'none');
+	const edges = [style.paddingLeft, style.paddingRight, style.borderLeftWidth, style.borderRightWidth];
+
+	return (
+		children.reduce((sum, child) => sum + childWidth(child), 0) +
+		(parseFloat(style.columnGap) || 0) * Math.max(children.length - 1, 0) +
+		edges.reduce((sum, edge) => sum + parseFloat(edge), 0)
+	);
 }
