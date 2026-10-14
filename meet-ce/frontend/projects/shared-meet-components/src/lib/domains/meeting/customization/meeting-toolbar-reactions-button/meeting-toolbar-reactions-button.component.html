@@ -1,0 +1,65 @@
+@if (isMobile()) {
+	<div id="reaction-menu-grid" class="reaction-grid" role="group" [attr.aria-label]="'REACTIONS.SEND' | translate">
+		@for (reaction of reactions; track reaction) {
+			<button
+				mat-menu-item
+				class="reaction-option"
+				[attr.data-reaction]="reaction"
+				[attr.aria-label]="reactionNameKeys[reaction] | translate"
+				(click)="send(reaction)"
+			>
+				{{ reactionEmoji[reaction] }}
+			</button>
+		}
+	</div>
+} @else {
+	<button
+		id="reactions-button"
+		#reactionsButton
+		mat-icon-button
+		[class.active]="localReaction()"
+		[attr.aria-label]="'REACTIONS.BUTTON' | translate"
+		aria-haspopup="true"
+		aria-keyshortcuts="E"
+		[attr.aria-expanded]="pickerOpen()"
+		(mouseenter)="onHover(true)"
+		(mouseleave)="onHover(false)"
+		(click)="onButtonClick($event)"
+		[disableRipple]="true"
+	>
+		@if (localReaction(); as mine) {
+			<ov-reaction class="button-reaction" [reaction]="mine" [ring]="true" />
+		} @else {
+			<mat-icon class="material-symbols-outlined">add_reaction</mat-icon>
+		}
+	</button>
+
+	<ng-template #picker>
+		<div
+			class="reaction-picker"
+			role="group"
+			[attr.aria-label]="'REACTIONS.SEND' | translate"
+			(mouseenter)="onHover(true)"
+			(mouseleave)="onHover(false)"
+			(keydown)="onPickerKeydown($event)"
+		>
+			<div class="reaction-row">
+				@for (reaction of reactions; track reaction; let place = $index) {
+					<button
+						type="button"
+						class="reaction-option"
+						[attr.data-reaction]="reaction"
+						[attr.aria-label]="reactionNameKeys[reaction] | translate"
+						[matTooltip]="(reactionNameKeys[reaction] | translate) + ' (' + (place + 1) + ')'"
+						matTooltipPosition="above"
+						(click)="send(reaction)"
+					>
+						{{ reactionEmoji[reaction] }}
+					</button>
+				}
+			</div>
+			<p class="reaction-lifetime">{{ 'REACTIONS.LIFETIME' | translate: { seconds: lifetimeSeconds } }}</p>
+			<span class="reaction-pointer" aria-hidden="true"></span>
+		</div>
+	</ng-template>
+}

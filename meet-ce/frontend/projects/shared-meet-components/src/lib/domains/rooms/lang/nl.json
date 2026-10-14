@@ -244,6 +244,8 @@
         "CAPTIONS_DESC": "Schakel live transcriptie in om ondertiteling tijdens de meeting weer te geven",
         "HAND": "Hand opsteken",
         "HAND_DESC": "Laat deelnemers hun hand opsteken om het woord te vragen",
+        "REACTIONS": "Reacties",
+        "REACTIONS_DESC": "Laat deelnemers emoji sturen die iedereen een paar seconden ziet",
         "CHAT": "Chat",
         "CHAT_DESC": "Sta deelnemers toe om tijdens de meeting berichten te sturen",
         "VIRTUAL_BACKGROUNDS": "Virtuele achtergronden",

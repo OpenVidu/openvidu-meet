@@ -6,7 +6,7 @@ import {
 	SignalRequest,
 	SignalResponse
 } from '@livekit/protocol';
-import { MeetRoomMemberRole, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
+import { MeetReaction, MeetRoomMemberRole, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
 import {
 	Browser,
 	chromium,
@@ -887,6 +887,62 @@ export const expectHandRaisedNotice = async (page: Page, message: string | false
 	if (message !== false) {
 		await expect(notice.locator('.notification-message')).toHaveText(message, { timeout: 5_000 });
 	}
+};
+
+/** A reaction stays on screen this long; the assertions that it went give it some slack. */
+const REACTION_GONE_TIMEOUT_MS = 15_000;
+
+/**
+ * Sends a reaction from the toolbar picker.
+ */
+export const sendReaction = async (page: Page, reaction: MeetReaction): Promise<void> => {
+	await page.locator('#reactions-button').click({ timeout: 10_000 });
+	await page.locator(`.reaction-row .reaction-option[data-reaction="${reaction}"]`).click({ timeout: 10_000 });
+};
+
+/**
+ * Asserts the camera tile of the named participant wears `reaction`, or no reaction once it has gone.
+ */
+export const expectTileReaction = async (
+	page: Page,
+	participantName: string,
+	reaction: string | false
+): Promise<void> => {
+	const tileReaction = page
+		.locator('.OV_stream_video.camera-source')
+		.filter({ has: page.locator('#participant-name', { hasText: new RegExp(`^${participantName}$`) }) })
+		.locator('.tile-reaction');
+	await (reaction === false
+		? expect(tileReaction).toHaveCount(0, { timeout: REACTION_GONE_TIMEOUT_MS })
+		: expect(tileReaction).toHaveText(reaction, { timeout: 10_000 }));
+};
+
+/**
+ * Asserts the participants panel row of the given participant wears `reaction` in place of the avatar.
+ */
+export const expectPanelReaction = async (page: Page, participantId: string, reaction: string): Promise<void> => {
+	await expect(page.locator(`#reaction-badge-${participantId}`)).toHaveText(reaction, { timeout: 10_000 });
+};
+
+/**
+ * Asserts the class pulse of the status rail reads `entries` (like `['👍1', '😕2']`), or is gone.
+ */
+export const expectReactionPulse = async (page: Page, entries: string[] | false): Promise<void> => {
+	const pulse = page.locator('#reaction-pulse');
+
+	if (entries === false) {
+		await expect(pulse).toHaveCount(0, { timeout: REACTION_GONE_TIMEOUT_MS });
+		return;
+	}
+
+	await expect
+		.poll(
+			async () => (await pulse.locator('.pulse-entry').allTextContents()).map((text) => text.replace(/\s+/g, '')),
+			{
+				timeout: 10_000
+			}
+		)
+		.toEqual(entries);
 };
 
 /**

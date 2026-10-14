@@ -1,4 +1,4 @@
-@use '../meeting-view/status-chip' as chip;
+@use '../status-rail/status-chip' as chip;
 
 :host.inert {
 	pointer-events: none;
@@ -113,15 +113,6 @@
 	.names-text {
 		overflow: hidden;
 		text-overflow: ellipsis;
-	}
-}
-
-@media (max-width: 790px) {
-	.unified-indicator {
-		.participant-count-label,
-		.names-text {
-			display: none;
-		}
 	}
 }
 

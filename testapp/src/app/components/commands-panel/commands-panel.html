@@ -226,6 +226,25 @@
 		</div>
 	</section>
 
+	<section class="ta-card">
+		<div class="ta-card__header">
+			<h2>Reactions</h2>
+			<span class="ta-hint">participantReactionSend() with the reaction clicked</span>
+		</div>
+		<div class="ta-btn-row">
+			@for (reaction of reactions; track reaction) {
+			<button
+				class="ta-btn"
+				data-testid="btn-participant-reaction-send"
+				[attr.data-reaction]="reaction"
+				(click)="commands.participantReactionSend(reaction)"
+			>
+				{{ reaction }}
+			</button>
+			}
+		</div>
+	</section>
+
 	<section class="ta-card" data-testid="section-event-api">
 		<div class="ta-card__header">
 			<h2>Listeners</h2>

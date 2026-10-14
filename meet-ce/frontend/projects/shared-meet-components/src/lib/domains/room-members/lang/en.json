@@ -146,6 +146,10 @@
           "LABEL": "Lower hands",
           "DESCRIPTION": "Allow lowering other participants' raised hands, one at a time or all at once"
         },
+        "participantReactionSend": {
+          "LABEL": "Send reactions",
+          "DESCRIPTION": "Allow sending reactions that everyone sees for a few seconds"
+        },
         "roomShareAccessLinks": {
           "LABEL": "Share access links",
           "DESCRIPTION": "Allow sharing invite links with others"

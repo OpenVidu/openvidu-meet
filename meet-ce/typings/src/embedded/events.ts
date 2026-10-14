@@ -1,4 +1,5 @@
 import { MeetRecordingStatus } from '../database/recording.entity.js';
+import { MeetReaction } from '../reaction.js';
 import { MeetParticipantInfo, MeetParticipantPayload } from '../response/participant-response.js';
 import type { MeetParticipantDeparturePayload } from '../webhook.js';
 
@@ -46,6 +47,11 @@ export enum EmbeddedEventName {
 	 * `participant.handRaiseDate`.
 	 */
 	PARTICIPANT_HAND_CHANGED = 'participantHandChanged',
+	/**
+	 * Event emitted to every participant, the sender included, when a participant sends a reaction.
+	 * Reactions are not replayed: a participant joining later is not notified of the ones sent before.
+	 */
+	PARTICIPANT_REACTION_SENT = 'participantReactionSent',
 	/**
 	 * Event emitted to the local participant when their microphone state changes. Emitted from the
 	 * prejoin screen onwards, before `meetingJoined`.
@@ -191,6 +197,16 @@ export interface EmbeddedEventPayloads {
 		roomId: string;
 		participant: MeetParticipantInfo;
 		origin: MeetEventOrigin.PARTICIPANT | MeetEventOrigin.MODERATOR;
+	};
+	/**
+	 * Payload for the {@link EmbeddedEventName.PARTICIPANT_REACTION_SENT} event.
+	 * `participant` is who sent the reaction, as they are at that moment (see {@link MeetParticipantInfo}),
+	 * and `reaction` one of the reactions in {@link MeetReaction}.
+	 */
+	[EmbeddedEventName.PARTICIPANT_REACTION_SENT]: {
+		roomId: string;
+		participant: MeetParticipantInfo;
+		reaction: MeetReaction;
 	};
 	/**
 	 * Payload for the {@link EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED} event.
@@ -339,6 +355,16 @@ export interface EmbeddedParticipantHandChangedEvent {
 }
 
 /**
+ * Event message emitted when a participant sends a reaction: the event name plus its payload,
+ * derived from {@link EmbeddedEventPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedParticipantReactionSentEvent {
+	event: EmbeddedEventName.PARTICIPANT_REACTION_SENT;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_REACTION_SENT>;
+}
+
+/**
  * Event message emitted to the local participant when their microphone state changes: the event
  * name plus its payload, derived from {@link EmbeddedEventPayloadFor}.
  * @category Communication
@@ -429,6 +455,7 @@ export type EmbeddedEvent =
 	| EmbeddedParticipantLeftEvent
 	| EmbeddedParticipantRoleChangedEvent
 	| EmbeddedParticipantHandChangedEvent
+	| EmbeddedParticipantReactionSentEvent
 	| EmbeddedMediaAudioStatusChangedEvent
 	| EmbeddedMediaVideoStatusChangedEvent
 	| EmbeddedMediaScreenShareStatusChangedEvent

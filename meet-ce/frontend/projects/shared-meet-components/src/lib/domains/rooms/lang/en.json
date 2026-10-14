@@ -244,6 +244,8 @@
         "CAPTIONS_DESC": "Enable live transcription to display captions during the meeting",
         "HAND": "Raise hand",
         "HAND_DESC": "Let participants raise their hand to ask for a turn",
+        "REACTIONS": "Reactions",
+        "REACTIONS_DESC": "Let participants send emoji that everyone sees for a few seconds",
         "CHAT": "Chat",
         "CHAT_DESC": "Allow participants to send messages during the meeting",
         "VIRTUAL_BACKGROUNDS": "Virtual Backgrounds",

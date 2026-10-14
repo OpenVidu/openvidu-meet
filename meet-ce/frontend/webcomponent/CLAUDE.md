@@ -83,7 +83,10 @@ events are re-dispatched on the outer element.
   `participantHandChanged` (everyone; payload `{ roomId, participant: MeetParticipantInfo, origin }`;
   the hand lives in a LiveKit participant attribute the server writes, so every raised hand is
   reported, in queue order, right after `meetingJoined`; the queue is ordered by
-  `participant.handRaiseDate`, never sent as a position that the next change would make stale).
+  `participant.handRaiseDate`, never sent as a position that the next change would make stale),
+  `participantReactionSent` (everyone, the sender included; payload
+  `{ roomId, participant: MeetParticipantInfo, reaction }`;
+  the server relays each reaction once and stores none, so nothing is replayed on joining).
   A state-change event carries the live `MeetParticipantInfo` snapshot, like its webhook, minus `roomName`.
   The 3.8.0 spellings (`joined`, `left`, `closed`) are dispatched **alongside** their
   canonical twin until **3.12.0** — a host listening to both names receives the event twice.
@@ -99,7 +102,8 @@ events are re-dispatched on the outer element.
   targets the recording the meeting currently knows, after waiting for a start still in flight),
   `participantHandRaise()` / `participantHandLower(identity?)` / `participantHandLowerAll()` (the
   own hand is never gated; lowering another participant's hand, or every hand, needs
-  `participantHandLower`), and
+  `participantHandLower`), `participantReactionSend(reaction)` (one of the `MeetReaction` names, gated
+  by `participantReactionSend`), and
   the convenience listener API `on()` / `once()` / `off()` added in
   `src/app/custom-element/wrapper.ts`. Every command runs through `EmbeddedCommandService.run()`,
   which enforces the permission and, internally, which commands work from the prejoin screen — the

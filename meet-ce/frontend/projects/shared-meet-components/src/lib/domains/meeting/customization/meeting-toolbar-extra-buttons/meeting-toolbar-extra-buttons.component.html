@@ -1,3 +1,8 @@
+<!-- Reactions on mobile: a grid in the More options menu, before Raise hand -->
+@if (showReactionsButton() && isMobile()) {
+	<ov-meeting-toolbar-reactions-button [isMobile]="true" />
+}
+
 <!-- Raise hand button -->
 @if (showHandButton()) {
 	@if (isMobile()) {
@@ -17,6 +22,11 @@
 			<mat-icon class="material-symbols-outlined">front_hand</mat-icon>
 		</button>
 	}
+}
+
+<!-- Reactions button, right after Raise hand -->
+@if (showReactionsButton() && !isMobile()) {
+	<ov-meeting-toolbar-reactions-button />
 }
 
 <!-- Captions button -->

@@ -1,0 +1,209 @@
+@if (hasStatus()) {
+	<div id="status-rail" class="status-rail">
+		<div class="status-rail-start">
+			@if (elapsedTime(); as elapsed) {
+				<div
+					id="meeting-elapsed-time"
+					class="status-chip elapsed-chip"
+					[class.folds]="isEndingSoon()"
+					[matTooltip]="'ROOM.ELAPSED_BADGE_TOOLTIP' | translate"
+				>
+					<mat-icon class="status-chip-icon">timer</mat-icon>
+					<span class="status-chip-value">{{ elapsed }}</span>
+				</div>
+			}
+
+			@if (showRecordingChip()) {
+				<div
+					id="recording-tag"
+					class="status-chip recording-chip"
+					[class.clickable]="canOpenActivitiesPanel()"
+					(click)="openRecordingActivityPanel()"
+				>
+					<span class="recording-dot"></span>
+					<span class="status-chip-value">REC</span>
+					@if (isRecordingStarting()) {
+						<span class="status-chip-label folds">{{ 'ROOM.RECORDING_BADGE_STARTING' | translate }}</span>
+					} @else if (recordingStatus().elapsed; as elapsed) {
+						<span class="status-chip-label folds">{{ elapsed | date: 'H:mm:ss' }}</span>
+					}
+				</div>
+			}
+
+			@if (isEndingSoon()) {
+				<div
+					id="meeting-ending-soon"
+					class="status-chip ending-soon-chip"
+					[class.urgent]="isEndingSoonUrgent()"
+				>
+					<mat-icon class="status-chip-icon">schedule</mat-icon>
+					@if (endingSoonTime(); as time) {
+						<span class="status-chip-label folds">{{ 'ROOM.ENDING_SOON_BADGE_LABEL' | translate }}</span>
+						<span class="status-chip-value">{{ time }}</span>
+					} @else {
+						<span class="status-chip-label">{{ 'ROOM.ENDING_SOON_BADGE_ENDING' | translate }}</span>
+					}
+				</div>
+			}
+
+			@if (isE2eeActive()) {
+				<div class="status-chip e2ee-chip folds" [matTooltip]="'ROOM.E2EE_BADGE_TOOLTIP' | translate">
+					<mat-icon class="status-chip-icon">lock</mat-icon>
+					<span class="status-chip-label">{{ 'ROOM.E2EE_BADGE_LABEL' | translate }}</span>
+				</div>
+			}
+		</div>
+
+		@if (reactionCounts().length > 0) {
+			<button
+				id="reaction-pulse"
+				class="status-chip reaction-pulse"
+				[class.clickable]="canOpenParticipantsPanel()"
+				[matTooltip]="'REACTIONS.LIVE' | translate"
+				(click)="openParticipantsPanel()"
+			>
+				@for (entry of reactionCounts(); track entry.reaction) {
+					<span class="pulse-entry">
+						<span class="pulse-emoji">{{ reactionEmoji[entry.reaction] }}</span>
+						<span class="status-chip-value">{{ entry.count }}</span>
+					</span>
+				}
+			</button>
+		}
+
+		<div class="status-rail-end">
+			@if (raisedHandCount(); as count) {
+				<div
+					id="raised-hands-chip"
+					class="status-chip raised-hands-chip"
+					[class.clickable]="canOpenParticipantsPanel()"
+					[matTooltip]="'HAND.RAISED_COUNT' | translate"
+					(click)="openParticipantsPanel()"
+				>
+					<mat-icon class="status-chip-icon material-symbols-outlined">front_hand</mat-icon>
+					<span class="status-chip-value">{{ count }}</span>
+				</div>
+			}
+
+			@if (hiddenParticipants(); as hidden) {
+				<ov-hidden-participants-indicator
+					class="folds"
+					mode="topbar"
+					[class.inert]="!canOpenParticipantsPanel()"
+					[count]="hidden.count"
+					[hiddenParticipantNames]="hidden.names"
+					(clicked)="openParticipantsPanel()"
+				/>
+			}
+
+			@if (hasMoreStatus()) {
+				<button
+					id="status-rail-more"
+					class="status-chip status-more"
+					[matMenuTriggerFor]="statusMenu"
+					[attr.aria-label]="'ROOM.STATUS_MENU' | translate"
+				>
+					<mat-icon class="status-chip-icon">more_horiz</mat-icon>
+				</button>
+			}
+		</div>
+	</div>
+
+	<mat-menu #statusMenu="matMenu" class="status-menu" xPosition="before">
+		@if (isEndingSoon()) {
+			<div mat-menu-item class="status-menu-item ending-soon-item">
+				<mat-icon>schedule</mat-icon>
+				<span class="status-menu-row">
+					@if (endingSoonTime(); as time) {
+						<span>{{ 'ROOM.ENDING_SOON_BADGE_LABEL' | translate }}</span>
+						<span class="status-menu-value">{{ time }}</span>
+					} @else {
+						<span>{{ 'ROOM.ENDING_SOON_BADGE_ENDING' | translate }}</span>
+					}
+				</span>
+			</div>
+		}
+
+		@if (elapsedTime(); as elapsed) {
+			<div mat-menu-item class="status-menu-item elapsed-item">
+				<mat-icon>timer</mat-icon>
+				<span class="status-menu-row">
+					<span>{{ 'ROOM.ELAPSED_BADGE_TOOLTIP' | translate }}</span>
+					<span class="status-menu-value">{{ elapsed }}</span>
+				</span>
+			</div>
+		}
+
+		@if (showRecordingChip()) {
+			<button mat-menu-item class="status-menu-item recording-item" (click)="openRecordingActivityPanel()">
+				<mat-icon>fiber_manual_record</mat-icon>
+				<span class="status-menu-row">
+					<span>{{ 'PANEL.RECORDING.STATUS_RECORDING' | translate }}</span>
+					@if (isRecordingStarting()) {
+						<span class="status-menu-value">{{ 'ROOM.RECORDING_BADGE_STARTING' | translate }}</span>
+					} @else if (recordingStatus().elapsed; as elapsed) {
+						<span class="status-menu-value">{{ elapsed | date: 'H:mm:ss' }}</span>
+					}
+				</span>
+			</button>
+		}
+
+		@if (isE2eeActive()) {
+			<div mat-menu-item class="status-menu-item e2ee-item">
+				<mat-icon>lock</mat-icon>
+				<span>{{ 'ROOM.E2EE_BADGE_TOOLTIP' | translate }}</span>
+			</div>
+		}
+
+		@if (raisedHandCount(); as count) {
+			<button mat-menu-item class="status-menu-item raised-hands-item" (click)="openParticipantsPanel()">
+				<mat-icon class="material-symbols-outlined">front_hand</mat-icon>
+				<span class="status-menu-row">
+					<span>{{ 'HAND.RAISED_COUNT' | translate }}</span>
+					<span class="status-menu-value">{{ count }}</span>
+				</span>
+			</button>
+		}
+
+		@if (hiddenParticipants(); as hidden) {
+			<button mat-menu-item class="status-menu-item hidden-participants-item" (click)="openParticipantsPanel()">
+				<mat-icon>{{ hidden.count === 1 ? 'person' : 'people' }}</mat-icon>
+				<span class="status-menu-row stacked">
+					<span>
+						+{{ hidden.count }}
+						{{
+							(hidden.count === 1 ? 'HIDDEN_PARTICIPANTS.ONE_MORE' : 'HIDDEN_PARTICIPANTS.MANY_MORE')
+								| translate
+						}}
+					</span>
+					@if (hiddenNames(); as names) {
+						<span class="status-menu-detail">
+							@if (names.remaining > 0) {
+								{{
+									'HIDDEN_PARTICIPANTS.NAMES_AND_MORE'
+										| translate: { names: names.shown, count: names.remaining }
+								}}
+							} @else {
+								{{ names.shown }}
+							}
+						</span>
+					}
+				</span>
+			</button>
+		}
+
+		@if (reactionCounts().length > 0) {
+			<button mat-menu-item class="status-menu-item reactions-item" (click)="openParticipantsPanel()">
+				<mat-icon>add_reaction</mat-icon>
+				<span class="status-menu-row stacked">
+					<span>{{ 'REACTIONS.LIVE' | translate }}</span>
+					<span class="status-menu-detail reaction-counts">
+						@for (entry of reactionCounts(); track entry.reaction) {
+							<span>{{ reactionEmoji[entry.reaction] }} {{ entry.count }}</span>
+						}
+					</span>
+				</span>
+			</button>
+		}
+	</mat-menu>
+}

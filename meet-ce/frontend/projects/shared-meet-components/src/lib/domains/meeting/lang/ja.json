@@ -12,6 +12,7 @@
 		"E2EE_BADGE_LABEL": "暗号化",
 		"E2EE_BADGE_TOOLTIP": "この会議はエンドツーエンドで暗号化されています",
 		"ELAPSED_BADGE_TOOLTIP": "会議開始からの経過時間",
+		"STATUS_MENU": "会議のステータス",
 		"RECORDING_BADGE_STARTING": "開始中",
 		"RECORDING_STARTED_TITLE": "このミーティングは録画されています",
 		"RECORDING_STARTED_MESSAGE": "これ以降、あなたの音声、映像、共有した内容はすべて録画されます。",
@@ -288,6 +289,23 @@
 		"LOWER_ALL": "すべての手を下ろす",
 		"RAISED_COUNT": "挙手中の参加者",
 		"LOWERED_BY_MODERATOR": "モデレーターがあなたの手を下ろしました"
+	},
+	"REACTIONS": {
+		"BUTTON": "リアクション",
+		"SEND": "リアクションを送信",
+		"LIFETIME": "全員に {seconds} 秒間表示されます",
+		"LIVE": "ライブリアクション",
+		"REACTED": "{name} が {reaction} でリアクションしました",
+		"NAMES": {
+			"THUMBS_UP": "いいね",
+			"THUMBS_DOWN": "よくないね",
+			"GRINNING_FACE": "笑顔",
+			"SLIGHTLY_FROWNING_FACE": "悲しい",
+			"CONFUSED_FACE": "困惑",
+			"FACE_WITH_OPEN_MOUTH": "驚き",
+			"CLAPPING_HANDS": "拍手",
+			"RED_HEART": "ハート"
+		}
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "会議を退出しました",

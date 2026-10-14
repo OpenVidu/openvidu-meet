@@ -1,0 +1,40 @@
+// The raised card that floats over the meeting next to a toolbar button, shared by the microphone
+// alerts and the reaction picker so both look alike. Theme-aware: the fallbacks keep the dark look
+// if the variables are ever missing.
+$background: var(--ov-surface-container-color, #3c4043);
+
+@mixin bubble {
+	position: relative;
+	pointer-events: auto;
+	border-radius: 8px;
+	background: $background;
+	// Separates the card from similarly light backgrounds in the light theme.
+	border: 1px solid var(--ov-border-color, rgba(255, 255, 255, 0.08));
+	color: var(--ov-text-surface-color, #ffffff);
+	// Hosts like the toolbar propagate white-space: nowrap; the bubble text must wrap.
+	white-space: normal;
+	box-shadow:
+		0 4px 8px 3px rgba(0, 0, 0, 0.15),
+		0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+// The triangle on the edge that faces the button: the bottom edge by default, the top edge once the
+// bubble carries `.below`.
+@mixin pointer($selector) {
+	#{$selector} {
+		position: absolute;
+		left: 50%;
+		transform: translateX(-50%);
+		border: 7px solid transparent;
+	}
+
+	&:not(.below) #{$selector} {
+		top: 100%;
+		border-top-color: $background;
+	}
+
+	&.below #{$selector} {
+		bottom: 100%;
+		border-bottom-color: $background;
+	}
+}

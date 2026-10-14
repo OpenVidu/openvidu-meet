@@ -8,6 +8,7 @@ import { meetRoomMemberCollectionName } from '../models/mongoose-schemas/room-me
 const roomMemberMigrationV1ToV2Name = generateSchemaMigrationName(meetRoomMemberCollectionName, 1, 2);
 const roomMemberMigrationV2ToV3Name = generateSchemaMigrationName(meetRoomMemberCollectionName, 2, 3);
 const roomMemberMigrationV3ToV4Name = generateSchemaMigrationName(meetRoomMemberCollectionName, 3, 4);
+const roomMemberMigrationV4ToV5Name = generateSchemaMigrationName(meetRoomMemberCollectionName, 4, 5);
 
 // Brings customPermissions and effectivePermissions to the current key set through
 // normalizePermissions(), which does both halves of the job. It renames the deprecated `can*` spellings
@@ -53,5 +54,6 @@ const normalizeMemberPermissionsTransform: SchemaTransform<MeetRoomMemberDocumen
 export const roomMemberMigrations: SchemaMigrationMap<MeetRoomMemberDocument> = new Map([
 	[roomMemberMigrationV1ToV2Name, normalizeMemberPermissionsTransform],
 	[roomMemberMigrationV2ToV3Name, normalizeMemberPermissionsTransform],
-	[roomMemberMigrationV3ToV4Name, normalizeMemberPermissionsTransform]
+	[roomMemberMigrationV3ToV4Name, normalizeMemberPermissionsTransform],
+	[roomMemberMigrationV4ToV5Name, normalizeMemberPermissionsTransform]
 ]);

@@ -4,6 +4,7 @@ export * from './api-registry.js';
 export * from './frontend-signal.js';
 export * from './livekit-permissions.js';
 export * from './participant-attributes.js';
+export * from './reaction.js';
 export * from './request/room-member-request.js';
 export * from './webhook.js';
 

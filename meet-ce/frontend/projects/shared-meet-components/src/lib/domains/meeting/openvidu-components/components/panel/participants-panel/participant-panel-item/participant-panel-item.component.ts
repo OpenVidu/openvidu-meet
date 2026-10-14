@@ -7,13 +7,16 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ParticipantPanelParticipantBadgeDirective } from '../../../../directives/template/internals.directive';
 import { ParticipantPanelItemElementsDirective } from '../../../../directives/template/openvidu-components-angular.directive';
+import { MeetingReactionsService } from '../../../../../services/meeting-reactions.service';
 import { ParticipantMediaKind, ParticipantModel } from '../../../../models/participant.model';
+import { REACTION_NAME_KEYS } from '../../../../models/reaction.model';
 import { TranslatePipe } from '../../../../pipes/translate.pipe';
 import { MeetingUiConfigService } from '../../../../services/config/meeting-ui-config.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
 import { TemplateRegistryService } from '../../../../services/template/template-registry.service';
 import { ConnectionQualityIndicatorComponent } from '../../../connection-quality-indicator/connection-quality-indicator.component';
 import { ParticipantAvatarComponent } from '../../../participant-avatar/participant-avatar.component';
+import { ReactionComponent } from '../../../reaction/reaction.component';
 
 /** What a device button reports when it reports anything at all. */
 type MediaControlState = 'active' | 'off';
@@ -101,6 +104,7 @@ const MEDIA_CONTROLS: MediaControlDescriptor[] = [
 		TranslatePipe,
 		ParticipantAvatarComponent,
 		ConnectionQualityIndicatorComponent,
+		ReactionComponent,
 		LowerCasePipe,
 		NgTemplateOutlet
 	],
@@ -123,6 +127,7 @@ export class ParticipantPanelItemComponent {
 	readonly handLowerRequested = output<void>();
 
 	private readonly libService = inject(MeetingUiConfigService);
+	private readonly reactionsService = inject(MeetingReactionsService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly templateRegistry = inject(TemplateRegistryService);
 
@@ -156,6 +161,14 @@ export class ParticipantPanelItemComponent {
 	readonly isHandRaised = computed(() => !!this.participantInput()?.isHandRaised);
 	readonly canLowerOwnHand = computed(() => this.isLocalParticipant() && this.isHandRaised());
 	readonly hasMenu = computed(() => this.canMuteLocally() || this.hasExternalElements());
+
+	/** The participant's reaction while it is on screen, which takes the place of their avatar. */
+	readonly reaction = computed(() => {
+		const participant = this.participantInput();
+		return participant && this.reactionsService.live().get(participant.identity);
+	});
+
+	protected readonly reactionNameKeys = REACTION_NAME_KEYS;
 
 	readonly mediaControls = computed<ParticipantMediaControl[]>(() => {
 		const participant = this.participantInput();

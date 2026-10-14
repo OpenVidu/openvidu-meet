@@ -75,6 +75,7 @@ describe('Webhook Integration Tests', () => {
 		e2ee: { enabled: false },
 		captions: { enabled: true },
 		raiseHand: { enabled: true },
+		reactions: { enabled: true },
 		initialAudioActive: true,
 		initialVideoActive: true
 	};

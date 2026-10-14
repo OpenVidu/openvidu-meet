@@ -6,6 +6,7 @@ import { apiLimiter } from '../middlewares/rate-limit.middleware.js';
 import {
 	validateLowerAllHandsReq,
 	validateMuteParticipantMediaReq,
+	validateSendParticipantReactionReq,
 	validateUpdateParticipantHandReq,
 	validateUpdateParticipantRoleReq
 } from '../middlewares/request-validators/meeting-validator.middleware.js';
@@ -95,4 +96,20 @@ meetingRouter.put(
 	validateUpdateParticipantHandReq,
 	withRoomPermissionForOthers('participantHandLower'),
 	meetingCtrl.updateParticipantHand
+);
+
+// Internal meeting routes
+export const internalMeetingRouter: Router = Router();
+internalMeetingRouter.use(bodyParser.urlencoded({ extended: true }));
+internalMeetingRouter.use(bodyParser.json());
+internalMeetingRouter.use(apiLimiter);
+
+// Only a participant reacts, so only the room member token they joined with is accepted.
+internalMeetingRouter.post(
+	'/:roomId/reactions',
+	withAuth(roomMemberTokenValidator),
+	withValidRoomId,
+	validateSendParticipantReactionReq,
+	withRoomPermission('participantReactionSend'),
+	meetingCtrl.sendParticipantReaction
 );

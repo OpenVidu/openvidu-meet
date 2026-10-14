@@ -24,6 +24,7 @@ describe('FeatureCalculator.applyPermissions', () => {
 		({
 			showStartStopRecording: true,
 			showChat: true,
+			showReactions: true,
 			showBackgrounds: true
 		}) as RoomFeatures;
 
@@ -82,12 +83,14 @@ describe('FeatureCalculator.applyPermissions', () => {
 		const features = buildFeatures();
 		features.showStartStopRecording = false;
 		features.showChat = false;
+		features.showReactions = false;
 		features.showBackgrounds = false;
 
 		FeatureCalculator.applyPermissions(features, buildPermissions());
 
 		expect(features.showStartStopRecording).toBeFalse();
 		expect(features.showChat).toBeFalse();
+		expect(features.showReactions).toBeFalse();
 		expect(features.showBackgrounds).toBeFalse();
 	});
 
@@ -99,6 +102,11 @@ describe('FeatureCalculator.applyPermissions', () => {
 		const noRead = featuresFor({ chatRead: false });
 		expect(noRead.showChat).toBeFalse();
 		expect(noRead.showChatInput).toBeFalse();
+	});
+
+	it('should gate the reaction picker on participantReactionSend', () => {
+		expect(featuresFor().showReactions).toBeTrue();
+		expect(featuresFor({ participantReactionSend: false }).showReactions).toBeFalse();
 	});
 
 	it('should gate the virtual backgrounds on mediaChangeVirtualBackground', () => {

@@ -2,8 +2,10 @@ import { Component, computed, effect, ElementRef, inject, input, OnDestroy, sign
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MeetingReactionsService } from '../../../services/meeting-reactions.service';
 import { AvatarView, DEFAULT_AVATAR_VIEW } from '../../models/avatar-view.model';
 import { ParticipantStream } from '../../models/participant.model';
+import { REACTION_NAME_KEYS } from '../../models/reaction.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
@@ -12,6 +14,7 @@ import { StreamLayoutStateService } from '../../services/layout/stream-layout-st
 import { ParticipantService } from '../../services/participant/participant.service';
 import { AudioWaveComponent } from '../audio-wave/audio-wave.component';
 import { ConnectionQualityIndicatorComponent } from '../connection-quality-indicator/connection-quality-indicator.component';
+import { ReactionComponent } from '../reaction/reaction.component';
 import { VideoElementComponent } from '../video-element/video-element.component';
 
 /**
@@ -27,6 +30,7 @@ import { VideoElementComponent } from '../video-element/video-element.component'
 		TranslatePipe,
 		AudioWaveComponent,
 		ConnectionQualityIndicatorComponent,
+		ReactionComponent,
 		VideoElementComponent
 	],
 	templateUrl: './stream.component.html',
@@ -38,6 +42,7 @@ export class StreamComponent implements OnDestroy {
 	private readonly participantService = inject(ParticipantService);
 	private readonly cdkSrv = inject(CdkOverlayService);
 	private readonly libService = inject(MeetingUiConfigService);
+	private readonly reactionsService = inject(MeetingReactionsService);
 	readonly stream = input<ParticipantStream | undefined>(undefined);
 
 	readonly showParticipantName = this.libService.displayParticipantNameSignal;
@@ -75,6 +80,15 @@ export class StreamComponent implements OnDestroy {
 			? this.participantService.handQueuePositions().get(stream.participant.identity)
 			: undefined;
 	});
+
+	/** The participant's reaction while it is on screen, shown on the camera tile only. */
+	readonly reaction = computed(() => {
+		const stream = this.stream();
+
+		return stream?.isCameraStream ? this.reactionsService.live().get(stream.participant.identity) : undefined;
+	});
+
+	protected readonly reactionNameKeys = REACTION_NAME_KEYS;
 
 	/**
 	 * @ignore

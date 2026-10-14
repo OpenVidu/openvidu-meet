@@ -1,4 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
+import { MeetReaction, MeetSignalType } from '@openvidu-meet/typings';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
@@ -33,5 +34,34 @@ describe('FrontendEventService signals that cannot be delivered', () => {
 		await expect(
 			service.sendParticipantMediaMutedSignal('room-1', ['participant-1'], { audioActive: false })
 		).resolves.toBeUndefined();
+	});
+});
+
+describe('FrontendEventService reaction signal', () => {
+	it('sends the reaction to the whole meeting, sender included, naming who sent it', async () => {
+		const sent: { roomName: string; data: object; options: object }[] = [];
+		const livekit = {
+			sendData: async (roomName: string, data: object, options: object) => {
+				sent.push({ roomName, data, options });
+			}
+		};
+		const service = new FrontendEventService(
+			...([noopLogger, livekit] as unknown as ConstructorParameters<typeof FrontendEventService>)
+		);
+
+		await service.sendParticipantReactionSentSignal('room-1', 'participant-1', MeetReaction.CLAPPING_HANDS);
+
+		expect(sent).toEqual([
+			{
+				roomName: 'room-1',
+				data: {
+					roomId: 'room-1',
+					participantIdentity: 'participant-1',
+					reaction: MeetReaction.CLAPPING_HANDS,
+					timestamp: expect.any(Number)
+				},
+				options: { topic: MeetSignalType.MEET_PARTICIPANT_REACTION_SENT }
+			}
+		]);
 	});
 });

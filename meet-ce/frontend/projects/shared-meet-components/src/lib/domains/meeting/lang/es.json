@@ -12,6 +12,7 @@
 		"E2EE_BADGE_LABEL": "Cifrada",
 		"E2EE_BADGE_TOOLTIP": "Esta reunión está cifrada de extremo a extremo",
 		"ELAPSED_BADGE_TOOLTIP": "Tiempo desde que empezó la reunión",
+		"STATUS_MENU": "Estado de la reunión",
 		"RECORDING_BADGE_STARTING": "Iniciando",
 		"RECORDING_STARTED_TITLE": "Esta reunión se está grabando",
 		"RECORDING_STARTED_MESSAGE": "Desde ahora se captura tu audio, tu vídeo y todo lo que compartas.",
@@ -288,6 +289,23 @@
 		"LOWER_ALL": "Bajar todas las manos",
 		"RAISED_COUNT": "Manos levantadas",
 		"LOWERED_BY_MODERATOR": "Un moderador ha bajado tu mano"
+	},
+	"REACTIONS": {
+		"BUTTON": "Reacciones",
+		"SEND": "Enviar una reacción",
+		"LIFETIME": "Todos la ven durante {seconds} s",
+		"LIVE": "Reacciones en directo",
+		"REACTED": "{name} ha reaccionado con {reaction}",
+		"NAMES": {
+			"THUMBS_UP": "Pulgar arriba",
+			"THUMBS_DOWN": "Pulgar abajo",
+			"GRINNING_FACE": "Sonrisa",
+			"SLIGHTLY_FROWNING_FACE": "Tristeza",
+			"CONFUSED_FACE": "Confusión",
+			"FACE_WITH_OPEN_MOUTH": "Sorpresa",
+			"CLAPPING_HANDS": "Aplausos",
+			"RED_HEART": "Corazón"
+		}
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "Has salido de la reunión",

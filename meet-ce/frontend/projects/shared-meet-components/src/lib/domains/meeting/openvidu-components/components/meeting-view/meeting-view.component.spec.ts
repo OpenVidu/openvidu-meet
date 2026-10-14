@@ -2,17 +2,13 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { DialogService } from '../../../../../shared/services/dialog.service';
-import { MeetingContextService } from '../../../services/meeting-context.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
-import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import { LocalMediaService } from '../../services/local-media/local-media.service';
-import { MeetingEndingSoonService } from '../../services/meeting-ending-soon/meeting-ending-soon.service';
 import { MeetingEventsService } from '../../services/meeting-events/meeting-events.service';
 import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
-import { RecordingService } from '../../services/recording/recording.service';
 import { MediaStorageService } from '../../services/storage/storage.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
@@ -113,8 +109,6 @@ describe('MeetingViewComponent', () => {
 						getLivekitUrl: () => 'wss://lk.test',
 						getCurrentParticipantName: () => 'Alice',
 						tokenErrorSignal: signal(undefined),
-						activitiesPanelButtonSignal: signal(true),
-						participantsPanelButtonSignal: signal(true),
 						backgroundEffectsButtonSignal: signal(true),
 						showBackgroundEffectsButton: signal(true)
 					} as unknown as MeetingUiConfigService
@@ -146,8 +140,6 @@ describe('MeetingViewComponent', () => {
 					provide: PanelService,
 					useValue: {
 						closePanel: () => {},
-						togglePanel: () => {},
-						isActivitiesPanelOpened: () => false,
 						isBackgroundEffectsPanelOpened: () => false
 					} as unknown as PanelService
 				},
@@ -158,22 +150,6 @@ describe('MeetingViewComponent', () => {
 						applyBackgroundFromStorage: () => Promise.resolve(),
 						removeBackground: () => Promise.resolve()
 					} as unknown as VirtualBackgroundService
-				},
-				{
-					provide: MeetingEndingSoonService,
-					useValue: { remainingMs: signal(undefined) } as unknown as MeetingEndingSoonService
-				},
-				{
-					provide: MeetingContextService,
-					useValue: { meetingStartedAt: signal(undefined) } as unknown as MeetingContextService
-				},
-				{
-					provide: SmartLayoutService,
-					useValue: { railHiddenParticipants: signal(undefined) } as unknown as SmartLayoutService
-				},
-				{
-					provide: RecordingService,
-					useValue: { recordingStatus: signal({ status: 'stopped' }) } as unknown as RecordingService
 				},
 				{
 					provide: ViewportService,

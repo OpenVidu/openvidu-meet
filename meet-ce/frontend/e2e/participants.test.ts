@@ -1,5 +1,12 @@
-import { MeetRoom, MeetRoomMemberRole, MeetRoomMemberUIBadge, MeetUserRole } from '@openvidu-meet/typings';
+import {
+	MeetReaction,
+	MeetRoom,
+	MeetRoomMemberRole,
+	MeetRoomMemberUIBadge,
+	MeetUserRole
+} from '@openvidu-meet/typings';
 import { expect, test, type Browser } from '@playwright/test';
+import { toggleChatPanel } from './helpers/chat.helper';
 import {
 	expectParticipantPanelMuted,
 	expectParticipantPanelUnmuted,
@@ -41,10 +48,13 @@ import {
 	expectNoMuteButton,
 	expectNoParticipantBadge,
 	expectNoRemoveModeratorButton,
+	expectPanelReaction,
 	expectParticipantBadge,
 	expectRaisedHandsChip,
+	expectReactionPulse,
 	expectRemoveModeratorButton,
 	expectTileHandPosition,
+	expectTileReaction,
 	getLocalParticipantId,
 	getParticipantIdByName,
 	joinParticipants,
@@ -55,6 +65,7 @@ import {
 	muteAllParticipantsMedia,
 	muteParticipantMedia,
 	removeParticipantModerator,
+	sendReaction,
 	toggleHand,
 	type ParticipantConfig
 } from './helpers/participant-management.helper';
@@ -785,6 +796,197 @@ test.describe('Participants E2E Tests', () => {
 
 			try {
 				await expect(byName[speakerName].locator('#raise-hand-button')).toHaveCount(0);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+	});
+
+	test.describe('Reactions (participantReactionSend)', () => {
+		const joinModeratorAndSpeaker = (browser: Browser) =>
+			joinParticipants(browser, {
+				roomId,
+				participants: [
+					{ name: moderatorName, baseRole: MeetRoomMemberRole.MODERATOR },
+					{ name: speakerName, baseRole: MeetRoomMemberRole.SPEAKER }
+				]
+			});
+
+		test('should show a reaction to everyone, on the tile, in the panel and in the pulse, until it fades', async ({
+			browser
+		}) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeaker(browser);
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const speakerPage = byName[speakerName];
+
+				await sendReaction(speakerPage, MeetReaction.THUMBS_UP);
+
+				await expectTileReaction(moderatorPage, speakerName, '👍');
+				await expectTileReaction(speakerPage, speakerName, '👍');
+				await expect(speakerPage.locator('#reactions-button')).toHaveClass(/active/);
+				await expectReactionPulse(moderatorPage, ['👍1']);
+
+				await moderatorPage.locator('#reaction-pulse').click();
+				await expectPanelReaction(
+					moderatorPage,
+					await getParticipantIdByName(moderatorPage, speakerName),
+					'👍'
+				);
+
+				await expectTileReaction(moderatorPage, speakerName, false);
+				await expectReactionPulse(moderatorPage, false);
+				await expect(speakerPage.locator('#reactions-button')).not.toHaveClass(/active/);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should replace a reaction with the next one of the same participant', async ({ browser }) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeaker(browser);
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const speakerPage = byName[speakerName];
+
+				await sendReaction(speakerPage, MeetReaction.FACE_WITH_OPEN_MOUTH);
+				await expectTileReaction(moderatorPage, speakerName, '😮');
+				await sendReaction(moderatorPage, MeetReaction.FACE_WITH_OPEN_MOUTH);
+				await expectReactionPulse(speakerPage, ['😮2']);
+
+				await sendReaction(speakerPage, MeetReaction.CLAPPING_HANDS);
+				await expectTileReaction(moderatorPage, speakerName, '👏');
+				await expectReactionPulse(speakerPage, ['😮1', '👏1']);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should open the picker with the E key and send the reaction of the digit pressed', async ({
+			browser
+		}) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeaker(browser);
+
+			try {
+				const speakerPage = byName[speakerName];
+
+				await speakerPage.keyboard.press('e');
+				await expect(speakerPage.locator('.reaction-row')).toBeVisible({ timeout: 10_000 });
+				await speakerPage.keyboard.press('5');
+
+				await expect(speakerPage.locator('.reaction-row')).toHaveCount(0);
+				await expectTileReaction(byName[moderatorName], speakerName, '😕');
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should open the picker on hover and close it once the pointer leaves', async ({ browser }) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeaker(browser);
+
+			try {
+				const speakerPage = byName[speakerName];
+
+				await speakerPage.locator('#reactions-button').hover();
+				await expect(speakerPage.locator('.reaction-row')).toBeVisible({ timeout: 5_000 });
+				await speakerPage
+					.locator(`.reaction-row .reaction-option[data-reaction="${MeetReaction.CLAPPING_HANDS}"]`)
+					.click();
+				await expectTileReaction(byName[moderatorName], speakerName, '👏');
+				await expect(speakerPage.locator('.reaction-row')).toBeVisible();
+
+				await speakerPage.mouse.move(10, 10);
+				await expect(speakerPage.locator('.reaction-row')).toHaveCount(0, { timeout: 5_000 });
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should show a quick burst of reactions at once and send only the last one', async ({ browser }) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeaker(browser);
+
+			try {
+				const speakerPage = byName[speakerName];
+				const option = (reaction: MeetReaction) =>
+					speakerPage.locator(`.reaction-row .reaction-option[data-reaction="${reaction}"]`);
+
+				await speakerPage.locator('#reactions-button').click();
+				await option(MeetReaction.THUMBS_UP).click();
+				await option(MeetReaction.GRINNING_FACE).click();
+				await option(MeetReaction.RED_HEART).click();
+				await expectTileReaction(speakerPage, speakerName, '❤️');
+
+				await expectTileReaction(byName[moderatorName], speakerName, '❤️');
+				await expectReactionPulse(byName[moderatorName], ['❤️1']);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should leave the digits to the chat once the picker goes away with the desktop toolbar', async ({
+			browser
+		}) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeaker(browser);
+
+			try {
+				const speakerPage = byName[speakerName];
+
+				await speakerPage.keyboard.press('e');
+				await expect(speakerPage.locator('.reaction-row')).toBeVisible({ timeout: 10_000 });
+				await speakerPage.setViewportSize({ width: 700, height: 900 });
+				await expect(speakerPage.locator('#reactions-button')).toHaveCount(0);
+				await speakerPage.setViewportSize({ width: 1366, height: 900 });
+
+				await toggleChatPanel(speakerPage);
+				await speakerPage.locator('#chat-input').pressSequentially('room 101');
+
+				await expect(speakerPage.locator('#chat-input')).toHaveValue('room 101');
+				await expect(speakerPage.locator('#reactions-button')).not.toHaveClass(/active/);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should leave out the picker without participantReactionSend, still showing the reactions of others', async ({
+			browser
+		}) => {
+			const { byName, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				participants: [
+					{ name: moderatorName, baseRole: MeetRoomMemberRole.MODERATOR },
+					{
+						name: speakerName,
+						baseRole: MeetRoomMemberRole.SPEAKER,
+						customPermissions: { participantReactionSend: false }
+					}
+				]
+			});
+
+			try {
+				const speakerPage = byName[speakerName];
+
+				await expect(speakerPage.locator('#reactions-button')).toHaveCount(0);
+
+				await sendReaction(byName[moderatorName], MeetReaction.RED_HEART);
+				await expectTileReaction(speakerPage, moderatorName, '❤️');
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should leave out the picker when the room has reactions off', async ({ browser }) => {
+			const roomWithoutReactions = await createRoom({
+				config: { reactions: { enabled: false } } as MeetRoom['config']
+			});
+			createdRoomIds.push(roomWithoutReactions.roomId);
+			const { byName, removeAllParticipants } = await joinParticipants(browser, {
+				roomId: roomWithoutReactions.roomId,
+				participants: [{ name: moderatorName, baseRole: MeetRoomMemberRole.MODERATOR }]
+			});
+
+			try {
+				await expect(byName[moderatorName].locator('#reactions-button')).toHaveCount(0);
 			} finally {
 				await removeAllParticipants();
 			}

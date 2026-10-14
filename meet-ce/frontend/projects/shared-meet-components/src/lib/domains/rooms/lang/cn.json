@@ -244,6 +244,8 @@
         "CAPTIONS_DESC": "启用实时转录，在会议期间显示字幕",
         "HAND": "举手",
         "HAND_DESC": "允许参会者举手请求发言",
+        "REACTIONS": "表情回应",
+        "REACTIONS_DESC": "允许参会者发送所有人都能看到几秒钟的表情",
         "CHAT": "聊天",
         "CHAT_DESC": "允许参与者在会议期间发送消息",
         "VIRTUAL_BACKGROUNDS": "虚拟背景",

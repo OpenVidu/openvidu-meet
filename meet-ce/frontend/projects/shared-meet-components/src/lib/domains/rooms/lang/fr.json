@@ -244,6 +244,8 @@
         "CAPTIONS_DESC": "Activez la transcription en direct pour afficher les sous-titres pendant la réunion",
         "HAND": "Lever la main",
         "HAND_DESC": "Permet aux participants de lever la main pour demander la parole",
+        "REACTIONS": "Réactions",
+        "REACTIONS_DESC": "Permet aux participants d'envoyer des emojis que tout le monde voit pendant quelques secondes",
         "CHAT": "Chat",
         "CHAT_DESC": "Autorisez les participants à envoyer des messages pendant la réunion",
         "VIRTUAL_BACKGROUNDS": "Arrière-plans virtuels",

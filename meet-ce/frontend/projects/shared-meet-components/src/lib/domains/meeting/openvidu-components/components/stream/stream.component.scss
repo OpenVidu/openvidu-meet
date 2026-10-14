@@ -20,13 +20,6 @@
 		font-family: 'Roboto', 'RobotoDraft', Helvetica, Arial, sans-serif;
 	}
 
-	#audio-wave-container {
-		position: absolute;
-		right: 0;
-		z-index: 999;
-		padding: 5px;
-	}
-
 	.fullscreen {
 		top: 40px;
 	}
@@ -198,6 +191,32 @@
 				inset 0 0 0 4px var(--ov-meet-hand-color),
 				inset 0 0 0 28px transparent;
 		}
+	}
+
+	// The top end of the tile: the reaction in the corner and the speaking wave beside it. A layer of
+	// its own, so the reaction can size itself by the tile's height.
+	.tile-corner {
+		position: absolute;
+		inset: 0;
+		z-index: 1000;
+		display: flex;
+		justify-content: flex-end;
+		align-items: flex-start;
+		gap: 6px;
+		padding: 8px;
+		container-type: size;
+		pointer-events: none;
+	}
+
+	// Light whatever the tile shows, video or a dark avatar, so the emoji always reads.
+	.tile-reaction {
+		flex: none;
+		height: clamp(32px, 26cqh, 54px);
+		aspect-ratio: 1;
+		border-radius: 50%;
+		background-color: color-mix(in srgb, white 88%, transparent);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+		font-size: clamp(20px, 16cqh, 34px);
 	}
 
 	@media (prefers-reduced-motion: reduce) {

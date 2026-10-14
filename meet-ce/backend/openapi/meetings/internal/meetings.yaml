@@ -1,0 +1,40 @@
+/meetings/{roomId}/reactions:
+    post:
+        operationId: participantReactionSend
+        summary: Send a reaction
+        description: >
+            Shows a reaction of the participant the room member token belongs to on their video and in the
+            participants panel of everyone in the meeting, them included, for a few seconds. Nothing is
+            stored: a participant joining later never sees it.
+
+            Requires the `participantReactionSend` permission. A room whose `reactions.enabled` config is
+            `false` rejects every reaction with a `403`.
+        tags:
+            - Internal API - Meetings
+        security:
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: '../../rooms/parameters/room-id-path.yaml'
+        requestBody:
+            $ref: './requests/send-participant-reaction.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/send-participant-reaction.yaml'
+            '400':
+                $ref: '../../shared/responses/errors/malformed-body.yaml'
+            '401':
+                $ref: '../../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../../shared/responses/errors/forbidden.yaml'
+            '404':
+                $ref: '../../rooms/responses/errors/room-not-found.yaml'
+            '413':
+                $ref: '../../shared/responses/errors/payload-too-large.yaml'
+            '422':
+                $ref: '../../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../../shared/responses/errors/service-unavailable.yaml'

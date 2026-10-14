@@ -146,6 +146,10 @@
           "LABEL": "Abbassa le mani",
           "DESCRIPTION": "Consente di abbassare le mani alzate degli altri partecipanti, una alla volta o tutte insieme"
         },
+        "participantReactionSend": {
+          "LABEL": "Invia reazioni",
+          "DESCRIPTION": "Consente di inviare reazioni che tutti vedono per qualche secondo"
+        },
         "roomShareAccessLinks": {
           "LABEL": "Condividere i link di accesso",
           "DESCRIPTION": "Consenti di condividere i link di invito con altri"

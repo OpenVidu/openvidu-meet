@@ -53,6 +53,7 @@ content:
                         participantKick: true
                         participantMute: true
                         participantHandLower: true
+                        participantReactionSend: true
                         meetingEnd: false
                         mediaPublishVideo: true
                         mediaPublishAudio: true

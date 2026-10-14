@@ -700,6 +700,36 @@ test.describe('Layout E2E Tests', () => {
 				}
 			});
 
+			test('should fold the participants left off the grid into the status menu on a phone', async ({
+				browser
+			}) => {
+				const { pages, removeAllParticipants } = await joinParticipants(browser, {
+					roomId,
+					accessUrl,
+					participants: [
+						{ name: 'viewer' },
+						{ name: 'remote-a', headless: true },
+						{ name: 'remote-b', headless: true }
+					]
+				});
+				const [pageA] = pages;
+
+				try {
+					await expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(2, { timeout: 20_000 });
+					await setSmartMosaicParticipantCount(pageA, 1);
+					await closeSettingsPanel(pageA);
+					await expectVisible(pageA, '#status-rail ov-hidden-participants-indicator');
+
+					await pageA.setViewportSize({ width: 390, height: 844 });
+
+					await expectHidden(pageA, '#status-rail ov-hidden-participants-indicator');
+					await pageA.locator('#status-rail-more').click();
+					await expectVisible(pageA, '.status-menu .hidden-participants-item');
+				} finally {
+					await removeAllParticipants();
+				}
+			});
+
 			test('should restore hidden remote participants with active video when the smart mosaic limit is raised again', async ({
 				browser
 			}) => {

@@ -64,6 +64,7 @@ describe('RoomWizardStateService.initializeWizard (stale state does not leak acr
 				e2ee: { enabled: false },
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
+				reactions: { enabled: true },
 				recording: { enabled: false }
 			}
 		});
@@ -321,7 +322,7 @@ describe('RoomWizardStateService.initializeWizard (the room it proposes)', () =>
 		});
 	});
 
-	it('proposes recording, chat, captions and virtual backgrounds on, and end-to-end encryption off', () => {
+	it('proposes every feature on except end-to-end encryption', () => {
 		expect(service.roomOptions().config).toEqual({
 			recording: { enabled: true, layout: MeetRecordingLayout.GRID },
 			chat: { enabled: true },
@@ -329,6 +330,7 @@ describe('RoomWizardStateService.initializeWizard (the room it proposes)', () =>
 			e2ee: { enabled: false },
 			captions: { enabled: true },
 			raiseHand: { enabled: true },
+			reactions: { enabled: true },
 			initialAudioActive: true,
 			initialVideoActive: true
 		});

@@ -1,3 +1,4 @@
+import { MeetReaction } from '../reaction.js';
 import { MeetParticipantMuteOptions } from '../request/meeting-request.js';
 import { MeetParticipantModerationAction } from '../request/room-member-request.js';
 
@@ -59,6 +60,12 @@ export enum EmbeddedCommandName {
 	 * @permission participantHandLower
 	 */
 	PARTICIPANT_HAND_LOWER_ALL = 'participantHandLowerAll',
+	/**
+	 * Sends a reaction from the local participant, which every participant sees for a few seconds and
+	 * is notified of through the `participantReactionSent` event.
+	 * @permission participantReactionSend
+	 */
+	PARTICIPANT_REACTION_SEND = 'participantReactionSend',
 	/**
 	 * Toggles the local participant's microphone, or sets it when `active` is provided.
 	 * @permission mediaPublishAudio
@@ -164,6 +171,13 @@ export interface EmbeddedCommandPayloads {
 	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL} command.
 	 */
 	[EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL]: void;
+	/**
+	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_REACTION_SEND} command.
+	 * `reaction` is one of the reactions in {@link MeetReaction}.
+	 */
+	[EmbeddedCommandName.PARTICIPANT_REACTION_SEND]: {
+		reaction: MeetReaction;
+	};
 	/**
 	 * Payload for the {@link EmbeddedCommandName.MEDIA_TOGGLE_AUDIO} command.
 	 * When `active` is omitted, the microphone state is toggled.
@@ -336,6 +350,16 @@ export interface EmbeddedParticipantHandLowerAllCommand {
 }
 
 /**
+ * Command message for {@link EmbeddedCommandName.PARTICIPANT_REACTION_SEND}: the command name plus its
+ * payload, derived from {@link EmbeddedCommandPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedParticipantReactionSendCommand {
+	command: EmbeddedCommandName.PARTICIPANT_REACTION_SEND;
+	payload: EmbeddedCommandPayloadFor<EmbeddedCommandName.PARTICIPANT_REACTION_SEND>;
+}
+
+/**
  * Command message for {@link EmbeddedCommandName.END_MEETING} (no payload).
  * @category Communication
  * @deprecated Use {@link EmbeddedMeetingEndCommand}. Removed in 3.12.0.
@@ -426,6 +450,7 @@ export type EmbeddedCommand =
 	| EmbeddedParticipantHandRaiseCommand
 	| EmbeddedParticipantHandLowerCommand
 	| EmbeddedParticipantHandLowerAllCommand
+	| EmbeddedParticipantReactionSendCommand
 	| EmbeddedMediaToggleAudioCommand
 	| EmbeddedMediaToggleVideoCommand
 	| EmbeddedMediaToggleScreenShareCommand

@@ -40,7 +40,8 @@ describe('Room API Tests', () => {
 					virtualBackground: { enabled: true },
 					e2ee: { enabled: false },
 					captions: { enabled: true },
-					raiseHand: { enabled: true }
+					raiseHand: { enabled: true },
+					reactions: { enabled: true }
 				}
 			});
 
@@ -54,7 +55,8 @@ describe('Room API Tests', () => {
 				virtualBackground: { enabled: false },
 				e2ee: { enabled: true },
 				captions: { enabled: true },
-				raiseHand: { enabled: true }
+				raiseHand: { enabled: true },
+				reactions: { enabled: true }
 			};
 			const updateResponse = await updateRoomConfig(createdRoom.roomId, updatedConfig);
 
@@ -154,7 +156,8 @@ describe('Room API Tests', () => {
 					virtualBackground: { enabled: true },
 					e2ee: { enabled: false },
 					captions: { enabled: true },
-					raiseHand: { enabled: true }
+					raiseHand: { enabled: true },
+					reactions: { enabled: true }
 				}
 			});
 
@@ -185,6 +188,7 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false },
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
+				reactions: { enabled: true },
 				initialAudioActive: true, // Creation default
 				initialVideoActive: true // Creation default
 			};
@@ -397,6 +401,7 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false },
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
+				reactions: { enabled: true },
 				initialAudioActive: true, // Creation default
 				initialVideoActive: true // Creation default
 			};

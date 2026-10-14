@@ -2,7 +2,8 @@ import {
 	EmbeddedEventName,
 	EmbeddedEventPayloadFor,
 	MeetParticipantModerationAction,
-	MeetParticipantMuteOptions
+	MeetParticipantMuteOptions,
+	MeetReaction
 } from '@openvidu-meet/typings';
 import type { App } from '../app';
 
@@ -135,6 +136,10 @@ export function createOpenViduMeetElementClass(
 
 		participantHandLowerAll(): void {
 			this._getComponentInstance()?.participantHandLowerAll();
+		}
+
+		participantReactionSend(reaction: MeetReaction): void {
+			this._getComponentInstance()?.participantReactionSend(reaction);
 		}
 
 		// ── Deprecated method aliases ────────────────────────────────────────

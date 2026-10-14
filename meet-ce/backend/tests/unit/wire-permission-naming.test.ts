@@ -23,6 +23,7 @@ const moderatorPermissions: MeetRoomMemberPermissions = {
 	participantKick: true,
 	participantMute: true,
 	participantHandLower: true,
+	participantReactionSend: true,
 	meetingEnd: true,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,

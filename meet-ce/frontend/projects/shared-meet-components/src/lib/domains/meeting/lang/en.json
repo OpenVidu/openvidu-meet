@@ -22,6 +22,7 @@
 		"E2EE_BADGE_LABEL": "Encrypted",
 		"E2EE_BADGE_TOOLTIP": "This meeting is end-to-end encrypted",
 		"ELAPSED_BADGE_TOOLTIP": "Time since the meeting started",
+		"STATUS_MENU": "Meeting status",
 		"RECORDING_BADGE_STARTING": "Starting",
 		"RECORDING_STARTED_TITLE": "This meeting is being recorded",
 		"RECORDING_STARTED_MESSAGE": "Your audio, your video and anything you share are being captured from now on.",
@@ -288,6 +289,23 @@
 		"LOWER_ALL": "Lower all hands",
 		"RAISED_COUNT": "Raised hands",
 		"LOWERED_BY_MODERATOR": "A moderator lowered your hand"
+	},
+	"REACTIONS": {
+		"BUTTON": "Reactions",
+		"SEND": "Send a reaction",
+		"LIFETIME": "Everyone sees it for {seconds} s",
+		"LIVE": "Live reactions",
+		"REACTED": "{name} reacted with {reaction}",
+		"NAMES": {
+			"THUMBS_UP": "Thumbs up",
+			"THUMBS_DOWN": "Thumbs down",
+			"GRINNING_FACE": "Smile",
+			"SLIGHTLY_FROWNING_FACE": "Sad",
+			"CONFUSED_FACE": "Confused",
+			"FACE_WITH_OPEN_MOUTH": "Surprised",
+			"CLAPPING_HANDS": "Applause",
+			"RED_HEART": "Heart"
+		}
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "You Left the Meeting",

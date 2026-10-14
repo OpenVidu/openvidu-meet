@@ -12,6 +12,7 @@
 		"E2EE_BADGE_LABEL": "Verschlüsselt",
 		"E2EE_BADGE_TOOLTIP": "Dieses Meeting ist Ende-zu-Ende-verschlüsselt",
 		"ELAPSED_BADGE_TOOLTIP": "Zeit seit Beginn des Meetings",
+		"STATUS_MENU": "Besprechungsstatus",
 		"RECORDING_BADGE_STARTING": "Wird gestartet",
 		"RECORDING_STARTED_TITLE": "Dieses Meeting wird aufgezeichnet",
 		"RECORDING_STARTED_MESSAGE": "Ab jetzt werden Ihr Audio, Ihr Video und alles, was Sie teilen, aufgezeichnet.",
@@ -288,6 +289,23 @@
 		"LOWER_ALL": "Alle Hände senken",
 		"RAISED_COUNT": "Gehobene Hände",
 		"LOWERED_BY_MODERATOR": "Ein Moderator hat deine Hand gesenkt"
+	},
+	"REACTIONS": {
+		"BUTTON": "Reaktionen",
+		"SEND": "Reaktion senden",
+		"LIFETIME": "Alle sehen sie {seconds} s lang",
+		"LIVE": "Live-Reaktionen",
+		"REACTED": "{name} hat mit {reaction} reagiert",
+		"NAMES": {
+			"THUMBS_UP": "Daumen hoch",
+			"THUMBS_DOWN": "Daumen runter",
+			"GRINNING_FACE": "Lächeln",
+			"SLIGHTLY_FROWNING_FACE": "Traurig",
+			"CONFUSED_FACE": "Verwirrt",
+			"FACE_WITH_OPEN_MOUTH": "Überrascht",
+			"CLAPPING_HANDS": "Applaus",
+			"RED_HEART": "Herz"
+		}
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "Sie haben das Meeting verlassen",

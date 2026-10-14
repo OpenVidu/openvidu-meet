@@ -141,7 +141,8 @@ describe('AI Assistant API Tests', () => {
 			it('should return 500 when captions are disabled in the room config', async () => {
 				const roomWithCaptionsOff = await setupSingleRoom(false, 'CAPTIONS_OFF_ROOM', {
 					captions: { enabled: false },
-					raiseHand: { enabled: true }
+					raiseHand: { enabled: true },
+					reactions: { enabled: true }
 				});
 
 				const response = await createAssistant(roomWithCaptionsOff.speakerToken);

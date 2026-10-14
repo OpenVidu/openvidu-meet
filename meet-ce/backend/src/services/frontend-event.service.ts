@@ -2,6 +2,8 @@ import type {
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantMuteOptions,
 	MeetParticipantPermissionsUpdatedPayload,
+	MeetParticipantReactionSentPayload,
+	MeetReaction,
 	MeetRecordingInfo,
 	MeetRecordingUpdatedPayload,
 	MeetSignalPayload
@@ -95,6 +97,27 @@ export class FrontendEventService {
 		};
 
 		await this.sendSignal(roomId, signalPayload, signalOptions);
+	}
+
+	/**
+	 * Sends a participant's reaction to everyone in the meeting, the sender included, whose own client
+	 * shows it from this signal like every other one does.
+	 */
+	async sendParticipantReactionSentSignal(
+		roomId: string,
+		participantIdentity: string,
+		reaction: MeetReaction
+	): Promise<void> {
+		this.logger.debug(`Sending reaction of participant '${participantIdentity}' in room '${roomId}'`);
+
+		const signalPayload: MeetParticipantReactionSentPayload = {
+			roomId,
+			participantIdentity,
+			reaction,
+			timestamp: Date.now()
+		};
+
+		await this.sendSignal(roomId, signalPayload, { topic: MeetSignalType.MEET_PARTICIPANT_REACTION_SENT });
 	}
 
 	/**

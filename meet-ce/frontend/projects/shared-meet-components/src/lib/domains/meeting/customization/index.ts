@@ -9,4 +9,5 @@ export * from './meeting-toolbar-copy-link-button/meeting-toolbar-copy-link-butt
 export * from './meeting-toolbar-extra-buttons/meeting-toolbar-extra-buttons.component';
 export * from './meeting-toolbar-leave-button/meeting-toolbar-leave-button.component';
 export * from './meeting-toolbar-more-options-menu/meeting-toolbar-more-options-menu.component';
+export * from './meeting-toolbar-reactions-button/meeting-toolbar-reactions-button.component';
 export * from './meeting-waiting-panel/meeting-waiting-panel.component';

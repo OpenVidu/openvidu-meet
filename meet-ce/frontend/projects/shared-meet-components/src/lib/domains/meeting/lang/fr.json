@@ -12,6 +12,7 @@
 		"E2EE_BADGE_LABEL": "Chiffrée",
 		"E2EE_BADGE_TOOLTIP": "Cette réunion est chiffrée de bout en bout",
 		"ELAPSED_BADGE_TOOLTIP": "Temps écoulé depuis le début de la réunion",
+		"STATUS_MENU": "État de la réunion",
 		"RECORDING_BADGE_STARTING": "Démarrage",
 		"RECORDING_STARTED_TITLE": "Cette réunion est en cours d’enregistrement",
 		"RECORDING_STARTED_MESSAGE": "À partir de maintenant, votre audio, votre vidéo et tout ce que vous partagez sont enregistrés.",
@@ -288,6 +289,23 @@
 		"LOWER_ALL": "Baisser toutes les mains",
 		"RAISED_COUNT": "Mains levées",
 		"LOWERED_BY_MODERATOR": "Un modérateur a baissé votre main"
+	},
+	"REACTIONS": {
+		"BUTTON": "Réactions",
+		"SEND": "Envoyer une réaction",
+		"LIFETIME": "Tout le monde la voit pendant {seconds} s",
+		"LIVE": "Réactions en direct",
+		"REACTED": "{name} a réagi avec {reaction}",
+		"NAMES": {
+			"THUMBS_UP": "Pouce levé",
+			"THUMBS_DOWN": "Pouce baissé",
+			"GRINNING_FACE": "Sourire",
+			"SLIGHTLY_FROWNING_FACE": "Tristesse",
+			"CONFUSED_FACE": "Confusion",
+			"FACE_WITH_OPEN_MOUTH": "Surprise",
+			"CLAPPING_HANDS": "Applaudissements",
+			"RED_HEART": "Cœur"
+		}
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "Vous avez quitté la réunion",

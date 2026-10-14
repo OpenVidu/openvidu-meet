@@ -1,3 +1,5 @@
+@use 'bubble';
+
 // The host only carries the small warning badge, overlaid on the button corner. The popup
 // bubble is rendered in a top-level CDK overlay (see the component), so it is positioned there.
 :host {
@@ -6,11 +8,6 @@
 	pointer-events: none;
 	z-index: 6;
 }
-
-// Theme-aware surface for the popup. Resolves to the active OpenVidu theme's raised-surface
-// colour (dark card in the dark theme, light card in the light theme); the fallback keeps
-// the previous dark look if the variable is ever missing.
-$alert-background: var(--ov-surface-container-color, #3c4043);
 
 .mic-warning-badge {
 	position: absolute;
@@ -30,9 +27,10 @@ $alert-background: var(--ov-surface-container-color, #3c4043);
 }
 
 .mic-status-alert {
+	@include bubble.bubble;
+	@include bubble.pointer('.alert-pointer');
+
 	// Positioned by the CDK overlay; this only needs to size to its content and anchor the pointer.
-	position: relative;
-	pointer-events: auto;
 	display: flex;
 	align-items: flex-start;
 	gap: 4px;
@@ -40,17 +38,7 @@ $alert-background: var(--ov-surface-container-color, #3c4043);
 	// Never wider than the viewport (with margins), so it wraps instead of overflowing on mobile.
 	max-width: min(320px, calc(100vw - 24px));
 	padding: 12px 8px 12px 16px;
-	border-radius: 8px;
-	background: $alert-background;
-	// Subtle border so the card separates from similarly-light backgrounds in the light theme.
-	border: 1px solid var(--ov-border-color, rgba(255, 255, 255, 0.08));
-	color: var(--ov-text-surface-color, #ffffff);
 	text-align: left;
-	// Hosts like the toolbar propagate white-space: nowrap; the bubble text must wrap.
-	white-space: normal;
-	box-shadow:
-		0 4px 8px 3px rgba(0, 0, 0, 0.15),
-		0 1px 3px rgba(0, 0, 0, 0.3);
 
 	.alert-content {
 		display: flex;
@@ -118,25 +106,5 @@ $alert-background: var(--ov-surface-container-color, #3c4043);
 			width: 18px;
 			height: 18px;
 		}
-	}
-
-	// Small triangle centered under (or over) the bubble, aimed at the mic button.
-	.alert-pointer {
-		position: absolute;
-		left: 50%;
-		transform: translateX(-50%);
-		border: 7px solid transparent;
-	}
-
-	// Default: bubble sits above the button → pointer on the bottom edge, aiming down.
-	&:not(.below) .alert-pointer {
-		top: 100%;
-		border-top-color: $alert-background;
-	}
-
-	// Flipped: bubble sits below the button → pointer on the top edge, aiming up.
-	&.below .alert-pointer {
-		bottom: 100%;
-		border-bottom-color: $alert-background;
 	}
 }
