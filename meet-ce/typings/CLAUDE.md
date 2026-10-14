@@ -2,7 +2,7 @@
 
 The contract package: every type shared between the backend, the frontend/library, the webcomponent
 and third-party host applications. It has **no runtime dependencies** (only TypeScript as a devDep)
-and it must stay that way — anything that needs a dependency belongs in the consuming package.
+and it must stay that way: anything that needs a dependency belongs in the consuming package.
 
 `src/` is the only editable place. `dist/` is generated (`tsc -p tsconfig.build.json`) and git-ignored.
 
@@ -14,7 +14,7 @@ therefore has to exist before the backend or frontend compiles or runs. `./meet.
 (or `pnpm --filter @openvidu-meet/typings run build`) is step 0 of every build.
 
 In dev, `./meet.sh dev` runs `tsc --watch` here and writes `dist/typings-ready.flag`; the other
-watchers block on that flag, so a type error in this package stalls them by design — check this
+watchers block on that flag, so a type error in this package stalls them by design; check this
 watcher's output first when the backend/frontend watcher looks stuck.
 
 Backend Jest and webcomponent Jest map `@openvidu-meet/typings` to `src/index.ts` directly, so unit
@@ -33,7 +33,7 @@ tests work without a build. Real builds do not.
 | `src/livekit-permissions.ts` | Mirrored LiveKit enums (e.g. `TrackSource`) so consumers don't need the LiveKit SDK for types |
 | `src/analytics.ts`, `src/ai-assistant.ts` | Analytics and AI-assistant contracts |
 
-`src/index.ts` is the single barrel — a new file is invisible until it is re-exported there (directly
+`src/index.ts` is the single barrel: a new file is invisible until it is re-exported there (directly
 or through the folder's `index.ts`).
 
 ## Conventions
@@ -63,14 +63,14 @@ or through the folder's `index.ts`).
   old one as a `@deprecated` alias whose text states the removal release (`Removed in 3.12.0.`), and
   register the pair in the alias map next to the enum (`EMBEDDED_COMMAND_ALIASES`,
   `EMBEDDED_EVENT_ALIASES`, `MEET_PERMISSION_ALIASES`). Those maps are the single source of truth every
-  consumer derives from — never hardcode a pair. Give a deprecated alias the **same** payload as its
+  consumer derives from; never hardcode a pair. Give a deprecated alias the **same** payload as its
   canonical twin through an indexed access (`EmbeddedEventPayloads[EmbeddedEventName.MEETING_LEFT]`)
   so the two cannot drift. The plan behind this lives in
   `../openvidu-competitors/meet-update-plan/api-naming-migration-phase.md`.
 
 ## API naming charter
 
-Every public identifier follows one scheme — learn a module once and you can predict its name on
+Every public identifier follows one scheme: learn a module once and you can predict its name on
 every surface. `src/api-registry.ts` is the registry (`MEET_API_MODULES`, `MEET_API_REST_GROUPS`,
 `meetApiModuleOf()`) **and the enforcement point**: `scripts/lint-api-naming.mjs` (repo root, run by
 `./meet.sh lint-backend`, CI-gated) fails on any identifier that doesn't start with a registered
@@ -78,7 +78,7 @@ token.
 
 - **Module token**: a singular, single-word lowerCamelCase noun (`embedded`, named after the
   embedded mode, is the one adjective), registered exactly once, never a prefix of another token.
-  A concept needing two words is not a module — fold it into the closest one and put the extra
+  A concept needing two words is not a module; fold it into the closest one and put the extra
   word in the action (`mediaChangeVirtualBackground`, not a `virtualBackground` module).
 - **Command** `moduleAction`: module first, then an imperative verb (`meetingLeave`,
   `participantKick`); bulk variants suffix `All`. **Event/webhook** `moduleEvent`: module first,
@@ -86,11 +86,11 @@ token.
   the host to act ends in `Requested` (`embeddedCloseRequested`), never in an imperative verb,
   which would read as a command.
 - **Permission** `moduleAbility`: flat boolean, no `can` prefix, **flat forever** (nesting is
-  rejected, not deferred — the prefix already groups). `Admin` is the only administrative verb
+  rejected, not deferred: the prefix already groups). `Admin` is the only administrative verb
   (never `Manage`); a fully split module (like `recording`) has no `Admin`. **Split rather than
   lump**: if an operator would grant one half and withhold the other, they are two permissions.
   **Verb before object**, no exceptions. A permission may share its string with the command it
-  gates (`participantKick`) — intentional.
+  gates (`participantKick`), on purpose.
 - **REST**: live meeting state is a sub-resource of `/meetings/{roomId}`; only durable artifacts
   and platform groups are top-level (see `MEET_API_REST_GROUPS`). Collections plural, singletons
   singular. `operationId` = `moduleAction`.
@@ -106,11 +106,14 @@ token.
 
 - `src/embedded/` and everything reachable from the **public** REST API (`/api/v1`) are external
   contracts. Additive changes only: new optional field, new enum member. Renaming or removing breaks
-  host applications and API consumers.
+  host applications and API consumers. Such a change is an OpenSpec change (root `CLAUDE.md`): its
+  delta spec states the behavior, the TSDoc here states the reference, and neither repeats the other.
 - Adding a field to a persisted entity is a **schema change**: it also needs a backend migration, a
   bumped `*_SCHEMA_VERSION` and a refreshed `MIGRATION_REV` in
   `meet-ce/backend/src/config/internal-config.ts` (see `meet-ce/backend/src/migrations/README.md`).
-- A change to `src/embedded/` usually also implies updating the OpenAPI specs (if it touches the API),
-  the webcomponent loader's delegated surface (which it derives automatically), and regenerating the
-  embedding docs with `./meet.sh build-webcomponent-doc`.
+- A change to `src/embedded/` also reaches: the OpenAPI (if it touches the API), the embedded API
+  contract test (`meet-ce/backend/tests/unit/typings/embedded-api-contract.test.ts`, which freezes the
+  command and event lists), the testapp controls (`testapp/CLAUDE.md`), the webcomponent loader's
+  delegated surface (derived automatically) and the openvidu.io reference, regenerated with
+  `./meet.sh build-webcomponent-doc ../openvidu.io/shared/meet`.
 - PRO has its own `meet-pro/typings` package that layers on top; don't move CE contracts there.

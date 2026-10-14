@@ -7,7 +7,7 @@ host application keeps control of data, interaction and customization.
 
 Two editions live side by side: **CE** (`meet-ce/`, Apache-2.0, this repo) and **PRO**
 (`meet-pro/`, separate private repo, cloned into this tree and **git-ignored**). PRO reuses CE by
-extending/overriding it — see "Edition model" below.
+extending/overriding it (see "Edition model" below).
 
 ## Repository layout
 
@@ -18,11 +18,70 @@ pnpm workspace (`pnpm-workspace.yaml`). Workspace package names are what `pnpm -
 | `meet-ce/typings`                                    | `@openvidu-meet/typings`              | Shared contracts (backend ⇄ frontend ⇄ embedding API) |
 | `meet-ce/backend`                                    | `@openvidu-meet/backend`              | Node.js + Express 5 REST API; also serves the built frontend |
 | `meet-ce/frontend`                                   | `@openvidu-meet/frontend`             | Angular SPA shell (thin) |
-| `meet-ce/frontend/projects/shared-meet-components`   | `@openvidu-meet/shared-components`    | Angular library — **all UI logic lives here** |
+| `meet-ce/frontend/projects/shared-meet-components`   | `@openvidu-meet/shared-components`    | Angular library: **all UI logic lives here** |
 | `meet-ce/frontend/webcomponent`                      | `@openvidu-meet/webcomponent`         | `<openvidu-meet>` custom element (Angular Elements) |
 | `testapp`                                            | `@openvidu-meet/testapp`              | Host app used to exercise webcomponent + iframe embedding |
 
-Each of the four domains has its own `CLAUDE.md` with the details; read it before working there.
+Each package above has its own `CLAUDE.md` with the details (the frontend one also covers
+`shared-meet-components`); read it before working there. `openspec/` holds the product specification (next
+section).
+
+## Spec-driven development (OpenSpec)
+
+`openspec/specs/` is the **source of truth for what Meet does**: one folder per capability (`rooms`,
+`recordings`, `embedded-api`, `deployment`, …), each a list of requirements with testable scenarios.
+The code implements the specs; when they disagree, one of them has a bug. Other artifacts own the
+details the specs only name:
+
+| What | Source of truth |
+| ---- | --------------- |
+| Behavior: what happens, for whom, gated by which permission, how it fails | `openspec/specs/` |
+| REST API and webhooks wire contract | OpenAPI in `meet-ce/backend/openapi/` |
+| Embedded API reference (attributes, commands, events) | TSDoc in `meet-ce/typings/src/embedded/` |
+| User documentation | openvidu.io (see next section) |
+| Release notes | `CHANGELOG.md` |
+
+Every change a user, an integrator or an operator can observe goes through an OpenSpec change;
+refactors, dependency bumps, tests and tooling do not need one:
+
+1. `/opsx:explore` (optional) to investigate, then `/opsx:propose <change-name>`: writes
+   `openspec/changes/<change-name>/` with `proposal.md`, delta specs, `design.md` and `tasks.md`.
+   Review them before any code is written. Design proposals live there too, never as loose
+   markdown files at the repo root.
+2. `/opsx:apply` implements the tasks. The tasks include the tests, the OpenAPI/TSDoc updates, the
+   `CHANGELOG.md` line and the openvidu.io pages, so they land with the code.
+3. `/opsx:archive` **inside the same pull request**, before merging: it folds the deltas into
+   `openspec/specs/` and moves the change to `openspec/changes/archive/`, so `main` always carries
+   specs that match its code. Reviewers read `proposal.md` and the delta specs before the code diff.
+
+The project context and the per-artifact rules every proposal follows (editions, deployment
+topologies, sources of truth, documentation) live in `openspec/config.yaml`; keep them there, not
+here. Two of them shape most designs:
+
+- **CE only.** This repo is public: specs and changes here never describe PRO features. PRO
+  specifies its own behavior in `meet-pro/` with its own `openspec/` once PRO work resumes.
+- **Any number of replicas.** Meet runs on OpenVidu Single Node, Elastic and High Availability; in
+  HA several Meet replicas share MongoDB, Redis and storage. See the `deployment` spec.
+
+The CLI is a root devDependency, so run it as **`npx openspec`** (the generated skills write a bare
+`openspec`; it is the same command): `npx openspec list --specs`, `npx openspec show <capability>
+--type spec`, `npx openspec validate --all --strict`. `.claude/skills/openspec-*/` and
+`.claude/commands/opsx/` are generated: after bumping `@fission-ai/openspec`, regenerate them with
+`npx openspec update` instead of editing them.
+
+## Documentation (openvidu.io)
+
+The user documentation lives in the openvidu.io repository, expected as a sibling checkout at
+`../openvidu.io`. Meet changes go to its `next` branch (the version in development), edited and
+committed in place, without a worktree. Each spec's `## Purpose` names the pages that document it.
+
+- Feature pages: `docs/meet/` (features, embedded tutorials and reference, deployment).
+- Embedded API reference: when `meet-ce/typings/src/embedded/` changes, regenerate it with
+  `./meet.sh build-webcomponent-doc ../openvidu.io/shared/meet` (writes
+  `shared/meet/webcomponent/{attributes,commands,events}.md`).
+- REST API reference: when the public OpenAPI changes, regenerate it with
+  `./meet.sh build-rest-api-doc ../openvidu.io/docs/meet/embedded/reference/api.html`.
+- Release notes (`docs/meet/releases.md`) are written on release day, not by each change.
 
 ## Edition model (why the code is shaped this way)
 
@@ -31,9 +90,9 @@ Each of the four domains has its own `CLAUDE.md` with the details; read it befor
   features by overriding/extending components instead of forking them.
 - The same applies to the backend: PRO depends on the CE backend package and overrides services.
 - Consequence: when adding CE features, keep seams open (injectable services, content projection,
-  route config arrays). Do not inline logic into `meet-ce/frontend/src/` — put it in the library.
+  route config arrays). Do not inline logic into `meet-ce/frontend/src/`; put it in the library.
 - `meet-pro/` is git-ignored and may not be present, and has pre-existing build errors unrelated to
-  CE work — don't try to fix those unrelated errors from a CE session, and don't assume PRO builds
+  CE work: don't try to fix those unrelated errors from a CE session, and don't assume PRO builds
   cleanly. Dependency **versions** are the exception: a dependency shared between `meet-ce/*` and
   `meet-pro/*` must be kept at the same version in both. This workspace uses `nodeLinker: hoisted`
   with one lockfile across CE and PRO, so a version mismatch on a shared dependency silently installs
@@ -92,7 +151,7 @@ it consumes the library's `dist`. Two details matter when things look stale:
 - The frontend `ng build --watch` writes **directly into `meet-ce/backend/public/frontend`**, and
   the webcomponent build deploys into `meet-ce/backend/public/webcomponent`. The backend serves
   those directories. `public/` is git-ignored; a stale bundle there is the usual cause of "my change
-  isn't showing up" — rebuild rather than debugging the running app.
+  isn't showing up"; rebuild rather than debugging the running app.
 
 ## Code style
 
@@ -103,11 +162,11 @@ it consumes the library's `dist`. Two details matter when things look stale:
   existing code over piling new code on top. Reworking what is there keeps the system smaller; a fix
   that only adds is the last resort, not the first.
 - **Few comments.** Code must read and explain itself; if it needs a comment to be understood, it is
-  written wrong — rename, restructure or simplify instead. Never write historical-narrative comments
+  written wrong: rename, restructure or simplify instead. Never write historical-narrative comments
   or comments that explain a bug fix or how a problem was solved (that belongs in commits, not the
   source). A rare comment is acceptable only to state a genuine non-obvious constraint the code cannot
   express. (Typings are the one exception: `meet-ce/typings/src` requires a concise TSDoc on every
-  exported member because the docs are generated from it — keep those factual, not narrative.)
+  exported member because the docs are generated from it; keep those factual, not narrative.)
 - Prettier (`.prettierrc`) is the formatter: **tabs**, tab width 4, print width 120, single quotes,
   no trailing commas, semicolons. Match it; do not reformat unrelated code.
 - ESLint is flat-config (`eslint.config.mjs`) per package and runs with `--max-warnings 0`, so
@@ -180,24 +239,18 @@ the OpenAPI sources already use for their own cross-references: `#/operations/<o
   (the `storage-diff` job in `backend-integration-test.yaml`), recordings run on S3 only; `main` always
   runs S3, GCS and ABS.
 - Backend integration tests and all Playwright suites need real infrastructure (LiveKit, MongoDB,
-  Redis, S3/MinIO). They are not runnable from a bare checkout — say so instead of reporting a pass.
-- Generated documentation:
-  - REST API → `./meet.sh build-rest-api-doc` (from `meet-ce/backend/openapi/`).
-  - Embedding API → `./meet.sh build-webcomponent-doc [dir]`, which parses the JSDoc of the enums in
-    `meet-ce/typings/src/embedded/` into `docs/webcomponent/{attributes,commands,events}.md`
-    (git-ignored; passing `dir` moves them there instead).
+  Redis, S3/MinIO). They are not runnable from a bare checkout: say so instead of reporting a pass.
+- `./meet.sh build-rest-api-doc` and `./meet.sh build-webcomponent-doc` generate the API references
+  (see "Documentation (openvidu.io)"); without a target directory the embedded one lands in the
+  git-ignored `docs/webcomponent/`.
 
 ## Repo-wide gotchas
 
-- Never edit generated output: `**/dist`, `meet-ce/backend/public/`, `docs/webcomponent/`.
+- Never edit generated output: `**/dist`, `meet-ce/backend/public/`, `docs/webcomponent/`,
+  `.claude/skills/openspec-*/`, `.claude/commands/opsx/`.
 - `screenshots/` and `videos/` are output of the `meet-screenshots` / `meet-videos` skills.
-- `MEET-*.md` at the root are design proposals, not implemented state. `MEET-E2E-DOMAIN-STRATEGY.md`
-  describes a *planned* move of frontend e2e to `tests/e2e/`; the suites still live in
-  `meet-ce/frontend/e2e/`.
-- **API migration plans live outside this repo.** The single source of truth for the API-naming
-  migration (the `moduleAction`/`moduleAbility` scheme, the deprecation window and its phased
-  implementation plan) is `../openvidu-competitors/meet-update-plan/` —
-  `new-api-format.md` (the target contract), `api-surface-and-namespacing-impact.md` (the rationale
-  and the naming charter) and `api-naming-migration-phase.md` (the phase plan, its decisions and its
-  register of verified barriers). Do **not** copy them here: duplicates diverged once already. That
-  repo is already a folder of `openvidu-meet.code-workspace`.
+- **The API-naming migration plan predates OpenSpec and lives outside this repo**, in
+  `../openvidu-competitors/meet-update-plan/` (`new-api-format.md`, the target contract;
+  `api-surface-and-namespacing-impact.md`, the rationale; `api-naming-migration-phase.md`, the phase
+  plan and its decisions). Do not copy it here. Its remaining step, removing the deprecated names in
+  3.12.0, goes through an OpenSpec change like any other.

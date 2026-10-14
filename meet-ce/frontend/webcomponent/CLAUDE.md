@@ -1,12 +1,19 @@
 # Webcomponent (`@openvidu-meet/webcomponent`)
 
-Publishes `<openvidu-meet>` — the full Meet experience embedded **inline** in a host application's
+Publishes `<openvidu-meet>`: the full Meet experience embedded **inline** in a host application's
 DOM (no iframe), built with Angular Elements. The host app keeps its own business layer on top and
 drives Meet through attributes/properties, DOM events and imperative methods.
 
 This is a separate Angular project that reuses the same `@openvidu-meet/shared-components` library as
 the SPA. It contains only the embedding shell: element registration, shadow-DOM plumbing, the
 attribute→route mapping and the lazy loader. **Feature work belongs in the library**, not here.
+
+The embedded API itself is specified elsewhere, and this file does not repeat it:
+
+- Behavior: `openspec/specs/embedded-api` (rules shared by every attribute, command and event),
+  `openspec/specs/embedded-distribution` (bundle URLs, caching, loading) and the capability of each
+  feature (`meeting-join`, `meetings`, `meeting-media`, `recordings`, `raise-hand`, …).
+- Reference: the TSDoc of `meet-ce/typings/src/embedded/`, published on openvidu.io.
 
 ## Bundles and how they are served
 
@@ -17,18 +24,15 @@ Two artifacts are produced and deployed into `meet-ce/backend/public/webcomponen
 
 | Artifact | Served at | Purpose |
 | -------- | --------- | ------- |
-| `openvidu-meet-loader.js` | `<basePath>/v1/openvidu-meet.js` | Tiny (~KB) lazy loader — the **stable public URL** hosts embed |
+| `openvidu-meet-loader.js` | `<basePath>/v1/openvidu-meet.js` | Tiny (~KB) lazy loader: the **stable public URL** hosts embed |
 | `openvidu-meet-wc.esm.js` | `<basePath>/v1/openvidu-meet.esm.js` | The heavy Angular+LiveKit ESM, `import()`ed on first use (CORS-enabled) |
 
-The bundle is always served **by the backend** so host apps pick up a redeployed version without
-changing their page. Caching contract (locked by backend unit tests + the `bundle-caching` e2e spec):
-both files are served `no-cache` + a strong content-hash ETag (`.sha256` sidecar), so browsers
-revalidate on every load — a 304 while unchanged, a full 200 with the new version on the first
-load after a redeploy.
+The deploy script writes a `.sha256` sidecar next to each file; the backend serves both `no-cache`
+with that hash as a strong ETag. Backend unit tests and the `bundle-caching` e2e spec lock this down.
 
-The ESM is deliberately ONE file: esbuild `splitting: true` was implemented and reverted
-(2026-07-29, product decision) because serving the emitted `chunk-*.js` files requires sibling
-public urls, and the distribution surface must stay at exactly the two stable urls above.
+The ESM is deliberately ONE file: esbuild `splitting: true` was tried and reverted (product decision)
+because the emitted `chunk-*.js` files would need more public URLs, and the distribution surface stays
+at exactly the two URLs above.
 
 ## Loader delegation (`src/main.loader.ts`)
 
@@ -38,92 +42,44 @@ registers the real element as `openvidu-meet-impl`), and delegates to an inner `
 attributes/properties are mirrored, imperative calls made before load are buffered and replayed, and
 events are re-dispatched on the outer element.
 
-- **Where the ESM is imported from.** First the sibling of the loader's own `src`
-  (`document.currentScript`), which is the Meet server for a host that embeds the url directly. A
-  host that serves the loader from somewhere else has no sibling there — a reverse proxy forwarding
-  only `/openvidu-meet.js` (what 3.8.0 hosts wrote, when that url was the whole bundle), a copy in
-  its own assets, a bundler that inlined it — so on failure the loader falls back to
-  `<meet server>/v1/openvidu-meet.esm.js`, derived from the element's `room-url` / `recording-url`
-  with the same `computeServerUrl()` the app uses to find the API. That fallback url is read at the
-  moment the sibling fails, not up front: a host that binds `room-url` through a framework sets it
-  right after the element connects. The host needs no change either way; the fallback only costs one
-  404 and logs a warning naming both urls.
-
+- The ESM is imported from the sibling of the loader's own `src` (`document.currentScript`) and, if
+  that fails, from `<meet server>/v1/openvidu-meet.esm.js` derived from `room-url` / `recording-url`
+  with the same `computeServerUrl()` the app uses to find the API. That fallback URL is read when the
+  sibling fails, not up front, because a framework may bind `room-url` right after the element
+  connects.
 - The delegated surface is derived from `EmbeddedAttribute` / `EmbeddedCommandName` /
-  `EmbeddedEventName` in `@openvidu-meet/typings` — the single source of truth. Adding a public
-  attribute/command/event means editing the typings first; the loader then picks it up automatically.
+  `EmbeddedEventName` in `@openvidu-meet/typings`. Adding a public attribute/command/event means
+  editing the typings first; the loader then picks it up automatically.
 - `TEARDOWN_GRACE_MS` (10 ms) keeps a live meeting alive across a DOM *move* (re-parenting fires
   disconnect+connect synchronously); only a genuine removal tears it down. Don't shorten it.
+- The loader is built straight from TS with esbuild, so it must not import Angular (that would defeat
+  the whole lazy-loading design).
 
-## Element API
+## Element internals
 
-- **Attributes/properties** — kebab-case attribute ⇄ camelCase property: `room-url`,
-  `recording-url`, `participant-name`, `participant-external-id`, `participant-metadata`,
-  `initial-audio-active`, `initial-video-active` (tri-state: set values outrank the room's
-  `config.initial*Active`, unset defers to it), `language` (BCP 47 tag, region variants
-  fall back to the language, `auto` reads `navigator.languages` with English as fallback; outranks the
-  participant's stored language without overwriting it), `show-language-selector` (tri-state, only `false`
-  hides the language selectors), `e2ee-key`, `leave-redirect-url`,
-  `show-only-recordings`, `show-recording`. Either `room-url` or `recording-url` is required.
-- **Events** (`CustomEvent`, `detail` = payload): `meetingJoined`, `meetingLeft` (with
-  `LeftEventReason`), `embeddedCloseRequested`, `mediaAudioStatusChanged`/`mediaVideoStatusChanged`/
-  `mediaScreenShareStatusChanged` (local participant only, payload `{active, origin}`),
-  `participantJoined`/`participantLeft` (**remote**
-  participants only; payload `{ roomId, participant: MeetParticipantPayload }` — identity,
-  correlation fields and role; live transitions only, no replay of participants already present,
-  no media state; `joinDate` is the server's millisecond, read from the participant info LiveKit holds,
-  which is why `participantJoined` is built a microtask after LiveKit announces the participant;
-  `participantLeft` adds `participant.leaveReason`, mapped from the LiveKit disconnect
-  reason by the same `participantLeaveReasonOf()` the webhook uses, but not `leaveDate`/`durationSeconds`,
-  which only the server clock can tell), `recordingStatusChanged` (everyone; payload `{ recordingId, status }`
-  with a `MeetRecordingStatus`; a recording's statuses only move forward, each at most once, and the
-  current one is reported right after `meetingJoined` on joining mid-recording),
-  `participantRoleChanged` (**local** participant only, once the refreshed token of the promotion or
-  demotion is in effect; payload `{ roomId, participant: MeetParticipantInfo }`),
-  `participantHandChanged` (everyone; payload `{ roomId, participant: MeetParticipantInfo, origin }`;
-  the hand lives in a LiveKit participant attribute the server writes, so every raised hand is
-  reported, in queue order, right after `meetingJoined`; the queue is ordered by
-  `participant.handRaiseDate`, never sent as a position that the next change would make stale),
-  `participantReactionSent` (everyone, the sender included; payload
-  `{ roomId, participant: MeetParticipantInfo, reaction }`;
-  the server relays each reaction once and stores none, so nothing is replayed on joining).
-  A state-change event carries the live `MeetParticipantInfo` snapshot, like its webhook, minus `roomName`.
-  The 3.8.0 spellings (`joined`, `left`, `closed`) are dispatched **alongside** their
-  canonical twin until **3.12.0** — a host listening to both names receives the event twice.
-  `EmbeddedEventBusService`'s queue only ever carries canonical names; `src/app/app.ts` emits both
-  outputs from a single switch on the canonical name, and the iframe bridge posts a second
-  `postMessage` under the deprecated name via `deprecatedEmbeddedEventAliasOf()` from the typings.
-- **Methods**: `meetingEnd()`, `meetingLeave()`, `participantKick(identity)`,
-  `participantMute(identity, media)`, `participantMuteAll(media)` (moderation is one-way: `media`
-  only accepts `false` values, e.g. `{audioActive: false}`, and never applies to a moderator),
-  `participantUpdateRole(identity, action)` (`upgrade` | `downgrade`, gated by `participantPromote`),
-  `mediaToggleAudio(active?)`, `mediaToggleVideo(active?)`, `mediaToggleScreenShare(active?)`
-  (omitted = toggle), `recordingStart()` / `recordingStop()` (gated by `recordingControl`; the stop
-  targets the recording the meeting currently knows, after waiting for a start still in flight),
-  `participantHandRaise()` / `participantHandLower(identity?)` / `participantHandLowerAll()` (the
-  own hand is never gated; lowering another participant's hand, or every hand, needs
-  `participantHandLower`), `participantReactionSend(reaction)` (one of the `MeetReaction` names, gated
-  by `participantReactionSend`), and
-  the convenience listener API `on()` / `once()` / `off()` added in
-  `src/app/custom-element/wrapper.ts`. Every command runs through `EmbeddedCommandService.run()`,
-  which enforces the permission and, internally, which commands work from the prejoin screen — the
-  audio/video toggles do, the rest are rejected (with a log) until the meeting is connected. The
-  iframe bridge applies no transport-level gating, so both transports accept/reject identically. The
-  3.8.0 spellings (`endMeeting`, `leaveRoom`, `kickParticipant`) stay as `@deprecated` aliases on the
-  wrapper until **3.12.0**; they forward to the canonical method, so `src/app/app.ts` and
-  `EmbeddedCommandService` only ever declare the canonical name. The iframe bridge accepts both wire
-  names by running `resolveEmbeddedCommandName()` from the typings.
+- Attributes are kebab-case and their properties camelCase. Either `room-url` or `recording-url` is
+  required.
+- Events: `EmbeddedEventBusService`'s queue only ever carries canonical names. `src/app/app.ts` emits
+  both outputs of an event, canonical and deprecated 3.8.0 alias (until 3.12.0), from a single switch
+  on the canonical name; the iframe bridge posts the second `postMessage` through
+  `deprecatedEmbeddedEventAliasOf()` from the typings.
+- `participantJoined` is built a microtask after LiveKit announces the participant, because its
+  `joinDate` is read from the participant info LiveKit holds. `participantLeft` maps the LiveKit
+  disconnect reason with the same `participantLeaveReasonOf()` the webhook uses.
+- Methods: every command runs through `EmbeddedCommandService.run()`, which enforces the permission
+  and which commands work from the prejoin screen. `src/app/custom-element/wrapper.ts` adds the
+  `on()` / `once()` / `off()` listener API and keeps the 3.8.0 method names as aliases that forward
+  to the canonical method, so `src/app/app.ts` and `EmbeddedCommandService` only declare canonical
+  names. The iframe bridge accepts both wire names through `resolveEmbeddedCommandName()` and applies
+  no gating of its own, so both transports accept and reject identically.
 - No `.d.ts` is published; hosts declare the subset they use (see
   `testapp/src/app/openvidu-meet-element.ts`).
-
-## Internals
-
-- `src/main.wc.ts` — `bootstrapOpenViduMeet(tagName?)`: creates the Angular application, flips
+- `src/main.wc.ts`: `bootstrapOpenViduMeet(tagName?)` creates the Angular application, flips
   `RuntimeConfigService.enableWebcomponentMode()` **before** registering the element, then registers.
   Auto-defines `openvidu-meet` unless `__OV_MEET_SKIP_AUTODEFINE__` is set. Also injects the
   Roboto/Material font `<link>`s into the host document.
-- `src/main.ts` — dev-only SPA harness (`ng serve`), same registration path.
-- `src/app/app.ts` — root component, `ViewEncapsulation.ShadowDom`. Maps host inputs to a `WcRoute`,
+- `src/main.ts`: dev-only SPA harness (`ng serve`), same registration path.
+- `src/app/app.ts`: root component, `ViewEncapsulation.ShadowDom`. Maps host inputs to a `WcRoute`,
   drives `WcRouterService`, renders the route's library component, and bridges events both ways.
   Effect order is significant: the server-base-URL effect must run before the navigate effect, because
   route guards call the API. Re-navigation is keyed on `wcRouteIdentity` so an unrelated attribute
@@ -133,7 +89,7 @@ events are re-dispatched on the outer element.
   HTTP interceptor also consults for the "current page".
 - **Shadow DOM**: `shadow-dom/styles.service.ts` reflects styles into the shadow root
   (`adoptedStyleSheets`) and `shadow-dom/overlay-container.service.ts` re-hosts the CDK overlay
-  container inside it — otherwise Material dialogs/menus render unstyled outside the shadow boundary.
+  container inside it; otherwise Material dialogs/menus render unstyled outside the shadow boundary.
 
 ## Commands
 
@@ -149,11 +105,12 @@ pnpm run test:e2e          # Playwright, project `webcomponent`
 
 - **Unit** (`tests/unit/`): loader delegation, wrapper API and the `deploy-to-backend` script
   contract (stable names + `.sha256` sidecars, exercised hermetically via `MEET_WC_DIST_DIR` /
-  `MEET_BACKEND_PUBLIC_DIR`) — framework-agnostic logic. The Angular shell is covered by e2e instead
+  `MEET_BACKEND_PUBLIC_DIR`): framework-agnostic logic. The Angular shell is covered by e2e instead
   of a TestBed. Config: `jest.config.mjs` (ts-jest ESM, typings mapped to source, SCSS stubbed).
 - **E2E** (`tests/e2e/`): `attributes`, `bundle-caching`, `commands`, `events`, `room`,
-  `identified-guest-state`, `webhooks`. They load the real bundle into the **testapp** and require a
-  full environment — endpoints in `tests/config.ts`, overridable by env:
+  `identified-guest-state`, `webhooks`. They load the real bundle into the **testapp** (see
+  `testapp/CLAUDE.md`) and require a full environment; endpoints in `tests/config.ts`, overridable by
+  env:
   - backend `http://localhost:6080/meet` (`MEET_API_URL`, `MEET_API_KEY`)
   - testapp `http://localhost:5080` (`MEET_TESTAPP_URL`) + webhook bridge on `:5081`
   - bundle `http://localhost:6080/meet/v1/openvidu-meet.js` (`MEET_WEBCOMPONENT_SRC`)
@@ -167,8 +124,6 @@ pnpm run test:e2e          # Playwright, project `webcomponent`
 - Two embedding modes share this API surface: this inline webcomponent and a cross-document
   `<iframe>` (bridged by `IframeBridgeService` in the library over `postMessage`). Keep the
   attribute/command/event contract identical for both; both are parametrized in the e2e suites.
-- After changing the library, rebuild the bundle and re-deploy — the loader serves whatever is in the
+- After changing the library, rebuild the bundle and re-deploy: the loader serves whatever is in the
   backend's `public/webcomponent/`, so a stale bundle silently masks your change.
-- The Angular `wc` configuration builds with `outputHashing: none` and optimization on; the loader is
-  built straight from TS with esbuild, so it must not import Angular (that would defeat the whole
-  lazy-loading design).
+- The Angular `wc` configuration builds with `outputHashing: none` and optimization on.
