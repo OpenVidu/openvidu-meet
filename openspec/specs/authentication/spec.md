@@ -281,6 +281,11 @@ The server SHALL allow each client address 5 failed `loginUser` attempts per 5 m
 - **WHEN** it calls `loginUser` again, even with correct credentials
 - **THEN** the server answers `429` with error `Too Many Requests`
 
+#### Scenario: Attempts spread over replicas
+- **GIVEN** two Meet replicas and a client whose 5 failed logins within 5 minutes were split between them
+- **WHEN** it calls `loginUser` again on either replica
+- **THEN** the server answers `429`, since the limit counts across the cluster (see `deployment`)
+
 ### Requirement: Rate limits on sensitive authentication actions
 The server SHALL allow each client address 30 requests per minute to `refreshAccessToken` and `logoutUser` together, and 20 requests per 5 minutes to `createApiKey`, `getApiKeys`, `deleteApiKeys`, `resetUserPassword` and `changeUserPassword` together, API key requests included, answering `429` beyond them. General API rate limits are specified in `deployment`.
 

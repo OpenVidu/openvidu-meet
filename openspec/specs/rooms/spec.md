@@ -367,7 +367,12 @@ On `bulkDeleteRooms` the server SHALL accept up to 100 comma-separated `roomIds`
 - **THEN** the created room has neither `autoDeletionDate` nor `autoDeletionPolicy`
 
 ### Requirement: Automatic deletion of expired rooms
-Within one hour after a room's `autoDeletionDate` has passed, Meet SHALL process the room exactly as a `deleteRoom` with the room's `autoDeletionPolicy`, and SHALL do so once for the whole cluster whatever the number of replicas. Rooms without a date, or with a date still ahead, SHALL be left untouched.
+Within one hour after a room's `autoDeletionDate` has passed, Meet SHALL process the room exactly as a `deleteRoom` with the room's `autoDeletionPolicy`, and SHALL do so once for the whole cluster whatever the number of replicas. Until it is processed, the room SHALL keep working as before, new participants included. Rooms without a date, or with a date still ahead, SHALL be left untouched.
+
+#### Scenario: Joining after the date, before processing
+- **GIVEN** an open room whose `autoDeletionDate` passed a minute ago and that the sweep has not processed yet
+- **WHEN** a participant joins with one of its access links
+- **THEN** they enter the meeting as in any open room
 
 #### Scenario: Expired idle room
 - **GIVEN** a room without meeting or recordings whose `autoDeletionDate` has passed

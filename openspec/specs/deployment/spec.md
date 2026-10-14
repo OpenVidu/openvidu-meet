@@ -375,6 +375,14 @@ The server SHALL limit requests per client IP address, per minute: 1000 for the 
 - **WHEN** it sends a 501st request within a minute
 - **THEN** the server answers `429`
 
+### Requirement: Rate limits count across the cluster
+Every rate limit of Meet, those above and those in `authentication`, SHALL count the requests of a client address across all Meet replicas, so a client gets the same allowance whatever the number of replicas and whichever replica the load balancer picks.
+
+#### Scenario: Requests spread over two replicas
+- **GIVEN** two Meet replicas behind a load balancer
+- **WHEN** a browser sends 300 API requests to each replica within a minute
+- **THEN** the requests beyond the 500th of that minute are answered `429`, whichever replica receives them
+
 ### Requirement: Rate-limited response
 A request over its limit SHALL get `429` with a JSON body `{ "error": "Too Many Requests", "message" }` and standard `RateLimit` and `RateLimit-Policy` headers, and SHALL be logged as a warning with its method, its path without the query string, and the client address.
 
