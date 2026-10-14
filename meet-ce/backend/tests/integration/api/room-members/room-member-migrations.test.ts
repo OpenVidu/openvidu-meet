@@ -63,6 +63,7 @@ const expectedCurrentEffectivePermissions = {
 	participantKick: false,
 	participantMute: false,
 	participantHandLower: false,
+	participantReactionSend: true,
 	meetingEnd: false,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,

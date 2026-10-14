@@ -1,8 +1,7 @@
-import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
 	AfterViewInit,
 	Component,
-	computed,
 	contentChild,
 	effect,
 	ElementRef,
@@ -18,12 +17,10 @@ import {
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { NotificationsComponent } from '../../../../../shared/components/notifications/notifications.component';
 import { DialogService } from '../../../../../shared/services/dialog.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 import { LoggerService } from '../../../../../shared/services/logger.service';
-import { MeetingContextService } from '../../../services/meeting-context.service';
 import { SidenavLayoutDirective } from '../../directives/layout/sidenav-layout.directive';
 import {
 	LayoutAdditionalElementsDirective,
@@ -55,21 +52,14 @@ import {
 	ActivitiesPanelStatusEvent,
 	ChatPanelStatusEvent,
 	ParticipantsPanelStatusEvent,
-	PanelType,
 	SettingsPanelStatusEvent
 } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '../../models/participant.model';
-import {
-	RecordingStartRequestedEvent,
-	RecordingState,
-	RecordingStopRequestedEvent
-} from '../../models/recording.model';
+import { RecordingStartRequestedEvent, RecordingStopRequestedEvent } from '../../models/recording.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
-import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import type { Room } from '../../services/livekit';
-import { MeetingEndingSoonService } from '../../services/meeting-ending-soon/meeting-ending-soon.service';
 import { RecordingNoticeService } from '../../services/recording-notice/recording-notice.service';
 import { MeetingEventsService } from '../../services/meeting-events/meeting-events.service';
 import { LocalMediaService } from '../../services/local-media/local-media.service';
@@ -77,13 +67,11 @@ import { MeetingPhaseService } from '../../services/meeting-phase/meeting-phase.
 import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
-import { RecordingService } from '../../services/recording/recording.service';
 import { MediaStorageService } from '../../services/storage/storage.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
 import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
-import { HiddenParticipantsIndicatorComponent } from '../hidden-participants-indicator/hidden-participants-indicator.component';
 import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
 import { SmartLayoutComponent } from '../layout/smart-layout/smart-layout.component';
 import { MeetingMediaSetupComponent } from '../meeting-media-setup/meeting-media-setup.component';
@@ -94,6 +82,7 @@ import { PanelComponent } from '../panel/panel.component';
 import { ParticipantPanelItemComponent } from '../panel/participants-panel/participant-panel-item/participant-panel-item.component';
 import { ParticipantsPanelComponent } from '../panel/participants-panel/participants-panel/participants-panel.component';
 import { SettingsPanelComponent } from '../panel/settings-panel/settings-panel.component';
+import { StatusRailComponent } from '../status-rail/status-rail.component';
 import { StreamComponent } from '../stream/stream.component';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
 
@@ -108,12 +97,9 @@ import { ToolbarComponent } from '../toolbar/toolbar.component';
 		MatIconModule,
 		MatProgressSpinnerModule,
 		MatSidenavModule,
-		MatTooltipModule,
 		SidenavLayoutDirective,
 		TranslatePipe,
 		MeetingMediaSetupComponent,
-		DatePipe,
-		HiddenParticipantsIndicatorComponent,
 		LandscapeWarningComponent,
 		NotificationsComponent,
 		ToolbarComponent,
@@ -125,6 +111,7 @@ import { ToolbarComponent } from '../toolbar/toolbar.component';
 		ParticipantsPanelComponent,
 		ParticipantPanelItemComponent,
 		SmartLayoutComponent,
+		StatusRailComponent,
 		StreamComponent,
 		NgTemplateOutlet
 	],
@@ -148,102 +135,15 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	private readonly backgroundService = inject(VirtualBackgroundService);
 	private readonly meetingEventsService = inject(MeetingEventsService);
 	private readonly translateService = inject(MeetingTranslateService);
-	private readonly meetingEndingSoonService = inject(MeetingEndingSoonService);
-	private readonly meetingContext = inject(MeetingContextService);
 	// Injected for its own sake: it watches the recording state and announces it to the room, and
 	// this is the view that hosts the notifications it raises.
 	private readonly recordingNoticeService = inject(RecordingNoticeService);
-	private readonly smartLayoutService = inject(SmartLayoutService);
-	private readonly recordingService = inject(RecordingService);
 	protected readonly viewportService = inject(ViewportService);
 	readonly templateRegistry = inject(TemplateRegistryService);
-
-	private readonly now = signal(Date.now());
-	private readonly clockHandle = setInterval(() => this.now.set(Date.now()), 1000);
-
-	/** `H:mm:ss` since the meeting started, or nothing for a meeting whose start is unknown. */
-	protected readonly meetingElapsedTime = computed(() => {
-		const startedAt = this.meetingContext.meetingStartedAt();
-
-		if (startedAt === undefined) return undefined;
-
-		const totalSeconds = Math.max(0, Math.floor((this.now() - startedAt) / 1000));
-		const hours = Math.floor(totalSeconds / 3600);
-		const minutes = Math.floor((totalSeconds % 3600) / 60);
-		const seconds = totalSeconds % 60;
-
-		return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-	});
-
-	private readonly endingSoonRemainingMs = this.meetingEndingSoonService.remainingMs;
-
-	protected readonly isEndingSoon = computed(() => this.endingSoonRemainingMs() !== undefined);
-
-	/** Solid warn treatment for the last minute; above it the chip stays on the calm surface. */
-	protected readonly isEndingSoonUrgent = computed(() => {
-		const remainingMs = this.endingSoonRemainingMs();
-		return remainingMs !== undefined && remainingMs <= MeetingViewComponent.ENDING_SOON_URGENT_MS;
-	});
-
-	/**
-	 * `mm:ss`, or nothing once the countdown is spent: the backend force-ends the meeting at that
-	 * same deadline, and a frozen `0:00` reads as a broken clock rather than a meeting about to
-	 * close.
-	 */
-	protected readonly endingSoonTime = computed(() => {
-		const remainingMs = this.endingSoonRemainingMs();
-
-		if (remainingMs === undefined || remainingMs <= 0) return undefined;
-
-		const totalSeconds = Math.ceil(remainingMs / 1000);
-		const minutes = Math.floor(totalSeconds / 60);
-		const seconds = totalSeconds % 60;
-
-		return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-	});
-
-	protected readonly recordingStatus = this.recordingService.recordingStatus;
-
-	protected readonly isRecording = computed(() => this.recordingStatus().status === RecordingState.STARTED);
-
-	/**
-	 * Egress takes a few seconds to come up, and until it does there is no elapsed time to show.
-	 * The chip goes up anyway, so asking for a recording is never met with silence.
-	 */
-	protected readonly isRecordingStarting = computed(() => this.recordingStatus().status === RecordingState.STARTING);
-
-	protected readonly showRecordingChip = computed(() => this.isRecordingStarting() || this.isRecording());
-
-	protected readonly canOpenActivitiesPanel = this.libService.activitiesPanelButtonSignal;
-
-	/**
-	 * The key is what actually encrypts: `MeetingLiveKitService` builds the room's `encryption`
-	 * options from it, so a key here means the media really is end-to-end encrypted.
-	 */
-	protected readonly isE2eeActive = computed(() => (this.libService.e2eeKeySignal() ?? '').trim() !== '');
-
-	/** Published by the smart layout, which cannot render into the rail itself. */
-	protected readonly railHiddenParticipants = this.smartLayoutService.railHiddenParticipants;
-
-	/** Every raised hand, whether or not the layout shows its tile. */
-	protected readonly raisedHandCount = computed(() => this.participantService.raisedHands().length);
-
-	protected readonly canOpenParticipantsPanel = this.libService.participantsPanelButtonSignal;
-
-	protected readonly showStatusRail = computed(
-		() =>
-			this.meetingElapsedTime() !== undefined ||
-			this.showRecordingChip() ||
-			this.isEndingSoon() ||
-			this.isE2eeActive() ||
-			this.raisedHandCount() > 0 ||
-			this.railHiddenParticipants() !== undefined
-	);
 
 	// Constants
 	private static readonly SPINNER_DIAMETER = 50;
 	private static readonly ENTER_ANIMATION_CLASS = 'ov-fade-in-enter';
-	private static readonly ENDING_SOON_URGENT_MS = 60_000;
 
 	// *** Toolbar ***
 
@@ -562,7 +462,6 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	}
 
 	async ngOnDestroy() {
-		clearInterval(this.clockHandle);
 		this.destroyed = true;
 
 		if (this.shouldDisconnectRoomWhenComponentIsDestroyed) {
@@ -600,18 +499,6 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 			.finally(() => {
 				this._transitionAfterDevicesReady();
 			});
-	}
-
-	protected openParticipantsPanel(): void {
-		if (!this.canOpenParticipantsPanel()) return;
-
-		this.panelService.togglePanel(PanelType.PARTICIPANTS);
-	}
-
-	protected openRecordingActivityPanel(): void {
-		if (!this.canOpenActivitiesPanel() || this.panelService.isActivitiesPanelOpened()) return;
-
-		this.panelService.togglePanel(PanelType.ACTIVITIES, 'recording');
 	}
 
 	/**

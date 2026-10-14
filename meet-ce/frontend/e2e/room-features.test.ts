@@ -67,6 +67,24 @@ test.describe('Room UI Features E2E Tests', () => {
 		});
 	});
 
+	test.describe('Duration Limit Feature', () => {
+		test('should count down beside the elapsed time, and keep only the countdown on a phone', async ({ page }) => {
+			const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl({
+				config: { maxDurationMinutes: 5 }
+			});
+			createdRoomIds.push(room.roomId);
+
+			await openMeeting(page, accessUrl);
+			await expectVisible(page, '#meeting-ending-soon');
+			await expectVisible(page, '#meeting-elapsed-time');
+
+			await page.setViewportSize({ width: 360, height: 780 });
+
+			await expectVisible(page, '#meeting-ending-soon');
+			await expectHidden(page, '#meeting-elapsed-time');
+		});
+	});
+
 	test.describe('Virtual Background Feature', () => {
 		test('should show virtual background button when enabled', async ({ page }) => {
 			const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl({

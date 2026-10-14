@@ -146,6 +146,10 @@
           "LABEL": "Baisser les mains",
           "DESCRIPTION": "Permet de baisser les mains levées des autres participants, une par une ou toutes à la fois"
         },
+        "participantReactionSend": {
+          "LABEL": "Envoyer des réactions",
+          "DESCRIPTION": "Permet d'envoyer des réactions que tout le monde voit pendant quelques secondes"
+        },
         "roomShareAccessLinks": {
           "LABEL": "Partager des liens d'accès",
           "DESCRIPTION": "Autoriser à partager des liens d'invitation avec d'autres personnes"

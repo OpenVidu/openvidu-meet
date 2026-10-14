@@ -1,14 +1,16 @@
 import type {
 	MeetParticipantHandOptions,
 	MeetParticipantModerationAction,
-	MeetParticipantMuteOptions
+	MeetParticipantMuteOptions,
+	MeetParticipantReactionOptions
 } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
-import { handleError } from '../models/error.model.js';
+import { errorInsufficientPermissions, handleError, rejectRequestFromMeetError } from '../models/error.model.js';
 import { LiveKitService } from '../services/livekit.service.js';
 import { LoggerService } from '../services/logger.service.js';
 import { MeetingService } from '../services/meeting.service.js';
+import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomMemberService } from '../services/room-member.service.js';
 import { RoomService } from '../services/room.service.js';
 
@@ -157,6 +159,30 @@ export const lowerAllHands = async (req: Request, res: Response) => {
 		res.status(200).json({ message: `Hands of participants in meeting in room '${roomId}' lowered` });
 	} catch (error) {
 		handleError(res, error, `lowering hands in room '${roomId}'`);
+	}
+};
+
+export const sendParticipantReaction = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const meetingService = container.get(MeetingService);
+	const { roomId } = req.params as Record<string, string>;
+	const { reaction } = req.body as MeetParticipantReactionOptions;
+	const participantIdentity = container.get(RequestSessionService).getParticipantIdentity();
+
+	if (!participantIdentity) {
+		logger.warn(
+			`Could not resolve the participant identity from the token when sending a reaction in room '${roomId}'`
+		);
+		return rejectRequestFromMeetError(res, errorInsufficientPermissions());
+	}
+
+	try {
+		await meetingService.sendParticipantReaction(roomId, participantIdentity, reaction);
+		res.status(200).json({
+			message: `Reaction of participant '${participantIdentity}' sent in meeting in room '${roomId}'`
+		});
+	} catch (error) {
+		handleError(res, error, `sending reaction of participant '${participantIdentity}' in room '${roomId}'`);
 	}
 };
 

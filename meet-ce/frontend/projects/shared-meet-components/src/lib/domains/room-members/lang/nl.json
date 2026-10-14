@@ -146,6 +146,10 @@
           "LABEL": "Handen laten zakken",
           "DESCRIPTION": "Laat opgestoken handen van andere deelnemers zakken, één voor één of allemaal tegelijk"
         },
+        "participantReactionSend": {
+          "LABEL": "Reacties sturen",
+          "DESCRIPTION": "Laat reacties sturen die iedereen een paar seconden ziet"
+        },
         "roomShareAccessLinks": {
           "LABEL": "Toegangslinks delen",
           "DESCRIPTION": "Uitnodigingslinks met anderen delen toestaan"

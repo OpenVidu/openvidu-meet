@@ -12,6 +12,7 @@
 		"E2EE_BADGE_LABEL": "एन्क्रिप्टेड",
 		"E2EE_BADGE_TOOLTIP": "यह मीटिंग एंड-टू-एंड एन्क्रिप्टेड है",
 		"ELAPSED_BADGE_TOOLTIP": "मीटिंग शुरू होने के बाद से समय",
+		"STATUS_MENU": "मीटिंग की स्थिति",
 		"RECORDING_BADGE_STARTING": "शुरू हो रही है",
 		"RECORDING_STARTED_TITLE": "इस मीटिंग की रिकॉर्डिंग हो रही है",
 		"RECORDING_STARTED_MESSAGE": "अब से आपका ऑडियो, वीडियो और आपके द्वारा साझा की गई हर चीज़ रिकॉर्ड होगी।",
@@ -288,6 +289,23 @@
 		"LOWER_ALL": "सभी हाथ नीचे करें",
 		"RAISED_COUNT": "उठे हुए हाथ",
 		"LOWERED_BY_MODERATOR": "एक मॉडरेटर ने आपका हाथ नीचे कर दिया"
+	},
+	"REACTIONS": {
+		"BUTTON": "प्रतिक्रियाएँ",
+		"SEND": "प्रतिक्रिया भेजें",
+		"LIFETIME": "सभी इसे {seconds} सेकंड तक देखते हैं",
+		"LIVE": "लाइव प्रतिक्रियाएँ",
+		"REACTED": "{name} ने {reaction} से प्रतिक्रिया दी",
+		"NAMES": {
+			"THUMBS_UP": "अंगूठा ऊपर",
+			"THUMBS_DOWN": "अंगूठा नीचे",
+			"GRINNING_FACE": "मुस्कान",
+			"SLIGHTLY_FROWNING_FACE": "उदास",
+			"CONFUSED_FACE": "उलझन",
+			"FACE_WITH_OPEN_MOUTH": "हैरानी",
+			"CLAPPING_HANDS": "तालियाँ",
+			"RED_HEART": "दिल"
+		}
 	},
 	"END_MEETING": {
 		"LEFT_TITLE": "आपने मीटिंग छोड़ दी",

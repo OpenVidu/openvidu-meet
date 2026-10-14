@@ -3,7 +3,8 @@ import type {
 	MeetParticipantHandChangedPayload,
 	MeetMeetingInfo,
 	MeetParticipantInfo,
-	MeetParticipantMuteOptions
+	MeetParticipantMuteOptions,
+	MeetReaction
 } from '@openvidu-meet/typings';
 import {
 	loweredHandAttributes,
@@ -25,6 +26,7 @@ import {
 	errorNoActiveMeeting,
 	errorParticipantCannotBeMuted,
 	errorParticipantNotFound,
+	errorReactionsDisabled,
 	OpenViduMeetError
 } from '../models/error.model.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
@@ -283,6 +285,26 @@ export class MeetingService {
 		const updated = await this.livekitService.updateParticipant(room.name, participant.identity, { attributes });
 		const payload = await MeetParticipantHelper.toParticipantHandChangedPayload(room, updated, origin);
 		this.webhookDispatcherService.sendParticipantHandChangedWebhook(payload);
+	}
+
+	/**
+	 * Shows a participant's reaction to everyone in the meeting of a room. Nothing is stored: the
+	 * reaction reaches whoever is in the meeting at that moment, and a participant joining later never
+	 * sees it.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param participantIdentity - The identity of the participant sending the reaction
+	 * @param reaction - The reaction to show
+	 * @throws A 403 error when the room has the feature disabled
+	 */
+	async sendParticipantReaction(roomId: string, participantIdentity: string, reaction: MeetReaction): Promise<void> {
+		const { config } = await this.roomService.getMeetRoom(roomId, ['config']);
+
+		if (!config.reactions.enabled) {
+			throw errorReactionsDisabled(roomId);
+		}
+
+		await this.frontendEventService.sendParticipantReactionSentSignal(roomId, participantIdentity, reaction);
 	}
 
 	/**

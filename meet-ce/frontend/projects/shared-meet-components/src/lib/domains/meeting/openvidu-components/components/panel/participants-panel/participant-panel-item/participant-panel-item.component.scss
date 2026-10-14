@@ -36,6 +36,15 @@
 		line-height: 0;
 	}
 
+	// Takes the avatar's place for the reaction's life: a column of emoji scans faster than initials.
+	.avatar-reaction {
+		position: absolute;
+		inset: 0;
+		border-radius: var(--ov-surface-radius);
+		background-color: color-mix(in srgb, var(--ov-text-surface-color) 10%, var(--ov-surface-color));
+		font-size: 24px;
+	}
+
 	.avatar-badge {
 		position: absolute;
 		bottom: -5px;

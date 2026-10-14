@@ -5,6 +5,7 @@ import {
 	MeetParticipantHandOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
+	MeetParticipantReactionOptions,
 	MeetPermissionsInput,
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
@@ -995,6 +996,24 @@ export const lowerAllHands = async (roomId: string, hand: MeetParticipantHandOpt
 		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
 		.send(hand);
 	return response;
+};
+
+export const sendParticipantReaction = async (
+	roomId: string,
+	reaction: MeetParticipantReactionOptions,
+	roomMemberToken?: string
+) => {
+	checkAppIsRunning();
+
+	const req = request(app).post(
+		getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/reactions`)
+	);
+
+	if (roomMemberToken) {
+		req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
+	}
+
+	return await req.send(reaction);
 };
 
 export const getMeetingParticipant = async (roomId: string, participantIdentity: string, roomMemberToken: string) => {

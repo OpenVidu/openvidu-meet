@@ -75,6 +75,7 @@ content:
                               participantKick: true
                               participantMute: true
                               participantHandLower: true
+                              participantReactionSend: true
                               meetingEnd: false
                               mediaPublishVideo: true
                               mediaPublishAudio: true
@@ -106,6 +107,7 @@ content:
                               participantKick: false
                               participantMute: false
                               participantHandLower: false
+                              participantReactionSend: true
                               meetingEnd: false
                               mediaPublishVideo: true
                               mediaPublishAudio: true

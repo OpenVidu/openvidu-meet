@@ -66,6 +66,12 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 				icon: 'do_not_touch'
 			},
 			{
+				key: 'participantReactionSend',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantReactionSend.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantReactionSend.DESCRIPTION',
+				icon: 'add_reaction'
+			},
+			{
 				key: 'roomShareAccessLinks',
 				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.roomShareAccessLinks.LABEL',
 				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.roomShareAccessLinks.DESCRIPTION',

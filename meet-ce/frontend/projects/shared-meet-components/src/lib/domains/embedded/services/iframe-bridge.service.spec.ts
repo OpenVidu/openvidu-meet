@@ -5,6 +5,7 @@ import {
 	EmbeddedEventName,
 	LeftEventReason,
 	MeetParticipantModerationAction,
+	MeetReaction,
 	MeetRecordingStatus,
 	MeetRoomMemberRole
 } from '@openvidu-meet/typings';
@@ -54,7 +55,8 @@ describe('IframeBridgeService', () => {
 			'recordingStop',
 			'participantHandRaise',
 			'participantHandLower',
-			'participantHandLowerAll'
+			'participantHandLowerAll',
+			'participantReactionSend'
 		]);
 		commandService.meetingEnd.and.resolveTo();
 		commandService.meetingLeave.and.resolveTo();
@@ -70,6 +72,7 @@ describe('IframeBridgeService', () => {
 		commandService.participantHandRaise.and.resolveTo();
 		commandService.participantHandLower.and.resolveTo();
 		commandService.participantHandLowerAll.and.resolveTo();
+		commandService.participantReactionSend.and.resolveTo();
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -456,6 +459,27 @@ describe('IframeBridgeService', () => {
 			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL });
 
 			expect(commandService.participantHandLowerAll).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe('reaction commands', () => {
+		it('forwards PARTICIPANT_REACTION_SEND with its reaction', () => {
+			startBridge();
+
+			postFromHost({
+				command: EmbeddedCommandName.PARTICIPANT_REACTION_SEND,
+				payload: { reaction: MeetReaction.RED_HEART }
+			});
+
+			expect(commandService.participantReactionSend).toHaveBeenCalledOnceWith(MeetReaction.RED_HEART);
+		});
+
+		it('ignores PARTICIPANT_REACTION_SEND without a reaction', () => {
+			startBridge();
+
+			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_REACTION_SEND });
+
+			expect(commandService.participantReactionSend).not.toHaveBeenCalled();
 		});
 	});
 

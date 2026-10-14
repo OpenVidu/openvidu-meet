@@ -118,6 +118,8 @@ content:
                                   enabled: true
                               raiseHand:
                                   enabled: true
+                              reactions:
+                                  enabled: true
                           roles:
                               moderator:
                                   permissions:
@@ -133,6 +135,7 @@ content:
                                       participantKick: true
                                       participantMute: true
                                       participantHandLower: true
+                                      participantReactionSend: true
                                       meetingEnd: true
                                       mediaPublishVideo: true
                                       mediaPublishAudio: true
@@ -154,6 +157,7 @@ content:
                                       participantKick: false
                                       participantMute: false
                                       participantHandLower: false
+                                      participantReactionSend: true
                                       meetingEnd: false
                                       mediaPublishVideo: true
                                       mediaPublishAudio: true
@@ -211,6 +215,8 @@ content:
                                   enabled: false
                               raiseHand:
                                   enabled: false
+                              reactions:
+                                  enabled: false
                           roles:
                               moderator:
                                   permissions:
@@ -226,6 +232,7 @@ content:
                                       participantKick: true
                                       participantMute: true
                                       participantHandLower: true
+                                      participantReactionSend: true
                                       meetingEnd: true
                                       mediaPublishVideo: true
                                       mediaPublishAudio: true
@@ -247,6 +254,7 @@ content:
                                       participantKick: false
                                       participantMute: false
                                       participantHandLower: false
+                                      participantReactionSend: true
                                       meetingEnd: false
                                       mediaPublishVideo: true
                                       mediaPublishAudio: true
@@ -297,6 +305,8 @@ content:
                                   enabled: true
                               raiseHand:
                                   enabled: true
+                              reactions:
+                                  enabled: true
                         - roomId: 'room-456'
                           config:
                               recording:
@@ -310,6 +320,8 @@ content:
                               e2ee:
                                   enabled: false
                               raiseHand:
+                                  enabled: false
+                              reactions:
                                   enabled: false
                     _extraFields:
                         - config

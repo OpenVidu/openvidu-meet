@@ -144,6 +144,19 @@ const MeetRaiseHandConfigSchema = new Schema(
 );
 
 /**
+ * Sub-schema for reactions configuration.
+ */
+const MeetReactionsConfigSchema = new Schema(
+	{
+		enabled: {
+			type: Boolean,
+			required: true
+		}
+	},
+	{ _id: false }
+);
+
+/**
  * Sub-schema for room theme configuration.
  */
 const MeetRoomThemeSchema = new Schema(
@@ -313,6 +326,10 @@ const MeetRoomConfigSchema = new Schema(
 		},
 		raiseHand: {
 			type: MeetRaiseHandConfigSchema,
+			required: true
+		},
+		reactions: {
+			type: MeetReactionsConfigSchema,
 			required: true
 		}
 	},

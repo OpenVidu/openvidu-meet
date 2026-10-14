@@ -33,9 +33,10 @@ export interface MeetParticipantPayload {
 
 /**
  * Live snapshot of a participant in an ongoing meeting: its identity plus its current media and
- * hand state. Served by `GET /meetings/{roomId}/participants` and carried by the webhooks that
- * report a state change (`participantRoleChanged`, `participantHandChanged`). See
- * {@link MeetParticipantPayload} for why the lifecycle webhooks do not carry it.
+ * hand state. Served by `GET /meetings/{roomId}/participants` and carried by every webhook and
+ * embedded event about a participant already in the meeting (`participantRoleChanged`,
+ * `participantHandChanged`, `participantReactionSent`). See {@link MeetParticipantPayload} for why
+ * the lifecycle ones do not carry it.
  */
 export interface MeetParticipantInfo extends MeetParticipantPayload {
 	/** Whether the participant's microphone is currently publishing (present and not muted). */

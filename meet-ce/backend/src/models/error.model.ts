@@ -477,6 +477,10 @@ export const errorHandDisabled = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Hand Error', `Raising hands is disabled for room '${roomId}'`, 403);
 };
 
+export const errorReactionsDisabled = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Reaction Error', `Reactions are disabled for room '${roomId}'`, 403);
+};
+
 // AI Assistant errors
 
 export const errorAiAssistantAlreadyStarting = (roomId: string): OpenViduMeetError => {

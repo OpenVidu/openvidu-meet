@@ -10,6 +10,8 @@ import {
 	MeetParticipantAttribute,
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantPermissionsUpdatedPayload,
+	MeetParticipantReactionSentPayload,
+	MeetReaction,
 	MeetRecordingStatus,
 	MeetRecordingUpdatedPayload,
 	MeetRoomMemberRole,
@@ -62,6 +64,7 @@ import { toMediaStatusChangedEvent } from '../utils/media-status-event.utils';
 import { hasReachedMeetingEnd, parseMeetingEndDate, parseMeetingStartDate } from '../utils/room-metadata.utils';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingHandService } from './meeting-hand.service';
+import { MeetingReactionsService } from './meeting-reactions.service';
 import { MeetingStateService } from './meeting-state.service';
 
 const HAND_NOTIFICATION_DURATION_MS = 5000;
@@ -111,6 +114,7 @@ export class MeetingEventHandlerService {
 	protected screenShare = inject(ScreenShareService);
 	protected meetingEndingSoon = inject(MeetingEndingSoonService);
 	protected meetingHand = inject(MeetingHandService);
+	protected meetingReactions = inject(MeetingReactionsService);
 
 	/**
 	 * Role changes and permission signals each replace the room member token, so they are applied one
@@ -339,11 +343,13 @@ export class MeetingEventHandlerService {
 	}
 
 	/**
-	 * Drops a remote participant who leaves from the raised-hand notice, and forwards the departure
-	 * to the host as a `participantLeft` event (embedded modes only), with the reason LiveKit gives.
+	 * Drops a remote participant who leaves from the raised-hand notice, takes their reaction off
+	 * screen, and forwards the departure to the host as a `participantLeft` event (embedded modes
+	 * only), with the reason LiveKit gives.
 	 */
 	protected onRemoteParticipantDisconnected(participant: RemoteParticipant, reason?: DisconnectReason): void {
 		this.withdrawHand(participant.identity);
+		this.meetingReactions.forget(participant.identity);
 
 		if (!this.runtimeConfigService.isEmbeddedMode()) {
 			return;
@@ -537,6 +543,7 @@ export class MeetingEventHandlerService {
 		this.mediaStatusLedger = {};
 		this.recordingStatusLedger.clear();
 		this.handNotice = undefined;
+		this.meetingReactions.clear();
 		this.meetingJoinedNotified = false;
 		this.localPromotedModerator = false;
 
@@ -600,7 +607,39 @@ export class MeetingEventHandlerService {
 			case MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED:
 				await this.handleParticipantMediaMuted(payload as MeetParticipantMediaMutedPayload);
 				break;
+
+			case MeetSignalType.MEET_PARTICIPANT_REACTION_SENT:
+				this.handleParticipantReactionSent(payload as MeetParticipantReactionSentPayload);
+				break;
 		}
+	}
+
+	/**
+	 * Hands a reaction the server relayed on behalf of a participant, the local one included, to the
+	 * reactions on screen, and tells the host about it (embedded modes only). A reaction from someone
+	 * no longer in the meeting, or one this client does not know, is dropped.
+	 */
+	private handleParticipantReactionSent({ participantIdentity, reaction }: MeetParticipantReactionSentPayload): void {
+		const room = this.meetingState.lkRoom();
+		const participant =
+			room?.localParticipant.identity === participantIdentity
+				? room.localParticipant
+				: room?.remoteParticipants.get(participantIdentity);
+
+		if (!participant || !Object.values(MeetReaction).includes(reaction)) return;
+
+		this.meetingReactions.receive(participantIdentity, reaction);
+
+		if (!this.runtimeConfigService.isEmbeddedMode()) return;
+
+		this.eventBus.emit({
+			event: EmbeddedEventName.PARTICIPANT_REACTION_SENT,
+			payload: {
+				roomId: this.meetingContext.roomId() ?? '',
+				participant: toEmbeddedParticipantInfo(participant),
+				reaction
+			}
+		});
 	}
 
 	private syncLocalRole(participant: LocalParticipant): void {

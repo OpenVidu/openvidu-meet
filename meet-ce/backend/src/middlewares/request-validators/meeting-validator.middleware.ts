@@ -3,6 +3,7 @@ import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import {
 	LowerAllHandsReqSchema,
 	MuteParticipantMediaReqSchema,
+	SendParticipantReactionReqSchema,
 	UpdateParticipantHandReqSchema,
 	UpdateParticipantRoleReqSchema
 } from '../../models/zod-schemas/meeting.schema.js';
@@ -42,6 +43,17 @@ export const validateUpdateParticipantHandReq = (req: Request, res: Response, ne
 
 export const validateLowerAllHandsReq = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = LowerAllHandsReqSchema.safeParse(req.body);
+
+	if (!success) {
+		return rejectUnprocessableRequest(res, error);
+	}
+
+	req.body = data;
+	next();
+};
+
+export const validateSendParticipantReactionReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = SendParticipantReactionReqSchema.safeParse(req.body);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);

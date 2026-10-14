@@ -9,6 +9,8 @@ import {
 	MeetParticipantInfo,
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantMuteOptions,
+	MeetParticipantReactionSentPayload,
+	MeetReaction,
 	MeetRecordingInfo,
 	MeetRecordingStatus,
 	MeetRecordingUpdatedPayload,
@@ -49,6 +51,7 @@ import {
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingEventHandlerService } from './meeting-event-handler.service';
 import { MeetingHandService } from './meeting-hand.service';
+import { MeetingReactionsService } from './meeting-reactions.service';
 import { MeetingStateService } from './meeting-state.service';
 
 class LoggerServiceStub {
@@ -98,12 +101,18 @@ describe('MeetingEventHandlerService', () => {
 	let refreshToken: jasmine.Spy;
 	let permissions: WritableSignal<Record<string, boolean>>;
 	let meetingHand: jasmine.SpyObj<MeetingHandService>;
+	let meetingReactions: jasmine.SpyObj<MeetingReactionsService>;
 	let lkRoom: WritableSignal<Room | undefined>;
 
 	beforeEach(() => {
 		permissions = signal({});
 		meetingHand = jasmine.createSpyObj<MeetingHandService>('MeetingHandService', ['lower']);
 		meetingHand.lower.and.resolveTo();
+		meetingReactions = jasmine.createSpyObj<MeetingReactionsService>('MeetingReactionsService', [
+			'receive',
+			'forget',
+			'clear'
+		]);
 		lkRoom = signal<Room | undefined>(undefined);
 		microphoneEnabled = signal(true);
 		cameraEnabled = signal(true);
@@ -209,6 +218,7 @@ describe('MeetingEventHandlerService', () => {
 					}
 				},
 				{ provide: MeetingHandService, useValue: meetingHand },
+				{ provide: MeetingReactionsService, useValue: meetingReactions },
 				{ provide: NavigationService, useValue: navigationServiceStub },
 				{ provide: NotificationService, useValue: notificationService },
 				{ provide: MeetingEndingSoonService, useValue: meetingEndingSoon },
@@ -386,6 +396,97 @@ describe('MeetingEventHandlerService', () => {
 			await Promise.resolve();
 
 			expect(localMedia.setMicrophoneEnabled).toHaveBeenCalledWith(false);
+		});
+	});
+
+	/**
+	 * The server relays every reaction to everyone, the sender included, once it has checked the
+	 * room allows it, so the participant it names is who sent it.
+	 */
+	describe('reactions', () => {
+		const participantOf = (identity: string, name: string) => ({
+			identity,
+			name,
+			metadata: undefined,
+			attributes: {},
+			joinedAt: new Date(0),
+			isMicrophoneEnabled: false,
+			isCameraEnabled: true,
+			isScreenShareEnabled: false
+		});
+
+		function receiveReaction(participantIdentity: string, reaction: MeetReaction): void {
+			const payload: MeetParticipantReactionSentPayload = {
+				roomId: 'room1',
+				participantIdentity,
+				reaction,
+				timestamp: 0
+			};
+			receiveSignal(MeetSignalType.MEET_PARTICIPANT_REACTION_SENT, payload);
+		}
+
+		function reactionEvents(): unknown[] {
+			return eventBus
+				.events()
+				.filter((event) => event.event === EmbeddedEventName.PARTICIPANT_REACTION_SENT)
+				.map((event) => ('payload' in event ? event.payload : undefined));
+		}
+
+		beforeEach(() => {
+			lkRoom.set({
+				localParticipant: participantOf('alice', 'Alice'),
+				remoteParticipants: new Map([['bob', participantOf('bob', 'Bob')]])
+			} as unknown as Room);
+		});
+
+		it('shows a reaction and tells the host who sent it, as they are at that moment', () => {
+			receiveReaction('bob', MeetReaction.CLAPPING_HANDS);
+
+			expect(meetingReactions.receive).toHaveBeenCalledOnceWith('bob', MeetReaction.CLAPPING_HANDS);
+			expect(reactionEvents()).toEqual([
+				{
+					roomId: 'room1',
+					participant: {
+						participantIdentity: 'bob',
+						participantName: 'Bob',
+						externalId: undefined,
+						metadata: undefined,
+						role: MeetRoomMemberRole.SPEAKER,
+						joinDate: 0,
+						audioActive: false,
+						videoActive: true,
+						screenShareActive: false,
+						handRaised: false
+					},
+					reaction: MeetReaction.CLAPPING_HANDS
+				}
+			]);
+		});
+
+		it('tells the host about the local participant reaction from the same relay', () => {
+			receiveReaction('alice', MeetReaction.RED_HEART);
+
+			expect(meetingReactions.receive).toHaveBeenCalledOnceWith('alice', MeetReaction.RED_HEART);
+			expect(reactionEvents()).toEqual([
+				jasmine.objectContaining({ participant: jasmine.objectContaining({ participantIdentity: 'alice' }) })
+			]);
+		});
+
+		it('drops a reaction from someone no longer in the meeting, or one it does not know', () => {
+			receiveReaction('carol', MeetReaction.GRINNING_FACE);
+			receiveReaction('bob', 'party_popper' as MeetReaction);
+
+			expect(meetingReactions.receive).not.toHaveBeenCalled();
+			expect(reactionEvents()).toEqual([]);
+		});
+
+		it('tells no host outside the embedded modes', () => {
+			isEmbeddedMode = false;
+
+			receiveReaction('bob', MeetReaction.GRINNING_FACE);
+
+			expect(meetingReactions.receive).toHaveBeenCalledOnceWith('bob', MeetReaction.GRINNING_FACE);
+			expect(reactionEvents()).toEqual([]);
 		});
 	});
 
@@ -1150,6 +1251,12 @@ describe('MeetingEventHandlerService', () => {
 			]);
 		});
 
+		it('takes the reaction of the participant who left off screen', () => {
+			onParticipantDisconnected(bob);
+
+			expect(meetingReactions.forget).toHaveBeenCalledOnceWith('bob');
+		});
+
 		it('reports an unknown reason when LiveKit gives none', () => {
 			onParticipantDisconnected(bob);
 
@@ -1253,6 +1360,12 @@ describe('MeetingEventHandlerService', () => {
 				reason
 			});
 		}
+
+		it('takes every reaction off screen', async () => {
+			await participantLeft(ParticipantLeftReason.LEAVE);
+
+			expect(meetingReactions.clear).toHaveBeenCalled();
+		});
 
 		it('attributes a room deletion to a moderator by default', async () => {
 			await participantLeft(ParticipantLeftReason.ROOM_DELETED);

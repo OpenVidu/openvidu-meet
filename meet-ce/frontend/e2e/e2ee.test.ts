@@ -258,6 +258,30 @@ test.describe('E2EE E2E Tests', () => {
 				await Promise.all([page2.close(), page3.close()]);
 			}
 		});
+
+		test('should move the encryption chip of the status rail into its menu on a phone', async ({ page }) => {
+			const accessUrl = await createE2eeRoom();
+
+			await openMeeting(page, accessUrl, { e2eeKey: 'test-key-status-rail' });
+
+			await expectVisible(page, '.e2ee-chip');
+			await expectHidden(page, '#status-rail-more');
+
+			await page.setViewportSize({ width: 360, height: 780 });
+
+			await expectHidden(page, '.e2ee-chip');
+			const offScreen = await page.evaluate(() =>
+				[...document.querySelectorAll('#status-rail > *')]
+					.map((chip) => ({ id: chip.id || chip.className, box: chip.getBoundingClientRect() }))
+					.filter(({ box }) => box.width > 0 && box.right > window.innerWidth)
+					.map(({ id }) => id)
+			);
+			expect(offScreen).toEqual([]);
+
+			await page.locator('#status-rail-more').click();
+			await expect(page.locator('.status-menu .e2ee-item')).toContainText('end-to-end encrypted');
+			await expectVisible(page, '.status-menu .elapsed-item');
+		});
 	});
 
 	test.describe('E2EE and Recording', () => {

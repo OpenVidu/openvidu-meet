@@ -1,0 +1,100 @@
+@use '../../openvidu-components/components/mic-status-alert/bubble';
+
+// Transparent in the layout, so the button sits in the toolbar (and the grid in the mobile menu) as
+// a direct child.
+:host {
+	display: contents;
+}
+
+// While it wears a reaction the button holds no text to align by, which drops it in WebKit.
+#reactions-button {
+	vertical-align: top;
+}
+
+// The button wears the local participant's reaction, ringed by what is left of its time.
+#reactions-button.active {
+	color: var(--ov-accent-action-color);
+}
+
+.button-reaction {
+	position: absolute;
+	inset: 0;
+	font-size: 22px;
+}
+
+.reaction-picker {
+	@include bubble.bubble;
+	@include bubble.pointer('.reaction-pointer');
+
+	padding: 6px 6px 8px;
+}
+
+.reaction-row {
+	display: flex;
+	gap: 2px;
+}
+
+.reaction-option {
+	font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+	text-align: center;
+}
+
+.reaction-picker .reaction-option {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	border: none;
+	border-radius: 50%;
+	background: transparent;
+	font-size: 24px;
+	line-height: 1;
+	cursor: pointer;
+	transition:
+		transform 0.12s ease,
+		background-color 0.12s ease;
+
+	&:hover,
+	&:focus-visible {
+		background: var(--ov-hover-color, rgba(255, 255, 255, 0.12));
+		transform: scale(1.15);
+		outline: none;
+	}
+}
+
+.reaction-lifetime {
+	margin: 0;
+	padding: 2px 8px 0;
+	font-size: 13px;
+	line-height: 1.4;
+	color: var(--ov-text-secondary-color, rgba(255, 255, 255, 0.9));
+	text-align: center;
+}
+
+.reaction-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	padding: 0 8px;
+
+	.reaction-option {
+		--mat-menu-item-label-text-size: 24px;
+
+		justify-content: center;
+		min-width: 44px;
+		min-height: 44px;
+		padding: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.reaction-picker .reaction-option {
+		transition: none;
+
+		&:hover,
+		&:focus-visible {
+			transform: none;
+		}
+	}
+}

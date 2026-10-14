@@ -1,6 +1,7 @@
 import {
 	EmbeddedEventName,
 	MeetParticipantModerationAction,
+	MeetReaction,
 	MeetRecordingStatus,
 	MeetWebhookEventType
 } from '@openvidu-meet/typings';
@@ -440,6 +441,15 @@ export const participantHandLowerAllCommand = async (page: Page): Promise<void> 
 	await page.getByTestId('btn-participant-hand-lower-all').click();
 };
 
+/** Clicks the testapp's `participantReactionSend()` button of `reaction`. */
+export const participantReactionSendCommand = async (page: Page, reaction: MeetReaction): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+	await page
+		.getByTestId('btn-participant-reaction-send')
+		.and(page.locator(`[data-reaction="${reaction}"]`))
+		.click();
+};
+
 /** Clicks the testapp's deprecated `leaveRoom()` button. Removed in 3.12.0. */
 export const leaveRoomLegacyCommand = async (page: Page): Promise<void> => {
 	await showControlsPanel(page, 'commands');
@@ -520,6 +530,16 @@ export const participantHandChangedLocator = (page: Page, participantIdentity: s
 	eventLocator(page, EmbeddedEventName.PARTICIPANT_HAND_CHANGED)
 		.filter({ hasText: `"participantIdentity":"${participantIdentity}"` })
 		.filter({ hasText: `"handRaised":${raised}` });
+
+/** The `.event-participantReactionSent` markers about `participantIdentity` sending `reaction`. */
+export const participantReactionSentLocator = (
+	page: Page,
+	participantIdentity: string,
+	reaction: MeetReaction
+): Locator =>
+	eventLocator(page, EmbeddedEventName.PARTICIPANT_REACTION_SENT)
+		.filter({ hasText: `"participantIdentity":"${participantIdentity}"` })
+		.filter({ hasText: `"reaction":"${reaction}"` });
 
 /** The `.event-recordingStatusChanged` markers carrying the given status. */
 export const recordingStatusLocator = (page: Page, status: MeetRecordingStatus): Locator =>

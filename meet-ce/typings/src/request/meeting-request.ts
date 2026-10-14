@@ -1,3 +1,5 @@
+import { MeetReaction } from '../reaction.js';
+
 /**
  * Which of a participant's devices a moderator turns off, as carried by
  * `PUT /meetings/{roomId}/participants/{participantIdentity}/media`, its bulk twin
@@ -29,4 +31,14 @@ export interface MeetParticipantMuteOptions {
 export interface MeetParticipantHandOptions {
 	/** `true` raises the hand, `false` lowers it. */
 	raised: boolean;
+}
+
+/**
+ * The reaction a participant sends, as carried by the internal
+ * `POST /meetings/{roomId}/reactions`, which the meeting and the `participantReactionSend`
+ * embedding command call on the participant's behalf.
+ */
+export interface MeetParticipantReactionOptions {
+	/** One of the reactions in {@link MeetReaction}. */
+	reaction: MeetReaction;
 }

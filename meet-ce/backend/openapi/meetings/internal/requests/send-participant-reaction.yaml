@@ -1,0 +1,22 @@
+description: Reaction to send
+required: true
+content:
+    application/json:
+        schema:
+            type: object
+            required:
+                - reaction
+            properties:
+                reaction:
+                    type: string
+                    enum:
+                        - thumbs_up
+                        - thumbs_down
+                        - grinning_face
+                        - slightly_frowning_face
+                        - confused_face
+                        - face_with_open_mouth
+                        - clapping_hands
+                        - red_heart
+                    description: The reaction to show, named after the Unicode CLDR short name of its emoji.
+                    example: thumbs_up

@@ -253,6 +253,25 @@
 						/>
 					</div>
 
+					<!-- Reactions -->
+					<div class="feature-row" id="room-feature-reactions">
+						<div class="feature-info">
+							<mat-icon class="feature-icon">add_reaction</mat-icon>
+							<div class="feature-text">
+								<span class="feature-label">{{ 'ROOMS.WIZARD.MEETING.REACTIONS' | translate }}</span>
+								<span class="feature-description">{{
+									'ROOMS.WIZARD.MEETING.REACTIONS_DESC' | translate
+								}}</span>
+							</div>
+						</div>
+						<mat-slide-toggle
+							[checked]="reactionsEnabled"
+							(change)="onReactionsToggleChange($event)"
+							color="primary"
+							class="feature-toggle"
+						/>
+					</div>
+
 					<!-- Chat -->
 					<div class="feature-row" id="room-feature-chat">
 						<div class="feature-info">

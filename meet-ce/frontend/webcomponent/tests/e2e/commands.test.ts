@@ -3,6 +3,7 @@ import {
 	LeftEventReason,
 	MeetEventOrigin,
 	MeetParticipantModerationAction,
+	MeetReaction,
 	MeetRecordingStatus,
 	MeetRoomMemberRole,
 	MeetWebhookEventType
@@ -40,6 +41,8 @@ import {
 	openMeetingAtMediaSetup,
 	participantMuteAllCommand,
 	participantMuteCommand,
+	participantReactionSendCommand,
+	participantReactionSentLocator,
 	participantUpdateRoleCommand,
 	recordingStartCommand,
 	recordingStatusLocator,
@@ -648,6 +651,32 @@ for (const integration of INTEGRATIONS) {
 				for (const context of contexts) {
 					await context.close();
 				}
+			});
+		});
+
+		test.describe('PARTICIPANT_REACTION_SEND Command', () => {
+			test('should send a reaction, telling everyone who sent it', async ({ page, browser }) => {
+				await openMeeting(page, roomId, { integration, role: 'speaker', name: 'Reactor' });
+				const reactorIdentity = await joinedParticipantIdentity(page);
+
+				const observerContext = await browser.newContext();
+				const observerPage = await observerContext.newPage();
+				await openMeeting(observerPage, roomId, { role: 'speaker', name: 'Observer' });
+				await expectEvent(observerPage, EmbeddedEventName.JOINED);
+
+				await participantReactionSendCommand(page, MeetReaction.CLAPPING_HANDS);
+
+				const sent = participantReactionSentLocator(page, reactorIdentity, MeetReaction.CLAPPING_HANDS);
+				await expect(sent).toHaveCount(1, { timeout: 15_000 });
+				await expect(sent).toContainText('"participantName":"Reactor"');
+				await expect(
+					participantReactionSentLocator(observerPage, reactorIdentity, MeetReaction.CLAPPING_HANDS)
+				).toHaveCount(1, {
+					timeout: 15_000
+				});
+				await expect(meetLocator(page, integration, '#reactions-button')).toHaveClass(/active/);
+
+				await observerContext.close();
 			});
 		});
 

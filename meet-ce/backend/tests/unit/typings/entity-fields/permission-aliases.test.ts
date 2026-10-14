@@ -51,7 +51,12 @@ describe('Permission alias map', () => {
 	it('should keep the permissions born after the rename out of the deprecated surface', () => {
 		// They are contract keys like any other, they simply have no `can*` spelling: a deployment
 		// must never invent one, so they appear in neither direction of the alias map.
-		expect(MEET_UNALIASED_PERMISSION_KEYS).toEqual(['meetingRead', 'participantMute', 'participantHandLower']);
+		expect(MEET_UNALIASED_PERMISSION_KEYS).toEqual([
+			'meetingRead',
+			'participantMute',
+			'participantHandLower',
+			'participantReactionSend'
+		]);
 
 		for (const permissionKey of MEET_UNALIASED_PERMISSION_KEYS) {
 			expect(MEET_PERMISSION_KEYS).toContain(permissionKey);
@@ -176,20 +181,23 @@ describe('normalizePermissions', () => {
 			meetingJoin: true,
 			meetingRead: true,
 			participantMute: false,
-			participantHandLower: false
+			participantHandLower: false,
+			participantReactionSend: true
 		});
 		expect(normalizePermissions({ meetingJoin: false }, { complete: true })).toEqual({
 			meetingJoin: false,
 			meetingRead: false,
 			participantMute: false,
-			participantHandLower: false
+			participantHandLower: false,
+			participantReactionSend: true
 		});
 		// The deprecated spelling cannot name it either, and reaches it through meetingJoin.
 		expect(normalizePermissions({ canJoinMeeting: true }, { complete: true })).toEqual({
 			meetingJoin: true,
 			meetingRead: true,
 			participantMute: false,
-			participantHandLower: false
+			participantHandLower: false,
+			participantReactionSend: true
 		});
 	});
 
@@ -198,11 +206,13 @@ describe('normalizePermissions', () => {
 		expect(normalizePermissions({ participantKick: true }, { complete: true })).toEqual({
 			participantKick: true,
 			participantMute: false,
-			participantHandLower: false
+			participantHandLower: false,
+			participantReactionSend: true
 		});
 		expect(normalizePermissions({ participantMute: true }, { complete: true })).toEqual({
 			participantMute: true,
-			participantHandLower: false
+			participantHandLower: false,
+			participantReactionSend: true
 		});
 	});
 
@@ -210,11 +220,28 @@ describe('normalizePermissions', () => {
 	it('should default participantHandLower to false, never take it from participantMute', () => {
 		expect(normalizePermissions({ participantMute: true }, { complete: true })).toEqual({
 			participantMute: true,
-			participantHandLower: false
+			participantHandLower: false,
+			participantReactionSend: true
 		});
 		expect(normalizePermissions({ participantHandLower: true }, { complete: true })).toEqual({
 			participantMute: false,
-			participantHandLower: true
+			participantHandLower: true,
+			participantReactionSend: true
+		});
+	});
+
+	// Reacting is taking part, not a power over others, so a set that cannot name it keeps it.
+	it('should default participantReactionSend to true, and keep an explicit false', () => {
+		expect(normalizePermissions({ chatWrite: false }, { complete: true })).toEqual({
+			chatWrite: false,
+			participantMute: false,
+			participantHandLower: false,
+			participantReactionSend: true
+		});
+		expect(normalizePermissions({ participantReactionSend: false }, { complete: true })).toEqual({
+			participantMute: false,
+			participantHandLower: false,
+			participantReactionSend: false
 		});
 	});
 
@@ -223,7 +250,8 @@ describe('normalizePermissions', () => {
 			meetingJoin: true,
 			meetingRead: false,
 			participantMute: false,
-			participantHandLower: false
+			participantHandLower: false,
+			participantReactionSend: true
 		});
 		expect(normalizePermissions({ meetingRead: true })).toEqual({ meetingRead: true });
 	});
