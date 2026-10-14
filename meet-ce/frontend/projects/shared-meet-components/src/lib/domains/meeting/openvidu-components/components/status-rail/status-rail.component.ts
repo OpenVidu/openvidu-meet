@@ -1,11 +1,9 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, OnDestroy, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetingContextService } from '../../../services/meeting-context.service';
 import { MeetingReactionsService } from '../../../services/meeting-reactions.service';
-import { nameHiddenParticipants } from '../../models/layout/smart-layout.model';
 import { PanelType } from '../../models/panel.model';
 import { REACTION_EMOJI } from '../../models/reaction.model';
 import { RecordingState } from '../../models/recording.model';
@@ -19,24 +17,17 @@ import { RecordingService } from '../../services/recording/recording.service';
 import { HiddenParticipantsIndicatorComponent } from '../hidden-participants-indicator/hidden-participants-indicator.component';
 
 /**
- * The meeting-wide status above the layout. A phone has room for one clock, the countdown to the
- * meeting's forced end once it starts, the recording mark, the raised hands and the leading
- * reactions; a menu lists every status in full. The reactions sit in the middle of the row.
+ * The meeting-wide status above the layout, with the reactions in the middle of the row. A phone
+ * splits it in two rows: the meeting's own status on top, and what its participants do below.
  */
 @Component({
 	selector: 'ov-status-rail',
-	imports: [
-		DatePipe,
-		MatIconModule,
-		MatMenuModule,
-		MatTooltipModule,
-		TranslatePipe,
-		HiddenParticipantsIndicatorComponent
-	],
+	imports: [DatePipe, MatIconModule, MatTooltipModule, TranslatePipe, HiddenParticipantsIndicatorComponent],
 	templateUrl: './status-rail.component.html',
 	styleUrl: './status-rail.component.scss',
 	host: {
-		'[class.has-status]': 'hasStatus()'
+		'[class.has-status]': 'hasStatus()',
+		'[class.has-participant-status]': 'hasParticipantStatus()'
 	}
 })
 export class StatusRailComponent implements OnDestroy {
@@ -116,11 +107,6 @@ export class StatusRailComponent implements OnDestroy {
 	/** Published by the smart layout, which cannot render into the rail itself. */
 	protected readonly hiddenParticipants = this.smartLayoutService.railHiddenParticipants;
 
-	protected readonly hiddenNames = computed(() => {
-		const hidden = this.hiddenParticipants();
-		return hidden && nameHiddenParticipants(hidden.names, hidden.count);
-	});
-
 	/** Every raised hand, whether or not the layout shows its tile. */
 	protected readonly raisedHandCount = computed(() => this.participantService.raisedHands().length);
 
@@ -132,18 +118,18 @@ export class StatusRailComponent implements OnDestroy {
 
 	protected readonly canOpenParticipantsPanel = this.uiConfig.participantsPanelButtonSignal;
 
-	/** Whether there is anything beyond the elapsed time, which is all a phone row can show in full. */
-	protected readonly hasMoreStatus = computed(
+	readonly hasParticipantStatus = computed(
+		() => this.raisedHandCount() > 0 || this.reactionCounts().length > 0 || this.hiddenParticipants() !== undefined
+	);
+
+	readonly hasStatus = computed(
 		() =>
+			this.elapsedTime() !== undefined ||
 			this.isEndingSoon() ||
 			this.showRecordingChip() ||
 			this.isE2eeActive() ||
-			this.raisedHandCount() > 0 ||
-			this.reactionCounts().length > 0 ||
-			this.hiddenParticipants() !== undefined
+			this.hasParticipantStatus()
 	);
-
-	readonly hasStatus = computed(() => this.elapsedTime() !== undefined || this.hasMoreStatus());
 
 	ngOnDestroy(): void {
 		clearInterval(this.clockHandle);

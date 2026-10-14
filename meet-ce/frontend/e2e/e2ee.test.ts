@@ -259,17 +259,17 @@ test.describe('E2EE E2E Tests', () => {
 			}
 		});
 
-		test('should move the encryption chip of the status rail into its menu on a phone', async ({ page }) => {
+		test('should keep the lock of the status rail on a phone, without its label', async ({ page }) => {
 			const accessUrl = await createE2eeRoom();
 
 			await openMeeting(page, accessUrl, { e2eeKey: 'test-key-status-rail' });
 
+			await expectVisible(page, '.e2ee-chip .status-chip-label');
+
+			await page.setViewportSize({ width: 320, height: 780 });
+
 			await expectVisible(page, '.e2ee-chip');
-			await expectHidden(page, '#status-rail-more');
-
-			await page.setViewportSize({ width: 360, height: 780 });
-
-			await expectHidden(page, '.e2ee-chip');
+			await expectHidden(page, '.e2ee-chip .status-chip-label');
 			const offScreen = await page.evaluate(() =>
 				[...document.querySelectorAll('#status-rail > *')]
 					.map((chip) => ({ id: chip.id || chip.className, box: chip.getBoundingClientRect() }))
@@ -277,10 +277,6 @@ test.describe('E2EE E2E Tests', () => {
 					.map(({ id }) => id)
 			);
 			expect(offScreen).toEqual([]);
-
-			await page.locator('#status-rail-more').click();
-			await expect(page.locator('.status-menu .e2ee-item')).toContainText('end-to-end encrypted');
-			await expectVisible(page, '.status-menu .elapsed-item');
 		});
 	});
 

@@ -114,6 +114,13 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
+
+	// A phone keeps the count alone; the participants panel it opens names them.
+	@media only screen and (max-width: 790px) {
+		.status-chip-label {
+			display: none;
+		}
+	}
 }
 
 .vertical-content {

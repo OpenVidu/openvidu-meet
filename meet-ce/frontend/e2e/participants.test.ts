@@ -863,6 +863,34 @@ test.describe('Participants E2E Tests', () => {
 			}
 		});
 
+		test('should give the raised hands and the reactions a row of their own in the status rail of a phone', async ({
+			browser
+		}) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeaker(browser);
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const speakerPage = byName[speakerName];
+				await moderatorPage.setViewportSize({ width: 320, height: 700 });
+
+				await toggleHand(speakerPage);
+				await sendReaction(speakerPage, MeetReaction.THUMBS_UP);
+				await expectRaisedHandsChip(moderatorPage, 1);
+				await expectReactionPulse(moderatorPage, ['👍1']);
+
+				const [clock, hand, pulse] = await Promise.all(
+					['#meeting-elapsed-time', '#raised-hands-chip', '#reaction-pulse'].map((chip) =>
+						moderatorPage.locator(chip).boundingBox()
+					)
+				);
+				expect(hand!.y).toBeGreaterThan(clock!.y + clock!.height);
+				expect(pulse!.y).toBeGreaterThan(clock!.y + clock!.height);
+				expect(hand!.x + hand!.width).toBeLessThanOrEqual(pulse!.x);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
 		test('should open the picker with the E key and send the reaction of the digit pressed', async ({
 			browser
 		}) => {

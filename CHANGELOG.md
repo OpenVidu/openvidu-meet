@@ -79,8 +79,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - In a narrow desktop browser window, the meeting toolbar overflowed the screen and hid some of its buttons. A window
   narrower than 768 px now gets the compact toolbar a phone gets.
 - On a phone, the status rail overflowed the screen and hid its last chips, such as the participants left out of the
-  layout. Narrower than 790 px, the rail keeps the elapsed time, or the countdown once it starts, and the recording
-  mark, and a **Meeting status** menu lists every status in full.
+  layout. Narrower than 790 px, the raised hands, the reactions and the participants left out of the layout now take
+  a second row of the rail.
 - The notifications in the top corner of a meeting covered the header of an open side panel, its close button
   included. They now sit beside the panel, or below its header when the panel fills the screen.
 
