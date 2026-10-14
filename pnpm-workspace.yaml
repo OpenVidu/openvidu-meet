@@ -29,6 +29,8 @@ allowBuilds:
 
 overrides:
   livekit-client: github:OpenVidu/client-sdk-js#v2.22.3-openvidu.1
+  # Only the browser build of @azure/identity loads it.
+  '@azure/identity>@azure/msal-browser': '-'
 
 strictPeerDependencies: false
 autoInstallPeers: true

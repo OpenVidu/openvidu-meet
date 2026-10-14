@@ -30,6 +30,11 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   `participantReactionSent`, with the `participantReactionSend` permission to send them and the room config
   `reactions.enabled` to turn them off.
 
+#### Deployment
+
+- Azure Blob Storage authenticates with the Azure managed identity of the VM or pod running Meet when
+  `MEET_AZURE_ACCOUNT_KEY` is empty.
+
 ### Improved
 
 #### Integration
