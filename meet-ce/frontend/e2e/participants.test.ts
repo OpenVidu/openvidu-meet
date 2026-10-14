@@ -867,6 +867,47 @@ test.describe('Participants E2E Tests', () => {
 			}
 		});
 
+		test('should keep the status rail of a phone in one row until its chips no longer fit, then move the hands and reactions below', async ({
+			browser
+		}) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeaker(browser);
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const speakerPage = byName[speakerName];
+				const chipBoxes = () =>
+					Promise.all(
+						['#meeting-elapsed-time', '#raised-hands-chip', '#reaction-pulse'].map(
+							async (chip) => (await moderatorPage.locator(chip).boundingBox())!
+						)
+					);
+				await moderatorPage.setViewportSize({ width: 390, height: 700 });
+
+				await toggleHand(speakerPage);
+				await sendReaction(speakerPage, MeetReaction.THUMBS_UP);
+				await expectRaisedHandsChip(moderatorPage, 1);
+				await expectReactionPulse(moderatorPage, ['👍1']);
+
+				const [clock, hand, pulse] = await chipBoxes();
+				expect(Math.abs(hand.y - clock.y)).toBeLessThan(2);
+				expect(Math.abs(pulse.y - clock.y)).toBeLessThan(2);
+
+				await moderatorPage.setViewportSize({ width: 220, height: 700 });
+
+				await expect
+					.poll(async () => {
+						const [narrowClock, narrowHand] = await chipBoxes();
+						return narrowHand.y > narrowClock.y + narrowClock.height;
+					})
+					.toBe(true);
+				const [, narrowHand, narrowPulse] = await chipBoxes();
+				expect(Math.abs(narrowPulse.y - narrowHand.y)).toBeLessThan(2);
+				expect(narrowHand.x + narrowHand.width).toBeLessThanOrEqual(narrowPulse.x);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
 		test('should open the picker with the E key and send the reaction of the digit pressed', async ({
 			browser
 		}) => {

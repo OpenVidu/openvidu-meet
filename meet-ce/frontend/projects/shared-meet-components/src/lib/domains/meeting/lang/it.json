@@ -12,7 +12,6 @@
 		"E2EE_BADGE_LABEL": "Crittografata",
 		"E2EE_BADGE_TOOLTIP": "Questa riunione è crittografata end-to-end",
 		"ELAPSED_BADGE_TOOLTIP": "Tempo trascorso dall'inizio della riunione",
-		"STATUS_MENU": "Stato della riunione",
 		"RECORDING_BADGE_STARTING": "Avvio",
 		"RECORDING_STARTED_TITLE": "Questa riunione è in registrazione",
 		"RECORDING_STARTED_MESSAGE": "Da ora vengono registrati il tuo audio, il tuo video e tutto ciò che condividi.",

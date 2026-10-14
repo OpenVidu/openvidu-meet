@@ -22,7 +22,6 @@
 		"E2EE_BADGE_LABEL": "Encrypted",
 		"E2EE_BADGE_TOOLTIP": "This meeting is end-to-end encrypted",
 		"ELAPSED_BADGE_TOOLTIP": "Time since the meeting started",
-		"STATUS_MENU": "Meeting status",
 		"RECORDING_BADGE_STARTING": "Starting",
 		"RECORDING_STARTED_TITLE": "This meeting is being recorded",
 		"RECORDING_STARTED_MESSAGE": "Your audio, your video and anything you share are being captured from now on.",

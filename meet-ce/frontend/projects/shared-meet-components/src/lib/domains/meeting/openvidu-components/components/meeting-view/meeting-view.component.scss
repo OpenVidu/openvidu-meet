@@ -182,6 +182,10 @@ $side-panel-width: 380px;
 		width: 100%;
 	}
 
+	#meeting-stage:has(ov-status-rail.needs-second-row) {
+		--ov-status-rail-height: 72px;
+	}
+
 	.notice-layer {
 		// Over the sidenav container, which these widths stack at 1000.
 		z-index: 1001;

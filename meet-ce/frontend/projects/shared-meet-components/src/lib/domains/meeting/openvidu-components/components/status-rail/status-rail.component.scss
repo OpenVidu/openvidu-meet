@@ -107,12 +107,6 @@
 	}
 }
 
-.reaction-counts {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 4px 12px;
-}
-
 // Calm while there is time to act: only the icon carries the warn colour.
 .ending-soon-chip .status-chip-icon {
 	color: var(--ov-warn-color);
@@ -133,41 +127,11 @@
 	}
 }
 
-.status-more {
-	@include chip.status-chip-interactive;
-	display: none;
-	padding: 0 6px;
-	color: var(--ov-text-primary-color);
-	font: inherit;
-}
-
-.status-menu-row {
-	display: flex;
-	align-items: baseline;
-	justify-content: space-between;
-	gap: 16px;
-
-	&.stacked {
-		flex-direction: column;
-		gap: 2px;
-	}
-}
-
-.status-menu-value {
-	font-weight: 700;
-	font-variant-numeric: tabular-nums;
-}
-
-.status-menu-detail {
-	font-size: 12px;
-	color: var(--ov-text-secondary-color);
-}
-
-// A phone row keeps one clock, the countdown first once it starts, the recording mark, the raised
-// hands and the two leading reactions, one on the narrowest; the menu behind ⋯ holds the rest in full.
+// A phone drops the words of its chips. When they still do not fit in one row, the raised hands, the
+// reactions and the people off the grid move to a second one, where the reactions keep as many
+// entries as there is room for, the most shown first.
 @media only screen and (max-width: 790px) {
-	.folds,
-	.reaction-pulse .pulse-entry:nth-child(n + 3) {
+	.folds {
 		display: none;
 	}
 
@@ -175,13 +139,46 @@
 		order: -1;
 	}
 
-	.status-more {
-		display: flex;
+	.status-rail-end,
+	.status-rail-end ov-hidden-participants-indicator {
+		min-width: auto;
 	}
-}
 
-@media only screen and (max-width: 360px) {
-	.reaction-pulse .pulse-entry:nth-child(n + 2) {
-		display: none;
+	:host(.needs-second-row) {
+		.status-rail {
+			display: grid;
+			grid-template-columns: 1fr auto 1fr;
+			align-content: center;
+			gap: 6px 8px;
+		}
+
+		.status-rail-start {
+			grid-column: 1 / -1;
+		}
+
+		.status-rail-end {
+			display: contents;
+		}
+
+		.raised-hands-chip {
+			grid-area: 2 / 1;
+			justify-self: start;
+		}
+
+		.reaction-pulse {
+			grid-area: 2 / 2;
+			flex-wrap: wrap;
+			justify-content: center;
+			overflow: hidden;
+
+			.pulse-entry {
+				height: 100%;
+			}
+		}
+
+		.status-rail-end ov-hidden-participants-indicator {
+			grid-area: 2 / 3;
+			justify-self: end;
+		}
 	}
 }

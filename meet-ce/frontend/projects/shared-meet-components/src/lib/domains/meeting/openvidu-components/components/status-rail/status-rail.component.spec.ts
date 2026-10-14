@@ -17,8 +17,8 @@ import { RecordingService } from '../../services/recording/recording.service';
 import { StatusRailComponent } from './status-rail.component';
 
 /**
- * The status rail keeps one clock slot and, for a phone, a menu that lists every status in full. The
- * phone row itself is a media query; what is checked here is what the rail and its menu hold.
+ * Where a phone puts each chip is a media query; what is checked here is what the rail holds and when
+ * its chips need a second row.
  */
 describe('StatusRailComponent', () => {
 	let fixture: ComponentFixture<StatusRailComponent>;
@@ -80,10 +80,11 @@ describe('StatusRailComponent', () => {
 		return fixture.nativeElement.querySelector(selector);
 	}
 
-	async function openStatusMenu(): Promise<HTMLElement[]> {
-		find('#status-rail-more')!.click();
+	async function renderAt(width: number): Promise<void> {
+		fixture.nativeElement.style.width = `${width}px`;
 		await render();
-		return Array.from(document.querySelectorAll<HTMLElement>('.status-menu-item'));
+		await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve)));
+		await render();
 	}
 
 	it('takes no row while there is no status to show', async () => {
@@ -93,13 +94,12 @@ describe('StatusRailComponent', () => {
 		expect(fixture.nativeElement.classList).not.toContain('has-status');
 	});
 
-	it('shows the elapsed time, and nothing behind the menu, in a meeting with nothing else going on', async () => {
+	it('shows the elapsed time alone in a meeting with nothing else going on', async () => {
 		meetingStartedAt.set(Date.now() - 65_000);
 		await render();
 
 		expect(fixture.nativeElement.classList).toContain('has-status');
 		expect(find('#meeting-elapsed-time')?.textContent).toContain('0:01:0');
-		expect(find('#status-rail-more')).toBeNull();
 	});
 
 	it('shows the countdown next to the elapsed time, which only a phone folds away', async () => {
@@ -109,42 +109,30 @@ describe('StatusRailComponent', () => {
 
 		expect(find('#meeting-ending-soon')?.textContent).toContain('4:59');
 		expect(find('#meeting-elapsed-time')?.classList).toContain('folds');
-		expect(find('#status-rail-more')).not.toBeNull();
 	});
 
-	it('lists every status in full behind the menu, the elapsed time included', async () => {
-		const rowKinds = [
-			'ending-soon-item',
-			'elapsed-item',
-			'recording-item',
-			'e2ee-item',
-			'raised-hands-item',
-			'hidden-participants-item',
-			'reactions-item'
-		];
-		meetingStartedAt.set(Date.now() - 55 * 60_000 - 500);
-		remainingMs.set(42_000);
+	it('asks for a second row only once its chips no longer fit in one', async () => {
+		meetingStartedAt.set(Date.now());
+		hiddenParticipants.set({ count: 6, names: [] });
+		await renderAt(700);
+
+		expect(fixture.nativeElement.classList).not.toContain('needs-second-row');
+
 		recordingStatus.set({ status: RecordingState.STARTED, elapsed: new Date(0, 0, 0, 0, 12, 5) });
-		e2eeKey.set('secret');
 		raisedHands.set([{ identity: 'sarah' }, { identity: 'lucia' }]);
-		hiddenParticipants.set({ count: 4, names: ['Clara', 'Tom', 'Kenji', 'Ana'] });
 		reactionCounts.set([
 			{ reaction: MeetReaction.THUMBS_UP, count: 3 },
-			{ reaction: MeetReaction.CONFUSED_FACE, count: 1 }
+			{ reaction: MeetReaction.CONFUSED_FACE, count: 2 },
+			{ reaction: MeetReaction.THUMBS_DOWN, count: 1 }
 		]);
-		await render();
+		await renderAt(300);
 
-		const rows = await openStatusMenu();
+		expect(find('#recording-tag')?.textContent).toContain('0:12:05');
+		expect(fixture.nativeElement.classList).toContain('needs-second-row');
 
-		expect(rows.map((row) => rowKinds.find((kind) => row.classList.contains(kind)))).toEqual(rowKinds);
-		expect(rows[0].textContent).toContain('0:42');
-		expect(rows[1].textContent).toContain('0:55:0');
-		expect(rows[2].textContent).toContain('0:12:05');
-		expect(rows[4].textContent).toContain('2');
-		expect(rows[5].textContent).toContain('+4');
-		expect(rows[5].textContent).toContain('HIDDEN_PARTICIPANTS.NAMES_AND_MORE');
-		expect(rows[6].textContent).toContain('👍 3');
-		expect(rows[6].textContent).toContain('😕 1');
+		await renderAt(1600);
+
+		expect(fixture.nativeElement.classList).not.toContain('needs-second-row');
 	});
 
 	it('shows the class pulse in the middle of the row, most shown reaction first', async () => {
@@ -162,7 +150,6 @@ describe('StatusRailComponent', () => {
 
 		expect(Array.from(rail.children).indexOf(pulse)).toBe(1);
 		expect(entries).toEqual(['😕2', '👍1']);
-		expect(find('#status-rail-more')).not.toBeNull();
 	});
 
 	it('opens the participants panel from the class pulse', async () => {
@@ -174,13 +161,12 @@ describe('StatusRailComponent', () => {
 		expect(panelService.togglePanel).toHaveBeenCalledWith(PanelType.PARTICIPANTS);
 	});
 
-	it('opens the participants panel from the hidden participants row', async () => {
+	it('opens the participants panel from the people left off the grid', async () => {
 		meetingStartedAt.set(Date.now());
 		hiddenParticipants.set({ count: 1, names: ['Clara'] });
 		await render();
 
-		const rows = await openStatusMenu();
-		rows.find((row) => row.classList.contains('hidden-participants-item'))!.click();
+		find('ov-hidden-participants-indicator .unified-indicator')!.click();
 
 		expect(panelService.togglePanel).toHaveBeenCalledWith(PanelType.PARTICIPANTS);
 	});
