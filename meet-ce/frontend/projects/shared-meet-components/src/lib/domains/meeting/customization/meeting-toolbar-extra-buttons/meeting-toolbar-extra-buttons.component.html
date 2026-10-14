@@ -17,7 +17,7 @@
 			mat-icon-button
 			(click)="onHandClick()"
 			[disableRipple]="true"
-			[matTooltip]="(isHandRaised() ? 'HAND.LOWER' : 'HAND.RAISE') | translate"
+			[matTooltip]="((isHandRaised() ? 'HAND.LOWER' : 'HAND.RAISE') | translate) + ' (R)'"
 		>
 			<mat-icon class="material-symbols-outlined">front_hand</mat-icon>
 		</button>

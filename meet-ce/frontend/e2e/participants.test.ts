@@ -747,6 +747,10 @@ test.describe('Participants E2E Tests', () => {
 					if (request.url().endsWith('/hand')) handRequests.push(request.postData());
 				});
 
+				await speakerPage.locator('#raise-hand-button').hover();
+				await expect(speakerPage.locator('.mat-mdc-tooltip')).toHaveText('Raise hand (R)');
+				await speakerPage.mouse.move(0, 0);
+
 				// Held down, the key repeats.
 				await speakerPage.keyboard.down('r');
 				await expectHandRaised(speakerPage, true);
