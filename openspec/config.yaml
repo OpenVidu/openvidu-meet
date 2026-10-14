@@ -1,0 +1,62 @@
+schema: spec-driven
+
+context: |
+  OpenVidu Meet is a self-hosted video conferencing application shipped with every OpenVidu
+  deployment, usable on its own or embedded in a host application (webcomponent, iframe, direct link).
+  Write every artifact in English. Never use the em dash character.
+
+  Editions. This public repository is the COMMUNITY edition (CE, `meet-ce/`, Apache-2.0). The PRO
+  edition lives in a private repository cloned into `meet-pro/` (git-ignored) and extends CE by
+  overriding services and components. Specs and changes in this repository describe CE behavior
+  only and never describe PRO features; PRO behavior is specified in `meet-pro/` itself. Changes keep
+  CE extension seams open (injectable services, content projection, route config arrays).
+
+  Deployment. Meet runs on every OpenVidu deployment type: Local (development), Single Node, Elastic
+  and High Availability. In High Availability several Meet replicas run behind a load balancer and
+  share MongoDB, Redis and the object storage, and LiveKit spreads rooms over several media nodes.
+  Every behavior holds with any number of replicas: no cross-request state in process memory,
+  coordination through Redis locks and keys, scheduled work runs once per cluster, schema migrations
+  run at startup under a lock. All replicas always run the same version (no mixed-version upgrades).
+
+  Sources of truth. `openspec/specs/` describes behavior: what Meet does, for whom, gated by which
+  permission, and how it fails. The wire contracts live elsewhere and specs name their identifiers
+  instead of restating them:
+  - REST API and webhooks: OpenAPI under `meet-ce/backend/openapi/` (public `/api/v1` with a
+    compatibility promise, internal `/internal-api/v1` without one).
+  - Embedded API (attributes, commands, events): TSDoc of `meet-ce/typings/src/embedded/`, which
+    `./meet.sh build-webcomponent-doc` turns into the attributes, commands and events reference pages
+    of openvidu.io.
+  - Public contracts only grow additively; a rename keeps the old name as a deprecated alias until
+    its announced removal release. The API naming charter is in `meet-ce/typings/CLAUDE.md`.
+
+  Documentation. The user documentation lives in the openvidu.io repository (sibling checkout
+  `../openvidu.io`, branch `next`, edited in place without a worktree). Each spec's Purpose names
+  the openvidu.io pages that document it. `CHANGELOG.md` follows the rules of the root `CLAUDE.md`.
+
+rules:
+  proposal:
+    - List in Impact every surface the change reaches (REST API, webhooks, embedded API, meeting UI, console UI, deployment configuration) and say whether a public contract changes additively, through a deprecated alias, or not at all.
+    - List the openvidu.io pages that change, or state that none do.
+    - When the change needs a CE extension seam for PRO, say so without describing the PRO feature.
+  specs:
+    - Describe behavior a user, an integrator or an operator can observe; never name classes, files, services or libraries.
+    - Spell public identifiers exactly as the contracts do (operationIds, webhook events, embedded attributes, commands and events, permission keys, room config fields) and link the OpenAPI or typings instead of restating schemas.
+    - Name the permission the server checks, not the role that usually holds it.
+    - Keep a feature's behavior on every surface (REST, webhook, embedded API, UI) in that feature's capability; `webhooks`, `embedded-api`, `permissions` and `deployment` hold only the rules shared by every feature.
+    - Add a scenario with several Meet replicas whenever the behavior depends on coordination between them.
+  design:
+    - Explain how the design behaves with several Meet replicas sharing MongoDB, Redis and storage.
+    - A new or changed persisted field needs a forward-only migration, a bumped schema version and a refreshed MIGRATION_REV (see `meet-ce/backend/src/migrations/README.md`).
+    - Follow the domain `CLAUDE.md` of every package the design touches.
+  tasks:
+    - Each group lands, with its code, the tests and contract updates its work calls for (OpenAPI, typings TSDoc, the embedded API contract test).
+    - End with a group named "Release surfaces" holding the `CHANGELOG.md` line (or why none applies under the root `CLAUDE.md` rules) and one task per openvidu.io page to update on `next`, regenerating the embedded API reference when the embedded API changes.
+
+operations:
+  apply:
+    guidance:
+      - Read the `CLAUDE.md` of each package before editing it and respect the build order typings, backend, shared-meet-components, frontend, webcomponent.
+      - Backend integration tests and Playwright suites need the OpenVidu local deployment; report them as not run when it is not available.
+  archive:
+    guidance:
+      - Archive inside the pull request that implements the change, once every task is done, and run `npx openspec validate --all --strict` afterwards.

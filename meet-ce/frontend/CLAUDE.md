@@ -2,9 +2,9 @@
 
 Angular 22, **standalone + zoneless + signals**, Angular Material. Two projects in `angular.json`:
 
-- `openvidu-meet` — the SPA **shell** (`src/`). Intentionally tiny: `main.ts`, `app.config.ts`,
+- `openvidu-meet`: the SPA **shell** (`src/`). Intentionally tiny: `main.ts`, `app.config.ts`,
   `app.routes.ts`, and `src/app/customization/` re-exports. Add nothing else here.
-- `shared-meet-components` — the Angular library (`projects/shared-meet-components/`) that contains
+- `shared-meet-components`: the Angular library (`projects/shared-meet-components/`) that contains
   **all** application logic: pages, components, services, guards, routes, i18n.
 
 The split exists so PRO can extend/override CE behaviour instead of duplicating it. Any feature you
@@ -41,7 +41,7 @@ Each domain exports `DomainRouteConfig[]` (`route` + optional `navMetadata`) ins
 `shared/routes/base-routes.ts` assembles the top-level routes; `console.routes.ts` assembles the
 console children, and the console navigation is generated from each entry's `navMetadata`
 (`label`, `icon`, `order`, `allowedRoles`). To add a console page: add the config to your domain's
-`*ConsoleRoutes` with `navMetadata` — do not touch the console component.
+`*ConsoleRoutes` with `navMetadata`; do not touch the console component.
 
 All pages are lazy (`loadComponent`). Multi-guard routes use `runGuardsSerially(...)` because order
 matters (extract params → validate access → strip query params).
@@ -55,7 +55,7 @@ matters (extract params → validate access → strip query params).
 `<ov-meeting>` and content-projects the customization components from
 `domains/meeting/customization/` (toolbar buttons, leave button, more-options menu, invite panel,
 waiting panel, participant item, settings extensions, custom layout). PRO composes the same
-`<ov-meeting>` with its own set. So: put new in-call UI in a customization component and project it —
+`<ov-meeting>` with its own set. So: put new in-call UI in a customization component and project it;
 don't hardcode it inside the meeting component.
 
 Under the hood, projected templates are collected into `TemplateRegistryService`, which exposes each
@@ -72,28 +72,28 @@ recording UI.
 - `provideOpenViduComponents()` replaces the old `OpenViduComponentsModule.forRoot()`.
 - It intentionally provides almost nothing: meeting services are `providedIn: 'root'` so the bundler
   keeps them (and their heavy MediaPipe/LiveKit/E2EE deps) in the lazy meeting chunk. **Do not add
-  service providers there** — it pins those chunks into the initial bundle.
+  service providers there**: it pins those chunks into the initial bundle.
 - Treat it as internal code you may refactor, but keep the public component/directive API stable.
 
 ## Conventions
 
-- Services use Angular 22's `@Service()` (not `@Injectable({providedIn:'root'})`) — follow the
+- Services use Angular 22's `@Service()` (not `@Injectable({providedIn:'root'})`); follow the
   surrounding files. Inject with `inject()`, never constructor params.
 - State is signals: `signal`/`computed`, expose `asReadonly()`. Native control flow
   (`@if`/`@for`/`@switch`), `class`/`style` bindings (never `ngClass`/`ngStyle`).
 - **Change detection**: OnPush is the **default** in Angular 22 (the runtime resolves
   `onPush: changeDetection !== ChangeDetectionStrategy.Eager`, so an absent value means OnPush).
-  Never write `changeDetection: ChangeDetectionStrategy.OnPush` — it is a no-op and Angular's own
+  Never write `changeDetection: ChangeDetectionStrategy.OnPush`: it is a no-op and Angular's own
   style guide forbids it. `ChangeDetectionStrategy.Eager` is the opt-out (CheckAlways) and nothing
   here needs it. Consequence to keep in mind: a plain mutable field mutated **after an `await`** will
   not re-render, since only signals, template event listeners and input changes mark a view dirty.
-- **Storage**: never touch `localStorage`/`sessionStorage` directly in the library — ESLint blocks it.
+- **Storage**: never touch `localStorage`/`sessionStorage` directly in the library; ESLint blocks it.
   Persist through `BrowserStorageService`, the single storage engine (one prefix, one serialization,
   one availability guard).
 - **HTTP**: call the API through `HttpService` (`api/v1` and `internal-api/v1` prefixes are constants
   on it). `httpInterceptor` is domain-agnostic: domains register an `HttpHeaderProvider` with
   `HttpHeaderProviderService` and an error handler with `HttpErrorNotifierService`. Registration
-  happens via `provideAppInitializer` in `app.config.ts`, and **order matters** — the room-member
+  happens via `provideAppInitializer` in `app.config.ts`, and **order matters**: the room-member
   handlers must be registered before the auth ones.
 - **Runtime modes**: `RuntimeConfigService` is the source of truth for deployment base path, server
   base URL and mode (`isWebcomponentMode`, `isIframeMode`, `isEmbeddedMode`). Gate embedding-specific
@@ -103,14 +103,14 @@ recording UI.
   registered with `provideTranslations(<DOMAIN>_TRANSLATIONS)`; one shared language preference. Add
   keys to every locale file in the bundle. Permission label keys were renamed to match the new
   permission names (`ROOM_MEMBERS.PERMISSIONS.ITEMS.recordingPlay.LABEL` instead of the old `can*`
-  one) — a deployment or PRO with translation overrides for these keys needs the same rename.
+  one); a deployment or PRO with translation overrides for these keys needs the same rename.
 
 ## Commands
 
 ```bash
 pnpm run dev            # ng build --watch → writes into ../backend/public/frontend
 pnpm run build          # production build, same output path
-pnpm run lib:build      # build the library (ng-packagr) — needed by webcomponent/PRO consumers
+pnpm run lib:build      # build the library (ng-packagr), needed by webcomponent/PRO consumers
 pnpm run lib:serve      # library watch build
 pnpm run test:unit:lib  # Karma/Jasmine specs of the library (headless: --browsers=ChromeHeadlessCI)
 pnpm run e2e:playwright:spa   # Playwright, `spa` project, against a running backend
@@ -122,7 +122,7 @@ backend serves it at `<basePath>/`.
 
 ## Tests
 
-- Unit: Karma + Jasmine + TestBed, specs co-located as `*.spec.ts` in the library (a handful today —
+- Unit: Karma + Jasmine + TestBed, specs co-located as `*.spec.ts` in the library (a handful today:
   services and utils, not components).
 - E2E: Playwright specs in `e2e/` (`*.test.ts`, project `spa`, `tsconfig.test.json`). They drive real
   Chrome with fake camera/mic against a **running** Meet backend + LiveKit, so `workers: 1`,
@@ -137,13 +137,13 @@ backend serves it at `<basePath>/`.
   the API and posted again after flipping one key would carry the old spelling contradicting the new
   value, and the whole request is rejected with a 422 (this is why the room wizard normalizes the
   roles it loads in edit mode). Cached room-member tokens can still carry old-style permission
-  names; `shared/utils/token.utils.ts` is the one place that fixes those up when a token is decoded —
+  names; `shared/utils/token.utils.ts` is the one place that fixes those up when a token is decoded;
   don't add a second decode path. That normalization goes away once the old names are fully removed.
 - `scripts/copy-livekit-assets.mjs` runs on `postinstall` and before every build/serve; it vendors the
   livekit-client E2EE worker and the MediaPipe WASM into `src/assets/` (git-ignored, version-coupled).
   If E2EE or virtual background breaks after a dependency bump, re-run `pnpm run assets:livekit`. The
   `.tflite` selfie-segmenter model is committed because it has no npm package.
-- The app build uses `preserveSymlinks: true` (pnpm workspace links) — keep it.
+- The app build uses `preserveSymlinks: true` (pnpm workspace links); keep it.
 - Watch the initial-bundle budget (warn 4 MB / error 10 MB): eager value-imports from the meeting
   domain are the usual regression, since they drag LiveKit/MediaPipe out of the lazy chunk.
 - `src/environments/environment*.ts` is swapped by `fileReplacements` per configuration
