@@ -133,12 +133,13 @@ The embedded element SHALL keep Meet, and any meeting in progress, running when 
 - **AND** listeners registered with `on` keep receiving events
 
 ### Requirement: Removing the element ends its Meet
-When the embedded element stays out of the document for more than 10 milliseconds, it SHALL stop the Meet running inside it, and the local participant SHALL leave any meeting in progress. Inserting the element again later SHALL start Meet anew from its attributes, without downloading the full bundle again.
+When the embedded element stays out of the document for more than 10 milliseconds, it SHALL stop the Meet running inside it, and the local participant SHALL leave any meeting in progress. The removal is the host's own decision, so the element SHALL emit no event for it. Inserting the element again later SHALL start Meet anew from its attributes, without downloading the full bundle again.
 
 #### Scenario: Element removed during a meeting
 - **GIVEN** a participant in a meeting through the element
 - **WHEN** the host removes the element and does not insert it again
 - **THEN** the participant leaves the meeting and the others see them leave
+- **AND** the host receives no `meetingLeft` nor any other event from the element
 
 #### Scenario: Element inserted again later
 - **GIVEN** an element removed a second ago

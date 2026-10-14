@@ -323,7 +323,12 @@ In the iframe and the embedded element, the meeting SHALL emit `meetingJoined` w
 - **THEN** the host receives a second `meetingJoined`
 
 ### Requirement: meetingLeft event
-In the iframe and the embedded element, the meeting SHALL emit `meetingLeft` exactly once when the local participant leaves a meeting they joined, for any reason, with the room id, their identity and a `reason`, and the deprecated `left` alongside it until 3.12.0.
+In the iframe and the embedded element, the meeting SHALL emit `meetingLeft` exactly once when the local participant leaves a meeting they joined, with the room id, their identity and a `reason`, and the deprecated `left` alongside it until 3.12.0. The one exception is the host removing the element or the iframe: that leave is the host's own decision and emits nothing (see `embedded-distribution`).
+
+#### Scenario: Host removes the element
+- **GIVEN** a participant in a meeting inside an embedded element
+- **WHEN** the host removes the element from the document for good
+- **THEN** the host receives no `meetingLeft`
 
 #### Scenario: Leave command
 - **GIVEN** a participant in a meeting inside an embedded element
