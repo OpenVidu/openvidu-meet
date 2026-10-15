@@ -293,7 +293,7 @@ When a meeting ends, the server SHALL end every broadcast still in progress in i
 - **THEN** the broadcast is still in progress and `broadcastList` returns it
 
 ### Requirement: A lost broadcast never blocks the room
-When the egress service streaming a meeting stops responding, the server SHALL end its broadcasts `failed`, with the error `The egress service stopped responding`, and report them ended. Broadcasts whose end never reached the server SHALL be settled at the next start request. In both cases the room SHALL be able to go live again.
+When the egress service streaming a meeting stops responding, the server SHALL end its broadcasts `failed`, with the error `The egress service stopped responding`. Changes and ends that never reached the server, including the meeting's end, SHALL be settled at the next start request and by a reconciliation run at startup and every minute. The room SHALL be able to go live again, and no broadcast SHALL stay in progress past its egress or its meeting.
 
 #### Scenario: Egress service killed while live
 - **GIVEN** a meeting streaming to a destination
@@ -301,13 +301,28 @@ When the egress service streaming a meeting stops responding, the server SHALL e
 - **THEN** the broadcast ends `failed` and `broadcastEnded` is sent
 - **AND** a new `broadcastStart` to that destination answers `201` while an egress service is available
 
+#### Scenario: Egress service killed while the server was down
+- **GIVEN** a meeting streaming to a destination
+- **WHEN** the egress service dies while every replica of the server is down
+- **THEN** within a minute of the server starting again, the broadcast ends `failed` and `broadcastEnded` is sent
+
+#### Scenario: Meeting ended while the server was down
+- **GIVEN** a meeting streaming to a destination
+- **WHEN** the meeting ends while every replica of the server is down
+- **THEN** within a minute of the server starting again, the broadcast ends and `broadcastEnded` is sent
+
 ### Requirement: Broadcasts need an egress service
-`broadcastStart`, `broadcastStop` and `broadcastBulkStop` SHALL answer `503` with error `LiveKit Error` when no egress service of the deployment takes the request, starting nothing.
+`broadcastStart`, `broadcastStop` and `broadcastBulkStop` SHALL answer `503` with error `LiveKit Error` when no egress service of the deployment takes the request, starting nothing. Broadcasts need the OpenVidu egress, which reports each stream with the tag the server gives its URL: against an egress that does not, `broadcastStart` SHALL answer `500` and withdraw what it added, so nothing streams.
 
 #### Scenario: No egress service running
 - **GIVEN** a deployment whose egress service is down
 - **WHEN** `broadcastStart` is called for a meeting in progress
 - **THEN** the REST API answers `503` and no broadcast is in progress
+
+#### Scenario: Egress without stream tags
+- **GIVEN** a deployment whose egress service does not report stream tags
+- **WHEN** `broadcastStart` is called for a meeting in progress
+- **THEN** the REST API answers `500`, no broadcast is in progress and nothing is streamed
 
 ### Requirement: One change at a time per room across replicas
 The server SHALL apply the start and stop requests and the media server events of a room's broadcasts one at a time, whichever replica receives them. A request SHALL wait up to 10 seconds for the change before it and SHALL answer `409` when that change holds the room's broadcasts for longer.
@@ -334,6 +349,16 @@ The server SHALL send, per broadcast, `broadcastStarted` when a start request cr
 #### Scenario: Two destinations
 - **WHEN** a start request streams to two destinations
 - **THEN** the endpoint receives one `broadcastStarted` for each broadcast
+
+#### Scenario: Stream keys with the same ends
+- **GIVEN** a meeting streaming to `rtmp://host/live/abcONExyz` and to `rtmp://host/live/abcTWOxyz`
+- **WHEN** both destinations receive media
+- **THEN** each broadcast gets its own `broadcastUpdated` with `active`
+
+#### Scenario: Destination streamed to again
+- **GIVEN** a meeting whose broadcast to destination A was stopped
+- **WHEN** a new broadcast to A starts and A receives media
+- **THEN** only the new broadcast gets `broadcastUpdated`, and the stopped one gets no further event
 
 ### Requirement: Embedded broadcast commands
 The embedded element SHALL run `broadcastStart(options?)` and `broadcastStop(options?)`, whose payloads are the bodies of `broadcastStart` and `broadcastBulkStop` without the `roomId`, only for a local participant holding `broadcastControl` in a joined meeting. Without options they SHALL go live to every room destination not streamed to yet and stop every running broadcast. `broadcastStop` with nothing running SHALL do nothing.
