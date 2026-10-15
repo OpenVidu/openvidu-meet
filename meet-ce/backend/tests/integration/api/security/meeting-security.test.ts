@@ -35,6 +35,7 @@ import { setupRoomMember, setupSingleRoom, updateRoomMemberPermissions } from '.
 import { RoomData, RoomMemberData } from '../../../interfaces/scenarios.js';
 
 const MEETINGS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings`);
+const BROADCASTS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/broadcasts`);
 const ASSISTANTS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/ai/assistants`);
 const LIVE_CAPTIONS_BODY = { capabilities: [{ name: MeetAssistantCapabilityName.LIVE_CAPTIONS }] };
 
@@ -121,9 +122,9 @@ describe('Meeting API Security Tests', () => {
 	describe('Broadcast Tests', () => {
 		const startBroadcastWith = (set: [string, string], body: object = {}) =>
 			request(app)
-				.post(`${MEETINGS_PATH}/${roomId}/broadcasts`)
+				.post(BROADCASTS_PATH)
 				.set(...set)
-				.send(body);
+				.send({ roomId, ...body });
 
 		it('should pass the authentication when request includes API key', async () => {
 			const response = await startBroadcastWith([INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY]);
@@ -175,7 +176,8 @@ describe('Meeting API Security Tests', () => {
 
 		it('should list the broadcasts with any room member token that may read the meeting', async () => {
 			const response = await request(app)
-				.get(`${MEETINGS_PATH}/${roomId}/broadcasts`)
+				.get(BROADCASTS_PATH)
+				.query({ roomId })
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.speakerToken);
 			expect(response.status).toBe(200);
 			expect(response.body).toEqual({ broadcasts: [] });

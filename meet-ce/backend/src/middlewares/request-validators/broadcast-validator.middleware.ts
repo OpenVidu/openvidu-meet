@@ -1,49 +1,63 @@
 import { MEET_BROADCAST_FIELDS } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
+import type { z } from 'zod';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import {
 	BroadcastFieldsQuerySchema,
-	StartBroadcastReqSchema,
-	StopBroadcastReqSchema
+	BroadcastIdParamsSchema,
+	BulkStopBroadcastsReqSchema,
+	GetBroadcastsQuerySchema,
+	StartBroadcastReqSchema
 } from '../../models/zod-schemas/broadcast.schema.js';
 import { mergeFieldsHeaderIntoQuery } from '../../models/zod-schemas/field-selection.schema.js';
 
 /**
- * Reads the fields a broadcast response is limited to, from the `fields` query parameter and the
- * `X-Fields` header together.
+ * Reads the query of a broadcast request against the schema, with the fields asked for in the
+ * `X-Fields` header merged into its `fields` parameter.
  */
-export const validateBroadcastFieldsReq = (req: Request, res: Response, next: NextFunction) => {
-	const query = req.query;
-	mergeFieldsHeaderIntoQuery(req.headers, query, MEET_BROADCAST_FIELDS);
+const validateQuery =
+	(schema: z.ZodType<Record<string, unknown>>) => (req: Request, res: Response, next: NextFunction) => {
+		const query = req.query;
+		mergeFieldsHeaderIntoQuery(req.headers, query, MEET_BROADCAST_FIELDS);
 
-	const { success, error, data } = BroadcastFieldsQuerySchema.safeParse(query);
+		const { success, error, data } = schema.safeParse(query);
 
-	if (!success) {
-		return rejectUnprocessableRequest(res, error);
-	}
+		if (!success) {
+			return rejectUnprocessableRequest(res, error);
+		}
 
-	res.locals.validatedQuery = data;
-	next();
-};
+		res.locals.validatedQuery = data;
+		next();
+	};
 
-export const validateStartBroadcastReq = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = StartBroadcastReqSchema.safeParse(req.body ?? {});
-
-	if (!success) {
-		return rejectUnprocessableRequest(res, error);
-	}
-
-	req.body = data;
-	next();
-};
-
-export const validateStopBroadcastReq = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = StopBroadcastReqSchema.safeParse(req.body ?? {});
+const validateBody = (schema: z.ZodType) => (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = schema.safeParse(req.body ?? {});
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);
 	}
 
 	req.body = data;
+	next();
+};
+
+/** Reads the fields a broadcast response is limited to. */
+export const validateBroadcastFieldsReq = validateQuery(BroadcastFieldsQuerySchema);
+
+/** Reads the room whose broadcasts are listed, and the fields of each. */
+export const validateGetBroadcastsReq = validateQuery(GetBroadcastsQuerySchema);
+
+export const validateStartBroadcastReq = validateBody(StartBroadcastReqSchema);
+
+export const validateBulkStopBroadcastsReq = validateBody(BulkStopBroadcastsReqSchema);
+
+export const validateBroadcastIdReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = BroadcastIdParamsSchema.safeParse(req.params);
+
+	if (!success) {
+		return rejectUnprocessableRequest(res, error);
+	}
+
+	req.params.broadcastId = data.broadcastId;
 	next();
 };

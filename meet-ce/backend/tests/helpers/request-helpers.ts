@@ -1364,8 +1364,7 @@ const checkAppIsRunning = () => {
 
 // BROADCAST HELPERS
 
-const broadcastsPath = (roomId: string) =>
-	getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/broadcasts`);
+const broadcastsPath = () => getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/broadcasts`);
 
 /**
  * Sends a broadcast request as the given room member, or with the API key when no token is given.
@@ -1381,7 +1380,12 @@ export const startBroadcasts = async (
 	roomMemberToken?: string
 ): Promise<Response> => {
 	checkAppIsRunning();
-	return await asBroadcastCaller(request(app).post(broadcastsPath(roomId)), roomMemberToken).send(options);
+	return await asBroadcastCaller(request(app).post(broadcastsPath()), roomMemberToken).send({ roomId, ...options });
+};
+
+export const stopBroadcast = async (broadcastId: string, roomMemberToken?: string): Promise<Response> => {
+	checkAppIsRunning();
+	return await asBroadcastCaller(request(app).post(`${broadcastsPath()}/${broadcastId}/stop`), roomMemberToken);
 };
 
 export const stopBroadcasts = async (
@@ -1390,19 +1394,18 @@ export const stopBroadcasts = async (
 	roomMemberToken?: string
 ): Promise<Response> => {
 	checkAppIsRunning();
-	return await asBroadcastCaller(request(app).post(`${broadcastsPath(roomId)}/stop`), roomMemberToken).send(options);
+	return await asBroadcastCaller(request(app).post(`${broadcastsPath()}/stop`), roomMemberToken).send({
+		roomId,
+		...options
+	});
 };
 
 export const getBroadcasts = async (roomId: string, roomMemberToken?: string): Promise<Response> => {
 	checkAppIsRunning();
-	return await asBroadcastCaller(request(app).get(broadcastsPath(roomId)), roomMemberToken);
+	return await asBroadcastCaller(request(app).get(broadcastsPath()).query({ roomId }), roomMemberToken);
 };
 
-export const getBroadcast = async (
-	roomId: string,
-	broadcastId: string,
-	roomMemberToken?: string
-): Promise<Response> => {
+export const getBroadcast = async (broadcastId: string, roomMemberToken?: string): Promise<Response> => {
 	checkAppIsRunning();
-	return await asBroadcastCaller(request(app).get(`${broadcastsPath(roomId)}/${broadcastId}`), roomMemberToken);
+	return await asBroadcastCaller(request(app).get(`${broadcastsPath()}/${broadcastId}`), roomMemberToken);
 };

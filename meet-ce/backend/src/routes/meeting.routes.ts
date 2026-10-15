@@ -12,14 +12,11 @@ import {
 } from '../middlewares/request-validators/meeting-validator.middleware.js';
 import { withValidRoomId } from '../middlewares/request-validators/room-validator.middleware.js';
 import { withRoomPermission, withRoomPermissionForOthers } from '../middlewares/room.middleware.js';
-import { broadcastRouter } from './broadcast.routes.js';
 
 export const meetingRouter: Router = Router();
 meetingRouter.use(bodyParser.urlencoded({ extended: true }));
 meetingRouter.use(bodyParser.json());
 meetingRouter.use(apiLimiter);
-
-meetingRouter.use('/:roomId/broadcasts', broadcastRouter);
 
 // Meetings Routes
 meetingRouter.get(

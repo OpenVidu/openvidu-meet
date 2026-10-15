@@ -91,8 +91,9 @@ token.
   lump**: if an operator would grant one half and withhold the other, they are two permissions.
   **Verb before object**, no exceptions. A permission may share its string with the command it
   gates (`participantKick`), on purpose.
-- **REST**: live meeting state is a sub-resource of `/meetings/{roomId}`; only durable artifacts
-  and platform groups are top-level (see `MEET_API_REST_GROUPS`). Collections plural, singletons
+- **REST**: live meeting state is a sub-resource of `/meetings/{roomId}`; only durable artifacts,
+  egresses addressed by their own id like a recording (`/broadcasts`) and platform groups are
+  top-level (see `MEET_API_REST_GROUPS`). Collections plural, singletons
   singular. `operationId` = `moduleAction`.
 - **Reserved words**: `broadcast` = RTMP only, `reaction` = emoji only, `message(s)` = chat only,
   `embedded` = the OpenVidu Meet element or iframe a host mounts (the meeting inside it is

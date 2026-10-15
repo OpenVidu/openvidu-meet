@@ -125,10 +125,14 @@ export const authorizeRoomAccess = async (req: Request, res: Response, next: Nex
  * Middleware to check if the authenticated principal has a specific permission in the room.
  *
  * @param permission The permission to check (key of MeetRoomMemberPermissions).
+ * @param roomIdOf Where the request names the room, its `roomId` path parameter unless said otherwise.
  */
-export const withRoomPermission = (permission: keyof MeetRoomMemberPermissions) => {
+export const withRoomPermission = (
+	permission: keyof MeetRoomMemberPermissions,
+	roomIdOf: (req: Request, res: Response) => string = (req) => req.params.roomId as string
+) => {
 	return async (req: Request, res: Response, next: NextFunction) => {
-		const roomId = req.params.roomId as string;
+		const roomId = roomIdOf(req, res);
 		const roomService = container.get(RoomService);
 
 		try {

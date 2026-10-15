@@ -36,6 +36,7 @@ import {
 	getRoomConfig,
 	startBroadcasts,
 	startTestServer,
+	stopBroadcast,
 	stopBroadcasts,
 	updateRoomRoles
 } from '../../../helpers/request-helpers.js';
@@ -67,9 +68,6 @@ const startOne = async (roomId: string, target: StartDestination, roomMemberToke
 	const response = await startBroadcasts(roomId, { destinations: [target] }, roomMemberToken);
 	return { response, broadcast: response.body.broadcasts?.[0] as MeetBroadcastInfo };
 };
-
-const stopOne = (roomId: string, broadcastId: string, roomMemberToken?: string) =>
-	stopBroadcasts(roomId, { broadcastIds: [broadcastId] }, roomMemberToken);
 
 describe('Broadcasts API Tests', () => {
 	let app: Express;
@@ -310,10 +308,10 @@ describe('Broadcasts API Tests', () => {
 				broadcast: { enabled: true, destinations: [{ name: 'Sink', url: sinkUrl }] }
 			});
 			const { roomId } = roomData.room;
-			const broadcastsPath = `${MEETINGS_PATH}/${roomId}/broadcasts`;
+			const broadcastsPath = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/broadcasts`);
 
 			const started = await asApiKey(request(app).post(`${broadcastsPath}?fields=broadcastId,status,bogus`)).send(
-				{}
+				{ roomId }
 			);
 			expect(started.status).toBe(201);
 			expect(started.body).toEqual({
@@ -329,17 +327,32 @@ describe('Broadcasts API Tests', () => {
 			expect(fetched.status).toBe(200);
 			expect(Object.keys(fetched.body).sort()).toEqual(['roomId', 'status']);
 
-			const listed = await asApiKey(request(app).get(broadcastsPath)).set('X-Fields', 'broadcastId');
+			const listed = await asApiKey(request(app).get(broadcastsPath).query({ roomId })).set(
+				'X-Fields',
+				'broadcastId'
+			);
 			expect(listed.body).toEqual({ broadcasts: [{ broadcastId }] });
 
 			const unknownOnly = await asApiKey(request(app).get(`${broadcastPath}?fields=bogus`));
 			expect(unknownOnly.body).toMatchObject({ broadcastId, roomId, url: expect.any(String) });
 
-			const stopped = await asApiKey(request(app).post(`${broadcastsPath}/stop`))
-				.set('X-Fields', 'status')
-				.send({ broadcastIds: [broadcastId] });
+			const stopped = await asApiKey(request(app).post(`${broadcastPath}/stop`)).set('X-Fields', 'status');
 			expect(stopped.status).toBe(200);
-			expect(stopped.body).toEqual({ broadcasts: [{ status: expect.stringMatching(/^(complete|aborted)$/) }] });
+			expect(stopped.body).toEqual({ status: expect.stringMatching(/^(complete|aborted)$/) });
+		});
+	});
+
+	describe('Broadcast Id Tests', () => {
+		it('should reject a list without its room and a malformed broadcast id, and find no broadcast of an unknown room', async () => {
+			const listed = await request(app)
+				.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/broadcasts`))
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+			expect(listed.status).toBe(422);
+
+			expect((await getBroadcast('no-room-in-it')).status).toBe(422);
+			expect((await stopBroadcast('no-room-in-it')).status).toBe(422);
+			expect((await getBroadcast('unknown_room--kX9pL2mQ7a')).status).toBe(404);
+			expect((await stopBroadcast('unknown_room--kX9pL2mQ7a')).status).toBe(404);
 		});
 	});
 
@@ -368,9 +381,9 @@ describe('Broadcasts API Tests', () => {
 				(broadcast) => broadcast === undefined,
 				'failed and left the list'
 			);
-			expect((await getBroadcast(roomId, broadcastB.broadcastId)).status).toBe(404);
+			expect((await getBroadcast(broadcastB.broadcastId)).status).toBe(404);
 
-			const single = await getBroadcast(roomId, broadcastA.broadcastId, roomData.speakerToken);
+			const single = await getBroadcast(broadcastA.broadcastId, roomData.speakerToken);
 			expect(single.status).toBe(200);
 			expect(single.body.url).toContain(`/${MEET_BROADCAST_REDACTED_STREAM_KEY}`);
 			expect(single.body.url).not.toContain(sinkUrl.split('/').pop());
@@ -399,18 +412,19 @@ describe('Broadcasts API Tests', () => {
 				'failed again and left the list'
 			);
 
-			const stoppedA = await stopOne(roomId, broadcastA.broadcastId, roomData.moderatorToken);
+			const stoppedA = await stopBroadcast(broadcastA.broadcastId, roomData.moderatorToken);
 			expect(stoppedA.status).toBe(200);
-			expect(stoppedA.body.broadcasts).toEqual([
+			expect(stoppedA.body).toEqual(
 				expect.objectContaining({
+					broadcastId: broadcastA.broadcastId,
 					status: MeetBroadcastStatus.COMPLETE,
 					startDate: active?.startDate,
 					endDate: expect.any(Number),
 					duration: expect.any(Number)
 				})
-			]);
+			);
 			expectMeetError(
-				await stopOne(roomId, broadcastA.broadcastId),
+				await stopBroadcast(broadcastA.broadcastId),
 				errorBroadcastNotFound(broadcastA.broadcastId)
 			);
 
@@ -446,12 +460,12 @@ describe('Broadcasts API Tests', () => {
 			const { roomId } = roomData.room;
 			const { broadcast } = await startOne(roomId, { destinationId: (await roomDestinationIds(roomData))[0] });
 
-			const stopped = await stopOne(roomId, broadcast.broadcastId);
+			const stopped = await stopBroadcast(broadcast.broadcastId);
 
 			expect(stopped.status).toBe(200);
-			expect(stopped.body.broadcasts[0]).toMatchObject({ status: MeetBroadcastStatus.ABORTED });
-			expect(stopped.body.broadcasts[0].startDate).toBeUndefined();
-			expect(stopped.body.broadcasts[0].endDate).toBeUndefined();
+			expect(stopped.body).toMatchObject({ status: MeetBroadcastStatus.ABORTED });
+			expect(stopped.body.startDate).toBeUndefined();
+			expect(stopped.body.endDate).toBeUndefined();
 		});
 
 		it('should gate stopping on broadcastControl', async () => {
@@ -460,7 +474,7 @@ describe('Broadcasts API Tests', () => {
 			const { broadcast } = await startOne(roomId, { destinationId: (await roomDestinationIds(roomData))[0] });
 
 			expectMeetError(
-				await stopOne(roomId, broadcast.broadcastId, roomData.speakerToken),
+				await stopBroadcast(broadcast.broadcastId, roomData.speakerToken),
 				errorInsufficientPermissions()
 			);
 		});

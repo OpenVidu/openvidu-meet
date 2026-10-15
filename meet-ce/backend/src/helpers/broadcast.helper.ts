@@ -48,6 +48,11 @@ export class BroadcastHelper {
 		return { ...options, config: { ...options.config, broadcast: { ...broadcast, destinations } } };
 	}
 
+	/** The room a broadcast belongs to: its id is `{roomId}--{id}`, as a recording's names its room. */
+	static roomIdOf(broadcastId: string): string {
+		return broadcastId.split('--')[0];
+	}
+
 	/** Whether the broadcast is still one of the room's current ones: not over yet, if only just ending. */
 	static isInProgress(status: MeetBroadcastStatus): boolean {
 		return IN_PROGRESS_STATUSES.includes(status);

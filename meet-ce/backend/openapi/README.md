@@ -66,7 +66,8 @@ violation:
   generate SDK method names and get renamed in the next major.
 - A new **top-level path segment** must be registered in `MEET_API_REST_GROUPS` first, and that is
   an API-design decision: live meeting features go under `/meetings/{roomId}`, only durable
-  artifacts (`/rooms`, `/recordings`) and platform groups get a top level. Collections are plural,
+  artifacts (`/rooms`, `/recordings`), egresses addressed by their own id like a recording
+  (`/broadcasts`) and platform groups get a top level. Collections are plural,
   singletons singular.
 
 ## Commands (run from `meet-ce/backend`)

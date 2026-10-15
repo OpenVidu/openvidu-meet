@@ -39,16 +39,6 @@ import { BroadcastConfigSchema } from './broadcast.schema.js';
 import { encodingValidator } from './recording-encoding.schema.js';
 import { PartialMeetPermissionsSchema } from './room-member.schema.js';
 
-export const nonEmptySanitizedRoomId = (fieldName: string) =>
-	z
-		.string()
-		.min(1, { message: `${fieldName} is required and cannot be empty` })
-		.max(100, { message: `${fieldName} cannot exceed 100 characters` })
-		.transform((value) => MeetRoomHelper.sanitizeRoomId(value))
-		.refine((data) => data !== '', {
-			message: `${fieldName} cannot be empty after sanitization`
-		});
-
 // Encoding options validation - both video and audio are required with all their fields
 /**
  * Meeting limits (`maxParticipants`, `maxDurationMinutes`): `null` is the explicit "no limit"
