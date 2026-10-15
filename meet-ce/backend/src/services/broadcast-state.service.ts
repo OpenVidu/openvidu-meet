@@ -31,6 +31,17 @@ export class BroadcastStateService {
 		return value ? (JSON.parse(value) as BroadcastRecord[]) : [];
 	}
 
+	/** Whether the room has broadcasts in progress, since a room without any has no value. */
+	async hasBroadcasts(roomId: string): Promise<boolean> {
+		return this.redisService.exists(this.getKey(roomId));
+	}
+
+	/** The rooms with broadcasts in progress, scanned without blocking Redis. */
+	async findRoomIds(): Promise<string[]> {
+		const keys = await this.redisService.getKeys(this.getKey('*'));
+		return keys.map((key) => key.slice(RedisKeyName.BROADCAST.length));
+	}
+
 	private getKey(roomId: string): string {
 		return `${RedisKeyName.BROADCAST}${roomId}`;
 	}

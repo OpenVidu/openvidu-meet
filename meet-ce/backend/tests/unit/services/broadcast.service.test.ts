@@ -21,9 +21,13 @@ import type { RedisService } from '../../../src/services/redis.service.js';
 const ROOM_ID = 'room-1';
 const REAL_URLS = { a: 'rtmp://mtx/live/aaaKEYaaa', b: 'rtmp://mtx/live/bbbKEYbbb' };
 const REDACTED = 'rtmp://mtx/live/********';
+const TAG = '#ov-stream-tag=';
+const tagged = (url: string, broadcastId: string) => `${url}${TAG}${broadcastId}`;
 const noopLogger = { info: () => {}, warn: () => {}, debug: () => {}, error: () => {}, verbose: () => {} };
 
 type StreamResult = {
+	/** The broadcast whose tag the stream carries; without it, the fake LiveKit tags it by position */
+	tag?: string;
 	status?: StreamInfo_Status;
 	startedAt?: bigint;
 	endedAt?: bigint;
@@ -32,8 +36,8 @@ type StreamResult = {
 };
 
 const streams = (results: StreamResult[]) =>
-	results.map((result) => ({
-		url: REDACTED,
+	results.map(({ tag, ...result }) => ({
+		url: tag ? tagged(REDACTED, tag) : REDACTED,
 		status: StreamInfo_Status.ACTIVE,
 		startedAt: 0n,
 		endedAt: 0n,
@@ -69,12 +73,19 @@ const liveRecord = (overrides: Partial<BroadcastRecord> = {}): BroadcastRecord =
 	encoding: MeetRecordingEncodingPreset.H264_720P_30,
 	startDate: 1000,
 	egressId: 'EG_1',
-	streamIndex: 0,
 	...overrides
 });
 
+/**
+ * LiveKit as the broadcast service sees it. Like the egress, it reports each stream with the tag
+ * of the URL that added it, in the order the URLs were added: a stream a test gives without a tag
+ * gets the tag of its position.
+ */
 class FakeLiveKitService {
 	participants = true;
+	roomLive = true;
+	egressInRoom = true;
+	streamTags = new Map<string, string[]>();
 	egressList: EgressInfo[] = [];
 	startCalls: { roomName: string; urls: string[]; layout?: string; encodingOptions?: unknown }[] = [];
 	stopCalls: string[] = [];
@@ -102,7 +113,8 @@ class FakeLiveKitService {
 			layout: options.layout,
 			encodingOptions: options.encodingOptions
 		});
-		return this.nextEgress;
+		this.streamTags.set(this.nextEgress.egressId, output.urls.map(tagOf));
+		return this.report(this.nextEgress);
 	}
 
 	async stopEgressIfRunning(egressId: string): Promise<EgressInfo | undefined> {
@@ -110,26 +122,48 @@ class FakeLiveKitService {
 
 		if (this.stopFails) throw new Error('egress unreachable');
 
-		return this.alreadyEnded ? undefined : this.nextEgress;
+		return this.alreadyEnded ? undefined : this.report(this.nextEgress);
 	}
 
 	async updateStream(egressId: string, add: string[], remove: string[]): Promise<EgressInfo | undefined> {
 		this.updateCalls.push({ egressId, add, remove });
 
-		if (add.includes(this.refusedUrl!)) throw new Error('sink failed');
+		if (add.some((url) => url.startsWith(`${this.refusedUrl}${TAG}`))) throw new Error('sink failed');
 
-		return this.alreadyEnded ? undefined : (this.updateResponses.shift() ?? this.nextEgress);
+		if (this.alreadyEnded) return undefined;
+
+		this.streamTags.set(egressId, [...(this.streamTags.get(egressId) ?? []), ...add.map(tagOf)]);
+		return this.report(this.updateResponses.shift() ?? this.nextEgress);
 	}
 
 	async getEgress(): Promise<EgressInfo[]> {
-		return this.egressList;
+		return this.egressList.map((egress) => this.report(egress));
 	}
 
 	async isEgressReachable(egressId: string): Promise<boolean> {
 		this.probeCalls.push(egressId);
 		return this.reachable;
 	}
+
+	async participantExists(): Promise<boolean> {
+		return this.egressInRoom;
+	}
+
+	async roomExists(): Promise<boolean> {
+		return this.roomLive;
+	}
+
+	/** The egress with each untagged stream tagged as the URL added at its position was. */
+	report(egress: EgressInfo): EgressInfo {
+		const tags = this.streamTags.get(egress.egressId) ?? [];
+		const streamResults = egress.streamResults.map((stream, index) =>
+			stream.url === REDACTED && tags[index] ? { ...stream, url: tagged(REDACTED, tags[index]) } : stream
+		);
+		return { ...egress, streamResults } as EgressInfo;
+	}
 }
+
+const tagOf = (url: string) => url.slice(url.indexOf(TAG) + TAG.length);
 
 class FakeMutexService {
 	busyAttempts = 0;
@@ -148,8 +182,11 @@ class FakeMutexService {
 
 class FakeBroadcastStateService {
 	records = new Map<string, BroadcastRecord[]>();
+	saves = 0;
 
 	async save(roomId: string, records: BroadcastRecord[]): Promise<void> {
+		this.saves++;
+
 		if (records.length === 0) {
 			this.records.delete(roomId);
 		} else {
@@ -158,7 +195,15 @@ class FakeBroadcastStateService {
 	}
 
 	async find(roomId: string): Promise<BroadcastRecord[]> {
-		return this.records.get(roomId) ?? [];
+		return structuredClone(this.records.get(roomId) ?? []);
+	}
+
+	async hasBroadcasts(roomId: string): Promise<boolean> {
+		return this.records.has(roomId);
+	}
+
+	async findRoomIds(): Promise<string[]> {
+		return [...this.records.keys()];
 	}
 }
 
@@ -230,6 +275,15 @@ describe('BroadcastService', () => {
 
 	const saved = () => state.records.get(ROOM_ID) ?? [];
 	const webhookSummary = () => webhooks.events.map(({ type, name, status }) => `${type}:${name}:${status}`);
+	/** Broadcasts in progress, whose URLs the egress EG_1 took in this order. */
+	const seed = async (records: BroadcastRecord[]) => {
+		await state.save(ROOM_ID, records);
+		livekit.streamTags.set(
+			'EG_1',
+			records.map(({ broadcastId }) => broadcastId)
+		);
+		state.saves = 0;
+	};
 
 	beforeEach(() => {
 		livekit = new FakeLiveKitService();
@@ -261,7 +315,7 @@ describe('BroadcastService', () => {
 			expect(livekit.startCalls).toEqual([
 				{
 					roomName: ROOM_ID,
-					urls: [REAL_URLS.a],
+					urls: [tagged(REAL_URLS.a, info.broadcastId)],
 					layout: MeetRecordingLayout.SPEAKER,
 					encodingOptions: EncodingOptionsPreset.H264_1080P_30
 				}
@@ -275,14 +329,14 @@ describe('BroadcastService', () => {
 				layout: MeetRecordingLayout.SPEAKER,
 				encoding: MeetRecordingEncodingPreset.H264_1080P_30
 			});
-			expect(saved()).toMatchObject([
-				{ broadcastId: info.broadcastId, url: REAL_URLS.a, egressId: 'EG_1', streamIndex: 0 }
+			expect(saved()).toEqual([
+				expect.objectContaining({ broadcastId: info.broadcastId, url: REAL_URLS.a, egressId: 'EG_1' })
 			]);
 			expect(frontend.signals.map(({ url }) => url)).toEqual([REDACTED]);
 			expect(webhookSummary()).toEqual(['broadcastStarted:A:starting']);
 		});
 
-		it('starts the egress with the first destination and adds each next one on its own, so each knows its stream', async () => {
+		it('starts the egress with the first destination and adds the next ones, each URL tagged with its broadcast', async () => {
 			livekit.nextEgress = egressWith({ streamResults: streams([{}]) });
 			livekit.updateResponses = [
 				egressWith({ streamResults: streams([{}, {}]) }),
@@ -297,17 +351,22 @@ describe('BroadcastService', () => {
 				]
 			});
 
-			expect(livekit.startCalls.map(({ urls }) => urls)).toEqual([[REAL_URLS.a]]);
+			const [a, b, extra] = broadcasts.map(({ broadcastId }) => broadcastId);
+			expect(livekit.startCalls.map(({ urls }) => urls)).toEqual([[tagged(REAL_URLS.a, a)]]);
 			expect(livekit.updateCalls).toEqual([
-				{ egressId: 'EG_1', add: [REAL_URLS.b], remove: [] },
-				{ egressId: 'EG_1', add: ['rtmp://mtx/live/xxxKEYxxx'], remove: [] }
+				{ egressId: 'EG_1', add: [tagged(REAL_URLS.b, b)], remove: [] },
+				{ egressId: 'EG_1', add: [tagged('rtmp://mtx/live/xxxKEYxxx', extra)], remove: [] }
 			]);
 			expect(broadcasts.map(({ name, status }) => `${name}:${status}`)).toEqual([
 				'A:active',
 				'B:starting',
 				'Extra:starting'
 			]);
-			expect(saved().map(({ name, streamIndex }) => `${name}:${streamIndex}`)).toEqual(['A:0', 'B:1', 'Extra:2']);
+			expect(saved().map(({ name, url }) => `${name}:${url}`)).toEqual([
+				`A:${REAL_URLS.a}`,
+				`B:${REAL_URLS.b}`,
+				'Extra:rtmp://mtx/live/xxxKEYxxx'
+			]);
 			expect(webhookSummary()).toEqual([
 				'broadcastStarted:A:active',
 				'broadcastStarted:B:starting',
@@ -316,16 +375,18 @@ describe('BroadcastService', () => {
 		});
 
 		it('streams to every room destination not streamed to yet when the request names none', async () => {
-			await state.save(ROOM_ID, [liveRecord()]);
+			await seed([liveRecord()]);
 			livekit.egressList = [egressWith({})];
 			livekit.nextEgress = egressWith({ streamResults: streams([{ startedAt: 1_000_000_000n }, {}]) });
 
 			const broadcasts = await service.startBroadcasts(ROOM_ID, {});
 
 			expect(livekit.startCalls).toEqual([]);
-			expect(livekit.updateCalls).toEqual([{ egressId: 'EG_1', add: [REAL_URLS.b], remove: [] }]);
+			expect(livekit.updateCalls).toEqual([
+				{ egressId: 'EG_1', add: [tagged(REAL_URLS.b, broadcasts[0].broadcastId)], remove: [] }
+			]);
 			expect(broadcasts).toMatchObject([{ name: 'B', destinationId: 'b', layout: MeetRecordingLayout.GRID }]);
-			expect(saved().map(({ name, streamIndex }) => `${name}:${streamIndex}`)).toEqual(['A:0', 'B:1']);
+			expect(saved().map(({ name, status }) => `${name}:${status}`)).toEqual(['A:active', 'B:starting']);
 			expect(webhookSummary()).toEqual(['broadcastStarted:B:starting']);
 
 			await expectStatus(service.startBroadcasts(ROOM_ID, {}), 409);
@@ -340,10 +401,22 @@ describe('BroadcastService', () => {
 				})
 			).rejects.toThrow('sink failed');
 
+			const [refused] = livekit.updateCalls[0].add;
+			expect(refused).toMatch(/^rtmp:\/\/mtx\/live\/xxxKEYxxx#ov-stream-tag=room-1--/);
 			expect(livekit.updateCalls.slice(-2)).toEqual([
-				{ egressId: 'EG_1', add: [], remove: [REAL_URLS.a] },
-				{ egressId: 'EG_1', add: [], remove: ['rtmp://mtx/live/xxxKEYxxx'] }
+				{ egressId: 'EG_1', add: [], remove: livekit.startCalls[0].urls },
+				{ egressId: 'EG_1', add: [], remove: [refused] }
 			]);
+			expect(saved()).toEqual([]);
+			expect(webhooks.events).toEqual([]);
+		});
+
+		it('refuses an egress that does not report stream tags, and takes back the stream it started', async () => {
+			livekit.nextEgress = egressWith({ streamResults: streams([{ tag: 'not-this-one' }]) });
+
+			await expectStatus(service.startBroadcasts(ROOM_ID, { destinations: [{ destinationId: 'a' }] }), 500);
+
+			expect(livekit.updateCalls).toEqual([{ egressId: 'EG_1', add: [], remove: livekit.startCalls[0].urls }]);
 			expect(saved()).toEqual([]);
 			expect(webhooks.events).toEqual([]);
 		});
@@ -353,7 +426,7 @@ describe('BroadcastService', () => {
 			await expectStatus(service.startBroadcasts(ROOM_ID, { destinations: [{ destinationId: 'a' }] }), 409);
 
 			livekit.participants = true;
-			await state.save(ROOM_ID, [liveRecord()]);
+			await seed([liveRecord()]);
 			livekit.egressList = [egressWith({})];
 			await expectStatus(service.startBroadcasts(ROOM_ID, { destinations: [{ destinationId: 'a' }] }), 409);
 			await expectStatus(
@@ -366,12 +439,7 @@ describe('BroadcastService', () => {
 			await state.save(
 				ROOM_ID,
 				['1', '2', '3', '4'].map((key) =>
-					liveRecord({
-						broadcastId: `bc-${key}`,
-						url: `rtmp://mtx/live/${key}`,
-						destinationId: undefined,
-						streamIndex: Number(key) - 1
-					})
+					liveRecord({ broadcastId: `bc-${key}`, url: `rtmp://mtx/live/${key}`, destinationId: undefined })
 				)
 			);
 			await expectStatus(
@@ -383,7 +451,7 @@ describe('BroadcastService', () => {
 		});
 
 		it('settles the broadcasts of an egress LiveKit no longer runs, then starts a new one', async () => {
-			await state.save(ROOM_ID, [liveRecord()]);
+			await seed([liveRecord()]);
 			livekit.egressList = [
 				egressWith({
 					status: EgressStatus.EGRESS_COMPLETE,
@@ -409,7 +477,7 @@ describe('BroadcastService', () => {
 		});
 
 		it('starts a new egress when the one it meant to join ended just before', async () => {
-			await state.save(ROOM_ID, [liveRecord()]);
+			await seed([liveRecord()]);
 			livekit.egressList = [egressWith({})];
 			livekit.alreadyEnded = true;
 
@@ -421,6 +489,7 @@ describe('BroadcastService', () => {
 
 		it('waits for another change of the broadcasts to finish instead of answering 409', async () => {
 			mutex.busyAttempts = 3;
+			livekit.nextEgress = egressWith({ streamResults: streams([{}, {}]) });
 
 			await service.startBroadcasts(ROOM_ID, {});
 
@@ -437,7 +506,7 @@ describe('BroadcastService', () => {
 	describe('stopBroadcasts', () => {
 		const twoLive = () => [
 			liveRecord(),
-			liveRecord({ broadcastId: 'bc-b', name: 'B', url: REAL_URLS.b, destinationId: 'b', streamIndex: 1 })
+			liveRecord({ broadcastId: 'bc-b', name: 'B', url: REAL_URLS.b, destinationId: 'b' })
 		];
 		const finished = {
 			status: StreamInfo_Status.FINISHED,
@@ -446,13 +515,13 @@ describe('BroadcastService', () => {
 			duration: 60_000_000_000n
 		};
 
-		it('removes the real URL from the egress and ends the broadcast with what LiveKit reports, the others going on', async () => {
-			await state.save(ROOM_ID, twoLive());
+		it('removes the tagged real URL from the egress and ends the broadcast with what LiveKit reports, the others going on', async () => {
+			await seed(twoLive());
 			livekit.nextEgress = egressWith({ streamResults: streams([finished, { startedAt: 1_000_000_000n }]) });
 
 			const [info] = await service.stopBroadcasts(ROOM_ID, { broadcastIds: ['bc-a'] });
 
-			expect(livekit.updateCalls).toEqual([{ egressId: 'EG_1', add: [], remove: [REAL_URLS.a] }]);
+			expect(livekit.updateCalls).toEqual([{ egressId: 'EG_1', add: [], remove: [tagged(REAL_URLS.a, 'bc-a')] }]);
 			expect(info).toMatchObject({ status: 'complete', endDate: 61_000, duration: 60, url: REDACTED });
 			expect(saved().map(({ broadcastId }) => broadcastId)).toEqual(['bc-b']);
 			expect(frontend.signals.map(({ broadcastId, status }) => `${broadcastId}:${status}`)).toEqual([
@@ -462,14 +531,9 @@ describe('BroadcastService', () => {
 		});
 
 		it('stops every running broadcast when the request names none', async () => {
-			await state.save(ROOM_ID, [
+			await seed([
 				...twoLive(),
-				liveRecord({
-					broadcastId: 'bc-c',
-					url: 'rtmp://mtx/live/c',
-					status: MeetBroadcastStatus.ENDING,
-					streamIndex: 2
-				})
+				liveRecord({ broadcastId: 'bc-c', url: 'rtmp://mtx/live/c', status: MeetBroadcastStatus.ENDING })
 			]);
 			livekit.updateResponses = [
 				egressWith({
@@ -483,7 +547,10 @@ describe('BroadcastService', () => {
 
 			const broadcasts = await service.stopBroadcasts(ROOM_ID, {});
 
-			expect(livekit.updateCalls.map(({ remove }) => remove)).toEqual([[REAL_URLS.a], [REAL_URLS.b]]);
+			expect(livekit.updateCalls.map(({ remove }) => remove)).toEqual([
+				[tagged(REAL_URLS.a, 'bc-a')],
+				[tagged(REAL_URLS.b, 'bc-b')]
+			]);
 			expect(broadcasts.map(({ broadcastId, status }) => `${broadcastId}:${status}`)).toEqual([
 				'bc-a:complete',
 				'bc-b:complete'
@@ -498,7 +565,7 @@ describe('BroadcastService', () => {
 		});
 
 		it('ends the broadcast even when LiveKit answers without its final stream state', async () => {
-			await state.save(ROOM_ID, [liveRecord()]);
+			await seed([liveRecord()]);
 			livekit.nextEgress = egressWith({ status: EgressStatus.EGRESS_ENDING, streamResults: streams([]) });
 
 			const [info] = await service.stopBroadcasts(ROOM_ID, { broadcastIds: ['bc-a'] });
@@ -508,7 +575,7 @@ describe('BroadcastService', () => {
 		});
 
 		it('answers 404 for an unknown broadcast and 409 for one already ending, stopping none of the others', async () => {
-			await state.save(ROOM_ID, twoLive());
+			await seed(twoLive());
 			await expectStatus(service.stopBroadcasts(ROOM_ID, { broadcastIds: ['bc-a', 'bc-zzz'] }), 404);
 
 			await state.save(ROOM_ID, [...twoLive().slice(1), liveRecord({ status: MeetBroadcastStatus.ENDING })]);
@@ -517,7 +584,7 @@ describe('BroadcastService', () => {
 		});
 
 		it('settles with LiveKit last report a broadcast whose egress ended just before the stop', async () => {
-			await state.save(ROOM_ID, [liveRecord()]);
+			await seed([liveRecord()]);
 			livekit.alreadyEnded = true;
 			livekit.egressList = [
 				egressWith({
@@ -537,7 +604,7 @@ describe('BroadcastService', () => {
 
 	describe('handleEgressEvent', () => {
 		it('stops an egress LiveKit still runs that streams no broadcast, which a request lost track of', async () => {
-			await state.save(ROOM_ID, [liveRecord()]);
+			await seed([liveRecord()]);
 			const lost = egressWith({ egressId: 'EG_lost', status: EgressStatus.EGRESS_STARTING });
 			livekit.egressList = [lost];
 
@@ -566,14 +633,19 @@ describe('BroadcastService', () => {
 			expect(livekit.stopCalls).toEqual([]);
 		});
 
-		it('moves each broadcast along with its own stream, telling only about the ones that changed', async () => {
-			await state.save(ROOM_ID, [
+		it('moves each broadcast along with the stream of its tag, whatever the order, telling only about the ones that changed', async () => {
+			await seed([
 				liveRecord({ status: MeetBroadcastStatus.STARTING, startDate: undefined }),
-				liveRecord({ broadcastId: 'bc-b', name: 'B', url: REAL_URLS.b, destinationId: 'b', streamIndex: 1 })
+				liveRecord({ broadcastId: 'bc-b', name: 'B', url: REAL_URLS.b, destinationId: 'b' })
 			]);
 
 			await service.handleEgressEvent(
-				egressWith({ streamResults: streams([{ startedAt: 2_000_000_000n }, { startedAt: 1_000_000_000n }]) })
+				egressWith({
+					streamResults: streams([
+						{ tag: 'bc-b', startedAt: 1_000_000_000n },
+						{ tag: 'bc-a', startedAt: 2_000_000_000n }
+					])
+				})
 			);
 
 			expect(
@@ -584,33 +656,34 @@ describe('BroadcastService', () => {
 		});
 
 		it('settles and forgets the broadcasts on egress_ended', async () => {
-			await state.save(ROOM_ID, [
+			await seed([
 				liveRecord(),
 				liveRecord({
 					broadcastId: 'bc-b',
 					name: 'B',
 					url: REAL_URLS.b,
 					destinationId: 'b',
-					streamIndex: 1,
 					status: MeetBroadcastStatus.STARTING,
 					startDate: undefined
 				})
 			]);
 
 			await service.handleEgressEvent(
-				egressWith({
-					status: EgressStatus.EGRESS_COMPLETE,
-					endedAt: 61_000_000_000n,
-					streamResults: streams([
-						{
-							status: StreamInfo_Status.FINISHED,
-							startedAt: 1_000_000_000n,
-							endedAt: 61_000_000_000n,
-							duration: 60_000_000_000n
-						},
-						{}
-					])
-				})
+				livekit.report(
+					egressWith({
+						status: EgressStatus.EGRESS_COMPLETE,
+						endedAt: 61_000_000_000n,
+						streamResults: streams([
+							{
+								status: StreamInfo_Status.FINISHED,
+								startedAt: 1_000_000_000n,
+								endedAt: 61_000_000_000n,
+								duration: 60_000_000_000n
+							},
+							{}
+						])
+					})
+				)
 			);
 
 			expect(state.records.has(ROOM_ID)).toBe(false);
@@ -618,19 +691,31 @@ describe('BroadcastService', () => {
 			expect(frontend.signals.map(({ url }) => url)).toEqual([REDACTED, REDACTED]);
 		});
 
-		it('drops an update that changes nothing, as LiveKit sends after a request made the change', async () => {
-			await state.save(ROOM_ID, [liveRecord()]);
-			const snapshot = egressWith({ streamResults: streams([{ startedAt: 1_000_000_000n }]) });
+		it('drops an update that changes nothing, as LiveKit sends after a request made the change, without writing it', async () => {
+			await seed([liveRecord()]);
+			const snapshot = egressWith({ streamResults: streams([{ tag: 'bc-a', startedAt: 1_000_000_000n }]) });
 
 			await service.handleEgressEvent(snapshot);
 			await service.handleEgressEvent(snapshot);
 
 			expect(webhooks.events).toEqual([]);
 			expect(frontend.signals).toEqual([]);
+			expect(state.saves).toBe(0);
+		});
+
+		it('keeps an ending broadcast ending when a later event carries an older snapshot', async () => {
+			await seed([liveRecord({ status: MeetBroadcastStatus.ENDING })]);
+
+			await service.handleEgressEvent(
+				egressWith({ streamResults: streams([{ tag: 'bc-a', startedAt: 1_000_000_000n }]) })
+			);
+
+			expect(saved()[0].status).toBe(MeetBroadcastStatus.ENDING);
+			expect(webhooks.events).toEqual([]);
 		});
 
 		it('outwaits a change that a request would give up on, so the latest state is not dropped', async () => {
-			await state.save(ROOM_ID, [liveRecord()]);
+			await seed([liveRecord()]);
 			mutex.busyAttempts = Infinity;
 			await expectStatus(service.stopBroadcasts(ROOM_ID, { broadcastIds: ['bc-a'] }), 409);
 			mutex.busyAttempts = mutex.attempts[0];
@@ -638,7 +723,7 @@ describe('BroadcastService', () => {
 			await service.handleEgressEvent(
 				egressWith({
 					status: EgressStatus.EGRESS_ENDING,
-					streamResults: streams([{ startedAt: 1_000_000_000n }])
+					streamResults: streams([{ tag: 'bc-a', startedAt: 1_000_000_000n }])
 				})
 			);
 
@@ -646,7 +731,7 @@ describe('BroadcastService', () => {
 		});
 
 		it('gives up quietly when the room lock never frees', async () => {
-			await state.save(ROOM_ID, [liveRecord()]);
+			await seed([liveRecord()]);
 			mutex.busyAttempts = Infinity;
 
 			await expect(service.handleEgressEvent(egressWith({}))).resolves.toBeUndefined();
@@ -655,11 +740,15 @@ describe('BroadcastService', () => {
 	});
 
 	describe('handleEgressParticipantLeft', () => {
+		const twoLive = () => [liveRecord(), liveRecord({ broadcastId: 'bc-b', name: 'B', url: REAL_URLS.b })];
+
+		beforeEach(() => {
+			livekit.egressList = [egressWith({ streamResults: streams([{ startedAt: 1_000_000_000n }, {}]) })];
+			livekit.egressInRoom = false;
+		});
+
 		it('ends the broadcasts as failed when their egress leaves the room and no longer answers', async () => {
-			await state.save(ROOM_ID, [
-				liveRecord(),
-				liveRecord({ broadcastId: 'bc-b', name: 'B', url: REAL_URLS.b, streamIndex: 1 })
-			]);
+			await seed(twoLive());
 			livekit.reachable = false;
 
 			await service.handleEgressParticipantLeft(ROOM_ID, 'EG_1');
@@ -674,7 +763,7 @@ describe('BroadcastService', () => {
 		});
 
 		it('leaves the broadcasts alone while their egress still answers', async () => {
-			await state.save(ROOM_ID, [liveRecord()]);
+			await seed([liveRecord()]);
 
 			await service.handleEgressParticipantLeft(ROOM_ID, 'EG_1');
 
@@ -684,7 +773,7 @@ describe('BroadcastService', () => {
 		});
 
 		it('does not even probe an egress that streams no broadcast, like a recording', async () => {
-			await state.save(ROOM_ID, [liveRecord()]);
+			await seed([liveRecord()]);
 			livekit.reachable = false;
 
 			await service.handleEgressParticipantLeft(ROOM_ID, 'EG_RECORDING');
@@ -694,12 +783,78 @@ describe('BroadcastService', () => {
 		});
 	});
 
+	describe('reconcileAllRooms', () => {
+		it('applies the latest snapshot of a healthy egress whose update never arrived, once', async () => {
+			await seed([liveRecord({ status: MeetBroadcastStatus.STARTING, startDate: undefined })]);
+			livekit.egressList = [egressWith({ streamResults: streams([{ startedAt: 2_000_000_000n }]) })];
+
+			await service.reconcileAllRooms();
+			await service.reconcileAllRooms();
+
+			expect(saved()).toMatchObject([{ status: MeetBroadcastStatus.ACTIVE, startDate: 2000 }]);
+			expect(webhookSummary()).toEqual(['broadcastUpdated:A:active']);
+			expect(livekit.probeCalls).toEqual([]);
+			expect(state.saves).toBe(1);
+		});
+
+		it('settles the broadcasts of an egress that ended without its egress_ended arriving', async () => {
+			await seed([liveRecord()]);
+			livekit.egressList = [
+				egressWith({
+					status: EgressStatus.EGRESS_FAILED,
+					endedAt: 30_000_000_000n,
+					error: 'boom',
+					streamResults: streams([{ startedAt: 1_000_000_000n }])
+				})
+			];
+
+			await service.reconcileAllRooms();
+
+			expect(state.records.has(ROOM_ID)).toBe(false);
+			expect(webhookSummary()).toEqual(['broadcastEnded:A:failed']);
+		});
+
+		it('fails the broadcasts of an egress whose service died while LiveKit still lists it in progress', async () => {
+			await seed([liveRecord()]);
+			livekit.egressList = [egressWith({})];
+			livekit.egressInRoom = false;
+			livekit.reachable = false;
+
+			await service.reconcileAllRooms();
+
+			expect(state.records.has(ROOM_ID)).toBe(false);
+			expect(webhookSummary()).toEqual(['broadcastEnded:A:failed']);
+		});
+
+		it('ends the broadcasts of a meeting LiveKit no longer has, stopping its egress', async () => {
+			await seed([liveRecord()]);
+			livekit.roomLive = false;
+			livekit.nextEgress = egressWith({ status: EgressStatus.EGRESS_ENDING });
+
+			await service.reconcileAllRooms();
+
+			expect(livekit.stopCalls).toEqual(['EG_1']);
+			expect(state.records.has(ROOM_ID)).toBe(false);
+			expect(webhookSummary()).toEqual(['broadcastEnded:A:complete']);
+		});
+
+		it('leaves the broadcasts of a room alone when LiveKit cannot be asked, and goes on with the next rooms', async () => {
+			await seed([liveRecord()]);
+			await state.save('room-2', [liveRecord({ broadcastId: 'room-2--b', roomId: 'room-2' })]);
+			livekit.roomExists = async () => {
+				throw new Error('LiveKit unreachable');
+			};
+
+			await expect(service.reconcileAllRooms()).resolves.toBeUndefined();
+
+			expect(saved()).toEqual([liveRecord()]);
+			expect(webhooks.events).toEqual([]);
+		});
+	});
+
 	describe('cleanupRoom', () => {
 		it('ends the broadcasts of a meeting that finished before LiveKit reported the end', async () => {
-			await state.save(ROOM_ID, [
-				liveRecord(),
-				liveRecord({ broadcastId: 'bc-b', name: 'B', url: REAL_URLS.b, streamIndex: 1 })
-			]);
+			await seed([liveRecord(), liveRecord({ broadcastId: 'bc-b', name: 'B', url: REAL_URLS.b })]);
 			livekit.nextEgress = egressWith({
 				status: EgressStatus.EGRESS_ENDING,
 				streamResults: streams([{ startedAt: 1_000_000_000n }, { startedAt: 1_000_000_000n }])
@@ -713,7 +868,7 @@ describe('BroadcastService', () => {
 		});
 
 		it('stops an egress still starting, which would outlive the room, and reports its broadcast aborted', async () => {
-			await state.save(ROOM_ID, [liveRecord({ status: MeetBroadcastStatus.STARTING, startDate: undefined })]);
+			await seed([liveRecord({ status: MeetBroadcastStatus.STARTING, startDate: undefined })]);
 			livekit.nextEgress = egressWith({ status: EgressStatus.EGRESS_ABORTED });
 
 			await service.cleanupRoom(ROOM_ID);
@@ -724,7 +879,7 @@ describe('BroadcastService', () => {
 		});
 
 		it('settles with what LiveKit last reported, so a destination that just connected still counts', async () => {
-			await state.save(ROOM_ID, [liveRecord({ status: MeetBroadcastStatus.STARTING, startDate: undefined })]);
+			await seed([liveRecord({ status: MeetBroadcastStatus.STARTING, startDate: undefined })]);
 			livekit.nextEgress = egressWith({
 				status: EgressStatus.EGRESS_ENDING,
 				streamResults: streams([{ startedAt: 5_000_000_000n }])
@@ -737,7 +892,7 @@ describe('BroadcastService', () => {
 		});
 
 		it('takes an egress LiveKit already ended as ended, and settles with what LiveKit reports of it', async () => {
-			await state.save(ROOM_ID, [liveRecord()]);
+			await seed([liveRecord()]);
 			livekit.alreadyEnded = true;
 			livekit.egressList = [egressWith({ status: EgressStatus.EGRESS_COMPLETE })];
 
@@ -748,7 +903,7 @@ describe('BroadcastService', () => {
 		});
 
 		it('still settles the broadcasts when the egress cannot be stopped', async () => {
-			await state.save(ROOM_ID, [liveRecord()]);
+			await seed([liveRecord()]);
 			livekit.stopFails = true;
 
 			await service.cleanupRoom(ROOM_ID);
@@ -766,12 +921,11 @@ describe('BroadcastService', () => {
 
 	describe('getBroadcasts', () => {
 		it('serves the broadcasts in progress, redacted, and tells whether the meeting is broadcast', async () => {
-			await state.save(ROOM_ID, [liveRecord()]);
+			await seed([liveRecord()]);
 			const [broadcast] = await service.getBroadcasts(ROOM_ID);
 
 			expect(broadcast.url).toBe(REDACTED);
 			expect(broadcast).not.toHaveProperty('egressId');
-			expect(broadcast).not.toHaveProperty('streamIndex');
 			expect(await service.isBroadcastActive(ROOM_ID)).toBe(true);
 			expect((await service.getBroadcast(ROOM_ID, 'bc-a')).broadcastId).toBe('bc-a');
 			await expectStatus(service.getBroadcast(ROOM_ID, 'bc-zzz'), 404);

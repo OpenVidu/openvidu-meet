@@ -51,6 +51,7 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 #### Deployment
 
+- Live broadcasts need the OpenVidu egress, which reports the tag Meet gives each stream URL.
 - Azure Blob Storage authenticates with the Azure managed identity of the VM or pod running Meet when
   `MEET_AZURE_ACCOUNT_KEY` is empty.
 
