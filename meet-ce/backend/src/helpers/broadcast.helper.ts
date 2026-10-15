@@ -58,6 +58,11 @@ export class BroadcastHelper {
 		return RUNNING_STATUSES.includes(status);
 	}
 
+	/** Whether LiveKit reports the egress starting or streaming, so it can still be stopped. */
+	static isEgressRunning(egress: EgressInfo | undefined): boolean {
+		return !!egress && BroadcastHelper.isRunning(EgressHelper.toStatus(egress.status, MeetBroadcastStatus));
+	}
+
 	/**
 	 * The destinations a start request names, with their real URLs: the room's, streamed to as
 	 * saved, and those given for this meeting with their full URL. A request that names none
@@ -91,8 +96,8 @@ export class BroadcastHelper {
 
 	/**
 	 * Whether the meeting can take these broadcasts on top of the ones in progress: at most
-	 * {@link MEET_BROADCAST_MAX_DESTINATIONS} run at once, and two streams to one ingest would be
-	 * closed by the platform, so a URL is streamed to once.
+	 * {@link MEET_BROADCAST_MAX_DESTINATIONS} run at once, and each stream key once, since the media
+	 * server tells the streams of a meeting apart by their stream key alone when they connect.
 	 */
 	static validateNewBroadcasts(inProgress: BroadcastRecord[], targets: BroadcastTarget[]): void {
 		if (inProgress.length + targets.length > MEET_BROADCAST_MAX_DESTINATIONS) {
@@ -100,11 +105,12 @@ export class BroadcastHelper {
 		}
 
 		const urls = targets.map(({ url }) => url);
-		const duplicate = urls.find((url, index) => urls.indexOf(url) !== index);
+		const duplicate = BroadcastHelper.findRepeatedStreamKey(urls);
 
 		if (duplicate) throw errorBroadcastDuplicateDestination(redactStreamUrl(duplicate));
 
-		const inUse = urls.find((url) => inProgress.some((record) => record.url === url));
+		const streamedKeys = new Set(inProgress.map(({ url }) => BroadcastHelper.streamKeyOf(url)));
+		const inUse = urls.find((url) => streamedKeys.has(BroadcastHelper.streamKeyOf(url)));
 
 		if (inUse) throw errorBroadcastDestinationInUse(redactStreamUrl(inUse));
 	}
@@ -135,8 +141,7 @@ export class BroadcastHelper {
 
 		if (destinations.length > MEET_BROADCAST_MAX_DESTINATIONS) throw errorBroadcastDestinationLimit();
 
-		const realUrls = Object.values(urls);
-		const duplicate = realUrls.find((url, index) => realUrls.indexOf(url) !== index);
+		const duplicate = BroadcastHelper.findRepeatedStreamKey(Object.values(urls));
 
 		if (duplicate) throw errorBroadcastDuplicateDestination(redactStreamUrl(duplicate));
 
@@ -221,6 +226,17 @@ export class BroadcastHelper {
 		void egressId;
 		void streamIndex;
 		return { ...info, url: redactStreamUrl(info.url) };
+	}
+
+	/** The first URL whose stream key an earlier one already has. */
+	private static findRepeatedStreamKey(urls: string[]): string | undefined {
+		const keys = urls.map((url) => BroadcastHelper.streamKeyOf(url));
+		return urls.find((_, index) => keys.indexOf(keys[index]) !== index);
+	}
+
+	/** The stream key of a destination URL as the media server reads it: what follows the last `/`. */
+	private static streamKeyOf(url: string): string {
+		return url.slice(url.lastIndexOf('/') + 1).replace(/ live=1$/, '');
 	}
 
 	/**

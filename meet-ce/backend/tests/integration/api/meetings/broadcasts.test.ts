@@ -7,8 +7,9 @@ import type {
 } from '@openvidu-meet/typings';
 import { MEET_BROADCAST_REDACTED_STREAM_KEY, MeetBroadcastStatus, MeetRecordingLayout } from '@openvidu-meet/typings';
 import { Express } from 'express';
-import { EgressClient, ServerError } from 'livekit-server-sdk';
+import { EgressClient, ServerError, StreamOutput, StreamProtocol } from 'livekit-server-sdk';
 import request from 'supertest';
+import { container } from '../../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import {
@@ -21,6 +22,7 @@ import {
 	errorEgressNotAvailable,
 	errorInsufficientPermissions
 } from '../../../../src/models/error.model.js';
+import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { expectMeetError } from '../../../helpers/assertion-helpers.js';
 import { createRtmpSink, deleteRtmpSinks } from '../../../helpers/broadcast-sink.helper.js';
 import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
@@ -165,7 +167,7 @@ describe('Broadcasts API Tests', () => {
 			expectMeetError(await startBroadcasts(roomId), errorBroadcastAlreadyStarted(roomId));
 		});
 
-		it('should report the meeting as broadcast and refuse a second broadcast to the same destination', async () => {
+		it('should report the meeting as broadcast and refuse a second broadcast to the same destination or stream key', async () => {
 			const roomData = await setupMeetingRoom(broadcastConfig(['a']));
 			const { roomId } = roomData.room;
 			const [idA] = await roomDestinationIds(roomData);
@@ -184,6 +186,11 @@ describe('Broadcasts API Tests', () => {
 			expectMeetError(
 				(await startOne(roomId, destination('a'))).response,
 				errorBroadcastDestinationInUse(REDACTED_URL)
+			);
+			expectMeetError(
+				(await startOne(roomId, { name: 'Mirror', url: 'rtmp://mirror-sink.invalid/app/a-stream-key' }))
+					.response,
+				errorBroadcastDestinationInUse('rtmp://mirror-sink.invalid/app/********')
 			);
 		});
 
@@ -208,7 +215,13 @@ describe('Broadcasts API Tests', () => {
 				{ destinations: [{ destinationId: idA, name: 'Renamed' }] },
 				{ destinations: [] },
 				{ destinations: [{ name: 'Redacted', url: REDACTED_URL }] },
-				{ destinations: [{ destinationId: idA }, { name: 'Same as a', url: destination('a').url }] }
+				{ destinations: [{ destinationId: idA }, { name: 'Same as a', url: destination('a').url }] },
+				{
+					destinations: [
+						{ destinationId: idA },
+						{ name: 'Key of a elsewhere', url: 'rtmp://mirror-sink.invalid/app/a-stream-key' }
+					]
+				}
 			];
 
 			for (const options of refused) {
@@ -378,6 +391,13 @@ describe('Broadcasts API Tests', () => {
 				(broadcast) => broadcast?.status === MeetBroadcastStatus.ACTIVE,
 				'streamed to the destination added for this meeting'
 			);
+			// The retried destination is still unreachable, so it fails on its own again.
+			await waitForBroadcast(
+				roomId,
+				retried.broadcastId,
+				(broadcast) => broadcast === undefined,
+				'failed again and left the list'
+			);
 
 			const stoppedA = await stopOne(roomId, broadcastA.broadcastId, roomData.moderatorToken);
 			expect(stoppedA.status).toBe(200);
@@ -396,13 +416,29 @@ describe('Broadcasts API Tests', () => {
 
 			const stoppedRest = await stopBroadcasts(roomId);
 			expect(stoppedRest.status).toBe(200);
-			expect(stoppedRest.body.broadcasts.map(({ broadcastId }: MeetBroadcastInfo) => broadcastId).sort()).toEqual(
-				[retried.broadcastId, added.broadcastId].sort()
-			);
+			expect(stoppedRest.body.broadcasts.map(({ broadcastId }: MeetBroadcastInfo) => broadcastId)).toEqual([
+				added.broadcastId
+			]);
 
 			await waitForBroadcasts(roomId, (broadcasts) => broadcasts.length === 0, 'all ended');
 			await waitForNoActiveEgress(roomId, 30_000);
 			expect((await stopBroadcasts(roomId)).body).toEqual({ broadcasts: [] });
+		});
+
+		it('should stop an egress that streams the meeting without a broadcast of it', async () => {
+			const roomData = await setupMeetingRoom(broadcastConfig(['a']));
+			const { roomId } = roomData.room;
+
+			await container
+				.get(LiveKitService)
+				.startRoomComposite(
+					roomId,
+					new StreamOutput({ protocol: StreamProtocol.RTMP, urls: [await createRtmpSink('lost')] }),
+					{ layout: MeetRecordingLayout.GRID }
+				);
+
+			await waitForNoActiveEgress(roomId, 30_000);
+			expect((await getBroadcasts(roomId)).body.broadcasts).toEqual([]);
 		});
 
 		it('should abort a broadcast stopped before any media reached its destination', async () => {

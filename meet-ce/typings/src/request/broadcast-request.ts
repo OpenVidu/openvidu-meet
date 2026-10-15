@@ -5,9 +5,9 @@
 export interface MeetBroadcastStartOptions {
 	/**
 	 * The destinations to stream to. Omitted, every destination saved in the room's config that the
-	 * meeting is not streaming to yet. A meeting streams to each destination once, and to at most
-	 * {@link MEET_BROADCAST_MAX_DESTINATIONS} at a time. See {@link MeetBroadcastStartDestination}
-	 * for details.
+	 * meeting is not streaming to yet. A meeting streams to each stream key once, whatever the server
+	 * it is on, and to at most {@link MEET_BROADCAST_MAX_DESTINATIONS} destinations at a time. See
+	 * {@link MeetBroadcastStartDestination} for details.
 	 */
 	destinations?: MeetBroadcastStartDestination[];
 }

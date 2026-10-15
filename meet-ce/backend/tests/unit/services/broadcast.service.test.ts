@@ -328,7 +328,7 @@ describe('BroadcastService', () => {
 			await expectStatus(service.startBroadcasts(ROOM_ID, {}), 409);
 		});
 
-		it('withdraws the streams it added when a later destination fails, so none of them starts', async () => {
+		it('withdraws the streams it added when a later destination fails, that one too in case the egress took it', async () => {
 			livekit.refusedUrl = 'rtmp://mtx/live/xxxKEYxxx';
 
 			await expect(
@@ -337,7 +337,10 @@ describe('BroadcastService', () => {
 				})
 			).rejects.toThrow('sink failed');
 
-			expect(livekit.updateCalls.at(-1)).toEqual({ egressId: 'EG_1', add: [], remove: [REAL_URLS.a] });
+			expect(livekit.updateCalls.slice(-2)).toEqual([
+				{ egressId: 'EG_1', add: [], remove: [REAL_URLS.a] },
+				{ egressId: 'EG_1', add: [], remove: ['rtmp://mtx/live/xxxKEYxxx'] }
+			]);
 			expect(saved()).toEqual([]);
 			expect(webhooks.events).toEqual([]);
 		});
@@ -530,13 +533,34 @@ describe('BroadcastService', () => {
 	});
 
 	describe('handleEgressEvent', () => {
-		it('ignores an egress that streams no broadcast of the room', async () => {
+		it('stops an egress LiveKit still runs that streams no broadcast, which a request lost track of', async () => {
 			await state.save(ROOM_ID, [liveRecord()]);
+			const lost = egressWith({ egressId: 'EG_lost', status: EgressStatus.EGRESS_STARTING });
+			livekit.egressList = [lost];
 
-			await service.handleEgressEvent(egressWith({ egressId: 'EG_other' }));
+			await service.handleEgressEvent(lost);
 
+			expect(livekit.stopCalls).toEqual(['EG_lost']);
+			expect(saved()).toEqual([liveRecord()]);
 			expect(frontend.signals).toEqual([]);
 			expect(webhooks.events).toEqual([]);
+		});
+
+		it('leaves alone an egress that streams no broadcast once it is ending or over', async () => {
+			for (const status of [EgressStatus.EGRESS_ENDING, EgressStatus.EGRESS_COMPLETE]) {
+				await service.handleEgressEvent(egressWith({ egressId: 'EG_old', status }));
+			}
+
+			expect(livekit.stopCalls).toEqual([]);
+			expect(webhooks.events).toEqual([]);
+		});
+
+		it('leaves alone an egress whose late event says it runs while LiveKit already reports it ending', async () => {
+			livekit.egressList = [egressWith({ egressId: 'EG_old', status: EgressStatus.EGRESS_ENDING })];
+
+			await service.handleEgressEvent(egressWith({ egressId: 'EG_old', status: EgressStatus.EGRESS_ACTIVE }));
+
+			expect(livekit.stopCalls).toEqual([]);
 		});
 
 		it('moves each broadcast along with its own stream, telling only about the ones that changed', async () => {

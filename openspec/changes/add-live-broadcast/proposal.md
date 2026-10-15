@@ -12,7 +12,9 @@ Twitch or any RTMP server, without a separate streaming tool.
   response, webhook and embedded event carries the URL with its key replaced by `********`, and a
   redacted URL sent back keeps the saved key.
 - A live meeting streams to each destination as its own broadcast, with its own status, up to five at
-  once: to the room's destinations, all or a subset, and to destinations given for that meeting only.
+  once and each with its own stream key: to the room's destinations, all or a subset, and to
+  destinations given for that meeting only. A stream the media server runs without a broadcast that
+  reports it, because the request that asked for it failed, is stopped.
   New REST operations under `/api/v1/meetings/{roomId}/broadcasts` (`broadcastStart`, `broadcastList`,
   `broadcastGet`, `broadcastStop`), webhooks `broadcastStarted`, `broadcastUpdated` and
   `broadcastEnded`, embedded commands `broadcastStart` and `broadcastStop`, embedded events of the

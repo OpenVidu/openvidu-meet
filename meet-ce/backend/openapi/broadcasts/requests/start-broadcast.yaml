@@ -15,7 +15,8 @@ content:
                         The destinations to stream to. Each is either the `destinationId` of one of the room's
                         saved destinations, sent alone, or the `name` and `url` of a destination for this
                         meeting only, which requires the `broadcastAddDestinations` permission. A meeting
-                        streams to each destination once, and to at most 5 at a time.
+                        streams to each stream key once, whatever the server it is on, and to at most 5
+                        destinations at a time.
                     items:
                         type: object
                         properties:

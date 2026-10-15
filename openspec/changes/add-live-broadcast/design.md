@@ -13,6 +13,9 @@ egress. Three facts of LiveKit shape the design (probed against the local deploy
 - LiveKit never reports an egress whose egress service died: it stays `EGRESS_ACTIVE` forever. The
   only signal is the egress participant leaving the room (`participant_left` of kind `EGRESS`, whose
   identity is the egress id) about 20 seconds after the death.
+- The egress marks a stream as receiving media when the RTMP client creates a stream with its stream
+  key, and gives the time to the first stream of that key still waiting, so two streams with the same
+  key can swap. It also holds back every update while any stream is still connecting.
 
 See proposal.md for the motivation and the specs for the behavior.
 
@@ -76,10 +79,18 @@ one, a full URL replaces it, anything else is `422`. A destination given for one
 only in the Redis record, so only the browser that added it knows its full URL and can start it again.
 The creation log redacts the room options.
 
+### One stream key per meeting
+
+Since the egress tells the streams of a meeting apart by their stream key when they connect, a room's
+destinations and the broadcasts in progress of a meeting never share one, whatever their hosts: the
+duplicate checks compare stream keys (what follows the last `/`, without ` live=1`), not whole URLs.
+Two streams with one key would let a destination take the other's start, and one left waiting would
+hold back every later update of the meeting's broadcasts.
+
 ### Start all or nothing, stop at once
 
 A start request adds its URLs one by one and, when one fails, removes the ones it added before
-answering the error. A stop removes the broadcast's URL with `UpdateStream`, which ends a stream that
+answering the error, the failing one included: a call that times out may still have been taken. A stop removes the broadcast's URL with `UpdateStream`, which ends a stream that
 is not the egress's last one synchronously; the last one makes the egress end itself. The answer of
 LiveKit settles the final state, so `broadcastStop` answers `200` with it, unlike `stopRecording`'s
 `202`.
@@ -99,9 +110,13 @@ When an egress participant leaves while its broadcasts or its recording are stil
 server probes it with an empty `UpdateStream`: only a dead egress service answers `503` ("no response
 from servers"). Then the broadcasts end `failed`, and the recording too, with `The egress service
 stopped responding`. A start request also settles saved broadcasts whose egress LiveKit no longer
-reports in progress, so a lost `egress_ended` cannot block the room. `room_finished` stops the egress
-and ends what is left, since an egress still starting would otherwise recreate the room. The
-recording service now ignores LiveKit's in-progress egresses whose recording Meet already ended.
+reports in progress, so a lost `egress_ended` cannot block the room. The reverse case, an egress no
+broadcast references while LiveKit still runs it, is one a request lost track of (LiveKit started it
+after the request timed out, or the replica stopped before saving): its first event stops it. The
+event alone is not enough, since events of an egress Meet already stopped keep arriving late, so
+LiveKit's current status is read first. `room_finished` stops the egress and ends what is left,
+since an egress still starting would otherwise recreate the room. The recording service now ignores
+LiveKit's in-progress egresses whose recording Meet already ended.
 
 ### Permissions enforced at the API
 
@@ -126,6 +141,14 @@ beyond the SDK's 10 s timeout. Both the `503` and the timeout map to `503` `No e
 available` for starting a broadcast or a recording and for `UpdateStream`.
 
 ## Risks / Trade-offs
+
+- [The stream position is egress behavior, not a LiveKit contract] → verified in the egress source of
+  the OpenVidu fork and of upstream `main` (2026-10-15) and exercised by the broadcast integration
+  tests on every egress upgrade; a fingerprint in the redacted URL, carried by the OpenVidu egress
+  fork, or a stream identifier upstream (livekit/egress#1423) would make it explicit.
+- [Updates of every destination wait while any destination of the meeting is still connecting] →
+  egress behavior; a destination that never connects delays the others' `broadcastUpdated` until it
+  fails.
 
 - [A broadcast running more than 24 hours without any change loses its Redis record] → the TTL is
   renewed on every change and a meeting with `maxDurationMinutes` ends within 24 hours; an unlimited
