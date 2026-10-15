@@ -13,7 +13,10 @@ import type { EgressInfo, RoomCompositeOptions, StreamOutput } from 'livekit-ser
 import '../../../src/config/dependency-injector.config.js';
 import type { BroadcastRecord } from '../../../src/models/broadcast.model.js';
 import { OpenViduMeetError } from '../../../src/models/error.model.js';
+import { RedisKeyName } from '../../../src/models/redis.model.js';
+import { BroadcastStateService } from '../../../src/services/broadcast-state.service.js';
 import { BroadcastService } from '../../../src/services/broadcast.service.js';
+import type { RedisService } from '../../../src/services/redis.service.js';
 
 const ROOM_ID = 'room-1';
 const REAL_URLS = { a: 'rtmp://mtx/live/aaaKEYaaa', b: 'rtmp://mtx/live/bbbKEYbbb' };
@@ -777,5 +780,25 @@ describe('BroadcastService', () => {
 			expect(await service.getBroadcasts(ROOM_ID)).toEqual([]);
 			expect(await service.isBroadcastActive(ROOM_ID)).toBe(false);
 		});
+	});
+});
+
+describe('BroadcastStateService', () => {
+	it('keeps the broadcasts of a room without expiry, for as long as the meeting streams, until none is left', async () => {
+		const calls: unknown[][] = [];
+		const redis = {
+			set: async (...args: unknown[]) => calls.push(['set', ...args]),
+			delete: async (key: string) => calls.push(['delete', key])
+		};
+		const stateService = new BroadcastStateService(redis as unknown as RedisService);
+		const key = `${RedisKeyName.BROADCAST}${ROOM_ID}`;
+
+		await stateService.save(ROOM_ID, [liveRecord()]);
+		await stateService.save(ROOM_ID, []);
+
+		expect(calls).toEqual([
+			['set', key, JSON.stringify([liveRecord()])],
+			['delete', key]
+		]);
 	});
 });

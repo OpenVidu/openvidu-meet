@@ -255,12 +255,17 @@ Once the broadcast to a destination has ended, a new start to that destination S
 - **THEN** the REST API answers `403`
 
 ### Requirement: Broadcasts end with their meeting
-When a meeting ends, the server SHALL end every broadcast still in progress in it, reporting each final status, `aborted` for one that never reached its destination, so no broadcast outlives its meeting.
+When a meeting ends, the server SHALL end every broadcast still in progress in it, reporting each final status, `aborted` for one that never reached its destination, so no broadcast outlives its meeting. A broadcast SHALL otherwise stay in progress until it is stopped or fails, however long its meeting lasts.
 
 #### Scenario: Meeting ended while live
 - **GIVEN** a meeting streaming to two destinations
 - **WHEN** the meeting ends
 - **THEN** both broadcasts end and a `broadcastEnded` webhook is sent for each
+
+#### Scenario: Meeting without a duration limit
+- **GIVEN** a meeting of a room without `maxDurationMinutes`, streaming to a destination for more than 24 hours
+- **WHEN** the destination drops and the media server reconnects it
+- **THEN** the broadcast is still in progress and `broadcastList` returns it
 
 ### Requirement: A lost broadcast never blocks the room
 When the egress service streaming a meeting stops responding, the server SHALL end its broadcasts `failed`, with the error `The egress service stopped responding`, and report them ended. Broadcasts whose end never reached the server SHALL be settled at the next start request. In both cases the room SHALL be able to go live again.

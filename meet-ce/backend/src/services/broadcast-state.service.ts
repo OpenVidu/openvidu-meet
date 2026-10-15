@@ -1,6 +1,4 @@
 import { inject, injectable } from 'inversify';
-import ms from 'ms';
-import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import type { BroadcastRecord } from '../models/broadcast.model.js';
 import { RedisKeyName } from '../models/redis.model.js';
 import { RedisService } from './redis.service.js';
@@ -12,18 +10,20 @@ import { RedisService } from './redis.service.js';
  */
 @injectable()
 export class BroadcastStateService {
-	private readonly TTL_MS = ms(INTERNAL_CONFIG.BROADCAST_STATE_TTL);
-
 	constructor(@inject(RedisService) protected redisService: RedisService) {}
 
-	/** Saves the broadcasts of the room; none left forgets the room. */
+	/**
+	 * Saves the broadcasts of the room; none left forgets the room. They never expire: a meeting
+	 * without a duration limit streams for as long as it lasts, and its end, seen by `room_finished`
+	 * or by the meeting reconciliation, forgets them.
+	 */
 	async save(roomId: string, records: BroadcastRecord[]): Promise<void> {
 		if (records.length === 0) {
 			await this.redisService.delete(this.getKey(roomId));
 			return;
 		}
 
-		await this.redisService.set(this.getKey(roomId), JSON.stringify(records), this.TTL_MS);
+		await this.redisService.set(this.getKey(roomId), JSON.stringify(records));
 	}
 
 	async find(roomId: string): Promise<BroadcastRecord[]> {

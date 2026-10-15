@@ -201,7 +201,7 @@ export class RedisService extends EventEmitter {
 	 * @returns A promise that resolves to 'OK' if the operation is successful.
 	 * @throws Error if there is an issue setting the value in Redis.
 	 */
-	async set(key: string, value: string | number | boolean | object, ttlMs: number): Promise<string> {
+	async set(key: string, value: string | number | boolean | object, ttlMs?: number): Promise<string> {
 		try {
 			const hasTTL = ttlMs !== undefined;
 

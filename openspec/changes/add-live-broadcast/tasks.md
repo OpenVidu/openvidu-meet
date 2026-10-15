@@ -19,6 +19,7 @@
 - [x] 3.4 Document the broadcast operations, the three webhooks, `broadcastActive` and the egress-unavailable `503` in the OpenAPI; verified by `redocly lint` and the API naming lint.
 - [x] 3.5 Compare destinations by stream key instead of whole URL, in the room config (`422`) and in start requests (`422` within the request, `409` against the broadcasts in progress), and say so in the OpenAPI and the typings TSDoc; verified by the unit test `broadcast.helper` and the integration tests `broadcasts` and `broadcast-room-config`.
 - [x] 3.6 Withdraw the destination whose add failed together with the ones added before it, and stop an egress LiveKit still runs that no broadcast references when its first event arrives; verified by the unit test `broadcast.service` and the integration test `broadcasts` (an egress started behind Meet's back is stopped).
+- [x] 3.7 Keep the broadcasts of a room in Redis without expiry, forgotten by the meeting's end (`room_finished` or the meeting reconciliation) instead of a 24 h TTL that could drop a broadcast still streaming; verified by the unit test `broadcast.service` (`BroadcastStateService`).
 
 ## 4. Recordings on the shared egress handling
 
