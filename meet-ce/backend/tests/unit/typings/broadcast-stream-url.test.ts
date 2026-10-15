@@ -39,11 +39,16 @@ describe('isValidStreamUrl', () => {
 		expect(isValidStreamUrl(REDACTED_YOUTUBE)).toBe(true);
 	});
 
-	it('refuses a URL without app or stream key, ending in a slash, or of another scheme', () => {
+	it('refuses a URL without app or stream key, ending in a slash, with whitespace, or of another scheme', () => {
 		expect(isValidStreamUrl('rtmp://media.example.com')).toBe(false);
 		expect(isValidStreamUrl('rtmp://media.example.com/key-without-app')).toBe(false);
 		expect(isValidStreamUrl('rtmp://media.example.com/live/key/')).toBe(false);
 		expect(isValidStreamUrl('rtmp://media.example.com/live/')).toBe(false);
+		expect(isValidStreamUrl('rtmp://media example.com/live/key')).toBe(false);
 		expect(isValidStreamUrl('http://media.example.com/live/key')).toBe(false);
+	});
+
+	it('answers at once for a long URL made of slashes, which a backtracking pattern takes minutes on', () => {
+		expect(isValidStreamUrl(`rtmp:///${'/'.repeat(1_000_000)} `)).toBe(false);
 	});
 });
