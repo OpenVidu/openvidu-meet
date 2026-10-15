@@ -152,8 +152,10 @@ available` for starting a broadcast or a recording and for `UpdateStream`.
   tests on every egress upgrade; a fingerprint in the redacted URL, carried by the OpenVidu egress
   fork, or a stream identifier upstream (livekit/egress#1423) would make it explicit.
 - [Updates of every destination wait while any destination of the meeting is still connecting] →
-  egress behavior; a destination that never connects delays the others' `broadcastUpdated` until it
-  fails.
+  egress behavior, bounded: the egress gives up on a destination after its first connection error,
+  measured at about 6 s for a host that never answers and for one that accepts the connection but
+  never speaks RTMP (2026-10-15). Each update is a full snapshot, so a held-back change arrives late,
+  never lost.
 
 - [A room whose `room_finished` fails after the room left the database keeps its Redis value] →
   nothing reads it again, since room ids are never reused.
