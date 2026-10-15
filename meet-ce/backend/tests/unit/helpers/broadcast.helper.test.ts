@@ -157,6 +157,31 @@ describe('BroadcastHelper.validateNewBroadcasts', () => {
 			409
 		);
 	});
+
+	it('streams each stream key once, the only thing the media server tells streams apart by', () => {
+		expectStatus(
+			() =>
+				BroadcastHelper.validateNewBroadcasts(
+					[],
+					targets(['rtmp://one.example.com/live/same-key', 'rtmps://two.example.com/app/same-key live=1'])
+				),
+			422
+		);
+		expectStatus(
+			() =>
+				BroadcastHelper.validateNewBroadcasts(
+					inProgress(['rtmp://one.example.com/live/same-key']),
+					targets(['rtmp://two.example.com/live/same-key'])
+				),
+			409
+		);
+		expect(() =>
+			BroadcastHelper.validateNewBroadcasts(
+				inProgress(['rtmp://one.example.com/live/same-key']),
+				targets(['rtmp://one.example.com/live/other-key'])
+			)
+		).not.toThrow();
+	});
 });
 
 describe('BroadcastHelper.reconcileRoomDestinations', () => {
@@ -198,7 +223,7 @@ describe('BroadcastHelper.reconcileRoomDestinations', () => {
 		expect(urls).toEqual({ [destinations[0].id!]: 'rtmp://mtx/live/cccKEYccc' });
 	});
 
-	it('rejects an unknown id, a new destination without its full URL, a repeated id, a repeated URL and the cap', () => {
+	it('rejects an unknown id, a new destination without its full URL, a repeated id, a repeated stream key and the cap', () => {
 		expectStatus(
 			() =>
 				BroadcastHelper.reconcileRoomDestinations(savedUrls, [
@@ -226,6 +251,14 @@ describe('BroadcastHelper.reconcileRoomDestinations', () => {
 				BroadcastHelper.reconcileRoomDestinations(savedUrls, [
 					{ id: 'a', name: 'A', url: 'rtmp://mtx/live/********' },
 					{ name: 'Same URL as A', url: savedUrls.a }
+				]),
+			422
+		);
+		expectStatus(
+			() =>
+				BroadcastHelper.reconcileRoomDestinations(savedUrls, [
+					{ id: 'a', name: 'A', url: 'rtmp://mtx/live/********' },
+					{ name: 'Key of A elsewhere', url: 'rtmp://other.example.com/app/aaaKEYaaa' }
 				]),
 			422
 		);

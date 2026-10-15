@@ -4,8 +4,8 @@
         summary: Start live broadcasts
         description: |
             Starts streaming the live meeting of a room to one or more RTMP destinations, one broadcast per
-            destination, each with its own status and lifecycle. A meeting streams to each destination once,
-            and to at most 5 at a time.
+            destination, each with its own status and lifecycle. A meeting streams to each stream key once,
+            whatever the server it is on, and to at most 5 destinations at a time.
 
             Requires the `broadcastControl` permission, and a room whose config has `broadcast.enabled`.
 
@@ -21,8 +21,9 @@
             [`broadcastEnded`](#/webhooks/broadcastEndedWebhook) webhooks or by
             [fetching a broadcast](#/operations/broadcastGet).
 
-            Starting a broadcast to a destination the meeting already streams to is rejected with a `409`, as
-            is starting one while the meeting has no participants.
+            Starting a broadcast to a destination the meeting already streams to, or to one with the same
+            stream key on another server, is rejected with a `409`, as is starting one while the meeting has no
+            participants.
         tags:
             - OpenVidu Meet - Broadcasts
         security:

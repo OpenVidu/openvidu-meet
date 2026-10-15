@@ -17,6 +17,8 @@
 - [x] 3.2 Apply LiveKit egress events to each broadcast by its stream position, send the `meet_broadcast_updated` signal and the broadcast webhooks per change, replay the broadcasts in progress to a joining participant and add `broadcastActive` to `meetingGet`; verified by the unit tests `livekit-webhook.service` and `frontend-event.service` and the integration test `webhook`.
 - [x] 3.3 End the broadcasts with their meeting, fail them when their egress service is lost, settle stale ones on the next start and answer `503` when no egress service is available; verified by the unit tests `broadcast.service` and `egress.helper` and live against the local deployment by killing the egress container.
 - [x] 3.4 Document the broadcast operations, the three webhooks, `broadcastActive` and the egress-unavailable `503` in the OpenAPI; verified by `redocly lint` and the API naming lint.
+- [x] 3.5 Compare destinations by stream key instead of whole URL, in the room config (`422`) and in start requests (`422` within the request, `409` against the broadcasts in progress), and say so in the OpenAPI and the typings TSDoc; verified by the unit test `broadcast.helper` and the integration tests `broadcasts` and `broadcast-room-config`.
+- [x] 3.6 Withdraw the destination whose add failed together with the ones added before it, and stop an egress LiveKit still runs that no broadcast references when its first event arrives; verified by the unit test `broadcast.service` and the integration test `broadcasts` (an egress started behind Meet's back is stopped).
 
 ## 4. Recordings on the shared egress handling
 
@@ -37,7 +39,8 @@
 ## 8. Verification on the rebased branch
 
 - [x] 8.1 Run the typings build, the full `./meet.sh build`, the backend, frontend and webcomponent unit suites and the three lints on the branch rebased onto `main`; all pass.
-- [ ] 8.2 Run the backend integration suites `broadcasts`, `broadcast-room-config`, `room-migrations`, `start-recording` and `webhook`, and the SPA and webcomponent broadcast e2e suites, against the local deployment on the rebased branch.
+- [x] 8.2 Run the backend integration suites `broadcasts` and `broadcast-room-config` and the SPA e2e suite `broadcasts` against the local deployment on the rebased branch; 31 of 31 and 5 of 5 pass, after making the lifecycle test wait for the retried unreachable destination to fail on its own.
+- [ ] 8.3 Run the backend integration suites `room-migrations`, `start-recording` and `webhook`, the SPA e2e suite `room-wizard` and the webcomponent broadcast e2e suites against the local deployment on the rebased branch.
 
 ## 9. Release surfaces
 

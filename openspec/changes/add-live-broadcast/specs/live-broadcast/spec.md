@@ -19,7 +19,7 @@ The server SHALL start a broadcast in a room only while the room's `broadcast.en
 - **THEN** the room's `broadcast` is disabled, with no destinations, layout `grid` and encoding `H264_720P_30`
 
 ### Requirement: Room destinations
-A room's `broadcast.destinations` SHALL hold at most five destinations, each a `name` of 1 to 50 characters and an RTMP or RTMPS `url` of the form `rtmp(s)://{host}(/{path})/{app}/{stream_key}`, optionally followed by ` live=1`. The server SHALL give each saved destination an `id`, and SHALL answer `422` to a sixth destination, a malformed name or URL, or two destinations with the same URL, storing nothing.
+A room's `broadcast.destinations` SHALL hold at most five destinations, each a `name` of 1 to 50 characters and an RTMP or RTMPS `url` of the form `rtmp(s)://{host}(/{path})/{app}/{stream_key}`, optionally followed by ` live=1`. The server SHALL give each saved destination an `id`, and SHALL answer `422` to a sixth destination or a malformed name or URL, storing nothing.
 
 #### Scenario: Destination saved
 - **WHEN** `createRoom` is called with `config.broadcast.destinations` holding `{ "name": "YouTube", "url": "rtmp://a.rtmp.youtube.com/live2/abcd-1234" }`
@@ -129,21 +129,33 @@ Each broadcast SHALL stream the meeting with the room's `broadcast.layout` (`gri
 - **THEN** the REST API answers `403`
 
 ### Requirement: Destinations of a start request
-Each entry of `destinations` SHALL be either the `destinationId` of a room destination alone, streamed to as saved, or a `name` and a full `url` for that meeting only. The server SHALL answer `422` to an entry mixing both forms, an unknown `destinationId`, a redacted URL, the same destination twice or more than five broadcasts in progress at once, and `409` to a destination the meeting already streams to.
+Each entry of `destinations` SHALL be either the `destinationId` of a room destination alone, streamed to as saved, or a `name` and a full `url` for that meeting only. The server SHALL answer `422` to an entry mixing both forms, an unknown `destinationId`, a redacted URL or more than five broadcasts in progress at once.
 
 #### Scenario: Room destination with a changed URL
 - **WHEN** `broadcastStart` is called with an entry carrying a `destinationId` and a `url`
 - **THEN** the REST API answers `422`: a room destination is never changed for a meeting
+
+#### Scenario: Sixth broadcast
+- **GIVEN** a meeting with five broadcasts in progress
+- **WHEN** `broadcastStart` is called for one more destination
+- **THEN** the REST API answers `422`
+
+### Requirement: One stream key per meeting
+Two destinations of a room, and two broadcasts in progress in a meeting, SHALL never share a stream key (what follows the last `/` of the URL), whatever their servers, since the media server tells the streams of a meeting apart by it alone. The server SHALL answer `422` to a config or start request holding two such destinations, and `409` to a start request for a destination whose stream key the meeting already streams to.
 
 #### Scenario: Destination already streamed
 - **GIVEN** a meeting streaming to room destination A
 - **WHEN** `broadcastStart` is called with `destinationId` A
 - **THEN** the REST API answers `409`
 
-#### Scenario: Sixth broadcast
-- **GIVEN** a meeting with five broadcasts in progress
-- **WHEN** `broadcastStart` is called for one more destination
-- **THEN** the REST API answers `422`
+#### Scenario: Same stream key on another server
+- **GIVEN** a meeting streaming to `rtmp://a.example.com/live/key-1`
+- **WHEN** `broadcastStart` is called for `rtmp://b.example.com/app/key-1`
+- **THEN** the REST API answers `409`
+
+#### Scenario: Room config with a mirrored key
+- **WHEN** `updateRoomConfig` sends two destinations `rtmp://a.example.com/live/key-1` and `rtmp://b.example.com/app/key-1`
+- **THEN** the server answers `422` and the stored destinations are unchanged
 
 ### Requirement: Destinations for one meeting need their own permission
 A start request that holds any entry with a `name` and a `url` SHALL also require `broadcastAddDestinations`, checked before the body is judged against the meeting: without it the server SHALL answer `403` and start nothing. Room destinations SHALL need only `broadcastControl`.
@@ -165,6 +177,19 @@ When the media server refuses one of the destinations of a start request, the se
 - **GIVEN** a meeting with no broadcast
 - **WHEN** `broadcastStart` asks for two destinations and the media server refuses the second
 - **THEN** the request fails and no broadcast is in progress in the meeting
+
+### Requirement: Nothing streams without its broadcast
+The server SHALL stop every stream of a meeting that no broadcast reports, whenever it learns of one: a destination the media server took although the request that asked for it failed, and an egress the media server started after the request gave up or its replica stopped before saving the broadcast. A destination SHALL never receive the meeting without a broadcast that reports it and can stop it.
+
+#### Scenario: Start answered too late
+- **GIVEN** a start request whose call to the media server timed out, so it answered an error
+- **WHEN** the media server starts streaming to that destination afterwards
+- **THEN** the server stops that stream as soon as the media server reports it, and no broadcast is listed
+
+#### Scenario: Destination taken by a failed request
+- **GIVEN** a meeting streaming to destination A
+- **WHEN** a start request for destination B fails after the media server took B
+- **THEN** the server withdraws B and the meeting streams to A only
 
 ### Requirement: Broadcast statuses
 Each broadcast SHALL move only forward through `starting`, `active` and `ending` to one final status: `complete`, `failed`, `aborted` or `limit_reached`. It SHALL stay `starting` until its destination receives media, become `active` with its `startDate` at that moment, and end `failed`, with `error` saying why, when the destination rejects or loses the stream. A broadcast ending SHALL leave the others going.

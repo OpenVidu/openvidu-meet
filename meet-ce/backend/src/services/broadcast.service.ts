@@ -1,5 +1,10 @@
 import type { MeetBroadcastInfo, MeetBroadcastStartOptions, MeetBroadcastStopOptions } from '@openvidu-meet/typings';
-import { MeetBroadcastStatus, MeetRecordingEncodingPreset, MeetRecordingLayout } from '@openvidu-meet/typings';
+import {
+	MeetBroadcastStatus,
+	MeetRecordingEncodingPreset,
+	MeetRecordingLayout,
+	redactStreamUrl
+} from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { EgressInfo } from 'livekit-server-sdk';
 import { StreamOutput, StreamProtocol } from 'livekit-server-sdk';
@@ -29,6 +34,9 @@ import { RoomService } from './room.service.js';
 import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 
 const LOCK_RETRY_DELAY_MS = 250;
+
+/** A destination URL on the egress it was added to. */
+type StreamPlacement = Pick<BroadcastRecord, 'egressId' | 'url'>;
 
 /**
  * Live broadcasts of a meeting, one per destination. They run on the room-composite egress the
@@ -161,20 +169,31 @@ export class BroadcastService {
 	/**
 	 * Applies an `egress_started`, `egress_updated` or `egress_ended` webhook of an egress that
 	 * streams the room to its broadcasts. What changes nothing is dropped: LiveKit reports every
-	 * change a request makes again, after the request already saved and notified it.
+	 * change a request makes again, after the request already saved and notified it. An egress that
+	 * streams no broadcast and LiveKit still runs is one a request lost track of, because LiveKit
+	 * started it after the request gave up or the replica stopped before saving it: it is stopped,
+	 * so nothing streams the meeting without a broadcast that reports it. LiveKit is asked first
+	 * because events of an egress whose broadcasts already ended keep arriving late.
 	 */
 	async handleEgressEvent(egress: EgressInfo): Promise<void> {
 		await this.withWebhookLock(egress.roomName, `an event of egress '${egress.egressId}'`, async () => {
 			const records = await this.broadcastState.find(egress.roomName);
 
-			if (!records.some((record) => record.egressId === egress.egressId)) {
-				this.logger.debug(
-					`Ignoring the event of egress '${egress.egressId}': it streams no broadcast of room '${egress.roomName}'`
-				);
+			if (records.some((record) => record.egressId === egress.egressId)) {
+				await this.saveAndNotify(egress.roomName, records, this.withEgress(records, egress));
 				return;
 			}
 
-			await this.saveAndNotify(egress.roomName, records, this.withEgress(records, egress));
+			if (!BroadcastHelper.isEgressRunning(egress)) return;
+
+			const [latest] = await this.livekitService.getEgress(egress.roomName, egress.egressId);
+
+			if (!BroadcastHelper.isEgressRunning(latest)) return;
+
+			this.logger.warn(
+				`Stopping egress '${egress.egressId}': it streams no broadcast of room '${egress.roomName}'`
+			);
+			await this.endEgress(egress.roomName, egress.egressId);
 		});
 	}
 
@@ -238,7 +257,8 @@ export class BroadcastService {
 	/**
 	 * Adds each target to the egress already streaming the meeting, or starts the egress with the
 	 * first one, one URL per call so each broadcast knows the position of its stream. A target that
-	 * fails withdraws the streams added before it, so the request starts every broadcast or none.
+	 * fails withdraws the streams added before it, and its own in case the egress took it before the
+	 * call failed, so the request starts every broadcast or none.
 	 */
 	protected async addStreams(
 		room: { roomId: string; roomName: string },
@@ -248,9 +268,11 @@ export class BroadcastService {
 	): Promise<{ started: BroadcastRecord[]; egress: EgressInfo }> {
 		const started: BroadcastRecord[] = [];
 		let egress: EgressInfo | undefined;
+		let adding: StreamPlacement | undefined;
 
 		try {
 			for (const target of targets) {
+				adding = host && { egressId: host.egressId, url: target.url };
 				const joined = host && (await this.livekitService.updateStream(host.egressId, [target.url], []));
 				const settings = joined && host ? host : roomSettings;
 				egress = joined ?? (await this.startEgress(room.roomId, target.url, settings));
@@ -258,20 +280,23 @@ export class BroadcastService {
 				started.push(host);
 			}
 		} catch (error) {
-			await this.withdraw(started);
+			await this.withdraw(adding ? [...started, adding] : started);
 			throw error;
 		}
 
 		return { started, egress: egress! };
 	}
 
-	/** Takes back the streams of broadcasts that will not be kept, without failing the caller. */
-	protected async withdraw(records: BroadcastRecord[]): Promise<void> {
-		for (const { broadcastId, egressId, url } of records) {
+	/** Takes back streams that no broadcast will keep, without failing the caller. */
+	protected async withdraw(streams: StreamPlacement[]): Promise<void> {
+		for (const { egressId, url } of streams) {
 			try {
 				await this.livekitService.updateStream(egressId, [], [url]);
 			} catch (error) {
-				this.logger.warn(`Could not withdraw the stream of broadcast '${broadcastId}'`, error);
+				this.logger.warn(
+					`Could not withdraw the stream to '${redactStreamUrl(url)}' from egress '${egressId}'`,
+					error
+				);
 			}
 		}
 	}

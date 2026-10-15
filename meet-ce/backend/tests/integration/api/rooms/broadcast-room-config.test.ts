@@ -11,6 +11,7 @@ import { container } from '../../../../src/config/dependency-injector.config.js'
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import {
+	errorBroadcastDuplicateDestination,
 	errorBroadcastEnabledWithoutDestinations,
 	errorBroadcastRedactedDestinationUrl,
 	errorBroadcastUnknownDestination
@@ -140,6 +141,23 @@ describe('Broadcast Room Configuration Tests', () => {
 
 			expect(room.config.broadcast.destinations).toEqual([]);
 			expect(await storedUrls(room.roomId)).toEqual({});
+		});
+
+		it('should reject two destinations with the same stream key, even on different servers', async () => {
+			const response = await createRoomRequest({
+				roomName: 'x',
+				config: {
+					broadcast: {
+						enabled: true,
+						destinations: [
+							destination('a'),
+							{ name: 'Mirror', url: 'rtmp://mirror.example.com/app/a-stream-key' }
+						]
+					}
+				}
+			});
+
+			expectMeetError(response, errorBroadcastDuplicateDestination('rtmp://mirror.example.com/app/********'));
 		});
 
 		it('should reject enabling broadcast without destinations, more than five destinations and a non-RTMP URL', async () => {

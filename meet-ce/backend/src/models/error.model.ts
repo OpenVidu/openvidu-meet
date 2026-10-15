@@ -297,7 +297,7 @@ export const errorBroadcastRedactedDestinationUrl = (): OpenViduMeetError => {
 export const errorBroadcastDuplicateDestination = (redactedUrl: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Broadcast Error',
-		`Duplicate destination: '${redactedUrl}' is already used by another destination`,
+		`Duplicate destination: '${redactedUrl}' has the stream key of another destination`,
 		422
 	);
 };
@@ -311,7 +311,11 @@ export const errorBroadcastDestinationLimit = (): OpenViduMeetError => {
 };
 
 export const errorBroadcastDestinationInUse = (redactedUrl: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Broadcast Error', `Destination '${redactedUrl}' is already being broadcast`, 409);
+	return new OpenViduMeetError(
+		'Broadcast Error',
+		`A destination with the stream key of '${redactedUrl}' is already being broadcast`,
+		409
+	);
 };
 
 export const errorBroadcastEnabledWithoutDestinations = (): OpenViduMeetError => {
