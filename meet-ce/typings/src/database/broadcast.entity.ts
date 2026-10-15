@@ -8,11 +8,11 @@ import type {
  * A live broadcast of a meeting: its composited audio and video streamed to one RTMP(S)
  * destination. A meeting streams to several destinations by running one broadcast per destination,
  * each with its own lifecycle, up to {@link MEET_BROADCAST_MAX_DESTINATIONS} at a time. A broadcast
- * is ephemeral: it exists while the meeting is streamed to its destination and leaves no stored
- * artifact, so it is served as a sub-resource of the meeting (`GET /meetings/{roomId}/broadcasts`).
+ * is ephemeral: it is served (`GET /broadcasts/{broadcastId}`) while the meeting is streamed to its
+ * destination, and leaves no stored artifact.
  */
 export interface MeetBroadcastInfo {
-	/** Unique identifier for the broadcast */
+	/** Unique identifier for the broadcast, which names the room it belongs to, as a recording's does */
 	broadcastId: string;
 	/** Identifier of the room being broadcast */
 	roomId: string;

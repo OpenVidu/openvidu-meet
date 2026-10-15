@@ -1,7 +1,9 @@
 name: broadcastId
 in: path
 required: true
-description: The unique identifier of the broadcast.
+description: >
+    The unique identifier of the broadcast, of the form `{roomId}--{id}`: it names the room the broadcast
+    belongs to, as a recording's identifier does.
 schema:
     type: string
 example: 'room-123--kX9pL2mQ7a'

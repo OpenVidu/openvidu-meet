@@ -302,6 +302,7 @@ describe('BroadcastHelper.createRecord', () => {
 			duration: undefined,
 			error: undefined
 		});
+		expect(BroadcastHelper.roomIdOf(created.broadcastId)).toBe('room-1');
 	});
 });
 

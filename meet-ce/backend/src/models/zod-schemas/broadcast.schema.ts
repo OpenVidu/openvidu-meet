@@ -14,6 +14,7 @@ import {
 import { z } from 'zod';
 import { fieldListSchema } from './field-selection.schema.js';
 import { encodingValidator } from './recording-encoding.schema.js';
+import { nonEmptySanitizedRoomId } from './room-id.schema.js';
 
 const DESTINATION_URL_MAX_LENGTH = 2048;
 
@@ -61,20 +62,42 @@ const BroadcastStartDestinationSchema = z
 		message: 'A destination is either the destinationId of a room destination alone, or a name and a url'
 	});
 
-export const StartBroadcastReqSchema: z.ZodType<MeetBroadcastStartOptions> = z.object({
+/** A broadcast id, which names the room it belongs to: `{roomId}--{id}`. */
+const broadcastIdSchema = z
+	.string()
+	.trim()
+	.refine((broadcastId) => {
+		const [roomId, id, ...rest] = broadcastId.split('--');
+		return Boolean(roomId && id) && rest.length === 0;
+	}, 'Broadcast id must have the form {roomId}--{id}');
+
+const fieldsSchema = fieldListSchema(MEET_BROADCAST_FIELDS);
+
+export const StartBroadcastReqSchema: z.ZodType<MeetBroadcastStartOptions & { roomId: string }> = z.object({
+	roomId: nonEmptySanitizedRoomId('roomId'),
 	destinations: destinationListSchema(BroadcastStartDestinationSchema)
 		.min(1, 'At least one destination is required')
 		.optional()
 });
 
-export const StopBroadcastReqSchema: z.ZodType<MeetBroadcastStopOptions> = z.object({
+export const BulkStopBroadcastsReqSchema: z.ZodType<MeetBroadcastStopOptions & { roomId: string }> = z.object({
+	roomId: nonEmptySanitizedRoomId('roomId'),
 	broadcastIds: z
-		.array(z.string().trim().min(1, 'Broadcast id cannot be empty'))
+		.array(broadcastIdSchema)
 		.min(1, 'At least one broadcast id is required')
 		.max(MEET_BROADCAST_MAX_DESTINATIONS, `Cannot stop more than ${MEET_BROADCAST_MAX_DESTINATIONS} broadcasts`)
 		.optional()
 });
 
+export const BroadcastIdParamsSchema = z.object({
+	broadcastId: broadcastIdSchema
+});
+
 export const BroadcastFieldsQuerySchema = z.object({
-	fields: fieldListSchema(MEET_BROADCAST_FIELDS)
+	fields: fieldsSchema
+});
+
+export const GetBroadcastsQuerySchema = z.object({
+	roomId: nonEmptySanitizedRoomId('roomId'),
+	fields: fieldsSchema
 });

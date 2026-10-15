@@ -15,8 +15,9 @@ Twitch or any RTMP server, without a separate streaming tool.
   once and each with its own stream key: to the room's destinations, all or a subset, and to
   destinations given for that meeting only. A stream the media server runs without a broadcast that
   reports it, because the request that asked for it failed, is stopped.
-  New REST operations under `/api/v1/meetings/{roomId}/broadcasts` (`broadcastStart`, `broadcastList`,
-  `broadcastGet`, `broadcastStop`), webhooks `broadcastStarted`, `broadcastUpdated` and
+  New REST operations under `/api/v1/broadcasts`, addressed like recordings: `broadcastStart` (the
+  room in the body), `broadcastList` (the room in the query), `broadcastGet` and `broadcastStop` by a
+  `broadcastId` that names its room, and `broadcastBulkStop` for several or all of a room; webhooks `broadcastStarted`, `broadcastUpdated` and
   `broadcastEnded`, embedded commands `broadcastStart` and `broadcastStop`, embedded events of the
   same three names, and `broadcastActive` in the meeting info.
 - Two new permissions: `broadcastControl` (go live, stop and restart each destination) and
@@ -55,7 +56,7 @@ Twitch or any RTMP server, without a separate streaming tool.
 
 ## Impact
 
-- REST API, additive: four new operations, the `config.broadcast` object, two permission keys,
+- REST API, additive: five new operations under a new top-level `/broadcasts` group, the `config.broadcast` object, two permission keys,
   `broadcastActive` in `meetingGet`, and the `503` of `startRecording`. No existing field changes.
 - Webhooks, additive: three new event types accepted by the webhook event filters.
 - Embedded API, additive: two commands and three events on the webcomponent and the iframe, and the

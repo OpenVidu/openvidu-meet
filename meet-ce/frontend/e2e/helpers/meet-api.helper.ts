@@ -469,10 +469,10 @@ export const requestRecording = (roomId: string): Promise<Response> =>
 
 /** Starts a live broadcast of the room's meeting to each of its saved destinations, as a host application would. */
 export const startBroadcasts = async (roomId: string): Promise<MeetBroadcastInfo[]> => {
-	const response = await fetch(withApiPath(`/meetings/${encodeURIComponent(roomId)}/broadcasts`), {
+	const response = await fetch(withApiPath('/broadcasts'), {
 		method: 'POST',
 		headers: { 'x-api-key': API_KEY, 'Content-Type': 'application/json' },
-		body: JSON.stringify({})
+		body: JSON.stringify({ roomId })
 	});
 
 	const responseText = await response.text();

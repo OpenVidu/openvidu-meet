@@ -34,13 +34,24 @@ See proposal.md for the motivation and the specs for the behavior.
 - Changing the layout or encoding for one meeting, or a room destination from inside a meeting.
 - Starting a broadcast automatically when a meeting starts.
 - Keeping a history of broadcasts: a broadcast leaves no artifact, so it is served only while it is in
-  progress, as a sub-resource of the meeting (`/meetings/{roomId}/broadcasts`), not as a top-level
-  `/broadcasts` resource like recordings.
+  progress.
 - Recording and broadcasting from the same egress.
 - Reporting a destination that is reconnecting: it stays `active` while the egress retries it.
   LiveKit reports the retries at most once a minute; exposing them is left for later.
 
 ## Decisions
+
+### A REST API shaped like the recordings one
+
+The broadcasts are a top-level `/broadcasts` group, as recordings are (decided 2026-10-15, over an
+earlier sub-resource of `/meetings/{roomId}`): start takes the `roomId` in its body and optional
+destinations, `GET /broadcasts/{broadcastId}` and `POST /broadcasts/{broadcastId}/stop` take the id
+alone, the list needs its `roomId` (broadcasts only exist within one live meeting), and
+`POST /broadcasts/stop` stops several or all of a room in one request for the meeting's Stop broadcast
+and the embedded `broadcastStop`. A `broadcastId` is `{roomId}--{id}`, so the room, its permissions and
+its Redis value follow from the id as a recording's room follows from its id. The `{id}` part is
+Meet's own, since LiveKit has no identifier per stream; should it get one, the id can carry it as a
+recording's carries its egress id. `MEET_API_REST_GROUPS` and the naming charter gain `broadcasts`.
 
 ### One egress per meeting, one stream per broadcast
 

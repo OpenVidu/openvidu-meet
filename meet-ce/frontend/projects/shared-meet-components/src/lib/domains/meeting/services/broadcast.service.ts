@@ -3,29 +3,26 @@ import { MeetBroadcastInfo, MeetBroadcastStartOptions, MeetBroadcastStopOptions 
 import { HttpService } from '../../../shared/services/http.service';
 
 /**
- * The live broadcast API of a meeting: `/meetings/{roomId}/broadcasts`, one broadcast per destination.
+ * The live broadcast API: `/broadcasts`, one broadcast per destination, each of a room's meeting.
  */
 @Service()
 export class BroadcastService {
 	private readonly httpService = inject(HttpService);
+	private readonly broadcastsPath = `${HttpService.API_PATH_PREFIX}/broadcasts`;
 
 	async startBroadcasts(roomId: string, options: MeetBroadcastStartOptions = {}): Promise<MeetBroadcastInfo[]> {
 		const { broadcasts } = await this.httpService.postRequest<{ broadcasts: MeetBroadcastInfo[] }>(
-			this.broadcastsPath(roomId),
-			options
+			this.broadcastsPath,
+			{ roomId, ...options }
 		);
 		return broadcasts;
 	}
 
 	async stopBroadcasts(roomId: string, options: MeetBroadcastStopOptions = {}): Promise<MeetBroadcastInfo[]> {
 		const { broadcasts } = await this.httpService.postRequest<{ broadcasts: MeetBroadcastInfo[] }>(
-			`${this.broadcastsPath(roomId)}/stop`,
-			options
+			`${this.broadcastsPath}/stop`,
+			{ roomId, ...options }
 		);
 		return broadcasts;
-	}
-
-	private broadcastsPath(roomId: string): string {
-		return `${HttpService.API_PATH_PREFIX}/meetings/${roomId}/broadcasts`;
 	}
 }

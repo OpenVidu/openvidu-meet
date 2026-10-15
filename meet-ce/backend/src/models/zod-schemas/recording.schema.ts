@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { invalidRegexPatternReason } from '../../utils/string-match-filter.utils.js';
 import { fieldListSchema } from './field-selection.schema.js';
 import { encodingValidator } from './recording-encoding.schema.js';
-import { nonEmptySanitizedRoomId } from './room.schema.js';
+import { nonEmptySanitizedRoomId } from './room-id.schema.js';
 
 const fieldsSchema = fieldListSchema(MEET_RECORDING_FIELDS);
 

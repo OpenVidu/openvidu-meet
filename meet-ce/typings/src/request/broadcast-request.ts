@@ -1,6 +1,6 @@
 /**
- * Body of `POST /meetings/{roomId}/broadcasts`, and payload of the `broadcastStart` embedded command:
- * the destinations to start streaming to, one broadcast each.
+ * Payload of the `broadcastStart` embedded command, and body of `POST /broadcasts` next to the
+ * `roomId` of the meeting to stream: the destinations to start streaming to, one broadcast each.
  */
 export interface MeetBroadcastStartOptions {
 	/**
@@ -30,8 +30,9 @@ export interface MeetBroadcastStartDestination {
 }
 
 /**
- * Body of `POST /meetings/{roomId}/broadcasts/stop`, and payload of the `broadcastStop` embedded
- * command: the broadcasts to stop.
+ * Payload of the `broadcastStop` embedded command, and body of `POST /broadcasts/stop` next to the
+ * `roomId` of the meeting: the broadcasts to stop. One broadcast is also stopped by its id alone,
+ * through `POST /broadcasts/{broadcastId}/stop`.
  */
 export interface MeetBroadcastStopOptions {
 	/** Identifiers of the broadcasts to stop. Omitted, every broadcast of the meeting still running */

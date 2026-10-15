@@ -1,12 +1,19 @@
 description: >
-    The destinations to stream to, one broadcast each. An empty body, or no body, streams to every
-    destination saved in the room's config that the meeting is not streaming to yet.
-required: false
+    The room whose meeting to stream, and the destinations to stream it to, one broadcast each. Without
+    `destinations`, the meeting streams to every destination saved in the room's config that it is not
+    streaming to yet.
+required: true
 content:
     application/json:
         schema:
             type: object
+            required:
+                - roomId
             properties:
+                roomId:
+                    type: string
+                    description: The unique identifier of the room whose meeting to stream.
+                    example: 'room-123'
                 destinations:
                     type: array
                     minItems: 1
@@ -40,6 +47,7 @@ content:
                                     included, of the form `rtmp(s)://{host}(/{path})/{app}/{stream_key}`.
                                     Required on it, together with `name`.
         example:
+            roomId: 'room-123'
             destinations:
                 - destinationId: 'kX9pL2mQ7a'
                 - name: 'Own media server'
