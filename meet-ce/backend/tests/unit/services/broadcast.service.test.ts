@@ -938,21 +938,30 @@ describe('BroadcastService', () => {
 });
 
 describe('BroadcastStateService', () => {
-	it('keeps the broadcasts of a room without expiry, for as long as the meeting streams, until none is left', async () => {
-		const calls: unknown[][] = [];
-		const redis = {
-			set: async (...args: unknown[]) => calls.push(['set', ...args]),
-			delete: async (key: string) => calls.push(['delete', key])
-		};
-		const stateService = new BroadcastStateService(redis as unknown as RedisService);
-		const key = `${RedisKeyName.BROADCAST}${ROOM_ID}`;
+	const hashes = new Map<string, Map<string, string>>();
+	const hash = (key: string) => hashes.get(key) ?? hashes.set(key, new Map()).get(key)!;
+	const redis = {
+		setHashField: async (key: string, field: string, value: string) => void hash(key).set(field, value),
+		removeHashField: async (key: string, field: string) => void hash(key).delete(field),
+		getHashField: async (key: string, field: string) => hash(key).get(field) ?? null,
+		hasHashField: async (key: string, field: string) => hash(key).has(field),
+		getHashFieldNames: async (key: string) => [...hash(key).keys()]
+	};
+	const stateService = new BroadcastStateService(redis as unknown as RedisService);
 
+	it('keeps the broadcasts of each room as a field of one hash without expiry, until none is left', async () => {
 		await stateService.save(ROOM_ID, [liveRecord()]);
+		await stateService.save('room-2', [liveRecord({ roomId: 'room-2' })]);
+
+		expect([...hashes.keys()]).toEqual([RedisKeyName.BROADCASTS]);
+		expect(await stateService.find(ROOM_ID)).toEqual([liveRecord()]);
+		expect(await stateService.findRoomIds()).toEqual([ROOM_ID, 'room-2']);
+		expect(await stateService.hasBroadcasts(ROOM_ID)).toBe(true);
+
 		await stateService.save(ROOM_ID, []);
 
-		expect(calls).toEqual([
-			['set', key, JSON.stringify([liveRecord()])],
-			['delete', key]
-		]);
+		expect(await stateService.find(ROOM_ID)).toEqual([]);
+		expect(await stateService.hasBroadcasts(ROOM_ID)).toBe(false);
+		expect(await stateService.findRoomIds()).toEqual(['room-2']);
 	});
 });

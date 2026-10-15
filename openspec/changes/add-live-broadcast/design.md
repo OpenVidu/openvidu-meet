@@ -76,10 +76,14 @@ The change is proposed upstream in livekit/egress#1423.
 
 ### State in Redis under a per-room lock
 
-The broadcasts in progress of a room live in one Redis value, `ov_meet:broadcast:<roomId>`: the list
-of records with the full URL and the egress id, deleted when the last one ends. Reads take no lock:
-the list and a broadcast are one `GET`, `broadcastActive` one `EXISTS`; a change is written only
-when it alters a record, so the repeated snapshots LiveKit sends cost a read. It has no TTL: a
+The broadcasts in progress live in one Redis hash, `ov_meet:broadcasts`, with a field per room: the
+list of records with the full URL and the egress id, removed when the last one ends. Reads take no
+lock: the list and a broadcast are one `HGET`, `broadcastActive` one `HEXISTS`, and the rooms that
+have broadcasts one `HKEYS`, whose cost follows those rooms and not the size of the keyspace. A key
+per room was rejected because finding the rooms then needs a `SCAN` of the whole database, shared
+with LiveKit and the rest of Meet: measured on a database of a million keys, about 95,000 calls and
+7.5 s for each sweep. A change is written only when it alters a record, so the repeated snapshots
+LiveKit sends cost a read. It has no TTL: a
 meeting without a duration limit streams for as long as it lasts, and a record that expired would
 make the next event of its egress look like one no broadcast references, which gets stopped. The
 meeting's end forgets it instead, through `room_finished` or the reconciliation below. Every change,
@@ -136,7 +140,7 @@ probe is an empty `UpdateStream`: only a dead egress service answers `503` ("no 
 servers"). Those broadcasts end `failed` with `The egress service stopped responding`, and a
 recording in the same case too. A room LiveKit no longer has is cleaned as `room_finished` does. The
 reconciliation runs on the egress `participant_left`, on every start request, and in a sweep at
-startup and every minute over the rooms with broadcast state (a Redis `SCAN`), so a webhook lost
+startup and every minute over the rooms of that hash, so a webhook lost
 while every replica was down, a killed egress or a restarted LiveKit leave nothing behind; measured
 on the local deployment: an egress killed is settled in about 23 s, and 3 s after Meet starts again
 when it was killed with Meet down. The reverse case, an egress no
