@@ -4,12 +4,10 @@ Meet already records meetings with LiveKit's room-composite egress, writing a fi
 can write RTMP streams instead, and LiveKit's `UpdateStream` adds and removes stream URLs on a running
 egress. Three facts of LiveKit shape the design (probed against the local deployment):
 
-- A stream has no identifier. LiveKit reports each stream by its URL with the key redacted
-  (`{abc...xyz}`, ends of at most three characters), lists streams in no stable order, and some
-  platforms rewrite the URL they report (Twitch).
-- An egress appends each added stream to its `streamResults` and never reorders or removes them in the
-  responses to `StartRoomCompositeEgress` and `UpdateStream`; `ListEgress` lags while new streams
-  connect.
+- A stream has no identifier upstream. LiveKit reports each stream by its URL with the key redacted
+  (`{abc...xyz}`, ends of at most three characters), in no stable order, and some platforms rewrite
+  the URL they report (Twitch). The egress keeps a stopped stream in `streamResults`, so a URL streamed
+  to again is listed twice.
 - LiveKit never reports an egress whose egress service died: it stays `EGRESS_ACTIVE` forever. The
   only signal is the egress participant leaving the room (`participant_left` of kind `EGRESS`, whose
   identity is the egress id) about 20 seconds after the death.
@@ -63,23 +61,29 @@ destination had no lifecycle of its own (stop, retry, status, webhooks) and a fa
 whole broadcast. The layout and encoding of the room config apply to the egress; a broadcast that
 joins a running egress reports the egress's own.
 
-### A broadcast knows its stream by position
+### A broadcast finds its stream by a tag
 
-Each URL is added in a call of its own, so the stream of a new broadcast is the last entry of the
-`streamResults` that call returns; the broadcast record keeps that `streamIndex` and reads its
-stream's status, dates and error from that position in every later egress snapshot. Matching the
-redacted URL LiveKit reports was rejected (two keys with the same ends collide, Twitch rewrites the
-URL), and so was reading the position from `ListEgress` (it lags). If LiveKit ships stream
-identifiers (livekit/egress#1423), only this lookup changes.
+Meet adds each destination URL with the fragment `#ov-stream-tag=<broadcastId>`. The OpenVidu egress
+(a patch to `pkg/config/urls.go` of its fork) streams to the URL without it and appends it to the
+redacted URL it reports, in the responses and in every egress webhook, so a broadcast reads its
+stream's status, dates and error from the entry ending with its own tag, whatever the order of the
+entries. Rejected: the position of the stream (egress behavior, not a contract), the redacted key
+(keys with the same ends collide, Twitch rewrites the URL), a fingerprint of the URL (a URL streamed
+to again repeats it), and one egress per destination (it composes and encodes the meeting once per
+destination: about one core each, against 1.5 cores for five destinations on one egress). An egress
+without the patch reports no tag: the start that meets it answers `500` and withdraws its stream.
+The change is proposed upstream in livekit/egress#1423.
 
 ### State in Redis under a per-room lock
 
 The broadcasts in progress of a room live in one Redis value, `ov_meet:broadcast:<roomId>`: the list
-of records with the full URL, egress id and stream index, deleted when the last one ends. It has no
-TTL: a meeting without a duration limit streams for as long as it lasts, and a record that expired
-would make the next event of its egress look like one no broadcast references, which gets stopped.
-The meeting's end forgets it instead, through `room_finished` or, when that event is lost, through
-the meeting reconciliation, which runs the same cleanup. Every change, from a request or from a LiveKit webhook on any replica, runs
+of records with the full URL and the egress id, deleted when the last one ends. Reads take no lock:
+the list and a broadcast are one `GET`, `broadcastActive` one `EXISTS`; a change is written only
+when it alters a record, so the repeated snapshots LiveKit sends cost a read. It has no TTL: a
+meeting without a duration limit streams for as long as it lasts, and a record that expired would
+make the next event of its egress look like one no broadcast references, which gets stopped. The
+meeting's end forgets it instead, through `room_finished` or the reconciliation below. Every change,
+from a request or from a LiveKit webhook on any replica, runs
 under the Redis lock `ov_meet_lock:broadcast_<roomId>`. A request waits up to 10 s for it and then
 answers `409`; a webhook waits up to the lock's 30 s TTL, since it carries LiveKit's latest snapshot
 that nothing else would apply. A MongoDB collection like the recordings one was rejected: there is
@@ -119,14 +123,23 @@ when the record did not change (LiveKit repeats every change a request already a
 participant gets one signal per broadcast in progress, sent to them alone on `participant_joined`. The
 browser turns the first signal of each broadcast into `broadcastStarted`, so a late joiner sees the
 same events as everyone else. Signals are relayed from the server, never trusted from a participant.
+A broadcast only moves forward: a snapshot older than what its record already knows, which a webhook
+queued behind a reconciliation can carry, changes nothing.
 
 ### Lost egresses and lost webhooks
 
-When an egress participant leaves while its broadcasts or its recording are still in progress, the
-server probes it with an empty `UpdateStream`: only a dead egress service answers `503` ("no response
-from servers"). Then the broadcasts end `failed`, and the recording too, with `The egress service
-stopped responding`. A start request also settles saved broadcasts whose egress LiveKit no longer
-reports in progress, so a lost `egress_ended` cannot block the room. The reverse case, an egress no
+A room's broadcasts are reconciled with LiveKit for whatever its webhooks never told the server:
+the latest snapshot of an egress in progress is applied, an egress LiveKit reports ended settles its
+broadcasts, and an egress in progress whose participant left the room and that no egress service
+answers died with its egress service, which LiveKit never reports and keeps listing in progress. The
+probe is an empty `UpdateStream`: only a dead egress service answers `503` ("no response from
+servers"). Those broadcasts end `failed` with `The egress service stopped responding`, and a
+recording in the same case too. A room LiveKit no longer has is cleaned as `room_finished` does. The
+reconciliation runs on the egress `participant_left`, on every start request, and in a sweep at
+startup and every minute over the rooms with broadcast state (a Redis `SCAN`), so a webhook lost
+while every replica was down, a killed egress or a restarted LiveKit leave nothing behind; measured
+on the local deployment: an egress killed is settled in about 23 s, and 3 s after Meet starts again
+when it was killed with Meet down. The reverse case, an egress no
 broadcast references while LiveKit still runs it, is one a request lost track of (LiveKit started it
 after the request timed out, or the replica stopped before saving): its first event stops it. The
 event alone is not enough, since events of an egress Meet already stopped keep arriving late, so
@@ -158,18 +171,18 @@ available` for starting a broadcast or a recording and for `UpdateStream`.
 
 ## Risks / Trade-offs
 
-- [The stream position is egress behavior, not a LiveKit contract] → verified in the egress source of
-  the OpenVidu fork and of upstream `main` (2026-10-15) and exercised by the broadcast integration
-  tests on every egress upgrade; a fingerprint in the redacted URL, carried by the OpenVidu egress
-  fork, or a stream identifier upstream (livekit/egress#1423) would make it explicit.
+- [Broadcasts need the OpenVidu egress, which reports stream tags] → OpenVidu releases Meet and its
+  egress together and never mixes versions; an egress without the tag is met by a `500` that streams
+  nothing, never by a broadcast stuck in `starting`. Proposed upstream (livekit/egress#1423).
+- [An add that times out, which the egress applies after the request withdrew it] → that stream runs
+  without a broadcast until its egress ends: removing it needs its full URL, which only the failed
+  request had. Not seen in the measurements.
 - [Updates of every destination wait while any destination of the meeting is still connecting] →
   egress behavior, bounded: the egress gives up on a destination after its first connection error,
   measured at about 6 s for a host that never answers and for one that accepts the connection but
   never speaks RTMP (2026-10-15). Each update is a full snapshot, so a held-back change arrives late,
   never lost.
 
-- [A room whose `room_finished` fails after the room left the database keeps its Redis value] →
-  nothing reads it again, since room ids are never reused.
 - [A webhook waiting for the room's broadcast lock delays the LiveKit events queued behind it] →
   LiveKit delivers through a keyed pool of 10 workers; waits measured under 5 s.
 - [Each destination costs about 3 Mbps of the egress host's upload at 720p] → the wizard and the
