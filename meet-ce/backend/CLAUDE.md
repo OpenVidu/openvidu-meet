@@ -97,8 +97,9 @@ broadcast is one destination: the broadcasts of a meeting share one room-composi
 the first one starts and the next ones join through `updateStream`, one URL per call. LiveKit
 reports streams redacted and in no reliable order, so each `BroadcastRecord` keeps the position of
 its stream in `streamResults` (`streamIndex`), which egress appends to and never reorders. The
-running broadcasts are a Redis list (`BroadcastStateService`, one per room, 24h TTL) mutated only
-under the room's broadcast lock, so any replica can answer the egress webhooks or a request.
+running broadcasts are a Redis list (`BroadcastStateService`, one per room, no TTL: the meeting's
+end forgets it) mutated only under the room's broadcast lock, so any replica can answer the egress
+webhooks or a request.
 
 ## Cross-cutting infrastructure
 

@@ -37,6 +37,8 @@ See proposal.md for the motivation and the specs for the behavior.
   progress, as a sub-resource of the meeting (`/meetings/{roomId}/broadcasts`), not as a top-level
   `/broadcasts` resource like recordings.
 - Recording and broadcasting from the same egress.
+- Reporting a destination that is reconnecting: it stays `active` while the egress retries it.
+  LiveKit reports the retries at most once a minute; exposing them is left for later.
 
 ## Decisions
 
@@ -62,8 +64,11 @@ identifiers (livekit/egress#1423), only this lookup changes.
 ### State in Redis under a per-room lock
 
 The broadcasts in progress of a room live in one Redis value, `ov_meet:broadcast:<roomId>`: the list
-of records with the full URL, egress id and stream index, deleted when the last one ends, with a 24 h
-TTL only as a safety net. Every change, from a request or from a LiveKit webhook on any replica, runs
+of records with the full URL, egress id and stream index, deleted when the last one ends. It has no
+TTL: a meeting without a duration limit streams for as long as it lasts, and a record that expired
+would make the next event of its egress look like one no broadcast references, which gets stopped.
+The meeting's end forgets it instead, through `room_finished` or, when that event is lost, through
+the meeting reconciliation, which runs the same cleanup. Every change, from a request or from a LiveKit webhook on any replica, runs
 under the Redis lock `ov_meet_lock:broadcast_<roomId>`. A request waits up to 10 s for it and then
 answers `409`; a webhook waits up to the lock's 30 s TTL, since it carries LiveKit's latest snapshot
 that nothing else would apply. A MongoDB collection like the recordings one was rejected: there is
@@ -150,9 +155,8 @@ available` for starting a broadcast or a recording and for `UpdateStream`.
   egress behavior; a destination that never connects delays the others' `broadcastUpdated` until it
   fails.
 
-- [A broadcast running more than 24 hours without any change loses its Redis record] → the TTL is
-  renewed on every change and a meeting with `maxDurationMinutes` ends within 24 hours; an unlimited
-  meeting streaming quietly for longer is not covered.
+- [A room whose `room_finished` fails after the room left the database keeps its Redis value] →
+  nothing reads it again, since room ids are never reused.
 - [A webhook waiting for the room's broadcast lock delays the LiveKit events queued behind it] →
   LiveKit delivers through a keyed pool of 10 workers; waits measured under 5 s.
 - [Each destination costs about 3 Mbps of the egress host's upload at 720p] → the wizard and the

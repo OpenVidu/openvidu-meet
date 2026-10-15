@@ -52,7 +52,6 @@ export const INTERNAL_CONFIG = {
 	RECORDING_AUTO_START_DISABLED_TTL: '24h' as StringValue, // Redis TTL for the per-room "auto-start disabled after a manual stop" flag; cleared on room_finished and refreshed on every hit, this is only a last-resort safety net against leaked flags
 
 	// Live broadcast state shared across replicas
-	BROADCAST_STATE_TTL: '24h' as StringValue, // Redis TTL for the per-room live broadcast (capped at the 24h max meeting duration); deleted when the broadcast ends or the meeting finishes, this is only a last-resort safety net
 	BROADCAST_LOCK_TTL: '30s' as StringValue, // Redis Lock TTL while a request or an egress webhook changes a room's broadcast; released as soon as it finishes, so the TTL only bounds a change stuck in LiveKit
 	BROADCAST_REQUEST_LOCK_WAIT: '10s' as StringValue, // How long a request waits for another change of the same room's broadcast to finish before answering 409; egress webhooks wait up to BROADCAST_LOCK_TTL
 
