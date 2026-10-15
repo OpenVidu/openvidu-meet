@@ -413,7 +413,7 @@ export class MeetingService {
 	protected async getStandardParticipant(roomId: string, participantIdentity: string): Promise<ParticipantInfo> {
 		const participant = await this.livekitService.getParticipant(roomId, participantIdentity);
 
-		if (!this.livekitService.isStandardParticipant(participant)) {
+		if (!MeetParticipantHelper.isStandardParticipant(participant)) {
 			throw errorParticipantNotFound(participantIdentity, roomId);
 		}
 

@@ -476,7 +476,10 @@ describe('MeetingEventsService (the room events it binds to)', () => {
 				{ provide: MeetingTranslateService, useValue: { translate: (key: string) => key } },
 				{ provide: ChatService, useValue: {} },
 				{ provide: MeetingUiConfigService, useValue: {} },
-				{ provide: RecordingService, useValue: {} },
+				{
+					provide: RecordingService,
+					useValue: jasmine.createSpyObj<RecordingService>('RecordingService', ['setRecordingStopped'])
+				},
 				{ provide: MeetStorageService, useValue: { getLocalTileFloating: () => null } }
 			]
 		});
@@ -649,6 +652,7 @@ describe('MeetingEventsService (remote roster across a full reconnect)', () => {
 				{ provide: ChatService, useValue: {} },
 				{ provide: MeetingUiConfigService, useValue: {} },
 				{ provide: RecordingService, useValue: {} },
+				{ provide: BroadcastStateService, useValue: {} },
 				{ provide: MeetStorageService, useValue: { getLocalTileFloating: () => null } }
 			]
 		});
