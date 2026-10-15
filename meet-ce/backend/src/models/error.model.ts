@@ -96,6 +96,14 @@ export const errorEgressNotAvailable = (): OpenViduMeetError => {
 	return new OpenViduMeetError('LiveKit Error', 'No egress service is available', 503);
 };
 
+export const errorEgressWithoutStreamTags = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'LiveKit Error',
+		'The egress service does not report stream tags, which broadcasts need: it is not the OpenVidu egress',
+		500
+	);
+};
+
 export const errorS3NotAvailable = (error: unknown): OpenViduMeetError => {
 	return new OpenViduMeetError('S3 Error', `S3 is not available ${String(error)}`, 503);
 };

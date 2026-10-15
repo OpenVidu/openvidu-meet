@@ -11,9 +11,11 @@ const YOUTUBE = 'rtmp://a.rtmp.youtube.com/live2/abcd-efgh-ijkl';
 const TWITCH = 'rtmps://live.twitch.tv:443/app/live_123456_XyZ?bandwidthtest=true';
 const REDACTED_YOUTUBE = 'rtmp://a.rtmp.youtube.com/live2/********';
 
+const tagged = (broadcastId: string) => `rtmp://mtx/live/{abc...xyz}#ov-stream-tag=${broadcastId}`;
+
 const stream = (overrides: Partial<StreamInfo>): StreamInfo =>
 	({
-		url: 'rtmp://mtx/live/{abc...xyz}',
+		url: tagged('bc-1'),
 		status: StreamInfo_Status.ACTIVE,
 		startedAt: 0n,
 		endedAt: 0n,
@@ -48,7 +50,6 @@ const record = (overrides: Partial<BroadcastRecord> = {}): BroadcastRecord => ({
 	layout: MeetRecordingLayout.GRID,
 	encoding: MeetRecordingEncodingPreset.H264_720P_30,
 	egressId: 'EG_1',
-	streamIndex: 0,
 	...overrides
 });
 
@@ -273,20 +274,37 @@ describe('BroadcastHelper.reconcileRoomDestinations', () => {
 	});
 });
 
+describe('BroadcastHelper.taggedUrl', () => {
+	it('tags the destination URL with the broadcast id, which names its room', () => {
+		const broadcastId = BroadcastHelper.newBroadcastId('room-1');
+
+		expect(broadcastId).toMatch(/^room-1--[0-9a-z]{10}$/);
+		expect(BroadcastHelper.roomIdOf(broadcastId)).toBe('room-1');
+		expect(BroadcastHelper.taggedUrl({ broadcastId, url: YOUTUBE })).toBe(
+			`${YOUTUBE}#ov-stream-tag=${broadcastId}`
+		);
+	});
+});
+
 describe('BroadcastHelper.createRecord', () => {
-	it('takes the last stream the egress reports as its own, since each URL is added on its own', () => {
+	const room = { roomId: 'room-1', roomName: 'Room' };
+	const target = { name: 'Extra', url: 'rtmp://mtx/live/extraKEY' };
+	const settings = { layout: MeetRecordingLayout.SPEAKER, encoding: MeetRecordingEncodingPreset.H264_1080P_30 };
+
+	it('takes the stream the egress reports under the broadcast tag, not the others of the egress', () => {
 		const created = BroadcastHelper.createRecord(
+			'room-1--extra',
 			egress({
 				egressId: 'EG_2',
-				streamResults: [stream({ startedAt: 1_000_000_000n }), stream({})]
+				streamResults: [stream({ url: tagged('room-1--extra') }), stream({ startedAt: 1_000_000_000n })]
 			}),
-			{ roomId: 'room-1', roomName: 'Room' },
-			{ name: 'Extra', url: 'rtmp://mtx/live/extraKEY' },
-			{ layout: MeetRecordingLayout.SPEAKER, encoding: MeetRecordingEncodingPreset.H264_1080P_30 }
+			room,
+			target,
+			settings
 		);
 
 		expect(created).toEqual({
-			broadcastId: expect.stringMatching(/^room-1--/),
+			broadcastId: 'room-1--extra',
 			roomId: 'room-1',
 			roomName: 'Room',
 			status: MeetBroadcastStatus.STARTING,
@@ -296,29 +314,60 @@ describe('BroadcastHelper.createRecord', () => {
 			layout: MeetRecordingLayout.SPEAKER,
 			encoding: MeetRecordingEncodingPreset.H264_1080P_30,
 			egressId: 'EG_2',
-			streamIndex: 1,
 			startDate: undefined,
 			endDate: undefined,
 			duration: undefined,
 			error: undefined
 		});
-		expect(BroadcastHelper.roomIdOf(created.broadcastId)).toBe('room-1');
+	});
+
+	it('refuses an egress that does not report the tag, which could never tell the broadcast how it goes', () => {
+		const untagged = egress({ streamResults: [stream({ url: 'rtmp://mtx/live/{ext...EY}' })] });
+
+		expectStatus(() => BroadcastHelper.createRecord('room-1--extra', untagged, room, target, settings), 500);
 	});
 });
 
 describe('BroadcastHelper.withEgressInfo', () => {
-	it('reads its own stream by position, whatever the others say', () => {
+	it('reads its own stream by its tag, wherever LiveKit lists it and whatever the others say', () => {
 		const updated = BroadcastHelper.withEgressInfo(
-			record({ streamIndex: 1 }),
+			record(),
 			egress({
 				streamResults: [
-					stream({ status: StreamInfo_Status.FAILED, error: 'Failed to connect' }),
-					stream({ startedAt: 2_000_000_000n })
+					stream({ startedAt: 2_000_000_000n }),
+					stream({ url: tagged('bc-2'), status: StreamInfo_Status.FAILED, error: 'Failed to connect' })
+				]
+			})
+		);
+		const reordered = BroadcastHelper.withEgressInfo(
+			record({ broadcastId: 'bc-2' }),
+			egress({ streamResults: [stream({ url: tagged('bc-3') }), stream({ url: tagged('bc-2') })] })
+		);
+
+		expect(updated).toMatchObject({ status: 'active', startDate: 2000, error: undefined });
+		expect(reordered).toMatchObject({ status: 'starting', startDate: undefined });
+	});
+
+	it('tells a destination streamed to again from its earlier broadcast, though both have the same URL', () => {
+		const updated = BroadcastHelper.withEgressInfo(
+			record({ broadcastId: 'bc-again' }),
+			egress({
+				streamResults: [
+					stream({ status: StreamInfo_Status.FINISHED, startedAt: 1_000_000_000n, endedAt: 9_000_000_000n }),
+					stream({ url: tagged('bc-again') })
 				]
 			})
 		);
 
-		expect(updated).toMatchObject({ status: 'active', startDate: 2000, error: undefined });
+		expect(updated).toMatchObject({ status: 'starting', startDate: undefined, endDate: undefined });
+	});
+
+	it('never moves back when a snapshot is older than what it already knows', () => {
+		const ending = record({ status: MeetBroadcastStatus.ENDING, startDate: 1000 });
+
+		expect(
+			BroadcastHelper.withEgressInfo(ending, egress({ streamResults: [stream({ startedAt: 1_000_000_000n })] }))
+		).toEqual(ending);
 	});
 
 	it('keeps the broadcast starting while LiveKit reports the egress active but no media has reached the destination', () => {
@@ -342,9 +391,11 @@ describe('BroadcastHelper.withEgressInfo', () => {
 	});
 
 	it('leaves the record as it is when a snapshot does not carry its stream yet', () => {
-		const current = record({ status: MeetBroadcastStatus.ACTIVE, startDate: 10_000, streamIndex: 2 });
+		const current = record({ status: MeetBroadcastStatus.ACTIVE, startDate: 10_000 });
 
-		expect(BroadcastHelper.withEgressInfo(current, egress({ streamResults: [stream({})] }))).toEqual(current);
+		expect(
+			BroadcastHelper.withEgressInfo(current, egress({ streamResults: [stream({ url: tagged('bc-other') })] }))
+		).toEqual(current);
 	});
 
 	it('fails with its stream, undated when no media ever reached the destination', () => {
@@ -383,7 +434,7 @@ describe('BroadcastHelper.withEgressInfo', () => {
 						endedAt: 61_000_000_000n,
 						duration: 60_000_000_000n
 					}),
-					stream({ startedAt: 5_000_000_000n })
+					stream({ url: tagged('bc-2'), startedAt: 5_000_000_000n })
 				]
 			})
 		);
@@ -456,8 +507,7 @@ describe('BroadcastHelper.withEgressInfo', () => {
 	it('leaves a broadcast its stream already ended alone when the egress ends later', () => {
 		const ended = record({
 			status: MeetBroadcastStatus.FAILED,
-			error: 'Connection refused',
-			streamIndex: 0
+			error: 'Connection refused'
 		});
 		const updated = BroadcastHelper.withEgressInfo(
 			ended,

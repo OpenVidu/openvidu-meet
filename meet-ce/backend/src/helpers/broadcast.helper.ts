@@ -22,13 +22,15 @@ import {
 	errorBroadcastDestinationLimit,
 	errorBroadcastDuplicateDestination,
 	errorBroadcastRedactedDestinationUrl,
-	errorBroadcastUnknownDestination
+	errorBroadcastUnknownDestination,
+	errorEgressWithoutStreamTags
 } from '../models/error.model.js';
 import { EgressHelper } from './egress.helper.js';
 
 const ID_LENGTH = 10;
 const IN_PROGRESS_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE, MeetBroadcastStatus.ENDING];
 const RUNNING_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE];
+const STREAM_TAG = '#ov-stream-tag=';
 
 export class BroadcastHelper {
 	private constructor() {
@@ -66,6 +68,24 @@ export class BroadcastHelper {
 	/** Whether LiveKit reports the egress starting or streaming, so it can still be stopped. */
 	static isEgressRunning(egress: EgressInfo | undefined): boolean {
 		return !!egress && BroadcastHelper.isRunning(EgressHelper.toStatus(egress.status, MeetBroadcastStatus));
+	}
+
+	/** Whether LiveKit reports the egress in progress, if only just ending. */
+	static isEgressInProgress(egress: EgressInfo | undefined): egress is EgressInfo {
+		return !!egress && BroadcastHelper.isInProgress(EgressHelper.toStatus(egress.status, MeetBroadcastStatus));
+	}
+
+	static newBroadcastId(roomId: string): string {
+		return `${roomId}--${uid(ID_LENGTH)}`;
+	}
+
+	/**
+	 * The URL the egress streams to for a broadcast: the destination's, tagged with the broadcast's
+	 * id. The egress streams to the URL without the tag and reports the tag after the redacted URL,
+	 * which is how a broadcast finds its stream in everything LiveKit reports of the egress.
+	 */
+	static taggedUrl({ broadcastId, url }: Pick<BroadcastRecord, 'broadcastId' | 'url'>): string {
+		return `${url}${STREAM_TAG}${broadcastId}`;
 	}
 
 	/**
@@ -154,18 +174,21 @@ export class BroadcastHelper {
 	}
 
 	/**
-	 * The record of a broadcast the egress just took: its stream is the last one the egress
-	 * reports, since each URL is added to the egress on its own, in a call of its own.
+	 * The record of a broadcast whose tagged URL the egress just took. An egress that does not
+	 * report the tag back could never tell the broadcast how its stream goes.
 	 */
 	static createRecord(
+		broadcastId: string,
 		egress: EgressInfo,
 		room: { roomId: string; roomName: string },
 		target: BroadcastTarget,
 		{ layout, encoding }: Pick<BroadcastRecord, 'layout' | 'encoding'>
 	): BroadcastRecord {
+		if (!BroadcastHelper.findStream(egress, broadcastId)) throw errorEgressWithoutStreamTags();
+
 		return BroadcastHelper.withEgressInfo(
 			{
-				broadcastId: `${room.roomId}--${uid(ID_LENGTH)}`,
+				broadcastId,
 				roomId: room.roomId,
 				roomName: room.roomName,
 				status: MeetBroadcastStatus.STARTING,
@@ -174,8 +197,7 @@ export class BroadcastHelper {
 				destinationId: target.destinationId,
 				layout,
 				encoding,
-				egressId: egress.egressId,
-				streamIndex: Math.max(egress.streamResults.length - 1, 0)
+				egressId: egress.egressId
 			},
 			egress
 		);
@@ -184,12 +206,14 @@ export class BroadcastHelper {
 	/**
 	 * The record updated with what LiveKit reports of its stream. A snapshot without the stream
 	 * (egress webhooks can carry one older than the response that added it) leaves the record as
-	 * it is. An egress that ended streams nowhere, so a broadcast still open in its last snapshot
+	 * it is, and so does one older than what the record already knows: a broadcast only moves
+	 * forward. An egress that ended streams nowhere, so a broadcast still open in its last snapshot
 	 * ends with it.
 	 */
 	static withEgressInfo(record: BroadcastRecord, egress: EgressInfo): BroadcastRecord {
-		const stream = egress.streamResults[record.streamIndex];
-		const updated = stream ? BroadcastHelper.withStream(record, stream, egress) : record;
+		const stream = BroadcastHelper.findStream(egress, record.broadcastId);
+		const reported = stream ? BroadcastHelper.withStream(record, stream, egress) : record;
+		const updated = BroadcastHelper.progressOf(reported) < BroadcastHelper.progressOf(record) ? record : reported;
 		const egressStatus = EgressHelper.toStatus(egress.status, MeetBroadcastStatus);
 
 		if (BroadcastHelper.isInProgress(egressStatus) || !BroadcastHelper.isInProgress(updated.status)) {
@@ -227,10 +251,21 @@ export class BroadcastHelper {
 		return records.map((record) => updated.find(({ broadcastId }) => broadcastId === record.broadcastId) ?? record);
 	}
 
-	static toBroadcastInfo({ egressId, streamIndex, ...info }: BroadcastRecord): MeetBroadcastInfo {
+	static toBroadcastInfo({ egressId, ...info }: BroadcastRecord): MeetBroadcastInfo {
 		void egressId;
-		void streamIndex;
 		return { ...info, url: redactStreamUrl(info.url) };
+	}
+
+	/** The stream of the broadcast among those LiveKit reports of the egress, by its tag. */
+	private static findStream(egress: EgressInfo, broadcastId: string): StreamInfo | undefined {
+		return egress.streamResults.find(({ url }) => url.endsWith(`${STREAM_TAG}${broadcastId}`));
+	}
+
+	/** How far the broadcast went: starting, active, ending and over, in that order. */
+	private static progressOf({ status }: BroadcastRecord): number {
+		return BroadcastHelper.isInProgress(status)
+			? IN_PROGRESS_STATUSES.indexOf(status)
+			: IN_PROGRESS_STATUSES.length;
 	}
 
 	/** The first URL whose stream key an earlier one already has. */
