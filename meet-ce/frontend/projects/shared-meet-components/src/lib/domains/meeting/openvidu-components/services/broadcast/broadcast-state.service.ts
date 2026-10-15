@@ -49,8 +49,6 @@ export class BroadcastStateService {
 	readonly isInProgress = computed(() => this.isStarting() || this.isLive() || this.isEnding());
 	/** Nothing streams and something failed: what the activity reports as a failure to go live. */
 	readonly hasFailed = computed(() => this.inProgress().length === 0 && this.failed().length > 0);
-	/** The destinations streamed to, whether or not media has reached them yet. */
-	readonly streamingDestinationCount = computed(() => this.inProgress().length);
 	/** The destinations media has reached, not those still connecting. */
 	readonly liveDestinationCount = computed(
 		() => this._broadcasts().filter(({ status }) => status === MeetBroadcastStatus.ACTIVE).length

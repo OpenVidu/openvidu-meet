@@ -87,6 +87,8 @@ const ROW_STATUS_BY_BROADCAST: Record<MeetBroadcastStatus, RowStatus> = {
 	[MeetBroadcastStatus.LIMIT_REACHED]: 'failed'
 };
 
+const STREAMING_ROW_STATUSES: RowStatus[] = ['connecting', 'live', 'stopping'];
+
 const ROW_STATUS_KEYS: Record<RowStatus, string> = {
 	connecting: 'PANEL.BROADCAST.DEST_CONNECTING',
 	live: 'PANEL.BROADCAST.DEST_LIVE',
@@ -169,7 +171,6 @@ export class BroadcastActivityComponent {
 	readonly state = computed<ActivityState>(() => ACTIVITY_STATES[this.phase()]);
 	readonly isRunning = computed(() => this.phase() === 'starting' || this.phase() === 'live');
 
-	readonly streamingCount = this.broadcastState.streamingDestinationCount;
 	readonly liveCount = this.broadcastState.liveDestinationCount;
 	readonly failedCount = computed(() => this.broadcastState.failed().length);
 	readonly liveMbps = computed(() => broadcastUploadMbps(this.liveCount()));
@@ -230,6 +231,10 @@ export class BroadcastActivityComponent {
 		];
 	});
 	readonly selectedCount = computed(() => this.rows().filter(({ selected }) => selected).length);
+	/** The destinations streamed to, including those a start is still waiting for the server to report. */
+	readonly streamingCount = computed(
+		() => this.rows().filter(({ status }) => STREAMING_ROW_STATUSES.includes(status)).length
+	);
 	readonly plannedMbps = computed(() => broadcastUploadMbps(this.selectedCount()));
 	readonly canAddDestination = computed(() => {
 		const count = this.isRunning() ? this.streamingCount() : this.selectedCount();
