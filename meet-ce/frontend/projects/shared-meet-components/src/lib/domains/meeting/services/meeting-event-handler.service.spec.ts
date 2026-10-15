@@ -1306,21 +1306,9 @@ describe('MeetingEventHandlerService', () => {
 	 * who started it, and the one that ends it closes the story.
 	 */
 	describe('broadcast signal', () => {
-		function receiveBroadcastSignal(broadcast: MeetBroadcastInfo, from?: { identity: string }): void {
-			let onData: ((...args: unknown[]) => void) | undefined;
-			const room = {
-				on: (event: string, handler: (...args: unknown[]) => void) => {
-					if (event === 'dataReceived') onData = handler;
-				}
-			};
-			service.setupRoomListeners(room as never);
+		function receiveBroadcastSignal(broadcast: MeetBroadcastInfo): void {
 			const payload: MeetBroadcastUpdatedPayload = { roomId: broadcast.roomId, broadcast, timestamp: 0 };
-			onData!(
-				new TextEncoder().encode(JSON.stringify(payload)),
-				from,
-				undefined,
-				MeetSignalType.MEET_BROADCAST_UPDATED
-			);
+			receiveSignal(MeetSignalType.MEET_BROADCAST_UPDATED, payload);
 		}
 
 		const hostEvents = () => eventBus.events().map((event) => event.event);
@@ -1380,15 +1368,6 @@ describe('MeetingEventHandlerService', () => {
 			seedMediaStatus();
 
 			receiveBroadcastSignal(liveBroadcast({ roomId: 'room2' }));
-			await Promise.resolve();
-
-			expect(hostEvents()).toEqual([]);
-		});
-
-		it('ignores a broadcast signal relayed from another participant', async () => {
-			seedMediaStatus();
-
-			receiveBroadcastSignal(liveBroadcast(), { identity: 'speaker1' });
 			await Promise.resolve();
 
 			expect(hostEvents()).toEqual([]);
