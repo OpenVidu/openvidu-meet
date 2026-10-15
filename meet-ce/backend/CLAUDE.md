@@ -98,7 +98,7 @@ the first one starts and the next ones join through `updateStream`, one URL per 
 reports streams redacted and in no reliable order, so each URL is added tagged with its broadcast id
 (`#ov-stream-tag=<broadcastId>`, `BroadcastHelper.taggedUrl`), which the OpenVidu egress strips
 before streaming and reports back after the redacted URL; a broadcast reads only the entry with its
-own tag. The running broadcasts are a Redis list (`BroadcastStateService`, one per room, no TTL)
+own tag. The running broadcasts are one Redis hash (`BroadcastStateService`, a field per room, no TTL)
 mutated only under the room's broadcast lock, so any replica can answer the egress webhooks or a
 request. Nothing expires it: `room_finished` and the reconciliation (`BroadcastService.reconcile`, on
 the egress `participant_left`, on every start and in the `broadcastsReconciliationGC` sweep) settle

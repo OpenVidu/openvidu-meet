@@ -363,6 +363,55 @@ export class RedisService extends EventEmitter {
 		}
 	}
 
+	/** Reads one field of a Redis hash, `null` when the hash has no such field. */
+	async getHashField(key: string, field: string): Promise<string | null> {
+		try {
+			return await this.redisPublisher.hget(key, field);
+		} catch (error) {
+			this.logger.error(`Error reading field '${field}' of hash '${key}' from Redis`, error);
+			throw error;
+		}
+	}
+
+	/** Writes one field of a Redis hash. */
+	async setHashField(key: string, field: string, value: string): Promise<void> {
+		try {
+			await this.redisPublisher.hset(key, field, value);
+		} catch (error) {
+			this.logger.error(`Error writing field '${field}' of hash '${key}' in Redis`, error);
+			throw error;
+		}
+	}
+
+	/** Removes one field of a Redis hash; the hash goes with its last field. */
+	async removeHashField(key: string, field: string): Promise<void> {
+		try {
+			await this.redisPublisher.hdel(key, field);
+		} catch (error) {
+			this.logger.error(`Error removing field '${field}' of hash '${key}' from Redis`, error);
+			throw error;
+		}
+	}
+
+	async hasHashField(key: string, field: string): Promise<boolean> {
+		try {
+			return (await this.redisPublisher.hexists(key, field)) === 1;
+		} catch (error) {
+			this.logger.error(`Error checking field '${field}' of hash '${key}' in Redis`, error);
+			throw error;
+		}
+	}
+
+	/** The field names of a Redis hash, read in one call whatever the size of the keyspace. */
+	async getHashFieldNames(key: string): Promise<string[]> {
+		try {
+			return await this.redisPublisher.hkeys(key);
+		} catch (error) {
+			this.logger.error(`Error reading the fields of hash '${key}' from Redis`, error);
+			throw error;
+		}
+	}
+
 	/**
 	 * Returns the cardinality (number of members) of a Redis Set.
 	 */
