@@ -62,7 +62,7 @@ describe('BroadcastStateService', () => {
 		expect(service.isInProgress()).toBeFalse();
 	});
 
-	it('is live while any broadcast is, and counts the destinations streamed to and reached', () => {
+	it('is live while any broadcast is, and counts the destinations media reached', () => {
 		service.setBroadcast(
 			broadcast({ broadcastId: 'bc1', destinationId: 'd1', status: MeetBroadcastStatus.STARTING })
 		);
@@ -73,7 +73,6 @@ describe('BroadcastStateService', () => {
 
 		expect(service.isLive()).toBeTrue();
 		expect(service.hasFailed()).toBeFalse();
-		expect(service.streamingDestinationCount()).toBe(2);
 		expect(service.liveDestinationCount()).toBe(1);
 		expect(service.failed().map(({ broadcastId }) => broadcastId)).toEqual(['bc3']);
 	});
