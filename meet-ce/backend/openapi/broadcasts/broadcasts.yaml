@@ -1,7 +1,7 @@
 /broadcasts:
     post:
         operationId: broadcastStart
-        summary: Start live broadcasts
+        summary: Start broadcasts
         description: |
             Starts streaming the live meeting of a room to one or more RTMP destinations, one broadcast per
             destination, each with its own status and lifecycle and its own `broadcastId`. A meeting streams to
@@ -59,7 +59,7 @@
                 $ref: '../shared/responses/errors/egress-unavailable.yaml'
     get:
         operationId: broadcastList
-        summary: Get the broadcasts of a meeting
+        summary: Get all broadcasts
         description: |
             Lists the broadcasts in progress in the live meeting of a room, one per destination. A broadcast
             leaves the list once it ends; the [`broadcastEnded`](#/webhooks/broadcastEndedWebhook) webhook
@@ -96,7 +96,7 @@
 /broadcasts/stop:
     post:
         operationId: broadcastBulkStop
-        summary: Stop several live broadcasts
+        summary: Bulk stop broadcasts
         description: |
             Stops the given broadcasts of the live meeting of a room, or every running one when no
             `broadcastIds` are given: the stream to each destination ends at once, while the other broadcasts
