@@ -10,6 +10,13 @@ export class BroadcastService {
 	private readonly httpService = inject(HttpService);
 	private readonly broadcastsPath = `${HttpService.API_PATH_PREFIX}/broadcasts`;
 
+	async getBroadcasts(roomId: string): Promise<MeetBroadcastInfo[]> {
+		const { broadcasts } = await this.httpService.getRequest<{ broadcasts: MeetBroadcastInfo[] }>(
+			`${this.broadcastsPath}?roomId=${encodeURIComponent(roomId)}`
+		);
+		return broadcasts;
+	}
+
 	async startBroadcasts(roomId: string, options: MeetBroadcastStartOptions = {}): Promise<MeetBroadcastInfo[]> {
 		const { broadcasts } = await this.httpService.postRequest<{ broadcasts: MeetBroadcastInfo[] }>(
 			this.broadcastsPath,

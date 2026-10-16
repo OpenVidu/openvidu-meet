@@ -3,6 +3,7 @@ import { MeetBroadcastInfo, MeetBroadcastStartDestination, MeetBroadcastStatus }
 import { ElapsedClock } from '../../../../../shared/utils/elapsed-clock';
 import {
 	broadcastDestinationKey,
+	broadcastProgress,
 	BroadcastRequestState,
 	BroadcastRequestStatus,
 	hasBroadcastFailed,
@@ -20,6 +21,7 @@ export class BroadcastStateService {
 	private readonly _broadcasts = signal<MeetBroadcastInfo[]>([]);
 	private readonly _request = signal<BroadcastRequestState>({ status: 'idle' });
 	private readonly _ownUrls = signal(new Map<string, string>());
+	private readonly endedIds = new Set<string>();
 	private clockedStart: number | undefined;
 
 	/**
@@ -64,9 +66,20 @@ export class BroadcastStateService {
 	/**
 	 * Takes what the server reports of one broadcast. A new attempt at a destination replaces the
 	 * failed one kept for it, and the normal end of the last broadcast in progress forgets every
-	 * failure kept: the meeting stopped streaming, which is no failure to go live.
+	 * failure kept: the meeting stopped streaming, which is no failure to go live. A broadcast only
+	 * moves forward: a report older than what is known of it, such as the repeat a joining
+	 * participant gets after the end already reached them, changes nothing.
 	 */
 	setBroadcast(broadcast: MeetBroadcastInfo): void {
+		const known = this._broadcasts().find(({ broadcastId }) => broadcastId === broadcast.broadcastId);
+		const reached = this.endedIds.has(broadcast.broadcastId)
+			? broadcastProgress(MeetBroadcastStatus.COMPLETE)
+			: known && broadcastProgress(known.status);
+
+		if (reached !== undefined && broadcastProgress(broadcast.status) < reached) return;
+
+		if (!isBroadcastInProgress(broadcast.status)) this.endedIds.add(broadcast.broadcastId);
+
 		const key = broadcastDestinationKey(broadcast);
 		const failed = hasBroadcastFailed(broadcast.status);
 		const keep = isBroadcastInProgress(broadcast.status) || failed;
@@ -115,6 +128,7 @@ export class BroadcastStateService {
 		this._broadcasts.set([]);
 		this._request.set({ status: 'idle' });
 		this._ownUrls.set(new Map());
+		this.endedIds.clear();
 		this.trackElapsed();
 	}
 
