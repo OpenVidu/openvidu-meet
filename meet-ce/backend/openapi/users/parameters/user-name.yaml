@@ -5,6 +5,7 @@ description: >
     Filter users by name.
     By default, name uses exact and case-sensitive matching.
     Use nameMatchMode and nameCaseInsensitive to customize matching behavior.
+    When userId is also given, a user matching either one is returned; role still narrows the result.
 schema:
     type: string
 example: 'Alice'

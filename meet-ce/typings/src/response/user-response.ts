@@ -43,9 +43,15 @@ export type MeetUserSortField = (typeof MEET_USER_SORT_FIELDS)[number];
  * Filters for querying Meet users, extending sorting and pagination options.
  */
 export interface MeetUserFilters extends SortAndPagination<MeetUserSortField> {
-	/** Optional filter by user ID. */
+	/**
+	 * Optional filter by user ID (exact match).
+	 * Combined with `name`, a user matching either one is returned; `role` still narrows the result.
+	 */
 	userId?: string;
-	/** Optional filter by user name. */
+	/**
+	 * Optional filter by user name, matched as `nameMatchMode` and `nameCaseInsensitive` say.
+	 * Combined with `userId`, a user matching either one is returned; `role` still narrows the result.
+	 */
 	name?: string;
 	/** Match mode used to apply name filter. Defaults to 'exact'. */
 	nameMatchMode?: TextMatchMode;

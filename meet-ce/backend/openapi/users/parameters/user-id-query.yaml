@@ -1,7 +1,9 @@
 in: query
 name: userId
 required: false
-description: Filter users by userId
+description: >
+    Filter users by userId (exact match).
+    When name is also given, a user matching either one is returned; role still narrows the result.
 schema:
     type: string
 example: 'alice_smith'
