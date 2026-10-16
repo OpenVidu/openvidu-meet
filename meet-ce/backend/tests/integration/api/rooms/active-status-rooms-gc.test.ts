@@ -2,7 +2,9 @@ import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { MeetRoomStatus } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { RoomRepository } from '../../../../src/repositories/room.repository.js';
+import { LivekitWebhookService } from '../../../../src/services/livekit-webhook.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
+import { WebhookDispatcherService } from '../../../../src/services/webhook-dispatcher.service.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	createRoom,
@@ -16,11 +18,15 @@ import {
 describe('Active Rooms Status GC Tests', () => {
 	let liveKitService: LiveKitService;
 	let roomRepository: RoomRepository;
+	let livekitWebhookService: LivekitWebhookService;
+	let webhookDispatcherService: WebhookDispatcherService;
 
 	beforeAll(async () => {
 		await startTestServer();
 		liveKitService = container.get(LiveKitService);
 		roomRepository = container.get(RoomRepository);
+		livekitWebhookService = container.get(LivekitWebhookService);
+		webhookDispatcherService = container.get(WebhookDispatcherService);
 	});
 
 	afterAll(async () => {
@@ -52,6 +58,31 @@ describe('Active Rooms Status GC Tests', () => {
 		// Should be OPEN because default meetingEndAction is NONE
 		expect(response.body.status).toBe(MeetRoomStatus.OPEN);
 
+		roomExistsSpy.mockRestore();
+	});
+
+	it('should end the meeting once when room_finished reaches two replicas while the check runs', async () => {
+		const createdRoom = await createRoom({ roomName: 'test-concurrent-end-gc' });
+		await roomRepository.updatePartial(createdRoom.roomId, { status: MeetRoomStatus.ACTIVE_MEETING });
+
+		const roomExistsSpy = jest
+			.spyOn(liveKitService, 'roomsExist')
+			.mockResolvedValue(new Map([[createdRoom.roomId, false]]));
+		const meetingEndedSpy = jest.spyOn(webhookDispatcherService, 'sendMeetingEndedWebhook').mockReturnValue();
+
+		await Promise.all([
+			executeRoomStatusValidationGC(),
+			livekitWebhookService.handleRoomFinished({ name: createdRoom.roomId, sid: 'RM_concurrent_end' }),
+			livekitWebhookService.handleRoomFinished({ name: createdRoom.roomId, sid: 'RM_concurrent_end' })
+		]);
+
+		const meetingEndedRoomIds = meetingEndedSpy.mock.calls.map(([room]) => room.roomId);
+		expect(meetingEndedRoomIds.filter((roomId) => roomId === createdRoom.roomId)).toHaveLength(1);
+
+		const response = await getRoom(createdRoom.roomId);
+		expect(response.body.status).toBe(MeetRoomStatus.OPEN);
+
+		meetingEndedSpy.mockRestore();
 		roomExistsSpy.mockRestore();
 	});
 

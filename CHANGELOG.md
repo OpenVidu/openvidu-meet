@@ -65,6 +65,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - The `joinDate` of the embedded event `participantJoined` was the moment the join reached the browser, by the
   browser's clock, and the one of `participantLeft` was rounded down to the second. Both now carry the `joinDate` of
   the [`participantJoined`][3.9-participant-joined] webhook.
+- The [`meetingEnded`][3.9-meeting-ended] webhook could be sent twice for one meeting when the media server's notice
+  of its end and the periodic meeting status check handled it at the same time. It is now sent once.
 
 #### UI
 
