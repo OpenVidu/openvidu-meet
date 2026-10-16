@@ -615,7 +615,10 @@ export class MeetingEventHandlerService {
 
 	private async runBroadcastRequest(event: BroadcastRequestedEvent): Promise<void> {
 		if (event.action === 'start') {
-			await this.broadcastService.startBroadcasts(event.roomId, { destinations: event.destinations });
+			const broadcasts = await this.broadcastService.startBroadcasts(event.roomId, {
+				destinations: event.destinations
+			});
+			this.broadcastState.recordOwnBroadcasts(event.destinations ?? [], broadcasts);
 		} else {
 			await this.broadcastService.stopBroadcasts(event.roomId, { broadcastIds: event.broadcastIds });
 		}

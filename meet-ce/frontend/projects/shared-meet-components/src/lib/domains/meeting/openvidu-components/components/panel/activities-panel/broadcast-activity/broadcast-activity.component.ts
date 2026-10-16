@@ -44,12 +44,21 @@ import { ActivityItemComponent, ActivityState } from '../activity-item/activity-
 /** How a destination row is doing, from the broadcast to it or from what was just asked. */
 type RowStatus = 'connecting' | 'live' | 'stopping' | 'stopped' | 'failed';
 
+/** A destination the local participant gave for the meeting, whose full URL only this client knows. */
+interface MeetingDestination extends BroadcastDestinationDraft {
+	/** Local to this client, never sent: it tells apart destinations whose URLs redact alike */
+	id: string;
+}
+
 /**
  * A destination as the activity lists it: one of the room's, or one given for this meeting, with
  * the broadcast to it when there is one.
  */
 interface DestinationRow {
-	/** The room destination's id, or the redacted URL of a destination given for the meeting */
+	/**
+	 * The room destination's id, the local id of a destination this client gave for the meeting,
+	 * or the id of the broadcast to one given by someone else
+	 */
 	key: string;
 	name: string;
 	url: string;
@@ -183,14 +192,28 @@ export class BroadcastActivityComponent {
 	// from this client, whose full URL only this client knows.
 	private readonly roomDestinations = computed(() => this.meetingContext.broadcastConfig()?.destinations ?? []);
 	private readonly unselectedIds = signal(new Set<string>());
-	private readonly meetingDestinations = signal<BroadcastDestinationDraft[]>([]);
+	private readonly meetingDestinations = signal<MeetingDestination[]>([]);
+	private meetingDestinationCount = 0;
 	/** The destinations a start was asked for and the server has not reported yet. */
 	private readonly pendingKeys = signal(new Set<string>());
 
 	readonly rows = computed<DestinationRow[]>(() => {
 		const broadcasts = this.broadcastState.broadcasts();
-		const meetingBroadcasts = broadcasts.filter(({ destinationId }) => !destinationId);
-		const local = this.meetingDestinations();
+		const ownUrls = this.broadcastState.ownUrls();
+		const ownBroadcastTo = (url: string) =>
+			broadcasts.filter(({ broadcastId }) => ownUrls.get(broadcastId) === url).at(-1);
+		const local = this.meetingDestinations().map((destination) => ({
+			destination,
+			broadcast: ownBroadcastTo(destination.url)
+		}));
+		const listed = new Set(local.map(({ broadcast }) => broadcast?.broadcastId));
+		// Until a start this client asked for is answered, a broadcast it does not know as its own yet
+		// may be one of its destinations, which already have their rows.
+		const startAnswered = this.pendingRequest().status !== 'starting';
+		const otherBroadcasts = broadcasts.filter(
+			({ broadcastId, destinationId }) =>
+				!destinationId && !listed.has(broadcastId) && (startAnswered || ownUrls.has(broadcastId))
+		);
 
 		return [
 			...this.roomDestinations().map(({ id, name, url }) =>
@@ -204,30 +227,29 @@ export class BroadcastActivityComponent {
 					selected: !this.unselectedIds().has(id!)
 				})
 			),
-			...meetingBroadcasts.map((broadcast) => {
-				const own = local.find(({ url }) => redactStreamUrl(url) === broadcast.url);
+			...local.map(({ destination: { id, name, url }, broadcast }) =>
+				this.toRow({
+					key: id,
+					name,
+					url: redactStreamUrl(url),
+					source: 'meeting',
+					broadcast,
+					start: { name, url },
+					selected: true
+				})
+			),
+			...otherBroadcasts.map((broadcast) => {
+				const ownUrl = ownUrls.get(broadcast.broadcastId);
 				return this.toRow({
-					key: broadcast.url,
+					key: broadcast.broadcastId,
 					name: broadcast.name,
 					url: broadcast.url,
 					source: 'meeting',
 					broadcast,
-					start: own && { name: own.name, url: own.url },
+					start: ownUrl ? { name: broadcast.name, url: ownUrl } : undefined,
 					selected: true
 				});
-			}),
-			...local
-				.filter(({ url }) => !meetingBroadcasts.some((broadcast) => broadcast.url === redactStreamUrl(url)))
-				.map(({ name, url }) =>
-					this.toRow({
-						key: redactStreamUrl(url),
-						name,
-						url,
-						source: 'meeting',
-						start: { name, url },
-						selected: true
-					})
-				)
+			})
 		];
 	});
 	readonly selectedCount = computed(() => this.rows().filter(({ selected }) => selected).length);
@@ -248,8 +270,8 @@ export class BroadcastActivityComponent {
 
 	readonly editor = new DestinationEditor(this.formBuilder);
 	readonly editorOpen = signal(false);
-	/** A destination given for the meeting while live, whose start the server has not answered yet. */
-	readonly addingDestination = signal(false);
+	/** The destination given for the meeting while live whose start the server has not answered yet. */
+	readonly addingDestination = signal<string | undefined>(undefined);
 	/** Adding a destination while live streams to it at once, so the editor says so. */
 	readonly submitLabelKey = computed(() => {
 		if (!this.isRunning()) return 'PANEL.BROADCAST.ADD';
@@ -267,15 +289,14 @@ export class BroadcastActivityComponent {
 	private readonly addedDestinationEffect = effect(() => {
 		const request = this.pendingRequest();
 
-		if (!this.addingDestination() || request.status === 'starting') return;
+		const added = this.addingDestination();
 
-		this.addingDestination.set(false);
+		if (!added || request.status === 'starting') return;
+
+		this.addingDestination.set(undefined);
 
 		if (request.status === 'failed') {
-			const { url } = this.editor.form.getRawValue();
-			this.meetingDestinations.update((destinations) =>
-				destinations.filter((destination) => destination.url !== url.trim())
-			);
+			this.removeMeetingDestination(added);
 			this.editor.rejection.set(request.error ?? '');
 			this.broadcastState.dismissFailure();
 		} else {
@@ -333,30 +354,29 @@ export class BroadcastActivityComponent {
 	}
 
 	closeEditor(): void {
-		this.addingDestination.set(false);
+		this.addingDestination.set(undefined);
 		this.editorOpen.set(false);
 	}
 
 	submitEditor(): void {
-		const destination = this.editor.submit();
+		const draft = this.editor.submit();
 
-		if (!destination) return;
+		if (!draft) return;
 
+		const destination = { ...draft, id: `meeting-${++this.meetingDestinationCount}` };
 		this.meetingDestinations.update((destinations) => [...destinations, destination]);
 
 		if (this.isRunning()) {
-			this.addingDestination.set(true);
-			this.startTo([destination], [redactStreamUrl(destination.url)]);
+			this.addingDestination.set(destination.id);
+			this.startTo([draft], [destination.id]);
 			return;
 		}
 
 		this.closeEditor();
 	}
 
-	removeMeetingDestination(key: string): void {
-		this.meetingDestinations.update((destinations) =>
-			destinations.filter(({ url }) => redactStreamUrl(url) !== key)
-		);
+	removeMeetingDestination(id: string): void {
+		this.meetingDestinations.update((destinations) => destinations.filter((destination) => destination.id !== id));
 	}
 
 	/** Streams to every chosen destination not streamed to yet, one broadcast each. */

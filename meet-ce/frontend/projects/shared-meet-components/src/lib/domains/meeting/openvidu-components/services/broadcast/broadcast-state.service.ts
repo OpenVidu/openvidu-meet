@@ -1,5 +1,5 @@
 import { computed, Service, signal } from '@angular/core';
-import { MeetBroadcastInfo, MeetBroadcastStatus } from '@openvidu-meet/typings';
+import { MeetBroadcastInfo, MeetBroadcastStartDestination, MeetBroadcastStatus } from '@openvidu-meet/typings';
 import { ElapsedClock } from '../../../../../shared/utils/elapsed-clock';
 import {
 	broadcastDestinationKey,
@@ -19,6 +19,7 @@ export class BroadcastStateService {
 	private readonly clock = new ElapsedClock();
 	private readonly _broadcasts = signal<MeetBroadcastInfo[]>([]);
 	private readonly _request = signal<BroadcastRequestState>({ status: 'idle' });
+	private readonly _ownUrls = signal(new Map<string, string>());
 	private clockedStart: number | undefined;
 
 	/**
@@ -27,6 +28,12 @@ export class BroadcastStateService {
 	 */
 	readonly broadcasts = this._broadcasts.asReadonly();
 	readonly request = this._request.asReadonly();
+	/**
+	 * The full URL of each broadcast the local participant started to a destination given for the
+	 * meeting, by broadcast id: the server only reports URLs redacted, alike for every destination
+	 * on one platform, so this is what ties such a broadcast to the destination it was asked for.
+	 */
+	readonly ownUrls = this._ownUrls.asReadonly();
 	/**
 	 * How long the meeting has been live, as a `Date` offset from zero so it can be formatted with
 	 * the `date` pipe. Not the moment it started.
@@ -81,6 +88,19 @@ export class BroadcastStateService {
 		this.trackElapsed();
 	}
 
+	/**
+	 * Records the destination given for the meeting that each broadcast of a start the local
+	 * participant asked for streams to, the broadcasts answered in the order of the destinations.
+	 */
+	recordOwnBroadcasts(destinations: MeetBroadcastStartDestination[], broadcasts: MeetBroadcastInfo[]): void {
+		const urls = new Map(this._ownUrls());
+
+		destinations.forEach(({ url }, index) => {
+			if (url && broadcasts[index]) urls.set(broadcasts[index].broadcastId, url);
+		});
+		this._ownUrls.set(urls);
+	}
+
 	setRequest(status: BroadcastRequestStatus, error?: string): void {
 		this._request.set({ status, error });
 	}
@@ -94,6 +114,7 @@ export class BroadcastStateService {
 	reset(): void {
 		this._broadcasts.set([]);
 		this._request.set({ status: 'idle' });
+		this._ownUrls.set(new Map());
 		this.trackElapsed();
 	}
 

@@ -212,7 +212,10 @@ describe('MeetingEventHandlerService', () => {
 		]);
 		broadcastService.startBroadcasts.and.resolveTo([liveBroadcast()]);
 		broadcastService.stopBroadcasts.and.resolveTo([liveBroadcast({ status: MeetBroadcastStatus.COMPLETE })]);
-		broadcastState = jasmine.createSpyObj<BroadcastStateService>('BroadcastStateService', ['setRequest']);
+		broadcastState = jasmine.createSpyObj<BroadcastStateService>('BroadcastStateService', [
+			'setRequest',
+			'recordOwnBroadcasts'
+		]);
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -1411,6 +1414,10 @@ describe('MeetingEventHandlerService', () => {
 				['room1', { destinations: undefined }]
 			]);
 			expect(broadcastState.setRequest.calls.allArgs()).toEqual([['starting'], ['idle'], ['starting'], ['idle']]);
+			expect(broadcastState.recordOwnBroadcasts.calls.allArgs()).toEqual([
+				[destinations, [liveBroadcast()]],
+				[[], [liveBroadcast()]]
+			]);
 		});
 
 		it('stops the broadcasts asked for, or every running one, in one request', async () => {
