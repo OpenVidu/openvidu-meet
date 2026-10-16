@@ -13,7 +13,7 @@ import type { EgressInfo, RoomCompositeOptions, StreamOutput } from 'livekit-ser
 import '../../../src/config/dependency-injector.config.js';
 import { BroadcastHelper } from '../../../src/helpers/broadcast.helper.js';
 import type { BroadcastRecord } from '../../../src/models/broadcast.model.js';
-import { OpenViduMeetError } from '../../../src/models/error.model.js';
+import { errorEgressNotAvailable, OpenViduMeetError } from '../../../src/models/error.model.js';
 import { RedisKeyName } from '../../../src/models/redis.model.js';
 import { BroadcastStateService } from '../../../src/services/broadcast-state.service.js';
 import { BroadcastService } from '../../../src/services/broadcast.service.js';
@@ -98,6 +98,7 @@ class FakeLiveKitService {
 	updateCalls: { egressId: string; add: string[]; remove: string[] }[] = [];
 	updateResponses: EgressInfo[] = [];
 	refusedUrl: string | undefined;
+	unavailableUrl: string | undefined;
 	nextEgress: EgressInfo = egressWith({});
 
 	async roomHasParticipants(): Promise<boolean> {
@@ -131,6 +132,8 @@ class FakeLiveKitService {
 		this.updateCalls.push({ egressId, add, remove });
 
 		if (add.some((url) => url.startsWith(`${this.refusedUrl}${TAG}`))) throw new Error('sink failed');
+
+		if (remove.some((url) => url.startsWith(`${this.unavailableUrl}${TAG}`))) throw errorEgressNotAvailable();
 
 		if (this.alreadyEnded) return undefined;
 
@@ -568,6 +571,18 @@ describe('BroadcastService', () => {
 			expect(frontend.signals.map(({ broadcastId, status }) => `${broadcastId}:${status}`)).toEqual([
 				'bc-a:complete'
 			]);
+			expect(webhookSummary()).toEqual(['broadcastEnded:A:complete']);
+		});
+
+		it('answers 503 when no egress service takes a stop, saving as stopped the broadcasts stopped before it', async () => {
+			await seed(twoLive());
+			livekit.nextEgress = egressWith({ streamResults: streams([finished, { startedAt: 1_000_000_000n }]) });
+			livekit.unavailableUrl = REAL_URLS.b;
+
+			await expectStatus(service.stopBroadcasts(ROOM_ID, {}), 503);
+			await expectStatus(service.stopBroadcasts(ROOM_ID, { broadcastIds: ['bc-b'] }), 503);
+
+			expect(saved().map(({ broadcastId, status }) => `${broadcastId}:${status}`)).toEqual(['bc-b:active']);
 			expect(webhookSummary()).toEqual(['broadcastEnded:A:complete']);
 		});
 

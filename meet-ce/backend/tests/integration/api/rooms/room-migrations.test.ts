@@ -266,6 +266,42 @@ const expectMigratedRoomToCurrentVersion = (migratedRoom: Record<string, unknown
 	expect(migratedRoom).not.toHaveProperty('roles.speaker.permissions.canRetrieveRecordings');
 };
 
+// v7 is what 3.9.0 stores: the current shape without the live broadcast config and permissions.
+const withoutBroadcastPermissions = (permissions: Record<string, boolean>) =>
+	Object.fromEntries(Object.entries(permissions).filter(([key]) => !key.startsWith('broadcast')));
+
+const buildLegacyRoomV7 = (roomId: string) => ({
+	schemaVersion: 7,
+	...buildLegacyRoomBase(roomId),
+	owner: MEET_ENV.INITIAL_ADMIN_USER,
+	config: {
+		chat: { enabled: true },
+		recording: {
+			enabled: true,
+			layout: MeetRecordingLayout.GRID,
+			encoding: MeetRecordingEncodingPreset.H264_720P_30
+		},
+		virtualBackground: { enabled: true },
+		e2ee: { enabled: false },
+		captions: { enabled: true },
+		raiseHand: { enabled: true },
+		reactions: { enabled: true }
+	},
+	roles: {
+		moderator: { permissions: withoutBroadcastPermissions(expectedCurrentModeratorPermissions) },
+		speaker: { permissions: withoutBroadcastPermissions(expectedCurrentSpeakerPermissions) }
+	},
+	access: {
+		anonymous: {
+			moderator: { enabled: true, url: `/room/${roomId}?secret=123456` },
+			speaker: { enabled: true, url: `/room/${roomId}?secret=abcdef` },
+			recording: { enabled: true, url: `/room/${roomId}/recordings?secret=ghijkl` }
+		},
+		user: { enabled: false, url: `/room/${roomId}` }
+	},
+	rolesUpdatedAt: Date.now()
+});
+
 describe('Room Schema Migrations', () => {
 	/**
 	 * Unit tests validate each transform independently.
@@ -468,7 +504,8 @@ describe('Room Schema Migrations', () => {
 		it.each([
 			{ fromVersion: 1, buildDocument: buildLegacyRoomV1 },
 			{ fromVersion: 2, buildDocument: buildLegacyRoomV2 },
-			{ fromVersion: 3, buildDocument: buildLegacyRoomV3 }
+			{ fromVersion: 3, buildDocument: buildLegacyRoomV3 },
+			{ fromVersion: 7, buildDocument: buildLegacyRoomV7 }
 		])(
 			'should migrate a legacy room document from v$fromVersion to the current version',
 			async ({ buildDocument }) => {
