@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Refreshing a join token
-`refreshRoomMemberToken` SHALL reissue, for a participant in the room's meeting, a token with the permissions and role they hold there at that moment, a promotion included, keeping their identity, name and correlation fields. It SHALL require in `X-Room-Member-Token` a join token expired at most 10 seconds ago that no later change invalidated (see `authentication`), answering `401` otherwise, `403` for another room's token and `404` when the participant is not in the meeting.
+`refreshRoomMemberToken` SHALL reissue, for a participant in the room's meeting, a token with the permissions and role they hold there at that moment, a promotion included, keeping their identity, name and correlation fields. It SHALL require in `X-Room-Member-Token` a join token expired at most 10 seconds ago that no later change but a demotion invalidated (see `authentication`), answering `401` otherwise, `403` for another room's token and `404` when the participant is not in the meeting.
 
 #### Scenario: Refresh after a promotion
 - **GIVEN** a speaker promoted to moderator in the meeting
@@ -42,7 +42,7 @@
 - **GIVEN** a participant promoted to moderator who holds a join token issued during the promotion
 - **WHEN** a moderator demotes them
 - **AND** their client calls `refreshRoomMemberToken` with that token
-- **THEN** the server answers `401` with message `Invalid token`
+- **THEN** the server answers `200` with a token carrying the permissions they had before the promotion, without the promoted moderator role
 
 #### Scenario: Change made through another replica
 - **GIVEN** two Meet replicas and a user member in the meeting

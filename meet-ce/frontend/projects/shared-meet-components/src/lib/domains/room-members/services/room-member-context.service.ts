@@ -32,6 +32,7 @@ export class RoomMemberContextService {
 	protected readonly TOKEN_UPDATE_MAX_ATTEMPTS = 6;
 	protected readonly TOKEN_UPDATE_FIRST_RETRY_DELAY_MS = 1000;
 	private tokenRefreshTimeoutId?: ReturnType<typeof setTimeout>;
+	private joinSecret?: string;
 
 	/**
 	 * Individual signals for room member context
@@ -162,14 +163,33 @@ export class RoomMemberContextService {
 		}
 
 		const { token } = await this.roomMemberService.generateRoomMemberToken(roomId, tokenOptions, headers);
+
+		if (tokenOptions.joinMeeting) {
+			this.joinSecret = tokenOptions.secret;
+		}
+
 		this._roomMemberToken.set(token);
 		await this.updateContextFromToken(token);
 		return token;
 	}
 
 	/**
+	 * Requests a new join token for a participant already inside a meeting with the credentials they joined
+	 * with, so the server resolves their role and permissions again, and updates the context with them.
+	 *
+	 * @param roomId - The unique identifier of the room
+	 * @return A promise that resolves to the new room member token
+	 */
+	regenerateToken(roomId: string): Promise<string> {
+		return this.generateToken(roomId, { secret: this.joinSecret, joinMeeting: true });
+	}
+
+	/**
 	 * Refreshes the current room member token for a participant already inside a meeting
 	 * and updates the context with new role and permissions.
+	 *
+	 * The server refuses with `401` to refresh a token that a later change invalidated, such as a change of the
+	 * member's permissions whose notice never arrived, so that refusal falls back to {@link regenerateToken}.
 	 *
 	 * @param roomId - The unique identifier of the room
 	 * @return A promise that resolves to the refreshed room member token
@@ -181,7 +201,18 @@ export class RoomMemberContextService {
 			throw new Error('Cannot refresh room member token: previous token not found');
 		}
 
-		const { token } = await this.roomMemberService.refreshRoomMemberToken(roomId);
+		let token: string;
+
+		try {
+			({ token } = await this.roomMemberService.refreshRoomMemberToken(roomId));
+		} catch (error) {
+			if (error instanceof HttpErrorResponse && error.status === 401) {
+				return this.regenerateToken(roomId);
+			}
+
+			throw error;
+		}
+
 		this._roomMemberToken.set(token);
 		await this.updateContextFromToken(token);
 		return token;
@@ -304,6 +335,7 @@ export class RoomMemberContextService {
 	 */
 	clearContext(): void {
 		this.clearTokenRefreshTimeout();
+		this.joinSecret = undefined;
 		this._roomMemberToken.set(undefined);
 		this._roomId.set(undefined);
 		this._participantName.set(undefined);

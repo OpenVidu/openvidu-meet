@@ -34,25 +34,32 @@ participant to "Room access revoked" on `401`, `403` or `404`.
 
 - **Reuse the room member token checks of `roomMemberTokenValidator`.** Extract its body (signature, metadata,
   `rolesUpdatedAt`, demotion revocation, `permissionsUpdatedAt` and member existence, `roleUpdatedAt` and user
-  existence) into one function that takes the clock tolerance, used by the validator with `0` and by the refresh
-  with `REFRESH_CLOCK_TOLERANCE_SECONDS`, replacing `getValidatedRoomMemberTokenContext` for the refresh. The room
+  existence) into one function that takes the clock tolerance and whether the demotion revocation applies, used by
+  the validator with `0` and the demotion revocation, and by the refresh with `REFRESH_CLOCK_TOLERANCE_SECONDS` and
+  without it, replacing `getValidatedRoomMemberTokenContext` for the refresh. The room
   check (`403` for another room's token) stays as it is. One definition of a valid room member token instead of a
   second, weaker one.
   Alternative considered: keep the refresh lenient and rebuild the permissions from the database. Rejected: an
   anonymous participant has no database record and the token does not carry the secret it was issued with, so the
   refresh cannot recompute them.
-- **Apply the demotion revocation too.** The refresh after a demotion already returns the demoted permissions, so
-  exempting it would be safe, but it would make the refresh the one endpoint that accepts a revoked token. With
-  the client fallback below, a demotion costs one refused refresh and one regeneration. Listed in the proposal's
-  `Decisions to confirm`.
+- **Exempt the demotion revocation from the refresh** (USER decision). The refresh reads the participant under
+  the same per-participant lock the demotion holds, so after a demotion it returns the restored permissions: a
+  token issued before the demotion can only be renewed into the demoted one, and every other endpoint keeps
+  refusing it. The client cached in a browser during an upgrade refreshes after every demotion and has no fallback,
+  so refusing it there would send each participant demoted in that window to "Room access revoked".
+  Alternative considered: apply it, so that no endpoint accepts a revoked token, and let the new client regenerate.
+  Rejected for the upgrade window above.
 - **Client fallback in the library.** When the refresh answers `401`, the renewal requests a join token with the
   meeting's room secret (or the signed-in user's access token) and the current token as `X-Room-Member-Token`,
   exactly as the "permissions updated" handler does, and only a refusal of that request (or a refresh refused
   with `403`/`404`) reaches the "Room access revoked" path of `updateTokenInMeeting`. It lives in
   `shared-meet-components` (room member context and meeting event handler), so CE and PRO shells and the
   embedded element get it unchanged.
-- **Several replicas.** The timestamps live in MongoDB and the demotion key in Redis, both shared, so a change made
-  through one replica is enforced by a refresh served by any other; nothing is cached in process memory.
+  The refresh request carries the skip-auth-recovery header: its refusal is about the room member token, and
+  without the header the interceptor's auth handler answers a `401` by logging out, which sends an anonymous
+  participant or an identified guest to the login page before the fallback runs.
+- **Several replicas.** The timestamps live in MongoDB, shared by every replica, so a change made through one
+  replica is enforced by a refresh served by any other; nothing is cached in process memory.
 
 ## Risks / Trade-offs
 
@@ -62,7 +69,6 @@ participant to "Room access revoked" on `401`, `403` or `404`.
 - [The fallback needs the entry credentials] → every entry (access link `secret`, identified guest link, signed-in
   user; `room-url` for the embedded element) leaves them in the meeting context, as the "permissions updated"
   handler already relies on.
-- [Extra request on every demotion] → one refused refresh per demotion, negligible.
 
 ## Migration Plan
 

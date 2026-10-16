@@ -33,6 +33,7 @@ import type { ParticipantMeetingMetadata } from '../helpers/participant.helper.j
 import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
+import { verifyRoomMemberToken } from '../middlewares/auth.middleware.js';
 import {
 	errorAnonymousAccessDisabled,
 	errorInsufficientPermissions,
@@ -658,6 +659,10 @@ export class RoomMemberService {
 	 * This method should be called when a participant wants to refresh their token while in a meeting to get updated permissions
 	 * based on their current LiveKit participant metadata.
 	 *
+	 * The previous token gets the same checks as on any other endpoint, so a token that a change made after it
+	 * invalidated cannot be renewed into one that is accepted again. A demotion is the exception: the participant is
+	 * read after it, so the new token carries the restored permissions.
+	 *
 	 * @param roomId - The ID of the room
 	 * @param previousToken - The previous room member token to refresh
 	 * @returns A promise that resolves to the new refreshed token
@@ -665,10 +670,14 @@ export class RoomMemberService {
 	 * and a 409 if a change to the participant's role keeps their metadata locked for too long
 	 */
 	async refreshRoomMemberToken(roomId: string, previousToken: string): Promise<string> {
-		const { participantIdentity, participantName } = await this.getValidatedRoomMemberTokenContext(
-			roomId,
-			previousToken
-		);
+		const { participantIdentity, participantName, metadata } = await verifyRoomMemberToken(previousToken, {
+			clockToleranceSeconds: INTERNAL_CONFIG.REFRESH_CLOCK_TOLERANCE_SECONDS,
+			ignoreDemotion: true
+		});
+
+		if (metadata.roomId !== roomId) {
+			throw errorInsufficientPermissions();
+		}
 
 		if (!participantIdentity || !participantName) {
 			throw errorInvalidToken();
@@ -691,7 +700,7 @@ export class RoomMemberService {
 
 	/**
 	 * Validates a room member token and extracts the participant identity and name from its claims, as well as the token metadata.
-	 * This method is used during token refresh to ensure the previous token is valid and to obtain the participant's current context in the meeting.
+	 * This method is used during token regeneration to keep the participant's identity in the meeting.
 	 *
 	 * @param roomId - The ID of the room
 	 * @param roomMemberToken - The room member token to validate

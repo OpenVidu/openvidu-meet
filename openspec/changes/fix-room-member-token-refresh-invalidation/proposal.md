@@ -10,14 +10,17 @@ issue time that every later check accepts, and do so for as long as they stay co
 
 ## What Changes
 
-- `refreshRoomMemberToken` refuses with `401` every room member token that the other endpoints refuse: one issued
-  before the room's roles or access were updated, before its room member's permissions changed or after the member
-  was deleted, before its user's role changed or after the user was deleted, or before the participant was demoted
-  from moderator. The refresh keeps its 10 second tolerance on expiry.
+- `refreshRoomMemberToken` refuses with `401` the room member tokens that the other endpoints refuse after a change:
+  one issued before the room's roles or access were updated, before its room member's permissions changed or after
+  the member was deleted, before its user's role changed or after the user was deleted. The refresh keeps its 10
+  second tolerance on expiry.
+- A token issued before the participant was demoted from moderator stays renewable, as today: the refresh reads the
+  participant after the demotion and returns the restored permissions, while every other endpoint keeps refusing
+  that token.
 - The meeting answers a refresh refused with `401` by obtaining a new join token with the credentials the
   participant entered with (the same regeneration the "permissions updated" notice already triggers), and only a
   refusal of that regeneration takes the participant out of the meeting. A participant who missed the notice of a
-  change, or who was just demoted, therefore stays in the meeting with their current permissions.
+  change therefore stays in the meeting with their current permissions.
 
 ## Capabilities
 
@@ -27,8 +30,11 @@ None.
 
 ### Modified Capabilities
 
-- `room-members`: "Refreshing a join token" refuses the tokens that `authentication` invalidates; "The meeting
-  keeps its token current" falls back to a regeneration when the refresh is refused with `401`.
+- `room-members`: "Refreshing a join token" refuses the tokens that `authentication` invalidates, a demotion
+  excepted; "The meeting keeps its token current" falls back to a regeneration when the refresh is refused with
+  `401`.
+- `authentication`: "Demotion revokes room member tokens" names the refresh as the one place that still renews a
+  token issued before the demotion.
 
 ## Impact
 
@@ -39,8 +45,8 @@ None.
 - Code: `meet-ce/backend/src/middlewares/auth.middleware.ts` (the room member token checks become reusable),
   `meet-ce/backend/src/services/room-member.service.ts` (refresh), and the room member context of the library.
   No persisted field, no migration.
-- Several replicas: the checks read MongoDB (room, member, user timestamps) and the Redis demotion key, both shared,
-  so a change made through one replica is enforced by a refresh on any other.
+- Several replicas: the refresh's checks read MongoDB (room, member, user timestamps), shared by every replica, so
+  a change made through one replica is enforced by a refresh on any other.
 - openvidu.io: no page changes.
 
 ## Severity
@@ -58,8 +64,8 @@ Conditions to exploit, all of them needed:
 - Their client ignores the "permissions updated" notice and calls `refreshRoomMemberToken` with the previous token
   instead, before each token expires. This needs a modified client or direct API calls, nothing else.
 - Not reachable: a room roles or access update (`updateRoomRoles`, `updateRoomAccess` answer `409` during a
-  meeting), and a demotion from moderator (the refresh reads the participant's state after the demotion). Both are
-  refused anyway for consistency with every other endpoint.
+  meeting), refused anyway for consistency with every other endpoint; and a demotion from moderator, since the
+  refresh reads the participant's state after the demotion and returns the restored permissions.
 
 Impact: the participant keeps, for the rest of their stay in the meeting and up to `MEET_ROOM_MEMBER_TOKEN_EXPIRATION`
 (default `2h`) after their last refresh, every permission they held before the change: for a former admin or owner
@@ -72,9 +78,11 @@ Rating: Medium (authenticated participant, one room, needs a revocation to happe
 
 ## Decisions to confirm
 
-- The refresh also refuses a token issued before a demotion, so a demoted participant's client gets its new token
-  through the regeneration fallback (alternative: exempt the demotion revocation from the refresh, since the
-  refresh already returns the demoted permissions, saving one refused request per demotion).
+- Decided (USER, 2026-10-16): the refresh exempts the demotion revocation and keeps renewing a token issued before
+  a demotion into one with the restored permissions. A client cached in a browser during an upgrade refreshes after
+  every demotion and has no regeneration fallback, so refusing it would send every participant demoted in that
+  window to "Room access revoked". Rejected alternative: refuse it like every other endpoint and let the new
+  client's fallback regenerate.
 - A refresh refused with `401` falls back to a regeneration instead of taking the participant out at once
   (alternative: keep today's client behavior, which would send any participant who missed a permissions notice to
   the "Room access revoked" screen at their next scheduled renewal).
