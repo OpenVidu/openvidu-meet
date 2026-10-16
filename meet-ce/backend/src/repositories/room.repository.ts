@@ -50,11 +50,11 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	}
 
 	protected override getAtomicUpdatePaths(): readonly string[] {
-		// Recording encoding must be treated as an atomic update path because
-		// it can be either a string or an object, and we want to ensure it is fully replaced rather than partially updated.
-		// The broadcast destination URLs are keyed by destination id, so a removed destination must
-		// take its URL with it instead of leaving it merged in.
-		return ['config.recording.encoding', 'broadcastDestinationUrls'];
+		// An encoding is either a preset string or an options object, so it is replaced whole: the
+		// fields of an object cannot be written into a string. The broadcast destination URLs are
+		// keyed by destination id, so a removed destination must take its URL with it instead of
+		// leaving it merged in.
+		return ['config.recording.encoding', 'config.broadcast.encoding', 'broadcastDestinationUrls'];
 	}
 
 	/**

@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { MEET_BROADCAST_FIELDS } from '@openvidu-meet/typings';
+import { MEET_BROADCAST_FIELDS, MeetRecordingAudioCodec, MeetRecordingVideoCodec } from '@openvidu-meet/typings';
 import {
 	BroadcastConfigSchema,
 	BroadcastFieldsQuerySchema,
@@ -31,9 +31,29 @@ describe('BroadcastConfigSchema', () => {
 	});
 
 	it('accepts the recording encodings, as a preset or as options', () => {
+		const options = {
+			video: {
+				width: 1280,
+				height: 720,
+				framerate: 30,
+				codec: MeetRecordingVideoCodec.H264_MAIN,
+				bitrate: 3000,
+				keyFrameInterval: 2,
+				depth: 24
+			},
+			audio: { codec: MeetRecordingAudioCodec.AAC, bitrate: 128, frequency: 44100 }
+		};
+
 		expect(
 			BroadcastConfigSchema.safeParse({ enabled: false, destinations: [], encoding: 'H264_1080P_30' }).success
 		).toBe(true);
+		expect(BroadcastConfigSchema.safeParse({ enabled: false, destinations: [], encoding: options }).success).toBe(
+			true
+		);
+		expect(
+			BroadcastConfigSchema.safeParse({ enabled: false, destinations: [], encoding: { video: options.video } })
+				.success
+		).toBe(false);
 		expect(BroadcastConfigSchema.safeParse({ enabled: false, destinations: [], encoding: 'H264_8K' }).success).toBe(
 			false
 		);
