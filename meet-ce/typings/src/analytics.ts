@@ -3,19 +3,19 @@
  */
 export interface MeetAnalytics {
 	/**
-	 * Total number of rooms created
+	 * Number of rooms that currently exist
 	 */
 	totalRooms: number;
 	/**
-	 * Number of rooms currently with an active meeting
+	 * Number of rooms that currently have an active meeting
 	 */
 	activeRooms: number;
 	/**
-	 * Total number of recordings created
+	 * Number of recordings that currently exist
 	 */
 	totalRecordings: number;
 	/**
-	 * Number of recordings that are complete and playable
+	 * Number of existing recordings whose status is `complete`
 	 */
 	completeRecordings: number;
 }
