@@ -101,6 +101,19 @@ describe('BroadcastStateService', () => {
 		expect(statuses()).toEqual(['bc2:starting', 'bc-meeting-2:starting']);
 	});
 
+	it('keeps the failure of a destination given for the meeting when another on the same platform starts', () => {
+		const meeting = { destinationId: undefined, url: 'rtmp://a.rtmp.youtube.com/live2/********' };
+		service.setBroadcast(
+			broadcast({ ...meeting, broadcastId: 'bc-a', name: 'Channel A', status: MeetBroadcastStatus.FAILED })
+		);
+
+		service.setBroadcast(
+			broadcast({ ...meeting, broadcastId: 'bc-b', name: 'Channel B', status: MeetBroadcastStatus.STARTING })
+		);
+
+		expect(statuses()).toEqual(['bc-a:failed', 'bc-b:starting']);
+	});
+
 	it('forgets the failures once the last broadcast in progress ends normally, so stopping is no failure', () => {
 		service.setBroadcast(broadcast({ broadcastId: 'bc1', destinationId: 'd1' }));
 		service.setBroadcast(
@@ -134,6 +147,18 @@ describe('BroadcastStateService', () => {
 
 		expect(statuses()).toEqual(['bc1:failed', 'bc2:failed']);
 		expect(service.hasFailed()).toBeTrue();
+	});
+
+	it('ties each broadcast of a start to the full URL of the destination given for the meeting, until reset', () => {
+		service.recordOwnBroadcasts(
+			[{ destinationId: 'd1' }, { name: 'Channel A', url: 'rtmp://a.rtmp.youtube.com/live2/key-a' }],
+			[broadcast({ broadcastId: 'bc1' }), broadcast({ broadcastId: 'bc2', destinationId: undefined })]
+		);
+
+		expect([...service.ownUrls()]).toEqual([['bc2', 'rtmp://a.rtmp.youtube.com/live2/key-a']]);
+
+		service.reset();
+		expect(service.ownUrls().size).toBe(0);
 	});
 
 	it('keeps a request pending until it is answered, and dismissing a refusal keeps the broadcasts', () => {

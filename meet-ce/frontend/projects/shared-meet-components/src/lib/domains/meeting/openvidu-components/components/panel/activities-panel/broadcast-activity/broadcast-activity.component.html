@@ -347,7 +347,7 @@
 				type="submit"
 				id="broadcast-destination-save-btn"
 				class="editor-submit"
-				[disabled]="addingDestination()"
+				[disabled]="addingDestination() !== undefined"
 			>
 				{{ submitLabelKey() | translate }}
 			</button>

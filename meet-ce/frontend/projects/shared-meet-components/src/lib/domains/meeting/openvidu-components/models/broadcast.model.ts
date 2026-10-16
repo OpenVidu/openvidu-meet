@@ -51,9 +51,11 @@ export const hasBroadcastFailed = (status: MeetBroadcastStatus): boolean => FAIL
 
 /**
  * What tells the broadcasts to one destination from those to another: the room destination they
- * stream to, or the URL of a destination given for the meeting.
+ * stream to, or the name and URL of a destination given for the meeting, since the redacted URL
+ * alone is the same for every destination on one platform.
  */
 export const broadcastDestinationKey = ({
 	destinationId,
+	name,
 	url
-}: Pick<MeetBroadcastInfo, 'destinationId' | 'url'>): string => destinationId ?? url;
+}: Pick<MeetBroadcastInfo, 'destinationId' | 'name' | 'url'>): string => destinationId ?? `${name}\n${url}`;
