@@ -88,9 +88,12 @@ meeting without a duration limit streams for as long as it lasts, and a record t
 make the next event of its egress look like one no broadcast references, which gets stopped. The
 meeting's end forgets it instead, through `room_finished` or the reconciliation below. Every change,
 from a request or from a LiveKit webhook on any replica, runs
-under the Redis lock `ov_meet_lock:broadcast_<roomId>`. A request waits up to 10 s for it and then
-answers `409`; a webhook waits up to the lock's 30 s TTL, since it carries LiveKit's latest snapshot
-that nothing else would apply. A MongoDB collection like the recordings one was rejected: there is
+under the Redis lock `ov_meet_lock:broadcast_<roomId>`, extended while the change runs: a start can
+make several calls to LiveKit, each allowed 10 s, and a change that outlived the lock's 30 s TTL
+would let another replica's change run beside it and be overwritten by it. The TTL only frees the
+lock of a replica that died holding it. A request waits up to 10 s for it and then answers `409`; a
+webhook waits up to 30 s, since it carries LiveKit's latest snapshot, and one that gives up leaves it
+to the reconciliation sweep. A MongoDB collection like the recordings one was rejected: there is
 nothing to list once the meeting ends.
 
 ### Full URLs stay out of the domain

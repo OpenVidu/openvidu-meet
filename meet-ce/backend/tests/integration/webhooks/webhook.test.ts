@@ -613,20 +613,33 @@ describe('Webhook Integration Tests', () => {
 			expect(await mutexService.lockRegistryExists(registryKey)).toBe(false);
 		});
 
-		it('should release lock once TTL expires without explicit release', async () => {
+		it('should keep the lock past its TTL while the callback runs and free it once it finishes', async () => {
+			const mutexService = container.get(MutexService);
+			const webhookEvent = createWebhookEvent('ttl-hold-event-id', 'ttl-hold-room');
+			const lockKey = MeetLock.getWebhookLock(webhookEvent);
+
+			await mutexService.withLock(lockKey, 1000, async () => {
+				await sleep('2500ms');
+				expect(await mutexService.lockExists(lockKey)).toBe(true);
+			});
+
+			expect(await mutexService.lockExists(lockKey)).toBe(false);
+		});
+
+		it('should free the lock of a holder that died once its TTL expires', async () => {
 			const mutexService = container.get(MutexService);
 			const webhookEvent = createWebhookEvent('ttl-expire-event-id', 'ttl-expire-room');
 			const lockKey = MeetLock.getWebhookLock(webhookEvent);
 
-			// Acquire with a short TTL (1s)
-			const ttlMs = 1000;
-			await mutexService.withLock(lockKey, ttlMs, async () => {
-				// Do not call release; wait for TTL + small buffer
-				await sleep('2s');
+			// A lock taken and never extended or released, as a process that crashed leaves it
+			await (mutexService as unknown as { acquire(key: string, ttl: number): Promise<unknown> }).acquire(
+				lockKey,
+				1000
+			);
+			expect(await mutexService.lockExists(lockKey)).toBe(true);
 
-				// Trigger existence check which should cause registry cleanup for expired locks
-				expect(await mutexService.lockExists(lockKey)).toBe(false);
-			});
+			await sleep('1500ms');
+			expect(await mutexService.lockExists(lockKey)).toBe(false);
 		});
 	});
 

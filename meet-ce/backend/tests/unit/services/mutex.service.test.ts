@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
+import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { randomUUID } from 'crypto';
 import { LockAcquisitionError } from 'redlock-universal';
 import '../../../src/config/dependency-injector.config.js';
@@ -8,29 +8,38 @@ import { MutexService } from '../../../src/services/mutex.service.js';
 import type { RedisService } from '../../../src/services/redis.service.js';
 
 /**
- * Stands in for Redis under the real MutexService: a single-key SET NX with a value-fenced release,
- * failing fast on contention the way the production engine (no retries) does.
+ * Stands in for Redis under the real MutexService: a single-key SET NX that expires after its TTL,
+ * with a value-fenced release and extension, failing fast on contention the way the production
+ * engine (no retries) does.
  */
 class InMemoryLockRedisService {
-	private readonly held = new Map<string, string>();
+	private readonly held = new Map<string, { value: string; expiresAt: number }>();
 
 	createRedlock(): RedisRedlock {
 		const engine = {
 			acquire: async ([key]: string[], ttl: number): Promise<RedisDistributedLock> => {
-				if (this.held.has(key)) {
+				if (this.holder(key)) {
 					throw new LockAcquisitionError(key, 1, new Error(`Lock "${key}" is already held`));
 				}
 
 				const value = randomUUID();
-				this.held.set(key, value);
+				this.held.set(key, { value, expiresAt: Date.now() + ttl });
 				return new RedisDistributedLock(engine as unknown as RedisRedlock, [key], value, Date.now() + ttl);
 			},
 			releaseLock: async (lock: RedisDistributedLock): Promise<boolean> => {
-				if (this.held.get(lock.resources[0]) !== lock.value) {
+				if (this.holder(lock.resources[0]) !== lock.value) {
 					return false;
 				}
 
 				this.held.delete(lock.resources[0]);
+				return true;
+			},
+			extendLock: async (lock: RedisDistributedLock, ttl: number): Promise<boolean> => {
+				if (this.holder(lock.resources[0]) !== lock.value) {
+					return false;
+				}
+
+				this.held.set(lock.resources[0], { value: lock.value, expiresAt: Date.now() + ttl });
 				return true;
 			}
 		};
@@ -38,7 +47,12 @@ class InMemoryLockRedisService {
 	}
 
 	async exists(key: string): Promise<boolean> {
-		return this.held.has(key);
+		return this.holder(key) !== undefined;
+	}
+
+	private holder(key: string): string | undefined {
+		const entry = this.held.get(key);
+		return entry && entry.expiresAt > Date.now() ? entry.value : undefined;
 	}
 }
 
@@ -73,6 +87,29 @@ const flush = () => new Promise((resolve) => setImmediate(resolve));
 
 describe('MutexService', () => {
 	const KEY = 'ov_meet_lock:scheduled_task_expiredRoomsGC';
+
+	afterEach(() => {
+		jest.useRealTimers();
+	});
+
+	it('keeps the lock for as long as its holder runs, past the TTL, and frees it once it finishes', async () => {
+		jest.useFakeTimers({ now: 0 });
+		const mutex = new MutexService(new InMemoryLockRedisService() as unknown as RedisService, buildLogger().logger);
+		let release!: () => void;
+		const holder = mutex.withLock(
+			KEY,
+			1000,
+			() => new Promise<string>((resolve) => (release = () => resolve('done')))
+		);
+
+		await jest.advanceTimersByTimeAsync(3500);
+		expect(await mutex.withLock(KEY, 1000, async () => 'taken')).toBeNull();
+
+		release();
+		expect(await holder).toBe('done');
+		await jest.advanceTimersByTimeAsync(3500);
+		expect(await mutex.withLock(KEY, 1000, async () => 'taken')).toBe('taken');
+	});
 
 	it('reports a lock held by another contender as expected, not as a warning', async () => {
 		const { logger, lines } = buildLogger();

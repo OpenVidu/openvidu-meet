@@ -352,8 +352,8 @@ export class BroadcastService {
 
 	/**
 	 * Runs a webhook's change to a room's broadcasts once no other change holds the room's
-	 * broadcast lock, waiting as long as one can hold it: the webhook carries LiveKit's latest
-	 * state of the egress, which nothing else would apply if it were dropped.
+	 * broadcast lock, waiting longer than a request does: the webhook carries LiveKit's latest state
+	 * of the egress, which only the next reconciliation sweep would apply if it were dropped.
 	 */
 	protected async withWebhookLock(roomId: string, webhook: string, task: () => Promise<void>): Promise<void> {
 		const handled = await this.withBroadcastLock(roomId, INTERNAL_CONFIG.BROADCAST_LOCK_TTL, async () => {
