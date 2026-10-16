@@ -450,6 +450,18 @@ export const participantReactionSendCommand = async (page: Page, reaction: MeetR
 		.click();
 };
 
+/** Clicks the testapp's `broadcastStart()` button: one broadcast per destination saved in the room. */
+export const broadcastStartCommand = async (page: Page): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+	await page.getByTestId('btn-broadcast-start').click();
+};
+
+/** Clicks the testapp's `broadcastStop()` button. */
+export const broadcastStopCommand = async (page: Page): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+	await page.getByTestId('btn-broadcast-stop').click();
+};
+
 /** Clicks the testapp's deprecated `leaveRoom()` button. Removed in 3.12.0. */
 export const leaveRoomLegacyCommand = async (page: Page): Promise<void> => {
 	await showControlsPanel(page, 'commands');

@@ -19,8 +19,9 @@ import {
  *   - Chat feature off        -> chatRead / chatWrite disabled for both roles.
  *   - Virtual background off  -> mediaChangeVirtualBackground disabled for both roles.
  *
- * The wizard's step order is Room Details -> Meeting -> Recording -> Room Access, so these specs set
- * a toggle in Meeting, then jump forward to Room Access to assert on the role-permission switches.
+ * The wizard's step order is Room Details -> Meeting -> Recording -> Broadcast -> Room Access, so these
+ * specs set a toggle in Meeting, then jump forward to Room Access to assert on the role-permission
+ * switches.
  *
  * The round-trip specs at the end then finish the wizard — in create and in edit mode — and read the
  * room back through the API, which is what proves a value set in the UI actually reaches the stored
@@ -340,5 +341,107 @@ test.describe('Room wizard E2E Tests', () => {
 
 		expect(recording.autoStart).toBe(MeetRecordingAutoStartMode.WHEN_MODERATOR_JOINS);
 		expect(recording.layout).toBe(MeetRecordingLayout.SPEAKER);
+	});
+
+	// ── Live broadcast round-trip (wizard -> API) ───────────────────────────────
+
+	/** Moves to the "Broadcast" step, the fourth one. */
+	const gotoBroadcast = async (page: Page): Promise<void> => {
+		await gotoStep(page, 3);
+		await expect(page.locator('#broadcast-enabled')).toBeVisible();
+	};
+
+	/** Adds a destination on the Broadcast step through its inline editor. */
+	const addBroadcastDestination = async (page: Page, name: string, url: string): Promise<void> => {
+		await page.locator('#broadcast-add-destination-btn').click();
+		await page.locator('#broadcast-destination-name').fill(name);
+		await page.locator('#broadcast-destination-url').fill(url);
+		await page.locator('#broadcast-destination-save-btn').click();
+	};
+
+	test('broadcast: its two role permissions follow the feature', async ({ page }) => {
+		await openAdvancedWizard(page);
+		await gotoRoomAccess(page);
+
+		// A new room starts without live broadcast, which takes its role permissions with it.
+		for (const role of ROLES) {
+			await expect(permissionSwitch(page, role, 'broadcastControl')).toBeDisabled();
+			await expect(permissionSwitch(page, role, 'broadcastAddDestinations')).toBeDisabled();
+		}
+
+		await gotoBroadcast(page);
+		await setFeature(page, 'broadcast-enabled', true);
+		await gotoRoomAccess(page);
+
+		for (const role of ROLES) {
+			await expect(page.locator(`[id^="${role}-permission-broadcast"]`)).toHaveCount(2);
+			await expect(permissionSwitch(page, role, 'broadcastControl')).toBeEnabled();
+		}
+
+		// Adding a destination needs going live, which the speaker lacks by default.
+		await expect(permissionSwitch(page, 'moderator', 'broadcastAddDestinations')).toBeEnabled();
+		await expect(permissionSwitch(page, 'speaker', 'broadcastAddDestinations')).toBeDisabled();
+	});
+
+	test('create mode: the broadcast destinations and layout reach the created room, the stream keys hidden', async ({
+		page
+	}) => {
+		await openAdvancedWizard(page);
+		await page.locator('input[formcontrolname="roomName"]').fill('wizard-broadcast-create');
+		await gotoBroadcast(page);
+
+		await setFeature(page, 'broadcast-enabled', true);
+		await addBroadcastDestination(page, 'YouTube', 'rtmp://a.rtmp.youtube.com/live2/abcd-1234');
+		await expect(page.locator('#broadcast-destination-0')).toContainText('YouTube');
+		await page.locator('#broadcast-layout-section .layout-tile').nth(1).click(); // Speaker
+
+		await gotoRoomAccess(page);
+		await page.locator('#wizard-finish-btn').click();
+
+		await page.waitForURL(/\/room\/[^/?]+/);
+		const roomId = /\/room\/([^/?]+)/.exec(page.url())![1];
+		createdRoomIds.push(roomId);
+
+		const { broadcast } = await getRoomConfig(roomId);
+
+		expect(broadcast.enabled).toBe(true);
+		expect(broadcast.layout).toBe(MeetRecordingLayout.SPEAKER);
+		expect(broadcast.destinations).toEqual([
+			expect.objectContaining({ name: 'YouTube', url: 'rtmp://a.rtmp.youtube.com/live2/********' })
+		]);
+	});
+
+	test('edit mode: the stored destinations prefill the step with their keys hidden, and a rename keeps the destination', async ({
+		page
+	}) => {
+		const room = await createRoom({
+			roomName: 'wizard-broadcast-edit',
+			config: {
+				broadcast: {
+					enabled: true,
+					destinations: [{ name: 'Twitch', url: 'rtmp://live.twitch.tv/app/live_secret' }]
+				}
+			}
+		});
+		createdRoomIds.push(room.roomId);
+		const [stored] = (await getRoomConfig(room.roomId)).broadcast.destinations;
+
+		await page.goto(`${MEET_BASE_URL}/rooms/${room.roomId}/edit`, { waitUntil: 'domcontentloaded' });
+		await gotoBroadcast(page);
+
+		await expect(page.locator('#broadcast-destination-0')).toContainText('rtmp://live.twitch.tv/app/********');
+		await page.locator('#broadcast-destination-0 button').first().click();
+		await page.locator('#broadcast-destination-name').fill('Twitch main');
+		await page.locator('#broadcast-destination-save-btn').click();
+
+		await gotoRoomAccess(page);
+		await page.locator('#wizard-finish-btn').click();
+		await page.waitForURL(`**/rooms/${room.roomId}`);
+
+		const { broadcast } = await getRoomConfig(room.roomId);
+
+		expect(broadcast.destinations).toEqual([
+			{ id: stored.id, name: 'Twitch main', url: 'rtmp://live.twitch.tv/app/********' }
+		]);
 	});
 });

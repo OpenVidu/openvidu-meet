@@ -1,6 +1,7 @@
 import {
 	MeetDeprecatedPermissionKey,
 	MeetPermissionKey,
+	MeetBroadcastInfo,
 	MeetRecordingInfo,
 	MeetRoom,
 	MeetRoomConfig,
@@ -465,6 +466,20 @@ export const requestRecording = (roomId: string): Promise<Response> =>
 		headers: { 'x-api-key': API_KEY, 'Content-Type': 'application/json' },
 		body: JSON.stringify({ roomId })
 	});
+
+/** Starts a live broadcast of the room's meeting to each of its saved destinations, as a host application would. */
+export const startBroadcasts = async (roomId: string): Promise<MeetBroadcastInfo[]> => {
+	const response = await fetch(withApiPath('/broadcasts'), {
+		method: 'POST',
+		headers: { 'x-api-key': API_KEY, 'Content-Type': 'application/json' },
+		body: JSON.stringify({ roomId })
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'start broadcasts');
+
+	return (JSON.parse(responseText) as { broadcasts: MeetBroadcastInfo[] }).broadcasts;
+};
 
 /**
  * Ends a recording that is still starting. The media server ends the egress right away while the

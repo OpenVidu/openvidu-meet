@@ -115,6 +115,7 @@
         "MEETING": "Riunione",
         "MEDIA": "Media",
         "RECORDINGS": "Registrazioni",
+        "BROADCAST": "Diretta streaming",
         "CHAT": "Chat"
       },
       "ITEMS": {
@@ -189,6 +190,14 @@
         "recordingDelete": {
           "LABEL": "Eliminare le registrazioni",
           "DESCRIPTION": "Consenti di eliminare le registrazioni"
+        },
+        "broadcastControl": {
+          "LABEL": "Andare in diretta",
+          "DESCRIPTION": "Consente di avviare e fermare dirette verso le destinazioni della stanza, tutte o solo alcune"
+        },
+        "broadcastAddDestinations": {
+          "LABEL": "Aggiungere destinazioni",
+          "DESCRIPTION": "Consente di trasmettere una riunione a URL aggiuntivi oltre alle destinazioni della stanza. Richiede \"Andare in diretta\""
         },
         "chatRead": {
           "LABEL": "Leggere",

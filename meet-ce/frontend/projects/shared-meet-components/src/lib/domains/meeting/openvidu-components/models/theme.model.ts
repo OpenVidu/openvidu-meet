@@ -51,6 +51,8 @@ export interface MeetingThemeVariables {
 	// === Special Colors ===
 	'--ov-recording-color'?: string;
 	'--ov-recording-start-color'?: string;
+	'--ov-broadcast-color'?: string;
+	'--ov-broadcast-accent-color'?: string;
 	'--ov-selection-color'?: string;
 	'--ov-selection-color-btn'?: string;
 	'--ov-activity-status-color'?: string;
@@ -87,6 +89,8 @@ export const MEETING_LIGHT_THEME: MeetingThemeVariables = {
 	'--ov-activity-status-color': '#c8cdd6',
 	'--ov-video-background': '#000000',
 	'--ov-recording-start-color': '#00758f',
+	'--ov-broadcast-color': '#5c6bc0',
+	'--ov-broadcast-accent-color': '#3949ab',
 
 	'--ov-toolbar-buttons-radius': '50%',
 	'--ov-leave-button-radius': '10px',
@@ -119,6 +123,8 @@ export const MEETING_DARK_THEME: MeetingThemeVariables = {
 	'--ov-activity-status-color': '#c8cdd6',
 	'--ov-video-background': '#000000',
 	'--ov-recording-start-color': '#00758f',
+	'--ov-broadcast-color': '#5c6bc0',
+	'--ov-broadcast-accent-color': '#9fa8da',
 
 	'--ov-toolbar-buttons-radius': '50%',
 	'--ov-leave-button-radius': '10px',

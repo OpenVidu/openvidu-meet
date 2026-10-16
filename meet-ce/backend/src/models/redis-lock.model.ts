@@ -44,6 +44,15 @@ export class RedisDistributedLock {
 	release(): Promise<boolean> {
 		return this.engine.releaseLock(this);
 	}
+
+	/**
+	 * Pushes the expiry back to `ttl` from now, as long as this holder still owns the lock.
+	 *
+	 * @returns `true` if the lock was extended, `false` if it was lost.
+	 */
+	extend(ttl: number): Promise<boolean> {
+		return this.engine.extendLock(this, ttl);
+	}
 }
 
 /**
@@ -99,5 +108,9 @@ export class RedisRedlock {
 	 */
 	releaseLock(lock: RedisDistributedLock): Promise<boolean> {
 		return this.adapter.delIfMatch(lock.resources[0], lock.value);
+	}
+
+	extendLock(lock: RedisDistributedLock, ttl: number): Promise<boolean> {
+		return this.adapter.extendIfMatch(lock.resources[0], lock.value, ttl);
 	}
 }

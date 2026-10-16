@@ -11,6 +11,7 @@ import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import {
+	errorBroadcastDisabled,
 	errorInsufficientPermissions,
 	errorInvalidToken,
 	errorUnauthorized
@@ -34,6 +35,7 @@ import { setupRoomMember, setupSingleRoom, updateRoomMemberPermissions } from '.
 import { RoomData, RoomMemberData } from '../../../interfaces/scenarios.js';
 
 const MEETINGS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings`);
+const BROADCASTS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/broadcasts`);
 const ASSISTANTS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/ai/assistants`);
 const LIVE_CAPTIONS_BODY = { capabilities: [{ name: MeetAssistantCapabilityName.LIVE_CAPTIONS }] };
 
@@ -113,6 +115,81 @@ describe('Meeting API Security Tests', () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
+			expectMeetError(response, errorInsufficientPermissions());
+		});
+	});
+
+	describe('Broadcast Tests', () => {
+		const startBroadcastWith = (set: [string, string], body: object = {}) =>
+			request(app)
+				.post(BROADCASTS_PATH)
+				.set(...set)
+				.send({ roomId, ...body });
+
+		it('should pass the authentication when request includes API key', async () => {
+			const response = await startBroadcastWith([INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY]);
+			// Broadcast is disabled in the room, which is a permission-layer answer, not an authentication one
+			expect(response.status).toBe(403);
+			expect(response.body.error).toBe('Broadcast Error');
+		});
+
+		it('should fail when using access token', async () => {
+			const response = await startBroadcastWith([INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, rootAdminAccessToken]);
+			expectMeetError(response, errorUnauthorized());
+		});
+
+		it('should fail when using room member token without broadcastControl permission', async () => {
+			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
+				broadcastControl: false
+			});
+
+			const response = await startBroadcastWith([
+				INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER,
+				roomMember.memberToken
+			]);
+			expectMeetError(response, errorInsufficientPermissions());
+		});
+
+		it('should fail to start to a destination of this meeting without broadcastAddDestinations', async () => {
+			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
+				broadcastControl: true,
+				broadcastAddDestinations: false
+			});
+			const memberHeader: [string, string] = [INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken];
+
+			expectMeetError(
+				await startBroadcastWith(memberHeader, {
+					destinations: [
+						{ destinationId: 'room-destination' },
+						{ name: 'Extra', url: 'rtmp://rtmp-sink.invalid/live/key' }
+					]
+				}),
+				errorInsufficientPermissions()
+			);
+			// Room destinations need no more than broadcastControl, so the request goes on to the
+			// room's own checks: this room has live broadcast disabled.
+			expectMeetError(
+				await startBroadcastWith(memberHeader, { destinations: [{ destinationId: 'room-destination' }] }),
+				errorBroadcastDisabled(roomId)
+			);
+		});
+
+		it('should list the broadcasts with any room member token that may read the meeting', async () => {
+			const response = await request(app)
+				.get(BROADCASTS_PATH)
+				.query({ roomId })
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.speakerToken);
+			expect(response.status).toBe(200);
+			expect(response.body).toEqual({ broadcasts: [] });
+		});
+
+		it('should fail when using room member token from a different room', async () => {
+			const newRoomData = await setupSingleRoom();
+
+			const response = await startBroadcastWith([
+				INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER,
+				newRoomData.moderatorToken
+			]);
 			expectMeetError(response, errorInsufficientPermissions());
 		});
 	});

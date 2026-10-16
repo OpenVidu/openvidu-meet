@@ -159,6 +159,7 @@
       "STEP_MEETING": "Réunion",
       "STEP_ROOM_ACCESS": "Accès à la salle",
       "STEP_RECORDING": "Enregistrement",
+      "STEP_BROADCAST": "Diffusion en direct",
       "BACK": "Retour",
       "BACK_TO_SIMPLE_MODE": "Retour au mode simple",
       "CANCEL_ARIA": "Annuler l'assistant et revenir à la page précédente",
@@ -225,7 +226,8 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Modifier le membre",
         "REMOVE_MEMBER": "Retirer le membre",
-        "FEATURE_DISABLED_PERMISSION": "Activez la fonctionnalité correspondante à l'étape Réunion pour configurer cette autorisation."
+        "FEATURE_DISABLED_PERMISSION": "Activez la fonctionnalité correspondante à l'étape Réunion pour configurer cette autorisation.",
+        "DEPENDENT_PERMISSION_DISABLED": "Accordez la permission dont celle-ci dépend pour la configurer."
       },
       "MEETING": {
         "TITLE": "Réunion",
@@ -293,7 +295,7 @@
         "SPEAKER_TITLE": "Disposition intervenant",
         "SPEAKER_DESC": "Mettre en avant l'intervenant actif avec les autres participants en dessous",
         "SINGLE_SPEAKER_TITLE": "Intervenant unique",
-        "SINGLE_SPEAKER_DESC": "N'afficher que l'intervenant actif dans l'enregistrement"
+        "SINGLE_SPEAKER_DESC": "N'afficher que l'intervenant actif"
       },
       "RECORDING_TRIGGER": {
         "TITLE": "Déclencheur",
@@ -308,6 +310,40 @@
         "AUTOSTART_MODE_MODERATOR_DESC": "Démarre dès qu'un modérateur rejoint la réunion ou est promu",
         "AUTOSTART_UNREACHABLE_TITLE": "Déclencheur d'enregistrement inatteignable",
         "AUTOSTART_UNREACHABLE_MESSAGE": "Ce déclencheur nécessite au moins ${required} participants pour se déclencher, mais la limite de participants de la salle est fixée à ${limit}."
+      },
+      "BROADCAST": {
+        "TITLE": "Diffusion en direct",
+        "DESCRIPTION": "Choisissez si les réunions de cette salle peuvent être diffusées en direct sur YouTube, Twitch ou tout serveur RTMP",
+        "RESTRICTIONS": "Restrictions",
+        "E2EE_WARNING_PREFIX": "La diffusion en direct est ",
+        "E2EE_WARNING_BOLD": "indisponible",
+        "E2EE_WARNING_SUFFIX": " tant que le chiffrement de bout en bout est activé. Si vous autorisez la diffusion en direct, le chiffrement sera automatiquement désactivé pour cette salle.",
+        "ALLOW_BROADCAST_TITLE": "Autoriser la diffusion en direct",
+        "ALLOW_BROADCAST_DESC": "Les participants autorisés peuvent diffuser la réunion vers des plateformes externes pendant son déroulement.",
+        "DEFAULT_DESTINATIONS": "Destinations par défaut",
+        "DESTINATIONS_COUNT": "{count} sur {max}",
+        "DESTINATIONS_DESC": "Lorsque la réunion passe en direct, elle peut être diffusée vers toutes ces destinations ou seulement vers celles choisies à ce moment-là.",
+        "NO_DESTINATIONS": "Ajoutez au moins une destination pour autoriser la diffusion en direct.",
+        "ADD_DESTINATION": "Ajouter une destination",
+        "NEW_DESTINATION": "Nouvelle destination",
+        "EDIT_DESTINATION": "Modifier la destination",
+        "NAME_LABEL": "Nom",
+        "URL_LABEL": "URL de diffusion",
+        "URL_HINT": "Collez l'URL rtmp:// ou rtmps:// fournie par votre plateforme, clé de diffusion incluse.",
+        "URL_RECOGNISED": "Reconnu comme {platform}.",
+        "URL_KEEP_KEY": "Laissez l'URL telle quelle pour conserver la clé de diffusion enregistrée, ou collez-en une nouvelle pour la remplacer.",
+        "URL_INVALID": "Saisissez une URL rtmp:// ou rtmps:// de la forme rtmp://host/app/key",
+        "URL_KEY_REQUIRED": "Une URL modifiée a besoin de sa clé de diffusion : collez l'URL complète",
+        "NAME_REQUIRED": "Saisissez un nom",
+        "ADD": "Ajouter",
+        "SAVE": "Enregistrer",
+        "CANCEL": "Annuler",
+        "EDIT": "Modifier",
+        "REMOVE": "Supprimer",
+        "KEYS_HIDDEN": "Jusqu'à {max} destinations. Les clés de diffusion restent masquées une fois enregistrées.",
+        "COST_NOTE": "Chaque destination est un flux distinct envoyé depuis votre serveur, environ {mbps} Mbps de débit montant chacun en 720p. Avec ces {count} destinations, une diffusion utilise environ {total} Mbps tant que la réunion est en direct.",
+        "PERMISSIONS_HINT": "Qui peut passer en direct, choisir des destinations ou en ajouter se définit par rôle dans",
+        "PERMISSIONS_LINK": "Accès à la salle"
       }
     },
     "ERRORS": {

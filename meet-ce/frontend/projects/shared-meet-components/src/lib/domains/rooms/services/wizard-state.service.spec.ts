@@ -148,9 +148,68 @@ describe('RoomWizardStateService.recordingAutoStartUnreachable (cross-field guar
 
 /**
  * One step per concept of the product: the room itself, the meetings held in it, their recording,
- * and who may do what. Room access comes last because its permissions depend on the features the
- * earlier steps turn on.
+ * their live broadcast, and who may do what. Room access comes last because its permissions depend
+ * on the features the earlier steps turn on.
  */
+describe('RoomWizardStateService (end-to-end encryption excludes recording and live broadcast)', () => {
+	let service: RoomWizardStateService;
+
+	beforeEach(() => {
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				RoomWizardStateService,
+				{ provide: TranslateService, useValue: { translate: (key: string) => key } }
+			]
+		});
+		service = TestBed.inject(RoomWizardStateService);
+		service.initializeWizard(false);
+	});
+
+	const e2eeControl = () => service.getStepById(WizardStepId.MEETING)!.formGroup.controls.e2eeEnabled;
+	const featureControl = (feature: 'recording' | 'broadcast') =>
+		feature === 'recording'
+			? service.getStepById(WizardStepId.RECORDING)!.formGroup.controls.recordingEnabled
+			: service.getStepById(WizardStepId.BROADCAST)!.formGroup.controls.broadcastEnabled;
+
+	// Each step syncs its form into the room options, as the step components do.
+	const toggleFeature = (feature: 'recording' | 'broadcast', enabled: boolean) => {
+		featureControl(feature).setValue(enabled);
+		service.updateStepData({ config: { [feature]: { enabled } } });
+		service.setFeatureEnabled(feature, enabled);
+	};
+
+	const toggleE2EE = (enabled: boolean) => {
+		e2eeControl().setValue(enabled);
+		service.updateStepData({ config: { e2ee: { enabled } } });
+		service.setE2EEEnabled(enabled);
+	};
+
+	const saved = () => {
+		const { e2ee, recording, broadcast } = service.roomOptions().config ?? {};
+		return { e2ee: e2ee?.enabled, recording: recording?.enabled, broadcast: broadcast?.enabled };
+	};
+
+	for (const [first, second] of [
+		['recording', 'broadcast'],
+		['broadcast', 'recording']
+	] as const) {
+		it(`keeps encryption off while ${second} is still on after ${first}, which turned it off, goes off`, () => {
+			toggleE2EE(true);
+			toggleFeature(first, true);
+			toggleFeature(second, true);
+
+			toggleFeature(first, false);
+			expect(e2eeControl().value).toBeFalse();
+			expect(saved()).toEqual(jasmine.objectContaining({ e2ee: false, [second]: true }));
+
+			toggleFeature(second, false);
+			expect(e2eeControl().value).toBeTrue();
+			expect(saved()).toEqual({ e2ee: true, recording: false, broadcast: false });
+		});
+	}
+});
+
 describe('RoomWizardStateService.initializeWizard (steps)', () => {
 	let service: RoomWizardStateService;
 
@@ -165,13 +224,14 @@ describe('RoomWizardStateService.initializeWizard (steps)', () => {
 		service = TestBed.inject(RoomWizardStateService);
 	});
 
-	it('orders the steps room details, meeting, recording, room access', () => {
+	it('orders the steps room details, meeting, recording, broadcast, room access', () => {
 		service.initializeWizard(false);
 
 		expect(service.steps().map((step) => step.id)).toEqual([
 			WizardStepId.ROOM_DETAILS,
 			WizardStepId.MEETING,
 			WizardStepId.RECORDING,
+			WizardStepId.BROADCAST,
 			WizardStepId.ROOM_ACCESS
 		]);
 		expect(service.currentStep()?.id).toBe(WizardStepId.ROOM_DETAILS);
@@ -202,6 +262,62 @@ describe('RoomWizardStateService.initializeWizard (steps)', () => {
 			layout: MeetRecordingLayout.SPEAKER,
 			anonymousRecordingEnabled: false
 		});
+	});
+
+	it('prefills the broadcast step, destinations and layout included, from the edited room', () => {
+		const destinations = [{ id: 'dest1', name: 'YouTube', url: 'rtmp://a.rtmp.youtube.com/live2/********' }];
+		service.initializeWizard(true, {
+			roomName: 'Existing room',
+			config: { broadcast: { enabled: true, destinations, layout: MeetRecordingLayout.SPEAKER } }
+		});
+
+		expect(service.getStepById(WizardStepId.BROADCAST)!.formGroup.getRawValue()).toEqual({
+			broadcastEnabled: true,
+			destinations,
+			layout: MeetRecordingLayout.SPEAKER
+		});
+	});
+});
+
+/**
+ * A live broadcast needs somewhere to stream to: the step refuses to enable it with no destination,
+ * which is the same rule the server applies to the room configuration.
+ */
+describe('RoomWizardStateService.getStepById (broadcast step)', () => {
+	let service: RoomWizardStateService;
+
+	beforeEach(() => {
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				RoomWizardStateService,
+				{ provide: TranslateService, useValue: { translate: (key: string) => key } }
+			]
+		});
+		service = TestBed.inject(RoomWizardStateService);
+		service.initializeWizard(false);
+	});
+
+	const broadcastForm = () => service.getStepById(WizardStepId.BROADCAST)!.formGroup;
+
+	it('accepts live broadcast off with no destination', () => {
+		expect(broadcastForm().valid).toBe(true);
+	});
+
+	it('rejects live broadcast on with nowhere to stream to', () => {
+		broadcastForm().controls.broadcastEnabled.setValue(true);
+
+		expect(broadcastForm().valid).toBe(false);
+		expect(broadcastForm().hasError('destinationsRequired')).toBe(true);
+	});
+
+	it('accepts live broadcast on once a destination is set', () => {
+		broadcastForm().controls.broadcastEnabled.setValue(true);
+		broadcastForm().controls.destinations.setValue([
+			{ name: 'YouTube', url: 'rtmp://a.rtmp.youtube.com/live2/abcd-1234' }
+		]);
+
+		expect(broadcastForm().valid).toBe(true);
 	});
 });
 
@@ -311,6 +427,8 @@ describe('RoomWizardStateService.initializeWizard (the room it proposes)', () =>
 					...everyPermission(true),
 					recordingControl: false,
 					recordingDelete: false,
+					broadcastControl: false,
+					broadcastAddDestinations: false,
 					roomShareAccessLinks: false,
 					participantPromote: false,
 					participantKick: false,
@@ -322,9 +440,10 @@ describe('RoomWizardStateService.initializeWizard (the room it proposes)', () =>
 		});
 	});
 
-	it('proposes every feature on except end-to-end encryption', () => {
+	it('proposes recording, chat, captions and virtual backgrounds on, and live broadcast and end-to-end encryption off', () => {
 		expect(service.roomOptions().config).toEqual({
 			recording: { enabled: true, layout: MeetRecordingLayout.GRID },
+			broadcast: { enabled: false, destinations: [], layout: MeetRecordingLayout.GRID },
 			chat: { enabled: true },
 			virtualBackground: { enabled: true },
 			e2ee: { enabled: false },

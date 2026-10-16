@@ -1,0 +1,222 @@
+/broadcasts:
+    post:
+        operationId: broadcastStart
+        summary: Start broadcasts
+        description: |
+            Starts streaming the live meeting of a room to one or more RTMP destinations, one broadcast per
+            destination, each with its own status and lifecycle and its own `broadcastId`. A meeting streams to
+            each stream key once, whatever the server it is on, and to at most 5 destinations at a time.
+
+            Requires the `broadcastControl` permission, and a room whose config has `broadcast.enabled`.
+
+            Each destination is one of the room's saved ones, named by its `destinationId` and streamed to as
+            saved, or one given by `name` and `url` for this meeting only, which requires the
+            `broadcastAddDestinations` permission. Without `destinations`, the meeting streams to every room
+            destination it is not streaming to yet.
+
+            Either every broadcast starts or none does. The request completes as soon as the media server
+            accepts the streams, and returns each broadcast in the `starting` status. A broadcast becomes
+            `active` once its destination receives media, and `failed` if the destination rejects or loses it.
+            Follow the transitions through the [`broadcastUpdated`](#/webhooks/broadcastUpdatedWebhook) and
+            [`broadcastEnded`](#/webhooks/broadcastEndedWebhook) webhooks or by
+            [fetching a broadcast](#/operations/broadcastGet).
+
+            Starting a broadcast to a destination the meeting already streams to, or to one with the same
+            stream key on another server, is rejected with a `409`, as is starting one while the meeting has no
+            participants.
+        tags:
+            - OpenVidu Meet - Broadcasts
+        security:
+            - apiKeyHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: './parameters/broadcast-x-fields-header.yaml'
+            - $ref: './parameters/broadcast-fields.yaml'
+        requestBody:
+            $ref: './requests/start-broadcast.yaml'
+        responses:
+            '201':
+                $ref: './responses/success/start-broadcast.yaml'
+            '400':
+                $ref: '../shared/responses/errors/malformed-body.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: './responses/errors/broadcast-forbidden.yaml'
+            '404':
+                $ref: '../rooms/responses/errors/room-not-found.yaml'
+            '409':
+                $ref: './responses/errors/broadcast-conflict.yaml'
+            '413':
+                $ref: '../shared/responses/errors/payload-too-large.yaml'
+            '422':
+                $ref: './responses/errors/broadcast-destinations-invalid.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/egress-unavailable.yaml'
+    get:
+        operationId: broadcastList
+        summary: Get all broadcasts
+        description: |
+            Lists the broadcasts in progress in the live meeting of a room, one per destination. A broadcast
+            leaves the list once it ends; the [`broadcastEnded`](#/webhooks/broadcastEndedWebhook) webhook
+            reports how it went.
+
+            Requires the `meetingRead` permission.
+        tags:
+            - OpenVidu Meet - Broadcasts
+        security:
+            - apiKeyHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: './parameters/broadcast-room-id-query.yaml'
+            - $ref: './parameters/broadcast-x-fields-header.yaml'
+            - $ref: './parameters/broadcast-fields.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/get-broadcasts.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '404':
+                $ref: '../rooms/responses/errors/room-not-found.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
+
+/broadcasts/stop:
+    post:
+        operationId: broadcastBulkStop
+        summary: Bulk stop broadcasts
+        description: |
+            Stops the given broadcasts of the live meeting of a room, or every running one when no
+            `broadcastIds` are given: the stream to each destination ends at once, while the other broadcasts
+            of the meeting go on. To stop one broadcast by its id alone, use
+            [stop a broadcast](#/operations/broadcastStop).
+
+            Requires the `broadcastControl` permission.
+
+            Returns each broadcast in its final state: `complete`, with its `endDate` and `duration`, or
+            `aborted` when no media had reached its destination yet. The
+            [`broadcastEnded`](#/webhooks/broadcastEndedWebhook) webhook reports the same. A request naming a
+            broadcast that is not in progress, or no longer running, stops none of them.
+        tags:
+            - OpenVidu Meet - Broadcasts
+        security:
+            - apiKeyHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: './parameters/broadcast-x-fields-header.yaml'
+            - $ref: './parameters/broadcast-fields.yaml'
+        requestBody:
+            $ref: './requests/bulk-stop-broadcasts.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/bulk-stop-broadcasts.yaml'
+            '400':
+                $ref: '../shared/responses/errors/malformed-body.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '404':
+                $ref: './responses/errors/broadcast-not-found.yaml'
+            '409':
+                $ref: './responses/errors/broadcast-already-stopped.yaml'
+            '413':
+                $ref: '../shared/responses/errors/payload-too-large.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/egress-unavailable.yaml'
+
+/broadcasts/{broadcastId}:
+    get:
+        operationId: broadcastGet
+        summary: Get a broadcast
+        description: |
+            Retrieves a broadcast while it is in progress.
+
+            Requires the `meetingRead` permission in the broadcast's room.
+        tags:
+            - OpenVidu Meet - Broadcasts
+        security:
+            - apiKeyHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: './parameters/broadcast-id-path.yaml'
+            - $ref: './parameters/broadcast-x-fields-header.yaml'
+            - $ref: './parameters/broadcast-fields.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/get-broadcast.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '404':
+                $ref: './responses/errors/broadcast-not-found.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
+
+/broadcasts/{broadcastId}/stop:
+    post:
+        operationId: broadcastStop
+        summary: Stop a broadcast
+        description: |
+            Stops a broadcast: the stream to its destination ends at once, while the other broadcasts of the
+            meeting go on.
+
+            Requires the `broadcastControl` permission in the broadcast's room.
+
+            Returns the broadcast in its final state: `complete`, with its `endDate` and `duration`, or
+            `aborted` when no media had reached its destination yet. The
+            [`broadcastEnded`](#/webhooks/broadcastEndedWebhook) webhook reports the same. A broadcast that is
+            not in progress answers `404`, and one already stopping `409`.
+        tags:
+            - OpenVidu Meet - Broadcasts
+        security:
+            - apiKeyHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: './parameters/broadcast-id-path.yaml'
+            - $ref: './parameters/broadcast-x-fields-header.yaml'
+            - $ref: './parameters/broadcast-fields.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/stop-broadcast.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '404':
+                $ref: './responses/errors/broadcast-not-found.yaml'
+            '409':
+                $ref: './responses/errors/broadcast-already-stopped.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/egress-unavailable.yaml'

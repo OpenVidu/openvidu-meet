@@ -112,63 +112,8 @@ export class MeetingConfigComponent {
 	}
 
 	onE2EEToggleChange(event: MatSlideToggleChange): void {
-		const isEnabled = event.checked;
-		this.meetingForm.patchValue({
-			e2eeEnabled: isEnabled
-		});
-
-		const recordingStep = this.wizardService.getStepById(WizardStepId.RECORDING);
-
-		if (!recordingStep) return;
-
-		const recordingForm = recordingStep.formGroup;
-
-		if (isEnabled) {
-			// Save the current recording state before disabling it, only when it is on, to preserve the
-			// user's original choice
-			if (recordingForm.controls.recordingEnabled.value) {
-				this.wizardService.setRecordingStateBeforeE2EE(true);
-			}
-
-			// Disable recording automatically
-			recordingForm.patchValue(
-				{
-					recordingEnabled: false
-				},
-				{ emitEvent: true }
-			);
-
-			this.wizardService.updateStepData({
-				config: {
-					recording: {
-						enabled: false
-					}
-				}
-			});
-		} else {
-			// Restore the previous recording state when E2EE is disabled
-			const previousRecordingState = this.wizardService.getRecordingStateBeforeE2EE();
-
-			if (previousRecordingState !== undefined) {
-				recordingForm.patchValue(
-					{
-						recordingEnabled: previousRecordingState
-					},
-					{ emitEvent: true }
-				);
-
-				this.wizardService.updateStepData({
-					config: {
-						recording: {
-							enabled: previousRecordingState
-						}
-					}
-				});
-
-				// Clear the saved state
-				this.wizardService.clearRecordingStateBeforeE2EE();
-			}
-		}
+		this.meetingForm.patchValue({ e2eeEnabled: event.checked });
+		this.wizardService.setE2EEEnabled(event.checked);
 	}
 
 	onChatToggleChange(event: MatSlideToggleChange): void {

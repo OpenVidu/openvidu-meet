@@ -115,6 +115,7 @@
         "MEETING": "Reunião",
         "MEDIA": "Multimédia",
         "RECORDINGS": "Gravações",
+        "BROADCAST": "Transmissão ao vivo",
         "CHAT": "Chat"
       },
       "ITEMS": {
@@ -189,6 +190,14 @@
         "recordingDelete": {
           "LABEL": "Eliminar gravações",
           "DESCRIPTION": "Permitir eliminar gravações"
+        },
+        "broadcastControl": {
+          "LABEL": "Entrar ao vivo",
+          "DESCRIPTION": "Permite iniciar e parar transmissões ao vivo para os destinos da sala, todos ou apenas alguns"
+        },
+        "broadcastAddDestinations": {
+          "LABEL": "Adicionar destinos",
+          "DESCRIPTION": "Permite transmitir uma reunião para URLs adicionais além dos destinos da sala. Requer \"Entrar ao vivo\""
         },
         "chatRead": {
           "LABEL": "Ler",

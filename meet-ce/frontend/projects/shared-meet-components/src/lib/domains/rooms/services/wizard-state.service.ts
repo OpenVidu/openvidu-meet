@@ -2,6 +2,7 @@ import { computed, inject, Service, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, ValidationErrors, Validators } from '@angular/forms';
 import {
 	MEET_ROOM_MEMBER_PERMISSIONS_FIELDS,
+	MeetBroadcastDestination,
 	MeetRecordingLayout,
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
@@ -13,9 +14,10 @@ import {
 } from '@openvidu-meet/typings';
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
 import { deepMerge, DeepPartial } from '../../../shared/utils/object.utils';
-import { WizardNavigationConfig, WizardStepId } from '../models';
+import { E2EE_EXCLUSIVE_FEATURES, E2EEExclusiveFeature, WizardNavigationConfig, WizardStepId } from '../models';
 import {
 	AnyWizardStep,
+	BroadcastFormGroup,
 	MAX_DURATION_MINUTES_LIMIT,
 	MAX_PARTICIPANTS_LIMIT,
 	MIN_DURATION_MINUTES_LIMIT,
@@ -32,6 +34,8 @@ const DEFAULT_MODERATOR_PERMISSIONS: MeetRoomMemberPermissions = {
 	recordingPlay: true,
 	recordingDownload: true,
 	recordingDelete: true,
+	broadcastControl: true,
+	broadcastAddDestinations: true,
 	meetingJoin: true,
 	meetingRead: true,
 	roomShareAccessLinks: true,
@@ -55,6 +59,8 @@ const DEFAULT_SPEAKER_PERMISSIONS: MeetRoomMemberPermissions = {
 	recordingPlay: true,
 	recordingDownload: true,
 	recordingDelete: false,
+	broadcastControl: false,
+	broadcastAddDestinations: false,
 	meetingJoin: true,
 	meetingRead: true,
 	roomShareAccessLinks: false,
@@ -78,6 +84,7 @@ const DEFAULT_CONFIG: MeetRoomConfig = {
 		enabled: true,
 		layout: MeetRecordingLayout.GRID
 	},
+	broadcast: { enabled: false, destinations: [], layout: MeetRecordingLayout.GRID },
 	chat: { enabled: true },
 	virtualBackground: { enabled: true },
 	e2ee: { enabled: false },
@@ -109,6 +116,13 @@ const DEFAULT_ROOM_OPTIONS: MeetRoomOptions = {
 	}
 };
 
+// Live broadcast needs somewhere to stream to, so enabling it without a destination is an
+// incomplete step, not a valid room.
+const broadcastDestinationsValidator = (control: AbstractControl): ValidationErrors | null => {
+	const { broadcastEnabled, destinations } = (control as BroadcastFormGroup).getRawValue();
+	return broadcastEnabled && destinations.length === 0 ? { destinationsRequired: true } : null;
+};
+
 /**
  * Service to manage the state of the room creation wizard.
  * Handles step navigation, form data management, and room options building.
@@ -125,8 +139,11 @@ export class RoomWizardStateService {
 	private _editMode = signal<boolean>(false);
 	private _roomOptions = signal<MeetRoomOptions>(deepMerge({}, DEFAULT_ROOM_OPTIONS));
 	private _pendingMembers = signal<MeetRoomMemberOptions[]>([]);
-	private _recordingStateBeforeE2EE = signal<boolean | undefined>(undefined);
-	private _e2eeStateBeforeRecording = signal<boolean | undefined>(undefined);
+	// What a feature was set to before E2EE turned it off, and what E2EE was before a feature turned
+	// it off, so undoing the toggle gives the user back what they had chosen.
+	// Which excluded features E2EE turned off, and which features turned E2EE off, to put them back.
+	private readonly featuresOnBeforeE2EE = new Set<E2EEExclusiveFeature>();
+	private readonly e2eeOnBeforeFeature = new Set<E2EEExclusiveFeature>();
 
 	public readonly steps = this._steps.asReadonly();
 	public readonly currentStepIndex = this._currentStepIndex.asReadonly();
@@ -343,6 +360,25 @@ export class RoomWizardStateService {
 				})
 			},
 			{
+				id: WizardStepId.BROADCAST,
+				label: this.translateService.translate('ROOMS.WIZARD.STEP_BROADCAST'),
+				isCompleted: editMode,
+				formGroup: this.formBuilder.group(
+					{
+						broadcastEnabled: this.formBuilder.nonNullable.control(
+							initialRoomOptions.config!.broadcast!.enabled ?? false
+						),
+						destinations: this.formBuilder.nonNullable.control<MeetBroadcastDestination[]>(
+							initialRoomOptions.config!.broadcast!.destinations ?? []
+						),
+						layout: this.formBuilder.nonNullable.control(
+							initialRoomOptions.config!.broadcast!.layout ?? MeetRecordingLayout.GRID
+						)
+					},
+					{ validators: [broadcastDestinationsValidator] }
+				)
+			},
+			{
 				id: WizardStepId.ROOM_ACCESS,
 				label: this.translateService.translate('ROOMS.WIZARD.STEP_ROOM_ACCESS'),
 				isCompleted: editMode,
@@ -476,28 +512,76 @@ export class RoomWizardStateService {
 		return controls;
 	}
 
-	setRecordingStateBeforeE2EE(value: boolean): void {
-		this._recordingStateBeforeE2EE.set(value);
+	isE2EEEnabled(): boolean {
+		return this.e2eeEnabledControl()?.value ?? false;
 	}
 
-	getRecordingStateBeforeE2EE(): boolean | undefined {
-		return this._recordingStateBeforeE2EE();
+	/**
+	 * Turns a feature end-to-end encryption excludes on or off. Turning one on turns E2EE off,
+	 * remembering that it was on; turning the last of them off puts E2EE back as it was.
+	 */
+	setFeatureEnabled(feature: E2EEExclusiveFeature, enabled: boolean): void {
+		if (enabled) {
+			if (this.isE2EEEnabled()) {
+				this.patchE2EE(false);
+			} else if (this.e2eeOnBeforeFeature.size === 0) {
+				return;
+			}
+
+			this.e2eeOnBeforeFeature.add(feature);
+			return;
+		}
+
+		if (this.e2eeOnBeforeFeature.delete(feature) && this.e2eeOnBeforeFeature.size === 0) {
+			this.patchE2EE(true);
+		}
 	}
 
-	clearRecordingStateBeforeE2EE(): void {
-		this._recordingStateBeforeE2EE.set(undefined);
+	/**
+	 * Turns end-to-end encryption on or off. Turning it on turns off every feature it excludes,
+	 * remembering which were on; turning it off puts those back.
+	 */
+	setE2EEEnabled(enabled: boolean): void {
+		this.e2eeOnBeforeFeature.clear();
+
+		for (const feature of E2EE_EXCLUSIVE_FEATURES) {
+			const control = this.featureEnabledControl(feature);
+
+			if (!control) continue;
+
+			if (enabled) {
+				if (control.value) {
+					this.featuresOnBeforeE2EE.add(feature);
+				}
+
+				this.patchFeature(feature, control, false);
+			} else if (this.featuresOnBeforeE2EE.delete(feature)) {
+				this.patchFeature(feature, control, true);
+			}
+		}
 	}
 
-	setE2EEStateBeforeRecording(value: boolean): void {
-		this._e2eeStateBeforeRecording.set(value);
+	private e2eeEnabledControl(): FormControl<boolean> | undefined {
+		return this.getStepById(WizardStepId.MEETING)?.formGroup.controls.e2eeEnabled;
 	}
 
-	getE2EEStateBeforeRecording(): boolean | undefined {
-		return this._e2eeStateBeforeRecording();
+	private featureEnabledControl(feature: E2EEExclusiveFeature): FormControl<boolean> | undefined {
+		switch (feature) {
+			case 'recording':
+				return this.getStepById(WizardStepId.RECORDING)?.formGroup.controls.recordingEnabled;
+			case 'broadcast':
+				return this.getStepById(WizardStepId.BROADCAST)?.formGroup.controls.broadcastEnabled;
+		}
 	}
 
-	clearE2EEStateBeforeRecording(): void {
-		this._e2eeStateBeforeRecording.set(undefined);
+	private patchE2EE(enabled: boolean): void {
+		this.e2eeEnabledControl()?.patchValue(enabled, { emitEvent: true });
+		this.updateStepData({ config: { e2ee: { enabled } } });
+	}
+
+	private patchFeature(feature: E2EEExclusiveFeature, control: FormControl<boolean>, enabled: boolean): void {
+		control.patchValue(enabled, { emitEvent: true });
+		this.updateStepData({ config: { [feature]: { enabled } } });
 	}
 
 	/**
@@ -528,8 +612,8 @@ export class RoomWizardStateService {
 	resetWizard(): void {
 		this._isInitialized.set(false);
 		this._editMode.set(false);
-		this._recordingStateBeforeE2EE.set(undefined);
-		this._e2eeStateBeforeRecording.set(undefined);
+		this.featuresOnBeforeE2EE.clear();
+		this.e2eeOnBeforeFeature.clear();
 		this._roomOptions.set(deepMerge({}, DEFAULT_ROOM_OPTIONS));
 		this._steps.set([]);
 		this._currentStepIndex.set(0);

@@ -4,8 +4,11 @@ import {
 	EmbeddedCommandName,
 	EmbeddedEventName,
 	LeftEventReason,
+	MeetBroadcastStatus,
 	MeetParticipantModerationAction,
 	MeetReaction,
+	MeetRecordingEncodingPreset,
+	MeetRecordingLayout,
 	MeetRecordingStatus,
 	MeetRoomMemberRole
 } from '@openvidu-meet/typings';
@@ -56,7 +59,9 @@ describe('IframeBridgeService', () => {
 			'participantHandRaise',
 			'participantHandLower',
 			'participantHandLowerAll',
-			'participantReactionSend'
+			'participantReactionSend',
+			'broadcastStart',
+			'broadcastStop'
 		]);
 		commandService.meetingEnd.and.resolveTo();
 		commandService.meetingLeave.and.resolveTo();
@@ -73,6 +78,8 @@ describe('IframeBridgeService', () => {
 		commandService.participantHandLower.and.resolveTo();
 		commandService.participantHandLowerAll.and.resolveTo();
 		commandService.participantReactionSend.and.resolveTo();
+		commandService.broadcastStart.and.resolveTo();
+		commandService.broadcastStop.and.resolveTo();
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -184,6 +191,31 @@ describe('IframeBridgeService', () => {
 			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_KICK });
 
 			expect(commandService.participantKick).not.toHaveBeenCalled();
+		});
+
+		it('forwards BROADCAST_START to the manager, with the destinations asked for', () => {
+			startBridge();
+			const destinations = [{ destinationId: 'dest-a' }];
+
+			postFromHost({ command: EmbeddedCommandName.BROADCAST_START });
+			postFromHost({ command: EmbeddedCommandName.BROADCAST_START, payload: { destinations } });
+
+			expect(commandService.broadcastStart.calls.allArgs()).toEqual([
+				[{ destinations: undefined }],
+				[{ destinations }]
+			]);
+		});
+
+		it('forwards BROADCAST_STOP to the manager, with the broadcasts asked for', () => {
+			startBridge();
+
+			postFromHost({ command: EmbeddedCommandName.BROADCAST_STOP });
+			postFromHost({ command: EmbeddedCommandName.BROADCAST_STOP, payload: { broadcastIds: ['bc1'] } });
+
+			expect(commandService.broadcastStop.calls.allArgs()).toEqual([
+				[{ broadcastIds: undefined }],
+				[{ broadcastIds: ['bc1'] }]
+			]);
 		});
 
 		it('ignores malformed messages (no command)', () => {
@@ -606,6 +638,27 @@ describe('IframeBridgeService', () => {
 
 			expect(postMessageSpy.calls.allArgs()).toEqual([
 				[{ event: EmbeddedEventName.PARTICIPANT_ROLE_CHANGED, payload }, PARENT_ORIGIN]
+			]);
+		});
+
+		it('relays BROADCAST_STARTED once: an event born after 3.8.0 has no deprecated alias', () => {
+			startBridge();
+			const payload = {
+				broadcastId: 'bc1',
+				roomId: ROOM_ID,
+				roomName: 'Room 1',
+				status: MeetBroadcastStatus.ACTIVE,
+				name: 'YouTube',
+				url: 'rtmp://a.rtmp.youtube.com/live2/********',
+				layout: MeetRecordingLayout.GRID,
+				encoding: MeetRecordingEncodingPreset.H264_720P_30
+			};
+
+			eventBus.emit({ event: EmbeddedEventName.BROADCAST_STARTED, payload });
+			TestBed.tick();
+
+			expect(postMessageSpy.calls.allArgs()).toEqual([
+				[{ event: EmbeddedEventName.BROADCAST_STARTED, payload }, PARENT_ORIGIN]
 			]);
 		});
 

@@ -1,0 +1,9 @@
+description: >
+    Not found: no broadcast with that identifier is in progress, or its room does not exist
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        example:
+            error: 'Broadcast Error'
+            message: "Broadcast 'room-123--kX9pL2mQ7a' not found"

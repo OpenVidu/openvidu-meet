@@ -60,7 +60,7 @@ export class RecordingScheduledTasksService {
 	 *
 	 * This method identifies and releases locks that are no longer needed by:
 	 * 1. Finding all active recording locks in the system
-	 * 2. Checking whether the room still has a recording egress in progress in LiveKit
+	 * 2. Checking whether the room still has a recording egress in progress
 	 * 3. Releasing the lock when it does not
 	 *
 	 * An in-progress egress keeps the lock whatever the room looks like: an egress waiting for its
@@ -161,7 +161,7 @@ export class RecordingScheduledTasksService {
 				return;
 			}
 
-			const inProgressRecordings = await this.livekitService.getInProgressRecordingsEgress(roomId);
+			const inProgressRecordings = await this.recordingService.getInProgressEgresses(roomId);
 
 			if (inProgressRecordings.length > 0) {
 				this.logger.debug(`Room ${roomId} has in-progress recordings, keeping lock`);
@@ -317,7 +317,7 @@ export class RecordingScheduledTasksService {
 			// Abort the recording
 			await Promise.all([
 				this.recordingService.updateRecordingStatus(recordingId, MeetRecordingStatus.ABORTED),
-				this.livekitService.stopEgress(egressId)
+				this.livekitService.stopEgressIfRunning(egressId)
 			]);
 
 			this.logger.info(`Successfully aborted stale recording '${recordingId}'`);

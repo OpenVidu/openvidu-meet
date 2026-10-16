@@ -1,0 +1,32 @@
+description: The broadcasts started, one per destination
+content:
+    application/json:
+        schema:
+            type: object
+            required:
+                - broadcasts
+            properties:
+                broadcasts:
+                    type: array
+                    description: The broadcasts started, in the order of the destinations asked for.
+                    items:
+                        $ref: '../../schemas/meet-broadcast.yaml'
+        example:
+            broadcasts:
+                - broadcastId: 'room-123--kX9pL2mQ7a'
+                  roomId: 'room-123'
+                  roomName: 'room'
+                  status: 'starting'
+                  name: 'YouTube'
+                  url: 'rtmp://a.rtmp.youtube.com/live2/********'
+                  destinationId: 'kX9pL2mQ7a'
+                  layout: 'grid'
+                  encoding: 'H264_720P_30'
+                - broadcastId: 'room-123--p7Rt4WqM2z'
+                  roomId: 'room-123'
+                  roomName: 'room'
+                  status: 'starting'
+                  name: 'Own media server'
+                  url: 'rtmp://media.example.com/live/********'
+                  layout: 'grid'
+                  encoding: 'H264_720P_30'

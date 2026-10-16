@@ -115,6 +115,7 @@
         "MEETING": "Meeting",
         "MEDIA": "Media",
         "RECORDINGS": "Recordings",
+        "BROADCAST": "Live broadcast",
         "CHAT": "Chat"
       },
       "ITEMS": {
@@ -189,6 +190,14 @@
         "recordingDelete": {
           "LABEL": "Delete",
           "DESCRIPTION": "Allow deleting recordings"
+        },
+        "broadcastControl": {
+          "LABEL": "Go live",
+          "DESCRIPTION": "Allow starting and stopping live broadcasts to the room's destinations, all of them or only some"
+        },
+        "broadcastAddDestinations": {
+          "LABEL": "Add destinations",
+          "DESCRIPTION": "Allow streaming a meeting to extra URLs besides the room's destinations. Needs \"Go live\""
         },
         "chatRead": {
           "LABEL": "Read",

@@ -1,5 +1,7 @@
 import {
 	LeftEventReason,
+	MeetBroadcastInfo,
+	MeetBroadcastStatus,
 	MeetParticipantJoinedPayload,
 	MeetParticipantLeftPayload,
 	MeetParticipantModerationAction,
@@ -11,15 +13,19 @@ import {
 	MeetWebhookEventType
 } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
+import { createRtmpSink, deleteRtmpSinks } from '../helpers/broadcast-sink.helper';
 import { createRoom, deleteRooms, getRecording, getRoom } from '../helpers/meet-api.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import {
+	broadcastStartCommand,
+	broadcastStopCommand,
 	endMeetingCommand,
 	expectWebhook,
 	joinedParticipantIdentity,
 	leaveMeeting,
 	openMeeting,
-	participantUpdateRoleCommand
+	participantUpdateRoleCommand,
+	webhookLocator
 } from '../helpers/testapp.helper';
 import { getWebhookFromStorage } from '../helpers/ui-utils.helper';
 
@@ -34,6 +40,7 @@ test.describe('Webhooks E2E Tests', () => {
 
 	test.afterAll(async () => {
 		await deleteRooms(createdRoomIds);
+		await deleteRtmpSinks();
 	});
 
 	test('should receive meetingStarted and meetingEnded webhooks', async ({ page }) => {
@@ -202,5 +209,49 @@ test.describe('Webhooks E2E Tests', () => {
 
 		const endedRecording = await getRecording(recordingId);
 		expect(recordingEndedWebhook.data).toMatchObject(endedRecording as any);
+	});
+
+	test('should receive broadcastStarted, broadcastUpdated and broadcastEnded webhooks', async ({ page }) => {
+		// The room streams to an RTMP ingress of the LiveKit deployment under test, the one sink the
+		// egress can reach here; the stream key never comes back in a webhook.
+		const sinkUrl = await createRtmpSink('webhooks');
+		const { roomId: broadcastRoomId } = await createRoom({
+			config: { broadcast: { enabled: true, destinations: [{ name: 'Sink', url: sinkUrl }] } }
+		});
+		createdRoomIds.push(broadcastRoomId);
+		await openMeeting(page, broadcastRoomId, { role: 'moderator' });
+
+		await broadcastStartCommand(page);
+		await expectWebhook(page, MeetWebhookEventType.BROADCAST_STARTED);
+
+		const startedWebhook = await getWebhookFromStorage(
+			page,
+			broadcastRoomId,
+			MeetWebhookEventType.BROADCAST_STARTED
+		);
+		const started = startedWebhook.data as MeetBroadcastInfo;
+		expect(started.roomId).toBe(broadcastRoomId);
+		expect(started.status).toBe(MeetBroadcastStatus.STARTING);
+		expect(started.url).toContain('/********');
+		expect(started.url).not.toContain(sinkUrl.split('/').pop()!);
+
+		// The broadcast is updated as it goes active.
+		await expect(webhookLocator(page, MeetWebhookEventType.BROADCAST_UPDATED).first()).toBeAttached({
+			timeout: 40_000
+		});
+		const updatedWebhook = await getWebhookFromStorage(
+			page,
+			broadcastRoomId,
+			MeetWebhookEventType.BROADCAST_UPDATED
+		);
+		expect((updatedWebhook.data as MeetBroadcastInfo).broadcastId).toBe(started.broadcastId);
+
+		await broadcastStopCommand(page);
+		await expectWebhook(page, MeetWebhookEventType.BROADCAST_ENDED, { timeout: 30_000 });
+
+		const endedWebhook = await getWebhookFromStorage(page, broadcastRoomId, MeetWebhookEventType.BROADCAST_ENDED);
+		const ended = endedWebhook.data as MeetBroadcastInfo;
+		expect(ended.broadcastId).toBe(started.broadcastId);
+		expect(ended.status).toBe(MeetBroadcastStatus.COMPLETE);
 	});
 });

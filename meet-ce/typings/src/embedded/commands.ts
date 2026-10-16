@@ -1,4 +1,5 @@
 import { MeetReaction } from '../reaction.js';
+import { MeetBroadcastStartOptions, MeetBroadcastStopOptions } from '../request/broadcast-request.js';
 import { MeetParticipantMuteOptions } from '../request/meeting-request.js';
 import { MeetParticipantModerationAction } from '../request/room-member-request.js';
 
@@ -93,6 +94,19 @@ export enum EmbeddedCommandName {
 	 * @permission recordingControl
 	 */
 	RECORDING_STOP = 'recordingStop',
+	/**
+	 * Starts a live broadcast of the meeting to each of the given destinations, one broadcast per
+	 * destination, or, when none is given, to each destination saved in the room's config that is
+	 * not being streamed to yet. The room must have live broadcast enabled. A destination given by
+	 * name and URL, for this meeting only, also needs `broadcastAddDestinations`.
+	 * @permission broadcastControl
+	 */
+	BROADCAST_START = 'broadcastStart',
+	/**
+	 * Stops the given live broadcasts of the meeting, or every running one when none is given.
+	 * @permission broadcastControl
+	 */
+	BROADCAST_STOP = 'broadcastStop',
 	/**
 	 * Ends the current meeting for all participants.
 	 * @permission meetingEnd
@@ -207,6 +221,16 @@ export interface EmbeddedCommandPayloads {
 	 * Payload for the {@link EmbeddedCommandName.RECORDING_STOP} command.
 	 */
 	[EmbeddedCommandName.RECORDING_STOP]: void;
+	/**
+	 * Payload for the {@link EmbeddedCommandName.BROADCAST_START} command. When `destinations` is
+	 * omitted, every room destination not streamed to yet. See {@link MeetBroadcastStartOptions}.
+	 */
+	[EmbeddedCommandName.BROADCAST_START]: MeetBroadcastStartOptions;
+	/**
+	 * Payload for the {@link EmbeddedCommandName.BROADCAST_STOP} command. When `broadcastIds` is
+	 * omitted, every running broadcast. See {@link MeetBroadcastStopOptions}.
+	 */
+	[EmbeddedCommandName.BROADCAST_STOP]: MeetBroadcastStopOptions;
 	/**
 	 * Payload for the {@link EmbeddedCommandName.END_MEETING} command.
 	 * @deprecated Use {@link EmbeddedCommandName.MEETING_END}. Removed in 3.12.0.
@@ -435,6 +459,24 @@ export interface EmbeddedRecordingStopCommand {
 }
 
 /**
+ * Command message for {@link EmbeddedCommandName.BROADCAST_START}.
+ * @category Communication
+ */
+export interface EmbeddedBroadcastStartCommand {
+	command: EmbeddedCommandName.BROADCAST_START;
+	payload?: EmbeddedCommandPayloadFor<EmbeddedCommandName.BROADCAST_START>;
+}
+
+/**
+ * Command message for {@link EmbeddedCommandName.BROADCAST_STOP}.
+ * @category Communication
+ */
+export interface EmbeddedBroadcastStopCommand {
+	command: EmbeddedCommandName.BROADCAST_STOP;
+	payload?: EmbeddedCommandPayloadFor<EmbeddedCommandName.BROADCAST_STOP>;
+}
+
+/**
  * Discriminated union of every command message the host can send to the embedded app; narrow on
  * `command`. In the iframe integration this is the object posted verbatim over `postMessage`.
  * Includes the deprecated aliases, which hosts written against 3.8.0 still send.
@@ -456,6 +498,8 @@ export type EmbeddedCommand =
 	| EmbeddedMediaToggleScreenShareCommand
 	| EmbeddedRecordingStartCommand
 	| EmbeddedRecordingStopCommand
+	| EmbeddedBroadcastStartCommand
+	| EmbeddedBroadcastStopCommand
 	| EmbeddedEndMeetingCommand
 	| EmbeddedLeaveRoomCommand
 	| EmbeddedKickParticipantCommand;

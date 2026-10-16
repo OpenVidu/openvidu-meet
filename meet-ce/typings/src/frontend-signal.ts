@@ -1,3 +1,4 @@
+import { MeetBroadcastInfo } from './database/broadcast.entity.js';
 import { MeetRecordingInfo } from './database/recording.entity.js';
 import { MeetReaction } from './reaction.js';
 import { MeetParticipantMuteOptions } from './request/meeting-request.js';
@@ -8,6 +9,8 @@ import { MeetParticipantMuteOptions } from './request/meeting-request.js';
 export enum MeetSignalType {
 	/** Emitted when the recording state of a meeting room is updated */
 	MEET_RECORDING_UPDATED = 'meet_recording_updated',
+	/** Emitted when the live broadcast state of a meeting room is updated */
+	MEET_BROADCAST_UPDATED = 'meet_broadcast_updated',
 	/** Emitted when a participant must regenerate their room member token to sync updated permissions */
 	MEET_PARTICIPANT_PERMISSIONS_UPDATED = 'meet_participant_permissions_updated',
 	/** Emitted when a moderator turns off a participant's microphone, camera or screen share */
@@ -25,6 +28,19 @@ export interface MeetRecordingUpdatedPayload {
 	roomId: string;
 	/** Latest recording state for the room */
 	recording: MeetRecordingInfo;
+	/** Timestamp in milliseconds when the update occurred */
+	timestamp: number;
+}
+
+/**
+ * Payload for MEET_BROADCAST_UPDATED signal,
+ * containing the latest state of one live broadcast of a room.
+ */
+export interface MeetBroadcastUpdatedPayload {
+	/** ID of the room whose broadcast state has changed */
+	roomId: string;
+	/** Latest state of the broadcast that changed */
+	broadcast: MeetBroadcastInfo;
 	/** Timestamp in milliseconds when the update occurred */
 	timestamp: number;
 }
@@ -82,12 +98,13 @@ export interface MeetingChatSignalPayload {
 
 /**
  * Union type representing the payload of a MeetSignal.
- * It can be either a {@link MeetRecordingUpdatedPayload}, {@link MeetParticipantPermissionsUpdatedPayload},
- * {@link MeetParticipantMediaMutedPayload} or {@link MeetParticipantReactionSentPayload}, depending on the
- * signal type.
+ * It can be either a {@link MeetRecordingUpdatedPayload}, {@link MeetBroadcastUpdatedPayload},
+ * {@link MeetParticipantPermissionsUpdatedPayload}, {@link MeetParticipantMediaMutedPayload} or
+ * {@link MeetParticipantReactionSentPayload}, depending on the signal type.
  */
 export type MeetSignalPayload =
 	| MeetRecordingUpdatedPayload
+	| MeetBroadcastUpdatedPayload
 	| MeetParticipantPermissionsUpdatedPayload
 	| MeetParticipantMediaMutedPayload
 	| MeetParticipantReactionSentPayload;

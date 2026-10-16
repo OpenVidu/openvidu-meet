@@ -11,7 +11,7 @@ import { MeetRecordingStatus } from '@openvidu-meet/typings';
 import type { Archiver } from 'archiver';
 import { ZipArchive } from 'archiver';
 import { inject, injectable } from 'inversify';
-import type { ParticipantInfo, Room, RoomCompositeOptions } from 'livekit-server-sdk';
+import type { EgressInfo, ParticipantInfo, Room, RoomCompositeOptions } from 'livekit-server-sdk';
 import { EgressStatus, EncodedFileOutput, EncodedFileType } from 'livekit-server-sdk';
 import ms from 'ms';
 import type { Readable } from 'stream';
@@ -20,6 +20,7 @@ import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { EncodingConverter } from '../helpers/encoding-converter.helper.js';
+import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import {
@@ -149,12 +150,12 @@ export class RecordingService {
 			}
 
 			const autoStartConfig = RecordingHelper.getAutoStartConfig(recording.autoStart);
-			const participants = await this.livekitService.listStandardParticipants(roomId);
+			const participants = await this.livekitService.listRoomParticipants(roomId);
 			const thresholdReached = this.recAutoStartStateService.hasReachedAutoStartThreshold(
 				roomId,
 				autoStartConfig,
 				candidate,
-				participants
+				participants.filter((participant) => MeetParticipantHelper.isStandardParticipant(participant))
 			);
 
 			if (!thresholdReached) return;
@@ -212,7 +213,7 @@ export class RecordingService {
 						egress.status
 					);
 
-					if (!isStoppable) {
+					if (!isStoppable || (await this.hasRecordingEnded(egress))) {
 						throw errorRecordingAlreadyStopped(recordingId);
 					}
 
@@ -220,7 +221,11 @@ export class RecordingService {
 					// every replica before the egress_ended webhook releases the recording-active lock.
 					await this.recAutoStartStateService.markDisabled(roomId, egress.roomId);
 
-					const egressInfo = await this.livekitService.stopEgress(egressId);
+					const egressInfo = await this.livekitService.stopEgressIfRunning(egressId);
+
+					if (!egressInfo) {
+						throw errorRecordingAlreadyStopped(recordingId);
+					}
 
 					this.logger.info(`Recording stopped successfully for room '${roomId}'`);
 					return await RecordingHelper.toRecordingInfo(egressInfo);
@@ -483,7 +488,7 @@ export class RecordingService {
 			this.logger.info(`Starting deletion of all recordings for room '${roomId}'`);
 
 			// Check for active recordings first
-			const activeRecordings = await this.livekitService.getInProgressRecordingsEgress(roomId);
+			const activeRecordings = await this.getInProgressEgresses(roomId);
 
 			if (activeRecordings.length > 0) {
 				this.logger.verbose(
@@ -497,7 +502,7 @@ export class RecordingService {
 
 						try {
 							this.logger.verbose(`Stopping active recording '${recordingId}'`);
-							await this.livekitService.stopEgress(egressInfo.egressId);
+							await this.livekitService.stopEgressIfRunning(egressInfo.egressId);
 							// Wait a bit for recording to fully stop
 							await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -785,7 +790,7 @@ export class RecordingService {
 				return;
 			}
 
-			const egress = await this.livekitService.getInProgressRecordingsEgress(roomId);
+			const egress = await this.getInProgressEgresses(roomId);
 
 			if (egress.length > 0) {
 				this.logger.verbose(
@@ -805,6 +810,23 @@ export class RecordingService {
 				this.logger.warn(`Error releasing recording lock for room '${roomId}' on egress ended`, error);
 			}
 		}
+	}
+
+	/**
+	 * The recording egresses of a room that are still in progress. LiveKit keeps listing as in
+	 * progress an egress whose egress service died, so one whose recording Meet has already ended is
+	 * left out. One whose recording Meet has not saved yet is still starting.
+	 */
+	async getInProgressEgresses(roomId: string): Promise<EgressInfo[]> {
+		const egresses = await this.livekitService.getInProgressRecordingsEgress(roomId);
+		const ended = await Promise.all(egresses.map((egress) => this.hasRecordingEnded(egress)));
+		return egresses.filter((_, index) => !ended[index]);
+	}
+
+	protected async hasRecordingEnded(egress: EgressInfo): Promise<boolean> {
+		const recordingId = RecordingHelper.extractRecordingIdFromEgress(egress);
+		const recording = await this.recordingRepository.findByRecordingId(recordingId, ['status']);
+		return !!recording && !RecordingHelper.isInProgress(recording.status);
 	}
 
 	/**

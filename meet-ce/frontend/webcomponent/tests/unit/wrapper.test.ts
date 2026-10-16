@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import type { MeetParticipantMuteOptions } from '@openvidu-meet/typings';
+import type {
+	MeetBroadcastStartOptions,
+	MeetBroadcastStopOptions,
+	MeetParticipantMuteOptions
+} from '@openvidu-meet/typings';
 import { MeetParticipantModerationAction } from '@openvidu-meet/typings';
 import { createOpenViduMeetElementClass } from '../../src/app/custom-element/wrapper';
 
@@ -54,6 +58,8 @@ interface ComponentInstance {
 	participantHandLower: jest.Mock;
 	participantHandLowerAll: jest.Mock;
 	participantReactionSend: jest.Mock;
+	broadcastStart: jest.Mock;
+	broadcastStop: jest.Mock;
 }
 
 interface TestableElement extends FakeNgElementBase {
@@ -76,6 +82,8 @@ interface TestableElement extends FakeNgElementBase {
 	participantHandLower(participantIdentity?: string): void;
 	participantHandLowerAll(): void;
 	participantReactionSend(reaction: string): void;
+	broadcastStart(options?: MeetBroadcastStartOptions): void;
+	broadcastStop(options?: MeetBroadcastStopOptions): void;
 	endMeeting(): void;
 	leaveRoom(): void;
 	kickParticipant(participantIdentity: string): void;
@@ -98,7 +106,9 @@ const componentInstance = (): ComponentInstance => ({
 	participantHandRaise: jest.fn(),
 	participantHandLower: jest.fn(),
 	participantHandLowerAll: jest.fn(),
-	participantReactionSend: jest.fn()
+	participantReactionSend: jest.fn(),
+	broadcastStart: jest.fn(),
+	broadcastStop: jest.fn()
 });
 
 const withComponent = (): [TestableElement, ComponentInstance] => {
@@ -245,6 +255,8 @@ describe('openvidu-meet custom element', () => {
 
 		// Every command the element publishes, with the arguments the component must receive
 		// untouched: the element is a transport, it decides nothing.
+		const start: MeetBroadcastStartOptions = { destinations: [{ destinationId: 'dest-a' }] };
+		const stop: MeetBroadcastStopOptions = { broadcastIds: ['bc1'] };
 		const commands: [keyof ComponentInstance, (el: TestableElement) => void, unknown[]][] = [
 			['meetingEnd', (el) => el.meetingEnd(), []],
 			['meetingLeave', (el) => el.meetingLeave(), []],
@@ -264,7 +276,9 @@ describe('openvidu-meet custom element', () => {
 			['participantHandRaise', (el) => el.participantHandRaise(), []],
 			['participantHandLower', (el) => el.participantHandLower('participant-1'), ['participant-1']],
 			['participantHandLowerAll', (el) => el.participantHandLowerAll(), []],
-			['participantReactionSend', (el) => el.participantReactionSend('thumbs_up'), ['thumbs_up']]
+			['participantReactionSend', (el) => el.participantReactionSend('thumbs_up'), ['thumbs_up']],
+			['broadcastStart', (el) => el.broadcastStart(start), [start]],
+			['broadcastStop', (el) => el.broadcastStop(stop), [stop]]
 		];
 
 		it.each(commands)('%s() reaches the Angular component instance as it was called', (name, call, args) => {
