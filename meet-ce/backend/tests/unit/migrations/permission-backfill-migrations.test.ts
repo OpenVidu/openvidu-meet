@@ -142,9 +142,11 @@ describe('Room migration v6 → v7', () => {
 
 describe('Room migration v7 → v8', () => {
 	const v7Permissions = () => {
-		const permissions = Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true]));
+		const permissions: Record<string, boolean> = Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true]));
 		delete permissions.broadcastControl;
 		delete permissions.broadcastAddDestinations;
+		// A key of the development builds of live broadcast, gone before release, that no room keeps.
+		permissions.broadcastEditDestinations = true;
 		return permissions;
 	};
 
@@ -182,6 +184,7 @@ describe('Room member migration v5 → v6', () => {
 	it('should complete effectivePermissions with the broadcast keys, denied', () => {
 		const permissions = Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true]));
 		delete permissions.broadcastControl;
+		delete permissions.broadcastAddDestinations;
 		const document = {
 			memberId: 'member-123',
 			effectivePermissions: permissions
@@ -191,6 +194,7 @@ describe('Room member migration v5 → v6', () => {
 
 		expect(Object.keys(migrated.effectivePermissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
 		expect(migrated.effectivePermissions.broadcastControl).toBe(false);
+		expect(migrated.effectivePermissions.broadcastAddDestinations).toBe(false);
 	});
 });
 

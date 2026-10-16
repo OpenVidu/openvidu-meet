@@ -27,7 +27,9 @@ import { expectMeetError } from '../../../helpers/assertion-helpers.js';
 import { createRtmpSink, deleteRtmpSinks } from '../../../helpers/broadcast-sink.helper.js';
 import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
+	createWebhook,
 	deleteAllRooms,
+	deleteAllWebhooks,
 	deleteRoom,
 	generateRoomMemberToken,
 	getBroadcast,
@@ -40,7 +42,7 @@ import {
 	stopBroadcasts,
 	updateRoomRoles
 } from '../../../helpers/request-helpers.js';
-import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { setupSingleRoom, startWebhookServer, stopWebhookServer } from '../../../helpers/test-scenarios.js';
 import {
 	waitForBroadcast,
 	waitForBroadcasts,
@@ -246,8 +248,13 @@ describe('Broadcasts API Tests', () => {
 					new ServerError('Service Unavailable', 'twirp error unknown: no response from servers', 503)
 				);
 
-			const response = await startBroadcasts(roomId);
-			startEgress.mockRestore();
+			let response: Awaited<ReturnType<typeof startBroadcasts>>;
+
+			try {
+				response = await startBroadcasts(roomId);
+			} finally {
+				startEgress.mockRestore();
+			}
 
 			expectMeetError(response, errorEgressNotAvailable());
 			expect((await getBroadcasts(roomId)).body.broadcasts).toEqual([]);
@@ -357,6 +364,26 @@ describe('Broadcasts API Tests', () => {
 	});
 
 	describe('Broadcast Lifecycle Tests', () => {
+		const webhooks: { event: string; creationDate: number; data: MeetBroadcastInfo }[] = [];
+
+		beforeAll(async () => {
+			await startWebhookServer(5080, (req) => webhooks.push(req.body));
+			await deleteAllWebhooks();
+			await createWebhook({ url: 'http://localhost:5080/webhook' });
+		});
+
+		afterAll(async () => {
+			await stopWebhookServer();
+			await deleteAllWebhooks();
+		});
+
+		/** The broadcast webhooks of one broadcast, in the order the server created them. */
+		const webhooksOf = (broadcastId: string) =>
+			webhooks
+				.filter(({ event, data }) => event.startsWith('broadcast') && data.broadcastId === broadcastId)
+				.sort((a, b) => a.creationDate - b.creationDate)
+				.map(({ event, data }) => `${event}:${data.status}`);
+
 		it('should go active with media, fail on its own when the destination is unreachable, and end when stopped', async () => {
 			const sinkUrl = await createRtmpSink('a');
 			const roomData = await setupMeetingRoom({
@@ -437,6 +464,31 @@ describe('Broadcasts API Tests', () => {
 			await waitForBroadcasts(roomId, (broadcasts) => broadcasts.length === 0, 'all ended');
 			await waitForNoActiveEgress(roomId, 30_000);
 			expect((await stopBroadcasts(roomId)).body).toEqual({ broadcasts: [] });
+
+			// Each broadcast is reported to the webhooks on its own, started first and ended last.
+			const broadcastIds = [broadcastA, broadcastB, retried, added].map(({ broadcastId }) => broadcastId);
+
+			for (let attempt = 0; attempt < 20; attempt++) {
+				if (broadcastIds.every((id) => webhooksOf(id).at(-1)?.startsWith('broadcastEnded'))) break;
+
+				await new Promise((resolve) => setTimeout(resolve, 500));
+			}
+
+			const live = ['broadcastStarted:starting', 'broadcastUpdated:active', 'broadcastEnded:complete'];
+			const unreachable = ['broadcastStarted:starting', 'broadcastEnded:failed'];
+			expect(webhooksOf(broadcastA.broadcastId)).toEqual(live);
+			expect(webhooksOf(added.broadcastId)).toEqual(live);
+			expect(webhooksOf(broadcastB.broadcastId)).toEqual(unreachable);
+			expect(webhooksOf(retried.broadcastId)).toEqual(unreachable);
+			expect(
+				webhooks.find(
+					({ event, data }) => event === 'broadcastEnded' && data.broadcastId === broadcastB.broadcastId
+				)?.data.error
+			).toEqual(expect.any(String));
+
+			const delivered = JSON.stringify(webhooks);
+			expect(delivered).not.toContain(sinkUrl.split('/').pop());
+			expect(delivered).not.toContain('ov-stream-tag');
 		});
 
 		it('should stop an egress that streams the meeting without a broadcast of it', async () => {

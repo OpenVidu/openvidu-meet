@@ -271,8 +271,13 @@ describe('Recording API Tests', () => {
 				.spyOn(EgressClient.prototype, 'startRoomCompositeEgress')
 				.mockRejectedValueOnce(egressError);
 
-			const response = await startRecording(room.roomId);
-			startEgress.mockRestore();
+			let response: Awaited<ReturnType<typeof startRecording>>;
+
+			try {
+				response = await startRecording(room.roomId);
+			} finally {
+				startEgress.mockRestore();
+			}
 
 			expectMeetError(response, errorEgressNotAvailable());
 			expectValidStartRecordingResponse(await startRecording(room.roomId), room.roomId, room.roomName);
