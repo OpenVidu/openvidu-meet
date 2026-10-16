@@ -101,6 +101,41 @@ describe('BroadcastStateService', () => {
 		expect(statuses()).toEqual(['bc2:starting', 'bc-meeting-2:starting']);
 	});
 
+	it('forgets the failures once the last broadcast in progress ends normally, so stopping is no failure', () => {
+		service.setBroadcast(broadcast({ broadcastId: 'bc1', destinationId: 'd1' }));
+		service.setBroadcast(
+			broadcast({ broadcastId: 'bc2', destinationId: 'd2', status: MeetBroadcastStatus.FAILED })
+		);
+		service.setBroadcast(
+			broadcast({ broadcastId: 'bc3', destinationId: 'd3', status: MeetBroadcastStatus.STARTING })
+		);
+
+		service.setBroadcast(
+			broadcast({ broadcastId: 'bc3', destinationId: 'd3', status: MeetBroadcastStatus.ABORTED })
+		);
+		expect(statuses()).toEqual(['bc1:active', 'bc2:failed']);
+
+		service.setBroadcast(
+			broadcast({ broadcastId: 'bc1', destinationId: 'd1', status: MeetBroadcastStatus.COMPLETE })
+		);
+		expect(service.broadcasts()).toEqual([]);
+		expect(service.hasFailed()).toBeFalse();
+	});
+
+	it('keeps the failures when the last broadcast in progress fails too', () => {
+		service.setBroadcast(broadcast({ broadcastId: 'bc1', destinationId: 'd1' }));
+		service.setBroadcast(
+			broadcast({ broadcastId: 'bc2', destinationId: 'd2', status: MeetBroadcastStatus.FAILED })
+		);
+
+		service.setBroadcast(
+			broadcast({ broadcastId: 'bc1', destinationId: 'd1', status: MeetBroadcastStatus.FAILED })
+		);
+
+		expect(statuses()).toEqual(['bc1:failed', 'bc2:failed']);
+		expect(service.hasFailed()).toBeTrue();
+	});
+
 	it('keeps a request pending until it is answered, and dismissing a refusal keeps the broadcasts', () => {
 		service.setBroadcast(broadcast());
 		service.setRequest('starting');

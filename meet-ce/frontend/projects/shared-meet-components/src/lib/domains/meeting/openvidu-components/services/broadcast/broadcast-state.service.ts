@@ -56,23 +56,27 @@ export class BroadcastStateService {
 
 	/**
 	 * Takes what the server reports of one broadcast. A new attempt at a destination replaces the
-	 * failed one kept for it.
+	 * failed one kept for it, and the normal end of the last broadcast in progress forgets every
+	 * failure kept: the meeting stopped streaming, which is no failure to go live.
 	 */
 	setBroadcast(broadcast: MeetBroadcastInfo): void {
 		const key = broadcastDestinationKey(broadcast);
-		const keep = isBroadcastInProgress(broadcast.status) || hasBroadcastFailed(broadcast.status);
+		const failed = hasBroadcastFailed(broadcast.status);
+		const keep = isBroadcastInProgress(broadcast.status) || failed;
 
 		this._broadcasts.update((broadcasts) => {
 			const known = broadcasts.some(({ broadcastId }) => broadcastId === broadcast.broadcastId);
 			const placed = known
 				? broadcasts.map((other) => (other.broadcastId === broadcast.broadcastId ? broadcast : other))
 				: [...broadcasts, broadcast];
-
-			return placed.filter((other) =>
+			const kept = placed.filter((other) =>
 				other === broadcast
 					? keep
 					: !(hasBroadcastFailed(other.status) && broadcastDestinationKey(other) === key)
 			);
+			const stoppedStreaming = !keep && !kept.some(({ status }) => isBroadcastInProgress(status));
+
+			return stoppedStreaming ? kept.filter(({ status }) => !hasBroadcastFailed(status)) : kept;
 		});
 		this.trackElapsed();
 	}
