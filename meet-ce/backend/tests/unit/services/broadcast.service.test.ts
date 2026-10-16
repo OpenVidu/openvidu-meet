@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from '@jest/globals';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { EgressStatus, EncodingOptionsPreset, StreamInfo_Status } from '@livekit/protocol';
 import type { MeetBroadcastInfo } from '@openvidu-meet/typings';
 import {
@@ -11,6 +11,7 @@ import type { EgressInfo, RoomCompositeOptions, StreamOutput } from 'livekit-ser
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
+import { BroadcastHelper } from '../../../src/helpers/broadcast.helper.js';
 import type { BroadcastRecord } from '../../../src/models/broadcast.model.js';
 import { OpenViduMeetError } from '../../../src/models/error.model.js';
 import { RedisKeyName } from '../../../src/models/redis.model.js';
@@ -23,6 +24,7 @@ const REAL_URLS = { a: 'rtmp://mtx/live/aaaKEYaaa', b: 'rtmp://mtx/live/bbbKEYbb
 const REDACTED = 'rtmp://mtx/live/********';
 const TAG = '#ov-stream-tag=';
 const tagged = (url: string, broadcastId: string) => `${url}${TAG}${broadcastId}`;
+const assertDestinationsAllowed = BroadcastHelper.assertDestinationsAllowed.bind(BroadcastHelper);
 const noopLogger = { info: () => {}, warn: () => {}, debug: () => {}, error: () => {}, verbose: () => {} };
 
 type StreamResult = {
@@ -286,6 +288,9 @@ describe('BroadcastService', () => {
 	};
 
 	beforeEach(() => {
+		jest.spyOn(BroadcastHelper, 'assertDestinationsAllowed').mockImplementation((urls) =>
+			assertDestinationsAllowed(urls, () => Promise.reject(new Error('no DNS in unit tests')))
+		);
 		livekit = new FakeLiveKitService();
 		mutex = new FakeMutexService();
 		state = new FakeBroadcastStateService();
@@ -468,6 +473,20 @@ describe('BroadcastService', () => {
 				service.startBroadcasts(ROOM_ID, { destinations: [{ destinationId: 'a' }, { destinationId: 'b' }] }),
 				422
 			);
+			expect(livekit.startCalls).toEqual([]);
+			expect(livekit.updateCalls).toEqual([]);
+		});
+
+		it('refuses a destination on the media server own host or a link-local address, starting nothing', async () => {
+			for (const url of ['rtmp://127.0.0.1:6379/live/key', 'rtmp://169.254.169.254/live/key']) {
+				await expectStatus(
+					service.startBroadcasts(ROOM_ID, {
+						destinations: [{ destinationId: 'a' }, { name: 'Internal', url }]
+					}),
+					422
+				);
+			}
+
 			expect(livekit.startCalls).toEqual([]);
 			expect(livekit.updateCalls).toEqual([]);
 		});

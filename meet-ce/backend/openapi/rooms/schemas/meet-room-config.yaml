@@ -220,7 +220,8 @@ MeetBroadcastDestination:
                 replaces it, and any query string attached to it, with `********`, and a config update that
                 sends the redacted URL back exactly as served keeps the stored key. A new destination, and a
                 changed host or path, need the full URL: a redacted URL with any other change is rejected
-                with a `422`.
+                with a `422`. A URL whose host is or resolves to a loopback, link-local (the cloud metadata
+                endpoint among them), unspecified, multicast or broadcast address is rejected with a `422`.
 MeetVirtualBackgroundConfig:
     type: object
     required:

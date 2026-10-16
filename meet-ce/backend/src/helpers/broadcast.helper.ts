@@ -12,7 +12,9 @@ import {
 	MeetBroadcastStatus,
 	redactStreamUrl
 } from '@openvidu-meet/typings';
+import { lookup } from 'dns/promises';
 import type { EgressInfo } from 'livekit-server-sdk';
+import { BlockList, isIP } from 'net';
 import { uid } from 'uid';
 import { isDeepStrictEqual } from 'util';
 import type { BroadcastDestinationUrls, BroadcastRecord, BroadcastTarget } from '../models/broadcast.model.js';
@@ -20,6 +22,7 @@ import type { EgressError } from '../models/egress.model.js';
 import {
 	errorBroadcastDestinationInUse,
 	errorBroadcastDestinationLimit,
+	errorBroadcastDestinationNotAllowed,
 	errorBroadcastDuplicateDestination,
 	errorBroadcastRedactedDestinationUrl,
 	errorBroadcastUnknownDestination,
@@ -31,6 +34,22 @@ const ID_LENGTH = 10;
 const IN_PROGRESS_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE, MeetBroadcastStatus.ENDING];
 const RUNNING_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE];
 const STREAM_TAG = '#ov-stream-tag=';
+const IPV4_MAPPED_PREFIX = '::ffff:';
+
+// No RTMP server a meeting is streamed to can live here: the media server's own host (loopback),
+// unspecified, link-local (where the cloud metadata endpoint lives), multicast and broadcast.
+const FORBIDDEN_STREAM_ADDRESSES = new BlockList();
+FORBIDDEN_STREAM_ADDRESSES.addSubnet('0.0.0.0', 8, 'ipv4');
+FORBIDDEN_STREAM_ADDRESSES.addSubnet('127.0.0.0', 8, 'ipv4');
+FORBIDDEN_STREAM_ADDRESSES.addSubnet('169.254.0.0', 16, 'ipv4');
+FORBIDDEN_STREAM_ADDRESSES.addSubnet('224.0.0.0', 4, 'ipv4');
+FORBIDDEN_STREAM_ADDRESSES.addAddress('255.255.255.255', 'ipv4');
+FORBIDDEN_STREAM_ADDRESSES.addAddress('::', 'ipv6');
+FORBIDDEN_STREAM_ADDRESSES.addAddress('::1', 'ipv6');
+FORBIDDEN_STREAM_ADDRESSES.addSubnet('fe80::', 10, 'ipv6');
+FORBIDDEN_STREAM_ADDRESSES.addSubnet('ff00::', 8, 'ipv6');
+
+type AddressLookup = (host: string, options: { all: true }) => Promise<{ address: string }[]>;
 
 export class BroadcastHelper {
 	private constructor() {
@@ -138,6 +157,21 @@ export class BroadcastHelper {
 		const inUse = urls.find((url) => streamedKeys.has(BroadcastHelper.streamKeyOf(url)));
 
 		if (inUse) throw errorBroadcastDestinationInUse(redactStreamUrl(inUse));
+	}
+
+	/**
+	 * Refuses a destination whose host resolves to an address where no RTMP server for the meeting
+	 * can live, which the media server would only use to reach itself or the cloud metadata
+	 * endpoint. A host that does not resolve is let through, for the media server to fail on it.
+	 */
+	static async assertDestinationsAllowed(urls: string[], resolve: AddressLookup = lookup): Promise<void> {
+		for (const url of urls) {
+			const addresses = await BroadcastHelper.addressesOf(url, resolve);
+
+			if (addresses.some((address) => BroadcastHelper.isForbiddenStreamAddress(address))) {
+				throw errorBroadcastDestinationNotAllowed(redactStreamUrl(url));
+			}
+		}
 	}
 
 	/**
@@ -254,6 +288,35 @@ export class BroadcastHelper {
 	static toBroadcastInfo({ egressId, ...info }: BroadcastRecord): MeetBroadcastInfo {
 		void egressId;
 		return { ...info, url: redactStreamUrl(info.url) };
+	}
+
+	private static async addressesOf(url: string, resolve: AddressLookup): Promise<string[]> {
+		let host: string;
+
+		try {
+			host = new URL(url).hostname;
+		} catch {
+			return [];
+		}
+
+		const literal = host.startsWith('[') && host.endsWith(']') ? host.slice(1, -1) : host;
+
+		if (isIP(literal)) return [literal];
+
+		try {
+			return (await resolve(literal, { all: true })).map(({ address }) => address);
+		} catch {
+			return [];
+		}
+	}
+
+	private static isForbiddenStreamAddress(address: string): boolean {
+		const lower = address.toLowerCase();
+		const mapped = lower.startsWith(IPV4_MAPPED_PREFIX) ? lower.slice(IPV4_MAPPED_PREFIX.length) : undefined;
+
+		if (mapped && isIP(mapped) === 4) return FORBIDDEN_STREAM_ADDRESSES.check(mapped, 'ipv4');
+
+		return FORBIDDEN_STREAM_ADDRESSES.check(address, isIP(address) === 6 ? 'ipv6' : 'ipv4');
 	}
 
 	/** The stream of the broadcast among those LiveKit reports of the egress, by its tag. */
