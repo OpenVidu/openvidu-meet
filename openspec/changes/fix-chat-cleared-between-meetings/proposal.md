@@ -2,7 +2,7 @@
 
 ## Why
 
-The chat messages of a meeting are kept in a service that lives as long as the page, and nothing empties it when the participant leaves. A participant who leaves a meeting and enters another one in the same tab, or the same `<openvidu-meet>` element, finds the previous meeting's messages in the chat panel and, because the toolbar counts every stored message as new when it is created again, an unread count on the chat button.
+The chat messages of a meeting are kept in a service that lives as long as the page, and nothing empties it when the participant leaves. A participant who leaves a meeting and joins another one with the same `<openvidu-meet>` element finds the previous meeting's messages in the chat panel and, because the toolbar counts every stored message as new when it is created again, an unread count on the chat button.
 
 ## What Changes
 
@@ -23,7 +23,7 @@ None. The `meeting-chat` spec already states the intended behavior; this change 
 
 ## Impact
 
-- Meeting UI: the chat panel and the chat button's unread count start empty on every entry, in the standalone app, the iframe and the webcomponent. No contract change.
+- Meeting UI: the chat panel and the chat button's unread count start empty on every entry with the same webcomponent. The standalone app and the iframe load the page again on every entry, so they never kept the messages. No contract change.
 - REST API, webhooks, embedded API, console UI, deployment configuration: not affected.
 - Frontend library: the chat service and the meeting view teardown.
 - openvidu.io: no page changes.

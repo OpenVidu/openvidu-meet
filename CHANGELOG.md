@@ -120,6 +120,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 - After leaving a meeting that was being recorded, joining another meeting with the same `<openvidu-meet>`
   element showed that recording as still in progress. The recording indicator starts over with each meeting.
+- After leaving a meeting, joining another meeting with the same `<openvidu-meet>` element showed the earlier
+  meeting's chat messages and counted them as unread. The chat now starts empty in every meeting.
 - A participant promoted and demoted in quick succession, or whose permissions changed right after their role, could
   be left with the permissions of the earlier change. The changes are now applied in the order they happen.
 - A participant promoted and demoted several times in a row got one notice per change, stacked over the meeting. Only

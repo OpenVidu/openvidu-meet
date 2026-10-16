@@ -143,6 +143,26 @@ test.describe('Room Features E2E Tests', () => {
 			await leaveMeeting(page);
 		});
 
+		test('should start the next meeting joined with the same element with an empty chat', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'speaker' });
+			await wcLocator(page, '#chat-panel-btn').click();
+			await wcLocator(page, '#chat-input').fill('Hello world');
+			await wcLocator(page, '#send-btn').click();
+			await expect(wcLocator(page, '.chat-message')).toBeVisible();
+			await leaveMeeting(page);
+
+			const { roomId: nextRoomId } = await createRoom();
+			createdRoomIds.push(nextRoomId);
+			await openMeeting(page, nextRoomId, { role: 'speaker' });
+
+			await expect(wcLocator(page, '#chat-panel-btn .mat-badge-content:visible')).toHaveCount(0);
+			await wcLocator(page, '#chat-panel-btn').click();
+			await expect(wcLocator(page, '#chat-input')).toBeVisible();
+			await expect(wcLocator(page, '.chat-message')).toHaveCount(0);
+
+			await leaveMeeting(page);
+		});
+
 		test('should leave every key typed in the chat to the chat, the meeting shortcuts included', async ({
 			page
 		}) => {
