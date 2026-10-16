@@ -28,7 +28,6 @@ export class ChatService {
 	// Chat notification sound served as a static asset (resolves in SPA & WC modes),
 	// matching SoundService instead of inlining the audio as base64.
 	private messageSound: HTMLAudioElement = new Audio(this.assets.chatMessageSound);
-	private messageList: ChatMessage[] = [];
 	private shownId: number | undefined;
 	constructor() {
 		this.messageSound.volume = 0.6;
@@ -73,13 +72,14 @@ export class ChatService {
 		}
 	}
 
+	/** Forgets the meeting's messages and its new-message notice, so the next meeting starts with an empty chat. */
+	clear(): void {
+		this.chatMessages.set([]);
+		this.dismissAnnouncement();
+	}
+
 	private addMessage(message: string, isLocal: boolean, participantName: string) {
-		this.messageList.push({
-			isLocal,
-			participantName,
-			message
-		});
-		this.chatMessages.set([...this.messageList]);
+		this.chatMessages.update((messages) => [...messages, { isLocal, participantName, message }]);
 	}
 
 	/**
@@ -87,10 +87,7 @@ export class ChatService {
 	 * Only the latest message is announced: a burst of them must not stack up over the meeting.
 	 */
 	private announceMessage(participantName: string): void {
-		if (this.shownId !== undefined) {
-			this.notificationService.dismissNotification(this.shownId);
-		}
-
+		this.dismissAnnouncement();
 		this.shownId = this.notificationService.showNotification({
 			kind: 'chat-message',
 			icon: 'chat',
@@ -104,5 +101,12 @@ export class ChatService {
 				run: () => this.panelService.togglePanel(PanelType.CHAT)
 			}
 		});
+	}
+
+	private dismissAnnouncement(): void {
+		if (this.shownId === undefined) return;
+
+		this.notificationService.dismissNotification(this.shownId);
+		this.shownId = undefined;
 	}
 }
