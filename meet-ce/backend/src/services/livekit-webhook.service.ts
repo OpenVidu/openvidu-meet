@@ -288,16 +288,12 @@ export class LivekitWebhookService {
 	/**
 	 * Handles a room finished event from LiveKit.
 	 *
-	 * This method retrieves the corresponding meet room from the room service using the LiveKit room name.
-	 * If the meet room is found, it processes the room based on its meeting end action:
-	 *
-	 * - If the action is DELETE, it deletes the room and all associated recordings.
-	 * - If the action is CLOSE, it closes the room without deleting it.
-	 * - If the action is NONE, it simply updates the room status to OPEN.
-	 *
-	 * Then, it sends a webhook notification indicating that the meeting has ended,
-	 * and cleans up any resources associated with the room, the meeting's duration-limit timer
-	 * included.
+	 * The end is claimed through {@link RoomRepository#finishMeeting}, which applies the room's
+	 * meeting end action (delete it with its members and recordings, close it, or reopen it) only
+	 * while the room is still `active_meeting`. Only the caller that claims it sends the
+	 * meeting-ended webhook and cleans up the meeting's state: the same end can reach several
+	 * replicas and the reconcile GC, and every other caller leaves the room alone. The duration-limit
+	 * timer is cancelled either way.
 	 *
 	 * @param finishedRoom - The finished room, as much of it as the caller knows: the LiveKit
 	 * webhook carries the meeting's `sid`, while {@link RoomScheduledTasksService}'s reconcile GC
@@ -311,45 +307,30 @@ export class LivekitWebhookService {
 			const roomScheduledTasksService = await this.getRoomScheduledTasksService();
 			roomScheduledTasksService.cancelMeetingEndAtDurationLimit(roomId);
 
-			const meetRoom = await this.roomService.getMeetRoom(roomId);
-
 			this.logger.info(`Processing room_finished event for room '${roomId}'`);
+			const endedRoom = await this.roomRepository.finishMeeting(roomId);
+
+			if (!endedRoom) {
+				this.logger.info(`Room '${roomId}' has no meeting left to end: its end was already processed`);
+				return;
+			}
+
 			const tasks = [];
 
-			switch (meetRoom.meetingEndAction) {
-				case MeetingEndAction.DELETE:
-					this.logger.info(
-						`Deleting room '${roomId}' (and its recordings if any) after meeting finished because it was scheduled to be deleted`
-					);
-					tasks.push(
-						this.recordingService.deleteAllRoomRecordings(roomId),
-						this.roomMemberRepository.deleteAllByRoomId(roomId),
-						this.roomRepository.deleteByRoomId(roomId)
-					);
-					break;
-				case MeetingEndAction.CLOSE:
-					this.logger.info(
-						`Closing room '${roomId}' after meeting finished because it was scheduled to be closed`
-					);
-					meetRoom.status = MeetRoomStatus.CLOSED;
-					meetRoom.meetingEndAction = MeetingEndAction.NONE;
-					tasks.push(
-						this.roomRepository.updatePartial(roomId, {
-							status: MeetRoomStatus.CLOSED,
-							meetingEndAction: MeetingEndAction.NONE
-						})
-					);
-					break;
-				default:
-					// Update Meet room status to OPEN
-					meetRoom.status = MeetRoomStatus.OPEN;
-					tasks.push(this.roomRepository.updatePartial(roomId, { status: MeetRoomStatus.OPEN }));
+			if (endedRoom.meetingEndAction === MeetingEndAction.DELETE) {
+				this.logger.info(`Deleted room '${roomId}' (and its recordings if any) after its meeting finished`);
+				tasks.push(
+					this.recordingService.deleteAllRoomRecordings(roomId),
+					this.roomMemberRepository.deleteAllByRoomId(roomId)
+				);
+			} else if (endedRoom.status === MeetRoomStatus.CLOSED) {
+				this.logger.info(`Closed room '${roomId}' after its meeting finished`);
 			}
 
 			// Send webhook notification, attributing the end to the duration GC when that's what
 			// actually force-ended this meeting (see RoomScheduledTasksService.recordMeetingEndedReason).
 			const reason = await this.getMeetingEndedReason(roomId, meetingId);
-			this.webhookDispatcherService.sendMeetingEndedWebhook(meetRoom, reason);
+			this.webhookDispatcherService.sendMeetingEndedWebhook(endedRoom, reason);
 
 			tasks.push(
 				this.meetingPresenceService.removeRoomFromAllUsers(roomId),

@@ -113,6 +113,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   reach only the participants holding `chatRead`.
 - A room's `config.chat.enabled` `false` was enforced in the interface only, so a modified client holding `chatWrite`
   could still send chat messages. The media server now refuses them.
+- The [`meetingEnded`][3.9-meeting-ended] webhook could be sent twice for one meeting when the media server's notice
+  of its end and the periodic meeting status check handled it at the same time. It is now sent once.
 
 #### UI
 
