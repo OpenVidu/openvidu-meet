@@ -46,7 +46,7 @@ const BroadcastDestinationSchema: z.ZodType<MeetBroadcastDestination> = z.object
 });
 
 export const BroadcastConfigSchema: z.ZodType<MeetBroadcastConfigOptions> = z.object({
-	enabled: z.boolean(),
+	enabled: z.boolean().optional(),
 	destinations: destinationListSchema(BroadcastDestinationSchema).optional(),
 	layout: z.enum(MeetRecordingLayout).optional(),
 	encoding: encodingValidator.optional()

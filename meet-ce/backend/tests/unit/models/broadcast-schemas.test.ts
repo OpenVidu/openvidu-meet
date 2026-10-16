@@ -76,8 +76,9 @@ describe('BroadcastConfigSchema', () => {
 		});
 	});
 
-	it('rejects a URL that is not rtmp(s), an empty name and a missing enabled flag', () => {
+	it('rejects a URL that is not rtmp(s), an empty name and a switch that is not a boolean', () => {
 		const result = BroadcastConfigSchema.safeParse({
+			enabled: 'true',
 			destinations: [{ name: '', url: 'https://youtube.com/live' }]
 		});
 
@@ -89,6 +90,10 @@ describe('BroadcastConfigSchema', () => {
 				'destinations.0.url: Destination url must be an rtmp:// or rtmps:// URL'
 			])
 		);
+	});
+
+	it('leaves the switch out when the request does, for the server to default or keep it', () => {
+		expect(BroadcastConfigSchema.parse({ layout: 'speaker' })).toEqual({ layout: 'speaker' });
 	});
 
 	it('rejects a URL the media server would refuse: no app, no stream key, or a trailing slash', () => {

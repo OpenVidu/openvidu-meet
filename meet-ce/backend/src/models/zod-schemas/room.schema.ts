@@ -215,6 +215,7 @@ const CreateRoomConfigSchema: z.ZodType<MeetRoomConfigOptions> = z
 			data.recording.encoding = MeetRecordingEncodingPreset.H264_720P_30;
 		}
 
+		data.broadcast.enabled ??= false;
 		data.broadcast.destinations ??= [];
 		data.broadcast.layout ??= MeetRecordingLayout.GRID;
 		data.broadcast.encoding ??= MeetRecordingEncodingPreset.H264_720P_30;
