@@ -161,6 +161,21 @@ describe('BroadcastStateService', () => {
 		expect(service.ownUrls().size).toBe(0);
 	});
 
+	it('only moves a broadcast forward, so a late report never brings one back once it ended', () => {
+		service.setBroadcast(broadcast({ status: MeetBroadcastStatus.ACTIVE }));
+		service.setBroadcast(broadcast({ status: MeetBroadcastStatus.STARTING }));
+		expect(statuses()).toEqual(['bc1:active']);
+
+		service.setBroadcast(broadcast({ status: MeetBroadcastStatus.COMPLETE }));
+		service.setBroadcast(broadcast({ status: MeetBroadcastStatus.ACTIVE }));
+		expect(service.broadcasts()).toEqual([]);
+		expect(service.isInProgress()).toBeFalse();
+
+		service.reset();
+		service.setBroadcast(broadcast({ status: MeetBroadcastStatus.ACTIVE }));
+		expect(statuses()).toEqual(['bc1:active']);
+	});
+
 	it('keeps a request pending until it is answered, and dismissing a refusal keeps the broadcasts', () => {
 		service.setBroadcast(broadcast());
 		service.setRequest('starting');

@@ -49,6 +49,24 @@ export const isBroadcastRunning = (status: MeetBroadcastStatus): boolean => RUNN
 /** Whether the broadcast ended in a failure the activity should say something about. */
 export const hasBroadcastFailed = (status: MeetBroadcastStatus): boolean => FAILED_STATUSES.includes(status);
 
+/** How far a broadcast went: starting, active, ending and over, in that order. A broadcast only moves forward. */
+export const broadcastProgress = (status: MeetBroadcastStatus): number =>
+	isBroadcastInProgress(status) ? IN_PROGRESS_STATUSES.indexOf(status) : IN_PROGRESS_STATUSES.length;
+
+/**
+ * A broadcast the server will say nothing more of, settled as the server settles one: complete if
+ * media reached its destination, aborted otherwise.
+ */
+export const settleBroadcast = (broadcast: MeetBroadcastInfo, now = Date.now()): MeetBroadcastInfo =>
+	broadcast.startDate
+		? {
+				...broadcast,
+				status: MeetBroadcastStatus.COMPLETE,
+				endDate: now,
+				duration: (now - broadcast.startDate) / 1000
+			}
+		: { ...broadcast, status: MeetBroadcastStatus.ABORTED };
+
 /**
  * What tells the broadcasts to one destination from those to another: the room destination they
  * stream to, or the name and URL of a destination given for the meeting, since the redacted URL

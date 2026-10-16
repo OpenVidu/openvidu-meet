@@ -207,6 +207,7 @@ describe('MeetingEventHandlerService', () => {
 		]);
 
 		broadcastService = jasmine.createSpyObj<BroadcastService>('BroadcastService', [
+			'getBroadcasts',
 			'startBroadcasts',
 			'stopBroadcasts'
 		]);
@@ -214,7 +215,8 @@ describe('MeetingEventHandlerService', () => {
 		broadcastService.stopBroadcasts.and.resolveTo([liveBroadcast({ status: MeetBroadcastStatus.COMPLETE })]);
 		broadcastState = jasmine.createSpyObj<BroadcastStateService>('BroadcastStateService', [
 			'setRequest',
-			'recordOwnBroadcasts'
+			'recordOwnBroadcasts',
+			'setBroadcast'
 		]);
 
 		TestBed.configureTestingModule({
@@ -1330,8 +1332,13 @@ describe('MeetingEventHandlerService', () => {
 
 		const hostEvents = () => eventBus.events().map((event) => event.event);
 
-		it('reports the first broadcast it hears of as started', async () => {
+		function joinMeeting(): void {
+			service.onParticipantConnected({ roomName: 'room1', identity: 'alice' } as ParticipantModel);
 			seedMediaStatus();
+		}
+
+		it('reports the first broadcast it hears of as started', async () => {
+			joinMeeting();
 
 			receiveBroadcastSignal(liveBroadcast());
 			await Promise.resolve();
@@ -1340,7 +1347,7 @@ describe('MeetingEventHandlerService', () => {
 		});
 
 		it('reports a later status of the same broadcast as an update', async () => {
-			seedMediaStatus();
+			joinMeeting();
 
 			receiveBroadcastSignal(liveBroadcast({ status: MeetBroadcastStatus.STARTING }));
 			receiveBroadcastSignal(liveBroadcast());
@@ -1350,7 +1357,7 @@ describe('MeetingEventHandlerService', () => {
 		});
 
 		it('reports the end of a broadcast, and the next one as a fresh start', async () => {
-			seedMediaStatus();
+			joinMeeting();
 
 			receiveBroadcastSignal(liveBroadcast());
 			receiveBroadcastSignal(liveBroadcast({ status: MeetBroadcastStatus.COMPLETE }));
@@ -1365,7 +1372,7 @@ describe('MeetingEventHandlerService', () => {
 		});
 
 		it('follows each broadcast of the meeting on its own, one per destination', async () => {
-			seedMediaStatus();
+			joinMeeting();
 
 			receiveBroadcastSignal(liveBroadcast({ broadcastId: 'bc1', status: MeetBroadcastStatus.STARTING }));
 			receiveBroadcastSignal(liveBroadcast({ broadcastId: 'bc2', status: MeetBroadcastStatus.STARTING }));
@@ -1381,8 +1388,71 @@ describe('MeetingEventHandlerService', () => {
 			]);
 		});
 
-		it('ignores the broadcast of another room', async () => {
+		it('tells the host of the broadcasts in progress only once it has joined, after meetingJoined', async () => {
 			seedMediaStatus();
+			receiveBroadcastSignal(liveBroadcast({ broadcastId: 'bc1', status: MeetBroadcastStatus.STARTING }));
+			receiveBroadcastSignal(liveBroadcast({ broadcastId: 'bc1' }));
+			receiveBroadcastSignal(liveBroadcast({ broadcastId: 'bc2', status: MeetBroadcastStatus.COMPLETE }));
+			await Promise.resolve();
+			expect(hostEvents()).toEqual([]);
+
+			service.onParticipantConnected({ roomName: 'room1', identity: 'alice' } as ParticipantModel);
+
+			expect(eventBus.events()).toEqual([
+				jasmine.objectContaining({ event: EmbeddedEventName.MEETING_JOINED }),
+				{ event: EmbeddedEventName.BROADCAST_STARTED, payload: liveBroadcast({ broadcastId: 'bc1' }) }
+			]);
+		});
+
+		it('tells the host nothing in the meeting app, where no host listens', async () => {
+			isEmbeddedMode = false;
+			joinMeeting();
+
+			receiveBroadcastSignal(liveBroadcast());
+			receiveBroadcastSignal(liveBroadcast({ status: MeetBroadcastStatus.COMPLETE }));
+			await Promise.resolve();
+
+			expect(hostEvents()).toEqual([]);
+		});
+
+		it('says nothing of a repeat, nor of a report older than what it already told', async () => {
+			joinMeeting();
+
+			receiveBroadcastSignal(liveBroadcast());
+			receiveBroadcastSignal(liveBroadcast());
+			receiveBroadcastSignal(liveBroadcast({ status: MeetBroadcastStatus.STARTING }));
+			receiveBroadcastSignal(liveBroadcast({ status: MeetBroadcastStatus.COMPLETE }));
+			receiveBroadcastSignal(liveBroadcast());
+			await Promise.resolve();
+
+			expect(hostEvents()).toEqual([EmbeddedEventName.BROADCAST_STARTED, EmbeddedEventName.BROADCAST_ENDED]);
+		});
+
+		it('settles after reconnecting a broadcast that ended meanwhile, and keeps the ones the server still has', async () => {
+			joinMeeting();
+			const ended = liveBroadcast({ broadcastId: 'bc1', startDate: 1_000 });
+			const running = liveBroadcast({ broadcastId: 'bc2', destinationId: 'dest2' });
+			receiveBroadcastSignal(ended);
+			receiveBroadcastSignal(running);
+			Object.assign(broadcastState, { inProgress: () => [ended, running] });
+			broadcastService.getBroadcasts.and.resolveTo([running]);
+
+			await service.onRoomReconnected();
+
+			expect(broadcastService.getBroadcasts).toHaveBeenCalledWith('room1');
+			expect(broadcastState.setBroadcast.calls.allArgs().map(([b]) => `${b.broadcastId}:${b.status}`)).toEqual([
+				'bc1:complete',
+				'bc2:active'
+			]);
+			expect(hostEvents()).toEqual([
+				EmbeddedEventName.BROADCAST_STARTED,
+				EmbeddedEventName.BROADCAST_STARTED,
+				EmbeddedEventName.BROADCAST_ENDED
+			]);
+		});
+
+		it('ignores the broadcast of another room', async () => {
+			joinMeeting();
 
 			receiveBroadcastSignal(liveBroadcast({ roomId: 'room2' }));
 			await Promise.resolve();
