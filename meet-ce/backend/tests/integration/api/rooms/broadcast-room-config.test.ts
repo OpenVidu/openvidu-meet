@@ -199,6 +199,21 @@ describe('Broadcast Room Configuration Tests', () => {
 			expect((await getRooms()).body.rooms).toEqual([]);
 		});
 
+		it('should reject a destination on a loopback or link-local address, where no RTMP server can live', async () => {
+			for (const url of ['rtmp://127.0.0.1:6379/live/key', 'rtmp://169.254.169.254/live/key']) {
+				const response = await createRoomRequest({
+					roomName: 'internal-destination',
+					config: { broadcast: { enabled: true, destinations: [{ name: 'Internal', url }] } }
+				});
+
+				expect(response.status).toBe(422);
+				expect(response.body.message).toContain('is not allowed');
+				expect(response.body.message).not.toContain('/live/key');
+			}
+
+			expect((await getRooms()).body.rooms).toEqual([]);
+		});
+
 		it('should reject two destinations with the same stream key, even on different servers', async () => {
 			const response = await createRoomRequest({
 				roomName: 'x',

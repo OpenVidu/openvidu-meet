@@ -45,7 +45,9 @@ content:
                                 description: >
                                     The RTMP or RTMPS URL of a destination for this meeting only, stream key
                                     included, of the form `rtmp(s)://{host}(/{path})/{app}/{stream_key}`.
-                                    Required on it, together with `name`.
+                                    Required on it, together with `name`. A URL whose host is or resolves
+                                    to a loopback, link-local (the cloud metadata endpoint among them),
+                                    unspecified, multicast or broadcast address is rejected with a `422`.
         example:
             roomId: 'room-123'
             destinations:

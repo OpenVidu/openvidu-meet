@@ -144,6 +144,22 @@ Each entry of `destinations` SHALL be either the `destinationId` of a room desti
 - **WHEN** `broadcastStart` is called for one more destination
 - **THEN** the REST API answers `422`
 
+### Requirement: Destinations where no RTMP server can live
+The server SHALL answer `422` to a room destination, and to a destination of a start request, whose host is or resolves to a loopback, link-local, unspecified, multicast or broadcast address, so the media server never streams to its own host or the cloud metadata endpoint. It SHALL accept private network addresses and hosts that do not resolve.
+
+#### Scenario: Destination on the media server's own host
+- **WHEN** `createRoom` is called with a destination URL `rtmp://127.0.0.1:1935/live/key`
+- **THEN** the REST API answers `422` and stores nothing
+
+#### Scenario: Meeting destination on the cloud metadata address
+- **GIVEN** a meeting in progress
+- **WHEN** `broadcastStart` is called with `{ "name": "Metadata", "url": "rtmp://169.254.169.254/live/key" }`
+- **THEN** the REST API answers `422` and no broadcast starts
+
+#### Scenario: Destination on a private network
+- **WHEN** `createRoom` is called with a destination URL `rtmp://10.0.0.7/live/key`
+- **THEN** the room is created with that destination
+
 ### Requirement: One stream key per meeting
 Two destinations of a room, and two broadcasts in progress in a meeting, SHALL never share a stream key (what follows the last `/` of the URL), whatever their servers, since the media server tells the streams of a meeting apart by it alone. The server SHALL answer `422` to a config or start request holding two such destinations, and `409` to a start request for a destination whose stream key the meeting already streams to.
 

@@ -107,6 +107,17 @@ one, a full URL replaces it, anything else is `422`. A destination given for one
 only in the Redis record, so only the browser that added it knows its full URL and can start it again.
 The creation log redacts the room options.
 
+### Destinations where no RTMP server can live
+
+The media server connects to every destination, and the error of a failed attempt (refused, timed
+out) tells one address from another, so a destination is a probe into the network the media server
+sees. A destination whose host is or resolves to a loopback, link-local, unspecified, multicast or
+broadcast address is refused with `422`, on a room's config and on every start, since a hostname can
+change where it points: such a URL only reaches the media server's own host or the cloud metadata
+endpoint. The criteria are those of the webhook destinations (OpenVidu/openvidu-meet#91): private
+networks stay allowed, since a self-hosted RTMP server usually lives on one, which leaves them
+mappable by whoever may add a destination, and a host that does not resolve is let through.
+
 ### One stream key per meeting
 
 Since the egress tells the streams of a meeting apart by their stream key when they connect, a room's

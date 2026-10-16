@@ -87,6 +87,7 @@ export class BroadcastService {
 			if (targets.length === 0) throw errorBroadcastAlreadyStarted(roomId);
 
 			BroadcastHelper.validateNewBroadcasts(records, targets);
+			await BroadcastHelper.assertDestinationsAllowed(targets.map(({ url }) => url));
 
 			const { started, egress } = await this.addStreams(
 				{ roomId, roomName },

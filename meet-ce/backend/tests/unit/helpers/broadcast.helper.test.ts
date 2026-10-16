@@ -185,6 +185,59 @@ describe('BroadcastHelper.validateNewBroadcasts', () => {
 	});
 });
 
+describe('BroadcastHelper.assertDestinationsAllowed', () => {
+	const NAMES: Record<string, string[]> = {
+		'egress.local': ['127.0.0.1'],
+		'mapped.local': ['::ffff:169.254.169.254'],
+		'mixed.example': ['203.0.113.10', '127.0.0.1'],
+		'sink.lan': ['172.18.0.5'],
+		'a.rtmp.youtube.com': ['142.250.200.12']
+	};
+	const resolve = async (host: string) => {
+		if (!NAMES[host]) throw new Error(`getaddrinfo ENOTFOUND ${host}`);
+
+		return NAMES[host].map((address) => ({ address }));
+	};
+	const verdict = async (url: string) =>
+		BroadcastHelper.assertDestinationsAllowed([url], resolve).then(
+			() => 'allowed',
+			(error: OpenViduMeetError) => `${error.statusCode} ${error.message}`
+		);
+
+	it('refuses a host that is or resolves to a loopback, link-local, unspecified or multicast address', async () => {
+		for (const url of [
+			'rtmp://127.0.0.1:6379/live/key',
+			'rtmp://[::1]:1935/live/key',
+			'rtmp://169.254.169.254/live/key',
+			'rtmp://0.0.0.0/live/key',
+			'rtmp://[ff02::1]/live/key',
+			'rtmp://egress.local/live/key',
+			'rtmp://mapped.local/live/key',
+			'rtmp://mixed.example/live/key'
+		]) {
+			expect([url, await verdict(url)]).toEqual([
+				url,
+				expect.stringMatching(/^422 Destination '.*\*{8}' is not allowed/)
+			]);
+		}
+	});
+
+	it('lets through a private network, a public host and a host that does not resolve', async () => {
+		for (const url of [
+			'rtmp://10.0.0.7/live/key',
+			'rtmp://sink.lan:1935/live/key',
+			'rtmps://a.rtmp.youtube.com/live2/key',
+			'rtmp://nowhere.invalid/live/key'
+		]) {
+			expect([url, await verdict(url)]).toEqual([url, 'allowed']);
+		}
+	});
+
+	it('never shows the stream key of a refused destination', async () => {
+		expect(await verdict('rtmp://127.0.0.1/live/secret-key')).not.toContain('secret-key');
+	});
+});
+
 describe('BroadcastHelper.reconcileRoomDestinations', () => {
 	const savedUrls = { a: 'rtmp://mtx/live/aaaKEYaaa', b: 'rtmp://mtx/live/bbbKEYbbb' };
 

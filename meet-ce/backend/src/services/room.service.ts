@@ -195,6 +195,7 @@ export class RoomService {
 		const roomConfig = config as MeetRoomConfig;
 		const broadcastDestinations = BroadcastHelper.reconcileRoomDestinations({}, roomConfig.broadcast.destinations);
 		roomConfig.broadcast.destinations = broadcastDestinations.destinations;
+		await BroadcastHelper.assertDestinationsAllowed(Object.values(broadcastDestinations.urls));
 
 		const now = Date.now();
 		const meetRoom: MeetRoom = {
@@ -276,6 +277,10 @@ export class RoomService {
 			? BroadcastHelper.reconcileRoomDestinations(savedUrls, sentDestinations)
 			: { destinations: room.config.broadcast.destinations, urls: savedUrls };
 		updatedConfig.broadcast.destinations = broadcastDestinations.destinations;
+
+		if (sentDestinations) {
+			await BroadcastHelper.assertDestinationsAllowed(Object.values(broadcastDestinations.urls));
+		}
 
 		// E2EE excludes every server-side composition of the meeting
 		if (updatedConfig.e2ee.enabled) {

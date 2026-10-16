@@ -318,6 +318,14 @@ export const errorBroadcastDestinationLimit = (): OpenViduMeetError => {
 	);
 };
 
+export const errorBroadcastDestinationNotAllowed = (redactedUrl: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Broadcast Error',
+		`Destination '${redactedUrl}' is not allowed: its host is a loopback, link-local, unspecified, multicast or broadcast address`,
+		422
+	);
+};
+
 export const errorBroadcastDestinationInUse = (redactedUrl: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Broadcast Error',
