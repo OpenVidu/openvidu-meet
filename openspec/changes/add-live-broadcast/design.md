@@ -97,7 +97,8 @@ nothing to list once the meeting ends.
 
 The room document stores the full URL of each saved destination in `broadcastDestinationUrls`, keyed
 by destination id, outside the `MeetRoom` shape; the config and every response carry the URL with its
-last non-empty path segment replaced by `********` and no query string. A config update resolves each
+stream key, what follows the last `/` as the egress reads it, replaced by `********`, so a URL stays
+valid once redacted and a query string attached to the key goes with it. A config update resolves each
 sent destination against those URLs: an `id` with the redacted URL exactly as served keeps the saved
 one, a full URL replaces it, anything else is `422`. A destination given for one meeting is kept
 only in the Redis record, so only the browser that added it knows its full URL and can start it again.

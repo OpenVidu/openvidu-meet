@@ -19,7 +19,7 @@ The server SHALL start a broadcast in a room only while the room's `broadcast.en
 - **THEN** the room's `broadcast` is disabled, with no destinations, layout `grid` and encoding `H264_720P_30`
 
 ### Requirement: Room destinations
-A room's `broadcast.destinations` SHALL hold at most five destinations, each a `name` of 1 to 50 characters and an RTMP or RTMPS `url` of the form `rtmp(s)://{host}(/{path})/{app}/{stream_key}`, optionally followed by ` live=1`. The server SHALL give each saved destination an `id`, and SHALL answer `422` to a sixth destination or a malformed name or URL, storing nothing.
+A room's `broadcast.destinations` SHALL hold at most five destinations, each a `name` of 1 to 50 characters and an RTMP or RTMPS `url` of the form `rtmp(s)://{host}(/{path})/{app}/{stream_key}`, optionally followed by ` live=1`, whose stream key is what follows the last `/`. The server SHALL give each saved destination an `id`, and SHALL answer `422` to a sixth destination or a malformed name or URL, storing nothing.
 
 #### Scenario: Destination saved
 - **WHEN** `createRoom` is called with `config.broadcast.destinations` holding `{ "name": "YouTube", "url": "rtmp://a.rtmp.youtube.com/live2/abcd-1234" }`
@@ -32,6 +32,10 @@ A room's `broadcast.destinations` SHALL hold at most five destinations, each a `
 #### Scenario: Six destinations
 - **WHEN** `updateRoomConfig` sends six destinations
 - **THEN** the server answers `422` and the stored destinations are unchanged
+
+#### Scenario: Destination URL without a usable stream key
+- **WHEN** `createRoom` is called with a destination URL that carries a `#`, has no host, or whose last path segment is only a query string
+- **THEN** the REST API answers `422` and stores nothing
 
 ### Requirement: Live broadcast needs a destination
 The server SHALL answer `422` with error `Broadcast Error`, storing nothing, to a `createRoom` or `updateRoomConfig` request whose resulting config has `broadcast.enabled` set to `true` and no destination, judging the destinations sent in the request or, when it sends none, the saved ones.
@@ -59,7 +63,7 @@ A config update that omits `broadcast.destinations` SHALL keep the saved destina
 - **THEN** the room's layout is `speaker` and both destinations are kept
 
 ### Requirement: Stream keys are never served
-The server SHALL never serve a destination's stream key: every response, webhook payload and embedded event, a room's config included, SHALL carry each destination URL with its last path segment replaced by `********` and without query string, and the server logs SHALL not contain the stream keys either.
+The server SHALL never serve a destination's stream key: every response, webhook payload and embedded event, a room's config included, SHALL carry each destination URL with its stream key, what follows the last `/`, and any query string attached to it replaced by `********`, and the server logs SHALL not contain the stream keys either.
 
 #### Scenario: Room read back
 - **GIVEN** a room whose destination URL is `rtmp://a.rtmp.youtube.com/live2/abcd-1234`

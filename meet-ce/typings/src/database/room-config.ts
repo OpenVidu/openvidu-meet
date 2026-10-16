@@ -209,9 +209,9 @@ export interface MeetBroadcastDestination {
 	/** Display name of the destination, such as the channel or platform it streams to */
 	name: string;
 	/**
-	 * Full `rtmp://` or `rtmps://` URL to stream to, stream key included. The stream key is a
-	 * secret, so it is never served: responses carry the URL with its last path segment replaced by
-	 * {@link MEET_BROADCAST_REDACTED_STREAM_KEY} and without query string. An update that sends a
+	 * Full `rtmp://` or `rtmps://` URL to stream to, stream key included. The stream key, what
+	 * follows the last `/`, is a secret, so it is never served: responses carry the URL with the key,
+	 * and any query string attached to it, replaced by {@link MEET_BROADCAST_REDACTED_STREAM_KEY}. An update that sends a
 	 * destination with its `id` and that redacted URL exactly as served (a response echoed back)
 	 * keeps the saved URL; a full URL replaces it, and a redacted URL with any other change is
 	 * rejected, since there is no stream key to go with it.
@@ -236,25 +236,42 @@ export const MEET_BROADCAST_REDACTED_STREAM_KEY = '********';
  */
 export const MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH = 50;
 
-const STREAM_URL_FORMAT = /^rtmps?:\/\/(?:[^\s/]*\/){2,}[^\s/]+( live=1)?$/;
+const STREAM_URL_FLAG = ' live=1';
+
+/** The address a destination URL streams to, without the ` live=1` flag some servers take after it. */
+const streamAddress = (url: string): string =>
+	url.endsWith(STREAM_URL_FLAG) ? url.slice(0, -STREAM_URL_FLAG.length) : url;
 
 /**
  * Whether a destination URL has the form the media server streams to,
- * `rtmp(s)://{host}(/{path})/{app}/{stream_key}`, without whitespace, optionally followed by
- * ` live=1`. The stream key is what follows the last `/`, so a URL ending in `/` has none.
+ * `rtmp(s)://{host}(/{path})/{app}/{stream_key}`, optionally followed by ` live=1`: no whitespace
+ * or `#` anywhere else, and a stream key, what follows the last `/`, that may carry a query string
+ * but is not one.
  */
-export const isValidStreamUrl = (url: string): boolean => STREAM_URL_FORMAT.test(url);
+export const isValidStreamUrl = (url: string): boolean => {
+	const match = /^rtmps?:\/\/(.+)$/.exec(streamAddress(url));
+
+	if (!match || /[\s#]/.test(match[1])) return false;
+
+	const [host, ...path] = match[1].split('/');
+	const key = path[path.length - 1] ?? '';
+	return host !== '' && !host.includes('?') && path.length >= 2 && path.every(Boolean) && !key.startsWith('?');
+};
 
 /**
- * A destination URL as the API serves it: its stream key (the last non-empty path segment, a
- * trailing slash notwithstanding) replaced by {@link MEET_BROADCAST_REDACTED_STREAM_KEY}, and its
- * query string dropped.
+ * A destination URL as the API serves it: its stream key, what follows the last `/` (a trailing
+ * slash notwithstanding) together with any query string attached to it, replaced by
+ * {@link MEET_BROADCAST_REDACTED_STREAM_KEY}, and without the ` live=1` flag.
  */
 export const redactStreamUrl = (url: string): string => {
-	const { protocol, host, pathname } = new URL(url);
-	const segments = (pathname || '/').split('/');
-	segments[streamKeyIndex(segments)] = MEET_BROADCAST_REDACTED_STREAM_KEY;
-	return `${protocol}//${host}${segments.join('/')}`;
+	const address = streamAddress(url);
+	const segments = address.split('/');
+	const index = streamKeyIndex(segments);
+
+	if (index < 0) return `${address.replace(/\/+$/, '')}/${MEET_BROADCAST_REDACTED_STREAM_KEY}`;
+
+	segments[index] = MEET_BROADCAST_REDACTED_STREAM_KEY;
+	return segments.join('/');
 };
 
 /**
@@ -262,16 +279,18 @@ export const redactStreamUrl = (url: string): string => {
  * {@link MEET_BROADCAST_REDACTED_STREAM_KEY}, rather than a full URL.
  */
 export const isRedactedStreamUrl = (url: string): boolean => {
-	const segments = url.split(/[?#]/)[0].split('/');
-	return segments[streamKeyIndex(segments)] === MEET_BROADCAST_REDACTED_STREAM_KEY;
+	const segments = streamAddress(url).split('/');
+	const index = streamKeyIndex(segments);
+	return index >= 0 && segments[index].split('?')[0] === MEET_BROADCAST_REDACTED_STREAM_KEY;
 };
 
+/** The place of the stream key among the `/`-separated parts of a URL: the last non-empty one after the host, if any. */
 const streamKeyIndex = (segments: string[]): number => {
-	for (let index = segments.length - 1; index > 0; index--) {
+	for (let index = segments.length - 1; index > 2; index--) {
 		if (segments[index] !== '') return index;
 	}
 
-	return segments.length - 1;
+	return -1;
 };
 
 /**
