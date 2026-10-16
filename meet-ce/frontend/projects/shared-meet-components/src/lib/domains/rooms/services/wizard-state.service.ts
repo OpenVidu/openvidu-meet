@@ -517,20 +517,22 @@ export class RoomWizardStateService {
 	}
 
 	/**
-	 * Turns a feature end-to-end encryption excludes on or off. Turning it on turns E2EE off,
-	 * remembering that it was on; turning it off puts E2EE back as it was.
+	 * Turns a feature end-to-end encryption excludes on or off. Turning one on turns E2EE off,
+	 * remembering that it was on; turning the last of them off puts E2EE back as it was.
 	 */
 	setFeatureEnabled(feature: E2EEExclusiveFeature, enabled: boolean): void {
 		if (enabled) {
 			if (this.isE2EEEnabled()) {
-				this.e2eeOnBeforeFeature.add(feature);
 				this.patchE2EE(false);
+			} else if (this.e2eeOnBeforeFeature.size === 0) {
+				return;
 			}
 
+			this.e2eeOnBeforeFeature.add(feature);
 			return;
 		}
 
-		if (this.e2eeOnBeforeFeature.delete(feature)) {
+		if (this.e2eeOnBeforeFeature.delete(feature) && this.e2eeOnBeforeFeature.size === 0) {
 			this.patchE2EE(true);
 		}
 	}
@@ -540,6 +542,8 @@ export class RoomWizardStateService {
 	 * remembering which were on; turning it off puts those back.
 	 */
 	setE2EEEnabled(enabled: boolean): void {
+		this.e2eeOnBeforeFeature.clear();
+
 		for (const feature of E2EE_EXCLUSIVE_FEATURES) {
 			const control = this.featureEnabledControl(feature);
 
