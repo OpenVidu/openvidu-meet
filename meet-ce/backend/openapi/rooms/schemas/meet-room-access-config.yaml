@@ -35,8 +35,8 @@ properties:
         properties:
             enabled:
                 type: boolean
-                default: true
-                example: true
+                default: false
+                example: false
                 description: |
                     Enables or disables access for users.
                     **Note**: admins, owner and members of the room will always have access regardless of this setting.

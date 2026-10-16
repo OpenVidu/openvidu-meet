@@ -32,7 +32,7 @@
             '403':
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '404':
-                $ref: '../rooms/responses/errors/room-not-found.yaml'
+                $ref: './responses/errors/room-or-user-not-found.yaml'
             '409':
                 $ref: './responses/errors/room-member-conflict.yaml'
             '413':
@@ -126,9 +126,17 @@
     get:
         operationId: getRoomMember
         summary: Get a room member
-        description: >
+        description: |
             Retrieves the details of a specific room member by their member ID.
 
+            Allowed callers:
+            - an API key
+            - an admin
+            - the room's owner
+            - a `room_manager` reading their own membership
+            - a room member token issued for that same member
+
+            Any other caller gets `403`.
 
             **Access token roles**: `admin`, `room_manager`.
         tags:

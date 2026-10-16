@@ -1,0 +1,16 @@
+description: Room or user not found
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        examples:
+            room_not_found:
+                summary: Room does not exist
+                value:
+                    error: 'Room Error'
+                    message: 'Room "room_123" does not exist'
+            user_not_found:
+                summary: The userId names no user
+                value:
+                    error: 'User Error'
+                    message: 'User "alice_smith" not found'

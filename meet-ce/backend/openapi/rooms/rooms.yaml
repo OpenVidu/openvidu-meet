@@ -14,6 +14,8 @@
         parameters:
             - $ref: './parameters/room-x-fields-header.yaml'
             - $ref: './parameters/room-x-extra-fields-header.yaml'
+            - $ref: './parameters/room-fields.yaml'
+            - $ref: './parameters/room-extra-fields.yaml'
         requestBody:
             $ref: './requests/create-room.yaml'
         responses:
@@ -294,6 +296,8 @@
             - $ref: './parameters/room-id-path.yaml'
             - $ref: './parameters/room-x-fields-header.yaml'
             - $ref: './parameters/room-x-extra-fields-header.yaml'
+            - $ref: './parameters/room-fields.yaml'
+            - $ref: './parameters/room-extra-fields.yaml'
         requestBody:
             $ref: './requests/update-room-status.yaml'
         responses:

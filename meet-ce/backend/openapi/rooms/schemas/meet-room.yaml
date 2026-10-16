@@ -30,8 +30,8 @@ properties:
             The timestamp (in milliseconds since the Unix epoch) specifying when the room will be automatically deleted.
             This must be at least one hour in the future.
 
-            After this time, the room is closed to new participants and scheduled for deletion.
-            It will be removed after the last participant leaves (graceful deletion).
+            Once the date passes, the room keeps working, new participants included, until the expired-rooms sweep,
+            which runs every hour, processes it with its `autoDeletionPolicy`.
 
             If not set, the room remains active until manually deleted.
     autoDeletionPolicy:
@@ -83,9 +83,8 @@ properties:
             <br/><br/>
 
             **Excluded from REST responses by default to reduce payload size.**
-            To include it in the response:
-            - **POST/PUT requests:** use the `X-ExtraFields: roles` header
-            - **Other requests:** use either the `extraFields=roles` query parameter or the `X-ExtraFields: roles` header
+            To include it in the response, use either the `extraFields=roles` query parameter or the
+            `X-ExtraFields: roles` header, on every request including POST/PUT.
         $ref: ./meet-room-roles.yaml
     access:
         description: >

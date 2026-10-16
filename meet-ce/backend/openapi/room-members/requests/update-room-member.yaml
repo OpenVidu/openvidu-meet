@@ -29,5 +29,8 @@ content:
                         Only include the permissions you want to override from the base role defaults.
                         Each property should be a permission name (e.g., 'recordingControl', 'mediaShareScreen') with a boolean value.
 
+                        The object replaces the member's current overrides as a whole: an override it leaves out falls back to
+                        the base role. Without `customPermissions`, the current overrides are kept.
+
                         For the complete list of all available permissions, see the full permissions schema:
                         [MeetPermissions](#/schemas/MeetPermissions)

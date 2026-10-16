@@ -17,9 +17,10 @@ description: |
       the flag is omitted when only part of the group is defined).
     - Every other deprecated key is a straight rename of exactly one new key.
 
-    A request carries only the permissions it means to change: both the room roles and a room member's
-    permissions are partial objects, so an omitted key keeps the value the role or the member already had. No
-    permission is ever derived from another one.
+    Room roles merge key by key, so a request carries only the permissions it means to change and an omitted key
+    keeps the value the role already had. A room member's `customPermissions` are instead replaced as a whole on
+    `updateRoomMember`, so an override the request leaves out falls back to the base role. No permission is ever
+    derived from another one.
 
     The examples in this reference show only the new keys; responses add the deprecated spellings next to
     them. The deprecated keys are removed in **3.12.0**.
@@ -36,7 +37,7 @@ properties:
         type: boolean
         example: true
         description: |
-            Can open and play back a recording. This does not prevent copying it — it only controls whether
+            Can open and play back a recording. This does not prevent copying it: it only controls whether
             the product offers a download (see `recordingDownload`).
     recordingDownload:
         type: boolean
@@ -121,7 +122,9 @@ properties:
     mediaChangeVirtualBackground:
         type: boolean
         example: true
-        description: Can change the virtual background.
+        description: >
+            Can change the virtual background. The background is applied in the participant's browser, so the
+            server does not enforce this permission.
     canRecord:
         type: boolean
         deprecated: true

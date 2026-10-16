@@ -19,8 +19,8 @@ properties:
             The timestamp (in milliseconds since the Unix epoch) specifying when the room will be automatically deleted.
             This must be at least one hour in the future and no later than the latest date a timestamp can represent.
 
-            After this time, the room is closed to new participants and scheduled for deletion.
-            It will be removed after the last participant leaves (graceful deletion).
+            Once the date passes, the room keeps working, new participants included, until the expired-rooms sweep,
+            which runs every hour, processes it with its `autoDeletionPolicy`.
 
             If not set, the room remains active until manually deleted.
     autoDeletionPolicy:
