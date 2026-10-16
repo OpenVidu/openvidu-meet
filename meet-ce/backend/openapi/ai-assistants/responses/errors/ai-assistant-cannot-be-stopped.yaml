@@ -1,4 +1,4 @@
-description: Conflict — The AI assistant cannot be stopped because it is being stopped by another participant
+description: Another start or stop of the room's AI assistant is still in progress after the retry window
 content:
     application/json:
         schema:
@@ -8,4 +8,4 @@ content:
                 summary: AI assistant is already stopping
                 value:
                     error: 'AI Assistant Error'
-                    message: 'AI assistant cannot be stopped for room "room_123"'
+                    message: "AI assistant cannot be stopped for room 'room_123'"

@@ -484,7 +484,7 @@ export const errorReactionsDisabled = (roomId: string): OpenViduMeetError => {
 // AI Assistant errors
 
 export const errorAiAssistantAlreadyStarting = (roomId: string): OpenViduMeetError => {
-	return new OpenViduMeetError('AI Assistant Error', `AI assistant  for room '${roomId}' is already starting`, 409);
+	return new OpenViduMeetError('AI Assistant Error', `AI assistant for room '${roomId}' is already starting`, 409);
 };
 
 export const errorAiAssistantCannotBeStopped = (roomId: string): OpenViduMeetError => {

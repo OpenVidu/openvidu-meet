@@ -5,7 +5,7 @@
         description: |
             Activates AI assistance.
 
-            > Currently only meeting AI Assistand and `live_captions` capability is supported.
+            > Currently only meeting AI Assistant and `live_captions` capability is supported.
         tags:
             - Internal API - AI Assistants
         security:
@@ -49,7 +49,7 @@
               schema:
                   type: string
                   minLength: 1
-              description: Identifier of the assistant activation returned by create operation.
+              description: Identifier returned by `createAiAssistant`, informative only. The room's current captions assistant is the one acted on, whatever the identifier.
               example: asst_123
         responses:
             '200':

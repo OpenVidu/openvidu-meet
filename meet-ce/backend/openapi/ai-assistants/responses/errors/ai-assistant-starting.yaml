@@ -1,4 +1,4 @@
-description: Conflict — The AI assistant cannot be started because it is already being started
+description: Another start or stop of the room's AI assistant is still in progress after the retry window
 content:
     application/json:
         schema:
@@ -8,4 +8,4 @@ content:
                 summary: AI assistant is already starting
                 value:
                     error: 'AI Assistant Error'
-                    message: 'AI assistant for room "room_123" is already starting'
+                    message: "AI assistant for room 'room_123' is already starting"
