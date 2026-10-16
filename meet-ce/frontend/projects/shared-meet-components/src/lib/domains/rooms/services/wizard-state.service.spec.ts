@@ -151,6 +151,65 @@ describe('RoomWizardStateService.recordingAutoStartUnreachable (cross-field guar
  * their live broadcast, and who may do what. Room access comes last because its permissions depend
  * on the features the earlier steps turn on.
  */
+describe('RoomWizardStateService (end-to-end encryption excludes recording and live broadcast)', () => {
+	let service: RoomWizardStateService;
+
+	beforeEach(() => {
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				RoomWizardStateService,
+				{ provide: TranslateService, useValue: { translate: (key: string) => key } }
+			]
+		});
+		service = TestBed.inject(RoomWizardStateService);
+		service.initializeWizard(false);
+	});
+
+	const e2eeControl = () => service.getStepById(WizardStepId.MEETING)!.formGroup.controls.e2eeEnabled;
+	const featureControl = (feature: 'recording' | 'broadcast') =>
+		feature === 'recording'
+			? service.getStepById(WizardStepId.RECORDING)!.formGroup.controls.recordingEnabled
+			: service.getStepById(WizardStepId.BROADCAST)!.formGroup.controls.broadcastEnabled;
+
+	// Each step syncs its form into the room options, as the step components do.
+	const toggleFeature = (feature: 'recording' | 'broadcast', enabled: boolean) => {
+		featureControl(feature).setValue(enabled);
+		service.updateStepData({ config: { [feature]: { enabled } } });
+		service.setFeatureEnabled(feature, enabled);
+	};
+
+	const toggleE2EE = (enabled: boolean) => {
+		e2eeControl().setValue(enabled);
+		service.updateStepData({ config: { e2ee: { enabled } } });
+		service.setE2EEEnabled(enabled);
+	};
+
+	const saved = () => {
+		const { e2ee, recording, broadcast } = service.roomOptions().config ?? {};
+		return { e2ee: e2ee?.enabled, recording: recording?.enabled, broadcast: broadcast?.enabled };
+	};
+
+	for (const [first, second] of [
+		['recording', 'broadcast'],
+		['broadcast', 'recording']
+	] as const) {
+		it(`keeps encryption off while ${second} is still on after ${first}, which turned it off, goes off`, () => {
+			toggleE2EE(true);
+			toggleFeature(first, true);
+			toggleFeature(second, true);
+
+			toggleFeature(first, false);
+			expect(e2eeControl().value).toBeFalse();
+			expect(saved()).toEqual(jasmine.objectContaining({ e2ee: false, [second]: true }));
+
+			toggleFeature(second, false);
+			expect(e2eeControl().value).toBeTrue();
+			expect(saved()).toEqual({ e2ee: true, recording: false, broadcast: false });
+		});
+	}
+});
+
 describe('RoomWizardStateService.initializeWizard (steps)', () => {
 	let service: RoomWizardStateService;
 
