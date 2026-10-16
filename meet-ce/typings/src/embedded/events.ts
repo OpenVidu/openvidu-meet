@@ -63,8 +63,8 @@ export enum EmbeddedEventName {
 	 */
 	MEDIA_VIDEO_STATUS_CHANGED = 'mediaVideoStatusChanged',
 	/**
-	 * Event emitted to the local participant when their screen share state changes. Emitted from the
-	 * prejoin screen onwards, before `meetingJoined`.
+	 * Event emitted to the local participant when their screen share starts or stops, once the meeting
+	 * is joined.
 	 */
 	MEDIA_SCREEN_SHARE_STATUS_CHANGED = 'mediaScreenShareStatusChanged',
 	/**

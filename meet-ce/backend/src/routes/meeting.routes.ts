@@ -19,9 +19,6 @@ meetingRouter.use(bodyParser.json());
 meetingRouter.use(apiLimiter);
 
 // Meetings Routes
-// Live introspection (the meeting and its participants). Gated on `meetingRead`, which defaults to
-// the holder's `meetingJoin` — so whoever may enter the meeting observes it and a recording-only
-// link does not, unless an operator grants the two apart.
 meetingRouter.get(
 	'/:roomId',
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
