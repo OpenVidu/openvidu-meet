@@ -13,7 +13,8 @@ export enum EmbeddedAttribute {
 	 */
 	RECORDING_URL = 'recording-url',
 	/**
-	 * Display name for the local participant.
+	 * Display name for the local participant. It fills and locks the join screen's name field, unless the
+	 * participant is a room member or a signed-in user, whose own name is used instead.
 	 */
 	PARTICIPANT_NAME = 'participant-name',
 	/**
@@ -53,8 +54,8 @@ export enum EmbeddedAttribute {
 	 */
 	SHOW_LANGUAGE_SELECTOR = 'show-language-selector',
 	/**
-	 * Secret key for end-to-end encryption (E2EE).
-	 * If provided, the participant will join the meeting using E2EE key.
+	 * Secret key for end-to-end encryption (E2EE). Used only in a room whose `config.e2ee.enabled` is
+	 * `true`, where it fills the join screen's encryption key; ignored otherwise.
 	 */
 	E2EE_KEY = 'e2ee-key',
 	/**
@@ -83,7 +84,7 @@ export interface WebComponentPropertyValues {
 	roomUrl?: string;
 	/** URL of a recording to view. When provided, `roomUrl` is not required. */
 	recordingUrl?: string;
-	/** Display name for the local participant. */
+	/** Display name for the local participant. Fills and locks the join screen's name field unless the participant is a room member or a signed-in user, whose own name is used instead. */
 	participantName?: string;
 	/** Application-defined identifier for the local participant (≤ 64 chars: letters, digits, `_`, `-`). Never interpreted by Meet. */
 	participantExternalId?: string;
@@ -97,7 +98,7 @@ export interface WebComponentPropertyValues {
 	language?: string;
 	/** Show the language selectors (default `true`); `false` hides them so the participant cannot change the language. */
 	showLanguageSelector?: boolean;
-	/** Secret key for end-to-end encryption (E2EE). When provided the participant joins using E2EE. */
+	/** Secret key for end-to-end encryption (E2EE). Used only in a room whose `config.e2ee.enabled` is `true`, where it fills the join screen's encryption key; ignored otherwise. */
 	e2eeKey?: string;
 	/** URL to redirect to when the participant dismisses the post-meeting, join, error or recording screen, after `embeddedCloseRequested` fires. */
 	leaveRedirectUrl?: string;
