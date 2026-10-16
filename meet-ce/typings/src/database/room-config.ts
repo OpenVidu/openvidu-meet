@@ -16,7 +16,7 @@ export interface MeetRoomConfig {
 	 * Maximum duration of the meeting in minutes. When reached, the meeting ends for every
 	 * participant, exactly as if a moderator had ended it.
 	 * `null` (or an absent key) means the meeting duration is unlimited; the lowest limit that can
-	 * be set is `10`, the highest is `1440` (1 day).
+	 * be set is `1`, the highest is `1440` (1 day).
 	 */
 	maxDurationMinutes?: number | null;
 	/**
@@ -80,7 +80,7 @@ export interface MeetRecordingConfig {
 	enabled: boolean;
 	/**
 	 * When set, the recording starts automatically once the configured participant threshold is
-	 * reached — see {@link MeetRecordingAutoStartMode} for the available thresholds. The threshold is
+	 * reached (see {@link MeetRecordingAutoStartMode} for the available thresholds). The threshold is
 	 * re-evaluated on every join and on every promotion to moderator. The start is attributed to the
 	 * system: no participant holding the `recordingControl` permission is involved. Ignored while
 	 * end-to-end encryption is enabled, which already excludes recording.
