@@ -366,7 +366,7 @@ export class RoomWizardStateService {
 				formGroup: this.formBuilder.group(
 					{
 						broadcastEnabled: this.formBuilder.nonNullable.control(
-							initialRoomOptions.config!.broadcast!.enabled
+							initialRoomOptions.config!.broadcast!.enabled ?? false
 						),
 						destinations: this.formBuilder.nonNullable.control<MeetBroadcastDestination[]>(
 							initialRoomOptions.config!.broadcast!.destinations ?? []

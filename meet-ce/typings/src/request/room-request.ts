@@ -45,13 +45,13 @@ export type MeetRoomConfigOptions = Partial<Omit<MeetRoomConfig, 'broadcast'>> &
 };
 
 /**
- * Live broadcast configuration as a request sends it. The destination list is optional: omitted, a
- * new room has no destinations and an update keeps the saved ones; sent, it replaces the whole list.
- * Enabling live broadcast needs at least one destination, sent or saved. See
- * {@link MeetBroadcastConfig} for details.
+ * Live broadcast configuration as a request sends it. The switch and the destination list are
+ * optional: omitted, a new room has live broadcast disabled and no destinations, and an update keeps
+ * the saved ones; a destination list sent replaces the whole list. Enabling live broadcast needs at
+ * least one destination, sent or saved. See {@link MeetBroadcastConfig} for details.
  */
-export type MeetBroadcastConfigOptions = Omit<MeetBroadcastConfig, 'destinations'> &
-	Partial<Pick<MeetBroadcastConfig, 'destinations'>>;
+export type MeetBroadcastConfigOptions = Omit<MeetBroadcastConfig, 'enabled' | 'destinations'> &
+	Partial<Pick<MeetBroadcastConfig, 'enabled' | 'destinations'>>;
 
 /**
  * Roles configuration for creating/updating a room.

@@ -11,7 +11,7 @@ When `createRoom` carries no `config`, the server SHALL give the room `chat`, `v
 - **AND** `initialAudioActive` and `initialVideoActive` are `true` and no meeting limit is set
 
 ### Requirement: Partial config at creation
-The server SHALL fill every top-level field missing from the `config` of a `createRoom` request with its default, SHALL default `recording.layout` to `grid` and `recording.encoding` to `H264_720P_30` when the `recording` object sent omits them, and SHALL default `broadcast.destinations` to none, `broadcast.layout` to `grid` and `broadcast.encoding` to `H264_720P_30` when the `broadcast` object sent omits them.
+The server SHALL fill every top-level field missing from the `config` of a `createRoom` request with its default, SHALL default `recording.layout` to `grid` and `recording.encoding` to `H264_720P_30` when the `recording` object sent omits them, and SHALL default `broadcast.enabled` to `false`, `broadcast.destinations` to none, `broadcast.layout` to `grid` and `broadcast.encoding` to `H264_720P_30` when the `broadcast` object sent omits them.
 
 #### Scenario: One feature turned off at creation
 - **WHEN** `createRoom` is called with `config` `{ "chat": { "enabled": false } }`
@@ -25,20 +25,9 @@ The server SHALL fill every top-level field missing from the `config` of a `crea
 - **WHEN** `createRoom` is called with `config.broadcast` holding `enabled` `true` and one destination
 - **THEN** the room's broadcast layout is `grid` and its encoding `H264_720P_30`
 
-### Requirement: Feature objects carry their switch
-Each feature object of a config (`chat`, `recording`, `broadcast`, `virtualBackground`, `e2ee`, `captions`, `raiseHand`, `reactions`) SHALL carry a boolean `enabled` whenever it is sent, at creation and on update; otherwise the server SHALL answer `422` naming the field and store nothing.
-
-#### Scenario: Missing switch
-- **WHEN** `updateRoomConfig` is called with `config` `{ "recording": { "layout": "speaker" } }`
-- **THEN** the server answers `422` naming `recording.enabled`
-
-#### Scenario: Broadcast without its switch
-- **WHEN** `updateRoomConfig` is called with `config` `{ "broadcast": { "layout": "speaker" } }`
-- **THEN** the server answers `422` naming `broadcast.enabled`
-
-#### Scenario: Switch of the wrong type
-- **WHEN** `createRoom` is called with `config.e2ee.enabled` set to the string `"true"`
-- **THEN** the server answers `422` and no room is created
+#### Scenario: Broadcast object without its switch
+- **WHEN** `createRoom` is called with `config.broadcast` `{ "layout": "speaker" }`
+- **THEN** the room has live broadcast disabled, in the `speaker` layout
 
 ### Requirement: Rules across fields judge the resulting config
 The server SHALL apply the rules that tie several config fields together (in `recordings`, the auto-start reachable with `maxParticipants` and encryption turning recording off; in `live-broadcast`, live broadcast needing a destination and turned off by encryption) to the config that results from the request, the stored config merged with the update, so that they hold even when the fields involved arrive in different requests.

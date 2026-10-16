@@ -145,8 +145,6 @@ MeetRecordingConfig:
                 - $ref: '#/MeetRecordingEncodingOptions'
 MeetBroadcastConfig:
     type: object
-    required:
-        - enabled
     properties:
         enabled:
             type: boolean
@@ -155,7 +153,8 @@ MeetBroadcastConfig:
             description: >
                 If true, the room's meetings can be broadcast live to RTMP destinations by anyone holding
                 the `broadcastControl` permission. Enabling it requires at least one destination, sent in
-                the same request or already saved.
+                the same request or already saved. A room created without it has live broadcast disabled,
+                and a config update that omits it keeps the saved value.
         destinations:
             type: array
             maxItems: 5

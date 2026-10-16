@@ -132,6 +132,22 @@ describe('Broadcast Room Configuration Tests', () => {
 			}
 		});
 
+		it('should create a room with broadcast disabled when the block leaves the switch out', async () => {
+			const room = await createRoom(
+				{
+					roomName: 'no-switch',
+					config: { broadcast: { destinations: [destination('a')], layout: MeetRecordingLayout.SPEAKER } }
+				},
+				undefined,
+				{ xExtraFields: 'config' }
+			);
+
+			expect(room.config.broadcast).toEqual(
+				expect.objectContaining({ enabled: false, layout: MeetRecordingLayout.SPEAKER })
+			);
+			expect(room.config.broadcast.destinations).toHaveLength(1);
+		});
+
 		it('should create a room with broadcast disabled and no destinations when the block leaves them out', async () => {
 			const room = await createRoom(
 				{ roomName: 'no-list', config: { broadcast: { enabled: false } } },
@@ -314,6 +330,15 @@ describe('Broadcast Room Configuration Tests', () => {
 			expect(response.status).toBe(200);
 			expect(response.body.broadcast.destinations).toEqual([{ id: b.id, name: b.name, url: REDACTED_URL }]);
 			expect(await storedUrls(room.roomId)).toEqual({ [b.id]: destination('b').url });
+		});
+
+		it('should keep the switch as saved when an update leaves it out', async () => {
+			const room = await createBroadcastRoom(['a']);
+
+			const updated = await updateRoomConfig(room.roomId, { broadcast: { layout: MeetRecordingLayout.SPEAKER } });
+
+			expect(updated.status).toBe(200);
+			expect(updated.body.broadcast).toEqual({ ...room.config.broadcast, layout: MeetRecordingLayout.SPEAKER });
 		});
 
 		it('should change only the layout, keeping the destinations the update leaves out', async () => {
