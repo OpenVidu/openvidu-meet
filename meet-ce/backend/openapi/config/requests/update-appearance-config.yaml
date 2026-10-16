@@ -1,4 +1,5 @@
-description: New rooms appearance config
+description: >
+    New rooms appearance config. `appearance.themes` must hold exactly one theme.
 required: true
 content:
     application/json:

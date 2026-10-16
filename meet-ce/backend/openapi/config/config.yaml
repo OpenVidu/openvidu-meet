@@ -79,6 +79,9 @@
             Updates the appearance config for rooms in the OpenVidu Meet application.
 
 
+            The stored theme is replaced, and each color the request omits keeps the stored theme's value.
+
+
             **Access token roles**: `admin`.
         tags:
             - Internal API - Global Config

@@ -9,8 +9,8 @@ MeetAppearanceConfig:
     properties:
         themes:
             type: array
-            description: Array of available themes for rooms
-            minItems: 1
+            description: >
+                Array of available themes for rooms. Empty until a theme is saved.
             maxItems: 1
             items:
                 $ref: '#/MeetRoomTheme'
@@ -25,7 +25,8 @@ MeetRoomTheme:
             description: Display name of the theme
             minLength: 1
             maxLength: 50
-            example: "Default Theme"
+            pattern: '^[a-zA-Z0-9_-]+$'
+            example: "corporate-dark"
         enabled:
             type: boolean
             description: Whether the theme is enabled
@@ -35,28 +36,38 @@ MeetRoomTheme:
             description: Base theme mode (light or dark)
         backgroundColor:
             type: string
-            description: Background color in hex format
-            pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+            description: >
+                Background color as a hex code: `#RGB`, `#RGBA`, `#RRGGBB` or `#RRGGBBAA`.
+                An update that omits it keeps the stored value, so a color cannot be removed once set.
+            pattern: '^#([0-9A-Fa-f]{8}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{3})$'
             example: "#FFFFFF"
         primaryColor:
             type: string
-            description: Primary color in hex format
-            pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+            description: >
+                Primary color as a hex code: `#RGB`, `#RGBA`, `#RRGGBB` or `#RRGGBBAA`.
+                An update that omits it keeps the stored value, so a color cannot be removed once set.
+            pattern: '^#([0-9A-Fa-f]{8}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{3})$'
             example: "#FF0000"
         secondaryColor:
             type: string
-            description: Secondary color in hex format
-            pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+            description: >
+                Secondary color as a hex code: `#RGB`, `#RGBA`, `#RRGGBB` or `#RRGGBBAA`.
+                An update that omits it keeps the stored value, so a color cannot be removed once set.
+            pattern: '^#([0-9A-Fa-f]{8}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{3})$'
             example: "#00FF00"
         accentColor:
             type: string
-            description: Accent color in hex format
-            pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+            description: >
+                Accent color as a hex code: `#RGB`, `#RGBA`, `#RRGGBB` or `#RRGGBBAA`.
+                An update that omits it keeps the stored value, so a color cannot be removed once set.
+            pattern: '^#([0-9A-Fa-f]{8}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{3})$'
             example: "#0000FF"
         surfaceColor:
             type: string
-            description: Surface color in hex format
-            pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+            description: >
+                Surface color as a hex code: `#RGB`, `#RGBA`, `#RRGGBB` or `#RRGGBBAA`.
+                An update that omits it keeps the stored value, so a color cannot be removed once set.
+            pattern: '^#([0-9A-Fa-f]{8}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{3})$'
             example: "#CCCCCC"
     required:
         - name
