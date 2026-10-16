@@ -52,6 +52,7 @@ describe('redactStreamUrl and isRedactedStreamUrl', () => {
 
 	it('masks the only segment when the URL has no application path', () => {
 		expect(redactStreamUrl('rtmp://stream.example.com')).toBe('rtmp://stream.example.com/********');
+		expect(redactStreamUrl('rtmp://stream.example.com///')).toBe('rtmp://stream.example.com/********');
 		expect(redactStreamUrl('rtmp://stream.example.com/key')).toBe('rtmp://stream.example.com/********');
 	});
 
@@ -78,6 +79,10 @@ describe('isValidStreamUrl', () => {
 	});
 
 	it('answers at once for a long URL made of slashes, which a backtracking pattern takes minutes on', () => {
-		expect(isValidStreamUrl(`rtmp:///${'/'.repeat(1_000_000)} `)).toBe(false);
+		const slashes = '/'.repeat(1_000_000);
+		expect(isValidStreamUrl(`rtmp:///${slashes} `)).toBe(false);
+		expect(redactStreamUrl(`rtmp://host${slashes}`)).toBe('rtmp://host/********');
+		expect(redactStreamUrl(`${slashes}key`)).toBe(`${slashes}********`);
+		expect(isRedactedStreamUrl(`rtmp://host${slashes}********`)).toBe(true);
 	});
 });

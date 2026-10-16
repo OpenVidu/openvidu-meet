@@ -268,7 +268,7 @@ export const redactStreamUrl = (url: string): string => {
 	const segments = address.split('/');
 	const index = streamKeyIndex(segments);
 
-	if (index < 0) return `${address.replace(/\/+$/, '')}/${MEET_BROADCAST_REDACTED_STREAM_KEY}`;
+	if (index < 0) return [...segments.slice(0, 3), MEET_BROADCAST_REDACTED_STREAM_KEY].join('/');
 
 	segments[index] = MEET_BROADCAST_REDACTED_STREAM_KEY;
 	return segments.join('/');
