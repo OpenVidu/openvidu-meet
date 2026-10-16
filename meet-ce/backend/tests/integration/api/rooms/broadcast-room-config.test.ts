@@ -2,8 +2,10 @@ import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import type { MeetBroadcastDestination, MeetRoom, MeetRoomOptions } from '@openvidu-meet/typings';
 import {
 	MEET_BROADCAST_REDACTED_STREAM_KEY,
+	MeetRecordingAudioCodec,
 	MeetRecordingEncodingPreset,
-	MeetRecordingLayout
+	MeetRecordingLayout,
+	MeetRecordingVideoCodec
 } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
@@ -143,6 +145,60 @@ describe('Broadcast Room Configuration Tests', () => {
 			expect(await storedUrls(room.roomId)).toEqual({});
 		});
 
+		it('should serve a stream key with a query string, a query in the path and the live=1 flag redacted so they can be sent back', async () => {
+			const urls = [
+				'rtmps://live.twitch.tv/app/twitch-key?bandwidthtest=true',
+				'rtmp://b.rtmp.youtube.com/live2?backup=1/youtube-key',
+				'rtmp://media.example.com/live/flagged-key live=1'
+			];
+			const room = await createRoom(
+				{
+					roomName: 'url-forms',
+					config: {
+						broadcast: {
+							enabled: true,
+							destinations: urls.map((url, index) => ({ name: `Dest ${index}`, url }))
+						}
+					}
+				},
+				undefined,
+				{ xExtraFields: 'config' }
+			);
+
+			expect(room.config.broadcast.destinations.map(({ url }) => url)).toEqual([
+				'rtmps://live.twitch.tv/app/********',
+				'rtmp://b.rtmp.youtube.com/live2?backup=1/********',
+				'rtmp://media.example.com/live/********'
+			]);
+
+			const echoed = await updateRoomConfig(room.roomId, {
+				broadcast: { enabled: true, destinations: room.config.broadcast.destinations }
+			});
+			expect(echoed.status).toBe(200);
+			expect(Object.values(await storedUrls(room.roomId))).toEqual(urls);
+		});
+
+		it('should reject a destination URL with a fragment, with no host, or whose stream key is only a query string', async () => {
+			for (const url of [
+				'rtmp://media.example.com/live/key#frag',
+				'rtmp:///live/key',
+				'rtmp://media.example.com/live/?key=secret'
+			]) {
+				const response = await createRoomRequest({
+					roomName: 'bad-url',
+					config: { broadcast: { enabled: true, destinations: [{ name: 'Bad', url }] } }
+				});
+
+				expectValidationError(
+					response,
+					'config.broadcast.destinations.0.url',
+					'Destination url must have the form'
+				);
+			}
+
+			expect((await getRooms()).body.rooms).toEqual([]);
+		});
+
 		it('should reject two destinations with the same stream key, even on different servers', async () => {
 			const response = await createRoomRequest({
 				roomName: 'x',
@@ -260,6 +316,35 @@ describe('Broadcast Room Configuration Tests', () => {
 			const kept = await updateRoomConfig(room.roomId, { broadcast: { enabled: true } });
 			expect(kept.status).toBe(200);
 			expect(kept.body.broadcast.layout).toBe(MeetRecordingLayout.SPEAKER);
+		});
+
+		it('should change the encoding from a preset to options and back, keeping the destinations', async () => {
+			const room = await createBroadcastRoom(['a']);
+			const encoding = {
+				video: {
+					width: 1920,
+					height: 1080,
+					framerate: 30,
+					codec: MeetRecordingVideoCodec.H264_HIGH,
+					bitrate: 4500,
+					keyFrameInterval: 2,
+					depth: 24
+				},
+				audio: { codec: MeetRecordingAudioCodec.AAC, bitrate: 192, frequency: 48000 }
+			};
+
+			const options = await updateRoomConfig(room.roomId, { broadcast: { enabled: true, encoding } });
+			expect(options.status).toBe(200);
+			expect(options.body.broadcast).toEqual({ ...room.config.broadcast, encoding });
+
+			const preset = await updateRoomConfig(room.roomId, {
+				broadcast: { enabled: true, encoding: MeetRecordingEncodingPreset.H264_1080P_30 }
+			});
+			expect(preset.status).toBe(200);
+			expect(preset.body.broadcast).toEqual({
+				...room.config.broadcast,
+				encoding: MeetRecordingEncodingPreset.H264_1080P_30
+			});
 		});
 
 		it('should turn broadcast off and on again without losing the destinations or their stream keys', async () => {
