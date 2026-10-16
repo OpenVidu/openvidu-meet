@@ -39,9 +39,8 @@ properties:
         type: string
         description: >
             Room the webhook is scoped to: only events of that room are delivered. When omitted,
-            events of every room are delivered. The ID is an opaque scope filter — it is not
-            validated against existing rooms, so the webhook can be registered before its room is
-            created, and it simply never matches once the room is gone.
+            events of every room are delivered. The ID is not checked against existing rooms, so a
+            webhook scoped to a room that does not exist, or no longer exists, receives no event.
         example: 'room-123'
     enabled:
         type: boolean

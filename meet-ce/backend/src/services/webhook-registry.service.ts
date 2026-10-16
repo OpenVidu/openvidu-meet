@@ -25,9 +25,7 @@ import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
  * This service is the CRUD surface only. Delivery (envelope, signature, retries) lives in
  * {@link WebhookDispatcherService}, which reads this collection to fan events out.
  *
- * A webhook's `roomId` is an opaque scope filter: it is not validated against existing rooms, so
- * it can be registered before its room is created, and it simply never matches once the room is
- * gone (the lifecycle-on-room-deletion policy is roadmap open decision #17).
+ * A webhook's `roomId` is an opaque scope filter, never validated against existing rooms.
  */
 @injectable()
 export class WebhookRegistryService {
