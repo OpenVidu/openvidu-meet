@@ -358,19 +358,41 @@ describe('BroadcastService', () => {
 				{ egressId: 'EG_1', add: [tagged('rtmp://mtx/live/xxxKEYxxx', extra)], remove: [] }
 			]);
 			expect(broadcasts.map(({ name, status }) => `${name}:${status}`)).toEqual([
-				'A:active',
+				'A:starting',
 				'B:starting',
 				'Extra:starting'
 			]);
-			expect(saved().map(({ name, url }) => `${name}:${url}`)).toEqual([
-				`A:${REAL_URLS.a}`,
-				`B:${REAL_URLS.b}`,
-				'Extra:rtmp://mtx/live/xxxKEYxxx'
+			expect(saved().map(({ name, url, status }) => `${name}:${url}:${status}`)).toEqual([
+				`A:${REAL_URLS.a}:active`,
+				`B:${REAL_URLS.b}:starting`,
+				'Extra:rtmp://mtx/live/xxxKEYxxx:starting'
 			]);
 			expect(webhookSummary()).toEqual([
-				'broadcastStarted:A:active',
+				'broadcastStarted:A:starting',
 				'broadcastStarted:B:starting',
-				'broadcastStarted:Extra:starting'
+				'broadcastStarted:Extra:starting',
+				'broadcastUpdated:A:active'
+			]);
+		});
+
+		it('tells each broadcast as started before the failure of its destination that LiveKit reported while the request went on', async () => {
+			livekit.nextEgress = egressWith({ streamResults: streams([{}]) });
+			livekit.updateResponses = [
+				egressWith({
+					streamResults: streams([{ status: StreamInfo_Status.FAILED, error: 'Connection refused' }, {}])
+				})
+			];
+
+			const broadcasts = await service.startBroadcasts(ROOM_ID, {
+				destinations: [{ destinationId: 'a' }, { destinationId: 'b' }]
+			});
+
+			expect(broadcasts.map(({ name, status }) => `${name}:${status}`)).toEqual(['A:starting', 'B:starting']);
+			expect(saved().map(({ name, status }) => `${name}:${status}`)).toEqual(['B:starting']);
+			expect(webhookSummary()).toEqual([
+				'broadcastStarted:A:starting',
+				'broadcastStarted:B:starting',
+				'broadcastEnded:A:failed'
 			]);
 		});
 

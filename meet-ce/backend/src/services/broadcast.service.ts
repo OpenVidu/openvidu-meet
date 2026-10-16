@@ -62,7 +62,8 @@ export class BroadcastService {
 	 * Starts streaming the meeting to each destination asked for, one broadcast each, or to every
 	 * room destination not streamed to yet. Either every broadcast starts or none does. The request
 	 * completes as soon as LiveKit accepts the streams: each broadcast is `starting` until media
-	 * reaches its destination.
+	 * reaches its destination, and is told as started before anything LiveKit reported of it while
+	 * the request went on, such as a destination that refused the stream at once.
 	 */
 	async startBroadcasts(roomId: string, { destinations }: MeetBroadcastStartOptions): Promise<MeetBroadcastInfo[]> {
 		return this.withRequestLock(roomId, async () => {
@@ -96,14 +97,14 @@ export class BroadcastService {
 					encoding: config.broadcast.encoding ?? MeetRecordingEncodingPreset.H264_720P_30
 				}
 			);
-			const updated = this.withEgress([...records, ...started], egress);
-			await this.saveAndNotify(roomId, records, updated);
+			const withStarted = [...records, ...started];
+			await this.saveAndNotify(roomId, records, withStarted);
+			await this.saveAndNotify(roomId, withStarted, this.withEgress(withStarted, egress));
 
-			const startedIds = new Set(started.map(({ broadcastId }) => broadcastId));
-			this.logger.info(`Broadcasts '${[...startedIds].join("', '")}' started for room '${roomId}'`);
-			return updated
-				.filter(({ broadcastId }) => startedIds.has(broadcastId))
-				.map((record) => BroadcastHelper.toBroadcastInfo(record));
+			this.logger.info(
+				`Broadcasts '${started.map(({ broadcastId }) => broadcastId).join("', '")}' started for room '${roomId}'`
+			);
+			return started.map((record) => BroadcastHelper.toBroadcastInfo(record));
 		});
 	}
 
