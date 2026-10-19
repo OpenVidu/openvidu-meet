@@ -13,6 +13,9 @@ deployments that set one of them are hit.
 - The recording output path given to the recorder uses the prefix of the selected storage mode:
   `MEET_AZURE_SUBCONTAINER_NAME` with `abs`, `MEET_S3_SUBBUCKET` with `s3` and `gcs` (unchanged).
 - The prefix of each mode is defined in one place, used both to write and to read recordings.
+- A key counts as already under the prefix only when it starts with the prefix followed by `/`, so a
+  prefix that begins the recordings path (such as `rec` or `recordings`) no longer makes Meet read
+  recordings outside it, and an empty prefix leaves keys unprefixed on both sides.
 - The `deployment` spec states that recordings are written and read under that prefix, with an ABS
   scenario.
 - Recordings already written under `MEET_S3_SUBBUCKET` in an affected deployment are not moved.

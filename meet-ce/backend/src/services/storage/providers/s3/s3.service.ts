@@ -29,6 +29,7 @@ import {
 	validateSSEConfig
 } from '../../../../helpers/s3-sse.helper.js';
 import { errorS3NotAvailable, internalError } from '../../../../models/error.model.js';
+import { withKeyPrefix } from '../../../../utils/storage-key.utils.js';
 import { LoggerService } from '../../../logger.service.js';
 
 /** Type guard: narrows an unknown error to one exposing a matching `code` property. */
@@ -295,19 +296,8 @@ export class S3Service {
 		return MEET_ENV.S3_SUBBUCKET;
 	}
 
-	/**
-	 * Constructs the full key for an S3 object by ensuring it includes the specified sub-bucket prefix.
-	 * If the provided name already starts with the prefix, it is returned as-is.
-	 * Otherwise, the prefix is prepended to the name.
-	 */
 	protected getFullKey(name: string): string {
-		const prefix = this.getKeyPrefix();
-
-		if (name.startsWith(prefix)) {
-			return name;
-		}
-
-		return `${prefix}/${name}`;
+		return withKeyPrefix(this.getKeyPrefix(), name);
 	}
 
 	protected async getObject(

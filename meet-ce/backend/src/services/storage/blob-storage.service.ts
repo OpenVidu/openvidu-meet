@@ -1,6 +1,7 @@
 import { inject, injectable } from 'inversify';
 import type { Readable } from 'stream';
 import { errorRecordingNotFound, errorRecordingRangeNotSatisfiable } from '../../models/error.model.js';
+import { withKeyPrefix } from '../../utils/storage-key.utils.js';
 import { LoggerService } from '../logger.service.js';
 import { StorageFactory } from './storage.factory.js';
 import type { StorageKeyBuilder, StorageProvider } from './storage.interface.js';
@@ -63,8 +64,8 @@ export class BlobStorageService {
 	 * @param recordingName - The unique name of the recording file, without extension
 	 */
 	getRecordingOutputPath(roomId: string, recordingName: string): string {
-		const prefix = this.storageProvider.getKeyPrefix();
-		return `${prefix}/${this.keyBuilder.buildRecordingOutputKey(roomId, recordingName)}`;
+		const key = this.keyBuilder.buildRecordingOutputKey(roomId, recordingName);
+		return withKeyPrefix(this.storageProvider.getKeyPrefix(), key);
 	}
 
 	/**

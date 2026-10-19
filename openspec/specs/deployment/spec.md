@@ -117,6 +117,12 @@ Meet SHALL use the object storage selected by `MEET_BLOB_STORAGE_MODE`: `s3` (de
 - **THEN** its file is written under the `meet-recordings` prefix of the container
 - **AND** `getRecordingMedia` serves it
 
+#### Scenario: Prefix that begins the recordings path
+- **GIVEN** `MEET_S3_SUBBUCKET=rec`
+- **WHEN** a recording completes
+- **THEN** its file is written under the `rec` prefix of the bucket
+- **AND** `getRecordingMedia` serves it
+
 ### Requirement: S3 credentials and endpoint
 In `s3` mode Meet SHALL reach `MEET_S3_SERVICE_ENDPOINT` (default `http://localhost:9000`) in region `MEET_AWS_REGION` (default `us-east-1`), with path-style addressing while `MEET_S3_WITH_PATH_STYLE_ACCESS` is `true` (default). It SHALL authenticate with `MEET_S3_ACCESS_KEY` and `MEET_S3_SECRET_KEY` when both are non-empty, and otherwise with the standard AWS credential sources (environment, shared configuration, instance or task role).
 

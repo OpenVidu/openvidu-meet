@@ -55,6 +55,27 @@ describe('BlobStorageService.getRecordingOutputPath', () => {
 		expect(`${outputPath}.mp4`).toBe(readKey);
 	});
 
+	const prefixes = ['openvidu-meet', 'rec', 'recordings', 'meet/recordings', ''];
+	const cases = providers.flatMap(([mode, create]) => prefixes.map((prefix) => [mode, prefix, create] as const));
+
+	it.each(cases)('writes where %s reads with the prefix %j', (_mode, prefix, create) => {
+		MEET_ENV.S3_SUBBUCKET = prefix;
+		MEET_ENV.AZURE_SUBCONTAINER_NAME = prefix;
+		const service = create();
+
+		const outputPath = blobStorageOver(service).getRecordingOutputPath('room-1', 'room-1--abc');
+		const readKey = service.getFullKey(keyBuilder.buildBinaryRecordingKey('room-1--EG_x--abc'));
+
+		expect(`${outputPath}.mp4`).toBe(readKey);
+	});
+
+	it('leaves a key read back from a listing under its prefix once', () => {
+		MEET_ENV.S3_SUBBUCKET = 'openvidu-meet';
+		const service = providers[0][1]();
+
+		expect(service.getFullKey('openvidu-meet/recordings/r/r--1.mp4')).toBe('openvidu-meet/recordings/r/r--1.mp4');
+	});
+
 	it('uses the Azure prefix with abs and the S3 prefix with s3 and gcs', () => {
 		MEET_ENV.S3_SUBBUCKET = 's3-prefix';
 		MEET_ENV.AZURE_SUBCONTAINER_NAME = 'azure-prefix';

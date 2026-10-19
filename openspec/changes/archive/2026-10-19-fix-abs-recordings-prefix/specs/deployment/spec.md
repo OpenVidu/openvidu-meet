@@ -13,3 +13,9 @@ Meet SHALL use the object storage selected by `MEET_BLOB_STORAGE_MODE`: `s3` (de
 - **WHEN** a recording completes
 - **THEN** its file is written under the `meet-recordings` prefix of the container
 - **AND** `getRecordingMedia` serves it
+
+#### Scenario: Prefix that begins the recordings path
+- **GIVEN** `MEET_S3_SUBBUCKET=rec`
+- **WHEN** a recording completes
+- **THEN** its file is written under the `rec` prefix of the bucket
+- **AND** `getRecordingMedia` serves it
