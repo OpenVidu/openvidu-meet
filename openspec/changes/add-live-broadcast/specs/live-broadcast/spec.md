@@ -420,12 +420,17 @@ The server SHALL send, per broadcast, `broadcastStarted` when a start request cr
 - **THEN** only the new broadcast gets `broadcastUpdated`, and the stopped one gets no further event
 
 ### Requirement: Embedded broadcast commands
-The embedded element SHALL run `broadcastStart(options?)` and `broadcastStop(options?)`, whose payloads are the bodies of the REST operations of the same names without the `roomId`, only for a local participant holding `broadcastControl` in a joined meeting. Without options they SHALL go live to every room destination not streamed to yet and stop every running broadcast. `broadcastStop` with nothing running SHALL do nothing.
+The embedded element SHALL run `broadcastStart(options?)` and `broadcastStop(options?)`, the bodies of the REST operations of the same names without `roomId`, for a local participant holding `broadcastControl` in a joined meeting, showing them in the activity as its own requests. Without options they SHALL start every room destination not streamed to yet and stop every running broadcast; `broadcastStop` with nothing running or starting SHALL do nothing.
 
 #### Scenario: Go live from the host
 - **GIVEN** a joined moderator holding `broadcastControl` in a room with two destinations
 - **WHEN** the host calls `broadcastStart()`
 - **THEN** the meeting goes live to both destinations
+
+#### Scenario: Start from the host shown in the activity
+- **GIVEN** a moderator with the Live broadcast activity open in a meeting live to room destination A
+- **WHEN** the host calls `broadcastStart({ destinationIds: ["B"] })`
+- **THEN** the activity shows B as connecting until it goes live
 
 #### Scenario: Destination for the meeting without its permission
 - **GIVEN** a joined participant holding `broadcastControl` but not `broadcastAddDestinations`

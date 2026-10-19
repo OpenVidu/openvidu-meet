@@ -213,7 +213,7 @@ export class EmbeddedCommandService {
 				return;
 			}
 
-			await this.broadcastService.startBroadcasts(roomId, options);
+			await this.broadcastService.request({ ...options, action: 'start', roomId });
 		});
 	}
 
@@ -222,12 +222,12 @@ export class EmbeddedCommandService {
 			const roomId = this.meetingContextService.roomId();
 			const running = this.broadcastState.inProgress().filter(({ status }) => isBroadcastRunning(status));
 
-			if (!roomId || running.length === 0) {
-				this.log.w('broadcastStop() called but no broadcast is running');
+			if (!roomId || (running.length === 0 && !this.broadcastState.isStartPending())) {
+				this.log.w('broadcastStop() called but no broadcast is running or starting');
 				return;
 			}
 
-			await this.broadcastService.stopBroadcasts(roomId, options);
+			await this.broadcastService.request({ ...options, action: 'stop', roomId });
 		});
 	}
 

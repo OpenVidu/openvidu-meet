@@ -607,35 +607,16 @@ export class MeetingEventHandlerService {
 	};
 
 	/**
-	 * Answers the activities panel's requests to the broadcast API, keeping the panel told what is in
-	 * flight and what was refused. The state of each broadcast arrives as a broadcast signal.
+	 * Answers the activities panel's requests to the broadcast API. The state of each broadcast
+	 * arrives as a broadcast signal.
 	 */
 	onBroadcastRequested = async (event: BroadcastRequestedEvent): Promise<void> => {
-		this.broadcastState.requestStarted(event);
-
 		try {
-			await this.runBroadcastRequest(event);
-			this.broadcastState.requestSucceeded(event);
+			await this.broadcastService.request(event);
 		} catch (error) {
 			console.error(`Error on broadcast request '${event.action}':`, error);
-			this.broadcastState.requestFailed(event, this.extractErrorMessage(error));
 		}
 	};
-
-	private async runBroadcastRequest(event: BroadcastRequestedEvent): Promise<void> {
-		if (event.action === 'start') {
-			const { roomId, destinationIds, destinations } = event;
-			const broadcasts = await this.broadcastService.startBroadcasts(roomId, { destinationIds, destinations });
-			this.broadcastState.recordOwnBroadcasts(destinations ?? [], broadcasts);
-		} else {
-			await this.broadcastService.stopBroadcasts(event.roomId, { broadcastIds: event.broadcastIds });
-		}
-	}
-
-	private extractErrorMessage(error: unknown): string | undefined {
-		const message = (error as { error?: { message?: unknown } } | undefined)?.error?.message;
-		return typeof message === 'string' ? message : undefined;
-	}
 
 	// ============================================
 	// PRIVATE METHODS - Event Handlers

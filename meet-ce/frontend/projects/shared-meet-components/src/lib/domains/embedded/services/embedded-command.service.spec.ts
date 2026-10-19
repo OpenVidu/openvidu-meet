@@ -64,6 +64,7 @@ describe('EmbeddedCommandService', () => {
 	let liveKitService: { isSessionActive: ReturnType<typeof signal<boolean>>; disconnect: jasmine.Spy };
 	let broadcastService: jasmine.SpyObj<BroadcastService>;
 	let runningBroadcasts: ReturnType<typeof signal<{ broadcastId: string; status: MeetBroadcastStatus }[]>>;
+	let startPending: ReturnType<typeof signal<boolean>>;
 	let phase: ReturnType<typeof signal<MeetingViewPhase>>;
 	let hasPermission: jasmine.Spy;
 	let logger: LoggerServiceStub;
@@ -133,12 +134,9 @@ describe('EmbeddedCommandService', () => {
 			isSessionActive: signal(true),
 			disconnect: jasmine.createSpy('disconnect').and.resolveTo()
 		};
-		broadcastService = jasmine.createSpyObj<BroadcastService>('BroadcastService', [
-			'startBroadcasts',
-			'stopBroadcasts'
-		]);
-		broadcastService.startBroadcasts.and.resolveTo([]);
-		broadcastService.stopBroadcasts.and.resolveTo([]);
+		broadcastService = jasmine.createSpyObj<BroadcastService>('BroadcastService', ['request']);
+		broadcastService.request.and.resolveTo();
+		startPending = signal(false);
 		runningBroadcasts = signal([{ broadcastId: BROADCAST_ID, status: MeetBroadcastStatus.ACTIVE }]);
 		phase = signal<MeetingViewPhase>('live');
 		hasPermission = jasmine.createSpy('hasPermission').and.returnValue(true);
@@ -172,7 +170,10 @@ describe('EmbeddedCommandService', () => {
 				{ provide: BroadcastService, useValue: broadcastService },
 				{
 					provide: BroadcastStateService,
-					useValue: { inProgress: runningBroadcasts } as unknown as BroadcastStateService
+					useValue: {
+						inProgress: runningBroadcasts,
+						isStartPending: startPending
+					} as unknown as BroadcastStateService
 				}
 			]
 		});
@@ -288,7 +289,7 @@ describe('EmbeddedCommandService', () => {
 
 			await service.broadcastStart();
 
-			expect(broadcastService.startBroadcasts).not.toHaveBeenCalled();
+			expect(broadcastService.request).not.toHaveBeenCalled();
 		});
 
 		it('rejects broadcastStop with no active session', async () => {
@@ -296,7 +297,7 @@ describe('EmbeddedCommandService', () => {
 
 			await service.broadcastStop();
 
-			expect(broadcastService.stopBroadcasts).not.toHaveBeenCalled();
+			expect(broadcastService.request).not.toHaveBeenCalled();
 		});
 
 		it('runs meetingEnd while the session is active (covers reconnecting)', async () => {
@@ -499,7 +500,7 @@ describe('EmbeddedCommandService', () => {
 			await service.broadcastStart();
 
 			expect(hasPermission).toHaveBeenCalledWith('broadcastControl');
-			expect(broadcastService.startBroadcasts).not.toHaveBeenCalled();
+			expect(broadcastService.request).not.toHaveBeenCalled();
 		});
 
 		it('gates broadcastStop on the same broadcastControl permission', async () => {
@@ -508,7 +509,7 @@ describe('EmbeddedCommandService', () => {
 			await service.broadcastStop();
 
 			expect(hasPermission).toHaveBeenCalledWith('broadcastControl');
-			expect(broadcastService.stopBroadcasts).not.toHaveBeenCalled();
+			expect(broadcastService.request).not.toHaveBeenCalled();
 		});
 
 		it('meetingLeave requires no permission: any participant may leave', async () => {
@@ -543,9 +544,9 @@ describe('EmbeddedCommandService', () => {
 			await service.broadcastStart(options);
 			await service.broadcastStart();
 
-			expect(broadcastService.startBroadcasts.calls.allArgs()).toEqual([
-				[ROOM_ID, options],
-				[ROOM_ID, {}]
+			expect(broadcastService.request.calls.allArgs()).toEqual([
+				[{ action: 'start', roomId: ROOM_ID, ...options }],
+				[{ action: 'start', roomId: ROOM_ID }]
 			]);
 		});
 
@@ -554,25 +555,28 @@ describe('EmbeddedCommandService', () => {
 
 			await service.broadcastStart();
 
-			expect(broadcastService.startBroadcasts).not.toHaveBeenCalled();
+			expect(broadcastService.request).not.toHaveBeenCalled();
 		});
 
 		it('broadcastStop stops the broadcasts asked for, or by default every running one', async () => {
 			await service.broadcastStop({ broadcastIds: [BROADCAST_ID] });
 			await service.broadcastStop();
 
-			expect(broadcastService.stopBroadcasts.calls.allArgs()).toEqual([
-				[ROOM_ID, { broadcastIds: [BROADCAST_ID] }],
-				[ROOM_ID, {}]
+			expect(broadcastService.request.calls.allArgs()).toEqual([
+				[{ action: 'stop', roomId: ROOM_ID, broadcastIds: [BROADCAST_ID] }],
+				[{ action: 'stop', roomId: ROOM_ID }]
 			]);
 		});
 
-		it('broadcastStop is rejected while no broadcast is running', async () => {
+		it('broadcastStop is rejected while no broadcast is running or starting', async () => {
 			runningBroadcasts.set([]);
 
 			await service.broadcastStop();
+			expect(broadcastService.request).not.toHaveBeenCalled();
 
-			expect(broadcastService.stopBroadcasts).not.toHaveBeenCalled();
+			startPending.set(true);
+			await service.broadcastStop();
+			expect(broadcastService.request).toHaveBeenCalledOnceWith({ action: 'stop', roomId: ROOM_ID });
 		});
 
 		it('meetingEnd ends the current meeting by its room id', async () => {
@@ -731,7 +735,7 @@ describe('EmbeddedCommandService', () => {
 
 	describe('error boundary', () => {
 		it('a failing broadcast command is logged, not propagated to the host', async () => {
-			broadcastService.startBroadcasts.and.rejectWith(new Error('boom'));
+			broadcastService.request.and.rejectWith(new Error('boom'));
 
 			await expectAsync(service.broadcastStart()).toBeResolved();
 		});

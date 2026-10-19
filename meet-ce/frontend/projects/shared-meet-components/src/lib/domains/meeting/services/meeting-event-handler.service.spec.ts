@@ -204,20 +204,8 @@ describe('MeetingEventHandlerService', () => {
 			'playHandRaisedSound'
 		]);
 
-		broadcastService = jasmine.createSpyObj<BroadcastService>('BroadcastService', [
-			'getBroadcasts',
-			'startBroadcasts',
-			'stopBroadcasts'
-		]);
-		broadcastService.startBroadcasts.and.resolveTo([liveBroadcast()]);
-		broadcastService.stopBroadcasts.and.resolveTo([liveBroadcast({ status: MeetBroadcastStatus.COMPLETE })]);
-		broadcastState = jasmine.createSpyObj<BroadcastStateService>('BroadcastStateService', [
-			'requestStarted',
-			'requestSucceeded',
-			'requestFailed',
-			'recordOwnBroadcasts',
-			'setBroadcast'
-		]);
+		broadcastService = jasmine.createSpyObj<BroadcastService>('BroadcastService', ['getBroadcasts', 'request']);
+		broadcastState = jasmine.createSpyObj<BroadcastStateService>('BroadcastStateService', ['setBroadcast']);
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -1465,58 +1453,23 @@ describe('MeetingEventHandlerService', () => {
 	});
 
 	/**
-	 * The activity never calls the API itself: it asks, the meeting page answers, and the server's
-	 * signal settles the request. Only a refusal is reported back, with the reason the server gave.
+	 * The activity never calls the API itself: it asks, and the meeting page hands the request to the
+	 * broadcast service, which keeps the activity told (see its own spec).
 	 */
 	describe('broadcast requests', () => {
-		beforeEach(() => {
+		it('hands each request to the broadcast service, and only logs a refusal', async () => {
 			spyOn(console, 'error');
-		});
-
-		it('starts the destinations asked for in one request, and settles the request once answered', async () => {
-			const destinations = [{ name: 'Backup', url: 'rtmp://media.example.com/live/key' }];
-
-			await service.onBroadcastRequested({
-				action: 'start',
-				roomId: 'room1',
-				destinationIds: ['dest1'],
-				destinations
+			const start = { action: 'start' as const, roomId: 'room1', destinationIds: ['dest1'] };
+			const stop = { action: 'stop' as const, roomId: 'room1' };
+			broadcastService.request.and.callFake(async ({ action }) => {
+				if (action === 'stop') throw { error: { message: 'Broadcast is disabled' } };
 			});
-			await service.onBroadcastRequested({ action: 'start', roomId: 'room1' });
 
-			expect(broadcastService.startBroadcasts.calls.allArgs()).toEqual([
-				['room1', { destinationIds: ['dest1'], destinations }],
-				['room1', { destinationIds: undefined, destinations: undefined }]
-			]);
-			expect(broadcastState.requestStarted.calls.allArgs()).toEqual(broadcastState.requestSucceeded.calls.allArgs());
-			expect(broadcastState.requestSucceeded.calls.allArgs().map(([request]) => request.action)).toEqual([
-				'start',
-				'start'
-			]);
-			expect(broadcastState.recordOwnBroadcasts.calls.allArgs()).toEqual([
-				[destinations, [liveBroadcast()]],
-				[[], [liveBroadcast()]]
-			]);
-		});
+			await service.onBroadcastRequested(start);
+			await service.onBroadcastRequested(stop);
 
-		it('stops the broadcasts asked for, or every running one, in one request', async () => {
-			await service.onBroadcastRequested({ action: 'stop', roomId: 'room1', broadcastIds: ['bc1', 'bc2'] });
-			await service.onBroadcastRequested({ action: 'stop', roomId: 'room1' });
-
-			expect(broadcastService.stopBroadcasts.calls.allArgs()).toEqual([
-				['room1', { broadcastIds: ['bc1', 'bc2'] }],
-				['room1', { broadcastIds: undefined }]
-			]);
-		});
-
-		it('reports a refused request with the reason the server gave', async () => {
-			broadcastService.startBroadcasts.and.rejectWith({ error: { message: 'Broadcast is disabled' } });
-
-			const request = { action: 'start' as const, roomId: 'room1', destinationIds: ['d'] };
-			await service.onBroadcastRequested(request);
-
-			expect(broadcastState.requestFailed).toHaveBeenCalledWith(request, 'Broadcast is disabled');
-			expect(broadcastState.requestSucceeded).not.toHaveBeenCalled();
+			expect(broadcastService.request.calls.allArgs()).toEqual([[start], [stop]]);
+			expect(console.error).toHaveBeenCalledTimes(1);
 		});
 	});
 
