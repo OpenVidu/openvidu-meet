@@ -14,25 +14,26 @@ export type BroadcastRequestedEvent =
 	| ({ action: 'start'; roomId: string } & MeetBroadcastStartOptions)
 	| { action: 'stop'; roomId: string; broadcastIds?: string[] };
 
-/**
- * What the local participant last asked of the broadcasts while the server has not answered, or
- * that the answer was a refusal.
- */
-export type BroadcastRequestStatus = 'idle' | 'starting' | 'stopping' | 'failed';
-
-export interface BroadcastRequestState {
-	status: BroadcastRequestStatus;
+/** A request the local participant made of the broadcasts that the server refused, with the reason it gave. */
+export interface BroadcastRequestRefusal {
+	request: BroadcastRequestedEvent;
 	error?: string;
 }
 
 /** A request as the activity builds it, before the room id every one of them carries is added. */
 export type BroadcastRequest = DistributiveOmit<BroadcastRequestedEvent, 'roomId'>;
 
-/** What the local participant is told while each kind of request is in flight. */
-export const BROADCAST_REQUEST_STATUS_BY_ACTION: Record<BroadcastRequestedEvent['action'], BroadcastRequestStatus> = {
-	start: 'starting',
-	stop: 'stopping'
-};
+/** Whether the request starts the room destination: it names it, or names none and so starts them all. */
+export const startsRoomDestination = (request: BroadcastRequestedEvent, destinationId: string): boolean =>
+	request.action === 'start' && (!request.destinationIds || request.destinationIds.includes(destinationId));
+
+/** Whether the request starts the destination given for the meeting with that URL. */
+export const startsMeetingDestination = (request: BroadcastRequestedEvent, url: string): boolean =>
+	request.action === 'start' && !!request.destinations?.some((destination) => destination.url === url);
+
+/** Whether the request stops the broadcast: it names it, or names none and so stops every running one. */
+export const stopsBroadcast = (request: BroadcastRequestedEvent, broadcastId: string): boolean =>
+	request.action === 'stop' && (!request.broadcastIds || request.broadcastIds.includes(broadcastId));
 
 /** The meeting's broadcasts as the activity shows them: what the row says and offers depends on the phase alone. */
 export type BroadcastPhase = 'idle' | 'starting' | 'live' | 'ending' | 'failed';

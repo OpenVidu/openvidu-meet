@@ -507,7 +507,7 @@ A participant holding `broadcastControl` and `broadcastAddDestinations` SHALL be
 - **THEN** no option to add a destination is offered
 
 ### Requirement: Controlling each destination while live
-While the meeting is live, the activity SHALL let a participant holding `broadcastControl` stop each destination, start again a room destination that is not streamed to, retry a failed one and stop the whole broadcast. When every broadcast failed, it SHALL show the failure with a retry and a dismiss.
+While the meeting is live, the activity SHALL let a participant holding `broadcastControl` stop each destination, start again a room destination that is not streamed to, retry a failed one and stop the whole broadcast. When every broadcast failed, it SHALL show the failure with a retry and a dismiss. Each start or stop SHALL show on its destinations as connecting or stopping until the server answers it, whatever is asked meanwhile.
 
 #### Scenario: Retry a failed destination
 - **GIVEN** a meeting live to destination A whose broadcast to destination B failed
@@ -517,6 +517,11 @@ While the meeting is live, the activity SHALL let a participant holding `broadca
 #### Scenario: Stop the whole broadcast
 - **WHEN** a moderator stops the broadcast from the activity
 - **THEN** every running broadcast of the meeting ends
+
+#### Scenario: Stop while another destination is starting
+- **GIVEN** a meeting live to room destination A
+- **WHEN** a moderator starts destination B and stops A before the server answers the start
+- **THEN** only A stops, and B shows as connecting until it goes live
 
 ### Requirement: Live broadcast control in More options
 The More options menu SHALL offer a participant holding `broadcastControl` in a room with live broadcast enabled to start the live broadcast, going live to every room destination not streamed to yet and opening the activity, or to stop it, ending every running broadcast. It SHALL be disabled while nobody publishes audio or video, while a start is waiting for the server and while the broadcast ends.

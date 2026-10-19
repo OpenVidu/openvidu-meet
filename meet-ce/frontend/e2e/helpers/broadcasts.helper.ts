@@ -77,6 +77,27 @@ export const stopBroadcastFromActivitiesPanel = async (page: Page): Promise<void
 	await button.click();
 };
 
+/** Stops the broadcast to one destination from its row in the activity. */
+export const stopDestinationFromActivitiesPanel = async (page: Page, rowKey: string): Promise<void> => {
+	await expandBroadcastActivity(page);
+	await page.locator(`#broadcast-destination-${rowKey} button.destination-action`).click();
+};
+
+/**
+ * Holds back the answer to every start the page asks for, as a slow server would: the start goes
+ * through at once and its broadcasts are signalled, but the page only learns the request is done
+ * after the delay.
+ */
+export const delayBroadcastStartAnswers = async (page: Page, delayMs: number): Promise<void> => {
+	await page.route('**/api/v1/broadcasts', async (route) => {
+		if (route.request().method() !== 'POST') return route.continue();
+
+		const response = await route.fetch();
+		await new Promise((resolve) => setTimeout(resolve, delayMs));
+		await route.fulfill({ response });
+	});
+};
+
 /**
  * Asserts the phase the activity reports, read off `data-status` rather than its copy, which is in
  * the active language.

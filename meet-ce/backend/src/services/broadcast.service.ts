@@ -68,21 +68,22 @@ export class BroadcastService {
 	 * room destination not streamed to yet. Either every broadcast starts or none does. The request
 	 * completes as soon as LiveKit accepts the streams: each broadcast is `starting` until media
 	 * reaches its destination, and is told as started before anything LiveKit reported of it while
-	 * the request went on, such as a destination that refused the stream at once.
+	 * the request went on, such as a destination that refused the stream at once. The destinations
+	 * are vetted before the room's broadcast lock is taken, since resolving their hosts can take as
+	 * long as the DNS server does.
 	 */
 	async startBroadcasts(roomId: string, options: MeetBroadcastStartOptions): Promise<MeetBroadcastInfo[]> {
+		const [{ roomName, config }, destinationUrls] = await Promise.all([
+			this.roomService.getMeetRoom(roomId, ['roomName', 'config']),
+			this.roomRepository.findBroadcastDestinationUrls(roomId)
+		]);
+		const resolveTargets = (inProgress: BroadcastRecord[]) =>
+			BroadcastHelper.resolveTargets(config.broadcast.destinations, destinationUrls, inProgress, options);
+		await BroadcastHelper.assertDestinationsAllowed(resolveTargets([]).map(({ url }) => url));
+
 		return this.withRequestLock(roomId, async () => {
 			const records = await this.reconcile(roomId, await this.broadcastState.find(roomId));
-			const [{ roomName, config }, destinationUrls] = await Promise.all([
-				this.roomService.getMeetRoom(roomId, ['roomName', 'config']),
-				this.roomRepository.findBroadcastDestinationUrls(roomId)
-			]);
-			const targets = BroadcastHelper.resolveTargets(
-				config.broadcast.destinations,
-				destinationUrls,
-				records,
-				options
-			);
+			const targets = resolveTargets(records);
 
 			if (targets.length === 0) throw errorBroadcastAlreadyStarted(roomId);
 
@@ -91,7 +92,6 @@ export class BroadcastService {
 			}
 
 			BroadcastHelper.validateNewBroadcasts(records, targets);
-			await BroadcastHelper.assertDestinationsAllowed(targets.map(({ url }) => url));
 
 			const { started, egress } = await this.addStreams(
 				{ roomId, roomName },

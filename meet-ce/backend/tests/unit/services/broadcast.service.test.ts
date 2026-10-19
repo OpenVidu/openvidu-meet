@@ -498,7 +498,7 @@ describe('BroadcastService', () => {
 			expect(livekit.updateCalls).toEqual([]);
 		});
 
-		it('refuses a destination on the media server own host or a link-local address, starting nothing', async () => {
+		it('refuses a destination on the media server own host or a link-local address before taking the room lock, starting nothing', async () => {
 			for (const url of ['rtmp://127.0.0.1:6379/live/key', 'rtmp://169.254.169.254/live/key']) {
 				await expectStatus(
 					service.startBroadcasts(ROOM_ID, {
@@ -509,6 +509,7 @@ describe('BroadcastService', () => {
 				);
 			}
 
+			expect(mutex.attempts).toEqual([]);
 			expect(livekit.startCalls).toEqual([]);
 			expect(livekit.updateCalls).toEqual([]);
 		});

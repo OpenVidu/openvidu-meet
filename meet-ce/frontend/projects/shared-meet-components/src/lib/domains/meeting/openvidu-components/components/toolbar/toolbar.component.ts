@@ -327,9 +327,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * @ignore
 	 * A start the server has not answered yet, or a broadcast ending: the toolbar waits.
 	 */
-	readonly isBroadcastBusy = computed(
-		() => this.broadcastState.isEnding() || this.broadcastState.request().status === 'starting'
-	);
+	readonly isBroadcastBusy = computed(() => this.broadcastState.isEnding() || this.broadcastState.isStartPending());
 
 	readonly totalParticipants = this.participantService.totalParticipantsSignal;
 

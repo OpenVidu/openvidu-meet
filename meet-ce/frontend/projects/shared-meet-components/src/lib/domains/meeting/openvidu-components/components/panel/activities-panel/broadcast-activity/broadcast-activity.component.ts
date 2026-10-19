@@ -32,7 +32,11 @@ import {
 	BroadcastPhase,
 	BroadcastRequest,
 	BroadcastRequestedEvent,
-	isBroadcastRunning
+	isBroadcastInProgress,
+	isBroadcastRunning,
+	startsMeetingDestination,
+	startsRoomDestination,
+	stopsBroadcast
 } from '../../../../models/broadcast.model';
 import { TranslatePipe } from '../../../../pipes/translate.pipe';
 import { BroadcastStateService } from '../../../../services/broadcast/broadcast-state.service';
@@ -156,15 +160,18 @@ export class BroadcastActivityComponent {
 
 	readonly elapsed = this.broadcastState.elapsed;
 	readonly showControls = this.uiConfig.broadcastActivityControlsSignal;
-	private readonly pendingRequest = this.broadcastState.request;
+	private readonly pendingRequests = this.broadcastState.pendingRequests;
 	private readonly showAddDestinations = this.uiConfig.broadcastActivityAddDestinationsSignal;
 
 	/** A refusal of what was last asked, shown until dismissed; one of a destination being added shows in its editor. */
-	readonly requestError = computed(() =>
-		this.pendingRequest().status === 'failed' && !this.addingDestination()
-			? (this.pendingRequest().error ?? '')
-			: undefined
-	);
+	readonly requestError = computed(() => {
+		const refusal = this.broadcastState.refusal();
+		const adding = this.addingDestination();
+
+		if (!refusal || (adding && startsMeetingDestination(refusal.request, adding.url))) return undefined;
+
+		return refusal.error ?? '';
+	});
 	readonly phase = computed<BroadcastPhase>(() => {
 		if (
 			this.broadcastState.hasFailed() ||
@@ -197,8 +204,6 @@ export class BroadcastActivityComponent {
 	private readonly unselectedIds = signal(new Set<string>());
 	private readonly meetingDestinations = signal<MeetingDestination[]>([]);
 	private meetingDestinationCount = 0;
-	/** The destinations a start was asked for and the server has not reported yet. */
-	private readonly pendingKeys = signal(new Set<string>());
 
 	readonly rows = computed<DestinationRow[]>(() => {
 		const broadcasts = this.broadcastState.broadcasts();
@@ -210,12 +215,14 @@ export class BroadcastActivityComponent {
 			broadcast: ownBroadcastTo(destination.url)
 		}));
 		const listed = new Set(local.map(({ broadcast }) => broadcast?.broadcastId));
-		// Until a start this client asked for is answered, a broadcast it does not know as its own yet
-		// may be one of its destinations, which already have their rows.
-		const startAnswered = this.pendingRequest().status !== 'starting';
+		// Until a start of destinations this client gave for the meeting is answered, a broadcast it
+		// does not know as its own yet may be one of them, which already have their rows.
+		const ownStartsAnswered = !this.pendingRequests().some(
+			(request) => request.action === 'start' && request.destinations?.length
+		);
 		const otherBroadcasts = broadcasts.filter(
 			({ broadcastId, destination }) =>
-				!destination.id && !listed.has(broadcastId) && (startAnswered || ownUrls.has(broadcastId))
+				!destination.id && !listed.has(broadcastId) && (ownStartsAnswered || ownUrls.has(broadcastId))
 		);
 
 		return [
@@ -269,13 +276,13 @@ export class BroadcastActivityComponent {
 
 	readonly hasRoomTracksPublished = signal(false);
 	readonly canGoLive = computed(
-		() => this.selectedCount() > 0 && this.hasRoomTracksPublished() && this.pendingRequest().status !== 'starting'
+		() => this.selectedCount() > 0 && this.hasRoomTracksPublished() && !this.broadcastState.isStartPending()
 	);
 
 	readonly editor = new DestinationEditor(this.formBuilder);
 	readonly editorOpen = signal(false);
 	/** The destination given for the meeting while live whose start the server has not answered yet. */
-	readonly addingDestination = signal<string | undefined>(undefined);
+	readonly addingDestination = signal<MeetingDestination | undefined>(undefined);
 	/** Adding a destination while live streams to it at once, so the editor says so. */
 	readonly submitLabelKey = computed(() => {
 		if (!this.isRunning()) return 'PANEL.BROADCAST.ADD';
@@ -291,27 +298,19 @@ export class BroadcastActivityComponent {
 	 * meeting's broadcasts, which go on streaming.
 	 */
 	private readonly addedDestinationEffect = effect(() => {
-		const request = this.pendingRequest();
-
 		const added = this.addingDestination();
 
-		if (!added || request.status === 'starting') return;
+		if (!added || this.pendingRequests().some((request) => startsMeetingDestination(request, added.url))) return;
 
 		this.addingDestination.set(undefined);
+		const refusal = this.broadcastState.refusal();
 
-		if (request.status === 'failed') {
-			this.removeMeetingDestination(added);
-			this.editor.rejection.set(request.error ?? '');
+		if (refusal && startsMeetingDestination(refusal.request, added.url)) {
+			this.removeMeetingDestination(added.id);
+			this.editor.rejection.set(refusal.error ?? '');
 			this.broadcastState.dismissFailure();
 		} else {
 			this.closeEditor();
-		}
-	});
-
-	/** Nothing is pending once the server has answered every start asked for. */
-	private readonly pendingEffect = effect(() => {
-		if (this.pendingRequest().status !== 'starting') {
-			this.pendingKeys.set(new Set());
 		}
 	});
 
@@ -333,9 +332,9 @@ export class BroadcastActivityComponent {
 		return ROW_STATUS_KEYS[row.status];
 	}
 
-	/** Whether the row's broadcast can be stopped. */
+	/** Whether the row's broadcast can be stopped, and no stop of it is on its way. */
 	isStreaming(row: DestinationRow): boolean {
-		return !!row.broadcast && isBroadcastRunning(row.broadcast.status);
+		return !!row.broadcast && isBroadcastRunning(row.broadcast.status) && row.status !== 'stopping';
 	}
 
 	toggleSelected(key: string, selected: boolean): void {
@@ -371,8 +370,8 @@ export class BroadcastActivityComponent {
 		this.meetingDestinations.update((destinations) => [...destinations, destination]);
 
 		if (this.isRunning()) {
-			this.addingDestination.set(destination.id);
-			this.startTo([draft], [destination.id]);
+			this.addingDestination.set(destination);
+			this.startTo([draft]);
 			return;
 		}
 
@@ -385,10 +384,10 @@ export class BroadcastActivityComponent {
 
 	/** Streams to every chosen destination not streamed to yet, one broadcast each. */
 	goLive(): void {
-		const rows = this.rows().filter(({ selected, broadcast, start }) => selected && !broadcast && start);
 		this.startTo(
-			rows.map(({ start }) => start!),
-			rows.map(({ key }) => key)
+			this.rows()
+				.filter(({ selected, status, start }) => selected && status === 'stopped' && start)
+				.map(({ start }) => start!)
 		);
 	}
 
@@ -397,7 +396,7 @@ export class BroadcastActivityComponent {
 	}
 
 	startRow(row: DestinationRow): void {
-		if (row.start) this.startTo([row.start], [row.key]);
+		if (row.start) this.startTo([row.start]);
 	}
 
 	stopRow(row: DestinationRow): void {
@@ -412,23 +411,41 @@ export class BroadcastActivityComponent {
 
 	dismissFailure(): void {
 		this.broadcastState.dismissFailure();
-		this.pendingKeys.set(new Set());
 	}
 
 	/** Starts these destinations alone: the room destinations not named are left as they are. */
-	private startTo(starts: DestinationStart[], keys: string[]): void {
+	private startTo(starts: DestinationStart[]): void {
 		const destinationIds = starts.flatMap((start) => ('destinationId' in start ? [start.destinationId] : []));
 		const destinations = starts.flatMap((start) => ('destinationId' in start ? [] : [start]));
-		this.pendingKeys.update((pending) => new Set([...pending, ...keys]));
 		this.emitRequest({ action: 'start', destinationIds, destinations });
 	}
 
+	/**
+	 * How the row is doing: as its broadcast goes, unless a request the server has not answered yet
+	 * stops that broadcast, or starts the destination while nothing streams to it.
+	 */
 	private toRow(row: Omit<DestinationRow, 'status'>): DestinationRow {
-		const status = row.broadcast
-			? ROW_STATUS_BY_BROADCAST[row.broadcast.status]
-			: this.pendingKeys().has(row.key)
-				? 'connecting'
-				: 'stopped';
+		const { broadcast, start } = row;
+		const pending = this.pendingRequests();
+		const startsRow = (request: BroadcastRequestedEvent) =>
+			!!start &&
+			('destinationId' in start
+				? startsRoomDestination(request, start.destinationId)
+				: startsMeetingDestination(request, start.url));
+		let status: RowStatus;
+
+		if (
+			broadcast &&
+			isBroadcastRunning(broadcast.status) &&
+			pending.some((request) => stopsBroadcast(request, broadcast.broadcastId))
+		) {
+			status = 'stopping';
+		} else if ((!broadcast || !isBroadcastInProgress(broadcast.status)) && pending.some(startsRow)) {
+			status = 'connecting';
+		} else {
+			status = broadcast ? ROW_STATUS_BY_BROADCAST[broadcast.status] : 'stopped';
+		}
+
 		return { ...row, status };
 	}
 

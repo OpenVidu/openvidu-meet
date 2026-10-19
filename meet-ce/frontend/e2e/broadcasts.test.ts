@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { createRtmpSink, deleteRtmpSinks } from './helpers/broadcast-sink.helper';
 import {
 	addDestinationFromActivitiesPanel,
+	delayBroadcastStartAnswers,
 	expectBroadcastBadgeVisible,
 	expectBroadcastNotice,
 	expectBroadcastPhase,
@@ -10,6 +11,7 @@ import {
 	expectNoBroadcastControls,
 	goLiveFromActivitiesPanel,
 	stopBroadcastFromActivitiesPanel,
+	stopDestinationFromActivitiesPanel,
 	toggleBroadcastFromToolbar,
 	untickPlannedDestination
 } from './helpers/broadcasts.helper';
@@ -94,6 +96,24 @@ test.describe('Live broadcast E2E Tests', () => {
 		await expect(page.locator('#broadcast-destination-editor')).toBeVisible();
 		await expect(page.locator('#broadcast-destination-save-btn')).toHaveText('Retry');
 		await expectBroadcastPhase(page, 'live');
+	});
+
+	test('should stop only the destination asked while the start of another is still unanswered', async ({ page }) => {
+		const extraUrl = await createRtmpSink('spa-extra');
+		await openMeeting(page, moderatorUrl);
+		await goLiveFromActivitiesPanel(page);
+		await expectDestinationStatus(page, destinationId, 'live', 40_000);
+
+		await delayBroadcastStartAnswers(page, 5_000);
+		await addDestinationFromActivitiesPanel(page, 'Extra', extraUrl);
+		await stopDestinationFromActivitiesPanel(page, destinationId);
+
+		await expectDestinationStatus(page, destinationId, 'stopped');
+		await expect(page.locator('#broadcast-destination-editor')).toBeVisible();
+		await expectDestinationStatus(page, 'meeting-1', 'live', 40_000);
+		await expect(page.locator('#broadcast-destination-editor')).toBeHidden({ timeout: 10_000 });
+		await expectDestinationStatus(page, destinationId, 'stopped');
+		await expect(page.locator('#broadcast-activity .activity-failure')).toHaveCount(0);
 	});
 
 	test('should go live and stop from the toolbar', async ({ page }) => {

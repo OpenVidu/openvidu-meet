@@ -45,7 +45,6 @@ import type {
 	Room
 } from '../openvidu-components';
 import {
-	BROADCAST_REQUEST_STATUS_BY_ACTION,
 	broadcastProgress,
 	isBroadcastInProgress,
 	BroadcastStateService,
@@ -612,14 +611,14 @@ export class MeetingEventHandlerService {
 	 * flight and what was refused. The state of each broadcast arrives as a broadcast signal.
 	 */
 	onBroadcastRequested = async (event: BroadcastRequestedEvent): Promise<void> => {
-		this.broadcastState.setRequest(BROADCAST_REQUEST_STATUS_BY_ACTION[event.action]);
+		this.broadcastState.requestStarted(event);
 
 		try {
 			await this.runBroadcastRequest(event);
-			this.broadcastState.setRequest('idle');
+			this.broadcastState.requestSucceeded(event);
 		} catch (error) {
 			console.error(`Error on broadcast request '${event.action}':`, error);
-			this.broadcastState.setRequest('failed', this.extractErrorMessage(error));
+			this.broadcastState.requestFailed(event, this.extractErrorMessage(error));
 		}
 	};
 

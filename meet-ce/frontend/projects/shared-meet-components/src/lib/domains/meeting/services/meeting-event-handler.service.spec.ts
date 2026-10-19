@@ -212,7 +212,9 @@ describe('MeetingEventHandlerService', () => {
 		broadcastService.startBroadcasts.and.resolveTo([liveBroadcast()]);
 		broadcastService.stopBroadcasts.and.resolveTo([liveBroadcast({ status: MeetBroadcastStatus.COMPLETE })]);
 		broadcastState = jasmine.createSpyObj<BroadcastStateService>('BroadcastStateService', [
-			'setRequest',
+			'requestStarted',
+			'requestSucceeded',
+			'requestFailed',
 			'recordOwnBroadcasts',
 			'setBroadcast'
 		]);
@@ -1486,7 +1488,11 @@ describe('MeetingEventHandlerService', () => {
 				['room1', { destinationIds: ['dest1'], destinations }],
 				['room1', { destinationIds: undefined, destinations: undefined }]
 			]);
-			expect(broadcastState.setRequest.calls.allArgs()).toEqual([['starting'], ['idle'], ['starting'], ['idle']]);
+			expect(broadcastState.requestStarted.calls.allArgs()).toEqual(broadcastState.requestSucceeded.calls.allArgs());
+			expect(broadcastState.requestSucceeded.calls.allArgs().map(([request]) => request.action)).toEqual([
+				'start',
+				'start'
+			]);
 			expect(broadcastState.recordOwnBroadcasts.calls.allArgs()).toEqual([
 				[destinations, [liveBroadcast()]],
 				[[], [liveBroadcast()]]
@@ -1506,9 +1512,11 @@ describe('MeetingEventHandlerService', () => {
 		it('reports a refused request with the reason the server gave', async () => {
 			broadcastService.startBroadcasts.and.rejectWith({ error: { message: 'Broadcast is disabled' } });
 
-			await service.onBroadcastRequested({ action: 'start', roomId: 'room1', destinationIds: ['d'] });
+			const request = { action: 'start' as const, roomId: 'room1', destinationIds: ['d'] };
+			await service.onBroadcastRequested(request);
 
-			expect(broadcastState.setRequest).toHaveBeenCalledWith('failed', 'Broadcast is disabled');
+			expect(broadcastState.requestFailed).toHaveBeenCalledWith(request, 'Broadcast is disabled');
+			expect(broadcastState.requestSucceeded).not.toHaveBeenCalled();
 		});
 	});
 

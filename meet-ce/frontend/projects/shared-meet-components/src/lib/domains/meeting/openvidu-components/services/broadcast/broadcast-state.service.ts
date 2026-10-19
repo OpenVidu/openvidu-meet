@@ -4,22 +4,24 @@ import { ElapsedClock } from '../../../../../shared/utils/elapsed-clock';
 import {
 	broadcastDestinationKey,
 	broadcastProgress,
-	BroadcastRequestState,
-	BroadcastRequestStatus,
+	BroadcastRequestedEvent,
+	BroadcastRequestRefusal,
 	hasBroadcastFailed,
 	isBroadcastInProgress
 } from '../../models/broadcast.model';
 
 /**
  * The live broadcasts of the meeting as the server last reported them, one per destination, plus
- * what the local participant has asked of them and is still waiting for. The status rail's LIVE
- * chip and the activity both read it.
+ * each request the local participant made of them that the server has not answered yet, and the
+ * last one it refused. Requests run side by side: one going on or answered says nothing of another.
+ * The status rail's LIVE chip and the activity both read it.
  */
 @Service()
 export class BroadcastStateService {
 	private readonly clock = new ElapsedClock();
 	private readonly _broadcasts = signal<MeetBroadcastInfo[]>([]);
-	private readonly _request = signal<BroadcastRequestState>({ status: 'idle' });
+	private readonly _pendingRequests = signal<BroadcastRequestedEvent[]>([]);
+	private readonly _refusal = signal<BroadcastRequestRefusal | undefined>(undefined);
 	private readonly _ownUrls = signal(new Map<string, string>());
 	private readonly endedIds = new Set<string>();
 	private clockedStart: number | undefined;
@@ -29,7 +31,9 @@ export class BroadcastStateService {
 	 * broadcast that ended normally is forgotten.
 	 */
 	readonly broadcasts = this._broadcasts.asReadonly();
-	readonly request = this._request.asReadonly();
+	readonly pendingRequests = this._pendingRequests.asReadonly();
+	/** The last request the server refused, until it is dismissed or something else is asked. */
+	readonly refusal = this._refusal.asReadonly();
 	/**
 	 * The full URL of each broadcast the local participant started to a destination given for the
 	 * meeting, by broadcast id: the server only reports URLs redacted, alike for every destination
@@ -45,15 +49,14 @@ export class BroadcastStateService {
 	readonly inProgress = computed(() => this._broadcasts().filter(({ status }) => isBroadcastInProgress(status)));
 	readonly failed = computed(() => this._broadcasts().filter(({ status }) => hasBroadcastFailed(status)));
 	readonly isLive = computed(() => this._broadcasts().some(({ status }) => status === MeetBroadcastStatus.ACTIVE));
+	readonly isStartPending = computed(() => this._pendingRequests().some(({ action }) => action === 'start'));
 	readonly isStarting = computed(
-		() =>
-			this._broadcasts().some(({ status }) => status === MeetBroadcastStatus.STARTING) ||
-			this._request().status === 'starting'
+		() => this._broadcasts().some(({ status }) => status === MeetBroadcastStatus.STARTING) || this.isStartPending()
 	);
 	readonly isEnding = computed(
 		() =>
 			this._broadcasts().some(({ status }) => status === MeetBroadcastStatus.ENDING) ||
-			this._request().status === 'stopping'
+			this._pendingRequests().some(({ action }) => action === 'stop')
 	);
 	readonly isInProgress = computed(() => this.isStarting() || this.isLive() || this.isEnding());
 	/** Nothing streams and something failed: what the activity reports as a failure to go live. */
@@ -116,22 +119,41 @@ export class BroadcastStateService {
 		this._ownUrls.set(urls);
 	}
 
-	setRequest(status: BroadcastRequestStatus, error?: string): void {
-		this._request.set({ status, error });
+	/** Something new is asked, so the last refusal no longer stands. */
+	requestStarted(request: BroadcastRequestedEvent): void {
+		this._refusal.set(undefined);
+		this._pendingRequests.update((requests) => [...requests, request]);
+	}
+
+	requestSucceeded(request: BroadcastRequestedEvent): void {
+		this.settle(request);
+	}
+
+	/** A request asked before the last {@link reset} belongs to another meeting, so its refusal is not shown. */
+	requestFailed(request: BroadcastRequestedEvent, error?: string): void {
+		if (this.settle(request)) this._refusal.set({ request, error });
 	}
 
 	/** Forgets the failures, of broadcasts and of requests, so the activity offers to start again. */
 	dismissFailure(): void {
 		this._broadcasts.update((broadcasts) => broadcasts.filter(({ status }) => !hasBroadcastFailed(status)));
-		this._request.set({ status: 'idle' });
+		this._refusal.set(undefined);
 	}
 
 	reset(): void {
 		this._broadcasts.set([]);
-		this._request.set({ status: 'idle' });
+		this._pendingRequests.set([]);
+		this._refusal.set(undefined);
 		this._ownUrls.set(new Map());
 		this.endedIds.clear();
 		this.trackElapsed();
+	}
+
+	/** Whether the request was still pending. */
+	private settle(request: BroadcastRequestedEvent): boolean {
+		const requests = this._pendingRequests();
+		this._pendingRequests.set(requests.filter((pending) => pending !== request));
+		return requests.includes(request);
 	}
 
 	/** Clocks the meeting from the first broadcast that went live among those still live. */

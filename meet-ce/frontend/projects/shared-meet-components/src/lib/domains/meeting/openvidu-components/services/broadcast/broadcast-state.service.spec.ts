@@ -203,15 +203,47 @@ describe('BroadcastStateService', () => {
 	});
 
 	it('keeps a request pending until it is answered, and dismissing a refusal keeps the broadcasts', () => {
+		const start = { action: 'start' as const, roomId: 'room1' };
 		service.setBroadcast(broadcast());
-		service.setRequest('starting');
+		service.requestStarted(start);
 		expect(service.isStarting()).toBeTrue();
 
-		service.setRequest('failed', 'Destination limit reached');
+		service.requestFailed(start, 'Destination limit reached');
+		expect(service.refusal()).toEqual({ request: start, error: 'Destination limit reached' });
 		service.dismissFailure();
 
-		expect(service.request()).toEqual({ status: 'idle' });
+		expect(service.pendingRequests()).toEqual([]);
+		expect(service.refusal()).toBeUndefined();
 		expect(service.isLive()).toBeTrue();
+	});
+
+	it('answers each request on its own: one answered leaves the others pending and the refusal of another standing', () => {
+		const start = { action: 'start' as const, roomId: 'room1', destinationIds: ['dest-2'] };
+		const stop = { action: 'stop' as const, roomId: 'room1', broadcastIds: ['bc1'] };
+		service.requestStarted(start);
+		service.requestStarted(stop);
+
+		service.requestFailed(stop, 'The broadcast stayed busy with another change');
+		expect(service.pendingRequests()).toEqual([start]);
+		expect(service.isStartPending()).toBeTrue();
+		expect(service.isEnding()).toBeFalse();
+
+		service.requestSucceeded(start);
+		expect(service.pendingRequests()).toEqual([]);
+		expect(service.refusal()?.request).toBe(stop);
+
+		service.requestStarted({ action: 'stop', roomId: 'room1' });
+		expect(service.refusal()).toBeUndefined();
+	});
+
+	it('shows no refusal of a request asked before a reset, which belongs to another meeting', () => {
+		const start = { action: 'start' as const, roomId: 'room1' };
+		service.requestStarted(start);
+		service.reset();
+
+		service.requestFailed(start, 'Room has no participants');
+
+		expect(service.refusal()).toBeUndefined();
 	});
 
 	it('clocks the time live from the first broadcast still live, once a second', () => {
