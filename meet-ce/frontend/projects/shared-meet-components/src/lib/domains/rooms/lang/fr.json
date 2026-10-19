@@ -332,7 +332,8 @@
       "FAILED_CREATE_ROOM": "Échec de la création de la salle",
       "FAILED_UPDATE_ROOM": "Échec de la mise à jour de la salle",
       "ROOM_CREATED_MEMBERS_FAILED_PREFIX": "Salle créée, mais échec de l'ajout de ",
-      "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " membre(s) : "
+      "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " membre(s) : ",
+      "FAILED_LOAD_RECORDINGS": "Échec du chargement des enregistrements"
     },
     "UI": {
       "STATUS": {

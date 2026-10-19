@@ -199,6 +199,17 @@
           "DESCRIPTION": "Allow sending chat messages"
         }
       }
+    },
+    "NOTICES": {
+      "LINK_COPIED": "Member access link copied to clipboard",
+      "REMOVED": "Member \"{memberName}\" removed successfully",
+      "REMOVE_FAILED": "Failed to remove member",
+      "BULK_REMOVED_ONE": "{count} member removed successfully.",
+      "BULK_REMOVED_MANY": "{count} members removed successfully.",
+      "BULK_NOT_REMOVED_ONE": "{count} member could not be removed.",
+      "BULK_NOT_REMOVED_MANY": "{count} members could not be removed.",
+      "BULK_REMOVE_FAILED": "Failed to remove members",
+      "LOAD_FAILED": "Failed to load room members"
     }
   }
 }

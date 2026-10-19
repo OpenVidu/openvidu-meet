@@ -332,7 +332,8 @@
       "FAILED_CREATE_ROOM": "Raum konnte nicht erstellt werden",
       "FAILED_UPDATE_ROOM": "Raum konnte nicht aktualisiert werden",
       "ROOM_CREATED_MEMBERS_FAILED_PREFIX": "Raum erstellt, aber das Hinzufügen von ",
-      "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " Mitglied(ern) ist fehlgeschlagen: "
+      "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " Mitglied(ern) ist fehlgeschlagen: ",
+      "FAILED_LOAD_RECORDINGS": "Aufnahmen konnten nicht geladen werden"
     },
     "UI": {
       "STATUS": {

@@ -332,7 +332,8 @@
       "FAILED_CREATE_ROOM": "Falha ao criar a sala",
       "FAILED_UPDATE_ROOM": "Falha ao atualizar a sala",
       "ROOM_CREATED_MEMBERS_FAILED_PREFIX": "Sala criada, mas não foi possível adicionar ",
-      "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " membro(s): "
+      "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " membro(s): ",
+      "FAILED_LOAD_RECORDINGS": "Falha ao carregar as gravações"
     },
     "UI": {
       "STATUS": {

@@ -332,7 +332,8 @@
       "FAILED_CREATE_ROOM": "Kamer aanmaken mislukt",
       "FAILED_UPDATE_ROOM": "Kamer bijwerken mislukt",
       "ROOM_CREATED_MEMBERS_FAILED_PREFIX": "Kamer aangemaakt, maar het toevoegen van ",
-      "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " lid/leden is mislukt: "
+      "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " lid/leden is mislukt: ",
+      "FAILED_LOAD_RECORDINGS": "Opnames laden mislukt"
     },
     "UI": {
       "STATUS": {

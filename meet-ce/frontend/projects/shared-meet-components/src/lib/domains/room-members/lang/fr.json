@@ -199,6 +199,17 @@
           "DESCRIPTION": "Autoriser à envoyer des messages dans le chat"
         }
       }
+    },
+    "NOTICES": {
+      "LINK_COPIED": "Lien d'accès du membre copié dans le presse-papiers",
+      "REMOVED": "Membre « {memberName} » retiré avec succès",
+      "REMOVE_FAILED": "Échec du retrait du membre",
+      "BULK_REMOVED_ONE": "{count} membre retiré avec succès.",
+      "BULK_REMOVED_MANY": "{count} membres retirés avec succès.",
+      "BULK_NOT_REMOVED_ONE": "{count} membre n'a pas pu être retiré.",
+      "BULK_NOT_REMOVED_MANY": "{count} membres n'ont pas pu être retirés.",
+      "BULK_REMOVE_FAILED": "Échec du retrait des membres",
+      "LOAD_FAILED": "Échec du chargement des membres de la salle"
     }
   }
 }

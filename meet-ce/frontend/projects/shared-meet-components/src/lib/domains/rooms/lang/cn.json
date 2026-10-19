@@ -332,7 +332,8 @@
       "FAILED_CREATE_ROOM": "创建房间失败",
       "FAILED_UPDATE_ROOM": "更新房间失败",
       "ROOM_CREATED_MEMBERS_FAILED_PREFIX": "房间已创建，但未能添加 ",
-      "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " 名成员："
+      "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " 名成员：",
+      "FAILED_LOAD_RECORDINGS": "加载录制失败"
     },
     "UI": {
       "STATUS": {

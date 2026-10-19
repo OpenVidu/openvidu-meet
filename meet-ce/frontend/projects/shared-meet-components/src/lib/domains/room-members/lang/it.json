@@ -199,6 +199,17 @@
           "DESCRIPTION": "Consenti di inviare messaggi nella chat"
         }
       }
+    },
+    "NOTICES": {
+      "LINK_COPIED": "Link di accesso del membro copiato negli appunti",
+      "REMOVED": "Membro \"{memberName}\" rimosso con successo",
+      "REMOVE_FAILED": "Impossibile rimuovere il membro",
+      "BULK_REMOVED_ONE": "{count} membro rimosso con successo.",
+      "BULK_REMOVED_MANY": "{count} membri rimossi con successo.",
+      "BULK_NOT_REMOVED_ONE": "Impossibile rimuovere {count} membro.",
+      "BULK_NOT_REMOVED_MANY": "Impossibile rimuovere {count} membri.",
+      "BULK_REMOVE_FAILED": "Impossibile rimuovere i membri",
+      "LOAD_FAILED": "Impossibile caricare i membri della stanza"
     }
   }
 }

@@ -199,6 +199,17 @@
           "DESCRIPTION": "Permitir enviar mensagens no chat"
         }
       }
+    },
+    "NOTICES": {
+      "LINK_COPIED": "Ligação de acesso do membro copiada para a área de transferência",
+      "REMOVED": "Membro \"{memberName}\" removido com sucesso",
+      "REMOVE_FAILED": "Falha ao remover o membro",
+      "BULK_REMOVED_ONE": "{count} membro removido com sucesso.",
+      "BULK_REMOVED_MANY": "{count} membros removidos com sucesso.",
+      "BULK_NOT_REMOVED_ONE": "Não foi possível remover {count} membro.",
+      "BULK_NOT_REMOVED_MANY": "Não foi possível remover {count} membros.",
+      "BULK_REMOVE_FAILED": "Falha ao remover os membros",
+      "LOAD_FAILED": "Falha ao carregar os membros da sala"
     }
   }
 }
