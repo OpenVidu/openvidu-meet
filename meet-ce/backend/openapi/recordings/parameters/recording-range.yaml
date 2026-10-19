@@ -7,7 +7,8 @@ description: |
 
     Examples:
       - `bytes=0-1023`: Requests bytes 0 through 1023 (first 1024 bytes).
-      - `bytes=1000-`: Requests from byte 1000 to the end of the file.
+      - `bytes=1000-`: Requests from byte 1000 on. An open-ended range returns at most 5 MiB, and the
+        `Content-Range` header of the `206` response tells which byte it actually ends at.
 
     This allows efficient partial downloads and resume capabilities for large files.
 

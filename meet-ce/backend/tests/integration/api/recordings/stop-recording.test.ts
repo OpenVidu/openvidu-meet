@@ -113,7 +113,7 @@ describe('Recording API Tests', () => {
 				expectErrorResponse(response, 409, 'Recording Error', `Recording '${recordingId}' is already stopped`);
 			});
 
-			it('should return 404 when recordingId is not in the correct format', async () => {
+			it('should return 422 when recordingId is not in the correct format', async () => {
 				const response = await stopRecording('invalid-recording-id');
 				expect(response.status).toBe(422);
 				expect(response.body.error).toBe('Unprocessable Entity');
