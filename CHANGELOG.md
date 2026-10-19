@@ -65,6 +65,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - The `joinDate` of the embedded event `participantJoined` was the moment the join reached the browser, by the
   browser's clock, and the one of `participantLeft` was rounded down to the second. Both now carry the `joinDate` of
   the [`participantJoined`][3.9-participant-joined] webhook.
+- [`startRecording`][3.9-start-recording] checked the target room before `recordingControl`, so a room member token of
+  another room got `404` for a room that does not exist and learned whether a room could be recorded. It now answers
+  `403` first.
 
 #### UI
 

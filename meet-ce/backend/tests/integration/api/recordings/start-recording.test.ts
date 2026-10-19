@@ -31,7 +31,7 @@ import {
 	stopRecording
 } from '../../../helpers/request-helpers.js';
 
-import { setupMultiRoomTestContext } from '../../../helpers/test-scenarios.js';
+import { setupMultiRoomTestContext, setupSingleRoom } from '../../../helpers/test-scenarios.js';
 import { waitForActiveRecordingEgress, waitForRecordingStatus } from '../../../helpers/wait-helpers.js';
 import { TestContext } from '../../../interfaces/scenarios.js';
 
@@ -734,6 +734,55 @@ describe('Recording API Tests', () => {
 			expect(response.body.message).toBe(
 				`Room '${autoStartRoom.roomId}' starts its recording automatically, so it cannot be started on-demand`
 			);
+		});
+	});
+
+	describe('Authorization before the room checks', () => {
+		let moderatorTokenOfOtherRoom: string;
+
+		beforeAll(async () => {
+			({ moderatorToken: moderatorTokenOfOtherRoom } = await setupSingleRoom());
+		});
+
+		const expectInsufficientPermissions = (response: { status: number; body: { message: string } }) => {
+			expect(response.status).toBe(403);
+			expect(response.body.message).toBe('Insufficient permissions to access this resource');
+		};
+
+		it('should answer 403 to a token of another room when the target room does not exist', async () => {
+			const response = await startRecording('non-existing-room-id', undefined, {
+				roomMemberToken: moderatorTokenOfOtherRoom
+			});
+
+			expectInsufficientPermissions(response);
+		});
+
+		it('should answer 403 to a token of another room when the target room has recording disabled', async () => {
+			const disabledRoom = await createRoom({
+				roomName: 'Recording Disabled Room',
+				config: { recording: { enabled: false } }
+			});
+
+			const response = await startRecording(disabledRoom.roomId, undefined, {
+				roomMemberToken: moderatorTokenOfOtherRoom
+			});
+
+			expectInsufficientPermissions(response);
+		});
+
+		it('should answer 403 to a token of another room when the target room starts recording on its own', async () => {
+			const autoStartRoom = await createRoom({
+				roomName: 'Auto Start Room Of Others',
+				config: {
+					recording: { enabled: true, autoStart: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS }
+				}
+			});
+
+			const response = await startRecording(autoStartRoom.roomId, undefined, {
+				roomMemberToken: moderatorTokenOfOtherRoom
+			});
+
+			expectInsufficientPermissions(response);
 		});
 	});
 });
