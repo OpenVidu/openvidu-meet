@@ -86,6 +86,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - On a phone, the status rail overflowed the screen and hid its last chips, such as the participants left out of the
   layout. Narrower than 790 px, the raised hands, the reactions and the participants left out of the layout now move
   to a second row of the rail when they do not fit beside the rest.
+- The microphone button of the meeting toolbar stayed enabled while the microphone was being turned on or off, so a quick
+  second press started the opposite change before the first one ended. It is now disabled until the change ends, like
+  the camera button.
 - The notifications in the top corner of a meeting covered the header of an open side panel, its close button
   included. They now sit beside the panel, or below its header when the panel fills the screen.
 

@@ -103,6 +103,7 @@ describe('MeetingEventHandlerService', () => {
 	let meetingHand: jasmine.SpyObj<MeetingHandService>;
 	let meetingReactions: jasmine.SpyObj<MeetingReactionsService>;
 	let lkRoom: WritableSignal<Room | undefined>;
+	let remoteModels: { identity: string; name: string }[];
 
 	beforeEach(() => {
 		permissions = signal({});
@@ -114,6 +115,7 @@ describe('MeetingEventHandlerService', () => {
 			'clear'
 		]);
 		lkRoom = signal<Room | undefined>(undefined);
+		remoteModels = [];
 		microphoneEnabled = signal(true);
 		cameraEnabled = signal(true);
 		screenShareEnabled = signal(false);
@@ -198,7 +200,7 @@ describe('MeetingEventHandlerService', () => {
 					useValue: {
 						clear: () => {},
 						localParticipant: () => ({ identity: 'alice' }),
-						remoteParticipants: () => [],
+						remoteParticipants: () => remoteModels,
 						lkRoom
 					}
 				},
@@ -1042,6 +1044,18 @@ describe('MeetingEventHandlerService', () => {
 			expect(soundService.playHandRaisedSound).toHaveBeenCalledTimes(1);
 			notificationService.showNotification.calls.mostRecent().args[0].action!.run();
 			expect(meetingHand.lower).toHaveBeenCalledOnceWith('bob');
+		});
+
+		it('names the participant as the meeting does, with the decrypted name', () => {
+			permissions.set({ participantHandLower: true });
+			remoteModels.push({ identity: 'bob', name: 'Bob' });
+			bob.name = 'Xk9f3a';
+
+			changeHand(bob, raisedHandAttributes(1000));
+
+			expect(notificationService.showNotification).toHaveBeenCalledOnceWith(
+				jasmine.objectContaining({ message: { key: 'HAND.RAISED_NOTIFICATION', params: { name: 'Bob' } } })
+			);
 		});
 
 		it('takes the notice away when that hand goes down', () => {
