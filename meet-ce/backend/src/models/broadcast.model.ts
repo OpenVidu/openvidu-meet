@@ -18,10 +18,3 @@ export interface BroadcastRecord extends MeetBroadcastInfo {
  * the redacted URL.
  */
 export type BroadcastDestinationUrls = Record<string, string>;
-
-/** The destination a broadcast is asked to stream to, resolved to its real URL. */
-export interface BroadcastTarget {
-	name: string;
-	url: string;
-	destinationId?: string;
-}

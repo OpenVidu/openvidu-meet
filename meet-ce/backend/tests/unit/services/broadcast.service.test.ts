@@ -68,9 +68,7 @@ const liveRecord = (overrides: Partial<BroadcastRecord> = {}): BroadcastRecord =
 	roomId: ROOM_ID,
 	roomName: 'Room',
 	status: MeetBroadcastStatus.ACTIVE,
-	name: 'A',
-	url: REAL_URLS.a,
-	destinationId: 'a',
+	destination: { id: 'a', name: 'A', url: REAL_URLS.a },
 	layout: MeetRecordingLayout.GRID,
 	encoding: MeetRecordingEncodingPreset.H264_720P_30,
 	startDate: 1000,
@@ -252,15 +250,27 @@ class FakeWebhookDispatcherService {
 	events: { type: MeetWebhookEventType; name: string; status: string }[] = [];
 
 	sendBroadcastStartedWebhook(info: MeetBroadcastInfo) {
-		this.events.push({ type: MeetWebhookEventType.BROADCAST_STARTED, name: info.name, status: info.status });
+		this.events.push({
+			type: MeetWebhookEventType.BROADCAST_STARTED,
+			name: info.destination.name,
+			status: info.status
+		});
 	}
 
 	sendBroadcastUpdatedWebhook(info: MeetBroadcastInfo) {
-		this.events.push({ type: MeetWebhookEventType.BROADCAST_UPDATED, name: info.name, status: info.status });
+		this.events.push({
+			type: MeetWebhookEventType.BROADCAST_UPDATED,
+			name: info.destination.name,
+			status: info.status
+		});
 	}
 
 	sendBroadcastEndedWebhook(info: MeetBroadcastInfo) {
-		this.events.push({ type: MeetWebhookEventType.BROADCAST_ENDED, name: info.name, status: info.status });
+		this.events.push({
+			type: MeetWebhookEventType.BROADCAST_ENDED,
+			name: info.destination.name,
+			status: info.status
+		});
 	}
 }
 
@@ -331,16 +341,18 @@ describe('BroadcastService', () => {
 			expect(info).toMatchObject({
 				broadcastId: expect.stringMatching(/^room-1--/),
 				status: MeetBroadcastStatus.STARTING,
-				name: 'A',
-				url: REDACTED,
-				destinationId: 'a',
+				destination: { id: 'a', name: 'A', url: REDACTED },
 				layout: MeetRecordingLayout.SPEAKER,
 				encoding: MeetRecordingEncodingPreset.H264_1080P_30
 			});
 			expect(saved()).toEqual([
-				expect.objectContaining({ broadcastId: info.broadcastId, url: REAL_URLS.a, egressId: 'EG_1' })
+				expect.objectContaining({
+					broadcastId: info.broadcastId,
+					destination: expect.objectContaining({ url: REAL_URLS.a }),
+					egressId: 'EG_1'
+				})
 			]);
-			expect(frontend.signals.map(({ url }) => url)).toEqual([REDACTED]);
+			expect(frontend.signals.map(({ destination }) => destination.url)).toEqual([REDACTED]);
 			expect(webhookSummary()).toEqual(['broadcastStarted:A:starting']);
 		});
 
@@ -362,12 +374,14 @@ describe('BroadcastService', () => {
 				{ egressId: 'EG_1', add: [tagged(REAL_URLS.b, b)], remove: [] },
 				{ egressId: 'EG_1', add: [tagged('rtmp://mtx/live/xxxKEYxxx', extra)], remove: [] }
 			]);
-			expect(broadcasts.map(({ name, status }) => `${name}:${status}`)).toEqual([
+			expect(broadcasts.map(({ destination, status }) => `${destination.name}:${status}`)).toEqual([
 				'A:starting',
 				'B:starting',
 				'Extra:starting'
 			]);
-			expect(saved().map(({ name, url, status }) => `${name}:${url}:${status}`)).toEqual([
+			expect(
+				saved().map(({ destination, status }) => `${destination.name}:${destination.url}:${status}`)
+			).toEqual([
 				`A:${REAL_URLS.a}:active`,
 				`B:${REAL_URLS.b}:starting`,
 				'Extra:rtmp://mtx/live/xxxKEYxxx:starting'
@@ -392,8 +406,11 @@ describe('BroadcastService', () => {
 				destinationIds: ['a', 'b']
 			});
 
-			expect(broadcasts.map(({ name, status }) => `${name}:${status}`)).toEqual(['A:starting', 'B:starting']);
-			expect(saved().map(({ name, status }) => `${name}:${status}`)).toEqual(['B:starting']);
+			expect(broadcasts.map(({ destination, status }) => `${destination.name}:${status}`)).toEqual([
+				'A:starting',
+				'B:starting'
+			]);
+			expect(saved().map(({ destination, status }) => `${destination.name}:${status}`)).toEqual(['B:starting']);
 			expect(webhookSummary()).toEqual([
 				'broadcastStarted:A:starting',
 				'broadcastStarted:B:starting',
@@ -412,8 +429,13 @@ describe('BroadcastService', () => {
 			expect(livekit.updateCalls).toEqual([
 				{ egressId: 'EG_1', add: [tagged(REAL_URLS.b, broadcasts[0].broadcastId)], remove: [] }
 			]);
-			expect(broadcasts).toMatchObject([{ name: 'B', destinationId: 'b', layout: MeetRecordingLayout.GRID }]);
-			expect(saved().map(({ name, status }) => `${name}:${status}`)).toEqual(['A:active', 'B:starting']);
+			expect(broadcasts).toMatchObject([
+				{ destination: { id: 'b', name: 'B' }, layout: MeetRecordingLayout.GRID }
+			]);
+			expect(saved().map(({ destination, status }) => `${destination.name}:${status}`)).toEqual([
+				'A:active',
+				'B:starting'
+			]);
 			expect(webhookSummary()).toEqual(['broadcastStarted:B:starting']);
 
 			await expectStatus(service.startBroadcasts(ROOM_ID, {}), 409);
@@ -468,7 +490,7 @@ describe('BroadcastService', () => {
 			await state.save(
 				ROOM_ID,
 				['1', '2', '3', '4'].map((key) =>
-					liveRecord({ broadcastId: `bc-${key}`, url: `rtmp://mtx/live/${key}`, destinationId: undefined })
+					liveRecord({ broadcastId: `bc-${key}`, destination: { name: key, url: `rtmp://mtx/live/${key}` } })
 				)
 			);
 			await expectStatus(service.startBroadcasts(ROOM_ID, { destinationIds: ['a', 'b'] }), 422);
@@ -547,7 +569,7 @@ describe('BroadcastService', () => {
 	describe('stopBroadcasts', () => {
 		const twoLive = () => [
 			liveRecord(),
-			liveRecord({ broadcastId: 'bc-b', name: 'B', url: REAL_URLS.b, destinationId: 'b' })
+			liveRecord({ broadcastId: 'bc-b', destination: { id: 'b', name: 'B', url: REAL_URLS.b } })
 		];
 		const finished = {
 			status: StreamInfo_Status.FINISHED,
@@ -563,7 +585,12 @@ describe('BroadcastService', () => {
 			const [info] = await service.stopBroadcasts(ROOM_ID, { broadcastIds: ['bc-a'] });
 
 			expect(livekit.updateCalls).toEqual([{ egressId: 'EG_1', add: [], remove: [tagged(REAL_URLS.a, 'bc-a')] }]);
-			expect(info).toMatchObject({ status: 'complete', endDate: 61_000, duration: 60, url: REDACTED });
+			expect(info).toMatchObject({
+				status: 'complete',
+				endDate: 61_000,
+				duration: 60,
+				destination: { url: REDACTED }
+			});
 			expect(saved().map(({ broadcastId }) => broadcastId)).toEqual(['bc-b']);
 			expect(frontend.signals.map(({ broadcastId, status }) => `${broadcastId}:${status}`)).toEqual([
 				'bc-a:complete'
@@ -586,7 +613,11 @@ describe('BroadcastService', () => {
 		it('stops every running broadcast when the request names none', async () => {
 			await seed([
 				...twoLive(),
-				liveRecord({ broadcastId: 'bc-c', url: 'rtmp://mtx/live/c', status: MeetBroadcastStatus.ENDING })
+				liveRecord({
+					broadcastId: 'bc-c',
+					destination: { name: 'C', url: 'rtmp://mtx/live/c' },
+					status: MeetBroadcastStatus.ENDING
+				})
 			]);
 			livekit.updateResponses = [
 				egressWith({
@@ -689,7 +720,7 @@ describe('BroadcastService', () => {
 		it('moves each broadcast along with the stream of its tag, whatever the order, telling only about the ones that changed', async () => {
 			await seed([
 				liveRecord({ status: MeetBroadcastStatus.STARTING, startDate: undefined }),
-				liveRecord({ broadcastId: 'bc-b', name: 'B', url: REAL_URLS.b, destinationId: 'b' })
+				liveRecord({ broadcastId: 'bc-b', destination: { id: 'b', name: 'B', url: REAL_URLS.b } })
 			]);
 
 			await service.handleEgressEvent(
@@ -713,9 +744,7 @@ describe('BroadcastService', () => {
 				liveRecord(),
 				liveRecord({
 					broadcastId: 'bc-b',
-					name: 'B',
-					url: REAL_URLS.b,
-					destinationId: 'b',
+					destination: { id: 'b', name: 'B', url: REAL_URLS.b },
 					status: MeetBroadcastStatus.STARTING,
 					startDate: undefined
 				})
@@ -741,7 +770,7 @@ describe('BroadcastService', () => {
 
 			expect(state.records.has(ROOM_ID)).toBe(false);
 			expect(webhookSummary()).toEqual(['broadcastEnded:A:complete', 'broadcastEnded:B:aborted']);
-			expect(frontend.signals.map(({ url }) => url)).toEqual([REDACTED, REDACTED]);
+			expect(frontend.signals.map(({ destination }) => destination.url)).toEqual([REDACTED, REDACTED]);
 		});
 
 		it('drops an update that changes nothing, as LiveKit sends after a request made the change, without writing it', async () => {
@@ -793,7 +822,10 @@ describe('BroadcastService', () => {
 	});
 
 	describe('handleEgressParticipantLeft', () => {
-		const twoLive = () => [liveRecord(), liveRecord({ broadcastId: 'bc-b', name: 'B', url: REAL_URLS.b })];
+		const twoLive = () => [
+			liveRecord(),
+			liveRecord({ broadcastId: 'bc-b', destination: { name: 'B', url: REAL_URLS.b } })
+		];
 
 		beforeEach(() => {
 			livekit.egressList = [egressWith({ streamResults: streams([{ startedAt: 1_000_000_000n }, {}]) })];
@@ -907,7 +939,10 @@ describe('BroadcastService', () => {
 
 	describe('cleanupRoom', () => {
 		it('ends the broadcasts of a meeting that finished before LiveKit reported the end', async () => {
-			await seed([liveRecord(), liveRecord({ broadcastId: 'bc-b', name: 'B', url: REAL_URLS.b })]);
+			await seed([
+				liveRecord(),
+				liveRecord({ broadcastId: 'bc-b', destination: { name: 'B', url: REAL_URLS.b } })
+			]);
 			livekit.nextEgress = egressWith({
 				status: EgressStatus.EGRESS_ENDING,
 				streamResults: streams([{ startedAt: 1_000_000_000n }, { startedAt: 1_000_000_000n }])
@@ -977,7 +1012,7 @@ describe('BroadcastService', () => {
 			await seed([liveRecord()]);
 			const [broadcast] = await service.getBroadcasts(ROOM_ID);
 
-			expect(broadcast.url).toBe(REDACTED);
+			expect(broadcast.destination.url).toBe(REDACTED);
 			expect(broadcast).not.toHaveProperty('egressId');
 			expect(await service.isBroadcastActive(ROOM_ID)).toBe(true);
 			expect((await service.getBroadcast(ROOM_ID, 'bc-a')).broadcastId).toBe('bc-a');

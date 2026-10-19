@@ -14,5 +14,5 @@ schema:
     type: string
 examples:
     basic:
-        value: 'broadcastId,status,url'
-        summary: Only return the status of the broadcast and its destination URL
+        value: 'broadcastId,status,destination'
+        summary: Only return the status of the broadcast and its destination

@@ -17,9 +17,10 @@ content:
                   roomId: 'room-123'
                   roomName: 'room'
                   status: 'active'
-                  name: 'YouTube'
-                  url: 'rtmp://a.rtmp.youtube.com/live2/********'
-                  destinationId: 'kX9pL2mQ7a'
+                  destination:
+                      id: 'kX9pL2mQ7a'
+                      name: 'YouTube'
+                      url: 'rtmp://a.rtmp.youtube.com/live2/********'
                   layout: 'grid'
                   encoding: 'H264_720P_30'
                   startDate: 1620000000000
@@ -27,7 +28,8 @@ content:
                   roomId: 'room-123'
                   roomName: 'room'
                   status: 'starting'
-                  name: 'Own media server'
-                  url: 'rtmp://media.example.com/live/********'
+                  destination:
+                      name: 'Own media server'
+                      url: 'rtmp://media.example.com/live/********'
                   layout: 'grid'
                   encoding: 'H264_720P_30'

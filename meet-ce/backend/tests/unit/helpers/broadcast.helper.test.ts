@@ -44,9 +44,7 @@ const record = (overrides: Partial<BroadcastRecord> = {}): BroadcastRecord => ({
 	roomId: 'room-1',
 	roomName: 'Room',
 	status: MeetBroadcastStatus.STARTING,
-	name: 'YouTube',
-	url: YOUTUBE,
-	destinationId: 'd1',
+	destination: { id: 'd1', name: 'YouTube', url: YOUTUBE },
 	layout: MeetRecordingLayout.GRID,
 	encoding: MeetRecordingEncodingPreset.H264_720P_30,
 	egressId: 'EG_1',
@@ -99,19 +97,16 @@ describe('BroadcastHelper.resolveTargets', () => {
 	it('streams to the room destinations named, as saved, and then to those given for this meeting', () => {
 		expect(
 			BroadcastHelper.resolveTargets(room, urls, [], { destinationIds: ['b'], destinations: [extra] })
-		).toEqual([{ destinationId: 'b', name: 'B', url: urls.b }, extra]);
+		).toEqual([{ id: 'b', name: 'B', url: urls.b }, extra]);
 	});
 
 	it('streams to every room destination not streamed to yet when destinationIds is omitted', () => {
-		expect(BroadcastHelper.resolveTargets(room, urls, [], {}).map(({ destinationId }) => destinationId)).toEqual([
-			'a',
-			'b'
-		]);
+		expect(BroadcastHelper.resolveTargets(room, urls, [], {}).map(({ id }) => id)).toEqual(['a', 'b']);
 		expect(
-			BroadcastHelper.resolveTargets(room, urls, [record({ destinationId: 'a', url: urls.a })], {
+			BroadcastHelper.resolveTargets(room, urls, [record({ destination: { id: 'a', name: 'A', url: urls.a } })], {
 				destinations: [extra]
 			})
-		).toEqual([{ destinationId: 'b', name: 'B', url: urls.b }, extra]);
+		).toEqual([{ id: 'b', name: 'B', url: urls.b }, extra]);
 	});
 
 	it('streams to no room destination when destinationIds is empty', () => {
@@ -133,7 +128,8 @@ describe('BroadcastHelper.resolveTargets', () => {
 });
 
 describe('BroadcastHelper.validateNewBroadcasts', () => {
-	const inProgress = (urls: string[]) => urls.map((url, index) => record({ broadcastId: `bc-${index}`, url }));
+	const inProgress = (urls: string[]) =>
+		urls.map((url, index) => record({ broadcastId: `bc-${index}`, destination: { name: url, url } }));
 	const targets = (urls: string[]) => urls.map((url) => ({ name: url, url }));
 
 	it('lets a meeting stream to five destinations at once, each once', () => {
@@ -339,7 +335,7 @@ describe('BroadcastHelper.taggedUrl', () => {
 
 		expect(broadcastId).toMatch(/^room-1--[0-9a-z]{10}$/);
 		expect(BroadcastHelper.roomIdOf(broadcastId)).toBe('room-1');
-		expect(BroadcastHelper.taggedUrl({ broadcastId, url: YOUTUBE })).toBe(
+		expect(BroadcastHelper.taggedUrl({ broadcastId, destination: { name: 'YouTube', url: YOUTUBE } })).toBe(
 			`${YOUTUBE}#ov-stream-tag=${broadcastId}`
 		);
 	});
@@ -367,9 +363,7 @@ describe('BroadcastHelper.createRecord', () => {
 			roomId: 'room-1',
 			roomName: 'Room',
 			status: MeetBroadcastStatus.STARTING,
-			name: 'Extra',
-			url: 'rtmp://mtx/live/extraKEY',
-			destinationId: undefined,
+			destination: { name: 'Extra', url: 'rtmp://mtx/live/extraKEY' },
 			layout: MeetRecordingLayout.SPEAKER,
 			encoding: MeetRecordingEncodingPreset.H264_1080P_30,
 			egressId: 'EG_2',
@@ -623,14 +617,12 @@ describe('BroadcastHelper.toBroadcastInfo', () => {
 			roomId: 'room-1',
 			roomName: 'Room',
 			status: 'starting',
-			name: 'YouTube',
-			url: REDACTED_YOUTUBE,
-			destinationId: 'd1',
+			destination: { id: 'd1', name: 'YouTube', url: REDACTED_YOUTUBE },
 			layout: 'grid',
 			encoding: 'H264_720P_30'
 		});
-		expect(BroadcastHelper.toBroadcastInfo(record({ url: TWITCH })).url).toBe(
-			'rtmps://live.twitch.tv:443/app/********'
-		);
+		expect(
+			BroadcastHelper.toBroadcastInfo(record({ destination: { name: 'Twitch', url: TWITCH } })).destination.url
+		).toBe('rtmps://live.twitch.tv:443/app/********');
 	});
 });

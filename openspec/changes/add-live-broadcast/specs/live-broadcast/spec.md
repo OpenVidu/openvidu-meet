@@ -76,7 +76,7 @@ The server SHALL never serve a destination's stream key: every response, webhook
 
 #### Scenario: Broadcast payload
 - **WHEN** a broadcast to that destination starts
-- **THEN** the broadcast's `url` in the response, the webhooks and the embedded events is the redacted URL
+- **THEN** the broadcast's `destination.url` in the response, the webhooks and the embedded events is the redacted URL
 
 ### Requirement: A redacted URL sent back keeps the saved key
 A destination sent with its `id` and its redacted URL exactly as the server serves it SHALL keep its saved URL, stream key included. A redacted URL with any other change, such as another host or path, and a redacted URL on a destination without `id`, SHALL be answered with `422`, since there is no stream key to go with it.
@@ -133,12 +133,12 @@ Each broadcast SHALL stream the meeting with the room's `broadcast.layout` (`gri
 - **THEN** the REST API answers `403`
 
 ### Requirement: Broadcast lists in the responses
-`broadcastStart` and `broadcastStop` SHALL answer with a `broadcasts` list, one entry per broadcast started or stopped, between one and five for a start, each the same broadcast object `broadcastGet` returns and the broadcast webhooks carry.
+`broadcastStart` and `broadcastStop` SHALL answer with a `broadcasts` list, one entry per broadcast started or stopped, between one and five for a start, each the same broadcast object `broadcastGet` returns and the broadcast webhooks carry. A broadcast SHALL carry what it streams to in `destination`, with the fields of a room config destination: the `id` of a room destination, absent for one given for that meeting only, its `name` and its redacted `url`.
 
 #### Scenario: Two destinations started
 - **GIVEN** a room with two destinations and a meeting in progress
 - **WHEN** `broadcastStart` is called with only the room's `roomId`
-- **THEN** the response body is a `broadcasts` list of two broadcasts, each with its own `broadcastId` and the `destinationId` of its destination
+- **THEN** the response body is a `broadcasts` list of two broadcasts, each with its own `broadcastId` and its destination in `destination`, carrying that destination's `id`, `name` and redacted `url`
 
 ### Requirement: Room destinations of a start request
 A start request SHALL name the room destinations to stream to by their ids in `destinationIds`, each streamed to as saved. The server SHALL keep an omitted `destinationIds` apart from an empty one: omitted, it SHALL stream to every room destination not streamed to yet; empty, to none of them. It SHALL answer `400` to an id the room does not have.
@@ -315,7 +315,7 @@ Once the broadcast to a destination has ended, a new start to that destination S
 
 #### Scenario: Restart after a stop
 - **GIVEN** a meeting whose broadcast to room destination A was stopped
-- **WHEN** `broadcastStart` is called with `destinationId` A
+- **WHEN** `broadcastStart` is called with `destinationIds` holding A
 - **THEN** the REST API answers `201` with a new `broadcastId`
 
 ### Requirement: Reading broadcasts

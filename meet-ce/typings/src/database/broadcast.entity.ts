@@ -1,3 +1,4 @@
+import type { MeetBroadcastDestination } from './room-config.js';
 import type {
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
@@ -12,7 +13,10 @@ import type {
  * destination, and leaves no stored artifact.
  */
 export interface MeetBroadcastInfo {
-	/** Unique identifier for the broadcast, which names the room it belongs to, as a recording's does */
+	/**
+	 * Unique identifier for the broadcast, which names the room it belongs to, as a recording's does.
+	 * Each attempt to stream to a destination is a new broadcast with a new identifier
+	 */
 	broadcastId: string;
 	/** Identifier of the room being broadcast */
 	roomId: string;
@@ -20,18 +24,13 @@ export interface MeetBroadcastInfo {
 	roomName: string;
 	/** Current status of the broadcast. See {@link MeetBroadcastStatus} for details */
 	status: MeetBroadcastStatus;
-	/** Display name of the destination streamed to */
-	name: string;
 	/**
-	 * URL of the destination with its stream key redacted, exactly as the room's config serves it
-	 * (see {@link MeetBroadcastDestination.url}). Never the full URL
+	 * Destination streamed to. A room destination carries the `id` it has in the room's config, the
+	 * same in every broadcast to it; a destination given for this meeting only has no `id`. Its `url`
+	 * has the stream key redacted, exactly as the room's config serves it (see
+	 * {@link MeetBroadcastDestination.url}), never the full URL
 	 */
-	url: string;
-	/**
-	 * Identifier of the room destination streamed to, as it has in the room's config. Absent on a
-	 * broadcast to a destination given for this meeting only
-	 */
-	destinationId?: string;
+	destination: MeetBroadcastDestination;
 	/** Layout of the meeting as it is streamed, taken from the room's config when the meeting went live */
 	layout: MeetRecordingLayout;
 	/**

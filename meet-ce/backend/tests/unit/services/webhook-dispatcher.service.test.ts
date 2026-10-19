@@ -31,10 +31,10 @@ describe('WebhookDispatcherService broadcast webhooks', () => {
 		const service = buildService();
 		const broadcast = (status: MeetBroadcastStatus) =>
 			({
-				broadcastId: 'room-1--kX9pL2mQ7a',
+				broadcastId: 'room-1--Qm4tZ8vR1c',
 				roomId: 'room-1',
 				status,
-				url: 'rtmp://a.rtmp.youtube.com/live2/********'
+				destination: { id: 'kX9pL2mQ7a', name: 'YouTube', url: 'rtmp://a.rtmp.youtube.com/live2/********' }
 			}) as MeetBroadcastInfo;
 
 		service.sendBroadcastStartedWebhook(broadcast(MeetBroadcastStatus.STARTING));

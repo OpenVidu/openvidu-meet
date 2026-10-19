@@ -63,9 +63,7 @@ describe('EmbeddedCommandService', () => {
 	let setRecordingStarting: jasmine.Spy;
 	let liveKitService: { isSessionActive: ReturnType<typeof signal<boolean>>; disconnect: jasmine.Spy };
 	let broadcastService: jasmine.SpyObj<BroadcastService>;
-	let runningBroadcasts: ReturnType<
-		typeof signal<{ broadcastId: string; status: MeetBroadcastStatus; destinationId?: string }[]>
-	>;
+	let runningBroadcasts: ReturnType<typeof signal<{ broadcastId: string; status: MeetBroadcastStatus }[]>>;
 	let phase: ReturnType<typeof signal<MeetingViewPhase>>;
 	let hasPermission: jasmine.Spy;
 	let logger: LoggerServiceStub;
@@ -141,9 +139,7 @@ describe('EmbeddedCommandService', () => {
 		]);
 		broadcastService.startBroadcasts.and.resolveTo([]);
 		broadcastService.stopBroadcasts.and.resolveTo([]);
-		runningBroadcasts = signal([
-			{ broadcastId: BROADCAST_ID, status: MeetBroadcastStatus.ACTIVE, destinationId: 'dest-a' }
-		]);
+		runningBroadcasts = signal([{ broadcastId: BROADCAST_ID, status: MeetBroadcastStatus.ACTIVE }]);
 		phase = signal<MeetingViewPhase>('live');
 		hasPermission = jasmine.createSpy('hasPermission').and.returnValue(true);
 		roomId = signal<string | undefined>(ROOM_ID);

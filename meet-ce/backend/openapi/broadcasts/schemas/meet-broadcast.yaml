@@ -8,8 +8,7 @@ required:
     - roomId
     - roomName
     - status
-    - name
-    - url
+    - destination
     - layout
     - encoding
 properties:
@@ -36,22 +35,31 @@ properties:
             The status of the broadcast. It is `starting` until the destination receives media, `active`
             from then on, `ending` while the media server stops it, and one of `complete`, `failed`,
             `aborted` or `limit_reached` once it has ended.
-    name:
-        type: string
-        example: 'YouTube'
-        description: The label of the destination streamed to, shown to participants.
-    url:
-        type: string
-        example: 'rtmp://a.rtmp.youtube.com/live2/********'
+    destination:
+        type: object
         description: >
-            The RTMP URL streamed to, with the stream key replaced by `********`: the key never leaves
-            the server.
-    destinationId:
-        type: string
-        example: 'kX9pL2mQ7a'
-        description: >
-            The `id` the destination has in the room's config, the same in every broadcast to it. Absent on
-            a broadcast to a destination given for this meeting only.
+            The destination streamed to, with the same fields a destination has in the room's config. A room
+            destination carries its `id`; a destination given for this meeting only has none.
+        required:
+            - name
+            - url
+        properties:
+            id:
+                type: string
+                example: 'kX9pL2mQ7a'
+                description: >
+                    The `id` the destination has in the room's config, the same in every broadcast to it.
+                    Absent on a destination given for this meeting only.
+            name:
+                type: string
+                example: 'YouTube'
+                description: The label of the destination, shown to participants.
+            url:
+                type: string
+                example: 'rtmp://a.rtmp.youtube.com/live2/********'
+                description: >
+                    The RTMP URL streamed to, with the stream key replaced by `********`: the key never
+                    leaves the server.
     layout:
         type: string
         enum: ['grid', 'speaker', 'single-speaker']
@@ -91,3 +99,15 @@ properties:
         type: string
         example: 'Stopped using API'
         description: Additional details about the broadcast. Present only when the broadcast ended.
+example:
+    broadcastId: 'room-123--Qm4tZ8vR1c'
+    roomId: 'room-123'
+    roomName: 'room'
+    status: 'active'
+    destination:
+        id: 'kX9pL2mQ7a'
+        name: 'YouTube'
+        url: 'rtmp://a.rtmp.youtube.com/live2/********'
+    layout: 'grid'
+    encoding: 'H264_720P_30'
+    startDate: 1620000000000

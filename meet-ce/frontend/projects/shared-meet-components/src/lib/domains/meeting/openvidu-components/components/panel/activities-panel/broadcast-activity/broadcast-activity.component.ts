@@ -214,8 +214,8 @@ export class BroadcastActivityComponent {
 		// may be one of its destinations, which already have their rows.
 		const startAnswered = this.pendingRequest().status !== 'starting';
 		const otherBroadcasts = broadcasts.filter(
-			({ broadcastId, destinationId }) =>
-				!destinationId && !listed.has(broadcastId) && (startAnswered || ownUrls.has(broadcastId))
+			({ broadcastId, destination }) =>
+				!destination.id && !listed.has(broadcastId) && (startAnswered || ownUrls.has(broadcastId))
 		);
 
 		return [
@@ -225,7 +225,7 @@ export class BroadcastActivityComponent {
 					name,
 					url,
 					source: 'room',
-					broadcast: broadcasts.find(({ destinationId }) => destinationId === id),
+					broadcast: broadcasts.find(({ destination }) => destination.id === id),
 					start: { destinationId: id! },
 					selected: !this.unselectedIds().has(id!)
 				})
@@ -243,13 +243,14 @@ export class BroadcastActivityComponent {
 			),
 			...otherBroadcasts.map((broadcast) => {
 				const ownUrl = ownUrls.get(broadcast.broadcastId);
+				const { name, url } = broadcast.destination;
 				return this.toRow({
 					key: broadcast.broadcastId,
-					name: broadcast.name,
-					url: broadcast.url,
+					name,
+					url,
 					source: 'meeting',
 					broadcast,
-					start: ownUrl ? { name: broadcast.name, url: ownUrl } : undefined,
+					start: ownUrl ? { name, url: ownUrl } : undefined,
 					selected: true
 				});
 			})

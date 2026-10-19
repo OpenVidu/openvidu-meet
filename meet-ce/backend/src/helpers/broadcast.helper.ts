@@ -17,7 +17,7 @@ import type { EgressInfo } from 'livekit-server-sdk';
 import { BlockList, isIP } from 'net';
 import { uid } from 'uid';
 import { isDeepStrictEqual } from 'util';
-import type { BroadcastDestinationUrls, BroadcastRecord, BroadcastTarget } from '../models/broadcast.model.js';
+import type { BroadcastDestinationUrls, BroadcastRecord } from '../models/broadcast.model.js';
 import type { EgressError } from '../models/egress.model.js';
 import {
 	errorBroadcastDestinationInUse,
@@ -104,8 +104,8 @@ export class BroadcastHelper {
 	 * id. The egress streams to the URL without the tag and reports the tag after the redacted URL,
 	 * which is how a broadcast finds its stream in everything LiveKit reports of the egress.
 	 */
-	static taggedUrl({ broadcastId, url }: Pick<BroadcastRecord, 'broadcastId' | 'url'>): string {
-		return `${url}${STREAM_TAG}${broadcastId}`;
+	static taggedUrl({ broadcastId, destination }: Pick<BroadcastRecord, 'broadcastId' | 'destination'>): string {
+		return `${destination.url}${STREAM_TAG}${broadcastId}`;
 	}
 
 	/**
@@ -118,8 +118,8 @@ export class BroadcastHelper {
 		roomDestinationUrls: BroadcastDestinationUrls,
 		inProgress: BroadcastRecord[],
 		{ destinationIds, destinations = [] }: MeetBroadcastStartOptions
-	): BroadcastTarget[] {
-		const streamed = new Set(inProgress.map(({ destinationId }) => destinationId));
+	): MeetBroadcastDestination[] {
+		const streamed = new Set(inProgress.map(({ destination }) => destination.id));
 		const saved = destinationIds
 			? destinationIds.map((destinationId) => {
 					const destination = roomDestinations.find(({ id }) => id === destinationId);
@@ -135,10 +135,7 @@ export class BroadcastHelper {
 			return { name, url };
 		});
 
-		return [
-			...saved.map(({ id, name }) => ({ destinationId: id!, name, url: roomDestinationUrls[id!] })),
-			...forMeeting
-		];
+		return [...saved.map(({ id, name }) => ({ id, name, url: roomDestinationUrls[id!] })), ...forMeeting];
 	}
 
 	/**
@@ -146,7 +143,7 @@ export class BroadcastHelper {
 	 * {@link MEET_BROADCAST_MAX_DESTINATIONS} run at once, and each stream key once, since the media
 	 * server tells the streams of a meeting apart by their stream key alone when they connect.
 	 */
-	static validateNewBroadcasts(inProgress: BroadcastRecord[], targets: BroadcastTarget[]): void {
+	static validateNewBroadcasts(inProgress: BroadcastRecord[], targets: MeetBroadcastDestination[]): void {
 		if (inProgress.length + targets.length > MEET_BROADCAST_MAX_DESTINATIONS) {
 			throw errorBroadcastDestinationLimit();
 		}
@@ -156,7 +153,7 @@ export class BroadcastHelper {
 
 		if (duplicate) throw errorBroadcastDuplicateDestination(redactStreamUrl(duplicate));
 
-		const streamedKeys = new Set(inProgress.map(({ url }) => BroadcastHelper.streamKeyOf(url)));
+		const streamedKeys = new Set(inProgress.map(({ destination }) => BroadcastHelper.streamKeyOf(destination.url)));
 		const inUse = urls.find((url) => streamedKeys.has(BroadcastHelper.streamKeyOf(url)));
 
 		if (inUse) throw errorBroadcastDestinationInUse(redactStreamUrl(inUse));
@@ -218,7 +215,7 @@ export class BroadcastHelper {
 		broadcastId: string,
 		egress: EgressInfo,
 		room: { roomId: string; roomName: string },
-		target: BroadcastTarget,
+		destination: MeetBroadcastDestination,
 		{ layout, encoding }: Pick<BroadcastRecord, 'layout' | 'encoding'>
 	): BroadcastRecord {
 		if (!BroadcastHelper.findStream(egress, broadcastId)) throw errorEgressWithoutStreamTags();
@@ -229,9 +226,7 @@ export class BroadcastHelper {
 				roomId: room.roomId,
 				roomName: room.roomName,
 				status: MeetBroadcastStatus.STARTING,
-				name: target.name,
-				url: target.url,
-				destinationId: target.destinationId,
+				destination,
 				layout,
 				encoding,
 				egressId: egress.egressId
@@ -290,7 +285,7 @@ export class BroadcastHelper {
 
 	static toBroadcastInfo({ egressId, ...info }: BroadcastRecord): MeetBroadcastInfo {
 		void egressId;
-		return { ...info, url: redactStreamUrl(info.url) };
+		return { ...info, destination: { ...info.destination, url: redactStreamUrl(info.destination.url) } };
 	}
 
 	private static async addressesOf(url: string, resolve: AddressLookup): Promise<string[]> {

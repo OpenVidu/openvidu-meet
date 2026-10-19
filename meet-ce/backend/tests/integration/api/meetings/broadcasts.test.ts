@@ -125,9 +125,7 @@ describe('Broadcasts API Tests', () => {
 						roomId: roomData.room.roomId,
 						roomName: 'BROADCAST_ROOM',
 						status: MeetBroadcastStatus.STARTING,
-						name: 'Destination a',
-						url: REDACTED_URL,
-						destinationId: idA,
+						destination: { id: idA, name: 'Destination a', url: REDACTED_URL },
 						layout: MeetRecordingLayout.GRID,
 						encoding: expect.any(String)
 					}
@@ -147,7 +145,7 @@ describe('Broadcasts API Tests', () => {
 
 			expect(response.status).toBe(201);
 			const started = response.body.broadcasts as MeetBroadcastInfo[];
-			expect(started.map(({ name, destinationId }) => [name, destinationId])).toEqual([
+			expect(started.map(({ destination }) => [destination.name, destination.id])).toEqual([
 				['Destination a', idA],
 				['Destination b', idB],
 				['Destination extra', undefined]
@@ -168,7 +166,7 @@ describe('Broadcasts API Tests', () => {
 			const rest = await startBroadcasts(roomId);
 
 			expect(rest.status).toBe(201);
-			expect(rest.body.broadcasts.map(({ destinationId }: MeetBroadcastInfo) => destinationId)).toEqual([idB]);
+			expect(rest.body.broadcasts.map(({ destination }: MeetBroadcastInfo) => destination.id)).toEqual([idB]);
 			expectMeetError(await startBroadcasts(roomId), errorBroadcastAlreadyStarted(roomId));
 		});
 
@@ -179,12 +177,14 @@ describe('Broadcasts API Tests', () => {
 
 			const onlyExtra = await startBroadcasts(roomId, { destinationIds: [], destinations: [destination('x')] });
 			expect(onlyExtra.status).toBe(201);
-			expect(onlyExtra.body.broadcasts.map(({ name }: MeetBroadcastInfo) => name)).toEqual(['Destination x']);
+			expect(onlyExtra.body.broadcasts.map(({ destination }: MeetBroadcastInfo) => destination.name)).toEqual([
+				'Destination x'
+			]);
 
 			const withRoom = await startBroadcasts(roomId, { destinations: [destination('y')] });
 			expect(withRoom.status).toBe(201);
 			expect(
-				withRoom.body.broadcasts.map(({ name, destinationId }: MeetBroadcastInfo) => [name, destinationId])
+				withRoom.body.broadcasts.map(({ destination }: MeetBroadcastInfo) => [destination.name, destination.id])
 			).toEqual([
 				['Destination a', idA],
 				['Destination b', idB],
@@ -370,7 +370,7 @@ describe('Broadcasts API Tests', () => {
 			expect(listed.body).toEqual({ broadcasts: [{ broadcastId }] });
 
 			const unknownOnly = await asApiKey(request(app).get(`${broadcastPath}?fields=bogus`));
-			expect(unknownOnly.body).toMatchObject({ broadcastId, roomId, url: expect.any(String) });
+			expect(unknownOnly.body).toMatchObject({ broadcastId, roomId, destination: { url: expect.any(String) } });
 
 			const stopped = await asApiKey(request(app).post(`${broadcastsPath}/stop`))
 				.set('X-Fields', 'status')
@@ -445,8 +445,8 @@ describe('Broadcasts API Tests', () => {
 
 			const single = await getBroadcast(broadcastA.broadcastId, roomData.speakerToken);
 			expect(single.status).toBe(200);
-			expect(single.body.url).toContain(`/${MEET_BROADCAST_REDACTED_STREAM_KEY}`);
-			expect(single.body.url).not.toContain(sinkUrl.split('/').pop());
+			expect(single.body.destination.url).toContain(`/${MEET_BROADCAST_REDACTED_STREAM_KEY}`);
+			expect(single.body.destination.url).not.toContain(sinkUrl.split('/').pop());
 
 			// The failed destination can be streamed to again, as a new broadcast, alongside one for
 			// this meeting.

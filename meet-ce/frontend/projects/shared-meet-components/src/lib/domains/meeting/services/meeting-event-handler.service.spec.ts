@@ -119,9 +119,7 @@ describe('MeetingEventHandlerService', () => {
 		roomId: 'room1',
 		roomName: 'Room 1',
 		status: MeetBroadcastStatus.ACTIVE,
-		name: 'YouTube',
-		url: 'rtmp://a.rtmp.youtube.com/live2/********',
-		destinationId: 'dest1',
+		destination: { id: 'dest1', name: 'YouTube', url: 'rtmp://a.rtmp.youtube.com/live2/********' },
 		layout: MeetRecordingLayout.GRID,
 		encoding: MeetRecordingEncodingPreset.H264_720P_30,
 		...overrides
@@ -1431,7 +1429,10 @@ describe('MeetingEventHandlerService', () => {
 		it('settles after reconnecting a broadcast that ended meanwhile, and keeps the ones the server still has', async () => {
 			joinMeeting();
 			const ended = liveBroadcast({ broadcastId: 'bc1', startDate: 1_000 });
-			const running = liveBroadcast({ broadcastId: 'bc2', destinationId: 'dest2' });
+			const running = liveBroadcast({
+				broadcastId: 'bc2',
+				destination: { id: 'dest2', name: 'Twitch', url: 'rtmp://live.twitch.tv/app/********' }
+			});
 			receiveBroadcastSignal(ended);
 			receiveBroadcastSignal(running);
 			Object.assign(broadcastState, { inProgress: () => [ended, running] });

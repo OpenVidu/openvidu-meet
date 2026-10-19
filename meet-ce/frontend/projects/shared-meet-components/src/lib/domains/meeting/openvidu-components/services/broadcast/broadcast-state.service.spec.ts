@@ -1,6 +1,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
+	MeetBroadcastDestination,
 	MeetBroadcastInfo,
 	MeetBroadcastStatus,
 	MeetRecordingEncodingPreset,
@@ -17,14 +18,17 @@ describe('BroadcastStateService', () => {
 	const NOW = 1_700_000_000_000;
 	let service: BroadcastStateService;
 
-	const broadcast = (overrides: Partial<MeetBroadcastInfo> = {}): MeetBroadcastInfo => ({
+	const broadcast = ({
+		destination,
+		...overrides
+	}: Partial<Omit<MeetBroadcastInfo, 'destination'>> & {
+		destination?: Partial<MeetBroadcastDestination>;
+	} = {}): MeetBroadcastInfo => ({
 		broadcastId: 'bc1',
 		roomId: 'room1',
 		roomName: 'Room 1',
 		status: MeetBroadcastStatus.ACTIVE,
-		name: 'YouTube',
-		url: 'rtmp://media.example.com/live/********',
-		destinationId: 'dest-1',
+		destination: { id: 'dest-1', name: 'YouTube', url: 'rtmp://media.example.com/live/********', ...destination },
 		layout: MeetRecordingLayout.GRID,
 		encoding: MeetRecordingEncodingPreset.H264_720P_30,
 		...overrides
@@ -64,11 +68,11 @@ describe('BroadcastStateService', () => {
 
 	it('is live while any broadcast is, and counts the destinations media reached', () => {
 		service.setBroadcast(
-			broadcast({ broadcastId: 'bc1', destinationId: 'd1', status: MeetBroadcastStatus.STARTING })
+			broadcast({ broadcastId: 'bc1', destination: { id: 'd1' }, status: MeetBroadcastStatus.STARTING })
 		);
-		service.setBroadcast(broadcast({ broadcastId: 'bc2', destinationId: 'd2' }));
+		service.setBroadcast(broadcast({ broadcastId: 'bc2', destination: { id: 'd2' } }));
 		service.setBroadcast(
-			broadcast({ broadcastId: 'bc3', destinationId: 'd3', status: MeetBroadcastStatus.FAILED })
+			broadcast({ broadcastId: 'bc3', destination: { id: 'd3' }, status: MeetBroadcastStatus.FAILED })
 		);
 
 		expect(service.isLive()).toBeTrue();
@@ -90,59 +94,71 @@ describe('BroadcastStateService', () => {
 	it('replaces the failed broadcast to a destination with the next attempt at it', () => {
 		service.setBroadcast(broadcast({ broadcastId: 'bc1', status: MeetBroadcastStatus.FAILED }));
 		service.setBroadcast(
-			broadcast({ broadcastId: 'bc-meeting', destinationId: undefined, status: MeetBroadcastStatus.FAILED })
+			broadcast({ broadcastId: 'bc-meeting', destination: { id: undefined }, status: MeetBroadcastStatus.FAILED })
 		);
 
 		service.setBroadcast(broadcast({ broadcastId: 'bc2', status: MeetBroadcastStatus.STARTING }));
 		service.setBroadcast(
-			broadcast({ broadcastId: 'bc-meeting-2', destinationId: undefined, status: MeetBroadcastStatus.STARTING })
+			broadcast({
+				broadcastId: 'bc-meeting-2',
+				destination: { id: undefined },
+				status: MeetBroadcastStatus.STARTING
+			})
 		);
 
 		expect(statuses()).toEqual(['bc2:starting', 'bc-meeting-2:starting']);
 	});
 
 	it('keeps the failure of a destination given for the meeting when another on the same platform starts', () => {
-		const meeting = { destinationId: undefined, url: 'rtmp://a.rtmp.youtube.com/live2/********' };
+		const meeting = { id: undefined, url: 'rtmp://a.rtmp.youtube.com/live2/********' };
 		service.setBroadcast(
-			broadcast({ ...meeting, broadcastId: 'bc-a', name: 'Channel A', status: MeetBroadcastStatus.FAILED })
+			broadcast({
+				broadcastId: 'bc-a',
+				destination: { ...meeting, name: 'Channel A' },
+				status: MeetBroadcastStatus.FAILED
+			})
 		);
 
 		service.setBroadcast(
-			broadcast({ ...meeting, broadcastId: 'bc-b', name: 'Channel B', status: MeetBroadcastStatus.STARTING })
+			broadcast({
+				broadcastId: 'bc-b',
+				destination: { ...meeting, name: 'Channel B' },
+				status: MeetBroadcastStatus.STARTING
+			})
 		);
 
 		expect(statuses()).toEqual(['bc-a:failed', 'bc-b:starting']);
 	});
 
 	it('forgets the failures once the last broadcast in progress ends normally, so stopping is no failure', () => {
-		service.setBroadcast(broadcast({ broadcastId: 'bc1', destinationId: 'd1' }));
+		service.setBroadcast(broadcast({ broadcastId: 'bc1', destination: { id: 'd1' } }));
 		service.setBroadcast(
-			broadcast({ broadcastId: 'bc2', destinationId: 'd2', status: MeetBroadcastStatus.FAILED })
+			broadcast({ broadcastId: 'bc2', destination: { id: 'd2' }, status: MeetBroadcastStatus.FAILED })
 		);
 		service.setBroadcast(
-			broadcast({ broadcastId: 'bc3', destinationId: 'd3', status: MeetBroadcastStatus.STARTING })
+			broadcast({ broadcastId: 'bc3', destination: { id: 'd3' }, status: MeetBroadcastStatus.STARTING })
 		);
 
 		service.setBroadcast(
-			broadcast({ broadcastId: 'bc3', destinationId: 'd3', status: MeetBroadcastStatus.ABORTED })
+			broadcast({ broadcastId: 'bc3', destination: { id: 'd3' }, status: MeetBroadcastStatus.ABORTED })
 		);
 		expect(statuses()).toEqual(['bc1:active', 'bc2:failed']);
 
 		service.setBroadcast(
-			broadcast({ broadcastId: 'bc1', destinationId: 'd1', status: MeetBroadcastStatus.COMPLETE })
+			broadcast({ broadcastId: 'bc1', destination: { id: 'd1' }, status: MeetBroadcastStatus.COMPLETE })
 		);
 		expect(service.broadcasts()).toEqual([]);
 		expect(service.hasFailed()).toBeFalse();
 	});
 
 	it('keeps the failures when the last broadcast in progress fails too', () => {
-		service.setBroadcast(broadcast({ broadcastId: 'bc1', destinationId: 'd1' }));
+		service.setBroadcast(broadcast({ broadcastId: 'bc1', destination: { id: 'd1' } }));
 		service.setBroadcast(
-			broadcast({ broadcastId: 'bc2', destinationId: 'd2', status: MeetBroadcastStatus.FAILED })
+			broadcast({ broadcastId: 'bc2', destination: { id: 'd2' }, status: MeetBroadcastStatus.FAILED })
 		);
 
 		service.setBroadcast(
-			broadcast({ broadcastId: 'bc1', destinationId: 'd1', status: MeetBroadcastStatus.FAILED })
+			broadcast({ broadcastId: 'bc1', destination: { id: 'd1' }, status: MeetBroadcastStatus.FAILED })
 		);
 
 		expect(statuses()).toEqual(['bc1:failed', 'bc2:failed']);
@@ -157,8 +173,8 @@ describe('BroadcastStateService', () => {
 			],
 			[
 				broadcast({ broadcastId: 'bc1' }),
-				broadcast({ broadcastId: 'bc2', destinationId: undefined }),
-				broadcast({ broadcastId: 'bc3', destinationId: undefined })
+				broadcast({ broadcastId: 'bc2', destination: { id: undefined } }),
+				broadcast({ broadcastId: 'bc3', destination: { id: undefined } })
 			]
 		);
 
@@ -199,15 +215,15 @@ describe('BroadcastStateService', () => {
 	});
 
 	it('clocks the time live from the first broadcast still live, once a second', () => {
-		service.setBroadcast(broadcast({ broadcastId: 'bc1', destinationId: 'd1', startDate: NOW - 5_000 }));
-		service.setBroadcast(broadcast({ broadcastId: 'bc2', destinationId: 'd2', startDate: NOW - 2_000 }));
+		service.setBroadcast(broadcast({ broadcastId: 'bc1', destination: { id: 'd1' }, startDate: NOW - 5_000 }));
+		service.setBroadcast(broadcast({ broadcastId: 'bc2', destination: { id: 'd2' }, startDate: NOW - 2_000 }));
 		expect(elapsedSeconds()).toBe(5);
 
 		jasmine.clock().tick(1_000);
 		expect(elapsedSeconds()).toBe(6);
 
 		service.setBroadcast(
-			broadcast({ broadcastId: 'bc1', destinationId: 'd1', status: MeetBroadcastStatus.COMPLETE })
+			broadcast({ broadcastId: 'bc1', destination: { id: 'd1' }, status: MeetBroadcastStatus.COMPLETE })
 		);
 		expect(elapsedSeconds()).toBe(3);
 	});

@@ -157,6 +157,20 @@ broadcastStarted:
                                                 status:
                                                     enum: [starting, active]
                                                     example: starting
+                    example:
+                        creationDate: 1619999998000
+                        event: broadcastStarted
+                        data:
+                            broadcastId: 'room-123--Qm4tZ8vR1c'
+                            roomId: 'room-123'
+                            roomName: 'room'
+                            status: 'starting'
+                            destination:
+                                id: 'kX9pL2mQ7a'
+                                name: 'YouTube'
+                                url: 'rtmp://a.rtmp.youtube.com/live2/********'
+                            layout: 'grid'
+                            encoding: 'H264_720P_30'
         responses:
             '200':
                 $ref: ./responses/success/webhook-success.yaml
@@ -196,6 +210,21 @@ broadcastUpdated:
                                                 status:
                                                     enum: [starting, active, ending]
                                                     example: active
+                    example:
+                        creationDate: 1620000000000
+                        event: broadcastUpdated
+                        data:
+                            broadcastId: 'room-123--Qm4tZ8vR1c'
+                            roomId: 'room-123'
+                            roomName: 'room'
+                            status: 'active'
+                            destination:
+                                id: 'kX9pL2mQ7a'
+                                name: 'YouTube'
+                                url: 'rtmp://a.rtmp.youtube.com/live2/********'
+                            layout: 'grid'
+                            encoding: 'H264_720P_30'
+                            startDate: 1620000000000
         responses:
             '200':
                 $ref: ./responses/success/webhook-success.yaml
@@ -237,6 +266,42 @@ broadcastEnded:
                                                 status:
                                                     enum: [complete, failed, aborted, limit_reached]
                                                     example: complete
+                    examples:
+                        complete:
+                            summary: Stopped after streaming
+                            value:
+                                creationDate: 1620003600000
+                                event: broadcastEnded
+                                data:
+                                    broadcastId: 'room-123--Qm4tZ8vR1c'
+                                    roomId: 'room-123'
+                                    roomName: 'room'
+                                    status: 'complete'
+                                    destination:
+                                        id: 'kX9pL2mQ7a'
+                                        name: 'YouTube'
+                                        url: 'rtmp://a.rtmp.youtube.com/live2/********'
+                                    layout: 'grid'
+                                    encoding: 'H264_720P_30'
+                                    startDate: 1620000000000
+                                    endDate: 1620003600000
+                                    duration: 3600
+                        failed:
+                            summary: The destination refused the connection
+                            value:
+                                creationDate: 1620000005000
+                                event: broadcastEnded
+                                data:
+                                    broadcastId: 'room-123--p7Rt4WqM2z'
+                                    roomId: 'room-123'
+                                    roomName: 'room'
+                                    status: 'failed'
+                                    destination:
+                                        name: 'Own media server'
+                                        url: 'rtmp://media.example.com/live/********'
+                                    layout: 'grid'
+                                    encoding: 'H264_720P_30'
+                                    error: 'Failed to connect: connection refused'
         responses:
             '200':
                 $ref: ./responses/success/webhook-success.yaml

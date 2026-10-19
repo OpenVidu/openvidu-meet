@@ -108,7 +108,7 @@ export class BroadcastStateService {
 	 */
 	recordOwnBroadcasts(destinations: MeetBroadcastStartDestination[], broadcasts: MeetBroadcastInfo[]): void {
 		const urls = new Map(this._ownUrls());
-		const forMeeting = broadcasts.filter(({ destinationId }) => !destinationId);
+		const forMeeting = broadcasts.filter(({ destination }) => !destination.id);
 
 		destinations.forEach(({ url }, index) => {
 			if (forMeeting[index]) urls.set(forMeeting[index].broadcastId, url);

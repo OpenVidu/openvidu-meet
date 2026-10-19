@@ -653,8 +653,7 @@ describe('IframeBridgeService', () => {
 				roomId: ROOM_ID,
 				roomName: 'Room 1',
 				status: MeetBroadcastStatus.ACTIVE,
-				name: 'YouTube',
-				url: 'rtmp://a.rtmp.youtube.com/live2/********',
+				destination: { name: 'YouTube', url: 'rtmp://a.rtmp.youtube.com/live2/********' },
 				layout: MeetRecordingLayout.GRID,
 				encoding: MeetRecordingEncodingPreset.H264_720P_30
 			};

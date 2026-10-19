@@ -218,8 +218,8 @@ describe('BroadcastFieldsQuerySchema', () => {
 
 	it('adds the fields of the X-Fields header to those of the query', () => {
 		const query: Record<string, unknown> = { fields: 'status' };
-		mergeFieldsHeaderIntoQuery({ 'x-fields': 'url,status,bogus' }, query, MEET_BROADCAST_FIELDS);
+		mergeFieldsHeaderIntoQuery({ 'x-fields': 'destination,status,bogus' }, query, MEET_BROADCAST_FIELDS);
 
-		expect(fieldsOf(query.fields as string)).toEqual(['status', 'url']);
+		expect(fieldsOf(query.fields as string)).toEqual(['status', 'destination']);
 	});
 });

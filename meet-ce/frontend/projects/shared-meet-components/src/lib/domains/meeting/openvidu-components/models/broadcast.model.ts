@@ -74,7 +74,5 @@ export const settleBroadcast = (broadcast: MeetBroadcastInfo, now = Date.now()):
  * alone is the same for every destination on one platform.
  */
 export const broadcastDestinationKey = ({
-	destinationId,
-	name,
-	url
-}: Pick<MeetBroadcastInfo, 'destinationId' | 'name' | 'url'>): string => destinationId ?? `${name}\n${url}`;
+	destination: { id, name, url }
+}: Pick<MeetBroadcastInfo, 'destination'>): string => id ?? `${name}\n${url}`;

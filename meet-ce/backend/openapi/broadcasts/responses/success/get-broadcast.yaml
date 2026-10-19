@@ -8,9 +8,10 @@ content:
             roomId: 'room-123'
             roomName: 'room'
             status: 'active'
-            name: 'YouTube'
-            url: 'rtmp://a.rtmp.youtube.com/live2/********'
-            destinationId: 'kX9pL2mQ7a'
+            destination:
+                id: 'kX9pL2mQ7a'
+                name: 'YouTube'
+                url: 'rtmp://a.rtmp.youtube.com/live2/********'
             layout: 'grid'
             encoding: 'H264_720P_30'
             startDate: 1620000000000

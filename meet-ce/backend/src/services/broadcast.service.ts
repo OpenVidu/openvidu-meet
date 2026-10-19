@@ -1,4 +1,9 @@
-import type { MeetBroadcastInfo, MeetBroadcastStartOptions, MeetBroadcastStopOptions } from '@openvidu-meet/typings';
+import type {
+	MeetBroadcastDestination,
+	MeetBroadcastInfo,
+	MeetBroadcastStartOptions,
+	MeetBroadcastStopOptions
+} from '@openvidu-meet/typings';
 import {
 	MeetBroadcastStatus,
 	MeetRecordingEncodingPreset,
@@ -14,7 +19,7 @@ import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { BroadcastHelper } from '../helpers/broadcast.helper.js';
 import { EncodingConverter } from '../helpers/encoding-converter.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
-import type { BroadcastRecord, BroadcastTarget } from '../models/broadcast.model.js';
+import type { BroadcastRecord } from '../models/broadcast.model.js';
 import { EGRESS_LOST_ERROR } from '../models/egress.model.js';
 import {
 	errorBroadcastAlreadyStarted,
@@ -35,7 +40,7 @@ import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 const LOCK_RETRY_DELAY_MS = 250;
 
 /** The stream of a broadcast on the egress it was added to. */
-type StreamPlacement = Pick<BroadcastRecord, 'broadcastId' | 'egressId' | 'url'>;
+type StreamPlacement = Pick<BroadcastRecord, 'broadcastId' | 'egressId' | 'destination'>;
 
 /**
  * Live broadcasts of a meeting, one per destination. They run on the room-composite egress the
@@ -273,7 +278,7 @@ export class BroadcastService {
 	protected async addStreams(
 		room: { roomId: string; roomName: string },
 		host: BroadcastRecord | undefined,
-		targets: BroadcastTarget[],
+		targets: MeetBroadcastDestination[],
 		roomSettings: Pick<BroadcastRecord, 'layout' | 'encoding'>
 	): Promise<{ started: BroadcastRecord[]; egress: EgressInfo }> {
 		const started: BroadcastRecord[] = [];
@@ -281,15 +286,15 @@ export class BroadcastService {
 		let adding: StreamPlacement | undefined;
 
 		try {
-			for (const target of targets) {
-				const stream = { broadcastId: BroadcastHelper.newBroadcastId(room.roomId), url: target.url };
+			for (const destination of targets) {
+				const stream = { broadcastId: BroadcastHelper.newBroadcastId(room.roomId), destination };
 				const url = BroadcastHelper.taggedUrl(stream);
 				adding = host && { ...stream, egressId: host.egressId };
 				const joined = host && (await this.livekitService.updateStream(host.egressId, [url], []));
 				const settings = joined && host ? host : roomSettings;
 				egress = joined ?? (await this.startEgress(room.roomId, url, settings));
 				adding = { ...stream, egressId: egress.egressId };
-				host = BroadcastHelper.createRecord(stream.broadcastId, egress, room, target, settings);
+				host = BroadcastHelper.createRecord(stream.broadcastId, egress, room, destination, settings);
 				started.push(host);
 			}
 		} catch (error) {
@@ -307,7 +312,7 @@ export class BroadcastService {
 				await this.livekitService.updateStream(stream.egressId, [], [BroadcastHelper.taggedUrl(stream)]);
 			} catch (error) {
 				this.logger.warn(
-					`Could not withdraw the stream to '${redactStreamUrl(stream.url)}' from egress '${stream.egressId}'`,
+					`Could not withdraw the stream to '${redactStreamUrl(stream.destination.url)}' from egress '${stream.egressId}'`,
 					error
 				);
 			}

@@ -53,6 +53,15 @@ its Redis value follow from the id as a recording's room follows from its id. Th
 Meet's own, since LiveKit has no identifier per stream; should it get one, the id can carry it as a
 recording's carries its egress id. `MEET_API_REST_GROUPS` and the naming charter gain `broadcasts`.
 
+### The destination is an object of the broadcast
+
+A broadcast carries what it streams to in `destination`, `{ id?, name, url }`, the shape a destination
+has in the room's config (decided 2026-10-19, over flat `name`, `url` and `destinationId` fields). It
+keeps apart the two identifiers a reader confused: `broadcastId` names one attempt, `destination.id` the
+room destination it streams to, the same across attempts and absent for a destination given for that
+meeting only. `layout` and `encoding` stay on the broadcast, since they are the meeting's stream, shared
+by every broadcast of the meeting.
+
 ### One egress per meeting, one stream per broadcast
 
 The first broadcast of a meeting starts a room-composite egress with a single RTMP URL; each later one
