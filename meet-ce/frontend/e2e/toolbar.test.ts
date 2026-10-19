@@ -31,6 +31,17 @@ test.describe('Toolbar Buttons E2E Tests', () => {
 		await expect(page.locator('#mic-btn #mic')).toBeVisible();
 	});
 
+	test('should end in the state of a single press when the microphone button is pressed twice quickly', async ({
+		page
+	}) => {
+		await openMeeting(page, accessUrl);
+
+		await page.locator('#mic-btn').dblclick();
+
+		await expect(page.locator('#mic-btn #mic_off')).toBeVisible();
+		await expect(page.locator('#mic-btn')).toBeEnabled();
+	});
+
 	test('should toggle mute/unmute on the local camera and update the icon accordingly', async ({ page }) => {
 		await openMeeting(page, accessUrl);
 

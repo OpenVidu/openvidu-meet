@@ -399,7 +399,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 */
 	async toggleMicrophone() {
 		try {
-			this.microphoneMuteChanging.set(false);
+			this.microphoneMuteChanging.set(true);
 			const isMicrophoneEnabled = this.isMicrophoneEnabled();
 			await this.localMedia.setMicrophoneEnabled(!isMicrophoneEnabled);
 		} catch (error: unknown) {
