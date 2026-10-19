@@ -199,6 +199,14 @@ export const errorRecordingAlreadyStarted = (roomId: string): OpenViduMeetError 
 	return new OpenViduMeetError('Recording Error', `Room '${roomId}' is already being recorded`, 409);
 };
 
+export const errorRecordingStartRefused = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Recording Error',
+		`The media server could not start a recording in room '${roomId}'`,
+		503
+	);
+};
+
 export const errorRecordingAutoStartDisabled = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Recording Error',

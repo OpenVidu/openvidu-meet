@@ -39,8 +39,8 @@ recordingRouter.post(
 	'/',
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	validateStartRecordingReq,
-	withRecordingStartAllowed,
 	authorizeRecordingControl,
+	withRecordingStartAllowed,
 	recordingCtrl.startRecording
 );
 recordingRouter.get(

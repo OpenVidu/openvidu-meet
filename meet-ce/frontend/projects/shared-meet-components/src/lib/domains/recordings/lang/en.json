@@ -65,7 +65,9 @@
       "STATUS_COMPLETE": "Complete",
       "STATUS_FAILED": "Failed",
       "STATUS_ABORTED": "Aborted",
-      "STATUS_LIMIT_REACHED": "Limit Reached"
+      "STATUS_LIMIT_REACHED": "Limit Reached",
+      "PLAY_PERMISSION_REQUIRED": "Playing and sharing recordings requires the recordingPlay permission",
+      "BULK_LIMIT_EXCEEDED": "At most {count} recordings can be processed at once"
     },
     "DETAIL": {
       "LOADING_TITLE": "Loading Recording Details",

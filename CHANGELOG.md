@@ -65,6 +65,15 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - The `joinDate` of the embedded event `participantJoined` was the moment the join reached the browser, by the
   browser's clock, and the one of `participantLeft` was rounded down to the second. Both now carry the `joinDate` of
   the [`participantJoined`][3.9-participant-joined] webhook.
+- [`startRecording`][3.9-start-recording] checked the target room before `recordingControl`, so a room member token of
+  another room got `404` for a room that does not exist and learned whether a room could be recorded. It now answers
+  `403` first.
+- [`startRecording`][3.9-start-recording] answered `500` when the media server did not accept the recording or could not
+  be reached. It now answers `503`.
+- [`bulkDeleteRecordings`][3.9-bulk-delete-recordings] and [`downloadRecordings`][3.9-download-recordings] accepted any
+  number of `recordingIds`, and a long list failed with a server or proxy error. They now accept up to 100 distinct ids
+  and answer `422` to more, and the recording lists disable ZIP download and bulk delete beyond 100 selected
+  recordings.
 
 #### UI
 
@@ -93,6 +102,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   included. They now sit beside the panel, or below its header when the panel fills the screen.
 - The notices of the console room detail page about copying a member's link, removing members and failing to load
   members or recordings were always in English. They now follow the selected language.
+- The recording lists of the console and the room recordings page offered play and share on every recording, even to a
+  user or room member without `recordingPlay`, and those actions then failed. They are now disabled, with a tooltip,
+  without `recordingPlay`.
 
 #### Deployment
 
@@ -252,3 +264,5 @@ registered on both receives it twice.
 [3.9-create-room]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/createRoom
 [3.9-start-recording]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/startRecording
 [3.9-stop-recording]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/stopRecording
+[3.9-bulk-delete-recordings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/bulkDeleteRecordings
+[3.9-download-recordings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/downloadRecordings

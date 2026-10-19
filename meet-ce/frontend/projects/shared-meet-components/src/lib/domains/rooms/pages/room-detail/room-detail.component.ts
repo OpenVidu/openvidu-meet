@@ -58,6 +58,7 @@ interface RoomDetailCachedState {
 	canViewRecordings: boolean;
 	canDeleteRecordings: boolean;
 	canDownloadRecordings: boolean;
+	canPlayRecordings: boolean;
 	selectedTabIndex: number;
 	members: EntityListSnapshot<MeetRoomMember, MemberTableFilter>;
 	recordings: EntityListSnapshot<MeetRecordingInfo, RecordingTableFilter>;
@@ -122,6 +123,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 	canViewRecordings = signal(false);
 	canDeleteRecordings = signal(false);
 	canDownloadRecordings = signal(false);
+	canPlayRecordings = signal(false);
 
 	roomId = signal('');
 	room = signal<MeetRoom | undefined>(undefined);
@@ -212,6 +214,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 			this.canViewRecordings.set(cached.canViewRecordings);
 			this.canDeleteRecordings.set(cached.canDeleteRecordings);
 			this.canDownloadRecordings.set(cached.canDownloadRecordings ?? true);
+			this.canPlayRecordings.set(cached.canPlayRecordings);
 			this.memberList.restore(cached.members);
 			this.initialMemberFilters.set(cached.members.filters);
 			this.recordingList.restore(cached.recordings);
@@ -256,6 +259,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 			canViewRecordings: this.canViewRecordings(),
 			canDeleteRecordings: this.canDeleteRecordings(),
 			canDownloadRecordings: this.canDownloadRecordings(),
+			canPlayRecordings: this.canPlayRecordings(),
 			selectedTabIndex: this.selectedTabIndex(),
 			members: this.memberList.snapshot(),
 			recordings: this.recordingList.snapshot(),
@@ -279,6 +283,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 				this.canViewRecordings.set(true);
 				this.canDeleteRecordings.set(true);
 				this.canDownloadRecordings.set(true);
+				this.canPlayRecordings.set(true);
 			} else {
 				try {
 					const { token } = await this.roomMemberService.generateRoomMemberToken(this.roomId(), {
@@ -288,10 +293,12 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 					this.canViewRecordings.set(decoded.metadata.permissions.recordingList);
 					this.canDeleteRecordings.set(decoded.metadata.permissions.recordingDelete);
 					this.canDownloadRecordings.set(decoded.metadata.permissions.recordingDownload);
+					this.canPlayRecordings.set(decoded.metadata.permissions.recordingPlay);
 				} catch {
 					this.canViewRecordings.set(false);
 					this.canDeleteRecordings.set(false);
 					this.canDownloadRecordings.set(false);
+					this.canPlayRecordings.set(false);
 				}
 			}
 
@@ -580,7 +587,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		await this.recordingActions.handle(action, {
 			list: this.recordingList,
 			log: this.log,
-			hasRecordingAccess: true
+			canPlayRecording: () => this.canPlayRecordings()
 		});
 	}
 

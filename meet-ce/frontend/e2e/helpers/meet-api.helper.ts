@@ -455,9 +455,8 @@ const changeUserPassword = async (
 // ---------------------------------------------------------------------------
 
 /**
- * Asks the room to record, without waiting for the answer: the request only comes back once the
- * recording is actually recording, which is what a caller testing the wait for it has not seen yet.
- * The returned promise is the caller's to settle.
+ * Asks the room to record. The API answers as soon as the media server accepts the recording, which
+ * is then in the `starting` status.
  */
 export const requestRecording = (roomId: string): Promise<Response> =>
 	fetch(withApiPath('/recordings'), {
@@ -467,8 +466,7 @@ export const requestRecording = (roomId: string): Promise<Response> =>
 	});
 
 /**
- * Ends a recording that is still starting. The media server ends the egress right away while the
- * API answers 409, so the response is deliberately not asserted: that conflict is the outcome.
+ * Ends a recording that is still starting. The API answers 202 and the recording ends `aborted`.
  */
 export const stopStartingRecording = async (recordingId: string): Promise<void> => {
 	await fetch(withApiPath(`/recordings/${encodeURIComponent(recordingId)}/stop`), {

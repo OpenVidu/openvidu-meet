@@ -100,10 +100,7 @@ test.describe('Recordings E2E Tests', () => {
 			await denyMediaAccess(page);
 			await openMeeting(page, accessUrl, { skipPrejoinMediaCheck: true });
 
-			const pendingRequest = requestRecording(roomId);
-			pendingRequest.catch(() => {
-				// The request outlives the test: it is only answered once the recording starts or gives up
-			});
+			await requestRecording(roomId);
 
 			await expectRecordingNotice(page, 'waiting-for-media');
 			await expectRecordingBadgeStarting(page);
@@ -120,15 +117,13 @@ test.describe('Recordings E2E Tests', () => {
 			// Once the recording gives up, what the notice promises cannot happen, so it goes away
 			await stopStartingRecording(recording.recordingId);
 			await expectNoRecordingNotice(page);
-			await pendingRequest.catch(() => {});
 		});
 
 		test('should let a moderator stop the recording while it waits, from the panel', async ({ page }) => {
 			await denyMediaAccess(page);
 			await openMeeting(page, accessUrl, { skipPrejoinMediaCheck: true });
 
-			const pendingRequest = requestRecording(roomId);
-			pendingRequest.catch(() => {});
+			await requestRecording(roomId);
 
 			await expectRecordingNotice(page, 'waiting-for-media');
 			await startStopRecordingFromActivitiesPanel(page, 'stop');
@@ -140,15 +135,13 @@ test.describe('Recordings E2E Tests', () => {
 			await expect
 				.poll(async () => (await getRoomRecordings(roomId))[0]?.status)
 				.toBe(MeetRecordingStatus.ABORTED);
-			await pendingRequest.catch(() => {});
 		});
 
 		test('should let a participant close the notice', async ({ page }) => {
 			await denyMediaAccess(page);
 			await openMeeting(page, accessUrl, { skipPrejoinMediaCheck: true });
 
-			const pendingRequest = requestRecording(roomId);
-			pendingRequest.catch(() => {});
+			await requestRecording(roomId);
 
 			await expectRecordingNotice(page, 'waiting-for-media');
 			await dismissRecordingNotice(page);
@@ -156,7 +149,6 @@ test.describe('Recordings E2E Tests', () => {
 
 			const [recording] = await getRoomRecordings(roomId);
 			await stopStartingRecording(recording.recordingId);
-			await pendingRequest.catch(() => {});
 		});
 	});
 });

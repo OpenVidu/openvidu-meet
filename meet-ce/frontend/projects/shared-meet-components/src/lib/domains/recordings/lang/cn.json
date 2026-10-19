@@ -65,7 +65,9 @@
       "STATUS_COMPLETE": "已完成",
       "STATUS_FAILED": "失败",
       "STATUS_ABORTED": "已中止",
-      "STATUS_LIMIT_REACHED": "已达上限"
+      "STATUS_LIMIT_REACHED": "已达上限",
+      "PLAY_PERMISSION_REQUIRED": "播放和分享录制需要 recordingPlay 权限",
+      "BULK_LIMIT_EXCEEDED": "一次最多只能处理 {count} 个录制"
     },
     "DETAIL": {
       "LOADING_TITLE": "正在加载录像详情",

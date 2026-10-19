@@ -39,7 +39,11 @@ import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { ViewportService } from '../../../meeting/openvidu-components';
-import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
+import {
+	RECORDINGS_BULK_MAX_ITEMS,
+	RecordingTableAction,
+	RecordingTableFilter
+} from '../../models/recording-list.model';
 import { RecordingUiUtils } from '../../utils/ui';
 
 /**
@@ -104,6 +108,8 @@ export class RecordingListsComponent implements OnInit {
 	// split); hosts that know the member's permissions pass the real value.
 	canDownloadRecordings = input(true);
 	downloadableRoomIds = input<Set<string>>(new Set());
+	canPlayRecordings = input(true);
+	playableRoomIds = input<Set<string>>(new Set());
 	showSearchBox = input(true);
 	showFilters = input(true);
 	showSelection = input(true);
@@ -214,6 +220,8 @@ export class RecordingListsComponent implements OnInit {
 
 	showEmptyFilterMessage = signal(false); // Show message when no recordings match filters
 
+	protected readonly bulkLimit = RECORDINGS_BULK_MAX_ITEMS;
+
 	// Selection state
 	selectedRecordings = signal<Set<string>>(new Set());
 	allSelected = signal(false);
@@ -237,6 +245,29 @@ export class RecordingListsComponent implements OnInit {
 		);
 	});
 
+	bulkDeleteDisabled = computed(
+		() =>
+			this.loading() || this.deletableSelected().length === 0 || this.deletableSelected().length > this.bulkLimit
+	);
+	bulkDownloadDisabled = computed(
+		() =>
+			this.loading() ||
+			this.downloadableSelected().length === 0 ||
+			this.downloadableSelected().length > this.bulkLimit
+	);
+
+	bulkDeleteTooltip(): string {
+		return this.deletableSelected().length > this.bulkLimit
+			? this.bulkLimitTooltip()
+			: this.bulkTooltip('DELETE', this.deletableSelected().length);
+	}
+
+	bulkDownloadTooltip(): string {
+		return this.downloadableSelected().length > this.bulkLimit
+			? this.bulkLimitTooltip()
+			: this.bulkTooltip('DOWNLOAD', this.downloadableSelected().length);
+	}
+
 	// Table configuration
 	displayedColumns = computed(() => {
 		const columns = ['status', 'startDate', 'duration', 'size', 'actions'];
@@ -255,12 +286,21 @@ export class RecordingListsComponent implements OnInit {
 	// Status options using enum values
 	statusOptions = [
 		{ value: '', label: this.translateService.translate('RECORDINGS.LIST.STATUS_ALL') },
-		{ value: MeetRecordingStatus.STARTING, label: this.translateService.translate('RECORDINGS.LIST.STATUS_STARTING') },
+		{
+			value: MeetRecordingStatus.STARTING,
+			label: this.translateService.translate('RECORDINGS.LIST.STATUS_STARTING')
+		},
 		{ value: MeetRecordingStatus.ACTIVE, label: this.translateService.translate('RECORDINGS.LIST.STATUS_ACTIVE') },
 		{ value: MeetRecordingStatus.ENDING, label: this.translateService.translate('RECORDINGS.LIST.STATUS_ENDING') },
-		{ value: MeetRecordingStatus.COMPLETE, label: this.translateService.translate('RECORDINGS.LIST.STATUS_COMPLETE') },
+		{
+			value: MeetRecordingStatus.COMPLETE,
+			label: this.translateService.translate('RECORDINGS.LIST.STATUS_COMPLETE')
+		},
 		{ value: MeetRecordingStatus.FAILED, label: this.translateService.translate('RECORDINGS.LIST.STATUS_FAILED') },
-		{ value: MeetRecordingStatus.ABORTED, label: this.translateService.translate('RECORDINGS.LIST.STATUS_ABORTED') },
+		{
+			value: MeetRecordingStatus.ABORTED,
+			label: this.translateService.translate('RECORDINGS.LIST.STATUS_ABORTED')
+		},
 		{
 			value: MeetRecordingStatus.LIMIT_REACHED,
 			label: this.translateService.translate('RECORDINGS.LIST.STATUS_LIMIT_REACHED')
@@ -381,6 +421,32 @@ export class RecordingListsComponent implements OnInit {
 		);
 	}
 
+	canPlayRecordingItem(recording: MeetRecordingInfo): boolean {
+		if (this.canPlayRecordings()) return true;
+
+		return this.playableRoomIds().has(recording.roomId);
+	}
+
+	isPlayDisabled(recording: MeetRecordingInfo): boolean {
+		return !RecordingUiUtils.isPlayable(recording.status) || !this.canPlayRecordingItem(recording);
+	}
+
+	isShareDisabled(recording: MeetRecordingInfo): boolean {
+		return !RecordingUiUtils.isShareable(recording.status) || !this.canPlayRecordingItem(recording);
+	}
+
+	playTooltip(recording: MeetRecordingInfo): string {
+		return this.canPlayRecordingItem(recording)
+			? RecordingUiUtils.getPlayRecordingTooltip(recording.status)
+			: this.translateService.translate('RECORDINGS.LIST.PLAY_PERMISSION_REQUIRED');
+	}
+
+	shareTooltip(recording: MeetRecordingInfo): string {
+		return this.canPlayRecordingItem(recording)
+			? RecordingUiUtils.getShareRecordingTooltip(recording.status)
+			: this.translateService.translate('RECORDINGS.LIST.PLAY_PERMISSION_REQUIRED');
+	}
+
 	canDeleteRecordingItem(recording: MeetRecordingInfo): boolean {
 		if (this.canDeleteRecordings()) return true;
 
@@ -391,6 +457,21 @@ export class RecordingListsComponent implements OnInit {
 		if (this.canDownloadRecordings()) return true;
 
 		return this.downloadableRoomIds().has(recording.roomId);
+	}
+
+	private bulkTooltip(action: 'DELETE' | 'DOWNLOAD', count: number): string {
+		const prefix = `RECORDINGS.LIST.${action}_OF_SELECTED`;
+		return (
+			this.translateService.translate(`${prefix}_PREFIX`) +
+			count +
+			this.translateService.translate(`${prefix}_INFIX`) +
+			this.selectedRecordings().size +
+			this.translateService.translate(`${prefix}_SUFFIX`)
+		);
+	}
+
+	private bulkLimitTooltip(): string {
+		return this.translateService.translate('RECORDINGS.LIST.BULK_LIMIT_EXCEEDED', { count: this.bulkLimit });
 	}
 
 	getSelectedRecordings(): MeetRecordingInfo[] {

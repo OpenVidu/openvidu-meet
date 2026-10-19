@@ -65,7 +65,9 @@
       "STATUS_COMPLETE": "पूर्ण",
       "STATUS_FAILED": "विफल",
       "STATUS_ABORTED": "निरस्त",
-      "STATUS_LIMIT_REACHED": "सीमा पूरी हुई"
+      "STATUS_LIMIT_REACHED": "सीमा पूरी हुई",
+      "PLAY_PERMISSION_REQUIRED": "रिकॉर्डिंग चलाने और साझा करने के लिए recordingPlay अनुमति आवश्यक है",
+      "BULK_LIMIT_EXCEEDED": "एक बार में अधिकतम {count} रिकॉर्डिंग संसाधित की जा सकती हैं"
     },
     "DETAIL": {
       "LOADING_TITLE": "रिकॉर्डिंग विवरण लोड हो रहा है",

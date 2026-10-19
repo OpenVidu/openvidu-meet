@@ -65,7 +65,9 @@
       "STATUS_COMPLETE": "完了",
       "STATUS_FAILED": "失敗",
       "STATUS_ABORTED": "中止",
-      "STATUS_LIMIT_REACHED": "上限到達"
+      "STATUS_LIMIT_REACHED": "上限到達",
+      "PLAY_PERMISSION_REQUIRED": "録画の再生と共有には recordingPlay 権限が必要です",
+      "BULK_LIMIT_EXCEEDED": "一度に処理できる録画は最大 {count} 件です"
     },
     "DETAIL": {
       "LOADING_TITLE": "録画の詳細を読み込んでいます",

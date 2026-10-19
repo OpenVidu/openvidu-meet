@@ -71,6 +71,7 @@ import {
 	expectRecordButtonAvailable,
 	expectRecordingDeletable,
 	expectRecordingNotDeletable,
+	expectRecordingPlayAndShare,
 	expectViewRecordingDeletable,
 	expectViewRecordingNotDeletable,
 	expectViewRecordingsButtonAvailable,
@@ -398,6 +399,25 @@ test.describe('Permissions E2E Tests', () => {
 			await openRoomRecordings(page, toRoomRecordingsUrl(member.accessUrl));
 
 			await expectRecordingNotDeletable(page, recordingId);
+		});
+
+		test('recordingPlay granted: the recording can be played and shared from the list', async ({
+			page,
+			browser
+		}) => {
+			const recordingId = await ensureRecording(browser);
+			const member = await createGuest({ recordingPlay: true });
+			await openRoomRecordings(page, toRoomRecordingsUrl(member.accessUrl));
+
+			await expectRecordingPlayAndShare(page, recordingId, true);
+		});
+
+		test('recordingPlay denied: play and share are disabled in the list', async ({ page, browser }) => {
+			const recordingId = await ensureRecording(browser);
+			const member = await createGuest({ recordingPlay: false });
+			await openRoomRecordings(page, toRoomRecordingsUrl(member.accessUrl));
+
+			await expectRecordingPlayAndShare(page, recordingId, false);
 		});
 
 		test('canDeleteRecordings granted: the recording can be deleted from the individual view', async ({

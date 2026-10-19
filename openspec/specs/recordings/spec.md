@@ -158,8 +158,8 @@ SHALL stay allowed.
 `startRecording` SHALL accept only an API key or a room member token holding `recordingControl` in
 the target room, and SHALL answer `201` with the recording in the `starting` status and a `Location`
 header pointing at it, without waiting for the recording to capture media. It SHALL answer `404` for
-an unknown room, `409` when nobody is connected to the room, and `409` while the room already has a
-recording `starting`, `active` or `ending`.
+an unknown room, `409` when nobody is connected to the room, `409` while the room already has a
+recording `starting`, `active` or `ending`, and `503` when the media server does not accept it.
 
 #### Scenario: Start with an API key
 - **GIVEN** a room with recording enabled and a meeting in progress
@@ -187,6 +187,13 @@ recording `starting`, `active` or `ending`.
 - **GIVEN** a room whose recording is active
 - **WHEN** `startRecording` is called for it again
 - **THEN** the REST API answers `409`
+
+#### Scenario: Media server does not accept the recording
+- **GIVEN** a room with recording enabled and a meeting in progress
+- **AND** a media server that has no recorder available, or cannot be reached
+- **WHEN** `startRecording` is called for it
+- **THEN** the REST API answers `503`
+- **AND** no recording is created and the room has no recording in progress
 
 ### Requirement: One recording in progress per room across replicas
 The server SHALL let a room have at most one recording in progress, whichever replica receives each
@@ -429,9 +436,11 @@ the recording's filename (or `{recordingId}.mp4`), gated by `recordingDownload` 
 - **THEN** the REST API answers `200` with a `Content-Disposition: attachment` header
 
 ### Requirement: Downloading several recordings as a ZIP
-`downloadRecordings` SHALL answer with a `recordings.zip` attachment holding the requested recordings
-the caller may download (`recordingDownload`, checked per recording) and that are `complete`, leaving
-the others out, and SHALL answer `400` when the caller may download none of them.
+`downloadRecordings` SHALL accept up to 100 distinct `recordingIds` and answer `422` to more, SHALL
+answer with a `recordings.zip` attachment holding the requested recordings the caller may download
+(`recordingDownload`, checked per recording) and that are `complete`, leaving the others out, and
+SHALL answer `400` when the caller may download none of them. The app SHALL NOT offer the ZIP
+download for a selection of more than 100 recordings.
 
 #### Scenario: Mixed rooms with a room member token
 - **GIVEN** a room member token of room A holding `recordingDownload`
@@ -441,6 +450,15 @@ the others out, and SHALL answer `400` when the caller may download none of them
 #### Scenario: Nothing downloadable
 - **WHEN** `downloadRecordings` is called with ids of recordings the caller may not download
 - **THEN** the REST API answers `400`
+
+#### Scenario: Too many ids
+- **WHEN** `downloadRecordings` is called with 101 distinct recording ids
+- **THEN** the REST API answers `422` and builds no ZIP
+
+#### Scenario: Large selection in the app
+- **GIVEN** a user who selected 101 complete recordings in a recordings list of the app
+- **WHEN** the user looks at the bulk actions
+- **THEN** the ZIP download is disabled with an explanation of the 100-recording limit
 
 ### Requirement: Deleting a recording
 `deleteRecording` SHALL require `recordingDelete` in the recording's room (a `recordingSecret` grants
@@ -462,10 +480,11 @@ answer `409` while the recording is `starting`, `active` or `ending` and `404` f
 - **THEN** the REST API answers `403`, or `401` for the secret alone
 
 ### Requirement: Deleting recordings in bulk
-`bulkDeleteRecordings` SHALL delete every requested recording the caller may delete
-(`recordingDelete`, checked per recording) whose status is final, SHALL answer `200` when all of them
-were deleted, and SHALL otherwise answer `400` listing the deleted ids and each failed id with its
-reason, keeping the deletions it made.
+`bulkDeleteRecordings` SHALL accept up to 100 distinct `recordingIds` and answer `422` to more,
+SHALL delete every requested recording the caller may delete (`recordingDelete`, checked per
+recording) whose status is final, SHALL answer `200` when all of them were deleted, and SHALL
+otherwise answer `400` listing the deleted ids and each failed id with its reason, keeping the
+deletions it made. The app SHALL NOT offer bulk delete for a selection of more than 100.
 
 #### Scenario: All deleted
 - **WHEN** `bulkDeleteRecordings` is called with ids of finished recordings the caller may delete
@@ -475,6 +494,19 @@ reason, keeping the deletions it made.
 - **WHEN** `bulkDeleteRecordings` is called with one finished recording, one active recording and one unknown id
 - **THEN** the REST API answers `400` with the finished one in `deleted` and the other two in `failed`
 - **AND** the finished recording is deleted
+
+#### Scenario: Too many ids
+- **WHEN** `bulkDeleteRecordings` is called with 101 distinct recording ids
+- **THEN** the REST API answers `422` and deletes nothing
+
+#### Scenario: Repeated ids
+- **WHEN** `bulkDeleteRecordings` is called with the same finished recording id twice
+- **THEN** the REST API answers `200` with that recording once in `deleted`
+
+#### Scenario: Large selection in the app
+- **GIVEN** a user who selected 101 finished recordings they may delete in a recordings list of the app
+- **WHEN** the user looks at the bulk actions
+- **THEN** the bulk delete is disabled with an explanation of the 100-recording limit
 
 ### Requirement: Shareable recording links
 `getRecordingUrl` SHALL require `recordingPlay` and return a link to the recording view page holding
@@ -640,10 +672,10 @@ included. From the meeting they SHALL open in a new browser tab.
 
 ### Requirement: Room recordings page
 The page `/room/{roomId}/recordings` SHALL list the room's recordings to a visitor whose access to the
-room (an access link secret, a room member or a registered user) holds `recordingList`, offering play
-and share, and download and delete only with `recordingDownload` and `recordingDelete`. Without
-`recordingList` it SHALL show an error page. The room's anonymous recording link (see `room-access`)
-grants list, play and download.
+room (an access link secret, a room member or a registered user) holds `recordingList`, enabling play
+and share only with `recordingPlay`, download only with `recordingDownload` and delete only with
+`recordingDelete`. Without `recordingList` it SHALL show an error page. The room's anonymous
+recording link (see `room-access`) grants list, play and download.
 
 #### Scenario: Anonymous recording link
 - **GIVEN** a room with recordings and anonymous recording access enabled
@@ -653,6 +685,11 @@ grants list, play and download.
 #### Scenario: Access without the permission
 - **WHEN** a visitor whose access to the room lacks `recordingList` opens the page
 - **THEN** an error page is shown instead of the list
+
+#### Scenario: Listing without playing
+- **GIVEN** a room member whose permissions hold `recordingList` but not `recordingPlay`
+- **WHEN** the member opens the room recordings page
+- **THEN** the page lists the room's recordings with play and share disabled, and their tooltip names `recordingPlay`
 
 ### Requirement: Recording view page
 The page `/recording/{recordingId}` SHALL play a `complete` recording, or show its status otherwise,
@@ -686,9 +723,9 @@ offered that same link.
 ### Requirement: Console recordings page
 The console's Recordings page, available to `admin`, `room_manager` and `room_member` users, SHALL
 list the recordings `getRecordings` returns to the user, searchable by room name with the same match
-modes, filterable by status and sortable. It SHALL offer play and share on each complete recording,
-and download, delete, ZIP download and bulk delete only for recordings whose room grants the user
-`recordingDownload` or `recordingDelete` respectively.
+modes, filterable by status and sortable. Like a room's Recordings tab, it SHALL enable play and share
+(`recordingPlay`) and offer download and ZIP download (`recordingDownload`) and delete and bulk delete
+(`recordingDelete`) only for recordings whose room grants the user that permission.
 
 #### Scenario: Admin
 - **WHEN** an `admin` user opens the Recordings page
@@ -698,6 +735,11 @@ and download, delete, ZIP download and bulk delete only for recordings whose roo
 - **GIVEN** a `room_member` user holding `recordingList` but not `recordingDelete` in room A
 - **WHEN** the user opens the Recordings page
 - **THEN** the recordings of room A are listed without a delete action
+
+#### Scenario: Member without play permission
+- **GIVEN** a `room_member` user holding `recordingList` but not `recordingPlay` in room A
+- **WHEN** the user opens the Recordings page, or the Recordings tab of room A's detail page
+- **THEN** the recordings of room A are listed with play and share disabled, and their tooltip names `recordingPlay`
 
 ### Requirement: Console recording detail page
 Opening a recording from the console list SHALL show its details (status, dates, duration, size,

@@ -30,6 +30,7 @@ import type { ILogger } from '../../../../shared/models/logger.model';
 interface RecordingsListCachedState {
 	list: EntityListSnapshot<MeetRecordingInfo, RecordingTableFilter>;
 	deletableRoomIds: string[];
+	playableRoomIds: string[];
 	scrollTop: number;
 }
 
@@ -64,10 +65,13 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 	deletableRoomIds = signal<Set<string>>(new Set());
 	canDownloadRecordings = computed(() => this.currentUserRole() === MeetUserRole.ADMIN);
 	downloadableRoomIds = signal<Set<string>>(new Set());
+	canPlayRecordings = computed(() => this.currentUserRole() === MeetUserRole.ADMIN);
+	playableRoomIds = signal<Set<string>>(new Set());
 	// Cache: roomId → permissions decoded from the room member token (avoids re-fetching tokens for
 	// already-seen rooms)
 	private roomDeletePermissionCache = new Map<string, boolean>();
 	private roomDownloadPermissionCache = new Map<string, boolean>();
+	private roomPlayPermissionCache = new Map<string, boolean>();
 
 	initialFilters = signal<RecordingTableFilter>({
 		nameFilter: '',
@@ -104,6 +108,7 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 			this.list.restore(cached.list);
 			this.initialFilters.set(cached.list.filters);
 			this.deletableRoomIds.set(new Set(cached.deletableRoomIds));
+			this.playableRoomIds.set(new Set(cached.playableRoomIds));
 			this.scrollToRestore = cached.scrollTop; // applied by ScrollPersistDirective once rendered
 			return;
 		}
@@ -115,12 +120,17 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 		this.listStateCache.set<RecordingsListCachedState>(RecordingsComponent.STATE_KEY, {
 			list: this.list.snapshot(),
 			deletableRoomIds: [...this.deletableRoomIds()],
+			playableRoomIds: [...this.playableRoomIds()],
 			scrollTop: this.scroller()?.scrollTop ?? 0
 		});
 	}
 
 	async onRecordingAction(action: RecordingTableAction) {
-		await this.recordingActions.handle(action, { list: this.list, log: this.log, hasRecordingAccess: true });
+		await this.recordingActions.handle(action, {
+			list: this.list,
+			log: this.log,
+			canPlayRecording: ({ roomId }) => this.canPlayRecordings() || this.playableRoomIds().has(roomId)
+		});
 	}
 
 	async onRecordingClick(recordingId: string) {
@@ -188,9 +198,11 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 					const decoded = decodeToken(token);
 					this.roomDeletePermissionCache.set(roomId, decoded.metadata.permissions.recordingDelete);
 					this.roomDownloadPermissionCache.set(roomId, decoded.metadata.permissions.recordingDownload);
+					this.roomPlayPermissionCache.set(roomId, decoded.metadata.permissions.recordingPlay);
 				} catch {
 					this.roomDeletePermissionCache.set(roomId, false);
 					this.roomDownloadPermissionCache.set(roomId, false);
+					this.roomPlayPermissionCache.set(roomId, false);
 				}
 			})
 		);
@@ -204,5 +216,9 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 			[...this.roomDownloadPermissionCache.entries()].filter(([, canDownload]) => canDownload).map(([id]) => id)
 		);
 		this.downloadableRoomIds.set(downloadable);
+		const playable = new Set(
+			[...this.roomPlayPermissionCache.entries()].filter(([, canPlay]) => canPlay).map(([id]) => id)
+		);
+		this.playableRoomIds.set(playable);
 	}
 }

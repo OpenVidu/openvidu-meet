@@ -2,7 +2,8 @@ name: recordingIds
 in: query
 required: true
 description: >
-    A comma-separated list of recording IDs.
+    A comma-separated list of recording IDs, at most 100 distinct ones per request. Duplicates are
+    ignored, and a list with more than 100 IDs is rejected with `422`.
     Each recording ID must follow the format: `{roomId}--{egressId}--{uid}`.
 
 schema:

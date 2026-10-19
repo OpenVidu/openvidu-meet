@@ -1059,6 +1059,7 @@ export const startRecording = async (
 	},
 	options?: {
 		headers?: { xFields?: string };
+		roomMemberToken?: string;
 	}
 ) => {
 	checkAppIsRunning();
@@ -1077,8 +1078,13 @@ export const startRecording = async (
 
 	const req = request(app)
 		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`))
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send(body);
+
+	if (options?.roomMemberToken) {
+		req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, options.roomMemberToken);
+	} else {
+		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+	}
 
 	if (options?.headers?.xFields) {
 		req.set('x-fields', options.headers.xFields);

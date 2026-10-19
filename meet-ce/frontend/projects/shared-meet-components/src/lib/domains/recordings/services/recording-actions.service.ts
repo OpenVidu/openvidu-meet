@@ -20,11 +20,10 @@ export interface RecordingListContext {
 	list: EntityListState<MeetRecordingInfo, RecordingTableFilter>;
 	log: ILogger;
 	/**
-	 * Whether the viewer already has recording access when sharing a link
-	 * (console pages pass `true`; the room-member view resolves access from the
-	 * share dialog itself).
+	 * Whether the viewer holds `recordingPlay` for a recording, which decides if the share dialog can
+	 * request a signed link. Omitted by the room-member view, whose dialog reads its own permissions.
 	 */
-	hasRecordingAccess?: boolean;
+	canPlayRecording?: (recording: MeetRecordingInfo) => boolean;
 }
 
 /**
@@ -51,7 +50,7 @@ export class RecordingActionsService {
 			case 'shareLink':
 				this.recordingService.openShareRecordingDialog(
 					action.recordings[0].recordingId,
-					context.hasRecordingAccess
+					context.canPlayRecording?.(action.recordings[0])
 				);
 				break;
 			case 'delete':
