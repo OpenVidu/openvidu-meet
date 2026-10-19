@@ -179,12 +179,13 @@ export class RecordingScheduledTasksService {
 	/**
 	 * Performs garbage collection for stale recordings in the system.
 	 *
-	 * This method identifies and aborts recordings that have become stale by:
+	 * This method identifies and ends recordings that have become stale by:
 	 * 1. Getting in-progress recordings from database in paginated batches (STARTING, ACTIVE and ENDING)
 	 * 2. Processing each batch with bounded concurrency to avoid memory overhead
 	 * 3. For each recording, checking if there's a corresponding in-progress egress in LiveKit
-	 * 4. If no egress exists, marking the recording as ABORTED
-	 * 5. If egress exists, checking last update time and aborting if stale
+	 * 4. If no egress is in progress, ending the recording with the status LiveKit reports for it, or
+	 *    ABORTED when LiveKit no longer knows it, and reporting that end
+	 * 5. If egress exists, checking last update time and stopping it if stale
 	 *
 	 * Uses pagination to avoid loading all active recordings into memory at once,
 	 * which is critical when dealing with thousands of concurrent recordings.
@@ -249,13 +250,14 @@ export class RecordingScheduledTasksService {
 	}
 
 	/**
-	 * Evaluates whether a recording is stale and aborts it if necessary.
-	 * First checks if there's a corresponding egress in LiveKit. If not, the recording is immediately
-	 * considered stale and aborted. If an egress exists, checks if it has been updated within the
-	 * configured stale period and whether the associated room exists or has publishers.
+	 * Evaluates whether a recording is stale and ends it if necessary.
+	 * First checks if there's a corresponding egress in progress in LiveKit. If not, the recording is
+	 * ended right away (see {@link finishLostRecording}). If an egress exists, checks if it has been
+	 * updated within the configured stale period and whether the associated room exists or has
+	 * publishers, and stops a stale one: its `egress_ended` webhook then reports the end.
 	 *
 	 * @param recording - The recording information from MongoDB.
-	 * @returns A promise that resolves to `true` if the recording was aborted, `false` otherwise.
+	 * @returns A promise that resolves to `true` if the recording was ended or stopped, `false` otherwise.
 	 * @throws Will throw an error if there is an issue checking egress existence, room existence,
 	 *         or aborting the recording.
 	 */
@@ -271,14 +273,8 @@ export class RecordingScheduledTasksService {
 			const egressInfo = inProgressRecordings.find((egress) => egress.egressId === egressId);
 
 			if (!egressInfo) {
-				// No egress found in LiveKit, recording is stale
-				this.logger.warn(
-					`Recording '${recordingId}' has no corresponding egress in LiveKit, marking as stale and aborting`
-				);
-
-				await this.recordingService.updateRecordingStatus(recordingId, MeetRecordingStatus.ABORTED);
-				this.logger.info(`Successfully aborted stale recording '${recordingId}'`);
-				return true;
+				this.logger.warn(`Recording '${recordingId}' has no egress in progress in LiveKit, ending it`);
+				return await this.finishLostRecording(recording, egressId);
 			}
 
 			// Egress exists, check if it's stale based on updatedAt timestamp
@@ -311,20 +307,41 @@ export class RecordingScheduledTasksService {
 			}
 
 			this.logger.warn(
-				`Room '${roomId}' does not exist or has no participants and recording '${recordingId}' is stale, aborting`
+				`Room '${roomId}' does not exist or has no participants and recording '${recordingId}' is stale, stopping it`
 			);
 
-			// Abort the recording
-			await Promise.all([
-				this.recordingService.updateRecordingStatus(recordingId, MeetRecordingStatus.ABORTED),
-				this.livekitService.stopEgress(egressId)
-			]);
-
-			this.logger.info(`Successfully aborted stale recording '${recordingId}'`);
+			await this.livekitService.stopEgress(egressId);
+			this.logger.info(`Successfully stopped stale recording '${recordingId}'`);
 			return true;
 		} catch (error) {
 			this.logger.warn(`Error processing stale recording '${recordingId}':`, error);
 			throw error;
 		}
+	}
+
+	/**
+	 * Ends a recording whose egress is no longer in progress. LiveKit keeps an ended egress for about a
+	 * day, so its final status is used when it is still known, and ABORTED otherwise.
+	 *
+	 * @returns `true` if this call ended the recording, `false` if its end was already reported.
+	 */
+	protected async finishLostRecording(recording: MeetRecordingInfo, egressId: string): Promise<boolean> {
+		const [endedEgress] = await this.livekitService.getEgress(recording.roomId, egressId);
+		const ended = endedEgress
+			? await RecordingHelper.toRecordingInfo(endedEgress)
+			: { ...recording, status: MeetRecordingStatus.ABORTED };
+
+		if (!RecordingHelper.canBeDeleted(ended.status)) {
+			this.logger.debug(`Egress of recording '${recording.recordingId}' is in progress again, keeping it`);
+			return false;
+		}
+
+		const finished = await this.recordingService.finishRecording(ended);
+
+		if (finished) {
+			this.logger.info(`Ended lost recording '${recording.recordingId}' as '${ended.status}'`);
+		}
+
+		return finished;
 	}
 }

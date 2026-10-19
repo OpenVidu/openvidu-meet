@@ -50,9 +50,9 @@ None.
 ## Decisions to confirm
 
 - The clean-up reports the end through the webhook, the in-meeting status and the embedded event,
-  like any end. Alternative: webhook only.
+  like any end (applied). Alternative: webhook only.
 - A stale recording whose process still exists is only stopped, and keeps the final status the media
-  server reports (possibly `complete`). Alternative: keep forcing `aborted` on it.
+  server reports (possibly `complete`) (applied). Alternative: keep forcing `aborted` on it.
 - The first final status stored wins and a later end notification for the same recording is ignored,
-  so `recordingEnded` is sent once. Alternative: let the later notification overwrite the status and
+  so `recordingEnded` is sent once (applied). Alternative: let the later notification overwrite the status and
   send a second `recordingEnded`.

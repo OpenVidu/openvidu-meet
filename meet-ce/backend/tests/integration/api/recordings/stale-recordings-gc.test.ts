@@ -1,17 +1,23 @@
 import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
-import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
+import {
+	MeetRecordingEncodingPreset,
+	MeetRecordingInfo,
+	MeetRecordingLayout,
+	MeetRecordingStatus
+} from '@openvidu-meet/typings';
 import { SpiedFunction } from 'jest-mock';
 import { EgressInfo, EgressStatus } from 'livekit-server-sdk';
 import ms from 'ms';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
+import { RecordingHelper } from '../../../../src/helpers/recording.helper.js';
 import { RecordingRepository } from '../../../../src/repositories/recording.repository.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { LoggerService } from '../../../../src/services/logger.service.js';
 import { RecordingScheduledTasksService } from '../../../../src/services/recording-scheduled-tasks.service.js';
 import { RecordingService } from '../../../../src/services/recording.service.js';
 import { MeetRecordingPage } from '../../../../src/types/recording-projection.types.js';
-import { startTestServer } from '../../../helpers/request-helpers.js';
+import { createRoom, deleteAllRecordings, deleteAllRooms, startTestServer } from '../../../helpers/request-helpers.js';
 
 describe('Stale Recordings GC Tests', () => {
 	let recordingTaskScheduler: RecordingScheduledTasksService;
@@ -23,14 +29,17 @@ describe('Stale Recordings GC Tests', () => {
 	let getInProgressRecordingsEgressMock: SpiedFunction<(roomName?: string) => Promise<EgressInfo[]>>;
 	let stopEgressMock: SpiedFunction<(egressId: string) => Promise<EgressInfo>>;
 	let evaluateAndAbortStaleRecordingMock: SpiedFunction<(recording: MeetRecordingInfo) => Promise<boolean>>;
-	let updateRecordingStatusMock: SpiedFunction<(recordingId: string, status: MeetRecordingStatus) => Promise<void>>;
+	let getEgressMock: SpiedFunction<(roomName?: string, egressId?: string) => Promise<EgressInfo[]>>;
+	let finishRecordingMock: SpiedFunction<(recording: MeetRecordingInfo) => Promise<boolean>>;
+	let toRecordingInfoMock: SpiedFunction<(egressInfo: EgressInfo) => Promise<MeetRecordingInfo>>;
+	let recordingRepository: RecordingRepository;
 
 	beforeAll(async () => {
 		await startTestServer();
 
 		const logger = container.get(LoggerService);
 		const recordingService = container.get(RecordingService);
-		const recordingRepository = container.get(RecordingRepository);
+		recordingRepository = container.get(RecordingRepository);
 		const livekitService = container.get(LiveKitService);
 		recordingTaskScheduler = container.get(RecordingScheduledTasksService);
 
@@ -51,10 +60,13 @@ describe('Stale Recordings GC Tests', () => {
 			recordingTaskScheduler as never,
 			'evaluateAndAbortStaleRecording'
 		);
-		updateRecordingStatusMock = jest.spyOn(recordingService as never, 'updateRecordingStatus');
+		getEgressMock = jest.spyOn(livekitService, 'getEgress');
+		finishRecordingMock = jest.spyOn(recordingService, 'finishRecording');
+		toRecordingInfoMock = jest.spyOn(RecordingHelper, 'toRecordingInfo');
 
 		// Default mock implementations
-		updateRecordingStatusMock.mockResolvedValue();
+		getEgressMock.mockResolvedValue([]);
+		finishRecordingMock.mockResolvedValue(true);
 		stopEgressMock.mockResolvedValue({} as EgressInfo);
 	});
 
@@ -170,7 +182,7 @@ describe('Stale Recordings GC Tests', () => {
 	});
 
 	describe('evaluateAndAbortStaleRecording', () => {
-		it('should abort recording immediately if no corresponding egress exists in LiveKit', async () => {
+		it('should end a recording as aborted, reporting it, when LiveKit no longer knows its egress', async () => {
 			const roomId = 'test-room';
 			const recordingId = `${roomId}--EG_test--1234567890`;
 			const recording = createMockRecordingInfo(recordingId, roomId, MeetRecordingStatus.ACTIVE);
@@ -181,10 +193,11 @@ describe('Stale Recordings GC Tests', () => {
 			// Execute evaluateAndAbortStaleRecording
 			const result = await recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording);
 
-			// Verify that the recording was aborted without calling stopEgress
+			// Verify that the recording was ended through the reporting path without calling stopEgress
 			expect(result).toBe(true);
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
-			expect(updateRecordingStatusMock).toHaveBeenCalledWith(recordingId, MeetRecordingStatus.ABORTED);
+			expect(getEgressMock).toHaveBeenCalledWith(roomId, 'EG_test');
+			expect(finishRecordingMock).toHaveBeenCalledWith({ ...recording, status: MeetRecordingStatus.ABORTED });
 			expect(stopEgressMock).not.toHaveBeenCalled();
 			expect(roomExistsMock).not.toHaveBeenCalled();
 		});
@@ -199,8 +212,44 @@ describe('Stale Recordings GC Tests', () => {
 			const result = await recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording);
 
 			expect(result).toBe(true);
-			expect(updateRecordingStatusMock).toHaveBeenCalledWith(recordingId, MeetRecordingStatus.ABORTED);
+			expect(finishRecordingMock).toHaveBeenCalledWith({ ...recording, status: MeetRecordingStatus.ABORTED });
 			expect(stopEgressMock).not.toHaveBeenCalled();
+		});
+
+		it('should end a recording with the status LiveKit reports for its ended egress', async () => {
+			const roomId = 'test-room';
+			const egressId = 'EG_test';
+			const recordingId = `${roomId}--${egressId}--1234567890`;
+			const recording = createMockRecordingInfo(recordingId, roomId, MeetRecordingStatus.ENDING);
+			const endedEgress = createMockEgressInfo(roomId, egressId, EgressStatus.EGRESS_COMPLETE);
+			const completed = { ...recording, status: MeetRecordingStatus.COMPLETE };
+
+			getInProgressRecordingsEgressMock.mockResolvedValueOnce([]);
+			getEgressMock.mockResolvedValueOnce([endedEgress]);
+			toRecordingInfoMock.mockResolvedValueOnce(completed);
+
+			const result = await recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording);
+
+			expect(result).toBe(true);
+			expect(toRecordingInfoMock).toHaveBeenCalledWith(endedEgress);
+			expect(finishRecordingMock).toHaveBeenCalledWith(completed);
+		});
+
+		it('should leave alone a recording whose egress is in progress again', async () => {
+			const roomId = 'test-room';
+			const egressId = 'EG_test';
+			const recordingId = `${roomId}--${egressId}--1234567890`;
+			const recording = createMockRecordingInfo(recordingId, roomId, MeetRecordingStatus.STARTING);
+			const activeEgress = createMockEgressInfo(roomId, egressId, EgressStatus.EGRESS_ACTIVE);
+
+			getInProgressRecordingsEgressMock.mockResolvedValueOnce([]);
+			getEgressMock.mockResolvedValueOnce([activeEgress]);
+			toRecordingInfoMock.mockResolvedValueOnce({ ...recording, status: MeetRecordingStatus.ACTIVE });
+
+			const result = await recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording);
+
+			expect(result).toBe(false);
+			expect(finishRecordingMock).not.toHaveBeenCalled();
 		});
 
 		it('should keep a recording waiting for its first track while the room has participants', async () => {
@@ -218,7 +267,7 @@ describe('Stale Recordings GC Tests', () => {
 			const result = await recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording);
 
 			expect(result).toBe(false);
-			expect(updateRecordingStatusMock).not.toHaveBeenCalled();
+			expect(finishRecordingMock).not.toHaveBeenCalled();
 			expect(stopEgressMock).not.toHaveBeenCalled();
 		});
 
@@ -239,7 +288,7 @@ describe('Stale Recordings GC Tests', () => {
 			expect(result).toBe(false);
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
 			expect(roomExistsMock).not.toHaveBeenCalled();
-			expect(updateRecordingStatusMock).not.toHaveBeenCalled();
+			expect(finishRecordingMock).not.toHaveBeenCalled();
 			expect(stopEgressMock).not.toHaveBeenCalled();
 		});
 
@@ -263,10 +312,10 @@ describe('Stale Recordings GC Tests', () => {
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
 			expect(roomExistsMock).toHaveBeenCalledWith(roomId);
 			expect(stopEgressMock).not.toHaveBeenCalled();
-			expect(updateRecordingStatusMock).not.toHaveBeenCalled();
+			expect(finishRecordingMock).not.toHaveBeenCalled();
 		});
 
-		it('should abort recording if room does not exist and recording update time is stale', async () => {
+		it('should stop the recording if room does not exist and recording update time is stale', async () => {
 			const roomId = 'test-room';
 			const egressId = 'EG_test';
 			const recordingId = `${roomId}--${egressId}--1234567890`;
@@ -281,15 +330,15 @@ describe('Stale Recordings GC Tests', () => {
 			// Execute evaluateAndAbortStaleRecording
 			const result = await recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording);
 
-			// Verify that the recording was aborted
+			// Verify that the recording was stopped, its end left to the egress_ended webhook
 			expect(result).toBe(true);
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
 			expect(roomExistsMock).toHaveBeenCalledWith(roomId);
-			expect(updateRecordingStatusMock).toHaveBeenCalledWith(recordingId, MeetRecordingStatus.ABORTED);
+			expect(finishRecordingMock).not.toHaveBeenCalled();
 			expect(stopEgressMock).toHaveBeenCalledWith(egressId);
 		});
 
-		it('should abort recording if room exists with no participants and updated time is stale', async () => {
+		it('should stop the recording if room exists with no participants and updated time is stale', async () => {
 			const roomId = 'test-room';
 			const egressId = 'EG_test';
 			const recordingId = `${roomId}--${egressId}--1234567890`;
@@ -305,12 +354,12 @@ describe('Stale Recordings GC Tests', () => {
 			// Execute evaluateAndAbortStaleRecording
 			const result = await recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording);
 
-			// Verify that the recording was aborted
+			// Verify that the recording was stopped, its end left to the egress_ended webhook
 			expect(result).toBe(true);
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
 			expect(roomExistsMock).toHaveBeenCalledWith(roomId);
 			expect(roomHasParticipantsMock).toHaveBeenCalledWith(roomId);
-			expect(updateRecordingStatusMock).toHaveBeenCalledWith(recordingId, MeetRecordingStatus.ABORTED);
+			expect(finishRecordingMock).not.toHaveBeenCalled();
 			expect(stopEgressMock).toHaveBeenCalledWith(egressId);
 		});
 
@@ -335,7 +384,7 @@ describe('Stale Recordings GC Tests', () => {
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
 			expect(roomExistsMock).toHaveBeenCalledWith(roomId);
 			expect(roomHasParticipantsMock).toHaveBeenCalledWith(roomId);
-			expect(updateRecordingStatusMock).not.toHaveBeenCalled();
+			expect(finishRecordingMock).not.toHaveBeenCalled();
 			expect(stopEgressMock).not.toHaveBeenCalled();
 		});
 
@@ -451,6 +500,33 @@ describe('Stale Recordings GC Tests', () => {
 			expect(result).toBe(true);
 			expect(stopEgressMock).toHaveBeenCalledWith(targetEgressId);
 			expect(stopEgressMock).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe('finishing a recording on two replicas', () => {
+		afterEach(async () => {
+			await deleteAllRecordings();
+			await deleteAllRooms();
+		});
+
+		it('stores the first final status and refuses the second one', async () => {
+			const { roomId } = await createRoom({ roomName: 'stale-gc-race' });
+			const recordingId = `${roomId}--EG_race--1234567890`;
+			await recordingRepository.create({
+				...createMockRecordingInfo(recordingId, roomId, MeetRecordingStatus.ENDING),
+				layout: MeetRecordingLayout.GRID,
+				encoding: MeetRecordingEncodingPreset.H264_720P_30
+			});
+			const stored = await recordingRepository.findByRecordingId(recordingId);
+
+			const results = await Promise.all([
+				recordingRepository.finish({ ...stored!, status: MeetRecordingStatus.ABORTED }),
+				recordingRepository.finish({ ...stored!, status: MeetRecordingStatus.COMPLETE })
+			]);
+			const winners = results.filter((result) => result !== null);
+
+			expect(winners).toHaveLength(1);
+			expect((await recordingRepository.findByRecordingId(recordingId))?.status).toBe(winners[0]!.status);
 		});
 	});
 });

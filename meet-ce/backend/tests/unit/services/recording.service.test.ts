@@ -1,5 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
-import { MeetRecordingAutoStartMode } from '@openvidu-meet/typings';
+import type { MeetRecordingInfo } from '@openvidu-meet/typings';
+import { MeetRecordingAutoStartMode, MeetRecordingStatus } from '@openvidu-meet/typings';
 import type { ParticipantInfo, Room } from 'livekit-server-sdk';
 import { EgressInfo, EgressStatus } from 'livekit-server-sdk';
 // The service modules form a cycle through the DI container module, so it has to be the one that
@@ -36,7 +37,7 @@ class FakeMutexService {
 
 const buildService = (livekit: FakeLiveKitService, mutex: FakeMutexService) =>
 	new RecordingService(
-		...([livekit, mutex, {}, {}, {}, {}, {}, noopLogger] as unknown as ConstructorParameters<
+		...([livekit, mutex, {}, {}, {}, {}, {}, {}, noopLogger] as unknown as ConstructorParameters<
 			typeof RecordingService
 		>)
 	);
@@ -189,7 +190,7 @@ const buildStartService = (latchDisabled: boolean) => {
 	const frontendEvents = new FakeFrontendEventService();
 	const latch = new FakeAutoStartState(latchDisabled);
 	const service = new RecordingService(
-		...([livekit, mutex, {}, {}, {}, frontendEvents, latch, noopLogger] as unknown as ConstructorParameters<
+		...([livekit, mutex, {}, {}, {}, frontendEvents, latch, {}, noopLogger] as unknown as ConstructorParameters<
 			typeof RecordingService
 		>)
 	);
@@ -337,5 +338,61 @@ describe('RecordingService.startAutoRecordingIfNeeded (the guards that say no)',
 		await start();
 
 		expect(starts).toEqual([]);
+	});
+});
+
+describe('RecordingService.finishRecording', () => {
+	const ended = { recordingId: 'room-1--EG_1--uid', roomId: 'room-1', status: MeetRecordingStatus.ABORTED };
+
+	const buildFinishService = () => {
+		let stored = false;
+		const repository = {
+			finish: async (recording: MeetRecordingInfo) => {
+				if (stored) return null;
+
+				stored = true;
+				return recording;
+			}
+		};
+		const frontendEvents = new FakeFrontendEventService();
+		const webhooks: MeetRecordingInfo[] = [];
+		const webhookDispatcher = {
+			sendRecordingEndedWebhook: (recording: MeetRecordingInfo) => webhooks.push(recording)
+		};
+		const mutex = new FakeMutexService();
+		const service = new RecordingService(
+			...([
+				new FakeLiveKitService([]),
+				mutex,
+				repository,
+				{},
+				{},
+				frontendEvents,
+				{},
+				webhookDispatcher,
+				noopLogger
+			] as unknown as ConstructorParameters<typeof RecordingService>)
+		);
+		return { service, frontendEvents, webhooks, mutex };
+	};
+
+	it('reports the end it stores: webhook, in-meeting signal and the release of the room hold', async () => {
+		const { service, frontendEvents, webhooks, mutex } = buildFinishService();
+
+		expect(await service.finishRecording(ended as MeetRecordingInfo)).toBe(true);
+
+		expect(webhooks).toEqual([ended]);
+		expect(frontendEvents.signals).toEqual([['room-1', ended]]);
+		expect(mutex.released).toEqual([expect.stringContaining('room-1')]);
+	});
+
+	it('reports nothing for a recording that had already ended', async () => {
+		const { service, frontendEvents, webhooks } = buildFinishService();
+
+		await service.finishRecording(ended as MeetRecordingInfo);
+		expect(await service.finishRecording(ended as MeetRecordingInfo)).toBe(false);
+
+		expect(webhooks).toHaveLength(1);
+		expect(frontendEvents.signals).toHaveLength(1);
 	});
 });
