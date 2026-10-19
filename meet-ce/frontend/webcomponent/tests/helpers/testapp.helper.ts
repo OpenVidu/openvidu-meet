@@ -450,15 +450,42 @@ export const participantReactionSendCommand = async (page: Page, reaction: MeetR
 		.click();
 };
 
-/** Clicks the testapp's `broadcastStart()` button: one broadcast per destination saved in the room. */
+/**
+ * Clicks the testapp's `broadcastStart()` button without options: one broadcast per destination saved
+ * in the room and not streamed to yet.
+ */
 export const broadcastStartCommand = async (page: Page): Promise<void> => {
 	await showControlsPanel(page, 'commands');
+	await page.getByTestId('input-broadcast-pick-destinations').uncheck();
 	await page.getByTestId('btn-broadcast-start').click();
 };
 
-/** Clicks the testapp's `broadcastStop()` button. */
+/** Clicks the testapp's `broadcastStart()` naming in `destinationIds` the room destinations called `names`. */
+export const broadcastStartToCommand = async (page: Page, names: string[]): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+	await page.getByTestId('input-broadcast-pick-destinations').check();
+
+	for (const name of names) {
+		await page.getByTestId('btn-broadcast-destination-target').filter({ hasText: name }).click();
+	}
+
+	await page.getByTestId('btn-broadcast-start').click();
+};
+
+/** Clicks the testapp's `broadcastStop()` button, naming the running broadcasts picked, or none to stop them all. */
 export const broadcastStopCommand = async (page: Page): Promise<void> => {
 	await showControlsPanel(page, 'commands');
+	await page.getByTestId('btn-broadcast-stop').click();
+};
+
+/** Clicks the testapp's `broadcastStop()` naming in `broadcastIds` the broadcasts to the destinations called `names`. */
+export const broadcastStopToCommand = async (page: Page, names: string[]): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+
+	for (const name of names) {
+		await page.getByTestId('btn-broadcast-stop-target').filter({ hasText: name }).click();
+	}
+
 	await page.getByTestId('btn-broadcast-stop').click();
 };
 

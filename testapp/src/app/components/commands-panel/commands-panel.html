@@ -196,26 +196,102 @@
 	<section class="ta-card">
 		<div class="ta-card__header">
 			<h2>Live broadcast</h2>
-			<span class="ta-hint">to the room's destinations</span>
 		</div>
-		<div class="ta-row">
-			<button
-				id="broadcast-start-btn"
-				class="ta-btn ta-btn--grow"
-				data-testid="btn-broadcast-start"
-				(click)="commands.broadcastStart()"
-			>
-				broadcastStart()
-			</button>
-			<button
-				id="broadcast-stop-btn"
-				class="ta-btn ta-btn--grow"
-				data-testid="btn-broadcast-stop"
-				(click)="commands.broadcastStop()"
-			>
-				broadcastStop()
-			</button>
+		<div class="ta-field">
+			<div class="ta-switch-field">
+				<label for="broadcast-pick-destinations">name the room destinations (destinationIds)</label>
+				<input
+					id="broadcast-pick-destinations"
+					class="ta-switch"
+					type="checkbox"
+					data-testid="input-broadcast-pick-destinations"
+					[(ngModel)]="commands.broadcastPickDestinations"
+				/>
+			</div>
+			@if (commands.broadcastPickDestinations()) { @if (broadcasts.destinations().length) {
+			<div class="ta-targets" data-testid="broadcast-destination-targets">
+				@for (destination of broadcasts.destinations(); track destination.id) {
+				<button
+					class="ta-btn ta-btn--sm"
+					[class.ta-btn--on]="commands.broadcastDestinationIds().includes(destination.id!)"
+					[title]="destination.id + ' ' + destination.url"
+					data-testid="btn-broadcast-destination-target"
+					(click)="commands.toggleBroadcastDestination(destination.id!)"
+				>
+					{{ destination.name }}
+				</button>
+				}
+			</div>
+			} @else {
+			<span class="ta-hint">the room has no destinations, or no meeting has been joined yet</span>
+			}
+			<span class="ta-hint">none picked sends an empty list: only the destination below</span>
+			} @else {
+			<span class="ta-hint">omitted: every room destination not streamed to yet</span>
+			}
 		</div>
+		<div class="ta-field">
+			<label class="ta-arg-label" for="broadcast-extra-url"
+				>A destination for this meeting only (destinations)</label
+			>
+			<input
+				id="broadcast-extra-name"
+				type="text"
+				placeholder="name"
+				data-testid="input-broadcast-extra-name"
+				[(ngModel)]="commands.broadcastExtraName"
+			/>
+			<input
+				id="broadcast-extra-url"
+				type="text"
+				placeholder="rtmp://host/app/stream-key"
+				data-testid="input-broadcast-extra-url"
+				[(ngModel)]="commands.broadcastExtraUrl"
+			/>
+		</div>
+		<button
+			id="broadcast-start-btn"
+			class="ta-btn"
+			data-testid="btn-broadcast-start"
+			(click)="commands.broadcastStart()"
+		>
+			broadcastStart()
+		</button>
+		<code class="ta-payload" data-testid="broadcast-start-payload"
+			>broadcastStart{{ optionsArgs(commands.broadcastStartOptions()) }}</code
+		>
+		<div class="ta-field">
+			<label class="ta-arg-label">Running broadcasts to stop (broadcastIds)</label>
+			@if (broadcasts.broadcasts().length) {
+			<div class="ta-targets" data-testid="broadcast-stop-targets">
+				@for (broadcast of broadcasts.broadcasts(); track broadcast.broadcastId) {
+				<button
+					class="ta-btn ta-btn--sm"
+					[class.ta-btn--on]="commands.broadcastStopIds().includes(broadcast.broadcastId)"
+					[title]="broadcast.broadcastId"
+					data-testid="btn-broadcast-stop-target"
+					(click)="commands.toggleBroadcastStop(broadcast.broadcastId)"
+				>
+					{{ broadcast.destination.name }} · {{ broadcast.status }}
+				</button>
+				}
+			</div>
+			<span class="ta-hint">none picked omits broadcastIds: every running broadcast stops</span>
+			} @else {
+			<span class="ta-hint">no broadcast running</span>
+			}
+		</div>
+		<button
+			id="broadcast-stop-btn"
+			class="ta-btn"
+			data-testid="btn-broadcast-stop"
+			(click)="commands.broadcastStop()"
+		>
+			broadcastStop()
+		</button>
+		<code class="ta-payload" data-testid="broadcast-stop-payload"
+			>broadcastStop{{ optionsArgs(commands.broadcastStopOptions()) }}</code
+		>
 	</section>
 
 	<section class="ta-card">

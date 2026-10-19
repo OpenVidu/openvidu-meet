@@ -20,7 +20,9 @@ import {
 } from '../helpers/media-controls.helper';
 import {
 	broadcastStartCommand,
+	broadcastStartToCommand,
 	broadcastStopCommand,
+	broadcastStopToCommand,
 	endMeetingCommand,
 	endMeetingLegacyCommand,
 	eventLocator,
@@ -954,6 +956,32 @@ for (const integration of INTEGRATIONS) {
 				await broadcastStopCommand(page);
 				await expectEvent(page, EmbeddedEventName.BROADCAST_ENDED, { timeout: 30_000 });
 				await expect(meetLocator(page, integration, '#broadcast-tag')).toBeHidden();
+			});
+
+			test('should start and stop only the destinations and broadcasts the commands name', async ({ page }) => {
+				const destinations = [
+					{ name: 'Sink A', url: await createRtmpSink(`commands-a-${integration}`) },
+					{ name: 'Sink B', url: await createRtmpSink(`commands-b-${integration}`) }
+				];
+				const { roomId } = await createRoom({ config: { broadcast: { enabled: true, destinations } } });
+				createdRoomIds.push(roomId);
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
+
+				await broadcastStartToCommand(page, ['Sink B']);
+				await expect(await expectEvent(page, EmbeddedEventName.BROADCAST_STARTED)).toContainText('Sink B');
+
+				await broadcastStartCommand(page);
+				const started = await expectEvent(page, EmbeddedEventName.BROADCAST_STARTED, { count: 2 });
+				await expect(started.nth(1)).toContainText('Sink A');
+
+				await broadcastStopToCommand(page, ['Sink B']);
+				const ended = await expectEvent(page, EmbeddedEventName.BROADCAST_ENDED, { timeout: 30_000 });
+				await expect(ended).toContainText('Sink B');
+
+				await broadcastStopCommand(page);
+				await expectEvent(page, EmbeddedEventName.BROADCAST_ENDED, { count: 2, timeout: 30_000 });
+				await expect(ended.nth(1)).toContainText('Sink A');
 			});
 
 			test('should not start a broadcast for a speaker who lacks broadcastControl', async ({ page }) => {
