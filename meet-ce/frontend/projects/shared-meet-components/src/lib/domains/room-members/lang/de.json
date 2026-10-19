@@ -199,6 +199,17 @@
           "DESCRIPTION": "Erlaubt das Senden von Chat-Nachrichten"
         }
       }
+    },
+    "NOTICES": {
+      "LINK_COPIED": "Zugangslink des Mitglieds in die Zwischenablage kopiert",
+      "REMOVED": "Mitglied \"{memberName}\" erfolgreich entfernt",
+      "REMOVE_FAILED": "Mitglied konnte nicht entfernt werden",
+      "BULK_REMOVED_ONE": "{count} Mitglied erfolgreich entfernt.",
+      "BULK_REMOVED_MANY": "{count} Mitglieder erfolgreich entfernt.",
+      "BULK_NOT_REMOVED_ONE": "{count} Mitglied konnte nicht entfernt werden.",
+      "BULK_NOT_REMOVED_MANY": "{count} Mitglieder konnten nicht entfernt werden.",
+      "BULK_REMOVE_FAILED": "Mitglieder konnten nicht entfernt werden",
+      "LOAD_FAILED": "Raummitglieder konnten nicht geladen werden"
     }
   }
 }

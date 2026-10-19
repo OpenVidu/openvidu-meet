@@ -199,6 +199,17 @@
           "DESCRIPTION": "允许发送聊天消息"
         }
       }
+    },
+    "NOTICES": {
+      "LINK_COPIED": "成员访问链接已复制到剪贴板",
+      "REMOVED": "成员“{memberName}”已成功移除",
+      "REMOVE_FAILED": "移除成员失败",
+      "BULK_REMOVED_ONE": "已成功移除 {count} 位成员。",
+      "BULK_REMOVED_MANY": "已成功移除 {count} 位成员。",
+      "BULK_NOT_REMOVED_ONE": "{count} 位成员无法移除。",
+      "BULK_NOT_REMOVED_MANY": "{count} 位成员无法移除。",
+      "BULK_REMOVE_FAILED": "移除成员失败",
+      "LOAD_FAILED": "加载房间成员失败"
     }
   }
 }

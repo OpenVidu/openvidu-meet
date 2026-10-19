@@ -332,7 +332,8 @@
       "FAILED_CREATE_ROOM": "कक्ष बनाने में विफल",
       "FAILED_UPDATE_ROOM": "कक्ष अपडेट करने में विफल",
       "ROOM_CREATED_MEMBERS_FAILED_PREFIX": "कक्ष बनाया गया, लेकिन जोड़ने में विफल ",
-      "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " सदस्य: "
+      "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " सदस्य: ",
+      "FAILED_LOAD_RECORDINGS": "रिकॉर्डिंग लोड करने में विफल"
     },
     "UI": {
       "STATUS": {

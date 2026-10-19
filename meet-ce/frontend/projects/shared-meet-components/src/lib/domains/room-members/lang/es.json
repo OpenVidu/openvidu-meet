@@ -199,6 +199,17 @@
           "DESCRIPTION": "Permite enviar mensajes en el chat"
         }
       }
+    },
+    "NOTICES": {
+      "LINK_COPIED": "Enlace de acceso del miembro copiado al portapapeles",
+      "REMOVED": "Miembro \"{memberName}\" quitado correctamente",
+      "REMOVE_FAILED": "Error al quitar el miembro",
+      "BULK_REMOVED_ONE": "{count} miembro quitado correctamente.",
+      "BULK_REMOVED_MANY": "{count} miembros quitados correctamente.",
+      "BULK_NOT_REMOVED_ONE": "No se pudo quitar {count} miembro.",
+      "BULK_NOT_REMOVED_MANY": "No se pudieron quitar {count} miembros.",
+      "BULK_REMOVE_FAILED": "Error al quitar los miembros",
+      "LOAD_FAILED": "Error al cargar los miembros de la sala"
     }
   }
 }

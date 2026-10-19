@@ -332,7 +332,8 @@
       "FAILED_CREATE_ROOM": "ルームの作成に失敗しました",
       "FAILED_UPDATE_ROOM": "ルームの更新に失敗しました",
       "ROOM_CREATED_MEMBERS_FAILED_PREFIX": "ルームは作成されましたが、追加に失敗しました ",
-      "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " 名のメンバー： "
+      "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " 名のメンバー： ",
+      "FAILED_LOAD_RECORDINGS": "録画の読み込みに失敗しました"
     },
     "UI": {
       "STATUS": {

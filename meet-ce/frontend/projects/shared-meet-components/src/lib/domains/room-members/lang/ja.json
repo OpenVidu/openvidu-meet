@@ -199,6 +199,17 @@
           "DESCRIPTION": "チャットメッセージの送信を許可します"
         }
       }
+    },
+    "NOTICES": {
+      "LINK_COPIED": "メンバーのアクセスリンクをクリップボードにコピーしました",
+      "REMOVED": "メンバー「{memberName}」を削除しました",
+      "REMOVE_FAILED": "メンバーの削除に失敗しました",
+      "BULK_REMOVED_ONE": "{count} 人のメンバーを削除しました。",
+      "BULK_REMOVED_MANY": "{count} 人のメンバーを削除しました。",
+      "BULK_NOT_REMOVED_ONE": "{count} 人のメンバーを削除できませんでした。",
+      "BULK_NOT_REMOVED_MANY": "{count} 人のメンバーを削除できませんでした。",
+      "BULK_REMOVE_FAILED": "メンバーの削除に失敗しました",
+      "LOAD_FAILED": "ルームのメンバーの読み込みに失敗しました"
     }
   }
 }

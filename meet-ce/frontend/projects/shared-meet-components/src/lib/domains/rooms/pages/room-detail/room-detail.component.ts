@@ -145,7 +145,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		fetchPage: (filters, nextPageToken) => this.fetchMembersPage(filters, nextPageToken),
 		onLoadError: (error) => {
 			this.log.e('Error loading room members:', error);
-			this.notificationService.showMessage('Failed to load room members');
+			this.notificationService.showMessage(this.translateService.translate('ROOM_MEMBERS.NOTICES.LOAD_FAILED'));
 		}
 	});
 
@@ -164,7 +164,9 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		fetchPage: (filters, nextPageToken) => this.fetchRecordingsPage(filters, nextPageToken),
 		onLoadError: (error) => {
 			this.log.e('Error loading recordings:', error);
-			this.notificationService.showMessage('Failed to load recordings');
+			this.notificationService.showMessage(
+				this.translateService.translate('ROOMS.ERRORS.FAILED_LOAD_RECORDINGS')
+			);
 		}
 	});
 
@@ -468,7 +470,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 
 	private copyMemberLink(member: MeetRoomMember) {
 		this.clipboard.copy(member.accessUrl);
-		this.notificationService.showMessage('Member access link copied to clipboard');
+		this.notificationService.showMessage(this.translateService.translate('ROOM_MEMBERS.NOTICES.LINK_COPIED'));
 	}
 
 	copyRoomId() {
@@ -484,11 +486,15 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 					await this.roomMemberService.deleteRoomMember(this.roomId(), member.memberId);
 
 					this.memberList.remove((m) => m.memberId === member.memberId);
-					this.notificationService.showMessage(`Member "${member.name}" removed successfully`);
+					this.notificationService.showMessage(
+						this.translateService.translate('ROOM_MEMBERS.NOTICES.REMOVED', { memberName: member.name })
+					);
 					await this.memberList.autoLoadIfEmpty();
 				} catch (error) {
 					this.log.e('Error removing member:', error);
-					this.notificationService.showMessage('Failed to remove member');
+					this.notificationService.showMessage(
+						this.translateService.translate('ROOM_MEMBERS.NOTICES.REMOVE_FAILED')
+					);
 				}
 			}
 		});
@@ -501,9 +507,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 				const { deleted } = await this.roomMemberService.bulkDeleteRoomMembers(this.roomId(), memberIds);
 
 				this.memberList.remove((m) => deleted.includes(m.memberId));
-				this.notificationService.showMessage(
-					`${deleted.length} member${deleted.length > 1 ? 's' : ''} removed successfully`
-				);
+				this.notificationService.showMessage(this.bulkNotice('BULK_REMOVED', deleted.length));
 				await this.memberList.autoLoadIfEmpty();
 			} catch (error) {
 				this.log.e('Error removing members:', error);
@@ -512,24 +516,20 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 
 				// Nothing structured to report (401, 500, network drop): plain failure.
 				if (deleted.length === 0 && failed.length === 0) {
-					this.notificationService.showMessage('Failed to remove members');
+					this.notificationService.showMessage(
+						this.translateService.translate('ROOM_MEMBERS.NOTICES.BULK_REMOVE_FAILED')
+					);
 					return;
 				}
 
 				// Partial result: some members were removed, some not.
 				this.memberList.remove((m) => deleted.includes(m.memberId));
 
-				let msg = '';
-
-				if (deleted.length > 0) {
-					msg += `${deleted.length} member${deleted.length > 1 ? 's' : ''} removed successfully. `;
-				}
-
-				if (failed.length > 0) {
-					msg += `${failed.length} member${failed.length > 1 ? 's' : ''} could not be removed.`;
-				}
-
-				this.notificationService.showMessage(msg.trim());
+				const parts = [
+					...(deleted.length > 0 ? [this.bulkNotice('BULK_REMOVED', deleted.length)] : []),
+					...(failed.length > 0 ? [this.bulkNotice('BULK_NOT_REMOVED', failed.length)] : [])
+				];
+				this.notificationService.showMessage(parts.join(' '));
 				await this.memberList.autoLoadIfEmpty();
 			}
 		};
@@ -538,6 +538,12 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		this.dialogService.showDialog({
 			...bulkRemoveMembersDialogPreset(this.translateService, count, this.shouldShowMeetingKickWarning()),
 			confirmCallback: bulkDeleteCallback
+		});
+	}
+
+	private bulkNotice(key: 'BULK_REMOVED' | 'BULK_NOT_REMOVED', count: number): string {
+		return this.translateService.translate(`ROOM_MEMBERS.NOTICES.${key}_${count === 1 ? 'ONE' : 'MANY'}`, {
+			count
 		});
 	}
 

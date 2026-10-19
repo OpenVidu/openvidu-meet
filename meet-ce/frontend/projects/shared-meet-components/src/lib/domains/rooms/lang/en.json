@@ -332,7 +332,8 @@
       "FAILED_CREATE_ROOM": "Failed to create room",
       "FAILED_UPDATE_ROOM": "Failed to update room",
       "ROOM_CREATED_MEMBERS_FAILED_PREFIX": "Room created, but failed to add ",
-      "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " member(s): "
+      "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " member(s): ",
+      "FAILED_LOAD_RECORDINGS": "Failed to load recordings"
     },
     "UI": {
       "STATUS": {

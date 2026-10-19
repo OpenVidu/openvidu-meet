@@ -199,6 +199,17 @@
           "DESCRIPTION": "बातचीत संदेश भेजने की अनुमति दें"
         }
       }
+    },
+    "NOTICES": {
+      "LINK_COPIED": "सदस्य का एक्सेस लिंक क्लिपबोर्ड पर कॉपी किया गया",
+      "REMOVED": "सदस्य \"{memberName}\" को सफलतापूर्वक हटाया गया",
+      "REMOVE_FAILED": "सदस्य को हटाने में विफल",
+      "BULK_REMOVED_ONE": "{count} सदस्य को सफलतापूर्वक हटाया गया।",
+      "BULK_REMOVED_MANY": "{count} सदस्यों को सफलतापूर्वक हटाया गया।",
+      "BULK_NOT_REMOVED_ONE": "{count} सदस्य को हटाया नहीं जा सका।",
+      "BULK_NOT_REMOVED_MANY": "{count} सदस्यों को हटाया नहीं जा सका।",
+      "BULK_REMOVE_FAILED": "सदस्यों को हटाने में विफल",
+      "LOAD_FAILED": "कक्ष के सदस्य लोड करने में विफल"
     }
   }
 }

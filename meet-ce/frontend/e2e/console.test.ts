@@ -1,4 +1,4 @@
-import { MeetRoom, MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
+import { MeetRoom, MeetRoomMemberRole, MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { authenticate, createReadyUser, type ReadyUser } from './helpers/auth.helper';
 import {
@@ -13,7 +13,7 @@ import {
 	loadMoreButton,
 	searchAndExpectRows
 } from './helpers/console-lists.helper';
-import { createRoom, createUser, deleteRooms, deleteUsers } from './helpers/meet-api.helper';
+import { createRoom, createRoomMember, createUser, deleteRooms, deleteUsers } from './helpers/meet-api.helper';
 
 /**
  * E2E coverage for the authenticated console list pages: rooms, users, recordings and the room
@@ -219,6 +219,25 @@ test.describe('Console Room detail E2E Tests', () => {
 			.click();
 
 		await expect(page.locator('ov-room-members-list')).toBeVisible({ timeout: 20_000 });
+	});
+
+	test.describe('in Spanish', () => {
+		test.use({ locale: 'es-ES' });
+
+		test('shows the notice of copying a member link in the selected language', async ({ page }) => {
+			const member = await createRoomMember(room.roomId, {
+				name: 'Invitada',
+				baseRole: MeetRoomMemberRole.SPEAKER
+			});
+			await gotoRoomDetail(page, room.roomId);
+			await page.getByRole('tab').nth(1).click();
+
+			await page.locator(`#copy-member-link-btn-${member.memberId}`).click();
+
+			await expect(page.locator('.ov-notification[data-kind="message"] .notification-message')).toHaveText(
+				'Enlace de acceso del miembro copiado al portapapeles'
+			);
+		});
 	});
 });
 

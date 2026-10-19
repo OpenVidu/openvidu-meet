@@ -332,7 +332,8 @@
       "FAILED_CREATE_ROOM": "Impossibile creare la stanza",
       "FAILED_UPDATE_ROOM": "Impossibile aggiornare la stanza",
       "ROOM_CREATED_MEMBERS_FAILED_PREFIX": "Stanza creata, ma impossibile aggiungere ",
-      "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " membro/i: "
+      "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " membro/i: ",
+      "FAILED_LOAD_RECORDINGS": "Impossibile caricare le registrazioni"
     },
     "UI": {
       "STATUS": {

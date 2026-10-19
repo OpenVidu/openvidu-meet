@@ -199,6 +199,17 @@
           "DESCRIPTION": "Chatberichten versturen toestaan"
         }
       }
+    },
+    "NOTICES": {
+      "LINK_COPIED": "Toegangslink van lid naar klembord gekopieerd",
+      "REMOVED": "Lid \"{memberName}\" succesvol verwijderd",
+      "REMOVE_FAILED": "Lid verwijderen mislukt",
+      "BULK_REMOVED_ONE": "{count} lid succesvol verwijderd.",
+      "BULK_REMOVED_MANY": "{count} leden succesvol verwijderd.",
+      "BULK_NOT_REMOVED_ONE": "{count} lid kon niet worden verwijderd.",
+      "BULK_NOT_REMOVED_MANY": "{count} leden konden niet worden verwijderd.",
+      "BULK_REMOVE_FAILED": "Leden verwijderen mislukt",
+      "LOAD_FAILED": "Ruimteleden laden mislukt"
     }
   }
 }
