@@ -65,7 +65,9 @@
       "STATUS_COMPLETE": "Voltooid",
       "STATUS_FAILED": "Mislukt",
       "STATUS_ABORTED": "Afgebroken",
-      "STATUS_LIMIT_REACHED": "Limiet bereikt"
+      "STATUS_LIMIT_REACHED": "Limiet bereikt",
+      "PLAY_PERMISSION_REQUIRED": "Voor het afspelen en delen van opnames is de machtiging recordingPlay nodig",
+      "BULK_LIMIT_EXCEEDED": "Er kunnen maximaal {count} opnames tegelijk worden verwerkt"
     },
     "DETAIL": {
       "LOADING_TITLE": "Opnamedetails laden",

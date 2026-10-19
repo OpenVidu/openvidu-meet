@@ -333,6 +333,16 @@ export const expectRecordingNotDeletable = async (page: Page, recordingId: strin
 	await expect(page.locator(`[id="delete-recording-btn-${recordingId}"]`)).toHaveCount(0);
 };
 
+/**
+ * Asserts that the given recording is listed with its play and share actions enabled or disabled, as
+ * `recordingPlay` decides (the viewer cannot delete, so share is a button of its own).
+ */
+export const expectRecordingPlayAndShare = async (page: Page, recordingId: string, enabled: boolean): Promise<void> => {
+	const assertion = enabled ? 'toBeEnabled' : 'toBeDisabled';
+	await expect(page.locator(`[id="play-recording-btn-${recordingId}"]`).first())[assertion]({ timeout: 15_000 });
+	await expect(page.locator(`[id="share-recording-link-${recordingId}"]`).first())[assertion]({ timeout: 15_000 });
+};
+
 // ─── Individual recording view: view + delete-permission assertions ─────────────
 
 /**

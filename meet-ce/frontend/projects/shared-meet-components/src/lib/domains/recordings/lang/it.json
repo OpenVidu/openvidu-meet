@@ -65,7 +65,9 @@
       "STATUS_COMPLETE": "Completata",
       "STATUS_FAILED": "Fallita",
       "STATUS_ABORTED": "Interrotta",
-      "STATUS_LIMIT_REACHED": "Limite raggiunto"
+      "STATUS_LIMIT_REACHED": "Limite raggiunto",
+      "PLAY_PERMISSION_REQUIRED": "Per riprodurre e condividere le registrazioni serve il permesso recordingPlay",
+      "BULK_LIMIT_EXCEEDED": "È possibile elaborare al massimo {count} registrazioni alla volta"
     },
     "DETAIL": {
       "LOADING_TITLE": "Caricamento dei dettagli della registrazione",

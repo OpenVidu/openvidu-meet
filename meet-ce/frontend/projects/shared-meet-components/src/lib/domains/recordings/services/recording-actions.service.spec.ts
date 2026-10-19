@@ -64,13 +64,24 @@ describe('RecordingActionsService', () => {
 		log = { e: jasmine.createSpy('log.e') } as unknown as ILogger;
 	});
 
-	it('forwards the share action with the context access flag', async () => {
+	it('forwards the share action with the viewer play permission for that recording', async () => {
 		await service.handle(
 			{ action: 'shareLink', recordings: [recording('r1')] },
-			{ list, log, hasRecordingAccess: true }
+			{ list, log, canPlayRecording: ({ recordingId }) => recordingId === 'r1' }
+		);
+		await service.handle(
+			{ action: 'shareLink', recordings: [recording('r2')] },
+			{ list, log, canPlayRecording: ({ recordingId }) => recordingId === 'r1' }
 		);
 
 		expect(recordingService.openShareRecordingDialog).toHaveBeenCalledWith('r1', true);
+		expect(recordingService.openShareRecordingDialog).toHaveBeenCalledWith('r2', false);
+	});
+
+	it('leaves the share dialog to read its own permissions when the host gives no play permission', async () => {
+		await service.handle({ action: 'shareLink', recordings: [recording('r1')] }, { list, log });
+
+		expect(recordingService.openShareRecordingDialog).toHaveBeenCalledWith('r1', undefined);
 	});
 
 	it('deletes a recording after confirmation, removes it from the list and notifies', async () => {
