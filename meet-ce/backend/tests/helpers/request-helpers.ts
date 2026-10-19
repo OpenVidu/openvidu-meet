@@ -1383,11 +1383,6 @@ export const startBroadcasts = async (
 	return await asBroadcastCaller(request(app).post(broadcastsPath()), roomMemberToken).send({ roomId, ...options });
 };
 
-export const stopBroadcast = async (broadcastId: string, roomMemberToken?: string): Promise<Response> => {
-	checkAppIsRunning();
-	return await asBroadcastCaller(request(app).post(`${broadcastsPath()}/${broadcastId}/stop`), roomMemberToken);
-};
-
 export const stopBroadcasts = async (
 	roomId: string,
 	options: MeetBroadcastStopOptions = {},

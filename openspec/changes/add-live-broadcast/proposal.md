@@ -16,8 +16,8 @@ Twitch or any RTMP server, without a separate streaming tool.
   destinations given for that meeting only. A stream the media server runs without a broadcast that
   reports it, because the request that asked for it failed, is stopped.
   New REST operations under `/api/v1/broadcasts`, addressed like recordings: `broadcastStart` (the
-  room in the body), `broadcastList` (the room in the query), `broadcastGet` and `broadcastStop` by a
-  `broadcastId` that names its room, and `broadcastBulkStop` for several or all of a room; webhooks `broadcastStarted`, `broadcastUpdated` and
+  room in the body), `broadcastList` (the room in the query), `broadcastGet` by a `broadcastId` that
+  names its room, and `broadcastStop` for one, several or all the broadcasts of a room; webhooks `broadcastStarted`, `broadcastUpdated` and
   `broadcastEnded`, embedded commands `broadcastStart` and `broadcastStop`, embedded events of the
   same three names, and `broadcastActive` in the meeting info.
 - Two new permissions: `broadcastControl` (go live, stop and restart each destination) and

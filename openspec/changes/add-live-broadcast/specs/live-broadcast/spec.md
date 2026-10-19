@@ -2,7 +2,7 @@
 
 Live broadcast streams a meeting, as it happens, to RTMP destinations outside Meet such as YouTube, Twitch or an own media server, one broadcast per destination. Room managers save a room's default destinations, moderators and host applications take the meeting live and stop it, and every participant and integrator learns when the meeting is being streamed and where.
 
-Surfaces: REST API under `/api/v1/broadcasts` (`broadcastStart`, `broadcastList`, `broadcastGet`, `broadcastStop`, `broadcastBulkStop`; `meet-ce/backend/openapi/broadcasts/`), room config `broadcast.*` (`meet-ce/backend/openapi/rooms/schemas/meet-room-config.yaml`, typings `meet-ce/typings/src/database/room-config.ts`), webhooks `broadcastStarted`, `broadcastUpdated` and `broadcastEnded`, embedded commands `broadcastStart` and `broadcastStop` and events of the same three names (`meet-ce/typings/src/embedded/`), permissions `broadcastControl` and `broadcastAddDestinations`, the meeting (activities panel, More options, status rail, notices) and the console room wizard (Live broadcast and Room Access steps). Documented in openvidu.io `docs/meet/features/meetings/live-broadcast.md`.
+Surfaces: REST API under `/api/v1/broadcasts` (`broadcastStart`, `broadcastList`, `broadcastGet`, `broadcastStop`; `meet-ce/backend/openapi/broadcasts/`), room config `broadcast.*` (`meet-ce/backend/openapi/rooms/schemas/meet-room-config.yaml`, typings `meet-ce/typings/src/database/room-config.ts`), webhooks `broadcastStarted`, `broadcastUpdated` and `broadcastEnded`, embedded commands `broadcastStart` and `broadcastStop` and events of the same three names (`meet-ce/typings/src/embedded/`), permissions `broadcastControl` and `broadcastAddDestinations`, the meeting (activities panel, More options, status rail, notices) and the console room wizard (Live broadcast and Room Access steps). Documented in openvidu.io `docs/meet/features/meetings/live-broadcast.md`.
 
 ## ADDED Requirements
 
@@ -132,6 +132,14 @@ Each broadcast SHALL stream the meeting with the room's `broadcast.layout` (`gri
 - **WHEN** `broadcastStart` is called with a room member token lacking `broadcastControl`, or issued for another room
 - **THEN** the REST API answers `403`
 
+### Requirement: Broadcast lists in the responses
+`broadcastStart` and `broadcastStop` SHALL answer with a `broadcasts` list, one entry per broadcast started or stopped, between one and five for a start, each the same broadcast object `broadcastGet` returns and the broadcast webhooks carry.
+
+#### Scenario: Two destinations started
+- **GIVEN** a room with two destinations and a meeting in progress
+- **WHEN** `broadcastStart` is called with only the room's `roomId`
+- **THEN** the response body is a `broadcasts` list of two broadcasts, each with its own `broadcastId` and the `destinationId` of its destination
+
 ### Requirement: Room destinations of a start request
 A start request SHALL name the room destinations to stream to by their ids in `destinationIds`, each streamed to as saved. The server SHALL keep an omitted `destinationIds` apart from an empty one: omitted, it SHALL stream to every room destination not streamed to yet; empty, to none of them. It SHALL answer `400` to an id the room does not have.
 
@@ -251,7 +259,7 @@ Each broadcast SHALL move only forward through `starting`, `active` and `ending`
 - **AND** the broadcast to A stays `active`
 
 ### Requirement: Broadcast identifiers
-Every broadcast SHALL be identified by a `broadcastId` of the form `{roomId}--{id}`, which names the room it belongs to as a recording's identifier does, so `broadcastGet` and `broadcastStop` take it alone. The server SHALL answer `422` to a malformed `broadcastId`, and `404` when it names a room that does not exist or a broadcast that is not in progress.
+Every broadcast SHALL be identified by a `broadcastId` of the form `{roomId}--{id}`, which names the room it belongs to as a recording's identifier does, so `broadcastGet` takes it alone. The server SHALL answer `422` to a malformed `broadcastId`, and `404` when it names a room that does not exist or a broadcast that is not in progress.
 
 #### Scenario: Broadcast read by its id alone
 - **GIVEN** a broadcast in progress in room `room-123`
@@ -259,15 +267,15 @@ Every broadcast SHALL be identified by a `broadcastId` of the form `{roomId}--{i
 - **THEN** the REST API answers `200` with the broadcast, whose `roomId` is `room-123`
 
 #### Scenario: Malformed identifier
-- **WHEN** `broadcastStop` is called with `broadcastId` `kX9pL2mQ7a`
+- **WHEN** `broadcastGet` is called with `broadcastId` `kX9pL2mQ7a`
 - **THEN** the REST API answers `422`
 
-### Requirement: Stopping a broadcast
-`broadcastStop` SHALL accept an API key or a room member token holding `broadcastControl` in the broadcast's room, end the stream to its destination at once while the other broadcasts go on, and answer `200` with the broadcast in its final state: `complete`, with `endDate` and `duration`, or `aborted`, without dates, when no media had reached its destination. It SHALL answer `409` for a broadcast already `ending`.
+### Requirement: Stopping broadcasts
+`broadcastStop` SHALL take the `roomId` in its body, accept an API key or a room member token holding `broadcastControl` in that room, and stop at once the broadcasts of that room named in `broadcastIds`, or every running one when it is omitted, while the others go on. It SHALL answer `200` with each in its final state: `complete`, with `endDate` and `duration`, or `aborted`, without dates, when no media had reached its destination.
 
 #### Scenario: Stop one destination
 - **GIVEN** a meeting streaming to destinations A and B
-- **WHEN** `broadcastStop` is called with the `broadcastId` of the broadcast to A
+- **WHEN** `broadcastStop` is called with the room's `roomId` and `broadcastIds` holding the broadcast to A
 - **THEN** the REST API answers `200` with that broadcast `complete`, and the broadcast to B stays `active`
 
 #### Scenario: Stop a broadcast still starting
@@ -275,27 +283,32 @@ Every broadcast SHALL be identified by a `broadcastId` of the form `{roomId}--{i
 - **WHEN** `broadcastStop` is called for it
 - **THEN** it ends `aborted` without `startDate`, `endDate` nor `duration`
 
-#### Scenario: Token without the permission
-- **WHEN** `broadcastStop` is called with a room member token lacking `broadcastControl`
-- **THEN** the REST API answers `403` and the broadcast goes on
-
-### Requirement: Stopping several broadcasts
-`broadcastBulkStop` SHALL take the `roomId` in its body, require `broadcastControl` in that room, and stop the broadcasts of that room named in `broadcastIds`, or every running one when none is named, answering `200` with each in its final state. A request naming a broadcast that is not in progress (`404`) or already `ending` (`409`) SHALL stop none of them.
-
 #### Scenario: Stop the whole broadcast
 - **GIVEN** a meeting streaming to destinations A and B
-- **WHEN** `broadcastBulkStop` is called with only the room's `roomId`
+- **WHEN** `broadcastStop` is called with only the room's `roomId`
 - **THEN** the REST API answers `200` with both broadcasts in their final state
 
 #### Scenario: Nothing running
 - **GIVEN** a meeting with no broadcast in progress
-- **WHEN** `broadcastBulkStop` is called without `broadcastIds`
-- **THEN** the REST API answers `200` with no broadcast
+- **WHEN** `broadcastStop` is called without `broadcastIds`
+- **THEN** the REST API answers `200` with an empty `broadcasts` list
+
+#### Scenario: Token without the permission
+- **WHEN** `broadcastStop` is called with a room member token lacking `broadcastControl`
+- **THEN** the REST API answers `403` and the broadcast goes on
+
+### Requirement: Stops are all or nothing
+A `broadcastStop` naming a broadcast that is not in progress in that room, including one of another room, SHALL answer `404`, and one naming a broadcast already `ending` SHALL answer `409`, stopping none of them.
 
 #### Scenario: One unknown identifier
 - **GIVEN** a meeting streaming to destination A
-- **WHEN** `broadcastBulkStop` is called with the broadcast to A and an unknown `broadcastId`
+- **WHEN** `broadcastStop` is called with the broadcast to A and an unknown `broadcastId`
 - **THEN** the REST API answers `404` and the broadcast to A goes on
+
+#### Scenario: Broadcast of another room
+- **GIVEN** a token holding `broadcastControl` in room A and a broadcast in progress in room B
+- **WHEN** `broadcastStop` is called with room A's `roomId` and the `broadcastId` of room B's broadcast
+- **THEN** the REST API answers `404` and room B's broadcast goes on
 
 ### Requirement: A destination can be streamed to again
 Once the broadcast to a destination has ended, a new start to that destination SHALL be accepted and create a new broadcast, with its own `broadcastId`, while the meeting goes on.
@@ -358,7 +371,7 @@ When the egress service streaming a meeting stops responding, the server SHALL e
 - **THEN** within a minute of the server starting again, the broadcast ends and `broadcastEnded` is sent
 
 ### Requirement: Broadcasts need an egress service
-`broadcastStart`, `broadcastStop` and `broadcastBulkStop` SHALL answer `503` with error `LiveKit Error` when no egress service of the deployment takes the request, starting nothing. Broadcasts need the OpenVidu egress, which reports each stream with the tag the server gives its URL: against an egress that does not, `broadcastStart` SHALL answer `500` and withdraw what it added, so nothing streams.
+`broadcastStart` and `broadcastStop` SHALL answer `503` with error `LiveKit Error` when no egress service of the deployment takes the request, starting nothing. Broadcasts need the OpenVidu egress, which reports each stream with the tag the server gives its URL: against an egress that does not, `broadcastStart` SHALL answer `500` and withdraw what it added, so nothing streams.
 
 #### Scenario: No egress service running
 - **GIVEN** a deployment whose egress service is down
@@ -407,7 +420,7 @@ The server SHALL send, per broadcast, `broadcastStarted` when a start request cr
 - **THEN** only the new broadcast gets `broadcastUpdated`, and the stopped one gets no further event
 
 ### Requirement: Embedded broadcast commands
-The embedded element SHALL run `broadcastStart(options?)` and `broadcastStop(options?)`, whose payloads are the bodies of `broadcastStart` and `broadcastBulkStop` without the `roomId`, only for a local participant holding `broadcastControl` in a joined meeting. Without options they SHALL go live to every room destination not streamed to yet and stop every running broadcast. `broadcastStop` with nothing running SHALL do nothing.
+The embedded element SHALL run `broadcastStart(options?)` and `broadcastStop(options?)`, whose payloads are the bodies of the REST operations of the same names without the `roomId`, only for a local participant holding `broadcastControl` in a joined meeting. Without options they SHALL go live to every room destination not streamed to yet and stop every running broadcast. `broadcastStop` with nothing running SHALL do nothing.
 
 #### Scenario: Go live from the host
 - **GIVEN** a joined moderator holding `broadcastControl` in a room with two destinations

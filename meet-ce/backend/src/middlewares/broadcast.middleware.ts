@@ -6,7 +6,7 @@ import { errorBroadcastDisabled, handleError, rejectRequestFromMeetError } from 
 import { RoomService } from '../services/room.service.js';
 import { withRoomPermission } from './room.middleware.js';
 
-/** The room a start or bulk stop request names in its body. */
+/** The room a start or stop request names in its body. */
 export const bodyRoomId = (req: Request) => (req.body as { roomId: string }).roomId;
 
 /** The room a list request names in its query. */

@@ -8,12 +8,17 @@ content:
             properties:
                 broadcasts:
                     type: array
-                    description: The broadcasts started, in the order of the destinations asked for.
+                    minItems: 1
+                    maxItems: 5
+                    description: >
+                        The broadcasts started, one per destination, each in the `starting` status: the room
+                        destinations first, in the order of `destinationIds` or, when it is omitted, of the
+                        room's config, then those for this meeting in the order of `destinations`.
                     items:
                         $ref: '../../schemas/meet-broadcast.yaml'
         example:
             broadcasts:
-                - broadcastId: 'room-123--kX9pL2mQ7a'
+                - broadcastId: 'room-123--Qm4tZ8vR1c'
                   roomId: 'room-123'
                   roomName: 'room'
                   status: 'starting'

@@ -18,11 +18,17 @@ content:
                 destinationIds:
                     type: array
                     maxItems: 5
-                    description: >
+                    description: |
                         The `id` of each destination saved in the room's config to stream to, streamed to as
-                        saved. Omitted, every room destination the meeting is not streaming to yet; empty, none
-                        of them, which then requires at least one entry in `destinations`. An `id` the room does
-                        not have is rejected with a `400`.
+                        saved.
+
+                        | Value | Room destinations streamed to |
+                        | ----- | ----------------------------- |
+                        | Omitted | Every room destination the meeting is not streaming to yet |
+                        | `[]` | None: `destinations` must then have at least one entry, or the request is rejected with a `422` |
+                        | `["id1"]` | Only the ones listed |
+
+                        An `id` the room does not have is rejected with a `400`.
                     items:
                         type: string
                         example: 'kX9pL2mQ7a'

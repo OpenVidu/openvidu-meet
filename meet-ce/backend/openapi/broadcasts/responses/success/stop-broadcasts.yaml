@@ -8,12 +8,15 @@ content:
             properties:
                 broadcasts:
                     type: array
-                    description: The broadcasts stopped, or none when the meeting had no broadcast running.
+                    maxItems: 5
+                    description: >
+                        The broadcasts stopped, each in its final state, or none when `broadcastIds` was
+                        omitted and the meeting had no broadcast running.
                     items:
                         $ref: '../../schemas/meet-broadcast.yaml'
         example:
             broadcasts:
-                - broadcastId: 'room-123--kX9pL2mQ7a'
+                - broadcastId: 'room-123--Qm4tZ8vR1c'
                   roomId: 'room-123'
                   roomName: 'room'
                   status: 'complete'
@@ -25,3 +28,11 @@ content:
                   startDate: 1620000000000
                   endDate: 1620000003600
                   duration: 3.6
+                - broadcastId: 'room-123--p7Rt4WqM2z'
+                  roomId: 'room-123'
+                  roomName: 'room'
+                  status: 'aborted'
+                  name: 'Own media server'
+                  url: 'rtmp://media.example.com/live/********'
+                  layout: 'grid'
+                  encoding: 'H264_720P_30'

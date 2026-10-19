@@ -5,9 +5,9 @@ import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import {
 	BroadcastFieldsQuerySchema,
 	BroadcastIdParamsSchema,
-	BulkStopBroadcastsReqSchema,
 	GetBroadcastsQuerySchema,
-	StartBroadcastReqSchema
+	StartBroadcastReqSchema,
+	StopBroadcastsReqSchema
 } from '../../models/zod-schemas/broadcast.schema.js';
 import { mergeFieldsHeaderIntoQuery } from '../../models/zod-schemas/field-selection.schema.js';
 
@@ -49,7 +49,7 @@ export const validateGetBroadcastsReq = validateQuery(GetBroadcastsQuerySchema);
 
 export const validateStartBroadcastReq = validateBody(StartBroadcastReqSchema);
 
-export const validateBulkStopBroadcastsReq = validateBody(BulkStopBroadcastsReqSchema);
+export const validateStopBroadcastsReq = validateBody(StopBroadcastsReqSchema);
 
 export const validateBroadcastIdReq = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = BroadcastIdParamsSchema.safeParse(req.params);

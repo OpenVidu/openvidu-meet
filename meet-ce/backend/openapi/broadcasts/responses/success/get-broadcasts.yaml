@@ -13,7 +13,7 @@ content:
                         $ref: '../../schemas/meet-broadcast.yaml'
         example:
             broadcasts:
-                - broadcastId: 'room-123--kX9pL2mQ7a'
+                - broadcastId: 'room-123--Qm4tZ8vR1c'
                   roomId: 'room-123'
                   roomName: 'room'
                   status: 'active'

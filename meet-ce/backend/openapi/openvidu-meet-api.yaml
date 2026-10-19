@@ -69,8 +69,6 @@ paths:
         $ref: './broadcasts/broadcasts.yaml#/~1broadcasts~1stop'
     /broadcasts/{broadcastId}:
         $ref: './broadcasts/broadcasts.yaml#/~1broadcasts~1{broadcastId}'
-    /broadcasts/{broadcastId}/stop:
-        $ref: './broadcasts/broadcasts.yaml#/~1broadcasts~1{broadcastId}~1stop'
     /webhooks:
         $ref: './webhooks/webhooks-api.yaml#/~1webhooks'
     /webhooks/{webhookId}:

@@ -3,17 +3,35 @@
         operationId: broadcastStart
         summary: Start broadcasts
         description: |
-            Starts streaming the live meeting of a room to one or more RTMP destinations, one broadcast per
-            destination, each with its own status and lifecycle and its own `broadcastId`. A meeting streams to
-            each stream key once, whatever the server it is on, and to at most 5 destinations at a time.
+            Starts streaming the live meeting of a room to one or more RTMP destinations. Each destination gets
+            a broadcast of its own, with its own `broadcastId`, status and lifecycle, so one request creates
+            between 1 and 5 broadcasts. A meeting streams to each stream key once, whatever the server it is on,
+            and to at most 5 destinations at a time.
 
             Requires the `broadcastControl` permission, and a room whose config has `broadcast.enabled`.
 
-            The room's saved destinations are named by their ids in `destinationIds` and streamed to as saved.
-            Without `destinationIds`, the meeting streams to every room destination it is not streaming to yet;
-            with an empty list, to none of them. Destinations for this meeting only go in `destinations`, by
-            `name` and `url`, which requires the `broadcastAddDestinations` permission. The broadcasts are
-            returned in that order: the room destinations first, then those for this meeting.
+            The destinations come from two fields of the body:
+
+            - `destinationIds` picks among the destinations saved in the room's config, by their `id`, each
+              streamed to as saved. What it starts depends on whether it is omitted, empty or has ids:
+
+              | `destinationIds` | Room destinations streamed to |
+              | ---------------- | ----------------------------- |
+              | Omitted | Every room destination the meeting is not streaming to yet |
+              | `[]` | None |
+              | `["id1"]` | Only the ones listed |
+
+              An `id` the room does not have is rejected with a `400`.
+            - `destinations` adds destinations for this meeting only, by `name` and `url`, never saved in the
+              room. It requires the `broadcastAddDestinations` permission.
+
+            With an empty `destinationIds`, `destinations` must have at least one entry, or the request is
+            rejected with a `422`.
+
+            The response lists one broadcast per destination in `broadcasts`: the room destinations first, in
+            the order of `destinationIds` or, when it is omitted, of the room's config, then those for this
+            meeting in the order of `destinations`. Every broadcast is the same object that
+            [fetching a broadcast](#/operations/broadcastGet) returns and the broadcast webhooks carry.
 
             Either every broadcast starts or none does. The request completes as soon as the media server
             accepts the streams, and returns each broadcast in the `starting` status. A broadcast becomes
@@ -96,20 +114,26 @@
 
 /broadcasts/stop:
     post:
-        operationId: broadcastBulkStop
-        summary: Bulk stop broadcasts
+        operationId: broadcastStop
+        summary: Stop broadcasts
         description: |
-            Stops the given broadcasts of the live meeting of a room, or every running one when no
-            `broadcastIds` are given: the stream to each destination ends at once, while the other broadcasts
-            of the meeting go on. To stop one broadcast by its id alone, use
-            [stop a broadcast](#/operations/broadcastStop).
+            Stops broadcasts of the live meeting of a room: one, several, or all of them. The stream to each
+            destination stopped ends at once, while the other broadcasts of the meeting go on.
+
+            | `broadcastIds` | Broadcasts stopped |
+            | -------------- | ------------------ |
+            | Omitted | Every running broadcast of the meeting |
+            | `["room-123--Qm4tZ8vR1c"]` | Only the ones listed, all of them of that room |
 
             Requires the `broadcastControl` permission.
 
-            Returns each broadcast in its final state: `complete`, with its `endDate` and `duration`, or
-            `aborted` when no media had reached its destination yet. The
-            [`broadcastEnded`](#/webhooks/broadcastEndedWebhook) webhook reports the same. A request naming a
-            broadcast that is not in progress, or no longer running, stops none of them.
+            The response lists each broadcast stopped in `broadcasts`, in its final state: `complete`, with its
+            `endDate` and `duration`, or `aborted` when no media had reached its destination yet. The list is
+            empty when `broadcastIds` is omitted and nothing was running. The
+            [`broadcastEnded`](#/webhooks/broadcastEndedWebhook) webhook reports the same.
+
+            Either every broadcast listed stops or none does: a `broadcastId` that is not in progress in the
+            room, including one of another room, answers `404`, and one already stopping `409`.
         tags:
             - OpenVidu Meet - Broadcasts
         security:
@@ -119,10 +143,10 @@
             - $ref: './parameters/broadcast-x-fields-header.yaml'
             - $ref: './parameters/broadcast-fields.yaml'
         requestBody:
-            $ref: './requests/bulk-stop-broadcasts.yaml'
+            $ref: './requests/stop-broadcasts.yaml'
         responses:
             '200':
-                $ref: './responses/success/bulk-stop-broadcasts.yaml'
+                $ref: './responses/success/stop-broadcasts.yaml'
             '400':
                 $ref: '../shared/responses/errors/malformed-body.yaml'
             '401':
@@ -178,46 +202,3 @@
                 $ref: '../shared/responses/errors/internal-server.yaml'
             '503':
                 $ref: '../shared/responses/errors/service-unavailable.yaml'
-
-/broadcasts/{broadcastId}/stop:
-    post:
-        operationId: broadcastStop
-        summary: Stop a broadcast
-        description: |
-            Stops a broadcast: the stream to its destination ends at once, while the other broadcasts of the
-            meeting go on.
-
-            Requires the `broadcastControl` permission in the broadcast's room.
-
-            Returns the broadcast in its final state: `complete`, with its `endDate` and `duration`, or
-            `aborted` when no media had reached its destination yet. The
-            [`broadcastEnded`](#/webhooks/broadcastEndedWebhook) webhook reports the same. A broadcast that is
-            not in progress answers `404`, and one already stopping `409`.
-        tags:
-            - OpenVidu Meet - Broadcasts
-        security:
-            - apiKeyHeader: []
-            - roomMemberTokenHeader: []
-        parameters:
-            - $ref: './parameters/broadcast-id-path.yaml'
-            - $ref: './parameters/broadcast-x-fields-header.yaml'
-            - $ref: './parameters/broadcast-fields.yaml'
-        responses:
-            '200':
-                $ref: './responses/success/stop-broadcast.yaml'
-            '401':
-                $ref: '../shared/responses/errors/unauthorized.yaml'
-            '403':
-                $ref: '../shared/responses/errors/forbidden.yaml'
-            '404':
-                $ref: './responses/errors/broadcast-not-found.yaml'
-            '409':
-                $ref: './responses/errors/broadcast-already-stopped.yaml'
-            '422':
-                $ref: '../shared/responses/errors/validation.yaml'
-            '429':
-                $ref: '../shared/responses/errors/too-many-requests.yaml'
-            '500':
-                $ref: '../shared/responses/errors/internal-server.yaml'
-            '503':
-                $ref: '../shared/responses/errors/egress-unavailable.yaml'

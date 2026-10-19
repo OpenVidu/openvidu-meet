@@ -1,4 +1,8 @@
 type: object
+description: >
+    One broadcast: the stream of a meeting to one destination, with its own status and lifecycle. Every
+    broadcasts operation returns this object, alone or in a `broadcasts` list, and the broadcast webhooks
+    carry it in their `data`.
 required:
     - broadcastId
     - roomId
@@ -11,8 +15,11 @@ required:
 properties:
     broadcastId:
         type: string
-        example: 'room-123--kX9pL2mQ7a'
-        description: The unique identifier of the broadcast.
+        example: 'room-123--Qm4tZ8vR1c'
+        description: >
+            The unique identifier of the broadcast, of the form `{roomId}--{id}`. It identifies one attempt
+            to stream to a destination: starting a destination again, after it was stopped or failed,
+            creates a broadcast with a new identifier.
     roomId:
         type: string
         example: 'room-123'
@@ -43,8 +50,8 @@ properties:
         type: string
         example: 'kX9pL2mQ7a'
         description: >
-            The `id` the destination has in the room's config. Absent on a broadcast to a destination
-            given for this meeting only.
+            The `id` the destination has in the room's config, the same in every broadcast to it. Absent on
+            a broadcast to a destination given for this meeting only.
     layout:
         type: string
         enum: ['grid', 'speaker', 'single-speaker']

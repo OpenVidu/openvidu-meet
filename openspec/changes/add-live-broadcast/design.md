@@ -43,10 +43,12 @@ See proposal.md for the motivation and the specs for the behavior.
 
 The broadcasts are a top-level `/broadcasts` group, as recordings are (decided 2026-10-15, over an
 earlier sub-resource of `/meetings/{roomId}`): start takes the `roomId` in its body and optional
-destinations, `GET /broadcasts/{broadcastId}` and `POST /broadcasts/{broadcastId}/stop` take the id
-alone, the list needs its `roomId` (broadcasts only exist within one live meeting), and
-`POST /broadcasts/stop` stops several or all of a room in one request for the meeting's Stop broadcast
-and the embedded `broadcastStop`. A `broadcastId` is `{roomId}--{id}`, so the room, its permissions and
+destinations, `GET /broadcasts/{broadcastId}` takes the id alone, the list needs its `roomId`
+(broadcasts only exist within one live meeting), and `POST /broadcasts/stop` is the one stop: it takes
+the `roomId` and the `broadcastIds` to stop, one or several, or none for every running one, the same body
+as the embedded `broadcastStop`. An earlier `POST /broadcasts/{broadcastId}/stop` for a single broadcast
+was dropped on 2026-10-19: it repeated what the list stop does with one id and answered a bare object
+where every other write answers a `broadcasts` list. A `broadcastId` is `{roomId}--{id}`, so the room, its permissions and
 its Redis value follow from the id as a recording's room follows from its id. The `{id}` part is
 Meet's own, since LiveKit has no identifier per stream; should it get one, the id can carry it as a
 recording's carries its egress id. `MEET_API_REST_GROUPS` and the naming charter gain `broadcasts`.

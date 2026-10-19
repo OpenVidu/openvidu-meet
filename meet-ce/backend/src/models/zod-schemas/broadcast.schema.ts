@@ -80,7 +80,7 @@ export const StartBroadcastReqSchema: z.ZodType<MeetBroadcastStartOptions & { ro
 		path: ['destinationIds']
 	});
 
-export const BulkStopBroadcastsReqSchema: z.ZodType<MeetBroadcastStopOptions & { roomId: string }> = z.object({
+export const StopBroadcastsReqSchema: z.ZodType<MeetBroadcastStopOptions & { roomId: string }> = z.object({
 	roomId: nonEmptySanitizedRoomId('roomId'),
 	broadcastIds: z
 		.array(broadcastIdSchema)

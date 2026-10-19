@@ -7,8 +7,8 @@
 export interface MeetBroadcastStartOptions {
 	/**
 	 * Identifiers of the room's saved destinations to stream to, each streamed to as saved. Omitted,
-	 * every room destination the meeting is not streaming to yet; empty, none of them. An identifier
-	 * the room does not have is rejected.
+	 * every room destination the meeting is not streaming to yet; empty, none of them, which then
+	 * requires at least one entry in `destinations`. An identifier the room does not have is rejected.
 	 */
 	destinationIds?: string[];
 	/**
@@ -30,8 +30,7 @@ export interface MeetBroadcastStartDestination {
 
 /**
  * Payload of the `broadcastStop` embedded command, and body of `POST /broadcasts/stop` next to the
- * `roomId` of the meeting: the broadcasts to stop. One broadcast is also stopped by its id alone,
- * through `POST /broadcasts/{broadcastId}/stop`.
+ * `roomId` of the meeting: the broadcasts to stop, one or several.
  */
 export interface MeetBroadcastStopOptions {
 	/** Identifiers of the broadcasts to stop. Omitted, every broadcast of the meeting still running */

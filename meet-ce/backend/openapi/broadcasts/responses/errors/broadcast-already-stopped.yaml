@@ -6,4 +6,4 @@ content:
             $ref: '../../../shared/schemas/error.yaml'
         example:
             error: 'Broadcast Error'
-            message: "Broadcast 'room-123--kX9pL2mQ7a' is already stopped"
+            message: "Broadcast 'room-123--Qm4tZ8vR1c' is already stopped"

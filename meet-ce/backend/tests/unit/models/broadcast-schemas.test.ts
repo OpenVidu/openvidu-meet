@@ -4,7 +4,7 @@ import {
 	BroadcastConfigSchema,
 	BroadcastFieldsQuerySchema,
 	BroadcastIdParamsSchema,
-	BulkStopBroadcastsReqSchema,
+	StopBroadcastsReqSchema,
 	GetBroadcastsQuerySchema,
 	StartBroadcastReqSchema
 } from '../../../src/models/zod-schemas/broadcast.schema.js';
@@ -126,18 +126,18 @@ describe('BroadcastConfigSchema', () => {
 	});
 });
 
-describe('StartBroadcastReqSchema and BulkStopBroadcastsReqSchema', () => {
+describe('StartBroadcastReqSchema and StopBroadcastsReqSchema', () => {
 	const nothingToStream =
 		'destinationIds: At least one destination is required: destinationIds is empty and no destinations are given';
 
 	it('accept a body naming only the room, meaning every room destination not streamed to yet, or every running broadcast', () => {
 		expect(StartBroadcastReqSchema.parse({ roomId })).toEqual({ roomId });
-		expect(BulkStopBroadcastsReqSchema.parse({ roomId })).toEqual({ roomId });
+		expect(StopBroadcastsReqSchema.parse({ roomId })).toEqual({ roomId });
 	});
 
 	it('require the room', () => {
 		expect(issues(StartBroadcastReqSchema.safeParse({}))).toEqual([expect.stringContaining('roomId')]);
-		expect(issues(BulkStopBroadcastsReqSchema.safeParse({}))).toEqual([expect.stringContaining('roomId')]);
+		expect(issues(StopBroadcastsReqSchema.safeParse({}))).toEqual([expect.stringContaining('roomId')]);
 	});
 
 	it('accept room destinations by id and destinations for the meeting by name and url', () => {
@@ -180,10 +180,10 @@ describe('StartBroadcastReqSchema and BulkStopBroadcastsReqSchema', () => {
 			issues(StartBroadcastReqSchema.safeParse({ roomId, destinationIds: ['a', 'b', 'c', 'd', 'e', 'f'] }))
 		).toEqual(['destinationIds: Cannot have more than 5 destinations']);
 		expect(StartBroadcastReqSchema.safeParse({ roomId, destinationIds: [' '] }).success).toBe(false);
-		expect(issues(BulkStopBroadcastsReqSchema.safeParse({ roomId, broadcastIds: [] }))).toEqual([
+		expect(issues(StopBroadcastsReqSchema.safeParse({ roomId, broadcastIds: [] }))).toEqual([
 			'broadcastIds: At least one broadcast id is required'
 		]);
-		expect(BulkStopBroadcastsReqSchema.safeParse({ roomId, broadcastIds: [''] }).success).toBe(false);
+		expect(StopBroadcastsReqSchema.safeParse({ roomId, broadcastIds: [''] }).success).toBe(false);
 	});
 });
 
