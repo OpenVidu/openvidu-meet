@@ -68,6 +68,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - [`startRecording`][3.9-start-recording] checked the target room before `recordingControl`, so a room member token of
   another room got `404` for a room that does not exist and learned whether a room could be recorded. It now answers
   `403` first.
+- [`startRecording`][3.9-start-recording] answered `500` when the media server did not accept the recording or could not
+  be reached. It now answers `503`.
 
 #### UI
 

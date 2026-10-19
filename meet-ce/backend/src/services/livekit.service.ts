@@ -19,6 +19,7 @@ import { RecordingHelper } from '../helpers/recording.helper.js';
 import {
 	errorLivekitNotAvailable,
 	errorParticipantNotFound,
+	errorRecordingStartRefused,
 	errorRoomNotFound,
 	internalError,
 	OpenViduMeetError
@@ -468,7 +469,7 @@ export class LiveKitService {
 			return await this.lk.egress.startRoomCompositeEgress(roomName, output, options);
 		} catch (error) {
 			this.logger.error(`Error starting Room Composite Egress for room '${roomName}'`, error);
-			throw internalError(`starting Room Composite Egress for room '${roomName}'`);
+			throw errorRecordingStartRefused(roomName);
 		}
 	}
 
