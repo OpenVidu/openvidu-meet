@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import stream from 'stream';
 import unzipper from 'unzipper';
+import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
@@ -109,6 +110,27 @@ describe('Recording API Tests', () => {
 			const response = await downloadRecordings(invalidRecordingIds, false);
 
 			expectValidationError(response, 'recordingIds', 'At least one recordingId is required');
+		});
+
+		it('should reject more distinct recordingIds than one request accepts', async () => {
+			const tooMany = Array.from(
+				{ length: INTERNAL_CONFIG.BULK_DELETE_MAX_ITEMS + 1 },
+				(_, i) => `room--EG_${i}--uid`
+			);
+			const response = await downloadRecordings(tooMany, false);
+
+			expectValidationError(
+				response,
+				'recordingIds',
+				`recordingIds cannot exceed ${INTERNAL_CONFIG.BULK_DELETE_MAX_ITEMS} items`
+			);
+		});
+
+		it('should count repeated recordingIds once against the limit', async () => {
+			const repeated = Array.from({ length: INTERNAL_CONFIG.BULK_DELETE_MAX_ITEMS + 1 }, () => 'room--EG_1--uid');
+			const response = await downloadRecordings(repeated, false);
+
+			expect(response.status).not.toBe(422);
 		});
 	});
 });

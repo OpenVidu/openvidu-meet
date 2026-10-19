@@ -8,6 +8,7 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { z } from 'zod';
+import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import { invalidRegexPatternReason } from '../../utils/string-match-filter.utils.js';
 import { encodingValidator, nonEmptySanitizedRoomId } from './room.schema.js';
 
@@ -140,17 +141,21 @@ export const BulkDeleteRecordingsReqSchema = z.object({
 		(arg) => {
 			if (typeof arg === 'string') {
 				// If the argument is a string, it is expected to be a comma-separated list of recording IDs.
-				return arg
+				const recordingIds = arg
 					.split(',')
 					.map((s) => s.trim())
 					.filter((s) => s !== '');
+				return Array.from(new Set(recordingIds));
 			}
 
 			return [];
 		},
-		z.array(nonEmptySanitizedRecordingId('recordingId')).min(1, {
-			message: 'At least one recordingId is required'
-		})
+		z
+			.array(nonEmptySanitizedRecordingId('recordingId'))
+			.min(1, { message: 'At least one recordingId is required' })
+			.max(INTERNAL_CONFIG.BULK_DELETE_MAX_ITEMS, {
+				message: `recordingIds cannot exceed ${INTERNAL_CONFIG.BULK_DELETE_MAX_ITEMS} items`
+			})
 	)
 });
 
