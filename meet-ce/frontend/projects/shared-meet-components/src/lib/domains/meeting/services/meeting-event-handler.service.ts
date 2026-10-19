@@ -425,7 +425,8 @@ export class MeetingEventHandlerService {
 	private announceRaisedHand(participant: Participant): void {
 		this.soundService.playHandRaisedSound();
 		const earlier = this.shownHandNotice()?.hands.filter(({ identity }) => identity !== participant.identity);
-		const name = participant.name ?? participant.identity;
+		const model = this.meetingState.remoteParticipants().find(({ identity }) => identity === participant.identity);
+		const name = model?.name ?? participant.name ?? participant.identity;
 		this.showHandNotice([...(earlier ?? []), { identity: participant.identity, name }]);
 	}
 

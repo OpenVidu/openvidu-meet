@@ -1,3 +1,4 @@
+import { MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import {
 	expectChatMessageCount,
@@ -10,9 +11,15 @@ import {
 	expectUnmaskedParticipantPanelNames,
 	expectUnmaskedVideoGridNames
 } from './helpers/e2ee.helper';
-import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
+import {
+	createRoom,
+	createRoomAndGetAnonymousAccessUrl,
+	createRoomMember,
+	deleteRooms
+} from './helpers/meet-api.helper';
 import { openLobby, openMeeting } from './helpers/meeting-navigation.helper';
 import { openMoreOptionsMenu, toggleParticipantsPanel } from './helpers/panels.helper';
+import { expectHandRaisedNotice, toggleHand } from './helpers/participant-management.helper';
 import { waitForRemoteStream } from './helpers/stream.helper';
 import { expectHidden, expectVisible } from './helpers/ui-utils.helper';
 
@@ -174,6 +181,33 @@ test.describe('E2EE E2E Tests', () => {
 				await expectChatMessageTextAt(page, 1, testMessage2);
 			} finally {
 				await page2.close();
+			}
+		});
+
+		test('should name a participant by their clear name in the raised-hand notice', async ({ browser }) => {
+			const e2eeKey = 'shared-encryption-key-789';
+			const speakerName = 'Alice';
+			const room = await createRoom({ config: { e2ee: { enabled: true } } });
+			createdRoomIds.push(room.roomId);
+			const [moderator, speaker] = await Promise.all([
+				createRoomMember(room.roomId, { name: 'Moderator', baseRole: MeetRoomMemberRole.MODERATOR }),
+				createRoomMember(room.roomId, { name: speakerName, baseRole: MeetRoomMemberRole.SPEAKER })
+			]);
+			const moderatorPage = await browser.newPage();
+			const speakerPage = await browser.newPage();
+
+			try {
+				await Promise.all([
+					openMeeting(moderatorPage, moderator.accessUrl, { e2eeKey }),
+					openMeeting(speakerPage, speaker.accessUrl, { e2eeKey })
+				]);
+				await Promise.all([waitForRemoteStream(moderatorPage), waitForRemoteStream(speakerPage)]);
+
+				await toggleHand(speakerPage);
+				await expectHandRaisedNotice(moderatorPage, `${speakerName} raised their hand`);
+			} finally {
+				await moderatorPage.close();
+				await speakerPage.close();
 			}
 		});
 
