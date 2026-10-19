@@ -1,6 +1,7 @@
 import { inject, injectable } from 'inversify';
 import type { Readable } from 'stream';
 import { errorRecordingNotFound, errorRecordingRangeNotSatisfiable } from '../../models/error.model.js';
+import { withKeyPrefix } from '../../utils/storage-key.utils.js';
 import { LoggerService } from '../logger.service.js';
 import { StorageFactory } from './storage.factory.js';
 import type { StorageKeyBuilder, StorageProvider } from './storage.interface.js';
@@ -55,6 +56,17 @@ export class BlobStorageService {
 	// ==========================================
 	// RECORDING MEDIA OPERATIONS
 	// ==========================================
+
+	/**
+	 * Builds the path the recorder writes a recording's file to, under the same prefix Meet reads it from.
+	 *
+	 * @param roomId - The room being recorded
+	 * @param recordingName - The unique name of the recording file, without extension
+	 */
+	getRecordingOutputPath(roomId: string, recordingName: string): string {
+		const key = this.keyBuilder.buildRecordingOutputKey(roomId, recordingName);
+		return withKeyPrefix(this.storageProvider.getKeyPrefix(), key);
+	}
 
 	/**
 	 * Retrieves recording media file as a stream.

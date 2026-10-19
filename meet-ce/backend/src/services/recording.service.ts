@@ -18,7 +18,6 @@ import type { Readable } from 'stream';
 import { uid } from 'uid';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { MEET_ENV } from '../environment.js';
 import { EncodingConverter } from '../helpers/encoding-converter.helper.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
@@ -845,8 +844,7 @@ export class RecordingService {
 		// Added unique identifier to the file path for avoiding overwriting
 		const recordingName = `${roomId}--${uid(10)}`;
 
-		// Generate the file path with the openviud-meet subbucket and the recording prefix
-		const filepath = `${MEET_ENV.S3_SUBBUCKET}/recordings/${roomId}/${recordingName}`;
+		const filepath = this.blobStorageService.getRecordingOutputPath(roomId, recordingName);
 
 		return new EncodedFileOutput({
 			fileType: EncodedFileType.DEFAULT_FILETYPE,

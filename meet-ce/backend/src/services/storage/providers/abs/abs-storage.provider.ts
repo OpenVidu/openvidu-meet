@@ -14,6 +14,10 @@ export class ABSStorageProvider implements StorageProvider {
 		@inject(ABSService) protected azureBlobService: ABSService
 	) {}
 
+	getKeyPrefix(): string {
+		return this.azureBlobService.getKeyPrefix();
+	}
+
 	/**
 	 * Retrieves an object from ABS as a JSON object.
 	 */

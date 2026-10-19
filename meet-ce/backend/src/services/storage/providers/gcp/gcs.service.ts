@@ -6,6 +6,7 @@ import { INTERNAL_CONFIG } from '../../../../config/internal-config.js';
 import { MEET_ENV } from '../../../../environment.js';
 import { errorS3NotAvailable, internalError } from '../../../../models/error.model.js';
 import { runConcurrently } from '../../../../utils/concurrency.utils.js';
+import { withKeyPrefix } from '../../../../utils/storage-key.utils.js';
 import { LoggerService } from '../../../logger.service.js';
 
 /**
@@ -361,19 +362,13 @@ export class GCSService {
 		}
 	}
 
-	/**
-	 * Constructs the full key for a GCS Storage object by ensuring it includes the specified sub-bucket prefix.
-	 * If the provided name already starts with the prefix, it is returned as-is.
-	 * Otherwise, the prefix is prepended to the name.
-	 */
+	getKeyPrefix(): string {
+		// GCS takes its bucket and path from the S3 variables, as documented for MEET_BLOB_STORAGE_MODE=gcs
+		return MEET_ENV.S3_SUBBUCKET;
+	}
+
 	protected getFullKey(name: string): string {
-		const prefix = `${MEET_ENV.S3_SUBBUCKET}`; // Use S3_SUBBUCKET for compatibility
-
-		if (name.startsWith(prefix)) {
-			return name;
-		}
-
-		return `${prefix}/${name}`;
+		return withKeyPrefix(this.getKeyPrefix(), name);
 	}
 
 	/**

@@ -111,6 +111,12 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - A `SERVER_TRUST_PROXY` subnet in IPv4-mapped IPv6 notation with a short prefix, such as `::ffff:10.0.0.0/8`,
   trusted every client as a proxy, so rate limiting took the client address from `X-Forwarded-For`. Such a
   subnet no longer matches every IPv4 address.
+- With `MEET_BLOB_STORAGE_MODE=abs`, recordings were written under `MEET_S3_SUBBUCKET` but read under
+  `MEET_AZURE_SUBCONTAINER_NAME`, so they could not be played, downloaded or deleted when the two differed. They are
+  now written under `MEET_AZURE_SUBCONTAINER_NAME`.
+- A `MEET_S3_SUBBUCKET` or `MEET_AZURE_SUBCONTAINER_NAME` that begins the recordings path, such as `rec` or
+  `recordings`, made Meet look for recordings outside the prefix they were written under, so they could not be played,
+  downloaded or deleted. They are now read under the prefix.
 
 ## 3.9.0
 

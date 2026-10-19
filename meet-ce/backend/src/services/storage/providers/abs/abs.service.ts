@@ -13,6 +13,7 @@ import { INTERNAL_CONFIG } from '../../../../config/internal-config.js';
 import { MEET_ENV } from '../../../../environment.js';
 import { errorAzureNotAvailable, internalError } from '../../../../models/error.model.js';
 import { runConcurrently } from '../../../../utils/concurrency.utils.js';
+import { withKeyPrefix } from '../../../../utils/storage-key.utils.js';
 import { LoggerService } from '../../../logger.service.js';
 
 /** Type guard: narrows an unknown error to one exposing a matching `code` property. */
@@ -304,14 +305,12 @@ export class ABSService {
 		});
 	}
 
+	getKeyPrefix(): string {
+		return MEET_ENV.AZURE_SUBCONTAINER_NAME;
+	}
+
 	protected getFullKey(name: string): string {
-		const prefix = `${MEET_ENV.AZURE_SUBCONTAINER_NAME}`;
-
-		if (name.startsWith(prefix)) {
-			return name;
-		}
-
-		return `${prefix}/${name}`;
+		return withKeyPrefix(this.getKeyPrefix(), name);
 	}
 
 	/**
