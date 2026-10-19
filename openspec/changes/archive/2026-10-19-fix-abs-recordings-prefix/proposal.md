@@ -42,14 +42,16 @@ None.
   may meet in a textual merge but not in behavior. PR #116 has no OpenSpec change yet; when it gets
   one it modifies "Azure Blob Storage credentials" of `deployment`, a different requirement from the
   one modified here, so the deltas do not conflict.
-- openvidu.io: none. `docs/docs/self-hosting/configuration/reference.md` already says
-  `MEET_AZURE_SUBCONTAINER_NAME` is where Meet stores recordings, which becomes true.
+- openvidu.io: the `MEET_AZURE_SUBCONTAINER_NAME` and `MEET_S3_SUBBUCKET` rows of
+  `docs/docs/self-hosting/configuration/reference.md`. The Azure row says where recordings are written
+  and read, with its default, and drops the mention of user preferences, which Meet no longer keeps in
+  blob storage. The S3 row says it has no effect with `abs`.
 
 ## Decisions to confirm
 
 - ABS writes under `MEET_AZURE_SUBCONTAINER_NAME`, the variable the spec and the configuration page
-  document for ABS. Alternative: make ABS read under `MEET_S3_SUBBUCKET`, as GCS already does, and
-  deprecate `MEET_AZURE_SUBCONTAINER_NAME`.
-- No migration moves the blobs an affected deployment already wrote under `MEET_S3_SUBBUCKET`; the
-  changelog states where they are. Alternative: a one-off startup migration that copies them under the
-  Azure prefix.
+  document for ABS (decided). Alternative: make ABS read under `MEET_S3_SUBBUCKET`, as GCS already does,
+  and deprecate `MEET_AZURE_SUBCONTAINER_NAME`.
+- No migration moves the blobs an affected deployment already wrote under `MEET_S3_SUBBUCKET`, and
+  the changelog carries no upgrade note about them (decided). Alternative: a one-off startup migration
+  that copies them under the Azure prefix.

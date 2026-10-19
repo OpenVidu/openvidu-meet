@@ -28,5 +28,5 @@ configuration, which the OpenVidu deployment sets.
 
 ## Risks / Trade-offs
 
-- [An affected deployment keeps unreadable recordings written before the fix] → the changelog line
-  states where they are, so an operator can move them under the Azure prefix by hand.
+- [An affected deployment keeps unreadable recordings written before the fix] → they stay under
+  `MEET_S3_SUBBUCKET`, where an operator can move them under the Azure prefix by hand.
