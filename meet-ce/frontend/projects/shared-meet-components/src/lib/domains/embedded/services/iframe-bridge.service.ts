@@ -260,8 +260,9 @@ export class IframeBridgeService {
 
 			case EmbeddedCommandName.BROADCAST_START: {
 				const payload = 'payload' in message ? message.payload : undefined;
+				const destinationIds = payload && 'destinationIds' in payload ? payload.destinationIds : undefined;
 				const destinations = payload && 'destinations' in payload ? payload.destinations : undefined;
-				await this.commandService.broadcastStart({ destinations });
+				await this.commandService.broadcastStart({ destinationIds, destinations });
 				break;
 			}
 

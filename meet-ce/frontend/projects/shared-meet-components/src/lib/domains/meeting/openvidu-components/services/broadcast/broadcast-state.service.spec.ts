@@ -151,11 +151,21 @@ describe('BroadcastStateService', () => {
 
 	it('ties each broadcast of a start to the full URL of the destination given for the meeting, until reset', () => {
 		service.recordOwnBroadcasts(
-			[{ destinationId: 'd1' }, { name: 'Channel A', url: 'rtmp://a.rtmp.youtube.com/live2/key-a' }],
-			[broadcast({ broadcastId: 'bc1' }), broadcast({ broadcastId: 'bc2', destinationId: undefined })]
+			[
+				{ name: 'Channel A', url: 'rtmp://a.rtmp.youtube.com/live2/key-a' },
+				{ name: 'Channel B', url: 'rtmp://b.example.com/live/key-b' }
+			],
+			[
+				broadcast({ broadcastId: 'bc1' }),
+				broadcast({ broadcastId: 'bc2', destinationId: undefined }),
+				broadcast({ broadcastId: 'bc3', destinationId: undefined })
+			]
 		);
 
-		expect([...service.ownUrls()]).toEqual([['bc2', 'rtmp://a.rtmp.youtube.com/live2/key-a']]);
+		expect([...service.ownUrls()]).toEqual([
+			['bc2', 'rtmp://a.rtmp.youtube.com/live2/key-a'],
+			['bc3', 'rtmp://b.example.com/live/key-b']
+		]);
 
 		service.reset();
 		expect(service.ownUrls().size).toBe(0);

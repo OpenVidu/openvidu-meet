@@ -318,7 +318,7 @@ describe('BroadcastService', () => {
 		it('starts a stream egress to the room destination, keeps its real URL server-side and tells everyone', async () => {
 			livekit.nextEgress = egressWith({ status: EgressStatus.EGRESS_STARTING });
 
-			const [info] = await service.startBroadcasts(ROOM_ID, { destinations: [{ destinationId: 'a' }] });
+			const [info] = await service.startBroadcasts(ROOM_ID, { destinationIds: ['a'] });
 
 			expect(livekit.startCalls).toEqual([
 				{
@@ -352,11 +352,8 @@ describe('BroadcastService', () => {
 			];
 
 			const broadcasts = await service.startBroadcasts(ROOM_ID, {
-				destinations: [
-					{ destinationId: 'a' },
-					{ destinationId: 'b' },
-					{ name: 'Extra', url: 'rtmp://mtx/live/xxxKEYxxx' }
-				]
+				destinationIds: ['a', 'b'],
+				destinations: [{ name: 'Extra', url: 'rtmp://mtx/live/xxxKEYxxx' }]
 			});
 
 			const [a, b, extra] = broadcasts.map(({ broadcastId }) => broadcastId);
@@ -392,7 +389,7 @@ describe('BroadcastService', () => {
 			];
 
 			const broadcasts = await service.startBroadcasts(ROOM_ID, {
-				destinations: [{ destinationId: 'a' }, { destinationId: 'b' }]
+				destinationIds: ['a', 'b']
 			});
 
 			expect(broadcasts.map(({ name, status }) => `${name}:${status}`)).toEqual(['A:starting', 'B:starting']);
@@ -427,7 +424,8 @@ describe('BroadcastService', () => {
 
 			await expect(
 				service.startBroadcasts(ROOM_ID, {
-					destinations: [{ destinationId: 'a' }, { name: 'Extra', url: 'rtmp://mtx/live/xxxKEYxxx' }]
+					destinationIds: ['a'],
+					destinations: [{ name: 'Extra', url: 'rtmp://mtx/live/xxxKEYxxx' }]
 				})
 			).rejects.toThrow('sink failed');
 
@@ -444,7 +442,7 @@ describe('BroadcastService', () => {
 		it('refuses an egress that does not report stream tags, and takes back the stream it started', async () => {
 			livekit.nextEgress = egressWith({ streamResults: streams([{ tag: 'not-this-one' }]) });
 
-			await expectStatus(service.startBroadcasts(ROOM_ID, { destinations: [{ destinationId: 'a' }] }), 500);
+			await expectStatus(service.startBroadcasts(ROOM_ID, { destinationIds: ['a'] }), 500);
 
 			expect(livekit.updateCalls).toEqual([{ egressId: 'EG_1', add: [], remove: livekit.startCalls[0].urls }]);
 			expect(saved()).toEqual([]);
@@ -453,15 +451,16 @@ describe('BroadcastService', () => {
 
 		it('refuses a room without participants, a destination already streamed to or asked twice, and a sixth destination', async () => {
 			livekit.participants = false;
-			await expectStatus(service.startBroadcasts(ROOM_ID, { destinations: [{ destinationId: 'a' }] }), 409);
+			await expectStatus(service.startBroadcasts(ROOM_ID, { destinationIds: ['a'] }), 409);
 
 			livekit.participants = true;
 			await seed([liveRecord()]);
 			livekit.egressList = [egressWith({})];
-			await expectStatus(service.startBroadcasts(ROOM_ID, { destinations: [{ destinationId: 'a' }] }), 409);
+			await expectStatus(service.startBroadcasts(ROOM_ID, { destinationIds: ['a'] }), 409);
 			await expectStatus(
 				service.startBroadcasts(ROOM_ID, {
-					destinations: [{ destinationId: 'b' }, { name: 'B again', url: REAL_URLS.b }]
+					destinationIds: ['b'],
+					destinations: [{ name: 'B again', url: REAL_URLS.b }]
 				}),
 				422
 			);
@@ -472,10 +471,7 @@ describe('BroadcastService', () => {
 					liveRecord({ broadcastId: `bc-${key}`, url: `rtmp://mtx/live/${key}`, destinationId: undefined })
 				)
 			);
-			await expectStatus(
-				service.startBroadcasts(ROOM_ID, { destinations: [{ destinationId: 'a' }, { destinationId: 'b' }] }),
-				422
-			);
+			await expectStatus(service.startBroadcasts(ROOM_ID, { destinationIds: ['a', 'b'] }), 422);
 			expect(livekit.startCalls).toEqual([]);
 			expect(livekit.updateCalls).toEqual([]);
 		});
@@ -484,7 +480,8 @@ describe('BroadcastService', () => {
 			for (const url of ['rtmp://127.0.0.1:6379/live/key', 'rtmp://169.254.169.254/live/key']) {
 				await expectStatus(
 					service.startBroadcasts(ROOM_ID, {
-						destinations: [{ destinationId: 'a' }, { name: 'Internal', url }]
+						destinationIds: ['a'],
+						destinations: [{ name: 'Internal', url }]
 					}),
 					422
 				);
@@ -512,7 +509,7 @@ describe('BroadcastService', () => {
 			];
 			livekit.nextEgress = egressWith({ egressId: 'EG_2', status: EgressStatus.EGRESS_STARTING });
 
-			const [info] = await service.startBroadcasts(ROOM_ID, { destinations: [{ destinationId: 'a' }] });
+			const [info] = await service.startBroadcasts(ROOM_ID, { destinationIds: ['a'] });
 
 			expect(livekit.startCalls).toHaveLength(1);
 			expect(info.status).toBe(MeetBroadcastStatus.STARTING);
@@ -525,7 +522,7 @@ describe('BroadcastService', () => {
 			livekit.egressList = [egressWith({})];
 			livekit.alreadyEnded = true;
 
-			await service.startBroadcasts(ROOM_ID, { destinations: [{ destinationId: 'b' }] });
+			await service.startBroadcasts(ROOM_ID, { destinationIds: ['b'] });
 
 			expect(livekit.updateCalls).toHaveLength(1);
 			expect(livekit.startCalls).toHaveLength(1);

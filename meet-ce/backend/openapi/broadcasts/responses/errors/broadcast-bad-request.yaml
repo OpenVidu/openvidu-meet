@@ -1,0 +1,18 @@
+description: >
+    Bad Request: the request body could not be parsed as JSON, or `destinationIds` names a destination the
+    room does not have
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        examples:
+            unknownDestination:
+                summary: A destination the room does not have
+                value:
+                    error: 'Broadcast Error'
+                    message: "Destination 'kX9pL2mQ7a' is not one of the room's destinations"
+            malformedBody:
+                summary: A body that is not JSON
+                value:
+                    error: 'Bad Request'
+                    message: 'Malformed body'

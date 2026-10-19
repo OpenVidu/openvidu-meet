@@ -103,13 +103,15 @@ export class BroadcastStateService {
 
 	/**
 	 * Records the destination given for the meeting that each broadcast of a start the local
-	 * participant asked for streams to, the broadcasts answered in the order of the destinations.
+	 * participant asked for streams to. The server answers the room destinations first and then
+	 * those given for the meeting, in the order they were asked for.
 	 */
 	recordOwnBroadcasts(destinations: MeetBroadcastStartDestination[], broadcasts: MeetBroadcastInfo[]): void {
 		const urls = new Map(this._ownUrls());
+		const forMeeting = broadcasts.filter(({ destinationId }) => !destinationId);
 
 		destinations.forEach(({ url }, index) => {
-			if (url && broadcasts[index]) urls.set(broadcasts[index].broadcastId, url);
+			if (forMeeting[index]) urls.set(forMeeting[index].broadcastId, url);
 		});
 		this._ownUrls.set(urls);
 	}

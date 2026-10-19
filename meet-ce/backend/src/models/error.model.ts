@@ -294,6 +294,14 @@ export const errorBroadcastUnknownDestination = (destinationId: string): OpenVid
 	);
 };
 
+export const errorBroadcastStartUnknownDestination = (destinationId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Broadcast Error',
+		`Destination '${destinationId}' is not one of the room's destinations`,
+		400
+	);
+};
+
 export const errorBroadcastRedactedDestinationUrl = (): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Broadcast Error',

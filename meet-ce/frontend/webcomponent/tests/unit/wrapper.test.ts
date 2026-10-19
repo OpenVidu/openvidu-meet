@@ -255,7 +255,7 @@ describe('openvidu-meet custom element', () => {
 
 		// Every command the element publishes, with the arguments the component must receive
 		// untouched: the element is a transport, it decides nothing.
-		const start: MeetBroadcastStartOptions = { destinations: [{ destinationId: 'dest-a' }] };
+		const start: MeetBroadcastStartOptions = { destinationIds: ['dest-a'] };
 		const stop: MeetBroadcastStopOptions = { broadcastIds: ['bc1'] };
 		const commands: [keyof ComponentInstance, (el: TestableElement) => void, unknown[]][] = [
 			['meetingEnd', (el) => el.meetingEnd(), []],

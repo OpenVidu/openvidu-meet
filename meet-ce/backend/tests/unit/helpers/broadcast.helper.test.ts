@@ -94,33 +94,39 @@ describe('BroadcastHelper.resolveTargets', () => {
 	];
 	const urls = { a: 'rtmp://mtx/live/aaaKEYaaa', b: 'rtmp://mtx/live/bbbKEYbbb' };
 
-	it('streams to the room destinations named, as saved, and to those given for this meeting', () => {
+	const extra = { name: 'Extra', url: 'rtmp://mtx/live/extraKEY' };
+
+	it('streams to the room destinations named, as saved, and then to those given for this meeting', () => {
 		expect(
-			BroadcastHelper.resolveTargets(
-				room,
-				urls,
-				[],
-				[{ destinationId: 'b' }, { name: 'Extra', url: 'rtmp://mtx/live/extraKEY' }]
-			)
-		).toEqual([
-			{ destinationId: 'b', name: 'B', url: urls.b },
-			{ name: 'Extra', url: 'rtmp://mtx/live/extraKEY' }
+			BroadcastHelper.resolveTargets(room, urls, [], { destinationIds: ['b'], destinations: [extra] })
+		).toEqual([{ destinationId: 'b', name: 'B', url: urls.b }, extra]);
+	});
+
+	it('streams to every room destination not streamed to yet when destinationIds is omitted', () => {
+		expect(BroadcastHelper.resolveTargets(room, urls, [], {}).map(({ destinationId }) => destinationId)).toEqual([
+			'a',
+			'b'
+		]);
+		expect(
+			BroadcastHelper.resolveTargets(room, urls, [record({ destinationId: 'a', url: urls.a })], {
+				destinations: [extra]
+			})
+		).toEqual([{ destinationId: 'b', name: 'B', url: urls.b }, extra]);
+	});
+
+	it('streams to no room destination when destinationIds is empty', () => {
+		expect(BroadcastHelper.resolveTargets(room, urls, [], { destinationIds: [], destinations: [extra] })).toEqual([
+			extra
 		]);
 	});
 
-	it('streams to every room destination not streamed to yet when the request names none', () => {
-		expect(
-			BroadcastHelper.resolveTargets(room, urls, [], undefined).map(({ destinationId }) => destinationId)
-		).toEqual(['a', 'b']);
-		expect(
-			BroadcastHelper.resolveTargets(room, urls, [record({ destinationId: 'a', url: urls.a })], undefined)
-		).toEqual([{ destinationId: 'b', name: 'B', url: urls.b }]);
-	});
-
-	it('rejects an unknown room destination and a redacted URL, which has no stream key', () => {
-		expectStatus(() => BroadcastHelper.resolveTargets(room, urls, [], [{ destinationId: 'zzz' }]), 422);
+	it('rejects an id the room does not have with a 400, and a redacted URL, which has no stream key', () => {
+		expectStatus(() => BroadcastHelper.resolveTargets(room, urls, [], { destinationIds: ['a', 'zzz'] }), 400);
 		expectStatus(
-			() => BroadcastHelper.resolveTargets(room, urls, [], [{ name: 'New', url: 'rtmp://mtx/live/********' }]),
+			() =>
+				BroadcastHelper.resolveTargets(room, urls, [], {
+					destinations: [{ name: 'New', url: 'rtmp://mtx/live/********' }]
+				}),
 			422
 		);
 	});

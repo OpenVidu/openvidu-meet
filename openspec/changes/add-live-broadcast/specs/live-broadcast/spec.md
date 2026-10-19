@@ -111,7 +111,7 @@ Each broadcast SHALL stream the meeting with the room's `broadcast.layout` (`gri
 - **THEN** the server answers `422`
 
 ### Requirement: Starting broadcasts
-`broadcastStart` SHALL take the `roomId` of the meeting to stream in its body and accept an API key or a room member token holding `broadcastControl` in that room, start one broadcast per destination and answer `201` with them, each `starting`, without waiting for media. Without `destinations` it SHALL stream to every room destination not streamed to yet, `409` when none is left. It SHALL answer `404` for an unknown room and `409` when nobody is connected.
+`broadcastStart` SHALL take the `roomId` of the meeting to stream in its body and accept an API key or a room member token holding `broadcastControl` in that room, start one broadcast per destination and answer `201` with them, each `starting`, without waiting for media: first the room destinations, then the destinations for that meeting, each in the order asked for. It SHALL answer `404` for an unknown room, and `409` when nobody is connected or nothing is left to start.
 
 #### Scenario: Go live to every room destination
 - **GIVEN** a room with two destinations and a meeting in progress
@@ -120,7 +120,7 @@ Each broadcast SHALL stream the meeting with the room's `broadcast.layout` (`gri
 
 #### Scenario: Every destination already streamed
 - **GIVEN** a meeting that streams to every destination of its room
-- **WHEN** `broadcastStart` is called without `destinations`
+- **WHEN** `broadcastStart` is called without `destinationIds` and without `destinations`
 - **THEN** the REST API answers `409`
 
 #### Scenario: Nobody connected
@@ -132,11 +132,37 @@ Each broadcast SHALL stream the meeting with the room's `broadcast.layout` (`gri
 - **WHEN** `broadcastStart` is called with a room member token lacking `broadcastControl`, or issued for another room
 - **THEN** the REST API answers `403`
 
-### Requirement: Destinations of a start request
-Each entry of `destinations` SHALL be either the `destinationId` of a room destination alone, streamed to as saved, or a `name` and a full `url` for that meeting only. The server SHALL answer `422` to an entry mixing both forms, an unknown `destinationId`, a redacted URL or more than five broadcasts in progress at once.
+### Requirement: Room destinations of a start request
+A start request SHALL name the room destinations to stream to by their ids in `destinationIds`, each streamed to as saved. The server SHALL keep an omitted `destinationIds` apart from an empty one: omitted, it SHALL stream to every room destination not streamed to yet; empty, to none of them. It SHALL answer `400` to an id the room does not have.
+
+#### Scenario: Only some room destinations
+- **GIVEN** a room with destinations A and B and a meeting in progress
+- **WHEN** `broadcastStart` is called with `destinationIds` holding only A
+- **THEN** the REST API answers `201` with one broadcast, to A
+
+#### Scenario: Only a destination for the meeting
+- **GIVEN** a room with destinations A and B and a meeting in progress
+- **WHEN** `broadcastStart` is called with an empty `destinationIds` and one destination in `destinations`
+- **THEN** the REST API answers `201` with one broadcast, to that destination, and none to A or B
+
+#### Scenario: Room destinations and one for the meeting
+- **GIVEN** a room with destinations A and B and a meeting in progress
+- **WHEN** `broadcastStart` is called without `destinationIds` and with one destination in `destinations`
+- **THEN** the REST API answers `201` with three broadcasts: A, B and that destination
+
+#### Scenario: Id of another room
+- **WHEN** `broadcastStart` is called with a `destinationIds` entry the room does not have, such as the id of another room's destination
+- **THEN** the REST API answers `400` and no broadcast starts
+
+### Requirement: Destinations for one meeting in a start request
+A start request SHALL give the destinations for that meeting only in `destinations`, each a `name` and a full `url` and nothing else, never saved in the room. The server SHALL answer `422` to an empty `destinationIds` with no `destinations`, to an entry with any other field, to a redacted URL and to more than five broadcasts in progress at once.
+
+#### Scenario: Nothing to stream to
+- **WHEN** `broadcastStart` is called with an empty `destinationIds` and no `destinations`
+- **THEN** the REST API answers `422`
 
 #### Scenario: Room destination with a changed URL
-- **WHEN** `broadcastStart` is called with an entry carrying a `destinationId` and a `url`
+- **WHEN** `broadcastStart` is called with a `destinations` entry carrying a `destinationId`
 - **THEN** the REST API answers `422`: a room destination is never changed for a meeting
 
 #### Scenario: Sixth broadcast
@@ -165,7 +191,7 @@ Two destinations of a room, and two broadcasts in progress in a meeting, SHALL n
 
 #### Scenario: Destination already streamed
 - **GIVEN** a meeting streaming to room destination A
-- **WHEN** `broadcastStart` is called with `destinationId` A
+- **WHEN** `broadcastStart` is called with `destinationIds` holding A
 - **THEN** the REST API answers `409`
 
 #### Scenario: Same stream key on another server
@@ -178,7 +204,7 @@ Two destinations of a room, and two broadcasts in progress in a meeting, SHALL n
 - **THEN** the server answers `422` and the stored destinations are unchanged
 
 ### Requirement: Destinations for one meeting need their own permission
-A start request that holds any entry with a `name` and a `url` SHALL also require `broadcastAddDestinations`, checked before the body is judged against the meeting: without it the server SHALL answer `403` and start nothing. Room destinations SHALL need only `broadcastControl`.
+A start request with any entry in `destinations` SHALL also require `broadcastAddDestinations`, checked before the body is judged against the meeting: without it the server SHALL answer `403` and start nothing. Room destinations SHALL need only `broadcastControl`.
 
 #### Scenario: Moderator limited to the room destinations
 - **GIVEN** a participant holding `broadcastControl` but not `broadcastAddDestinations`
@@ -187,7 +213,7 @@ A start request that holds any entry with a `name` and a `url` SHALL also requir
 
 #### Scenario: Room destination only
 - **GIVEN** the same participant
-- **WHEN** they call `broadcastStart` with only the `destinationId` of a room destination
+- **WHEN** they call `broadcastStart` with only `destinationIds`
 - **THEN** the REST API answers `201`
 
 ### Requirement: Every broadcast of a start begins or none does

@@ -96,9 +96,10 @@ export enum EmbeddedCommandName {
 	RECORDING_STOP = 'recordingStop',
 	/**
 	 * Starts a live broadcast of the meeting to each of the given destinations, one broadcast per
-	 * destination, or, when none is given, to each destination saved in the room's config that is
-	 * not being streamed to yet. The room must have live broadcast enabled. A destination given by
-	 * name and URL, for this meeting only, also needs `broadcastAddDestinations`.
+	 * destination: the room destinations named by `destinationIds`, or, when it is omitted, each
+	 * room destination not being streamed to yet, plus the `destinations` given by name and URL for
+	 * this meeting only, which also need `broadcastAddDestinations`. The room must have live
+	 * broadcast enabled.
 	 * @permission broadcastControl
 	 */
 	BROADCAST_START = 'broadcastStart',
@@ -222,7 +223,7 @@ export interface EmbeddedCommandPayloads {
 	 */
 	[EmbeddedCommandName.RECORDING_STOP]: void;
 	/**
-	 * Payload for the {@link EmbeddedCommandName.BROADCAST_START} command. When `destinations` is
+	 * Payload for the {@link EmbeddedCommandName.BROADCAST_START} command. When `destinationIds` is
 	 * omitted, every room destination not streamed to yet. See {@link MeetBroadcastStartOptions}.
 	 */
 	[EmbeddedCommandName.BROADCAST_START]: MeetBroadcastStartOptions;

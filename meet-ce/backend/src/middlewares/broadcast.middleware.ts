@@ -17,13 +17,12 @@ export const broadcastRoomId = (req: Request) => BroadcastHelper.roomIdOf(req.pa
 
 /**
  * Middleware to require `broadcastAddDestinations` from a start request that streams to a
- * destination given for the meeting, which is any entry without the `destinationId` of a room
- * destination.
+ * destination given for the meeting.
  */
 export const withAddDestinationsPermissionToStart = (req: Request, res: Response, next: NextFunction) => {
 	const { destinations } = req.body as MeetBroadcastStartOptions;
 
-	if (!destinations?.some(({ destinationId }) => !destinationId)) return next();
+	if (!destinations?.length) return next();
 
 	return withRoomPermission('broadcastAddDestinations', bodyRoomId)(req, res, next);
 };

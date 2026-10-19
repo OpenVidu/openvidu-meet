@@ -1,16 +1,17 @@
-import type { MeetBroadcastInfo, MeetBroadcastStartDestination } from '@openvidu-meet/typings';
+import type { MeetBroadcastInfo, MeetBroadcastStartOptions } from '@openvidu-meet/typings';
 import { MeetBroadcastStatus } from '@openvidu-meet/typings';
 import type { DistributiveOmit } from '../../../../shared/utils/object.utils';
 
 /**
  * What the live broadcast activity asks of the meeting: the one output it emits, narrowed on
  * `action`. A meeting runs one broadcast per destination, so a request names the destinations to
- * start streaming to, or the broadcasts to stop; naming none means every room destination not
- * streamed to yet, or every running broadcast. The panel never calls the API itself, the meeting
+ * start streaming to, or the broadcasts to stop; without `destinationIds` a start streams to every
+ * room destination not streamed to yet, and without `broadcastIds` a stop ends every running
+ * broadcast. The panel never calls the API itself, the meeting
  * page answers each request.
  */
 export type BroadcastRequestedEvent =
-	| { action: 'start'; roomId: string; destinations?: MeetBroadcastStartDestination[] }
+	| ({ action: 'start'; roomId: string } & MeetBroadcastStartOptions)
 	| { action: 'stop'; roomId: string; broadcastIds?: string[] };
 
 /**

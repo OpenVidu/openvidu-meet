@@ -193,16 +193,21 @@ describe('IframeBridgeService', () => {
 			expect(commandService.participantKick).not.toHaveBeenCalled();
 		});
 
-		it('forwards BROADCAST_START to the manager, with the destinations asked for', () => {
+		it('forwards BROADCAST_START to the manager, keeping an empty list of room destinations apart from an omitted one', () => {
 			startBridge();
-			const destinations = [{ destinationId: 'dest-a' }];
+			const destinations = [{ name: 'Backup', url: 'rtmp://media.example.com/live/key' }];
 
 			postFromHost({ command: EmbeddedCommandName.BROADCAST_START });
-			postFromHost({ command: EmbeddedCommandName.BROADCAST_START, payload: { destinations } });
+			postFromHost({ command: EmbeddedCommandName.BROADCAST_START, payload: { destinationIds: ['dest-a'] } });
+			postFromHost({
+				command: EmbeddedCommandName.BROADCAST_START,
+				payload: { destinationIds: [], destinations }
+			});
 
 			expect(commandService.broadcastStart.calls.allArgs()).toEqual([
-				[{ destinations: undefined }],
-				[{ destinations }]
+				[{ destinationIds: undefined, destinations: undefined }],
+				[{ destinationIds: ['dest-a'], destinations: undefined }],
+				[{ destinationIds: [], destinations }]
 			]);
 		});
 

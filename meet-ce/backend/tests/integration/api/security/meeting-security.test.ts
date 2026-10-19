@@ -159,17 +159,15 @@ describe('Meeting API Security Tests', () => {
 
 			expectMeetError(
 				await startBroadcastWith(memberHeader, {
-					destinations: [
-						{ destinationId: 'room-destination' },
-						{ name: 'Extra', url: 'rtmp://rtmp-sink.invalid/live/key' }
-					]
+					destinationIds: ['room-destination'],
+					destinations: [{ name: 'Extra', url: 'rtmp://rtmp-sink.invalid/live/key' }]
 				}),
 				errorInsufficientPermissions()
 			);
 			// Room destinations need no more than broadcastControl, so the request goes on to the
 			// room's own checks: this room has live broadcast disabled.
 			expectMeetError(
-				await startBroadcastWith(memberHeader, { destinations: [{ destinationId: 'room-destination' }] }),
+				await startBroadcastWith(memberHeader, { destinationIds: ['room-destination'] }),
 				errorBroadcastDisabled(roomId)
 			);
 		});

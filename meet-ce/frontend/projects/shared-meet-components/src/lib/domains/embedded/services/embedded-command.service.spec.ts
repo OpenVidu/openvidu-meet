@@ -539,16 +539,16 @@ describe('EmbeddedCommandService', () => {
 
 	describe('command actions', () => {
 		it('broadcastStart starts the destinations asked for, or by default every room destination not streamed to yet', async () => {
-			const destinations = [
-				{ destinationId: 'dest-b' },
-				{ name: 'Backup', url: 'rtmp://media.example.com/live/key' }
-			];
+			const options = {
+				destinationIds: ['dest-b'],
+				destinations: [{ name: 'Backup', url: 'rtmp://media.example.com/live/key' }]
+			};
 
-			await service.broadcastStart({ destinations });
+			await service.broadcastStart(options);
 			await service.broadcastStart();
 
 			expect(broadcastService.startBroadcasts.calls.allArgs()).toEqual([
-				[ROOM_ID, { destinations }],
+				[ROOM_ID, options],
 				[ROOM_ID, {}]
 			]);
 		});

@@ -50,6 +50,9 @@ interface MeetingDestination extends BroadcastDestinationDraft {
 	id: string;
 }
 
+/** A room destination by its id, or a destination given for the meeting by its name and full URL. */
+type DestinationStart = { destinationId: string } | MeetBroadcastStartDestination;
+
 /**
  * A destination as the activity lists it: one of the room's, or one given for this meeting, with
  * the broadcast to it when there is one.
@@ -65,7 +68,7 @@ interface DestinationRow {
 	source: 'room' | 'meeting';
 	broadcast?: MeetBroadcastInfo;
 	/** How to start a broadcast to it; absent when this client does not know the full URL */
-	start?: MeetBroadcastStartDestination;
+	start?: DestinationStart;
 	selected: boolean;
 	status: RowStatus;
 }
@@ -223,7 +226,7 @@ export class BroadcastActivityComponent {
 					url,
 					source: 'room',
 					broadcast: broadcasts.find(({ destinationId }) => destinationId === id),
-					start: { destinationId: id },
+					start: { destinationId: id! },
 					selected: !this.unselectedIds().has(id!)
 				})
 			),
@@ -411,9 +414,12 @@ export class BroadcastActivityComponent {
 		this.pendingKeys.set(new Set());
 	}
 
-	private startTo(destinations: MeetBroadcastStartDestination[], keys: string[]): void {
+	/** Starts these destinations alone: the room destinations not named are left as they are. */
+	private startTo(starts: DestinationStart[], keys: string[]): void {
+		const destinationIds = starts.flatMap((start) => ('destinationId' in start ? [start.destinationId] : []));
+		const destinations = starts.flatMap((start) => ('destinationId' in start ? [] : [start]));
 		this.pendingKeys.update((pending) => new Set([...pending, ...keys]));
-		this.emitRequest({ action: 'start', destinations });
+		this.emitRequest({ action: 'start', destinationIds, destinations });
 	}
 
 	private toRow(row: Omit<DestinationRow, 'status'>): DestinationRow {

@@ -127,7 +127,8 @@ describe('BroadcastConfigSchema', () => {
 });
 
 describe('StartBroadcastReqSchema and BulkStopBroadcastsReqSchema', () => {
-	const message = 'A destination is either the destinationId of a room destination alone, or a name and a url';
+	const nothingToStream =
+		'destinationIds: At least one destination is required: destinationIds is empty and no destinations are given';
 
 	it('accept a body naming only the room, meaning every room destination not streamed to yet, or every running broadcast', () => {
 		expect(StartBroadcastReqSchema.parse({ roomId })).toEqual({ roomId });
@@ -141,38 +142,44 @@ describe('StartBroadcastReqSchema and BulkStopBroadcastsReqSchema', () => {
 
 	it('accept room destinations by id and destinations for the meeting by name and url', () => {
 		expect(
-			StartBroadcastReqSchema.safeParse({ roomId, destinations: [{ destinationId: 'a' }, destination('c')] })
-				.success
-		).toBe(true);
+			StartBroadcastReqSchema.parse({ roomId, destinationIds: ['a'], destinations: [destination('c')] })
+		).toEqual({ roomId, destinationIds: ['a'], destinations: [destination('c')] });
 	});
 
-	it('reject a room destination sent with a name or a url, since a meeting cannot change it', () => {
-		expect(
-			issues(
-				StartBroadcastReqSchema.safeParse({ roomId, destinations: [{ destinationId: 'a', name: 'Renamed' }] })
-			)
-		).toEqual([`destinations.0: ${message}`]);
-		expect(
-			issues(
-				StartBroadcastReqSchema.safeParse({
-					roomId,
-					destinations: [{ destinationId: 'a', ...destination('x') }]
-				})
-			)
-		).toEqual([`destinations.0: ${message}`]);
+	it('keep an empty list of room destinations apart from an omitted one', () => {
+		expect(StartBroadcastReqSchema.parse({ roomId, destinationIds: [], destinations: [destination('c')] })).toEqual(
+			{ roomId, destinationIds: [], destinations: [destination('c')] }
+		);
+		expect(StartBroadcastReqSchema.parse({ roomId, destinations: [] })).toEqual({ roomId, destinations: [] });
 	});
 
-	it('reject an empty list, more than five entries and an entry naming neither an id nor a url', () => {
-		expect(issues(StartBroadcastReqSchema.safeParse({ roomId, destinations: [] }))).toEqual([
-			'destinations: At least one destination is required'
+	it('reject a body that streams to nothing: no room destination and no destination for the meeting', () => {
+		expect(issues(StartBroadcastReqSchema.safeParse({ roomId, destinationIds: [] }))).toEqual([nothingToStream]);
+		expect(issues(StartBroadcastReqSchema.safeParse({ roomId, destinationIds: [], destinations: [] }))).toEqual([
+			nothingToStream
 		]);
+	});
+
+	it('reject a destination for the meeting without a name and a url, or carrying a destinationId', () => {
+		expect(StartBroadcastReqSchema.safeParse({ roomId, destinations: [{ name: 'No url' }] }).success).toBe(false);
+		expect(StartBroadcastReqSchema.safeParse({ roomId, destinations: [{ destinationId: 'a' }] }).success).toBe(
+			false
+		);
+		expect(
+			StartBroadcastReqSchema.safeParse({ roomId, destinations: [{ destinationId: 'a', ...destination('x') }] })
+				.success
+		).toBe(false);
+	});
+
+	it('reject more than five entries in either list and an empty id', () => {
 		expect(
 			StartBroadcastReqSchema.safeParse({ roomId, destinations: ['a', 'b', 'c', 'd', 'e', 'f'].map(destination) })
 				.success
 		).toBe(false);
-		expect(issues(StartBroadcastReqSchema.safeParse({ roomId, destinations: [{ name: 'No url' }] }))).toEqual([
-			`destinations.0: ${message}`
-		]);
+		expect(
+			issues(StartBroadcastReqSchema.safeParse({ roomId, destinationIds: ['a', 'b', 'c', 'd', 'e', 'f'] }))
+		).toEqual(['destinationIds: Cannot have more than 5 destinations']);
+		expect(StartBroadcastReqSchema.safeParse({ roomId, destinationIds: [' '] }).success).toBe(false);
 		expect(issues(BulkStopBroadcastsReqSchema.safeParse({ roomId, broadcastIds: [] }))).toEqual([
 			'broadcastIds: At least one broadcast id is required'
 		]);

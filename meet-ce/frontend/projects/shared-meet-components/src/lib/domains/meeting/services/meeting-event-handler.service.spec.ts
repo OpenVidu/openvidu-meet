@@ -1471,17 +1471,19 @@ describe('MeetingEventHandlerService', () => {
 		});
 
 		it('starts the destinations asked for in one request, and settles the request once answered', async () => {
-			const destinations = [
-				{ destinationId: 'dest1' },
-				{ name: 'Backup', url: 'rtmp://media.example.com/live/key' }
-			];
+			const destinations = [{ name: 'Backup', url: 'rtmp://media.example.com/live/key' }];
 
-			await service.onBroadcastRequested({ action: 'start', roomId: 'room1', destinations });
+			await service.onBroadcastRequested({
+				action: 'start',
+				roomId: 'room1',
+				destinationIds: ['dest1'],
+				destinations
+			});
 			await service.onBroadcastRequested({ action: 'start', roomId: 'room1' });
 
 			expect(broadcastService.startBroadcasts.calls.allArgs()).toEqual([
-				['room1', { destinations }],
-				['room1', { destinations: undefined }]
+				['room1', { destinationIds: ['dest1'], destinations }],
+				['room1', { destinationIds: undefined, destinations: undefined }]
 			]);
 			expect(broadcastState.setRequest.calls.allArgs()).toEqual([['starting'], ['idle'], ['starting'], ['idle']]);
 			expect(broadcastState.recordOwnBroadcasts.calls.allArgs()).toEqual([
@@ -1503,11 +1505,7 @@ describe('MeetingEventHandlerService', () => {
 		it('reports a refused request with the reason the server gave', async () => {
 			broadcastService.startBroadcasts.and.rejectWith({ error: { message: 'Broadcast is disabled' } });
 
-			await service.onBroadcastRequested({
-				action: 'start',
-				roomId: 'room1',
-				destinations: [{ destinationId: 'd' }]
-			});
+			await service.onBroadcastRequested({ action: 'start', roomId: 'room1', destinationIds: ['d'] });
 
 			expect(broadcastState.setRequest).toHaveBeenCalledWith('failed', 'Broadcast is disabled');
 		});

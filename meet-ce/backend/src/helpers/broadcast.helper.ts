@@ -3,7 +3,7 @@ import { StreamInfo_Status } from '@livekit/protocol';
 import type {
 	MeetBroadcastDestination,
 	MeetBroadcastInfo,
-	MeetBroadcastStartDestination,
+	MeetBroadcastStartOptions,
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
 import {
@@ -25,6 +25,7 @@ import {
 	errorBroadcastDestinationNotAllowed,
 	errorBroadcastDuplicateDestination,
 	errorBroadcastRedactedDestinationUrl,
+	errorBroadcastStartUnknownDestination,
 	errorBroadcastUnknownDestination,
 	errorEgressWithoutStreamTags
 } from '../models/error.model.js';
@@ -108,34 +109,36 @@ export class BroadcastHelper {
 	}
 
 	/**
-	 * The destinations a start request names, with their real URLs: the room's, streamed to as
-	 * saved, and those given for this meeting with their full URL. A request that names none
-	 * streams to every room destination the meeting is not streaming to yet.
+	 * The destinations a start request names, with their real URLs: first the room's, streamed to
+	 * as saved, and then those given for this meeting with their full URL. Without
+	 * `destinationIds`, the room's are every one the meeting is not streaming to yet.
 	 */
 	static resolveTargets(
 		roomDestinations: MeetBroadcastDestination[],
 		roomDestinationUrls: BroadcastDestinationUrls,
 		inProgress: BroadcastRecord[],
-		requested: MeetBroadcastStartDestination[] | undefined
+		{ destinationIds, destinations = [] }: MeetBroadcastStartOptions
 	): BroadcastTarget[] {
 		const streamed = new Set(inProgress.map(({ destinationId }) => destinationId));
-		const destinations: MeetBroadcastStartDestination[] =
-			requested ??
-			roomDestinations.filter(({ id }) => !streamed.has(id)).map(({ id }) => ({ destinationId: id }));
+		const saved = destinationIds
+			? destinationIds.map((destinationId) => {
+					const destination = roomDestinations.find(({ id }) => id === destinationId);
 
-		return destinations.map(({ destinationId, name, url }) => {
-			if (destinationId) {
-				const destination = roomDestinations.find(({ id }) => id === destinationId);
+					if (!destination) throw errorBroadcastStartUnknownDestination(destinationId);
 
-				if (!destination) throw errorBroadcastUnknownDestination(destinationId);
+					return destination;
+				})
+			: roomDestinations.filter(({ id }) => !streamed.has(id));
+		const forMeeting = destinations.map(({ name, url }) => {
+			if (isRedactedStreamUrl(url)) throw errorBroadcastRedactedDestinationUrl();
 
-				return { destinationId, name: destination.name, url: roomDestinationUrls[destinationId] };
-			}
-
-			if (isRedactedStreamUrl(url!)) throw errorBroadcastRedactedDestinationUrl();
-
-			return { name: name!, url: url! };
+			return { name, url };
 		});
+
+		return [
+			...saved.map(({ id, name }) => ({ destinationId: id!, name, url: roomDestinationUrls[id!] })),
+			...forMeeting
+		];
 	}
 
 	/**

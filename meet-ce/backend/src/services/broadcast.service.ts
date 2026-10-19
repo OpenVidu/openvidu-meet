@@ -65,14 +65,9 @@ export class BroadcastService {
 	 * reaches its destination, and is told as started before anything LiveKit reported of it while
 	 * the request went on, such as a destination that refused the stream at once.
 	 */
-	async startBroadcasts(roomId: string, { destinations }: MeetBroadcastStartOptions): Promise<MeetBroadcastInfo[]> {
+	async startBroadcasts(roomId: string, options: MeetBroadcastStartOptions): Promise<MeetBroadcastInfo[]> {
 		return this.withRequestLock(roomId, async () => {
 			const records = await this.reconcile(roomId, await this.broadcastState.find(roomId));
-
-			if (!(await this.livekitService.roomHasParticipants(roomId))) {
-				throw errorBroadcastRoomHasNoParticipants(roomId);
-			}
-
 			const [{ roomName, config }, destinationUrls] = await Promise.all([
 				this.roomService.getMeetRoom(roomId, ['roomName', 'config']),
 				this.roomRepository.findBroadcastDestinationUrls(roomId)
@@ -81,10 +76,14 @@ export class BroadcastService {
 				config.broadcast.destinations,
 				destinationUrls,
 				records,
-				destinations
+				options
 			);
 
 			if (targets.length === 0) throw errorBroadcastAlreadyStarted(roomId);
+
+			if (!(await this.livekitService.roomHasParticipants(roomId))) {
+				throw errorBroadcastRoomHasNoParticipants(roomId);
+			}
 
 			BroadcastHelper.validateNewBroadcasts(records, targets);
 			await BroadcastHelper.assertDestinationsAllowed(targets.map(({ url }) => url));

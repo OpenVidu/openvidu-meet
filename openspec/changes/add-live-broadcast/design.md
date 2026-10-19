@@ -166,9 +166,22 @@ LiveKit's current status is read first. `room_finished` stops the egress and end
 since an egress still starting would otherwise recreate the room. The recording service now ignores
 LiveKit's in-progress egresses whose recording Meet already ended.
 
+### Two lists in a start body
+
+A start body names the room destinations in `destinationIds` and the destinations for that meeting in
+`destinations` (decided 2026-10-19). It replaced one `destinations` list whose entries were either a
+`destinationId` alone or a `name` and `url`, told apart by the fields they carried, with a rule that the
+id could not travel with a name or URL. Each list now holds one kind of entry, and each maps to one
+permission. The server keeps an omitted `destinationIds` (every room destination not streamed to yet,
+which the meeting's Go live and a bare `broadcastStart()` rely on) apart from an empty one (none of
+them), so a client always sends the list when it means only those; the UI does. An id the room does not
+have is `400`, a body that names nothing to stream to is `422`. The answer lists the room destinations
+first and then the meeting's, each in the order asked for, which is how a client ties its own
+destinations to their broadcasts.
+
 ### Permissions enforced at the API
 
-`broadcastControl` gates the routes; a start body with any entry by name and URL also needs
+`broadcastControl` gates the routes; a start body with any entry in `destinations` also needs
 `broadcastAddDestinations`, checked by a middleware before `broadcast.enabled`, so a refused add is
 `403` before any `409` or `422`. The UI and the embedded commands use the participant's room member
 token on the same REST routes, so hiding controls is never the enforcement. The two permissions stay

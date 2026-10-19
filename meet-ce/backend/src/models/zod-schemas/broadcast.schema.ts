@@ -1,6 +1,7 @@
 import type {
 	MeetBroadcastConfigOptions,
 	MeetBroadcastDestination,
+	MeetBroadcastStartDestination,
 	MeetBroadcastStartOptions,
 	MeetBroadcastStopOptions
 } from '@openvidu-meet/typings';
@@ -52,15 +53,10 @@ export const BroadcastConfigSchema: z.ZodType<MeetBroadcastConfigOptions> = z.ob
 	encoding: encodingValidator.optional()
 });
 
-const BroadcastStartDestinationSchema = z
-	.object({
-		destinationId: destinationIdSchema.optional(),
-		name: destinationNameSchema.optional(),
-		url: destinationUrlSchema.optional()
-	})
-	.refine(({ destinationId, name, url }) => (destinationId ? !name && !url : Boolean(name && url)), {
-		message: 'A destination is either the destinationId of a room destination alone, or a name and a url'
-	});
+const BroadcastStartDestinationSchema: z.ZodType<MeetBroadcastStartDestination> = z.strictObject({
+	name: destinationNameSchema,
+	url: destinationUrlSchema
+});
 
 /** A broadcast id, which names the room it belongs to: `{roomId}--{id}`. */
 const broadcastIdSchema = z
@@ -73,12 +69,16 @@ const broadcastIdSchema = z
 
 const fieldsSchema = fieldListSchema(MEET_BROADCAST_FIELDS);
 
-export const StartBroadcastReqSchema: z.ZodType<MeetBroadcastStartOptions & { roomId: string }> = z.object({
-	roomId: nonEmptySanitizedRoomId('roomId'),
-	destinations: destinationListSchema(BroadcastStartDestinationSchema)
-		.min(1, 'At least one destination is required')
-		.optional()
-});
+export const StartBroadcastReqSchema: z.ZodType<MeetBroadcastStartOptions & { roomId: string }> = z
+	.object({
+		roomId: nonEmptySanitizedRoomId('roomId'),
+		destinationIds: destinationListSchema(destinationIdSchema).optional(),
+		destinations: destinationListSchema(BroadcastStartDestinationSchema).optional()
+	})
+	.refine(({ destinationIds, destinations }) => destinationIds?.length !== 0 || Boolean(destinations?.length), {
+		message: 'At least one destination is required: destinationIds is empty and no destinations are given',
+		path: ['destinationIds']
+	});
 
 export const BulkStopBroadcastsReqSchema: z.ZodType<MeetBroadcastStopOptions & { roomId: string }> = z.object({
 	roomId: nonEmptySanitizedRoomId('roomId'),
