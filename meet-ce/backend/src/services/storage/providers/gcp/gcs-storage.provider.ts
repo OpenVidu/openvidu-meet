@@ -14,6 +14,10 @@ export class GCSStorageProvider implements StorageProvider {
 		@inject(GCSService) protected gcsService: GCSService
 	) {}
 
+	getKeyPrefix(): string {
+		return this.gcsService.getKeyPrefix();
+	}
+
 	/**
 	 * Retrieves an object from GCS Storage as a JSON object.
 	 */

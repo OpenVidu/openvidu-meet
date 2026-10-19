@@ -10,6 +10,12 @@ import type { Readable } from 'stream';
  */
 export interface StorageProvider {
 	/**
+	 * The prefix every object of Meet lives under inside the bucket or container, where recordings are
+	 * written by the recorder and read, listed and deleted by Meet.
+	 */
+	getKeyPrefix(): string;
+
+	/**
 	 * Retrieves an object from storage as a JSON object.
 	 *
 	 * @param key - The storage key/path of the object
@@ -114,4 +120,12 @@ export interface StorageKeyBuilder {
 	 * @param recordingId - The unique identifier of the recording
 	 */
 	buildBinaryRecordingKey(recordingId: string): string;
+
+	/**
+	 * Builds the key a recording's output file is written to, without the extension the recorder adds.
+	 *
+	 * @param roomId - The room being recorded
+	 * @param recordingName - The unique name of the recording file
+	 */
+	buildRecordingOutputKey(roomId: string, recordingName: string): string;
 }

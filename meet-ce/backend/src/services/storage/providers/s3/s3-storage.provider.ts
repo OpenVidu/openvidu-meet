@@ -14,6 +14,10 @@ export class S3StorageProvider implements StorageProvider {
 		@inject(S3Service) protected s3Service: S3Service
 	) {}
 
+	getKeyPrefix(): string {
+		return this.s3Service.getKeyPrefix();
+	}
+
 	/**
 	 * Retrieves an object from S3 as a JSON object.
 	 */

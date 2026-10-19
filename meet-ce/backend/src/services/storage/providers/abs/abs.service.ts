@@ -304,8 +304,12 @@ export class ABSService {
 		});
 	}
 
+	getKeyPrefix(): string {
+		return MEET_ENV.AZURE_SUBCONTAINER_NAME;
+	}
+
 	protected getFullKey(name: string): string {
-		const prefix = `${MEET_ENV.AZURE_SUBCONTAINER_NAME}`;
+		const prefix = this.getKeyPrefix();
 
 		if (name.startsWith(prefix)) {
 			return name;

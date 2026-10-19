@@ -57,6 +57,17 @@ export class BlobStorageService {
 	// ==========================================
 
 	/**
+	 * Builds the path the recorder writes a recording's file to, under the same prefix Meet reads it from.
+	 *
+	 * @param roomId - The room being recorded
+	 * @param recordingName - The unique name of the recording file, without extension
+	 */
+	getRecordingOutputPath(roomId: string, recordingName: string): string {
+		const prefix = this.storageProvider.getKeyPrefix();
+		return `${prefix}/${this.keyBuilder.buildRecordingOutputKey(roomId, recordingName)}`;
+	}
+
+	/**
 	 * Retrieves recording media file as a stream.
 	 * Supports partial content requests via HTTP range headers.
 	 *

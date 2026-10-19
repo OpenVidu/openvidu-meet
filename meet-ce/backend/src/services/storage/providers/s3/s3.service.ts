@@ -291,13 +291,17 @@ export class S3Service {
 		}
 	}
 
+	getKeyPrefix(): string {
+		return MEET_ENV.S3_SUBBUCKET;
+	}
+
 	/**
 	 * Constructs the full key for an S3 object by ensuring it includes the specified sub-bucket prefix.
 	 * If the provided name already starts with the prefix, it is returned as-is.
 	 * Otherwise, the prefix is prepended to the name.
 	 */
 	protected getFullKey(name: string): string {
-		const prefix = `${MEET_ENV.S3_SUBBUCKET}`;
+		const prefix = this.getKeyPrefix();
 
 		if (name.startsWith(prefix)) {
 			return name;

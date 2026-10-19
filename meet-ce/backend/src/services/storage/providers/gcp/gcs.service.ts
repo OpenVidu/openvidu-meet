@@ -361,13 +361,18 @@ export class GCSService {
 		}
 	}
 
+	getKeyPrefix(): string {
+		// GCS takes its bucket and path from the S3 variables, as documented for MEET_BLOB_STORAGE_MODE=gcs
+		return MEET_ENV.S3_SUBBUCKET;
+	}
+
 	/**
 	 * Constructs the full key for a GCS Storage object by ensuring it includes the specified sub-bucket prefix.
 	 * If the provided name already starts with the prefix, it is returned as-is.
 	 * Otherwise, the prefix is prepended to the name.
 	 */
 	protected getFullKey(name: string): string {
-		const prefix = `${MEET_ENV.S3_SUBBUCKET}`; // Use S3_SUBBUCKET for compatibility
+		const prefix = this.getKeyPrefix();
 
 		if (name.startsWith(prefix)) {
 			return name;
