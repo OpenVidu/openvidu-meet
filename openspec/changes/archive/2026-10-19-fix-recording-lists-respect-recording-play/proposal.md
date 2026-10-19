@@ -11,9 +11,10 @@ lists offering play and share unconditionally, so the spec states the buggy beha
 
 ## What Changes
 
-- The room recordings page offers play and share only to a visitor holding `recordingPlay`.
+- The room recordings page enables play and share only for a visitor holding `recordingPlay`; without it
+  both stay visible but disabled, with a tooltip naming the permission.
 - The console's Recordings page and a room's Recordings tab resolve `recordingPlay` per room, as they
-  already do for `recordingDownload` and `recordingDelete`, and offer play and share only for
+  already do for `recordingDownload` and `recordingDelete`, and enable play and share only for
   recordings of rooms that grant it.
 - The share dialog no longer assumes access: whoever opens it says whether the viewer holds
   `recordingPlay` for that recording, removing the "has access by default" fallback.
@@ -28,7 +29,7 @@ None.
 
 ### Modified Capabilities
 
-- `recordings`: "Room recordings page" and "Console recordings page" offer play and share only with
+- `recordings`: "Room recordings page" and "Console recordings page" enable play and share only with
   `recordingPlay`.
 
 ## Impact
@@ -45,6 +46,6 @@ None.
 
 ## Decisions to confirm
 
-- Without `recordingPlay`, the lists hide play and share. Alternative: show them disabled with a
-  tooltip naming the missing permission.
+- Without `recordingPlay`, the lists show play and share disabled with a tooltip naming the missing
+  permission (decided). Alternative: hide them.
 - `admin` users and room owners keep every action, as they hold every permission (see `permissions`).
