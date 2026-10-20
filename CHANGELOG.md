@@ -97,6 +97,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   scheduled close and answers `409` when a deletion is scheduled, and `closed` keeps a scheduled deletion.
 - The room returned by `deleteRoom` and `bulkDeleteRooms` carried its `roles` with the current permission keys only. It
   now carries the deprecated `can*` keys next to them, as every other room response does.
+- `getRoomMember` answered `404` for a member that does not exist before checking the caller, so a caller without
+  access could tell which `memberId` values belong to the room. Such a caller now gets `403` whether or not the member
+  exists.
 - A permission change made with `updateRoomMember` during a meeting reached the media server only when the
   participant's client renewed its token, so a client that skipped the renewal kept publishing what it had lost. The
   server now applies the new media grant at once.
