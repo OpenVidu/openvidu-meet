@@ -124,6 +124,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - A room with end-to-end encryption could have live captions on, although the captions assistant only receives
   encrypted audio and produced no captions. As with recording, `captions.enabled` is now stored as `false` while
   `e2ee.enabled` is `true`, in existing rooms too, and the room wizard turns captions off when encryption is turned on.
+- Registering the same callback twice with `on()` on `<openvidu-meet>` called it twice per event and left one
+  registration that `off()` could not remove, and a callback registered with `once()` could not be removed with
+  `off()`. A callback is now registered once per event, and `off()` removes it however it was added.
 
 #### UI
 

@@ -1,5 +1,6 @@
 import { EmbeddedAttribute, EmbeddedCommandName, EmbeddedEventName } from '@openvidu-meet/typings';
 import { computeServerUrl } from 'projects/shared-meet-components/src/lib/shared/utils/url.utils';
+import { EventListeners } from './event-listeners';
 
 /**
  * Lazy loader for `<openvidu-meet>`: the tiny bundle served at the stable url `<basePath>/v1/openvidu-meet.js`.
@@ -134,7 +135,7 @@ class OpenViduMeetLoader extends HTMLElement {
 	// feeds both into the same input and the last one wins there too.
 	readonly _writes = new Map<string, ImplWrite>();
 	_deferred: DeferredCall[] = [];
-	readonly _handlerMap = new Map<string, Map<(payload: unknown) => void, EventListener>>();
+	readonly _listeners = new EventListeners(this);
 	_placeholder: HTMLElement | null = null;
 	_teardownTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -246,45 +247,17 @@ class OpenViduMeetLoader extends HTMLElement {
 	}
 
 	on(eventName: EmbeddedEventName, callback: (payload: unknown) => void): this {
-		const listener: EventListener = (e: Event) => callback((e as CustomEvent).detail);
-
-		if (!this._handlerMap.has(eventName)) {
-			this._handlerMap.set(eventName, new Map());
-		}
-
-		this._handlerMap.get(eventName)!.set(callback, listener);
-		this.addEventListener(eventName, listener);
+		this._listeners.add(eventName, callback);
 		return this;
 	}
 
 	once(eventName: EmbeddedEventName, callback: (payload: unknown) => void): this {
-		const wrapper = (payload: unknown): void => {
-			this.off(eventName, wrapper);
-			callback(payload);
-		};
-
-		return this.on(eventName, wrapper);
+		this._listeners.add(eventName, callback, true);
+		return this;
 	}
 
 	off(eventName: EmbeddedEventName, callback?: (payload: unknown) => void): this {
-		const handlers = this._handlerMap.get(eventName);
-
-		if (!handlers) return this;
-
-		if (!callback) {
-			handlers.forEach((listener) => this.removeEventListener(eventName, listener));
-			this._handlerMap.delete(eventName);
-		} else {
-			const listener = handlers.get(callback);
-
-			if (listener) {
-				this.removeEventListener(eventName, listener);
-				handlers.delete(callback);
-
-				if (handlers.size === 0) this._handlerMap.delete(eventName);
-			}
-		}
-
+		this._listeners.remove(eventName, callback);
 		return this;
 	}
 

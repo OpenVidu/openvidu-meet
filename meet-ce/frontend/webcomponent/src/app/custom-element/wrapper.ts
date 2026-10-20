@@ -5,6 +5,7 @@ import {
 	MeetParticipantMuteOptions,
 	MeetReaction
 } from '@openvidu-meet/typings';
+import { EventListeners } from '../../event-listeners';
 import type { App } from '../app';
 
 /**
@@ -16,30 +17,18 @@ export function createOpenViduMeetElementClass(
 ): CustomElementConstructor {
 	// Declared, not returned as a class expression: mutation testing does not instrument inside one.
 	class OpenViduMeetElement extends (NgElementConstructor as any) {
-		// Keyed by the caller's handler, so `off()` can find the wrapper it was registered with.
-		private readonly _handlerMap = new Map<string, Map<(...args: never[]) => unknown, EventListener>>();
+		private readonly _listeners = new EventListeners(this as unknown as HTMLElement);
 
 		disconnectedCallback(): void {
 			super.disconnectedCallback?.();
-			const el = this as unknown as HTMLElement;
-			this._handlerMap.forEach((handlers, eventName) => {
-				handlers.forEach((listener) => el.removeEventListener(eventName, listener));
-			});
-			this._handlerMap.clear();
+			this._listeners.clear();
 		}
 
 		on(
 			eventName: EmbeddedEventName,
 			callback: (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName>) => void
 		): this {
-			const listener: EventListener = (e: Event) => callback((e as CustomEvent).detail);
-
-			if (!this._handlerMap.has(eventName)) {
-				this._handlerMap.set(eventName, new Map());
-			}
-
-			this._handlerMap.get(eventName)!.set(callback, listener);
-			(this as unknown as HTMLElement).addEventListener(eventName, listener);
+			this._listeners.add(eventName, callback);
 			return this;
 		}
 
@@ -47,38 +36,15 @@ export function createOpenViduMeetElementClass(
 			eventName: EmbeddedEventName,
 			callback: (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName>) => void
 		): this {
-			const wrapper = (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName>): void => {
-				this.off(eventName, wrapper);
-				callback(eventPayload);
-			};
-
-			return this.on(eventName, wrapper);
+			this._listeners.add(eventName, callback, true);
+			return this;
 		}
 
 		off(
 			eventName: EmbeddedEventName,
 			callback?: (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName>) => void
 		): this {
-			const handlers = this._handlerMap.get(eventName);
-
-			if (!handlers) return this;
-
-			const el = this as unknown as HTMLElement;
-
-			if (!callback) {
-				handlers.forEach((listener) => el.removeEventListener(eventName, listener));
-				this._handlerMap.delete(eventName);
-			} else {
-				const listener = handlers.get(callback);
-
-				if (listener) {
-					el.removeEventListener(eventName, listener);
-					handlers.delete(callback);
-
-					if (handlers.size === 0) this._handlerMap.delete(eventName);
-				}
-			}
-
+			this._listeners.remove(eventName, callback);
 			return this;
 		}
 

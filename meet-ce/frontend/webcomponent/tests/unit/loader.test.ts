@@ -67,7 +67,7 @@ type Loader = HTMLElement & {
 	roomUrl?: string;
 	recordingUrl?: string;
 	showOnlyRecordings?: boolean;
-	_handlerMap: Map<string, Map<unknown, EventListener>>;
+	_listeners: { size: number };
 	_meetServerEsmUrl(): string | null;
 };
 
@@ -213,6 +213,51 @@ describe('openvidu-meet lazy loader', () => {
 			expect(cb).toHaveBeenCalledWith({ n: 1 });
 		});
 
+		it('runs a callback registered twice once per event, and removes it with one off()', async () => {
+			const el = createLoader();
+			document.body.appendChild(el);
+			await flush();
+
+			const cb = jest.fn();
+			el.on('joined', cb);
+			el.on('joined', cb);
+			implOf(el).dispatchEvent(new CustomEvent('joined', { bubbles: false, detail: {} }));
+
+			expect(cb).toHaveBeenCalledTimes(1);
+
+			el.off('joined', cb);
+			implOf(el).dispatchEvent(new CustomEvent('joined', { bubbles: false, detail: {} }));
+
+			expect(cb).toHaveBeenCalledTimes(1);
+		});
+
+		it('removes a once() subscription with off() before its event', async () => {
+			const el = createLoader();
+			document.body.appendChild(el);
+			await flush();
+
+			const cb = jest.fn();
+			el.once('joined', cb);
+			el.off('joined', cb);
+			implOf(el).dispatchEvent(new CustomEvent('joined', { bubbles: false, detail: {} }));
+
+			expect(cb).not.toHaveBeenCalled();
+		});
+
+		it('keeps an on() subscription permanent when once() registers the same callback', async () => {
+			const el = createLoader();
+			document.body.appendChild(el);
+			await flush();
+
+			const cb = jest.fn();
+			el.on('joined', cb);
+			el.once('joined', cb);
+			implOf(el).dispatchEvent(new CustomEvent('joined', { bubbles: false, detail: {} }));
+			implOf(el).dispatchEvent(new CustomEvent('joined', { bubbles: false, detail: {} }));
+
+			expect(cb).toHaveBeenCalledTimes(2);
+		});
+
 		it('removes every callback of an event when off() is given none, and only that event', async () => {
 			const el = createLoader();
 			document.body.appendChild(el);
@@ -258,7 +303,7 @@ describe('openvidu-meet lazy loader', () => {
 			el.off('joined', cb);
 			el.off('left');
 
-			expect(el._handlerMap.size).toBe(0);
+			expect(el._listeners.size).toBe(0);
 		});
 	});
 
