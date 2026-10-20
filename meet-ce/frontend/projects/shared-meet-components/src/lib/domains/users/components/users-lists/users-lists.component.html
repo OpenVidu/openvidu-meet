@@ -281,7 +281,7 @@
 								<span class="user-id" id="user-id-{{ user.userId }}">{{ user.userId }}</span>
 							</div>
 							<div class="user-badges" id="user-badges-{{ user.userId }}">
-								@if (UsersUiUtils.isRootAdmin(user, rootAdminId())) {
+								@if (user.isRootAdmin) {
 									<span
 										class="badge badge-root"
 										[matTooltip]="'USERS.LIST.ROOT_ADMIN_TOOLTIP' | translate"
@@ -344,7 +344,7 @@
 							<span
 								class="action-tooltip-target"
 								[matTooltip]="
-									UsersUiUtils.isProtectedUser(user, currentUserId(), rootAdminId())
+									UsersUiUtils.isProtectedUser(user, currentUserId())
 										? ('USERS.LIST.PROTECTED_ACCOUNT_TOOLTIP' | translate)
 										: ('USERS.LIST.UPDATE_ROLE' | translate)
 								"
@@ -353,7 +353,7 @@
 									mat-icon-button
 									(click)="$event.stopPropagation(); updateRole(user)"
 									[disabled]="
-										loading() || UsersUiUtils.isProtectedUser(user, currentUserId(), rootAdminId())
+										loading() || UsersUiUtils.isProtectedUser(user, currentUserId())
 									"
 									id="update-role-btn-{{ user.userId }}"
 								>
@@ -365,7 +365,7 @@
 							<span
 								class="action-tooltip-target"
 								[matTooltip]="
-									UsersUiUtils.isProtectedUser(user, currentUserId(), rootAdminId())
+									UsersUiUtils.isProtectedUser(user, currentUserId())
 										? ('USERS.LIST.PROTECTED_ACCOUNT_TOOLTIP' | translate)
 										: ('USERS.LIST.RESET_PASSWORD' | translate)
 								"
@@ -374,7 +374,7 @@
 									mat-icon-button
 									(click)="$event.stopPropagation(); resetPassword(user)"
 									[disabled]="
-										loading() || UsersUiUtils.isProtectedUser(user, currentUserId(), rootAdminId())
+										loading() || UsersUiUtils.isProtectedUser(user, currentUserId())
 									"
 									id="reset-password-btn-{{ user.userId }}"
 								>
@@ -386,7 +386,7 @@
 							<span
 								class="action-tooltip-target"
 								[matTooltip]="
-									UsersUiUtils.isProtectedUser(user, currentUserId(), rootAdminId())
+									UsersUiUtils.isProtectedUser(user, currentUserId())
 										? ('USERS.LIST.PROTECTED_ACCOUNT_TOOLTIP' | translate)
 										: ('USERS.LIST.DELETE_USER' | translate)
 								"
@@ -395,7 +395,7 @@
 									mat-icon-button
 									(click)="$event.stopPropagation(); deleteUser(user)"
 									[disabled]="
-										loading() || UsersUiUtils.isProtectedUser(user, currentUserId(), rootAdminId())
+										loading() || UsersUiUtils.isProtectedUser(user, currentUserId())
 									"
 									class="delete-action"
 									id="delete-user-btn-{{ user.userId }}"
@@ -412,8 +412,8 @@
 					mat-row
 					*matRowDef="let row; columns: displayedColumns()"
 					[class.selected-row]="isUserSelected(row)"
-					[class.protected-row]="UsersUiUtils.isProtectedUser(row, currentUserId(), rootAdminId())"
-					[class.root-row]="UsersUiUtils.isRootAdmin(row, rootAdminId())"
+					[class.protected-row]="UsersUiUtils.isProtectedUser(row, currentUserId())"
+					[class.root-row]="row.isRootAdmin"
 					id="table-row-{{ row.userId }}"
 					(click)="onUserClick(row)"
 				></tr>

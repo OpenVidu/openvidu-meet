@@ -199,7 +199,7 @@
 				}
 
 				<!-- ─── Admin Actions (admin viewing another non-root user) ─── -->
-				@if (isAdminViewing() && !isRootAdmin()) {
+				@if (isAdminViewing() && !targetUser()?.isRootAdmin) {
 					<mat-card class="section-card admin-actions-card">
 						<mat-card-header>
 							<div mat-card-avatar class="section-avatar danger-avatar">

@@ -29,6 +29,7 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - Reactions, in the meeting and through the embedded command `participantReactionSend` and the embedded event
   `participantReactionSent`, with the `participantReactionSend` permission to send them and the room config
   `reactions.enabled` to turn them off.
+- User responses carry `isRootAdmin`, `true` for the `MEET_INITIAL_ADMIN_USER` account.
 
 #### Deployment
 
@@ -108,6 +109,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - The recording lists of the console and the room recordings page offered play and share on every recording, even to a
   user or room member without `recordingPlay`, and those actions then failed. They are now disabled, with a tooltip,
   without `recordingPlay`.
+- The console treated the earliest registered user as the root admin, so after a change of
+  `MEET_INITIAL_ADMIN_USER` it protected the wrong account. It now protects the `MEET_INITIAL_ADMIN_USER` account.
 
 #### Deployment
 

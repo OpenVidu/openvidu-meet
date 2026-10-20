@@ -20,16 +20,19 @@ content:
                           registrationDate: 1620000000000
                           role: 'admin'
                           roleUpdatedAt: 1620000000000
+                          isRootAdmin: true
                         - userId: 'alice_smith'
                           name: 'Alice Smith'
                           registrationDate: 1620050000000
                           role: 'room_manager'
                           roleUpdatedAt: 1620050000000
+                          isRootAdmin: false
                         - userId: 'bob_jones'
                           name: 'Bob Jones'
                           registrationDate: 1620100000000
                           role: 'room_member'
                           roleUpdatedAt: 1620100000000
+                          isRootAdmin: false
                     pagination:
                         nextPageToken: 'eyJvZmZzZXQiOjEwfQ=='
                         isTruncated: true
@@ -43,6 +46,7 @@ content:
                           registrationDate: 1620000000000
                           role: 'admin'
                           roleUpdatedAt: 1620000000000
+                          isRootAdmin: true
                     pagination:
                         isTruncated: false
                         maxItems: 10

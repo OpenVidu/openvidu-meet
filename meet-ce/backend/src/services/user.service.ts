@@ -448,6 +448,6 @@ export class UserService {
 		const { passwordHash, mustChangePassword, ...userDTO } = user;
 		void passwordHash;
 		void mustChangePassword;
-		return userDTO;
+		return { ...userDTO, isRootAdmin: user.userId === MEET_ENV.INITIAL_ADMIN_USER };
 	}
 }

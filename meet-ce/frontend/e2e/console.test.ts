@@ -168,6 +168,37 @@ test.describe('Console Users list E2E Tests', () => {
 		await expect(page.locator(`[id="select-user-${users[1].userId}"]`)).toBeVisible();
 	});
 
+	test('marks and protects the root admin the server names, not the earliest registered user', async ({ page }) => {
+		const account = (userId: string, registrationDate: number, isRootAdmin: boolean): MeetUserDTO => ({
+			userId,
+			name: userId,
+			role: MeetUserRole.ADMIN,
+			registrationDate,
+			roleUpdatedAt: registrationDate,
+			isRootAdmin
+		});
+		await page.route('**/api/v1/users?*', async (route) => {
+			if (route.request().method() !== 'GET') return route.continue();
+
+			await route.fulfill({
+				json: {
+					users: [account('admin', 1_000, false), account('root_admin', 2_000, true)],
+					pagination: { isTruncated: false, maxItems: 10 }
+				}
+			});
+		});
+
+		await gotoConsolePage(page, 'users', 'ov-users-lists');
+
+		await expect(page.locator('[id="badge-root-root_admin"]')).toBeVisible();
+		await expect(page.locator('[id="select-user-root_admin"]')).toHaveCount(0);
+		await expect(page.locator('[id="delete-user-btn-root_admin"]')).toBeDisabled();
+
+		await expect(page.locator('[id="badge-root-admin"]')).toHaveCount(0);
+		await expect(page.locator('[id="select-user-admin"]')).toBeVisible();
+		await expect(page.locator('[id="delete-user-btn-admin"]')).toBeEnabled();
+	});
+
 	test('the list is still populated after navigating to a user and back', async ({ page }) => {
 		await gotoConsolePage(page, 'users', 'ov-users-lists');
 		await expect(page.locator(`[id="select-user-${users[0].userId}"]`)).toBeVisible({ timeout: 20_000 });

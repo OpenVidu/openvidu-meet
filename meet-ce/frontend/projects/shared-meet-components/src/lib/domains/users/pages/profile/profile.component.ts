@@ -62,7 +62,6 @@ export class ProfileComponent implements OnInit {
 	isLoading = signal(true);
 	isOwnProfile = signal(true);
 	isAdminViewing = signal(false);
-	isRootAdmin = signal(false);
 
 	showCurrentPassword = signal(false);
 	showNewPassword = signal(false);
@@ -104,13 +103,9 @@ export class ProfileComponent implements OnInit {
 					this.isAdminViewing.set(true);
 				}
 
-				const [user, rootAdmin] = await Promise.all([
-					this.userService.getUser(userId),
-					this.userService.getRootAdmin()
-				]);
+				const user = await this.userService.getUser(userId);
 				this.targetUser.set(user);
 				this.isOwnProfile.set(false);
-				this.isRootAdmin.set(UsersUiUtils.isRootAdmin(user, rootAdmin?.userId ?? ''));
 			} else {
 				// Own profile
 				const user = await this.userService.getMe();
