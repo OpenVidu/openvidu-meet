@@ -1,6 +1,7 @@
 import type { ParticipantPermission } from '@livekit/protocol';
 import type {
 	LiveKitPermissions,
+	MeetRoom,
 	MeetRoomMember,
 	MeetRoomMemberField,
 	MeetRoomMemberOptions,
@@ -27,6 +28,7 @@ import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
+import type { ParticipantMeetingMetadata } from '../helpers/participant.helper.js';
 import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
@@ -285,7 +287,8 @@ export class RoomMemberService {
 		const nextCustomPermissions = updates.customPermissions ?? member.customPermissions;
 
 		// Recompute effective permissions
-		const { roles } = await this.roomService.getMeetRoom(roomId, ['roles']);
+		const room = await this.roomService.getMeetRoom(roomId, ['roles', 'config']);
+		const { roles } = room;
 		const effectivePermissions = this.computeEffectivePermissions(roles, nextBaseRole, nextCustomPermissions);
 
 		const updatedMember = await this.roomMemberRepository.updatePartial(roomId, memberId, {
@@ -299,8 +302,7 @@ export class RoomMemberService {
 			// If member lost permission to join meeting, kick them out if they are currently in a meeting
 			await this.kickMembersFromMeetingInBatches(roomId, [memberId]);
 		} else {
-			// Send a signal to the participant to regenerate their token and update permissions in real-time if they are currently in a meeting
-			await this.notifyParticipantPermissionsUpdate(roomId, memberId);
+			await this.applyMemberPermissionsToMeeting(roomId, memberId, effectivePermissions, room);
 		}
 
 		return updatedMember;
@@ -605,45 +607,17 @@ export class RoomMemberService {
 				`Regenerating room member token for participant '${participantIdentity}' in room '${roomId}'`
 			);
 
-			participantName = await this.withParticipantMetadataLock(roomId, participantIdentity!, async () => {
-				// Issued after any demotion that held the lock first, so the demotion does not revoke it.
-				tokenMetadata.iat = Date.now();
-				const participant = await this.getParticipantFromMeeting(roomId, participantIdentity!);
-				const participantMetadata = MeetParticipantHelper.parseOwnMeetingMetadata(participant);
-				const isCurrentlyPromotedModerator = participantMetadata.isPromotedModerator === true;
-
-				let metadataToApply: string;
-
-				if (isCurrentlyPromotedModerator && tokenMetadata.badge === MeetRoomMemberUIBadge.OTHER) {
-					const mergedPermissions = this.mergePermissions(
-						tokenMetadata.permissions,
-						roles[MeetRoomMemberRole.MODERATOR].permissions
-					);
-
-					// Keep current promotion status while refreshing to new non-moderator base permissions.
-					participantMetadata.originalPermissions = tokenMetadata.permissions;
-					participantMetadata.permissions = mergedPermissions;
-
-					tokenMetadata.permissions = mergedPermissions;
-					tokenMetadata.badge = MeetRoomMemberUIBadge.MODERATOR;
-					tokenMetadata.isPromotedModerator = true;
-
-					metadataToApply = JSON.stringify(participantMetadata);
-				} else {
-					metadataToApply = JSON.stringify(tokenMetadata);
+			const participant = await this.applyPermissionsToLiveParticipant(
+				roomId,
+				participantIdentity!,
+				{ roles, config },
+				() => {
+					// Issued after any demotion that held the lock first, so the demotion does not revoke it.
+					tokenMetadata.iat = Date.now();
+					return tokenMetadata;
 				}
-
-				const permission = this.buildLiveParticipantPermission(
-					participant.permission,
-					tokenMetadata.permissions,
-					config.chat.enabled
-				);
-				await this.livekitService.updateParticipant(roomId, participant.identity, {
-					metadata: metadataToApply,
-					permission
-				});
-				return participant.name || participantName;
-			});
+			);
+			participantName = participant.name || participantName;
 		}
 
 		const livekitPermissions = this.getLiveKitPermissions(roomId, tokenMetadata.permissions, config.chat.enabled);
@@ -1176,6 +1150,94 @@ export class RoomMemberService {
 			);
 			throw error;
 		}
+	}
+
+	/**
+	 * Applies new base permissions to a participant in the meeting from the server: their LiveKit metadata and
+	 * grant. A participant promoted to moderator stays promoted, with the new permissions as the ones a demotion
+	 * restores.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param participantIdentity - The LiveKit identity of the participant
+	 * @param room - The room's roles and config
+	 * @param buildMetadata - Builds the participant's metadata, with their new base permissions and badge, from
+	 * their current one
+	 * @returns The participant as it was before the update
+	 */
+	protected async applyPermissionsToLiveParticipant(
+		roomId: string,
+		participantIdentity: string,
+		{ roles, config }: Pick<MeetRoom, 'roles' | 'config'>,
+		buildMetadata: (current: ParticipantMeetingMetadata) => ParticipantMeetingMetadata
+	): Promise<ParticipantInfo> {
+		return this.withParticipantMetadataLock(roomId, participantIdentity, async () => {
+			const participant = await this.getParticipantFromMeeting(roomId, participantIdentity);
+			const current = MeetParticipantHelper.parseOwnMeetingMetadata(participant);
+			const metadata = buildMetadata(current);
+
+			if (current.isPromotedModerator && metadata.badge === MeetRoomMemberUIBadge.OTHER) {
+				metadata.originalPermissions = metadata.permissions;
+				metadata.permissions = this.mergePermissions(
+					metadata.permissions,
+					roles[MeetRoomMemberRole.MODERATOR].permissions
+				);
+				metadata.badge = MeetRoomMemberUIBadge.MODERATOR;
+				metadata.isPromotedModerator = true;
+			}
+
+			await this.livekitService.updateParticipant(roomId, participantIdentity, {
+				metadata: JSON.stringify(metadata),
+				permission: this.buildLiveParticipantPermission(
+					participant.permission,
+					metadata.permissions,
+					config.chat.enabled
+				)
+			});
+			return participant;
+		});
+	}
+
+	/**
+	 * Applies a member's new permissions to their participant in the meeting, if they are in it, and signals
+	 * their client to renew its token so the meeting interface follows. When a role change keeps the
+	 * participant locked for too long, the renewal alone carries the new permissions.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param memberId - The ID of the member, which is their participant identity
+	 * @param permissions - The member's new effective permissions
+	 * @param room - The room's roles and config
+	 */
+	protected async applyMemberPermissionsToMeeting(
+		roomId: string,
+		memberId: string,
+		permissions: MeetRoomMemberPermissions,
+		room: Pick<MeetRoom, 'roles' | 'config'>
+	): Promise<void> {
+		const badge = this.resolveBadgeFromPermissions(
+			permissions,
+			room.roles[MeetRoomMemberRole.MODERATOR].permissions
+		);
+
+		try {
+			await this.applyPermissionsToLiveParticipant(roomId, memberId, room, (current) =>
+				current.memberId === memberId
+					? { ...current, permissions, badge, isPromotedModerator: undefined, originalPermissions: undefined }
+					: current
+			);
+		} catch (error) {
+			if (!(error instanceof OpenViduMeetError) || ![404, 409].includes(error.statusCode)) {
+				throw error;
+			}
+
+			if (error.statusCode === 404) {
+				this.logger.verbose(`Member '${memberId}' is not in the meeting of room '${roomId}'`);
+				return;
+			}
+
+			this.logger.warn(`Could not apply the new permissions of member '${memberId}' in room '${roomId}':`, error);
+		}
+
+		await this.frontendEventService.sendParticipantPermissionsUpdatedSignal(roomId, memberId);
 	}
 
 	/**

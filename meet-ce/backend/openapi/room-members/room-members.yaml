@@ -178,7 +178,8 @@
 
             The room member tokens issued to that member before the write stop being accepted (`401`).
             If the update takes `meetingJoin` away the member is removed from an ongoing meeting;
-            otherwise a member already in a meeting is signalled to pick up the new permissions
+            otherwise the new permissions apply at once to a member already in a meeting, media
+            server grant included, and the member is signalled so the meeting interface follows,
             without rejoining.
 
             **Access token roles**: `admin`, `room_manager`.

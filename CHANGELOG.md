@@ -95,6 +95,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   went on, cancelling a scheduled close or deletion and sending a second `meetingStarted` webhook, and `closed` turned
   a scheduled deletion into a close. During a meeting the room now stays `active_meeting`: `open` cancels only a
   scheduled close and answers `409` when a deletion is scheduled, and `closed` keeps a scheduled deletion.
+- A permission change made with `updateRoomMember` during a meeting reached the media server only when the
+  participant's client renewed its token, so a client that skipped the renewal kept publishing what it had lost. The
+  server now applies the new media grant at once.
 - `chatRead` was enforced in the interface only: every chat message reached every participant's client. Messages now
   reach only the participants holding `chatRead`.
 - A room's `config.chat.enabled` `false` was enforced in the interface only, so a modified client holding `chatWrite`

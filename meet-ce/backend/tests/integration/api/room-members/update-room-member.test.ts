@@ -1,7 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
+import { TrackSource } from '@livekit/protocol';
 import {
 	MeetRoomMember,
 	MeetRoomMemberRole,
+	MeetRoomMemberTokenMetadata,
 	MeetRoomRoles,
 	MeetSignalType,
 	MeetUserRole
@@ -10,14 +12,20 @@ import { container } from '../../../../src/config/dependency-injector.config.js'
 import { OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
+import { TokenService } from '../../../../src/services/token.service.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
-import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
+import {
+	disconnectFakeParticipants,
+	joinFakeParticipant,
+	updateParticipantMetadata
+} from '../../../helpers/livekit-cli-helpers.js';
 import {
 	createRoom,
 	createRoomMember,
 	createUser,
 	deleteAllRooms,
 	deleteAllUsers,
+	generateRoomMemberToken,
 	getRoomMember,
 	sleep,
 	startTestServer,
@@ -35,6 +43,15 @@ describe('Room Members API Tests', () => {
 		roomId = room.roomId;
 		roomRoles = room.roles;
 	});
+
+	/** Joins a member to the meeting as the meeting client does. */
+	const joinMemberToMeeting = async (memberId: string, participantName: string): Promise<void> => {
+		const token = await generateRoomMemberToken(roomId, { secret: memberId, joinMeeting: true, participantName });
+		const { metadata } = container.get(TokenService).getClaimsIgnoringExpiration(token.replace(/^Bearer\s+/i, ''));
+
+		await joinFakeParticipant(roomId, memberId);
+		await updateParticipantMetadata(roomId, memberId, JSON.parse(metadata!) as MeetRoomMemberTokenMetadata);
+	};
 
 	afterAll(async () => {
 		await disconnectFakeParticipants();
@@ -333,9 +350,8 @@ describe('Room Members API Tests', () => {
 			const member = createResponse.body as MeetRoomMember;
 			const memberId = member.memberId;
 
-			// Join fake participant to the room to simulate real join
 			const participantIdentity = memberId; // Participant identity is the same as memberId for members
-			await joinFakeParticipant(roomId, memberId);
+			await joinMemberToMeeting(memberId, 'Test Member');
 
 			const frontendEventService = container.get(FrontendEventService);
 			const sendSignalSpy = jest.spyOn(frontendEventService as any, 'sendSignal');
@@ -361,6 +377,28 @@ describe('Room Members API Tests', () => {
 					destinationIdentities: [participantIdentity]
 				}
 			);
+		});
+
+		it('should apply the new media grant to a member in the meeting without their client renewing its token', async () => {
+			const createResponse = await createRoomMember(roomId, {
+				name: 'Live Member',
+				baseRole: MeetRoomMemberRole.SPEAKER
+			});
+			const memberId = createResponse.body.memberId as string;
+			await joinMemberToMeeting(memberId, 'Live Member');
+
+			const response = await updateRoomMember(roomId, memberId, {
+				customPermissions: { mediaPublishAudio: false }
+			});
+			expect(response.status).toBe(200);
+
+			const participant = await container.get(LiveKitService).getParticipant(roomId, memberId);
+			expect(participant.permission?.canPublishSources).not.toContain(TrackSource.MICROPHONE);
+			expect(participant.permission?.canPublishSources).toContain(TrackSource.CAMERA);
+
+			// A token refresh or a reconnection rebuilds the grant from this metadata
+			const { permissions } = JSON.parse(participant.metadata) as MeetRoomMemberTokenMetadata;
+			expect(permissions.mediaPublishAudio).toBe(false);
 		});
 	});
 
