@@ -130,6 +130,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - A join refused because `participant-external-id` or `participant-metadata` exceed their limits showed the generic
   error screen. It now shows an "Invalid participant data" error screen and logs the server's reason in the browser
   console.
+- The styles of `<openvidu-meet>` reached the host page, restyling its own elements such as Angular Material
+  components, and the host page's `<style>` rules reached inside the element. Each side's styles now stay on its side
+  of the element's shadow root.
 
 #### UI
 

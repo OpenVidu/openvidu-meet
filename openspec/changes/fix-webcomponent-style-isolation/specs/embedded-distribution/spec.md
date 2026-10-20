@@ -12,5 +12,5 @@ The embedded element SHALL apply Meet's styles only inside its shadow root and S
 - **GIVEN** a host page with its own element of class `mat-mdc-button`
 - **WHEN** an element joins a meeting and the participant opens a menu of the meeting
 - **THEN** the computed style of the host page's element is the same as before the element was connected
-- **AND** the host document's `<head>` holds no stylesheet added by Meet other than the font stylesheets
+- **AND** no stylesheet Meet adds to the host document's `<head>` declares any style, other than the font stylesheets
 

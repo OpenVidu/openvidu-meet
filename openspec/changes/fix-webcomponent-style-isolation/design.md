@@ -27,6 +27,26 @@
 
 The change is client-side only and behaves the same with any number of Meet replicas.
 
+## Measurement
+
+Taken on the testapp with the loader, a host `<style>button { background: red !important }</style>` and a host
+`button.mat-mdc-button`, before the change:
+
+- Inward: the join screen's buttons were red, the host rule copied into the shadow root.
+- Outward: at the device setup screen `document.head` held about 30 Meet `<style>` elements, Angular Material's
+  structural styles and Meet's component styles, and the host button took Material's padding, height and font
+  (`padding: 0 12px`, `height: 40px`). Angular removes a component's styles when no instance is left, so the set
+  changed as the screens changed, and the host button's style with it.
+- Outside the shadow root Meet appended the CDK's `cdk-describedby-message-container` to `body`, hidden only by
+  `.cdk-visually-hidden` from those `<head>` styles; the CDK live announcer goes there too when used. No class was set
+  on `<html>`.
+- The CDK's media matcher adds one `<style>` to `head` whose rules are empty `@media … { body { } }` blocks, to make
+  `matchMedia` listeners fire in WebKit. It declares nothing and stays.
+
+After the change: `head` holds only the font links and that empty style, the host button keeps the user agent's
+style through the meeting and an open menu, the join button is not red, and the CDK's describedby container sits
+inside the shadow root, so decisions 2 to 4 hold as written.
+
 ## Risks / Trade-offs
 
 - [`ɵSharedStylesHost` is a private Angular API] -> One provider in the webcomponent app config, guarded by the e2e scenario "Meet's rules do not reach the host page", which fails on an Angular upgrade that changes it.

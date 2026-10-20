@@ -5,7 +5,8 @@ import {
 	inject,
 	provideAppInitializer,
 	provideBrowserGlobalErrorListeners,
-	provideZonelessChangeDetection
+	provideZonelessChangeDetection,
+	ɵSHARED_STYLES_HOST as SHARED_STYLES_HOST
 } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
@@ -23,6 +24,7 @@ import {
 	ThemeService
 } from '@openvidu-meet/shared-components';
 import { ShadowOverlayContainer } from './shadow-dom/overlay-container.service';
+import { ShadowOnlySharedStylesHost } from './shadow-dom/shared-styles-host';
 
 export const appConfig: ApplicationConfig = {
 	providers: [
@@ -43,6 +45,7 @@ export const appConfig: ApplicationConfig = {
 		provideTranslations(AUTH_TRANSLATIONS),
 		provideTranslations(SHARED_TRANSLATIONS),
 		ShadowOverlayContainer,
-		{ provide: OverlayContainer, useExisting: ShadowOverlayContainer }
+		{ provide: OverlayContainer, useExisting: ShadowOverlayContainer },
+		{ provide: SHARED_STYLES_HOST, useClass: ShadowOnlySharedStylesHost }
 	]
 };

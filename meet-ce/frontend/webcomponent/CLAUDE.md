@@ -87,9 +87,11 @@ events are re-dispatched on the outer element.
 - **No Angular Router**: there is no URL to own inside a host page, so `domains/embedded/` in the
   library provides a mini-router (`WcRouterService`, `WcRouteName`, `wcRouteFromAttributes`) that the
   HTTP interceptor also consults for the "current page".
-- **Shadow DOM**: `shadow-dom/styles.service.ts` reflects styles into the shadow root
-  (`adoptedStyleSheets`) and `shadow-dom/overlay-container.service.ts` re-hosts the CDK overlay
-  container inside it; otherwise Material dialogs/menus render unstyled outside the shadow boundary.
+- **Shadow DOM**: Meet's styles live only in the shadow root. `shadow-dom/shared-styles-host.ts`
+  keeps Angular from adding the host page's `<head>` as a style host, so no Meet rule reaches the
+  host page and no host rule is copied in. `shadow-dom/overlay-container.service.ts` re-hosts the
+  CDK overlay container inside the shadow root, and `shadow-dom/body-nodes.service.ts` moves there
+  the CDK accessibility nodes appended to `document.body`, which those styles keep hidden.
 
 ## Commands
 

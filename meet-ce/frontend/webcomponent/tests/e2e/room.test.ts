@@ -5,7 +5,7 @@ import { createRoom, deleteRooms } from '../helpers/meet-api.helper';
 import { openMoreOptionsMenu } from '../helpers/panels.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import { expectSignificantImageDifferenceEventually, screenshotWcElement } from '../helpers/stream.helper';
-import { leaveMeeting, openMeeting } from '../helpers/testapp.helper';
+import { ensureFixture, leaveMeeting, openMeeting, openMeetingAtMediaSetup } from '../helpers/testapp.helper';
 import { openWebcomponentWithAttributes } from '../helpers/webcomponent-attributes.helper';
 import { INTEGRATIONS, meetLocator, wcLocator } from '../helpers/webcomponent.helper';
 
@@ -32,6 +32,57 @@ test.describe('Room Features E2E Tests', () => {
 			await expect(wcLocator(page, 'ov-meeting-view')).toBeVisible();
 
 			await leaveMeeting(page, { role: 'moderator' });
+		});
+	});
+
+	// What CSS lets cross a shadow root by design (inherited and custom properties, parts) still does;
+	// no stylesheet rule crosses it in either direction.
+	test.describe('Style isolation', () => {
+		test('should not let a host page rule reach inside the element', async ({ page }) => {
+			await ensureFixture(page);
+			await page.addStyleTag({ content: 'button { background: rgb(255, 0, 0) !important; }' });
+
+			const { meet } = await openMeetingAtMediaSetup(page, roomId, { role: 'moderator' });
+
+			await expect(meet('#join-button')).not.toHaveCSS('background-color', 'rgb(255, 0, 0)');
+		});
+
+		test("should not let Meet's rules reach the host page", async ({ page }) => {
+			await ensureFixture(page);
+			const probe = await page.evaluateHandle(() => {
+				const button = document.createElement('button');
+				button.className = 'mat-mdc-button mdc-button';
+				button.textContent = 'Host button';
+				return document.body.appendChild(button);
+			});
+			const probeStyle = () =>
+				probe.evaluate((button) => {
+					const { fontFamily, padding, height, borderRadius, color } = getComputedStyle(button);
+					return { fontFamily, padding, height, borderRadius, color };
+				});
+			const styleBefore = await probeStyle();
+
+			await openMeeting(page, roomId, { role: 'moderator' });
+			await openMoreOptionsMenu(page);
+
+			expect(await probeStyle()).toEqual(styleBefore);
+			// Meet's stylesheets are the ones inside its shadow roots; none of them is in the host's <head>.
+			const leaked = await page.locator('openvidu-meet').evaluate((element) => {
+				const meetStyles = new Set<string>();
+
+				const collect = (root: ShadowRoot | null): void => {
+					root?.querySelectorAll('style').forEach((style) => meetStyles.add(style.textContent ?? ''));
+					root?.querySelectorAll('*').forEach((node) => collect(node.shadowRoot));
+				};
+
+				collect(element.shadowRoot);
+				meetStyles.delete('');
+
+				return [...document.head.querySelectorAll('style')]
+					.map((style) => style.textContent ?? '')
+					.filter((text) => meetStyles.has(text));
+			});
+			expect(leaked).toEqual([]);
 		});
 	});
 
