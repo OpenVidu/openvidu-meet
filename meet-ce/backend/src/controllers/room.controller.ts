@@ -158,7 +158,7 @@ export const deleteRoom = async (req: Request, res: Response) => {
 		const response = await roomService.deleteMeetRoom(roomId, deleteOpts);
 
 		if (response.room) {
-			response.room = MeetRoomHelper.addResponseMetadata(response.room);
+			response.room = MeetRoomHelper.addResponseMetadata(roomToWire(response.room));
 		}
 
 		// Determine the status code based on the success code
@@ -210,7 +210,7 @@ export const bulkDeleteRooms = async (req: Request, res: Response) => {
 
 		successful.forEach((item) => {
 			if (item.room) {
-				item.room = MeetRoomHelper.addResponseMetadata(item.room);
+				item.room = MeetRoomHelper.addResponseMetadata(roomToWire(item.room));
 			}
 		});
 
