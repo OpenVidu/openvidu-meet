@@ -157,6 +157,10 @@ export const errorInvalidApiKeySubject = (): OpenViduMeetError => {
 	);
 };
 
+export const errorApiKeyChangeInProgress = (): OpenViduMeetError => {
+	return new OpenViduMeetError('API Key Error', 'Another API key change is in progress, please retry', 409);
+};
+
 export const errorApiKeyNotConfigured = (): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Authentication Error',

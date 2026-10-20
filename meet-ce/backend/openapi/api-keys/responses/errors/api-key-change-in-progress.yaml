@@ -1,0 +1,10 @@
+description: |
+    Another API key change was in progress. API key changes are serialized so that exactly one key
+    remains; a change that keeps waiting past the retry budget is asked to retry.
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        example:
+            error: 'API Key Error'
+            message: 'Another API key change is in progress, please retry'

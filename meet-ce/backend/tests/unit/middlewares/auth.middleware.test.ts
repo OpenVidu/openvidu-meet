@@ -18,6 +18,7 @@ import { RoomMemberRepository } from '../../../src/repositories/room-member.repo
 import { RoomRepository } from '../../../src/repositories/room.repository.js';
 import { ApiKeyService } from '../../../src/services/api-key.service.js';
 import { LoggerService } from '../../../src/services/logger.service.js';
+import { MutexService } from '../../../src/services/mutex.service.js';
 import { RedisService } from '../../../src/services/redis.service.js';
 import { RequestSessionService } from '../../../src/services/request-session.service.js';
 import { TokenService } from '../../../src/services/token.service.js';
@@ -65,6 +66,7 @@ beforeAll(() => {
 	registerDependencies();
 	// The unit job has no Redis, and RedisService exits the process when it cannot connect.
 	container.rebind(RedisService).toConstantValue(redisService);
+	container.rebind(MutexService).toConstantValue({} as MutexService);
 	logger = container.get(LoggerService);
 	apiKeyService = container.get(ApiKeyService);
 	tokenService = container.get(TokenService);

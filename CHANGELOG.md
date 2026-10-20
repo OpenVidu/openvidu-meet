@@ -80,6 +80,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   other, once.
 - The access token of a user with a pending password change also reached public endpoints whose path ends in `/me`
   or `/change-password`, such as `GET /api/v1/users/me`. Only `getMe` and `changeUserPassword` accept it now.
+- Two simultaneous API key regenerations could leave two API keys, both accepted. Exactly one remains now, the last
+  one generated.
 
 #### UI
 

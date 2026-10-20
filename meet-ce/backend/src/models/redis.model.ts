@@ -38,6 +38,7 @@ export const enum RedisLockName {
 	MIGRATION = 'migration',
 	WEBHOOK = 'webhook',
 	WEBHOOK_REGISTRATION = 'webhook_registration',
+	API_KEY = 'api_key',
 	AI_ASSISTANT = 'ai_assistant',
 	PARTICIPANT_METADATA = 'participant_metadata',
 	HAND = 'hand'
