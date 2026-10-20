@@ -127,6 +127,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - Registering the same callback twice with `on()` on `<openvidu-meet>` called it twice per event and left one
   registration that `off()` could not remove, and a callback registered with `once()` could not be removed with
   `off()`. A callback is now registered once per event, and `off()` removes it however it was added.
+- A join refused because `participant-external-id` or `participant-metadata` exceed their limits showed the generic
+  error screen. It now shows an "Invalid participant data" error screen and logs the server's reason in the browser
+  console.
 
 #### UI
 

@@ -408,6 +408,29 @@ for (const integration of INTEGRATIONS) {
 			});
 		});
 
+		test.describe('Invalid correlation fields', () => {
+			test('should show the invalid participant data screen for an external id with a space', async ({
+				page
+			}) => {
+				const consoleErrors: string[] = [];
+				page.on('console', (message) => {
+					if (message.type() === 'error') consoleErrors.push(message.text());
+				});
+				const { meet } = await openMeetingAtMediaSetup(page, roomId, {
+					integration,
+					role: 'moderator',
+					externalId: 'user 42'
+				});
+
+				await meet('#join-button').click();
+
+				await expect(meet('.error-title')).toHaveText('Invalid participant data');
+				await expect
+					.poll(() => consoleErrors.some((text) => text.includes('participantExternalId')))
+					.toBe(true);
+			});
+		});
+
 		// The role describes the LOCAL participant, like their devices do: neither the moderator who
 		// changed it nor anyone else in the meeting hears about it.
 		test.describe('PARTICIPANT_ROLE_CHANGED Event', () => {

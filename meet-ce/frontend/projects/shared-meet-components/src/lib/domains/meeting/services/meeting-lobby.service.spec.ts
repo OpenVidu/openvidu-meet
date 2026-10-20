@@ -1,7 +1,9 @@
 import { Clipboard } from '@angular/cdk/clipboard';
+import { HttpErrorResponse } from '@angular/common/http';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MeetRoomMemberTokenOptions, MeetRoomStatus } from '@openvidu-meet/typings';
+import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
@@ -315,6 +317,30 @@ describe('MeetingLobbyService', () => {
 
 			await expectAsync(service.generateJoinToken()).toBeRejected();
 			expect(meetingContextStub.setIsActiveMeeting).not.toHaveBeenCalled();
+		});
+
+		it('shows the invalid participant data screen and logs the refused fields', async () => {
+			const redirect = spyOn(TestBed.inject(NavigationService), 'redirectToErrorPage');
+			const logError = spyOn(service['log'], 'e');
+			await enterLobby();
+			await service.submitAccess();
+			roomMemberContext.generateToken.and.rejectWith(
+				new HttpErrorResponse({
+					status: 422,
+					error: {
+						message: 'Invalid request',
+						details: [{ field: 'participantExternalId', message: 'Invalid participant external id' }]
+					}
+				})
+			);
+
+			await expectAsync(service.generateJoinToken()).toBeRejected();
+
+			expect(redirect).toHaveBeenCalledWith(NavigationErrorReason.INVALID_PARTICIPANT_DATA, true);
+			expect(logError).toHaveBeenCalledWith(
+				'Invalid participant data:',
+				'participantExternalId: Invalid participant external id'
+			);
 		});
 	});
 

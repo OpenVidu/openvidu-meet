@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
@@ -469,6 +470,14 @@ export class MeetingLobbyService {
 					}
 
 					break;
+				case 422:
+					// The embedding application sent a participant external id or metadata the server refuses
+					this.log.e('Invalid participant data:', this.describeValidationError(error));
+					await this.navigationService.redirectToErrorPage(
+						NavigationErrorReason.INVALID_PARTICIPANT_DATA,
+						true
+					);
+					break;
 				case 429:
 					// Too many requests (rate limited)
 					await this.navigationService.redirectToErrorPage(NavigationErrorReason.TOO_MANY_REQUESTS, true);
@@ -479,6 +488,11 @@ export class MeetingLobbyService {
 
 			throw new Error('Error generating room member token', { cause: error });
 		}
+	}
+
+	protected describeValidationError(error: HttpErrorResponse): string {
+		const details: { field: string; message: string }[] = error.error?.details ?? [];
+		return details.map(({ field, message }) => `${field}: ${message}`).join('; ') || error.error?.message;
 	}
 
 	protected clearLobbyState() {

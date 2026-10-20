@@ -51,6 +51,10 @@
       "TITLE": "Membro inválido",
       "MESSAGE": "Já não é membro desta sala ou as informações do membro estão incorretas"
     },
+    "INVALID_PARTICIPANT_DATA": {
+      "TITLE": "Dados de participante inválidos",
+      "MESSAGE": "A aplicação que abriu esta reunião enviou dados de participante inválidos. Contacte o fornecedor dessa aplicação"
+    },
     "FORBIDDEN_ROOM_ACCESS": {
       "TITLE": "Acesso à sala proibido",
       "MESSAGE": "Não está autorizado a aceder a esta sala (nem às suas gravações)"

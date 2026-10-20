@@ -51,6 +51,10 @@
       "TITLE": "Invalid member",
       "MESSAGE": "You are no longer a member of this room or the member information is incorrect"
     },
+    "INVALID_PARTICIPANT_DATA": {
+      "TITLE": "Invalid participant data",
+      "MESSAGE": "The application that opened this meeting sent invalid participant data. Please contact the provider of that application"
+    },
     "FORBIDDEN_ROOM_ACCESS": {
       "TITLE": "Forbidden room access",
       "MESSAGE": "You are not authorized to access this room (nor its recordings)"
