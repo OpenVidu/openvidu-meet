@@ -7,12 +7,13 @@ import { openMoreOptionsMenu } from './panels.helper';
 
 /**
  * Starts a recording via the more-options menu and waits for the
- * `.webhook-recordingUpdated` DOM marker set by the testapp.
+ * `.webhook-recordingUpdated` DOM marker set by the testapp. The first egress of a run starts its
+ * browser cold, which can take well over 10 s.
  */
 export const startRecording = async (page: Page): Promise<void> => {
 	await openMoreOptionsMenu(page);
 	await wcLocator(page, '#recording-btn').click();
-	await expect(page.locator(`.webhook-${MeetWebhookEventType.RECORDING_UPDATED}`)).toBeVisible({ timeout: 10_000 });
+	await expect(page.locator(`.webhook-${MeetWebhookEventType.RECORDING_UPDATED}`)).toBeVisible({ timeout: 40_000 });
 };
 
 /**
@@ -20,5 +21,5 @@ export const startRecording = async (page: Page): Promise<void> => {
  */
 export const stopRecording = async (page: Page): Promise<void> => {
 	await wcLocator(page, '#stop-recording-btn').click();
-	await expect(page.locator(`.webhook-${MeetWebhookEventType.RECORDING_ENDED}`)).toBeVisible({ timeout: 10_000 });
+	await expect(page.locator(`.webhook-${MeetWebhookEventType.RECORDING_ENDED}`)).toBeVisible({ timeout: 30_000 });
 };
