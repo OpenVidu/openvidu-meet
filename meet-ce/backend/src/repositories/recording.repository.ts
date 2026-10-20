@@ -4,6 +4,7 @@ import { inject, injectable } from 'inversify';
 import type { QueryFilter } from 'mongoose';
 import { uid as secureUid } from 'uid/secure';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import { DocumentNotFoundError } from '../models/database.model.js';
 import { internalError } from '../models/error.model.js';
 import type {
 	MeetRecordingDocument,
@@ -25,6 +26,8 @@ import { buildStringMatchFilter } from '../utils/string-match-filter.utils.js';
 import { BaseRepository } from './base.repository.js';
 import { RoomMemberRepository } from './room-member.repository.js';
 import { RoomRepository } from './room.repository.js';
+
+const IN_PROGRESS_STATUSES = [MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE, MeetRecordingStatus.ENDING];
 
 /**
  * Repository for managing recording entities in MongoDB.
@@ -109,6 +112,26 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 */
 	replace(recording: MeetRecordingInfo): Promise<MeetRecordingInfo> {
 		return this.replaceOne({ recordingId: recording.recordingId }, recording);
+	}
+
+	/**
+	 * Stores a recording's final state only while the stored one is still in progress, so that of
+	 * several callers ending the same recording, on any replica, exactly one succeeds.
+	 *
+	 * @param recording - The recording with its final status
+	 * @returns The stored recording, or `null` when it had already ended or does not exist
+	 */
+	async finish(recording: MeetRecordingInfo): Promise<MeetRecordingInfo | null> {
+		try {
+			return await this.replaceOne(
+				{ recordingId: recording.recordingId, status: { $in: IN_PROGRESS_STATUSES } },
+				recording
+			);
+		} catch (error) {
+			if (error instanceof DocumentNotFoundError) return null;
+
+			throw error;
+		}
 	}
 
 	/**
@@ -319,9 +342,7 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * @returns Object containing current batch of recordings, pagination flag, and optional next page token
 	 */
 	async findInProgressRecordings(batchSize = 100, pageToken?: string): Promise<MeetRecordingPage<MeetRecordingInfo>> {
-		const filter: QueryFilter<MeetRecordingDocument> = {
-			status: { $in: [MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE, MeetRecordingStatus.ENDING] }
-		};
+		const filter: QueryFilter<MeetRecordingDocument> = { status: { $in: IN_PROGRESS_STATUSES } };
 
 		const { items, isTruncated, nextPageToken } = await this.findMany(filter, {
 			maxItems: batchSize,

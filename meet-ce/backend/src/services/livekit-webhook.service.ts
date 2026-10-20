@@ -413,41 +413,32 @@ export class LivekitWebhookService {
 
 			this.logger.debug(`Recording '${recordingId}' in room '${roomId}' status: '${status}'`);
 
-			// Common task for all webhook types: save/update recording metadata in MongoDB
-			let recordingTask: Promise<unknown>;
-
-			if (webhookAction === 'started') {
-				// Create new recording with auto-generated access secrets
-				recordingTask = this.recordingRepository.create(recordingInfo);
-			} else {
-				// Update existing recording
-				recordingTask = this.recordingRepository.replace(recordingInfo);
-			}
-
-			const commonTasks = [recordingTask];
-			const specificTasks: Promise<unknown>[] = [];
-
-			// Send webhook notification
 			switch (webhookAction) {
-				case 'started':
-					specificTasks.push(this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo));
-					this.webhookDispatcherService.sendRecordingStartedWebhook(recordingInfo);
-					break;
-				case 'updated':
-					this.webhookDispatcherService.sendRecordingUpdatedWebhook(recordingInfo);
-					specificTasks.push(this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo));
-					break;
-				case 'ended':
-					specificTasks.push(
-						this.recordingService.releaseRecordingLockIfNoEgress(roomId),
+				case 'started': {
+					// Create new recording with auto-generated access secrets
+					const tasks = [
+						this.recordingRepository.create(recordingInfo),
 						this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo)
-					);
-					this.webhookDispatcherService.sendRecordingEndedWebhook(recordingInfo);
+					];
+					this.webhookDispatcherService.sendRecordingStartedWebhook(recordingInfo);
+					await Promise.all(tasks);
+					break;
+				}
+
+				case 'updated': {
+					const tasks = [
+						this.recordingRepository.replace(recordingInfo),
+						this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo)
+					];
+					this.webhookDispatcherService.sendRecordingUpdatedWebhook(recordingInfo);
+					await Promise.all(tasks);
+					break;
+				}
+
+				case 'ended':
+					await this.recordingService.finishRecording(recordingInfo);
 					break;
 			}
-
-			// Wait for all promises to resolve
-			await Promise.all([...commonTasks, ...specificTasks]);
 		} catch (error) {
 			this.logger.error(
 				`Error processing recording_${webhookAction} webhook for egress '${egressInfo.egressId}'`,

@@ -53,6 +53,7 @@ import { RecordingAutoStartStateService } from './recording-auto-start-state.ser
 import { RequestSessionService } from './request-session.service.js';
 import type { RoomService } from './room.service.js';
 import { BlobStorageService } from './storage/blob-storage.service.js';
+import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 
 @injectable()
 export class RecordingService {
@@ -64,6 +65,7 @@ export class RecordingService {
 		@inject(BlobStorageService) protected blobStorageService: BlobStorageService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(RecordingAutoStartStateService) protected recAutoStartStateService: RecordingAutoStartStateService,
+		@inject(WebhookDispatcherService) protected webhookDispatcherService: WebhookDispatcherService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {}
 
@@ -500,12 +502,11 @@ export class RecordingService {
 							// Wait a bit for recording to fully stop
 							await new Promise((resolve) => setTimeout(resolve, 1000));
 
-							// Check if the recording has stopped and update status if needed
-							const { status } = await this.getRecording(recordingId, ['status']);
+							// A recording whose end has not been reported by now is aborted, and reported so
+							const recording = await this.getRecording(recordingId);
 
-							if (status !== MeetRecordingStatus.COMPLETE) {
+							if (await this.finishRecording({ ...recording, status: MeetRecordingStatus.ABORTED })) {
 								this.logger.warn(`Recording '${recordingId}' did not complete successfully`);
-								await this.updateRecordingStatus(recordingId, MeetRecordingStatus.ABORTED);
 							}
 
 							this.logger.verbose(`Successfully stopped recording '${recordingId}'`);
@@ -690,10 +691,28 @@ export class RecordingService {
 		return this.blobStorageService.getRecordingMedia(recordingId, validatedRange);
 	}
 
-	async updateRecordingStatus(recordingId: string, status: MeetRecordingStatus): Promise<void> {
-		// Ensure recording exists before updating
-		await this.getRecording(recordingId, ['recordingId']);
-		await this.recordingRepository.updatePartial(recordingId, { status });
+	/**
+	 * Gives a recording its final status and reports its end: the `recordingEnded` webhook, the
+	 * in-meeting signal and the release of the room's recording hold. Only the first caller to end a
+	 * recording stores and reports it, so an end reaching several paths or replicas is reported once.
+	 *
+	 * @param recording - The recording with its final status
+	 * @returns Whether this call ended the recording
+	 */
+	async finishRecording(recording: MeetRecordingInfo): Promise<boolean> {
+		const finished = await this.recordingRepository.finish(recording);
+
+		if (!finished) {
+			this.logger.debug(`Recording '${recording.recordingId}' had already ended, not reporting it again`);
+			return false;
+		}
+
+		this.webhookDispatcherService.sendRecordingEndedWebhook(finished);
+		await Promise.all([
+			this.releaseRecordingLockIfNoEgress(finished.roomId),
+			this.frontendEventService.sendRecordingUpdatedSignal(finished.roomId, finished)
+		]);
+		return true;
 	}
 
 	/**
