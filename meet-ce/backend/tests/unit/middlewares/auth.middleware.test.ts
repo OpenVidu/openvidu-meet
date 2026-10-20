@@ -7,6 +7,7 @@ import {
 	accessTokenValidator,
 	allowAnonymous,
 	apiKeyValidator,
+	pendingPasswordChangeTokenValidator,
 	roomMemberTokenValidator,
 	withAuth,
 	type AuthValidator
@@ -227,35 +228,42 @@ describe('the validators, against a change made in the same millisecond as the t
 		});
 
 		// A user who has to change their password, and a temporary token minted for that, may reach
-		// the two endpoints that change it and nothing else.
-		it('holds a user who must change their password to the endpoints that let them', async () => {
+		// only the routes that declare it, whatever the path of any other route looks like.
+		it('holds a user who must change their password to the routes that admit it', async () => {
 			jest.spyOn(tokenService, 'parseTokenMetadata').mockReturnValue({
 				iat: ISSUED_AT,
 				tokenType: TokenType.ACCESS
 			} as never);
 			jest.spyOn(userService, 'getUser').mockResolvedValue(user({ mustChangePassword: true }));
-			const validator = accessTokenValidator(MeetUserRole.ADMIN);
 
-			await validator.validate(requestWith({ authorization: 'Bearer a-token' }, '/change-password'));
-			await validator.validate(requestWith({ authorization: 'Bearer a-token' }, '/me'));
+			await pendingPasswordChangeTokenValidator(MeetUserRole.ADMIN).validate(accessTokenRequest());
 
-			await expect(validator.validate(accessTokenRequest())).rejects.toMatchObject({
-				statusCode: 403,
-				message: 'Password change required. Please change your password before accessing other resources.'
-			});
+			for (const path of ['/rooms', '/me', '/change-password']) {
+				await expect(
+					accessTokenValidator(MeetUserRole.ADMIN).validate(
+						requestWith({ authorization: 'Bearer a-token' }, path)
+					)
+				).rejects.toMatchObject({
+					statusCode: 403,
+					message: 'Password change required. Please change your password before accessing other resources.'
+				});
+			}
 		});
 
-		it('holds a temporary token to those same endpoints', async () => {
+		it('holds a temporary token to those same routes', async () => {
 			jest.spyOn(tokenService, 'parseTokenMetadata').mockReturnValue({
 				iat: ISSUED_AT,
 				tokenType: TokenType.TEMPORARY
 			} as never);
 			jest.spyOn(userService, 'getUser').mockResolvedValue(user());
-			const validator = accessTokenValidator(MeetUserRole.ADMIN);
 
-			await validator.validate(requestWith({ authorization: 'Bearer a-token' }, '/me'));
+			await pendingPasswordChangeTokenValidator(MeetUserRole.ADMIN).validate(accessTokenRequest());
 
-			await expect(validator.validate(accessTokenRequest())).rejects.toMatchObject({
+			await expect(
+				accessTokenValidator(MeetUserRole.ADMIN).validate(
+					requestWith({ authorization: 'Bearer a-token' }, '/me')
+				)
+			).rejects.toMatchObject({
 				statusCode: 403,
 				message: 'Password change required. Please change your password before accessing other resources.'
 			});

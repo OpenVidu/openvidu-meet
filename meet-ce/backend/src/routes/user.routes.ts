@@ -2,7 +2,12 @@ import { MeetUserRole } from '@openvidu-meet/typings';
 import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as userCtrl from '../controllers/user.controller.js';
-import { accessTokenValidator, apiKeyValidator, withAuth } from '../middlewares/auth.middleware.js';
+import {
+	accessTokenValidator,
+	apiKeyValidator,
+	pendingPasswordChangeTokenValidator,
+	withAuth
+} from '../middlewares/auth.middleware.js';
 import { apiLimiter, sensitiveActionLimiter } from '../middlewares/rate-limit.middleware.js';
 import {
 	validateBulkDeleteUsersReq,
@@ -67,13 +72,17 @@ internalUserRouter.use(apiLimiter);
 
 internalUserRouter.get(
 	'/me',
-	withAuth(accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)),
+	withAuth(
+		pendingPasswordChangeTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)
+	),
 	userCtrl.getMe
 );
 internalUserRouter.post(
 	'/change-password',
 	sensitiveActionLimiter,
-	withAuth(accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)),
+	withAuth(
+		pendingPasswordChangeTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)
+	),
 	validateChangePasswordReq,
 	userCtrl.changePassword
 );

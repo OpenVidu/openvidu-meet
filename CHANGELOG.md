@@ -78,6 +78,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - A recording ended by the stale-recordings clean-up sent no [`recordingEnded`][3.9-recording-ended] webhook and stayed
   in progress in the meeting and for the embedded event `recordingStatusChanged`. Its end is now reported like any
   other, once.
+- The access token of a user with a pending password change also reached public endpoints whose path ends in `/me`
+  or `/change-password`, such as `GET /api/v1/users/me`. Only `getMe` and `changeUserPassword` accept it now.
 
 #### UI
 

@@ -93,13 +93,7 @@ export const withAuth = (...validators: AuthValidator[]): RequestHandler => {
 	};
 };
 
-/**
- * Access token validator for user access.
- * Validates access tokens and user roles, and sets the authenticated user in the session.
- *
- * @param roles One or more roles that are allowed to access the resource
- */
-export const accessTokenValidator = (...roles: MeetUserRole[]): AuthValidator => {
+const createAccessTokenValidator = (roles: MeetUserRole[], admitsPendingPasswordChange: boolean): AuthValidator => {
 	return {
 		getPriority(): number {
 			return 2;
@@ -157,15 +151,8 @@ export const accessTokenValidator = (...roles: MeetUserRole[]): AuthValidator =>
 				throw errorInvalidToken();
 			}
 
-			// Restrict access if password change is required or if token is temporary
-			if (user.mustChangePassword || tokenType === TokenType.TEMPORARY) {
-				// Allow only change-password and me endpoints
-				const requestPath = req.path;
-				const allowedPaths = ['/change-password', '/me'];
-
-				if (!allowedPaths.includes(requestPath)) {
-					throw errorPasswordChangeRequired();
-				}
+			if (!admitsPendingPasswordChange && (user.mustChangePassword || tokenType === TokenType.TEMPORARY)) {
+				throw errorPasswordChangeRequired();
 			}
 
 			// Check if user has one of the required roles
@@ -178,6 +165,25 @@ export const accessTokenValidator = (...roles: MeetUserRole[]): AuthValidator =>
 		}
 	};
 };
+
+/**
+ * Access token validator for user access.
+ * Validates access tokens and user roles, and sets the authenticated user in the session.
+ * A user with a pending password change, or a temporary token, is refused.
+ *
+ * @param roles One or more roles that are allowed to access the resource
+ */
+export const accessTokenValidator = (...roles: MeetUserRole[]): AuthValidator =>
+	createAccessTokenValidator(roles, false);
+
+/**
+ * Access token validator for the endpoints that complete a pending password change.
+ * Same as {@link accessTokenValidator}, but also admits a user with a pending password change and a temporary token.
+ *
+ * @param roles One or more roles that are allowed to access the resource
+ */
+export const pendingPasswordChangeTokenValidator = (...roles: MeetUserRole[]): AuthValidator =>
+	createAccessTokenValidator(roles, true);
 
 /**
  * Room member token validator for room access.

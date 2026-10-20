@@ -265,6 +265,16 @@ describe('Token Validation Tests', () => {
 				expect(response.body).toHaveProperty('message');
 				expect(response.body.message).toContain('Password change required');
 			});
+
+			it('should fail on public endpoints whose path ends in /me with mustChangePassword', async () => {
+				for (const path of [`${USERS_PATH}/me`, `${ROOMS_PATH}/me`]) {
+					const response = await request(app)
+						.get(path)
+						.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, userData.accessToken);
+					expect(response.status).toBe(403);
+					expect(response.body.message).toContain('Password change required');
+				}
+			});
 		});
 
 		describe('Temporary Access Token Tests', () => {
@@ -311,6 +321,16 @@ describe('Token Validation Tests', () => {
 				expect(response.status).toBe(403);
 				expect(response.body).toHaveProperty('message');
 				expect(response.body.message).toContain('Password change required');
+			});
+
+			it('should fail on public endpoints whose path ends in /me with temporary token', async () => {
+				for (const path of [`${USERS_PATH}/me`, `${ROOMS_PATH}/me`]) {
+					const response = await request(app)
+						.get(path)
+						.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessTokenTmp);
+					expect(response.status).toBe(403);
+					expect(response.body.message).toContain('Password change required');
+				}
 			});
 		});
 	});
