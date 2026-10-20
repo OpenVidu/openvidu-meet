@@ -13,6 +13,8 @@ So the same attribute gives a different language depending on the embedding mode
 
 - `language` applies to every entry, a meeting or a recording screen, in the webcomponent, the iframe and the direct link alike, including an iframe or direct link whose URL is a recording URL.
 - An entry to a recording screen without `language` uses the stored preference again, as a meeting entry does.
+- The app's own navigations, such as from the room recordings back to the room, keep the language the entry set: an
+  iframe that changed language on such a navigation no longer does.
 - `show-language-selector` keeps its meaning; recording screens have no language selector, so it has no visible effect there.
 
 ## Capabilities

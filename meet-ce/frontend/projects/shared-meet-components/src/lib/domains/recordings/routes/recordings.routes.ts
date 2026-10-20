@@ -1,4 +1,5 @@
 import { MeetUserRole } from '@openvidu-meet/typings';
+import { applyRequestedLanguageGuard } from '../../../shared/guards/apply-requested-language.guard';
 import { removeQueryParamsGuard } from '../../../shared/guards/remove-query-params.guard';
 import { runGuardsSerially } from '../../../shared/guards/run-serially.guard';
 import {
@@ -30,6 +31,7 @@ export const recordingsDomainRoutes: DomainRouteConfig[] = [
 				),
 			canActivate: [
 				runGuardsSerially(
+					applyRequestedLanguageGuard,
 					storeTokensFromQueryParamsGuard,
 					extractRoomRecordingsParamsGuard,
 					validateRoomRecordingsAccessGuard,
@@ -45,6 +47,7 @@ export const recordingsDomainRoutes: DomainRouteConfig[] = [
 				import('../pages/view-recording/view-recording.component').then((m) => m.ViewRecordingComponent),
 			canActivate: [
 				runGuardsSerially(
+					applyRequestedLanguageGuard,
 					storeTokensFromQueryParamsGuard,
 					extractRecordingParamsGuard,
 					validateRecordingAccessGuard,

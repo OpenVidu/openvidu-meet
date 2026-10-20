@@ -19,6 +19,7 @@ import {
 	EmbeddedEventBusService,
 	EndMeetingComponent,
 	ErrorComponent,
+	LanguageService,
 	LoginComponent,
 	MeetingContextService,
 	NavigationErrorReason,
@@ -94,6 +95,7 @@ export class App {
 	private readonly commandService = inject(EmbeddedCommandService);
 	private readonly eventBus = inject(EmbeddedEventBusService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
+	private readonly languageService = inject(LanguageService);
 	private readonly meetingContext = inject(MeetingContextService);
 	private readonly _elRef = inject(ElementRef);
 	private readonly _destroyRef = inject(DestroyRef);
@@ -152,8 +154,6 @@ export class App {
 		participantMetadata: this.participantMetadata(),
 		initialAudioActive: this.initialAudioActive(),
 		initialVideoActive: this.initialVideoActive(),
-		language: this.language(),
-		showLanguageSelector: this.showLanguageSelector(),
 		e2eeKey: this.e2eeKey(),
 		leaveRedirectUrl: this.leaveRedirectUrl(),
 		showOnlyRecordings: this.showOnlyRecordings(),
@@ -234,6 +234,11 @@ export class App {
 				this.runtimeConfigService.setServerBaseUrl(serverUrl);
 			}
 		});
+
+		// The language belongs to the element, not to a view: every screen follows the attribute, and
+		// only a change of the attribute changes it.
+		effect(() => this.languageService.setEmbeddedLanguage(this.language() || undefined));
+		effect(() => this.languageService.setSelectorVisible(this.showLanguageSelector() ?? true));
 
 		// Sync the mini-router's home route with the attribute-derived one. Registered AFTER the
 		// server-base-URL effect so the base URL is set before the guard's first API call. The router

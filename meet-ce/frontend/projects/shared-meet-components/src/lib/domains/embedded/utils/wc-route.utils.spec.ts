@@ -68,7 +68,7 @@ describe('wcRouteFromAttributes', () => {
 		expect(route.name).toBe(WcRouteName.INVALID);
 	});
 
-	it('resolves meeting from room-url, carrying secret/e2ee/name/language/leaveRedirectUrl', () => {
+	it('resolves meeting from room-url, carrying secret/e2ee/name/leaveRedirectUrl', () => {
 		const route = wcRouteFromAttributes(
 			inputs({
 				roomUrl: 'https://x/room/r1?secret=sec',
@@ -87,8 +87,6 @@ describe('wcRouteFromAttributes', () => {
 					secret: 'sec',
 					e2eeKey: 'k',
 					participantName: 'Alice',
-					language: 'es',
-					showLanguageSelector: false,
 					leaveRedirectUrl: 'https://back'
 				})
 			})

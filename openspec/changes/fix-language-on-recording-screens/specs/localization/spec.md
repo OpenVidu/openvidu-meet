@@ -28,3 +28,8 @@ The `language` attribute or query parameter SHALL set the language an entry star
 - **GIVEN** an iframe whose `src` is a recording URL carrying `language=ja`
 - **WHEN** the recording view is shown
 - **THEN** it is in Japanese
+
+#### Scenario: Navigation inside an iframe
+- **GIVEN** an iframe whose `src` carries `language=es` and `show-only-recordings=true`
+- **WHEN** the participant goes from the room recordings page back to the room
+- **THEN** the join screen is in Spanish
