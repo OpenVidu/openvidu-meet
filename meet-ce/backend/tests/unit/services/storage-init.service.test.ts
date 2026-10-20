@@ -4,7 +4,9 @@ import ms from 'ms';
 // starts the graph (see meeting-mute.test.ts).
 import '../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
+import { MEET_ENV } from '../../../src/environment.js';
 import { StorageInitService } from '../../../src/services/storage/storage-init.service.js';
+import { UserService } from '../../../src/services/user.service.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, debug: () => {}, error: () => {}, verbose: () => {} };
 
@@ -98,5 +100,63 @@ describe('StorageInitService.initializeStorage (boot lock contract)', () => {
 		for (const initializer of initializers) {
 			expect(initializer).not.toHaveBeenCalled();
 		}
+	});
+});
+
+/**
+ * The root admin is seeded from MEET_INITIAL_ADMIN_USER and MEET_INITIAL_ADMIN_PASSWORD, and a value below the
+ * login minimum would create an account nobody can log in to. The password only matters when the account is
+ * created, so an existing root admin starts whatever the variable holds.
+ */
+describe('UserService.initializeAdminUser (root admin configuration)', () => {
+	const buildUserService = (existingUserId?: string) => {
+		const userRepository = {
+			findByUserId: jest.fn(async (userId: string) => (userId === existingUserId ? { userId } : null)),
+			create: jest.fn(async (user: unknown) => user)
+		};
+		const service = new UserService(
+			...([noopLogger, userRepository] as unknown as ConstructorParameters<typeof UserService>)
+		);
+		return { service, userRepository };
+	};
+
+	const withAdminConfig = async (userId: string, password: string, run: () => Promise<void>) => {
+		const { INITIAL_ADMIN_USER, INITIAL_ADMIN_PASSWORD } = MEET_ENV;
+		Object.assign(MEET_ENV, { INITIAL_ADMIN_USER: userId, INITIAL_ADMIN_PASSWORD: password });
+
+		try {
+			await run();
+		} finally {
+			Object.assign(MEET_ENV, { INITIAL_ADMIN_USER, INITIAL_ADMIN_PASSWORD });
+		}
+	};
+
+	it('refuses a root admin user ID shorter than the login minimum', async () => {
+		const { service, userRepository } = buildUserService('root');
+
+		await withAdminConfig('root', 'password', async () => {
+			await expect(service.initializeAdminUser()).rejects.toThrow(
+				'MEET_INITIAL_ADMIN_USER must be at least 5 characters long'
+			);
+		});
+		expect(userRepository.create).not.toHaveBeenCalled();
+	});
+
+	it('refuses to create the root admin with a password shorter than the login minimum', async () => {
+		const { service, userRepository } = buildUserService();
+
+		await withAdminConfig('rootadmin', '1234', async () => {
+			await expect(service.initializeAdminUser()).rejects.toThrow(
+				'MEET_INITIAL_ADMIN_PASSWORD must be at least 5 characters long'
+			);
+		});
+		expect(userRepository.create).not.toHaveBeenCalled();
+	});
+
+	it('starts with a short password when the root admin already exists, and leaves it untouched', async () => {
+		const { service, userRepository } = buildUserService('rootadmin');
+
+		await withAdminConfig('rootadmin', '1234', () => service.initializeAdminUser());
+		expect(userRepository.create).not.toHaveBeenCalled();
 	});
 });

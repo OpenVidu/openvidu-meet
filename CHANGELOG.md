@@ -9,6 +9,10 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 ## 3.10.0 (unreleased)
 
+### Upgrade notes
+
+- Meet no longer starts when `MEET_INITIAL_ADMIN_USER` is shorter than 5 characters.
+
 ### Added
 
 #### Integration
@@ -132,6 +136,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - A `MEET_S3_SUBBUCKET` or `MEET_AZURE_SUBCONTAINER_NAME` that begins the recordings path, such as `rec` or
   `recordings`, made Meet look for recordings outside the prefix they were written under, so they could not be played,
   downloaded or deleted. They are now read under the prefix.
+- A `MEET_INITIAL_ADMIN_USER` or `MEET_INITIAL_ADMIN_PASSWORD` shorter than 5 characters created a root admin that
+  could never log in. Meet now refuses to start with such a value and names the variable.
 
 ## 3.9.0
 

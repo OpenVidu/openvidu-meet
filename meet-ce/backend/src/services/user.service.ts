@@ -17,6 +17,7 @@ import {
 	errorUserAlreadyExists,
 	errorUserNotFound
 } from '../models/error.model.js';
+import { LoginReqSchema } from '../models/zod-schemas/auth.schema.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
@@ -52,6 +53,9 @@ export class UserService {
 	 * Initializes the default admin user
 	 */
 	async initializeAdminUser(): Promise<void> {
+		const { userId: userIdSchema, password: passwordSchema } = LoginReqSchema.shape;
+		this.assertLoginMinLength('MEET_INITIAL_ADMIN_USER', MEET_ENV.INITIAL_ADMIN_USER, userIdSchema.minLength);
+
 		// Check if the admin user already exists
 		const existingUser = await this.userRepository.findByUserId(MEET_ENV.INITIAL_ADMIN_USER, ['userId']);
 
@@ -59,6 +63,12 @@ export class UserService {
 			this.logger.info('Admin user already initialized, skipping admin user initialization');
 			return;
 		}
+
+		this.assertLoginMinLength(
+			'MEET_INITIAL_ADMIN_PASSWORD',
+			MEET_ENV.INITIAL_ADMIN_PASSWORD,
+			passwordSchema.minLength
+		);
 
 		const admin: MeetUser = {
 			userId: MEET_ENV.INITIAL_ADMIN_USER,
@@ -72,6 +82,15 @@ export class UserService {
 
 		await this.userRepository.create(admin);
 		this.logger.info(`Admin user initialized with default credentials`);
+	}
+
+	/**
+	 * A root admin configured below the login minimum could never log in, so startup refuses it.
+	 */
+	protected assertLoginMinLength(variable: string, value: string, minLength: number | null): void {
+		if (minLength !== null && value.length < minLength) {
+			throw new Error(`${variable} must be at least ${minLength} characters long`);
+		}
 	}
 
 	async createUser(userOptions: MeetUserOptions): Promise<MeetUser> {
