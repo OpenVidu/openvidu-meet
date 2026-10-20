@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetUserOptions, MeetUserRole } from '@openvidu-meet/typings';
+import { MeetUserModel } from '../../../../src/models/mongoose-schemas/user.schema.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { createUser, deleteAllUsers, getUser, loginReq, startTestServer } from '../../../helpers/request-helpers.js';
 
@@ -146,6 +147,18 @@ describe('Users API Tests', () => {
 			expect(secondResponse.status).toBe(409);
 			expect(secondResponse.body).toHaveProperty('message');
 			expect(secondResponse.body.message).toContain('already exists');
+		});
+
+		it('should answer 409 to the one of two simultaneous requests that finds the userId taken', async () => {
+			const userId = `user_${Date.now()}`;
+			const userOptions = { userId, name: 'Test User', password: 'password123', role: MeetUserRole.ROOM_MANAGER };
+
+			const responses = await Promise.all([createUser(userOptions), createUser(userOptions)]);
+
+			expect(responses.map((response) => response.status).sort()).toEqual([201, 409]);
+			const conflict = responses.find((response) => response.status === 409)!;
+			expect(conflict.body.message).toBe(`User '${userId}' already exists`);
+			expect(await MeetUserModel.countDocuments({ userId })).toBe(1);
 		});
 	});
 

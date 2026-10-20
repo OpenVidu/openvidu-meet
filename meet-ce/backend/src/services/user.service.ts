@@ -5,6 +5,7 @@ import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { PasswordHelper } from '../helpers/password.helper.js';
+import { DuplicateKeyError } from '../models/database.model.js';
 import {
 	errorCannotChangeOwnRole,
 	errorCannotChangeRootAdminRole,
@@ -74,12 +75,6 @@ export class UserService {
 	}
 
 	async createUser(userOptions: MeetUserOptions): Promise<MeetUser> {
-		const existingUser = await this.userRepository.findByUserId(userOptions.userId, ['userId']);
-
-		if (existingUser) {
-			throw errorUserAlreadyExists(userOptions.userId);
-		}
-
 		const passwordHash = await PasswordHelper.hashPassword(userOptions.password);
 		const now = Date.now();
 		const user: MeetUser = {
@@ -92,7 +87,10 @@ export class UserService {
 			mustChangePassword: true
 		};
 
-		const createdUser = await this.userRepository.create(user);
+		const createdUser = await this.userRepository.create(user).catch((error: unknown) => {
+			throw error instanceof DuplicateKeyError ? errorUserAlreadyExists(userOptions.userId) : error;
+		});
+
 		this.logger.info(`User '${createdUser.userId}' created`);
 		return createdUser;
 	}

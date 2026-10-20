@@ -2,7 +2,7 @@ import type { SortAndPagination } from '@openvidu-meet/typings';
 import { SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable, unmanaged } from 'inversify';
 import type { Model, QueryFilter, Require_id, UpdateQuery } from 'mongoose';
-import { DocumentNotFoundError } from '../models/database.model.js';
+import { DocumentNotFoundError, DuplicateKeyError } from '../models/database.model.js';
 import type { DocumentOnlyField, PaginatedResult, PaginationCursor } from '../models/database.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { decodePaginationCursor, encodePaginationCursor } from '../utils/pagination-cursor.utils.js';
@@ -60,6 +60,11 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 			this.logger.debug(`Document created with ID: ${String(document._id)}`);
 			return this.toDomain(this.stripMetadataFromDocument(document.toObject()));
 		} catch (error) {
+			if ((error as { code?: unknown }).code === 11000) {
+				this.logger.debug('Document already exists:', error);
+				throw new DuplicateKeyError('Document already exists');
+			}
+
 			this.logger.error('Error creating document:', error);
 			throw error;
 		}

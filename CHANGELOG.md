@@ -85,6 +85,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - Logging out, changing one's own password and refreshing with rotation left the earlier user tokens valid until
   they expired. `logoutUser` now revokes the session's tokens, `changeUserPassword` revokes every earlier token of
   the user and returns new ones, and a rotated refresh token is accepted once.
+- Two simultaneous [`createUser`][3.10-create-user] requests with the same `userId` could answer `500`. The one that
+  finds the `userId` taken now answers `409`.
 
 #### UI
 
@@ -266,6 +268,7 @@ registered on both receives it twice.
 - Unanswered webhooks caused active connections to grow continuously. Every webhook is answered.
 - The `openvidu/openvidu-meet` Docker image resolved its dependencies anew on every build instead of installing the versions in the lockfile. It now installs the locked versions.
 
+[3.10-create-user]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/createUser
 [3.10-participant-role-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantRoleChangedWebhook
 [3.10-participant-role-update]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantRoleUpdate
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html
