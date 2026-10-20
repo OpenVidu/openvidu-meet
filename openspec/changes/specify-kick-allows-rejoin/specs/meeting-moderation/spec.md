@@ -12,3 +12,8 @@ Kicking a participant SHALL only disconnect them from the meeting in progress. T
 - **GIVEN** an identified guest who was kicked
 - **WHEN** a room manager deletes their room member record and they try to join again
 - **THEN** they cannot enter the meeting
+
+#### Scenario: Kicked anonymous participant while the meeting runs
+- **GIVEN** a speaker who entered through the room's anonymous speaker link and was kicked
+- **WHEN** a room manager tries to disable that link while the meeting is still active
+- **THEN** the server answers `409` and the speaker can still join again through the link

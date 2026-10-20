@@ -347,6 +347,31 @@ test.describe('Participants E2E Tests', () => {
 			}
 		});
 
+		test('should let a kicked participant join again through the same link', async ({ browser }) => {
+			const { byName, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				participants: [{ name: moderatorName, baseRole: MeetRoomMemberRole.MODERATOR }]
+			});
+			const speakerPage = await browser.newPage();
+			const speakerLink = room.access.anonymous.speaker.url;
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				await openMeeting(speakerPage, speakerLink, { name: speakerName });
+
+				await toggleParticipantsPanel(moderatorPage);
+				await kickParticipant(moderatorPage, await getParticipantIdByName(moderatorPage, speakerName));
+				await expect(speakerPage.locator('#layout-container')).toHaveCount(0, { timeout: 10_000 });
+
+				await openMeeting(speakerPage, speakerLink, { name: speakerName });
+				await expect(speakerPage.locator('#layout-container')).toBeVisible();
+				await expect(moderatorPage.locator('[data-participant-id]', { hasText: speakerName })).toHaveCount(1);
+			} finally {
+				await speakerPage.close();
+				await removeAllParticipants();
+			}
+		});
+
 		test('should not let a participant without canKickParticipants kick others', async ({ browser }) => {
 			const { byName, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,

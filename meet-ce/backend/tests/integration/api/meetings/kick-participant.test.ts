@@ -2,10 +2,13 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/glo
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
+import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
-	disconnectFakeParticipants
-} from '../../../helpers/livekit-cli-helpers.js';
-import { deleteAllRooms, kickParticipant, startTestServer } from '../../../helpers/request-helpers.js';
+	deleteAllRooms,
+	generateRoomMemberToken,
+	kickParticipant,
+	startTestServer
+} from '../../../helpers/request-helpers.js';
 
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
@@ -45,6 +48,26 @@ describe('Meetings API Tests', () => {
 			await expect(livekitService.getParticipant(roomData.room.roomId, participantIdentity)).rejects.toThrow(
 				OpenViduMeetError
 			);
+		});
+
+		it('should let a kicked participant join again with the same access', async () => {
+			const joinWithSpeakerLink = async () => {
+				const token = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.speakerSecret,
+					joinMeeting: true,
+					participantName: 'Kicked Speaker'
+				});
+				const { sub: identity } = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+				await joinFakeParticipant(roomData.room.roomId, identity);
+				return identity as string;
+			};
+
+			const kickedIdentity = await joinWithSpeakerLink();
+			const response = await kickParticipant(roomData.room.roomId, kickedIdentity, roomData.moderatorToken);
+			expect(response.status).toBe(200);
+
+			const rejoinedIdentity = await joinWithSpeakerLink();
+			expect(await livekitService.participantExists(roomData.room.roomId, rejoinedIdentity)).toBe(true);
 		});
 
 		it('should fail with 404 if participant does not exist', async () => {
