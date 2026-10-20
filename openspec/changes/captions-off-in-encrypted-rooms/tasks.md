@@ -10,9 +10,10 @@
 ## 2. Room wizard
 
 - [ ] 2.1 Make the wizard turn the captions toggle off and disable it while encryption is on, restoring its previous value when encryption is turned off, alongside the recording handling in the wizard state service; verify with a test in `meet-ce/frontend/e2e/room-wizard.test.ts`; report it as not run if the local deployment is unavailable.
+- [ ] 2.2 Warn about it as the wizard does for recording: in the Meeting step, add a "Live captions are unavailable while encryption is enabled." item to the E2EE restrictions card next to the recording one (`ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_CAPTIONS_*`), and show a warning under the disabled captions toggle while encryption is on, styled like the Recording step's `E2EE_WARNING_*` notice; translate the new keys in the ten `lib/domains/rooms/lang/*.json` files; verify both texts in the 2.1 test.
 
 ## 3. Release surfaces
 
 - [ ] 3.1 Add under `## 3.10.0 (unreleased)` -> `### Fixed` -> `#### Integration` of `CHANGELOG.md`: "- A room with end-to-end encryption could have live captions on, although the captions assistant only receives encrypted audio and produced no captions. As with recording, `captions.enabled` is now stored as `false` while `e2ee.enabled` is `true`, in existing rooms too, and the room wizard turns captions off when encryption is turned on."
-- [ ] 3.2 openvidu.io `next`, `docs/meet/features/meetings/e2e-encryption.md`: state next to the recording limitation that encrypted rooms have no live captions.
-- [ ] 3.3 openvidu.io `next`, `docs/meet/features/meetings/live-captions.md`: state that live captions are not available in rooms with end-to-end encryption.
+- [ ] 3.2 openvidu.io `next`, `docs/meet/features/meetings/e2e-encryption.md`: add a **Live captions are not available** bullet to the "E2EE Limitations" warning next to the recording one, and refresh the `room-wizard-e2ee` light and dark screenshots, which now show the captions restriction.
+- [ ] 3.3 openvidu.io `next`, `docs/meet/features/meetings/live-captions.md`: add an `!!! info` notice, like the one in `docs/meet/features/recordings/configuration.md`, saying live captions and end-to-end encryption are mutually exclusive.
