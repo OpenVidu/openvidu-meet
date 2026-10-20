@@ -290,7 +290,7 @@ export class MeetingLobbyService {
 	 * Sets the back button text based on the application mode and user authentication
 	 */
 	protected async setBackButtonText(): Promise<void> {
-		const isStandaloneMode = !this.runtimeConfigService.isWebcomponentMode();
+		const isStandaloneMode = !this.runtimeConfigService.isEmbeddedMode();
 		const redirection = this.leaveRedirect.getLeaveRedirectURL();
 		const isAuthenticated = await this.authService.isUserAuthenticated();
 
