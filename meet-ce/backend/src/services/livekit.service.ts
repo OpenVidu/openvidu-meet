@@ -1,5 +1,4 @@
 import type { AgentDispatch, ParticipantPermission } from '@livekit/protocol';
-import { ParticipantInfo_Kind } from '@livekit/protocol';
 import { inject, injectable } from 'inversify';
 import type {
 	CreateOptions,
@@ -15,11 +14,11 @@ import type {
 import { DataPacket_Kind, EgressStatus, LiveKitAPI } from 'livekit-server-sdk';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
-import { RecordingHelper } from '../helpers/recording.helper.js';
+import { EgressHelper } from '../helpers/egress.helper.js';
 import {
+	errorEgressNotAvailable,
 	errorLivekitNotAvailable,
 	errorParticipantNotFound,
-	errorRecordingStartRefused,
 	errorRoomNotFound,
 	internalError,
 	OpenViduMeetError
@@ -198,8 +197,25 @@ export class LiveKitService {
 	 * LiveKit's Twirp errors carry the HTTP status (404) and a twirp code ('not_found').
 	 */
 	private isNotFoundError(error: unknown): boolean {
-		const err = error as { status?: number; code?: string } | null;
-		return err?.status === 404 || err?.code === 'not_found';
+		const { status, code } = this.asTwirpError(error);
+		return status === 404 || code === 'not_found';
+	}
+
+	/**
+	 * The HTTP status, twirp code and message of an error LiveKit's API answered with; empty for
+	 * any other error.
+	 */
+	private asTwirpError(error: unknown): { status?: number; code?: string; message?: string } {
+		return error ?? {};
+	}
+
+	/**
+	 * The error to answer for a failed call to an egress. LiveKit answers 503 when no egress service
+	 * takes the call, which for a start comes only after this client has given up waiting.
+	 */
+	private toEgressError(error: unknown, operation: string): OpenViduMeetError {
+		const unavailable = this.asTwirpError(error).status === 503 || (error as Error | null)?.name === 'TimeoutError';
+		return unavailable ? errorEgressNotAvailable() : internalError(operation);
 	}
 
 	/**
@@ -246,17 +262,6 @@ export class LiveKitService {
 			this.logger.error(`Error listing participants for room '${roomName}'`, error);
 			throw internalError(`listing participants for room '${roomName}'`);
 		}
-	}
-
-	/**
-	 * Lists the standard participants (web clients) currently in a LiveKit room, filtering out its
-	 * internal participants (egress, ingress, agents) from the API surface.
-	 *
-	 * @param roomName - The name of the room to list participants from
-	 */
-	async listStandardParticipants(roomName: string): Promise<ParticipantInfo[]> {
-		const participants = await this.listRoomParticipants(roomName);
-		return participants.filter((participant) => this.isStandardParticipant(participant));
 	}
 
 	async participantExists(roomName: string, participantIdentity: string): Promise<boolean> {
@@ -469,17 +474,65 @@ export class LiveKitService {
 			return await this.lk.egress.startRoomCompositeEgress(roomName, output, options);
 		} catch (error) {
 			this.logger.error(`Error starting Room Composite Egress for room '${roomName}'`, error);
-			throw errorRecordingStartRefused(roomName);
+			throw this.toEgressError(error, `starting Room Composite Egress for room '${roomName}'`);
 		}
 	}
 
-	async stopEgress(egressId: string): Promise<EgressInfo> {
+	/**
+	 * Adds and removes stream URLs of a running egress. LiveKit needs the URLs as they were given,
+	 * not as it reports them (redacted). An egress that ended since it was last seen takes no
+	 * update, which LiveKit answers as a precondition failure: `undefined` instead of an error.
+	 */
+	async updateStream(egressId: string, addUrls: string[], removeUrls: string[]): Promise<EgressInfo | undefined> {
+		try {
+			return await this.lk.egress.updateStream(egressId, addUrls, removeUrls);
+		} catch (error) {
+			const { status } = this.asTwirpError(error);
+
+			if (status === 404 || status === 412) {
+				this.logger.debug(`Egress '${egressId}' had already ended`);
+				return undefined;
+			}
+
+			this.logger.error(`Error updating the stream URLs of egress '${egressId}'`, error);
+			throw this.toEgressError(error, `updating the destinations of egress '${egressId}'`);
+		}
+	}
+
+	/**
+	 * Stops an egress that may have ended already. Whether it still runs cannot be checked
+	 * beforehand, since LiveKit can end it between the check and the stop, so LiveKit's answer that
+	 * there is nothing to stop is taken as the outcome: `undefined` instead of an error.
+	 */
+	async stopEgressIfRunning(egressId: string): Promise<EgressInfo | undefined> {
 		try {
 			this.logger.info(`Stopping egress '${egressId}'`);
 			return await this.lk.egress.stopEgress(egressId);
 		} catch (error) {
+			const { status } = this.asTwirpError(error);
+
+			if (status === 404 || status === 412) {
+				this.logger.debug(`Egress '${egressId}' had already ended`);
+				return undefined;
+			}
+
 			this.logger.error(`Error stopping egress '${egressId}'`, error);
 			throw internalError(`stopping egress '${egressId}'`);
+		}
+	}
+
+	/**
+	 * Whether an egress service still handles the egress. LiveKit keeps listing an egress whose
+	 * service died as in progress, so only a call routed to the egress tells: it is lost when no
+	 * egress service answers for it. An update that changes nothing is that call: a streaming
+	 * egress applies it as a no-op, any other refuses it, and either answer proves a service has it.
+	 */
+	async isEgressReachable(egressId: string): Promise<boolean> {
+		try {
+			await this.lk.egress.updateStream(egressId, [], []);
+			return true;
+		} catch (error) {
+			return this.asTwirpError(error).status !== 503;
 		}
 	}
 
@@ -499,13 +552,7 @@ export class LiveKitService {
 			};
 			return await this.lk.egress.listEgress(options);
 		} catch (error) {
-			const err = error as { code?: string; status?: number; message?: string } | null;
-
-			if (
-				err?.code === 'not_found' ||
-				err?.status === 404 ||
-				(typeof err?.message === 'string' && err.message.includes('egress does not exist'))
-			) {
+			if (this.isNotFoundError(error) || this.asTwirpError(error).message?.includes('egress does not exist')) {
 				return [];
 			}
 
@@ -529,7 +576,7 @@ export class LiveKitService {
 		}
 
 		// Filter the egress array to include only recording egress
-		return egressArray.filter((egress) => RecordingHelper.isRecordingEgress(egress));
+		return egressArray.filter((egress) => EgressHelper.isFileEgress(egress));
 	}
 
 	/**
@@ -555,13 +602,5 @@ export class LiveKitService {
 			this.logger.error(`Error getting in-progress recordings for room '${roomName}'`, error);
 			throw internalError(`getting in-progress egress for room '${roomName}'`);
 		}
-	}
-
-	/**
-	 * Checks if a participant is a standard participant (web clients).
-	 * @param participant
-	 */
-	isStandardParticipant(participant: ParticipantInfo): boolean {
-		return participant.kind === ParticipantInfo_Kind.STANDARD;
 	}
 }

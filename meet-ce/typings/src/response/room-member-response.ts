@@ -21,6 +21,8 @@ export const MEET_ROOM_MEMBER_PERMISSIONS_FIELDS = [
 	'recordingPlay',
 	'recordingDownload',
 	'recordingDelete',
+	'broadcastControl',
+	'broadcastAddDestinations',
 	'meetingJoin',
 	'meetingRead',
 	'roomShareAccessLinks',

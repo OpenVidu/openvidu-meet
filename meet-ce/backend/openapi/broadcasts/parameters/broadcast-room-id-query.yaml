@@ -1,0 +1,7 @@
+name: roomId
+in: query
+required: true
+description: The unique identifier of the room whose broadcasts to list.
+schema:
+    type: string
+example: 'room-123'

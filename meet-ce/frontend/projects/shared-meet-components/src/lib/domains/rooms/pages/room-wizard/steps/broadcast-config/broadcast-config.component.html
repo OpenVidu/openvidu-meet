@@ -1,0 +1,235 @@
+<div class="broadcast-config-step fade-in">
+	<!-- Header Section -->
+	<header class="step-header">
+		<mat-icon class="ov-broadcast-icon step-icon">sensors</mat-icon>
+		<div class="step-title-group">
+			<h3 class="step-title">{{ 'ROOMS.WIZARD.BROADCAST.TITLE' | translate }}</h3>
+			<p class="step-description">{{ 'ROOMS.WIZARD.BROADCAST.DESCRIPTION' | translate }}</p>
+		</div>
+	</header>
+
+	<!-- Form Section -->
+	<main class="step-content">
+		<form [formGroup]="broadcastForm" class="broadcast-form">
+			<!-- E2EE Conflict Warning -->
+			@if (isE2EEEnabled) {
+				<ov-e2ee-exclusion-warning keys="ROOMS.WIZARD.BROADCAST" />
+			}
+
+			<div class="feature-row" id="broadcast-enabled">
+				<div class="feature-info">
+					<mat-icon class="feature-icon">sensors</mat-icon>
+					<div class="feature-text">
+						<span class="feature-label">{{
+							'ROOMS.WIZARD.BROADCAST.ALLOW_BROADCAST_TITLE' | translate
+						}}</span>
+						<span class="feature-description">{{
+							'ROOMS.WIZARD.BROADCAST.ALLOW_BROADCAST_DESC' | translate
+						}}</span>
+					</div>
+				</div>
+				<mat-slide-toggle
+					formControlName="broadcastEnabled"
+					color="primary"
+					class="feature-toggle"
+					(change)="onBroadcastToggleChange($event)"
+				/>
+			</div>
+
+			@if (isBroadcastEnabled) {
+				<!-- ── Default destinations ──────────────────── -->
+				<section class="settings-section fade-in" id="broadcast-destinations-section">
+					<div class="section-header">
+						<mat-icon class="section-icon">hub</mat-icon>
+						<span class="section-label">{{
+							'ROOMS.WIZARD.BROADCAST.DEFAULT_DESTINATIONS' | translate
+						}}</span>
+						<span class="section-count" id="broadcast-destinations-count">{{
+							'ROOMS.WIZARD.BROADCAST.DESTINATIONS_COUNT'
+								| translate: { count: destinations().length, max: maxDestinations }
+						}}</span>
+					</div>
+
+					<div class="destinations-panel">
+						<p class="destinations-hint">{{ 'ROOMS.WIZARD.BROADCAST.DESTINATIONS_DESC' | translate }}</p>
+
+						@for (destination of destinations(); track $index; let index = $index) {
+							@if (editingIndex() === index) {
+								<ng-container *ngTemplateOutlet="destinationEditor" />
+							} @else {
+								<div class="destination-row" [attr.id]="'broadcast-destination-' + index">
+									<ov-platform-icon [platform]="platformOf(destination.url)" [size]="36" />
+									<div class="destination-text">
+										<span class="destination-name">{{ destination.name }}</span>
+										<span class="destination-url">{{ destination.url }}</span>
+									</div>
+									<button
+										mat-icon-button
+										type="button"
+										class="destination-action"
+										[matTooltip]="'ROOMS.WIZARD.BROADCAST.EDIT' | translate"
+										[attr.aria-label]="
+											('ROOMS.WIZARD.BROADCAST.EDIT' | translate) + ' ' + destination.name
+										"
+										(click)="openEdit(index)"
+									>
+										<mat-icon>edit</mat-icon>
+									</button>
+									<button
+										mat-icon-button
+										type="button"
+										class="destination-action"
+										[matTooltip]="'ROOMS.WIZARD.BROADCAST.REMOVE' | translate"
+										[attr.aria-label]="
+											('ROOMS.WIZARD.BROADCAST.REMOVE' | translate) + ' ' + destination.name
+										"
+										(click)="removeDestination(index)"
+									>
+										<mat-icon>delete</mat-icon>
+									</button>
+								</div>
+							}
+						}
+
+						@if (isAddingNew()) {
+							<ng-container *ngTemplateOutlet="destinationEditor" />
+						}
+
+						@if (canAddDestination()) {
+							<button
+								mat-button
+								type="button"
+								id="broadcast-add-destination-btn"
+								class="add-destination"
+								(click)="openAdd()"
+							>
+								<mat-icon>add</mat-icon>
+								<span>{{ 'ROOMS.WIZARD.BROADCAST.ADD_DESTINATION' | translate }}</span>
+							</button>
+						}
+
+						@if (destinations().length === 0 && !isEditorOpen()) {
+							<p class="destinations-empty" id="broadcast-destinations-required" role="alert">
+								{{ 'ROOMS.WIZARD.BROADCAST.NO_DESTINATIONS' | translate }}
+							</p>
+						}
+
+						<p class="destinations-note">
+							{{ 'ROOMS.WIZARD.BROADCAST.KEYS_HIDDEN' | translate: { max: maxDestinations } }}
+						</p>
+
+						@if (destinations().length > 0) {
+							<div class="cost-note" id="broadcast-cost-note">
+								<mat-icon class="cost-note-icon">network_check</mat-icon>
+								<span>{{
+									'ROOMS.WIZARD.BROADCAST.COST_NOTE'
+										| translate
+											: {
+													mbps: mbpsPerDestination,
+													count: destinations().length,
+													total: estimatedMbps()
+											  }
+								}}</span>
+							</div>
+						}
+					</div>
+				</section>
+
+				<!-- ── Layout ───────────────────────────────── -->
+				<section class="settings-section fade-in" id="broadcast-layout-section">
+					<div class="section-header">
+						<mat-icon class="section-icon">dashboard</mat-icon>
+						<span class="section-label">{{ 'ROOMS.WIZARD.RECORDING_LAYOUT.TITLE' | translate }}</span>
+					</div>
+
+					<ov-layout-picker [control]="broadcastForm.controls.layout" />
+				</section>
+
+				<p class="permissions-hint">
+					<mat-icon class="permissions-hint-icon">manage_accounts</mat-icon>
+					<span>{{ 'ROOMS.WIZARD.BROADCAST.PERMISSIONS_HINT' | translate }}</span>
+					<button
+						mat-button
+						type="button"
+						class="link-button"
+						id="broadcast-go-to-access-btn"
+						(click)="goToRoomAccess()"
+					>
+						{{ 'ROOMS.WIZARD.BROADCAST.PERMISSIONS_LINK' | translate }}
+					</button>
+				</p>
+			}
+		</form>
+	</main>
+</div>
+
+<ng-template #destinationEditor>
+	<form
+		[formGroup]="editor.form"
+		class="destination-editor"
+		id="broadcast-destination-editor"
+		(ngSubmit)="submitDestination()"
+	>
+		<span class="destination-editor-title">
+			{{
+				(isAddingNew() ? 'ROOMS.WIZARD.BROADCAST.NEW_DESTINATION' : 'ROOMS.WIZARD.BROADCAST.EDIT_DESTINATION')
+					| translate
+			}}
+		</span>
+		<div class="destination-editor-fields">
+			<mat-form-field appearance="outline" class="destination-name-field" subscriptSizing="dynamic">
+				<mat-label>{{ 'ROOMS.WIZARD.BROADCAST.NAME_LABEL' | translate }}</mat-label>
+				<input
+					matInput
+					id="broadcast-destination-name"
+					formControlName="name"
+					[maxlength]="editor.nameMaxLength"
+				/>
+				@if (editor.form.controls.name.hasError('required')) {
+					<mat-error>{{ 'ROOMS.WIZARD.BROADCAST.NAME_REQUIRED' | translate }}</mat-error>
+				}
+			</mat-form-field>
+			<mat-form-field appearance="outline" class="destination-url-field" subscriptSizing="dynamic">
+				<mat-label>{{ 'ROOMS.WIZARD.BROADCAST.URL_LABEL' | translate }}</mat-label>
+				<ov-platform-icon
+					matPrefix
+					class="destination-url-platform"
+					[platform]="editor.platform()"
+					[size]="26"
+				/>
+				<input
+					matInput
+					id="broadcast-destination-url"
+					formControlName="url"
+					autocomplete="off"
+					spellcheck="false"
+				/>
+				@if (editor.form.controls.url.hasError('required') || editor.form.controls.url.hasError('rtmpUrl')) {
+					<mat-error>{{ 'ROOMS.WIZARD.BROADCAST.URL_INVALID' | translate }}</mat-error>
+				} @else if (editor.form.controls.url.hasError('streamKeyRequired')) {
+					<mat-error id="broadcast-destination-url-key-required">{{
+						'ROOMS.WIZARD.BROADCAST.URL_KEY_REQUIRED' | translate
+					}}</mat-error>
+				}
+			</mat-form-field>
+		</div>
+		<div class="destination-editor-footer">
+			<p class="destination-editor-hint">
+				@if (editor.keepsSavedKey()) {
+					{{ 'ROOMS.WIZARD.BROADCAST.URL_KEEP_KEY' | translate }}
+				} @else {
+					@if (editor.platform() !== 'other') {
+						{{ 'ROOMS.WIZARD.BROADCAST.URL_RECOGNISED' | translate: { platform: editor.platformLabel() } }}
+					}
+					{{ 'ROOMS.WIZARD.BROADCAST.URL_HINT' | translate }}
+				}
+			</p>
+			<button mat-button type="button" id="broadcast-destination-cancel-btn" (click)="closeEditor()">
+				{{ 'ROOMS.WIZARD.BROADCAST.CANCEL' | translate }}
+			</button>
+			<button mat-flat-button type="submit" id="broadcast-destination-save-btn" color="primary">
+				{{ (isAddingNew() ? 'ROOMS.WIZARD.BROADCAST.ADD' : 'ROOMS.WIZARD.BROADCAST.SAVE') | translate }}
+			</button>
+		</div>
+	</form>
+</ng-template>

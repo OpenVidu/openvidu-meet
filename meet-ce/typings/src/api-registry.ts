@@ -49,14 +49,16 @@ export type MeetApiModule = (typeof MEET_API_MODULES)[number];
 /**
  * Top-level REST path segments the two OpenAPI specs may use. Feature modules only appear here
  * when they own a **durable artifact or configuration** (`rooms`, `recordings`, `webhooks`,
- * `meetings`); every live-meeting feature is a sub-resource of `/meetings/{roomId}` instead of a
- * new top-level group. The rest are the platform groups (account, auth, deployment config) that
- * predate the module scheme. Adding a segment here is an API-design decision, not a formality —
- * the naming lint fails on any path outside this list.
+ * `meetings`), or, like `broadcasts`, an egress of the meeting addressed by its own id the way a
+ * recording is; every other live-meeting feature is a sub-resource of `/meetings/{roomId}` instead
+ * of a new top-level group. The rest are the platform groups (account, auth, deployment config)
+ * that predate the module scheme. Adding a segment here is an API-design decision, not a
+ * formality — the naming lint fails on any path outside this list.
  */
 export const MEET_API_REST_GROUPS = [
 	'rooms',
 	'recordings',
+	'broadcasts',
 	'meetings',
 	'webhooks',
 	'users',

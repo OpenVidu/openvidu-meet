@@ -136,6 +136,9 @@
 ::ng-deep #recording-btn > .mat-icon {
 	color: var(--ov-recording-color, var(--ov-error-color)) !important;
 }
+::ng-deep #broadcast-btn > .mat-icon {
+	color: var(--ov-broadcast-accent-color) !important;
+}
 
 ::ng-deep .mat-mdc-menu-panel {
 	border-radius: var(--ov-surface-radius) !important;

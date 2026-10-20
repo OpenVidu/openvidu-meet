@@ -1,0 +1,83 @@
+description: >
+    The room whose meeting to stream, and the destinations to stream it to, one broadcast each: the room
+    destinations named by `destinationIds`, then the `destinations` given for this meeting only. Without
+    `destinationIds`, the meeting streams to every destination saved in the room's config that it is not
+    streaming to yet; with an empty list, to none of them.
+required: true
+content:
+    application/json:
+        schema:
+            type: object
+            required:
+                - roomId
+            properties:
+                roomId:
+                    type: string
+                    description: The unique identifier of the room whose meeting to stream.
+                    example: 'room-123'
+                destinationIds:
+                    type: array
+                    maxItems: 5
+                    description: |
+                        The `id` of each destination saved in the room's config to stream to, streamed to as
+                        saved.
+
+                        | Value | Room destinations streamed to |
+                        | ----- | ----------------------------- |
+                        | Omitted | Every room destination the meeting is not streaming to yet |
+                        | `[]` | None: `destinations` must then have at least one entry, or the request is rejected with a `422` |
+                        | `["id1"]` | Only the ones listed |
+
+                        An `id` the room does not have is rejected with a `400`.
+                    items:
+                        type: string
+                        example: 'kX9pL2mQ7a'
+                destinations:
+                    type: array
+                    maxItems: 5
+                    description: >
+                        Destinations for this meeting only, never saved in the room. Requires the
+                        `broadcastAddDestinations` permission. A meeting streams to each stream key once,
+                        whatever the server it is on, and to at most 5 destinations at a time.
+                    items:
+                        type: object
+                        additionalProperties: false
+                        required:
+                            - name
+                            - url
+                        properties:
+                            name:
+                                type: string
+                                maxLength: 50
+                                example: 'Own media server'
+                                description: The label of the destination.
+                            url:
+                                type: string
+                                format: uri
+                                example: 'rtmp://media.example.com/live/stream-key'
+                                description: >
+                                    The RTMP or RTMPS URL of the destination, stream key included, of the form
+                                    `rtmp(s)://{host}(/{path})/{app}/{stream_key}`. A URL whose host is or
+                                    resolves to a loopback, link-local (the cloud metadata endpoint among them),
+                                    unspecified, multicast or broadcast address is rejected with a `422`.
+        examples:
+            roomAndMeetingDestinations:
+                summary: A room destination and one for this meeting
+                value:
+                    roomId: 'room-123'
+                    destinationIds: ['kX9pL2mQ7a']
+                    destinations:
+                        - name: 'Own media server'
+                          url: 'rtmp://media.example.com/live/stream-key'
+            onlyMeetingDestinations:
+                summary: Only a destination for this meeting, none of the room's
+                value:
+                    roomId: 'room-123'
+                    destinationIds: []
+                    destinations:
+                        - name: 'Own media server'
+                          url: 'rtmp://media.example.com/live/stream-key'
+            everyRoomDestination:
+                summary: Every room destination not streamed to yet
+                value:
+                    roomId: 'room-123'

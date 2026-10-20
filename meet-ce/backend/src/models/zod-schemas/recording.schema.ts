@@ -1,4 +1,3 @@
-import type { MeetRecordingField } from '@openvidu-meet/typings';
 import {
 	MEET_RECORDING_FIELDS,
 	MEET_RECORDING_SORT_FIELDS,
@@ -10,34 +9,11 @@ import {
 import { z } from 'zod';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import { invalidRegexPatternReason } from '../../utils/string-match-filter.utils.js';
-import { encodingValidator, nonEmptySanitizedRoomId } from './room.schema.js';
+import { fieldListSchema } from './field-selection.schema.js';
+import { encodingValidator } from './recording-encoding.schema.js';
+import { nonEmptySanitizedRoomId } from './room-id.schema.js';
 
-/**
- * Shared fields validation schema for Recording entity
- * Validates and transforms comma-separated string to typed array
- * Only allows fields that exist in MEET_RECORDING_FIELDS
- */
-const fieldsSchema = z
-	.string()
-	.optional()
-	.transform((value) => {
-		if (!value) return undefined;
-
-		const requested = value
-			.split(',')
-			.map((field) => field.trim())
-			.filter((field) => field !== '');
-
-		// Filter: only keep valid fields that exist in MeetRecordingInfo
-		const validFields = requested.filter((field) =>
-			MEET_RECORDING_FIELDS.includes(field as MeetRecordingField)
-		) as MeetRecordingField[];
-
-		// Deduplicate
-		const unique = Array.from(new Set(validFields));
-
-		return unique.length > 0 ? unique : undefined;
-	});
+const fieldsSchema = fieldListSchema(MEET_RECORDING_FIELDS);
 
 export const nonEmptySanitizedRecordingId = (fieldName: string) =>
 	z
@@ -162,40 +138,6 @@ export const BulkDeleteRecordingsReqSchema = z.object({
 export const RecordingQueryFieldsSchema = z.object({
 	fields: fieldsSchema
 });
-
-export const RecordingHeaderFieldsSchema = z.object({
-	'x-fields': fieldsSchema
-});
-
-/**
- * Merges X-Fields header values into query.fields for recordings.
- * When both header and query param provide fields, values are merged (union of unique fields).
- * This allows API consumers to use either mechanism or both simultaneously.
- */
-export function mergeRecordingHeaderFieldsIntoQuery(
-	headers: Record<string, unknown>,
-	query: Record<string, unknown>
-): void {
-	const headerResult = RecordingHeaderFieldsSchema.safeParse(headers);
-
-	if (!headerResult.success) {
-		return;
-	}
-
-	const headerFields = headerResult.data['x-fields'];
-
-	if (headerFields) {
-		const existingFields =
-			typeof query.fields === 'string'
-				? query.fields
-						.split(',')
-						.map((f: string) => f.trim())
-						.filter((f: string) => f !== '')
-				: [];
-		const merged = Array.from(new Set([...existingFields, ...headerFields]));
-		query.fields = merged.join(',');
-	}
-}
 
 export const GetRecordingReqSchema = z.object({
 	params: z.object({

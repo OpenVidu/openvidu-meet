@@ -45,6 +45,15 @@ export enum PanelSettingsOptions {
 }
 
 /**
+ * @internal
+ * The activity the activities panel opens expanded.
+ */
+export enum PanelActivitiesOptions {
+	RECORDING = 'recording',
+	BROADCAST = 'broadcast'
+}
+
+/**
  * Interface representing a panel status event emmited by the library to the final app.
  *
  * Exported because the aliases below name it: a public output typed with an unexported

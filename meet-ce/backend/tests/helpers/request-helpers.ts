@@ -4,6 +4,8 @@ import {
 	MeetAssistantCapabilityName,
 	MeetParticipantHandOptions,
 	MeetParticipantModerationAction,
+	MeetBroadcastStartOptions,
+	MeetBroadcastStopOptions,
 	MeetParticipantMuteOptions,
 	MeetParticipantReactionOptions,
 	MeetPermissionsInput,
@@ -13,7 +15,7 @@ import {
 	MeetRecordingStatus,
 	MeetRoom,
 	MeetRoomAccessConfig,
-	MeetRoomConfig,
+	MeetRoomConfigOptions,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomExtraField,
@@ -566,7 +568,7 @@ export const getRoomConfig = async (roomId: string): Promise<Response> => {
 		.send();
 };
 
-export const updateRoomConfig = async (roomId: string, config: Partial<MeetRoomConfig>) => {
+export const updateRoomConfig = async (roomId: string, config: MeetRoomConfigOptions) => {
 	checkAppIsRunning();
 
 	return await request(app)
@@ -1358,4 +1360,47 @@ const checkAppIsRunning = () => {
 	if (!app) {
 		throw new Error('App instance is not defined');
 	}
+};
+
+// BROADCAST HELPERS
+
+const broadcastsPath = () => getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/broadcasts`);
+
+/**
+ * Sends a broadcast request as the given room member, or with the API key when no token is given.
+ */
+const asBroadcastCaller = (req: request.Test, roomMemberToken?: string) =>
+	roomMemberToken
+		? req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
+		: req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+
+export const startBroadcasts = async (
+	roomId: string,
+	options: MeetBroadcastStartOptions = {},
+	roomMemberToken?: string
+): Promise<Response> => {
+	checkAppIsRunning();
+	return await asBroadcastCaller(request(app).post(broadcastsPath()), roomMemberToken).send({ roomId, ...options });
+};
+
+export const stopBroadcasts = async (
+	roomId: string,
+	options: MeetBroadcastStopOptions = {},
+	roomMemberToken?: string
+): Promise<Response> => {
+	checkAppIsRunning();
+	return await asBroadcastCaller(request(app).post(`${broadcastsPath()}/stop`), roomMemberToken).send({
+		roomId,
+		...options
+	});
+};
+
+export const getBroadcasts = async (roomId: string, roomMemberToken?: string): Promise<Response> => {
+	checkAppIsRunning();
+	return await asBroadcastCaller(request(app).get(broadcastsPath()).query({ roomId }), roomMemberToken);
+};
+
+export const getBroadcast = async (broadcastId: string, roomMemberToken?: string): Promise<Response> => {
+	checkAppIsRunning();
+	return await asBroadcastCaller(request(app).get(`${broadcastsPath()}/${broadcastId}`), roomMemberToken);
 };

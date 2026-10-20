@@ -1,0 +1,12 @@
+description: >
+    Validation error: the body is malformed, or a destination cannot be streamed to (an empty
+    `destinationIds` with no `destinations`, a destination for the meeting without a name or a URL or with
+    any other field, a URL without app and stream key, a redacted URL, two destinations with the same
+    stream key, or more than 5 destinations at once)
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        example:
+            error: 'Broadcast Error'
+            message: 'A meeting cannot broadcast to more than 5 destinations at once'

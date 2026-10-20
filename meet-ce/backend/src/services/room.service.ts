@@ -3,6 +3,7 @@ import type {
 	MeetRoomAccess,
 	MeetRoomAccessConfig,
 	MeetRoomConfig,
+	MeetRoomConfigOptions,
 	MeetRoomField,
 	MeetRoomMemberPermissions,
 	MeetRoomOptions,
@@ -28,8 +29,10 @@ import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import { BroadcastHelper } from '../helpers/broadcast.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import {
+	errorBroadcastEnabledWithoutDestinations,
 	errorDeletingRoom,
 	errorRoomActiveMeeting,
 	errorRoomNotFound,
@@ -95,6 +98,7 @@ export class RoomService {
 		const { roomName, autoDeletionDate, autoDeletionPolicy, config, roles, access } = roomOptions;
 
 		this.validateRecordingAutoStartIsReachable(config ?? {});
+		this.validateBroadcastHasDestinations(config ?? {});
 
 		// Generate a unique room ID based on the room name
 		const roomIdPrefix = MeetRoomHelper.createRoomIdPrefixFromRoomName(roomName!) || 'room';
@@ -112,6 +116,8 @@ export class RoomService {
 			recordingPlay: true,
 			recordingDownload: true,
 			recordingDelete: true,
+			broadcastControl: true,
+			broadcastAddDestinations: true,
 			meetingJoin: true,
 			meetingRead: true,
 			roomShareAccessLinks: true,
@@ -137,6 +143,8 @@ export class RoomService {
 			recordingPlay: true,
 			recordingDownload: true,
 			recordingDelete: false,
+			broadcastControl: false,
+			broadcastAddDestinations: false,
 			meetingJoin: true,
 			meetingRead: true,
 			roomShareAccessLinks: false,
@@ -184,6 +192,11 @@ export class RoomService {
 			}
 		};
 
+		const roomConfig = config as MeetRoomConfig;
+		const broadcastDestinations = BroadcastHelper.reconcileRoomDestinations({}, roomConfig.broadcast.destinations);
+		roomConfig.broadcast.destinations = broadcastDestinations.destinations;
+		await BroadcastHelper.assertDestinationsAllowed(Object.values(broadcastDestinations.urls));
+
 		const now = Date.now();
 		const meetRoom: MeetRoom = {
 			roomId,
@@ -193,14 +206,14 @@ export class RoomService {
 			// maxParticipants,
 			autoDeletionDate,
 			autoDeletionPolicy: autoDeletionDate ? autoDeletionPolicy : undefined,
-			config: config as MeetRoomConfig,
+			config: roomConfig,
 			roles: roomRoles,
 			access: accessConfig,
 			status: MeetRoomStatus.OPEN,
 			rolesUpdatedAt: now,
 			meetingEndAction: MeetingEndAction.NONE
 		};
-		const createdRoom = await this.roomRepository.create(meetRoom);
+		const createdRoom = await this.roomRepository.create(meetRoom, broadcastDestinations.urls);
 		this.logger.info(`Room '${createdRoom.roomId}' created`);
 		return createdRoom;
 	}
@@ -245,7 +258,7 @@ export class RoomService {
 	 * @param config - Partial config with the fields to update
 	 * @returns A Promise that resolves to the updated MeetRoom object
 	 */
-	async updateMeetRoomConfig(roomId: string, config: Partial<MeetRoomConfig>): Promise<MeetRoom> {
+	async updateMeetRoomConfig(roomId: string, config: MeetRoomConfigOptions): Promise<MeetRoom> {
 		const room = await this.getMeetRoom(roomId, ['config', 'status']);
 
 		if (room.status === MeetRoomStatus.ACTIVE_MEETING) {
@@ -256,21 +269,36 @@ export class RoomService {
 		// Merge existing config with new config (partial update)
 		const updatedConfig = merge({}, room.config, config);
 
-		// Disable recording if E2EE is enabled
-		if (updatedConfig.e2ee.enabled && updatedConfig.recording.enabled) {
+		// The destination list is replaced as a whole, never merged entry by entry, and its saved
+		// URLs are the only ones the room knows: a redacted URL sent back keeps the saved one.
+		const savedUrls = await this.roomRepository.findBroadcastDestinationUrls(roomId);
+		const sentDestinations = config.broadcast?.destinations;
+		const broadcastDestinations = sentDestinations
+			? BroadcastHelper.reconcileRoomDestinations(savedUrls, sentDestinations)
+			: { destinations: room.config.broadcast.destinations, urls: savedUrls };
+		updatedConfig.broadcast.destinations = broadcastDestinations.destinations;
+
+		if (sentDestinations) {
+			await BroadcastHelper.assertDestinationsAllowed(Object.values(broadcastDestinations.urls));
+		}
+
+		// E2EE excludes every server-side composition of the meeting
+		if (updatedConfig.e2ee.enabled) {
 			updatedConfig.recording.enabled = false;
+			updatedConfig.broadcast.enabled = false;
 		}
 
 		this.validateRecordingAutoStartIsReachable(updatedConfig);
+		this.validateBroadcastHasDestinations(updatedConfig);
 
-		return this.roomRepository.updatePartial(roomId, { config: updatedConfig });
+		return this.roomRepository.updateConfig(roomId, updatedConfig, broadcastDestinations.urls);
 	}
 
 	/**
 	 * Checks if a recording `autoStart` property is reachable.
 	 * @throws Error when maxParticipants is lower than the required participants for auto start recording.
 	 */
-	protected validateRecordingAutoStartIsReachable(config: Partial<MeetRoomConfig>): void {
+	protected validateRecordingAutoStartIsReachable(config: MeetRoomConfigOptions): void {
 		const { maxParticipants } = config;
 		const autoStart = config.recording?.autoStart;
 
@@ -281,6 +309,15 @@ export class RoomService {
 
 		if (maxParticipants < minParticipantsAutoStart) {
 			throw errorUnreachableRecordingAutoStart(autoStart, maxParticipants, minParticipantsAutoStart);
+		}
+	}
+
+	/**
+	 * Checks that a config enabling live broadcast leaves it at least one destination, sent or saved.
+	 */
+	protected validateBroadcastHasDestinations(config: MeetRoomConfigOptions): void {
+		if (config.broadcast?.enabled && !config.broadcast.destinations?.length) {
+			throw errorBroadcastEnabledWithoutDestinations();
 		}
 	}
 

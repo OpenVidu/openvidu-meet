@@ -66,6 +66,7 @@ export class ToolbarMediaButtonsComponent {
 	showFullscreenButton = input<boolean>(true);
 	showRecordingButton = input<boolean>(true);
 	showViewRecordingsButton = input<boolean>(false);
+	showBroadcastButton = input<boolean>(true);
 	showBackgroundEffectsButton = input<boolean>(true);
 	showSettingsButton = input<boolean>(true);
 
@@ -76,6 +77,10 @@ export class ToolbarMediaButtonsComponent {
 	recordingStatus = input<RecordingState>(RecordingState.STOPPED);
 	hasRoomTracksPublished = input<boolean>(false);
 	recordingStartsAutomatically = input<boolean>(false);
+
+	// Live broadcast related inputs
+	isBroadcastRunning = input<boolean>(false);
+	isBroadcastBusy = input<boolean>(false);
 
 	// Leave button
 	showLeaveButton = input<boolean>(true);
@@ -121,6 +126,17 @@ export class ToolbarMediaButtonsComponent {
 			this.recordingStatus() === RecordingState.STOPPING ||
 			(!this.isRecordingInProgress() && !this.hasRoomTracksPublished()) ||
 			this.cannotStartRecordingHere()
+	);
+
+	readonly isBroadcastToggleDisabled = computed(
+		() => this.isBroadcastBusy() || (!this.isBroadcastRunning() && !this.hasRoomTracksPublished())
+	);
+
+	/** Why the broadcast toggle cannot be used, or an empty string when it can. */
+	readonly broadcastDisabledReasonKey = computed(() =>
+		this.isBroadcastRunning() || this.isBroadcastBusy() || this.hasRoomTracksPublished()
+			? ''
+			: 'TOOLBAR.NO_TRACKS_PUBLISHED'
 	);
 
 	/** Why the toggle cannot be used, or an empty string when it can. */
@@ -172,6 +188,7 @@ export class ToolbarMediaButtonsComponent {
 	// More options menu outputs
 	readonly fullscreenToggled = output<void>();
 	readonly recordingToggled = output<void>();
+	readonly broadcastToggled = output<void>();
 	readonly viewRecordingsClicked = output<void>();
 	readonly backgroundEffectsToggled = output<void>();
 	readonly settingsToggled = output<void>();
@@ -202,6 +219,10 @@ export class ToolbarMediaButtonsComponent {
 
 	onRecordingToggle(): void {
 		this.recordingToggled.emit();
+	}
+
+	onBroadcastToggle(): void {
+		this.broadcastToggled.emit();
 	}
 
 	onViewRecordingsClick(): void {

@@ -6,6 +6,8 @@ import {
 	handLoweredByOf,
 	handRaiseDateOf,
 	LeftEventReason,
+	MeetBroadcastInfo,
+	MeetBroadcastUpdatedPayload,
 	MeetEventOrigin,
 	MeetParticipantAttribute,
 	MeetParticipantMediaMutedPayload,
@@ -27,9 +29,11 @@ import { RuntimeConfigService } from '../../../shared/services/runtime-config.se
 import { SoundService } from '../../../shared/services/sound.service';
 import { EmbeddedEventBusService } from '../../embedded/services/embedded-event-bus.service';
 import { RecordingService } from '../../recordings/services/recording.service';
+import { BroadcastService } from './broadcast.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
 import type {
+	BroadcastRequestedEvent,
 	DisconnectReason,
 	LocalParticipant,
 	Participant,
@@ -41,6 +45,9 @@ import type {
 	Room
 } from '../openvidu-components';
 import {
+	broadcastProgress,
+	isBroadcastInProgress,
+	BroadcastStateService,
 	LocalMediaService,
 	ScreenShareService,
 	MeetingEndingSoonService,
@@ -48,7 +55,8 @@ import {
 	RoomEvent,
 	Track,
 	parseParticipantMetadata,
-	raisedHandQueue
+	raisedHandQueue,
+	settleBroadcast
 } from '../openvidu-components';
 import {
 	MeetingEventsService,
@@ -103,6 +111,8 @@ export class MeetingEventHandlerService {
 	protected meetingState = inject(MeetingStateService);
 	protected roomFeatureService = inject(RoomFeatureService);
 	protected recordingService = inject(RecordingService);
+	protected broadcastService = inject(BroadcastService);
+	protected broadcastState = inject(BroadcastStateService);
 	protected roomMemberContextService = inject(RoomMemberContextService);
 	protected eventBus = inject(EmbeddedEventBusService);
 	protected navigationService = inject(NavigationService);
@@ -388,6 +398,12 @@ export class MeetingEventHandlerService {
 			this.eventBus.emit({ event: EmbeddedEventName.RECORDING_STATUS_CHANGED, payload: { recordingId, status } });
 		}
 
+		for (const broadcast of this.broadcastLedger.values()) {
+			if (isBroadcastInProgress(broadcast.status)) {
+				this.eventBus.emit({ event: EmbeddedEventName.BROADCAST_STARTED, payload: broadcast });
+			}
+		}
+
 		for (const participant of this.raisedHandQueue()) {
 			this.eventBus.emit(this.participantHandChangedEvent(participant, MeetEventOrigin.PARTICIPANT));
 		}
@@ -543,6 +559,7 @@ export class MeetingEventHandlerService {
 		// Per entry: the next one starts up again, against its own initial state.
 		this.mediaStatusLedger = {};
 		this.recordingStatusLedger.clear();
+		this.broadcastLedger.clear();
 		this.handNotice = undefined;
 		this.meetingReactions.clear();
 		this.meetingJoinedNotified = false;
@@ -589,6 +606,18 @@ export class MeetingEventHandlerService {
 		}
 	};
 
+	/**
+	 * Answers the activities panel's requests to the broadcast API. The state of each broadcast
+	 * arrives as a broadcast signal.
+	 */
+	onBroadcastRequested = async (event: BroadcastRequestedEvent): Promise<void> => {
+		try {
+			await this.broadcastService.request(event);
+		} catch (error) {
+			console.error(`Error on broadcast request '${event.action}':`, error);
+		}
+	};
+
 	// ============================================
 	// PRIVATE METHODS - Event Handlers
 	// ============================================
@@ -597,6 +626,10 @@ export class MeetingEventHandlerService {
 		switch (topic) {
 			case MeetSignalType.MEET_RECORDING_UPDATED:
 				this.handleRecordingUpdated(payload as MeetRecordingUpdatedPayload);
+				break;
+
+			case MeetSignalType.MEET_BROADCAST_UPDATED:
+				this.handleBroadcastUpdated(payload as MeetBroadcastUpdatedPayload);
 				break;
 
 			case MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED:
@@ -733,6 +766,80 @@ export class MeetingEventHandlerService {
 			this.eventBus.emit({ event: EmbeddedEventName.RECORDING_STATUS_CHANGED, payload });
 		}
 	}
+
+	// The last report of each broadcast in the current entry, so the first of each reads as a start
+	// (for a late joiner too), the rest as updates until the one that ends it, and nothing repeats.
+	private readonly broadcastLedger = new Map<string, MeetBroadcastInfo>();
+
+	private handleBroadcastUpdated(event: MeetBroadcastUpdatedPayload): void {
+		const roomId = this.meetingContext.roomId();
+
+		if (roomId && event.roomId !== roomId) {
+			return;
+		}
+
+		this.notifyBroadcast(event.broadcast);
+	}
+
+	/**
+	 * Notifies the host of a change of a broadcast (embedded modes only) when it moves the broadcast
+	 * forward: a broadcast that ended says nothing more, and a repeat or a late, older report says
+	 * nothing new. Until `meetingJoined` the change is only recorded, for
+	 * {@link onParticipantConnected} to report the broadcasts in progress.
+	 */
+	private notifyBroadcast(broadcast: MeetBroadcastInfo): void {
+		const known = this.broadcastLedger.get(broadcast.broadcastId);
+
+		if (
+			known &&
+			(!isBroadcastInProgress(known.status) ||
+				broadcastProgress(broadcast.status) < broadcastProgress(known.status) ||
+				JSON.stringify(broadcast) === JSON.stringify(known))
+		) {
+			return;
+		}
+
+		this.broadcastLedger.set(broadcast.broadcastId, broadcast);
+
+		if (!this.runtimeConfigService.isEmbeddedMode() || !this.meetingJoinedNotified) return;
+
+		const event = !isBroadcastInProgress(broadcast.status)
+			? EmbeddedEventName.BROADCAST_ENDED
+			: known
+				? EmbeddedEventName.BROADCAST_UPDATED
+				: EmbeddedEventName.BROADCAST_STARTED;
+		this.eventBus.emit({ event, payload: broadcast });
+	}
+
+	/**
+	 * Brings the broadcasts up to date after the connection came back, since their signals may
+	 * have been lost meanwhile: the server repeats only the broadcasts still in progress, so one
+	 * known in progress before that is not among them anymore ended, and is settled here.
+	 */
+	onRoomReconnected = async (): Promise<void> => {
+		const roomId = this.meetingContext.roomId();
+
+		if (!roomId) return;
+
+		const before = this.broadcastState.inProgress();
+		let current: MeetBroadcastInfo[];
+
+		try {
+			current = await this.broadcastService.getBroadcasts(roomId);
+		} catch (error) {
+			console.warn('Could not bring the broadcasts up to date after reconnecting:', error);
+			return;
+		}
+
+		const ended = before
+			.filter(({ broadcastId }) => !current.some((broadcast) => broadcast.broadcastId === broadcastId))
+			.map((broadcast) => settleBroadcast(broadcast));
+
+		for (const broadcast of [...ended, ...current]) {
+			this.broadcastState.setBroadcast(broadcast);
+			this.notifyBroadcast(broadcast);
+		}
+	};
 
 	/**
 	 * Handles permissions updated event for the local participant by regenerating the room member token to get updated permissions.

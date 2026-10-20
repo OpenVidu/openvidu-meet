@@ -14,6 +14,13 @@ content:
                 recording:
                     enabled: true
                     encoding: H264_720P_30
+                broadcast:
+                    enabled: true
+                    layout: speaker
+                    encoding: H264_720P_30
+                    destinations:
+                        - name: YouTube
+                          url: rtmp://a.rtmp.youtube.com/live2/abcd-1234-efgh-5678
                 chat:
                     enabled: true
                 virtualBackground:

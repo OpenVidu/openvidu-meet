@@ -1,6 +1,8 @@
 import {
 	EmbeddedEventName,
 	EmbeddedEventPayloadFor,
+	MeetBroadcastStartOptions,
+	MeetBroadcastStopOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetReaction
@@ -140,6 +142,14 @@ export function createOpenViduMeetElementClass(
 
 		participantReactionSend(reaction: MeetReaction): void {
 			this._getComponentInstance()?.participantReactionSend(reaction);
+		}
+
+		broadcastStart(options?: MeetBroadcastStartOptions): void {
+			this._getComponentInstance()?.broadcastStart(options);
+		}
+
+		broadcastStop(options?: MeetBroadcastStopOptions): void {
+			this._getComponentInstance()?.broadcastStop(options);
 		}
 
 		// ── Deprecated method aliases ────────────────────────────────────────

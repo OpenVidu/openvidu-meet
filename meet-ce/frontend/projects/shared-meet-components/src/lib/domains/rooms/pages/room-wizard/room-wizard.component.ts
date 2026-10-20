@@ -23,6 +23,7 @@ import { WizardStep, WizardStepId } from '../../models/wizard.model';
 import { RoomService } from '../../services/room.service';
 import { RoomWizardStateService } from '../../services/wizard-state.service';
 import { RoomBasicCreationComponent } from '../room-basic-creation/room-basic-creation.component';
+import { BroadcastConfigComponent } from './steps/broadcast-config/broadcast-config.component';
 import { MeetingConfigComponent } from './steps/meeting-config/meeting-config.component';
 import { RecordingConfigComponent } from './steps/recording-config/recording-config.component';
 import { RoomAccessComponent } from './steps/room-access/room-access.component';
@@ -41,6 +42,7 @@ import { RoomWizardRoomDetailsComponent } from './steps/room-details/room-detail
 		RoomWizardRoomDetailsComponent,
 		MeetingConfigComponent,
 		RecordingConfigComponent,
+		BroadcastConfigComponent,
 		RoomAccessComponent,
 		TranslatePipe
 	],

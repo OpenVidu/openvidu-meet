@@ -1,8 +1,9 @@
-import type { MeetRoom, MeetRoomField, ProjectedMeetRoom } from '@openvidu-meet/typings';
+import type { MeetRoom, MeetRoomConfig, MeetRoomField, ProjectedMeetRoom } from '@openvidu-meet/typings';
 import { MeetRoomStatus, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { QueryFilter } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import type { BroadcastDestinationUrls } from '../models/broadcast.model.js';
 import type { MeetRoomDocument, MeetRoomDocumentOnlyField } from '../models/mongoose-schemas/room.schema.js';
 import { MEET_ROOM_DOCUMENT_ONLY_FIELDS, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
 import { LoggerService } from '../services/logger.service.js';
@@ -38,8 +39,9 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * @returns Room with complete URLs
 	 */
 	protected toDomain(dbObject: MeetRoomDocument): MeetRoom {
-		const { schemaVersion, ...room } = dbObject;
+		const { schemaVersion, broadcastDestinationUrls, ...room } = dbObject;
 		void schemaVersion;
+		void broadcastDestinationUrls;
 		return this.enrichRoomWithBaseUrls(room);
 	}
 
@@ -48,9 +50,11 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	}
 
 	protected override getAtomicUpdatePaths(): readonly string[] {
-		// Recording encoding must be treated as an atomic update path because
-		// it can be either a string or an object, and we want to ensure it is fully replaced rather than partially updated.
-		return ['config.recording.encoding'];
+		// An encoding is either a preset string or an options object, so it is replaced whole: the
+		// fields of an object cannot be written into a string. The broadcast destination URLs are
+		// keyed by destination id, so a removed destination must take its URL with it instead of
+		// leaving it merged in.
+		return ['config.recording.encoding', 'config.broadcast.encoding', 'broadcastDestinationUrls'];
 	}
 
 	/**
@@ -58,15 +62,51 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * URLs are stored in the database without the base URL.
 	 *
 	 * @param room - The room data to create
+	 * @param broadcastDestinationUrls - The real URL of each of the room's broadcast destinations
 	 * @returns The created room with enriched URLs
 	 */
-	create(room: MeetRoom): Promise<MeetRoom> {
+	create(room: MeetRoom, broadcastDestinationUrls: BroadcastDestinationUrls = {}): Promise<MeetRoom> {
 		const normalizedRoom = this.normalizeRoomForStorage(room) as MeetRoom;
 		const document: MeetRoomDocument = {
 			...normalizedRoom,
+			broadcastDestinationUrls,
 			schemaVersion: INTERNAL_CONFIG.ROOM_SCHEMA_VERSION
 		};
 		return this.createDocument(document);
+	}
+
+	/**
+	 * Replaces the config of a room together with the real URL of each of its broadcast
+	 * destinations, which live outside the domain shape (see {@link findBroadcastDestinationUrls}).
+	 *
+	 * @param roomId - The unique room identifier
+	 * @param config - The complete config to store
+	 * @param broadcastDestinationUrls - The real URL of each destination in `config.broadcast`
+	 * @returns The updated room with enriched URLs
+	 * @throws Error if room not found
+	 */
+	updateConfig(
+		roomId: string,
+		config: MeetRoomConfig,
+		broadcastDestinationUrls: BroadcastDestinationUrls
+	): Promise<MeetRoom> {
+		return this.updatePartialOne({ roomId }, { config, broadcastDestinationUrls });
+	}
+
+	/**
+	 * The real URL, stream key included, of each broadcast destination of a room, by destination
+	 * id. The room's domain object only carries the redacted URLs, so this is the one read that
+	 * yields the secrets, for the server's own use.
+	 *
+	 * @param roomId - The unique room identifier
+	 * @returns The URLs by destination id, empty when the room has no destinations or does not exist
+	 */
+	async findBroadcastDestinationUrls(roomId: string): Promise<BroadcastDestinationUrls> {
+		const document = (await this.model.findOne({ roomId }, 'broadcastDestinationUrls').lean().exec()) as Pick<
+			MeetRoomDocument,
+			'broadcastDestinationUrls'
+		> | null;
+		return document?.broadcastDestinationUrls ?? {};
 	}
 
 	/**

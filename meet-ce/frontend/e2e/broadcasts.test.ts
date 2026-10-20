@@ -1,0 +1,138 @@
+import { expect, test } from '@playwright/test';
+import { createRtmpSink, deleteRtmpSinks } from './helpers/broadcast-sink.helper';
+import {
+	addDestinationFromActivitiesPanel,
+	delayBroadcastStartAnswers,
+	expectBroadcastBadgeVisible,
+	expectBroadcastNotice,
+	expectBroadcastPhase,
+	expectDestinationStatus,
+	expectNoBroadcastBadge,
+	expectNoBroadcastControls,
+	goLiveFromActivitiesPanel,
+	stopBroadcastFromActivitiesPanel,
+	stopDestinationFromActivitiesPanel,
+	toggleBroadcastFromToolbar,
+	untickPlannedDestination
+} from './helpers/broadcasts.helper';
+import {
+	createRoomAndGetAnonymousAccessUrl,
+	deleteRooms,
+	getRoomConfig,
+	startBroadcasts
+} from './helpers/meet-api.helper';
+import { openMeeting } from './helpers/meeting-navigation.helper';
+
+/**
+ * The live broadcasts as the room sees them: the activity a moderator goes live from, one broadcast
+ * per destination, the LIVE chip everyone gets, and what a participant without the permission is
+ * left with. The room streams to an RTMP ingress of the LiveKit deployment under test, the one sink
+ * the egress can reach here.
+ */
+test.describe('Live broadcast E2E Tests', () => {
+	let roomId: string;
+	let sinkUrl: string;
+	let destinationId: string;
+	let moderatorUrl: string;
+	let speakerUrl: string;
+
+	test.beforeEach(async () => {
+		sinkUrl = await createRtmpSink('spa');
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl({
+			config: { broadcast: { enabled: true, destinations: [{ name: 'Sink', url: sinkUrl }] } }
+		});
+		roomId = room.roomId;
+		moderatorUrl = accessUrl;
+		speakerUrl = room.access.anonymous.speaker.url;
+		destinationId = (await getRoomConfig(roomId)).broadcast.destinations[0].id!;
+	});
+
+	test.afterEach(async () => {
+		await deleteRooms([roomId]);
+		await deleteRtmpSinks();
+	});
+
+	test('should go live from the activities panel, reach the destination and stop', async ({ page }) => {
+		await openMeeting(page, moderatorUrl);
+
+		await goLiveFromActivitiesPanel(page);
+		await expectBroadcastPhase(page, 'live', 40_000);
+		await expectDestinationStatus(page, destinationId, 'live');
+		await expectBroadcastBadgeVisible(page);
+		await expectBroadcastNotice(page, 'started');
+
+		await stopBroadcastFromActivitiesPanel(page);
+		await expectBroadcastNotice(page, 'stopped');
+		await expectBroadcastPhase(page, 'idle', 30_000);
+		await expectNoBroadcastBadge(page);
+	});
+
+	test('should let a room destination be left out but not changed, and go live to one added for the meeting', async ({
+		page
+	}) => {
+		const extraUrl = await createRtmpSink('spa-extra');
+		await openMeeting(page, moderatorUrl);
+
+		await addDestinationFromActivitiesPanel(page, 'Extra', extraUrl);
+		await expect(page.locator(`#broadcast-destination-${destinationId} .destination-action`)).toHaveCount(0);
+		await untickPlannedDestination(page, destinationId);
+		await goLiveFromActivitiesPanel(page);
+
+		await expectBroadcastPhase(page, 'live', 40_000);
+		await expectDestinationStatus(page, destinationId, 'stopped');
+		await expect(page.locator('#broadcast-activity .destination-row[data-status="live"]')).toHaveCount(1);
+	});
+
+	test('should keep a destination the server refuses in its editor, with the meeting still live', async ({
+		page
+	}) => {
+		await openMeeting(page, moderatorUrl);
+		await goLiveFromActivitiesPanel(page);
+		await expectBroadcastPhase(page, 'live', 40_000);
+
+		await addDestinationFromActivitiesPanel(page, 'Sink again', sinkUrl);
+
+		await expect(page.locator('#broadcast-destination-url-rejected')).toContainText('already being broadcast');
+		await expect(page.locator('#broadcast-destination-editor')).toBeVisible();
+		await expect(page.locator('#broadcast-destination-save-btn')).toHaveText('Retry');
+		await expectBroadcastPhase(page, 'live');
+	});
+
+	test('should stop only the destination asked while the start of another is still unanswered', async ({ page }) => {
+		const extraUrl = await createRtmpSink('spa-extra');
+		await openMeeting(page, moderatorUrl);
+		await goLiveFromActivitiesPanel(page);
+		await expectDestinationStatus(page, destinationId, 'live', 40_000);
+
+		await delayBroadcastStartAnswers(page, 5_000);
+		await addDestinationFromActivitiesPanel(page, 'Extra', extraUrl);
+		await stopDestinationFromActivitiesPanel(page, destinationId);
+
+		await expectDestinationStatus(page, destinationId, 'stopped');
+		await expect(page.locator('#broadcast-destination-editor')).toBeVisible();
+		await expectDestinationStatus(page, 'meeting-1', 'live', 40_000);
+		await expect(page.locator('#broadcast-destination-editor')).toBeHidden({ timeout: 10_000 });
+		await expectDestinationStatus(page, destinationId, 'stopped');
+		await expect(page.locator('#broadcast-activity .activity-failure')).toHaveCount(0);
+	});
+
+	test('should go live and stop from the toolbar', async ({ page }) => {
+		await openMeeting(page, moderatorUrl);
+
+		await toggleBroadcastFromToolbar(page);
+		await expectBroadcastPhase(page, 'live', 40_000);
+		await expectBroadcastBadgeVisible(page);
+
+		await toggleBroadcastFromToolbar(page);
+		await expectBroadcastPhase(page, 'idle', 30_000);
+		await expectNoBroadcastBadge(page);
+	});
+
+	test('should show a participant without broadcastControl the live broadcast, but no controls', async ({ page }) => {
+		await openMeeting(page, speakerUrl);
+		await startBroadcasts(roomId);
+
+		await expectBroadcastBadgeVisible(page);
+		await expectNoBroadcastControls(page);
+	});
+});

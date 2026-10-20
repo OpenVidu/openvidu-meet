@@ -29,9 +29,29 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - Reactions, in the meeting and through the embedded command `participantReactionSend` and the embedded event
   `participantReactionSent`, with the `participantReactionSend` permission to send them and the room config
   `reactions.enabled` to turn them off.
+- [Broadcasts API][3.10-broadcasts] under `/api/v1/broadcasts`: stream a live meeting to one or more RTMP
+  destinations, one broadcast per destination and up to five at once, each with its own status and its own
+  `broadcastId`, as a recording has, read them and stop one or several. Starting and stopping use the new [`broadcastControl`][3.10-permissions] permission
+  and streaming to a destination the room does not have `broadcastAddDestinations`, both granted to the
+  moderator role of rooms created from this release on. The embedded API gets the `broadcastStart` and
+  `broadcastStop` commands and the `broadcastStarted`, `broadcastUpdated` and `broadcastEnded` events, the
+  webhooks [`broadcastStarted`][3.10-broadcast-started], [`broadcastUpdated`][3.10-broadcast-updated] and
+  [`broadcastEnded`][3.10-broadcast-ended] report the same, and the [meeting info][3.10-meetings] carries
+  `broadcastActive`.
+- Rooms save the destinations a broadcast streams to by default, and the layout and encoding it streams
+  with, in [`config.broadcast`][3.10-room-config].
+  Every response replaces the stream key of a destination URL with `********`, and a redacted URL sent back
+  keeps the saved key.
+
+#### UI
+
+- The room wizard gets a Broadcast step to save the room's default RTMP destinations and layout, the meeting's activities
+  panel a Live broadcast activity to go live to them, add one for the meeting, and stop or restart each, and
+  the status rail a `LIVE` chip with the time on air.
 
 #### Deployment
 
+- Live broadcasts need the OpenVidu egress, which reports the tag Meet gives each stream URL.
 - Azure Blob Storage authenticates with the Azure managed identity of the VM or pod running Meet when
   `MEET_AZURE_ACCOUNT_KEY` is empty.
 
@@ -68,12 +88,17 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - [`startRecording`][3.9-start-recording] checked the target room before `recordingControl`, so a room member token of
   another room got `404` for a room that does not exist and learned whether a room could be recorded. It now answers
   `403` first.
-- [`startRecording`][3.9-start-recording] answered `500` when the media server did not accept the recording or could not
-  be reached. It now answers `503`.
+- [`startRecording`][3.9-start-recording] answered `500` when no egress service was available to record. It now answers
+  `503`.
 - [`bulkDeleteRecordings`][3.9-bulk-delete-recordings] and [`downloadRecordings`][3.9-download-recordings] accepted any
   number of `recordingIds`, and a long list failed with a server or proxy error. They now accept up to 100 distinct ids
   and answer `422` to more, and the recording lists disable ZIP download and bulk delete beyond 100 selected
   recordings.
+- [`POST /recordings/{recordingId}/stop`][3.10-stop-recording] answered 500 when the recording ended while the stop was
+  being processed. It answers 409, as for any recording already stopped.
+- A recording whose egress service died stayed in progress for good: stopping it answered 500 and starting another one
+  in the room 409. It ends as `failed`, with its [`recordingEnded`][3.10-recording-ended] webhook, and the room can
+  record again.
 - A recording ended by the stale-recordings clean-up sent no [`recordingEnded`][3.9-recording-ended] webhook and stayed
   in progress in the meeting and for the embedded event `recordingStatusChanged`. Its end is now reported like any
   other, once.
@@ -276,3 +301,13 @@ registered on both receives it twice.
 [3.9-recording-ended]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/webhooks/recordingEndedWebhook
 [3.9-bulk-delete-recordings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/bulkDeleteRecordings
 [3.9-download-recordings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/downloadRecordings
+
+[3.10-stop-recording]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/stopRecording
+[3.10-recording-ended]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/recordingEndedWebhook
+[3.10-broadcasts]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/broadcastStart
+[3.10-permissions]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/schemas/MeetPermissions
+[3.10-room-config]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/schemas/MeetRoomConfig
+[3.10-meetings]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/meetingGet
+[3.10-broadcast-started]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/broadcastStartedWebhook
+[3.10-broadcast-updated]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/broadcastUpdatedWebhook
+[3.10-broadcast-ended]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/broadcastEndedWebhook

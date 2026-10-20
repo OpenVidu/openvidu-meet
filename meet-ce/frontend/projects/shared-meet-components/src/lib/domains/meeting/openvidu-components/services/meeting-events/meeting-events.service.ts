@@ -1,5 +1,6 @@
 import { inject, Service, signal } from '@angular/core';
 import {
+	MeetBroadcastUpdatedPayload,
 	MeetingChatSignalPayload,
 	MeetRecordingStatus,
 	MeetRecordingUpdatedPayload,
@@ -24,6 +25,7 @@ import {
 	TrackPublication
 } from '../../services/livekit';
 import { safeJsonParse } from '../../utils/utils';
+import { BroadcastStateService } from '../broadcast/broadcast-state.service';
 import { ChatService } from '../chat/chat.service';
 import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
@@ -53,6 +55,7 @@ const isMeetSignalType = (topic: string | undefined): topic is MeetSignalType =>
 @Service()
 export class MeetingEventsService {
 	private readonly dialogService = inject(DialogService);
+	private readonly broadcastState = inject(BroadcastStateService);
 	private readonly chatService = inject(ChatService);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly loggerSrv = inject(LoggerService);
@@ -324,6 +327,8 @@ export class MeetingEventsService {
 
 		if (topic === MeetSignalType.MEET_RECORDING_UPDATED) {
 			this.handleRecordingUpdated(event as MeetRecordingUpdatedPayload);
+		} else if (topic === MeetSignalType.MEET_BROADCAST_UPDATED) {
+			this.broadcastState.setBroadcast((event as MeetBroadcastUpdatedPayload).broadcast);
 		}
 
 		this.meetSignals.next({ topic, payload: event as MeetSignalPayload });
@@ -390,6 +395,7 @@ export class MeetingEventsService {
 			this.reconnectInProgress = false;
 			this._activeSpeakers.set([]);
 			this.recordingService.setRecordingStopped();
+			this.broadcastState.reset();
 			this.dialogService.closeBlockingDialog();
 			const participantLeftEvent: ParticipantLeftEvent = {
 				roomName: this.meetingLiveKitService.getRoomName(),

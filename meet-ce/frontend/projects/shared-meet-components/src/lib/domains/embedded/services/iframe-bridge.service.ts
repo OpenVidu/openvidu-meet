@@ -258,6 +258,21 @@ export class IframeBridgeService {
 				break;
 			}
 
+			case EmbeddedCommandName.BROADCAST_START: {
+				const payload = 'payload' in message ? message.payload : undefined;
+				const destinationIds = payload && 'destinationIds' in payload ? payload.destinationIds : undefined;
+				const destinations = payload && 'destinations' in payload ? payload.destinations : undefined;
+				await this.commandService.broadcastStart({ destinationIds, destinations });
+				break;
+			}
+
+			case EmbeddedCommandName.BROADCAST_STOP: {
+				const payload = 'payload' in message ? message.payload : undefined;
+				const broadcastIds = payload && 'broadcastIds' in payload ? payload.broadcastIds : undefined;
+				await this.commandService.broadcastStop({ broadcastIds });
+				break;
+			}
+
 			default:
 				break;
 		}
