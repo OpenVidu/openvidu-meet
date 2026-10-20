@@ -468,7 +468,7 @@ export class RoomMemberService {
 		const [secretSource, authenticatedSource, room] = await Promise.all([
 			secret ? this.resolvePermissionSourceFromSecret(roomId, secret) : Promise.resolve(undefined),
 			this.resolvePermissionSourceFromAuthenticatedUser(roomId),
-			this.roomService.getMeetRoom(roomId, ['roles'])
+			this.roomService.getMeetRoom(roomId, ['roles', 'config'])
 		]);
 
 		if (!secretSource && !authenticatedSource) {
@@ -495,7 +495,14 @@ export class RoomMemberService {
 
 		if (joinMeeting) {
 			tokenMetadata.livekitUrl = MEET_ENV.LIVEKIT_URL;
-			let resolvedParticipantName = participantName || secretSource?.name || authenticatedSource?.name;
+			const boundName =
+				secretSource?.name ||
+				authenticatedSource?.name ||
+				this.requestSessionService.getAuthenticatedUser()?.name;
+			// An encrypted room gets the name encrypted by the client, which the server cannot check
+			let resolvedParticipantName = room.config.e2ee.enabled
+				? participantName || boundName
+				: boundName || participantName;
 			let participantIdentity: string | undefined;
 
 			// If regenerating an existing token for joining a meeting, use the participant identity from the previous token's context
