@@ -8,7 +8,7 @@
             stored: a participant joining later never sees it.
 
             Requires the `participantReactionSend` permission. A room whose `reactions.enabled` config is
-            `false` rejects every reaction with a `403`.
+            `false` rejects every reaction with a `403`, and a room without a meeting running answers `404`.
         tags:
             - Internal API - Meetings
         security:
@@ -27,7 +27,7 @@
             '403':
                 $ref: '../../shared/responses/errors/forbidden.yaml'
             '404':
-                $ref: '../../rooms/responses/errors/room-not-found.yaml'
+                $ref: '../responses/errors/no-active-meeting.yaml'
             '413':
                 $ref: '../../shared/responses/errors/payload-too-large.yaml'
             '422':

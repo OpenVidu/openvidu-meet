@@ -295,10 +295,13 @@ export class MeetingService {
 	 * @param roomId - The ID of the room
 	 * @param participantIdentity - The identity of the participant sending the reaction
 	 * @param reaction - The reaction to show
-	 * @throws A 403 error when the room has the feature disabled
+	 * @throws A 404 error when the room has no active meeting, or a 403 when the room has the feature disabled
 	 */
 	async sendParticipantReaction(roomId: string, participantIdentity: string, reaction: MeetReaction): Promise<void> {
-		const { config } = await this.roomService.getMeetRoom(roomId, ['config']);
+		const [, { config }] = await this.withActiveMeetingRoom(
+			roomId,
+			this.roomService.getMeetRoom(roomId, ['config'])
+		);
 
 		if (!config.reactions.enabled) {
 			throw errorReactionsDisabled(roomId);
