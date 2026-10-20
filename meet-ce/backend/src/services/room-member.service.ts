@@ -12,6 +12,7 @@ import type {
 	ProjectedMeetRoomMember
 } from '@openvidu-meet/typings';
 import {
+	MEET_PERMISSION_KEYS,
 	MeetParticipantModerationAction,
 	MeetRoomMemberRole,
 	MeetRoomMemberType,
@@ -265,7 +266,8 @@ export class RoomMemberService {
 	}
 
 	/**
-	 * Updates an existing room member.
+	 * Updates an existing room member. Only a change of its effective permissions revokes the member's
+	 * earlier tokens and reaches a member in the meeting.
 	 *
 	 * @param roomId - The ID of the room
 	 * @param memberId - The ID of the member to update
@@ -277,7 +279,11 @@ export class RoomMemberService {
 		memberId: string,
 		updates: { baseRole?: MeetRoomMemberRole; customPermissions?: Partial<MeetRoomMemberPermissions> }
 	): Promise<MeetRoomMember> {
-		const member = await this.getRoomMember(roomId, memberId, ['baseRole', 'customPermissions']);
+		const member = await this.getRoomMember(roomId, memberId, [
+			'baseRole',
+			'customPermissions',
+			'effectivePermissions'
+		]);
 
 		if (!member) {
 			throw errorRoomMemberNotFound(roomId, memberId);
@@ -288,15 +294,21 @@ export class RoomMemberService {
 
 		// Recompute effective permissions
 		const room = await this.roomService.getMeetRoom(roomId, ['roles', 'config']);
-		const { roles } = room;
-		const effectivePermissions = this.computeEffectivePermissions(roles, nextBaseRole, nextCustomPermissions);
+		const effectivePermissions = this.computeEffectivePermissions(room.roles, nextBaseRole, nextCustomPermissions);
+		const permissionsChanged = MEET_PERMISSION_KEYS.some(
+			(key) => effectivePermissions[key] !== member.effectivePermissions[key]
+		);
 
 		const updatedMember = await this.roomMemberRepository.updatePartial(roomId, memberId, {
 			baseRole: nextBaseRole,
 			customPermissions: nextCustomPermissions,
 			effectivePermissions,
-			permissionsUpdatedAt: Date.now()
+			...(permissionsChanged && { permissionsUpdatedAt: Date.now() })
 		});
+
+		if (!permissionsChanged) {
+			return updatedMember;
+		}
 
 		if (!effectivePermissions.meetingJoin) {
 			// If member lost permission to join meeting, kick them out if they are currently in a meeting

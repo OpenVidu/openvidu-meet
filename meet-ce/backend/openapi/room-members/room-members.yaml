@@ -176,11 +176,12 @@
             You can modify the member's base role and custom permission overrides.
             The effective permissions will be recalculated based on the new base role and custom permissions.
 
-            The room member tokens issued to that member before the write stop being accepted (`401`).
-            If the update takes `meetingJoin` away the member is removed from an ongoing meeting;
-            otherwise the new permissions apply at once to a member already in a meeting, media
-            server grant included, and the member is signalled so the meeting interface follows,
-            without rejoining.
+            When the effective permissions change, the room member tokens issued to that member before
+            the write stop being accepted (`401`). If the update takes `meetingJoin` away the member is
+            removed from an ongoing meeting; otherwise the new permissions apply at once to a member
+            already in a meeting, media server grant included, and the member is signalled so the
+            meeting interface follows, without rejoining. An update that leaves the effective permissions
+            as they were is stored without any of these effects.
 
             **Access token roles**: `admin`, `room_manager`.
         tags:

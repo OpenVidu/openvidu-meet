@@ -103,6 +103,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - A permission change made with `updateRoomMember` during a meeting reached the media server only when the
   participant's client renewed its token, so a client that skipped the renewal kept publishing what it had lost. The
   server now applies the new media grant at once.
+- An `updateRoomMember` that changed nothing, such as one with an empty body, revoked the member's room member tokens
+  and told a member in the meeting that their permissions were updated. Only an update that changes the member's
+  effective permissions does so now.
 - The name an identified guest, a member user or a signed-in user joined a meeting with was locked by the join screen
   only, so a modified client could join under any name. Outside encrypted rooms the server now uses the member's or
   the user's name.

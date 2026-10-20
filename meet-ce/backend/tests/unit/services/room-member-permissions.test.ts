@@ -120,7 +120,8 @@ describe('RoomMemberService.updateRoomMember on a member in the meeting', () => 
 				{
 					findByRoomAndMemberId: async () => ({
 						baseRole: MeetRoomMemberRole.SPEAKER,
-						customPermissions: {}
+						customPermissions: {},
+						effectivePermissions: speaker
 					}),
 					updatePartial: async () => ({})
 				},
@@ -168,6 +169,13 @@ describe('RoomMemberService.updateRoomMember on a member in the meeting', () => 
 			isPromotedModerator: true
 		});
 		expect(permission.canPublishSources).toContain(TrackSource.CAMERA);
+	});
+
+	it('leaves the meeting alone when the effective permissions do not change', async () => {
+		await memberService.updateRoomMember(ROOM_ID, MEMBER_ID, { customPermissions: { chatWrite: true } });
+
+		expect(updateParticipant).not.toHaveBeenCalled();
+		expect(sendParticipantPermissionsUpdatedSignal).not.toHaveBeenCalled();
 	});
 
 	it('leaves a member who is not in the meeting alone', async () => {

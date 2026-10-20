@@ -8,7 +8,10 @@ import {
 	MeetSignalType,
 	MeetUserRole
 } from '@openvidu-meet/typings';
+import type { Express } from 'express';
+import request from 'supertest';
 import { container } from '../../../../src/config/dependency-injector.config.js';
+import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
@@ -26,6 +29,7 @@ import {
 	deleteAllRooms,
 	deleteAllUsers,
 	generateRoomMemberToken,
+	getFullPath,
 	getRoomMember,
 	sleep,
 	startTestServer,
@@ -33,11 +37,12 @@ import {
 } from '../../../helpers/request-helpers.js';
 
 describe('Room Members API Tests', () => {
+	let app: Express;
 	let roomId: string;
 	let roomRoles: MeetRoomRoles;
 
 	beforeAll(async () => {
-		await startTestServer();
+		app = await startTestServer();
 
 		const room = await createRoom({}, undefined, { xExtraFields: 'roles' });
 		roomId = room.roomId;
@@ -52,6 +57,12 @@ describe('Room Members API Tests', () => {
 		await joinFakeParticipant(roomId, memberId);
 		await updateParticipantMetadata(roomId, memberId, JSON.parse(metadata!) as MeetRoomMemberTokenMetadata);
 	};
+
+	/** Reads an identified guest's own member record with a room member token, which fails with 401 once revoked. */
+	const getOwnMemberWithToken = (memberId: string, roomMemberToken: string) =>
+		request(app)
+			.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members/${memberId}`))
+			.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 
 	afterAll(async () => {
 		await disconnectFakeParticipants();
@@ -277,18 +288,37 @@ describe('Room Members API Tests', () => {
 			expect(response.body).toHaveProperty('baseRole', MeetRoomMemberRole.MODERATOR);
 		});
 
-		it('should allow empty update body (no changes)', async () => {
+		it('should allow empty update body (no changes) and keep the member tokens valid', async () => {
 			// Create a member
 			const createResponse = await createRoomMember(roomId, {
 				name: 'Test Member',
 				baseRole: MeetRoomMemberRole.SPEAKER
 			});
 			const memberId = createResponse.body.memberId;
+			const memberToken = await generateRoomMemberToken(roomId, { secret: memberId });
 
 			// Update with empty body
 			const response = await updateRoomMember(roomId, memberId, {});
 			expect(response.status).toBe(200);
 			expect(response.body).toHaveProperty('baseRole', MeetRoomMemberRole.SPEAKER);
+			expect(response.body.permissionsUpdatedAt).toBe(createResponse.body.permissionsUpdatedAt);
+
+			expect((await getOwnMemberWithToken(memberId, memberToken)).status).toBe(200);
+		});
+
+		it('should keep permissionsUpdatedAt when the overrides match the base role', async () => {
+			const createResponse = await createRoomMember(roomId, {
+				name: 'Test Member',
+				baseRole: MeetRoomMemberRole.SPEAKER
+			});
+			const memberId = createResponse.body.memberId;
+
+			const response = await updateRoomMember(roomId, memberId, {
+				customPermissions: { chatWrite: roomRoles.speaker.permissions.chatWrite }
+			});
+			expect(response.status).toBe(200);
+			expect(response.body.customPermissions).toHaveProperty('chatWrite');
+			expect(response.body.permissionsUpdatedAt).toBe(createResponse.body.permissionsUpdatedAt);
 		});
 
 		it('should fail when member does not exist', async () => {
@@ -377,6 +407,12 @@ describe('Room Members API Tests', () => {
 					destinationIdentities: [participantIdentity]
 				}
 			);
+
+			// An update that changes nothing does not tell the participant anything
+			sendSignalSpy.mockClear();
+			expect((await updateRoomMember(roomId, memberId, {})).status).toBe(200);
+			expect(sendSignalSpy).not.toHaveBeenCalled();
+			sendSignalSpy.mockRestore();
 		});
 
 		it('should apply the new media grant to a member in the meeting without their client renewing its token', async () => {
