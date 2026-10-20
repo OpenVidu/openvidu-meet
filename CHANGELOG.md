@@ -91,6 +91,10 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   the user and returns new ones, and a rotated refresh token is accepted once.
 - Two simultaneous [`createUser`][3.10-create-user] requests with the same `userId` could answer `500`. The one that
   finds the `userId` taken now answers `409`.
+- [`updateRoomStatus`][3.10-update-room-status] with `open` during a meeting set the room `open` while the meeting
+  went on, cancelling a scheduled close or deletion and sending a second `meetingStarted` webhook, and `closed` turned
+  a scheduled deletion into a close. During a meeting the room now stays `active_meeting`: `open` cancels only a
+  scheduled close and answers `409` when a deletion is scheduled, and `closed` keeps a scheduled deletion.
 
 #### UI
 
@@ -277,6 +281,7 @@ registered on both receives it twice.
 [3.10-create-user]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/createUser
 [3.10-participant-role-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantRoleChangedWebhook
 [3.10-participant-role-update]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantRoleUpdate
+[3.10-update-room-status]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/updateRoomStatus
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html
 [3.9-meetings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/meetingGet
 [3.9-webhooks-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/webhookList

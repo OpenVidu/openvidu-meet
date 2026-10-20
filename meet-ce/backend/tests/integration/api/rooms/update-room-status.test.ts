@@ -1,16 +1,20 @@
-import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRoomStatus } from '@openvidu-meet/typings';
+import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
+import { MeetRoomDeletionPolicyWithMeeting, MeetRoomStatus } from '@openvidu-meet/typings';
+import { container } from '../../../../src/config/dependency-injector.config.js';
+import { RoomScheduledTasksService } from '../../../../src/services/room-scheduled-tasks.service.js';
+import { WebhookDispatcherService } from '../../../../src/services/webhook-dispatcher.service.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	createRoom,
 	deleteAllRooms,
+	deleteRoom,
 	endMeeting,
 	getRoom,
 	startTestServer,
 	updateRoomStatus
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
-import { waitForRoomToClose } from '../../../helpers/wait-helpers.js';
+import { waitForMeetingToEnd, waitForRoomToClose, waitForRoomToDelete } from '../../../helpers/wait-helpers.js';
 
 describe('Room API Tests', () => {
 	beforeAll(async () => {
@@ -79,6 +83,56 @@ describe('Room API Tests', () => {
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body.status).toEqual('closed');
 			expect(getResponse.body.meetingEndAction).toEqual('none');
+		});
+
+		it('should cancel a scheduled close when reopened during the meeting, which stays active', async () => {
+			const roomData = await setupSingleRoom(true);
+			const { roomId } = roomData.room;
+			expect((await updateRoomStatus(roomId, MeetRoomStatus.CLOSED)).status).toBe(202);
+
+			const response = await updateRoomStatus(roomId, MeetRoomStatus.OPEN);
+			expect(response.status).toBe(200);
+			expect(response.body.status).toEqual('active_meeting');
+			expect(response.body.meetingEndAction).toEqual('none');
+
+			// The reconciliation of open rooms with a live meeting no longer finds it
+			const sendMeetingStarted = jest.spyOn(container.get(WebhookDispatcherService), 'sendMeetingStartedWebhook');
+			await container.get(RoomScheduledTasksService)['reconcileOpenRoomsGC']();
+			expect(sendMeetingStarted).not.toHaveBeenCalled();
+			sendMeetingStarted.mockRestore();
+
+			await endMeeting(roomId, roomData.moderatorToken);
+			await waitForMeetingToEnd(roomId);
+			const getResponse = await getRoom(roomId);
+			expect(getResponse.body.status).toEqual('open');
+		});
+
+		it('should keep a scheduled deletion when closed during the meeting', async () => {
+			const roomData = await setupSingleRoom(true);
+			const { roomId } = roomData.room;
+			await deleteRoom(roomId, { withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS });
+
+			const response = await updateRoomStatus(roomId, MeetRoomStatus.CLOSED);
+			expect(response.status).toBe(202);
+			expect(response.body.status).toEqual('active_meeting');
+			expect(response.body.meetingEndAction).toEqual('delete');
+
+			await endMeeting(roomId, roomData.moderatorToken);
+			await waitForRoomToDelete(roomId);
+			expect((await getRoom(roomId)).status).toBe(404);
+		});
+
+		it('should refuse to reopen a room scheduled for deletion and leave it unchanged', async () => {
+			const roomData = await setupSingleRoom(true);
+			const { roomId } = roomData.room;
+			await deleteRoom(roomId, { withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS });
+
+			const response = await updateRoomStatus(roomId, MeetRoomStatus.OPEN);
+			expect(response.status).toBe(409);
+
+			const getResponse = await getRoom(roomId);
+			expect(getResponse.body.status).toEqual('active_meeting');
+			expect(getResponse.body.meetingEndAction).toEqual('delete');
 		});
 
 		it('should fail with 404 when updating non-existent room', async () => {

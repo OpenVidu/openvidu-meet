@@ -32,6 +32,7 @@ import { MeetRoomHelper } from '../helpers/room.helper.js';
 import {
 	errorDeletingRoom,
 	errorRoomActiveMeeting,
+	errorRoomDeletionScheduled,
 	errorRoomNotFound,
 	errorUnreachableRecordingAutoStart,
 	internalError,
@@ -285,33 +286,43 @@ export class RoomService {
 	}
 
 	/**
-	 * Updates the status of a specific meeting room.
+	 * Updates the status of a specific meeting room. A room with an active meeting keeps `active_meeting`:
+	 * closing it schedules the close for the end of the meeting, and opening it cancels a scheduled close.
+	 * A scheduled deletion is never replaced.
 	 *
 	 * @param roomId - The unique identifier of the meeting room to update
 	 * @param status - The new status to apply to the meeting room
 	 * @returns A Promise that resolves to an object containing the updated room
 	 * and a boolean indicating if the update was immediate or scheduled
+	 * @throws A 409 when opening a room whose deletion is scheduled for the end of its meeting
 	 */
 	async updateMeetRoomStatus(roomId: string, status: MeetRoomStatus): Promise<{ room: MeetRoom; updated: boolean }> {
-		const { status: currentStatus } = await this.getMeetRoom(roomId, ['status']);
-		let updated = true;
-		let fieldsToUpdate: Partial<MeetRoom>;
+		const room = await this.getMeetRoom(roomId);
 
-		// If closing the room while a meeting is active, mark it to be closed when the meeting ends
-		if (status === MeetRoomStatus.CLOSED && currentStatus === MeetRoomStatus.ACTIVE_MEETING) {
-			fieldsToUpdate = { meetingEndAction: MeetingEndAction.CLOSE };
-			updated = false;
-		} else {
-			fieldsToUpdate = { status, meetingEndAction: MeetingEndAction.NONE };
+		if (room.status !== MeetRoomStatus.ACTIVE_MEETING) {
+			const updatedRoom = await this.roomRepository.updateIdleRoomStatus(roomId, status);
+
+			if (!updatedRoom) return this.updateMeetRoomStatus(roomId, status);
+
+			if (status === MeetRoomStatus.CLOSED) {
+				this.logger.info(`Room '${roomId}' closed`);
+			}
+
+			return { room: updatedRoom, updated: true };
 		}
 
-		const updatedRoom = await this.roomRepository.updatePartial(roomId, fieldsToUpdate);
+		if (room.meetingEndAction === MeetingEndAction.DELETE) {
+			if (status === MeetRoomStatus.OPEN) throw errorRoomDeletionScheduled(roomId);
 
-		if (updated && status === MeetRoomStatus.CLOSED) {
-			this.logger.info(`Room '${roomId}' closed`);
+			return { room, updated: false };
 		}
 
-		return { room: updatedRoom, updated };
+		const meetingEndAction = status === MeetRoomStatus.CLOSED ? MeetingEndAction.CLOSE : MeetingEndAction.NONE;
+		const updatedRoom = await this.roomRepository.scheduleMeetingEndAction(roomId, meetingEndAction);
+
+		if (!updatedRoom) return this.updateMeetRoomStatus(roomId, status);
+
+		return { room: updatedRoom, updated: status === MeetRoomStatus.OPEN };
 	}
 
 	/**

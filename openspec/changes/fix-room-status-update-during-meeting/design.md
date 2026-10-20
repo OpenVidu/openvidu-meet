@@ -38,7 +38,9 @@ assumes:
 When the write matches nothing because the state moved between the read and the write, the service reads
 the room again and decides once more.
 
-`handleRoomFinished` applies the action it read with a write filtered on that same `meetingEndAction`
+This half is implemented by `fix-meeting-ended-webhook-sent-twice` (`RoomRepository.finishMeeting`, branch
+`fix/meetings`), which needs the same conditional write to send `meetingEnded` once: this change relies on it
+instead of writing it twice. `handleRoomFinished` applies the action it read with a write filtered on that same `meetingEndAction`
 (`close` and `none` branches; the `delete` branch cannot be cancelled any more). On a miss it reads the
 room again and applies the action it now finds. Either side therefore sees the other's write: a close
 scheduled just before the end is applied, and one scheduled just after finds the room idle and closes it
