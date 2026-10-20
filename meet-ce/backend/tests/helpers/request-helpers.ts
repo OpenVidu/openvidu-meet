@@ -343,23 +343,19 @@ export const changePasswordReq = async (
 
 /**
  * Changes the password for the authenticated user and
- * returns the access and refresh tokens in the format "Bearer <token>" if provided.
- * If the user does not require password change, no tokens are returned
+ * returns the new access and refresh tokens in the format "Bearer <token>".
  */
 export const changePassword = async (
 	currentPassword: string,
 	newPassword: string,
 	accessToken: string
-): Promise<{ accessToken?: string; refreshToken?: string }> => {
+): Promise<{ accessToken: string; refreshToken: string }> => {
 	const response = await changePasswordReq({ currentPassword, newPassword }, accessToken);
 	expect(response.status).toBe(200);
 
-	const newAccessToken = response.body.accessToken;
-	const newRefreshToken = response.body.refreshToken;
-
 	return {
-		accessToken: newAccessToken ? `Bearer ${newAccessToken}` : undefined,
-		refreshToken: newRefreshToken ? `Bearer ${newRefreshToken}` : undefined
+		accessToken: `Bearer ${response.body.accessToken}`,
+		refreshToken: `Bearer ${response.body.refreshToken}`
 	};
 };
 

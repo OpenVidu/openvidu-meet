@@ -82,6 +82,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   or `/change-password`, such as `GET /api/v1/users/me`. Only `getMe` and `changeUserPassword` accept it now.
 - Two simultaneous API key regenerations could leave two API keys, both accepted. Exactly one remains now, the last
   one generated.
+- Logging out, changing one's own password and refreshing with rotation left the earlier user tokens valid until
+  they expired. `logoutUser` now revokes the session's tokens, `changeUserPassword` revokes every earlier token of
+  the user and returns new ones, and a rotated refresh token is accepted once.
 
 #### UI
 

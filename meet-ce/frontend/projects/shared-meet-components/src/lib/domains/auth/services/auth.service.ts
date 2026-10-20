@@ -20,6 +20,7 @@ export class AuthService {
 
 	protected hasCheckAuth = false;
 	protected user: MeetUserDTO | null = null;
+	protected refreshInProgress?: Promise<void>;
 
 	/**
 	 * Logs in a user with the provided credentials.
@@ -63,35 +64,57 @@ export class AuthService {
 
 	/**
 	 * Refreshes the access token using the refresh token.
-	 *
-	 * @returns A promise that resolves to the response from the refresh endpoint
+	 * Concurrent calls share one refresh, and the tabs of the browser take turns: the server accepts a rotated
+	 * refresh token only once, so a tab that finds it already rotated by another tab uses the stored tokens.
 	 */
-	async refreshToken() {
-		const path = `${this.AUTH_API}/refresh`;
-		const refreshToken = this.tokenStorageService.getRefreshToken();
+	refreshToken(): Promise<void> {
+		this.refreshInProgress ??= this.refreshInTurnWithOtherTabs().finally(
+			() => (this.refreshInProgress = undefined)
+		);
+		return this.refreshInProgress;
+	}
 
-		// Add refresh token header if in header mode
-		let headers: Record<string, string> | undefined;
+	protected async refreshInTurnWithOtherTabs(): Promise<void> {
+		const refreshTokenSeen = this.tokenStorageService.getRefreshToken();
 
-		if (refreshToken) {
-			headers = {};
-			headers[HTTP_HEADERS.REFRESH_TOKEN] = `Bearer ${refreshToken}`;
-		}
+		await this.withTabsLock(async () => {
+			const refreshToken = this.tokenStorageService.getRefreshToken();
 
-		const response = await this.httpService.postRequest<{
-			message: string;
-			accessToken: string;
-			refreshToken?: string;
-		}>(path, {}, headers);
+			if (refreshToken !== null && refreshToken !== refreshTokenSeen) {
+				return;
+			}
 
-		// Update tokens in localStorage
-		this.tokenStorageService.setAccessToken(response.accessToken);
+			const response = await this.httpService.postRequest<{
+				message: string;
+				accessToken: string;
+				refreshToken?: string;
+			}>(`${this.AUTH_API}/refresh`, {}, this.refreshTokenHeader(refreshToken));
 
-		if (response.refreshToken) {
-			this.tokenStorageService.setRefreshToken(response.refreshToken);
-		}
+			this.tokenStorageService.setAccessToken(response.accessToken);
 
-		return response;
+			if (response.refreshToken) {
+				this.tokenStorageService.setRefreshToken(response.refreshToken);
+			}
+		});
+	}
+
+	protected withTabsLock(callback: () => Promise<void>): Promise<void> {
+		return 'locks' in navigator ? navigator.locks.request('openvidu-meet-token-refresh', callback) : callback();
+	}
+
+	protected refreshTokenHeader(refreshToken: string | null): Record<string, string> | undefined {
+		return refreshToken ? { [HTTP_HEADERS.REFRESH_TOKEN]: `Bearer ${refreshToken}` } : undefined;
+	}
+
+	/**
+	 * Changes the password of the signed-in user. The change rejects every earlier token of the user,
+	 * so the tokens it returns are stored to keep this browser signed in.
+	 */
+	async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+		const { accessToken, refreshToken } = await this.userService.changePassword(currentPassword, newPassword);
+		this.tokenStorageService.setAccessToken(accessToken);
+		this.tokenStorageService.setRefreshToken(refreshToken);
+		this.sessionStorageService.removeMustChangePasswordRequired();
 	}
 
 	/**
@@ -104,7 +127,11 @@ export class AuthService {
 	async logout(redirectToAfterLogin?: string) {
 		try {
 			const path = `${this.AUTH_API}/logout`;
-			await this.httpService.postRequest(path);
+			await this.httpService.postRequest(
+				path,
+				{},
+				this.refreshTokenHeader(this.tokenStorageService.getRefreshToken())
+			);
 			this.user = null;
 
 			// Clear tokens from localStorage if in header mode

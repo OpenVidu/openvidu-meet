@@ -13,6 +13,7 @@ import {
 	errorUnauthorized,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
+import type { TokenMetadata } from '../models/token.model.js';
 import { TokenType } from '../models/token.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
@@ -21,6 +22,7 @@ import { LoggerService } from '../services/logger.service.js';
 import { ParticipantTokenRevocationService } from '../services/participant-token-revocation.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { TokenService } from '../services/token.service.js';
+import { UserTokenRevocationService } from '../services/user-token-revocation.service.js';
 import { UserService } from '../services/user.service.js';
 import { getAccessToken, getRoomMemberToken } from '../utils/token.utils.js';
 
@@ -112,8 +114,7 @@ const createAccessTokenValidator = (roles: MeetUserRole[], admitsPendingPassword
 			}
 
 			let userId: string | undefined;
-			let tokenType: TokenType;
-			let issuedAt: number;
+			let metadata: TokenMetadata;
 
 			try {
 				// Verify the token and extract the user ID and token metadata
@@ -125,12 +126,10 @@ const createAccessTokenValidator = (roles: MeetUserRole[], admitsPendingPassword
 				}
 
 				// Validate that this is an access or temporary token, not a refresh token
-				const parsedMetadata = tokenService.parseTokenMetadata(tokenMetadata);
+				metadata = tokenService.parseTokenMetadata(tokenMetadata);
 				userId = sub;
-				tokenType = parsedMetadata.tokenType;
-				issuedAt = parsedMetadata.iat;
 
-				if (tokenType === TokenType.REFRESH) {
+				if (metadata.tokenType === TokenType.REFRESH) {
 					throw new Error('Invalid token type for access');
 				}
 			} catch (error) {
@@ -146,12 +145,14 @@ const createAccessTokenValidator = (roles: MeetUserRole[], admitsPendingPassword
 				throw errorInvalidTokenSubject();
 			}
 
-			// Invalidate access tokens issued before the user's latest role change
-			if (issuedAt < user.roleUpdatedAt) {
+			if (metadata.iat < user.roleUpdatedAt || (await isRevokedUserToken(user.userId, metadata))) {
 				throw errorInvalidToken();
 			}
 
-			if (!admitsPendingPasswordChange && (user.mustChangePassword || tokenType === TokenType.TEMPORARY)) {
+			if (
+				!admitsPendingPasswordChange &&
+				(user.mustChangePassword || metadata.tokenType === TokenType.TEMPORARY)
+			) {
 				throw errorPasswordChangeRequired();
 			}
 
@@ -343,13 +344,12 @@ const setAuthenticatedUserIfPresent = async (req: Request): Promise<void> => {
 
 	try {
 		const tokenService = container.get(TokenService);
-		const payload = await tokenService.verifyToken(token);
-		const userId = payload.sub;
+		const { sub: userId, metadata } = await tokenService.verifyToken(token);
 
 		const userService = container.get(UserService);
 		const user = userId ? await userService.getUser(userId) : null;
 
-		if (user) {
+		if (user && !(await isRevokedUserToken(user.userId, tokenService.parseTokenMetadata(metadata ?? '')))) {
 			const requestSessionService = container.get(RequestSessionService);
 			requestSessionService.setUser(user);
 		}
@@ -358,3 +358,6 @@ const setAuthenticatedUserIfPresent = async (req: Request): Promise<void> => {
 		logger.debug('Token found but invalid:', error);
 	}
 };
+
+const isRevokedUserToken = (userId: string, metadata: TokenMetadata): Promise<boolean> =>
+	container.get(UserTokenRevocationService).isRevoked(userId, metadata);

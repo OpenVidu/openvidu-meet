@@ -20,9 +20,7 @@ import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
-import { SessionStorageService } from '../../../../shared/services/session-storage.service';
-import { TokenStorageService } from '../../../../shared/services/token-storage.service';
-import { UserService } from '../../../users/services/user.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
 	selector: 'ov-change-password-required',
@@ -41,9 +39,7 @@ import { UserService } from '../../../users/services/user.service';
 	styleUrl: './change-password-required.component.scss'
 })
 export class ChangePasswordRequiredComponent implements OnInit {
-	private readonly userService = inject(UserService);
-	private readonly tokenStorageService = inject(TokenStorageService);
-	private readonly sessionStorageService = inject(SessionStorageService);
+	private readonly authService = inject(AuthService);
 	private readonly notificationService = inject(NotificationService);
 	private readonly navigationService = inject(NavigationService);
 	private readonly route = inject(ActivatedRoute);
@@ -139,19 +135,7 @@ export class ChangePasswordRequiredComponent implements OnInit {
 		const delayLoader = setTimeout(() => this.isSavingPassword.set(true), 200);
 
 		try {
-			const response = await this.userService.changePassword(currentPassword!, newPassword!);
-
-			if (!response.accessToken) {
-				throw new Error('No renewed access token received after mandatory password change');
-			}
-
-			this.tokenStorageService.setAccessToken(response.accessToken);
-
-			if (response.refreshToken) {
-				this.tokenStorageService.setRefreshToken(response.refreshToken);
-			}
-
-			this.sessionStorageService.removeMustChangePasswordRequired();
+			await this.authService.changePassword(currentPassword!, newPassword!);
 			this.notificationService.showMessage(
 				this.translateService.translate('AUTH.CHANGE_PASSWORD.ERRORS.UPDATE_SUCCESS')
 			);

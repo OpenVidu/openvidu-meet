@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetUserRole } from '@openvidu-meet/typings';
+import type { Response } from 'supertest';
 import { MEET_ENV } from '../../../../src/environment.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
@@ -9,6 +10,7 @@ import {
 	createUser,
 	deleteAllRooms,
 	deleteAllUsers,
+	getMe,
 	loginReq,
 	loginRootAdmin,
 	loginUser,
@@ -31,7 +33,19 @@ describe('Users API Tests', () => {
 	});
 
 	describe('Change Password Tests', () => {
-		it('should successfully change root admin password', async () => {
+		/**
+		 * A password change rejects every earlier token of the user, so the root admin session these
+		 * tests share continues with the tokens the change that restores the password returns.
+		 */
+		const restoreRootAdminPassword = async (changedPassword: string, changeResponse: Response) => {
+			({ accessToken: rootAdminAccessToken } = await changePassword(
+				changedPassword,
+				MEET_ENV.INITIAL_ADMIN_PASSWORD,
+				`Bearer ${changeResponse.body.accessToken}`
+			));
+		};
+
+		it('should successfully change root admin password and return new tokens', async () => {
 			const newPassword = 'newpassword123';
 			const response = await changePasswordReq(
 				{ currentPassword: MEET_ENV.INITIAL_ADMIN_PASSWORD, newPassword },
@@ -40,11 +54,10 @@ describe('Users API Tests', () => {
 			expect(response.status).toBe(200);
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('changed successfully');
-			expect(response.body).not.toHaveProperty('accessToken');
-			expect(response.body).not.toHaveProperty('refreshToken');
+			expect(response.body).toHaveProperty('accessToken');
+			expect(response.body).toHaveProperty('refreshToken');
 
-			// Reset password back
-			await changePassword(newPassword, MEET_ENV.INITIAL_ADMIN_PASSWORD, rootAdminAccessToken);
+			await restoreRootAdminPassword(newPassword, response);
 		});
 
 		it('should successfully login with new password after change', async () => {
@@ -73,8 +86,7 @@ describe('Users API Tests', () => {
 			});
 			expect(loginResponse.status).toBe(200);
 
-			// Reset password back
-			await changePassword(newPassword, initialPassword, rootAdminAccessToken);
+			await restoreRootAdminPassword(newPassword, changeResponse);
 		});
 
 		it('should successfully change password and return new tokens when mustChangePassword is true', async () => {
@@ -113,24 +125,36 @@ describe('Users API Tests', () => {
 			expect(refreshResponse.status).toBe(200);
 		});
 
-		it('should successfully change password for regular user without returning tokens', async () => {
+		it('should sign out every other session of the user and keep the one that changed it signed in', async () => {
 			const userData = await setupUser({
 				userId: `user_${Date.now()}`,
 				name: 'Regular User',
 				password: 'password123',
 				role: MeetUserRole.ROOM_MANAGER
 			});
+			const otherSession = await loginUser(userData.user.userId, userData.password);
 
-			// Change password
 			const response = await changePasswordReq(
 				{ currentPassword: userData.password, newPassword: 'newpassword123' },
 				userData.accessToken
 			);
 			expect(response.status).toBe(200);
-			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('changed successfully');
-			expect(response.body).not.toHaveProperty('accessToken');
-			expect(response.body).not.toHaveProperty('refreshToken');
+
+			for (const accessToken of [otherSession.accessToken, userData.accessToken]) {
+				const meResponse = await getMe(accessToken);
+				expect(meResponse.status).toBe(401);
+				expect(meResponse.body.message).toBe('Invalid token');
+			}
+
+			for (const refreshToken of [otherSession.refreshToken!, userData.refreshToken]) {
+				const refreshResponse = await refreshTokenReq(refreshToken);
+				expect(refreshResponse.status).toBe(400);
+				expect(refreshResponse.body.message).toBe('Invalid refresh token');
+			}
+
+			expect((await getMe(`Bearer ${response.body.accessToken}`)).status).toBe(200);
+			expect((await refreshTokenReq(`Bearer ${response.body.refreshToken}`)).status).toBe(200);
 		});
 
 		it('should fail when current password is incorrect', async () => {

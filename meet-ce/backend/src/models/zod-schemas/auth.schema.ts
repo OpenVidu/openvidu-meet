@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { TokenMetadata} from '../token.model.js';
+import type { TokenMetadata } from '../token.model.js';
 import { TokenType } from '../token.model.js';
 
 export const LoginReqSchema = z.object({
@@ -9,5 +9,7 @@ export const LoginReqSchema = z.object({
 
 export const TokenMetadataSchema: z.ZodType<TokenMetadata> = z.object({
 	iat: z.number(),
-	tokenType: z.enum(TokenType)
+	tokenType: z.enum(TokenType),
+	sid: z.string().optional(),
+	rid: z.string().optional()
 });

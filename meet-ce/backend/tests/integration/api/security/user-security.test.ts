@@ -495,7 +495,7 @@ describe('User API Security Tests', () => {
 			expect(response.status).toBe(200);
 
 			// Reset old password
-			await changePassword(newPassword, MEET_ENV.INITIAL_ADMIN_PASSWORD, rootAdminAccessToken);
+			await changePassword(newPassword, MEET_ENV.INITIAL_ADMIN_PASSWORD, `Bearer ${response.body.accessToken}`);
 		});
 
 		it('should succeed when user is authenticated as ADMIN', async () => {
@@ -509,7 +509,7 @@ describe('User API Security Tests', () => {
 			expect(response.status).toBe(200);
 
 			// Reset old password
-			await changePassword(newPassword, testUsers.admin.password, testUsers.admin.accessToken);
+			await changePassword(newPassword, testUsers.admin.password, `Bearer ${response.body.accessToken}`);
 		});
 
 		it('should succeed when user is authenticated as ROOM_MANAGER', async () => {
@@ -523,7 +523,7 @@ describe('User API Security Tests', () => {
 			expect(response.status).toBe(200);
 
 			// Reset old password
-			await changePassword(newPassword, testUsers.roomManager.password, testUsers.roomManager.accessToken);
+			await changePassword(newPassword, testUsers.roomManager.password, `Bearer ${response.body.accessToken}`);
 		});
 
 		it('should succeed when user is authenticated as ROOM_MEMBER', async () => {
@@ -537,7 +537,7 @@ describe('User API Security Tests', () => {
 			expect(response.status).toBe(200);
 
 			// Reset old password
-			await changePassword(newPassword, testUsers.roomMember.password, testUsers.roomMember.accessToken);
+			await changePassword(newPassword, testUsers.roomMember.password, `Bearer ${response.body.accessToken}`);
 		});
 
 		it('should fail when user is not authenticated', async () => {

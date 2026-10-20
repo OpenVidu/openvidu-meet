@@ -1,6 +1,6 @@
 import { MeetRoom, MeetRoomMemberRole, MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
-import { authenticate, createReadyUser, type ReadyUser } from './helpers/auth.helper';
+import { authenticate, createReadyUser, expectNoLoginPage, type ReadyUser } from './helpers/auth.helper';
 import {
 	bulkDelete,
 	clearSearchAndExpectAtLeast,
@@ -13,7 +13,14 @@ import {
 	loadMoreButton,
 	searchAndExpectRows
 } from './helpers/console-lists.helper';
-import { createRoom, createRoomMember, createUser, deleteRooms, deleteUsers } from './helpers/meet-api.helper';
+import {
+	createRoom,
+	createRoomMember,
+	createUser,
+	deleteRooms,
+	deleteUsers,
+	MEET_BASE_URL
+} from './helpers/meet-api.helper';
 
 /**
  * E2E coverage for the authenticated console list pages: rooms, users, recordings and the room
@@ -267,6 +274,34 @@ test.describe('Console Room detail E2E Tests', () => {
 		await expect(page.locator('.ov-notification[data-kind="message"] .notification-message')).toHaveText(
 			'Enlace de acceso del miembro copiado al portapapeles'
 		);
+	});
+});
+
+// ─── Profile ─────────────────────────────────────────────────────────────────
+
+test.describe('Console profile E2E Tests', () => {
+	test('changing the password keeps the user signed in', async ({ browser }) => {
+		const { user } = await createReadyUser(`${RUN_ID}-pw`, MeetUserRole.ADMIN);
+		const context = await browser.newContext();
+		const page = await context.newPage();
+
+		try {
+			await authenticate(page, user);
+			await page.goto(`${MEET_BASE_URL}/profile`, { waitUntil: 'domcontentloaded' });
+
+			const newPassword = `${user.password}x`;
+			await page.locator('input[formcontrolname="currentPassword"]').fill(user.password);
+			await page.locator('input[formcontrolname="newPassword"]').fill(newPassword);
+			await page.locator('input[formcontrolname="confirmPassword"]').fill(newPassword);
+			await page.locator('form button[type="submit"]').click();
+			await expectNotification(page);
+
+			await gotoConsolePage(page, 'users', 'ov-users-lists');
+			await expectNoLoginPage(page);
+		} finally {
+			await context.close();
+			await cleanupUsers([user.userId]);
+		}
 	});
 });
 

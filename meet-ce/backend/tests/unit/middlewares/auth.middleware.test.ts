@@ -22,6 +22,7 @@ import { MutexService } from '../../../src/services/mutex.service.js';
 import { RedisService } from '../../../src/services/redis.service.js';
 import { RequestSessionService } from '../../../src/services/request-session.service.js';
 import { TokenService } from '../../../src/services/token.service.js';
+import { UserTokenRevocationService } from '../../../src/services/user-token-revocation.service.js';
 import { UserService } from '../../../src/services/user.service.js';
 
 /**
@@ -60,7 +61,13 @@ let userService: UserService;
 let roomRepository: RoomRepository;
 let roomMemberRepository: RoomMemberRepository;
 let requestSessionService: RequestSessionService;
-const redisService = { get: async () => null } as unknown as RedisService;
+const redisStore = new Map<string, string>();
+const redisService = {
+	get: async () => null,
+	getMany: async (keys: string[]) => keys.map((key) => redisStore.get(key) ?? null),
+	set: async (key: string, value: unknown) => redisStore.set(key, String(value)),
+	setIfNotExists: async (key: string, value: string) => !redisStore.has(key) && !!redisStore.set(key, value)
+} as unknown as RedisService;
 
 beforeAll(() => {
 	registerDependencies();
@@ -182,6 +189,7 @@ describe('the validators, against a change made in the same millisecond as the t
 		jest.spyOn(requestSessionService, 'setUser').mockImplementation(() => {});
 		jest.spyOn(requestSessionService, 'setRoomMemberTokenInfo').mockImplementation(() => {});
 		jest.spyOn(redisService, 'get').mockResolvedValue(null);
+		redisStore.clear();
 	});
 
 	describe('accessTokenValidator', () => {
@@ -268,6 +276,49 @@ describe('the validators, against a change made in the same millisecond as the t
 			).rejects.toMatchObject({
 				statusCode: 403,
 				message: 'Password change required. Please change your password before accessing other resources.'
+			});
+		});
+
+		describe('once the user ended the session the token belongs to', () => {
+			const revocation = () => container.get(UserTokenRevocationService);
+
+			const validateSessionToken = (sid: string, iat = ISSUED_AT): Promise<void> => {
+				jest.spyOn(tokenService, 'parseTokenMetadata').mockReturnValue({
+					iat,
+					tokenType: TokenType.ACCESS,
+					sid
+				});
+				jest.spyOn(userService, 'getUser').mockResolvedValue(user());
+
+				return accessTokenValidator(MeetUserRole.ADMIN).validate(accessTokenRequest());
+			};
+
+			it('refuses a token of a session that logged out, and accepts the other sessions of the user', async () => {
+				await revocation().revokeSession('session-1');
+
+				await expect(validateSessionToken('session-1')).rejects.toMatchObject({
+					statusCode: 401,
+					message: 'Invalid token'
+				});
+				await validateSessionToken('session-2');
+			});
+
+			it('refuses a token issued before the user changed their password, and accepts one issued in that very millisecond', async () => {
+				const now = jest.spyOn(Date, 'now').mockReturnValue(ISSUED_AT + 1);
+				await revocation().revokeIssuedTokens('user-1');
+				now.mockRestore();
+
+				await expect(validateSessionToken('session-1', ISSUED_AT)).rejects.toMatchObject({
+					statusCode: 401,
+					message: 'Invalid token'
+				});
+				await validateSessionToken('session-1', ISSUED_AT + 1);
+			});
+
+			it('lets a refresh token be exchanged only once', async () => {
+				expect(await revocation().claimRefreshToken('refresh-1')).toBe(true);
+				expect(await revocation().claimRefreshToken('refresh-1')).toBe(false);
+				expect(await revocation().claimRefreshToken('refresh-2')).toBe(true);
 			});
 		});
 
@@ -479,6 +530,14 @@ describe('the validators, against a change made in the same millisecond as the t
 	 * own permissions instead of the link's when the room member token is minted.
 	 */
 	describe('allowAnonymous', () => {
+		beforeEach(() => {
+			jest.spyOn(tokenService, 'parseTokenMetadata').mockReturnValue({
+				iat: ISSUED_AT,
+				tokenType: TokenType.ACCESS,
+				sid: 'session-1'
+			});
+		});
+
 		it('carries a signed-in user into an anonymous request', async () => {
 			const signedIn = user();
 			jest.spyOn(userService, 'getUser').mockResolvedValue(signedIn);
@@ -496,6 +555,15 @@ describe('the validators, against a change made in the same millisecond as the t
 
 		it('stays anonymous, rather than failing, when the token riding along is stale', async () => {
 			jest.spyOn(tokenService, 'verifyToken').mockRejectedValue(new Error('token expired'));
+
+			await allowAnonymous.validate(accessTokenRequest());
+
+			expect(requestSessionService.setUser).not.toHaveBeenCalled();
+		});
+
+		it('stays anonymous when the token riding along belongs to a session that logged out', async () => {
+			jest.spyOn(userService, 'getUser').mockResolvedValue(user());
+			await container.get(UserTokenRevocationService).revokeSession('session-1');
 
 			await allowAnonymous.validate(accessTokenRequest());
 

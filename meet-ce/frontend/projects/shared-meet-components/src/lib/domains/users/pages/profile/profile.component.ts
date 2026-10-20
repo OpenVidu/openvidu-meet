@@ -179,7 +179,7 @@ export class ProfileComponent implements OnInit {
 		const delayLoader = setTimeout(() => this.isSavingPassword.set(true), 200);
 
 		try {
-			await this.userService.changePassword(currentPassword!, newPassword!);
+			await this.authService.changePassword(currentPassword!, newPassword!);
 
 			this.changePasswordForm.reset({ currentPassword: '', newPassword: '', confirmPassword: '' });
 			this.showCurrentPassword.set(false);

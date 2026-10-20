@@ -99,8 +99,8 @@ export class UserService {
 		newPassword: string
 	): Promise<{
 		message: string;
-		accessToken?: string;
-		refreshToken?: string;
+		accessToken: string;
+		refreshToken: string;
 	}> {
 		const path = `${this.INTERNAL_USERS_API}/change-password`;
 		return this.httpService.postRequest(path, { currentPassword, newPassword });
