@@ -99,10 +99,6 @@ export const errorAzureNotAvailable = (error: unknown): OpenViduMeetError => {
 	return new OpenViduMeetError('ABS Error', `Azure Blob Storage is not available ${String(error)}`, 503);
 };
 
-export const errorConfigurationError = (message: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Configuration Error', message, 500);
-};
-
 // Auth errors
 
 export const errorInvalidCredentials = (): OpenViduMeetError => {
@@ -509,6 +505,14 @@ export const errorAiAssistantAlreadyStarting = (roomId: string): OpenViduMeetErr
 
 export const errorAiAssistantCannotBeStopped = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('AI Assistant Error', `AI assistant cannot be stopped for room '${roomId}'`, 409);
+};
+
+export const errorCaptionsDisabledInDeployment = (): OpenViduMeetError => {
+	return new OpenViduMeetError('AI Assistant Error', 'Live captions are disabled for this deployment', 403);
+};
+
+export const errorCaptionsDisabled = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('AI Assistant Error', `Live captions are disabled for room '${roomId}'`, 403);
 };
 
 // Webhook errors

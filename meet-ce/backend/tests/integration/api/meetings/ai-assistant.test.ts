@@ -131,14 +131,18 @@ describe('AI Assistant API Tests', () => {
 				MEET_ENV.CAPTIONS_ENABLED = captionsDefaultValue;
 			});
 
-			it('should return 500 when MEET_CAPTIONS_ENABLED env var is false', async () => {
+			it('should return 403 and start no assistant when the deployment has captions off', async () => {
 				MEET_ENV.CAPTIONS_ENABLED = 'false';
 
 				const response = await createAssistant(roomData.speakerToken);
-				expect(response.status).toBe(500);
+
+				expect(response.status).toBe(403);
+				expect(response.body.message).toBe('Live captions are disabled for this deployment');
+				expect(createAgentSpy).not.toHaveBeenCalled();
 			});
 
-			it('should return 500 when captions are disabled in the room config', async () => {
+			it('should return 403 and start no assistant when the room has captions off', async () => {
+				MEET_ENV.CAPTIONS_ENABLED = 'true';
 				const roomWithCaptionsOff = await setupSingleRoom(false, 'CAPTIONS_OFF_ROOM', {
 					captions: { enabled: false },
 					raiseHand: { enabled: true },
@@ -147,8 +151,11 @@ describe('AI Assistant API Tests', () => {
 
 				const response = await createAssistant(roomWithCaptionsOff.speakerToken);
 
-				expect(response.status).toBe(500);
-				await deleteAllRooms();
+				expect(response.status).toBe(403);
+				expect(response.body.message).toBe(
+					`Live captions are disabled for room '${roomWithCaptionsOff.room.roomId}'`
+				);
+				expect(createAgentSpy).not.toHaveBeenCalled();
 			});
 		});
 
