@@ -71,7 +71,7 @@ describe('RoomMemberService.updateParticipantRole - S2: a participant Meet did n
 			...([
 				{ warn: () => {}, debug: () => {}, verbose: () => {} } as unknown as LoggerService,
 				{},
-				{ getMeetRoom: async () => ({ roles }) } as unknown as RoomService,
+				{ getMeetRoom: async () => ({ roles, config: { chat: { enabled: true } } }) } as unknown as RoomService,
 				{},
 				{},
 				{},

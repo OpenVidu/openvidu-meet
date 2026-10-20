@@ -10,8 +10,8 @@ import { RoomMemberService } from '../../../src/services/room-member.service.js'
 // getLiveKitPermissions is protected; this exposes it. The constructor body is empty (it only stores
 // the injected dependencies), so the grant builder can be exercised with no real dependencies.
 class TestableRoomMemberService extends RoomMemberService {
-	buildGrant(roomId: string, permissions: MeetRoomMemberPermissions): LiveKitPermissions {
-		return this.getLiveKitPermissions(roomId, permissions);
+	buildGrant(roomId: string, permissions: MeetRoomMemberPermissions, chatEnabled = true): LiveKitPermissions {
+		return this.getLiveKitPermissions(roomId, permissions, chatEnabled);
 	}
 }
 
@@ -48,5 +48,19 @@ describe('RoomMemberService LiveKit grant (identity cannot be self-forged)', () 
 		expect(grant.canPublish).toBe(true);
 		expect(grant.canPublishData).toBe(true);
 		expect(grant.canSubscribe).toBe(true);
+	});
+});
+
+describe('RoomMemberService LiveKit grant (room chat switch)', () => {
+	it('denies publishing data when the room has chat disabled, whatever chatWrite says', () => {
+		const grant = service.buildGrant('room-abc', permissionsWith({ chatWrite: true }), false);
+
+		expect(grant.canPublishData).toBe(false);
+	});
+
+	it('allows publishing data when the room has chat enabled and chatWrite is granted', () => {
+		const grant = service.buildGrant('room-abc', permissionsWith({ chatWrite: true }), true);
+
+		expect(grant.canPublishData).toBe(true);
 	});
 });

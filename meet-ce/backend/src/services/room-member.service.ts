@@ -635,7 +635,8 @@ export class RoomMemberService {
 
 				const permission = this.buildLiveParticipantPermission(
 					participant.permission,
-					tokenMetadata.permissions
+					tokenMetadata.permissions,
+					config.chat.enabled
 				);
 				await this.livekitService.updateParticipant(roomId, participant.identity, {
 					metadata: metadataToApply,
@@ -645,7 +646,7 @@ export class RoomMemberService {
 			});
 		}
 
-		const livekitPermissions = this.getLiveKitPermissions(roomId, tokenMetadata.permissions);
+		const livekitPermissions = this.getLiveKitPermissions(roomId, tokenMetadata.permissions, config.chat.enabled);
 		return this.tokenService.generateRoomMemberToken({
 			tokenMetadata,
 			livekitPermissions,
@@ -676,10 +677,13 @@ export class RoomMemberService {
 			throw errorInvalidToken();
 		}
 
-		const tokenMetadata = await this.withParticipantMetadataLock(roomId, participantIdentity, () =>
-			this.buildTokenMetadataFromParticipant(roomId, participantIdentity)
-		);
-		const livekitPermissions = this.getLiveKitPermissions(roomId, tokenMetadata.permissions);
+		const [tokenMetadata, { config }] = await Promise.all([
+			this.withParticipantMetadataLock(roomId, participantIdentity, () =>
+				this.buildTokenMetadataFromParticipant(roomId, participantIdentity)
+			),
+			this.roomService.getMeetRoom(roomId, ['config'])
+		]);
+		const livekitPermissions = this.getLiveKitPermissions(roomId, tokenMetadata.permissions, config.chat.enabled);
 		return this.tokenService.generateRoomMemberToken({
 			tokenMetadata,
 			livekitPermissions,
@@ -1019,23 +1023,30 @@ export class RoomMemberService {
 	 * Gets the LiveKit permissions for a room member based on their Meet permissions.
 	 *
 	 * @param roomId - The ID of the room
+	 * @param chatEnabled - The room's `config.chat.enabled`
 	 * @returns The LiveKit permissions for the room member
 	 */
-	protected getLiveKitPermissions(roomId: string, permissions: MeetRoomMemberPermissions): LiveKitPermissions {
+	protected getLiveKitPermissions(
+		roomId: string,
+		permissions: MeetRoomMemberPermissions,
+		chatEnabled: boolean
+	): LiveKitPermissions {
 		return {
 			room: roomId,
 			roomJoin: true,
 			canSubscribe: true,
 			canUpdateOwnMetadata: false,
-			...this.buildPublishGrant(permissions)
+			...this.buildPublishGrant(permissions, chatEnabled)
 		};
 	}
 
 	/**
-	 * The grant fields a participant's Meet permissions decide: media sources and data channel.
+	 * The grant fields a participant's Meet permissions and the room's chat switch decide: media sources
+	 * and data channel. Chat is the only data a participant publishes.
 	 */
 	private buildPublishGrant(
-		permissions: MeetRoomMemberPermissions
+		permissions: MeetRoomMemberPermissions,
+		chatEnabled: boolean
 	): Pick<LiveKitPermissions, 'canPublish' | 'canPublishSources' | 'canPublishData'> {
 		const canPublishSources: TrackSource[] = [];
 
@@ -1055,7 +1066,7 @@ export class RoomMemberService {
 		return {
 			canPublish: permissions.mediaPublishAudio || permissions.mediaPublishVideo || permissions.mediaShareScreen,
 			canPublishSources,
-			canPublishData: permissions.chatWrite
+			canPublishData: chatEnabled && permissions.chatWrite
 		};
 	}
 
@@ -1064,13 +1075,14 @@ export class RoomMemberService {
 	 */
 	protected buildLiveParticipantPermission(
 		currentPermission: ParticipantInfo['permission'],
-		permissions: MeetRoomMemberPermissions
+		permissions: MeetRoomMemberPermissions,
+		chatEnabled: boolean
 	): Partial<ParticipantPermission> | undefined {
 		if (!currentPermission) {
 			return undefined;
 		}
 
-		return { ...currentPermission, ...this.buildPublishGrant(permissions) };
+		return { ...currentPermission, ...this.buildPublishGrant(permissions, chatEnabled) };
 	}
 
 	/**
@@ -1095,7 +1107,11 @@ export class RoomMemberService {
 		action: MeetParticipantModerationAction
 	): Promise<void> {
 		try {
-			const { roles, roomName } = await this.roomService.getMeetRoom(roomId, ['roles', 'roomName']);
+			const { roles, roomName, config } = await this.roomService.getMeetRoom(roomId, [
+				'roles',
+				'roomName',
+				'config'
+			]);
 			const updatedParticipant = await this.withParticipantMetadataLock(roomId, participantIdentity, async () => {
 				const participant = await this.getParticipantFromMeeting(roomId, participantIdentity);
 				const metadata = MeetParticipantHelper.requireMeetingMetadata(participant, roomId);
@@ -1127,7 +1143,11 @@ export class RoomMemberService {
 					delete metadata.originalPermissions;
 				}
 
-				const permission = this.buildLiveParticipantPermission(participant.permission, metadata.permissions);
+				const permission = this.buildLiveParticipantPermission(
+					participant.permission,
+					metadata.permissions,
+					config.chat.enabled
+				);
 				const updatedParticipant = await this.livekitService.updateParticipant(roomId, participantIdentity, {
 					metadata: JSON.stringify(metadata),
 					permission

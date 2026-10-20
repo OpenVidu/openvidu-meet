@@ -446,6 +446,18 @@ describe('Room Members API Tests', () => {
 			expect(claims.video?.canPublishData).toBe(false);
 		});
 
+		it('should deny LiveKit canPublishData to a moderator of a room with chat disabled', async () => {
+			const roomWithoutChat = await setupSingleRoom(false, 'NO_CHAT_ROOM', { chat: { enabled: false } });
+
+			const token = await generateRoomMemberToken(roomWithoutChat.room.roomId, {
+				secret: roomWithoutChat.moderatorSecret,
+				joinMeeting: true,
+				participantName: 'Moderator'
+			});
+			const claims = tokenService.getClaimsIgnoringExpiration(getRawToken(token));
+			expect(claims.video?.canPublishData).toBe(false);
+		});
+
 		it('should fail to generate token when room does not exist', async () => {
 			const response = await generateRoomMemberTokenRequest('non-existent-room-id', {
 				secret: roomData.moderatorSecret
@@ -747,6 +759,7 @@ describe('Room Members API Tests', () => {
 				participantIdentityPrefix: 'participant'
 			});
 		});
+
 	});
 
 	describe('Regenerate Room Member Token Tests', () => {

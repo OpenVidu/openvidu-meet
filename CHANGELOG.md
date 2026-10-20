@@ -97,6 +97,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   scheduled close and answers `409` when a deletion is scheduled, and `closed` keeps a scheduled deletion.
 - `chatRead` was enforced in the interface only: every chat message reached every participant's client. Messages now
   reach only the participants holding `chatRead`.
+- A room's `config.chat.enabled` `false` was enforced in the interface only, so a modified client holding `chatWrite`
+  could still send chat messages. The media server now refuses them.
 
 #### UI
 
