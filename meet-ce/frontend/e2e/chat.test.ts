@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { MeetRoomMemberRole } from '@openvidu-meet/typings';
+import { expect, test, type Page } from '@playwright/test';
 import {
 	expectChatLinkCount,
 	expectChatLinkHrefContains,
@@ -7,12 +8,15 @@ import {
 	expectChatMessageTextAt,
 	expectFirstMessageSender,
 	openChatFromNotification,
+	receivedDataChannelText,
+	recordDataChannelMessages,
 	sendChatMessage,
 	toggleChatPanel
 } from './helpers/chat.helper';
-import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
+import { createRoomAndGetAnonymousAccessUrl, createRoomMember, deleteRooms } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-navigation.helper';
 import { disconnectAllBrowserFakeParticipants, joinParticipants } from './helpers/participant-management.helper';
+import { waitForRemoteStream } from './helpers/stream.helper';
 
 test.describe('Chat E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -202,5 +206,50 @@ test.describe('Chat E2E Tests', () => {
 		await expectChatMessageTextAt(page, 0, 'message-1');
 		await expectChatMessageTextAt(page, 1, 'message-2');
 		await expectChatMessageTextAt(page, 2, 'message-3');
+	});
+
+	test('should deliver messages only to the participants holding chatRead', async ({ browser }) => {
+		const [sender, reader, nonReader] = await Promise.all([
+			createRoomMember(roomId, { name: 'sender', baseRole: MeetRoomMemberRole.MODERATOR }),
+			createRoomMember(roomId, { name: 'reader', baseRole: MeetRoomMemberRole.SPEAKER }),
+			createRoomMember(roomId, {
+				name: 'non-reader',
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: { chatRead: false }
+			})
+		]);
+
+		const pages: Page[] = [];
+
+		const openMeetingPage = async (accessUrl: string, recordData = false): Promise<Page> => {
+			const page = await browser.newPage();
+			pages.push(page);
+
+			if (recordData) {
+				await recordDataChannelMessages(page);
+			}
+
+			await openMeeting(page, accessUrl);
+			return page;
+		};
+
+		try {
+			const readerPage = await openMeetingPage(reader.accessUrl, true);
+			const nonReaderPage = await openMeetingPage(nonReader.accessUrl, true);
+			// Opened last, so it is the window in front that the chat is used from
+			const senderPage = await openMeetingPage(sender.accessUrl);
+			await waitForRemoteStream(senderPage, 2);
+
+			const message = 'only for chat readers';
+			await toggleChatPanel(senderPage);
+			await sendChatMessage(senderPage, message);
+
+			await expect.poll(() => receivedDataChannelText(readerPage)).toContain(message);
+			// The media server fans a packet out to its recipients at once, so a copy would be here by now
+			await nonReaderPage.waitForTimeout(1_000);
+			expect(await receivedDataChannelText(nonReaderPage)).not.toContain(message);
+		} finally {
+			await Promise.all(pages.map((page) => page.close()));
+		}
 	});
 });

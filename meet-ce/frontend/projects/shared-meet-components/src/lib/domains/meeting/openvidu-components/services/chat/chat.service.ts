@@ -48,7 +48,8 @@ export class ChatService {
 	}
 
 	/**
-	 * Sends a chat message through the data channel.
+	 * Sends a chat message through the data channel to the participants holding `chatRead`, so the media
+	 * server never delivers it to anyone else.
 	 *
 	 * @param message The message text to send
 	 */
@@ -61,8 +62,18 @@ export class ChatService {
 				const payload = JSON.stringify({ message: plainTextMessage });
 				const data: Uint8Array<ArrayBuffer> = new TextEncoder().encode(payload);
 
-				// Send through data channel
-				await this.participantService.publishData(data, { topic: DataTopic.CHAT, reliable: true });
+				const destinationIdentities = this.participantService
+					.remoteParticipants()
+					.filter((participant) => participant.canReadChat)
+					.map((participant) => participant.identity);
+
+				if (destinationIdentities.length > 0) {
+					await this.participantService.publishData(data, {
+						topic: DataTopic.CHAT,
+						reliable: true,
+						destinationIdentities
+					});
+				}
 
 				// Add to local message list
 				this.addMessage(plainTextMessage, true, this.participantService.getMyName()!);
