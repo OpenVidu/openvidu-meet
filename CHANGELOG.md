@@ -146,6 +146,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   without `recordingPlay`.
 - The console treated the earliest registered user as the root admin, so after a change of
   `MEET_INITIAL_ADMIN_USER` it protected the wrong account. It now protects the `MEET_INITIAL_ADMIN_USER` account.
+- In a room whose anonymous speaker access is disabled, the meeting still offered the anonymous speaker link to share,
+  a link every recipient was refused with. The meeting no longer offers it.
 
 #### Deployment
 

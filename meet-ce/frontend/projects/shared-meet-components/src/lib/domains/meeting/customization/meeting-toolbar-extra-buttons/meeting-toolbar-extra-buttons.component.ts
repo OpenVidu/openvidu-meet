@@ -8,6 +8,7 @@ import { RuntimeConfigService } from '../../../../shared/services/runtime-config
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingHandService } from '../../services/meeting-hand.service';
+import { RoomAccessLinkService } from '../../services/room-access-link.service';
 import { isShortcut } from '../../utils/keyboard-shortcut.utils';
 import { MeetingToolbarCopyLinkButtonComponent } from '../meeting-toolbar-copy-link-button/meeting-toolbar-copy-link-button.component';
 import { MeetingToolbarReactionsButtonComponent } from '../meeting-toolbar-reactions-button/meeting-toolbar-reactions-button.component';
@@ -36,15 +37,19 @@ export class MeetingToolbarExtraButtonsComponent {
 	protected captionService = inject(MeetingCaptionsService);
 	protected handService = inject(MeetingHandService);
 	protected runtimeConfigService = inject(RuntimeConfigService);
+	protected roomAccessLinkService = inject(RoomAccessLinkService);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingToolbarExtraButtons');
 
 	/**
 	 * Whether to show the copy link button: only for moderators (when share access
-	 * links are enabled) and never when embedded (webcomponent or iframe)
+	 * links are enabled) while the room has a link to share, and never when embedded (webcomponent or iframe)
 	 */
 	showCopyLinkButton = computed(
-		() => this.meetingContextService.meetingUI().showShareAccessLinks && !this.runtimeConfigService.isEmbeddedMode()
+		() =>
+			this.meetingContextService.meetingUI().showShareAccessLinks &&
+			!!this.roomAccessLinkService.speakerPublicLink() &&
+			!this.runtimeConfigService.isEmbeddedMode()
 	);
 
 	/** Whether to show the captions button (visible when not HIDDEN) */

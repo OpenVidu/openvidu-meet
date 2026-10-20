@@ -17,8 +17,10 @@ export class MeetingInvitePanelComponent {
 	protected meetingContextService = inject(MeetingContextService);
 	protected roomAccessLinkService = inject(RoomAccessLinkService);
 
-	showShareLink = computed(() => this.meetingContextService.meetingUI().showShareAccessLinks);
 	roomAccessUrl = this.roomAccessLinkService.speakerPublicLink;
+	showShareLink = computed(
+		() => this.meetingContextService.meetingUI().showShareAccessLinks && !!this.roomAccessUrl()
+	);
 
 	onCopyClicked(): void {
 		this.roomAccessLinkService.copyRoomAccessLink();
