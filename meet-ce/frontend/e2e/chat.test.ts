@@ -236,7 +236,6 @@ test.describe('Chat E2E Tests', () => {
 		try {
 			const readerPage = await openMeetingPage(reader.accessUrl, true);
 			const nonReaderPage = await openMeetingPage(nonReader.accessUrl, true);
-			// Opened last, so it is the window in front that the chat is used from
 			const senderPage = await openMeetingPage(sender.accessUrl);
 			await waitForRemoteStream(senderPage, 2);
 

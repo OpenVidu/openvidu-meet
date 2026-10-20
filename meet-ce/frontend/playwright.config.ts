@@ -60,7 +60,7 @@ export default defineConfig({
 	outputDir: 'test-results/output',
 	timeout: 60000,
 	use: {
-		headless: isCI,
+		headless: true,
 		trace: 'on-first-retry',
 		screenshot: 'only-on-failure',
 		ignoreHTTPSErrors: true,

@@ -1,7 +1,5 @@
 import { defineConfig } from '@playwright/test';
 
-const isCI = process.env['RUN_MODE'] === 'CI';
-
 const commonArgs = ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'];
 
 export default defineConfig({
@@ -13,7 +11,7 @@ export default defineConfig({
 	outputDir: 'test-results/output',
 	timeout: 60000,
 	use: {
-		headless: isCI,
+		headless: true,
 		trace: 'on-first-retry',
 		screenshot: 'only-on-failure',
 		ignoreHTTPSErrors: true,

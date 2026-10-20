@@ -46,7 +46,7 @@ The test suite uses the following technologies:
 - **Retries**: 0 (no automatic retries)
 - **Workers**: 1 (sequential execution)
 - **Parallel Execution**: Disabled
-- **Headless Mode**: CI-dependent (headless in CI, headed in development)
+- **Headless Mode**: always headless; pass `--headed` to watch a run
 - **Viewport**: 1280x720
 - **Permissions**: Camera and microphone access enabled
 - **Video Recording**: On failure only
