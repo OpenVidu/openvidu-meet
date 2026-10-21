@@ -91,6 +91,28 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   the user and returns new ones, and a rotated refresh token is accepted once.
 - Two simultaneous [`createUser`][3.10-create-user] requests with the same `userId` could answer `500`. The one that
   finds the `userId` taken now answers `409`.
+- [`updateRoomStatus`][3.10-update-room-status] with `open` during a meeting set the room `open` while the meeting
+  went on, cancelling a scheduled close or deletion and sending a second `meetingStarted` webhook, and `closed` turned
+  a scheduled deletion into a close. During a meeting the room now stays `active_meeting`: `open` cancels only a
+  scheduled close and answers `409` when a deletion is scheduled, and `closed` keeps a scheduled deletion.
+- The room returned by `deleteRoom` and `bulkDeleteRooms` carried its `roles` with the current permission keys only. It
+  now carries the deprecated `can*` keys next to them, as every other room response does.
+- `getRoomMember` answered `404` for a member that does not exist before checking the caller, so a caller without
+  access could tell which `memberId` values belong to the room. Such a caller now gets `403` whether or not the member
+  exists.
+- A permission change made with `updateRoomMember` during a meeting reached the media server only when the
+  participant's client renewed its token, so a client that skipped the renewal kept publishing what it had lost. The
+  server now applies the new media grant at once.
+- An `updateRoomMember` that changed nothing, such as one with an empty body, revoked the member's room member tokens
+  and told a member in the meeting that their permissions were updated. Only an update that changes the member's
+  effective permissions does so now.
+- The name an identified guest, a member user or a signed-in user joined a meeting with was locked by the join screen
+  only, so a modified client could join under any name. Outside encrypted rooms the server now uses the member's or
+  the user's name.
+- `chatRead` was enforced in the interface only: every chat message reached every participant's client. Messages now
+  reach only the participants holding `chatRead`.
+- A room's `config.chat.enabled` `false` was enforced in the interface only, so a modified client holding `chatWrite`
+  could still send chat messages. The media server now refuses them.
 
 #### UI
 
@@ -124,6 +146,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   without `recordingPlay`.
 - The console treated the earliest registered user as the root admin, so after a change of
   `MEET_INITIAL_ADMIN_USER` it protected the wrong account. It now protects the `MEET_INITIAL_ADMIN_USER` account.
+- In a room whose anonymous speaker access is disabled, the meeting still offered the anonymous speaker link to share,
+  a link every recipient was refused with. The meeting no longer offers it.
 
 #### Deployment
 
@@ -277,6 +301,7 @@ registered on both receives it twice.
 [3.10-create-user]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/createUser
 [3.10-participant-role-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantRoleChangedWebhook
 [3.10-participant-role-update]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantRoleUpdate
+[3.10-update-room-status]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/updateRoomStatus
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html
 [3.9-meetings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/meetingGet
 [3.9-webhooks-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/webhookList

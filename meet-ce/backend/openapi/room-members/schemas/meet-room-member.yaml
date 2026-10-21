@@ -80,4 +80,5 @@ properties:
         type: number
         example: 1620000000000
         description: >
-            Timestamp (in milliseconds since the Unix epoch) of the last time this member's effective permissions were updated.
+            Timestamp (in milliseconds since the Unix epoch) of the last time this member's effective permissions changed.
+            Room member tokens issued to the member before it are no longer accepted.

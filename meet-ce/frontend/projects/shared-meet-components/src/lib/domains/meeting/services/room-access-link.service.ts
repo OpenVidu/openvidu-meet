@@ -17,12 +17,15 @@ export class RoomAccessLinkService {
 
 	private readonly _speakerPublicLink = signal<string | undefined>(undefined);
 	private readonly _speakerCopyLink = signal<string | undefined>(undefined);
+	private readonly _speakerLinkDisabled = signal(false);
 	private lastFetchedRoomId?: string;
 
 	/** Readonly signal for the speaker link displayed in the UI */
 	readonly speakerPublicLink = this._speakerPublicLink.asReadonly();
 	/** Readonly signal for the real speaker link used for copy action */
 	readonly speakerCopyLink = this._speakerCopyLink.asReadonly();
+	/** Whether the room's anonymous speaker access is disabled, so there is no link to share */
+	readonly speakerLinkDisabled = this._speakerLinkDisabled.asReadonly();
 
 	constructor() {
 		// Keep link state synchronized with permission and room changes.
@@ -62,10 +65,16 @@ export class RoomAccessLinkService {
 	}
 
 	/**
-	 * Sets speaker links from room access information.
+	 * Sets speaker links from room access information, only while the anonymous speaker access is enabled.
 	 * The public link is shown in the UI while the speaker link is used for copy action.
 	 */
 	private setSpeakerLinksFromRoomAccess(access: MeetRoomAccess): void {
+		if (!access.anonymous.speaker.enabled) {
+			this.clear();
+			this._speakerLinkDisabled.set(true);
+			return;
+		}
+
 		const publicLink = this.getPublicLinkFromAccessUrl(access.user.url);
 		this._speakerPublicLink.set(publicLink);
 		this._speakerCopyLink.set(access.anonymous.speaker.url);
@@ -115,5 +124,6 @@ export class RoomAccessLinkService {
 	clear(): void {
 		this._speakerPublicLink.set(undefined);
 		this._speakerCopyLink.set(undefined);
+		this._speakerLinkDisabled.set(false);
 	}
 }

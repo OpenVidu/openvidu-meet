@@ -82,7 +82,9 @@ MeetChatConfig:
             type: boolean
             default: true
             example: true
-            description: If true, the room will be allowed to send and receive chat messages.
+            description: |
+                If true, the room's meetings offer a chat. If false, the meeting shows no chat and the media server
+                refuses chat messages from every participant, whatever their `chatRead` and `chatWrite` permissions.
 MeetRecordingConfig:
     type: object
     required:

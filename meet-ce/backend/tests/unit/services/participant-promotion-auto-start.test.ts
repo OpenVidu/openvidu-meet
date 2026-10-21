@@ -90,7 +90,7 @@ describe('RoomMemberService.updateParticipantRole — B10: a promotion re-evalua
 			...([
 				{ warn: () => {}, debug: () => {}, verbose: () => {} } as unknown as LoggerService,
 				{},
-				{ getMeetRoom: async () => ({ roles }) } as unknown as RoomService,
+				{ getMeetRoom: async () => ({ roles, config: { chat: { enabled: true } } }) } as unknown as RoomService,
 				{},
 				{},
 				{},

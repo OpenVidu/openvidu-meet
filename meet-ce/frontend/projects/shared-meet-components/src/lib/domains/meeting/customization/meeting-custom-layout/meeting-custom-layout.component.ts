@@ -56,10 +56,15 @@ export class MeetingCustomLayoutComponent {
 	});
 
 	/**
-	 * Waiting overlay: embedded modes (webcomponent or iframe) only, shown while alone
-	 * in place of the share/copy link overlay (link sharing is handled by the host application).
+	 * Waiting overlay, shown while alone in place of the share/copy link overlay: in embedded modes
+	 * (webcomponent or iframe), where link sharing is handled by the host application, and when the
+	 * room's anonymous speaker access is disabled, so there is no link to share.
 	 */
-	shouldShowWaitingOverlay = computed(() => this.isEmbeddedMode() && this.meetingStateService.isAlone());
+	shouldShowWaitingOverlay = computed(
+		() =>
+			(this.isEmbeddedMode() || this.roomAccessLinkService.speakerLinkDisabled()) &&
+			this.meetingStateService.isAlone()
+	);
 
 	/** True when either overlay covers the layout (used to hide the hidden-participants indicator). */
 	shouldShowOverlay = computed(() => this.shouldShowLinkOverlay() || this.shouldShowWaitingOverlay());

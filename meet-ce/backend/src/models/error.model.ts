@@ -348,6 +348,14 @@ export const errorRoomActiveMeeting = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `Room '${roomId}' has an active meeting`, 409);
 };
 
+export const errorRoomDeletionScheduled = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Room Error',
+		`Room '${roomId}' is scheduled for deletion when its active meeting ends`,
+		409
+	);
+};
+
 /**
  * A recording auto-start threshold that the room's participant limit can never reach: storing it
  * would configure a recording that is guaranteed never to start.

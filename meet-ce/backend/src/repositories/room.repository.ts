@@ -1,5 +1,5 @@
 import type { MeetRoom, MeetRoomField, ProjectedMeetRoom } from '@openvidu-meet/typings';
-import { MeetRoomStatus, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
+import { MeetingEndAction, MeetRoomStatus, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { QueryFilter } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
@@ -110,6 +110,42 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 		return this.updatePartialOne(
 			{ roomId, status: MeetRoomStatus.OPEN },
 			{ status: MeetRoomStatus.ACTIVE_MEETING },
+			{ throwIfNotFound: false }
+		);
+	}
+
+	/**
+	 * Sets the status of a room without an active meeting, clearing any pending meeting end action,
+	 * atomically.
+	 *
+	 * @param roomId - The unique room identifier
+	 * @param status - The status to set
+	 * @returns The updated room, or `null` if the room has an active meeting
+	 */
+	updateIdleRoomStatus(roomId: string, status: MeetRoomStatus): Promise<MeetRoom | null> {
+		return this.updatePartialOne(
+			{ roomId, status: { $ne: MeetRoomStatus.ACTIVE_MEETING } },
+			{ status, meetingEndAction: MeetingEndAction.NONE },
+			{ throwIfNotFound: false }
+		);
+	}
+
+	/**
+	 * Sets what happens to a room when its active meeting ends, atomically. A scheduled deletion is
+	 * never replaced.
+	 *
+	 * @param roomId - The unique room identifier
+	 * @param meetingEndAction - The action to apply when the meeting ends
+	 * @returns The updated room, or `null` if the room has no active meeting or its deletion is scheduled
+	 */
+	scheduleMeetingEndAction(roomId: string, meetingEndAction: MeetingEndAction): Promise<MeetRoom | null> {
+		return this.updatePartialOne(
+			{
+				roomId,
+				status: MeetRoomStatus.ACTIVE_MEETING,
+				meetingEndAction: { $ne: MeetingEndAction.DELETE }
+			},
+			{ meetingEndAction },
 			{ throwIfNotFound: false }
 		);
 	}

@@ -22,70 +22,48 @@ import { accessTokenValidator, allowAnonymous, withAuth } from './auth.middlewar
  * - If the user is authenticated via room member token, checks if they are accessing their own info.
  * - If authenticated as a user (Meet account holder), checks if they have management permissions (admin or owner),
  *  or if they are accessing their own member info.
+ *
+ * The caller is authorized before the member is looked up, so a caller without access cannot tell which
+ * members exist. A room that does not exist answers 404 first, as every room-scoped operation does.
  */
 export const authorizeRoomMemberAccess = async (req: Request, res: Response, next: NextFunction) => {
 	const roomId = req.params.roomId as string;
 	const memberId = req.params.memberId as string;
 
-	// Fail fast if room or member does not exist
 	try {
-		const roomMemberService = container.get(RoomMemberService);
-		const isMember = await roomMemberService.isRoomMember(roomId, memberId);
+		const { owner } = await container.get(RoomService).getMeetRoom(roomId, ['owner']);
+
+		if (!canReadRoomMember(roomId, memberId, owner)) {
+			return rejectRequestFromMeetError(res, errorInsufficientPermissions());
+		}
+
+		const isMember = await container.get(RoomMemberService).isRoomMember(roomId, memberId);
 
 		if (!isMember) {
-			const error = errorRoomMemberNotFound(roomId, memberId);
-			return rejectRequestFromMeetError(res, error);
-		}
-	} catch (error) {
-		return handleError(res, error, 'checking if member exists in room');
-	}
-
-	const requestSessionService = container.get(RequestSessionService);
-	const user = requestSessionService.getAuthenticatedUser();
-	const memberRoomId = requestSessionService.getRoomIdFromMember();
-	const currentMemberId = requestSessionService.getRoomMemberId();
-
-	const forbiddenError = errorInsufficientPermissions();
-
-	// Room Member Token
-	if (memberRoomId) {
-		// Check if the token belongs to the requested room
-		// and if the memberId matches the requested member
-		const isSameRoom = memberRoomId === roomId;
-		const isSameMember = currentMemberId === memberId;
-
-		if (!isSameRoom || !isSameMember) {
-			return rejectRequestFromMeetError(res, forbiddenError);
+			return rejectRequestFromMeetError(res, errorRoomMemberNotFound(roomId, memberId));
 		}
 
 		return next();
+	} catch (error) {
+		return handleError(res, error, 'authorizing access to a room member');
+	}
+};
+
+const canReadRoomMember = (roomId: string, memberId: string, owner: string): boolean => {
+	const requestSessionService = container.get(RequestSessionService);
+	const memberRoomId = requestSessionService.getRoomIdFromMember();
+
+	if (memberRoomId) {
+		return memberRoomId === roomId && requestSessionService.getRoomMemberId() === memberId;
 	}
 
-	// Authenticated user
-	if (user) {
-		// Allow if user is admin
-		if (user.role === MeetUserRole.ADMIN) {
-			return next();
-		}
+	const user = requestSessionService.getAuthenticatedUser();
 
-		try {
-			// Check if user is room owner
-			// or is accessing their own member info
-			const roomService = container.get(RoomService);
-			const isOwner = await roomService.isRoomOwner(roomId, user.userId);
-			const isSameMember = user.userId === memberId;
-
-			if (!isOwner && !isSameMember) {
-				return rejectRequestFromMeetError(res, forbiddenError);
-			}
-
-			return next();
-		} catch (error) {
-			return handleError(res, error, 'checking room ownership');
-		}
+	if (!user) {
+		return false;
 	}
 
-	return rejectRequestFromMeetError(res, forbiddenError);
+	return user.role === MeetUserRole.ADMIN || user.userId === owner || user.userId === memberId;
 };
 
 /**

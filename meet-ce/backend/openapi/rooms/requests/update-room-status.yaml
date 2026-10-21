@@ -13,7 +13,9 @@ content:
                     example: closed
                     description: |
                         The new status of the room. Options are:
-                        - open: The room will be open for new participants to join.
-                        - closed: The room will be closed to new participants.
+                        - open: The room will be open for new participants to join. During a meeting,
+                          cancels a scheduled close.
+                        - closed: The room will be closed to new participants. During a meeting, the
+                          close is scheduled for the end of the meeting.
             required:
                 - status

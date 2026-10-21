@@ -297,6 +297,27 @@ describe('Room Members API Security Tests', () => {
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
 			expectMeetError(response, errorInsufficientPermissions());
 		});
+
+		it('should not reveal to a speaker link token whether a member exists', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomId}/members/guest-nonexistent`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.speakerToken);
+			expectMeetError(response, errorInsufficientPermissions());
+		});
+
+		it('should not reveal to a ROOM_MANAGER without access to the room whether a member exists', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomId}/members/guest-nonexistent`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
+			expectMeetError(response, errorInsufficientPermissions());
+		});
+
+		it('should answer 404 to the room owner for a member that does not exist', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomId}/members/guest-nonexistent`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerOwner.accessToken);
+			expectMeetError(response, errorRoomMemberNotFound(roomId, 'guest-nonexistent'));
+		});
 	});
 
 	describe('Update Room Member Tests', () => {

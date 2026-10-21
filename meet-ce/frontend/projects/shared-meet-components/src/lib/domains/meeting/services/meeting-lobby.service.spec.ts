@@ -1,9 +1,11 @@
+import { Clipboard } from '@angular/cdk/clipboard';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MeetRoomMemberTokenOptions, MeetRoomStatus } from '@openvidu-meet/typings';
 import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
+import { NotificationService } from '../../../shared/services/notification.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { AuthService } from '../../auth/services/auth.service';
 import { RecordingService } from '../../recordings/services/recording.service';
@@ -313,6 +315,56 @@ describe('MeetingLobbyService', () => {
 
 			await expectAsync(service.generateJoinToken()).toBeRejected();
 			expect(meetingContextStub.setIsActiveMeeting).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('the room access link to share', () => {
+		const roomWithSpeakerAccess = (enabled: boolean) =>
+			({
+				access: {
+					user: { url: 'https://meet.example.com/room/room1' },
+					anonymous: { speaker: { enabled, url: 'https://meet.example.com/room/room1?secret=abc' } }
+				}
+			}) as never;
+
+		const loadLinks = async (speakerAccessEnabled: boolean): Promise<RoomAccessLinkService> => {
+			roomService.getRoom.and.resolveTo(roomWithSpeakerAccess(speakerAccessEnabled));
+			TestBed.resetTestingModule();
+			TestBed.configureTestingModule({
+				providers: [
+					provideZonelessChangeDetection(),
+					RoomAccessLinkService,
+					{ provide: LoggerService, useClass: LoggerServiceStub },
+					{ provide: RoomService, useValue: roomService },
+					{
+						provide: RoomMemberContextService,
+						useValue: { roomId: () => ROOM_ID, permissions: () => ({ roomShareAccessLinks: true }) }
+					},
+					{ provide: Clipboard, useValue: { copy: () => true } },
+					{ provide: NotificationService, useValue: { showMessage: () => undefined } }
+				]
+			});
+
+			const links = TestBed.inject(RoomAccessLinkService);
+			TestBed.tick();
+			await roomService.getRoom.calls.mostRecent().returnValue;
+			return links;
+		};
+
+		it('is offered while the room has its anonymous speaker access enabled', async () => {
+			const links = await loadLinks(true);
+
+			expect(links.speakerPublicLink()).toBe('meet.example.com/room/room1');
+			expect(links.speakerCopyLink()).toBe('https://meet.example.com/room/room1?secret=abc');
+			expect(links.speakerLinkDisabled()).toBeFalse();
+		});
+
+		it('is not offered when the room has its anonymous speaker access disabled', async () => {
+			const links = await loadLinks(false);
+
+			expect(links.speakerPublicLink()).toBeUndefined();
+			expect(links.speakerCopyLink()).toBeUndefined();
+			expect(links.speakerLinkDisabled()).toBeTrue();
 		});
 	});
 });

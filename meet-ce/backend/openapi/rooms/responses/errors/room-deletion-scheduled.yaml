@@ -1,0 +1,8 @@
+description: The room cannot be reopened because its deletion is scheduled for the end of its active meeting.
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        example:
+            error: 'Room Error'
+            message: "Room 'room_123' is scheduled for deletion when its active meeting ends"

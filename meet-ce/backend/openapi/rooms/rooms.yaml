@@ -286,6 +286,12 @@
             This can be used to open or close the room for new participants.
 
 
+            While a meeting is active the room keeps the status `active_meeting`: `closed` schedules the
+            close for the end of the meeting (`202`), and `open` cancels a scheduled close (`200`). A
+            deletion scheduled for the end of the meeting is kept: `closed` answers `202` without replacing
+            it, and `open` answers `409`.
+
+
             **Access token roles**: `admin`, `room_manager`.
         tags:
             - OpenVidu Meet - Rooms
@@ -313,6 +319,8 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '404':
                 $ref: './responses/errors/room-not-found.yaml'
+            '409':
+                $ref: './responses/errors/room-deletion-scheduled.yaml'
             '413':
                 $ref: '../shared/responses/errors/payload-too-large.yaml'
             '422':

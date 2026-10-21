@@ -427,6 +427,13 @@ export class ParticipantModel {
 		return this._connectionQuality();
 	}
 
+	/**
+	 * Whether the participant holds `chatRead`, as the server last wrote it in their metadata.
+	 */
+	get canReadChat(): boolean {
+		return parseParticipantMetadata(this.participant.metadata)?.permissions?.chatRead === true;
+	}
+
 	// ── Public setters ────────────────────────────────────────────────────────────────────────────
 	set badge(badge: MeetRoomMemberUIBadge) {
 		this._badge.set(badge);
