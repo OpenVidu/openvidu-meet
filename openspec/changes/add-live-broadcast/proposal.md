@@ -21,7 +21,7 @@ Twitch or any RTMP server, without a separate streaming tool.
   `broadcastEnded`, embedded commands `broadcastStart` and `broadcastStop`, embedded events of the
   same three names, and `broadcastActive` in the meeting info.
 - Two new permissions: `broadcastControl` (go live, stop and restart each destination) and
-  `broadcastAddDestinations` (stream to a destination the room does not have). Rooms created from
+  `broadcastEdit` (stream to a destination the room does not have). Rooms created from
   3.10.0 grant both to the moderator role; rooms, members and tokens from before start without them.
 - Meeting UI: a Live broadcast activity in the activities panel, a start and stop item in More
   options, a `LIVE` chip with the time on air in the status rail, and a notice to every participant

@@ -195,7 +195,7 @@
           "LABEL": "Andare in diretta",
           "DESCRIPTION": "Consente di avviare e fermare dirette verso le destinazioni della stanza, tutte o solo alcune"
         },
-        "broadcastAddDestinations": {
+        "broadcastEdit": {
           "LABEL": "Aggiungere destinazioni",
           "DESCRIPTION": "Consente di trasmettere una riunione a URL aggiuntivi oltre alle destinazioni della stanza. Richiede \"Andare in diretta\""
         },

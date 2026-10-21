@@ -366,7 +366,7 @@ test.describe('Room wizard E2E Tests', () => {
 		// A new room starts without live broadcast, which takes its role permissions with it.
 		for (const role of ROLES) {
 			await expect(permissionSwitch(page, role, 'broadcastControl')).toBeDisabled();
-			await expect(permissionSwitch(page, role, 'broadcastAddDestinations')).toBeDisabled();
+			await expect(permissionSwitch(page, role, 'broadcastEdit')).toBeDisabled();
 		}
 
 		await gotoBroadcast(page);
@@ -379,8 +379,8 @@ test.describe('Room wizard E2E Tests', () => {
 		}
 
 		// Adding a destination needs going live, which the speaker lacks by default.
-		await expect(permissionSwitch(page, 'moderator', 'broadcastAddDestinations')).toBeEnabled();
-		await expect(permissionSwitch(page, 'speaker', 'broadcastAddDestinations')).toBeDisabled();
+		await expect(permissionSwitch(page, 'moderator', 'broadcastEdit')).toBeEnabled();
+		await expect(permissionSwitch(page, 'speaker', 'broadcastEdit')).toBeDisabled();
 	});
 
 	test('create mode: the broadcast destinations and layout reach the created room, the stream keys hidden', async ({

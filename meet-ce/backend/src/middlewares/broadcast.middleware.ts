@@ -16,15 +16,15 @@ export const queryRoomId = (_req: Request, res: Response) => (res.locals.validat
 export const broadcastRoomId = (req: Request) => BroadcastHelper.roomIdOf(req.params.broadcastId as string);
 
 /**
- * Middleware to require `broadcastAddDestinations` from a start request that streams to a
+ * Middleware to require `broadcastEdit` from a start request that streams to a
  * destination given for the meeting.
  */
-export const withAddDestinationsPermissionToStart = (req: Request, res: Response, next: NextFunction) => {
+export const withEditPermissionToStart = (req: Request, res: Response, next: NextFunction) => {
 	const { destinations } = req.body as MeetBroadcastStartOptions;
 
 	if (!destinations?.length) return next();
 
-	return withRoomPermission('broadcastAddDestinations', bodyRoomId)(req, res, next);
+	return withRoomPermission('broadcastEdit', bodyRoomId)(req, res, next);
 };
 
 /**

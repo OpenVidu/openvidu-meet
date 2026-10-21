@@ -35,7 +35,7 @@ content:
                     type: array
                     description: >
                         Destinations for this meeting only, never saved in the room. Requires the
-                        `broadcastAddDestinations` permission. A meeting streams to each stream key once,
+                        `broadcastEdit` permission. A meeting streams to each stream key once,
                         whatever the server it is on.
                     items:
                         type: object

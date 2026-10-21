@@ -22,7 +22,7 @@
 
               An `id` the room does not have is rejected with a `400`.
             - `destinations` adds destinations for this meeting only, by `name` and `url`, never saved in the
-              room. It requires the `broadcastAddDestinations` permission.
+              room. It requires the `broadcastEdit` permission.
 
             With an empty `destinationIds`, `destinations` must have at least one entry, or the request is
             rejected with a `422`.

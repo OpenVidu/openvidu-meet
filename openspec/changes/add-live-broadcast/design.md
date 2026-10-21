@@ -193,7 +193,7 @@ destinations to their broadcasts.
 ### Permissions enforced at the API
 
 `broadcastControl` gates the routes; a start body with any entry in `destinations` also needs
-`broadcastAddDestinations`, checked by a middleware before `broadcast.enabled`, so a refused add is
+`broadcastEdit`, checked by a middleware before `broadcast.enabled`, so a refused add is
 `403` before any `409` or `422`. The UI and the embedded commands use the participant's room member
 token on the same REST routes, so hiding controls is never the enforcement. The two permissions stay
 independent values; the wizard only disables the dependent switch.

@@ -82,7 +82,7 @@ describe('FeatureCalculator.applyPermissions', () => {
 	it('should offer adding destinations only together with broadcastControl', () => {
 		expect(featuresFor().showBroadcastAddDestinations).toBeTrue();
 		expect(featuresFor({ broadcastControl: false }).showBroadcastAddDestinations).toBeFalse();
-		expect(featuresFor({ broadcastAddDestinations: false }).showBroadcastAddDestinations).toBeFalse();
+		expect(featuresFor({ broadcastEdit: false }).showBroadcastAddDestinations).toBeFalse();
 	});
 
 	it('should keep showViewRecordings on recordingList even when play and download are denied', () => {

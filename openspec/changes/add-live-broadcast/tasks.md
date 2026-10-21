@@ -2,7 +2,7 @@
 
 ## 1. Contracts
 
-- [x] 1.1 Add `MeetBroadcastInfo`, `MeetBroadcastStatus`, `MeetBroadcastStartOptions`, `MeetBroadcastStopOptions`, `MEET_BROADCAST_FIELDS`, `config.broadcast` (`MeetBroadcastConfig`, `MeetBroadcastDestination`, `MeetRoomConfigOptions`, the redaction helpers and limits), `broadcastControl` and `broadcastAddDestinations`, `broadcastActive`, the broadcast webhook event types and the `meet_broadcast_updated` signal to the typings with TSDoc; verified by the typings build and the backend unit tests `broadcast-stream-url`, `broadcast-fields` and `permission-aliases`.
+- [x] 1.1 Add `MeetBroadcastInfo`, `MeetBroadcastStatus`, `MeetBroadcastStartOptions`, `MeetBroadcastStopOptions`, `MEET_BROADCAST_FIELDS`, `config.broadcast` (`MeetBroadcastConfig`, `MeetBroadcastDestination`, `MeetRoomConfigOptions`, the redaction helpers and limits), `broadcastControl` and `broadcastEdit`, `broadcastActive`, the broadcast webhook event types and the `meet_broadcast_updated` signal to the typings with TSDoc; verified by the typings build and the backend unit tests `broadcast-stream-url`, `broadcast-fields` and `permission-aliases`.
 - [x] 1.2 Add the embedded commands `broadcastStart` and `broadcastStop` and the events `broadcastStarted`, `broadcastUpdated` and `broadcastEnded`; verified by the embedded API contract test.
 
 ## 2. Room config, permissions and migrations
@@ -13,7 +13,7 @@
 
 ## 3. Broadcasts API
 
-- [x] 3.1 Serve `broadcastStart`, `broadcastList`, `broadcastGet` and `broadcastStop` under `/broadcasts`, shaped like the recordings API (room in the start and stop bodies and the list query, `broadcastId` naming its room for get), with `broadcastControl`, `broadcastAddDestinations` and `meetingRead`, field selection, one broadcast per destination on one shared egress, all-or-nothing starts and the per-room Redis lock; verified by the unit tests `broadcast.service` and `broadcast.helper` and the integration tests `broadcasts` and `meeting-security` (48 of 48).
+- [x] 3.1 Serve `broadcastStart`, `broadcastList`, `broadcastGet` and `broadcastStop` under `/broadcasts`, shaped like the recordings API (room in the start and stop bodies and the list query, `broadcastId` naming its room for get), with `broadcastControl`, `broadcastEdit` and `meetingRead`, field selection, one broadcast per destination on one shared egress, all-or-nothing starts and the per-room Redis lock; verified by the unit tests `broadcast.service` and `broadcast.helper` and the integration tests `broadcasts` and `meeting-security` (48 of 48).
 - [x] 3.2 Apply LiveKit egress events to each broadcast, send the `meet_broadcast_updated` signal and the broadcast webhooks per change, replay the broadcasts in progress to a joining participant and add `broadcastActive` to `meetingGet`; verified by the unit tests `livekit-webhook.service` and `frontend-event.service` and the integration test `webhook`.
 - [x] 3.3 End the broadcasts with their meeting, fail them when their egress service is lost, settle stale ones on the next start and answer `503` when no egress service is available; verified by the unit tests `broadcast.service` and `egress.helper` and live against the local deployment by killing the egress container.
 - [x] 3.4 Document the broadcast operations, the three webhooks, `broadcastActive` and the egress-unavailable `503` in the OpenAPI; verified by `redocly lint` and the API naming lint.
@@ -55,7 +55,7 @@
 - [x] 9.1 Add the 3.10.0 lines to `CHANGELOG.md`: Added > Integration (broadcasts API, permissions, embedded commands and events, webhooks, `broadcastActive`; `config.broadcast` and the redacted URLs), Added > UI (wizard step, activity, `LIVE` chip) and Fixed > Integration (the three recording fixes).
 - [x] 9.2 openvidu.io: write the live broadcast feature page `docs/meet/features/meetings/live-broadcast.md` (room destinations, going live, permissions, embedded API and webhooks) and register it in the navigation.
 - [x] 9.3 openvidu.io: say in `docs/meet/features/meetings/e2e-encryption.md` that end-to-end encryption also turns live broadcast off.
-- [x] 9.4 openvidu.io: add `broadcastControl` and `broadcastAddDestinations` to the predefined roles of `docs/meet/features/rooms/access.md`.
+- [x] 9.4 openvidu.io: add `broadcastControl` and `broadcastEdit` to the predefined roles of `docs/meet/features/rooms/access.md`.
 - [x] 9.5 openvidu.io: list `broadcastStarted`, `broadcastUpdated` and `broadcastEnded` in `docs/meet/embedded/reference/webhooks.md`.
 - [x] 9.6 openvidu.io: regenerate the embedded API reference with `./meet.sh build-webcomponent-doc ../openvidu.io/shared/meet` and the REST API reference with `./meet.sh build-rest-api-doc ../openvidu.io/docs/meet/embedded/reference/api.html`; the embedded reference generator now renders nested object types and a command whose payload is a named options type (`broadcastStart(options?)`).
 

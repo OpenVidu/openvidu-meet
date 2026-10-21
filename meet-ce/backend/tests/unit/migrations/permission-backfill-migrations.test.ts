@@ -144,7 +144,7 @@ describe('Room migration v7 → v8', () => {
 	const v7Permissions = () => {
 		const permissions: Record<string, boolean> = Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true]));
 		delete permissions.broadcastControl;
-		delete permissions.broadcastAddDestinations;
+		delete permissions.broadcastEdit;
 		// A key of the development builds of live broadcast, gone before release, that no room keeps.
 		permissions.broadcastEditDestinations = true;
 		return permissions;
@@ -160,7 +160,7 @@ describe('Room migration v7 → v8', () => {
 		// Nobody is granted live broadcast by a migration, whatever else the role could already do:
 		// an existing room gains the capability when someone edits its roles, not when it is migrated.
 		expect(migrated.roles.moderator.permissions.broadcastControl).toBe(false);
-		expect(migrated.roles.speaker.permissions.broadcastAddDestinations).toBe(false);
+		expect(migrated.roles.speaker.permissions.broadcastEdit).toBe(false);
 	});
 
 	it('should give the room a disabled broadcast config in the grid layout with no destinations, and no destination URLs', () => {
@@ -184,7 +184,7 @@ describe('Room member migration v5 → v6', () => {
 	it('should complete effectivePermissions with the broadcast keys, denied', () => {
 		const permissions = Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true]));
 		delete permissions.broadcastControl;
-		delete permissions.broadcastAddDestinations;
+		delete permissions.broadcastEdit;
 		const document = {
 			memberId: 'member-123',
 			effectivePermissions: permissions
@@ -194,7 +194,7 @@ describe('Room member migration v5 → v6', () => {
 
 		expect(Object.keys(migrated.effectivePermissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
 		expect(migrated.effectivePermissions.broadcastControl).toBe(false);
-		expect(migrated.effectivePermissions.broadcastAddDestinations).toBe(false);
+		expect(migrated.effectivePermissions.broadcastEdit).toBe(false);
 	});
 });
 

@@ -6,7 +6,7 @@ import {
 	bodyRoomId,
 	broadcastRoomId,
 	queryRoomId,
-	withAddDestinationsPermissionToStart,
+	withEditPermissionToStart,
 	withBroadcastEnabled
 } from '../middlewares/broadcast.middleware.js';
 import { apiLimiter } from '../middlewares/rate-limit.middleware.js';
@@ -34,7 +34,7 @@ broadcastRouter.post(
 	validateBroadcastFieldsReq,
 	validateStartBroadcastReq,
 	withRoomPermission('broadcastControl', bodyRoomId),
-	withAddDestinationsPermissionToStart,
+	withEditPermissionToStart,
 	withBroadcastEnabled,
 	broadcastCtrl.startBroadcasts
 );

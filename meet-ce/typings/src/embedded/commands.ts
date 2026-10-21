@@ -98,7 +98,7 @@ export enum EmbeddedCommandName {
 	 * Starts a live broadcast of the meeting to each of the given destinations, one broadcast per
 	 * destination: the room destinations named by `destinationIds`, or, when it is omitted, each
 	 * room destination not being streamed to yet, plus the `destinations` given by name and URL for
-	 * this meeting only, which also need `broadcastAddDestinations`. The room must have live
+	 * this meeting only, which also need `broadcastEdit`. The room must have live
 	 * broadcast enabled.
 	 * @permission broadcastControl
 	 */

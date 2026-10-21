@@ -285,7 +285,7 @@ describe('Broadcasts API Tests', () => {
 			expect((await startBroadcasts(roomId)).status).toBe(201);
 		});
 
-		it('should require broadcastControl, and broadcastAddDestinations for a destination of this meeting', async () => {
+		it('should require broadcastControl, and broadcastEdit for a destination of this meeting', async () => {
 			// Roles are settled before the meeting starts, which is when they can still change.
 			const roomData = await setupSingleRoom(false, 'BROADCAST_ROOM', broadcastConfig(['a']));
 			const { roomId } = roomData.room;
@@ -293,7 +293,7 @@ describe('Broadcasts API Tests', () => {
 				moderator: {
 					permissions: {
 						...roomData.room.roles.moderator.permissions,
-						broadcastAddDestinations: false
+						broadcastEdit: false
 					}
 				}
 			});

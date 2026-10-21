@@ -57,7 +57,7 @@ describe('Permission alias map', () => {
 			'participantHandLower',
 			'participantReactionSend',
 			'broadcastControl',
-			'broadcastAddDestinations'
+			'broadcastEdit'
 		]);
 
 		for (const permissionKey of MEET_UNALIASED_PERMISSION_KEYS) {
@@ -182,7 +182,7 @@ describe('normalizePermissions', () => {
 		participantHandLower: false,
 		participantReactionSend: true,
 		broadcastControl: false,
-		broadcastAddDestinations: false
+		broadcastEdit: false
 	};
 
 	// A complete input that predates the key keeps behaving as it did — joining gated reading — but
@@ -311,7 +311,7 @@ describe('toDeprecatedPermissions', () => {
 			participantMute: false,
 			participantHandLower: false,
 			broadcastControl: false,
-			broadcastAddDestinations: false
+			broadcastEdit: false
 		});
 	});
 

@@ -37,7 +37,7 @@ export class FeatureCalculator {
 			features.showBroadcastControls = permissions.broadcastControl;
 		}
 
-		features.showBroadcastAddDestinations = features.showBroadcastControls && permissions.broadcastAddDestinations;
+		features.showBroadcastAddDestinations = features.showBroadcastControls && permissions.broadcastEdit;
 
 		// Chat: chatRead gates the whole panel; chatWrite gates the message input within it.
 		if (features.showChat) {

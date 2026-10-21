@@ -428,7 +428,7 @@ describe('RoomWizardStateService.initializeWizard (the room it proposes)', () =>
 					recordingControl: false,
 					recordingDelete: false,
 					broadcastControl: false,
-					broadcastAddDestinations: false,
+					broadcastEdit: false,
 					roomShareAccessLinks: false,
 					participantPromote: false,
 					participantKick: false,

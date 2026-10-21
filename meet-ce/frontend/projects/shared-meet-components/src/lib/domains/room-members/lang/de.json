@@ -195,7 +195,7 @@
           "LABEL": "Live gehen",
           "DESCRIPTION": "Erlaubt das Starten und Beenden von Live-Übertragungen an die Ziele des Raums, an alle oder nur einige"
         },
-        "broadcastAddDestinations": {
+        "broadcastEdit": {
           "LABEL": "Ziele hinzufügen",
           "DESCRIPTION": "Erlaubt, ein Meeting zusätzlich zu den Zielen des Raums an weitere URLs zu übertragen. Erfordert „Live gehen“"
         },

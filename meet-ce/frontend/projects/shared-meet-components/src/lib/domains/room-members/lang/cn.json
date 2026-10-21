@@ -195,7 +195,7 @@
           "LABEL": "开始直播",
           "DESCRIPTION": "允许向房间的目标（全部或部分）开始和停止直播"
         },
-        "broadcastAddDestinations": {
+        "broadcastEdit": {
           "LABEL": "添加目标",
           "DESCRIPTION": "允许在房间目标之外将会议推流到额外的地址。需要“开始直播”"
         },

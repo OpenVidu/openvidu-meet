@@ -195,7 +195,7 @@
           "LABEL": "Live gaan",
           "DESCRIPTION": "Staat toe live-uitzendingen naar de bestemmingen van de ruimte te starten en te stoppen, alle of slechts enkele"
         },
-        "broadcastAddDestinations": {
+        "broadcastEdit": {
           "LABEL": "Bestemmingen toevoegen",
           "DESCRIPTION": "Staat toe een vergadering naar extra URL's uit te zenden naast de bestemmingen van de ruimte. Vereist \"Live gaan\""
         },

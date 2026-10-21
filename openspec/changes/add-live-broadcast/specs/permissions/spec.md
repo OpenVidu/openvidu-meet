@@ -3,10 +3,10 @@
 ### Requirement: Broadcast permissions
 Meet SHALL gate live broadcasts with two permissions, whose behavior `live-broadcast` specifies:
 - `broadcastControl`: start and stop the live broadcasts of the meeting to the room's destinations.
-- `broadcastAddDestinations`: stream the meeting to a destination the room does not have, which also needs `broadcastControl`.
+- `broadcastEdit`: stream the meeting to a destination the room does not have, which also needs `broadcastControl`.
 
 #### Scenario: Room destinations only
-- **GIVEN** a room member token granting `broadcastControl` and denying `broadcastAddDestinations`
+- **GIVEN** a room member token granting `broadcastControl` and denying `broadcastEdit`
 - **WHEN** its holder calls `broadcastStart` once with a room destination and once with a destination given by name and URL
 - **THEN** the first answers `201` and the second `403`
 
@@ -29,17 +29,17 @@ A room created without permissions for its moderator role SHALL grant that role 
 
 #### Scenario: Default moderator
 - **WHEN** a client creates a room without `roles`
-- **THEN** the moderator role grants every permission, `broadcastControl` and `broadcastAddDestinations` included
+- **THEN** the moderator role grants every permission, `broadcastControl` and `broadcastEdit` included
 
 ### Requirement: Speaker role defaults
 A room created without permissions for its speaker role SHALL grant that role `recordingList`, `recordingPlay`, `recordingDownload`, `meetingJoin`, `meetingRead`, `participantReactionSend`, `mediaPublishAudio`, `mediaPublishVideo`, `mediaShareScreen`, `mediaChangeVirtualBackground`, `chatRead` and `chatWrite`, and deny the other ten.
 
 #### Scenario: Default speaker
 - **WHEN** a client creates a room without `roles`
-- **THEN** the speaker role denies `recordingControl`, `recordingDelete`, `broadcastControl`, `broadcastAddDestinations`, `roomShareAccessLinks`, `participantPromote`, `participantKick`, `participantMute`, `participantHandLower` and `meetingEnd`, and grants every other permission
+- **THEN** the speaker role denies `recordingControl`, `recordingDelete`, `broadcastControl`, `broadcastEdit`, `roomShareAccessLinks`, `participantPromote`, `participantKick`, `participantMute`, `participantHandLower` and `meetingEnd`, and grants every other permission
 
 ### Requirement: Permissions missing from older data
-When a room member token, or a room or member stored before a permission existed, lacks that permission, Meet SHALL complete it: `meetingRead` with the value of `meetingJoin`, `participantMute`, `participantHandLower`, `broadcastControl` and `broadcastAddDestinations` denied, and `participantReactionSend` granted. A value present SHALL always win.
+When a room member token, or a room or member stored before a permission existed, lacks that permission, Meet SHALL complete it: `meetingRead` with the value of `meetingJoin`, `participantMute`, `participantHandLower`, `broadcastControl` and `broadcastEdit` denied, and `participantReactionSend` granted. A value present SHALL always win.
 
 #### Scenario: Room from before 3.9.0
 - **GIVEN** a room created before 3.9.0 with default roles
@@ -50,7 +50,7 @@ When a room member token, or a room or member stored before a permission existed
 - **GIVEN** a room created by 3.9.0 with default roles
 - **WHEN** the deployment is upgraded to 3.10.0
 - **THEN** the moderator role still grants `participantMute`, denies `participantHandLower` and grants `participantReactionSend`
-- **AND** both roles deny `broadcastControl` and `broadcastAddDestinations`
+- **AND** both roles deny `broadcastControl` and `broadcastEdit`
 
 #### Scenario: Member overrides from before 3.9.0
 - **GIVEN** a member stored before 3.9.0 whose overrides denied joining the meeting
@@ -68,11 +68,11 @@ When a room member token, or a room or member stored before a permission existed
 - **THEN** the token is read as denying `broadcastControl` and the server answers `403`
 
 ### Requirement: Permissions without a deprecated name
-`meetingRead`, `participantMute`, `participantHandLower`, `participantReactionSend`, `broadcastControl` and `broadcastAddDestinations` SHALL exist only under their current names: no deprecated key sets them, and no response adds a deprecated twin for them.
+`meetingRead`, `participantMute`, `participantHandLower`, `participantReactionSend`, `broadcastControl` and `broadcastEdit` SHALL exist only under their current names: no deprecated key sets them, and no response adds a deprecated twin for them.
 
 #### Scenario: Read back without a twin
 - **WHEN** a manager reads a room's `roles`
-- **THEN** each role carries `meetingRead`, `participantMute`, `participantHandLower`, `participantReactionSend`, `broadcastControl` and `broadcastAddDestinations` under those names only
+- **THEN** each role carries `meetingRead`, `participantMute`, `participantHandLower`, `participantReactionSend`, `broadcastControl` and `broadcastEdit` under those names only
 
 #### Scenario: Deprecated join key leaves meetingRead alone
 - **GIVEN** a speaker role that grants `meetingRead`

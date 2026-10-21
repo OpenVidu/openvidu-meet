@@ -158,9 +158,9 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 				icon: 'sensors'
 			},
 			{
-				key: 'broadcastAddDestinations',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.broadcastAddDestinations.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.broadcastAddDestinations.DESCRIPTION',
+				key: 'broadcastEdit',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.broadcastEdit.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.broadcastEdit.DESCRIPTION',
 				icon: 'add_link',
 				dependsOn: 'broadcastControl'
 			}

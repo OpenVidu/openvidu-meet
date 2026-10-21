@@ -2,7 +2,7 @@
 
 Live broadcast streams a meeting, as it happens, to RTMP destinations outside Meet such as YouTube, Twitch or an own media server, one broadcast per destination. Room managers save a room's default destinations, moderators and host applications take the meeting live and stop it, and every participant and integrator learns when the meeting is being streamed and where.
 
-Surfaces: REST API under `/api/v1/broadcasts` (`broadcastStart`, `broadcastList`, `broadcastGet`, `broadcastStop`; `meet-ce/backend/openapi/broadcasts/`), room config `broadcast.*` (`meet-ce/backend/openapi/rooms/schemas/meet-room-config.yaml`, typings `meet-ce/typings/src/database/room-config.ts`), webhooks `broadcastStarted`, `broadcastUpdated` and `broadcastEnded`, embedded commands `broadcastStart` and `broadcastStop` and events of the same three names (`meet-ce/typings/src/embedded/`), permissions `broadcastControl` and `broadcastAddDestinations`, the meeting (activities panel, More options, status rail, notices) and the console room wizard (Live broadcast and Room Access steps). Documented in openvidu.io `docs/meet/features/meetings/live-broadcast.md`.
+Surfaces: REST API under `/api/v1/broadcasts` (`broadcastStart`, `broadcastList`, `broadcastGet`, `broadcastStop`; `meet-ce/backend/openapi/broadcasts/`), room config `broadcast.*` (`meet-ce/backend/openapi/rooms/schemas/meet-room-config.yaml`, typings `meet-ce/typings/src/database/room-config.ts`), webhooks `broadcastStarted`, `broadcastUpdated` and `broadcastEnded`, embedded commands `broadcastStart` and `broadcastStop` and events of the same three names (`meet-ce/typings/src/embedded/`), permissions `broadcastControl` and `broadcastEdit`, the meeting (activities panel, More options, status rail, notices) and the console room wizard (Live broadcast and Room Access steps). Documented in openvidu.io `docs/meet/features/meetings/live-broadcast.md`.
 
 ## ADDED Requirements
 
@@ -212,10 +212,10 @@ Two destinations of a room, and two broadcasts in progress in a meeting, SHALL n
 - **THEN** the server answers `422` and the stored destinations are unchanged
 
 ### Requirement: Destinations for one meeting need their own permission
-A start request with any entry in `destinations` SHALL also require `broadcastAddDestinations`, checked before the body is judged against the meeting: without it the server SHALL answer `403` and start nothing. Room destinations SHALL need only `broadcastControl`.
+A start request with any entry in `destinations` SHALL also require `broadcastEdit`, checked before the body is judged against the meeting: without it the server SHALL answer `403` and start nothing. Room destinations SHALL need only `broadcastControl`.
 
 #### Scenario: Moderator limited to the room destinations
-- **GIVEN** a participant holding `broadcastControl` but not `broadcastAddDestinations`
+- **GIVEN** a participant holding `broadcastControl` but not `broadcastEdit`
 - **WHEN** they call `broadcastStart` with a room destination and a destination given by name and URL
 - **THEN** the REST API answers `403` and no broadcast starts
 
@@ -433,7 +433,7 @@ The embedded element SHALL run `broadcastStart(options?)` and `broadcastStop(opt
 - **THEN** the activity shows B as connecting until it goes live
 
 #### Scenario: Destination for the meeting without its permission
-- **GIVEN** a joined participant holding `broadcastControl` but not `broadcastAddDestinations`
+- **GIVEN** a joined participant holding `broadcastControl` but not `broadcastEdit`
 - **WHEN** the host calls `broadcastStart({ destinations: [{ name: "Own", url: "rtmp://media.example.com/live/key" }] })`
 - **THEN** no broadcast starts and the browser console logs the server's refusal
 
@@ -495,7 +495,7 @@ Before the meeting goes live, the activity SHALL list the room's destinations, a
 - **THEN** going live is disabled and the activity asks to share audio or video first
 
 ### Requirement: Destinations added in the meeting
-A participant holding `broadcastControl` and `broadcastAddDestinations` SHALL be able to add a destination by name and full URL for that meeting. Before going live it SHALL be listed and removable; while live, adding it SHALL stream to it at once, and a refusal SHALL keep its editor open with the server's message while the other broadcasts go on.
+A participant holding `broadcastControl` and `broadcastEdit` SHALL be able to add a destination by name and full URL for that meeting. Before going live it SHALL be listed and removable; while live, adding it SHALL stream to it at once, and a refusal SHALL keep its editor open with the server's message while the other broadcasts go on.
 
 #### Scenario: Destination added while live
 - **GIVEN** a meeting streaming to room destination A
@@ -507,7 +507,7 @@ A participant holding `broadcastControl` and `broadcastAddDestinations` SHALL be
 - **THEN** the editor stays open with the server's message and the meeting keeps streaming to its other destinations
 
 #### Scenario: Without the permission to add
-- **GIVEN** a participant holding `broadcastControl` but not `broadcastAddDestinations`
+- **GIVEN** a participant holding `broadcastControl` but not `broadcastEdit`
 - **WHEN** they open the Live broadcast activity
 - **THEN** no option to add a destination is offered
 
@@ -555,12 +555,12 @@ The console room wizard SHALL offer a Live broadcast step with the switch, the d
 - **THEN** the destination keeps its stream key under the new name
 
 ### Requirement: Broadcast permissions in the Room Access step
-The Room Access step of the wizard SHALL show the `broadcastControl` and `broadcastAddDestinations` switches of each role disabled while live broadcast is not allowed, keeping their values, and `broadcastAddDestinations` disabled for a role that does not hold `broadcastControl`, since it has no effect without it.
+The Room Access step of the wizard SHALL show the `broadcastControl` and `broadcastEdit` switches of each role disabled while live broadcast is not allowed, keeping their values, and `broadcastEdit` disabled for a role that does not hold `broadcastControl`, since it has no effect without it.
 
 #### Scenario: Speaker given control
 - **GIVEN** a wizard with live broadcast allowed and the speaker role denying `broadcastControl`
 - **WHEN** the user grants `broadcastControl` to the speaker role
-- **THEN** the speaker's `broadcastAddDestinations` switch becomes available
+- **THEN** the speaker's `broadcastEdit` switch becomes available
 
 ### Requirement: Rooms from before live broadcast
 On upgrading to 3.10.0, every existing room SHALL get live broadcast disabled, with no destinations, layout `grid` and encoding `H264_720P_30`. Its roles and members SHALL hold neither broadcast permission (see `permissions`).
@@ -568,4 +568,4 @@ On upgrading to 3.10.0, every existing room SHALL get live broadcast disabled, w
 #### Scenario: Room from 3.9.0
 - **GIVEN** a room created by 3.9.0
 - **WHEN** the deployment is upgraded and a manager reads the room's config and roles
-- **THEN** `broadcast.enabled` is `false` with no destinations, and both roles deny `broadcastControl` and `broadcastAddDestinations`
+- **THEN** `broadcast.enabled` is `false` with no destinations, and both roles deny `broadcastControl` and `broadcastEdit`

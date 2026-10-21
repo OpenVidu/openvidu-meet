@@ -12,7 +12,7 @@ export interface MeetBroadcastStartOptions {
 	destinationIds?: string[];
 	/**
 	 * Destinations for this meeting only, never saved in the room. Requires the
-	 * `broadcastAddDestinations` permission.
+	 * `broadcastEdit` permission.
 	 */
 	destinations?: MeetBroadcastStartDestination[];
 }

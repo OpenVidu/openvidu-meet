@@ -195,7 +195,7 @@
           "LABEL": "Emitir en directo",
           "DESCRIPTION": "Permite iniciar y detener emisiones en directo a los destinos de la sala, a todos o solo a algunos"
         },
-        "broadcastAddDestinations": {
+        "broadcastEdit": {
           "LABEL": "Añadir destinos",
           "DESCRIPTION": "Permite emitir una reunión a URLs adicionales además de los destinos de la sala. Requiere \"Emitir en directo\""
         },

@@ -195,7 +195,7 @@
           "LABEL": "Passer en direct",
           "DESCRIPTION": "Permet de démarrer et d'arrêter des diffusions en direct vers les destinations de la salle, toutes ou seulement certaines"
         },
-        "broadcastAddDestinations": {
+        "broadcastEdit": {
           "LABEL": "Ajouter des destinations",
           "DESCRIPTION": "Permet de diffuser une réunion vers des URL supplémentaires en plus des destinations de la salle. Nécessite « Passer en direct »"
         },

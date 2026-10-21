@@ -150,10 +150,10 @@ describe('Meeting API Security Tests', () => {
 			expectMeetError(response, errorInsufficientPermissions());
 		});
 
-		it('should fail to start to a destination of this meeting without broadcastAddDestinations', async () => {
+		it('should fail to start to a destination of this meeting without broadcastEdit', async () => {
 			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
 				broadcastControl: true,
-				broadcastAddDestinations: false
+				broadcastEdit: false
 			});
 			const memberHeader: [string, string] = [INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken];
 

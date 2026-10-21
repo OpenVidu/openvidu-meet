@@ -195,7 +195,7 @@
           "LABEL": "ライブ配信を開始",
           "DESCRIPTION": "ルームの配信先（すべて、または一部）へのライブ配信の開始と停止を許可します"
         },
-        "broadcastAddDestinations": {
+        "broadcastEdit": {
           "LABEL": "配信先を追加",
           "DESCRIPTION": "ルームの配信先に加えて、追加の URL へミーティングを配信することを許可します。「ライブ配信を開始」が必要です"
         },

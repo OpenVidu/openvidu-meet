@@ -69,7 +69,7 @@ content:
                               recordingDownload: true
                               recordingDelete: true
                               broadcastControl: true
-                              broadcastAddDestinations: true
+                              broadcastEdit: true
                               meetingJoin: true
                               meetingRead: true
                               roomShareAccessLinks: true
@@ -103,7 +103,7 @@ content:
                               recordingDownload: true
                               recordingDelete: false
                               broadcastControl: false
-                              broadcastAddDestinations: false
+                              broadcastEdit: false
                               meetingJoin: true
                               meetingRead: true
                               roomShareAccessLinks: false
