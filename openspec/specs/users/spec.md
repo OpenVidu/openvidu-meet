@@ -344,6 +344,12 @@ The console SHALL offer a Users page only to `admin` users, listing accounts wit
 - **WHEN** the list shows the root admin and their own account
 - **THEN** neither row can be selected nor offers role change, password reset or delete
 
+#### Scenario: Root admin registered after other users
+- **GIVEN** a deployment that restarted with `MEET_INITIAL_ADMIN_USER` changed from `admin` to `root_admin`
+- **WHEN** another administrator opens the Users page
+- **THEN** the `root_admin` row is marked as the root admin and protected
+- **AND** the `admin` row can be selected and offers role change, password reset and delete
+
 ### Requirement: Console user actions
 The console SHALL let an administrator create a user (role `room_manager` preselected, with a generator and a copy button for the temporary password), change a user's role in a dialog warning that a change to `room_member` hands owned rooms to the root admin and a change to `admin` removes room memberships, reset a password with a generated temporary one, and delete one or several users after a confirmation.
 
@@ -393,3 +399,17 @@ Meet SHALL refuse to start, logging which variable is wrong and exiting with a n
 - **GIVEN** a deployment whose root admin account exists
 - **WHEN** Meet restarts with `MEET_INITIAL_ADMIN_PASSWORD` set to `1234`
 - **THEN** Meet starts and the root admin keeps its password
+
+### Requirement: Root admin identified in user responses
+The server SHALL include `isRootAdmin` in every user returned by `createUser`, `getUsers`, `getUser`, `updateUserRole` and `getMe`, `true` for the account whose `userId` equals `MEET_INITIAL_ADMIN_USER` and `false` for every other account.
+
+#### Scenario: Reading the root admin
+- **GIVEN** default configuration
+- **WHEN** an administrator calls `getUser` for `admin`
+- **THEN** the response carries `isRootAdmin` `true`
+
+#### Scenario: Root admin user ID changed
+- **GIVEN** a deployment whose root admin was `admin` and that restarted with `MEET_INITIAL_ADMIN_USER` set to `root_admin`
+- **WHEN** an administrator calls `getUsers`
+- **THEN** `root_admin` carries `isRootAdmin` `true`
+- **AND** `admin` carries `isRootAdmin` `false`
