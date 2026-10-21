@@ -115,14 +115,10 @@ describe('BroadcastConfigSchema', () => {
 		expect(BroadcastConfigSchema.safeParse({ enabled: true, destinations: [] }).success).toBe(true);
 	});
 
-	it('caps the destinations at five', () => {
-		const result = BroadcastConfigSchema.safeParse({
-			enabled: true,
-			destinations: ['a', 'b', 'c', 'd', 'e', 'f'].map(destination)
-		});
+	it('takes any number of destinations', () => {
+		const destinations = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map(destination);
 
-		expect(result.success).toBe(false);
-		expect(issues(result)).toEqual(['destinations: Cannot have more than 5 destinations']);
+		expect(BroadcastConfigSchema.safeParse({ enabled: true, destinations }).success).toBe(true);
 	});
 });
 
@@ -171,14 +167,11 @@ describe('StartBroadcastReqSchema and StopBroadcastsReqSchema', () => {
 		).toBe(false);
 	});
 
-	it('reject more than five entries in either list and an empty id', () => {
-		expect(
-			StartBroadcastReqSchema.safeParse({ roomId, destinations: ['a', 'b', 'c', 'd', 'e', 'f'].map(destination) })
-				.success
-		).toBe(false);
-		expect(
-			issues(StartBroadcastReqSchema.safeParse({ roomId, destinationIds: ['a', 'b', 'c', 'd', 'e', 'f'] }))
-		).toEqual(['destinationIds: Cannot have more than 5 destinations']);
+	it('take any number of entries in either list, and reject an empty id', () => {
+		const names = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
+		expect(StartBroadcastReqSchema.safeParse({ roomId, destinations: names.map(destination) }).success).toBe(true);
+		expect(StartBroadcastReqSchema.safeParse({ roomId, destinationIds: names }).success).toBe(true);
 		expect(StartBroadcastReqSchema.safeParse({ roomId, destinationIds: [' '] }).success).toBe(false);
 		expect(issues(StopBroadcastsReqSchema.safeParse({ roomId, broadcastIds: [] }))).toEqual([
 			'broadcastIds: At least one broadcast id is required'

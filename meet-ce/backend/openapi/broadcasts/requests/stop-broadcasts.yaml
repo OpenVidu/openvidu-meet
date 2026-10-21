@@ -16,7 +16,6 @@ content:
                 broadcastIds:
                     type: array
                     minItems: 1
-                    maxItems: 5
                     description: >
                         The identifiers of the broadcasts to stop, all of them of that room. Omitted, every
                         running broadcast of the meeting.

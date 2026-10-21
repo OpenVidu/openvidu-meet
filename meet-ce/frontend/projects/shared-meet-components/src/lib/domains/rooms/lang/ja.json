@@ -321,7 +321,6 @@
         "ALLOW_BROADCAST_TITLE": "ライブ配信を許可",
         "ALLOW_BROADCAST_DESC": "権限を持つ参加者は、ミーティング中にそれを外部プラットフォームへ配信できます。",
         "DEFAULT_DESTINATIONS": "既定の配信先",
-        "DESTINATIONS_COUNT": "{count} / {max}",
         "DESTINATIONS_DESC": "ミーティングをライブ配信する際、これらすべての配信先、またはそのとき選んだ配信先のみに配信できます。",
         "NO_DESTINATIONS": "ライブ配信を許可するには、配信先を少なくとも 1 つ追加してください。",
         "ADD_DESTINATION": "配信先を追加",
@@ -340,7 +339,7 @@
         "CANCEL": "キャンセル",
         "EDIT": "編集",
         "REMOVE": "削除",
-        "KEYS_HIDDEN": "配信先は最大 {max} 件です。ストリームキーは保存後は表示されません。",
+        "KEYS_HIDDEN": "ストリームキーは保存後は表示されません。",
         "COST_NOTE": "各配信先はサーバーから送信される個別のストリームで、720p では 1 件あたり約 {mbps} Mbps のアップロードを使用します。これら {count} 件の配信先では、ミーティングのライブ中に約 {total} Mbps を使用します。",
         "PERMISSIONS_HINT": "誰がライブ配信を開始し、配信先を選び、追加できるかは、ロールごとに次で設定します：",
         "PERMISSIONS_LINK": "ルームアクセス"

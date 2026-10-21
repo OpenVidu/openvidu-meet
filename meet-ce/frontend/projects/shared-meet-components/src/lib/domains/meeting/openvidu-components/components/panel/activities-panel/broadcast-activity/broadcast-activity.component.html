@@ -115,8 +115,8 @@
 			}
 		</div>
 
-		<div class="destinations-footer">
-			@if (canAddDestination()) {
+		@if (canAddDestination()) {
+			<div class="destinations-footer">
 				<button
 					mat-button
 					type="button"
@@ -127,11 +127,8 @@
 					<mat-icon>add</mat-icon>
 					<span>{{ 'PANEL.BROADCAST.ADD_DESTINATION' | translate }}</span>
 				</button>
-			}
-			<span class="caption-detail">{{
-				'PANEL.BROADCAST.DESTINATIONS_COUNT' | translate: { count: rows().length, max: maxDestinations }
-			}}</span>
-		</div>
+			</div>
+		}
 
 		@if (selectedCount() > 0) {
 			<p class="cost-note activity-hint">
@@ -215,23 +212,18 @@
 			}
 		</div>
 
-		@if (isRunning() && showControls()) {
+		@if (isRunning() && showControls() && canAddDestination()) {
 			<div class="destinations-footer">
-				@if (canAddDestination()) {
-					<button
-						mat-button
-						type="button"
-						id="broadcast-add-destination-btn"
-						class="add-destination"
-						(click)="openAdd()"
-					>
-						<mat-icon>add</mat-icon>
-						<span>{{ 'PANEL.BROADCAST.ADD_DESTINATION' | translate }}</span>
-					</button>
-				}
-				<span class="caption-detail">{{
-					'PANEL.BROADCAST.DESTINATIONS_COUNT' | translate: { count: streamingCount(), max: maxDestinations }
-				}}</span>
+				<button
+					mat-button
+					type="button"
+					id="broadcast-add-destination-btn"
+					class="add-destination"
+					(click)="openAdd()"
+				>
+					<mat-icon>add</mat-icon>
+					<span>{{ 'PANEL.BROADCAST.ADD_DESTINATION' | translate }}</span>
+				</button>
 			</div>
 		}
 	}

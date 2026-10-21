@@ -321,7 +321,6 @@
         "ALLOW_BROADCAST_TITLE": "Permitir emisión en directo",
         "ALLOW_BROADCAST_DESC": "Los participantes con permiso pueden emitir la reunión a plataformas externas mientras se celebra.",
         "DEFAULT_DESTINATIONS": "Destinos por defecto",
-        "DESTINATIONS_COUNT": "{count} de {max}",
         "DESTINATIONS_DESC": "Cuando la reunión se emita en directo, podrá enviarse a todos estos destinos o solo a los elegidos en ese momento.",
         "NO_DESTINATIONS": "Añade al menos un destino para permitir la emisión en directo.",
         "ADD_DESTINATION": "Añadir destino",
@@ -340,7 +339,7 @@
         "CANCEL": "Cancelar",
         "EDIT": "Editar",
         "REMOVE": "Eliminar",
-        "KEYS_HIDDEN": "Hasta {max} destinos. Las claves de emisión quedan ocultas una vez guardadas.",
+        "KEYS_HIDDEN": "Las claves de emisión quedan ocultas una vez guardadas.",
         "COST_NOTE": "Cada destino es una emisión independiente enviada desde tu servidor, de unos {mbps} Mbps de subida a 720p. Con estos {count} destinos, una emisión consume unos {total} Mbps mientras la reunión está en directo.",
         "PERMISSIONS_HINT": "Quién puede emitir, elegir destinos o añadir otros se define por rol en",
         "PERMISSIONS_LINK": "Acceso a la sala"

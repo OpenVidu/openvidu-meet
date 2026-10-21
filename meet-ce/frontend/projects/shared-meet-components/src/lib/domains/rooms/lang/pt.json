@@ -321,7 +321,6 @@
         "ALLOW_BROADCAST_TITLE": "Permitir transmissão ao vivo",
         "ALLOW_BROADCAST_DESC": "Os participantes com permissão podem transmitir a reunião para plataformas externas enquanto ela acontece.",
         "DEFAULT_DESTINATIONS": "Destinos padrão",
-        "DESTINATIONS_COUNT": "{count} de {max}",
         "DESTINATIONS_DESC": "Quando a reunião entrar ao vivo, poderá ser transmitida para todos estes destinos ou apenas para os escolhidos naquele momento.",
         "NO_DESTINATIONS": "Adicione pelo menos um destino para permitir a transmissão ao vivo.",
         "ADD_DESTINATION": "Adicionar destino",
@@ -340,7 +339,7 @@
         "CANCEL": "Cancelar",
         "EDIT": "Editar",
         "REMOVE": "Remover",
-        "KEYS_HIDDEN": "Até {max} destinos. As chaves de transmissão ficam ocultas depois de salvas.",
+        "KEYS_HIDDEN": "As chaves de transmissão ficam ocultas depois de salvas.",
         "COST_NOTE": "Cada destino é uma transmissão separada enviada do seu servidor, cerca de {mbps} Mbps de upload cada em 720p. Com estes {count} destinos, uma transmissão usa cerca de {total} Mbps enquanto a reunião estiver ao vivo.",
         "PERMISSIONS_HINT": "Quem pode entrar ao vivo, escolher destinos ou adicionar outros é definido por função em",
         "PERMISSIONS_LINK": "Acesso à sala"

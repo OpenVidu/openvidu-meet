@@ -183,7 +183,6 @@
 			"UPLOAD_ESTIMATE": "environ {mbps} Mbps de débit montant",
 			"COST_NOTE": "Chaque destination est un flux distinct, environ {mbps} Mbps de débit montant du serveur. Ces {count} destinations utilisent environ {total} Mbps en direct.",
 			"COST_NOTE_ONE": "Chaque destination est un flux distinct, environ {mbps} Mbps de débit montant du serveur. Celle-ci utilise environ {total} Mbps en direct.",
-			"DESTINATIONS_COUNT": "{count} sur {max}",
 			"ADD_DESTINATION": "Ajouter une destination",
 			"NEW_DESTINATION": "Nouvelle destination pour cette réunion",
 			"NAME_LABEL": "Nom",

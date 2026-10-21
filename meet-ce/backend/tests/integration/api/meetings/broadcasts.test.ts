@@ -15,7 +15,6 @@ import { MEET_ENV } from '../../../../src/environment.js';
 import {
 	errorBroadcastAlreadyStarted,
 	errorBroadcastDestinationInUse,
-	errorBroadcastDestinationLimit,
 	errorBroadcastDisabled,
 	errorBroadcastNotFound,
 	errorBroadcastRoomHasNoParticipants,
@@ -262,14 +261,6 @@ describe('Broadcasts API Tests', () => {
 			}
 
 			expect((await getBroadcasts(roomId)).body.broadcasts).toEqual([]);
-		});
-
-		it('should cap a meeting at five destinations at once', async () => {
-			const roomData = await setupMeetingRoom(broadcastConfig(['a', 'b', 'c', 'd', 'e']));
-			const { roomId } = roomData.room;
-
-			expect((await startBroadcasts(roomId)).body.broadcasts).toHaveLength(5);
-			expectMeetError((await startOne(roomId, destination('f'))).response, errorBroadcastDestinationLimit());
 		});
 
 		it('should return 503 when no egress service takes the broadcast, leaving the room free to go live', async () => {

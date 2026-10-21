@@ -157,10 +157,9 @@ MeetBroadcastConfig:
                 and a config update that omits it keeps the saved value.
         destinations:
             type: array
-            maxItems: 5
             default: []
             description: >
-                The destinations a broadcast streams to by default, at most 5, each with its own stream key:
+                The destinations a broadcast streams to by default, each with its own stream key:
                 two destinations with the same stream key, even on different servers, are rejected with a
                 `422`. A config update that omits the list keeps the saved one; one that sends it replaces
                 the whole list: a destination is kept when it comes back with its `id`, changed when it comes

@@ -6,12 +6,7 @@ import type {
 	MeetBroadcastStartOptions,
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
-import {
-	isRedactedStreamUrl,
-	MEET_BROADCAST_MAX_DESTINATIONS,
-	MeetBroadcastStatus,
-	redactStreamUrl
-} from '@openvidu-meet/typings';
+import { isRedactedStreamUrl, MeetBroadcastStatus, redactStreamUrl } from '@openvidu-meet/typings';
 import { lookup } from 'dns/promises';
 import type { EgressInfo } from 'livekit-server-sdk';
 import { BlockList, isIP } from 'net';
@@ -21,7 +16,6 @@ import type { BroadcastDestinationUrls, BroadcastRecord } from '../models/broadc
 import type { EgressError } from '../models/egress.model.js';
 import {
 	errorBroadcastDestinationInUse,
-	errorBroadcastDestinationLimit,
 	errorBroadcastDestinationNotAllowed,
 	errorBroadcastDuplicateDestination,
 	errorBroadcastRedactedDestinationUrl,
@@ -139,15 +133,11 @@ export class BroadcastHelper {
 	}
 
 	/**
-	 * Whether the meeting can take these broadcasts on top of the ones in progress: at most
-	 * {@link MEET_BROADCAST_MAX_DESTINATIONS} run at once, and each stream key once, since the media
-	 * server tells the streams of a meeting apart by their stream key alone when they connect.
+	 * Whether the meeting can take these broadcasts on top of the ones in progress: each stream key
+	 * once, since the media server tells the streams of a meeting apart by their stream key alone
+	 * when they connect.
 	 */
 	static validateNewBroadcasts(inProgress: BroadcastRecord[], targets: MeetBroadcastDestination[]): void {
-		if (inProgress.length + targets.length > MEET_BROADCAST_MAX_DESTINATIONS) {
-			throw errorBroadcastDestinationLimit();
-		}
-
 		const urls = targets.map(({ url }) => url);
 		const duplicate = BroadcastHelper.findRepeatedStreamKey(urls);
 
@@ -197,8 +187,6 @@ export class BroadcastHelper {
 			urls[destinationId] = realUrl;
 			return { id: destinationId, name, url: redactStreamUrl(realUrl) };
 		});
-
-		if (destinations.length > MEET_BROADCAST_MAX_DESTINATIONS) throw errorBroadcastDestinationLimit();
 
 		const duplicate = BroadcastHelper.findRepeatedStreamKey(Object.values(urls));
 

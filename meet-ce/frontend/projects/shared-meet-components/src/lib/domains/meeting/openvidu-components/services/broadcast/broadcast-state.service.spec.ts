@@ -208,8 +208,8 @@ describe('BroadcastStateService', () => {
 		service.requestStarted(start);
 		expect(service.isStarting()).toBeTrue();
 
-		service.requestFailed(start, 'Destination limit reached');
-		expect(service.refusal()).toEqual({ request: start, error: 'Destination limit reached' });
+		service.requestFailed(start, 'Broadcast is disabled');
+		expect(service.refusal()).toEqual({ request: start, error: 'Broadcast is disabled' });
 		service.dismissFailure();
 
 		expect(service.pendingRequests()).toEqual([]);

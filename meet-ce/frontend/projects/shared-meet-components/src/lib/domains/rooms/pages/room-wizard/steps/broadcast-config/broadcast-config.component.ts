@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MEET_BROADCAST_MAX_DESTINATIONS, MeetBroadcastDestination } from '@openvidu-meet/typings';
+import { MeetBroadcastDestination } from '@openvidu-meet/typings';
 import { PlatformIconComponent } from '../../../../../../shared/components/platform-icon/platform-icon.component';
 import { E2eeExclusionWarningComponent } from '../../../../components/e2ee-exclusion-warning/e2ee-exclusion-warning.component';
 import { LayoutPickerComponent } from '../../../../components/layout-picker/layout-picker.component';
@@ -48,7 +48,6 @@ export class BroadcastConfigComponent {
 	private readonly formBuilder = inject(FormBuilder);
 
 	readonly broadcastForm: BroadcastFormGroup;
-	readonly maxDestinations = MEET_BROADCAST_MAX_DESTINATIONS;
 	readonly mbpsPerDestination = BROADCAST_MBPS_PER_DESTINATION;
 
 	readonly editor = new DestinationEditor(this.formBuilder);
@@ -57,9 +56,7 @@ export class BroadcastConfigComponent {
 	readonly isAddingNew = computed(() => this.editingIndex() === NEW_DESTINATION);
 	readonly destinations = signal<MeetBroadcastDestination[]>([]);
 	readonly estimatedMbps = computed(() => broadcastUploadMbps(this.destinations().length));
-	readonly canAddDestination = computed(
-		() => !this.isEditorOpen() && this.destinations().length < this.maxDestinations
-	);
+	readonly canAddDestination = computed(() => !this.isEditorOpen());
 
 	constructor() {
 		const broadcastStep = this.wizardService.getStepById(WizardStepId.BROADCAST);

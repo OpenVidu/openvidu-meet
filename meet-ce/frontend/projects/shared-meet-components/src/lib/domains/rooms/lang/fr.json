@@ -321,7 +321,6 @@
         "ALLOW_BROADCAST_TITLE": "Autoriser la diffusion en direct",
         "ALLOW_BROADCAST_DESC": "Les participants autorisés peuvent diffuser la réunion vers des plateformes externes pendant son déroulement.",
         "DEFAULT_DESTINATIONS": "Destinations par défaut",
-        "DESTINATIONS_COUNT": "{count} sur {max}",
         "DESTINATIONS_DESC": "Lorsque la réunion passe en direct, elle peut être diffusée vers toutes ces destinations ou seulement vers celles choisies à ce moment-là.",
         "NO_DESTINATIONS": "Ajoutez au moins une destination pour autoriser la diffusion en direct.",
         "ADD_DESTINATION": "Ajouter une destination",
@@ -340,7 +339,7 @@
         "CANCEL": "Annuler",
         "EDIT": "Modifier",
         "REMOVE": "Supprimer",
-        "KEYS_HIDDEN": "Jusqu'à {max} destinations. Les clés de diffusion restent masquées une fois enregistrées.",
+        "KEYS_HIDDEN": "Les clés de diffusion restent masquées une fois enregistrées.",
         "COST_NOTE": "Chaque destination est un flux distinct envoyé depuis votre serveur, environ {mbps} Mbps de débit montant chacun en 720p. Avec ces {count} destinations, une diffusion utilise environ {total} Mbps tant que la réunion est en direct.",
         "PERMISSIONS_HINT": "Qui peut passer en direct, choisir des destinations ou en ajouter se définit par rôle dans",
         "PERMISSIONS_LINK": "Accès à la salle"

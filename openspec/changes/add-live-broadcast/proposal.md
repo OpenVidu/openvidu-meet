@@ -6,13 +6,13 @@ Twitch or any RTMP server, without a separate streaming tool.
 
 ## What Changes
 
-- A room saves up to five default RTMP destinations, and the layout and encoding a broadcast streams
+- A room saves any number of default RTMP destinations, and the layout and encoding a broadcast streams
   with, in `config.broadcast`. Live broadcast is off by default, needs at least one destination to be
   on, and is excluded by end-to-end encryption like recording. Stream keys are never served: every
   response, webhook and embedded event carries the URL with its key replaced by `********`, and a
   redacted URL sent back keeps the saved key.
-- A live meeting streams to each destination as its own broadcast, with its own status, up to five at
-  once and each with its own stream key: to the room's destinations, all or a subset, and to
+- A live meeting streams to each destination as its own broadcast, with its own status, as many at
+  once as asked and each with its own stream key: to the room's destinations, all or a subset, and to
   destinations given for that meeting only. A stream the media server runs without a broadcast that
   reports it, because the request that asked for it failed, is stopped.
   New REST operations under `/api/v1/broadcasts`, addressed like recordings: `broadcastStart` (the

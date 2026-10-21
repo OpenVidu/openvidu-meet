@@ -19,7 +19,7 @@ The server SHALL start a broadcast in a room only while the room's `broadcast.en
 - **THEN** the room's `broadcast` is disabled, with no destinations, layout `grid` and encoding `H264_720P_30`
 
 ### Requirement: Room destinations
-A room's `broadcast.destinations` SHALL hold at most five destinations, each a `name` of 1 to 50 characters and an RTMP or RTMPS `url` of the form `rtmp(s)://{host}(/{path})/{app}/{stream_key}`, optionally followed by ` live=1`, whose stream key is what follows the last `/`. The server SHALL give each saved destination an `id`, and SHALL answer `422` to a sixth destination or a malformed name or URL, storing nothing.
+A room's `broadcast.destinations` SHALL hold any number of destinations, each a `name` of 1 to 50 characters and an RTMP or RTMPS `url` of the form `rtmp(s)://{host}(/{path})/{app}/{stream_key}`, optionally followed by ` live=1`, whose stream key is what follows the last `/`. The server SHALL give each saved destination an `id`, and SHALL answer `422` to a malformed name or URL, storing nothing.
 
 #### Scenario: Destination saved
 - **WHEN** `createRoom` is called with `config.broadcast.destinations` holding `{ "name": "YouTube", "url": "rtmp://a.rtmp.youtube.com/live2/abcd-1234" }`
@@ -133,7 +133,7 @@ Each broadcast SHALL stream the meeting with the room's `broadcast.layout` (`gri
 - **THEN** the REST API answers `403`
 
 ### Requirement: Broadcast lists in the responses
-`broadcastStart` and `broadcastStop` SHALL answer with a `broadcasts` list, one entry per broadcast started or stopped, between one and five for a start, each the same broadcast object `broadcastGet` returns and the broadcast webhooks carry. A broadcast SHALL carry what it streams to in `destination`, with the fields of a room config destination: the `id` of a room destination, absent for one given for that meeting only, its `name` and its redacted `url`.
+`broadcastStart` and `broadcastStop` SHALL answer with a `broadcasts` list, one entry per broadcast started or stopped, at least one for a start, each the same broadcast object `broadcastGet` returns and the broadcast webhooks carry. A broadcast SHALL carry what it streams to in `destination`, with the fields of a room config destination: the `id` of a room destination, absent for one given for that meeting only, its `name` and its redacted `url`.
 
 #### Scenario: Two destinations started
 - **GIVEN** a room with two destinations and a meeting in progress
@@ -163,7 +163,7 @@ A start request SHALL name the room destinations to stream to by their ids in `d
 - **THEN** the REST API answers `400` and no broadcast starts
 
 ### Requirement: Destinations for one meeting in a start request
-A start request SHALL give the destinations for that meeting only in `destinations`, each a `name` and a full `url` and nothing else, never saved in the room. The server SHALL answer `422` to an empty `destinationIds` with no `destinations`, to an entry with any other field, to a redacted URL and to more than five broadcasts in progress at once.
+A start request SHALL give the destinations for that meeting only in `destinations`, each a `name` and a full `url` and nothing else, never saved in the room. The server SHALL answer `422` to an empty `destinationIds` with no `destinations`, to an entry with any other field and to a redacted URL. A meeting SHALL stream to any number of destinations at once.
 
 #### Scenario: Nothing to stream to
 - **WHEN** `broadcastStart` is called with an empty `destinationIds` and no `destinations`
@@ -176,7 +176,7 @@ A start request SHALL give the destinations for that meeting only in `destinatio
 #### Scenario: Sixth broadcast
 - **GIVEN** a meeting with five broadcasts in progress
 - **WHEN** `broadcastStart` is called for one more destination
-- **THEN** the REST API answers `422`
+- **THEN** the sixth broadcast starts and the five others go on
 
 ### Requirement: Destinations where no RTMP server can live
 The server SHALL answer `422` to a room destination, and to a destination of a start request, whose host is or resolves to a loopback, link-local, unspecified, multicast or broadcast address, so the media server never streams to its own host or the cloud metadata endpoint. It SHALL accept private network addresses and hosts that do not resolve.
@@ -495,7 +495,7 @@ Before the meeting goes live, the activity SHALL list the room's destinations, a
 - **THEN** going live is disabled and the activity asks to share audio or video first
 
 ### Requirement: Destinations added in the meeting
-A participant holding `broadcastControl` and `broadcastAddDestinations` SHALL be able to add a destination by name and full URL for that meeting while fewer than five are chosen or streamed. Before going live it SHALL be listed and removable; while live, adding it SHALL stream to it at once, and a refusal SHALL keep its editor open with the server's message while the other broadcasts go on.
+A participant holding `broadcastControl` and `broadcastAddDestinations` SHALL be able to add a destination by name and full URL for that meeting. Before going live it SHALL be listed and removable; while live, adding it SHALL stream to it at once, and a refusal SHALL keep its editor open with the server's message while the other broadcasts go on.
 
 #### Scenario: Destination added while live
 - **GIVEN** a meeting streaming to room destination A
@@ -542,7 +542,7 @@ The More options menu SHALL offer a participant holding `broadcastControl` in a 
 - **THEN** no live broadcast item is offered
 
 ### Requirement: Live broadcast in the room wizard
-The console room wizard SHALL offer a Live broadcast step with the switch, up to five default destinations to add, edit and remove, and the layout. A saved stream key SHALL never be shown, and an edited destination SHALL keep it while its URL is left as served. Finishing SHALL be blocked while live broadcast is allowed without a destination.
+The console room wizard SHALL offer a Live broadcast step with the switch, the default destinations to add, edit and remove, and the layout. A saved stream key SHALL never be shown, and an edited destination SHALL keep it while its URL is left as served. Finishing SHALL be blocked while live broadcast is allowed without a destination.
 
 #### Scenario: Allowed without a destination
 - **GIVEN** a user creating a room in the wizard

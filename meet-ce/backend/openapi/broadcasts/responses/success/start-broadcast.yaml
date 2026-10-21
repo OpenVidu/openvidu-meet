@@ -9,7 +9,6 @@ content:
                 broadcasts:
                     type: array
                     minItems: 1
-                    maxItems: 5
                     description: >
                         The broadcasts started, one per destination, each in the `starting` status: the room
                         destinations first, in the order of `destinationIds` or, when it is omitted, of the

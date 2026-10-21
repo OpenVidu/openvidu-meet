@@ -183,7 +183,6 @@
 			"UPLOAD_ESTIMATE": "cerca de {mbps} Mbps de upload",
 			"COST_NOTE": "Cada destino é uma transmissão separada, cerca de {mbps} Mbps de upload do servidor. Estes {count} usam cerca de {total} Mbps ao vivo.",
 			"COST_NOTE_ONE": "Cada destino é uma transmissão separada, cerca de {mbps} Mbps de upload do servidor. Este usa cerca de {total} Mbps ao vivo.",
-			"DESTINATIONS_COUNT": "{count} de {max}",
 			"ADD_DESTINATION": "Adicionar destino",
 			"NEW_DESTINATION": "Novo destino para esta reunião",
 			"NAME_LABEL": "Nome",

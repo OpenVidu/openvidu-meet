@@ -8,7 +8,6 @@ content:
             properties:
                 broadcasts:
                     type: array
-                    maxItems: 5
                     description: >
                         The broadcasts stopped, each in its final state, or none when `broadcastIds` was
                         omitted and the meeting had no broadcast running.

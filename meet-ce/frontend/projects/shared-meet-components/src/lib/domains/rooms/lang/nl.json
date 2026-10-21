@@ -321,7 +321,6 @@
         "ALLOW_BROADCAST_TITLE": "Live-uitzending toestaan",
         "ALLOW_BROADCAST_DESC": "Deelnemers met toestemming kunnen de vergadering tijdens het verloop uitzenden naar externe platforms.",
         "DEFAULT_DESTINATIONS": "Standaardbestemmingen",
-        "DESTINATIONS_COUNT": "{count} van {max}",
         "DESTINATIONS_DESC": "Wanneer de vergadering live gaat, kan die naar al deze bestemmingen worden uitgezonden of alleen naar de op dat moment gekozen bestemmingen.",
         "NO_DESTINATIONS": "Voeg minstens één bestemming toe om live-uitzending toe te staan.",
         "ADD_DESTINATION": "Bestemming toevoegen",
@@ -340,7 +339,7 @@
         "CANCEL": "Annuleren",
         "EDIT": "Bewerken",
         "REMOVE": "Verwijderen",
-        "KEYS_HIDDEN": "Maximaal {max} bestemmingen. Streamsleutels blijven verborgen zodra ze zijn opgeslagen.",
+        "KEYS_HIDDEN": "Streamsleutels blijven verborgen zodra ze zijn opgeslagen.",
         "COST_NOTE": "Elke bestemming is een aparte stream vanaf uw server, ongeveer {mbps} Mbps upload per stuk bij 720p. Met deze {count} bestemmingen gebruikt een uitzending ongeveer {total} Mbps zolang de vergadering live is.",
         "PERMISSIONS_HINT": "Wie live mag gaan, bestemmingen kiest of andere toevoegt, wordt per rol ingesteld onder",
         "PERMISSIONS_LINK": "Toegang tot de ruimte"

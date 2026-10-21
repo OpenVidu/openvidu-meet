@@ -8,7 +8,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
-	MEET_BROADCAST_MAX_DESTINATIONS,
 	MeetBroadcastInfo,
 	MeetBroadcastStartDestination,
 	MeetBroadcastStatus,
@@ -155,7 +154,6 @@ export class BroadcastActivityComponent {
 	 */
 	onBroadcastRequested = output<BroadcastRequestedEvent>();
 
-	readonly maxDestinations = MEET_BROADCAST_MAX_DESTINATIONS;
 	readonly mbpsPerDestination = BROADCAST_MBPS_PER_DESTINATION;
 
 	readonly elapsed = this.broadcastState.elapsed;
@@ -269,10 +267,7 @@ export class BroadcastActivityComponent {
 		() => this.rows().filter(({ status }) => STREAMING_ROW_STATUSES.includes(status)).length
 	);
 	readonly plannedMbps = computed(() => broadcastUploadMbps(this.selectedCount()));
-	readonly canAddDestination = computed(() => {
-		const count = this.isRunning() ? this.streamingCount() : this.selectedCount();
-		return this.showAddDestinations() && !this.editorOpen() && count < this.maxDestinations;
-	});
+	readonly canAddDestination = computed(() => this.showAddDestinations() && !this.editorOpen());
 
 	readonly hasRoomTracksPublished = signal(false);
 	readonly canGoLive = computed(

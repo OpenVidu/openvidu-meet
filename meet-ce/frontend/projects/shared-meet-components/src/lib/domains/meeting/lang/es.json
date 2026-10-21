@@ -183,7 +183,6 @@
 			"UPLOAD_ESTIMATE": "unos {mbps} Mbps de subida",
 			"COST_NOTE": "Cada destino es una emisión independiente, de unos {mbps} Mbps de subida del servidor. Estos {count} consumen unos {total} Mbps en directo.",
 			"COST_NOTE_ONE": "Cada destino es una emisión independiente, de unos {mbps} Mbps de subida del servidor. Este consume unos {total} Mbps en directo.",
-			"DESTINATIONS_COUNT": "{count} de {max}",
 			"ADD_DESTINATION": "Añadir destino",
 			"NEW_DESTINATION": "Nuevo destino para esta reunión",
 			"NAME_LABEL": "Nombre",

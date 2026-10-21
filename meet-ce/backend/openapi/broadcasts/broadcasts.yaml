@@ -5,8 +5,7 @@
         description: |
             Starts streaming the live meeting of a room to one or more RTMP destinations. Each destination gets
             a broadcast of its own, with its own `broadcastId`, status and lifecycle, so one request creates
-            between 1 and 5 broadcasts. A meeting streams to each stream key once, whatever the server it is on,
-            and to at most 5 destinations at a time.
+            one broadcast or more. A meeting streams to each stream key once, whatever the server it is on.
 
             Requires the `broadcastControl` permission, and a room whose config has `broadcast.enabled`.
 

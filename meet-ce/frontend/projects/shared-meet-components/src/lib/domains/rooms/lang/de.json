@@ -321,7 +321,6 @@
         "ALLOW_BROADCAST_TITLE": "Live-Übertragung erlauben",
         "ALLOW_BROADCAST_DESC": "Teilnehmer mit Berechtigung können das Meeting während es läuft auf externe Plattformen übertragen.",
         "DEFAULT_DESTINATIONS": "Standardziele",
-        "DESTINATIONS_COUNT": "{count} von {max}",
         "DESTINATIONS_DESC": "Geht das Meeting live, kann es an alle diese Ziele oder nur an die in dem Moment gewählten übertragen werden.",
         "NO_DESTINATIONS": "Fügen Sie mindestens ein Ziel hinzu, um die Live-Übertragung zu erlauben.",
         "ADD_DESTINATION": "Ziel hinzufügen",
@@ -340,7 +339,7 @@
         "CANCEL": "Abbrechen",
         "EDIT": "Bearbeiten",
         "REMOVE": "Entfernen",
-        "KEYS_HIDDEN": "Bis zu {max} Ziele. Stream-Schlüssel bleiben nach dem Speichern verborgen.",
+        "KEYS_HIDDEN": "Stream-Schlüssel bleiben nach dem Speichern verborgen.",
         "COST_NOTE": "Jedes Ziel ist ein eigener Stream von Ihrem Server, etwa {mbps} Mbit/s Upload je Ziel bei 720p. Mit diesen {count} Zielen verbraucht eine Übertragung etwa {total} Mbit/s, solange das Meeting live ist.",
         "PERMISSIONS_HINT": "Wer live gehen, Ziele auswählen oder weitere hinzufügen darf, wird pro Rolle festgelegt unter",
         "PERMISSIONS_LINK": "Raumzugang"

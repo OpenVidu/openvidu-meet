@@ -1,5 +1,4 @@
 import type { MeetRoomDeletionErrorCode, MeetRoomMemberRole } from '@openvidu-meet/typings';
-import { MEET_BROADCAST_MAX_DESTINATIONS } from '@openvidu-meet/typings';
 import type { Response } from 'express';
 import type { z } from 'zod';
 import { container } from '../config/dependency-injector.config.js';
@@ -314,14 +313,6 @@ export const errorBroadcastDuplicateDestination = (redactedUrl: string): OpenVid
 	return new OpenViduMeetError(
 		'Broadcast Error',
 		`Duplicate destination: '${redactedUrl}' has the stream key of another destination`,
-		422
-	);
-};
-
-export const errorBroadcastDestinationLimit = (): OpenViduMeetError => {
-	return new OpenViduMeetError(
-		'Broadcast Error',
-		`A meeting cannot broadcast to more than ${MEET_BROADCAST_MAX_DESTINATIONS} destinations at once`,
 		422
 	);
 };

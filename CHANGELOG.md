@@ -30,9 +30,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   `participantReactionSent`, with the `participantReactionSend` permission to send them and the room config
   `reactions.enabled` to turn them off.
 - [Broadcasts API][3.10-broadcasts] under `/api/v1/broadcasts`: stream a live meeting to one or more RTMP
-  destinations, one broadcast per destination and up to five at once, each with its own status and its own
-  `broadcastId`, as a recording has, read them and stop one or several. Starting and stopping use the new [`broadcastControl`][3.10-permissions] permission
-  and streaming to a destination the room does not have `broadcastAddDestinations`, both granted to the
+  destinations, one broadcast per destination, each with its own status and its own `broadcastId`, as a
+  recording has, read them and stop one or several. Starting and stopping use the new
+  [`broadcastControl`][3.10-permissions] permission and streaming to a destination the room does not have `broadcastAddDestinations`, both granted to the
   moderator role of rooms created from this release on. The embedded API gets the `broadcastStart` and
   `broadcastStop` commands and the `broadcastStarted`, `broadcastUpdated` and `broadcastEnded` events, the
   webhooks [`broadcastStarted`][3.10-broadcast-started], [`broadcastUpdated`][3.10-broadcast-updated] and

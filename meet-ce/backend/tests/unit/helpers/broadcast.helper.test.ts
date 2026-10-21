@@ -132,21 +132,13 @@ describe('BroadcastHelper.validateNewBroadcasts', () => {
 		urls.map((url, index) => record({ broadcastId: `bc-${index}`, destination: { name: url, url } }));
 	const targets = (urls: string[]) => urls.map((url) => ({ name: url, url }));
 
-	it('lets a meeting stream to five destinations at once, each once', () => {
+	it('lets a meeting stream to any number of destinations at once, each once', () => {
 		expect(() =>
 			BroadcastHelper.validateNewBroadcasts(
-				inProgress(['a', 'b', 'c']),
-				targets(['rtmp://mtx/live/d', 'rtmp://mtx/live/e'])
+				inProgress(['a', 'b', 'c', 'd', 'e', 'f']),
+				targets(['rtmp://mtx/live/g', 'rtmp://mtx/live/h'])
 			)
 		).not.toThrow();
-		expectStatus(
-			() =>
-				BroadcastHelper.validateNewBroadcasts(
-					inProgress(['a', 'b', 'c', 'd']),
-					targets(['rtmp://mtx/live/e', 'rtmp://mtx/live/f'])
-				),
-			422
-		);
 		expectStatus(
 			() => BroadcastHelper.validateNewBroadcasts([], targets(['rtmp://mtx/live/a', 'rtmp://mtx/live/a'])),
 			422
@@ -279,7 +271,7 @@ describe('BroadcastHelper.reconcileRoomDestinations', () => {
 		expect(urls).toEqual({ [destinations[0].id!]: 'rtmp://mtx/live/cccKEYccc' });
 	});
 
-	it('rejects an unknown id, a new destination without its full URL, a repeated id, a repeated stream key and the cap', () => {
+	it('rejects an unknown id, a new destination without its full URL, a repeated id and a repeated stream key', () => {
 		expectStatus(
 			() =>
 				BroadcastHelper.reconcileRoomDestinations(savedUrls, [
@@ -316,14 +308,6 @@ describe('BroadcastHelper.reconcileRoomDestinations', () => {
 					{ id: 'a', name: 'A', url: 'rtmp://mtx/live/********' },
 					{ name: 'Key of A elsewhere', url: 'rtmp://other.example.com/app/aaaKEYaaa' }
 				]),
-			422
-		);
-		expectStatus(
-			() =>
-				BroadcastHelper.reconcileRoomDestinations(
-					{},
-					['c', 'd', 'e', 'f', 'g', 'h'].map((key) => ({ name: key, url: `rtmp://mtx/live/${key}` }))
-				),
 			422
 		);
 	});

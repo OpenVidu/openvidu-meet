@@ -321,7 +321,6 @@
         "ALLOW_BROADCAST_TITLE": "Consenti diretta streaming",
         "ALLOW_BROADCAST_DESC": "I partecipanti con permesso possono trasmettere la riunione su piattaforme esterne mentre si svolge.",
         "DEFAULT_DESTINATIONS": "Destinazioni predefinite",
-        "DESTINATIONS_COUNT": "{count} di {max}",
         "DESTINATIONS_DESC": "Quando la riunione va in diretta, può essere trasmessa a tutte queste destinazioni o solo a quelle scelte in quel momento.",
         "NO_DESTINATIONS": "Aggiungi almeno una destinazione per consentire la diretta streaming.",
         "ADD_DESTINATION": "Aggiungi destinazione",
@@ -340,7 +339,7 @@
         "CANCEL": "Annulla",
         "EDIT": "Modifica",
         "REMOVE": "Rimuovi",
-        "KEYS_HIDDEN": "Fino a {max} destinazioni. Le chiavi dello stream restano nascoste una volta salvate.",
+        "KEYS_HIDDEN": "Le chiavi dello stream restano nascoste una volta salvate.",
         "COST_NOTE": "Ogni destinazione è uno stream separato inviato dal tuo server, circa {mbps} Mbps di upload ciascuno a 720p. Con queste {count} destinazioni, una diretta usa circa {total} Mbps finché la riunione è in onda.",
         "PERMISSIONS_HINT": "Chi può andare in diretta, scegliere le destinazioni o aggiungerne altre si imposta per ruolo in",
         "PERMISSIONS_LINK": "Accesso alla stanza"

@@ -321,7 +321,6 @@
         "ALLOW_BROADCAST_TITLE": "Allow live broadcast",
         "ALLOW_BROADCAST_DESC": "Participants with permission can stream the meeting to external platforms while it happens.",
         "DEFAULT_DESTINATIONS": "Default destinations",
-        "DESTINATIONS_COUNT": "{count} of {max}",
         "DESTINATIONS_DESC": "When the meeting goes live, it can stream to all of these or only to the ones chosen at that moment.",
         "NO_DESTINATIONS": "Add at least one destination to allow live broadcast.",
         "ADD_DESTINATION": "Add destination",
@@ -340,7 +339,7 @@
         "CANCEL": "Cancel",
         "EDIT": "Edit",
         "REMOVE": "Remove",
-        "KEYS_HIDDEN": "Up to {max} destinations. Stream keys stay hidden once saved.",
+        "KEYS_HIDDEN": "Stream keys stay hidden once saved.",
         "COST_NOTE": "Every destination is a separate stream sent from your server, about {mbps} Mbps of upload each at 720p. With these {count} destinations, a broadcast uses about {total} Mbps while the meeting is live.",
         "PERMISSIONS_HINT": "Who can go live, choose destinations or add others is set per role in",
         "PERMISSIONS_LINK": "Room Access"

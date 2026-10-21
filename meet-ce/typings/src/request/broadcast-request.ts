@@ -1,8 +1,7 @@
 /**
  * Payload of the `broadcastStart` embedded command, and body of `POST /broadcasts` next to the
  * `roomId` of the meeting to stream: the destinations to start streaming to, one broadcast each.
- * A meeting streams to each stream key once, whatever the server it is on, and to at most
- * {@link MEET_BROADCAST_MAX_DESTINATIONS} destinations at a time.
+ * A meeting streams to each stream key once, whatever the server it is on.
  */
 export interface MeetBroadcastStartOptions {
 	/**

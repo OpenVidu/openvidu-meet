@@ -44,10 +44,7 @@
 						<span class="section-label">{{
 							'ROOMS.WIZARD.BROADCAST.DEFAULT_DESTINATIONS' | translate
 						}}</span>
-						<span class="section-count" id="broadcast-destinations-count">{{
-							'ROOMS.WIZARD.BROADCAST.DESTINATIONS_COUNT'
-								| translate: { count: destinations().length, max: maxDestinations }
-						}}</span>
+						<span class="section-count" id="broadcast-destinations-count">{{ destinations().length }}</span>
 					</div>
 
 					<div class="destinations-panel">
@@ -115,7 +112,7 @@
 						}
 
 						<p class="destinations-note">
-							{{ 'ROOMS.WIZARD.BROADCAST.KEYS_HIDDEN' | translate: { max: maxDestinations } }}
+							{{ 'ROOMS.WIZARD.BROADCAST.KEYS_HIDDEN' | translate }}
 						</p>
 
 						@if (destinations().length > 0) {

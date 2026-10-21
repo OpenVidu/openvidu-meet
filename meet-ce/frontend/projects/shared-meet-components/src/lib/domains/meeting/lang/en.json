@@ -183,7 +183,6 @@
 			"UPLOAD_ESTIMATE": "about {mbps} Mbps upload",
 			"COST_NOTE": "Each destination is a separate stream, about {mbps} Mbps of server upload. These {count} use about {total} Mbps while live.",
 			"COST_NOTE_ONE": "Each destination is a separate stream, about {mbps} Mbps of server upload. This one uses about {total} Mbps while live.",
-			"DESTINATIONS_COUNT": "{count} of {max}",
 			"ADD_DESTINATION": "Add destination",
 			"NEW_DESTINATION": "New destination for this meeting",
 			"NAME_LABEL": "Name",

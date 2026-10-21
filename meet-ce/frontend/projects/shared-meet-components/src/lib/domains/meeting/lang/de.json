@@ -183,7 +183,6 @@
 			"UPLOAD_ESTIMATE": "etwa {mbps} Mbit/s Upload",
 			"COST_NOTE": "Jedes Ziel ist ein eigener Stream mit etwa {mbps} Mbit/s Server-Upload. Diese {count} verbrauchen live etwa {total} Mbit/s.",
 			"COST_NOTE_ONE": "Jedes Ziel ist ein eigener Stream mit etwa {mbps} Mbit/s Server-Upload. Dieses verbraucht live etwa {total} Mbit/s.",
-			"DESTINATIONS_COUNT": "{count} von {max}",
 			"ADD_DESTINATION": "Ziel hinzufügen",
 			"NEW_DESTINATION": "Neues Ziel für dieses Meeting",
 			"NAME_LABEL": "Name",

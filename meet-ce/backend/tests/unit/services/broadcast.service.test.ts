@@ -471,7 +471,7 @@ describe('BroadcastService', () => {
 			expect(webhooks.events).toEqual([]);
 		});
 
-		it('refuses a room without participants, a destination already streamed to or asked twice, and a sixth destination', async () => {
+		it('refuses a room without participants, and a destination already streamed to or asked twice', async () => {
 			livekit.participants = false;
 			await expectStatus(service.startBroadcasts(ROOM_ID, { destinationIds: ['a'] }), 409);
 
@@ -486,14 +486,6 @@ describe('BroadcastService', () => {
 				}),
 				422
 			);
-
-			await state.save(
-				ROOM_ID,
-				['1', '2', '3', '4'].map((key) =>
-					liveRecord({ broadcastId: `bc-${key}`, destination: { name: key, url: `rtmp://mtx/live/${key}` } })
-				)
-			);
-			await expectStatus(service.startBroadcasts(ROOM_ID, { destinationIds: ['a', 'b'] }), 422);
 			expect(livekit.startCalls).toEqual([]);
 			expect(livekit.updateCalls).toEqual([]);
 		});

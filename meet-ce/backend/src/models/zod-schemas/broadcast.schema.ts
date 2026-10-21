@@ -9,7 +9,6 @@ import {
 	isValidStreamUrl,
 	MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH,
 	MEET_BROADCAST_FIELDS,
-	MEET_BROADCAST_MAX_DESTINATIONS,
 	MeetRecordingLayout
 } from '@openvidu-meet/typings';
 import { z } from 'zod';
@@ -35,11 +34,6 @@ const destinationUrlSchema = z
 	.max(DESTINATION_URL_MAX_LENGTH, `Destination url cannot exceed ${DESTINATION_URL_MAX_LENGTH} characters`)
 	.refine(isValidStreamUrl, 'Destination url must have the form rtmp(s)://{host}(/{path})/{app}/{stream_key}');
 
-const destinationListSchema = <T extends z.ZodType>(item: T) =>
-	z
-		.array(item)
-		.max(MEET_BROADCAST_MAX_DESTINATIONS, `Cannot have more than ${MEET_BROADCAST_MAX_DESTINATIONS} destinations`);
-
 const BroadcastDestinationSchema: z.ZodType<MeetBroadcastDestination> = z.object({
 	id: destinationIdSchema.optional(),
 	name: destinationNameSchema,
@@ -48,7 +42,7 @@ const BroadcastDestinationSchema: z.ZodType<MeetBroadcastDestination> = z.object
 
 export const BroadcastConfigSchema: z.ZodType<MeetBroadcastConfigOptions> = z.object({
 	enabled: z.boolean().optional(),
-	destinations: destinationListSchema(BroadcastDestinationSchema).optional(),
+	destinations: z.array(BroadcastDestinationSchema).optional(),
 	layout: z.enum(MeetRecordingLayout).optional(),
 	encoding: encodingValidator.optional()
 });
@@ -72,8 +66,8 @@ const fieldsSchema = fieldListSchema(MEET_BROADCAST_FIELDS);
 export const StartBroadcastReqSchema: z.ZodType<MeetBroadcastStartOptions & { roomId: string }> = z
 	.object({
 		roomId: nonEmptySanitizedRoomId('roomId'),
-		destinationIds: destinationListSchema(destinationIdSchema).optional(),
-		destinations: destinationListSchema(BroadcastStartDestinationSchema).optional()
+		destinationIds: z.array(destinationIdSchema).optional(),
+		destinations: z.array(BroadcastStartDestinationSchema).optional()
 	})
 	.refine(({ destinationIds, destinations }) => destinationIds?.length !== 0 || Boolean(destinations?.length), {
 		message: 'At least one destination is required: destinationIds is empty and no destinations are given',
@@ -82,11 +76,7 @@ export const StartBroadcastReqSchema: z.ZodType<MeetBroadcastStartOptions & { ro
 
 export const StopBroadcastsReqSchema: z.ZodType<MeetBroadcastStopOptions & { roomId: string }> = z.object({
 	roomId: nonEmptySanitizedRoomId('roomId'),
-	broadcastIds: z
-		.array(broadcastIdSchema)
-		.min(1, 'At least one broadcast id is required')
-		.max(MEET_BROADCAST_MAX_DESTINATIONS, `Cannot stop more than ${MEET_BROADCAST_MAX_DESTINATIONS} broadcasts`)
-		.optional()
+	broadcastIds: z.array(broadcastIdSchema).min(1, 'At least one broadcast id is required').optional()
 });
 
 export const BroadcastIdParamsSchema = z.object({

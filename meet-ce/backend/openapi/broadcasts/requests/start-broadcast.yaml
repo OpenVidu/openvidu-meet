@@ -17,7 +17,6 @@ content:
                     example: 'room-123'
                 destinationIds:
                     type: array
-                    maxItems: 5
                     description: |
                         The `id` of each destination saved in the room's config to stream to, streamed to as
                         saved.
@@ -34,11 +33,10 @@ content:
                         example: 'kX9pL2mQ7a'
                 destinations:
                     type: array
-                    maxItems: 5
                     description: >
                         Destinations for this meeting only, never saved in the room. Requires the
                         `broadcastAddDestinations` permission. A meeting streams to each stream key once,
-                        whatever the server it is on, and to at most 5 destinations at a time.
+                        whatever the server it is on.
                     items:
                         type: object
                         additionalProperties: false

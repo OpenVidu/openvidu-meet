@@ -247,7 +247,7 @@ describe('Broadcast Room Configuration Tests', () => {
 			expectMeetError(response, errorBroadcastDuplicateDestination('rtmp://mirror.example.com/app/********'));
 		});
 
-		it('should reject enabling broadcast without destinations, more than five destinations and a non-RTMP URL', async () => {
+		it('should reject enabling broadcast without destinations and a non-RTMP URL, and take any number of destinations', async () => {
 			for (const broadcast of [{ enabled: true, destinations: [] }, { enabled: true }]) {
 				expectMeetError(
 					await createRoomRequest({ roomName: 'x', config: { broadcast } }),
@@ -255,11 +255,8 @@ describe('Broadcast Room Configuration Tests', () => {
 				);
 			}
 
-			const tooMany = await createRoomRequest({
-				roomName: 'x',
-				config: { broadcast: { enabled: true, destinations: ['a', 'b', 'c', 'd', 'e', 'f'].map(destination) } }
-			});
-			expectValidationError(tooMany, 'config.broadcast.destinations', 'Cannot have more than 5 destinations');
+			const many = await createBroadcastRoom(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']);
+			expect(many.config.broadcast.destinations).toHaveLength(8);
 
 			const httpUrl = await createRoomRequest({
 				roomName: 'x',

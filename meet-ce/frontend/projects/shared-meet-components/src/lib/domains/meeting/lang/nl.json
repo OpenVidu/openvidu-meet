@@ -183,7 +183,6 @@
 			"UPLOAD_ESTIMATE": "ongeveer {mbps} Mbps upload",
 			"COST_NOTE": "Elke bestemming is een aparte stream van ongeveer {mbps} Mbps server-upload. Deze {count} gebruiken live ongeveer {total} Mbps.",
 			"COST_NOTE_ONE": "Elke bestemming is een aparte stream van ongeveer {mbps} Mbps server-upload. Deze gebruikt live ongeveer {total} Mbps.",
-			"DESTINATIONS_COUNT": "{count} van {max}",
 			"ADD_DESTINATION": "Bestemming toevoegen",
 			"NEW_DESTINATION": "Nieuwe bestemming voor deze vergadering",
 			"NAME_LABEL": "Naam",

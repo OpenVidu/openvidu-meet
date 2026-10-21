@@ -183,7 +183,6 @@
 			"UPLOAD_ESTIMATE": "約 {mbps} Mbps のアップロード",
 			"COST_NOTE": "各配信先はそれぞれ独立したストリームで、サーバーから約 {mbps} Mbps をアップロードします。この {count} 件でライブ中に約 {total} Mbps を使用します。",
 			"COST_NOTE_ONE": "各配信先はそれぞれ独立したストリームで、サーバーから約 {mbps} Mbps をアップロードします。この配信先はライブ中に約 {total} Mbps を使用します。",
-			"DESTINATIONS_COUNT": "{count} / {max}",
 			"ADD_DESTINATION": "配信先を追加",
 			"NEW_DESTINATION": "このミーティング用の新しい配信先",
 			"NAME_LABEL": "名前",

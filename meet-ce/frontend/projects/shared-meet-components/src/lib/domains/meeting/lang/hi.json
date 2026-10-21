@@ -183,7 +183,6 @@
 			"UPLOAD_ESTIMATE": "लगभग {mbps} Mbps अपलोड",
 			"COST_NOTE": "हर गंतव्य एक अलग स्ट्रीम है, सर्वर से लगभग {mbps} Mbps अपलोड। ये {count} लाइव रहते हुए लगभग {total} Mbps उपयोग करते हैं।",
 			"COST_NOTE_ONE": "हर गंतव्य एक अलग स्ट्रीम है, सर्वर से लगभग {mbps} Mbps अपलोड। यह लाइव रहते हुए लगभग {total} Mbps उपयोग करता है।",
-			"DESTINATIONS_COUNT": "{max} में से {count}",
 			"ADD_DESTINATION": "गंतव्य जोड़ें",
 			"NEW_DESTINATION": "इस मीटिंग के लिए नया गंतव्य",
 			"NAME_LABEL": "नाम",
