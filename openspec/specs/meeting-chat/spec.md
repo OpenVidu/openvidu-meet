@@ -50,7 +50,7 @@ A participant holding `chatRead` but not `chatWrite` SHALL see the chat read-onl
 - **THEN** the panel shows the messages and the read-only notice, and no input or send button
 
 ### Requirement: Server enforcement of chatWrite
-The server SHALL let a participant publish chat messages to the media server only when they hold `chatWrite`, so a client that bypasses the interface cannot send messages without it; receiving is not affected.
+The server SHALL let a participant publish chat messages to the media server only when they hold `chatWrite` and the room's `config.chat.enabled` is `true`, so a client that bypasses the interface cannot send messages without them; receiving is not affected. A promotion, a demotion or a permission change during the meeting SHALL keep this rule.
 
 #### Scenario: Join token without chatWrite
 - **GIVEN** an identified guest with `chatWrite` false
@@ -61,6 +61,16 @@ The server SHALL let a participant publish chat messages to the media server onl
 - **GIVEN** an identified guest with `chatWrite` true
 - **WHEN** they join the meeting
 - **THEN** their media server grant allows publishing data
+
+#### Scenario: Chat disabled in the room
+- **GIVEN** a room with `config.chat.enabled` false
+- **WHEN** a moderator holding `chatWrite` joins its meeting and a modified client sends a chat message
+- **THEN** their media server grant does not allow publishing data and no participant receives the message
+
+#### Scenario: Promotion in a room without chat
+- **GIVEN** a room with `config.chat.enabled` false and a speaker in its meeting
+- **WHEN** a moderator promotes the speaker
+- **THEN** the promoted participant's media server grant still does not allow publishing data
 
 ### Requirement: Permission changes apply during the meeting
 When a participant's `chatRead` or `chatWrite` changes during the meeting, through a room member update or a promotion to moderator or demotion, the chat SHALL follow without rejoining: the chat button and panel appear or disappear, the input switches to or from read-only, and the media server grant follows `chatWrite`.
@@ -99,7 +109,7 @@ A participant who can write SHALL send a message with the send button or the Ent
 - **THEN** the input accepts no more characters
 
 ### Requirement: Delivery and display
-A sent message SHALL reach every participant of the meeting, in the order it was sent, and be shown to those who can read the chat labelled with the sender's display name; the sender sees it labelled as their own. Addresses in a message SHALL be shown as links.
+A sent message SHALL reach, through the media server, only the participants of the meeting who hold `chatRead` when it is sent, in the order it was sent, so a participant without `chatRead` does not receive it even with a client that bypasses the interface. It SHALL be shown labelled with the sender's display name; the sender sees it labelled as their own. Addresses in a message SHALL be shown as links.
 
 #### Scenario: Receiving a message
 - **GIVEN** two participants in a meeting, `sender` and `receiver`
@@ -116,6 +126,16 @@ A sent message SHALL reach every participant of the meeting, in the order it was
 - **GIVEN** a participant in a meeting
 - **WHEN** they send `demos.openvidu.io`
 - **THEN** the message shows it as a link
+
+#### Scenario: Participant without chatRead
+- **GIVEN** a meeting with a participant whose permissions deny `chatRead`, connected with a client that bypasses the interface
+- **WHEN** another participant sends a message
+- **THEN** the media server does not deliver the message to that participant
+
+#### Scenario: chatRead granted during the meeting
+- **GIVEN** a participant in the meeting whose `chatRead` was just granted
+- **WHEN** another participant sends a message afterwards
+- **THEN** the participant receives and sees it, and does not receive the messages sent before the grant
 
 ### Requirement: Messages last only the meeting
 Chat messages SHALL exist only among the participants of the meeting: the server SHALL keep no history and expose messages through no REST operation, webhook or embedded event, a participant who joins later SHALL NOT see earlier messages, and the next meeting a participant enters SHALL start with an empty chat.
