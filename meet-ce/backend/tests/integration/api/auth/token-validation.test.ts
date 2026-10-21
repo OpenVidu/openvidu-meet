@@ -241,20 +241,6 @@ describe('Token Validation Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when accessing /change-password endpoint with mustChangePassword', async () => {
-				const response = await request(app)
-					.post(`${INTERNAL_USERS_PATH}/change-password`)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, userData.accessToken)
-					.send({
-						currentPassword: resetPassword,
-						newPassword: userData.password
-					});
-				expect(response.status).toBe(200);
-
-				// Reset user password again for futher tests
-				await resetUserPassword(userData.user.userId, resetPassword);
-			});
-
 			it('should fail when accessing other endpoints with mustChangePassword', async () => {
 				// Try to create a room (requires ROOM_MANAGER role which this user has, but password change blocks it)
 				const response = await request(app)
@@ -264,6 +250,27 @@ describe('Token Validation Tests', () => {
 				expect(response.status).toBe(403);
 				expect(response.body).toHaveProperty('message');
 				expect(response.body.message).toContain('Password change required');
+			});
+
+			it('should fail on public endpoints whose path ends in /me with mustChangePassword', async () => {
+				for (const path of [`${USERS_PATH}/me`, `${ROOMS_PATH}/me`]) {
+					const response = await request(app)
+						.get(path)
+						.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, userData.accessToken);
+					expect(response.status).toBe(403);
+					expect(response.body.message).toContain('Password change required');
+				}
+			});
+
+			it('should succeed when accessing /change-password endpoint with mustChangePassword', async () => {
+				const response = await request(app)
+					.post(`${INTERNAL_USERS_PATH}/change-password`)
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, userData.accessToken)
+					.send({
+						currentPassword: resetPassword,
+						newPassword: userData.password
+					});
+				expect(response.status).toBe(200);
 			});
 		});
 
@@ -292,6 +299,26 @@ describe('Token Validation Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
+			it('should fail when accessing other endpoints with temporary token', async () => {
+				const response = await request(app)
+					.post(ROOMS_PATH)
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessTokenTmp)
+					.send({});
+				expect(response.status).toBe(403);
+				expect(response.body).toHaveProperty('message');
+				expect(response.body.message).toContain('Password change required');
+			});
+
+			it('should fail on public endpoints whose path ends in /me with temporary token', async () => {
+				for (const path of [`${USERS_PATH}/me`, `${ROOMS_PATH}/me`]) {
+					const response = await request(app)
+						.get(path)
+						.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessTokenTmp);
+					expect(response.status).toBe(403);
+					expect(response.body.message).toContain('Password change required');
+				}
+			});
+
 			it('should succeed when accessing /change-password endpoint with temporary token', async () => {
 				const response = await request(app)
 					.post(`${INTERNAL_USERS_PATH}/change-password`)
@@ -301,16 +328,6 @@ describe('Token Validation Tests', () => {
 						newPassword: 'FinalPassword123!'
 					});
 				expect(response.status).toBe(200);
-			});
-
-			it('should fail when accessing other endpoints with temporary token', async () => {
-				const response = await request(app)
-					.post(ROOMS_PATH)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessTokenTmp)
-					.send({});
-				expect(response.status).toBe(403);
-				expect(response.body).toHaveProperty('message');
-				expect(response.body.message).toContain('Password change required');
 			});
 		});
 	});

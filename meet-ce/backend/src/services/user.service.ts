@@ -5,6 +5,7 @@ import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { PasswordHelper } from '../helpers/password.helper.js';
+import { DuplicateKeyError } from '../models/database.model.js';
 import {
 	errorCannotChangeOwnRole,
 	errorCannotChangeRootAdminRole,
@@ -16,6 +17,7 @@ import {
 	errorUserAlreadyExists,
 	errorUserNotFound
 } from '../models/error.model.js';
+import { LoginReqSchema } from '../models/zod-schemas/auth.schema.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
@@ -51,6 +53,9 @@ export class UserService {
 	 * Initializes the default admin user
 	 */
 	async initializeAdminUser(): Promise<void> {
+		const { userId: userIdSchema, password: passwordSchema } = LoginReqSchema.shape;
+		this.assertLoginMinLength('MEET_INITIAL_ADMIN_USER', MEET_ENV.INITIAL_ADMIN_USER, userIdSchema.minLength);
+
 		// Check if the admin user already exists
 		const existingUser = await this.userRepository.findByUserId(MEET_ENV.INITIAL_ADMIN_USER, ['userId']);
 
@@ -58,6 +63,12 @@ export class UserService {
 			this.logger.info('Admin user already initialized, skipping admin user initialization');
 			return;
 		}
+
+		this.assertLoginMinLength(
+			'MEET_INITIAL_ADMIN_PASSWORD',
+			MEET_ENV.INITIAL_ADMIN_PASSWORD,
+			passwordSchema.minLength
+		);
 
 		const admin: MeetUser = {
 			userId: MEET_ENV.INITIAL_ADMIN_USER,
@@ -73,13 +84,16 @@ export class UserService {
 		this.logger.info(`Admin user initialized with default credentials`);
 	}
 
-	async createUser(userOptions: MeetUserOptions): Promise<MeetUser> {
-		const existingUser = await this.userRepository.findByUserId(userOptions.userId, ['userId']);
-
-		if (existingUser) {
-			throw errorUserAlreadyExists(userOptions.userId);
+	/**
+	 * A root admin configured below the login minimum could never log in, so startup refuses it.
+	 */
+	protected assertLoginMinLength(variable: string, value: string, minLength: number | null): void {
+		if (minLength !== null && value.length < minLength) {
+			throw new Error(`${variable} must be at least ${minLength} characters long`);
 		}
+	}
 
+	async createUser(userOptions: MeetUserOptions): Promise<MeetUser> {
 		const passwordHash = await PasswordHelper.hashPassword(userOptions.password);
 		const now = Date.now();
 		const user: MeetUser = {
@@ -92,7 +106,10 @@ export class UserService {
 			mustChangePassword: true
 		};
 
-		const createdUser = await this.userRepository.create(user);
+		const createdUser = await this.userRepository.create(user).catch((error: unknown) => {
+			throw error instanceof DuplicateKeyError ? errorUserAlreadyExists(userOptions.userId) : error;
+		});
+
 		this.logger.info(`User '${createdUser.userId}' created`);
 		return createdUser;
 	}
@@ -448,6 +465,6 @@ export class UserService {
 		const { passwordHash, mustChangePassword, ...userDTO } = user;
 		void passwordHash;
 		void mustChangePassword;
-		return userDTO;
+		return { ...userDTO, isRootAdmin: user.userId === MEET_ENV.INITIAL_ADMIN_USER };
 	}
 }

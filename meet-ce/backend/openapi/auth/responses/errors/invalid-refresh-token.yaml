@@ -1,4 +1,6 @@
-description: Bad Request — The refresh token is missing or invalid
+description: >
+    Bad Request. The refresh token is missing or invalid, belongs to a session that logged out, was issued
+    before the user changed their password, or was already exchanged with rotation enabled
 content:
     application/json:
         schema:

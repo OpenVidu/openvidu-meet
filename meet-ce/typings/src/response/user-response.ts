@@ -5,7 +5,10 @@ import { TextMatchMode } from './text-match.js';
 /**
  * Data Transfer Object (DTO) for MeetUser, excluding sensitive fields.
  */
-export type MeetUserDTO = Omit<MeetUser, 'passwordHash' | 'mustChangePassword'>;
+export type MeetUserDTO = Omit<MeetUser, 'passwordHash' | 'mustChangePassword'> & {
+	/** Whether this account is the root admin, the one whose `userId` is `MEET_INITIAL_ADMIN_USER`. */
+	isRootAdmin: boolean;
+};
 
 /**
  * List of all valid fields that can be selected from a MeetUser.

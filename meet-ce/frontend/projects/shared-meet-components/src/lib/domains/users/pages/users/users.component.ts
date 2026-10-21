@@ -65,7 +65,6 @@ export class UsersComponent implements OnInit, OnDestroy {
 	protected scrollToRestore = 0;
 
 	currentUserId = signal<string>('');
-	rootAdminId = signal<string>('');
 
 	initialFilters = signal<UserTableFilter>({
 		nameFilter: '',
@@ -90,10 +89,6 @@ export class UsersComponent implements OnInit, OnDestroy {
 		const isBackNavigation = this.navigationService.isPopStateNavigation();
 
 		this.currentUserId.set((await this.authService.getUserId()) ?? '');
-
-		const rootAdmin = await this.userService.getRootAdmin();
-
-		if (rootAdmin) this.rootAdminId.set(rootAdmin.userId);
 
 		// Restore cached state only when navigating *back* (browser back/forward); an
 		// explicit navigation to this page loads fresh data so others' changes show.

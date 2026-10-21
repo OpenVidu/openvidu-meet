@@ -35,3 +35,15 @@ export class DocumentNotFoundError extends Error {
 		this.name = 'DocumentNotFoundError';
 	}
 }
+
+/**
+ * Raised by the base repository when a write collides with a unique index (MongoDB error code 11000),
+ * e.g. a concurrent request created the same document first. Like {@link DocumentNotFoundError}, it carries
+ * no HTTP status: the service layer translates it into a domain `OpenViduMeetError`.
+ */
+export class DuplicateKeyError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'DuplicateKeyError';
+	}
+}

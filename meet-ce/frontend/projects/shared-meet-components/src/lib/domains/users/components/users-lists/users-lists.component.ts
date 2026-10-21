@@ -104,7 +104,6 @@ export class UsersListsComponent implements OnInit {
 
 	users = input<MeetUserDTO[]>([]);
 	currentUserId = input('');
-	rootAdminId = input('');
 	showSearchBox = input(true);
 	showFilters = input(true);
 	showSelection = input(true);
@@ -317,7 +316,7 @@ export class UsersListsComponent implements OnInit {
 	}
 
 	canSelectUser(user: MeetUserDTO): boolean {
-		return !UsersUiUtils.isProtectedUser(user, this.currentUserId(), this.rootAdminId());
+		return !UsersUiUtils.isProtectedUser(user, this.currentUserId());
 	}
 
 	getSelectedUsers(): MeetUserDTO[] {

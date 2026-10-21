@@ -26,6 +26,7 @@ describe('Users API Tests', () => {
 			expect(response.body).toHaveProperty('role', MeetUserRole.ADMIN);
 			expect(response.body).toHaveProperty('registrationDate');
 			expect(response.body).toHaveProperty('roleUpdatedAt');
+			expect(response.body).toHaveProperty('isRootAdmin', false);
 		});
 
 		it('should get root admin user', async () => {
@@ -34,6 +35,7 @@ describe('Users API Tests', () => {
 			expect(response.body).toHaveProperty('userId', MEET_ENV.INITIAL_ADMIN_USER);
 			expect(response.body).toHaveProperty('name', 'Admin');
 			expect(response.body).toHaveProperty('role', MeetUserRole.ADMIN);
+			expect(response.body).toHaveProperty('isRootAdmin', true);
 		});
 
 		it('should get user with different roles', async () => {

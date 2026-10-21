@@ -7,6 +7,7 @@
 
             > **Note:** Only one API key can be created in the system.
             > If an API key already exists, it will be replaced with the new one.
+            > Simultaneous calls run one after the other, and the last one's key is the one that remains.
 
             **Access token roles**: `admin`.
         tags:
@@ -20,6 +21,8 @@
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
                 $ref: '../shared/responses/errors/forbidden.yaml'
+            '409':
+                $ref: './responses/errors/api-key-change-in-progress.yaml'
             '429':
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':

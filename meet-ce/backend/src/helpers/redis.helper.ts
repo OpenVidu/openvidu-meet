@@ -66,6 +66,10 @@ export class MeetLock {
 		return `${RedisLockPrefix.BASE}${RedisLockName.WEBHOOK_REGISTRATION}`;
 	}
 
+	static getApiKeyLock(): string {
+		return `${RedisLockPrefix.BASE}${RedisLockName.API_KEY}`;
+	}
+
 	static getAiAssistantLock(roomId: string, capabilityName: string): string {
 		if (!roomId) {
 			throw new Error('roomId must be a non-empty string');

@@ -5,6 +5,7 @@ import {
 	deleteAllRooms,
 	deleteAllUsers,
 	deleteUser,
+	getMe,
 	loginRootAdmin,
 	refreshTokenReq,
 	resetUserPassword,
@@ -45,6 +46,8 @@ describe('Authentication API Tests', () => {
 			expect(response.body.message).toContain('successfully refreshed');
 			expect(response.body).toHaveProperty('accessToken');
 			expect(response.body).not.toHaveProperty('refreshToken');
+
+			expect((await refreshTokenReq(refreshToken)).status).toBe(200);
 		});
 
 		it('should return a new refresh token when refresh rotation is enabled', async () => {
@@ -60,6 +63,30 @@ describe('Authentication API Tests', () => {
 			expect(secondRefreshResponse.status).toBe(200);
 			expect(secondRefreshResponse.body).toHaveProperty('accessToken');
 			expect(secondRefreshResponse.body).toHaveProperty('refreshToken');
+		});
+
+		it('should refuse a rotated refresh token presented again, keeping the tokens the first exchange returned', async () => {
+			MEET_ENV.REFRESH_TOKEN_ROTATION_ENABLED = 'true';
+			const login = await loginRootAdmin();
+
+			const firstExchange = await refreshTokenReq(login.refreshToken);
+			expect(firstExchange.status).toBe(200);
+
+			const secondExchange = await refreshTokenReq(login.refreshToken);
+			expect(secondExchange.status).toBe(400);
+			expect(secondExchange.body.message).toBe('Invalid refresh token');
+
+			expect((await getMe(`Bearer ${firstExchange.body.accessToken}`)).status).toBe(200);
+			expect((await refreshTokenReq(`Bearer ${firstExchange.body.refreshToken}`)).status).toBe(200);
+		});
+
+		it('should exchange a refresh token presented twice at once only once', async () => {
+			MEET_ENV.REFRESH_TOKEN_ROTATION_ENABLED = 'true';
+			const { refreshToken } = await loginRootAdmin();
+
+			const responses = await Promise.all([refreshTokenReq(refreshToken), refreshTokenReq(refreshToken)]);
+
+			expect(responses.map((response) => response.status).sort()).toEqual([200, 400]);
 		});
 
 		it('should fail when refresh token is missing', async () => {

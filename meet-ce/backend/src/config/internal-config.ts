@@ -73,6 +73,11 @@ export const INTERNAL_CONFIG = {
 	WEBHOOK_REQUEST_TIMEOUT: 5000, // Timeout in ms for each webhook HTTP request (delivery and URL test)
 	WEBHOOK_REGISTRY_LOCK_TTL: '5s' as StringValue, // Redis lock TTL serializing the webhook registration count-then-create against WEBHOOK_MAX_ENDPOINTS
 
+	// API key
+	API_KEY_LOCK_TTL: '5s' as StringValue, // Redis lock TTL serializing every API key replacement and the startup seeding, so exactly one key remains
+	API_KEY_LOCK_RETRY_DELAY: '200ms' as StringValue, // Delay between API key lock acquisition attempts
+	API_KEY_LOCK_MAX_ATTEMPTS: 10, // A regeneration still finding the lock taken after this answers 409
+
 	CAPTIONS_AGENT_NAME: 'speech-processing',
 	ASSISTANT_STATE_LOCK_TTL: '60s' as StringValue, // Redis lock TTL for AI assistant state (start/stop operations)
 

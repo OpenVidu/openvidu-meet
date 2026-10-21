@@ -9,6 +9,10 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 ## 3.10.0 (unreleased)
 
+### Upgrade notes
+
+- Meet no longer starts when `MEET_INITIAL_ADMIN_USER` is shorter than 5 characters.
+
 ### Added
 
 #### Integration
@@ -29,6 +33,7 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - Reactions, in the meeting and through the embedded command `participantReactionSend` and the embedded event
   `participantReactionSent`, with the `participantReactionSend` permission to send them and the room config
   `reactions.enabled` to turn them off.
+- User responses carry `isRootAdmin`, `true` for the `MEET_INITIAL_ADMIN_USER` account.
 
 #### Deployment
 
@@ -77,6 +82,15 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - A recording ended by the stale-recordings clean-up sent no [`recordingEnded`][3.9-recording-ended] webhook and stayed
   in progress in the meeting and for the embedded event `recordingStatusChanged`. Its end is now reported like any
   other, once.
+- The access token of a user with a pending password change also reached public endpoints whose path ends in `/me`
+  or `/change-password`, such as `GET /api/v1/users/me`. Only `getMe` and `changeUserPassword` accept it now.
+- Two simultaneous API key regenerations could leave two API keys, both accepted. Exactly one remains now, the last
+  one generated.
+- Logging out, changing one's own password and refreshing with rotation left the earlier user tokens valid until
+  they expired. `logoutUser` now revokes the session's tokens, `changeUserPassword` revokes every earlier token of
+  the user and returns new ones, and a rotated refresh token is accepted once.
+- Two simultaneous [`createUser`][3.10-create-user] requests with the same `userId` could answer `500`. The one that
+  finds the `userId` taken now answers `409`.
 
 #### UI
 
@@ -108,6 +122,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - The recording lists of the console and the room recordings page offered play and share on every recording, even to a
   user or room member without `recordingPlay`, and those actions then failed. They are now disabled, with a tooltip,
   without `recordingPlay`.
+- The console treated the earliest registered user as the root admin, so after a change of
+  `MEET_INITIAL_ADMIN_USER` it protected the wrong account. It now protects the `MEET_INITIAL_ADMIN_USER` account.
 
 #### Deployment
 
@@ -120,6 +136,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - A `MEET_S3_SUBBUCKET` or `MEET_AZURE_SUBCONTAINER_NAME` that begins the recordings path, such as `rec` or
   `recordings`, made Meet look for recordings outside the prefix they were written under, so they could not be played,
   downloaded or deleted. They are now read under the prefix.
+- A `MEET_INITIAL_ADMIN_USER` or `MEET_INITIAL_ADMIN_PASSWORD` shorter than 5 characters created a root admin that
+  could never log in. Meet now refuses to start with such a value and names the variable.
 
 ## 3.9.0
 
@@ -256,6 +274,7 @@ registered on both receives it twice.
 - Unanswered webhooks caused active connections to grow continuously. Every webhook is answered.
 - The `openvidu/openvidu-meet` Docker image resolved its dependencies anew on every build instead of installing the versions in the lockfile. It now installs the locked versions.
 
+[3.10-create-user]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/createUser
 [3.10-participant-role-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantRoleChangedWebhook
 [3.10-participant-role-update]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantRoleUpdate
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html

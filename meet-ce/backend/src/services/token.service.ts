@@ -3,6 +3,7 @@ import { inject, injectable } from 'inversify';
 import { jwtDecode } from 'jwt-decode';
 import type { AccessTokenOptions, ClaimGrants, VideoGrant } from 'livekit-server-sdk';
 import { AccessToken, TokenVerifier } from 'livekit-server-sdk';
+import { uid } from 'uid/secure';
 import { MEET_ENV } from '../environment.js';
 import { validateTokenMetadata } from '../middlewares/request-validators/auth-validator.middleware.js';
 import { validateRoomMemberTokenMetadata } from '../middlewares/request-validators/room-member-validator.middleware.js';
@@ -14,10 +15,18 @@ import { LoggerService } from './logger.service.js';
 export class TokenService {
 	constructor(@inject(LoggerService) protected logger: LoggerService) {}
 
-	async generateAccessToken(user: MeetUser, isTemporary = false): Promise<string> {
+	/**
+	 * Starts a login session: a new session id for the tokens a login or a password change returns.
+	 */
+	createSessionId(): string {
+		return uid(32);
+	}
+
+	async generateAccessToken(user: MeetUser, sid: string, isTemporary = false): Promise<string> {
 		const tokenMetadata: TokenMetadata = {
 			iat: Date.now(),
-			tokenType: isTemporary ? TokenType.TEMPORARY : TokenType.ACCESS
+			tokenType: isTemporary ? TokenType.TEMPORARY : TokenType.ACCESS,
+			sid
 		};
 		const tokenOptions: AccessTokenOptions = {
 			identity: user.userId,
@@ -38,10 +47,12 @@ export class TokenService {
 		}
 	}
 
-	async generateRefreshToken(user: MeetUser): Promise<string> {
+	async generateRefreshToken(user: MeetUser, sid: string): Promise<string> {
 		const tokenMetadata: TokenMetadata = {
 			iat: Date.now(),
-			tokenType: TokenType.REFRESH
+			tokenType: TokenType.REFRESH,
+			sid,
+			rid: uid(32)
 		};
 		const tokenOptions: AccessTokenOptions = {
 			identity: user.userId,
