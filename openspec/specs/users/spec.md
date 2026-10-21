@@ -143,13 +143,26 @@ The server SHALL return the account of the caller from `getMe` for a user of any
 - **THEN** the server answers `401`
 
 ### Requirement: Change own password
-The server SHALL let any logged-in user replace their password through `changeUserPassword` by giving the current one, answer `400` when the current password is wrong and `422` when the new one is shorter than 5 characters, and accept only the new password at later logins.
+The server SHALL let any logged-in user replace their password through `changeUserPassword` by giving the current one, answer `400` when the current password is wrong and `422` when the new one is shorter than 5 characters, and accept only the new password at later logins. A successful change SHALL answer `200` with a new `accessToken` and `refreshToken` and SHALL reject, on every replica, every access token and refresh token issued to the user before it.
 
 #### Scenario: Password changed
 - **GIVEN** a logged-in user without a pending password change
 - **WHEN** they call `changeUserPassword` with their current password and a new valid one
-- **THEN** the server answers `200` without new tokens
+- **THEN** the server answers `200` with an `accessToken` and a `refreshToken`
 - **AND** logging in with the old password fails and with the new one succeeds
+
+#### Scenario: Other sessions signed out
+- **GIVEN** a user logged in from two browsers
+- **WHEN** they change their password from the first one
+- **THEN** the second browser's access token answers `401` with message `Invalid token`
+- **AND** its refresh token answers `400` with message `Invalid refresh token`
+- **AND** the tokens the change returned are accepted
+
+#### Scenario: Change on another replica
+- **GIVEN** two Meet replicas and a user logged in from two browsers
+- **WHEN** the user changes their password through the first replica
+- **AND** the second browser presents its earlier access token to the second replica
+- **THEN** the second replica answers `401` with message `Invalid token`
 
 #### Scenario: Wrong current password
 - **WHEN** a user calls `changeUserPassword` with a wrong current password
@@ -361,3 +374,22 @@ The console SHALL send a user with a pending password change, after login, to a 
 - **WHEN** they log in to the console with the temporary password
 - **THEN** the console shows the password change page
 - **AND** after a successful change it opens the page they originally requested
+
+### Requirement: Root admin configuration validated at startup
+Meet SHALL refuse to start, logging which variable is wrong and exiting with a non-zero status, when `MEET_INITIAL_ADMIN_USER` is shorter than 5 characters, or when no account has that `userId` yet and `MEET_INITIAL_ADMIN_PASSWORD` is shorter than 5 characters. A `MEET_INITIAL_ADMIN_PASSWORD` of any length is accepted when the root admin account already exists.
+
+#### Scenario: Short root admin user ID
+- **GIVEN** `MEET_INITIAL_ADMIN_USER` set to `root`
+- **WHEN** Meet starts
+- **THEN** it logs that `MEET_INITIAL_ADMIN_USER` must be at least 5 characters long and exits with a non-zero status
+
+#### Scenario: Short password on the first start
+- **GIVEN** an empty database and `MEET_INITIAL_ADMIN_PASSWORD` set to `1234`
+- **WHEN** Meet starts
+- **THEN** it logs that `MEET_INITIAL_ADMIN_PASSWORD` must be at least 5 characters long and exits with a non-zero status
+- **AND** no root admin account is created
+
+#### Scenario: Short password with an existing root admin
+- **GIVEN** a deployment whose root admin account exists
+- **WHEN** Meet restarts with `MEET_INITIAL_ADMIN_PASSWORD` set to `1234`
+- **THEN** Meet starts and the root admin keeps its password
