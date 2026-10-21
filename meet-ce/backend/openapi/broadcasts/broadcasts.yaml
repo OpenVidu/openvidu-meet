@@ -4,43 +4,23 @@
         summary: Start broadcasts
         description: |
             Starts streaming the live meeting of a room to one or more RTMP destinations. Each destination gets
-            a broadcast of its own, with its own `broadcastId`, status and lifecycle, so one request creates
-            one broadcast or more. A meeting streams to each stream key once, whatever the server it is on.
+            a broadcast of its own, with its own `broadcastId`, status and lifecycle.
 
             Requires the `broadcastControl` permission, and a room whose config has `broadcast.enabled`.
 
-            The destinations come from two fields of the body:
+            `destinationIds` picks among the destinations saved in the room's config, and `destinations` adds
+            destinations for this meeting only, which also requires the `broadcastEdit` permission. Without
+            `destinationIds`, the meeting streams to every saved destination it is not streaming to yet.
 
-            - `destinationIds` picks among the destinations saved in the room's config, by their `id`, each
-              streamed to as saved. What it starts depends on whether it is omitted, empty or has ids:
-
-              | `destinationIds` | Room destinations streamed to |
-              | ---------------- | ----------------------------- |
-              | Omitted | Every room destination the meeting is not streaming to yet |
-              | `[]` | None |
-              | `["id1"]` | Only the ones listed |
-
-              An `id` the room does not have is rejected with a `400`.
-            - `destinations` adds destinations for this meeting only, by `name` and `url`, never saved in the
-              room. It requires the `broadcastEdit` permission.
-
-            With an empty `destinationIds`, `destinations` must have at least one entry, or the request is
-            rejected with a `422`.
-
-            The response lists one broadcast per destination in `broadcasts`: the room destinations first, in
-            the order of `destinationIds` or, when it is omitted, of the room's config, then those for this
-            meeting in the order of `destinations`. Every broadcast is the same object that
-            [fetching a broadcast](#/operations/broadcastGet) returns and the broadcast webhooks carry.
-
-            Either every broadcast starts or none does. The request completes as soon as the media server
-            accepts the streams, and returns each broadcast in the `starting` status. A broadcast becomes
-            `active` once its destination receives media, and `failed` if the destination rejects or loses it.
-            Follow the transitions through the [`broadcastUpdated`](#/webhooks/broadcastUpdatedWebhook) and
+            Either every broadcast starts or none does. The response lists each one in the `starting` status.
+            A broadcast becomes `active` once its destination receives media, and `failed` if the destination
+            rejects or loses the stream. Follow the transitions through the
+            [`broadcastUpdated`](#/webhooks/broadcastUpdatedWebhook) and
             [`broadcastEnded`](#/webhooks/broadcastEndedWebhook) webhooks or by
             [fetching a broadcast](#/operations/broadcastGet).
 
-            Starting a broadcast to a destination the meeting already streams to, or to one with the same
-            stream key on another server, is rejected with a `409`, as is starting one while the meeting has no
+            Starting a destination the meeting already streams to, or one with the same stream key as a
+            destination already streamed to, is rejected with a `409`, as is starting while the meeting has no
             participants.
         tags:
             - OpenVidu Meet - Broadcasts

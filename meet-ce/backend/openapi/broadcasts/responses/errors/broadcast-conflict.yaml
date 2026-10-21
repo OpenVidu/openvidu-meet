@@ -1,7 +1,7 @@
 description: >
     Conflict: the meeting already streams to a destination asked for, or to one with the same stream key,
-    or to every room destination when none is asked for, has no participants to broadcast, or its
-    broadcasts were held by another change for too long
+    or to every room destination when none is asked for, has no participants to broadcast, or another
+    broadcast request of the meeting was still being applied: retry it
 content:
     application/json:
         schema:

@@ -52,9 +52,9 @@ properties:
         example: false
         description: >
             Can start and stop the live broadcast of the meeting, choose which of the room's destinations it
-            streams to, and stop or restart any of them while it runs. Has no deprecated `can*` equivalent.
-            A room created from 3.10.0 on grants it to the moderator role and denies it to the speaker role
-            by default; a room or member that existed before 3.10.0 starts without it.
+            streams to, and stop or restart any of them while it runs. A room created from 3.10.0 on grants it
+            to the moderator role and denies it to the speaker role by default; a room or member that existed
+            before 3.10.0 starts without it.
     broadcastEdit:
         type: boolean
         example: false

@@ -160,7 +160,7 @@ MeetBroadcastConfig:
             default: []
             description: >
                 The destinations a broadcast streams to by default, each with its own stream key:
-                two destinations with the same stream key, even on different servers, are rejected with a
+                two destinations with the same stream key, even if their URLs differ, are rejected with a
                 `422`. A config update that omits the list keeps the saved one; one that sends it replaces
                 the whole list: a destination is kept when it comes back with its `id`, changed when it comes
                 back with a different `name` or a full `url`, and removed when it is left out.
@@ -213,13 +213,12 @@ MeetBroadcastDestination:
             description: >
                 The RTMP or RTMPS URL of the destination, stream key included, of the form
                 `rtmp(s)://{host}(/{path})/{app}/{stream_key}`, optionally followed by ` live=1`; any other
-                form, a URL ending in `/`, with a `#` or whose stream key is only a query string among them, is
-                rejected with a `422`. The stream key, what follows the last `/`, is a secret: every response
-                replaces it, and any query string attached to it, with `********`, and a config update that
-                sends the redacted URL back exactly as served keeps the stored key. A new destination, and a
-                changed host or path, need the full URL: a redacted URL with any other change is rejected
-                with a `422`. A URL whose host is or resolves to a loopback, link-local (the cloud metadata
-                endpoint among them), unspecified, multicast or broadcast address is rejected with a `422`.
+                form is rejected with a `422`. The stream key, what follows the last `/`, is a secret: every
+                response replaces it with `********`, and a config update that sends the redacted URL back
+                exactly as served keeps the stored key. A new destination, and a changed host or path, need
+                the full URL: a redacted URL with any other change is rejected with a `422`. A URL whose host
+                is or resolves to a loopback, link-local, unspecified, multicast or broadcast address is
+                rejected with a `422`.
 MeetVirtualBackgroundConfig:
     type: object
     required:

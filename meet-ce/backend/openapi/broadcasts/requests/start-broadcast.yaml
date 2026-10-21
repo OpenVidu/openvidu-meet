@@ -1,8 +1,4 @@
-description: >
-    The room whose meeting to stream, and the destinations to stream it to, one broadcast each: the room
-    destinations named by `destinationIds`, then the `destinations` given for this meeting only. Without
-    `destinationIds`, the meeting streams to every destination saved in the room's config that it is not
-    streaming to yet; with an empty list, to none of them.
+description: The room whose meeting to stream, and the destinations to stream it to, one broadcast each.
 required: true
 content:
     application/json:
@@ -18,8 +14,7 @@ content:
                 destinationIds:
                     type: array
                     description: |
-                        The `id` of each destination saved in the room's config to stream to, streamed to as
-                        saved.
+                        The `id` of each destination saved in the room's config to stream to.
 
                         | Value | Room destinations streamed to |
                         | ----- | ----------------------------- |
@@ -35,8 +30,8 @@ content:
                     type: array
                     description: >
                         Destinations for this meeting only, never saved in the room. Requires the
-                        `broadcastEdit` permission. A meeting streams to each stream key once,
-                        whatever the server it is on.
+                        `broadcastEdit` permission. A meeting streams to each stream key once, even if the
+                        URLs differ.
                     items:
                         type: object
                         additionalProperties: false
@@ -56,8 +51,8 @@ content:
                                 description: >
                                     The RTMP or RTMPS URL of the destination, stream key included, of the form
                                     `rtmp(s)://{host}(/{path})/{app}/{stream_key}`. A URL whose host is or
-                                    resolves to a loopback, link-local (the cloud metadata endpoint among them),
-                                    unspecified, multicast or broadcast address is rejected with a `422`.
+                                    resolves to a loopback, link-local, unspecified, multicast or broadcast
+                                    address is rejected with a `422`.
         examples:
             roomAndMeetingDestinations:
                 summary: A room destination and one for this meeting

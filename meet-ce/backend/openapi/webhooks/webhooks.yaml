@@ -182,7 +182,7 @@ broadcastUpdated:
             This webhook is triggered when a live broadcast changes while it runs.
 
             > The change is in the broadcast status: from `starting` to `active` once media reaches its
-            > destination, or to `ending` while the media server stops it.
+            > destination, or to `ending` while it is being stopped.
             >
             > The payload is the [`MeetBroadcast`](#/schemas/MeetBroadcast) entity. As with
             > [`broadcastStarted`](#/webhooks/broadcastStartedWebhook), it never carries `endDate`,

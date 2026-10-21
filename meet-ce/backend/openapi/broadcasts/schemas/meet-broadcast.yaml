@@ -16,9 +16,9 @@ properties:
         type: string
         example: 'room-123--Qm4tZ8vR1c'
         description: >
-            The unique identifier of the broadcast, of the form `{roomId}--{id}`. It identifies one attempt
-            to stream to a destination: starting a destination again, after it was stopped or failed,
-            creates a broadcast with a new identifier.
+            The unique identifier of the broadcast. It identifies one attempt to stream to a destination:
+            starting a destination again, after it was stopped or failed, creates a broadcast with a new
+            identifier.
     roomId:
         type: string
         example: 'room-123'
@@ -31,10 +31,18 @@ properties:
         type: string
         enum: ['starting', 'active', 'ending', 'complete', 'failed', 'aborted', 'limit_reached']
         example: 'active'
-        description: >
-            The status of the broadcast. It is `starting` until the destination receives media, `active`
-            from then on, `ending` while the media server stops it, and one of `complete`, `failed`,
-            `aborted` or `limit_reached` once it has ended.
+        description: |
+            The status of the broadcast:
+
+            | Status | Meaning |
+            | ------ | ------- |
+            | `starting` | Connecting to the destination: no media has reached it yet |
+            | `active` | The destination is receiving the stream |
+            | `ending` | The broadcast is being stopped |
+            | `complete` | Ended normally: it was stopped, or its meeting ended |
+            | `failed` | The destination rejected or lost the stream, or the broadcast could not be kept running. `error` says why |
+            | `aborted` | Ended before any media reached the destination |
+            | `limit_reached` | Ended because a system limit was reached |
     destination:
         type: object
         description: >
@@ -58,19 +66,19 @@ properties:
                 type: string
                 example: 'rtmp://a.rtmp.youtube.com/live2/********'
                 description: >
-                    The RTMP URL streamed to, with the stream key replaced by `********`: the key never
-                    leaves the server.
+                    The RTMP URL streamed to, with the stream key replaced by `********`: stream keys are
+                    never returned.
     layout:
         type: string
         enum: ['grid', 'speaker', 'single-speaker']
         example: 'grid'
-        description: The layout of the meeting as it is streamed, taken from the room's config when the meeting went live.
+        description: The layout the meeting is streamed with, as set by the room's `broadcast` config.
     encoding:
         oneOf:
             - $ref: '../../rooms/schemas/meet-room-config.yaml#/MeetRecordingEncodingPreset'
             - $ref: '../../rooms/schemas/meet-room-config.yaml#/MeetRecordingEncodingOptions'
         example: 'H264_720P_30'
-        description: The encoding of the stream, taken from the room's config when the meeting went live.
+        description: The encoding of the stream, as set by the room's `broadcast` config.
     startDate:
         type: number
         example: 1620000000000
@@ -90,7 +98,7 @@ properties:
     errorCode:
         type: number
         example: 100
-        description: The error code of the broadcast. Present only when the media server failed.
+        description: A numeric error code. Present only on some failed broadcasts.
     error:
         type: string
         example: 'Failed to connect: connection refused'
