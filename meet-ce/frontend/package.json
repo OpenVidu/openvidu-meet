@@ -30,7 +30,7 @@
 		"@angular/material": "22.2.0",
 		"@angular/platform-browser": "22.2.0",
 		"@angular/platform-browser-dynamic": "22.2.0",
-		"@angular/router": "22.2.0",
+		"@angular/router": "22.2.1",
 		"@livekit/track-processors": "0.8.1",
 		"@openvidu-meet/shared-components": "workspace:*",
 		"@openvidu-meet/typings": "workspace:*",
