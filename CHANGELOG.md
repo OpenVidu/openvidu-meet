@@ -155,6 +155,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   the camera button.
 - The notifications in the top corner of a meeting covered the header of an open side panel, its close button
   included. They now sit beside the panel, or below its header when the panel fills the screen.
+- In a chat message, a bare domain followed by a query or a fragment, such as `example.com?x=1`, was linked without
+  them. The whole address is linked now.
 - The notices of the console room detail page about copying a member's link, removing members and failing to load
   members or recordings were always in English. They now follow the selected language.
 - The recording lists of the console and the room recordings page offered play and share on every recording, even to a

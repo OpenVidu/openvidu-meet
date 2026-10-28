@@ -254,26 +254,23 @@ importers:
         specifier: 22.2.3
         version: 22.2.3(@angular/common@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2))(rxjs@7.8.2))(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2))(@angular/platform-browser@22.2.3(@angular/animations@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2)))(@angular/common@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2))(rxjs@7.8.2))(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2)))(rxjs@7.8.2)
       '@livekit/track-processors':
-        specifier: 0.8.1
-        version: 0.8.1(@types/dom-mediacapture-transform@0.1.11)(livekit-client@https://codeload.github.com/OpenVidu/client-sdk-js/tar.gz/b4ddf7478a5313a139bfe1cf3ce689ac017a5080(@types/dom-mediacapture-record@1.0.22))
+        specifier: 0.8.2
+        version: 0.8.2(@types/dom-mediacapture-transform@0.1.11)(livekit-client@https://codeload.github.com/OpenVidu/client-sdk-js/tar.gz/b4ddf7478a5313a139bfe1cf3ce689ac017a5080(@types/dom-mediacapture-record@1.0.22))
       '@openvidu-meet/shared-components':
         specifier: workspace:*
         version: link:projects/shared-meet-components
       '@openvidu-meet/typings':
         specifier: workspace:*
         version: link:../typings
-      core-js:
-        specifier: 3.50.0
-        version: 3.50.0
       jwt-decode:
         specifier: 4.0.0
         version: 4.0.0
       linkify-string:
-        specifier: 4.3.3
-        version: 4.3.3(linkifyjs@4.3.3)
+        specifier: 4.4.0
+        version: 4.4.0(linkifyjs@4.4.0)
       linkifyjs:
-        specifier: 4.3.3
-        version: 4.3.3
+        specifier: 4.4.0
+        version: 4.4.0
       livekit-client:
         specifier: github:OpenVidu/client-sdk-js#v2.22.3-openvidu.1
         version: https://codeload.github.com/OpenVidu/client-sdk-js/tar.gz/b4ddf7478a5313a139bfe1cf3ce689ac017a5080(@types/dom-mediacapture-record@1.0.22)
@@ -381,8 +378,8 @@ importers:
         specifier: 22.2.3
         version: 22.2.3(@angular/common@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2))(rxjs@7.8.2))(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2))(@angular/platform-browser@22.2.3(@angular/animations@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2)))(@angular/common@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2))(rxjs@7.8.2))(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2)))(rxjs@7.8.2)
       '@livekit/track-processors':
-        specifier: 0.8.1
-        version: 0.8.1(@types/dom-mediacapture-transform@0.1.11)(livekit-client@https://codeload.github.com/OpenVidu/client-sdk-js/tar.gz/b4ddf7478a5313a139bfe1cf3ce689ac017a5080(@types/dom-mediacapture-record@1.0.22))
+        specifier: 0.8.2
+        version: 0.8.2(@types/dom-mediacapture-transform@0.1.11)(livekit-client@https://codeload.github.com/OpenVidu/client-sdk-js/tar.gz/b4ddf7478a5313a139bfe1cf3ce689ac017a5080(@types/dom-mediacapture-record@1.0.22))
       jwt-decode:
         specifier: 4.0.0
         version: 4.0.0
@@ -429,8 +426,8 @@ importers:
         specifier: 22.2.3
         version: 22.2.3(@angular/common@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2))(rxjs@7.8.2))(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2))(@angular/platform-browser@22.2.3(@angular/animations@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2)))(@angular/common@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2))(rxjs@7.8.2))(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2)))(rxjs@7.8.2)
       '@livekit/track-processors':
-        specifier: 0.8.1
-        version: 0.8.1(@types/dom-mediacapture-transform@0.1.11)(livekit-client@https://codeload.github.com/OpenVidu/client-sdk-js/tar.gz/b4ddf7478a5313a139bfe1cf3ce689ac017a5080(@types/dom-mediacapture-record@1.0.22))
+        specifier: 0.8.2
+        version: 0.8.2(@types/dom-mediacapture-transform@0.1.11)(livekit-client@https://codeload.github.com/OpenVidu/client-sdk-js/tar.gz/b4ddf7478a5313a139bfe1cf3ce689ac017a5080(@types/dom-mediacapture-record@1.0.22))
       '@openvidu-meet/shared-components':
         specifier: workspace:*
         version: link:../projects/shared-meet-components
@@ -701,17 +698,14 @@ importers:
         specifier: 22.2.3
         version: 22.2.3(@angular/common@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2))(rxjs@7.8.2))(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2))(@angular/platform-browser@22.2.3(@angular/animations@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2)))(@angular/common@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2))(rxjs@7.8.2))(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.2)))(rxjs@7.8.2)
       '@livekit/track-processors':
-        specifier: 0.8.1
-        version: 0.8.1(@types/dom-mediacapture-transform@0.1.11)(livekit-client@https://codeload.github.com/OpenVidu/client-sdk-js/tar.gz/b4ddf7478a5313a139bfe1cf3ce689ac017a5080(@types/dom-mediacapture-record@1.0.22))
+        specifier: 0.8.2
+        version: 0.8.2(@types/dom-mediacapture-transform@0.1.11)(livekit-client@https://codeload.github.com/OpenVidu/client-sdk-js/tar.gz/b4ddf7478a5313a139bfe1cf3ce689ac017a5080(@types/dom-mediacapture-record@1.0.22))
       '@openvidu-meet/shared-components':
         specifier: workspace:*
         version: link:../../meet-ce/frontend/projects/shared-meet-components
       '@openvidu-meet/typings':
         specifier: workspace:*
         version: link:../../meet-ce/typings
-      core-js:
-        specifier: 3.50.0
-        version: 3.50.0
       jwt-decode:
         specifier: 4.0.0
         version: 4.0.0
@@ -3075,9 +3069,9 @@ packages:
   '@livekit/protocol@1.51.0':
     resolution: {integrity: sha512-kEDEDaFvIcp5VlYBromdSKMJMEJKfPvXPfEaJPdEz1Qgo84gZAoLF2g58CcMlVYGsjrwE5XYgQxRS5B7KuEj3w==}
 
-  '@livekit/track-processors@0.8.1':
-    resolution: {integrity: sha512-RvNAKDVNhWf4nkuatBHHVihOTy1rvm1SGT2Y3mKocUbfDQCea0LnL12LmwyhJCENzmTWm+N4ysdQ0M69Np9kWg==}
-    version: 0.8.1
+  '@livekit/track-processors@0.8.2':
+    resolution: {integrity: sha512-e7mBsNMR7Ond4IyJ4afZ2azAdbd9SwQTUQgJvJBySp9M9UlObXjp/H9oKyV5UttBUjTS1h0O7SksN4PJIjYScg==}
+    version: 0.8.2
     peerDependencies:
       '@types/dom-mediacapture-transform': ^0.1.9
       livekit-client: ^1.12.0 || ^2.1.0
@@ -5243,9 +5237,6 @@ packages:
   core-js-compat@3.49.0:
     resolution: {integrity: sha512-VQXt1jr9cBz03b331DFDCCP90b3fanciLkgiOoy8SBHy06gNf+vQ1A3WFLqG7I8TipYIKeYK9wxd0tUrvHcOZA==}
 
-  core-js@3.50.0:
-    resolution: {integrity: sha512-BRWgOLKkFeCgRudR6zrs8p9XJZcE14grzKMMssoYrk6krtuEZ7MTKPIY5RzOnqsEKIR9kst7wNzphttraT+Yqw==}
-
   core-util-is@1.0.3:
     resolution: {integrity: sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==}
 
@@ -6896,13 +6887,13 @@ packages:
   lines-and-columns@1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
 
-  linkify-string@4.3.3:
-    resolution: {integrity: sha512-k8BwpKz6t4jigzoi5hKUbji0M4kUqhQ7LXIKFRxb2VvG5m0+4YSck+VFLhOxxeiuVu3pLDuSVNRq9+IQKroFIw==}
+  linkify-string@4.4.0:
+    resolution: {integrity: sha512-rfPNINl/+Y+VZqi23TjgJWYaH+T3ui7qKju7qgFRAtBistuGoRizpxoM7aZA0JjfCiILsK+8Lob36FcCMudakA==}
     peerDependencies:
-      linkifyjs: '==4.3.3'
+      linkifyjs: 4.4.0
 
-  linkifyjs@4.3.3:
-    resolution: {integrity: sha512-P8aEP5U/D1/IlTY2OeYsErdwh9bGuLE30NcXtKEjgdHcahveQoQwM2yZNsioQHsWFz0P7KKudisbrzCgR0sDHg==}
+  linkifyjs@4.4.0:
+    resolution: {integrity: sha512-InTexvtbai+2c+dEVGcc6O6P2DMVIiwD9a/i4zFroazOIYLOS6FSVmAJ7kFeumnCMx6/gQqNAkbUvgMubV4+MA==}
 
   listr2@11.1.0:
     resolution: {integrity: sha512-xsuczF6mWkEo/E80QHaEokQzKmTy7m80KcLRnkUt9wrcePres2w7dbQi5zOsWtDUg8Dac4gPFyu4EJ/IvKwTOg==}
@@ -12726,7 +12717,7 @@ snapshots:
     dependencies:
       '@bufbuild/protobuf': 1.10.1
 
-  '@livekit/track-processors@0.8.1(@types/dom-mediacapture-transform@0.1.11)(livekit-client@https://codeload.github.com/OpenVidu/client-sdk-js/tar.gz/b4ddf7478a5313a139bfe1cf3ce689ac017a5080(@types/dom-mediacapture-record@1.0.22))':
+  '@livekit/track-processors@0.8.2(@types/dom-mediacapture-transform@0.1.11)(livekit-client@https://codeload.github.com/OpenVidu/client-sdk-js/tar.gz/b4ddf7478a5313a139bfe1cf3ce689ac017a5080(@types/dom-mediacapture-record@1.0.22))':
     dependencies:
       '@mediapipe/tasks-vision': 0.10.14
       '@types/dom-mediacapture-transform': 0.1.11
@@ -15039,8 +15030,6 @@ snapshots:
   core-js-compat@3.49.0:
     dependencies:
       browserslist: 4.28.8
-
-  core-js@3.50.0: {}
 
   core-util-is@1.0.3: {}
 
@@ -17579,11 +17568,11 @@ snapshots:
 
   lines-and-columns@1.2.4: {}
 
-  linkify-string@4.3.3(linkifyjs@4.3.3):
+  linkify-string@4.4.0(linkifyjs@4.4.0):
     dependencies:
-      linkifyjs: 4.3.3
+      linkifyjs: 4.4.0
 
-  linkifyjs@4.3.3: {}
+  linkifyjs@4.4.0: {}
 
   listr2@11.1.0:
     dependencies:
