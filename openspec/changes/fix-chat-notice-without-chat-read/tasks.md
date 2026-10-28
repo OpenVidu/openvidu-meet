@@ -8,5 +8,5 @@
 
 ## 2. Release surfaces
 
-- [x] 2.1 Add under `## 3.10.0 (unreleased)` -> `### Fixed` -> `#### UI` of `CHANGELOG.md`: "- A participant without `chatRead`, or in a room with `chat.enabled` set to `false`, got the new-message notice, its sound and an unread count for every chat message. They now get nothing for messages they cannot read."
+- [x] 2.1 `CHANGELOG.md`: no line. Since `fix-enforce-chat-read-delivery` and `fix-enforce-chat-enabled-in-media-grant`, listed in the same release, those messages no longer reach the participant, so the notice they raised is already gone for every reader of the changelog (USER 2026-10-28).
 - [x] 2.2 openvidu.io: none.
