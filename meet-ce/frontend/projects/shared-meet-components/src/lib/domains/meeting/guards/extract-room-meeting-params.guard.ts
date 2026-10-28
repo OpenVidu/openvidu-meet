@@ -40,7 +40,7 @@ export const extractRoomMeetingParamsGuard: CanActivateFn = (route: ActivatedRou
 		initialAudioActive: parseOptionalBoolean(initialAudioActive),
 		initialVideoActive: parseOptionalBoolean(initialVideoActive),
 		showRecording,
-		showOnlyRecordings: showOnlyRecordings === 'true'
+		showOnlyRecordings: parseOptionalBoolean(showOnlyRecordings)
 	});
 
 	if (decision.kind === 'redirect') {

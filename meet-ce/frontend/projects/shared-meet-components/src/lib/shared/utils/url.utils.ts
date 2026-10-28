@@ -73,7 +73,7 @@ export const extractParams = (route: {
 		language: queryParams[EmbeddedAttribute.LANGUAGE],
 		showLanguageSelector: queryParams[EmbeddedAttribute.SHOW_LANGUAGE_SELECTOR],
 		leaveRedirectUrl: queryParams[EmbeddedAttribute.LEAVE_REDIRECT_URL],
-		showOnlyRecordings: queryParams[EmbeddedAttribute.SHOW_ONLY_RECORDINGS] || 'false',
+		showOnlyRecordings: queryParams[EmbeddedAttribute.SHOW_ONLY_RECORDINGS],
 		showRecording: queryParams[EmbeddedAttribute.SHOW_RECORDING],
 		e2eeKey: queryParams[EmbeddedAttribute.E2EE_KEY]
 	};

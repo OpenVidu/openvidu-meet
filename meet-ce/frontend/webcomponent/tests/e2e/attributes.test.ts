@@ -558,6 +558,25 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await expect(wcLocator(page, '#participant-name-input')).toHaveCount(0);
 			});
 
+			for (const [value, query] of [
+				['no value', 'show-only-recordings'],
+				['the value 1', 'show-only-recordings=1']
+			]) {
+				test(`should show the room recordings in an iframe whose URL carries show-only-recordings with ${value}`, async ({
+					page
+				}) => {
+					await openWebcomponentWithAttributes(
+						page,
+						{ [EmbeddedAttribute.ROOM_URL]: `${accessUrl}&${query}` },
+						{ integration: 'iframe' }
+					);
+					const meet = (selector: string) => meetLocator(page, 'iframe', selector);
+
+					await expect(meet('ov-recording-lists, .recordings-list')).toBeVisible({ timeout: 15_000 });
+					await expect(meet('#participant-name-input')).toHaveCount(0);
+				});
+			}
+
 			test('should redirect to the specified recording when show-recording is set', async ({ page }) => {
 				await openWebcomponentWithAttributes(page, {
 					[EmbeddedAttribute.ROOM_URL]: accessUrl,

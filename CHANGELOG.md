@@ -138,6 +138,12 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   warning. It now listens to the host page and posts events from the moment it loads.
 - With `leave-redirect-url` set, the redirect could replace the host page before `embeddedCloseRequested` reached it,
   in the embedded element and in the iframe. The redirect now follows the event.
+- A room URL opened in an iframe or a direct link with `show-only-recordings` and no value, or a value other than
+  `true` such as `1`, showed the meeting. It now shows the room recordings page unless the value is `false`, as the
+  attribute of `<openvidu-meet>` does.
+
+#### UI
+
 - After leaving a meeting that was being recorded, joining another meeting with the same `<openvidu-meet>`
   element showed that recording as still in progress. The recording indicator starts over with each meeting.
 - After leaving a meeting, joining another meeting with the same `<openvidu-meet>` element showed the earlier

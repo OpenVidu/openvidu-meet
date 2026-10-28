@@ -6,6 +6,7 @@ import { GlobalConfigService } from '../../../shared/services/global-config.serv
 import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { SessionStorageService } from '../../../shared/services/session-storage.service';
+import { parseOptionalBoolean } from '../../../shared/utils/url.utils';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomAccessService } from '../../rooms/services/room-access.service';
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
@@ -64,6 +65,12 @@ describe('MeetingEntryService.prepare (resets the previous room feature state)',
 
 		expect(roomFeatureService.reset).toHaveBeenCalled();
 		expect(roomFeatureService.setInitialMediaRequest).toHaveBeenCalled();
+	});
+
+	it('sends a bare show-only-recordings query parameter to the room recordings', () => {
+		const decision = service.prepare({ roomId: 'room-b', showOnlyRecordings: parseOptionalBoolean('') });
+
+		expect(decision).toEqual({ kind: 'redirect', to: '/room/room-b/recordings' });
 	});
 });
 
