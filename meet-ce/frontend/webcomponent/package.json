@@ -45,7 +45,7 @@
 		"jest-environment-jsdom": "30.5.2",
 		"pixelmatch": "7.2.0",
 		"pngjs": "7.0.0",
-		"ts-jest": "29.4.13",
+		"ts-jest": "29.4.15",
 		"ts-jest-resolver": "2.0.1",
 		"typescript": "6.0.3"
 	}

@@ -27,9 +27,9 @@
     "@angular/build": "22.2.4",
     "@angular/cli": "22.2.4",
     "@angular/compiler-cli": "22.2.3",
-    "concurrently": "10.0.5",
+    "concurrently": "10.0.6",
     "express": "5.3.0",
-    "socket.io": "4.8.3",
+    "socket.io": "4.8.4",
     "typescript": "6.0.3"
   }
 }
