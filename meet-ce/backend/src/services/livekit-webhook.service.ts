@@ -222,7 +222,7 @@ export class LivekitWebhookService {
 			}
 
 			await Promise.all([
-				this.roomMemberService.releaseParticipantName(room.name, participant.name),
+				this.roomMemberService.releaseParticipantName(room.name, participant),
 				this.aiAssistantService.cleanupState(room.name, participant.identity)
 			]);
 			this.logger.verbose(`Released name for participant '${participant.name}' in room '${room.name}'`);

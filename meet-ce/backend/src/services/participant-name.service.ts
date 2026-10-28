@@ -6,6 +6,31 @@ import { runConcurrently } from '../utils/concurrency.utils.js';
 import { LoggerService } from './logger.service.js';
 import { RedisService } from './redis.service.js';
 
+const RESERVE_NAME_SCRIPT = `
+local current = redis.call('GET', KEYS[1])
+if current then
+	local ok, reservation = pcall(cjson.decode, current)
+	if not (ok and type(reservation) == 'table' and reservation.identity == ARGV[1]) then
+		return 0
+	end
+end
+redis.call('SET', KEYS[1], ARGV[2], 'PX', ARGV[3])
+return 1
+`;
+
+const RELEASE_NAME_SCRIPT = `
+local current = redis.call('GET', KEYS[1])
+if not current then
+	return 0
+end
+local ok, reservation = pcall(cjson.decode, current)
+if ok and type(reservation) == 'table' and (reservation.identity ~= ARGV[1] or reservation.reservedAt > tonumber(ARGV[2])) then
+	return 0
+end
+redis.call('DEL', KEYS[1])
+return 1
+`;
+
 @injectable()
 export class ParticipantNameService {
 	private readonly MAX_CONCURRENT_NAME_REQUESTS = INTERNAL_CONFIG.PARTICIPANT_MAX_CONCURRENT_NAME_REQUESTS;
@@ -18,14 +43,17 @@ export class ParticipantNameService {
 
 	/**
 	 * Reserves a unique participant name for a room using atomic operations.
-	 * If the requested name is taken, it generates alternatives with incremental suffixes.
+	 * If the requested name is taken by another identity, it generates alternatives with incremental
+	 * suffixes. A name held by the same identity, an earlier session of the same member or user, is
+	 * taken over.
 	 *
 	 * @param roomId - The room identifier
 	 * @param requestedName - The desired participant name
+	 * @param participantIdentity - The identity of the participant the name is reserved for
 	 * @returns Promise<string> - The reserved unique name
 	 * @throws Error if unable to reserve a unique name after max retries
 	 */
-	async reserveUniqueName(roomId: string, requestedName: string): Promise<string> {
+	async reserveUniqueName(roomId: string, requestedName: string, participantIdentity: string): Promise<string> {
 		const participantsKey = `${RedisKeyName.ROOM_PARTICIPANTS}${roomId}`;
 
 		// Extract the base name without any numeric suffix
@@ -35,7 +63,7 @@ export class ParticipantNameService {
 
 		// First, try to reserve the exact requested name
 		const normalizedRequestedName = requestedName.toLowerCase();
-		const reservedOriginal = await this.tryReserveName(participantsKey, normalizedRequestedName);
+		const reservedOriginal = await this.tryReserveName(participantsKey, normalizedRequestedName, participantIdentity);
 
 		if (reservedOriginal) {
 			this.logger.verbose(`Reserved original name '${requestedName}' for room '${roomId}'`);
@@ -46,7 +74,7 @@ export class ParticipantNameService {
 		// Use the extracted base name to avoid concatenating suffixes
 		for (let attempt = 1; attempt <= this.MAX_CONCURRENT_NAME_REQUESTS; attempt++) {
 			const alternativeName = await this.generateAlternativeName(roomId, normalizedBaseName, attempt);
-			const reserved = await this.tryReserveName(participantsKey, alternativeName);
+			const reserved = await this.tryReserveName(participantsKey, alternativeName, participantIdentity);
 
 			if (reserved) {
 				this.logger.verbose(
@@ -64,25 +92,36 @@ export class ParticipantNameService {
 	}
 
 	/**
-	 * Releases a reserved participant name, making it available for others.
+	 * Releases the name a session of a participant reserved, making it available for others, and
+	 * returns its number suffix to the available pool for reuse. A reservation taken over after that
+	 * session joined belongs to a newer session of the same identity, so it is kept.
 	 *
 	 * @param roomId - The room identifier
 	 * @param participantName - The name to release
+	 * @param participantIdentity - The identity of the leaving session
+	 * @param joinedAt - When the leaving session joined, in milliseconds since epoch
 	 */
-	/**
-	 * Releases a reserved participant name, making it available for others.
-	 * Also returns the number suffix to the available pool for reuse.
-	 *
-	 * @param roomId - The room identifier
-	 * @param participantName - The name to release
-	 */
-	async releaseName(roomId: string, participantName: string): Promise<void> {
+	async releaseName(
+		roomId: string,
+		participantName: string,
+		participantIdentity: string,
+		joinedAt: number
+	): Promise<void> {
 		const participantsKey = `${RedisKeyName.ROOM_PARTICIPANTS}${roomId}`;
 		// Normalize the name for case-insensitive checks
 		const normalizedName = participantName.toLowerCase();
 
 		try {
-			await this.redisService.delete(`${participantsKey}:${normalizedName}`);
+			const released = await this.redisService.runScript(
+				RELEASE_NAME_SCRIPT,
+				[`${participantsKey}:${normalizedName}`],
+				[participantIdentity, joinedAt]
+			);
+
+			if (released !== 1) {
+				this.logger.verbose(`Name '${participantName}' for room '${roomId}' is held by a newer session`);
+				return;
+			}
 
 			// If this is a numbered variant (e.g., "Alice_2"), return the number to the pool
 			const numberMatch = participantName.match(/^(.+)_(\d+)$/);
@@ -177,21 +216,28 @@ export class ParticipantNameService {
 	}
 
 	/**
-	 * Attempts to atomically reserve a specific name using Redis SET with NX (not exists) option.
+	 * Attempts to atomically reserve a specific name for an identity: free names are taken, and a name
+	 * the same identity holds is taken over with a new reservation time.
 	 *
 	 * @private
 	 * @param participantsKey - The Redis key prefix for participants
 	 * @param name - The name to reserve
+	 * @param participantIdentity - The identity the name is reserved for
 	 * @returns Promise<boolean> - True if reservation was successful
 	 */
-	private async tryReserveName(participantsKey: string, name: string): Promise<boolean> {
+	private async tryReserveName(participantsKey: string, name: string, participantIdentity: string): Promise<boolean> {
 		// Normalize the name for case-insensitive checks
 		const normalizedName = name.toLowerCase();
 		const nameKey = `${participantsKey}:${normalizedName}`;
-		const timestamp = Date.now().toString();
+		const reservation = JSON.stringify({ identity: participantIdentity, reservedAt: Date.now() });
 
 		try {
-			return await this.redisService.setIfNotExists(nameKey, timestamp, this.PARTICIPANT_NAME_TTL);
+			const reserved = await this.redisService.runScript(
+				RESERVE_NAME_SCRIPT,
+				[nameKey],
+				[participantIdentity, reservation, this.PARTICIPANT_NAME_TTL]
+			);
+			return reserved === 1;
 		} catch (error) {
 			this.logger.warn(`Error trying to reserve name '${name}':`, error);
 			return false;
