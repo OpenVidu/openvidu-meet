@@ -85,7 +85,7 @@ The embedded element SHALL be defined as soon as the loader runs, without loadin
 - **THEN** no Meet is started inside it
 
 ### Requirement: Calls made before the bundle loads are kept
-The embedded element SHALL keep the attributes and properties a host sets, the method calls it makes and the listeners it registers before the full bundle has loaded. Once loaded, it SHALL apply the last value written to each attribute or property, deliver the calls in the order they were made, each then accepted or rejected as `embedded-api` specifies, and deliver later events to those listeners.
+The embedded element SHALL keep the attributes and properties a host sets and the listeners it registers before the full bundle has loaded. Once loaded, it SHALL apply the last value written to each attribute or property and deliver later events to those listeners. A command method called before the full bundle has loaded, or before the element's Meet has started, SHALL be rejected at once with a console warning naming the command, and SHALL NOT run later.
 
 #### Scenario: Listener registered before the load
 - **GIVEN** a host that calls `element.on("meetingJoined", callback)` right after creating the element
@@ -95,6 +95,12 @@ The embedded element SHALL keep the attributes and properties a host sets, the m
 #### Scenario: Property read before the load
 - **WHEN** a host sets `element.participantName = "Bob"` and reads it back before the bundle has loaded
 - **THEN** it reads `Bob`
+
+#### Scenario: Command called before the load
+- **GIVEN** an element whose full bundle is still loading
+- **WHEN** the host calls `element.mediaToggleVideo(false)`
+- **THEN** the call returns without an exception and the browser console warns that `mediaToggleVideo` was rejected
+- **AND** the camera is on when the participant later reaches the device setup screen of a room whose `config.initialVideoActive` is true
 
 ### Requirement: The full bundle falls back to the Meet server
 The embedded element SHALL import the full bundle from next to the loader's own URL. If that import fails, it SHALL import it from `/v1/openvidu-meet.esm.js` under the Meet server named by `room-url` or `recording-url`, read at the moment of the failure, and SHALL log a console warning naming both URLs. There SHALL be no fallback when that URL is the one that failed or when neither attribute is set.
@@ -189,3 +195,17 @@ Meet SHALL run as the standalone app when a room access URL or a recording URL i
 - **WHEN** a person follows a link to `https://meet.example.com/meet/room/r-1?secret=s&participant-name=John`
 - **THEN** the room's join screen opens in that tab with `John` pre-filled
 - **AND** no embedded event is emitted
+
+### Requirement: Styles stay on their side of the element
+The embedded element SHALL apply Meet's styles only inside its shadow root and SHALL NOT take in the host page's stylesheets, so no rule of Meet applies to the host page and no rule of the host page applies inside Meet. Only what CSS lets cross a shadow root by design SHALL cross it: inherited properties and custom properties set on the element, and its shadow parts.
+
+#### Scenario: Host page rule
+- **GIVEN** a host page whose `<head>` holds `<style>button { background: red; }</style>`
+- **WHEN** the element shows the join screen
+- **THEN** the join screen's buttons do not have a red background
+
+#### Scenario: Meet's rules do not reach the host page
+- **GIVEN** a host page with its own element of class `mat-mdc-button`
+- **WHEN** an element joins a meeting and the participant opens a menu of the meeting
+- **THEN** the computed style of the host page's element is the same as before the element was connected
+- **AND** no stylesheet Meet adds to the host document's `<head>` declares any style, other than the font stylesheets
