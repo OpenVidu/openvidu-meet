@@ -43,7 +43,7 @@
 		"@types/pngjs": "6.0.5",
 		"jest": "30.5.2",
 		"jest-environment-jsdom": "30.5.2",
-		"pixelmatch": "7.2.0",
+		"pixelmatch": "8.0.0",
 		"pngjs": "7.0.0",
 		"ts-jest": "29.4.15",
 		"ts-jest-resolver": "2.0.1",
