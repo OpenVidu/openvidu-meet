@@ -121,6 +121,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   reach only the participants holding `chatRead`.
 - A room's `config.chat.enabled` `false` was enforced in the interface only, so a modified client holding `chatWrite`
   could still send chat messages. The media server now refuses them.
+- A room with end-to-end encryption could have live captions on, although the captions assistant only receives
+  encrypted audio and produced no captions. As with recording, `captions.enabled` is now stored as `false` while
+  `e2ee.enabled` is `true`, in existing rooms too, and the room wizard turns captions off when encryption is turned on.
 
 #### UI
 

@@ -208,6 +208,15 @@
 													'ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_RECORDING_SUFFIX' | translate
 												}}
 											</li>
+											<li>
+												{{ 'ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_CAPTIONS_PREFIX' | translate
+												}}<b>{{
+													'ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_CAPTIONS_BOLD' | translate
+												}}</b
+												>{{
+													'ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_CAPTIONS_SUFFIX' | translate
+												}}
+											</li>
 										</ul>
 									</div>
 								</div>
@@ -216,22 +225,39 @@
 					</div>
 
 					<!-- Captions -->
-					<div class="feature-row" id="room-feature-captions">
-						<div class="feature-info">
-							<mat-icon class="feature-icon">closed_caption</mat-icon>
-							<div class="feature-text">
-								<span class="feature-label">{{ 'ROOMS.WIZARD.MEETING.CAPTIONS' | translate }}</span>
-								<span class="feature-description">{{
-									'ROOMS.WIZARD.MEETING.CAPTIONS_DESC' | translate
-								}}</span>
+					<div class="feature-row-wrapper">
+						<div class="feature-row" id="room-feature-captions">
+							<div class="feature-info">
+								<mat-icon class="feature-icon">closed_caption</mat-icon>
+								<div class="feature-text">
+									<span class="feature-label">{{ 'ROOMS.WIZARD.MEETING.CAPTIONS' | translate }}</span>
+									<span class="feature-description">{{
+										'ROOMS.WIZARD.MEETING.CAPTIONS_DESC' | translate
+									}}</span>
+								</div>
 							</div>
+							<mat-slide-toggle
+								[checked]="captionsEnabled"
+								[disabled]="e2eeEnabled"
+								(change)="onCaptionsToggleChange($event)"
+								color="primary"
+								class="feature-toggle"
+							/>
 						</div>
-						<mat-slide-toggle
-							[checked]="captionsEnabled"
-							(change)="onCaptionsToggleChange($event)"
-							color="primary"
-							class="feature-toggle"
-						/>
+						@if (e2eeEnabled) {
+							<div class="e2ee-info-section fade-in" id="captions-e2ee-warning">
+								<div class="warning-card">
+									<mat-icon class="warning-icon">warning</mat-icon>
+									<div class="warning-content">
+										<p class="warning-text">
+											{{ 'ROOMS.WIZARD.MEETING.CAPTIONS_E2EE_WARNING_PREFIX' | translate
+											}}<b>{{ 'ROOMS.WIZARD.MEETING.CAPTIONS_E2EE_WARNING_BOLD' | translate }}</b
+											>{{ 'ROOMS.WIZARD.MEETING.CAPTIONS_E2EE_WARNING_SUFFIX' | translate }}
+										</p>
+									</div>
+								</div>
+							</div>
+						}
 					</div>
 
 					<!-- Raise hand -->

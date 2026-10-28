@@ -1,6 +1,7 @@
 import type {
 	MeetRoom,
 	MeetRoomAccess,
+	MeetRoomConfig,
 	MeetRoomExtraField,
 	MeetRoomField,
 	MeetRoomMemberPermissions,
@@ -103,6 +104,24 @@ export class MeetRoomHelper {
 	 */
 	static minParticipantsForAutoStart(mode: MeetRecordingAutoStartMode): number {
 		return RecordingHelper.getAutoStartConfig(mode).minParticipants;
+	}
+
+	/**
+	 * Turns off the features end-to-end encryption excludes: recording and live captions need the
+	 * server to read the media, which an encrypted room never lets it do.
+	 *
+	 * @param config - The room config, changed in place
+	 */
+	static disableFeaturesExcludedByE2EE(config: Partial<MeetRoomConfig>): void {
+		if (!config.e2ee?.enabled) return;
+
+		if (config.recording?.enabled) {
+			config.recording = { ...config.recording, enabled: false };
+		}
+
+		if (config.captions?.enabled) {
+			config.captions = { ...config.captions, enabled: false };
+		}
 	}
 
 	/**

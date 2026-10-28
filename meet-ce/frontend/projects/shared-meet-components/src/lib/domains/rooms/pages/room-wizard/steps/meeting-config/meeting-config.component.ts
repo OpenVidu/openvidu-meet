@@ -116,6 +116,7 @@ export class MeetingConfigComponent {
 		this.meetingForm.patchValue({
 			e2eeEnabled: isEnabled
 		});
+		this.applyE2EEToCaptions(isEnabled);
 
 		const recordingStep = this.wizardService.getStepById(WizardStepId.RECORDING);
 
@@ -168,6 +169,28 @@ export class MeetingConfigComponent {
 				// Clear the saved state
 				this.wizardService.clearRecordingStateBeforeE2EE();
 			}
+		}
+	}
+
+	/**
+	 * Live captions cannot work in an encrypted room: encryption turns them off, remembering whether
+	 * they were on, and turning encryption off again restores them.
+	 */
+	private applyE2EEToCaptions(e2eeEnabled: boolean): void {
+		if (e2eeEnabled) {
+			if (this.captionsEnabled) {
+				this.wizardService.setCaptionsStateBeforeE2EE(true);
+			}
+
+			this.meetingForm.patchValue({ captionsEnabled: false });
+			return;
+		}
+
+		const previousCaptionsState = this.wizardService.getCaptionsStateBeforeE2EE();
+
+		if (previousCaptionsState !== undefined) {
+			this.meetingForm.patchValue({ captionsEnabled: previousCaptionsState });
+			this.wizardService.clearCaptionsStateBeforeE2EE();
 		}
 	}
 
