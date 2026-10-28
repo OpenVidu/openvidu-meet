@@ -10,6 +10,7 @@ import {
 	type ReadyUser
 } from './helpers/auth.helper';
 import {
+	createRoom,
 	createRoomAsUser,
 	createRoomMember,
 	deleteRooms,
@@ -498,6 +499,16 @@ test.describe('Access E2E Tests', () => {
 
 	test.describe('Room lobby access', () => {
 		runScenarios(lobbyView, accessScenarios);
+
+		test('another room entered in the same tab by its user access link asks to log in', async ({ page }) => {
+			const otherRoom = await createRoom();
+			createdRoomIds.push(otherRoom.roomId);
+			await openLobby(page, otherRoom.access.anonymous.speaker.url);
+
+			await page.goto(room.access.user.url, { waitUntil: 'domcontentloaded' });
+
+			await expectLoginPage(page);
+		});
 	});
 
 	// ── Room recordings list access ──────────────────────────────────────────────

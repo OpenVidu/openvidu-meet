@@ -77,51 +77,54 @@ export class MeetingContextService {
 	}
 
 	/**
-	 * Sets the room secret in context
+	 * Sets the room secret in context, for the current room
 	 * @param secret The room secret
 	 * @param updateStorage Whether to persist in SessionStorage (default: false)
 	 */
 	setRoomSecret(secret: string, updateStorage = false): void {
-		if (updateStorage) {
-			this.sessionStorageService.setRoomSecret(secret);
+		const roomId = this._roomId();
+
+		if (updateStorage && roomId) {
+			this.sessionStorageService.setRoomSecret(roomId, secret);
 		}
 
 		this._roomSecret.set(secret);
 	}
 
 	/**
-	 * Loads the room secret from session storage into context, if one was
-	 * previously persisted (e.g. by an earlier URL visit carrying `?secret=`).
+	 * Loads into context the room secret persisted for the current room (e.g. by an earlier URL visit
+	 * carrying `?secret=`), and none when it was persisted for another room.
 	 */
 	loadRoomSecretFromStorage(): void {
-		const secret = this.sessionStorageService.getRoomSecret();
-
-		if (secret) {
-			this._roomSecret.set(secret);
-		}
+		const roomId = this._roomId();
+		this._roomSecret.set((roomId && this.sessionStorageService.getRoomSecret(roomId)) || undefined);
 	}
 
 	/**
-	 * Stores the E2EE key in context
+	 * Stores the E2EE key in context, for the current room
 	 * @param key The E2EE key
 	 * @param fromUrl Whether the key came from a URL parameter (default: false)
 	 */
 	setE2eeKey(key: string, fromUrl = false): void {
-		this.sessionStorageService.setE2EEData(key, fromUrl);
+		const roomId = this._roomId();
+
+		if (roomId) {
+			this.sessionStorageService.setE2EEData(roomId, key, fromUrl);
+		}
+
 		this._e2eeKey.set(key);
 		this._isE2eeKeyFromUrl.set(fromUrl);
 	}
 
 	/**
-	 * Loads the E2EE key data from session storage
+	 * Loads into context the E2EE key data persisted for the current room, and none when it was
+	 * persisted for another room.
 	 */
 	loadE2eeKeyFromStorage(): void {
-		const e2eeData = this.sessionStorageService.getE2EEData();
-
-		if (e2eeData) {
-			this._e2eeKey.set(e2eeData.key);
-			this._isE2eeKeyFromUrl.set(e2eeData.fromUrl);
-		}
+		const roomId = this._roomId();
+		const e2eeData = roomId ? this.sessionStorageService.getE2EEData(roomId) : null;
+		this._e2eeKey.set(e2eeData?.key ?? '');
+		this._isE2eeKeyFromUrl.set(e2eeData?.fromUrl ?? false);
 	}
 
 	/**

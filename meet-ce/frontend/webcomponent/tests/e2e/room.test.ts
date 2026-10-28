@@ -1,13 +1,13 @@
 import { EmbeddedAttribute } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { applyBackgroundEffect, startScreensharing, stopScreensharing } from '../helpers/media-controls.helper';
-import { createRoom, deleteRooms } from '../helpers/meet-api.helper';
+import { createRoom, deleteRooms, getRoom } from '../helpers/meet-api.helper';
 import { openMoreOptionsMenu } from '../helpers/panels.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import { expectSignificantImageDifferenceEventually, screenshotWcElement } from '../helpers/stream.helper';
 import { ensureFixture, leaveMeeting, openMeeting, openMeetingAtMediaSetup } from '../helpers/testapp.helper';
 import { openWebcomponentWithAttributes } from '../helpers/webcomponent-attributes.helper';
-import { INTEGRATIONS, meetLocator, wcLocator } from '../helpers/webcomponent.helper';
+import { INTEGRATIONS, meetLocator, wcHost, wcLocator } from '../helpers/webcomponent.helper';
 
 test.describe('Room Features E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -32,6 +32,22 @@ test.describe('Room Features E2E Tests', () => {
 			await expect(wcLocator(page, 'ov-meeting-view')).toBeVisible();
 
 			await leaveMeeting(page, { role: 'moderator' });
+		});
+
+		test("should ask to log in when room-url switches to another room's user access link", async ({ page }) => {
+			const [roomA, roomB] = await Promise.all([getRoom(roomId), createRoom()]);
+			createdRoomIds.push(roomB.roomId);
+			await openWebcomponentWithAttributes(page, {
+				[EmbeddedAttribute.ROOM_URL]: roomA.access.anonymous.speaker.url
+			});
+			await expect(wcLocator(page, '#participant-name-input')).toBeVisible({ timeout: 15_000 });
+
+			await wcHost(page).evaluate(
+				(element, [attribute, url]) => element.setAttribute(attribute, url),
+				[EmbeddedAttribute.ROOM_URL, roomB.access.user.url]
+			);
+
+			await expect(wcLocator(page, '#login-button')).toBeVisible({ timeout: 15_000 });
 		});
 	});
 

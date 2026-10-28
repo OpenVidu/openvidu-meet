@@ -117,7 +117,7 @@ export class MeetingEntryService {
 		});
 
 		// Prefer the caller-supplied secret (URL/input); otherwise restore the one
-		// persisted on this origin. Keeping the fallback here means every adapter
+		// persisted for this room. Keeping the fallback here means every adapter
 		// (route guard, Web Component) shares it without re-implementing it.
 		if (secret) {
 			this.meetingContextService.setRoomSecret(secret, true);
@@ -134,7 +134,7 @@ export class MeetingEntryService {
 		}
 
 		// Prefer the caller-supplied value (URL/input); otherwise restore the last one
-		// stored on this origin so the lobby pre-fills it.
+		// stored for this room so the lobby pre-fills it.
 		if (e2eeKey) {
 			this.meetingContextService.setE2eeKey(e2eeKey, true);
 		} else {

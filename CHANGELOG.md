@@ -142,6 +142,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   element showed that recording as still in progress. The recording indicator starts over with each meeting.
 - After leaving a meeting, joining another meeting with the same `<openvidu-meet>` element showed the earlier
   meeting's chat messages and counted them as unread. The chat now starts empty in every meeting.
+- A browser tab, or an `<openvidu-meet>` element, that had entered a room with a secret or an encryption key reused
+  them for any other room entered without them, so a user access link opened afterwards showed the "Invalid link"
+  error screen. They are now kept only for the room they were given for.
 - On the join screen of a meeting in an iframe without `leave-redirect-url`, a signed-in user got a **Back to Rooms**
   button that only emitted `embeddedCloseRequested`, and an anonymous participant got none. The iframe's access error
   screens, and a recording opened in an iframe by its link, offered no button either. The join, error and recording
