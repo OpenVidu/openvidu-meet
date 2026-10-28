@@ -416,8 +416,8 @@ export class NavigationService {
 	/**
 	 * End the current flow. Embedded modes always emit `embeddedCloseRequested` first so the
 	 * host can remove the embedded element (the deprecated `closed` alias is dispatched alongside
-	 * it by each shell), then redirect if a leave-redirect URL is configured. Otherwise, the SPA
-	 * navigates to `fallbackRoute` if given.
+	 * it by each shell), then, once the shell has dispatched it, redirect if a leave-redirect URL is
+	 * configured. Otherwise, the SPA navigates to `fallbackRoute` if given.
 	 */
 	private async closeOrLeave(fallbackRoute?: string, replaceUrl = false): Promise<void> {
 		const isEmbeddedMode = this.runtimeConfigService.isEmbeddedMode();
@@ -429,6 +429,10 @@ export class NavigationService {
 		const leaveRedirectUrl = this.leaveRedirect.getLeaveRedirectURL();
 
 		if (leaveRedirectUrl) {
+			if (isEmbeddedMode) {
+				await this.eventBus.delivered();
+			}
+
 			await this.redirectToLeaveUrl();
 			return;
 		}

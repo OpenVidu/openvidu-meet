@@ -14,6 +14,7 @@ The host also has no signal that the iframe is listening. This change proposes n
 - Meet in an iframe resolves the containing page's origin and starts listening for commands and posting events as soon as the app starts, on every screen, instead of when the meeting page is shown.
 - A command posted before the meeting page is shown is rejected with the same console warning as any command outside its phase.
 - `embeddedCloseRequested` reaches the host page from recording screens and from access error screens shown before the join screen.
+- With a leave redirect, in the iframe and in the embedded element, the redirect waits until `embeddedCloseRequested` has been dispatched to the host page; a fast redirect could replace the host page before it arrived.
 
 The fix makes these existing requirements hold in the iframe, so no delta spec is written (`skip_specs: true`):
 

@@ -14,6 +14,7 @@ This was left open in the baseline findings (section 4, "iframe join-screen back
 - In an iframe the join screen always offers a back button labelled "Back", whoever the participant is, as the embedded element and the iframe's end screen do.
 - Pressing it emits `embeddedCloseRequested` and then follows the leave redirect when one is set, as today.
 - The iframe's access error screens get the same rule: a dismiss button that emits `embeddedCloseRequested`, with or without a leave redirect. They lacked one because the host page could not receive the event that early; `fix-iframe-bridge-starts-with-app`, in the same branch and applied first, makes the iframe listen and post from the start, so the exception goes. One rule now covers the join, end and error screens of the iframe.
+- A recording opened in an iframe by its link gets the same dismiss button, which it lacked without a leave redirect.
 - The standalone app keeps its current rule ("Back to Rooms" for a signed-in user without a leave redirect, no button for an anonymous one).
 
 ## Capabilities

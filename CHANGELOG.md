@@ -133,13 +133,19 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - The styles of `<openvidu-meet>` reached the host page, restyling its own elements such as Angular Material
   components, and the host page's `<style>` rules reached inside the element. Each side's styles now stay on its side
   of the element's shadow root.
-
-#### UI
-
+- Meet in an iframe did not post `embeddedCloseRequested` to the host page from a recording screen or from an access
+  error screen shown before the join screen, and dropped commands posted before the join screen without a console
+  warning. It now listens to the host page and posts events from the moment it loads.
+- With `leave-redirect-url` set, the redirect could replace the host page before `embeddedCloseRequested` reached it,
+  in the embedded element and in the iframe. The redirect now follows the event.
 - After leaving a meeting that was being recorded, joining another meeting with the same `<openvidu-meet>`
   element showed that recording as still in progress. The recording indicator starts over with each meeting.
 - After leaving a meeting, joining another meeting with the same `<openvidu-meet>` element showed the earlier
   meeting's chat messages and counted them as unread. The chat now starts empty in every meeting.
+- On the join screen of a meeting in an iframe without `leave-redirect-url`, a signed-in user got a **Back to Rooms**
+  button that only emitted `embeddedCloseRequested`, and an anonymous participant got none. The iframe's access error
+  screens, and a recording opened in an iframe by its link, offered no button either. The join, error and recording
+  screens of an iframe now always offer one that emits `embeddedCloseRequested`, as its end screen does.
 - A room member or user who joined a meeting again before their earlier session had left it, from a second tab, after
   reloading or by rejoining quickly, was renamed with a numeric suffix such as `Ana_1` everywhere the meeting shows or
   reports names. They now keep their name.

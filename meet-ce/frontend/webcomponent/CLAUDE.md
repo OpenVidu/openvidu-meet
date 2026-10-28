@@ -71,7 +71,8 @@ events are re-dispatched on the outer element.
   `on()` / `once()` / `off()` listener API and keeps the 3.8.0 method names as aliases that forward
   to the canonical method, so `src/app/app.ts` and `EmbeddedCommandService` only declare canonical
   names. The iframe bridge accepts both wire names through `resolveEmbeddedCommandName()` and applies
-  no gating of its own, so both transports accept and reject identically.
+  no gating of its own beyond rejecting commands that arrive before the meeting page, so both
+  transports accept and reject identically.
 - No `.d.ts` is published; hosts declare the subset they use (see
   `testapp/src/app/openvidu-meet-element.ts`).
 - `src/main.wc.ts`: `bootstrapOpenViduMeet(tagName?)` creates the Angular application, flips
@@ -126,6 +127,10 @@ pnpm run test:e2e          # Playwright, project `webcomponent`
 - Two embedding modes share this API surface: this inline webcomponent and a cross-document
   `<iframe>` (bridged by `IframeBridgeService` in the library over `postMessage`). Keep the
   attribute/command/event contract identical for both; both are parametrized in the e2e suites.
+- `IframeBridgeService` starts from an app initializer of the SPA shell (`src/app/app.config.ts`), so
+  the iframe listens and posts events on every screen. It imports `EmbeddedCommandService` as a type
+  only: the meeting page (`MeetingComponent`) attaches it, which keeps LiveKit out of the eager
+  bundle. A command received before that is rejected with the phase warning.
 - After changing the library, rebuild the bundle and re-deploy: the loader serves whatever is in the
   backend's `public/webcomponent/`, so a stale bundle silently masks your change.
 - The Angular `wc` configuration builds with `outputHashing: none` and optimization on.
