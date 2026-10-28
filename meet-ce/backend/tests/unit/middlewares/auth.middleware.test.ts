@@ -382,6 +382,26 @@ describe('the validators, against a change made in the same millisecond as the t
 			});
 		});
 
+		it('looks the revocation up without waiting for the room, and refuses a revoked token', async () => {
+			let answerRoomLookup: (room: MeetRoom) => void = () => {};
+			jest.spyOn(tokenService, 'parseRoomMemberTokenMetadata').mockReturnValue(metadata as never);
+			jest.spyOn(roomRepository, 'findByRoomId').mockReturnValue(
+				new Promise((resolve) => (answerRoomLookup = resolve)) as never
+			);
+			jest.spyOn(roomMemberRepository, 'findByRoomAndMemberId').mockResolvedValue({
+				permissionsUpdatedAt: ISSUED_AT
+			} as MeetRoomMember);
+			jest.spyOn(userService, 'getUser').mockResolvedValue(user({ roleUpdatedAt: ISSUED_AT }));
+			jest.spyOn(redisService, 'get').mockImplementation(async () => {
+				answerRoomLookup({ rolesUpdatedAt: ISSUED_AT } as MeetRoom);
+				return String(ISSUED_AT + 1);
+			});
+
+			await expect(roomMemberTokenValidator.validate(roomMemberTokenRequest())).rejects.toMatchObject({
+				statusCode: 401
+			});
+		});
+
 		// A token minted from an anonymous access link names neither a member nor a user, so the two
 		// lookups behind those must not run for it.
 		it('accepts a token that names neither a member nor a user', async () => {

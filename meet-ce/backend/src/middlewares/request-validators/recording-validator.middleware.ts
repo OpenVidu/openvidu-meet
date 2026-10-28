@@ -6,8 +6,8 @@ import {
 	GetRecordingReqSchema,
 	GetRecordingUrlReqSchema,
 	mergeRecordingHeaderFieldsIntoQuery,
-	nonEmptySanitizedRecordingId,
 	RecordingFiltersSchema,
+	RecordingIdParamSchema,
 	RecordingQueryFieldsSchema,
 	StartRecordingReqSchema,
 	StopRecordingReqSchema
@@ -66,7 +66,7 @@ export const validateBulkDeleteRecordingsReq = (req: Request, res: Response, nex
 };
 
 export const withValidRecordingId = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = nonEmptySanitizedRecordingId('recordingId').safeParse(req.params.recordingId);
+	const { success, error, data } = RecordingIdParamSchema.safeParse(req.params.recordingId);
 
 	if (!success) {
 		error.issues[0] = { ...error.issues[0], path: ['recordingId'] };

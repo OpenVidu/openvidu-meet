@@ -223,41 +223,35 @@ export const roomMemberTokenValidator: AuthValidator = {
 			const { iat, roomId, memberId, userId } = parsedMetadata;
 
 			const roomRepository = container.get(RoomRepository);
-			const room = await roomRepository.findByRoomId(roomId, ['rolesUpdatedAt']);
+			const tokenRevocationService = container.get(ParticipantTokenRevocationService);
+			const roomMemberRepository = container.get(RoomMemberRepository);
+			const userService = container.get(UserService);
+			const [room, revoked, roomMember, user] = await Promise.all([
+				roomRepository.findByRoomId(roomId, ['rolesUpdatedAt']),
+				participantIdentity ? tokenRevocationService.isRevoked(roomId, participantIdentity, iat) : false,
+				memberId
+					? roomMemberRepository.findByRoomAndMemberId(roomId, memberId, ['permissionsUpdatedAt'])
+					: undefined,
+				userId ? userService.getUser(userId, ['roleUpdatedAt']) : undefined
+			]);
 
 			// Always validate room role/access updates for any room member token
 			if (!room || iat < room.rolesUpdatedAt) {
 				throw new Error('Token has outdated permissions');
 			}
 
-			const tokenRevocationService = container.get(ParticipantTokenRevocationService);
-
-			if (participantIdentity && (await tokenRevocationService.isRevoked(roomId, participantIdentity, iat))) {
+			if (revoked) {
 				throw new Error('Token was issued before the participant role changed');
 			}
 
 			// If the token has a memberId, validate that permissions haven't been updated after token issuance
-			if (memberId) {
-				const roomMemberRepository = container.get(RoomMemberRepository);
-				const roomMember = await roomMemberRepository.findByRoomAndMemberId(roomId, memberId, [
-					'permissionsUpdatedAt'
-				]);
-
-				// If member not found or permissions were updated after token issuance, invalidate token
-				if (!roomMember || iat < roomMember.permissionsUpdatedAt) {
-					throw new Error('Token has outdated permissions');
-				}
+			if (memberId && (!roomMember || iat < roomMember.permissionsUpdatedAt)) {
+				throw new Error('Token has outdated permissions');
 			}
 
 			// If the token is associated with a user, validate user role wasn't updated after token issuance
-			if (userId) {
-				const userService = container.get(UserService);
-				const user = await userService.getUser(userId, ['roleUpdatedAt']);
-
-				// If user not found or role was updated after token issuance, invalidate token
-				if (!user || iat < user.roleUpdatedAt) {
-					throw new Error('Token has outdated permissions');
-				}
+			if (userId && (!user || iat < user.roleUpdatedAt)) {
+				throw new Error('Token has outdated permissions');
 			}
 
 			// Set room member token metadata in the session

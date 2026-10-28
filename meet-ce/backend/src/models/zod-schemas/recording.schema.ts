@@ -10,7 +10,7 @@ import {
 import { z } from 'zod';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import { invalidRegexPatternReason } from '../../utils/string-match-filter.utils.js';
-import { encodingValidator, nonEmptySanitizedRoomId } from './room.schema.js';
+import { encodingValidator, nonEmptySanitizedRoomId, RoomIdParamSchema } from './room.schema.js';
 
 /**
  * Shared fields validation schema for Recording entity
@@ -55,7 +55,7 @@ export const nonEmptySanitizedRecordingId = (fieldName: string) =>
 			if (parts.length !== 3) return sanitizedValue;
 
 			// If the recording ID is in the expected format, sanitize the roomId part
-			const { success, data } = nonEmptySanitizedRoomId('roomId').safeParse(parts[0]);
+			const { success, data } = RoomIdParamSchema.safeParse(parts[0]);
 
 			if (!success) {
 				// If the roomId part is not valid, return the sanitized value
@@ -85,6 +85,8 @@ export const nonEmptySanitizedRecordingId = (fieldName: string) =>
 				message: `${fieldName} does not follow the expected format`
 			}
 		);
+
+export const RecordingIdParamSchema = nonEmptySanitizedRecordingId('recordingId');
 
 export const StartRecordingReqSchema = z.object({
 	roomId: nonEmptySanitizedRoomId('roomId'),
