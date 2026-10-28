@@ -212,13 +212,13 @@ test.describe('Permissions E2E Tests', () => {
 		});
 
 		test('canReadChat denied: a message sent to the meeting raises no notice', async ({ page, browser }) => {
-			await joinAsGuest(page, { canReadChat: false, canWriteChat: true });
 			const { byName, removeAllParticipants } = await joinParticipants(browser, {
 				roomId: room.roomId,
 				participants: [{ name: 'Chat Sender' }, { name: 'Chat Reader' }]
 			});
 
 			try {
+				await joinAsGuest(page, { canReadChat: false, canWriteChat: true });
 				await toggleChatPanel(byName['Chat Sender'], 'open');
 				await sendChatMessage(byName['Chat Sender'], 'Can anyone read this?');
 				await expectChatMessageNotification(byName['Chat Reader']);

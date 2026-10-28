@@ -9,8 +9,8 @@
 
 ## 2. Room wizard
 
-- [ ] 2.1 Make the wizard turn the captions toggle off and disable it while encryption is on, restoring its previous value when encryption is turned off, alongside the recording handling in the wizard state service; verify with a test in `meet-ce/frontend/e2e/room-wizard.test.ts`; report it as not run if the local deployment is unavailable.
-- [ ] 2.2 Warn about it as the wizard does for recording: in the Meeting step, add a "Live captions are unavailable while encryption is enabled." item to the E2EE restrictions card next to the recording one (`ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_CAPTIONS_*`), and show a warning under the disabled captions toggle while encryption is on, styled like the Recording step's `E2EE_WARNING_*` notice; translate the new keys in the ten `lib/domains/rooms/lang/*.json` files; verify both texts in the 2.1 test.
+- [x] 2.1 Make the wizard turn the captions toggle off and disable it while encryption is on, restoring its previous value when encryption is turned off, alongside the recording handling in the wizard state service; verify with a test in `meet-ce/frontend/e2e/room-wizard.test.ts`; report it as not run if the local deployment is unavailable.
+- [x] 2.2 Warn about it as the wizard does for recording: in the Meeting step, add a "Live captions are unavailable while encryption is enabled." item to the E2EE restrictions card next to the recording one (`ROOMS.WIZARD.MEETING.E2EE_RESTRICTION_CAPTIONS_*`), and show a warning under the disabled captions toggle while encryption is on, styled like the Recording step's `E2EE_WARNING_*` notice; translate the new keys in the ten `lib/domains/rooms/lang/*.json` files; verify both texts in the 2.1 test.
 
 ## 3. Release surfaces
 
