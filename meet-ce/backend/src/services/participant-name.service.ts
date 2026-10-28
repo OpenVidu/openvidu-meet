@@ -63,7 +63,11 @@ export class ParticipantNameService {
 
 		// First, try to reserve the exact requested name
 		const normalizedRequestedName = requestedName.toLowerCase();
-		const reservedOriginal = await this.tryReserveName(participantsKey, normalizedRequestedName, participantIdentity);
+		const reservedOriginal = await this.tryReserveName(
+			participantsKey,
+			normalizedRequestedName,
+			participantIdentity
+		);
 
 		if (reservedOriginal) {
 			this.logger.verbose(`Reserved original name '${requestedName}' for room '${roomId}'`);

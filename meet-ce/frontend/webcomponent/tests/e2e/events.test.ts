@@ -103,7 +103,7 @@ for (const integration of INTEGRATIONS) {
 				await expect(left).toContainText(LeftEventReason.VOLUNTARY_LEAVE);
 			});
 
-			test('should receive left event with meeting_ended reason when moderator ends meeting', async ({
+			test('should receive left event with meeting_ended_by_self reason when the moderator ends the meeting', async ({
 				page
 			}) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
@@ -112,8 +112,7 @@ for (const integration of INTEGRATIONS) {
 				await endMeetingCommand(page);
 
 				const left = await expectEvent(page, EmbeddedEventName.LEFT);
-				await expect(left).toContainText('reason');
-				await expect(left).toContainText(LeftEventReason.MEETING_ENDED);
+				expect(await eventPayloadField(left, 'reason')).toBe(LeftEventReason.MEETING_ENDED_BY_SELF);
 			});
 
 			test('should receive left event when speaker leaves room', async ({ page }) => {

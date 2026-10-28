@@ -416,14 +416,15 @@ test.describe('Participants E2E Tests', () => {
 
 			try {
 				const moderatorPage = byName[moderatorName];
+				const participantRows = moderatorPage.locator('[data-participant-id]');
 				await toggleParticipantsPanel(moderatorPage);
 				await openMeeting(firstTab, accessUrl);
-				await expect(moderatorPage.locator('[data-participant-id]', { hasText: guestName })).toHaveCount(1);
+				await expect(participantRows.filter({ hasText: guestName })).toHaveCount(1);
 
 				await openMeeting(secondTab, accessUrl);
 				await expect(firstTab.locator('#layout-container')).toHaveCount(0, { timeout: 10_000 });
-				await expect(moderatorPage.locator('[data-participant-id]', { hasText: guestName })).toHaveCount(1);
-				await expect(moderatorPage.locator('[data-participant-id]', { hasText: `${guestName}_` })).toHaveCount(0);
+				await expect(participantRows.filter({ hasText: guestName })).toHaveCount(1);
+				await expect(participantRows.filter({ hasText: `${guestName}_` })).toHaveCount(0);
 			} finally {
 				await firstTab.close();
 				await secondTab.close();

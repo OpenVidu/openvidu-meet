@@ -148,6 +148,11 @@ export class MeetingContextService {
 		this._endedBySelf.set(true);
 	}
 
+	/** Withdraws {@link markMeetingEndedBySelf} when the end this participant asked for did not happen. */
+	clearMeetingEndedBySelf(): void {
+		this._endedBySelf.set(false);
+	}
+
 	setMeetingStartedAt(startedAt: number | undefined): void {
 		this._meetingStartedAt.set(startedAt);
 	}

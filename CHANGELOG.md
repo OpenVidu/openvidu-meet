@@ -70,6 +70,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - [`participantKick`][3.9-participant-kick] and the embedded command of the same name could disconnect the recorder
   of a recording in progress or the live captions assistant, which `participantGet` answers as not in the meeting.
   They now answer the same 404 for them.
+- The embedded commands `meetingEnd` and `endMeeting` reported `meeting_ended` in the `meetingLeft` event of the
+  participant whose host ended the meeting. They now report `meeting_ended_by_self`, as ending it from the leave menu
+  does.
 - The `joinDate` of the embedded event `participantJoined` was the moment the join reached the browser, by the
   browser's clock, and the one of `participantLeft` was rounded down to the second. Both now carry the `joinDate` of
   the [`participantJoined`][3.9-participant-joined] webhook.
