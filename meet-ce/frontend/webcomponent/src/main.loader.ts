@@ -1,5 +1,6 @@
 import { EmbeddedAttribute, EmbeddedCommandName, EmbeddedEventName } from '@openvidu-meet/typings';
 import { computeServerUrl } from 'projects/shared-meet-components/src/lib/shared/utils/url.utils';
+import { warnCommandRejected } from './command-rejection';
 import { EventListeners } from './event-listeners';
 
 /**
@@ -9,7 +10,8 @@ import { EventListeners } from './event-listeners';
  * element connects. The ESM registers the real Angular Elements element as `openvidu-meet-impl` (through
  * {@link bootstrapOpenViduMeet}, its own auto-define suppressed by `__OV_MEET_SKIP_AUTODEFINE__`) and the
  * loader delegates to an inner `<openvidu-meet-impl>`: attributes and properties are forwarded, imperative
- * calls are buffered until it exists, and its events are re-dispatched on the loader.
+ * calls made before it exists are rejected with a console warning, and its events are re-dispatched on the
+ * loader.
  *
  * The delegated surface comes from `@openvidu-meet/typings`.
  */
@@ -123,7 +125,6 @@ try {
 
 type ImplElement = HTMLElement & Record<string, unknown>;
 type ImplWrite = (impl: ImplElement) => void;
-type DeferredCall = { method: string; args: unknown[] };
 
 class OpenViduMeetLoader extends HTMLElement {
 	static readonly observedAttributes = ATTRIBUTES;
@@ -134,7 +135,6 @@ class OpenViduMeetLoader extends HTMLElement {
 	// The host's last write per input, attribute or property: that is all a mounted impl needs, as it
 	// feeds both into the same input and the last one wins there too.
 	readonly _writes = new Map<string, ImplWrite>();
-	_deferred: DeferredCall[] = [];
 	readonly _listeners = new EventListeners(this);
 	_placeholder: HTMLElement | null = null;
 	_teardownTimer: ReturnType<typeof setTimeout> | null = null;
@@ -284,12 +284,6 @@ class OpenViduMeetLoader extends HTMLElement {
 		this._placeholder?.remove();
 		this._placeholder = null;
 		this._impl = impl;
-
-		for (const { method, args } of this._deferred) {
-			(impl[method] as ((...a: unknown[]) => unknown) | undefined)?.(...args);
-		}
-
-		this._deferred = [];
 	}
 }
 
@@ -309,18 +303,19 @@ for (const prop of PROPERTIES) {
 	});
 }
 
-// Buffered calls keep the name they were made with: resolving a deprecated alias is the impl's job.
+// No command can run before the device setup screen, so one called before the impl exists is rejected
+// at once, under the name it was called with: resolving a deprecated alias is the impl's job.
 for (const method of METHODS) {
 	Object.defineProperty(OpenViduMeetLoader.prototype, method, {
 		configurable: true,
 		enumerable: false,
 		value(this: OpenViduMeetLoader, ...args: unknown[]): unknown {
-			if (this._impl) {
-				return (this._impl[method] as (...a: unknown[]) => unknown)(...args);
+			if (!this._impl) {
+				warnCommandRejected(method);
+				return undefined;
 			}
 
-			this._deferred.push({ method, args });
-			return undefined;
+			return (this._impl[method] as (...a: unknown[]) => unknown)(...args);
 		}
 	});
 }

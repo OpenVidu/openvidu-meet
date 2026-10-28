@@ -1,10 +1,12 @@
 import {
+	EmbeddedCommandName,
 	EmbeddedEventName,
 	EmbeddedEventPayloadFor,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetReaction
 } from '@openvidu-meet/typings';
+import { warnCommandRejected } from '../../command-rejection';
 import { EventListeners } from '../../event-listeners';
 import type { App } from '../app';
 
@@ -49,63 +51,67 @@ export function createOpenViduMeetElementClass(
 		}
 
 		meetingEnd(): void {
-			this._getComponentInstance()?.meetingEnd();
+			this._run(EmbeddedCommandName.MEETING_END, (app) => app.meetingEnd());
 		}
 
 		meetingLeave(): void {
-			this._getComponentInstance()?.meetingLeave();
+			this._run(EmbeddedCommandName.MEETING_LEAVE, (app) => app.meetingLeave());
 		}
 
 		participantKick(participantIdentity: string): void {
-			this._getComponentInstance()?.participantKick(participantIdentity);
+			this._run(EmbeddedCommandName.PARTICIPANT_KICK, (app) => app.participantKick(participantIdentity));
 		}
 
 		participantMute(participantIdentity: string, media: MeetParticipantMuteOptions): void {
-			this._getComponentInstance()?.participantMute(participantIdentity, media);
+			this._run(EmbeddedCommandName.PARTICIPANT_MUTE, (app) => app.participantMute(participantIdentity, media));
 		}
 
 		participantMuteAll(media: MeetParticipantMuteOptions): void {
-			this._getComponentInstance()?.participantMuteAll(media);
+			this._run(EmbeddedCommandName.PARTICIPANT_MUTE_ALL, (app) => app.participantMuteAll(media));
 		}
 
 		participantUpdateRole(participantIdentity: string, action: MeetParticipantModerationAction): void {
-			this._getComponentInstance()?.participantUpdateRole(participantIdentity, action);
+			this._run(EmbeddedCommandName.PARTICIPANT_UPDATE_ROLE, (app) =>
+				app.participantUpdateRole(participantIdentity, action)
+			);
 		}
 
 		mediaToggleAudio(active?: boolean): void {
-			this._getComponentInstance()?.mediaToggleAudio(active);
+			this._run(EmbeddedCommandName.MEDIA_TOGGLE_AUDIO, (app) => app.mediaToggleAudio(active));
 		}
 
 		mediaToggleVideo(active?: boolean): void {
-			this._getComponentInstance()?.mediaToggleVideo(active);
+			this._run(EmbeddedCommandName.MEDIA_TOGGLE_VIDEO, (app) => app.mediaToggleVideo(active));
 		}
 
 		mediaToggleScreenShare(active?: boolean): void {
-			this._getComponentInstance()?.mediaToggleScreenShare(active);
+			this._run(EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE, (app) => app.mediaToggleScreenShare(active));
 		}
 
 		recordingStart(): void {
-			this._getComponentInstance()?.recordingStart();
+			this._run(EmbeddedCommandName.RECORDING_START, (app) => app.recordingStart());
 		}
 
 		recordingStop(): void {
-			this._getComponentInstance()?.recordingStop();
+			this._run(EmbeddedCommandName.RECORDING_STOP, (app) => app.recordingStop());
 		}
 
 		participantHandRaise(): void {
-			this._getComponentInstance()?.participantHandRaise();
+			this._run(EmbeddedCommandName.PARTICIPANT_HAND_RAISE, (app) => app.participantHandRaise());
 		}
 
 		participantHandLower(participantIdentity?: string): void {
-			this._getComponentInstance()?.participantHandLower(participantIdentity);
+			this._run(EmbeddedCommandName.PARTICIPANT_HAND_LOWER, (app) =>
+				app.participantHandLower(participantIdentity)
+			);
 		}
 
 		participantHandLowerAll(): void {
-			this._getComponentInstance()?.participantHandLowerAll();
+			this._run(EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL, (app) => app.participantHandLowerAll());
 		}
 
 		participantReactionSend(reaction: MeetReaction): void {
-			this._getComponentInstance()?.participantReactionSend(reaction);
+			this._run(EmbeddedCommandName.PARTICIPANT_REACTION_SEND, (app) => app.participantReactionSend(reaction));
 		}
 
 		// ── Deprecated method aliases ────────────────────────────────────────
@@ -127,11 +133,17 @@ export function createOpenViduMeetElementClass(
 			this.participantKick(participantIdentity);
 		}
 
-		private _getComponentInstance(): App | null {
+		/** Runs a command on the component, or rejects it with a warning while Meet has not started. */
+		private _run(command: EmbeddedCommandName, call: (app: App) => void): void {
 			// Accesses Angular Elements internal strategy to reach the component instance.
-			const strategy = (this as any).ngElementStrategy;
-			const instance = strategy?.componentRef?.instance as App | undefined;
-			return instance ?? null;
+			const app = (this as any).ngElementStrategy?.componentRef?.instance as App | undefined;
+
+			if (!app) {
+				warnCommandRejected(command);
+				return;
+			}
+
+			call(app);
 		}
 	}
 

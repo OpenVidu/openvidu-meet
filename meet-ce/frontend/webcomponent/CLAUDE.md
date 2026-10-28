@@ -39,8 +39,9 @@ at exactly the two URLs above.
 The loader registers `<openvidu-meet>` immediately without loading Angular. On first
 `connectedCallback` it sets `globalThis.__OV_MEET_SKIP_AUTODEFINE__`, `import()`s the ESM (which then
 registers the real element as `openvidu-meet-impl`), and delegates to an inner `<openvidu-meet-impl>`:
-attributes/properties are mirrored, imperative calls made before load are buffered and replayed, and
-events are re-dispatched on the outer element.
+attributes/properties are mirrored, imperative calls made before load are rejected with a console
+warning (no command can run before the device setup screen), and events are re-dispatched on the outer
+element. The wrapper rejects them the same way while the Angular component does not exist yet.
 
 - The ESM is imported from the sibling of the loader's own `src` (`document.currentScript`) and, if
   that fails, from `<meet server>/v1/openvidu-meet.esm.js` derived from `room-url` / `recording-url`

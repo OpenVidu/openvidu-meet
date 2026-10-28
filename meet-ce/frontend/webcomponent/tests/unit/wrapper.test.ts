@@ -317,12 +317,17 @@ describe('openvidu-meet custom element', () => {
 			expect(instance[name]).toHaveBeenCalledWith(...args);
 		});
 
-		it.each(commands)('%s() is a no-op while the Angular component instance is missing', (_name, call) => {
-			const el = createElement();
-			el.ngElementStrategy = undefined;
+		it.each(commands)(
+			'%s() is rejected with a warning while the Angular component instance is missing',
+			(name, call) => {
+				const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+				const el = createElement();
+				el.ngElementStrategy = undefined;
 
-			expect(() => call(el)).not.toThrow();
-		});
+				expect(() => call(el)).not.toThrow();
+				expect(warn).toHaveBeenCalledWith(expect.stringContaining(`${name} rejected`));
+			}
+		);
 	});
 
 	// A host written against 3.8.0 calls these names on the element and must reach the same
@@ -352,7 +357,8 @@ describe('openvidu-meet custom element', () => {
 			expect(instance.participantKick).toHaveBeenCalledWith('participant-1');
 		});
 
-		it('are no-ops when the Angular component instance is not yet available', () => {
+		it('are rejected with a warning under the canonical name when the Angular component instance is not yet available', () => {
+			const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 			const el = createElement();
 			el.ngElementStrategy = undefined;
 
@@ -361,6 +367,11 @@ describe('openvidu-meet custom element', () => {
 				el.leaveRoom();
 				el.kickParticipant('participant-1');
 			}).not.toThrow();
+			expect(warn.mock.calls.map(([message]) => message)).toEqual([
+				expect.stringContaining('meetingEnd rejected'),
+				expect.stringContaining('meetingLeave rejected'),
+				expect.stringContaining('participantKick rejected')
+			]);
 		});
 	});
 });

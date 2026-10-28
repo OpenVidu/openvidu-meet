@@ -8,10 +8,6 @@ import { EmbeddedAttribute, EmbeddedCommandName, EmbeddedEventName } from '@open
 // jsdom without pulling in Angular / LiveKit / the 5.6 MB bundle.
 // Mirrors the real impl (the custom-element wrapper): canonical methods plus the deprecated
 // spellings, which the loader must keep proxying for the whole deprecation window.
-// Set by the test that needs an impl bundle older than the loader: one the host calls a command
-// the bundle does not have.
-let commandMissingFromImpl: string | null = null;
-
 class FakeImpl extends HTMLElement {
 	// Like Angular Elements, the attribute and the property feed one input and the last write wins.
 	static readonly observedAttributes = ['show-only-recordings'];
@@ -35,12 +31,6 @@ class FakeImpl extends HTMLElement {
 	endMeeting = jest.fn();
 	leaveRoom = jest.fn();
 	kickParticipant = jest.fn();
-
-	constructor() {
-		super();
-
-		if (commandMissingFromImpl) delete (this as unknown as Record<string, unknown>)[commandMissingFromImpl];
-	}
 
 	attributeChangedCallback(_name: string, _previous: string | null, value: string | null): void {
 		this.showOnlyRecordings = value !== null && value !== 'false';
@@ -86,7 +76,6 @@ const implOf = (el: Loader): FakeImpl => el.shadowRoot!.querySelector('openvidu-
 describe('openvidu-meet lazy loader', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
-		commandMissingFromImpl = null;
 	});
 
 	it('registers <openvidu-meet> immediately (no Angular needed)', () => {
@@ -328,46 +317,34 @@ describe('openvidu-meet lazy loader', () => {
 	});
 
 	describe('pre-load buffering', () => {
-		it('replays imperative calls made before the bundle loaded', async () => {
+		// No command can run before the device setup screen, so keeping one for later would only
+		// delay its rejection.
+		it('rejects a command called before the bundle loaded with a warning, and never runs it', async () => {
+			const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 			const el = createLoader();
+
 			el.meetingEnd();
 			el.participantKick('user-1');
 
+			expect(warn).toHaveBeenCalledWith(expect.stringContaining('meetingEnd rejected'));
+			expect(warn).toHaveBeenCalledWith(expect.stringContaining('participantKick rejected'));
+
 			document.body.appendChild(el);
 			await flush();
 
-			const impl = implOf(el);
-			expect(impl.meetingEnd).toHaveBeenCalledTimes(1);
-			expect(impl.participantKick).toHaveBeenCalledWith('user-1');
+			expect(implOf(el).meetingEnd).not.toHaveBeenCalled();
+			expect(implOf(el).participantKick).not.toHaveBeenCalled();
+			warn.mockRestore();
 		});
 
-		it('replays a deprecated call made before the bundle loaded, under its own name', async () => {
-			const el = createLoader();
-			el.leaveRoom();
+		// The loader is a transport: resolving a deprecated alias is the wrapper's job, one layer down.
+		it('names a deprecated command it rejects by the name it was called with', () => {
+			const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-			document.body.appendChild(el);
-			await flush();
+			createLoader().leaveRoom();
 
-			// The loader is a transport: it must not rewrite the name it buffered. Resolving the
-			// alias is the wrapper's job, one layer down.
-			expect(implOf(el).leaveRoom).toHaveBeenCalledTimes(1);
-			expect(implOf(el).meetingLeave).not.toHaveBeenCalled();
-		});
-
-		// The loader may be newer than the bundle the server hands it (a host that pins the loader
-		// url, a cached bundle): a command the bundle does not have is dropped, not thrown.
-		it('drops a buffered call the impl turns out not to implement', async () => {
-			commandMissingFromImpl = 'meetingEnd';
-
-			const el = createLoader();
-			el.meetingEnd();
-			el.meetingLeave();
-
-			document.body.appendChild(el);
-			await flush();
-
-			expect(implOf(el).meetingEnd).toBeUndefined();
-			expect(implOf(el).meetingLeave).toHaveBeenCalledTimes(1);
+			expect(warn).toHaveBeenCalledWith(expect.stringContaining('leaveRoom rejected'));
+			warn.mockRestore();
 		});
 
 		it('applies properties set before the bundle loaded', async () => {
