@@ -37,7 +37,7 @@
 		"test:unit-webcomponent": "pnpm --filter @openvidu-meet/webcomponent run test:unit"
 	},
 	"devDependencies": {
-		"@fission-ai/openspec": "1.14.1",
+		"@fission-ai/openspec": "1.15.0",
 		"concurrently": "10.0.6",
 		"identity-obj-proxy": "3.0.0",
 		"nodemon": "3.1.14",
