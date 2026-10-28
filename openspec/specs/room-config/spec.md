@@ -77,7 +77,7 @@ The server SHALL accept as `recording.encoding` either one of the encoding prese
 - **THEN** the server answers `422`
 
 ### Requirement: Rules across fields judge the resulting config
-The server SHALL apply the rules that tie several config fields together, namely that the recording auto-start must be reachable with `maxParticipants` and that end-to-end encryption turns recording off (both specified in `recordings`), to the config that results from the request, the stored config merged with the update, so that they hold even when the fields involved arrive in different requests.
+The server SHALL apply the rules that tie several config fields together, namely that the recording auto-start must be reachable with `maxParticipants` and that end-to-end encryption turns recording and live captions off (specified in `recordings` and `live-captions`), to the config that results from the request, the stored config merged with the update, so that they hold even when the fields involved arrive in different requests.
 
 #### Scenario: Unreachable auto-start split over two requests
 - **GIVEN** a room whose stored `maxParticipants` is 1
@@ -93,6 +93,11 @@ The server SHALL apply the rules that tie several config fields together, namely
 - **GIVEN** a room with `e2ee` enabled
 - **WHEN** `updateRoomConfig` sets only `recording.enabled` to `true`
 - **THEN** the server answers `200` and `recording.enabled` stays `false`
+
+#### Scenario: Captions re-enabled on an encrypted room
+- **GIVEN** a room with `e2ee` enabled
+- **WHEN** `updateRoomConfig` sets only `captions.enabled` to `true`
+- **THEN** the server answers `200` and `captions.enabled` stays `false`
 
 ### Requirement: Reading the config
 The server SHALL return a room's config, as a plain config object, on `getRoomConfig` to an API key, to a room member token issued for that room and to a logged-in user allowed into the room (see `room-access`), SHALL answer `403` to any other caller and `404` for a room that does not exist. Room responses SHALL carry the same object only when the extra field `config` is requested (see `rooms`).

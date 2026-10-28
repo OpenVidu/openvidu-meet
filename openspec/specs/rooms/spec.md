@@ -511,12 +511,17 @@ The wizard SHALL block finishing while the participant limit is outside 1 to 30,
 - **THEN** the field shows an error with the accepted range and the finish button is disabled
 
 ### Requirement: Wizard dependent settings
-The wizard SHALL keep end-to-end encryption and recording mutually exclusive, restoring the previous state of the other when one is turned off again, and SHALL disable the `mediaChangeVirtualBackground` role switches while virtual backgrounds are off, restoring them as left when virtual backgrounds are turned back on. The chat role switches are specified in `meeting-chat`.
+The wizard SHALL keep end-to-end encryption mutually exclusive with recording and with live captions, warning while encryption is on that both are unavailable, restoring the previous state of each when encryption is turned off again, and SHALL disable the `mediaChangeVirtualBackground` role switches while virtual backgrounds are off, restoring them as left when virtual backgrounds are turned back on. The chat role switches are specified in `meeting-chat`.
 
 #### Scenario: Enabling end-to-end encryption
 - **GIVEN** the wizard with recording allowed
 - **WHEN** the user turns end-to-end encryption on and later off again
 - **THEN** recording is turned off while encryption is on and allowed again afterwards
+
+#### Scenario: Enabling end-to-end encryption with live captions on
+- **GIVEN** the wizard with live captions turned on
+- **WHEN** the user turns end-to-end encryption on and later off again
+- **THEN** live captions are turned off and cannot be turned on while encryption is on, a warning says they are unavailable while encryption is enabled, and they are on again afterwards
 
 #### Scenario: Virtual backgrounds turned off
 - **GIVEN** the wizard with virtual backgrounds turned off in the Meeting step

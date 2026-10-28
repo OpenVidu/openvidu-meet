@@ -15,5 +15,5 @@
 ## 3. Release surfaces
 
 - [x] 3.1 Add under `## 3.10.0 (unreleased)` -> `### Fixed` -> `#### Integration` of `CHANGELOG.md`: "- A room with end-to-end encryption could have live captions on, although the captions assistant only receives encrypted audio and produced no captions. As with recording, `captions.enabled` is now stored as `false` while `e2ee.enabled` is `true`, in existing rooms too, and the room wizard turns captions off when encryption is turned on."
-- [ ] 3.2 openvidu.io `next`, `docs/meet/features/meetings/e2e-encryption.md`: add a **Live captions are not available** bullet to the "E2EE Limitations" warning next to the recording one, and refresh the `room-wizard-e2ee` light and dark screenshots, which now show the captions restriction.
+- [x] 3.2 openvidu.io `next`, `docs/meet/features/meetings/e2e-encryption.md`: add a **Live captions are not available** bullet to the "E2EE Limitations" warning next to the recording one, and refresh the `room-wizard-e2ee` light and dark screenshots, which now show the captions restriction.
 - [x] 3.3 openvidu.io `next`, `docs/meet/features/meetings/live-captions.md`: add an `!!! info` notice, like the one in `docs/meet/features/recordings/configuration.md`, saying live captions and end-to-end encryption are mutually exclusive.
