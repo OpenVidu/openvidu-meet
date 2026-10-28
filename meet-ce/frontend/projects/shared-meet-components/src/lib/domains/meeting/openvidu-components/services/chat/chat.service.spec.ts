@@ -1,7 +1,8 @@
-import { provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { AssetsService } from '../../../../../shared/services/assets.service';
 import { NotificationService } from '../../../../../shared/services/notification.service';
+import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { PanelService } from '../panel/panel.service';
 import { ParticipantService } from '../participant/participant.service';
 import { ChatService } from './chat.service';
@@ -11,8 +12,10 @@ describe('ChatService', () => {
 
 	let service: ChatService;
 	let notificationService: jasmine.SpyObj<NotificationService>;
+	const chatPanelButton = signal(true);
 
 	beforeEach(() => {
+		chatPanelButton.set(true);
 		notificationService = jasmine.createSpyObj<NotificationService>('NotificationService', [
 			'showNotification',
 			'dismissNotification'
@@ -24,6 +27,7 @@ describe('ChatService', () => {
 				provideZonelessChangeDetection(),
 				{ provide: NotificationService, useValue: notificationService },
 				{ provide: PanelService, useValue: { isChatPanelOpened: () => false } },
+				{ provide: MeetingUiConfigService, useValue: { chatPanelButtonSignal: chatPanelButton } },
 				{ provide: ParticipantService, useValue: {} },
 				{ provide: AssetsService, useValue: { chatMessageSound: '' } }
 			]
@@ -40,6 +44,15 @@ describe('ChatService', () => {
 
 		expect(service.chatMessages()).toEqual([]);
 		expect(notificationService.dismissNotification).toHaveBeenCalledOnceWith(NOTICE_ID);
+	});
+
+	it('ignores a message the participant cannot read, without a notice', async () => {
+		chatPanelButton.set(false);
+
+		await service.addRemoteMessage('hello', 'Alice');
+
+		expect(service.chatMessages()).toEqual([]);
+		expect(notificationService.showNotification).not.toHaveBeenCalled();
 	});
 
 	it('announces the first message after a clear as new', async () => {

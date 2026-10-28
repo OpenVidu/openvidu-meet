@@ -47,6 +47,10 @@ export const expectChatMessageNotification = async (page: Page): Promise<void> =
 	await expect(page.locator(CHAT_NOTIFICATION)).toBeVisible({ timeout: 10_000 });
 };
 
+export const expectNoChatMessageNotification = async (page: Page): Promise<void> => {
+	await expect(page.locator(CHAT_NOTIFICATION)).toHaveCount(0);
+};
+
 /** Opens the chat from the notification's own action, the way a participant does. */
 export const openChatFromNotification = async (page: Page): Promise<void> => {
 	await page.locator(`${CHAT_NOTIFICATION} .notification-action`).click();

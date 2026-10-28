@@ -3,6 +3,7 @@ import { ChatMessage } from '../../models/chat.model';
 
 import { DataTopic } from '../../models/data-topic.model';
 import { PanelType } from '../../models/panel.model';
+import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { PanelService } from '../panel/panel.service';
 import { ParticipantService } from '../participant/participant.service';
 import { AssetsService } from '../../../../../shared/services/assets.service';
@@ -20,6 +21,7 @@ const CHAT_NOTIFICATION_DURATION_MS = 5_000;
 export class ChatService {
 	private readonly participantService = inject(ParticipantService);
 	private readonly panelService = inject(PanelService);
+	private readonly uiConfig = inject(MeetingUiConfigService);
 	private readonly notificationService = inject(NotificationService);
 	private readonly assets = inject(AssetsService);
 	private log: ILogger = inject(LoggerService).get('ChatService');
@@ -33,11 +35,16 @@ export class ChatService {
 		this.messageSound.volume = 0.6;
 	}
 
-	/** Adds a new message to the chat from a remote participant
+	/**
+	 * Adds a new message to the chat from a remote participant. A participant who cannot read the chat,
+	 * for whom the meeting hides the chat button, gets nothing: no message, notice or sound.
+	 *
 	 * @param message
 	 * @param participantName
 	 */
 	async addRemoteMessage(message: string, participantName: string) {
+		if (!this.uiConfig.chatPanelButtonSignal()) return;
+
 		this.addMessage(message, false, participantName);
 
 		if (!this.panelService.isChatPanelOpened()) {
