@@ -598,18 +598,6 @@ export class RoomMemberService {
 				`Generating room member token for joining a meeting for '${participantName}' in room '${roomId}'`
 			);
 
-			try {
-				// Reserve a unique name for the participant
-				participantName = await this.participantNameService.reserveUniqueName(roomId, participantName);
-				this.logger.verbose(`Reserved unique name '${participantName}' for room '${roomId}'`);
-			} catch (error) {
-				this.logger.debug(`Failed to reserve unique name '${participantName}' for room '${roomId}':`, error);
-				throw error;
-			}
-
-			// Create the Livekit room if it doesn't exist
-			await this.roomService.createLivekitRoom(roomId);
-
 			if (tokenMetadata.memberId || tokenMetadata.userId) {
 				// Use memberId as participant identity for identified members
 				// (users or identified guests with a record in the database)
@@ -620,6 +608,22 @@ export class RoomMemberService {
 				const identityPrefix = this.createParticipantIdentityPrefixFromName(participantName) || 'participant';
 				participantIdentity = `${identityPrefix}-${uid(15)}`;
 			}
+
+			try {
+				// Reserve a unique name for the participant
+				participantName = await this.participantNameService.reserveUniqueName(
+					roomId,
+					participantName,
+					participantIdentity!
+				);
+				this.logger.verbose(`Reserved unique name '${participantName}' for room '${roomId}'`);
+			} catch (error) {
+				this.logger.debug(`Failed to reserve unique name '${participantName}' for room '${roomId}':`, error);
+				throw error;
+			}
+
+			// Create the Livekit room if it doesn't exist
+			await this.roomService.createLivekitRoom(roomId);
 		} else {
 			// REFRESH MODE
 			this.logger.verbose(
@@ -1437,18 +1441,24 @@ export class RoomMemberService {
 	}
 
 	/**
-	 * Releases a participant's reserved name when they disconnect from meeting.
-	 * This should be called when a participant leaves the meeting to free up the name.
+	 * Releases the name a participant's session reserved when that session leaves the meeting, unless a
+	 * newer session of the same participant took it over meanwhile.
 	 *
 	 * @param roomId - The room identifier
-	 * @param participantName - The participant name to release
+	 * @param participant - The participant whose session left
 	 */
-	async releaseParticipantName(roomId: string, participantName: string): Promise<void> {
+	async releaseParticipantName(roomId: string, participant: ParticipantInfo): Promise<void> {
+		const { name, identity } = participant;
+
 		try {
-			await this.participantNameService.releaseName(roomId, participantName);
-			this.logger.verbose(`Released participant name '${participantName}' for room '${roomId}'`);
+			await this.participantNameService.releaseName(
+				roomId,
+				name,
+				identity,
+				MeetParticipantHelper.extractJoinDate(participant)
+			);
 		} catch (error) {
-			this.logger.warn(`Error releasing participant name '${participantName}' for room '${roomId}':`, error);
+			this.logger.warn(`Error releasing participant name '${name}' for room '${roomId}':`, error);
 		}
 	}
 

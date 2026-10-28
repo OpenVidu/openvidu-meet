@@ -284,14 +284,7 @@ const UpdateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data: Partial<MeetRoomConfig>) => {
-		// Automatically disable recording when E2EE is enabled
-		if (data.e2ee?.enabled && data.recording?.enabled) {
-			data.recording = {
-				...data.recording,
-				enabled: false
-			};
-		}
-
+		MeetRoomHelper.disableFeaturesExcludedByE2EE(data);
 		return data;
 	});
 
@@ -332,14 +325,7 @@ const CreateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 			data.recording.encoding = MeetRecordingEncodingPreset.H264_720P_30;
 		}
 
-		// Automatically disable recording when E2EE is enabled
-		if (data.e2ee.enabled && data.recording.enabled) {
-			data.recording = {
-				...data.recording,
-				enabled: false
-			};
-		}
-
+		MeetRoomHelper.disableFeaturesExcludedByE2EE(data);
 		return data;
 	});
 

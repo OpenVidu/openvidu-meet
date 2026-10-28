@@ -55,6 +55,7 @@ describe('MeetingService mute', () => {
 		getParticipant: jest.Mock<(roomId: string, identity: string) => Promise<ParticipantInfo>>;
 		isStandardParticipant: jest.Mock<(participant: ParticipantInfo) => boolean>;
 		mutePublishedTrack: jest.Mock<(roomId: string, identity: string, trackSid: string) => Promise<void>>;
+		deleteParticipant: jest.Mock<(roomId: string, identity: string) => Promise<void>>;
 		listStandardParticipants: jest.Mock<(roomId: string) => Promise<ParticipantInfo[]>>;
 		getRoom: jest.Mock<(roomId: string) => Promise<Room>>;
 	};
@@ -73,6 +74,7 @@ describe('MeetingService mute', () => {
 			getParticipant: jest.fn(),
 			isStandardParticipant: jest.fn(() => true),
 			mutePublishedTrack: jest.fn(async () => {}),
+			deleteParticipant: jest.fn(async () => {}),
 			listStandardParticipants: jest.fn(async () => []),
 			getRoom: jest.fn(async () => ({ name: ROOM_ID }) as Room)
 		};
@@ -137,6 +139,22 @@ describe('MeetingService mute', () => {
 			statusCode: 404
 		});
 		expect(livekitService.mutePublishedTrack).not.toHaveBeenCalled();
+	});
+
+	it('kicks a participant of the meeting', async () => {
+		livekitService.getParticipant.mockResolvedValue(speakerWith([microphone]));
+
+		await meetingService.kickParticipant(ROOM_ID, IDENTITY);
+
+		expect(livekitService.deleteParticipant).toHaveBeenCalledWith(ROOM_ID, IDENTITY);
+	});
+
+	it('answers a kick of a recorder or an agent with a 404 and disconnects nobody', async () => {
+		livekitService.getParticipant.mockResolvedValue(speakerWith([]));
+		livekitService.isStandardParticipant.mockReturnValue(false);
+
+		await expect(meetingService.kickParticipant(ROOM_ID, IDENTITY)).rejects.toMatchObject({ statusCode: 404 });
+		expect(livekitService.deleteParticipant).not.toHaveBeenCalled();
 	});
 
 	it('mutes everyone but the moderators', async () => {

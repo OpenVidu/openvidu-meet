@@ -67,9 +67,17 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - Two simultaneous [`participantRoleUpdate`][3.10-participant-role-update] requests for the same participant both
   succeeded, and a promotion made while the participant's token was being regenerated could be undone by it. Both
   now apply one after the other, so the second promotion answers `409`.
+- [`participantKick`][3.9-participant-kick] and the embedded command of the same name could disconnect the recorder
+  of a recording in progress or the live captions assistant, which `participantGet` answers as not in the meeting.
+  They now answer the same 404 for them.
+- The embedded commands `meetingEnd` and `endMeeting` reported `meeting_ended` in the `meetingLeft` event of the
+  participant whose host ended the meeting. They now report `meeting_ended_by_self`, as ending it from the leave menu
+  does.
 - The `joinDate` of the embedded event `participantJoined` was the moment the join reached the browser, by the
   browser's clock, and the one of `participantLeft` was rounded down to the second. Both now carry the `joinDate` of
   the [`participantJoined`][3.9-participant-joined] webhook.
+- The [`meetingEnded`][3.9-meeting-ended] webhook could be sent twice for one meeting when the media server's notice
+  of its end and the periodic meeting status check handled it at the same time. It is now sent once.
 - [`startRecording`][3.9-start-recording] checked the target room before `recordingControl`, so a room member token of
   another room got `404` for a room that does not exist and learned whether a room could be recorded. It now answers
   `403` first.
@@ -113,11 +121,19 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   reach only the participants holding `chatRead`.
 - A room's `config.chat.enabled` `false` was enforced in the interface only, so a modified client holding `chatWrite`
   could still send chat messages. The media server now refuses them.
+- A room with end-to-end encryption could have live captions on, although the captions assistant only receives
+  encrypted audio and produced no captions. As with recording, `captions.enabled` is now stored as `false` while
+  `e2ee.enabled` is `true`, in existing rooms too, and the room wizard turns captions off when encryption is turned on.
 
 #### UI
 
 - After leaving a meeting that was being recorded, joining another meeting with the same `<openvidu-meet>`
   element showed that recording as still in progress. The recording indicator starts over with each meeting.
+- After leaving a meeting, joining another meeting with the same `<openvidu-meet>` element showed the earlier
+  meeting's chat messages and counted them as unread. The chat now starts empty in every meeting.
+- A room member or user who joined a meeting again before their earlier session had left it, from a second tab, after
+  reloading or by rejoining quickly, was renamed with a numeric suffix such as `Ana_1` everywhere the meeting shows or
+  reports names. They now keep their name.
 - A participant promoted and demoted in quick succession, or whose permissions changed right after their role, could
   be left with the permissions of the earlier change. The changes are now applied in the order they happen.
 - A participant promoted and demoted several times in a row got one notice per change, stacked over the meeting. Only
@@ -310,6 +326,7 @@ registered on both receives it twice.
 [3.9-meeting-ended]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/webhooks/meetingEndedWebhook
 [3.9-participant-mute]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/participantMute
 [3.9-participant-mute-all]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/participantMuteAll
+[3.9-participant-kick]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/participantKick
 [3.9-download]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/downloadRecording
 [3.9-room-config]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/schemas/MeetRoomConfig
 [3.9-permissions]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/schemas/MeetPermissions

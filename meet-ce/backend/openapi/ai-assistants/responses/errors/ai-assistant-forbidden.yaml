@@ -1,0 +1,21 @@
+description: Forbidden - The caller lacks the permission, or live captions are disabled for the deployment or for the room
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        examples:
+            insufficient_permissions:
+                summary: The room permissions of the caller do not cover the operation
+                value:
+                    error: Authorization Error
+                    message: 'Insufficient permissions to access this resource'
+            captions_disabled_in_deployment:
+                summary: Live captions are disabled for the deployment
+                value:
+                    error: 'AI Assistant Error'
+                    message: 'Live captions are disabled for this deployment'
+            captions_disabled_in_room:
+                summary: Live captions are disabled in the room configuration
+                value:
+                    error: 'AI Assistant Error'
+                    message: "Live captions are disabled for room 'room_123'"

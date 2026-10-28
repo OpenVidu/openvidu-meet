@@ -257,10 +257,7 @@ export class RoomService {
 		// Merge existing config with new config (partial update)
 		const updatedConfig = merge({}, room.config, config);
 
-		// Disable recording if E2EE is enabled
-		if (updatedConfig.e2ee.enabled && updatedConfig.recording.enabled) {
-			updatedConfig.recording.enabled = false;
-		}
+		MeetRoomHelper.disableFeaturesExcludedByE2EE(updatedConfig);
 
 		this.validateRecordingAutoStartIsReachable(updatedConfig);
 

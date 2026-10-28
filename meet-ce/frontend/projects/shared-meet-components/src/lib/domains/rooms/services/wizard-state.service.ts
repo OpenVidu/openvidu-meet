@@ -126,6 +126,7 @@ export class RoomWizardStateService {
 	private _roomOptions = signal<MeetRoomOptions>(deepMerge({}, DEFAULT_ROOM_OPTIONS));
 	private _pendingMembers = signal<MeetRoomMemberOptions[]>([]);
 	private _recordingStateBeforeE2EE = signal<boolean | undefined>(undefined);
+	private _captionsStateBeforeE2EE = signal<boolean | undefined>(undefined);
 	private _e2eeStateBeforeRecording = signal<boolean | undefined>(undefined);
 
 	public readonly steps = this._steps.asReadonly();
@@ -488,6 +489,18 @@ export class RoomWizardStateService {
 		this._recordingStateBeforeE2EE.set(undefined);
 	}
 
+	setCaptionsStateBeforeE2EE(value: boolean): void {
+		this._captionsStateBeforeE2EE.set(value);
+	}
+
+	getCaptionsStateBeforeE2EE(): boolean | undefined {
+		return this._captionsStateBeforeE2EE();
+	}
+
+	clearCaptionsStateBeforeE2EE(): void {
+		this._captionsStateBeforeE2EE.set(undefined);
+	}
+
 	setE2EEStateBeforeRecording(value: boolean): void {
 		this._e2eeStateBeforeRecording.set(value);
 	}
@@ -529,6 +542,7 @@ export class RoomWizardStateService {
 		this._isInitialized.set(false);
 		this._editMode.set(false);
 		this._recordingStateBeforeE2EE.set(undefined);
+		this._captionsStateBeforeE2EE.set(undefined);
 		this._e2eeStateBeforeRecording.set(undefined);
 		this._roomOptions.set(deepMerge({}, DEFAULT_ROOM_OPTIONS));
 		this._steps.set([]);

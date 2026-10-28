@@ -354,6 +354,12 @@ The `reason` of `meetingLeft` SHALL be one of the leave reasons of `meetings`, `
 - **THEN** the other receives `meetingLeft` with `reason` `meeting_ended`
 - **AND** the one who ended it receives `meeting_ended_by_self`
 
+#### Scenario: Ended with the meetingEnd command
+- **GIVEN** two participants in a meeting, each in an embedded element, the first holding `meetingEnd`
+- **WHEN** the first element's host calls `meetingEnd()`, or the deprecated `endMeeting()`
+- **THEN** the first element emits `meetingLeft` with `reason` `meeting_ended_by_self`
+- **AND** the second receives `meeting_ended`
+
 #### Scenario: Kicked
 - **GIVEN** a participant in a meeting
 - **WHEN** a moderator removes them

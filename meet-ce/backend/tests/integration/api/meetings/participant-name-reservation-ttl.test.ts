@@ -45,7 +45,7 @@ describe('ParticipantNameService', () => {
 
 	describe('Reservation time to live', () => {
 		it('keeps a reserved name for the configured time, not for 1000 times longer', async () => {
-			await participantNameService.reserveUniqueName(roomId, 'Expiring');
+			await participantNameService.reserveUniqueName(roomId, 'Expiring', 'expiring-1');
 
 			const ttl = await remainingTtl(`ov_meet:room_participants:${roomId}:expiring`);
 
@@ -54,9 +54,9 @@ describe('ParticipantNameService', () => {
 		});
 
 		it('keeps a released numeric suffix for the same time as a reservation', async () => {
-			await participantNameService.reserveUniqueName(roomId, 'Numbered');
-			const numberedName = await participantNameService.reserveUniqueName(roomId, 'Numbered');
-			await participantNameService.releaseName(roomId, numberedName);
+			await participantNameService.reserveUniqueName(roomId, 'Numbered', 'numbered-1');
+			const numberedName = await participantNameService.reserveUniqueName(roomId, 'Numbered', 'numbered-2');
+			await participantNameService.releaseName(roomId, numberedName, 'numbered-2', Date.now());
 
 			const ttl = await remainingTtl(`ov_meet:participant_pool:${roomId}:*`);
 

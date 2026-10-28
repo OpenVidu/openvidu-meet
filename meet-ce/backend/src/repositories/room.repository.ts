@@ -151,6 +151,46 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	}
 
 	/**
+	 * Ends the meeting of a room that is still `active_meeting` by applying its pending
+	 * `meetingEndAction` (delete the room, close it or reopen it), atomically. The same end can be
+	 * reported by the `room_finished` webhook on any replica and by the reconciliation GC: only one
+	 * caller gets the room back. Each write is conditioned on the action it applies, so an action
+	 * changed meanwhile is read again instead of being overwritten.
+	 *
+	 * @param roomId - The unique room identifier
+	 * @returns The room as the end left it (as it was before, when deleted), or `null` if the room
+	 * was not `active_meeting`
+	 */
+	async finishMeeting(roomId: string): Promise<MeetRoom | null> {
+		const room = await this.findOne({ roomId, status: MeetRoomStatus.ACTIVE_MEETING });
+
+		if (!room) return null;
+
+		return (await this.applyMeetingEndAction(room)) ?? this.finishMeeting(roomId);
+	}
+
+	private async applyMeetingEndAction(room: MeetRoom): Promise<MeetRoom | null> {
+		const { roomId, meetingEndAction } = room;
+		const filter = { roomId, status: MeetRoomStatus.ACTIVE_MEETING, meetingEndAction };
+
+		switch (meetingEndAction) {
+			case MeetingEndAction.DELETE: {
+				const { deletedCount } = await this.model.deleteOne(filter).exec();
+				return deletedCount === 1 ? room : null;
+			}
+
+			case MeetingEndAction.CLOSE:
+				return this.updatePartialOne(
+					filter,
+					{ status: MeetRoomStatus.CLOSED, meetingEndAction: MeetingEndAction.NONE },
+					{ throwIfNotFound: false }
+				);
+			default:
+				return this.updatePartialOne(filter, { status: MeetRoomStatus.OPEN }, { throwIfNotFound: false });
+		}
+	}
+
+	/**
 	 * Replaces an existing room with new data.
 	 * URLs are stored in the database without the base URL.
 	 *

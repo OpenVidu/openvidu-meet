@@ -19,6 +19,7 @@ import {
 import {
 	createRoom,
 	createRoomAsUser,
+	createRoomMember,
 	createUser,
 	deleteRooms,
 	deleteUsers,
@@ -347,6 +348,31 @@ test.describe('Participants E2E Tests', () => {
 			}
 		});
 
+		test('should let a kicked participant join again through the same link', async ({ browser }) => {
+			const { byName, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				participants: [{ name: moderatorName, baseRole: MeetRoomMemberRole.MODERATOR }]
+			});
+			const speakerPage = await browser.newPage();
+			const speakerLink = room.access.anonymous.speaker.url;
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				await openMeeting(speakerPage, speakerLink, { name: speakerName });
+
+				await toggleParticipantsPanel(moderatorPage);
+				await kickParticipant(moderatorPage, await getParticipantIdByName(moderatorPage, speakerName));
+				await expect(speakerPage.locator('#layout-container')).toHaveCount(0, { timeout: 10_000 });
+
+				await openMeeting(speakerPage, speakerLink, { name: speakerName });
+				await expect(speakerPage.locator('#layout-container')).toBeVisible();
+				await expect(moderatorPage.locator('[data-participant-id]', { hasText: speakerName })).toHaveCount(1);
+			} finally {
+				await speakerPage.close();
+				await removeAllParticipants();
+			}
+		});
+
 		test('should not let a participant without canKickParticipants kick others', async ({ browser }) => {
 			const { byName, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
@@ -374,6 +400,39 @@ test.describe('Participants E2E Tests', () => {
 
 	// The panel is the only UI that mutes someone else, and the muted participant is never told in
 	// words — their own toolbar reading off IS the notice, so that is what every case asserts.
+	test.describe('Joining again', () => {
+		test('should keep the name of an identified guest who joins again from a second tab', async ({ browser }) => {
+			const guestName = 'Returning Guest';
+			const { byName, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				participants: [{ name: moderatorName, baseRole: MeetRoomMemberRole.MODERATOR }]
+			});
+			const { accessUrl } = await createRoomMember(roomId, {
+				name: guestName,
+				baseRole: MeetRoomMemberRole.SPEAKER
+			});
+			const firstTab = await browser.newPage();
+			const secondTab = await browser.newPage();
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const participantRows = moderatorPage.locator('[data-participant-id]');
+				await toggleParticipantsPanel(moderatorPage);
+				await openMeeting(firstTab, accessUrl);
+				await expect(participantRows.filter({ hasText: guestName })).toHaveCount(1);
+
+				await openMeeting(secondTab, accessUrl);
+				await expect(firstTab.locator('#layout-container')).toHaveCount(0, { timeout: 10_000 });
+				await expect(participantRows.filter({ hasText: guestName })).toHaveCount(1);
+				await expect(participantRows.filter({ hasText: `${guestName}_` })).toHaveCount(0);
+			} finally {
+				await firstTab.close();
+				await secondTab.close();
+				await removeAllParticipants();
+			}
+		});
+	});
+
 	test.describe('Mute participant media (participantMute)', () => {
 		const joinModeratorAndSpeaker = (browser: Browser, speaker: Partial<ParticipantConfig> = {}) =>
 			joinParticipants(browser, {

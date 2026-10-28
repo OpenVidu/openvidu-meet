@@ -440,6 +440,24 @@ describe('Room Schema Migrations', () => {
 		});
 	});
 
+	describe('Room Migration Transforms (live captions)', () => {
+		const transform = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 7, 8))!;
+		const roomV7 = (e2eeEnabled: boolean) =>
+			({
+				schemaVersion: 7,
+				roomId: 'room-v7',
+				config: { e2ee: { enabled: e2eeEnabled }, captions: { enabled: true } }
+			}) as unknown as MeetRoomDocument;
+
+		it('should turn live captions off in a room with encryption on, from v7 to v8', () => {
+			expect(transform(roomV7(true)).config.captions).toEqual({ enabled: false });
+		});
+
+		it('should leave live captions on in a room without encryption, from v7 to v8', () => {
+			expect(transform(roomV7(false)).config.captions).toEqual({ enabled: true });
+		});
+	});
+
 	describe('Room Migration Integration', () => {
 		let migrationService: MigrationService;
 		const testRoomIds: string[] = [];

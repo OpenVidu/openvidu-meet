@@ -29,7 +29,7 @@ Reactions SHALL be enabled in new rooms unless `reactions.enabled` is set to `fa
 - **AND** the toolbar shows no Reactions button
 
 ### Requirement: Send a reaction
-`POST /internal-api/v1/meetings/{roomId}/reactions` (`participantReactionSend`) SHALL relay a reaction on behalf of the participant who holds the room member token, showing it to everyone in the meeting, the sender included. The reaction SHALL be relayed by the server; a reaction published by a participant directly SHALL be ignored by the other participants' meetings.
+`POST /internal-api/v1/meetings/{roomId}/reactions` (`participantReactionSend`) SHALL relay a reaction on behalf of the participant who holds the room member token, showing it to everyone in the meeting, the sender included. The reaction SHALL be relayed by the server; a reaction published by a participant directly SHALL be ignored by the other participants' meetings. When the room has no meeting running, it SHALL answer 404 and relay nothing.
 
 #### Scenario: Reaction reaches everyone
 - **GIVEN** a meeting with three participants, all holding `participantReactionSend`
@@ -40,6 +40,11 @@ Reactions SHALL be enabled in new rooms unless `reactions.enabled` is set to `fa
 - **GIVEN** a participant able to send data messages in the meeting
 - **WHEN** they publish a message imitating a relayed reaction of another participant
 - **THEN** no participant shows that reaction
+
+#### Scenario: No meeting running
+- **GIVEN** a room member token holding `participantReactionSend` for a room whose meeting has ended
+- **WHEN** it is used to send `thumbs_up`
+- **THEN** the request answers 404
 
 ### Requirement: Who may send a reaction
 The reactions endpoint SHALL accept only a room member token of a participant of that room's meeting holding `participantReactionSend`: without credentials or with an API key it SHALL answer 401, and with a token that lacks the permission or names no participant it SHALL answer 403.

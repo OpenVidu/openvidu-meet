@@ -273,6 +273,23 @@ export class RedisService extends EventEmitter {
 	}
 
 	/**
+	 * Runs a Lua script atomically.
+	 *
+	 * @param {string} script - The Lua script
+	 * @param {string[]} keys - The keys the script reads or writes, available as `KEYS`
+	 * @param {Array<string | number>} args - The script arguments, available as `ARGV`
+	 * @returns {Promise<unknown>} - The value the script returns
+	 */
+	async runScript(script: string, keys: string[], args: Array<string | number>): Promise<unknown> {
+		try {
+			return await this.redisPublisher.eval(script, keys.length, ...keys, ...args);
+		} catch (error) {
+			this.logger.error(`Error running a Lua script in Redis for keys '${keys.join(', ')}'`, error);
+			throw error;
+		}
+	}
+
+	/**
 	 * Sets an expiration time on an existing key.
 	 *
 	 * @param {string} key - The key to set expiration on

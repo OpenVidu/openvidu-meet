@@ -51,7 +51,7 @@ describe('E2EE Room Configuration Tests', () => {
 	});
 
 	describe('E2EE Enabled Configuration', () => {
-		it('Should create a room with E2EE enabled and recording automatically disabled', async () => {
+		it('Should create a room with E2EE enabled and recording and live captions automatically disabled', async () => {
 			const payload = {
 				roomName: 'Test E2EE Enabled',
 				config: {
@@ -71,7 +71,8 @@ describe('E2EE Room Configuration Tests', () => {
 
 			expect(room.roomName).toBe('Test E2EE Enabled');
 			expect(room.config.e2ee.enabled).toBe(true);
-			expect(room.config.recording.enabled).toBe(false); // Recording should be disabled
+			expect(room.config.recording.enabled).toBe(false);
+			expect(room.config.captions.enabled).toBe(false);
 		});
 	});
 
@@ -91,7 +92,7 @@ describe('E2EE Room Configuration Tests', () => {
 			expect(response.body.message).toBe(`Recording is disabled for room '${room.roomId}'`);
 		});
 
-		it('Should disable recording when updating room config to enable E2EE', async () => {
+		it('Should disable recording and live captions when updating room config to enable E2EE', async () => {
 			// Create room with recording enabled and E2EE disabled
 			const room = await createRoom(
 				{
@@ -115,7 +116,7 @@ describe('E2EE Room Configuration Tests', () => {
 			expect(room.config.recording.enabled).toBe(true);
 			expect(room.config.e2ee?.enabled).toBe(false);
 
-			// Update room to enable E2EE (recording should be automatically disabled)
+			// Update room to enable E2EE (recording and live captions should be automatically disabled)
 			const updatedConfig = {
 				e2ee: { enabled: true }
 			};
@@ -129,6 +130,7 @@ describe('E2EE Room Configuration Tests', () => {
 			expect(status).toBe(200);
 			expect(config.e2ee.enabled).toBe(true);
 			expect(config.recording.enabled).toBe(false);
+			expect(config.captions.enabled).toBe(false);
 		});
 	});
 

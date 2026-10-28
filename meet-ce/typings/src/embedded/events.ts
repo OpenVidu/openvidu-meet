@@ -110,7 +110,11 @@ export enum LeftEventReason {
 	SERVER_SHUTDOWN = 'server_shutdown',
 	/** The participant was kicked from the meeting by a moderator */
 	PARTICIPANT_KICKED = 'participant_kicked',
-	/** A moderator ended the meeting for all participants */
+	/**
+	 * The meeting was ended for everyone by someone or something other than the local participant:
+	 * another participant, the `meetingEnd` REST operation or command of another participant, or the
+	 * forced deletion or closing of its room. It is also the only end reason `participantLeft` carries.
+	 */
 	MEETING_ENDED = 'meeting_ended',
 	/** The local participant ended the meeting for all participants */
 	MEETING_ENDED_BY_SELF = 'meeting_ended_by_self',

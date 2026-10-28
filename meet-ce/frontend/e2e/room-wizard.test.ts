@@ -186,6 +186,30 @@ test.describe('Room wizard E2E Tests', () => {
 		}
 	});
 
+	test('encryption turns live captions off with a warning, and turning it off restores them', async ({ page }) => {
+		await openWizardAtMeeting(page);
+		const captions = page.locator('#room-feature-captions button');
+		const e2eeRestrictions = page
+			.locator('.feature-row-wrapper', { has: page.locator('#room-feature-e2ee') })
+			.locator('.restrictions-list');
+		await expect(captions).toHaveAttribute('aria-checked', 'true');
+
+		await setFeature(page, 'room-feature-e2ee', true);
+
+		await expect(captions).toHaveAttribute('aria-checked', 'false');
+		await expect(captions).toBeDisabled();
+		await expect(e2eeRestrictions).toContainText('Live captions are unavailable while encryption is enabled.');
+		await expect(page.locator('#captions-e2ee-warning')).toContainText(
+			'Live captions are unavailable while end-to-end encryption is enabled.'
+		);
+
+		await setFeature(page, 'room-feature-e2ee', false);
+
+		await expect(captions).toHaveAttribute('aria-checked', 'true');
+		await expect(captions).toBeEnabled();
+		await expect(page.locator('#captions-e2ee-warning')).toHaveCount(0);
+	});
+
 	test('re-enabling a feature restores its role permissions', async ({ page }) => {
 		await openWizardAtMeeting(page);
 		await setFeature(page, 'room-feature-chat', false);

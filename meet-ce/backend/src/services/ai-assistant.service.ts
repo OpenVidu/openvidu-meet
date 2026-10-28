@@ -8,7 +8,8 @@ import { MeetLock } from '../helpers/redis.helper.js';
 import {
 	errorAiAssistantAlreadyStarting,
 	errorAiAssistantCannotBeStopped,
-	errorConfigurationError
+	errorCaptionsDisabled,
+	errorCaptionsDisabledInDeployment
 } from '../models/error.model.js';
 import { RedisKeyName } from '../models/redis.model.js';
 import { LiveKitService } from './livekit.service.js';
@@ -201,15 +202,13 @@ export class AiAssistantService {
 	protected async validateCreateConditions(roomId: string, capability: MeetAssistantCapabilityName): Promise<void> {
 		if (capability === MeetAssistantCapabilityName.LIVE_CAPTIONS) {
 			if (MEET_ENV.CAPTIONS_ENABLED !== 'true') {
-				throw errorConfigurationError(
-					'Live captions are not enabled in the server configuration. Please set CAPTIONS_ENABLED to true to enable this feature.'
-				);
+				throw errorCaptionsDisabledInDeployment();
 			}
 
-			const room = await this.roomService.getMeetRoom(roomId);
+			const { config } = await this.roomService.getMeetRoom(roomId, ['config']);
 
-			if (!room.config.captions.enabled) {
-				throw errorConfigurationError('Live captions are not enabled in the room configuration.');
+			if (!config.captions.enabled) {
+				throw errorCaptionsDisabled(roomId);
 			}
 		}
 	}

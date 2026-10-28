@@ -13,6 +13,7 @@ const roomMigrationV3ToV4Name = generateSchemaMigrationName(meetRoomCollectionNa
 const roomMigrationV4ToV5Name = generateSchemaMigrationName(meetRoomCollectionName, 4, 5);
 const roomMigrationV5ToV6Name = generateSchemaMigrationName(meetRoomCollectionName, 5, 6);
 const roomMigrationV6ToV7Name = generateSchemaMigrationName(meetRoomCollectionName, 6, 7);
+const roomMigrationV7ToV8Name = generateSchemaMigrationName(meetRoomCollectionName, 7, 8);
 
 const roomMigrationV1ToV2Transform: SchemaTransform<MeetRoomDocument> = (room) => {
 	room.config.captions = { enabled: true };
@@ -143,6 +144,16 @@ const roomMigrationV6ToV7Transform: SchemaTransform<MeetRoomDocument> = (room) =
 	return normalizeRolePermissionsTransform(room);
 };
 
+// v8 turns live captions off in encrypted rooms, as the room config rules now do for every write: the
+// captions assistant only receives encrypted audio there and never produced captions.
+const roomMigrationV7ToV8Transform: SchemaTransform<MeetRoomDocument> = (room) => {
+	if (room.config.e2ee?.enabled && room.config.captions?.enabled) {
+		room.config.captions = { ...room.config.captions, enabled: false };
+	}
+
+	return room;
+};
+
 /**
  * Schema migrations for MeetRoom.
  * Key format: schema_{collection}_v{from}_to_v{to}
@@ -153,5 +164,6 @@ export const roomMigrations: SchemaMigrationMap<MeetRoomDocument> = new Map([
 	[roomMigrationV3ToV4Name, normalizeRolePermissionsTransform],
 	[roomMigrationV4ToV5Name, normalizeRolePermissionsTransform],
 	[roomMigrationV5ToV6Name, roomMigrationV5ToV6Transform],
-	[roomMigrationV6ToV7Name, roomMigrationV6ToV7Transform]
+	[roomMigrationV6ToV7Name, roomMigrationV6ToV7Transform],
+	[roomMigrationV7ToV8Name, roomMigrationV7ToV8Transform]
 ]);
