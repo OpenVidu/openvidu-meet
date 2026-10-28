@@ -24,7 +24,7 @@
 ## 5. Static files after the API (D5)
 
 - [x] 5.1 Move `appRouter.use(express.static(frontendDirectoryPath, { index: false }))` in `server.ts` after the API routers, `/health`, `/info` and the webcomponent bundle routes, and before the SPA catch-all. Verify with a running backend: `curl -I <base>/main-*.js` (any built asset) answers 200 with its file content type; an unknown `/api/v1/x` answers the JSON 404; `/` answers the SPA HTML.
-- [ ] 5.2 Verify that the frontend e2e suite (`./meet.sh test-e2e-frontend`) loads the SPA and its lazy chunks through the moved mount.
+- [x] 5.2 Verify that the frontend e2e suite (`./meet.sh test-e2e-frontend`) loads the SPA and its lazy chunks through the moved mount.
 
 ## 6. Measurement
 
