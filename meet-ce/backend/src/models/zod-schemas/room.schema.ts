@@ -50,6 +50,8 @@ export const nonEmptySanitizedRoomId = (fieldName: string) =>
 			message: `${fieldName} cannot be empty after sanitization`
 		});
 
+export const RoomIdParamSchema = nonEmptySanitizedRoomId('roomId');
+
 // Encoding options validation - both video and audio are required with all their fields
 export const EncodingOptionsSchema: z.ZodType<MeetRecordingEncodingOptions> = z.object({
 	video: z.object({

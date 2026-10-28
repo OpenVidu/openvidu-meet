@@ -4,8 +4,8 @@ import {
 	BulkDeleteRoomsReqSchema,
 	DeleteRoomReqSchema,
 	mergeHeaderFieldsIntoQuery,
-	nonEmptySanitizedRoomId,
 	RoomFiltersSchema,
+	RoomIdParamSchema,
 	RoomOptionsSchema,
 	RoomQueryFieldsSchema,
 	UpdateRoomAccessReqSchema,
@@ -70,7 +70,7 @@ export const validateBulkDeleteRoomsReq = (req: Request, res: Response, next: Ne
 };
 
 export const withValidRoomId = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = nonEmptySanitizedRoomId('roomId').safeParse(req.params.roomId);
+	const { success, error, data } = RoomIdParamSchema.safeParse(req.params.roomId);
 
 	if (!success) {
 		error.issues[0] = { ...error.issues[0], path: ['roomId'] };
@@ -97,7 +97,7 @@ export const validateGetRoomReq = (req: Request, res: Response, next: NextFuncti
 };
 
 export const validateDeleteRoomReq = (req: Request, res: Response, next: NextFunction) => {
-	const roomIdResult = nonEmptySanitizedRoomId('roomId').safeParse(req.params.roomId);
+	const roomIdResult = RoomIdParamSchema.safeParse(req.params.roomId);
 
 	if (!roomIdResult.success) {
 		return rejectUnprocessableRequest(res, roomIdResult.error);

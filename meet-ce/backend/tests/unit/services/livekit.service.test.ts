@@ -1,5 +1,6 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 import type { EncodedFileOutput } from 'livekit-server-sdk';
+import { TwirpError } from 'livekit-server-sdk';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
@@ -31,5 +32,36 @@ describe('LiveKitService.startRoomComposite', () => {
 		const service = buildService(() => Promise.resolve(egress));
 
 		await expect(service.startRoomComposite('room-1', output, {})).resolves.toBe(egress);
+	});
+});
+
+describe('LiveKitService.sendData', () => {
+	const buildSendingService = (sendData: () => Promise<void>) => {
+		const listRooms = jest.fn(async () => []);
+		const service = Object.create(LiveKitService.prototype) as LiveKitService;
+		Object.assign(service as object, { lk: { room: { sendData, listRooms } }, logger: noopLogger });
+		return { service, listRooms };
+	};
+
+	it('sends without asking first whether the room exists', async () => {
+		const { service, listRooms } = buildSendingService(() => Promise.resolve());
+
+		await service.sendData('room-1', { a: 1 }, { topic: 't' });
+
+		expect(listRooms).not.toHaveBeenCalled();
+	});
+
+	it('skips a room the media server does not have', async () => {
+		const { service } = buildSendingService(() =>
+			Promise.reject(new TwirpError('not_found', 'requested room does not exist', 404, 'not_found'))
+		);
+
+		await expect(service.sendData('room-1', { a: 1 }, { topic: 't' })).resolves.toBeUndefined();
+	});
+
+	it('answers 500 when the media server fails for any other reason', async () => {
+		const { service } = buildSendingService(() => Promise.reject(new Error('no response from servers')));
+
+		await expect(service.sendData('room-1', { a: 1 }, { topic: 't' })).rejects.toMatchObject({ statusCode: 500 });
 	});
 });
