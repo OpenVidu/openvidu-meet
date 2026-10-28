@@ -115,6 +115,18 @@ export class MeetingService {
 	}
 
 	/**
+	 * Disconnects a participant from the meeting of a room.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param participantIdentity - The identity of the participant to kick
+	 * @throws A 404 error when the participant is not in the meeting, recorders and agents included
+	 */
+	async kickParticipant(roomId: string, participantIdentity: string): Promise<void> {
+		await this.getStandardParticipant(roomId, participantIdentity);
+		await this.livekitService.deleteParticipant(roomId, participantIdentity);
+	}
+
+	/**
 	 * Turns off some of a participant's devices in the meeting of a room.
 	 *
 	 * @param roomId - The ID of the room

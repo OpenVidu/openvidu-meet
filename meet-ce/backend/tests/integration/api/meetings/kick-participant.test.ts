@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
+import { MeetRecordingStatus } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
@@ -6,8 +7,11 @@ import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helper
 import {
 	deleteAllRooms,
 	generateRoomMemberToken,
+	getRecording,
 	kickParticipant,
-	startTestServer
+	startRecordingAndWaitUntilActive,
+	startTestServer,
+	stopAllRecordings
 } from '../../../helpers/request-helpers.js';
 
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
@@ -25,6 +29,7 @@ describe('Meetings API Tests', () => {
 	});
 
 	afterAll(async () => {
+		await stopAllRecordings();
 		await disconnectFakeParticipants();
 		await deleteAllRooms();
 	});
@@ -78,6 +83,21 @@ describe('Meetings API Tests', () => {
 			);
 			expect(response.status).toBe(404);
 			expect(response.body.error).toBe('Participant Error');
+		});
+
+		it('should fail with 404 for the recorder of a recording in progress and leave the recording going', async () => {
+			const recordingResponse = await startRecordingAndWaitUntilActive(roomData.room.roomId);
+			expect(recordingResponse.status).toBe(201);
+			const participants = await livekitService.listRoomParticipants(roomData.room.roomId);
+			const recorder = participants.find((participant) => !livekitService.isStandardParticipant(participant));
+			expect(recorder).toBeDefined();
+
+			const response = await kickParticipant(roomData.room.roomId, recorder!.identity, roomData.moderatorToken);
+			expect(response.status).toBe(404);
+			expect(response.body.error).toBe('Participant Error');
+
+			const recording = await getRecording(recordingResponse.body.recordingId);
+			expect(recording.body.status).toBe(MeetRecordingStatus.ACTIVE);
 		});
 
 		it('should fail with 404 if room does not exist', async () => {

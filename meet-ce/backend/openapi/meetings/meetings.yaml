@@ -177,7 +177,9 @@
         operationId: participantKick
         summary: Kick a participant
         description: >
-            Kicks a participant from a meeting.
+            Kicks a participant from a meeting. The recorder of a recording in progress and agents such
+            as the live captions assistant are not participants of the meeting, so kicking them answers
+            `404` and disconnects nobody.
 
 
             Requires the `participantKick` permission.

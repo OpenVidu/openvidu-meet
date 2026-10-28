@@ -189,7 +189,7 @@ export const sendParticipantReaction = async (req: Request, res: Response) => {
 export const kickParticipantFromMeeting = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
-	const roomMemberService = container.get(RoomMemberService);
+	const meetingService = container.get(MeetingService);
 	const { roomId, participantIdentity } = req.params as Record<string, string>;
 
 	// Check if the room exists
@@ -201,7 +201,7 @@ export const kickParticipantFromMeeting = async (req: Request, res: Response) =>
 
 	try {
 		logger.verbose(`Kicking participant '${participantIdentity}' from room '${roomId}'`);
-		await roomMemberService.kickParticipantFromMeeting(roomId, participantIdentity);
+		await meetingService.kickParticipant(roomId, participantIdentity);
 		res.status(200).json({
 			message: `Participant '${participantIdentity}' kicked successfully from meeting in room '${roomId}'`
 		});
