@@ -10,10 +10,12 @@ import http from 'http';
 import { EgressInfo, EgressStatus } from 'livekit-server-sdk';
 import { container } from '../../src/config/dependency-injector.config.js';
 import { MeetParticipantHelper } from '../../src/helpers/participant.helper.js';
+import { MeetLock } from '../../src/helpers/redis.helper.js';
 import { RecordingRepository } from '../../src/repositories/recording.repository.js';
 import { RoomMemberRepository } from '../../src/repositories/room-member.repository.js';
 import { RoomRepository } from '../../src/repositories/room.repository.js';
 import { LiveKitService } from '../../src/services/livekit.service.js';
+import { MutexService } from '../../src/services/mutex.service.js';
 
 // ─── CONFIGURATION ───────────────────────────────────────────────────────────
 
@@ -325,11 +327,13 @@ export const waitForNoInProgressEgress = async (
  * Waits until a recording's `egress_ended` LiveKit webhook has been fully
  * processed by the backend handler.
  *
- * The condition is satisfied when the recording no longer exists in the database
- * or its status is no longer {@link MeetRecordingStatus.ACTIVE}.
+ * The condition is satisfied when the recording no longer exists in the database,
+ * or when it reached a final status and the room's recording hold was released:
+ * the handler writes the status first, so a recording started right after the
+ * status alone can still be refused because the room is being recorded.
  *
- * Polls `RecordingRepository` directly to observe the exact side-effect written
- * by the webhook handler.
+ * Polls `RecordingRepository` and the lock registry directly to observe the exact
+ * side effects written by the webhook handler.
  *
  * @param recordingId - Recording identifier to poll.
  * @param timeoutMs   - Maximum wait time in milliseconds (default: 30 000).
@@ -339,6 +343,7 @@ export const waitForRecordingToStop = async (
 	timeoutMs = DEFAULT_RECORDING_TIMEOUT_MS
 ): Promise<void> => {
 	const recordingRepository = container.get(RecordingRepository);
+	const mutexService = container.get(MutexService);
 
 	await pollUntil(
 		async () => {
@@ -347,8 +352,13 @@ export const waitForRecordingToStop = async (
 			// Recording deleted → handler finished.
 			if (!recording) return true;
 
-			return [MeetRecordingStatus.COMPLETE, MeetRecordingStatus.FAILED, MeetRecordingStatus.ABORTED].includes(
-				recording.status
+			const isFinal = [
+				MeetRecordingStatus.COMPLETE,
+				MeetRecordingStatus.FAILED,
+				MeetRecordingStatus.ABORTED
+			].includes(recording.status);
+			return (
+				isFinal && !(await mutexService.lockRegistryExists(MeetLock.getRecordingActiveLock(recording.roomId)))
 			);
 		},
 		{ timeoutMs, errorMessage: `Recording '${recordingId}' did not stop` }
