@@ -204,14 +204,8 @@ export class RecordingService {
 			async () => {
 				try {
 					const [egress] = await this.livekitService.getEgress(roomId, egressId);
-
-					if (!egress) {
-						throw errorRecordingNotFound(egressId);
-					}
-
-					const isStoppable = [EgressStatus.EGRESS_ACTIVE, EgressStatus.EGRESS_STARTING].includes(
-						egress.status
-					);
+					const isStoppable =
+						egress && [EgressStatus.EGRESS_ACTIVE, EgressStatus.EGRESS_STARTING].includes(egress.status);
 
 					if (!isStoppable) {
 						throw errorRecordingAlreadyStopped(recordingId);
