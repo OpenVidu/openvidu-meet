@@ -1,54 +1,14 @@
 name: WebComponent E2E Tests
 on:
-  pull_request:
-    paths:
-      - 'meet-ce/frontend/webcomponent/**'
-      - '!meet-ce/frontend/webcomponent/tests/unit/**'
-      - 'meet-ce/frontend/projects/shared-meet-components/**'
-      - '!meet-ce/frontend/projects/**/*.spec.ts'
-      - 'meet-ce/backend/**'
-      # Nothing under tests/ is shipped in the server these suites run against.
-      - '!meet-ce/backend/tests/**'
-      - 'meet-ce/typings/**'
-      - 'testapp/**'
-      - 'meet.sh'
-      - '.github/workflows/wc-e2e-test.yaml'
-      - '!**/*.md'
-      - '!meet-ce/backend/nodemon*.json'
-  schedule:
-    - cron: '17 0 * * *'
+  workflow_call:
   workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   contents: read
 
 jobs:
-  main-changed:
-    name: Detect changes since the last nightly
-    runs-on: ubuntu-24.04
-    if: ${{ github.event_name == 'schedule' }}
-    permissions:
-      actions: read
-    outputs:
-      changed: ${{ steps.compare.outputs.changed }}
-    steps:
-      - name: Compare main with the last successful nightly
-        id: compare
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          last=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$GITHUB_WORKFLOW" --event schedule \
-            --status success --limit 1 --json headSha --jq '.[0].headSha')
-          echo "changed=$([[ "$last" != "$GITHUB_SHA" ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-
   e2e-tests:
     name: WebComponent E2E Tests
-    needs: main-changed
-    if: ${{ !cancelled() && needs.main-changed.outputs.changed != 'false' && github.event.pull_request.user.login != 'dependabot[bot]' }}
     runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
     steps:
       - name: Setup Node.js

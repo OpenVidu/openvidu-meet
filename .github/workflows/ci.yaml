@@ -1,0 +1,142 @@
+name: CI
+
+# The one workflow that runs the test suites: it picks the suites a change affects (see
+# scripts/ci/changed-suites.mjs) and ends in `CI OK`, the only required status check of `main`.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 0 * * *'
+  workflow_dispatch:
+    inputs:
+      suites:
+        description: 'Suites to run, comma-separated (backend-unit, frontend-unit, wc-unit, backend-integration, frontend-e2e, wc-e2e), or all'
+        default: 'all'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Select suites
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      backend-unit: ${{ steps.select.outputs.backend-unit }}
+      frontend-unit: ${{ steps.select.outputs.frontend-unit }}
+      wc-unit: ${{ steps.select.outputs.wc-unit }}
+      backend-integration: ${{ steps.select.outputs.backend-integration }}
+      frontend-e2e: ${{ steps.select.outputs.frontend-e2e }}
+      wc-e2e: ${{ steps.select.outputs.wc-e2e }}
+    steps:
+      - name: Checkout the merge commit and its base
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+
+      # Pull requests run the suites their files affect (Dependabot ones never take a self-hosted
+      # runner), pushes to main only the unit suites, and the nightly every suite when main moved
+      # since the last green nightly.
+      - name: Select the suites the change affects
+        id: select
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEFORE: ${{ github.event.before }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          SUITES: ${{ inputs.suites }}
+        run: |
+          pick() { node scripts/ci/changed-suites.mjs "$@" >> "$GITHUB_OUTPUT"; }
+
+          case "$GITHUB_EVENT_NAME" in
+            pull_request)
+              if [ "$PR_AUTHOR" = 'dependabot[bot]' ]; then
+                git diff --name-only HEAD^1 HEAD | pick --only backend-unit,frontend-unit,wc-unit,backend-integration
+              else
+                git diff --name-only HEAD^1 HEAD | pick
+              fi
+              ;;
+            push)
+              if git fetch --no-tags --depth=1 origin "$BEFORE"; then
+                git diff --name-only "$BEFORE" HEAD | pick --only backend-unit,frontend-unit,wc-unit
+              else
+                pick --all --only backend-unit,frontend-unit,wc-unit
+              fi
+              ;;
+            schedule)
+              last=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$GITHUB_WORKFLOW" --event schedule \
+                --status success --limit 1 --json headSha --jq '.[0].headSha')
+              if [ "$last" != "$GITHUB_SHA" ]; then
+                pick --all
+              fi
+              ;;
+            workflow_dispatch)
+              if [ "$SUITES" = 'all' ]; then
+                pick --all
+              else
+                pick --all --only "$SUITES"
+              fi
+              ;;
+          esac
+          cat "$GITHUB_OUTPUT"
+
+  backend-unit:
+    name: Backend Unit Tests
+    needs: changes
+    if: needs.changes.outputs.backend-unit == 'true'
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/backend-unit-test.yaml
+
+  frontend-unit:
+    name: Frontend Unit Tests
+    needs: changes
+    if: needs.changes.outputs.frontend-unit == 'true'
+    uses: ./.github/workflows/frontend-unit-test.yaml
+
+  wc-unit:
+    name: WebComponent Unit Tests
+    needs: changes
+    if: needs.changes.outputs.wc-unit == 'true'
+    uses: ./.github/workflows/wc-unit-test.yaml
+
+  backend-integration:
+    name: Backend Integration Tests
+    needs: changes
+    if: needs.changes.outputs.backend-integration == 'true'
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/backend-integration-test.yaml
+    secrets: inherit
+
+  frontend-e2e:
+    name: Frontend E2E Tests
+    needs: changes
+    if: needs.changes.outputs.frontend-e2e == 'true'
+    uses: ./.github/workflows/frontend-e2e-test.yaml
+
+  wc-e2e:
+    name: WebComponent E2E Tests
+    needs: changes
+    if: needs.changes.outputs.wc-e2e == 'true'
+    uses: ./.github/workflows/wc-e2e-test.yaml
+
+  # Runs even when the run is cancelled, so a superseded run never leaves a skipped (that is, passing)
+  # check behind.
+  ci-ok:
+    name: CI OK
+    needs: [changes, backend-unit, frontend-unit, wc-unit, backend-integration, frontend-e2e, wc-e2e]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Fail when a suite failed or was cancelled
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
