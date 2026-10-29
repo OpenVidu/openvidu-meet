@@ -1,0 +1,17 @@
+@if (showCamera()) {
+	<ov-video-devices-select
+		(onVideoDeviceChanged)="onVideoDeviceChanged.emit($event)"
+		(onVideoEnabledChanged)="onVideoEnabledChanged.emit($event)"
+	/>
+}
+@if (showMicrophone()) {
+	<ov-audio-devices-select
+		(onAudioDeviceChanged)="onAudioDeviceChanged.emit($event)"
+		(onAudioEnabledChanged)="onAudioEnabledChanged.emit($event)"
+	/>
+}
+@if (trial.pending()) {
+	<button id="settings-apply-devices" class="apply-button" [disabled]="trial.applying()" (click)="apply()">
+		{{ 'PANEL.SETTINGS.APPLY' | translate }}
+	</button>
+}

@@ -307,7 +307,7 @@ export class LocalMediaService {
 		return result;
 	}
 
-	private reportUnavailable(kind: Track.Kind): void {
+	reportUnavailable(kind: Track.Kind): void {
 		const camera = kind === Track.Kind.Video;
 
 		this.notificationService.showNotification({

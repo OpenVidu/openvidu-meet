@@ -117,6 +117,8 @@
 			"MICROPHONE_LEVEL": "麦克风音量",
 			"MICROPHONE_LEVEL_HINT": "说话以确认其他人能听到你",
 			"MICROPHONE_OFF": "你的麦克风已关闭",
+			"APPLY": "应用",
+			"EFFECT_APPLIES_ON_APPLY": "应用此摄像头后将添加背景效果",
 			"DISPLAY_NAME": "显示名称",
 			"DISPLAY_NAME_HINT": "加入会议时设置",
 			"DISPLAY_NAME_LOCKED": "会议期间无法更改",

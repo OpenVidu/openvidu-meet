@@ -60,7 +60,11 @@
 			<div class="camera-preview">
 				<ov-video-element [videoTrack]="videoTrack()" [isLocal]="true" [avatar]="previewAvatar()" />
 				@if (!isCameraEnabled()) {
-					<span class="camera-off-caption">{{ 'PANEL.SETTINGS.CAMERA_OFF' | translate }}</span>
+					<span class="preview-caption">{{ 'PANEL.SETTINGS.CAMERA_OFF' | translate }}</span>
+				} @else if (showEffectHint()) {
+					<span id="settings-effect-hint" class="preview-caption">
+						{{ 'PANEL.SETTINGS.EFFECT_APPLIES_ON_APPLY' | translate }}
+					</span>
 				} @else if (showBackgroundsButton()) {
 					<button
 						id="settings-backgrounds-button"
@@ -78,10 +82,10 @@
 				class="device-field"
 				[class.off]="!isCameraEnabled()"
 				[matMenuTriggerFor]="cameraMenu"
-				[disabled]="!isCameraEnabled() || cameraStatusChanging() || cameras().length <= 1"
+				[disabled]="!isCameraEnabled() || cameraStatusChanging() || isApplying() || cameras().length <= 1"
 			>
 				<mat-icon>videocam</mat-icon>
-				<span class="field-value">{{ cameraSelected()?.label }}</span>
+				<span class="field-value">{{ cameraShown()?.label }}</span>
 				@if (cameras().length > 1) {
 					<mat-icon class="field-chevron">expand_more</mat-icon>
 				}
@@ -104,9 +108,9 @@
 				mat-menu-item
 				id="option-{{ camera.label }}"
 				(click)="onCameraSelected({ value: camera })"
-				[class.selected]="camera.device === cameraSelected()?.device"
+				[class.selected]="camera.device === cameraShown()?.device"
 			>
-				@if (camera.device === cameraSelected()?.device) {
+				@if (camera.device === cameraShown()?.device) {
 					<mat-icon class="check-icon">check</mat-icon>
 				}
 				<span>{{ camera.label }}</span>

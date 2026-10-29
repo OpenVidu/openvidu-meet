@@ -9,9 +9,11 @@ import { PanelType } from '../../../models/panel.model';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { MeetingUiConfigService } from '../../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../../services/device/device.service';
+import { DeviceTrialService } from '../../../services/device-trial/device-trial.service';
 import { LocalMediaService } from '../../../services/local-media/local-media.service';
 import { PanelService } from '../../../services/panel/panel.service';
 import { ParticipantService } from '../../../services/participant/participant.service';
+import { VirtualBackgroundService } from '../../../services/virtual-background/virtual-background.service';
 import { VideoElementComponent } from '../../video-element/video-element.component';
 import { LoggerService } from '../../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../../shared/models/logger.model';
@@ -36,10 +38,16 @@ export class VideoDevicesComponent {
 	private readonly panelService = inject(PanelService);
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly localParticipant = inject(ParticipantService).localParticipant;
+	private readonly virtualBackground = inject(VirtualBackgroundService);
+	private readonly trial = inject(DeviceTrialService, { optional: true });
 
 	readonly cameraStatusChanging = signal(false);
 	readonly isCameraEnabled = this.localMedia.camera.enabled;
-	readonly videoTrack = this.localMedia.camera.track;
+	readonly videoTrack = computed(() => this.trial?.camera.track() ?? this.localMedia.camera.track());
+	readonly isApplying = computed(() => this.trial?.applying() ?? false);
+	readonly showEffectHint = computed(
+		() => !!this.trial?.camera.device() && this.virtualBackground.isBackgroundApplied()
+	);
 	readonly showBackgroundsButton = inject(MeetingUiConfigService).backgroundEffectsButtonSignal;
 	readonly previewAvatar = computed<AvatarView>(() => ({
 		show: !this.isCameraEnabled(),
@@ -52,6 +60,8 @@ export class VideoDevicesComponent {
 	protected readonly cameras: WritableSignal<CustomDevice[]>;
 	protected readonly cameraSelected: WritableSignal<CustomDevice | undefined>;
 	protected readonly hasVideoDevices: Signal<boolean>;
+	/** The camera the selector shows: the one being tried, else the published one. */
+	protected readonly cameraShown = computed(() => this.trial?.camera.device() ?? this.cameraSelected());
 
 	private log: ILogger = {
 		d: () => {},
@@ -83,6 +93,11 @@ export class VideoDevicesComponent {
 	}
 
 	async onCameraSelected(event: { value: CustomDevice }) {
+		if (this.trial) {
+			await this.trial.tryCamera(event.value);
+			return;
+		}
+
 		try {
 			const device: CustomDevice = event?.value;
 

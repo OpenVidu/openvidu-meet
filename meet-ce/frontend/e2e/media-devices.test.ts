@@ -1,3 +1,4 @@
+import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures/media-devices.fixture';
 import {
 	MIC_SYSTEM_MUTED_ALERT,
@@ -21,15 +22,24 @@ import {
 } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { openMeeting, openPrejoin, reopenPrejoin } from './helpers/meeting-navigation.helper';
-import { openSettingsPanel } from './helpers/panels.helper';
-import { getFirstVideoTrackDeviceId, getFirstVideoTrackLabel, getScreenTrackLabel } from './helpers/stream.helper';
+import { closeSettingsPanel, openSettingsPanel } from './helpers/panels.helper';
+import {
+	capturePeerConnections,
+	getFirstVideoTrackDeviceId,
+	getFirstVideoTrackLabel,
+	getPublishedTrackLabel,
+	getScreenTrackLabel,
+	getSettingsPreviewLabel
+} from './helpers/stream.helper';
 import {
 	failGetUserMediaFor,
 	getGetUserMediaCallCount,
 	getGetUserMediaCalls,
 	getGetUserMediaCallsFor,
+	getLiveCaptureLabels,
 	hideDeviceLabelsUntilPermissionGranted,
-	installGetUserMediaCounter
+	installGetUserMediaCounter,
+	recordLocalCaptures
 } from './helpers/ui-utils.helper';
 
 test.describe('Media Devices E2E Tests', () => {
@@ -78,38 +88,6 @@ test.describe('Media Devices E2E Tests', () => {
 			await expect.poll(() => getFirstVideoTrackLabel(page)).toBe('fake_device_0');
 		});
 
-		test('should allow selecting and replacing the video track with a custom virtual device in the videoconference page', async ({
-			page
-		}) => {
-			await openMeeting(page, accessUrl);
-
-			await openSettingsPanel(page);
-			await page.locator('#audio-video-opt').click();
-			await expect(page.locator('ov-video-devices-select')).toBeVisible();
-
-			const videoDropdown = page.locator('#video-dropdown');
-
-			if (await videoDropdown.isDisabled()) {
-				await expect(videoDropdown).toBeDisabled();
-				return;
-			}
-
-			await videoDropdown.click();
-			const customOption = page.locator('#option-custom_fake_video_1');
-
-			if (!(await customOption.isVisible())) {
-				await assertHasVideoDeviceOption(page);
-				return;
-			}
-
-			await customOption.click();
-			await expect.poll(() => getFirstVideoTrackLabel(page)).toBe('custom_fake_video_1');
-
-			await page.locator('#video-dropdown').click();
-			await page.locator('#option-fake_device_0').click();
-			await expect.poll(() => getFirstVideoTrackLabel(page)).toBe('fake_device_0');
-		});
-
 		test('should replace the screen track with a custom virtual device', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 			await startScreensharing(page);
@@ -125,6 +103,72 @@ test.describe('Media Devices E2E Tests', () => {
 
 			const replacedLabel = await getScreenTrackLabel(page);
 			expect(replacedLabel).not.toBeNull();
+		});
+	});
+
+	test.describe('Trying devices in the meeting settings', () => {
+		const APPLY = '#settings-apply-devices';
+
+		/** Joins with both fake cameras available and opens the Audio & video tab of the settings. */
+		const openAudioVideoSettings = async (page: Page): Promise<void> => {
+			await capturePeerConnections(page);
+			await recordLocalCaptures(page);
+			await openMeeting(page, accessUrl);
+			await expect.poll(() => getPublishedTrackLabel(page, 'video'), { timeout: 15_000 }).toBe('fake_device_0');
+			await openSettingsPanel(page);
+			await page.locator('#audio-video-opt').click();
+		};
+
+		test('previews a picked camera and publishes it only when applied', async ({ twoCamerasPage: page }) => {
+			await openAudioVideoSettings(page);
+
+			await selectVideoDevice(page, 'fake_device_1');
+
+			await expect.poll(() => getSettingsPreviewLabel(page)).toBe('fake_device_1');
+			await expect(page.locator(APPLY)).toBeVisible();
+			expect(await getLiveCaptureLabels(page, 'video')).toEqual(['fake_device_0', 'fake_device_1']);
+			expect(await getPublishedTrackLabel(page, 'video')).toBe('fake_device_0');
+
+			await page.locator(APPLY).click();
+
+			await expect.poll(() => getPublishedTrackLabel(page, 'video')).toBe('fake_device_1');
+			await expect(page.locator(APPLY)).toBeHidden();
+			await expect.poll(() => getLiveCaptureLabels(page, 'video')).toEqual(['fake_device_1']);
+		});
+
+		test('discards a picked camera when the settings close', async ({ twoCamerasPage: page }) => {
+			await openAudioVideoSettings(page);
+			await selectVideoDevice(page, 'fake_device_1');
+			await expect.poll(() => getSettingsPreviewLabel(page)).toBe('fake_device_1');
+
+			await closeSettingsPanel(page);
+
+			await expect.poll(() => getLiveCaptureLabels(page, 'video')).toEqual(['fake_device_0']);
+			expect(await getPublishedTrackLabel(page, 'video')).toBe('fake_device_0');
+
+			await openSettingsPanel(page);
+			await page.locator('#audio-video-opt').click();
+			await expect(page.locator('#video-dropdown .field-value')).toHaveText('fake_device_0');
+			await expect(page.locator(APPLY)).toBeHidden();
+		});
+
+		test('publishes a picked camera and microphone with one Apply', async ({ twoCamerasPage: page }) => {
+			await openAudioVideoSettings(page);
+			const publishedMicrophone = await getPublishedTrackLabel(page, 'audio');
+			const otherMicrophone =
+				publishedMicrophone === 'Fake Audio Input 2' ? 'Fake Audio Input 1' : 'Fake Audio Input 2';
+
+			await selectVideoDevice(page, 'fake_device_1');
+			await selectAudioDevice(page, otherMicrophone);
+			await expect(page.locator('#audio-dropdown .field-value')).toHaveText(otherMicrophone);
+			expect(await getPublishedTrackLabel(page, 'audio')).toBe(publishedMicrophone);
+
+			await page.locator(APPLY).click();
+
+			await expect.poll(() => getPublishedTrackLabel(page, 'video')).toBe('fake_device_1');
+			await expect.poll(() => getPublishedTrackLabel(page, 'audio')).toBe(otherMicrophone);
+			await expect(page.locator(APPLY)).toBeHidden();
+			await expect.poll(() => getLiveCaptureLabels(page, 'video')).toEqual(['fake_device_1']);
 		});
 	});
 
@@ -246,7 +290,7 @@ test.describe('Media Devices E2E Tests', () => {
 			await expect.poll(() => getFirstVideoTrackDeviceId(page), { timeout: 15_000 }).toBe(switchedDeviceId);
 		});
 
-		test('carries the prejoin-selected camera into the meeting', async ({ page }) => {
+		test('carries the prejoin-selected camera into the meeting', async ({ twoCamerasPage: page }) => {
 			await openPrejoin(page, accessUrl);
 			await expect.poll(() => getFirstVideoTrackDeviceId(page), { timeout: 15_000 }).not.toBeNull();
 
@@ -258,9 +302,8 @@ test.describe('Media Devices E2E Tests', () => {
 				return;
 			}
 
-			const beforeDeviceId = await getFirstVideoTrackDeviceId(page);
 			await selectVideoDevice(page, alternate.label);
-			await expect.poll(() => getFirstVideoTrackDeviceId(page)).not.toBe(beforeDeviceId);
+			await expect.poll(() => getFirstVideoTrackLabel(page)).toBe(alternate.label);
 			const switchedDeviceId = await getFirstVideoTrackDeviceId(page);
 
 			await page.locator('#join-button').click();

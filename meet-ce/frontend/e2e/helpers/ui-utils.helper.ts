@@ -387,6 +387,47 @@ export const getGetUserMediaCallsFor = async (page: Page, kind: 'audio' | 'video
 	return (await getGetUserMediaCalls(page)).filter((call) => call[kind]);
 };
 
+type CaptureWindow = Window & { __ovCaptures?: MediaStreamTrack[] };
+
+/**
+ * Records every device capture the page opens, and every clone made of one, so a test can tell
+ * which of them are still running. Registers an init script, so it must be called before navigating.
+ */
+export const recordLocalCaptures = async (page: Page): Promise<void> => {
+	await page.addInitScript(() => {
+		const captures: MediaStreamTrack[] = [];
+		(window as CaptureWindow).__ovCaptures = captures;
+
+		const mediaDevices = navigator.mediaDevices;
+		const getUserMedia = mediaDevices.getUserMedia.bind(mediaDevices);
+
+		mediaDevices.getUserMedia = async (constraints?: MediaStreamConstraints) => {
+			const stream = await getUserMedia(constraints);
+			captures.push(...stream.getTracks());
+			return stream;
+		};
+
+		const clone = MediaStreamTrack.prototype.clone;
+
+		MediaStreamTrack.prototype.clone = function (this: MediaStreamTrack) {
+			const copy = clone.call(this);
+			captures.push(copy);
+			return copy;
+		};
+	});
+};
+
+/** Labels of the recorded captures of the given kind that are still running, clones included. */
+export const getLiveCaptureLabels = (page: Page, kind: 'audio' | 'video'): Promise<string[]> =>
+	page.evaluate(
+		(trackKind) =>
+			((window as CaptureWindow).__ovCaptures ?? [])
+				.filter((track) => track.kind === trackKind && track.readyState === 'live')
+				.map((track) => track.label)
+				.sort(),
+		kind
+	);
+
 /**
  * Makes `getUserMedia` fail for the given kind, as a device already held by another application
  * does (`NotReadableError`). Registers an init script, so it must be called before navigating.

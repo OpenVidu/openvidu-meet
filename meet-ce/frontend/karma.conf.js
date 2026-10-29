@@ -30,9 +30,16 @@ module.exports = function (config) {
 			// Headless Chrome for CI: no sandbox / shared-memory tweaks so it runs
 			// inside containerized GitHub Actions runners. Select with
 			// `ng test shared-meet-components --browsers=ChromeHeadlessCI`.
+			// Audio contexts start suspended without a user gesture, which leaves microphone
+			// level specs reading silence.
 			ChromeHeadlessCI: {
 				base: 'ChromeHeadless',
-				flags: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
+				flags: [
+					'--no-sandbox',
+					'--disable-gpu',
+					'--disable-dev-shm-usage',
+					'--autoplay-policy=no-user-gesture-required'
+				]
 			}
 		},
 		singleRun: false,

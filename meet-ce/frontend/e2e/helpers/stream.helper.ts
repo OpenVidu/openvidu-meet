@@ -686,6 +686,27 @@ export const waitForSubscribedRemoteVideos = async (page: Page, count: number): 
 		.toBe(count);
 };
 
+/**
+ * Label of the capture the page sends to the others for the given kind, read from its peer
+ * connections ({@link capturePeerConnections} must have run), or `null` while nothing is sent.
+ */
+export const getPublishedTrackLabel = (page: Page, kind: 'audio' | 'video'): Promise<string | null> =>
+	page.evaluate(
+		(trackKind) =>
+			((window as PeerConnectionWindow).__peerConnections ?? [])
+				.filter((connection) => connection.connectionState !== 'closed')
+				.flatMap((connection) => connection.getSenders())
+				.find((sender) => sender.track?.kind === trackKind)?.track?.label ?? null,
+		kind
+	);
+
+/** Label of the camera the settings panel previews, or `null` when it shows none. */
+export const getSettingsPreviewLabel = (page: Page): Promise<string | null> =>
+	page.evaluate(() => {
+		const video = document.querySelector<HTMLVideoElement>('.camera-preview video');
+		return (video?.srcObject as MediaStream | null)?.getVideoTracks()[0]?.label ?? null;
+	});
+
 /** Number of remote videos that delivered frames during a one-second window. */
 export const countFlowingRemoteVideos = async (page: Page): Promise<number> => {
 	const [before, after] = await snapshotsOneSecondApart(page);

@@ -117,6 +117,8 @@
 			"MICROPHONE_LEVEL": "Nível do microfone",
 			"MICROPHONE_LEVEL_HINT": "Fale para confirmar que os outros o ouvem",
 			"MICROPHONE_OFF": "O seu microfone está desligado",
+			"APPLY": "Aplicar",
+			"EFFECT_APPLIES_ON_APPLY": "O efeito de fundo é adicionado ao aplicar esta câmara",
 			"DISPLAY_NAME": "Nome a apresentar",
 			"DISPLAY_NAME_HINT": "Escolhido ao entrar na reunião",
 			"DISPLAY_NAME_LOCKED": "Não pode ser alterado durante a reunião",
