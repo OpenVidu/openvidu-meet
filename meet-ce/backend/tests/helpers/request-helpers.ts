@@ -45,10 +45,10 @@ import { RoomScheduledTasksService } from '../../src/services/room-scheduled-tas
 import { MongoDBService } from '../../src/services/storage/mongodb.service.js';
 import { getBasePath } from '../../src/utils/html-dynamic-base-path.utils.js';
 import {
-	waitForActiveRecordingEgress,
 	waitForAllRecordingsToStop,
 	waitForAllRoomsToDelete,
 	waitForMeetingToEnd,
+	waitForRecordingStatus,
 	waitForRecordingToStop
 } from './wait-helpers.js';
 
@@ -1090,8 +1090,9 @@ export const startRecording = async (
 };
 
 /**
- * Starts a recording and, when accepted, waits until its egress is recording: the API answers as
- * soon as LiveKit accepts the egress, while a stop only produces a file once the egress is active.
+ * Starts a recording and, when accepted, waits until Meet reports it active: the API answers as
+ * soon as LiveKit accepts the egress, the recording turns active (with its start date) once the
+ * deployment processes the egress webhook, and a stop only produces a file once it is active.
  */
 export const startRecordingAndWaitUntilActive = async (
 	...args: Parameters<typeof startRecording>
@@ -1099,7 +1100,7 @@ export const startRecordingAndWaitUntilActive = async (
 	const response = await startRecording(...args);
 
 	if (response.status === 201) {
-		await waitForActiveRecordingEgress(args[0]);
+		await waitForRecordingStatus(response.body.recordingId, MeetRecordingStatus.ACTIVE);
 	}
 
 	return response;
