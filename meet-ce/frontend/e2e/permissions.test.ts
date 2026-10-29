@@ -214,6 +214,9 @@ test.describe('Permissions E2E Tests', () => {
 		test('canReadChat denied: a message sent to the meeting raises no notice', async ({ page, browser }) => {
 			const { byName, removeAllParticipants } = await joinParticipants(browser, {
 				roomId: room.roomId,
+				// The guests of the earlier tests in this shared room linger in LiveKit for ~20 s after
+				// their page closes, so counting remote streams here would count them too.
+				skipRemoteStreamCheck: true,
 				participants: [{ name: 'Chat Sender' }, { name: 'Chat Reader' }]
 			});
 

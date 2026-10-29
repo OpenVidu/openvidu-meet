@@ -1392,6 +1392,9 @@ test.describe('Layout E2E Tests', () => {
 
 					// Set limit to 1 so the indicator appears in topbar mode initially
 					await setSmartMosaicParticipantCount(pageA, 1);
+					// The speaking remote-a ends up in the only slot: pinning the silent remote-b before that
+					// would leave the pin on a hidden participant
+					await waitForVisibleRemoteParticipants(pageA, { count: 1, includes: ['remote-a'] });
 					await expect(pageA.locator('.hidden-participants-container.horizontal')).toBeVisible({
 						timeout: 10_000
 					});

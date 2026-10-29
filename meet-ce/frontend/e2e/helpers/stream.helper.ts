@@ -531,6 +531,7 @@ export const dragStream = async (page: Page, selector: string, targetX: number, 
 	const element = selector === '.local_participant' ? localCameraStream(page) : page.locator(selector).first();
 
 	await expect(element).toBeVisible({ timeout: 5_000 });
+	await waitForBoundingBoxStable(element);
 	const box = await element.boundingBox();
 
 	if (!box) {
@@ -543,6 +544,8 @@ export const dragStream = async (page: Page, selector: string, targetX: number, 
 	// float/pin buttons and the release would CLICK them, toggling dock instead of dragging.
 	await page.mouse.move(box.x + box.width / 2, box.y + 8);
 	await page.mouse.down();
+	await page.mouse.move(box.x + box.width / 2, box.y + 28);
+	await expect(element).toHaveClass(/cdk-drag-dragging/, { timeout: 1_000 });
 	await page.mouse.move(targetX, targetY, { steps: 10 });
 	await page.mouse.up();
 };
