@@ -234,10 +234,11 @@ the OpenAPI sources already use for their own cross-references: `#/operations/<o
   Most jobs watch `meet.sh` because CI calls it, so dev-mode logic lives in `scripts/dev/dev.sh`
   (sourced only by `./meet.sh dev`), which no workflow watches. Markdown and `nodemon*.json` never
   trigger a job.
-- Workflows trigger on pull requests and on pushes to `main` only: a branch gets CI once it has a PR
-  (a draft is enough) or through `workflow_dispatch`. Backend integration and both e2e suites also run
-  nightly on `main` (00:17 UTC), only when `main` moved since their last green nightly; the
-  `main-changed` job skips the rest. On a pull request that leaves storage untouched
+- Workflows trigger on pull requests: a branch gets CI once it has a PR (a draft is enough) or through
+  `workflow_dispatch`. On `main`, the unit workflows run on every push; backend integration and both
+  e2e suites run nightly instead (00:17 UTC), only when `main` moved since their last green nightly
+  (the `main-changed` job skips the rest), because the required checks are strict and the PR already
+  ran them on the tree `main` gets. On a pull request that leaves storage untouched
   (the `storage-diff` job in `backend-integration-test.yaml`), recordings run on S3 only; `main` always
   runs S3, GCS and ABS.
 - Backend integration tests and all Playwright suites need real infrastructure (LiveKit, MongoDB,

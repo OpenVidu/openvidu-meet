@@ -1,9 +1,8 @@
 name: Frontend E2E Tests
 
 on:
-  push:
-    branches: [main]
-    paths: &frontend-e2e-test-paths
+  pull_request:
+    paths:
       - 'meet-ce/frontend/**'
       - '!meet-ce/frontend/webcomponent/**'
       - '!meet-ce/frontend/projects/**/*.spec.ts'
@@ -15,8 +14,6 @@ on:
       - '.github/workflows/frontend-e2e-test.yaml'
       - '!**/*.md'
       - '!meet-ce/backend/nodemon*.json'
-  pull_request:
-    paths: *frontend-e2e-test-paths
   schedule:
     - cron: '17 0 * * *'
   workflow_dispatch:

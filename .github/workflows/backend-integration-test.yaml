@@ -1,8 +1,7 @@
 name: Backend Integration Tests
 on:
-  push:
-    branches: [main]
-    paths: &backend-integration-test-paths
+  pull_request:
+    paths:
       - 'meet-ce/backend/src/**'
       - 'meet-ce/backend/package.json'
       - 'meet-ce/backend/tests/integration/**'
@@ -16,8 +15,6 @@ on:
       - '.github/workflows/backend-integration-test.yaml'
       - '!**/*.md'
       - '!meet-ce/frontend/**'
-  pull_request:
-    paths: *backend-integration-test-paths
   schedule:
     - cron: '17 0 * * *'
   workflow_dispatch:
