@@ -176,6 +176,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   subnet no longer matches every IPv4 address.
 - A request with a compressed body followed by extra bytes could stop the server, with no authentication needed.
   Such a request no longer does.
+- An unknown `MEET_BLOB_STORAGE_MODE` value, including `GCS` or `ABS` in capitals, made Meet use S3 storage. Values
+  now match in any case, and any other value stops startup naming the variable.
 - With `MEET_BLOB_STORAGE_MODE=abs`, recordings were written under `MEET_S3_SUBBUCKET` but read under
   `MEET_AZURE_SUBCONTAINER_NAME`, so they could not be played, downloaded or deleted when the two differed. They are
   now written under `MEET_AZURE_SUBCONTAINER_NAME`.

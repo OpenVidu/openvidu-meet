@@ -111,10 +111,9 @@ const persistenceModule = new ContainerModule(({ bind }) => {
  * Blob storage bindings. Only the provider, key builder and provider-specific client differ per
  * storage mode; the factory, facade and initialization services are mode-agnostic.
  */
-const createStorageModule = (storageMode: string): ContainerModule =>
+export const createStorageModule = (storageMode: string): ContainerModule =>
 	new ContainerModule(({ bind }) => {
 		switch (storageMode) {
-			default:
 			case 's3':
 				bind<StorageProvider>(STORAGE_TYPES.StorageProvider).to(S3StorageProvider).inSingletonScope();
 				bind<StorageKeyBuilder>(STORAGE_TYPES.KeyBuilder).to(S3KeyBuilder).inSingletonScope();
@@ -133,6 +132,8 @@ const createStorageModule = (storageMode: string): ContainerModule =>
 				bind(GCSService).toSelf().inSingletonScope();
 				bind(GCSStorageProvider).toSelf().inSingletonScope();
 				break;
+			default:
+				throw new Error(`MEET_BLOB_STORAGE_MODE must be 's3', 'gcs' or 'abs', got '${storageMode}'`);
 		}
 
 		bind(StorageFactory).toSelf().inSingletonScope();

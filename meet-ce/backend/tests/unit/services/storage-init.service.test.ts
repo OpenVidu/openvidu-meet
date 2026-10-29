@@ -1,10 +1,14 @@
 import { describe, expect, it, jest } from '@jest/globals';
+import { Container } from 'inversify';
 import ms from 'ms';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see meeting-mute.test.ts).
-import '../../../src/config/dependency-injector.config.js';
+import { createStorageModule } from '../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../src/environment.js';
+import { ABSService } from '../../../src/services/storage/providers/abs/abs.service.js';
+import { GCSService } from '../../../src/services/storage/providers/gcp/gcs.service.js';
+import { S3Service } from '../../../src/services/storage/providers/s3/s3.service.js';
 import { StorageInitService } from '../../../src/services/storage/storage-init.service.js';
 import { UserService } from '../../../src/services/user.service.js';
 
@@ -158,5 +162,43 @@ describe('UserService.initializeAdminUser (root admin configuration)', () => {
 
 		await withAdminConfig('rootadmin', '1234', () => service.initializeAdminUser());
 		expect(userRepository.create).not.toHaveBeenCalled();
+	});
+});
+
+describe('MEET_BLOB_STORAGE_MODE (storage provider selection)', () => {
+	const readStorageMode = async (value: string) => {
+		const original = process.env.MEET_BLOB_STORAGE_MODE;
+		process.env.MEET_BLOB_STORAGE_MODE = value;
+		jest.resetModules();
+
+		try {
+			const { MEET_ENV: env } = await import('../../../src/environment.js');
+			return env.BLOB_STORAGE_MODE;
+		} finally {
+			if (original === undefined) {
+				delete process.env.MEET_BLOB_STORAGE_MODE;
+			} else {
+				process.env.MEET_BLOB_STORAGE_MODE = original;
+			}
+		}
+	};
+
+	it.each([
+		['GCS', GCSService],
+		[' abs ', ABSService],
+		['', S3Service]
+	])('selects the provider of %j', async (value, providerService) => {
+		const storage = new Container();
+		storage.load(createStorageModule(await readStorageMode(value)));
+
+		expect(storage.isBound(providerService)).toBe(true);
+	});
+
+	it('refuses an unknown value naming the variable and the accepted values', async () => {
+		const mode = await readStorageMode('gsc');
+
+		expect(() => new Container().load(createStorageModule(mode))).toThrow(
+			"MEET_BLOB_STORAGE_MODE must be 's3', 'gcs' or 'abs', got 'gsc'"
+		);
 	});
 });
