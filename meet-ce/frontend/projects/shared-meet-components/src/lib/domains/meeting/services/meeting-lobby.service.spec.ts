@@ -1,7 +1,9 @@
 import { Clipboard } from '@angular/cdk/clipboard';
+import { HttpErrorResponse } from '@angular/common/http';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MeetRoomMemberTokenOptions, MeetRoomStatus } from '@openvidu-meet/typings';
+import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
@@ -41,9 +43,15 @@ describe('MeetingLobbyService', () => {
 	};
 	let e2eeEnabled: boolean;
 	let speakerPublicLink: string | undefined;
+	let embeddedMode: boolean;
+	let signedIn: boolean;
+	let leaveRedirectUrl: string | undefined;
 
 	beforeEach(() => {
 		e2eeEnabled = false;
+		embeddedMode = false;
+		signedIn = false;
+		leaveRedirectUrl = undefined;
 		speakerPublicLink = undefined;
 		roomService = jasmine.createSpyObj<RoomService>('RoomService', ['getRoom', 'loadRoomConfig']);
 		roomService.getRoom.and.callFake(
@@ -104,13 +112,13 @@ describe('MeetingLobbyService', () => {
 				{ provide: RecordingService, useValue: { listRecordings: async () => ({ recordings: [] }) } },
 				{
 					provide: AuthService,
-					useValue: { isUserAuthenticated: async () => false, getUserName: async () => undefined }
+					useValue: { isUserAuthenticated: async () => signedIn, getUserName: async () => undefined }
 				},
 				{ provide: NavigationService, useValue: { redirectToErrorPage: async () => undefined } },
-				{ provide: LeaveRedirectService, useValue: { getLeaveRedirectURL: () => undefined } },
+				{ provide: LeaveRedirectService, useValue: { getLeaveRedirectURL: () => leaveRedirectUrl } },
 				{
 					provide: RuntimeConfigService,
-					useValue: { isWebcomponentMode: () => false, isEmbeddedMode: () => false }
+					useValue: { isWebcomponentMode: () => false, isEmbeddedMode: () => embeddedMode }
 				}
 			]
 		});
@@ -233,6 +241,46 @@ describe('MeetingLobbyService', () => {
 		});
 	});
 
+	// The iframe goes by the embedded element's rule, as its end screen does: it has no console to go
+	// back to, and the host page can act on embeddedCloseRequested.
+	describe('the back button', () => {
+		const backButtonAfterInit = async (): Promise<string | null> => {
+			await service.initialize();
+			await new Promise((resolve) => setTimeout(resolve));
+			return service.showBackButton() ? service.backButtonText() : null;
+		};
+
+		it('reads Back in an iframe for a signed-in user', async () => {
+			embeddedMode = true;
+			signedIn = true;
+
+			expect(await backButtonAfterInit()).toBe('LOBBY.BACK');
+		});
+
+		it('reads Back in an iframe for an anonymous participant', async () => {
+			embeddedMode = true;
+
+			expect(await backButtonAfterInit()).toBe('LOBBY.BACK');
+		});
+
+		it('reads Back in an iframe with a leave redirect', async () => {
+			embeddedMode = true;
+			leaveRedirectUrl = 'https://example.com/left';
+
+			expect(await backButtonAfterInit()).toBe('LOBBY.BACK');
+		});
+
+		it('goes back to the rooms of a signed-in user in the standalone app', async () => {
+			signedIn = true;
+
+			expect(await backButtonAfterInit()).toBe('LOBBY.BACK_TO_ROOMS');
+		});
+
+		it('is absent for an anonymous participant in the standalone app', async () => {
+			expect(await backButtonAfterInit()).toBeNull();
+		});
+	});
+
 	describe('clearing the lobby', () => {
 		it('grants access to the prejoin without minting a token', async () => {
 			await enterLobby();
@@ -315,6 +363,30 @@ describe('MeetingLobbyService', () => {
 
 			await expectAsync(service.generateJoinToken()).toBeRejected();
 			expect(meetingContextStub.setIsActiveMeeting).not.toHaveBeenCalled();
+		});
+
+		it('shows the invalid participant data screen and logs the refused fields', async () => {
+			const redirect = spyOn(TestBed.inject(NavigationService), 'redirectToErrorPage');
+			const logError = spyOn(service['log'], 'e');
+			await enterLobby();
+			await service.submitAccess();
+			roomMemberContext.generateToken.and.rejectWith(
+				new HttpErrorResponse({
+					status: 422,
+					error: {
+						message: 'Invalid request',
+						details: [{ field: 'participantExternalId', message: 'Invalid participant external id' }]
+					}
+				})
+			);
+
+			await expectAsync(service.generateJoinToken()).toBeRejected();
+
+			expect(redirect).toHaveBeenCalledWith(NavigationErrorReason.INVALID_PARTICIPANT_DATA, true);
+			expect(logError).toHaveBeenCalledWith(
+				'Invalid participant data:',
+				'participantExternalId: Invalid participant external id'
+			);
 		});
 	});
 

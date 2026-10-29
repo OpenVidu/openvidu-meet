@@ -19,9 +19,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 - Embedded commands `recordingStart` and `recordingStop`, gated by `recordingControl`, and the embedded event
   `recordingStatusChanged`, carrying `{ recordingId, status }` to every participant.
-- Embedded attributes and URL parameters `language`, which sets the initial meeting language (a BCP 47
-  language tag, or `auto` for the browser's) over the participant's stored preference without replacing it,
-  and `show-language-selector`, which hides the language selectors when `false`.
+- Embedded attributes and URL parameters `language`, which sets the initial interface language, meeting and
+  recording screens alike (a BCP 47 language tag, or `auto` for the browser's), over the participant's stored
+  preference without replacing it, and `show-language-selector`, which hides the language selectors when `false`.
 - Embedded command `participantUpdateRole`, gated by `participantPromote`, promotes a participant to moderator or
   demotes them back. Every promotion and demotion is reported as the
   [`participantRoleChanged`][3.10-participant-role-changed] webhook and as the embedded event of the same name to the
@@ -129,6 +129,23 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - A room with end-to-end encryption could have live captions on, although the captions assistant only receives
   encrypted audio and produced no captions. As with recording, `captions.enabled` is now stored as `false` while
   `e2ee.enabled` is `true`, in existing rooms too, and the room wizard turns captions off when encryption is turned on.
+- Registering the same callback twice with `on()` on `<openvidu-meet>` called it twice per event and left one
+  registration that `off()` could not remove, and a callback registered with `once()` could not be removed with
+  `off()`. A callback is now registered once per event, and `off()` removes it however it was added.
+- A join refused because `participant-external-id` or `participant-metadata` exceed their limits showed the generic
+  error screen. It now shows an "Invalid participant data" error screen and logs the server's reason in the browser
+  console.
+- The styles of `<openvidu-meet>` reached the host page, restyling its own elements such as Angular Material
+  components, and the host page's `<style>` rules reached inside the element. Each side's styles now stay on its side
+  of the element's shadow root.
+- Meet in an iframe did not post `embeddedCloseRequested` to the host page from a recording screen or from an access
+  error screen shown before the join screen, and dropped commands posted before the join screen without a console
+  warning. It now listens to the host page and posts events from the moment it loads.
+- With `leave-redirect-url` set, the redirect could replace the host page before `embeddedCloseRequested` reached it,
+  in the embedded element and in the iframe. The redirect now follows the event.
+- A room URL opened in an iframe or a direct link with `show-only-recordings` and no value, or a value other than
+  `true` such as `1`, showed the meeting. It now shows the room recordings page unless the value is `false`, as the
+  attribute of `<openvidu-meet>` does.
 
 #### UI
 
@@ -136,6 +153,13 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   element showed that recording as still in progress. The recording indicator starts over with each meeting.
 - After leaving a meeting, joining another meeting with the same `<openvidu-meet>` element showed the earlier
   meeting's chat messages and counted them as unread. The chat now starts empty in every meeting.
+- A browser tab, or an `<openvidu-meet>` element, that had entered a room with a secret or an encryption key reused
+  them for any other room entered without them, so a user access link opened afterwards showed the "Invalid link"
+  error screen. They are now kept only for the room they were given for.
+- On the join screen of a meeting in an iframe without `leave-redirect-url`, a signed-in user got a **Back to Rooms**
+  button that only emitted `embeddedCloseRequested`, and an anonymous participant got none. The iframe's access error
+  screens, and a recording opened in an iframe by its link, offered no button either. The join, error and recording
+  screens of an iframe now always offer one that emits `embeddedCloseRequested`, as its end screen does.
 - A room member or user who joined a meeting again before their earlier session had left it, from a second tab, after
   reloading or by rejoining quickly, was renamed with a numeric suffix such as `Ana_1` everywhere the meeting shows or
   reports names. They now keep their name.

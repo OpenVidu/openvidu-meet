@@ -17,6 +17,8 @@ import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { SoundService } from '../../../../shared/services/sound.service';
+import { EmbeddedCommandService } from '../../../embedded/services/embedded-command.service';
+import { IframeBridgeService } from '../../../embedded/services/iframe-bridge.service';
 import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
 import { MeetingParticipantItemComponent } from '../../customization/meeting-participant-item/meeting-participant-item.component';
 import { MeetingRaisedHandsStripComponent } from '../../customization/meeting-raised-hands-strip/meeting-raised-hands-strip.component';
@@ -89,6 +91,8 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	protected readonly generateJoinToken = () => this.lobbyService.generateJoinToken();
 
 	constructor() {
+		inject(IframeBridgeService).attachCommands(inject(EmbeddedCommandService));
+
 		// Change theme variables when custom theme is enabled.
 		// Only `meetingAppearance()` should be a dependency of this effect. The theme service
 		// mutators below both read and write their own internal signals (`currentTheme`,

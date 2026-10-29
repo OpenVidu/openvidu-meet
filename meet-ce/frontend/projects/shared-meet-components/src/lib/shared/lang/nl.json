@@ -51,6 +51,10 @@
       "TITLE": "Ongeldig lid",
       "MESSAGE": "U bent geen lid meer van deze kamer of de ledeninformatie is onjuist"
     },
+    "INVALID_PARTICIPANT_DATA": {
+      "TITLE": "Ongeldige deelnemersgegevens",
+      "MESSAGE": "De applicatie die deze vergadering heeft geopend, heeft ongeldige deelnemersgegevens verzonden. Neem contact op met de leverancier van die applicatie"
+    },
     "FORBIDDEN_ROOM_ACCESS": {
       "TITLE": "Toegang tot kamer verboden",
       "MESSAGE": "U bent niet geautoriseerd om toegang te krijgen tot deze kamer (noch tot de bijbehorende opnames)"
