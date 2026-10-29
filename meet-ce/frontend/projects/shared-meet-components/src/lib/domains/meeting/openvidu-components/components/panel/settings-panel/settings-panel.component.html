@@ -26,18 +26,14 @@
 	<div class="settings-content" role="tabpanel">
 		@switch (selectedOption()) {
 			@case (settingsOptions.AUDIO_VIDEO) {
-				@if (showCameraControls()) {
-					<ov-video-devices-select
-						(onVideoDeviceChanged)="onVideoDeviceChanged.emit($event)"
-						(onVideoEnabledChanged)="onVideoEnabledChanged.emit($event)"
-					/>
-				}
-				@if (showMicrophoneControls()) {
-					<ov-audio-devices-select
-						(onAudioDeviceChanged)="onAudioDeviceChanged.emit($event)"
-						(onAudioEnabledChanged)="onAudioEnabledChanged.emit($event)"
-					/>
-				}
+				<ov-audio-video-settings
+					[showCamera]="showCameraControls()"
+					[showMicrophone]="showMicrophoneControls()"
+					(onVideoDeviceChanged)="onVideoDeviceChanged.emit($event)"
+					(onVideoEnabledChanged)="onVideoEnabledChanged.emit($event)"
+					(onAudioDeviceChanged)="onAudioDeviceChanged.emit($event)"
+					(onAudioEnabledChanged)="onAudioEnabledChanged.emit($event)"
+				/>
 			}
 			@case (settingsOptions.LAYOUT) {
 				<ng-container *ngTemplateOutlet="layoutTemplate() ?? null" />

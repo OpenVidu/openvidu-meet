@@ -117,6 +117,8 @@
 			"MICROPHONE_LEVEL": "Livello del microfono",
 			"MICROPHONE_LEVEL_HINT": "Parla per verificare che gli altri ti sentano",
 			"MICROPHONE_OFF": "Il tuo microfono è spento",
+			"APPLY": "Applica",
+			"EFFECT_APPLIES_ON_APPLY": "L'effetto di sfondo si aggiunge applicando questa fotocamera",
 			"DISPLAY_NAME": "Nome visualizzato",
 			"DISPLAY_NAME_HINT": "Scelto all'ingresso nella riunione",
 			"DISPLAY_NAME_LOCKED": "Non può essere modificato durante la riunione",

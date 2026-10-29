@@ -13,10 +13,9 @@ import { PanelService } from '../../../services/panel/panel.service';
 import { ParticipantService } from '../../../services/participant/participant.service';
 import { TemplateRegistryService } from '../../../services/template/template-registry.service';
 import { ParticipantAvatarComponent } from '../../participant-avatar/participant-avatar.component';
-import { AudioDevicesComponent } from '../../settings/audio-devices/audio-devices.component';
+import { AudioVideoSettingsComponent } from '../../settings/audio-video-settings/audio-video-settings.component';
 import { LangSelectorComponent } from '../../settings/lang-selector/lang-selector.component';
 import { ThemeSelectorComponent } from '../../settings/theme-selector/theme-selector.component';
-import { VideoDevicesComponent } from '../../settings/video-devices/video-devices.component';
 
 interface SettingsTab {
 	option: PanelSettingsOptions;
@@ -38,8 +37,7 @@ interface SettingsTab {
 		ParticipantAvatarComponent,
 		LangSelectorComponent,
 		ThemeSelectorComponent,
-		VideoDevicesComponent,
-		AudioDevicesComponent
+		AudioVideoSettingsComponent
 	],
 	templateUrl: './settings-panel.component.html',
 	styleUrls: ['../panel.component.scss', './settings-panel.component.scss']

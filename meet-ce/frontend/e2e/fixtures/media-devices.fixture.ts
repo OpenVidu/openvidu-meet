@@ -12,6 +12,9 @@ import path from 'node:path';
  *   a file with `test.use({ fakeAudioFile })` and drives `micAudioPage`, a dedicated Chromium
  *   launched with that file. Files live in `e2e/assets/audio/`.
  *
+ * - `twoCamerasPage`: a dedicated Chromium whose fake media exposes two cameras, the only way to
+ *   switch between cameras, since the project launch flags give a single one.
+ *
  * The regular `page` fixture is left untouched (project browser, shared setup), so only the tests
  * that need these behaviours pay for a dedicated browser.
  */
@@ -25,6 +28,8 @@ type MediaDevicesFixtures = {
 	/** Name of a file under e2e/assets/audio captured as the fake mic by `micAudioPage`. */
 	fakeAudioFile: string;
 	micAudioPage: Page;
+	/** Chromium exposing two fake cameras (`fake_device_0`, `fake_device_1`) besides the fake microphones. */
+	twoCamerasPage: Page;
 };
 
 export const test = base.extend<MediaDevicesFixtures>({
@@ -57,6 +62,30 @@ export const test = base.extend<MediaDevicesFixtures>({
 			args: [
 				...COMMON_ARGS,
 				`--use-file-for-fake-audio-capture=${path.resolve(AUDIO_DIR, fakeAudioFile)}`,
+				'--window-size=1366,900'
+			]
+		});
+		const context = await browser.newContext({
+			permissions: ['camera', 'microphone'],
+			viewport: { width: 1366, height: 900 },
+			ignoreHTTPSErrors: true
+		});
+		const page = await context.newPage();
+
+		await use(page);
+
+		await context.close();
+		await browser.close();
+	},
+
+	// eslint-disable-next-line no-empty-pattern
+	twoCamerasPage: async ({}, use, testInfo) => {
+		const browser = await chromium.launch({
+			headless: testInfo.project.use.headless,
+			args: [
+				'--use-fake-ui-for-media-stream',
+				'--use-fake-device-for-media-stream=device-count=2',
+				'--enable-gpu',
 				'--window-size=1366,900'
 			]
 		});

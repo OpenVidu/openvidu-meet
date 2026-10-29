@@ -117,6 +117,8 @@
 			"MICROPHONE_LEVEL": "マイクの音量",
 			"MICROPHONE_LEVEL_HINT": "話して、他の参加者に聞こえるか確認してください",
 			"MICROPHONE_OFF": "マイクはオフです",
+			"APPLY": "適用",
+			"EFFECT_APPLIES_ON_APPLY": "背景効果はこのカメラを適用すると追加されます",
 			"DISPLAY_NAME": "表示名",
 			"DISPLAY_NAME_HINT": "会議への参加時に設定されました",
 			"DISPLAY_NAME_LOCKED": "会議中は変更できません",

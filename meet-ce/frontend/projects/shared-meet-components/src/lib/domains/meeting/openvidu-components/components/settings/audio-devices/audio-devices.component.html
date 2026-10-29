@@ -73,10 +73,12 @@
 				class="device-field"
 				[class.off]="!isMicrophoneEnabled()"
 				[matMenuTriggerFor]="microphoneMenu"
-				[disabled]="!isMicrophoneEnabled() || microphoneStatusChanging() || microphones().length <= 1"
+				[disabled]="
+					!isMicrophoneEnabled() || microphoneStatusChanging() || isApplying() || microphones().length <= 1
+				"
 			>
 				<mat-icon>mic</mat-icon>
-				<span class="field-value">{{ microphoneSelected()?.label }}</span>
+				<span class="field-value">{{ microphoneShown()?.label }}</span>
 				@if (microphones().length > 1) {
 					<mat-icon class="field-chevron">expand_more</mat-icon>
 				}
@@ -121,9 +123,9 @@
 				mat-menu-item
 				id="option-{{ microphone.label }}"
 				(click)="onMicrophoneSelected({ value: microphone })"
-				[class.selected]="microphone.device === microphoneSelected()?.device"
+				[class.selected]="microphone.device === microphoneShown()?.device"
 			>
-				@if (microphone.device === microphoneSelected()?.device) {
+				@if (microphone.device === microphoneShown()?.device) {
 					<mat-icon>check</mat-icon>
 				}
 				<span>{{ microphone.label }}</span>

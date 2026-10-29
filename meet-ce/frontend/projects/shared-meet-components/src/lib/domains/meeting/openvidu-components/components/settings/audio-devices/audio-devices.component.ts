@@ -7,6 +7,7 @@ import { CustomDevice } from '../../../models/device.model';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { MicStatusAlertComponent } from '../../mic-status-alert/mic-status-alert.component';
 import { DeviceService } from '../../../services/device/device.service';
+import { DeviceTrialService } from '../../../services/device-trial/device-trial.service';
 import { LocalMediaService } from '../../../services/local-media/local-media.service';
 import { MicActivityService } from '../../../services/mic-activity/mic-activity.service';
 import { LoggerService } from '../../../../../../shared/services/logger.service';
@@ -32,9 +33,14 @@ export class AudioDevicesComponent {
 	readonly microphoneStatusChanging = signal(false);
 	readonly isMicrophoneEnabled = inject(LocalMediaService).microphone.enabled;
 
-	private readonly micLevel = inject(MicActivityService).level;
+	private readonly trial = inject(DeviceTrialService, { optional: true });
+	private readonly publishedLevel = inject(MicActivityService).level;
+	private readonly micLevel = computed(() =>
+		this.trial?.microphone.device() ? this.trial.microphone.level() : this.publishedLevel()
+	);
 	readonly levelBars = Array.from({ length: LEVEL_BARS });
 	readonly litLevelBars = computed(() => (this.isMicrophoneEnabled() ? Math.round(this.micLevel() * LEVEL_BARS) : 0));
+	readonly isApplying = computed(() => this.trial?.applying() ?? false);
 
 	private log: ILogger = {
 		d: () => {},
@@ -47,6 +53,8 @@ export class AudioDevicesComponent {
 	protected readonly microphones: WritableSignal<CustomDevice[]>;
 	protected readonly microphoneSelected: WritableSignal<CustomDevice | undefined>;
 	protected readonly hasAudioDevices: Signal<boolean>;
+	/** The microphone the selector shows: the one being tried, else the published one. */
+	protected readonly microphoneShown = computed(() => this.trial?.microphone.device() ?? this.microphoneSelected());
 
 	private readonly deviceSrv = inject(DeviceService);
 	private readonly localMedia = inject(LocalMediaService);
@@ -75,6 +83,11 @@ export class AudioDevicesComponent {
 	}
 
 	async onMicrophoneSelected(event: { value: CustomDevice }) {
+		if (this.trial) {
+			await this.trial.tryMicrophone(event.value);
+			return;
+		}
+
 		try {
 			const device: CustomDevice = event?.value;
 
