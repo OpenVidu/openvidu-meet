@@ -47,7 +47,7 @@ jobs:
   e2e-tests:
     name: Frontend E2E Tests
     needs: main-changed
-    if: ${{ !cancelled() && needs.main-changed.outputs.changed != 'false' }}
+    if: ${{ !cancelled() && needs.main-changed.outputs.changed != 'false' && github.event.pull_request.user.login != 'dependabot[bot]' }}
     runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
     steps:
       - name: Checkout OpenVidu Meet

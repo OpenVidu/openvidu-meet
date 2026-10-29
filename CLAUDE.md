@@ -241,7 +241,10 @@ the OpenAPI sources already use for their own cross-references: `#/operations/<o
   ran them on the tree `main` gets. On a pull request recordings run on S3 only, unless it changes
   `meet-ce/backend/src/services/storage/` or carries the `ci:storage` label (the `storage-providers`
   job in `backend-integration-test.yaml`; the label is read when a run starts, so add it before
-  pushing); the nightly and `workflow_dispatch` run S3, GCS and ABS.
+  pushing); the nightly and `workflow_dispatch` run S3, GCS and ABS. Dependabot pull requests run only
+  the unit workflows: their integration and e2e jobs skip on GitHub-hosted runners (matrix jobs skip
+  their steps, so the required checks still report) and the nightly tests the merge; dispatch the
+  workflow on the Dependabot branch to test it before. Dependabot groups all action bumps in one PR.
 - Backend integration tests and all Playwright suites need real infrastructure (LiveKit, MongoDB,
   Redis, S3/MinIO). They are not runnable from a bare checkout: say so instead of reporting a pass.
 - `./meet.sh build-rest-api-doc` and `./meet.sh build-webcomponent-doc` generate the API references
