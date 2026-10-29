@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { readFileSync } from 'node:fs';
 
-// Prints `<suite>=true|false` for each CI suite, from the changed files read on stdin (one per line).
+// Prints `<suite>=true|false` for each CI suite, and `storage=true|false` for the storage services (their
+// recordings tests then run on every storage provider), from the changed files read on stdin (one per line).
 //   --all             every suite, without reading stdin
 //   --only a,b        no suite outside this list
 // Patterns follow GitHub's `paths` filters: evaluated in order, `!` excludes, a later pattern re-includes.
@@ -84,6 +85,8 @@ const SUITES = {
 
 const CI_FILES = ['.github/workflows/ci.yaml', 'scripts/ci/changed-suites.mjs'];
 
+const STORAGE = ['meet-ce/backend/src/services/storage/**'];
+
 const toRegExp = (glob) =>
 	new RegExp(
 		'^' +
@@ -136,3 +139,5 @@ for (const [suite, patterns] of Object.entries(SUITES)) {
 	const affected = all || files.some((file) => matches(file, [...patterns, ...CI_FILES]));
 	console.log(`${suite}=${affected && only.includes(suite)}`);
 }
+
+console.log(`storage=${all || files.some((file) => matches(file, STORAGE))}`);

@@ -35,6 +35,7 @@ jobs:
       backend-integration: ${{ steps.select.outputs.backend-integration }}
       frontend-e2e: ${{ steps.select.outputs.frontend-e2e }}
       wc-e2e: ${{ steps.select.outputs.wc-e2e }}
+      storage: ${{ steps.select.outputs.storage }}
     steps:
       - name: Checkout the merge commit and its base
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -42,8 +43,8 @@ jobs:
           fetch-depth: 2
 
       # Pull requests run the suites their files affect (Dependabot ones never take a self-hosted
-      # runner), pushes to main only the unit suites, and the nightly every suite when main moved
-      # since the last green nightly.
+      # runner), pushes to main the affected unit and integration suites, and the nightly every suite
+      # when main moved since the last green nightly.
       - name: Select the suites the change affects
         id: select
         env:
@@ -64,9 +65,9 @@ jobs:
               ;;
             push)
               if git fetch --no-tags --depth=1 origin "$BEFORE"; then
-                git diff --name-only "$BEFORE" HEAD | pick --only backend-unit,frontend-unit,wc-unit
+                git diff --name-only "$BEFORE" HEAD | pick --only backend-unit,frontend-unit,wc-unit,backend-integration
               else
-                pick --all --only backend-unit,frontend-unit,wc-unit
+                pick --all --only backend-unit,frontend-unit,wc-unit,backend-integration
               fi
               ;;
             schedule)
@@ -115,6 +116,10 @@ jobs:
       contents: read
       checks: write
     uses: ./.github/workflows/backend-integration-test.yaml
+    # GCS and ABS share one bucket each, which every recordings job empties first, so they only run when
+    # the storage services change, on the `ci:storage` label, at night and on dispatch.
+    with:
+      storage-providers: ${{ (needs.changes.outputs.storage == 'true' || contains(github.event.pull_request.labels.*.name, 'ci:storage')) && '["s3", "abs", "gcs"]' || '["s3"]' }}
     secrets: inherit
 
   frontend-e2e:

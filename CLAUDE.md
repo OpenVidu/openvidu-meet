@@ -239,15 +239,16 @@ the OpenAPI sources already use for their own cross-references: `#/operations/<o
   lives in `scripts/dev/dev.sh` (sourced only by `./meet.sh dev`), which no suite watches. Markdown and
   `nodemon*.json` never select a suite.
 - CI runs on pull requests: a branch gets CI once it has a PR (a draft is enough) or by dispatching
-  `CI` (input `suites`, `all` by default) or a single suite workflow. A push to `main` runs only the
-  unit suites; every suite runs nightly instead (00:17 UTC), only when `main` moved since the last
-  green nightly, because the required check is strict and the PR already ran the suites on the tree
-  `main` gets. On a pull request recordings run on S3 only, unless it changes
-  `meet-ce/backend/src/services/storage/` or carries the `ci:storage` label (the `storage-providers`
-  job in `backend-integration-test.yaml`; the label is read when a run starts, so add it before
-  pushing); the nightly and dispatched runs use S3, GCS and ABS. Dependabot pull requests skip the e2e
-  suites, so they never take a self-hosted runner, and the nightly tests the merge; dispatch the e2e
-  workflow on the Dependabot branch to test it before. Dependabot groups all action bumps in one PR.
+  `CI` (input `suites`, `all` by default) or a single suite workflow. A push to `main` runs the unit
+  and backend integration suites it affects (both on GitHub-hosted runners) but not the e2e suites,
+  which run nightly instead (00:17 UTC) together with every other suite, only when `main` moved since
+  the last green nightly. On a pull request or a push, recordings run on S3 only, unless the change
+  touches `meet-ce/backend/src/services/storage/` or the pull request carries the `ci:storage` label
+  (read when a run starts, so add it before pushing): GCS and ABS share one bucket each, which every
+  recordings job empties first. The nightly and dispatched runs use S3, GCS and ABS. Dependabot pull
+  requests skip the e2e suites, so they never take a self-hosted runner, and the nightly tests the
+  merge; dispatch the e2e workflow on the Dependabot branch to test it before. Dependabot groups all
+  action bumps in one PR.
 - Backend integration tests and all Playwright suites need real infrastructure (LiveKit, MongoDB,
   Redis, S3/MinIO). They are not runnable from a bare checkout: say so instead of reporting a pass.
 - `./meet.sh build-rest-api-doc` and `./meet.sh build-webcomponent-doc` generate the API references
