@@ -28,7 +28,7 @@ All in `meet-ce/backend/tests/integration/api/room-members/refresh-room-member-t
 
 ## 5. Advisory
 
-- [ ] 5.1 Draft the GitHub Security Advisory text outside the repository (summary, affected releases confirmed with `git show v3.8.0:` and `v3.9.0:` of `room-member.service.ts`, patched release, severity with a CVSS 3.1 vector, the conditions and impact of the proposal's `## Severity`, workaround: remove a participant from the meeting with `participantKick` after reducing their permissions or their account role, and the note that tokens renewed before the upgrade stay valid until they expire). Verify by having the maintainers review it in the private advisory before publication.
+- [x] 5.1 Draft the GitHub Security Advisory text outside the repository (summary, affected releases confirmed with `git show v3.8.0:` and `v3.9.0:` of `room-member.service.ts`, patched release, severity with a CVSS 3.1 vector, the conditions and impact of the proposal's `## Severity`, workaround: remove a participant from the meeting with `participantKick` after reducing their permissions or their account role, and the note that tokens renewed before the upgrade stay valid until they expire). Drafted outside the repository and handed to the maintainers, who decide when to publish it. Affected releases confirmed: 3.8.0 and 3.9.0 (3.7.0 has no room member token refresh); `CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:L/I:L/A:L`, 5.0.
 
 ## 6. Release surfaces
 
@@ -37,5 +37,5 @@ All in `meet-ce/backend/tests/integration/api/room-members/refresh-room-member-t
 
 ## Workflow follow-up
 
-- This change lives on a local branch only and is published through a private GitHub Security Advisory: never push it to the public repository before the advisory is published.
+- Decided (USER, 2026-10-29): the fix lands through a regular pull request like the other fixes, not through the private fork of a GitHub Security Advisory.
 - Archive the change in the same pull request that lands the fix, then run `npx openspec validate --all --strict`.
