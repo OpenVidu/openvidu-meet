@@ -7,6 +7,7 @@ import {
 	MeetRoomMemberTokenOptions,
 	ProjectedMeetRoomMember
 } from '@openvidu-meet/typings';
+import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import { HttpService } from '../../../shared/services/http.service';
 import type { MeetRoomMemberClientResponseOptions } from '../models/room-member-request';
 import type { MeetRoomMemberQueryOptionsWithFields } from '../types/room-member-projection.types';
@@ -228,7 +229,8 @@ export class RoomMemberService {
 	 */
 	async refreshRoomMemberToken(roomId: string): Promise<{ token: string }> {
 		const path = `${this.getRoomMemberApiPath(roomId, true)}/token/refresh`;
-		// Note: The previous token is expected to be sent in the corresponding header by the HTTP interceptor
-		return this.httpService.postRequest(path, {});
+		// Note: The previous token is expected to be sent in the corresponding header by the HTTP interceptor.
+		// A refusal is about that token, never about a signed-in session, so it must not log the user out.
+		return this.httpService.postRequest(path, {}, { [HTTP_HEADERS.SKIP_AUTH_RECOVERY]: 'true' });
 	}
 }

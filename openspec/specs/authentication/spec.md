@@ -250,7 +250,7 @@ The server SHALL reject with `401` a room member token bound to a room member is
 - **THEN** the server answers `401` with message `Invalid token`
 
 ### Requirement: Demotion revokes room member tokens
-The server SHALL reject with `401` every room member token issued to a participant before they were demoted from moderator (`participantRoleUpdate` or `participantUpdateRole`, see `meeting-moderation`), on every replica and for as long as such a token could still be valid, while a token issued to them after the demotion is accepted.
+The server SHALL reject with `401` every room member token issued to a participant before they were demoted from moderator (`participantRoleUpdate` or `participantUpdateRole`, see `meeting-moderation`), on every replica and for as long as such a token could still be valid, while a token issued to them after the demotion is accepted. Only `refreshRoomMemberToken` SHALL still renew it, into a token with the restored permissions (see `room-members`).
 
 #### Scenario: Demoted on another replica
 - **GIVEN** two Meet replicas and a participant promoted to moderator who holds a room member token issued during the promotion

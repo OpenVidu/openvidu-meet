@@ -9,6 +9,7 @@ import {
 	apiKeyValidator,
 	pendingPasswordChangeTokenValidator,
 	roomMemberTokenValidator,
+	verifyRoomMemberToken,
 	withAuth,
 	type AuthValidator
 } from '../../../src/middlewares/auth.middleware.js';
@@ -428,6 +429,69 @@ describe('the validators, against a change made in the same millisecond as the t
 		it("refuses a token older than the participant's last role change in the meeting", async () => {
 			await expect(
 				validateWith({ ...sameInstant, participantTokensRevokedAt: ISSUED_AT + 1 })
+			).rejects.toMatchObject({ statusCode: 401 });
+		});
+	});
+
+	// The refresh renews a token a few seconds past its expiry, and a demotion is the one change it lets through:
+	// it reads the participant after the demotion, so the new token carries the restored permissions.
+	describe('verifyRoomMemberToken, as the refresh calls it', () => {
+		const refreshOptions = { clockToleranceSeconds: 10, ignoreDemotion: true };
+		const metadata = { iat: ISSUED_AT, roomId: 'room-1', memberId: 'member-1', userId: 'user-1' };
+		const sameInstant = {
+			rolesUpdatedAt: ISSUED_AT,
+			permissionsUpdatedAt: ISSUED_AT,
+			roleUpdatedAt: ISSUED_AT,
+			participantTokensRevokedAt: ISSUED_AT
+		};
+
+		const verifyWith = (updates: typeof sameInstant, options = refreshOptions) => {
+			jest.spyOn(tokenService, 'parseRoomMemberTokenMetadata').mockReturnValue(metadata as never);
+			jest.spyOn(roomRepository, 'findByRoomId').mockResolvedValue({
+				rolesUpdatedAt: updates.rolesUpdatedAt
+			} as MeetRoom);
+			jest.spyOn(roomMemberRepository, 'findByRoomAndMemberId').mockResolvedValue({
+				permissionsUpdatedAt: updates.permissionsUpdatedAt
+			} as MeetRoomMember);
+			jest.spyOn(userService, 'getUser').mockResolvedValue(user({ roleUpdatedAt: updates.roleUpdatedAt }));
+			jest.spyOn(redisService, 'get').mockResolvedValue(String(updates.participantTokensRevokedAt));
+
+			return verifyRoomMemberToken('a-token', options);
+		};
+
+		it('verifies the signature with the clock tolerance it is given', async () => {
+			await verifyWith(sameInstant);
+
+			expect(tokenService.verifyToken).toHaveBeenCalledWith('a-token', 10);
+		});
+
+		it("refuses a token older than the room's roles", async () => {
+			await expect(verifyWith({ ...sameInstant, rolesUpdatedAt: ISSUED_AT + 1 })).rejects.toMatchObject({
+				statusCode: 401,
+				message: 'Invalid token'
+			});
+		});
+
+		it("refuses a token older than the member's permissions", async () => {
+			await expect(verifyWith({ ...sameInstant, permissionsUpdatedAt: ISSUED_AT + 1 })).rejects.toMatchObject({
+				statusCode: 401,
+				message: 'Invalid token'
+			});
+		});
+
+		it("refuses a token older than the user's role", async () => {
+			await expect(verifyWith({ ...sameInstant, roleUpdatedAt: ISSUED_AT + 1 })).rejects.toMatchObject({
+				statusCode: 401,
+				message: 'Invalid token'
+			});
+		});
+
+		it("accepts a token older than the participant's demotion, which every other endpoint refuses", async () => {
+			const demoted = { ...sameInstant, participantTokensRevokedAt: ISSUED_AT + 1 };
+
+			await expect(verifyWith(demoted)).resolves.toMatchObject({ metadata });
+			await expect(
+				verifyWith(demoted, { clockToleranceSeconds: 0, ignoreDemotion: false })
 			).rejects.toMatchObject({ statusCode: 401 });
 		});
 	});

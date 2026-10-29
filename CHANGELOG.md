@@ -60,6 +60,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - A room member token issued before its participant was demoted through
   [`participantRoleUpdate`][3.10-participant-role-update] or `participantUpdateRole` stayed valid until it expired,
   so they kept their moderator permissions. It is now rejected.
+- `refreshRoomMemberToken` renewed room member tokens without the checks that invalidate them after a change of the
+  member's permissions or of the user's role. It now applies them, and the meeting renews a refused token with the
+  credentials it joined with.
 - [`participantRoleUpdate`][3.10-participant-role-update], [`participantMute`][3.9-participant-mute],
   [`participantMuteAll`][3.9-participant-mute-all], `updateRoomMember` and the embedded commands that use them
   answered with an error when the notice to the affected participants could not be delivered, although the change
