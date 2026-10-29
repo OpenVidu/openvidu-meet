@@ -4,7 +4,7 @@ import { TwirpError } from 'livekit-server-sdk';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
-import { errorRecordingStartRefused } from '../../../src/models/error.model.js';
+import { errorLivekitNotAvailable, errorRecordingStartRefused } from '../../../src/models/error.model.js';
 import { LiveKitService } from '../../../src/services/livekit.service.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, debug: () => {}, error: () => {}, verbose: () => {} };
@@ -63,5 +63,39 @@ describe('LiveKitService.sendData', () => {
 		const { service } = buildSendingService(() => Promise.reject(new Error('no response from servers')));
 
 		await expect(service.sendData('room-1', { a: 1 }, { topic: 't' })).rejects.toMatchObject({ statusCode: 500 });
+	});
+});
+
+describe('LiveKitService.roomHasParticipants', () => {
+	const buildListingService = (listParticipants: () => Promise<unknown[]>) => {
+		const service = Object.create(LiveKitService.prototype) as LiveKitService;
+		Object.assign(service as object, { lk: { room: { listParticipants } }, logger: noopLogger });
+		return service;
+	};
+
+	it('tells whether the room has someone connected', async () => {
+		await expect(buildListingService(() => Promise.resolve([{}])).roomHasParticipants('room-1')).resolves.toBe(
+			true
+		);
+		await expect(buildListingService(() => Promise.resolve([])).roomHasParticipants('room-1')).resolves.toBe(false);
+	});
+
+	it('reports no participants for a room the media server does not have', async () => {
+		const service = buildListingService(() =>
+			Promise.reject(new TwirpError('not_found', 'requested room does not exist', 404, 'not_found'))
+		);
+
+		await expect(service.roomHasParticipants('room-1')).resolves.toBe(false);
+	});
+
+	it('answers 503 when the media server cannot be reached', async () => {
+		const service = buildListingService(() =>
+			Promise.reject(new TypeError('fetch failed', { cause: { code: 'ECONNREFUSED' } }))
+		);
+
+		await expect(service.roomHasParticipants('room-1')).rejects.toMatchObject({
+			statusCode: 503,
+			message: errorLivekitNotAvailable().message
+		});
 	});
 });
