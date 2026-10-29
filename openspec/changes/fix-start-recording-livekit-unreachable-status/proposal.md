@@ -26,11 +26,10 @@ None.
 
 ### Modified Capabilities
 
-None for now (`skip_specs: true`). On `main` the requirement "Starting a recording through the REST
-API" of `recordings` promises `503` for a media server that cannot be reached. `add-live-broadcast`
-(#120) rewrites it to `503` with `LiveKit Error` when no egress service takes the recording, which no
-longer names an unreachable media server: once #120 is merged, this change adds that scenario to
-`recordings`.
+None (`skip_specs: true`). The scenario "Media server does not accept the recording" of
+`recordings` "Starting a recording through the REST API" already promises `503` for a media server
+that cannot be reached; the code is brought in line with it. `add-live-broadcast` (#120) rewrites that
+requirement, and its rebase keeps the unreachable media server in the scenario.
 
 ## Impact
 
@@ -39,13 +38,13 @@ longer names an unreachable media server: once #120 is merged, this change adds 
 - Webhooks, embedded API, meeting UI, console UI, deployment configuration: not affected.
 - Code: `roomHasParticipants` and its two callers in `meet-ce/backend` (recording start and the
   stale-recordings clean-up).
-- openvidu.io: none. The `503` of `startRecording` in the REST API reference comes from #120's
-  `egress-unavailable.yaml` once #120 is merged.
+- openvidu.io: none. The OpenAPI already documents the `503` of `startRecording` for a media server
+  that cannot be reached.
 
 ## Decisions to confirm
 
 - The `503` reuses `errorLivekitNotAvailable` (`LiveKit Error`, "LiveKit is not available"), the error
   the other media server calls already answer. Alternative: a recording-specific error naming the
   room.
-- Depends on #120, which carries the reconciled `startRecording` `503` (`toEgressError`, shared
-  `egress-unavailable.yaml`): implement after #120 is merged, on top of that error handling.
+- Implemented before #120 for 3.10.0, on top of the `503` that `main` already answers when the media
+  server does not accept the recording; #120 rebases on it.
