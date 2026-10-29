@@ -83,6 +83,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   `403` first.
 - [`startRecording`][3.9-start-recording] answered `500` when the media server did not accept the recording, and `500`
   or `409` (no participants) when it could not be reached. It now answers `503`.
+- [`stopRecording`][3.9-stop-recording] answered `404` for a recording that had ended more than 24 hours earlier. It
+  now answers `409`, as for any recording already stopped.
 - [`bulkDeleteRecordings`][3.9-bulk-delete-recordings] and [`downloadRecordings`][3.9-download-recordings] accepted any
   number of `recordingIds`, and a long list failed with a server or proxy error. They now accept up to 100 distinct ids
   and answer `422` to more, and the recording lists disable ZIP download and bulk delete beyond 100 selected
