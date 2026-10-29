@@ -226,8 +226,8 @@ the OpenAPI sources already use for their own cross-references: `#/operations/<o
 ## Tests, CI and docs
 
 - GitHub workflows in `.github/workflows/` are path-filtered per package (backend unit/integration,
-  frontend unit/e2e, webcomponent unit/e2e) and use Node `24.15.0` (same pin as
-  `meet-ce/docker/Dockerfile`) and pnpm `11.8.0`. Unit jobs run on GitHub-hosted `ubuntu-24.04`
+  frontend unit/e2e, webcomponent unit/e2e) and use Node `24.22.1` (same pin as
+  `meet-ce/docker/Dockerfile`) and pnpm `11.28.9`. Unit jobs run on GitHub-hosted `ubuntu-24.04`
   runners, free for this public repo; the integration and e2e jobs need the OpenVidu local deployment
   and run on the shared self-hosted runners. pnpm is pinned by `packageManager` in the root
   `package.json`, which the Docker build follows; `pnpm/action-setup` fails if its `version` differs.
