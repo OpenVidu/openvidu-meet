@@ -660,7 +660,8 @@ describe('Room Members API Tests', () => {
 				permissions: roomRoles.moderator.permissions,
 				joinMeeting: true,
 				participantName: participantName + '_1', // Suffix is added to avoid conflict with the first participant
-				participantIdentityPrefix: 'alice_smith_unique_1'
+				// The identity is chosen before the name is reserved, so it derives from the name asked for
+				participantIdentityPrefix: 'alice_smith_unique'
 			});
 		});
 
