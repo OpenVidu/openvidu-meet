@@ -231,9 +231,9 @@ the OpenAPI sources already use for their own cross-references: `#/operations/<o
   unit/e2e, webcomponent unit/e2e: each a reusable workflow that can also be dispatched on its own) and
   ends in `CI OK`, the only required status check of `main`: renaming, splitting or adding jobs never
   touches the ruleset. Suites use Node `24.22.1` (same pin as `meet-ce/docker/Dockerfile`) and pnpm
-  `11.28.9`. Unit and backend integration jobs run on GitHub-hosted `ubuntu-24.04` runners, free for
-  this public repo (integration starts the OpenVidu local deployment there, faster than on the
-  self-hosted runners); the e2e jobs run on the shared self-hosted runners. pnpm is pinned by
+  `11.28.9`. Every job runs on GitHub-hosted `ubuntu-24.04` runners, free for this public repo (the
+  integration and e2e jobs start the OpenVidu local deployment there, faster than on the shared
+  self-hosted runners, which Meet no longer uses). pnpm is pinned by
   `packageManager` in the root `package.json`, which the Docker build follows; `pnpm/action-setup`
   fails if its `version` differs. Most suites watch `meet.sh` because CI calls it, so dev-mode logic
   lives in `scripts/dev/dev.sh` (sourced only by `./meet.sh dev`), which no suite watches. Markdown and
@@ -245,9 +245,7 @@ the OpenAPI sources already use for their own cross-references: `#/operations/<o
   the last green nightly. On a pull request or a push, recordings run on S3 only, unless the change
   touches `meet-ce/backend/src/services/storage/` or the pull request carries the `ci:storage` label
   (read when a run starts, so add it before pushing): GCS and ABS share one bucket each, which every
-  recordings job empties first. The nightly and dispatched runs use S3, GCS and ABS. Dependabot pull
-  requests skip the e2e suites, so they never take a self-hosted runner, and the nightly tests the
-  merge; dispatch the e2e workflow on the Dependabot branch to test it before. Dependabot groups all
+  recordings job empties first. The nightly and dispatched runs use S3, GCS and ABS. Dependabot groups all
   action bumps in one PR.
 - Backend integration tests and all Playwright suites need real infrastructure (LiveKit, MongoDB,
   Redis, S3/MinIO). They are not runnable from a bare checkout: say so instead of reporting a pass.

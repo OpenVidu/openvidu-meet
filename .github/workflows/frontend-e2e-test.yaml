@@ -10,7 +10,7 @@ permissions:
 jobs:
   e2e-tests:
     name: Frontend E2E Tests
-    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout OpenVidu Meet
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -103,7 +103,3 @@ jobs:
             echo "Available files:" >> $GITHUB_STEP_SUMMARY
             find meet-ce/frontend/test-results -type f 2>/dev/null | head -20 >> $GITHUB_STEP_SUMMARY || echo "No test-results directory found" >> $GITHUB_STEP_SUMMARY
           fi
-
-      - name: Cleanup
-        if: always()
-        uses: OpenVidu/actions/cleanup@26a149ff32c72503a7c7ce4fb5fa4d000cb3262d # 1.0.25

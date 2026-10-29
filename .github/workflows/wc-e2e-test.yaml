@@ -9,7 +9,7 @@ permissions:
 jobs:
   e2e-tests:
     name: WebComponent E2E Tests
-    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
+    runs-on: ubuntu-24.04
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -85,7 +85,3 @@ jobs:
           name: room-test-openvidu-meet-logs
           path: meet_backend.log
           retention-days: 2
-
-      - name: Clean up
-        if: always()
-        uses: OpenVidu/actions/cleanup@26a149ff32c72503a7c7ce4fb5fa4d000cb3262d # 1.0.25
