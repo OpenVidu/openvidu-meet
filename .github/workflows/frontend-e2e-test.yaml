@@ -1,54 +1,16 @@
 name: Frontend E2E Tests
 
 on:
-  pull_request:
-    paths:
-      - 'meet-ce/frontend/**'
-      - '!meet-ce/frontend/webcomponent/**'
-      - '!meet-ce/frontend/projects/**/*.spec.ts'
-      - 'meet-ce/backend/**'
-      # Nothing under tests/ is shipped in the server these suites run against.
-      - '!meet-ce/backend/tests/**'
-      - 'meet-ce/typings/**'
-      - 'meet.sh'
-      - '.github/workflows/frontend-e2e-test.yaml'
-      - '!**/*.md'
-      - '!meet-ce/backend/nodemon*.json'
-  schedule:
-    - cron: '17 0 * * *'
+  workflow_call:
   workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   contents: read
 
 jobs:
-  main-changed:
-    name: Detect changes since the last nightly
-    runs-on: ubuntu-24.04
-    if: ${{ github.event_name == 'schedule' }}
-    permissions:
-      actions: read
-    outputs:
-      changed: ${{ steps.compare.outputs.changed }}
-    steps:
-      - name: Compare main with the last successful nightly
-        id: compare
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          last=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$GITHUB_WORKFLOW" --event schedule \
-            --status success --limit 1 --json headSha --jq '.[0].headSha')
-          echo "changed=$([[ "$last" != "$GITHUB_SHA" ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-
   e2e-tests:
     name: Frontend E2E Tests
-    needs: main-changed
-    if: ${{ !cancelled() && needs.main-changed.outputs.changed != 'false' && github.event.pull_request.user.login != 'dependabot[bot]' }}
-    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout OpenVidu Meet
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -141,7 +103,3 @@ jobs:
             echo "Available files:" >> $GITHUB_STEP_SUMMARY
             find meet-ce/frontend/test-results -type f 2>/dev/null | head -20 >> $GITHUB_STEP_SUMMARY || echo "No test-results directory found" >> $GITHUB_STEP_SUMMARY
           fi
-
-      - name: Cleanup
-        if: always()
-        uses: OpenVidu/actions/cleanup@26a149ff32c72503a7c7ce4fb5fa4d000cb3262d # 1.0.25
