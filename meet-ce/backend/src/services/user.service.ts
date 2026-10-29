@@ -70,12 +70,13 @@ export class UserService {
 			passwordSchema.minLength
 		);
 
+		const now = Date.now();
 		const admin: MeetUser = {
 			userId: MEET_ENV.INITIAL_ADMIN_USER,
 			name: 'Admin',
-			registrationDate: Date.now(),
+			registrationDate: now,
 			role: MeetUserRole.ADMIN,
-			roleUpdatedAt: Date.now(),
+			roleUpdatedAt: now,
 			passwordHash: await PasswordHelper.hashPassword(MEET_ENV.INITIAL_ADMIN_PASSWORD),
 			mustChangePassword: false
 		};
