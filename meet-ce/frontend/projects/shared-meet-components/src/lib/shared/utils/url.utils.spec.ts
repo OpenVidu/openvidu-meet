@@ -166,13 +166,29 @@ describe('extractParams', () => {
 		});
 	});
 
-	it('defaults showOnlyRecordings to "false" and leaves absent params undefined', () => {
+	it('leaves absent params undefined', () => {
 		const result = extractParams({ params: { 'room-id': 'r1' }, queryParams: {} });
-		expect(result.showOnlyRecordings).toBe('false');
+		expect(result.showOnlyRecordings).toBeUndefined();
 		expect(result.secret).toBeUndefined();
 		expect(result.participantName).toBeUndefined();
 		expect(result.participantExternalId).toBeUndefined();
 		expect(result.participantMetadata).toBeUndefined();
+	});
+
+	it('reads show-only-recordings with the rule of the other boolean params', () => {
+		const showOnlyRecordings = (value?: string) =>
+			parseOptionalBoolean(
+				extractParams({
+					params: { 'room-id': 'r1' },
+					queryParams: { [EmbeddedAttribute.SHOW_ONLY_RECORDINGS]: value }
+				}).showOnlyRecordings
+			);
+
+		expect(showOnlyRecordings(undefined)).toBeUndefined();
+		expect(showOnlyRecordings('')).toBeTrue();
+		expect(showOnlyRecordings('1')).toBeTrue();
+		expect(showOnlyRecordings('true')).toBeTrue();
+		expect(showOnlyRecordings('false')).toBeFalse();
 	});
 });
 

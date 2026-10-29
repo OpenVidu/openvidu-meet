@@ -19,6 +19,7 @@ import {
 	EmbeddedEventBusService,
 	EndMeetingComponent,
 	ErrorComponent,
+	LanguageService,
 	LoginComponent,
 	MeetingContextService,
 	NavigationErrorReason,
@@ -40,8 +41,8 @@ import {
 	type MeetReaction,
 	type WebComponentPropertyValues
 } from '@openvidu-meet/typings';
+import { ShadowBodyNodesService } from './shadow-dom/body-nodes.service';
 import { ShadowOverlayContainer } from './shadow-dom/overlay-container.service';
-import { ShadowStylesService } from './shadow-dom/styles.service';
 
 /**
  * `booleanAttribute` with the third state kept: an attribute that was never set stays `undefined`
@@ -70,7 +71,7 @@ const optionalBooleanAttribute = (value: unknown): boolean | undefined =>
 	templateUrl: './app.html',
 	styleUrls: ['./app.material.scss', './app.css'],
 	encapsulation: ViewEncapsulation.ShadowDom,
-	providers: [ShadowStylesService],
+	providers: [ShadowBodyNodesService],
 	host: {
 		'[attr.role]': '"application"',
 		'[attr.aria-label]': '"OpenVidu Meet"',
@@ -94,10 +95,11 @@ export class App {
 	private readonly commandService = inject(EmbeddedCommandService);
 	private readonly eventBus = inject(EmbeddedEventBusService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
+	private readonly languageService = inject(LanguageService);
 	private readonly meetingContext = inject(MeetingContextService);
 	private readonly _elRef = inject(ElementRef);
 	private readonly _destroyRef = inject(DestroyRef);
-	private readonly _shadowStyles = inject(ShadowStylesService);
+	private readonly _shadowBodyNodes = inject(ShadowBodyNodesService);
 	private readonly _shadowOverlay = inject(ShadowOverlayContainer);
 
 	// ── Host inputs (element attributes/properties) ──────────────────────────
@@ -152,8 +154,6 @@ export class App {
 		participantMetadata: this.participantMetadata(),
 		initialAudioActive: this.initialAudioActive(),
 		initialVideoActive: this.initialVideoActive(),
-		language: this.language(),
-		showLanguageSelector: this.showLanguageSelector(),
 		e2eeKey: this.e2eeKey(),
 		leaveRedirectUrl: this.leaveRedirectUrl(),
 		showOnlyRecordings: this.showOnlyRecordings(),
@@ -235,6 +235,11 @@ export class App {
 			}
 		});
 
+		// The language belongs to the element, not to a view: every screen follows the attribute, and
+		// only a change of the attribute changes it.
+		effect(() => this.languageService.setEmbeddedLanguage(this.language() || undefined));
+		effect(() => this.languageService.setSelectorVisible(this.showLanguageSelector() ?? true));
+
 		// Sync the mini-router's home route with the attribute-derived one. Registered AFTER the
 		// server-base-URL effect so the base URL is set before the guard's first API call. The router
 		// re-navigates only when the route-determining identity changes (see syncHomeRoute), so an
@@ -267,7 +272,7 @@ export class App {
 			const { shadowRoot } = this._elRef.nativeElement as HTMLElement;
 
 			if (shadowRoot) {
-				this._shadowStyles.reflect(shadowRoot, this._destroyRef);
+				this._shadowBodyNodes.rehost(shadowRoot, this._destroyRef);
 				this._shadowOverlay.setShadowRoot(shadowRoot);
 			}
 		});

@@ -100,7 +100,7 @@ describe('NavigationService - hosted-mode event gates', () => {
 			expect(router.navigate).not.toHaveBeenCalled();
 		});
 
-		it('iframe mode with leave-redirect: emits EMBEDDED_CLOSE_REQUESTED and redirects', async () => {
+		it('iframe mode with leave-redirect: emits EMBEDDED_CLOSE_REQUESTED and redirects once the shell dispatched it', async () => {
 			iframeMode = true;
 			spyOn(leaveRedirect, 'getLeaveRedirectURL').and.returnValue('https://host.example.com/done');
 			const redirectSpy = spyOn(
@@ -108,11 +108,34 @@ describe('NavigationService - hosted-mode event gates', () => {
 				'redirectWindow'
 			);
 
-			await service.goBackFromMeeting('/rooms');
+			const leaving = service.goBackFromMeeting('/rooms');
+			await new Promise((resolve) => setTimeout(resolve));
 
 			expect(eventBus.emit).toHaveBeenCalledOnceWith({ event: EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED });
+			expect(redirectSpy).not.toHaveBeenCalled();
+
+			eventBus.drain();
+			await leaving;
+
 			expect(redirectSpy).toHaveBeenCalledOnceWith('https://host.example.com/done');
 			expect(router.navigate).not.toHaveBeenCalled();
+		});
+
+		it('iframe mode with leave-redirect: still redirects when no shell dispatches EMBEDDED_CLOSE_REQUESTED', async () => {
+			jasmine.clock().install();
+			iframeMode = true;
+			spyOn(leaveRedirect, 'getLeaveRedirectURL').and.returnValue('https://host.example.com/done');
+			const redirectSpy = spyOn(
+				service as unknown as { redirectWindow: (url: string) => void },
+				'redirectWindow'
+			);
+
+			const leaving = service.goBackFromMeeting('/rooms');
+			jasmine.clock().tick(1000);
+			await leaving;
+			jasmine.clock().uninstall();
+
+			expect(redirectSpy).toHaveBeenCalledOnceWith('https://host.example.com/done');
 		});
 
 		it('SPA mode with no leave-redirect: navigates to the fallback route, no host event', async () => {

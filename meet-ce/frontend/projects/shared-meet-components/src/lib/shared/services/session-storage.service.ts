@@ -14,21 +14,24 @@ export class SessionStorageService {
 	private readonly storage = inject(BrowserStorageService);
 
 	/**
-	 * Stores the room secret.
+	 * Stores the room secret together with the room it was given for.
 	 *
+	 * @param roomId The room the secret belongs to.
 	 * @param secret The secret to store.
 	 */
-	public setRoomSecret(secret: string): void {
-		this.storage.set(SessionStorageKeys.ROOM_SECRET, secret, 'session');
+	public setRoomSecret(roomId: string, secret: string): void {
+		this.storage.set(SessionStorageKeys.ROOM_SECRET, { roomId, secret }, 'session');
 	}
 
 	/**
-	 * Retrieves the room secret.
+	 * Retrieves the room secret stored for a room.
 	 *
-	 * @returns The stored secret or null if not found.
+	 * @param roomId The room being entered.
+	 * @returns The secret stored for that room, or null when none was stored for it.
 	 */
-	public getRoomSecret(): string | null {
-		return this.storage.get<string>(SessionStorageKeys.ROOM_SECRET, 'session');
+	public getRoomSecret(roomId: string): string | null {
+		const stored = this.storage.get<{ roomId: string; secret: string }>(SessionStorageKeys.ROOM_SECRET, 'session');
+		return stored?.roomId === roomId ? stored.secret : null;
 	}
 
 	/**
@@ -64,22 +67,28 @@ export class SessionStorageService {
 	}
 
 	/**
-	 * Stores the E2EE key data (key and origin flag).
+	 * Stores the E2EE key data (key and origin flag) together with the room it was given for.
 	 *
+	 * @param roomId The room the key belongs to.
 	 * @param e2eeKey The E2EE key to store.
 	 * @param fromUrl True if the E2EE key came from a URL parameter.
 	 */
-	public setE2EEData(e2eeKey: string, fromUrl: boolean): void {
-		this.storage.set(SessionStorageKeys.E2EE_DATA, { key: e2eeKey, fromUrl }, 'session');
+	public setE2EEData(roomId: string, e2eeKey: string, fromUrl: boolean): void {
+		this.storage.set(SessionStorageKeys.E2EE_DATA, { roomId, key: e2eeKey, fromUrl }, 'session');
 	}
 
 	/**
-	 * Retrieves the E2EE key data (key and origin flag).
+	 * Retrieves the E2EE key data (key and origin flag) stored for a room.
 	 *
-	 * @returns The stored E2EE data or null if not found.
+	 * @param roomId The room being entered.
+	 * @returns The E2EE data stored for that room, or null when none was stored for it.
 	 */
-	public getE2EEData(): { key: string; fromUrl: boolean } | null {
-		return this.storage.get<{ key: string; fromUrl: boolean }>(SessionStorageKeys.E2EE_DATA, 'session');
+	public getE2EEData(roomId: string): { key: string; fromUrl: boolean } | null {
+		const stored = this.storage.get<{ roomId: string; key: string; fromUrl: boolean }>(
+			SessionStorageKeys.E2EE_DATA,
+			'session'
+		);
+		return stored?.roomId === roomId ? { key: stored.key, fromUrl: stored.fromUrl } : null;
 	}
 
 	/**

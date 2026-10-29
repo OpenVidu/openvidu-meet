@@ -51,6 +51,10 @@
       "TITLE": "成员无效",
       "MESSAGE": "您已不再是此房间的成员，或成员信息有误"
     },
+    "INVALID_PARTICIPANT_DATA": {
+      "TITLE": "参与者数据无效",
+      "MESSAGE": "打开此会议的应用程序发送了无效的参与者数据。请联系该应用程序的提供方"
+    },
     "FORBIDDEN_ROOM_ACCESS": {
       "TITLE": "禁止访问房间",
       "MESSAGE": "您无权访问此房间（亦无权访问其录像）"

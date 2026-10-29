@@ -161,14 +161,14 @@ export class ViewRecordingComponent implements OnInit {
 	/**
 	 * Determines whether to show the back button based on the following conditions:
 	 * - The user has permission to retrieve recordings and the recording info is available (to navigate back to the room recordings page)
-	 * - The app is in embedded mode (to close the WebComponentManagerService)
+	 * - The app is embedded (to ask the host page to close it with `embeddedCloseRequested`)
 	 * - A leave redirect URL is configured (to navigate to that URL)
 	 */
 	shouldShowBackButton(): boolean {
 		const recording = this.recording();
 		return (
 			(this.canRetrieveRecordings() && !!recording?.roomId) ||
-			this.runtimeConfigService.isWebcomponentMode() ||
+			this.runtimeConfigService.isEmbeddedMode() ||
 			!!this.leaveRedirect.getLeaveRedirectURL()
 		);
 	}

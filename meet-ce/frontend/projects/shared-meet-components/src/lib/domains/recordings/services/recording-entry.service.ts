@@ -78,8 +78,8 @@ export class RecordingEntryService {
 
 		this.meetingContextService.setRoomId(roomId);
 
-		// Prefer the caller-supplied secret; otherwise restore the one persisted on
-		// this origin, so every adapter (route guard, Web Component) shares the
+		// Prefer the caller-supplied secret; otherwise restore the one persisted for
+		// this room, so every adapter (route guard, Web Component) shares the
 		// fallback without re-implementing it.
 		if (params.roomSecret) {
 			this.meetingContextService.setRoomSecret(params.roomSecret, true);

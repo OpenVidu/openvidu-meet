@@ -60,7 +60,7 @@ interface TestableElement extends FakeNgElementBase {
 	on(eventName: string, callback: (detail: unknown) => void): TestableElement;
 	once(eventName: string, callback: (detail: unknown) => void): TestableElement;
 	off(eventName: string, callback?: (detail: unknown) => void): TestableElement;
-	_handlerMap: Map<string, Map<unknown, EventListener>>;
+	_listeners: { size: number };
 	meetingEnd(): void;
 	meetingLeave(): void;
 	participantKick(participantIdentity: string): void;
@@ -136,6 +136,27 @@ describe('openvidu-meet custom element', () => {
 			it('returns the element so calls can be chained', () => {
 				expect(el.on('joined', () => {})).toBe(el);
 			});
+
+			it('runs a callback registered twice once per event', () => {
+				const callback = jest.fn();
+				el.on('joined', callback);
+				el.on('joined', callback);
+
+				el.dispatchEvent(new CustomEvent('joined', { detail: {} }));
+
+				expect(callback).toHaveBeenCalledTimes(1);
+			});
+
+			it('keeps a callback registered with on() permanent when once() registers it again', () => {
+				const callback = jest.fn();
+				el.on('joined', callback);
+				el.once('joined', callback);
+
+				el.dispatchEvent(new CustomEvent('joined', { detail: {} }));
+				el.dispatchEvent(new CustomEvent('joined', { detail: {} }));
+
+				expect(callback).toHaveBeenCalledTimes(2);
+			});
 		});
 
 		describe('once()', () => {
@@ -180,7 +201,7 @@ describe('openvidu-meet custom element', () => {
 				el.off('joined', callback);
 				el.off('left');
 
-				expect(el._handlerMap.size).toBe(0);
+				expect(el._listeners.size).toBe(0);
 			});
 
 			it('removes every callback for the event when none is provided', () => {
@@ -194,6 +215,27 @@ describe('openvidu-meet custom element', () => {
 
 				expect(first).not.toHaveBeenCalled();
 				expect(second).not.toHaveBeenCalled();
+			});
+
+			it('removes with one call a callback registered twice', () => {
+				const callback = jest.fn();
+				el.on('joined', callback);
+				el.on('joined', callback);
+				el.off('joined', callback);
+
+				el.dispatchEvent(new CustomEvent('joined', { detail: {} }));
+
+				expect(callback).not.toHaveBeenCalled();
+			});
+
+			it('removes a callback registered with once() before its event', () => {
+				const callback = jest.fn();
+				el.once('left', callback);
+				el.off('left', callback);
+
+				el.dispatchEvent(new CustomEvent('left', { detail: {} }));
+
+				expect(callback).not.toHaveBeenCalled();
 			});
 
 			it('does nothing when the event has no registered callbacks', () => {
@@ -236,7 +278,7 @@ describe('openvidu-meet custom element', () => {
 			el.dispatchEvent(new CustomEvent('joined', { detail: {} }));
 
 			expect(callback).not.toHaveBeenCalled();
-			expect(el._handlerMap.size).toBe(0);
+			expect(el._listeners.size).toBe(0);
 		});
 	});
 
@@ -275,12 +317,17 @@ describe('openvidu-meet custom element', () => {
 			expect(instance[name]).toHaveBeenCalledWith(...args);
 		});
 
-		it.each(commands)('%s() is a no-op while the Angular component instance is missing', (_name, call) => {
-			const el = createElement();
-			el.ngElementStrategy = undefined;
+		it.each(commands)(
+			'%s() is rejected with a warning while the Angular component instance is missing',
+			(name, call) => {
+				const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+				const el = createElement();
+				el.ngElementStrategy = undefined;
 
-			expect(() => call(el)).not.toThrow();
-		});
+				expect(() => call(el)).not.toThrow();
+				expect(warn).toHaveBeenCalledWith(expect.stringContaining(`${name} rejected`));
+			}
+		);
 	});
 
 	// A host written against 3.8.0 calls these names on the element and must reach the same
@@ -310,7 +357,8 @@ describe('openvidu-meet custom element', () => {
 			expect(instance.participantKick).toHaveBeenCalledWith('participant-1');
 		});
 
-		it('are no-ops when the Angular component instance is not yet available', () => {
+		it('are rejected with a warning under the canonical name when the Angular component instance is not yet available', () => {
+			const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 			const el = createElement();
 			el.ngElementStrategy = undefined;
 
@@ -319,6 +367,11 @@ describe('openvidu-meet custom element', () => {
 				el.leaveRoom();
 				el.kickParticipant('participant-1');
 			}).not.toThrow();
+			expect(warn.mock.calls.map(([message]) => message)).toEqual([
+				expect.stringContaining('meetingEnd rejected'),
+				expect.stringContaining('meetingLeave rejected'),
+				expect.stringContaining('participantKick rejected')
+			]);
 		});
 	});
 });

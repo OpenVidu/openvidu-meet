@@ -23,6 +23,7 @@ export class EmbeddedEventBusService {
 	private readonly log = inject(LoggerService).get('EmbeddedEventBusService');
 
 	private readonly _events = signal<EmbeddedEvent[]>([]);
+	private readonly drainWaiters: (() => void)[] = [];
 
 	/** Pending outbound host events, oldest first; the shell drains and re-emits each. */
 	readonly events = this._events.asReadonly();
@@ -34,8 +35,27 @@ export class EmbeddedEventBusService {
 	}
 
 	/**
+	 * Resolves once a shell has dispatched every event queued so far, or after `maxWaitMs` when no shell
+	 * drains the queue (an iframe that could not resolve its host's origin).
+	 */
+	delivered(maxWaitMs = 1000): Promise<void> {
+		if (this._events().length === 0) {
+			return Promise.resolve();
+		}
+
+		return new Promise((resolve) => {
+			const timer = setTimeout(resolve, maxWaitMs);
+			this.drainWaiters.push(() => {
+				clearTimeout(timer);
+				resolve();
+			});
+		});
+	}
+
+	/**
 	 * Remove and return all queued host events, oldest first. Events enqueued
 	 * during draining (e.g. re-entrantly) stay queued and re-trigger the effect.
+	 * Callers awaiting {@link delivered} resume after the shell has dispatched the returned events.
 	 */
 	drain(): EmbeddedEvent[] {
 		const queued = this._events();
@@ -45,6 +65,11 @@ export class EmbeddedEventBusService {
 		}
 
 		this._events.set([]);
+
+		for (const resolve of this.drainWaiters.splice(0)) {
+			resolve();
+		}
+
 		return queued;
 	}
 }
