@@ -17,7 +17,6 @@ const SUITES = {
 		'meet-ce/typings/**',
 		'pnpm-lock.yaml',
 		'meet.sh',
-		'.github/workflows/backend-unit-test.yaml',
 		'!**/*.md',
 		'!meet-ce/backend/nodemon*.json'
 	],
@@ -27,7 +26,6 @@ const SUITES = {
 		'!meet-ce/frontend/e2e/**',
 		'meet-ce/typings/**',
 		'meet.sh',
-		'.github/workflows/frontend-unit-test.yaml',
 		'!**/*.md'
 	],
 	'wc-unit': [
@@ -37,7 +35,6 @@ const SUITES = {
 		'!meet-ce/frontend/projects/**/*.spec.ts',
 		'meet-ce/typings/**',
 		'meet.sh',
-		'.github/workflows/wc-unit-test.yaml',
 		'!**/*.md'
 	],
 	'backend-integration': [
@@ -51,7 +48,6 @@ const SUITES = {
 		'!meet-ce/typings/src/embedded/**',
 		'meet-ce/typings/src/embedded/events.ts',
 		'pnpm-lock.yaml',
-		'.github/workflows/backend-integration-test.yaml',
 		'!**/*.md'
 	],
 	'frontend-e2e': [
@@ -63,7 +59,6 @@ const SUITES = {
 		'!meet-ce/backend/tests/**',
 		'meet-ce/typings/**',
 		'meet.sh',
-		'.github/workflows/frontend-e2e-test.yaml',
 		'!**/*.md',
 		'!meet-ce/backend/nodemon*.json'
 	],
@@ -77,7 +72,6 @@ const SUITES = {
 		'meet-ce/typings/**',
 		'testapp/**',
 		'meet.sh',
-		'.github/workflows/wc-e2e-test.yaml',
 		'!**/*.md',
 		'!meet-ce/backend/nodemon*.json'
 	]

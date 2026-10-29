@@ -123,6 +123,24 @@ Meet SHALL use the object storage selected by `MEET_BLOB_STORAGE_MODE`: `s3` (de
 - **THEN** its file is written under the `rec` prefix of the bucket
 - **AND** `getRecordingMedia` serves it
 
+### Requirement: Storage mode values
+Meet SHALL read `MEET_BLOB_STORAGE_MODE` ignoring letter case and surrounding spaces, SHALL use S3 storage when it is unset or empty, and SHALL refuse to start with any value other than `s3`, `gcs` or `abs`, naming the variable and the accepted values.
+
+#### Scenario: Value in another case
+- **GIVEN** `MEET_BLOB_STORAGE_MODE=GCS`
+- **WHEN** Meet starts
+- **THEN** it uses Google Cloud Storage
+
+#### Scenario: Unknown value
+- **GIVEN** `MEET_BLOB_STORAGE_MODE=gsc`
+- **WHEN** Meet starts
+- **THEN** it logs that `MEET_BLOB_STORAGE_MODE` must be `s3`, `gcs` or `abs` and exits with a non-zero status, without serving
+
+#### Scenario: Unset value
+- **GIVEN** `MEET_BLOB_STORAGE_MODE` is unset or empty
+- **WHEN** Meet starts
+- **THEN** it uses S3 storage
+
 ### Requirement: S3 credentials and endpoint
 In `s3` mode Meet SHALL reach `MEET_S3_SERVICE_ENDPOINT` (default `http://localhost:9000`) in region `MEET_AWS_REGION` (default `us-east-1`), with path-style addressing while `MEET_S3_WITH_PATH_STYLE_ACCESS` is `true` (default). It SHALL authenticate with `MEET_S3_ACCESS_KEY` and `MEET_S3_SECRET_KEY` when both are non-empty, and otherwise with the standard AWS credential sources (environment, shared configuration, instance or task role).
 

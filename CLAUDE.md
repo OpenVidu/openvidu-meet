@@ -225,12 +225,13 @@ the OpenAPI sources already use for their own cross-references: `#/operations/<o
 
 ## Tests, CI and docs
 
-- One workflow, `.github/workflows/ci.yaml`, runs the test suites. Its `Select suites` job picks the
-  suites a change affects with `scripts/ci/changed-suites.mjs` (per-suite path patterns with the
-  semantics of GitHub `paths` filters), calls the affected ones (backend unit/integration, frontend
-  unit/e2e, webcomponent unit/e2e: each a reusable workflow that can also be dispatched on its own) and
-  ends in `CI OK`, the only required status check of `main`: renaming, splitting or adding jobs never
-  touches the ruleset. Suites use Node `24.22.1` (same pin as `meet-ce/docker/Dockerfile`) and pnpm
+- One workflow, `Tests` (`.github/workflows/ci.yaml`), runs every test suite. Its `Select suites` job
+  picks the suites a change affects with `scripts/ci/changed-suites.mjs` (per-suite path patterns with
+  the semantics of GitHub `paths` filters). The unit suites (backend, frontend, webcomponent; tests and
+  lint) run first; backend integration and both e2e suites start only if none of them failed. It ends
+  in `All tests passed`, the only required status check of `main`: renaming, splitting or adding jobs
+  never touches the ruleset. Repeated steps are YAML anchors defined at their first use, so a version
+  is pinned in one place. Suites use Node `24.22.1` (same pin as `meet-ce/docker/Dockerfile`) and pnpm
   `11.28.9`. Every job runs on GitHub-hosted `ubuntu-24.04` runners, free for this public repo (the
   integration and e2e jobs start the OpenVidu local deployment there, faster than on the shared
   self-hosted runners, which Meet no longer uses). pnpm is pinned by
@@ -239,7 +240,7 @@ the OpenAPI sources already use for their own cross-references: `#/operations/<o
   lives in `scripts/dev/dev.sh` (sourced only by `./meet.sh dev`), which no suite watches. Markdown and
   `nodemon*.json` never select a suite.
 - CI runs on pull requests: a branch gets CI once it has a PR (a draft is enough) or by dispatching
-  `CI` (input `suites`, `all` by default) or a single suite workflow. A push to `main` runs the unit
+  `Tests` (input `suites`, `all` by default, or a comma-separated list). A push to `main` runs the unit
   and backend integration suites it affects (both on GitHub-hosted runners) but not the e2e suites,
   which run nightly instead (00:17 UTC) together with every other suite, only when `main` moved since
   the last green nightly. On a pull request or a push, recordings run on S3 only, unless the change
