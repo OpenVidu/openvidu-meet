@@ -18,6 +18,8 @@ on:
       - '!meet-ce/frontend/**'
   pull_request:
     paths: *backend-integration-test-paths
+  schedule:
+    - cron: '17 0 * * *'
   workflow_dispatch:
     inputs:
       use-aws:
@@ -44,8 +46,28 @@ permissions:
   contents: read
 
 jobs:
+  main-changed:
+    name: Detect changes since the last nightly
+    runs-on: ubuntu-24.04
+    if: ${{ github.event_name == 'schedule' }}
+    permissions:
+      actions: read
+    outputs:
+      changed: ${{ steps.compare.outputs.changed }}
+    steps:
+      - name: Compare main with the last successful nightly
+        id: compare
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          last=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$GITHUB_WORKFLOW" --event schedule \
+            --status success --limit 1 --json headSha --jq '.[0].headSha')
+          echo "changed=$([[ "$last" != "$GITHUB_SHA" ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
   test-api:
     name: ${{ matrix.test-name }}
+    needs: main-changed
+    if: ${{ !cancelled() && needs.main-changed.outputs.changed != 'false' }}
     runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
     permissions:
       contents: read
@@ -232,7 +254,8 @@ jobs:
       - start-aws-runner-abs
       - start-aws-runner-gcs
       - storage-diff
-    if: ${{ always() && (needs.start-aws-runner-s3.result == 'success' || needs.start-aws-runner-s3.result == 'skipped') && (needs.start-aws-runner-abs.result == 'success' || needs.start-aws-runner-abs.result == 'skipped') && (needs.start-aws-runner-gcs.result == 'success' || needs.start-aws-runner-gcs.result == 'skipped') }}
+      - main-changed
+    if: ${{ always() && needs.main-changed.outputs.changed != 'false' && (needs.start-aws-runner-s3.result == 'success' || needs.start-aws-runner-s3.result == 'skipped') && (needs.start-aws-runner-abs.result == 'success' || needs.start-aws-runner-abs.result == 'skipped') && (needs.start-aws-runner-gcs.result == 'success' || needs.start-aws-runner-gcs.result == 'skipped') }}
     runs-on: ${{ (matrix.storage-provider == 's3' && needs.start-aws-runner-s3.outputs.label) || (matrix.storage-provider == 'abs' && needs.start-aws-runner-abs.outputs.label) || (matrix.storage-provider == 'gcs' && needs.start-aws-runner-gcs.outputs.label) || vars.LABEL_WORKER_SELFHOSTED }}
     strategy:
       fail-fast: false
