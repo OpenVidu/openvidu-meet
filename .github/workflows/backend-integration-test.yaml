@@ -214,33 +214,27 @@ jobs:
           run-runner-as-user: ${{ inputs.run-runner-as-user || 'ubuntu' }}
           market-type: ${{ inputs.market-type || 'spot' }}
 
-  storage-diff:
-    name: Detect storage changes
-    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
-    if: ${{ github.event_name == 'pull_request' }}
+  storage-providers:
+    name: Select storage providers
+    runs-on: ubuntu-24.04
+    if: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci:storage') }}
     outputs:
-      untouched: ${{ steps.diff.outputs.untouched }}
+      s3-only: ${{ steps.diff.outputs.s3-only }}
     steps:
       - name: Checkout the merge commit and its base
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 2
-      - name: Diff against the base branch
+      - name: Diff the storage services against the base branch
         id: diff
         run: |
-          files=$(git diff --name-only HEAD^1 HEAD)
-          if ! grep -qE \
-            -e '^meet-ce/backend/src/services/storage/' \
-            -e '^meet-ce/backend/src/config/dependency-injector\.config\.ts$' \
-            -e '^meet-ce/backend/src/environment\.ts$' \
-            -e '^meet-ce/backend/package\.json$' \
-            -e '^\.github/workflows/backend-integration-test\.yaml$' \
-            <<< "$files"; then
-            echo "untouched=true" >> "$GITHUB_OUTPUT"
+          if git diff --quiet HEAD^1 HEAD -- meet-ce/backend/src/services/storage/; then
+            echo "s3-only=true" >> "$GITHUB_OUTPUT"
           fi
 
-  # On pull requests that leave storage untouched only S3 runs. The other providers skip their steps
-  # rather than the job, so that their required status checks still report.
+  # On pull requests only S3 runs, unless they change the storage services or carry the `ci:storage`
+  # label. The other providers skip their steps rather than the job, so that their required status
+  # checks still report.
   test-recordings:
     name: Recordings API Tests (${{ matrix.storage-provider }})
     permissions:
@@ -250,7 +244,7 @@ jobs:
       - start-aws-runner-s3
       - start-aws-runner-abs
       - start-aws-runner-gcs
-      - storage-diff
+      - storage-providers
       - main-changed
     if: ${{ always() && needs.main-changed.outputs.changed != 'false' && (needs.start-aws-runner-s3.result == 'success' || needs.start-aws-runner-s3.result == 'skipped') && (needs.start-aws-runner-abs.result == 'success' || needs.start-aws-runner-abs.result == 'skipped') && (needs.start-aws-runner-gcs.result == 'success' || needs.start-aws-runner-gcs.result == 'skipped') }}
     runs-on: ${{ (matrix.storage-provider == 's3' && needs.start-aws-runner-s3.outputs.label) || (matrix.storage-provider == 'abs' && needs.start-aws-runner-abs.outputs.label) || (matrix.storage-provider == 'gcs' && needs.start-aws-runner-gcs.outputs.label) || vars.LABEL_WORKER_SELFHOSTED }}
@@ -260,7 +254,7 @@ jobs:
         storage-provider: [s3, abs, gcs]
     timeout-minutes: 30
     env:
-      RUN_PROVIDER: ${{ matrix.storage-provider == 's3' || needs.storage-diff.outputs.untouched != 'true' }}
+      RUN_PROVIDER: ${{ matrix.storage-provider == 's3' || needs.storage-providers.outputs.s3-only != 'true' }}
     steps:
       - name: Setup Node.js
         if: env.RUN_PROVIDER == 'true'
