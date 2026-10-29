@@ -227,9 +227,10 @@ the OpenAPI sources already use for their own cross-references: `#/operations/<o
 
 - GitHub workflows in `.github/workflows/` are path-filtered per package (backend unit/integration,
   frontend unit/e2e, webcomponent unit/e2e) and use Node `24.22.1` (same pin as
-  `meet-ce/docker/Dockerfile`) and pnpm `11.28.9`. Unit jobs run on GitHub-hosted `ubuntu-24.04`
-  runners, free for this public repo; the integration and e2e jobs need the OpenVidu local deployment
-  and run on the shared self-hosted runners. pnpm is pinned by `packageManager` in the root
+  `meet-ce/docker/Dockerfile`) and pnpm `11.28.9`. Unit and backend integration jobs run on
+  GitHub-hosted `ubuntu-24.04` runners, free for this public repo (integration starts the OpenVidu
+  local deployment there, faster than on the self-hosted runners); the e2e jobs run on the shared
+  self-hosted runners. pnpm is pinned by `packageManager` in the root
   `package.json`, which the Docker build follows; `pnpm/action-setup` fails if its `version` differs.
   Most jobs watch `meet.sh` because CI calls it, so dev-mode logic lives in `scripts/dev/dev.sh`
   (sourced only by `./meet.sh dev`), which no workflow watches. Markdown and `nodemon*.json` never
@@ -241,10 +242,9 @@ the OpenAPI sources already use for their own cross-references: `#/operations/<o
   ran them on the tree `main` gets. On a pull request recordings run on S3 only, unless it changes
   `meet-ce/backend/src/services/storage/` or carries the `ci:storage` label (the `storage-providers`
   job in `backend-integration-test.yaml`; the label is read when a run starts, so add it before
-  pushing); the nightly and `workflow_dispatch` run S3, GCS and ABS. Dependabot pull requests run only
-  the unit workflows: their integration and e2e jobs skip on GitHub-hosted runners (matrix jobs skip
-  their steps, so the required checks still report) and the nightly tests the merge; dispatch the
-  workflow on the Dependabot branch to test it before. Dependabot groups all action bumps in one PR.
+  pushing); the nightly and `workflow_dispatch` run S3, GCS and ABS. Dependabot pull requests skip
+  the e2e jobs, so they never take a self-hosted runner, and the nightly tests the merge; dispatch the
+  e2e workflow on the Dependabot branch to test it before. Dependabot groups all action bumps in one PR.
 - Backend integration tests and all Playwright suites need real infrastructure (LiveKit, MongoDB,
   Redis, S3/MinIO). They are not runnable from a bare checkout: say so instead of reporting a pass.
 - `./meet.sh build-rest-api-doc` and `./meet.sh build-webcomponent-doc` generate the API references
