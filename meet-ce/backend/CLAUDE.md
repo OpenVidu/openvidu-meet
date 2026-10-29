@@ -144,7 +144,7 @@ pnpm run lint                      # --max-warnings 0
 - Jest with `@swc/jest` (transpile only, no type-checking during a test run). `test:types` is the
   separate `tsc --noEmit` pass over `tests/**` (its own `tsconfig.test.json`, extending
   `tsconfig.prod.json` without the `**/*.test.ts` exclusion); run it after editing tests, since a
-  Jest pass alone won't catch a type error there. Wired into `backend-unit-test.yaml` as its own step.
+  Jest pass alone won't catch a type error there. Wired into the `Backend unit` CI job as its own step.
 - `--experimental-vm-modules` is required and must not be dropped: ESM-only deps (chalk 5) and the
   cloud SDKs' internal dynamic `import()` need it, and `import.meta.url` is used in `path.utils.ts`.
 - `tests/integration/**` hits a **real** MongoDB, Redis, LiveKit and S3/MinIO via supertest; they run
