@@ -54,7 +54,7 @@
 		</ng-container>
 
 		<!-- Toolbar Additional Buttons -->
-		<div *ovToolbarAdditionalButtons>
+		<div *ovToolbarAdditionalButtons [ovToolbarAdditionalButtonsPosition]="extraButtonsPosition">
 			<ng-content select="ov-meeting-toolbar-extra-buttons" />
 		</div>
 

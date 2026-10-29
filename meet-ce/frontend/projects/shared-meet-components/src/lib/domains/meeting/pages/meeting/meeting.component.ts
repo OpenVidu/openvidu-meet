@@ -22,7 +22,13 @@ import { IframeBridgeService } from '../../../embedded/services/iframe-bridge.se
 import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
 import { MeetingParticipantItemComponent } from '../../customization/meeting-participant-item/meeting-participant-item.component';
 import { MeetingRaisedHandsStripComponent } from '../../customization/meeting-raised-hands-strip/meeting-raised-hands-strip.component';
-import { MeetingThemeMode, MeetingThemeService, OpenViduComponentsUiModule, Room } from '../../openvidu-components';
+import {
+	MeetingThemeMode,
+	MeetingThemeService,
+	OpenViduComponentsUiModule,
+	Room,
+	ToolbarAdditionalButtonsPosition
+} from '../../openvidu-components';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingStateService } from '../../services/meeting-state.service';
@@ -86,6 +92,7 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	features = this.meetingContextService.meetingUI;
 	initialMediaState = this.meetingContextService.initialMediaState;
 	hasRecordings = this.meetingContextService.hasRecordings;
+	protected readonly extraButtonsPosition = ToolbarAdditionalButtonsPosition.BEFORE_MENU;
 
 	/** Handed to the meeting view, which calls it when the participant commits to joining. */
 	protected readonly generateJoinToken = () => this.lobbyService.generateJoinToken();
