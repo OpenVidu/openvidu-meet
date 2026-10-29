@@ -1035,21 +1035,22 @@ test.describe('Stream E2E Tests', () => {
 			// Over-target well past the bottom-right corner of the FULL layout so CDK clamps the
 			// tile flush to that boundary.
 			await dragStream(page, '.local_participant', right(layoutBox) + 400, bottom(layoutBox) + 400);
-			await page.waitForTimeout(500);
 
-			const tileBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(tileBox).not.toBeNull();
+			await expect(async () => {
+				const tileBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
+				expect(tileBox).not.toBeNull();
 
-			// Core assertion: the tile is dragged far BELOW the caption-shrunk grid, i.e. down into
-			// the captions band. Before the fix its boundary was the grid (#layout), so it stayed
-			// pinned at/above the grid bottom and this failed.
-			expect(bottom(tileBox!)).toBeGreaterThan(bottom(gridBox) + 100);
-			// It reaches (near) the very bottom of the full layout area — the tile is clamped
-			// inside the boundary so its bottom lands within roughly one tile-height of the edge
-			// (the captions footer reflow leaves a small, environment-dependent slack).
-			expect(bottom(tileBox!)).toBeGreaterThan(bottom(layoutBox) - 100);
-			// …and the right edge of the full layout area.
-			expect(right(tileBox!)).toBeGreaterThan(right(layoutBox) - 20);
+				// Core assertion: the tile is dragged far BELOW the caption-shrunk grid, i.e. down into
+				// the captions band. Before the fix its boundary was the grid (#layout), so it stayed
+				// pinned at/above the grid bottom and this failed.
+				expect(bottom(tileBox!)).toBeGreaterThan(bottom(gridBox) + 100);
+				// It reaches (near) the very bottom of the full layout area — the tile is clamped
+				// inside the boundary so its bottom lands within roughly one tile-height of the edge
+				// (the captions footer reflow leaves a small, environment-dependent slack).
+				expect(bottom(tileBox!)).toBeGreaterThan(bottom(layoutBox) - 100);
+				// …and the right edge of the full layout area.
+				expect(right(tileBox!)).toBeGreaterThan(right(layoutBox) - 20);
+			}).toPass({ timeout: 8_000 });
 
 			await page.close();
 		});
@@ -1063,18 +1064,19 @@ test.describe('Stream E2E Tests', () => {
 			// Over-target well past the bottom-left corner of the FULL layout so CDK clamps the
 			// tile flush to that boundary.
 			await dragStream(page, '.local_participant', layoutBox.x - 400, bottom(layoutBox) + 400);
-			await page.waitForTimeout(500);
 
-			const tileBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(tileBox).not.toBeNull();
+			await expect(async () => {
+				const tileBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
+				expect(tileBox).not.toBeNull();
 
-			expect(bottom(tileBox!)).toBeGreaterThan(bottom(gridBox) + 100);
-			expect(bottom(tileBox!)).toBeGreaterThan(bottom(layoutBox) - 100);
-			// …and on the LEFT side of the layout. We assert the left half rather than the exact
-			// left edge: with the captions footer the layout area can reflow partly off-screen to
-			// the left, so the pointer (clamped to the viewport) cannot always reach the exact edge,
-			// but the tile clearly lands in the left half — the opposite corner from the RIGHT test.
-			expect(right(tileBox!)).toBeLessThan(layoutBox.x + layoutBox.width / 2);
+				expect(bottom(tileBox!)).toBeGreaterThan(bottom(gridBox) + 100);
+				expect(bottom(tileBox!)).toBeGreaterThan(bottom(layoutBox) - 100);
+				// …and on the LEFT side of the layout. We assert the left half rather than the exact
+				// left edge: with the captions footer the layout area can reflow partly off-screen to
+				// the left, so the pointer (clamped to the viewport) cannot always reach the exact edge,
+				// but the tile clearly lands in the left half — the opposite corner from the RIGHT test.
+				expect(right(tileBox!)).toBeLessThan(layoutBox.x + layoutBox.width / 2);
+			}).toPass({ timeout: 8_000 });
 
 			await page.close();
 		});

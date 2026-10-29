@@ -9,7 +9,7 @@ This repository contains the **Community Edition (CE)**. The **Professional Edit
 ## Prerequisites
 
 - **Node.js** `24.15.0` or later.
-- **pnpm** `11.8.0` (pinned by `packageManager` in `package.json`). `./meet.sh` offers to install it if it is missing.
+- **pnpm** `11.28.9` (pinned by `packageManager` in `package.json`). `./meet.sh` offers to install it if it is missing.
 - **Backing services** (LiveKit, MongoDB, Redis and S3-compatible storage). The simplest way to run them is the [OpenVidu local deployment](https://github.com/OpenVidu/openvidu-local-deployment), which the backend defaults already match.
 
 > [!TIP]

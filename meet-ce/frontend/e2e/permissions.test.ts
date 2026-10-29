@@ -125,11 +125,8 @@ test.describe('Permissions E2E Tests', () => {
 	 * Creates an identified-guest member of the shared room with the given base role and custom
 	 * permission overrides — the access URL requires no login, so the member can be driven directly.
 	 */
-	const createGuest = (
-		customPermissions: WirePermissions,
-		baseRole = MeetRoomMemberRole.SPEAKER,
-		roomId = room.roomId
-	) => createRoomMember(roomId, { name: `perm-${memberSequence++}`, baseRole, customPermissions });
+	const createGuest = (customPermissions: WirePermissions, baseRole = MeetRoomMemberRole.SPEAKER) =>
+		createRoomMember(room.roomId, { name: `perm-${memberSequence++}`, baseRole, customPermissions });
 
 	/**
 	 * Joins the meeting as a fresh guest with the given custom permissions and returns the member.
@@ -137,9 +134,9 @@ test.describe('Permissions E2E Tests', () => {
 	const joinAsGuest = async (
 		page: Page,
 		customPermissions: WirePermissions,
-		options: { baseRole?: MeetRoomMemberRole; skipPrejoinMediaCheck?: boolean; roomId?: string } = {}
+		options: { baseRole?: MeetRoomMemberRole; skipPrejoinMediaCheck?: boolean } = {}
 	) => {
-		const member = await createGuest(customPermissions, options.baseRole, options.roomId);
+		const member = await createGuest(customPermissions, options.baseRole);
 		await openMeeting(page, member.accessUrl, { skipPrejoinMediaCheck: options.skipPrejoinMediaCheck });
 		return member;
 	};
@@ -214,18 +211,17 @@ test.describe('Permissions E2E Tests', () => {
 			await expectNoChat(page);
 		});
 
-		// Its own room: the participants counted by joinParticipants must not include a guest of an
-		// earlier test still leaving the shared room's meeting.
 		test('canReadChat denied: a message sent to the meeting raises no notice', async ({ page, browser }) => {
-			const { roomId } = await createRoom();
-			createdRoomIds.push(roomId);
 			const { byName, removeAllParticipants } = await joinParticipants(browser, {
-				roomId,
+				roomId: room.roomId,
+				// The guests of the earlier tests in this shared room linger in LiveKit for ~20 s after
+				// their page closes, so counting remote streams here would count them too.
+				skipRemoteStreamCheck: true,
 				participants: [{ name: 'Chat Sender' }, { name: 'Chat Reader' }]
 			});
 
 			try {
-				await joinAsGuest(page, { canReadChat: false, canWriteChat: true }, { roomId });
+				await joinAsGuest(page, { canReadChat: false, canWriteChat: true });
 				await toggleChatPanel(byName['Chat Sender'], 'open');
 				await sendChatMessage(byName['Chat Sender'], 'Can anyone read this?');
 				await expectChatMessageNotification(byName['Chat Reader']);

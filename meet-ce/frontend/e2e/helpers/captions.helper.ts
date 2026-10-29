@@ -2,7 +2,7 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import { createRoomAndGetAnonymousAccessUrl } from './meet-api.helper';
 import { openMeeting } from './meeting-navigation.helper';
 import { floatStream } from './stream.helper';
-import { getElementBoundingBox } from './ui-utils.helper';
+import { getElementBoundingBox, getSettledBoundingBox } from './ui-utils.helper';
 
 export const getCaptionsButton = (page: Page): Locator => {
 	return page.locator('#captions-button').first();
@@ -117,7 +117,7 @@ export const openFloatingWithCaptions = async (page: Page): Promise<FloatingCapt
 	await enableCaptions(page);
 
 	await floatStream(page);
-	await page.waitForTimeout(1000);
+	await getSettledBoundingBox(page, '.local_participant:has(.OV_stream_video.local)');
 
 	const layoutBox = await getElementBoundingBox(page, '#layout-container');
 	const gridBox = await getElementBoundingBox(page, '#layout');

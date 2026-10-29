@@ -148,7 +148,10 @@ pnpm run lint                      # --max-warnings 0
 - `--experimental-vm-modules` is required and must not be dropped: ESM-only deps (chalk 5) and the
   cloud SDKs' internal dynamic `import()` need it, and `import.meta.url` is used in `path.utils.ts`.
 - `tests/integration/**` hits a **real** MongoDB, Redis, LiveKit and S3/MinIO via supertest; they run
-  `--runInBand --forceExit` and are grouped into separate npm scripts so CI can shard them. They
-  cannot pass without that infrastructure.
+  one file at a time with `--forceExit` and are grouped into separate npm scripts so CI can shard them.
+  They cannot pass without that infrastructure. Each file boots the whole app in the same process and
+  the heap keeps growing across files, so a big shard (`test:integration-room-management`) runs in one
+  worker that Jest recycles past 1 GB (`--maxWorkers=1 --workerIdleMemoryLimit=1GB`) instead of
+  `--runInBand`, which ran out of heap in CI.
 - `@openvidu-meet/typings` is mapped to the typings *source* in `jest.config.mjs`, so unit tests do
   not need a typings build.
