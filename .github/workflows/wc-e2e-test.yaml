@@ -41,11 +41,11 @@ jobs:
         with:
           version: 11.28.9
       - name: Install safe-chain
-        uses: OpenVidu/actions/install-safe-chain@ccd21721ffb48bdeb889526d3a0b496c451ffd48 # v1.0.24
+        uses: OpenVidu/actions/install-safe-chain@26a149ff32c72503a7c7ce4fb5fa4d000cb3262d # 1.0.25
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
-        uses: OpenVidu/actions/start-openvidu-local-deployment@ccd21721ffb48bdeb889526d3a0b496c451ffd48 # v1.0.24
+        uses: OpenVidu/actions/start-openvidu-local-deployment@26a149ff32c72503a7c7ce4fb5fa4d000cb3262d # 1.0.25
         with:
           ref-openvidu-local-deployment: development
           pre_startup_commands: |
@@ -59,13 +59,13 @@ jobs:
             chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
 
       - name: Build and Start OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@ccd21721ffb48bdeb889526d3a0b496c451ffd48 # v1.0.24
+        uses: OpenVidu/actions/start-openvidu-meet@26a149ff32c72503a7c7ce4fb5fa4d000cb3262d # 1.0.25
         env:
           MEET_INITIAL_WEBHOOK_ENABLED: true
           MEET_INITIAL_WEBHOOK_URL: 'http://localhost:5080/webhook'
 
       - name: Start OpenVidu Meet Testapp
-        uses: OpenVidu/actions/start-openvidu-meet-testapp@ccd21721ffb48bdeb889526d3a0b496c451ffd48 # v1.0.24
+        uses: OpenVidu/actions/start-openvidu-meet-testapp@26a149ff32c72503a7c7ce4fb5fa4d000cb3262d # 1.0.25
         with:
           skip_install: 'true'
           skip_checkout: 'true'
@@ -109,4 +109,4 @@ jobs:
 
       - name: Clean up
         if: always()
-        uses: OpenVidu/actions/cleanup@ccd21721ffb48bdeb889526d3a0b496c451ffd48 # v1.0.24
+        uses: OpenVidu/actions/cleanup@26a149ff32c72503a7c7ce4fb5fa4d000cb3262d # 1.0.25
