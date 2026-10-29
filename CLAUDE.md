@@ -234,10 +234,17 @@ the OpenAPI sources already use for their own cross-references: `#/operations/<o
   Most jobs watch `meet.sh` because CI calls it, so dev-mode logic lives in `scripts/dev/dev.sh`
   (sourced only by `./meet.sh dev`), which no workflow watches. Markdown and `nodemon*.json` never
   trigger a job.
-- Workflows trigger on pull requests and on pushes to `main` only: a branch gets CI once it has a PR
-  (a draft is enough) or through `workflow_dispatch`. On a pull request that leaves storage untouched
-  (the `storage-diff` job in `backend-integration-test.yaml`), recordings run on S3 only; `main` always
-  runs S3, GCS and ABS.
+- Workflows trigger on pull requests: a branch gets CI once it has a PR (a draft is enough) or through
+  `workflow_dispatch`. On `main`, the unit workflows run on every push; backend integration and both
+  e2e suites run nightly instead (00:17 UTC), only when `main` moved since their last green nightly
+  (the `main-changed` job skips the rest), because the required checks are strict and the PR already
+  ran them on the tree `main` gets. On a pull request recordings run on S3 only, unless it changes
+  `meet-ce/backend/src/services/storage/` or carries the `ci:storage` label (the `storage-providers`
+  job in `backend-integration-test.yaml`; the label is read when a run starts, so add it before
+  pushing); the nightly and `workflow_dispatch` run S3, GCS and ABS. Dependabot pull requests run only
+  the unit workflows: their integration and e2e jobs skip on GitHub-hosted runners (matrix jobs skip
+  their steps, so the required checks still report) and the nightly tests the merge; dispatch the
+  workflow on the Dependabot branch to test it before. Dependabot groups all action bumps in one PR.
 - Backend integration tests and all Playwright suites need real infrastructure (LiveKit, MongoDB,
   Redis, S3/MinIO). They are not runnable from a bare checkout: say so instead of reporting a pass.
 - `./meet.sh build-rest-api-doc` and `./meet.sh build-webcomponent-doc` generate the API references
