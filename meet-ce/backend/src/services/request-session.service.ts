@@ -164,9 +164,13 @@ export class RequestSessionService {
 	}
 
 	/**
-	 * Gets the room the room member token was validated against from the current request context.
+	 * Gets the room the room member token was validated against from the current request context, when it is the
+	 * given room.
+	 *
+	 * @param roomId - The ID of the room the caller is about to act on
 	 */
-	getRoom(): RequestRoomSnapshot | undefined {
-		return this.getContext()?.room;
+	getRoom(roomId: string): RequestRoomSnapshot | undefined {
+		const room = this.getContext()?.room;
+		return room?.roomId === roomId ? room : undefined;
 	}
 }

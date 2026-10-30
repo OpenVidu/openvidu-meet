@@ -1,16 +1,21 @@
 import type {
-	MeetRoom,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomField,
 	MeetRoomMemberTokenMetadata,
-	MeetUser
+	MeetUser,
+	ProjectedMeetRoom
 } from '@openvidu-meet/typings';
+
+/**
+ * The fields the room member token validator reads from the room it validates the token against.
+ */
+export const REQUEST_ROOM_FIELDS = ['roomId', 'rolesUpdatedAt', 'config'] as const satisfies readonly MeetRoomField[];
 
 /**
  * The room a room member token was validated against, as read once by the validator for the rest of its request.
  */
-export type RequestRoomSnapshot = Pick<MeetRoom, 'roomId' | 'rolesUpdatedAt' | 'config'>;
+export type RequestRoomSnapshot = ProjectedMeetRoom<typeof REQUEST_ROOM_FIELDS>;
 
 /**
  * Context information stored per HTTP request.

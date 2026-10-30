@@ -444,7 +444,7 @@ describe('the validators, against a change made in the same millisecond as the t
 						() => 'accepted',
 						() => 'refused'
 					);
-					return { outcome, room: requestSessionService.getRoom() };
+					return { outcome, room: requestSessionService.getRoom('room-1') };
 				});
 
 			it('keeps the room it read, config included, once it accepts the token', async () => {

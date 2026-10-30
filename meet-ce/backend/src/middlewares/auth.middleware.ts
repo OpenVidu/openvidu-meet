@@ -14,6 +14,7 @@ import {
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
 import type { RequestRoomSnapshot } from '../models/request-context.model.js';
+import { REQUEST_ROOM_FIELDS } from '../models/request-context.model.js';
 import type { TokenMetadata } from '../models/token.model.js';
 import { TokenType } from '../models/token.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
@@ -217,12 +218,6 @@ export const roomMemberTokenValidator: AuthValidator = {
 	}
 };
 
-const REQUEST_ROOM_SNAPSHOT_FIELDS = [
-	'roomId',
-	'rolesUpdatedAt',
-	'config'
-] as const satisfies readonly (keyof RequestRoomSnapshot)[];
-
 /**
  * Verifies a room member token and that no later change invalidated it: an update of its room's roles or access,
  * of its room member's permissions or of its user's role, the deletion of that member or user, and a demotion of
@@ -258,7 +253,7 @@ export const verifyRoomMemberToken = async (
 		const { iat, roomId, memberId, userId } = metadata;
 
 		const [room, revoked, roomMember, user] = await Promise.all([
-			container.get(RoomRepository).findByRoomId(roomId, REQUEST_ROOM_SNAPSHOT_FIELDS),
+			container.get(RoomRepository).findByRoomId(roomId, REQUEST_ROOM_FIELDS),
 			!ignoreDemotion && participantIdentity
 				? container.get(ParticipantTokenRevocationService).isRevoked(roomId, participantIdentity, iat)
 				: false,
