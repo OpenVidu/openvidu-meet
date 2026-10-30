@@ -16,6 +16,6 @@ The audio of a shared screen SHALL be captured without echo cancellation, noise 
 - **THEN** the screen-share audio sends almost no data during that minute
 
 #### Scenario: Sharing the entire screen with system audio
-- **GIVEN** a participant on Windows sharing their entire screen with the system audio
+- **GIVEN** a participant sharing their entire screen with the system audio
 - **WHEN** another participant speaks
 - **THEN** that participant does not hear their own voice coming back through the shared screen
