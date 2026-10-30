@@ -51,7 +51,10 @@
         summary: Refresh room member token
         description: >
             Refreshes a room member token for a participant already connected to a meeting.
-            Requires a valid room member token in `X-Room-Member-Token`.
+            Requires in `X-Room-Member-Token` a room member token the server still accepts, expired at most
+            10 seconds ago. A token issued before a change of the room's roles or access, of the member's
+            permissions or of the user's role, or after the member or the user was deleted, answers `401`;
+            one issued before the participant's demotion is renewed with the restored permissions.
         tags:
             - Internal API - Room Members
         security:

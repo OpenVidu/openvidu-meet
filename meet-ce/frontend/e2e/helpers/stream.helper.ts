@@ -531,6 +531,7 @@ export const dragStream = async (page: Page, selector: string, targetX: number, 
 	const element = selector === '.local_participant' ? localCameraStream(page) : page.locator(selector).first();
 
 	await expect(element).toBeVisible({ timeout: 5_000 });
+	await waitForBoundingBoxStable(element);
 	const box = await element.boundingBox();
 
 	if (!box) {
@@ -543,6 +544,8 @@ export const dragStream = async (page: Page, selector: string, targetX: number, 
 	// float/pin buttons and the release would CLICK them, toggling dock instead of dragging.
 	await page.mouse.move(box.x + box.width / 2, box.y + 8);
 	await page.mouse.down();
+	await page.mouse.move(box.x + box.width / 2, box.y + 28);
+	await expect(element).toHaveClass(/cdk-drag-dragging/, { timeout: 1_000 });
 	await page.mouse.move(targetX, targetY, { steps: 10 });
 	await page.mouse.up();
 };
@@ -682,6 +685,27 @@ export const waitForSubscribedRemoteVideos = async (page: Page, count: number): 
 		)
 		.toBe(count);
 };
+
+/**
+ * Label of the capture the page sends to the others for the given kind, read from its peer
+ * connections ({@link capturePeerConnections} must have run), or `null` while nothing is sent.
+ */
+export const getPublishedTrackLabel = (page: Page, kind: 'audio' | 'video'): Promise<string | null> =>
+	page.evaluate(
+		(trackKind) =>
+			((window as PeerConnectionWindow).__peerConnections ?? [])
+				.filter((connection) => connection.connectionState !== 'closed')
+				.flatMap((connection) => connection.getSenders())
+				.find((sender) => sender.track?.kind === trackKind)?.track?.label ?? null,
+		kind
+	);
+
+/** Label of the camera the settings panel previews, or `null` when it shows none. */
+export const getSettingsPreviewLabel = (page: Page): Promise<string | null> =>
+	page.evaluate(() => {
+		const video = document.querySelector<HTMLVideoElement>('.camera-preview video');
+		return (video?.srcObject as MediaStream | null)?.getVideoTracks()[0]?.label ?? null;
+	});
 
 /** Number of remote videos that delivered frames during a one-second window. */
 export const countFlowingRemoteVideos = async (page: Page): Promise<number> => {

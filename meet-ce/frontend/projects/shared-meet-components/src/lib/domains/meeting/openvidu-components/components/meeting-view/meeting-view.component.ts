@@ -58,6 +58,7 @@ import { BroadcastRequestedEvent } from '../../models/broadcast.model';
 import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '../../models/participant.model';
 import { RecordingStartRequestedEvent, RecordingStopRequestedEvent } from '../../models/recording.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
+import { ChatService } from '../../services/chat/chat.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import type { Room } from '../../services/livekit';
@@ -133,6 +134,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	private readonly dialogService = inject(DialogService);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly participantService = inject(ParticipantService);
+	private readonly chatService = inject(ChatService);
 	private readonly panelService = inject(PanelService);
 	private readonly backgroundService = inject(VirtualBackgroundService);
 	private readonly meetingEventsService = inject(MeetingEventsService);
@@ -472,6 +474,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 
 	async ngOnDestroy() {
 		this.destroyed = true;
+		this.chatService.clear();
 
 		if (this.shouldDisconnectRoomWhenComponentIsDestroyed) {
 			await this.disconnectRoom(ParticipantLeftReason.LEAVE);

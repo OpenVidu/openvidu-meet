@@ -147,11 +147,14 @@ export const expectCopiedText = async (page: Page, expectedText: string, timeout
 /**
  * Takes a screenshot of the first `.OV_video-element` on the page. Fades still running are finished
  * first, so the capture shows the video and not the background it fades in over.
+ *
+ * The page is clipped to the element's box once that box stops moving, instead of taking an element
+ * screenshot: the element screenshot waits for two animation frames, which a background effect
+ * running on a CPU-only runner can starve past any timeout.
  */
 export const captureVideoElementScreenshot = async (page: Page): Promise<Buffer> => {
-	const videoLocator = page.locator('.OV_video-element').first();
-	await expect(videoLocator).toBeVisible({ timeout: 5_000 });
-	return await videoLocator.screenshot({ timeout: 10_000, animations: 'disabled' });
+	const box = await getSettledBoundingBox(page, '.OV_video-element');
+	return await page.screenshot({ clip: box, timeout: 20_000, animations: 'disabled' });
 };
 
 /**
@@ -383,6 +386,47 @@ export const getGetUserMediaCalls = async (page: Page): Promise<GetUserMediaCall
 export const getGetUserMediaCallsFor = async (page: Page, kind: 'audio' | 'video'): Promise<GetUserMediaCall[]> => {
 	return (await getGetUserMediaCalls(page)).filter((call) => call[kind]);
 };
+
+type CaptureWindow = Window & { __ovCaptures?: MediaStreamTrack[] };
+
+/**
+ * Records every device capture the page opens, and every clone made of one, so a test can tell
+ * which of them are still running. Registers an init script, so it must be called before navigating.
+ */
+export const recordLocalCaptures = async (page: Page): Promise<void> => {
+	await page.addInitScript(() => {
+		const captures: MediaStreamTrack[] = [];
+		(window as CaptureWindow).__ovCaptures = captures;
+
+		const mediaDevices = navigator.mediaDevices;
+		const getUserMedia = mediaDevices.getUserMedia.bind(mediaDevices);
+
+		mediaDevices.getUserMedia = async (constraints?: MediaStreamConstraints) => {
+			const stream = await getUserMedia(constraints);
+			captures.push(...stream.getTracks());
+			return stream;
+		};
+
+		const clone = MediaStreamTrack.prototype.clone;
+
+		MediaStreamTrack.prototype.clone = function (this: MediaStreamTrack) {
+			const copy = clone.call(this);
+			captures.push(copy);
+			return copy;
+		};
+	});
+};
+
+/** Labels of the recorded captures of the given kind that are still running, clones included. */
+export const getLiveCaptureLabels = (page: Page, kind: 'audio' | 'video'): Promise<string[]> =>
+	page.evaluate(
+		(trackKind) =>
+			((window as CaptureWindow).__ovCaptures ?? [])
+				.filter((track) => track.kind === trackKind && track.readyState === 'live')
+				.map((track) => track.label)
+				.sort(),
+		kind
+	);
 
 /**
  * Makes `getUserMedia` fail for the given kind, as a device already held by another application

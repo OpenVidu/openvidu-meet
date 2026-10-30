@@ -60,7 +60,7 @@ An identified guest SHALL get a generated `memberId` that starts with `guest-`, 
 - **AND** its `accessUrl` ends with `/room/room-123?secret=` followed by that `memberId`
 
 ### Requirement: Effective permissions
-The server SHALL compute a member's `effectivePermissions` as the permission set of its base role in the room (see `room-access`) with every key of `customPermissions` overriding the role's value, and SHALL set `permissionsUpdatedAt` each time it computes them.
+The server SHALL compute a member's `effectivePermissions` as the permission set of its base role in the room (see `room-access`) with every key of `customPermissions` overriding the role's value, and SHALL set `permissionsUpdatedAt` when it first computes them and each time they change; an `updateRoomMember` that leaves them as they were SHALL NOT advance it.
 
 #### Scenario: Override on top of the role
 - **GIVEN** a room whose speaker role denies `recordingControl` and grants `mediaShareScreen`
@@ -70,6 +70,11 @@ The server SHALL compute a member's `effectivePermissions` as the permission set
 #### Scenario: No overrides
 - **WHEN** a manager adds a member with `baseRole` `moderator` and no `customPermissions`
 - **THEN** the member's `effectivePermissions` equal the room's moderator role permissions
+
+#### Scenario: Update without effect
+- **GIVEN** a speaker member without overrides in a room whose speaker role grants `chatWrite`
+- **WHEN** a manager calls `updateRoomMember` with `customPermissions` granting `chatWrite`
+- **THEN** the member's `customPermissions` hold `chatWrite` and its `permissionsUpdatedAt` is unchanged
 
 ### Requirement: Members follow their room role
 When the permission set of a room role changes through `updateRoomRoles` (see `room-access`), the server SHALL recompute the `effectivePermissions` of every member of the room from the new role sets, keeping each member's `customPermissions`, and SHALL advance their `permissionsUpdatedAt`.
@@ -112,7 +117,7 @@ The server SHALL allow `addRoomMember`, `getRoomMembers`, `updateRoomMember`, `d
 - **THEN** the server answers `401`
 
 ### Requirement: Reading one member
-`getRoomMember` SHALL be allowed with an API key, to an admin, to the room's owner, to a `room_manager` reading their own membership, and with a room member token issued for that same member. Any other caller SHALL get `403`, and a member or room that does not exist SHALL give `404`.
+`getRoomMember` SHALL be allowed with an API key, to an admin, to the room's owner, to a `room_manager` reading their own membership, and with a room member token issued for that same member. A room that does not exist SHALL give `404`. Any other caller SHALL get `403` whether or not the member exists, and only a caller allowed to read the member SHALL get `404` for a member that does not exist.
 
 #### Scenario: Own member through a room member token
 - **GIVEN** an identified guest holding a room member token obtained with their personal link
@@ -132,6 +137,11 @@ The server SHALL allow `addRoomMember`, `getRoomMembers`, `updateRoomMember`, `d
 #### Scenario: Unknown member
 - **WHEN** a manager of the room calls `getRoomMember` for a `memberId` that is not a member of it
 - **THEN** the server answers `404`
+
+#### Scenario: Probing for members without access
+- **GIVEN** a room member token obtained with the room's anonymous speaker link
+- **WHEN** its holder calls `getRoomMember` for an existing `memberId` and for one that is not a member of the room
+- **THEN** the server answers `403` to both
 
 ### Requirement: Listing members
 `getRoomMembers` SHALL return a page of the room's members filtered by `name` (match mode `exact` by default, or `prefix`, `partial` or `regex`, case-sensitive unless `nameCaseInsensitive` is `true`), `baseRole` and `type`, sorted by `membershipDate` (the default) or `name`, in descending order unless `sortOrder` says otherwise, with `maxItems` defaulting to 10 and capped at 100.
@@ -163,7 +173,7 @@ The server SHALL allow `addRoomMember`, `getRoomMembers`, `updateRoomMember`, `d
 - **THEN** the server answers `400`
 
 ### Requirement: Updating a member
-`updateRoomMember` SHALL change the member's `baseRole`, its `customPermissions`, or both, recompute its `effectivePermissions` and answer `200` with the member; a `customPermissions` object SHALL replace the previous overrides as a whole, so an override it leaves out falls back to the base role. The room member tokens issued to the member before the update stop being accepted (see `authentication`).
+`updateRoomMember` SHALL change the member's `baseRole`, its `customPermissions`, or both, recompute its `effectivePermissions` and answer `200` with the member; a `customPermissions` object SHALL replace the previous overrides as a whole, so an override it leaves out falls back to the base role. When the `effectivePermissions` change, the member's earlier room member tokens stop being accepted (see `authentication`); otherwise they stay valid.
 
 #### Scenario: Change the base role
 - **GIVEN** a speaker member without overrides
@@ -181,8 +191,11 @@ The server SHALL allow `addRoomMember`, `getRoomMembers`, `updateRoomMember`, `d
 - **THEN** the member's `effectivePermissions` equal its base role permissions
 
 #### Scenario: Empty body
+- **GIVEN** an identified guest taking part in the room's meeting
 - **WHEN** a manager calls `updateRoomMember` with an empty body
 - **THEN** the server answers `200` and the member keeps its role and overrides
+- **AND** the room member tokens issued to the member before the call are still accepted
+- **AND** the guest gets no notice that their permissions were updated
 
 #### Scenario: Unknown member
 - **WHEN** a manager updates a member that does not exist in the room
@@ -198,7 +211,7 @@ When an update leaves a member without `meetingJoin` and that member is in the r
 - **AND** a new join token requested with their personal link is refused with `403`
 
 ### Requirement: Permission changes reach a member in the meeting
-When an update keeps `meetingJoin` and the member is in the room's meeting, the server SHALL ask that participant's client to renew its room member token, and the meeting SHALL then apply the new permissions without the participant leaving and show them a notice that their permissions were updated. Failing to deliver that request SHALL NOT fail the update.
+When an update changes the `effectivePermissions` of a member who is in the room's meeting and keeps `meetingJoin`, the server SHALL ask that participant's client to renew its room member token, and the meeting SHALL then apply the new permissions without the participant leaving and show them a notice that their permissions were updated. Failing to deliver that request SHALL NOT fail the update.
 
 #### Scenario: Chat write revoked live
 - **GIVEN** a user member taking part in the meeting with `chatWrite`
@@ -356,7 +369,7 @@ A room member token SHALL fix how its holder appears in the meeting: the room ow
 - **THEN** the participants panel marks them as the owner and webhooks report their role as `moderator`
 
 ### Requirement: Join tokens
-With `joinMeeting` set to `true`, the server SHALL issue a token that connects its holder to the room's meeting with the media grant of its permissions (see `permissions`), under the `participantName` given or else the name of the member or of the user, once the join checks pass: an open room, `meetingJoin`, a known name and room below `maxParticipants`, with the refusals specified in `meeting-join`. The identity the token assigns is specified in `meetings`.
+With `joinMeeting` set to `true`, the server SHALL issue a token that connects its holder to the room's meeting with the media grant of its permissions (see `permissions`) once the join checks pass: an open room, `meetingJoin`, a known name and room below `maxParticipants`, with the refusals specified in `meeting-join`. The name SHALL be the member's or the user's, else the `participantName` given, which an encrypted room always uses. The identity is specified in `meetings`.
 
 #### Scenario: Name taken from the member
 - **GIVEN** an identified guest named "Alice Smith"
@@ -367,6 +380,26 @@ With `joinMeeting` set to `true`, the server SHALL issue a token that connects i
 - **GIVEN** a registered user who is a member of the room
 - **WHEN** they request a join token with their access token and no `participantName`
 - **THEN** the token joins the meeting under the name of their member record
+
+#### Scenario: Another name asked for an identified guest
+- **GIVEN** an identified guest named "Alice Smith" in a room without end-to-end encryption
+- **WHEN** a join token is requested with their personal link and `participantName` "Bob"
+- **THEN** the token joins the meeting as "Alice Smith"
+
+#### Scenario: Another name asked by a signed-in user
+- **GIVEN** a signed-in user named "Carol", not a member of a room without end-to-end encryption
+- **WHEN** they request a join token with the room's anonymous speaker secret and `participantName` "Dave"
+- **THEN** the token joins the meeting as "Carol"
+
+#### Scenario: Anonymous participant
+- **GIVEN** a request with the room's anonymous moderator secret and no access token
+- **WHEN** a join token is requested with `participantName` "Erin"
+- **THEN** the token joins the meeting as "Erin"
+
+#### Scenario: Encrypted room
+- **GIVEN** an identified guest of a room with `e2ee.enabled` `true`
+- **WHEN** a join token is requested with their personal link and the encrypted name as `participantName`
+- **THEN** the token joins the meeting under that encrypted name
 
 #### Scenario: Join checks
 - **GIVEN** a room member token request with `joinMeeting` for a closed room, or with the room's anonymous recording secret
@@ -396,7 +429,7 @@ When a join token request carries, as `X-Room-Member-Token`, the join token of a
 - **THEN** the server answers `404`
 
 ### Requirement: Refreshing a join token
-`refreshRoomMemberToken` SHALL reissue, for a participant in the room's meeting, a token with the permissions and role they hold there at that moment, a promotion included, keeping their identity, name and correlation fields. It SHALL require in `X-Room-Member-Token` a join token expired at most 10 seconds ago (`401` otherwise, also for a token that does not join), and answer `403` for another room's token and `404` when the participant is not in the meeting.
+`refreshRoomMemberToken` SHALL reissue, for a participant in the room's meeting, a token with the permissions and role they hold there at that moment, a promotion included, keeping their identity, name and correlation fields. It SHALL require in `X-Room-Member-Token` a join token expired at most 10 seconds ago that no later change but a demotion invalidated (see `authentication`), answering `401` otherwise, `403` for another room's token and `404` when the participant is not in the meeting.
 
 #### Scenario: Refresh after a promotion
 - **GIVEN** a speaker promoted to moderator in the meeting
@@ -421,6 +454,30 @@ When a join token request carries, as `X-Room-Member-Token`, the join token of a
 - **WHEN** a client calls `refreshRoomMemberToken` for a room with a join token of a different room
 - **THEN** the server answers `403`
 
+#### Scenario: Member permissions changed after the token
+- **GIVEN** a user member in the meeting whose join token grants `participantKick`
+- **WHEN** a manager updates the member to deny `participantKick`
+- **AND** the member's client calls `refreshRoomMemberToken` with the join token issued before the update
+- **THEN** the server answers `401` with message `Invalid token`
+
+#### Scenario: Account role changed after the token
+- **GIVEN** an admin in the meeting of a room they neither own nor belong to
+- **WHEN** an administrator changes that user's role to `room_manager`
+- **AND** the participant's client calls `refreshRoomMemberToken` with the join token issued before the change
+- **THEN** the server answers `401` with message `Invalid token`
+
+#### Scenario: Demoted after the token
+- **GIVEN** a participant promoted to moderator who holds a join token issued during the promotion
+- **WHEN** a moderator demotes them
+- **AND** their client calls `refreshRoomMemberToken` with that token
+- **THEN** the server answers `200` with a token carrying the permissions they had before the promotion, without the promoted moderator role
+
+#### Scenario: Change made through another replica
+- **GIVEN** two Meet replicas and a user member in the meeting
+- **WHEN** a manager updates the member's permissions through the first replica
+- **AND** the member's client calls `refreshRoomMemberToken` through the second replica with the join token issued before the update
+- **THEN** the second replica answers `401`
+
 ### Requirement: One change at a time per participant
 The server SHALL apply the join token regenerations and refreshes of a participant one after the other with that participant's role changes (see `meeting-moderation`), across every Meet replica, and SHALL answer `409` to a regeneration or refresh that cannot start within about 3 seconds because another change of that participant is still in progress.
 
@@ -436,7 +493,7 @@ The server SHALL apply the join token regenerations and refreshes of a participa
 - **THEN** the server answers `409` saying the participant is already being updated
 
 ### Requirement: The meeting keeps its token current
-The meeting SHALL renew the participant's join token through `refreshRoomMemberToken` shortly before it expires, and SHALL repeat a renewal that fails without an access refusal, up to six attempts with a growing delay, keeping the current token meanwhile; a renewal refused with `401`, `403` or `404` ends as specified in `meeting-join` (Access lost during the meeting).
+The meeting SHALL renew the participant's join token through `refreshRoomMemberToken` shortly before it expires, repeating one that fails without an access refusal up to six attempts with a growing delay, keeping the current token meanwhile. After a refresh refused with `401` it SHALL request a new join token with the credentials the participant entered with; a refusal of that request, or a refresh refused with `403` or `404`, ends as specified in `meeting-join` (Access lost during the meeting).
 
 #### Scenario: Meeting longer than the token lifetime
 - **GIVEN** a participant who stays in a meeting longer than `MEET_ROOM_MEMBER_TOKEN_EXPIRATION`
@@ -447,6 +504,22 @@ The meeting SHALL renew the participant's join token through `refreshRoomMemberT
 - **GIVEN** a participant whose token renewal fails because the server is unreachable
 - **WHEN** the server is back before the attempts run out
 - **THEN** the participant stays in the meeting with a renewed token
+
+#### Scenario: Permissions notice missed
+- **GIVEN** a member in the meeting whose client did not receive the notice that a manager denied them `chatWrite`
+- **WHEN** their next renewal through `refreshRoomMemberToken` is refused with `401`
+- **THEN** the meeting obtains a new join token with the credentials the member entered with
+- **AND** the member stays in the meeting with a read-only chat
+
+#### Scenario: Demoted participant
+- **GIVEN** a participant promoted to moderator in the meeting
+- **WHEN** a moderator demotes them
+- **THEN** they stay in the meeting with the permissions they had before the promotion
+
+#### Scenario: Access withdrawn while the notice was missed
+- **GIVEN** an admin in the meeting of a room they neither own nor belong to, whose client did not receive the notice of a change of their role to `room_manager`
+- **WHEN** their next renewal is refused with `401` and the new join token request with `403`
+- **THEN** they are taken to the "Room access revoked" error screen
 
 ### Requirement: Recovery from an outdated token
 When the server refuses a request of the meeting, the room recordings page or the recording view page with `401` because the room member token is no longer accepted, the page SHALL obtain a new token with the credentials the visitor entered with and retry the request with it; a refusal of the new token ends as specified in `meeting-join` (Access lost during the meeting).

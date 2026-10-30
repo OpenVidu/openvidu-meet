@@ -26,7 +26,7 @@ The moderation operations SHALL accept an API key, which acts with every permiss
 - **THEN** the request answers 404
 
 ### Requirement: Kick a participant
-`DELETE /api/v1/meetings/{roomId}/participants/{participantIdentity}` (`participantKick`) SHALL disconnect that participant from the meeting, whatever their role, and they SHALL leave with reason `participant_kicked` (their own `meetingLeft`, and the `participantLeft` webhook and event). It SHALL answer 404 when the participant is not in the meeting.
+`DELETE /api/v1/meetings/{roomId}/participants/{participantIdentity}` (`participantKick`) SHALL disconnect that participant from the meeting, whatever their role, and they SHALL leave with reason `participant_kicked` (their own `meetingLeft`, and the `participantLeft` webhook and event). It SHALL answer 404 when the participant is not in the meeting, and SHALL answer 404 and disconnect nothing for a recorder or an agent, which are never participants of the meeting.
 
 #### Scenario: Participant kicked
 - **GIVEN** a speaker in a running meeting
@@ -37,6 +37,18 @@ The moderation operations SHALL accept an API key, which acts with every permiss
 #### Scenario: Participant not in the meeting
 - **WHEN** a client kicks an identity that is not in the meeting
 - **THEN** the request answers 404
+
+#### Scenario: Recorder of a recording in progress
+- **GIVEN** a meeting being recorded
+- **WHEN** a client holding `participantKick` calls `participantKick` with the identity of the recorder
+- **THEN** the request answers 404
+- **AND** the recording goes on
+
+#### Scenario: Live captions assistant
+- **GIVEN** a meeting whose live captions assistant is running
+- **WHEN** a client holding `participantKick` calls `participantKick` with the identity of the assistant
+- **THEN** the request answers 404
+- **AND** the captions keep arriving
 
 ### Requirement: Kick command
 The embedded command `participantKick(participantIdentity)`, and its deprecated alias `kickParticipant` until 3.12.0, SHALL kick the given participant on behalf of the local participant, gated by `participantKick` (execution rules in `embedded-api`). The local participant SHALL stay in the meeting.
@@ -299,3 +311,21 @@ Every participant's panel SHALL mark each participant's role with a badge (owner
 - **GIVEN** a participant without `participantPromote`
 - **WHEN** they open a speaker's row menu
 - **THEN** neither Promote nor Demote is offered
+
+### Requirement: A kick does not revoke access
+Kicking a participant SHALL only disconnect them from the meeting in progress. Their access to the room SHALL be unchanged: with the same access link, room member token or account they SHALL be able to join that meeting again at once, and later meetings of the room. Keeping a participant out SHALL require revoking their access to the room (see `room-access` and `room-members`).
+
+#### Scenario: Kicked participant joins again
+- **GIVEN** a speaker who entered through the room's speaker link and was kicked
+- **WHEN** they open the same link and press Join while the meeting is still running
+- **THEN** they enter the meeting again
+
+#### Scenario: Kicked member whose access is revoked
+- **GIVEN** an identified guest who was kicked
+- **WHEN** a room manager deletes their room member record and they try to join again
+- **THEN** they cannot enter the meeting
+
+#### Scenario: Kicked anonymous participant while the meeting runs
+- **GIVEN** a speaker who entered through the room's anonymous speaker link and was kicked
+- **WHEN** a room manager tries to disable that link while the meeting is still active
+- **THEN** the server answers `409` and the speaker can still join again through the link

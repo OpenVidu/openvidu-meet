@@ -293,7 +293,8 @@ const streamKeyIndex = (segments: string[]): number => {
  */
 export interface MeetChatConfig {
 	/**
-	 * Indicates if chat is enabled in the room
+	 * Whether the room's meetings offer a chat. When `false` the media server refuses chat messages
+	 * from every participant, whatever their `chatRead` and `chatWrite` permissions.
 	 */
 	enabled: boolean;
 }

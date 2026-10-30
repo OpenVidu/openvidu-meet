@@ -65,7 +65,7 @@ export const MEET_ENV = {
 	MONGO_SOCKET_TIMEOUT_MS: parseInt(process.env.MEET_MONGO_SOCKET_TIMEOUT_MS ?? '0', 10),
 	MONGO_MAX_IDLE_TIME_MS: parseInt(process.env.MEET_MONGO_MAX_IDLE_TIME_MS ?? '0', 10),
 
-	BLOB_STORAGE_MODE: process.env.MEET_BLOB_STORAGE_MODE || 's3', // Options: 's3', 'abs', 'gcs'
+	BLOB_STORAGE_MODE: process.env.MEET_BLOB_STORAGE_MODE?.trim().toLowerCase() || 's3', // Options: 's3', 'abs', 'gcs'
 
 	// S3 or GCS configuration
 	S3_BUCKET: process.env.MEET_S3_BUCKET ?? 'openvidu-appdata',

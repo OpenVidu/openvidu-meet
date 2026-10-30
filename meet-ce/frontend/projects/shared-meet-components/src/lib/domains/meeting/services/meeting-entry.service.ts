@@ -1,6 +1,5 @@
 import { Service, inject } from '@angular/core';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
-import { LanguageService } from '../../../shared/services/i18n/language.service';
 import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomAccessService } from '../../rooms/services/room-access.service';
@@ -32,10 +31,6 @@ export interface MeetingEntryParams {
 	initialAudioActive?: boolean;
 	/** Join with the camera active (initial state only; the participant may deactivate it afterwards). Defaults to true. */
 	initialVideoActive?: boolean;
-	/** Initial UI language asked by the embedding application, as a BCP 47 tag (never persisted). */
-	language?: string;
-	/** Show the language selectors (default `true`); `false` keeps the participant from changing the language. */
-	showLanguageSelector?: boolean;
 	/** Optional leave-redirect URL passed to {@link LeaveRedirectService}. */
 	leaveRedirectUrl?: string;
 	/** Request a redirect to `/recording/<id>` instead of the meeting. */
@@ -75,7 +70,6 @@ export class MeetingEntryService {
 	private readonly roomAccessService = inject(RoomAccessService);
 	private readonly roomFeatureService = inject(RoomFeatureService);
 	private readonly leaveRedirect = inject(LeaveRedirectService);
-	private readonly languageService = inject(LanguageService);
 
 	/**
 	 * Populates meeting/room-member context from the supplied params and returns
@@ -99,9 +93,7 @@ export class MeetingEntryService {
 		participantExternalId,
 		participantMetadata,
 		initialAudioActive,
-		initialVideoActive,
-		language,
-		showLanguageSelector = true
+		initialVideoActive
 	}: MeetingEntryParams): MeetingEntryDecision {
 		this.leaveRedirect.handleLeaveRedirectUrl(leaveRedirectUrl);
 
@@ -124,11 +116,8 @@ export class MeetingEntryService {
 			videoActive: initialVideoActive
 		});
 
-		this.languageService.setEmbeddedLanguage(language);
-		this.languageService.setSelectorVisible(showLanguageSelector);
-
 		// Prefer the caller-supplied secret (URL/input); otherwise restore the one
-		// persisted on this origin. Keeping the fallback here means every adapter
+		// persisted for this room. Keeping the fallback here means every adapter
 		// (route guard, Web Component) shares it without re-implementing it.
 		if (secret) {
 			this.meetingContextService.setRoomSecret(secret, true);
@@ -145,7 +134,7 @@ export class MeetingEntryService {
 		}
 
 		// Prefer the caller-supplied value (URL/input); otherwise restore the last one
-		// stored on this origin so the lobby pre-fills it.
+		// stored for this room so the lobby pre-fills it.
 		if (e2eeKey) {
 			this.meetingContextService.setE2eeKey(e2eeKey, true);
 		} else {

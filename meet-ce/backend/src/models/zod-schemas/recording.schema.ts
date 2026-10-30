@@ -11,7 +11,7 @@ import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import { invalidRegexPatternReason } from '../../utils/string-match-filter.utils.js';
 import { fieldListSchema } from './field-selection.schema.js';
 import { encodingValidator } from './recording-encoding.schema.js';
-import { nonEmptySanitizedRoomId } from './room-id.schema.js';
+import { nonEmptySanitizedRoomId, RoomIdParamSchema } from './room-id.schema.js';
 
 const fieldsSchema = fieldListSchema(MEET_RECORDING_FIELDS);
 
@@ -31,7 +31,7 @@ export const nonEmptySanitizedRecordingId = (fieldName: string) =>
 			if (parts.length !== 3) return sanitizedValue;
 
 			// If the recording ID is in the expected format, sanitize the roomId part
-			const { success, data } = nonEmptySanitizedRoomId('roomId').safeParse(parts[0]);
+			const { success, data } = RoomIdParamSchema.safeParse(parts[0]);
 
 			if (!success) {
 				// If the roomId part is not valid, return the sanitized value
@@ -61,6 +61,8 @@ export const nonEmptySanitizedRecordingId = (fieldName: string) =>
 				message: `${fieldName} does not follow the expected format`
 			}
 		);
+
+export const RecordingIdParamSchema = nonEmptySanitizedRecordingId('recordingId');
 
 export const StartRecordingReqSchema = z.object({
 	roomId: nonEmptySanitizedRoomId('roomId'),

@@ -9,10 +9,16 @@ import {
 	MeetRecordingVideoCodec,
 	MeetRoom
 } from '@openvidu-meet/typings';
+import type { RoomServiceClient } from 'livekit-server-sdk';
 import { EgressClient, ServerError } from 'livekit-server-sdk';
 import { container } from '../../../../src/config/dependency-injector.config.js';
-import { errorEgressNotAvailable, errorRoomNotFound } from '../../../../src/models/error.model.js';
+import {
+	errorEgressNotAvailable,
+	errorLivekitNotAvailable,
+	errorRoomNotFound
+} from '../../../../src/models/error.model.js';
 import { RecordingRepository } from '../../../../src/repositories/recording.repository.js';
+import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import {
 	expectMeetError,
 	expectValidationError,
@@ -204,6 +210,25 @@ describe('Recording API Tests', () => {
 			// Room exists but it has no participants
 			expect(response.status).toBe(409);
 			expect(response.body.message).toContain(`Room '${room.roomId}' has no participants`);
+		});
+
+		it('should answer 503 and create no recording when the media server cannot be reached', async () => {
+			const { lk } = container.get(LiveKitService) as unknown as { lk: { room: RoomServiceClient } };
+			const listParticipants = jest
+				.spyOn(lk.room, 'listParticipants')
+				.mockRejectedValueOnce(new TypeError('fetch failed', { cause: { code: 'ECONNREFUSED' } }));
+
+			try {
+				const response = await startRecording(room.roomId);
+				const error = errorLivekitNotAvailable();
+				expect(response.status).toBe(503);
+				expect(response.body).toEqual({ error: error.name, message: error.message });
+
+				const { recordings } = await container.get(RecordingRepository).find({ roomId: room.roomId });
+				expect(recordings).toHaveLength(0);
+			} finally {
+				listParticipants.mockRestore();
+			}
 		});
 
 		it('should sanitize roomId and reject the request with 409 due to no participants', async () => {

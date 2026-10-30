@@ -9,15 +9,19 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 ## 3.10.0 (unreleased)
 
+### Upgrade notes
+
+- Meet no longer starts when `MEET_INITIAL_ADMIN_USER` is shorter than 5 characters.
+
 ### Added
 
 #### Integration
 
 - Embedded commands `recordingStart` and `recordingStop`, gated by `recordingControl`, and the embedded event
   `recordingStatusChanged`, carrying `{ recordingId, status }` to every participant.
-- Embedded attributes and URL parameters `language`, which sets the initial meeting language (a BCP 47
-  language tag, or `auto` for the browser's) over the participant's stored preference without replacing it,
-  and `show-language-selector`, which hides the language selectors when `false`.
+- Embedded attributes and URL parameters `language`, which sets the initial interface language, meeting and
+  recording screens alike (a BCP 47 language tag, or `auto` for the browser's), over the participant's stored
+  preference without replacing it, and `show-language-selector`, which hides the language selectors when `false`.
 - Embedded command `participantUpdateRole`, gated by `participantPromote`, promotes a participant to moderator or
   demotes them back. Every promotion and demotion is reported as the
   [`participantRoleChanged`][3.10-participant-role-changed] webhook and as the embedded event of the same name to the
@@ -32,16 +36,17 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - [Broadcasts API][3.10-broadcasts] under `/api/v1/broadcasts`: stream a live meeting to one or more RTMP
   destinations, one broadcast per destination, each with its own status and its own `broadcastId`, as a
   recording has, read them and stop one or several. Starting and stopping use the new
-  [`broadcastControl`][3.10-permissions] permission and streaming to a destination the room does not have `broadcastEdit`, both granted to the
-  moderator role of rooms created from this release on. The embedded API gets the `broadcastStart` and
-  `broadcastStop` commands and the `broadcastStarted`, `broadcastUpdated` and `broadcastEnded` events, the
-  webhooks [`broadcastStarted`][3.10-broadcast-started], [`broadcastUpdated`][3.10-broadcast-updated] and
-  [`broadcastEnded`][3.10-broadcast-ended] report the same, and the [meeting info][3.10-meetings] carries
-  `broadcastActive`.
+  [`broadcastControl`][3.10-permissions] permission and streaming to a destination the room does not have
+  `broadcastEdit`, both granted to the moderator role of rooms created from this release on. The embedded API
+  gets the `broadcastStart` and `broadcastStop` commands and the `broadcastStarted`, `broadcastUpdated` and
+  `broadcastEnded` events, the webhooks [`broadcastStarted`][3.10-broadcast-started],
+  [`broadcastUpdated`][3.10-broadcast-updated] and [`broadcastEnded`][3.10-broadcast-ended] report the same, and
+  the [meeting info][3.10-meetings] carries `broadcastActive`.
 - Rooms save the destinations a broadcast streams to by default, and the layout and encoding it streams
   with, in [`config.broadcast`][3.10-room-config].
   Every response replaces the stream key of a destination URL with `********`, and a redacted URL sent back
   keeps the saved key.
+- User responses carry `isRootAdmin`, `true` for the `MEET_INITIAL_ADMIN_USER` account.
 
 #### UI
 
@@ -65,8 +70,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 #### UI
 
 - The meeting settings panel takes the width of the other panels and groups its options in three tabs: Audio &
-  video, with a camera preview, on and off switches and a microphone level meter; Layout, which More options >
-  Adjust layout opens directly and which also sets the own video floating or in the grid; and General.
+  video, with on and off switches and a camera preview and a microphone level meter that show a picked camera or
+  microphone before Apply switches the one the others receive; Layout, which More options > Adjust layout opens
+  directly and which also sets the own video floating or in the grid; and General.
 
 ### Fixed
 
@@ -75,6 +81,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - A room member token issued before its participant was demoted through
   [`participantRoleUpdate`][3.10-participant-role-update] or `participantUpdateRole` stayed valid until it expired,
   so they kept their moderator permissions. It is now rejected.
+- `refreshRoomMemberToken` renewed room member tokens without the checks that invalidate them after a change of the
+  member's permissions or of the user's role. It now applies them, and the meeting renews a refused token with the
+  credentials it joined with.
 - [`participantRoleUpdate`][3.10-participant-role-update], [`participantMute`][3.9-participant-mute],
   [`participantMuteAll`][3.9-participant-mute-all], `updateRoomMember` and the embedded commands that use them
   answered with an error when the notice to the affected participants could not be delivered, although the change
@@ -82,14 +91,24 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - Two simultaneous [`participantRoleUpdate`][3.10-participant-role-update] requests for the same participant both
   succeeded, and a promotion made while the participant's token was being regenerated could be undone by it. Both
   now apply one after the other, so the second promotion answers `409`.
+- [`participantKick`][3.9-participant-kick] and the embedded command of the same name could disconnect the recorder
+  of a recording in progress or the live captions assistant, which `participantGet` answers as not in the meeting.
+  They now answer the same 404 for them.
+- The embedded commands `meetingEnd` and `endMeeting` reported `meeting_ended` in the `meetingLeft` event of the
+  participant whose host ended the meeting. They now report `meeting_ended_by_self`, as ending it from the leave menu
+  does.
 - The `joinDate` of the embedded event `participantJoined` was the moment the join reached the browser, by the
   browser's clock, and the one of `participantLeft` was rounded down to the second. Both now carry the `joinDate` of
   the [`participantJoined`][3.9-participant-joined] webhook.
+- The [`meetingEnded`][3.9-meeting-ended] webhook could be sent twice for one meeting when the media server's notice
+  of its end and the periodic meeting status check handled it at the same time. It is now sent once.
 - [`startRecording`][3.9-start-recording] checked the target room before `recordingControl`, so a room member token of
   another room got `404` for a room that does not exist and learned whether a room could be recorded. It now answers
   `403` first.
-- [`startRecording`][3.9-start-recording] answered `500` when no egress service was available to record. It now answers
-  `503`.
+- [`startRecording`][3.9-start-recording] answered `500` when the media server did not accept the recording, and `500`
+  or `409` (no participants) when it could not be reached. It now answers `503`.
+- [`stopRecording`][3.9-stop-recording] answered `404` for a recording that had ended more than 24 hours earlier. It
+  now answers `409`, as for any recording already stopped.
 - [`bulkDeleteRecordings`][3.9-bulk-delete-recordings] and [`downloadRecordings`][3.9-download-recordings] accepted any
   number of `recordingIds`, and a long list failed with a server or proxy error. They now accept up to 100 distinct ids
   and answer `422` to more, and the recording lists disable ZIP download and bulk delete beyond 100 selected
@@ -102,11 +121,74 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - A recording ended by the stale-recordings clean-up sent no [`recordingEnded`][3.9-recording-ended] webhook and stayed
   in progress in the meeting and for the embedded event `recordingStatusChanged`. Its end is now reported like any
   other, once.
+- The access token of a user with a pending password change also reached public endpoints whose path ends in `/me`
+  or `/change-password`, such as `GET /api/v1/users/me`. Only `getMe` and `changeUserPassword` accept it now.
+- Two simultaneous API key regenerations could leave two API keys, both accepted. Exactly one remains now, the last
+  one generated.
+- Logging out, changing one's own password and refreshing with rotation left the earlier user tokens valid until
+  they expired. `logoutUser` now revokes the session's tokens, `changeUserPassword` revokes every earlier token of
+  the user and returns new ones, and a rotated refresh token is accepted once.
+- Two simultaneous [`createUser`][3.10-create-user] requests with the same `userId` could answer `500`. The one that
+  finds the `userId` taken now answers `409`.
+- [`updateRoomStatus`][3.10-update-room-status] with `open` during a meeting set the room `open` while the meeting
+  went on, cancelling a scheduled close or deletion and sending a second `meetingStarted` webhook, and `closed` turned
+  a scheduled deletion into a close. During a meeting the room now stays `active_meeting`: `open` cancels only a
+  scheduled close and answers `409` when a deletion is scheduled, and `closed` keeps a scheduled deletion.
+- The room returned by `deleteRoom` and `bulkDeleteRooms` carried its `roles` with the current permission keys only. It
+  now carries the deprecated `can*` keys next to them, as every other room response does.
+- `getRoomMember` answered `404` for a member that does not exist before checking the caller, so a caller without
+  access could tell which `memberId` values belong to the room. Such a caller now gets `403` whether or not the member
+  exists.
+- A permission change made with `updateRoomMember` during a meeting reached the media server only when the
+  participant's client renewed its token, so a client that skipped the renewal kept publishing what it had lost. The
+  server now applies the new media grant at once.
+- An `updateRoomMember` that changed nothing, such as one with an empty body, revoked the member's room member tokens
+  and told a member in the meeting that their permissions were updated. Only an update that changes the member's
+  effective permissions does so now.
+- The name an identified guest, a member user or a signed-in user joined a meeting with was locked by the join screen
+  only, so a modified client could join under any name. Outside encrypted rooms the server now uses the member's or
+  the user's name.
+- `chatRead` was enforced in the interface only: every chat message reached every participant's client. Messages now
+  reach only the participants holding `chatRead`.
+- A room's `config.chat.enabled` `false` was enforced in the interface only, so a modified client holding `chatWrite`
+  could still send chat messages. The media server now refuses them.
+- A room with end-to-end encryption could have live captions on, although the captions assistant only receives
+  encrypted audio and produced no captions. As with recording, `captions.enabled` is now stored as `false` while
+  `e2ee.enabled` is `true`, in existing rooms too, and the room wizard turns captions off when encryption is turned on.
+- Registering the same callback twice with `on()` on `<openvidu-meet>` called it twice per event and left one
+  registration that `off()` could not remove, and a callback registered with `once()` could not be removed with
+  `off()`. A callback is now registered once per event, and `off()` removes it however it was added.
+- A join refused because `participant-external-id` or `participant-metadata` exceed their limits showed the generic
+  error screen. It now shows an "Invalid participant data" error screen and logs the server's reason in the browser
+  console.
+- The styles of `<openvidu-meet>` reached the host page, restyling its own elements such as Angular Material
+  components, and the host page's `<style>` rules reached inside the element. Each side's styles now stay on its side
+  of the element's shadow root.
+- Meet in an iframe did not post `embeddedCloseRequested` to the host page from a recording screen or from an access
+  error screen shown before the join screen, and dropped commands posted before the join screen without a console
+  warning. It now listens to the host page and posts events from the moment it loads.
+- With `leave-redirect-url` set, the redirect could replace the host page before `embeddedCloseRequested` reached it,
+  in the embedded element and in the iframe. The redirect now follows the event.
+- A room URL opened in an iframe or a direct link with `show-only-recordings` and no value, or a value other than
+  `true` such as `1`, showed the meeting. It now shows the room recordings page unless the value is `false`, as the
+  attribute of `<openvidu-meet>` does.
 
 #### UI
 
 - After leaving a meeting that was being recorded, joining another meeting with the same `<openvidu-meet>`
   element showed that recording as still in progress. The recording indicator starts over with each meeting.
+- After leaving a meeting, joining another meeting with the same `<openvidu-meet>` element showed the earlier
+  meeting's chat messages and counted them as unread. The chat now starts empty in every meeting.
+- A browser tab, or an `<openvidu-meet>` element, that had entered a room with a secret or an encryption key reused
+  them for any other room entered without them, so a user access link opened afterwards showed the "Invalid link"
+  error screen. They are now kept only for the room they were given for.
+- On the join screen of a meeting in an iframe without `leave-redirect-url`, a signed-in user got a **Back to Rooms**
+  button that only emitted `embeddedCloseRequested`, and an anonymous participant got none. The iframe's access error
+  screens, and a recording opened in an iframe by its link, offered no button either. The join, error and recording
+  screens of an iframe now always offer one that emits `embeddedCloseRequested`, as its end screen does.
+- A room member or user who joined a meeting again before their earlier session had left it, from a second tab, after
+  reloading or by rejoining quickly, was renamed with a numeric suffix such as `Ana_1` everywhere the meeting shows or
+  reports names. They now keep their name.
 - A participant promoted and demoted in quick succession, or whose permissions changed right after their role, could
   be left with the permissions of the earlier change. The changes are now applied in the order they happen.
 - A participant promoted and demoted several times in a row got one notice per change, stacked over the meeting. Only
@@ -128,23 +210,35 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   the camera button.
 - The notifications in the top corner of a meeting covered the header of an open side panel, its close button
   included. They now sit beside the panel, or below its header when the panel fills the screen.
+- In a chat message, a bare domain followed by a query or a fragment, such as `example.com?x=1`, was linked without
+  them. The whole address is linked now.
 - The notices of the console room detail page about copying a member's link, removing members and failing to load
   members or recordings were always in English. They now follow the selected language.
 - The recording lists of the console and the room recordings page offered play and share on every recording, even to a
   user or room member without `recordingPlay`, and those actions then failed. They are now disabled, with a tooltip,
   without `recordingPlay`.
+- The console treated the earliest registered user as the root admin, so after a change of
+  `MEET_INITIAL_ADMIN_USER` it protected the wrong account. It now protects the `MEET_INITIAL_ADMIN_USER` account.
+- In a room whose anonymous speaker access is disabled, the meeting still offered the anonymous speaker link to share,
+  a link every recipient was refused with. The meeting no longer offers it.
 
 #### Deployment
 
 - A `SERVER_TRUST_PROXY` subnet in IPv4-mapped IPv6 notation with a short prefix, such as `::ffff:10.0.0.0/8`,
   trusted every client as a proxy, so rate limiting took the client address from `X-Forwarded-For`. Such a
   subnet no longer matches every IPv4 address.
+- A request with a compressed body followed by extra bytes could stop the server, with no authentication needed.
+  Such a request no longer does.
+- An unknown `MEET_BLOB_STORAGE_MODE` value, including `GCS` or `ABS` in capitals, made Meet use S3 storage. Values
+  now match in any case, and any other value stops startup naming the variable.
 - With `MEET_BLOB_STORAGE_MODE=abs`, recordings were written under `MEET_S3_SUBBUCKET` but read under
   `MEET_AZURE_SUBCONTAINER_NAME`, so they could not be played, downloaded or deleted when the two differed. They are
   now written under `MEET_AZURE_SUBCONTAINER_NAME`.
 - A `MEET_S3_SUBBUCKET` or `MEET_AZURE_SUBCONTAINER_NAME` that begins the recordings path, such as `rec` or
   `recordings`, made Meet look for recordings outside the prefix they were written under, so they could not be played,
   downloaded or deleted. They are now read under the prefix.
+- A `MEET_INITIAL_ADMIN_USER` or `MEET_INITIAL_ADMIN_PASSWORD` shorter than 5 characters created a root admin that
+  could never log in. Meet now refuses to start with such a value and names the variable.
 
 ## 3.9.0
 
@@ -281,8 +375,10 @@ registered on both receives it twice.
 - Unanswered webhooks caused active connections to grow continuously. Every webhook is answered.
 - The `openvidu/openvidu-meet` Docker image resolved its dependencies anew on every build instead of installing the versions in the lockfile. It now installs the locked versions.
 
+[3.10-create-user]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/createUser
 [3.10-participant-role-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantRoleChangedWebhook
 [3.10-participant-role-update]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantRoleUpdate
+[3.10-update-room-status]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/updateRoomStatus
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html
 [3.9-meetings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/meetingGet
 [3.9-webhooks-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/webhookList
@@ -291,6 +387,7 @@ registered on both receives it twice.
 [3.9-meeting-ended]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/webhooks/meetingEndedWebhook
 [3.9-participant-mute]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/participantMute
 [3.9-participant-mute-all]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/participantMuteAll
+[3.9-participant-kick]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/participantKick
 [3.9-download]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/downloadRecording
 [3.9-room-config]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/schemas/MeetRoomConfig
 [3.9-permissions]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/schemas/MeetPermissions

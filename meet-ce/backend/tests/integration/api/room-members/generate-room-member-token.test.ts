@@ -454,6 +454,18 @@ describe('Room Members API Tests', () => {
 			expect(claims.video?.canPublishData).toBe(false);
 		});
 
+		it('should deny LiveKit canPublishData to a moderator of a room with chat disabled', async () => {
+			const roomWithoutChat = await setupSingleRoom(false, 'NO_CHAT_ROOM', { chat: { enabled: false } });
+
+			const token = await generateRoomMemberToken(roomWithoutChat.room.roomId, {
+				secret: roomWithoutChat.moderatorSecret,
+				joinMeeting: true,
+				participantName: 'Moderator'
+			});
+			const claims = tokenService.getClaimsIgnoringExpiration(getRawToken(token));
+			expect(claims.video?.canPublishData).toBe(false);
+		});
+
 		it('should fail to generate token when room does not exist', async () => {
 			const response = await generateRoomMemberTokenRequest('non-existent-room-id', {
 				secret: roomData.moderatorSecret
@@ -660,7 +672,8 @@ describe('Room Members API Tests', () => {
 				permissions: roomRoles.moderator.permissions,
 				joinMeeting: true,
 				participantName: participantName + '_1', // Suffix is added to avoid conflict with the first participant
-				participantIdentityPrefix: 'alice_smith_unique_1'
+				// The identity is chosen before the name is reserved, so it derives from the name asked for
+				participantIdentityPrefix: 'alice_smith_unique'
 			});
 		});
 
@@ -758,6 +771,46 @@ describe('Room Members API Tests', () => {
 				participantName,
 				participantIdentityPrefix: 'participant'
 			});
+		});
+
+		it('should join an identified guest under their member name whatever participantName says', async () => {
+			const createResponse = await createRoomMember(roomId, {
+				name: 'Named Guest',
+				baseRole: MeetRoomMemberRole.SPEAKER
+			});
+
+			const token = await generateRoomMemberToken(roomId, {
+				secret: createResponse.body.memberId as string,
+				joinMeeting: true,
+				participantName: 'Bob'
+			});
+			expect(tokenService.getClaimsIgnoringExpiration(getRawToken(token)).name).toBe('Named Guest');
+		});
+
+		it('should join a signed-in user under their account name through an anonymous link', async () => {
+			const token = await generateRoomMemberToken(
+				roomId,
+				{ secret: roomData.speakerSecret, joinMeeting: true, participantName: 'Dave' },
+				testUsers.roomMember.accessToken
+			);
+			expect(tokenService.getClaimsIgnoringExpiration(getRawToken(token)).name).toBe(
+				testUsers.roomMember.user.name
+			);
+		});
+
+		it('should join an identified guest of an encrypted room under the participantName given', async () => {
+			const encryptedRoom = await setupSingleRoom(false, 'E2EE_ROOM', { e2ee: { enabled: true } });
+			const createResponse = await createRoomMember(encryptedRoom.room.roomId, {
+				name: 'Encrypted Guest',
+				baseRole: MeetRoomMemberRole.SPEAKER
+			});
+
+			const token = await generateRoomMemberToken(encryptedRoom.room.roomId, {
+				secret: createResponse.body.memberId as string,
+				joinMeeting: true,
+				participantName: 'encrypted-name'
+			});
+			expect(tokenService.getClaimsIgnoringExpiration(getRawToken(token)).name).toBe('encrypted-name');
 		});
 	});
 

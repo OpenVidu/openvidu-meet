@@ -115,14 +115,20 @@ export class LiveKitService {
 	 *
 	 * @param roomName - The name of the room to check
 	 * @returns A promise that resolves to true if the room has at least one participant,
-	 *          or false if the room has no participants or if an error occurs
+	 *          or false if the room has no participants or does not exist
+	 * @throws A 503 error if LiveKit cannot be reached
 	 */
 	async roomHasParticipants(roomName: string): Promise<boolean> {
 		try {
-			const participants = await this.listRoomParticipants(roomName);
+			const participants = await this.lk.room.listParticipants(roomName);
 			return participants.length > 0;
-		} catch {
-			return false;
+		} catch (error) {
+			if (this.isNotFoundError(error)) {
+				return false;
+			}
+
+			this.logger.error(`Error listing participants for room '${roomName}'`, error);
+			throw errorLivekitNotAvailable();
 		}
 	}
 
@@ -382,18 +388,15 @@ export class LiveKitService {
 	}
 
 	async sendData(roomName: string, rawData: object, options: SendDataOptions): Promise<void> {
-		// Check if the room exists before sending data
-		const roomExists = await this.roomExists(roomName);
-
-		if (!roomExists) {
-			this.logger.warn(`Skipping sending data because LiveKit room '${roomName}' does not exist`);
-			return;
-		}
-
 		try {
 			const data: Uint8Array = new TextEncoder().encode(JSON.stringify(rawData));
 			await this.lk.room.sendData(roomName, data, DataPacket_Kind.RELIABLE, options);
 		} catch (error) {
+			if (this.isNotFoundError(error)) {
+				this.logger.warn(`Skipping sending data because LiveKit room '${roomName}' does not exist`);
+				return;
+			}
+
 			this.logger.error(`Error sending data to LiveKit room '${roomName}'`, error);
 			throw internalError(`sending data to LiveKit room '${roomName}'`);
 		}

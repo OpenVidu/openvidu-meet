@@ -18,12 +18,6 @@ import { EmbeddedEventBusService } from './embedded-event-bus.service';
 import { IframeBridgeService } from './iframe-bridge.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 
-class LoggerServiceStub {
-	get() {
-		return { d: () => {}, w: () => {}, e: () => {} };
-	}
-}
-
 const PARENT_ORIGIN = 'https://host.example.com';
 const ROOM_ID = 'room1';
 const IDENTITY = 'participant-1';
@@ -39,9 +33,11 @@ describe('IframeBridgeService', () => {
 	let commandService: jasmine.SpyObj<EmbeddedCommandService>;
 	let isIframeMode: WritableSignal<boolean>;
 	let postMessageSpy: jasmine.Spy;
+	let logWarn: jasmine.Spy;
 
 	beforeEach(() => {
 		isIframeMode = signal(true);
+		logWarn = jasmine.createSpy('w');
 		// Only the canonical methods are stubbed: the bridge resolves the alias itself, so a
 		// deprecated command arriving over postMessage must still land on the canonical method.
 		commandService = jasmine.createSpyObj<EmbeddedCommandService>('EmbeddedCommandService', [
@@ -86,8 +82,7 @@ describe('IframeBridgeService', () => {
 				provideZonelessChangeDetection(),
 				IframeBridgeService,
 				EmbeddedEventBusService,
-				{ provide: LoggerService, useClass: LoggerServiceStub },
-				{ provide: EmbeddedCommandService, useValue: commandService },
+				{ provide: LoggerService, useValue: { get: () => ({ d: () => {}, w: logWarn, e: () => {} }) } },
 				{ provide: RuntimeConfigService, useValue: { isIframeMode } as unknown as RuntimeConfigService }
 			]
 		});
@@ -102,11 +97,17 @@ describe('IframeBridgeService', () => {
 	 * Start the bridge with a stubbed parent-origin resolution (the real one reads
 	 * `ancestorOrigins`/`referrer`, which the Karma top window does not provide).
 	 */
-	function startBridge(parentOrigin = PARENT_ORIGIN): void {
+	function startListening(parentOrigin = PARENT_ORIGIN): void {
 		spyOn(service as unknown as { resolveParentOrigin: () => string }, 'resolveParentOrigin').and.returnValue(
 			parentOrigin
 		);
 		service.initialize();
+	}
+
+	/** Start the bridge as a meeting page sees it: listening, with the command service attached. */
+	function startBridge(parentOrigin = PARENT_ORIGIN): void {
+		startListening(parentOrigin);
+		service.attachCommands(commandService);
 	}
 
 	describe('initialize()', () => {
@@ -149,6 +150,57 @@ describe('IframeBridgeService', () => {
 
 			const messageListenerCalls = addSpy.calls.allArgs().filter(([type]) => type === 'message');
 			expect(messageListenerCalls.length).toBe(1);
+		});
+	});
+
+	describe('before the meeting page attaches the command service', () => {
+		it('rejects a command with the phase warning and runs nothing', () => {
+			startListening();
+
+			postFromHost({ command: EmbeddedCommandName.MEDIA_TOGGLE_AUDIO, payload: { active: false } });
+
+			expect(logWarn).toHaveBeenCalledOnceWith(
+				`${EmbeddedCommandName.MEDIA_TOGGLE_AUDIO} rejected: not available in the current meeting phase`
+			);
+			expect(commandService.mediaToggleAudio).not.toHaveBeenCalled();
+		});
+
+		it('names the canonical command when the host posts a deprecated one', () => {
+			startListening();
+
+			postFromHost({ command: EmbeddedCommandName.LEAVE_ROOM });
+
+			expect(logWarn).toHaveBeenCalledOnceWith(
+				`${EmbeddedCommandName.MEETING_LEAVE} rejected: not available in the current meeting phase`
+			);
+		});
+
+		it('ignores an unknown command without a warning', () => {
+			startListening();
+
+			postFromHost({ command: 'meetingSelfDestruct' });
+
+			expect(logWarn).not.toHaveBeenCalled();
+		});
+
+		it('runs the commands posted once it is attached', () => {
+			startListening();
+			postFromHost({ command: EmbeddedCommandName.MEETING_LEAVE });
+
+			service.attachCommands(commandService);
+			postFromHost({ command: EmbeddedCommandName.MEETING_LEAVE });
+
+			expect(commandService.meetingLeave).toHaveBeenCalledTimes(1);
+		});
+
+		it('relays events, such as embeddedCloseRequested from an error screen', () => {
+			startListening();
+
+			eventBus.emit({ event: EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED });
+			TestBed.tick();
+
+			const relayed = postMessageSpy.calls.allArgs().map(([msg]) => msg.event);
+			expect(relayed).toEqual([EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED, EmbeddedEventName.CLOSED]);
 		});
 	});
 

@@ -42,12 +42,13 @@
 	}
 }
 
-.camera-off-caption {
+.preview-caption {
 	position: absolute;
 	z-index: 890;
 	left: 0;
 	right: 0;
 	bottom: 12px;
+	padding: 0 12px;
 	text-align: center;
 	font-size: 13px;
 	color: #ffffff;

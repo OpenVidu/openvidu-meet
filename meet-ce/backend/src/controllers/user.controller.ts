@@ -11,6 +11,7 @@ import {
 import { LoggerService } from '../services/logger.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { TokenService } from '../services/token.service.js';
+import { UserTokenRevocationService } from '../services/user-token-revocation.service.js';
 import { UserService } from '../services/user.service.js';
 import { getBaseUrl } from '../utils/url.utils.js';
 
@@ -127,24 +128,17 @@ export const changePassword = async (req: Request, res: Response) => {
 		const userService = container.get(UserService);
 		await userService.changePassword(user.userId, currentPassword, newPassword);
 
+		await container.get(UserTokenRevocationService).revokeIssuedTokens(user.userId);
+
 		const message = `Password for user '${user.userId}' changed successfully`;
 		logger.info(message);
 
-		// Generate new tokens if the user had to change password
-		if (user.mustChangePassword) {
-			logger.verbose(`Generating new tokens for user '${user.userId}' after password change`);
-			const tokenService = container.get(TokenService);
-			const accessToken = await tokenService.generateAccessToken(user);
-			const refreshToken = await tokenService.generateRefreshToken(user);
+		const tokenService = container.get(TokenService);
+		const sid = tokenService.createSessionId();
+		const accessToken = await tokenService.generateAccessToken(user, sid);
+		const refreshToken = await tokenService.generateRefreshToken(user, sid);
 
-			return res.status(200).json({
-				message,
-				accessToken,
-				refreshToken
-			});
-		}
-
-		return res.status(200).json({ message });
+		return res.status(200).json({ message, accessToken, refreshToken });
 	} catch (error) {
 		handleError(res, error, 'changing password');
 	}

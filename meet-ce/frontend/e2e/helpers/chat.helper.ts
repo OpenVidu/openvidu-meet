@@ -47,6 +47,10 @@ export const expectChatMessageNotification = async (page: Page): Promise<void> =
 	await expect(page.locator(CHAT_NOTIFICATION)).toBeVisible({ timeout: 10_000 });
 };
 
+export const expectNoChatMessageNotification = async (page: Page): Promise<void> => {
+	await expect(page.locator(CHAT_NOTIFICATION)).toHaveCount(0);
+};
+
 /** Opens the chat from the notification's own action, the way a participant does. */
 export const openChatFromNotification = async (page: Page): Promise<void> => {
 	await page.locator(`${CHAT_NOTIFICATION} .notification-action`).click();
@@ -123,3 +127,43 @@ export const expectChatWriteDisabled = async (page: Page): Promise<void> => {
 	await expect(page.locator('#chat-input')).toHaveCount(0);
 	await expect(page.locator('#send-btn')).toHaveCount(0);
 };
+
+/**
+ * Records, from before the page loads, the text of every data channel message the page receives, as a
+ * client that bypasses the meeting interface would read it.
+ */
+export const recordDataChannelMessages = async (page: Page): Promise<void> => {
+	await page.addInitScript(() => {
+		const received: string[] = [];
+		(window as unknown as { __dataChannelText: string[] }).__dataChannelText = received;
+
+		const record = (channel: RTCDataChannel) =>
+			channel.addEventListener('message', ({ data }: MessageEvent) => {
+				if (data instanceof Blob) {
+					void data.text().then((text) => received.push(text));
+				} else {
+					received.push(typeof data === 'string' ? data : new TextDecoder().decode(data));
+				}
+			});
+
+		const NativePeerConnection = window.RTCPeerConnection;
+		window.RTCPeerConnection = class extends NativePeerConnection {
+			constructor(configuration?: RTCConfiguration) {
+				super(configuration);
+				this.addEventListener('datachannel', ({ channel }) => record(channel));
+			}
+
+			override createDataChannel(label: string, options?: RTCDataChannelInit): RTCDataChannel {
+				const channel = super.createDataChannel(label, options);
+				record(channel);
+				return channel;
+			}
+		};
+	});
+};
+
+/**
+ * The data channel messages {@link recordDataChannelMessages} recorded, joined.
+ */
+export const receivedDataChannelText = (page: Page): Promise<string> =>
+	page.evaluate(() => (window as unknown as { __dataChannelText: string[] }).__dataChannelText.join('\n'));

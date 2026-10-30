@@ -40,9 +40,10 @@ export enum EmbeddedAttribute {
 	 */
 	INITIAL_VIDEO_ACTIVE = 'initial-video-active',
 	/**
-	 * Language the interface starts in: `en`, `es`, `de`, `fr`, `zh` (Simplified), `hi`, `it`, `ja`,
-	 * `nl` or `pt` (European). A regional variant uses its language (`pt-BR` is `pt`). `auto` uses the
-	 * browser's preferred languages, and English when none is available.
+	 * Language the interface starts in, on the meeting and recording screens alike: `en`, `es`, `de`,
+	 * `fr`, `zh` (Simplified), `hi`, `it`, `ja`, `nl` or `pt` (European). A regional variant uses its
+	 * language (`pt-BR` is `pt`). `auto` uses the browser's preferred languages, and English when none
+	 * is available.
 	 *
 	 * It **overrides the participant's previous choice**, which they can still change unless
 	 * `show-language-selector` is `false`. An unsupported value is ignored.
@@ -94,7 +95,7 @@ export interface WebComponentPropertyValues {
 	initialAudioActive?: boolean;
 	/** Initial camera state (they may activate it later). Set: wins over `config.initialVideoActive`; omitted: the room decides. */
 	initialVideoActive?: boolean;
-	/** Language the interface starts in: `en`, `es`, `de`, `fr`, `zh`, `hi`, `it`, `ja`, `nl` or `pt`, regional variants included (`pt-BR` is `pt`), or `auto` for the browser's language. Wins over the participant's previous choice without replacing it. */
+	/** Language the interface starts in, meeting and recording screens alike: `en`, `es`, `de`, `fr`, `zh`, `hi`, `it`, `ja`, `nl` or `pt`, regional variants included (`pt-BR` is `pt`), or `auto` for the browser's language. Wins over the participant's previous choice without replacing it. */
 	language?: string;
 	/** Show the language selectors (default `true`); `false` hides them so the participant cannot change the language. */
 	showLanguageSelector?: boolean;

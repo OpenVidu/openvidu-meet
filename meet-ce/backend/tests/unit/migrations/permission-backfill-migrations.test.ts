@@ -26,7 +26,7 @@ const roomV3ToV4 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollec
 const roomV4ToV5 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 4, 5))!;
 const roomV5ToV6 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 5, 6))!;
 const roomV6ToV7 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 6, 7))!;
-const roomV7ToV8 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 7, 8))!;
+const roomV8ToV9 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 8, 9))!;
 const roomMemberV1ToV2 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 1, 2))!;
 const roomMemberV2ToV3 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 2, 3))!;
 const roomMemberV3ToV4 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 3, 4))!;
@@ -140,8 +140,8 @@ describe('Room migration v6 → v7', () => {
 	});
 });
 
-describe('Room migration v7 → v8', () => {
-	const v7Permissions = () => {
+describe('Room migration v8 → v9', () => {
+	const v8Permissions = () => {
 		const permissions: Record<string, boolean> = Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true]));
 		delete permissions.broadcastControl;
 		delete permissions.broadcastEdit;
@@ -151,8 +151,8 @@ describe('Room migration v7 → v8', () => {
 	};
 
 	it('should complete the role permissions with the broadcast keys, denied', () => {
-		const migrated = roomV7ToV8({
-			...roomDocument(v7Permissions(), v7Permissions()),
+		const migrated = roomV8ToV9({
+			...roomDocument(v8Permissions(), v8Permissions()),
 			config: { recording: { enabled: true } }
 		} as unknown as MeetRoomDocument);
 
@@ -164,8 +164,8 @@ describe('Room migration v7 → v8', () => {
 	});
 
 	it('should give the room a disabled broadcast config in the grid layout with no destinations, and no destination URLs', () => {
-		const migrated = roomV7ToV8({
-			...roomDocument(v7Permissions(), v7Permissions()),
+		const migrated = roomV8ToV9({
+			...roomDocument(v8Permissions(), v8Permissions()),
 			config: { recording: { enabled: true } }
 		} as unknown as MeetRoomDocument);
 

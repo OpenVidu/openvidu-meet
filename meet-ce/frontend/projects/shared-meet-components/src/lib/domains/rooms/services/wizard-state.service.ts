@@ -139,8 +139,6 @@ export class RoomWizardStateService {
 	private _editMode = signal<boolean>(false);
 	private _roomOptions = signal<MeetRoomOptions>(deepMerge({}, DEFAULT_ROOM_OPTIONS));
 	private _pendingMembers = signal<MeetRoomMemberOptions[]>([]);
-	// What a feature was set to before E2EE turned it off, and what E2EE was before a feature turned
-	// it off, so undoing the toggle gives the user back what they had chosen.
 	// Which excluded features E2EE turned off, and which features turned E2EE off, to put them back.
 	private readonly featuresOnBeforeE2EE = new Set<E2EEExclusiveFeature>();
 	private readonly e2eeOnBeforeFeature = new Set<E2EEExclusiveFeature>();
@@ -571,6 +569,8 @@ export class RoomWizardStateService {
 				return this.getStepById(WizardStepId.RECORDING)?.formGroup.controls.recordingEnabled;
 			case 'broadcast':
 				return this.getStepById(WizardStepId.BROADCAST)?.formGroup.controls.broadcastEnabled;
+			case 'captions':
+				return this.getStepById(WizardStepId.MEETING)?.formGroup.controls.captionsEnabled;
 		}
 	}
 

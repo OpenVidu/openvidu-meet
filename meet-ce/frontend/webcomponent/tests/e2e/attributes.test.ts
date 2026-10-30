@@ -9,12 +9,15 @@ import {
 } from '../helpers/media-controls.helper';
 import { openMoreOptionsMenu } from '../helpers/panels.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
-import { endMeetingCommand, leaveMeeting, openMeeting, openMeetingAtMediaSetup } from '../helpers/testapp.helper';
 import {
-	openWebcomponentWithAttributes,
-	type WebComponentAttributes
-} from '../helpers/webcomponent-attributes.helper';
-import { waitForPageRedirect, wcHost, wcLocator } from '../helpers/webcomponent.helper';
+	endMeetingCommand,
+	ensureFixture,
+	leaveMeeting,
+	openMeeting,
+	openMeetingAtMediaSetup
+} from '../helpers/testapp.helper';
+import { openWebcomponentWithAttributes, type WebComponentAttributes } from '../helpers/webcomponent-attributes.helper';
+import { meetLocator, waitForPageRedirect, wcHost, wcLocator } from '../helpers/webcomponent.helper';
 
 // ─── WebComponent attribute coverage ────────────────────────────────────────
 //
@@ -25,6 +28,12 @@ import { waitForPageRedirect, wcHost, wcLocator } from '../helpers/webcomponent.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const REDIRECT_TARGET_URL = 'https://openvidu.io';
+
+/** Stores a language preference on the host origin, as picking it in a language selector does. */
+const storeLanguagePreference = async (page: Page, lang: string): Promise<void> => {
+	await ensureFixture(page);
+	await page.evaluate((item) => localStorage.setItem('ovMeet-lang', JSON.stringify({ item })), lang);
+};
 
 test.describe('WebComponent Attributes E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -222,7 +231,9 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await expectPrejoinCameraEnabled(page, 'iframe', true, { timeout: 10_000 });
 			});
 
-			test('should apply the room default on the iframe transport when neither param is set', async ({ page }) => {
+			test('should apply the room default on the iframe transport when neither param is set', async ({
+				page
+			}) => {
 				await openMeetingAtMediaSetup(page, mediaDisabledByRoomId, {
 					integration: 'iframe',
 					role: 'moderator'
@@ -547,6 +558,25 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await expect(wcLocator(page, '#participant-name-input')).toHaveCount(0);
 			});
 
+			for (const [value, query] of [
+				['no value', 'show-only-recordings'],
+				['the value 1', 'show-only-recordings=1']
+			]) {
+				test(`should show the room recordings in an iframe whose URL carries show-only-recordings with ${value}`, async ({
+					page
+				}) => {
+					await openWebcomponentWithAttributes(
+						page,
+						{ [EmbeddedAttribute.ROOM_URL]: `${accessUrl}&${query}` },
+						{ integration: 'iframe' }
+					);
+					const meet = (selector: string) => meetLocator(page, 'iframe', selector);
+
+					await expect(meet('ov-recording-lists, .recordings-list')).toBeVisible({ timeout: 15_000 });
+					await expect(meet('#participant-name-input')).toHaveCount(0);
+				});
+			}
+
 			test('should redirect to the specified recording when show-recording is set', async ({ page }) => {
 				await openWebcomponentWithAttributes(page, {
 					[EmbeddedAttribute.ROOM_URL]: accessUrl,
@@ -555,6 +585,47 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 
 				await expect(wcLocator(page, '.recording-page-content')).toBeVisible({ timeout: 15_000 });
 				await expect(wcLocator(page, '#participant-name-input')).toHaveCount(0);
+			});
+
+			// The iframe's own navigations carry no language, so they keep the one the iframe was opened with.
+			test('should keep the requested language from the recordings back to the room in an iframe', async ({
+				page
+			}) => {
+				await openWebcomponentWithAttributes(
+					page,
+					{
+						[EmbeddedAttribute.ROOM_URL]: accessUrl,
+						[EmbeddedAttribute.LANGUAGE]: 'es',
+						[EmbeddedAttribute.SHOW_ONLY_RECORDINGS]: 'true'
+					},
+					{ integration: 'iframe' }
+				);
+				const meet = (selector: string) => meetLocator(page, 'iframe', selector);
+
+				await meet('.recordings-page-header .quick-action-button').click();
+
+				await expect(meet('#participant-name-submit')).toHaveText('Unirse a la reunión', { timeout: 15_000 });
+			});
+
+			test('should show the room recordings in the stored language once language is removed', async ({
+				page
+			}) => {
+				await storeLanguagePreference(page, 'de');
+				await openWebcomponentWithAttributes(page, {
+					[EmbeddedAttribute.ROOM_URL]: accessUrl,
+					[EmbeddedAttribute.LANGUAGE]: 'es'
+				});
+				await expect(wcLocator(page, '#participant-name-input')).toBeVisible({ timeout: 15_000 });
+
+				// The testapp sets `language` as a property, so the host drops it the same way.
+				await wcHost(page).evaluate((el, showOnlyRecordings) => {
+					(el as HTMLElement & { language?: string }).language = undefined;
+					el.setAttribute(showOnlyRecordings, '');
+				}, EmbeddedAttribute.SHOW_ONLY_RECORDINGS);
+
+				await expect(wcLocator(page, '.recordings-page-header')).toContainText('Zurück zum Raum', {
+					timeout: 15_000
+				});
 			});
 		});
 	});
@@ -592,6 +663,31 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 			});
 
 			await expect(wcLocator(page, '.recording-page-content')).toBeVisible({ timeout: 15_000 });
+		});
+
+		test('should show the recording in the requested language', async ({ page }) => {
+			await storeLanguagePreference(page, 'de');
+			await openWebcomponentWithAttributes(page, {
+				[EmbeddedAttribute.RECORDING_URL]: await getRecordingUrl(recordingId),
+				[EmbeddedAttribute.LANGUAGE]: 'fr'
+			});
+
+			await expect(wcLocator(page, '.recording-page-content')).toContainText('Télécharger', { timeout: 15_000 });
+		});
+
+		test('should show the recording in the requested language on the iframe transport', async ({ page }) => {
+			await openWebcomponentWithAttributes(
+				page,
+				{
+					[EmbeddedAttribute.RECORDING_URL]: await getRecordingUrl(recordingId),
+					[EmbeddedAttribute.LANGUAGE]: 'ja'
+				},
+				{ integration: 'iframe' }
+			);
+
+			await expect(meetLocator(page, 'iframe', '.recording-page-content')).toContainText('ダウンロード', {
+				timeout: 15_000
+			});
 		});
 	});
 

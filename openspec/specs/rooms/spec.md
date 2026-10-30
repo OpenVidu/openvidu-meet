@@ -200,7 +200,7 @@ A room's `status` SHALL be `active_meeting` while a meeting runs in it (see `mee
 - **THEN** the room, its members and its recordings are deleted and `getRoom` answers `404`
 
 ### Requirement: Opening and closing a room
-On `updateRoomStatus` the server SHALL set a room without an active meeting to `open` or `closed` and answer `200`. Closing a room whose meeting is active SHALL answer `202` with the room still `active_meeting` and `meetingEndAction` `close`, leave the meeting running and close the room when it ends. Any other status SHALL get `422`. A closed room SHALL accept no new meeting (see `meeting-join` and `meetings`) and keep its recordings and members.
+On `updateRoomStatus` the server SHALL set a room without an active meeting to `open` or `closed` and answer `200`. While a meeting is active the room SHALL stay `active_meeting`: `closed` answers `202` and schedules `meetingEndAction` `close`, keeping a scheduled `delete`; `open` cancels a scheduled `close` and answers `200`, or `409` when `delete` is scheduled. Any other status SHALL get `422`. A closed room SHALL accept no new meeting (see `meeting-join`) and keep its recordings and members.
 
 #### Scenario: Close an idle room
 - **GIVEN** an open room without an active meeting
@@ -223,6 +223,29 @@ On `updateRoomStatus` the server SHALL set a room without an active meeting to `
 - **WHEN** its owner calls `updateRoomStatus` with `closed`
 - **THEN** the server answers `202` with `status` `active_meeting` and `meetingEndAction` `close`
 - **AND** once the meeting ends the room is `closed` with `meetingEndAction` `none`
+
+#### Scenario: Reopen during the meeting cancels the scheduled close
+- **GIVEN** a room with an active meeting and `meetingEndAction` `close`
+- **WHEN** its owner calls `updateRoomStatus` with `open`
+- **THEN** the server answers `200` with `status` `active_meeting` and `meetingEndAction` `none`
+- **AND** once the meeting ends the room is `open`
+- **AND** no second `meetingStarted` webhook is sent for the meeting
+
+#### Scenario: Closing keeps a scheduled deletion
+- **GIVEN** a room with an active meeting that `deleteRoom` with `withMeeting=when_meeting_ends` scheduled for deletion
+- **WHEN** its owner calls `updateRoomStatus` with `closed`
+- **THEN** the server answers `202` with `meetingEndAction` `delete`
+- **AND** the room is deleted when the meeting ends
+
+#### Scenario: Reopening a room scheduled for deletion
+- **GIVEN** a room with an active meeting and `meetingEndAction` `delete`
+- **WHEN** its owner calls `updateRoomStatus` with `open`
+- **THEN** the server answers `409` and the room keeps `status` `active_meeting` and `meetingEndAction` `delete`
+
+#### Scenario: Meeting ends on another replica while the room is closed
+- **GIVEN** two Meet replicas sharing MongoDB and a room with an active meeting
+- **WHEN** replica A handles `updateRoomStatus` with `closed` while replica B handles the end of that meeting
+- **THEN** the room ends up `closed` with `meetingEndAction` `none`, never `open` with a pending `close`
 
 ### Requirement: Room management authorization
 The server SHALL allow `updateRoomStatus`, `deleteRoom`, `updateRoomConfig`, `updateRoomRoles` and `updateRoomAccess` only to an API key, to a user with the `admin` role, and to the room's owner, and SHALL answer `403` to any other user. A room member token SHALL never authorize them, whatever permissions it carries. Who may manage room members is specified in `room-members`.
@@ -488,12 +511,17 @@ The wizard SHALL block finishing while the participant limit is outside 1 to 30,
 - **THEN** the field shows an error with the accepted range and the finish button is disabled
 
 ### Requirement: Wizard dependent settings
-The wizard SHALL keep end-to-end encryption and recording mutually exclusive, restoring the previous state of the other when one is turned off again, and SHALL disable the `mediaChangeVirtualBackground` role switches while virtual backgrounds are off, restoring them as left when virtual backgrounds are turned back on. The chat role switches are specified in `meeting-chat`.
+The wizard SHALL keep end-to-end encryption mutually exclusive with recording and with live captions, warning while encryption is on that both are unavailable, restoring the previous state of each when encryption is turned off again, and SHALL disable the `mediaChangeVirtualBackground` role switches while virtual backgrounds are off, restoring them as left when virtual backgrounds are turned back on. The chat role switches are specified in `meeting-chat`.
 
 #### Scenario: Enabling end-to-end encryption
 - **GIVEN** the wizard with recording allowed
 - **WHEN** the user turns end-to-end encryption on and later off again
 - **THEN** recording is turned off while encryption is on and allowed again afterwards
+
+#### Scenario: Enabling end-to-end encryption with live captions on
+- **GIVEN** the wizard with live captions turned on
+- **WHEN** the user turns end-to-end encryption on and later off again
+- **THEN** live captions are turned off and cannot be turned on while encryption is on, a warning says they are unavailable while encryption is enabled, and they are on again afterwards
 
 #### Scenario: Virtual backgrounds turned off
 - **GIVEN** the wizard with virtual backgrounds turned off in the Meeting step

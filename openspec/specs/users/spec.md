@@ -143,13 +143,26 @@ The server SHALL return the account of the caller from `getMe` for a user of any
 - **THEN** the server answers `401`
 
 ### Requirement: Change own password
-The server SHALL let any logged-in user replace their password through `changeUserPassword` by giving the current one, answer `400` when the current password is wrong and `422` when the new one is shorter than 5 characters, and accept only the new password at later logins.
+The server SHALL let any logged-in user replace their password through `changeUserPassword` by giving the current one, answer `400` when the current password is wrong and `422` when the new one is shorter than 5 characters, and accept only the new password at later logins. A successful change SHALL answer `200` with a new `accessToken` and `refreshToken` and SHALL reject, on every replica, every access token and refresh token issued to the user before it.
 
 #### Scenario: Password changed
 - **GIVEN** a logged-in user without a pending password change
 - **WHEN** they call `changeUserPassword` with their current password and a new valid one
-- **THEN** the server answers `200` without new tokens
+- **THEN** the server answers `200` with an `accessToken` and a `refreshToken`
 - **AND** logging in with the old password fails and with the new one succeeds
+
+#### Scenario: Other sessions signed out
+- **GIVEN** a user logged in from two browsers
+- **WHEN** they change their password from the first one
+- **THEN** the second browser's access token answers `401` with message `Invalid token`
+- **AND** its refresh token answers `400` with message `Invalid refresh token`
+- **AND** the tokens the change returned are accepted
+
+#### Scenario: Change on another replica
+- **GIVEN** two Meet replicas and a user logged in from two browsers
+- **WHEN** the user changes their password through the first replica
+- **AND** the second browser presents its earlier access token to the second replica
+- **THEN** the second replica answers `401` with message `Invalid token`
 
 #### Scenario: Wrong current password
 - **WHEN** a user calls `changeUserPassword` with a wrong current password
@@ -331,6 +344,12 @@ The console SHALL offer a Users page only to `admin` users, listing accounts wit
 - **WHEN** the list shows the root admin and their own account
 - **THEN** neither row can be selected nor offers role change, password reset or delete
 
+#### Scenario: Root admin registered after other users
+- **GIVEN** a deployment that restarted with `MEET_INITIAL_ADMIN_USER` changed from `admin` to `root_admin`
+- **WHEN** another administrator opens the Users page
+- **THEN** the `root_admin` row is marked as the root admin and protected
+- **AND** the `admin` row can be selected and offers role change, password reset and delete
+
 ### Requirement: Console user actions
 The console SHALL let an administrator create a user (role `room_manager` preselected, with a generator and a copy button for the temporary password), change a user's role in a dialog warning that a change to `room_member` hands owned rooms to the root admin and a change to `admin` removes room memberships, reset a password with a generated temporary one, and delete one or several users after a confirmation.
 
@@ -361,3 +380,36 @@ The console SHALL send a user with a pending password change, after login, to a 
 - **WHEN** they log in to the console with the temporary password
 - **THEN** the console shows the password change page
 - **AND** after a successful change it opens the page they originally requested
+
+### Requirement: Root admin configuration validated at startup
+Meet SHALL refuse to start, logging which variable is wrong and exiting with a non-zero status, when `MEET_INITIAL_ADMIN_USER` is shorter than 5 characters, or when no account has that `userId` yet and `MEET_INITIAL_ADMIN_PASSWORD` is shorter than 5 characters. A `MEET_INITIAL_ADMIN_PASSWORD` of any length is accepted when the root admin account already exists.
+
+#### Scenario: Short root admin user ID
+- **GIVEN** `MEET_INITIAL_ADMIN_USER` set to `root`
+- **WHEN** Meet starts
+- **THEN** it logs that `MEET_INITIAL_ADMIN_USER` must be at least 5 characters long and exits with a non-zero status
+
+#### Scenario: Short password on the first start
+- **GIVEN** an empty database and `MEET_INITIAL_ADMIN_PASSWORD` set to `1234`
+- **WHEN** Meet starts
+- **THEN** it logs that `MEET_INITIAL_ADMIN_PASSWORD` must be at least 5 characters long and exits with a non-zero status
+- **AND** no root admin account is created
+
+#### Scenario: Short password with an existing root admin
+- **GIVEN** a deployment whose root admin account exists
+- **WHEN** Meet restarts with `MEET_INITIAL_ADMIN_PASSWORD` set to `1234`
+- **THEN** Meet starts and the root admin keeps its password
+
+### Requirement: Root admin identified in user responses
+The server SHALL include `isRootAdmin` in every user returned by `createUser`, `getUsers`, `getUser`, `updateUserRole` and `getMe`, `true` for the account whose `userId` equals `MEET_INITIAL_ADMIN_USER` and `false` for every other account.
+
+#### Scenario: Reading the root admin
+- **GIVEN** default configuration
+- **WHEN** an administrator calls `getUser` for `admin`
+- **THEN** the response carries `isRootAdmin` `true`
+
+#### Scenario: Root admin user ID changed
+- **GIVEN** a deployment whose root admin was `admin` and that restarted with `MEET_INITIAL_ADMIN_USER` set to `root_admin`
+- **WHEN** an administrator calls `getUsers`
+- **THEN** `root_admin` carries `isRootAdmin` `true`
+- **AND** `admin` carries `isRootAdmin` `false`

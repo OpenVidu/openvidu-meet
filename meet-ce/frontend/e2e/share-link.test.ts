@@ -104,6 +104,26 @@ test.describe('Share Link E2E Tests', () => {
 			await expectHidden(page, '#invite-panel');
 		});
 
+		test('should offer nothing to share when the room has its anonymous speaker access disabled', async ({
+			page
+		}) => {
+			const room = await createRoom({ access: { anonymous: { speaker: { enabled: false } } } });
+			roomId = room.roomId;
+			createdRoomIds.push(roomId);
+			const accessUrl = await createMemberAccessUrl(true);
+
+			await openLobby(page, accessUrl);
+			await expectHidden(page, 'ov-share-room-access-link');
+
+			await openMeeting(page, accessUrl);
+			await expectVisible(page, '#waiting-overlay');
+			await expectHidden(page, '#share-link-overlay');
+			await expectHidden(page, '#copy-speaker-link');
+
+			await toggleParticipantsPanel(page);
+			await expectHidden(page, '#invite-panel');
+		});
+
 		test('should hide the layout overlay when another participant joins the meeting', async ({ page, browser }) => {
 			const moderatorAccessUrl = await createMemberAccessUrl(true);
 			const speaker = await createRoomMember(roomId, {

@@ -86,7 +86,9 @@ MeetChatConfig:
             type: boolean
             default: true
             example: true
-            description: If true, the room will be allowed to send and receive chat messages.
+            description: |
+                If true, the room's meetings offer a chat. If false, the meeting shows no chat and the media server
+                refuses chat messages from every participant, whatever their `chatRead` and `chatWrite` permissions.
 MeetRecordingConfig:
     type: object
     required:
@@ -241,7 +243,7 @@ MeetE2EEConfig:
             description: >
                 If true, the room will have End-to-End Encryption (E2EE) enabled.<br/>
                 This ensures that the media streams are encrypted from the sender to the receiver, providing enhanced privacy and security for the participants.<br/>
-                **Enabling E2EE will disable the recording and live broadcast features for the room**.
+                **Enabling E2EE will disable the recording, live broadcast and live captions features for the room**.
 MeetCaptionsConfig:
     type: object
     required:
@@ -254,6 +256,7 @@ MeetCaptionsConfig:
             description: >
                 If true, the room will have live captions enabled.<br/>
                 This allows participants to see real-time captions of the all participants' speech during the meeting.<br/>
+                **Live captions are stored as disabled while E2EE is enabled**: the captions assistant only receives encrypted audio.
 MeetReactionsConfig:
     type: object
     required:

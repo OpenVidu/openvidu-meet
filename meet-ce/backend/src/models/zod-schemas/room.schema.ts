@@ -39,7 +39,6 @@ import { BroadcastConfigSchema } from './broadcast.schema.js';
 import { encodingValidator } from './recording-encoding.schema.js';
 import { PartialMeetPermissionsSchema } from './room-member.schema.js';
 
-// Encoding options validation - both video and audio are required with all their fields
 /**
  * Meeting limits (`maxParticipants`, `maxDurationMinutes`): `null` is the explicit "no limit"
  * value, so it is stored as such. Config updates deep-merge with the stored config, which makes
@@ -154,21 +153,7 @@ const UpdateRoomConfigSchema: z.ZodType<MeetRoomConfigOptions> = z
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data: MeetRoomConfigOptions) => {
-		// Automatically disable recording and broadcast when E2EE is enabled
-		if (data.e2ee?.enabled && data.recording?.enabled) {
-			data.recording = {
-				...data.recording,
-				enabled: false
-			};
-		}
-
-		if (data.e2ee?.enabled && data.broadcast?.enabled) {
-			data.broadcast = {
-				...data.broadcast,
-				enabled: false
-			};
-		}
-
+		MeetRoomHelper.disableFeaturesExcludedByE2EE(data);
 		return data;
 	});
 
@@ -220,21 +205,7 @@ const CreateRoomConfigSchema: z.ZodType<MeetRoomConfigOptions> = z
 		data.broadcast.layout ??= MeetRecordingLayout.GRID;
 		data.broadcast.encoding ??= MeetRecordingEncodingPreset.H264_720P_30;
 
-		// Automatically disable recording and broadcast when E2EE is enabled
-		if (data.e2ee.enabled && data.recording.enabled) {
-			data.recording = {
-				...data.recording,
-				enabled: false
-			};
-		}
-
-		if (data.e2ee.enabled && data.broadcast.enabled) {
-			data.broadcast = {
-				...data.broadcast,
-				enabled: false
-			};
-		}
-
+		MeetRoomHelper.disableFeaturesExcludedByE2EE(data);
 		return data;
 	});
 

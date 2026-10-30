@@ -8,6 +8,10 @@ export interface TokenMetadata {
 	iat: number;
 	/** Type of the token */
 	tokenType: TokenType;
+	/** Login session the token belongs to, shared by every token obtained from one login or password change */
+	sid?: string;
+	/** Identifier of a refresh token, so that it can be exchanged only once */
+	rid?: string;
 }
 
 /**

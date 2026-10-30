@@ -1,4 +1,4 @@
-import type { MeetUserRole } from '@openvidu-meet/typings';
+import type { MeetRoomMemberTokenMetadata, MeetUserRole } from '@openvidu-meet/typings';
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
@@ -13,6 +13,7 @@ import {
 	errorUnauthorized,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
+import type { TokenMetadata } from '../models/token.model.js';
 import { TokenType } from '../models/token.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
@@ -21,6 +22,7 @@ import { LoggerService } from '../services/logger.service.js';
 import { ParticipantTokenRevocationService } from '../services/participant-token-revocation.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { TokenService } from '../services/token.service.js';
+import { UserTokenRevocationService } from '../services/user-token-revocation.service.js';
 import { UserService } from '../services/user.service.js';
 import { getAccessToken, getRoomMemberToken } from '../utils/token.utils.js';
 
@@ -93,13 +95,7 @@ export const withAuth = (...validators: AuthValidator[]): RequestHandler => {
 	};
 };
 
-/**
- * Access token validator for user access.
- * Validates access tokens and user roles, and sets the authenticated user in the session.
- *
- * @param roles One or more roles that are allowed to access the resource
- */
-export const accessTokenValidator = (...roles: MeetUserRole[]): AuthValidator => {
+const createAccessTokenValidator = (roles: MeetUserRole[], admitsPendingPasswordChange: boolean): AuthValidator => {
 	return {
 		getPriority(): number {
 			return 2;
@@ -118,8 +114,7 @@ export const accessTokenValidator = (...roles: MeetUserRole[]): AuthValidator =>
 			}
 
 			let userId: string | undefined;
-			let tokenType: TokenType;
-			let issuedAt: number;
+			let metadata: TokenMetadata;
 
 			try {
 				// Verify the token and extract the user ID and token metadata
@@ -131,12 +126,10 @@ export const accessTokenValidator = (...roles: MeetUserRole[]): AuthValidator =>
 				}
 
 				// Validate that this is an access or temporary token, not a refresh token
-				const parsedMetadata = tokenService.parseTokenMetadata(tokenMetadata);
+				metadata = tokenService.parseTokenMetadata(tokenMetadata);
 				userId = sub;
-				tokenType = parsedMetadata.tokenType;
-				issuedAt = parsedMetadata.iat;
 
-				if (tokenType === TokenType.REFRESH) {
+				if (metadata.tokenType === TokenType.REFRESH) {
 					throw new Error('Invalid token type for access');
 				}
 			} catch (error) {
@@ -152,20 +145,15 @@ export const accessTokenValidator = (...roles: MeetUserRole[]): AuthValidator =>
 				throw errorInvalidTokenSubject();
 			}
 
-			// Invalidate access tokens issued before the user's latest role change
-			if (issuedAt < user.roleUpdatedAt) {
+			if (metadata.iat < user.roleUpdatedAt || (await isRevokedUserToken(user.userId, metadata))) {
 				throw errorInvalidToken();
 			}
 
-			// Restrict access if password change is required or if token is temporary
-			if (user.mustChangePassword || tokenType === TokenType.TEMPORARY) {
-				// Allow only change-password and me endpoints
-				const requestPath = req.path;
-				const allowedPaths = ['/change-password', '/me'];
-
-				if (!allowedPaths.includes(requestPath)) {
-					throw errorPasswordChangeRequired();
-				}
+			if (
+				!admitsPendingPasswordChange &&
+				(user.mustChangePassword || metadata.tokenType === TokenType.TEMPORARY)
+			) {
+				throw errorPasswordChangeRequired();
 			}
 
 			// Check if user has one of the required roles
@@ -178,6 +166,25 @@ export const accessTokenValidator = (...roles: MeetUserRole[]): AuthValidator =>
 		}
 	};
 };
+
+/**
+ * Access token validator for user access.
+ * Validates access tokens and user roles, and sets the authenticated user in the session.
+ * A user with a pending password change, or a temporary token, is refused.
+ *
+ * @param roles One or more roles that are allowed to access the resource
+ */
+export const accessTokenValidator = (...roles: MeetUserRole[]): AuthValidator =>
+	createAccessTokenValidator(roles, false);
+
+/**
+ * Access token validator for the endpoints that complete a pending password change.
+ * Same as {@link accessTokenValidator}, but also admits a user with a pending password change and a temporary token.
+ *
+ * @param roles One or more roles that are allowed to access the resource
+ */
+export const pendingPasswordChangeTokenValidator = (...roles: MeetUserRole[]): AuthValidator =>
+	createAccessTokenValidator(roles, true);
 
 /**
  * Room member token validator for room access.
@@ -200,68 +207,72 @@ export const roomMemberTokenValidator: AuthValidator = {
 			throw errorUnauthorized();
 		}
 
-		const requestSessionService = container.get(RequestSessionService);
-
-		try {
-			// Verify the token and extract the room member token metadata
-			const tokenService = container.get(TokenService);
-			const { sub: participantIdentity, metadata: tokenMetadata } = await tokenService.verifyToken(token);
-
-			if (!tokenMetadata) {
-				throw new Error('Missing required token claims');
-			}
-
-			// Validate the room member token metadata
-			const parsedMetadata = tokenService.parseRoomMemberTokenMetadata(tokenMetadata);
-			const { iat, roomId, memberId, userId } = parsedMetadata;
-
-			const roomRepository = container.get(RoomRepository);
-			const room = await roomRepository.findByRoomId(roomId, ['rolesUpdatedAt']);
-
-			// Always validate room role/access updates for any room member token
-			if (!room || iat < room.rolesUpdatedAt) {
-				throw new Error('Token has outdated permissions');
-			}
-
-			const tokenRevocationService = container.get(ParticipantTokenRevocationService);
-
-			if (participantIdentity && (await tokenRevocationService.isRevoked(roomId, participantIdentity, iat))) {
-				throw new Error('Token was issued before the participant role changed');
-			}
-
-			// If the token has a memberId, validate that permissions haven't been updated after token issuance
-			if (memberId) {
-				const roomMemberRepository = container.get(RoomMemberRepository);
-				const roomMember = await roomMemberRepository.findByRoomAndMemberId(roomId, memberId, [
-					'permissionsUpdatedAt'
-				]);
-
-				// If member not found or permissions were updated after token issuance, invalidate token
-				if (!roomMember || iat < roomMember.permissionsUpdatedAt) {
-					throw new Error('Token has outdated permissions');
-				}
-			}
-
-			// If the token is associated with a user, validate user role wasn't updated after token issuance
-			if (userId) {
-				const userService = container.get(UserService);
-				const user = await userService.getUser(userId, ['roleUpdatedAt']);
-
-				// If user not found or role was updated after token issuance, invalidate token
-				if (!user || iat < user.roleUpdatedAt) {
-					throw new Error('Token has outdated permissions');
-				}
-			}
-
-			// Set room member token metadata in the session
-			requestSessionService.setRoomMemberTokenInfo(parsedMetadata, participantIdentity);
-		} catch (error) {
-			const logger = container.get(LoggerService);
-			logger.debug('Invalid room member token:', error);
-			throw errorInvalidToken();
-		}
+		const { participantIdentity, metadata } = await verifyRoomMemberToken(token);
+		container.get(RequestSessionService).setRoomMemberTokenInfo(metadata, participantIdentity);
 
 		await setAuthenticatedUserIfPresent(req);
+	}
+};
+
+/**
+ * Verifies a room member token and that no later change invalidated it: an update of its room's roles or access,
+ * of its room member's permissions or of its user's role, the deletion of that member or user, and a demotion of
+ * its participant unless `ignoreDemotion` is set.
+ *
+ * @param clockToleranceSeconds - How long after its expiry the token is still accepted
+ * @param ignoreDemotion - Accept a token issued before its participant was demoted from moderator
+ * @throws The `401` invalid token error when the token is not valid
+ */
+export const verifyRoomMemberToken = async (
+	token: string,
+	{ clockToleranceSeconds = 0, ignoreDemotion = false } = {}
+): Promise<{ participantIdentity?: string; participantName?: string; metadata: MeetRoomMemberTokenMetadata }> => {
+	try {
+		const tokenService = container.get(TokenService);
+		const {
+			sub: participantIdentity,
+			name: participantName,
+			metadata: tokenMetadata
+		} = await tokenService.verifyToken(token, clockToleranceSeconds);
+
+		if (!tokenMetadata) {
+			throw new Error('Missing required token claims');
+		}
+
+		const metadata = tokenService.parseRoomMemberTokenMetadata(tokenMetadata);
+		const { iat, roomId, memberId, userId } = metadata;
+
+		const [room, revoked, roomMember, user] = await Promise.all([
+			container.get(RoomRepository).findByRoomId(roomId, ['rolesUpdatedAt']),
+			!ignoreDemotion && participantIdentity
+				? container.get(ParticipantTokenRevocationService).isRevoked(roomId, participantIdentity, iat)
+				: false,
+			memberId
+				? container.get(RoomMemberRepository).findByRoomAndMemberId(roomId, memberId, ['permissionsUpdatedAt'])
+				: undefined,
+			userId ? container.get(UserService).getUser(userId, ['roleUpdatedAt']) : undefined
+		]);
+
+		if (!room || iat < room.rolesUpdatedAt) {
+			throw new Error('Token has outdated permissions');
+		}
+
+		if (revoked) {
+			throw new Error('Token was issued before the participant role changed');
+		}
+
+		if (memberId && (!roomMember || iat < roomMember.permissionsUpdatedAt)) {
+			throw new Error('Token has outdated permissions');
+		}
+
+		if (userId && (!user || iat < user.roleUpdatedAt)) {
+			throw new Error('Token has outdated permissions');
+		}
+
+		return { participantIdentity, participantName, metadata };
+	} catch (error) {
+		container.get(LoggerService).debug('Invalid room member token:', error);
+		throw errorInvalidToken();
 	}
 };
 
@@ -337,13 +348,12 @@ const setAuthenticatedUserIfPresent = async (req: Request): Promise<void> => {
 
 	try {
 		const tokenService = container.get(TokenService);
-		const payload = await tokenService.verifyToken(token);
-		const userId = payload.sub;
+		const { sub: userId, metadata } = await tokenService.verifyToken(token);
 
 		const userService = container.get(UserService);
 		const user = userId ? await userService.getUser(userId) : null;
 
-		if (user) {
+		if (user && !(await isRevokedUserToken(user.userId, tokenService.parseTokenMetadata(metadata ?? '')))) {
 			const requestSessionService = container.get(RequestSessionService);
 			requestSessionService.setUser(user);
 		}
@@ -352,3 +362,6 @@ const setAuthenticatedUserIfPresent = async (req: Request): Promise<void> => {
 		logger.debug('Token found but invalid:', error);
 	}
 };
+
+const isRevokedUserToken = (userId: string, metadata: TokenMetadata): Promise<boolean> =>
+	container.get(UserTokenRevocationService).isRevoked(userId, metadata);

@@ -83,7 +83,7 @@ conflicting pair, tokens normalized). The code rules behind it:
   recognize, so a missed entry reads as `false` instead of raising an error. It also needs a
   migration **step of its own** that re-runs the permission normalization (`room` v4→v5 and
   `roomMember` v2→v3 for `participantMute`, v5→v6 / v3→v4 for `participantHandLower`, v6→v7 / v4→v5
-  for `participantReactionSend`, v7→v8 / v5→v6 for the broadcast permissions): documents already at
+  for `participantReactionSend`, v8→v9 / v5→v6 for the broadcast permissions): documents already at
   the previous version are up to date as far as the runner is concerned, so extending the previous
   step would never reach them.
 - Decoding a token normalizes old names through the same `MeetPermissionsSchema` the API uses.
@@ -159,11 +159,14 @@ pnpm run lint                      # --max-warnings 0
 - Jest with `@swc/jest` (transpile only, no type-checking during a test run). `test:types` is the
   separate `tsc --noEmit` pass over `tests/**` (its own `tsconfig.test.json`, extending
   `tsconfig.prod.json` without the `**/*.test.ts` exclusion); run it after editing tests, since a
-  Jest pass alone won't catch a type error there. Wired into `backend-unit-test.yaml` as its own step.
+  Jest pass alone won't catch a type error there. Wired into the `Backend unit` CI job as its own step.
 - `--experimental-vm-modules` is required and must not be dropped: ESM-only deps (chalk 5) and the
   cloud SDKs' internal dynamic `import()` need it, and `import.meta.url` is used in `path.utils.ts`.
 - `tests/integration/**` hits a **real** MongoDB, Redis, LiveKit and S3/MinIO via supertest; they run
-  `--runInBand --forceExit` and are grouped into separate npm scripts so CI can shard them. They
-  cannot pass without that infrastructure.
+  one file at a time with `--forceExit` and are grouped into separate npm scripts so CI can shard them.
+  They cannot pass without that infrastructure. Each file boots the whole app in the same process and
+  the heap keeps growing across files, so a big shard (`test:integration-room-management`) runs in one
+  worker that Jest recycles past 1 GB (`--maxWorkers=1 --workerIdleMemoryLimit=1GB`) instead of
+  `--runInBand`, which ran out of heap in CI.
 - `@openvidu-meet/typings` is mapped to the typings *source* in `jest.config.mjs`, so unit tests do
   not need a typings build.

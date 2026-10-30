@@ -29,3 +29,8 @@ properties:
         example: 1620000000000
         description: |
             Timestamp in milliseconds since the Unix epoch of the last time the user's role was updated.
+    isRootAdmin:
+        type: boolean
+        example: false
+        description: |
+            Whether this account is the root admin, the account whose `userId` is the `MEET_INITIAL_ADMIN_USER` of the deployment (`admin` by default). Other administrators cannot delete it, change its role or reset its password.

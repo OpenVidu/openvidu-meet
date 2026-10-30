@@ -519,6 +519,30 @@ export const kickParticipantLegacyCommand = async (page: Page, participantIdenti
 /** Locator for a `.event-{name}` DOM marker. */
 export const eventLocator = (page: Page, eventName: EmbeddedEventName): Locator => page.locator(`.event-${eventName}`);
 
+/**
+ * Records, outside the page, the name of every lifecycle event the testapp receives from now on, so the
+ * record outlives a leave redirect that replaces the testapp and its event markers.
+ */
+export const recordHostEvents = async (page: Page): Promise<string[]> => {
+	const received: string[] = [];
+	await ensureFixture(page);
+	await page.exposeFunction('__recordHostEvent', (name: string) => received.push(name));
+	await page.evaluate((eventNames) => {
+		eventNames.forEach((name) => {
+			document.addEventListener(
+				name,
+				(ev) => {
+					if ((ev.target as Element | null)?.getAttribute?.('data-testid') === 'event-sink') {
+						(window as any).__recordHostEvent(name);
+					}
+				},
+				true
+			);
+		});
+	}, Object.values(EmbeddedEventName));
+	return received;
+};
+
 /** The names of the events the page has received, in the order they arrived. */
 export const eventSequence = (page: Page): Promise<string[]> =>
 	page

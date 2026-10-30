@@ -64,7 +64,7 @@ Twitch or any RTMP server, without a separate streaming tool.
 - Meeting UI and console UI: new activity, toolbar item, status rail chip, notices, wizard step and
   permission switches, translated in every supported language.
 - Deployment: broadcasts need the OpenVidu egress that reports stream tags (fork branch
-  `stream-url-tag`), released together with Meet. No new configuration variable. Schema migrations bump rooms to v8 and room members to
+  `stream-url-tag`), released together with Meet. No new configuration variable. Schema migrations bump rooms to v9 and room members to
   v6. Broadcasts need the deployment's egress service, outbound RTMP from it, and about 3 Mbps of
   upload per destination at 720p.
 - CE extension seams: the activity, the toolbar item and the status rail chip are switchable through

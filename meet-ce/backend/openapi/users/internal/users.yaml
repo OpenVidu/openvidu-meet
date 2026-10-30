@@ -25,7 +25,9 @@
         operationId: changeUserPassword
         summary: Change user password
         description: >
-            Allows the authenticated user to change their password.
+            Allows the authenticated user to change their password. Every access and refresh token issued to
+            the user before the change is rejected from then on, on every replica, so every other session is
+            signed out; the response carries new tokens that keep the current one signed in.
 
 
             **Access token roles**: `admin`, `room_manager`, `room_member`.

@@ -30,7 +30,7 @@ The server SHALL fill every top-level field missing from the `config` of a `crea
 - **THEN** the room has live broadcast disabled, in the `speaker` layout
 
 ### Requirement: Rules across fields judge the resulting config
-The server SHALL apply the rules that tie several config fields together (in `recordings`, the auto-start reachable with `maxParticipants` and encryption turning recording off; in `live-broadcast`, live broadcast needing a destination and turned off by encryption) to the config that results from the request, the stored config merged with the update, so that they hold even when the fields involved arrive in different requests.
+The server SHALL apply the rules that tie several config fields together, namely that the recording auto-start must be reachable with `maxParticipants`, that end-to-end encryption turns recording, live broadcast and live captions off, and that live broadcast needs a destination (specified in `recordings`, `live-broadcast` and `live-captions`), to the config that results from the request, the stored config merged with the update, so that they hold even when the fields involved arrive in different requests.
 
 #### Scenario: Unreachable auto-start split over two requests
 - **GIVEN** a room whose stored `maxParticipants` is 1
@@ -46,6 +46,11 @@ The server SHALL apply the rules that tie several config fields together (in `re
 - **GIVEN** a room with `e2ee` enabled
 - **WHEN** `updateRoomConfig` sets only `recording.enabled` to `true`
 - **THEN** the server answers `200` and `recording.enabled` stays `false`
+
+#### Scenario: Captions re-enabled on an encrypted room
+- **GIVEN** a room with `e2ee` enabled
+- **WHEN** `updateRoomConfig` sets only `captions.enabled` to `true`
+- **THEN** the server answers `200` and `captions.enabled` stays `false`
 
 #### Scenario: Live broadcast enabled on a room without destinations
 - **GIVEN** a room with no saved broadcast destination

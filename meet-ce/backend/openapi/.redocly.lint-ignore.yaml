@@ -42,7 +42,6 @@ config/schemas/rooms-appearance-config.yaml:
 auth/auth.yaml:
   security-defined:
     - '#/~1auth~1login/post'
-    - '#/~1auth~1logout/post'
 config/config.yaml:
   security-defined:
     - '#/~1config~1rooms~1appearance/get'

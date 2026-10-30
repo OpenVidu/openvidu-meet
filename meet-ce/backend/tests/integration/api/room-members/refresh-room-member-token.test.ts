@@ -1,9 +1,11 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import {
 	MeetParticipantModerationAction,
+	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberUIBadge,
-	MeetRoomRoles
+	MeetRoomRoles,
+	MeetUserRole
 } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
@@ -17,14 +19,20 @@ import {
 } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRooms,
+	deleteAllUsers,
 	endMeeting,
 	generateRoomMemberToken,
+	generateRoomMemberTokenRequest,
+	kickParticipant,
+	loginUser,
 	refreshRoomMemberTokenRequest,
 	sleep,
 	startTestServer,
-	updateParticipant
+	updateParticipant,
+	updateRoomMember,
+	updateUserRole
 } from '../../../helpers/request-helpers.js';
-import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { setupRoomMember, setupSingleRoom, setupUser } from '../../../helpers/test-scenarios.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
 
 describe('Room Members API Tests', () => {
@@ -34,6 +42,21 @@ describe('Room Members API Tests', () => {
 	let tokenService: TokenService;
 
 	const getRawToken = (token: string) => token.replace(/^Bearer\s+/i, '');
+
+	const claimsOf = (token: string) => {
+		const claims = tokenService.getClaimsIgnoringExpiration(getRawToken(token));
+		return { ...claims, metadata: JSON.parse(claims.metadata || '{}') as MeetRoomMemberTokenMetadata };
+	};
+
+	/** Joins the meeting with a join token: LiveKit takes the participant's metadata from it. */
+	const joinWith = async (token: string): Promise<string> => {
+		const { sub: participantIdentity, metadata } = claimsOf(token);
+		await joinFakeParticipant(roomId, participantIdentity!);
+		await updateParticipantMetadata(roomId, participantIdentity!, metadata);
+		return participantIdentity!;
+	};
+
+	const uniqueUserId = (prefix: string) => `${prefix}_${String(Date.now()).slice(-6)}`;
 
 	beforeAll(async () => {
 		await startTestServer();
@@ -50,6 +73,7 @@ describe('Room Members API Tests', () => {
 	afterAll(async () => {
 		await disconnectFakeParticipants();
 		await deleteAllRooms();
+		await deleteAllUsers();
 	});
 
 	describe('Refresh Room Member Token Tests', () => {
@@ -233,6 +257,143 @@ describe('Room Members API Tests', () => {
 				participantName: 'Test Participant',
 				participantIdentityPrefix: 'test_participant'
 			});
+		});
+	});
+
+	/**
+	 * A change made while the participant stays in the meeting invalidates the join token they hold. Renewing it
+	 * through the refresh must be refused like any other use of it, and the participant gets their current
+	 * permissions by requesting a join token again with the credentials they entered with.
+	 */
+	describe('Refresh after a change that invalidates the token', () => {
+		it('should refuse a token issued before the member was denied a permission', async () => {
+			const { user, accessToken } = await setupUser({
+				userId: uniqueUserId('rf_kick'),
+				name: 'Kick Member',
+				password: 'kick_member_pass',
+				role: MeetUserRole.ROOM_MEMBER
+			});
+			const { member } = await setupRoomMember(
+				roomId,
+				{ userId: user.userId, baseRole: MeetRoomMemberRole.MODERATOR },
+				accessToken
+			);
+			const previousToken = await generateRoomMemberToken(roomId, { joinMeeting: true }, accessToken);
+			const participantIdentity = await joinWith(previousToken);
+
+			const updateResponse = await updateRoomMember(roomId, member.memberId, {
+				customPermissions: { participantKick: false }
+			});
+			expect(updateResponse.status).toBe(200);
+
+			const refreshResponse = await refreshRoomMemberTokenRequest(roomId, previousToken);
+			expect(refreshResponse.status).toBe(401);
+			expect(refreshResponse.body.message).toBe('Invalid token');
+
+			const regenerated = await generateRoomMemberToken(
+				roomId,
+				{ joinMeeting: true },
+				accessToken,
+				previousToken
+			);
+			expect(claimsOf(regenerated).sub).toBe(participantIdentity);
+			expect(claimsOf(regenerated).metadata.permissions.participantKick).toBe(false);
+		});
+
+		it('should refuse a token issued before an identified guest was given a lower base role', async () => {
+			const { member } = await setupRoomMember(roomId, {
+				name: 'Guest Moderator',
+				baseRole: MeetRoomMemberRole.MODERATOR
+			});
+			const previousToken = await generateRoomMemberToken(roomId, { secret: member.memberId, joinMeeting: true });
+			const participantIdentity = await joinWith(previousToken);
+
+			const updateResponse = await updateRoomMember(roomId, member.memberId, {
+				baseRole: MeetRoomMemberRole.SPEAKER
+			});
+			expect(updateResponse.status).toBe(200);
+
+			const refreshResponse = await refreshRoomMemberTokenRequest(roomId, previousToken);
+			expect(refreshResponse.status).toBe(401);
+			expect(refreshResponse.body.message).toBe('Invalid token');
+
+			const regenerated = await generateRoomMemberToken(
+				roomId,
+				{ secret: member.memberId, joinMeeting: true },
+				undefined,
+				previousToken
+			);
+			expect(claimsOf(regenerated).sub).toBe(participantIdentity);
+			expect(claimsOf(regenerated).metadata.permissions.meetingEnd).toBe(false);
+			expect(claimsOf(regenerated).metadata.badge).toBe(MeetRoomMemberUIBadge.OTHER);
+		});
+
+		it('should refuse a token issued before an admin outside the room became a room manager', async () => {
+			const { user, accessToken, password } = await setupUser({
+				userId: uniqueUserId('rf_adm'),
+				name: 'Former Admin',
+				password: 'former_admin_pass',
+				role: MeetUserRole.ADMIN
+			});
+			const previousToken = await generateRoomMemberToken(roomId, { joinMeeting: true }, accessToken);
+			await joinWith(previousToken);
+
+			const roleResponse = await updateUserRole(user.userId, MeetUserRole.ROOM_MANAGER);
+			expect(roleResponse.status).toBe(200);
+
+			const refreshResponse = await refreshRoomMemberTokenRequest(roomId, previousToken);
+			expect(refreshResponse.status).toBe(401);
+			expect(refreshResponse.body.message).toBe('Invalid token');
+
+			const { accessToken: currentAccessToken } = await loginUser(user.userId, password);
+			const regenerateResponse = await generateRoomMemberTokenRequest(
+				roomId,
+				{ joinMeeting: true },
+				currentAccessToken,
+				previousToken
+			);
+			expect(regenerateResponse.status).toBe(403);
+		});
+
+		// The refresh reads the participant after the demotion, so it can only turn the earlier token into
+		// one with the restored permissions. Every other endpoint keeps refusing that token.
+		it('should renew a token issued before a demotion into one with the restored permissions', async () => {
+			const previousToken = await generateRoomMemberToken(roomId, {
+				secret: roomData.speakerSecret,
+				joinMeeting: true,
+				participantName: 'Demoted Speaker'
+			});
+			const participantIdentity = await joinWith(previousToken);
+
+			await updateParticipant(
+				roomId,
+				participantIdentity,
+				MeetParticipantModerationAction.UPGRADE,
+				roomData.moderatorToken
+			);
+			const promotedResponse = await refreshRoomMemberTokenRequest(roomId, previousToken);
+			expect(promotedResponse.status).toBe(200);
+			const promotedToken = `Bearer ${promotedResponse.body.token}`;
+
+			await updateParticipant(
+				roomId,
+				participantIdentity,
+				MeetParticipantModerationAction.DOWNGRADE,
+				roomData.moderatorToken
+			);
+
+			const demotedResponse = await refreshRoomMemberTokenRequest(roomId, promotedToken);
+			expectValidRoomMemberTokenResponse(demotedResponse, {
+				roomId,
+				badge: MeetRoomMemberUIBadge.OTHER,
+				permissions: roomRoles.speaker.permissions,
+				joinMeeting: true,
+				participantName: 'Demoted Speaker',
+				participantIdentityPrefix: 'demoted_speaker'
+			});
+
+			const kickResponse = await kickParticipant(roomId, participantIdentity, promotedToken);
+			expect(kickResponse.status).toBe(401);
 		});
 	});
 });

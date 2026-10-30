@@ -6,6 +6,7 @@ import { EgressInfo, EgressStatus } from 'livekit-server-sdk';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
+import { errorRecordingAlreadyStopped } from '../../../src/models/error.model.js';
 import { RecordingService } from '../../../src/services/recording.service.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, debug: () => {}, error: () => {}, verbose: () => {} };
@@ -477,5 +478,43 @@ describe('RecordingService.finishRecording', () => {
 
 		expect(webhooks).toHaveLength(1);
 		expect(frontendEvents.signals).toHaveLength(1);
+	});
+});
+
+describe('RecordingService.stopRecording', () => {
+	const recordingId = 'room-1--EG_1--uid';
+
+	const buildStopService = (egresses: Partial<EgressInfo>[]) => {
+		const stopped: string[] = [];
+		const livekit = {
+			getEgress: async () => egresses,
+			stopEgress: async (egressId: string) => stopped.push(egressId)
+		};
+		const mutex = { withLock: async (_key: string, _ttl: number, run: () => Promise<unknown>) => run() };
+		const latch = { disabled: [] as string[], markDisabled: async (roomId: string) => latch.disabled.push(roomId) };
+		const service = new RecordingService(
+			...([livekit, mutex, {}, {}, {}, {}, latch, {}, noopLogger] as unknown as ConstructorParameters<
+				typeof RecordingService
+			>)
+		);
+		return { service, stopped, latch };
+	};
+
+	it('answers 409 for a recording whose egress the media server no longer knows', async () => {
+		const { service, stopped, latch } = buildStopService([]);
+
+		await expect(service.stopRecording(recordingId)).rejects.toMatchObject({
+			statusCode: 409,
+			message: errorRecordingAlreadyStopped(recordingId).message
+		});
+		expect(stopped).toEqual([]);
+		expect(latch.disabled).toEqual([]);
+	});
+
+	it('answers 409 for a recording whose egress has ended', async () => {
+		const { service, stopped } = buildStopService([{ status: EgressStatus.EGRESS_COMPLETE }]);
+
+		await expect(service.stopRecording(recordingId)).rejects.toMatchObject({ statusCode: 409 });
+		expect(stopped).toEqual([]);
 	});
 });

@@ -1,4 +1,5 @@
 import { EmbeddedAttribute } from '@openvidu-meet/typings';
+import { applyRequestedLanguageGuard } from '../../../shared/guards/apply-requested-language.guard';
 import { removeQueryParamsGuard } from '../../../shared/guards/remove-query-params.guard';
 import { runGuardsSerially } from '../../../shared/guards/run-serially.guard';
 import { DomainRouteConfig } from '../../../shared/models/domain-routes.model';
@@ -15,6 +16,7 @@ export const meetingDomainRoutes: DomainRouteConfig[] = [
 			loadComponent: () => import('../pages/meeting/meeting.component').then((m) => m.MeetingComponent),
 			canActivate: [
 				runGuardsSerially(
+					applyRequestedLanguageGuard,
 					extractRoomMeetingParamsGuard,
 					validateRoomMeetingAccessGuard,
 					removeQueryParamsGuard(['secret', EmbeddedAttribute.E2EE_KEY])

@@ -6,6 +6,9 @@
             Activates AI assistance.
 
             > Currently only meeting AI Assistant and `live_captions` capability is supported.
+
+            Answers `403` and starts no assistant when live captions are disabled for the deployment or the room's
+            `captions.enabled` config is `false`.
         tags:
             - Internal API - AI Assistants
         security:
@@ -20,7 +23,7 @@
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
-                $ref: '../shared/responses/errors/forbidden.yaml'
+                $ref: './responses/errors/ai-assistant-forbidden.yaml'
             '409':
                 $ref: './responses/errors/ai-assistant-starting.yaml'
             '422':

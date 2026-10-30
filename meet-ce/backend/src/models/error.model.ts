@@ -111,10 +111,6 @@ export const errorAzureNotAvailable = (error: unknown): OpenViduMeetError => {
 	return new OpenViduMeetError('ABS Error', `Azure Blob Storage is not available ${String(error)}`, 503);
 };
 
-export const errorConfigurationError = (message: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Configuration Error', message, 500);
-};
-
 // Auth errors
 
 export const errorInvalidCredentials = (): OpenViduMeetError => {
@@ -167,6 +163,10 @@ export const errorInvalidApiKeySubject = (): OpenViduMeetError => {
 		'Invalid API key subject. The user associated with the API key does not exist',
 		403
 	);
+};
+
+export const errorApiKeyChangeInProgress = (): OpenViduMeetError => {
+	return new OpenViduMeetError('API Key Error', 'Another API key change is in progress, please retry', 409);
 };
 
 export const errorApiKeyNotConfigured = (): OpenViduMeetError => {
@@ -438,6 +438,14 @@ export const errorRoomActiveMeeting = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `Room '${roomId}' has an active meeting`, 409);
 };
 
+export const errorRoomDeletionScheduled = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Room Error',
+		`Room '${roomId}' is scheduled for deletion when its active meeting ends`,
+		409
+	);
+};
+
 /**
  * A recording auto-start threshold that the room's participant limit can never reach: storing it
  * would configure a recording that is guaranteed never to start.
@@ -591,6 +599,14 @@ export const errorAiAssistantAlreadyStarting = (roomId: string): OpenViduMeetErr
 
 export const errorAiAssistantCannotBeStopped = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('AI Assistant Error', `AI assistant cannot be stopped for room '${roomId}'`, 409);
+};
+
+export const errorCaptionsDisabledInDeployment = (): OpenViduMeetError => {
+	return new OpenViduMeetError('AI Assistant Error', 'Live captions are disabled for this deployment', 403);
+};
+
+export const errorCaptionsDisabled = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('AI Assistant Error', `Live captions are disabled for room '${roomId}'`, 403);
 };
 
 // Webhook errors

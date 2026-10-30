@@ -8,6 +8,7 @@ import {
 	expectNoLoginPage,
 	type ReadyUser
 } from './helpers/auth.helper';
+import { gotoConsolePage } from './helpers/console-lists.helper';
 import { createRoom, deleteRooms, deleteUsers, getRecordingShareUrl } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-navigation.helper';
 import { toggleParticipantsPanel } from './helpers/panels.helper';
@@ -489,5 +490,67 @@ test.describe('Token Refresh E2E Tests', () => {
 				}
 			});
 		}
+	});
+
+	// ── Console (several requests, several tabs) ─────────────────────────────────
+
+	test.describe('Console', () => {
+		let consoleAdmin: ReadyUser;
+
+		test.beforeAll(async () => {
+			consoleAdmin = (await createReadyUser('Refresh Console Admin', MeetUserRole.ADMIN)).user;
+			createdUserIds.push(consoleAdmin.userId);
+		});
+
+		test('a page whose requests expire together refreshes once and stays signed in', async ({ page }) => {
+			await authenticate(page, consoleAdmin);
+			const ctrl = await installTokenExpiryController(page);
+
+			try {
+				await gotoConsolePage(page, 'users', 'ov-users-lists');
+				await ctrl.expireAccessToken();
+				// Loading the console sends several requests at once, all with the expired access token.
+				await page.reload({ waitUntil: 'domcontentloaded' });
+
+				await expect(page.locator('ov-users-lists')).toBeVisible({ timeout: 20_000 });
+				await expectNoLoginPage(page);
+				expect(ctrl.blockedCount()).toBeGreaterThanOrEqual(2);
+				expect(ctrl.authRefreshCount()).toBe(1);
+			} finally {
+				await ctrl.dispose();
+			}
+		});
+
+		test('two tabs whose access token expires at the same moment both stay signed in', async ({ browser }) => {
+			const context = await browser.newContext();
+			const tabs = [await context.newPage(), await context.newPage()];
+
+			try {
+				await authenticate(tabs[0], consoleAdmin);
+				const controllers = await Promise.all(tabs.map((tab) => installTokenExpiryController(tab)));
+				await Promise.all(tabs.map((tab) => gotoConsolePage(tab, 'users', 'ov-users-lists')));
+
+				await Promise.all(controllers.map((ctrl) => ctrl.expireAccessToken()));
+				// The first tab's refresh is held until the second tab has also found its token expired,
+				// so both renew at the same moment.
+				await tabs[0].route(
+					(url) => url.pathname.endsWith('/auth/refresh'),
+					async (route) => {
+						await expect.poll(() => controllers[1].blockedCount(), { timeout: 20_000 }).toBeGreaterThan(0);
+						await route.fallback();
+					},
+					{ times: 1 }
+				);
+				await Promise.all(tabs.map((tab) => tab.reload({ waitUntil: 'domcontentloaded' })));
+
+				for (const [index, tab] of tabs.entries()) {
+					await expect(tab.locator('ov-users-lists')).toBeVisible({ timeout: 20_000 });
+					await expectNoLoginPage(tab);
+					expect(controllers[index].blockedCount()).toBeGreaterThan(0);
+				}
+			} finally {
+				await context.close();
+			}
+		});
 	});
 });

@@ -19,6 +19,7 @@ import { TaskSchedulerService } from '../services/task-scheduler.service.js';
 import { ApiKeyService } from '../services/api-key.service.js';
 import { GlobalConfigService } from '../services/global-config.service.js';
 import { TokenService } from '../services/token.service.js';
+import { UserTokenRevocationService } from '../services/user-token-revocation.service.js';
 import { UserService } from '../services/user.service.js';
 
 import { ABSStorageProvider } from '../services/storage/providers/abs/abs-storage.provider.js';
@@ -113,10 +114,9 @@ const persistenceModule = new ContainerModule(({ bind }) => {
  * Blob storage bindings. Only the provider, key builder and provider-specific client differ per
  * storage mode; the factory, facade and initialization services are mode-agnostic.
  */
-const createStorageModule = (storageMode: string): ContainerModule =>
+export const createStorageModule = (storageMode: string): ContainerModule =>
 	new ContainerModule(({ bind }) => {
 		switch (storageMode) {
-			default:
 			case 's3':
 				bind<StorageProvider>(STORAGE_TYPES.StorageProvider).to(S3StorageProvider).inSingletonScope();
 				bind<StorageKeyBuilder>(STORAGE_TYPES.KeyBuilder).to(S3KeyBuilder).inSingletonScope();
@@ -135,6 +135,8 @@ const createStorageModule = (storageMode: string): ContainerModule =>
 				bind(GCSService).toSelf().inSingletonScope();
 				bind(GCSStorageProvider).toSelf().inSingletonScope();
 				break;
+			default:
+				throw new Error(`MEET_BLOB_STORAGE_MODE must be 's3', 'gcs' or 'abs', got '${storageMode}'`);
 		}
 
 		bind(StorageFactory).toSelf().inSingletonScope();
@@ -162,6 +164,7 @@ const domainModule = new ContainerModule(({ bind }) => {
 	bind(MeetingService).toSelf().inSingletonScope();
 	bind(ParticipantNameService).toSelf().inSingletonScope();
 	bind(ParticipantTokenRevocationService).toSelf().inSingletonScope();
+	bind(UserTokenRevocationService).toSelf().inSingletonScope();
 	bind(MeetingPresenceService).toSelf().inSingletonScope();
 	bind(RoomMemberService).toSelf().inSingletonScope();
 	bind(WebhookDispatcherService).toSelf().inSingletonScope();

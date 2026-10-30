@@ -144,16 +144,19 @@ class FakeRoomScheduledTasksService {
 }
 
 class FakeRoomRepository {
-	updatePartialCalls: Array<{ roomId: string; fields: unknown }> = [];
-	deletedRoomIds: string[] = [];
 	activateMeetingCalls: string[] = [];
 	/** Mirrors `activateMeeting`'s real contract: `null` simulates the room no longer being OPEN. */
 	activateMeetingResult: { config: { maxDurationMinutes?: number } } | null = { config: {} };
-
-	async updatePartial(roomId: string, fields: unknown) {
-		this.updatePartialCalls.push({ roomId, fields });
-		return { roomId, ...(fields as object) };
-	}
+	/**
+	 * Mirrors `finishMeeting`'s real contract: the first call ends the room's meeting and gets the
+	 * room as the end left it, every later one finds no meeting to end. `null` simulates a room that
+	 * was not `active_meeting` in the first place.
+	 */
+	endedRoom: { roomId: string; status: MeetRoomStatus; meetingEndAction: MeetingEndAction } | null = {
+		roomId: 'room-1',
+		status: MeetRoomStatus.OPEN,
+		meetingEndAction: MeetingEndAction.NONE
+	};
 
 	async activateMeeting(roomId: string) {
 		this.activateMeetingCalls.push(roomId);
@@ -165,8 +168,10 @@ class FakeRoomRepository {
 		return { roomId, status: MeetRoomStatus.ACTIVE_MEETING, ...this.activateMeetingResult };
 	}
 
-	async deleteByRoomId(roomId: string) {
-		this.deletedRoomIds.push(roomId);
+	async finishMeeting() {
+		const endedRoom = this.endedRoom;
+		this.endedRoom = null;
+		return endedRoom;
 	}
 }
 
@@ -181,13 +186,15 @@ class FakeLiveKitService {
 
 class FakeWebhookDispatcherService {
 	sendMeetingStartedWebhookCalls: unknown[] = [];
+	sendMeetingEndedWebhookRooms: unknown[] = [];
 	sendMeetingEndedWebhookReasons: (MeetMeetingEndedReason | undefined)[] = [];
 
 	sendMeetingStartedWebhook(room: unknown) {
 		this.sendMeetingStartedWebhookCalls.push(room);
 	}
 
-	sendMeetingEndedWebhook(_room: unknown, reason?: MeetMeetingEndedReason) {
+	sendMeetingEndedWebhook(room: unknown, reason?: MeetMeetingEndedReason) {
+		this.sendMeetingEndedWebhookRooms.push(room);
 		this.sendMeetingEndedWebhookReasons.push(reason);
 	}
 }
@@ -316,7 +323,7 @@ describe('LivekitWebhookService duration-limit timer wiring', () => {
 				{ reactivateAutoRecording: async () => {}, releaseRecordingLockIfNoEgress: async () => {} },
 				{},
 				new FakeLiveKitService(),
-				{ getMeetRoom: async () => ({ roomId: 'room-1', meetingEndAction: MeetingEndAction.NONE }) },
+				{},
 				new FakeRoomRepository(),
 				{ sendMeetingEndedWebhook: () => {} },
 				{},
@@ -342,8 +349,8 @@ describe('LivekitWebhookService duration-limit timer wiring', () => {
  * covers the seam the previous tests straddled: one side asserted the flag reader in isolation, the
  * other used a double that ignored the sid, and the synthetic `Room` between them type-checked.
  */
-describe('LivekitWebhookService.handleRoomFinished (force-end attribution reaches the webhook)', () => {
-	const buildFinishedService = (redis: FakeRedisService, meetingEndAction = MeetingEndAction.NONE) => {
+describe('LivekitWebhookService.handleRoomFinished', () => {
+	const buildFinishedService = (redis: FakeRedisService) => {
 		const webhookDispatcherService = new FakeWebhookDispatcherService();
 		const roomRepository = new FakeRoomRepository();
 		const cleanups: string[] = [];
@@ -359,7 +366,7 @@ describe('LivekitWebhookService.handleRoomFinished (force-end attribution reache
 				},
 				{},
 				new FakeLiveKitService(),
-				{ getMeetRoom: async () => ({ roomId: 'room-1', meetingEndAction }) },
+				{},
 				roomRepository,
 				webhookDispatcherService,
 				{},
@@ -377,14 +384,15 @@ describe('LivekitWebhookService.handleRoomFinished (force-end attribution reache
 		return { service, webhookDispatcherService, roomRepository, cleanups };
 	};
 
-	it('reopens the room and runs every cleanup when the meeting ends normally', async () => {
-		const { service, roomRepository, cleanups } = buildFinishedService(new FakeRedisService());
+	it('sends meetingEnded with the room as the end left it and runs every cleanup', async () => {
+		const { service, roomRepository, webhookDispatcherService, cleanups } = buildFinishedService(
+			new FakeRedisService()
+		);
+		const endedRoom = roomRepository.endedRoom;
 
 		await service.handleRoomFinished({ name: 'room-1', sid: 'sid-1' });
 
-		expect(roomRepository.updatePartialCalls).toEqual([
-			{ roomId: 'room-1', fields: { status: MeetRoomStatus.OPEN } }
-		]);
+		expect(webhookDispatcherService.sendMeetingEndedWebhookRooms).toEqual([endedRoom]);
 		expect(cleanups.sort()).toEqual([
 			'cleanupParticipantNames(room-1)',
 			'cleanupRoom(room-1)',
@@ -394,31 +402,42 @@ describe('LivekitWebhookService.handleRoomFinished (force-end attribution reache
 		]);
 	});
 
-	it('closes the room and forgets the end action when it was scheduled to close', async () => {
-		const { service, roomRepository } = buildFinishedService(new FakeRedisService(), MeetingEndAction.CLOSE);
+	it('also deletes the members and recordings of a room the end deleted', async () => {
+		const { service, roomRepository, cleanups } = buildFinishedService(new FakeRedisService());
+		roomRepository.endedRoom = {
+			roomId: 'room-1',
+			status: MeetRoomStatus.ACTIVE_MEETING,
+			meetingEndAction: MeetingEndAction.DELETE
+		};
 
 		await service.handleRoomFinished({ name: 'room-1', sid: 'sid-1' });
 
-		expect(roomRepository.updatePartialCalls).toEqual([
-			{
-				roomId: 'room-1',
-				fields: { status: MeetRoomStatus.CLOSED, meetingEndAction: MeetingEndAction.NONE }
-			}
-		]);
-	});
-
-	it('deletes the room, its members and its recordings when it was scheduled for deletion', async () => {
-		const { service, roomRepository, cleanups } = buildFinishedService(
-			new FakeRedisService(),
-			MeetingEndAction.DELETE
-		);
-
-		await service.handleRoomFinished({ name: 'room-1', sid: 'sid-1' });
-
-		expect(roomRepository.deletedRoomIds).toEqual(['room-1']);
-		expect(roomRepository.updatePartialCalls).toEqual([]);
 		expect(cleanups).toContain('deleteAllRoomRecordings(room-1)');
 		expect(cleanups).toContain('deleteAllByRoomId(room-1)');
+	});
+
+	it('sends one meetingEnded when the same end is reported twice at once', async () => {
+		const { service, webhookDispatcherService, cleanups } = buildFinishedService(new FakeRedisService());
+
+		await Promise.all([
+			service.handleRoomFinished({ name: 'room-1', sid: 'sid-1' }),
+			service.handleRoomFinished({ name: 'room-1' })
+		]);
+
+		expect(webhookDispatcherService.sendMeetingEndedWebhookRooms).toHaveLength(1);
+		expect(cleanups.filter((cleanup) => cleanup.startsWith('cleanupParticipantNames'))).toHaveLength(1);
+	});
+
+	it('sends nothing and cleans nothing up for a room with no meeting to end', async () => {
+		const { service, roomRepository, webhookDispatcherService, cleanups } = buildFinishedService(
+			new FakeRedisService()
+		);
+		roomRepository.endedRoom = null;
+
+		await service.handleRoomFinished({ name: 'room-1', sid: 'sid-1' });
+
+		expect(webhookDispatcherService.sendMeetingEndedWebhookRooms).toEqual([]);
+		expect(cleanups).toEqual([]);
 	});
 
 	it('attributes the end to the duration limit for a caller that knows only the room', async () => {

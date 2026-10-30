@@ -317,8 +317,8 @@ export const setupUser = async (userOptions: MeetUserOptions): Promise<UserData>
 	return {
 		user,
 		password: newPassword,
-		accessToken: accessToken!,
-		refreshToken: refreshToken!
+		accessToken,
+		refreshToken
 	};
 };
 

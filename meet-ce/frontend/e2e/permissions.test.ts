@@ -10,9 +10,14 @@ import { createReadyMemberUser, expectLobbyAccessRestricted, expectNameInput } f
 import { authenticate, createReadyUser, type ReadyUser } from './helpers/auth.helper';
 import {
 	expectChatAvailable,
+	expectChatMessageNotification,
+	expectChatMessageTextAt,
 	expectChatWriteDisabled,
 	expectChatWriteEnabled,
 	expectNoChat,
+	expectNoChatMessageNotification,
+	openChatFromNotification,
+	sendChatMessage,
 	toggleChatPanel
 } from './helpers/chat.helper';
 import {
@@ -204,6 +209,28 @@ test.describe('Permissions E2E Tests', () => {
 		test('canReadChat denied: the chat panel button is not available', async ({ page }) => {
 			await joinAsGuest(page, { canReadChat: false });
 			await expectNoChat(page);
+		});
+
+		test('canReadChat denied: a message sent to the meeting raises no notice', async ({ page, browser }) => {
+			const { byName, removeAllParticipants } = await joinParticipants(browser, {
+				roomId: room.roomId,
+				// The guests of the earlier tests in this shared room linger in LiveKit for ~20 s after
+				// their page closes, so counting remote streams here would count them too.
+				skipRemoteStreamCheck: true,
+				participants: [{ name: 'Chat Sender' }, { name: 'Chat Reader' }]
+			});
+
+			try {
+				await joinAsGuest(page, { canReadChat: false, canWriteChat: true });
+				await toggleChatPanel(byName['Chat Sender'], 'open');
+				await sendChatMessage(byName['Chat Sender'], 'Can anyone read this?');
+				await expectChatMessageNotification(byName['Chat Reader']);
+
+				await expectNoChat(page);
+				await expectNoChatMessageNotification(page);
+			} finally {
+				await removeAllParticipants();
+			}
 		});
 
 		test('canWriteChat granted: the chat input is editable', async ({ page }) => {
@@ -537,6 +564,38 @@ test.describe('Permissions E2E Tests', () => {
 			await expectPermissionsUpdatedNotification(page);
 			await expectNoBackgroundsButton(page);
 			await expectChatAvailable(page);
+		});
+
+		test('granting canReadChat live shows the messages sent from then on', async ({ page, browser }) => {
+			const guest = await createRoomMember(room.roomId, {
+				name: 'Late Chat Reader',
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: { canReadChat: false }
+			});
+			const { byName, removeAllParticipants } = await joinParticipants(browser, {
+				roomId: room.roomId,
+				participants: [{ name: 'Chat Sender' }]
+			});
+
+			try {
+				await openMeeting(page, guest.accessUrl);
+				await expectNoChat(page);
+
+				await updateRoomMemberPermissions(room.roomId, guest.memberId, {
+					customPermissions: { canReadChat: true }
+				});
+				await expectPermissionsUpdatedNotification(page);
+				await expectChatAvailable(page);
+
+				await toggleChatPanel(byName['Chat Sender'], 'open');
+				await sendChatMessage(byName['Chat Sender'], 'Now you can read this');
+
+				await expectChatMessageNotification(page);
+				await openChatFromNotification(page);
+				await expectChatMessageTextAt(page, 0, 'Now you can read this');
+			} finally {
+				await removeAllParticipants();
+			}
 		});
 
 		test('revoking canWriteChat live switches the chat panel to read-only', async ({ page }) => {

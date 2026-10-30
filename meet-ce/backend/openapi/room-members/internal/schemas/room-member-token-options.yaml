@@ -21,7 +21,9 @@ properties:
         type: string
         description: >
             The participant display name to use when joining the meeting.
-            Required for anonymous guests when `joinMeeting` is true.
+            Required for anonymous guests when `joinMeeting` is true. Ignored when the token is bound to
+            a room member or a signed-in user, who join under their own name, except in a room with
+            end-to-end encryption, where the name arrives encrypted and is always taken from here.
         example: 'Alice'
     participantExternalId:
         type: string

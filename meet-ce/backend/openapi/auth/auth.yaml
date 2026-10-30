@@ -26,20 +26,31 @@
         operationId: logoutUser
         summary: Logout from OpenVidu Meet
         description: >
-            Logs out the user.
+            Logs out the user. When the request carries a valid access token or refresh token, the login
+            session it belongs to ends on every replica: every access and refresh token of that session is
+            rejected from then on, while the user's other sessions stay valid. A login session is the tokens
+            one `loginUser` or `changeUserPassword` returns plus every token later obtained from them through
+            `refreshAccessToken`. Without a valid credential, the call still succeeds.
         tags:
             - Internal API - Authentication
+        security:
+            - {}
+            - accessTokenHeader: []
+            - refreshTokenHeader: []
         responses:
             '200':
                 $ref: './responses/success/user-logout.yaml'
             '429':
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
 /auth/refresh:
     post:
         operationId: refreshAccessToken
         summary: Refresh access token
         description: >
-            Refreshes the access token using the refresh token.
+            Refreshes the access token using the refresh token. Unless `MEET_REFRESH_TOKEN_ROTATION_ENABLED` is
+            `false`, it also returns a new refresh token, and each refresh token is accepted only once.
         tags:
             - Internal API - Authentication
         security:

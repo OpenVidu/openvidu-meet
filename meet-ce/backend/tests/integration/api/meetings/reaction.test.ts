@@ -3,8 +3,10 @@ import { MeetReaction } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
 import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
+import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRooms,
+	endMeeting,
 	generateRoomMemberToken,
 	sendParticipantReaction,
 	startTestServer,
@@ -28,11 +30,12 @@ describe('Meetings API Tests', () => {
 	});
 
 	afterAll(async () => {
+		await disconnectFakeParticipants();
 		await deleteAllRooms();
 	});
 
 	describe('Reaction Tests', () => {
-		// A speaker's joining token, which acts as the participant it was minted for.
+		// Joins the meeting as a speaker through a joining token, so the token acts as that participant.
 		const joinSpeaker = async (participantName: string) => {
 			const { speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(roomData.room.access);
 			const token = await generateRoomMemberToken(roomData.room.roomId, {
@@ -40,7 +43,9 @@ describe('Meetings API Tests', () => {
 				joinMeeting: true,
 				participantName
 			});
-			return { identity: identityOf(token), token };
+			const identity = identityOf(token);
+			await joinFakeParticipant(roomData.room.roomId, identity);
+			return { identity, token };
 		};
 
 		const spyOnReactionSignal = () =>
@@ -80,6 +85,22 @@ describe('Meetings API Tests', () => {
 
 			expect(response.status).toBe(403);
 			expect(response.body.error).toBe('Reaction Error');
+			expect(signalSpy).not.toHaveBeenCalled();
+		});
+
+		it('should fail with 404 once the meeting has ended', async () => {
+			const alice = await joinSpeaker('Alice');
+			await endMeeting(roomData.room.roomId, roomData.moderatorToken);
+			const signalSpy = spyOnReactionSignal();
+
+			const response = await sendParticipantReaction(
+				roomData.room.roomId,
+				{ reaction: MeetReaction.THUMBS_UP },
+				alice.token
+			);
+
+			expect(response.status).toBe(404);
+			expect(response.body.error).toBe('Meeting Error');
 			expect(signalSpy).not.toHaveBeenCalled();
 		});
 

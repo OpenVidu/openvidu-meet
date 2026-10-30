@@ -124,6 +124,8 @@
 			"MICROPHONE_LEVEL": "Nivel del micrófono",
 			"MICROPHONE_LEVEL_HINT": "Habla para comprobar que los demás te oyen",
 			"MICROPHONE_OFF": "Tu micrófono está apagado",
+			"APPLY": "Aplicar",
+			"EFFECT_APPLIES_ON_APPLY": "El efecto de fondo se añade al aplicar esta cámara",
 			"DISPLAY_NAME": "Nombre para mostrar",
 			"DISPLAY_NAME_HINT": "Elegido al unirte a la reunión",
 			"DISPLAY_NAME_LOCKED": "No se puede cambiar durante la reunión",

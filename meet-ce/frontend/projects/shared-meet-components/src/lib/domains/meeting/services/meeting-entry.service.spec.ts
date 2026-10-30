@@ -1,17 +1,23 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { LanguageService } from '../../../shared/services/i18n/language.service';
+import { SessionStorageKeys } from '../../../shared/models/storage.model';
+import { BrowserStorageService } from '../../../shared/services/browser-storage.service';
+import { GlobalConfigService } from '../../../shared/services/global-config.service';
 import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
+import { LoggerService } from '../../../shared/services/logger.service';
+import { SessionStorageService } from '../../../shared/services/session-storage.service';
+import { parseOptionalBoolean } from '../../../shared/utils/url.utils';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomAccessService } from '../../rooms/services/room-access.service';
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
+import { ViewportService } from '../openvidu-components';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingEntryService } from './meeting-entry.service';
+import { RoomAccessLinkService } from './room-access-link.service';
 
 describe('MeetingEntryService.prepare (resets the previous room feature state)', () => {
 	let service: MeetingEntryService;
 	let roomFeatureService: jasmine.SpyObj<RoomFeatureService>;
-	let languageService: jasmine.SpyObj<LanguageService>;
 
 	beforeEach(() => {
 		roomFeatureService = jasmine.createSpyObj<RoomFeatureService>('RoomFeatureService', [
@@ -32,10 +38,6 @@ describe('MeetingEntryService.prepare (resets the previous room feature state)',
 			'loadParticipantNameFromStorage'
 		]);
 		const roomAccessService = jasmine.createSpyObj<RoomAccessService>('RoomAccessService', ['validateAccess']);
-		languageService = jasmine.createSpyObj<LanguageService>('LanguageService', [
-			'setEmbeddedLanguage',
-			'setSelectorVisible'
-		]);
 		const leaveRedirectService = jasmine.createSpyObj<LeaveRedirectService>('LeaveRedirectService', [
 			'handleLeaveRedirectUrl'
 		]);
@@ -48,8 +50,7 @@ describe('MeetingEntryService.prepare (resets the previous room feature state)',
 				{ provide: RoomMemberContextService, useValue: roomMemberContextService },
 				{ provide: RoomAccessService, useValue: roomAccessService },
 				{ provide: RoomFeatureService, useValue: roomFeatureService },
-				{ provide: LeaveRedirectService, useValue: leaveRedirectService },
-				{ provide: LanguageService, useValue: languageService }
+				{ provide: LeaveRedirectService, useValue: leaveRedirectService }
 			]
 		});
 		service = TestBed.inject(MeetingEntryService);
@@ -66,19 +67,84 @@ describe('MeetingEntryService.prepare (resets the previous room feature state)',
 		expect(roomFeatureService.setInitialMediaRequest).toHaveBeenCalled();
 	});
 
-	// An entry without the language gives the choice back, so a language imposed by a previous
-	// mount does not outlive it.
-	it('imposes the requested language on every entry, and releases it when none is requested', () => {
-		service.prepare({ roomId: 'room-a', language: 'es' });
-		service.prepare({ roomId: 'room-b' });
+	it('sends a bare show-only-recordings query parameter to the room recordings', () => {
+		const decision = service.prepare({ roomId: 'room-b', showOnlyRecordings: parseOptionalBoolean('') });
 
-		expect(languageService.setEmbeddedLanguage.calls.allArgs()).toEqual([['es'], [undefined]]);
+		expect(decision).toEqual({ kind: 'redirect', to: '/room/room-b/recordings' });
+	});
+});
+
+describe('MeetingEntryService.prepare (secret and encryption key kept per room)', () => {
+	let service: MeetingEntryService;
+	let context: MeetingContextService;
+	let sessionStorageService: SessionStorageService;
+
+	beforeEach(() => {
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				MeetingEntryService,
+				MeetingContextService,
+				{ provide: LoggerService, useValue: { get: () => ({ d: () => {}, w: () => {}, e: () => {} }) } },
+				{
+					provide: RoomFeatureService,
+					useValue: jasmine.createSpyObj<RoomFeatureService>('RoomFeatureService', [
+						'reset',
+						'setInitialMediaRequest'
+					])
+				},
+				{
+					provide: RoomMemberContextService,
+					useValue: jasmine.createSpyObj<RoomMemberContextService>('RoomMemberContextService', [
+						'setParticipantExternalId',
+						'setParticipantMetadata',
+						'setParticipantName',
+						'loadParticipantNameFromStorage'
+					])
+				},
+				{ provide: RoomAccessService, useValue: {} },
+				{ provide: LeaveRedirectService, useValue: { handleLeaveRedirectUrl: () => undefined } },
+				{ provide: GlobalConfigService, useValue: {} },
+				{ provide: ViewportService, useValue: {} },
+				{ provide: RoomAccessLinkService, useValue: {} }
+			]
+		});
+		service = TestBed.inject(MeetingEntryService);
+		context = TestBed.inject(MeetingContextService);
+		sessionStorageService = TestBed.inject(SessionStorageService);
+		sessionStorageService.clearMeetingData();
 	});
 
-	it('hides the language selectors on every entry that turns them off, and shows them on one that does not', () => {
-		service.prepare({ roomId: 'room-a', showLanguageSelector: false });
+	afterEach(() => sessionStorageService.clearMeetingData());
+
+	it('restores the secret and the key when the same room is entered again without them', () => {
+		service.prepare({ roomId: 'room-a', secret: 'secret-a', e2eeKey: 'key-a' });
+
+		service.prepare({ roomId: 'room-a' });
+
+		expect(context.roomSecret()).toBe('secret-a');
+		expect(context.e2eeKey()).toBe('key-a');
+		expect(context.isE2eeKeyFromUrl()).toBeTrue();
+	});
+
+	it('enters another room without them with neither', () => {
+		service.prepare({ roomId: 'room-a', secret: 'secret-a', e2eeKey: 'key-a' });
+
 		service.prepare({ roomId: 'room-b' });
 
-		expect(languageService.setSelectorVisible.calls.allArgs()).toEqual([[false], [true]]);
+		expect(context.roomSecret()).toBeUndefined();
+		expect(context.e2eeKey()).toBe('');
+		expect(context.isE2eeKeyFromUrl()).toBeFalse();
+	});
+
+	it('ignores a secret and a key stored before they were kept with their room', () => {
+		const storage = TestBed.inject(BrowserStorageService);
+		storage.set(SessionStorageKeys.ROOM_SECRET, 'old-secret', 'session');
+		storage.set(SessionStorageKeys.E2EE_DATA, { key: 'old-key', fromUrl: true }, 'session');
+
+		service.prepare({ roomId: 'room-a' });
+
+		expect(context.roomSecret()).toBeUndefined();
+		expect(context.e2eeKey()).toBe('');
 	});
 });

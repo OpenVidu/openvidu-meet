@@ -17,7 +17,6 @@ import {
 	MeetRecordingStatus,
 	MeetRecordingUpdatedPayload,
 	MeetRoomMemberRole,
-	MeetRoomMemberTokenOptions,
 	MeetSignalType
 } from '@openvidu-meet/typings';
 import type { EmbeddedParticipantHandChangedEvent } from '@openvidu-meet/typings';
@@ -855,12 +854,8 @@ export class MeetingEventHandlerService {
 			return;
 		}
 
-		const tokenOptions: MeetRoomMemberTokenOptions = {
-			secret: this.meetingContext.roomSecret(),
-			joinMeeting: true
-		};
 		const regenerated = await this.roomMemberContextService.updateTokenInMeeting(() =>
-			this.roomMemberContextService.generateToken(roomId, tokenOptions)
+			this.roomMemberContextService.regenerateToken(roomId)
 		);
 
 		if (regenerated) {

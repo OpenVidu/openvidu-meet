@@ -78,6 +78,11 @@ export const INTERNAL_CONFIG = {
 	WEBHOOK_REQUEST_TIMEOUT: 5000, // Timeout in ms for each webhook HTTP request (delivery and URL test)
 	WEBHOOK_REGISTRY_LOCK_TTL: '5s' as StringValue, // Redis lock TTL serializing the webhook registration count-then-create against WEBHOOK_MAX_ENDPOINTS
 
+	// API key
+	API_KEY_LOCK_TTL: '5s' as StringValue, // Redis lock TTL serializing every API key replacement and the startup seeding, so exactly one key remains
+	API_KEY_LOCK_RETRY_DELAY: '200ms' as StringValue, // Delay between API key lock acquisition attempts
+	API_KEY_LOCK_MAX_ATTEMPTS: 10, // A regeneration still finding the lock taken after this answers 409
+
 	CAPTIONS_AGENT_NAME: 'speech-processing',
 	ASSISTANT_STATE_LOCK_TTL: '60s' as StringValue, // Redis lock TTL for AI assistant state (start/stop operations)
 
@@ -122,7 +127,7 @@ export const INTERNAL_CONFIG = {
 	GLOBAL_CONFIG_SCHEMA_VERSION: 4 as SchemaVersion, // MIGRATION_REV: 1789642617602
 	USER_SCHEMA_VERSION: 2 as SchemaVersion, // MIGRATION_REV: 1774181859233
 	API_KEY_SCHEMA_VERSION: 1 as SchemaVersion, // MIGRATION_REV: 1771328577054
-	ROOM_SCHEMA_VERSION: 8 as SchemaVersion, // MIGRATION_REV: 1792057733783
+	ROOM_SCHEMA_VERSION: 9 as SchemaVersion, // MIGRATION_REV: 1793351090878
 	ROOM_MEMBER_SCHEMA_VERSION: 6 as SchemaVersion, // MIGRATION_REV: 1792057733783
 	RECORDING_SCHEMA_VERSION: 3 as SchemaVersion, // MIGRATION_REV: 1781616231619
 	WEBHOOK_SCHEMA_VERSION: 1 as SchemaVersion // MIGRATION_REV: 1786634401242

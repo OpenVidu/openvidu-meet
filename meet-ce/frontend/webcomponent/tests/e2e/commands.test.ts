@@ -120,14 +120,14 @@ for (const integration of INTEGRATIONS) {
 		});
 
 		test.describe('END_MEETING Command', () => {
-			test('should end the meeting and emit left event with meeting_ended reason', async ({ page }) => {
+			test('should end the meeting and emit left event with meeting_ended_by_self reason', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.JOINED);
 
 				await endMeetingCommand(page);
 
 				const left = await expectEvent(page, EmbeddedEventName.LEFT);
-				await expect(left).toContainText(LeftEventReason.MEETING_ENDED);
+				expect(await eventPayloadField(left, 'reason')).toBe(LeftEventReason.MEETING_ENDED_BY_SELF);
 			});
 
 			test('should disconnect all participants when moderator ends the meeting', async ({ page, browser }) => {
@@ -144,10 +144,10 @@ for (const integration of INTEGRATIONS) {
 				await endMeetingCommand(page);
 
 				const moderatorLeft = await expectEvent(page, EmbeddedEventName.LEFT);
-				await expect(moderatorLeft).toContainText(LeftEventReason.MEETING_ENDED);
+				expect(await eventPayloadField(moderatorLeft, 'reason')).toBe(LeftEventReason.MEETING_ENDED_BY_SELF);
 
 				const speakerLeft = await expectEvent(speakerPage, EmbeddedEventName.LEFT);
-				await expect(speakerLeft).toContainText(LeftEventReason.MEETING_ENDED);
+				expect(await eventPayloadField(speakerLeft, 'reason')).toBe(LeftEventReason.MEETING_ENDED);
 
 				await speakerContext.close();
 			});
@@ -391,7 +391,7 @@ for (const integration of INTEGRATIONS) {
 				await endMeetingCommand(speakerPage);
 
 				const moderatorLeft = await expectEvent(page, EmbeddedEventName.LEFT);
-				await expect(moderatorLeft).toContainText(LeftEventReason.MEETING_ENDED);
+				expect(await eventPayloadField(moderatorLeft, 'reason')).toBe(LeftEventReason.MEETING_ENDED);
 
 				await speakerContext.close();
 			});
@@ -1014,7 +1014,7 @@ for (const integration of INTEGRATIONS) {
 				await endMeetingLegacyCommand(page);
 
 				const left = await expectEvent(page, EmbeddedEventName.LEFT);
-				await expect(left).toContainText(LeftEventReason.MEETING_ENDED);
+				expect(await eventPayloadField(left, 'reason')).toBe(LeftEventReason.MEETING_ENDED_BY_SELF);
 			});
 
 			test('should kick a participant via the deprecated kickParticipant() alias', async ({ page, browser }) => {

@@ -124,6 +124,8 @@
 			"MICROPHONE_LEVEL": "Mikrofonpegel",
 			"MICROPHONE_LEVEL_HINT": "Sprechen Sie, um zu prüfen, ob andere Sie hören",
 			"MICROPHONE_OFF": "Ihr Mikrofon ist aus",
+			"APPLY": "Übernehmen",
+			"EFFECT_APPLIES_ON_APPLY": "Der Hintergrundeffekt wird beim Übernehmen dieser Kamera hinzugefügt",
 			"DISPLAY_NAME": "Anzeigename",
 			"DISPLAY_NAME_HINT": "Beim Beitreten zur Besprechung gewählt",
 			"DISPLAY_NAME_LOCKED": "Kann während der Besprechung nicht geändert werden",

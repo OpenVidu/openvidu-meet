@@ -51,6 +51,10 @@
       "TITLE": "Membro non valido",
       "MESSAGE": "Non sei più un membro di questa stanza oppure le informazioni sul membro non sono corrette"
     },
+    "INVALID_PARTICIPANT_DATA": {
+      "TITLE": "Dati del partecipante non validi",
+      "MESSAGE": "L'applicazione che ha aperto questa riunione ha inviato dati del partecipante non validi. Contatta il fornitore di tale applicazione"
+    },
     "FORBIDDEN_ROOM_ACCESS": {
       "TITLE": "Accesso alla stanza non consentito",
       "MESSAGE": "Non sei autorizzato ad accedere a questa stanza (né alle sue registrazioni)"

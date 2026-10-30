@@ -87,9 +87,6 @@ const createApp = () => {
 	// Create a router for all app routes (to be mounted under base path)
 	const appRouter: Router = express.Router();
 
-	// Serve static files (disable automatic index.html serving so our catch-all can inject config)
-	appRouter.use(express.static(frontendDirectoryPath, { index: false }));
-
 	// Public API routes
 	// Public, unauthenticated docs page: cheap single HTML response, so a generous per-IP ceiling
 	// protects against trivial flooding without affecting legitimate use.
@@ -132,6 +129,8 @@ const createApp = () => {
 		staticAssetLimiter,
 		serveWebcomponentBundle(webcomponentEsmBundlePath, WEBCOMPONENT_BUNDLE_ALLOW_ORIGIN)
 	);
+	// Serve static files (disable automatic index.html serving so our catch-all can inject config)
+	appRouter.use(express.static(frontendDirectoryPath, { index: false }));
 	// Serve OpenVidu Meet index.html file for all non-API routes (with dynamic base path injection)
 	appRouter.get(/^(?!.*\/(api|internal-api)\/).*$/, (_req: Request, res: Response) => {
 		res.type('html').send(getHtmlWithBasePath(frontendHtmlPath));

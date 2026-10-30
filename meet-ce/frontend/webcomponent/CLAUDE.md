@@ -39,8 +39,9 @@ at exactly the two URLs above.
 The loader registers `<openvidu-meet>` immediately without loading Angular. On first
 `connectedCallback` it sets `globalThis.__OV_MEET_SKIP_AUTODEFINE__`, `import()`s the ESM (which then
 registers the real element as `openvidu-meet-impl`), and delegates to an inner `<openvidu-meet-impl>`:
-attributes/properties are mirrored, imperative calls made before load are buffered and replayed, and
-events are re-dispatched on the outer element.
+attributes/properties are mirrored, imperative calls made before load are rejected with a console
+warning (no command can run before the device setup screen), and events are re-dispatched on the outer
+element. The wrapper rejects them the same way while the Angular component does not exist yet.
 
 - The ESM is imported from the sibling of the loader's own `src` (`document.currentScript`) and, if
   that fails, from `<meet server>/v1/openvidu-meet.esm.js` derived from `room-url` / `recording-url`
@@ -74,10 +75,11 @@ events are re-dispatched on the outer element.
   `on()` / `once()` / `off()` listener API and keeps the 3.8.0 method names as aliases that forward
   to the canonical method, so `src/app/app.ts` and `EmbeddedCommandService` only declare canonical
   names. The iframe bridge accepts both wire names through `resolveEmbeddedCommandName()` and applies
-  no gating of its own, so both transports accept and reject identically.
-- `broadcastStart({destinations?})` runs one broadcast per destination given, or per room destination
-  not streamed to yet when none is given; `broadcastStop({broadcastIds?})` ends the broadcasts given,
-  or every running one. Both need `broadcastControl`.
+  no gating of its own beyond rejecting commands that arrive before the meeting page, so both
+  transports accept and reject identically.
+- `broadcastStart({destinationIds?, destinations?})` runs one broadcast per destination asked for, or per
+  room destination not streamed to yet when `destinationIds` is omitted; `broadcastStop({broadcastIds?})`
+  ends the broadcasts given, or every running one. Both need `broadcastControl`.
 - No `.d.ts` is published; hosts declare the subset they use (see
   `testapp/src/app/openvidu-meet-element.ts`).
 - `src/main.wc.ts`: `bootstrapOpenViduMeet(tagName?)` creates the Angular application, flips
@@ -93,9 +95,11 @@ events are re-dispatched on the outer element.
 - **No Angular Router**: there is no URL to own inside a host page, so `domains/embedded/` in the
   library provides a mini-router (`WcRouterService`, `WcRouteName`, `wcRouteFromAttributes`) that the
   HTTP interceptor also consults for the "current page".
-- **Shadow DOM**: `shadow-dom/styles.service.ts` reflects styles into the shadow root
-  (`adoptedStyleSheets`) and `shadow-dom/overlay-container.service.ts` re-hosts the CDK overlay
-  container inside it; otherwise Material dialogs/menus render unstyled outside the shadow boundary.
+- **Shadow DOM**: Meet's styles live only in the shadow root. `shadow-dom/shared-styles-host.ts`
+  keeps Angular from adding the host page's `<head>` as a style host, so no Meet rule reaches the
+  host page and no host rule is copied in. `shadow-dom/overlay-container.service.ts` re-hosts the
+  CDK overlay container inside the shadow root, and `shadow-dom/body-nodes.service.ts` moves there
+  the CDK accessibility nodes appended to `document.body`, which those styles keep hidden.
 
 ## Commands
 
@@ -130,6 +134,10 @@ pnpm run test:e2e          # Playwright, project `webcomponent`
 - Two embedding modes share this API surface: this inline webcomponent and a cross-document
   `<iframe>` (bridged by `IframeBridgeService` in the library over `postMessage`). Keep the
   attribute/command/event contract identical for both; both are parametrized in the e2e suites.
+- `IframeBridgeService` starts from an app initializer of the SPA shell (`src/app/app.config.ts`), so
+  the iframe listens and posts events on every screen. It imports `EmbeddedCommandService` as a type
+  only: the meeting page (`MeetingComponent`) attaches it, which keeps LiveKit out of the eager
+  bundle. A command received before that is rejected with the phase warning.
 - After changing the library, rebuild the bundle and re-deploy: the loader serves whatever is in the
   backend's `public/webcomponent/`, so a stale bundle silently masks your change.
 - The Angular `wc` configuration builds with `outputHashing: none` and optimization on.

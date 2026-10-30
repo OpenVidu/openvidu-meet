@@ -6,6 +6,7 @@ import {
 } from '@openvidu-meet/typings';
 import { HttpService } from '../../../shared/services/http.service';
 import { LoggerService } from '../../../shared/services/logger.service';
+import { MeetingContextService } from './meeting-context.service';
 
 @Service()
 export class MeetingModerationService {
@@ -13,17 +14,27 @@ export class MeetingModerationService {
 
 	protected httpService = inject(HttpService);
 	protected loggerService = inject(LoggerService);
+	protected meetingContextService = inject(MeetingContextService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingModerationService');
 
 	/**
-	 * Ends a meeting by its room ID.
+	 * Ends a meeting for everyone on behalf of the local participant, who is then told they ended it.
+	 * The mark is withdrawn when the server refuses, so a later end by someone else is still reported
+	 * as such.
 	 *
 	 * @param roomId - The unique identifier of the meeting room
 	 * @returns A promise that resolves when the meeting has been ended
 	 */
-	async endMeeting(roomId: string): Promise<any> {
+	async endMeeting(roomId: string): Promise<void> {
 		const path = `${this.MEETINGS_API}/${roomId}`;
-		return this.httpService.deleteRequest(path);
+		this.meetingContextService.markMeetingEndedBySelf();
+
+		try {
+			await this.httpService.deleteRequest(path);
+		} catch (error) {
+			this.meetingContextService.clearMeetingEndedBySelf();
+			throw error;
+		}
 	}
 
 	/**

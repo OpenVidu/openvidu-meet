@@ -1,4 +1,5 @@
 import {
+	EmbeddedCommandName,
 	EmbeddedEventName,
 	EmbeddedEventPayloadFor,
 	MeetBroadcastStartOptions,
@@ -7,6 +8,8 @@ import {
 	MeetParticipantMuteOptions,
 	MeetReaction
 } from '@openvidu-meet/typings';
+import { warnCommandRejected } from '../../command-rejection';
+import { EventListeners } from '../../event-listeners';
 import type { App } from '../app';
 
 /**
@@ -18,30 +21,18 @@ export function createOpenViduMeetElementClass(
 ): CustomElementConstructor {
 	// Declared, not returned as a class expression: mutation testing does not instrument inside one.
 	class OpenViduMeetElement extends (NgElementConstructor as any) {
-		// Keyed by the caller's handler, so `off()` can find the wrapper it was registered with.
-		private readonly _handlerMap = new Map<string, Map<(...args: never[]) => unknown, EventListener>>();
+		private readonly _listeners = new EventListeners(this as unknown as HTMLElement);
 
 		disconnectedCallback(): void {
 			super.disconnectedCallback?.();
-			const el = this as unknown as HTMLElement;
-			this._handlerMap.forEach((handlers, eventName) => {
-				handlers.forEach((listener) => el.removeEventListener(eventName, listener));
-			});
-			this._handlerMap.clear();
+			this._listeners.clear();
 		}
 
 		on(
 			eventName: EmbeddedEventName,
 			callback: (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName>) => void
 		): this {
-			const listener: EventListener = (e: Event) => callback((e as CustomEvent).detail);
-
-			if (!this._handlerMap.has(eventName)) {
-				this._handlerMap.set(eventName, new Map());
-			}
-
-			this._handlerMap.get(eventName)!.set(callback, listener);
-			(this as unknown as HTMLElement).addEventListener(eventName, listener);
+			this._listeners.add(eventName, callback);
 			return this;
 		}
 
@@ -49,107 +40,88 @@ export function createOpenViduMeetElementClass(
 			eventName: EmbeddedEventName,
 			callback: (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName>) => void
 		): this {
-			const wrapper = (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName>): void => {
-				this.off(eventName, wrapper);
-				callback(eventPayload);
-			};
-
-			return this.on(eventName, wrapper);
+			this._listeners.add(eventName, callback, true);
+			return this;
 		}
 
 		off(
 			eventName: EmbeddedEventName,
 			callback?: (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName>) => void
 		): this {
-			const handlers = this._handlerMap.get(eventName);
-
-			if (!handlers) return this;
-
-			const el = this as unknown as HTMLElement;
-
-			if (!callback) {
-				handlers.forEach((listener) => el.removeEventListener(eventName, listener));
-				this._handlerMap.delete(eventName);
-			} else {
-				const listener = handlers.get(callback);
-
-				if (listener) {
-					el.removeEventListener(eventName, listener);
-					handlers.delete(callback);
-
-					if (handlers.size === 0) this._handlerMap.delete(eventName);
-				}
-			}
-
+			this._listeners.remove(eventName, callback);
 			return this;
 		}
 
 		meetingEnd(): void {
-			this._getComponentInstance()?.meetingEnd();
+			this._run(EmbeddedCommandName.MEETING_END, (app) => app.meetingEnd());
 		}
 
 		meetingLeave(): void {
-			this._getComponentInstance()?.meetingLeave();
+			this._run(EmbeddedCommandName.MEETING_LEAVE, (app) => app.meetingLeave());
 		}
 
 		participantKick(participantIdentity: string): void {
-			this._getComponentInstance()?.participantKick(participantIdentity);
+			this._run(EmbeddedCommandName.PARTICIPANT_KICK, (app) => app.participantKick(participantIdentity));
 		}
 
 		participantMute(participantIdentity: string, media: MeetParticipantMuteOptions): void {
-			this._getComponentInstance()?.participantMute(participantIdentity, media);
+			this._run(EmbeddedCommandName.PARTICIPANT_MUTE, (app) => app.participantMute(participantIdentity, media));
 		}
 
 		participantMuteAll(media: MeetParticipantMuteOptions): void {
-			this._getComponentInstance()?.participantMuteAll(media);
+			this._run(EmbeddedCommandName.PARTICIPANT_MUTE_ALL, (app) => app.participantMuteAll(media));
 		}
 
 		participantUpdateRole(participantIdentity: string, action: MeetParticipantModerationAction): void {
-			this._getComponentInstance()?.participantUpdateRole(participantIdentity, action);
+			this._run(EmbeddedCommandName.PARTICIPANT_UPDATE_ROLE, (app) =>
+				app.participantUpdateRole(participantIdentity, action)
+			);
 		}
 
 		mediaToggleAudio(active?: boolean): void {
-			this._getComponentInstance()?.mediaToggleAudio(active);
+			this._run(EmbeddedCommandName.MEDIA_TOGGLE_AUDIO, (app) => app.mediaToggleAudio(active));
 		}
 
 		mediaToggleVideo(active?: boolean): void {
-			this._getComponentInstance()?.mediaToggleVideo(active);
+			this._run(EmbeddedCommandName.MEDIA_TOGGLE_VIDEO, (app) => app.mediaToggleVideo(active));
 		}
 
 		mediaToggleScreenShare(active?: boolean): void {
-			this._getComponentInstance()?.mediaToggleScreenShare(active);
+			this._run(EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE, (app) => app.mediaToggleScreenShare(active));
 		}
 
 		recordingStart(): void {
-			this._getComponentInstance()?.recordingStart();
+			this._run(EmbeddedCommandName.RECORDING_START, (app) => app.recordingStart());
 		}
 
 		recordingStop(): void {
-			this._getComponentInstance()?.recordingStop();
+			this._run(EmbeddedCommandName.RECORDING_STOP, (app) => app.recordingStop());
 		}
 
 		participantHandRaise(): void {
-			this._getComponentInstance()?.participantHandRaise();
+			this._run(EmbeddedCommandName.PARTICIPANT_HAND_RAISE, (app) => app.participantHandRaise());
 		}
 
 		participantHandLower(participantIdentity?: string): void {
-			this._getComponentInstance()?.participantHandLower(participantIdentity);
+			this._run(EmbeddedCommandName.PARTICIPANT_HAND_LOWER, (app) =>
+				app.participantHandLower(participantIdentity)
+			);
 		}
 
 		participantHandLowerAll(): void {
-			this._getComponentInstance()?.participantHandLowerAll();
+			this._run(EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL, (app) => app.participantHandLowerAll());
 		}
 
 		participantReactionSend(reaction: MeetReaction): void {
-			this._getComponentInstance()?.participantReactionSend(reaction);
+			this._run(EmbeddedCommandName.PARTICIPANT_REACTION_SEND, (app) => app.participantReactionSend(reaction));
 		}
 
 		broadcastStart(options?: MeetBroadcastStartOptions): void {
-			this._getComponentInstance()?.broadcastStart(options);
+			this._run(EmbeddedCommandName.BROADCAST_START, (app) => app.broadcastStart(options));
 		}
 
 		broadcastStop(options?: MeetBroadcastStopOptions): void {
-			this._getComponentInstance()?.broadcastStop(options);
+			this._run(EmbeddedCommandName.BROADCAST_STOP, (app) => app.broadcastStop(options));
 		}
 
 		// ── Deprecated method aliases ────────────────────────────────────────
@@ -171,11 +143,17 @@ export function createOpenViduMeetElementClass(
 			this.participantKick(participantIdentity);
 		}
 
-		private _getComponentInstance(): App | null {
+		/** Runs a command on the component, or rejects it with a warning while Meet has not started. */
+		private _run(command: EmbeddedCommandName, call: (app: App) => void): void {
 			// Accesses Angular Elements internal strategy to reach the component instance.
-			const strategy = (this as any).ngElementStrategy;
-			const instance = strategy?.componentRef?.instance as App | undefined;
-			return instance ?? null;
+			const app = (this as any).ngElementStrategy?.componentRef?.instance as App | undefined;
+
+			if (!app) {
+				warnCommandRejected(command);
+				return;
+			}
+
+			call(app);
 		}
 	}
 

@@ -139,7 +139,7 @@ The server SHALL sign every token with the deployment's `LIVEKIT_API_KEY` and `L
 - **THEN** the second replica answers `200`
 
 ### Requirement: Refresh the access token
-The server SHALL exchange a valid refresh token sent to `refreshAccessToken` for a new `accessToken`, and SHALL also return a new `refreshToken` when `MEET_REFRESH_TOKEN_ROTATION_ENABLED` is `true` (the default).
+The server SHALL exchange a valid refresh token sent to `refreshAccessToken` for a new `accessToken`, and SHALL also return a new `refreshToken` when `MEET_REFRESH_TOKEN_ROTATION_ENABLED` is `true` (the default). With rotation, each refresh token is accepted once: presenting it again answers `400` with message `Invalid refresh token`, on every replica.
 
 #### Scenario: Refresh with rotation
 - **GIVEN** a valid refresh token and default configuration
@@ -150,6 +150,22 @@ The server SHALL exchange a valid refresh token sent to `refreshAccessToken` for
 - **GIVEN** `MEET_REFRESH_TOKEN_ROTATION_ENABLED` set to `false`
 - **WHEN** the client refreshes
 - **THEN** the response carries an `accessToken` and no `refreshToken`
+
+#### Scenario: Rotated refresh token presented again
+- **GIVEN** default configuration and a refresh token already exchanged through `refreshAccessToken`
+- **WHEN** a client calls `refreshAccessToken` with that same refresh token
+- **THEN** the server answers `400` with message `Invalid refresh token`
+- **AND** the tokens the first exchange returned stay valid
+
+#### Scenario: Same refresh token on two replicas at once
+- **GIVEN** two Meet replicas, default configuration and one refresh token
+- **WHEN** each replica receives `refreshAccessToken` with that refresh token at the same time
+- **THEN** one answers `200` with new tokens and the other `400` with message `Invalid refresh token`
+
+#### Scenario: Refresh without rotation reuses the token
+- **GIVEN** `MEET_REFRESH_TOKEN_ROTATION_ENABLED` set to `false` and a refresh token already exchanged once
+- **WHEN** the client refreshes with it again before it expires
+- **THEN** the server answers `200` with a new `accessToken`
 
 ### Requirement: Refresh failures
 The server SHALL answer `refreshAccessToken` with `400` when the refresh token is missing (`No refresh token provided`) or is invalid, expired or another kind of token (`Invalid refresh token`), and with `403` when its user no longer exists or has a pending password change.
@@ -164,11 +180,24 @@ The server SHALL answer `refreshAccessToken` with `400` when the refresh token i
 - **THEN** the server answers `403` saying a password change is required
 
 ### Requirement: Logout
-The server SHALL answer `logoutUser` with `200` whether or not the request carries credentials, keeping no server-side session; logging out consists of the client discarding its tokens.
+The server SHALL answer `logoutUser` with `200` whether or not the request carries credentials. When it carries a valid access token or refresh token, the server SHALL end that login session on every replica: every access token and refresh token of the session is rejected from then on, while the user's other sessions stay valid. A login session is the tokens one `loginUser` or `changeUserPassword` returns plus every token later obtained from them through `refreshAccessToken`.
 
 #### Scenario: Logout without credentials
 - **WHEN** a client calls `logoutUser` with no credential
 - **THEN** the server answers `200` with message `Logout successful`
+
+#### Scenario: Logout ends the session
+- **GIVEN** a user logged in from two browsers
+- **WHEN** the first browser calls `logoutUser` with its access token
+- **THEN** that access token answers `401` with message `Invalid token` on `getMe`
+- **AND** that browser's refresh token answers `400` with message `Invalid refresh token` on `refreshAccessToken`
+- **AND** the second browser's tokens are still accepted
+
+#### Scenario: Logout on another replica
+- **GIVEN** two Meet replicas and a logged-in user
+- **WHEN** the user calls `logoutUser` through the first replica
+- **AND** presents the same access token to the second replica
+- **THEN** the second replica answers `401` with message `Invalid token`
 
 ### Requirement: Role change invalidates access tokens
 The server SHALL reject with `401` every access token issued before the latest change of its user's role, on every replica, while the user's refresh token keeps working and yields an access token that is accepted.
@@ -221,7 +250,7 @@ The server SHALL reject with `401` a room member token bound to a room member is
 - **THEN** the server answers `401` with message `Invalid token`
 
 ### Requirement: Demotion revokes room member tokens
-The server SHALL reject with `401` every room member token issued to a participant before they were demoted from moderator (`participantRoleUpdate` or `participantUpdateRole`, see `meeting-moderation`), on every replica and for as long as such a token could still be valid, while a token issued to them after the demotion is accepted.
+The server SHALL reject with `401` every room member token issued to a participant before they were demoted from moderator (`participantRoleUpdate` or `participantUpdateRole`, see `meeting-moderation`), on every replica and for as long as such a token could still be valid, while a token issued to them after the demotion is accepted. Only `refreshRoomMemberToken` SHALL still renew it, into a token with the restored permissions (see `room-members`).
 
 #### Scenario: Demoted on another replica
 - **GIVEN** two Meet replicas and a participant promoted to moderator who holds a room member token issued during the promotion
@@ -318,6 +347,16 @@ The console SHALL keep its tokens in browser storage, and when a request answers
 - **GIVEN** a signed-in user whose access and refresh tokens both expired
 - **WHEN** they act on a console page
 - **THEN** the console shows the login page and returns to that page after login
+
+#### Scenario: Several requests expire together
+- **GIVEN** a signed-in user whose access token expired, with default refresh token rotation
+- **WHEN** a console page sends several requests that all answer `401`
+- **THEN** the console refreshes once, retries every request with the new access token and the user stays signed in
+
+#### Scenario: Two console tabs renew at once
+- **GIVEN** a user signed in to the console in two tabs of the same browser, with default refresh token rotation
+- **WHEN** both tabs find the access token expired at the same moment
+- **THEN** both tabs keep working without returning to the login page
 
 ### Requirement: Console logout
 The console SHALL log the user out from the logout button of the console toolbar (see `console`) by calling `logoutUser`, discarding the stored tokens and showing the login page.

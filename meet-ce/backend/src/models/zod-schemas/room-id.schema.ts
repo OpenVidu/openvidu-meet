@@ -10,3 +10,5 @@ export const nonEmptySanitizedRoomId = (fieldName: string) =>
 		.refine((data) => data !== '', {
 			message: `${fieldName} cannot be empty after sanitization`
 		});
+
+export const RoomIdParamSchema = nonEmptySanitizedRoomId('roomId');

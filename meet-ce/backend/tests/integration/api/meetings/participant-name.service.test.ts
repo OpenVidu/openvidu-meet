@@ -1,6 +1,7 @@
-import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import ms from 'ms';
 import { container, registerDependencies } from '../../../../src/config/dependency-injector.config.js';
+import { RedisKeyName } from '../../../../src/models/redis.model.js';
 import { ParticipantNameService } from '../../../../src/services/participant-name.service.js';
 import { RedisService } from '../../../../src/services/redis.service.js';
 
@@ -8,6 +9,28 @@ describe('ParticipantNameService', () => {
 	let participantNameService: ParticipantNameService;
 	let redisService: RedisService;
 	const testRoomId = 'test-room-unique-names';
+	const holders = new Map<string, string>();
+	let sessions = 0;
+
+	// Each reservation stands for the session of a different participant unless a test names the identity
+	const reserve = async (roomId: string, name: string, identity = `participant-${++sessions}`) => {
+		const reserved = await participantNameService.reserveUniqueName(roomId, name, identity);
+		holders.set(`${roomId}:${reserved}`, identity);
+		return reserved;
+	};
+
+	const reserveAt = async (reservedAt: number, name: string, identity: string) => {
+		const now = jest.spyOn(Date, 'now').mockReturnValue(reservedAt);
+
+		try {
+			return await reserve(testRoomId, name, identity);
+		} finally {
+			now.mockRestore();
+		}
+	};
+
+	const release = (roomId: string, name: string, joinedAt = Date.now()) =>
+		participantNameService.releaseName(roomId, name, holders.get(`${roomId}:${name}`) ?? 'unknown', joinedAt);
 
 	beforeAll(async () => {
 		registerDependencies();
@@ -43,7 +66,7 @@ describe('ParticipantNameService', () => {
 	describe('Reserve unique participant name', () => {
 		it('should reserve the original name when available', async () => {
 			const requestedName = 'Participant';
-			const reservedName = await participantNameService.reserveUniqueName(testRoomId, requestedName);
+			const reservedName = await reserve(testRoomId, requestedName);
 
 			expect(reservedName).toBe(requestedName);
 
@@ -53,8 +76,8 @@ describe('ParticipantNameService', () => {
 		});
 
 		it('should treat names as case-insensitive if required', async () => {
-			await participantNameService.reserveUniqueName(testRoomId, 'Participant');
-			const reserved2 = await participantNameService.reserveUniqueName(testRoomId, 'participant');
+			await reserve(testRoomId, 'Participant');
+			const reserved2 = await reserve(testRoomId, 'participant');
 			expect(reserved2).toBe('participant_1');
 		});
 
@@ -62,15 +85,15 @@ describe('ParticipantNameService', () => {
 			const requestedName = 'Participant';
 
 			// Reserve the original name
-			const firstReservation = await participantNameService.reserveUniqueName(testRoomId, requestedName);
+			const firstReservation = await reserve(testRoomId, requestedName);
 			expect(firstReservation).toBe(requestedName);
 
 			// Try to reserve the same name again - should get alternative
-			const secondReservation = await participantNameService.reserveUniqueName(testRoomId, requestedName);
+			const secondReservation = await reserve(testRoomId, requestedName);
 			expect(secondReservation).toBe(`${requestedName}_1`);
 
 			// Try again - should get next alternative
-			const thirdReservation = await participantNameService.reserveUniqueName(testRoomId, requestedName);
+			const thirdReservation = await reserve(testRoomId, requestedName);
 			expect(thirdReservation).toBe(`${requestedName}_2`);
 		});
 
@@ -81,24 +104,24 @@ describe('ParticipantNameService', () => {
 			const baseName = 'BOB';
 
 			// Reserve BOB
-			const name1 = await participantNameService.reserveUniqueName(testRoomId, baseName);
+			const name1 = await reserve(testRoomId, baseName);
 			expect(name1).toBe('BOB');
 
 			// Reserve BOB again -> should get BOB_1
-			const name2 = await participantNameService.reserveUniqueName(testRoomId, baseName);
+			const name2 = await reserve(testRoomId, baseName);
 			expect(name2).toBe('BOB_1');
 
 			// Now a user explicitly requests "BOB_1" (which is already taken)
 			// Should get BOB_2, NOT BOB_1_1
-			const name3 = await participantNameService.reserveUniqueName(testRoomId, 'BOB_1');
+			const name3 = await reserve(testRoomId, 'BOB_1');
 			expect(name3).toBe('BOB_2');
 
 			// Request BOB again -> should get BOB_3
-			const name4 = await participantNameService.reserveUniqueName(testRoomId, baseName);
+			const name4 = await reserve(testRoomId, baseName);
 			expect(name4).toBe('BOB_3');
 
 			// Request BOB_2 (already taken) -> should get BOB_4
-			const name5 = await participantNameService.reserveUniqueName(testRoomId, 'BOB_2');
+			const name5 = await reserve(testRoomId, 'BOB_2');
 			expect(name5).toBe('BOB_4');
 		});
 
@@ -106,23 +129,23 @@ describe('ParticipantNameService', () => {
 			// Test with names that already have underscores in them
 
 			// Reserve "John_Doe"
-			const name1 = await participantNameService.reserveUniqueName(testRoomId, 'John_Doe');
+			const name1 = await reserve(testRoomId, 'John_Doe');
 			expect(name1).toBe('John_Doe');
 
 			// Reserve "John_Doe" again -> should get "John_Doe_1"
-			const name2 = await participantNameService.reserveUniqueName(testRoomId, 'John_Doe');
+			const name2 = await reserve(testRoomId, 'John_Doe');
 			expect(name2).toBe('John_Doe_1');
 
 			// Request "John_Doe_1" (already taken) -> should get "John_Doe_2"
-			const name3 = await participantNameService.reserveUniqueName(testRoomId, 'John_Doe_1');
+			const name3 = await reserve(testRoomId, 'John_Doe_1');
 			expect(name3).toBe('John_Doe_2');
 
 			// Request "John_Doe_5" (not taken yet) -> should reserve "John_Doe_5"
-			const name4 = await participantNameService.reserveUniqueName(testRoomId, 'John_Doe_5');
+			const name4 = await reserve(testRoomId, 'John_Doe_5');
 			expect(name4).toBe('John_Doe_5');
 
 			// Request "John_Doe" again -> should get "John_Doe_3" (next available)
-			const name5 = await participantNameService.reserveUniqueName(testRoomId, 'John_Doe');
+			const name5 = await reserve(testRoomId, 'John_Doe');
 			expect(name5).toBe('John_Doe_3');
 		});
 
@@ -132,7 +155,7 @@ describe('ParticipantNameService', () => {
 
 			// Simulate concurrent requests for the same name
 			const reservationPromises = Array.from({ length: concurrentRequests }, () =>
-				participantNameService.reserveUniqueName(testRoomId, requestedName)
+				reserve(testRoomId, requestedName)
 			);
 
 			const reservedNames = await Promise.all(reservationPromises);
@@ -154,19 +177,19 @@ describe('ParticipantNameService', () => {
 			const requestedName = 'Participant';
 
 			// Reserve multiple names
-			const name1 = await participantNameService.reserveUniqueName(testRoomId, requestedName);
-			const name2 = await participantNameService.reserveUniqueName(testRoomId, requestedName);
-			const name3 = await participantNameService.reserveUniqueName(testRoomId, requestedName);
+			const name1 = await reserve(testRoomId, requestedName);
+			const name2 = await reserve(testRoomId, requestedName);
+			const name3 = await reserve(testRoomId, requestedName);
 
 			expect(name1).toBe('Participant');
 			expect(name2).toBe('Participant_1');
 			expect(name3).toBe('Participant_2');
 
 			// Release the middle one
-			await participantNameService.releaseName(testRoomId, name2);
+			await release(testRoomId, name2);
 
 			// Next reservation should reuse the released number
-			const name4 = await participantNameService.reserveUniqueName(testRoomId, requestedName);
+			const name4 = await reserve(testRoomId, requestedName);
 			expect(name4).toBe('Participant_1'); // Should reuse the released number
 		});
 
@@ -177,18 +200,18 @@ describe('ParticipantNameService', () => {
 			const names: string[] = [];
 
 			for (let i = 0; i < 5; i++) {
-				names.push(await participantNameService.reserveUniqueName(testRoomId, requestedName));
+				names.push(await reserve(testRoomId, requestedName));
 			}
 
 			expect(names).toEqual(['Optimized', 'Optimized_1', 'Optimized_2', 'Optimized_3', 'Optimized_4']);
 
 			// Release some names (simulate participants leaving)
-			await participantNameService.releaseName(testRoomId, 'Optimized_1');
-			await participantNameService.releaseName(testRoomId, 'Optimized_3');
+			await release(testRoomId, 'Optimized_1');
+			await release(testRoomId, 'Optimized_3');
 
 			// New participants should get the lowest available numbers
-			const newName1 = await participantNameService.reserveUniqueName(testRoomId, requestedName);
-			const newName2 = await participantNameService.reserveUniqueName(testRoomId, requestedName);
+			const newName1 = await reserve(testRoomId, requestedName);
+			const newName2 = await reserve(testRoomId, requestedName);
 
 			expect(newName1).toBe('Optimized_1'); // Lowest available
 			expect(newName2).toBe('Optimized_3'); // Next lowest available
@@ -200,11 +223,11 @@ describe('ParticipantNameService', () => {
 			const participantName = 'Participant';
 
 			// Reserve a name
-			await participantNameService.reserveUniqueName(testRoomId, participantName);
+			await reserve(testRoomId, participantName);
 			expect(await participantNameService.isNameReserved(testRoomId, participantName)).toBe(true);
 
 			// Release the name
-			await participantNameService.releaseName(testRoomId, participantName);
+			await release(testRoomId, participantName);
 			expect(await participantNameService.isNameReserved(testRoomId, participantName)).toBe(false);
 		});
 
@@ -212,11 +235,49 @@ describe('ParticipantNameService', () => {
 			const participantName = 'Frank';
 
 			// Reserve, release, and reserve again
-			await participantNameService.reserveUniqueName(testRoomId, participantName);
-			await participantNameService.releaseName(testRoomId, participantName);
+			await reserve(testRoomId, participantName);
+			await release(testRoomId, participantName);
 
-			const newReservation = await participantNameService.reserveUniqueName(testRoomId, participantName);
+			const newReservation = await reserve(testRoomId, participantName);
 			expect(newReservation).toBe(participantName);
+		});
+	});
+
+	describe('Reservations owned by an identity', () => {
+		it('should give an identity its own name back and another identity a suffix', async () => {
+			expect(await reserve(testRoomId, 'Ana', 'member-ana')).toBe('Ana');
+			expect(await reserve(testRoomId, 'Ana', 'member-ana')).toBe('Ana');
+			expect(await reserve(testRoomId, 'Ana', 'member-bob')).toBe('Ana_1');
+		});
+
+		it('should keep a name a newer session took over when the earlier session leaves', async () => {
+			await reserveAt(1_000, 'Ana', 'member-ana');
+			await reserveAt(3_000, 'Ana', 'member-ana');
+
+			await release(testRoomId, 'Ana', 2_000);
+
+			expect(await participantNameService.isNameReserved(testRoomId, 'Ana')).toBe(true);
+			expect(await reserve(testRoomId, 'Ana', 'member-bob')).toBe('Ana_1');
+		});
+
+		it('should free the name of the leaving session and return its suffix to the pool', async () => {
+			await reserve(testRoomId, 'Ana', 'member-ana');
+			const suffixedName = await reserveAt(1_000, 'Ana', 'member-bob');
+
+			await release(testRoomId, suffixedName, 2_000);
+
+			expect(await participantNameService.isNameReserved(testRoomId, suffixedName)).toBe(false);
+			expect(await reserve(testRoomId, 'Ana', 'member-carol')).toBe('Ana_1');
+		});
+
+		it('should release a reservation in the old format and never give it back by identity', async () => {
+			const nameKey = `${RedisKeyName.ROOM_PARTICIPANTS}${testRoomId}:ana`;
+			await redisService.setIfNotExists(nameKey, Date.now().toString(), ms('1m'));
+
+			expect(await reserve(testRoomId, 'Ana', 'member-ana')).toBe('Ana_1');
+
+			await participantNameService.releaseName(testRoomId, 'Ana', 'member-ana', Date.now());
+			expect(await participantNameService.isNameReserved(testRoomId, 'Ana')).toBe(false);
 		});
 	});
 
@@ -226,7 +287,7 @@ describe('ParticipantNameService', () => {
 
 			// Reserve multiple names
 			for (const name of names) {
-				await participantNameService.reserveUniqueName(testRoomId, name);
+				await reserve(testRoomId, name);
 			}
 
 			const reservedNames = await participantNameService.getReservedNames(testRoomId);
@@ -250,7 +311,7 @@ describe('ParticipantNameService', () => {
 			const twentyNames = participantNameService['MAX_CONCURRENT_NAME_REQUESTS'];
 
 			for (let i = 0; i <= twentyNames; i++) {
-				promises.push(participantNameService.reserveUniqueName(testRoomId, requestedName));
+				promises.push(reserve(testRoomId, requestedName));
 			}
 
 			// Los primeros MAX_RETRIES deben resolverse bien
@@ -268,18 +329,18 @@ describe('ParticipantNameService', () => {
 			const requestedName = 'RaceTest';
 
 			// Try to reserve two names
-			const n1 = await participantNameService.reserveUniqueName(testRoomId, requestedName);
-			const n2 = await participantNameService.reserveUniqueName(testRoomId, requestedName);
+			const n1 = await reserve(testRoomId, requestedName);
+			const n2 = await reserve(testRoomId, requestedName);
 
 			expect([n1, n2]).toEqual(['RaceTest', 'RaceTest_1']);
 
 			// Release _1
-			await participantNameService.releaseName(testRoomId, n2);
+			await release(testRoomId, n2);
 
 			// Try to reserve again concurrently
 			const [c1, c2] = await Promise.all([
-				participantNameService.reserveUniqueName(testRoomId, requestedName),
-				participantNameService.reserveUniqueName(testRoomId, requestedName)
+				reserve(testRoomId, requestedName),
+				reserve(testRoomId, requestedName)
 			]);
 
 			// One of them should be _1 and the other should be _2
@@ -293,12 +354,12 @@ describe('ParticipantNameService', () => {
 
 			try {
 				const requestedName = 'TTLTest';
-				const name = await participantNameService.reserveUniqueName(testRoomId, requestedName);
+				const name = await reserve(testRoomId, requestedName);
 				expect(name).toBe('TTLTest');
 
 				await new Promise((resolve) => setTimeout(resolve, service.PARTICIPANT_NAME_TTL + 50));
 
-				const newName = await participantNameService.reserveUniqueName(testRoomId, requestedName);
+				const newName = await reserve(testRoomId, requestedName);
 				expect(newName).toBe('TTLTest');
 			} finally {
 				service.PARTICIPANT_NAME_TTL = configuredTtl;
@@ -309,8 +370,8 @@ describe('ParticipantNameService', () => {
 			const requestedName = 'Isolated';
 
 			// Reserve in two different rooms
-			const room1Name = await participantNameService.reserveUniqueName(`${testRoomId}-a`, requestedName);
-			const room2Name = await participantNameService.reserveUniqueName(`${testRoomId}-b`, requestedName);
+			const room1Name = await reserve(`${testRoomId}-a`, requestedName);
+			const room2Name = await reserve(`${testRoomId}-b`, requestedName);
 
 			// Both names should be isolated
 			expect(room1Name).toBe(requestedName);
@@ -320,11 +381,11 @@ describe('ParticipantNameService', () => {
 		it('should treat names case-insensitively if normalization is enabled', async () => {
 			const requestedName = 'CaseTest';
 
-			const n1 = await participantNameService.reserveUniqueName(testRoomId, requestedName);
+			const n1 = await reserve(testRoomId, requestedName);
 			expect(n1).toBe('CaseTest');
 
 			// Try to reserve with different casing
-			const n2 = await participantNameService.reserveUniqueName(testRoomId, 'casetest');
+			const n2 = await reserve(testRoomId, 'casetest');
 			expect(n2).toBe('casetest_1'); // Should return alternative name with original case
 		});
 	});

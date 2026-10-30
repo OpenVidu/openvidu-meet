@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetUser, MeetUserRole } from '@openvidu-meet/typings';
+import { MeetUser, MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
 import { MEET_ENV } from '../../../../src/environment.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { createUser, deleteAllUsers, getUsers, startTestServer } from '../../../helpers/request-helpers.js';
@@ -57,6 +57,10 @@ describe('Users API Tests', () => {
 
 			// Root admin + 5 test users = 6 total
 			expect(response.body.users.length).toBe(6);
+			const rootAdminIds = (response.body.users as MeetUserDTO[])
+				.filter((user) => user.isRootAdmin)
+				.map((user) => user.userId);
+			expect(rootAdminIds).toEqual([MEET_ENV.INITIAL_ADMIN_USER]);
 			expect(response.body).toHaveProperty('pagination');
 			expect(response.body.pagination).toHaveProperty('isTruncated', false);
 		});

@@ -8,7 +8,7 @@
 ## 2. Room config, permissions and migrations
 
 - [x] 2.1 Validate `config.broadcast` (destinations, names, URLs, layout, encoding), keep full URLs in `broadcastDestinationUrls` and serve them redacted, resolve echoed redacted URLs, replace the destination list as a whole, require a destination while enabled and turn broadcast off under end-to-end encryption; redact the room creation log; verified by the unit tests `broadcast-schemas` and `broadcast.helper` and the integration tests `broadcast-room-config`, `e2ee-room-config`, `create-room` and `update-room-config`.
-- [x] 2.2 Grant both permissions to the moderator role of new rooms, deny them to the speaker role, complete them to `false` on older rooms, members and tokens, and migrate rooms to v8 and room members to v6 with a refreshed `MIGRATION_REV`; verified by the unit test `permission-backfill-migrations` and the integration tests `room-migrations` and `room-member-migrations`.
+- [x] 2.2 Grant both permissions to the moderator role of new rooms, deny them to the speaker role, complete them to `false` on older rooms, members and tokens, and migrate rooms to v9 and room members to v6 with a refreshed `MIGRATION_REV`; verified by the unit test `permission-backfill-migrations` and the integration tests `room-migrations` and `room-member-migrations`.
 - [x] 2.3 Document `MeetBroadcastConfig`, `MeetBroadcastDestination` and both permissions in the OpenAPI; verified by `redocly lint` and the API naming lint.
 
 ## 3. Broadcasts API

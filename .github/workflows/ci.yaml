@@ -1,0 +1,528 @@
+name: Tests
+
+# Runs the test suites a change affects (see scripts/ci/changed-suites.mjs) in two stages, unit then
+# integration and e2e, and ends in `All tests passed`, the only required status check of `main`.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 0 * * *'
+  workflow_dispatch:
+    inputs:
+      suites:
+        description: 'Suites to run, comma-separated (backend-unit, frontend-unit, wc-unit, backend-integration, frontend-e2e, wc-e2e), or all'
+        default: 'all'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Select suites
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      backend-unit: ${{ steps.select.outputs.backend-unit }}
+      frontend-unit: ${{ steps.select.outputs.frontend-unit }}
+      wc-unit: ${{ steps.select.outputs.wc-unit }}
+      backend-integration: ${{ steps.select.outputs.backend-integration }}
+      frontend-e2e: ${{ steps.select.outputs.frontend-e2e }}
+      wc-e2e: ${{ steps.select.outputs.wc-e2e }}
+      storage: ${{ steps.select.outputs.storage }}
+    steps:
+      - name: Checkout the merge commit and its base
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+
+      # Pull requests run the suites their files affect, pushes to main the affected unit and
+      # integration suites, and the nightly every suite when main moved since the last green nightly.
+      - name: Select the suites the change affects
+        id: select
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEFORE: ${{ github.event.before }}
+          SUITES: ${{ inputs.suites }}
+        run: |
+          pick() { node scripts/ci/changed-suites.mjs "$@" >> "$GITHUB_OUTPUT"; }
+
+          case "$GITHUB_EVENT_NAME" in
+            pull_request)
+              git diff --name-only HEAD^1 HEAD | pick
+              ;;
+            push)
+              if git fetch --no-tags --depth=1 origin "$BEFORE"; then
+                git diff --name-only "$BEFORE" HEAD | pick --only backend-unit,frontend-unit,wc-unit,backend-integration
+              else
+                pick --all --only backend-unit,frontend-unit,wc-unit,backend-integration
+              fi
+              ;;
+            schedule)
+              last=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$GITHUB_WORKFLOW" --event schedule \
+                --status success --limit 1 --json headSha --jq '.[0].headSha')
+              if [ "$last" != "$GITHUB_SHA" ]; then
+                pick --all
+              fi
+              ;;
+            workflow_dispatch)
+              if [ "$SUITES" = 'all' ]; then
+                pick --all
+              else
+                pick --all --only "$SUITES"
+              fi
+              ;;
+          esac
+          cat "$GITHUB_OUTPUT"
+
+  backend-unit:
+    name: Backend unit
+    needs: changes
+    if: needs.changes.outputs.backend-unit == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      checks: write # required by mikepenz/action-junit-report to publish the test report
+    steps:
+      - &checkout
+        name: Checkout OpenVidu Meet
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - &setup-node
+        name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24.22.1'
+      - &setup-pnpm
+        name: Setup pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11.28.9
+      - &install-safe-chain
+        name: Install safe-chain
+        uses: OpenVidu/actions/install-safe-chain@26a149ff32c72503a7c7ce4fb5fa4d000cb3262d # 1.0.25
+
+      - name: Install dependencies
+        run: ./meet.sh install
+
+      - name: Build typings
+        run: ./meet.sh build-typings --skip-install
+
+      - name: Run tests
+        run: ./meet.sh test-unit-backend --skip-install
+        env:
+          JEST_JUNIT_OUTPUT_DIR: './backend/reports/'
+
+      - &publish-test-report
+        name: Publish Test Report
+        uses: mikepenz/action-junit-report@6ef3fdcfcd5f0b5d14df3e659ef19b8c6820f93d # v6.6.1
+        if: always()
+        with:
+          report_paths: '**/reports/junit.xml'
+          fail_on_failure: true
+          require_tests: true
+
+      - name: Type-check tests
+        if: always()
+        run: pnpm --filter @openvidu-meet/backend run test:types
+
+      - name: Run ESLint
+        if: always()
+        run: ./meet.sh lint-backend --skip-install
+
+  frontend-unit:
+    name: Frontend unit
+    needs: changes
+    if: needs.changes.outputs.frontend-unit == 'true'
+    runs-on: ubuntu-24.04
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
+    steps:
+      - *checkout
+      - *setup-node
+      - *setup-pnpm
+      - *install-safe-chain
+
+      - name: Install dependencies
+        run: ./meet.sh install
+
+      - name: Run frontend library unit tests
+        run: ./meet.sh test-unit-frontend --skip-install
+
+      - name: Run ESLint
+        if: always()
+        run: ./meet.sh lint-frontend --skip-install
+
+  wc-unit:
+    name: WebComponent unit
+    needs: changes
+    if: needs.changes.outputs.wc-unit == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - *checkout
+      - *setup-node
+      - *setup-pnpm
+      - *install-safe-chain
+
+      - name: Install dependencies
+        run: ./meet.sh install
+
+      - name: Build typings
+        run: ./meet.sh build-typings --skip-install
+
+      - name: Build webcomponent
+        run: ./meet.sh build-webcomponent --skip-install --skip-typings
+
+      # ts-jest runs with isolatedModules (transpile-only), so this is the sole type-check the
+      # webcomponent test suites ever get (same hole test:types closes for the backend's tests/**).
+      - name: Type-check tests
+        run: pnpm --filter @openvidu-meet/webcomponent run test:types
+
+      - name: Run tests
+        run: ./meet.sh test-unit-webcomponent --skip-install
+
+      - name: Run ESLint
+        if: always()
+        run: ./meet.sh lint-webcomponent --skip-install
+
+  backend-integration:
+    name: ${{ matrix.suite }}
+    needs: [changes, backend-unit, frontend-unit, wc-unit]
+    if: ${{ !cancelled() && !failure() && needs.changes.outputs.backend-integration == 'true' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      checks: write # required by mikepenz/action-junit-report to publish the test report
+    env:
+      JEST_JUNIT_OUTPUT_DIR: './meet-ce/backend/reports/'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: 'Rooms, Room Members, Meetings'
+            shard: room-management
+          - suite: 'Auth, Security, API Keys, Users'
+            shard: auth-security
+          - suite: 'Webhooks'
+            shard: webhooks
+          - suite: 'Global Config, Analytics'
+            shard: config-analytics
+    steps:
+      - *setup-node
+      - *setup-pnpm
+      - *install-safe-chain
+      - &install-lk
+        name: Install LiveKit CLI
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download --repo livekit/livekit-cli --pattern 'lk_*_linux_amd64.tar.gz' --output - \
+            | sudo tar -xz -C /usr/local/bin lk
+
+      - &start-local-deployment
+        name: Setup OpenVidu Local Deployment
+        uses: OpenVidu/actions/start-openvidu-local-deployment@26a149ff32c72503a7c7ce4fb5fa4d000cb3262d # 1.0.25
+        with:
+          ref-openvidu-local-deployment: development
+          pre_startup_commands: |
+            cat <<'BASH' > pre_startup_commands.sh
+            #!/bin/bash
+            echo "Commenting out openvidu-meet container in docker-compose.yaml"
+            if [ -f docker-compose.yaml ]; then
+              yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
+            fi
+            BASH
+            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
+
+      - name: Setup OpenVidu Meet
+        uses: OpenVidu/actions/start-openvidu-meet@26a149ff32c72503a7c7ce4fb5fa4d000cb3262d # 1.0.25
+
+      - name: Run tests
+        run: pnpm run test:integration-backend-${{ matrix.shard }}
+
+      - name: Upload OpenVidu Meet logs
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: integration-${{ matrix.shard }}-openvidu-meet-logs
+          path: meet_backend.log
+          retention-days: 2
+
+      - *publish-test-report
+
+  backend-recordings:
+    name: Recordings (${{ matrix.storage-provider }})
+    needs: [changes, backend-unit, frontend-unit, wc-unit]
+    if: ${{ !cancelled() && !failure() && needs.changes.outputs.backend-integration == 'true' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      checks: write # required by mikepenz/action-junit-report to publish the test report
+    env:
+      JEST_JUNIT_OUTPUT_DIR: './meet-ce/backend/reports/'
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # GCS and ABS share one bucket each, which every recordings job empties first, so they only run when
+        # the storage services change, on the `ci:storage` label, at night and on dispatch.
+        storage-provider: ${{ fromJSON((needs.changes.outputs.storage == 'true' || contains(github.event.pull_request.labels.*.name, 'ci:storage')) && '["s3", "abs", "gcs"]' || '["s3"]') }}
+    steps:
+      - *setup-node
+      - *setup-pnpm
+      - *install-safe-chain
+      - *install-lk
+
+      - name: Save GCP credentials
+        if: matrix.storage-provider == 'gcs'
+        run: |
+          echo '${{ secrets.GCP_CREDENTIALS_JSON }}' > /tmp/credentials.json
+          chmod 600 /tmp/credentials.json
+
+      - name: Remove existing rooms or recordings in buckets
+        if: (matrix.storage-provider == 'abs' || matrix.storage-provider == 'gcs')
+        run: |
+          if [[ "${{ matrix.storage-provider }}" == "abs" ]]; then
+            echo "Installing Azure CLI..."
+            curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+            echo "Logging into Azure..."
+            az storage blob delete-batch \
+              --account-name "${{ vars.MEET_AZURE_ACCOUNT_NAME }}" \
+              --account-key "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}" \
+              --source openvidu-appdata-recordings \
+              --pattern "openvidu-meet/*" \
+              --delete-snapshots include || echo "No files found to delete or container doesn't exist"
+            echo "Existing blobs deleted from Azure Blob Storage container."
+
+          elif [[ "${{ matrix.storage-provider }}" == "gcs" ]]; then
+            echo "Installing Google Cloud CLI..."
+            curl https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz | tar -xz
+            ./google-cloud-sdk/install.sh --quiet
+            export PATH=$PATH:$(pwd)/google-cloud-sdk/bin
+
+            echo "Authenticating with Google Cloud..."
+            gcloud auth activate-service-account --key-file=/tmp/credentials.json
+
+            echo "Removing openvidu-meet folder from GCS bucket..."
+            gsutil -m rm -r gs://openvidu-appdata/openvidu-meet/ || echo "No files found to delete or bucket doesn't exist"
+          fi
+
+      - name: Setup OpenVidu Local Deployment
+        uses: OpenVidu/actions/start-openvidu-local-deployment@26a149ff32c72503a7c7ce4fb5fa4d000cb3262d # 1.0.25
+        with:
+          ref-openvidu-local-deployment: development
+          pre_startup_commands: |
+            cat <<'BASH' > pre_startup_commands.sh
+            #!/bin/bash
+            if [[ "${{ matrix.storage-provider }}" == "abs" ]]; then
+              echo "Using Azure Blob Storage provider"
+              yq e -i '
+                del(.storage.s3) |
+                .storage.azure = {
+                  "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
+                  "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
+                  "container_name": "openvidu-appdata-recordings"
+                }
+              ' egress.yaml
+            elif [[ "${{ matrix.storage-provider }}" == "gcs" ]]; then
+              echo "Using Google Cloud Storage provider"
+              yq eval --inplace '.storage.gcp.credentials_json = (load("/tmp/credentials.json") | tostring) | .storage.gcp.credentials_json style="single"' egress.yaml
+
+              yq e -i '
+                del(.storage.s3) |
+                .storage.gcp.bucket = "openvidu-appdata"
+              ' egress.yaml
+            fi
+
+            echo "Commenting out openvidu-meet container in docker-compose.yaml"
+            if [ -f docker-compose.yaml ]; then
+              yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
+            fi
+            BASH
+            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
+
+      - name: Setup OpenVidu Meet
+        uses: OpenVidu/actions/start-openvidu-meet@26a149ff32c72503a7c7ce4fb5fa4d000cb3262d # 1.0.25
+        env: &storage-env
+          MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
+          # ABS variables
+          MEET_AZURE_ACCOUNT_NAME: ${{ matrix.storage-provider == 'abs' && vars.MEET_AZURE_ACCOUNT_NAME || '' }}
+          MEET_AZURE_ACCOUNT_KEY: ${{ matrix.storage-provider == 'abs' && secrets.MEET_AZURE_ACCOUNT_KEY || '' }}
+          MEET_AZURE_CONTAINER_NAME: ${{ matrix.storage-provider == 'abs' && 'openvidu-appdata-recordings' || '' }}
+          # GCS variables
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ matrix.storage-provider == 'gcs' && '/tmp/credentials.json' || '' }}
+          MEET_S3_BUCKET: openvidu-appdata
+
+      - name: Run tests
+        run: pnpm run test:integration-backend-recordings
+        env: *storage-env
+
+      - *publish-test-report
+
+      - name: Upload OpenVidu Meet logs
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: recordings-test-${{ matrix.storage-provider }}-openvidu-meet-logs
+          path: meet_backend.log
+          retention-days: 2
+
+      - name: Clean up credentials
+        if: always() && matrix.storage-provider == 'gcs'
+        run: |
+          rm -f /tmp/credentials.json
+          echo "GCP credentials file removed"
+
+  frontend-e2e:
+    name: Frontend E2E
+    needs: [changes, backend-unit, frontend-unit, wc-unit]
+    if: ${{ !cancelled() && !failure() && needs.changes.outputs.frontend-e2e == 'true' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - *checkout
+      - *setup-node
+      - *setup-pnpm
+      - *install-safe-chain
+      - *install-lk
+      - *start-local-deployment
+
+      - name: Build and Start OpenVidu Meet
+        uses: OpenVidu/actions/start-openvidu-meet@26a149ff32c72503a7c7ce4fb5fa4d000cb3262d # 1.0.25
+
+      # Playwright only transpiles, so this is the sole type-check the e2e suites ever get
+      # (same hole test:types closes for the backend's tests/**).
+      - name: Type-check e2e suites
+        run: pnpm --filter @openvidu-meet/frontend run test:types:e2e
+
+      - name: Run frontend E2E tests
+        run: ./meet.sh test-e2e-frontend --skip-install
+        env:
+          RUN_MODE: CI
+          PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: frontend-e2e-test-results
+          path: meet-ce/frontend/test-results/
+          retention-days: 2
+      - name: Generate test report
+        if: always()
+        run: |
+          echo "# Frontend E2E Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f "meet-ce/frontend/test-results/results.json" ]; then
+            TOTAL=$(jq '.stats.expected' meet-ce/frontend/test-results/results.json)
+            PASSED=$(jq '.stats.expected - .stats.unexpected - .stats.skipped' meet-ce/frontend/test-results/results.json)
+            FAILED=$(jq '.stats.unexpected' meet-ce/frontend/test-results/results.json)
+            SKIPPED=$(jq '.stats.skipped' meet-ce/frontend/test-results/results.json)
+
+            echo "## Test Summary" >> $GITHUB_STEP_SUMMARY
+            echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| 📊 Total Tests | $TOTAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| ✅ Passed | $PASSED |" >> $GITHUB_STEP_SUMMARY
+            echo "| ❌ Failed | $FAILED |" >> $GITHUB_STEP_SUMMARY
+            echo "| ⏭️ Skipped | $SKIPPED |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            if [ "$FAILED" -gt 0 ]; then
+              echo "## Failed Tests Details" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "| File | Test Name | Duration (ms) | Error |" >> $GITHUB_STEP_SUMMARY
+              echo "|------|-----------|---------------|-------|" >> $GITHUB_STEP_SUMMARY
+              jq -r '.suites[] | .file as $file | .specs[] | select(.ok == false) | {file: $file, title: .title, duration: (.duration // 0), error: (.failures[0].error.message // "Unknown error" | gsub("\n"; " ") | gsub("|"; "\\|"))} | "| \(.file | split("/")[-1]) | \(.title | .[0:50]) | \(.duration) | \(.error | .[0:70]) |"' meet-ce/frontend/test-results/results.json >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "<details><summary>📋 Full Error Messages</summary>" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              jq -r '.suites[] | .file as $file | .specs[] | select(.ok == false) | "### ❌ \(.title)\n**File:** `\($file)`\n**Error:**\n```\n\(.failures[0].error.message // "Unknown error")\n```\n"' meet-ce/frontend/test-results/results.json >> $GITHUB_STEP_SUMMARY
+              echo "</details>" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "## ✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "⚠️ Test results file not found at meet-ce/frontend/test-results/results.json" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Available files:" >> $GITHUB_STEP_SUMMARY
+            find meet-ce/frontend/test-results -type f 2>/dev/null | head -20 >> $GITHUB_STEP_SUMMARY || echo "No test-results directory found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  wc-e2e:
+    name: WebComponent E2E
+    needs: [changes, backend-unit, frontend-unit, wc-unit]
+    if: ${{ !cancelled() && !failure() && needs.changes.outputs.wc-e2e == 'true' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - *setup-node
+      - *setup-pnpm
+      - *install-safe-chain
+      - *install-lk
+      - *start-local-deployment
+
+      - name: Build and Start OpenVidu Meet
+        uses: OpenVidu/actions/start-openvidu-meet@26a149ff32c72503a7c7ce4fb5fa4d000cb3262d # 1.0.25
+        env:
+          MEET_INITIAL_WEBHOOK_ENABLED: true
+          MEET_INITIAL_WEBHOOK_URL: 'http://localhost:5080/webhook'
+
+      - name: Start OpenVidu Meet Testapp
+        uses: OpenVidu/actions/start-openvidu-meet-testapp@26a149ff32c72503a7c7ce4fb5fa4d000cb3262d # 1.0.25
+        with:
+          skip_install: 'true'
+          skip_checkout: 'true'
+          skip_build_typings: 'true'
+          skip_build_webcomponent: 'true'
+
+      # Playwright only transpiles, so this is the sole type-check the e2e suites ever get (same
+      # hole test:types:e2e closes for the frontend's e2e/**).
+      - name: Type-check tests
+        run: pnpm --filter @openvidu-meet/webcomponent run test:types
+
+      - name: Run tests
+        run: ./meet.sh test-e2e-webcomponent --skip-install
+        env:
+          RUN_MODE: CI
+          PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: room-test-results
+          path: meet-ce/frontend/webcomponent/test-results/
+          retention-days: 2
+
+      - name: Upload TestApp logs on failure
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: room-test-testapp-logs
+          path: testapp.log
+          retention-days: 2
+
+      - name: Upload OpenVidu Meet logs on failure
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: room-test-openvidu-meet-logs
+          path: meet_backend.log
+          retention-days: 2
+
+  # Runs even when the run is cancelled, so a superseded run never leaves a skipped (that is, passing)
+  # check behind.
+  all-tests-passed:
+    name: All tests passed
+    needs: [changes, backend-unit, frontend-unit, wc-unit, backend-integration, backend-recordings, frontend-e2e, wc-e2e]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Fail when a suite failed or was cancelled
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

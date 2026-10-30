@@ -1,4 +1,5 @@
 import {
+	EmbeddedAttribute,
 	EmbeddedEventName,
 	LeftEventReason,
 	MeetBroadcastStatus,
@@ -11,10 +12,20 @@ import {
 	MeetWebhookEventType
 } from '@openvidu-meet/typings';
 import { expect, Locator, test } from '@playwright/test';
-import { INTEGRATIONS, meetLocator } from '../helpers/webcomponent.helper';
+import { MEET_TESTAPP_URL } from '../config';
 import { createRtmpSink, deleteRtmpSinks } from '../helpers/broadcast-sink.helper';
-import { createRoom, deleteRooms, updateParticipantRole, waitForMeetingParticipant } from '../helpers/meet-api.helper';
+import { INTEGRATIONS, meetLocator, waitForPageRedirect } from '../helpers/webcomponent.helper';
+import {
+	createRoom,
+	deleteRooms,
+	getRecordingUrl,
+	getRoom,
+	listRecordingsByRoomId,
+	updateParticipantRole,
+	waitForMeetingParticipant
+} from '../helpers/meet-api.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
+import { openWebcomponentWithAttributes } from '../helpers/webcomponent-attributes.helper';
 import {
 	broadcastStartCommand,
 	broadcastStopCommand,
@@ -35,9 +46,12 @@ import {
 	openMeetingAtMediaSetup,
 	participantMuteCommand,
 	participantUpdateRoleCommand,
+	recordHostEvents,
 	recordingStatusLocator
 } from '../helpers/testapp.helper';
 import { getWebhookFromStorage } from '../helpers/ui-utils.helper';
+
+const LEAVE_REDIRECT_URL = `${MEET_TESTAPP_URL.replace(/\/$/, '')}/?left`;
 
 // Events carry the same names/payloads regardless of transport; run every spec
 // against both integrations, selecting the mode through the testapp's UI.
@@ -55,6 +69,13 @@ for (const integration of INTEGRATIONS) {
 			await deleteRooms(createdRoomIds);
 			await deleteRtmpSinks();
 		});
+
+		/** The room's moderator link with a secret the room does not have. */
+		const invalidLink = async (): Promise<string> => {
+			const url = new URL((await getRoom(roomId)).access.anonymous.moderator.url);
+			url.searchParams.set('secret', 'not-the-room-secret');
+			return url.toString();
+		};
 
 		test.describe('JOINED Event', () => {
 			test('should receive joined event when joining as moderator', async ({ page }) => {
@@ -108,7 +129,7 @@ for (const integration of INTEGRATIONS) {
 				await expect(left).toContainText(LeftEventReason.VOLUNTARY_LEAVE);
 			});
 
-			test('should receive left event with meeting_ended reason when moderator ends meeting', async ({
+			test('should receive left event with meeting_ended_by_self reason when the moderator ends the meeting', async ({
 				page
 			}) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
@@ -117,8 +138,7 @@ for (const integration of INTEGRATIONS) {
 				await endMeetingCommand(page);
 
 				const left = await expectEvent(page, EmbeddedEventName.LEFT);
-				await expect(left).toContainText('reason');
-				await expect(left).toContainText(LeftEventReason.MEETING_ENDED);
+				expect(await eventPayloadField(left, 'reason')).toBe(LeftEventReason.MEETING_ENDED_BY_SELF);
 			});
 
 			test('should receive left event when speaker leaves room', async ({ page }) => {
@@ -158,6 +178,109 @@ for (const integration of INTEGRATIONS) {
 				await meetLocator(page, integration, '#back-btn').click();
 				await expect(eventLocator(page, EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED).first()).toBeVisible({
 					timeout: 5_000
+				});
+			});
+
+			test('should receive embeddedCloseRequested from the Back button of an anonymous participant join screen', async ({
+				page
+			}) => {
+				const room = await getRoom(roomId);
+				await openWebcomponentWithAttributes(
+					page,
+					{ [EmbeddedAttribute.ROOM_URL]: room.access.anonymous.speaker.url },
+					{ integration }
+				);
+				const back = meetLocator(page, integration, '.quick-action-button').first();
+
+				await expect(back).toContainText('Back', { timeout: 15_000 });
+				await expect(back).not.toContainText('Back to Rooms');
+				await back.click();
+
+				await expectEvent(page, EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED);
+				await expect(meetLocator(page, integration, '#participant-name-input')).toBeVisible();
+			});
+
+			test('should receive embeddedCloseRequested from the button of an access error screen', async ({
+				page
+			}) => {
+				await openWebcomponentWithAttributes(
+					page,
+					{ [EmbeddedAttribute.ROOM_URL]: await invalidLink() },
+					{
+						integration
+					}
+				);
+				const errorTitle = meetLocator(page, integration, '.error-title');
+
+				await expect(errorTitle).toHaveText('Invalid link', { timeout: 15_000 });
+				await meetLocator(page, integration, '.error-actions button').click();
+
+				await expectEvent(page, EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED);
+				await expect(errorTitle).toBeVisible();
+			});
+
+			test('should receive embeddedCloseRequested from an access error screen before its leave redirect', async ({
+				page
+			}) => {
+				const received = await recordHostEvents(page);
+				await openWebcomponentWithAttributes(
+					page,
+					{
+						[EmbeddedAttribute.ROOM_URL]: await invalidLink(),
+						[EmbeddedAttribute.LEAVE_REDIRECT_URL]: LEAVE_REDIRECT_URL
+					},
+					{ integration }
+				);
+
+				await expect(meetLocator(page, integration, '.error-title')).toHaveText('Invalid link', {
+					timeout: 15_000
+				});
+				await meetLocator(page, integration, '.error-actions button').click();
+
+				await waitForPageRedirect(page, LEAVE_REDIRECT_URL);
+				expect(received).toContain(EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED);
+			});
+
+			test.describe('from a recording screen', () => {
+				let recordingUrl: string;
+
+				test.beforeAll(async ({ browser }) => {
+					const room = await createRoom();
+					createdRoomIds.push(room.roomId);
+					const context = await browser.newContext();
+					const page = await context.newPage();
+
+					try {
+						await openMeeting(page, room.roomId, { role: 'moderator' });
+						await startRecording(page);
+						await stopRecording(page);
+						await endMeetingCommand(page);
+					} finally {
+						await context.close();
+					}
+
+					const [recording] = await listRecordingsByRoomId(room.roomId);
+					recordingUrl = await getRecordingUrl(recording.recordingId);
+				});
+
+				test('should receive embeddedCloseRequested when the recording opened by its link is closed', async ({
+					page
+				}) => {
+					await openWebcomponentWithAttributes(
+						page,
+						{ [EmbeddedAttribute.RECORDING_URL]: recordingUrl },
+						{
+							integration
+						}
+					);
+					const recordingPage = meetLocator(page, integration, '.recording-page-content, .mobile-container');
+
+					await meetLocator(page, integration, '.desktop-back-button, .back-button')
+						.first()
+						.click({ timeout: 15_000 });
+
+					await expectEvent(page, EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED);
+					await expect(recordingPage.first()).toBeVisible();
 				});
 			});
 		});
@@ -411,6 +534,29 @@ for (const integration of INTEGRATIONS) {
 				);
 
 				await speakerContext.close();
+			});
+		});
+
+		test.describe('Invalid correlation fields', () => {
+			test('should show the invalid participant data screen for an external id with a space', async ({
+				page
+			}) => {
+				const consoleErrors: string[] = [];
+				page.on('console', (message) => {
+					if (message.type() === 'error') consoleErrors.push(message.text());
+				});
+				const { meet } = await openMeetingAtMediaSetup(page, roomId, {
+					integration,
+					role: 'moderator',
+					externalId: 'user 42'
+				});
+
+				await meet('#join-button').click();
+
+				await expect(meet('.error-title')).toHaveText('Invalid participant data');
+				await expect
+					.poll(() => consoleErrors.some((text) => text.includes('participantExternalId')))
+					.toBe(true);
 			});
 		});
 

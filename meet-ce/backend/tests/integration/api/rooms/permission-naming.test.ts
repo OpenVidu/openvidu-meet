@@ -1,13 +1,22 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import type { MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
-import { MeetRoomMemberRole, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
+import { MeetRoomDeletionPolicyWithMeeting, MeetRoomMemberRole, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
 import type { Express } from 'express';
 import request from 'supertest';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import { TokenService } from '../../../../src/services/token.service.js';
-import { createRoom, deleteAllRooms, getFullPath, startTestServer } from '../../../helpers/request-helpers.js';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
+import {
+	bulkDeleteRooms,
+	createRoom,
+	deleteAllRooms,
+	deleteRoom,
+	getFullPath,
+	startTestServer
+} from '../../../helpers/request-helpers.js';
+import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 
 let app: Express;
 
@@ -76,6 +85,7 @@ describe('Permission naming', () => {
 	});
 
 	afterAll(async () => {
+		await disconnectFakeParticipants();
 		await deleteAllRooms();
 	});
 
@@ -202,6 +212,34 @@ describe('Permission naming', () => {
 			// play alone cannot be expressed as canRetrieveRecordings, so the deprecated flag is
 			// absent instead of misleading an old client with a collapsed value.
 			expect(createResponse.body.customPermissions).toEqual({ recordingPlay: true });
+		});
+
+		it('should serve both key sets in the room a deletion returns', async () => {
+			const { room } = await setupSingleRoom(true);
+			const response = await deleteRoom(
+				room.roomId,
+				{ withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS },
+				{ xExtraFields: 'roles' }
+			);
+			expect(response.status).toBe(202);
+			expect(response.body.room.roles.speaker.permissions).toMatchObject({ chatWrite: true, canWriteChat: true });
+		});
+
+		it('should serve both key sets in the rooms a bulk deletion returns', async () => {
+			const { room } = await setupSingleRoom(true);
+			const response = await bulkDeleteRooms(
+				[room.roomId],
+				MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
+				undefined,
+				undefined,
+				undefined,
+				{ xExtraFields: 'roles' }
+			);
+			expect(response.status).toBe(200);
+			expect(response.body.deleted[0].room.roles.speaker.permissions).toMatchObject({
+				chatWrite: true,
+				canWriteChat: true
+			});
 		});
 	});
 

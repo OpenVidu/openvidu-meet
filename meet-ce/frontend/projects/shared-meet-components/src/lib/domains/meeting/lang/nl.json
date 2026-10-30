@@ -124,6 +124,8 @@
 			"MICROPHONE_LEVEL": "Microfoonniveau",
 			"MICROPHONE_LEVEL_HINT": "Praat om te controleren of anderen je horen",
 			"MICROPHONE_OFF": "Je microfoon staat uit",
+			"APPLY": "Toepassen",
+			"EFFECT_APPLIES_ON_APPLY": "Het achtergrondeffect wordt toegevoegd wanneer je deze camera toepast",
 			"DISPLAY_NAME": "Weergavenaam",
 			"DISPLAY_NAME_HINT": "Gekozen toen je deelnam aan de vergadering",
 			"DISPLAY_NAME_LOCKED": "Kan tijdens de vergadering niet worden gewijzigd",

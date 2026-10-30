@@ -78,7 +78,8 @@ describe('Room API Tests', () => {
 				...updatedConfig,
 				initialAudioActive: true, // Creation default, unchanged
 				initialVideoActive: true, // Creation default, unchanged
-				recording: { ...updatedConfig.recording, layout: MeetRecordingLayout.GRID } // Layout remains unchanged
+				recording: { ...updatedConfig.recording, layout: MeetRecordingLayout.GRID }, // Layout remains unchanged
+				captions: { enabled: false } // Encryption turns live captions off
 			});
 
 			// Verify with a get request
@@ -88,7 +89,8 @@ describe('Room API Tests', () => {
 				...updatedConfig,
 				initialAudioActive: true, // Creation default, unchanged
 				initialVideoActive: true, // Creation default, unchanged
-				recording: { ...updatedConfig.recording, layout: MeetRecordingLayout.GRID } // Layout remains unchanged
+				recording: { ...updatedConfig.recording, layout: MeetRecordingLayout.GRID }, // Layout remains unchanged
+				captions: { enabled: false } // Encryption turns live captions off
 			});
 		});
 

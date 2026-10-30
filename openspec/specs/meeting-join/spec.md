@@ -82,13 +82,23 @@ An entry URL without `secret` SHALL require a signed-in Meet user: a person with
 - **THEN** the login form is shown inside the element and the host application never handles the password
 
 ### Requirement: Secret and encryption key are kept out of the address bar
-In the standalone app and the iframe the meeting SHALL remove `secret` and `e2ee-key` from the address bar once the room is entered, and SHALL keep both for the browser tab, so reloading the same room enters it again with the same access and key.
+In the standalone app and the iframe the meeting SHALL remove `secret` and `e2ee-key` from the address bar once the room is entered, and SHALL keep both for the browser tab together with their room, so reloading the same room enters it again with the same access and key. An entry to another room without `secret` or `e2ee-key`, in the same tab or in the same embedded element, SHALL NOT use them.
 
 #### Scenario: Reload after entering
 - **GIVEN** a participant who opened `/room/{roomId}?secret=<speaker secret>`
 - **WHEN** the room is entered
 - **THEN** the address bar shows `/room/{roomId}` without `secret`
 - **AND** reloading the page shows the join screen of the same room with the same access
+
+#### Scenario: Another room in the same tab
+- **GIVEN** a tab that entered room A through its anonymous speaker link, with no Meet session
+- **WHEN** the same tab opens room B's user access link, which carries no `secret`
+- **THEN** the login screen is shown, not the "Invalid link" error screen
+
+#### Scenario: Element switched to another room
+- **GIVEN** an `<openvidu-meet>` on room A's join screen, entered through room A's anonymous speaker link, with no Meet session
+- **WHEN** the host sets `room-url` to room B's user access link, which carries no `secret`
+- **THEN** the element shows the login screen, not the "Invalid link" error screen
 
 ### Requirement: Join screen
 The join screen SHALL show the room name, a name field and a join button that stays disabled while the name is empty, and SHALL NOT accept a name made only of spaces; in a room with end-to-end encryption enabled it SHALL also show that meetings are encrypted and require the encryption key, unless `e2ee-key` provided it. Encryption itself is defined in `meeting-media`.
@@ -297,12 +307,13 @@ The meeting SHALL load the room's initial media defaults before opening the devi
 - **THEN** the new participant carries no `externalId`
 
 ### Requirement: Correlation field limits
-The server SHALL reject a join whose `participant-external-id` is empty, longer than 64 characters or has characters other than letters, digits, `_` and `-`, or whose `participant-metadata` exceeds 2048 UTF-8 bytes, with `422`, and the participant SHALL NOT enter the meeting.
+The server SHALL reject a join whose `participant-external-id` is empty, longer than 64 characters or has characters other than letters, digits, `_` and `-`, or whose `participant-metadata` exceeds 2048 UTF-8 bytes, with `422`, and the participant SHALL NOT enter the meeting. The meeting SHALL then show the "Invalid participant data" error screen and log the server's reason in the browser console.
 
 #### Scenario: External id with a space
 - **GIVEN** an embedded element with `participant-external-id="user 42"`
 - **WHEN** the participant presses join
 - **THEN** the server answers `422` and the participant does not enter the meeting
+- **AND** the "Invalid participant data" error screen is shown and the browser console names `participantExternalId`
 
 #### Scenario: Metadata over the byte limit
 - **GIVEN** a `participant-metadata` of 2000 characters that takes more than 2048 bytes in UTF-8
@@ -353,6 +364,12 @@ The `reason` of `meetingLeft` SHALL be one of the leave reasons of `meetings`, `
 - **WHEN** one of them ends the meeting for everyone from the leave menu
 - **THEN** the other receives `meetingLeft` with `reason` `meeting_ended`
 - **AND** the one who ended it receives `meeting_ended_by_self`
+
+#### Scenario: Ended with the meetingEnd command
+- **GIVEN** two participants in a meeting, each in an embedded element, the first holding `meetingEnd`
+- **WHEN** the first element's host calls `meetingEnd()`, or the deprecated `endMeeting()`
+- **THEN** the first element emits `meetingLeft` with `reason` `meeting_ended_by_self`
+- **AND** the second receives `meeting_ended`
 
 #### Scenario: Kicked
 - **GIVEN** a participant in a meeting
@@ -406,7 +423,7 @@ After the local participant leaves a meeting, the meeting SHALL show the end scr
 - **THEN** the first tab shows the end screen saying the meeting was closed because they joined from another tab or device
 
 ### Requirement: Dismissing the end and error screens
-The end screen and the access error screens SHALL offer a dismiss button where it leads somewhere: always in the embedded element; when a leave redirect is set, in every mode; and in the standalone app for a signed-in user, leading to the console (`Back to Rooms` on the end screen, `Back to Console` on an error screen). The end screen offers it in the iframe too. Otherwise no button is shown.
+The end screen and the access error screens SHALL offer a dismiss button where it leads somewhere: always in the embedded element and the iframe; when a leave redirect is set, in every mode; and in the standalone app for a signed-in user, leading to the console (`Back to Rooms` on the end screen, `Back to Console` on an error screen). Otherwise no button is shown.
 
 #### Scenario: Anonymous participant in the standalone app
 - **GIVEN** an anonymous participant who opened a direct link without `leave-redirect-url`
@@ -420,11 +437,11 @@ The end screen and the access error screens SHALL offer a dismiss button where i
 
 #### Scenario: Error screen in the iframe
 - **GIVEN** an iframe without `leave-redirect-url` showing an access error screen
-- **WHEN** the screen is shown
-- **THEN** it offers no dismiss button
+- **WHEN** the participant presses its dismiss button
+- **THEN** the containing page receives `embeddedCloseRequested` and the iframe stays where it is
 
 ### Requirement: Back button on the join screen
-The join screen SHALL offer a back button: always in the embedded element, and in the standalone app and the iframe when a leave redirect is set or the participant is signed in. In the standalone app a signed-in participant without a leave redirect goes back to the console rooms page.
+The join screen SHALL offer a back button: always in the embedded element and the iframe, and in the standalone app when a leave redirect is set or the participant is signed in. In the standalone app a signed-in participant without a leave redirect goes back to the console rooms page. In the embedded element and the iframe the button reads `Back` and emits `embeddedCloseRequested`, then follows the leave redirect when one is set.
 
 #### Scenario: Anonymous direct link
 - **GIVEN** an anonymous participant opening a direct link without `leave-redirect-url`
@@ -435,6 +452,17 @@ The join screen SHALL offer a back button: always in the embedded element, and i
 - **GIVEN** an embedded element without `leave-redirect-url`
 - **WHEN** the participant presses back on the join screen
 - **THEN** the host receives `embeddedCloseRequested` and the element stays where it is
+
+#### Scenario: Signed-in user in an iframe without a redirect
+- **GIVEN** a signed-in user on the join screen of an iframe without `leave-redirect-url`
+- **WHEN** the join screen is shown
+- **THEN** its back button reads `Back`, not `Back to Rooms`
+- **AND** pressing it posts `embeddedCloseRequested` to the containing page and the iframe stays where it is
+
+#### Scenario: Anonymous participant in an iframe
+- **GIVEN** an anonymous participant on the join screen of an iframe without `leave-redirect-url`
+- **WHEN** the join screen is shown
+- **THEN** it offers a back button reading `Back`
 
 ### Requirement: embeddedCloseRequested event
 In the iframe and the embedded element, dismissing the join, end or error screen, or closing a recording screen (see `recordings`), SHALL emit `embeddedCloseRequested`, with no payload, before any leave redirect, and the deprecated `closed` alongside it until 3.12.0. Leaving the meeting alone SHALL NOT emit it: the meeting may continue for the others and the host decides what to remove.

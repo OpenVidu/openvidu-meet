@@ -151,7 +151,7 @@ describe('RoomWizardStateService.recordingAutoStartUnreachable (cross-field guar
  * their live broadcast, and who may do what. Room access comes last because its permissions depend
  * on the features the earlier steps turn on.
  */
-describe('RoomWizardStateService (end-to-end encryption excludes recording and live broadcast)', () => {
+describe('RoomWizardStateService (end-to-end encryption excludes recording, live broadcast and live captions)', () => {
 	let service: RoomWizardStateService;
 
 	beforeEach(() => {
@@ -208,6 +208,20 @@ describe('RoomWizardStateService (end-to-end encryption excludes recording and l
 			expect(saved()).toEqual({ e2ee: true, recording: false, broadcast: false });
 		});
 	}
+
+	it('turns live captions off while encryption is on, and back on when it goes off', () => {
+		const captions = service.getStepById(WizardStepId.MEETING)!.formGroup.controls.captionsEnabled;
+		const savedCaptions = () => service.roomOptions().config?.captions?.enabled;
+		captions.setValue(true);
+
+		toggleE2EE(true);
+		expect(captions.value).toBeFalse();
+		expect(savedCaptions()).toBeFalse();
+
+		toggleE2EE(false);
+		expect(captions.value).toBeTrue();
+		expect(savedCaptions()).toBeTrue();
+	});
 });
 
 describe('RoomWizardStateService.initializeWizard (steps)', () => {

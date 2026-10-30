@@ -9,11 +9,12 @@ import {
 } from '@openvidu-meet/typings';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
-import { EmbeddedCommandService } from './embedded-command.service';
+import type { EmbeddedCommandService } from './embedded-command.service';
 import { EmbeddedEventBusService } from './embedded-event-bus.service';
 
 /**
- * `postMessage` transport for the embedded **iframe** integration.
+ * `postMessage` transport for the embedded **iframe** integration, started with the app so the
+ * iframe listens and relays events on every screen.
  *
  * When Meet is loaded inside a cross-document `<iframe>`, the
  * host page drives it over `window.postMessage` instead of element methods/DOM
@@ -21,8 +22,9 @@ import { EmbeddedEventBusService } from './embedded-event-bus.service';
  * delegates to the already-centralized API so the iframe exposes the *same* public
  * surface as the webcomponent:
  *
- * - **Commands** (host → app) are forwarded to {@link EmbeddedCommandService}, which checks the
- *   permission and meeting phase each command declares. The bridge applies no gating of its own.
+ * - **Commands** (host → app) are forwarded to the {@link EmbeddedCommandService} the meeting page
+ *   attaches, which checks the permission and meeting phase each command declares. Before it is
+ *   attached no command can run, so each is rejected with the phase warning.
  * - **Events** (app → host) are drained from {@link EmbeddedEventBusService.events}
  *   (the shared lifecycle-event queue, canonical names only) and relayed as `postMessage` events —
  *   each canonical event is followed by a second post under its deprecated 3.8.0 name, if it has
@@ -30,11 +32,11 @@ import { EmbeddedEventBusService } from './embedded-event-bus.service';
  */
 @Service()
 export class IframeBridgeService {
-	private readonly commandService = inject(EmbeddedCommandService);
 	private readonly eventBus = inject(EmbeddedEventBusService);
 	private readonly runtimeConfig = inject(RuntimeConfigService);
 	private readonly log = inject(LoggerService).get('IframeBridgeService');
 
+	private commandService: EmbeddedCommandService | undefined;
 	private initialized = false;
 	private readonly boundHandleMessage = (event: MessageEvent): void => {
 		void this.handleMessage(event);
@@ -66,9 +68,14 @@ export class IframeBridgeService {
 		inject(DestroyRef).onDestroy(() => window.removeEventListener('message', this.boundHandleMessage));
 	}
 
+	/** Hands the bridge the command service of the meeting page; commands run through it from then on. */
+	attachCommands(commandService: EmbeddedCommandService): void {
+		this.commandService = commandService;
+	}
+
 	/**
-	 * Starts the iframe bridge. No-op unless running inside an iframe, so the SPA's
-	 * root component can call it unconditionally. Resolves the trusted parent origin
+	 * Starts the iframe bridge. No-op unless running inside an iframe, so the app startup
+	 * can call it unconditionally. Resolves the trusted parent origin
 	 * up front (no handshake); if it cannot be determined the bridge stays closed
 	 * rather than falling back to a wildcard.
 	 */
@@ -136,12 +143,24 @@ export class IframeBridgeService {
 		// switch only ever deals with canonical ones, and adding a future alias is a typings
 		// change alone. This resolve call is itself removed in 3.12.0 along with the aliases —
 		// see resolveEmbeddedCommandName's own @deprecated tag.
-		switch (resolveEmbeddedCommandName(message.command)) {
+		const command = resolveEmbeddedCommandName(message.command);
+		const commandService = this.commandService;
+
+		if (!Object.values(EmbeddedCommandName).includes(command)) {
+			return;
+		}
+
+		if (!commandService) {
+			this.log.w(`${command} rejected: not available in the current meeting phase`);
+			return;
+		}
+
+		switch (command) {
 			case EmbeddedCommandName.MEETING_END:
-				await this.commandService.meetingEnd();
+				await commandService.meetingEnd();
 				break;
 			case EmbeddedCommandName.MEETING_LEAVE:
-				await this.commandService.meetingLeave();
+				await commandService.meetingLeave();
 				break;
 
 			case EmbeddedCommandName.PARTICIPANT_KICK: {
@@ -156,7 +175,7 @@ export class IframeBridgeService {
 					return;
 				}
 
-				await this.commandService.participantKick(participantIdentity);
+				await commandService.participantKick(participantIdentity);
 				break;
 			}
 
@@ -171,7 +190,7 @@ export class IframeBridgeService {
 					return;
 				}
 
-				await this.commandService.participantMute(participantIdentity, media);
+				await commandService.participantMute(participantIdentity, media);
 				break;
 			}
 
@@ -184,7 +203,7 @@ export class IframeBridgeService {
 					return;
 				}
 
-				await this.commandService.participantMuteAll(media);
+				await commandService.participantMuteAll(media);
 				break;
 			}
 
@@ -204,32 +223,32 @@ export class IframeBridgeService {
 					return;
 				}
 
-				await this.commandService.participantUpdateRole(participantIdentity, action);
+				await commandService.participantUpdateRole(participantIdentity, action);
 				break;
 			}
 
 			case EmbeddedCommandName.MEDIA_TOGGLE_AUDIO:
-				await this.commandService.mediaToggleAudio(this.extractActivePayload(message));
+				await commandService.mediaToggleAudio(this.extractActivePayload(message));
 				break;
 
 			case EmbeddedCommandName.MEDIA_TOGGLE_VIDEO:
-				await this.commandService.mediaToggleVideo(this.extractActivePayload(message));
+				await commandService.mediaToggleVideo(this.extractActivePayload(message));
 				break;
 
 			case EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE:
-				await this.commandService.mediaToggleScreenShare(this.extractActivePayload(message));
+				await commandService.mediaToggleScreenShare(this.extractActivePayload(message));
 				break;
 
 			case EmbeddedCommandName.RECORDING_START:
-				await this.commandService.recordingStart();
+				await commandService.recordingStart();
 				break;
 
 			case EmbeddedCommandName.RECORDING_STOP:
-				await this.commandService.recordingStop();
+				await commandService.recordingStop();
 				break;
 
 			case EmbeddedCommandName.PARTICIPANT_HAND_RAISE:
-				await this.commandService.participantHandRaise();
+				await commandService.participantHandRaise();
 				break;
 
 			case EmbeddedCommandName.PARTICIPANT_HAND_LOWER: {
@@ -237,12 +256,12 @@ export class IframeBridgeService {
 				const participantIdentity =
 					payload && 'participantIdentity' in payload ? payload.participantIdentity : undefined;
 
-				await this.commandService.participantHandLower(participantIdentity);
+				await commandService.participantHandLower(participantIdentity);
 				break;
 			}
 
 			case EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL:
-				await this.commandService.participantHandLowerAll();
+				await commandService.participantHandLowerAll();
 				break;
 
 			case EmbeddedCommandName.PARTICIPANT_REACTION_SEND: {
@@ -254,7 +273,7 @@ export class IframeBridgeService {
 					return;
 				}
 
-				await this.commandService.participantReactionSend(reaction);
+				await commandService.participantReactionSend(reaction);
 				break;
 			}
 
@@ -262,14 +281,14 @@ export class IframeBridgeService {
 				const payload = 'payload' in message ? message.payload : undefined;
 				const destinationIds = payload && 'destinationIds' in payload ? payload.destinationIds : undefined;
 				const destinations = payload && 'destinations' in payload ? payload.destinations : undefined;
-				await this.commandService.broadcastStart({ destinationIds, destinations });
+				await commandService.broadcastStart({ destinationIds, destinations });
 				break;
 			}
 
 			case EmbeddedCommandName.BROADCAST_STOP: {
 				const payload = 'payload' in message ? message.payload : undefined;
 				const broadcastIds = payload && 'broadcastIds' in payload ? payload.broadcastIds : undefined;
-				await this.commandService.broadcastStop({ broadcastIds });
+				await commandService.broadcastStop({ broadcastIds });
 				break;
 			}
 

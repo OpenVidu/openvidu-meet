@@ -237,7 +237,7 @@ available` for starting a broadcast or a recording and for `UpdateStream`.
 
 ## Migration Plan
 
-- Rooms migrate from schema v7 to v8: `config.broadcast` arrives disabled with no destinations,
+- Rooms migrate from schema v8 to v9: `config.broadcast` arrives disabled with no destinations,
   layout `grid` and encoding `H264_720P_30`, `broadcastDestinationUrls` empty, and the role
   permissions normalized so both broadcast permissions complete to `false`. Room members migrate from
   v5 to v6 with the same permission normalization. `MIGRATION_REV` is refreshed for both.

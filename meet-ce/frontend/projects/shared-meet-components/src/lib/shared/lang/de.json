@@ -51,6 +51,10 @@
       "TITLE": "Ungültiges Mitglied",
       "MESSAGE": "Sie sind kein Mitglied dieses Raums mehr oder die Mitgliedsinformationen sind fehlerhaft"
     },
+    "INVALID_PARTICIPANT_DATA": {
+      "TITLE": "Ungültige Teilnehmerdaten",
+      "MESSAGE": "Die Anwendung, die dieses Meeting geöffnet hat, hat ungültige Teilnehmerdaten gesendet. Bitte wende dich an den Anbieter dieser Anwendung"
+    },
     "FORBIDDEN_ROOM_ACCESS": {
       "TITLE": "Zugriff auf Raum verweigert",
       "MESSAGE": "Sie sind nicht berechtigt, auf diesen Raum (noch auf seine Aufnahmen) zuzugreifen"
