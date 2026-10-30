@@ -98,6 +98,25 @@ Every opening of the camera, including turning it back on, switching device and 
 - **WHEN** they pick the other one in the Audio & video tab
 - **THEN** the camera tried is requested at 1280x720
 
+### Requirement: Microphone audio quality
+The microphone SHALL be published at speech quality, with the audio encoder capped at 24 kbps, and SHALL keep silence suppression and, outside end-to-end encrypted rooms, redundant audio against packet loss. The audio of a shared screen SHALL NOT be capped at that speech bitrate.
+
+#### Scenario: Speaking
+- **GIVEN** a participant publishing their microphone in a room without end-to-end encryption
+- **WHEN** they speak
+- **THEN** their microphone audio is encoded at 24 kbps at most
+- **AND** each audio packet also carries the previous audio frame
+
+#### Scenario: Packet loss
+- **GIVEN** a participant who receives another participant's microphone with 3% of the packets lost
+- **WHEN** the other participant speaks
+- **THEN** the lost audio is recovered from the redundant frames, without audible gaps
+
+#### Scenario: Sharing a tab with sound
+- **GIVEN** a participant sharing a browser tab with its audio
+- **WHEN** the tab plays music
+- **THEN** the tab audio is published without the 24 kbps speech cap
+
 ### Requirement: Turning a device off mutes it
 Turning the camera or the microphone off SHALL mute its published track instead of unpublishing it, and turning it back on SHALL unmute the same publication. Turning the camera off SHALL stop capturing it, so the camera light goes off; the microphone SHALL keep capturing while muted, which is what the microphone warnings listen to.
 
