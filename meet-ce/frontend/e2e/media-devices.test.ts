@@ -27,6 +27,7 @@ import {
 	capturePeerConnections,
 	getFirstVideoTrackDeviceId,
 	getFirstVideoTrackLabel,
+	getPublishedAudioBitrateCaps,
 	getPublishedTrackLabel,
 	getScreenTrackLabel,
 	getSettingsPreviewLabel
@@ -453,6 +454,22 @@ test.describe('Media Devices E2E Tests', () => {
 
 			// The microphone stays enabled and usable after the switch.
 			expect(await isPrejoinAudioEnabled(page)).toBe(true);
+		});
+	});
+
+	test.describe('Audio quality', () => {
+		test('sends the microphone at speech quality and the screen audio uncapped by it', async ({ page }) => {
+			await capturePeerConnections(page);
+			await openMeeting(page, accessUrl);
+			await expect.poll(async () => Object.values(await getPublishedAudioBitrateCaps(page))).toEqual([24_000]);
+			const [microphoneTrackId] = Object.keys(await getPublishedAudioBitrateCaps(page));
+
+			await startScreensharing(page);
+
+			await expect.poll(async () => Object.keys(await getPublishedAudioBitrateCaps(page)).length).toBe(2);
+			const { [microphoneTrackId]: microphoneCap, ...screenAudio } = await getPublishedAudioBitrateCaps(page);
+			expect(microphoneCap).toBe(24_000);
+			expect(Object.values(screenAudio)).not.toContain(24_000);
 		});
 	});
 

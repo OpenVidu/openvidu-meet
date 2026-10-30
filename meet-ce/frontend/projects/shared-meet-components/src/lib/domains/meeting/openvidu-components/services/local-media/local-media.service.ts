@@ -4,8 +4,14 @@ import { isCapturing, LocalDevice } from '../../models/local-device.model';
 import { cameraCaptureOptions, microphoneCaptureOptions } from '../../models/media-capture.model';
 import type { ParticipantModel } from '../../models/participant.model';
 import { DeviceService } from '../device/device.service';
-import type { CreateLocalTracksOptions, LocalAudioTrack, LocalTrack, LocalVideoTrack } from '../livekit';
-import { MediaDeviceFailure, Track } from '../livekit';
+import type {
+	CreateLocalTracksOptions,
+	LocalAudioTrack,
+	LocalTrack,
+	LocalVideoTrack,
+	TrackPublishOptions
+} from '../livekit';
+import { AudioPresets, MediaDeviceFailure, Track } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { VideoTrackProcessorService } from '../track-processor/video-track-processor.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
@@ -22,6 +28,9 @@ export interface InitialMediaState {
 
 /** Long enough to read which device failed and why, short enough not to sit on top of the meeting. */
 const NOTICE_DURATION_MS = 10_000;
+
+/** Set on the microphone alone: as a Room publish default it would also cap the audio of a shared screen. */
+const MICROPHONE_PUBLISH_OPTIONS: TrackPublishOptions = { audioPreset: AudioPresets.speech };
 
 /**
  * Owns the local participant's camera and microphone for the whole entry: opens them for the
@@ -246,7 +255,13 @@ export class LocalMediaService {
 
 		if (!participant || tracks.length === 0) return;
 
-		await Promise.all(tracks.map((track) => participant.publishTrack(track)));
+		await Promise.all(
+			tracks.map((track) =>
+				track.kind === Track.Kind.Audio
+					? participant.publishTrack(track, MICROPHONE_PUBLISH_OPTIONS)
+					: participant.publishTrack(track)
+			)
+		);
 		participant.bump();
 	}
 

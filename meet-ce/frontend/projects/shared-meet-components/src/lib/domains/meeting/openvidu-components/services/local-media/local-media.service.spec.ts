@@ -13,7 +13,7 @@ import type {
 	LocalVideoTrack,
 	VideoCaptureOptions
 } from '../livekit';
-import { Track } from '../livekit';
+import { AudioPresets, Track } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { VideoTrackProcessorService } from '../track-processor/video-track-processor.service';
 import { LocalMediaService } from './local-media.service';
@@ -680,14 +680,27 @@ describe('LocalMediaService', () => {
 	});
 
 	describe('once the participant has joined', () => {
-		it('publishes the open devices and bumps the participant', async () => {
+		it('publishes the open devices, the microphone at speech quality, and bumps the participant', async () => {
 			await service.acquire();
 
 			await service.publish(asParticipant());
 
 			expect(participant.publishTrack).toHaveBeenCalledWith(asTrack(video));
-			expect(participant.publishTrack).toHaveBeenCalledWith(asTrack(audio));
+			expect(participant.publishTrack).toHaveBeenCalledWith(asTrack(audio), { audioPreset: AudioPresets.speech });
 			expect(participant.bump).toHaveBeenCalled();
+		});
+
+		it('publishes a microphone opened after joining at speech quality', async () => {
+			service.applyInitialState({ camera: true, microphone: false });
+			await service.acquire();
+			await service.publish(asParticipant());
+			participant.publishTrack.calls.reset();
+
+			await service.setMicrophoneEnabled(true);
+
+			expect(participant.publishTrack).toHaveBeenCalledOnceWith(asTrack(audio), {
+				audioPreset: AudioPresets.speech
+			});
 		});
 
 		it('publishes a device opened after joining', async () => {
