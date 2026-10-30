@@ -32,19 +32,20 @@ canceller's output that keeps it from engaging.
 
 **`restrictOwnAudio` instead of the echo canceller for system audio.** A tab never carries the
 meeting audio (Meet passes `selfBrowserSurface: 'exclude'`) and a window carries no audio in Chrome.
-Only the entire screen with system audio (Windows, ChromeOS) contains what the meeting plays.
-`restrictOwnAudio` asks the browser to leave the capturing page's own playback out of that capture.
-It is passed as a plain constraint, so a browser or surface that does not support it ignores it: a
-tab capture in Chrome 156 lists it as `[false]` in its capabilities and still captures. Whether
-Chrome on Windows honors it is the open risk below.
+Only the entire screen with system audio (Windows, ChromeOS, and macOS 14.2 or later with Chrome 141
+or later) contains what the meeting plays. `restrictOwnAudio` asks the browser to leave the capturing
+page's own playback out of that capture. It is passed as a plain constraint, so a browser or surface
+that does not support it ignores it: a tab capture in Chrome 156 lists it as `[false]` in its
+capabilities and still captures.
 
 ## Risks / Trade-offs
 
-- [Chrome on Windows does not honor `restrictOwnAudio` for system audio, so sharing the entire screen
-  with its sound echoes the other participants] → verified by hand on Windows before merging; the
-  pull request stays a draft until then. If it fails, keep echo cancellation for system audio only by
-  re-enabling it on the captured audio track when the shared surface is the entire screen, and
-  measure whether `applyConstraints` takes effect there.
+- [Chrome does not honor `restrictOwnAudio` for system audio, so sharing the entire screen with its
+  sound echoes the other participants] → verified by hand on macOS 15 (task 1.4): the page's own
+  playback stays out of the capture and other applications' audio does not. Windows was not verified.
+  If it echoes there, the way out is the capture options, not the captured track: Chrome rejects
+  changing the processing of a captured audio track (`OverconstrainedError`), so echo cancellation
+  cannot be turned back on for the entire screen alone after the participant picks it.
 - [Unfiltered system audio also carries notification sounds and other applications] → that is what
   sharing system audio means; the browser's picker already lets the participant leave the audio out.
 - [Louder shared audio without automatic gain control] → the participant controls the source

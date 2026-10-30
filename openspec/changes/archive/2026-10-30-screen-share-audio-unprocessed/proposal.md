@@ -40,8 +40,8 @@ None.
   contract changes.
 - **Code:** frontend library only (`shared-meet-components`), the capture options of the screen
   share service. No new dependency.
-- **Risk to verify before merging:** sharing the entire screen with system audio on Windows, where the
-  meeting's own audio would come back as echo if the browser does not honor `restrictOwnAudio`. The
-  pull request stays a draft until that check is done on a Windows machine.
+- **Risk verified before merging:** sharing the entire screen with system audio, where the meeting's
+  own audio would come back as echo if the browser did not honor `restrictOwnAudio`. Checked by hand
+  in Chrome on macOS 15; Windows was not verified.
 - **PRO:** no overridable signature changes.
 - **openvidu.io:** no page documents screen-share audio; none changes.
