@@ -13,6 +13,8 @@ import {
 	errorUnauthorized,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
+import type { RequestRoomSnapshot } from '../models/request-context.model.js';
+import { REQUEST_ROOM_FIELDS } from '../models/request-context.model.js';
 import type { TokenMetadata } from '../models/token.model.js';
 import { TokenType } from '../models/token.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
@@ -207,8 +209,10 @@ export const roomMemberTokenValidator: AuthValidator = {
 			throw errorUnauthorized();
 		}
 
-		const { participantIdentity, metadata } = await verifyRoomMemberToken(token);
-		container.get(RequestSessionService).setRoomMemberTokenInfo(metadata, participantIdentity);
+		const { participantIdentity, metadata, room } = await verifyRoomMemberToken(token);
+		const requestSessionService = container.get(RequestSessionService);
+		requestSessionService.setRoomMemberTokenInfo(metadata, participantIdentity);
+		requestSessionService.setRoom(room);
 
 		await setAuthenticatedUserIfPresent(req);
 	}
@@ -221,12 +225,18 @@ export const roomMemberTokenValidator: AuthValidator = {
  *
  * @param clockToleranceSeconds - How long after its expiry the token is still accepted
  * @param ignoreDemotion - Accept a token issued before its participant was demoted from moderator
+ * @returns The claims of the token and the room it was verified against
  * @throws The `401` invalid token error when the token is not valid
  */
 export const verifyRoomMemberToken = async (
 	token: string,
 	{ clockToleranceSeconds = 0, ignoreDemotion = false } = {}
-): Promise<{ participantIdentity?: string; participantName?: string; metadata: MeetRoomMemberTokenMetadata }> => {
+): Promise<{
+	participantIdentity?: string;
+	participantName?: string;
+	metadata: MeetRoomMemberTokenMetadata;
+	room: RequestRoomSnapshot;
+}> => {
 	try {
 		const tokenService = container.get(TokenService);
 		const {
@@ -243,7 +253,7 @@ export const verifyRoomMemberToken = async (
 		const { iat, roomId, memberId, userId } = metadata;
 
 		const [room, revoked, roomMember, user] = await Promise.all([
-			container.get(RoomRepository).findByRoomId(roomId, ['rolesUpdatedAt']),
+			container.get(RoomRepository).findByRoomId(roomId, REQUEST_ROOM_FIELDS),
 			!ignoreDemotion && participantIdentity
 				? container.get(ParticipantTokenRevocationService).isRevoked(roomId, participantIdentity, iat)
 				: false,
@@ -269,7 +279,7 @@ export const verifyRoomMemberToken = async (
 			throw new Error('Token has outdated permissions');
 		}
 
-		return { participantIdentity, participantName, metadata };
+		return { participantIdentity, participantName, metadata, room };
 	} catch (error) {
 		container.get(LoggerService).debug('Invalid room member token:', error);
 		throw errorInvalidToken();
