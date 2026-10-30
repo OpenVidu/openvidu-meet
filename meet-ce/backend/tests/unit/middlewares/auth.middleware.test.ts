@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import type { MeetRoom, MeetRoomMember, MeetUser } from '@openvidu-meet/typings';
+import type { MeetRoom, MeetRoomConfig, MeetRoomMember, MeetUser } from '@openvidu-meet/typings';
 import { MeetUserRole } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { container, registerDependencies } from '../../../src/config/dependency-injector.config.js';
@@ -338,6 +338,7 @@ describe('the validators, against a change made in the same millisecond as the t
 
 	describe('roomMemberTokenValidator', () => {
 		const metadata = { iat: ISSUED_AT, roomId: 'room-1', memberId: 'member-1', userId: 'user-1' };
+		const config = { reactions: { enabled: true } } as MeetRoomConfig;
 
 		const validateWith = (updates: {
 			rolesUpdatedAt: number;
@@ -347,7 +348,9 @@ describe('the validators, against a change made in the same millisecond as the t
 		}): Promise<void> => {
 			jest.spyOn(tokenService, 'parseRoomMemberTokenMetadata').mockReturnValue(metadata as never);
 			jest.spyOn(roomRepository, 'findByRoomId').mockResolvedValue({
-				rolesUpdatedAt: updates.rolesUpdatedAt
+				roomId: 'room-1',
+				rolesUpdatedAt: updates.rolesUpdatedAt,
+				config
 			} as MeetRoom);
 			jest.spyOn(roomMemberRepository, 'findByRoomAndMemberId').mockResolvedValue({
 				permissionsUpdatedAt: updates.permissionsUpdatedAt
@@ -430,6 +433,42 @@ describe('the validators, against a change made in the same millisecond as the t
 			await expect(
 				validateWith({ ...sameInstant, participantTokensRevokedAt: ISSUED_AT + 1 })
 			).rejects.toMatchObject({ statusCode: 401 });
+		});
+
+		// The handlers that gate a feature on the room config take it from the room the validator read, so that
+		// read has to carry the config, and a refused token must not leave a room behind for them.
+		describe('the room it shares with the rest of the request', () => {
+			const validateInRequest = (updates: typeof sameInstant) =>
+				requestSessionService.run(async () => {
+					const outcome = await validateWith(updates).then(
+						() => 'accepted',
+						() => 'refused'
+					);
+					return { outcome, room: requestSessionService.getRoom() };
+				});
+
+			it('keeps the room it read, config included, once it accepts the token', async () => {
+				expect(await validateInRequest(sameInstant)).toEqual({
+					outcome: 'accepted',
+					room: { roomId: 'room-1', rolesUpdatedAt: ISSUED_AT, config }
+				});
+				expect(roomRepository.findByRoomId).toHaveBeenCalledWith('room-1', [
+					'roomId',
+					'rolesUpdatedAt',
+					'config'
+				]);
+			});
+
+			it.each([
+				["the room's roles", { rolesUpdatedAt: ISSUED_AT + 1 }],
+				["the member's permissions", { permissionsUpdatedAt: ISSUED_AT + 1 }],
+				["the participant's last role change in the meeting", { participantTokensRevokedAt: ISSUED_AT + 1 }]
+			])('keeps no room when it refuses a token older than %s', async (_, update) => {
+				expect(await validateInRequest({ ...sameInstant, ...update })).toEqual({
+					outcome: 'refused',
+					room: undefined
+				});
+			});
 		});
 	});
 

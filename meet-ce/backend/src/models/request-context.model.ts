@@ -1,10 +1,16 @@
 import type {
+	MeetRoom,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomField,
 	MeetRoomMemberTokenMetadata,
 	MeetUser
 } from '@openvidu-meet/typings';
+
+/**
+ * The room a room member token was validated against, as read once by the validator for the rest of its request.
+ */
+export type RequestRoomSnapshot = Pick<MeetRoom, 'roomId' | 'rolesUpdatedAt' | 'config'>;
 
 /**
  * Context information stored per HTTP request.
@@ -16,6 +22,7 @@ export interface RequestContext {
 	origin?: string;
 	user?: MeetUser;
 	roomMember?: MeetRoomMemberTokenMetadata & { participantIdentity?: string };
+	room?: RequestRoomSnapshot;
 }
 
 /**

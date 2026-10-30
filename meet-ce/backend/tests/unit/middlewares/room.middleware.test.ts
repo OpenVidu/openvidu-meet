@@ -3,6 +3,7 @@ import type { MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { container, registerDependencies } from '../../../src/config/dependency-injector.config.js';
 import { withRoomPermission } from '../../../src/middlewares/room.middleware.js';
+import type { RequestRoomSnapshot } from '../../../src/models/request-context.model.js';
 import { RequestSessionService } from '../../../src/services/request-session.service.js';
 import { RoomService } from '../../../src/services/room.service.js';
 
@@ -18,6 +19,8 @@ const mockResponse = (): ResponseMock => {
 };
 
 const requestFor = (roomId: string): Request => ({ params: { roomId } }) as unknown as Request;
+
+const validatedAgainst = (roomId: string) => ({ roomId }) as RequestRoomSnapshot;
 
 const roomService = {
 	meetRoomExists: async () => true,
@@ -44,7 +47,7 @@ describe('withRoomPermission', () => {
 
 	// The room member token validator has just found this room, or it would have refused the token.
 	it('does not look the room up again for a room member token of that same room', async () => {
-		jest.spyOn(requestSessionService, 'getRoomIdFromMember').mockReturnValue('room-1');
+		jest.spyOn(requestSessionService, 'getRoom').mockReturnValue(validatedAgainst('room-1'));
 		const next = jest.fn() as unknown as NextFunction;
 
 		await checkChatWrite(requestFor('room-1'), mockResponse(), next);
@@ -54,7 +57,7 @@ describe('withRoomPermission', () => {
 	});
 
 	it('looks the room up for a room member token of another room', async () => {
-		jest.spyOn(requestSessionService, 'getRoomIdFromMember').mockReturnValue('room-2');
+		jest.spyOn(requestSessionService, 'getRoom').mockReturnValue(validatedAgainst('room-2'));
 
 		await checkChatWrite(requestFor('room-1'), mockResponse(), jest.fn() as unknown as NextFunction);
 
@@ -62,7 +65,7 @@ describe('withRoomPermission', () => {
 	});
 
 	it('answers 404 for a missing room when no room member token authenticated the request', async () => {
-		jest.spyOn(requestSessionService, 'getRoomIdFromMember').mockReturnValue(undefined);
+		jest.spyOn(requestSessionService, 'getRoom').mockReturnValue(undefined);
 		jest.spyOn(roomService, 'meetRoomExists').mockResolvedValue(false);
 		const res = mockResponse();
 		const next = jest.fn() as unknown as NextFunction;

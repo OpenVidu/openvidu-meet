@@ -455,6 +455,28 @@ export class RoomService {
 	}
 
 	/**
+	 * Retrieves the config of a room to gate a feature on it, reusing the room the room member token of the current
+	 * request was validated against instead of reading it again, when it is that same room.
+	 *
+	 * It serves read-only gating: never use it under a lock that guards the room, nor after the request wrote the room,
+	 * because the config it returns may predate both.
+	 *
+	 * @param roomId - The ID of the room
+	 * @returns A promise that resolves to the config of the room
+	 * @throws Error if room not found
+	 */
+	async getRequestRoomConfig(roomId: string): Promise<MeetRoomConfig> {
+		const requestRoom = this.requestSessionService.getRoom();
+
+		if (requestRoom?.roomId === roomId) {
+			return requestRoom.config;
+		}
+
+		const { config } = await this.getMeetRoom(roomId, ['config']);
+		return config;
+	}
+
+	/**
 	 * Deletes a room based on the specified policies for handling active meetings and recordings.
 	 *
 	 * @param roomId - The unique identifier of the room to delete
