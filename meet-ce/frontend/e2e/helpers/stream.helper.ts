@@ -838,3 +838,24 @@ export const setTabVisibility = async (page: Page, state: DocumentVisibilityStat
 		document.dispatchEvent(new Event('visibilitychange'));
 	}, state);
 };
+
+type AudioProcessing = Pick<MediaTrackSettings, 'echoCancellation' | 'noiseSuppression' | 'autoGainControl'>;
+
+/**
+ * Voice processing the browser applies to every audio track the page sends, keyed by track id
+ * ({@link capturePeerConnections} must have run).
+ */
+export const getPublishedAudioProcessing = (page: Page): Promise<Record<string, AudioProcessing>> =>
+	page.evaluate(() =>
+		Object.fromEntries(
+			((window as PeerConnectionWindow).__peerConnections ?? [])
+				.filter((connection) => connection.connectionState !== 'closed')
+				.flatMap((connection) => connection.getSenders())
+				.map((sender) => sender.track)
+				.filter((track): track is MediaStreamTrack => track?.kind === 'audio')
+				.map((track) => {
+					const { echoCancellation, noiseSuppression, autoGainControl } = track.getSettings();
+					return [track.id, { echoCancellation, noiseSuppression, autoGainControl }];
+				})
+		)
+	);

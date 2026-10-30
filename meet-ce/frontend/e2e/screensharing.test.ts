@@ -10,9 +10,11 @@ import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-
 import { openMeeting } from './helpers/meeting-navigation.helper';
 import { disconnectAllBrowserFakeParticipants, joinParticipants } from './helpers/participant-management.helper';
 import {
+	capturePeerConnections,
 	expectPinnedStreamCount,
 	expectScreenSourceCount,
 	expectVideoCount,
+	getPublishedAudioProcessing,
 	getScreenSourceTracks,
 	unpinCurrentPinnedStream
 } from './helpers/stream.helper';
@@ -126,6 +128,25 @@ test.describe('Screensharing E2E Tests', () => {
 		} finally {
 			await removeAllParticipants();
 		}
+	});
+
+	test('should send the screen audio without the voice processing of the microphone', async ({ page }) => {
+		await capturePeerConnections(page);
+		await openMeeting(page, accessUrl);
+		await expect.poll(async () => Object.keys(await getPublishedAudioProcessing(page)).length).toBe(1);
+		const [microphoneTrackId] = Object.keys(await getPublishedAudioProcessing(page));
+
+		await startScreensharing(page);
+
+		await expect.poll(async () => Object.keys(await getPublishedAudioProcessing(page)).length).toBe(2);
+		const { [microphoneTrackId]: microphone, ...screenAudio } = await getPublishedAudioProcessing(page);
+		const voiceProcessing = (enabled: boolean) => ({
+			echoCancellation: enabled,
+			noiseSuppression: enabled,
+			autoGainControl: enabled
+		});
+		expect(microphone).toEqual(voiceProcessing(true));
+		expect(Object.values(screenAudio)).toEqual([voiceProcessing(false)]);
 	});
 
 	test('should correctly share screen with microphone muted and maintain proper track state', async ({ page }) => {
