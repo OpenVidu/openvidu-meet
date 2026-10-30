@@ -127,7 +127,10 @@ backend serves it at `<basePath>/`.
 - E2E: Playwright specs in `e2e/` (`*.test.ts`, project `spa`, `tsconfig.test.json`). They drive real
   Chrome with fake camera/mic against a **running** Meet backend + LiveKit, so `workers: 1`,
   `fullyParallel: false`, and `retries: 2` in CI (parallel participant bootstraps cause environmental
-  flakiness). Helpers/fixtures live in `e2e/helpers/` and `e2e/fixtures/`.
+  flakiness). Helpers/fixtures live in `e2e/helpers/` and `e2e/fixtures/`. CI splits the specs into
+  four jobs by domain (the `frontend-e2e` matrix in `.github/workflows/ci.yaml`, each passing its
+  files through `./meet.sh test-e2e-frontend -- <args>`); the last one runs every spec the others do
+  not list, so a new spec file runs there until it is given a group.
 
 ## Gotchas
 

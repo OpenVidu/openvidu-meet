@@ -133,6 +133,7 @@ show_help() {
   echo "    Run end-to-end tests for the frontend project (Playwright '--project=spa')"
   echo -e "    ${YELLOW}Options:${NC} --force-install-browsers    Force reinstall of Playwright browsers"
   echo -e "             ${NC} --skip-install-browsers     Skip Playwright browsers installation"
+  echo -e "             ${NC} -- <args>                   Pass the rest to Playwright (spec files, --grep...)"
   echo
   echo -e "  ${BLUE}dev${NC}"
   echo "    Start development mode with watchers"
@@ -454,15 +455,22 @@ test_e2e_frontend() {
   # Parse optional flags
   FORCE_INSTALL=false
   SKIP_INSTALL_BROWSERS=false
-  for arg in "$@"; do
-    case "$arg" in
+  PLAYWRIGHT_ARGS=()
+  while [ $# -gt 0 ]; do
+    case "$1" in
       --force-install-browsers|--force-install|-f)
         FORCE_INSTALL=true
         ;;
       --skip-install-browsers)
         SKIP_INSTALL_BROWSERS=true
         ;;
+      --)
+        shift
+        PLAYWRIGHT_ARGS=("$@")
+        break
+        ;;
     esac
+    shift
   done
 
   install_dependencies
@@ -470,7 +478,7 @@ test_e2e_frontend() {
   ensure_playwright_chromium "$FORCE_INSTALL" "$SKIP_INSTALL_BROWSERS"
 
   echo -e "${GREEN}Running frontend E2E tests...${NC}"
-  pnpm --filter @openvidu-meet/frontend run e2e:playwright:spa
+  pnpm --filter @openvidu-meet/frontend run e2e:playwright:spa "${PLAYWRIGHT_ARGS[@]}"
 }
 
 # Start OpenVidu Meet services in prod or ci mode
