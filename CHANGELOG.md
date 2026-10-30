@@ -54,6 +54,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   microphone before Apply switches the one the others receive; Layout, which More options > Adjust layout opens
   directly and which also sets the own video floating or in the grid; and General.
 - The microphone is sent at speech quality, 24 kbps instead of 48 kbps.
+- The audio of a shared screen is captured as played, without echo cancellation, noise suppression or automatic
+  gain control.
 
 ### Fixed
 
