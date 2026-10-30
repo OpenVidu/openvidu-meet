@@ -19,6 +19,8 @@ its own, and can land later.
   snapshot is for the same room, instead of querying MongoDB again: the raise hand switch, the
   reactions switch and the recording switch. Any other request (access token, API key, another room)
   reads MongoDB as today.
+- The token refresh takes the room `config` for the chat grant from the read that verified the
+  previous token, instead of reading the room again.
 - Reads that decide a write, or that run under a lock, keep reading MongoDB: status transitions,
   role and access updates, deletions.
 
@@ -43,9 +45,10 @@ declares `skip_specs`.
 - **Deployment:** no new configuration. One MongoDB query less per in-meeting request that gates on
   the room `config`.
 - **Code:** backend only (`meet-ce/backend`): the request context model, the room member token
-  validator, `RoomService` and the handlers that switch features on the room `config`.
+  validator, `RoomService`, the token refresh in `RoomMemberService` and the handlers that switch
+  features on the room `config`.
 - **PRO:** `RoomService` gains a method; no existing overridable signature changes.
 - **openvidu.io:** no page changes.
 - **Related change:** `optimize-api-request-hot-path` is independent. If it lands first, its D3
   check ("the token was validated against this room") can read the snapshot instead of comparing
-  room IDs; tasks 3.2 covers that.
+  room IDs; task 3.3 covers that.

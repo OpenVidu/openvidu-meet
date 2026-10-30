@@ -58,8 +58,10 @@ already not atomic: an update can land between the two reads today.
 
 `roomMemberTokenValidator` reads `['roomId', 'rolesUpdatedAt', 'config']` and, once the token is
 accepted, stores that partial room in `RequestContext.room` through a new
-`RequestSessionService.setRoom()` / `getRoom()` pair. The field list is one constant next to the
-validator, so the snapshot never grows by accident.
+`RequestSessionService.setRoom()` / `getRoom(roomId)` pair. `getRoom(roomId)` returns the snapshot
+only when it is that room, so no caller can gate on the config of another room by forgetting to
+compare. The field list is one constant, `REQUEST_ROOM_FIELDS` in `request-context.model.ts`, and the
+snapshot type derives from it, so the snapshot never grows by accident and the two cannot drift.
 
 - Rejected: reading the whole room. The room document carries the access URLs, which
   `RoomRepository.toDomain` enriches with the base URL on every read. That enrichment was the
@@ -70,8 +72,8 @@ validator, so the snapshot never grows by accident.
 
 ### D2. Call sites opt in with `RoomService.getRequestRoomConfig(roomId)`
 
-The method returns `config` from the snapshot when the snapshot exists and its `roomId` equals
-`roomId`. Otherwise it reads `getMeetRoom(roomId, ['config'])` exactly as the call sites do today,
+The method returns `config` from `getRoom(roomId)` when the request's snapshot is that room.
+Otherwise it reads `getMeetRoom(roomId, ['config'])` exactly as the call sites do today,
 including the 404 for a missing room. `ensureHandEnabled`, `sendParticipantReaction` and
 `withRecordingStartAllowed` switch to it. The server-relayed chat endpoint will use it too, if that
 transport is chosen.
@@ -83,9 +85,15 @@ transport is chosen.
 ### D3. Writes and locked reads keep reading MongoDB
 
 Every other `getMeetRoom` and `findByRoomId` call site stays untouched. This covers status
-transitions, the role, access and config updates, deletions, token refresh (which reads `status` and
-`roles`), and everything in the webhook and scheduler paths, which run outside a request context
-anyway (`RequestSessionService` getters return `undefined` there).
+transitions, the role, access and config updates, deletions, and everything in the webhook and
+scheduler paths, which run outside a request context anyway (`RequestSessionService` getters return
+`undefined` there).
+
+The token refresh is the one other room read that goes. Its route has no room member token
+validator, so it never sees the request snapshot, but it calls `verifyRoomMemberToken` itself, which
+now returns the room it verified the previous token against. The refresh takes `config` (for the
+chat grant) from that room instead of reading it a second time: the same read, in the same request,
+of a `config` fixed during the meeting.
 
 ### Several replicas
 
@@ -98,14 +106,16 @@ one request.
 ## Risks / Trade-offs
 
 - [A future call site reads `config` from the snapshot in a write path that needs a fresh value] →
-  The method's TSDoc states the rule (read-only gating, never under a lock or after a write in the
-  same request), and the only way to get the snapshot is this one explicitly named method.
+  The method's TSDoc states the rule (it gates a feature, never serves as the config a write starts
+  from, because it may have been read at authentication), and the only way to get the snapshot is
+  this one explicitly named method.
 - [Every room member token request now projects `config`, even the ones that do not need it] →
   `config` is a small subdocument; the measured CPU still fell by 10%. If a profile later shows the
   projection cost on routes that never read `config`, D1's rejected per-route alternative is the
   fallback.
-- [The snapshot is taken before a token refresh changes the participant's grant] → Token refresh
-  does not read `config` from the snapshot (D3), and `config` is fixed during the meeting.
+- [The room is read before a token refresh changes the participant's grant] → The refresh takes
+  only `config` from that read (D3), and `config` is fixed during the meeting; the grant itself comes
+  from the participant's current metadata.
 
 ## Migration Plan
 
