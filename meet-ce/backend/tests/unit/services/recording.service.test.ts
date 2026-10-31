@@ -3,6 +3,7 @@ import type { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { MeetRecordingAutoStartMode, MeetRecordingStatus } from '@openvidu-meet/typings';
 import type { ParticipantInfo, Room } from 'livekit-server-sdk';
 import { EgressInfo, EgressStatus } from 'livekit-server-sdk';
+import { PassThrough, Readable } from 'stream';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
@@ -433,5 +434,65 @@ describe('RecordingService.stopRecording', () => {
 
 		await expect(service.stopRecording(recordingId)).rejects.toMatchObject({ statusCode: 409 });
 		expect(stopped).toEqual([]);
+	});
+});
+
+describe('RecordingService.writeRecordingsZip', () => {
+	const recordingIds = Array.from({ length: 60 }, (_, index) => `room-1--EG_${index}--abc`);
+
+	const buildZipService = (openStream: () => Readable) => {
+		const service = buildService(new FakeLiveKitService([]), new FakeMutexService());
+		Object.assign(service, {
+			getRecording: async (recordingId: string) => ({ filename: `${recordingId}.mp4` }),
+			getRecordingAsStream: async () => ({ fileSize: undefined, fileStream: openStream() })
+		});
+		return service;
+	};
+
+	const drainedOutput = () => {
+		const chunks: Buffer[] = [];
+		const output = new PassThrough();
+		output.on('data', (chunk: Buffer) => chunks.push(chunk));
+		return { output, zipEntries: () => Buffer.concat(chunks).toString('latin1').split('PK\x03\x04').length - 1 };
+	};
+
+	it('writes every recording while holding at most one of them open', async () => {
+		const opened: Readable[] = [];
+		let mostOpenAtOnce = 0;
+		const service = buildZipService(() => {
+			const stillOpen = opened.filter((stream) => !stream.readableEnded && !stream.destroyed).length;
+			mostOpenAtOnce = Math.max(mostOpenAtOnce, stillOpen + 1);
+			const stream = Readable.from([Buffer.alloc(1024)]);
+			opened.push(stream);
+			return stream;
+		});
+		const { output, zipEntries } = drainedOutput();
+
+		await service.writeRecordingsZip(recordingIds, output, new AbortController().signal);
+
+		expect(opened).toHaveLength(60);
+		expect(mostOpenAtOnce).toBe(1);
+		expect(zipEntries()).toBe(60);
+	});
+
+	it('destroys the recording being read and opens no other when the download is aborted', async () => {
+		const opened: Readable[] = [];
+		let firstOpened!: () => void;
+		const opening = new Promise<void>((resolve) => (firstOpened = resolve));
+		const service = buildZipService(() => {
+			const neverEnding = new Readable({ read: () => {} });
+			opened.push(neverEnding);
+			firstOpened();
+			return neverEnding;
+		});
+		const download = new AbortController();
+
+		const writing = service.writeRecordingsZip(recordingIds, drainedOutput().output, download.signal);
+		await opening;
+		download.abort();
+
+		await expect(writing).rejects.toMatchObject({ name: 'AbortError' });
+		expect(opened).toHaveLength(1);
+		expect(opened[0].destroyed).toBe(true);
 	});
 });

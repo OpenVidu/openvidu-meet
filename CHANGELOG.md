@@ -94,6 +94,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   number of `recordingIds`, and a long list failed with a server or proxy error. They now accept up to 100 distinct ids
   and answer `422` to more, and the recording lists disable ZIP download and bulk delete beyond 100 selected
   recordings.
+- [`downloadRecordings`][3.9-download-recordings] with more than 50 recordings, two large ZIPs at once or a cancelled
+  ZIP left every later recording playback and download on that server hanging until it restarted. Each ZIP now
+  releases what it opened, whatever its size or however it ends.
 - A recording ended by the stale-recordings clean-up sent no [`recordingEnded`][3.9-recording-ended] webhook and stayed
   in progress in the meeting and for the embedded event `recordingStatusChanged`. Its end is now reported like any
   other, once.
