@@ -407,12 +407,15 @@ export class LivekitWebhookService {
 				}
 
 				case 'updated': {
-					const tasks = [
-						this.recordingRepository.replace(recordingInfo),
-						this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo)
-					];
+					const updated = await this.recordingRepository.replaceInProgress(recordingInfo);
+
+					if (!updated) {
+						this.logger.debug(`Ignoring update of recording '${recordingId}': it has already ended`);
+						break;
+					}
+
 					this.webhookDispatcherService.sendRecordingUpdatedWebhook(recordingInfo);
-					await Promise.all(tasks);
+					await this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo);
 					break;
 				}
 

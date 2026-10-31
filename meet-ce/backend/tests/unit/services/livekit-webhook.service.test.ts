@@ -1,9 +1,11 @@
-import { describe, expect, it } from '@jest/globals';
-import { MeetingEndAction, MeetMeetingEndedReason, MeetRoomStatus } from '@openvidu-meet/typings';
-import type { Room } from 'livekit-server-sdk';
+import { afterEach, describe, expect, it, jest } from '@jest/globals';
+import type { MeetRecordingInfo } from '@openvidu-meet/typings';
+import { MeetingEndAction, MeetMeetingEndedReason, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
+import type { EgressInfo, Room } from 'livekit-server-sdk';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
+import { RecordingHelper } from '../../../src/helpers/recording.helper.js';
 import { LivekitWebhookService } from '../../../src/services/livekit-webhook.service.js';
 import type { RoomScheduledTasksService } from '../../../src/services/room-scheduled-tasks.service.js';
 
@@ -462,5 +464,78 @@ describe('LivekitWebhookService.handleRoomFinished', () => {
 		await service.handleRoomFinished({ name: 'room-1', sid: 'sid-NEW' });
 
 		expect(webhookDispatcherService.sendMeetingEndedWebhookReasons).toEqual([undefined]);
+	});
+});
+
+describe('LivekitWebhookService.handleEgressUpdated', () => {
+	const buildUpdatedService = (storedStatus: MeetRecordingStatus) => {
+		const stored = { recordingId: 'room-1--EG_1--uid', roomId: 'room-1', status: storedStatus };
+		const inProgress = [MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE, MeetRecordingStatus.ENDING];
+		const repository = {
+			replaceInProgress: async (recording: MeetRecordingInfo) => {
+				if (!inProgress.includes(stored.status)) return null;
+
+				stored.status = recording.status;
+				return recording;
+			}
+		};
+		const webhooks: MeetRecordingInfo[] = [];
+		const signals: MeetRecordingInfo[] = [];
+		const service = new LivekitWebhookService(
+			...([
+				{},
+				repository,
+				{},
+				{},
+				{},
+				{ sendRecordingUpdatedWebhook: (recording: MeetRecordingInfo) => webhooks.push(recording) },
+				{
+					sendRecordingUpdatedSignal: async (_roomId: string, recording: MeetRecordingInfo) =>
+						signals.push(recording)
+				},
+				{},
+				{},
+				{},
+				{},
+				{},
+				{},
+				new FakeLogger()
+			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
+		);
+		return { service, stored, webhooks, signals };
+	};
+
+	const egressReporting = (status: MeetRecordingStatus) => {
+		jest.spyOn(RecordingHelper, 'isRecordingEgress').mockReturnValue(true);
+		jest.spyOn(RecordingHelper, 'toRecordingInfo').mockResolvedValue({
+			recordingId: 'room-1--EG_1--uid',
+			roomId: 'room-1',
+			status
+		} as MeetRecordingInfo);
+		return {} as EgressInfo;
+	};
+
+	afterEach(() => {
+		jest.restoreAllMocks();
+	});
+
+	it('stores and reports an update of a recording in progress', async () => {
+		const { service, stored, webhooks, signals } = buildUpdatedService(MeetRecordingStatus.STARTING);
+
+		await service.handleEgressUpdated(egressReporting(MeetRecordingStatus.ACTIVE));
+
+		expect(stored.status).toBe(MeetRecordingStatus.ACTIVE);
+		expect(webhooks).toHaveLength(1);
+		expect(signals).toHaveLength(1);
+	});
+
+	it('ignores an update that arrives after the recording ended', async () => {
+		const { service, stored, webhooks, signals } = buildUpdatedService(MeetRecordingStatus.COMPLETE);
+
+		await service.handleEgressUpdated(egressReporting(MeetRecordingStatus.ENDING));
+
+		expect(stored.status).toBe(MeetRecordingStatus.COMPLETE);
+		expect(webhooks).toEqual([]);
+		expect(signals).toEqual([]);
 	});
 });
