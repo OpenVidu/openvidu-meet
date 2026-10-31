@@ -29,10 +29,6 @@ A room's `broadcast.destinations` SHALL hold any number of destinations, each a 
 - **WHEN** a destination is sent with the URL `rtmp://a.rtmp.youtube.com/live2/`
 - **THEN** the server answers `422`
 
-#### Scenario: Six destinations
-- **WHEN** `updateRoomConfig` sends six destinations
-- **THEN** the server answers `422` and the stored destinations are unchanged
-
 #### Scenario: Destination URL without a usable stream key
 - **WHEN** `createRoom` is called with a destination URL that carries a `#`, has no host, or whose last path segment is only a query string
 - **THEN** the REST API answers `422` and stores nothing

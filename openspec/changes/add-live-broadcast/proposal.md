@@ -56,7 +56,7 @@ Twitch or any RTMP server, without a separate streaming tool.
 
 ## Impact
 
-- REST API, additive: five new operations under a new top-level `/broadcasts` group, the `config.broadcast` object, two permission keys,
+- REST API, additive: four new operations (`broadcastStart`, `broadcastList`, `broadcastGet`, `broadcastStop`) under a new top-level `/broadcasts` group, the `config.broadcast` object, two permission keys,
   `broadcastActive` in `meetingGet`, and the `503` of `startRecording`. No existing field changes.
 - Webhooks, additive: three new event types accepted by the webhook event filters.
 - Embedded API, additive: two commands and three events on the webcomponent and the iframe, and the
