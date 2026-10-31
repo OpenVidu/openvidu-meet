@@ -1,15 +1,24 @@
-import { afterEach, describe, expect, it, jest } from '@jest/globals';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ParticipantInfo_Kind } from '@livekit/protocol';
-import type { MeetRecordingInfo } from '@openvidu-meet/typings';
-import { MeetingEndAction, MeetMeetingEndedReason, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
+import type { MeetRecordingInfo, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import {
+	MEET_PERMISSION_KEYS,
+	MeetingEndAction,
+	MeetMeetingEndedReason,
+	MeetRecordingStatus,
+	MeetRoomMemberUIBadge,
+	MeetRoomStatus
+} from '@openvidu-meet/typings';
 import type { ParticipantInfo, Room } from 'livekit-server-sdk';
 import { EgressInfo, EgressStatus } from 'livekit-server-sdk';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
-import '../../../src/config/dependency-injector.config.js';
+import { container, registerDependencies } from '../../../src/config/dependency-injector.config.js';
 import { RecordingHelper } from '../../../src/helpers/recording.helper.js';
 import { EGRESS_LOST_ERROR } from '../../../src/models/egress.model.js';
+import { RoomRepository } from '../../../src/repositories/room.repository.js';
 import { LivekitWebhookService } from '../../../src/services/livekit-webhook.service.js';
+import { RedisService } from '../../../src/services/redis.service.js';
 import type { RoomScheduledTasksService } from '../../../src/services/room-scheduled-tasks.service.js';
 
 class FakeRedisService {
@@ -638,5 +647,120 @@ describe('LivekitWebhookService.handleEgressUpdated', () => {
 		expect(stored.status).toBe(MeetRecordingStatus.COMPLETE);
 		expect(webhooks).toEqual([]);
 		expect(signals).toEqual([]);
+	});
+});
+
+// The media server accepts a token until it expires, so a client can reconnect with one a demotion or a member
+// update revoked; Meet hears of that session only through its join.
+describe('LivekitWebhookService.handleParticipantJoined (a session that joined with a revoked token)', () => {
+	const ROOM = {
+		name: 'room-1',
+		sid: 'RM_1',
+		metadata: JSON.stringify({ roomOptions: { roomName: 'Room 1' } })
+	} as Room;
+	const IDENTITY = 'speaker-1';
+	const DEMOTED_AT = 2_000;
+	const redis = new FakeRedisService();
+	let liveParticipant: ParticipantInfo;
+	let deleteParticipant: jest.Mock<(roomId: string, identity: string) => Promise<void>>;
+	let webhookDispatcherService: { sendParticipantJoinedWebhook: jest.Mock; sendParticipantLeftWebhook: jest.Mock };
+	let service: LivekitWebhookService;
+
+	const session = (iat?: number): ParticipantInfo =>
+		({
+			identity: IDENTITY,
+			kind: ParticipantInfo_Kind.STANDARD,
+			sid: 'PA_1',
+			name: 'Ana',
+			metadata:
+				iat === undefined
+					? ''
+					: JSON.stringify({
+							iat,
+							roomId: ROOM.name,
+							permissions: Object.fromEntries(
+								MEET_PERMISSION_KEYS.map((key) => [key, false])
+							) as unknown as MeetRoomMemberPermissions,
+							badge: MeetRoomMemberUIBadge.OTHER
+						})
+		}) as ParticipantInfo;
+
+	beforeAll(() => {
+		registerDependencies();
+		container.rebind(RedisService).toConstantValue(redis as unknown as RedisService);
+	});
+
+	beforeEach(() => {
+		redis.store.clear();
+		redis.store.set(`ov_meet:participant_tokens_revoked_at:${ROOM.name}:${IDENTITY}`, String(DEMOTED_AT));
+		jest.spyOn(container.get(RoomRepository), 'findByRoomId').mockResolvedValue({ rolesUpdatedAt: 0 } as never);
+		deleteParticipant = jest.fn(async () => {});
+		webhookDispatcherService = { sendParticipantJoinedWebhook: jest.fn(), sendParticipantLeftWebhook: jest.fn() };
+		const silent = () => {};
+
+		service = new LivekitWebhookService(
+			...([
+				{ startAutoRecordingIfNeeded: async () => {}, getAllRecordings: async () => ({ recordings: [] }) },
+				{},
+				{ getParticipant: async () => liveParticipant, deleteParticipant },
+				{},
+				{},
+				webhookDispatcherService,
+				{},
+				{ releaseParticipantName: async () => {} },
+				{},
+				{},
+				{ cleanupState: async () => {} },
+				{},
+				redis,
+				{ info: silent, warn: silent, debug: silent, verbose: silent, error: silent },
+				{ getBroadcasts: async () => [] }
+			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
+		);
+	});
+
+	afterEach(() => {
+		jest.restoreAllMocks();
+	});
+
+	it('removes a session that joined with the token it held before its demotion, and reports neither its join nor its departure', async () => {
+		liveParticipant = session(DEMOTED_AT - 1);
+
+		await service.handleParticipantJoined(ROOM, liveParticipant);
+		await service.handleParticipantLeft(ROOM, liveParticipant);
+
+		expect(deleteParticipant).toHaveBeenCalledWith(ROOM.name, IDENTITY);
+		expect(webhookDispatcherService.sendParticipantJoinedWebhook).not.toHaveBeenCalled();
+		expect(webhookDispatcherService.sendParticipantLeftWebhook).not.toHaveBeenCalled();
+	});
+
+	it('keeps a session whose token is current, and reports its join and its departure', async () => {
+		liveParticipant = session(DEMOTED_AT);
+
+		await service.handleParticipantJoined(ROOM, liveParticipant);
+		await service.handleParticipantLeft(ROOM, liveParticipant);
+
+		expect(deleteParticipant).not.toHaveBeenCalled();
+		expect(webhookDispatcherService.sendParticipantJoinedWebhook).toHaveBeenCalledTimes(1);
+		expect(webhookDispatcherService.sendParticipantLeftWebhook).toHaveBeenCalledTimes(1);
+	});
+
+	it('keeps a session the server gave current metadata after it joined', async () => {
+		liveParticipant = session(DEMOTED_AT);
+
+		await service.handleParticipantJoined(ROOM, session(DEMOTED_AT - 1));
+
+		expect(deleteParticipant).not.toHaveBeenCalled();
+		expect(webhookDispatcherService.sendParticipantJoinedWebhook).toHaveBeenCalledTimes(1);
+	});
+
+	it('leaves a session without Meet metadata alone', async () => {
+		liveParticipant = session();
+
+		await service.handleParticipantJoined(ROOM, liveParticipant);
+
+		expect(deleteParticipant).not.toHaveBeenCalled();
+		expect(container.get(RoomRepository).findByRoomId).not.toHaveBeenCalled();
+		expect(webhookDispatcherService.sendParticipantJoinedWebhook).toHaveBeenCalledTimes(1);
 	});
 });

@@ -26,6 +26,9 @@ export const enum RedisKeyName {
 	// Stores, per meeting participant, when their role last changed: room member tokens they were
 	// issued before that moment are no longer accepted.
 	PARTICIPANT_TOKENS_REVOKED_AT = `${REDIS_KEY_PREFIX}participant_tokens_revoked_at:`,
+	// Marks a meeting session removed as it joined for using a revoked room member token, so its
+	// departure is not reported either.
+	REVOKED_TOKEN_SESSION = `${REDIS_KEY_PREFIX}revoked_token_session:`,
 	// Marks a user login session as ended by a logout: every token of that session is rejected.
 	USER_SESSION_REVOKED = `${REDIS_KEY_PREFIX}user_session_revoked:`,
 	// Stores, per user, when they last changed their own password: tokens issued before are rejected.

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import type { MeetRoomMemberPermissions, MeetRoomRoles } from '@openvidu-meet/typings';
 import {
 	MEET_PERMISSION_KEYS,
@@ -158,5 +158,53 @@ describe('RoomMemberService.updateParticipantRole — B10: a promotion re-evalua
 
 		expect(livekitService.updateParticipant).toHaveBeenCalledTimes(1);
 		expect(recordingService.startAutoRecordingIfNeeded).not.toHaveBeenCalled();
+	});
+});
+
+// The media server hands the client a token built from the metadata a demotion pushes, which is what it reconnects
+// with, so that metadata must not count as one of the tokens the demotion revokes.
+describe('RoomMemberService.updateParticipantRole (the metadata a demotion pushes)', () => {
+	afterEach(() => {
+		jest.restoreAllMocks();
+	});
+
+	it('stamps the demoted metadata after revoking the earlier tokens', async () => {
+		let clock = 1_000;
+		jest.spyOn(Date, 'now').mockImplementation(() => ++clock);
+		let revokedAt = Infinity;
+		let pushedAt = -Infinity;
+
+		const roomMemberService = new RoomMemberService(
+			...([
+				{ warn: () => {}, debug: () => {}, verbose: () => {} },
+				{},
+				{ getMeetRoom: async () => ({ roles, config: { chat: { enabled: true } } }) },
+				{},
+				{},
+				{},
+				{
+					getParticipant: async () => ({ identity: IDENTITY, metadata: promotedModeratorMetadata }),
+					updateParticipant: async (
+						_roomId: string,
+						identity: string,
+						{ metadata }: { metadata: string }
+					) => {
+						pushedAt = JSON.parse(metadata).iat;
+						return { identity, metadata, tracks: [] };
+					}
+				},
+				{},
+				{},
+				{},
+				{},
+				{ sendParticipantRoleChangedWebhook: () => {} },
+				{ revokeIssuedTokens: async () => (revokedAt = Date.now()) },
+				{ withRetryLock: (_key: string, _ttl: number, update: () => Promise<unknown>) => update() }
+			] as unknown as ConstructorParameters<typeof RoomMemberService>)
+		);
+
+		await roomMemberService.updateParticipantRole(ROOM_ID, IDENTITY, MeetParticipantModerationAction.DOWNGRADE);
+
+		expect(pushedAt).toBeGreaterThanOrEqual(revokedAt);
 	});
 });

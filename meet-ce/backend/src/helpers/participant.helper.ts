@@ -266,7 +266,7 @@ export class MeetParticipantHelper {
 	 *
 	 * @param participant - The LiveKit participant to inspect.
 	 */
-	private static parseMeetingMetadata(participant: ParticipantInfo): ParticipantMeetingMetadata | undefined {
+	static parseMeetingMetadata(participant: ParticipantInfo): ParticipantMeetingMetadata | undefined {
 		if (!participant.metadata) {
 			return undefined;
 		}
