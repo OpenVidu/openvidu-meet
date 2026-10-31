@@ -33,7 +33,7 @@ import type { ParticipantMeetingMetadata } from '../helpers/participant.helper.j
 import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
-import { verifyRoomMemberToken } from '../middlewares/auth.middleware.js';
+import { checkRoomMemberTokenCurrency, verifyRoomMemberToken } from '../middlewares/auth.middleware.js';
 import {
 	errorAnonymousAccessDisabled,
 	errorInsufficientPermissions,
@@ -631,15 +631,13 @@ export class RoomMemberService {
 				`Regenerating room member token for participant '${participantIdentity}' in room '${roomId}'`
 			);
 
+			// The push stamps tokenMetadata itself with its time, after any demotion that held the lock first, so the
+			// demotion does not revoke the token issued from it.
 			const participant = await this.applyPermissionsToLiveParticipant(
 				roomId,
 				participantIdentity!,
 				{ roles, config },
-				() => {
-					// Issued after any demotion that held the lock first, so the demotion does not revoke it.
-					tokenMetadata.iat = Date.now();
-					return tokenMetadata;
-				}
+				() => tokenMetadata
 			);
 			participantName = participant.name || participantName;
 		}
@@ -660,8 +658,10 @@ export class RoomMemberService {
 	 * based on their current LiveKit participant metadata.
 	 *
 	 * The previous token gets the same checks as on any other endpoint, so a token that a change made after it
-	 * invalidated cannot be renewed into one that is accepted again. A demotion is the exception: the participant is
-	 * read after it, so the new token carries the restored permissions.
+	 * invalidated cannot be renewed into one that is accepted again. A demotion is the exception for the previous
+	 * token: the participant is read after it, so the new token carries the restored permissions. The participant's
+	 * metadata in the meeting gets every check, demotion included, so a session that reconnected with an earlier
+	 * token cannot renew what that token granted.
 	 *
 	 * @param roomId - The ID of the room
 	 * @param previousToken - The previous room member token to refresh
@@ -931,6 +931,8 @@ export class RoomMemberService {
 	 * @param roomId - The ID of the room
 	 * @param participantIdentity - The LiveKit identity of the participant
 	 * @returns The token metadata to include in the refreshed token
+	 * @throws The `401` invalid token error when a change made after the participant's metadata was issued
+	 * invalidated it
 	 */
 	protected async buildTokenMetadataFromParticipant(
 		roomId: string,
@@ -938,6 +940,14 @@ export class RoomMemberService {
 	): Promise<MeetRoomMemberTokenMetadata> {
 		const participant = await this.getParticipantFromMeeting(roomId, participantIdentity);
 		const participantMetadata = MeetParticipantHelper.parseOwnMeetingMetadata(participant);
+		const { outdatedReason } = await checkRoomMemberTokenCurrency(participantMetadata, participantIdentity);
+
+		if (outdatedReason) {
+			this.logger.debug(
+				`Not renewing the token of participant '${participantIdentity}' in room '${roomId}': ${outdatedReason}`
+			);
+			throw errorInvalidToken();
+		}
 
 		return {
 			iat: Date.now(),
@@ -1154,21 +1164,21 @@ export class RoomMemberService {
 					delete metadata.originalPermissions;
 				}
 
+				if (action === MeetParticipantModerationAction.DOWNGRADE) {
+					await this.participantTokenRevocationService.revokeIssuedTokens(roomId, participantIdentity);
+				}
+
+				// Stamped after the revocation, so the token the media server derives from it is not revoked.
+				metadata.iat = Date.now();
 				const permission = this.buildLiveParticipantPermission(
 					participant.permission,
 					metadata.permissions,
 					config.chat.enabled
 				);
-				const updatedParticipant = await this.livekitService.updateParticipant(roomId, participantIdentity, {
+				return this.livekitService.updateParticipant(roomId, participantIdentity, {
 					metadata: JSON.stringify(metadata),
 					permission
 				});
-
-				if (action === MeetParticipantModerationAction.DOWNGRADE) {
-					await this.participantTokenRevocationService.revokeIssuedTokens(roomId, participantIdentity);
-				}
-
-				return updatedParticipant;
 			});
 
 			this.webhookDispatcherService.sendParticipantRoleChangedWebhook({
@@ -1190,9 +1200,10 @@ export class RoomMemberService {
 	}
 
 	/**
-	 * Applies new base permissions to a participant in the meeting from the server: their LiveKit metadata and
-	 * grant. A participant promoted to moderator stays promoted, with the new permissions as the ones a demotion
-	 * restores.
+	 * Applies new base permissions to a participant in the meeting from the server: their LiveKit metadata, stamped
+	 * with the time of the push, and grant. A participant promoted to moderator stays promoted, with the new
+	 * permissions as the ones a demotion restores, unless the promotion comes from a session that reconnected with a
+	 * token issued before a demotion.
 	 *
 	 * @param roomId - The ID of the room
 	 * @param participantIdentity - The LiveKit identity of the participant
@@ -1212,7 +1223,11 @@ export class RoomMemberService {
 			const current = MeetParticipantHelper.parseOwnMeetingMetadata(participant);
 			const metadata = buildMetadata(current);
 
-			if (current.isPromotedModerator && metadata.badge === MeetRoomMemberUIBadge.OTHER) {
+			if (
+				current.isPromotedModerator &&
+				metadata.badge === MeetRoomMemberUIBadge.OTHER &&
+				!(await this.participantTokenRevocationService.isRevoked(roomId, participantIdentity, current.iat))
+			) {
 				metadata.originalPermissions = metadata.permissions;
 				metadata.permissions = this.mergePermissions(
 					metadata.permissions,
@@ -1222,6 +1237,7 @@ export class RoomMemberService {
 				metadata.isPromotedModerator = true;
 			}
 
+			metadata.iat = Date.now();
 			await this.livekitService.updateParticipant(roomId, participantIdentity, {
 				metadata: JSON.stringify(metadata),
 				permission: this.buildLiveParticipantPermission(

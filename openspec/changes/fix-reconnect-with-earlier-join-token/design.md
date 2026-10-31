@@ -16,9 +16,10 @@ What LiveKit lets Meet control (read in `openvidu-livekit`): the token's `exp` a
 
 Check at join, stamp pushes, and make the renewal check live metadata:
 
-1. `handleParticipantJoined` runs the currency checks of `verifyRoomMemberToken` on the joining session's metadata and removes the session when they fail. The checks become one function used by both.
-2. `applyPermissionsToLiveParticipant` sets `iat` to the push time in the metadata it writes, so the token the media server hands to the client after a push is current.
+1. `handleParticipantJoined` runs the currency checks of `verifyRoomMemberToken` on the joining session's metadata and removes the session when they fail. The checks become one function used by both. A session the payload shows as stale is read again from the media server first: a push that landed between the join and the webhook made it current, and a session already replaced (another `sid`) is left alone. A database or Redis failure keeps the session, since removing every reconnection during an outage is worse than the window it leaves; the renewal check below still refuses to mint a token from it. A removed session's `sid` is marked in Redis, so its `participant_left` sends no `participantLeft`.
+2. Every push of participant metadata sets `iat` to the push time, so the token the media server hands to the client after a push is current: `applyPermissionsToLiveParticipant` (member update and token regeneration) and `updateParticipantRole`. A demotion revokes the earlier tokens before it pushes, so its stamp is never older than the revocation.
 3. `refreshRoomMemberToken` runs the same checks on the live metadata. No `ignoreDemotion` is needed for it: after a demotion the pushed metadata is stamped after the revocation. The exemption of decision 3 for the previous token stays.
+4. The token regeneration (`generateRoomMemberToken` with a previous token) also reads the live metadata: it keeps a participant promoted when the live metadata says so. It keeps the promotion only when that metadata is newer than the participant's last demotion, so a session that reconnected with a promotion token cannot regenerate one.
 
 The window between connection and removal only grants what the old token granted for the webhook's latency; step 3 keeps that window from yielding a new Meet token.
 

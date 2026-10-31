@@ -4,12 +4,15 @@ import { MeetingEndAction, MeetMeetingEndedReason, MeetRecordingStatus, MeetRoom
 import { inject, injectable } from 'inversify';
 import type { EgressInfo, ParticipantInfo, Room, WebhookEvent } from 'livekit-server-sdk';
 import { WebhookReceiver } from 'livekit-server-sdk';
+import ms from 'ms';
 import { container } from '../config/dependency-injector.config.js';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { EgressHelper } from '../helpers/egress.helper.js';
 import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
+import { checkRoomMemberTokenCurrency } from '../middlewares/auth.middleware.js';
 import type { EgressWebhookAction } from '../models/egress.model.js';
 import { EGRESS_LOST_ERROR } from '../models/egress.model.js';
 import { RedisKeyName } from '../models/redis.model.js';
@@ -180,6 +183,8 @@ export class LivekitWebhookService {
 	async handleParticipantJoined(room: Room, participant: ParticipantInfo) {
 		if (!MeetParticipantHelper.isStandardParticipant(participant)) return;
 
+		if (await this.removeSessionWithRevokedToken(room, participant)) return;
+
 		// The room's recording may be configured to start by itself.
 		void this.recordingService.startAutoRecordingIfNeeded(room, participant);
 
@@ -211,6 +216,51 @@ export class LivekitWebhookService {
 				error
 			);
 		}
+	}
+
+	/**
+	 * Removes a session that joined the meeting with a room member token a later change revoked, such as a demotion
+	 * or a member update: the media server accepts a token until it expires, and tells Meet of a session only once it
+	 * joined. A session whose metadata the server updated since it joined is judged by that metadata, and a session
+	 * whose token cannot be checked is kept.
+	 *
+	 * @returns Whether the session was removed
+	 */
+	protected async removeSessionWithRevokedToken(room: Room, joined: ParticipantInfo): Promise<boolean> {
+		try {
+			if (!(await this.hasRevokedToken(joined))) return false;
+
+			const participant = await this.livekitService.getParticipant(room.name, joined.identity);
+
+			if (participant.sid !== joined.sid || !(await this.hasRevokedToken(participant))) return false;
+
+			await this.redisService.set(
+				`${RedisKeyName.REVOKED_TOKEN_SESSION}${joined.sid}`,
+				true,
+				ms(INTERNAL_CONFIG.REVOKED_TOKEN_SESSION_TTL)
+			);
+			await this.livekitService.deleteParticipant(room.name, joined.identity);
+			this.logger.info(
+				`Removed participant '${joined.identity}' from room '${room.name}': it joined with a revoked room member token`
+			);
+			return true;
+		} catch (error) {
+			this.logger.warn(
+				`Could not check the room member token participant '${joined.identity}' joined room '${room.name}' with:`,
+				error
+			);
+			return false;
+		}
+	}
+
+	/** Whether the participant carries Meet metadata that a change made after it was issued revoked. */
+	protected async hasRevokedToken(participant: ParticipantInfo): Promise<boolean> {
+		const metadata = MeetParticipantHelper.parseMeetingMetadata(participant);
+
+		if (!metadata) return false;
+
+		const { outdatedReason } = await checkRoomMemberTokenCurrency(metadata, participant.identity);
+		return !!outdatedReason;
 	}
 
 	/**
@@ -290,8 +340,14 @@ export class LivekitWebhookService {
 	 */
 	protected async handleMeetingParticipantLeft(room: Room, participant: ParticipantInfo) {
 		try {
-			const payload = await MeetParticipantHelper.toParticipantLeftPayload(room, participant, Date.now());
-			this.webhookDispatcherService.sendParticipantLeftWebhook(payload);
+			const removedAtJoin = await this.redisService.delete(
+				`${RedisKeyName.REVOKED_TOKEN_SESSION}${participant.sid}`
+			);
+
+			if (!removedAtJoin) {
+				const payload = await MeetParticipantHelper.toParticipantLeftPayload(room, participant, Date.now());
+				this.webhookDispatcherService.sendParticipantLeftWebhook(payload);
+			}
 
 			const userId = this.getUserIdFromParticipant(participant);
 

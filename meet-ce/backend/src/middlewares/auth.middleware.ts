@@ -219,9 +219,7 @@ export const roomMemberTokenValidator: AuthValidator = {
 };
 
 /**
- * Verifies a room member token and that no later change invalidated it: an update of its room's roles or access,
- * of its room member's permissions or of its user's role, the deletion of that member or user, and a demotion of
- * its participant unless `ignoreDemotion` is set.
+ * Verifies a room member token and that no later change invalidated it (see {@link checkRoomMemberTokenCurrency}).
  *
  * @param clockToleranceSeconds - How long after its expiry the token is still accepted
  * @param ignoreDemotion - Accept a token issued before its participant was demoted from moderator
@@ -250,33 +248,12 @@ export const verifyRoomMemberToken = async (
 		}
 
 		const metadata = tokenService.parseRoomMemberTokenMetadata(tokenMetadata);
-		const { iat, roomId, memberId, userId } = metadata;
+		const { room, outdatedReason } = await checkRoomMemberTokenCurrency(metadata, participantIdentity, {
+			ignoreDemotion
+		});
 
-		const [room, revoked, roomMember, user] = await Promise.all([
-			container.get(RoomRepository).findByRoomId(roomId, REQUEST_ROOM_FIELDS),
-			!ignoreDemotion && participantIdentity
-				? container.get(ParticipantTokenRevocationService).isRevoked(roomId, participantIdentity, iat)
-				: false,
-			memberId
-				? container.get(RoomMemberRepository).findByRoomAndMemberId(roomId, memberId, ['permissionsUpdatedAt'])
-				: undefined,
-			userId ? container.get(UserService).getUser(userId, ['roleUpdatedAt']) : undefined
-		]);
-
-		if (!room || iat < room.rolesUpdatedAt) {
-			throw new Error('Token has outdated permissions');
-		}
-
-		if (revoked) {
-			throw new Error('Token was issued before the participant role changed');
-		}
-
-		if (memberId && (!roomMember || iat < roomMember.permissionsUpdatedAt)) {
-			throw new Error('Token has outdated permissions');
-		}
-
-		if (userId && (!user || iat < user.roleUpdatedAt)) {
-			throw new Error('Token has outdated permissions');
+		if (!room || outdatedReason) {
+			throw new Error(outdatedReason);
 		}
 
 		return { participantIdentity, participantName, metadata, room };
@@ -284,6 +261,50 @@ export const verifyRoomMemberToken = async (
 		container.get(LoggerService).debug('Invalid room member token:', error);
 		throw errorInvalidToken();
 	}
+};
+
+/**
+ * Tells whether a change made after a room member token was issued invalidated it: an update of its room's roles or
+ * access, of its room member's permissions or of its user's role, the deletion of that member or user, and a
+ * demotion of its participant unless `ignoreDemotion` is set. The metadata a participant joined a meeting with is
+ * checked the same way. A database or Redis failure is thrown, never taken for an invalidated token.
+ *
+ * @param ignoreDemotion - Accept a token issued before its participant was demoted from moderator
+ * @returns The token's room, and why the token is no longer valid when it is not
+ */
+export const checkRoomMemberTokenCurrency = async (
+	{ iat, roomId, memberId, userId }: MeetRoomMemberTokenMetadata,
+	participantIdentity: string | undefined,
+	{ ignoreDemotion = false } = {}
+): Promise<{ room: RequestRoomSnapshot | null; outdatedReason?: string }> => {
+	const [room, revoked, roomMember, user] = await Promise.all([
+		container.get(RoomRepository).findByRoomId(roomId, REQUEST_ROOM_FIELDS),
+		!ignoreDemotion && participantIdentity
+			? container.get(ParticipantTokenRevocationService).isRevoked(roomId, participantIdentity, iat)
+			: false,
+		memberId
+			? container.get(RoomMemberRepository).findByRoomAndMemberId(roomId, memberId, ['permissionsUpdatedAt'])
+			: undefined,
+		userId ? container.get(UserService).getUser(userId, ['roleUpdatedAt']) : undefined
+	]);
+
+	if (!room || iat < room.rolesUpdatedAt) {
+		return { room, outdatedReason: 'Token has outdated permissions' };
+	}
+
+	if (revoked) {
+		return { room, outdatedReason: 'Token was issued before the participant role changed' };
+	}
+
+	if (memberId && (!roomMember || iat < roomMember.permissionsUpdatedAt)) {
+		return { room, outdatedReason: 'Token has outdated permissions' };
+	}
+
+	if (userId && (!user || iat < user.roleUpdatedAt)) {
+		return { room, outdatedReason: 'Token has outdated permissions' };
+	}
+
+	return { room };
 };
 
 /**
