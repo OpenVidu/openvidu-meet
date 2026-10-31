@@ -24,8 +24,8 @@ tests work without a build. Real builds do not.
 
 | Path | Contents |
 | ---- | -------- |
-| `src/database/` | Persisted domain entities and their enums: `user.entity`, `room.entity`, `room-member.entity`, `recording.entity`, `api-key.entity`, `global-config.entity`, plus `room-config` and `room-member-permissions` |
-| `src/request/` | REST request bodies / query options (`room-request`, `room-member-request`, `user-request`) |
+| `src/database/` | Persisted domain entities and their enums: `user.entity`, `room.entity`, `room-member.entity`, `recording.entity`, `broadcast.entity`, `api-key.entity`, `global-config.entity`, plus `room-config` and `room-member-permissions` |
+| `src/request/` | REST request bodies / query options (`room-request`, `room-member-request`, `broadcast-request`, `user-request`) |
 | `src/response/` | REST response shapes and the generic query helpers: `field-projection`, `sort-pagination`, `extra-field`, `text-match`, per-entity `*-response` |
 | `src/embedded/` | The **public embedding API**: `attributes.ts`, `commands.ts`, `events.ts` |
 | `src/webhook.ts` | Outgoing webhook event types and payloads |
@@ -91,8 +91,9 @@ token.
   lump**: if an operator would grant one half and withhold the other, they are two permissions.
   **Verb before object**, no exceptions. A permission may share its string with the command it
   gates (`participantKick`), on purpose.
-- **REST**: live meeting state is a sub-resource of `/meetings/{roomId}`; only durable artifacts
-  and platform groups are top-level (see `MEET_API_REST_GROUPS`). Collections plural, singletons
+- **REST**: live meeting state is a sub-resource of `/meetings/{roomId}`; only durable artifacts,
+  egresses addressed by their own id like a recording (`/broadcasts`) and platform groups are
+  top-level (see `MEET_API_REST_GROUPS`). Collections plural, singletons
   singular. `operationId` = `moduleAction`.
 - **Reserved words**: `broadcast` = RTMP only, `reaction` = emoji only, `message(s)` = chat only,
   `embedded` = the OpenVidu Meet element or iframe a host mounts (the meeting inside it is

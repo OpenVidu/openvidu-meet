@@ -128,6 +128,8 @@ content:
                                       recordingPlay: true
                                       recordingDownload: true
                                       recordingDelete: true
+                                      broadcastControl: true
+                                      broadcastEdit: true
                                       meetingJoin: true
                                       meetingRead: true
                                       roomShareAccessLinks: true
@@ -150,6 +152,8 @@ content:
                                       recordingPlay: true
                                       recordingDownload: true
                                       recordingDelete: false
+                                      broadcastControl: false
+                                      broadcastEdit: false
                                       meetingJoin: true
                                       meetingRead: true
                                       roomShareAccessLinks: false
@@ -225,6 +229,8 @@ content:
                                       recordingPlay: true
                                       recordingDownload: true
                                       recordingDelete: false
+                                      broadcastControl: false
+                                      broadcastEdit: false
                                       meetingJoin: true
                                       meetingRead: true
                                       roomShareAccessLinks: true
@@ -247,6 +253,8 @@ content:
                                       recordingPlay: true
                                       recordingDownload: true
                                       recordingDelete: false
+                                      broadcastControl: false
+                                      broadcastEdit: false
                                       meetingJoin: true
                                       meetingRead: true
                                       roomShareAccessLinks: false
@@ -313,6 +321,10 @@ content:
                                   enabled: true
                                   layout: grid
                                   encoding: H264_720P_30
+                              broadcast:
+                                  enabled: false
+                                  destinations: []
+                                  layout: grid
                               chat:
                                   enabled: false
                               virtualBackground:

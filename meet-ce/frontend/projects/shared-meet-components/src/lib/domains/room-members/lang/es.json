@@ -115,6 +115,7 @@
         "MEETING": "Reunión",
         "MEDIA": "Multimedia",
         "RECORDINGS": "Grabaciones",
+        "BROADCAST": "Emisión en directo",
         "CHAT": "Chat"
       },
       "ITEMS": {
@@ -189,6 +190,14 @@
         "recordingDelete": {
           "LABEL": "Eliminar grabaciones",
           "DESCRIPTION": "Permite eliminar grabaciones"
+        },
+        "broadcastControl": {
+          "LABEL": "Emitir en directo",
+          "DESCRIPTION": "Permite iniciar y detener emisiones en directo a los destinos de la sala, a todos o solo a algunos"
+        },
+        "broadcastEdit": {
+          "LABEL": "Añadir destinos",
+          "DESCRIPTION": "Permite emitir una reunión a URLs adicionales además de los destinos de la sala. Requiere \"Emitir en directo\""
         },
         "chatRead": {
           "LABEL": "Leer",

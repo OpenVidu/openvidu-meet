@@ -1,11 +1,11 @@
 import type { NextFunction, Request, Response } from 'express';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
+import { RoomIdParamSchema } from '../../models/zod-schemas/room-id.schema.js';
 import {
 	BulkDeleteRoomsReqSchema,
 	DeleteRoomReqSchema,
 	mergeHeaderFieldsIntoQuery,
 	RoomFiltersSchema,
-	RoomIdParamSchema,
 	RoomOptionsSchema,
 	RoomQueryFieldsSchema,
 	UpdateRoomAccessReqSchema,

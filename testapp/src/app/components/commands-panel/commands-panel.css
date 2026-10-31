@@ -31,3 +31,9 @@
 .ta-listener-state__dot {
 	color: var(--ta-accent);
 }
+
+.ta-payload {
+	font-size: 10px;
+	color: var(--ta-text-2);
+	overflow-wrap: anywhere;
+}

@@ -19,6 +19,7 @@ import { ConsolePreferencesService } from './services/console-preferences';
 import { EventLogService } from './services/event-log';
 import { IframeHostService } from './services/iframe-host';
 import { MeetCommandsService } from './services/meet-commands';
+import { BroadcastRosterService } from './services/broadcast-roster';
 import { ParticipantRosterService } from './services/participant-roster';
 import { TestappConfigStore } from './services/testapp-config';
 import { ThemeService } from './services/theme';
@@ -47,6 +48,7 @@ export class App {
 	protected readonly consolePreferences = inject(ConsolePreferencesService);
 	private readonly commands = inject(MeetCommandsService);
 	private readonly roster = inject(ParticipantRosterService);
+	private readonly broadcastRoster = inject(BroadcastRosterService);
 	private readonly iframeHost = inject(IframeHostService);
 	private readonly sanitizer = inject(DomSanitizer);
 
@@ -113,6 +115,7 @@ export class App {
 	protected applyConfig(): void {
 		this.log.clear();
 		this.roster.clear();
+		this.broadcastRoster.clear();
 
 		const apply = () => {
 			if (this.integration() === 'iframe') {
@@ -214,6 +217,7 @@ export class App {
 		const payload = detail ?? {};
 		this.log.event(name, payload);
 		this.roster.track(name, payload);
+		this.broadcastRoster.track(name, payload);
 		this.eventSink()?.nativeElement.dispatchEvent(new CustomEvent(name, { detail: payload, bubbles: true }));
 	}
 }

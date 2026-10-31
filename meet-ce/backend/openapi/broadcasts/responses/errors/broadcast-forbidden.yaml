@@ -1,0 +1,10 @@
+description: >
+    Forbidden: the caller lacks the permission, or live broadcast is disabled in the room's
+    config
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        example:
+            error: 'Broadcast Error'
+            message: "Live broadcast is disabled for room 'room-123'"

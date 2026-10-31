@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { MeetAssistantCapabilityName } from '@openvidu-meet/typings';
+import { MeetAssistantCapabilityName, MeetRecordingEncodingPreset, MeetRecordingLayout } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
 import { container } from '../../../../src/config/dependency-injector.config.js';
@@ -144,6 +144,12 @@ describe('AI Assistant API Tests', () => {
 			it('should return 403 and start no assistant when the room has captions off', async () => {
 				MEET_ENV.CAPTIONS_ENABLED = 'true';
 				const roomWithCaptionsOff = await setupSingleRoom(false, 'CAPTIONS_OFF_ROOM', {
+					broadcast: {
+						enabled: false,
+						destinations: [],
+						layout: MeetRecordingLayout.GRID,
+						encoding: MeetRecordingEncodingPreset.H264_720P_30
+					},
 					captions: { enabled: false },
 					raiseHand: { enabled: true },
 					reactions: { enabled: true }

@@ -36,6 +36,8 @@ import {
 	EmbeddedEventPayloadFor,
 	LeftEventReason,
 	type EmbeddedEvent,
+	type MeetBroadcastStartOptions,
+	type MeetBroadcastStopOptions,
 	type MeetParticipantModerationAction,
 	type MeetParticipantMuteOptions,
 	type MeetReaction,
@@ -136,6 +138,9 @@ export class App {
 	readonly recordingStatusChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.RECORDING_STATUS_CHANGED>>();
 	readonly participantHandChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_HAND_CHANGED>>();
 	readonly participantReactionSent = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_REACTION_SENT>>();
+	readonly broadcastStarted = output<EmbeddedEventPayloadFor<EmbeddedEventName.BROADCAST_STARTED>>();
+	readonly broadcastUpdated = output<EmbeddedEventPayloadFor<EmbeddedEventName.BROADCAST_UPDATED>>();
+	readonly broadcastEnded = output<EmbeddedEventPayloadFor<EmbeddedEventName.BROADCAST_ENDED>>();
 	readonly embeddedCloseRequested = output<void>();
 
 	/** @deprecated Renamed to `meetingJoined`. Removed in 3.12.0. Dispatched alongside it. */
@@ -352,6 +357,14 @@ export class App {
 		return this.commandService.participantReactionSend(reaction);
 	}
 
+	broadcastStart(options?: MeetBroadcastStartOptions): Promise<void> {
+		return this.commandService.broadcastStart(options);
+	}
+
+	broadcastStop(options?: MeetBroadcastStopOptions): Promise<void> {
+		return this.commandService.broadcastStop(options);
+	}
+
 	// ── Internal ─────────────────────────────────────────────────────────────
 	// The bus only ever queues canonical events (see EmbeddedEventBusService), so this switch
 	// only ever handles canonical names; emitting the deprecated output alongside the canonical
@@ -405,6 +418,15 @@ export class App {
 				break;
 			case EmbeddedEventName.PARTICIPANT_REACTION_SENT:
 				this.participantReactionSent.emit(payload);
+				break;
+			case EmbeddedEventName.BROADCAST_STARTED:
+				this.broadcastStarted.emit(payload);
+				break;
+			case EmbeddedEventName.BROADCAST_UPDATED:
+				this.broadcastUpdated.emit(payload);
+				break;
+			case EmbeddedEventName.BROADCAST_ENDED:
+				this.broadcastEnded.emit(payload);
 				break;
 		}
 	}

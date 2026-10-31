@@ -91,6 +91,18 @@ export const errorLivekitNotAvailable = (): OpenViduMeetError => {
 	return new OpenViduMeetError('LiveKit Error', 'LiveKit is not available', 503);
 };
 
+export const errorEgressNotAvailable = (): OpenViduMeetError => {
+	return new OpenViduMeetError('LiveKit Error', 'No egress service is available', 503);
+};
+
+export const errorEgressWithoutStreamTags = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'LiveKit Error',
+		'The egress service does not report stream tags, which broadcasts need: it is not the OpenVidu egress',
+		500
+	);
+};
+
 export const errorS3NotAvailable = (error: unknown): OpenViduMeetError => {
 	return new OpenViduMeetError('S3 Error', `S3 is not available ${String(error)}`, 503);
 };
@@ -199,14 +211,6 @@ export const errorRecordingAlreadyStarted = (roomId: string): OpenViduMeetError 
 	return new OpenViduMeetError('Recording Error', `Room '${roomId}' is already being recorded`, 409);
 };
 
-export const errorRecordingStartRefused = (roomId: string): OpenViduMeetError => {
-	return new OpenViduMeetError(
-		'Recording Error',
-		`The media server could not start a recording in room '${roomId}'`,
-		503
-	);
-};
-
 export const errorRecordingAutoStartDisabled = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Recording Error',
@@ -244,6 +248,96 @@ export const errorRecordingsZipEmpty = (): OpenViduMeetError => {
 		'Recording Error',
 		'None of the provided recordings are available for ZIP download',
 		400
+	);
+};
+
+// Broadcast errors
+
+export const errorBroadcastDisabled = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Broadcast Error', `Live broadcast is disabled for room '${roomId}'`, 403);
+};
+
+export const errorBroadcastNotFound = (broadcastId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Broadcast Error', `Broadcast '${broadcastId}' not found`, 404);
+};
+
+export const errorBroadcastAlreadyStarted = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Broadcast Error',
+		`Room '${roomId}' is already being broadcast to every one of its destinations`,
+		409
+	);
+};
+
+export const errorBroadcastAlreadyStopped = (broadcastId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Broadcast Error', `Broadcast '${broadcastId}' is already stopped`, 409);
+};
+
+export const errorBroadcastUpdateInProgress = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Broadcast Error',
+		`The broadcast of room '${roomId}' stayed busy with another change`,
+		409
+	);
+};
+
+export const errorBroadcastRoomHasNoParticipants = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Broadcast Error', `Room '${roomId}' has no participants to broadcast`, 409);
+};
+
+export const errorBroadcastUnknownDestination = (destinationId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Broadcast Error',
+		`Destination '${destinationId}' is not one of the room's destinations`,
+		422
+	);
+};
+
+export const errorBroadcastStartUnknownDestination = (destinationId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Broadcast Error',
+		`Destination '${destinationId}' is not one of the room's destinations`,
+		400
+	);
+};
+
+export const errorBroadcastRedactedDestinationUrl = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Broadcast Error',
+		'A changed or new destination needs its full URL, stream key included; a redacted URL only keeps a saved destination URL exactly as it was served',
+		422
+	);
+};
+
+export const errorBroadcastDuplicateDestination = (redactedUrl: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Broadcast Error',
+		`Duplicate destination: '${redactedUrl}' has the stream key of another destination`,
+		422
+	);
+};
+
+export const errorBroadcastDestinationNotAllowed = (redactedUrl: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Broadcast Error',
+		`Destination '${redactedUrl}' is not allowed: its host is a loopback, link-local, unspecified, multicast or broadcast address`,
+		422
+	);
+};
+
+export const errorBroadcastDestinationInUse = (redactedUrl: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Broadcast Error',
+		`A destination with the stream key of '${redactedUrl}' is already being broadcast`,
+		409
+	);
+};
+
+export const errorBroadcastEnabledWithoutDestinations = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Broadcast Error',
+		'At least one destination is required while broadcast is enabled',
+		422
 	);
 };
 

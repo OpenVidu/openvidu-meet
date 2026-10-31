@@ -1,0 +1,11 @@
+description: >
+    Conflict: the meeting already streams to a destination asked for, or to one with the same stream key,
+    or to every room destination when none is asked for, has no participants to broadcast, or another
+    broadcast request of the meeting was still being applied: retry it
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        example:
+            error: 'Broadcast Error'
+            message: "A destination with the stream key of 'rtmp://a.rtmp.youtube.com/live2/********' is already being broadcast"

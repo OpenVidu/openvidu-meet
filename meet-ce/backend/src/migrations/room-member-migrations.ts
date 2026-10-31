@@ -9,6 +9,7 @@ const roomMemberMigrationV1ToV2Name = generateSchemaMigrationName(meetRoomMember
 const roomMemberMigrationV2ToV3Name = generateSchemaMigrationName(meetRoomMemberCollectionName, 2, 3);
 const roomMemberMigrationV3ToV4Name = generateSchemaMigrationName(meetRoomMemberCollectionName, 3, 4);
 const roomMemberMigrationV4ToV5Name = generateSchemaMigrationName(meetRoomMemberCollectionName, 4, 5);
+const roomMemberMigrationV5ToV6Name = generateSchemaMigrationName(meetRoomMemberCollectionName, 5, 6);
 
 // Brings customPermissions and effectivePermissions to the current key set through
 // normalizePermissions(), which does both halves of the job. It renames the deprecated `can*` spellings
@@ -55,5 +56,6 @@ export const roomMemberMigrations: SchemaMigrationMap<MeetRoomMemberDocument> = 
 	[roomMemberMigrationV1ToV2Name, normalizeMemberPermissionsTransform],
 	[roomMemberMigrationV2ToV3Name, normalizeMemberPermissionsTransform],
 	[roomMemberMigrationV3ToV4Name, normalizeMemberPermissionsTransform],
-	[roomMemberMigrationV4ToV5Name, normalizeMemberPermissionsTransform]
+	[roomMemberMigrationV4ToV5Name, normalizeMemberPermissionsTransform],
+	[roomMemberMigrationV5ToV6Name, normalizeMemberPermissionsTransform]
 ]);

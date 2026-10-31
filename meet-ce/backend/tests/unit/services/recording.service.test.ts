@@ -11,14 +11,38 @@ import { RecordingService } from '../../../src/services/recording.service.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, debug: () => {}, error: () => {}, verbose: () => {} };
 
+const RECORDING_ID = 'room-1--EG_1--uid1';
+
+const recordingEgress = (status: EgressStatus) =>
+	new EgressInfo({ egressId: 'EG_1', roomName: 'room-1', status, fileResults: [{ filename: 'room-1--uid1.mp4' }] });
+
 class FakeLiveKitService {
 	egressQueries = 0;
+	stops: string[] = [];
 
-	constructor(private inProgress: Partial<EgressInfo>[]) {}
+	constructor(private inProgress: EgressInfo[]) {}
 
 	async getInProgressRecordingsEgress(): Promise<EgressInfo[]> {
 		this.egressQueries++;
-		return this.inProgress as EgressInfo[];
+		return this.inProgress;
+	}
+
+	async getEgress(): Promise<EgressInfo[]> {
+		return this.inProgress;
+	}
+
+	async stopEgressIfRunning(egressId: string): Promise<EgressInfo> {
+		this.stops.push(egressId);
+		return this.inProgress[0];
+	}
+}
+
+class FakeRecordingRepository {
+	constructor(private statuses: Record<string, MeetRecordingStatus> = {}) {}
+
+	async findByRecordingId(recordingId: string) {
+		const status = this.statuses[recordingId];
+		return status ? { recordingId, status } : null;
 	}
 }
 
@@ -36,9 +60,13 @@ class FakeMutexService {
 	}
 }
 
-const buildService = (livekit: FakeLiveKitService, mutex: FakeMutexService) =>
+const buildService = (
+	livekit: FakeLiveKitService,
+	mutex: FakeMutexService,
+	recordings = new FakeRecordingRepository()
+) =>
 	new RecordingService(
-		...([livekit, mutex, {}, {}, {}, {}, {}, {}, noopLogger] as unknown as ConstructorParameters<
+		...([livekit, mutex, recordings, {}, {}, {}, {}, {}, noopLogger] as unknown as ConstructorParameters<
 			typeof RecordingService
 		>)
 	);
@@ -61,10 +89,7 @@ describe('RecordingService.releaseRecordingLockIfNoEgress — B3: STARTING egres
 
 	it('keeps the lock held while a new egress is still STARTING, not just ACTIVE', async () => {
 		const mutex = new FakeMutexService();
-		const service = buildService(
-			new FakeLiveKitService([{ egressId: 'eg-1', status: EgressStatus.EGRESS_STARTING }]),
-			mutex
-		);
+		const service = buildService(new FakeLiveKitService([recordingEgress(EgressStatus.EGRESS_STARTING)]), mutex);
 
 		await service.releaseRecordingLockIfNoEgress('room-1');
 
@@ -73,10 +98,7 @@ describe('RecordingService.releaseRecordingLockIfNoEgress — B3: STARTING egres
 
 	it('keeps the lock held for an ENDING egress', async () => {
 		const mutex = new FakeMutexService();
-		const service = buildService(
-			new FakeLiveKitService([{ egressId: 'eg-1', status: EgressStatus.EGRESS_ENDING }]),
-			mutex
-		);
+		const service = buildService(new FakeLiveKitService([recordingEgress(EgressStatus.EGRESS_ENDING)]), mutex);
 
 		await service.releaseRecordingLockIfNoEgress('room-1');
 
@@ -85,10 +107,7 @@ describe('RecordingService.releaseRecordingLockIfNoEgress — B3: STARTING egres
 
 	it('keeps the lock held for an ACTIVE egress', async () => {
 		const mutex = new FakeMutexService();
-		const service = buildService(
-			new FakeLiveKitService([{ egressId: 'eg-1', status: EgressStatus.EGRESS_ACTIVE }]),
-			mutex
-		);
+		const service = buildService(new FakeLiveKitService([recordingEgress(EgressStatus.EGRESS_ACTIVE)]), mutex);
 
 		await service.releaseRecordingLockIfNoEgress('room-1');
 
@@ -124,6 +143,70 @@ describe('RecordingService.releaseRecordingLockIfNoEgress - S6: a lock nobody ho
 	});
 });
 
+/**
+ * LiveKit keeps listing as in progress an egress whose egress service died, and Meet ends that
+ * recording itself, so a recording in progress is one that LiveKit and Meet both still run.
+ */
+describe('RecordingService.getInProgressEgresses (an egress LiveKit lists after its service died)', () => {
+	it('leaves out an egress whose recording Meet has already ended', async () => {
+		const service = buildService(
+			new FakeLiveKitService([recordingEgress(EgressStatus.EGRESS_ACTIVE)]),
+			new FakeMutexService(),
+			new FakeRecordingRepository({ [RECORDING_ID]: MeetRecordingStatus.FAILED })
+		);
+
+		await expect(service.getInProgressEgresses('room-1')).resolves.toEqual([]);
+	});
+
+	it.each([
+		['is still in progress in Meet', { [RECORDING_ID]: MeetRecordingStatus.ACTIVE }],
+		['Meet has not saved yet, which is still starting', {}]
+	])('keeps an egress whose recording %s', async (_case, statuses) => {
+		const egress = recordingEgress(EgressStatus.EGRESS_ACTIVE);
+		const service = buildService(
+			new FakeLiveKitService([egress]),
+			new FakeMutexService(),
+			new FakeRecordingRepository(statuses)
+		);
+
+		await expect(service.getInProgressEgresses('room-1')).resolves.toEqual([egress]);
+	});
+
+	it('releases the lock of a room whose listed egress belongs to a recording Meet has ended', async () => {
+		const mutex = new FakeMutexService();
+		const service = buildService(
+			new FakeLiveKitService([recordingEgress(EgressStatus.EGRESS_ACTIVE)]),
+			mutex,
+			new FakeRecordingRepository({ [RECORDING_ID]: MeetRecordingStatus.FAILED })
+		);
+
+		await service.releaseRecordingLockIfNoEgress('room-1');
+
+		expect(mutex.released).toEqual([expect.stringContaining('room-1')]);
+	});
+
+	it('answers 409 to a stop of that recording without stopping its egress', async () => {
+		const livekit = new FakeLiveKitService([recordingEgress(EgressStatus.EGRESS_ACTIVE)]);
+		const service = new RecordingService(
+			...([
+				livekit,
+				{ withLock: async (_key: string, _ttl: number, task: () => Promise<unknown>) => task() },
+				new FakeRecordingRepository({ [RECORDING_ID]: MeetRecordingStatus.FAILED }),
+				{},
+				{},
+				{},
+				{},
+				{},
+				noopLogger
+			] as unknown as ConstructorParameters<typeof RecordingService>)
+		);
+
+		await expect(service.stopRecording(RECORDING_ID)).rejects.toMatchObject({ statusCode: 409 });
+
+		expect(livekit.stops).toEqual([]);
+	});
+});
+
 const ROOM_ID = 'room-1';
 const MEETING_ID = 'RM_meeting_1';
 
@@ -139,7 +222,7 @@ class FakeStartLiveKitService {
 		return [];
 	}
 
-	async listStandardParticipants(): Promise<ParticipantInfo[]> {
+	async listRoomParticipants(): Promise<ParticipantInfo[]> {
 		return [];
 	}
 }

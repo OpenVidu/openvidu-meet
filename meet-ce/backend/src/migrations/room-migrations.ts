@@ -14,6 +14,7 @@ const roomMigrationV4ToV5Name = generateSchemaMigrationName(meetRoomCollectionNa
 const roomMigrationV5ToV6Name = generateSchemaMigrationName(meetRoomCollectionName, 5, 6);
 const roomMigrationV6ToV7Name = generateSchemaMigrationName(meetRoomCollectionName, 6, 7);
 const roomMigrationV7ToV8Name = generateSchemaMigrationName(meetRoomCollectionName, 7, 8);
+const roomMigrationV8ToV9Name = generateSchemaMigrationName(meetRoomCollectionName, 8, 9);
 
 const roomMigrationV1ToV2Transform: SchemaTransform<MeetRoomDocument> = (room) => {
 	room.config.captions = { enabled: true };
@@ -154,6 +155,22 @@ const roomMigrationV7ToV8Transform: SchemaTransform<MeetRoomDocument> = (room) =
 	return room;
 };
 
+// v9 adds the live broadcast feature. It arrives disabled, in the grid layout at 720p, with no
+// destinations and therefore no destination URLs, and its permissions complete to `false` through
+// the same normalization every new permission gets (see UNALIASED_PERMISSION_DEFAULTS in the
+// typings).
+const roomMigrationV8ToV9Transform: SchemaTransform<MeetRoomDocument> = (room) => {
+	normalizeRolePermissionsTransform(room);
+	room.config.broadcast ??= {
+		enabled: false,
+		destinations: [],
+		layout: MeetRecordingLayout.GRID,
+		encoding: MeetRecordingEncodingPreset.H264_720P_30
+	};
+	room.broadcastDestinationUrls ??= {};
+	return room;
+};
+
 /**
  * Schema migrations for MeetRoom.
  * Key format: schema_{collection}_v{from}_to_v{to}
@@ -165,5 +182,6 @@ export const roomMigrations: SchemaMigrationMap<MeetRoomDocument> = new Map([
 	[roomMigrationV4ToV5Name, normalizeRolePermissionsTransform],
 	[roomMigrationV5ToV6Name, roomMigrationV5ToV6Transform],
 	[roomMigrationV6ToV7Name, roomMigrationV6ToV7Transform],
-	[roomMigrationV7ToV8Name, roomMigrationV7ToV8Transform]
+	[roomMigrationV7ToV8Name, roomMigrationV7ToV8Transform],
+	[roomMigrationV8ToV9Name, roomMigrationV8ToV9Transform]
 ]);

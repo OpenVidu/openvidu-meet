@@ -1,4 +1,6 @@
 export * from './delete-room-dialog/delete-room-dialog.component';
+export * from './e2ee-exclusion-warning/e2ee-exclusion-warning.component';
+export * from './layout-picker/layout-picker.component';
 export * from './room-share-dialog/room-share-dialog.component';
 export * from './rooms-lists/rooms-lists.component';
 export * from './step-indicator/step-indicator.component';

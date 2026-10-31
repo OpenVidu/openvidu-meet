@@ -159,6 +159,7 @@
       "STEP_MEETING": "Meeting",
       "STEP_ROOM_ACCESS": "Raumzugriff",
       "STEP_RECORDING": "Aufnahme",
+      "STEP_BROADCAST": "Live-Übertragung",
       "BACK": "Zurück",
       "BACK_TO_SIMPLE_MODE": "Zurück zum einfachen Modus",
       "CANCEL_ARIA": "Assistenten abbrechen und zur vorherigen Seite zurückkehren",
@@ -225,7 +226,8 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Mitglied bearbeiten",
         "REMOVE_MEMBER": "Mitglied entfernen",
-        "FEATURE_DISABLED_PERMISSION": "Aktivieren Sie die zugehörige Funktion im Schritt Meeting, um diese Berechtigung zu konfigurieren."
+        "FEATURE_DISABLED_PERMISSION": "Aktivieren Sie die zugehörige Funktion im Schritt Meeting, um diese Berechtigung zu konfigurieren.",
+        "DEPENDENT_PERMISSION_DISABLED": "Erteilen Sie zuerst die Berechtigung, von der diese abhängt."
       },
       "MEETING": {
         "TITLE": "Meeting",
@@ -299,7 +301,7 @@
         "SPEAKER_TITLE": "Sprecher-Layout",
         "SPEAKER_DESC": "Den aktiven Sprecher hervorheben, mit anderen Teilnehmern darunter",
         "SINGLE_SPEAKER_TITLE": "Einzelner Sprecher",
-        "SINGLE_SPEAKER_DESC": "Nur den aktiven Sprecher in der Aufnahme anzeigen"
+        "SINGLE_SPEAKER_DESC": "Nur den aktiven Sprecher anzeigen"
       },
       "RECORDING_TRIGGER": {
         "TITLE": "Auslöser",
@@ -314,6 +316,39 @@
         "AUTOSTART_MODE_MODERATOR_DESC": "Startet, sobald ein Moderator beitritt oder befördert wird",
         "AUTOSTART_UNREACHABLE_TITLE": "Aufnahme-Auslöser nicht erreichbar",
         "AUTOSTART_UNREACHABLE_MESSAGE": "Dieser Auslöser benötigt mindestens ${required} Teilnehmer, um ausgelöst zu werden, aber das Teilnehmerlimit des Raums ist auf ${limit} festgelegt."
+      },
+      "BROADCAST": {
+        "TITLE": "Live-Übertragung",
+        "DESCRIPTION": "Legen Sie fest, ob die Meetings dieses Raums live zu YouTube, Twitch oder einem beliebigen RTMP-Server übertragen werden können",
+        "RESTRICTIONS": "Einschränkungen",
+        "E2EE_WARNING_PREFIX": "Die Live-Übertragung ist ",
+        "E2EE_WARNING_BOLD": "nicht verfügbar",
+        "E2EE_WARNING_SUFFIX": ", solange die Ende-zu-Ende-Verschlüsselung aktiviert ist. Wenn Sie die Live-Übertragung erlauben, wird die Verschlüsselung für diesen Raum automatisch deaktiviert.",
+        "ALLOW_BROADCAST_TITLE": "Live-Übertragung erlauben",
+        "ALLOW_BROADCAST_DESC": "Teilnehmer mit Berechtigung können das Meeting während es läuft auf externe Plattformen übertragen.",
+        "DEFAULT_DESTINATIONS": "Standardziele",
+        "DESTINATIONS_DESC": "Geht das Meeting live, kann es an alle diese Ziele oder nur an die in dem Moment gewählten übertragen werden.",
+        "NO_DESTINATIONS": "Fügen Sie mindestens ein Ziel hinzu, um die Live-Übertragung zu erlauben.",
+        "ADD_DESTINATION": "Ziel hinzufügen",
+        "NEW_DESTINATION": "Neues Ziel",
+        "EDIT_DESTINATION": "Ziel bearbeiten",
+        "NAME_LABEL": "Name",
+        "URL_LABEL": "Stream-URL",
+        "URL_HINT": "Fügen Sie die rtmp://- oder rtmps://-URL Ihrer Plattform ein, einschließlich Stream-Schlüssel.",
+        "URL_RECOGNISED": "Erkannt als {platform}.",
+        "URL_KEEP_KEY": "Lassen Sie die URL unverändert, um den gespeicherten Stream-Schlüssel zu behalten, oder fügen Sie eine neue ein, um ihn zu ersetzen.",
+        "URL_INVALID": "Geben Sie eine rtmp://- oder rtmps://-URL der Form rtmp://host/app/key ein",
+        "URL_KEY_REQUIRED": "Eine geänderte URL braucht ihren Stream-Schlüssel: Fügen Sie die vollständige URL ein",
+        "NAME_REQUIRED": "Geben Sie einen Namen ein",
+        "ADD": "Hinzufügen",
+        "SAVE": "Speichern",
+        "CANCEL": "Abbrechen",
+        "EDIT": "Bearbeiten",
+        "REMOVE": "Entfernen",
+        "KEYS_HIDDEN": "Stream-Schlüssel bleiben nach dem Speichern verborgen.",
+        "COST_NOTE": "Jedes Ziel ist ein eigener Stream von Ihrem Server, etwa {mbps} Mbit/s Upload je Ziel bei 720p. Mit diesen {count} Zielen verbraucht eine Übertragung etwa {total} Mbit/s, solange das Meeting live ist.",
+        "PERMISSIONS_HINT": "Wer live gehen, Ziele auswählen oder weitere hinzufügen darf, wird pro Rolle festgelegt unter",
+        "PERMISSIONS_LINK": "Raumzugang"
       }
     },
     "ERRORS": {

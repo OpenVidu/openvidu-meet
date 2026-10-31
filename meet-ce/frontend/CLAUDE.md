@@ -67,7 +67,7 @@ This was the separately published `openvidu-components-angular` npm library. It 
 project source** so it can be refactored and improved without shipping breaking changes to external
 consumers. It keeps its own internal structure (`components/`, `services/`, `directives/api|template`,
 `models/`, `pipes/`) and handles LiveKit, layout, panels, devices, virtual background, E2EE, chat,
-recording UI.
+recording and live broadcast UI.
 
 - `provideOpenViduComponents()` replaces the old `OpenViduComponentsModule.forRoot()`.
 - It intentionally provides almost nothing: meeting services are `providedIn: 'root'` so the bundler

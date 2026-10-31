@@ -62,6 +62,29 @@
 	}
 }
 
+// Solid in the broadcast's colour, like the activity's tile while live.
+.broadcast-chip {
+	background-color: var(--ov-broadcast-color);
+	border-color: var(--ov-broadcast-color);
+
+	.status-chip-icon,
+	.status-chip-value {
+		color: #ffffff;
+	}
+
+	.status-chip-label {
+		color: color-mix(in srgb, #ffffff 80%, transparent);
+	}
+
+	&.clickable {
+		@include chip.status-chip-interactive;
+
+		&:hover {
+			background-color: color-mix(in srgb, var(--ov-broadcast-color) 88%, #000000);
+		}
+	}
+}
+
 .elapsed-chip .status-chip-icon {
 	color: var(--ov-text-secondary-color);
 }

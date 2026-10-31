@@ -1,18 +1,23 @@
 import { inject, Service } from '@angular/core';
 import {
 	EmbeddedCommandName,
+	MeetBroadcastStartOptions,
+	MeetBroadcastStopOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetReaction,
 	MeetRoomMemberPermissions
 } from '@openvidu-meet/typings';
 import {
+	BroadcastStateService,
+	isBroadcastRunning,
 	LocalMediaService,
 	MeetingLiveKitService,
 	MeetingPhaseService,
 	ScreenShareService
 } from '../../meeting/openvidu-components';
 import { RecordingService as RecordingStateService } from '../../meeting/openvidu-components/services/recording/recording.service';
+import { BroadcastService } from '../../meeting/services/broadcast.service';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { MeetingHandService } from '../../meeting/services/meeting-hand.service';
 import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
@@ -45,6 +50,8 @@ export class EmbeddedCommandService {
 	private readonly recordingState = inject(RecordingStateService);
 	private readonly handService = inject(MeetingHandService);
 	private readonly reactionsService = inject(MeetingReactionsService);
+	private readonly broadcastService = inject(BroadcastService);
+	private readonly broadcastState = inject(BroadcastStateService);
 	private readonly log = inject(LoggerService).get('EmbeddedCommandService');
 	private lastRecordingStart: Promise<void> | undefined;
 
@@ -195,6 +202,33 @@ export class EmbeddedCommandService {
 	private async startRecording(roomId: string): Promise<void> {
 		const { recordingId } = await this.recordingService.startRecording(roomId);
 		this.recordingState.setRecordingStarting(recordingId);
+	}
+
+	async broadcastStart(options: MeetBroadcastStartOptions = {}): Promise<void> {
+		await this.run(EmbeddedCommandName.BROADCAST_START, 'broadcastControl', async () => {
+			const roomId = this.meetingContextService.roomId();
+
+			if (!roomId) {
+				this.log.w('broadcastStart() called but room id is undefined');
+				return;
+			}
+
+			await this.broadcastService.request({ ...options, action: 'start', roomId });
+		});
+	}
+
+	async broadcastStop(options: MeetBroadcastStopOptions = {}): Promise<void> {
+		await this.run(EmbeddedCommandName.BROADCAST_STOP, 'broadcastControl', async () => {
+			const roomId = this.meetingContextService.roomId();
+			const running = this.broadcastState.inProgress().filter(({ status }) => isBroadcastRunning(status));
+
+			if (!roomId || (running.length === 0 && !this.broadcastState.isStartPending())) {
+				this.log.w('broadcastStop() called but no broadcast is running or starting');
+				return;
+			}
+
+			await this.broadcastService.request({ ...options, action: 'stop', roomId });
+		});
 	}
 
 	/** Anything other than an actual boolean (e.g. a webcomponent attribute string) means "toggle". */

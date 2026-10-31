@@ -140,6 +140,26 @@
 			</button>
 		}
 
+		<!-- Live broadcast button -->
+		@if (showBroadcastButton()) {
+			<button
+				mat-menu-item
+				id="broadcast-btn"
+				[disabled]="isBroadcastToggleDisabled()"
+				[matTooltip]="broadcastDisabledReasonKey() ? (broadcastDisabledReasonKey() | translate) : ''"
+				(click)="onBroadcastToggle()"
+			>
+				<mat-icon>sensors</mat-icon>
+				<span>
+					{{
+						isBroadcastRunning()
+							? ('TOOLBAR.STOP_BROADCAST' | translate)
+							: ('TOOLBAR.START_BROADCAST' | translate)
+					}}
+				</span>
+			</button>
+		}
+
 		<!-- View recordings button -->
 		@if (showViewRecordingsButton()) {
 			<button mat-menu-item id="view-recordings-btn" (click)="onViewRecordingsClick()">

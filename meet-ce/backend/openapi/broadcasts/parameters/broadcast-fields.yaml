@@ -1,0 +1,12 @@
+name: fields
+in: query
+description: >
+    Specifies which fields to include in the response for the broadcast resource.
+    Provide a comma-separated list of field names.
+    <br/><br/>
+    Names that are not broadcast fields are ignored. A list with no usable name is treated as if
+    the parameter had been omitted, so the response carries the full broadcast.
+required: false
+schema:
+    type: string
+example: 'broadcastId,status'

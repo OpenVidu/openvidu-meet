@@ -1,15 +1,25 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import {
 	EmbeddedEventName,
 	EmbeddedEventPayloadFor,
+	MeetBroadcastStartOptions,
+	MeetBroadcastStopOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetReaction
 } from '@openvidu-meet/typings';
 import { Integration, TriState, toOptionalBoolean } from '../models';
 import type { OpenViduMeetElement } from '../openvidu-meet-element';
+import { BroadcastRosterService } from './broadcast-roster';
 import { EventLogService } from './event-log';
 import { IframeHostService } from './iframe-host';
+
+/** The call's arguments as the log prints them: `()` for no options. */
+export const optionsArgs = (options: object): string =>
+	Object.keys(options).length ? `(${JSON.stringify(options)})` : '()';
+
+const toggled = (ids: string[], id: string): string[] =>
+	ids.includes(id) ? ids.filter((current) => current !== id) : [...ids, id];
 
 type JoinedHandler = (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName.JOINED>) => void;
 
@@ -26,6 +36,7 @@ type JoinedHandler = (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName.JO
 export class MeetCommandsService {
 	private readonly iframeHost = inject(IframeHostService);
 	private readonly log = inject(EventLogService);
+	private readonly broadcastRoster = inject(BroadcastRosterService);
 
 	/** Participant addressed by `participantKick()`, `participantUpdateRole()` and `participantMute()`. */
 	readonly participantIdentity = signal('');
@@ -35,6 +46,31 @@ export class MeetCommandsService {
 	readonly muteScreenShare = signal(false);
 	/** Explicit `active` for the media toggles. `''` toggles instead. */
 	readonly mediaActive = signal<TriState>('');
+	/** Whether `broadcastStart()` names its room destinations; off, `destinationIds` is omitted. */
+	readonly broadcastPickDestinations = signal(false);
+	/** Room destinations `broadcastStart()` names when picking them; none picked sends `[]`. */
+	readonly broadcastDestinationIds = signal<string[]>([]);
+	/** A destination for this meeting only, sent in `destinations` when it has a URL. */
+	readonly broadcastExtraName = signal('');
+	readonly broadcastExtraUrl = signal('');
+	/** Running broadcasts `broadcastStop()` names; none picked omits `broadcastIds` and stops them all. */
+	private readonly broadcastStopPicks = signal<string[]>([]);
+	readonly broadcastStopIds = computed(() =>
+		this.broadcastStopPicks().filter((id) =>
+			this.broadcastRoster.broadcasts().some(({ broadcastId }) => broadcastId === id)
+		)
+	);
+	readonly broadcastStartOptions = computed<MeetBroadcastStartOptions>(() => {
+		const url = this.broadcastExtraUrl().trim();
+		return {
+			...(this.broadcastPickDestinations() && { destinationIds: this.broadcastDestinationIds() }),
+			...(url && { destinations: [{ name: this.broadcastExtraName().trim() || 'Testapp', url }] })
+		};
+	});
+	readonly broadcastStopOptions = computed<MeetBroadcastStopOptions>(() => {
+		const broadcastIds = this.broadcastStopIds();
+		return broadcastIds.length ? { broadcastIds } : {};
+	});
 	/** Whether an `on("joined")` handler is currently registered. */
 	readonly joinedListenerRegistered = signal(false);
 
@@ -209,6 +245,34 @@ export class MeetCommandsService {
 			(element) => element.participantReactionSend(reaction)
 		);
 		this.log.command('participantReactionSend', `("${reaction}")`);
+	}
+
+	// ── Live broadcast ──────────────────────────────────────────────────────
+
+	toggleBroadcastDestination(destinationId: string): void {
+		this.broadcastDestinationIds.update((ids) => toggled(ids, destinationId));
+	}
+
+	toggleBroadcastStop(broadcastId: string): void {
+		this.broadcastStopPicks.set(toggled(this.broadcastStopIds(), broadcastId));
+	}
+
+	broadcastStart(): void {
+		const options = this.broadcastStartOptions();
+		this.dispatch(
+			() => this.iframeHost.broadcastStart(options),
+			(element) => element.broadcastStart(options)
+		);
+		this.log.command('broadcastStart', optionsArgs(options));
+	}
+
+	broadcastStop(): void {
+		const options = this.broadcastStopOptions();
+		this.dispatch(
+			() => this.iframeHost.broadcastStop(options),
+			(element) => element.broadcastStop(options)
+		);
+		this.log.command('broadcastStop', optionsArgs(options));
 	}
 
 	// ── Deprecated 3.8.0 spellings ──────────────────────────────────────────

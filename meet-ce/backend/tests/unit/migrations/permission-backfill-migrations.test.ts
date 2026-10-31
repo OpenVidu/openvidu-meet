@@ -26,10 +26,12 @@ const roomV3ToV4 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollec
 const roomV4ToV5 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 4, 5))!;
 const roomV5ToV6 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 5, 6))!;
 const roomV6ToV7 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 6, 7))!;
+const roomV8ToV9 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 8, 9))!;
 const roomMemberV1ToV2 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 1, 2))!;
 const roomMemberV2ToV3 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 2, 3))!;
 const roomMemberV3ToV4 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 3, 4))!;
 const roomMemberV4ToV5 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 4, 5))!;
+const roomMemberV5ToV6 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 5, 6))!;
 
 // A permission set as stored right before a key was added: every current key but that one, granted.
 const currentPermissionsWithout = (missingKey: string) => {
@@ -135,6 +137,64 @@ describe('Room migration v6 → v7', () => {
 		// Reacting is taking part, not moderating: every existing role keeps being able to.
 		expect(migrated.roles.moderator.permissions.participantReactionSend).toBe(true);
 		expect(migrated.roles.speaker.permissions.participantReactionSend).toBe(true);
+	});
+});
+
+describe('Room migration v8 → v9', () => {
+	const v8Permissions = () => {
+		const permissions: Record<string, boolean> = Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true]));
+		delete permissions.broadcastControl;
+		delete permissions.broadcastEdit;
+		// A key of the development builds of live broadcast, gone before release, that no room keeps.
+		permissions.broadcastEditDestinations = true;
+		return permissions;
+	};
+
+	it('should complete the role permissions with the broadcast keys, denied', () => {
+		const migrated = roomV8ToV9({
+			...roomDocument(v8Permissions(), v8Permissions()),
+			config: { recording: { enabled: true } }
+		} as unknown as MeetRoomDocument);
+
+		expect(Object.keys(migrated.roles.moderator.permissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
+		// Nobody is granted live broadcast by a migration, whatever else the role could already do:
+		// an existing room gains the capability when someone edits its roles, not when it is migrated.
+		expect(migrated.roles.moderator.permissions.broadcastControl).toBe(false);
+		expect(migrated.roles.speaker.permissions.broadcastEdit).toBe(false);
+	});
+
+	it('should give the room a disabled broadcast config in the grid layout with no destinations, and no destination URLs', () => {
+		const migrated = roomV8ToV9({
+			...roomDocument(v8Permissions(), v8Permissions()),
+			config: { recording: { enabled: true } }
+		} as unknown as MeetRoomDocument);
+
+		expect(migrated.config.broadcast).toEqual({
+			enabled: false,
+			destinations: [],
+			layout: 'grid',
+			encoding: 'H264_720P_30'
+		});
+		expect(migrated.broadcastDestinationUrls).toEqual({});
+		expect(migrated.config.recording).toEqual({ enabled: true });
+	});
+});
+
+describe('Room member migration v5 → v6', () => {
+	it('should complete effectivePermissions with the broadcast keys, denied', () => {
+		const permissions = Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true]));
+		delete permissions.broadcastControl;
+		delete permissions.broadcastEdit;
+		const document = {
+			memberId: 'member-123',
+			effectivePermissions: permissions
+		} as unknown as MeetRoomMemberDocument;
+
+		const migrated = roomMemberV5ToV6(document);
+
+		expect(Object.keys(migrated.effectivePermissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
+		expect(migrated.effectivePermissions.broadcastControl).toBe(false);
+		expect(migrated.effectivePermissions.broadcastEdit).toBe(false);
 	});
 });
 

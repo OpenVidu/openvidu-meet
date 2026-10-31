@@ -400,6 +400,7 @@ jobs:
       - *setup-node
       - *setup-pnpm
       - *install-safe-chain
+      - *install-lk
       - *start-local-deployment
 
       - name: Build and Start OpenVidu Meet

@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
-import { MeetMeetingEndedReason, MeetWebhookEventType } from '@openvidu-meet/typings';
-import type { MeetRoom, MeetWebhookPayload } from '@openvidu-meet/typings';
+import { MeetBroadcastStatus, MeetMeetingEndedReason, MeetWebhookEventType } from '@openvidu-meet/typings';
+import type { MeetBroadcastInfo, MeetRoom, MeetWebhookPayload } from '@openvidu-meet/typings';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
@@ -26,6 +26,29 @@ const fakeRoom = { roomId: 'room-1', roomName: 'Room 1' } as MeetRoom;
  * every end path except the one that actually needs it (a force-end by the duration GC), so every
  * other integrator's parsing of this event is unaffected.
  */
+describe('WebhookDispatcherService broadcast webhooks', () => {
+	it('sends each change of a broadcast as its own event, carrying the broadcast as it is', () => {
+		const service = buildService();
+		const broadcast = (status: MeetBroadcastStatus) =>
+			({
+				broadcastId: 'room-1--Qm4tZ8vR1c',
+				roomId: 'room-1',
+				status,
+				destination: { id: 'kX9pL2mQ7a', name: 'YouTube', url: 'rtmp://a.rtmp.youtube.com/live2/********' }
+			}) as MeetBroadcastInfo;
+
+		service.sendBroadcastStartedWebhook(broadcast(MeetBroadcastStatus.STARTING));
+		service.sendBroadcastUpdatedWebhook(broadcast(MeetBroadcastStatus.ACTIVE));
+		service.sendBroadcastEndedWebhook(broadcast(MeetBroadcastStatus.COMPLETE));
+
+		expect(service.calls).toEqual([
+			{ event: MeetWebhookEventType.BROADCAST_STARTED, payload: broadcast(MeetBroadcastStatus.STARTING) },
+			{ event: MeetWebhookEventType.BROADCAST_UPDATED, payload: broadcast(MeetBroadcastStatus.ACTIVE) },
+			{ event: MeetWebhookEventType.BROADCAST_ENDED, payload: broadcast(MeetBroadcastStatus.COMPLETE) }
+		]);
+	});
+});
+
 describe('WebhookDispatcherService.sendMeetingEndedWebhook (C7: additive reason field)', () => {
 	it('omits reason entirely for a normal end', () => {
 		const service = buildService();

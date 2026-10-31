@@ -54,6 +54,7 @@ import {
 	ParticipantsPanelStatusEvent,
 	SettingsPanelStatusEvent
 } from '../../models/panel.model';
+import { BroadcastRequestedEvent } from '../../models/broadcast.model';
 import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '../../models/participant.model';
 import { RecordingStartRequestedEvent, RecordingStopRequestedEvent } from '../../models/recording.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
@@ -61,6 +62,7 @@ import { ChatService } from '../../services/chat/chat.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import type { Room } from '../../services/livekit';
+import { BroadcastNoticeService } from '../../services/broadcast-notice/broadcast-notice.service';
 import { RecordingNoticeService } from '../../services/recording-notice/recording-notice.service';
 import { MeetingEventsService } from '../../services/meeting-events/meeting-events.service';
 import { LocalMediaService } from '../../services/local-media/local-media.service';
@@ -140,6 +142,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	// Injected for its own sake: it watches the recording state and announces it to the room, and
 	// this is the view that hosts the notifications it raises.
 	private readonly recordingNoticeService = inject(RecordingNoticeService);
+	private readonly broadcastNoticeService = inject(BroadcastNoticeService);
 	protected readonly viewportService = inject(ViewportService);
 	readonly templateRegistry = inject(TemplateRegistryService);
 
@@ -344,6 +347,12 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	 * It provides the {@link RecordingStopRequestedEvent} payload as event data.
 	 */
 	readonly onRecordingStopRequested = output<RecordingStopRequestedEvent>();
+
+	/**
+	 * Fired whenever the user asks something of the live broadcast from the activities panel.
+	 * It provides the {@link BroadcastRequestedEvent} payload as event data.
+	 */
+	readonly onBroadcastRequested = output<BroadcastRequestedEvent>();
 
 	/**
 	 * This event is fired when the user clicks on the start recording button.

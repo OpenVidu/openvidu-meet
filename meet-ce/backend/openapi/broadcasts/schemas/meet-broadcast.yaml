@@ -1,0 +1,121 @@
+type: object
+description: >
+    One broadcast: the stream of a meeting to one destination, with its own status and lifecycle. Every
+    broadcasts operation returns this object, alone or in a `broadcasts` list, and the broadcast webhooks
+    carry it in their `data`.
+required:
+    - broadcastId
+    - roomId
+    - roomName
+    - status
+    - destination
+    - layout
+    - encoding
+properties:
+    broadcastId:
+        type: string
+        example: 'room-123--Qm4tZ8vR1c'
+        description: >
+            The unique identifier of the broadcast. It identifies one attempt to stream to a destination:
+            starting a destination again, after it was stopped or failed, creates a broadcast with a new
+            identifier.
+    roomId:
+        type: string
+        example: 'room-123'
+        description: The unique identifier of the room whose meeting is broadcast.
+    roomName:
+        type: string
+        example: 'room'
+        description: The name of the room whose meeting is broadcast.
+    status:
+        type: string
+        enum: ['starting', 'active', 'ending', 'complete', 'failed', 'aborted', 'limit_reached']
+        example: 'active'
+        description: |
+            The status of the broadcast:
+
+            | Status | Meaning |
+            | ------ | ------- |
+            | `starting` | Connecting to the destination: no media has reached it yet |
+            | `active` | The destination is receiving the stream |
+            | `ending` | The broadcast is being stopped |
+            | `complete` | Ended normally: it was stopped, or its meeting ended |
+            | `failed` | The destination rejected or lost the stream, or the broadcast could not be kept running. `error` says why |
+            | `aborted` | Ended before any media reached the destination |
+            | `limit_reached` | Ended because a system limit was reached |
+    destination:
+        type: object
+        description: >
+            The destination streamed to, with the same fields a destination has in the room's config. A room
+            destination carries its `id`; a destination given for this meeting only has none.
+        required:
+            - name
+            - url
+        properties:
+            id:
+                type: string
+                example: 'kX9pL2mQ7a'
+                description: >
+                    The `id` the destination has in the room's config, the same in every broadcast to it.
+                    Absent on a destination given for this meeting only.
+            name:
+                type: string
+                example: 'YouTube'
+                description: The label of the destination, shown to participants.
+            url:
+                type: string
+                example: 'rtmp://a.rtmp.youtube.com/live2/********'
+                description: >
+                    The RTMP URL streamed to, with the stream key replaced by `********`: stream keys are
+                    never returned.
+    layout:
+        type: string
+        enum: ['grid', 'speaker', 'single-speaker']
+        example: 'grid'
+        description: The layout the meeting is streamed with, as set by the room's `broadcast` config.
+    encoding:
+        oneOf:
+            - $ref: '../../rooms/schemas/meet-room-config.yaml#/MeetRecordingEncodingPreset'
+            - $ref: '../../rooms/schemas/meet-room-config.yaml#/MeetRecordingEncodingOptions'
+        example: 'H264_720P_30'
+        description: The encoding of the stream, as set by the room's `broadcast` config.
+    startDate:
+        type: number
+        example: 1620000000000
+        description: >
+            The date when media started to reach the destination (milliseconds since the Unix epoch).
+            Absent while it has not, and on a broadcast that never streamed anything.
+    endDate:
+        type: number
+        example: 1620000003600
+        description: >
+            The date when the broadcast ended (milliseconds since the Unix epoch). Absent until it ends,
+            and on a broadcast that never streamed anything.
+    duration:
+        type: number
+        example: 3.6
+        description: The duration of the broadcast in seconds. Absent until it ends.
+    errorCode:
+        type: number
+        example: 100
+        description: A numeric error code. Present only on some failed broadcasts.
+    error:
+        type: string
+        example: 'Failed to connect: connection refused'
+        description: The error message of the broadcast. Present only when the broadcast failed.
+    details:
+        type: string
+        example: 'Stopped using API'
+        description: Additional details about the broadcast. Present only when the broadcast ended.
+example:
+    broadcastId: 'room-123--Qm4tZ8vR1c'
+    roomId: 'room-123'
+    roomName: 'room'
+    status: 'active'
+    destination:
+        id: 'kX9pL2mQ7a'
+        name: 'YouTube'
+        url: 'rtmp://a.rtmp.youtube.com/live2/********'
+    layout: 'grid'
+    encoding: 'H264_720P_30'
+    startDate: 1620000000000

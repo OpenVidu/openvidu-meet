@@ -1,0 +1,7 @@
+name: broadcastId
+in: path
+required: true
+description: The unique identifier of the broadcast.
+schema:
+    type: string
+example: 'room-123--Qm4tZ8vR1c'
