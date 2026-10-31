@@ -99,6 +99,8 @@ export class RecordingService {
 
 		if (!acquiredLock) throw errorRecordingAlreadyStarted(roomId);
 
+		let egressRequested = false;
+
 		try {
 			if (autoStartMeetingId && (await this.recAutoStartStateService.isDisabled(roomId, autoStartMeetingId))) {
 				throw errorRecordingAutoStartDisabled(roomId);
@@ -107,6 +109,7 @@ export class RecordingService {
 			const roomRecordingConfig = await this.validateRoomForStartRecording(roomId);
 			const options = this.generateCompositeOptionsFromRequest(roomRecordingConfig, configOverride);
 			const output = this.generateFileOutputFromRequest(roomId);
+			egressRequested = true;
 			const egressInfo = await this.livekitService.startRoomComposite(roomId, output, options);
 			const recordingInfo = await RecordingHelper.toRecordingInfo(egressInfo);
 
@@ -116,7 +119,10 @@ export class RecordingService {
 			this.logger.debug(`Error starting recording in room '${roomId}'`, error);
 
 			try {
-				await this.releaseRecordingLockIfNoEgress(roomId);
+				// Only the egress request can have left a recording behind: nothing before it creates one
+				await (egressRequested
+					? this.releaseRecordingLockIfNoEgress(roomId)
+					: this.releaseRecordingActiveLock(roomId));
 			} catch (releaseError) {
 				this.logger.warn(`Failed to release recording lock for room '${roomId}'`, releaseError);
 			}
@@ -819,15 +825,19 @@ export class RecordingService {
 				return;
 			}
 
-			try {
-				// Releases the long-lived recording_active lock acquired by another request or
-				// replica, so it must go through the Redis registry rather than a local Lock.
-				// eslint-disable-next-line @typescript-eslint/no-deprecated
-				await this.mutexService.releaseWithRegistry(lockName);
-				this.logger.verbose(`Recording active lock released for room '${roomId}'`);
-			} catch (error) {
-				this.logger.warn(`Error releasing recording lock for room '${roomId}' on egress ended`, error);
-			}
+			await this.releaseRecordingActiveLock(roomId);
+		}
+	}
+
+	protected async releaseRecordingActiveLock(roomId: string): Promise<void> {
+		try {
+			// Releases the long-lived recording_active lock acquired by another request or
+			// replica, so it must go through the Redis registry rather than a local Lock.
+			// eslint-disable-next-line @typescript-eslint/no-deprecated
+			await this.mutexService.releaseWithRegistry(MeetLock.getRecordingActiveLock(roomId));
+			this.logger.verbose(`Recording active lock released for room '${roomId}'`);
+		} catch (error) {
+			this.logger.warn(`Error releasing recording lock for room '${roomId}'`, error);
 		}
 	}
 
