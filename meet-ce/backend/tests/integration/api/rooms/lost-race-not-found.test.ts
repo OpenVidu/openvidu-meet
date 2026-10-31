@@ -37,13 +37,13 @@ describe('Room API Tests', () => {
 
 	describe('A room deleted by a concurrent request', () => {
 		const deletedRightBefore = (roomId: string) => {
-			const deleteByRoomId = roomRepository.deleteByRoomId.bind(roomRepository);
-			jest.spyOn(roomRepository, 'deleteByRoomId').mockImplementation(async (id: string) => {
+			const deleteIdleRoom = roomRepository.deleteIdleRoom.bind(roomRepository);
+			jest.spyOn(roomRepository, 'deleteIdleRoom').mockImplementation(async (id: string) => {
 				if (id === roomId) {
-					await deleteByRoomId(id);
+					await deleteIdleRoom(id);
 				}
 
-				return deleteByRoomId(id);
+				return deleteIdleRoom(id);
 			});
 		};
 
@@ -62,7 +62,7 @@ describe('Room API Tests', () => {
 			const updatePartial = roomRepository.updatePartial.bind(roomRepository);
 			jest.spyOn(roomRepository, 'updatePartial').mockImplementationOnce(
 				async (id: string, fields: Partial<MeetRoom>) => {
-					await roomRepository.deleteByRoomId(id);
+					await roomRepository.deleteIdleRoom(id);
 					return updatePartial(id, fields);
 				}
 			);

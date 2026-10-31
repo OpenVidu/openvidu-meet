@@ -115,6 +115,10 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   scheduled close and answers `409` when a deletion is scheduled, and `closed` keeps a scheduled deletion.
 - The room returned by `deleteRoom` and `bulkDeleteRooms` carried its `roles` with the current permission keys only. It
   now carries the deprecated `can*` keys next to them, as every other room response does.
+- [`deleteRoom`][3.9-delete-room], [`bulkDeleteRooms`][3.9-bulk-delete-rooms] and the automatic deletion of expired
+  rooms could leave a room `open` with a pending deletion when its meeting ended at the same moment, and the next
+  meeting then deleted the room and its recordings; a meeting starting at the same moment could have its room deleted
+  under it. A deletion now acts on the meeting state the room has when it is written.
 - `getRoomMember` answered `404` for a member that does not exist before checking the caller, so a caller without
   access could tell which `memberId` values belong to the room. Such a caller now gets `403` whether or not the member
   exists.
@@ -377,3 +381,5 @@ registered on both receives it twice.
 [3.9-recording-ended]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/webhooks/recordingEndedWebhook
 [3.9-bulk-delete-recordings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/bulkDeleteRecordings
 [3.9-download-recordings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/downloadRecordings
+[3.9-delete-room]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/deleteRoom
+[3.9-bulk-delete-rooms]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/bulkDeleteRooms
