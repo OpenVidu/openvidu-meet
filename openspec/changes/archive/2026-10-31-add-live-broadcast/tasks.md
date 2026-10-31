@@ -48,7 +48,7 @@
 
 - [x] 8.1 Run the typings build, the full `./meet.sh build`, the backend, frontend and webcomponent unit suites and the three lints on the branch rebased onto `main`; all pass.
 - [x] 8.2 Run the backend integration suites `broadcasts` and `broadcast-room-config` and the SPA e2e suite `broadcasts` against the local deployment on the rebased branch; 31 of 31 and 5 of 5 pass, after making the lifecycle test wait for the retried unreachable destination to fail on its own.
-- [ ] 8.3 Run the backend integration suites `room-migrations`, `start-recording` and `webhook`, the SPA e2e suite `room-wizard` and the webcomponent broadcast e2e suites against the local deployment on the rebased branch.
+- [x] 8.3 Run the backend integration suites `room-migrations`, `start-recording` and `webhook`, the SPA e2e suite `room-wizard` and the webcomponent broadcast e2e suites against the local deployment on the rebased branch; all pass in CI (run 41222435988, with `main` merged in at 75afb573c).
 
 ## 9. Release surfaces
 
