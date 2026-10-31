@@ -42,7 +42,7 @@ export const withRecordingStartAllowed = async (req: Request, res: Response, nex
 
 	try {
 		const { roomId } = req.body as { roomId: string };
-		const { config } = await roomService.getMeetRoom(roomId, ['config']);
+		const config = await roomService.getRequestRoomConfig(roomId);
 
 		if (!config.recording.enabled) {
 			logger.debug(`Recording is disabled for room '${roomId}'`);

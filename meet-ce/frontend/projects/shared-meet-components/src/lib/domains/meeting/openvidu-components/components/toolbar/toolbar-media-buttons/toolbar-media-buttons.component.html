@@ -109,16 +109,6 @@
 		<mat-icon>more_vert</mat-icon>
 	</button>
 	<mat-menu #settingsMenu="matMenu" id="more-options-menu">
-		<!-- Additional buttons injection inside menu (mobile only) -->
-		@if (showAdditionalButtonsInsideMenu() && additionalButtonsPosition() === 'beforeMenu') {
-			<ng-container
-				*ngTemplateOutlet="
-					toolbarAdditionalButtonsTemplate();
-					context: { $implicit: additionalButtonsPosition() }
-				"
-			/>
-		}
-
 		<!-- Fullscreen button -->
 		@if (showFullscreenButton()) {
 			<button mat-menu-item id="fullscreen-btn" (click)="onFullscreenToggle()">
@@ -192,7 +182,7 @@
 		}
 
 		<!-- Additional buttons injection inside menu (mobile only) -->
-		@if (showAdditionalButtonsInsideMenu() && additionalButtonsPosition() === 'afterMenu') {
+		@if (showAdditionalButtonsInsideMenu()) {
 			<ng-container
 				*ngTemplateOutlet="
 					toolbarAdditionalButtonsTemplate();

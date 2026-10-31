@@ -1,6 +1,7 @@
 import { Service } from '@angular/core';
 import type { SwitchBackgroundProcessorOptions } from '@livekit/track-processors';
 import {
+	AudioPresets,
 	ConnectionError,
 	ConnectionErrorReason,
 	ConnectionQuality,
@@ -72,6 +73,7 @@ export class LivekitSdkService {
 
 export {
 	AudioCaptureOptions,
+	AudioPresets,
 	ConnectionError,
 	ConnectionErrorReason,
 	ConnectionQuality,

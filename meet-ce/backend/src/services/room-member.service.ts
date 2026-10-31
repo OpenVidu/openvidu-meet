@@ -670,7 +670,7 @@ export class RoomMemberService {
 	 * and a 409 if a change to the participant's role keeps their metadata locked for too long
 	 */
 	async refreshRoomMemberToken(roomId: string, previousToken: string): Promise<string> {
-		const { participantIdentity, participantName, metadata } = await verifyRoomMemberToken(previousToken, {
+		const { participantIdentity, participantName, metadata, room } = await verifyRoomMemberToken(previousToken, {
 			clockToleranceSeconds: INTERNAL_CONFIG.REFRESH_CLOCK_TOLERANCE_SECONDS,
 			ignoreDemotion: true
 		});
@@ -683,13 +683,14 @@ export class RoomMemberService {
 			throw errorInvalidToken();
 		}
 
-		const [tokenMetadata, { config }] = await Promise.all([
-			this.withParticipantMetadataLock(roomId, participantIdentity, () =>
-				this.buildTokenMetadataFromParticipant(roomId, participantIdentity)
-			),
-			this.roomService.getMeetRoom(roomId, ['config'])
-		]);
-		const livekitPermissions = this.getLiveKitPermissions(roomId, tokenMetadata.permissions, config.chat.enabled);
+		const tokenMetadata = await this.withParticipantMetadataLock(roomId, participantIdentity, () =>
+			this.buildTokenMetadataFromParticipant(roomId, participantIdentity)
+		);
+		const livekitPermissions = this.getLiveKitPermissions(
+			roomId,
+			tokenMetadata.permissions,
+			room.config.chat.enabled
+		);
 		return this.tokenService.generateRoomMemberToken({
 			tokenMetadata,
 			livekitPermissions,

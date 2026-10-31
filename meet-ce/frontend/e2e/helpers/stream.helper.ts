@@ -700,6 +700,21 @@ export const getPublishedTrackLabel = (page: Page, kind: 'audio' | 'video'): Pro
 		kind
 	);
 
+/**
+ * Bitrate cap of every audio track the page sends, keyed by track id, as set on its sender's encoding
+ * ({@link capturePeerConnections} must have run). `undefined` means the track is sent uncapped.
+ */
+export const getPublishedAudioBitrateCaps = (page: Page): Promise<Record<string, number | undefined>> =>
+	page.evaluate(() =>
+		Object.fromEntries(
+			((window as PeerConnectionWindow).__peerConnections ?? [])
+				.filter((connection) => connection.connectionState !== 'closed')
+				.flatMap((connection) => connection.getSenders())
+				.filter((sender) => sender.track?.kind === 'audio')
+				.map((sender) => [sender.track!.id, sender.getParameters().encodings[0]?.maxBitrate])
+		)
+	);
+
 /** Label of the camera the settings panel previews, or `null` when it shows none. */
 export const getSettingsPreviewLabel = (page: Page): Promise<string | null> =>
 	page.evaluate(() => {

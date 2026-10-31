@@ -137,6 +137,27 @@ describe('Room Members API Tests', () => {
 			expect(refreshedMetadata.metadata).toBe('{"department": "cardiology"}');
 		});
 
+		it('should grant LiveKit canPublishData to a refreshed token only when its room has chat enabled', async () => {
+			const roomWithoutChat = await setupSingleRoom(false, 'NO_CHAT_ROOM', { chat: { enabled: false } });
+			const refreshModeratorOf = async ({ room, moderatorSecret }: RoomData) => {
+				const previousToken = await generateRoomMemberToken(room.roomId, {
+					secret: moderatorSecret,
+					joinMeeting: true,
+					participantName: 'Chat Refresher'
+				});
+				const { sub: participantIdentity, metadata } = claimsOf(previousToken);
+				await joinFakeParticipant(room.roomId, participantIdentity!);
+				await updateParticipantMetadata(room.roomId, participantIdentity!, metadata);
+
+				const response = await refreshRoomMemberTokenRequest(room.roomId, previousToken);
+				expect(response.status).toBe(200);
+				return claimsOf(response.body.token as string).video?.canPublishData;
+			};
+
+			expect(await refreshModeratorOf(roomData)).toBe(true);
+			expect(await refreshModeratorOf(roomWithoutChat)).toBe(false);
+		});
+
 		it('should fail when using valid room member token for joining meeting but participant has not joined', async () => {
 			// Generate a room member token for joining the meeting
 			const previousToken = await generateRoomMemberToken(roomId, {

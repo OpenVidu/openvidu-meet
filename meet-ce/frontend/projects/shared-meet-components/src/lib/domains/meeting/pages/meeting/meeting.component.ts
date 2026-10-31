@@ -18,7 +18,8 @@ import {
 	MeetingThemeMode,
 	MeetingThemeService,
 	OpenViduComponentsUiModule,
-	Room
+	Room,
+	ToolbarAdditionalButtonsPosition
 } from '../../openvidu-components';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
@@ -89,6 +90,8 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	 * nobody is streamed without being able to see where.
 	 */
 	showBroadcastActivity = computed(() => this.features().showBroadcastControls || this.broadcastState.isInProgress());
+
+	protected readonly extraButtonsPosition = ToolbarAdditionalButtonsPosition.BEFORE_MENU;
 
 	/** Handed to the meeting view, which calls it when the participant commits to joining. */
 	protected readonly generateJoinToken = () => this.lobbyService.generateJoinToken();

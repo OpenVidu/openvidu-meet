@@ -121,11 +121,9 @@ jobs:
       - &publish-test-report
         name: Publish Test Report
         uses: mikepenz/action-junit-report@6ef3fdcfcd5f0b5d14df3e659ef19b8c6820f93d # v6.6.1
-        if: always()
+        if: failure()
         with:
           report_paths: '**/reports/junit.xml'
-          fail_on_failure: true
-          require_tests: true
 
       - name: Type-check tests
         if: always()
@@ -380,10 +378,23 @@ jobs:
           echo "GCP credentials file removed"
 
   frontend-e2e:
-    name: Frontend E2E
+    name: ${{ matrix.group }}
     needs: [changes, backend-unit, frontend-unit, wc-unit]
     if: ${{ !cancelled() && !failure() && needs.changes.outputs.frontend-e2e == 'true' }}
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - group: Layout
+            specs: layout.test.ts
+          - group: Access and permissions
+            specs: access.test.ts permissions.test.ts token-refresh.test.ts share-link.test.ts
+          - group: Participants, streams and devices
+            specs: participants.test.ts stream.test.ts media-devices.test.ts
+          # Every spec the groups above leave out, so a new one runs here until it joins a group.
+          - group: Console and meeting features
+            specs: --grep-invert (layout|access|permissions|token-refresh|share-link|participants|stream|media-devices)\.test\.ts
     steps:
       - *checkout
       - *setup-node
@@ -401,22 +412,23 @@ jobs:
         run: pnpm --filter @openvidu-meet/frontend run test:types:e2e
 
       - name: Run frontend E2E tests
-        run: ./meet.sh test-e2e-frontend --skip-install
+        run: ./meet.sh test-e2e-frontend --skip-install -- $SPECS
         env:
+          SPECS: ${{ matrix.specs }}
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
 
       - name: Upload test results
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: frontend-e2e-test-results
+          name: frontend-e2e-test-results-${{ strategy.job-index }}
           path: meet-ce/frontend/test-results/
           retention-days: 2
       - name: Generate test report
-        if: always()
+        if: failure()
         run: |
-          echo "# Frontend E2E Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "# Frontend E2E Test Results: ${{ matrix.group }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ -f "meet-ce/frontend/test-results/results.json" ]; then
             TOTAL=$(jq '.stats.expected' meet-ce/frontend/test-results/results.json)
@@ -492,7 +504,7 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
 
       - name: Upload test results
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: room-test-results

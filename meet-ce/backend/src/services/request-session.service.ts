@@ -6,7 +6,7 @@ import type {
 } from '@openvidu-meet/typings';
 import { randomUUID } from 'crypto';
 import { inject, injectable } from 'inversify';
-import type { RequestContext } from '../models/request-context.model.js';
+import type { RequestContext, RequestRoomSnapshot } from '../models/request-context.model.js';
 import { requestContextStorage } from '../utils/request-context.utils.js';
 import { LoggerService } from './logger.service.js';
 
@@ -149,5 +149,28 @@ export class RequestSessionService {
 	 */
 	getRoomMemberPermissions(): MeetRoomMemberPermissions | undefined {
 		return this.getContext()?.roomMember?.permissions;
+	}
+
+	/**
+	 * Sets the room the room member token was validated against in the current request context.
+	 * If called outside a request context, this operation is silently ignored.
+	 */
+	setRoom(room: RequestRoomSnapshot): void {
+		const context = this.getContext();
+
+		if (context) {
+			context.room = room;
+		}
+	}
+
+	/**
+	 * Gets the room the room member token was validated against from the current request context, when it is the
+	 * given room.
+	 *
+	 * @param roomId - The ID of the room the caller is about to act on
+	 */
+	getRoom(roomId: string): RequestRoomSnapshot | undefined {
+		const room = this.getContext()?.room;
+		return room?.roomId === roomId ? room : undefined;
 	}
 }

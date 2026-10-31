@@ -134,7 +134,7 @@ export const withRoomPermission = (
 	return async (req: Request, res: Response, next: NextFunction) => {
 		const roomId = roomIdOf(req, res);
 		const roomService = container.get(RoomService);
-		const tokenValidatedAgainstRoom = container.get(RequestSessionService).getRoomIdFromMember() === roomId;
+		const tokenValidatedAgainstRoom = !!container.get(RequestSessionService).getRoom(roomId);
 
 		try {
 			const roomExists = tokenValidatedAgainstRoom || (await roomService.meetRoomExists(roomId));
