@@ -18,10 +18,7 @@ import {
 	BROADCAST_MBPS_PER_DESTINATION,
 	broadcastUploadMbps
 } from '../../../../../../../shared/models/broadcast.model';
-import {
-	BroadcastDestinationDraft,
-	DestinationEditor
-} from '../../../../../../../shared/utils/broadcast-destination-editor';
+import { DestinationEditor } from '../../../../../../../shared/utils/broadcast-destination-editor';
 import {
 	detectBroadcastPlatform,
 	extractBroadcastHost
@@ -33,6 +30,7 @@ import {
 	BroadcastRequestedEvent,
 	isBroadcastInProgress,
 	isBroadcastRunning,
+	MeetingDestination,
 	startsMeetingDestination,
 	startsRoomDestination,
 	stopsBroadcast
@@ -46,12 +44,6 @@ import { ActivityItemComponent, ActivityState } from '../activity-item/activity-
 
 /** How a destination row is doing, from the broadcast to it or from what was just asked. */
 type RowStatus = 'connecting' | 'live' | 'stopping' | 'stopped' | 'failed';
-
-/** A destination the local participant gave for the meeting, whose full URL only this client knows. */
-interface MeetingDestination extends BroadcastDestinationDraft {
-	/** Local to this client, never sent: it tells apart destinations whose URLs redact alike */
-	id: string;
-}
 
 /** A room destination by its id, or a destination given for the meeting by its name and full URL. */
 type DestinationStart = { destinationId: string } | MeetBroadcastStartDestination;
@@ -196,19 +188,16 @@ export class BroadcastActivityComponent {
 		return this.requestError() || failed?.error || failed?.details;
 	});
 
-	// The room's destinations, all chosen unless unticked, with the ones given for this meeting
+	// The room's destinations, all chosen unless left out, with the ones given for this meeting
 	// from this client, whose full URL only this client knows.
 	private readonly roomDestinations = computed(() => this.meetingContext.broadcastConfig()?.destinations ?? []);
-	private readonly unselectedIds = signal(new Set<string>());
-	private readonly meetingDestinations = signal<MeetingDestination[]>([]);
-	private meetingDestinationCount = 0;
 
 	readonly rows = computed<DestinationRow[]>(() => {
 		const broadcasts = this.broadcastState.broadcasts();
 		const ownUrls = this.broadcastState.ownUrls();
 		const ownBroadcastTo = (url: string) =>
 			broadcasts.filter(({ broadcastId }) => ownUrls.get(broadcastId) === url).at(-1);
-		const local = this.meetingDestinations().map((destination) => ({
+		const local = this.broadcastState.meetingDestinations().map((destination) => ({
 			destination,
 			broadcast: ownBroadcastTo(destination.url)
 		}));
@@ -232,7 +221,7 @@ export class BroadcastActivityComponent {
 					source: 'room',
 					broadcast: broadcasts.find(({ destination }) => destination.id === id),
 					start: { destinationId: id! },
-					selected: !this.unselectedIds().has(id!)
+					selected: !this.broadcastState.leftOutRoomDestinationIds().has(id!)
 				})
 			),
 			...local.map(({ destination: { id, name, url }, broadcast }) =>
@@ -333,17 +322,7 @@ export class BroadcastActivityComponent {
 	}
 
 	toggleSelected(key: string, selected: boolean): void {
-		this.unselectedIds.update((ids) => {
-			const next = new Set(ids);
-
-			if (selected) {
-				next.delete(key);
-			} else {
-				next.add(key);
-			}
-
-			return next;
-		});
+		this.broadcastState.chooseRoomDestination(key, selected);
 	}
 
 	openAdd(): void {
@@ -361,8 +340,7 @@ export class BroadcastActivityComponent {
 
 		if (!draft) return;
 
-		const destination = { ...draft, id: `meeting-${++this.meetingDestinationCount}` };
-		this.meetingDestinations.update((destinations) => [...destinations, destination]);
+		const destination = this.broadcastState.addMeetingDestination(draft);
 
 		if (this.isRunning()) {
 			this.addingDestination.set(destination);
@@ -374,7 +352,7 @@ export class BroadcastActivityComponent {
 	}
 
 	removeMeetingDestination(id: string): void {
-		this.meetingDestinations.update((destinations) => destinations.filter((destination) => destination.id !== id));
+		this.broadcastState.removeMeetingDestination(id);
 	}
 
 	/** Streams to every chosen destination not streamed to yet, one broadcast each. */

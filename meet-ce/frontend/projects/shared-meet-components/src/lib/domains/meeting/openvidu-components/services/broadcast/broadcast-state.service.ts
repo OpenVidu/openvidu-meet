@@ -1,5 +1,6 @@
 import { computed, Service, signal } from '@angular/core';
 import { MeetBroadcastInfo, MeetBroadcastStartDestination, MeetBroadcastStatus } from '@openvidu-meet/typings';
+import type { BroadcastDestinationDraft } from '../../../../../shared/utils/broadcast-destination-editor';
 import { ElapsedClock } from '../../../../../shared/utils/elapsed-clock';
 import {
 	broadcastDestinationKey,
@@ -7,14 +8,16 @@ import {
 	BroadcastRequestedEvent,
 	BroadcastRequestRefusal,
 	hasBroadcastFailed,
-	isBroadcastInProgress
+	isBroadcastInProgress,
+	MeetingDestination
 } from '../../models/broadcast.model';
 
 /**
  * The live broadcasts of the meeting as the server last reported them, one per destination, plus
  * each request the local participant made of them that the server has not answered yet, and the
  * last one it refused. Requests run side by side: one going on or answered says nothing of another.
- * The status rail's LIVE chip and the activity both read it.
+ * The status rail's LIVE chip and the activity both read it. It also holds the destinations the
+ * local participant chose in the activity, which outlive the panel until they leave the meeting.
  */
 @Service()
 export class BroadcastStateService {
@@ -23,8 +26,11 @@ export class BroadcastStateService {
 	private readonly _pendingRequests = signal<BroadcastRequestedEvent[]>([]);
 	private readonly _refusal = signal<BroadcastRequestRefusal | undefined>(undefined);
 	private readonly _ownUrls = signal(new Map<string, string>());
+	private readonly _leftOutRoomDestinationIds = signal(new Set<string>());
+	private readonly _meetingDestinations = signal<MeetingDestination[]>([]);
 	private readonly endedIds = new Set<string>();
 	private clockedStart: number | undefined;
+	private meetingDestinationCount = 0;
 
 	/**
 	 * The broadcasts in progress, plus the failed ones kept until the failure is dismissed; a
@@ -40,6 +46,9 @@ export class BroadcastStateService {
 	 * on one platform, so this is what ties such a broadcast to the destination it was asked for.
 	 */
 	readonly ownUrls = this._ownUrls.asReadonly();
+	/** The room destinations the local participant left out of going live; every other one is chosen. */
+	readonly leftOutRoomDestinationIds = this._leftOutRoomDestinationIds.asReadonly();
+	readonly meetingDestinations = this._meetingDestinations.asReadonly();
 	/**
 	 * How long the meeting has been live, as a `Date` offset from zero so it can be formatted with
 	 * the `date` pipe. Not the moment it started.
@@ -140,11 +149,38 @@ export class BroadcastStateService {
 		this._refusal.set(undefined);
 	}
 
+	chooseRoomDestination(destinationId: string, chosen: boolean): void {
+		this._leftOutRoomDestinationIds.update((ids) => {
+			const next = new Set(ids);
+
+			if (chosen) {
+				next.delete(destinationId);
+			} else {
+				next.add(destinationId);
+			}
+
+			return next;
+		});
+	}
+
+	/** Lists the destination with a local id no other destination of this client has had. */
+	addMeetingDestination(draft: BroadcastDestinationDraft): MeetingDestination {
+		const destination = { ...draft, id: `meeting-${++this.meetingDestinationCount}` };
+		this._meetingDestinations.update((destinations) => [...destinations, destination]);
+		return destination;
+	}
+
+	removeMeetingDestination(id: string): void {
+		this._meetingDestinations.update((destinations) => destinations.filter((destination) => destination.id !== id));
+	}
+
 	reset(): void {
 		this._broadcasts.set([]);
 		this._pendingRequests.set([]);
 		this._refusal.set(undefined);
 		this._ownUrls.set(new Map());
+		this._leftOutRoomDestinationIds.set(new Set());
+		this._meetingDestinations.set([]);
 		this.endedIds.clear();
 		this.trackElapsed();
 	}

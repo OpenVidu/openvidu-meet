@@ -482,12 +482,17 @@ The activities panel SHALL hold a Live broadcast activity for a participant hold
 - **THEN** the activities panel opens on the Live broadcast activity
 
 ### Requirement: Going live from the activity
-Before the meeting goes live, the activity SHALL list the room's destinations, all chosen by default, let the participant leave any out but never change them, show the upload the chosen ones need, and go live to the chosen ones. Going live SHALL be disabled, telling why, while nobody in the meeting publishes audio or video.
+Before the meeting goes live, the activity SHALL list the room's destinations, all chosen by default, let the participant leave any out but never change them, show the upload the chosen ones need, and go live to the chosen ones. The destinations left out and those added for the meeting SHALL hold for the whole meeting entry, whatever panel opens or closes. Going live SHALL be disabled, telling why, while nobody in the meeting publishes audio or video.
 
 #### Scenario: One destination left out
 - **GIVEN** a room with destinations A and B and a moderator in its meeting
 - **WHEN** the moderator unticks B and goes live
 - **THEN** the meeting streams to A only
+
+#### Scenario: Choices kept while the panel is closed
+- **GIVEN** a room with destinations A and B and a moderator in its meeting who unticks A and adds destination C for the meeting
+- **WHEN** they open the chat and come back to the Live broadcast activity
+- **THEN** A is still left out, C is still listed, and going live streams to B and C only
 
 #### Scenario: Nobody publishes
 - **GIVEN** a meeting where nobody publishes audio or video

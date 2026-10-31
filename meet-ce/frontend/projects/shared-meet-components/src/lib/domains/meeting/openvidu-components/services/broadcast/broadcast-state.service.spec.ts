@@ -187,6 +187,31 @@ describe('BroadcastStateService', () => {
 		expect(service.ownUrls().size).toBe(0);
 	});
 
+	it('keeps the destinations chosen in the activity, which outlive the panel, until reset', () => {
+		service.chooseRoomDestination('dest-1', false);
+		service.chooseRoomDestination('dest-2', false);
+		service.chooseRoomDestination('dest-2', true);
+		service.addMeetingDestination({ name: 'Channel A', url: 'rtmp://a.rtmp.youtube.com/live2/key-a' });
+
+		expect([...service.leftOutRoomDestinationIds()]).toEqual(['dest-1']);
+		expect(service.meetingDestinations()).toEqual([
+			{ id: 'meeting-1', name: 'Channel A', url: 'rtmp://a.rtmp.youtube.com/live2/key-a' }
+		]);
+
+		service.reset();
+		expect(service.leftOutRoomDestinationIds().size).toBe(0);
+		expect(service.meetingDestinations()).toEqual([]);
+	});
+
+	it('never gives a destination for the meeting the local id of one removed, which a row may still hold', () => {
+		const first = service.addMeetingDestination({ name: 'Channel A', url: 'rtmp://a.example.com/live/key-a' });
+		service.removeMeetingDestination(first.id);
+		const second = service.addMeetingDestination({ name: 'Channel B', url: 'rtmp://b.example.com/live/key-b' });
+
+		expect(second.id).not.toBe(first.id);
+		expect(service.meetingDestinations().map(({ name }) => name)).toEqual(['Channel B']);
+	});
+
 	it('only moves a broadcast forward, so a late report never brings one back once it ended', () => {
 		service.setBroadcast(broadcast({ status: MeetBroadcastStatus.ACTIVE }));
 		service.setBroadcast(broadcast({ status: MeetBroadcastStatus.STARTING }));

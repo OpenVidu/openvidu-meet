@@ -9,12 +9,14 @@ import {
 	expectDestinationStatus,
 	expectNoBroadcastBadge,
 	expectNoBroadcastControls,
+	expandBroadcastActivity,
 	goLiveFromActivitiesPanel,
 	stopBroadcastFromActivitiesPanel,
 	stopDestinationFromActivitiesPanel,
 	toggleBroadcastFromToolbar,
 	untickPlannedDestination
 } from './helpers/broadcasts.helper';
+import { toggleChatPanel } from './helpers/chat.helper';
 import {
 	createRoomAndGetAnonymousAccessUrl,
 	deleteRooms,
@@ -67,7 +69,7 @@ test.describe('Live broadcast E2E Tests', () => {
 		await expectNoBroadcastBadge(page);
 	});
 
-	test('should let a room destination be left out but not changed, and go live to one added for the meeting', async ({
+	test('should keep the destinations chosen while another panel opens, and go live to those alone', async ({
 		page
 	}) => {
 		const extraUrl = await createRtmpSink('spa-extra');
@@ -76,9 +78,16 @@ test.describe('Live broadcast E2E Tests', () => {
 		await addDestinationFromActivitiesPanel(page, 'Extra', extraUrl);
 		await expect(page.locator(`#broadcast-destination-${destinationId} .destination-action`)).toHaveCount(0);
 		await untickPlannedDestination(page, destinationId);
+
+		await toggleChatPanel(page);
+		await expandBroadcastActivity(page);
+		await expect(page.locator(`#broadcast-destination-${destinationId} input[type="checkbox"]`)).not.toBeChecked();
+		await expectDestinationStatus(page, 'meeting-1', 'stopped');
+
 		await goLiveFromActivitiesPanel(page);
 
 		await expectBroadcastPhase(page, 'live', 40_000);
+		await expectDestinationStatus(page, 'meeting-1', 'live');
 		await expectDestinationStatus(page, destinationId, 'stopped');
 		await expect(page.locator('#broadcast-activity .destination-row[data-status="live"]')).toHaveCount(1);
 	});

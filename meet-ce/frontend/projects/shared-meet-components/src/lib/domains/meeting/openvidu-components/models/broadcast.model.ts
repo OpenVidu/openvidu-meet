@@ -1,6 +1,13 @@
 import type { MeetBroadcastInfo, MeetBroadcastStartOptions } from '@openvidu-meet/typings';
 import { MeetBroadcastStatus } from '@openvidu-meet/typings';
+import type { BroadcastDestinationDraft } from '../../../../shared/utils/broadcast-destination-editor';
 import type { DistributiveOmit } from '../../../../shared/utils/object.utils';
+
+/** A destination the local participant gave for the meeting, whose full URL only this client knows. */
+export interface MeetingDestination extends BroadcastDestinationDraft {
+	/** Local to this client, never sent: it tells apart destinations whose URLs redact alike */
+	id: string;
+}
 
 /**
  * What the live broadcast activity asks of the meeting: the one output it emits, narrowed on
