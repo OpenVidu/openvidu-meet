@@ -731,9 +731,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await meetLocator(page, integration, '.quick-action-button').first().click();
 
 				await expectEvent(page, EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED);
-				await expect(
-					page.waitForURL((url) => url.toString().startsWith(REDIRECT_TARGET_URL), { timeout: 3_000 })
-				).rejects.toThrow();
+				await expect(waitForPageRedirect(page, REDIRECT_TARGET_URL, 3_000)).rejects.toThrow();
 			});
 		}
 
