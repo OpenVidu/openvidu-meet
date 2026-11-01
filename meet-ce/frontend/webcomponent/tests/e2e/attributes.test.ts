@@ -1,4 +1,4 @@
-import { EmbeddedAttribute } from '@openvidu-meet/typings';
+import { EmbeddedAttribute, EmbeddedEventName } from '@openvidu-meet/typings';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { createRoom, deleteRooms, getRecordingUrl, listRecordingsByRoomId } from '../helpers/meet-api.helper';
 import {
@@ -12,12 +12,13 @@ import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import {
 	endMeetingCommand,
 	ensureFixture,
+	expectEvent,
 	leaveMeeting,
 	openMeeting,
 	openMeetingAtMediaSetup
 } from '../helpers/testapp.helper';
 import { openWebcomponentWithAttributes, type WebComponentAttributes } from '../helpers/webcomponent-attributes.helper';
-import { meetLocator, waitForPageRedirect, wcHost, wcLocator } from '../helpers/webcomponent.helper';
+import { INTEGRATIONS, meetLocator, waitForPageRedirect, wcHost, wcLocator } from '../helpers/webcomponent.helper';
 
 // ─── WebComponent attribute coverage ────────────────────────────────────────
 //
@@ -693,12 +694,48 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 
 	test.describe('Using leave-redirect-url', () => {
 		let accessUrl: string;
+		let otherRoomAccessUrl: string;
 
 		test.beforeAll(async () => {
-			const room = await createRoom();
-			createdRoomIds.push(room.roomId);
+			const [room, otherRoom] = await Promise.all([createRoom(), createRoom()]);
+			createdRoomIds.push(room.roomId, otherRoom.roomId);
 			accessUrl = room.access.anonymous.moderator.url;
+			otherRoomAccessUrl = otherRoom.access.anonymous.moderator.url;
 		});
+
+		for (const integration of INTEGRATIONS) {
+			test(`should not send the host page to an earlier entry's redirect from a new ${integration} without one`, async ({
+				page
+			}) => {
+				await openWebcomponentWithAttributes(
+					page,
+					{
+						[EmbeddedAttribute.ROOM_URL]: accessUrl,
+						[EmbeddedAttribute.LEAVE_REDIRECT_URL]: REDIRECT_TARGET_URL
+					},
+					{ integration }
+				);
+				await expect(meetLocator(page, integration, '#participant-name-input')).toBeVisible({
+					timeout: 15_000
+				});
+
+				await openWebcomponentWithAttributes(
+					page,
+					{ [EmbeddedAttribute.ROOM_URL]: otherRoomAccessUrl },
+					{ integration }
+				);
+				await expect(meetLocator(page, integration, '#participant-name-input')).toBeVisible({
+					timeout: 15_000
+				});
+
+				await meetLocator(page, integration, '.quick-action-button').first().click();
+
+				await expectEvent(page, EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED);
+				await expect(
+					page.waitForURL((url) => url.toString().startsWith(REDIRECT_TARGET_URL), { timeout: 3_000 })
+				).rejects.toThrow();
+			});
+		}
 
 		test('should redirect to the configured URL from the lobby back button', async ({ page }) => {
 			await openWebcomponentWithAttributes(page, {

@@ -5,9 +5,9 @@ import { SessionStorageService } from './session-storage.service';
 
 /**
  * Owns the "leave-redirect URL" — where the user is sent after leaving/closing a meeting. It
- * resolves the URL per embedding mode (SPA / iframe / webcomponent) and persists it in session
- * storage so it survives reloads and the lobby can pre-fill it. Performing the actual redirect is
- * {@link NavigationService}'s job; this service only owns the resolved destination.
+ * resolves the URL of each meeting entry per embedding mode (SPA / iframe / webcomponent) and
+ * persists it in session storage with its room so it survives reloads. Performing the actual
+ * redirect is {@link NavigationService}'s job; this service only owns the resolved destination.
  */
 @Service()
 export class LeaveRedirectService {
@@ -17,69 +17,66 @@ export class LeaveRedirectService {
 	private leaveRedirectUrl?: string;
 
 	/**
-	 * Retrieves the leave-redirect URL, checking both the in-memory value and session storage.
+	 * Retrieves the leave-redirect URL of the current entry, or the stored one after a reload.
 	 *
 	 * @returns The leave-redirect URL if set, otherwise `undefined`.
 	 */
 	getLeaveRedirectURL(): string | undefined {
-		const storedRedirectUrl = this.sessionStorageService.getRedirectUrl();
-
-		if (!this.leaveRedirectUrl && storedRedirectUrl) {
-			this.leaveRedirectUrl = storedRedirectUrl;
-		}
-
-		return this.leaveRedirectUrl;
+		return this.leaveRedirectUrl ?? this.sessionStorageService.getRedirect()?.url;
 	}
 
 	/**
-	 * Resolves and stores the leave-redirect URL with automatic referrer detection.
+	 * Sets the leave-redirect URL of a meeting entry, replacing whatever an earlier entry set.
 	 *
-	 * @param leaveRedirectUrl - The URL to set as the leave-redirect destination.
+	 * @param roomId - The room being entered.
+	 * @param leaveRedirectUrl - The leave-redirect URL the entry was given, if any.
 	 */
-	handleLeaveRedirectUrl(leaveRedirectUrl: string | undefined): void {
-		const isWebcomponentMode = this.runtimeConfigService.isWebcomponentMode();
-		const isIframeMode = this.runtimeConfigService.isIframeMode();
+	handleLeaveRedirectUrl(roomId: string, leaveRedirectUrl: string | undefined): void {
+		this.leaveRedirectUrl =
+			this.resolveLeaveRedirectUrl(leaveRedirectUrl) ?? this.findStandaloneLeaveRedirectUrl(roomId);
 
-		// Explicit valid URL provided - use as is
-		if (leaveRedirectUrl && isValidUrl(leaveRedirectUrl)) {
-			this.setLeaveRedirectUrl(leaveRedirectUrl);
-			return;
-		}
-
-		// Relative path while embedded — resolve it against the HOST page's origin.
-		if (leaveRedirectUrl?.startsWith('/')) {
-			// Webcomponent: the Angular Elements element runs in the host's window,
-			// so `window.location.origin` IS the host origin.
-			if (isWebcomponentMode) {
-				this.setLeaveRedirectUrl(window.location.origin + leaveRedirectUrl);
-				return;
-			}
-
-			// Iframe: the app runs on the Meet server origin, so the host origin is
-			// reconstructed from the referrer (the parent page that loaded the iframe).
-			if (isIframeMode) {
-				const hostOrigin = getReferrerOrigin();
-
-				if (hostOrigin) {
-					this.setLeaveRedirectUrl(hostOrigin + leaveRedirectUrl);
-				}
-
-				return;
-			}
-		}
-
-		// Auto-detect from referrer (only when running standalone and no explicit URL provided)
-		if (!leaveRedirectUrl && !isWebcomponentMode && !isIframeMode) {
-			const autoRedirectUrl = getAutoRedirectUrl();
-
-			if (autoRedirectUrl) {
-				this.setLeaveRedirectUrl(autoRedirectUrl);
-			}
+		if (this.leaveRedirectUrl) {
+			this.sessionStorageService.setRedirect(roomId, this.leaveRedirectUrl);
+		} else {
+			this.sessionStorageService.removeRedirectUrl();
 		}
 	}
 
-	private setLeaveRedirectUrl(leaveRedirectUrl: string): void {
-		this.leaveRedirectUrl = leaveRedirectUrl;
-		this.sessionStorageService.setRedirectUrl(leaveRedirectUrl);
+	private resolveLeaveRedirectUrl(leaveRedirectUrl: string | undefined): string | undefined {
+		if (leaveRedirectUrl && isValidUrl(leaveRedirectUrl)) {
+			return leaveRedirectUrl;
+		}
+
+		if (!leaveRedirectUrl?.startsWith('/')) {
+			return undefined;
+		}
+
+		// Webcomponent: the Angular Elements element runs in the host's window,
+		// so `window.location.origin` IS the host origin.
+		if (this.runtimeConfigService.isWebcomponentMode()) {
+			return window.location.origin + leaveRedirectUrl;
+		}
+
+		// Iframe: the app runs on the Meet server origin, so the host origin is
+		// reconstructed from the referrer (the parent page that loaded the iframe).
+		if (this.runtimeConfigService.isIframeMode()) {
+			const hostOrigin = getReferrerOrigin();
+			return hostOrigin ? hostOrigin + leaveRedirectUrl : undefined;
+		}
+
+		return undefined;
+	}
+
+	/**
+	 * A standalone entry without a redirect of its own keeps the one stored for the same room, since
+	 * a reload loses the query parameter, or else takes the referrer.
+	 */
+	private findStandaloneLeaveRedirectUrl(roomId: string): string | undefined {
+		if (this.runtimeConfigService.isEmbeddedMode()) {
+			return undefined;
+		}
+
+		const stored = this.sessionStorageService.getRedirect();
+		return stored?.roomId === roomId ? stored.url : (getAutoRedirectUrl() ?? undefined);
 	}
 }
