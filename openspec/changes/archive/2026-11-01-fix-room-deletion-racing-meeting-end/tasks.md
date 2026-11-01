@@ -4,7 +4,7 @@
 
 - [x] 1.1 In `deleteMeetRoom` of `meet-ce/backend/src/services/room.service.ts`, replace the unconditional `updatePartial(roomId, { meetingEndAction })` by `scheduleMeetingEndAction` (filtered on `active_meeting`; `delete` may replace `close`) and, when it returns `null`, decide again from a fresh read. Verified in `tests/unit/services/room.service.test.ts`: a `null` from the repository leads to the idle branch.
 - [x] 1.2 Make the idle branches (`status: closed`, plain delete) conditional on `status != active_meeting` in `meet-ce/backend/src/repositories/room.repository.ts`, deciding again on a miss with the same retry shape as `updateMeetRoomStatus`. Verified in the same unit file with a repository that reports an activated meeting.
-- [ ] 1.3 Check that `bulkDeleteMeetRooms` and the expired-rooms task of `room-scheduled-tasks.service.ts` go through the same path; keep `tests/integration/api/rooms/delete-room.test.ts` and `bulk-delete-rooms.test.ts` passing (needs the OpenVidu local deployment; report as not run when unavailable).
+- [x] 1.3 Check that `bulkDeleteMeetRooms` and the expired-rooms task of `room-scheduled-tasks.service.ts` go through the same path; keep `tests/integration/api/rooms/delete-room.test.ts` and `bulk-delete-rooms.test.ts` passing (needs the OpenVidu local deployment; report as not run when unavailable).
 
 ## 2. Release surfaces
 
