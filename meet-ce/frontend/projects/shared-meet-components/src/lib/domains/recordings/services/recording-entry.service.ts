@@ -1,6 +1,7 @@
 import { Service, inject } from '@angular/core';
 import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
+import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { RoomAccessService } from '../../rooms/services/room-access.service';
 import { RecordingService } from './recording.service';
@@ -61,6 +62,7 @@ export class RecordingEntryService {
 	private readonly meetingContextService = inject(MeetingContextService);
 	private readonly roomAccessService = inject(RoomAccessService);
 	private readonly recordingService = inject(RecordingService);
+	private readonly leaveRedirect = inject(LeaveRedirectService);
 
 	/**
 	 * Derives the recording's owning room from the recording ID and seeds room
@@ -77,6 +79,7 @@ export class RecordingEntryService {
 		}
 
 		this.meetingContextService.setRoomId(roomId);
+		this.leaveRedirect.keepOnlyForRoom(roomId);
 
 		// Prefer the caller-supplied secret; otherwise restore the one persisted for
 		// this room, so every adapter (route guard, Web Component) shares the

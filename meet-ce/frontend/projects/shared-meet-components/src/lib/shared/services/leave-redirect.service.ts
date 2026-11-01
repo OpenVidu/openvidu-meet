@@ -14,7 +14,7 @@ export class LeaveRedirectService {
 	private readonly sessionStorageService = inject(SessionStorageService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
 
-	private leaveRedirectUrl?: string;
+	private redirect?: { roomId: string; url: string };
 
 	/**
 	 * Retrieves the leave-redirect URL of the current entry, or the stored one after a reload.
@@ -22,7 +22,7 @@ export class LeaveRedirectService {
 	 * @returns The leave-redirect URL if set, otherwise `undefined`.
 	 */
 	getLeaveRedirectURL(): string | undefined {
-		return this.leaveRedirectUrl ?? this.sessionStorageService.getRedirect()?.url;
+		return (this.redirect ?? this.sessionStorageService.getRedirect())?.url;
 	}
 
 	/**
@@ -32,14 +32,31 @@ export class LeaveRedirectService {
 	 * @param leaveRedirectUrl - The leave-redirect URL the entry was given, if any.
 	 */
 	handleLeaveRedirectUrl(roomId: string, leaveRedirectUrl: string | undefined): void {
-		this.leaveRedirectUrl =
-			this.resolveLeaveRedirectUrl(leaveRedirectUrl) ?? this.findStandaloneLeaveRedirectUrl(roomId);
+		const url = this.resolveLeaveRedirectUrl(leaveRedirectUrl) ?? this.findStandaloneLeaveRedirectUrl(roomId);
 
-		if (this.leaveRedirectUrl) {
-			this.sessionStorageService.setRedirect(roomId, this.leaveRedirectUrl);
+		if (url) {
+			this.redirect = { roomId, url };
+			this.sessionStorageService.setRedirect(roomId, url);
 		} else {
-			this.sessionStorageService.removeRedirectUrl();
+			this.forget();
 		}
+	}
+
+	/**
+	 * Drops the leave-redirect URL unless it was set for this room, for an entry that carries none of
+	 * its own, such as a recording.
+	 *
+	 * @param roomId - The room being entered.
+	 */
+	keepOnlyForRoom(roomId: string): void {
+		if ((this.redirect ?? this.sessionStorageService.getRedirect())?.roomId !== roomId) {
+			this.forget();
+		}
+	}
+
+	private forget(): void {
+		this.redirect = undefined;
+		this.sessionStorageService.removeRedirectUrl();
 	}
 
 	private resolveLeaveRedirectUrl(leaveRedirectUrl: string | undefined): string | undefined {

@@ -163,6 +163,45 @@ describe('LeaveRedirectService', () => {
 		});
 	});
 
+	describe('keepOnlyForRoom()', () => {
+		it('webcomponent mode: an entry to a recording of another room drops the redirect, stored too', () => {
+			webcomponentMode = true;
+			service.handleLeaveRedirectUrl('room-a', 'https://app.example.com/a');
+
+			service.keepOnlyForRoom('room-b');
+
+			expect(service.getLeaveRedirectURL()).toBeUndefined();
+			expect(stored).toBeNull();
+		});
+
+		it('iframe mode: a new iframe on a recording of another room ignores the stored redirect', () => {
+			iframeMode = true;
+			service.handleLeaveRedirectUrl('room-a', 'https://app.example.com/a');
+
+			const replaced = reload();
+			replaced.keepOnlyForRoom('room-b');
+
+			expect(replaced.getLeaveRedirectURL()).toBeUndefined();
+		});
+
+		it('keeps the redirect for a recording of the same room', () => {
+			service.handleLeaveRedirectUrl('room-a', 'https://app.example.com/a');
+
+			service.keepOnlyForRoom('room-a');
+
+			expect(service.getLeaveRedirectURL()).toBe('https://app.example.com/a');
+		});
+
+		it('standalone SPA: keeps the stored redirect of the same room after a reload', () => {
+			service.handleLeaveRedirectUrl('room-a', 'https://app.example.com/a');
+
+			const reloaded = reload();
+			reloaded.keepOnlyForRoom('room-a');
+
+			expect(reloaded.getLeaveRedirectURL()).toBe('https://app.example.com/a');
+		});
+	});
+
 	describe('getLeaveRedirectURL()', () => {
 		it('falls back to the stored URL after a reload outside a meeting entry', () => {
 			stored = { roomId: 'room-a', url: 'https://stored.example.com/back' };

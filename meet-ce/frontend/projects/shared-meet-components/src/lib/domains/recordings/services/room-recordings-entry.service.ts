@@ -1,5 +1,6 @@
 import { Service, inject } from '@angular/core';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
+import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { RoomAccessService } from '../../rooms/services/room-access.service';
 
@@ -38,12 +39,14 @@ export type RoomRecordingsEntryOutcome =
 export class RoomRecordingsEntryService {
 	private readonly meetingContextService = inject(MeetingContextService);
 	private readonly roomAccessService = inject(RoomAccessService);
+	private readonly leaveRedirect = inject(LeaveRedirectService);
 
 	/**
 	 * Seeds room context. Performs no network I/O.
 	 */
 	prepare(params: RoomRecordingsEntryParams): RoomRecordingsEntryDecision {
 		this.meetingContextService.setRoomId(params.roomId);
+		this.leaveRedirect.keepOnlyForRoom(params.roomId);
 
 		// Prefer the caller-supplied secret; otherwise restore the one persisted for
 		// this room, so every adapter (route guard, Web Component) shares the
