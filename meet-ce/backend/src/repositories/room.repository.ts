@@ -132,18 +132,22 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 
 	/**
 	 * Sets what happens to a room when its active meeting ends, atomically. A scheduled deletion is
-	 * never replaced.
+	 * kept unless `replaceDeletion` is set, as a later deletion request does.
 	 *
 	 * @param roomId - The unique room identifier
 	 * @param meetingEndAction - The action to apply when the meeting ends
-	 * @returns The updated room, or `null` if the room has no active meeting or its deletion is scheduled
+	 * @returns The updated room, or `null` if the room has no active meeting or its deletion is kept
 	 */
-	scheduleMeetingEndAction(roomId: string, meetingEndAction: MeetingEndAction): Promise<MeetRoom | null> {
+	scheduleMeetingEndAction(
+		roomId: string,
+		meetingEndAction: MeetingEndAction,
+		{ replaceDeletion = false } = {}
+	): Promise<MeetRoom | null> {
 		return this.updatePartialOne(
 			{
 				roomId,
 				status: MeetRoomStatus.ACTIVE_MEETING,
-				meetingEndAction: { $ne: MeetingEndAction.DELETE }
+				...(replaceDeletion ? {} : { meetingEndAction: { $ne: MeetingEndAction.DELETE } })
 			},
 			{ meetingEndAction },
 			{ throwIfNotFound: false }
@@ -463,13 +467,16 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	}
 
 	/**
-	 * Deletes a room by its roomId.
+	 * Deletes a room that has no active meeting, atomically.
 	 *
 	 * @param roomId - The unique room identifier
-	 * @throws Error if the room was not found or could not be deleted
+	 * @returns Whether the room was deleted: `false` if it has an active meeting or does not exist
 	 */
-	deleteByRoomId(roomId: string): Promise<void> {
-		return this.deleteOne({ roomId });
+	async deleteIdleRoom(roomId: string): Promise<boolean> {
+		const { deletedCount } = await this.model
+			.deleteOne({ roomId, status: { $ne: MeetRoomStatus.ACTIVE_MEETING } })
+			.exec();
+		return deletedCount === 1;
 	}
 
 	/**

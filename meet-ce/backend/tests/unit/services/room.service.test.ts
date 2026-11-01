@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import type { MeetRoom, MeetRoomConfig } from '@openvidu-meet/typings';
+import {
+	MeetRoomDeletionErrorCode,
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionSuccessCode,
+	MeetRoomStatus
+} from '@openvidu-meet/typings';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see meeting-mute.test.ts).
 import '../../../src/config/dependency-injector.config.js';
@@ -68,5 +74,49 @@ describe('RoomService.getRequestRoomConfig', () => {
 		await expect(
 			inRequestValidatedAgainst('room-2', () => roomService.getRequestRoomConfig('room-1'))
 		).rejects.toMatchObject({ statusCode: 404 });
+	});
+});
+
+describe('RoomService.deleteMeetRoom (a meeting that starts or ends while the room is deleted)', () => {
+	const buildDeletionService = (statuses: MeetRoomStatus[], repository: Record<string, unknown>) => {
+		const deleteAllByRoomId = jest.fn(async (_roomId: string) => {});
+		const roomService = new RoomService(
+			{ verbose: () => {}, debug: () => {} } as unknown as LoggerService,
+			{ findByRoomId: async () => ({ status: statuses.shift() }), ...repository } as unknown as RoomRepository,
+			{ deleteAllByRoomId } as never,
+			{ hasRoomRecordings: async () => false } as never,
+			{} as never,
+			{} as never
+		);
+		return { roomService, deleteAllByRoomId };
+	};
+
+	it('deletes the room at once when its meeting ended before the deletion could be scheduled', async () => {
+		const deleteIdleRoom = jest.fn(async (_roomId: string) => true);
+		const { roomService, deleteAllByRoomId } = buildDeletionService(
+			[MeetRoomStatus.ACTIVE_MEETING, MeetRoomStatus.OPEN],
+			{ scheduleMeetingEndAction: async () => null, deleteIdleRoom }
+		);
+
+		const response = await roomService.deleteMeetRoom('room-1', {
+			withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS
+		});
+
+		expect(response.successCode).toBe(MeetRoomDeletionSuccessCode.ROOM_DELETED);
+		expect(deleteIdleRoom).toHaveBeenCalledWith('room-1');
+		expect(deleteAllByRoomId).toHaveBeenCalledWith('room-1');
+	});
+
+	it('answers 409 and keeps the room when its meeting started before the deletion was written', async () => {
+		const { roomService, deleteAllByRoomId } = buildDeletionService(
+			[MeetRoomStatus.OPEN, MeetRoomStatus.ACTIVE_MEETING],
+			{ deleteIdleRoom: async () => false }
+		);
+
+		await expect(roomService.deleteMeetRoom('room-1')).rejects.toMatchObject({
+			statusCode: 409,
+			name: MeetRoomDeletionErrorCode.ROOM_HAS_ACTIVE_MEETING
+		});
+		expect(deleteAllByRoomId).not.toHaveBeenCalled();
 	});
 });
