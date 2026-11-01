@@ -706,7 +706,7 @@ export class RecordingService {
 	 * @returns Whether this call ended the recording
 	 */
 	async finishRecording(recording: MeetRecordingInfo): Promise<boolean> {
-		const finished = await this.recordingRepository.finish(recording);
+		const finished = await this.recordingRepository.replaceInProgress(recording);
 
 		if (!finished) {
 			this.logger.debug(`Recording '${recording.recordingId}' had already ended, not reporting it again`);

@@ -104,24 +104,14 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	}
 
 	/**
-	 * Replaces an existing recording with new data.
+	 * Stores a recording's new state only while the stored one is still in progress: a recording that
+	 * has ended never changes again, and of several callers ending it, on any replica, exactly one
+	 * succeeds.
 	 *
-	 * @param recording - The recording data to update
-	 * @returns The updated recording (without access secrets)
-	 * @throws Error if recording not found
-	 */
-	replace(recording: MeetRecordingInfo): Promise<MeetRecordingInfo> {
-		return this.replaceOne({ recordingId: recording.recordingId }, recording);
-	}
-
-	/**
-	 * Stores a recording's final state only while the stored one is still in progress, so that of
-	 * several callers ending the same recording, on any replica, exactly one succeeds.
-	 *
-	 * @param recording - The recording with its final status
+	 * @param recording - The recording's new state
 	 * @returns The stored recording, or `null` when it had already ended or does not exist
 	 */
-	async finish(recording: MeetRecordingInfo): Promise<MeetRecordingInfo | null> {
+	async replaceInProgress(recording: MeetRecordingInfo): Promise<MeetRecordingInfo | null> {
 		try {
 			return await this.replaceOne(
 				{ recordingId: recording.recordingId, status: { $in: IN_PROGRESS_STATUSES } },

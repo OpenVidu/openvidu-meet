@@ -349,7 +349,7 @@ describe('RecordingService.finishRecording', () => {
 	const buildFinishService = () => {
 		let stored = false;
 		const repository = {
-			finish: async (recording: MeetRecordingInfo) => {
+			replaceInProgress: async (recording: MeetRecordingInfo) => {
 				if (stored) return null;
 
 				stored = true;
