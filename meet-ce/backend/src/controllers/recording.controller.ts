@@ -281,37 +281,33 @@ export const downloadRecordingsZip = async (req: Request, res: Response) => {
 
 	logger.info(`Preparing ZIP download for recordings: ${String(recordingIds)}`);
 
+	const recordingIdsToProccess = bulkValidation?.processableIds ?? [];
+	const failed = (bulkValidation?.failed as { recordingId: string; error: string }[]) ?? [];
+
+	failed.forEach((failure) => {
+		logger.warn(
+			`Skipping recording '${failure.recordingId}' from ZIP download due to access issue: ${failure.error}`
+		);
+	});
+
+	if (recordingIdsToProccess.length === 0) {
+		handleError(res, errorRecordingsZipEmpty(), 'downloading recordings ZIP');
+		return;
+	}
+
+	res.setHeader('Content-Type', 'application/zip');
+	res.setHeader('Content-Disposition', 'attachment; filename="recordings.zip"');
+
+	const download = new AbortController();
+	res.on('close', () => download.abort());
+
 	try {
-		const recordingIdsToProccess = bulkValidation?.processableIds ?? [];
-		const failed = (bulkValidation?.failed as { recordingId: string; error: string }[]) ?? [];
-
-		failed.forEach((failure) => {
-			logger.warn(
-				`Skipping recording '${failure.recordingId}' from ZIP download due to access issue: ${failure.error}`
-			);
-		});
-
-		if (recordingIdsToProccess.length === 0) {
-			throw errorRecordingsZipEmpty();
+		await recordingService.writeRecordingsZip(recordingIdsToProccess, res, download.signal);
+	} catch (error) {
+		if (!download.signal.aborted) {
+			logger.error('Error writing recordings ZIP', error);
 		}
 
-		const archive = await recordingService.createRecordingsZipArchive(recordingIdsToProccess);
-
-		res.setHeader('Content-Type', 'application/zip');
-		res.setHeader('Content-Disposition', 'attachment; filename="recordings.zip"');
-
-		// Handle errors in the archive
-		archive.on('error', (err) => {
-			logger.error(`ZIP archive error`, err);
-			res.status(500).end();
-		});
-
-		// Pipe the archive to the response
-		archive.pipe(res);
-
-		// Finalize the archive
-		void archive.finalize();
-	} catch (error) {
-		handleError(res, error, 'downloading recordings ZIP');
+		res.destroy();
 	}
 };
