@@ -3,7 +3,7 @@
 ## 1. Tie the redirect to its entry
 
 - [x] 1.1 In `leave-redirect.service.ts` (`shared/services`) of `shared-meet-components`, store the redirect with its room id (as the room secret is) in the tab's storage and ignore a stored value of another room. In `domains/meeting/services/meeting-entry.service.ts`, call the redirect handling on every entry so an entry without `leave-redirect-url` clears the in-memory and the stored value in the embedded modes. Verify with unit specs of both services (no redirect after an entry without the parameter, redirect kept for the same room after a reload, ignored for another room).
-- [ ] 1.2 Add webcomponent and iframe cases (remount on room B without the attribute, iframe replaced) to the existing embedded e2e suites; report as not run when the testapp is unavailable.
+- [x] 1.2 Add webcomponent and iframe cases (remount on room B without the attribute, iframe replaced) to the existing embedded e2e suites; report as not run when the testapp is unavailable.
 
 ## 2. Release surfaces
 
