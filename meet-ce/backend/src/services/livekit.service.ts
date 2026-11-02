@@ -387,11 +387,6 @@ export class LiveKitService {
 			const data: Uint8Array = new TextEncoder().encode(JSON.stringify(rawData));
 			await this.lk.room.sendData(roomName, data, DataPacket_Kind.RELIABLE, options);
 		} catch (error) {
-			if (this.isNotFoundError(error)) {
-				this.logger.warn(`Skipping sending data because LiveKit room '${roomName}' does not exist`);
-				return;
-			}
-
 			this.logger.error(`Error sending data to LiveKit room '${roomName}'`, error);
 			throw internalError(`sending data to LiveKit room '${roomName}'`);
 		}

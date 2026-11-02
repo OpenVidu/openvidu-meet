@@ -7,7 +7,7 @@ import { PassThrough, Readable } from 'stream';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
-import { errorRecordingAlreadyStopped } from '../../../src/models/error.model.js';
+import { errorLivekitNotAvailable, errorRecordingAlreadyStopped } from '../../../src/models/error.model.js';
 import { RecordingService } from '../../../src/services/recording.service.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, debug: () => {}, error: () => {}, verbose: () => {} };
@@ -130,6 +130,8 @@ const MEETING_ID = 'RM_meeting_1';
 
 class FakeStartLiveKitService {
 	composites: string[] = [];
+	egressQueries = 0;
+	inProgress: Partial<EgressInfo>[] = [];
 
 	async startRoomComposite(roomId: string): Promise<never> {
 		this.composites.push(roomId);
@@ -137,7 +139,8 @@ class FakeStartLiveKitService {
 	}
 
 	async getInProgressRecordingsEgress(): Promise<EgressInfo[]> {
-		return [];
+		this.egressQueries++;
+		return this.inProgress as EgressInfo[];
 	}
 
 	async listStandardParticipants(): Promise<ParticipantInfo[]> {
@@ -280,6 +283,36 @@ describe('RecordingService.startRecording (the guards that say no)', () => {
 		await expect(service.startRecording(ROOM_ID)).rejects.toMatchObject({ statusCode: 409 });
 
 		expect(livekit.composites).toEqual([]);
+	});
+});
+
+describe('RecordingService.startRecording (a failed start releases the room hold)', () => {
+	it('releases the hold without asking the media server when it fails before requesting the egress', async () => {
+		const { service, livekit, mutex } = buildStartService(false);
+		(service as unknown as { validateRoomForStartRecording: () => Promise<never> }).validateRoomForStartRecording =
+			async () => {
+				throw errorLivekitNotAvailable();
+			};
+
+		await expect(service.startRecording(ROOM_ID)).rejects.toMatchObject({ statusCode: 503 });
+
+		expect(livekit.egressQueries).toBe(0);
+		expect(mutex.released).toEqual([expect.stringContaining(ROOM_ID)]);
+	});
+
+	it('keeps the hold while the media server reports an egress the failed request left behind', async () => {
+		const { service, livekit, mutex } = buildStartService(false);
+		Object.assign(service, {
+			validateRoomForStartRecording: async () => ({}),
+			generateCompositeOptionsFromRequest: () => ({}),
+			generateFileOutputFromRequest: () => ({})
+		});
+		livekit.inProgress = [{ egressId: 'EG_1' }];
+
+		await expect(service.startRecording(ROOM_ID)).rejects.toThrow('unexpected egress start');
+
+		expect(livekit.egressQueries).toBe(1);
+		expect(mutex.released).toEqual([]);
 	});
 });
 
