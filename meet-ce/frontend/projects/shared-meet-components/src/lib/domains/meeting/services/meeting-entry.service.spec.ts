@@ -18,6 +18,7 @@ import { RoomAccessLinkService } from './room-access-link.service';
 describe('MeetingEntryService.prepare (resets the previous room feature state)', () => {
 	let service: MeetingEntryService;
 	let roomFeatureService: jasmine.SpyObj<RoomFeatureService>;
+	let leaveRedirectService: jasmine.SpyObj<LeaveRedirectService>;
 
 	beforeEach(() => {
 		roomFeatureService = jasmine.createSpyObj<RoomFeatureService>('RoomFeatureService', [
@@ -38,7 +39,7 @@ describe('MeetingEntryService.prepare (resets the previous room feature state)',
 			'loadParticipantNameFromStorage'
 		]);
 		const roomAccessService = jasmine.createSpyObj<RoomAccessService>('RoomAccessService', ['validateAccess']);
-		const leaveRedirectService = jasmine.createSpyObj<LeaveRedirectService>('LeaveRedirectService', [
+		leaveRedirectService = jasmine.createSpyObj<LeaveRedirectService>('LeaveRedirectService', [
 			'handleLeaveRedirectUrl'
 		]);
 
@@ -71,6 +72,16 @@ describe('MeetingEntryService.prepare (resets the previous room feature state)',
 		const decision = service.prepare({ roomId: 'room-b', showOnlyRecordings: parseOptionalBoolean('') });
 
 		expect(decision).toEqual({ kind: 'redirect', to: '/room/room-b/recordings' });
+	});
+
+	it('hands every entry its own leave redirect with its room, none included', () => {
+		service.prepare({ roomId: 'room-a', leaveRedirectUrl: 'https://app.example.com/a' });
+		service.prepare({ roomId: 'room-b' });
+
+		expect(leaveRedirectService.handleLeaveRedirectUrl.calls.allArgs()).toEqual([
+			['room-a', 'https://app.example.com/a'],
+			['room-b', undefined]
+		]);
 	});
 });
 

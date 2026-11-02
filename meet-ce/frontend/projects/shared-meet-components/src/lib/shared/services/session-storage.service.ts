@@ -42,21 +42,22 @@ export class SessionStorageService {
 	}
 
 	/**
-	 * Stores a redirect URL to be used after leaving OpenVidu Meet.
+	 * Stores the URL to redirect to after leaving OpenVidu Meet, together with the room it was given for.
 	 *
-	 * @param redirectUrl The URL to redirect to.
+	 * @param roomId The room the redirect belongs to.
+	 * @param url The URL to redirect to.
 	 */
-	public setRedirectUrl(redirectUrl: string): void {
-		this.storage.set(SessionStorageKeys.REDIRECT_URL, redirectUrl, 'session');
+	public setRedirect(roomId: string, url: string): void {
+		this.storage.set(SessionStorageKeys.REDIRECT_URL, { roomId, url }, 'session');
 	}
 
 	/**
-	 * Retrieves the redirect URL stored in sessionStorage.
+	 * Retrieves the stored redirect with the room it was given for.
 	 *
-	 * @returns The redirect URL or null if not found.
+	 * @returns The stored redirect, or null if none was stored.
 	 */
-	public getRedirectUrl(): string | null {
-		return this.storage.get<string>(SessionStorageKeys.REDIRECT_URL, 'session');
+	public getRedirect(): { roomId: string; url: string } | null {
+		return this.storage.get<{ roomId: string; url: string }>(SessionStorageKeys.REDIRECT_URL, 'session');
 	}
 
 	/**

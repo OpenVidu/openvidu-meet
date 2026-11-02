@@ -95,7 +95,7 @@ export class MeetingEntryService {
 		initialAudioActive,
 		initialVideoActive
 	}: MeetingEntryParams): MeetingEntryDecision {
-		this.leaveRedirect.handleLeaveRedirectUrl(leaveRedirectUrl);
+		this.leaveRedirect.handleLeaveRedirectUrl(roomId, leaveRedirectUrl);
 
 		this.meetingContextService.setRoomId(roomId);
 
