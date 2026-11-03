@@ -1,5 +1,5 @@
 import type { MeetRoomMemberPermissions } from '@openvidu-meet/typings';
-import { normalizePermissions } from '@openvidu-meet/typings';
+import { MeetRoomMemberRole, normalizePermissions } from '@openvidu-meet/typings';
 import type { SchemaMigrationMap, SchemaTransform } from '../models/migration.model.js';
 import { generateSchemaMigrationName } from '../models/migration.model.js';
 import type { MeetRoomMemberDocument } from '../models/mongoose-schemas/room-member.schema.js';
@@ -47,6 +47,18 @@ const normalizeMemberPermissionsTransform: SchemaTransform<MeetRoomMemberDocumen
 	return roomMember;
 };
 
+// v4 adds the `participantHandLower` permission: the normalization completes it, and a member with the
+// moderator role is then granted it, as the moderator role of every room is.
+const roomMemberMigrationV3ToV4Transform: SchemaTransform<MeetRoomMemberDocument> = (roomMember) => {
+	normalizeMemberPermissionsTransform(roomMember);
+
+	if (roomMember.baseRole === MeetRoomMemberRole.MODERATOR) {
+		roomMember.effectivePermissions.participantHandLower = true;
+	}
+
+	return roomMember;
+};
+
 /**
  * Schema migrations for MeetRoomMember.
  * Key format: schema_{collection}_v{from}_to_v{to}
@@ -54,6 +66,6 @@ const normalizeMemberPermissionsTransform: SchemaTransform<MeetRoomMemberDocumen
 export const roomMemberMigrations: SchemaMigrationMap<MeetRoomMemberDocument> = new Map([
 	[roomMemberMigrationV1ToV2Name, normalizeMemberPermissionsTransform],
 	[roomMemberMigrationV2ToV3Name, normalizeMemberPermissionsTransform],
-	[roomMemberMigrationV3ToV4Name, normalizeMemberPermissionsTransform],
+	[roomMemberMigrationV3ToV4Name, roomMemberMigrationV3ToV4Transform],
 	[roomMemberMigrationV4ToV5Name, normalizeMemberPermissionsTransform]
 ]);

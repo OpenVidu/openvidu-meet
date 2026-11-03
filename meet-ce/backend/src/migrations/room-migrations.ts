@@ -131,10 +131,14 @@ const normalizeRolePermissionsTransform: SchemaTransform<MeetRoomDocument> = (ro
 };
 
 // v6 adds the raise hand feature: its room config toggle, on like every other feature's, and its
-// `participantHandLower` permission, completed by the same normalization as the previous steps.
+// `participantHandLower` permission, completed by the same normalization as the previous steps and then
+// granted to the moderator role, as a room created from this version on has it.
 const roomMigrationV5ToV6Transform: SchemaTransform<MeetRoomDocument> = (room) => {
 	room.config.raiseHand = { enabled: true };
-	return normalizeRolePermissionsTransform(room);
+	normalizeRolePermissionsTransform(room);
+	room.roles.moderator.permissions.participantHandLower = true;
+
+	return room;
 };
 
 // v7 adds the reactions feature: its room config toggle, on like every other feature's, and its

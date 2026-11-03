@@ -111,9 +111,8 @@ describe('Room migration v5 → v6', () => {
 
 		expect(migrated.config).toEqual({ captions: { enabled: true }, raiseHand: { enabled: true } });
 		expect(Object.keys(migrated.roles.moderator.permissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
-		// Lowering other people's hands is a moderation capability: an existing room gains it when
-		// someone edits its roles, not when it is migrated.
-		expect(migrated.roles.moderator.permissions.participantHandLower).toBe(false);
+		// An existing room ends up like one created from this version on: only the moderator role has it.
+		expect(migrated.roles.moderator.permissions.participantHandLower).toBe(true);
 		expect(migrated.roles.speaker.permissions.participantHandLower).toBe(false);
 	});
 });
@@ -172,15 +171,26 @@ describe('Room member migration v1 → v2', () => {
 });
 
 describe('Room member migration v3 → v4', () => {
-	it('should complete effectivePermissions with participantHandLower and leave the overlay alone', () => {
-		const migrated = roomMemberV3ToV4({
+	const roomMember = (baseRole: string) =>
+		({
 			memberId: 'member-123',
+			baseRole,
 			customPermissions: { participantMute: true },
 			effectivePermissions: currentPermissionsWithout('participantHandLower')
-		} as unknown as MeetRoomMemberDocument);
+		}) as unknown as MeetRoomMemberDocument;
+
+	it('should complete effectivePermissions with participantHandLower and leave the overlay alone', () => {
+		const migrated = roomMemberV3ToV4(roomMember('speaker'));
 
 		expect(Object.keys(migrated.effectivePermissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
 		expect(migrated.effectivePermissions.participantHandLower).toBe(false);
+		expect(migrated.customPermissions).toStrictEqual({ participantMute: true });
+	});
+
+	it('should grant participantHandLower to a member with the moderator role, as the migrated role does', () => {
+		const migrated = roomMemberV3ToV4(roomMember('moderator'));
+
+		expect(migrated.effectivePermissions.participantHandLower).toBe(true);
 		expect(migrated.customPermissions).toStrictEqual({ participantMute: true });
 	});
 });
