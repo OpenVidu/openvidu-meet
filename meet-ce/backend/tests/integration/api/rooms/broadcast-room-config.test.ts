@@ -161,11 +161,12 @@ describe('Broadcast Room Configuration Tests', () => {
 			expect(await storedUrls(room.roomId)).toEqual({});
 		});
 
-		it('should serve a stream key with a query string, a query in the path and the live=1 flag redacted so they can be sent back', async () => {
+		it('should serve a stream key with a query string (slashes included), a query in the path and the live=1 flag redacted so they can be sent back', async () => {
 			const urls = [
 				'rtmps://live.twitch.tv/app/twitch-key?bandwidthtest=true',
 				'rtmp://b.rtmp.youtube.com/live2?backup=1/youtube-key',
-				'rtmp://media.example.com/live/flagged-key live=1'
+				'rtmp://media.example.com/live/flagged-key live=1',
+				'rtmp://media.example.com/live/stream-key?token=abc/def'
 			];
 			const room = await createRoom(
 				{
@@ -184,6 +185,7 @@ describe('Broadcast Room Configuration Tests', () => {
 			expect(room.config.broadcast.destinations.map(({ url }) => url)).toEqual([
 				'rtmps://live.twitch.tv/app/********',
 				'rtmp://b.rtmp.youtube.com/live2?backup=1/********',
+				'rtmp://media.example.com/live/********',
 				'rtmp://media.example.com/live/********'
 			]);
 
@@ -194,11 +196,13 @@ describe('Broadcast Room Configuration Tests', () => {
 			expect(Object.values(await storedUrls(room.roomId))).toEqual(urls);
 		});
 
-		it('should reject a destination URL with a fragment, with no host, or whose stream key is only a query string', async () => {
+		it('should reject a destination URL with a fragment, no host, user information, a malformed escape, or whose stream key is only a query string', async () => {
 			for (const url of [
 				'rtmp://media.example.com/live/key#frag',
 				'rtmp:///live/key',
-				'rtmp://media.example.com/live/?key=secret'
+				'rtmp://media.example.com/live/?key=secret',
+				'rtmp://user:pass@192.0.2.10/live/key1abcdefgh',
+				'rtmp://172.18.0.1:1935/live/ab%zzKEY'
 			]) {
 				const response = await createRoomRequest({
 					roomName: 'bad-url',
@@ -425,6 +429,23 @@ describe('Broadcast Room Configuration Tests', () => {
 			expect(response.status).toBe(200);
 			expect(response.body.broadcast).toEqual(room.config.broadcast);
 			expect(Object.keys(await storedUrls(room.roomId))).toEqual([room.config.broadcast.destinations[0].id]);
+		});
+
+		it('should reject a destination URL with user information or a malformed escape, keeping the saved ones', async () => {
+			const room = await createBroadcastRoom(['a']);
+
+			for (const url of [
+				'rtmp://user:pass@192.0.2.10/live/key1abcdefgh',
+				'rtmp://172.18.0.1:1935/live/ab%zzKEY'
+			]) {
+				const response = await updateRoomConfig(room.roomId, {
+					broadcast: { enabled: true, destinations: [{ name: 'Bad', url }] }
+				});
+
+				expect(response.status).toBe(422);
+			}
+
+			expect(Object.values(await storedUrls(room.roomId))).toEqual([destination('a').url]);
 		});
 
 		it('should reject an unknown destination id and a redacted URL for a new destination or with another host', async () => {

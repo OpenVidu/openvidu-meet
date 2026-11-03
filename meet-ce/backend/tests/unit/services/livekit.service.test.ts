@@ -57,8 +57,26 @@ describe('LiveKitService calls to an egress', () => {
 		});
 
 		expect(await outcome(answering(invalid).startRoomComposite('room-1', {} as StreamOutput, {}))).toBe(
-			'422 The media server refused the egress options: request has missing or invalid field: width'
+			'422 The media server refused the egress options as invalid'
 		);
+	});
+
+	it('keeps a stream key out of the log and the answer of a failed call', async () => {
+		const key = 'live_123456_SeCrEtKeY';
+		const echoing = Object.assign(new Error(`invalid url rtmp://live.example.com/app/${key}`), {
+			status: 400,
+			code: 'invalid_argument'
+		});
+		const errorLog = jest.spyOn(logger, 'error');
+
+		const start = await outcome(answering(echoing).startRoomComposite('room-1', {} as StreamOutput, {}));
+		const update = await outcome(answering(echoing).updateStream('EG_1', ['url'], []));
+
+		const logged = (errorLog.mock.calls.flat() as unknown[]).map((arg) =>
+			arg instanceof Error ? arg.message : String(arg)
+		);
+		expect([start, update, ...logged].join('\n')).not.toContain(key);
+		errorLog.mockRestore();
 	});
 
 	it('takes an update of an egress that already ended as nothing to update, and maps no egress service to 503', async () => {

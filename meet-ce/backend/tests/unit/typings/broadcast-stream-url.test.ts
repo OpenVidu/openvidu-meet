@@ -13,6 +13,8 @@ const VALID = [
 	'rtmp://media.example.com:1935/path/to/app/key',
 	'rtmp://[::1]:1935/live/key',
 	'rtmp://media.example.com/app/key live=1',
+	'rtmp://192.0.2.11/live/stream?token=abc/def',
+	'rtmp://media.example.com/live/key%20with%2Fescapes',
 	REDACTED_YOUTUBE,
 	`${REDACTED_YOUTUBE}?x=1`
 ];
@@ -30,7 +32,10 @@ const INVALID = [
 	'rtmp://media.example.com/live/key#frag',
 	'rtmp://media.example.com/live/#ov-stream-tag=x',
 	'rtmp://media.example.com/live/?key=secret',
-	'http://media.example.com/live/key'
+	'http://media.example.com/live/key',
+	'rtmp://user:pass@192.0.2.10/live/key1abcdefgh',
+	'rtmp://172.18.0.1:1935/live/ab%zzKEY',
+	'rtmp://172.18.0.1:1935/live/key%2'
 ];
 
 describe('redactStreamUrl and isRedactedStreamUrl', () => {
@@ -41,6 +46,14 @@ describe('redactStreamUrl and isRedactedStreamUrl', () => {
 		expect(redactStreamUrl('rtmp://media.example.com/app/key live=1')).toBe(
 			'rtmp://media.example.com/app/********'
 		);
+	});
+
+	it('masks the whole query attached to the stream key, slashes included', () => {
+		expect(redactStreamUrl('rtmp://192.0.2.11/live/stream?token=abc/def')).toBe('rtmp://192.0.2.11/live/********');
+		expect(redactStreamUrl('rtmp://192.0.2.11/path/to/app/key?a=1/b/c live=1')).toBe(
+			'rtmp://192.0.2.11/path/to/app/********'
+		);
+		expect(isRedactedStreamUrl('rtmp://192.0.2.11/live/********')).toBe(true);
 	});
 
 	it('masks the stream key before a trailing slash', () => {
@@ -70,7 +83,7 @@ describe('isValidStreamUrl', () => {
 		for (const url of VALID) expect([url, isValidStreamUrl(url)]).toEqual([url, true]);
 	});
 
-	it('refuses a URL without host, app or stream key, with a fragment, with whitespace or of another scheme', () => {
+	it('refuses a URL without host, app or stream key, with a fragment, whitespace, user information or a malformed escape, or of another scheme', () => {
 		for (const url of INVALID) expect([url, isValidStreamUrl(url)]).toEqual([url, false]);
 	});
 
