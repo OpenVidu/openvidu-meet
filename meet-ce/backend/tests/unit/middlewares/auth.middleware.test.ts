@@ -1,8 +1,9 @@
-import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import type { MeetRoom, MeetRoomConfig, MeetRoomMember, MeetUser } from '@openvidu-meet/typings';
 import { MeetUserRole } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { container, registerDependencies } from '../../../src/config/dependency-injector.config.js';
+import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
 import {
 	accessTokenValidator,
 	allowAnonymous,
@@ -320,6 +321,63 @@ describe('the validators, against a change made in the same millisecond as the t
 				expect(await revocation().claimRefreshToken('refresh-1')).toBe(true);
 				expect(await revocation().claimRefreshToken('refresh-1')).toBe(false);
 				expect(await revocation().claimRefreshToken('refresh-2')).toBe(true);
+			});
+
+			describe('while Redis does not answer', () => {
+				const neverSettles = () => new Promise<never>(() => {});
+
+				beforeEach(() => {
+					jest.useFakeTimers();
+				});
+				afterEach(() => {
+					jest.useRealTimers();
+					jest.restoreAllMocks();
+				});
+
+				const settledAfterTheWait = async <T>(operation: Promise<T>) => {
+					const outcome = operation.then(
+						(value) => ({ value }),
+						(error: unknown) => ({ error })
+					);
+					await jest.advanceTimersByTimeAsync(INTERNAL_CONFIG.USER_TOKEN_REVOCATION_TIMEOUT_MS);
+					return outcome;
+				};
+
+				it('answers 503 to a request that carries a user access token, instead of waiting for Redis', async () => {
+					jest.spyOn(redisService, 'getMany').mockImplementation(neverSettles);
+
+					expect(await settledAfterTheWait(validateSessionToken('session-1'))).toMatchObject({
+						error: { statusCode: 503, message: 'Redis is not available' }
+					});
+				});
+
+				it('answers 503 when Redis fails instead of answering', async () => {
+					jest.spyOn(redisService, 'getMany').mockRejectedValue(new Error('connection lost'));
+
+					expect(await settledAfterTheWait(validateSessionToken('session-1'))).toMatchObject({
+						error: { statusCode: 503 }
+					});
+				});
+
+				it('answers 503 when the end of a session cannot be recorded', async () => {
+					jest.spyOn(redisService, 'set').mockImplementation(neverSettles);
+
+					expect(await settledAfterTheWait(revocation().revokeSession('session-1'))).toMatchObject({
+						error: { statusCode: 503 }
+					});
+				});
+
+				it('answers 503 when a refresh token cannot be claimed', async () => {
+					jest.spyOn(redisService, 'setIfNotExists').mockImplementation(neverSettles);
+
+					expect(await settledAfterTheWait(revocation().claimRefreshToken('refresh-1'))).toMatchObject({
+						error: { statusCode: 503 }
+					});
+				});
+
+				it('accepts the token again once Redis answers', async () => {
+					await validateSessionToken('session-1');
+				});
 			});
 		});
 

@@ -6,9 +6,10 @@ When Redis is unreachable, every request that carries a user access token, and `
 
 ## What Changes
 
-- The revocation check waits for Redis at most about one second, so the request answers instead of hanging.
-- What the request answers when the check expires depends on the decision below (`503`, or the token is accepted).
-- A delta spec states the bounded wait; the outcome scenario is added once the decision is taken.
+- The revocation check, and the writes that record a logout, a password change or an exchanged refresh token, wait for Redis at most about one second, so the request answers instead of hanging.
+- When the wait expires or Redis fails, the request answers `503` (decision below): no token that could not be checked is ever accepted. `logoutUser` answers `503` when the end of the session cannot be recorded.
+- The console keeps the user's session when the refresh of the access token is answered `503`; it used to sign the user out on any failed refresh.
+- The REST API reference gains `503` on every operation that accepts a user access token or the refresh token, and the `503` text names Redis.
 
 ## Capabilities
 
@@ -22,16 +23,16 @@ None.
 
 ## Impact
 
-- REST API: every operation that accepts a user access token (public and internal) and `logoutUser`. With option A the OpenAPI gains a `503` response on them; with option B the contract does not change.
-- Console UI: stays usable (option B) or shows its server-unavailable state instead of hanging (option A).
+- REST API: every operation that accepts a user access token (public and internal), `logoutUser` and `refreshAccessToken` gain a `503` response in the OpenAPI.
+- Console UI: requests fail instead of hanging during the outage, and the user is not signed out by a refresh the server could not answer.
 - Webhooks, embedded API, meeting UI, deployment configuration: not affected.
-- Code: the revocation service and the access-token validator and auth controller of `meet-ce/backend`.
-- openvidu.io: none (REST API reference regenerated only if the OpenAPI changes).
+- Code: the revocation service of `meet-ce/backend`, the `503` error, a `USER_TOKEN_REVOCATION_TIMEOUT_MS` constant, and the auth error handler of the frontend library.
+- openvidu.io: the REST API reference is regenerated.
 
-## Decisions to confirm
+## Decisions
 
-- Open product question 4. Option A: fail closed, answer `503` when Redis cannot say whether the token is revoked (no revoked token is ever accepted, the console is down during the outage). Option B: fail open, accept the token when Redis cannot say (revoked tokens stay usable during an outage, the console keeps working).
-- What `logoutUser` answers when the revocation cannot be recorded. Proposed: `503` under option A and `200` under option B. Alternative: `200` in both, as the spec says today.
+- Open product question 4, decided with option A (USER, 2026-11-03): fail closed. When Redis cannot say whether a token is revoked the server answers `503`, so no revoked token is ever accepted; the console cannot make authenticated requests during the outage.
+- `logoutUser` answers `503` when the revocation cannot be recorded, as under option A of the proposal.
 
 ## Source
 

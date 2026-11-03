@@ -17,6 +17,7 @@ export const INTERNAL_CONFIG = {
 
 	// Token verification settings
 	REFRESH_CLOCK_TOLERANCE_SECONDS: 10, // Time in seconds to allow for clock skew when validating token expiration
+	USER_TOKEN_REVOCATION_TIMEOUT_MS: 1000, // Longest wait for Redis when checking or recording the revocation of a user token
 
 	// S3 configuration
 	S3_MAX_RETRIES_ATTEMPTS_ON_SAVE_ERROR: '5',

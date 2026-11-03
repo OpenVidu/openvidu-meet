@@ -1,4 +1,4 @@
-description: 'Service Unavailable: LiveKit or the blob storage provider is unreachable'
+description: 'Service Unavailable: LiveKit, the blob storage provider or Redis is unreachable'
 content:
     application/json:
         schema:

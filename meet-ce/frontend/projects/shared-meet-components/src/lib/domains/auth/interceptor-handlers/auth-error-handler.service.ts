@@ -100,6 +100,11 @@ export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 				if (error.url?.includes('/auth/refresh')) {
 					console.error('Error refreshing access token');
 
+					// A server that cannot answer says nothing about the session, so it is kept
+					if (error.status === 503) {
+						throw originalError;
+					}
+
 					// If the original request was not to the profile endpoint and does not have the skip-auth-recovery header,
 					// logout and redirect to the login page
 					if (

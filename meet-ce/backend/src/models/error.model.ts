@@ -91,6 +91,10 @@ export const errorLivekitNotAvailable = (): OpenViduMeetError => {
 	return new OpenViduMeetError('LiveKit Error', 'LiveKit is not available', 503);
 };
 
+export const errorRedisNotAvailable = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Redis Error', 'Redis is not available', 503);
+};
+
 export const errorS3NotAvailable = (error: unknown): OpenViduMeetError => {
 	return new OpenViduMeetError('S3 Error', `S3 is not available ${String(error)}`, 503);
 };
