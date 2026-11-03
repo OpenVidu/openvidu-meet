@@ -1,3 +1,6 @@
+import { ElementRef } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { MeetingShortcutsService } from '../services/meeting-shortcuts.service';
 import { isMeetingKey, isShortcut } from './keyboard-shortcut.utils';
 
 /**
@@ -49,5 +52,25 @@ describe('keyboard shortcuts', () => {
 		const input = shadowRoot.appendChild(document.createElement('input'));
 
 		expect(press(input, 'r', shadowRoot)).toEqual({ meetingKey: true, shortcut: false });
+	});
+
+	// A compact toolbar keeps the hand and reaction buttons in its closed More options menu, out of the page.
+	it('reads the root from the meeting, not from a button the toolbar took out of the page', () => {
+		const meeting = shadowRoot.appendChild(document.createElement('div'));
+		const meetingButton = shadowRoot.appendChild(document.createElement('button'));
+		TestBed.configureTestingModule({
+			providers: [MeetingShortcutsService, { provide: ElementRef, useValue: new ElementRef(meeting) }]
+		});
+		const shortcuts = TestBed.inject(MeetingShortcutsService);
+		let verdict: boolean | undefined;
+		const listener = (event: Event) => (verdict = shortcuts.isShortcut(event));
+		document.addEventListener('keydown', listener);
+
+		meetingButton.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', bubbles: true, composed: true }));
+		expect(verdict).toBeTrue();
+
+		document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', bubbles: true }));
+		expect(verdict).toBeFalse();
+		document.removeEventListener('keydown', listener);
 	});
 });

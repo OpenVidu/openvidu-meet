@@ -6,3 +6,4 @@ export * from './meeting-event-handler.service';
 export * from './meeting-lobby.service';
 export * from './meeting-state.service';
 export * from './meeting-moderation.service';
+export * from './meeting-shortcuts.service';
