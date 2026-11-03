@@ -121,9 +121,9 @@ export enum MeetRecordingEncodingPreset {
 export interface MeetRecordingEncodingOptions {
 	/** Video encoding configuration */
 	video: {
-		/** Video width in pixels */
+		/** Video width in pixels: an even number of at least 16 */
 		width: number;
-		/** Video height in pixels */
+		/** Video height in pixels: an even number of at least 16 */
 		height: number;
 		/** Frame rate in fps */
 		framerate: number;
@@ -133,7 +133,7 @@ export interface MeetRecordingEncodingOptions {
 		bitrate: number;
 		/** Keyframe interval in seconds */
 		keyFrameInterval: number;
-		/** Video depth (pixel format) in bits */
+		/** Video depth (pixel format) in bits: 8, 16 or 24 */
 		depth: number;
 	};
 

@@ -50,6 +50,17 @@ describe('LiveKitService calls to an egress', () => {
 		expect(await start(twirp(500))).toMatch(/^500 /);
 	});
 
+	it('answers 422 for a start whose options the egress cannot use', async () => {
+		const invalid = Object.assign(new Error('request has missing or invalid field: width'), {
+			status: 400,
+			code: 'invalid_argument'
+		});
+
+		expect(await outcome(answering(invalid).startRoomComposite('room-1', {} as StreamOutput, {}))).toBe(
+			'422 The media server refused the egress options: request has missing or invalid field: width'
+		);
+	});
+
 	it('takes an update of an egress that already ended as nothing to update, and maps no egress service to 503', async () => {
 		const update = (failure?: unknown) => outcome(answering(failure).updateStream('EG_1', ['url'], []));
 

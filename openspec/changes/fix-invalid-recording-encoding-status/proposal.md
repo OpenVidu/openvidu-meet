@@ -13,7 +13,7 @@ error at every join.
   accepts (whole width and height, even and at least 16; audio and video depth in the accepted set) and answer
   `422` otherwise.
 - A start the media server still rejects as an invalid request answers `422`; `503` stays for a media server that is
-  unavailable, out of capacity or unreachable.
+  unavailable or unreachable, and any other failure answers `500`.
 - No spec change: the fix makes `room-config` "Recording encoding" (a valid value, `422` otherwise) and `recordings`
   "Recording layout and encoding" hold for these values.
 
@@ -37,7 +37,7 @@ None (`skip_specs: true`). The code is brought in line with `room-config` "Recor
 
 ## Decisions to confirm
 
-- Rooms already stored with an invalid encoding. Proposed: no migration; their start answers `422`, which tells the integrator to fix the room. Alternative: a forward-only migration resetting the encoding to `H264_720P_30`.
+- Rooms already stored with an invalid encoding. Decided: no migration; their start answers `422`, which tells the integrator to fix the room. Alternative: a forward-only migration resetting the encoding to `H264_720P_30`.
 
 ## Source
 

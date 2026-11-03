@@ -206,7 +206,7 @@ content:
                                           codec: H264_HIGH
                                           bitrate: 2500
                                           keyFrameInterval: 2
-                                          depth: 2
+                                          depth: 24
                                       audio:
                                           codec: AAC
                                           bitrate: 192
