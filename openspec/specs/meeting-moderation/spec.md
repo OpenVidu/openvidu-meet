@@ -9,7 +9,7 @@ Surfaces: REST API (`participantKick`, `participantMute`, `participantMuteAll`, 
 ## Requirements
 
 ### Requirement: Who may moderate
-The moderation operations SHALL accept an API key, which acts with every permission, or a room member token for that room holding the operation's permission: `participantKick` to kick, `participantMute` to mute, `participantPromote` to promote or demote. A token for another room or lacking the permission SHALL get 403, a request without credentials 401, and a room that does not exist 404.
+The moderation operations SHALL accept an API key, which acts with every permission, or a room member token for that room holding the operation's permission: `participantKick` to kick, `participantMute` to mute, `participantPromote` to promote or demote. A token for another room SHALL get 403 whether or not the room exists, a token lacking the permission 403, a request without credentials 401, and an API key for a room that does not exist 404.
 
 #### Scenario: API key
 - **GIVEN** a running meeting
@@ -22,8 +22,13 @@ The moderation operations SHALL accept an API key, which acts with every permiss
 - **THEN** the request answers 403 and nothing is muted
 
 #### Scenario: Unknown room
-- **WHEN** a client holding `participantKick` calls `participantKick` for a room that does not exist
+- **WHEN** a backend calls `participantKick` with the API key for a room that does not exist
 - **THEN** the request answers 404
+
+#### Scenario: Token of another room
+- **GIVEN** a client holding `participantKick` in room A
+- **WHEN** it calls `participantKick` for room B, once with an existing room and once with a room that does not exist
+- **THEN** the request answers 403 to both
 
 ### Requirement: Kick a participant
 `DELETE /api/v1/meetings/{roomId}/participants/{participantIdentity}` (`participantKick`) SHALL disconnect that participant from the meeting, whatever their role, and they SHALL leave with reason `participant_kicked` (their own `meetingLeft`, and the `participantLeft` webhook and event). It SHALL answer 404 when the participant is not in the meeting, and SHALL answer 404 and disconnect nothing for a recorder or an agent, which are never participants of the meeting.

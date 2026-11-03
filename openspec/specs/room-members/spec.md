@@ -117,7 +117,7 @@ The server SHALL allow `addRoomMember`, `getRoomMembers`, `updateRoomMember`, `d
 - **THEN** the server answers `401`
 
 ### Requirement: Reading one member
-`getRoomMember` SHALL be allowed with an API key, to an admin, to the room's owner, to a `room_manager` reading their own membership, and with a room member token issued for that same member. A room that does not exist SHALL give `404`. Any other caller SHALL get `403` whether or not the member exists, and only a caller allowed to read the member SHALL get `404` for a member that does not exist.
+`getRoomMember` SHALL be allowed with an API key, to an admin, to the room's owner, to a `room_manager` reading their own membership, and with a room member token of that member. A token of another room SHALL get `403` whether or not the room exists; other callers SHALL get `404` for a missing room. Any other caller SHALL get `403` whether or not the member exists, and only a caller allowed to read it SHALL get `404` for a missing member.
 
 #### Scenario: Own member through a room member token
 - **GIVEN** an identified guest holding a room member token obtained with their personal link
@@ -142,6 +142,15 @@ The server SHALL allow `addRoomMember`, `getRoomMembers`, `updateRoomMember`, `d
 - **GIVEN** a room member token obtained with the room's anonymous speaker link
 - **WHEN** its holder calls `getRoomMember` for an existing `memberId` and for one that is not a member of the room
 - **THEN** the server answers `403` to both
+
+#### Scenario: Probing for rooms with another room's token
+- **GIVEN** a room member token of room A
+- **WHEN** its holder calls `getRoomMember` for room B, once with an existing room and once with a room that does not exist
+- **THEN** the server answers `403` to both
+
+#### Scenario: Unknown room for a manager
+- **WHEN** a user with access to read members calls `getRoomMember` for a room that does not exist
+- **THEN** the server answers `404`
 
 ### Requirement: Listing members
 `getRoomMembers` SHALL return a page of the room's members filtered by `name` (match mode `exact` by default, or `prefix`, `partial` or `regex`, case-sensitive unless `nameCaseInsensitive` is `true`), `baseRole` and `type`, sorted by `membershipDate` (the default) or `name`, in descending order unless `sortOrder` says otherwise, with `maxItems` defaulting to 10 and capped at 100.
