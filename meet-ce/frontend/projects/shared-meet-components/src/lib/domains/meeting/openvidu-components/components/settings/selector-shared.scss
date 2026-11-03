@@ -6,6 +6,25 @@
 	color: var(--ov-text-secondary-color);
 }
 
+// A warning that sits under a field, to tell the participant what a pick will do.
+@mixin warning() {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 8px 10px;
+	border: 1px solid color-mix(in srgb, var(--ov-warning-color, #fbbc04) 55%, transparent);
+	border-radius: 8px;
+	background: color-mix(in srgb, var(--ov-warning-color, #fbbc04) 16%, transparent);
+	color: var(--ov-text-primary-color);
+	font-size: 13px;
+	line-height: 1.4;
+
+	mat-icon {
+		@include icon(18px);
+		color: var(--ov-warning-color, #fbbc04);
+	}
+}
+
 @mixin icon($size: 20px) {
 	flex-shrink: 0;
 	font-size: $size;

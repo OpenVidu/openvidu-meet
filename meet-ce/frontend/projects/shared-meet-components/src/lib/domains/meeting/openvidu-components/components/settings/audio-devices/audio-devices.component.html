@@ -85,9 +85,10 @@
 			</button>
 
 			@if (switchesAtOnce && microphones().length > 1) {
-				<span id="settings-microphone-switch-hint" class="device-hint">
-					{{ 'PANEL.SETTINGS.MICROPHONE_SWITCHES_AT_ONCE' | translate }}
-				</span>
+				<div id="settings-microphone-switch-hint" class="device-warning" role="note">
+					<mat-icon>warning</mat-icon>
+					<span>{{ 'PANEL.SETTINGS.MICROPHONE_SWITCHES_AT_ONCE' | translate }}</span>
+				</div>
 			}
 
 			<div
