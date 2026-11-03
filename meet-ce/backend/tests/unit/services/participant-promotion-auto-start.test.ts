@@ -12,7 +12,9 @@ import type { ParticipantInfo, Room } from 'livekit-server-sdk';
 import '../../../src/config/dependency-injector.config.js';
 import type { LiveKitService } from '../../../src/services/livekit.service.js';
 import type { LoggerService } from '../../../src/services/logger.service.js';
+import { ParticipantTokenRevocationService } from '../../../src/services/participant-token-revocation.service.js';
 import type { RecordingService } from '../../../src/services/recording.service.js';
+import type { RedisService } from '../../../src/services/redis.service.js';
 import { RoomMemberService } from '../../../src/services/room-member.service.js';
 import type { RoomService } from '../../../src/services/room.service.js';
 import type { TokenService } from '../../../src/services/token.service.js';
@@ -102,7 +104,7 @@ describe('RoomMemberService.updateParticipantRole — B10: a promotion re-evalua
 				{},
 				recordingService as unknown as RecordingService,
 				{ sendParticipantRoleChangedWebhook: () => {} } as unknown as WebhookDispatcherService,
-				{ revokeIssuedTokens: async () => {} },
+				{ revokeIssuedTokens: async () => {}, getIssueTime: async () => Date.now() },
 				{ withRetryLock: (_key: string, _ttl: number, update: () => Promise<unknown>) => update() }
 			] as unknown as ConstructorParameters<typeof RoomMemberService>)
 		);
@@ -164,16 +166,15 @@ describe('RoomMemberService.updateParticipantRole — B10: a promotion re-evalua
 // The media server hands the client a token built from the metadata a demotion pushes, which is what it reconnects
 // with, so that metadata must not count as one of the tokens the demotion revokes.
 describe('RoomMemberService.updateParticipantRole (the metadata a demotion pushes)', () => {
-	afterEach(() => {
-		jest.restoreAllMocks();
-	});
+	const redisStore = new Map<string, string>();
+	const revocation = new ParticipantTokenRevocationService({
+		set: async (key: string, value: unknown) => redisStore.set(key, String(value)),
+		get: async (key: string) => redisStore.get(key) ?? null
+	} as unknown as RedisService);
+	let pushed: { metadata: string }[];
+	let webhooks: unknown[];
 
-	it('stamps the demoted metadata after revoking the earlier tokens', async () => {
-		let clock = 1_000;
-		jest.spyOn(Date, 'now').mockImplementation(() => ++clock);
-		let revokedAt = Infinity;
-		let pushedAt = -Infinity;
-
+	const demotion = (updateParticipant: () => Promise<unknown>) => {
 		const roomMemberService = new RoomMemberService(
 			...([
 				{ warn: () => {}, debug: () => {}, verbose: () => {} },
@@ -184,27 +185,55 @@ describe('RoomMemberService.updateParticipantRole (the metadata a demotion pushe
 				{},
 				{
 					getParticipant: async () => ({ identity: IDENTITY, metadata: promotedModeratorMetadata }),
-					updateParticipant: async (
-						_roomId: string,
-						identity: string,
-						{ metadata }: { metadata: string }
-					) => {
-						pushedAt = JSON.parse(metadata).iat;
-						return { identity, metadata, tracks: [] };
+					updateParticipant: async (_roomId: string, identity: string, update: { metadata: string }) => {
+						pushed.push(update);
+						return updateParticipant().then(() => ({ identity, metadata: update.metadata, tracks: [] }));
 					}
 				},
 				{},
 				{},
 				{},
 				{},
-				{ sendParticipantRoleChangedWebhook: () => {} },
-				{ revokeIssuedTokens: async () => (revokedAt = Date.now()) },
+				{ sendParticipantRoleChangedWebhook: (event: unknown) => webhooks.push(event) },
+				revocation,
 				{ withRetryLock: (_key: string, _ttl: number, update: () => Promise<unknown>) => update() }
 			] as unknown as ConstructorParameters<typeof RoomMemberService>)
 		);
 
-		await roomMemberService.updateParticipantRole(ROOM_ID, IDENTITY, MeetParticipantModerationAction.DOWNGRADE);
+		return () =>
+			roomMemberService.updateParticipantRole(ROOM_ID, IDENTITY, MeetParticipantModerationAction.DOWNGRADE);
+	};
 
-		expect(pushedAt).toBeGreaterThanOrEqual(revokedAt);
+	beforeEach(() => {
+		redisStore.clear();
+		pushed = [];
+		webhooks = [];
+	});
+
+	afterEach(() => {
+		jest.restoreAllMocks();
+	});
+
+	it('stamps the demoted metadata so that it is not revoked, while an earlier token is', async () => {
+		const now = jest.spyOn(Date, 'now').mockReturnValue(1_000);
+		await demotion(async () => {})();
+
+		const pushedAt = JSON.parse(pushed[0].metadata).iat;
+		expect(await revocation.isRevoked(ROOM_ID, IDENTITY, pushedAt)).toBe(false);
+		expect(await revocation.isRevoked(ROOM_ID, IDENTITY, 1_000)).toBe(true);
+		now.mockRestore();
+	});
+
+	it('revokes the earlier tokens even when the media server cannot apply the demotion, and reports nothing', async () => {
+		jest.spyOn(Date, 'now').mockReturnValue(1_000);
+
+		await expect(
+			demotion(async () => {
+				throw new Error('media server unavailable');
+			})()
+		).rejects.toThrow('media server unavailable');
+
+		expect(await revocation.isRevoked(ROOM_ID, IDENTITY, 1_000)).toBe(true);
+		expect(webhooks).toEqual([]);
 	});
 });

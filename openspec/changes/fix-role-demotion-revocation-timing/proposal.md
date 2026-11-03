@@ -28,11 +28,13 @@ None (`skip_specs: true`). The code is brought in line with `authentication` "De
 - Code: the demotion and token paths of `room-member.service.ts`, `participant-token-revocation.service.ts` and the lock constant of `internal-config.ts` in `meet-ce/backend`.
 - openvidu.io: none.
 
-## Decisions to confirm
+## Decisions
 
-- Order of the revocation and the media server update. Proposed: revoke first (a revocation whose update then fails costs that participant one regeneration, which keeps the promotion). Alternative: keep the order and compensate by retrying the revocation.
-- Lock lifetime. Proposed: raise it above two media server calls. Alternative: shorten the media server client timeout.
-- Delivery: private advisory or regular public pull request.
+Taken with the proposed option each time (USER, 2026-11-03):
+
+- The revocation is recorded before the media server update (already in `fix-reconnect-with-earlier-join-token`).
+- The lock is raised above the two media server requests it covers.
+- Delivery: a regular public pull request; the demotion of a live participant is new in the unreleased 3.10.0.
 
 ## Source
 

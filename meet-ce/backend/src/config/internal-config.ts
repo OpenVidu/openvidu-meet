@@ -39,7 +39,8 @@ export const INTERNAL_CONFIG = {
 	MEETING_MIN_DURATION_MINUTES_LIMIT: 1, // Lowest value config.maxDurationMinutes may be set to; 0 would be indistinguishable from the null that means no limit
 	MEETING_MAX_DURATION_MINUTES_LIMIT: 1_440, // Highest value config.maxDurationMinutes may be set to (1 day)
 	REVOKED_TOKEN_SESSION_TTL: '1h' as StringValue, // Redis TTL for the mark of a session removed as it joined with a revoked room member token; consumed by its participant_left, this only bounds a mark whose departure never arrives
-	PARTICIPANT_METADATA_LOCK_TTL: '10s' as StringValue, // Redis lock TTL serializing the read-modify-write of a participant's LiveKit metadata (role change, token regeneration); released as soon as the write lands
+	LIVEKIT_REQUEST_TIMEOUT_SECONDS: 10, // Timeout in seconds of each request to the media server API
+	PARTICIPANT_METADATA_LOCK_TTL: '30s' as StringValue, // Redis lock TTL serializing the read-modify-write of a participant's LiveKit metadata (role change, token regeneration); released as soon as the write lands, and above two media server requests (the read and the update) so it never lapses under them
 	PARTICIPANT_METADATA_LOCK_RETRY_DELAY: '100ms' as StringValue, // Delay between attempts to take a participant's metadata lock held by another writer
 	PARTICIPANT_METADATA_LOCK_MAX_ATTEMPTS: 30, // ~3s budget before the write is refused with a 409
 

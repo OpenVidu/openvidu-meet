@@ -35,7 +35,8 @@ export class LiveKitService {
 		this.lk = new LiveKitAPI({
 			host: livekitUrlHostname,
 			apiKey: MEET_ENV.LIVEKIT_API_KEY,
-			secret: MEET_ENV.LIVEKIT_API_SECRET
+			secret: MEET_ENV.LIVEKIT_API_SECRET,
+			requestTimeout: INTERNAL_CONFIG.LIVEKIT_REQUEST_TIMEOUT_SECONDS
 		});
 	}
 
