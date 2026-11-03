@@ -610,6 +610,8 @@ export class RoomMemberService {
 				participantIdentity = `${identityPrefix}-${uid(15)}`;
 			}
 
+			tokenMetadata.iat = await this.participantTokenRevocationService.getIssueTime(roomId, participantIdentity!);
+
 			try {
 				// Reserve a unique name for the participant
 				participantName = await this.participantNameService.reserveUniqueName(
@@ -631,8 +633,6 @@ export class RoomMemberService {
 				`Regenerating room member token for participant '${participantIdentity}' in room '${roomId}'`
 			);
 
-			// The push stamps tokenMetadata itself with its time, after any demotion that held the lock first, so the
-			// demotion does not revoke the token issued from it.
 			const participant = await this.applyPermissionsToLiveParticipant(
 				roomId,
 				participantIdentity!,
@@ -950,7 +950,7 @@ export class RoomMemberService {
 		}
 
 		return {
-			iat: Date.now(),
+			iat: await this.participantTokenRevocationService.getIssueTime(roomId, participantIdentity),
 			roomId,
 			memberId: participantMetadata.memberId,
 			userId: participantMetadata.userId,
@@ -1169,7 +1169,7 @@ export class RoomMemberService {
 				}
 
 				// Stamped after the revocation, so the token the media server derives from it is not revoked.
-				metadata.iat = Date.now();
+				metadata.iat = await this.participantTokenRevocationService.getIssueTime(roomId, participantIdentity);
 				const permission = this.buildLiveParticipantPermission(
 					participant.permission,
 					metadata.permissions,
@@ -1237,7 +1237,7 @@ export class RoomMemberService {
 				metadata.isPromotedModerator = true;
 			}
 
-			metadata.iat = Date.now();
+			metadata.iat = await this.participantTokenRevocationService.getIssueTime(roomId, participantIdentity);
 			await this.livekitService.updateParticipant(roomId, participantIdentity, {
 				metadata: JSON.stringify(metadata),
 				permission: this.buildLiveParticipantPermission(

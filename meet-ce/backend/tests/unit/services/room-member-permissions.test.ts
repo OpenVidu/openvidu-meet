@@ -2,13 +2,16 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@j
 import type { MeetRoomMemberPermissions, MeetRoomRoles } from '@openvidu-meet/typings';
 import { MEET_PERMISSION_KEYS, MeetRoomMemberRole, MeetRoomMemberUIBadge, TrackSource } from '@openvidu-meet/typings';
 import type { ParticipantInfo } from 'livekit-server-sdk';
+import ms from 'ms';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see meeting-mute.test.ts).
 import { container, registerDependencies } from '../../../src/config/dependency-injector.config.js';
+import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
 import type { ParticipantMeetingMetadata } from '../../../src/helpers/participant.helper.js';
 import { errorParticipantNotFound } from '../../../src/models/error.model.js';
 import { RoomRepository } from '../../../src/repositories/room.repository.js';
 import { MutexService } from '../../../src/services/mutex.service.js';
+import { ParticipantTokenRevocationService } from '../../../src/services/participant-token-revocation.service.js';
 import { RedisService } from '../../../src/services/redis.service.js';
 import { RoomMemberService } from '../../../src/services/room-member.service.js';
 import { TokenService } from '../../../src/services/token.service.js';
@@ -143,7 +146,8 @@ describe('RoomMemberService.updateRoomMember on a member in the meeting', () => 
 				{},
 				{
 					isRevoked: async (_roomId: string, _identity: string, issuedAt: number) =>
-						tokensRevokedAt !== undefined && issuedAt < tokensRevokedAt
+						tokensRevokedAt !== undefined && issuedAt < tokensRevokedAt,
+					getIssueTime: async () => Date.now()
 				},
 				{ withRetryLock: (_key: string, _ttl: number, update: () => Promise<unknown>) => update() }
 			] as unknown as ConstructorParameters<typeof RoomMemberService>)
@@ -288,7 +292,7 @@ describe('RoomMemberService.refreshRoomMemberToken from the participant in the m
 				{},
 				{},
 				{},
-				{},
+				container.get(ParticipantTokenRevocationService),
 				{ withRetryLock: (_key: string, _ttl: number, update: () => Promise<unknown>) => update() }
 			] as unknown as ConstructorParameters<typeof RoomMemberService>)
 		);
@@ -322,5 +326,14 @@ describe('RoomMemberService.refreshRoomMemberToken from the participant in the m
 			permissions: speaker,
 			badge: MeetRoomMemberUIBadge.OTHER
 		});
+	});
+});
+
+// A metadata update holds the participant's lock across a read and an update of the media server.
+describe('the participant metadata lock', () => {
+	it('outlasts the two media server requests it covers', () => {
+		const requestsMs = 2 * INTERNAL_CONFIG.LIVEKIT_REQUEST_TIMEOUT_SECONDS * 1000;
+
+		expect(ms(INTERNAL_CONFIG.PARTICIPANT_METADATA_LOCK_TTL)).toBeGreaterThan(requestsMs);
 	});
 });
