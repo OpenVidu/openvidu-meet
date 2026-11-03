@@ -22,6 +22,7 @@ import {
 	LanguageService,
 	LoginComponent,
 	MeetingContextService,
+	MeetingThemeService,
 	NavigationErrorReason,
 	RoomRecordingsComponent,
 	RuntimeConfigService,
@@ -77,8 +78,9 @@ const optionalBooleanAttribute = (value: unknown): boolean | undefined =>
 	host: {
 		'[attr.role]': '"application"',
 		'[attr.aria-label]': '"OpenVidu Meet"',
-		// :host([data-theme='dark']) in app.material.scss cannot read document[data-theme] across the shadow boundary.
-		'[attr.data-theme]': 'themeService.isDark() ? "dark" : null'
+		// The theme lives on the element, never on the host page's document.
+		'[attr.data-theme]': 'themeService.isDark() ? "dark" : null',
+		'[style]': 'meetingThemeService.appliedVariables()'
 	}
 })
 export class App {
@@ -93,6 +95,7 @@ export class App {
 
 	// ── Injected dependencies ────────────────────────────────────────────────
 	protected readonly themeService = inject(ThemeService);
+	protected readonly meetingThemeService = inject(MeetingThemeService);
 	protected readonly router = inject(WcRouterService);
 	private readonly commandService = inject(EmbeddedCommandService);
 	private readonly eventBus = inject(EmbeddedEventBusService);

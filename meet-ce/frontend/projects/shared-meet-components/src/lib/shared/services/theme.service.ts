@@ -1,12 +1,12 @@
-import { computed, DOCUMENT, inject, Service, signal } from '@angular/core';
-import { MeetingThemeMode, MeetingThemeService } from '../../domains/meeting/openvidu-components';
+import { computed, inject, Service, signal } from '@angular/core';
+import { MeetingThemeMode, MeetingThemeService, THEME_ROOT_ELEMENT } from '../../domains/meeting/openvidu-components';
 import { MeetStorageService } from './storage.service';
 
 export type Theme = 'light' | 'dark';
 
 @Service()
 export class ThemeService {
-	private document = inject(DOCUMENT);
+	private readonly root = inject(THEME_ROOT_ELEMENT);
 	protected meetingThemeService = inject(MeetingThemeService);
 	private readonly meetStorageService = inject(MeetStorageService);
 
@@ -50,23 +50,18 @@ export class ThemeService {
 	 */
 	private setTheme(theme: Theme, saveToStorage = true): void {
 		this._currentTheme.set(theme);
-		this.applyThemeToDocument(theme);
+		this.applyThemeToRoot(theme);
 		// Persistence flows through the single owner (MeetStorageService) via the components chain:
 		// one key, one format, one write path. When saveToStorage is false the theme is applied but
 		// not remembered (e.g. following the system preference, or a themed room config).
 		this.meetingThemeService.setTheme(theme as MeetingThemeMode, saveToStorage);
 	}
 
-	/**
-	 * Applies the theme to the document
-	 */
-	private applyThemeToDocument(theme: Theme): void {
-		const htmlElement = this.document.documentElement;
-
+	private applyThemeToRoot(theme: Theme): void {
 		if (theme === 'dark') {
-			htmlElement.setAttribute('data-theme', 'dark');
+			this.root?.setAttribute('data-theme', 'dark');
 		} else {
-			htmlElement.removeAttribute('data-theme');
+			this.root?.removeAttribute('data-theme');
 		}
 	}
 
