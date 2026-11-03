@@ -1,12 +1,19 @@
 /**
+ * Whether a key press reached the meeting. `root` is the meeting's root node: the document in the
+ * standalone app and the iframe, the element's shadow root inside `<openvidu-meet>`, where a key
+ * pressed with the focus on the host page never reaches it.
+ */
+export const isMeetingKey = (event: Event, root: Node): boolean => event.composedPath().includes(root);
+
+/**
  * Whether a key press may act as a meeting shortcut: once per press, never with a modifier and never
  * while the participant is typing somewhere. The typing check reads the element the key went to, which
  * inside a shadow root (the webcomponent's, or one of the host page's) is not the event's target.
  */
-export const isShortcut = (event: Event): boolean => {
+export const isShortcut = (event: Event, root: Node): boolean => {
 	const { repeat, ctrlKey, metaKey, altKey } = event as KeyboardEvent;
 	const origin = event.composedPath()[0] as HTMLElement | undefined;
 	const typing = origin?.isContentEditable || origin?.matches?.('input, textarea, select');
 
-	return !repeat && !ctrlKey && !metaKey && !altKey && !typing;
+	return isMeetingKey(event, root) && !repeat && !ctrlKey && !metaKey && !altKey && !typing;
 };

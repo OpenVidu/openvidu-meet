@@ -50,6 +50,7 @@ export class MeetingToolbarReactionsButtonComponent {
 	private readonly overlay = inject(Overlay);
 	private readonly viewContainerRef = inject(ViewContainerRef);
 	private readonly injector = inject(Injector);
+	private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
 	/** Whether the toolbar is in its mobile layout, which shows the reactions as a grid of menu items */
 	isMobile = input<boolean>(false);
@@ -74,7 +75,7 @@ export class MeetingToolbarReactionsButtonComponent {
 	/** `E` opens the picker and puts the keyboard on its first reaction. */
 	@HostListener('document:keydown.e', ['$event'])
 	onShortcut(event: Event): void {
-		if (!isShortcut(event)) return;
+		if (!isShortcut(event, this.meetingRoot())) return;
 
 		event.preventDefault();
 		this.openPicker({ focus: true });
@@ -170,7 +171,7 @@ export class MeetingToolbarReactionsButtonComponent {
 			return;
 		}
 
-		const reaction = isShortcut(event) ? this.reactions[Number(event.key) - 1] : undefined;
+		const reaction = isShortcut(event, this.meetingRoot()) ? this.reactions[Number(event.key) - 1] : undefined;
 
 		if (!reaction) return;
 
@@ -178,6 +179,10 @@ export class MeetingToolbarReactionsButtonComponent {
 		this.closePicker();
 		this.send(reaction);
 	};
+
+	private meetingRoot(): Node {
+		return this.elementRef.nativeElement.getRootNode();
+	}
 
 	private pickerElement(): HTMLElement | null | undefined {
 		return this.picker?.overlayElement.querySelector<HTMLElement>('.reaction-picker');

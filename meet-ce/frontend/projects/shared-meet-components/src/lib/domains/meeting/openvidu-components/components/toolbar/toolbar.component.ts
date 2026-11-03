@@ -54,6 +54,7 @@ import { ToolbarMediaButtonsComponent } from './toolbar-media-buttons/toolbar-me
 import { ToolbarPanelButtonsComponent } from './toolbar-panel-buttons/toolbar-panel-buttons.component';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';
+import { isMeetingKey } from '../../../utils/keyboard-shortcut.utils';
 
 /**
  * The **ToolbarComponent** is hosted inside of the {@link MeetingViewComponent}.
@@ -397,7 +398,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 		// change-detection tick per keystroke; fullscreen state itself is tracked reactively via the
 		// fullscreenchange subscription.
 		const onDocumentKeyDown = (event: KeyboardEvent) => {
-			if (event.key !== 'F11') return;
+			if (event.key !== 'F11' || !isMeetingKey(event, this.host.getRootNode())) return;
 
 			event.preventDefault();
 			this.toggleFullscreen();

@@ -1,4 +1,4 @@
-import { Component, computed, HostListener, inject, signal } from '@angular/core';
+import { Component, computed, ElementRef, HostListener, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -39,6 +39,7 @@ export class MeetingToolbarExtraButtonsComponent {
 	protected runtimeConfigService = inject(RuntimeConfigService);
 	protected roomAccessLinkService = inject(RoomAccessLinkService);
 	protected loggerService = inject(LoggerService);
+	private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingToolbarExtraButtons');
 
 	/**
@@ -78,7 +79,7 @@ export class MeetingToolbarExtraButtonsComponent {
 	/** `R` raises or lowers the hand once per press. */
 	@HostListener('document:keydown.r', ['$event'])
 	onHandShortcut(event: Event): void {
-		if (!isShortcut(event) || !this.showHandButton()) return;
+		if (!isShortcut(event, this.elementRef.nativeElement.getRootNode()) || !this.showHandButton()) return;
 
 		void this.onHandClick();
 	}

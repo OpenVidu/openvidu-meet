@@ -369,6 +369,31 @@ test.describe('Room Features E2E Tests', () => {
 			await leaveMeeting(page);
 		});
 
+		test('should take the meeting shortcuts only from keys pressed inside the element', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'speaker' });
+			const raiseHandButton = wcLocator(page, '#raise-hand-button');
+			await page.evaluate(() => {
+				const hostButton = document.createElement('button');
+				hostButton.id = 'host-shortcut-probe';
+				hostButton.textContent = 'Host button';
+				document.body.appendChild(hostButton);
+			});
+
+			await page.locator('#host-shortcut-probe').focus();
+			await page.keyboard.press('r');
+			await page.keyboard.press('e');
+
+			await expect(raiseHandButton).not.toHaveClass(/active/);
+			await expect(wcLocator(page, '#reactions-button')).not.toHaveClass(/active/);
+
+			await wcLocator(page, '#layout-container').click({ position: { x: 5, y: 5 } });
+			await page.keyboard.press('r');
+
+			await expect(raiseHandButton).toHaveClass(/active/);
+
+			await leaveMeeting(page);
+		});
+
 		test('should show activities panel', async ({ page }) => {
 			await openMeeting(page, roomId, { role: 'moderator' });
 

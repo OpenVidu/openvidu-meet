@@ -6,6 +6,11 @@ $side-panel-width: 380px;
 #meeting-stage {
 	height: 100%;
 }
+
+// Focusable only so a click anywhere in the meeting keeps the keyboard in it.
+#meeting-view-container {
+	outline: none;
+}
 #meeting-stage {
 	--ov-status-rail-height: 44px;
 
