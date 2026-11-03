@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Reading one member
-`getRoomMember` SHALL be allowed with an API key, to an admin, to the room's owner, to a `room_manager` reading their own membership, and with a room member token issued for that same member. A room member token issued for another room SHALL get `403` whether or not the room exists; for other callers a room that does not exist SHALL give `404`. Any other caller SHALL get `403` whether or not the member exists, and only a caller allowed to read the member SHALL get `404` for a member that does not exist.
+`getRoomMember` SHALL be allowed with an API key, to an admin, to the room's owner, to a `room_manager` reading their own membership, and with a room member token of that member. A token of another room SHALL get `403` whether or not the room exists; other callers SHALL get `404` for a missing room. Any other caller SHALL get `403` whether or not the member exists, and only a caller allowed to read it SHALL get `404` for a missing member.
 
 #### Scenario: Own member through a room member token
 - **GIVEN** an identified guest holding a room member token obtained with their personal link
