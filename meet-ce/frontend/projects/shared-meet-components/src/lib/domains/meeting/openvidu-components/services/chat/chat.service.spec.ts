@@ -12,6 +12,8 @@ describe('ChatService', () => {
 
 	let service: ChatService;
 	let notificationService: jasmine.SpyObj<NotificationService>;
+	let sendText: jasmine.Spy;
+	let remoteParticipants: { identity: string; canReadChat: boolean }[];
 	const chatPanelButton = signal(true);
 
 	beforeEach(() => {
@@ -21,6 +23,8 @@ describe('ChatService', () => {
 			'dismissNotification'
 		]);
 		notificationService.showNotification.and.returnValue(NOTICE_ID);
+		sendText = jasmine.createSpy('sendText').and.resolveTo();
+		remoteParticipants = [];
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -28,7 +32,10 @@ describe('ChatService', () => {
 				{ provide: NotificationService, useValue: notificationService },
 				{ provide: PanelService, useValue: { isChatPanelOpened: () => false } },
 				{ provide: MeetingUiConfigService, useValue: { chatPanelButtonSignal: chatPanelButton } },
-				{ provide: ParticipantService, useValue: {} },
+				{
+					provide: ParticipantService,
+					useValue: { remoteParticipants: () => remoteParticipants, sendText, getMyName: () => 'Me' }
+				},
 				{ provide: AssetsService, useValue: { chatMessageSound: '' } }
 			]
 		});
@@ -53,6 +60,27 @@ describe('ChatService', () => {
 
 		expect(service.chatMessages()).toEqual([]);
 		expect(notificationService.showNotification).not.toHaveBeenCalled();
+	});
+
+	it('sends a message as a text stream to the participants holding chatRead only', async () => {
+		remoteParticipants = [
+			{ identity: 'reader', canReadChat: true },
+			{ identity: 'non-reader', canReadChat: false }
+		];
+
+		await service.sendMessage('hello  there');
+
+		expect(sendText).toHaveBeenCalledOnceWith('hello there', { topic: 'chat', destinationIdentities: ['reader'] });
+		expect(service.chatMessages()).toEqual([{ isLocal: true, participantName: 'Me', message: 'hello there' }]);
+	});
+
+	it('sends nothing when no participant holds chatRead, and still shows the own message', async () => {
+		remoteParticipants = [{ identity: 'non-reader', canReadChat: false }];
+
+		await service.sendMessage('hello');
+
+		expect(sendText).not.toHaveBeenCalled();
+		expect(service.chatMessages()).toEqual([{ isLocal: true, participantName: 'Me', message: 'hello' }]);
 	});
 
 	it('announces the first message after a clear as new', async () => {

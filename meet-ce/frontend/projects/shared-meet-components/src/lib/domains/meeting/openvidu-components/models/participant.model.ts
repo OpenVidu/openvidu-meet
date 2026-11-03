@@ -4,11 +4,11 @@ import type { LocalAudioTrack, LocalVideoTrack, RemoteParticipant, Room, TrackPu
 import {
 	AudioCaptureOptions,
 	ConnectionQuality,
-	DataPublishOptions,
 	LocalParticipant,
 	LocalTrack,
 	LocalTrackPublication,
 	ScreenShareCaptureOptions,
+	SendTextOptions,
 	Track,
 	TrackPublishOptions,
 	VideoCaptureOptions
@@ -586,18 +586,20 @@ export class ParticipantModel {
 	}
 
 	/**
-	 * Publish a new data payload to the room. Data will be forwarded to each participant in the room if the destination field in publishOptions is empty.
-	 * @param data
-	 * @param {DataPublishOptions} publishOptions [DataPublishOptions](https://docs.livekit.io/client-sdk-js/types/DataPublishOptions.html)
-	 * @returns Promise that is resolved if the data was successfully sent, or rejected with an Error object if not.
+	 * Sends a text to the room as a text stream, to the participants in the destination identities of the options.
+	 * Unlike a data packet, a stream keeps its recipients visible to the media server when the room is encrypted.
+	 * @param text
+	 * @param {SendTextOptions} options [SendTextOptions](https://docs.livekit.io/reference/client-sdk-js/interfaces/SendTextOptions.html)
+	 * @returns Promise that is resolved if the text was successfully sent, or rejected with an Error object if not.
 	 * @internal
 	 */
-	async publishData(data: Uint8Array<ArrayBuffer>, publishOptions: DataPublishOptions): Promise<void> {
+	async sendText(text: string, options: SendTextOptions): Promise<void> {
 		if (this.participant instanceof LocalParticipant) {
-			return this.participant.publishData(data, publishOptions);
+			await this.participant.sendText(text, options);
+			return;
 		}
 
-		return Promise.reject("Remote participant can't publish data");
+		return Promise.reject("Remote participant can't send text");
 	}
 
 	// NOTE: a `setName` method is intentionally NOT implemented — updating a participant's name

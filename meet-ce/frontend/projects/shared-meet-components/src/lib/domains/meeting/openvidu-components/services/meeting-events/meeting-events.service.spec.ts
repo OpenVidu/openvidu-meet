@@ -8,6 +8,7 @@ import {
 } from '@openvidu-meet/typings';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { MeetStorageService } from '../../../../../shared/services/storage.service';
+import { MAX_CHAT_MESSAGE_LENGTH } from '../../models/chat.model';
 import { DataTopic } from '../../models/data-topic.model';
 import { ParticipantModel } from '../../models/participant.model';
 import { ConnectionQuality, RemoteParticipant, Room, RoomEvent, Track } from '../../services/livekit';
@@ -36,6 +37,7 @@ describe('MeetingEventsService', () => {
 	let recordingService: jasmine.SpyObj<RecordingService>;
 	let broadcastState: jasmine.SpyObj<BroadcastStateService>;
 	let onData: (payload: Uint8Array, participant?: unknown, kind?: unknown, topic?: string) => Promise<void>;
+	let onChat: (reader: AsyncIterable<string>, sender: { identity: string }) => Promise<void>;
 
 	const storedParticipant = { sid: 'sid1', identity: 'speaker1', name: 'Speaker 1' };
 
@@ -65,8 +67,8 @@ describe('MeetingEventsService', () => {
 				{
 					provide: ParticipantService,
 					useValue: {
-						getRemoteParticipantBySid: (sid: string) =>
-							sid === storedParticipant.sid ? storedParticipant : undefined
+						getRemoteParticipantByIdentity: (identity: string) =>
+							identity === storedParticipant.identity ? storedParticipant : undefined
 					}
 				},
 				{ provide: DialogService, useValue: {} },
@@ -84,6 +86,9 @@ describe('MeetingEventsService', () => {
 				if (event === RoomEvent.DataReceived) onData = handler as typeof onData;
 
 				return room;
+			},
+			registerTextStreamHandler(topic: string, handler: typeof onChat) {
+				if (topic === DataTopic.CHAT) onChat = handler;
 			}
 		};
 		service.bindRoom(room as never, {
@@ -174,16 +179,42 @@ describe('MeetingEventsService', () => {
 			expect(broadcastState.setBroadcast).not.toHaveBeenCalled();
 		});
 
-		it('still delivers chat messages relayed from a known participant', async () => {
+		it('ignores a chat packet relayed from a participant', async () => {
 			await receive(DataTopic.CHAT, { message: 'hello' }, storedParticipant);
 
-			expect(chatService.addRemoteMessage).toHaveBeenCalledWith('hello', 'Speaker 1');
+			expect(chatService.addRemoteMessage).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('chat stream', () => {
+		const stream = (...chunks: string[]): AsyncIterable<string> => ({
+			async *[Symbol.asyncIterator]() {
+				yield* chunks;
+			}
 		});
 
-		it('discards chat messages from a participant that is not in the roster', async () => {
-			await receive(DataTopic.CHAT, { message: 'hello' }, { sid: 'unknown-sid' });
+		it('delivers a chat message from a participant of the meeting, whole', async () => {
+			await onChat(stream('hel', 'lo'), { identity: storedParticipant.identity });
+
+			expect(chatService.addRemoteMessage).toHaveBeenCalledOnceWith('hello', 'Speaker 1');
+		});
+
+		it('discards a chat message from a participant that is not in the roster', async () => {
+			await onChat(stream('hello'), { identity: 'unknown' });
 
 			expect(chatService.addRemoteMessage).not.toHaveBeenCalled();
+		});
+
+		it('discards a chat message longer than the chat accepts', async () => {
+			await onChat(stream('a'.repeat(MAX_CHAT_MESSAGE_LENGTH), 'a'), { identity: storedParticipant.identity });
+
+			expect(chatService.addRemoteMessage).not.toHaveBeenCalled();
+		});
+
+		it('delivers a chat message of exactly the length the chat accepts', async () => {
+			await onChat(stream('a'.repeat(MAX_CHAT_MESSAGE_LENGTH)), { identity: storedParticipant.identity });
+
+			expect(chatService.addRemoteMessage).toHaveBeenCalledTimes(1);
 		});
 	});
 });
@@ -197,7 +228,8 @@ const fakeRoom = () => {
 		on(event: string, handler: RoomHandler) {
 			handlers.set(event, handler);
 			return room;
-		}
+		},
+		registerTextStreamHandler() {}
 	};
 
 	return {

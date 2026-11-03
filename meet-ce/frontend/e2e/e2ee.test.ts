@@ -3,6 +3,8 @@ import { expect, test } from '@playwright/test';
 import {
 	expectChatMessageCount,
 	expectChatMessageTextAt,
+	receivedDataChannelMessageCount,
+	recordDataChannelMessages,
 	sendChatMessage,
 	toggleChatPanel
 } from './helpers/chat.helper';
@@ -181,6 +183,51 @@ test.describe('E2EE E2E Tests', () => {
 				await expectChatMessageTextAt(page, 1, testMessage2);
 			} finally {
 				await page2.close();
+			}
+		});
+
+		test('should deliver chat only to the participants holding chatRead', async ({ browser }) => {
+			const e2eeKey = 'shared-encryption-key-321';
+			const room = await createRoom({ config: { e2ee: { enabled: true } } });
+			createdRoomIds.push(room.roomId);
+			const [sender, reader, nonReader] = await Promise.all([
+				createRoomMember(room.roomId, { name: 'sender', baseRole: MeetRoomMemberRole.MODERATOR }),
+				createRoomMember(room.roomId, { name: 'reader', baseRole: MeetRoomMemberRole.SPEAKER }),
+				createRoomMember(room.roomId, {
+					name: 'non-reader',
+					baseRole: MeetRoomMemberRole.SPEAKER,
+					customPermissions: { chatRead: false }
+				})
+			]);
+			const [senderPage, readerPage, nonReaderPage] = await Promise.all([
+				browser.newPage(),
+				browser.newPage(),
+				browser.newPage()
+			]);
+
+			try {
+				await Promise.all([recordDataChannelMessages(readerPage), recordDataChannelMessages(nonReaderPage)]);
+				await Promise.all([
+					openMeeting(senderPage, sender.accessUrl, { e2eeKey }),
+					openMeeting(readerPage, reader.accessUrl, { e2eeKey }),
+					openMeeting(nonReaderPage, nonReader.accessUrl, { e2eeKey })
+				]);
+				await waitForRemoteStream(senderPage, 2);
+
+				const readerBefore = await receivedDataChannelMessageCount(readerPage);
+				const nonReaderBefore = await receivedDataChannelMessageCount(nonReaderPage);
+				const message = 'only for chat readers';
+				await toggleChatPanel(senderPage);
+				await sendChatMessage(senderPage, message);
+
+				await toggleChatPanel(readerPage);
+				await expectChatMessageTextAt(readerPage, 0, message);
+				expect(await receivedDataChannelMessageCount(readerPage)).toBeGreaterThan(readerBefore);
+				// The media server fans a message out to its recipients at once, so a copy would be here by now
+				await nonReaderPage.waitForTimeout(1_000);
+				expect(await receivedDataChannelMessageCount(nonReaderPage)).toBe(nonReaderBefore);
+			} finally {
+				await Promise.all([senderPage.close(), readerPage.close(), nonReaderPage.close()]);
 			}
 		});
 

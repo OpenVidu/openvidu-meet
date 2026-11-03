@@ -1,7 +1,7 @@
 import { Service, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
 import { ParticipantModel, ParticipantProperties, raisedHandQueue } from '../../models/participant.model';
 import { E2eeService } from '../e2ee/e2ee.service';
-import type { DataPublishOptions, LocalParticipant, Participant, RemoteParticipant } from '../livekit';
+import type { LocalParticipant, Participant, RemoteParticipant, SendTextOptions } from '../livekit';
 import { ConnectionQuality, Track } from '../livekit';
 import { LocalMediaService } from '../local-media/local-media.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
@@ -128,15 +128,16 @@ export class ParticipantService {
 	}
 
 	/**
-	 * Publishes a new data payload to the room. Data will be forwarded to each participant in the room if the destination field in publishOptions is empty.
-	 * @param data
-	 * @param {DataPublishOptions} publishOptions [DataPublishOptions](https://docs.livekit.io/client-sdk-js/types/DataPublishOptions.html)
+	 * Sends a text to the room as a text stream, to the participants in the destination identities of the options.
+	 * @param text
+	 * @param {SendTextOptions} options [SendTextOptions](https://docs.livekit.io/reference/client-sdk-js/interfaces/SendTextOptions.html)
 	 */
-	publishData(data: Uint8Array<ArrayBuffer>, publishOptions: DataPublishOptions): Promise<void> {
+	async sendText(text: string, options: SendTextOptions): Promise<void> {
 		const localParticipant = this.localParticipant();
 
 		if (localParticipant) {
-			return localParticipant.publishData(data, publishOptions);
+			await localParticipant.sendText(text, options);
+			return;
 		}
 
 		return Promise.reject('Local participant not found');
@@ -272,6 +273,14 @@ export class ParticipantService {
 	 */
 	getRemoteParticipantBySid(sid: string): ParticipantModel | undefined {
 		return this.remoteParticipants().find((p) => p.sid === sid);
+	}
+
+	/**
+	 * Returns the remote participant with the given identity.
+	 * @param identity
+	 */
+	getRemoteParticipantByIdentity(identity: string): ParticipantModel | undefined {
+		return this.remoteParticipants().find((p) => p.identity === identity);
 	}
 
 	/**

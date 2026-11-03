@@ -163,6 +163,12 @@ export const recordDataChannelMessages = async (page: Page): Promise<void> => {
 };
 
 /**
+ * How many data channel messages {@link recordDataChannelMessages} recorded, for rooms where they are encrypted.
+ */
+export const receivedDataChannelMessageCount = (page: Page): Promise<number> =>
+	page.evaluate(() => (window as unknown as { __dataChannelText: string[] }).__dataChannelText.length);
+
+/**
  * The data channel messages {@link recordDataChannelMessages} recorded, joined.
  */
 export const receivedDataChannelText = (page: Page): Promise<string> =>
