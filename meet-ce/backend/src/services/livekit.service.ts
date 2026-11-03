@@ -219,15 +219,25 @@ export class LiveKitService {
 	/**
 	 * The error to answer for a failed call to an egress. LiveKit answers 503 when no egress service
 	 * takes the call, which for a start comes only after this client has given up waiting, and
-	 * `invalid_argument` for options the egress cannot use.
+	 * `invalid_argument` for options the egress cannot use. LiveKit's message is left out of the
+	 * answer, as it can echo a stream URL with its key.
 	 */
 	private toEgressError(error: unknown, operation: string): OpenViduMeetError {
-		const { status, code, message } = this.asTwirpError(error);
+		const { status, code } = this.asTwirpError(error);
 
-		if (code === 'invalid_argument') return errorEgressOptionsRefused(message ?? operation);
+		if (code === 'invalid_argument') return errorEgressOptionsRefused();
 
 		const unavailable = status === 503 || (error as Error | null)?.name === 'TimeoutError';
 		return unavailable ? errorEgressNotAvailable() : internalError(operation);
+	}
+
+	/**
+	 * What to log of a failed call to an egress: its status and code, never its message, which can
+	 * echo a stream URL with its key.
+	 */
+	private egressFailure(error: unknown): string {
+		const { status, code } = this.asTwirpError(error);
+		return status ? `status ${status}, code ${code}` : ((error as Error | null)?.name ?? 'unknown error');
 	}
 
 	/**
@@ -477,7 +487,9 @@ export class LiveKitService {
 		try {
 			return await this.lk.egress.startRoomCompositeEgress(roomName, output, options);
 		} catch (error) {
-			this.logger.error(`Error starting Room Composite Egress for room '${roomName}'`, error);
+			this.logger.error(
+				`Error starting Room Composite Egress for room '${roomName}' (${this.egressFailure(error)})`
+			);
 			throw this.toEgressError(error, `starting Room Composite Egress for room '${roomName}'`);
 		}
 	}
@@ -498,7 +510,7 @@ export class LiveKitService {
 				return undefined;
 			}
 
-			this.logger.error(`Error updating the stream URLs of egress '${egressId}'`, error);
+			this.logger.error(`Error updating the stream URLs of egress '${egressId}' (${this.egressFailure(error)})`);
 			throw this.toEgressError(error, `updating the destinations of egress '${egressId}'`);
 		}
 	}

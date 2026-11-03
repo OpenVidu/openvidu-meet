@@ -239,34 +239,34 @@ const streamAddress = (url: string): string =>
 
 /**
  * Whether a destination URL has the form the media server streams to,
- * `rtmp(s)://{host}(/{path})/{app}/{stream_key}`, optionally followed by ` live=1`: no whitespace
- * or `#` anywhere else, and a stream key, what follows the last `/`, that may carry a query string
- * but is not one.
+ * `rtmp(s)://{host}(/{path})/{app}/{stream_key}`, optionally followed by ` live=1`: no whitespace,
+ * `#` or malformed `%` escape anywhere else, no user information before the host, and a stream key,
+ * what follows the last `/`, that may carry a query string but is not one.
  */
 export const isValidStreamUrl = (url: string): boolean => {
 	const match = /^rtmps?:\/\/(.+)$/.exec(streamAddress(url));
 
-	if (!match || /[\s#]/.test(match[1])) return false;
+	if (!match || /[\s#]|%(?![0-9a-fA-F]{2})/.test(match[1])) return false;
 
 	const [host, ...path] = match[1].split('/');
 	const key = path[path.length - 1] ?? '';
-	return host !== '' && !host.includes('?') && path.length >= 2 && path.every(Boolean) && !key.startsWith('?');
+	return host !== '' && !/[?@]/.test(host) && path.length >= 2 && path.every(Boolean) && !key.startsWith('?');
 };
 
 /**
  * A destination URL as the API serves it: its stream key, what follows the last `/` (a trailing
- * slash notwithstanding) together with any query string attached to it, replaced by
- * {@link MEET_BROADCAST_REDACTED_STREAM_KEY}, and without the ` live=1` flag.
+ * slash notwithstanding) together with any query string attached to it, whatever the query holds,
+ * replaced by {@link MEET_BROADCAST_REDACTED_STREAM_KEY}, and without the ` live=1` flag.
  */
 export const redactStreamUrl = (url: string): string => {
-	const address = streamAddress(url);
-	const segments = address.split('/');
+	const segments = streamAddress(url).split('/');
 	const index = streamKeyIndex(segments);
 
 	if (index < 0) return [...segments.slice(0, 3), MEET_BROADCAST_REDACTED_STREAM_KEY].join('/');
 
-	segments[index] = MEET_BROADCAST_REDACTED_STREAM_KEY;
-	return segments.join('/');
+	const rest = segments.slice(index + 1);
+	const trailingSlashes = rest.every((segment) => segment === '') ? rest : [];
+	return [...segments.slice(0, index), MEET_BROADCAST_REDACTED_STREAM_KEY, ...trailingSlashes].join('/');
 };
 
 /**
@@ -279,8 +279,17 @@ export const isRedactedStreamUrl = (url: string): boolean => {
 	return index >= 0 && segments[index].split('?')[0] === MEET_BROADCAST_REDACTED_STREAM_KEY;
 };
 
-/** The place of the stream key among the `/`-separated parts of a URL: the last non-empty one after the host, if any. */
+/**
+ * The place of the stream key among the `/`-separated parts of a URL: the first one past the first
+ * path segment that holds a query string, whose `/` belong to that query, or else the last non-empty
+ * one after the host, if any. A query in the first path segment is the application's, as in
+ * YouTube's backup server `rtmp://b.rtmp.youtube.com/live2?backup=1/{stream_key}`.
+ */
 const streamKeyIndex = (segments: string[]): number => {
+	const queried = segments.findIndex((segment, index) => index > 3 && segment.includes('?'));
+
+	if (queried >= 0) return queried;
+
 	for (let index = segments.length - 1; index > 2; index--) {
 		if (segments[index] !== '') return index;
 	}

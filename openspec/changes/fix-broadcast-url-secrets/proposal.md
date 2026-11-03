@@ -18,9 +18,10 @@ three logs.
 - The failed calls to the media server (`startRoomComposite`, `updateStream`) log only their status and
   code, never the error message, which echoes the URL; the room creation log shows the redacted
   destinations.
-- No delta of its own: "Stream keys are never served" of `add-live-broadcast` already states that the
-  key and its query are masked and the logs carry no key; "Room destinations" ("422 to a malformed URL")
-  gets the two new malformed shapes as scenarios through a task.
+- LiveKit's error message is left out of the `422` a refused egress request answers, as it can echo the
+  URL with its key.
+- `live-broadcast` deltas: "Room destinations" names the two new malformed shapes, with a scenario each;
+  "Stream keys are never served" masks a query with slashes, with a scenario.
 
 ## Capabilities
 
@@ -30,7 +31,7 @@ None.
 
 ### Modified Capabilities
 
-None (`skip_specs: true`). A task updates the `live-broadcast` delta of `add-live-broadcast`.
+- `live-broadcast`: "Room destinations" and "Stream keys are never served".
 
 ## Impact
 
@@ -46,7 +47,7 @@ None (`skip_specs: true`). A task updates the `live-broadcast` delta of `add-liv
 
 ## Decisions to confirm
 
-- Delivery: private advisory or regular public pull request.
+- Delivery: private advisory or regular public pull request. Decided: public pull request, since live broadcast is in no release yet.
 - Whether rooms stored with a userinfo or bad-escape URL before this fix is migrated. Proposed: no
   migration; the rooms stay readable (redacted) and the start of that destination answers `422`.
   Alternative: a migration that drops such destinations.

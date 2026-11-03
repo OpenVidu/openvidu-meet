@@ -95,8 +95,8 @@ export const errorEgressNotAvailable = (): OpenViduMeetError => {
 	return new OpenViduMeetError('LiveKit Error', 'No egress service is available', 503);
 };
 
-export const errorEgressOptionsRefused = (reason: string): OpenViduMeetError => {
-	return new OpenViduMeetError('LiveKit Error', `The media server refused the egress options: ${reason}`, 422);
+export const errorEgressOptionsRefused = (): OpenViduMeetError => {
+	return new OpenViduMeetError('LiveKit Error', 'The media server refused the egress options as invalid', 422);
 };
 
 export const errorEgressWithoutStreamTags = (): OpenViduMeetError => {
