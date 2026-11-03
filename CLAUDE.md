@@ -240,10 +240,9 @@ the OpenAPI sources already use for their own cross-references: `#/operations/<o
   lives in `scripts/dev/dev.sh` (sourced only by `./meet.sh dev`), which no suite watches. Markdown and
   `nodemon*.json` never select a suite.
 - CI runs on pull requests: a branch gets CI once it has a PR (a draft is enough) or by dispatching
-  `Tests` (input `suites`, `all` by default, or a comma-separated list). A push to `main` runs the unit
-  and backend integration suites it affects (both on GitHub-hosted runners) but not the e2e suites,
-  which run nightly instead (00:17 UTC) together with every other suite, only when `main` moved since
-  the last green nightly. On a pull request or a push, recordings run on S3 only, unless the change
+  `Tests` (input `suites`, `all` by default, or a comma-separated list). A push to `main` runs the suites it
+  affects, like a pull request, and the nightly (00:17 UTC) runs every suite, only when `main` moved
+  since the last green nightly. On a pull request or a push, recordings run on S3 only, unless the change
   touches `meet-ce/backend/src/services/storage/` or the pull request carries the `ci:storage` label
   (read when a run starts, so add it before pushing): GCS and ABS share one bucket each, which every
   recordings job empties first. The nightly and dispatched runs use S3, GCS and ABS. Dependabot groups all
