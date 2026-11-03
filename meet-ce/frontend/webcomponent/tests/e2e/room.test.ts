@@ -100,6 +100,7 @@ test.describe('Room Features E2E Tests', () => {
 			});
 			expect(leaked).toEqual([]);
 		});
+
 		test("should leave the host page's <html> as the host set it", async ({ page }) => {
 			await page.emulateMedia({ colorScheme: 'light' });
 			await ensureFixture(page);
@@ -131,6 +132,31 @@ test.describe('Room Features E2E Tests', () => {
 
 			await wcHost(page).evaluate((element) => element.remove());
 			await expectHtmlUntouched();
+		});
+
+		test('should keep the device setup screen inside the element', async ({ page }) => {
+			const { meet } = await openMeetingAtMediaSetup(page, roomId, { role: 'moderator' });
+			await expect(meet('.top-toolbar')).toBeVisible();
+
+			// Points of the top of the page outside the element, where the setup toolbar used to lie.
+			const { outside, taken } = await wcHost(page).evaluate((element) => {
+				const box = element.getBoundingClientRect();
+				const points: [number, number][] = [];
+
+				for (let x = 5; x < window.innerWidth; x += 40) {
+					for (let y = 5; y < 90; y += 20) {
+						if (x < box.left || x > box.right || y < box.top || y > box.bottom) points.push([x, y]);
+					}
+				}
+
+				return {
+					outside: points.length,
+					taken: points.filter(([x, y]) => document.elementFromPoint(x, y) === element).length
+				};
+			});
+
+			expect(outside).toBeGreaterThan(0);
+			expect(taken).toBe(0);
 		});
 	});
 
