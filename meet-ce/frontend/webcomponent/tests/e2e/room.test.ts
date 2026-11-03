@@ -262,6 +262,39 @@ test.describe('Room Features E2E Tests', () => {
 			await leaveMeeting(page);
 		});
 
+		test('should keep every toolbar button inside an element narrower than the window', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'moderator' });
+			await wcHost(page).evaluate((element) => (element.style.width = '700px'));
+
+			const outside = () =>
+				wcHost(page).evaluate((element) => {
+					const box = element.getBoundingClientRect();
+					const buttons: Element[] = [];
+					const collect = (root: ParentNode): void =>
+						root.querySelectorAll('*').forEach((node) => {
+							if (node.matches('#toolbar button')) buttons.push(node);
+
+							if (node.shadowRoot) collect(node.shadowRoot);
+						});
+					collect(element.shadowRoot!);
+
+					return buttons
+						.map((button) => ({
+							id: button.id || button.className,
+							button: button.getBoundingClientRect()
+						}))
+						.filter(
+							({ button }) => button.width > 0 && (button.left < box.left || button.right > box.right)
+						)
+						.map(({ id }) => id);
+				});
+
+			expect(await wcHost(page).evaluate((element) => element.getBoundingClientRect().width)).toBeLessThan(750);
+			await expect.poll(outside).toEqual([]);
+
+			await leaveMeeting(page, { role: 'moderator' });
+		});
+
 		test('should leave every key typed in the chat to the chat, the meeting shortcuts included', async ({
 			page
 		}) => {

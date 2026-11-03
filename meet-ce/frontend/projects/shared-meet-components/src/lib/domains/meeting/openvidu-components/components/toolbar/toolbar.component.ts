@@ -5,6 +5,7 @@ import {
 	computed,
 	DestroyRef,
 	effect,
+	ElementRef,
 	inject,
 	OnDestroy,
 	OnInit,
@@ -47,6 +48,7 @@ import { PlatformService } from '../../services/platform/platform.service';
 import { RecordingService } from '../../services/recording/recording.service';
 import { MeetingContextService } from '../../../services/meeting-context.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
+import { ViewportService } from '../../services/viewport/viewport.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ToolbarMediaButtonsComponent } from './toolbar-media-buttons/toolbar-media-buttons.component';
 import { ToolbarPanelButtonsComponent } from './toolbar-panel-buttons/toolbar-panel-buttons.component';
@@ -89,6 +91,10 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly platformService = inject(PlatformService);
 	private readonly destroyRef = inject(DestroyRef);
+	private readonly host: HTMLElement = inject(ElementRef).nativeElement;
+	private readonly viewportService = inject(ViewportService);
+	private readonly toolbarResizes = new ResizeObserver(() => this.fitToolbar());
+	private readonly toolbarMutations = new MutationObserver(() => this.fitToolbar());
 	readonly templateRegistry = inject(TemplateRegistryService);
 
 	/**
@@ -408,12 +414,27 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 
 	ngAfterViewInit() {
 		this.subscribeToFullscreenChanged();
+
+		const toolbar = this.toolbarElement();
+		this.toolbarResizes.observe(toolbar);
+		this.toolbarMutations.observe(toolbar, { childList: true, subtree: true, characterData: true });
+		this.fitToolbar();
 	}
 
 	ngOnDestroy(): void {
+		this.toolbarResizes.disconnect();
+		this.toolbarMutations.disconnect();
 		this.panelService.clear();
 		this.isFullscreenActive.set(false);
 		this.cdkOverlayService.setSelector('body');
+	}
+
+	private toolbarElement(): HTMLElement {
+		return this.host.querySelector<HTMLElement>('#toolbar')!;
+	}
+
+	private fitToolbar(): void {
+		this.viewportService.fitToolbar(this.toolbarElement());
 	}
 
 	/**

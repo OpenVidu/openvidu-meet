@@ -6,7 +6,7 @@
 		(click)="onCameraToggle()"
 		[disabled]="isConnectionLost() || !hasVideoDevices() || cameraMuteChanging()"
 		[class.disabled]="!isCameraEnabled()"
-		[class.mobile-btn]="isMobileView()"
+		[class.mobile-btn]="isCompact()"
 		[matTooltip]="isCameraEnabled() ? ('TOOLBAR.STOP_VIDEO' | translate) : ('TOOLBAR.START_VIDEO' | translate)"
 		[matTooltipDisabled]="!hasVideoDevices()"
 	>
@@ -25,7 +25,7 @@
 			(click)="onMicrophoneToggle()"
 			[disabled]="isConnectionLost() || !hasAudioDevices() || microphoneMuteChanging()"
 			[class.disabled]="!isMicrophoneEnabled()"
-			[class.mobile-btn]="isMobileView()"
+			[class.mobile-btn]="isCompact()"
 			[matTooltip]="
 				isMicrophoneEnabled() ? ('TOOLBAR.MUTE_AUDIO' | translate) : ('TOOLBAR.UNMUTE_AUDIO' | translate)
 			"
@@ -50,7 +50,7 @@
 			id="screenshare-btn"
 			[disabled]="isConnectionLost()"
 			[class.active-btn]="isScreenShareEnabled()"
-			[class.mobile-btn]="isMobileView()"
+			[class.mobile-btn]="isCompact()"
 			matTooltip="{{
 				isScreenShareEnabled() ? ('TOOLBAR.DISABLE_SCREEN' | translate) : ('TOOLBAR.ENABLE_SCREEN' | translate)
 			}}"
@@ -65,7 +65,7 @@
 			[matMenuTriggerFor]="isScreenShareEnabled() ? screenshareMenu : null"
 			[disabled]="isConnectionLost()"
 			[class.active-btn]="isScreenShareEnabled()"
-			[class.mobile-btn]="isMobileView()"
+			[class.mobile-btn]="isCompact()"
 			matTooltip="{{
 				isScreenShareEnabled() ? ('TOOLBAR.DISABLE_SCREEN' | translate) : ('TOOLBAR.ENABLE_SCREEN' | translate)
 			}}"
@@ -103,7 +103,7 @@
 		id="more-options-btn"
 		[matMenuTriggerFor]="settingsMenu"
 		[disabled]="isConnectionLost()"
-		[class.mobile-btn]="isMobileView()"
+		[class.mobile-btn]="isCompact()"
 		matTooltip="{{ 'TOOLBAR.MORE_OPTIONS' | translate }}"
 	>
 		<mat-icon>more_vert</mat-icon>
@@ -222,7 +222,7 @@
 		mat-icon-button
 		(click)="onLeaveClick()"
 		id="leave-btn"
-		[class.mobile-btn]="isMobileView()"
+		[class.mobile-btn]="isCompact()"
 		matTooltip="{{ 'TOOLBAR.LEAVE' | translate }}"
 	>
 		<mat-icon>call_end</mat-icon>
