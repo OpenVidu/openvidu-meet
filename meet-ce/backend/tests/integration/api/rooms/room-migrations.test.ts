@@ -150,7 +150,7 @@ const expectedCurrentModeratorPermissions = {
 	participantPromote: true,
 	participantKick: true,
 	participantMute: false,
-	participantHandLower: false,
+	participantHandLower: true,
 	participantReactionSend: true,
 	meetingEnd: true,
 	mediaPublishVideo: true,
@@ -435,7 +435,10 @@ describe('Room Schema Migrations', () => {
 			const roomV3 = buildLegacyRoomV3('room-v3') as unknown as MeetRoomDocument;
 			const migratedRoom = transform!(roomV3);
 
-			expect(migratedRoom.roles.moderator.permissions).toEqual(expectedCurrentModeratorPermissions);
+			expect(migratedRoom.roles.moderator.permissions).toEqual({
+				...expectedCurrentModeratorPermissions,
+				participantHandLower: false
+			});
 			expect(migratedRoom.roles.speaker.permissions).toEqual(expectedCurrentSpeakerPermissions);
 		});
 	});
