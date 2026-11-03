@@ -128,7 +128,28 @@ export class PlatformService {
 		return /Firefox[/\s](\d+\.\d+)/.test(this.userAgent);
 	}
 
-	private isIOSWithSafari(userAgent: string): boolean {
-		return /\bSafari\b/.test(userAgent) && !/\bCriOS\b/.test(userAgent) && !/\bFxiOS\b/.test(userAgent);
+	/**
+	 * Returns true for Safari on a computer or on iOS, not for the browsers that carry its token
+	 */
+	isSafari(): boolean {
+		return /Safari/.test(this.userAgent) && !/Chrome|CriOS|FxiOS|Edg|OPR|OPiOS/.test(this.userAgent);
+	}
+
+	// ===== Capture =====
+
+	/**
+	 * Returns true if a camera can be captured next to another one that stays open: Android camera
+	 * stacks refuse the second open, and WebKit on iOS and iPadOS mutes the first capture when another starts
+	 */
+	canCaptureSecondCamera(): boolean {
+		return !this.isMobile();
+	}
+
+	/**
+	 * Returns true if a microphone can be captured next to another one that stays open: besides the
+	 * mobile limits of the camera, Safari ends the second one
+	 */
+	canCaptureSecondMicrophone(): boolean {
+		return this.canCaptureSecondCamera() && !this.isSafari();
 	}
 }
