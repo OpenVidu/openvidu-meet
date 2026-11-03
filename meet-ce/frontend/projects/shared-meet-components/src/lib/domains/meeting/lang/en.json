@@ -119,6 +119,8 @@
 			"MICROPHONE_OFF": "Your microphone is off",
 			"APPLY": "Apply",
 			"EFFECT_APPLIES_ON_APPLY": "The background effect is added when you apply this camera",
+			"CAMERA_SWITCHES_AT_ONCE": "Others see the new camera as soon as you pick it",
+			"MICROPHONE_SWITCHES_AT_ONCE": "Others hear the new microphone as soon as you pick it",
 			"DISPLAY_NAME": "Display name",
 			"DISPLAY_NAME_HINT": "Chosen when you joined the meeting",
 			"DISPLAY_NAME_LOCKED": "It cannot be changed during the meeting",

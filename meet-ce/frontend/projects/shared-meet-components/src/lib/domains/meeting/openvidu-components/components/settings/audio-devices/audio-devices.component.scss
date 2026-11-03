@@ -75,6 +75,7 @@
 	}
 }
 
+.device-hint,
 .mic-level-hint {
 	@include controls.hint();
 }

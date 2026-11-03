@@ -119,6 +119,8 @@
 			"MICROPHONE_OFF": "Votre micro est désactivé",
 			"APPLY": "Appliquer",
 			"EFFECT_APPLIES_ON_APPLY": "L'effet d'arrière-plan s'ajoute en appliquant cette caméra",
+			"CAMERA_SWITCHES_AT_ONCE": "Les autres voient la nouvelle caméra dès que vous la choisissez",
+			"MICROPHONE_SWITCHES_AT_ONCE": "Les autres entendent le nouveau micro dès que vous le choisissez",
 			"DISPLAY_NAME": "Nom affiché",
 			"DISPLAY_NAME_HINT": "Choisi en rejoignant la réunion",
 			"DISPLAY_NAME_LOCKED": "Il ne peut pas être modifié pendant la réunion",

@@ -1,13 +1,14 @@
 ## ADDED Requirements
 
 ### Requirement: Where devices can be tried
-The meeting SHALL offer trying a device before applying it only where the browser can capture a second device of that kind while the published one stays live: never on Android, iOS or iPadOS phones and tablets, and not for the microphone in Safari. There a pick in the Audio & video tab SHALL switch the published device at once, as on the device setup screen, and no Apply button SHALL appear.
+The meeting SHALL offer trying a device before applying it only where the browser can capture a second device of that kind while the published one stays live: never on Android, iOS or iPadOS, and not for the microphone in Safari. There a pick in the Audio & video tab SHALL switch the published device at once, with no Apply button, and the tab SHALL say beside the selector that the others receive the pick as soon as it is made.
 
 #### Scenario: Switching camera on a phone
 - **GIVEN** participants A and B in a meeting, A on an Android phone publishing the camera "Front"
 - **WHEN** A picks the camera "Back" in the Audio & video tab
 - **THEN** B sees "Back"
 - **AND** the tab shows no Apply button
+- **AND** beside the camera selector the tab says that the others see the new camera as soon as it is picked
 
 #### Scenario: Switching camera on an iPhone
 - **GIVEN** participants A and B in a meeting, A on an iPhone publishing the camera "Front"
@@ -20,12 +21,14 @@ The meeting SHALL offer trying a device before applying it only where the browse
 - **WHEN** A picks the microphone "Headset" in the Audio & video tab
 - **THEN** B hears A through "Headset"
 - **AND** the tab shows no Apply button
+- **AND** beside the microphone selector the tab says that the others hear the new microphone as soon as it is picked
 
 #### Scenario: Trying a camera in Safari on a computer
 - **GIVEN** a participant in Safari on a computer publishing the camera "Built-in" and having a camera "USB" too
 - **WHEN** they pick "USB" in the Audio & video tab
 - **THEN** the preview shows "USB" and the tab shows an Apply button
 - **AND** the others keep seeing "Built-in"
+- **AND** the camera selector carries no note about the pick reaching the others at once
 
 ## MODIFIED Requirements
 

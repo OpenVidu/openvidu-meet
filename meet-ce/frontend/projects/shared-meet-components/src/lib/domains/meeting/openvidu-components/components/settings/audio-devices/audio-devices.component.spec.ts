@@ -124,6 +124,10 @@ describe('AudioDevicesComponent', () => {
 			expect(deviceService.setMicSelected).not.toHaveBeenCalled();
 		});
 
+		it('does not warn that a pick reaches the others at once', () => {
+			expect(component.switchesAtOnce).toBeFalse();
+		});
+
 		it('meters the microphone being tried, and the published one otherwise', () => {
 			localMedia.microphone.enabled.set(true);
 			micLevel.set(0.5);
@@ -149,6 +153,10 @@ describe('AudioDevicesComponent', () => {
 			expect(localMedia.switchMicrophone).toHaveBeenCalledOnceWith('mic-2');
 			expect(deviceService.setMicSelected).toHaveBeenCalledOnceWith('mic-2');
 			expect(trial.tryMicrophone).not.toHaveBeenCalled();
+		});
+
+		it('tells the participant that a pick reaches the others at once', () => {
+			expect(component.switchesAtOnce).toBeTrue();
 		});
 
 		it('meters the published microphone', () => {

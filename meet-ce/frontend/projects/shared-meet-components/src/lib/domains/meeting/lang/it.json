@@ -119,6 +119,8 @@
 			"MICROPHONE_OFF": "Il tuo microfono è spento",
 			"APPLY": "Applica",
 			"EFFECT_APPLIES_ON_APPLY": "L'effetto di sfondo si aggiunge applicando questa fotocamera",
+			"CAMERA_SWITCHES_AT_ONCE": "Gli altri vedono la nuova fotocamera appena la scegli",
+			"MICROPHONE_SWITCHES_AT_ONCE": "Gli altri sentono il nuovo microfono appena lo scegli",
 			"DISPLAY_NAME": "Nome visualizzato",
 			"DISPLAY_NAME_HINT": "Scelto all'ingresso nella riunione",
 			"DISPLAY_NAME_LOCKED": "Non può essere modificato durante la riunione",

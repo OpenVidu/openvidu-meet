@@ -44,6 +44,7 @@ export class VideoDevicesComponent {
 		? inject(DeviceTrialService, { optional: true })
 		: null;
 
+	readonly switchesAtOnce = this.trial === null;
 	readonly cameraStatusChanging = signal(false);
 	readonly isCameraEnabled = this.localMedia.camera.enabled;
 	readonly videoTrack = computed(() => this.trial?.camera.track() ?? this.localMedia.camera.track());

@@ -124,6 +124,8 @@ test.describe('Media Devices E2E Tests', () => {
 
 		test('previews a picked camera and publishes it only when applied', async ({ twoCamerasPage: page }) => {
 			await openAudioVideoSettings(page);
+			await expect(page.locator('#settings-camera-switch-hint')).toBeHidden();
+			await expect(page.locator('#settings-microphone-switch-hint')).toBeHidden();
 
 			await selectVideoDevice(page, 'fake_device_1');
 
@@ -182,6 +184,8 @@ test.describe('Media Devices E2E Tests', () => {
 			}, ANDROID_PHONE_USER_AGENT);
 			await page.setViewportSize({ width: 390, height: 844 });
 			await openAudioVideoSettings(page);
+			await expect(page.locator('#settings-camera-switch-hint')).toBeVisible();
+			await expect(page.locator('#settings-microphone-switch-hint')).toBeVisible();
 
 			await selectVideoDevice(page, 'fake_device_1');
 
