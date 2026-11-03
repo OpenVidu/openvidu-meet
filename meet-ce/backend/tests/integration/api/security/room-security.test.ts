@@ -459,6 +459,13 @@ describe('Room API Security Tests', () => {
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
 			expectMeetError(response, errorInsufficientPermissions());
 		});
+
+		it('should not reveal to a room member token of another room whether a room exists', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/non-existing-room-id`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
+			expectMeetError(response, errorInsufficientPermissions());
+		});
 	});
 
 	describe('Delete Room Tests', () => {

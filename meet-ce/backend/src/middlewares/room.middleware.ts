@@ -68,6 +68,15 @@ export const applyRoomListAccessFilters = (_req: Request, res: Response, next: N
 };
 
 /**
+ * Whether the request carries a room member token of a room other than `roomId`. Such a token is
+ * refused before the room is looked up, so it cannot tell which rooms exist.
+ */
+export const isTokenOfAnotherRoom = (roomId: string): boolean => {
+	const memberRoomId = container.get(RequestSessionService).getRoomIdFromMember();
+	return memberRoomId !== undefined && memberRoomId !== roomId;
+};
+
+/**
  * Middleware to authorize access to a room.
  *
  * - If a Room Member Token is used, it checks that the token's roomId matches the requested roomId.
@@ -76,6 +85,11 @@ export const applyRoomListAccessFilters = (_req: Request, res: Response, next: N
  */
 export const authorizeRoomAccess = async (req: Request, res: Response, next: NextFunction) => {
 	const roomId = req.params.roomId as string;
+	const forbiddenError = errorInsufficientPermissions();
+
+	if (isTokenOfAnotherRoom(roomId)) {
+		return rejectRequestFromMeetError(res, forbiddenError);
+	}
 
 	const roomService = container.get(RoomService);
 	const roomExists = await roomService.meetRoomExists(roomId);
@@ -90,15 +104,8 @@ export const authorizeRoomAccess = async (req: Request, res: Response, next: Nex
 	const memberRoomId = requestSessionService.getRoomIdFromMember();
 	const user = requestSessionService.getAuthenticatedUser();
 
-	const forbiddenError = errorInsufficientPermissions();
-
-	// Room Member Token
+	// Room Member Token of this room
 	if (memberRoomId) {
-		// Check if the member's roomId matches the requested roomId
-		if (memberRoomId !== roomId) {
-			return rejectRequestFromMeetError(res, forbiddenError);
-		}
-
 		return next();
 	}
 
@@ -133,6 +140,11 @@ export const withRoomPermission = (
 ) => {
 	return async (req: Request, res: Response, next: NextFunction) => {
 		const roomId = roomIdOf(req, res);
+
+		if (isTokenOfAnotherRoom(roomId)) {
+			return rejectRequestFromMeetError(res, errorInsufficientPermissions());
+		}
+
 		const roomService = container.get(RoomService);
 		const tokenValidatedAgainstRoom = !!container.get(RequestSessionService).getRoom(roomId);
 

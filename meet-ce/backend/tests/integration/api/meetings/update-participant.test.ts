@@ -139,15 +139,14 @@ describe('Meetings API Tests', () => {
 			expect(response.body.error).toBe('Participant Error');
 		});
 
-		it('should fail with 404 if room does not exist', async () => {
+		it('should answer 403 to a token of another room even when the room does not exist', async () => {
 			const response = await updateParticipant(
 				'nonexistent-room-id',
 				participantIdentity,
 				MeetParticipantModerationAction.UPGRADE,
 				roomData.moderatorToken
 			);
-			expect(response.status).toBe(404);
-			expect(response.body.error).toBe('Room Error');
+			expect(response.status).toBe(403);
 		});
 
 		it('should fail with 409 when upgrading an already moderator participant', async () => {

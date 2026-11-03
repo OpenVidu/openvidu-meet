@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import type { MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import type { MeetRoomMemberPermissions, MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { container, registerDependencies } from '../../../src/config/dependency-injector.config.js';
 import { withRoomPermission } from '../../../src/middlewares/room.middleware.js';
@@ -28,6 +28,7 @@ let requestSessionService: RequestSessionService;
 
 const inRequestValidatedAgainst = (roomId: string, check: () => Promise<unknown>) =>
 	requestSessionService.run(() => {
+		requestSessionService.setRoomMemberTokenInfo({ roomId } as MeetRoomMemberTokenMetadata);
 		requestSessionService.setRoom({ roomId } as RequestRoomSnapshot);
 		return check();
 	});
@@ -59,12 +60,20 @@ describe('withRoomPermission', () => {
 		expect(next).toHaveBeenCalled();
 	});
 
-	it('looks the room up for a room member token of another room', async () => {
-		await inRequestValidatedAgainst('room-2', () =>
-			checkChatWrite(requestFor('room-1'), mockResponse(), jest.fn() as unknown as NextFunction)
-		);
+	// Answering by the room's existence first would tell that token which rooms exist.
+	it('answers 403 to a room member token of another room without looking the room up, whether it exists or not', async () => {
+		for (const exists of [true, false]) {
+			jest.spyOn(roomService, 'meetRoomExists').mockResolvedValue(exists);
+			const res = mockResponse();
+			const next = jest.fn() as unknown as NextFunction;
 
-		expect(roomService.meetRoomExists).toHaveBeenCalledWith('room-1');
+			await inRequestValidatedAgainst('room-2', () => checkChatWrite(requestFor('room-1'), res, next));
+
+			expect(res.status).toHaveBeenCalledWith(403);
+			expect(next).not.toHaveBeenCalled();
+		}
+
+		expect(roomService.meetRoomExists).not.toHaveBeenCalled();
 	});
 
 	it('answers 404 for a missing room when no room member token authenticated the request', async () => {
