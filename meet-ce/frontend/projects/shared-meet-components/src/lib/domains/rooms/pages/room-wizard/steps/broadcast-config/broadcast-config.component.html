@@ -51,7 +51,7 @@
 						<p class="destinations-hint">{{ 'ROOMS.WIZARD.BROADCAST.DESTINATIONS_DESC' | translate }}</p>
 
 						@for (destination of destinations(); track $index; let index = $index) {
-							@if (editingIndex() === index) {
+							@if (editing() === destination) {
 								<ng-container *ngTemplateOutlet="destinationEditor" />
 							} @else {
 								<div class="destination-row" [attr.id]="'broadcast-destination-' + index">
@@ -68,7 +68,7 @@
 										[attr.aria-label]="
 											('ROOMS.WIZARD.BROADCAST.EDIT' | translate) + ' ' + destination.name
 										"
-										(click)="openEdit(index)"
+										(click)="openEdit(destination)"
 									>
 										<mat-icon>edit</mat-icon>
 									</button>
@@ -80,7 +80,7 @@
 										[attr.aria-label]="
 											('ROOMS.WIZARD.BROADCAST.REMOVE' | translate) + ' ' + destination.name
 										"
-										(click)="removeDestination(index)"
+										(click)="removeDestination(destination)"
 									>
 										<mat-icon>delete</mat-icon>
 									</button>

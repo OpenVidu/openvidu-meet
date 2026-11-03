@@ -20,9 +20,7 @@ import { BroadcastFormGroup, BroadcastFormValue } from '../../../../models/wizar
 import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services/wizard-state.service';
 
-/** No destination being edited; `-1` is a new one, any other index the destination at that position. */
-const NOT_EDITING = null;
-const NEW_DESTINATION = -1;
+const NEW_DESTINATION = 'new';
 
 @Component({
 	selector: 'ov-broadcast-config',
@@ -51,9 +49,9 @@ export class BroadcastConfigComponent {
 	readonly mbpsPerDestination = BROADCAST_MBPS_PER_DESTINATION;
 
 	readonly editor = new DestinationEditor(this.formBuilder);
-	readonly editingIndex = signal<number | null>(NOT_EDITING);
-	readonly isEditorOpen = computed(() => this.editingIndex() !== NOT_EDITING);
-	readonly isAddingNew = computed(() => this.editingIndex() === NEW_DESTINATION);
+	readonly editing = signal<MeetBroadcastDestination | typeof NEW_DESTINATION | null>(null);
+	readonly isEditorOpen = computed(() => this.editing() !== null);
+	readonly isAddingNew = computed(() => this.editing() === NEW_DESTINATION);
 	readonly destinations = signal<MeetBroadcastDestination[]>([]);
 	readonly estimatedMbps = computed(() => broadcastUploadMbps(this.destinations().length));
 	readonly canAddDestination = computed(() => !this.isEditorOpen());
@@ -89,42 +87,38 @@ export class BroadcastConfigComponent {
 
 	openAdd(): void {
 		this.editor.open();
-		this.editingIndex.set(NEW_DESTINATION);
+		this.editing.set(NEW_DESTINATION);
 	}
 
-	openEdit(index: number): void {
-		const { name, url } = this.destinations()[index];
-		this.editor.open({ name, url }, url);
-		this.editingIndex.set(index);
+	openEdit(destination: MeetBroadcastDestination): void {
+		this.editor.open({ name: destination.name, url: destination.url }, destination.url);
+		this.editing.set(destination);
 	}
 
 	closeEditor(): void {
-		this.editingIndex.set(NOT_EDITING);
+		this.editing.set(null);
 	}
 
 	submitDestination(): void {
-		const index = this.editingIndex();
+		const editing = this.editing();
 		const edited = this.editor.submit();
 
-		if (index === NOT_EDITING || !edited) return;
+		if (editing === null || !edited) return;
 
-		const destinations = [...this.destinations()];
-		const destination = { ...(index === NEW_DESTINATION ? {} : destinations[index]), ...edited };
-
-		if (index === NEW_DESTINATION) {
-			destinations.push(destination);
-		} else {
-			destinations[index] = destination;
-		}
-
-		this.setDestinations(destinations);
+		this.setDestinations(
+			editing === NEW_DESTINATION
+				? [...this.destinations(), edited]
+				: this.destinations().map((destination) =>
+						destination === editing ? { ...destination, ...edited } : destination
+					)
+		);
 		this.closeEditor();
 	}
 
-	removeDestination(index: number): void {
-		this.setDestinations(this.destinations().filter((_, position) => position !== index));
+	removeDestination(removed: MeetBroadcastDestination): void {
+		this.setDestinations(this.destinations().filter((destination) => destination !== removed));
 
-		if (this.editingIndex() === index) {
+		if (this.editing() === removed) {
 			this.closeEditor();
 		}
 	}

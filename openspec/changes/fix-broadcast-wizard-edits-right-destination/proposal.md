@@ -13,8 +13,8 @@ makes the editor vanish and hides Add until the step is left.
 - The wizard edits the destination the editor was opened on, whatever rows are removed meanwhile.
   Removing the destination being edited closes the editor; removing any other leaves the editor open on
   its destination.
-- No delta of its own: `live-broadcast` is still being added by `add-live-broadcast`, whose requirement
-  "Live broadcast in the room wizard" gets a scenario for a row removed while another is edited.
+- Requirement "Live broadcast in the room wizard" of `live-broadcast` gets a scenario for a row removed
+  while another is edited.
 
 ## Capabilities
 
@@ -24,7 +24,7 @@ None.
 
 ### Modified Capabilities
 
-None (`skip_specs: true`). A task adds the scenario to the `live-broadcast` delta of `add-live-broadcast`.
+- `live-broadcast`: requirement "Live broadcast in the room wizard" (MODIFIED).
 
 ## Impact
 
@@ -33,9 +33,9 @@ None (`skip_specs: true`). A task adds the scenario to the `live-broadcast` delt
 - Code: `BroadcastConfigComponent` (`meet-ce/frontend/projects/shared-meet-components/src/lib/domains/rooms/pages/room-wizard/steps/broadcast-config/`).
 - openvidu.io: none.
 
-## Decisions to confirm
+## Decisions
 
-- How the editor keeps hold of the destination it edits. Proposed: by the destination object itself,
+- How the editor keeps hold of the destination it edits. Decided: by the destination object itself,
   since a destination added in the wizard has no `id` yet, so Edit and Remove stay available on the other
   rows. Alternative: hide Edit and Remove on every row while the editor is open, as Add already is, which
   keeps the index but blocks those actions during an edit.
