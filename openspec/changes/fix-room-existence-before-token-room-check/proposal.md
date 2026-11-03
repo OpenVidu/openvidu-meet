@@ -7,7 +7,7 @@ A room member token of one room can find out whether any other room exists: on `
 ## What Changes
 
 - A room member token issued for another room gets `403` before the server looks the room up, whether or not that room exists; `404` for a missing room stays for API key and user callers.
-- `getRoomMember` and the moderation operations follow the same rule as `startRecording`.
+- `getRoom`, `getRoomConfig`, `getRoomMember` and the operations guarded by a room permission (meeting and broadcast operations) follow the same rule as `startRecording`.
 
 ## Capabilities
 
@@ -24,13 +24,13 @@ None.
 
 - REST API: `getRoomMember` and the operations guarded by a room permission (`participantKick`, `participantMute`, `participantMuteAll`, `participantPromote` and the rest); a token of another room gets `403` where it got `404`; the OpenAPI already lists `403`, so the contract does not change.
 - Webhooks, embedded API, meeting UI, console UI, deployment configuration: not affected.
-- Code: `withRoomPermission` in `room.middleware.ts` and `room-member.middleware.ts` in `meet-ce/backend`.
+- Code: `withRoomPermission` and `authorizeRoomAccess` in `room.middleware.ts` and `authorizeRoomMemberAccess` in `room-member.middleware.ts` in `meet-ce/backend`.
 - openvidu.io: none.
 
 ## Decisions to confirm
 
-- Which rule to keep, since two specs took opposite sides. Proposed: `403` for another room's token before any lookup (the cheaper one, and the one `startRecording` already follows). Alternative: `404` for a missing room first, as `room-members` said.
-- Delivery: private advisory or regular public pull request.
+- Which rule to keep, since two specs took opposite sides. Decided: `403` for another room's token before any lookup (the cheaper one, and the one `startRecording` already follows). Alternative: `404` for a missing room first, as `room-members` said.
+- Delivery: private advisory or regular public pull request. Decided: public pull request, since the finding is already public in this repository.
 
 ## Source
 

@@ -103,10 +103,9 @@ describe('Meetings API Tests', () => {
 			expect(recording.body.status).toBe(MeetRecordingStatus.ACTIVE);
 		});
 
-		it('should fail with 404 if room does not exist', async () => {
+		it('should answer 403 to a token of another room even when the room does not exist', async () => {
 			const response = await kickParticipant('nonexistent-room-id', participantIdentity, roomData.moderatorToken);
-			expect(response.status).toBe(404);
-			expect(response.body.error).toBe('Room Error');
+			expect(response.status).toBe(403);
 		});
 	});
 });

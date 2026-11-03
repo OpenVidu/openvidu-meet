@@ -56,9 +56,9 @@ describe('Meetings API Tests', () => {
 			roomData = await setupSingleRoom(true);
 		});
 
-		it('should fail with 404 if the room does not exist', async () => {
+		it('should answer 403 to a token of another room even when the room does not exist', async () => {
 			const response = await endMeeting('nonexistent-room-id', roomData.moderatorToken);
-			expect(response.status).toBe(404);
+			expect(response.status).toBe(403);
 		});
 	});
 });

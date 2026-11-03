@@ -139,9 +139,9 @@ describe('Meetings API Tests', () => {
 			expect(response.body.message).toContain('no active meeting');
 		});
 
-		it('should fail with 404 when the room does not exist', async () => {
+		it('should answer 403 to a token of another room even when the room does not exist', async () => {
 			const response = await getMeeting('non-existent-room', meetingRoom.moderatorToken);
-			expect(response.status).toBe(404);
+			expect(response.status).toBe(403);
 		});
 
 		it('should fail with 401 without a room member token', async () => {

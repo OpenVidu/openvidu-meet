@@ -298,6 +298,13 @@ describe('Room Members API Security Tests', () => {
 			expectMeetError(response, errorInsufficientPermissions());
 		});
 
+		it('should not reveal to a room member token of another room whether a room exists', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/non-existing-room-id/members/${memberId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomUsers.roomMemberDetails.memberToken);
+			expectMeetError(response, errorInsufficientPermissions());
+		});
+
 		it('should not reveal to a speaker link token whether a member exists', async () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomId}/members/guest-nonexistent`)

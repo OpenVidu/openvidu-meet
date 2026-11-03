@@ -15,6 +15,7 @@ import { RoomMemberService } from '../services/room-member.service.js';
 import { RoomService } from '../services/room.service.js';
 import type { AuthValidator } from './auth.middleware.js';
 import { accessTokenValidator, allowAnonymous, withAuth } from './auth.middleware.js';
+import { isTokenOfAnotherRoom } from './room.middleware.js';
 
 /**
  * Middleware to authorize access to specific room member information.
@@ -24,11 +25,16 @@ import { accessTokenValidator, allowAnonymous, withAuth } from './auth.middlewar
  *  or if they are accessing their own member info.
  *
  * The caller is authorized before the member is looked up, so a caller without access cannot tell which
- * members exist. A room that does not exist answers 404 first, as every room-scoped operation does.
+ * members exist. A room member token of another room is refused before the room is looked up; for any
+ * other caller, a room that does not exist answers 404 first, as every room-scoped operation does.
  */
 export const authorizeRoomMemberAccess = async (req: Request, res: Response, next: NextFunction) => {
 	const roomId = req.params.roomId as string;
 	const memberId = req.params.memberId as string;
+
+	if (isTokenOfAnotherRoom(roomId)) {
+		return rejectRequestFromMeetError(res, errorInsufficientPermissions());
+	}
 
 	try {
 		const { owner } = await container.get(RoomService).getMeetRoom(roomId, ['owner']);
@@ -79,7 +85,9 @@ export const setupRoomMemberTokenAuthentication = (req: Request, res: Response, 
 	if (secret) {
 		authValidators.push(allowAnonymous);
 	} else {
-		authValidators.push(accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER));
+		authValidators.push(
+			accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)
+		);
 	}
 
 	return withAuth(...authValidators)(req, res, next);

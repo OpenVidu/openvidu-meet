@@ -324,6 +324,13 @@ describe('Meeting API Security Tests', () => {
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
 			expectMeetError(response, errorInsufficientPermissions());
 		});
+
+		it('should not reveal to a room member token of another room whether a room exists', async () => {
+			const response = await request(app)
+				.delete(`${MEETINGS_PATH}/non-existing-room-id/participants/${participantIdentity}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+			expectMeetError(response, errorInsufficientPermissions());
+		});
 	});
 
 	// The member's base role is MODERATOR, which grants all three gates, so only the denial carries
