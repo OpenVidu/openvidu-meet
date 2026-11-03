@@ -48,7 +48,9 @@ describe('ShadowBodyNodesService', () => {
 		const hostNodes = [hostLiveRegion(), descriptionContainer('ng')];
 		document.body.append(...hostNodes);
 
-		service.rehost(shadowRoot, { onDestroy: (callback) => destroyCallbacks.push(callback) } as DestroyRef);
+		service.rehost(shadowRoot, {
+			onDestroy: (callback: () => void) => destroyCallbacks.push(callback)
+		} as unknown as DestroyRef);
 	});
 
 	afterEach(() => destroy());
