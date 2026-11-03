@@ -8,6 +8,7 @@ With another camera and another microphone picked in the meeting's Audio & video
 
 - Apply takes both picks and closes both tried captures the moment it is pressed, then switches the published camera and microphone and remembers them, whatever happens to the panel meanwhile. The switches already run in the root-provided local media service, which outlives the panel.
 - The per-device read of the pick after the camera switch disappears with it.
+- The Apply button stays, disabled, while the switch is in progress, as the requirement says: taking the picks at once would otherwise hide it the moment it is pressed.
 
 ## Capabilities
 

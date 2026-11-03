@@ -103,7 +103,7 @@ export class DeviceTrialService implements OnDestroy {
 	);
 
 	/** Whether a picked device is waiting to be applied. */
-	readonly pending = computed(() => !!this.camera.device() || !!this.microphone.device());
+	readonly pending = computed(() => this._applying() || !!this.camera.device() || !!this.microphone.device());
 	/** Whether {@link apply} is switching the published devices. */
 	readonly applying = this._applying.asReadonly();
 
@@ -121,21 +121,26 @@ export class DeviceTrialService implements OnDestroy {
 	}
 
 	/**
-	 * Moves the published camera and microphone onto the picked ones. Each tried capture is closed
-	 * before its device is reopened for publishing, since some platforms refuse a second capture of
-	 * a device that is still held. A device that fails to switch goes back to the published one,
-	 * which the switch itself reports, and is left out of the result.
+	 * Moves the published camera and microphone onto the picked ones. Both picks are taken and every
+	 * tried capture is closed first: some platforms refuse a second capture of a device that is still
+	 * held, and the switches then complete whatever happens to the settings meanwhile. A device that
+	 * fails to switch goes back to the published one, which the switch itself reports, and is left out
+	 * of the result.
 	 */
 	async apply(): Promise<AppliedDevices> {
+		const pickedCamera = this.camera.device();
+		const pickedMicrophone = this.microphone.device();
+		this.camera.discard();
+		this.microphone.discard();
 		this._applying.set(true);
 
 		try {
-			const camera = await this.applyOne(this.camera, async (deviceId) => {
+			const camera = await this.applyOne(pickedCamera, async (deviceId) => {
 				await this.localMedia.switchCamera(deviceId);
 				this.deviceService.setCameraSelected(deviceId);
 				return this.deviceService.cameraSelected();
 			});
-			const microphone = await this.applyOne(this.microphone, async (deviceId) => {
+			const microphone = await this.applyOne(pickedMicrophone, async (deviceId) => {
 				await this.localMedia.switchMicrophone(deviceId);
 				this.deviceService.setMicSelected(deviceId);
 				return this.deviceService.microphoneSelected();
@@ -161,15 +166,11 @@ export class DeviceTrialService implements OnDestroy {
 		}
 	}
 
-	private async applyOne<T extends LocalTrack>(
-		tried: TriedDevice<T>,
+	private async applyOne(
+		device: CustomDevice | undefined,
 		switchTo: (deviceId: string) => Promise<CustomDevice | undefined>
 	): Promise<CustomDevice | undefined> {
-		const device = tried.device();
-
 		if (!device) return undefined;
-
-		tried.discard();
 
 		try {
 			return await switchTo(device.device);
