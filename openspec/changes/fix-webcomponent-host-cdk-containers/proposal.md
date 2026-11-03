@@ -33,7 +33,7 @@ None.
 
 ## Decisions to confirm
 
-- How to tell Meet's description container from the host's. Proposed: a distinct application id in the
+- How to tell Meet's description container from the host's. Decided: a distinct application id in the
   element, matched in the container's message ids. Alternative: create Meet's container inside the shadow
   root and stop observing `document.body`.
 
