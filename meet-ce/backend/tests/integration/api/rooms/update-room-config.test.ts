@@ -2,6 +2,7 @@ import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import {
 	MeetRecordingAudioCodec,
 	MeetRecordingAutoStartMode,
+	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
 	MeetRecordingVideoCodec,
@@ -736,6 +737,35 @@ describe('Room API Tests', () => {
 
 			expect(response.status).toBe(422);
 			expect(JSON.stringify(response.body.details)).toContain('Expected number');
+		});
+
+		it('should fail when updating encoding with a width or depth the media server cannot use', async () => {
+			const createdRoom = await createRoom({ roomName: 'unusable-encoding-update-test' });
+			const encoding = (video: Partial<MeetRecordingEncodingOptions['video']>) => ({
+				video: {
+					width: 1280,
+					height: 720,
+					framerate: 30,
+					codec: MeetRecordingVideoCodec.H264_MAIN,
+					bitrate: 3000,
+					keyFrameInterval: 4,
+					depth: 24,
+					...video
+				},
+				audio: { codec: MeetRecordingAudioCodec.OPUS, bitrate: 128, frequency: 48000 }
+			});
+
+			for (const [video, message] of [
+				[{ width: 1281 }, 'Video width must be an even number'],
+				[{ depth: 32 }, 'Video depth must be 8, 16 or 24']
+			] as const) {
+				const response = await updateRoomConfig(createdRoom.roomId, {
+					recording: { enabled: true, encoding: encoding(video) }
+				} as unknown as MeetRoomConfig);
+
+				expect(response.status).toBe(422);
+				expect(JSON.stringify(response.body.details)).toContain(message);
+			}
 		});
 	});
 });

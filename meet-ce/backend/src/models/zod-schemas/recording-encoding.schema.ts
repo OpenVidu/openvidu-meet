@@ -2,15 +2,23 @@ import type { MeetRecordingEncodingOptions } from '@openvidu-meet/typings';
 import { MeetRecordingAudioCodec, MeetRecordingEncodingPreset, MeetRecordingVideoCodec } from '@openvidu-meet/typings';
 import { z } from 'zod';
 
+/** A video dimension the media server accepts: a whole, even number of at least 16 pixels. */
+const videoDimension = (name: string) =>
+	z
+		.number()
+		.int(`${name} must be a whole number`)
+		.min(16, `${name} must be at least 16`)
+		.multipleOf(2, `${name} must be an even number`);
+
 export const EncodingOptionsSchema: z.ZodType<MeetRecordingEncodingOptions> = z.object({
 	video: z.object({
-		width: z.number().positive('Video width must be a positive number'),
-		height: z.number().positive('Video height must be a positive number'),
+		width: videoDimension('Video width'),
+		height: videoDimension('Video height'),
 		framerate: z.number().positive('Video framerate must be a positive number'),
 		codec: z.enum(MeetRecordingVideoCodec),
 		bitrate: z.number().positive('Video bitrate must be a positive number'),
 		keyFrameInterval: z.number().positive('Video keyFrameInterval must be a positive number'),
-		depth: z.number().positive('Video depth must be a positive number')
+		depth: z.literal([8, 16, 24], 'Video depth must be 8, 16 or 24')
 	}),
 	audio: z.object({
 		codec: z.enum(MeetRecordingAudioCodec),

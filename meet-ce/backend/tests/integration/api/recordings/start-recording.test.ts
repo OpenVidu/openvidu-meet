@@ -478,6 +478,34 @@ describe('Recording API Tests', () => {
 			expectValidationError(response, 'config.encoding.audio.bitrate', 'positive');
 		});
 
+		it('should reject encoding options with a width or depth the media server cannot use', async () => {
+			const encoding = (video: Partial<MeetRecordingEncodingOptions['video']>) =>
+				({
+					video: {
+						width: 1280,
+						height: 720,
+						framerate: 30,
+						codec: MeetRecordingVideoCodec.H264_MAIN,
+						bitrate: 3000,
+						keyFrameInterval: 4,
+						depth: 24,
+						...video
+					},
+					audio: { codec: MeetRecordingAudioCodec.OPUS, bitrate: 128, frequency: 48000 }
+				}) as MeetRecordingEncodingOptions;
+
+			expectValidationError(
+				await startRecording(room.roomId, { encoding: encoding({ width: 1281 }) }),
+				'config.encoding.video.width',
+				'Video width must be an even number'
+			);
+			expectValidationError(
+				await startRecording(room.roomId, { encoding: encoding({ depth: 32 }) }),
+				'config.encoding.video.depth',
+				'Video depth must be 8, 16 or 24'
+			);
+		});
+
 		it('should reject encoding options with missing keyFrameInterval', async () => {
 			const invalidEncoding = {
 				video: {

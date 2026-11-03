@@ -17,6 +17,7 @@ import { MEET_ENV } from '../environment.js';
 import { EgressHelper } from '../helpers/egress.helper.js';
 import {
 	errorEgressNotAvailable,
+	errorEgressOptionsRefused,
 	errorLivekitNotAvailable,
 	errorParticipantNotFound,
 	errorRoomNotFound,
@@ -217,10 +218,15 @@ export class LiveKitService {
 
 	/**
 	 * The error to answer for a failed call to an egress. LiveKit answers 503 when no egress service
-	 * takes the call, which for a start comes only after this client has given up waiting.
+	 * takes the call, which for a start comes only after this client has given up waiting, and
+	 * `invalid_argument` for options the egress cannot use.
 	 */
 	private toEgressError(error: unknown, operation: string): OpenViduMeetError {
-		const unavailable = this.asTwirpError(error).status === 503 || (error as Error | null)?.name === 'TimeoutError';
+		const { status, code, message } = this.asTwirpError(error);
+
+		if (code === 'invalid_argument') return errorEgressOptionsRefused(message ?? operation);
+
+		const unavailable = status === 503 || (error as Error | null)?.name === 'TimeoutError';
 		return unavailable ? errorEgressNotAvailable() : internalError(operation);
 	}
 

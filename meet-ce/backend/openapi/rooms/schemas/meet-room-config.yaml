@@ -346,16 +346,18 @@ MeetRecordingVideoEncodingOptions:
     properties:
         width:
             type: integer
-            minimum: 1
+            minimum: 16
+            multipleOf: 2
             example: 1280
             description: |
-              Video width in pixels
+              Video width in pixels: an even number of at least 16
         height:
             type: integer
-            minimum: 1
+            minimum: 16
+            multipleOf: 2
             example: 720
             description: |
-              Video height in pixels
+              Video height in pixels: an even number of at least 16
         framerate:
             type: integer
             minimum: 1
@@ -380,7 +382,7 @@ MeetRecordingVideoEncodingOptions:
               Keyframe interval in seconds
         depth:
             type: integer
-            minimum: 1
+            enum: [8, 16, 24]
             example: 24
             description: |
               Video depth (pixel format) in bits
