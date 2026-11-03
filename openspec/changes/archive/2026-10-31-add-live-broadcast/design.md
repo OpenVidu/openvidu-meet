@@ -83,7 +83,8 @@ entries. Rejected: the position of the stream (egress behavior, not a contract),
 to again repeats it), and one egress per destination (it composes and encodes the meeting once per
 destination: about one core each, against 1.5 cores for five destinations on one egress). An egress
 without the patch reports no tag: the start that meets it answers `500` and withdraws its stream.
-The change is proposed upstream in livekit/egress#1423.
+Proposed upstream in livekit/egress#1423, which later added stream ids (livekit/egress#1462); adopting
+them is planned in the change `adopt-egress-stream-destination-ids`.
 
 ### State in Redis under a per-room lock
 
@@ -216,7 +217,7 @@ available` for starting a broadcast or a recording and for `UpdateStream`.
 
 - [Broadcasts need the OpenVidu egress, which reports stream tags] → OpenVidu releases Meet and its
   egress together and never mixes versions; an egress without the tag is met by a `500` that streams
-  nothing, never by a broadcast stuck in `starting`. Proposed upstream (livekit/egress#1423).
+  nothing, never by a broadcast stuck in `starting`. Replaced by stream ids later (`adopt-egress-stream-destination-ids`).
 - [An add that times out, which the egress applies after the request withdrew it] → that stream runs
   without a broadcast until its egress ends: removing it needs its full URL, which only the failed
   request had. Not seen in the measurements.
