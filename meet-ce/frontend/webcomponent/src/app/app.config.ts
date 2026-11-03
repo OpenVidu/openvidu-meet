@@ -21,6 +21,7 @@ import {
 	RoomMemberHeaderProviderService,
 	RoomMemberInterceptorErrorHandlerService,
 	SHARED_TRANSLATIONS,
+	THEME_ROOT_ELEMENT,
 	ThemeService
 } from '@openvidu-meet/shared-components';
 import { ShadowOverlayContainer } from './shadow-dom/overlay-container.service';
@@ -32,6 +33,7 @@ export const appConfig: ApplicationConfig = {
 		provideZonelessChangeDetection(),
 		provideAnimationsAsync(),
 		provideRouter([]),
+		{ provide: THEME_ROOT_ELEMENT, useValue: null },
 		provideAppInitializer(() => inject(ThemeService).init()),
 		provideAppInitializer(() => inject(RoomMemberHeaderProviderService).init()),
 		// Important to register the room member error handler before the auth error handler,

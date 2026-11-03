@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { inject, Service, signal } from '@angular/core';
+import { inject, InjectionToken, Service, signal } from '@angular/core';
 import {
 	MEETING_DARK_THEME,
 	MEETING_LIGHT_THEME,
@@ -7,6 +7,15 @@ import {
 	MeetingThemeVariables
 } from '../../models/theme.model';
 import { MeetStorageService } from '../../../../../shared/services/storage.service';
+
+/**
+ * The element that carries the theme attributes and custom properties: the document root by default.
+ * `null` leaves every element of the document untouched, for a shell that renders the theme on its own
+ * host from {@link MeetingThemeService.appliedVariables}.
+ */
+export const THEME_ROOT_ELEMENT = new InjectionToken<HTMLElement | null>('THEME_ROOT_ELEMENT', {
+	factory: () => inject(DOCUMENT).documentElement
+});
 
 /**
  * Service for managing the meeting UI themes dynamically
@@ -21,7 +30,7 @@ import { MeetStorageService } from '../../../../../shared/services/storage.servi
  */
 @Service()
 export class MeetingThemeService {
-	private readonly document = inject(DOCUMENT);
+	private readonly root = inject(THEME_ROOT_ELEMENT);
 	private readonly storageService = inject(MeetStorageService);
 
 	private readonly THEME_ATTRIBUTE = 'data-ov-theme';
@@ -34,6 +43,12 @@ export class MeetingThemeService {
 	 * Signal that emits the current theme variables
 	 */
 	readonly currentVariables = signal<MeetingThemeVariables>({});
+
+	private readonly _appliedVariables = signal<Record<string, string>>({});
+	/**
+	 * Every custom property applied so far, with its latest value
+	 */
+	readonly appliedVariables = this._appliedVariables.asReadonly();
 
 	constructor() {}
 
@@ -105,18 +120,14 @@ export class MeetingThemeService {
 	private applyTheme(theme: MeetingThemeMode): void {
 		// Until a theme is applied, `:root:not([data-ov-theme])` in theme.scss follows the system
 		// preference through media queries. From here on the attribute pins the choice explicitly.
-		this.document.documentElement.setAttribute(this.THEME_ATTRIBUTE, theme);
+		this.root?.setAttribute(this.THEME_ATTRIBUTE, theme);
 		this.applyCSSVariables(this.getDefaultVariablesForTheme(theme));
 	}
 
 	private applyCSSVariables(variables: MeetingThemeVariables): void {
-		const documentElement = this.document.documentElement;
-
-		Object.entries(variables).forEach(([property, value]) => {
-			if (value !== undefined) {
-				documentElement.style.setProperty(property, value);
-			}
-		});
+		const defined = Object.entries(variables).filter((entry): entry is [string, string] => entry[1] !== undefined);
+		this._appliedVariables.update((applied) => ({ ...applied, ...Object.fromEntries(defined) }));
+		defined.forEach(([property, value]) => this.root?.style.setProperty(property, value));
 	}
 
 	private getDefaultVariablesForTheme(theme: MeetingThemeMode): MeetingThemeVariables {

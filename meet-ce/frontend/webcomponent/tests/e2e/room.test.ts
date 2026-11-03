@@ -100,6 +100,38 @@ test.describe('Room Features E2E Tests', () => {
 			});
 			expect(leaked).toEqual([]);
 		});
+		test("should leave the host page's <html> as the host set it", async ({ page }) => {
+			await page.emulateMedia({ colorScheme: 'light' });
+			await ensureFixture(page);
+			const html = page.locator('html');
+			await html.evaluate((root) => {
+				root.removeAttribute('data-ov-theme');
+				root.setAttribute('data-theme', 'cupcake');
+				root.setAttribute('style', '--host-accent: rgb(1, 2, 3);');
+			});
+
+			const expectHtmlUntouched = async () => {
+				await expect(html).toHaveAttribute('data-theme', 'cupcake');
+				await expect(html).not.toHaveAttribute('data-ov-theme');
+				await expect(html).toHaveAttribute('style', '--host-accent: rgb(1, 2, 3);');
+			};
+
+			const meetingBackground = () =>
+				wcLocator(page, '#meeting-view-container').evaluate((element) =>
+					getComputedStyle(element).getPropertyValue('--ov-background-color').trim()
+				);
+
+			await openMeeting(page, roomId, { role: 'moderator' });
+			await expectHtmlUntouched();
+			await expect.poll(meetingBackground).toBe('#f5f5f5');
+
+			await page.emulateMedia({ colorScheme: 'dark' });
+			await expect.poll(meetingBackground).toBe('#1f2020');
+			await expectHtmlUntouched();
+
+			await wcHost(page).evaluate((element) => element.remove());
+			await expectHtmlUntouched();
+		});
 	});
 
 	test.describe('Basic Room Features', () => {

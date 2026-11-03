@@ -37,7 +37,7 @@ None.
 
 ## Decisions to confirm
 
-- Whether the element follows the system color scheme when the host has no theme. Proposed: yes, inside
+- Whether the element follows the system color scheme when the host has no theme. Decided: yes, inside
   the element only. Alternative: stay on the light theme unless the host sets the theme.
 
 ## Source
