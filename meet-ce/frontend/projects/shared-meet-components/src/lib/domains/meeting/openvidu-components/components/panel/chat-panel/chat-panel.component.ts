@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MAX_CHAT_MESSAGE_LENGTH } from '../../../models/chat.model';
 import { PanelType } from '../../../models/panel.model';
 import { LinkifyPipe } from '../../../pipes/linkify.pipe';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
@@ -35,6 +36,10 @@ export class ChatPanelComponent implements AfterViewInit {
 	 * @ignore
 	 */
 	readonly message = signal<string>('');
+	/**
+	 * @ignore
+	 */
+	readonly maxMessageLength = MAX_CHAT_MESSAGE_LENGTH;
 	/**
 	 * @ignore
 	 */

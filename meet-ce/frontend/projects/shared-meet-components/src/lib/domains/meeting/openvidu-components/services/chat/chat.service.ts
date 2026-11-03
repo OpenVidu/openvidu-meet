@@ -1,6 +1,5 @@
 import { inject, Service, signal } from '@angular/core';
 import { ChatMessage } from '../../models/chat.model';
-
 import { DataTopic } from '../../models/data-topic.model';
 import { PanelType } from '../../models/panel.model';
 import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
@@ -54,8 +53,8 @@ export class ChatService {
 	}
 
 	/**
-	 * Sends a chat message through the data channel to the participants holding `chatRead`, so the media
-	 * server never delivers it to anyone else.
+	 * Sends a chat message as a text stream to the participants holding `chatRead`, so the media server
+	 * never delivers it to anyone else, even when the meeting is encrypted.
 	 *
 	 * @param message The message text to send
 	 */
@@ -64,19 +63,14 @@ export class ChatService {
 
 		if (plainTextMessage !== '' && plainTextMessage !== ' ') {
 			try {
-				// Create message payload
-				const payload = JSON.stringify({ message: plainTextMessage });
-				const data: Uint8Array<ArrayBuffer> = new TextEncoder().encode(payload);
-
 				const destinationIdentities = this.participantService
 					.remoteParticipants()
 					.filter((participant) => participant.canReadChat)
 					.map((participant) => participant.identity);
 
 				if (destinationIdentities.length > 0) {
-					await this.participantService.publishData(data, {
+					await this.participantService.sendText(plainTextMessage, {
 						topic: DataTopic.CHAT,
-						reliable: true,
 						destinationIdentities
 					});
 				}

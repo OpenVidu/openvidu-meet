@@ -34,11 +34,11 @@ import {
 import type {
 	AudioCaptureOptions,
 	CreateLocalTracksOptions,
-	DataPublishOptions,
 	E2EEOptions,
 	KeyProviderOptions,
 	RoomOptions,
 	ScreenShareCaptureOptions,
+	SendTextOptions,
 	TextStreamReader,
 	TrackPublishOptions,
 	VideoCaptureOptions
@@ -83,7 +83,6 @@ export {
 	createLocalTracks,
 	CreateLocalTracksOptions,
 	DataPacket_Kind,
-	DataPublishOptions,
 	deriveKeys,
 	DisconnectReason,
 	E2EEOptions,
@@ -103,6 +102,7 @@ export {
 	RoomEvent,
 	RoomOptions,
 	ScreenShareCaptureOptions,
+	SendTextOptions,
 	SwitchBackgroundProcessorOptions,
 	TextStreamReader,
 	Track,

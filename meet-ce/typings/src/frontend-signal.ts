@@ -76,10 +76,6 @@ export interface MeetParticipantReactionSentPayload {
 	timestamp: number;
 }
 
-export interface MeetingChatSignalPayload {
-	message: string;
-}
-
 /**
  * Union type representing the payload of a MeetSignal.
  * It can be either a {@link MeetRecordingUpdatedPayload}, {@link MeetParticipantPermissionsUpdatedPayload},

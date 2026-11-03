@@ -1,12 +1,12 @@
 import { inject, Service, signal } from '@angular/core';
 import {
-	MeetingChatSignalPayload,
 	MeetRecordingStatus,
 	MeetRecordingUpdatedPayload,
 	MeetSignalPayload,
 	MeetSignalType
 } from '@openvidu-meet/typings';
 import { Subject } from 'rxjs';
+import { MAX_CHAT_MESSAGE_LENGTH } from '../../models/chat.model';
 import { DataTopic } from '../../models/data-topic.model';
 import { ParticipantLeftEvent, ParticipantLeftReason } from '../../models/participant.model';
 import {
@@ -94,6 +94,7 @@ export class MeetingEventsService {
 		this.subscribeToParticipantNameChanged(room);
 		this.subscribeToParticipantAttributesChanged(room);
 		this.subscribeToDataMessage(room);
+		this.subscribeToChat(room);
 		this.subscribeToReconnection(room, callbacks);
 		this.subscribeToConnectionQualityChanged(room);
 	}
@@ -272,29 +273,19 @@ export class MeetingEventsService {
 		room.on(
 			RoomEvent.DataReceived,
 			async (payload: Uint8Array, participant?: RemoteParticipant, _?: DataPacket_Kind, topic?: string) => {
-				try {
-					const decoder = new TextDecoder();
-
-					// Meet signals carry server authority (recording state), so only the server may
-					// send them: a packet relayed from a participant arrives with that participant,
-					// one sent by the server does not.
-					if (participant && isMeetSignalType(topic)) {
+				// Meet signals carry server authority (recording state), so only the server may send them: a
+				// packet relayed from a participant arrives with that participant, one sent by the server does
+				// not. Nothing else a participant publishes is read: chat travels as a text stream.
+				if (participant) {
+					if (isMeetSignalType(topic)) {
 						this.log.w(`Discarding '${topic}' data relayed from a participant`, participant.identity);
-						return;
 					}
 
-					const storedParticipant = participant
-						? this.participantService.getRemoteParticipantBySid(participant.sid || '')
-						: undefined;
+					return;
+				}
 
-					if (participant && !storedParticipant) {
-						this.log.w('DataReceived from unknown participant', participant);
-						return;
-					}
-
-					const participantIdentity = storedParticipant?.identity || '';
-					const participantName = storedParticipant?.name || '';
-					const rawText = decoder.decode(payload);
+				try {
+					const rawText = new TextDecoder().decode(payload);
 					this.log.d('DataReceived (raw)', { topic });
 
 					const eventMessage = safeJsonParse(rawText);
@@ -305,7 +296,7 @@ export class MeetingEventsService {
 					}
 
 					this.log.d(`Data event received: ${topic}`);
-					this.handleDataEvent(topic, eventMessage, participantName || participantIdentity || 'Unknown');
+					this.handleDataEvent(topic, eventMessage);
 				} catch (err) {
 					this.log.e('Unhandled error processing DataReceived', err);
 				}
@@ -313,13 +304,39 @@ export class MeetingEventsService {
 		);
 	}
 
-	private handleDataEvent(topic: string | undefined, event: unknown, participantName: string) {
-		if (topic === DataTopic.CHAT) {
-			const { message } = event as MeetingChatSignalPayload;
-			this.chatService.addRemoteMessage(message, participantName);
-			return;
-		}
+	/**
+	 * Chat travels as a text stream, not as a data packet: in an encrypted room a packet hides its recipients
+	 * from the media server, which then delivers it to everyone, while a stream keeps them visible.
+	 */
+	private subscribeToChat(room: Room) {
+		room.registerTextStreamHandler(DataTopic.CHAT, async (reader, { identity }) => {
+			const participant = this.participantService.getRemoteParticipantByIdentity(identity);
 
+			if (!participant) {
+				this.log.w('Discarding chat from unknown participant', identity);
+				return;
+			}
+
+			try {
+				let message = '';
+
+				for await (const chunk of reader) {
+					message += chunk;
+
+					if (message.length > MAX_CHAT_MESSAGE_LENGTH) {
+						this.log.w('Discarding chat message over the length limit', identity);
+						return;
+					}
+				}
+
+				this.chatService.addRemoteMessage(message, participant.name || participant.identity || 'Unknown');
+			} catch (err) {
+				this.log.e('Unhandled error processing chat message', err);
+			}
+		});
+	}
+
+	private handleDataEvent(topic: string | undefined, event: unknown) {
 		if (!isMeetSignalType(topic)) return;
 
 		if (topic === MeetSignalType.MEET_RECORDING_UPDATED) {
