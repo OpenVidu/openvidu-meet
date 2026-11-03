@@ -209,3 +209,17 @@ The embedded element SHALL apply Meet's styles only inside its shadow root and S
 - **WHEN** an element joins a meeting and the participant opens a menu of the meeting
 - **THEN** the computed style of the host page's element is the same as before the element was connected
 - **AND** no stylesheet Meet adds to the host document's `<head>` declares any style, other than the font stylesheets
+
+### Requirement: The host page's root element is left untouched
+The embedded element SHALL NOT add, change or remove any attribute, class or inline style of the host page's `<html>` or `<body>`, when it connects, when the system color scheme changes, or after it is removed. The element's theme SHALL apply inside the element only.
+
+#### Scenario: Host theme attribute in light mode
+- **GIVEN** a host page whose `<html>` has `data-theme="cupcake"` and a light system theme
+- **WHEN** an element connects and shows the join screen
+- **THEN** the host `<html>` still has `data-theme="cupcake"` and no attribute or inline style added by Meet
+
+#### Scenario: System switches to dark
+- **GIVEN** a connected element on the same page
+- **WHEN** the operating system switches to the dark color scheme
+- **THEN** the host `<html>` is unchanged
+- **AND** after the element is removed the host `<html>` is still unchanged
