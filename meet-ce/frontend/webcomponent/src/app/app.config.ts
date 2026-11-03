@@ -1,6 +1,8 @@
+import { LIVE_ANNOUNCER_ELEMENT_TOKEN } from '@angular/cdk/a11y';
 import { OverlayContainer } from '@angular/cdk/overlay';
 import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import {
+	APP_ID,
 	ApplicationConfig,
 	inject,
 	provideAppInitializer,
@@ -24,6 +26,7 @@ import {
 	THEME_ROOT_ELEMENT,
 	ThemeService
 } from '@openvidu-meet/shared-components';
+import { createLiveAnnouncerElement, MEET_APP_ID } from './shadow-dom/body-nodes.service';
 import { ShadowOverlayContainer } from './shadow-dom/overlay-container.service';
 import { ShadowOnlySharedStylesHost } from './shadow-dom/shared-styles-host';
 
@@ -46,6 +49,8 @@ export const appConfig: ApplicationConfig = {
 		provideTranslations(RECORDINGS_TRANSLATIONS),
 		provideTranslations(AUTH_TRANSLATIONS),
 		provideTranslations(SHARED_TRANSLATIONS),
+		{ provide: APP_ID, useValue: MEET_APP_ID },
+		{ provide: LIVE_ANNOUNCER_ELEMENT_TOKEN, useFactory: createLiveAnnouncerElement },
 		ShadowOverlayContainer,
 		{ provide: OverlayContainer, useExisting: ShadowOverlayContainer },
 		{ provide: SHARED_STYLES_HOST, useClass: ShadowOnlySharedStylesHost }

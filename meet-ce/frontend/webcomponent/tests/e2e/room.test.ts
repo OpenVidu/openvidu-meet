@@ -158,6 +158,38 @@ test.describe('Room Features E2E Tests', () => {
 			expect(outside).toBeGreaterThan(0);
 			expect(taken).toBe(0);
 		});
+
+		test("should leave the host page's accessibility nodes in the host page", async ({ page }) => {
+			await ensureFixture(page);
+			const appendHostNodes = (suffix: string) =>
+				page.evaluate((suffix) => {
+					const liveRegion = document.createElement('div');
+					liveRegion.className = 'cdk-live-announcer-element cdk-visually-hidden';
+					liveRegion.id = `host-live-${suffix}`;
+					const descriptions = document.createElement('div');
+					descriptions.className = 'cdk-describedby-message-container cdk-visually-hidden';
+					descriptions.id = `host-descriptions-${suffix}`;
+					const message = document.createElement('div');
+					message.id = `cdk-describedby-message-host-${suffix}-0`;
+					descriptions.appendChild(message);
+					document.body.append(liveRegion, descriptions);
+				}, suffix);
+			const hostNodesInBody = () =>
+				page.evaluate(() =>
+					[...document.body.querySelectorAll(':scope > [id^="host-"]')].map((node) => node.id)
+				);
+
+			await appendHostNodes('before');
+			await openMeeting(page, roomId, { role: 'moderator' });
+			await appendHostNodes('after');
+			await openMoreOptionsMenu(page);
+
+			await expect.poll(hostNodesInBody).toHaveLength(4);
+			await expect(wcLocator(page, '.cdk-live-announcer-element')).toHaveCount(1);
+
+			await wcHost(page).evaluate((element) => element.remove());
+			await expect.poll(hostNodesInBody).toHaveLength(4);
+		});
 	});
 
 	test.describe('Basic Room Features', () => {
