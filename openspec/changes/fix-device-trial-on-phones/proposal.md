@@ -2,14 +2,14 @@
 
 ## Why
 
-Trying a camera or a microphone in the meeting's Audio & video tab opens a second capture of the same kind while the published one stays live, and phones do not allow that. On most Android phones the other camera cannot open, so the participant gets "could not be started", no Apply, and no other way to switch camera during the meeting, which 3.9 allowed; on iPhones and iPads the browser mutes the published camera or microphone for everyone while the pick is pending. Safari also ends a microphone opened next to another one.
+Trying a camera or a microphone in the meeting's Audio & video tab opens a second capture of the same kind while the published one stays live, and phones do not allow that. On most Android phones the other camera cannot open, so the participant gets "could not be started", no Apply, and no other way to switch camera during the meeting, which 3.9 allowed; on iPhones and iPads the browser ends the published camera or microphone as soon as the other one opens (checked on an iPhone, in Safari and in Chrome). Safari also ends a microphone opened next to another one.
 
 ## What Changes
 
 - Trying a device before applying it is offered only where the browser can keep a second capture of that kind next to the published one. On Android, iOS and iPadOS phones and tablets, for the camera and the microphone, and in Safari for the microphone, a pick in the meeting's Audio & video tab switches the published device at once, as the device setup screen does and as the meeting did in 3.9, with no Apply button.
 - Where the pick switches at once, the tab says so beside the camera or microphone selector (when there is another device to pick): the others see or hear the new device as soon as it is picked. The note is new text in the ten bundled languages.
 - Computers keep the trial for the camera in every browser and for the microphone outside Safari.
-- Where the trial applies is decided per device kind from the platform before anything is opened: on iOS the second capture opens without error and only then mutes the published one, so a failure cannot be the signal.
+- Where the trial applies is decided per device kind from the platform before anything is opened: on iOS the second capture opens without error and only then ends the published one, so a failure cannot be the signal.
 
 ## Capabilities
 
