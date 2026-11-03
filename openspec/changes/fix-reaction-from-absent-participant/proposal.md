@@ -28,7 +28,7 @@ None (`skip_specs: true`). The code is brought in line with `reactions` "Who may
 
 ## Decisions to confirm
 
-- How an absent sender is told from a missing meeting. Proposed: `404` when the room has no active meeting (from the room read the request already does) and `403` when it has and the sender is absent, as both specs say. Alternative: one LiveKit lookup of the sender and `404` for both cases, with the `reactions` scenario changed to match.
+- How an absent sender is told from a missing meeting. Decided: `404` when the room has no active meeting (from the room read the request already does) and `403` when it has and the sender is absent, as both specs say. Alternative: one LiveKit lookup of the sender and `404` for both cases, with the `reactions` scenario changed to match.
 
 ## Source
 

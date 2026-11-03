@@ -131,6 +131,27 @@ describe('Meetings API Tests', () => {
 			expect(response.status).toBe(403);
 		});
 
+		it('should fail with 403 for a joining token whose participant is not in the meeting', async () => {
+			await joinSpeaker('Alice');
+			const { speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(roomData.room.access);
+			const absentToken = await generateRoomMemberToken(roomData.room.roomId, {
+				secret: speakerSecret,
+				joinMeeting: true,
+				participantName: 'Bob'
+			});
+			const signalSpy = spyOnReactionSignal();
+
+			const response = await sendParticipantReaction(
+				roomData.room.roomId,
+				{ reaction: MeetReaction.THUMBS_UP },
+				absentToken
+			);
+
+			expect(response.status).toBe(403);
+			expect(response.body.error).toBe('Reaction Error');
+			expect(signalSpy).not.toHaveBeenCalled();
+		});
+
 		it('should reject a reaction outside the offered set', async () => {
 			const alice = await joinSpeaker('Alice');
 

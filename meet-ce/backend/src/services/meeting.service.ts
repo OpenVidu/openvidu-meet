@@ -26,6 +26,7 @@ import {
 	errorNoActiveMeeting,
 	errorParticipantCannotBeMuted,
 	errorParticipantNotFound,
+	errorReactionSenderNotInMeeting,
 	errorReactionsDisabled,
 	OpenViduMeetError
 } from '../models/error.model.js';
@@ -314,12 +315,20 @@ export class MeetingService {
 	 * @param participantIdentity - The identity of the participant sending the reaction
 	 * @param reaction - The reaction to show
 	 * @throws A 404 error when the room has no active meeting, or a 403 when the room has the feature disabled
+	 * or the participant is not in the meeting
 	 */
 	async sendParticipantReaction(roomId: string, participantIdentity: string, reaction: MeetReaction): Promise<void> {
-		const [, config] = await this.withActiveMeetingRoom(roomId, this.roomService.getRequestRoomConfig(roomId));
+		const [, [config, senderInMeeting]] = await this.withActiveMeetingRoom(
+			roomId,
+			Promise.all([this.roomService.getRequestRoomConfig(roomId), this.isInMeeting(roomId, participantIdentity)])
+		);
 
 		if (!config.reactions.enabled) {
 			throw errorReactionsDisabled(roomId);
+		}
+
+		if (!senderInMeeting) {
+			throw errorReactionSenderNotInMeeting(participantIdentity, roomId);
 		}
 
 		await this.frontendEventService.sendParticipantReactionSentSignal(roomId, participantIdentity, reaction);
@@ -430,6 +439,19 @@ export class MeetingService {
 		}
 
 		return participant;
+	}
+
+	protected async isInMeeting(roomId: string, participantIdentity: string): Promise<boolean> {
+		try {
+			await this.getStandardParticipant(roomId, participantIdentity);
+			return true;
+		} catch (error) {
+			if (error instanceof OpenViduMeetError && error.statusCode === 404) {
+				return false;
+			}
+
+			throw error;
+		}
 	}
 
 	/**
