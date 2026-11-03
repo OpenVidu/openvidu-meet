@@ -1,19 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
-import '@angular/compiler';
-import { LIVE_ANNOUNCER_ELEMENT_TOKEN } from '@angular/cdk/a11y';
-import { DestroyRef, DOCUMENT, Injector, runInInjectionContext } from '@angular/core';
-import {
-	createLiveAnnouncerElement,
-	MEET_APP_ID,
-	ShadowBodyNodesService
-} from '../../src/app/shadow-dom/body-nodes.service';
+import { createLiveAnnouncerElement, MEET_APP_ID, moveMeetBodyNodes } from '../../src/app/shadow-dom/body-nodes';
 
 // A host page using the CDK appends the same two kinds of nodes to `document.body` as Meet does; only
 // Meet's may move into its shadow root.
-describe('ShadowBodyNodesService', () => {
+describe('moveMeetBodyNodes', () => {
 	let shadowRoot: ShadowRoot;
 	let liveAnnouncerElement: HTMLElement;
-	let destroy: () => void;
+	let stop: () => void;
 
 	const descriptionContainer = (appId: string): HTMLElement => {
 		const container = document.createElement('div');
@@ -35,25 +28,13 @@ describe('ShadowBodyNodesService', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
 		shadowRoot = document.createElement('div').attachShadow({ mode: 'open' });
-		const destroyCallbacks: (() => void)[] = [];
-		destroy = () => destroyCallbacks.forEach((callback) => callback());
-		const injector = Injector.create({
-			providers: [
-				{ provide: DOCUMENT, useValue: document },
-				{ provide: LIVE_ANNOUNCER_ELEMENT_TOKEN, useFactory: createLiveAnnouncerElement, deps: [] }
-			]
-		});
-		liveAnnouncerElement = injector.get(LIVE_ANNOUNCER_ELEMENT_TOKEN)!;
-		const service = runInInjectionContext(injector, () => new ShadowBodyNodesService());
-		const hostNodes = [hostLiveRegion(), descriptionContainer('ng')];
-		document.body.append(...hostNodes);
+		liveAnnouncerElement = createLiveAnnouncerElement(document);
+		document.body.append(hostLiveRegion(), descriptionContainer('ng'));
 
-		service.rehost(shadowRoot, {
-			onDestroy: (callback: () => void) => destroyCallbacks.push(callback)
-		} as unknown as DestroyRef);
+		stop = moveMeetBodyNodes(document, shadowRoot, liveAnnouncerElement);
 	});
 
-	afterEach(() => destroy());
+	afterEach(() => stop());
 
 	it("puts Meet's live announcer in the shadow root and leaves the host's in the page", () => {
 		expect(liveAnnouncerElement.parentNode).toBe(shadowRoot);
