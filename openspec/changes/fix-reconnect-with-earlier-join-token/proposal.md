@@ -30,12 +30,14 @@ None.
 - Code: `handleParticipantJoined` of the LiveKit webhook service, the token checks of `auth.middleware.ts`, `refreshRoomMemberToken` and the live metadata pushes of `room-member.service.ts` in `meet-ce/backend`.
 - openvidu.io: none.
 
-## Decisions to confirm
+## Decisions
 
-- A stale session at join. Proposed: remove it. Alternative: rebuild its metadata and grant from stored state for members and users, and remove only anonymous participants (more code, and anonymous roles and promotions cannot be rebuilt).
-- Webhooks of a rejected session. Proposed: check before sending `participantJoined` and keep `participantLeft` quiet for that session. Alternative: send both events so every `participantLeft` pairs with a `participantJoined`.
-- A kicked participant reconnecting with the same join token. Proposed: unchanged, because `meeting-moderation` "A kick does not revoke access" lets them join again at once. Alternative: record a revocation at kick time.
-- Delivery: private advisory or regular public pull request.
+Taken with the proposed option each time (USER, 2026-11-03):
+
+- A stale session at join is removed, not rebuilt.
+- A rejected session is checked before `participantJoined` is sent, and its `participantLeft` stays quiet.
+- A kicked participant reconnecting with the same join token is unchanged: `meeting-moderation` "A kick does not revoke access" lets them join again at once.
+- Delivery: a regular public pull request. Every revocation this fix completes (`participantUpdateRole`, the live grant push of `updateRoomMember`) is new in the unreleased 3.10.0, and in 3.9 a connection simply keeps the permissions it joined with, so no published release behaves differently and there is nothing to disclose privately.
 
 ## Source
 

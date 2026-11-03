@@ -20,6 +20,7 @@ import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	disconnectFakeParticipants,
 	joinFakeParticipant,
+	joinFakeParticipantUntilRemoved,
 	updateParticipantMetadata
 } from '../../../helpers/livekit-cli-helpers.js';
 import {
@@ -49,13 +50,19 @@ describe('Room Members API Tests', () => {
 		roomRoles = room.roles;
 	});
 
-	/** Joins a member to the meeting as the meeting client does. */
-	const joinMemberToMeeting = async (memberId: string, participantName: string): Promise<void> => {
+	/** The metadata a room member token to join the meeting carries, which the media server holds for its session. */
+	const joinTokenMetadata = async (memberId: string, participantName: string): Promise<string> => {
 		const token = await generateRoomMemberToken(roomId, { secret: memberId, joinMeeting: true, participantName });
 		const { metadata } = container.get(TokenService).getClaimsIgnoringExpiration(token.replace(/^Bearer\s+/i, ''));
+		return metadata!;
+	};
+
+	/** Joins a member to the meeting as the meeting client does. */
+	const joinMemberToMeeting = async (memberId: string, participantName: string): Promise<void> => {
+		const metadata = await joinTokenMetadata(memberId, participantName);
 
 		await joinFakeParticipant(roomId, memberId);
-		await updateParticipantMetadata(roomId, memberId, JSON.parse(metadata!) as MeetRoomMemberTokenMetadata);
+		await updateParticipantMetadata(roomId, memberId, JSON.parse(metadata) as MeetRoomMemberTokenMetadata);
 	};
 
 	/** Reads an identified guest's own member record with a room member token, which fails with 401 once revoked. */
@@ -435,6 +442,44 @@ describe('Room Members API Tests', () => {
 			// A token refresh or a reconnection rebuilds the grant from this metadata
 			const { permissions } = JSON.parse(participant.metadata) as MeetRoomMemberTokenMetadata;
 			expect(permissions.mediaPublishAudio).toBe(false);
+		});
+	});
+
+	describe('A session that connects with a token a member update revoked', () => {
+		const createSpeaker = async (name: string): Promise<string> => {
+			const response = await createRoomMember(roomId, { name, baseRole: MeetRoomMemberRole.SPEAKER });
+			return response.body.memberId as string;
+		};
+
+		it('should be removed from the meeting when the token was issued before the update', async () => {
+			const memberId = await createSpeaker('Stale Member');
+			const heldBefore = await joinTokenMetadata(memberId, 'Stale Member');
+			await sleep('10ms');
+			const response = await updateRoomMember(roomId, memberId, {
+				customPermissions: { mediaPublishAudio: false }
+			});
+			expect(response.status).toBe(200);
+
+			await joinFakeParticipantUntilRemoved(roomId, memberId, heldBefore);
+
+			expect(await container.get(LiveKitService).participantExists(roomId, memberId)).toBe(false);
+		});
+
+		it('should stay in the meeting when the token was issued after the update', async () => {
+			const memberId = await createSpeaker('Current Member');
+			await sleep('10ms');
+			const response = await updateRoomMember(roomId, memberId, {
+				customPermissions: { mediaPublishAudio: false }
+			});
+			expect(response.status).toBe(200);
+			await sleep('10ms');
+			const issuedAfter = await joinTokenMetadata(memberId, 'Current Member');
+
+			await joinFakeParticipant(roomId, memberId, issuedAfter);
+			// The media server removes a session within a moment of its join, so one still here has been kept
+			await sleep('3s');
+
+			expect(await container.get(LiveKitService).participantExists(roomId, memberId)).toBe(true);
 		});
 	});
 
