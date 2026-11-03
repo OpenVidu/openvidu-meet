@@ -311,13 +311,23 @@ In a meeting 790 px wide or narrower, every chip of the status rail SHALL stay v
 - **THEN** the rail shows the countdown instead of the elapsed time
 
 ### Requirement: Toolbar across screen sizes
-In a meeting narrower than 768 px, on any device, the toolbar SHALL turn compact: every toolbar button SHALL stay within the screen, the extra buttons (such as raise hand, reactions and captions) SHALL move into the More options menu, and the panel buttons SHALL collapse into a single Panels menu.
+When the toolbar buttons do not fit the width of the meeting, in a window or in an embedded element, on any device, the toolbar SHALL turn compact: every toolbar button SHALL stay within the screen, the extra buttons (such as raise hand, reactions and captions) SHALL move into the More options menu, and the panel buttons SHALL collapse into a single Panels menu.
 
 #### Scenario: Narrow desktop window
 - **GIVEN** a desktop browser window 390 px wide
 - **WHEN** the participant joins a meeting
 - **THEN** no toolbar button lies outside the screen
 - **AND** the captions control is inside the More options menu
+
+#### Scenario: Tablet width
+- **GIVEN** a browser window 820 px wide and a room with the default toolbar
+- **WHEN** the participant joins a meeting
+- **THEN** the chat and participants buttons are reachable
+
+#### Scenario: Narrow embedded element
+- **GIVEN** an `<openvidu-meet>` element 700 px wide in a wider window
+- **WHEN** the participant joins a meeting
+- **THEN** no toolbar button lies outside the element
 
 ### Requirement: Side panels
 The chat, participants, activities, settings and background effects panels SHALL open one at a time. Where the meeting is wider than 790 px a panel SHALL open beside the grid, which shrinks to make room; otherwise it SHALL open over the meeting at full width. The `<openvidu-meet>` element SHALL open panels beside the grid whatever its own width.
