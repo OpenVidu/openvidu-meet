@@ -119,6 +119,8 @@
 			"MICROPHONE_OFF": "マイクはオフです",
 			"APPLY": "適用",
 			"EFFECT_APPLIES_ON_APPLY": "背景効果はこのカメラを適用すると追加されます",
+			"CAMERA_SWITCHES_AT_ONCE": "選択するとすぐに、他の参加者に新しいカメラの映像が表示されます",
+			"MICROPHONE_SWITCHES_AT_ONCE": "選択するとすぐに、他の参加者に新しいマイクの音声が聞こえます",
 			"DISPLAY_NAME": "表示名",
 			"DISPLAY_NAME_HINT": "会議への参加時に設定されました",
 			"DISPLAY_NAME_LOCKED": "会議中は変更できません",

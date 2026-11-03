@@ -119,6 +119,8 @@
 			"MICROPHONE_OFF": "Je microfoon staat uit",
 			"APPLY": "Toepassen",
 			"EFFECT_APPLIES_ON_APPLY": "Het achtergrondeffect wordt toegevoegd wanneer je deze camera toepast",
+			"CAMERA_SWITCHES_AT_ONCE": "Anderen zien de nieuwe camera zodra je die kiest",
+			"MICROPHONE_SWITCHES_AT_ONCE": "Anderen horen de nieuwe microfoon zodra je die kiest",
 			"DISPLAY_NAME": "Weergavenaam",
 			"DISPLAY_NAME_HINT": "Gekozen toen je deelnam aan de vergadering",
 			"DISPLAY_NAME_LOCKED": "Kan tijdens de vergadering niet worden gewijzigd",

@@ -90,6 +90,12 @@
 					<mat-icon class="field-chevron">expand_more</mat-icon>
 				}
 			</button>
+
+			@if (switchesAtOnce && cameras().length > 1) {
+				<span id="settings-camera-switch-hint" class="device-hint">
+					{{ 'PANEL.SETTINGS.CAMERA_SWITCHES_AT_ONCE' | translate }}
+				</span>
+			}
 		} @else {
 			<div id="no-video-device-message" class="no-device-notice">
 				<mat-icon>videocam_off</mat-icon>

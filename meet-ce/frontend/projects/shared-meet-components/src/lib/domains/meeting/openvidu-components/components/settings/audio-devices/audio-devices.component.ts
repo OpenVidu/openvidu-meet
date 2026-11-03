@@ -37,6 +37,8 @@ export class AudioDevicesComponent {
 	private readonly trial = inject(PlatformService).canCaptureSecondMicrophone()
 		? inject(DeviceTrialService, { optional: true })
 		: null;
+
+	readonly switchesAtOnce = this.trial === null;
 	private readonly publishedLevel = inject(MicActivityService).level;
 	private readonly micLevel = computed(() =>
 		this.trial?.microphone.device() ? this.trial.microphone.level() : this.publishedLevel()

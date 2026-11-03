@@ -134,6 +134,10 @@ describe('VideoDevicesComponent', () => {
 			expect(changes).toEqual([]);
 		});
 
+		it('does not warn that a pick reaches the others at once', () => {
+			expect(component.switchesAtOnce).toBeFalse();
+		});
+
 		it('previews the camera being tried, and the published one otherwise', () => {
 			expect(component.videoTrack() as unknown).toEqual({ id: 'published' });
 
@@ -169,6 +173,10 @@ describe('VideoDevicesComponent', () => {
 			expect(localMedia.switchCamera).toHaveBeenCalledOnceWith('cam-2');
 			expect(deviceService.setCameraSelected).toHaveBeenCalledOnceWith('cam-2');
 			expect(trial.tryCamera).not.toHaveBeenCalled();
+		});
+
+		it('tells the participant that a pick reaches the others at once', () => {
+			expect(component.switchesAtOnce).toBeTrue();
 		});
 
 		it('previews the published camera', () => {
