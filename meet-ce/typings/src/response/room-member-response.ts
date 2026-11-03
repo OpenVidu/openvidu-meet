@@ -121,6 +121,11 @@ export interface MeetRoomMemberFilters extends SortAndPagination<MeetRoomMemberS
 export interface MeetRoomMemberTokenMetadata {
 	/** Token issued at timestamp (milliseconds since epoch) */
 	iat: number;
+	/**
+	 * Stamp of the demotion revocation recorded for the participant when the token was issued, if any. A later
+	 * demotion revokes the token.
+	 */
+	issuedAfterRevocation?: number;
 	/** Unique identifier for the room */
 	roomId: string;
 	/** Unique identifier for the member if defined */

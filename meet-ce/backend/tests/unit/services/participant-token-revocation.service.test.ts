@@ -2,15 +2,13 @@ import { afterEach, describe, expect, it, jest } from '@jest/globals';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see meeting-mute.test.ts).
 import '../../../src/config/dependency-injector.config.js';
-import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
 import { ParticipantTokenRevocationService } from '../../../src/services/participant-token-revocation.service.js';
 import type { RedisService } from '../../../src/services/redis.service.js';
 
 const ROOM_ID = 'room-1';
 const IDENTITY = 'participant-1';
-const CLOCK_MARGIN_MS = INTERNAL_CONFIG.REFRESH_CLOCK_TOLERANCE_SECONDS * 1000;
 
-// Replicas stamp revocations and issue tokens from their own clocks.
+// Replicas stamp revocations and issue tokens from their own clocks, which may disagree.
 describe('ParticipantTokenRevocationService', () => {
 	const store = new Map<string, string>();
 	const service = new ParticipantTokenRevocationService({
@@ -25,30 +23,43 @@ describe('ParticipantTokenRevocationService', () => {
 		jest.restoreAllMocks();
 	});
 
-	it('revokes a token another replica issued just before, from a clock slightly ahead', async () => {
+	it('revokes a token issued before, even by a replica whose clock is ahead of the revocation', async () => {
+		clockAt(20_000);
+		const earlierToken = await service.getTokenIssue(ROOM_ID, IDENTITY);
+
 		clockAt(10_000);
 		await service.revokeIssuedTokens(ROOM_ID, IDENTITY);
 
-		expect(await service.isRevoked(ROOM_ID, IDENTITY, 10_000 + CLOCK_MARGIN_MS - 1)).toBe(true);
+		expect(await service.isRevoked(ROOM_ID, IDENTITY, earlierToken)).toBe(true);
 	});
 
-	it('issues a token at the time of the replica when nothing was revoked, or the revocation is behind it', async () => {
-		clockAt(10_000);
-		expect(await service.getIssueTime(ROOM_ID, IDENTITY)).toBe(10_000);
-
-		await service.revokeIssuedTokens(ROOM_ID, IDENTITY);
-		clockAt(10_000 + CLOCK_MARGIN_MS + 5_000);
-		expect(await service.getIssueTime(ROOM_ID, IDENTITY)).toBe(10_000 + CLOCK_MARGIN_MS + 5_000);
-	});
-
-	it('issues a token the revocation accepts even from a replica whose clock is behind it', async () => {
+	it('accepts a token issued after, even by a replica whose clock is behind the revocation', async () => {
 		clockAt(10_000);
 		await service.revokeIssuedTokens(ROOM_ID, IDENTITY);
 
 		clockAt(9_000);
-		const issuedAt = await service.getIssueTime(ROOM_ID, IDENTITY);
+		const laterToken = await service.getTokenIssue(ROOM_ID, IDENTITY);
 
-		expect(await service.isRevoked(ROOM_ID, IDENTITY, issuedAt)).toBe(false);
-		expect(issuedAt).toBeGreaterThan(10_000 + CLOCK_MARGIN_MS);
+		expect(await service.isRevoked(ROOM_ID, IDENTITY, laterToken)).toBe(false);
+	});
+
+	// A token stamped ahead of the replica's clock would outlive a permission update made right after it.
+	it('stamps a token with the time of the replica that issues it, revocation or not', async () => {
+		clockAt(10_000);
+		expect((await service.getTokenIssue(ROOM_ID, IDENTITY)).iat).toBe(10_000);
+
+		await service.revokeIssuedTokens(ROOM_ID, IDENTITY);
+		expect((await service.getTokenIssue(ROOM_ID, IDENTITY)).iat).toBe(10_000);
+	});
+
+	it('revokes a token issued after one demotion when a later demotion comes', async () => {
+		clockAt(10_000);
+		await service.revokeIssuedTokens(ROOM_ID, IDENTITY);
+		const tokenBetweenDemotions = await service.getTokenIssue(ROOM_ID, IDENTITY);
+
+		clockAt(20_000);
+		await service.revokeIssuedTokens(ROOM_ID, IDENTITY);
+
+		expect(await service.isRevoked(ROOM_ID, IDENTITY, tokenBetweenDemotions)).toBe(true);
 	});
 });

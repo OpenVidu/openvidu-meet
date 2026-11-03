@@ -145,9 +145,12 @@ describe('RoomMemberService.updateRoomMember on a member in the meeting', () => 
 				{},
 				{},
 				{
-					isRevoked: async (_roomId: string, _identity: string, issuedAt: number) =>
-						tokensRevokedAt !== undefined && issuedAt < tokensRevokedAt,
-					getIssueTime: async () => Date.now()
+					isRevoked: async (
+						_roomId: string,
+						_identity: string,
+						{ issuedAfterRevocation }: ParticipantMeetingMetadata
+					) => tokensRevokedAt !== undefined && issuedAfterRevocation !== tokensRevokedAt,
+					getTokenIssue: async () => ({ iat: Date.now() })
 				},
 				{ withRetryLock: (_key: string, _ttl: number, update: () => Promise<unknown>) => update() }
 			] as unknown as ConstructorParameters<typeof RoomMemberService>)
@@ -319,7 +322,13 @@ describe('RoomMemberService.refreshRoomMemberToken from the participant in the m
 	});
 
 	it('renews from the metadata the demotion pushed', async () => {
-		liveMetadata = { iat: DEMOTED_AT, roomId: ROOM_ID, permissions: speaker, badge: MeetRoomMemberUIBadge.OTHER };
+		liveMetadata = {
+			iat: DEMOTED_AT,
+			issuedAfterRevocation: DEMOTED_AT,
+			roomId: ROOM_ID,
+			permissions: speaker,
+			badge: MeetRoomMemberUIBadge.OTHER
+		};
 
 		await expect(memberService.refreshRoomMemberToken(ROOM_ID, 'previous-token')).resolves.toBe('renewed-token');
 		expect(generateRoomMemberToken.mock.calls[0]![0].tokenMetadata).toMatchObject({
