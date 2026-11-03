@@ -250,6 +250,10 @@ export class App {
 		// re-navigates only when the route-determining identity changes (see syncHomeRoute), so an
 		// unrelated attribute change doesn't yank the user off an interrupt view (login, recordings…).
 		effect(() => {
+			// The outgoing mount of a remount stays alive for a moment: if its effect kept navigating the
+			// shared router, the two mounts would re-trigger each other's navigation and race on the token.
+			if (App.activeMount !== this) return;
+
 			const route = wcRouteFromAttributes(this.inputs());
 
 			// Surface the specific misconfiguration cause to the integrator via the console;
