@@ -67,6 +67,7 @@ import {
 	muteParticipantMedia,
 	removeParticipantModerator,
 	sendReaction,
+	tapSignalling,
 	toggleHand,
 	type ParticipantConfig
 } from './helpers/participant-management.helper';
@@ -282,6 +283,46 @@ test.describe('Participants E2E Tests', () => {
 				// ...and moderator 1 sees the demotion reactively (badge gone, promote available again).
 				await expectNoParticipantBadge(moderator1Page, speakerId);
 				await expectMakeModeratorButton(moderator1Page, speakerId);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should keep a demoted participant in the meeting, as a speaker, when their client rejoins from scratch', async ({
+			page,
+			browser
+		}) => {
+			const signalling = await tapSignalling(page);
+			const speaker = await createRoomMember(roomId, { name: speakerName, baseRole: MeetRoomMemberRole.SPEAKER });
+			await openMeeting(page, speaker.accessUrl);
+			const { byName, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				skipRemoteStreamCheck: true,
+				participants: [{ name: moderatorName, baseRole: MeetRoomMemberRole.MODERATOR }]
+			});
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				await toggleParticipantsPanel(moderatorPage);
+				const speakerId = await getParticipantIdByName(moderatorPage, speakerName);
+				await toggleParticipantsPanel(page);
+				const speakerLocalId = await getLocalParticipantId(page);
+
+				await makeParticipantModerator(moderatorPage, speakerId);
+				await expectParticipantBadge(page, speakerLocalId, MeetRoomMemberUIBadge.MODERATOR);
+				await removeParticipantModerator(moderatorPage, speakerId);
+				await expectNoParticipantBadge(page, speakerLocalId);
+
+				// The rejoin presents the token the media server refreshed at the demotion, which the
+				// server must not take for the moderator token the demotion revoked. A session joined
+				// with a revoked token is removed within a second of the rejoin.
+				await signalling.requestFullReconnect();
+				signalling.completeReconnect();
+				await page.waitForTimeout(5_000);
+
+				await expect(page.locator('#layout-container')).toBeVisible();
+				await expect(moderatorPage.locator('[data-participant-id]', { hasText: speakerName })).toHaveCount(1);
+				await expectNoParticipantBadge(page, speakerLocalId);
 			} finally {
 				await removeAllParticipants();
 			}
