@@ -10,7 +10,7 @@ Paths are under `meet-ce/frontend/projects/shared-meet-components/src/lib/domain
 
 ## Decisions
 
-- **Decided per device kind, from the platform, before opening.** A new `PlatformService.canCaptureTwice(kind)` answers false on Android, iOS and iPadOS for both kinds and in Safari for the microphone. Detecting the limit from a failed open would cover Android only: on iOS the second open succeeds and mutes the published device for everyone.
+- **Decided per device kind, from the platform, before opening.** New `PlatformService.canCaptureSecondCamera()` and `canCaptureSecondMicrophone()` answer false on Android, iOS and iPadOS and, for the microphone, in Safari. Two methods rather than one taking a `Track.Kind`: the service is shared with the recordings pages, which must not pull livekit-client in. Detecting the limit from a failed open would cover Android only: on iOS the second open succeeds and mutes the published device for everyone.
 - **The selectors decide, not the provider.** Each selector takes the trial only when its kind can be captured twice, so a pick falls through to the existing immediate switch. A provider factory that gives the whole tab no trial (the audit's suggestion) is one line shorter but cannot keep the camera trial in Safari while dropping the microphone one. `AudioVideoSettingsComponent` keeps providing the service; with no pick it opens nothing and its Apply button never shows.
 - **No new UI.** Where the trial is left out the tab behaves as the device setup screen does.
 

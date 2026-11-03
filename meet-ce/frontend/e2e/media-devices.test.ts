@@ -109,6 +109,8 @@ test.describe('Media Devices E2E Tests', () => {
 
 	test.describe('Trying devices in the meeting settings', () => {
 		const APPLY = '#settings-apply-devices';
+		const ANDROID_PHONE_USER_AGENT =
+			'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
 
 		/** Joins with both fake cameras available and opens the Audio & video tab of the settings. */
 		const openAudioVideoSettings = async (page: Page): Promise<void> => {
@@ -170,6 +172,22 @@ test.describe('Media Devices E2E Tests', () => {
 			await expect.poll(() => getPublishedTrackLabel(page, 'audio')).toBe(otherMicrophone);
 			await expect(page.locator(APPLY)).toBeHidden();
 			await expect.poll(() => getLiveCaptureLabels(page, 'video')).toEqual(['fake_device_1']);
+		});
+
+		test('switches the camera at once on an Android phone, where a second camera cannot be opened', async ({
+			twoCamerasPage: page
+		}) => {
+			await page.addInitScript((userAgent) => {
+				Object.defineProperty(navigator, 'userAgent', { get: () => userAgent });
+			}, ANDROID_PHONE_USER_AGENT);
+			await page.setViewportSize({ width: 390, height: 844 });
+			await openAudioVideoSettings(page);
+
+			await selectVideoDevice(page, 'fake_device_1');
+
+			await expect.poll(() => getPublishedTrackLabel(page, 'video')).toBe('fake_device_1');
+			await expect.poll(() => getLiveCaptureLabels(page, 'video')).toEqual(['fake_device_1']);
+			await expect(page.locator(APPLY)).toBeHidden();
 		});
 	});
 

@@ -8,6 +8,7 @@ import { MeetingUiConfigService } from '../../../services/config/meeting-ui-conf
 import { LocalMediaService } from '../../../services/local-media/local-media.service';
 import { PanelService } from '../../../services/panel/panel.service';
 import { ParticipantService } from '../../../services/participant/participant.service';
+import { PlatformService } from '../../../services/platform/platform.service';
 import { VirtualBackgroundService } from '../../../services/virtual-background/virtual-background.service';
 import { VideoDevicesComponent } from './video-devices.component';
 
@@ -32,7 +33,7 @@ describe('VideoDevicesComponent', () => {
 
 	const click = () => new MouseEvent('click');
 
-	function create(trial?: unknown) {
+	function create(trial?: unknown, canCaptureSecondCamera = true) {
 		localMedia = {
 			setCameraEnabled: jasmine.createSpy('setCameraEnabled'),
 			switchCamera: jasmine.createSpy('switchCamera'),
@@ -52,6 +53,7 @@ describe('VideoDevicesComponent', () => {
 				{ provide: LocalMediaService, useValue: localMedia as unknown as LocalMediaService },
 				{ provide: DeviceService, useValue: deviceService },
 				{ provide: PanelService, useValue: {} },
+				{ provide: PlatformService, useValue: { canCaptureSecondCamera: () => canCaptureSecondCamera } },
 				{ provide: ParticipantService, useValue: { localParticipant: signal(undefined) } },
 				{ provide: MeetingUiConfigService, useValue: { backgroundEffectsButtonSignal: signal(false) } },
 				{ provide: VirtualBackgroundService, useValue: { isBackgroundApplied: () => backgroundApplied() } },
@@ -150,6 +152,27 @@ describe('VideoDevicesComponent', () => {
 
 			backgroundApplied.set(false);
 			expect(component.showEffectHint()).toBeFalse();
+		});
+	});
+
+	describe('in the meeting settings where a second camera cannot be captured', () => {
+		let trial: { tryCamera: jasmine.Spy };
+
+		beforeEach(() => {
+			trial = { tryCamera: jasmine.createSpy('tryCamera') };
+			create(trial, false);
+		});
+
+		it('switches the camera at once when one is picked', async () => {
+			await component.onCameraSelected({ value: other });
+
+			expect(localMedia.switchCamera).toHaveBeenCalledOnceWith('cam-2');
+			expect(deviceService.setCameraSelected).toHaveBeenCalledOnceWith('cam-2');
+			expect(trial.tryCamera).not.toHaveBeenCalled();
+		});
+
+		it('previews the published camera', () => {
+			expect(component.videoTrack() as unknown).toEqual({ id: 'published' });
 		});
 	});
 });

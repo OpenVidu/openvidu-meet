@@ -7,8 +7,9 @@ import { VideoDevicesComponent } from '../video-devices/video-devices.component'
 
 /**
  * @internal
- * The Audio & video tab of the meeting settings: devices picked here are tried in the tab and only
- * reach the others when applied. Its trial lives and dies with the tab.
+ * The Audio & video tab of the meeting settings: where the browser can capture a second device of a kind,
+ * a device picked here is tried in the tab and only reaches the others when applied; elsewhere it
+ * switches at once. Its trial lives and dies with the tab.
  */
 @Component({
 	selector: 'ov-audio-video-settings',
