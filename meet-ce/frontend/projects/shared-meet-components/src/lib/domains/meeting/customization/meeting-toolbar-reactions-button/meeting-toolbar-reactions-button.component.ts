@@ -4,6 +4,7 @@ import {
 	afterNextRender,
 	Component,
 	DestroyRef,
+	effect,
 	ElementRef,
 	HostListener,
 	inject,
@@ -36,8 +37,8 @@ const HOVER_CLOSE_MS = 300;
 
 /**
  * The reaction picker. On desktop, a toolbar button whose picker opens on hover, on a click or with
- * `E`, in the same floating card as the microphone alerts; on mobile, a grid of reactions inside the
- * More options menu. Its visibility is decided by the parent (MeetingToolbarExtraButtonsComponent).
+ * `E`, in the same floating card as the microphone alerts; on mobile, a row of the More options menu that
+ * unfolds a tray of reactions. Its visibility is decided by the parent (MeetingToolbarExtraButtonsComponent).
  */
 @Component({
 	selector: 'ov-meeting-toolbar-reactions-button',
@@ -52,17 +53,20 @@ export class MeetingToolbarReactionsButtonComponent {
 	private readonly injector = inject(Injector);
 	private readonly shortcuts = inject(MeetingShortcutsService);
 
-	/** Whether the toolbar is in its mobile layout, which shows the reactions as a grid of menu items */
+	/** Whether the toolbar is in its mobile layout, which shows the reactions as a row of the More options menu */
 	isMobile = input<boolean>(false);
 
 	/** The local participant's reaction while it is on screen, which the button wears */
 	localReaction = this.reactionsService.localReaction;
 	readonly pickerOpen = signal(false);
+	/** Whether the tray of the mobile menu is unfolded */
+	readonly trayOpen = signal(false);
 	readonly reactions = Object.values(MeetReaction);
 	readonly reactionEmoji = REACTION_EMOJI;
 	readonly reactionNameKeys = REACTION_NAME_KEYS;
 	readonly lifetimeSeconds = REACTION_LIFETIME_MS / 1000;
 
+	private readonly toggle = viewChild<ElementRef<HTMLElement>>('toggle');
 	private readonly button = viewChild('reactionsButton', { read: ElementRef<HTMLElement> });
 	private readonly pickerTemplate = viewChild<TemplateRef<unknown>>('picker');
 	private picker?: OverlayRef;
@@ -70,6 +74,19 @@ export class MeetingToolbarReactionsButtonComponent {
 
 	constructor() {
 		inject(DestroyRef).onDestroy(() => this.closePicker());
+
+		// Closing the menu detaches its content, so the row measures nothing and the tray folds for the next time.
+		effect((onCleanup) => {
+			const row = this.toggle()?.nativeElement;
+
+			if (!row) return;
+
+			const observer = new ResizeObserver(([entry]) => {
+				if (!entry.contentRect.width) this.trayOpen.set(false);
+			});
+			observer.observe(row);
+			onCleanup(() => observer.disconnect());
+		});
 	}
 
 	/** `E` opens the picker and puts the keyboard on its first reaction. */
@@ -107,7 +124,14 @@ export class MeetingToolbarReactionsButtonComponent {
 		options[(current + step + options.length) % options.length].focus();
 	}
 
+	/** The row unfolds the tray without closing the menu, which a click on a menu item otherwise does. */
+	toggleTray(event: Event): void {
+		event.stopPropagation();
+		this.trayOpen.update((open) => !open);
+	}
+
 	send(reaction: MeetReaction): void {
+		this.trayOpen.set(false);
 		this.reactionsService.send(reaction);
 	}
 

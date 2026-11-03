@@ -1,16 +1,37 @@
 @if (isMobile()) {
-	<div id="reaction-menu-grid" class="reaction-grid" role="group" [attr.aria-label]="'REACTIONS.SEND' | translate">
-		@for (reaction of reactions; track reaction) {
-			<button
-				mat-menu-item
-				class="reaction-option"
-				[attr.data-reaction]="reaction"
-				[attr.aria-label]="reactionNameKeys[reaction] | translate"
-				(click)="send(reaction)"
-			>
-				{{ reactionEmoji[reaction] }}
-			</button>
-		}
+	<button
+		id="reactions-menu-item"
+		#toggle
+		mat-menu-item
+		class="reactions-toggle"
+		aria-haspopup="true"
+		aria-controls="reaction-menu-tray"
+		[attr.aria-expanded]="trayOpen()"
+		(click)="toggleTray($event)"
+		[disableRipple]="true"
+	>
+		<mat-icon class="material-symbols-outlined">add_reaction</mat-icon>
+		<span class="button-text">{{ 'REACTIONS.BUTTON' | translate }}</span>
+		<mat-icon class="reactions-chevron">expand_more</mat-icon>
+	</button>
+	<div id="reaction-menu-tray" class="reaction-tray" [class.open]="trayOpen()">
+		<div class="reaction-tray-clip">
+			<div class="reaction-grid" role="group" [attr.aria-label]="'REACTIONS.SEND' | translate">
+				@for (reaction of reactions; track reaction; let place = $index) {
+					<button
+						type="button"
+						class="reaction-option"
+						[style.--place]="place"
+						[attr.data-reaction]="reaction"
+						[attr.aria-label]="reactionNameKeys[reaction] | translate"
+						(click)="send(reaction)"
+					>
+						{{ reactionEmoji[reaction] }}
+					</button>
+				}
+				<p class="reaction-lifetime">{{ 'REACTIONS.LIFETIME' | translate: { seconds: lifetimeSeconds } }}</p>
+			</div>
+		</div>
 	</div>
 } @else {
 	<button

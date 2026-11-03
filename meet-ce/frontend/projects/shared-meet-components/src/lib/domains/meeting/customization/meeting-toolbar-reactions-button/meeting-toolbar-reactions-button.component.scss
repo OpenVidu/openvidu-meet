@@ -35,21 +35,17 @@
 }
 
 .reaction-option {
-	font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
-	text-align: center;
-}
-
-.reaction-picker .reaction-option {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 44px;
-	height: 44px;
+	width: var(--reaction-size, 44px);
+	height: var(--reaction-size, 44px);
 	padding: 0;
 	border: none;
 	border-radius: 50%;
 	background: transparent;
-	font-size: 24px;
+	font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+	font-size: var(--reaction-font-size, 24px);
 	line-height: 1;
 	cursor: pointer;
 	transition:
@@ -59,8 +55,14 @@
 	&:hover,
 	&:focus-visible {
 		background: var(--ov-hover-color, rgba(255, 255, 255, 0.12));
-		transform: scale(1.15);
 		outline: none;
+	}
+}
+
+.reaction-picker .reaction-option {
+	&:hover,
+	&:focus-visible {
+		transform: scale(1.15);
 	}
 }
 
@@ -73,25 +75,79 @@
 	text-align: center;
 }
 
-.reaction-grid {
+.reactions-chevron {
+	margin: 0 0 0 auto;
+	transition: transform 0.24s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.reactions-toggle[aria-expanded='true'] .reactions-chevron {
+	transform: rotate(180deg);
+}
+
+// The tray folds to nothing, so the rest of the menu does not move until the row is opened.
+.reaction-tray {
 	display: grid;
-	grid-template-columns: repeat(4, 1fr);
-	padding: 0 8px;
+	grid-template-rows: 0fr;
+	visibility: hidden;
+	transition:
+		grid-template-rows 0.24s cubic-bezier(0.2, 0, 0, 1),
+		visibility 0s linear 0.24s;
 
-	.reaction-option {
-		--mat-menu-item-label-text-size: 24px;
-
-		justify-content: center;
-		min-width: 44px;
-		min-height: 44px;
-		padding: 0;
+	&.open {
+		grid-template-rows: 1fr;
+		visibility: visible;
+		transition-delay: 0s;
 	}
 }
 
-@media (prefers-reduced-motion: reduce) {
-	.reaction-picker .reaction-option {
-		transition: none;
+.reaction-tray-clip {
+	min-height: 0;
+	overflow: hidden;
+}
 
+.reaction-grid {
+	--reaction-size: 52px;
+	--reaction-font-size: 28px;
+
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	row-gap: 4px;
+	justify-items: center;
+	margin: 2px 8px 6px;
+	padding: 8px 4px 6px;
+	border-radius: 12px;
+	background: var(--ov-surface-container-color);
+
+	.reaction-option {
+		opacity: 0;
+		transform: translateY(8px) scale(0.6);
+		transition:
+			opacity 0.2s ease,
+			transform 0.26s cubic-bezier(0.2, 1.3, 0.4, 1),
+			background-color 0.12s ease;
+	}
+
+	.reaction-lifetime {
+		grid-column: 1 / -1;
+		margin-top: 4px;
+	}
+}
+
+.reaction-tray.open .reaction-grid .reaction-option {
+	opacity: 1;
+	transform: none;
+	transition-delay: calc(80ms + var(--place) * 25ms), calc(80ms + var(--place) * 25ms), 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.reaction-picker .reaction-option,
+	.reaction-grid .reaction-option,
+	.reaction-tray,
+	.reactions-chevron {
+		transition: none;
+	}
+
+	.reaction-picker .reaction-option {
 		&:hover,
 		&:focus-visible {
 			transform: none;
