@@ -70,10 +70,13 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 #### UI
 
 - The meeting settings panel takes the width of the other panels and groups its options in three tabs: Audio &
-  video, with on and off switches and a camera preview and a microphone level meter that show a picked camera or
-  microphone before Apply switches the one the others receive; Layout, which More options > Adjust layout opens
-  directly and which also sets the own video floating or in the grid; and General.
+  video, with on and off switches and a camera preview and a microphone level meter that, in Chrome, Edge and
+  Firefox on a computer, show a picked camera or microphone before Apply switches the one the others receive;
+  Layout, which More options > Adjust layout opens directly and which also sets the own video floating or in the
+  grid; and General.
 - The microphone is sent at speech quality, 24 kbps instead of 48 kbps.
+- The audio of a shared screen is captured as played, without echo cancellation, noise suppression or automatic
+  gain control.
 
 ### Fixed
 

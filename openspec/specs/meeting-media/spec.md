@@ -134,7 +134,7 @@ Turning the camera or the microphone off SHALL mute its published track instead 
 - **AND** the microphone keeps capturing on their device
 
 ### Requirement: Device selection
-Once a device kind has been opened, the device setup screen and the Audio & video settings SHALL list its devices and let the participant switch without turning the device off, at once on the device setup screen and on Apply in the meeting. The selected camera and microphone SHALL be remembered per browser and used in later entries, while whether each device was on SHALL NOT be remembered. A switch to a device that cannot be opened SHALL go back to the previous device and tell the participant.
+Once a device kind has been opened, the device setup screen and the Audio & video settings SHALL list its devices and let the participant switch without turning the device off, at once, or on Apply where the meeting lets them try it first. The selected camera and microphone SHALL be remembered per browser and used in later entries, while whether each device was on SHALL NOT be remembered. A switch to a device that cannot be opened SHALL go back to the previous device and tell the participant.
 
 #### Scenario: Selection carried into the meeting
 - **GIVEN** a participant who picks another camera on the device setup screen
@@ -245,6 +245,24 @@ While a participant shares their screen, the screen share button SHALL open a me
 - **GIVEN** a participant sharing a browser tab in Chrome
 - **WHEN** they choose to replace the screen and pick a window
 - **THEN** the others see the window in the same screen share tile
+
+### Requirement: Shared screen audio
+The audio of a shared screen SHALL be captured without echo cancellation, noise suppression or automatic gain control, so the others hear it as the shared surface plays it. When the shared audio is the system audio, Meet SHALL ask the browser to leave out the audio the meeting itself plays, so the participants do not hear their own voices back.
+
+#### Scenario: Sharing a tab that plays music
+- **GIVEN** a participant sharing a browser tab with its audio
+- **WHEN** the tab plays music
+- **THEN** the tab audio is published without echo cancellation, noise suppression or automatic gain control
+
+#### Scenario: Sharing a silent tab
+- **GIVEN** a participant sharing a browser tab with its audio
+- **WHEN** the tab plays nothing for a minute
+- **THEN** the screen-share audio sends almost no data during that minute
+
+#### Scenario: Sharing the entire screen with system audio
+- **GIVEN** a participant sharing their entire screen with the system audio
+- **WHEN** another participant speaks
+- **THEN** that participant does not hear their own voice coming back through the shared screen
 
 ### Requirement: Media state of the other participants
 Every participant SHALL see the media state of the others, updated live: a camera tile SHALL show the participant's avatar while their camera is off and a microphone-off mark while they are muted, and the participants panel SHALL show the microphone, camera and screen share state of each participant.
@@ -477,10 +495,10 @@ While turning the camera or the microphone on or off from the meeting toolbar is
 - **AND** it is enabled again afterwards
 
 ### Requirement: Trying a device before applying it
-In the meeting, picking a camera or a microphone in the Audio & video tab SHALL only change that tab: the camera preview SHALL show the picked camera, without the background effect and with a hint when one is applied, and the level meter SHALL follow the picked microphone. The others SHALL keep receiving the published devices. A picked device that cannot be opened SHALL leave them untouched, put the selector back and tell the participant.
+In the meeting, where devices can be tried, picking a camera or a microphone in the Audio & video tab SHALL only change that tab: the camera preview SHALL show the picked camera, without the background effect and with a hint when one is applied, and the level meter SHALL follow the picked microphone. The others SHALL keep receiving the published devices. A picked device that cannot be opened SHALL leave them untouched, put the selector back and tell the participant.
 
 #### Scenario: Trying another camera
-- **GIVEN** participants A and B in a meeting, A publishing the camera "Front" and having a camera "Back" too
+- **GIVEN** participants A and B in a meeting, A on a computer publishing the camera "Front" and having a camera "Back" too
 - **WHEN** A picks "Back" in the Audio & video tab
 - **THEN** A's preview shows "Back"
 - **AND** B keeps seeing "Front"
@@ -566,3 +584,33 @@ A pick that has not been applied SHALL be discarded, closing its capture and sho
 - **GIVEN** a participant trying the camera "Back"
 - **WHEN** "Back" is unplugged
 - **THEN** the selector and the preview show the published camera again
+
+### Requirement: Where devices can be tried
+The meeting SHALL offer trying a device before applying it only where the browser can capture a second device of that kind while the published one stays live: never on Android, iOS or iPadOS, nor in Safari. There a pick in the Audio & video tab SHALL switch the published device at once, with no Apply button, and the tab SHALL say beside the selector that the others receive the pick as soon as it is made.
+
+#### Scenario: Switching camera on a phone
+- **GIVEN** participants A and B in a meeting, A on an Android phone publishing the camera "Front"
+- **WHEN** A picks the camera "Back" in the Audio & video tab
+- **THEN** B sees "Back"
+- **AND** the tab shows no Apply button
+- **AND** beside the camera selector the tab says that the others see the new camera as soon as it is picked
+
+#### Scenario: Switching camera on an iPhone
+- **GIVEN** participants A and B in a meeting, A on an iPhone publishing the camera "Front"
+- **WHEN** A picks the camera "Back" in the Audio & video tab
+- **THEN** B sees "Back"
+- **AND** no second capture is opened beside A's camera, which would end it
+
+#### Scenario: Switching the microphone in Safari
+- **GIVEN** participants A and B in a meeting, A in Safari on a computer publishing the microphone "Laptop"
+- **WHEN** A picks the microphone "Headset" in the Audio & video tab
+- **THEN** B hears A through "Headset"
+- **AND** the tab shows no Apply button
+- **AND** beside the microphone selector the tab says that the others hear the new microphone as soon as it is picked
+
+#### Scenario: Switching camera in Safari on a computer
+- **GIVEN** participants A and B in a meeting, A in Safari on a computer publishing the camera "Built-in" and having a camera "USB" too
+- **WHEN** A picks "USB" in the Audio & video tab
+- **THEN** B sees "USB"
+- **AND** the tab shows no Apply button
+- **AND** beside the camera selector the tab says that the others see the new camera as soon as it is picked

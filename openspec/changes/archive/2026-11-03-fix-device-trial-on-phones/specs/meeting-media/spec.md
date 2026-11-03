@@ -1,31 +1,34 @@
 ## ADDED Requirements
 
 ### Requirement: Where devices can be tried
-The meeting SHALL offer trying a device before applying it only where the browser can capture a second device of that kind while the published one stays live: never on Android, iOS or iPadOS phones and tablets, and not for the microphone in Safari. There a pick in the Audio & video tab SHALL switch the published device at once, as on the device setup screen, and no Apply button SHALL appear.
+The meeting SHALL offer trying a device before applying it only where the browser can capture a second device of that kind while the published one stays live: never on Android, iOS or iPadOS, nor in Safari. There a pick in the Audio & video tab SHALL switch the published device at once, with no Apply button, and the tab SHALL say beside the selector that the others receive the pick as soon as it is made.
 
 #### Scenario: Switching camera on a phone
 - **GIVEN** participants A and B in a meeting, A on an Android phone publishing the camera "Front"
 - **WHEN** A picks the camera "Back" in the Audio & video tab
 - **THEN** B sees "Back"
 - **AND** the tab shows no Apply button
+- **AND** beside the camera selector the tab says that the others see the new camera as soon as it is picked
 
 #### Scenario: Switching camera on an iPhone
 - **GIVEN** participants A and B in a meeting, A on an iPhone publishing the camera "Front"
 - **WHEN** A picks the camera "Back" in the Audio & video tab
 - **THEN** B sees "Back"
-- **AND** A's camera is never shown muted to B while the pick is made
+- **AND** no second capture is opened beside A's camera, which would end it
 
 #### Scenario: Switching the microphone in Safari
 - **GIVEN** participants A and B in a meeting, A in Safari on a computer publishing the microphone "Laptop"
 - **WHEN** A picks the microphone "Headset" in the Audio & video tab
 - **THEN** B hears A through "Headset"
 - **AND** the tab shows no Apply button
+- **AND** beside the microphone selector the tab says that the others hear the new microphone as soon as it is picked
 
-#### Scenario: Trying a camera in Safari on a computer
-- **GIVEN** a participant in Safari on a computer publishing the camera "Built-in" and having a camera "USB" too
-- **WHEN** they pick "USB" in the Audio & video tab
-- **THEN** the preview shows "USB" and the tab shows an Apply button
-- **AND** the others keep seeing "Built-in"
+#### Scenario: Switching camera in Safari on a computer
+- **GIVEN** participants A and B in a meeting, A in Safari on a computer publishing the camera "Built-in" and having a camera "USB" too
+- **WHEN** A picks "USB" in the Audio & video tab
+- **THEN** B sees "USB"
+- **AND** the tab shows no Apply button
+- **AND** beside the camera selector the tab says that the others see the new camera as soon as it is picked
 
 ## MODIFIED Requirements
 

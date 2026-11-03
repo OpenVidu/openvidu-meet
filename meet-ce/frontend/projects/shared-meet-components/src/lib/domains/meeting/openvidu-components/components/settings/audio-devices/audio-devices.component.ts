@@ -10,6 +10,7 @@ import { DeviceService } from '../../../services/device/device.service';
 import { DeviceTrialService } from '../../../services/device-trial/device-trial.service';
 import { LocalMediaService } from '../../../services/local-media/local-media.service';
 import { MicActivityService } from '../../../services/mic-activity/mic-activity.service';
+import { PlatformService } from '../../../services/platform/platform.service';
 import { LoggerService } from '../../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../../shared/models/logger.model';
 
@@ -33,7 +34,11 @@ export class AudioDevicesComponent {
 	readonly microphoneStatusChanging = signal(false);
 	readonly isMicrophoneEnabled = inject(LocalMediaService).microphone.enabled;
 
-	private readonly trial = inject(DeviceTrialService, { optional: true });
+	private readonly trial = inject(PlatformService).canCaptureSecondDevice()
+		? inject(DeviceTrialService, { optional: true })
+		: null;
+
+	readonly switchesAtOnce = this.trial === null;
 	private readonly publishedLevel = inject(MicActivityService).level;
 	private readonly micLevel = computed(() =>
 		this.trial?.microphone.device() ? this.trial.microphone.level() : this.publishedLevel()

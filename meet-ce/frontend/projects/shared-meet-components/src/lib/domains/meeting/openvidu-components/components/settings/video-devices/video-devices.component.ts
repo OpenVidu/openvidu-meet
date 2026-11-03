@@ -13,6 +13,7 @@ import { DeviceTrialService } from '../../../services/device-trial/device-trial.
 import { LocalMediaService } from '../../../services/local-media/local-media.service';
 import { PanelService } from '../../../services/panel/panel.service';
 import { ParticipantService } from '../../../services/participant/participant.service';
+import { PlatformService } from '../../../services/platform/platform.service';
 import { VirtualBackgroundService } from '../../../services/virtual-background/virtual-background.service';
 import { VideoElementComponent } from '../../video-element/video-element.component';
 import { LoggerService } from '../../../../../../shared/services/logger.service';
@@ -39,8 +40,11 @@ export class VideoDevicesComponent {
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly localParticipant = inject(ParticipantService).localParticipant;
 	private readonly virtualBackground = inject(VirtualBackgroundService);
-	private readonly trial = inject(DeviceTrialService, { optional: true });
+	private readonly trial = inject(PlatformService).canCaptureSecondDevice()
+		? inject(DeviceTrialService, { optional: true })
+		: null;
 
+	readonly switchesAtOnce = this.trial === null;
 	readonly cameraStatusChanging = signal(false);
 	readonly isCameraEnabled = this.localMedia.camera.enabled;
 	readonly videoTrack = computed(() => this.trial?.camera.track() ?? this.localMedia.camera.track());

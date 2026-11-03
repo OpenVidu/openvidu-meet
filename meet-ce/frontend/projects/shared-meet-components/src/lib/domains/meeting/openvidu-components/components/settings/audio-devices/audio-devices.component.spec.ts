@@ -6,6 +6,7 @@ import { DeviceService } from '../../../services/device/device.service';
 import { DeviceTrialService } from '../../../services/device-trial/device-trial.service';
 import { LocalMediaService } from '../../../services/local-media/local-media.service';
 import { MicActivityService } from '../../../services/mic-activity/mic-activity.service';
+import { PlatformService } from '../../../services/platform/platform.service';
 import { AudioDevicesComponent } from './audio-devices.component';
 
 class LoggerServiceStub {
@@ -27,7 +28,7 @@ describe('AudioDevicesComponent', () => {
 	let deviceService: { setMicSelected: jasmine.Spy };
 	let micLevel: ReturnType<typeof signal<number>>;
 
-	function create(trial?: unknown) {
+	function create(trial?: unknown, canCaptureSecondDevice = true) {
 		localMedia = {
 			setMicrophoneEnabled: jasmine.createSpy('setMicrophoneEnabled'),
 			switchMicrophone: jasmine.createSpy('switchMicrophone'),
@@ -42,6 +43,10 @@ describe('AudioDevicesComponent', () => {
 				{ provide: LoggerService, useClass: LoggerServiceStub },
 				{ provide: LocalMediaService, useValue: localMedia as unknown as LocalMediaService },
 				{ provide: MicActivityService, useValue: { level: micLevel } as unknown as MicActivityService },
+				{
+					provide: PlatformService,
+					useValue: { canCaptureSecondDevice: () => canCaptureSecondDevice }
+				},
 				{
 					provide: DeviceService,
 					useValue: {
@@ -119,6 +124,10 @@ describe('AudioDevicesComponent', () => {
 			expect(deviceService.setMicSelected).not.toHaveBeenCalled();
 		});
 
+		it('does not warn that a pick reaches the others at once', () => {
+			expect(component.switchesAtOnce).toBeFalse();
+		});
+
 		it('meters the microphone being tried, and the published one otherwise', () => {
 			localMedia.microphone.enabled.set(true);
 			micLevel.set(0.5);
@@ -127,6 +136,34 @@ describe('AudioDevicesComponent', () => {
 
 			trial.microphone.device.set(headset);
 			expect(component.litLevelBars()).toBe(component.levelBars.length);
+		});
+	});
+
+	describe('in the meeting settings where a second device cannot be captured', () => {
+		let trial: { tryMicrophone: jasmine.Spy };
+
+		beforeEach(() => {
+			trial = { tryMicrophone: jasmine.createSpy('tryMicrophone') };
+			create(trial, false);
+		});
+
+		it('switches the microphone at once when one is picked', async () => {
+			await component.onMicrophoneSelected({ value: headset });
+
+			expect(localMedia.switchMicrophone).toHaveBeenCalledOnceWith('mic-2');
+			expect(deviceService.setMicSelected).toHaveBeenCalledOnceWith('mic-2');
+			expect(trial.tryMicrophone).not.toHaveBeenCalled();
+		});
+
+		it('tells the participant that a pick reaches the others at once', () => {
+			expect(component.switchesAtOnce).toBeTrue();
+		});
+
+		it('meters the published microphone', () => {
+			localMedia.microphone.enabled.set(true);
+			micLevel.set(0.5);
+
+			expect(component.litLevelBars()).toBe(component.levelBars.length / 2);
 		});
 	});
 });

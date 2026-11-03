@@ -126,6 +126,8 @@
 			"MICROPHONE_OFF": "Ihr Mikrofon ist aus",
 			"APPLY": "Übernehmen",
 			"EFFECT_APPLIES_ON_APPLY": "Der Hintergrundeffekt wird beim Übernehmen dieser Kamera hinzugefügt",
+			"CAMERA_SWITCHES_AT_ONCE": "Andere sehen die neue Kamera, sobald Sie sie auswählen",
+			"MICROPHONE_SWITCHES_AT_ONCE": "Andere hören das neue Mikrofon, sobald Sie es auswählen",
 			"DISPLAY_NAME": "Anzeigename",
 			"DISPLAY_NAME_HINT": "Beim Beitreten zur Besprechung gewählt",
 			"DISPLAY_NAME_LOCKED": "Kann während der Besprechung nicht geändert werden",

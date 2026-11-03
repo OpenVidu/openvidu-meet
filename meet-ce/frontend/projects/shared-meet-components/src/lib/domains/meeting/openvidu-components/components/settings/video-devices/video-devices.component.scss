@@ -95,6 +95,10 @@
 	}
 }
 
+.device-warning {
+	@include controls.warning();
+}
+
 .no-device-notice {
 	@include controls.notice();
 }

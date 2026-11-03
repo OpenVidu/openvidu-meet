@@ -128,7 +128,21 @@ export class PlatformService {
 		return /Firefox[/\s](\d+\.\d+)/.test(this.userAgent);
 	}
 
-	private isIOSWithSafari(userAgent: string): boolean {
-		return /\bSafari\b/.test(userAgent) && !/\bCriOS\b/.test(userAgent) && !/\bFxiOS\b/.test(userAgent);
+	/**
+	 * Returns true for Safari on a computer or on iOS, not for the browsers that carry its token
+	 */
+	isSafari(): boolean {
+		return /Safari/.test(this.userAgent) && !/Chrome|CriOS|FxiOS|Edg|OPR|OPiOS/.test(this.userAgent);
+	}
+
+	// ===== Capture =====
+
+	/**
+	 * Returns true if a device can be captured next to another of its kind that stays open: Android
+	 * camera stacks refuse the second open, WebKit on iOS and iPadOS ends the first capture when another
+	 * starts, and Safari on a computer is left out too because that is not verified there
+	 */
+	canCaptureSecondDevice(): boolean {
+		return !this.isMobile() && !this.isSafari();
 	}
 }

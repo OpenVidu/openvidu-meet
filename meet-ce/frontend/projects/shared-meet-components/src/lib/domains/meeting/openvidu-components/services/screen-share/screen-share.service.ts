@@ -81,7 +81,9 @@ export class ScreenShareService {
 
 	private captureOptions(): ScreenShareCaptureOptions {
 		return {
-			audio: true,
+			// Played as the shared surface plays it: the microphone's voice processing would filter music
+			// and keep sending a silent tab. Only system audio can contain the meeting itself.
+			audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, restrictOwnAudio: true },
 			video: {
 				displaySurface: 'browser' // Set browser tab as default options
 			},
