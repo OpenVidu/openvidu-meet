@@ -241,7 +241,8 @@ the OpenAPI sources already use for their own cross-references: `#/operations/<o
   `nodemon*.json` never select a suite.
 - CI runs on pull requests: a branch gets CI once it has a PR (a draft is enough) or by dispatching
   `Tests` (input `suites`, `all` by default, or a comma-separated list). A push to `main` runs the suites it
-  affects, like a pull request, and the nightly (00:17 UTC) runs every suite, only when `main` moved
+  affects, like a pull request, except that a change touching only the backend does not select the e2e
+  suites (the integration suite covers it), and the nightly (00:17 UTC) runs every suite, only when `main` moved
   since the last green nightly. On a pull request or a push, recordings run on S3 only, unless the change
   touches `meet-ce/backend/src/services/storage/` or the pull request carries the `ci:storage` label
   (read when a run starts, so add it before pushing): GCS and ABS share one bucket each, which every

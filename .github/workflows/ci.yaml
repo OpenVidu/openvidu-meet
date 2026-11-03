@@ -42,8 +42,9 @@ jobs:
         with:
           fetch-depth: 2
 
-      # Pull requests and pushes to main run the suites their files affect, and the nightly every suite
-      # when main moved since the last green nightly.
+      # Pull requests and pushes to main run the suites their files affect (a push leaves the e2e suites
+      # out when only the backend changed), and the nightly every suite when main moved since the last
+      # green nightly.
       - name: Select the suites the change affects
         id: select
         env:
@@ -59,7 +60,7 @@ jobs:
               ;;
             push)
               if git fetch --no-tags --depth=1 origin "$BEFORE"; then
-                git diff --name-only "$BEFORE" HEAD | pick
+                git diff --name-only "$BEFORE" HEAD | pick --without-backend
               else
                 pick --all
               fi
