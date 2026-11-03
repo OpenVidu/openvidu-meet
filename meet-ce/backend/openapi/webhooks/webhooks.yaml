@@ -119,6 +119,193 @@ recordingEnded:
             '200':
                 $ref: ./responses/success/webhook-success.yaml
 
+broadcastStarted:
+    post:
+        summary: Broadcast started
+        description: |
+            This webhook is triggered when a live broadcast starts, one per destination the meeting
+            streams to.
+
+            > The broadcast is in the `starting` status until its destination receives media, and
+            > carries no `startDate` meanwhile: nothing has been streamed yet. The
+            > [`broadcastUpdated`](#/webhooks/broadcastUpdatedWebhook) webhook reports it when it
+            > becomes `active`.
+            >
+            > The payload is the [`MeetBroadcast`](#/schemas/MeetBroadcast) entity. At this point it
+            > never carries `endDate`, `duration`, `errorCode`, `error` or `details`: those only appear
+            > once the broadcast ends.
+        operationId: broadcastStartedWebhook
+        parameters:
+            - $ref: ./parameters/x-timestamp.yaml
+            - $ref: ./parameters/x-signature.yaml
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        allOf:
+                            - $ref: ./schemas/webhook-base-event.yaml
+                            - properties:
+                                  event:
+                                      example: broadcastStarted
+                                  data:
+                                      type: object
+                                      allOf:
+                                          - $ref: ../broadcasts/schemas/meet-broadcast.yaml
+                                          - properties:
+                                                status:
+                                                    enum: [starting, active]
+                                                    example: starting
+                    example:
+                        creationDate: 1619999998000
+                        event: broadcastStarted
+                        data:
+                            broadcastId: 'room-123--Qm4tZ8vR1c'
+                            roomId: 'room-123'
+                            roomName: 'room'
+                            status: 'starting'
+                            destination:
+                                id: 'kX9pL2mQ7a'
+                                name: 'YouTube'
+                                url: 'rtmp://a.rtmp.youtube.com/live2/********'
+                            layout: 'grid'
+                            encoding: 'H264_720P_30'
+        responses:
+            '200':
+                $ref: ./responses/success/webhook-success.yaml
+
+broadcastUpdated:
+    post:
+        summary: Broadcast updated
+        description: |
+            This webhook is triggered when a live broadcast changes while it runs.
+
+            > The change is in the broadcast status: from `starting` to `active` once media reaches its
+            > destination, or to `ending` while it is being stopped.
+            >
+            > The payload is the [`MeetBroadcast`](#/schemas/MeetBroadcast) entity. As with
+            > [`broadcastStarted`](#/webhooks/broadcastStartedWebhook), it never carries `endDate`,
+            > `duration`, `errorCode`, `error` or `details`.
+        operationId: broadcastUpdatedWebhook
+        parameters:
+            - $ref: ./parameters/x-timestamp.yaml
+            - $ref: ./parameters/x-signature.yaml
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        allOf:
+                            - $ref: ./schemas/webhook-base-event.yaml
+                            - properties:
+                                  event:
+                                      example: broadcastUpdated
+                                  data:
+                                      type: object
+                                      allOf:
+                                          - $ref: ../broadcasts/schemas/meet-broadcast.yaml
+                                          - properties:
+                                                status:
+                                                    enum: [starting, active, ending]
+                                                    example: active
+                    example:
+                        creationDate: 1620000000000
+                        event: broadcastUpdated
+                        data:
+                            broadcastId: 'room-123--Qm4tZ8vR1c'
+                            roomId: 'room-123'
+                            roomName: 'room'
+                            status: 'active'
+                            destination:
+                                id: 'kX9pL2mQ7a'
+                                name: 'YouTube'
+                                url: 'rtmp://a.rtmp.youtube.com/live2/********'
+                            layout: 'grid'
+                            encoding: 'H264_720P_30'
+                            startDate: 1620000000000
+        responses:
+            '200':
+                $ref: ./responses/success/webhook-success.yaml
+
+broadcastEnded:
+    post:
+        summary: Broadcast ended
+        description: |
+            This webhook is triggered when a live broadcast ends.
+
+            > The broadcast can end because it was stopped, because its destination rejected or lost the
+            > stream, or because the meeting ended. The other broadcasts of the meeting go on.
+            >
+            > The payload is the [`MeetBroadcast`](#/schemas/MeetBroadcast) entity. `endDate` is present
+            > except when the broadcast ended without ever streaming media (alongside a missing
+            > `startDate`); `duration` is present only when it did stream. `errorCode` and `error` are
+            > present only when `status` is `failed`. `details` accompanies any ending status when the
+            > server has extra context to add.
+        operationId: broadcastEndedWebhook
+        parameters:
+            - $ref: ./parameters/x-timestamp.yaml
+            - $ref: ./parameters/x-signature.yaml
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        allOf:
+                            - $ref: ./schemas/webhook-base-event.yaml
+                            - properties:
+                                  event:
+                                      example: broadcastEnded
+                                  data:
+                                      type: object
+                                      allOf:
+                                          - $ref: ../broadcasts/schemas/meet-broadcast.yaml
+                                          - properties:
+                                                status:
+                                                    enum: [complete, failed, aborted, limit_reached]
+                                                    example: complete
+                    examples:
+                        complete:
+                            summary: Stopped after streaming
+                            value:
+                                creationDate: 1620003600000
+                                event: broadcastEnded
+                                data:
+                                    broadcastId: 'room-123--Qm4tZ8vR1c'
+                                    roomId: 'room-123'
+                                    roomName: 'room'
+                                    status: 'complete'
+                                    destination:
+                                        id: 'kX9pL2mQ7a'
+                                        name: 'YouTube'
+                                        url: 'rtmp://a.rtmp.youtube.com/live2/********'
+                                    layout: 'grid'
+                                    encoding: 'H264_720P_30'
+                                    startDate: 1620000000000
+                                    endDate: 1620003600000
+                                    duration: 3600
+                        failed:
+                            summary: The destination refused the connection
+                            value:
+                                creationDate: 1620000005000
+                                event: broadcastEnded
+                                data:
+                                    broadcastId: 'room-123--p7Rt4WqM2z'
+                                    roomId: 'room-123'
+                                    roomName: 'room'
+                                    status: 'failed'
+                                    destination:
+                                        name: 'Own media server'
+                                        url: 'rtmp://media.example.com/live/********'
+                                    layout: 'grid'
+                                    encoding: 'H264_720P_30'
+                                    error: 'Failed to connect: connection refused'
+        responses:
+            '200':
+                $ref: ./responses/success/webhook-success.yaml
+
 meetingStarted:
     post:
         summary: Meeting started

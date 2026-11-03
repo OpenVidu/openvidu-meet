@@ -447,7 +447,7 @@ describe('Recording Auto-Start Tests', () => {
 
 		// An egress ended by the system (here, as the stale recordings GC does it) is NOT a
 		// deliberate stop: the auto-start stays armed so a later join relaunches the recording.
-		await livekitService.stopEgress(RecordingHelper.extractInfoFromRecordingId(firstRecordingId).egressId);
+		await livekitService.stopEgressIfRunning(RecordingHelper.extractInfoFromRecordingId(firstRecordingId).egressId);
 
 		const lkRoom = await livekitService.getRoom(room.roomId);
 		expect(await recAutoStartStateService.isDisabled(room.roomId, lkRoom.sid)).toBe(false);

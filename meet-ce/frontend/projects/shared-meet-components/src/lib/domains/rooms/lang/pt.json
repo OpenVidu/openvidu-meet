@@ -159,6 +159,7 @@
       "STEP_MEETING": "Reunião",
       "STEP_ROOM_ACCESS": "Acesso à sala",
       "STEP_RECORDING": "Gravação",
+      "STEP_BROADCAST": "Transmissão ao vivo",
       "BACK": "Voltar",
       "BACK_TO_SIMPLE_MODE": "Voltar ao modo simples",
       "CANCEL_ARIA": "Cancelar o assistente e regressar à página anterior",
@@ -225,7 +226,8 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Editar membro",
         "REMOVE_MEMBER": "Remover membro",
-        "FEATURE_DISABLED_PERMISSION": "Ative a funcionalidade correspondente no passo Reunião para configurar esta permissão."
+        "FEATURE_DISABLED_PERMISSION": "Ative a funcionalidade correspondente no passo Reunião para configurar esta permissão.",
+        "DEPENDENT_PERMISSION_DISABLED": "Conceda primeiro a permissão da qual esta depende para configurá-la."
       },
       "MEETING": {
         "TITLE": "Reunião",
@@ -299,7 +301,7 @@
         "SPEAKER_TITLE": "Esquema do orador",
         "SPEAKER_DESC": "Destacar o orador ativo com os outros participantes abaixo",
         "SINGLE_SPEAKER_TITLE": "Orador único",
-        "SINGLE_SPEAKER_DESC": "Mostrar apenas o orador ativo na gravação"
+        "SINGLE_SPEAKER_DESC": "Mostrar apenas o orador ativo"
       },
       "RECORDING_TRIGGER": {
         "TITLE": "Acionador",
@@ -314,6 +316,39 @@
         "AUTOSTART_MODE_MODERATOR_DESC": "Começa logo que um moderador entra ou é promovido",
         "AUTOSTART_UNREACHABLE_TITLE": "Acionador de gravação inalcançável",
         "AUTOSTART_UNREACHABLE_MESSAGE": "Este acionador precisa de pelo menos ${required} participantes para ser ativado, mas o limite de participantes da sala está definido como ${limit}."
+      },
+      "BROADCAST": {
+        "TITLE": "Transmissão ao vivo",
+        "DESCRIPTION": "Escolha se as reuniões desta sala podem ser transmitidas ao vivo para o YouTube, Twitch ou qualquer servidor RTMP",
+        "RESTRICTIONS": "Restrições",
+        "E2EE_WARNING_PREFIX": "A transmissão ao vivo ",
+        "E2EE_WARNING_BOLD": "não está disponível",
+        "E2EE_WARNING_SUFFIX": " enquanto a criptografia de ponta a ponta estiver ativada. Se permitir a transmissão ao vivo, a criptografia será desativada automaticamente nesta sala.",
+        "ALLOW_BROADCAST_TITLE": "Permitir transmissão ao vivo",
+        "ALLOW_BROADCAST_DESC": "Os participantes com permissão podem transmitir a reunião para plataformas externas enquanto ela acontece.",
+        "DEFAULT_DESTINATIONS": "Destinos padrão",
+        "DESTINATIONS_DESC": "Quando a reunião entrar ao vivo, poderá ser transmitida para todos estes destinos ou apenas para os escolhidos naquele momento.",
+        "NO_DESTINATIONS": "Adicione pelo menos um destino para permitir a transmissão ao vivo.",
+        "ADD_DESTINATION": "Adicionar destino",
+        "NEW_DESTINATION": "Novo destino",
+        "EDIT_DESTINATION": "Editar destino",
+        "NAME_LABEL": "Nome",
+        "URL_LABEL": "URL da transmissão",
+        "URL_HINT": "Cole a URL rtmp:// ou rtmps:// fornecida pela plataforma, com a chave de transmissão incluída.",
+        "URL_RECOGNISED": "Reconhecido como {platform}.",
+        "URL_KEEP_KEY": "Deixe a URL como está para manter a chave de transmissão salva, ou cole uma nova para substituí-la.",
+        "URL_INVALID": "Insira uma URL rtmp:// ou rtmps:// no formato rtmp://host/app/key",
+        "URL_KEY_REQUIRED": "Uma URL alterada precisa da chave de transmissão: cole a URL completa",
+        "NAME_REQUIRED": "Insira um nome",
+        "ADD": "Adicionar",
+        "SAVE": "Salvar",
+        "CANCEL": "Cancelar",
+        "EDIT": "Editar",
+        "REMOVE": "Remover",
+        "KEYS_HIDDEN": "As chaves de transmissão ficam ocultas depois de salvas.",
+        "COST_NOTE": "Cada destino é uma transmissão separada enviada do seu servidor, cerca de {mbps} Mbps de upload cada em 720p. Com estes {count} destinos, uma transmissão usa cerca de {total} Mbps enquanto a reunião estiver ao vivo.",
+        "PERMISSIONS_HINT": "Quem pode entrar ao vivo, escolher destinos ou adicionar outros é definido por função em",
+        "PERMISSIONS_LINK": "Acesso à sala"
       }
     },
     "ERRORS": {

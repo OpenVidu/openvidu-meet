@@ -1,4 +1,4 @@
-import { DisconnectReason, TrackSource } from '@livekit/protocol';
+import { DisconnectReason, ParticipantInfo_Kind, TrackSource } from '@livekit/protocol';
 import type {
 	MeetParticipantHandChangedPayload,
 	MeetParticipantDeparturePayload,
@@ -35,6 +35,14 @@ export interface ParticipantMeetingMetadata extends MeetRoomMemberTokenMetadata 
 export class MeetParticipantHelper {
 	private constructor() {
 		// Prevent instantiation of this utility class
+	}
+
+	/**
+	 * Whether the participant is a person in the meeting, and not one of LiveKit's own (an egress,
+	 * an ingress, an agent).
+	 */
+	static isStandardParticipant(participant: ParticipantInfo): boolean {
+		return participant.kind === ParticipantInfo_Kind.STANDARD;
 	}
 
 	/**

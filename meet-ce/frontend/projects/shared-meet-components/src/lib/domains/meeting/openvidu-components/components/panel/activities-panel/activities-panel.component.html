@@ -16,10 +16,17 @@
 			@if (showRecordingActivity()) {
 				<ov-recording-activity
 					id="recording-activity"
-					[expanded]="expandedPanel() === 'recording'"
+					[expanded]="expandedPanel() === activitiesOptions.RECORDING"
 					(onRecordingStartRequested)="onRecordingStartRequested.emit($event)"
 					(onRecordingStopRequested)="onRecordingStopRequested.emit($event)"
 					(onViewRecordingsClicked)="onViewRecordingsClicked.emit()"
+				/>
+			}
+			@if (showBroadcastActivity()) {
+				<ov-broadcast-activity
+					id="broadcast-activity"
+					[expanded]="expandedPanel() === activitiesOptions.BROADCAST"
+					(onBroadcastRequested)="onBroadcastRequested.emit($event)"
 				/>
 			}
 		</mat-accordion>

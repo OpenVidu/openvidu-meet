@@ -1,0 +1,10 @@
+<div class="layout-options" role="radiogroup">
+	@for (option of options(); track option.value) {
+		<label class="layout-tile" [class.selected]="option.value === control().value">
+			<input type="radio" class="layout-radio" [formControl]="control()" [value]="option.value" />
+			<img class="layout-image" [src]="option.imageUrl" alt="" />
+			<span class="layout-title">{{ option.titleKey | translate }}</span>
+			<span class="layout-description">{{ option.descriptionKey | translate }}</span>
+		</label>
+	}
+</div>

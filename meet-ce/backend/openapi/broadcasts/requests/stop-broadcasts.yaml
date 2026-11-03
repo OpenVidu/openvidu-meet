@@ -1,0 +1,39 @@
+description: >
+    The room whose broadcasts to stop, and which of them. Without `broadcastIds`, every running broadcast
+    of the room's meeting stops.
+required: true
+content:
+    application/json:
+        schema:
+            type: object
+            required:
+                - roomId
+            properties:
+                roomId:
+                    type: string
+                    description: The unique identifier of the room whose broadcasts to stop.
+                    example: 'room-123'
+                broadcastIds:
+                    type: array
+                    minItems: 1
+                    description: >
+                        The identifiers of the broadcasts to stop, all of them of that room. Omitted, every
+                        running broadcast of the meeting.
+                    items:
+                        type: string
+                        example: 'room-123--Qm4tZ8vR1c'
+        examples:
+            oneBroadcast:
+                summary: One broadcast
+                value:
+                    roomId: 'room-123'
+                    broadcastIds: ['room-123--Qm4tZ8vR1c']
+            severalBroadcasts:
+                summary: Several broadcasts
+                value:
+                    roomId: 'room-123'
+                    broadcastIds: ['room-123--Qm4tZ8vR1c', 'room-123--p7Rt4WqM2z']
+            everyBroadcast:
+                summary: Every running broadcast of the meeting
+                value:
+                    roomId: 'room-123'

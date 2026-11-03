@@ -162,7 +162,12 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			lockExistsMock.mockResolvedValueOnce(true);
 			getLockCreatedAtMock.mockResolvedValueOnce(Date.now() - ms('5m'));
 			getInProgressRecordingsEgressMock.mockResolvedValueOnce([
-				{ status: EgressStatus.EGRESS_STARTING } as EgressInfo
+				new EgressInfo({
+					egressId: 'EG_starting',
+					roomName: roomId,
+					status: EgressStatus.EGRESS_STARTING,
+					fileResults: [{ filename: `${roomId}--uid.mp4` }]
+				})
 			]);
 
 			await recordingTaskScheduler['evaluateAndReleaseOrphanedLock'](roomId, 'prefix_');

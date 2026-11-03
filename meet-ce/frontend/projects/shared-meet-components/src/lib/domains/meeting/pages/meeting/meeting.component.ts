@@ -1,14 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import {
-	Component,
-	computed,
-	contentChild,
-	effect,
-	inject,
-	OnInit,
-	signal,
-	untracked, OnDestroy
-} from '@angular/core';
+import { Component, computed, contentChild, effect, inject, OnInit, signal, untracked, OnDestroy } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
@@ -23,6 +14,7 @@ import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lo
 import { MeetingParticipantItemComponent } from '../../customization/meeting-participant-item/meeting-participant-item.component';
 import { MeetingRaisedHandsStripComponent } from '../../customization/meeting-raised-hands-strip/meeting-raised-hands-strip.component';
 import {
+	BroadcastStateService,
 	MeetingThemeMode,
 	MeetingThemeService,
 	OpenViduComponentsUiModule,
@@ -62,6 +54,7 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	protected soundService = inject(SoundService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
 	private readonly translateService = inject(TranslateService);
+	private readonly broadcastState = inject(BroadcastStateService);
 
 	// Template reference for custom participant panel item
 	protected participantItem = contentChild.required(MeetingParticipantItemComponent);
@@ -92,6 +85,12 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	features = this.meetingContextService.meetingUI;
 	initialMediaState = this.meetingContextService.initialMediaState;
 	hasRecordings = this.meetingContextService.hasRecordings;
+	/**
+	 * Whoever may go live gets the activity; everyone else gets it while the meeting is live, so
+	 * nobody is streamed without being able to see where.
+	 */
+	showBroadcastActivity = computed(() => this.features().showBroadcastControls || this.broadcastState.isInProgress());
+
 	protected readonly extraButtonsPosition = ToolbarAdditionalButtonsPosition.BEFORE_MENU;
 
 	/** Handed to the meeting view, which calls it when the participant commits to joining. */

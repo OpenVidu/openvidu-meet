@@ -31,6 +31,9 @@ content:
                             - recordingStarted
                             - recordingUpdated
                             - recordingEnded
+                            - broadcastStarted
+                            - broadcastUpdated
+                            - broadcastEnded
                     example: ['participantJoined', 'participantLeft']
                 roomId:
                     type: string

@@ -3,6 +3,8 @@ import {
 	EmbeddedCommandName,
 	EmbeddedCommand,
 	EmbeddedEvent,
+	MeetBroadcastStartOptions,
+	MeetBroadcastStopOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetReaction
@@ -137,6 +139,14 @@ export class IframeHostService {
 
 	participantReactionSend(reaction: MeetReaction): void {
 		this.post({ command: EmbeddedCommandName.PARTICIPANT_REACTION_SEND, payload: { reaction } });
+	}
+
+	broadcastStart(options: MeetBroadcastStartOptions): void {
+		this.post({ command: EmbeddedCommandName.BROADCAST_START, payload: options });
+	}
+
+	broadcastStop(options: MeetBroadcastStopOptions): void {
+		this.post({ command: EmbeddedCommandName.BROADCAST_STOP, payload: options });
 	}
 
 	// ── Deprecated command names ────────────────────────────────────────────

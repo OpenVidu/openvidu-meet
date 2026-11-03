@@ -1,0 +1,5 @@
+@use '_design-tokens.scss';
+
+.e2ee-info-section {
+	@include design-tokens.ov-warning-panel;
+}

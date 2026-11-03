@@ -1,0 +1,9 @@
+description: >
+    Conflict: a broadcast asked for is already stopping
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        example:
+            error: 'Broadcast Error'
+            message: "Broadcast 'room-123--Qm4tZ8vR1c' is already stopped"

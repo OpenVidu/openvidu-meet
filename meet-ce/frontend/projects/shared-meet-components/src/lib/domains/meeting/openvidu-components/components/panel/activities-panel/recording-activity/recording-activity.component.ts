@@ -1,7 +1,5 @@
-import { DatePipe } from '@angular/common';
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import {
 	RecordingStartRequestedEvent,
@@ -14,6 +12,7 @@ import { MeetingLiveKitService } from '../../../../services/meeting-livekit/meet
 import { ParticipantService } from '../../../../services/participant/participant.service';
 import { RecordingService } from '../../../../services/recording/recording.service';
 import { MeetingContextService } from '../../../../../services/meeting-context.service';
+import { ActivityItemComponent, ActivityState } from '../activity-item/activity-item.component';
 
 /**
  * What the row says while something is happening. States absent from this map are idle, and the row
@@ -31,9 +30,9 @@ const STATUS_KEYS: Partial<Record<RecordingState, string>> = {
  */
 @Component({
 	selector: 'ov-recording-activity',
-	imports: [DatePipe, MatButtonModule, MatExpansionModule, MatIconModule, TranslatePipe],
+	imports: [ActivityItemComponent, MatButtonModule, MatIconModule, TranslatePipe],
 	templateUrl: './recording-activity.component.html',
-	styleUrls: ['./recording-activity.component.scss', '../activities-panel.component.scss']
+	styleUrls: ['../activity-shared.scss', './recording-activity.component.scss']
 })
 export class RecordingActivityComponent {
 	private readonly libService = inject(MeetingUiConfigService);
@@ -74,10 +73,6 @@ export class RecordingActivityComponent {
 	 * @internal
 	 */
 	readonly oldRecordingStatus = signal(RecordingState.STOPPED);
-	/**
-	 * @internal
-	 */
-	readonly isPanelOpened = signal(false);
 
 	/**
 	 * @internal
@@ -104,6 +99,23 @@ export class RecordingActivityComponent {
 	 * while nothing is.
 	 */
 	readonly statusKey = computed(() => STATUS_KEYS[this.recordingStatus()] ?? this.triggerModeKey());
+
+	/**
+	 * @internal
+	 */
+	readonly state = computed<ActivityState>(() => {
+		switch (this.recordingStatus()) {
+			case RecordingState.STARTED:
+				return 'live';
+			case RecordingState.STARTING:
+			case RecordingState.STOPPING:
+				return 'pending';
+			case RecordingState.FAILED:
+				return 'failed';
+			default:
+				return 'idle';
+		}
+	});
 
 	/**
 	 * @internal
@@ -167,13 +179,6 @@ export class RecordingActivityComponent {
 		this.participantService.remoteParticipants();
 		this.hasRoomTracksPublished.set(this.meetingLiveKitService.hasRoomTracksPublished());
 	});
-
-	/**
-	 * @internal
-	 */
-	setPanelOpened(value: boolean) {
-		this.isPanelOpened.set(value);
-	}
 
 	/**
 	 * @internal

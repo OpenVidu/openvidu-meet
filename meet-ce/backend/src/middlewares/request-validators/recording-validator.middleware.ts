@@ -1,11 +1,12 @@
+import { MEET_RECORDING_FIELDS } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
+import { mergeFieldsHeaderIntoQuery } from '../../models/zod-schemas/field-selection.schema.js';
 import {
 	BulkDeleteRecordingsReqSchema,
 	GetRecordingMediaReqSchema,
 	GetRecordingReqSchema,
 	GetRecordingUrlReqSchema,
-	mergeRecordingHeaderFieldsIntoQuery,
 	RecordingFiltersSchema,
 	RecordingIdParamSchema,
 	RecordingQueryFieldsSchema,
@@ -16,7 +17,7 @@ import {
 export const validateStartRecordingReq = (req: Request, res: Response, next: NextFunction) => {
 	// Merge X-Fields header into query params before validation
 	const query = req.query;
-	mergeRecordingHeaderFieldsIntoQuery(req.headers, query);
+	mergeFieldsHeaderIntoQuery(req.headers, query, MEET_RECORDING_FIELDS);
 
 	const bodyResult = StartRecordingReqSchema.safeParse(req.body);
 
@@ -39,7 +40,7 @@ export const validateStartRecordingReq = (req: Request, res: Response, next: Nex
 export const validateGetRecordingsReq = (req: Request, res: Response, next: NextFunction) => {
 	// Merge X-Fields header into query params before validation
 	const query = req.query;
-	mergeRecordingHeaderFieldsIntoQuery(req.headers, query);
+	mergeFieldsHeaderIntoQuery(req.headers, query, MEET_RECORDING_FIELDS);
 
 	const { success, error, data } = RecordingFiltersSchema.safeParse(query);
 
@@ -80,7 +81,7 @@ export const withValidRecordingId = (req: Request, res: Response, next: NextFunc
 export const validateGetRecordingReq = (req: Request, res: Response, next: NextFunction) => {
 	// Merge X-Fields header into query params before validation
 	const query = req.query;
-	mergeRecordingHeaderFieldsIntoQuery(req.headers, query);
+	mergeFieldsHeaderIntoQuery(req.headers, query, MEET_RECORDING_FIELDS);
 
 	const { success, error, data } = GetRecordingReqSchema.safeParse({
 		params: req.params,
@@ -99,7 +100,7 @@ export const validateGetRecordingReq = (req: Request, res: Response, next: NextF
 export const validateStopRecordingReq = (req: Request, res: Response, next: NextFunction) => {
 	// Merge X-Fields header into query params before validation
 	const query = req.query;
-	mergeRecordingHeaderFieldsIntoQuery(req.headers, query);
+	mergeFieldsHeaderIntoQuery(req.headers, query, MEET_RECORDING_FIELDS);
 
 	const { success, error, data } = StopRecordingReqSchema.safeParse({
 		params: req.params,

@@ -1,4 +1,4 @@
-import { MeetRoomConfig } from '../database/room-config.js';
+import { MeetBroadcastConfig, MeetRoomConfig } from '../database/room-config.js';
 import { MeetRoomMemberPermissions } from '../database/room-member-permissions.js';
 import { MeetRoomAutoDeletionPolicy } from '../database/room.entity.js';
 
@@ -21,9 +21,9 @@ export interface MeetRoomOptions {
 	 */
 	autoDeletionPolicy?: MeetRoomAutoDeletionPolicy;
 	/**
-	 * Configuration of the room. See {@link MeetRoomConfig} for details.
+	 * Configuration of the room. See {@link MeetRoomConfigOptions} for details.
 	 */
-	config?: Partial<MeetRoomConfig>;
+	config?: MeetRoomConfigOptions;
 	/**
 	 * Roles configuration for the room. See {@link MeetRoomRolesConfig} for details.
 	 */
@@ -33,6 +33,25 @@ export interface MeetRoomOptions {
 	 */
 	access?: MeetRoomAccessConfig;
 }
+
+/**
+ * Configuration of a room as a request sends it, to create the room or to update its config: every
+ * field is optional. Omitted, a field takes its default on creation and keeps its current value on
+ * an update. See {@link MeetRoomConfig} for details.
+ */
+export type MeetRoomConfigOptions = Partial<Omit<MeetRoomConfig, 'broadcast'>> & {
+	/** Live broadcast configuration. See {@link MeetBroadcastConfigOptions} for details. */
+	broadcast?: MeetBroadcastConfigOptions;
+};
+
+/**
+ * Live broadcast configuration as a request sends it. The switch and the destination list are
+ * optional: omitted, a new room has live broadcast disabled and no destinations, and an update keeps
+ * the saved ones; a destination list sent replaces the whole list. Enabling live broadcast needs at
+ * least one destination, sent or saved. See {@link MeetBroadcastConfig} for details.
+ */
+export type MeetBroadcastConfigOptions = Omit<MeetBroadcastConfig, 'enabled' | 'destinations'> &
+	Partial<Pick<MeetBroadcastConfig, 'enabled' | 'destinations'>>;
 
 /**
  * Roles configuration for creating/updating a room.

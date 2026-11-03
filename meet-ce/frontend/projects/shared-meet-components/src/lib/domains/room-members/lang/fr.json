@@ -115,6 +115,7 @@
         "MEETING": "Réunion",
         "MEDIA": "Média",
         "RECORDINGS": "Enregistrements",
+        "BROADCAST": "Diffusion en direct",
         "CHAT": "Chat"
       },
       "ITEMS": {
@@ -189,6 +190,14 @@
         "recordingDelete": {
           "LABEL": "Supprimer les enregistrements",
           "DESCRIPTION": "Autoriser à supprimer les enregistrements"
+        },
+        "broadcastControl": {
+          "LABEL": "Passer en direct",
+          "DESCRIPTION": "Permet de démarrer et d'arrêter des diffusions en direct vers les destinations de la salle, toutes ou seulement certaines"
+        },
+        "broadcastEdit": {
+          "LABEL": "Ajouter des destinations",
+          "DESCRIPTION": "Permet de diffuser une réunion vers des URL supplémentaires en plus des destinations de la salle. Nécessite « Passer en direct »"
         },
         "chatRead": {
           "LABEL": "Lire",

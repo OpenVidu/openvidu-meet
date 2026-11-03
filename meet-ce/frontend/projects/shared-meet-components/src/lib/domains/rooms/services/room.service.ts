@@ -4,6 +4,7 @@ import {
 	MeetRoomAccess,
 	MeetRoomAccessConfig,
 	MeetRoomConfig,
+	MeetRoomConfigOptions,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
@@ -168,7 +169,7 @@ export class RoomService {
 	 * @param config - The room config to be saved.
 	 * @returns A promise that resolves when the config have been saved.
 	 */
-	async updateRoomConfig(roomId: string, config: Partial<MeetRoomConfig>): Promise<MeetRoomConfig> {
+	async updateRoomConfig(roomId: string, config: MeetRoomConfigOptions): Promise<MeetRoomConfig> {
 		this.log.d('Saving room config', config);
 		const path = `${this.ROOMS_API}/${roomId}/config`;
 		return this.httpService.putRequest(path, { config });

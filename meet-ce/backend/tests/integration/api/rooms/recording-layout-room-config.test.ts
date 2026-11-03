@@ -37,6 +37,7 @@ describe('Room API Tests', () => {
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
+				broadcast: { enabled: false, destinations: [] },
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
 				reactions: { enabled: true }
@@ -69,6 +70,7 @@ describe('Room API Tests', () => {
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
+				broadcast: { enabled: false, destinations: [] },
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
 				reactions: { enabled: true }
@@ -101,6 +103,7 @@ describe('Room API Tests', () => {
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
+				broadcast: { enabled: false, destinations: [] },
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
 				reactions: { enabled: true }

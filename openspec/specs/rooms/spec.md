@@ -468,7 +468,7 @@ The console SHALL ask for confirmation and then delete with both policies set to
 - **AND** choosing to close the room keeps it in the list as closed
 
 ### Requirement: Console room wizard
-The console SHALL let `admin` and `room_manager` users create a room either by name only or through a wizard with the steps Room Details, Meeting, Recording and Room Access, and SHALL take the user into the new room's join screen once it is created. A failed creation SHALL keep the wizard and its input and show the server's message. Every wizard session SHALL start from the defaults, never from an abandoned one.
+The console SHALL let `admin` and `room_manager` users create a room either by name only or through a wizard with the steps Room Details, Meeting, Recording, Live broadcast and Room Access, and SHALL take the user into the new room's join screen once it is created. A failed creation SHALL keep the wizard and its input and show the server's message. Every wizard session SHALL start from the defaults, never from an abandoned one.
 
 #### Scenario: Basic creation
 - **GIVEN** a `room_manager` user on the Rooms page
@@ -499,7 +499,7 @@ The console SHALL open the wizard in edit mode only for an admin or the room's o
 - **THEN** the room detail page opens and the room's `chat.enabled` is `false`
 
 ### Requirement: Wizard validation
-The wizard SHALL block finishing while the participant limit is outside 1 to 30, the duration limit outside 1 to 1440 minutes, the auto-deletion date less than an hour ahead, or the recording auto-start unreachable with the participant limit, flagging the Meeting and Recording steps in that last case, so that it never submits a combination the server rejects (see `room-config`).
+The wizard SHALL block finishing while the participant limit is outside 1 to 30, the duration limit outside 1 to 1440 minutes, the auto-deletion date less than an hour ahead, the recording auto-start unreachable with the participant limit, flagging the Meeting and Recording steps in that case, or live broadcast allowed without a destination (see `live-broadcast`), so that it never submits a combination the server rejects (see `room-config`).
 
 #### Scenario: Unreachable auto-start
 - **GIVEN** the wizard with participant limit 1
@@ -510,18 +510,27 @@ The wizard SHALL block finishing while the participant limit is outside 1 to 30,
 - **WHEN** the user types 31 as participant limit
 - **THEN** the field shows an error with the accepted range and the finish button is disabled
 
+#### Scenario: Live broadcast without a destination
+- **WHEN** the user allows live broadcast and saves no destination
+- **THEN** the finish button is disabled
+
 ### Requirement: Wizard dependent settings
-The wizard SHALL keep end-to-end encryption mutually exclusive with recording and with live captions, warning while encryption is on that both are unavailable, restoring the previous state of each when encryption is turned off again, and SHALL disable the `mediaChangeVirtualBackground` role switches while virtual backgrounds are off, restoring them as left when virtual backgrounds are turned back on. The chat role switches are specified in `meeting-chat`.
+The wizard SHALL keep end-to-end encryption mutually exclusive with recording, live broadcast and live captions, restoring the others when one is turned off again, warning while encryption is on that recording and live captions are unavailable, and SHALL disable the `mediaChangeVirtualBackground` role switches while virtual backgrounds are off, restoring them as left once they are back on. The chat and broadcast role switches are specified in `meeting-chat` and `live-broadcast`.
 
 #### Scenario: Enabling end-to-end encryption
-- **GIVEN** the wizard with recording allowed
+- **GIVEN** the wizard with recording and live broadcast allowed
 - **WHEN** the user turns end-to-end encryption on and later off again
-- **THEN** recording is turned off while encryption is on and allowed again afterwards
+- **THEN** recording and live broadcast are turned off while encryption is on and allowed again afterwards
 
 #### Scenario: Enabling end-to-end encryption with live captions on
 - **GIVEN** the wizard with live captions turned on
 - **WHEN** the user turns end-to-end encryption on and later off again
 - **THEN** live captions are turned off and cannot be turned on while encryption is on, a warning says they are unavailable while encryption is enabled, and they are on again afterwards
+
+#### Scenario: Allowing live broadcast in an encrypted room
+- **GIVEN** the wizard with end-to-end encryption on
+- **WHEN** the user allows live broadcast and later turns it off again
+- **THEN** encryption is turned off while live broadcast is allowed and back on afterwards
 
 #### Scenario: Virtual backgrounds turned off
 - **GIVEN** the wizard with virtual backgrounds turned off in the Meeting step

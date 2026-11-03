@@ -30,10 +30,12 @@ import {
 	OpenViduMeetError
 } from '../models/error.model.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
+import { BroadcastService } from './broadcast.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { MutexService } from './mutex.service.js';
+import { RecordingService } from './recording.service.js';
 import { RequestSessionService } from './request-session.service.js';
 import { RoomService } from './room.service.js';
 import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
@@ -55,7 +57,9 @@ export class MeetingService {
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
 		@inject(WebhookDispatcherService) protected webhookDispatcherService: WebhookDispatcherService,
-		@inject(MutexService) protected mutexService: MutexService
+		@inject(MutexService) protected mutexService: MutexService,
+		@inject(BroadcastService) protected broadcastService: BroadcastService,
+		@inject(RecordingService) protected recordingService: RecordingService
 	) {}
 
 	/**
@@ -69,11 +73,12 @@ export class MeetingService {
 		// the former counts non-hidden participants (not Meet's kind-STANDARD filter, so it could
 		// diverge from the /participants listing) and the latter flips for ANY egress on the room,
 		// not just Meet recordings.
-		const [room, [participants, activeRecordings]] = await this.withActiveMeetingRoom(
+		const [room, [participants, activeRecordings, broadcastActive]] = await this.withActiveMeetingRoom(
 			roomId,
 			Promise.all([
 				this.getStandardParticipants(roomId),
-				this.livekitService.getInProgressRecordingsEgress(roomId)
+				this.recordingService.getInProgressEgresses(roomId),
+				this.broadcastService.isBroadcastActive(roomId)
 			])
 		);
 
@@ -85,6 +90,7 @@ export class MeetingService {
 			endDate: MeetRoomHelper.extractMeetingEndDateFromMetadata(room.metadata),
 			participantCount: participants.length,
 			recordingActive: activeRecordings.length > 0,
+			broadcastActive,
 			// The cap LiveKit is enforcing right now, stamped on the room at creation from
 			// `config.maxParticipants`: the database holds what the *next* meeting will get.
 			maxParticipants: room.maxParticipants || undefined
@@ -408,7 +414,8 @@ export class MeetingService {
 	 * @returns
 	 */
 	async getStandardParticipants(roomId: string): Promise<ParticipantInfo[]> {
-		return this.livekitService.listStandardParticipants(roomId);
+		const participants = await this.livekitService.listRoomParticipants(roomId);
+		return participants.filter((participant) => MeetParticipantHelper.isStandardParticipant(participant));
 	}
 
 	/**
@@ -418,7 +425,7 @@ export class MeetingService {
 	protected async getStandardParticipant(roomId: string, participantIdentity: string): Promise<ParticipantInfo> {
 		const participant = await this.livekitService.getParticipant(roomId, participantIdentity);
 
-		if (!this.livekitService.isStandardParticipant(participant)) {
+		if (!MeetParticipantHelper.isStandardParticipant(participant)) {
 			throw errorParticipantNotFound(participantIdentity, roomId);
 		}
 

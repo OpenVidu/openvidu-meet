@@ -7,6 +7,8 @@ export interface PermissionItem {
 	/** i18n key — resolve with the `translate` pipe at render. */
 	description: string;
 	icon: string;
+	/** A permission that only takes effect together with this other one, which the UI disables it without. */
+	dependsOn?: keyof MeetRoomMemberPermissions;
 }
 
 export interface PermissionGroup {
@@ -146,6 +148,25 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 		]
 	},
 	{
+		label: 'ROOM_MEMBERS.PERMISSIONS.GROUPS.BROADCAST',
+		icon: 'sensors',
+		permissions: [
+			{
+				key: 'broadcastControl',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.broadcastControl.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.broadcastControl.DESCRIPTION',
+				icon: 'sensors'
+			},
+			{
+				key: 'broadcastEdit',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.broadcastEdit.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.broadcastEdit.DESCRIPTION',
+				icon: 'add_link',
+				dependsOn: 'broadcastControl'
+			}
+		]
+	},
+	{
 		label: 'ROOM_MEMBERS.PERMISSIONS.GROUPS.CHAT',
 		icon: 'chat',
 		permissions: [
@@ -164,3 +185,10 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 		]
 	}
 ];
+
+export type DependentPermissionItem = PermissionItem & { dependsOn: keyof MeetRoomMemberPermissions };
+
+/** The permissions that only make sense with another one granted (see {@link PermissionItem.dependsOn}). */
+export const DEPENDENT_PERMISSIONS: DependentPermissionItem[] = PERMISSION_GROUPS.flatMap(
+	(group) => group.permissions
+).filter((permission): permission is DependentPermissionItem => permission.dependsOn !== undefined);

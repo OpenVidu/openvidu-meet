@@ -11,6 +11,9 @@ MeetWebhookEvent:
                       - recordingStarted
                       - recordingUpdated
                       - recordingEnded
+                      - broadcastStarted
+                      - broadcastUpdated
+                      - broadcastEnded
                       - meetingStarted
                       - meetingEnded
                       - participantJoined

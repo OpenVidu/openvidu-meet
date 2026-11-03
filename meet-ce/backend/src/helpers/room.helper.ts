@@ -1,7 +1,7 @@
 import type {
 	MeetRoom,
 	MeetRoomAccess,
-	MeetRoomConfig,
+	MeetRoomConfigOptions,
 	MeetRoomExtraField,
 	MeetRoomField,
 	MeetRoomMemberPermissions,
@@ -107,16 +107,20 @@ export class MeetRoomHelper {
 	}
 
 	/**
-	 * Turns off the features end-to-end encryption excludes: recording and live captions need the
-	 * server to read the media, which an encrypted room never lets it do.
+	 * Turns off the features end-to-end encryption excludes: recording, live broadcast and live
+	 * captions need the server to read the media, which an encrypted room never lets it do.
 	 *
 	 * @param config - The room config, changed in place
 	 */
-	static disableFeaturesExcludedByE2EE(config: Partial<MeetRoomConfig>): void {
+	static disableFeaturesExcludedByE2EE(config: MeetRoomConfigOptions): void {
 		if (!config.e2ee?.enabled) return;
 
 		if (config.recording?.enabled) {
 			config.recording = { ...config.recording, enabled: false };
+		}
+
+		if (config.broadcast?.enabled) {
+			config.broadcast = { ...config.broadcast, enabled: false };
 		}
 
 		if (config.captions?.enabled) {

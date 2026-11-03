@@ -63,6 +63,12 @@ paths:
         $ref: './recordings/recordings.yaml#/~1recordings~1{recordingId}~1url'
     /recordings/{recordingId}/stop:
         $ref: './recordings/recordings.yaml#/~1recordings~1{recordingId}~1stop'
+    /broadcasts:
+        $ref: './broadcasts/broadcasts.yaml#/~1broadcasts'
+    /broadcasts/stop:
+        $ref: './broadcasts/broadcasts.yaml#/~1broadcasts~1stop'
+    /broadcasts/{broadcastId}:
+        $ref: './broadcasts/broadcasts.yaml#/~1broadcasts~1{broadcastId}'
     /webhooks:
         $ref: './webhooks/webhooks-api.yaml#/~1webhooks'
     /webhooks/{webhookId}:
@@ -93,6 +99,8 @@ components:
             $ref: ./meetings/schemas/meet-participant-info.yaml
         MeetRecording:
             $ref: ./recordings/schemas/meet-recording.yaml
+        MeetBroadcast:
+            $ref: ./broadcasts/schemas/meet-broadcast.yaml
         MeetWebhook:
             $ref: ./webhooks/schemas/meet-webhook-endpoint.yaml
         MeetWebhookEvent:

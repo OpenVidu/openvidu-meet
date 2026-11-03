@@ -358,8 +358,8 @@ describe('DeviceTrialService', () => {
 
 			expect(events).toEqual([
 				'stop cam-back',
-				'switch camera cam-back',
 				'stop mic-headset',
+				'switch camera cam-back',
 				'switch microphone mic-headset'
 			]);
 			expect(deviceService.setCameraSelected).toHaveBeenCalledOnceWith('cam-back');
@@ -376,10 +376,28 @@ describe('DeviceTrialService', () => {
 
 			const applying = service.apply();
 			expect(service.applying()).toBeTrue();
+			expect(service.pending()).toBeTrue();
 
 			switching.resolve();
 			await applying;
 			expect(service.applying()).toBeFalse();
+			expect(service.pending()).toBeFalse();
+		});
+
+		it('still switches and remembers the microphone when the settings go away before the camera has switched', async () => {
+			const switching = deferred<void>();
+			localMedia.switchCamera.and.returnValue(switching.promise);
+			await service.tryCamera(back);
+			await service.tryMicrophone(headset);
+
+			const applying = service.apply();
+			service.ngOnDestroy();
+			switching.resolve();
+			const applied = await applying;
+
+			expect(localMedia.switchMicrophone).toHaveBeenCalledOnceWith('mic-headset');
+			expect(deviceService.setMicSelected).toHaveBeenCalledOnceWith('mic-headset');
+			expect(applied).toEqual({ camera: back, microphone: headset });
 		});
 
 		it('does not remember a device that could not be switched to', async () => {

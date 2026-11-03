@@ -81,10 +81,11 @@
 									@for (permission of group.permissions; track permission.key) {
 										<div
 											class="permission-row"
+											[class.dependent]="!!permission.dependsOn"
 											[attr.id]="'moderator-permission-' + permission.key"
 											[matTooltip]="
-												isPermissionFeatureDisabled(permission.key)
-													? ('ROOMS.WIZARD.ACCESS.FEATURE_DISABLED_PERMISSION' | translate)
+												disabledReasonKey(moderatorForm, permission)
+													? (disabledReasonKey(moderatorForm, permission) | translate)
 													: ''
 											"
 										>
@@ -129,10 +130,11 @@
 									@for (permission of group.permissions; track permission.key) {
 										<div
 											class="permission-row"
+											[class.dependent]="!!permission.dependsOn"
 											[attr.id]="'speaker-permission-' + permission.key"
 											[matTooltip]="
-												isPermissionFeatureDisabled(permission.key)
-													? ('ROOMS.WIZARD.ACCESS.FEATURE_DISABLED_PERMISSION' | translate)
+												disabledReasonKey(speakerForm, permission)
+													? (disabledReasonKey(speakerForm, permission) | translate)
 													: ''
 											"
 										>

@@ -10,6 +10,11 @@
       access token: authenticate them with an API key or a room member token.
 - name: OpenVidu Meet - Recordings
   description: Operations related to managing OpenVidu Meet recordings
+- name: OpenVidu Meet - Broadcasts
+  description: >
+      Operations related to managing OpenVidu Meet broadcasts, the live streams of a meeting to RTMP
+      destinations, one per destination. They take no user access token: authenticate them with an API key or
+      a room member token.
 - name: OpenVidu Meet - Webhooks
   description: Operations related to managing the webhooks OpenVidu Meet delivers event notifications to
 - name: Internal API - Authentication

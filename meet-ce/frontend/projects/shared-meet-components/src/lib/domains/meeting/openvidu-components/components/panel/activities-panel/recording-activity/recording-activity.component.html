@@ -1,146 +1,109 @@
-<mat-expansion-panel
-	(opened)="setPanelOpened(true)"
-	(closed)="setPanelOpened(false)"
+<ov-activity-item
 	[expanded]="expanded()"
-	[class.no-body]="!isPanelOpened()"
+	icon="radio_button_checked"
+	titleKey="PANEL.RECORDING.TITLE"
+	[statusKey]="statusKey()"
+	[state]="state()"
+	[elapsed]="elapsed()"
+	statusId="recording-status"
+	[status]="recordingStatus()"
 >
-	<mat-expansion-panel-header>
-		<div class="recording-row">
-			<div
-				class="recording-tile"
-				[class.live]="recordingStatus() === recStatusEnum.STARTED"
-				[class.pending]="
-					recordingStatus() === recStatusEnum.STARTING || recordingStatus() === recStatusEnum.STOPPING
-				"
-				[class.failed]="recordingStatus() === recStatusEnum.FAILED"
-			>
-				@if (recordingStatus() === recStatusEnum.FAILED) {
-					<mat-icon>error_outline</mat-icon>
-				} @else {
-					<mat-icon>radio_button_checked</mat-icon>
-				}
-			</div>
-
-			<div class="recording-identity">
-				<h3 class="recording-name">{{ 'PANEL.RECORDING.TITLE' | translate }}</h3>
-				<p class="recording-status" id="recording-status" [attr.data-status]="recordingStatus()">
-					@if (recordingStatus() === recStatusEnum.STARTED) {
-						<span class="live-dot" aria-hidden="true"></span>
-					}
-					<span>{{ statusKey() | translate }}</span>
-					@if (recordingStatus() === recStatusEnum.STARTED && elapsed(); as elapsedTime) {
-						<span class="status-separator" aria-hidden="true">&middot;</span>
-						<span class="recording-elapsed">{{ elapsedTime | date: 'H:mm:ss' }}</span>
-					}
-				</p>
+	<!-- While recording, what that means for everyone in the room. -->
+	@if (recordingStatus() === recStatusEnum.STARTED) {
+		<div class="activity-note" role="status">
+			<mat-icon class="activity-note-icon">radio_button_checked</mat-icon>
+			<div class="activity-note-body">
+				<span class="activity-note-title">
+					{{ 'PANEL.RECORDING.IN_PROGRESS_TITLE' | translate }}
+				</span>
+				<span class="activity-note-message">
+					{{ 'PANEL.RECORDING.IN_PROGRESS_MESSAGE' | translate }}
+				</span>
 			</div>
 		</div>
+	}
 
-		@if (recordingStatus() === recStatusEnum.STARTING || recordingStatus() === recStatusEnum.STOPPING) {
-			<span class="recording-progress" aria-hidden="true"><span class="recording-progress-bar"></span></span>
-		}
-	</mat-expansion-panel-header>
-
-	@if (isPanelOpened()) {
-		<div class="recording-body">
-			<!-- While recording, what that means for everyone in the room. -->
-			@if (recordingStatus() === recStatusEnum.STARTED) {
-				<div class="recording-note" role="status">
-					<mat-icon class="recording-note-icon">radio_button_checked</mat-icon>
-					<div class="recording-note-body">
-						<span class="recording-note-title">
-							{{ 'PANEL.RECORDING.IN_PROGRESS_TITLE' | translate }}
-						</span>
-						<span class="recording-note-message">
-							{{ 'PANEL.RECORDING.IN_PROGRESS_MESSAGE' | translate }}
-						</span>
-					</div>
-				</div>
-			}
-
-			<!-- The same slot, escalated: the only red in this panel. -->
-			@if (recordingStatus() === recStatusEnum.FAILED) {
-				<div class="recording-failure" role="alert">
-					<mat-icon class="recording-failure-icon">error_outline</mat-icon>
-					<div class="recording-note-body">
-						<span class="recording-note-title">
-							{{ 'PANEL.RECORDING.ERROR_STARTING' | translate }}
-						</span>
-						@if (recordingError()) {
-							<span class="recording-note-message">{{ recordingError() }}</span>
-						}
-					</div>
-				</div>
-			}
-
-			<!-- Why the start control is there but cannot be used. -->
-			@if (isIdle() && startsAutomatically() && showStartStopRecordingButton()) {
-				<div class="recording-note single-line">
-					<mat-icon class="recording-note-icon">schedule</mat-icon>
-					<span class="recording-note-message">
-						{{ 'PANEL.RECORDING.AUTO_START_ONLY' | translate }}
-					</span>
-				</div>
-			}
-
-			@if (!showStartStopRecordingButton()) {
-				<p class="recording-permission">
-					<mat-icon class="recording-permission-icon">lock</mat-icon>
-					<span>{{ 'PANEL.RECORDING.MODERATORS_ONLY' | translate }}</span>
-				</p>
-			}
-
-			<div class="recording-actions">
-				@if (showStartStopRecordingButton()) {
-					@switch (recordingStatus()) {
-						@case (recStatusEnum.STARTED) {
-							<button mat-flat-button id="stop-recording-btn" (click)="stopRecording()">
-								<mat-icon>stop_circle</mat-icon>
-								<span>{{ 'TOOLBAR.STOP_RECORDING' | translate }}</span>
-							</button>
-						}
-						@case (recStatusEnum.STARTING) {
-							<button mat-flat-button id="stop-recording-btn" (click)="stopRecording()">
-								<mat-icon>stop_circle</mat-icon>
-								<span>{{ 'TOOLBAR.STOP_RECORDING' | translate }}</span>
-							</button>
-						}
-						@case (recStatusEnum.STOPPING) {
-							<button mat-flat-button class="is-busy" disabled>
-								<span class="busy-spinner" aria-hidden="true"></span>
-								<span>{{ 'PANEL.RECORDING.STOPPING' | translate }}</span>
-							</button>
-						}
-						@case (recStatusEnum.FAILED) {
-							<button mat-flat-button id="retry-recording-btn" (click)="retry()">
-								<mat-icon>refresh</mat-icon>
-								<span>{{ 'PANEL.RECORDING.TRY_AGAIN' | translate }}</span>
-							</button>
-							<button mat-stroked-button id="reset-recording-status-btn" (click)="resetStatus()">
-								<span>{{ 'PANEL.RECORDING.DISMISS' | translate }}</span>
-							</button>
-						}
-						@default {
-							<button
-								mat-flat-button
-								id="start-recording-btn"
-								[disabled]="!canStartRecording()"
-								(click)="startRecording()"
-							>
-								<mat-icon>radio_button_checked</mat-icon>
-								<span>{{ 'TOOLBAR.START_RECORDING' | translate }}</span>
-							</button>
-						}
-					}
-				}
-
-				@if (showViewRecordingsButton() && recordingStatus() !== recStatusEnum.FAILED) {
-					<button mat-stroked-button id="view-recordings-btn" (click)="viewAllRecordings()">
-						<span>{{ 'TOOLBAR.VIEW_RECORDINGS' | translate }}</span>
-						<mat-icon class="external-link-icon">open_in_new</mat-icon>
-					</button>
+	<!-- The same slot, escalated: the only red in this panel. -->
+	@if (recordingStatus() === recStatusEnum.FAILED) {
+		<div class="activity-failure" role="alert">
+			<mat-icon class="activity-failure-icon">error_outline</mat-icon>
+			<div class="activity-note-body">
+				<span class="activity-note-title">
+					{{ 'PANEL.RECORDING.ERROR_STARTING' | translate }}
+				</span>
+				@if (recordingError()) {
+					<span class="activity-note-message">{{ recordingError() }}</span>
 				}
 			</div>
 		</div>
 	}
-</mat-expansion-panel>
+
+	<!-- Why the start control is there but cannot be used. -->
+	@if (isIdle() && startsAutomatically() && showStartStopRecordingButton()) {
+		<div class="activity-note single-line">
+			<mat-icon class="activity-note-icon">schedule</mat-icon>
+			<span class="activity-note-message">
+				{{ 'PANEL.RECORDING.AUTO_START_ONLY' | translate }}
+			</span>
+		</div>
+	}
+
+	@if (!showStartStopRecordingButton()) {
+		<p class="activity-permission">
+			<mat-icon class="activity-permission-icon">lock</mat-icon>
+			<span>{{ 'PANEL.RECORDING.MODERATORS_ONLY' | translate }}</span>
+		</p>
+	}
+
+	<div class="activity-actions">
+		@if (showStartStopRecordingButton()) {
+			@switch (recordingStatus()) {
+				@case (recStatusEnum.STARTED) {
+					<button mat-flat-button id="stop-recording-btn" (click)="stopRecording()">
+						<mat-icon>stop_circle</mat-icon>
+						<span>{{ 'TOOLBAR.STOP_RECORDING' | translate }}</span>
+					</button>
+				}
+				@case (recStatusEnum.STARTING) {
+					<button mat-flat-button id="stop-recording-btn" (click)="stopRecording()">
+						<mat-icon>stop_circle</mat-icon>
+						<span>{{ 'TOOLBAR.STOP_RECORDING' | translate }}</span>
+					</button>
+				}
+				@case (recStatusEnum.STOPPING) {
+					<button mat-flat-button class="is-busy" disabled>
+						<span class="busy-spinner" aria-hidden="true"></span>
+						<span>{{ 'PANEL.RECORDING.STOPPING' | translate }}</span>
+					</button>
+				}
+				@case (recStatusEnum.FAILED) {
+					<button mat-flat-button id="retry-recording-btn" (click)="retry()">
+						<mat-icon>refresh</mat-icon>
+						<span>{{ 'PANEL.RECORDING.TRY_AGAIN' | translate }}</span>
+					</button>
+					<button mat-stroked-button id="reset-recording-status-btn" (click)="resetStatus()">
+						<span>{{ 'PANEL.RECORDING.DISMISS' | translate }}</span>
+					</button>
+				}
+				@default {
+					<button
+						mat-flat-button
+						id="start-recording-btn"
+						[disabled]="!canStartRecording()"
+						(click)="startRecording()"
+					>
+						<mat-icon>radio_button_checked</mat-icon>
+						<span>{{ 'TOOLBAR.START_RECORDING' | translate }}</span>
+					</button>
+				}
+			}
+		}
+
+		@if (showViewRecordingsButton() && recordingStatus() !== recStatusEnum.FAILED) {
+			<button mat-stroked-button id="view-recordings-btn" (click)="viewAllRecordings()">
+				<span>{{ 'TOOLBAR.VIEW_RECORDINGS' | translate }}</span>
+				<mat-icon class="external-link-icon">open_in_new</mat-icon>
+			</button>
+		}
+	</div>
+</ov-activity-item>

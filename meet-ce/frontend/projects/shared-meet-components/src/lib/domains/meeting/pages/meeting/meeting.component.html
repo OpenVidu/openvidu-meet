@@ -25,6 +25,7 @@
 		[toolbarScreenshareButton]="features().showScreenShare"
 		[toolbarLeaveButton]="!features().showEndMeeting"
 		[toolbarRecordingButton]="features().showStartStopRecording"
+		[toolbarBroadcastButton]="features().showBroadcastControls"
 		[toolbarViewRecordingsButton]="features().showViewRecordings && hasRecordings()"
 		[toolbarChatPanelButton]="features().showChat"
 		[chatWritable]="features().showChatInput"
@@ -33,19 +34,26 @@
 		[toolbarSettingsButton]="features().showSettings"
 		[toolbarFullscreenButton]="features().showFullscreen"
 		[toolbarActivitiesPanelButton]="
-			features().showStartStopRecording || (features().showViewRecordings && hasRecordings())
+			features().showStartStopRecording ||
+			(features().showViewRecordings && hasRecordings()) ||
+			showBroadcastActivity()
 		"
 		[activitiesPanelRecordingActivity]="
 			features().showStartStopRecording || (features().showViewRecordings && hasRecordings())
 		"
 		[recordingActivityStartStopRecordingButton]="features().showStartStopRecording"
 		[recordingActivityViewRecordingsButton]="features().showViewRecordings && hasRecordings()"
+		[activitiesPanelBroadcastActivity]="showBroadcastActivity()"
+		[broadcastActivityControls]="features().showBroadcastControls"
+		[broadcastActivityAddDestinations]="features().showBroadcastAddDestinations"
 		[showThemeSelector]="features().showThemeSelector"
 		(onRoomCreated)="onRoomCreated($event)"
 		(onParticipantConnected)="onParticipantConnected($event)"
 		(onParticipantLeft)="onParticipantLeft($event)"
+		(onRoomReconnected)="eventHandlerService.onRoomReconnected()"
 		(onRecordingStartRequested)="eventHandlerService.onRecordingStartRequested($event)"
 		(onRecordingStopRequested)="eventHandlerService.onRecordingStopRequested($event)"
+		(onBroadcastRequested)="eventHandlerService.onBroadcastRequested($event)"
 		(onViewRecordingsClicked)="onViewRecordingsClicked()"
 	>
 		<!-- Toolbar Leave Button (for moderators) -->

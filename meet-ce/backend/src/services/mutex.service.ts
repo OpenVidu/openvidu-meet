@@ -22,7 +22,9 @@ export class MutexService {
 
 	/**
 	 * Executes a callback while holding the specified lock.
-	 * The lock is always released after the callback completes, even if the callback throws.
+	 * The lock is held for as long as the callback runs, extended before its TTL runs out, so the TTL
+	 * only bounds a holder that died. It is always released after the callback completes, even if
+	 * the callback throws.
 	 * Returns null if the lock cannot be acquired (i.e., another process holds it).
 	 *
 	 * Preferred pattern for ephemeral locks:
@@ -44,14 +46,30 @@ export class MutexService {
 			return null;
 		}
 
+		const keepAlive = setInterval(() => void this.extend(lock, ttl), ttl / 2);
+
 		try {
 			return await callback();
 		} finally {
+			clearInterval(keepAlive);
+
 			// If callback process took longer than TTL, the lock may have expired and been released by Redlock automatically.
 			// In that case, we should not attempt to release it again to avoid errors. Instead, we check if the lock still exists before releasing.
 			if (await this.lockExists(key)) {
 				await this.release(lock);
 			}
+		}
+	}
+
+	private async extend(lock: RedisDistributedLock, ttl: number): Promise<void> {
+		const [key] = lock.resources;
+
+		try {
+			if (!(await lock.extend(ttl))) {
+				this.logger.warn(`Lock '${key}' was lost while its holder still ran`);
+			}
+		} catch (error) {
+			this.logger.warn(`Error extending lock '${key}'`, error);
 		}
 	}
 

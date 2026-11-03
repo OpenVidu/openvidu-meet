@@ -11,3 +11,4 @@ export * from './translation-bundle.model';
 
 export * from './logger.model';
 export * from './translator.model';
+export * from './broadcast.model';
