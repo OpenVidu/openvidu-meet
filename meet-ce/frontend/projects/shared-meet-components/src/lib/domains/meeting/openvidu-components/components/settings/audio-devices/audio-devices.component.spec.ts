@@ -28,7 +28,7 @@ describe('AudioDevicesComponent', () => {
 	let deviceService: { setMicSelected: jasmine.Spy };
 	let micLevel: ReturnType<typeof signal<number>>;
 
-	function create(trial?: unknown, canCaptureSecondMicrophone = true) {
+	function create(trial?: unknown, canCaptureSecondDevice = true) {
 		localMedia = {
 			setMicrophoneEnabled: jasmine.createSpy('setMicrophoneEnabled'),
 			switchMicrophone: jasmine.createSpy('switchMicrophone'),
@@ -45,7 +45,7 @@ describe('AudioDevicesComponent', () => {
 				{ provide: MicActivityService, useValue: { level: micLevel } as unknown as MicActivityService },
 				{
 					provide: PlatformService,
-					useValue: { canCaptureSecondMicrophone: () => canCaptureSecondMicrophone }
+					useValue: { canCaptureSecondDevice: () => canCaptureSecondDevice }
 				},
 				{
 					provide: DeviceService,
@@ -139,7 +139,7 @@ describe('AudioDevicesComponent', () => {
 		});
 	});
 
-	describe('in the meeting settings where a second microphone cannot be captured', () => {
+	describe('in the meeting settings where a second device cannot be captured', () => {
 		let trial: { tryMicrophone: jasmine.Spy };
 
 		beforeEach(() => {

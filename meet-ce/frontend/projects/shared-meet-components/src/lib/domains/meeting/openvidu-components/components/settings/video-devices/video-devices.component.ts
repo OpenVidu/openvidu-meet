@@ -40,7 +40,7 @@ export class VideoDevicesComponent {
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly localParticipant = inject(ParticipantService).localParticipant;
 	private readonly virtualBackground = inject(VirtualBackgroundService);
-	private readonly trial = inject(PlatformService).canCaptureSecondCamera()
+	private readonly trial = inject(PlatformService).canCaptureSecondDevice()
 		? inject(DeviceTrialService, { optional: true })
 		: null;
 

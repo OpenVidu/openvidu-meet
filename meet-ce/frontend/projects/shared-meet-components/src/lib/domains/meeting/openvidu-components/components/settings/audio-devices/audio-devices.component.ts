@@ -34,7 +34,7 @@ export class AudioDevicesComponent {
 	readonly microphoneStatusChanging = signal(false);
 	readonly isMicrophoneEnabled = inject(LocalMediaService).microphone.enabled;
 
-	private readonly trial = inject(PlatformService).canCaptureSecondMicrophone()
+	private readonly trial = inject(PlatformService).canCaptureSecondDevice()
 		? inject(DeviceTrialService, { optional: true })
 		: null;
 

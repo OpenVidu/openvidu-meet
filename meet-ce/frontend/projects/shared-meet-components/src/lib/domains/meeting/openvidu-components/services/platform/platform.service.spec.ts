@@ -28,32 +28,19 @@ describe('PlatformService', () => {
 
 	describe('capturing a second device next to the open one', () => {
 		const cases = [
-			{ browser: 'Chrome on Linux', userAgent: LINUX_CHROME, camera: true, microphone: true },
-			{ browser: 'Edge on Windows', userAgent: WINDOWS_EDGE, camera: true, microphone: true },
-			{ browser: 'Firefox on Linux', userAgent: LINUX_FIREFOX, camera: true, microphone: true },
-			{ browser: 'Safari on a Mac', userAgent: MAC_SAFARI, camera: true, microphone: false },
-			{
-				browser: 'Chrome on an Android phone',
-				userAgent: ANDROID_PHONE_CHROME,
-				camera: false,
-				microphone: false
-			},
-			{
-				browser: 'Chrome on an Android tablet',
-				userAgent: ANDROID_TABLET_CHROME,
-				camera: false,
-				microphone: false
-			},
-			{ browser: 'Safari on an iPhone', userAgent: IPHONE_SAFARI, camera: false, microphone: false },
-			{ browser: 'Chrome on an iPhone', userAgent: IPHONE_CHROME, camera: false, microphone: false }
+			{ browser: 'Chrome on Linux', userAgent: LINUX_CHROME, allowed: true },
+			{ browser: 'Edge on Windows', userAgent: WINDOWS_EDGE, allowed: true },
+			{ browser: 'Firefox on Linux', userAgent: LINUX_FIREFOX, allowed: true },
+			{ browser: 'Safari on a Mac', userAgent: MAC_SAFARI, allowed: false },
+			{ browser: 'Chrome on an Android phone', userAgent: ANDROID_PHONE_CHROME, allowed: false },
+			{ browser: 'Chrome on an Android tablet', userAgent: ANDROID_TABLET_CHROME, allowed: false },
+			{ browser: 'Safari on an iPhone', userAgent: IPHONE_SAFARI, allowed: false },
+			{ browser: 'Chrome on an iPhone', userAgent: IPHONE_CHROME, allowed: false }
 		];
 
-		for (const { browser, userAgent, camera, microphone } of cases) {
-			it(`${browser}: camera ${camera}, microphone ${microphone}`, () => {
-				const platform = platformOf(userAgent);
-
-				expect(platform.canCaptureSecondCamera()).toBe(camera);
-				expect(platform.canCaptureSecondMicrophone()).toBe(microphone);
+		for (const { browser, userAgent, allowed } of cases) {
+			it(`${browser}: ${allowed}`, () => {
+				expect(platformOf(userAgent).canCaptureSecondDevice()).toBe(allowed);
 			});
 		}
 
@@ -61,10 +48,9 @@ describe('PlatformService', () => {
 			(document as unknown as { ontouchend: null }).ontouchend = null;
 
 			try {
-				const platform = platformOf(MAC_SAFARI);
-
-				expect(platform.canCaptureSecondCamera()).toBeFalse();
-				expect(platform.canCaptureSecondMicrophone()).toBeFalse();
+				expect(
+					platformOf(LINUX_CHROME.replace('X11; Linux x86_64', 'Macintosh')).canCaptureSecondDevice()
+				).toBeFalse();
 			} finally {
 				delete (document as unknown as { ontouchend?: null }).ontouchend;
 			}

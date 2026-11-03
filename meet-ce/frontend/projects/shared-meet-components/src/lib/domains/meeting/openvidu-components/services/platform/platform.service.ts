@@ -138,18 +138,11 @@ export class PlatformService {
 	// ===== Capture =====
 
 	/**
-	 * Returns true if a camera can be captured next to another one that stays open: Android camera
-	 * stacks refuse the second open, and WebKit on iOS and iPadOS ends the first capture when another starts
+	 * Returns true if a device can be captured next to another of its kind that stays open: Android
+	 * camera stacks refuse the second open, WebKit on iOS and iPadOS ends the first capture when another
+	 * starts, and Safari on a computer is left out too because that is not verified there
 	 */
-	canCaptureSecondCamera(): boolean {
-		return !this.isMobile();
-	}
-
-	/**
-	 * Returns true if a microphone can be captured next to another one that stays open: besides the
-	 * mobile limits of the camera, Safari ends the second one
-	 */
-	canCaptureSecondMicrophone(): boolean {
-		return this.canCaptureSecondCamera() && !this.isSafari();
+	canCaptureSecondDevice(): boolean {
+		return !this.isMobile() && !this.isSafari();
 	}
 }

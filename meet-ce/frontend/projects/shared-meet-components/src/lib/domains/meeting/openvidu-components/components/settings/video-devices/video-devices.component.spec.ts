@@ -33,7 +33,7 @@ describe('VideoDevicesComponent', () => {
 
 	const click = () => new MouseEvent('click');
 
-	function create(trial?: unknown, canCaptureSecondCamera = true) {
+	function create(trial?: unknown, canCaptureSecondDevice = true) {
 		localMedia = {
 			setCameraEnabled: jasmine.createSpy('setCameraEnabled'),
 			switchCamera: jasmine.createSpy('switchCamera'),
@@ -53,7 +53,7 @@ describe('VideoDevicesComponent', () => {
 				{ provide: LocalMediaService, useValue: localMedia as unknown as LocalMediaService },
 				{ provide: DeviceService, useValue: deviceService },
 				{ provide: PanelService, useValue: {} },
-				{ provide: PlatformService, useValue: { canCaptureSecondCamera: () => canCaptureSecondCamera } },
+				{ provide: PlatformService, useValue: { canCaptureSecondDevice: () => canCaptureSecondDevice } },
 				{ provide: ParticipantService, useValue: { localParticipant: signal(undefined) } },
 				{ provide: MeetingUiConfigService, useValue: { backgroundEffectsButtonSignal: signal(false) } },
 				{ provide: VirtualBackgroundService, useValue: { isBackgroundApplied: () => backgroundApplied() } },
@@ -159,7 +159,7 @@ describe('VideoDevicesComponent', () => {
 		});
 	});
 
-	describe('in the meeting settings where a second camera cannot be captured', () => {
+	describe('in the meeting settings where a second device cannot be captured', () => {
 		let trial: { tryCamera: jasmine.Spy };
 
 		beforeEach(() => {
