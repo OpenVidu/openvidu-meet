@@ -10,11 +10,12 @@ import type {
 import { MeetRecordingStatus } from '@openvidu-meet/typings';
 import type { Archiver } from 'archiver';
 import { ZipArchive } from 'archiver';
+import { once } from 'events';
 import { inject, injectable } from 'inversify';
 import type { EgressInfo, ParticipantInfo, Room, RoomCompositeOptions } from 'livekit-server-sdk';
 import { EgressStatus, EncodedFileOutput, EncodedFileType } from 'livekit-server-sdk';
 import ms from 'ms';
-import type { Readable } from 'stream';
+import type { Readable, Writable } from 'stream';
 import { uid } from 'uid';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
@@ -99,6 +100,8 @@ export class RecordingService {
 
 		if (!acquiredLock) throw errorRecordingAlreadyStarted(roomId);
 
+		let egressRequested = false;
+
 		try {
 			if (autoStartMeetingId && (await this.recAutoStartStateService.isDisabled(roomId, autoStartMeetingId))) {
 				throw errorRecordingAutoStartDisabled(roomId);
@@ -107,6 +110,7 @@ export class RecordingService {
 			const roomRecordingConfig = await this.validateRoomForStartRecording(roomId);
 			const options = this.generateCompositeOptionsFromRequest(roomRecordingConfig, configOverride);
 			const output = this.generateFileOutputFromRequest(roomId);
+			egressRequested = true;
 			const egressInfo = await this.livekitService.startRoomComposite(roomId, output, options);
 			const recordingInfo = await RecordingHelper.toRecordingInfo(egressInfo);
 
@@ -116,7 +120,10 @@ export class RecordingService {
 			this.logger.debug(`Error starting recording in room '${roomId}'`, error);
 
 			try {
-				await this.releaseRecordingLockIfNoEgress(roomId);
+				// Only the egress request can have left a recording behind: nothing before it creates one
+				await (egressRequested
+					? this.releaseRecordingLockIfNoEgress(roomId)
+					: this.releaseRecordingActiveLock(roomId));
 			} catch (releaseError) {
 				this.logger.warn(`Failed to release recording lock for room '${roomId}'`, releaseError);
 			}
@@ -427,46 +434,57 @@ export class RecordingService {
 	}
 
 	/**
-	 * Creates a ZIP archive stream with all recordings
-	 *
-	 * @param recordingIds Array of recording identifiers requested for ZIP download.
-	 * @returns An Archiver instance already populated with recordings.
+	 * Writes a ZIP of the given recordings into `output`, opening each recording only once the previous
+	 * one is written, so a ZIP holds at most one storage stream whatever its size. Aborting `signal`
+	 * destroys the stream being read and opens no other one. A recording that cannot be opened is left
+	 * out of the ZIP.
 	 */
-	async createRecordingsZipArchive(recordingIds: string[]): Promise<Archiver> {
+	async writeRecordingsZip(recordingIds: string[], output: Writable, signal: AbortSignal): Promise<void> {
 		const archive = new ZipArchive({ zlib: { level: 0 } });
-		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_RETRIEVE_RECORDINGS;
+		// Every archive error also rejects the entry or the finalize being awaited, which reports it.
+		archive.on('error', () => {});
+		archive.pipe(output);
 
-		const settledResults = await runConcurrently(
-			recordingIds,
-			async (recordingId) => {
-				this.logger.debug(`Preparing recording '${recordingId}' for ZIP`);
+		try {
+			for (const recordingId of recordingIds) {
+				signal.throwIfAborted();
+				const recording = await this.openRecordingForZip(recordingId);
 
-				const [{ filename }, { fileStream }] = await Promise.all([
-					this.getRecording(recordingId, ['filename']),
-					this.getRecordingAsStream(recordingId)
-				]);
-
-				return {
-					fileName: filename || `${recordingId}.mp4`,
-					fileStream
-				};
-			},
-			{ concurrency, failFast: false }
-		);
-
-		for (let index = 0; index < settledResults.length; index++) {
-			const result = settledResults[index];
-			const recordingId = recordingIds[index];
-
-			if (result.status === 'rejected') {
-				this.logger.warn(`Error adding recording '${recordingId}' to ZIP`, result.reason);
-				continue;
+				if (recording) {
+					await this.appendToZip(archive, recording, signal);
+				}
 			}
 
-			archive.append(result.value.fileStream, { name: result.value.fileName });
+			await archive.finalize();
+		} catch (error) {
+			archive.unpipe(output);
+			archive.abort();
+			throw error;
 		}
+	}
 
-		return archive;
+	protected async openRecordingForZip(recordingId: string): Promise<{ name: string; stream: Readable } | undefined> {
+		try {
+			const { filename } = await this.getRecording(recordingId, ['filename']);
+			const { fileStream } = await this.getRecordingAsStream(recordingId);
+			return { name: filename || `${recordingId}.mp4`, stream: fileStream };
+		} catch (error) {
+			this.logger.warn(`Error adding recording '${recordingId}' to ZIP`, error);
+			return undefined;
+		}
+	}
+
+	protected async appendToZip(
+		archive: Archiver,
+		{ name, stream }: { name: string; stream: Readable },
+		signal: AbortSignal
+	): Promise<void> {
+		try {
+			archive.append(stream, { name });
+			await once(archive, 'entry', { signal });
+		} finally {
+			stream.destroy();
+		}
 	}
 
 	/**
@@ -699,7 +717,7 @@ export class RecordingService {
 	 * @returns Whether this call ended the recording
 	 */
 	async finishRecording(recording: MeetRecordingInfo): Promise<boolean> {
-		const finished = await this.recordingRepository.finish(recording);
+		const finished = await this.recordingRepository.replaceInProgress(recording);
 
 		if (!finished) {
 			this.logger.debug(`Recording '${recording.recordingId}' had already ended, not reporting it again`);
@@ -812,15 +830,19 @@ export class RecordingService {
 				return;
 			}
 
-			try {
-				// Releases the long-lived recording_active lock acquired by another request or
-				// replica, so it must go through the Redis registry rather than a local Lock.
-				// eslint-disable-next-line @typescript-eslint/no-deprecated
-				await this.mutexService.releaseWithRegistry(lockName);
-				this.logger.verbose(`Recording active lock released for room '${roomId}'`);
-			} catch (error) {
-				this.logger.warn(`Error releasing recording lock for room '${roomId}' on egress ended`, error);
-			}
+			await this.releaseRecordingActiveLock(roomId);
+		}
+	}
+
+	protected async releaseRecordingActiveLock(roomId: string): Promise<void> {
+		try {
+			// Releases the long-lived recording_active lock acquired by another request or
+			// replica, so it must go through the Redis registry rather than a local Lock.
+			// eslint-disable-next-line @typescript-eslint/no-deprecated
+			await this.mutexService.releaseWithRegistry(MeetLock.getRecordingActiveLock(roomId));
+			this.logger.verbose(`Recording active lock released for room '${roomId}'`);
+		} catch (error) {
+			this.logger.warn(`Error releasing recording lock for room '${roomId}'`, error);
 		}
 	}
 

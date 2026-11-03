@@ -47,7 +47,7 @@ export class FrontendEventService {
 			...(participantSid ? { destinationSids: [participantSid] } : {})
 		};
 
-		await this.sendSignal(roomId, payload, options);
+		await this.sendSignal(roomId, payload, options, { onlyIfRoomExists: true });
 	}
 
 	/**
@@ -149,11 +149,24 @@ export class FrontendEventService {
 	/**
 	 * Sends a signal to the frontend. A signal tells clients about a change the server has already
 	 * applied, so a delivery failure is logged and never fails the operation that caused it.
+	 *
+	 * `onlyIfRoomExists` is for signals that may outlive their meeting: the media server answers data
+	 * sent to a room it does not have only after a multi-second timeout.
 	 */
-	protected async sendSignal(roomId: string, rawData: MeetSignalPayload, options: SendDataOptions): Promise<void> {
+	protected async sendSignal(
+		roomId: string,
+		rawData: MeetSignalPayload,
+		options: SendDataOptions,
+		{ onlyIfRoomExists = false } = {}
+	): Promise<void> {
 		this.logger.verbose(`Notifying participants in room ${roomId}: "${options.topic}".`);
 
 		try {
+			if (onlyIfRoomExists && !(await this.livekitService.roomExists(roomId))) {
+				this.logger.warn(`Skipping signal "${options.topic}" because LiveKit room '${roomId}' does not exist`);
+				return;
+			}
+
 			await this.livekitService.sendData(roomId, rawData, options);
 		} catch (error) {
 			this.logger.warn(`Error sending signal "${options.topic}" to room '${roomId}'`, error);

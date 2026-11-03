@@ -98,8 +98,9 @@ export interface MeetRoomMemberPermissions {
 	 * Introduced after the rename, so it has no deprecated `can*` spelling (see
 	 * {@link MEET_UNALIASED_PERMISSION_KEYS}). It is independent of every other permission: a request
 	 * that omits it leaves it at whatever the role or the member already had. Only a set completed
-	 * from scratch, which is what a stored document migrated from before 3.10.0 and a token issued
-	 * back then go through, starts it at `false` (see {@link UNALIASED_PERMISSION_DEFAULTS}).
+	 * from scratch, which is what a token issued before 3.10.0 goes through, starts it at `false`
+	 * (see {@link UNALIASED_PERMISSION_DEFAULTS}). A room or member stored before 3.10.0 is migrated
+	 * with it granted to the moderator role and denied to the speaker role.
 	 */
 	participantHandLower: boolean;
 	/**

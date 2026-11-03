@@ -119,6 +119,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - A recording whose egress service died stayed in progress for good: stopping it answered 500 and starting another one
   in the room 409. It ends as `failed`, with its [`recordingEnded`][3.10-recording-ended] webhook, and the room can
   record again.
+- [`downloadRecordings`][3.9-download-recordings] with more than 50 recordings, two large ZIPs at once or a cancelled
+  ZIP left every later recording playback and download on that server hanging until it restarted. Each ZIP now
+  releases what it opened, whatever its size or however it ends.
 - A recording ended by the stale-recordings clean-up sent no [`recordingEnded`][3.9-recording-ended] webhook and stayed
   in progress in the meeting and for the embedded event `recordingStatusChanged`. Its end is now reported like any
   other, once.
@@ -137,6 +140,10 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   scheduled close and answers `409` when a deletion is scheduled, and `closed` keeps a scheduled deletion.
 - The room returned by `deleteRoom` and `bulkDeleteRooms` carried its `roles` with the current permission keys only. It
   now carries the deprecated `can*` keys next to them, as every other room response does.
+- [`deleteRoom`][3.9-delete-room], [`bulkDeleteRooms`][3.9-bulk-delete-rooms] and the automatic deletion of expired
+  rooms could leave a room `open` with a pending deletion when its meeting ended at the same moment, and the next
+  meeting then deleted the room and its recordings; a meeting starting at the same moment could have its room deleted
+  under it. A deletion now acts on the meeting state the room has when it is written.
 - `getRoomMember` answered `404` for a member that does not exist before checking the caller, so a caller without
   access could tell which `memberId` values belong to the room. Such a caller now gets `403` whether or not the member
   exists.
@@ -170,6 +177,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   warning. It now listens to the host page and posts events from the moment it loads.
 - With `leave-redirect-url` set, the redirect could replace the host page before `embeddedCloseRequested` reached it,
   in the embedded element and in the iframe. The redirect now follows the event.
+- A `leave-redirect-url` stayed in effect for the next element or iframe of the same page, which then sent the host
+  page to the earlier URL on Back. Each entry now uses only its own.
 - A room URL opened in an iframe or a direct link with `show-only-recordings` and no value, or a value other than
   `true` such as `1`, showed the meeting. It now shows the room recordings page unless the value is `false`, as the
   attribute of `<openvidu-meet>` does.
@@ -399,6 +408,8 @@ registered on both receives it twice.
 [3.9-recording-ended]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/webhooks/recordingEndedWebhook
 [3.9-bulk-delete-recordings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/bulkDeleteRecordings
 [3.9-download-recordings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/downloadRecordings
+[3.9-delete-room]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/deleteRoom
+[3.9-bulk-delete-rooms]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/bulkDeleteRooms
 
 [3.10-stop-recording]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/stopRecording
 [3.10-recording-ended]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/recordingEndedWebhook

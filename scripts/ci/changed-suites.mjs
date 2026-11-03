@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 // recordings tests then run on every storage provider), from the changed files read on stdin (one per line).
 //   --all             every suite, without reading stdin
 //   --only a,b        no suite outside this list
+//   --without-backend the e2e suites ignore changes that only touch the backend
 // Patterns follow GitHub's `paths` filters: evaluated in order, `!` excludes, a later pattern re-includes.
 
 const SUITES = {
@@ -54,28 +55,31 @@ const SUITES = {
 		'meet-ce/frontend/**',
 		'!meet-ce/frontend/webcomponent/**',
 		'!meet-ce/frontend/projects/**/*.spec.ts',
-		'meet-ce/backend/**',
-		// Nothing under tests/ is shipped in the server these suites run against.
-		'!meet-ce/backend/tests/**',
 		'meet-ce/typings/**',
 		'meet.sh',
-		'!**/*.md',
-		'!meet-ce/backend/nodemon*.json'
+		'!**/*.md'
 	],
 	'wc-e2e': [
 		'meet-ce/frontend/webcomponent/**',
 		'!meet-ce/frontend/webcomponent/tests/unit/**',
 		'meet-ce/frontend/projects/shared-meet-components/**',
 		'!meet-ce/frontend/projects/**/*.spec.ts',
-		'meet-ce/backend/**',
-		'!meet-ce/backend/tests/**',
 		'meet-ce/typings/**',
 		'testapp/**',
 		'meet.sh',
-		'!**/*.md',
-		'!meet-ce/backend/nodemon*.json'
+		'!**/*.md'
 	]
 };
+
+// The e2e suites run against the built server, so a change to it selects them too.
+const E2E_SERVER = [
+	'meet-ce/backend/**',
+	// Nothing under tests/ is shipped in the server these suites run against.
+	'!meet-ce/backend/tests/**',
+	'!meet-ce/backend/nodemon*.json',
+	'!**/*.md'
+];
+const E2E_SUITES = ['frontend-e2e', 'wc-e2e'];
 
 const CI_FILES = ['.github/workflows/ci.yaml', 'scripts/ci/changed-suites.mjs'];
 
@@ -113,6 +117,7 @@ const matches = (file, patterns) =>
 
 const args = process.argv.slice(2);
 const all = args.includes('--all');
+const withBackend = !args.includes('--without-backend');
 const onlyIndex = args.indexOf('--only');
 const only = onlyIndex >= 0 ? args[onlyIndex + 1].split(',').map((suite) => suite.trim()) : Object.keys(SUITES);
 const unknown = only.filter((suite) => !(suite in SUITES));
@@ -130,7 +135,12 @@ const files = all
 			.filter(Boolean);
 
 for (const [suite, patterns] of Object.entries(SUITES)) {
-	const affected = all || files.some((file) => matches(file, [...patterns, ...CI_FILES]));
+	const backendSelects = withBackend && E2E_SUITES.includes(suite);
+	const affected =
+		all ||
+		files.some(
+			(file) => matches(file, [...patterns, ...CI_FILES]) || (backendSelects && matches(file, E2E_SERVER))
+		);
 	console.log(`${suite}=${affected && only.includes(suite)}`);
 }
 

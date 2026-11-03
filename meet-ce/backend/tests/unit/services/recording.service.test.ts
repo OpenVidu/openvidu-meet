@@ -3,10 +3,11 @@ import type { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { MeetRecordingAutoStartMode, MeetRecordingStatus } from '@openvidu-meet/typings';
 import type { ParticipantInfo, Room } from 'livekit-server-sdk';
 import { EgressInfo, EgressStatus } from 'livekit-server-sdk';
+import { PassThrough, Readable } from 'stream';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
-import { errorRecordingAlreadyStopped } from '../../../src/models/error.model.js';
+import { errorLivekitNotAvailable, errorRecordingAlreadyStopped } from '../../../src/models/error.model.js';
 import { RecordingService } from '../../../src/services/recording.service.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, debug: () => {}, error: () => {}, verbose: () => {} };
@@ -212,6 +213,8 @@ const MEETING_ID = 'RM_meeting_1';
 
 class FakeStartLiveKitService {
 	composites: string[] = [];
+	egressQueries = 0;
+	inProgress: Partial<EgressInfo>[] = [];
 
 	async startRoomComposite(roomId: string): Promise<never> {
 		this.composites.push(roomId);
@@ -219,7 +222,8 @@ class FakeStartLiveKitService {
 	}
 
 	async getInProgressRecordingsEgress(): Promise<EgressInfo[]> {
-		return [];
+		this.egressQueries++;
+		return this.inProgress as EgressInfo[];
 	}
 
 	async listRoomParticipants(): Promise<ParticipantInfo[]> {
@@ -365,6 +369,36 @@ describe('RecordingService.startRecording (the guards that say no)', () => {
 	});
 });
 
+describe('RecordingService.startRecording (a failed start releases the room hold)', () => {
+	it('releases the hold without asking the media server when it fails before requesting the egress', async () => {
+		const { service, livekit, mutex } = buildStartService(false);
+		(service as unknown as { validateRoomForStartRecording: () => Promise<never> }).validateRoomForStartRecording =
+			async () => {
+				throw errorLivekitNotAvailable();
+			};
+
+		await expect(service.startRecording(ROOM_ID)).rejects.toMatchObject({ statusCode: 503 });
+
+		expect(livekit.egressQueries).toBe(0);
+		expect(mutex.released).toEqual([expect.stringContaining(ROOM_ID)]);
+	});
+
+	it('keeps the hold while the media server reports an egress the failed request left behind', async () => {
+		const { service, livekit, mutex } = buildStartService(false);
+		Object.assign(service, {
+			validateRoomForStartRecording: async () => ({}),
+			generateCompositeOptionsFromRequest: () => ({}),
+			generateFileOutputFromRequest: () => ({})
+		});
+		livekit.inProgress = [{ egressId: 'EG_1' }];
+
+		await expect(service.startRecording(ROOM_ID)).rejects.toThrow('unexpected egress start');
+
+		expect(livekit.egressQueries).toBe(1);
+		expect(mutex.released).toEqual([]);
+	});
+});
+
 describe('RecordingService.startAutoRecordingIfNeeded (the guards that say no)', () => {
 	const autoStartMode = MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS;
 
@@ -431,7 +465,7 @@ describe('RecordingService.finishRecording', () => {
 	const buildFinishService = () => {
 		let stored = false;
 		const repository = {
-			finish: async (recording: MeetRecordingInfo) => {
+			replaceInProgress: async (recording: MeetRecordingInfo) => {
 				if (stored) return null;
 
 				stored = true;
@@ -516,5 +550,65 @@ describe('RecordingService.stopRecording', () => {
 
 		await expect(service.stopRecording(recordingId)).rejects.toMatchObject({ statusCode: 409 });
 		expect(stopped).toEqual([]);
+	});
+});
+
+describe('RecordingService.writeRecordingsZip', () => {
+	const recordingIds = Array.from({ length: 60 }, (_, index) => `room-1--EG_${index}--abc`);
+
+	const buildZipService = (openStream: () => Readable) => {
+		const service = buildService(new FakeLiveKitService([]), new FakeMutexService());
+		Object.assign(service, {
+			getRecording: async (recordingId: string) => ({ filename: `${recordingId}.mp4` }),
+			getRecordingAsStream: async () => ({ fileSize: undefined, fileStream: openStream() })
+		});
+		return service;
+	};
+
+	const drainedOutput = () => {
+		const chunks: Buffer[] = [];
+		const output = new PassThrough();
+		output.on('data', (chunk: Buffer) => chunks.push(chunk));
+		return { output, zipEntries: () => Buffer.concat(chunks).toString('latin1').split('PK\x03\x04').length - 1 };
+	};
+
+	it('writes every recording while holding at most one of them open', async () => {
+		const opened: Readable[] = [];
+		let mostOpenAtOnce = 0;
+		const service = buildZipService(() => {
+			const stillOpen = opened.filter((stream) => !stream.readableEnded && !stream.destroyed).length;
+			mostOpenAtOnce = Math.max(mostOpenAtOnce, stillOpen + 1);
+			const stream = Readable.from([Buffer.alloc(1024)]);
+			opened.push(stream);
+			return stream;
+		});
+		const { output, zipEntries } = drainedOutput();
+
+		await service.writeRecordingsZip(recordingIds, output, new AbortController().signal);
+
+		expect(opened).toHaveLength(60);
+		expect(mostOpenAtOnce).toBe(1);
+		expect(zipEntries()).toBe(60);
+	});
+
+	it('destroys the recording being read and opens no other when the download is aborted', async () => {
+		const opened: Readable[] = [];
+		let firstOpened!: () => void;
+		const opening = new Promise<void>((resolve) => (firstOpened = resolve));
+		const service = buildZipService(() => {
+			const neverEnding = new Readable({ read: () => {} });
+			opened.push(neverEnding);
+			firstOpened();
+			return neverEnding;
+		});
+		const download = new AbortController();
+
+		const writing = service.writeRecordingsZip(recordingIds, drainedOutput().output, download.signal);
+		await opening;
+		download.abort();
+
+		await expect(writing).rejects.toMatchObject({ name: 'AbortError' });
+		expect(opened).toHaveLength(1);
+		expect(opened[0].destroyed).toBe(true);
 	});
 });

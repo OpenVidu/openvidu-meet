@@ -20,10 +20,12 @@ import {
 } from '@openvidu-meet/typings';
 import { Request, Response } from 'express';
 import crypto from 'crypto';
-import { WebhookEvent } from 'livekit-server-sdk';
+import { EgressInfo, EgressStatus, WebhookEvent } from 'livekit-server-sdk';
 import { container } from '../../../src/config/dependency-injector.config.js';
 import { lkWebhookHandler } from '../../../src/controllers/livekit-webhook.controller.js';
+import { RecordingHelper } from '../../../src/helpers/recording.helper.js';
 import { MeetLock } from '../../../src/helpers/redis.helper.js';
+import { RecordingRepository } from '../../../src/repositories/recording.repository.js';
 import { LivekitWebhookService } from '../../../src/services/livekit-webhook.service.js';
 import { LiveKitService } from '../../../src/services/livekit.service.js';
 import { MutexService } from '../../../src/services/mutex.service.js';
@@ -33,6 +35,7 @@ import {
 	updateParticipantMetadata
 } from '../../helpers/livekit-cli-helpers.js';
 import {
+	createRoom,
 	createWebhook,
 	deleteAllRecordings,
 	deleteAllRooms,
@@ -483,6 +486,50 @@ describe('Webhook Integration Tests', () => {
 			// Validate encoding is present and coherent with default value
 			expect(data.encoding).toBeDefined();
 			expect(data.encoding).toBe('H264_720P_30');
+		});
+	});
+
+	describe('Recording that outlives its meeting', () => {
+		afterEach(() => {
+			jest.restoreAllMocks();
+		});
+
+		it('ends the recording without waiting on the LiveKit room that no longer exists', async () => {
+			const { roomId, roomName } = await createRoom({ roomName: 'webhook-recording-after-meeting' });
+			const egressId = 'EG_after_meeting';
+			const recording: MeetRecordingInfo = {
+				recordingId: `${roomId}--${egressId}--1234567890`,
+				roomId,
+				roomName,
+				status: MeetRecordingStatus.ACTIVE,
+				layout: MeetRecordingLayout.GRID,
+				encoding: MeetRecordingEncodingPreset.H264_720P_30,
+				startDate: Date.now() - 60_000,
+				filename: `${roomId}--1234567890.mp4`
+			};
+			await container.get(RecordingRepository).create(recording);
+			jest.spyOn(RecordingHelper, 'toRecordingInfo').mockResolvedValueOnce({
+				...recording,
+				status: MeetRecordingStatus.COMPLETE,
+				endDate: Date.now()
+			});
+			const sendDataSpy = jest.spyOn(container.get(LiveKitService), 'sendData');
+
+			const startedAt = Date.now();
+			await container.get(LivekitWebhookService).handleEgressEnded({
+				egressId,
+				roomName: roomId,
+				status: EgressStatus.EGRESS_COMPLETE,
+				fileResults: [{ filename: recording.filename }],
+				streamResults: []
+			} as unknown as EgressInfo);
+
+			expect(Date.now() - startedAt).toBeLessThan(2000);
+			expect(sendDataSpy).not.toHaveBeenCalled();
+			expect((await container.get(RecordingRepository).findByRecordingId(recording.recordingId))?.status).toBe(
+				MeetRecordingStatus.COMPLETE
+			);
+			await waitForWebhookEvent(receivedWebhooks, MeetWebhookEventType.RECORDING_ENDED, { roomId });
 		});
 	});
 

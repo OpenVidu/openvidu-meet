@@ -12,10 +12,12 @@ import { container } from '../../../../src/config/dependency-injector.config.js'
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { RecordingHelper } from '../../../../src/helpers/recording.helper.js';
 import { RecordingRepository } from '../../../../src/repositories/recording.repository.js';
+import { LivekitWebhookService } from '../../../../src/services/livekit-webhook.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { LoggerService } from '../../../../src/services/logger.service.js';
 import { RecordingScheduledTasksService } from '../../../../src/services/recording-scheduled-tasks.service.js';
 import { RecordingService } from '../../../../src/services/recording.service.js';
+import { WebhookDispatcherService } from '../../../../src/services/webhook-dispatcher.service.js';
 import { MeetRecordingPage } from '../../../../src/types/recording-projection.types.js';
 import { createRoom, deleteAllRecordings, deleteAllRooms, startTestServer } from '../../../helpers/request-helpers.js';
 
@@ -520,13 +522,50 @@ describe('Stale Recordings GC Tests', () => {
 			const stored = await recordingRepository.findByRecordingId(recordingId);
 
 			const results = await Promise.all([
-				recordingRepository.finish({ ...stored!, status: MeetRecordingStatus.ABORTED }),
-				recordingRepository.finish({ ...stored!, status: MeetRecordingStatus.COMPLETE })
+				recordingRepository.replaceInProgress({ ...stored!, status: MeetRecordingStatus.ABORTED }),
+				recordingRepository.replaceInProgress({ ...stored!, status: MeetRecordingStatus.COMPLETE })
 			]);
 			const winners = results.filter((result) => result !== null);
 
 			expect(winners).toHaveLength(1);
 			expect((await recordingRepository.findByRecordingId(recordingId))?.status).toBe(winners[0]!.status);
+		});
+	});
+
+	describe('an update replayed after the recording ended', () => {
+		afterEach(async () => {
+			await deleteAllRecordings();
+			await deleteAllRooms();
+		});
+
+		it('keeps the recording ended, so the clean-up never reports its end again', async () => {
+			const { roomId } = await createRoom({ roomName: 'stale-gc-late-update' });
+			const egressId = 'EG_late_update';
+			const recordingId = `${roomId}--${egressId}--1234567890`;
+			const ended = createMockRecordingInfo(recordingId, roomId, MeetRecordingStatus.COMPLETE);
+			await recordingRepository.create({
+				...ended,
+				layout: MeetRecordingLayout.GRID,
+				encoding: MeetRecordingEncodingPreset.H264_720P_30
+			});
+			const webhookDispatcher = container.get(WebhookDispatcherService);
+			const updatedWebhookSpy = jest.spyOn(webhookDispatcher, 'sendRecordingUpdatedWebhook');
+			const endedWebhookSpy = jest.spyOn(webhookDispatcher, 'sendRecordingEndedWebhook');
+			toRecordingInfoMock.mockResolvedValueOnce({ ...ended, status: MeetRecordingStatus.ENDING });
+
+			await container
+				.get(LivekitWebhookService)
+				.handleEgressUpdated(createMockEgressInfo(roomId, egressId, EgressStatus.EGRESS_ENDING));
+			await recordingTaskScheduler['performStaleRecordingsGC']();
+
+			expect((await recordingRepository.findByRecordingId(recordingId))?.status).toBe(
+				MeetRecordingStatus.COMPLETE
+			);
+			expect(evaluateAndAbortStaleRecordingMock).not.toHaveBeenCalledWith(
+				expect.objectContaining({ recordingId })
+			);
+			expect(updatedWebhookSpy).not.toHaveBeenCalled();
+			expect(endedWebhookSpy).not.toHaveBeenCalled();
 		});
 	});
 });

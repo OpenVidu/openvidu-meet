@@ -548,8 +548,7 @@ export class RoomService {
 				`Room '${roomId}' status: hasActiveMeeting=${hasActiveMeeting}, hasRecordings=${hasRecordings}`
 			);
 
-			// Pass room object to avoid second DB fetch
-			let updatedRoom = await this.executeDeletionStrategy(
+			const deletion = await this.executeDeletionStrategy(
 				roomId,
 				hasActiveMeeting,
 				hasRecordings,
@@ -557,8 +556,13 @@ export class RoomService {
 				withRecordings
 			);
 
+			if (!deletion) {
+				this.logger.debug(`Room '${roomId}' changed state while being deleted, deciding again`);
+				return this.deleteMeetRoom(roomId, options);
+			}
+
 			// Apply field filters to the updated room if it is not deleted and fields were requested
-			updatedRoom = updatedRoom ? MeetRoomHelper.applyFieldFilters(updatedRoom, fields) : undefined;
+			const updatedRoom = deletion.room && MeetRoomHelper.applyFieldFilters(deletion.room, fields);
 
 			return this.getDeletionResponse(
 				roomId,
@@ -582,7 +586,10 @@ export class RoomService {
 	 * - If there are recordings and policy is CLOSE, closes the room.
 	 * - If force delete is requested, deletes the room and all recordings and members.
 	 *
-	 * @param room - The room object (already fetched from DB) to avoid duplicate queries
+	 * Every write is conditioned on the meeting state the strategy was chosen from.
+	 *
+	 * @returns The room as the deletion left it (none when deleted), or `null` when the room's meeting
+	 * started or ended meanwhile and the deletion has to be decided again
 	 */
 	protected async executeDeletionStrategy(
 		roomId: string,
@@ -590,17 +597,16 @@ export class RoomService {
 		hasRecordings: boolean,
 		withMeeting: MeetRoomDeletionPolicyWithMeeting,
 		withRecordings: MeetRoomDeletionPolicyWithRecordings
-	): Promise<MeetRoom | undefined> {
+	): Promise<{ room?: MeetRoom } | null> {
 		// Validate policies first (fail-fast)
 		this.validateDeletionPolicies(roomId, hasActiveMeeting, hasRecordings, withMeeting, withRecordings);
 
 		// No meeting, no recordings: simple deletion
 		if (!hasActiveMeeting && !hasRecordings) {
-			await Promise.all([
-				this.roomMemberRepository.deleteAllByRoomId(roomId),
-				this.roomRepository.deleteByRoomId(roomId)
-			]);
-			return undefined;
+			if (!(await this.roomRepository.deleteIdleRoom(roomId))) return null;
+
+			await this.roomMemberRepository.deleteAllByRoomId(roomId);
+			return {};
 		}
 
 		// Determine actions based on policies
@@ -610,29 +616,34 @@ export class RoomService {
 		if (hasActiveMeeting) {
 			// Set meeting end action (DELETE or CLOSE) depending on recording policy
 			const meetingEndAction = shouldCloseRoom ? MeetingEndAction.CLOSE : MeetingEndAction.DELETE;
-			const updatedRoom = await this.roomRepository.updatePartial(roomId, { meetingEndAction });
+			const updatedRoom = await this.roomRepository.scheduleMeetingEndAction(roomId, meetingEndAction, {
+				replaceDeletion: true
+			});
+
+			if (!updatedRoom) return null;
 
 			if (shouldForceEndMeeting) {
 				// Force end meeting by deleting the LiveKit room
 				await this.livekitService.deleteRoom(roomId);
 			}
 
-			return updatedRoom;
+			return { room: updatedRoom };
 		}
 
 		if (shouldCloseRoom) {
 			// Close room instead of deleting if recordings exist and policy is CLOSE
-			const updatedRoom = await this.roomRepository.updatePartial(roomId, { status: MeetRoomStatus.CLOSED });
-			return updatedRoom;
+			const updatedRoom = await this.roomRepository.updateIdleRoomStatus(roomId, MeetRoomStatus.CLOSED);
+			return updatedRoom && { room: updatedRoom };
 		}
 
 		// Force delete: delete room and all recordings and members
+		if (!(await this.roomRepository.deleteIdleRoom(roomId))) return null;
+
 		await Promise.all([
 			this.recordingService.deleteAllRoomRecordings(roomId),
-			this.roomMemberRepository.deleteAllByRoomId(roomId),
-			this.roomRepository.deleteByRoomId(roomId)
+			this.roomMemberRepository.deleteAllByRoomId(roomId)
 		]);
-		return undefined;
+		return {};
 	}
 
 	/**

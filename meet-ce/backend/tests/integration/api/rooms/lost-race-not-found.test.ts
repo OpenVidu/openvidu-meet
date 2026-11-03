@@ -17,6 +17,7 @@ import {
 } from '../../../helpers/request-helpers.js';
 
 const NOT_FOUND = { error: 'Not Found', message: 'The requested resource no longer exists' };
+const roomNotFound = (roomId: string) => ({ error: 'Room Error', message: `Room '${roomId}' does not exist` });
 
 describe('Room API Tests', () => {
 	let app: Express;
@@ -37,13 +38,13 @@ describe('Room API Tests', () => {
 
 	describe('A room deleted by a concurrent request', () => {
 		const deletedRightBefore = (roomId: string) => {
-			const deleteByRoomId = roomRepository.deleteByRoomId.bind(roomRepository);
-			jest.spyOn(roomRepository, 'deleteByRoomId').mockImplementation(async (id: string) => {
+			const deleteIdleRoom = roomRepository.deleteIdleRoom.bind(roomRepository);
+			jest.spyOn(roomRepository, 'deleteIdleRoom').mockImplementation(async (id: string) => {
 				if (id === roomId) {
-					await deleteByRoomId(id);
+					await deleteIdleRoom(id);
 				}
 
-				return deleteByRoomId(id);
+				return deleteIdleRoom(id);
 			});
 		};
 
@@ -54,7 +55,7 @@ describe('Room API Tests', () => {
 			const response = await deleteRoom(roomId);
 
 			expect(response.status).toBe(404);
-			expect(response.body).toEqual(NOT_FOUND);
+			expect(response.body).toEqual(roomNotFound(roomId));
 		});
 
 		it('answers 404, not 500, when it vanishes between the existence check and an access update', async () => {
@@ -62,7 +63,7 @@ describe('Room API Tests', () => {
 			const updatePartial = roomRepository.updatePartial.bind(roomRepository);
 			jest.spyOn(roomRepository, 'updatePartial').mockImplementationOnce(
 				async (id: string, fields: Partial<MeetRoom>) => {
-					await roomRepository.deleteByRoomId(id);
+					await roomRepository.deleteIdleRoom(id);
 					return updatePartial(id, fields);
 				}
 			);
@@ -84,7 +85,7 @@ describe('Room API Tests', () => {
 			const response = await bulkDeleteRooms([roomId, survivor.roomId]);
 
 			expect(response.status).toBe(400);
-			expect(response.body.failed).toEqual([{ roomId, ...NOT_FOUND }]);
+			expect(response.body.failed).toEqual([{ roomId, ...roomNotFound(roomId) }]);
 			expect(response.body.deleted.map((room: { roomId: string }) => room.roomId)).toEqual([survivor.roomId]);
 		});
 

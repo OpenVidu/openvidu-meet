@@ -26,7 +26,7 @@
 		"@angular/router": "22.2.3",
 		"@livekit/track-processors": "0.8.2",
 		"jwt-decode": "4.0.0",
-		"livekit-client": "2.22.3",
+		"livekit-client": "2.23.0",
 		"rxjs": "7.8.2"
 	},
 	"dependencies": {

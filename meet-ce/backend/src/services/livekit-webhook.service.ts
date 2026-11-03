@@ -492,7 +492,11 @@ export class LivekitWebhookService {
 				this.webhookDispatcherService.sendRecordingStartedWebhook(recording);
 				break;
 			case 'updated':
-				await this.recordingRepository.replace(recording);
+				if (!(await this.recordingRepository.replaceInProgress(recording))) {
+					this.logger.debug(`Ignoring update of recording '${recording.recordingId}': it has already ended`);
+					return;
+				}
+
 				this.webhookDispatcherService.sendRecordingUpdatedWebhook(recording);
 				break;
 			case 'ended':

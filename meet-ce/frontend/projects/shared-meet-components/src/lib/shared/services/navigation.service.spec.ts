@@ -54,8 +54,8 @@ describe('NavigationService - hosted-mode event gates', () => {
 			basePath: '/'
 		};
 		const sessionStorageStub = {
-			getRedirectUrl: () => null,
-			setRedirectUrl: () => {}
+			getRedirect: () => null,
+			setRedirect: () => {}
 		};
 
 		TestBed.configureTestingModule({

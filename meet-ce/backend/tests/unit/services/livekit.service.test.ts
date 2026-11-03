@@ -88,16 +88,10 @@ describe('LiveKitService.sendData', () => {
 		expect(listRooms).not.toHaveBeenCalled();
 	});
 
-	it('skips a room the media server does not have', async () => {
+	it('answers 500 when the media server does not deliver, as it does for a room it does not have', async () => {
 		const { service } = buildSendingService(() =>
-			Promise.reject(new TwirpError('not_found', 'requested room does not exist', 404, 'not_found'))
+			Promise.reject(new TwirpError('unavailable', 'no response from servers', 503, 'unavailable'))
 		);
-
-		await expect(service.sendData('room-1', { a: 1 }, { topic: 't' })).resolves.toBeUndefined();
-	});
-
-	it('answers 500 when the media server fails for any other reason', async () => {
-		const { service } = buildSendingService(() => Promise.reject(new Error('no response from servers')));
 
 		await expect(service.sendData('room-1', { a: 1 }, { topic: 't' })).rejects.toMatchObject({ statusCode: 500 });
 	});

@@ -1,5 +1,5 @@
-import { describe, expect, it } from '@jest/globals';
-import type { MeetBroadcastInfo } from '@openvidu-meet/typings';
+import { describe, expect, it, jest } from '@jest/globals';
+import type { MeetBroadcastInfo, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { MeetReaction, MeetSignalType } from '@openvidu-meet/typings';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
@@ -35,6 +35,43 @@ describe('FrontendEventService signals that cannot be delivered', () => {
 		await expect(
 			service.sendParticipantMediaMutedSignal('room-1', ['participant-1'], { audioActive: false })
 		).resolves.toBeUndefined();
+	});
+});
+
+describe('FrontendEventService recording updated signal', () => {
+	const buildService = (roomExists: boolean) => {
+		const sendData = jest.fn(async () => {});
+		const livekit = { roomExists: async () => roomExists, sendData };
+		const service = new FrontendEventService(
+			...([noopLogger, livekit] as unknown as ConstructorParameters<typeof FrontendEventService>)
+		);
+		return { service, sendData };
+	};
+	const recording = { recordingId: 'room-1--EG_1--abc', roomId: 'room-1' } as MeetRecordingInfo;
+
+	it('is not sent to a room the media server no longer has', async () => {
+		const { service, sendData } = buildService(false);
+
+		await service.sendRecordingUpdatedSignal('room-1', recording);
+
+		expect(sendData).not.toHaveBeenCalled();
+	});
+
+	it('is sent to a room the media server has', async () => {
+		const { service, sendData } = buildService(true);
+
+		await service.sendRecordingUpdatedSignal('room-1', recording);
+
+		expect(sendData).toHaveBeenCalledTimes(1);
+	});
+
+	it('resolves when the media server cannot say whether the room exists', async () => {
+		const livekit = { roomExists: async () => Promise.reject(new Error('LiveKit unreachable')) };
+		const service = new FrontendEventService(
+			...([noopLogger, livekit] as unknown as ConstructorParameters<typeof FrontendEventService>)
+		);
+
+		await expect(service.sendRecordingUpdatedSignal('room-1', recording)).resolves.toBeUndefined();
 	});
 });
 
