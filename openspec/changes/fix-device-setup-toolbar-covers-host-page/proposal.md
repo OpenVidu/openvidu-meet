@@ -31,7 +31,7 @@ None.
 
 ## Decisions to confirm
 
-- How to contain the toolbar. Proposed: `position: absolute` inside the setup container. Alternative:
+- How to contain the toolbar. Decided: `position: absolute` inside the setup container. Alternative:
   `contain: layout` on the element's host, which also moves every overlay (dialogs need rechecking).
 
 ## Source

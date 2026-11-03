@@ -178,6 +178,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - The styles of `<openvidu-meet>` reached the host page, restyling its own elements such as Angular Material
   components, and the host page's `<style>` rules reached inside the element. Each side's styles now stay on its side
   of the element's shadow root.
+- On the device setup screen, the toolbar of `<openvidu-meet>` covered the top of the host page across its full width
+  and took its clicks. It now stays inside the element.
 - Meet in an iframe did not post `embeddedCloseRequested` to the host page from a recording screen or from an access
   error screen shown before the join screen, and dropped commands posted before the join screen without a console
   warning. It now listens to the host page and posts events from the moment it loads.
