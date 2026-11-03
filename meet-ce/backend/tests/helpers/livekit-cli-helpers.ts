@@ -19,6 +19,44 @@ const fakeParticipantRooms = new Set<string>();
  * @param metadata The metadata claim to join with, as a room member token carries it
  */
 export const joinFakeParticipant = async (roomId: string, participantIdentity: string, metadata?: string) => {
+	await spawnFakeParticipant(roomId, participantIdentity, metadata);
+	await waitForParticipantToConnect(roomId, participantIdentity);
+
+	if (metadata) {
+		await waitForParticipantToUpdateMetadata(roomId, participantIdentity, JSON.parse(metadata));
+	}
+};
+
+/**
+ * Connects as a client holding the given metadata and waits until the media server removes the session, which ends
+ * its CLI process.
+ *
+ * @param roomId The ID of the room to join
+ * @param participantIdentity The identity for the fake participant
+ * @param metadata The metadata claim to join with, as a room member token carries it
+ * @param timeoutMs How long to wait for the removal
+ */
+export const joinFakeParticipantUntilRemoved = async (
+	roomId: string,
+	participantIdentity: string,
+	metadata: string,
+	timeoutMs = 15_000
+) => {
+	const process = await spawnFakeParticipant(roomId, participantIdentity, metadata);
+
+	await new Promise<void>((resolve, reject) => {
+		const timer = setTimeout(
+			() => reject(new Error(`Participant '${participantIdentity}' was not removed from room '${roomId}'`)),
+			timeoutMs
+		);
+		process.once('exit', () => {
+			clearTimeout(timer);
+			resolve();
+		});
+	});
+};
+
+const spawnFakeParticipant = async (roomId: string, participantIdentity: string, metadata?: string) => {
 	await ensureLivekitCliInstalled();
 	const metadataArgs = metadata ? ['--metadata', metadata] : [];
 	const process = spawnLivekitCliProcess([
@@ -34,11 +72,7 @@ export const joinFakeParticipant = async (roomId: string, participantIdentity: s
 	// Store the process to be able to terminate it later
 	fakeParticipantsProcesses.set(`${roomId}-${participantIdentity}`, process);
 	fakeParticipantRooms.add(roomId);
-	await waitForParticipantToConnect(roomId, participantIdentity);
-
-	if (metadata) {
-		await waitForParticipantToUpdateMetadata(roomId, participantIdentity, JSON.parse(metadata));
-	}
+	return process;
 };
 
 /**
