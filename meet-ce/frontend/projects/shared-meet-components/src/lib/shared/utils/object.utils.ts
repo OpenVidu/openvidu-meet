@@ -6,11 +6,8 @@ type PlainObject = Record<string, unknown>;
  * partial update without forcing callers to re-specify sibling fields just to satisfy a nested
  * interface's required properties.
  */
-export type DeepPartial<T> = T extends Array<infer U>
-	? Array<DeepPartial<U>>
-	: T extends object
-		? { [K in keyof T]?: DeepPartial<T[K]> }
-		: T;
+export type DeepPartial<T> =
+	T extends Array<infer U> ? Array<DeepPartial<U>> : T extends object ? { [K in keyof T]?: DeepPartial<T[K]> } : T;
 
 export const isPlainObject = (value: unknown): value is PlainObject => {
 	if (value === null || typeof value !== 'object') return false;
@@ -51,3 +48,6 @@ export const deepMerge = <T>(target: T, source: unknown): T => {
 
 	return out as T;
 };
+
+/** `Omit` applied to each member of a union in turn, rather than to the union as a whole. */
+export type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;

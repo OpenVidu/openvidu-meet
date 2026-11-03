@@ -37,11 +37,14 @@ class WebComponentDocGenerator {
                 .replace(/\/\*[\s\S]*?\*\//g, '')
                 .replace(/\/\/.*$/gm, '');
 
-            for (const match of content.matchAll(/export interface (\w+)(?:\s+extends\s+([^{]+))?\s*{([^{}]*)}/g)) {
+            for (const match of content.matchAll(/export interface (\w+)(?:\s+extends\s+([^{]+))?\s*{((?:[^{}]|{[^{}]*})*)}/g)) {
                 const [, name, bases = '', body] = match;
                 interfaces.set(name, {
                     bases: bases.split(',').map((base) => base.trim()).filter(Boolean),
-                    fields: [...body.matchAll(/(\w+\??)\s*:\s*([^;\n]+)/g)].map(([, key, type]) => [key, type.trim()])
+                    fields: [...body.matchAll(/(\w+\??)\s*:\s*({[^{}]*}|[^;\n]+)/g)].map(([, key, type]) => [
+                        key,
+                        type.replace(/\s+/g, ' ').replace(/;\s*}$/, ' }').trim()
+                    ])
                 });
             }
 
@@ -422,12 +425,15 @@ class WebComponentDocGenerator {
      * webcomponent exposes and the name an iframe host posts, so the table cannot state two
      * different names for one command. Each parameter carries its type, and a long signature
      * puts one parameter per line (an object type one member per line), so the code block never
-     * grows wider than its longest parameter. Returned as a code block for the table cell.
+     * grows wider than its longest parameter. A payload declared as a named options type is the
+     * command's one optional argument, `options`. Returned as a code block for the table cell.
      */
     generateSignature(methodName, payload) {
-        const fields = payload && payload.type.includes('{')
-            ? this.parseFields(payload.type).map(([key, value]) => [key, this.resolveTypeNames(value, key)])
-            : [];
+        const fields = !payload || payload.type === 'void'
+            ? []
+            : payload.type.includes('{')
+                ? this.parseFields(payload.type).map(([key, value]) => [key, this.resolveTypeNames(value, key)])
+                : [['options?', this.resolveTypeNames(payload.type, methodName)]];
         const oneLine = `${methodName}(${fields.map(([key, type]) => `${key}: ${type}`).join(', ')})`;
         let lines = [oneLine];
 
@@ -445,15 +451,36 @@ class WebComponentDocGenerator {
      * Splits an object type into its `[name, type]` fields, comments removed.
      */
     parseFields(type) {
-        return type
+        const body = type
             .replace(/\/\*[\s\S]*?\*\//g, '') // Remove /* */ comments
             .replace(/\/\/.*$/gm, '') // Remove // comments
-            .replace(/[{}]/g, '')
-            .split(';')
-            .map(prop => prop.trim())
-            .filter(prop => prop)
+            .trim()
+            .replace(/^{([\s\S]*)}$/, '$1');
+
+        return this.splitTopLevel(body, ';')
             .map(prop => [prop.slice(0, prop.indexOf(':')).trim(), prop.slice(prop.indexOf(':') + 1).trim()])
             .filter(([key, value]) => key && value);
+    }
+
+    /**
+     * Splits a type at each `separator` outside its braces and brackets, so an object nested in a
+     * field or in a union stays whole.
+     */
+    splitTopLevel(type, separator) {
+        const parts = [];
+        let depth = 0;
+        let start = 0;
+
+        for (let i = 0; i < type.length; i++) {
+            if ('{[('.includes(type[i])) depth++;
+            else if ('}])'.includes(type[i])) depth--;
+            else if (depth === 0 && type[i] === separator) {
+                parts.push(type.slice(start, i));
+                start = i + 1;
+            }
+        }
+
+        return [...parts, type.slice(start)].map((part) => part.trim()).filter(Boolean);
     }
 
     /**
@@ -608,15 +635,17 @@ class WebComponentDocGenerator {
             return 'None';
         }
 
-        if (type.includes('{') && type.includes('}')) {
-            const fields = this.parseFields(type).flatMap(([key, value]) =>
+        const resolved = type.includes('{') ? type : this.resolveTypeNames(type, type);
+
+        if (resolved.startsWith('{')) {
+            const fields = this.parseFields(resolved).flatMap(([key, value]) =>
                 this.fieldLines(key, this.resolveTypeNames(value, key), 1, ';')
             );
 
             return this.codeBlock(fields.length > 0 ? ['{', ...fields, '}'] : ['object']);
         }
 
-        return this.inlineCode(this.resolveTypeNames(type, type));
+        return this.inlineCode(resolved);
     }
 
     /**
@@ -625,19 +654,30 @@ class WebComponentDocGenerator {
      */
     fieldLines(name, type, depth, ending) {
         const pad = '    '.repeat(depth);
+        const alternatives = this.splitTopLevel(type, '|');
 
-        if (type.startsWith('{')) {
-            const members = this.parseFields(type).flatMap(([key, value]) => this.fieldLines(key, value, depth + 1, ';'));
-            return [`${pad}${name}: {`, ...members, `${pad}}${ending}`];
+        if (alternatives.length === 1 && type.startsWith('{')) {
+            const close = type.slice(type.lastIndexOf('}') + 1);
+            return [`${pad}${name}: {`, ...this.memberLines(type, depth + 1), `${pad}}${close}${ending}`];
         }
 
-        const alternatives = type.split(' | ');
-        if (alternatives.length > 1 && `${pad}${name}: ${type}${ending}`.length > 40) {
-            return [`${pad}${name}:`, ...alternatives.map((alternative, index) =>
-                `${pad}    | ${alternative}${index === alternatives.length - 1 ? ending : ''}`)];
+        if (alternatives.length > 1 && (type.includes('{') || `${pad}${name}: ${type}${ending}`.length > 40)) {
+            const lines = alternatives.flatMap((alternative) => alternative.startsWith('{')
+                ? [`${pad}    | {`, ...this.memberLines(alternative, depth + 2), `${pad}    }`]
+                : [`${pad}    | ${alternative}`]);
+            lines[lines.length - 1] += ending;
+            return [`${pad}${name}:`, ...lines];
         }
 
         return [`${pad}${name}: ${type}${ending}`];
+    }
+
+    /**
+     * The lines of the members of an object type, which may close with `[]` for an array of them.
+     */
+    memberLines(type, depth) {
+        const object = type.slice(0, type.lastIndexOf('}') + 1);
+        return this.parseFields(object).flatMap(([key, value]) => this.fieldLines(key, value, depth, ';'));
     }
 
     /**

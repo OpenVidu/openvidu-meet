@@ -277,6 +277,23 @@
 
 			.permission-row {
 				@include permission-row-base;
+
+				&.dependent {
+					position: relative;
+					margin-left: var(--ov-meet-spacing-lg);
+
+					&::before {
+						content: '';
+						position: absolute;
+						left: calc(-1 * var(--ov-meet-spacing-md));
+						top: -6px;
+						width: 10px;
+						height: 50%;
+						border-left: 2px solid var(--ov-meet-border-secondary);
+						border-bottom: 2px solid var(--ov-meet-border-secondary);
+						border-bottom-left-radius: 6px;
+					}
+				}
 			}
 		}
 	}

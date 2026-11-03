@@ -9,6 +9,7 @@ export * from './components/landscape-warning/landscape-warning.component';
 export * from './components/layout/smart-layout/smart-layout.component';
 export * from './components/meeting-view/meeting-view.component';
 export * from './components/panel/activities-panel/activities-panel.component';
+export * from './components/panel/activities-panel/broadcast-activity/broadcast-activity.component';
 export * from './components/panel/activities-panel/recording-activity/recording-activity.component';
 export * from './components/panel/chat-panel/chat-panel.component';
 export * from './components/panel/panel.component';
@@ -32,6 +33,7 @@ export * from './directives/template/internals.directive';
 export * from './directives/template/openvidu-components-angular.directive';
 export * from './directives/template/openvidu-components-angular.directive.module';
 // Models
+export * from './models/broadcast.model';
 export * from './models/data-topic.model';
 export * from './models/device.model';
 export * from './models/lang.model';
@@ -50,6 +52,7 @@ export * from './models/viewport.model';
 export * from './pipes/participant.pipe';
 export * from './pipes/translate.pipe';
 // Services
+export * from './services/broadcast/broadcast-state.service';
 export * from './services/chat/chat.service';
 export * from './services/e2ee/e2ee.service';
 export * from './services/layout/smart-layout.service';

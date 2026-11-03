@@ -1,12 +1,18 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MeetParticipantMediaMutedPayload, MeetRecordingStatus, MeetSignalType } from '@openvidu-meet/typings';
+import {
+	MeetBroadcastStatus,
+	MeetParticipantMediaMutedPayload,
+	MeetRecordingStatus,
+	MeetSignalType
+} from '@openvidu-meet/typings';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { MeetStorageService } from '../../../../../shared/services/storage.service';
 import { DataTopic } from '../../models/data-topic.model';
 import { ParticipantModel } from '../../models/participant.model';
 import { ConnectionQuality, RemoteParticipant, Room, RoomEvent, Track } from '../../services/livekit';
 import { DialogService } from '../../../../../shared/services/dialog.service';
+import { BroadcastStateService } from '../broadcast/broadcast-state.service';
 import { ChatService } from '../chat/chat.service';
 import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { E2eeService } from '../e2ee/e2ee.service';
@@ -28,6 +34,7 @@ describe('MeetingEventsService', () => {
 	let service: MeetingEventsService;
 	let chatService: jasmine.SpyObj<ChatService>;
 	let recordingService: jasmine.SpyObj<RecordingService>;
+	let broadcastState: jasmine.SpyObj<BroadcastStateService>;
 	let onData: (payload: Uint8Array, participant?: unknown, kind?: unknown, topic?: string) => Promise<void>;
 
 	const storedParticipant = { sid: 'sid1', identity: 'speaker1', name: 'Speaker 1' };
@@ -45,6 +52,7 @@ describe('MeetingEventsService', () => {
 			'setRecordingStopped',
 			'setRecordingFailed'
 		]);
+		broadcastState = jasmine.createSpyObj<BroadcastStateService>('BroadcastStateService', ['setBroadcast']);
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -53,6 +61,7 @@ describe('MeetingEventsService', () => {
 				{ provide: LoggerService, useClass: LoggerServiceStub },
 				{ provide: ChatService, useValue: chatService },
 				{ provide: RecordingService, useValue: recordingService },
+				{ provide: BroadcastStateService, useValue: broadcastState },
 				{
 					provide: ParticipantService,
 					useValue: {
@@ -145,6 +154,24 @@ describe('MeetingEventsService', () => {
 			await receive('something_else', { message: 'hello' });
 
 			expect(relayed).toEqual([]);
+		});
+
+		const broadcastUpdate = {
+			roomId: 'room1',
+			broadcast: { broadcastId: 'bc1', status: MeetBroadcastStatus.ACTIVE },
+			timestamp: 0
+		};
+
+		it('drives the LIVE indicator from a server-sent broadcast update', async () => {
+			await receive(MeetSignalType.MEET_BROADCAST_UPDATED, broadcastUpdate);
+
+			expect(broadcastState.setBroadcast).toHaveBeenCalledWith(jasmine.objectContaining({ broadcastId: 'bc1' }));
+		});
+
+		it('ignores a broadcast update relayed from a participant', async () => {
+			await receive(MeetSignalType.MEET_BROADCAST_UPDATED, broadcastUpdate, storedParticipant);
+
+			expect(broadcastState.setBroadcast).not.toHaveBeenCalled();
 		});
 
 		it('still delivers chat messages relayed from a known participant', async () => {
@@ -400,6 +427,7 @@ describe('MeetingEventsService (the room events it binds to)', () => {
 	let service: MeetingEventsService;
 	let participantService: jasmine.SpyObj<ParticipantService>;
 	let streamLayoutService: jasmine.SpyObj<StreamLayoutStateService>;
+	let broadcastState: jasmine.SpyObj<BroadcastStateService>;
 	let emit: (event: RoomEvent, ...args: unknown[]) => void;
 	let registeredEvents: () => RoomEvent[];
 
@@ -431,9 +459,12 @@ describe('MeetingEventsService (the room events it binds to)', () => {
 			'setLastScreenPinned'
 		]);
 
+		broadcastState = jasmine.createSpyObj<BroadcastStateService>('BroadcastStateService', ['reset']);
+
 		TestBed.configureTestingModule({
 			providers: [
 				provideZonelessChangeDetection(),
+				{ provide: BroadcastStateService, useValue: broadcastState },
 				{ provide: ParticipantService, useValue: participantService },
 				{ provide: StreamLayoutStateService, useValue: streamLayoutService },
 				{ provide: LoggerService, useClass: LoggerServiceStub },
@@ -445,7 +476,10 @@ describe('MeetingEventsService (the room events it binds to)', () => {
 				{ provide: MeetingTranslateService, useValue: { translate: (key: string) => key } },
 				{ provide: ChatService, useValue: {} },
 				{ provide: MeetingUiConfigService, useValue: {} },
-				{ provide: RecordingService, useValue: {} },
+				{
+					provide: RecordingService,
+					useValue: jasmine.createSpyObj<RecordingService>('RecordingService', ['setRecordingStopped'])
+				},
 				{ provide: MeetStorageService, useValue: { getLocalTileFloating: () => null } }
 			]
 		});
@@ -487,6 +521,12 @@ describe('MeetingEventsService (the room events it binds to)', () => {
 				RoomEvent.ConnectionQualityChanged
 			])
 		);
+	});
+
+	it('forgets the live broadcast once the participant is out of the room', () => {
+		emit(RoomEvent.Disconnected, undefined);
+
+		expect(broadcastState.reset).toHaveBeenCalled();
 	});
 
 	it('publishes the speakers it is told about', () => {
@@ -612,6 +652,7 @@ describe('MeetingEventsService (remote roster across a full reconnect)', () => {
 				{ provide: ChatService, useValue: {} },
 				{ provide: MeetingUiConfigService, useValue: {} },
 				{ provide: RecordingService, useValue: {} },
+				{ provide: BroadcastStateService, useValue: {} },
 				{ provide: MeetStorageService, useValue: { getLocalTileFloating: () => null } }
 			]
 		});

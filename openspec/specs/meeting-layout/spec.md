@@ -269,12 +269,17 @@ While the participant is the only one in the meeting, the grid SHALL show next t
 - **THEN** the grid shows a waiting message and no access link
 
 ### Requirement: Status rail
-A status rail SHALL sit above the layout, in a row of its own that never covers the video, whenever there is a meeting-wide status. It SHALL hold the elapsed time and forced-end countdown (see `meetings`), the recording mark (see `recordings`), the encryption mark, the raised hands count (see `raise-hand`), the reactions pulse (see `reactions`) and the hidden participants indicator. The recording mark SHALL open the activities panel; the hands, pulse and indicator, the participants panel.
+A status rail SHALL sit above the layout, in a row of its own that never covers the video, whenever there is a meeting-wide status. It SHALL hold the elapsed time and forced-end countdown, the recording mark, the live broadcast mark, the encryption mark, the raised hands count, the reactions pulse and the hidden participants indicator, each specified by its feature. The recording and live broadcast marks SHALL open the activities panel; the hands, pulse and indicator, the participants panel.
 
 #### Scenario: Recording in progress
 - **GIVEN** a meeting being recorded
 - **WHEN** the participant clicks the recording mark in the status rail
 - **THEN** the activities panel opens on the recording
+
+#### Scenario: Live broadcast in progress
+- **GIVEN** a meeting streaming to a destination
+- **WHEN** the participant clicks the live broadcast mark in the status rail
+- **THEN** the activities panel opens on the live broadcast
 
 #### Scenario: Desktop countdown
 - **GIVEN** a desktop meeting window and a meeting close to its maximum duration

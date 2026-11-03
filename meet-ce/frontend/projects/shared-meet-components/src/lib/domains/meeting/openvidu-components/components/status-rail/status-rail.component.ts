@@ -4,10 +4,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetingContextService } from '../../../services/meeting-context.service';
 import { MeetingReactionsService } from '../../../services/meeting-reactions.service';
-import { PanelType } from '../../models/panel.model';
+import { PanelActivitiesOptions, PanelType } from '../../models/panel.model';
 import { REACTION_EMOJI } from '../../models/reaction.model';
 import { RecordingState } from '../../models/recording.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
+import { BroadcastStateService } from '../../services/broadcast/broadcast-state.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import { MeetingEndingSoonService } from '../../services/meeting-ending-soon/meeting-ending-soon.service';
@@ -36,6 +37,7 @@ export class StatusRailComponent implements OnDestroy {
 	private readonly meetingContext = inject(MeetingContextService);
 	private readonly meetingEndingSoonService = inject(MeetingEndingSoonService);
 	private readonly recordingService = inject(RecordingService);
+	private readonly broadcastState = inject(BroadcastStateService);
 	private readonly smartLayoutService = inject(SmartLayoutService);
 	private readonly uiConfig = inject(MeetingUiConfigService);
 	private readonly panelService = inject(PanelService);
@@ -98,6 +100,10 @@ export class StatusRailComponent implements OnDestroy {
 		() => this.isRecordingStarting() || this.recordingStatus().status === RecordingState.STARTED
 	);
 
+	protected readonly isBroadcastStarting = this.broadcastState.isStarting;
+	protected readonly broadcastElapsed = this.broadcastState.elapsed;
+	protected readonly showBroadcastChip = computed(() => this.broadcastState.isInProgress());
+
 	/**
 	 * The key is what actually encrypts: `MeetingLiveKitService` builds the room's `encryption`
 	 * options from it, so a key here means the media really is end-to-end encrypted.
@@ -115,6 +121,7 @@ export class StatusRailComponent implements OnDestroy {
 	protected readonly reactionEmoji = REACTION_EMOJI;
 
 	protected readonly canOpenActivitiesPanel = this.uiConfig.activitiesPanelButtonSignal;
+	protected readonly activitiesOptions = PanelActivitiesOptions;
 
 	protected readonly canOpenParticipantsPanel = this.uiConfig.participantsPanelButtonSignal;
 
@@ -123,6 +130,7 @@ export class StatusRailComponent implements OnDestroy {
 			this.elapsedTime() !== undefined ||
 			this.isEndingSoon() ||
 			this.showRecordingChip() ||
+			this.showBroadcastChip() ||
 			this.isE2eeActive() ||
 			this.raisedHandCount() > 0 ||
 			this.reactionCounts().length > 0 ||
@@ -152,10 +160,10 @@ export class StatusRailComponent implements OnDestroy {
 		this.panelService.togglePanel(PanelType.PARTICIPANTS);
 	}
 
-	protected openRecordingActivityPanel(): void {
+	protected openActivitiesPanel(activity: PanelActivitiesOptions): void {
 		if (!this.canOpenActivitiesPanel() || this.panelService.isActivitiesPanelOpened()) return;
 
-		this.panelService.togglePanel(PanelType.ACTIVITIES, 'recording');
+		this.panelService.togglePanel(PanelType.ACTIVITIES, activity);
 	}
 
 	private measureRows(): void {

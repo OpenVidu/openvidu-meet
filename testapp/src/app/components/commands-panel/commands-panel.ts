@@ -1,7 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MeetParticipantModerationAction, MeetReaction } from '@openvidu-meet/typings';
-import { MeetCommandsService } from '../../services/meet-commands';
+import { BroadcastRosterService } from '../../services/broadcast-roster';
+import { MeetCommandsService, optionsArgs } from '../../services/meet-commands';
 import { ParticipantRosterService } from '../../services/participant-roster';
 
 /**
@@ -18,6 +19,8 @@ import { ParticipantRosterService } from '../../services/participant-roster';
 export class CommandsPanel {
 	protected readonly commands = inject(MeetCommandsService);
 	protected readonly roster = inject(ParticipantRosterService);
+	protected readonly broadcasts = inject(BroadcastRosterService);
+	protected readonly optionsArgs = optionsArgs;
 	protected readonly ModerationAction = MeetParticipantModerationAction;
 	protected readonly reactions = Object.values(MeetReaction);
 }

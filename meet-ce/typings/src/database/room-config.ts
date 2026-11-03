@@ -48,6 +48,10 @@ export interface MeetRoomConfig {
 	 */
 	recording: MeetRecordingConfig;
 	/**
+	 * Configuration for live broadcast feature. See {@link MeetBroadcastConfig} for details.
+	 */
+	broadcast: MeetBroadcastConfig;
+	/**
 	 * Configuration for virtual backgrounds feature. See {@link MeetVirtualBackgroundConfig} for details.
 	 */
 	virtualBackground: MeetVirtualBackgroundConfig;
@@ -157,6 +161,132 @@ export const MEET_RECORDING_AUTO_START_PRESETS: Record<MeetRecordingAutoStartMod
  */
 export const minParticipantsForAutoStart = (mode: MeetRecordingAutoStartMode): number =>
 	MEET_RECORDING_AUTO_START_PRESETS[mode].minParticipants;
+
+/**
+ * Interface representing the config for live broadcasts (RTMP streaming) in a room.
+ */
+export interface MeetBroadcastConfig {
+	/**
+	 * Indicates if live broadcast is enabled in the room. Forced to `false` while end-to-end
+	 * encryption is enabled, which excludes broadcast the same way it excludes recording. Defaults to
+	 * `false`; config updates deep-merge with the stored config, so omitting this field keeps its
+	 * current value.
+	 */
+	enabled: boolean;
+	/**
+	 * The room's default destinations: where a meeting streams when it goes live, one broadcast per
+	 * destination. Each has its own stream key, and at least one is required while `enabled` is
+	 * `true`. In the meeting, a participant with the `broadcastControl` permission starts a
+	 * broadcast to any of them, and with `broadcastEdit` to a destination given for that
+	 * meeting only: the list saved here never changes from inside a meeting.
+	 * See {@link MeetBroadcastDestination} for details.
+	 */
+	destinations: MeetBroadcastDestination[];
+	/**
+	 * Layout of the meeting as it is streamed, the same layouts a recording uses. See
+	 * {@link MeetRecordingLayout} for details. Defaults to `grid`; config updates deep-merge with the
+	 * stored config, so omitting this field keeps its current value.
+	 */
+	layout?: MeetRecordingLayout;
+	/**
+	 * Encoding of the stream, the same presets and options a recording uses: a preset for common
+	 * scenarios, or detailed options for fine-grained control. Defaults to `H264_720P_30`; config
+	 * updates deep-merge with the stored config, so omitting this field keeps its current value.
+	 */
+	encoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
+}
+
+/**
+ * A destination saved in a room's config: a name and the RTMP(S) URL the platform issued, stream
+ * key included.
+ */
+export interface MeetBroadcastDestination {
+	/**
+	 * Identifier assigned by the server when the destination is saved. Always present when served,
+	 * omitted when adding a destination. On an update, a destination sent with its `id` is the saved
+	 * one (and keeps its saved URL, see `url`), while one sent without `id` is new.
+	 */
+	id?: string;
+	/** Display name of the destination, such as the channel or platform it streams to */
+	name: string;
+	/**
+	 * Full `rtmp://` or `rtmps://` URL to stream to, stream key included. The stream key, what
+	 * follows the last `/`, is a secret, so it is never served: responses carry the URL with the key,
+	 * and any query string attached to it, replaced by {@link MEET_BROADCAST_REDACTED_STREAM_KEY}. An update that sends a
+	 * destination with its `id` and that redacted URL exactly as served (a response echoed back)
+	 * keeps the saved URL; a full URL replaces it, and a redacted URL with any other change is
+	 * rejected, since there is no stream key to go with it.
+	 */
+	url: string;
+}
+
+/**
+ * Placeholder that replaces the stream key (the last path segment) of a destination URL when it is
+ * served. See {@link MeetBroadcastDestination.url}.
+ */
+export const MEET_BROADCAST_REDACTED_STREAM_KEY = '********';
+
+/**
+ * Maximum length of a broadcast destination's name.
+ */
+export const MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH = 50;
+
+const STREAM_URL_FLAG = ' live=1';
+
+/** The address a destination URL streams to, without the ` live=1` flag some servers take after it. */
+const streamAddress = (url: string): string =>
+	url.endsWith(STREAM_URL_FLAG) ? url.slice(0, -STREAM_URL_FLAG.length) : url;
+
+/**
+ * Whether a destination URL has the form the media server streams to,
+ * `rtmp(s)://{host}(/{path})/{app}/{stream_key}`, optionally followed by ` live=1`: no whitespace
+ * or `#` anywhere else, and a stream key, what follows the last `/`, that may carry a query string
+ * but is not one.
+ */
+export const isValidStreamUrl = (url: string): boolean => {
+	const match = /^rtmps?:\/\/(.+)$/.exec(streamAddress(url));
+
+	if (!match || /[\s#]/.test(match[1])) return false;
+
+	const [host, ...path] = match[1].split('/');
+	const key = path[path.length - 1] ?? '';
+	return host !== '' && !host.includes('?') && path.length >= 2 && path.every(Boolean) && !key.startsWith('?');
+};
+
+/**
+ * A destination URL as the API serves it: its stream key, what follows the last `/` (a trailing
+ * slash notwithstanding) together with any query string attached to it, replaced by
+ * {@link MEET_BROADCAST_REDACTED_STREAM_KEY}, and without the ` live=1` flag.
+ */
+export const redactStreamUrl = (url: string): string => {
+	const address = streamAddress(url);
+	const segments = address.split('/');
+	const index = streamKeyIndex(segments);
+
+	if (index < 0) return [...segments.slice(0, 3), MEET_BROADCAST_REDACTED_STREAM_KEY].join('/');
+
+	segments[index] = MEET_BROADCAST_REDACTED_STREAM_KEY;
+	return segments.join('/');
+};
+
+/**
+ * Whether a destination URL is one the API served, with its stream key replaced by
+ * {@link MEET_BROADCAST_REDACTED_STREAM_KEY}, rather than a full URL.
+ */
+export const isRedactedStreamUrl = (url: string): boolean => {
+	const segments = streamAddress(url).split('/');
+	const index = streamKeyIndex(segments);
+	return index >= 0 && segments[index].split('?')[0] === MEET_BROADCAST_REDACTED_STREAM_KEY;
+};
+
+/** The place of the stream key among the `/`-separated parts of a URL: the last non-empty one after the host, if any. */
+const streamKeyIndex = (segments: string[]): number => {
+	for (let index = segments.length - 1; index > 2; index--) {
+		if (segments[index] !== '') return index;
+	}
+
+	return -1;
+};
 
 /**
  * Interface representing the config for chat in a room.

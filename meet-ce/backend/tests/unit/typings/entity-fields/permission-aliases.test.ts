@@ -55,7 +55,9 @@ describe('Permission alias map', () => {
 			'meetingRead',
 			'participantMute',
 			'participantHandLower',
-			'participantReactionSend'
+			'participantReactionSend',
+			'broadcastControl',
+			'broadcastEdit'
 		]);
 
 		for (const permissionKey of MEET_UNALIASED_PERMISSION_KEYS) {
@@ -174,30 +176,33 @@ describe('normalizePermissions', () => {
 		expect(Object.keys(normalized).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
 	});
 
+	// Every key born after the rename that completes to a literal, at that literal.
+	const literalDefaults = {
+		participantMute: false,
+		participantHandLower: false,
+		participantReactionSend: true,
+		broadcastControl: false,
+		broadcastEdit: false
+	};
+
 	// A complete input that predates the key keeps behaving as it did — joining gated reading — but
 	// the two permissions are independent: nothing is derived outside that completion.
 	it('should complete meetingRead from meetingJoin only in a complete set', () => {
 		expect(normalizePermissions({ meetingJoin: true }, { complete: true })).toEqual({
 			meetingJoin: true,
 			meetingRead: true,
-			participantMute: false,
-			participantHandLower: false,
-			participantReactionSend: true
+			...literalDefaults
 		});
 		expect(normalizePermissions({ meetingJoin: false }, { complete: true })).toEqual({
 			meetingJoin: false,
 			meetingRead: false,
-			participantMute: false,
-			participantHandLower: false,
-			participantReactionSend: true
+			...literalDefaults
 		});
 		// The deprecated spelling cannot name it either, and reaches it through meetingJoin.
 		expect(normalizePermissions({ canJoinMeeting: true }, { complete: true })).toEqual({
 			meetingJoin: true,
 			meetingRead: true,
-			participantMute: false,
-			participantHandLower: false,
-			participantReactionSend: true
+			...literalDefaults
 		});
 	});
 
@@ -205,28 +210,23 @@ describe('normalizePermissions', () => {
 	it('should default participantMute to false, never take it from participantKick', () => {
 		expect(normalizePermissions({ participantKick: true }, { complete: true })).toEqual({
 			participantKick: true,
-			participantMute: false,
-			participantHandLower: false,
-			participantReactionSend: true
+			...literalDefaults
 		});
 		expect(normalizePermissions({ participantMute: true }, { complete: true })).toEqual({
-			participantMute: true,
-			participantHandLower: false,
-			participantReactionSend: true
+			...literalDefaults,
+			participantMute: true
 		});
 	});
 
 	// participantHandLower is implied by nothing either: a moderation capability no earlier permission decided.
 	it('should default participantHandLower to false, never take it from participantMute', () => {
 		expect(normalizePermissions({ participantMute: true }, { complete: true })).toEqual({
-			participantMute: true,
-			participantHandLower: false,
-			participantReactionSend: true
+			...literalDefaults,
+			participantMute: true
 		});
 		expect(normalizePermissions({ participantHandLower: true }, { complete: true })).toEqual({
-			participantMute: false,
-			participantHandLower: true,
-			participantReactionSend: true
+			...literalDefaults,
+			participantHandLower: true
 		});
 	});
 
@@ -234,14 +234,24 @@ describe('normalizePermissions', () => {
 	it('should default participantReactionSend to true, and keep an explicit false', () => {
 		expect(normalizePermissions({ chatWrite: false }, { complete: true })).toEqual({
 			chatWrite: false,
-			participantMute: false,
-			participantHandLower: false,
-			participantReactionSend: true
+			...literalDefaults
 		});
 		expect(normalizePermissions({ participantReactionSend: false }, { complete: true })).toEqual({
-			participantMute: false,
-			participantHandLower: false,
+			...literalDefaults,
 			participantReactionSend: false
+		});
+	});
+
+	// Nor are the broadcast permissions implied by recording: keeping a copy and publishing live are
+	// different powers.
+	it('should default the broadcast permissions to false, never take them from recordingControl', () => {
+		expect(normalizePermissions({ recordingControl: true }, { complete: true })).toEqual({
+			recordingControl: true,
+			...literalDefaults
+		});
+		expect(normalizePermissions({ broadcastControl: true }, { complete: true })).toEqual({
+			...literalDefaults,
+			broadcastControl: true
 		});
 	});
 
@@ -249,9 +259,7 @@ describe('normalizePermissions', () => {
 		expect(normalizePermissions({ meetingJoin: true, meetingRead: false }, { complete: true })).toEqual({
 			meetingJoin: true,
 			meetingRead: false,
-			participantMute: false,
-			participantHandLower: false,
-			participantReactionSend: true
+			...literalDefaults
 		});
 		expect(normalizePermissions({ meetingRead: true })).toEqual({ meetingRead: true });
 	});
@@ -301,7 +309,9 @@ describe('toDeprecatedPermissions', () => {
 		expect(normalizePermissions(toDeprecatedPermissions(current), { complete: true })).toEqual({
 			...current,
 			participantMute: false,
-			participantHandLower: false
+			participantHandLower: false,
+			broadcastControl: false,
+			broadcastEdit: false
 		});
 	});
 

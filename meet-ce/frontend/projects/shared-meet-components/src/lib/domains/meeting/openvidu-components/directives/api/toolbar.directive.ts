@@ -103,6 +103,48 @@ export class ToolbarRecordingButtonDirective implements OnDestroy {
 	}
 }
 
+/**
+ * The **broadcastButton** directive allows show/hide the start/stop live broadcast toolbar button.
+ *
+ * Default: `true`
+ *
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `toolbar` component:
+ *
+ * @example
+ * <ov-meeting-view [toolbarBroadcastButton]="false"></ov-meeting-view>
+ *
+ * \
+ * And it also can be used in the {@link ToolbarComponent}.
+ * @example
+ * <ov-toolbar [broadcastButton]="false"></ov-toolbar>
+ */
+@Directive({
+	selector: 'ov-meeting-view[toolbarBroadcastButton], ov-toolbar[broadcastButton]'
+})
+export class ToolbarBroadcastButtonDirective implements OnDestroy {
+	/**
+	 * @ignore
+	 */
+	readonly toolbarBroadcastButton = input<boolean | undefined>(undefined);
+	/**
+	 * @ignore
+	 */
+	readonly broadcastButton = input<boolean | undefined>(undefined);
+
+	private readonly libService = inject(MeetingUiConfigService);
+	private readonly broadcastButtonEffect = effect(() => {
+		this.update(this.broadcastButton() ?? this.toolbarBroadcastButton() ?? true);
+	});
+
+	ngOnDestroy(): void {
+		this.update(true);
+	}
+
+	private update(value: boolean) {
+		this.libService.updateToolbarConfig({ broadcast: value });
+	}
+}
+
 
 /**
  * The **fullscreenButton** directive allows show/hide the fullscreen toolbar button.

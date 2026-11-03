@@ -1,3 +1,4 @@
+export * from './broadcast.service';
 export * from './meeting-captions.service';
 export * from './meeting-context.service';
 export * from './meeting-entry.service';

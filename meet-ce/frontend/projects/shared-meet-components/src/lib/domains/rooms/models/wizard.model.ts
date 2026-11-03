@@ -3,10 +3,19 @@ import { FormGroup } from '@angular/forms';
 /**
  * Enumeration of wizard step identifiers
  */
+/**
+ * The features that end-to-end encryption excludes: enabling it turns them off. Recording and live
+ * broadcast also turn it off when enabled; live captions cannot be enabled while it is on.
+ */
+export type E2EEExclusiveFeature = 'recording' | 'broadcast' | 'captions';
+
+export const E2EE_EXCLUSIVE_FEATURES: E2EEExclusiveFeature[] = ['recording', 'broadcast', 'captions'];
+
 export enum WizardStepId {
 	ROOM_DETAILS = 'roomDetails',
 	MEETING = 'meeting',
 	RECORDING = 'recording',
+	BROADCAST = 'broadcast',
 	ROOM_ACCESS = 'roomAccess'
 }
 

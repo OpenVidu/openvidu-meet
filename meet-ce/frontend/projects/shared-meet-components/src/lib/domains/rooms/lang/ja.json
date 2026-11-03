@@ -159,6 +159,7 @@
       "STEP_MEETING": "会議",
       "STEP_ROOM_ACCESS": "ルームのアクセス",
       "STEP_RECORDING": "録画",
+      "STEP_BROADCAST": "ライブ配信",
       "BACK": "戻る",
       "BACK_TO_SIMPLE_MODE": "シンプルモードに戻る",
       "CANCEL_ARIA": "ウィザードをキャンセルして前のページに戻る",
@@ -225,7 +226,8 @@
         "MEMBERS_TO_ADD_SUFFIX": "）",
         "EDIT_MEMBER": "メンバーを編集",
         "REMOVE_MEMBER": "メンバーを削除",
-        "FEATURE_DISABLED_PERMISSION": "この権限を設定するには、「会議」ステップで対応する機能を有効にしてください。"
+        "FEATURE_DISABLED_PERMISSION": "この権限を設定するには、「会議」ステップで対応する機能を有効にしてください。",
+        "DEPENDENT_PERMISSION_DISABLED": "この権限を設定するには、依存先の権限を先に付与してください。"
       },
       "MEETING": {
         "TITLE": "会議",
@@ -299,7 +301,7 @@
         "SPEAKER_TITLE": "スピーカーレイアウト",
         "SPEAKER_DESC": "アクティブなスピーカーを強調表示し、他の参加者をその下に表示します",
         "SINGLE_SPEAKER_TITLE": "シングルスピーカー",
-        "SINGLE_SPEAKER_DESC": "録画にはアクティブなスピーカーのみを表示します"
+        "SINGLE_SPEAKER_DESC": "アクティブなスピーカーのみを表示します"
       },
       "RECORDING_TRIGGER": {
         "TITLE": "トリガー",
@@ -314,6 +316,39 @@
         "AUTOSTART_MODE_MODERATOR_DESC": "モデレーターが参加、または昇格した時点で録画を開始します",
         "AUTOSTART_UNREACHABLE_TITLE": "録画トリガーに到達できません",
         "AUTOSTART_UNREACHABLE_MESSAGE": "このトリガーには少なくとも ${required} 人の参加者が必要ですが、ルームの参加者数の上限は ${limit} に設定されています。"
+      },
+      "BROADCAST": {
+        "TITLE": "ライブ配信",
+        "DESCRIPTION": "このルームのミーティングを YouTube、Twitch、または任意の RTMP サーバーへライブ配信できるようにするかを選択します",
+        "RESTRICTIONS": "制限事項",
+        "E2EE_WARNING_PREFIX": "エンドツーエンド暗号化が有効な間、ライブ配信は",
+        "E2EE_WARNING_BOLD": "利用できません",
+        "E2EE_WARNING_SUFFIX": "。ライブ配信を許可すると、このルームの暗号化は自動的に無効になります。",
+        "ALLOW_BROADCAST_TITLE": "ライブ配信を許可",
+        "ALLOW_BROADCAST_DESC": "権限を持つ参加者は、ミーティング中にそれを外部プラットフォームへ配信できます。",
+        "DEFAULT_DESTINATIONS": "既定の配信先",
+        "DESTINATIONS_DESC": "ミーティングをライブ配信する際、これらすべての配信先、またはそのとき選んだ配信先のみに配信できます。",
+        "NO_DESTINATIONS": "ライブ配信を許可するには、配信先を少なくとも 1 つ追加してください。",
+        "ADD_DESTINATION": "配信先を追加",
+        "NEW_DESTINATION": "新しい配信先",
+        "EDIT_DESTINATION": "配信先を編集",
+        "NAME_LABEL": "名前",
+        "URL_LABEL": "ストリーム URL",
+        "URL_HINT": "プラットフォームから提供された rtmp:// または rtmps:// の URL を、ストリームキーを含めて貼り付けてください。",
+        "URL_RECOGNISED": "{platform} として認識しました。",
+        "URL_KEEP_KEY": "保存済みのストリームキーを維持するには URL をそのままにし、置き換えるには新しい URL を貼り付けてください。",
+        "URL_INVALID": "rtmp://host/app/key 形式の rtmp:// または rtmps:// の URL を入力してください",
+        "URL_KEY_REQUIRED": "変更した URL にはストリームキーが必要です。完全な URL を貼り付けてください",
+        "NAME_REQUIRED": "名前を入力してください",
+        "ADD": "追加",
+        "SAVE": "保存",
+        "CANCEL": "キャンセル",
+        "EDIT": "編集",
+        "REMOVE": "削除",
+        "KEYS_HIDDEN": "ストリームキーは保存後は表示されません。",
+        "COST_NOTE": "各配信先はサーバーから送信される個別のストリームで、720p では 1 件あたり約 {mbps} Mbps のアップロードを使用します。これら {count} 件の配信先では、ミーティングのライブ中に約 {total} Mbps を使用します。",
+        "PERMISSIONS_HINT": "誰がライブ配信を開始し、配信先を選び、追加できるかは、ロールごとに次で設定します：",
+        "PERMISSIONS_LINK": "ルームアクセス"
       }
     },
     "ERRORS": {

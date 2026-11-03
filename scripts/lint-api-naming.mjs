@@ -13,7 +13,8 @@
  *   3. Every OpenAPI `operationId` starts with a registered module token, except the frozen
  *      pre-charter list below (aligned in the next major, when SDK method names may break).
  *   4. Every top-level REST path segment of both specs belongs to `MEET_API_REST_GROUPS` — live
- *      meeting features go under `/meetings/{roomId}`, not new top-level groups.
+ *      meeting features go under `/meetings/{roomId}`, not new top-level groups, unless addressed
+ *      by their own id like a recording (`/broadcasts`).
  *
  * Requires `meet-ce/typings/dist` to be built (meet.sh builds it before linting).
  */

@@ -68,6 +68,12 @@ describe('Room Header Fields Tests', () => {
 				chat: { enabled: false },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
+				broadcast: {
+					enabled: false,
+					destinations: [],
+					layout: MeetRecordingLayout.GRID,
+					encoding: MeetRecordingEncodingPreset.H264_720P_30
+				},
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
 				reactions: { enabled: true }
@@ -162,6 +168,12 @@ describe('Room Header Fields Tests', () => {
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
+				broadcast: {
+					enabled: false,
+					destinations: [],
+					layout: MeetRecordingLayout.GRID,
+					encoding: MeetRecordingEncodingPreset.H264_720P_30
+				},
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
 				reactions: { enabled: true }

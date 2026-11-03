@@ -201,7 +201,7 @@ export class RedisService extends EventEmitter {
 	 * @returns A promise that resolves to 'OK' if the operation is successful.
 	 * @throws Error if there is an issue setting the value in Redis.
 	 */
-	async set(key: string, value: string | number | boolean | object, ttlMs: number): Promise<string> {
+	async set(key: string, value: string | number | boolean | object, ttlMs?: number): Promise<string> {
 		try {
 			const hasTTL = ttlMs !== undefined;
 
@@ -376,6 +376,55 @@ export class RedisService extends EventEmitter {
 			return await this.redisPublisher.srem(key, member);
 		} catch (error) {
 			this.logger.error(`Error removing from set in Redis for key '${key}'`, error);
+			throw error;
+		}
+	}
+
+	/** Reads one field of a Redis hash, `null` when the hash has no such field. */
+	async getHashField(key: string, field: string): Promise<string | null> {
+		try {
+			return await this.redisPublisher.hget(key, field);
+		} catch (error) {
+			this.logger.error(`Error reading field '${field}' of hash '${key}' from Redis`, error);
+			throw error;
+		}
+	}
+
+	/** Writes one field of a Redis hash. */
+	async setHashField(key: string, field: string, value: string): Promise<void> {
+		try {
+			await this.redisPublisher.hset(key, field, value);
+		} catch (error) {
+			this.logger.error(`Error writing field '${field}' of hash '${key}' in Redis`, error);
+			throw error;
+		}
+	}
+
+	/** Removes one field of a Redis hash; the hash goes with its last field. */
+	async removeHashField(key: string, field: string): Promise<void> {
+		try {
+			await this.redisPublisher.hdel(key, field);
+		} catch (error) {
+			this.logger.error(`Error removing field '${field}' of hash '${key}' from Redis`, error);
+			throw error;
+		}
+	}
+
+	async hasHashField(key: string, field: string): Promise<boolean> {
+		try {
+			return (await this.redisPublisher.hexists(key, field)) === 1;
+		} catch (error) {
+			this.logger.error(`Error checking field '${field}' of hash '${key}' in Redis`, error);
+			throw error;
+		}
+	}
+
+	/** The field names of a Redis hash, read in one call whatever the size of the keyspace. */
+	async getHashFieldNames(key: string): Promise<string[]> {
+		try {
+			return await this.redisPublisher.hkeys(key);
+		} catch (error) {
+			this.logger.error(`Error reading the fields of hash '${key}' from Redis`, error);
 			throw error;
 		}
 	}

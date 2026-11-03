@@ -1,3 +1,4 @@
+import { MeetBroadcastInfo } from './database/broadcast.entity.js';
 import { MeetRecordingInfo } from './database/recording.entity.js';
 import { MeetRoom } from './database/room.entity.js';
 import { LeftEventReason, MeetEventOrigin } from './embedded/events.js';
@@ -36,7 +37,13 @@ export enum MeetWebhookEventType {
 	/** Emitted when a recording is updated */
 	RECORDING_UPDATED = 'recordingUpdated',
 	/** Emitted when a recording ends */
-	RECORDING_ENDED = 'recordingEnded'
+	RECORDING_ENDED = 'recordingEnded',
+	/** Emitted when a live broadcast starts in a room, one per destination */
+	BROADCAST_STARTED = 'broadcastStarted',
+	/** Emitted when a live broadcast is updated: it goes active once media reaches its destination, or it starts ending */
+	BROADCAST_UPDATED = 'broadcastUpdated',
+	/** Emitted when a live broadcast ends */
+	BROADCAST_ENDED = 'broadcastEnded'
 }
 
 /**
@@ -172,13 +179,14 @@ export interface MeetParticipantHandChangedPayload extends MeetParticipantJoined
 
 /**
  * Payload for OpenVidu Meet webhook events.
- * Depending on the event type, the payload can be {@link MeetRecordingInfo}, {@link MeetRoom},
- * {@link MeetMeetingEndedPayload}, {@link MeetParticipantJoinedPayload},
+ * Depending on the event type, the payload can be {@link MeetRecordingInfo}, {@link MeetBroadcastInfo},
+ * {@link MeetRoom}, {@link MeetMeetingEndedPayload}, {@link MeetParticipantJoinedPayload},
  * {@link MeetParticipantLeftPayload}, {@link MeetParticipantRoleChangedPayload} or
  * {@link MeetParticipantHandChangedPayload}.
  */
 export type MeetWebhookPayload =
 	| MeetRecordingInfo
+	| MeetBroadcastInfo
 	| MeetRoom
 	| MeetMeetingEndedPayload
 	| MeetParticipantJoinedPayload

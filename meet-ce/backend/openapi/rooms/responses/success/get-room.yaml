@@ -60,6 +60,11 @@ content:
                             enabled: true
                             layout: grid
                             encoding: H264_720P_30
+                        broadcast:
+                            enabled: false
+                            destinations: []
+                            layout: grid
+                            encoding: H264_720P_30
                         virtualBackground:
                             enabled: true
                         e2ee:
@@ -92,6 +97,11 @@ content:
                             enabled: true
                             layout: grid
                             encoding: H264_720P_30
+                        broadcast:
+                            enabled: false
+                            destinations: []
+                            layout: grid
+                            encoding: H264_720P_30
                         virtualBackground:
                             enabled: true
                         e2ee:
@@ -110,6 +120,8 @@ content:
                                 recordingPlay: true
                                 recordingDownload: true
                                 recordingDelete: true
+                                broadcastControl: true
+                                broadcastEdit: true
                                 meetingJoin: true
                                 meetingRead: true
                                 roomShareAccessLinks: true
@@ -132,6 +144,8 @@ content:
                                 recordingPlay: true
                                 recordingDownload: true
                                 recordingDelete: false
+                                broadcastControl: false
+                                broadcastEdit: false
                                 meetingJoin: true
                                 meetingRead: true
                                 roomShareAccessLinks: false

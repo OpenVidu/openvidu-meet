@@ -1,0 +1,47 @@
+<mat-expansion-panel
+	(opened)="opened.set(true)"
+	(closed)="opened.set(false)"
+	[expanded]="expanded()"
+	[class.no-body]="!opened()"
+>
+	<mat-expansion-panel-header>
+		<div class="activity-row">
+			<div
+				class="activity-tile"
+				[class.live]="state() === 'live'"
+				[class.pending]="state() === 'pending'"
+				[class.failed]="state() === 'failed'"
+			>
+				<mat-icon>{{ state() === 'failed' ? 'error_outline' : icon() }}</mat-icon>
+			</div>
+
+			<div class="activity-identity">
+				<h3 class="activity-name">{{ titleKey() | translate }}</h3>
+				<p class="activity-status" [attr.id]="statusId()" [attr.data-status]="status()">
+					@if (state() === 'live') {
+						<span class="live-dot" aria-hidden="true"></span>
+					}
+					<span>{{ statusKey() | translate }}</span>
+					@if (detail(); as detailText) {
+						<span class="status-separator" aria-hidden="true">&middot;</span>
+						<span class="activity-status-detail">{{ detailText }}</span>
+					}
+					@if (state() === 'live' && elapsed(); as elapsedTime) {
+						<span class="status-separator" aria-hidden="true">&middot;</span>
+						<span class="activity-elapsed">{{ elapsedTime | date: 'H:mm:ss' }}</span>
+					}
+				</p>
+			</div>
+		</div>
+
+		@if (state() === 'pending') {
+			<span class="activity-progress" aria-hidden="true"><span class="activity-progress-bar"></span></span>
+		}
+	</mat-expansion-panel-header>
+
+	@if (opened()) {
+		<div class="activity-body">
+			<ng-content />
+		</div>
+	}
+</mat-expansion-panel>

@@ -263,7 +263,7 @@ The server SHALL process a notification from the media server once even when sev
 - **THEN** the webhook receives exactly one `participantJoined` for that participant
 
 ### Requirement: Webhook event catalogue
-The server SHALL emit exactly the event types `meetingStarted`, `meetingEnded`, `participantJoined`, `participantLeft`, `participantRoleChanged`, `participantHandChanged`, `recordingStarted`, `recordingUpdated` and `recordingEnded`, each triggered as its owning capability specifies. `testEvent` SHALL only be sent by `webhookTest` and is not an event type.
+The server SHALL emit exactly the event types `meetingStarted`, `meetingEnded`, `participantJoined`, `participantLeft`, `participantRoleChanged`, `participantHandChanged`, `recordingStarted`, `recordingUpdated`, `recordingEnded`, `broadcastStarted`, `broadcastUpdated` and `broadcastEnded`, each triggered as its owning capability specifies. `testEvent` SHALL only be sent by `webhookTest` and is not an event type.
 
 #### Scenario: Owner of each event
 - **WHEN** a reviewer looks up when an event fires and what its payload means
@@ -271,9 +271,10 @@ The server SHALL emit exactly the event types `meetingStarted`, `meetingEnded`, 
 - **AND** `participantRoleChanged` in `meeting-moderation`
 - **AND** `participantHandChanged` in `raise-hand`
 - **AND** `recordingStarted`, `recordingUpdated` and `recordingEnded` in `recordings`
+- **AND** `broadcastStarted`, `broadcastUpdated` and `broadcastEnded` in `live-broadcast`
 
 #### Scenario: Filtering by an event type
-- **WHEN** an administrator registers a webhook filtered to any subset of the nine event types
+- **WHEN** an administrator registers a webhook filtered to any subset of the twelve event types
 - **THEN** the REST API accepts it, and rejects `testEvent` with `422`
 
 ### Requirement: Every payload names its room

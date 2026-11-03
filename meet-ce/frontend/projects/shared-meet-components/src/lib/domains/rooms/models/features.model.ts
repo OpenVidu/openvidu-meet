@@ -41,6 +41,15 @@ export interface RoomFeatures {
 	showViewRecordings: boolean;
 
 	/**
+	 * Indicates if the live broadcast controls (go live, stop, start and stop destinations) are shown in the UI
+	 */
+	showBroadcastControls: boolean;
+	/**
+	 * Indicates if adding destinations for the meeting to a broadcast is shown in the UI
+	 */
+	showBroadcastAddDestinations: boolean;
+
+	/**
 	 * Indicates if the fullscreen control is shown in the UI
 	 */
 	showFullscreen: boolean;

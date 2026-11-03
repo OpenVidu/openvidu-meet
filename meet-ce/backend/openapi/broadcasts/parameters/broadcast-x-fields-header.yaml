@@ -1,0 +1,18 @@
+name: X-Fields
+in: header
+description: >
+    Comma-separated list of **Broadcast** fields to include in the response.
+    Use this header to request only the data you need, reducing payload size and improving performance.
+
+    When combined with the `fields` query parameter, values are merged (union of unique fields).
+    <br/><br/>
+    Names that are not broadcast fields are ignored. A list with no usable name is treated as if
+    the header had been omitted, so the response carries the full broadcast.
+
+required: false
+schema:
+    type: string
+examples:
+    basic:
+        value: 'broadcastId,status,destination'
+        summary: Only return the status of the broadcast and its destination

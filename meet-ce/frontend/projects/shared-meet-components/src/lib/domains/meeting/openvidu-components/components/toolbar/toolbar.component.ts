@@ -21,8 +21,9 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { fromEvent } from 'rxjs';
 import { FallbackLogoDirective } from '../../directives/api/internals.directive';
 import { ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../directives/template/internals.directive';
+import { BroadcastRequestedEvent, isBroadcastRunning } from '../../models/broadcast.model';
 import { ChatMessage } from '../../models/chat.model';
-import { PanelType } from '../../models/panel.model';
+import { PanelActivitiesOptions, PanelType } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantLeftReason } from '../../models/participant.model';
 import {
 	RecordingStartRequestedEvent,
@@ -30,6 +31,7 @@ import {
 	RecordingStopRequestedEvent
 } from '../../models/recording.model';
 import { DialogService } from '../../../../../shared/services/dialog.service';
+import { BroadcastStateService } from '../../services/broadcast/broadcast-state.service';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { ChatService } from '../../services/chat/chat.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
@@ -80,6 +82,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly deviceService = inject(DeviceService);
 	private readonly dialogService = inject(DialogService);
 	private readonly recordingService = inject(RecordingService);
+	private readonly broadcastState = inject(BroadcastStateService);
 	private readonly meetingContext = inject(MeetingContextService);
 	private readonly translateService = inject(MeetingTranslateService);
 	private readonly cdkOverlayService = inject(CdkOverlayService);
@@ -120,6 +123,12 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * This event is fired when the user clicks on the view recordings button.
 	 */
 	readonly onViewRecordingsClicked = output<void>();
+
+	/**
+	 * @internal
+	 * This event is fired when the user starts or stops the live broadcast from the toolbar.
+	 */
+	readonly onBroadcastRequested = output<BroadcastRequestedEvent>();
 
 	/**
 	 * @ignore
@@ -231,6 +240,11 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
+	readonly showBroadcastButton = this.libService.broadcastButtonSignal;
+
+	/**
+	 * @ignore
+	 */
 	readonly showSettingsButton = this.libService.toolbarSettingsButtonSignal;
 
 	/**
@@ -241,6 +255,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			this.showFullscreenButton() ||
 			this.showBackgroundEffectsButton() ||
 			this.showRecordingButton() ||
+			this.showBroadcastButton() ||
 			this.showSettingsButton()
 	);
 
@@ -291,7 +306,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	recordingStatus = this.recordingService.recordingStatus.asReadonly();
+	recordingStatus = this.recordingService.recordingStatus;
 
 	/**
 	 * @ignore
@@ -299,6 +314,20 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * control there only ever stops.
 	 */
 	readonly recordingStartsAutomatically = computed(() => !!this.meetingContext.recordingConfig()?.autoStart);
+
+	/**
+	 * @ignore
+	 * Broadcasts the server runs, starting or live: the toolbar stops them.
+	 */
+	readonly isBroadcastRunning = computed(() =>
+		this.broadcastState.inProgress().some(({ status }) => isBroadcastRunning(status))
+	);
+
+	/**
+	 * @ignore
+	 * A start the server has not answered yet, or a broadcast ending: the toolbar waits.
+	 */
+	readonly isBroadcastBusy = computed(() => this.broadcastState.isEnding() || this.broadcastState.isStartPending());
 
 	readonly totalParticipants = this.participantService.totalParticipantsSignal;
 
@@ -474,8 +503,12 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * @ignore
 	 */
 	openRecordingActivityPanel() {
+		this.openActivityPanel(PanelActivitiesOptions.RECORDING);
+	}
+
+	private openActivityPanel(activity: PanelActivitiesOptions) {
 		if (this.showActivitiesPanelButton() && !this.isActivitiesOpened()) {
-			this.panelService.togglePanel(PanelType.ACTIVITIES, 'recording');
+			this.panelService.togglePanel(PanelType.ACTIVITIES, activity);
 		}
 	}
 
@@ -501,6 +534,27 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			});
 			this.openRecordingActivityPanel();
 		}
+	}
+
+	/**
+	 * @ignore
+	 * Goes live to the room's destinations, one broadcast each, or stops every broadcast. Going live,
+	 * or a broadcast that failed, opens the broadcast activity, where the destinations and any
+	 * failure show.
+	 */
+	toggleBroadcast() {
+		const roomId = this.meetingLiveKitService.getRoomName();
+
+		if (this.isBroadcastRunning()) {
+			this.onBroadcastRequested.emit({ action: 'stop', roomId });
+			return;
+		}
+
+		if (!this.broadcastState.hasFailed()) {
+			this.onBroadcastRequested.emit({ action: 'start', roomId });
+		}
+
+		this.openActivityPanel(PanelActivitiesOptions.BROADCAST);
 	}
 
 	/**

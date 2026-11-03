@@ -1,6 +1,11 @@
 import { NgModule } from '@angular/core';
-import { ActivitiesPanelRecordingActivityDirective } from './activities-panel.directive';
 import {
+    ActivitiesPanelBroadcastActivityDirective,
+    ActivitiesPanelRecordingActivityDirective
+} from './activities-panel.directive';
+import {
+    BroadcastActivityAddDestinationsDirective,
+    BroadcastActivityControlsDirective,
     E2EEKeyDirective,
     FallbackLogoDirective,
     LayoutRemoteParticipantsDirective,
@@ -21,6 +26,7 @@ import {
     ToolbarActivitiesPanelButtonDirective,
     ToolbarAdditionalButtonsPossitionDirective,
     ToolbarBackgroundEffectsButtonDirective,
+    ToolbarBroadcastButtonDirective,
     ToolbarChatPanelButtonDirective,
     ToolbarDisplayLogoDirective,
     ToolbarDisplayRoomNameDirective,
@@ -58,6 +64,7 @@ const directives = [
 	ToolbarBackgroundEffectsButtonDirective,
 	ToolbarLeaveButtonDirective,
 	ToolbarRecordingButtonDirective,
+	ToolbarBroadcastButtonDirective,
 	ToolbarParticipantsPanelButtonDirective,
 	ToolbarChatPanelButtonDirective,
 	ChatWritableDirective,
@@ -75,6 +82,9 @@ const directives = [
 	ParticipantPanelItemMuteButtonDirective,
 	ParticipantNameDirective,
 	ActivitiesPanelRecordingActivityDirective,
+	ActivitiesPanelBroadcastActivityDirective,
+	BroadcastActivityControlsDirective,
+	BroadcastActivityAddDestinationsDirective,
 	LayoutRemoteParticipantsDirective,
 	StartStopRecordingButtonsDirective,
 	RecordingActivityViewRecordingsButtonDirective,

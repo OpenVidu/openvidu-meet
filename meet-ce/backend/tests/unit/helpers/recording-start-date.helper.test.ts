@@ -10,9 +10,8 @@ const egressWith = (file?: { startedAt?: bigint; endedAt?: bigint }, startedAt?:
 
 describe('RecordingHelper.extractStartDate', () => {
 	it('returns the instant the file started, in milliseconds', () => {
-		expect(RecordingHelper.extractStartDate(egressWith({ startedAt: 1_788_956_750_295_899_948n }))).toBeCloseTo(
-			1_788_956_750_295.9,
-			1
+		expect(RecordingHelper.extractStartDate(egressWith({ startedAt: 1_788_956_750_295_899_948n }))).toBe(
+			1_788_956_750_295
 		);
 	});
 

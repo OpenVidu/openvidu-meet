@@ -10,11 +10,17 @@ import {
 	MeetRoom
 } from '@openvidu-meet/typings';
 import type { RoomServiceClient } from 'livekit-server-sdk';
+import { EgressClient, ServerError } from 'livekit-server-sdk';
 import { container } from '../../../../src/config/dependency-injector.config.js';
-import { errorLivekitNotAvailable, errorRoomNotFound } from '../../../../src/models/error.model.js';
+import {
+	errorEgressNotAvailable,
+	errorLivekitNotAvailable,
+	errorRoomNotFound
+} from '../../../../src/models/error.model.js';
 import { RecordingRepository } from '../../../../src/repositories/recording.repository.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import {
+	expectMeetError,
 	expectValidationError,
 	expectValidRecordingLocationHeader,
 	expectValidRecordingWithFields,
@@ -273,6 +279,33 @@ describe('Recording API Tests', () => {
 			expect(secondResponse.body.message).toContain('already');
 			const stopResponse = await stopRecording(recordingId);
 			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId, room.roomName);
+		});
+
+		it.each([
+			[
+				'LiveKit finds no egress service',
+				new ServerError('Service Unavailable', 'twirp error unknown: no response from servers', 503)
+			],
+			[
+				'the request times out while LiveKit looks for one',
+				new DOMException('The operation was aborted due to timeout', 'TimeoutError')
+			]
+		])('should return 503 and leave the room free to record when %s', async (_case, egressError) => {
+			await joinFakeParticipant(room.roomId, 'fakeParticipantId');
+			const startEgress = jest
+				.spyOn(EgressClient.prototype, 'startRoomCompositeEgress')
+				.mockRejectedValueOnce(egressError);
+
+			let response: Awaited<ReturnType<typeof startRecording>>;
+
+			try {
+				response = await startRecording(room.roomId);
+			} finally {
+				startEgress.mockRestore();
+			}
+
+			expectMeetError(response, errorEgressNotAvailable());
+			expectValidStartRecordingResponse(await startRecording(room.roomId), room.roomId, room.roomName);
 		});
 
 		it('should reject invalid layout in config override', async () => {

@@ -19,6 +19,7 @@ interface ToolbarConfig {
 	backgroundEffects: boolean;
 	recording: boolean;
 	viewRecordings: boolean;
+	broadcast: boolean;
 	brandingLogo: string;
 	additionalButtonsPosition: ToolbarAdditionalButtonsPosition;
 }
@@ -40,6 +41,15 @@ interface RecordingActivityConfig {
 	enabled: boolean;
 	startStopButton: boolean;
 	viewRecordingsButton: boolean;
+}
+
+/**
+ * Live broadcast activity configuration
+ */
+interface BroadcastActivityConfig {
+	enabled: boolean;
+	controls: boolean;
+	addDestinations: boolean;
 }
 
 /**
@@ -83,6 +93,7 @@ export class MeetingUiConfigService {
 		backgroundEffects: true,
 		recording: true,
 		viewRecordings: false,
+		broadcast: true,
 		brandingLogo: '',
 		additionalButtonsPosition: ToolbarAdditionalButtonsPosition.AFTER_MENU
 	});
@@ -98,6 +109,12 @@ export class MeetingUiConfigService {
 		enabled: true,
 		startStopButton: true,
 		viewRecordingsButton: false,
+	});
+
+	private readonly broadcastActivityConfig = signal<BroadcastActivityConfig>({
+		enabled: true,
+		controls: true,
+		addDestinations: true
 	});
 
 	// Individual configs that don't fit into groups
@@ -137,10 +154,14 @@ export class MeetingUiConfigService {
 	readonly toolbarAdditionalButtonsPositionSignal = computed(() => this.toolbarConfig().additionalButtonsPosition);
 	readonly backgroundEffectsButtonSignal = computed(() => this.toolbarConfig().backgroundEffects);
 	readonly recordingButtonSignal = computed(() => this.toolbarConfig().recording);
+	readonly broadcastButtonSignal = computed(() => this.toolbarConfig().broadcast);
 	readonly toolbarViewRecordingsButtonSignal = computed(() => this.toolbarConfig().viewRecordings);
 	readonly recordingActivitySignal = computed(() => this.recordingActivityConfig().enabled);
 	readonly recordingActivityStartStopRecordingButtonSignal = computed(() => this.recordingActivityConfig().startStopButton);
 	readonly recordingActivityViewRecordingsButtonSignal = computed(() => this.recordingActivityConfig().viewRecordingsButton);
+	readonly broadcastActivitySignal = computed(() => this.broadcastActivityConfig().enabled);
+	readonly broadcastActivityControlsSignal = computed(() => this.broadcastActivityConfig().controls);
+	readonly broadcastActivityAddDestinationsSignal = computed(() => this.broadcastActivityConfig().addDestinations);
 	readonly layoutRemoteParticipantsSignal = this.layoutRemoteParticipantsConfig.asReadonly();
 
 	// ============================================
@@ -173,6 +194,13 @@ export class MeetingUiConfigService {
 	 */
 	updateRecordingActivityConfig(partialConfig: Partial<RecordingActivityConfig>): void {
 		this.recordingActivityConfig.update((current) => ({ ...current, ...partialConfig }));
+	}
+
+	/**
+	 * Update multiple live broadcast activity configuration properties at once
+	 */
+	updateBroadcastActivityConfig(partialConfig: Partial<BroadcastActivityConfig>): void {
+		this.broadcastActivityConfig.update((current) => ({ ...current, ...partialConfig }));
 	}
 
 	/**

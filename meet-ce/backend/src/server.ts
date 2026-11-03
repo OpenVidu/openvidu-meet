@@ -19,6 +19,7 @@ import { aiAssistantRouter } from './routes/ai-assistant.routes.js';
 import { analyticsRouter } from './routes/analytics.routes.js';
 import { apiKeyRouter } from './routes/api-key.routes.js';
 import { authRouter } from './routes/auth.routes.js';
+import { broadcastRouter } from './routes/broadcast.routes.js';
 import { configRouter } from './routes/global-config.routes.js';
 import { livekitWebhookRouter } from './routes/livekit.routes.js';
 import { internalMeetingRouter, meetingRouter } from './routes/meeting.routes.js';
@@ -96,6 +97,7 @@ const createApp = () => {
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`, /*mediaTypeValidatorMiddleware,*/ roomRouter);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings`, meetingRouter);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`, /*mediaTypeValidatorMiddleware,*/ recordingRouter);
+	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/broadcasts`, broadcastRouter);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/webhooks`, webhookRouter);
 
 	// Internal API routes
