@@ -69,8 +69,8 @@ export class ViewportService {
 	 * Whether device should show mobile landscape warning
 	 * This is orientation-independent and hardware-based detection
 	 */
-	readonly shouldShowLandscapeWarning = computed(() =>
-		this.platform.isPhysicalMobileDevice() && this.orientation() === 'landscape'
+	readonly shouldShowLandscapeWarning = computed(
+		() => this.platform.isPhysicalMobileDevice() && this.orientation() === 'landscape'
 	);
 
 	/**
@@ -93,6 +93,29 @@ export class ViewportService {
 	 */
 	readonly isTabletDown = computed(() => this._width() < this.BREAKPOINTS.desktop);
 
+	private readonly _isCompactToolbar = signal(this.getCurrentWidth() < this.BREAKPOINTS.tablet);
+	// The width the full toolbar took when it last overflowed; until it is measured, a tablet's.
+	private fullToolbarWidth: number = this.BREAKPOINTS.tablet;
+
+	/**
+	 * Whether the meeting toolbar is compact, because its full set of buttons does not fit its width
+	 */
+	readonly isCompactToolbar = this._isCompactToolbar.asReadonly();
+
+	/**
+	 * Turns the toolbar compact when its buttons overflow it, and back once it is as wide as the full
+	 * toolbar was: the compact toolbar always fits, so it cannot tell whether the full one would.
+	 */
+	fitToolbar(toolbar: HTMLElement): void {
+		if (!this._isCompactToolbar()) {
+			if (toolbar.scrollWidth > toolbar.clientWidth) {
+				this.fullToolbarWidth = toolbar.scrollWidth;
+				this._isCompactToolbar.set(true);
+			}
+		} else if (toolbar.clientWidth >= this.fullToolbarWidth) {
+			this._isCompactToolbar.set(false);
+		}
+	}
 
 	/**
 	 * Complete viewport information

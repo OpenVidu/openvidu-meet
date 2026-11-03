@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { toggleCamera, toggleMicrophone } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-navigation.helper';
@@ -48,22 +48,34 @@ test.describe('Toolbar Buttons E2E Tests', () => {
 		await expect(page.locator('#layout-smart-mosaic')).toBeVisible();
 	});
 
-	// A desktop browser in a narrow window has no touch screen, yet needs the compact toolbar a phone gets.
-	test('should keep every toolbar button on screen in a narrow desktop window', async ({ page }) => {
-		await page.setViewportSize({ width: 390, height: 844 });
-		await openMeeting(page, accessUrl);
-
-		const offScreen = await page.evaluate(() =>
+	const toolbarButtonsOffScreen = (page: Page) =>
+		page.evaluate(() =>
 			[...document.querySelectorAll('#toolbar button')]
 				.map((button) => ({ id: button.id || button.className, box: button.getBoundingClientRect() }))
 				.filter(({ box }) => box.width > 0 && (box.left < 0 || box.right > window.innerWidth))
 				.map(({ id }) => id)
 		);
-		expect(offScreen).toEqual([]);
+
+	// A desktop browser in a narrow window has no touch screen, yet needs the compact toolbar a phone gets.
+	test('should keep every toolbar button on screen in a narrow desktop window', async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await openMeeting(page, accessUrl);
+
+		await expect.poll(() => toolbarButtonsOffScreen(page)).toEqual([]);
 
 		await openMoreOptionsMenu(page);
 		await expect(page.locator('.mat-mdc-menu-panel #captions-button')).toBeVisible();
 	});
+
+	// The full toolbar needs more than a tablet's width, so it turns compact whenever its buttons do not fit.
+	for (const width of [768, 820, 960]) {
+		test(`should keep every toolbar button on screen in a ${width} px window`, async ({ page }) => {
+			await page.setViewportSize({ width, height: 1024 });
+			await openMeeting(page, accessUrl);
+
+			await expect.poll(() => toolbarButtonsOffScreen(page)).toEqual([]);
+		});
+	}
 
 	// Guards the only two DOM anchors in the app that are addressed by *string* id, both from
 	// `toolbar.component.ts`: `documentService.toggleFullscreen('meeting-stage')` and

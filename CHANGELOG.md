@@ -215,8 +215,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   access to the room takes them out.
 - The notices a participant sees when promoted to moderator, demoted or given updated permissions were always in
   English. They now follow the selected language.
-- In a narrow desktop browser window, the meeting toolbar overflowed the screen and hid some of its buttons. A window
-  narrower than 768 px now gets the compact toolbar a phone gets.
+- In a narrow desktop browser window or a narrow `<openvidu-meet>`, the meeting toolbar overflowed and hid some of its
+  buttons. A window or an element too narrow for the whole toolbar now gets the compact toolbar a phone gets.
 - On a phone, the status rail overflowed the screen and hid its last chips, such as the participants left out of the
   layout. Narrower than 790 px, the raised hands, the reactions and the participants left out of the layout now move
   to a second row of the rail when they do not fit beside the rest.

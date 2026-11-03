@@ -167,4 +167,44 @@ describe('ViewportService', () => {
 		expect(service.viewportSize()).toBe('mobile');
 		expect(service.viewportInfo().width).toBe(600);
 	});
+
+	describe('compact toolbar', () => {
+		const toolbar = (clientWidth: number, scrollWidth = clientWidth) =>
+			({ clientWidth, scrollWidth }) as unknown as HTMLElement;
+
+		it('turns compact when the buttons overflow the toolbar, at any window width', () => {
+			sizeViewport(1366, 800);
+			const service = createService();
+
+			service.fitToolbar(toolbar(900, 900));
+			expect(service.isCompactToolbar()).toBeFalse();
+
+			service.fitToolbar(toolbar(700, 980));
+			expect(service.isCompactToolbar()).toBeTrue();
+		});
+
+		it('stays compact until the toolbar is as wide as the full toolbar was', () => {
+			sizeViewport(1366, 800);
+			const service = createService();
+			service.fitToolbar(toolbar(700, 980));
+
+			service.fitToolbar(toolbar(979));
+			expect(service.isCompactToolbar()).toBeTrue();
+
+			service.fitToolbar(toolbar(980));
+			expect(service.isCompactToolbar()).toBeFalse();
+		});
+
+		it('starts compact in a window narrower than a tablet, until the toolbar measures a tablet', () => {
+			sizeViewport(390, 800);
+			const service = createService();
+			expect(service.isCompactToolbar()).toBeTrue();
+
+			service.fitToolbar(toolbar(390));
+			expect(service.isCompactToolbar()).toBeTrue();
+
+			service.fitToolbar(toolbar(768));
+			expect(service.isCompactToolbar()).toBeFalse();
+		});
+	});
 });

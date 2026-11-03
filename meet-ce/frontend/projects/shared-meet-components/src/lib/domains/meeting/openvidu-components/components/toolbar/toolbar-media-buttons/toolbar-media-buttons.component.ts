@@ -153,8 +153,7 @@ export class ToolbarMediaButtonsComponent {
 	// Viewport service for responsive behavior
 	private viewportService = inject(ViewportService);
 
-	// The compact toolbar follows the width, like the panel buttons, so a narrow desktop window gets it too.
-	readonly isMobileView = computed(() => this.viewportService.isMobileView());
+	readonly isCompact = this.viewportService.isCompactToolbar;
 
 	// Essential buttons that always stay visible
 	readonly showCameraButtonDirect = computed(() => this.showCameraButton());
@@ -171,12 +170,12 @@ export class ToolbarMediaButtonsComponent {
 
 	// Check if additional buttons should be shown outside (desktop/tablet) or inside More Options (mobile)
 	readonly showAdditionalButtonsOutside = computed(() => {
-		return !this.isMobileView() && this.toolbarAdditionalButtonsTemplate();
+		return !this.isCompact() && this.toolbarAdditionalButtonsTemplate();
 	});
 
 	// Check if additional buttons should be shown inside More Options menu (mobile only)
 	readonly showAdditionalButtonsInsideMenu = computed(() => {
-		return this.isMobileView() && this.toolbarAdditionalButtonsTemplate();
+		return this.isCompact() && this.toolbarAdditionalButtonsTemplate();
 	});
 
 	// Media button outputs

@@ -1038,7 +1038,8 @@ test.describe('Participants E2E Tests', () => {
 
 				await speakerPage.keyboard.press('e');
 				await expect(speakerPage.locator('.reaction-row')).toBeVisible({ timeout: 10_000 });
-				await speakerPage.setViewportSize({ width: 700, height: 900 });
+				// Too narrow for the full toolbar, so it turns compact and the desktop reactions button goes.
+				await speakerPage.setViewportSize({ width: 390, height: 900 });
 				await expect(speakerPage.locator('#reactions-button')).toHaveCount(0);
 				await speakerPage.setViewportSize({ width: 1366, height: 900 });
 

@@ -32,7 +32,7 @@ None.
 
 ## Decisions to confirm
 
-- Whether the sidenav, rail and notice breakpoint (790 px) should also follow measurement. Proposed: no, only the toolbar here. Alternative: align all breakpoints in this change.
+- Whether the sidenav, rail and notice breakpoint (790 px) should also follow measurement. Decided: no, only the toolbar here. Alternative: align all breakpoints in this change.
 
 ## Source
 
