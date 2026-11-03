@@ -139,7 +139,7 @@ export class PlatformService {
 
 	/**
 	 * Returns true if a camera can be captured next to another one that stays open: Android camera
-	 * stacks refuse the second open, and WebKit on iOS and iPadOS mutes the first capture when another starts
+	 * stacks refuse the second open, and WebKit on iOS and iPadOS ends the first capture when another starts
 	 */
 	canCaptureSecondCamera(): boolean {
 		return !this.isMobile();

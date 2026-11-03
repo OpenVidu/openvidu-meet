@@ -14,7 +14,7 @@ The meeting SHALL offer trying a device before applying it only where the browse
 - **GIVEN** participants A and B in a meeting, A on an iPhone publishing the camera "Front"
 - **WHEN** A picks the camera "Back" in the Audio & video tab
 - **THEN** B sees "Back"
-- **AND** A's camera is never shown muted to B while the pick is made
+- **AND** no second capture is opened beside A's camera, which would end it
 
 #### Scenario: Switching the microphone in Safari
 - **GIVEN** participants A and B in a meeting, A in Safari on a computer publishing the microphone "Laptop"
