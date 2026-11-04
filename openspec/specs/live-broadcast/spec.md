@@ -557,7 +557,7 @@ The More options menu SHALL offer a participant holding `broadcastControl` in a 
 - **THEN** no live broadcast item is offered
 
 ### Requirement: Live broadcast in the room wizard
-The console room wizard SHALL offer a Live broadcast step with the switch, the default destinations to add, edit and remove, and the layout. A saved stream key SHALL never be shown, and an edited destination SHALL keep it while its URL is left as served. Finishing SHALL be blocked while live broadcast is allowed without a destination.
+The console room wizard SHALL offer a Live broadcast step with the switch, the default destinations to add, edit and remove, and the layout. A saved stream key SHALL never be shown, and an edited destination SHALL keep it while its URL is left as served. The editor SHALL save onto the destination it was opened on, whatever other rows are removed meanwhile. Finishing SHALL be blocked while live broadcast is allowed without a destination.
 
 #### Scenario: Allowed without a destination
 - **GIVEN** a user creating a room in the wizard
@@ -568,6 +568,11 @@ The console room wizard SHALL offer a Live broadcast step with the switch, the d
 - **GIVEN** a room with a saved destination
 - **WHEN** its owner edits the room, renames the destination, leaves its URL as shown and saves
 - **THEN** the destination keeps its stream key under the new name
+
+#### Scenario: Row removed while another is edited
+- **GIVEN** a room with destinations A, B and C open in the wizard
+- **WHEN** its owner edits C, removes A, renames C, saves the editor and finishes
+- **THEN** the room keeps B unchanged and C under the new name with its stream key
 
 ### Requirement: Broadcast permissions in the Room Access step
 The Room Access step of the wizard SHALL show the `broadcastControl` and `broadcastEdit` switches of each role disabled while live broadcast is not allowed, keeping their values, and `broadcastEdit` disabled for a role that does not hold `broadcastControl`, since it has no effect without it.

@@ -468,4 +468,52 @@ test.describe('Room wizard E2E Tests', () => {
 			{ id: stored.id, name: 'Twitch main', url: 'rtmp://live.twitch.tv/app/********' }
 		]);
 	});
+
+	test('edit mode: the editor keeps the destination it was opened on while other rows are removed', async ({
+		page
+	}) => {
+		const room = await createRoom({
+			roomName: 'wizard-broadcast-remove-while-editing',
+			config: {
+				broadcast: {
+					enabled: true,
+					destinations: [
+						{ name: 'Alpha', url: 'rtmp://a.rtmp.youtube.com/live2/alpha-key' },
+						{ name: 'Bravo', url: 'rtmp://a.rtmp.youtube.com/live2/bravo-key' },
+						{ name: 'Charlie', url: 'rtmp://live.twitch.tv/app/charlie_key' },
+						{ name: 'Delta', url: 'rtmp://live.twitch.tv/app/delta_key' }
+					]
+				}
+			}
+		});
+		createdRoomIds.push(room.roomId);
+		const [, , charlie, delta] = (await getRoomConfig(room.roomId)).broadcast.destinations;
+		const row = (name: string) => page.locator('.destination-row', { hasText: name });
+		const editor = page.locator('#broadcast-destination-editor');
+
+		await page.goto(`${MEET_BASE_URL}/rooms/${room.roomId}/edit`, { waitUntil: 'domcontentloaded' });
+		await gotoBroadcast(page);
+
+		await row('Charlie').locator('button').first().click();
+		await page.locator('#broadcast-destination-name').fill('Charlie main');
+		await row('Alpha').locator('button').nth(1).click();
+		await page.locator('#broadcast-destination-save-btn').click();
+
+		await row('Delta').locator('button').first().click();
+		await row('Bravo').locator('button').nth(1).click();
+		await expect(editor).toBeVisible();
+		await expect(page.locator('#broadcast-destination-name')).toHaveValue('Delta');
+		await page.locator('#broadcast-destination-save-btn').click();
+		await expect(editor).toBeHidden();
+		await expect(page.locator('#broadcast-add-destination-btn')).toBeVisible();
+
+		await gotoRoomAccess(page);
+		await page.locator('#wizard-finish-btn').click();
+		await page.waitForURL(`**/rooms/${room.roomId}`);
+
+		expect((await getRoomConfig(room.roomId)).broadcast.destinations).toEqual([
+			{ ...charlie, name: 'Charlie main' },
+			delta
+		]);
+	});
 });
