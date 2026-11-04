@@ -462,34 +462,33 @@ describe('RecordingService.startAutoRecordingIfNeeded (the guards that say no)',
 describe('RecordingService.finishRecording', () => {
 	const ended = { recordingId: 'room-1--EG_1--uid', roomId: 'room-1', status: MeetRecordingStatus.ABORTED };
 
-	const buildFinishService = () => {
-		let stored = false;
+	const buildFinishService = ({ stored = true, livekit = new FakeLiveKitService([]) } = {}) => {
+		let status = stored ? MeetRecordingStatus.ACTIVE : undefined;
 		const repository = {
 			replaceInProgress: async (recording: MeetRecordingInfo) => {
-				if (stored) return null;
+				if (status !== MeetRecordingStatus.ACTIVE) return null;
 
-				stored = true;
+				status = recording.status;
 				return recording;
-			}
+			},
+			findByRecordingId: async () => (status ? { status } : null)
 		};
-		const frontendEvents = new FakeFrontendEventService();
-		const webhooks: MeetRecordingInfo[] = [];
-		const order: string[] = [];
-		const webhookDispatcher = {
-			sendRecordingEndedWebhook: (recording: MeetRecordingInfo) => {
-				order.push('webhook');
-				webhooks.push(recording);
-			}
-		};
+		const events: unknown[][] = [];
 		const mutex = new FakeMutexService();
-		const release = mutex.releaseWithRegistry.bind(mutex);
 		mutex.releaseWithRegistry = async (key: string) => {
-			order.push('release');
-			await release(key);
+			events.push(['release', key]);
+		};
+		const frontendEvents = {
+			sendRecordingUpdatedSignal: async (...args: unknown[]) => {
+				events.push(['signal', ...args]);
+			}
+		};
+		const webhookDispatcher = {
+			sendRecordingEndedWebhook: (recording: MeetRecordingInfo) => events.push(['webhook', recording])
 		};
 		const service = new RecordingService(
 			...([
-				new FakeLiveKitService([]),
+				livekit,
 				mutex,
 				repository,
 				{},
@@ -500,45 +499,52 @@ describe('RecordingService.finishRecording', () => {
 				noopLogger
 			] as unknown as ConstructorParameters<typeof RecordingService>)
 		);
-		return { service, frontendEvents, webhooks, mutex, order };
+		return { service, events };
 	};
 
-	it('reports the end it stores: webhook, in-meeting signal and the release of the room hold', async () => {
-		const { service, frontendEvents, webhooks, mutex } = buildFinishService();
+	it('releases the room hold, then reports the end it stores: webhook and in-meeting signal', async () => {
+		const { service, events } = buildFinishService();
 
 		expect(await service.finishRecording(ended as MeetRecordingInfo)).toBe(true);
 
-		expect(webhooks).toEqual([ended]);
-		expect(frontendEvents.signals).toEqual([['room-1', ended]]);
-		expect(mutex.released).toEqual([expect.stringContaining('room-1')]);
+		expect(events).toEqual([
+			['release', expect.stringContaining('room-1')],
+			['webhook', ended],
+			['signal', 'room-1', ended]
+		]);
 	});
 
-	it('reports nothing for a recording that had already ended', async () => {
-		const { service, frontendEvents, webhooks } = buildFinishService();
-
+	it('neither reports nor releases again for a recording that had already ended', async () => {
+		const { service, events } = buildFinishService();
 		await service.finishRecording(ended as MeetRecordingInfo);
-		expect(await service.finishRecording(ended as MeetRecordingInfo)).toBe(false);
-
-		expect(webhooks).toHaveLength(1);
-		expect(frontendEvents.signals).toHaveLength(1);
-	});
-
-	it('releases the room hold also for an end that has no in-progress recording stored', async () => {
-		const { service, mutex } = buildFinishService();
-		await service.finishRecording(ended as MeetRecordingInfo);
-		mutex.released.length = 0;
+		events.length = 0;
 
 		expect(await service.finishRecording(ended as MeetRecordingInfo)).toBe(false);
 
-		expect(mutex.released).toEqual([expect.stringContaining('room-1')]);
+		expect(events).toEqual([]);
 	});
 
-	it('releases the room hold before it reports the end', async () => {
-		const { service, order } = buildFinishService();
+	it('releases the room hold, reporting nothing, for the end of a recording that was never stored', async () => {
+		const { service, events } = buildFinishService({ stored: false });
 
-		await service.finishRecording(ended as MeetRecordingInfo);
+		expect(await service.finishRecording(ended as MeetRecordingInfo)).toBe(false);
 
-		expect(order).toEqual(['release', 'webhook']);
+		expect(events).toEqual([['release', expect.stringContaining('room-1')]]);
+	});
+
+	it('still reports the end when the room hold cannot be checked', async () => {
+		const livekit = new FakeLiveKitService([]);
+		livekit.getInProgressRecordingsEgress = async () => {
+			throw errorLivekitNotAvailable();
+		};
+		const { service, events } = buildFinishService({ livekit });
+
+		expect(await service.finishRecording(ended as MeetRecordingInfo)).toBe(true);
+
+		expect(events).toEqual([
+			['webhook', ended],
+			['signal', 'room-1', ended]
+		]);
 	});
 });
 
