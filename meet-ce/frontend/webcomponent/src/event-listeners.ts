@@ -43,10 +43,4 @@ export class EventListeners {
 
 		if (listeners.size === 0) this.listeners.delete(eventName);
 	}
-
-	clear(): void {
-		for (const eventName of [...this.listeners.keys()]) {
-			this.remove(eventName);
-		}
-	}
 }

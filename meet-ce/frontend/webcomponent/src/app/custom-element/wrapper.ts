@@ -23,11 +23,6 @@ export function createOpenViduMeetElementClass(
 	class OpenViduMeetElement extends (NgElementConstructor as any) {
 		private readonly _listeners = new EventListeners(this as unknown as HTMLElement);
 
-		disconnectedCallback(): void {
-			super.disconnectedCallback?.();
-			this._listeners.clear();
-		}
-
 		on(
 			eventName: EmbeddedEventName,
 			callback: (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName>) => void
