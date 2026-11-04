@@ -5,6 +5,7 @@ import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import {
 	OpenViduMeetError,
 	errorInsufficientPermissions,
+	internalError,
 	errorInvalidApiKey,
 	errorInvalidApiKeySubject,
 	errorInvalidToken,
@@ -83,11 +84,11 @@ export const withAuth = (...validators: AuthValidator[]): RequestHandler => {
 						return rejectRequestFromMeetError(res, error);
 					}
 
-					// A non-Meet error here is unexpected (e.g. Mongo/Redis down while resolving
-					// the user, room or permissions).
+					// A non-Meet error here is the server failing (e.g. Mongo/Redis down while resolving
+					// the user, room or permissions), not a refused credential.
 					const logger = container.get(LoggerService);
 					logger.error('Unexpected error while authenticating request', error);
-					return rejectRequestFromMeetError(res, errorUnauthorized());
+					return rejectRequestFromMeetError(res, internalError('authenticating request'));
 				}
 			}
 		}
@@ -224,7 +225,7 @@ export const roomMemberTokenValidator: AuthValidator = {
  * @param clockToleranceSeconds - How long after its expiry the token is still accepted
  * @param ignoreDemotion - Accept a token issued before its participant was demoted from moderator
  * @returns The claims of the token and the room it was verified against
- * @throws The `401` invalid token error when the token is not valid
+ * @throws The `401` invalid token error when the token is not valid; a MongoDB or Redis failure is thrown as it is
  */
 export const verifyRoomMemberToken = async (
 	token: string,
@@ -235,32 +236,34 @@ export const verifyRoomMemberToken = async (
 	metadata: MeetRoomMemberTokenMetadata;
 	room: RequestRoomSnapshot;
 }> => {
-	try {
-		const tokenService = container.get(TokenService);
-		const {
-			sub: participantIdentity,
-			name: participantName,
-			metadata: tokenMetadata
-		} = await tokenService.verifyToken(token, clockToleranceSeconds);
+	const tokenService = container.get(TokenService);
+	let claims;
+	let metadata: MeetRoomMemberTokenMetadata;
 
-		if (!tokenMetadata) {
+	try {
+		claims = await tokenService.verifyToken(token, clockToleranceSeconds);
+
+		if (!claims.metadata) {
 			throw new Error('Missing required token claims');
 		}
 
-		const metadata = tokenService.parseRoomMemberTokenMetadata(tokenMetadata);
-		const { room, outdatedReason } = await checkRoomMemberTokenCurrency(metadata, participantIdentity, {
-			ignoreDemotion
-		});
-
-		if (!room || outdatedReason) {
-			throw new Error(outdatedReason);
-		}
-
-		return { participantIdentity, participantName, metadata, room };
+		metadata = tokenService.parseRoomMemberTokenMetadata(claims.metadata);
 	} catch (error) {
 		container.get(LoggerService).debug('Invalid room member token:', error);
 		throw errorInvalidToken();
 	}
+
+	const { sub: participantIdentity, name: participantName } = claims;
+	const { room, outdatedReason } = await checkRoomMemberTokenCurrency(metadata, participantIdentity, {
+		ignoreDemotion
+	});
+
+	if (!room || outdatedReason) {
+		container.get(LoggerService).debug('Invalid room member token:', outdatedReason);
+		throw errorInvalidToken();
+	}
+
+	return { participantIdentity, participantName, metadata, room };
 };
 
 /**

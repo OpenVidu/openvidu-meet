@@ -150,9 +150,7 @@ describe('withAuth', () => {
 		});
 	});
 
-	// Mongo or Redis failing while the user, the room or the permissions are resolved must reach the
-	// caller as a plain 401, not as an internal error, and must not pass for a valid credential.
-	it('answers a plain 401 when authentication fails for a reason of its own, and says so in the log', async () => {
+	it('answers 500, not 401, when authentication fails for a reason of its own, and says so in the log', async () => {
 		const error = jest.spyOn(logger, 'error').mockImplementation(() => {});
 		const res = mockResponse();
 		const next = jest.fn() as NextFunction;
@@ -161,8 +159,8 @@ describe('withAuth', () => {
 
 		expect(next).not.toHaveBeenCalled();
 		expect(answered(res)).toEqual({
-			status: 401,
-			body: { error: 'Authentication Error', message: 'Unauthorized' }
+			status: 500,
+			body: { error: 'Internal Server Error', message: 'Unexpected error while authenticating request' }
 		});
 		expect(error).toHaveBeenCalledWith('Unexpected error while authenticating request', expect.any(Error));
 		error.mockRestore();
@@ -532,6 +530,24 @@ describe('the validators, against a change made in the same millisecond as the t
 
 		it("refuses a token older than the user's role", async () => {
 			await expect(verifyWith({ ...sameInstant, roleUpdatedAt: ISSUED_AT + 1 })).rejects.toMatchObject({
+				statusCode: 401,
+				message: 'Invalid token'
+			});
+		});
+
+		it('lets a database failure through instead of refusing the token', async () => {
+			jest.spyOn(tokenService, 'parseRoomMemberTokenMetadata').mockReturnValue(metadata as never);
+			jest.spyOn(roomRepository, 'findByRoomId').mockRejectedValue(new Error('mongo down'));
+
+			await expect(verifyRoomMemberToken('a-token', refreshOptions)).rejects.toThrow('mongo down');
+		});
+
+		it('answers 401 for a token whose claims cannot be parsed', async () => {
+			jest.spyOn(tokenService, 'parseRoomMemberTokenMetadata').mockImplementation(() => {
+				throw new Error('malformed');
+			});
+
+			await expect(verifyRoomMemberToken('a-token', refreshOptions)).rejects.toMatchObject({
 				statusCode: 401,
 				message: 'Invalid token'
 			});
