@@ -11,7 +11,7 @@ import { MeetStorageService } from '../../../../../shared/services/storage.servi
 import { MAX_CHAT_MESSAGE_LENGTH } from '../../models/chat.model';
 import { DataTopic } from '../../models/data-topic.model';
 import { ParticipantModel } from '../../models/participant.model';
-import { ConnectionQuality, RemoteParticipant, Room, RoomEvent, Track } from '../../services/livekit';
+import { ConnectionQuality, Encryption_Type, RemoteParticipant, Room, RoomEvent, Track } from '../../services/livekit';
 import { DialogService } from '../../../../../shared/services/dialog.service';
 import { BroadcastStateService } from '../broadcast/broadcast-state.service';
 import { ChatService } from '../chat/chat.service';
@@ -36,13 +36,36 @@ describe('MeetingEventsService', () => {
 	let chatService: jasmine.SpyObj<ChatService>;
 	let recordingService: jasmine.SpyObj<RecordingService>;
 	let broadcastState: jasmine.SpyObj<BroadcastStateService>;
-	let onData: (payload: Uint8Array, participant?: unknown, kind?: unknown, topic?: string) => Promise<void>;
+	let onData: (
+		payload: Uint8Array,
+		participant?: unknown,
+		kind?: unknown,
+		topic?: string,
+		encryptionType?: Encryption_Type,
+		participantIdentity?: string
+	) => Promise<void>;
 	let onChat: (reader: AsyncIterable<string>, sender: { identity: string }) => Promise<void>;
 
 	const storedParticipant = { sid: 'sid1', identity: 'speaker1', name: 'Speaker 1' };
 
-	function receive(topic: string, payload: object, participant?: { sid: string }): Promise<void> {
-		return onData(new TextEncoder().encode(JSON.stringify(payload)), participant, undefined, topic);
+	type Packet = { identity?: string; encryptionType?: Encryption_Type; listedSender?: { sid: string } };
+
+	const fromServer: Packet = { encryptionType: Encryption_Type.NONE };
+	const fromListedParticipant: Packet = {
+		identity: storedParticipant.identity,
+		encryptionType: Encryption_Type.NONE,
+		listedSender: storedParticipant
+	};
+
+	function receive(topic: string, payload: object, { identity, encryptionType, listedSender }: Packet = fromServer) {
+		return onData(
+			new TextEncoder().encode(JSON.stringify(payload)),
+			listedSender,
+			undefined,
+			topic,
+			encryptionType,
+			identity
+		);
 	}
 
 	beforeEach(() => {
@@ -111,10 +134,10 @@ describe('MeetingEventsService', () => {
 			expect(recordingService.setRecordingStopped).toHaveBeenCalled();
 		});
 
-		// Meet's chat is the data channel, so a participant allowed to chat can publish on any
-		// topic: the recording indicator must not be steerable by a forged packet.
+		// A participant allowed to chat can publish on any topic: the recording indicator must not be
+		// steerable by a forged packet.
 		it('ignores a recording update relayed from a participant', async () => {
-			await receive(MeetSignalType.MEET_RECORDING_UPDATED, recordingUpdate, storedParticipant);
+			await receive(MeetSignalType.MEET_RECORDING_UPDATED, recordingUpdate, fromListedParticipant);
 
 			expect(recordingService.setRecordingStopped).not.toHaveBeenCalled();
 		});
@@ -145,17 +168,46 @@ describe('MeetingEventsService', () => {
 			await receive(
 				MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED,
 				{ roomId: 'room1', media: { audioActive: false }, timestamp: 0 },
-				storedParticipant
+				fromListedParticipant
 			);
 
 			expect(relayed).toEqual([]);
+		});
+
+		// The receiver lists a participant only once it has learned of them, which is no guarantee for a sender
+		// that has just connected.
+		it('ignores a signal from a participant the receiver does not list yet', async () => {
+			await receive(MeetSignalType.MEET_RECORDING_UPDATED, recordingUpdate, {
+				identity: 'newcomer',
+				encryptionType: Encryption_Type.NONE
+			});
+
+			expect(recordingService.setRecordingStopped).not.toHaveBeenCalled();
+		});
+
+		it('ignores an encrypted signal, whether or not it names a sender', async () => {
+			await receive(MeetSignalType.MEET_RECORDING_UPDATED, recordingUpdate, {
+				identity: 'newcomer',
+				encryptionType: Encryption_Type.GCM
+			});
+			await receive(MeetSignalType.MEET_RECORDING_UPDATED, recordingUpdate, {
+				encryptionType: Encryption_Type.GCM
+			});
+
+			expect(recordingService.setRecordingStopped).not.toHaveBeenCalled();
+		});
+
+		it('ignores a signal that does not say whether it is encrypted', async () => {
+			await receive(MeetSignalType.MEET_RECORDING_UPDATED, recordingUpdate, {});
+
+			expect(recordingService.setRecordingStopped).not.toHaveBeenCalled();
 		});
 
 		it('does not relay chat or unknown topics', async () => {
 			const relayed: MeetSignal[] = [];
 			service.meetSignals$.subscribe((meetSignal) => relayed.push(meetSignal));
 
-			await receive(DataTopic.CHAT, { message: 'hello' }, storedParticipant);
+			await receive(DataTopic.CHAT, { message: 'hello' }, fromListedParticipant);
 			await receive('something_else', { message: 'hello' });
 
 			expect(relayed).toEqual([]);
@@ -174,13 +226,13 @@ describe('MeetingEventsService', () => {
 		});
 
 		it('ignores a broadcast update relayed from a participant', async () => {
-			await receive(MeetSignalType.MEET_BROADCAST_UPDATED, broadcastUpdate, storedParticipant);
+			await receive(MeetSignalType.MEET_BROADCAST_UPDATED, broadcastUpdate, fromListedParticipant);
 
 			expect(broadcastState.setBroadcast).not.toHaveBeenCalled();
 		});
 
 		it('ignores a chat packet relayed from a participant', async () => {
-			await receive(DataTopic.CHAT, { message: 'hello' }, storedParticipant);
+			await receive(DataTopic.CHAT, { message: 'hello' }, fromListedParticipant);
 
 			expect(chatService.addRemoteMessage).not.toHaveBeenCalled();
 		});

@@ -8,7 +8,7 @@ The server sends its meeting signals (`MeetSignalType`: `meet_recording_updated`
 `chatWrite` hold LiveKit's `canPublishData`, which is all or nothing, so they can publish on those
 topics too.
 
-`MeetingEventsService.subscribeToDataMessage` guards them with `if (participant && isMeetSignalType(topic))`.
+`MeetingEventsService.subscribeToDataMessage` guards them with `if (participant)`, discarding what a listed participant relays. Chat travels as a text stream, which needs the same `canPublishData`.
 `participant` is the `RemoteParticipant` that `livekit-client` resolved from its roster, so it is
 `undefined` both for a server packet and for a packet whose sender the receiver does not list yet
 (the gap recorded as M12 in the Phase 5 findings). A forged signal in that window passes as the
@@ -65,8 +65,8 @@ Alternatives considered:
 
 The check stays in the single place every data packet enters the meeting, before any topic is
 dispatched, so recording state, mute, reactions and permission refresh are covered at once and a new
-`MeetSignalType` is covered by construction. The non-signal path (chat) keeps resolving the sender
-from the roster as today.
+`MeetSignalType` is covered by construction. Chat travels as a text stream, with its own handler that keeps resolving the sender
+from the roster.
 
 ### D3. Several replicas
 

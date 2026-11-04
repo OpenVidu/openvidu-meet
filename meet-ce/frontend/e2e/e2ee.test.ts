@@ -21,7 +21,14 @@ import {
 } from './helpers/meet-api.helper';
 import { openLobby, openMeeting } from './helpers/meeting-navigation.helper';
 import { openMoreOptionsMenu, toggleParticipantsPanel } from './helpers/panels.helper';
-import { expectHandRaisedNotice, toggleHand } from './helpers/participant-management.helper';
+import {
+	expectHandRaisedNotice,
+	expectMutedByModeratorNotification,
+	expectMuteButton,
+	getParticipantIdByName,
+	muteParticipantMedia,
+	toggleHand
+} from './helpers/participant-management.helper';
 import { waitForRemoteStream } from './helpers/stream.helper';
 import { expectHidden, expectVisible } from './helpers/ui-utils.helper';
 
@@ -252,6 +259,40 @@ test.describe('E2EE E2E Tests', () => {
 
 				await toggleHand(speakerPage);
 				await expectHandRaisedNotice(moderatorPage, `${speakerName} raised their hand`);
+			} finally {
+				await moderatorPage.close();
+				await speakerPage.close();
+			}
+		});
+
+		// Server signals are the one thing a meeting acts on without the room key: they arrive unencrypted and
+		// without a sender identity, which is what tells them from a participant's.
+		test('should apply a moderator mute in an encrypted room', async ({ browser }) => {
+			const e2eeKey = 'shared-encryption-key-654';
+			const speakerName = 'Bob';
+			const room = await createRoom({ config: { e2ee: { enabled: true } } });
+			createdRoomIds.push(room.roomId);
+			const [moderator, speaker] = await Promise.all([
+				createRoomMember(room.roomId, { name: 'Moderator', baseRole: MeetRoomMemberRole.MODERATOR }),
+				createRoomMember(room.roomId, { name: speakerName, baseRole: MeetRoomMemberRole.SPEAKER })
+			]);
+			const moderatorPage = await browser.newPage();
+			const speakerPage = await browser.newPage();
+
+			try {
+				await Promise.all([
+					openMeeting(moderatorPage, moderator.accessUrl, { e2eeKey }),
+					openMeeting(speakerPage, speaker.accessUrl, { e2eeKey })
+				]);
+				await Promise.all([waitForRemoteStream(moderatorPage), waitForRemoteStream(speakerPage)]);
+
+				await toggleParticipantsPanel(moderatorPage);
+				const speakerId = await getParticipantIdByName(moderatorPage, speakerName);
+				await expectMuteButton(moderatorPage, speakerId, 'audio');
+				await muteParticipantMedia(moderatorPage, speakerId, 'audio');
+
+				await expect(speakerPage.locator('#mic-btn #mic_off')).toBeVisible({ timeout: 15_000 });
+				await expectMutedByModeratorNotification(speakerPage);
 			} finally {
 				await moderatorPage.close();
 				await speakerPage.close();
