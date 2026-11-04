@@ -468,10 +468,21 @@ jobs:
           fi
 
   wc-e2e:
-    name: WebComponent E2E
+    name: ${{ matrix.group }}
     needs: [changes, backend-unit, frontend-unit, wc-unit]
     if: ${{ !cancelled() && !failure() && needs.changes.outputs.wc-e2e == 'true' }}
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - group: WebComponent commands
+            specs: commands.test.ts
+          - group: WebComponent events and webhooks
+            specs: events.test.ts webhooks.test.ts
+          # Every spec the groups above leave out, so a new one runs here until it joins a group.
+          - group: WebComponent attributes and rooms
+            specs: --grep-invert (commands|events|webhooks)\.test\.ts
     steps:
       - *setup-node
       - *setup-pnpm
@@ -499,8 +510,9 @@ jobs:
         run: pnpm --filter @openvidu-meet/webcomponent run test:types
 
       - name: Run tests
-        run: ./meet.sh test-e2e-webcomponent --skip-install
+        run: ./meet.sh test-e2e-webcomponent --skip-install -- $SPECS
         env:
+          SPECS: ${{ matrix.specs }}
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
 
@@ -508,7 +520,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: room-test-results
+          name: wc-e2e-test-results-${{ strategy.job-index }}
           path: meet-ce/frontend/webcomponent/test-results/
           retention-days: 2
 
@@ -516,7 +528,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: room-test-testapp-logs
+          name: wc-e2e-testapp-logs-${{ strategy.job-index }}
           path: testapp.log
           retention-days: 2
 
@@ -524,7 +536,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: room-test-openvidu-meet-logs
+          name: wc-e2e-meet-logs-${{ strategy.job-index }}
           path: meet_backend.log
           retention-days: 2
 

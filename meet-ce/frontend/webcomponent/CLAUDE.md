@@ -129,6 +129,10 @@ pnpm run test:e2e          # Playwright, project `webcomponent`
   `./meet.sh start-testapp` in a second terminal). An `ERR_CONNECTION_REFUSED :5080` means the
   environment isn't up, not a code failure.
 
+  CI splits the specs into three jobs (the `wc-e2e` matrix in `.github/workflows/ci.yaml`, each passing
+  its files through `./meet.sh test-e2e-webcomponent -- <args>`); the last one runs every spec the others
+  do not list, so a new spec file runs there until it is given a group.
+
 ## Gotchas
 
 - Two embedding modes share this API surface: this inline webcomponent and a cross-document

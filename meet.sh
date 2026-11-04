@@ -128,6 +128,7 @@ show_help() {
   echo "    Run end-to-end tests for the webcomponent project (Playwright '--project=webcomponent')"
   echo -e "    ${YELLOW}Options:${NC} --force-install-browsers    Force reinstall of Playwright browsers"
   echo -e "             ${NC} --skip-install-browsers     Skip Playwright browsers installation"
+  echo -e "             ${NC} -- <args>                   Pass the rest to Playwright (spec files, --grep...)"
   echo
   echo -e "  ${BLUE}test-e2e-frontend${NC}"
   echo "    Run end-to-end tests for the frontend project (Playwright '--project=spa')"
@@ -426,15 +427,22 @@ test_e2e_webcomponent() {
   # Parse optional flags
   FORCE_INSTALL=false
   SKIP_INSTALL_BROWSERS=false
-  for arg in "$@"; do
-    case "$arg" in
+  PLAYWRIGHT_ARGS=()
+  while [ $# -gt 0 ]; do
+    case "$1" in
       --force-install-browsers|--force-install|-f)
         FORCE_INSTALL=true
         ;;
       --skip-install-browsers)
         SKIP_INSTALL_BROWSERS=true
         ;;
+      --)
+        shift
+        PLAYWRIGHT_ARGS=("$@")
+        break
+        ;;
     esac
+    shift
   done
 
   install_dependencies
@@ -442,7 +450,7 @@ test_e2e_webcomponent() {
   ensure_playwright_chromium "$FORCE_INSTALL" "$SKIP_INSTALL_BROWSERS"
 
   echo -e "${GREEN}Running webcomponent E2E tests...${NC}"
-  pnpm --filter @openvidu-meet/frontend run e2e:playwright:wc
+  pnpm --filter @openvidu-meet/frontend run e2e:playwright:wc "${PLAYWRIGHT_ARGS[@]}"
 }
 
 # Run migrated e2e tests for frontend
