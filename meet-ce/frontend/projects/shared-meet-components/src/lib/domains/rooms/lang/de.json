@@ -376,6 +376,26 @@
       "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " Mitglied(ern) ist fehlgeschlagen: ",
       "FAILED_LOAD_RECORDINGS": "Aufnahmen konnten nicht geladen werden"
     },
+    "DELETION": {
+      "SUCCESS": {
+        "ROOM_DELETED": "Raum erfolgreich gelöscht",
+        "ROOM_WITH_ACTIVE_MEETING_DELETED": "Raum mit aktivem Meeting erfolgreich gelöscht",
+        "ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED": "Raum mit aktivem Meeting wird gelöscht, sobald das Meeting endet",
+        "ROOM_AND_RECORDINGS_DELETED": "Raum und seine Aufnahmen erfolgreich gelöscht",
+        "ROOM_CLOSED": "Raum geschlossen statt gelöscht, da er Aufnahmen enthält",
+        "ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_DELETED": "Raum mit aktivem Meeting und seine Aufnahmen erfolgreich gelöscht",
+        "ROOM_WITH_ACTIVE_MEETING_CLOSED": "Raum mit aktivem Meeting geschlossen statt gelöscht, da er Aufnahmen enthält",
+        "ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_SCHEDULED_TO_BE_DELETED": "Raum mit aktivem Meeting und seine Aufnahmen werden gelöscht, sobald das Meeting endet",
+        "ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_CLOSED": "Raum mit aktivem Meeting wird geschlossen, sobald das Meeting endet, da er Aufnahmen enthält"
+      },
+      "ERROR": {
+        "ROOM_HAS_ACTIVE_MEETING": "Der Raum kann nicht gelöscht werden, da er ein aktives Meeting hat.",
+        "ROOM_HAS_RECORDINGS": "Der Raum kann nicht gelöscht werden, da er Aufnahmen enthält.",
+        "ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS": "Der Raum mit aktivem Meeting kann nicht gelöscht werden, da er Aufnahmen enthält.",
+        "ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS_CANNOT_SCHEDULE_DELETION": "Der Raum mit aktivem Meeting kann nicht zum Löschen vorgemerkt werden, da er Aufnahmen enthält.",
+        "ROOM_WITH_RECORDINGS_HAS_ACTIVE_MEETING": "Der Raum mit Aufnahmen kann nicht gelöscht werden, da er ein aktives Meeting hat."
+      }
+    },
     "UI": {
       "STATUS": {
         "OPEN": "Offen",

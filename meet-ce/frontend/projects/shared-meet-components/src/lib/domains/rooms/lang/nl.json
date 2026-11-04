@@ -376,6 +376,26 @@
       "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " lid/leden is mislukt: ",
       "FAILED_LOAD_RECORDINGS": "Opnames laden mislukt"
     },
+    "DELETION": {
+      "SUCCESS": {
+        "ROOM_DELETED": "Ruimte succesvol verwijderd",
+        "ROOM_WITH_ACTIVE_MEETING_DELETED": "Ruimte met actieve vergadering succesvol verwijderd",
+        "ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED": "Ruimte met actieve vergadering wordt verwijderd zodra de vergadering eindigt",
+        "ROOM_AND_RECORDINGS_DELETED": "Ruimte en bijbehorende opnames succesvol verwijderd",
+        "ROOM_CLOSED": "Ruimte gesloten in plaats van verwijderd omdat er opnames zijn",
+        "ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_DELETED": "Ruimte met actieve vergadering en bijbehorende opnames succesvol verwijderd",
+        "ROOM_WITH_ACTIVE_MEETING_CLOSED": "Ruimte met actieve vergadering gesloten in plaats van verwijderd omdat er opnames zijn",
+        "ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_SCHEDULED_TO_BE_DELETED": "Ruimte met actieve vergadering en bijbehorende opnames worden verwijderd zodra de vergadering eindigt",
+        "ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_CLOSED": "Ruimte met actieve vergadering wordt gesloten zodra de vergadering eindigt omdat er opnames zijn"
+      },
+      "ERROR": {
+        "ROOM_HAS_ACTIVE_MEETING": "De ruimte kan niet worden verwijderd omdat er een actieve vergadering is.",
+        "ROOM_HAS_RECORDINGS": "De ruimte kan niet worden verwijderd omdat er opnames zijn.",
+        "ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS": "De ruimte met actieve vergadering kan niet worden verwijderd omdat er opnames zijn.",
+        "ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS_CANNOT_SCHEDULE_DELETION": "De ruimte met actieve vergadering kan niet worden gepland voor verwijdering omdat er opnames zijn.",
+        "ROOM_WITH_RECORDINGS_HAS_ACTIVE_MEETING": "De ruimte met opnames kan niet worden verwijderd omdat er een actieve vergadering is."
+      }
+    },
     "UI": {
       "STATUS": {
         "OPEN": "Open",

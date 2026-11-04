@@ -275,6 +275,19 @@ test.describe('Console Room detail E2E Tests', () => {
 			'Enlace de acceso del miembro copiado al portapapeles'
 		);
 	});
+
+	test('shows the notice of deleting the room in the selected language', async ({ page }) => {
+		await gotoRoomDetail(page, room.roomId);
+		await page.locator('#language-selector-btn').click();
+		await page.locator('#lang-opt-es').click();
+
+		await page.locator('.icon-action-btn.delete-btn').click();
+		await confirmDialog(page);
+
+		await expect(page.locator('.ov-notification[data-kind="message"] .notification-message')).toHaveText(
+			'Sala eliminada correctamente'
+		);
+	});
 });
 
 // ─── Profile ─────────────────────────────────────────────────────────────────

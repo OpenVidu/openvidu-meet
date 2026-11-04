@@ -376,6 +376,26 @@
       "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " 名のメンバー： ",
       "FAILED_LOAD_RECORDINGS": "録画の読み込みに失敗しました"
     },
+    "DELETION": {
+      "SUCCESS": {
+        "ROOM_DELETED": "ルームを削除しました",
+        "ROOM_WITH_ACTIVE_MEETING_DELETED": "進行中のミーティングがあるルームを削除しました",
+        "ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED": "進行中のミーティングがあるルームは、ミーティング終了時に削除されます",
+        "ROOM_AND_RECORDINGS_DELETED": "ルームと録画を削除しました",
+        "ROOM_CLOSED": "録画があるため、ルームは削除されず閉鎖されました",
+        "ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_DELETED": "進行中のミーティングがあるルームと録画を削除しました",
+        "ROOM_WITH_ACTIVE_MEETING_CLOSED": "録画があるため、進行中のミーティングがあるルームは削除されず閉鎖されました",
+        "ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_SCHEDULED_TO_BE_DELETED": "進行中のミーティングがあるルームと録画は、ミーティング終了時に削除されます",
+        "ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_CLOSED": "録画があるため、進行中のミーティングがあるルームは、ミーティング終了時に閉鎖されます"
+      },
+      "ERROR": {
+        "ROOM_HAS_ACTIVE_MEETING": "進行中のミーティングがあるため、ルームを削除できません。",
+        "ROOM_HAS_RECORDINGS": "録画があるため、ルームを削除できません。",
+        "ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS": "録画があるため、進行中のミーティングがあるルームを削除できません。",
+        "ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS_CANNOT_SCHEDULE_DELETION": "録画があるため、進行中のミーティングがあるルームの削除を予約できません。",
+        "ROOM_WITH_RECORDINGS_HAS_ACTIVE_MEETING": "進行中のミーティングがあるため、録画があるルームを削除できません。"
+      }
+    },
     "UI": {
       "STATUS": {
         "OPEN": "オープン",

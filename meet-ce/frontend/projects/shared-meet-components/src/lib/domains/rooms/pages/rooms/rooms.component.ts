@@ -341,7 +341,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 			await this.list.autoLoadIfEmpty();
 		}
 
-		this.notificationService.showMessage(this.roomDeletionService.removeRoomIdFromMessage(message));
+		this.notificationService.showMessage(message);
 	}
 
 	private bulkDeleteRooms(rooms: MeetRoom[]) {
