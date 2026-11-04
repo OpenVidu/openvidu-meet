@@ -666,17 +666,21 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 	let webhookDispatcherService: { sendParticipantJoinedWebhook: jest.Mock; sendParticipantLeftWebhook: jest.Mock };
 	let service: LivekitWebhookService;
 
-	const session = (iat?: number): ParticipantInfo =>
+	const ISSUED_BEFORE_DEMOTION = {};
+	const ISSUED_AFTER_DEMOTION = { issuedAfterRevocation: DEMOTED_AT };
+
+	const session = (issue?: { issuedAfterRevocation?: number }): ParticipantInfo =>
 		({
 			identity: IDENTITY,
 			kind: ParticipantInfo_Kind.STANDARD,
 			sid: 'PA_1',
 			name: 'Ana',
 			metadata:
-				iat === undefined
+				issue === undefined
 					? ''
 					: JSON.stringify({
-							iat,
+							iat: DEMOTED_AT,
+							...issue,
 							roomId: ROOM.name,
 							permissions: Object.fromEntries(
 								MEET_PERMISSION_KEYS.map((key) => [key, false])
@@ -724,7 +728,7 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 	});
 
 	it('removes a session that joined with the token it held before its demotion, and reports neither its join nor its departure', async () => {
-		liveParticipant = session(DEMOTED_AT - 1);
+		liveParticipant = session(ISSUED_BEFORE_DEMOTION);
 
 		await service.handleParticipantJoined(ROOM, liveParticipant);
 		await service.handleParticipantLeft(ROOM, liveParticipant);
@@ -735,7 +739,7 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 	});
 
 	it('keeps a session whose token is current, and reports its join and its departure', async () => {
-		liveParticipant = session(DEMOTED_AT);
+		liveParticipant = session(ISSUED_AFTER_DEMOTION);
 
 		await service.handleParticipantJoined(ROOM, liveParticipant);
 		await service.handleParticipantLeft(ROOM, liveParticipant);
@@ -746,9 +750,9 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 	});
 
 	it('keeps a session the server gave current metadata after it joined', async () => {
-		liveParticipant = session(DEMOTED_AT);
+		liveParticipant = session(ISSUED_AFTER_DEMOTION);
 
-		await service.handleParticipantJoined(ROOM, session(DEMOTED_AT - 1));
+		await service.handleParticipantJoined(ROOM, session(ISSUED_BEFORE_DEMOTION));
 
 		expect(deleteParticipant).not.toHaveBeenCalled();
 		expect(webhookDispatcherService.sendParticipantJoinedWebhook).toHaveBeenCalledTimes(1);

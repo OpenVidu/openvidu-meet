@@ -337,7 +337,13 @@ describe('the validators, against a change made in the same millisecond as the t
 	});
 
 	describe('roomMemberTokenValidator', () => {
-		const metadata = { iat: ISSUED_AT, roomId: 'room-1', memberId: 'member-1', userId: 'user-1' };
+		const metadata = {
+			iat: ISSUED_AT,
+			issuedAfterRevocation: ISSUED_AT,
+			roomId: 'room-1',
+			memberId: 'member-1',
+			userId: 'user-1'
+		};
 		const config = { reactions: { enabled: true } } as MeetRoomConfig;
 
 		const validateWith = (updates: {
@@ -476,7 +482,13 @@ describe('the validators, against a change made in the same millisecond as the t
 	// it reads the participant after the demotion, so the new token carries the restored permissions.
 	describe('verifyRoomMemberToken, as the refresh calls it', () => {
 		const refreshOptions = { clockToleranceSeconds: 10, ignoreDemotion: true };
-		const metadata = { iat: ISSUED_AT, roomId: 'room-1', memberId: 'member-1', userId: 'user-1' };
+		const metadata = {
+			iat: ISSUED_AT,
+			issuedAfterRevocation: ISSUED_AT,
+			roomId: 'room-1',
+			memberId: 'member-1',
+			userId: 'user-1'
+		};
 		const sameInstant = {
 			rolesUpdatedAt: ISSUED_AT,
 			permissionsUpdatedAt: ISSUED_AT,

@@ -104,7 +104,7 @@ describe('RoomMemberService.updateParticipantRole — B10: a promotion re-evalua
 				{},
 				recordingService as unknown as RecordingService,
 				{ sendParticipantRoleChangedWebhook: () => {} } as unknown as WebhookDispatcherService,
-				{ revokeIssuedTokens: async () => {}, getIssueTime: async () => Date.now() },
+				{ revokeIssuedTokens: async () => {}, getTokenIssue: async () => ({ iat: Date.now() }) },
 				{ withRetryLock: (_key: string, _ttl: number, update: () => Promise<unknown>) => update() }
 			] as unknown as ConstructorParameters<typeof RoomMemberService>)
 		);
@@ -218,9 +218,8 @@ describe('RoomMemberService.updateParticipantRole (the metadata a demotion pushe
 		const now = jest.spyOn(Date, 'now').mockReturnValue(1_000);
 		await demotion(async () => {})();
 
-		const pushedAt = JSON.parse(pushed[0].metadata).iat;
-		expect(await revocation.isRevoked(ROOM_ID, IDENTITY, pushedAt)).toBe(false);
-		expect(await revocation.isRevoked(ROOM_ID, IDENTITY, 1_000)).toBe(true);
+		expect(await revocation.isRevoked(ROOM_ID, IDENTITY, JSON.parse(pushed[0].metadata))).toBe(false);
+		expect(await revocation.isRevoked(ROOM_ID, IDENTITY, {})).toBe(true);
 		now.mockRestore();
 	});
 
@@ -233,7 +232,7 @@ describe('RoomMemberService.updateParticipantRole (the metadata a demotion pushe
 			})()
 		).rejects.toThrow('media server unavailable');
 
-		expect(await revocation.isRevoked(ROOM_ID, IDENTITY, 1_000)).toBe(true);
+		expect(await revocation.isRevoked(ROOM_ID, IDENTITY, {})).toBe(true);
 		expect(webhooks).toEqual([]);
 	});
 });

@@ -273,14 +273,16 @@ export const verifyRoomMemberToken = async (
  * @returns The token's room, and why the token is no longer valid when it is not
  */
 export const checkRoomMemberTokenCurrency = async (
-	{ iat, roomId, memberId, userId }: MeetRoomMemberTokenMetadata,
+	{ iat, issuedAfterRevocation, roomId, memberId, userId }: MeetRoomMemberTokenMetadata,
 	participantIdentity: string | undefined,
 	{ ignoreDemotion = false } = {}
 ): Promise<{ room: RequestRoomSnapshot | null; outdatedReason?: string }> => {
 	const [room, revoked, roomMember, user] = await Promise.all([
 		container.get(RoomRepository).findByRoomId(roomId, REQUEST_ROOM_FIELDS),
 		!ignoreDemotion && participantIdentity
-			? container.get(ParticipantTokenRevocationService).isRevoked(roomId, participantIdentity, iat)
+			? container
+					.get(ParticipantTokenRevocationService)
+					.isRevoked(roomId, participantIdentity, { issuedAfterRevocation })
 			: false,
 		memberId
 			? container.get(RoomMemberRepository).findByRoomAndMemberId(roomId, memberId, ['permissionsUpdatedAt'])

@@ -299,6 +299,7 @@ export const RoomMemberTokenOptionsSchema: z.ZodType<MeetRoomMemberTokenOptions>
 
 export const RoomMemberTokenMetadataSchema: z.ZodType<MeetRoomMemberTokenMetadata> = z.object({
 	iat: z.number(),
+	issuedAfterRevocation: z.number().optional(),
 	roomId: z.string(),
 	memberId: z.string().optional(),
 	userId: z.string().optional(),

@@ -610,7 +610,10 @@ export class RoomMemberService {
 				participantIdentity = `${identityPrefix}-${uid(15)}`;
 			}
 
-			tokenMetadata.iat = await this.participantTokenRevocationService.getIssueTime(roomId, participantIdentity!);
+			Object.assign(
+				tokenMetadata,
+				await this.participantTokenRevocationService.getTokenIssue(roomId, participantIdentity!)
+			);
 
 			try {
 				// Reserve a unique name for the participant
@@ -950,7 +953,7 @@ export class RoomMemberService {
 		}
 
 		return {
-			iat: await this.participantTokenRevocationService.getIssueTime(roomId, participantIdentity),
+			...(await this.participantTokenRevocationService.getTokenIssue(roomId, participantIdentity)),
 			roomId,
 			memberId: participantMetadata.memberId,
 			userId: participantMetadata.userId,
@@ -1169,7 +1172,10 @@ export class RoomMemberService {
 				}
 
 				// Stamped after the revocation, so the token the media server derives from it is not revoked.
-				metadata.iat = await this.participantTokenRevocationService.getIssueTime(roomId, participantIdentity);
+				Object.assign(
+					metadata,
+					await this.participantTokenRevocationService.getTokenIssue(roomId, participantIdentity)
+				);
 				const permission = this.buildLiveParticipantPermission(
 					participant.permission,
 					metadata.permissions,
@@ -1226,7 +1232,7 @@ export class RoomMemberService {
 			if (
 				current.isPromotedModerator &&
 				metadata.badge === MeetRoomMemberUIBadge.OTHER &&
-				!(await this.participantTokenRevocationService.isRevoked(roomId, participantIdentity, current.iat))
+				!(await this.participantTokenRevocationService.isRevoked(roomId, participantIdentity, current))
 			) {
 				metadata.originalPermissions = metadata.permissions;
 				metadata.permissions = this.mergePermissions(
@@ -1237,7 +1243,10 @@ export class RoomMemberService {
 				metadata.isPromotedModerator = true;
 			}
 
-			metadata.iat = await this.participantTokenRevocationService.getIssueTime(roomId, participantIdentity);
+			Object.assign(
+				metadata,
+				await this.participantTokenRevocationService.getTokenIssue(roomId, participantIdentity)
+			);
 			await this.livekitService.updateParticipant(roomId, participantIdentity, {
 				metadata: JSON.stringify(metadata),
 				permission: this.buildLiveParticipantPermission(
