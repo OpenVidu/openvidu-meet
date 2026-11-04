@@ -26,6 +26,7 @@ import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingStateService } from '../../services/meeting-state.service';
 import { MeetingEventHandlerService } from '../../services/meeting-event-handler.service';
 import { MeetingLobbyService } from '../../services/meeting-lobby.service';
+import { MeetingShortcutsService } from '../../services/meeting-shortcuts.service';
 
 @Component({
 	selector: 'ov-meeting',
@@ -39,7 +40,7 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 		MeetingLobbyComponent,
 		MeetingRaisedHandsStripComponent
 	],
-	providers: [MeetingLobbyService, MeetingEventHandlerService]
+	providers: [MeetingLobbyService, MeetingEventHandlerService, MeetingShortcutsService]
 })
 export class MeetingComponent implements OnInit, OnDestroy {
 	protected meetingContextService = inject(MeetingContextService);

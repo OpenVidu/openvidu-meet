@@ -9,7 +9,7 @@ import { MeetingCaptionsService } from '../../services/meeting-captions.service'
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingHandService } from '../../services/meeting-hand.service';
 import { RoomAccessLinkService } from '../../services/room-access-link.service';
-import { isShortcut } from '../../utils/keyboard-shortcut.utils';
+import { MeetingShortcutsService } from '../../services/meeting-shortcuts.service';
 import { MeetingToolbarCopyLinkButtonComponent } from '../meeting-toolbar-copy-link-button/meeting-toolbar-copy-link-button.component';
 import { MeetingToolbarReactionsButtonComponent } from '../meeting-toolbar-reactions-button/meeting-toolbar-reactions-button.component';
 import { LoggerService } from '../../../../shared/services/logger.service';
@@ -39,6 +39,7 @@ export class MeetingToolbarExtraButtonsComponent {
 	protected runtimeConfigService = inject(RuntimeConfigService);
 	protected roomAccessLinkService = inject(RoomAccessLinkService);
 	protected loggerService = inject(LoggerService);
+	private readonly shortcuts = inject(MeetingShortcutsService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingToolbarExtraButtons');
 
 	/**
@@ -78,7 +79,7 @@ export class MeetingToolbarExtraButtonsComponent {
 	/** `R` raises or lowers the hand once per press. */
 	@HostListener('document:keydown.r', ['$event'])
 	onHandShortcut(event: Event): void {
-		if (!isShortcut(event) || !this.showHandButton()) return;
+		if (!this.shortcuts.isShortcut(event) || !this.showHandButton()) return;
 
 		void this.onHandClick();
 	}

@@ -27,7 +27,7 @@ import {
 	REACTION_NAME_KEYS
 } from '../../openvidu-components/models/reaction.model';
 import { MeetingReactionsService } from '../../services/meeting-reactions.service';
-import { isShortcut } from '../../utils/keyboard-shortcut.utils';
+import { MeetingShortcutsService } from '../../services/meeting-shortcuts.service';
 
 /** How long the pointer rests on the button before the picker opens, so crossing the toolbar opens nothing. */
 const HOVER_OPEN_MS = 100;
@@ -50,6 +50,7 @@ export class MeetingToolbarReactionsButtonComponent {
 	private readonly overlay = inject(Overlay);
 	private readonly viewContainerRef = inject(ViewContainerRef);
 	private readonly injector = inject(Injector);
+	private readonly shortcuts = inject(MeetingShortcutsService);
 
 	/** Whether the toolbar is in its mobile layout, which shows the reactions as a grid of menu items */
 	isMobile = input<boolean>(false);
@@ -74,7 +75,7 @@ export class MeetingToolbarReactionsButtonComponent {
 	/** `E` opens the picker and puts the keyboard on its first reaction. */
 	@HostListener('document:keydown.e', ['$event'])
 	onShortcut(event: Event): void {
-		if (!isShortcut(event)) return;
+		if (!this.shortcuts.isShortcut(event)) return;
 
 		event.preventDefault();
 		this.openPicker({ focus: true });
@@ -170,7 +171,7 @@ export class MeetingToolbarReactionsButtonComponent {
 			return;
 		}
 
-		const reaction = isShortcut(event) ? this.reactions[Number(event.key) - 1] : undefined;
+		const reaction = this.shortcuts.isShortcut(event) ? this.reactions[Number(event.key) - 1] : undefined;
 
 		if (!reaction) return;
 
