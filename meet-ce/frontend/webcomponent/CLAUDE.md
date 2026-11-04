@@ -105,7 +105,7 @@ element. The wrapper rejects them the same way while the Angular component does 
 
 ```bash
 pnpm run build:wc:bundle   # build + bundle + deploy to backend/public/webcomponent
-pnpm run dev               # watch build + testapp (scripts/dev.js)
+pnpm run dev               # watch the bundle build and deploy it (scripts/dev.js); the testapp starts with ./meet.sh dev --testapp
 pnpm run deploy:backend    # re-deploy an existing dist/ build
 pnpm run test:unit         # Jest (ts-jest ESM, jsdom) over tests/unit
 pnpm run test:e2e          # Playwright, project `webcomponent`
