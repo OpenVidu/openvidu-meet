@@ -9,7 +9,7 @@ import { createOpenViduMeetElementClass } from '../../src/app/custom-element/wra
 
 // Minimal stand-in for the Angular Elements base class produced by `createCustomElement()`.
 // The wrapper only relies on two things from its superclass:
-//   1. `super.connectedCallback()` / `super.disconnectedCallback()` lifecycle hooks, and
+//   1. the `super.connectedCallback()` lifecycle hook, and
 //   2. the `ngElementStrategy.componentRef.instance` path used to reach the Angular
 //      component when the imperative methods are called.
 // Both are stubbed here so the wrapper can be exercised in jsdom without Angular.
@@ -26,19 +26,8 @@ class FakeNgElementBase extends HTMLElement {
 	disconnectedCallback(): void {}
 }
 
-// `disconnectedCallback` is optional on the base class, so the wrapper must not assume it.
-class BaseWithoutDisconnect extends HTMLElement {
-	connectedCallback(): void {}
-}
-
 const TAG = 'openvidu-meet-wrapper-test';
 customElements.define(TAG, createOpenViduMeetElementClass(FakeNgElementBase as unknown as CustomElementConstructor));
-
-const TAG_WITHOUT_DISCONNECT = 'openvidu-meet-wrapper-test-partial-base';
-customElements.define(
-	TAG_WITHOUT_DISCONNECT,
-	createOpenViduMeetElementClass(BaseWithoutDisconnect as unknown as CustomElementConstructor)
-);
 
 // The component only implements the canonical names; the deprecated element methods are expected
 // to route through their canonical twin, so a missing `endMeeting` here is deliberate.
@@ -264,31 +253,22 @@ describe('openvidu-meet custom element', () => {
 			expect(el.baseConnections).toBe(1);
 		});
 
-		it('disconnects from a base class that does not implement disconnectedCallback', () => {
-			const el = document.createElement(TAG_WITHOUT_DISCONNECT) as TestableElement;
-			const callback = jest.fn();
-			el.on('joined', callback);
-			document.body.appendChild(el);
-
-			expect(() => el.remove()).not.toThrow();
-
-			el.dispatchEvent(new CustomEvent('joined', { detail: {} }));
-
-			expect(callback).not.toHaveBeenCalled();
-		});
-
-		it('removes all registered callbacks when disconnected from the DOM', () => {
+		it('keeps the registered callbacks when the element is moved to another container', () => {
 			const el = createElement();
-			const callback = jest.fn();
-			el.on('joined', callback);
+			const on = jest.fn();
+			const once = jest.fn();
+			el.on('joined', on);
+			el.once('joined', once);
+			const first = document.body.appendChild(document.createElement('div'));
+			const second = document.body.appendChild(document.createElement('div'));
 
-			document.body.appendChild(el);
-			document.body.removeChild(el); // triggers disconnectedCallback
-
+			first.appendChild(el);
+			second.appendChild(el);
+			el.dispatchEvent(new CustomEvent('joined', { detail: {} }));
 			el.dispatchEvent(new CustomEvent('joined', { detail: {} }));
 
-			expect(callback).not.toHaveBeenCalled();
-			expect(el._listeners.size).toBe(0);
+			expect(on).toHaveBeenCalledTimes(2);
+			expect(once).toHaveBeenCalledTimes(1);
 		});
 	});
 
