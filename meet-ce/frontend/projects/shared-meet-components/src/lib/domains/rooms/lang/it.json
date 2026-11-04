@@ -376,6 +376,26 @@
       "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " membro/i: ",
       "FAILED_LOAD_RECORDINGS": "Impossibile caricare le registrazioni"
     },
+    "DELETION": {
+      "SUCCESS": {
+        "ROOM_DELETED": "Stanza eliminata con successo",
+        "ROOM_WITH_ACTIVE_MEETING_DELETED": "Stanza con riunione attiva eliminata con successo",
+        "ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED": "Stanza con riunione attiva programmata per l'eliminazione al termine della riunione",
+        "ROOM_AND_RECORDINGS_DELETED": "Stanza e relative registrazioni eliminate con successo",
+        "ROOM_CLOSED": "Stanza chiusa invece di eliminata perché contiene registrazioni",
+        "ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_DELETED": "Stanza con riunione attiva e relative registrazioni eliminate con successo",
+        "ROOM_WITH_ACTIVE_MEETING_CLOSED": "Stanza con riunione attiva chiusa invece di eliminata perché contiene registrazioni",
+        "ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_SCHEDULED_TO_BE_DELETED": "Stanza con riunione attiva e relative registrazioni programmate per l'eliminazione al termine della riunione",
+        "ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_CLOSED": "Stanza con riunione attiva programmata per la chiusura al termine della riunione perché contiene registrazioni"
+      },
+      "ERROR": {
+        "ROOM_HAS_ACTIVE_MEETING": "La stanza non può essere eliminata perché ha una riunione attiva.",
+        "ROOM_HAS_RECORDINGS": "La stanza non può essere eliminata perché contiene registrazioni.",
+        "ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS": "La stanza con riunione attiva non può essere eliminata perché contiene registrazioni.",
+        "ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS_CANNOT_SCHEDULE_DELETION": "La stanza con riunione attiva non può essere programmata per l'eliminazione perché contiene registrazioni.",
+        "ROOM_WITH_RECORDINGS_HAS_ACTIVE_MEETING": "La stanza con registrazioni non può essere eliminata perché ha una riunione attiva."
+      }
+    },
     "UI": {
       "STATUS": {
         "OPEN": "Aperta",

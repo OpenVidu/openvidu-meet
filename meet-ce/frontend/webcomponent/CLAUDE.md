@@ -105,7 +105,7 @@ element. The wrapper rejects them the same way while the Angular component does 
 
 ```bash
 pnpm run build:wc:bundle   # build + bundle + deploy to backend/public/webcomponent
-pnpm run dev               # watch build + testapp (scripts/dev.js)
+pnpm run dev               # watch the bundle build and deploy it (scripts/dev.js); the testapp starts with ./meet.sh dev --testapp
 pnpm run deploy:backend    # re-deploy an existing dist/ build
 pnpm run test:unit         # Jest (ts-jest ESM, jsdom) over tests/unit
 pnpm run test:e2e          # Playwright, project `webcomponent`
@@ -128,6 +128,10 @@ pnpm run test:e2e          # Playwright, project `webcomponent`
   Bring the environment up with `./meet.sh dev --testapp` from the repo root (or `./meet.sh dev` plus
   `./meet.sh start-testapp` in a second terminal). An `ERR_CONNECTION_REFUSED :5080` means the
   environment isn't up, not a code failure.
+
+  CI splits the specs into three jobs (the `wc-e2e` matrix in `.github/workflows/ci.yaml`, each passing
+  its files through `./meet.sh test-e2e-webcomponent -- <args>`); the last one runs every spec the others
+  do not list, so a new spec file runs there until it is given a group.
 
 ## Gotchas
 

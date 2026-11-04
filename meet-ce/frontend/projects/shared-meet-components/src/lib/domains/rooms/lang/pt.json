@@ -376,6 +376,26 @@
       "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " membro(s): ",
       "FAILED_LOAD_RECORDINGS": "Falha ao carregar as gravações"
     },
+    "DELETION": {
+      "SUCCESS": {
+        "ROOM_DELETED": "Sala eliminada com sucesso",
+        "ROOM_WITH_ACTIVE_MEETING_DELETED": "Sala com reunião ativa eliminada com sucesso",
+        "ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED": "Sala com reunião ativa agendada para ser eliminada quando a reunião terminar",
+        "ROOM_AND_RECORDINGS_DELETED": "Sala e as suas gravações eliminadas com sucesso",
+        "ROOM_CLOSED": "Sala fechada em vez de eliminada porque tem gravações",
+        "ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_DELETED": "Sala com reunião ativa e as suas gravações eliminadas com sucesso",
+        "ROOM_WITH_ACTIVE_MEETING_CLOSED": "Sala com reunião ativa fechada em vez de eliminada porque tem gravações",
+        "ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_SCHEDULED_TO_BE_DELETED": "Sala com reunião ativa e as suas gravações agendadas para serem eliminadas quando a reunião terminar",
+        "ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_CLOSED": "Sala com reunião ativa agendada para ser fechada quando a reunião terminar porque tem gravações"
+      },
+      "ERROR": {
+        "ROOM_HAS_ACTIVE_MEETING": "A sala não pode ser eliminada porque tem uma reunião ativa.",
+        "ROOM_HAS_RECORDINGS": "A sala não pode ser eliminada porque tem gravações.",
+        "ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS": "A sala com reunião ativa não pode ser eliminada porque tem gravações.",
+        "ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS_CANNOT_SCHEDULE_DELETION": "A sala com reunião ativa não pode ser agendada para eliminação porque tem gravações.",
+        "ROOM_WITH_RECORDINGS_HAS_ACTIVE_MEETING": "A sala com gravações não pode ser eliminada porque tem uma reunião ativa."
+      }
+    },
     "UI": {
       "STATUS": {
         "OPEN": "Aberta",

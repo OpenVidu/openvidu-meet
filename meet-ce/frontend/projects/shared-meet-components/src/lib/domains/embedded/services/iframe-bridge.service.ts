@@ -1,4 +1,12 @@
-import { DestroyRef, effect, inject, Service, signal } from '@angular/core';
+import {
+	DestroyRef,
+	effect,
+	EnvironmentProviders,
+	inject,
+	provideAppInitializer,
+	Service,
+	signal
+} from '@angular/core';
 import {
 	deprecatedEmbeddedEventAliasOf,
 	EmbeddedCommand,
@@ -45,14 +53,23 @@ export class IframeBridgeService {
 	/** Trusted parent origin, resolved once when the bridge starts; empty until then. */
 	private readonly parentDomain = signal('');
 
+	/** Set when the bridge refuses to open: nobody will ever consume the events, so they are dropped. */
+	private readonly refused = signal(false);
+
 	/**
 	 * Relays queued lifecycle events to the host. Gated on the trusted parent
 	 * origin: until it is resolved (when the bridge starts) events stay queued.
-	 * Setting `parentDomain` re-runs this effect and flushes them.
+	 * Setting `parentDomain` re-runs this effect and flushes them. A bridge that refused to
+	 * open drops every event instead.
 	 */
 	private readonly eventRelayEffect = effect(() => {
 		const queued = this.eventBus.events();
 		const target = this.parentDomain();
+
+		if (this.refused()) {
+			this.eventBus.drain();
+			return;
+		}
 
 		if (!this.initialized || !target || queued.length === 0) {
 			return;
@@ -91,6 +108,7 @@ export class IframeBridgeService {
 			// safely target outbound events, so we refuse to open the bridge instead of
 			// trusting/posting to '*'.
 			this.log.e('Could not determine the parent origin; iframe bridge not started.');
+			this.refused.set(true);
 			return;
 		}
 
@@ -332,4 +350,9 @@ export class IframeBridgeService {
 			window.parent.postMessage({ ...event, event: legacyEventName }, targetOrigin);
 		}
 	}
+}
+
+/** Starts the iframe bridge with the application. Every application shell built on the library lists it. */
+export function provideEmbeddedIframeBridge(): EnvironmentProviders {
+	return provideAppInitializer(() => inject(IframeBridgeService).initialize());
 }

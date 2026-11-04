@@ -376,6 +376,26 @@
       "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " सदस्य: ",
       "FAILED_LOAD_RECORDINGS": "रिकॉर्डिंग लोड करने में विफल"
     },
+    "DELETION": {
+      "SUCCESS": {
+        "ROOM_DELETED": "रूम सफलतापूर्वक हटा दिया गया",
+        "ROOM_WITH_ACTIVE_MEETING_DELETED": "सक्रिय मीटिंग वाला रूम सफलतापूर्वक हटा दिया गया",
+        "ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED": "सक्रिय मीटिंग वाला रूम मीटिंग समाप्त होने पर हटाया जाएगा",
+        "ROOM_AND_RECORDINGS_DELETED": "रूम और उसकी रिकॉर्डिंग सफलतापूर्वक हटा दी गईं",
+        "ROOM_CLOSED": "रिकॉर्डिंग होने के कारण रूम हटाने के बजाय बंद कर दिया गया",
+        "ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_DELETED": "सक्रिय मीटिंग वाला रूम और उसकी रिकॉर्डिंग सफलतापूर्वक हटा दी गईं",
+        "ROOM_WITH_ACTIVE_MEETING_CLOSED": "रिकॉर्डिंग होने के कारण सक्रिय मीटिंग वाला रूम हटाने के बजाय बंद कर दिया गया",
+        "ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_SCHEDULED_TO_BE_DELETED": "सक्रिय मीटिंग वाला रूम और उसकी रिकॉर्डिंग मीटिंग समाप्त होने पर हटाई जाएंगी",
+        "ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_CLOSED": "रिकॉर्डिंग होने के कारण सक्रिय मीटिंग वाला रूम मीटिंग समाप्त होने पर बंद किया जाएगा"
+      },
+      "ERROR": {
+        "ROOM_HAS_ACTIVE_MEETING": "सक्रिय मीटिंग होने के कारण रूम हटाया नहीं जा सकता।",
+        "ROOM_HAS_RECORDINGS": "रिकॉर्डिंग होने के कारण रूम हटाया नहीं जा सकता।",
+        "ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS": "रिकॉर्डिंग होने के कारण सक्रिय मीटिंग वाला रूम हटाया नहीं जा सकता।",
+        "ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS_CANNOT_SCHEDULE_DELETION": "रिकॉर्डिंग होने के कारण सक्रिय मीटिंग वाले रूम को हटाने के लिए शेड्यूल नहीं किया जा सकता।",
+        "ROOM_WITH_RECORDINGS_HAS_ACTIVE_MEETING": "सक्रिय मीटिंग होने के कारण रिकॉर्डिंग वाला रूम हटाया नहीं जा सकता।"
+      }
+    },
     "UI": {
       "STATUS": {
         "OPEN": "खुला",

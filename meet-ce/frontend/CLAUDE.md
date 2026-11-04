@@ -94,7 +94,8 @@ recording and live broadcast UI.
   on it). `httpInterceptor` is domain-agnostic: domains register an `HttpHeaderProvider` with
   `HttpHeaderProviderService` and an error handler with `HttpErrorNotifierService`. Registration
   happens via `provideAppInitializer` in `app.config.ts`, and **order matters**: the room-member
-  handlers must be registered before the auth ones.
+  handlers must be registered before the auth ones. A shell also lists `provideEmbeddedIframeBridge()`;
+  without it an iframe posts no events and accepts no commands.
 - **Runtime modes**: `RuntimeConfigService` is the source of truth for deployment base path, server
   base URL and mode (`isWebcomponentMode`, `isIframeMode`, `isEmbeddedMode`). Gate embedding-specific
   UI on those signals rather than sniffing the URL. In webcomponent mode API calls must wait for

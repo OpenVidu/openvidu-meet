@@ -376,6 +376,26 @@
       "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " member(s): ",
       "FAILED_LOAD_RECORDINGS": "Failed to load recordings"
     },
+    "DELETION": {
+      "SUCCESS": {
+        "ROOM_DELETED": "Room deleted successfully",
+        "ROOM_WITH_ACTIVE_MEETING_DELETED": "Room with active meeting deleted successfully",
+        "ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED": "Room with active meeting scheduled to be deleted when the meeting ends",
+        "ROOM_AND_RECORDINGS_DELETED": "Room and its recordings deleted successfully",
+        "ROOM_CLOSED": "Room closed instead of deleted because it has recordings",
+        "ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_DELETED": "Room with active meeting and its recordings deleted successfully",
+        "ROOM_WITH_ACTIVE_MEETING_CLOSED": "Room with active meeting closed instead of deleted because it has recordings",
+        "ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_SCHEDULED_TO_BE_DELETED": "Room with active meeting and its recordings scheduled to be deleted when the meeting ends",
+        "ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_CLOSED": "Room with active meeting scheduled to be closed when the meeting ends because it has recordings"
+      },
+      "ERROR": {
+        "ROOM_HAS_ACTIVE_MEETING": "The room cannot be deleted because it has an active meeting.",
+        "ROOM_HAS_RECORDINGS": "The room cannot be deleted because it has recordings.",
+        "ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS": "The room with an active meeting cannot be deleted because it has recordings.",
+        "ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS_CANNOT_SCHEDULE_DELETION": "The room with an active meeting cannot be scheduled to be deleted because it has recordings.",
+        "ROOM_WITH_RECORDINGS_HAS_ACTIVE_MEETING": "The room with recordings cannot be deleted because it has an active meeting."
+      }
+    },
     "UI": {
       "STATUS": {
         "OPEN": "Open",

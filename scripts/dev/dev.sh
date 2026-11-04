@@ -160,6 +160,16 @@ dev() {
       --testapp)
         include_testapp=true
         ;;
+      --skip-install|--skip-build|--skip-typings)
+        ;;
+      --webcomponent)
+        echo -e "${RED}Error: '--webcomponent' is not a flag. The webcomponent bundle watcher starts with '--testapp'.${NC}"
+        exit 1
+        ;;
+      *)
+        echo -e "${RED}Error: Unknown option '$arg' for 'dev'. Supported: --testapp${NC}"
+        exit 1
+        ;;
     esac
   done
 

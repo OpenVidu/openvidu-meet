@@ -1,4 +1,4 @@
-import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular/core';
+import { ApplicationInitStatus, provideZonelessChangeDetection, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
 	EmbeddedCommandName,
@@ -15,7 +15,7 @@ import {
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { EmbeddedCommandService } from './embedded-command.service';
 import { EmbeddedEventBusService } from './embedded-event-bus.service';
-import { IframeBridgeService } from './iframe-bridge.service';
+import { IframeBridgeService, provideEmbeddedIframeBridge } from './iframe-bridge.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 
 const PARENT_ORIGIN = 'https://host.example.com';
@@ -140,6 +140,22 @@ describe('IframeBridgeService', () => {
 			// With the bridge closed, inbound commands are ignored.
 			postFromHost({ command: EmbeddedCommandName.MEETING_LEAVE });
 			expect(commandService.meetingLeave).not.toHaveBeenCalled();
+		});
+
+		it('drops the events instead of queueing them when the parent origin cannot be resolved', async () => {
+			startBridge('');
+			eventBus.emit({
+				event: EmbeddedEventName.MEETING_JOINED,
+				payload: { roomId: ROOM_ID, participantIdentity: IDENTITY }
+			});
+			let delivered = false;
+			void eventBus.delivered().then(() => (delivered = true));
+			TestBed.tick();
+			await Promise.resolve();
+
+			expect(eventBus.events()).toEqual([]);
+			expect(postMessageSpy).not.toHaveBeenCalled();
+			expect(delivered).toBeTrue();
 		});
 
 		it('is idempotent: starting twice attaches the listener only once', () => {
@@ -794,5 +810,22 @@ describe('IframeBridgeService', () => {
 
 			expect(removeSpy).toHaveBeenCalledWith('message', jasmine.any(Function));
 		});
+	});
+});
+
+describe('provideEmbeddedIframeBridge()', () => {
+	it('starts the bridge when the application bootstraps', async () => {
+		const initialize = jasmine.createSpy('initialize');
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				provideEmbeddedIframeBridge(),
+				{ provide: IframeBridgeService, useValue: { initialize } }
+			]
+		});
+
+		await TestBed.inject(ApplicationInitStatus).donePromise;
+
+		expect(initialize).toHaveBeenCalledTimes(1);
 	});
 });
