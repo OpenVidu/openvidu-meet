@@ -1,4 +1,12 @@
-import { DestroyRef, effect, inject, Service, signal } from '@angular/core';
+import {
+	DestroyRef,
+	effect,
+	EnvironmentProviders,
+	inject,
+	provideAppInitializer,
+	Service,
+	signal
+} from '@angular/core';
 import {
 	deprecatedEmbeddedEventAliasOf,
 	EmbeddedCommand,
@@ -332,4 +340,9 @@ export class IframeBridgeService {
 			window.parent.postMessage({ ...event, event: legacyEventName }, targetOrigin);
 		}
 	}
+}
+
+/** Starts the iframe bridge with the application. Every application shell built on the library lists it. */
+export function provideEmbeddedIframeBridge(): EnvironmentProviders {
+	return provideAppInitializer(() => inject(IframeBridgeService).initialize());
 }
