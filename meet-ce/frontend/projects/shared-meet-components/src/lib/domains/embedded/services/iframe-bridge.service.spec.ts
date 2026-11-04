@@ -142,6 +142,22 @@ describe('IframeBridgeService', () => {
 			expect(commandService.meetingLeave).not.toHaveBeenCalled();
 		});
 
+		it('drops the events instead of queueing them when the parent origin cannot be resolved', async () => {
+			startBridge('');
+			eventBus.emit({
+				event: EmbeddedEventName.MEETING_JOINED,
+				payload: { roomId: ROOM_ID, participantIdentity: IDENTITY }
+			});
+			let delivered = false;
+			void eventBus.delivered().then(() => (delivered = true));
+			TestBed.tick();
+			await Promise.resolve();
+
+			expect(eventBus.events()).toEqual([]);
+			expect(postMessageSpy).not.toHaveBeenCalled();
+			expect(delivered).toBeTrue();
+		});
+
 		it('is idempotent: starting twice attaches the listener only once', () => {
 			const addSpy = spyOn(window, 'addEventListener').and.callThrough();
 
