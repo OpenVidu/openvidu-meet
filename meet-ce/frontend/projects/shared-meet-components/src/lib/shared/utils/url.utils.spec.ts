@@ -1,3 +1,4 @@
+import { convertToParamMap } from '@angular/router';
 import { EmbeddedAttribute } from '@openvidu-meet/typings';
 import {
 	appendQuery,
@@ -45,7 +46,9 @@ describe('queryParam', () => {
 
 describe('computeServerUrl', () => {
 	it('returns the base URL up to the marker segment', () => {
-		expect(computeServerUrl('http://localhost:6080/meet/room/my-room', '/room/')).toBe('http://localhost:6080/meet');
+		expect(computeServerUrl('http://localhost:6080/meet/room/my-room', '/room/')).toBe(
+			'http://localhost:6080/meet'
+		);
 	});
 
 	it('derives the base URL from the "/recording/" marker', () => {
@@ -133,7 +136,7 @@ describe('extractParams', () => {
 	it('maps route params + query params onto the entry-parameter bag', () => {
 		const result = extractParams({
 			params: { 'room-id': 'r1' },
-			queryParams: {
+			queryParamMap: convertToParamMap({
 				secret: 'sec',
 				[EmbeddedAttribute.PARTICIPANT_NAME]: 'Alice',
 				[EmbeddedAttribute.PARTICIPANT_EXTERNAL_ID]: 'crm-user_42',
@@ -146,7 +149,7 @@ describe('extractParams', () => {
 				[EmbeddedAttribute.SHOW_ONLY_RECORDINGS]: 'true',
 				[EmbeddedAttribute.SHOW_RECORDING]: 'rec-1',
 				[EmbeddedAttribute.E2EE_KEY]: 'k'
-			}
+			})
 		});
 
 		expect(result).toEqual({
@@ -167,7 +170,7 @@ describe('extractParams', () => {
 	});
 
 	it('leaves absent params undefined', () => {
-		const result = extractParams({ params: { 'room-id': 'r1' }, queryParams: {} });
+		const result = extractParams({ params: { 'room-id': 'r1' }, queryParamMap: convertToParamMap({}) });
 		expect(result.showOnlyRecordings).toBeUndefined();
 		expect(result.secret).toBeUndefined();
 		expect(result.participantName).toBeUndefined();
@@ -175,12 +178,22 @@ describe('extractParams', () => {
 		expect(result.participantMetadata).toBeUndefined();
 	});
 
+	it('takes the first value of a repeated param', () => {
+		const result = extractParams({
+			params: { 'room-id': 'r1' },
+			queryParamMap: convertToParamMap({ [EmbeddedAttribute.LANGUAGE]: ['es', 'fr'], secret: ['a', 'b'] })
+		});
+
+		expect(result.language).toBe('es');
+		expect(result.secret).toBe('a');
+	});
+
 	it('reads show-only-recordings with the rule of the other boolean params', () => {
 		const showOnlyRecordings = (value?: string) =>
 			parseOptionalBoolean(
 				extractParams({
 					params: { 'room-id': 'r1' },
-					queryParams: { [EmbeddedAttribute.SHOW_ONLY_RECORDINGS]: value }
+					queryParamMap: convertToParamMap({ [EmbeddedAttribute.SHOW_ONLY_RECORDINGS]: value })
 				}).showOnlyRecordings
 			);
 

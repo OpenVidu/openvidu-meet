@@ -1,3 +1,4 @@
+import type { ParamMap } from '@angular/router';
 import { EmbeddedAttribute } from '@openvidu-meet/typings';
 
 /**
@@ -57,25 +58,23 @@ export const parseOptionalBoolean = (value: string | undefined): boolean | undef
 /**
  * Extracts the meeting/recording entry parameters from a route snapshot's `params` + `queryParams`.
  */
-export const extractParams = (route: {
-	params: Record<string, string>;
-	queryParams: Record<string, string | undefined>;
-}) => {
-	const { params, queryParams } = route;
+export const extractParams = (route: { params: Record<string, string>; queryParamMap: ParamMap }) => {
+	const { params, queryParamMap } = route;
+	const query = (name: string) => queryParamMap.get(name) ?? undefined;
 	return {
 		roomId: params['room-id'],
-		secret: queryParams['secret'],
-		participantName: queryParams[EmbeddedAttribute.PARTICIPANT_NAME],
-		participantExternalId: queryParams[EmbeddedAttribute.PARTICIPANT_EXTERNAL_ID],
-		participantMetadata: queryParams[EmbeddedAttribute.PARTICIPANT_METADATA],
-		initialAudioActive: queryParams[EmbeddedAttribute.INITIAL_AUDIO_ACTIVE],
-		initialVideoActive: queryParams[EmbeddedAttribute.INITIAL_VIDEO_ACTIVE],
-		language: queryParams[EmbeddedAttribute.LANGUAGE],
-		showLanguageSelector: queryParams[EmbeddedAttribute.SHOW_LANGUAGE_SELECTOR],
-		leaveRedirectUrl: queryParams[EmbeddedAttribute.LEAVE_REDIRECT_URL],
-		showOnlyRecordings: queryParams[EmbeddedAttribute.SHOW_ONLY_RECORDINGS],
-		showRecording: queryParams[EmbeddedAttribute.SHOW_RECORDING],
-		e2eeKey: queryParams[EmbeddedAttribute.E2EE_KEY]
+		secret: query('secret'),
+		participantName: query(EmbeddedAttribute.PARTICIPANT_NAME),
+		participantExternalId: query(EmbeddedAttribute.PARTICIPANT_EXTERNAL_ID),
+		participantMetadata: query(EmbeddedAttribute.PARTICIPANT_METADATA),
+		initialAudioActive: query(EmbeddedAttribute.INITIAL_AUDIO_ACTIVE),
+		initialVideoActive: query(EmbeddedAttribute.INITIAL_VIDEO_ACTIVE),
+		language: query(EmbeddedAttribute.LANGUAGE),
+		showLanguageSelector: query(EmbeddedAttribute.SHOW_LANGUAGE_SELECTOR),
+		leaveRedirectUrl: query(EmbeddedAttribute.LEAVE_REDIRECT_URL),
+		showOnlyRecordings: query(EmbeddedAttribute.SHOW_ONLY_RECORDINGS),
+		showRecording: query(EmbeddedAttribute.SHOW_RECORDING),
+		e2eeKey: query(EmbeddedAttribute.E2EE_KEY)
 	};
 };
 
