@@ -202,6 +202,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 - After leaving a meeting that was being recorded, joining another meeting with the same `<openvidu-meet>`
   element showed that recording as still in progress. The recording indicator starts over with each meeting.
+- A participant able to chat could publish a message imitating the server's, to show a recording as started or stopped,
+  turn off other participants' devices or force a permission refresh, when the other meetings did not list them yet.
+  Only messages the server sent take effect now.
 - After leaving a meeting, joining another meeting with the same `<openvidu-meet>` element showed the earlier
   meeting's chat messages and counted them as unread. The chat now starts empty in every meeting.
 - A browser tab, or an `<openvidu-meet>` element, that had entered a room with a secret or an encryption key reused

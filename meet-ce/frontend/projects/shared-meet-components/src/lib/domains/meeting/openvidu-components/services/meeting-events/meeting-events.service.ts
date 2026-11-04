@@ -14,6 +14,7 @@ import {
 	ConnectionQuality,
 	DataPacket_Kind,
 	DisconnectReason,
+	Encryption_Type,
 	LocalParticipant,
 	Participant,
 	RemoteParticipant,
@@ -275,13 +276,20 @@ export class MeetingEventsService {
 	private subscribeToDataMessage(room: Room) {
 		room.on(
 			RoomEvent.DataReceived,
-			async (payload: Uint8Array, participant?: RemoteParticipant, _?: DataPacket_Kind, topic?: string) => {
-				// Meet signals carry server authority (recording state), so only the server may send them: a
-				// packet relayed from a participant arrives with that participant, one sent by the server does
-				// not. Nothing else a participant publishes is read: chat travels as a text stream.
-				if (participant) {
+			async (
+				payload: Uint8Array,
+				_participant?: RemoteParticipant,
+				_kind?: DataPacket_Kind,
+				topic?: string,
+				encryptionType?: Encryption_Type,
+				participantIdentity?: string
+			) => {
+				// Only the server may send Meet signals. The media server stamps every packet a participant
+				// publishes, encrypted ones included, with their identity; its own carry none and are never
+				// encrypted. Nothing else a participant publishes is read: chat travels as a text stream.
+				if (participantIdentity || encryptionType !== Encryption_Type.NONE) {
 					if (isMeetSignalType(topic)) {
-						this.log.w(`Discarding '${topic}' data relayed from a participant`, participant.identity);
+						this.log.w(`Discarding '${topic}' data not sent by the server`, participantIdentity);
 					}
 
 					return;
