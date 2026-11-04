@@ -74,13 +74,13 @@ A text with no translation in the selected language SHALL be shown in English ra
 - **THEN** it is shown in English and the rest of the screen stays in the selected language
 
 ### Requirement: Language requested by the host
-The `language` attribute or query parameter SHALL set the language an entry starts in, whether it opens a meeting or a recording screen, from a room URL or a recording URL, in the embedded element, the iframe and the direct link alike, over the participant's stored preference, without replacing that preference: an entry without `language` SHALL use the stored preference again.
+The `language` attribute or query parameter SHALL set the interface language when it is set or changed, whether the page shows a meeting or a recording screen, from a room URL or a recording URL, in the embedded element, the iframe and the direct link alike, over the participant's stored preference, without replacing that preference. Removing `language` SHALL restore the stored preference. It SHALL NOT be applied again at each entry.
 
 #### Scenario: Requested language wins for the entry
 - **GIVEN** a participant whose stored preference is German
 - **WHEN** an embedded element enters a room with `language="es"`
 - **THEN** the device setup screen is in Spanish
-- **AND** a later entry without `language` is in German again
+- **AND** once `language` is removed from the element the interface is in German again
 
 #### Scenario: Iframe query parameter
 - **GIVEN** an iframe whose `src` carries `language=es-ES`
@@ -106,6 +106,11 @@ The `language` attribute or query parameter SHALL set the language an entry star
 - **GIVEN** an iframe whose `src` carries `language=es` and `show-only-recordings=true`
 - **WHEN** the participant goes from the room recordings page back to the room
 - **THEN** the join screen is in Spanish
+
+#### Scenario: Participant's choice kept for another room
+- **GIVEN** an element with `language="es"` whose participant chose Deutsch on the device setup screen
+- **WHEN** the host sets `room-url` to another room without changing `language`
+- **THEN** the new room starts in German
 
 ### Requirement: Language tag matching
 `language` SHALL accept a BCP 47 tag, case-insensitively, matching a supported language by its full tag or else by its language subtag, with `zh` for Simplified Chinese and `pt` for European Portuguese, so `pt-BR` selects `pt` and `zh-CN` selects Simplified Chinese. An unsupported value SHALL be ignored, with a browser console warning, and the stored preference applies.
