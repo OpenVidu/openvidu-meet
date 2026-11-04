@@ -1,4 +1,4 @@
-import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular/core';
+import { ApplicationInitStatus, provideZonelessChangeDetection, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
 	EmbeddedCommandName,
@@ -15,7 +15,7 @@ import {
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { EmbeddedCommandService } from './embedded-command.service';
 import { EmbeddedEventBusService } from './embedded-event-bus.service';
-import { IframeBridgeService } from './iframe-bridge.service';
+import { IframeBridgeService, provideEmbeddedIframeBridge } from './iframe-bridge.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 
 const PARENT_ORIGIN = 'https://host.example.com';
@@ -810,5 +810,22 @@ describe('IframeBridgeService', () => {
 
 			expect(removeSpy).toHaveBeenCalledWith('message', jasmine.any(Function));
 		});
+	});
+});
+
+describe('provideEmbeddedIframeBridge()', () => {
+	it('starts the bridge when the application bootstraps', async () => {
+		const initialize = jasmine.createSpy('initialize');
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				provideEmbeddedIframeBridge(),
+				{ provide: IframeBridgeService, useValue: { initialize } }
+			]
+		});
+
+		await TestBed.inject(ApplicationInitStatus).donePromise;
+
+		expect(initialize).toHaveBeenCalledTimes(1);
 	});
 });
