@@ -376,6 +376,26 @@
       "ROOM_CREATED_MEMBERS_FAILED_MIDDLE": " 名成员：",
       "FAILED_LOAD_RECORDINGS": "加载录制失败"
     },
+    "DELETION": {
+      "SUCCESS": {
+        "ROOM_DELETED": "房间已成功删除",
+        "ROOM_WITH_ACTIVE_MEETING_DELETED": "有进行中会议的房间已成功删除",
+        "ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED": "有进行中会议的房间将在会议结束时删除",
+        "ROOM_AND_RECORDINGS_DELETED": "房间及其录制内容已成功删除",
+        "ROOM_CLOSED": "由于存在录制内容，房间已关闭而未删除",
+        "ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_DELETED": "有进行中会议的房间及其录制内容已成功删除",
+        "ROOM_WITH_ACTIVE_MEETING_CLOSED": "由于存在录制内容，有进行中会议的房间已关闭而未删除",
+        "ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_SCHEDULED_TO_BE_DELETED": "有进行中会议的房间及其录制内容将在会议结束时删除",
+        "ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_CLOSED": "由于存在录制内容，有进行中会议的房间将在会议结束时关闭"
+      },
+      "ERROR": {
+        "ROOM_HAS_ACTIVE_MEETING": "房间有进行中的会议，无法删除。",
+        "ROOM_HAS_RECORDINGS": "房间存在录制内容，无法删除。",
+        "ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS": "有进行中会议的房间存在录制内容，无法删除。",
+        "ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS_CANNOT_SCHEDULE_DELETION": "有进行中会议的房间存在录制内容，无法安排删除。",
+        "ROOM_WITH_RECORDINGS_HAS_ACTIVE_MEETING": "有录制内容的房间有进行中的会议，无法删除。"
+      }
+    },
     "UI": {
       "STATUS": {
         "OPEN": "开放",

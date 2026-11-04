@@ -59,11 +59,8 @@ export class RoomDeletionService {
 		return validErrorCodes.includes(errorCode as MeetRoomDeletionErrorCode);
 	}
 
-	removeRoomIdFromMessage(message: string): string {
-		const roomIdPattern = /'[^']+'/g;
-		let filteredMessage = message.replace(roomIdPattern, '');
-		filteredMessage = filteredMessage.replace(/\s+/g, ' ').trim();
-		return filteredMessage;
+	private successMessage(successCode: MeetRoomDeletionSuccessCode): string {
+		return this.translateService.translate(`ROOMS.DELETION.SUCCESS.${successCode.toUpperCase()}`);
 	}
 
 	private async deleteRoomWithDefaultPolicies(
@@ -72,18 +69,18 @@ export class RoomDeletionService {
 		onSuccess: (result: RoomDeletionResult) => void | Promise<void>
 	) {
 		try {
-			const { successCode, message, room } = await this.roomService.deleteRoom(
+			const { successCode, room } = await this.roomService.deleteRoom(
 				roomId,
 				MeetRoomDeletionPolicyWithMeeting.FAIL,
 				MeetRoomDeletionPolicyWithRecordings.FAIL
 			);
 
-			await onSuccess({ roomId, successCode, message, room });
+			await onSuccess({ roomId, successCode, message: this.successMessage(successCode), room });
 		} catch (error: any) {
 			const errorCode = error.error?.error;
 
 			if (errorCode && this.isValidDeletionErrorCode(errorCode)) {
-				const errorMessage = this.removeRoomIdFromMessage(error.error.message);
+				const errorMessage = this.translateService.translate(`ROOMS.DELETION.ERROR.${errorCode.toUpperCase()}`);
 				this.showDeletionErrorDialogWithOptions(roomId, errorMessage, log, onSuccess);
 			} else {
 				this.notificationService.showMessage(
@@ -105,12 +102,8 @@ export class RoomDeletionService {
 			recordingPolicy: MeetRoomDeletionPolicyWithRecordings
 		) => {
 			try {
-				const { successCode, message, room } = await this.roomService.deleteRoom(
-					roomId,
-					meetingPolicy,
-					recordingPolicy
-				);
-				await onSuccess({ roomId, successCode, message, room });
+				const { successCode, room } = await this.roomService.deleteRoom(roomId, meetingPolicy, recordingPolicy);
+				await onSuccess({ roomId, successCode, message: this.successMessage(successCode), room });
 			} catch (error) {
 				this.notificationService.showMessage(
 					this.translateService.translate('ROOMS.ERRORS.FAILED_DELETE_ROOM')

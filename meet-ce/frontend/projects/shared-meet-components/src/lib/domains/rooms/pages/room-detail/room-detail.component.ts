@@ -408,7 +408,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 			await this.navigationService.navigateToAndInvalidate('/rooms', 'rooms');
 		}
 
-		this.notificationService.showMessage(this.roomDeletionService.removeRoomIdFromMessage(message));
+		this.notificationService.showMessage(message);
 	}
 
 	// --- Room Members management ---
