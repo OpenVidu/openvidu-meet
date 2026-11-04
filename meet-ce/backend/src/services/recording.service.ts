@@ -709,8 +709,9 @@ export class RecordingService {
 	}
 
 	/**
-	 * Gives a recording its final status and reports its end: the `recordingEnded` webhook, the
-	 * in-meeting signal and the release of the room's recording hold. Only the first caller to end a
+	 * Gives a recording its final status and reports its end: the `recordingEnded` webhook and the
+	 * in-meeting signal, sent once the room's recording hold is released so a start requested on
+	 * hearing the end is accepted. Every end releases the hold; only the first caller to end a
 	 * recording stores and reports it, so an end reaching several paths or replicas is reported once.
 	 *
 	 * @param recording - The recording with its final status
@@ -718,6 +719,7 @@ export class RecordingService {
 	 */
 	async finishRecording(recording: MeetRecordingInfo): Promise<boolean> {
 		const finished = await this.recordingRepository.replaceInProgress(recording);
+		await this.releaseRecordingLockIfNoEgress(recording.roomId);
 
 		if (!finished) {
 			this.logger.debug(`Recording '${recording.recordingId}' had already ended, not reporting it again`);
@@ -725,10 +727,7 @@ export class RecordingService {
 		}
 
 		this.webhookDispatcherService.sendRecordingEndedWebhook(finished);
-		await Promise.all([
-			this.releaseRecordingLockIfNoEgress(finished.roomId),
-			this.frontendEventService.sendRecordingUpdatedSignal(finished.roomId, finished)
-		]);
+		await this.frontendEventService.sendRecordingUpdatedSignal(finished.roomId, finished);
 		return true;
 	}
 

@@ -474,10 +474,19 @@ describe('RecordingService.finishRecording', () => {
 		};
 		const frontendEvents = new FakeFrontendEventService();
 		const webhooks: MeetRecordingInfo[] = [];
+		const order: string[] = [];
 		const webhookDispatcher = {
-			sendRecordingEndedWebhook: (recording: MeetRecordingInfo) => webhooks.push(recording)
+			sendRecordingEndedWebhook: (recording: MeetRecordingInfo) => {
+				order.push('webhook');
+				webhooks.push(recording);
+			}
 		};
 		const mutex = new FakeMutexService();
+		const release = mutex.releaseWithRegistry.bind(mutex);
+		mutex.releaseWithRegistry = async (key: string) => {
+			order.push('release');
+			await release(key);
+		};
 		const service = new RecordingService(
 			...([
 				new FakeLiveKitService([]),
@@ -491,7 +500,7 @@ describe('RecordingService.finishRecording', () => {
 				noopLogger
 			] as unknown as ConstructorParameters<typeof RecordingService>)
 		);
-		return { service, frontendEvents, webhooks, mutex };
+		return { service, frontendEvents, webhooks, mutex, order };
 	};
 
 	it('reports the end it stores: webhook, in-meeting signal and the release of the room hold', async () => {
@@ -512,6 +521,24 @@ describe('RecordingService.finishRecording', () => {
 
 		expect(webhooks).toHaveLength(1);
 		expect(frontendEvents.signals).toHaveLength(1);
+	});
+
+	it('releases the room hold also for an end that has no in-progress recording stored', async () => {
+		const { service, mutex } = buildFinishService();
+		await service.finishRecording(ended as MeetRecordingInfo);
+		mutex.released.length = 0;
+
+		expect(await service.finishRecording(ended as MeetRecordingInfo)).toBe(false);
+
+		expect(mutex.released).toEqual([expect.stringContaining('room-1')]);
+	});
+
+	it('releases the room hold before it reports the end', async () => {
+		const { service, order } = buildFinishService();
+
+		await service.finishRecording(ended as MeetRecordingInfo);
+
+		expect(order).toEqual(['release', 'webhook']);
 	});
 });
 
