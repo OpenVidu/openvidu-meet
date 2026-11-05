@@ -12,16 +12,14 @@ import {
 import type { ParticipantInfo, Room } from 'livekit-server-sdk';
 import { AccessToken, EgressInfo, EgressStatus } from 'livekit-server-sdk';
 import crypto from 'crypto';
-// LivekitWebhookService is in an import cycle with the DI container module, which therefore has to be
-// evaluated first: otherwise RoomScheduledTasksService declares `@inject(LivekitWebhookService)` before it exists.
 import { container, registerDependencies } from '../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../src/environment.js';
 import { RecordingHelper } from '../../../src/helpers/recording.helper.js';
 import { EGRESS_LOST_ERROR } from '../../../src/models/egress.model.js';
 import { RoomRepository } from '../../../src/repositories/room.repository.js';
 import { LivekitWebhookService } from '../../../src/services/livekit-webhook.service.js';
+import { MeetingDurationLimitService } from '../../../src/services/meeting-duration-limit.service.js';
 import { RedisService } from '../../../src/services/redis.service.js';
-import type { RoomScheduledTasksService } from '../../../src/services/room-scheduled-tasks.service.js';
 import { TokenService } from '../../../src/services/token.service.js';
 
 class FakeRedisService {
@@ -40,89 +38,6 @@ class FakeRedisService {
 		return this.store.delete(key) ? 1 : 0;
 	}
 }
-
-class TestableLivekitWebhookService extends LivekitWebhookService {
-	runGetMeetingEndedReason(roomId: string, meetingId?: string): Promise<MeetMeetingEndedReason | undefined> {
-		return this.getMeetingEndedReason(roomId, meetingId);
-	}
-}
-
-const buildService = (redis: FakeRedisService) =>
-	new TestableLivekitWebhookService(
-		...([{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, redis, {}] as unknown as ConstructorParameters<
-			typeof LivekitWebhookService
-		>)
-	);
-
-/**
- * Reads the MEETING_ENDED_REASON flag that RoomScheduledTasksService stamps before force-ending a
- * meeting for exceeding its duration limit, deciding whether the meetingEnded webhook carries an
- * attributed reason instead of reading as a moderator's own end.
- */
-describe('LivekitWebhookService.getMeetingEndedReason (force-end attribution flag)', () => {
-	it('is undefined when no flag was ever set (a normal end)', async () => {
-		const service = buildService(new FakeRedisService());
-
-		await expect(service.runGetMeetingEndedReason('room-1', 'sid-N')).resolves.toBeUndefined();
-	});
-
-	it('is MAX_DURATION_REACHED when the flag matches the finishing meeting', async () => {
-		const redis = new FakeRedisService();
-		await redis.set('ov_meet:meeting_ended_reason:room-1', 'sid-N');
-		const service = buildService(redis);
-
-		await expect(service.runGetMeetingEndedReason('room-1', 'sid-N')).resolves.toBe(
-			MeetMeetingEndedReason.MAX_DURATION_REACHED
-		);
-	});
-
-	it('is undefined when the flag belongs to a different (stale) meeting in the same room', async () => {
-		const redis = new FakeRedisService();
-		await redis.set('ov_meet:meeting_ended_reason:room-1', 'sid-OLD');
-		const service = buildService(redis);
-
-		await expect(service.runGetMeetingEndedReason('room-1', 'sid-NEW')).resolves.toBeUndefined();
-	});
-
-	it('consumes the flag, so it can only ever attribute one end', async () => {
-		const redis = new FakeRedisService();
-		await redis.set('ov_meet:meeting_ended_reason:room-1', 'sid-N');
-		const service = buildService(redis);
-
-		await expect(service.runGetMeetingEndedReason('room-1', 'sid-N')).resolves.toBe(
-			MeetMeetingEndedReason.MAX_DURATION_REACHED
-		);
-		expect(redis.store.has('ov_meet:meeting_ended_reason:room-1')).toBe(false);
-	});
-
-	it('leaves a flag it did not attribute standing, for the end it belongs to', async () => {
-		const redis = new FakeRedisService();
-		await redis.set('ov_meet:meeting_ended_reason:room-1', 'sid-OLD');
-		const service = buildService(redis);
-
-		await service.runGetMeetingEndedReason('room-1', 'sid-NEW');
-
-		expect(redis.store.get('ov_meet:meeting_ended_reason:room-1')).toBe('sid-OLD');
-	});
-
-	// The reconcile GC reports an end it found by noticing the room is gone from LiveKit, which is
-	// also why it cannot name the meeting: there is no sid left to compare the flag against.
-	it('attributes a standing flag to a caller that cannot name the finishing meeting', async () => {
-		const redis = new FakeRedisService();
-		await redis.set('ov_meet:meeting_ended_reason:room-1', 'sid-N');
-		const service = buildService(redis);
-
-		await expect(service.runGetMeetingEndedReason('room-1')).resolves.toBe(
-			MeetMeetingEndedReason.MAX_DURATION_REACHED
-		);
-	});
-
-	it('reports no reason to that caller when no flag stands', async () => {
-		const service = buildService(new FakeRedisService());
-
-		await expect(service.runGetMeetingEndedReason('room-1')).resolves.toBeUndefined();
-	});
-});
 
 class FakeLogger {
 	info() {}
@@ -143,7 +58,7 @@ class FakeRoomService {
 	}
 }
 
-class FakeRoomScheduledTasksService {
+class FakeMeetingDurationLimitService {
 	scheduled: { room: Room; maxDurationMinutes: number }[] = [];
 	cancelled: string[] = [];
 
@@ -153,6 +68,10 @@ class FakeRoomScheduledTasksService {
 
 	cancelMeetingEndAtDurationLimit(roomId: string): void {
 		this.cancelled.push(roomId);
+	}
+
+	async getMeetingEndedReason(): Promise<MeetMeetingEndedReason | undefined> {
+		return undefined;
 	}
 }
 
@@ -212,20 +131,13 @@ class FakeWebhookDispatcherService {
 	}
 }
 
-class TestableRoomLifecycleService extends LivekitWebhookService {
-	readonly roomScheduledTasks = new FakeRoomScheduledTasksService();
-
-	protected override getRoomScheduledTasksService(): Promise<RoomScheduledTasksService> {
-		return Promise.resolve(this.roomScheduledTasks as unknown as RoomScheduledTasksService);
-	}
-}
-
 const buildRoomStartedService = (roomService: FakeRoomService) => {
 	const roomRepository = new FakeRoomRepository();
 	roomRepository.activateMeetingResult = { config: { maxDurationMinutes: roomService.maxDurationMinutes } };
 	const livekitService = new FakeLiveKitService();
 	const webhookDispatcherService = new FakeWebhookDispatcherService();
-	const service = new TestableRoomLifecycleService(
+	const meetingDurationLimit = new FakeMeetingDurationLimitService();
+	const service = new LivekitWebhookService(
 		...([
 			{},
 			{},
@@ -240,11 +152,13 @@ const buildRoomStartedService = (roomService: FakeRoomService) => {
 			{},
 			{},
 			{},
-			new FakeLogger()
+			new FakeLogger(),
+			{},
+			meetingDurationLimit
 		] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
 	);
 
-	return { service, roomRepository, livekitService, webhookDispatcherService };
+	return { service, roomRepository, livekitService, webhookDispatcherService, meetingDurationLimit };
 };
 
 describe('LivekitWebhookService.handleRoomStarted (closed rooms are not reactivated)', () => {
@@ -298,40 +212,45 @@ describe('LivekitWebhookService duration-limit timer wiring', () => {
 	// The started room itself is handed over, not just its id: the timer's deadline is that room's
 	// own creation time plus the limit.
 	it('arms the timer with the room limit when a limited meeting starts', async () => {
-		const { service } = buildRoomStartedService(new FakeRoomService(MeetRoomStatus.OPEN, 30));
+		const { service, meetingDurationLimit } = buildRoomStartedService(new FakeRoomService(MeetRoomStatus.OPEN, 30));
 
 		await service.handleRoomStarted(startedRoom);
 
-		expect(service.roomScheduledTasks.scheduled).toEqual([{ room: startedRoom, maxDurationMinutes: 30 }]);
+		expect(meetingDurationLimit.scheduled).toEqual([{ room: startedRoom, maxDurationMinutes: 30 }]);
 	});
 
 	it('arms nothing for a room without a duration limit', async () => {
-		const { service } = buildRoomStartedService(new FakeRoomService(MeetRoomStatus.OPEN));
+		const { service, meetingDurationLimit } = buildRoomStartedService(new FakeRoomService(MeetRoomStatus.OPEN));
 
 		await service.handleRoomStarted(startedRoom);
 
-		expect(service.roomScheduledTasks.scheduled).toEqual([]);
+		expect(meetingDurationLimit.scheduled).toEqual([]);
 	});
 
 	it('arms nothing for a closed room, whose resurrected LiveKit room is deleted instead', async () => {
-		const { service } = buildRoomStartedService(new FakeRoomService(MeetRoomStatus.CLOSED, 30));
+		const { service, meetingDurationLimit } = buildRoomStartedService(
+			new FakeRoomService(MeetRoomStatus.CLOSED, 30)
+		);
 
 		await service.handleRoomStarted(startedRoom);
 
-		expect(service.roomScheduledTasks.scheduled).toEqual([]);
+		expect(meetingDurationLimit.scheduled).toEqual([]);
 	});
 
 	it('arms nothing for a stale event that does not transition the room', async () => {
-		const { service, roomRepository } = buildRoomStartedService(new FakeRoomService(MeetRoomStatus.OPEN, 30));
+		const { service, roomRepository, meetingDurationLimit } = buildRoomStartedService(
+			new FakeRoomService(MeetRoomStatus.OPEN, 30)
+		);
 		roomRepository.activateMeetingResult = null;
 
 		await service.handleRoomStarted(startedRoom);
 
-		expect(service.roomScheduledTasks.scheduled).toEqual([]);
+		expect(meetingDurationLimit.scheduled).toEqual([]);
 	});
 
 	it('disarms the timer when the meeting finishes by any other means', async () => {
-		const service = new TestableRoomLifecycleService(
+		const meetingDurationLimit = new FakeMeetingDurationLimitService();
+		const service = new LivekitWebhookService(
 			...([
 				{ reactivateAutoRecording: async () => {}, releaseRecordingLockIfNoEgress: async () => {} },
 				{},
@@ -346,13 +265,15 @@ describe('LivekitWebhookService duration-limit timer wiring', () => {
 				{ cleanupState: async () => {} },
 				{},
 				new FakeRedisService(),
-				new FakeLogger()
+				new FakeLogger(),
+				{},
+				meetingDurationLimit
 			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
 		);
 
 		await service.handleRoomFinished({ name: 'room-1', sid: 'sid-1' } as unknown as Room);
 
-		expect(service.roomScheduledTasks.cancelled).toEqual(['room-1']);
+		expect(meetingDurationLimit.cancelled).toEqual(['room-1']);
 	});
 });
 
@@ -370,7 +291,17 @@ describe('LivekitWebhookService.handleRoomFinished', () => {
 		const record = (name: string) => async (roomId: string) => {
 			cleanups.push(`${name}(${roomId})`);
 		};
-		const service = new TestableRoomLifecycleService(
+		const meetingDurationLimitService = new MeetingDurationLimitService(
+			...([
+				new FakeLogger(),
+				{},
+				{ registerTask: () => {}, cancelTask: () => {} },
+				{},
+				redis,
+				{}
+			] as unknown as ConstructorParameters<typeof MeetingDurationLimitService>)
+		);
+		const service = new LivekitWebhookService(
 			...([
 				{
 					reactivateAutoRecording: async () => {},
@@ -390,7 +321,8 @@ describe('LivekitWebhookService.handleRoomFinished', () => {
 				{},
 				redis,
 				new FakeLogger(),
-				{ cleanupRoom: record('cleanupRoom') }
+				{ cleanupRoom: record('cleanupRoom') },
+				meetingDurationLimitService
 			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
 		);
 
@@ -1163,12 +1095,10 @@ describe('LivekitWebhookService handlers whose collaborators fail', () => {
 			{},
 			{ get: async () => null, delete: failing },
 			new FakeLogger(),
-			{ getBroadcasts: async () => [] }
+			{ getBroadcasts: async () => [] },
+			new FakeMeetingDurationLimitService()
 		] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
 	);
-	Object.assign(service, {
-		getRoomScheduledTasksService: async () => new FakeRoomScheduledTasksService()
-	});
 
 	it.each([
 		['a participant join', () => service.handleParticipantJoined(ROOM, person)],

@@ -6,6 +6,7 @@ export * from './global-config.service.js';
 export * from './livekit-webhook.service.js';
 export * from './livekit.service.js';
 export * from './logger.service.js';
+export * from './meeting-duration-limit.service.js';
 export * from './migration.service.js';
 export * from './mutex.service.js';
 export * from './participant-name.service.js';
