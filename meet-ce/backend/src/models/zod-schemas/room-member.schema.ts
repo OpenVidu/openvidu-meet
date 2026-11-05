@@ -22,6 +22,7 @@ import {
 } from '@openvidu-meet/typings';
 import { z } from 'zod';
 import { invalidRegexPatternReason } from '../../utils/string-match-filter.utils.js';
+import { fieldListSchema } from './field-selection.schema.js';
 import { maxItemsSchema } from './pagination.schema.js';
 
 /**
@@ -54,23 +55,7 @@ const fieldsSchema = z
 		return unique.length > 0 ? unique : undefined;
 	});
 
-/**
- * Shared extraFields validation schema for RoomMember entity.
- * Validates and transforms comma-separated string to a typed array of MeetRoomMemberExtraField.
- */
-const extraFieldsSchema = z
-	.string()
-	.optional()
-	.transform((value) => {
-		if (!value) return undefined;
-
-		const requested = value.split(',').map((p) => p.trim());
-		const valid = requested.filter((p) =>
-			MEET_ROOM_MEMBER_EXTRA_FIELDS.includes(p as MeetRoomMemberExtraField)
-		) as MeetRoomMemberExtraField[];
-
-		return valid.length > 0 ? valid : undefined;
-	});
+const extraFieldsSchema = fieldListSchema(MEET_ROOM_MEMBER_EXTRA_FIELDS);
 
 const RoomMemberRoleSchema: z.ZodType<MeetRoomMemberRole> = z.enum(MeetRoomMemberRole);
 

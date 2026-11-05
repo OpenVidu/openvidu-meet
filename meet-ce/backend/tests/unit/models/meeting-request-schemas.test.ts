@@ -55,10 +55,10 @@ describe('MuteParticipantMediaReqSchema', () => {
 
 	it('rejects turning a device on', () => {
 		expect(issues(MuteParticipantMediaReqSchema, { audioActive: true })).toEqual([
-			"audioActive: Invalid enum value. Expected 'false', received 'true'"
+			'audioActive: audioActive can only be the boolean false'
 		]);
 		expect(issues(MuteParticipantMediaReqSchema, { audioActive: false, videoActive: true })).toEqual([
-			"videoActive: Invalid enum value. Expected 'false', received 'true'"
+			'videoActive: videoActive can only be the boolean false'
 		]);
 	});
 
@@ -69,7 +69,9 @@ describe('MuteParticipantMediaReqSchema', () => {
 	});
 
 	it('rejects a value that is not a boolean', () => {
-		expect(issues(MuteParticipantMediaReqSchema, { screenShareActive: 'false' })).toHaveLength(1);
+		expect(issues(MuteParticipantMediaReqSchema, { screenShareActive: 'false' })).toEqual([
+			'screenShareActive: screenShareActive can only be the boolean false'
+		]);
 	});
 });
 
@@ -86,7 +88,7 @@ describe('hand schemas', () => {
 	it('LowerAllHandsReqSchema accepts only lowering', () => {
 		expect(LowerAllHandsReqSchema.parse({ raised: false })).toEqual({ raised: false });
 		expect(issues(LowerAllHandsReqSchema, { raised: true })).toEqual([
-			"raised: Invalid enum value. Expected 'false', received 'true'"
+			'raised: raised can only be the boolean false'
 		]);
 		expect(issues(LowerAllHandsReqSchema, {})).toEqual(['raised: Required']);
 	});

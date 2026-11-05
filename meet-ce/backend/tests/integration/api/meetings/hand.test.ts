@@ -259,7 +259,7 @@ describe('Meetings API Tests', () => {
 
 		it('should reject raising every hand', async () => {
 			const response = await lowerAllHands(roomData.room.roomId, { raised: true }, roomData.moderatorToken);
-			expectValidationError(response, 'raised', "Invalid enum value. Expected 'false', received 'true'");
+			expectValidationError(response, 'raised', 'raised can only be the boolean false');
 		});
 
 		it('should fail with 403 when lowering every hand without participantHandLower', async () => {

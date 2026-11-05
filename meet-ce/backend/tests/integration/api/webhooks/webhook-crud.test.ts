@@ -108,7 +108,7 @@ describe('Webhooks API Tests (CRUD)', () => {
 
 			// Missing URL
 			response = await createWebhook({});
-			expectValidationError(response, 'url', 'Must be a valid URL');
+			expectValidationError(response, 'url', 'Required');
 
 			// Empty events array (omitting the field is the way to receive every event)
 			response = await createWebhook({ url: 'https://example.com/hook', events: [] as never });

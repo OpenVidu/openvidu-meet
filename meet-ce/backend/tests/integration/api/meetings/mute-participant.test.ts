@@ -106,7 +106,7 @@ describe('Meetings API Tests', () => {
 				{ audioActive: true } as never,
 				roomData.moderatorToken
 			);
-			expectValidationError(response, 'audioActive', "Invalid enum value. Expected 'false', received 'true'");
+			expectValidationError(response, 'audioActive', 'audioActive can only be the boolean false');
 		});
 
 		it('should reject a request that names no device', async () => {

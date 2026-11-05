@@ -782,6 +782,14 @@ describe('room deletion schemas', () => {
 		});
 
 		it.each([
+			['null', null],
+			['an object', { roomId: 'a' }],
+			['a boolean', true]
+		])('refuses an array entry that is %s instead of reading it as an id', (_case, entry) => {
+			expect(BulkDeleteRoomsReqSchema.safeParse({ roomIds: ['a', entry] }).success).toBe(false);
+		});
+
+		it.each([
 			['an empty string', ''],
 			['only separators', ' , ,'],
 			['ids that sanitize to nothing', '!!,??'],

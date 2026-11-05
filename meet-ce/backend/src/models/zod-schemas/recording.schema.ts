@@ -20,48 +20,20 @@ export const nonEmptySanitizedRecordingId = (fieldName: string) =>
 	z
 		.string()
 		.min(1, { message: `${fieldName} is required and cannot be empty` })
-		.transform((val) => {
-			const sanitizedValue = val.trim();
+		.transform((value) => value.trim())
+		.refine((value) => value !== '', { message: `${fieldName} cannot be empty after sanitization` })
+		.transform((value, ctx) => {
+			// The recording ID has the form 'roomId--EG_xxx--uid', with a room ID as the room ID schema accepts it
+			const [roomId, egressId, uid, ...rest] = value.split('--');
+			const room = RoomIdParamSchema.safeParse(roomId);
 
-			// Verify the format of the recording ID
-			// The recording ID should be in the format 'roomId--EG_xxx--uid'
-			const parts = sanitizedValue.split('--');
-
-			// If the recording ID is not in the expected format, return the sanitized value
-			// The next validation will check if the format is correct
-			if (parts.length !== 3) return sanitizedValue;
-
-			// If the recording ID is in the expected format, sanitize the roomId part
-			const { success, data } = RoomIdParamSchema.safeParse(parts[0]);
-
-			if (!success) {
-				// If the roomId part is not valid, return the sanitized value
-				return sanitizedValue;
+			if (rest.length > 0 || !room.success || !egressId?.startsWith('EG_') || egressId.length <= 3 || !uid) {
+				ctx.addIssue({ code: 'custom', message: `${fieldName} does not follow the expected format` });
+				return z.NEVER;
 			}
 
-			return `${data}--${parts[1]}--${parts[2]}`;
-		})
-		.refine((data) => data !== '', {
-			message: `${fieldName} cannot be empty after sanitization`
-		})
-		.refine(
-			(data) => {
-				const parts = data.split('--');
-
-				if (parts.length !== 3) return false;
-
-				if (parts[0].length === 0) return false;
-
-				if (!parts[1].startsWith('EG_') || parts[1].length <= 3) return false;
-
-				if (parts[2].length === 0) return false;
-
-				return true;
-			},
-			{
-				message: `${fieldName} does not follow the expected format`
-			}
-		);
+			return `${room.data}--${egressId}--${uid}`;
+		});
 
 export const RecordingIdParamSchema = nonEmptySanitizedRecordingId('recordingId');
 

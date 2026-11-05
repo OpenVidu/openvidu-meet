@@ -93,6 +93,11 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - Kicking a participant answered `404` when the media server stopped answering during the kick. It now answers `503`.
 - A list request with a `maxItems` below 1, such as `0.5`, answered an empty page marked as truncated and without a
   `nextPageToken`. Such a value now returns one item.
+- A fractional `autoDeletionDate`, a recording ID whose room part is not a valid room ID, and a `roomIds` entry of
+  [`bulkDeleteRooms`][3.10-bulk-delete-rooms] that is not a string or a number were accepted. They now answer `422`.
+- A missing `url` in [`webhookCreate`][3.10-webhook-create] was reported as not a valid URL, and `true` or `"false"` in
+  `participantMuteAll`, `participantMute` or `participantHandLowerAll` as an enum value equal to the one expected. They
+  are now reported as `Required` and as only accepting the boolean `false`.
 - [`participantRoleUpdate`][3.10-participant-role-update], [`participantMute`][3.9-participant-mute],
   [`participantMuteAll`][3.9-participant-mute-all], `updateRoomMember` and the embedded commands that use them
   answered with an error when the notice to the affected participants could not be delivered, although the change
@@ -419,6 +424,8 @@ registered on both receives it twice.
 [3.10-participant-role-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantRoleChangedWebhook
 [3.10-participant-role-update]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantRoleUpdate
 [3.10-update-room-status]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/updateRoomStatus
+[3.10-bulk-delete-rooms]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/bulkDeleteRooms
+[3.10-webhook-create]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/webhookCreate
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html
 [3.9-meetings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/meetingGet
 [3.9-webhooks-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/webhookList

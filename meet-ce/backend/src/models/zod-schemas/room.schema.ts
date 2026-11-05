@@ -38,6 +38,7 @@ import { invalidRegexPatternReason } from '../../utils/string-match-filter.utils
 import { BroadcastConfigSchema } from './broadcast.schema.js';
 import { encodingValidator } from './recording-encoding.schema.js';
 import { PartialMeetPermissionsSchema } from './room-member.schema.js';
+import { fieldListSchema } from './field-selection.schema.js';
 import { maxItemsSchema } from './pagination.schema.js';
 
 /**
@@ -278,6 +279,7 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		.number()
 		.positive('autoDeletionDate must be a positive integer')
 		.max(LATEST_REPRESENTABLE_DATE, 'autoDeletionDate must be a valid timestamp in milliseconds')
+		.int('autoDeletionDate must be a positive integer')
 		.refine(
 			(date) => date >= Date.now() + ms(INTERNAL_CONFIG.MIN_ROOM_AUTO_DELETE_DURATION),
 			`autoDeletionDate must be at least ${INTERNAL_CONFIG.MIN_ROOM_AUTO_DELETE_DURATION} in the future`
@@ -344,21 +346,7 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 	// 	.default(null)
 });
 
-// Shared extraFields validation schema for Room entity
-// Validates and transforms comma-separated string to typed array
-const extraFieldsSchema = z
-	.string()
-	.optional()
-	.transform((value) => {
-		// Transform to typed array of MeetRoomExtraField
-		if (!value) return undefined;
-
-		const allowed = MEET_ROOM_EXTRA_FIELDS;
-		const requested = value.split(',').map((p) => p.trim());
-		const valid = requested.filter((p) => allowed.includes(p as MeetRoomExtraField));
-
-		return valid.length > 0 ? (valid as MeetRoomExtraField[]) : undefined;
-	});
+const extraFieldsSchema = fieldListSchema(MEET_ROOM_EXTRA_FIELDS);
 
 // Shared fields validation schema for Room entity
 // Validates and transforms comma-separated string to typed array
@@ -505,8 +493,7 @@ export const DeleteRoomReqSchema = z.object({
 export const BulkDeleteRoomsReqSchema = z.object({
 	roomIds: z.preprocess(
 		(arg) => {
-			// First, convert input to array of strings
-			let roomIds: string[] = [];
+			let roomIds: unknown[] = [];
 
 			if (typeof arg === 'string') {
 				roomIds = arg
@@ -514,7 +501,9 @@ export const BulkDeleteRoomsReqSchema = z.object({
 					.map((s) => s.trim())
 					.filter((s) => s !== '');
 			} else if (Array.isArray(arg)) {
-				roomIds = arg.map((item) => String(item)).filter((s) => s !== '');
+				roomIds = (arg as unknown[])
+					.map((item) => (typeof item === 'number' ? String(item) : item))
+					.filter((item) => item !== '');
 			}
 
 			// Apply sanitization BEFORE validation and deduplicate
@@ -523,7 +512,8 @@ export const BulkDeleteRoomsReqSchema = z.object({
 
 			// Pre-sanitize to check for duplicates that would become identical
 			for (const id of roomIds) {
-				const transformed = MeetRoomHelper.sanitizeRoomId(id);
+				// Anything but a string is kept as it is, for the array schema to refuse
+				const transformed = typeof id === 'string' ? MeetRoomHelper.sanitizeRoomId(id) : id;
 
 				// Only add non-empty IDs
 				if (transformed !== '') {

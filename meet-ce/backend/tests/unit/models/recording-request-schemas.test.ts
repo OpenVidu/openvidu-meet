@@ -52,10 +52,21 @@ describe('RecordingIdParamSchema', () => {
 		expect(parse('room--EG_a b!--ui d')).toBe('room--EG_a b!--ui d');
 	});
 
-	it('keeps a room part that cannot be sanitized into a valid room id, for the format check to judge', () => {
-		expect(parse('!!!--EG_abc--uid1')).toBe('!!!--EG_abc--uid1');
-		expect(parse(`${'a'.repeat(101)}--EG_abc--uid1`)).toBe(`${'a'.repeat(101)}--EG_abc--uid1`);
+	it('rejects a room part that is not a valid room id once sanitized', () => {
+		expect(issues(RecordingIdParamSchema, '!!!--EG_abc--uid1')).toEqual([
+			'recordingId does not follow the expected format'
+		]);
+		expect(issues(RecordingIdParamSchema, `${'a'.repeat(101)}--EG_abc--uid1`)).toEqual([
+			'recordingId does not follow the expected format'
+		]);
 	});
+
+	it.each(['room--EG_--uid1', 'room--eg_abc--uid1', 'room--EG_abc--', 'room--EG_abc--uid1--extra'])(
+		'rejects %j for not following the format',
+		(value) => {
+			expect(issues(RecordingIdParamSchema, value)).toEqual(['recordingId does not follow the expected format']);
+		}
+	);
 
 	it('accepts a room part of exactly 100 characters', () => {
 		const roomId = 'a'.repeat(100);
@@ -68,10 +79,7 @@ describe('RecordingIdParamSchema', () => {
 	});
 
 	it('rejects an id that is only whitespace', () => {
-		expect(issues(RecordingIdParamSchema, '   ')).toEqual([
-			'recordingId cannot be empty after sanitization',
-			'recordingId does not follow the expected format'
-		]);
+		expect(issues(RecordingIdParamSchema, '   ')).toEqual(['recordingId cannot be empty after sanitization']);
 	});
 
 	it('names the field it was given in the messages', () => {

@@ -38,7 +38,8 @@ describe('MeetWebhookOptionsSchema', () => {
 	});
 
 	it('requires a URL', () => {
-		expect(issues(MeetWebhookOptionsSchema, {})).toEqual(['url: Must be a valid URL']);
+		expect(issues(MeetWebhookOptionsSchema, {})).toEqual(['url: Required']);
+		expect(issues(MeetWebhookOptionsSchema, { url: 'not a url' })).toContain('url: Must be a valid URL');
 	});
 
 	it('rejects a value that is not a URL', () => {

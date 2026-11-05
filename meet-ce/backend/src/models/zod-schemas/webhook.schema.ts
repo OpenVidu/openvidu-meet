@@ -9,7 +9,9 @@ import { z } from 'zod';
  * webhook that never fires, which is what `enabled: false` expresses.
  */
 export const MeetWebhookOptionsSchema: z.ZodType<MeetWebhookOptions> = z.object({
-	url: z.url('Must be a valid URL').regex(/^https?:\/\//, { message: 'URL must start with http:// or https://' }),
+	url: z
+		.url({ error: (issue) => (issue.input === undefined ? undefined : 'Must be a valid URL') })
+		.regex(/^https?:\/\//, { message: 'URL must start with http:// or https://' }),
 	events: z
 		.array(z.enum(MeetWebhookEventType))
 		.nonempty('Must contain at least one event type (omit the field to receive every event)')
