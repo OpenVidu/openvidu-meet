@@ -3,8 +3,6 @@ import type { MeetRoomMemberPermissions, MeetRoomRoles } from '@openvidu-meet/ty
 import { MEET_PERMISSION_KEYS, MeetRoomMemberRole, MeetRoomMemberUIBadge, TrackSource } from '@openvidu-meet/typings';
 import type { ParticipantInfo } from 'livekit-server-sdk';
 import ms from 'ms';
-// The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see meeting-mute.test.ts).
 import { container, registerDependencies } from '../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
 import type { ParticipantMeetingMetadata } from '../../../src/helpers/participant.helper.js';

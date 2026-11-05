@@ -1,9 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 import type { MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { MEET_PERMISSION_KEYS, MeetRoomMemberUIBadge, TrackSource } from '@openvidu-meet/typings';
-// The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see meeting-mute.test.ts).
-import '../../../src/config/dependency-injector.config.js';
 import type { LiveKitPermissions } from '@openvidu-meet/typings';
 import { RoomMemberService } from '../../../src/services/room-member.service.js';
 

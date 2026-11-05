@@ -2,8 +2,6 @@ import { describe, expect, it, jest } from '@jest/globals';
 import { MeetUserRole } from '@openvidu-meet/typings';
 import { Container } from 'inversify';
 import ms from 'ms';
-// The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see meeting-mute.test.ts).
 import { createStorageModule } from '../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../src/environment.js';

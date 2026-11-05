@@ -8,9 +8,6 @@ import {
 	MeetRoomDeletionSuccessCode,
 	MeetRoomStatus
 } from '@openvidu-meet/typings';
-// The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see meeting-mute.test.ts).
-import '../../../src/config/dependency-injector.config.js';
 import type { RoomRepository } from '../../../src/repositories/room.repository.js';
 import type { LoggerService } from '../../../src/services/logger.service.js';
 import { RequestSessionService } from '../../../src/services/request-session.service.js';

@@ -8,7 +8,6 @@ import type {
 	MeetRoomMemberPermissions,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberTokenOptions,
-	MeetRoomRoles,
 	ProjectedMeetRoomMember
 } from '@openvidu-meet/typings';
 import {
@@ -23,7 +22,6 @@ import {
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { ParticipantInfo } from 'livekit-server-sdk';
-import merge from 'lodash.merge';
 import ms from 'ms';
 import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
@@ -159,7 +157,11 @@ export class RoomMemberService {
 
 		// Compute effective permissions
 		const { roles } = await this.roomService.getMeetRoom(roomId, ['roles']);
-		const effectivePermissions = this.computeEffectivePermissions(roles, baseRole, customPermissions);
+		const effectivePermissions = MeetRoomMemberHelper.computeEffectivePermissions(
+			roles,
+			baseRole,
+			customPermissions
+		);
 
 		const now = Date.now();
 		const roomMember = {
@@ -175,23 +177,6 @@ export class RoomMemberService {
 			permissionsUpdatedAt: now
 		};
 		return this.roomMemberRepository.create(roomMember);
-	}
-
-	/**
-	 * Computes effective permissions by merging base role permissions with custom permissions.
-	 *
-	 * @param roomRoles - The room roles configuration
-	 * @param baseRole - The base role of the member
-	 * @param customPermissions - Optional custom permissions that override the base role
-	 * @returns The effective permissions object
-	 */
-	protected computeEffectivePermissions(
-		roomRoles: MeetRoomRoles,
-		baseRole: MeetRoomMemberRole,
-		customPermissions?: Partial<MeetRoomMemberPermissions>
-	): MeetRoomMemberPermissions {
-		const basePermissions = roomRoles[baseRole].permissions;
-		return merge({}, basePermissions, customPermissions);
 	}
 
 	/**
@@ -295,7 +280,11 @@ export class RoomMemberService {
 
 		// Recompute effective permissions
 		const room = await this.roomService.getMeetRoom(roomId, ['roles', 'config']);
-		const effectivePermissions = this.computeEffectivePermissions(room.roles, nextBaseRole, nextCustomPermissions);
+		const effectivePermissions = MeetRoomMemberHelper.computeEffectivePermissions(
+			room.roles,
+			nextBaseRole,
+			nextCustomPermissions
+		);
 		const permissionsChanged = MEET_PERMISSION_KEYS.some(
 			(key) => effectivePermissions[key] !== member.effectivePermissions[key]
 		);
@@ -319,88 +308,6 @@ export class RoomMemberService {
 		}
 
 		return updatedMember;
-	}
-
-	/**
-	 * Updates effective permissions for all members of a room based on the new room roles permissions.
-	 * This method should be called when room roles are updated to ensure all members
-	 * have their effective permissions recalculated.
-	 *
-	 * @param roomId - The ID of the room
-	 * @param roomRoles - The updated room roles configuration
-	 * @returns A promise that resolves when all members have been updated
-	 */
-	async updateAllRoomMemberPermissions(roomId: string, roomRoles: MeetRoomRoles): Promise<void> {
-		this.logger.verbose(`Updating effective permissions for all members in room '${roomId}'`);
-
-		let batchNumber = 0;
-		let nextPageToken: string | undefined;
-		let totalUpdated = 0;
-
-		do {
-			batchNumber++;
-
-			// Get a batch of members
-			const {
-				members,
-				isTruncated,
-				nextPageToken: token
-			} = await this.getAllRoomMembers(roomId, {
-				maxItems: 100,
-				nextPageToken,
-				fields: ['memberId', 'baseRole', 'customPermissions']
-			});
-
-			if (members.length === 0) {
-				break;
-			}
-
-			this.logger.verbose(`Processing batch ${batchNumber} with ${members.length} members in room '${roomId}'`);
-
-			// Update each member's effective permissions in this batch
-			await runConcurrently(
-				members,
-				async (member) => {
-					try {
-						// Recalculate effective permissions based on new room roles
-						const effectivePermissions = this.computeEffectivePermissions(
-							roomRoles,
-							member.baseRole,
-							member.customPermissions
-						);
-
-						// Update the member with new effective permissions
-						await this.roomMemberRepository.updatePartial(roomId, member.memberId, {
-							effectivePermissions,
-							permissionsUpdatedAt: Date.now()
-						});
-
-						this.logger.debug(
-							`Updated effective permissions for member '${member.memberId}' in room '${roomId}'`
-						);
-					} catch (error) {
-						this.logger.warn(
-							`Failed to update effective permissions for member '${member.memberId}' in room '${roomId}':`,
-							error
-						);
-						// Continue with other members even if one fails
-					}
-				},
-				{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_UPDATE_PERMISSIONS, failFast: true }
-			);
-
-			totalUpdated += members.length;
-			nextPageToken = isTruncated ? token : undefined;
-
-			this.logger.verbose(`Completed batch ${batchNumber}, total updated: ${totalUpdated} members`);
-		} while (nextPageToken);
-
-		if (totalUpdated === 0) {
-			this.logger.verbose(`No members found in room '${roomId}' to update`);
-			return;
-		}
-
-		this.logger.info(`Successfully updated effective permissions for ${totalUpdated} members in room '${roomId}'`);
 	}
 
 	/**
@@ -1273,26 +1180,6 @@ export class RoomMemberService {
 	}
 
 	/**
-	 * Sends a signal to the participant to regenerate their token and update their permissions in real-time.
-	 * This is used after a participant's permissions have been updated while they are in a meeting.
-	 *
-	 * @param roomId - The ID of the room
-	 * @param participantIdentity - The identity of the participant to send the signal to
-	 */
-	async notifyParticipantPermissionsUpdate(roomId: string, participantIdentity: string): Promise<void> {
-		const isParticipantInMeeting = await this.existsParticipantInMeeting(roomId, participantIdentity);
-
-		if (!isParticipantInMeeting) {
-			this.logger.verbose(
-				`Not sending permissions updated signal to participant '${participantIdentity}' in room '${roomId}' because they are not currently in a meeting`
-			);
-			return;
-		}
-
-		await this.frontendEventService.sendParticipantPermissionsUpdatedSignal(roomId, participantIdentity);
-	}
-
-	/**
 	 * Kicks multiple members from a meeting in batches.
 	 * This method processes the kicks in parallel batches to avoid overwhelming the system.
 	 *
@@ -1315,7 +1202,7 @@ export class RoomMemberService {
 			memberIds,
 			async (memberId) => {
 				try {
-					await this.kickParticipantFromMeeting(roomId, memberId);
+					await this.livekitService.deleteParticipant(roomId, memberId);
 					this.logger.verbose(`Kicked participant '${memberId}' from meeting in room '${roomId}'`);
 					return 'kicked';
 				} catch (error) {
@@ -1366,16 +1253,6 @@ export class RoomMemberService {
 		if (skippedCount > 0) {
 			this.logger.verbose(`Skipped ${skippedCount} participant(s) not present in meeting in room '${roomId}'`);
 		}
-	}
-
-	async kickParticipantFromMeeting(roomId: string, participantIdentity: string): Promise<void> {
-		this.logger.verbose(`Kicking participant '${participantIdentity}' from room '${roomId}'`);
-		return this.livekitService.deleteParticipant(roomId, participantIdentity);
-	}
-
-	protected async existsParticipantInMeeting(roomId: string, participantIdentity: string): Promise<boolean> {
-		this.logger.debug(`Checking if participant '${participantIdentity}' exists in room '${roomId}'`);
-		return this.livekitService.participantExists(roomId, participantIdentity);
 	}
 
 	protected async getParticipantFromMeeting(roomId: string, participantIdentity: string): Promise<ParticipantInfo> {
