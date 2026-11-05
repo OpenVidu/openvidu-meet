@@ -1,3 +1,35 @@
+<ng-template #refreshToolbar>
+	<div class="refresh-toolbar">
+		@if (lastUpdatedTime(); as time) {
+			<span class="refresh-time" id="overview-updated-at">{{ 'OVERVIEW.UPDATED_AT' | translate: { time } }}</span>
+		}
+		<button
+			mat-stroked-button
+			type="button"
+			id="refresh-overview-button"
+			[disabled]="isRefreshing()"
+			(click)="refresh()"
+		>
+			<mat-icon [class.spinning]="isRefreshing()">refresh</mat-icon>
+			{{ 'OVERVIEW.REFRESH' | translate }}
+		</button>
+	</div>
+</ng-template>
+
+<ng-template #refreshError>
+	@if (refreshFailed()) {
+		<div class="refresh-error" role="alert" id="overview-refresh-error">
+			<mat-icon>warning</mat-icon>
+			<div>
+				<strong>{{ 'OVERVIEW.REFRESH_ERROR' | translate }}</strong>
+				@if (lastUpdatedTime(); as time) {
+					{{ 'OVERVIEW.REFRESH_ERROR_KEPT' | translate: { time } }}
+				}
+			</div>
+		</div>
+	}
+</ng-template>
+
 <div class="ov-page-container ov-mb-xxl">
 	@if (isLoading()) {
 		<!-- Loading State -->
@@ -10,122 +42,210 @@
 				<p class="subtitle">{{ 'OVERVIEW.LOADING_SUBTITLE' | translate }}</p>
 			</div>
 		</div>
-	} @else if (hasData()) {
-		<div class="page-header">
-			<div class="title">
-				<mat-icon>dashboard</mat-icon>
-				<h1>{{ 'OVERVIEW.TITLE' | translate }}</h1>
+	} @else if (stats(); as s) {
+		@if (hasData()) {
+			<div class="overview-header">
+				<div class="page-header">
+					<div class="title">
+						<mat-icon>dashboard</mat-icon>
+						<h1>{{ 'OVERVIEW.TITLE' | translate }}</h1>
+					</div>
+					<p class="subtitle">{{ 'OVERVIEW.SUBTITLE' | translate }}</p>
+				</div>
+				<ng-container [ngTemplateOutlet]="refreshToolbar" />
 			</div>
-			<p class="subtitle">{{ 'OVERVIEW.SUBTITLE' | translate }}</p>
-		</div>
-		<!-- Dashboard State -->
-		<div class="dashboard-content">
-			<!-- Stats Grid -->
-			<div class="stats-grid">
-				<mat-card class="stat-card rooms-card">
-					<mat-card-content>
-						<div class="stat-icon">
-							<mat-icon class="ov-room-icon">video_chat</mat-icon>
-						</div>
-						<div class="stat-content">
-							<div class="stat-number">{{ stats().totalRooms }}</div>
-							<div class="stat-label">{{ 'OVERVIEW.TOTAL_ROOMS' | translate }}</div>
-							<div class="stat-detail">{{ stats().activeRooms }} {{ 'OVERVIEW.ACTIVE_MEETINGS_SUFFIX' | translate }}</div>
-						</div>
-					</mat-card-content>
-					<mat-card-actions>
-						<button
-							mat-button
-							(click)="navigateTo('rooms/new')"
-							class="primary-button"
-							id="create-room-button"
-						>
-							<mat-icon>add</mat-icon>
-							{{ 'OVERVIEW.CREATE_ROOM' | translate }}
-						</button>
-						<button mat-button (click)="navigateTo('rooms')" id="view-all-rooms-button">
-							{{ 'OVERVIEW.VIEW_ALL' | translate }}
-							<mat-icon class="ov-navigation-icon">arrow_forward</mat-icon>
-						</button>
-					</mat-card-actions>
-				</mat-card>
-
-				<mat-card class="stat-card recordings-card">
-					<mat-card-content>
-						<div class="stat-icon">
-							<mat-icon class="ov-recording-icon">video_library</mat-icon>
-						</div>
-						<div class="stat-content">
-							<div class="stat-number">{{ stats().totalRecordings }}</div>
-							<div class="stat-label">{{ 'OVERVIEW.TOTAL_RECORDINGS' | translate }}</div>
-							<div class="stat-detail">{{ stats().completeRecordings }} {{ 'OVERVIEW.AVAILABLE_PLAYBACK_SUFFIX' | translate }}</div>
-						</div>
-					</mat-card-content>
-					<mat-card-actions>
-						<button mat-button (click)="navigateTo('recordings')" id="view-all-recordings-button">
-							<mat-icon class="ov-navigation-icon">arrow_forward</mat-icon>
-							{{ 'OVERVIEW.VIEW_ALL' | translate }}
-						</button>
-					</mat-card-actions>
-				</mat-card>
-			</div>
-		</div>
-	} @else {
-		<!-- First Time User State -->
-		<div class="get-started-header">
-			<h1>{{ 'OVERVIEW.GET_STARTED_TITLE' | translate }}</h1>
-			<p class="subtitle">{{ 'OVERVIEW.GET_STARTED_SUBTITLE_1' | translate }}</p>
-			<p class="subtitle">{{ 'OVERVIEW.GET_STARTED_SUBTITLE_2' | translate }}</p>
-		</div>
-		<div class="welcome-content">
-			<div class="welcome-card">
-				<div class="welcome-actions">
-					<div class="getting-started-grid">
-						<mat-card class="feature-card">
-							<mat-card-content>
+			<ng-container [ngTemplateOutlet]="refreshError" />
+			<!-- Dashboard State -->
+			<div class="dashboard-content">
+				<!-- Stats Grid -->
+				<div class="stats-grid">
+					<mat-card class="stat-card rooms-card">
+						<mat-card-content>
+							<div class="stat-icon">
 								<mat-icon class="ov-room-icon">video_chat</mat-icon>
-								<h3>{{ 'OVERVIEW.CREATE_FIRST_ROOM_TITLE' | translate }}</h3>
-								<p>{{ 'OVERVIEW.CREATE_FIRST_ROOM_DESC' | translate }}</p>
-								<button
-									mat-stroked-button
-									(click)="navigateTo('rooms/new')"
-									id="create-first-room-button"
-								>
-									<mat-icon class="ov-action-icon">add</mat-icon>
-									{{ 'OVERVIEW.CREATE_ROOM' | translate }}
-								</button>
-							</mat-card-content>
-						</mat-card>
+							</div>
+							<div class="stat-content">
+								<div class="stat-number">{{ s.totalRooms }}</div>
+								<div class="stat-label">{{ 'OVERVIEW.TOTAL_ROOMS' | translate }}</div>
+							</div>
+						</mat-card-content>
+						<div class="status-breakdown">
+							<div
+								class="status-bar"
+								role="img"
+								[attr.aria-label]="
+									'OVERVIEW.ROOMS_BAR_LABEL'
+										| translate: { open: s.openRooms, meeting: s.activeRooms, closed: s.closedRooms }
+								"
+							>
+								@for (segment of roomSegments(); track segment.key) {
+									@if (segment.count > 0) {
+										<div
+											[class]="'status-segment status-' + segment.key"
+											[style.flex-grow]="segment.count"
+										></div>
+									}
+								}
+							</div>
+							<ul class="status-legend">
+								@for (segment of roomSegments(); track segment.key) {
+									<li class="status-legend-row" [id]="'rooms-status-' + segment.key">
+										<span [class]="'legend-swatch status-' + segment.key"></span>
+										<span class="legend-label">{{ segment.label | translate }}</span>
+										<span class="legend-count">{{ segment.count }}</span>
+									</li>
+								}
+							</ul>
+						</div>
+						<mat-card-actions>
+							<button
+								mat-button
+								(click)="navigateTo('rooms/new')"
+								class="primary-button"
+								id="create-room-button"
+							>
+								<mat-icon>add</mat-icon>
+								{{ 'OVERVIEW.CREATE_ROOM' | translate }}
+							</button>
+							<button mat-button (click)="navigateTo('rooms')" id="view-all-rooms-button">
+								{{ 'OVERVIEW.VIEW_ALL' | translate }}
+								<mat-icon class="ov-navigation-icon">arrow_forward</mat-icon>
+							</button>
+						</mat-card-actions>
+					</mat-card>
 
-						<mat-card class="feature-card">
-							<mat-card-content>
-								<mat-icon class="material-symbols-outlined"> palette </mat-icon>
-								<h3>{{ 'OVERVIEW.CUSTOMIZE_TITLE' | translate }}</h3>
-								<p>{{ 'OVERVIEW.CUSTOMIZE_DESC' | translate }}</p>
-								<button
-									mat-stroked-button
-									(click)="navigateTo('config')"
-									id="configure-appearance-button"
-								>
-									{{ 'OVERVIEW.GO_TO_CONFIG' | translate }}
-								</button>
-							</mat-card-content>
-						</mat-card>
+					<mat-card class="stat-card recordings-card">
+						<mat-card-content>
+							<div class="stat-icon">
+								<mat-icon class="ov-recording-icon">video_library</mat-icon>
+							</div>
+							<div class="stat-content">
+								<div class="stat-number">{{ s.totalRecordings }}</div>
+								<div class="stat-label">{{ 'OVERVIEW.TOTAL_RECORDINGS' | translate }}</div>
+								<div class="stat-detail">{{ s.completeRecordings }} {{ 'OVERVIEW.AVAILABLE_PLAYBACK_SUFFIX' | translate }}</div>
+							</div>
+						</mat-card-content>
+						<div class="live-status" id="recordings-in-progress">
+							@if (s.recordingsInProgress > 0) {
+								<span class="live-dot"></span>
+								<span class="live-text"><strong>{{ s.recordingsInProgress }}</strong> {{ 'OVERVIEW.RECORDINGS_IN_PROGRESS' | translate }}</span>
+								<span class="live-badge">{{ 'OVERVIEW.LIVE' | translate }}</span>
+							} @else {
+								<span class="idle-dot"></span>
+								<span class="live-text idle">{{ 'OVERVIEW.NO_RECORDING_IN_PROGRESS' | translate }}</span>
+							}
+						</div>
+						<mat-card-actions>
+							<button mat-button (click)="navigateTo('recordings')" id="view-all-recordings-button">
+								<mat-icon class="ov-navigation-icon">arrow_forward</mat-icon>
+								{{ 'OVERVIEW.VIEW_ALL' | translate }}
+							</button>
+						</mat-card-actions>
+					</mat-card>
 
-						<mat-card class="feature-card">
-							<mat-card-content>
-								<mat-icon class="material-symbols-outlined ov-developer-icon"> code_blocks </mat-icon>
+					<mat-card class="stat-card expiring-card">
+						<mat-card-content>
+							<div class="stat-icon">
+								<mat-icon class="expiring-icon">schedule</mat-icon>
+							</div>
+							<div class="stat-content">
+								<div class="stat-number">{{ s.roomsExpiringSoon }}</div>
+								<div class="stat-label">{{ 'OVERVIEW.EXPIRING_TITLE' | translate }}</div>
+								<div class="stat-detail">{{ 'OVERVIEW.EXPIRING_DETAIL' | translate }}</div>
+							</div>
+						</mat-card-content>
+						<div class="expiring-next" id="next-expiring-room">
+							@if (s.nextExpiringRoom; as next) {
+								<span class="expiring-next-label">{{ 'OVERVIEW.EXPIRING_NEXT' | translate }}</span>
+								<a class="expiring-next-name" [routerLink]="['/rooms', next.roomId]">{{ next.roomName }}</a>
+								@if (nextExpiringWhen(); as when) {
+									<span class="expiring-next-when">{{ when.key | translate: when.params }}</span>
+								}
+							} @else {
+								<span class="expiring-none">{{ 'OVERVIEW.EXPIRING_NONE' | translate }}</span>
+							}
+						</div>
+						<mat-card-actions>
+							<button mat-button (click)="navigateTo('rooms')" id="view-expiring-rooms-button">
+								{{ 'OVERVIEW.VIEW_ROOMS' | translate }}
+								<mat-icon class="ov-navigation-icon">arrow_forward</mat-icon>
+							</button>
+						</mat-card-actions>
+					</mat-card>
+				</div>
+			</div>
+		} @else {
+			<!-- First Time User State -->
+			<ng-container [ngTemplateOutlet]="refreshToolbar" />
+			<ng-container [ngTemplateOutlet]="refreshError" />
+			<div class="get-started-header">
+				<h1>{{ 'OVERVIEW.GET_STARTED_TITLE' | translate }}</h1>
+				<p class="subtitle">{{ 'OVERVIEW.GET_STARTED_SUBTITLE_1' | translate }}</p>
+				<p class="subtitle">{{ 'OVERVIEW.GET_STARTED_SUBTITLE_2' | translate }}</p>
+			</div>
+			<div class="welcome-content">
+				<div class="welcome-card">
+					<div class="welcome-actions">
+						<div class="getting-started-grid">
+							<mat-card class="feature-card">
+								<mat-card-content>
+									<mat-icon class="ov-room-icon">video_chat</mat-icon>
+									<h3>{{ 'OVERVIEW.CREATE_FIRST_ROOM_TITLE' | translate }}</h3>
+									<p>{{ 'OVERVIEW.CREATE_FIRST_ROOM_DESC' | translate }}</p>
+									<button
+										mat-stroked-button
+										(click)="navigateTo('rooms/new')"
+										id="create-first-room-button"
+									>
+										<mat-icon class="ov-action-icon">add</mat-icon>
+										{{ 'OVERVIEW.CREATE_ROOM' | translate }}
+									</button>
+								</mat-card-content>
+							</mat-card>
 
-								<h3>{{ 'OVERVIEW.EMBED_TITLE' | translate }}</h3>
-								<p>{{ 'OVERVIEW.EMBED_DESC' | translate }}</p>
-								<button mat-stroked-button (click)="navigateTo('embedded')" id="go-to-embedded-button">
-									{{ 'OVERVIEW.GO_TO_EMBEDDED' | translate }}
-								</button>
-							</mat-card-content>
-						</mat-card>
+							<mat-card class="feature-card">
+								<mat-card-content>
+									<mat-icon class="material-symbols-outlined"> palette </mat-icon>
+									<h3>{{ 'OVERVIEW.CUSTOMIZE_TITLE' | translate }}</h3>
+									<p>{{ 'OVERVIEW.CUSTOMIZE_DESC' | translate }}</p>
+									<button
+										mat-stroked-button
+										(click)="navigateTo('config')"
+										id="configure-appearance-button"
+									>
+										{{ 'OVERVIEW.GO_TO_CONFIG' | translate }}
+									</button>
+								</mat-card-content>
+							</mat-card>
+
+							<mat-card class="feature-card">
+								<mat-card-content>
+									<mat-icon class="material-symbols-outlined ov-developer-icon"> code_blocks </mat-icon>
+
+									<h3>{{ 'OVERVIEW.EMBED_TITLE' | translate }}</h3>
+									<p>{{ 'OVERVIEW.EMBED_DESC' | translate }}</p>
+									<button mat-stroked-button (click)="navigateTo('embedded')" id="go-to-embedded-button">
+										{{ 'OVERVIEW.GO_TO_EMBEDDED' | translate }}
+									</button>
+								</mat-card-content>
+							</mat-card>
+						</div>
 					</div>
 				</div>
 			</div>
+		}
+	} @else {
+		<!-- First request failed: no figures yet, never the getting-started view -->
+		<div class="overview-header">
+			<div class="page-header">
+				<div class="title">
+					<mat-icon>dashboard</mat-icon>
+					<h1>{{ 'OVERVIEW.TITLE' | translate }}</h1>
+				</div>
+				<p class="subtitle">{{ 'OVERVIEW.SUBTITLE' | translate }}</p>
+			</div>
+			<ng-container [ngTemplateOutlet]="refreshToolbar" />
 		</div>
+		<ng-container [ngTemplateOutlet]="refreshError" />
 	}
 </div>

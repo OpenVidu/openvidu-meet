@@ -95,6 +95,10 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - The console lists keep their rows, dimmed, while a search, a sort or a new page loads, and show placeholder rows when
   they have none yet, instead of replacing the list with a spinner, and the Embedded page shows its sections with
   placeholder rows instead of a loading screen.
+- The console overview shows the rooms by status (open, in a meeting now and closed), the recordings in progress and the
+  rooms that reach their auto-deletion date within 7 days, and refreshes every 30 seconds while its tab is visible or
+  on Refresh; `getAnalytics` returns them as `openRooms`, `closedRooms`, `recordingsInProgress`, `roomsExpiringSoon`
+  and `nextExpiringRoom`.
 
 ### Fixed
 
@@ -283,6 +287,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   `MEET_INITIAL_ADMIN_USER` it protected the wrong account. It now protects the `MEET_INITIAL_ADMIN_USER` account.
 - In a room whose anonymous speaker access is disabled, the meeting still offered the anonymous speaker link to share,
   a link every recipient was refused with. The meeting no longer offers it.
+- The console overview showed the getting-started view of an empty deployment when its request failed. It now keeps its
+  last figures, or shows an error notice when it has none.
 
 #### Deployment
 

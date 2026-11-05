@@ -1,4 +1,10 @@
-import type { MeetRoom, MeetRoomConfig, MeetRoomField, ProjectedMeetRoom } from '@openvidu-meet/typings';
+import type {
+	MeetExpiringRoom,
+	MeetRoom,
+	MeetRoomConfig,
+	MeetRoomField,
+	ProjectedMeetRoom
+} from '@openvidu-meet/typings';
 import { MeetingEndAction, MeetRoomStatus, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { QueryFilter } from 'mongoose';
@@ -504,10 +510,33 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	}
 
 	/**
-	 * Counts the number of rooms with active meetings.
+	 * Counts the number of rooms with the given status.
 	 */
-	countActiveRooms(): Promise<number> {
-		return this.count({ status: MeetRoomStatus.ACTIVE_MEETING });
+	countByStatus(status: MeetRoomStatus): Promise<number> {
+		return this.count({ status });
+	}
+
+	/**
+	 * Counts the rooms whose auto-deletion date falls in [from, until).
+	 */
+	countExpiringRooms(from: number, until: number): Promise<number> {
+		return this.count({ autoDeletionDate: { $gte: from, $lt: until } });
+	}
+
+	/**
+	 * Finds the room with the earliest auto-deletion date in [from, until).
+	 */
+	async findNextExpiringRoom(from: number, until: number): Promise<MeetExpiringRoom | null> {
+		const { items } = await this.findMany(
+			{ autoDeletionDate: { $gte: from, $lt: until } },
+			{ maxItems: 1, sortField: 'autoDeletionDate', sortOrder: SortOrder.ASC },
+			['roomId', 'roomName', 'autoDeletionDate']
+		);
+		const [room] = items;
+
+		return room?.autoDeletionDate === undefined
+			? null
+			: { roomId: room.roomId, roomName: room.roomName, autoDeletionDate: room.autoDeletionDate };
 	}
 
 	// ==========================================

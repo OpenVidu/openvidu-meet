@@ -1,5 +1,8 @@
+import { MeetRoomStatus } from '@openvidu-meet/typings';
 import type { MeetAnalytics } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
+import ms from 'ms';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { LoggerService } from './logger.service.js';
@@ -26,19 +29,42 @@ export class AnalyticsService {
 		try {
 			this.logger.verbose('Retrieving analytics data...');
 
+			const now = Date.now();
+			const expiringUntil = now + ms(INTERNAL_CONFIG.ANALYTICS_EXPIRING_ROOMS_WINDOW);
+
 			// Fetch all metrics in parallel for better performance
-			const [totalRooms, activeRooms, totalRecordings, completeRecordings] = await Promise.all([
+			const [
+				totalRooms,
+				activeRooms,
+				openRooms,
+				closedRooms,
+				totalRecordings,
+				completeRecordings,
+				recordingsInProgress,
+				roomsExpiringSoon,
+				nextExpiringRoom
+			] = await Promise.all([
 				this.roomRepository.countTotal(),
-				this.roomRepository.countActiveRooms(),
+				this.roomRepository.countByStatus(MeetRoomStatus.ACTIVE_MEETING),
+				this.roomRepository.countByStatus(MeetRoomStatus.OPEN),
+				this.roomRepository.countByStatus(MeetRoomStatus.CLOSED),
 				this.recordingRepository.countTotal(),
-				this.recordingRepository.countCompleteRecordings()
+				this.recordingRepository.countCompleteRecordings(),
+				this.recordingRepository.countInProgress(),
+				this.roomRepository.countExpiringRooms(now, expiringUntil),
+				this.roomRepository.findNextExpiringRoom(now, expiringUntil)
 			]);
 
 			const analytics: MeetAnalytics = {
 				totalRooms,
 				activeRooms,
+				openRooms,
+				closedRooms,
 				totalRecordings,
-				completeRecordings
+				completeRecordings,
+				recordingsInProgress,
+				roomsExpiringSoon,
+				...(nextExpiringRoom && { nextExpiringRoom })
 			};
 
 			this.logger.verbose('Analytics data retrieved successfully');

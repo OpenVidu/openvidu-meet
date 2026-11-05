@@ -381,4 +381,13 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	countCompleteRecordings(): Promise<number> {
 		return this.count({ status: MeetRecordingStatus.COMPLETE });
 	}
+
+	/**
+	 * Counts the recordings that have started and not yet ended: status 'starting', 'active' or 'ending'.
+	 */
+	countInProgress(): Promise<number> {
+		return this.count({
+			status: { $in: [MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE, MeetRecordingStatus.ENDING] }
+		});
+	}
 }

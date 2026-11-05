@@ -111,6 +111,8 @@ export const INTERNAL_CONFIG = {
 	CONCURRENCY_BULK_CLEANUP_USER_RESOURCES: 20, // Concurrency limit for bulk cleanup of user resources
 	CONCURRENCY_BULK_CLEANUP_PARTICIPANT_NAME_RESERVATIONS: 20, // Concurrency limit for bulk cleanup of participant name reservations
 
+	ANALYTICS_EXPIRING_ROOMS_WINDOW: '7d' as StringValue, // How far ahead an auto-deletion date counts a room as expiring soon in the analytics
+
 	// Boot-time locks (migrations, storage seeding). The guarded routines are idempotent, so a
 	// contender waits for the lock and re-runs them itself instead of assuming the holder finished;
 	// each retry budget outlives its lock TTL so a dead holder's lock lapses within the window.
