@@ -132,7 +132,8 @@ what LiveKit's webhooks never told.
   collection, migration, recording or broadcast state transition must be lock-guarded. Lock TTLs cap
   at 24h. Cross-replica state lives in Redis keys, never in process memory; there is no pub/sub
   channel between replicas.
-- **Scheduled tasks**: `TaskSchedulerService` + `*-scheduled-tasks.service.ts` (cron). Intervals,
+- **Scheduled tasks**: `TaskSchedulerService` + `*-scheduled-tasks.service.ts` (cron), plus
+  `MeetingDurationLimitService`, which owns its sweep next to the per-meeting timers. Intervals,
   batch sizes and concurrency limits are all constants in `config/internal-config.ts`; reuse them
   instead of hardcoding numbers, and use `utils/concurrency.utils.ts` (`runConcurrently`) for fan-out.
 
