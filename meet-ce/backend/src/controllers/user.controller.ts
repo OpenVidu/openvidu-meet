@@ -2,12 +2,8 @@ import type { MeetUserFilters, MeetUserOptions, MeetUserRole } from '@openvidu-m
 import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import {
-	errorUnauthorized,
-	errorUserNotFound,
-	handleError,
-	rejectRequestFromMeetError
-} from '../models/error.model.js';
+import { handleError, rejectRequestFromMeetError } from '../middlewares/error-handler.middleware.js';
+import { errorUnauthorized, errorUserNotFound } from '../models/error.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { TokenService } from '../services/token.service.js';

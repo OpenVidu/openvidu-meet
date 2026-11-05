@@ -8,11 +8,12 @@ import type {
 import type { Request, Response } from 'express';
 import type { z } from 'zod';
 import { container } from '../config/dependency-injector.config.js';
+import { handleError } from '../middlewares/error-handler.middleware.js';
 import type { UpdateRoomMemberReqSchema } from '../models/zod-schemas/room-member.schema.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetRoomMemberHelper } from '../helpers/room-member.helper.js';
 import { memberToWire } from '../helpers/permission-naming.helper.js';
-import { errorRoomMemberNotFound, errorUnauthorized, handleError } from '../models/error.model.js';
+import { errorRoomMemberNotFound, errorUnauthorized } from '../models/error.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RoomMemberService } from '../services/room-member.service.js';
 import { getRoomMemberToken } from '../utils/token.utils.js';

@@ -9,7 +9,6 @@ import {
 	apiKeyValidator,
 	pendingPasswordChangeTokenValidator,
 	roomMemberTokenValidator,
-	verifyRoomMemberToken,
 	withAuth,
 	type AuthValidator
 } from '../../../src/middlewares/auth.middleware.js';
@@ -17,6 +16,7 @@ import { errorInsufficientPermissions } from '../../../src/models/error.model.js
 import { TokenType } from '../../../src/models/token.model.js';
 import { RoomMemberRepository } from '../../../src/repositories/room-member.repository.js';
 import { RoomRepository } from '../../../src/repositories/room.repository.js';
+import { UserRepository } from '../../../src/repositories/user.repository.js';
 import { ApiKeyService } from '../../../src/services/api-key.service.js';
 import { LoggerService } from '../../../src/services/logger.service.js';
 import { MutexService } from '../../../src/services/mutex.service.js';
@@ -59,6 +59,7 @@ let logger: LoggerService;
 let apiKeyService: ApiKeyService;
 let tokenService: TokenService;
 let userService: UserService;
+let userRepository: UserRepository;
 let roomRepository: RoomRepository;
 let roomMemberRepository: RoomMemberRepository;
 let requestSessionService: RequestSessionService;
@@ -79,6 +80,7 @@ beforeAll(() => {
 	apiKeyService = container.get(ApiKeyService);
 	tokenService = container.get(TokenService);
 	userService = container.get(UserService);
+	userRepository = container.get(UserRepository);
 	roomRepository = container.get(RoomRepository);
 	roomMemberRepository = container.get(RoomMemberRepository);
 	requestSessionService = container.get(RequestSessionService);
@@ -197,7 +199,7 @@ describe('the validators, against a change made in the same millisecond as the t
 				iat: ISSUED_AT,
 				tokenType: TokenType.ACCESS
 			} as never);
-			jest.spyOn(userService, 'getUser').mockResolvedValue(user({ roleUpdatedAt }));
+			jest.spyOn(userRepository, 'findByUserId').mockResolvedValue(user({ roleUpdatedAt }));
 
 			return accessTokenValidator(MeetUserRole.ADMIN).validate(accessTokenRequest());
 		};
@@ -238,7 +240,7 @@ describe('the validators, against a change made in the same millisecond as the t
 				iat: ISSUED_AT,
 				tokenType: TokenType.ACCESS
 			} as never);
-			jest.spyOn(userService, 'getUser').mockResolvedValue(null as never);
+			jest.spyOn(userRepository, 'findByUserId').mockResolvedValue(null as never);
 
 			await expect(accessTokenValidator(MeetUserRole.ADMIN).validate(accessTokenRequest())).rejects.toMatchObject(
 				{ statusCode: 403, message: 'Invalid token subject' }
@@ -250,7 +252,7 @@ describe('the validators, against a change made in the same millisecond as the t
 				iat: ISSUED_AT,
 				tokenType: TokenType.ACCESS
 			} as never);
-			jest.spyOn(userService, 'getUser').mockResolvedValue(user({ role: MeetUserRole.ROOM_MEMBER }));
+			jest.spyOn(userRepository, 'findByUserId').mockResolvedValue(user({ role: MeetUserRole.ROOM_MEMBER }));
 
 			await expect(accessTokenValidator(MeetUserRole.ADMIN).validate(accessTokenRequest())).rejects.toMatchObject(
 				{ statusCode: 403, message: 'Insufficient permissions to access this resource' }
@@ -264,7 +266,7 @@ describe('the validators, against a change made in the same millisecond as the t
 				iat: ISSUED_AT,
 				tokenType: TokenType.ACCESS
 			} as never);
-			jest.spyOn(userService, 'getUser').mockResolvedValue(user({ mustChangePassword: true }));
+			jest.spyOn(userRepository, 'findByUserId').mockResolvedValue(user({ mustChangePassword: true }));
 
 			await pendingPasswordChangeTokenValidator(MeetUserRole.ADMIN).validate(accessTokenRequest());
 
@@ -285,7 +287,7 @@ describe('the validators, against a change made in the same millisecond as the t
 				iat: ISSUED_AT,
 				tokenType: TokenType.TEMPORARY
 			} as never);
-			jest.spyOn(userService, 'getUser').mockResolvedValue(user());
+			jest.spyOn(userRepository, 'findByUserId').mockResolvedValue(user());
 
 			await pendingPasswordChangeTokenValidator(MeetUserRole.ADMIN).validate(accessTokenRequest());
 
@@ -308,7 +310,7 @@ describe('the validators, against a change made in the same millisecond as the t
 					tokenType: TokenType.ACCESS,
 					sid
 				});
-				jest.spyOn(userService, 'getUser').mockResolvedValue(user());
+				jest.spyOn(userRepository, 'findByUserId').mockResolvedValue(user());
 
 				return accessTokenValidator(MeetUserRole.ADMIN).validate(accessTokenRequest());
 			};
@@ -347,7 +349,7 @@ describe('the validators, against a change made in the same millisecond as the t
 				iat: ISSUED_AT,
 				tokenType: TokenType.REFRESH
 			} as never);
-			jest.spyOn(userService, 'getUser').mockResolvedValue(user());
+			jest.spyOn(userRepository, 'findByUserId').mockResolvedValue(user());
 
 			await expect(accessTokenValidator(MeetUserRole.ADMIN).validate(accessTokenRequest())).rejects.toMatchObject(
 				{ statusCode: 401, message: 'Invalid token' }
@@ -389,7 +391,9 @@ describe('the validators, against a change made in the same millisecond as the t
 			jest.spyOn(roomMemberRepository, 'findByRoomAndMemberId').mockResolvedValue({
 				permissionsUpdatedAt: updates.permissionsUpdatedAt
 			} as MeetRoomMember);
-			jest.spyOn(userService, 'getUser').mockResolvedValue(user({ roleUpdatedAt: updates.roleUpdatedAt }));
+			jest.spyOn(userRepository, 'findByUserId').mockResolvedValue(
+				user({ roleUpdatedAt: updates.roleUpdatedAt })
+			);
 			jest.spyOn(redisService, 'get').mockResolvedValue(String(updates.participantTokensRevokedAt));
 
 			return roomMemberTokenValidator.validate(roomMemberTokenRequest());
@@ -429,7 +433,7 @@ describe('the validators, against a change made in the same millisecond as the t
 			jest.spyOn(roomMemberRepository, 'findByRoomAndMemberId').mockResolvedValue({
 				permissionsUpdatedAt: ISSUED_AT
 			} as MeetRoomMember);
-			jest.spyOn(userService, 'getUser').mockResolvedValue(user({ roleUpdatedAt: ISSUED_AT }));
+			jest.spyOn(userRepository, 'findByUserId').mockResolvedValue(user({ roleUpdatedAt: ISSUED_AT }));
 			jest.spyOn(redisService, 'get').mockImplementation(async () => {
 				answerRoomLookup({ rolesUpdatedAt: ISSUED_AT } as MeetRoom);
 				return String(ISSUED_AT + 1);
@@ -449,12 +453,12 @@ describe('the validators, against a change made in the same millisecond as the t
 			} as never);
 			jest.spyOn(roomRepository, 'findByRoomId').mockResolvedValue({ rolesUpdatedAt: ISSUED_AT } as never);
 			jest.spyOn(roomMemberRepository, 'findByRoomAndMemberId');
-			jest.spyOn(userService, 'getUser');
+			jest.spyOn(userRepository, 'findByUserId');
 
 			await roomMemberTokenValidator.validate(roomMemberTokenRequest());
 
 			expect(roomMemberRepository.findByRoomAndMemberId).not.toHaveBeenCalled();
-			expect(userService.getUser).not.toHaveBeenCalled();
+			expect(userRepository.findByUserId).not.toHaveBeenCalled();
 		});
 
 		it("refuses a token older than the user's role", async () => {
@@ -532,10 +536,12 @@ describe('the validators, against a change made in the same millisecond as the t
 			jest.spyOn(roomMemberRepository, 'findByRoomAndMemberId').mockResolvedValue({
 				permissionsUpdatedAt: updates.permissionsUpdatedAt
 			} as MeetRoomMember);
-			jest.spyOn(userService, 'getUser').mockResolvedValue(user({ roleUpdatedAt: updates.roleUpdatedAt }));
+			jest.spyOn(userRepository, 'findByUserId').mockResolvedValue(
+				user({ roleUpdatedAt: updates.roleUpdatedAt })
+			);
 			jest.spyOn(redisService, 'get').mockResolvedValue(String(updates.participantTokensRevokedAt));
 
-			return verifyRoomMemberToken('a-token', options);
+			return tokenService.verifyRoomMemberToken('a-token', options);
 		};
 
 		it('verifies the signature with the clock tolerance it is given', async () => {
@@ -569,7 +575,7 @@ describe('the validators, against a change made in the same millisecond as the t
 			jest.spyOn(tokenService, 'parseRoomMemberTokenMetadata').mockReturnValue(metadata as never);
 			jest.spyOn(roomRepository, 'findByRoomId').mockRejectedValue(new Error('mongo down'));
 
-			await expect(verifyRoomMemberToken('a-token', refreshOptions)).rejects.toThrow('mongo down');
+			await expect(tokenService.verifyRoomMemberToken('a-token', refreshOptions)).rejects.toThrow('mongo down');
 		});
 
 		it('answers 401 for a token whose claims cannot be parsed', async () => {
@@ -577,7 +583,7 @@ describe('the validators, against a change made in the same millisecond as the t
 				throw new Error('malformed');
 			});
 
-			await expect(verifyRoomMemberToken('a-token', refreshOptions)).rejects.toMatchObject({
+			await expect(tokenService.verifyRoomMemberToken('a-token', refreshOptions)).rejects.toMatchObject({
 				statusCode: 401,
 				message: 'Invalid token'
 			});
@@ -603,7 +609,7 @@ describe('the validators, against a change made in the same millisecond as the t
 			iat: ISSUED_AT,
 			tokenType: TokenType.ACCESS
 		} as never);
-		jest.spyOn(userService, 'getUser').mockResolvedValue(user());
+		jest.spyOn(userRepository, 'findByUserId').mockResolvedValue(user());
 		const request = requestWith({ authorization: 'Bearer a-token', 'x-api-key': 'a-key' });
 		const next = jest.fn() as NextFunction;
 
@@ -611,7 +617,7 @@ describe('the validators, against a change made in the same millisecond as the t
 
 		expect(next).toHaveBeenCalled();
 		expect(requestSessionService.setUser).toHaveBeenCalledWith(apiUser);
-		expect(userService.getUser).not.toHaveBeenCalled();
+		expect(userRepository.findByUserId).not.toHaveBeenCalled();
 	});
 
 	it('lets the room member token decide over an access token that arrives with it', async () => {
@@ -620,7 +626,7 @@ describe('the validators, against a change made in the same millisecond as the t
 			roomId: 'room-1'
 		} as never);
 		jest.spyOn(roomRepository, 'findByRoomId').mockResolvedValue({ rolesUpdatedAt: ISSUED_AT } as never);
-		jest.spyOn(userService, 'getUser').mockResolvedValue(user());
+		jest.spyOn(userRepository, 'findByUserId').mockResolvedValue(user());
 		const request = requestWith({ authorization: 'Bearer a-token', 'x-room-member-token': 'Bearer a-token' });
 		const next = jest.fn() as NextFunction;
 
@@ -640,7 +646,7 @@ describe('the validators, against a change made in the same millisecond as the t
 			tokenType: TokenType.ACCESS
 		} as never);
 		const signedIn = user();
-		jest.spyOn(userService, 'getUser').mockResolvedValue(signedIn);
+		jest.spyOn(userRepository, 'findByUserId').mockResolvedValue(signedIn);
 		const next = jest.fn() as NextFunction;
 
 		await withAuth(apiKeyValidator, accessTokenValidator(MeetUserRole.ADMIN))(
@@ -733,7 +739,7 @@ describe('the validators, against a change made in the same millisecond as the t
 
 		it('carries a signed-in user into an anonymous request', async () => {
 			const signedIn = user();
-			jest.spyOn(userService, 'getUser').mockResolvedValue(signedIn);
+			jest.spyOn(userRepository, 'findByUserId').mockResolvedValue(signedIn);
 
 			await allowAnonymous.validate(accessTokenRequest());
 
@@ -755,7 +761,7 @@ describe('the validators, against a change made in the same millisecond as the t
 		});
 
 		it('stays anonymous when the token riding along belongs to a session that logged out', async () => {
-			jest.spyOn(userService, 'getUser').mockResolvedValue(user());
+			jest.spyOn(userRepository, 'findByUserId').mockResolvedValue(user());
 			await container.get(UserTokenRevocationService).revokeSession('session-1');
 
 			await allowAnonymous.validate(accessTokenRequest());
@@ -764,7 +770,7 @@ describe('the validators, against a change made in the same millisecond as the t
 		});
 
 		it('stays anonymous when the token names a user who no longer exists', async () => {
-			jest.spyOn(userService, 'getUser').mockResolvedValue(null as never);
+			jest.spyOn(userRepository, 'findByUserId').mockResolvedValue(null as never);
 
 			await allowAnonymous.validate(accessTokenRequest());
 

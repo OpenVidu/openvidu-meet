@@ -1,13 +1,9 @@
 import { describe, expect, it } from '@jest/globals';
 import { MEET_PERMISSION_KEYS, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
 import type { MeetRoomMemberTokenMetadata, MeetUser } from '@openvidu-meet/typings';
-// The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see meeting-mute.test.ts).
 import ms from 'ms';
-import '../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../src/environment.js';
 import { TokenType } from '../../../src/models/token.model.js';
-import type { LoggerService } from '../../../src/services/logger.service.js';
 import { TokenService } from '../../../src/services/token.service.js';
 
 /**
@@ -17,7 +13,9 @@ import { TokenService } from '../../../src/services/token.service.js';
  * is one whose metadata was written by something other than this server.
  */
 describe('TokenService metadata parsing', () => {
-	const service = new TokenService({ debug: () => {} } as unknown as LoggerService);
+	const service = new TokenService(
+		...([{ debug: () => {} }] as unknown as ConstructorParameters<typeof TokenService>)
+	);
 
 	const roomMemberMetadata: MeetRoomMemberTokenMetadata = {
 		iat: 1_700_000_000_000,

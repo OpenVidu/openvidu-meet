@@ -7,9 +7,6 @@ import {
 	MeetRoomMemberUIBadge
 } from '@openvidu-meet/typings';
 import type { ParticipantInfo } from 'livekit-server-sdk';
-// The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see migration.service.test.ts).
-import '../../../src/config/dependency-injector.config.js';
 import { RecordingAutoStartStateService } from '../../../src/services/recording-auto-start-state.service.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, debug: () => {}, error: () => {}, verbose: () => {} };

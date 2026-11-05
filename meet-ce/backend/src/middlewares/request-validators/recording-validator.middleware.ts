@@ -1,6 +1,5 @@
 import { MEET_RECORDING_FIELDS } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
-import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import { mergeFieldsHeaderIntoQuery } from '../../models/zod-schemas/field-selection.schema.js';
 import {
 	BulkDeleteRecordingsReqSchema,
@@ -13,6 +12,7 @@ import {
 	StartRecordingReqSchema,
 	StopRecordingReqSchema
 } from '../../models/zod-schemas/recording.schema.js';
+import { rejectUnprocessableRequest } from '../error-handler.middleware.js';
 
 export const validateStartRecordingReq = (req: Request, res: Response, next: NextFunction) => {
 	// Merge X-Fields header into query params before validation

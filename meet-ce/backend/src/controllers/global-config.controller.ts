@@ -2,7 +2,7 @@ import type { MeetAppearanceConfig, SecurityConfig } from '@openvidu-meet/typing
 import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { MEET_ENV } from '../environment.js';
-import { handleError } from '../models/error.model.js';
+import { handleError } from '../middlewares/error-handler.middleware.js';
 import { GlobalConfigService } from '../services/global-config.service.js';
 import { LoggerService } from '../services/logger.service.js';
 

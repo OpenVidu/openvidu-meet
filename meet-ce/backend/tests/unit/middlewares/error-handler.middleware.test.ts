@@ -2,8 +2,13 @@ import { beforeAll, describe, expect, it, jest } from '@jest/globals';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import request from 'supertest';
 import { container, registerDependencies } from '../../../src/config/dependency-injector.config.js';
-import { globalErrorHandler } from '../../../src/middlewares/error-handler.middleware.js';
-import { errorLivekitNotAvailable, errorRecordingNotFound } from '../../../src/models/error.model.js';
+import { globalErrorHandler, handleError } from '../../../src/middlewares/error-handler.middleware.js';
+import { DocumentNotFoundError } from '../../../src/models/database.model.js';
+import {
+	errorLivekitNotAvailable,
+	errorRecordingNotFound,
+	OpenViduMeetError
+} from '../../../src/models/error.model.js';
 import { LoggerService } from '../../../src/services/logger.service.js';
 
 /**
@@ -30,11 +35,11 @@ const buildApp = () => {
 	return app;
 };
 
-describe('globalErrorHandler', () => {
-	beforeAll(() => {
-		registerDependencies();
-	});
+beforeAll(() => {
+	registerDependencies();
+});
 
+describe('globalErrorHandler', () => {
 	it('answers 413 Payload Too Large to a body the parser refused for its size', async () => {
 		const response = await request(buildApp())
 			.post('/echo')
@@ -115,5 +120,53 @@ describe('globalErrorHandler', () => {
 		const response = await request(buildApp()).post('/typed-object').send({});
 
 		expect(response.status).toBe(500);
+	});
+});
+
+const buildResponse = () => {
+	const sent: { status?: number; body?: unknown } = {};
+	const res = {
+		status(code: number) {
+			sent.status = code;
+			return this;
+		},
+		json(body: unknown) {
+			sent.body = body;
+			return this;
+		}
+	} as unknown as Response;
+
+	return { res, sent };
+};
+
+describe('handleError', () => {
+	it('answers 404 when the resource vanished between the existence check and the write', () => {
+		const { res, sent } = buildResponse();
+
+		handleError(res, new DocumentNotFoundError('Document not found for deletion'), 'deleting room');
+
+		expect(sent.status).toBe(404);
+		expect(sent.body).toEqual({ error: 'Not Found', message: 'The requested resource no longer exists' });
+	});
+
+	it('keeps the status and wording of a domain error', () => {
+		const { res, sent } = buildResponse();
+
+		handleError(res, new OpenViduMeetError('Room Error', "Room 'r' is closed", 409), 'joining room');
+
+		expect(sent.status).toBe(409);
+		expect(sent.body).toEqual({ error: 'Room Error', message: "Room 'r' is closed" });
+	});
+
+	it('masks any other error as a 500 without leaking its message', () => {
+		const { res, sent } = buildResponse();
+
+		handleError(res, new Error('connection reset by peer'), 'deleting room');
+
+		expect(sent.status).toBe(500);
+		expect(sent.body).toEqual({
+			error: 'Internal Server Error',
+			message: 'Unexpected error while deleting room'
+		});
 	});
 });

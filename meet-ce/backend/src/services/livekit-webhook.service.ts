@@ -12,7 +12,6 @@ import { EgressHelper } from '../helpers/egress.helper.js';
 import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
-import { checkRoomMemberTokenCurrency } from '../middlewares/auth.middleware.js';
 import type { EgressWebhookAction } from '../models/egress.model.js';
 import { EGRESS_LOST_ERROR } from '../models/egress.model.js';
 import { RedisKeyName } from '../models/redis.model.js';
@@ -189,7 +188,8 @@ export class LivekitWebhookService {
 		void this.recordingService.startAutoRecordingIfNeeded(room, participant);
 
 		try {
-			const payload = await MeetParticipantHelper.toParticipantJoinedPayload(room, participant);
+			const roomName = await this.roomService.getMeetRoomName(room);
+			const payload = MeetParticipantHelper.toParticipantJoinedPayload(room.name, roomName, participant);
 			this.webhookDispatcherService.sendParticipantJoinedWebhook(payload);
 
 			const userId = this.getUserIdFromParticipant(participant);
@@ -259,7 +259,7 @@ export class LivekitWebhookService {
 
 		if (!metadata) return false;
 
-		const { outdatedReason } = await checkRoomMemberTokenCurrency(metadata, participant.identity);
+		const { outdatedReason } = await this.tokenService.checkRoomMemberTokenCurrency(metadata, participant.identity);
 		return !!outdatedReason;
 	}
 
@@ -345,7 +345,13 @@ export class LivekitWebhookService {
 			);
 
 			if (!removedAtJoin) {
-				const payload = await MeetParticipantHelper.toParticipantLeftPayload(room, participant, Date.now());
+				const roomName = await this.roomService.getMeetRoomName(room);
+				const payload = MeetParticipantHelper.toParticipantLeftPayload(
+					room.name,
+					roomName,
+					participant,
+					Date.now()
+				);
 				this.webhookDispatcherService.sendParticipantLeftWebhook(payload);
 			}
 
@@ -522,7 +528,7 @@ export class LivekitWebhookService {
 		this.logger.debug(`Processing recording_${webhookAction} webhook for egress: ${egressInfo.egressId}.`);
 
 		try {
-			const recordingInfo = await RecordingHelper.toRecordingInfo(egressInfo);
+			const recordingInfo = await this.recordingService.toRecordingInfo(egressInfo);
 			const { roomId, recordingId, status } = recordingInfo;
 
 			this.logger.debug(`Recording '${recordingId}' in room '${roomId}' status: '${status}'`);

@@ -1,5 +1,4 @@
 import type { NextFunction, Request, Response } from 'express';
-import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import {
 	LowerAllHandsReqSchema,
 	MuteParticipantMediaReqSchema,
@@ -7,6 +6,7 @@ import {
 	UpdateParticipantHandReqSchema,
 	UpdateParticipantRoleReqSchema
 } from '../../models/zod-schemas/meeting.schema.js';
+import { rejectUnprocessableRequest } from '../error-handler.middleware.js';
 
 export const validateUpdateParticipantRoleReq = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = UpdateParticipantRoleReqSchema.safeParse(req.body);

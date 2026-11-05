@@ -1,5 +1,4 @@
 import { describe, expect, it } from '@jest/globals';
-import '../../../src/config/dependency-injector.config.js';
 import type { RedisService } from '../../../src/services/redis.service.js';
 import { ParticipantNameService } from '../../../src/services/participant-name.service.js';
 

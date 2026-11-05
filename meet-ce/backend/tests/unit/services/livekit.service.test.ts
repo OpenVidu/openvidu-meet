@@ -1,9 +1,6 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import type { EgressInfo, StreamOutput } from 'livekit-server-sdk';
 import { TwirpError } from 'livekit-server-sdk';
-// The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see migration.service.test.ts).
-import '../../../src/config/dependency-injector.config.js';
 import type { OpenViduMeetError } from '../../../src/models/error.model.js';
 import { errorLivekitNotAvailable } from '../../../src/models/error.model.js';
 import { LiveKitService } from '../../../src/services/livekit.service.js';

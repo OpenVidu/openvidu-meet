@@ -1,5 +1,4 @@
 import type { NextFunction, Request, Response } from 'express';
-import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import { RoomIdParamSchema } from '../../models/zod-schemas/room-id.schema.js';
 import {
 	BulkDeleteRoomsReqSchema,
@@ -13,6 +12,7 @@ import {
 	UpdateRoomRolesReqSchema,
 	UpdateRoomStatusReqSchema
 } from '../../models/zod-schemas/room.schema.js';
+import { rejectUnprocessableRequest } from '../error-handler.middleware.js';
 
 export const validateCreateRoomReq = (req: Request, res: Response, next: NextFunction) => {
 	const query = req.query;

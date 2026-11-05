@@ -8,7 +8,7 @@ import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { applyHttpFieldFiltering } from '../helpers/field-filter.helper.js';
 import { BroadcastHelper } from '../helpers/broadcast.helper.js';
-import { handleError } from '../models/error.model.js';
+import { handleError } from '../middlewares/error-handler.middleware.js';
 import { BroadcastService } from '../services/broadcast.service.js';
 import { LoggerService } from '../services/logger.service.js';
 

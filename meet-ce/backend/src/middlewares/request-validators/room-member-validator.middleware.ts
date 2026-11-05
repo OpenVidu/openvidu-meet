@@ -1,16 +1,14 @@
-import type { MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
-import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import {
 	BulkDeleteRoomMembersReqSchema,
 	mergeMemberHeaderFieldsIntoQuery,
 	RoomMemberFiltersSchema,
 	RoomMemberOptionsSchema,
 	RoomMemberQueryFieldsSchema,
-	RoomMemberTokenMetadataSchema,
 	RoomMemberTokenOptionsSchema,
 	UpdateRoomMemberReqSchema
 } from '../../models/zod-schemas/room-member.schema.js';
+import { rejectUnprocessableRequest } from '../error-handler.middleware.js';
 
 export const validateCreateRoomMemberReq = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = RoomMemberOptionsSchema.safeParse(req.body);
@@ -109,14 +107,4 @@ export const validateCreateRoomMemberTokenReq = (req: Request, res: Response, ne
 
 	req.body = data;
 	next();
-};
-
-export const validateRoomMemberTokenMetadata = (metadata: unknown): MeetRoomMemberTokenMetadata => {
-	const { success, error, data } = RoomMemberTokenMetadataSchema.safeParse(metadata);
-
-	if (!success) {
-		throw new Error(`Invalid metadata: ${error.message}`);
-	}
-
-	return data;
 };

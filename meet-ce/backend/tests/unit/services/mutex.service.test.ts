@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { randomUUID } from 'crypto';
 import { LockAcquisitionError } from 'redlock-universal';
-import '../../../src/config/dependency-injector.config.js';
 import { RedisDistributedLock, type RedisRedlock } from '../../../src/models/redis-lock.model.js';
 import type { LoggerService } from '../../../src/services/logger.service.js';
 import { MutexService } from '../../../src/services/mutex.service.js';

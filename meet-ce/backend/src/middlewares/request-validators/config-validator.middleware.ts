@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
-import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import { RoomsAppearanceConfigSchema, SecurityConfigSchema } from '../../models/zod-schemas/global-config.schema.js';
+import { rejectUnprocessableRequest } from '../error-handler.middleware.js';
 
 export const validateUpdateSecurityConfigReq = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = SecurityConfigSchema.safeParse(req.body);

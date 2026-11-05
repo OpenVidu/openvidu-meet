@@ -33,7 +33,6 @@ import type { ParticipantMeetingMetadata } from '../helpers/participant.helper.j
 import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
-import { checkRoomMemberTokenCurrency, verifyRoomMemberToken } from '../middlewares/auth.middleware.js';
 import {
 	errorAnonymousAccessDisabled,
 	errorInsufficientPermissions,
@@ -673,10 +672,13 @@ export class RoomMemberService {
 	 * and a 409 if a change to the participant's role keeps their metadata locked for too long
 	 */
 	async refreshRoomMemberToken(roomId: string, previousToken: string): Promise<string> {
-		const { participantIdentity, participantName, metadata, room } = await verifyRoomMemberToken(previousToken, {
-			clockToleranceSeconds: INTERNAL_CONFIG.REFRESH_CLOCK_TOLERANCE_SECONDS,
-			ignoreDemotion: true
-		});
+		const { participantIdentity, participantName, metadata, room } = await this.tokenService.verifyRoomMemberToken(
+			previousToken,
+			{
+				clockToleranceSeconds: INTERNAL_CONFIG.REFRESH_CLOCK_TOLERANCE_SECONDS,
+				ignoreDemotion: true
+			}
+		);
 
 		if (metadata.roomId !== roomId) {
 			throw errorInsufficientPermissions();
@@ -943,7 +945,10 @@ export class RoomMemberService {
 	): Promise<MeetRoomMemberTokenMetadata> {
 		const participant = await this.getParticipantFromMeeting(roomId, participantIdentity);
 		const participantMetadata = MeetParticipantHelper.parseOwnMeetingMetadata(participant);
-		const { outdatedReason } = await checkRoomMemberTokenCurrency(participantMetadata, participantIdentity);
+		const { outdatedReason } = await this.tokenService.checkRoomMemberTokenCurrency(
+			participantMetadata,
+			participantIdentity
+		);
 
 		if (outdatedReason) {
 			this.logger.debug(

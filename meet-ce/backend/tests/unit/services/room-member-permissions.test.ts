@@ -277,6 +277,7 @@ describe('RoomMemberService.refreshRoomMemberToken from the participant in the m
 		} as never);
 		redisStore.set(`ov_meet:participant_tokens_revoked_at:${ROOM_ID}:${IDENTITY}`, String(DEMOTED_AT));
 		generateRoomMemberToken = jest.fn(async () => 'renewed-token');
+		jest.spyOn(tokenService, 'generateRoomMemberToken').mockImplementation(generateRoomMemberToken as never);
 
 		memberService = new RoomMemberService(
 			...([
@@ -290,7 +291,7 @@ describe('RoomMemberService.refreshRoomMemberToken from the participant in the m
 					getParticipant: async () =>
 						({ identity: IDENTITY, name: 'Ana', metadata: JSON.stringify(liveMetadata) }) as ParticipantInfo
 				},
-				{ generateRoomMemberToken },
+				tokenService,
 				{},
 				{},
 				{},

@@ -9,13 +9,11 @@ import { errorApiKeyChangeInProgress, errorApiKeyNotConfigured } from '../models
 import { ApiKeyRepository } from '../repositories/api-key.repository.js';
 import { LoggerService } from './logger.service.js';
 import { MutexService } from './mutex.service.js';
-import { UserService } from './user.service.js';
 
 @injectable()
 export class ApiKeyService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
-		@inject(UserService) protected userService: UserService,
 		@inject(ApiKeyRepository) protected apiKeyRepository: ApiKeyRepository,
 		@inject(MutexService) protected mutexService: MutexService
 	) {}

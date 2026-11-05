@@ -33,8 +33,8 @@ import { S3Service } from '../services/storage/providers/s3/s3.service.js';
 import { BlobStorageService } from '../services/storage/blob-storage.service.js';
 import { MongoDBService } from '../services/storage/mongodb.service.js';
 import { StorageInitService } from '../services/storage/storage-init.service.js';
-import { StorageFactory } from '../services/storage/storage.factory.js';
 import type { StorageKeyBuilder, StorageProvider } from '../services/storage/storage.interface.js';
+import { STORAGE_TYPES } from '../services/storage/storage.interface.js';
 
 import { WebhookMigration } from '../migrations/webhooks-migration.js';
 import { AiAssistantService } from '../services/ai-assistant.service.js';
@@ -66,18 +66,9 @@ import { WebhookRegistryService } from '../services/webhook-registry.service.js'
  * declared is irrelevant, and so is the order of the imports above. Grouping the bindings into
  * cohesive `ContainerModule`s makes that independence explicit: each module is self-contained and
  * `container.load(...)` can receive them in any order.
- *
- * Runtime construction cycles (e.g. RoomService needs RecordingService, and RecordingService
- * occasionally needs RoomService) are broken at the point of use with a lazy `container.get(...)`
- * lookup rather than a constructor dependency — see RecordingService#getRoomService.
  */
 
 export const container: Container = new Container();
-
-export const STORAGE_TYPES = {
-	StorageProvider: Symbol.for('StorageProvider'),
-	KeyBuilder: Symbol.for('KeyBuilder')
-};
 
 /**
  * Cross-cutting infrastructure with no domain dependencies: logging, Redis, distributed
@@ -112,7 +103,7 @@ const persistenceModule = new ContainerModule(({ bind }) => {
 
 /**
  * Blob storage bindings. Only the provider, key builder and provider-specific client differ per
- * storage mode; the factory, facade and initialization services are mode-agnostic.
+ * storage mode; the facade and initialization services are mode-agnostic.
  */
 export const createStorageModule = (storageMode: string): ContainerModule =>
 	new ContainerModule(({ bind }) => {
@@ -139,7 +130,6 @@ export const createStorageModule = (storageMode: string): ContainerModule =>
 				throw new Error(`MEET_BLOB_STORAGE_MODE must be 's3', 'gcs' or 'abs', got '${storageMode}'`);
 		}
 
-		bind(StorageFactory).toSelf().inSingletonScope();
 		bind(BlobStorageService).toSelf().inSingletonScope();
 		bind(StorageInitService).toSelf().inSingletonScope();
 	});

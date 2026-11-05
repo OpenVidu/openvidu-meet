@@ -1,8 +1,5 @@
 import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { Readable } from 'stream';
-// The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see migration.service.test.ts).
-import '../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../src/environment.js';
 import { ABSService } from '../../../src/services/storage/providers/abs/abs.service.js';
 import { GCSService } from '../../../src/services/storage/providers/gcp/gcs.service.js';
@@ -23,12 +20,8 @@ const blobStorageOver = (service: KeyedService) =>
 	new BlobStorageService(
 		...([
 			noopLogger,
-			{
-				create: () => ({
-					provider: { getKeyPrefix: () => service.getKeyPrefix() } as StorageProvider,
-					keyBuilder
-				})
-			}
+			{ getKeyPrefix: () => service.getKeyPrefix() } as StorageProvider,
+			keyBuilder
 		] as unknown as ConstructorParameters<typeof BlobStorageService>)
 	);
 
@@ -98,9 +91,7 @@ describe('BlobStorageService.getRecordingOutputPath', () => {
 describe('BlobStorageService reading and deleting recording media', () => {
 	const build = (provider: Partial<StorageProvider>) =>
 		new BlobStorageService(
-			...([noopLogger, { create: () => ({ provider, keyBuilder }) }] as unknown as ConstructorParameters<
-				typeof BlobStorageService
-			>)
+			...([noopLogger, provider, keyBuilder] as unknown as ConstructorParameters<typeof BlobStorageService>)
 		);
 
 	const mediaOf = (fileSize: number | undefined) => {
@@ -192,10 +183,9 @@ describe('BlobStorageService.checkHealth', () => {
 	])('stops the server when %s', async (_case, checkHealth) => {
 		const exit = jest.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
 		const service = new BlobStorageService(
-			...([
-				noopLogger,
-				{ create: () => ({ provider: { checkHealth }, keyBuilder }) }
-			] as unknown as ConstructorParameters<typeof BlobStorageService>)
+			...([noopLogger, { checkHealth }, keyBuilder] as unknown as ConstructorParameters<
+				typeof BlobStorageService
+			>)
 		);
 
 		await service.checkHealth();
@@ -209,10 +199,9 @@ describe('BlobStorageService.checkHealth', () => {
 	])('lets the server start when the storage and its %s are there', async (_case, status) => {
 		const exit = jest.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
 		const service = new BlobStorageService(
-			...([
-				noopLogger,
-				{ create: () => ({ provider: { checkHealth: async () => status }, keyBuilder }) }
-			] as unknown as ConstructorParameters<typeof BlobStorageService>)
+			...([noopLogger, { checkHealth: async () => status }, keyBuilder] as unknown as ConstructorParameters<
+				typeof BlobStorageService
+			>)
 		);
 
 		await service.checkHealth();

@@ -8,8 +8,6 @@ import type {
 	MeetRecordingInfo
 } from '@openvidu-meet/typings';
 import type { EgressInfo } from 'livekit-server-sdk';
-import { container } from '../config/dependency-injector.config.js';
-import { RoomService } from '../services/room.service.js';
 import { EgressHelper } from './egress.helper.js';
 import { EncodingConverter } from './encoding-converter.helper.js';
 import { applyHttpFieldFiltering } from './field-filter.helper.js';
@@ -33,7 +31,7 @@ export class RecordingHelper {
 		return applyHttpFieldFiltering(recording, fields, undefined, []);
 	}
 
-	static async toRecordingInfo(egressInfo: EgressInfo): Promise<MeetRecordingInfo> {
+	static toRecordingInfo(egressInfo: EgressInfo, roomName: string): MeetRecordingInfo {
 		const status = EgressHelper.toStatus(egressInfo.status, MeetRecordingStatus);
 		const size = RecordingHelper.extractSize(egressInfo);
 		// const outputMode = RecordingHelper.extractOutputMode(egressInfo);
@@ -45,8 +43,6 @@ export class RecordingHelper {
 		const { roomName: roomId } = egressInfo;
 		const layout = RecordingHelper.extractRecordingLayout(egressInfo);
 		const encoding = RecordingHelper.extractRecordingEncoding(egressInfo);
-		const roomService = container.get(RoomService);
-		const { roomName } = await roomService.getMeetRoom(roomId, ['roomName']);
 
 		return {
 			recordingId,

@@ -491,6 +491,27 @@ export class RoomService {
 	}
 
 	/**
+	 * Retrieves the name of the Meet room a LiveKit room belongs to. Meet writes the room options into the metadata of
+	 * every LiveKit room it creates, so the name is usually at hand without a database round trip, which matters
+	 * because participants join and leave far more often than rooms are read. The database is read only when that
+	 * metadata is missing or unparseable.
+	 *
+	 * @param room - The LiveKit room, named after the Meet room id
+	 * @returns A promise that resolves to the name of the Meet room
+	 * @throws The `404` room not found error when the metadata carries no name and the room does not exist
+	 */
+	async getMeetRoomName(room: Room): Promise<string> {
+		const roomName = MeetRoomHelper.extractRoomOptionsFromMetadata(room.metadata)?.roomName;
+
+		if (roomName) {
+			return roomName;
+		}
+
+		const meetRoom = await this.getMeetRoom(room.name, ['roomName']);
+		return meetRoom.roomName;
+	}
+
+	/**
 	 * Retrieves the config of a room to gate a feature on it, reusing the room the room member token of the current
 	 * request was validated against instead of reading it again, when it is that same room.
 	 *

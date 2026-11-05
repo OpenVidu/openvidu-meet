@@ -1,8 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
 import ms from 'ms';
-// The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see meeting-mute.test.ts).
-import '../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
 import { MigrationService } from '../../../src/services/migration.service.js';
 

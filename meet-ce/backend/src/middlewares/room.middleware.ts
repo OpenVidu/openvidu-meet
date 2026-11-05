@@ -3,17 +3,12 @@ import { MeetUserRole } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import {
-	errorInsufficientPermissions,
-	errorRoomNotFound,
-	handleError,
-	rejectRequestFromMeetError,
-	toMeetError
-} from '../models/error.model.js';
+import { errorInsufficientPermissions, errorRoomNotFound, toMeetError } from '../models/error.model.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomService } from '../services/room.service.js';
 import { RoomQueryWithFields } from '../types/room-projection.types.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
+import { handleError, rejectRequestFromMeetError } from './error-handler.middleware.js';
 
 /**
  * Middleware to apply room list access filters to validated query options.

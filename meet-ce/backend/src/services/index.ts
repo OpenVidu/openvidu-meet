@@ -27,7 +27,6 @@ export * from './webhook-registry.service.js';
 export * from './storage/blob-storage.service.js';
 export * from './storage/mongodb.service.js';
 export * from './storage/storage-init.service.js';
-export * from './storage/storage.factory.js';
 export * from './storage/storage.interface.js';
 
 // Storage providers

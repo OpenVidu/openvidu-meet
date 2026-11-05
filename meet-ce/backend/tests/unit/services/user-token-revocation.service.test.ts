@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, jest } from '@jest/globals';
-import '../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../src/environment.js';
 import { RedisKeyName } from '../../../src/models/redis.model.js';
 import type { RedisService } from '../../../src/services/redis.service.js';

@@ -1,7 +1,4 @@
 import { afterEach, describe, expect, it, jest } from '@jest/globals';
-// The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see meeting-mute.test.ts).
-import '../../../src/config/dependency-injector.config.js';
 import { ParticipantTokenRevocationService } from '../../../src/services/participant-token-revocation.service.js';
 import type { RedisService } from '../../../src/services/redis.service.js';
 

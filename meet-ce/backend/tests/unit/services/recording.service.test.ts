@@ -6,14 +6,13 @@ import type { ParticipantInfo, Room } from 'livekit-server-sdk';
 import { EgressInfo, EgressStatus } from 'livekit-server-sdk';
 import { PassThrough, Readable } from 'stream';
 // The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see migration.service.test.ts).
+// starts the graph (see meeting-mute.test.ts).
 import '../../../src/config/dependency-injector.config.js';
 import {
 	errorLivekitNotAvailable,
 	errorRecordingAlreadyStopped,
 	errorRecordingStopInProgress
 } from '../../../src/models/error.model.js';
-import { RecordingHelper } from '../../../src/helpers/recording.helper.js';
 import { RecordingService } from '../../../src/services/recording.service.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, debug: () => {}, error: () => {}, verbose: () => {} };
@@ -636,7 +635,7 @@ describe('RecordingService.stopRecording', () => {
 			});
 			Object.assign(service, { recordingRepository: { findByRecordingId: async () => null } });
 			const info = { recordingId, status: MeetRecordingStatus.ENDING } as MeetRecordingInfo;
-			jest.spyOn(RecordingHelper, 'toRecordingInfo').mockResolvedValue(info);
+			jest.spyOn(service, 'toRecordingInfo').mockResolvedValue(info);
 
 			await expect(service.stopRecording(recordingId)).resolves.toBe(info);
 			expect(stopped).toEqual(['EG_1']);

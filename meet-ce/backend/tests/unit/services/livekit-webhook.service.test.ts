@@ -13,7 +13,7 @@ import type { ParticipantInfo, Room } from 'livekit-server-sdk';
 import { AccessToken, EgressInfo, EgressStatus } from 'livekit-server-sdk';
 import crypto from 'crypto';
 // The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see migration.service.test.ts).
+// starts the graph (see meeting-mute.test.ts).
 import { container, registerDependencies } from '../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../src/environment.js';
 import { RecordingHelper } from '../../../src/helpers/recording.helper.js';
@@ -21,8 +21,8 @@ import { EGRESS_LOST_ERROR } from '../../../src/models/egress.model.js';
 import { RoomRepository } from '../../../src/repositories/room.repository.js';
 import { LivekitWebhookService } from '../../../src/services/livekit-webhook.service.js';
 import { RedisService } from '../../../src/services/redis.service.js';
-import { RoomService } from '../../../src/services/room.service.js';
 import type { RoomScheduledTasksService } from '../../../src/services/room-scheduled-tasks.service.js';
+import { TokenService } from '../../../src/services/token.service.js';
 
 class FakeRedisService {
 	store = new Map<string, string>();
@@ -611,6 +611,8 @@ describe('LivekitWebhookService.handleParticipantLeft (an egress leaving the roo
 });
 
 describe('LivekitWebhookService.handleEgressUpdated', () => {
+	let reported: MeetRecordingInfo;
+
 	const buildUpdatedService = (storedStatus: MeetRecordingStatus) => {
 		const stored = { recordingId: 'room-1--EG_1--uid', roomId: 'room-1', status: storedStatus };
 		const inProgress = [MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE, MeetRecordingStatus.ENDING];
@@ -626,7 +628,7 @@ describe('LivekitWebhookService.handleEgressUpdated', () => {
 		const signals: MeetRecordingInfo[] = [];
 		const service = new LivekitWebhookService(
 			...([
-				{},
+				{ toRecordingInfo: async () => reported },
 				repository,
 				{},
 				{},
@@ -649,11 +651,7 @@ describe('LivekitWebhookService.handleEgressUpdated', () => {
 	};
 
 	const egressReporting = (status: MeetRecordingStatus) => {
-		jest.spyOn(RecordingHelper, 'toRecordingInfo').mockResolvedValue({
-			recordingId: 'room-1--EG_1--uid',
-			roomId: 'room-1',
-			status
-		} as MeetRecordingInfo);
+		reported = { recordingId: 'room-1--EG_1--uid', roomId: 'room-1', status } as MeetRecordingInfo;
 		return new EgressInfo({ fileResults: [{}] });
 	};
 
@@ -739,7 +737,7 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 				{ startAutoRecordingIfNeeded: async () => {}, getAllRecordings: async () => ({ recordings: [] }) },
 				{},
 				{ getParticipant: async () => liveParticipant, deleteParticipant },
-				{},
+				{ getMeetRoomName: async () => 'Room 1' },
 				{},
 				webhookDispatcherService,
 				{},
@@ -747,7 +745,7 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 				{},
 				{},
 				{ cleanupState: async () => {} },
-				{},
+				container.get(TokenService),
 				redis,
 				{ info: silent, warn: silent, debug: silent, verbose: silent, error: silent },
 				{ getBroadcasts: async () => [] }
@@ -868,7 +866,7 @@ describe('LivekitWebhookService participant presence and meeting state', () => {
 				},
 				{},
 				{},
-				{},
+				{ getMeetRoomName: async () => 'Room 1' },
 				{},
 				webhooks,
 				{
@@ -1063,7 +1061,7 @@ describe('LivekitWebhookService egress routing', () => {
 		const startedWebhooks: MeetRecordingInfo[] = [];
 		const service = new LivekitWebhookService(
 			...([
-				{},
+				{ toRecordingInfo: async (egress: EgressInfo) => RecordingHelper.toRecordingInfo(egress, 'Room 1') },
 				{ create: async (recording: MeetRecordingInfo) => created.push(recording) },
 				{},
 				{},
@@ -1100,7 +1098,6 @@ describe('LivekitWebhookService egress routing', () => {
 
 	it('stores a started file egress as a recording, reports it and tells the room', async () => {
 		const { service, broadcastEvents, created, signals, startedWebhooks } = build();
-		container.rebind(RoomService).toConstantValue({ getMeetRoom: async () => ({ roomName: 'Room 1' }) } as never);
 		const egress = new EgressInfo({
 			egressId: 'EG_1',
 			roomName: 'room-1',
@@ -1120,7 +1117,6 @@ describe('LivekitWebhookService egress routing', () => {
 		]);
 		expect(startedWebhooks).toEqual(created);
 		expect(signals).toEqual(['room-1:room-1--EG_1--uid1']);
-		container.rebind(RoomService).toSelf().inSingletonScope();
 	});
 
 	it('ignores an egress that writes both a file and a stream', async () => {

@@ -1,8 +1,5 @@
 import { afterEach, describe, expect, it } from '@jest/globals';
 import ms from 'ms';
-// The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see room-scheduled-tasks.service.test.ts).
-import '../../../src/config/dependency-injector.config.js';
 import type { IScheduledTask } from '../../../src/models/task-scheduler.model.js';
 import { TaskSchedulerService } from '../../../src/services/task-scheduler.service.js';
 
