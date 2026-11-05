@@ -1,0 +1,60 @@
+:host {
+	display: block;
+	background: var(--ov-meet-surface-elevated);
+	border: 1px solid var(--ov-meet-border-light);
+	border-radius: var(--ov-meet-radius-md);
+	margin: var(--ov-meet-spacing-md) 0;
+	padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.row {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-lg);
+	height: 64px;
+	border-bottom: 1px solid var(--ov-meet-border-color-light);
+
+	&:last-of-type {
+		border-bottom: none;
+	}
+}
+
+.bar {
+	flex: 1;
+	height: 14px;
+	border-radius: var(--ov-meet-radius-sm);
+	background: color-mix(in srgb, var(--ov-meet-text-hint) 22%, transparent);
+	animation: pulse 1.4s ease-in-out infinite;
+
+	&.avatar {
+		flex: none;
+		width: 36px;
+		height: 36px;
+		border-radius: 50%;
+	}
+
+	&.wide {
+		flex: 2;
+	}
+}
+
+@keyframes pulse {
+	50% {
+		opacity: 0.45;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.bar {
+		animation: none;
+	}
+}

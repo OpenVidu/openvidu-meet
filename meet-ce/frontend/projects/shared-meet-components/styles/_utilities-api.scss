@@ -302,6 +302,11 @@
 	border: 1px solid var(--ov-meet-border-light);
 	overflow: auto;
 
+	&.is-loading {
+		opacity: 0.55;
+		pointer-events: none;
+	}
+
 	// Subtle glow effect when selections are active
 	:host(.has-selections) & {
 		box-shadow:

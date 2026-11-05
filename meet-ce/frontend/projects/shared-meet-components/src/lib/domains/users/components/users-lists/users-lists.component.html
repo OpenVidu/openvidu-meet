@@ -194,11 +194,8 @@
 	}
 
 	<!-- Loading Spinner -->
-	@if (loading()) {
-		<div class="loading-container">
-			<mat-spinner diameter="40" />
-			<span>{{ 'USERS.LIST.LOADING_USERS' | translate }}</span>
-		</div>
+	@if (loading() && users().length === 0) {
+		<ov-table-skeleton [label]="'USERS.LIST.LOADING_USERS' | translate" />
 	} @else if (users().length === 0 && showEmptyFilterMessage()) {
 		<!-- No users match the current filters -->
 		<div class="no-users-state">
@@ -215,7 +212,7 @@
 		</div>
 	} @else {
 		<!-- Users Table -->
-		<div class="table-container" id="table-container">
+		<div class="table-container" id="table-container" [class.is-loading]="loading()">
 			<table
 				mat-table
 				[dataSource]="users()"
