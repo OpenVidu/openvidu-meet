@@ -234,14 +234,12 @@
 									/>
 								}
 
-								<div class="room-info">
-									@if (showRoomInfo()) {
+								@if (showRoomInfo()) {
+									<div class="room-info">
 										<div class="room-name">{{ recording.roomName }}</div>
-									}
-									<a class="room-id" [routerLink]="['/recordings', recording.recordingId]">{{
-										recording.recordingId
-									}}</a>
-								</div>
+										<div class="room-id">{{ recording.recordingId }}</div>
+									</div>
+								}
 							</div>
 
 							<div class="status-info">
@@ -455,21 +453,11 @@
 							<td mat-cell *matCellDef="let recording" class="room-cell">
 								<div class="room-info">
 									<span class="room-name">{{ recording.roomName }}</span>
-									<span class="room-id">{{ recording.roomId }}</span>
+									<a class="room-id" [routerLink]="['/rooms', recording.roomId]">{{ recording.roomId }}</a>
 								</div>
 							</td>
 						</ng-container>
 					}
-
-					<!-- Recording ID Column -->
-					<ng-container matColumnDef="recordingId">
-						<th mat-header-cell *matHeaderCellDef>{{ 'RECORDINGS.DETAIL.RECORDING_ID' | translate }}</th>
-						<td mat-cell *matCellDef="let recording" class="recording-id-cell">
-							<a class="recording-id" [routerLink]="['/recordings', recording.recordingId]">{{
-								recording.recordingId
-							}}</a>
-						</td>
-					</ng-container>
 
 					<!-- Status Column -->
 					<ng-container matColumnDef="status">
@@ -636,6 +624,7 @@
 						*matRowDef="let row; columns: displayedColumns()"
 						[class.selected-row]="isRecordingSelected(row)"
 						id="table-row-{{ row.recordingId }}"
+						[ovRowLink]="['/recordings', row.recordingId]"
 					></tr>
 				</table>
 			</div>

@@ -77,8 +77,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - The microphone is sent at speech quality, 24 kbps instead of 48 kbps.
 - The audio of a shared screen is captured as played, without echo cancellation, noise suppression or automatic
   gain control.
-- The console lists of rooms, recordings and users open an item from its id, a link, instead of from the whole row,
-  and the recordings list shows the recording id.
+- The console lists of rooms, recordings and users no longer open an item at the end of a text selection, open it in a
+  new tab on a Ctrl or Cmd click, and show the ids of rooms and users as links, the room id among them on the
+  recordings list.
 
 ### Fixed
 

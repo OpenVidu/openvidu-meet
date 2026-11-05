@@ -309,13 +309,6 @@
 }
 
 // === SHARED COMPONENTS ===
-.recording-id {
-	@extend %ov-link;
-	font-family: 'Roboto Mono', monospace;
-	font-size: var(--ov-meet-font-size-xs);
-	overflow-wrap: anywhere;
-}
-
 .room-info {
 	@extend %ov-info-display;
 	flex: 1;
@@ -332,10 +325,14 @@
 		}
 	}
 
+	a.room-id {
+		@extend %ov-link;
+	}
+
 	.room-id {
 		@include design-tokens.ov-text-truncate;
-		@extend %ov-link;
 		font-size: var(--ov-meet-font-size-xs);
+		color: var(--ov-meet-text-secondary);
 
 		.cards-container & {
 			font-size: var(--ov-meet-font-size-xxs);
