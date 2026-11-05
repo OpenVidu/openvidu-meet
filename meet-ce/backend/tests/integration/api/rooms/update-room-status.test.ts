@@ -3,6 +3,8 @@ import { MeetRoomDeletionPolicyWithMeeting, MeetRoomStatus } from '@openvidu-mee
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { RoomScheduledTasksService } from '../../../../src/services/room-scheduled-tasks.service.js';
 import { WebhookDispatcherService } from '../../../../src/services/webhook-dispatcher.service.js';
+import { errorRoomDeletionScheduled } from '../../../../src/models/error.model.js';
+import { expectMeetError } from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	createRoom,
@@ -128,7 +130,7 @@ describe('Room API Tests', () => {
 			await deleteRoom(roomId, { withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS });
 
 			const response = await updateRoomStatus(roomId, MeetRoomStatus.OPEN);
-			expect(response.status).toBe(409);
+			expectMeetError(response, errorRoomDeletionScheduled(roomId));
 
 			const getResponse = await getRoom(roomId);
 			expect(getResponse.body.status).toEqual('active_meeting');

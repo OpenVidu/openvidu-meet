@@ -7,6 +7,7 @@ import { container } from '../../../../src/config/dependency-injector.config.js'
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import { TokenService } from '../../../../src/services/token.service.js';
+import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	bulkDeleteRooms,
@@ -146,7 +147,7 @@ describe('Permission naming', () => {
 				canRetrieveRecordings: true,
 				recordingDownload: false
 			});
-			expect(response.status).toBe(422);
+			expectValidationError(response, 'roles.speaker.permissions.canRetrieveRecordings', 'Conflicting values');
 		});
 	});
 

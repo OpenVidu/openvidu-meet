@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetRoomMember, MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
-import { OpenViduMeetError } from '../../../../src/models/error.model.js';
+import { errorRoomMemberNotFound, OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
-import { expectValidationError } from '../../../helpers/assertion-helpers.js';
+import { expectMeetError, expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	bulkDeleteRoomMembers,
@@ -12,7 +12,6 @@ import {
 	createUser,
 	deleteAllRooms,
 	deleteAllUsers,
-
 	getRoomMember,
 	getUser,
 	startTestServer
@@ -61,7 +60,7 @@ describe('Bulk Delete Room Members API Tests', () => {
 			// Verify all members no longer exist
 			for (const memberId of memberIds) {
 				const getResponse = await getRoomMember(roomId, memberId);
-				expect(getResponse.status).toBe(404);
+				expectMeetError(getResponse, errorRoomMemberNotFound(roomId, memberId));
 			}
 		});
 

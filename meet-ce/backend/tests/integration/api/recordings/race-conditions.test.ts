@@ -3,7 +3,9 @@ import { MeetRecordingStatus } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { RecordingScheduledTasksService } from '../../../../src/services/recording-scheduled-tasks.service.js';
 import { RecordingService } from '../../../../src/services/recording.service.js';
+import { errorRecordingAlreadyStarted, errorRecordingNotFound } from '../../../../src/models/error.model.js';
 import {
+	expectMeetError,
 	expectValidStartRecordingResponse,
 	expectValidStopRecordingResponse
 } from '../../../helpers/assertion-helpers.js';
@@ -146,7 +148,7 @@ describe('Recording API Race Conditions Tests', () => {
 		expect([MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE]).toContain(recordingA.body.status);
 
 		const secondStartA = await startRecording(roomDataA.room.roomId);
-		expect(secondStartA.status).toBe(409);
+		expectMeetError(secondStartA, errorRecordingAlreadyStarted(roomDataA.room.roomId));
 	});
 
 	it('should handle simultaneous recordings in different rooms correctly', async () => {
@@ -278,7 +280,7 @@ describe('Recording API Race Conditions Tests', () => {
 
 			// Verify the recording doesn't exist in storage anymore
 			const verificationRecordingResponse = await getRecording(recordingId);
-			expect(verificationRecordingResponse.status).toBe(404);
+			expectMeetError(verificationRecordingResponse, errorRecordingNotFound(recordingId));
 		}
 
 		expect(streamSuccessful || deleteSuccessful).toBe(true);

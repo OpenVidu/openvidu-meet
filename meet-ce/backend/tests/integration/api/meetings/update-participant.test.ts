@@ -13,7 +13,8 @@ import { MEET_ENV } from '../../../../src/environment.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { MutexService } from '../../../../src/services/mutex.service.js';
 import { MeetLock } from '../../../../src/helpers/redis.helper.js';
-import { expectValidationError } from '../../../helpers/assertion-helpers.js';
+import { errorInsufficientPermissions, errorInvalidToken } from '../../../../src/models/error.model.js';
+import { expectMeetError, expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	disconnectFakeParticipants,
 	joinFakeParticipant,
@@ -146,7 +147,7 @@ describe('Meetings API Tests', () => {
 				MeetParticipantModerationAction.UPGRADE,
 				roomData.moderatorToken
 			);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail with 409 when upgrading an already moderator participant', async () => {
@@ -239,7 +240,7 @@ describe('Meetings API Tests', () => {
 				const { staleModeratorToken } = await promoteRefreshAndDemote();
 
 				const response = await kickParticipant(roomData.room.roomId, participantIdentity, staleModeratorToken);
-				expect(response.status).toBe(401);
+				expectMeetError(response, errorInvalidToken());
 			});
 
 			it('should refresh that token to the permissions the participant had before the promotion', async () => {
@@ -253,7 +254,7 @@ describe('Meetings API Tests', () => {
 					participantIdentity,
 					`Bearer ${refresh.body.token}`
 				);
-				expect(response.status).toBe(403);
+				expectMeetError(response, errorInsufficientPermissions());
 			});
 		});
 
@@ -419,7 +420,7 @@ describe('Meetings API Tests', () => {
 				expect(refreshed.status).toBe(200);
 
 				const response = await kickParticipant(roomId, participantIdentity, `Bearer ${refreshed.body.token}`);
-				expect(response.status).toBe(401);
+				expectMeetError(response, errorInvalidToken());
 			});
 		});
 	});

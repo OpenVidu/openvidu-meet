@@ -1,4 +1,5 @@
-import { describe, expect, it } from '@jest/globals';
+import { afterEach, describe, expect, it, jest } from '@jest/globals';
+import { ParticipantInfo_Kind } from '@livekit/protocol';
 import type { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { MeetRecordingAutoStartMode, MeetRecordingStatus } from '@openvidu-meet/typings';
 import type { ParticipantInfo, Room } from 'livekit-server-sdk';
@@ -7,7 +8,12 @@ import { PassThrough, Readable } from 'stream';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
-import { errorLivekitNotAvailable, errorRecordingAlreadyStopped } from '../../../src/models/error.model.js';
+import {
+	errorLivekitNotAvailable,
+	errorRecordingAlreadyStopped,
+	errorRecordingStopInProgress
+} from '../../../src/models/error.model.js';
+import { RecordingHelper } from '../../../src/helpers/recording.helper.js';
 import { RecordingService } from '../../../src/services/recording.service.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, debug: () => {}, error: () => {}, verbose: () => {} };
@@ -459,6 +465,32 @@ describe('RecordingService.startAutoRecordingIfNeeded (the guards that say no)',
 	});
 });
 
+describe('RecordingService.startAutoRecordingIfNeeded (who counts towards the threshold)', () => {
+	it('counts the people in the meeting, never its recorders or agents', async () => {
+		const { service, livekit, latch } = buildStartService(false);
+		(service as unknown as { getRoomService: () => Promise<unknown> }).getRoomService = async () => ({
+			getMeetRoom: async () => ({
+				config: {
+					recording: { enabled: true, autoStart: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS },
+					e2ee: { enabled: false }
+				}
+			})
+		});
+		const person = { identity: 'participant-1', kind: ParticipantInfo_Kind.STANDARD } as ParticipantInfo;
+		livekit.listRoomParticipants = async () => [
+			person,
+			{ identity: 'EG_1', kind: ParticipantInfo_Kind.EGRESS } as ParticipantInfo,
+			{ identity: 'agent-1', kind: ParticipantInfo_Kind.AGENT } as ParticipantInfo
+		];
+		const threshold = jest.fn((..._args: unknown[]) => false);
+		latch.hasReachedAutoStartThreshold = threshold;
+
+		await service.startAutoRecordingIfNeeded({ name: ROOM_ID, sid: MEETING_ID } as Room, person);
+
+		expect(threshold).toHaveBeenCalledWith(ROOM_ID, expect.anything(), person, [person]);
+	});
+});
+
 describe('RecordingService.finishRecording', () => {
 	const ended = { recordingId: 'room-1--EG_1--uid', roomId: 'room-1', status: MeetRecordingStatus.ABORTED };
 
@@ -545,6 +577,70 @@ describe('RecordingService.stopRecording', () => {
 		expect(latch.disabled).toEqual([]);
 	});
 
+	const liveEgress = (status: EgressStatus) => new EgressInfo({ ...recordingEgress(status), roomId: 'RM_meeting' });
+
+	it.each([
+		['active', EgressStatus.EGRESS_ACTIVE],
+		['starting', EgressStatus.EGRESS_STARTING]
+	])(
+		'stops a recording whose egress is %s, disarming the auto-start for the meeting first',
+		async (_case, status) => {
+			const egress = liveEgress(status);
+			const { service } = buildStopService([egress]);
+			const disarmed: string[][] = [];
+			const stopped: string[] = [];
+			Object.assign(service, {
+				recAutoStartStateService: {
+					markDisabled: async (roomId: string, meetingId: string) => disarmed.push([roomId, meetingId])
+				}
+			});
+			Object.assign((service as unknown as { livekitService: object }).livekitService, {
+				stopEgressIfRunning: async (egressId: string) => {
+					expect(disarmed).toEqual([['room-1', 'RM_meeting']]);
+					stopped.push(egressId);
+					return egress;
+				}
+			});
+			Object.assign(service, { recordingRepository: { findByRecordingId: async () => null } });
+			const info = { recordingId, status: MeetRecordingStatus.ENDING } as MeetRecordingInfo;
+			jest.spyOn(RecordingHelper, 'toRecordingInfo').mockResolvedValue(info);
+
+			await expect(service.stopRecording(recordingId)).resolves.toBe(info);
+			expect(stopped).toEqual(['EG_1']);
+			jest.restoreAllMocks();
+		}
+	);
+
+	it('answers 409 when the egress ended between the check and the stop', async () => {
+		const { service } = buildStopService([liveEgress(EgressStatus.EGRESS_ACTIVE)]);
+		Object.assign((service as unknown as { livekitService: object }).livekitService, {
+			stopEgressIfRunning: async () => null
+		});
+		Object.assign(service, { recordingRepository: { findByRecordingId: async () => null } });
+
+		await expect(service.stopRecording(recordingId)).rejects.toMatchObject({
+			statusCode: 409,
+			message: errorRecordingAlreadyStopped(recordingId).message
+		});
+	});
+
+	it('answers 409 while another stop of the room holds its stop lock', async () => {
+		const { service } = buildStopService([]);
+		Object.assign(service, { mutexService: { withLock: async () => null } });
+
+		await expect(service.stopRecording(recordingId)).rejects.toMatchObject({
+			statusCode: 409,
+			message: errorRecordingStopInProgress(recordingId).message
+		});
+	});
+
+	it('answers 404 for a recording that does not exist', async () => {
+		const { service } = buildStopService([]);
+		Object.assign(service, { recordingRepository: { findByRecordingId: async () => null } });
+
+		await expect(service.getRecording(recordingId)).rejects.toMatchObject({ statusCode: 404 });
+	});
+
 	it('answers 409 for a recording whose egress has ended', async () => {
 		const { service, stopped } = buildStopService([{ status: EgressStatus.EGRESS_COMPLETE }]);
 
@@ -591,6 +687,31 @@ describe('RecordingService.writeRecordingsZip', () => {
 		expect(zipEntries()).toBe(60);
 	});
 
+	it('leaves out a recording it cannot open and names a recording without a filename after its id', async () => {
+		const service = buildZipService(() => Readable.from([Buffer.alloc(16)]));
+		Object.assign(service, {
+			getRecording: async (recordingId: string) => {
+				if (recordingId === 'room-1--EG_1--abc') throw new Error('not found');
+
+				return { filename: '' };
+			}
+		});
+		const chunks: Buffer[] = [];
+		const output = new PassThrough();
+		output.on('data', (chunk: Buffer) => chunks.push(chunk));
+
+		await service.writeRecordingsZip(
+			['room-1--EG_0--abc', 'room-1--EG_1--abc'],
+			output,
+			new AbortController().signal
+		);
+
+		const zip = Buffer.concat(chunks).toString('latin1');
+		expect(zip.split('PK\x03\x04').length - 1).toBe(1);
+		expect(zip).toContain('room-1--EG_0--abc.mp4');
+		expect(zip).not.toContain('room-1--EG_1--abc');
+	});
+
 	it('destroys the recording being read and opens no other when the download is aborted', async () => {
 		const opened: Readable[] = [];
 		let firstOpened!: () => void;
@@ -610,5 +731,82 @@ describe('RecordingService.writeRecordingsZip', () => {
 		await expect(writing).rejects.toMatchObject({ name: 'AbortError' });
 		expect(opened).toHaveLength(1);
 		expect(opened[0].destroyed).toBe(true);
+	});
+});
+
+describe('RecordingService.deleteAllRoomRecordings', () => {
+	const build = (inProgress: EgressInfo[], storedRecordings: string[]) => {
+		const actions: string[] = [];
+		const service = new RecordingService(
+			...([
+				{
+					getInProgressRecordingsEgress: async () => inProgress,
+					stopEgressIfRunning: async (egressId: string) => actions.push(`stop:${egressId}`)
+				},
+				{},
+				{
+					findByRecordingId: async (recordingId: string) => ({
+						recordingId,
+						roomId: 'room-1',
+						status: MeetRecordingStatus.ACTIVE
+					}),
+					findAllByRoomId: async () => storedRecordings.map((recordingId) => ({ recordingId })),
+					deleteByRecordingIds: async (ids: string[]) => actions.push(`deleteDocs:${ids.join(',')}`)
+				},
+				{},
+				{ deleteRecordingMediaBatch: async (ids: string[]) => actions.push(`deleteMedia:${ids.join(',')}`) },
+				{},
+				{},
+				{},
+				noopLogger
+			] as unknown as ConstructorParameters<typeof RecordingService>)
+		);
+		Object.assign(service, {
+			finishRecording: async (recording: MeetRecordingInfo) => {
+				actions.push(`finish:${recording.recordingId}:${recording.status}`);
+				return true;
+			}
+		});
+		return { service, actions };
+	};
+
+	afterEach(() => {
+		jest.useRealTimers();
+	});
+
+	it('stops a recording still in progress and ends it as aborted before deleting every recording of the room', async () => {
+		jest.useFakeTimers();
+		const { service, actions } = build([recordingEgress(EgressStatus.EGRESS_ACTIVE)], [RECORDING_ID, 'room-1--EG_0--old']);
+
+		const deletion = service.deleteAllRoomRecordings('room-1');
+		await jest.advanceTimersByTimeAsync(1000);
+		await deletion;
+
+		expect(actions).toEqual([
+			'stop:EG_1',
+			`finish:${RECORDING_ID}:${MeetRecordingStatus.ABORTED}`,
+			`deleteDocs:${RECORDING_ID},room-1--EG_0--old`,
+			`deleteMedia:${RECORDING_ID},room-1--EG_0--old`
+		]);
+	});
+
+	it('still deletes the recordings when stopping one in progress fails', async () => {
+		jest.useFakeTimers();
+		const { service, actions } = build([recordingEgress(EgressStatus.EGRESS_ACTIVE)], [RECORDING_ID]);
+		Object.assign((service as unknown as { livekitService: object }).livekitService, {
+			stopEgressIfRunning: async () => Promise.reject(new Error('egress unreachable'))
+		});
+
+		await service.deleteAllRoomRecordings('room-1');
+
+		expect(actions).toEqual([`deleteDocs:${RECORDING_ID}`, `deleteMedia:${RECORDING_ID}`]);
+	});
+
+	it('deletes nothing in a room without recordings', async () => {
+		const { service, actions } = build([], []);
+
+		await service.deleteAllRoomRecordings('room-1');
+
+		expect(actions).toEqual([]);
 	});
 });

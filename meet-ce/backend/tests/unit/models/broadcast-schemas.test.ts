@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
+import { beforeAll, describe, expect, it } from '@jest/globals';
 import { MEET_BROADCAST_FIELDS, MeetRecordingAudioCodec, MeetRecordingVideoCodec } from '@openvidu-meet/typings';
 import {
 	BroadcastConfigSchema,
@@ -8,7 +8,12 @@ import {
 	GetBroadcastsQuerySchema,
 	StartBroadcastReqSchema
 } from '../../../src/models/zod-schemas/broadcast.schema.js';
-import { mergeFieldsHeaderIntoQuery } from '../../../src/models/zod-schemas/field-selection.schema.js';
+import { configureZodErrorMessages } from '../../../src/config/zod-config.js';
+import { fieldListSchema, mergeFieldsHeaderIntoQuery } from '../../../src/models/zod-schemas/field-selection.schema.js';
+
+beforeAll(() => {
+	configureZodErrorMessages();
+});
 
 const issues = (result: { success: boolean; error?: { issues: Array<{ path: unknown[]; message: string }> } }) =>
 	result.error!.issues.map(({ path, message }) => `${path.join('.')}: ${message}`);
@@ -214,5 +219,187 @@ describe('BroadcastFieldsQuerySchema', () => {
 		mergeFieldsHeaderIntoQuery({ 'x-fields': 'destination,status,bogus' }, query, MEET_BROADCAST_FIELDS);
 
 		expect(fieldsOf(query.fields as string)).toEqual(['status', 'destination']);
+	});
+});
+
+describe('broadcast destinations', () => {
+	const configIssues = (destinations: unknown[]) => {
+		const result = BroadcastConfigSchema.safeParse({ enabled: true, destinations });
+		return result.success ? [] : issues(result);
+	};
+	const urlOfLength = (length: number) => `rtmp://mtx/live/${'k'.repeat(length - 'rtmp://mtx/live/'.length)}`;
+
+	it('accepts a name of 1 to 50 characters, counted after trimming', () => {
+		expect(configIssues([{ name: 'a', url: 'rtmp://mtx/live/k' }])).toEqual([]);
+		expect(configIssues([{ name: 'a'.repeat(50), url: 'rtmp://mtx/live/k' }])).toEqual([]);
+		expect(configIssues([{ name: `  ${'a'.repeat(50)}  `, url: 'rtmp://mtx/live/k' }])).toEqual([]);
+	});
+
+	it('rejects a name over 50 characters and a name that is only whitespace', () => {
+		expect(configIssues([{ name: 'a'.repeat(51), url: 'rtmp://mtx/live/k' }])).toEqual([
+			'destinations.0.name: Destination name cannot exceed 50 characters'
+		]);
+		expect(configIssues([{ name: '   ', url: 'rtmp://mtx/live/k' }])).toEqual([
+			'destinations.0.name: Destination name is required'
+		]);
+		expect(configIssues([{ url: 'rtmp://mtx/live/k' }])).toEqual(['destinations.0.name: Required']);
+	});
+
+	it('requires a URL', () => {
+		expect(configIssues([{ name: 'X' }])).toEqual([expect.stringMatching(/^destinations\.0\.url: /)]);
+	});
+
+	it('accepts a URL of exactly 2048 characters and rejects one more', () => {
+		expect(configIssues([{ name: 'X', url: urlOfLength(2048) }])).toEqual([]);
+		expect(configIssues([{ name: 'X', url: urlOfLength(2049) }])).toEqual([
+			'destinations.0.url: Destination url cannot exceed 2048 characters'
+		]);
+	});
+
+	it.each([
+		'http://mtx/live/k',
+		'https://mtx/live/k',
+		'srt://mtx/live/k',
+		'rtmpx://mtx/live/k',
+		'xrtmp://mtx/live/k'
+	])('rejects the URL %s, which is not rtmp or rtmps', (url) => {
+		expect(configIssues([{ name: 'X', url }])).toContain(
+			'destinations.0.url: Destination url must be an rtmp:// or rtmps:// URL'
+		);
+	});
+
+	it('trims the id of a saved destination and rejects an empty one', () => {
+		const parsed = BroadcastConfigSchema.parse({
+			destinations: [{ id: ' d1 ', name: 'X', url: 'rtmp://mtx/live/k' }]
+		});
+
+		expect(parsed.destinations?.[0].id).toBe('d1');
+		expect(configIssues([{ id: ' ', name: 'X', url: 'rtmp://mtx/live/k' }])).toEqual([
+			'destinations.0.id: Destination id cannot be empty'
+		]);
+	});
+});
+
+describe('start and stop broadcast requests', () => {
+	it('sanitize the room id', () => {
+		expect(StartBroadcastReqSchema.parse({ roomId: 'ro om!1' })).toEqual({ roomId: 'room1' });
+		expect(StopBroadcastsReqSchema.parse({ roomId: 'ro om!1' })).toEqual({ roomId: 'room1' });
+		expect(GetBroadcastsQuerySchema.parse({ roomId: 'ro om!1' }).roomId).toBe('room1');
+	});
+
+	it('reject an empty room id, and one that sanitizes to nothing', () => {
+		for (const schema of [StartBroadcastReqSchema, StopBroadcastsReqSchema, GetBroadcastsQuerySchema]) {
+			expect(issues(schema.safeParse({ roomId: '' }))).toEqual([
+				'roomId: roomId is required and cannot be empty'
+			]);
+			expect(issues(schema.safeParse({ roomId: '!!' }))).toEqual([
+				'roomId: roomId cannot be empty after sanitization'
+			]);
+		}
+	});
+
+	it('Start accepts room destinations with the destinations of the meeting empty, and the other way round', () => {
+		expect(StartBroadcastReqSchema.safeParse({ roomId, destinationIds: ['a'], destinations: [] }).success).toBe(
+			true
+		);
+		expect(
+			StartBroadcastReqSchema.safeParse({ roomId, destinationIds: [], destinations: [destination('a')] }).success
+		).toBe(true);
+	});
+
+	it('Start names the empty room destination id', () => {
+		expect(issues(StartBroadcastReqSchema.safeParse({ roomId, destinationIds: [' '] }))).toEqual([
+			'destinationIds.0: Destination id cannot be empty'
+		]);
+	});
+
+	it('Start rejects a destination of the meeting that carries anything but a name and a url', () => {
+		expect(
+			issues(StartBroadcastReqSchema.safeParse({ roomId, destinations: [{ ...destination('a'), id: 'x' }] }))
+		).toEqual([expect.stringContaining('destinations.0')]);
+	});
+
+	it('Start validates the destinations of the meeting', () => {
+		expect(
+			issues(StartBroadcastReqSchema.safeParse({ roomId, destinations: [{ name: '', url: 'http://x/y/z' }] }))
+		).toEqual([
+			'destinations.0.name: Destination name is required',
+			'destinations.0.url: Destination url must be an rtmp:// or rtmps:// URL',
+			'destinations.0.url: Destination url must have the form rtmp(s)://{host}(/{path})/{app}/{stream_key}'
+		]);
+	});
+
+	it('Stop trims the broadcast ids it is given and names the one that is malformed', () => {
+		expect(StopBroadcastsReqSchema.parse({ roomId, broadcastIds: [' room-1--abc '] }).broadcastIds).toEqual([
+			'room-1--abc'
+		]);
+		expect(issues(StopBroadcastsReqSchema.safeParse({ roomId, broadcastIds: ['room-1--abc', 'abc'] }))).toEqual([
+			'broadcastIds.1: Broadcast id must have the form {roomId}--{id}'
+		]);
+	});
+
+	it('Get reads the fields of the broadcasts', () => {
+		expect(GetBroadcastsQuerySchema.parse({ roomId, fields: 'status,bogus' }).fields).toEqual(['status']);
+	});
+
+	it('Broadcast id names the part it lacks', () => {
+		for (const broadcastId of ['', ' ', '--', 'room-1--', '--id', 'a--b--c', 'abc']) {
+			expect(issues(BroadcastIdParamsSchema.safeParse({ broadcastId }))).toEqual([
+				'broadcastId: Broadcast id must have the form {roomId}--{id}'
+			]);
+		}
+
+		expect(BroadcastIdParamsSchema.safeParse({}).success).toBe(false);
+	});
+});
+
+describe('fieldListSchema', () => {
+	const schema = fieldListSchema(['a', 'b', 'c'] as const);
+
+	it('reads a comma-separated list into the allowed fields, once each, in the order asked', () => {
+		expect(schema.parse(' c, a ,c,x, ')).toEqual(['c', 'a']);
+	});
+
+	it('reads a list with no allowed field, an empty list and no list as every field', () => {
+		expect(schema.parse('x,y')).toBeUndefined();
+		expect(schema.parse(' , ')).toBeUndefined();
+		expect(schema.parse('')).toBeUndefined();
+		expect(schema.parse(undefined)).toBeUndefined();
+	});
+
+	it('is case sensitive', () => {
+		expect(schema.parse('A,b')).toEqual(['b']);
+	});
+
+	it('rejects a value that is not a string', () => {
+		expect(issues(schema.safeParse(5))).toEqual([': Expected string, received number']);
+	});
+});
+
+describe('mergeFieldsHeaderIntoQuery', () => {
+	const allowed = ['a', 'b', 'c'] as const;
+	const merge = (headers: Record<string, unknown>, query: Record<string, unknown>) => {
+		mergeFieldsHeaderIntoQuery(headers, query, allowed);
+		return query;
+	};
+
+	it('puts the header fields after the ones of the query, once each', () => {
+		expect(merge({ 'x-fields': 'c, a,x' }, { fields: ' b ,, a' })).toEqual({ fields: 'b,a,c' });
+	});
+
+	it('keeps the names of the query that are not allowed, for the query schema to drop', () => {
+		expect(merge({ 'x-fields': 'a' }, { fields: 'zzz' })).toEqual({ fields: 'zzz,a' });
+	});
+
+	it('sets the fields when the query has none or has something other than a string', () => {
+		expect(merge({ 'x-fields': 'a,b' }, {})).toEqual({ fields: 'a,b' });
+		expect(merge({ 'x-fields': 'a' }, { fields: ['b'] })).toEqual({ fields: 'a' });
+		expect(merge({ 'x-fields': 'a' }, { fields: '' })).toEqual({ fields: 'a' });
+	});
+
+	it('leaves the query alone when the header names no allowed field or is not a string', () => {
+		expect(merge({ 'x-fields': 'x' }, { fields: 'b' })).toEqual({ fields: 'b' });
+		expect(merge({ 'x-fields': 5 }, { fields: 'b' })).toEqual({ fields: 'b' });
+		expect(merge({}, { fields: 'b' })).toEqual({ fields: 'b' });
 	});
 });

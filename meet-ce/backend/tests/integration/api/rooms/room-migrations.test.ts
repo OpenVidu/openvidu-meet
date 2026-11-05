@@ -541,5 +541,51 @@ describe('Room Schema Migrations', () => {
 				expectMigratedRoomToCurrentVersion(migratedRoom as Record<string, unknown>, roomId);
 			}
 		);
+
+		it('should migrate every legacy room when there are more of them than one batch holds', async () => {
+			const roomIds = Array.from({ length: 120 }, (_, index) => `legacy-batch-room-${Date.now()}-${index}`);
+			testRoomIds.push(...roomIds);
+
+			await MeetRoomModel.collection.insertMany(roomIds.map(buildLegacyRoomV7));
+			await migrationService.runMigrations();
+
+			const migrated = await MeetRoomModel.collection.find({ roomId: { $in: roomIds } }).toArray();
+			expect(migrated).toHaveLength(120);
+			expect(migrated.every((room) => room.schemaVersion === INTERNAL_CONFIG.ROOM_SCHEMA_VERSION)).toBe(true);
+		});
+
+		it('should refuse to start on rooms written by a newer version of Meet', async () => {
+			const roomId = `future-room-${Date.now()}`;
+			testRoomIds.push(roomId);
+			await MeetRoomModel.collection.insertOne({
+				...buildLegacyRoomV7(roomId),
+				schemaVersion: INTERNAL_CONFIG.ROOM_SCHEMA_VERSION + 1
+			});
+
+			try {
+				await expect(migrationService.runMigrations()).rejects.toThrow(
+					`Collection ${meetRoomCollectionName} has schemaVersion ${INTERNAL_CONFIG.ROOM_SCHEMA_VERSION + 1}, ` +
+						`which is higher than expected ${INTERNAL_CONFIG.ROOM_SCHEMA_VERSION}`
+				);
+			} finally {
+				await MeetRoomModel.collection.deleteOne({ roomId });
+			}
+		});
+
+		it('should refuse to start when a legacy room cannot be migrated, leaving it as it was', async () => {
+			const roomId = `broken-room-${Date.now()}`;
+			testRoomIds.push(roomId);
+			const { config: _config, ...brokenRoom } = buildLegacyRoomV7(roomId);
+			await MeetRoomModel.collection.insertOne(brokenRoom);
+
+			try {
+				await expect(migrationService.runMigrations()).rejects.toThrow('did not complete successfully');
+				expect((await MeetRoomModel.collection.findOne({ roomId }))?.schemaVersion).toBe(7);
+			} finally {
+				await MeetRoomModel.collection.deleteOne({ roomId });
+			}
+
+			await expect(migrationService.runMigrations()).resolves.toBeUndefined();
+		});
 	});
 });

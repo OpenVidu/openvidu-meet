@@ -2,11 +2,12 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetRoomMemberRole, MeetRoomMemberTokenMetadata, MeetUserRole } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { OpenViduMeetError } from '../../../../src/models/error.model.js';
+import { errorRoomMemberNotFound, OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { MeetRecordingModel } from '../../../../src/models/mongoose-schemas/recording.schema.js';
 import { LivekitWebhookService } from '../../../../src/services/livekit-webhook.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { TokenService } from '../../../../src/services/token.service.js';
+import { expectMeetError } from '../../../helpers/assertion-helpers.js';
 import {
 	disconnectFakeParticipants,
 	joinFakeParticipant,
@@ -254,13 +255,13 @@ describe('Users API Tests', () => {
 
 			// Verify all memberships are removed
 			const getMember1AfterResponse = await getRoomMember(room1.roomId, userId);
-			expect(getMember1AfterResponse.status).toBe(404);
+			expectMeetError(getMember1AfterResponse, errorRoomMemberNotFound(room1.roomId, userId));
 
 			const getMember2AfterResponse = await getRoomMember(room2.roomId, userId);
-			expect(getMember2AfterResponse.status).toBe(404);
+			expectMeetError(getMember2AfterResponse, errorRoomMemberNotFound(room2.roomId, userId));
 
 			const getMember3AfterResponse = await getRoomMember(room3.roomId, userId);
-			expect(getMember3AfterResponse.status).toBe(404);
+			expectMeetError(getMember3AfterResponse, errorRoomMemberNotFound(room3.roomId, userId));
 		});
 
 		it('should kick user from active meeting when deleting user', async () => {
@@ -341,10 +342,10 @@ describe('Users API Tests', () => {
 
 			// Verify memberships removed
 			const getMember1Response = await getRoomMember(memberRoom1.roomId, userId);
-			expect(getMember1Response.status).toBe(404);
+			expectMeetError(getMember1Response, errorRoomMemberNotFound(memberRoom1.roomId, userId));
 
 			const getMember2Response = await getRoomMember(memberRoom2.roomId, userId);
-			expect(getMember2Response.status).toBe(404);
+			expectMeetError(getMember2Response, errorRoomMemberNotFound(memberRoom2.roomId, userId));
 		});
 
 		it('should not affect other room members when deleting a room owner', async () => {

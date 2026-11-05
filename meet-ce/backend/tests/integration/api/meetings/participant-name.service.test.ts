@@ -48,10 +48,7 @@ describe('ParticipantNameService', () => {
 	// Every room this suite reserves names in starts with testRoomId, so one prefix per key family clears it all
 	async function cleanupTestData() {
 		try {
-			for (const pattern of [
-				`ov_meet:room_participants:${testRoomId}*`,
-				`ov_meet:participant_pool:${testRoomId}*`
-			]) {
+			for (const pattern of [`ov_meet:room_participants:${testRoomId}*`]) {
 				const keys = await redisService.getKeys(pattern);
 
 				if (keys.length > 0) {

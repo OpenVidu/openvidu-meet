@@ -1,5 +1,4 @@
 import type {
-	MeetApiKey,
 	MeetBroadcastInfo,
 	MeetMeetingEndedPayload,
 	MeetParticipantJoinedPayload,
@@ -454,14 +453,7 @@ export class WebhookDispatcherService {
 	}
 
 	protected async getApiKey(): Promise<string> {
-		let apiKeys: MeetApiKey[];
-
-		try {
-			apiKeys = await this.apiKeyService.getApiKeys();
-		} catch {
-			// If there is an error retrieving API keys, we assume they are not configured
-			apiKeys = [];
-		}
+		const apiKeys = await this.apiKeyService.getApiKeys();
 
 		if (apiKeys.length === 0) {
 			throw errorApiKeyNotConfiguredForWebhooks();

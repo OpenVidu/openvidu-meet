@@ -307,39 +307,6 @@ export class RedisService extends EventEmitter {
 	}
 
 	/**
-	 * Removes and returns the member with the lowest score from a sorted set.
-	 *
-	 * @param {string} key - The key of the sorted set
-	 * @param {number} count - Number of members to pop (default: 1)
-	 * @returns {Promise<string[]>} - Array of popped members
-	 */
-	async popMinFromSortedSet(key: string, count = 1): Promise<string[]> {
-		try {
-			return await this.redisPublisher.zpopmin(key, count);
-		} catch (error) {
-			this.logger.error(`Error popping min from sorted set in Redis for key '${key}'`, error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Adds one or more members to a sorted set.
-	 *
-	 * @param {string} key - The key of the sorted set
-	 * @param {number} score - The score for the member
-	 * @param {string} member - The member to add
-	 * @returns {Promise<number>} - Number of elements added
-	 */
-	async addToSortedSet(key: string, score: number, member: string): Promise<number> {
-		try {
-			return await this.redisPublisher.zadd(key, score, member);
-		} catch (error) {
-			this.logger.error(`Error adding to sorted set in Redis for key '${key}'`, error);
-			throw error;
-		}
-	}
-
-	/**
 	 * Adds a member to a Redis Set and refreshes the key TTL atomically.
 	 *
 	 * @param key - The key of the set

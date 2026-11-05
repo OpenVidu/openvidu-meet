@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetUserRole } from '@openvidu-meet/typings';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { expectValidationError } from '../../../helpers/assertion-helpers.js';
+import { errorInvalidCredentials } from '../../../../src/models/error.model.js';
+import { expectMeetError, expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	createUser,
 	deleteAllUsers,
@@ -58,7 +59,7 @@ describe('Users API Tests', () => {
 
 			// Verify old password no longer works
 			const loginOldResponse = await loginReq({ userId, password: initialPassword });
-			expect(loginOldResponse.status).toBe(404);
+			expectMeetError(loginOldResponse, errorInvalidCredentials());
 
 			// Verify new password works
 			const loginResponse = await loginReq({ userId, password: newPassword });

@@ -11,6 +11,7 @@ import {
 } from '@openvidu-meet/typings';
 import express, { Request, Response } from 'express';
 import http from 'http';
+import { AddressInfo } from 'net';
 import { StringValue } from 'ms';
 import { container } from '../../src/config/dependency-injector.config.js';
 import { MeetRoomHelper } from '../../src/helpers/room.helper.js';
@@ -259,10 +260,8 @@ export const setupMultiRecordingsTestContext = async (
 /** An incoming webhook request together with the exact body bytes it carried. */
 export type RawBodyRequest = Request & { rawBody: string };
 
-export const startWebhookServer = async (
-	port: number,
-	webhookReceivedCallback: (event: RawBodyRequest) => void
-): Promise<void> => {
+/** Starts a webhook receiver on a free port and resolves to the URL to register. */
+export const startWebhookServer = async (webhookReceivedCallback: (event: RawBodyRequest) => void): Promise<string> => {
 	const app = express();
 	// The signature covers the bytes as sent, so the receiver keeps them: re-serializing the parsed
 	// body is not guaranteed to reproduce them, which is the mistake the published recipes must avoid.
@@ -279,10 +278,10 @@ export const startWebhookServer = async (
 		res.status(200).send({ success: true });
 	});
 
-	return new Promise<void>((resolve) => {
-		mockWebhookServer = app.listen(port, () => {
-			console.log(`Webhook server listening on port ${port}`);
-			resolve();
+	return new Promise<string>((resolve) => {
+		mockWebhookServer = app.listen(0, () => {
+			const { port } = mockWebhookServer.address() as AddressInfo;
+			resolve(`http://localhost:${port}/webhook`);
 		});
 	});
 };

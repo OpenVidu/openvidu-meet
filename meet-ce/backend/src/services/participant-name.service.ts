@@ -61,32 +61,23 @@ export class ParticipantNameService {
 		const { baseName: extractedBaseName, originalCaseBase } = this.extractBaseName(requestedName);
 		const normalizedBaseName = extractedBaseName.toLowerCase();
 
-		// First, try to reserve the exact requested name
-		const normalizedRequestedName = requestedName.toLowerCase();
-		const reservedOriginal = await this.tryReserveName(
-			participantsKey,
-			normalizedRequestedName,
-			participantIdentity
-		);
+		const reservedOriginal = await this.tryReserveName(participantsKey, requestedName, participantIdentity);
 
 		if (reservedOriginal) {
 			this.logger.verbose(`Reserved original name '${requestedName}' for room '${roomId}'`);
 			return requestedName;
 		}
 
-		// If original name is taken, generate alternatives with atomic counter
-		// Use the extracted base name to avoid concatenating suffixes
+		// Numbered from the base name, so "BOB_1" taken gives "BOB_2" rather than "BOB_1_1"
 		for (let attempt = 1; attempt <= this.MAX_CONCURRENT_NAME_REQUESTS; attempt++) {
-			const alternativeName = await this.generateAlternativeName(roomId, normalizedBaseName, attempt);
-			const reserved = await this.tryReserveName(participantsKey, alternativeName, participantIdentity);
+			const number = await this.findNextAvailableNumber(roomId, normalizedBaseName);
+			const alternativeName = `${normalizedBaseName}_${number}`;
 
-			if (reserved) {
+			if (await this.tryReserveName(participantsKey, alternativeName, participantIdentity)) {
 				this.logger.verbose(
 					`Reserved alternative name '${alternativeName}' for room '${roomId}' (attempt ${attempt})`
 				);
-				// Return alternative name with original case from the base name
-				const suffix = alternativeName.replace(`${normalizedBaseName}_`, '');
-				return `${originalCaseBase}_${suffix}`;
+				return `${originalCaseBase}_${number}`;
 			}
 		}
 
@@ -96,8 +87,8 @@ export class ParticipantNameService {
 	}
 
 	/**
-	 * Releases the name a session of a participant reserved, making it available for others, and
-	 * returns its number suffix to the available pool for reuse. A reservation taken over after that
+	 * Releases the name a session of a participant reserved, making it and its number suffix available
+	 * for others. A reservation taken over after that
 	 * session joined belongs to a newer session of the same identity, so it is kept.
 	 *
 	 * @param roomId - The room identifier
@@ -125,15 +116,6 @@ export class ParticipantNameService {
 			if (released !== 1) {
 				this.logger.verbose(`Name '${participantName}' for room '${roomId}' is held by a newer session`);
 				return;
-			}
-
-			// If this is a numbered variant (e.g., "Alice_2"), return the number to the pool
-			const numberMatch = participantName.match(/^(.+)_(\d+)$/);
-
-			if (numberMatch) {
-				const baseName = numberMatch[1];
-				const number = parseInt(numberMatch[2], 10);
-				await this.returnNumberToPool(roomId, baseName, number);
 			}
 
 			this.logger.verbose(`Released name '${participantName}' for room '${roomId}'`);
@@ -183,16 +165,11 @@ export class ParticipantNameService {
 	 */
 	async cleanupExpiredReservations(roomId: string): Promise<void> {
 		const participantsKey = `${RedisKeyName.ROOM_PARTICIPANTS}${roomId}`;
-		const participantsPoolKey = `${RedisKeyName.PARTICIPANT_NAME_POOL}${roomId}`;
 		const pattern = `${participantsKey}:*`;
-		const poolPattern = `${participantsPoolKey}:*`;
 		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_CLEANUP_PARTICIPANT_NAME_RESERVATIONS;
 
 		try {
-			const [participantKeys, poolKeys] = await Promise.all([
-				this.redisService.getKeys(pattern),
-				this.redisService.getKeys(poolPattern)
-			]);
+			const participantKeys = await this.redisService.getKeys(pattern);
 
 			// Redis TTL will automatically clean up expired keys, but we can force cleanup if needed.
 			await runConcurrently(
@@ -203,16 +180,8 @@ export class ParticipantNameService {
 				{ concurrency, failFast: true }
 			);
 
-			// Clean up expired participant name numbers from the pool
-			await runConcurrently(
-				poolKeys,
-				async (key) => {
-					await this.redisService.delete(key);
-				},
-				{ concurrency, failFast: true }
-			);
 			this.logger.verbose(
-				`Cleaned up ${participantKeys.length} expired participant name reservations and ${poolKeys.length} pool numbers for room '${roomId}'`
+				`Cleaned up ${participantKeys.length} expired participant name reservations for room '${roomId}'`
 			);
 		} catch (error) {
 			this.logger.warn(`Error cleaning up reservations for room '${roomId}'`, error);
@@ -249,66 +218,6 @@ export class ParticipantNameService {
 	}
 
 	/**
-	 * Generates an alternative name using a pool of available numbers.
-	 * First tries to get a number from the available pool, then generates the next sequential number.
-	 *
-	 * @private
-	 * @param roomId - The room identifier
-	 * @param baseName - The base name to append number to
-	 * @param fallbackSuffix - Fallback suffix if Redis fails
-	 * @returns Promise<string> - The generated alternative name
-	 */
-	private async generateAlternativeName(roomId: string, baseName: string, fallbackSuffix: number): Promise<string> {
-		try {
-			// Normalize the base name for case-insensitive checks
-			const normalizedBaseName = baseName.toLowerCase();
-
-			// First try to get an available number from the pool
-			const availableNumber = await this.getNumberFromPool(roomId, normalizedBaseName);
-
-			if (availableNumber !== null) {
-				return `${baseName}_${availableNumber}`;
-			}
-
-			// If no number available in pool, find the next sequential number
-			const nextNumber = await this.findNextAvailableNumber(roomId, baseName);
-			return `${baseName}_${nextNumber}`;
-		} catch (error) {
-			this.logger.warn(`Error generating alternative name for '${baseName}' in room '${roomId}', using fallback`, error);
-			// Fallback to simple incremental suffix if Redis fails
-			return `${baseName}_${fallbackSuffix}`;
-		}
-	}
-
-	/**
-	 * Gets the smallest available number from the pool for reuse.
-	 *
-	 * @private
-	 * @param roomId - The room identifier
-	 * @param baseName - The base name
-	 * @returns Promise<number | null> - Available number or null if pool is empty
-	 */
-	private async getNumberFromPool(roomId: string, baseName: string): Promise<number | null> {
-		const poolKey = `${RedisKeyName.PARTICIPANT_NAME_POOL}${roomId}:${baseName}`;
-
-		try {
-			// Get the smallest number from the sorted set and remove it atomically
-			const results = await this.redisService.popMinFromSortedSet(poolKey, 1);
-
-			if (results.length > 0) {
-				const number = parseInt(results[0], 10);
-				this.logger.verbose(`Reusing number ${number} from pool for '${baseName}' in room '${roomId}'`);
-				return number;
-			}
-
-			return null;
-		} catch (error) {
-			this.logger.warn(`Error getting number from pool for '${baseName}' in room '${roomId}'`, error);
-			return null;
-		}
-	}
-
-	/**
 	 * Finds the next available sequential number by checking existing participants.
 	 *
 	 * @private
@@ -324,13 +233,13 @@ export class ParticipantNameService {
 			const existingKeys = await this.redisService.getKeys(pattern);
 			const usedNumbers = new Set<number>();
 
-			// Extract all used numbers
-			for (const key of existingKeys) {
-				const name = key.replace(`${participantsKey}:`, '');
-				const numberMatch = name.match(/^.+_(\d+)$/);
+			const prefix = `${participantsKey}:${baseName}_`;
 
-				if (numberMatch) {
-					usedNumbers.add(parseInt(numberMatch[1], 10));
+			for (const key of existingKeys) {
+				const suffix = key.slice(prefix.length);
+
+				if (/^\d+$/.test(suffix)) {
+					usedNumbers.add(parseInt(suffix, 10));
 				}
 			}
 
@@ -347,30 +256,6 @@ export class ParticipantNameService {
 			this.logger.warn(`Error finding next available number for '${baseName}' in room '${roomId}'`, error);
 			// Fallback to timestamp-based number if everything fails
 			return Date.now() % 10000;
-		}
-	}
-
-	/**
-	 * Returns a number to the available pool for reuse.
-	 *
-	 * @private
-	 * @param roomId - The room identifier
-	 * @param baseName - The base name
-	 * @param number - The number to return to pool
-	 */
-	private async returnNumberToPool(roomId: string, baseName: string, number: number): Promise<void> {
-		const poolKey = `${RedisKeyName.PARTICIPANT_NAME_POOL}${roomId}:${baseName}`;
-
-		try {
-			// Add number to sorted set (score = number for natural ordering)
-			await this.redisService.addToSortedSet(poolKey, number, number.toString());
-
-			// Set TTL on pool key to prevent memory leaks
-			await this.redisService.setExpiration(poolKey, this.PARTICIPANT_NAME_TTL);
-
-			this.logger.verbose(`Returned number ${number} to pool for '${baseName}' in room '${roomId}'`);
-		} catch (error) {
-			this.logger.warn(`Error returning number ${number} to pool for '${baseName}' in room '${roomId}'`, error);
 		}
 	}
 

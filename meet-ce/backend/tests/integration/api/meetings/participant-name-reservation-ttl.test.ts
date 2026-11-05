@@ -52,16 +52,5 @@ describe('ParticipantNameService', () => {
 			expect(ttl).toBeGreaterThan(reservationTtl - ms('1m'));
 			expect(ttl).toBeLessThanOrEqual(reservationTtl);
 		});
-
-		it('keeps a released numeric suffix for the same time as a reservation', async () => {
-			await participantNameService.reserveUniqueName(roomId, 'Numbered', 'numbered-1');
-			const numberedName = await participantNameService.reserveUniqueName(roomId, 'Numbered', 'numbered-2');
-			await participantNameService.releaseName(roomId, numberedName, 'numbered-2', Date.now());
-
-			const ttl = await remainingTtl(`ov_meet:participant_pool:${roomId}:*`);
-
-			expect(ttl).toBeGreaterThan(reservationTtl - ms('1m'));
-			expect(ttl).toBeLessThanOrEqual(reservationTtl);
-		});
 	});
 });

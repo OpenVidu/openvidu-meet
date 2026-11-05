@@ -12,6 +12,7 @@ import { invalidRegexPatternReason } from '../../utils/string-match-filter.utils
 import { fieldListSchema } from './field-selection.schema.js';
 import { encodingValidator } from './recording-encoding.schema.js';
 import { nonEmptySanitizedRoomId, RoomIdParamSchema } from './room-id.schema.js';
+import { maxItemsSchema } from './pagination.schema.js';
 
 const fieldsSchema = fieldListSchema(MEET_RECORDING_FIELDS);
 
@@ -90,16 +91,7 @@ export const RecordingFiltersSchema = z
 		}, z.boolean().optional().default(false)),
 		status: z.enum(MeetRecordingStatus).optional(),
 		fields: fieldsSchema,
-		maxItems: z.coerce
-			.number()
-			.positive('maxItems must be a positive number')
-			.transform((val) => {
-				// Convert the value to a number
-				const intVal = Math.floor(val);
-				// Ensure it's not greater than 100
-				return intVal > 100 ? 100 : intVal;
-			})
-			.default(10),
+		maxItems: maxItemsSchema,
 		nextPageToken: z.string().optional(),
 		sortField: z.enum(MEET_RECORDING_SORT_FIELDS).optional().default('startDate'),
 		sortOrder: z.enum(SortOrder).optional().default(SortOrder.DESC)

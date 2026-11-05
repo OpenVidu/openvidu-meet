@@ -66,6 +66,7 @@ describe('Webhook Integration Tests', () => {
 	let receivedWebhooks: ReceivedWebhook[] = [];
 	// The deployment's first API key, which is the secret the dispatcher signs with.
 	let apiKey: string;
+	let webhookUrl: string;
 
 	const defaultRoomConfig: MeetRoomConfig = {
 		recording: {
@@ -95,7 +96,7 @@ describe('Webhook Integration Tests', () => {
 		// Start test server for webhooks
 		apiKey = (await getApiKeys()).body[0].key;
 
-		await startWebhookServer(5080, (req) => {
+		webhookUrl = await startWebhookServer((req) => {
 			receivedWebhooks.push({
 				headers: req.headers,
 				body: req.body,
@@ -108,7 +109,7 @@ describe('Webhook Integration Tests', () => {
 		receivedWebhooks = [];
 		// Register the receiver as the only webhook of the deployment
 		await deleteAllWebhooks();
-		await createWebhook({ url: `http://localhost:5080/webhook` });
+		await createWebhook({ url: webhookUrl });
 	});
 
 	afterAll(async () => {
@@ -134,7 +135,7 @@ describe('Webhook Integration Tests', () => {
 	describe('Webhook sending', () => {
 		it('should not send webhooks when the registered webhook is disabled', async () => {
 			await deleteAllWebhooks();
-			await createWebhook({ url: `http://localhost:5080/webhook`, enabled: false });
+			await createWebhook({ url: webhookUrl, enabled: false });
 
 			const { room, moderatorToken } = await setupSingleRoom(true);
 
@@ -143,7 +144,7 @@ describe('Webhook Integration Tests', () => {
 			// `meeting_started` under test, so once it lands on the same receiver, a delivery of
 			// `meeting_started` would already have landed too.
 			await deleteAllWebhooks();
-			await createWebhook({ url: `http://localhost:5080/webhook` });
+			await createWebhook({ url: webhookUrl });
 			await endMeeting(room.roomId, moderatorToken);
 			await waitForWebhookEvent(receivedWebhooks, MeetWebhookEventType.MEETING_ENDED, {
 				roomId: room.roomId

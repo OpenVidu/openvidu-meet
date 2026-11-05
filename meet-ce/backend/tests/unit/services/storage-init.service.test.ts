@@ -1,4 +1,5 @@
 import { describe, expect, it, jest } from '@jest/globals';
+import { MeetUserRole } from '@openvidu-meet/typings';
 import { Container } from 'inversify';
 import ms from 'ms';
 // The service modules form a cycle through the DI container module, so it has to be the one that
@@ -6,6 +7,7 @@ import ms from 'ms';
 import { createStorageModule } from '../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../src/environment.js';
+import { PasswordHelper } from '../../../src/helpers/password.helper.js';
 import { ABSService } from '../../../src/services/storage/providers/abs/abs.service.js';
 import { GCSService } from '../../../src/services/storage/providers/gcp/gcs.service.js';
 import { S3Service } from '../../../src/services/storage/providers/s3/s3.service.js';
@@ -155,6 +157,23 @@ describe('UserService.initializeAdminUser (root admin configuration)', () => {
 			);
 		});
 		expect(userRepository.create).not.toHaveBeenCalled();
+	});
+
+	it('creates the root admin when its user ID and password are exactly the login minimum', async () => {
+		const { service, userRepository } = buildUserService();
+
+		await withAdminConfig('admin', '12345', () => service.initializeAdminUser());
+
+		expect(userRepository.create).toHaveBeenCalledWith(
+			expect.objectContaining({
+				userId: 'admin',
+				role: MeetUserRole.ADMIN,
+				mustChangePassword: false,
+				passwordHash: expect.not.stringContaining('12345')
+			})
+		);
+		const [[admin]] = userRepository.create.mock.calls as [[{ passwordHash: string }]];
+		expect(await PasswordHelper.verifyPassword('12345', admin.passwordHash)).toBe(true);
 	});
 
 	it('starts with a short password when the root admin already exists, and leaves it untouched', async () => {

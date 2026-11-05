@@ -2,7 +2,9 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetRoomDeletionPolicyWithMeeting, MeetRoomDeletionPolicyWithRecordings } from '@openvidu-meet/typings';
 import ms from 'ms';
 import { setInternalConfig } from '../../../../src/config/internal-config.js';
+import { expectMeetError } from '../../../helpers/assertion-helpers.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
+import { errorRoomNotFound } from '../../../../src/models/error.model.js';
 import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	createRoom,
@@ -50,7 +52,7 @@ describe('Expired Rooms GC Tests', () => {
 		await runExpiredRoomsGC();
 
 		response = await getRoom(createdRoom.roomId);
-		expect(response.status).toBe(404);
+		expectMeetError(response, errorRoomNotFound(createdRoom.roomId));
 	});
 
 	it('should schedule room to be deleted when expiration date has passed and there is a active meeting', async () => {
@@ -106,7 +108,7 @@ describe('Expired Rooms GC Tests', () => {
 		await waitForRoomToDelete(room.roomId);
 		// Verify that the room is deleted
 		response = await getRoom(room.roomId);
-		expect(response.status).toBe(404);
+		expectMeetError(response, errorRoomNotFound(room.roomId));
 	});
 
 	it('should never delete a room without an auto-deletion date', async () => {
@@ -145,7 +147,7 @@ describe('Expired Rooms GC Tests', () => {
 			const response = await getRoom(room.roomId);
 
 			if (room.autoDeletionDate! < Date.now()) {
-				expect(response.status).toBe(404); // Should be deleted
+				expectMeetError(response, errorRoomNotFound(room.roomId));
 			} else {
 				expect(response.status).toBe(200); // Should still exist
 			}

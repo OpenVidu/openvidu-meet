@@ -149,3 +149,74 @@ describe('FrontendEventService.sendBroadcastUpdatedSignal', () => {
 		expect(calls).toEqual([expect.objectContaining({ destinationSids: ['PA_late'] })]);
 	});
 });
+
+/** The payload and its addressing are the contract the frontend reads every signal by. */
+describe('FrontendEventService signal payloads', () => {
+	const buildService = () => {
+		const sent: { roomName: string; data: object; options: object }[] = [];
+		const livekit = {
+			roomExists: async () => true,
+			sendData: async (roomName: string, data: object, options: object) => {
+				sent.push({ roomName, data, options });
+			}
+		};
+		const service = new FrontendEventService(
+			...([noopLogger, livekit] as unknown as ConstructorParameters<typeof FrontendEventService>)
+		);
+		return { service, sent };
+	};
+	const recording = { recordingId: 'room-1--EG_1--abc', roomId: 'room-1' } as MeetRecordingInfo;
+
+	it('sends the recording state to the whole room, or to one participant given their sid', async () => {
+		const { service, sent } = buildService();
+
+		await service.sendRecordingUpdatedSignal('room-1', recording);
+		await service.sendRecordingUpdatedSignal('room-1', recording, 'PA_late');
+
+		const data = { roomId: 'room-1', recording, timestamp: expect.any(Number) };
+		expect(sent).toEqual([
+			{ roomName: 'room-1', data, options: { topic: MeetSignalType.MEET_RECORDING_UPDATED } },
+			{
+				roomName: 'room-1',
+				data,
+				options: { topic: MeetSignalType.MEET_RECORDING_UPDATED, destinationSids: ['PA_late'] }
+			}
+		]);
+	});
+
+	it('tells only the participant whose permissions changed', async () => {
+		const { service, sent } = buildService();
+
+		await service.sendParticipantPermissionsUpdatedSignal('room-1', 'participant-1');
+
+		expect(sent).toEqual([
+			{
+				roomName: 'room-1',
+				data: { roomId: 'room-1', participantIdentity: 'participant-1', timestamp: expect.any(Number) },
+				options: {
+					topic: MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED,
+					destinationIdentities: ['participant-1']
+				}
+			}
+		]);
+	});
+
+	it('tells every muted participant in one signal which devices were turned off', async () => {
+		const { service, sent } = buildService();
+
+		await service.sendParticipantMediaMutedSignal('room-1', ['participant-1', 'participant-2'], {
+			audioActive: false
+		});
+
+		expect(sent).toEqual([
+			{
+				roomName: 'room-1',
+				data: { roomId: 'room-1', media: { audioActive: false }, timestamp: expect.any(Number) },
+				options: {
+					topic: MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED,
+					destinationIdentities: ['participant-1', 'participant-2']
+				}
+			}
+		]);
+	});
+});

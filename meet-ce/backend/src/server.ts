@@ -94,9 +94,9 @@ const createApp = () => {
 		res.type('html').send(getOpenApiHtmlWithBasePath(publicApiHtmlFilePath, INTERNAL_CONFIG.API_BASE_PATH_V1))
 	);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/users`, userRouter);
-	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`, /*mediaTypeValidatorMiddleware,*/ roomRouter);
+	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`, roomRouter);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings`, meetingRouter);
-	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`, /*mediaTypeValidatorMiddleware,*/ recordingRouter);
+	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`, recordingRouter);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/broadcasts`, broadcastRouter);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/webhooks`, webhookRouter);
 

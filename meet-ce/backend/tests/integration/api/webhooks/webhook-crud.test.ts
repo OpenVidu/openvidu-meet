@@ -7,6 +7,8 @@ import type { AddressInfo } from 'net';
 import request from 'supertest';
 import { INTERNAL_CONFIG, setInternalConfig } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
+import { errorUnauthorized, errorWebhookNotFound } from '../../../../src/models/error.model.js';
+import { expectMeetError, expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { getFullPath, loginRootAdmin, startTestServer } from '../../../helpers/request-helpers.js';
 
 const WEBHOOKS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/webhooks`);
@@ -51,10 +53,10 @@ describe('Webhooks API Tests (CRUD)', () => {
 	describe('Authentication', () => {
 		it('should fail with 401 without credentials', async () => {
 			let response = await request(app).get(WEBHOOKS_PATH);
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 
 			response = await request(app).post(WEBHOOKS_PATH).send({ url: 'https://example.com/hook' });
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 
 		it('should accept an admin access token', async () => {
@@ -102,19 +104,19 @@ describe('Webhooks API Tests (CRUD)', () => {
 		it('should reject an invalid payload with 422', async () => {
 			// Not an http(s) URL
 			let response = await createWebhook({ url: 'ftp://example.com/hook' });
-			expect(response.status).toBe(422);
+			expectValidationError(response, 'url', 'URL must start with http:// or https://');
 
 			// Missing URL
 			response = await createWebhook({});
-			expect(response.status).toBe(422);
+			expectValidationError(response, 'url', 'Must be a valid URL');
 
 			// Empty events array (omitting the field is the way to receive every event)
 			response = await createWebhook({ url: 'https://example.com/hook', events: [] as never });
-			expect(response.status).toBe(422);
+			expectValidationError(response, 'events', 'Must contain at least one event type');
 
 			// Unknown event type
 			response = await createWebhook({ url: 'https://example.com/hook', events: ['somethingElse'] as never });
-			expect(response.status).toBe(422);
+			expectValidationError(response, 'events.0', 'Invalid enum value');
 		});
 
 		it('should reject registrations beyond the webhook limit with 409', async () => {
@@ -160,7 +162,7 @@ describe('Webhooks API Tests (CRUD)', () => {
 
 		it('should fail with 404 for a webhook that does not exist', async () => {
 			const response = await getWebhook('wh-does-not-exist');
-			expect(response.status).toBe(404);
+			expectMeetError(response, errorWebhookNotFound('wh-does-not-exist'));
 		});
 	});
 
@@ -192,14 +194,14 @@ describe('Webhooks API Tests (CRUD)', () => {
 
 		it('should fail with 404 when updating a webhook that does not exist', async () => {
 			const response = await updateWebhook('wh-does-not-exist', { url: 'https://example.com/hook' });
-			expect(response.status).toBe(404);
+			expectMeetError(response, errorWebhookNotFound('wh-does-not-exist'));
 		});
 
 		it('should reject an invalid payload with 422', async () => {
 			const created = (await createWebhook({ url: 'https://example.com/hook' }).expect(201)).body as MeetWebhook;
 
 			const response = await updateWebhook(created.webhookId, { url: 'not-a-url' });
-			expect(response.status).toBe(422);
+			expectValidationError(response, 'url', 'Must be a valid URL');
 		});
 	});
 
@@ -215,7 +217,7 @@ describe('Webhooks API Tests (CRUD)', () => {
 
 		it('should fail with 404 when deleting a webhook that does not exist', async () => {
 			const response = await deleteWebhook('wh-does-not-exist');
-			expect(response.status).toBe(404);
+			expectMeetError(response, errorWebhookNotFound('wh-does-not-exist'));
 		});
 	});
 
@@ -256,11 +258,13 @@ describe('Webhooks API Tests (CRUD)', () => {
 
 			const response = await withApiKey(request(app).post(`${WEBHOOKS_PATH}/${created.webhookId}/test`));
 			expect(response.status).toBe(400);
+			expect(response.body.error).toBe('Webhook Error');
+			expect(response.body.message).toContain("Webhook URL 'http://localhost:1/unreachable' is invalid");
 		});
 
 		it('should fail with 404 when testing a webhook that does not exist', async () => {
 			const response = await withApiKey(request(app).post(`${WEBHOOKS_PATH}/wh-does-not-exist/test`));
-			expect(response.status).toBe(404);
+			expectMeetError(response, errorWebhookNotFound('wh-does-not-exist'));
 		});
 	});
 });

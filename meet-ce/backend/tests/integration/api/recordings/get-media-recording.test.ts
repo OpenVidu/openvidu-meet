@@ -1,6 +1,11 @@
+import { errorRecordingNotFound } from '../../../../src/models/error.model.js';
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetRoom } from '@openvidu-meet/typings';
-import { expectSuccessRecordingMediaResponse, expectValidationError } from '../../../helpers/assertion-helpers.js';
+import {
+	expectMeetError,
+	expectSuccessRecordingMediaResponse,
+	expectValidationError
+} from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
@@ -185,7 +190,7 @@ describe('Recording API Tests', () => {
 			const nonExistentId = `${room.roomId}--EG_nonexistent--12345`;
 			const response = await getRecordingMedia(nonExistentId);
 
-			expect(response.status).toBe(404);
+			expectMeetError(response, errorRecordingNotFound(nonExistentId));
 		});
 
 		it('should return 422 when recordingId format is invalid', async () => {

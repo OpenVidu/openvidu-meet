@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import type { MeetRoom, MeetRoomConfig } from '@openvidu-meet/typings';
 import {
+	MeetingEndAction,
 	MeetRoomDeletionErrorCode,
 	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
 	MeetRoomStatus
 } from '@openvidu-meet/typings';
@@ -118,5 +120,173 @@ describe('RoomService.deleteMeetRoom (a meeting that starts or ends while the ro
 			name: MeetRoomDeletionErrorCode.ROOM_HAS_ACTIVE_MEETING
 		});
 		expect(deleteAllByRoomId).not.toHaveBeenCalled();
+	});
+});
+
+/**
+ * Every combination of the room's state and the two deletion policies: what the deletion does to the
+ * room, its meeting, its recordings and its members, and what it answers.
+ */
+describe('RoomService.deleteMeetRoom policies', () => {
+	const { FORCE: M_FORCE, WHEN_MEETING_ENDS: M_WHEN_ENDS, FAIL: M_FAIL } = MeetRoomDeletionPolicyWithMeeting;
+	const { FORCE: R_FORCE, CLOSE: R_CLOSE, FAIL: R_FAIL } = MeetRoomDeletionPolicyWithRecordings;
+	const room = { roomId: 'room-1', roomName: 'Room 1', status: MeetRoomStatus.CLOSED } as MeetRoom;
+
+	const build = (state: { activeMeeting: boolean; recordings: boolean }) => {
+		const actions: string[] = [];
+		const roomService = new RoomService(
+			{ verbose: () => {}, debug: () => {} } as unknown as LoggerService,
+			{
+				findByRoomId: async () => ({
+					status: state.activeMeeting ? MeetRoomStatus.ACTIVE_MEETING : MeetRoomStatus.OPEN
+				}),
+				deleteIdleRoom: async () => {
+					actions.push('deleteRoom');
+					return true;
+				},
+				scheduleMeetingEndAction: async (_roomId: string, action: MeetingEndAction, options: object) => {
+					actions.push(`schedule:${action}:${JSON.stringify(options)}`);
+					return room;
+				},
+				updateIdleRoomStatus: async (_roomId: string, status: MeetRoomStatus) => {
+					actions.push(`status:${status}`);
+					return room;
+				}
+			} as unknown as RoomRepository,
+			{ deleteAllByRoomId: async () => actions.push('deleteMembers') } as never,
+			{
+				hasRoomRecordings: async () => state.recordings,
+				deleteAllRoomRecordings: async () => actions.push('deleteRecordings')
+			} as never,
+			{ deleteRoom: async () => actions.push('endMeeting') } as never,
+			{} as never
+		);
+		return { roomService, actions };
+	};
+
+	const idle = { activeMeeting: false, recordings: false };
+	const withRecordings = { activeMeeting: false, recordings: true };
+	const live = { activeMeeting: true, recordings: false };
+	const liveWithRecordings = { activeMeeting: true, recordings: true };
+	const replace = JSON.stringify({ replaceDeletion: true });
+
+	it.each([
+		[idle, M_FAIL, R_FAIL, MeetRoomDeletionSuccessCode.ROOM_DELETED, ['deleteRoom', 'deleteMembers'], false],
+		[idle, M_FORCE, R_CLOSE, MeetRoomDeletionSuccessCode.ROOM_DELETED, ['deleteRoom', 'deleteMembers'], false],
+		[
+			withRecordings,
+			M_FAIL,
+			R_FORCE,
+			MeetRoomDeletionSuccessCode.ROOM_AND_RECORDINGS_DELETED,
+			['deleteRoom', 'deleteRecordings', 'deleteMembers'],
+			false
+		],
+		[withRecordings, M_FAIL, R_CLOSE, MeetRoomDeletionSuccessCode.ROOM_CLOSED, ['status:closed'], true],
+		[
+			live,
+			M_FORCE,
+			R_FAIL,
+			MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_DELETED,
+			[`schedule:delete:${replace}`, 'endMeeting'],
+			false
+		],
+		[
+			live,
+			M_WHEN_ENDS,
+			R_CLOSE,
+			MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED,
+			[`schedule:delete:${replace}`],
+			true
+		],
+		[
+			liveWithRecordings,
+			M_FORCE,
+			R_FORCE,
+			MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_DELETED,
+			[`schedule:delete:${replace}`, 'endMeeting'],
+			false
+		],
+		[
+			liveWithRecordings,
+			M_FORCE,
+			R_CLOSE,
+			MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_CLOSED,
+			[`schedule:close:${replace}`, 'endMeeting'],
+			true
+		],
+		[
+			liveWithRecordings,
+			M_WHEN_ENDS,
+			R_FORCE,
+			MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_SCHEDULED_TO_BE_DELETED,
+			[`schedule:delete:${replace}`],
+			true
+		],
+		[
+			liveWithRecordings,
+			M_WHEN_ENDS,
+			R_CLOSE,
+			MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_CLOSED,
+			[`schedule:close:${replace}`],
+			true
+		]
+	])(
+		'%j with meeting %s and recordings %s answers %s',
+		async (state, withMeeting, withRecordingsPolicy, successCode, expectedActions, returnsRoom) => {
+			const { roomService, actions } = build(state);
+
+			const response = await roomService.deleteMeetRoom('room-1', {
+				withMeeting,
+				withRecordings: withRecordingsPolicy
+			});
+
+			expect(response.successCode).toBe(successCode);
+			expect(response.message).toMatch(/^Room 'room-1'/);
+			expect(response.room).toEqual(returnsRoom ? room : undefined);
+			expect(actions).toEqual(expectedActions);
+		}
+	);
+
+	it.each([
+		[live, M_FAIL, R_FORCE, MeetRoomDeletionErrorCode.ROOM_HAS_ACTIVE_MEETING],
+		[liveWithRecordings, M_FAIL, R_FORCE, MeetRoomDeletionErrorCode.ROOM_WITH_RECORDINGS_HAS_ACTIVE_MEETING],
+		[withRecordings, M_FORCE, R_FAIL, MeetRoomDeletionErrorCode.ROOM_HAS_RECORDINGS],
+		[liveWithRecordings, M_FORCE, R_FAIL, MeetRoomDeletionErrorCode.ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS],
+		[
+			liveWithRecordings,
+			M_WHEN_ENDS,
+			R_FAIL,
+			MeetRoomDeletionErrorCode.ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS_CANNOT_SCHEDULE_DELETION
+		]
+	])(
+		'%j with meeting %s and recordings %s refuses with %s',
+		async (state, withMeeting, withRecordingsPolicy, name) => {
+			const { roomService, actions } = build(state);
+
+			await expect(
+				roomService.deleteMeetRoom('room-1', { withMeeting, withRecordings: withRecordingsPolicy })
+			).rejects.toMatchObject({ statusCode: 409, name });
+			expect(actions).toEqual([]);
+		}
+	);
+
+	it('refuses by default to delete a room with an active meeting or with recordings', async () => {
+		await expect(build(live).roomService.deleteMeetRoom('room-1')).rejects.toMatchObject({
+			name: MeetRoomDeletionErrorCode.ROOM_HAS_ACTIVE_MEETING
+		});
+		await expect(build(withRecordings).roomService.deleteMeetRoom('room-1')).rejects.toMatchObject({
+			name: MeetRoomDeletionErrorCode.ROOM_HAS_RECORDINGS
+		});
+	});
+
+	it('returns only the requested fields of the room the deletion left', async () => {
+		const { roomService } = build(withRecordings);
+
+		const response = await roomService.deleteMeetRoom('room-1', {
+			withRecordings: R_CLOSE,
+			fields: ['roomId', 'status']
+		});
+
+		expect(response.room).toEqual({ roomId: 'room-1', status: MeetRoomStatus.CLOSED });
 	});
 });

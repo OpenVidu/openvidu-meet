@@ -159,3 +159,35 @@ describe('LiveKitService.roomHasParticipants', () => {
 		});
 	});
 });
+
+describe('LiveKitService.participantExists', () => {
+	const buildListingService = (listParticipants: () => Promise<unknown[]>) => {
+		const service = Object.create(LiveKitService.prototype) as LiveKitService;
+		Object.assign(service as object, { lk: { room: { listParticipants } }, logger });
+		return service;
+	};
+
+	it('tells whether the participant is in the room', async () => {
+		const service = buildListingService(() => Promise.resolve([{ identity: 'ana' }]));
+
+		await expect(service.participantExists('room-1', 'ana')).resolves.toBe(true);
+		await expect(service.participantExists('room-1', 'ben')).resolves.toBe(false);
+	});
+
+	it('reports no participant in a room the media server does not have', async () => {
+		const service = buildListingService(() =>
+			Promise.reject(new TwirpError('not_found', 'requested room does not exist', 404, 'not_found'))
+		);
+
+		await expect(service.participantExists('room-1', 'ana')).resolves.toBe(false);
+	});
+
+	it('answers 503 instead of a missing participant when the media server cannot be reached', async () => {
+		const service = buildListingService(() =>
+			Promise.reject(new TypeError('fetch failed', { cause: { code: 'ECONNREFUSED' } }))
+		);
+
+		await expect(service.participantExists('room-1', 'ana')).rejects.toMatchObject({ statusCode: 503 });
+		await expect(service.deleteParticipant('room-1', 'ana')).rejects.toMatchObject({ statusCode: 503 });
+	});
+});

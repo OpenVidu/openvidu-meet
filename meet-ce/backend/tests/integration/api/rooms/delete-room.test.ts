@@ -1,3 +1,4 @@
+import { errorRoomNotFound } from '../../../../src/models/error.model.js';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import {
 	MeetingEndAction,
@@ -9,10 +10,11 @@ import {
 } from '@openvidu-meet/typings';
 import {
 	expectExtraFieldsInResponse,
+	expectMeetError,
 	expectSuccessListRecordingResponse,
 	expectValidRoom
 } from '../../../helpers/assertion-helpers.js';
-import { disconnectFakeParticipants } from "../../../helpers/livekit-cli-helpers.js";
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	createRoom,
 	deleteAllRecordings,
@@ -24,7 +26,11 @@ import {
 	startTestServer
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
-import { waitForParticipantsToDisconnect, waitForRoomToClose, waitForRoomToDelete } from '../../../helpers/wait-helpers.js';
+import {
+	waitForParticipantsToDisconnect,
+	waitForRoomToClose,
+	waitForRoomToDelete
+} from '../../../helpers/wait-helpers.js';
 
 describe('Room API Tests', () => {
 	beforeAll(async () => {
@@ -50,7 +56,7 @@ describe('Room API Tests', () => {
 
 				// Check room is deleted
 				const getResponse = await getRoom(roomId);
-				expect(getResponse.status).toBe(404);
+				expectMeetError(getResponse, errorRoomNotFound(roomId));
 			});
 		});
 
@@ -80,7 +86,7 @@ describe('Room API Tests', () => {
 				await waitForRoomToDelete(roomId); // Wait for the meeting to end and webhook to be processed
 				// Check room is deleted
 				const getResponse = await getRoom(roomId);
-				expect(getResponse.status).toBe(404);
+				expectMeetError(getResponse, errorRoomNotFound(roomId));
 			});
 
 			it('should return 202 with successCode=room_with_active_meeting_deleted when withMeeting=force', async () => {
@@ -102,7 +108,7 @@ describe('Room API Tests', () => {
 				await endMeeting(roomId, moderatorToken);
 				await waitForRoomToDelete(roomId); // Wait for the meeting to end and webhook to be processed
 				const getResponse = await getRoom(roomId);
-				expect(getResponse.status).toBe(404);
+				expectMeetError(getResponse, errorRoomNotFound(roomId));
 			});
 
 			it('should return partial room response when fields parameter are included with successCode=room_with_active_meeting_scheduled_to_be_closed when withMeeting=when_meeting_ends and withRecordings=close', async () => {
@@ -285,7 +291,7 @@ describe('Room API Tests', () => {
 
 				// Check the room and recordings are deleted
 				const roomResponse = await getRoom(roomId);
-				expect(roomResponse.status).toBe(404);
+				expectMeetError(roomResponse, errorRoomNotFound(roomId));
 				const recordingsResponse = await getAllRecordings({ roomId, maxItems: 1 });
 				expectSuccessListRecordingResponse(recordingsResponse, 0, false, false, 1);
 			});
@@ -345,7 +351,7 @@ describe('Room API Tests', () => {
 
 				// Check the room and recordings are deleted
 				const roomResponse = await getRoom(roomId);
-				expect(roomResponse.status).toBe(404);
+				expectMeetError(roomResponse, errorRoomNotFound(roomId));
 				const recordingsResponse = await getAllRecordings({ roomId, maxItems: 1 });
 				expectSuccessListRecordingResponse(recordingsResponse, 0, false, false, 1);
 			});
@@ -413,7 +419,7 @@ describe('Room API Tests', () => {
 				await endMeeting(roomId, moderatorToken);
 				await waitForRoomToDelete(roomId);
 				const roomResponse = await getRoom(roomId);
-				expect(roomResponse.status).toBe(404);
+				expectMeetError(roomResponse, errorRoomNotFound(roomId));
 				const recordingsResponse = await getAllRecordings({ roomId, maxItems: 1 });
 				expectSuccessListRecordingResponse(recordingsResponse, 0, false, false, 1);
 			});

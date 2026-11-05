@@ -86,4 +86,17 @@ describe('withRoomPermission', () => {
 		expect(res.status).toHaveBeenCalledWith(404);
 		expect(next).not.toHaveBeenCalled();
 	});
+
+	it('answers 403 to a member of the room who lacks the permission', async () => {
+		jest.spyOn(roomService, 'getAuthenticatedRoomMemberPermissions').mockResolvedValue({
+			chatWrite: false
+		} as MeetRoomMemberPermissions);
+		const res = mockResponse();
+		const next = jest.fn() as unknown as NextFunction;
+
+		await inRequestValidatedAgainst('room-1', () => checkChatWrite(requestFor('room-1'), res, next));
+
+		expect(res.status).toHaveBeenCalledWith(403);
+		expect(next).not.toHaveBeenCalled();
+	});
 });

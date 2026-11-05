@@ -10,6 +10,13 @@ import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import {
+	errorInsufficientPermissions,
+	errorNoActiveMeeting,
+	errorParticipantNotFound,
+	errorUnauthorized
+} from '../../../../src/models/error.model.js';
+import { expectMeetError } from '../../../helpers/assertion-helpers.js';
+import {
 	disconnectFakeParticipants,
 	joinFakeParticipant,
 	updateParticipantMetadata
@@ -141,17 +148,17 @@ describe('Meetings API Tests', () => {
 
 		it('should answer 403 to a token of another room even when the room does not exist', async () => {
 			const response = await getMeeting('non-existent-room', meetingRoom.moderatorToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail with 401 without a room member token', async () => {
 			const response = await request(app).get(`${MEETINGS_PATH}/${meetingRoom.room.roomId}`);
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 
 		it('should reject a token minted for another room', async () => {
 			const response = await getMeeting(meetingRoom.room.roomId, idleRoom.moderatorToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should reject a token without the meetingRead permission', async () => {
@@ -163,7 +170,7 @@ describe('Meetings API Tests', () => {
 			});
 
 			const response = await getMeeting(meetingRoom.room.roomId, recordingToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should gate on meetingRead and not on meetingJoin', async () => {
@@ -214,7 +221,7 @@ describe('Meetings API Tests', () => {
 
 		it('should fail with 404 when the room has no active meeting', async () => {
 			const response = await getParticipants(idleRoom.room.roomId, idleRoom.moderatorToken);
-			expect(response.status).toBe(404);
+			expectMeetError(response, errorNoActiveMeeting(idleRoom.room.roomId));
 		});
 	});
 
@@ -235,7 +242,7 @@ describe('Meetings API Tests', () => {
 
 		it('should fail with 404 for a participant that is not in the meeting', async () => {
 			const response = await getParticipant(meetingRoom.room.roomId, 'nobody-here', meetingRoom.moderatorToken);
-			expect(response.status).toBe(404);
+			expectMeetError(response, errorParticipantNotFound('nobody-here', meetingRoom.room.roomId));
 		});
 
 		it('should count and list only the stamped participant after another one joins and leaves', async () => {

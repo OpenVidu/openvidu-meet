@@ -15,7 +15,19 @@ import {
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { TokenService } from '../../../../src/services/token.service.js';
-import { expectValidationError, expectValidRoomMemberTokenResponse } from '../../../helpers/assertion-helpers.js';
+import {
+	errorAnonymousAccessDisabled,
+	errorInsufficientPermissions,
+	errorInvalidRoomSecret,
+	errorParticipantNotFound,
+	errorRoomClosed,
+	errorRoomNotFound
+} from '../../../../src/models/error.model.js';
+import {
+	expectMeetError,
+	expectValidationError,
+	expectValidRoomMemberTokenResponse
+} from '../../../helpers/assertion-helpers.js';
 import {
 	disconnectFakeParticipants,
 	joinFakeParticipant,
@@ -200,7 +212,7 @@ describe('Room Members API Tests', () => {
 			});
 
 			const response = await generateRoomMemberTokenRequest(roomId, { secret: roomData.moderatorSecret });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorAnonymousAccessDisabled(roomId, MeetRoomMemberRole.MODERATOR));
 
 			// Enable anonymous moderator access for further tests
 			await updateRoomAccessConfig(roomId, {
@@ -235,7 +247,7 @@ describe('Room Members API Tests', () => {
 			});
 
 			const response = await generateRoomMemberTokenRequest(roomId, { secret: roomData.speakerSecret });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorAnonymousAccessDisabled(roomId, MeetRoomMemberRole.SPEAKER));
 
 			// Enable anonymous speaker access for further tests
 			await updateRoomAccessConfig(roomId, {
@@ -274,7 +286,7 @@ describe('Room Members API Tests', () => {
 			});
 
 			const response = await generateRoomMemberTokenRequest(roomId, { secret: recordingSecret });
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorAnonymousAccessDisabled(roomId, 'recording'));
 
 			await updateRoomAccessConfig(roomId, {
 				anonymous: {
@@ -293,14 +305,14 @@ describe('Room Members API Tests', () => {
 				participantName: 'Recording Viewer'
 			});
 
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail to generate token when secret is invalid', async () => {
 			const response = await generateRoomMemberTokenRequest(roomId, {
 				secret: 'invalid-secret'
 			});
-			expect(response.status).toBe(400);
+			expectMeetError(response, errorInvalidRoomSecret(roomId));
 		});
 
 		it('should generate token for ADMIN user', async () => {
@@ -470,7 +482,7 @@ describe('Room Members API Tests', () => {
 			const response = await generateRoomMemberTokenRequest('non-existent-room-id', {
 				secret: roomData.moderatorSecret
 			});
-			expect(response.status).toBe(404);
+			expectMeetError(response, errorRoomNotFound('non-existent-room-id'));
 		});
 
 		it('should combine permissions when using ADMIN access token and recording secret', async () => {
@@ -692,7 +704,7 @@ describe('Room Members API Tests', () => {
 				joinMeeting: true,
 				participantName: 'Anonymous User'
 			});
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 
 			// Restore default config
 			await updateRoomRoles(roomId, {
@@ -721,7 +733,7 @@ describe('Room Members API Tests', () => {
 				joinMeeting: true,
 				participantName: member.name
 			});
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail to generate token for joining meeting when room is closed', async () => {
@@ -733,7 +745,7 @@ describe('Room Members API Tests', () => {
 				joinMeeting: true,
 				participantName: 'Alice Smith'
 			});
-			expect(response.status).toBe(409);
+			expectMeetError(response, errorRoomClosed(roomId));
 
 			// Reopen the room for further tests
 			await updateRoomStatus(roomId, MeetRoomStatus.OPEN);
@@ -988,7 +1000,13 @@ describe('Room Members API Tests', () => {
 				undefined,
 				initialToken
 			);
-			expect(response.status).toBe(404);
+			expectMeetError(
+				response,
+				errorParticipantNotFound(
+					tokenService.getClaimsIgnoringExpiration(getRawToken(initialToken)).sub!,
+					roomId
+				)
+			);
 		});
 
 		it('should regenerate token with moderator permissions after promotion although source remains speaker', async () => {

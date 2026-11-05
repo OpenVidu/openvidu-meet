@@ -8,7 +8,7 @@ import { MEET_ENV } from '../../../../src/environment.js';
 import { AiAssistantService } from '../../../../src/services/ai-assistant.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { RequestSessionService } from '../../../../src/services/request-session.service.js';
-import { expectValidAssistantResponse } from '../../../helpers/assertion-helpers.js';
+import { expectValidAssistantResponse, expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	cancelAssistant,
 	createAssistant,
@@ -169,13 +169,13 @@ describe('AI Assistant API Tests', () => {
 			it('should return 422 when the capabilities field is missing from the request body', async () => {
 				const response = await createAssistant(roomData.speakerToken, {} as any);
 
-				expect(response.status).toBe(422);
+				expectValidationError(response, 'capabilities', 'Required');
 			});
 
 			it('should return 422 when the capabilities array is empty', async () => {
 				const response = await createAssistant(roomData.speakerToken, { capabilities: [] });
 
-				expect(response.status).toBe(422);
+				expectValidationError(response, 'capabilities', 'Too small');
 			});
 
 			it('should return 422 when capabilities contains only unknown/invalid names', async () => {
@@ -183,7 +183,7 @@ describe('AI Assistant API Tests', () => {
 					capabilities: [{ name: 'non_existent_capability' as MeetAssistantCapabilityName }]
 				});
 
-				expect(response.status).toBe(422);
+				expectValidationError(response, 'capabilities', 'At least one valid capability is required');
 			});
 
 			it('should strip unknown capability names and succeed when at least one valid capability remains', async () => {
@@ -220,7 +220,7 @@ describe('AI Assistant API Tests', () => {
 					capabilities: { name: MeetAssistantCapabilityName.LIVE_CAPTIONS }
 				} as any);
 
-				expect(response.status).toBe(422);
+				expectValidationError(response, 'capabilities', 'Expected array, received object');
 			});
 		});
 
@@ -380,7 +380,7 @@ describe('AI Assistant API Tests', () => {
 					.delete(`${ASSISTANTS_PATH}/%20`)
 					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.speakerToken);
 
-				expect(response.status).toBe(422);
+				expectValidationError(response, 'assistantId', 'Too small');
 			});
 		});
 

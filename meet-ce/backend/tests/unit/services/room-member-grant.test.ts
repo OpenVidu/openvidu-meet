@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 import type { MeetRoomMemberPermissions } from '@openvidu-meet/typings';
-import { MEET_PERMISSION_KEYS } from '@openvidu-meet/typings';
+import { MEET_PERMISSION_KEYS, MeetRoomMemberUIBadge, TrackSource } from '@openvidu-meet/typings';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see meeting-mute.test.ts).
 import '../../../src/config/dependency-injector.config.js';
@@ -13,6 +13,10 @@ class TestableRoomMemberService extends RoomMemberService {
 	buildGrant(roomId: string, permissions: MeetRoomMemberPermissions, chatEnabled = true): LiveKitPermissions {
 		return this.getLiveKitPermissions(roomId, permissions, chatEnabled);
 	}
+
+	badgeFor(permissions: MeetRoomMemberPermissions, moderatorPermissions: MeetRoomMemberPermissions) {
+		return this.resolveBadgeFromPermissions(permissions, moderatorPermissions);
+	}
 }
 
 const service = new TestableRoomMemberService(
@@ -21,7 +25,9 @@ const service = new TestableRoomMemberService(
 
 const permissionsWith = (overrides: Partial<MeetRoomMemberPermissions>): MeetRoomMemberPermissions =>
 	({
-		...(Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, false])) as unknown as MeetRoomMemberPermissions),
+		...(Object.fromEntries(
+			MEET_PERMISSION_KEYS.map((key) => [key, false])
+		) as unknown as MeetRoomMemberPermissions),
 		...overrides
 	}) as MeetRoomMemberPermissions;
 
@@ -62,5 +68,42 @@ describe('RoomMemberService LiveKit grant (room chat switch)', () => {
 		const grant = service.buildGrant('room-abc', permissionsWith({ chatWrite: true }), true);
 
 		expect(grant.canPublishData).toBe(true);
+	});
+});
+
+describe('RoomMemberService LiveKit grant (media sources)', () => {
+	it.each([
+		[{}, false, []],
+		[{ mediaPublishAudio: true }, true, [TrackSource.MICROPHONE]],
+		[{ mediaPublishVideo: true }, true, [TrackSource.CAMERA]],
+		[{ mediaShareScreen: true }, true, [TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO]],
+		[
+			{ mediaPublishAudio: true, mediaPublishVideo: true, mediaShareScreen: true },
+			true,
+			[TrackSource.MICROPHONE, TrackSource.CAMERA, TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO]
+		]
+	])('lets permissions %j publish (%s) exactly the sources %j', (overrides, canPublish, sources) => {
+		const grant = service.buildGrant('room-abc', permissionsWith(overrides));
+
+		expect(grant.room).toBe('room-abc');
+		expect(grant.canPublish).toBe(canPublish);
+		expect(grant.canPublishSources).toEqual(sources);
+	});
+});
+
+describe('RoomMemberService badge', () => {
+	const moderator = permissionsWith({ participantKick: true, meetingEnd: true, chatWrite: true });
+
+	it('shows a member holding every permission of the moderator role as a moderator', () => {
+		expect(service.badgeFor(moderator, moderator)).toBe(MeetRoomMemberUIBadge.MODERATOR);
+		expect(service.badgeFor(permissionsWith({ ...moderator, recordingDelete: true }), moderator)).toBe(
+			MeetRoomMemberUIBadge.MODERATOR
+		);
+	});
+
+	it('shows a member lacking any permission of the moderator role as another participant', () => {
+		expect(service.badgeFor(permissionsWith({ ...moderator, meetingEnd: false }), moderator)).toBe(
+			MeetRoomMemberUIBadge.OTHER
+		);
 	});
 });

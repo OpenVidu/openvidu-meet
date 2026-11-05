@@ -3,6 +3,8 @@ import type { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
+import { errorPayloadTooLarge } from '../../../../src/models/error.model.js';
+import { expectMeetError } from '../../../helpers/assertion-helpers.js';
 import { deleteAllRooms, getFullPath, startTestServer } from '../../../helpers/request-helpers.js';
 
 const roomBodyOfSize = (bytes: number): string => {
@@ -51,7 +53,7 @@ describe('Room API Tests', () => {
 				.set('Content-Type', 'application/webhook+json')
 				.send('x'.repeat(5 * 1024 * 1024));
 
-			expect(response.status).toBe(413);
+			expectMeetError(response, errorPayloadTooLarge(102400));
 		});
 
 		it('keeps answering 400 Bad Request to a malformed JSON body', async () => {

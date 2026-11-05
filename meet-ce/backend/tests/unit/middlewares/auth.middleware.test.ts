@@ -212,6 +212,27 @@ describe('the validators, against a change made in the same millisecond as the t
 			await expect(validateWith(ISSUED_AT + 1)).rejects.toMatchObject({ statusCode: 401 });
 		});
 
+		it('refuses a token signed with the same credentials that carries no Meet metadata', async () => {
+			jest.spyOn(tokenService, 'verifyToken').mockResolvedValue({ sub: 'user-1' } as never);
+
+			await expect(accessTokenValidator(MeetUserRole.ADMIN).validate(accessTokenRequest())).rejects.toMatchObject({
+				statusCode: 401,
+				message: 'Invalid token'
+			});
+		});
+
+		it('refuses a refresh token used as an access token', async () => {
+			jest.spyOn(tokenService, 'parseTokenMetadata').mockReturnValue({
+				iat: ISSUED_AT,
+				tokenType: TokenType.REFRESH
+			} as never);
+
+			await expect(accessTokenValidator(MeetUserRole.ADMIN).validate(accessTokenRequest())).rejects.toMatchObject({
+				statusCode: 401,
+				message: 'Invalid token'
+			});
+		});
+
 		it('refuses a token whose user is gone', async () => {
 			jest.spyOn(tokenService, 'parseTokenMetadata').mockReturnValue({
 				iat: ISSUED_AT,
@@ -335,6 +356,15 @@ describe('the validators, against a change made in the same millisecond as the t
 	});
 
 	describe('roomMemberTokenValidator', () => {
+		it('refuses a token signed with the same credentials that carries no Meet metadata', async () => {
+			jest.spyOn(tokenService, 'verifyToken').mockResolvedValue({ sub: 'speaker-1' } as never);
+
+			await expect(roomMemberTokenValidator.validate(roomMemberTokenRequest())).rejects.toMatchObject({
+				statusCode: 401,
+				message: 'Invalid token'
+			});
+		});
+
 		const metadata = {
 			iat: ISSUED_AT,
 			issuedAfterRevocation: ISSUED_AT,
@@ -672,6 +702,18 @@ describe('the validators, against a change made in the same millisecond as the t
 			await expect(apiKeyValidator.validate(requestWith({ 'x-api-key': 'a-key' }))).rejects.toMatchObject({
 				statusCode: 403
 			});
+		});
+
+		it('answers 500, not 401, when the stored API keys cannot be read', async () => {
+			jest.restoreAllMocks();
+			jest.spyOn(apiKeyService, 'getApiKeys').mockRejectedValue(new Error('mongo down'));
+			const error = jest.spyOn(logger, 'error').mockImplementation(() => {});
+			const res = mockResponse();
+
+			await withAuth(apiKeyValidator)(requestWith({ 'x-api-key': 'a-key' }), res, jest.fn() as NextFunction);
+
+			expect(answered(res).status).toBe(500);
+			error.mockRestore();
 		});
 	});
 

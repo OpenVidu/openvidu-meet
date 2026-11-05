@@ -1,3 +1,4 @@
+import { errorInsufficientPermissions } from '../../../../src/models/error.model.js';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import {
 	MeetRecordingEncodingPreset,
@@ -10,6 +11,7 @@ import ms from 'ms';
 import { Response } from 'supertest';
 import {
 	expectExtraFieldsInResponse,
+	expectMeetError,
 	expectSuccessRoomsResponse,
 	expectValidationError,
 	expectValidRoom,
@@ -292,6 +294,36 @@ describe('Room API Tests', () => {
 			expectValidRoom(rooms[1], 'room-2h', { autoDeletionDate: date1 });
 			expectValidRoom(rooms[2], 'room-without-date');
 		});
+
+		it('should page through rooms sorted by autoDeletionDate one at a time, rooms without one included', async () => {
+			const now = Date.now();
+			await createRoom({ roomName: 'room-3h', autoDeletionDate: now + ms('3h') });
+			await createRoom({ roomName: 'no-date-a' });
+			await createRoom({ roomName: 'room-2h', autoDeletionDate: now + ms('2h') });
+			await createRoom({ roomName: 'no-date-b' });
+
+			const pageThrough = async (sortOrder: string) => {
+				const names: string[] = [];
+				let nextPageToken: string | undefined;
+
+				do {
+					const response = await getRooms({
+						sortField: 'autoDeletionDate',
+						sortOrder,
+						maxItems: 1,
+						...(nextPageToken && { nextPageToken })
+					});
+					expect(response.status).toBe(200);
+					names.push(...response.body.rooms.map((room: MeetRoom) => room.roomName));
+					nextPageToken = response.body.pagination.nextPageToken;
+				} while (nextPageToken);
+
+				return names;
+			};
+
+			expect(await pageThrough('asc')).toEqual(['no-date-a', 'no-date-b', 'room-2h', 'room-3h']);
+			expect(await pageThrough('desc')).toEqual(['room-3h', 'room-2h', 'no-date-b', 'no-date-a']);
+		});
 	});
 
 	describe('List Room Validation failures', () => {
@@ -504,7 +536,7 @@ describe('Room API Tests', () => {
 				undefined,
 				testUsers.roomManager.accessToken
 			);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should not return rooms when filtering by member for ADMIN user', async () => {
@@ -540,7 +572,7 @@ describe('Room API Tests', () => {
 				undefined,
 				testUsers.roomManager.accessToken
 			);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should filter rooms by member for ROOM_MEMBER member', async () => {
@@ -558,7 +590,7 @@ describe('Room API Tests', () => {
 				undefined,
 				testUsers.roomMember.accessToken
 			);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should filter rooms by userAccess for ADMIN user', async () => {

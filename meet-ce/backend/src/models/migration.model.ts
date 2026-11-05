@@ -115,25 +115,6 @@ export function isValidMigrationNameFormat(name: string): name is MigrationName 
 }
 
 /**
- * Parses a schema migration name and extracts entity and versions.
- */
-export function parseSchemaMigrationName(
-	name: string
-): { collectionName: string; fromVersion: SchemaVersion; toVersion: SchemaVersion } | null {
-	const match = /^schema_([a-z0-9_]+)_v(\d+)_to_v(\d+)$/.exec(name);
-
-	if (!match) {
-		return null;
-	}
-
-	return {
-		collectionName: match[1],
-		fromVersion: Number(match[2]),
-		toVersion: Number(match[3])
-	};
-}
-
-/**
  * Represents a schema version number.
  * Versions start at 1 and increment sequentially.
  */

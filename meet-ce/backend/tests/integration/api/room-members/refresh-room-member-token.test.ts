@@ -11,7 +11,12 @@ import { container } from '../../../../src/config/dependency-injector.config.js'
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import { TokenService } from '../../../../src/services/token.service.js';
-import { expectValidRoomMemberTokenResponse } from '../../../helpers/assertion-helpers.js';
+import {
+	errorInsufficientPermissions,
+	errorInvalidToken,
+	errorParticipantNotFound
+} from '../../../../src/models/error.model.js';
+import { expectMeetError, expectValidRoomMemberTokenResponse } from '../../../helpers/assertion-helpers.js';
 import {
 	disconnectFakeParticipants,
 	joinFakeParticipant,
@@ -168,7 +173,7 @@ describe('Room Members API Tests', () => {
 
 			// Attempt to refresh the token without the participant joining the meeting
 			const response = await refreshRoomMemberTokenRequest(roomId, previousToken);
-			expect(response.status).toBe(404);
+			expectMeetError(response, errorParticipantNotFound(claimsOf(previousToken).sub!, roomId));
 		});
 
 		it('should succeed when previous token is expired but still within clock tolerance', async () => {
@@ -233,7 +238,7 @@ describe('Room Members API Tests', () => {
 				await sleep('3s');
 
 				const response = await refreshRoomMemberTokenRequest(roomId, previousToken);
-				expect(response.status).toBe(401);
+				expectMeetError(response, errorInvalidToken());
 			} finally {
 				// Restore original config values after the test
 				MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = initialTokenTtl;
@@ -373,7 +378,7 @@ describe('Room Members API Tests', () => {
 				currentAccessToken,
 				previousToken
 			);
-			expect(regenerateResponse.status).toBe(403);
+			expectMeetError(regenerateResponse, errorInsufficientPermissions());
 		});
 
 		// The refresh reads the participant after the demotion, so it can only turn the earlier token into
@@ -414,7 +419,7 @@ describe('Room Members API Tests', () => {
 			});
 
 			const kickResponse = await kickParticipant(roomId, participantIdentity, promotedToken);
-			expect(kickResponse.status).toBe(401);
+			expectMeetError(kickResponse, errorInvalidToken());
 		});
 	});
 });
