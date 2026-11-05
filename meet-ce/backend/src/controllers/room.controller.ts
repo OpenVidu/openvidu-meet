@@ -19,6 +19,7 @@ import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { handleError } from '../middlewares/error-handler.middleware.js';
 import type { MeetRoomDeletionOptions } from '../models/request-context.model.js';
 import { LoggerService } from '../services/logger.service.js';
+import { RoomAccessService } from '../services/room-access.service.js';
 import { RoomService } from '../services/room.service.js';
 import type { RoomQueryWithFields } from '../types/room-projection.types.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
@@ -52,6 +53,7 @@ export const createRoom = async (req: Request, res: Response) => {
 export const getRooms = async (_req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
+	const roomAccessService = container.get(RoomAccessService);
 	const queryParams = res.locals.validatedQuery as RoomQueryWithFields;
 
 	logger.verbose(`Getting all rooms with filters: ${JSON.stringify(queryParams)}`);
@@ -79,7 +81,7 @@ export const getRooms = async (_req: Request, res: Response) => {
 			? await runConcurrently(
 					rooms,
 					async (room) => {
-						const permissions = await roomService.getAuthenticatedRoomMemberPermissions(room.roomId!);
+						const permissions = await roomAccessService.getAuthenticatedRoomMemberPermissions(room.roomId!);
 
 						if (mustAddRoomIdInFields) {
 							delete room.roomId;
@@ -125,7 +127,7 @@ export const getRoom = async (req: Request, res: Response) => {
 
 		if (shouldApplyPermissionFiltering) {
 			// Apply permission filtering to the room based on the authenticated user's permissions
-			const permissions = await roomService.getAuthenticatedRoomMemberPermissions(roomId);
+			const permissions = await container.get(RoomAccessService).getAuthenticatedRoomMemberPermissions(roomId);
 			room = MeetRoomHelper.applyPermissionFiltering(room, permissions);
 		}
 

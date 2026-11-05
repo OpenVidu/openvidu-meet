@@ -5,9 +5,6 @@ import { MeetRecordingAutoStartMode, MeetRecordingStatus } from '@openvidu-meet/
 import type { ParticipantInfo, Room } from 'livekit-server-sdk';
 import { EgressInfo, EgressStatus } from 'livekit-server-sdk';
 import { PassThrough, Readable } from 'stream';
-// The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see meeting-mute.test.ts).
-import '../../../src/config/dependency-injector.config.js';
 import {
 	errorLivekitNotAvailable,
 	errorRecordingAlreadyStopped,
@@ -290,8 +287,7 @@ const buildStartService = (latchDisabled: boolean) => {
 	return { service, livekit, mutex, frontendEvents, latch };
 };
 
-// Cuts the flow short right after the latch recheck: the real method resolves RoomService
-// through the DI container, which a unit test cannot reach.
+// Cuts the flow short right after the latch recheck, before the room is read.
 const failAtRoomValidation = (service: RecordingService) => {
 	(service as unknown as { validateRoomForStartRecording: () => Promise<never> }).validateRoomForStartRecording =
 		async () => {
@@ -339,13 +335,18 @@ describe('RecordingService.startRecording — B8: the deliberate-stop latch is r
 
 	it('startAutoRecordingIfNeeded hands the meeting sid to startRecording for the under-lock recheck', async () => {
 		const { service } = buildStartService(false);
-		(service as unknown as { getRoomService: () => Promise<unknown> }).getRoomService = async () => ({
-			getMeetRoom: async () => ({
-				config: {
-					recording: { enabled: true, autoStart: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS },
-					e2ee: { enabled: false }
-				}
-			})
+		Object.assign(service, {
+			roomRepository: {
+				findByRoomId: async () => ({
+					config: {
+						recording: {
+							enabled: true,
+							autoStart: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS
+						},
+						e2ee: { enabled: false }
+					}
+				})
+			}
 		});
 
 		let startArgs: unknown[] | undefined;
@@ -409,8 +410,8 @@ describe('RecordingService.startAutoRecordingIfNeeded (the guards that say no)',
 
 	const buildAutoStartService = (config: unknown, latchDisabled = false) => {
 		const { service, latch } = buildStartService(latchDisabled);
-		(service as unknown as { getRoomService: () => Promise<unknown> }).getRoomService = async () => ({
-			getMeetRoom: async () => ({ config })
+		Object.assign(service, {
+			roomRepository: { findByRoomId: async () => ({ config }) }
 		});
 
 		const starts: unknown[][] = [];
@@ -467,13 +468,18 @@ describe('RecordingService.startAutoRecordingIfNeeded (the guards that say no)',
 describe('RecordingService.startAutoRecordingIfNeeded (who counts towards the threshold)', () => {
 	it('counts the people in the meeting, never its recorders or agents', async () => {
 		const { service, livekit, latch } = buildStartService(false);
-		(service as unknown as { getRoomService: () => Promise<unknown> }).getRoomService = async () => ({
-			getMeetRoom: async () => ({
-				config: {
-					recording: { enabled: true, autoStart: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS },
-					e2ee: { enabled: false }
-				}
-			})
+		Object.assign(service, {
+			roomRepository: {
+				findByRoomId: async () => ({
+					config: {
+						recording: {
+							enabled: true,
+							autoStart: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS
+						},
+						e2ee: { enabled: false }
+					}
+				})
+			}
 		});
 		const person = { identity: 'participant-1', kind: ParticipantInfo_Kind.STANDARD } as ParticipantInfo;
 		livekit.listRoomParticipants = async () => [

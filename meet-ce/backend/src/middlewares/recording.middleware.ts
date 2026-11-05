@@ -15,6 +15,7 @@ import {
 import { LoggerService } from '../services/logger.service.js';
 import { RecordingService } from '../services/recording.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
+import { RoomAccessService } from '../services/room-access.service.js';
 import { RoomService } from '../services/room.service.js';
 import { RecordingQueryWithFields } from '../types/recording-projection.types.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
@@ -229,8 +230,7 @@ export const authorizeRecordingControl = async (req: Request, res: Response, nex
 
 		try {
 			// Check that the authenticated user has 'recordingControl' permission in the target room
-			const roomService = container.get(RoomService);
-			const permissions = await roomService.getAuthenticatedRoomMemberPermissions(roomId);
+			const permissions = await container.get(RoomAccessService).getAuthenticatedRoomMemberPermissions(roomId);
 
 			if (!permissions['recordingControl']) {
 				throw errorInsufficientPermissions();

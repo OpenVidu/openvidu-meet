@@ -1,5 +1,10 @@
-import type { MeetRoomMember, MeetRoomMemberExtraField, MeetRoomMemberField } from '@openvidu-meet/typings';
-import { MEET_ROOM_MEMBER_EXTRA_FIELDS, MEET_ROOM_MEMBER_FIELDS } from '@openvidu-meet/typings';
+import type {
+	MeetRoomMember,
+	MeetRoomMemberExtraField,
+	MeetRoomMemberField,
+	MeetRoomMemberPermissions
+} from '@openvidu-meet/typings';
+import { MEET_PERMISSION_KEYS, MEET_ROOM_MEMBER_EXTRA_FIELDS, MEET_ROOM_MEMBER_FIELDS } from '@openvidu-meet/typings';
 import { addHttpResponseMetadata, applyHttpFieldFiltering, buildFieldsForDbQuery } from './field-filter.helper.js';
 
 export class MeetRoomMemberHelper {
@@ -50,5 +55,42 @@ export class MeetRoomMemberHelper {
 	 */
 	static addResponseMetadata<T>(obj: T): T & { _extraFields: MeetRoomMemberExtraField[] } {
 		return addHttpResponseMetadata(obj, MEET_ROOM_MEMBER_EXTRA_FIELDS);
+	}
+
+	/**
+	 * Gets all permissions set to true.
+	 */
+	static allPermissions(): MeetRoomMemberPermissions {
+		return MeetRoomMemberHelper.everyPermission(true);
+	}
+
+	/**
+	 * Gets all permissions set to false.
+	 */
+	static noPermissions(): MeetRoomMemberPermissions {
+		return MeetRoomMemberHelper.everyPermission(false);
+	}
+
+	/**
+	 * Gets a permission set that only allows retrieving recordings.
+	 *
+	 * Grants the whole retrieval group (list + play + download), preserving what the pre-split
+	 * `canRetrieveRecordings: true` granted to public recording links. Narrowing the link to
+	 * `recordingPlay` only (the use case the split enables) is a behavior change for existing
+	 * deployments and needs its own sign-off: see §8.11 of the migration plan.
+	 */
+	static recordingReadOnlyPermissions(): MeetRoomMemberPermissions {
+		return {
+			...MeetRoomMemberHelper.noPermissions(),
+			recordingList: true,
+			recordingPlay: true,
+			recordingDownload: true
+		};
+	}
+
+	private static everyPermission(allowed: boolean): MeetRoomMemberPermissions {
+		return Object.fromEntries(
+			MEET_PERMISSION_KEYS.map((key) => [key, allowed])
+		) as unknown as MeetRoomMemberPermissions;
 	}
 }

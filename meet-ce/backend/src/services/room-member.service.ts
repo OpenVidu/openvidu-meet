@@ -32,6 +32,7 @@ import { MEET_ENV } from '../environment.js';
 import type { ParticipantMeetingMetadata } from '../helpers/participant.helper.js';
 import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
+import { MeetRoomMemberHelper } from '../helpers/room-member.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import {
 	errorAnonymousAccessDisabled,
@@ -818,7 +819,7 @@ export class RoomMemberService {
 
 		if (anonymousRole === 'recording') {
 			return {
-				permissions: this.getRecordingReadOnlyPermissions()
+				permissions: MeetRoomMemberHelper.recordingReadOnlyPermissions()
 			};
 		}
 
@@ -851,7 +852,7 @@ export class RoomMemberService {
 			return {
 				userId: user.userId,
 				name: user.name,
-				permissions: this.getAllPermissions(),
+				permissions: MeetRoomMemberHelper.allPermissions(),
 				badge: isOwner ? MeetRoomMemberUIBadge.OWNER : MeetRoomMemberUIBadge.ADMIN
 			};
 		}
@@ -895,7 +896,7 @@ export class RoomMemberService {
 		second?: MeetRoomMemberPermissions
 	): MeetRoomMemberPermissions {
 		const sources = [first, second].filter((p): p is MeetRoomMemberPermissions => !!p);
-		const basePermissions = this.getNoPermissions();
+		const basePermissions = MeetRoomMemberHelper.noPermissions();
 
 		return (Object.keys(basePermissions) as Array<keyof MeetRoomMemberPermissions>).reduce(
 			(merged, permission) => ({
@@ -968,43 +969,6 @@ export class RoomMemberService {
 			livekitUrl: participantMetadata.livekitUrl,
 			externalId: participantMetadata.externalId,
 			metadata: participantMetadata.metadata
-		};
-	}
-
-	/**
-	 * Gets all permissions set to true.
-	 */
-	getAllPermissions(): MeetRoomMemberPermissions {
-		return this.everyPermission(true);
-	}
-
-	/**
-	 * Gets all permissions set to false.
-	 */
-	getNoPermissions(): MeetRoomMemberPermissions {
-		return this.everyPermission(false);
-	}
-
-	protected everyPermission(allowed: boolean): MeetRoomMemberPermissions {
-		return Object.fromEntries(
-			MEET_PERMISSION_KEYS.map((key) => [key, allowed])
-		) as unknown as MeetRoomMemberPermissions;
-	}
-
-	/**
-	 * Gets a permission set that only allows retrieving recordings.
-	 *
-	 * Grants the whole retrieval group (list + play + download), preserving what the pre-split
-	 * `canRetrieveRecordings: true` granted to public recording links. Narrowing the link to
-	 * `recordingPlay` only (the use case the split enables) is a behavior change for existing
-	 * deployments and needs its own sign-off — see §8.11 of the migration plan.
-	 */
-	getRecordingReadOnlyPermissions(): MeetRoomMemberPermissions {
-		return {
-			...this.getNoPermissions(),
-			recordingList: true,
-			recordingPlay: true,
-			recordingDownload: true
 		};
 	}
 
