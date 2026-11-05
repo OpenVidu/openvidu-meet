@@ -1,6 +1,6 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { DatePipe } from '@angular/common';
-import { Component, OnDestroy, OnInit, computed, inject, signal, viewChild } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -9,7 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
 	MeetRecordingFilters,
 	MeetRecordingInfo,
@@ -23,12 +23,10 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.component';
-import { ScrollPersistDirective } from '../../../../shared/directives/scroll-persist.directive';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { bulkRemoveMembersDialogPreset, removeMemberDialogPreset } from '../../utils/dialog-presets';
-import { EntityListSnapshot, EntityListState } from '../../../../shared/models/entity-list.model';
-import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
+import { EntityListState } from '../../../../shared/models/entity-list.model';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -36,7 +34,11 @@ import { parseBulkDeleteError } from '../../../../shared/utils/bulk-delete.utils
 import { decodeToken } from '../../../../shared/utils/token.utils';
 import { AuthService } from '../../../auth/services/auth.service';
 import { RecordingListsComponent } from '../../../recordings/components/recording-lists/recording-lists.component';
-import { RecordingTableAction, RecordingTableFilter } from '../../../recordings/models/recording-list.model';
+import {
+	RECORDING_FILTER_DEFAULTS,
+	RecordingTableAction,
+	RecordingTableFilter
+} from '../../../recordings/models/recording-list.model';
 import { RecordingActionsService } from '../../../recordings/services/recording-actions.service';
 import { RecordingService } from '../../../recordings/services/recording.service';
 import {
@@ -51,19 +53,6 @@ import { RoomService } from '../../services/room.service';
 import { RoomUiUtils } from '../../utils/ui';
 import { LoggerService } from '../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../shared/models/logger.model';
-
-/** Cached UI state for the room detail page (both tabs), restored on return. */
-interface RoomDetailCachedState {
-	room: MeetRoom;
-	canViewRecordings: boolean;
-	canDeleteRecordings: boolean;
-	canDownloadRecordings: boolean;
-	canPlayRecordings: boolean;
-	selectedTabIndex: number;
-	members: EntityListSnapshot<MeetRoomMember, MemberTableFilter>;
-	recordings: EntityListSnapshot<MeetRecordingInfo, RecordingTableFilter>;
-	scrollTop: number;
-}
 
 @Component({
 	selector: 'ov-room-detail',
@@ -80,15 +69,14 @@ interface RoomDetailCachedState {
 		BreadcrumbComponent,
 		RecordingListsComponent,
 		RoomMembersListsComponent,
-		ScrollPersistDirective,
 		TranslatePipe
 	],
 	templateUrl: './room-detail.component.html',
 	styleUrl: './room-detail.component.scss'
 })
-export class RoomDetailComponent implements OnInit, OnDestroy {
+export class RoomDetailComponent implements OnInit {
 	private readonly route = inject(ActivatedRoute);
-	private readonly listStateCache = inject(ListStateCacheService);
+	private readonly router = inject(Router);
 	private readonly authService = inject(AuthService);
 	private readonly roomService = inject(RoomService);
 	private readonly roomDeletionService = inject(RoomDeletionService);
@@ -103,10 +91,6 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 	private readonly dialog = inject(MatDialog);
 	private readonly loggerService = inject(LoggerService);
 	protected readonly log: ILogger = this.loggerService.get('OpenVidu Meet - RoomDetailComponent');
-
-	private readonly scroller = viewChild(ScrollPersistDirective);
-	/** Scroll position to restore on the page container (set when restoring cached state). */
-	protected scrollToRestore = 0;
 
 	currentUserId = signal<string>('');
 	currentUserRole = signal<MeetUserRole | undefined>(undefined);
@@ -152,14 +136,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 	});
 
 	// Recordings tab
-	initialRecordingFilters = signal<RecordingTableFilter>({
-		nameFilter: '',
-		nameMatchMode: TextMatchMode.PREFIX,
-		nameCaseInsensitive: false,
-		statusFilter: '',
-		sortField: 'startDate',
-		sortOrder: SortOrder.DESC
-	});
+	initialRecordingFilters = signal(RECORDING_FILTER_DEFAULTS);
 
 	protected readonly recordingList = new EntityListState<MeetRecordingInfo, RecordingTableFilter>({
 		initialFilters: this.initialRecordingFilters(),
@@ -178,9 +155,6 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 	protected readonly RoomUiUtils = RoomUiUtils;
 
 	async ngOnInit() {
-		// Capture the navigation trigger synchronously, before any await finalizes the navigation.
-		const isBackNavigation = this.navigationService.isPopStateNavigation();
-
 		const roomId = this.route.snapshot.paramMap.get('room-id');
 
 		if (!roomId) {
@@ -205,40 +179,12 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		this.currentUserId.set(userId ?? '');
 		this.currentUserRole.set(role);
 
-		// Restore cached state only when navigating *back* (browser back/forward), e.g.
-		// from a member edit page. Opening this room afresh (clicking it) loads fresh data.
-		const cached = this.listStateCache.get<RoomDetailCachedState>(this.cacheKey());
-
-		if (cached && isBackNavigation) {
-			this.room.set(cached.room);
-			this.canViewRecordings.set(cached.canViewRecordings);
-			this.canDeleteRecordings.set(cached.canDeleteRecordings);
-			this.canDownloadRecordings.set(cached.canDownloadRecordings ?? true);
-			this.canPlayRecordings.set(cached.canPlayRecordings);
-			this.memberList.restore(cached.members);
-			this.initialMemberFilters.set(cached.members.filters);
-			this.recordingList.restore(cached.recordings);
-			this.initialRecordingFilters.set(cached.recordings.filters);
-
-			// An explicit ?tab=members request wins over the cached tab.
-			if (this.route.snapshot.queryParamMap.get('tab') === 'members' && this.canManageRoom()) {
-				this.selectedTabIndex.set(1);
-			} else {
-				this.selectedTabIndex.set(cached.selectedTabIndex);
-			}
-
-			this.scrollToRestore = cached.scrollTop; // applied by ScrollPersistDirective once rendered
-			this.isInitializing.set(false);
-			return;
-		}
-
 		const delayLoader = setTimeout(() => {
 			this.showInitialLoader.set(true);
 		}, 200);
 
 		await this.loadRoomDetails();
 
-		// Open the Room Members tab directly when requested (e.g. after adding a member)
 		if (this.route.snapshot.queryParamMap.get('tab') === 'members' && this.canManageRoom()) {
 			this.selectedTabIndex.set(1);
 		}
@@ -248,27 +194,13 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		this.isInitializing.set(false);
 	}
 
-	ngOnDestroy() {
-		const room = this.room();
-
-		// Only cache once the room has loaded; nothing useful to restore otherwise.
-		if (!room) return;
-
-		this.listStateCache.set<RoomDetailCachedState>(this.cacheKey(), {
-			room,
-			canViewRecordings: this.canViewRecordings(),
-			canDeleteRecordings: this.canDeleteRecordings(),
-			canDownloadRecordings: this.canDownloadRecordings(),
-			canPlayRecordings: this.canPlayRecordings(),
-			selectedTabIndex: this.selectedTabIndex(),
-			members: this.memberList.snapshot(),
-			recordings: this.recordingList.snapshot(),
-			scrollTop: this.scroller()?.scrollTop ?? 0
+	protected onTabChange(index: number) {
+		this.selectedTabIndex.set(index);
+		void this.router.navigate([], {
+			relativeTo: this.route,
+			queryParams: { tab: index === 1 ? 'members' : null },
+			replaceUrl: true
 		});
-	}
-
-	private cacheKey(): string {
-		return `rooms/${this.roomId()}`;
 	}
 
 	// --- Room management ---
@@ -405,7 +337,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 			this.room.set(updatedRoom);
 		} else {
 			// Room was deleted, navigate back to the rooms list (refreshed so the deleted room is gone)
-			await this.navigationService.navigateToAndInvalidate('/rooms', 'rooms');
+			await this.navigationService.navigateTo('/rooms');
 		}
 
 		this.notificationService.showMessage(message);

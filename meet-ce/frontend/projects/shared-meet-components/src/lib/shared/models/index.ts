@@ -3,6 +3,7 @@ export * from './config.model';
 export * from './domain-routes.model';
 export * from './entity-list.model';
 export * from './lang.model';
+export * from './list-url-state';
 export * from './navigation.model';
 export * from './notification.model';
 export * from './sidenav.model';

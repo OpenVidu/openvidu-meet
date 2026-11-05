@@ -7,7 +7,6 @@ import { EmbeddedEventBusService } from '../../domains/embedded/services/embedde
 import { WcRouteName } from '../../domains/embedded/models/wc-route.model';
 import { WcRouterGateway } from '../../domains/embedded/services/wc-router-gateway.service';
 import { LeaveRedirectService } from './leave-redirect.service';
-import { ListStateCacheService } from './list-state-cache.service';
 import { NavigationService } from './navigation.service';
 import { RuntimeConfigService } from './runtime-config.service';
 import { SessionStorageService } from './session-storage.service';
@@ -68,7 +67,6 @@ describe('NavigationService - hosted-mode event gates', () => {
 				{ provide: Router, useValue: router as unknown as Router },
 				{ provide: RuntimeConfigService, useValue: runtimeConfigStub as unknown as RuntimeConfigService },
 				{ provide: SessionStorageService, useValue: sessionStorageStub as unknown as SessionStorageService },
-				{ provide: ListStateCacheService, useValue: {} as ListStateCacheService },
 				{ provide: WcRouterGateway, useValue: wcRouterGateway as unknown as WcRouterGateway }
 			]
 		});

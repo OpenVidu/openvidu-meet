@@ -1,5 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { RECORDINGS_BULK_MAX_ITEMS } from '../../models/recording-list.model';
@@ -19,6 +20,7 @@ describe('RecordingListsComponent', () => {
 			imports: [RecordingListsComponent],
 			providers: [
 				provideZonelessChangeDetection(),
+				provideRouter([]),
 				{
 					provide: TranslateService,
 					useValue: {

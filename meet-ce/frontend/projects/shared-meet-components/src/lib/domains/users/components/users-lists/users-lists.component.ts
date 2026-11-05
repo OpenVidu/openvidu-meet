@@ -27,8 +27,16 @@ import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
-import { MeetUserDTO, MeetUserRole, MeetUserSortField, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
+import {
+	MEET_USER_SORT_FIELDS,
+	MeetUserDTO,
+	MeetUserRole,
+	MeetUserSortField,
+	SortOrder,
+	TextMatchMode
+} from '@openvidu-meet/typings';
 import { merge } from 'rxjs';
+import { ListUrlParams } from '../../../../shared/models/list-url-state';
 import { RowLinkDirective } from '../../../../shared/directives/row-link.directive';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
@@ -48,6 +56,24 @@ export interface UserTableFilter {
 	sortField: MeetUserSortField;
 	sortOrder: SortOrder;
 }
+
+export const USER_FILTER_DEFAULTS: UserTableFilter = {
+	nameFilter: '',
+	nameMatchMode: TextMatchMode.PREFIX,
+	nameCaseInsensitive: false,
+	roleFilter: '',
+	sortField: 'registrationDate',
+	sortOrder: SortOrder.DESC
+};
+
+export const USER_FILTER_URL_PARAMS: ListUrlParams<UserTableFilter> = {
+	nameFilter: { param: 'q' },
+	nameMatchMode: { param: 'match', allowed: Object.values(TextMatchMode) },
+	nameCaseInsensitive: { param: 'ignoreCase' },
+	roleFilter: { param: 'role', allowed: ['', ...Object.values(MeetUserRole)] },
+	sortField: { param: 'sort', allowed: MEET_USER_SORT_FIELDS },
+	sortOrder: { param: 'order', allowed: Object.values(SortOrder) }
+};
 
 /**
  * Reusable component for displaying a list of users with filtering, selection, and bulk operations.
@@ -113,14 +139,9 @@ export class UsersListsComponent implements OnInit {
 	showSelection = input(true);
 	showLoadMore = input(false);
 	loading = input(false);
-	initialFilters = input<UserTableFilter>({
-		nameFilter: '',
-		nameMatchMode: TextMatchMode.PREFIX,
-		nameCaseInsensitive: false,
-		roleFilter: '',
-		sortField: 'registrationDate',
-		sortOrder: SortOrder.DESC
-	});
+	initialFilters = input<UserTableFilter>(USER_FILTER_DEFAULTS);
+
+	private readonly applyInitialFilters = effect(() => this.applyFilters(this.initialFilters()));
 
 	// Host binding state for styling when users are selected
 	hasSelections = computed(() => this.selectedUsers().size > 0);
@@ -246,15 +267,16 @@ export class UsersListsComponent implements OnInit {
 
 	// ===== INITIALIZATION METHODS =====
 
-	private setupFilters() {
-		const filters = this.initialFilters();
+	private applyFilters(filters: UserTableFilter) {
 		this.filtersForm.patchValue(filters, { emitEvent: false });
-		const initialSnapshot = this.filtersForm.getRawValue();
-		this.filterState.set(initialSnapshot);
-		this.appliedFilterState.set(initialSnapshot);
+		const snapshot = this.filtersForm.getRawValue();
+		this.filterState.set(snapshot);
+		this.appliedFilterState.set(snapshot);
 		this.currentSortField.set(filters.sortField);
 		this.currentSortOrder.set(filters.sortOrder);
+	}
 
+	private setupFilters() {
 		// Keep the reactive snapshot in sync with any form change
 		this.filtersForm.valueChanges
 			.pipe(takeUntilDestroyed(this.destroyRef))

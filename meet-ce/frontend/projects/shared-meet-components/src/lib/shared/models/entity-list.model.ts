@@ -26,14 +26,6 @@ export interface EntityListStateOptions<TItem, TFilter> {
 	onLoadError: (error: unknown) => void;
 }
 
-/** Serializable snapshot of the list, for {@link ListStateCacheService}-style back-navigation restore. */
-export interface EntityListSnapshot<TItem, TFilter> {
-	items: TItem[];
-	nextPageToken?: string;
-	hasMore: boolean;
-	filters: TFilter;
-}
-
 /**
  * State and behaviour shared by every paginated entity list page (rooms, users,
  * recordings, room members): the items signal, token pagination, the delayed
@@ -139,24 +131,5 @@ export class EntityListState<TItem, TFilter> {
 	/** Removes every item matching the predicate (e.g. after a deletion). */
 	remove(shouldRemove: (item: TItem) => boolean): void {
 		this.update((items) => items.filter((item) => !shouldRemove(item)));
-	}
-
-	/** Captures items, pagination and filters for a later {@link restore}. */
-	snapshot(): EntityListSnapshot<TItem, TFilter> {
-		return {
-			items: this._items(),
-			nextPageToken: this.nextPageToken,
-			hasMore: this._hasMore(),
-			filters: this.currentFilters
-		};
-	}
-
-	/** Restores a {@link snapshot} (back navigation) and skips initialization. */
-	restore(snapshot: EntityListSnapshot<TItem, TFilter>): void {
-		this._items.set(snapshot.items);
-		this.nextPageToken = snapshot.nextPageToken;
-		this._hasMore.set(snapshot.hasMore);
-		this.currentFilters = snapshot.filters;
-		this._isInitializing.set(false);
 	}
 }

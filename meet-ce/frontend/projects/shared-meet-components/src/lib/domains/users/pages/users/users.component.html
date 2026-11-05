@@ -17,7 +17,7 @@
 }
 
 @if (!list.isInitializing()) {
-	<div class="ov-page-container ov-mb-xxl" id="users-page-container" [ovScrollPersist]="scrollToRestore">
+	<div class="ov-page-container ov-mb-xxl" id="users-page-container">
 		<!-- Users Header -->
 		<div class="page-header" id="users-page-header">
 			<div class="title" id="users-title">
@@ -42,7 +42,7 @@
 				(userAction)="onUserAction($event)"
 				(loadMore)="list.loadMore($event)"
 				(refresh)="list.refresh($event)"
-				(filterChange)="list.refresh($event)"
+				(filterChange)="urlState.write($event)"
 			/>
 		</div>
 	</div>

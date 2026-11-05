@@ -42,6 +42,7 @@ import { TranslateService } from '../../../../shared/services/i18n/translate.ser
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { ViewportService } from '../../../meeting/openvidu-components';
 import {
+	RECORDING_FILTER_DEFAULTS,
 	RECORDINGS_BULK_MAX_ITEMS,
 	RecordingTableAction,
 	RecordingTableFilter
@@ -121,14 +122,9 @@ export class RecordingListsComponent implements OnInit {
 	showLoadMore = input(false);
 	loading = input(false);
 	roomName = input<string | undefined>(undefined);
-	initialFilters = input<RecordingTableFilter>({
-		nameFilter: '',
-		nameMatchMode: TextMatchMode.PREFIX,
-		nameCaseInsensitive: false,
-		statusFilter: '',
-		sortField: 'startDate',
-		sortOrder: SortOrder.DESC
-	});
+	initialFilters = input<RecordingTableFilter>(RECORDING_FILTER_DEFAULTS);
+
+	private readonly applyInitialFilters = effect(() => this.applyFilters(this.initialFilters()));
 
 	// Host binding state for styling when rooms are selected
 	hasSelections = computed(() => this.selectedRecordings().size > 0);
@@ -345,15 +341,16 @@ export class RecordingListsComponent implements OnInit {
 
 	// ===== INITIALIZATION METHODS =====
 
-	private setupFilters() {
-		const filters = this.initialFilters();
+	private applyFilters(filters: RecordingTableFilter) {
 		this.filtersForm.patchValue(filters, { emitEvent: false });
-		const initialSnapshot = this.filtersForm.getRawValue();
-		this.filterState.set(initialSnapshot);
-		this.appliedFilterState.set(initialSnapshot);
+		const snapshot = this.filtersForm.getRawValue();
+		this.filterState.set(snapshot);
+		this.appliedFilterState.set(snapshot);
 		this.currentSortField.set(filters.sortField);
 		this.currentSortOrder.set(filters.sortOrder);
+	}
 
+	private setupFilters() {
 		// Keep the reactive snapshot in sync with any form change
 		this.filtersForm.valueChanges
 			.pipe(takeUntilDestroyed(this.destroyRef))

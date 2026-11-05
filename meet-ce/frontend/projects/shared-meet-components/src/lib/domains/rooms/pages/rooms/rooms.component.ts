@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -21,16 +21,13 @@ import {
 	MeetRoomDeletionSuccessCode,
 	MeetRoomFilters,
 	MeetRoomStatus,
-	MeetUserRole,
-	SortOrder,
-	TextMatchMode
+	MeetUserRole
 } from '@openvidu-meet/typings';
-import { ScrollPersistDirective } from '../../../../shared/directives/scroll-persist.directive';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { bulkDeleteRoomsDialogPreset } from '../../utils/dialog-presets';
-import { EntityListSnapshot, EntityListState } from '../../../../shared/models/entity-list.model';
-import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
+import { EntityListState } from '../../../../shared/models/entity-list.model';
+import { ListUrlState } from '../../../../shared/models/list-url-state';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -39,6 +36,8 @@ import { DeleteRoomDialogOptions } from '../../models/delete-room-dialog.model';
 import { DeleteRoomDialogComponent } from '../../components/delete-room-dialog/delete-room-dialog.component';
 import { RoomShareDialogComponent } from '../../components/room-share-dialog/room-share-dialog.component';
 import {
+	ROOM_FILTER_DEFAULTS,
+	ROOM_FILTER_URL_PARAMS,
 	RoomsListsComponent,
 	RoomTableAction,
 	RoomTableFilter
@@ -49,12 +48,6 @@ import { RoomUiUtils } from '../../utils/ui';
 import { AuthService } from '../../../auth/services/auth.service';
 import { LoggerService } from '../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../shared/models/logger.model';
-
-/** Cached UI state for the rooms list, restored when navigating back to it. */
-interface RoomsListCachedState {
-	list: EntityListSnapshot<MeetRoom, RoomTableFilter>;
-	scrollTop: number;
-}
 
 @Component({
 	selector: 'ov-rooms',
@@ -74,15 +67,13 @@ interface RoomsListCachedState {
 		MatFormFieldModule,
 		MatInputModule,
 		RoomsListsComponent,
-		ScrollPersistDirective,
 		TranslatePipe
 	],
 	templateUrl: './rooms.component.html',
 	styleUrl: './rooms.component.scss'
 })
-export class RoomsComponent implements OnInit, OnDestroy {
+export class RoomsComponent implements OnInit {
 	private roomService = inject(RoomService);
-	private listStateCache = inject(ListStateCacheService);
 	private authService = inject(AuthService);
 	private notificationService = inject(NotificationService);
 	private dialogService = inject(DialogService);
@@ -93,29 +84,12 @@ export class RoomsComponent implements OnInit, OnDestroy {
 	protected loggerService = inject(LoggerService);
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - RoomsComponent');
 
-	private static readonly STATE_KEY = 'rooms';
-
-	private readonly scroller = viewChild(ScrollPersistDirective);
-	/** Scroll position to restore on the page container (set when restoring cached state). */
-	protected scrollToRestore = 0;
-
 	currentUserId = signal<string>('');
 	currentUserRole = signal<MeetUserRole | undefined>(undefined);
 	protected readonly MeetUserRole = MeetUserRole;
 
-	initialFilters = signal<RoomTableFilter>({
-		nameFilter: '',
-		nameMatchMode: TextMatchMode.PREFIX,
-		nameCaseInsensitive: false,
-		statusFilter: '',
-		sortField: 'creationDate',
-		sortOrder: SortOrder.DESC,
-		ownerFilter: '',
-		memberFilter: '',
-		showOwnedRooms: false,
-		showMemberRooms: false,
-		showUserAccessRooms: false
-	});
+	protected readonly urlState = new ListUrlState(ROOM_FILTER_DEFAULTS, ROOM_FILTER_URL_PARAMS);
+	initialFilters = signal(this.urlState.current);
 
 	protected readonly list = new EntityListState<MeetRoom, RoomTableFilter>({
 		initialFilters: this.initialFilters(),
@@ -127,32 +101,14 @@ export class RoomsComponent implements OnInit, OnDestroy {
 	});
 
 	async ngOnInit() {
-		// Capture the navigation trigger synchronously, before any await finalizes the navigation.
-		const isBackNavigation = this.navigationService.isPopStateNavigation();
-
 		const [userId, role] = await Promise.all([this.authService.getUserId(), this.authService.getUserRole()]);
 		this.currentUserId.set(userId ?? '');
 		this.currentUserRole.set(role);
 
-		// Restore previously cached state (filters, sort, loaded pages, scroll) only when
-		// navigating *back* (browser back/forward). An explicit navigation to this page
-		// (clicking the menu/link) loads fresh data so changes by others are reflected.
-		const cached = this.listStateCache.get<RoomsListCachedState>(RoomsComponent.STATE_KEY);
-
-		if (cached && isBackNavigation) {
-			this.list.restore(cached.list);
-			this.initialFilters.set(cached.list.filters); // seeds the child filter form via setupFilters()
-			this.scrollToRestore = cached.scrollTop; // applied by ScrollPersistDirective once rendered
-			return;
-		}
-
 		await this.list.initialize(this.initialFilters());
-	}
-
-	ngOnDestroy() {
-		this.listStateCache.set<RoomsListCachedState>(RoomsComponent.STATE_KEY, {
-			list: this.list.snapshot(),
-			scrollTop: this.scroller()?.scrollTop ?? 0
+		this.urlState.onChange((filters) => {
+			this.initialFilters.set(filters);
+			void this.list.refresh(filters);
 		});
 	}
 

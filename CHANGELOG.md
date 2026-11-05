@@ -90,6 +90,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - The console lists of rooms, recordings and users no longer open an item at the end of a text selection, open it in a
   new tab on a Ctrl or Cmd click, and show the ids of rooms and users as links, the room id among them on the
   recordings list.
+- The console lists of rooms, users and recordings keep their search, filters and order in the URL, and the room page its
+  selected tab, so a reload or a shared link shows the same view.
 
 ### Fixed
 

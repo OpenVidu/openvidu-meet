@@ -18,7 +18,7 @@
 }
 
 @if (!list.isInitializing()) {
-	<div class="ov-page-container ov-mb-xxl" id="rooms-page-container" [ovScrollPersist]="scrollToRestore">
+	<div class="ov-page-container ov-mb-xxl" id="rooms-page-container">
 		<!-- Rooms Header -->
 		<div class="page-header" id="rooms-page-header">
 			<div class="title" id="rooms-title">
@@ -50,7 +50,7 @@
 				(roomAction)="onRoomAction($event)"
 				(loadMore)="list.loadMore($event)"
 				(refresh)="list.refresh($event)"
-				(filterChange)="list.refresh($event)"
+				(filterChange)="urlState.write($event)"
 			/>
 		</div>
 	</div>
