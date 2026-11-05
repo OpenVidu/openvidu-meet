@@ -150,7 +150,6 @@
       "RECORDING_DELETED": "Aufnahme erfolgreich gelöscht",
       "DELETE_FAILED": "Aufnahme konnte nicht gelöscht werden",
       "LOAD_RECORDINGS_FAILED": "Aufnahmen konnten nicht geladen werden",
-      "NAVIGATE_DETAIL_FAILED": "Fehler bei der Navigation zu den Aufnahmedetails",
       "RECORDINGS_DELETED_SUFFIX_SINGULAR": "Aufnahme erfolgreich gelöscht",
       "RECORDINGS_DELETED_SUFFIX_PLURAL": "Aufnahmen erfolgreich gelöscht",
       "RECORDINGS_DELETED_DOT_SUFFIX_SINGULAR": "Aufnahme erfolgreich gelöscht. ",

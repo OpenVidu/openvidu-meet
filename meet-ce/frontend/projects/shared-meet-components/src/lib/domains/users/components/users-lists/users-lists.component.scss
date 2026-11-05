@@ -141,7 +141,7 @@
 	}
 
 	.user-id {
-		@extend .secondary-text, .monospace-text;
+		@extend .secondary-text, .monospace-text, %ov-link;
 	}
 }
 

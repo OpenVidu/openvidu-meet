@@ -153,7 +153,6 @@
       "USER_DELETE_FAILED": "ユーザーの削除に失敗しました",
       "USERS_LOAD_FAILED": "ユーザーの読み込みに失敗しました",
       "USERS_DELETE_FAILED": "ユーザーの削除に失敗しました",
-      "USER_PROFILE_NAVIGATION_FAILED": "ユーザープロフィールへの移動中にエラーが発生しました",
       "USERS_DELETED_SUFFIX_SINGULAR": "件のユーザーを削除しました。",
       "USERS_DELETED_SUFFIX_PLURAL": "件のユーザーを削除しました。",
       "USERS_FAILED_SUFFIX_SINGULAR": "件のユーザーを削除できませんでした。",

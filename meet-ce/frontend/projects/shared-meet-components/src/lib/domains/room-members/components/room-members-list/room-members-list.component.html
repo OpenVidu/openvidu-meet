@@ -258,7 +258,6 @@
 								[checked]="allSelected()"
 								[indeterminate]="someSelected()"
 								(change)="toggleAllSelection()"
-								(click)="$event.stopPropagation()"
 								[disabled]="loading()"
 								id="members-select-all-checkbox"
 							/>
@@ -266,7 +265,6 @@
 						<td mat-cell *matCellDef="let member" id="members-select-cell-{{ member.memberId }}">
 							<mat-checkbox
 								[checked]="isMemberSelected(member)"
-								(click)="$event.stopPropagation()"
 								(change)="toggleMemberSelection(member)"
 								[disabled]="loading()"
 								id="select-member-{{ member.memberId }}"
@@ -309,7 +307,6 @@
 										class="member-id-link"
 										[routerLink]="['/users', member.memberId]"
 										[matTooltip]="'ROOM_MEMBERS.LIST.VIEW_USER_PROFILE' | translate"
-										(click)="$event.stopPropagation()"
 										id="member-id-link-{{ member.memberId }}"
 									>
 										{{ member.memberId }}
@@ -391,7 +388,7 @@
 							<button
 								mat-icon-button
 								[matTooltip]="'ROOM_MEMBERS.LIST.COPY_ACCESS_LINK' | translate"
-								(click)="$event.stopPropagation(); copyMemberLink(member)"
+								(click)="copyMemberLink(member)"
 								[disabled]="loading()"
 								class="copy-link-btn"
 								id="copy-member-link-btn-{{ member.memberId }}"
@@ -403,7 +400,7 @@
 							<button
 								mat-icon-button
 								[matTooltip]="'ROOM_MEMBERS.LIST.EDIT_MEMBER' | translate"
-								(click)="$event.stopPropagation(); editMember(member)"
+								(click)="editMember(member)"
 								[disabled]="loading()"
 								class="edit-action"
 								id="edit-member-btn-{{ member.memberId }}"
@@ -415,7 +412,7 @@
 							<button
 								mat-icon-button
 								[matTooltip]="'ROOM_MEMBERS.LIST.REMOVE_MEMBER' | translate"
-								(click)="$event.stopPropagation(); deleteMember(member)"
+								(click)="deleteMember(member)"
 								[disabled]="loading()"
 								class="delete-action"
 								id="delete-member-btn-{{ member.memberId }}"
@@ -432,7 +429,6 @@
 					*matRowDef="let row; columns: displayedColumns()"
 					[class.selected-row]="isMemberSelected(row)"
 					id="members-table-row-{{ row.memberId }}"
-					(click)="onMemberClick(row)"
 				></tr>
 			</table>
 		</div>

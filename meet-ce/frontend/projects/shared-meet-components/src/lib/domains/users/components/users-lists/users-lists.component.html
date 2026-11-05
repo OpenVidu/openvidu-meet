@@ -235,7 +235,6 @@
 								[checked]="allSelected()"
 								[indeterminate]="someSelected()"
 								(change)="toggleAllSelection()"
-								(click)="$event.stopPropagation()"
 								[disabled]="loading()"
 								id="select-all-checkbox"
 							/>
@@ -244,7 +243,6 @@
 							@if (canSelectUser(user)) {
 								<mat-checkbox
 									[checked]="isUserSelected(user)"
-									(click)="$event.stopPropagation()"
 									(change)="toggleUserSelection(user)"
 									[disabled]="loading()"
 									id="select-user-{{ user.userId }}"
@@ -278,7 +276,12 @@
 							</div>
 							<div class="user-info" id="user-text-info-{{ user.userId }}">
 								<span class="user-name" id="user-name-{{ user.userId }}">{{ user.name }}</span>
-								<span class="user-id" id="user-id-{{ user.userId }}">{{ user.userId }}</span>
+								<a
+									class="user-id"
+									[routerLink]="user.userId === currentUserId() ? '/profile' : ['/users', user.userId]"
+									id="user-id-{{ user.userId }}"
+									>{{ user.userId }}</a
+								>
 							</div>
 							<div class="user-badges" id="user-badges-{{ user.userId }}">
 								@if (user.isRootAdmin) {
@@ -351,7 +354,7 @@
 							>
 								<button
 									mat-icon-button
-									(click)="$event.stopPropagation(); updateRole(user)"
+									(click)="updateRole(user)"
 									[disabled]="
 										loading() || UsersUiUtils.isProtectedUser(user, currentUserId())
 									"
@@ -372,7 +375,7 @@
 							>
 								<button
 									mat-icon-button
-									(click)="$event.stopPropagation(); resetPassword(user)"
+									(click)="resetPassword(user)"
 									[disabled]="
 										loading() || UsersUiUtils.isProtectedUser(user, currentUserId())
 									"
@@ -393,7 +396,7 @@
 							>
 								<button
 									mat-icon-button
-									(click)="$event.stopPropagation(); deleteUser(user)"
+									(click)="deleteUser(user)"
 									[disabled]="
 										loading() || UsersUiUtils.isProtectedUser(user, currentUserId())
 									"
@@ -415,7 +418,6 @@
 					[class.protected-row]="UsersUiUtils.isProtectedUser(row, currentUserId())"
 					[class.root-row]="row.isRootAdmin"
 					id="table-row-{{ row.userId }}"
-					(click)="onUserClick(row)"
 				></tr>
 			</table>
 		</div>

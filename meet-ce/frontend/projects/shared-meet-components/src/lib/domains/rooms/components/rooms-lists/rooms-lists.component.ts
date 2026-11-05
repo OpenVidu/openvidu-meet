@@ -163,7 +163,6 @@ export class RoomsListsComponent implements OnInit {
 	filterChange = output<RoomTableFilter>();
 	loadMore = output<RoomTableFilter>();
 	refresh = output<RoomTableFilter>();
-	roomClicked = output<string>();
 
 	// Filter controls
 	filtersForm = new FormGroup({
@@ -434,10 +433,6 @@ export class RoomsListsComponent implements OnInit {
 
 	accessRoom(room: MeetRoom) {
 		this.roomAction.emit({ rooms: [room], action: 'access' });
-	}
-
-	onRoomClick(room: MeetRoom) {
-		this.roomClicked.emit(room.roomId);
 	}
 
 	copyRoomId(room: MeetRoom) {

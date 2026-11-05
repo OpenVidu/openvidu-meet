@@ -135,7 +135,6 @@ export class RoomMembersListsComponent implements OnInit {
 	readonly filterChange = output<MemberTableFilter>();
 	readonly loadMore = output<MemberTableFilter>();
 	readonly refresh = output<MemberTableFilter>();
-	readonly memberClicked = output<string>();
 
 	// Filter controls
 	filtersForm = new FormGroup({
@@ -371,10 +370,6 @@ export class RoomMembersListsComponent implements OnInit {
 
 	addMember() {
 		this.memberAction.emit({ members: [], action: 'addMember' });
-	}
-
-	onMemberClick(member: MeetRoomMember) {
-		this.memberClicked.emit(member.memberId);
 	}
 
 	copyMemberLink(member: MeetRoomMember) {

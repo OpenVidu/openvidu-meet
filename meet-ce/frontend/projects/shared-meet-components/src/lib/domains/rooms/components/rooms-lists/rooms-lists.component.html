@@ -329,7 +329,6 @@
 									[checked]="allSelected()"
 									[indeterminate]="someSelected()"
 									(change)="toggleAllSelection()"
-									(click)="$event.stopPropagation()"
 									[disabled]="loading()"
 									id="select-all-checkbox"
 								/>
@@ -339,7 +338,6 @@
 							@if (canSelectRoom(room)) {
 								<mat-checkbox
 									[checked]="isRoomSelected(room)"
-									(click)="$event.stopPropagation()"
 									(change)="toggleRoomSelection(room)"
 									[disabled]="loading()"
 									id="select-room-{{ room.roomId }}"
@@ -362,11 +360,16 @@
 						<div class="room-info" id="room-info-{{ room.roomId }}">
 							<span class="room-name" id="room-name-{{ room.roomId }}">{{ room.roomName }}</span>
 							<span class="room-id-wrap" id="room-id-wrap-{{ room.roomId }}">
-								<span class="room-id" id="room-id-{{ room.roomId }}">{{ room.roomId }}</span>
+								<a
+									class="room-id"
+									[routerLink]="['/rooms', room.roomId]"
+									id="room-id-{{ room.roomId }}"
+									>{{ room.roomId }}</a
+								>
 								<button
 									mat-icon-button
 									class="copy-btn"
-									(click)="$event.stopPropagation(); copyRoomId(room)"
+									(click)="copyRoomId(room)"
 									[matTooltip]="'ROOMS.COMMON.COPY_ROOM_ID' | translate"
 									id="copy-room-id-btn-{{ room.roomId }}"
 								>
@@ -391,7 +394,6 @@
 									[routerLink]="['/users', room.owner]"
 									[matTooltip]="'ROOMS.COMMON.VIEW_USER_PROFILE' | translate"
 									id="owner-profile-link-{{ room.roomId }}"
-									(click)="$event.stopPropagation()"
 								>
 									{{ room.owner }}
 								</a>
@@ -512,7 +514,7 @@
 							<span [matTooltip]="RoomUiUtils.getAccessRoomTooltip(room) | translate">
 								<button
 									mat-icon-button
-									(click)="$event.stopPropagation(); accessRoom(room)"
+									(click)="accessRoom(room)"
 									[disabled]="loading() || !RoomUiUtils.canAccessRoom(room)"
 									class="primary-action"
 									id="access-room-btn-{{ room.roomId }}"
@@ -526,7 +528,7 @@
 								<span [matTooltip]="RoomUiUtils.getEditRoomTooltip(room) | translate">
 									<button
 										mat-icon-button
-										(click)="$event.stopPropagation(); editRoom(room)"
+										(click)="editRoom(room)"
 										[disabled]="loading() || !RoomUiUtils.canEditRoom(room)"
 										id="edit-room-btn-{{ room.roomId }}"
 									>
@@ -539,7 +541,6 @@
 									mat-icon-button
 									[matMenuTriggerFor]="actionsMenu"
 									[matTooltip]="'ROOMS.COMMON.MORE_ACTIONS' | translate"
-									(click)="$event.stopPropagation()"
 									[disabled]="loading()"
 									id="more-actions-btn-{{ room.roomId }}"
 								>
@@ -550,7 +551,7 @@
 									<span [matTooltip]="RoomUiUtils.getShareAccessLinksTooltip(room) | translate">
 										<button
 											mat-menu-item
-											(click)="$event.stopPropagation(); shareLink(room)"
+											(click)="shareLink(room)"
 											[disabled]="!RoomUiUtils.canShareAccessLinks(room)"
 											id="share-link-btn-{{ room.roomId }}"
 										>
@@ -563,7 +564,7 @@
 
 									<button
 										mat-menu-item
-										(click)="$event.stopPropagation(); toggleRoomStatus(room)"
+										(click)="toggleRoomStatus(room)"
 										[class]="RoomUiUtils.getRoomToggleClass(room)"
 										id="toggle-room-status-btn-{{ room.roomId }}"
 									>
@@ -572,7 +573,7 @@
 									</button>
 									<button
 										mat-menu-item
-										(click)="$event.stopPropagation(); deleteRoom(room)"
+										(click)="deleteRoom(room)"
 										class="delete-action"
 										id="delete-room-btn-{{ room.roomId }}"
 									>
@@ -586,7 +587,7 @@
 									<span [matTooltip]="RoomUiUtils.getShareAccessLinksTooltip(room) | translate">
 										<button
 											mat-icon-button
-											(click)="$event.stopPropagation(); shareLink(room)"
+											(click)="shareLink(room)"
 											[disabled]="!RoomUiUtils.canShareAccessLinks(room)"
 											id="share-link-btn-{{ room.roomId }}"
 										>
@@ -605,7 +606,6 @@
 					*matRowDef="let row; columns: displayedColumns()"
 					[class.selected-row]="isRoomSelected(row)"
 					id="table-row-{{ row.roomId }}"
-					(click)="onRoomClick(row)"
 				></tr>
 			</table>
 		</div>

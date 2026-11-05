@@ -355,8 +355,6 @@
       "LOADING_ROOMS": "Fehler beim Laden der Räume",
       "CREATING_ROOM": "Fehler beim Erstellen des Raums",
       "NAVIGATING_ROOM_CONFIG": "Fehler bei der Navigation zur Raumkonfiguration",
-      "NAVIGATING_ROOM_DETAIL": "Fehler bei der Navigation zu den Raumdetails",
-      "NAVIGATING_RECORDING_DETAIL": "Fehler bei der Navigation zu den Aufnahmedetails",
       "ROOM_REOPENED": "Raum erfolgreich wieder geöffnet",
       "FAILED_REOPEN_ROOM": "Raum konnte nicht wieder geöffnet werden",
       "ROOM_CLOSED": "Raum erfolgreich geschlossen",

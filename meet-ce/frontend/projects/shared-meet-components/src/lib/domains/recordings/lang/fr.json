@@ -150,7 +150,6 @@
       "RECORDING_DELETED": "Enregistrement supprimé avec succès",
       "DELETE_FAILED": "Échec de la suppression de l'enregistrement",
       "LOAD_RECORDINGS_FAILED": "Échec du chargement des enregistrements",
-      "NAVIGATE_DETAIL_FAILED": "Erreur lors de la navigation vers les détails de l'enregistrement",
       "RECORDINGS_DELETED_SUFFIX_SINGULAR": "enregistrement supprimé avec succès",
       "RECORDINGS_DELETED_SUFFIX_PLURAL": "enregistrements supprimés avec succès",
       "RECORDINGS_DELETED_DOT_SUFFIX_SINGULAR": "enregistrement supprimé avec succès. ",

@@ -133,17 +133,6 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 		});
 	}
 
-	async onRecordingClick(recordingId: string) {
-		try {
-			await this.navigationService.navigateTo(`/recordings/${recordingId}`);
-		} catch (error) {
-			this.notificationService.showMessage(
-				this.translateService.translate('RECORDINGS.ERRORS.NAVIGATE_DETAIL_FAILED')
-			);
-			this.log.e('Error navigating to recording detail:', error);
-		}
-	}
-
 	private async fetchRecordingsPage(filters: RecordingTableFilter, nextPageToken: string | undefined) {
 		const recordingFilters: MeetRecordingFilters = {
 			maxItems: 50,

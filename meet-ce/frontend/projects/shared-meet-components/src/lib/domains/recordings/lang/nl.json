@@ -150,7 +150,6 @@
       "RECORDING_DELETED": "Opname succesvol verwijderd",
       "DELETE_FAILED": "Opname verwijderen mislukt",
       "LOAD_RECORDINGS_FAILED": "Opnames laden mislukt",
-      "NAVIGATE_DETAIL_FAILED": "Fout bij het navigeren naar de opnamedetails",
       "RECORDINGS_DELETED_SUFFIX_SINGULAR": "opname succesvol verwijderd",
       "RECORDINGS_DELETED_SUFFIX_PLURAL": "opnames succesvol verwijderd",
       "RECORDINGS_DELETED_DOT_SUFFIX_SINGULAR": "opname succesvol verwijderd. ",

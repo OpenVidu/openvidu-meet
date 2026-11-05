@@ -355,8 +355,6 @@
       "LOADING_ROOMS": "ルームの読み込み中にエラーが発生しました",
       "CREATING_ROOM": "ルームの作成中にエラーが発生しました",
       "NAVIGATING_ROOM_CONFIG": "ルーム設定への移動中にエラーが発生しました",
-      "NAVIGATING_ROOM_DETAIL": "ルームの詳細への移動中にエラーが発生しました",
-      "NAVIGATING_RECORDING_DETAIL": "録画の詳細への移動中にエラーが発生しました",
       "ROOM_REOPENED": "ルームを再開しました",
       "FAILED_REOPEN_ROOM": "ルームの再開に失敗しました",
       "ROOM_CLOSED": "ルームをクローズしました",

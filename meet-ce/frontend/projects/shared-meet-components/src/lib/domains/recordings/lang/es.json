@@ -150,7 +150,6 @@
       "RECORDING_DELETED": "Grabación eliminada correctamente",
       "DELETE_FAILED": "Error al eliminar la grabación",
       "LOAD_RECORDINGS_FAILED": "Error al cargar las grabaciones",
-      "NAVIGATE_DETAIL_FAILED": "Error al navegar al detalle de la grabación",
       "RECORDINGS_DELETED_SUFFIX_SINGULAR": "grabación eliminada correctamente",
       "RECORDINGS_DELETED_SUFFIX_PLURAL": "grabaciones eliminadas correctamente",
       "RECORDINGS_DELETED_DOT_SUFFIX_SINGULAR": "grabación eliminada correctamente. ",

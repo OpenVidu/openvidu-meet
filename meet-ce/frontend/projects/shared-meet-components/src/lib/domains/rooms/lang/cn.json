@@ -355,8 +355,6 @@
       "LOADING_ROOMS": "加载房间出错",
       "CREATING_ROOM": "创建房间出错",
       "NAVIGATING_ROOM_CONFIG": "跳转到房间配置时出错",
-      "NAVIGATING_ROOM_DETAIL": "跳转到房间详情时出错",
-      "NAVIGATING_RECORDING_DETAIL": "跳转到录像详情时出错",
       "ROOM_REOPENED": "房间已成功重新开放",
       "FAILED_REOPEN_ROOM": "重新开放房间失败",
       "ROOM_CLOSED": "房间已成功关闭",

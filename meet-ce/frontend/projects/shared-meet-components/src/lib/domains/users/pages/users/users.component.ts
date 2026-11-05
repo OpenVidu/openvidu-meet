@@ -264,24 +264,4 @@ export class UsersComponent implements OnInit, OnDestroy {
 			confirmCallback: bulkDeleteCallback
 		});
 	}
-
-	async onUserClick(userId: string) {
-		try {
-			await this.navigateToUserProfile(userId);
-		} catch (error) {
-			this.notificationService.showMessage(
-				this.translateService.translate('USERS.ERRORS.USER_PROFILE_NAVIGATION_FAILED')
-			);
-			this.log.e('Error navigating to user profile:', error);
-		}
-	}
-
-	private async navigateToUserProfile(userId: string) {
-		if (userId === this.currentUserId()) {
-			await this.navigationService.navigateTo('/profile');
-			return;
-		}
-
-		await this.navigationService.navigateTo(`/users/${userId}`);
-	}
 }

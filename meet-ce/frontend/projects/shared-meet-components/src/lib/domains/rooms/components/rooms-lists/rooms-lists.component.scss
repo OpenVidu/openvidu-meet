@@ -135,23 +135,7 @@
 	.owner-name-link {
 		font-size: var(--ov-meet-font-size-sm);
 		font-weight: var(--ov-meet-font-weight-medium);
-		color: var(--ov-meet-color-primary);
-		text-decoration: none;
-		cursor: pointer;
-		@include design-tokens.ov-theme-transition;
-
-		&:hover {
-			text-decoration: underline;
-		}
-
-		&:active {
-			opacity: 0.8;
-		}
-
-		&:focus-visible {
-			outline: 2px solid var(--ov-meet-color-primary);
-			outline-offset: 2px;
-		}
+		@extend %ov-link;
 	}
 
 	.you-badge {
@@ -179,7 +163,7 @@
 	}
 
 	.room-id {
-		@extend .secondary-text, .monospace-text;
+		@extend .secondary-text, .monospace-text, %ov-link;
 	}
 
 	.copy-btn {

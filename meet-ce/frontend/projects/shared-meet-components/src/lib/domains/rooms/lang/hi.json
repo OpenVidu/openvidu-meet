@@ -355,8 +355,6 @@
       "LOADING_ROOMS": "कक्ष लोड करने में त्रुटि",
       "CREATING_ROOM": "कक्ष बनाने में त्रुटि",
       "NAVIGATING_ROOM_CONFIG": "कक्ष कॉन्फ़िग पर नेविगेट करने में त्रुटि",
-      "NAVIGATING_ROOM_DETAIL": "कक्ष विवरण पर नेविगेट करने में त्रुटि",
-      "NAVIGATING_RECORDING_DETAIL": "रिकॉर्डिंग विवरण पर नेविगेट करने में त्रुटि",
       "ROOM_REOPENED": "कक्ष सफलतापूर्वक पुनः खोला गया",
       "FAILED_REOPEN_ROOM": "कक्ष पुनः खोलने में विफल",
       "ROOM_CLOSED": "कक्ष सफलतापूर्वक बंद किया गया",

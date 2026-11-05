@@ -268,17 +268,6 @@ export class RoomsComponent implements OnInit, OnDestroy {
 		});
 	}
 
-	async onRoomClick(roomId: string) {
-		try {
-			await this.navigationService.navigateTo(`/rooms/${roomId}`);
-		} catch (error) {
-			this.notificationService.showMessage(
-				this.translateService.translate('ROOMS.ERRORS.NAVIGATING_ROOM_DETAIL')
-			);
-			this.log.e('Error navigating to room detail:', error);
-		}
-	}
-
 	private async reopenRoom(room: MeetRoom) {
 		try {
 			const updatedRoom = await this.roomService.updateRoomStatus(room.roomId, MeetRoomStatus.OPEN);

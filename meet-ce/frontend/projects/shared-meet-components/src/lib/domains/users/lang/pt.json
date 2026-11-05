@@ -153,7 +153,6 @@
       "USER_DELETE_FAILED": "Falha ao eliminar o utilizador",
       "USERS_LOAD_FAILED": "Falha ao carregar os utilizadores",
       "USERS_DELETE_FAILED": "Falha ao eliminar os utilizadores",
-      "USER_PROFILE_NAVIGATION_FAILED": "Erro ao navegar para o perfil do utilizador",
       "USERS_DELETED_SUFFIX_SINGULAR": "utilizador eliminado com sucesso.",
       "USERS_DELETED_SUFFIX_PLURAL": "utilizadores eliminados com sucesso.",
       "USERS_FAILED_SUFFIX_SINGULAR": "utilizador não pôde ser eliminado.",

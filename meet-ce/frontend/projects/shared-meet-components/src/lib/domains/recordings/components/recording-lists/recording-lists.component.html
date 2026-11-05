@@ -234,12 +234,14 @@
 									/>
 								}
 
-								@if (showRoomInfo()) {
-									<div class="room-info">
+								<div class="room-info">
+									@if (showRoomInfo()) {
 										<div class="room-name">{{ recording.roomName }}</div>
-										<div class="room-id">{{ recording.recordingId }}</div>
-									</div>
-								}
+									}
+									<a class="room-id" [routerLink]="['/recordings', recording.recordingId]">{{
+										recording.recordingId
+									}}</a>
+								</div>
 							</div>
 
 							<div class="status-info">
@@ -423,7 +425,6 @@
 									[checked]="allSelected()"
 									[indeterminate]="someSelected()"
 									(change)="toggleAllSelection()"
-									(click)="$event.stopPropagation()"
 									[disabled]="loading()"
 									[attr.aria-label]="
 										allSelected()
@@ -437,7 +438,6 @@
 									<mat-checkbox
 										[checked]="isRecordingSelected(recording)"
 										(change)="toggleRecordingSelection(recording)"
-										(click)="$event.stopPropagation()"
 										[disabled]="loading()"
 										[attr.aria-label]="('RECORDINGS.LIST.SELECT_RECORDING_PREFIX' | translate) + recording.recordingId"
 									/>
@@ -460,6 +460,16 @@
 							</td>
 						</ng-container>
 					}
+
+					<!-- Recording ID Column -->
+					<ng-container matColumnDef="recordingId">
+						<th mat-header-cell *matHeaderCellDef>{{ 'RECORDINGS.DETAIL.RECORDING_ID' | translate }}</th>
+						<td mat-cell *matCellDef="let recording" class="recording-id-cell">
+							<a class="recording-id" [routerLink]="['/recordings', recording.recordingId]">{{
+								recording.recordingId
+							}}</a>
+						</td>
+					</ng-container>
 
 					<!-- Status Column -->
 					<ng-container matColumnDef="status">
@@ -524,7 +534,7 @@
 									<button
 										mat-icon-button
 										class="action-button play-button"
-										(click)="$event.stopPropagation(); playRecording(recording)"
+										(click)="playRecording(recording)"
 										[disabled]="loading() || isPlayDisabled(recording)"
 										id="play-recording-btn-{{ recording.recordingId }}"
 									>
@@ -538,7 +548,7 @@
 										<button
 											mat-icon-button
 											class="action-button download-button"
-											(click)="$event.stopPropagation(); downloadRecording(recording)"
+											(click)="downloadRecording(recording)"
 											[disabled]="loading() || !RecordingUiUtils.isDownloadable(recording.status)"
 											id="download-recording-btn-{{ recording.recordingId }}"
 										>
@@ -552,7 +562,7 @@
 										<button
 											mat-icon-button
 											class="action-button share-button"
-											(click)="$event.stopPropagation(); shareRecordingLink(recording)"
+											(click)="shareRecordingLink(recording)"
 											[disabled]="loading() || isShareDisabled(recording)"
 											id="share-recording-link-{{ recording.recordingId }}"
 										>
@@ -564,7 +574,7 @@
 										<button
 											mat-icon-button
 											class="action-button delete-button"
-											(click)="$event.stopPropagation(); deleteRecording(recording)"
+											(click)="deleteRecording(recording)"
 											[disabled]="loading() || !RecordingUiUtils.isDeletable(recording.status)"
 											id="delete-recording-btn-{{ recording.recordingId }}"
 										>
@@ -577,7 +587,6 @@
 										mat-icon-button
 										class="action-button more-button"
 										[matMenuTriggerFor]="actionsMenu"
-										(click)="$event.stopPropagation()"
 										[matTooltip]="'RECORDINGS.COMMON.MORE_ACTIONS' | translate"
 										[disabled]="loading()"
 										id="more-actions-btn-{{ recording.recordingId }}"
@@ -591,7 +600,7 @@
 										>
 											<button
 												mat-menu-item
-												(click)="$event.stopPropagation(); shareRecordingLink(recording)"
+												(click)="shareRecordingLink(recording)"
 												[disabled]="isShareDisabled(recording)"
 												id="share-recording-link-{{ recording.recordingId }}"
 											>
@@ -606,7 +615,7 @@
 										>
 											<button
 												mat-menu-item
-												(click)="$event.stopPropagation(); deleteRecording(recording)"
+												(click)="deleteRecording(recording)"
 												[disabled]="!RecordingUiUtils.isDeletable(recording.status)"
 												class="delete-action"
 												id="delete-recording-btn-{{ recording.recordingId }}"
@@ -627,7 +636,6 @@
 						*matRowDef="let row; columns: displayedColumns()"
 						[class.selected-row]="isRecordingSelected(row)"
 						id="table-row-{{ row.recordingId }}"
-						(click)="onRecordingClick(row)"
 					></tr>
 				</table>
 			</div>
