@@ -76,7 +76,6 @@
     "TITLE": "嵌入",
     "SUBTITLE": "将 OpenVidu Meet 嵌入到您的应用所需的一切。",
     "LOADING_TITLE": "正在加载设置",
-    "LOADING_SUBTITLE": "正在获取您的设置，请稍候...",
     "API_KEY_TITLE": "API 密钥",
     "API_KEY_SUBTITLE_PREFIX": "生成和管理用于",
     "API_KEY_SUBTITLE_LINK": "REST API",

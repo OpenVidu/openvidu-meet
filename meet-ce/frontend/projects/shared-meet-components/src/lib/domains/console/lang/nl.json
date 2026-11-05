@@ -76,7 +76,6 @@
     "TITLE": "Insluiten",
     "SUBTITLE": "Alles wat u nodig hebt om OpenVidu Meet in uw applicaties in te sluiten.",
     "LOADING_TITLE": "Instellingen laden",
-    "LOADING_SUBTITLE": "Even geduld terwijl we uw instellingen ophalen...",
     "API_KEY_TITLE": "API-SLEUTEL",
     "API_KEY_SUBTITLE_PREFIX": "Genereer en beheer uw API-sleutel voor",
     "API_KEY_SUBTITLE_LINK": "REST API",

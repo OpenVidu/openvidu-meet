@@ -37,7 +37,7 @@ import {
 import { merge } from 'rxjs';
 import { ListUrlParams } from '../../../../shared/models/list-url-state';
 import { RowLinkDirective } from '../../../../shared/directives/row-link.directive';
-import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
+import { SkeletonRowsComponent } from '../../../../shared/components/skeleton-rows/skeleton-rows.component';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
@@ -119,7 +119,7 @@ export const USER_FILTER_URL_PARAMS: ListUrlParams<UserTableFilter> = {
 		MatBadgeModule,
 		MatSortModule,
 		DatePipe,
-		TableSkeletonComponent,
+		SkeletonRowsComponent,
 		TranslatePipe
 	],
 	templateUrl: './users-lists.component.html',

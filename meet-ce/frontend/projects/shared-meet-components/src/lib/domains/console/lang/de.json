@@ -76,7 +76,6 @@
     "TITLE": "Eingebettet",
     "SUBTITLE": "Alles, was Sie zum Einbetten von OpenVidu Meet in Ihre Anwendungen benötigen.",
     "LOADING_TITLE": "Einstellungen werden geladen",
-    "LOADING_SUBTITLE": "Bitte warten Sie, während wir Ihre Einstellungen abrufen...",
     "API_KEY_TITLE": "API-SCHLÜSSEL",
     "API_KEY_SUBTITLE_PREFIX": "Generieren und verwalten Sie Ihren API-Schlüssel für den Zugriff auf die",
     "API_KEY_SUBTITLE_LINK": "REST API",

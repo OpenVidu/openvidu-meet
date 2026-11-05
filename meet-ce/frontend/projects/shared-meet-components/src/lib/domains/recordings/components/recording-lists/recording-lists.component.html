@@ -197,7 +197,7 @@
 
 	<!-- Loading Spinner -->
 	@if (loading() && recordings().length === 0) {
-		<ov-table-skeleton [label]="'RECORDINGS.LIST.LOADING_RECORDINGS' | translate" />
+		<ov-skeleton-rows [label]="'RECORDINGS.LIST.LOADING_RECORDINGS' | translate" />
 	} @else if (recordings().length === 0 && showEmptyFilterMessage()) {
 		<!-- No recordings match the current filters -->
 		<div class="no-recordings-state">

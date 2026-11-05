@@ -76,7 +76,6 @@
     "TITLE": "Embedded",
     "SUBTITLE": "Everything you need to embed OpenVidu Meet in your applications.",
     "LOADING_TITLE": "Loading Settings",
-    "LOADING_SUBTITLE": "Please wait while we fetch your settings...",
     "API_KEY_TITLE": "API KEY",
     "API_KEY_SUBTITLE_PREFIX": "Generate and manage your API key for",
     "API_KEY_SUBTITLE_LINK": "REST API",

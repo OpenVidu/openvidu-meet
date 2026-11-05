@@ -76,7 +76,6 @@
     "TITLE": "Intégration",
     "SUBTITLE": "Tout ce dont vous avez besoin pour intégrer OpenVidu Meet à vos applications.",
     "LOADING_TITLE": "Chargement des paramètres",
-    "LOADING_SUBTITLE": "Veuillez patienter pendant que nous récupérons vos paramètres...",
     "API_KEY_TITLE": "CLÉ API",
     "API_KEY_SUBTITLE_PREFIX": "Générez et gérez votre clé API pour l'accès à",
     "API_KEY_SUBTITLE_LINK": "l'API REST",

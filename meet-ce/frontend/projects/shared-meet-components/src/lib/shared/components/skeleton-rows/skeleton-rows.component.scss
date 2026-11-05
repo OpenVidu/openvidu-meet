@@ -5,6 +5,24 @@
 	border-radius: var(--ov-meet-radius-md);
 	margin: var(--ov-meet-spacing-md) 0;
 	padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+
+	&.plain {
+		background: none;
+		border: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	&.delayed {
+		opacity: 0;
+		animation: reveal 0s linear 300ms forwards;
+	}
+}
+
+@keyframes reveal {
+	to {
+		opacity: 1;
+	}
 }
 
 .visually-hidden {

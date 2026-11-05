@@ -218,7 +218,7 @@
 
 	<!-- Loading Spinner -->
 	@if (loading() && members().length === 0) {
-		<ov-table-skeleton [label]="'ROOM_MEMBERS.LIST.LOADING_MEMBERS' | translate" />
+		<ov-skeleton-rows [label]="'ROOM_MEMBERS.LIST.LOADING_MEMBERS' | translate" />
 	} @else if (members().length === 0 && showEmptyFilterMessage()) {
 		<!-- No members match the current filters -->
 		<div class="no-members-state">
