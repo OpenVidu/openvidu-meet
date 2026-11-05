@@ -3,10 +3,6 @@ import { ParticipantInfo_Kind, TrackSource } from '@livekit/protocol';
 import type { MeetParticipantMuteOptions, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { MEET_PERMISSION_KEYS, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
 import type { ParticipantInfo, Room } from 'livekit-server-sdk';
-// The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph: importing MeetingService first leaves it uninitialized when RoomMemberService
-// declares its `@inject(MeetingService)` constructor.
-import '../../../src/config/dependency-injector.config.js';
 import { errorRoomNotFound } from '../../../src/models/error.model.js';
 import type { FrontendEventService } from '../../../src/services/frontend-event.service.js';
 import type { LiveKitService } from '../../../src/services/livekit.service.js';

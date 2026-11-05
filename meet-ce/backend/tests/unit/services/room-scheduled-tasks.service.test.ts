@@ -1,9 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import type { Room } from 'livekit-server-sdk';
 import ms from 'ms';
-// The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see meeting-mute.test.ts).
-import '../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
 import { MeetRoomHelper } from '../../../src/helpers/room.helper.js';
 import type { IScheduledTask } from '../../../src/models/task-scheduler.model.js';

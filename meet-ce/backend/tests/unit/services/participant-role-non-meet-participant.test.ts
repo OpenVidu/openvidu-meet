@@ -7,9 +7,6 @@ import {
 	MeetRoomMemberUIBadge
 } from '@openvidu-meet/typings';
 import type { ParticipantInfo } from 'livekit-server-sdk';
-// The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see meeting-mute.test.ts).
-import '../../../src/config/dependency-injector.config.js';
 import type { LiveKitService } from '../../../src/services/livekit.service.js';
 import type { LoggerService } from '../../../src/services/logger.service.js';
 import { RoomMemberService } from '../../../src/services/room-member.service.js';

@@ -2,9 +2,12 @@ import type {
 	MeetRoomMember,
 	MeetRoomMemberExtraField,
 	MeetRoomMemberField,
-	MeetRoomMemberPermissions
+	MeetRoomMemberPermissions,
+	MeetRoomMemberRole,
+	MeetRoomRoles
 } from '@openvidu-meet/typings';
 import { MEET_PERMISSION_KEYS, MEET_ROOM_MEMBER_EXTRA_FIELDS, MEET_ROOM_MEMBER_FIELDS } from '@openvidu-meet/typings';
+import merge from 'lodash.merge';
 import { addHttpResponseMetadata, applyHttpFieldFiltering, buildFieldsForDbQuery } from './field-filter.helper.js';
 
 export class MeetRoomMemberHelper {
@@ -86,6 +89,18 @@ export class MeetRoomMemberHelper {
 			recordingPlay: true,
 			recordingDownload: true
 		};
+	}
+
+	/**
+	 * Computes a member's effective permissions: the permissions of their base role in the room,
+	 * overridden by their custom permissions.
+	 */
+	static computeEffectivePermissions(
+		roomRoles: MeetRoomRoles,
+		baseRole: MeetRoomMemberRole,
+		customPermissions?: Partial<MeetRoomMemberPermissions>
+	): MeetRoomMemberPermissions {
+		return merge({}, roomRoles[baseRole].permissions, customPermissions);
 	}
 
 	private static everyPermission(allowed: boolean): MeetRoomMemberPermissions {

@@ -25,9 +25,9 @@ import merge from 'lodash.merge';
 import ms from 'ms';
 import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
-import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { BroadcastHelper } from '../helpers/broadcast.helper.js';
+import { MeetRoomMemberHelper } from '../helpers/room-member.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import {
 	errorBroadcastEnabledWithoutDestinations,
@@ -53,7 +53,6 @@ import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { RecordingService } from './recording.service.js';
 import { RequestSessionService } from './request-session.service.js';
-import type { RoomMemberService } from './room-member.service.js';
 
 /**
  * Service for managing OpenVidu Meet rooms.
@@ -71,17 +70,6 @@ export class RoomService {
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService
 	) {}
-
-	private roomMemberService?: RoomMemberService;
-
-	private async getRoomMemberService(): Promise<RoomMemberService> {
-		if (!this.roomMemberService) {
-			const { RoomMemberService } = await import('./room-member.service.js');
-			this.roomMemberService = container.get(RoomMemberService);
-		}
-
-		return this.roomMemberService;
-	}
 
 	/**
 	 * Creates an OpenVidu Meet room with the specified options.
@@ -377,9 +365,7 @@ export class RoomService {
 			rolesUpdatedAt: Date.now()
 		});
 
-		// Update existing room members with new effective permissions
-		const roomMemberService = await this.getRoomMemberService();
-		await roomMemberService.updateAllRoomMemberPermissions(roomId, updatedRoom.roles);
+		await this.updateAllRoomMemberPermissions(roomId, updatedRoom.roles);
 
 		// If speaker role's recordingList permission has changed, update recordings access scope metadata
 		// (listing is the capability that scopes recording visibility for room users).
@@ -393,6 +379,81 @@ export class RoomService {
 		}
 
 		return updatedRoom;
+	}
+
+	/**
+	 * Recomputes the effective permissions of every member of a room from its new roles.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param roomRoles - The updated room roles configuration
+	 * @returns A promise that resolves when all members have been updated
+	 */
+	protected async updateAllRoomMemberPermissions(roomId: string, roomRoles: MeetRoomRoles): Promise<void> {
+		this.logger.verbose(`Updating effective permissions for all members in room '${roomId}'`);
+
+		let batchNumber = 0;
+		let nextPageToken: string | undefined;
+		let totalUpdated = 0;
+
+		do {
+			batchNumber++;
+
+			const {
+				members,
+				isTruncated,
+				nextPageToken: token
+			} = await this.roomMemberRepository.findByRoomId(roomId, {
+				maxItems: 100,
+				nextPageToken,
+				fields: ['memberId', 'baseRole', 'customPermissions']
+			});
+
+			if (members.length === 0) {
+				break;
+			}
+
+			this.logger.verbose(`Processing batch ${batchNumber} with ${members.length} members in room '${roomId}'`);
+
+			await runConcurrently(
+				members,
+				async (member) => {
+					try {
+						const effectivePermissions = MeetRoomMemberHelper.computeEffectivePermissions(
+							roomRoles,
+							member.baseRole,
+							member.customPermissions
+						);
+
+						await this.roomMemberRepository.updatePartial(roomId, member.memberId, {
+							effectivePermissions,
+							permissionsUpdatedAt: Date.now()
+						});
+
+						this.logger.debug(
+							`Updated effective permissions for member '${member.memberId}' in room '${roomId}'`
+						);
+					} catch (error) {
+						this.logger.warn(
+							`Failed to update effective permissions for member '${member.memberId}' in room '${roomId}':`,
+							error
+						);
+					}
+				},
+				{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_UPDATE_PERMISSIONS, failFast: true }
+			);
+
+			totalUpdated += members.length;
+			nextPageToken = isTruncated ? token : undefined;
+
+			this.logger.verbose(`Completed batch ${batchNumber}, total updated: ${totalUpdated} members`);
+		} while (nextPageToken);
+
+		if (totalUpdated === 0) {
+			this.logger.verbose(`No members found in room '${roomId}' to update`);
+			return;
+		}
+
+		this.logger.info(`Successfully updated effective permissions for ${totalUpdated} members in room '${roomId}'`);
 	}
 
 	/**

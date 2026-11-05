@@ -1,7 +1,6 @@
 import type { MeetUser, MeetUserDTO, MeetUserField, MeetUserFilters, MeetUserOptions } from '@openvidu-meet/typings';
 import { MeetUserRole } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { PasswordHelper } from '../helpers/password.helper.js';
@@ -24,10 +23,11 @@ import { RoomRepository } from '../repositories/room.repository.js';
 import { UserRepository } from '../repositories/user.repository.js';
 import type { ProjectedMeetUser } from '../types/user-projection.types.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
+import { FrontendEventService } from './frontend-event.service.js';
+import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { MeetingPresenceService } from './meeting-presence.service.js';
 import { RequestSessionService } from './request-session.service.js';
-import type { RoomMemberService } from './room-member.service.js';
 
 @injectable()
 export class UserService {
@@ -38,16 +38,10 @@ export class UserService {
 		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
 		@inject(RecordingRepository) protected recordingRepository: RecordingRepository,
 		@inject(MeetingPresenceService) protected meetingPresenceService: MeetingPresenceService,
-		@inject(RequestSessionService) protected requestSessionService: RequestSessionService
+		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
+		@inject(LiveKitService) protected livekitService: LiveKitService,
+		@inject(FrontendEventService) protected frontendEventService: FrontendEventService
 	) {}
-
-	/**
-	 * TODO: Prevent circular imports when refactoring backend code
-	 */
-	private async getRoomMemberService(): Promise<RoomMemberService> {
-		const { RoomMemberService } = await import('./room-member.service.js');
-		return container.get(RoomMemberService);
-	}
 
 	/**
 	 * Initializes the default admin user
@@ -266,11 +260,10 @@ export class UserService {
 		const activeMeetings = await this.meetingPresenceService.getUserMeetings(userId);
 
 		if (activeMeetings.length > 0) {
-			const roomMemberService = await this.getRoomMemberService();
 			const notifyResults = await runConcurrently(
 				activeMeetings,
 				async ({ roomId, participantIdentity }) => {
-					await roomMemberService.notifyParticipantPermissionsUpdate(roomId, participantIdentity);
+					await this.notifyParticipantPermissionsUpdate(roomId, participantIdentity);
 					return { roomId, participantIdentity };
 				},
 				{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_UPDATE_PERMISSIONS }
@@ -287,6 +280,26 @@ export class UserService {
 
 		this.logger.info(`Role for user '${userId}' changed to '${newRole}' by admin`);
 		return updatedUser;
+	}
+
+	/**
+	 * Tells a participant of the user, if they are still in the meeting, to renew their token so their
+	 * new permissions take effect.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param participantIdentity - The identity of the participant to send the signal to
+	 */
+	protected async notifyParticipantPermissionsUpdate(roomId: string, participantIdentity: string): Promise<void> {
+		const isParticipantInMeeting = await this.livekitService.participantExists(roomId, participantIdentity);
+
+		if (!isParticipantInMeeting) {
+			this.logger.verbose(
+				`Not sending permissions updated signal to participant '${participantIdentity}' in room '${roomId}' because they are not currently in a meeting`
+			);
+			return;
+		}
+
+		await this.frontendEventService.sendParticipantPermissionsUpdatedSignal(roomId, participantIdentity);
 	}
 
 	async deleteUser(userId: string): Promise<void> {
@@ -375,7 +388,6 @@ export class UserService {
 	private async bulkCleanupUserResources(userIds: string[]): Promise<void> {
 		const adminUserId = MEET_ENV.INITIAL_ADMIN_USER;
 		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_CLEANUP_USER_RESOURCES;
-		const roomMemberService = await this.getRoomMemberService();
 
 		const userCleanupResults = await runConcurrently(
 			userIds,
@@ -386,7 +398,7 @@ export class UserService {
 					const kickResults = await runConcurrently(
 						activeMeetings,
 						async ({ roomId, participantIdentity }) => {
-							await roomMemberService.kickParticipantFromMeeting(roomId, participantIdentity);
+							await this.livekitService.deleteParticipant(roomId, participantIdentity);
 							return { roomId, participantIdentity };
 						},
 						{ concurrency }

@@ -25,7 +25,7 @@ None (`skip_specs: true`). `meeting-moderation` "Kick a participant" keeps holdi
 
 - REST API: `participantKick`, `updateRoomMember`, `deleteRoomMember`, `bulkDeleteRoomMembers`, `deleteUser`, `bulkDeleteUsers` and `updateUserRole`, which kick or notify a participant in a meeting, make fewer media server calls. Status codes and bodies do not change. The embedded command `participantKick` uses the same endpoint.
 - Webhooks, embedded API, meeting UI, console UI, deployment configuration: not affected. No public contract changes.
-- Code: `kickParticipant` of `MeetingService` (`meet-ce/backend/src/services/meeting.service.ts`); `deleteParticipant` and `participantExists` of `LiveKitService` (`meet-ce/backend/src/services/livekit.service.ts`). `RoomMemberService.kickParticipantFromMeeting` keeps delegating to `LiveKitService.deleteParticipant`: member and user identities are never recorders or agents, so it needs no participant read.
+- Code: `kickParticipant` of `MeetingService` (`meet-ce/backend/src/services/meeting.service.ts`); `deleteParticipant` and `participantExists` of `LiveKitService` (`meet-ce/backend/src/services/livekit.service.ts`). The member and user kicks of `RoomMemberService` and `UserService` keep calling `LiveKitService.deleteParticipant` directly: member and user identities are never recorders or agents, so they need no participant read.
 - PRO: no seam changes; no overridable method changes its signature.
 - openvidu.io: none.
 
