@@ -1,5 +1,11 @@
 import { describe, expect, it } from '@jest/globals';
-import { MEET_PERMISSION_KEYS } from '@openvidu-meet/typings';
+import {
+	MEET_PERMISSION_KEYS,
+	MEET_RECORDING_SORT_FIELDS,
+	MEET_ROOM_MEMBER_SORT_FIELDS,
+	MEET_ROOM_SORT_FIELDS,
+	MEET_USER_SORT_FIELDS
+} from '@openvidu-meet/typings';
 import type { Schema } from 'mongoose';
 import { MeetApiKeyModel } from '../../../src/models/mongoose-schemas/api-key.schema.js';
 import { MeetGlobalConfigModel } from '../../../src/models/mongoose-schemas/global-config.schema.js';
@@ -195,7 +201,9 @@ const schemas: [string, { schema: Schema; modelName: string }, Record<string, st
 		[
 			[{ roomId: 1 }, { unique: true }],
 			[{ creationDate: -1, _id: -1 }, {}],
+			[{ roomId: 1, creationDate: -1, _id: -1 }, {}],
 			[{ roomName: 1, creationDate: -1, _id: -1 }, {}],
+			[{ roomName: 1, _id: 1 }, {}],
 			[{ status: 1, creationDate: -1, _id: -1 }, {}],
 			[{ owner: 1, creationDate: -1, _id: -1 }, {}],
 			[{ 'access.user.enabled': 1, creationDate: -1, _id: -1 }, {}],
@@ -223,6 +231,7 @@ const schemas: [string, { schema: Schema; modelName: string }, Record<string, st
 			[{ startDate: -1, _id: -1 }, {}],
 			[{ roomId: 1, startDate: -1, _id: -1 }, {}],
 			[{ roomName: 1, startDate: -1, _id: -1 }, {}],
+			[{ roomName: 1, _id: 1 }, {}],
 			[{ roomOwner: 1, startDate: -1, _id: -1 }, {}],
 			[{ roomUserAccess: 1, startDate: -1, _id: -1 }, {}],
 			[{ status: 1, startDate: -1, _id: -1 }, {}],
@@ -237,9 +246,9 @@ const schemas: [string, { schema: Schema; modelName: string }, Record<string, st
 		[
 			[{ userId: 1 }, { unique: true }],
 			[{ registrationDate: -1, _id: -1 }, {}],
-			[{ name: 1, registrationDate: -1, _id: -1 }, {}],
+			[{ name: 1, _id: 1 }, {}],
 			[{ role: 1, registrationDate: -1, _id: -1 }, {}],
-			[{ name: 1, role: 1, _id: 1 }, {}]
+			[{ role: 1, name: 1, _id: 1 }, {}]
 		]
 	],
 	['MeetApiKey', MeetApiKeyModel, apiKeyPaths, [[{ key: 1 }, { unique: true }]]],
@@ -258,5 +267,24 @@ describe.each(schemas)('%s mongoose schema', (name, model, paths, indexes) => {
 
 	it('is registered under the collection name the migrations are keyed on', () => {
 		expect(model.modelName).toBe(name);
+	});
+});
+
+const sortedLists: [string, { schema: Schema }, readonly string[]][] = [
+	['MeetRoom', MeetRoomModel, MEET_ROOM_SORT_FIELDS],
+	['MeetRoomMember', MeetRoomMemberModel, MEET_ROOM_MEMBER_SORT_FIELDS],
+	['MeetRecording', MeetRecordingModel, MEET_RECORDING_SORT_FIELDS],
+	['MeetUser', MeetUserModel, MEET_USER_SORT_FIELDS]
+];
+
+describe.each(sortedLists)('%s list sort', (_name, model, sortFields) => {
+	const indexTails = model.schema.indexes().map(([keys]) => Object.entries(keys).slice(-2));
+
+	it.each(sortFields)('is served by an index ending in { %s, _id }, the order the list pages by', (sortField) => {
+		const servesSort = indexTails.some(
+			([field, id]) => field?.[0] === sortField && id?.[0] === '_id' && field[1] === id[1]
+		);
+
+		expect(servesSort).toBe(true);
 	});
 });

@@ -133,6 +133,7 @@ MeetRecordingSchema.index({ recordingId: 1 }, { unique: true });
 MeetRecordingSchema.index({ startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ roomId: 1, startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ roomName: 1, startDate: -1, _id: -1 });
+MeetRecordingSchema.index({ roomName: 1, _id: 1 });
 MeetRecordingSchema.index({ roomOwner: 1, startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ roomUserAccess: 1, startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ status: 1, startDate: -1, _id: -1 });
