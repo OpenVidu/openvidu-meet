@@ -469,7 +469,9 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>(
 // Create indexes for efficient querying
 MeetRoomSchema.index({ roomId: 1 }, { unique: true });
 MeetRoomSchema.index({ creationDate: -1, _id: -1 });
+MeetRoomSchema.index({ roomId: 1, creationDate: -1, _id: -1 });
 MeetRoomSchema.index({ roomName: 1, creationDate: -1, _id: -1 });
+MeetRoomSchema.index({ roomName: 1, _id: 1 });
 MeetRoomSchema.index({ status: 1, creationDate: -1, _id: -1 });
 MeetRoomSchema.index({ owner: 1, creationDate: -1, _id: -1 });
 MeetRoomSchema.index({ 'access.user.enabled': 1, creationDate: -1, _id: -1 });

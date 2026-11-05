@@ -50,7 +50,6 @@ const MigrationSchema = new Schema<MeetMigrationDocument>(
 
 // Index for efficient lookups
 MigrationSchema.index({ name: 1 }, { unique: true });
-MigrationSchema.index({ status: 1 });
 
 /**
  * Mongoose model for MeetMigration.
