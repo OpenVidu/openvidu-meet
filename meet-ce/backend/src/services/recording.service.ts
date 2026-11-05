@@ -80,6 +80,17 @@ export class RecordingService {
 	}
 
 	/**
+	 * Converts an egress into the recording it reports, carrying the current name of its room.
+	 *
+	 * @throws The `404` room not found error when the room of the egress does not exist
+	 */
+	async toRecordingInfo(egressInfo: EgressInfo): Promise<MeetRecordingInfo> {
+		const roomService = await this.getRoomService();
+		const { roomName } = await roomService.getMeetRoom(egressInfo.roomName, ['roomName']);
+		return RecordingHelper.toRecordingInfo(egressInfo, roomName);
+	}
+
+	/**
 	 * Starts a recording in the room. The request completes as soon as LiveKit accepts the egress:
 	 * the recording is `starting` until the first track is published and LiveKit reports it active,
 	 * which can take as long as the participants take to publish. `autoStartMeetingId` marks the
@@ -112,7 +123,7 @@ export class RecordingService {
 			const output = this.generateFileOutputFromRequest(roomId);
 			egressRequested = true;
 			const egressInfo = await this.livekitService.startRoomComposite(roomId, output, options);
-			const recordingInfo = await RecordingHelper.toRecordingInfo(egressInfo);
+			const recordingInfo = await this.toRecordingInfo(egressInfo);
 
 			this.logger.info(`Recording '${recordingInfo.recordingId}' started for room '${roomId}'`);
 			return recordingInfo;
@@ -224,7 +235,7 @@ export class RecordingService {
 					}
 
 					this.logger.info(`Recording stopped successfully for room '${roomId}'`);
-					return await RecordingHelper.toRecordingInfo(egressInfo);
+					return await this.toRecordingInfo(egressInfo);
 				} catch (error) {
 					this.logger.debug(`Error stopping recording '${recordingId}'`, error);
 					throw error;

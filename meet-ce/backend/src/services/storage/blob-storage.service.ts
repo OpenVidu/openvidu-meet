@@ -3,8 +3,8 @@ import type { Readable } from 'stream';
 import { errorRecordingNotFound, errorRecordingRangeNotSatisfiable } from '../../models/error.model.js';
 import { withKeyPrefix } from '../../utils/storage-key.utils.js';
 import { LoggerService } from '../logger.service.js';
-import { StorageFactory } from './storage.factory.js';
 import type { StorageKeyBuilder, StorageProvider } from './storage.interface.js';
+import { STORAGE_TYPES } from './storage.interface.js';
 
 /**
  * Service responsible for managing binary files (blobs) in object storage.
@@ -15,17 +15,11 @@ import type { StorageKeyBuilder, StorageProvider } from './storage.interface.js'
  */
 @injectable()
 export class BlobStorageService {
-	protected storageProvider: StorageProvider;
-	protected keyBuilder: StorageKeyBuilder;
-
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
-		@inject(StorageFactory) protected storageFactory: StorageFactory
-	) {
-		const { provider, keyBuilder } = this.storageFactory.create();
-		this.storageProvider = provider;
-		this.keyBuilder = keyBuilder;
-	}
+		@inject(STORAGE_TYPES.StorageProvider) protected storageProvider: StorageProvider,
+		@inject(STORAGE_TYPES.KeyBuilder) protected keyBuilder: StorageKeyBuilder
+	) {}
 
 	/**
 	 * Performs a health check on the blob storage system.
@@ -136,7 +130,10 @@ export class BlobStorageService {
 			await this.storageProvider.deleteObjects(storageKeys);
 			this.logger.verbose(`Deleted ${storageKeys.length} recording media files`);
 		} catch (error) {
-			this.logger.error(`Error deleting recording media batch for recordings [${recordingIds.join(', ')}]:`, error);
+			this.logger.error(
+				`Error deleting recording media batch for recordings [${recordingIds.join(', ')}]:`,
+				error
+			);
 			throw error;
 		}
 	}
@@ -188,9 +185,7 @@ export class BlobStorageService {
 
 		// Check if start is beyond file size
 		if (start >= fileSize) {
-			this.logger.warn(
-				`Invalid range: start=${start} exceeds fileSize=${fileSize} for recording ${recordingId}`
-			);
+			this.logger.warn(`Invalid range: start=${start} exceeds fileSize=${fileSize} for recording ${recordingId}`);
 			throw errorRecordingRangeNotSatisfiable(recordingId, fileSize);
 		}
 

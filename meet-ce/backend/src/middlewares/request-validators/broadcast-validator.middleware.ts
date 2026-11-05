@@ -1,7 +1,6 @@
 import { MEET_BROADCAST_FIELDS } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import type { z } from 'zod';
-import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import {
 	BroadcastFieldsQuerySchema,
 	BroadcastIdParamsSchema,
@@ -10,6 +9,7 @@ import {
 	StopBroadcastsReqSchema
 } from '../../models/zod-schemas/broadcast.schema.js';
 import { mergeFieldsHeaderIntoQuery } from '../../models/zod-schemas/field-selection.schema.js';
+import { rejectUnprocessableRequest } from '../error-handler.middleware.js';
 
 /**
  * Reads the query of a broadcast request against the schema, with the fields asked for in the

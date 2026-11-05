@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
-import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import { MeetWebhookOptionsSchema } from '../../models/zod-schemas/webhook.schema.js';
+import { rejectUnprocessableRequest } from '../error-handler.middleware.js';
 
 /**
  * Validates the body of webhook create and update requests (both carry {@link MeetWebhookOptions}).

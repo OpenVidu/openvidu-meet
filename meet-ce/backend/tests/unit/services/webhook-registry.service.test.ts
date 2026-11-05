@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import type { MeetWebhook, MeetWebhookOptions } from '@openvidu-meet/typings';
 import { randomUUID } from 'crypto';
 import { LockAcquisitionError } from 'redlock-universal';
-import '../../../src/config/dependency-injector.config.js';
 import { setInternalConfig } from '../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../src/environment.js';
 import { OpenViduMeetError } from '../../../src/models/error.model.js';

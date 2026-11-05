@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it } from '@jest/globals';
 import type { MeetApiKey } from '@openvidu-meet/typings';
-import '../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../src/environment.js';
 import { errorApiKeyNotConfigured } from '../../../src/models/error.model.js';
 import { ApiKeyService } from '../../../src/services/api-key.service.js';
@@ -37,7 +36,7 @@ const build = ({ lockFree = true } = {}) => {
 		}
 	};
 	const service = new ApiKeyService(
-		...([noopLogger, {}, repository, mutex] as unknown as ConstructorParameters<typeof ApiKeyService>)
+		...([noopLogger, repository, mutex] as unknown as ConstructorParameters<typeof ApiKeyService>)
 	);
 	return { service, repository, locks };
 };

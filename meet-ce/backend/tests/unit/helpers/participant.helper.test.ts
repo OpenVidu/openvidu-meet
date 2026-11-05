@@ -14,11 +14,6 @@ import {
 import type { ParticipantInfo } from 'livekit-server-sdk';
 import { MeetParticipantHelper } from '../../../src/helpers/participant.helper.js';
 
-// Only the container-free statics are covered here. The async webhook payload builders
-// (toParticipantJoinedPayload/toParticipantLeftPayload) resolve the RoomService through the DI
-// container to fall back to the database for the room identity, so they belong to the integration
-// suite instead.
-
 const allPermissions = Object.fromEntries(
 	MEET_PERMISSION_KEYS.map((key) => [key, true])
 ) as unknown as MeetRoomMemberPermissions;

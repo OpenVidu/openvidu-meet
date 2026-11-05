@@ -9,7 +9,7 @@ import {
 } from '@openvidu-meet/typings';
 import type { EgressInfo, RoomCompositeOptions, StreamOutput } from 'livekit-server-sdk';
 // The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see migration.service.test.ts).
+// starts the graph (see meeting-mute.test.ts).
 import '../../../src/config/dependency-injector.config.js';
 import { BroadcastHelper } from '../../../src/helpers/broadcast.helper.js';
 import type { BroadcastRecord } from '../../../src/models/broadcast.model.js';

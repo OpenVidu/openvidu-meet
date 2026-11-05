@@ -23,7 +23,7 @@ import {
  */
 describe('Validation error messages (public 422 contract)', () => {
 	beforeAll(() => {
-		// Installed at boot by models/error.model.ts; unit tests apply it explicitly to avoid
+		// Installed at boot by middlewares/error-handler.middleware.ts; unit tests apply it explicitly to avoid
 		// pulling the DI container in just for its side effect.
 		configureZodErrorMessages();
 	});

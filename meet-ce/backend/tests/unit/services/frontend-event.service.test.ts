@@ -1,9 +1,6 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import type { MeetBroadcastInfo, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { MeetReaction, MeetSignalType } from '@openvidu-meet/typings';
-// The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see migration.service.test.ts).
-import '../../../src/config/dependency-injector.config.js';
 import { FrontendEventService } from '../../../src/services/frontend-event.service.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, debug: () => {}, error: () => {}, verbose: () => {} };

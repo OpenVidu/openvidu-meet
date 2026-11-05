@@ -4,9 +4,6 @@ import http from 'http';
 import type { AddressInfo } from 'net';
 import { MeetBroadcastStatus, MeetMeetingEndedReason, MeetWebhookEventType } from '@openvidu-meet/typings';
 import type { MeetBroadcastInfo, MeetRoom, MeetWebhook, MeetWebhookPayload } from '@openvidu-meet/typings';
-// The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see migration.service.test.ts).
-import '../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG, setInternalConfig } from '../../../src/config/internal-config.js';
 import { WebhookDispatcherService } from '../../../src/services/webhook-dispatcher.service.js';
 

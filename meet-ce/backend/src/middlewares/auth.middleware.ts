@@ -1,4 +1,4 @@
-import type { MeetRoomMemberTokenMetadata, MeetUserRole } from '@openvidu-meet/typings';
+import type { MeetUserRole } from '@openvidu-meet/typings';
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
@@ -11,23 +11,18 @@ import {
 	errorInvalidToken,
 	errorInvalidTokenSubject,
 	errorPasswordChangeRequired,
-	errorUnauthorized,
-	rejectRequestFromMeetError
+	errorUnauthorized
 } from '../models/error.model.js';
-import type { RequestRoomSnapshot } from '../models/request-context.model.js';
-import { REQUEST_ROOM_FIELDS } from '../models/request-context.model.js';
 import type { TokenMetadata } from '../models/token.model.js';
 import { TokenType } from '../models/token.model.js';
-import { RoomMemberRepository } from '../repositories/room-member.repository.js';
-import { RoomRepository } from '../repositories/room.repository.js';
 import { ApiKeyService } from '../services/api-key.service.js';
 import { LoggerService } from '../services/logger.service.js';
-import { ParticipantTokenRevocationService } from '../services/participant-token-revocation.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { TokenService } from '../services/token.service.js';
 import { UserTokenRevocationService } from '../services/user-token-revocation.service.js';
 import { UserService } from '../services/user.service.js';
 import { getAccessToken, getRoomMemberToken } from '../utils/token.utils.js';
+import { rejectRequestFromMeetError } from './error-handler.middleware.js';
 
 /**
  * Interface for authentication validators.
@@ -210,106 +205,13 @@ export const roomMemberTokenValidator: AuthValidator = {
 			throw errorUnauthorized();
 		}
 
-		const { participantIdentity, metadata, room } = await verifyRoomMemberToken(token);
+		const { participantIdentity, metadata, room } = await container.get(TokenService).verifyRoomMemberToken(token);
 		const requestSessionService = container.get(RequestSessionService);
 		requestSessionService.setRoomMemberTokenInfo(metadata, participantIdentity);
 		requestSessionService.setRoom(room);
 
 		await setAuthenticatedUserIfPresent(req);
 	}
-};
-
-/**
- * Verifies a room member token and that no later change invalidated it (see {@link checkRoomMemberTokenCurrency}).
- *
- * @param clockToleranceSeconds - How long after its expiry the token is still accepted
- * @param ignoreDemotion - Accept a token issued before its participant was demoted from moderator
- * @returns The claims of the token and the room it was verified against
- * @throws The `401` invalid token error when the token is not valid; a MongoDB or Redis failure is thrown as it is
- */
-export const verifyRoomMemberToken = async (
-	token: string,
-	{ clockToleranceSeconds = 0, ignoreDemotion = false } = {}
-): Promise<{
-	participantIdentity?: string;
-	participantName?: string;
-	metadata: MeetRoomMemberTokenMetadata;
-	room: RequestRoomSnapshot;
-}> => {
-	const tokenService = container.get(TokenService);
-	let claims;
-	let metadata: MeetRoomMemberTokenMetadata;
-
-	try {
-		claims = await tokenService.verifyToken(token, clockToleranceSeconds);
-
-		if (!claims.metadata) {
-			throw new Error('Missing required token claims');
-		}
-
-		metadata = tokenService.parseRoomMemberTokenMetadata(claims.metadata);
-	} catch (error) {
-		container.get(LoggerService).debug('Invalid room member token:', error);
-		throw errorInvalidToken();
-	}
-
-	const { sub: participantIdentity, name: participantName } = claims;
-	const { room, outdatedReason } = await checkRoomMemberTokenCurrency(metadata, participantIdentity, {
-		ignoreDemotion
-	});
-
-	if (!room || outdatedReason) {
-		container.get(LoggerService).debug('Invalid room member token:', outdatedReason);
-		throw errorInvalidToken();
-	}
-
-	return { participantIdentity, participantName, metadata, room };
-};
-
-/**
- * Tells whether a change made after a room member token was issued invalidated it: an update of its room's roles or
- * access, of its room member's permissions or of its user's role, the deletion of that member or user, and a
- * demotion of its participant unless `ignoreDemotion` is set. The metadata a participant joined a meeting with is
- * checked the same way. A database or Redis failure is thrown, never taken for an invalidated token.
- *
- * @param ignoreDemotion - Accept a token issued before its participant was demoted from moderator
- * @returns The token's room, and why the token is no longer valid when it is not
- */
-export const checkRoomMemberTokenCurrency = async (
-	{ iat, issuedAfterRevocation, roomId, memberId, userId }: MeetRoomMemberTokenMetadata,
-	participantIdentity: string | undefined,
-	{ ignoreDemotion = false } = {}
-): Promise<{ room: RequestRoomSnapshot | null; outdatedReason?: string }> => {
-	const [room, revoked, roomMember, user] = await Promise.all([
-		container.get(RoomRepository).findByRoomId(roomId, REQUEST_ROOM_FIELDS),
-		!ignoreDemotion && participantIdentity
-			? container
-					.get(ParticipantTokenRevocationService)
-					.isRevoked(roomId, participantIdentity, { issuedAfterRevocation })
-			: false,
-		memberId
-			? container.get(RoomMemberRepository).findByRoomAndMemberId(roomId, memberId, ['permissionsUpdatedAt'])
-			: undefined,
-		userId ? container.get(UserService).getUser(userId, ['roleUpdatedAt']) : undefined
-	]);
-
-	if (!room || iat < room.rolesUpdatedAt) {
-		return { room, outdatedReason: 'Token has outdated permissions' };
-	}
-
-	if (revoked) {
-		return { room, outdatedReason: 'Token was issued before the participant role changed' };
-	}
-
-	if (memberId && (!roomMember || iat < roomMember.permissionsUpdatedAt)) {
-		return { room, outdatedReason: 'Token has outdated permissions' };
-	}
-
-	if (userId && (!user || iat < user.roleUpdatedAt)) {
-		return { room, outdatedReason: 'Token has outdated permissions' };
-	}
-
-	return { room };
 };
 
 /**

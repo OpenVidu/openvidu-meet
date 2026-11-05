@@ -6,7 +6,8 @@ import type {
 } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
-import { errorInsufficientPermissions, handleError, rejectRequestFromMeetError } from '../models/error.model.js';
+import { handleError, rejectRequestFromMeetError } from '../middlewares/error-handler.middleware.js';
+import { errorInsufficientPermissions } from '../models/error.model.js';
 import { LiveKitService } from '../services/livekit.service.js';
 import { LoggerService } from '../services/logger.service.js';
 import { MeetingService } from '../services/meeting.service.js';

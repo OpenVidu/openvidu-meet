@@ -10,9 +10,7 @@ import {
 	errorInvalidRecordingSecret,
 	errorManualRecordingNotAllowed,
 	errorRecordingDisabled,
-	handleError,
-	OpenViduMeetError,
-	rejectRequestFromMeetError
+	OpenViduMeetError
 } from '../models/error.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RecordingService } from '../services/recording.service.js';
@@ -28,6 +26,7 @@ import {
 	roomMemberTokenValidator,
 	withAuth
 } from './auth.middleware.js';
+import { handleError, rejectRequestFromMeetError } from './error-handler.middleware.js';
 
 /**
  * Middleware to ensure the room accepts a recording being started on-demand: recording has to be

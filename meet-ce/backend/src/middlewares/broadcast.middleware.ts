@@ -2,8 +2,9 @@ import type { MeetBroadcastStartOptions } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { BroadcastHelper } from '../helpers/broadcast.helper.js';
-import { errorBroadcastDisabled, handleError, rejectRequestFromMeetError } from '../models/error.model.js';
+import { errorBroadcastDisabled } from '../models/error.model.js';
 import { RoomService } from '../services/room.service.js';
+import { handleError, rejectRequestFromMeetError } from './error-handler.middleware.js';
 import { withRoomPermission } from './room.middleware.js';
 
 /** The room a start or stop request names in its body. */

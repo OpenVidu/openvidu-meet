@@ -109,18 +109,25 @@ what LiveKit's webhooks never told.
 - **DI (Inversify 8)**: `src/config/dependency-injector.config.ts`. Bindings are grouped in
   `ContainerModule`s and loaded in one order-independent `container.load(...)`; every binding is a
   lazy singleton. Injection is fully explicit `@inject(...)`: decorator metadata emission is **off**
-  and there is no `reflect-metadata`, so a missing `@inject` fails at runtime. Break construction
-  cycles with a lazy `container.get(...)` at the point of use, not with a constructor dependency.
-  Startup work that must happen before listening goes in `initializeEagerServices()`.
+  and there is no `reflect-metadata`, so a missing `@inject` fails at runtime. Only the edge of the
+  app (`config/`, `server.ts`, routes, controllers, middlewares) resolves from `container`; services,
+  helpers, models and repositories never import it. Importing it puts a module in an import cycle
+  with `dependency-injector.config.ts`, where evaluation order decides whether `@inject(X)` reads `X`
+  or an uninitialized binding. A construction cycle between services means a shared piece belongs
+  lower down (a repository, a smaller service or a pure helper), not behind a lazy lookup; four
+  services still have one (`RoomService`, `RecordingService`, `UserService`,
+  `LivekitWebhookService`), so do not add a fifth. Startup work that must happen before listening
+  goes in `initializeEagerServices()`.
 - **Request context**: `initRequestContext` must stay the first middleware after body parsing; it
   opens the `AsyncLocalStorage` scope that `RequestSessionService` (authenticated user, room member
   token info) relies on. Anything outside a request (schedulers, webhooks) has no session.
-- **Logging**: always `container.get(LoggerService)` (Winston). Request-id correlation is stamped at
-  logger level, not in the transport formatter.
-- **Errors**: `models/error.model.ts`: `OpenViduMeetError` factories (`errorUnauthorized()`,
-  `errorProFeature()`, …), `handleError` for controllers, `rejectRequestFromMeetError` for
-  middleware. Unknown errors must be logged and masked as 500; `globalErrorHandler` is the last
-  resort and is registered after every route.
+- **Logging**: `LoggerService` (Winston), injected like any other service. Request-id correlation is
+  stamped at logger level, not in the transport formatter.
+- **Errors**: `models/error.model.ts` defines them: `OpenViduMeetError` and its factories
+  (`errorUnauthorized()`, `errorProFeature()`, …). `middlewares/error-handler.middleware.ts` answers
+  them: `handleError` for controllers, `rejectRequestFromMeetError` for middleware,
+  `rejectUnprocessableRequest` for validators. Unknown errors must be logged and masked as 500;
+  `globalErrorHandler` is the last resort and is registered after every route.
 - **Distributed coordination**: `MutexService` (redlock-universal via `models/redis-lock.model.ts`).
   Meet runs multi-replica (OpenVidu High Availability, see the `deployment` spec): any garbage
   collection, migration, recording or broadcast state transition must be lock-guarded. Lock TTLs cap

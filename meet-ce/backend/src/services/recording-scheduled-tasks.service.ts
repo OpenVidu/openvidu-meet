@@ -328,7 +328,7 @@ export class RecordingScheduledTasksService {
 	protected async finishLostRecording(recording: MeetRecordingInfo, egressId: string): Promise<boolean> {
 		const [endedEgress] = await this.livekitService.getEgress(recording.roomId, egressId);
 		const ended = endedEgress
-			? await RecordingHelper.toRecordingInfo(endedEgress)
+			? await this.recordingService.toRecordingInfo(endedEgress)
 			: { ...recording, status: MeetRecordingStatus.ABORTED };
 
 		if (!RecordingHelper.canBeDeleted(ended.status)) {

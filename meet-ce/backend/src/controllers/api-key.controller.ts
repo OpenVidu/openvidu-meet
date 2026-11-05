@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
-import { handleError } from '../models/error.model.js';
+import { handleError } from '../middlewares/error-handler.middleware.js';
 import { ApiKeyService } from '../services/api-key.service.js';
 import { LoggerService } from '../services/logger.service.js';
 

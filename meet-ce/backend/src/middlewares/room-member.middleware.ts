@@ -6,15 +6,14 @@ import {
 	errorInsufficientPermissions,
 	errorInvalidRoomSecret,
 	errorRoomMemberNotFound,
-	errorRoomNotFound,
-	handleError,
-	rejectRequestFromMeetError
+	errorRoomNotFound
 } from '../models/error.model.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomMemberService } from '../services/room-member.service.js';
 import { RoomService } from '../services/room.service.js';
 import type { AuthValidator } from './auth.middleware.js';
 import { accessTokenValidator, allowAnonymous, withAuth } from './auth.middleware.js';
+import { handleError, rejectRequestFromMeetError } from './error-handler.middleware.js';
 import { isTokenOfAnotherRoom } from './room.middleware.js';
 
 /**

@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
-import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import { AssistantIdSchema, CreateAssistantReqSchema } from '../../models/zod-schemas/ai-assistant.schema.js';
+import { rejectUnprocessableRequest } from '../error-handler.middleware.js';
 
 export const validateCreateAssistantReq = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = CreateAssistantReqSchema.safeParse(req.body);

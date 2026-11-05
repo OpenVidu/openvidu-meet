@@ -16,7 +16,7 @@ import { BroadcastHelper } from '../helpers/broadcast.helper.js';
 import { roomToWire, rolesToWire } from '../helpers/permission-naming.helper.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
-import { handleError } from '../models/error.model.js';
+import { handleError } from '../middlewares/error-handler.middleware.js';
 import type { MeetRoomDeletionOptions } from '../models/request-context.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RoomService } from '../services/room.service.js';

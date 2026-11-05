@@ -1,5 +1,4 @@
 import type { NextFunction, Request, Response } from 'express';
-import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import {
 	BulkDeleteUsersReqSchema,
 	ChangePasswordReqSchema,
@@ -8,6 +7,7 @@ import {
 	UserFiltersSchema,
 	UserOptionsSchema
 } from '../../models/zod-schemas/user.schema.js';
+import { rejectUnprocessableRequest } from '../error-handler.middleware.js';
 
 export const validateCreateUserReq = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = UserOptionsSchema.safeParse(req.body);

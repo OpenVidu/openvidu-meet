@@ -23,12 +23,12 @@ import crypto from 'crypto';
 import { EgressInfo, EgressStatus, WebhookEvent } from 'livekit-server-sdk';
 import { container } from '../../../src/config/dependency-injector.config.js';
 import { lkWebhookHandler } from '../../../src/controllers/livekit-webhook.controller.js';
-import { RecordingHelper } from '../../../src/helpers/recording.helper.js';
 import { MeetLock } from '../../../src/helpers/redis.helper.js';
 import { RecordingRepository } from '../../../src/repositories/recording.repository.js';
 import { LivekitWebhookService } from '../../../src/services/livekit-webhook.service.js';
 import { LiveKitService } from '../../../src/services/livekit.service.js';
 import { MutexService } from '../../../src/services/mutex.service.js';
+import { RecordingService } from '../../../src/services/recording.service.js';
 import {
 	disconnectFakeParticipants,
 	joinFakeParticipant,
@@ -509,7 +509,7 @@ describe('Webhook Integration Tests', () => {
 				filename: `${roomId}--1234567890.mp4`
 			};
 			await container.get(RecordingRepository).create(recording);
-			jest.spyOn(RecordingHelper, 'toRecordingInfo').mockResolvedValueOnce({
+			jest.spyOn(container.get(RecordingService), 'toRecordingInfo').mockResolvedValueOnce({
 				...recording,
 				status: MeetRecordingStatus.COMPLETE,
 				endDate: Date.now()

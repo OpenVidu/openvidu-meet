@@ -10,7 +10,6 @@ import { EgressInfo, EgressStatus } from 'livekit-server-sdk';
 import ms from 'ms';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
-import { RecordingHelper } from '../../../../src/helpers/recording.helper.js';
 import { RecordingRepository } from '../../../../src/repositories/recording.repository.js';
 import { LivekitWebhookService } from '../../../../src/services/livekit-webhook.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
@@ -64,7 +63,7 @@ describe('Stale Recordings GC Tests', () => {
 		);
 		getEgressMock = jest.spyOn(livekitService, 'getEgress');
 		finishRecordingMock = jest.spyOn(recordingService, 'finishRecording');
-		toRecordingInfoMock = jest.spyOn(RecordingHelper, 'toRecordingInfo');
+		toRecordingInfoMock = jest.spyOn(recordingService, 'toRecordingInfo');
 
 		// Default mock implementations
 		getEgressMock.mockResolvedValue([]);

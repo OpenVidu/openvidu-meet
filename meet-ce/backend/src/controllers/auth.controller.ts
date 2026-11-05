@@ -1,14 +1,13 @@
 import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { MEET_ENV } from '../environment.js';
+import { handleError, rejectRequestFromMeetError } from '../middlewares/error-handler.middleware.js';
 import {
 	errorInvalidCredentials,
 	errorInvalidRefreshToken,
 	errorInvalidTokenSubject,
 	errorPasswordChangeRequired,
-	errorRefreshTokenNotPresent,
-	handleError,
-	rejectRequestFromMeetError
+	errorRefreshTokenNotPresent
 } from '../models/error.model.js';
 import type { TokenMetadata } from '../models/token.model.js';
 import { TokenType } from '../models/token.model.js';

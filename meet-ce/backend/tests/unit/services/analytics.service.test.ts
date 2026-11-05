@@ -2,9 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals
 import type { MeetExpiringRoom } from '@openvidu-meet/typings';
 import { MeetRoomStatus } from '@openvidu-meet/typings';
 import ms from 'ms';
-// The service modules form a cycle through the DI container module, so it has to be the one that
-// starts the graph (see meeting-mute.test.ts).
-import '../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
 import { AnalyticsService } from '../../../src/services/analytics.service.js';
 

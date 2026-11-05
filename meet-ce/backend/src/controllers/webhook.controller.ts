@@ -2,7 +2,7 @@ import type { MeetWebhookOptions } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { handleError } from '../models/error.model.js';
+import { handleError } from '../middlewares/error-handler.middleware.js';
 import { LoggerService } from '../services/logger.service.js';
 import { WebhookRegistryService } from '../services/webhook-registry.service.js';
 import { getBaseUrl } from '../utils/url.utils.js';

@@ -2,16 +2,12 @@ import type { MeetRecordingField } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
 import type { Readable } from 'stream';
 import type { z } from 'zod';
+import { handleError, rejectRequestFromMeetError } from '../middlewares/error-handler.middleware.js';
 import type { StartRecordingReqSchema } from '../models/zod-schemas/recording.schema.js';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
-import {
-	errorRecordingsZipEmpty,
-	handleError,
-	internalError,
-	rejectRequestFromMeetError
-} from '../models/error.model.js';
+import { errorRecordingsZipEmpty, internalError } from '../models/error.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RecordingService } from '../services/recording.service.js';
 import { getBaseUrl } from '../utils/url.utils.js';

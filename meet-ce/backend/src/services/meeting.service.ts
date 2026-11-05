@@ -85,7 +85,7 @@ export class MeetingService {
 
 		return {
 			roomId,
-			roomName: await this.resolveRoomName(room),
+			roomName: await this.roomService.getMeetRoomName(room),
 			startDate:
 				MeetRoomHelper.extractMeetingStartDateFromMetadata(room.metadata) ?? Number(room.creationTime) * 1000,
 			endDate: MeetRoomHelper.extractMeetingEndDateFromMetadata(room.metadata),
@@ -302,7 +302,8 @@ export class MeetingService {
 	): Promise<void> {
 		const attributes = raised ? raisedHandAttributes(Date.now()) : loweredHandAttributes(origin);
 		const updated = await this.livekitService.updateParticipant(room.name, participant.identity, { attributes });
-		const payload = await MeetParticipantHelper.toParticipantHandChangedPayload(room, updated, origin);
+		const roomName = await this.roomService.getMeetRoomName(room);
+		const payload = MeetParticipantHelper.toParticipantHandChangedPayload(room.name, roomName, updated, origin);
 		this.webhookDispatcherService.sendParticipantHandChangedWebhook(payload);
 	}
 
@@ -466,21 +467,5 @@ export class MeetingService {
 	async countStandardParticipants(roomId: string): Promise<number> {
 		const participants = await this.getStandardParticipants(roomId);
 		return participants.length;
-	}
-
-	/**
-	 * Room name straight off the LiveKit room metadata Meet stamps at creation, with the database as
-	 * fallback — the same trade-off the participant webhooks make (the metadata is already at hand,
-	 * the database is a round trip).
-	 */
-	protected async resolveRoomName(room: Room): Promise<string> {
-		const roomName = MeetRoomHelper.extractRoomOptionsFromMetadata(room.metadata)?.roomName;
-
-		if (roomName) {
-			return roomName;
-		}
-
-		const meetRoom = await this.roomService.getMeetRoom(room.name, ['roomName']);
-		return meetRoom.roomName;
 	}
 }

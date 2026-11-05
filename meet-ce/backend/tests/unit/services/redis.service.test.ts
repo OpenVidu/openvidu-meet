@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { EventEmitter } from 'events';
 import type { RedisOptions } from 'ioredis';
-import '../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../src/environment.js';
 import { RedisService } from '../../../src/services/redis.service.js';
 

@@ -1,5 +1,10 @@
 import type { Readable } from 'stream';
 
+export const STORAGE_TYPES = {
+	StorageProvider: Symbol.for('StorageProvider'),
+	KeyBuilder: Symbol.for('KeyBuilder')
+};
+
 /**
  * Basic storage interface that defines primitive storage operations.
  * This interface follows the Single Responsibility Principle by focusing
