@@ -9,11 +9,11 @@ starts a recording as soon as it hears the end can get `409`.
 
 ## What Changes
 
-- Every end reported by the media server releases the room's recording hold (the release is idempotent and checks the
-  media server), whether or not it ended a stored in-progress recording.
+- The end that stores a recording, and the end of a recording that was never stored, release the room's recording hold
+  (the release checks the media server). An end repeated for a recording already ended releases nothing, so it cannot
+  free the hold of a start requested in between.
 - `recordingEnded` and the in-meeting end notice are sent after that release.
-- Specs: `recordings` gains the requirement "A recording's end frees the room before it is reported". The test helper
-  that waits for the hold before restarting becomes unnecessary.
+- Specs: `recordings` gains the requirement "A recording's end frees the room before it is reported".
 
 ## Capabilities
 
@@ -29,7 +29,7 @@ None.
 
 - REST API and webhooks: `startRecording` right after `recordingEnded` is accepted; no contract change.
 - Embedded API: `recordingStart()` on `recordingStatusChanged` with a final status is accepted.
-- Code: the recording finish path of the recording service in `meet-ce/backend`; the wait helper in the recordings integration tests.
+- Code: the recording finish path of the recording service in `meet-ce/backend`.
 - Meeting UI, console UI, deployment configuration: not affected.
 - openvidu.io: none.
 

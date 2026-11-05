@@ -11,7 +11,16 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 ### Upgrade notes
 
+- The first start migrates the stored rooms and room members, and a 3.9 server does not start on the migrated
+  database.
 - Meet no longer starts when `MEET_INITIAL_ADMIN_USER` is shorter than 5 characters.
+- Meet no longer starts with a `MEET_BLOB_STORAGE_MODE` other than `s3`, `gcs` or `abs`, which 3.9 took as `s3`.
+- A `SERVER_TRUST_PROXY` subnet in IPv4-mapped IPv6 notation with a prefix shorter than 96, such as
+  `::ffff:10.0.0.0/8`, matches no IPv4 address, so the proxies it named are no longer trusted.
+- Existing rooms get raise hand and reactions turned on, and live broadcast turned off, with `broadcastControl` and
+  `broadcastEdit` granted to no role or member.
+- Webhooks registered without `events`, the one of `MEET_INITIAL_WEBHOOK_URL` included, also receive
+  `participantRoleChanged`, `participantHandChanged`, `broadcastStarted`, `broadcastUpdated` and `broadcastEnded`.
 
 ### Added
 
@@ -35,9 +44,10 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   `reactions.enabled` to turn them off.
 - [Broadcasts API][3.10-broadcasts] under `/api/v1/broadcasts`: stream a live meeting to one or more RTMP
   destinations, one broadcast per destination, each with its own status and its own `broadcastId`, as a
-  recording has, read them and stop one or several. Starting and stopping use the new
-  [`broadcastControl`][3.10-permissions] permission and streaming to a destination the room does not have
-  `broadcastEdit`, both granted to the moderator role of rooms created from this release on. The embedded API
+  recording has, read them and stop one or several, in a room whose `config.broadcast.enabled` is `true` (`false` by
+  default). Starting and stopping use the new [`broadcastControl`][3.10-permissions] permission and streaming to a
+  destination the room does not have uses `broadcastEdit`, both granted to the moderator role of rooms created from
+  this release on, and reading them uses `meetingRead`. The embedded API
   gets the `broadcastStart` and `broadcastStop` commands and the `broadcastStarted`, `broadcastUpdated` and
   `broadcastEnded` events, the webhooks [`broadcastStarted`][3.10-broadcast-started],
   [`broadcastUpdated`][3.10-broadcast-updated] and [`broadcastEnded`][3.10-broadcast-ended] report the same, and
@@ -89,7 +99,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   [`participantRoleUpdate`][3.10-participant-role-update] or `participantUpdateRole` stayed valid until it expired,
   so they kept their moderator permissions. It is now rejected.
 - `refreshRoomMemberToken` renewed room member tokens without the checks that invalidate them after a change of the
-  member's permissions or of the user's role. It now applies them, and the meeting renews a refused token with the
+  room's roles or access, of the member's permissions or of the user's role, or the deletion of the member or the
+  user. It now applies them, and the meeting renews a refused token with the
   credentials it joined with.
 - A request whose credentials could not be checked because MongoDB or Redis failed answered `401`. It now answers
   `500`.
@@ -119,14 +130,13 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - A recording encoding the media server cannot use, such as an odd width, was accepted in a room's
   `recording.encoding` and in the `config.encoding` of [`startRecording`][3.9-start-recording], and the start then
   failed with a server error. Both now answer `422`.
-- [`stopRecording`][3.9-stop-recording] answered `404` for a recording that had ended more than 24 hours earlier. It
-  now answers `409`, as for any recording already stopped.
+- [`stopRecording`][3.9-stop-recording] answered `404` for a recording that had ended more than 24 hours earlier, and
+  `500` for one that ended while the stop was being processed. It now answers `409` for both, as for any recording
+  already stopped.
 - [`bulkDeleteRecordings`][3.9-bulk-delete-recordings] and [`downloadRecordings`][3.9-download-recordings] accepted any
   number of `recordingIds`, and a long list failed with a server or proxy error. They now accept up to 100 distinct ids
   and answer `422` to more, and the recording lists disable ZIP download and bulk delete beyond 100 selected
   recordings.
-- [`POST /recordings/{recordingId}/stop`][3.10-stop-recording] answered 500 when the recording ended while the stop was
-  being processed. It answers 409, as for any recording already stopped.
 - A recording whose egress service died stayed in progress for good: stopping it answered 500 and starting another one
   in the room 409. It ends as `failed`, with its [`recordingEnded`][3.10-recording-ended] webhook, and the room can
   record again.
@@ -262,7 +272,7 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 - A `SERVER_TRUST_PROXY` subnet in IPv4-mapped IPv6 notation with a short prefix, such as `::ffff:10.0.0.0/8`,
   trusted every client as a proxy, so rate limiting took the client address from `X-Forwarded-For`. Such a
-  subnet no longer matches every IPv4 address.
+  subnet now matches no IPv4 address.
 - A request with a compressed body followed by extra bytes could stop the server, with no authentication needed.
   Such a request no longer does.
 - An unknown `MEET_BLOB_STORAGE_MODE` value, including `GCS` or `ABS` in capitals, made Meet use S3 storage. Values
@@ -437,7 +447,6 @@ registered on both receives it twice.
 [3.9-delete-room]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/deleteRoom
 [3.9-bulk-delete-rooms]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/bulkDeleteRooms
 
-[3.10-stop-recording]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/stopRecording
 [3.10-recording-ended]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/recordingEndedWebhook
 [3.10-broadcasts]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/broadcastStart
 [3.10-permissions]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/schemas/MeetPermissions
