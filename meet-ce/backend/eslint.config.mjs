@@ -54,5 +54,23 @@ export default tseslint.config(
 				{ blankLine: 'always', prev: 'block-like', next: '*' }
 			]
 		}
+	},
+	{
+		files: ['src/**/*.ts'],
+		ignores: ['src/config/**', 'src/server.ts', 'src/routes/**', 'src/controllers/**', 'src/middlewares/**'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							group: ['**/dependency-injector.config.js'],
+							message:
+								'Only the edge of the app resolves from the DI container: inject the dependency instead. A construction cycle means a shared piece belongs lower down (backend CLAUDE.md, DI).'
+						}
+					]
+				}
+			]
+		}
 	}
 );
