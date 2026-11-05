@@ -118,16 +118,10 @@ export class RecordingService {
 			return recordingInfo;
 		} catch (error) {
 			this.logger.debug(`Error starting recording in room '${roomId}'`, error);
-
-			try {
-				// Only the egress request can have left a recording behind: nothing before it creates one
-				await (egressRequested
-					? this.releaseRecordingLockIfNoEgress(roomId)
-					: this.releaseRecordingActiveLock(roomId));
-			} catch (releaseError) {
-				this.logger.warn(`Failed to release recording lock for room '${roomId}'`, releaseError);
-			}
-
+			// Only the egress request can have left a recording behind: nothing before it creates one
+			await (egressRequested
+				? this.releaseRecordingLockIfNoEgress(roomId)
+				: this.releaseRecordingActiveLock(roomId));
 			throw error;
 		}
 	}
@@ -709,9 +703,12 @@ export class RecordingService {
 	}
 
 	/**
-	 * Gives a recording its final status and reports its end: the `recordingEnded` webhook, the
-	 * in-meeting signal and the release of the room's recording hold. Only the first caller to end a
-	 * recording stores and reports it, so an end reaching several paths or replicas is reported once.
+	 * Gives a recording its final status and reports its end: the `recordingEnded` webhook and the
+	 * in-meeting signal, sent once the room's recording hold is released so a start requested on
+	 * hearing the end is accepted. Only the first caller to end a recording releases the hold and
+	 * reports the end, so an end reaching several paths or replicas is reported once and a repeated
+	 * one never frees the hold of a start requested in between. The end of a recording Meet never
+	 * stored releases the hold and reports nothing.
 	 *
 	 * @param recording - The recording with its final status
 	 * @returns Whether this call ended the recording
@@ -719,16 +716,17 @@ export class RecordingService {
 	async finishRecording(recording: MeetRecordingInfo): Promise<boolean> {
 		const finished = await this.recordingRepository.replaceInProgress(recording);
 
-		if (!finished) {
+		if (!finished && (await this.recordingRepository.findByRecordingId(recording.recordingId, ['status']))) {
 			this.logger.debug(`Recording '${recording.recordingId}' had already ended, not reporting it again`);
 			return false;
 		}
 
+		await this.releaseRecordingLockIfNoEgress(recording.roomId);
+
+		if (!finished) return false;
+
 		this.webhookDispatcherService.sendRecordingEndedWebhook(finished);
-		await Promise.all([
-			this.releaseRecordingLockIfNoEgress(finished.roomId),
-			this.frontendEventService.sendRecordingUpdatedSignal(finished.roomId, finished)
-		]);
+		await this.frontendEventService.sendRecordingUpdatedSignal(finished.roomId, finished);
 		return true;
 	}
 
@@ -810,11 +808,15 @@ export class RecordingService {
 	 * a duplicate/stale `egress_ended` for a previous egress arriving while a new one is still
 	 * STARTING must not release the lock a concurrent request could then re-acquire, starting a
 	 * second recording.
+	 *
+	 * Never throws: a lock it cannot release is left to the orphaned-locks clean-up.
 	 */
 	async releaseRecordingLockIfNoEgress(roomId: string): Promise<void> {
-		if (roomId) {
-			const lockName = MeetLock.getRecordingActiveLock(roomId);
+		if (!roomId) return;
 
+		const lockName = MeetLock.getRecordingActiveLock(roomId);
+
+		try {
 			if (!(await this.mutexService.lockRegistryExists(lockName))) {
 				this.logger.verbose(`No recording active lock held for room '${roomId}'`);
 				return;
@@ -829,9 +831,12 @@ export class RecordingService {
 				this.logger.debug(`Cannot release recording lock for room '${roomId}'. Recording is still active.`);
 				return;
 			}
-
-			await this.releaseRecordingActiveLock(roomId);
+		} catch (error) {
+			this.logger.warn(`Failed to release recording lock for room '${roomId}'`, error);
+			return;
 		}
+
+		await this.releaseRecordingActiveLock(roomId);
 	}
 
 	protected async releaseRecordingActiveLock(roomId: string): Promise<void> {
