@@ -153,7 +153,6 @@
       "USER_DELETE_FAILED": "उपयोगकर्ता हटाने में विफल",
       "USERS_LOAD_FAILED": "उपयोगकर्ता लोड करने में विफल",
       "USERS_DELETE_FAILED": "उपयोगकर्ता हटाने में विफल",
-      "USER_PROFILE_NAVIGATION_FAILED": "उपयोगकर्ता प्रोफ़ाइल पर नेविगेट करने में त्रुटि",
       "USERS_DELETED_SUFFIX_SINGULAR": "उपयोगकर्ता सफलतापूर्वक हटाया गया।",
       "USERS_DELETED_SUFFIX_PLURAL": "उपयोगकर्ता सफलतापूर्वक हटाए गए।",
       "USERS_FAILED_SUFFIX_SINGULAR": "उपयोगकर्ता को हटाया नहीं जा सका।",

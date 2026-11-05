@@ -150,7 +150,6 @@
       "RECORDING_DELETED": "Recording deleted successfully",
       "DELETE_FAILED": "Failed to delete recording",
       "LOAD_RECORDINGS_FAILED": "Failed to load recordings",
-      "NAVIGATE_DETAIL_FAILED": "Error navigating to recording detail",
       "RECORDINGS_DELETED_SUFFIX_SINGULAR": "recording deleted successfully",
       "RECORDINGS_DELETED_SUFFIX_PLURAL": "recordings deleted successfully",
       "RECORDINGS_DELETED_DOT_SUFFIX_SINGULAR": "recording deleted successfully. ",

@@ -26,6 +26,7 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { RouterModule } from '@angular/router';
 import { MeetUserDTO, MeetUserRole, MeetUserSortField, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { merge } from 'rxjs';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
@@ -76,6 +77,7 @@ export interface UserTableFilter {
 	selector: 'ov-users-lists',
 	imports: [
 		ReactiveFormsModule,
+		RouterModule,
 		MatTableModule,
 		MatCheckboxModule,
 		MatButtonModule,
@@ -126,7 +128,6 @@ export class UsersListsComponent implements OnInit {
 	readonly filterChange = output<UserTableFilter>();
 	readonly loadMore = output<UserTableFilter>();
 	readonly refresh = output<UserTableFilter>();
-	readonly userClicked = output<string>();
 
 	// Filter controls
 	filtersForm = new FormGroup({
@@ -328,10 +329,6 @@ export class UsersListsComponent implements OnInit {
 
 	createUser() {
 		this.userAction.emit({ users: [], action: 'create' });
-	}
-
-	onUserClick(user: MeetUserDTO) {
-		this.userClicked.emit(user.userId);
 	}
 
 	resetPassword(user: MeetUserDTO) {

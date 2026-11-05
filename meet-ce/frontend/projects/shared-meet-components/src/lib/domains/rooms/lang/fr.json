@@ -355,8 +355,6 @@
       "LOADING_ROOMS": "Erreur lors du chargement des salles",
       "CREATING_ROOM": "Erreur lors de la création de la salle",
       "NAVIGATING_ROOM_CONFIG": "Erreur lors de la navigation vers la configuration de la salle",
-      "NAVIGATING_ROOM_DETAIL": "Erreur lors de la navigation vers les détails de la salle",
-      "NAVIGATING_RECORDING_DETAIL": "Erreur lors de la navigation vers les détails de l'enregistrement",
       "ROOM_REOPENED": "Salle rouverte avec succès",
       "FAILED_REOPEN_ROOM": "Échec de la réouverture de la salle",
       "ROOM_CLOSED": "Salle fermée avec succès",

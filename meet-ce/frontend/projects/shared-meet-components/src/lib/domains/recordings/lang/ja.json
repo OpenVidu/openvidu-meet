@@ -150,7 +150,6 @@
       "RECORDING_DELETED": "録画を削除しました",
       "DELETE_FAILED": "録画の削除に失敗しました",
       "LOAD_RECORDINGS_FAILED": "録画の読み込みに失敗しました",
-      "NAVIGATE_DETAIL_FAILED": "録画の詳細への移動中にエラーが発生しました",
       "RECORDINGS_DELETED_SUFFIX_SINGULAR": "件の録画を削除しました",
       "RECORDINGS_DELETED_SUFFIX_PLURAL": "件の録画を削除しました",
       "RECORDINGS_DELETED_DOT_SUFFIX_SINGULAR": "件の録画を削除しました。 ",

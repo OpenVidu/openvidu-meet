@@ -27,6 +27,7 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { RouterModule } from '@angular/router';
 import {
 	MeetRecordingInfo,
 	MeetRecordingSortField,
@@ -73,6 +74,7 @@ import { RecordingUiUtils } from '../../utils/ui';
 	selector: 'ov-recording-lists',
 	imports: [
 		ReactiveFormsModule,
+		RouterModule,
 		MatTableModule,
 		MatCheckboxModule,
 		MatButtonModule,
@@ -131,7 +133,6 @@ export class RecordingListsComponent implements OnInit {
 
 	// Output events
 	recordingAction = output<RecordingTableAction>();
-	recordingClicked = output<string>();
 	filterChange = output<RecordingTableFilter>();
 	loadMore = output<RecordingTableFilter>();
 	refresh = output<RecordingTableFilter>();
@@ -270,7 +271,7 @@ export class RecordingListsComponent implements OnInit {
 
 	// Table configuration
 	displayedColumns = computed(() => {
-		const columns = ['status', 'startDate', 'duration', 'size', 'actions'];
+		const columns = ['recordingId', 'status', 'startDate', 'duration', 'size', 'actions'];
 
 		if (this.showRoomInfo()) {
 			columns.unshift('roomInfo');
@@ -480,10 +481,6 @@ export class RecordingListsComponent implements OnInit {
 	}
 
 	// ===== ACTION METHODS =====
-
-	onRecordingClick(recording: MeetRecordingInfo) {
-		this.recordingClicked.emit(recording.recordingId);
-	}
 
 	playRecording(recording: MeetRecordingInfo) {
 		this.recordingAction.emit({ recordings: [recording], action: 'play' });

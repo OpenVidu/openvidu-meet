@@ -1047,6 +1047,25 @@
 	font-style: italic;
 }
 
+%ov-link {
+	color: var(--ov-meet-color-primary);
+	text-decoration: none;
+	cursor: pointer;
+
+	&:hover {
+		text-decoration: underline;
+	}
+
+	&:active {
+		opacity: 0.8;
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--ov-meet-color-primary);
+		outline-offset: 2px;
+	}
+}
+
 // === FORM UTILITIES ===
 // Common form patterns for settings and configuration components
 

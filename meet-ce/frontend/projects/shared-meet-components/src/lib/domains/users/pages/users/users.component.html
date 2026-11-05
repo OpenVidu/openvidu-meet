@@ -40,7 +40,6 @@
 				[showLoadMore]="list.hasMore()"
 				[initialFilters]="initialFilters()"
 				(userAction)="onUserAction($event)"
-				(userClicked)="onUserClick($event)"
 				(loadMore)="list.loadMore($event)"
 				(refresh)="list.refresh($event)"
 				(filterChange)="list.refresh($event)"

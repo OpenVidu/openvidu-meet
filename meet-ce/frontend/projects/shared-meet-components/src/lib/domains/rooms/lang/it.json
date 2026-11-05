@@ -355,8 +355,6 @@
       "LOADING_ROOMS": "Errore durante il caricamento delle stanze",
       "CREATING_ROOM": "Errore durante la creazione della stanza",
       "NAVIGATING_ROOM_CONFIG": "Errore durante la navigazione alla configurazione della stanza",
-      "NAVIGATING_ROOM_DETAIL": "Errore durante la navigazione ai dettagli della stanza",
-      "NAVIGATING_RECORDING_DETAIL": "Errore durante la navigazione ai dettagli della registrazione",
       "ROOM_REOPENED": "Stanza riaperta con successo",
       "FAILED_REOPEN_ROOM": "Impossibile riaprire la stanza",
       "ROOM_CLOSED": "Stanza chiusa con successo",

@@ -355,8 +355,6 @@
       "LOADING_ROOMS": "Fout bij het laden van kamers",
       "CREATING_ROOM": "Fout bij het aanmaken van kamer",
       "NAVIGATING_ROOM_CONFIG": "Fout bij het navigeren naar de kamerconfiguratie",
-      "NAVIGATING_ROOM_DETAIL": "Fout bij het navigeren naar de kamerdetails",
-      "NAVIGATING_RECORDING_DETAIL": "Fout bij het navigeren naar de opnamedetails",
       "ROOM_REOPENED": "Kamer succesvol heropend",
       "FAILED_REOPEN_ROOM": "Kamer heropenen mislukt",
       "ROOM_CLOSED": "Kamer succesvol gesloten",

@@ -355,8 +355,6 @@
       "LOADING_ROOMS": "Error loading rooms",
       "CREATING_ROOM": "Error creating room",
       "NAVIGATING_ROOM_CONFIG": "Error navigating to room config",
-      "NAVIGATING_ROOM_DETAIL": "Error navigating to room detail",
-      "NAVIGATING_RECORDING_DETAIL": "Error navigating to recording detail",
       "ROOM_REOPENED": "Room reopened successfully",
       "FAILED_REOPEN_ROOM": "Failed to reopen room",
       "ROOM_CLOSED": "Room closed successfully",

@@ -153,7 +153,6 @@
       "USER_DELETE_FAILED": "删除用户失败",
       "USERS_LOAD_FAILED": "加载用户失败",
       "USERS_DELETE_FAILED": "删除用户失败",
-      "USER_PROFILE_NAVIGATION_FAILED": "跳转到用户资料时出错",
       "USERS_DELETED_SUFFIX_SINGULAR": "个用户已成功删除。",
       "USERS_DELETED_SUFFIX_PLURAL": "个用户已成功删除。",
       "USERS_FAILED_SUFFIX_SINGULAR": "个用户无法删除。",

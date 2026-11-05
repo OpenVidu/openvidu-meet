@@ -150,7 +150,6 @@
       "RECORDING_DELETED": "录像已成功删除",
       "DELETE_FAILED": "删除录像失败",
       "LOAD_RECORDINGS_FAILED": "加载录像失败",
-      "NAVIGATE_DETAIL_FAILED": "跳转到录像详情时出错",
       "RECORDINGS_DELETED_SUFFIX_SINGULAR": "个录像已成功删除",
       "RECORDINGS_DELETED_SUFFIX_PLURAL": "个录像已成功删除",
       "RECORDINGS_DELETED_DOT_SUFFIX_SINGULAR": "个录像已成功删除。",

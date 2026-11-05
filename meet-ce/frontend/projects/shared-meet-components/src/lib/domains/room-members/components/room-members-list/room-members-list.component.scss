@@ -107,24 +107,7 @@
 	}
 
 	.member-id-link {
-		@extend .secondary-text, .monospace-text;
-		color: var(--ov-meet-color-primary);
-		text-decoration: none;
-		cursor: pointer;
-		@include design-tokens.ov-theme-transition;
-
-		&:hover {
-			text-decoration: underline;
-		}
-
-		&:active {
-			opacity: 0.8;
-		}
-
-		&:focus-visible {
-			outline: 2px solid var(--ov-meet-color-primary);
-			outline-offset: 2px;
-		}
+		@extend .secondary-text, .monospace-text, %ov-link;
 	}
 }
 

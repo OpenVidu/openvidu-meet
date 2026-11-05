@@ -590,15 +590,4 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 			canPlayRecording: () => this.canPlayRecordings()
 		});
 	}
-
-	async onRecordingClick(recordingId: string) {
-		try {
-			await this.navigationService.navigateTo(`/recordings/${recordingId}`);
-		} catch (error) {
-			this.notificationService.showMessage(
-				this.translateService.translate('ROOMS.ERRORS.NAVIGATING_RECORDING_DETAIL')
-			);
-			this.log.e('Error navigating to recording detail:', error);
-		}
-	}
 }
