@@ -14,6 +14,7 @@ export * from './recording-scheduled-tasks.service.js';
 export * from './recording.service.js';
 export * from './redis.service.js';
 export * from './request-session.service.js';
+export * from './room-access.service.js';
 export * from './room-member.service.js';
 export * from './room-scheduled-tasks.service.js';
 export * from './room.service.js';

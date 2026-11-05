@@ -9,7 +9,6 @@ import type {
 	MeetRoomOptions,
 	MeetRoomRoles,
 	MeetRoomRolesConfig,
-	MeetUser,
 	ProjectedMeetRoom
 } from '@openvidu-meet/typings';
 import {
@@ -18,8 +17,7 @@ import {
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
-	MeetRoomStatus,
-	MeetUserRole
+	MeetRoomStatus
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { CreateOptions, Room } from 'livekit-server-sdk';
@@ -960,98 +958,5 @@ export class RoomService {
 		const { moderatorSecret, speakerSecret, recordingSecret } = MeetRoomHelper.extractSecretsFromRoom(access);
 		const allSecrets = [moderatorSecret, speakerSecret, recordingSecret];
 		return allSecrets.includes(secret);
-	}
-
-	/**
-	 * Retrieves the permissions of the authenticated room member.
-	 *
-	 * - If the user is authenticated via room member token, their permissions are obtained from the token metadata.
-	 * - If the user is admin or the room owner, they have all permissions.
-	 * - If the user is a room member, their permissions are obtained from their room member info.
-	 * - If the user is authenticated but not a room member, permissions depend on whether user access is enabled
-	 * (speaker permissions if enabled, no permissions if not).
-	 * - If there's no authenticated user nor room member token, returns all permissions.
-	 * This is necessary for methods invoked by system processes (e.g., room auto-deletion).
-	 *
-	 * @param roomId The ID of the room.
-	 * @returns A promise that resolves to the MeetRoomMemberPermissions object.
-	 */
-	async getAuthenticatedRoomMemberPermissions(roomId: string): Promise<MeetRoomMemberPermissions> {
-		const roomMemberService = await this.getRoomMemberService();
-		const user = this.requestSessionService.getAuthenticatedUser();
-		const memberRoomId = this.requestSessionService.getRoomIdFromMember();
-
-		// Room member token
-		if (memberRoomId) {
-			if (memberRoomId !== roomId) {
-				return roomMemberService.getNoPermissions();
-			}
-
-			return this.requestSessionService.getRoomMemberPermissions()!;
-		}
-
-		// Authenticated user
-		if (user) {
-			if (user.role === MeetUserRole.ADMIN) {
-				return roomMemberService.getAllPermissions();
-			}
-
-			const { owner, access, roles } = await this.getMeetRoom(roomId, ['owner', 'access', 'roles']);
-
-			if (owner === user.userId) {
-				return roomMemberService.getAllPermissions();
-			}
-
-			// Get permissions for room members
-			const member = await roomMemberService.getRoomMember(roomId, user.userId, ['effectivePermissions']);
-
-			if (member) {
-				return member.effectivePermissions;
-			}
-
-			// If not a room member, check if user access is enabled to determine if we should return speaker permissions or no permissions
-			if (access.user.enabled) {
-				return roles.speaker.permissions;
-			}
-
-			return roomMemberService.getNoPermissions();
-		}
-
-		// No authenticated user nor room member token - return all permissions for system processes
-		return roomMemberService.getAllPermissions();
-	}
-
-	/**
-	 * Checks if a user can access a specific room based on their role.
-	 *
-	 * @param roomId The ID of the room to check access for.
-	 * @param user The user object containing user details and role.
-	 * @returns A promise that resolves to true if the user can access the room, false otherwise.
-	 * @throws Error if room not found
-	 */
-	async canUserAccessRoom(roomId: string, user: MeetUser): Promise<boolean> {
-		// Verify room exists first (throws 404 if not found)
-		const { owner, access } = await this.getMeetRoom(roomId, ['owner', 'access']);
-
-		if (user.role === MeetUserRole.ADMIN) {
-			// Admins can access all rooms
-			return true;
-		}
-
-		if (access.user.enabled) {
-			// Users can access rooms with user access enabled
-			return true;
-		}
-
-		// Users can access rooms they own or are members of
-		const isOwner = owner === user.userId;
-
-		if (isOwner) {
-			return true;
-		}
-
-		const roomMemberService = await this.getRoomMemberService();
-		const isMember = await roomMemberService.isRoomMember(roomId, user.userId);
-		return isMember;
 	}
 }

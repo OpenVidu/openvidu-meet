@@ -5,6 +5,7 @@ import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { errorInsufficientPermissions, errorRoomNotFound, toMeetError } from '../models/error.model.js';
 import { RequestSessionService } from '../services/request-session.service.js';
+import { RoomAccessService } from '../services/room-access.service.js';
 import { RoomService } from '../services/room.service.js';
 import { RoomQueryWithFields } from '../types/room-projection.types.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
@@ -107,7 +108,7 @@ export const authorizeRoomAccess = async (req: Request, res: Response, next: Nex
 	// Authenticated user
 	if (user) {
 		try {
-			const canAccess = await roomService.canUserAccessRoom(roomId, user);
+			const canAccess = await container.get(RoomAccessService).canUserAccessRoom(roomId, user);
 
 			if (!canAccess) {
 				return rejectRequestFromMeetError(res, forbiddenError);
@@ -151,7 +152,7 @@ export const withRoomPermission = (
 				return rejectRequestFromMeetError(res, error);
 			}
 
-			const permissions = await roomService.getAuthenticatedRoomMemberPermissions(roomId);
+			const permissions = await container.get(RoomAccessService).getAuthenticatedRoomMemberPermissions(roomId);
 
 			if (!permissions[permission]) {
 				const error = errorInsufficientPermissions();

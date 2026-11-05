@@ -62,7 +62,8 @@ Tokens carry an `iat` that is compared against `user.roleUpdatedAt`, `room.roles
 invalidates live tokens. Keep that invariant when touching roles, room access or member permissions.
 
 Coarse role checks happen in `withAuth`; fine-grained checks live in `room.middleware.ts` /
-`room-member.middleware.ts` (`authorizeRoomAccess`, `authorizeRoomManagement`, …). Effective member
+`room-member.middleware.ts` (`authorizeRoomAccess`, `authorizeRoomManagement`, …), which ask
+`RoomAccessService` what the requester may do in the room. Effective member
 permissions (`MeetRoomMemberPermissions`) are also pushed into LiveKit grants, so a permission must
 be enforced **both** at the API and in the token grant to be real.
 
@@ -114,10 +115,9 @@ what LiveKit's webhooks never told.
   helpers, models and repositories never import it. Importing it puts a module in an import cycle
   with `dependency-injector.config.ts`, where evaluation order decides whether `@inject(X)` reads `X`
   or an uninitialized binding. A construction cycle between services means a shared piece belongs
-  lower down (a repository, a smaller service or a pure helper), not behind a lazy lookup; four
-  services still have one (`RoomService`, `RecordingService`, `UserService`,
-  `LivekitWebhookService`), so do not add a fifth. Startup work that must happen before listening
-  goes in `initializeEagerServices()`.
+  lower down (a repository, a smaller service or a pure helper), not behind a lazy lookup; three
+  services still have one (`RoomService`, `UserService`, `LivekitWebhookService`), so do not add a
+  fourth. Startup work that must happen before listening goes in `initializeEagerServices()`.
 - **Request context**: `initRequestContext` must stay the first middleware after body parsing; it
   opens the `AsyncLocalStorage` scope that `RequestSessionService` (authenticated user, room member
   token info) relies on. Anything outside a request (schedulers, webhooks) has no session.

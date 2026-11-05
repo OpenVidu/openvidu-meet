@@ -5,6 +5,7 @@ import { container, registerDependencies } from '../../../src/config/dependency-
 import { withRoomPermission } from '../../../src/middlewares/room.middleware.js';
 import type { RequestRoomSnapshot } from '../../../src/models/request-context.model.js';
 import { RequestSessionService } from '../../../src/services/request-session.service.js';
+import { RoomAccessService } from '../../../src/services/room-access.service.js';
 import { RoomService } from '../../../src/services/room.service.js';
 
 type ResponseMock = Response & { status: jest.Mock; json: jest.Mock };
@@ -20,10 +21,10 @@ const mockResponse = (): ResponseMock => {
 
 const requestFor = (roomId: string): Request => ({ params: { roomId } }) as unknown as Request;
 
-const roomService = {
-	meetRoomExists: async () => true,
+const roomService = { meetRoomExists: async () => true } as unknown as RoomService;
+const roomAccessService = {
 	getAuthenticatedRoomMemberPermissions: async () => ({}) as MeetRoomMemberPermissions
-} as unknown as RoomService;
+} as unknown as RoomAccessService;
 let requestSessionService: RequestSessionService;
 
 const inRequestValidatedAgainst = (roomId: string, check: () => Promise<unknown>) =>
@@ -36,6 +37,7 @@ const inRequestValidatedAgainst = (roomId: string, check: () => Promise<unknown>
 beforeAll(() => {
 	registerDependencies();
 	container.rebind(RoomService).toConstantValue(roomService);
+	container.rebind(RoomAccessService).toConstantValue(roomAccessService);
 	requestSessionService = container.get(RequestSessionService);
 });
 
@@ -45,7 +47,7 @@ describe('withRoomPermission', () => {
 	beforeEach(() => {
 		jest.restoreAllMocks();
 		jest.spyOn(roomService, 'meetRoomExists').mockResolvedValue(true);
-		jest.spyOn(roomService, 'getAuthenticatedRoomMemberPermissions').mockResolvedValue({
+		jest.spyOn(roomAccessService, 'getAuthenticatedRoomMemberPermissions').mockResolvedValue({
 			chatWrite: true
 		} as MeetRoomMemberPermissions);
 	});
@@ -88,7 +90,7 @@ describe('withRoomPermission', () => {
 	});
 
 	it('answers 403 to a member of the room who lacks the permission', async () => {
-		jest.spyOn(roomService, 'getAuthenticatedRoomMemberPermissions').mockResolvedValue({
+		jest.spyOn(roomAccessService, 'getAuthenticatedRoomMemberPermissions').mockResolvedValue({
 			chatWrite: false
 		} as MeetRoomMemberPermissions);
 		const res = mockResponse();

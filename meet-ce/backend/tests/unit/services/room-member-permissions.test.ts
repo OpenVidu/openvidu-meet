@@ -8,6 +8,7 @@ import ms from 'ms';
 import { container, registerDependencies } from '../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
 import type { ParticipantMeetingMetadata } from '../../../src/helpers/participant.helper.js';
+import { MeetRoomMemberHelper } from '../../../src/helpers/room-member.helper.js';
 import { errorParticipantNotFound } from '../../../src/models/error.model.js';
 import { RoomRepository } from '../../../src/repositories/room.repository.js';
 import { MutexService } from '../../../src/services/mutex.service.js';
@@ -32,9 +33,9 @@ const service = new TestableRoomMemberService(
 	...(Array.from({ length: 11 }, () => ({})) as unknown as ConstructorParameters<typeof RoomMemberService>)
 );
 
-const none = service.getNoPermissions();
+const none = MeetRoomMemberHelper.noPermissions();
 
-describe('RoomMemberService.getNoPermissions', () => {
+describe('MeetRoomMemberHelper.noPermissions', () => {
 	it('denies every permission there is', () => {
 		expect(Object.keys(none).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
 		expect(Object.entries(none).filter(([, granted]) => granted !== false)).toEqual([]);
@@ -70,7 +71,7 @@ describe('RoomMemberService.mergePermissions', () => {
 describe('RoomMemberService.updateRoomMember on a member in the meeting', () => {
 	const ROOM_ID = 'room-abc';
 	const MEMBER_ID = 'guest-abc';
-	const all = service.getAllPermissions();
+	const all = MeetRoomMemberHelper.allPermissions();
 	const speaker: MeetRoomMemberPermissions = {
 		...none,
 		meetingJoin: true,
@@ -310,7 +311,7 @@ describe('RoomMemberService.refreshRoomMemberToken from the participant in the m
 		liveMetadata = {
 			iat: JOINED_AT,
 			roomId: ROOM_ID,
-			permissions: service.getAllPermissions(),
+			permissions: MeetRoomMemberHelper.allPermissions(),
 			originalPermissions: speaker,
 			badge: MeetRoomMemberUIBadge.MODERATOR,
 			isPromotedModerator: true

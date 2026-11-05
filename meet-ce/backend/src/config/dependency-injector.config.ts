@@ -53,6 +53,7 @@ import { ParticipantTokenRevocationService } from '../services/participant-token
 import { RecordingAutoStartStateService } from '../services/recording-auto-start-state.service.js';
 import { RecordingScheduledTasksService } from '../services/recording-scheduled-tasks.service.js';
 import { RecordingService } from '../services/recording.service.js';
+import { RoomAccessService } from '../services/room-access.service.js';
 import { RoomMemberService } from '../services/room-member.service.js';
 import { RoomScheduledTasksService } from '../services/room-scheduled-tasks.service.js';
 import { RoomService } from '../services/room.service.js';
@@ -150,6 +151,7 @@ const domainModule = new ContainerModule(({ bind }) => {
 	bind(RecordingService).toSelf().inSingletonScope();
 	bind(BroadcastStateService).toSelf().inSingletonScope();
 	bind(BroadcastService).toSelf().inSingletonScope();
+	bind(RoomAccessService).toSelf().inSingletonScope();
 	bind(RoomService).toSelf().inSingletonScope();
 	bind(MeetingService).toSelf().inSingletonScope();
 	bind(ParticipantNameService).toSelf().inSingletonScope();

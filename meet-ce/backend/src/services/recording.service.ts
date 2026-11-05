@@ -5,7 +5,9 @@ import type {
 	MeetRecordingField,
 	MeetRecordingInfo,
 	MeetRecordingLayout,
-	MeetRoomMemberPermissions
+	MeetRoomField,
+	MeetRoomMemberPermissions,
+	ProjectedMeetRoom
 } from '@openvidu-meet/typings';
 import { MeetRecordingStatus } from '@openvidu-meet/typings';
 import type { Archiver } from 'archiver';
@@ -17,7 +19,6 @@ import { EgressStatus, EncodedFileOutput, EncodedFileType } from 'livekit-server
 import ms from 'ms';
 import type { Readable, Writable } from 'stream';
 import { uid } from 'uid';
-import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { EncodingConverter } from '../helpers/encoding-converter.helper.js';
 import { MeetParticipantHelper } from '../helpers/participant.helper.js';
@@ -34,10 +35,12 @@ import {
 	errorRecordingNotStreamable,
 	errorRecordingStopInProgress,
 	errorRoomHasNoParticipants,
+	errorRoomNotFound,
 	OpenViduMeetError
 } from '../models/error.model.js';
 import type { RedisLock } from '../models/redis-lock.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
+import { RoomRepository } from '../repositories/room.repository.js';
 import type {
 	MeetRecordingPage,
 	ProjectedRecording,
@@ -53,7 +56,7 @@ import { LoggerService } from './logger.service.js';
 import { MutexService } from './mutex.service.js';
 import { RecordingAutoStartStateService } from './recording-auto-start-state.service.js';
 import { RequestSessionService } from './request-session.service.js';
-import type { RoomService } from './room.service.js';
+import { RoomAccessService } from './room-access.service.js';
 import { BlobStorageService } from './storage/blob-storage.service.js';
 import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 
@@ -68,16 +71,10 @@ export class RecordingService {
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(RecordingAutoStartStateService) protected recAutoStartStateService: RecordingAutoStartStateService,
 		@inject(WebhookDispatcherService) protected webhookDispatcherService: WebhookDispatcherService,
-		@inject(LoggerService) protected logger: LoggerService
+		@inject(LoggerService) protected logger: LoggerService,
+		@inject(RoomRepository) protected roomRepository: RoomRepository,
+		@inject(RoomAccessService) protected roomAccessService: RoomAccessService
 	) {}
-
-	/**
-	 * TODO: Prevent circular imports when refactoring backend code
-	 */
-	private async getRoomService(): Promise<RoomService> {
-		const { RoomService } = await import('./room.service.js');
-		return container.get(RoomService);
-	}
 
 	/**
 	 * Converts an egress into the recording it reports, carrying the current name of its room.
@@ -85,8 +82,7 @@ export class RecordingService {
 	 * @throws The `404` room not found error when the room of the egress does not exist
 	 */
 	async toRecordingInfo(egressInfo: EgressInfo): Promise<MeetRecordingInfo> {
-		const roomService = await this.getRoomService();
-		const { roomName } = await roomService.getMeetRoom(egressInfo.roomName, ['roomName']);
+		const { roomName } = await this.getRoom(egressInfo.roomName, ['roomName']);
 		return RecordingHelper.toRecordingInfo(egressInfo, roomName);
 	}
 
@@ -146,8 +142,7 @@ export class RecordingService {
 		candidate: ParticipantInfo
 	): Promise<void> {
 		try {
-			const roomService = await this.getRoomService();
-			const room = await roomService.getMeetRoom(roomId, ['config']);
+			const room = await this.getRoom(roomId, ['config']);
 			const { recording, e2ee } = room.config;
 
 			if (!recording.enabled || !recording.autoStart || e2ee.enabled) return;
@@ -341,8 +336,7 @@ export class RecordingService {
 		}
 
 		// Check room member permissions for the room associated with the recording
-		const roomService = await this.getRoomService();
-		const permissions = await roomService.getAuthenticatedRoomMemberPermissions(roomId);
+		const permissions = await this.roomAccessService.getAuthenticatedRoomMemberPermissions(roomId);
 
 		if (!permissions[permission]) {
 			this.logger.warn(`Insufficient permissions to access recording '${recordingId}'`);
@@ -639,8 +633,7 @@ export class RecordingService {
 		const recordingSecrets = await this.getRecordingAccessSecrets(recordingId);
 
 		if (!privateAccess) {
-			const roomService = await this.getRoomService();
-			const { access } = await roomService.getMeetRoom(roomId, ['access']);
+			const { access } = await this.getRoom(roomId, ['access']);
 
 			if (!access.anonymous.recording.enabled) {
 				throw errorAnonymousAccessDisabled(roomId, 'recording');
@@ -769,14 +762,31 @@ export class RecordingService {
 	 * @throws Will throw an error if the room does not exist or has no participants.
 	 */
 	protected async validateRoomForStartRecording(roomId: string): Promise<MeetRecordingConfig> {
-		const roomService = await this.getRoomService();
-		const { config } = await roomService.getMeetRoom(roomId, ['config']);
+		const { config } = await this.getRoom(roomId, ['config']);
 
 		const hasParticipants = await this.livekitService.roomHasParticipants(roomId);
 
 		if (!hasParticipants) throw errorRoomHasNoParticipants(roomId);
 
 		return config.recording;
+	}
+
+	/**
+	 * Reads the fields of a room the recording rules need.
+	 *
+	 * @throws The `404` room not found error when the room does not exist
+	 */
+	protected async getRoom<const TFields extends readonly MeetRoomField[]>(
+		roomId: string,
+		fields: TFields
+	): Promise<ProjectedMeetRoom<TFields>> {
+		const room = await this.roomRepository.findByRoomId(roomId, fields);
+
+		if (!room) {
+			throw errorRoomNotFound(roomId);
+		}
+
+		return room;
 	}
 
 	/**

@@ -10,6 +10,7 @@ import {
 } from '../models/error.model.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomMemberService } from '../services/room-member.service.js';
+import { RoomAccessService } from '../services/room-access.service.js';
 import { RoomService } from '../services/room.service.js';
 import type { AuthValidator } from './auth.middleware.js';
 import { accessTokenValidator, allowAnonymous, withAuth } from './auth.middleware.js';
@@ -151,7 +152,7 @@ export const authorizeRoomMemberTokenGeneration = async (req: Request, res: Resp
 	// Scenario 2: No secret provided (Authenticated User)
 	if (user) {
 		try {
-			const canAccess = await roomService.canUserAccessRoom(roomId, user);
+			const canAccess = await container.get(RoomAccessService).canUserAccessRoom(roomId, user);
 
 			if (!canAccess) {
 				return rejectRequestFromMeetError(res, forbiddenError);
