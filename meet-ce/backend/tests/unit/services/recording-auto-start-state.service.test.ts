@@ -80,9 +80,28 @@ describe("RecordingAutoStartStateService.activateAutoStart — B2: a late room_f
 		await expect(service.activateAutoStart('room-1', 'sid-N')).resolves.toBeUndefined();
 		expect(redis.store.size).toBe(0);
 	});
+
+	it('leaves the flag to its TTL when the caller cannot name the finishing meeting', async () => {
+		const redis = new FakeRedisService();
+		const service = buildService(redis);
+		await service.markDisabled('room-1', 'sid-N');
+
+		await service.activateAutoStart('room-1');
+
+		expect(await service.isDisabled('room-1', 'sid-N')).toBe(true);
+	});
 });
 
 describe('RecordingAutoStartStateService.isDisabled (a flag only speaks for the meeting that set it)', () => {
+	it('sets no flag for a stop whose egress names no meeting', async () => {
+		const redis = new FakeRedisService();
+		const service = buildService(redis);
+
+		await service.markDisabled('room-1', '');
+
+		expect(redis.store.size).toBe(0);
+	});
+
 	it('does not block a later meeting with the flag an earlier one left behind', async () => {
 		const service = buildService(new FakeRedisService());
 		await service.markDisabled('room-1', 'sid-old');

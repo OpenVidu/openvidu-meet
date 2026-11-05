@@ -235,19 +235,6 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	}
 
 	/**
-	 * Replaces an existing room with new data.
-	 * URLs are stored in the database without the base URL.
-	 *
-	 * @param room - The complete updated room data
-	 * @returns The updated room with enriched URLs
-	 * @throws Error if room not found
-	 */
-	replace(room: MeetRoom): Promise<MeetRoom> {
-		const normalizedRoom = this.normalizeRoomForStorage(room) as MeetRoom;
-		return this.replaceOne({ roomId: room.roomId }, normalizedRoom);
-	}
-
-	/**
 	 * Finds a room by its roomId.
 	 * Returns the room with enriched URLs (including base URL).
 	 *
@@ -285,16 +272,6 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 
 	findByOwner(owner: string, fields?: readonly MeetRoomField[]): Promise<MeetRoom[] | Partial<MeetRoom>[]> {
 		return this.findAll({ owner }, fields as string[]);
-	}
-
-	/**
-	 * Finds room IDs where user access is enabled.
-	 *
-	 * @returns Array of rooms including only roomId
-	 */
-	async findRoomIdsWithUserAccessEnabled(): Promise<string[]> {
-		const rooms = await this.findAll({ 'access.user.enabled': true }, ['roomId']);
-		return rooms.map((room) => room.roomId);
 	}
 
 	/**
@@ -517,16 +494,6 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 			.deleteOne({ roomId, status: { $ne: MeetRoomStatus.ACTIVE_MEETING } })
 			.exec();
 		return deletedCount === 1;
-	}
-
-	/**
-	 * Deletes multiple rooms by their roomIds.
-	 *
-	 * @param roomIds - Array of room identifiers
-	 * @throws Error if no rooms were found or could not be deleted
-	 */
-	deleteByRoomIds(roomIds: string[]): Promise<void> {
-		return this.deleteMany({ roomId: { $in: roomIds } });
 	}
 
 	/**

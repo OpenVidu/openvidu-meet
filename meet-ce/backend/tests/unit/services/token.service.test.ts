@@ -3,7 +3,9 @@ import { MEET_PERMISSION_KEYS, MeetRoomMemberUIBadge } from '@openvidu-meet/typi
 import type { MeetRoomMemberTokenMetadata, MeetUser } from '@openvidu-meet/typings';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see meeting-mute.test.ts).
+import ms from 'ms';
 import '../../../src/config/dependency-injector.config.js';
+import { MEET_ENV } from '../../../src/environment.js';
 import { TokenType } from '../../../src/models/token.model.js';
 import type { LoggerService } from '../../../src/services/logger.service.js';
 import { TokenService } from '../../../src/services/token.service.js';
@@ -53,6 +55,7 @@ describe('TokenService metadata parsing', () => {
 		const user = { userId: 'user-1', name: 'Ana' } as MeetUser;
 		const metadataOf = (token: string) =>
 			service.parseTokenMetadata(service.getClaimsIgnoringExpiration(token).metadata ?? '');
+		const metadataOfClaims = (claims: { metadata?: string }) => service.parseTokenMetadata(claims.metadata ?? '');
 
 		it('gives every token of one login its session, and every refresh token an id of its own', async () => {
 			const sid = service.createSessionId();
@@ -72,6 +75,44 @@ describe('TokenService metadata parsing', () => {
 			expect(metadataOf(firstRefreshToken).rid).not.toBe(metadataOf(secondRefreshToken).rid);
 			expect(metadataOf(accessToken).rid).toBeUndefined();
 			expect(service.createSessionId()).not.toBe(sid);
+		});
+
+		it('types each token and gives it the lifetime of its kind', async () => {
+			const sid = service.createSessionId();
+			const claimsOf = async (token: Promise<string>) => service.getClaimsIgnoringExpiration(await token);
+			const lifetime = (claims: { exp?: number; nbf?: number }) => (claims.exp ?? 0) - (claims.nbf ?? 0);
+
+			const access = await claimsOf(service.generateAccessToken(user, sid));
+			const temporary = await claimsOf(service.generateAccessToken(user, sid, true));
+			const refresh = await claimsOf(service.generateRefreshToken(user, sid));
+
+			expect([access, temporary, refresh].map((claims) => metadataOfClaims(claims).tokenType)).toEqual([
+				TokenType.ACCESS,
+				TokenType.TEMPORARY,
+				TokenType.REFRESH
+			]);
+			expect([access, temporary, refresh].map(lifetime)).toEqual([
+				ms(MEET_ENV.ACCESS_TOKEN_EXPIRATION) / 1000,
+				ms(MEET_ENV.PASSWORD_CHANGE_TOKEN_EXPIRATION) / 1000,
+				ms(MEET_ENV.REFRESH_TOKEN_EXPIRATION) / 1000
+			]);
+			expect(access).toMatchObject({ sub: 'user-1', name: 'Ana' });
+			expect(access.video).toBeUndefined();
+		});
+
+		it('gives a room member token the media grants it was issued with', async () => {
+			const grants = { room: 'room-1', roomJoin: true, canPublish: false, canSubscribe: true };
+			const token = await service.generateRoomMemberToken({
+				tokenMetadata: roomMemberMetadata,
+				livekitPermissions: grants,
+				participantName: 'Ana',
+				participantIdentity: 'speaker-1'
+			});
+
+			const claims = service.getClaimsIgnoringExpiration(token);
+			expect(claims).toMatchObject({ sub: 'speaker-1', name: 'Ana', video: grants });
+			expect(service.parseRoomMemberTokenMetadata(claims.metadata ?? '')).toEqual(roomMemberMetadata);
+			expect((claims.exp ?? 0) - (claims.nbf ?? 0)).toBe(ms(MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION) / 1000);
 		});
 	});
 

@@ -130,6 +130,27 @@ describe('webcomponent-bundle.utils - ETag with content-hash sidecar', () => {
 		expect(getWebcomponentBundleEtag(file)).toBe(`"${sha256(content)}"`);
 		expect(getWebcomponentBundleEtag(file)).not.toBe(before);
 	});
+	it('hashes the bundle again when a redeploy keeps its size but not its timestamp', () => {
+		const file = makeBundle('bundle-version-1');
+		getWebcomponentBundleEtag(file);
+
+		fs.writeFileSync(file, 'bundle-version-2');
+		const later = new Date(Date.now() + 60_000);
+		fs.utimesSync(file, later, later);
+
+		expect(getWebcomponentBundleEtag(file)).toBe(`"${sha256('bundle-version-2')}"`);
+	});
+
+	it('hashes the bundle again when a redeploy keeps its timestamp but not its size', () => {
+		const file = makeBundle('bundle-short');
+		const { mtime } = fs.statSync(file);
+		getWebcomponentBundleEtag(file);
+
+		fs.writeFileSync(file, 'bundle-much-longer');
+		fs.utimesSync(file, mtime, mtime);
+
+		expect(getWebcomponentBundleEtag(file)).toBe(`"${sha256('bundle-much-longer')}"`);
+	});
 });
 
 describe('webcomponent-bundle.utils - matchesIfNoneMatch', () => {

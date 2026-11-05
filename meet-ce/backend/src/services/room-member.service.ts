@@ -970,60 +970,20 @@ export class RoomMemberService {
 	 * Gets all permissions set to true.
 	 */
 	getAllPermissions(): MeetRoomMemberPermissions {
-		return {
-			recordingControl: true,
-			recordingList: true,
-			recordingPlay: true,
-			recordingDownload: true,
-			recordingDelete: true,
-			broadcastControl: true,
-			broadcastEdit: true,
-			meetingJoin: true,
-			meetingRead: true,
-			roomShareAccessLinks: true,
-			participantPromote: true,
-			participantKick: true,
-			participantMute: true,
-			participantHandLower: true,
-			participantReactionSend: true,
-			meetingEnd: true,
-			mediaPublishVideo: true,
-			mediaPublishAudio: true,
-			mediaShareScreen: true,
-			chatRead: true,
-			chatWrite: true,
-			mediaChangeVirtualBackground: true
-		};
+		return this.everyPermission(true);
 	}
 
 	/**
 	 * Gets all permissions set to false.
 	 */
 	getNoPermissions(): MeetRoomMemberPermissions {
-		return {
-			recordingControl: false,
-			recordingList: false,
-			recordingPlay: false,
-			recordingDownload: false,
-			recordingDelete: false,
-			broadcastControl: false,
-			broadcastEdit: false,
-			meetingJoin: false,
-			meetingRead: false,
-			roomShareAccessLinks: false,
-			participantPromote: false,
-			participantKick: false,
-			participantMute: false,
-			participantHandLower: false,
-			participantReactionSend: false,
-			meetingEnd: false,
-			mediaPublishVideo: false,
-			mediaPublishAudio: false,
-			mediaShareScreen: false,
-			chatRead: false,
-			chatWrite: false,
-			mediaChangeVirtualBackground: false
-		};
+		return this.everyPermission(false);
+	}
+
+	protected everyPermission(allowed: boolean): MeetRoomMemberPermissions {
+		return Object.fromEntries(
+			MEET_PERMISSION_KEYS.map((key) => [key, allowed])
+		) as unknown as MeetRoomMemberPermissions;
 	}
 
 	/**

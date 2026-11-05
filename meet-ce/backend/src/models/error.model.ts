@@ -42,22 +42,6 @@ export const errorPayloadTooLarge = (limitBytes: number): OpenViduMeetError => {
 	return new OpenViduMeetError('Payload Too Large', `Request body exceeds the limit of ${limitBytes} bytes`, 413);
 };
 
-export const errorProFeature = (operation: string): OpenViduMeetError => {
-	return new OpenViduMeetError(
-		'Pro Feature Error',
-		`The operation '${operation}' is a PRO feature. Please, upgrade to OpenVidu PRO`,
-		402
-	);
-};
-
-export const errorUnsupportedMediaType = (supportedTypes: string[]): OpenViduMeetError => {
-	return new OpenViduMeetError(
-		'Unsupported Media Type',
-		`Unsupported media type. Supported types: ${supportedTypes.join(', ')}`,
-		415
-	);
-};
-
 export const errorInvalidPaginationToken = (): OpenViduMeetError => {
 	return new OpenViduMeetError('Bad Request', 'Invalid pagination token', 400);
 };
@@ -343,27 +327,6 @@ export const errorBroadcastEnabledWithoutDestinations = (): OpenViduMeetError =>
 		'At least one destination is required while broadcast is enabled',
 		422
 	);
-};
-
-const isMatchingError = (error: OpenViduMeetError, originalError: OpenViduMeetError): boolean => {
-	return (
-		error instanceof OpenViduMeetError &&
-		error.name === originalError.name &&
-		error.statusCode === originalError.statusCode &&
-		error.message === originalError.message
-	);
-};
-
-export const isErrorRecordingAlreadyStopped = (error: OpenViduMeetError, recordingId: string): boolean => {
-	return isMatchingError(error, errorRecordingAlreadyStopped(recordingId));
-};
-
-export const isErrorRecordingNotFound = (error: OpenViduMeetError, recordingId: string): boolean => {
-	return isMatchingError(error, errorRecordingNotFound(recordingId));
-};
-
-export const isErrorRecordingStopInProgress = (error: OpenViduMeetError, recordingId: string): boolean => {
-	return isMatchingError(error, errorRecordingStopInProgress(recordingId));
 };
 
 // User errors

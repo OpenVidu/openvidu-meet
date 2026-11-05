@@ -309,3 +309,28 @@ describe('MeetParticipantHelper.extractMediaState', () => {
 		).toBe(true);
 	});
 });
+
+describe('MeetParticipantHelper.parseMeetingMetadata', () => {
+	it('reads the Meet metadata a participant joined with', () => {
+		expect(
+			MeetParticipantHelper.parseMeetingMetadata(participantWith({ metadata: meetingMetadata() }))
+		).toMatchObject({ roomId: 'room-abc', badge: MeetRoomMemberUIBadge.MODERATOR, permissions: allPermissions });
+	});
+
+	it.each([
+		['no metadata', ''],
+		['metadata that is not JSON', '{'],
+		['metadata another application wrote', JSON.stringify({ role: 'host' })]
+	])('reads nothing from a participant with %s', (_case, metadata) => {
+		expect(MeetParticipantHelper.parseMeetingMetadata(participantWith({ metadata }))).toBeUndefined();
+	});
+
+	it('brings the permissions a promotion saved under their old names to the current names', () => {
+		const metadata = meetingMetadata({ originalPermissions: { canWriteChat: true } });
+
+		const parsed = MeetParticipantHelper.parseMeetingMetadata(participantWith({ metadata }));
+
+		expect(parsed?.originalPermissions).toMatchObject({ chatWrite: true });
+		expect(parsed?.originalPermissions).not.toHaveProperty('canWriteChat');
+	});
+});

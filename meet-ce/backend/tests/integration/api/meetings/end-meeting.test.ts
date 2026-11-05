@@ -1,12 +1,14 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
+import { errorInsufficientPermissions } from '../../../../src/models/error.model.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import { deleteAllRooms, endMeeting, getRoom, startTestServer } from '../../../helpers/request-helpers.js';
 
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 import { waitForMeetingToEnd } from '../../../helpers/wait-helpers.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
+import { expectMeetError } from '../../../helpers/assertion-helpers.js';
 
 describe('Meetings API Tests', () => {
 	let livekitService: LiveKitService;
@@ -58,7 +60,7 @@ describe('Meetings API Tests', () => {
 
 		it('should answer 403 to a token of another room even when the room does not exist', async () => {
 			const response = await endMeeting('nonexistent-room-id', roomData.moderatorToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 	});
 });

@@ -23,7 +23,7 @@ import {
 	errorInsufficientPermissions
 } from '../../../../src/models/error.model.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
-import { expectMeetError } from '../../../helpers/assertion-helpers.js';
+import { expectMeetError, expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { createRtmpSink, deleteRtmpSinks } from '../../../helpers/broadcast-sink.helper.js';
 import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
@@ -157,7 +157,17 @@ describe('Broadcasts API Tests', () => {
 		});
 
 		it('should start every room destination not streamed to yet when the request names none', async () => {
-			const roomData = await setupMeetingRoom(broadcastConfig(['a', 'b']));
+			// Real sinks keep both broadcasts running: one to a dead host may already have failed, which
+			// would make its destination one not streamed to yet.
+			const roomData = await setupMeetingRoom({
+				broadcast: {
+					enabled: true,
+					destinations: [
+						{ name: 'Destination a', url: await createRtmpSink('rest-a') },
+						{ name: 'Destination b', url: await createRtmpSink('rest-b') }
+					]
+				}
+			});
 			const { roomId } = roomData.room;
 			const [idA, idB] = await roomDestinationIds(roomData);
 			await startOne(roomId, { destinationId: idA });
@@ -192,7 +202,13 @@ describe('Broadcasts API Tests', () => {
 		});
 
 		it('should report the meeting as broadcast and refuse a second broadcast to the same destination or stream key', async () => {
-			const roomData = await setupMeetingRoom(broadcastConfig(['a']));
+			// A real sink keeps the broadcast running through every request below.
+			const sinkUrl = await createRtmpSink('in-use');
+			const streamKey = sinkUrl.split('/').pop()!;
+			const redactedSinkUrl = sinkUrl.replace(streamKey, MEET_BROADCAST_REDACTED_STREAM_KEY);
+			const roomData = await setupMeetingRoom({
+				broadcast: { enabled: true, destinations: [{ name: 'Destination a', url: sinkUrl }] }
+			});
 			const { roomId } = roomData.room;
 			const [idA] = await roomDestinationIds(roomData);
 			await startOne(roomId, { destinationId: idA });
@@ -205,16 +221,16 @@ describe('Broadcasts API Tests', () => {
 
 			expectMeetError(
 				(await startOne(roomId, { destinationId: idA })).response,
-				errorBroadcastDestinationInUse(REDACTED_URL)
+				errorBroadcastDestinationInUse(redactedSinkUrl)
 			);
 			expectMeetError(
-				(await startOne(roomId, destination('a'))).response,
-				errorBroadcastDestinationInUse(REDACTED_URL)
+				(await startOne(roomId, { name: 'Destination a', url: sinkUrl })).response,
+				errorBroadcastDestinationInUse(redactedSinkUrl)
 			);
 			expectMeetError(
-				(await startOne(roomId, { name: 'Mirror', url: 'rtmp://mirror-sink.invalid/app/a-stream-key' }))
+				(await startOne(roomId, { name: 'Mirror', url: `rtmp://mirror-sink.invalid/app/${streamKey}` }))
 					.response,
-				errorBroadcastDestinationInUse('rtmp://mirror-sink.invalid/app/********')
+				errorBroadcastDestinationInUse(`rtmp://mirror-sink.invalid/app/${MEET_BROADCAST_REDACTED_STREAM_KEY}`)
 			);
 		});
 
@@ -376,7 +392,7 @@ describe('Broadcasts API Tests', () => {
 			const listed = await request(app)
 				.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/broadcasts`))
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
-			expect(listed.status).toBe(422);
+			expectValidationError(listed, 'roomId', 'Required');
 
 			expect((await getBroadcast('no-room-in-it')).status).toBe(422);
 			expect((await stopBroadcasts('unknown_room', { broadcastIds: ['no-room-in-it'] })).status).toBe(422);
@@ -391,9 +407,9 @@ describe('Broadcasts API Tests', () => {
 		const webhooks: { event: string; creationDate: number; data: MeetBroadcastInfo }[] = [];
 
 		beforeAll(async () => {
-			await startWebhookServer(5080, (req) => webhooks.push(req.body));
+			const url = await startWebhookServer((req) => webhooks.push(req.body));
 			await deleteAllWebhooks();
-			await createWebhook({ url: 'http://localhost:5080/webhook' });
+			await createWebhook({ url });
 		});
 
 		afterAll(async () => {

@@ -141,22 +141,6 @@ export class BlobStorageService {
 		}
 	}
 
-	/**
-	 * Checks if a recording media file exists in blob storage.
-	 *
-	 * @param recordingId - The unique identifier of the recording
-	 * @returns True if the recording media exists, false otherwise
-	 */
-	async recordingMediaExists(recordingId: string): Promise<boolean> {
-		try {
-			const storageKey = this.keyBuilder.buildBinaryRecordingKey(recordingId);
-			return await this.storageProvider.exists(storageKey);
-		} catch (error) {
-			this.logger.warn(`Error checking if recording media exists for '${recordingId}':`, error);
-			return false;
-		}
-	}
-
 	// ==========================================
 	// PRIVATE HELPER METHODS
 	// ==========================================

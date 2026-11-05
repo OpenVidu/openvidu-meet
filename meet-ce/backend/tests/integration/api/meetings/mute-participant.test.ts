@@ -8,7 +8,8 @@ import {
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
-import { expectValidationError } from '../../../helpers/assertion-helpers.js';
+import { errorInsufficientPermissions } from '../../../../src/models/error.model.js';
+import { expectMeetError, expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants, updateParticipantMetadata } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRooms,
@@ -115,7 +116,11 @@ describe('Meetings API Tests', () => {
 				{},
 				roomData.moderatorToken
 			);
-			expect(response.status).toBe(422);
+			expectValidationError(
+				response,
+				'',
+				'At least one of audioActive, videoActive or screenShareActive must be set to false'
+			);
 		});
 
 		it('should reject muting a moderator', async () => {
@@ -138,7 +143,7 @@ describe('Meetings API Tests', () => {
 				{ audioActive: false },
 				roomData.speakerToken
 			);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail with 404 if the participant is not in the meeting', async () => {

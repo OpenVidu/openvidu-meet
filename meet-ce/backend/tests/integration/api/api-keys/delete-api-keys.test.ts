@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
+import { errorApiKeyNotConfigured } from '../../../../src/models/error.model.js';
 import {
 	deleteApiKeys,
 	generateApiKey,
@@ -10,6 +11,7 @@ import {
 	restoreDefaultApiKeys,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
+import { expectMeetError } from '../../../helpers/assertion-helpers.js';
 
 describe('API Keys API Tests', () => {
 	let app: Express;
@@ -41,7 +43,7 @@ describe('API Keys API Tests', () => {
 
 			// Verify the deleted API key no longer works
 			const apiResponse = await getRoomsWithApiKey(apiKey);
-			expect(apiResponse.status).toBe(401);
+			expectMeetError(apiResponse, errorApiKeyNotConfigured());
 		});
 	});
 });

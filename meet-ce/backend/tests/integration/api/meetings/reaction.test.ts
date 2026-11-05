@@ -3,6 +3,7 @@ import { MeetReaction } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
 import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
+import { errorInsufficientPermissions, errorUnauthorized } from '../../../../src/models/error.model.js';
 import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRooms,
@@ -14,6 +15,7 @@ import {
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
+import { expectMeetError, expectValidationError } from '../../../helpers/assertion-helpers.js';
 
 // The identity a joining token was minted for: the participant the token acts as.
 const identityOf = (bearerToken: string): string => {
@@ -117,7 +119,7 @@ describe('Meetings API Tests', () => {
 				alice.token
 			);
 
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 			expect(signalSpy).not.toHaveBeenCalled();
 		});
 
@@ -128,7 +130,7 @@ describe('Meetings API Tests', () => {
 				roomData.speakerToken
 			);
 
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should fail with 403 for a joining token whose participant is not in the meeting', async () => {
@@ -161,7 +163,7 @@ describe('Meetings API Tests', () => {
 				alice.token
 			);
 
-			expect(response.status).toBe(422);
+			expectValidationError(response, 'reaction', "received 'party_popper'");
 		});
 
 		it('should reject the emoji in place of the reaction name', async () => {
@@ -173,7 +175,7 @@ describe('Meetings API Tests', () => {
 				alice.token
 			);
 
-			expect(response.status).toBe(422);
+			expectValidationError(response, 'reaction', "received '👍'");
 		});
 
 		it('should fail with 401 without a room member token', async () => {
@@ -181,7 +183,7 @@ describe('Meetings API Tests', () => {
 				reaction: MeetReaction.SLIGHTLY_FROWNING_FACE
 			});
 
-			expect(response.status).toBe(401);
+			expectMeetError(response, errorUnauthorized());
 		});
 	});
 });

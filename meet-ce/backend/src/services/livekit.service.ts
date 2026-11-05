@@ -24,7 +24,6 @@ import {
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
-import { runConcurrently } from '../utils/concurrency.utils.js';
 import { LoggerService } from './logger.service.js';
 
 @injectable()
@@ -250,29 +249,6 @@ export class LiveKitService {
 	}
 
 	/**
-	 * Deletes multiple LiveKit rooms with bounded concurrency to avoid overwhelming the server.
-	 *
-	 * @param roomNames - Array of room names to delete
-	 * @returns Promise that resolves when all room deletions have been processed
-	 */
-	async batchDeleteRooms(roomNames: string[]): Promise<void> {
-		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_DELETE_ROOMS;
-		await runConcurrently<string, void>(
-			roomNames,
-			async (roomName) => {
-				try {
-					await this.deleteRoom(roomName);
-					this.logger.verbose(`Deleted LiveKit room '${roomName}' successfully.`);
-				} catch (error) {
-					this.logger.warn(`Error deleting LiveKit room '${roomName}'`, error);
-					// Continue with deletion of other rooms even if one fails
-				}
-			},
-			{ concurrency, failFast: true }
-		);
-	}
-
-	/**
 	 * Lists all participants in a LiveKit room.
 	 *
 	 * @param roomName - The name of the room to list participants from
@@ -289,7 +265,7 @@ export class LiveKitService {
 
 	async participantExists(roomName: string, participantIdentity: string): Promise<boolean> {
 		try {
-			const participants: ParticipantInfo[] = await this.listRoomParticipants(roomName);
+			const participants = await this.lk.room.listParticipants(roomName);
 			return participants.some((participant) => {
 				return participant.identity === participantIdentity;
 			});

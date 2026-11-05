@@ -1,3 +1,4 @@
+import { errorUnreachableRecordingAutoStart } from '../../../../src/models/error.model.js';
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import {
 	MeetRecordingAudioCodec,
@@ -8,7 +9,11 @@ import {
 	MeetRecordingVideoCodec,
 	MeetRoomConfig
 } from '@openvidu-meet/typings';
-import { DEFAULT_RECORDING_ENCODING_PRESET, expectValidationError } from '../../../helpers/assertion-helpers.js';
+import {
+	DEFAULT_RECORDING_ENCODING_PRESET,
+	expectMeetError,
+	expectValidationError
+} from '../../../helpers/assertion-helpers.js';
 import {
 	createRoom,
 	deleteAllRooms,
@@ -534,7 +539,10 @@ describe('Room API Tests', () => {
 					autoStart: MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS
 				}
 			});
-			expect(response.status).toBe(422);
+			expectMeetError(
+				response,
+				errorUnreachableRecordingAutoStart(MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS, 1, 2)
+			);
 
 			// A single-participant room does reach the first-participant threshold
 			response = await updateRoomConfig(createdRoom.roomId, {

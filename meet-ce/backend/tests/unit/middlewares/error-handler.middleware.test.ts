@@ -1,8 +1,10 @@
 import { beforeAll, describe, expect, it, jest } from '@jest/globals';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import request from 'supertest';
-import { registerDependencies } from '../../../src/config/dependency-injector.config.js';
+import { container, registerDependencies } from '../../../src/config/dependency-injector.config.js';
 import { globalErrorHandler } from '../../../src/middlewares/error-handler.middleware.js';
+import { errorLivekitNotAvailable, errorRecordingNotFound } from '../../../src/models/error.model.js';
+import { LoggerService } from '../../../src/services/logger.service.js';
 
 /**
  * Mirrors the wiring in server.ts: the body parser runs before the routes and the global error
@@ -14,6 +16,15 @@ const buildApp = () => {
 	app.post('/echo', (req, res) => res.status(200).json(req.body));
 	app.post('/broken', () => {
 		throw new Error('connection reset by peer');
+	});
+	app.post('/not-found', () => {
+		throw errorRecordingNotFound('rec-1');
+	});
+	app.post('/unavailable', () => {
+		throw errorLivekitNotAvailable();
+	});
+	app.post('/typed-object', () => {
+		throw { type: 'entity.parse.failed' };
 	});
 	app.use(globalErrorHandler);
 	return app;
@@ -66,5 +77,43 @@ describe('globalErrorHandler', () => {
 			error: 'Internal Server Error',
 			message: 'Unexpected error while processing the request'
 		});
+	});
+
+	it('keeps the status of a client-side OpenViduMeetError and logs it below the error stream', async () => {
+		const logger = container.get(LoggerService);
+		const error = jest.spyOn(logger, 'error');
+		const debug = jest.spyOn(logger, 'debug');
+
+		const response = await request(buildApp()).post('/not-found').send({});
+
+		expect(response.status).toBe(404);
+		expect(response.body).toEqual({
+			error: 'Recording Error',
+			message: "Recording 'rec-1' not found"
+		});
+		expect(error).not.toHaveBeenCalled();
+		expect(debug).toHaveBeenCalledWith(expect.stringContaining("Recording 'rec-1' not found"));
+		error.mockRestore();
+		debug.mockRestore();
+	});
+
+	it('keeps the status of a server-side OpenViduMeetError and logs it as an error', async () => {
+		const logger = container.get(LoggerService);
+		const error = jest.spyOn(logger, 'error');
+
+		const response = await request(buildApp()).post('/unavailable').send({});
+
+		expect(response.status).toBe(503);
+		expect(error).toHaveBeenCalledWith(
+			'Unhandled server error reached the global error handler',
+			expect.objectContaining({ statusCode: 503 })
+		);
+		error.mockRestore();
+	});
+
+	it('does not read a parser reason out of a thrown value that is not an Error', async () => {
+		const response = await request(buildApp()).post('/typed-object').send({});
+
+		expect(response.status).toBe(500);
 	});
 });

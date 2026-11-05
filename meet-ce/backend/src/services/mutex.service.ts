@@ -170,15 +170,13 @@ export class MutexService {
 			return;
 		}
 
-		if (lock) {
-			try {
-				await lock.release();
-				this.logger.verbose(`Lock ${key} successfully released.`);
-			} catch (error) {
-				this.logger.error(`Error releasing lock for key '${key}'`, error);
-			} finally {
-				await this.redisService.delete(registryKey);
-			}
+		try {
+			await lock.release();
+			this.logger.verbose(`Lock ${key} successfully released.`);
+		} catch (error) {
+			this.logger.error(`Error releasing lock for key '${key}'`, error);
+		} finally {
+			await this.redisService.delete(registryKey);
 		}
 	}
 

@@ -1,9 +1,4 @@
-import type {
-	MeetRoomMemberPermissions,
-	MeetRoomMemberTokenMetadata,
-	MeetUser,
-	MeetUserRole
-} from '@openvidu-meet/typings';
+import type { MeetRoomMemberPermissions, MeetRoomMemberTokenMetadata, MeetUser } from '@openvidu-meet/typings';
 import { randomUUID } from 'crypto';
 import { inject, injectable } from 'inversify';
 import type { RequestContext, RequestRoomSnapshot } from '../models/request-context.model.js';
@@ -38,14 +33,6 @@ export class RequestSessionService {
 	 */
 	run<T>(callback: () => T): T {
 		return requestContextStorage.run({ requestId: randomUUID() }, callback);
-	}
-
-	/**
-	 * Gets the correlation id of the current request context.
-	 * Returns undefined if called outside of a request context.
-	 */
-	getRequestId(): string | undefined {
-		return this.getContext()?.requestId;
 	}
 
 	/**
@@ -98,13 +85,6 @@ export class RequestSessionService {
 	 */
 	getAuthenticatedUser(): MeetUser | undefined {
 		return this.getContext()?.user;
-	}
-
-	/**
-	 * Gets the authenticated user's role from the current request context.
-	 */
-	getAuthenticatedUserRole(): MeetUserRole | undefined {
-		return this.getContext()?.user?.role;
 	}
 
 	/**

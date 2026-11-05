@@ -22,6 +22,7 @@ import {
 } from '@openvidu-meet/typings';
 import { z } from 'zod';
 import { invalidRegexPatternReason } from '../../utils/string-match-filter.utils.js';
+import { maxItemsSchema } from './pagination.schema.js';
 
 /**
  * Shared fields validation schema for RoomMember entity
@@ -172,16 +173,7 @@ export const RoomMemberFiltersSchema = z
 		type: z.enum(MeetRoomMemberType).optional(),
 		fields: fieldsSchema,
 		extraFields: extraFieldsSchema,
-		maxItems: z.coerce
-			.number()
-			.positive('maxItems must be a positive number')
-			.transform((val) => {
-				// Convert the value to a number
-				const intVal = Math.floor(val);
-				// Ensure it's not greater than 100
-				return intVal > 100 ? 100 : intVal;
-			})
-			.default(10),
+		maxItems: maxItemsSchema,
 		nextPageToken: z.string().optional(),
 		sortField: z.enum(MEET_ROOM_MEMBER_SORT_FIELDS).optional().default('membershipDate'),
 		sortOrder: z.enum(SortOrder).optional().default(SortOrder.DESC)

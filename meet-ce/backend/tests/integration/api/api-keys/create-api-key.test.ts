@@ -6,6 +6,7 @@ import { container } from '../../../../src/config/dependency-injector.config.js'
 import { INTERNAL_CONFIG, setInternalConfig } from '../../../../src/config/internal-config.js';
 import { MeetLock } from '../../../../src/helpers/redis.helper.js';
 import { MutexService } from '../../../../src/services/mutex.service.js';
+import { errorInvalidApiKey } from '../../../../src/models/error.model.js';
 import {
 	generateApiKey,
 	getApiKeys,
@@ -14,6 +15,7 @@ import {
 	restoreDefaultApiKeys,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
+import { expectMeetError } from '../../../helpers/assertion-helpers.js';
 
 const API_KEYS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`);
 
@@ -63,7 +65,7 @@ describe('API Keys API Tests', () => {
 
 			// Verify the first API key no longer works
 			let apiResponse = await getRoomsWithApiKey(apiKey1);
-			expect(apiResponse.status).toBe(401);
+			expectMeetError(apiResponse, errorInvalidApiKey());
 
 			// Verify the second API key works
 			apiResponse = await getRoomsWithApiKey(apiKey2);

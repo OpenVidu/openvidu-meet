@@ -2,8 +2,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/glo
 import { MeetRecordingStatus } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MeetParticipantHelper } from '../../../../src/helpers/participant.helper.js';
-import { OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
+import { errorInsufficientPermissions, OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRooms,
@@ -17,6 +17,7 @@ import {
 
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
+import { expectMeetError } from '../../../helpers/assertion-helpers.js';
 
 const participantIdentity = 'TEST_PARTICIPANT';
 
@@ -105,7 +106,7 @@ describe('Meetings API Tests', () => {
 
 		it('should answer 403 to a token of another room even when the room does not exist', async () => {
 			const response = await kickParticipant('nonexistent-room-id', participantIdentity, roomData.moderatorToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 	});
 });

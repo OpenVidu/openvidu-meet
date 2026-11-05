@@ -82,14 +82,7 @@ export class ApiKeyService {
 	}
 
 	async validateApiKey(apiKey: string): Promise<boolean> {
-		let storedApiKeys: MeetApiKey[];
-
-		try {
-			storedApiKeys = await this.getApiKeys();
-		} catch {
-			// If there is an error retrieving API keys, we assume they are not configured
-			storedApiKeys = [];
-		}
+		const storedApiKeys = await this.getApiKeys();
 
 		if (storedApiKeys.length === 0) {
 			throw errorApiKeyNotConfigured();

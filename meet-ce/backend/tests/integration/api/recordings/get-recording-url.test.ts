@@ -2,8 +2,8 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
-import { errorRecordingNotFound } from '../../../../src/models/error.model.js';
-import { expectValidGetRecordingUrlResponse } from '../../../helpers/assertion-helpers.js';
+import { errorRecordingNotFound, errorUnauthorized } from '../../../../src/models/error.model.js';
+import { expectMeetError, expectValidGetRecordingUrlResponse } from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
@@ -100,7 +100,7 @@ describe('Recording API Tests', () => {
 			let recordingResponse = await request(app)
 				.get(`${RECORDINGS_PATH}/${recordingId}/media`)
 				.query({ recordingSecret: secret });
-			expect(recordingResponse.status).toBe(401);
+			expectMeetError(recordingResponse, errorUnauthorized());
 
 			// Verify that the URL is accessible with authentication
 			const { accessToken } = await loginRootAdmin();
@@ -129,7 +129,7 @@ describe('Recording API Tests', () => {
 			let recordingResponse = await request(app)
 				.get(`${RECORDINGS_PATH}/${recordingId}/media`)
 				.query({ recordingSecret: secret });
-			expect(recordingResponse.status).toBe(401);
+			expectMeetError(recordingResponse, errorUnauthorized());
 
 			// Verify that the URL is accessible with authentication
 			const { accessToken } = await loginRootAdmin();

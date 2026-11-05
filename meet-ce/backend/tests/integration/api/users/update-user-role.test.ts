@@ -9,7 +9,8 @@ import { FrontendEventService } from '../../../../src/services/frontend-event.se
 import { LivekitWebhookService } from '../../../../src/services/livekit-webhook.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { TokenService } from '../../../../src/services/token.service.js';
-import { expectValidationError } from '../../../helpers/assertion-helpers.js';
+import { errorRoomMemberNotFound, errorRoomNotFound } from '../../../../src/models/error.model.js';
+import { expectMeetError, expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	disconnectFakeParticipants,
 	joinFakeParticipant,
@@ -227,7 +228,7 @@ describe('Users API Tests', () => {
 
 			// The concurrently deleted room stays deleted; ownership transfer was correctly skipped.
 			const getRoomResponse = await getRoom(room.roomId);
-			expect(getRoomResponse.status).toBe(404);
+			expectMeetError(getRoomResponse, errorRoomNotFound(room.roomId));
 		});
 
 		it('should update recording roomOwner when ownership is transferred by role change', async () => {
@@ -288,7 +289,7 @@ describe('Users API Tests', () => {
 
 			// Verify the user is no longer a member of the room
 			const getMemberAfterResponse = await getRoomMember(room.roomId, userId);
-			expect(getMemberAfterResponse.status).toBe(404);
+			expectMeetError(getMemberAfterResponse, errorRoomMemberNotFound(room.roomId, userId));
 		});
 
 		it('should send permissions-updated signal when role changes and user is in an active meeting', async () => {
@@ -355,7 +356,10 @@ describe('Users API Tests', () => {
 
 	describe('Update User Role Validation Tests', () => {
 		it('should fail when role is missing', async () => {
-			const response = await updateUserRole(testUsers.roomManager.user.userId, undefined as unknown as MeetUserRole);
+			const response = await updateUserRole(
+				testUsers.roomManager.user.userId,
+				undefined as unknown as MeetUserRole
+			);
 			expectValidationError(response, 'role', 'Required');
 		});
 

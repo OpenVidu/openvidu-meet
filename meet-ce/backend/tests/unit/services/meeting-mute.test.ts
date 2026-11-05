@@ -257,4 +257,29 @@ describe('MeetingService mute', () => {
 		expect(mutedTrackSids()).toEqual([microphone.sid, camera.sid]);
 		expect(frontendEventService.sendParticipantMediaMutedSignal).not.toHaveBeenCalled();
 	});
+
+	it('leaves the recorders and agents of the meeting out of a mute-everyone', async () => {
+		const recorder = { ...speakerWith([microphone]), identity: 'EG_1', kind: ParticipantInfo_Kind.EGRESS };
+		livekitService.listRoomParticipants.mockResolvedValue([recorder as ParticipantInfo]);
+
+		await meetingService.muteAllParticipants(ROOM_ID, { audioActive: false });
+
+		expect(livekitService.mutePublishedTrack).not.toHaveBeenCalled();
+		expect(frontendEventService.sendParticipantMediaMutedSignal).not.toHaveBeenCalled();
+	});
+
+	it('answers with the participant listing failure when the meeting itself was found', async () => {
+		livekitService.listRoomParticipants.mockRejectedValue(new Error('LiveKit is unreachable') as never);
+
+		await expect(meetingService.muteAllParticipants(ROOM_ID, { audioActive: false })).rejects.toThrow(
+			'LiveKit is unreachable'
+		);
+	});
+
+	it('passes on a room lookup failure that is not a missing room unchanged', async () => {
+		const unavailable = new Error('LiveKit is unreachable');
+		livekitService.getRoom.mockRejectedValue(unavailable as never);
+
+		await expect(meetingService.muteAllParticipants(ROOM_ID, { audioActive: false })).rejects.toBe(unavailable);
+	});
 });

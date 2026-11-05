@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it } from '@jest/globals';
+import { afterEach, describe, expect, it, jest } from '@jest/globals';
+import { Readable } from 'stream';
 // The service modules form a cycle through the DI container module, so it has to be the one that
 // starts the graph (see migration.service.test.ts).
 import '../../../src/config/dependency-injector.config.js';
@@ -91,5 +92,131 @@ describe('BlobStorageService.getRecordingOutputPath', () => {
 		expect(blobStorageOver(providers[2][1]()).getRecordingOutputPath('r', 'r--1')).toBe(
 			's3-prefix/recordings/r/r--1'
 		);
+	});
+});
+
+describe('BlobStorageService reading and deleting recording media', () => {
+	const build = (provider: Partial<StorageProvider>) =>
+		new BlobStorageService(
+			...([noopLogger, { create: () => ({ provider, keyBuilder }) }] as unknown as ConstructorParameters<
+				typeof BlobStorageService
+			>)
+		);
+
+	const mediaOf = (fileSize: number | undefined) => {
+		const reads: unknown[] = [];
+		const service = build({
+			getObjectHeaders: async () => ({ contentLength: fileSize }),
+			getObjectAsStream: async (_key: string, range?: unknown) => {
+				reads.push(range);
+				return Readable.from([]);
+			}
+		} as Partial<StorageProvider>);
+		return { service, reads };
+	};
+
+	it.each([
+		['the whole file', undefined, undefined],
+		['a range inside the file', { start: 10, end: 19 }, { start: 10, end: 19 }],
+		['the first bytes', { start: 0, end: 9 }, { start: 0, end: 9 }],
+		['a range past the end, cut at the last byte', { start: 90, end: 500 }, { start: 90, end: 99 }],
+		['the last byte', { start: 99, end: 99 }, { start: 99, end: 99 }],
+		['a range with a negative start, as the whole file', { start: -1, end: 10 }, undefined],
+		['a range that is not a number, as the whole file', { start: NaN, end: 10 }, undefined],
+		['a range that ends before it starts, as the whole file', { start: 20, end: 10 }, undefined]
+	])('reads %s of a 100-byte recording', async (_case, range, expected) => {
+		const { service, reads } = mediaOf(100);
+
+		const media = await service.getRecordingMedia('room-1--EG_1--abc', range);
+
+		expect(reads).toEqual([expected]);
+		expect(media).toMatchObject({ fileSize: 100, start: expected?.start, end: expected?.end });
+	});
+
+	it('answers 416 to a range that starts past the end of the recording', async () => {
+		const { service, reads } = mediaOf(100);
+
+		await expect(service.getRecordingMedia('room-1--EG_1--abc', { start: 100, end: 150 })).rejects.toMatchObject({
+			statusCode: 416
+		});
+		expect(reads).toEqual([]);
+	});
+
+	it('answers 404 for a recording whose file is missing or empty', async () => {
+		const { service, reads } = mediaOf(undefined);
+
+		await expect(service.getRecordingMedia('room-1--EG_1--abc')).rejects.toMatchObject({ statusCode: 404 });
+		await expect(mediaOf(0).service.getRecordingMedia('room-1--EG_1--abc')).rejects.toMatchObject({
+			statusCode: 404
+		});
+		expect(reads).toEqual([]);
+	});
+
+	it('deletes recordings by their storage keys, and asks nothing for an empty batch', async () => {
+		const deleted: string[][] = [];
+		const service = build({
+			deleteObject: async (key: string) => void deleted.push([key]),
+			deleteObjects: async (keys: string[]) => void deleted.push(keys)
+		} as Partial<StorageProvider>);
+
+		await service.deleteRecordingMedia('room-1--EG_1--abc');
+		await service.deleteRecordingMediaBatch(['room-1--EG_1--abc', 'room-2--EG_2--def']);
+		await service.deleteRecordingMediaBatch([]);
+
+		expect(deleted).toEqual([
+			['recordings/room-1/room-1--abc.mp4'],
+			['recordings/room-1/room-1--abc.mp4', 'recordings/room-2/room-2--def.mp4']
+		]);
+	});
+
+	it('passes on a failure to delete', async () => {
+		const service = build({
+			deleteObject: async () => Promise.reject(new Error('storage down')),
+			deleteObjects: async () => Promise.reject(new Error('storage down'))
+		} as Partial<StorageProvider>);
+
+		await expect(service.deleteRecordingMedia('room-1--EG_1--abc')).rejects.toThrow('storage down');
+		await expect(service.deleteRecordingMediaBatch(['room-1--EG_1--abc'])).rejects.toThrow('storage down');
+	});
+});
+
+describe('BlobStorageService.checkHealth', () => {
+	afterEach(() => {
+		jest.restoreAllMocks();
+	});
+
+	it.each([
+		['the storage cannot be reached', async () => ({ accessible: false, bucketExists: true })],
+		['the bucket or container does not exist', async () => ({ accessible: true })],
+		['the check itself fails', async () => Promise.reject(new Error('storage down'))]
+	])('stops the server when %s', async (_case, checkHealth) => {
+		const exit = jest.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
+		const service = new BlobStorageService(
+			...([
+				noopLogger,
+				{ create: () => ({ provider: { checkHealth }, keyBuilder }) }
+			] as unknown as ConstructorParameters<typeof BlobStorageService>)
+		);
+
+		await service.checkHealth();
+
+		expect(exit).toHaveBeenCalledWith(1);
+	});
+
+	it.each([
+		['bucket', { accessible: true, bucketExists: true }],
+		['container', { accessible: true, containerExists: true }]
+	])('lets the server start when the storage and its %s are there', async (_case, status) => {
+		const exit = jest.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
+		const service = new BlobStorageService(
+			...([
+				noopLogger,
+				{ create: () => ({ provider: { checkHealth: async () => status }, keyBuilder }) }
+			] as unknown as ConstructorParameters<typeof BlobStorageService>)
+		);
+
+		await service.checkHealth();
+
+		expect(exit).not.toHaveBeenCalled();
 	});
 });

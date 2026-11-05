@@ -1,6 +1,7 @@
+import { errorRecordingNotFound, errorRecordingNotStopped } from '../../../../src/models/error.model.js';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import { MeetRoom } from '@openvidu-meet/typings';
-import { expectValidationError } from '../../../helpers/assertion-helpers.js';
+import { expectMeetError, expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
@@ -48,7 +49,7 @@ describe('Recording API Tests', () => {
 
 			// Verify that the recording is deleted
 			const getResponse = await deleteRecording(recordingId);
-			expect(getResponse.status).toBe(404);
+			expectMeetError(getResponse, errorRecordingNotFound(recordingId));
 		});
 	});
 
@@ -109,7 +110,7 @@ describe('Recording API Tests', () => {
 
 			// Attempt to delete the active recording
 			let deleteResponse = await deleteRecording(activeRecordingId);
-			expect(deleteResponse.status).toBe(409);
+			expectMeetError(deleteResponse, errorRecordingNotStopped(activeRecordingId));
 
 			await stopRecording(activeRecordingId);
 			// Attempt to delete the recording again

@@ -442,7 +442,7 @@ describe('Broadcast Room Configuration Tests', () => {
 					broadcast: { enabled: true, destinations: [{ name: 'Bad', url }] }
 				});
 
-				expect(response.status).toBe(422);
+				expectValidationError(response, 'config.broadcast.destinations.0.url', 'must have the form');
 			}
 
 			expect(Object.values(await storedUrls(room.roomId))).toEqual([destination('a').url]);

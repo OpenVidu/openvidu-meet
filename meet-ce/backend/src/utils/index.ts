@@ -1,4 +1,3 @@
-export * from './array.utils.js';
 export * from './concurrency.utils.js';
 export * from './html-dynamic-base-path.utils.js';
 export * from './path.utils.js';

@@ -3,6 +3,7 @@ import { MeetEventOrigin } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
 import { WebhookDispatcherService } from '../../../../src/services/webhook-dispatcher.service.js';
+import { errorInsufficientPermissions } from '../../../../src/models/error.model.js';
 import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRooms,
@@ -14,6 +15,7 @@ import {
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
+import { expectMeetError, expectValidationError } from '../../../helpers/assertion-helpers.js';
 
 interface JoinedParticipant {
 	identity: string;
@@ -180,7 +182,7 @@ describe('Meetings API Tests', () => {
 				{ raised: false },
 				bob.token
 			);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 			expect((await handOf(alice)).handRaised).toBe(true);
 		});
 
@@ -232,7 +234,7 @@ describe('Meetings API Tests', () => {
 				{ raised: 'yes' } as never,
 				alice.token
 			);
-			expect(response.status).toBe(422);
+			expectValidationError(response, 'raised', 'Expected boolean, received string');
 		});
 
 		it('should lower every raised hand as a moderator action', async () => {
@@ -257,12 +259,12 @@ describe('Meetings API Tests', () => {
 
 		it('should reject raising every hand', async () => {
 			const response = await lowerAllHands(roomData.room.roomId, { raised: true }, roomData.moderatorToken);
-			expect(response.status).toBe(422);
+			expectValidationError(response, 'raised', "Invalid enum value. Expected 'false', received 'true'");
 		});
 
 		it('should fail with 403 when lowering every hand without participantHandLower', async () => {
 			const response = await lowerAllHands(roomData.room.roomId, { raised: false }, roomData.speakerToken);
-			expect(response.status).toBe(403);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 	});
 });

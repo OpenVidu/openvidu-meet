@@ -15,23 +15,11 @@ import { getCurrentRequestOrigin } from './request-context.utils.js';
  * @returns The base URL as a string (e.g., 'https://example.com/meet').
  */
 export const getBaseUrl = (): string => {
-	let hostUrl: string;
-
-	if (MEET_ENV.BASE_URL) {
-		hostUrl = MEET_ENV.BASE_URL.endsWith('/') ? MEET_ENV.BASE_URL.slice(0, -1) : MEET_ENV.BASE_URL;
-
-		// Remove default port 443 for HTTPS URLs
-		if (hostUrl.startsWith('https://') && hostUrl.includes(':443')) {
-			hostUrl = hostUrl.replace(':443', '');
-		}
-
-		// Remove default port 80 for HTTP URLs
-		if (hostUrl.startsWith('http://') && hostUrl.includes(':80')) {
-			hostUrl = hostUrl.replace(':80', '');
-		}
-	} else {
-		hostUrl = getCurrentRequestOrigin() ?? `http://localhost:${MEET_ENV.SERVER_PORT}`;
-	}
+	const hostUrl = MEET_ENV.BASE_URL
+		? MEET_ENV.BASE_URL.replace(/\/$/, '')
+				.replace(/^(https:\/\/[^/]+):443(?=\/|$)/, '$1')
+				.replace(/^(http:\/\/[^/]+):80(?=\/|$)/, '$1')
+		: (getCurrentRequestOrigin() ?? `http://localhost:${MEET_ENV.SERVER_PORT}`);
 
 	// Append the base path (without trailing slash)
 	const basePath = getBasePath();
@@ -89,7 +77,10 @@ export const stripBasePath = (path: string): string => {
 	const basePath = getBasePath();
 	const basePathWithoutTrailingSlash = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
 
-	if (basePathWithoutTrailingSlash && path.startsWith(basePathWithoutTrailingSlash)) {
+	if (
+		basePathWithoutTrailingSlash &&
+		(path === basePathWithoutTrailingSlash || path.startsWith(`${basePathWithoutTrailingSlash}/`))
+	) {
 		return path.slice(basePathWithoutTrailingSlash.length) || '/';
 	}
 

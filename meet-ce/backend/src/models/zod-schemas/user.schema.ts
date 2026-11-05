@@ -2,6 +2,7 @@ import type { MeetUserOptions } from '@openvidu-meet/typings';
 import { MEET_USER_SORT_FIELDS, MeetUserRole, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { z } from 'zod';
 import { invalidRegexPatternReason } from '../../utils/string-match-filter.utils.js';
+import { maxItemsSchema } from './pagination.schema.js';
 
 export const UserOptionsSchema: z.ZodType<MeetUserOptions> = z.object({
 	userId: z
@@ -29,16 +30,7 @@ export const UserFiltersSchema = z
 			return arg;
 		}, z.boolean().optional().default(false)),
 		role: z.enum(MeetUserRole).optional(),
-		maxItems: z.coerce
-			.number()
-			.positive('maxItems must be a positive number')
-			.transform((val) => {
-				// Convert the value to a number
-				const intVal = Math.floor(val);
-				// Ensure it's not greater than 100
-				return intVal > 100 ? 100 : intVal;
-			})
-			.default(10),
+		maxItems: maxItemsSchema,
 		nextPageToken: z.string().optional(),
 		sortField: z.enum(MEET_USER_SORT_FIELDS).optional().default('registrationDate'),
 		sortOrder: z.enum(SortOrder).optional().default(SortOrder.DESC)
