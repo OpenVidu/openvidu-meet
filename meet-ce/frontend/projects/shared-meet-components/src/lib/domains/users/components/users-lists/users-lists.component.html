@@ -278,7 +278,7 @@
 								<span class="user-name" id="user-name-{{ user.userId }}">{{ user.name }}</span>
 								<a
 									class="user-id"
-									[routerLink]="user.userId === currentUserId() ? '/profile' : ['/users', user.userId]"
+									[routerLink]="userLink(user)"
 									id="user-id-{{ user.userId }}"
 									>{{ user.userId }}</a
 								>
@@ -418,6 +418,7 @@
 					[class.protected-row]="UsersUiUtils.isProtectedUser(row, currentUserId())"
 					[class.root-row]="row.isRootAdmin"
 					id="table-row-{{ row.userId }}"
+					[ovRowLink]="userLink(row)"
 				></tr>
 			</table>
 		</div>

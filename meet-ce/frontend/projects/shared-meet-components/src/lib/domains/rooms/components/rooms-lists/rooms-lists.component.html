@@ -606,6 +606,7 @@
 					*matRowDef="let row; columns: displayedColumns()"
 					[class.selected-row]="isRoomSelected(row)"
 					id="table-row-{{ row.roomId }}"
+					[ovRowLink]="['/rooms', row.roomId]"
 				></tr>
 			</table>
 		</div>

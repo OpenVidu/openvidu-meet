@@ -36,6 +36,7 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { merge } from 'rxjs';
+import { RowLinkDirective } from '../../../../shared/directives/row-link.directive';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
@@ -75,6 +76,7 @@ import { RecordingUiUtils } from '../../utils/ui';
 	imports: [
 		ReactiveFormsModule,
 		RouterModule,
+		RowLinkDirective,
 		MatTableModule,
 		MatCheckboxModule,
 		MatButtonModule,
@@ -271,7 +273,7 @@ export class RecordingListsComponent implements OnInit {
 
 	// Table configuration
 	displayedColumns = computed(() => {
-		const columns = ['recordingId', 'status', 'startDate', 'duration', 'size', 'actions'];
+		const columns = ['status', 'startDate', 'duration', 'size', 'actions'];
 
 		if (this.showRoomInfo()) {
 			columns.unshift('roomInfo');

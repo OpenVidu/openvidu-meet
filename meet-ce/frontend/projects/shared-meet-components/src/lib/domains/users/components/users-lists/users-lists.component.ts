@@ -29,6 +29,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import { MeetUserDTO, MeetUserRole, MeetUserSortField, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { merge } from 'rxjs';
+import { RowLinkDirective } from '../../../../shared/directives/row-link.directive';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
@@ -78,6 +79,7 @@ export interface UserTableFilter {
 	imports: [
 		ReactiveFormsModule,
 		RouterModule,
+		RowLinkDirective,
 		MatTableModule,
 		MatCheckboxModule,
 		MatButtonModule,
@@ -329,6 +331,10 @@ export class UsersListsComponent implements OnInit {
 
 	createUser() {
 		this.userAction.emit({ users: [], action: 'create' });
+	}
+
+	userLink(user: MeetUserDTO) {
+		return user.userId === this.currentUserId() ? '/profile' : ['/users', user.userId];
 	}
 
 	resetPassword(user: MeetUserDTO) {

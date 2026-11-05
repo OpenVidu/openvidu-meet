@@ -38,6 +38,7 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { merge } from 'rxjs';
+import { RowLinkDirective } from '../../../../shared/directives/row-link.directive';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -100,6 +101,7 @@ export interface RoomTableFilter {
 	imports: [
 		ReactiveFormsModule,
 		RouterModule,
+		RowLinkDirective,
 		MatTableModule,
 		MatCheckboxModule,
 		MatButtonModule,
