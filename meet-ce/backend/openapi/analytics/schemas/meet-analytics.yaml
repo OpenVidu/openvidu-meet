@@ -9,6 +9,14 @@ properties:
         type: integer
         description: Number of rooms that currently have an active meeting
         example: 3
+    openRooms:
+        type: integer
+        description: Number of rooms whose status is `open`
+        example: 31
+    closedRooms:
+        type: integer
+        description: Number of rooms whose status is `closed`
+        example: 8
     totalRecordings:
         type: integer
         description: Number of recordings that currently exist
@@ -17,8 +25,43 @@ properties:
         type: integer
         description: Number of existing recordings whose status is `complete`
         example: 125
+    recordingsInProgress:
+        type: integer
+        description: Number of recordings whose status is `starting`, `active` or `ending`
+        example: 2
+    roomsExpiringSoon:
+        type: integer
+        description: Number of rooms whose `autoDeletionDate` falls between now and 7 days ahead
+        example: 3
+    nextExpiringRoom:
+        type: object
+        description: >
+            The room with the earliest `autoDeletionDate` among those counted in `roomsExpiringSoon`.
+            Absent when no room is expiring soon.
+        properties:
+            roomId:
+                type: string
+                description: Unique identifier of the room
+                example: room-123
+            roomName:
+                type: string
+                description: Name of the room
+                example: Weekly sync
+            autoDeletionDate:
+                type: integer
+                format: int64
+                description: Timestamp in milliseconds when the room reaches its auto-deletion date
+                example: 1767225600000
+        required:
+            - roomId
+            - roomName
+            - autoDeletionDate
 required:
     - totalRooms
     - activeRooms
+    - openRooms
+    - closedRooms
     - totalRecordings
     - completeRecordings
+    - recordingsInProgress
+    - roomsExpiringSoon
