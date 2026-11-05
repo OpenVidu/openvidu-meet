@@ -22,7 +22,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
@@ -41,6 +40,7 @@ import {
 import { merge } from 'rxjs';
 import { ListUrlParams } from '../../../../shared/models/list-url-state';
 import { RowLinkDirective } from '../../../../shared/directives/row-link.directive';
+import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -141,12 +141,12 @@ export const ROOM_FILTER_URL_PARAMS: ListUrlParams<RoomTableFilter> = {
 		MatSelectModule,
 		MatMenuModule,
 		MatTooltipModule,
-		MatProgressSpinnerModule,
 		MatToolbarModule,
 		MatBadgeModule,
 		MatDividerModule,
 		MatSortModule,
 		DatePipe,
+		TableSkeletonComponent,
 		TranslatePipe
 	],
 	templateUrl: './rooms-lists.component.html',

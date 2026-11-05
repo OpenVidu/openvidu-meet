@@ -92,6 +92,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   recordings list.
 - The console lists of rooms, users and recordings keep their search, filters and order in the URL, and the room page its
   selected tab, so a reload or a shared link shows the same view.
+- The console lists keep their rows, dimmed, while a search, a sort or a new page loads, and show placeholder rows when
+  they have none yet, instead of replacing the list with a spinner.
 
 ### Fixed
 
@@ -228,6 +230,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 #### UI
 
+- The Duration and Size headers of the console recordings list were shown in English whatever the language. They are now
+  translated.
 - After leaving a meeting that was being recorded, joining another meeting with the same `<openvidu-meet>`
   element showed that recording as still in progress. The recording indicator starts over with each meeting.
 - A participant able to chat could publish a message imitating the server's, to show a recording as started or stopped,

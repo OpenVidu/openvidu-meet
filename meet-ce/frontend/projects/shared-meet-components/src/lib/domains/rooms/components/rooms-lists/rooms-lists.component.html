@@ -289,11 +289,8 @@
 	}
 
 	<!-- Loading Spinner -->
-	@if (loading()) {
-		<div class="loading-container">
-			<mat-spinner diameter="40" />
-			<span>{{ 'ROOMS.LIST.LOADING_ROOMS' | translate }}</span>
-		</div>
+	@if (loading() && rooms().length === 0) {
+		<ov-table-skeleton [label]="'ROOMS.LIST.LOADING_ROOMS' | translate" />
 	} @else if (rooms().length === 0 && showEmptyFilterMessage()) {
 		<!-- No rooms match the current filters -->
 		<div class="no-rooms-state">
@@ -308,7 +305,7 @@
 		</div>
 	} @else {
 		<!-- Rooms Table -->
-		<div class="table-container" id="table-container">
+		<div class="table-container" id="table-container" [class.is-loading]="loading()">
 			<table
 				mat-table
 				[dataSource]="rooms()"

@@ -217,11 +217,8 @@
 	}
 
 	<!-- Loading Spinner -->
-	@if (loading()) {
-		<div class="loading-container">
-			<mat-spinner diameter="40" />
-			<span>{{ 'ROOM_MEMBERS.LIST.LOADING_MEMBERS' | translate }}</span>
-		</div>
+	@if (loading() && members().length === 0) {
+		<ov-table-skeleton [label]="'ROOM_MEMBERS.LIST.LOADING_MEMBERS' | translate" />
 	} @else if (members().length === 0 && showEmptyFilterMessage()) {
 		<!-- No members match the current filters -->
 		<div class="no-members-state">
@@ -238,7 +235,7 @@
 		</div>
 	} @else {
 		<!-- Members Table -->
-		<div class="table-container" id="members-table-container">
+		<div class="table-container" id="members-table-container" [class.is-loading]="loading()">
 			<table
 				mat-table
 				[dataSource]="members()"

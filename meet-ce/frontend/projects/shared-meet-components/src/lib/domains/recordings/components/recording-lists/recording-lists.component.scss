@@ -2,6 +2,11 @@
 
 // === MOBILE CARDS VIEW ===
 .cards-container {
+	&.is-loading {
+		opacity: 0.55;
+		pointer-events: none;
+	}
+
 	@include design-tokens.ov-grid-responsive(280px);
 	gap: var(--ov-meet-spacing-md);
 	padding: var(--ov-meet-spacing-md) 0;
@@ -373,10 +378,6 @@
 }
 
 // === UTILITY EXTENSIONS ===
-.loading-container {
-	@extend %ov-loading-container;
-}
-
 .date-info {
 	@extend %ov-date-info;
 }

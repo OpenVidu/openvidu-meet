@@ -20,7 +20,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
@@ -36,6 +35,7 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { merge } from 'rxjs';
+import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
@@ -92,12 +92,12 @@ export interface MemberTableFilter {
 		MatSelectModule,
 		MatMenuModule,
 		MatTooltipModule,
-		MatProgressSpinnerModule,
 		MatToolbarModule,
 		MatBadgeModule,
 		MatSortModule,
 		RouterModule,
 		DatePipe,
+		TableSkeletonComponent,
 		TranslatePipe
 	],
 	templateUrl: './room-members-list.component.html',
