@@ -30,6 +30,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import {
+	MEET_ROOM_SORT_FIELDS,
 	MeetRoom,
 	MeetRoomSortField,
 	MeetRoomStatus,
@@ -38,6 +39,7 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { merge } from 'rxjs';
+import { ListUrlParams } from '../../../../shared/models/list-url-state';
 import { RowLinkDirective } from '../../../../shared/directives/row-link.directive';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
@@ -70,6 +72,34 @@ export interface RoomTableFilter {
 	/** All roles: include rooms accessible to all users */
 	showUserAccessRooms: boolean;
 }
+
+export const ROOM_FILTER_DEFAULTS: RoomTableFilter = {
+	nameFilter: '',
+	nameMatchMode: TextMatchMode.PREFIX,
+	nameCaseInsensitive: false,
+	statusFilter: '',
+	sortField: 'creationDate',
+	sortOrder: SortOrder.DESC,
+	ownerFilter: '',
+	memberFilter: '',
+	showOwnedRooms: false,
+	showMemberRooms: false,
+	showUserAccessRooms: false
+};
+
+export const ROOM_FILTER_URL_PARAMS: ListUrlParams<RoomTableFilter> = {
+	nameFilter: { param: 'q' },
+	nameMatchMode: { param: 'match', allowed: Object.values(TextMatchMode) },
+	nameCaseInsensitive: { param: 'ignoreCase' },
+	statusFilter: { param: 'status', allowed: ['', ...Object.values(MeetRoomStatus)] },
+	sortField: { param: 'sort', allowed: MEET_ROOM_SORT_FIELDS },
+	sortOrder: { param: 'order', allowed: Object.values(SortOrder) },
+	ownerFilter: { param: 'owner' },
+	memberFilter: { param: 'member' },
+	showOwnedRooms: { param: 'owned' },
+	showMemberRooms: { param: 'memberOf' },
+	showUserAccessRooms: { param: 'userAccess' }
+};
 
 /**
  * Reusable component for displaying a list of rooms with filtering, selection, and bulk operations.
@@ -143,19 +173,9 @@ export class RoomsListsComponent implements OnInit {
 	canViewUserProfiles = computed(
 		() => !!this.currentUserRole() && this.currentUserRole() !== MeetUserRole.ROOM_MEMBER
 	);
-	initialFilters = input<RoomTableFilter>({
-		nameFilter: '',
-		nameMatchMode: TextMatchMode.PREFIX,
-		nameCaseInsensitive: false,
-		statusFilter: '',
-		sortField: 'creationDate',
-		sortOrder: SortOrder.DESC,
-		ownerFilter: '',
-		memberFilter: '',
-		showOwnedRooms: false,
-		showMemberRooms: false,
-		showUserAccessRooms: false
-	});
+	initialFilters = input<RoomTableFilter>(ROOM_FILTER_DEFAULTS);
+
+	private readonly applyInitialFilters = effect(() => this.applyFilters(this.initialFilters()));
 
 	// Host binding state for styling when rooms are selected
 	hasSelections = computed(() => this.selectedRooms().size > 0);
@@ -327,15 +347,16 @@ export class RoomsListsComponent implements OnInit {
 
 	// ===== INITIALIZATION METHODS =====
 
-	private setupFilters() {
-		const initial = this.initialFilters();
-		this.filtersForm.patchValue(initial, { emitEvent: false });
-		const initialSnapshot = this.filtersForm.getRawValue();
-		this.filterState.set(initialSnapshot);
-		this.appliedFilterState.set(initialSnapshot);
-		this.currentSortField.set(initial.sortField);
-		this.currentSortOrder.set(initial.sortOrder);
+	private applyFilters(filters: RoomTableFilter) {
+		this.filtersForm.patchValue(filters, { emitEvent: false });
+		const snapshot = this.filtersForm.getRawValue();
+		this.filterState.set(snapshot);
+		this.appliedFilterState.set(snapshot);
+		this.currentSortField.set(filters.sortField);
+		this.currentSortOrder.set(filters.sortOrder);
+	}
 
+	private setupFilters() {
 		// Keep the reactive snapshot in sync with any form change
 		this.filtersForm.valueChanges
 			.pipe(takeUntilDestroyed(this.destroyRef))

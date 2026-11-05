@@ -11,7 +11,6 @@ export * from './http-header-provider.service';
 export * from './http.service';
 export * from './i18n';
 export * from './leave-redirect.service';
-export * from './list-state-cache.service';
 export * from './navigation.service';
 export * from './notification.service';
 export * from './runtime-config.service';

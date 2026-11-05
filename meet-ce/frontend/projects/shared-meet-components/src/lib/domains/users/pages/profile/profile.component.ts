@@ -234,8 +234,6 @@ export class ProfileComponent implements OnInit {
 		}
 
 		this.targetUser.set(updatedUser);
-		// Role is shown in the users list — invalidate it so the change is reflected on return
-		this.navigationService.invalidateCachedRoute('users');
 	}
 
 	async onResetPassword() {
@@ -263,7 +261,7 @@ export class ProfileComponent implements OnInit {
 					this.notificationService.showMessage(
 						`${this.translateService.translate('USERS.ERRORS.USER_DELETED_PREFIX')}${user.name}${this.translateService.translate('USERS.ERRORS.USER_DELETED_SUFFIX')}`
 					);
-					await this.navigationService.navigateToAndInvalidate('/users', 'users', {}, true);
+					await this.navigationService.navigateTo('/users', {}, true);
 				} catch (error) {
 					console.error('Error deleting user:', error);
 					this.notificationService.showMessage(

@@ -18,7 +18,7 @@
 }
 
 @if (!list.isInitializing()) {
-	<div class="ov-page-container ov-mb-xxl" [ovScrollPersist]="scrollToRestore">
+	<div class="ov-page-container ov-mb-xxl">
 		<!-- Recordings Header -->
 		<div class="page-header">
 			<div class="title">
@@ -47,7 +47,7 @@
 				(recordingAction)="onRecordingAction($event)"
 				(loadMore)="list.loadMore($event)"
 				(refresh)="list.refresh($event)"
-				(filterChange)="list.refresh($event)"
+				(filterChange)="urlState.write($event)"
 			/>
 		</div>
 	</div>

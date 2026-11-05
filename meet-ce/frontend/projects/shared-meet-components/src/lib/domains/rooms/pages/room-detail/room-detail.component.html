@@ -18,7 +18,7 @@
 }
 
 @if (!isInitializing() && room()) {
-	<div class="ov-page-container ov-mb-xxl" [ovScrollPersist]="scrollToRestore">
+	<div class="ov-page-container ov-mb-xxl">
 		<!-- Room Detail Header -->
 		<div class="page-header">
 			<div class="header-top">
@@ -210,7 +210,7 @@
 			<mat-card class="tabs-card">
 				<mat-tab-group
 					[selectedIndex]="selectedTabIndex()"
-					(selectedIndexChange)="selectedTabIndex.set($event)"
+					(selectedIndexChange)="onTabChange($event)"
 					animationDuration="0ms"
 				>
 					<!-- Recordings Tab -->

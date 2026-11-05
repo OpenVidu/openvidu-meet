@@ -104,10 +104,7 @@ export class AddRoomMemberComponent implements OnInit {
 				);
 			}
 
-			// Invalidate the room detail so its members tab reloads with the new/updated member
-			await this.navigationService.navigateToAndInvalidate(`/rooms/${this.roomId}`, `rooms/${this.roomId}`, {
-				tab: 'members'
-			});
+			await this.navigationService.navigateTo(`/rooms/${this.roomId}`, { tab: 'members' });
 		} catch (error) {
 			const msg = this.isEditMode()
 				? this.translateService.translate('ROOM_MEMBERS.ERRORS.MEMBER_UPDATE_FAILED')

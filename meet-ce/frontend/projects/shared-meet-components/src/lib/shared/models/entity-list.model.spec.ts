@@ -191,7 +191,7 @@ describe('EntityListState', () => {
 		});
 	});
 
-	describe('mutations and snapshots', () => {
+	describe('mutations', () => {
 		it('remove drops matching items and update transforms them', async () => {
 			fetchPage.and.resolveTo(page(['a', 'b', 'c']));
 			await list.load({ name: '' });
@@ -201,30 +201,6 @@ describe('EntityListState', () => {
 
 			list.update((items) => items.map((item) => ({ id: item.id.toUpperCase() })));
 			expect(ids()).toEqual(['A', 'C']);
-		});
-
-		it('snapshot/restore round-trips items, pagination and filters', async () => {
-			fetchPage.and.returnValues(
-				Promise.resolve(page(['a'], 'token-1')),
-				Promise.resolve(page(['next'], 'token-2'))
-			);
-			await list.load({ name: 'saved' });
-
-			const restored = new EntityListState<TestItem, TestFilter>({
-				initialFilters: { name: '' },
-				fetchPage,
-				onLoadError
-			});
-			restored.restore(list.snapshot());
-
-			expect(restored.items().map((item) => item.id)).toEqual(['a']);
-			expect(restored.hasMore()).toBeTrue();
-			expect(restored.isInitializing()).toBeFalse();
-
-			// The restored list resumes pagination from the snapshot's token and filters.
-			restored.remove(() => true);
-			await restored.autoLoadIfEmpty();
-			expect(fetchPage.calls.mostRecent().args).toEqual([{ name: 'saved' }, 'token-1']);
 		});
 	});
 });

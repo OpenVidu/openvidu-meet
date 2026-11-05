@@ -1,5 +1,5 @@
 import { inject, Service } from '@angular/core';
-import { NavigationStart, Params, Router, UrlTree } from '@angular/router';
+import { Params, Router, UrlTree } from '@angular/router';
 import { EmbeddedEventName, LeftEventReason } from '@openvidu-meet/typings';
 import { MeetingRoute, WcRouteName } from '../../domains/embedded/models/wc-route.model';
 import { wcRouteFromPath } from '../../domains/embedded/utils/wc-route.utils';
@@ -8,7 +8,6 @@ import { WcRouterGateway } from '../../domains/embedded/services/wc-router-gatew
 import { ACCESS_TOKEN_QUERY_PARAM, REFRESH_TOKEN_QUERY_PARAM } from '../guards/store-tokens-from-query-params.guard';
 import { NavigationErrorReason } from '../models/navigation.model';
 import { LeaveRedirectService } from './leave-redirect.service';
-import { ListStateCacheService } from './list-state-cache.service';
 import { RuntimeConfigService } from './runtime-config.service';
 import { TokenStorageService } from './token-storage.service';
 
@@ -17,26 +16,12 @@ export class NavigationService {
 	private readonly eventBus = inject(EmbeddedEventBusService);
 	private readonly router = inject(Router);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
-	private readonly listStateCacheService = inject(ListStateCacheService);
 	private readonly tokenStorageService = inject(TokenStorageService);
 	private readonly leaveRedirect = inject(LeaveRedirectService);
 	// Drives the WC mini-router through a leaf gateway rather than injecting WcRouterService directly:
 	// the router's guards pull in entry services that (transitively) inject NavigationService, so a
 	// direct dependency would close a DI cycle. WcRouterService registers itself on the gateway.
 	private readonly wcRouterGateway = inject(WcRouterGateway);
-
-	/** Trigger of the most recently started navigation (tracked from NavigationStart). */
-	private lastNavigationTrigger: 'imperative' | 'popstate' | 'hashchange' = 'imperative';
-
-	constructor() {
-		// getCurrentNavigation() is null by the time a lazy component's ngOnInit runs,
-		// so capture the trigger when each navigation starts instead.
-		this.router.events.subscribe((event) => {
-			if (event instanceof NavigationStart) {
-				this.lastNavigationTrigger = event.navigationTrigger ?? 'imperative';
-			}
-		});
-	}
 
 	/**
 	 * Redirects the user to the leave redirect URL if set and valid.
@@ -146,58 +131,6 @@ export class NavigationService {
 		// server origin (which already carries the base path) in webcomponent mode.
 		const url = this.runtimeConfigService.resolveUrl(path);
 		window.open(url, '_blank', features);
-	}
-
-	/**
-	 * Invalidates a cached reusable route so it reloads fresh on next attach, then
-	 * navigates to a route. Used after mutations (create/edit/delete) performed from
-	 * a detail or wizard page so the affected list reflects the change on return.
-	 *
-	 * @param route - The route to navigate to
-	 * @param pathToInvalidate - The cached route key to invalidate (e.g. 'rooms', 'rooms/<roomId>')
-	 * @param queryParams - Optional query parameters to include in the navigation
-	 * @param replaceUrl - If true, replaces the current URL in the browser history
-	 */
-	async navigateToAndInvalidate(
-		route: string,
-		pathToInvalidate: string,
-		queryParams?: Params,
-		replaceUrl = false
-	): Promise<void> {
-		this.listStateCacheService.invalidate(pathToInvalidate);
-		await this.navigateTo(route, queryParams, replaceUrl);
-	}
-
-	/**
-	 * Invalidates a cached reusable route (and any routes nested under it) so it
-	 * reloads fresh on next attach. Use when a mutation succeeds but navigation does
-	 * not go straight to the affected list (e.g. redirecting into a meeting).
-	 *
-	 * @param path - The cached route key to invalidate (e.g. 'rooms', 'rooms/<roomId>')
-	 */
-	invalidateCachedRoute(path: string): void {
-		this.listStateCacheService.invalidate(path);
-	}
-
-	/**
-	 * Clears all cached reusable route instances. Call on logout so a different user
-	 * never sees the previous user's cached lists and detached components are destroyed.
-	 */
-	clearCachedRoutes(): void {
-		this.listStateCacheService.clearAll();
-	}
-
-	/**
-	 * Whether the in-progress navigation was triggered by the browser back/forward
-	 * gesture (popstate) rather than an explicit in-app navigation (clicking a link,
-	 * menu item or row). Used so list pages restore their cached state only when the
-	 * user navigates *back* to them, and load fresh data when they navigate *to* them.
-	 *
-	 * Read it synchronously at the start of a component's `ngOnInit` (before any
-	 * `await`), so a later navigation cannot overwrite the value first.
-	 */
-	isPopStateNavigation(): boolean {
-		return this.lastNavigationTrigger === 'popstate';
 	}
 
 	/**

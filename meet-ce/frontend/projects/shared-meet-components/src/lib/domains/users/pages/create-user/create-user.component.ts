@@ -90,7 +90,7 @@ export class CreateUserComponent {
 		try {
 			await this.userService.createUser({ userId: userId!, name: name!, role: role!, password: password! });
 			this.notificationService.showMessage(this.translateService.translate('USERS.ERRORS.USER_CREATED_SUCCESS'));
-			await this.navigationService.navigateToAndInvalidate('/users', 'users');
+			await this.navigationService.navigateTo('/users');
 		} catch (error: any) {
 			console.error('Error creating user:', error);
 			this.notificationService.showMessage(this.translateService.translate('USERS.ERRORS.USER_CREATE_FAILED'));

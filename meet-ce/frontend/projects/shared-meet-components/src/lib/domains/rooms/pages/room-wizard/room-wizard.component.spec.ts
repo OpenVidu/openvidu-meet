@@ -27,8 +27,6 @@ describe('RoomWizardComponent.createRoomAdvance — B5/F7: a rejected submit des
 	let createRoomSpy: jasmine.Spy;
 	let notificationServiceStub: { showMessage: jasmine.Spy };
 	let navigationServiceStub: {
-		navigateToAndInvalidate: jasmine.Spy;
-		invalidateCachedRoute: jasmine.Spy;
 		redirectTo: jasmine.Spy;
 	};
 
@@ -36,8 +34,6 @@ describe('RoomWizardComponent.createRoomAdvance — B5/F7: a rejected submit des
 		createRoomSpy = jasmine.createSpy('createRoom');
 		notificationServiceStub = { showMessage: jasmine.createSpy('showMessage') };
 		navigationServiceStub = {
-			navigateToAndInvalidate: jasmine.createSpy('navigateToAndInvalidate').and.resolveTo(undefined),
-			invalidateCachedRoute: jasmine.createSpy('invalidateCachedRoute'),
 			redirectTo: jasmine.createSpy('redirectTo').and.resolveTo(undefined)
 		};
 

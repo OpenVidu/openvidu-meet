@@ -1,17 +1,10 @@
-import { Component, computed, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
-import {
-	MeetRecordingFilters,
-	MeetRecordingInfo,
-	MeetUserRole,
-	SortOrder,
-	TextMatchMode
-} from '@openvidu-meet/typings';
-import { ScrollPersistDirective } from '../../../../shared/directives/scroll-persist.directive';
-import { EntityListSnapshot, EntityListState } from '../../../../shared/models/entity-list.model';
-import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
+import { MeetRecordingFilters, MeetRecordingInfo, MeetUserRole } from '@openvidu-meet/typings';
+import { EntityListState } from '../../../../shared/models/entity-list.model';
+import { ListUrlState } from '../../../../shared/models/list-url-state';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
@@ -20,35 +13,25 @@ import { decodeToken } from '../../../../shared/utils/token.utils';
 import { AuthService } from '../../../auth/services/auth.service';
 import { RoomMemberService } from '../../../room-members/services/room-member.service';
 import { RecordingListsComponent } from '../../components/recording-lists/recording-lists.component';
-import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
+import {
+	RECORDING_FILTER_DEFAULTS,
+	RECORDING_FILTER_URL_PARAMS,
+	RecordingTableAction,
+	RecordingTableFilter
+} from '../../models/recording-list.model';
 import { RecordingActionsService } from '../../services/recording-actions.service';
 import { RecordingService } from '../../services/recording.service';
 import { LoggerService } from '../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../shared/models/logger.model';
 
-/** Cached UI state for the recordings list, restored when navigating back to it. */
-interface RecordingsListCachedState {
-	list: EntityListSnapshot<MeetRecordingInfo, RecordingTableFilter>;
-	deletableRoomIds: string[];
-	playableRoomIds: string[];
-	scrollTop: number;
-}
-
 @Component({
 	selector: 'ov-recordings',
-	imports: [RecordingListsComponent, MatIconModule, MatProgressSpinnerModule, ScrollPersistDirective, TranslatePipe],
+	imports: [RecordingListsComponent, MatIconModule, MatProgressSpinnerModule, TranslatePipe],
 	templateUrl: './recordings.component.html',
 	styleUrl: './recordings.component.scss'
 })
-export class RecordingsComponent implements OnInit, OnDestroy {
-	private static readonly STATE_KEY = 'recordings';
-
-	private readonly scroller = viewChild(ScrollPersistDirective);
-	/** Scroll position to restore on the page container (set when restoring cached state). */
-	protected scrollToRestore = 0;
-
+export class RecordingsComponent implements OnInit {
 	protected loggerService: LoggerService = inject(LoggerService);
-	private listStateCache = inject(ListStateCacheService);
 	private authService: AuthService = inject(AuthService);
 	private recordingService: RecordingService = inject(RecordingService);
 	private recordingActions = inject(RecordingActionsService);
@@ -73,14 +56,8 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 	private roomDownloadPermissionCache = new Map<string, boolean>();
 	private roomPlayPermissionCache = new Map<string, boolean>();
 
-	initialFilters = signal<RecordingTableFilter>({
-		nameFilter: '',
-		nameMatchMode: TextMatchMode.PREFIX,
-		nameCaseInsensitive: false,
-		statusFilter: '',
-		sortField: 'startDate',
-		sortOrder: SortOrder.DESC
-	});
+	protected readonly urlState = new ListUrlState(RECORDING_FILTER_DEFAULTS, RECORDING_FILTER_URL_PARAMS);
+	initialFilters = signal(this.urlState.current);
 
 	protected readonly list = new EntityListState<MeetRecordingInfo, RecordingTableFilter>({
 		initialFilters: this.initialFilters(),
@@ -94,34 +71,12 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 	});
 
 	async ngOnInit() {
-		// Capture the navigation trigger synchronously, before any await finalizes the navigation.
-		const isBackNavigation = this.navigationService.isPopStateNavigation();
-
-		const role = await this.authService.getUserRole();
-		this.currentUserRole.set(role);
-
-		// Restore cached state only when navigating *back* (browser back/forward); an
-		// explicit navigation to this page loads fresh data so others' changes show.
-		const cached = this.listStateCache.get<RecordingsListCachedState>(RecordingsComponent.STATE_KEY);
-
-		if (cached && isBackNavigation) {
-			this.list.restore(cached.list);
-			this.initialFilters.set(cached.list.filters);
-			this.deletableRoomIds.set(new Set(cached.deletableRoomIds));
-			this.playableRoomIds.set(new Set(cached.playableRoomIds));
-			this.scrollToRestore = cached.scrollTop; // applied by ScrollPersistDirective once rendered
-			return;
-		}
+		this.currentUserRole.set(await this.authService.getUserRole());
 
 		await this.list.initialize(this.initialFilters());
-	}
-
-	ngOnDestroy() {
-		this.listStateCache.set<RecordingsListCachedState>(RecordingsComponent.STATE_KEY, {
-			list: this.list.snapshot(),
-			deletableRoomIds: [...this.deletableRoomIds()],
-			playableRoomIds: [...this.playableRoomIds()],
-			scrollTop: this.scroller()?.scrollTop ?? 0
+		this.urlState.onChange((filters) => {
+			this.initialFilters.set(filters);
+			void this.list.refresh(filters);
 		});
 	}
 

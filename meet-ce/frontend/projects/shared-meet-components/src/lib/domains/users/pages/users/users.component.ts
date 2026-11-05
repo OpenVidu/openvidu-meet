@@ -1,16 +1,15 @@
-import { Component, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MeetUserDTO, MeetUserFilters, MeetUserRole, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
+import { MeetUserDTO, MeetUserFilters, MeetUserRole } from '@openvidu-meet/typings';
 import { firstValueFrom } from 'rxjs';
-import { ScrollPersistDirective } from '../../../../shared/directives/scroll-persist.directive';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { bulkDeleteUsersDialogPreset, deleteUserDialogPreset } from '../../utils/dialog-presets';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
-import { EntityListSnapshot, EntityListState } from '../../../../shared/models/entity-list.model';
-import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
+import { EntityListState } from '../../../../shared/models/entity-list.model';
+import { ListUrlState } from '../../../../shared/models/list-url-state';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -19,6 +18,8 @@ import { AuthService } from '../../../auth/services/auth.service';
 import { ResetPasswordDialogComponent } from '../../components/reset-password-dialog/reset-password-dialog.component';
 import { UpdateRoleDialogComponent } from '../../components/update-role-dialog/update-role-dialog.component';
 import {
+	USER_FILTER_DEFAULTS,
+	USER_FILTER_URL_PARAMS,
 	UsersListsComponent,
 	UserTableAction,
 	UserTableFilter
@@ -27,28 +28,14 @@ import { UserService } from '../../services/user.service';
 import { LoggerService } from '../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../shared/models/logger.model';
 
-/** Cached UI state for the users list, restored when navigating back to it. */
-interface UsersListCachedState {
-	list: EntityListSnapshot<MeetUserDTO, UserTableFilter>;
-	scrollTop: number;
-}
-
 @Component({
 	selector: 'ov-users',
-	imports: [
-		MatButtonModule,
-		MatIconModule,
-		MatProgressSpinnerModule,
-		UsersListsComponent,
-		ScrollPersistDirective,
-		TranslatePipe
-	],
+	imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule, UsersListsComponent, TranslatePipe],
 	templateUrl: './users.component.html',
 	styleUrl: './users.component.scss'
 })
-export class UsersComponent implements OnInit, OnDestroy {
+export class UsersComponent implements OnInit {
 	private userService = inject(UserService);
-	private listStateCache = inject(ListStateCacheService);
 	private authService = inject(AuthService);
 	private notificationService = inject(NotificationService);
 	private dialogService = inject(DialogService);
@@ -58,22 +45,10 @@ export class UsersComponent implements OnInit, OnDestroy {
 	private loggerService = inject(LoggerService);
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - UsersComponent');
 
-	private static readonly STATE_KEY = 'users';
-
-	private readonly scroller = viewChild(ScrollPersistDirective);
-	/** Scroll position to restore on the page container (set when restoring cached state). */
-	protected scrollToRestore = 0;
-
 	currentUserId = signal<string>('');
 
-	initialFilters = signal<UserTableFilter>({
-		nameFilter: '',
-		nameMatchMode: TextMatchMode.PREFIX,
-		nameCaseInsensitive: false,
-		roleFilter: '',
-		sortField: 'registrationDate',
-		sortOrder: SortOrder.DESC
-	});
+	protected readonly urlState = new ListUrlState(USER_FILTER_DEFAULTS, USER_FILTER_URL_PARAMS);
+	initialFilters = signal(this.urlState.current);
 
 	protected readonly list = new EntityListState<MeetUserDTO, UserTableFilter>({
 		initialFilters: this.initialFilters(),
@@ -85,29 +60,12 @@ export class UsersComponent implements OnInit, OnDestroy {
 	});
 
 	async ngOnInit() {
-		// Capture the navigation trigger synchronously, before any await finalizes the navigation.
-		const isBackNavigation = this.navigationService.isPopStateNavigation();
-
 		this.currentUserId.set((await this.authService.getUserId()) ?? '');
 
-		// Restore cached state only when navigating *back* (browser back/forward); an
-		// explicit navigation to this page loads fresh data so others' changes show.
-		const cached = this.listStateCache.get<UsersListCachedState>(UsersComponent.STATE_KEY);
-
-		if (cached && isBackNavigation) {
-			this.list.restore(cached.list);
-			this.initialFilters.set(cached.list.filters);
-			this.scrollToRestore = cached.scrollTop; // applied by ScrollPersistDirective once rendered
-			return;
-		}
-
 		await this.list.initialize(this.initialFilters());
-	}
-
-	ngOnDestroy() {
-		this.listStateCache.set<UsersListCachedState>(UsersComponent.STATE_KEY, {
-			list: this.list.snapshot(),
-			scrollTop: this.scroller()?.scrollTop ?? 0
+		this.urlState.onChange((filters) => {
+			this.initialFilters.set(filters);
+			void this.list.refresh(filters);
 		});
 	}
 

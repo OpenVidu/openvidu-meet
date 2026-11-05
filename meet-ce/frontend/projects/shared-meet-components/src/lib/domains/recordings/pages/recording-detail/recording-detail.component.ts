@@ -169,7 +169,7 @@ export class RecordingDetailComponent implements OnInit {
 				);
 
 				// After deletion, navigate back to the recordings page (refreshed so the deleted recording is gone)
-				await this.navigationService.navigateToAndInvalidate('/recordings', 'recordings');
+				await this.navigationService.navigateTo('/recordings');
 			} catch (error) {
 				console.error('Error deleting recording:', error);
 				this.notificationService.showMessage(

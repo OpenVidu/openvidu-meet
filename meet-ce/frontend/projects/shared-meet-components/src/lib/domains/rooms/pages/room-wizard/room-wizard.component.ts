@@ -210,9 +210,6 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 			// Create room with basic config
 			const { access } = await this.roomService.createRoom({ roomName }, { fields: ['access'] });
 
-			// Refresh the rooms list so the new room appears when the user returns to it
-			this.navigationService.invalidateCachedRoute('rooms');
-
 			// Extract the path from the access URL and navigate to it
 			const url = new URL(access.user.url);
 			const path = url.pathname;
@@ -257,7 +254,7 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 				// Navigate to the room detail page after update, refreshing the rooms list and this
 				// room's detail so the changes are reflected. The route change destroys this
 				// component, which resets the wizard on its own (see ngOnDestroy).
-				await this.navigationService.navigateToAndInvalidate(`/rooms/${this.roomId}`, 'rooms', undefined, true);
+				await this.navigationService.navigateTo(`/rooms/${this.roomId}`, undefined, true);
 				this.notificationService.showMessage(this.translateService.translate('ROOMS.ERRORS.ROOM_UPDATED'));
 			} else {
 				// Create new room
@@ -270,9 +267,6 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 				if (pendingMembers.length > 0) {
 					await this.createPendingMembers(roomId, pendingMembers);
 				}
-
-				// Refresh the rooms list so the new room appears when the user returns to it
-				this.navigationService.invalidateCachedRoute('rooms');
 
 				// Extract the path from the access URL and navigate to it. Same as above: the route
 				// change destroys this component and resets the wizard.
@@ -297,7 +291,7 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 				// A partial update may already have been applied across the separate requests
 				// above — invalidate so the list/detail reload fresh instead of showing stale data.
 				// The route change destroys this component and resets the wizard.
-				await this.navigationService.navigateToAndInvalidate(`/rooms/${this.roomId}`, 'rooms', undefined, true);
+				await this.navigationService.navigateTo(`/rooms/${this.roomId}`, undefined, true);
 			}
 
 			// A failed room creation never partially applies, so there's nothing to refresh: stay
