@@ -6,12 +6,12 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetApiKey, MeetWebhook } from '@openvidu-meet/typings';
 import type { DialogPreset } from '../../../../shared/models/notification.model';
 import type { Translator } from '../../../../shared/models/translator.model';
+import { SkeletonRowsComponent } from '../../../../shared/components/skeleton-rows/skeleton-rows.component';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { ApiKeyService } from '../../../../shared/services/api-key.service';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
@@ -39,7 +39,7 @@ const deleteWebhookDialogPreset = (t: Translator, url: string): DialogPreset => 
 		MatFormFieldModule,
 		MatSlideToggleModule,
 		MatTooltipModule,
-		MatProgressSpinnerModule,
+		SkeletonRowsComponent,
 		TranslatePipe
 	],
 	templateUrl: './embedded.component.html',

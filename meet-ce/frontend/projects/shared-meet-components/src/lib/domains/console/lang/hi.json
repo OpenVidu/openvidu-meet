@@ -76,7 +76,6 @@
     "TITLE": "एम्बेडेड",
     "SUBTITLE": "OpenVidu Meet को अपने अनुप्रयोगों में एम्बेड करने के लिए आवश्यक सब कुछ।",
     "LOADING_TITLE": "सेटिंग्स लोड हो रही हैं",
-    "LOADING_SUBTITLE": "कृपया प्रतीक्षा करें जब तक हम आपकी सेटिंग्स प्राप्त करते हैं...",
     "API_KEY_TITLE": "API कुंजी",
     "API_KEY_SUBTITLE_PREFIX": "इसके लिए अपनी API कुंजी जनरेट करें और प्रबंधित करें",
     "API_KEY_SUBTITLE_LINK": "REST API",

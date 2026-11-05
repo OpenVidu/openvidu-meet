@@ -290,7 +290,7 @@
 
 	<!-- Loading Spinner -->
 	@if (loading() && rooms().length === 0) {
-		<ov-table-skeleton [label]="'ROOMS.LIST.LOADING_ROOMS' | translate" />
+		<ov-skeleton-rows [label]="'ROOMS.LIST.LOADING_ROOMS' | translate" />
 	} @else if (rooms().length === 0 && showEmptyFilterMessage()) {
 		<!-- No rooms match the current filters -->
 		<div class="no-rooms-state">

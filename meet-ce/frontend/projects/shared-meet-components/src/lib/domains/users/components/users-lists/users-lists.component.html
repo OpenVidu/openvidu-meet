@@ -195,7 +195,7 @@
 
 	<!-- Loading Spinner -->
 	@if (loading() && users().length === 0) {
-		<ov-table-skeleton [label]="'USERS.LIST.LOADING_USERS' | translate" />
+		<ov-skeleton-rows [label]="'USERS.LIST.LOADING_USERS' | translate" />
 	} @else if (users().length === 0 && showEmptyFilterMessage()) {
 		<!-- No users match the current filters -->
 		<div class="no-users-state">

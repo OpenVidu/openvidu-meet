@@ -36,7 +36,7 @@ import {
 } from '@openvidu-meet/typings';
 import { merge } from 'rxjs';
 import { RowLinkDirective } from '../../../../shared/directives/row-link.directive';
-import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
+import { SkeletonRowsComponent } from '../../../../shared/components/skeleton-rows/skeleton-rows.component';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
@@ -92,7 +92,7 @@ import { RecordingUiUtils } from '../../utils/ui';
 		MatDividerModule,
 		MatSortModule,
 		DatePipe,
-		TableSkeletonComponent,
+		SkeletonRowsComponent,
 		TranslatePipe
 	],
 	templateUrl: './recording-lists.component.html',

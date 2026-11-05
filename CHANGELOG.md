@@ -93,7 +93,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - The console lists of rooms, users and recordings keep their search, filters and order in the URL, and the room page its
   selected tab, so a reload or a shared link shows the same view.
 - The console lists keep their rows, dimmed, while a search, a sort or a new page loads, and show placeholder rows when
-  they have none yet, instead of replacing the list with a spinner.
+  they have none yet, instead of replacing the list with a spinner, and the Embedded page shows its sections with
+  placeholder rows instead of a loading screen.
 
 ### Fixed
 

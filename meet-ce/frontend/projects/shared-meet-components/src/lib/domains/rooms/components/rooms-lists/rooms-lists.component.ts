@@ -40,7 +40,7 @@ import {
 import { merge } from 'rxjs';
 import { ListUrlParams } from '../../../../shared/models/list-url-state';
 import { RowLinkDirective } from '../../../../shared/directives/row-link.directive';
-import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
+import { SkeletonRowsComponent } from '../../../../shared/components/skeleton-rows/skeleton-rows.component';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -146,7 +146,7 @@ export const ROOM_FILTER_URL_PARAMS: ListUrlParams<RoomTableFilter> = {
 		MatDividerModule,
 		MatSortModule,
 		DatePipe,
-		TableSkeletonComponent,
+		SkeletonRowsComponent,
 		TranslatePipe
 	],
 	templateUrl: './rooms-lists.component.html',

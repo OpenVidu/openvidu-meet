@@ -7,275 +7,261 @@
 		<p class="subtitle">{{ 'EMBEDDED.SUBTITLE' | translate }}</p>
 	</div>
 
-	@if (isLoading()) {
-		<div class="ov-page-loading">
-			<div class="loading-content">
-				<div class="loading-header">
-					<div class="loading-title">
-						<mat-icon class="ov-settings-icon loading-icon">settings</mat-icon>
-						<h1>{{ 'EMBEDDED.LOADING_TITLE' | translate }}</h1>
-					</div>
-					<p class="loading-subtitle">{{ 'EMBEDDED.LOADING_SUBTITLE' | translate }}</p>
+	<div class="page-content">
+		<!-- API KEY Section -->
+		<mat-card class="section-card api-key-section">
+			<mat-card-header>
+				<div mat-card-avatar>
+					<mat-icon class="section-icon">vpn_key</mat-icon>
 				</div>
+				<mat-card-title>{{ 'EMBEDDED.API_KEY_TITLE' | translate }}</mat-card-title>
+				<mat-card-subtitle>
+					{{ 'EMBEDDED.API_KEY_SUBTITLE_PREFIX' | translate }}
+					<a
+						href="{{ restApiDocsUrl() }}"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="rest-api-link"
+					>
+						{{ 'EMBEDDED.API_KEY_SUBTITLE_LINK' | translate }}
+						<mat-icon class="external-link-icon">open_in_new</mat-icon>
+					</a>
+					{{ 'EMBEDDED.API_KEY_SUBTITLE_SUFFIX' | translate }}
+				</mat-card-subtitle>
+			</mat-card-header>
 
-				<div class="loading-spinner-container">
-					<mat-spinner diameter="48" />
-				</div>
-			</div>
-		</div>
-	} @else {
-		<div class="page-content">
-			<!-- API KEY Section -->
-			<mat-card class="section-card api-key-section">
-				<mat-card-header>
-					<div mat-card-avatar>
-						<mat-icon class="section-icon">vpn_key</mat-icon>
-					</div>
-					<mat-card-title>{{ 'EMBEDDED.API_KEY_TITLE' | translate }}</mat-card-title>
-					<mat-card-subtitle>
-						{{ 'EMBEDDED.API_KEY_SUBTITLE_PREFIX' | translate }}
-						<a
-							href="{{ restApiDocsUrl() }}"
-							target="_blank"
-							rel="noopener noreferrer"
-							class="rest-api-link"
-						>
-							{{ 'EMBEDDED.API_KEY_SUBTITLE_LINK' | translate }}
-							<mat-icon class="external-link-icon">open_in_new</mat-icon>
-						</a>
-						{{ 'EMBEDDED.API_KEY_SUBTITLE_SUFFIX' | translate }}
-					</mat-card-subtitle>
-				</mat-card-header>
+			<mat-card-content>
+				@if (isLoading()) {
+					<ov-skeleton-rows plain delayed [count]="1" [label]="'EMBEDDED.LOADING_TITLE' | translate" />
+				} @else if (apiKeyData()) {
+					<div class="api-key-display">
+						<mat-form-field subscriptSizing="dynamic" appearance="outline" class="api-key-field">
+							<mat-label>{{ 'EMBEDDED.API_KEY_LABEL' | translate }}</mat-label>
+							<input
+								matInput
+								readonly
+								[type]="showApiKey() ? 'text' : 'password'"
+								[value]="apiKeyData()!.key"
+							/>
+							<button
+								mat-icon-button
+								matSuffix
+								(click)="toggleApiKeyVisibility()"
+								[matTooltip]="'EMBEDDED.TOGGLE_VISIBILITY' | translate"
+								class="toggle-visibility-button"
+							>
+								<mat-icon>{{ showApiKey() ? 'visibility_off' : 'visibility' }}</mat-icon>
+							</button>
+						</mat-form-field>
 
-				<mat-card-content>
-					@if (apiKeyData()) {
-						<div class="api-key-display">
-							<mat-form-field subscriptSizing="dynamic" appearance="outline" class="api-key-field">
-								<mat-label>{{ 'EMBEDDED.API_KEY_LABEL' | translate }}</mat-label>
-								<input
-									matInput
-									readonly
-									[type]="showApiKey() ? 'text' : 'password'"
-									[value]="apiKeyData()!.key"
-								/>
-								<button
-									mat-icon-button
-									matSuffix
-									(click)="toggleApiKeyVisibility()"
-									[matTooltip]="'EMBEDDED.TOGGLE_VISIBILITY' | translate"
-									class="toggle-visibility-button"
-								>
-									<mat-icon>{{ showApiKey() ? 'visibility_off' : 'visibility' }}</mat-icon>
-								</button>
-							</mat-form-field>
-
-							<div class="api-key-actions">
-								<button mat-button (click)="copyApiKey()" class="copy-button">
-									<mat-icon>content_copy</mat-icon>
-									{{ 'EMBEDDED.COPY' | translate }}
-								</button>
-							</div>
-						</div>
-
-						<!-- <div class="api-key-info">
-						<p class="info-text">
-							<mat-icon class="info-icon">info</mat-icon>
-							Generated on: {{ apiKeyData()!.creationDate | date: 'medium' }}
-						</p>
-						<p class="warning-text">
-							<mat-icon class="warning-icon">warning</mat-icon>
-							Keep your API key secure. Do not share it publicly or expose it in client-side code.
-						</p>
-					</div> -->
-					} @else {
-						<div class="no-api-key">
-							<h3>{{ 'EMBEDDED.NO_API_KEY_TITLE' | translate }}</h3>
-							<p>{{ 'EMBEDDED.NO_API_KEY_DESC' | translate }}</p>
-							<button mat-button class (click)="generateApiKey()" class="primary-button">
-								<mat-icon>vpn_key</mat-icon>
-								{{ 'EMBEDDED.GENERATE_API_KEY' | translate }}
+						<div class="api-key-actions">
+							<button mat-button (click)="copyApiKey()" class="copy-button">
+								<mat-icon>content_copy</mat-icon>
+								{{ 'EMBEDDED.COPY' | translate }}
 							</button>
 						</div>
-					}
-				</mat-card-content>
+					</div>
 
-				@if (apiKeyData()) {
-					<mat-card-actions>
-						<button mat-raised-button color="primary" (click)="regenerateApiKey()">
-							<mat-icon>refresh</mat-icon>
-							{{ 'EMBEDDED.REGENERATE_KEY' | translate }}
+					<!-- <div class="api-key-info">
+					<p class="info-text">
+						<mat-icon class="info-icon">info</mat-icon>
+						Generated on: {{ apiKeyData()!.creationDate | date: 'medium' }}
+					</p>
+					<p class="warning-text">
+						<mat-icon class="warning-icon">warning</mat-icon>
+						Keep your API key secure. Do not share it publicly or expose it in client-side code.
+					</p>
+				</div> -->
+				} @else {
+					<div class="no-api-key">
+						<h3>{{ 'EMBEDDED.NO_API_KEY_TITLE' | translate }}</h3>
+						<p>{{ 'EMBEDDED.NO_API_KEY_DESC' | translate }}</p>
+						<button mat-button class (click)="generateApiKey()" class="primary-button">
+							<mat-icon>vpn_key</mat-icon>
+							{{ 'EMBEDDED.GENERATE_API_KEY' | translate }}
 						</button>
-						<button mat-stroked-button id="revoke-key-btn" (click)="revokeApiKey()">
-							<mat-icon>delete</mat-icon>
-							{{ 'EMBEDDED.REVOKE_KEY' | translate }}
-						</button>
-					</mat-card-actions>
+					</div>
 				}
-			</mat-card>
+			</mat-card-content>
 
-			<!-- WEBHOOKS Section -->
-			<mat-card class="section-card webhooks-section">
-				<mat-card-header>
-					<div mat-card-avatar>
-						<mat-icon class="section-icon">webhook</mat-icon>
+			@if (apiKeyData()) {
+				<mat-card-actions>
+					<button mat-raised-button color="primary" (click)="regenerateApiKey()">
+						<mat-icon>refresh</mat-icon>
+						{{ 'EMBEDDED.REGENERATE_KEY' | translate }}
+					</button>
+					<button mat-stroked-button id="revoke-key-btn" (click)="revokeApiKey()">
+						<mat-icon>delete</mat-icon>
+						{{ 'EMBEDDED.REVOKE_KEY' | translate }}
+					</button>
+				</mat-card-actions>
+			}
+		</mat-card>
+
+		<!-- WEBHOOKS Section -->
+		<mat-card class="section-card webhooks-section">
+			<mat-card-header>
+				<div mat-card-avatar>
+					<mat-icon class="section-icon">webhook</mat-icon>
+				</div>
+				<mat-card-title>{{ 'EMBEDDED.WEBHOOKS_TITLE' | translate }}</mat-card-title>
+				<mat-card-subtitle>{{ 'EMBEDDED.WEBHOOKS_SUBTITLE' | translate }}</mat-card-subtitle>
+			</mat-card-header>
+
+			<mat-card-content class="ov-mt-sm">
+				@if (!isLoading() && !apiKeyData()) {
+					<div class="webhook-warning">
+						<div class="warning-card">
+							<mat-icon class="warning-icon">warning</mat-icon>
+							<div class="warning-content">
+								<p class="warning-title">{{ 'EMBEDDED.WEBHOOKS_NO_API_KEY_TITLE' | translate }}</p>
+								<p class="warning-text">{{ 'EMBEDDED.WEBHOOKS_NO_API_KEY_WARNING' | translate }}</p>
+							</div>
+						</div>
 					</div>
-					<mat-card-title>{{ 'EMBEDDED.WEBHOOKS_TITLE' | translate }}</mat-card-title>
-					<mat-card-subtitle>{{ 'EMBEDDED.WEBHOOKS_SUBTITLE' | translate }}</mat-card-subtitle>
-				</mat-card-header>
+				}
 
-				<mat-card-content class="ov-mt-sm">
-					@if (!apiKeyData()) {
-						<div class="webhook-warning">
-							<div class="warning-card">
-								<mat-icon class="warning-icon">warning</mat-icon>
-								<div class="warning-content">
-									<p class="warning-title">{{ 'EMBEDDED.WEBHOOKS_NO_API_KEY_TITLE' | translate }}</p>
-									<p class="warning-text">{{ 'EMBEDDED.WEBHOOKS_NO_API_KEY_WARNING' | translate }}</p>
-								</div>
-							</div>
-						</div>
-					}
+				@if (isLoading()) {
+					<ov-skeleton-rows plain delayed [count]="3" [label]="'EMBEDDED.LOADING_TITLE' | translate" />
+				} @else if (webhooks().length === 0) {
+					<div class="no-webhooks">
+						<mat-icon class="no-webhooks-icon">webhook</mat-icon>
+						<h3>{{ 'EMBEDDED.NO_WEBHOOKS_TITLE' | translate }}</h3>
+						<p>{{ 'EMBEDDED.NO_WEBHOOKS_DESC' | translate }}</p>
+						<button
+							mat-button
+							class="primary-button"
+							(click)="openWebhookEditor()"
+							[disabled]="!canManageWebhooks"
+							[matTooltip]="'EMBEDDED.ENABLE_WEBHOOKS_TOOLTIP' | translate"
+							[matTooltipDisabled]="canManageWebhooks"
+						>
+							<mat-icon>add</mat-icon>
+							{{ 'EMBEDDED.ADD_WEBHOOK' | translate }}
+						</button>
+					</div>
+				} @else {
+					<div class="webhook-toolbar">
+						<span class="webhook-count">
+							{{
+								'EMBEDDED.WEBHOOKS_COUNT'
+									| translate: { active: activeWebhookCount, total: webhooks().length }
+							}}
+						</span>
+						<button
+							mat-button
+							class="primary-button"
+							(click)="openWebhookEditor()"
+							[disabled]="!canManageWebhooks"
+							[matTooltip]="'EMBEDDED.ENABLE_WEBHOOKS_TOOLTIP' | translate"
+							[matTooltipDisabled]="canManageWebhooks"
+						>
+							<mat-icon>add</mat-icon>
+							{{ 'EMBEDDED.ADD_WEBHOOK' | translate }}
+						</button>
+					</div>
 
-					@if (webhooks().length === 0) {
-						<div class="no-webhooks">
-							<mat-icon class="no-webhooks-icon">webhook</mat-icon>
-							<h3>{{ 'EMBEDDED.NO_WEBHOOKS_TITLE' | translate }}</h3>
-							<p>{{ 'EMBEDDED.NO_WEBHOOKS_DESC' | translate }}</p>
-							<button
-								mat-button
-								class="primary-button"
-								(click)="openWebhookEditor()"
-								[disabled]="!canManageWebhooks"
-								[matTooltip]="'EMBEDDED.ENABLE_WEBHOOKS_TOOLTIP' | translate"
-								[matTooltipDisabled]="canManageWebhooks"
-							>
-								<mat-icon>add</mat-icon>
-								{{ 'EMBEDDED.ADD_WEBHOOK' | translate }}
-							</button>
-						</div>
-					} @else {
-						<div class="webhook-toolbar">
-							<span class="webhook-count">
-								{{
-									'EMBEDDED.WEBHOOKS_COUNT'
-										| translate: { active: activeWebhookCount, total: webhooks().length }
-								}}
-							</span>
-							<button
-								mat-button
-								class="primary-button"
-								(click)="openWebhookEditor()"
-								[disabled]="!canManageWebhooks"
-								[matTooltip]="'EMBEDDED.ENABLE_WEBHOOKS_TOOLTIP' | translate"
-								[matTooltipDisabled]="canManageWebhooks"
-							>
-								<mat-icon>add</mat-icon>
-								{{ 'EMBEDDED.ADD_WEBHOOK' | translate }}
-							</button>
+					<div class="webhook-list">
+						<div class="webhook-list-header">
+							<span class="col-status">{{ 'EMBEDDED.WEBHOOK_COLUMN_STATUS' | translate }}</span>
+							<span class="col-endpoint">{{ 'EMBEDDED.WEBHOOK_COLUMN_ENDPOINT' | translate }}</span>
+							<span class="col-events">{{ 'EMBEDDED.WEBHOOK_COLUMN_EVENTS' | translate }}</span>
+							<span class="col-room">{{ 'EMBEDDED.WEBHOOK_COLUMN_ROOM' | translate }}</span>
+							<span class="col-actions">{{ 'EMBEDDED.WEBHOOK_COLUMN_ACTIONS' | translate }}</span>
 						</div>
 
-						<div class="webhook-list">
-							<div class="webhook-list-header">
-								<span class="col-status">{{ 'EMBEDDED.WEBHOOK_COLUMN_STATUS' | translate }}</span>
-								<span class="col-endpoint">{{ 'EMBEDDED.WEBHOOK_COLUMN_ENDPOINT' | translate }}</span>
-								<span class="col-events">{{ 'EMBEDDED.WEBHOOK_COLUMN_EVENTS' | translate }}</span>
-								<span class="col-room">{{ 'EMBEDDED.WEBHOOK_COLUMN_ROOM' | translate }}</span>
-								<span class="col-actions">{{ 'EMBEDDED.WEBHOOK_COLUMN_ACTIONS' | translate }}</span>
-							</div>
+						@for (webhook of webhooks(); track webhook.webhookId) {
+							<div class="webhook-item">
+								<div class="webhook-row">
+									<div class="col-status">
+										<mat-slide-toggle
+											[checked]="webhook.enabled"
+											(change)="toggleWebhookEnabled(webhook, $event.checked)"
+											[matTooltip]="
+												(webhook.enabled
+													? 'EMBEDDED.WEBHOOK_ACTIVE'
+													: 'EMBEDDED.WEBHOOK_PAUSED'
+												) | translate
+											"
+											[aria-label]="
+												(webhook.enabled
+													? 'EMBEDDED.WEBHOOK_ACTIVE'
+													: 'EMBEDDED.WEBHOOK_PAUSED'
+												) | translate
+											"
+										/>
+									</div>
 
-							@for (webhook of webhooks(); track webhook.webhookId) {
-								<div class="webhook-item">
-									<div class="webhook-row">
-										<div class="col-status">
-											<mat-slide-toggle
-												[checked]="webhook.enabled"
-												(change)="toggleWebhookEnabled(webhook, $event.checked)"
-												[matTooltip]="
-													(webhook.enabled
-														? 'EMBEDDED.WEBHOOK_ACTIVE'
-														: 'EMBEDDED.WEBHOOK_PAUSED'
-													) | translate
-												"
-												[aria-label]="
-													(webhook.enabled
-														? 'EMBEDDED.WEBHOOK_ACTIVE'
-														: 'EMBEDDED.WEBHOOK_PAUSED'
-													) | translate
-												"
-											/>
-										</div>
+									<div class="col-endpoint">
+										<span class="webhook-url" [matTooltip]="webhook.url">{{
+											webhook.url
+										}}</span>
+										<button
+											mat-icon-button
+											class="copy-url-button"
+											(click)="copyWebhookUrl(webhook)"
+											[matTooltip]="'EMBEDDED.WEBHOOK_COPY_URL' | translate"
+										>
+											<mat-icon>content_copy</mat-icon>
+										</button>
+									</div>
 
-										<div class="col-endpoint">
-											<span class="webhook-url" [matTooltip]="webhook.url">{{
-												webhook.url
+									<div class="col-events">
+										@if (webhook.events?.length) {
+											@for (event of webhook.events; track event) {
+												<span class="webhook-chip">{{ event }}</span>
+											}
+										} @else {
+											<span class="webhook-chip all-events">
+												{{ 'EMBEDDED.WEBHOOK_ALL_EVENTS' | translate }}
+											</span>
+										}
+									</div>
+
+									<div class="col-room">
+										@if (webhook.roomId) {
+											<span class="webhook-chip room-scope" [matTooltip]="webhook.roomId">
+												<mat-icon class="chip-icon">meeting_room</mat-icon>
+												{{ webhook.roomId }}
+											</span>
+										} @else {
+											<span class="webhook-all-rooms">{{
+												'EMBEDDED.WEBHOOK_ALL_ROOMS' | translate
 											}}</span>
-											<button
-												mat-icon-button
-												class="copy-url-button"
-												(click)="copyWebhookUrl(webhook)"
-												[matTooltip]="'EMBEDDED.WEBHOOK_COPY_URL' | translate"
-											>
-												<mat-icon>content_copy</mat-icon>
-											</button>
-										</div>
+										}
+									</div>
 
-										<div class="col-events">
-											@if (webhook.events?.length) {
-												@for (event of webhook.events; track event) {
-													<span class="webhook-chip">{{ event }}</span>
-												}
-											} @else {
-												<span class="webhook-chip all-events">
-													{{ 'EMBEDDED.WEBHOOK_ALL_EVENTS' | translate }}
-												</span>
-											}
-										</div>
-
-										<div class="col-room">
-											@if (webhook.roomId) {
-												<span class="webhook-chip room-scope" [matTooltip]="webhook.roomId">
-													<mat-icon class="chip-icon">meeting_room</mat-icon>
-													{{ webhook.roomId }}
-												</span>
-											} @else {
-												<span class="webhook-all-rooms">{{
-													'EMBEDDED.WEBHOOK_ALL_ROOMS' | translate
-												}}</span>
-											}
-										</div>
-
-										<div class="col-actions">
-											<button
-												mat-icon-button
-												(click)="openWebhookEditor(webhook)"
-												[matTooltip]="'EMBEDDED.EDIT_WEBHOOK' | translate"
-											>
-												<mat-icon>edit</mat-icon>
-											</button>
-											<button
-												mat-icon-button
-												class="delete-webhook-button"
-												(click)="deleteWebhook(webhook)"
-												[matTooltip]="'EMBEDDED.DELETE_WEBHOOK' | translate"
-											>
-												<mat-icon>delete</mat-icon>
-											</button>
-											<button
-												mat-stroked-button
-												class="test-button"
-												(click)="testWebhook(webhook)"
-											>
-												<mat-icon>send</mat-icon>
-												{{ 'EMBEDDED.WEBHOOK_TEST' | translate }}
-											</button>
-										</div>
+									<div class="col-actions">
+										<button
+											mat-icon-button
+											(click)="openWebhookEditor(webhook)"
+											[matTooltip]="'EMBEDDED.EDIT_WEBHOOK' | translate"
+										>
+											<mat-icon>edit</mat-icon>
+										</button>
+										<button
+											mat-icon-button
+											class="delete-webhook-button"
+											(click)="deleteWebhook(webhook)"
+											[matTooltip]="'EMBEDDED.DELETE_WEBHOOK' | translate"
+										>
+											<mat-icon>delete</mat-icon>
+										</button>
+										<button
+											mat-stroked-button
+											class="test-button"
+											(click)="testWebhook(webhook)"
+										>
+											<mat-icon>send</mat-icon>
+											{{ 'EMBEDDED.WEBHOOK_TEST' | translate }}
+										</button>
 									</div>
 								</div>
-							}
-						</div>
-					}
-				</mat-card-content>
-			</mat-card>
-		</div>
-	}
+							</div>
+						}
+					</div>
+				}
+			</mat-card-content>
+		</mat-card>
+	</div>
 </div>

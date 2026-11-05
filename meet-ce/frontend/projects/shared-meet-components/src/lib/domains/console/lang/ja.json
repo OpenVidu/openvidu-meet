@@ -76,7 +76,6 @@
     "TITLE": "埋め込み",
     "SUBTITLE": "OpenVidu Meet をアプリケーションに埋め込むために必要なすべてが揃っています。",
     "LOADING_TITLE": "設定を読み込んでいます",
-    "LOADING_SUBTITLE": "設定を取得していますので、お待ちください...",
     "API_KEY_TITLE": "API キー",
     "API_KEY_SUBTITLE_PREFIX": "次のアクセス用に API キーを生成・管理します：",
     "API_KEY_SUBTITLE_LINK": "REST API",
