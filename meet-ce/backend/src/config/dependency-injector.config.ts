@@ -45,6 +45,7 @@ import { BroadcastService } from '../services/broadcast.service.js';
 import { FrontendEventService } from '../services/frontend-event.service.js';
 import { LivekitWebhookService } from '../services/livekit-webhook.service.js';
 import { LiveKitService } from '../services/livekit.service.js';
+import { MeetingDurationLimitService } from '../services/meeting-duration-limit.service.js';
 import { MeetingPresenceService } from '../services/meeting-presence.service.js';
 import { MeetingService } from '../services/meeting.service.js';
 import { MigrationService } from '../services/migration.service.js';
@@ -161,6 +162,7 @@ const domainModule = new ContainerModule(({ bind }) => {
 	bind(RoomMemberService).toSelf().inSingletonScope();
 	bind(WebhookDispatcherService).toSelf().inSingletonScope();
 	bind(WebhookRegistryService).toSelf().inSingletonScope();
+	bind(MeetingDurationLimitService).toSelf().inSingletonScope();
 	bind(LivekitWebhookService).toSelf().inSingletonScope();
 	bind(RoomScheduledTasksService).toSelf().inSingletonScope();
 	bind(RecordingScheduledTasksService).toSelf().inSingletonScope();
@@ -209,5 +211,6 @@ export const initializeEagerServices = async () => {
 	// Initialize scheduled tasks services to register their cron jobs
 	container.get(RecordingScheduledTasksService);
 	container.get(RoomScheduledTasksService);
+	container.get(MeetingDurationLimitService);
 	container.get(BroadcastScheduledTasksService);
 };

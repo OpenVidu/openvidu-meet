@@ -115,9 +115,8 @@ what LiveKit's webhooks never told.
   helpers, models and repositories never import it. Importing it puts a module in an import cycle
   with `dependency-injector.config.ts`, where evaluation order decides whether `@inject(X)` reads `X`
   or an uninitialized binding. A construction cycle between services means a shared piece belongs
-  lower down (a repository, a smaller service or a pure helper), not behind a lazy lookup; one
-  service still has one (`LivekitWebhookService`), so do not add a second. Startup work that must
-  happen before listening goes in `initializeEagerServices()`.
+  lower down (a repository, a smaller service or a pure helper), never behind a lazy lookup.
+  Startup work that must happen before listening goes in `initializeEagerServices()`.
 - **Request context**: `initRequestContext` must stay the first middleware after body parsing; it
   opens the `AsyncLocalStorage` scope that `RequestSessionService` (authenticated user, room member
   token info) relies on. Anything outside a request (schedulers, webhooks) has no session.

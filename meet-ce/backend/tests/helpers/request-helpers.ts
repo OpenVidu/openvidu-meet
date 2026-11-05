@@ -41,6 +41,7 @@ import { RoomRepository } from '../../src/repositories/room.repository.js';
 import { createApp, registerDependencies } from '../../src/server.js';
 import { ApiKeyService } from '../../src/services/api-key.service.js';
 import { GlobalConfigService } from '../../src/services/global-config.service.js';
+import { MeetingDurationLimitService } from '../../src/services/meeting-duration-limit.service.js';
 import { RecordingService } from '../../src/services/recording.service.js';
 import { RedisService } from '../../src/services/redis.service.js';
 import { RoomScheduledTasksService } from '../../src/services/room-scheduled-tasks.service.js';
@@ -757,8 +758,8 @@ export const executeRoomStatusValidationGC = async () => {
 export const executeDurationLimitTimersGC = async () => {
 	checkAppIsRunning();
 
-	const roomTaskScheduler = container.get(RoomScheduledTasksService);
-	await roomTaskScheduler['reconcileDurationLimitTimersGC']();
+	const meetingDurationLimitService = container.get(MeetingDurationLimitService);
+	await meetingDurationLimitService['reconcileDurationLimitTimersGC']();
 	await sleep('1s');
 };
 

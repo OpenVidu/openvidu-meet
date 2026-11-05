@@ -1,11 +1,10 @@
 import { ParticipantInfo_Kind } from '@livekit/protocol';
 import type { MeetRecordingInfo } from '@openvidu-meet/typings';
-import { MeetingEndAction, MeetMeetingEndedReason, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetingEndAction, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { EgressInfo, ParticipantInfo, Room, WebhookEvent } from 'livekit-server-sdk';
 import { WebhookReceiver } from 'livekit-server-sdk';
 import ms from 'ms';
-import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { EgressHelper } from '../helpers/egress.helper.js';
@@ -23,11 +22,11 @@ import { BroadcastService } from './broadcast.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
+import { MeetingDurationLimitService } from './meeting-duration-limit.service.js';
 import { MeetingPresenceService } from './meeting-presence.service.js';
 import { RecordingService } from './recording.service.js';
 import { RedisService } from './redis.service.js';
 import { RoomMemberService } from './room-member.service.js';
-import type { RoomScheduledTasksService } from './room-scheduled-tasks.service.js';
 import { RoomService } from './room.service.js';
 import { TokenService } from './token.service.js';
 import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
@@ -50,18 +49,10 @@ export class LivekitWebhookService {
 		@inject(TokenService) protected tokenService: TokenService,
 		@inject(RedisService) protected redisService: RedisService,
 		@inject(LoggerService) protected logger: LoggerService,
-		@inject(BroadcastService) protected broadcastService: BroadcastService
+		@inject(BroadcastService) protected broadcastService: BroadcastService,
+		@inject(MeetingDurationLimitService) protected meetingDurationLimitService: MeetingDurationLimitService
 	) {
 		this.webhookReceiver = new WebhookReceiver(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
-	}
-
-	/**
-	 * Resolved on use rather than injected: RoomScheduledTasksService injects this service for its
-	 * reconcile paths, so a constructor dependency back would be a cycle.
-	 */
-	protected async getRoomScheduledTasksService(): Promise<RoomScheduledTasksService> {
-		const { RoomScheduledTasksService } = await import('./room-scheduled-tasks.service.js');
-		return container.get(RoomScheduledTasksService);
 	}
 
 	/**
@@ -414,8 +405,7 @@ export class LivekitWebhookService {
 			}
 
 			if (updatedRoom.config.maxDurationMinutes) {
-				const roomScheduledTasksService = await this.getRoomScheduledTasksService();
-				roomScheduledTasksService.scheduleMeetingEndAtDurationLimit(
+				this.meetingDurationLimitService.scheduleMeetingEndAtDurationLimit(
 					room,
 					updatedRoom.config.maxDurationMinutes
 				);
@@ -447,8 +437,7 @@ export class LivekitWebhookService {
 			// Reactivate the recording auto-start before anything else
 			await this.recordingService.reactivateAutoRecording(roomId, meetingId);
 
-			const roomScheduledTasksService = await this.getRoomScheduledTasksService();
-			roomScheduledTasksService.cancelMeetingEndAtDurationLimit(roomId);
+			this.meetingDurationLimitService.cancelMeetingEndAtDurationLimit(roomId);
 
 			this.logger.info(`Processing room_finished event for room '${roomId}'`);
 			const endedRoom = await this.roomRepository.finishMeeting(roomId);
@@ -470,9 +459,7 @@ export class LivekitWebhookService {
 				this.logger.info(`Closed room '${roomId}' after its meeting finished`);
 			}
 
-			// Send webhook notification, attributing the end to the duration GC when that's what
-			// actually force-ended this meeting (see RoomScheduledTasksService.recordMeetingEndedReason).
-			const reason = await this.getMeetingEndedReason(roomId, meetingId);
+			const reason = await this.meetingDurationLimitService.getMeetingEndedReason(roomId, meetingId);
 			this.webhookDispatcherService.sendMeetingEndedWebhook(endedRoom, reason);
 
 			tasks.push(
@@ -486,34 +473,6 @@ export class LivekitWebhookService {
 		} catch (error) {
 			this.logger.error(`Error handling room finished event for room '${roomId}'`, error);
 		}
-	}
-
-	/**
-	 * Whether the meeting finishing in `roomId` was force-ended by the duration GC rather than
-	 * ending normally (a moderator's own end, or the room emptying out). Scoped to the meeting's
-	 * sid when the caller knows it: like {@link RecordingAutoStartStateService#isDisabled}, a flag
-	 * left over from a different, earlier meeting in the same room never applies.
-	 *
-	 * The flag is consumed on the way out, so it attributes exactly one end. That is what lets a
-	 * caller with no sid attribute at all: a flag still standing means no `room_finished` ever came
-	 * for the meeting the duration GC ended, which is the very case the reconcile GC covers.
-	 */
-	protected async getMeetingEndedReason(
-		roomId: string,
-		meetingId?: string
-	): Promise<MeetMeetingEndedReason | undefined> {
-		const key = `${RedisKeyName.MEETING_ENDED_REASON}${roomId}`;
-		const value = await this.redisService.get(key);
-
-		if (value === null || (meetingId !== undefined && value !== meetingId)) return undefined;
-
-		try {
-			await this.redisService.delete(key);
-		} catch (error) {
-			this.logger.warn(`Error consuming the meeting ended reason flag for room '${roomId}'`, error);
-		}
-
-		return MeetMeetingEndedReason.MAX_DURATION_REACHED;
 	}
 
 	/**
