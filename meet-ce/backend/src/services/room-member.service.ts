@@ -51,6 +51,7 @@ import {
 	OpenViduMeetError
 } from '../models/error.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
+import { UserRepository } from '../repositories/user.repository.js';
 import type {
 	MeetRoomMemberPage,
 	RoomMemberQuery,
@@ -69,7 +70,6 @@ import { RecordingService } from './recording.service.js';
 import { RequestSessionService } from './request-session.service.js';
 import { RoomService } from './room.service.js';
 import { TokenService } from './token.service.js';
-import { UserService } from './user.service.js';
 import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 
 interface ResolvedPermissionSource {
@@ -89,7 +89,7 @@ export class RoomMemberService {
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
 		@inject(RoomService) protected roomService: RoomService,
-		@inject(UserService) protected userService: UserService,
+		@inject(UserRepository) protected userRepository: UserRepository,
 		@inject(ParticipantNameService) protected participantNameService: ParticipantNameService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
@@ -120,7 +120,7 @@ export class RoomMemberService {
 
 		if (userId) {
 			// User
-			const user = await this.userService.getUser(userId, ['userId', 'name', 'role']);
+			const user = await this.userRepository.findByUserId(userId, ['userId', 'name', 'role']);
 
 			if (!user) {
 				throw errorUserNotFound(userId);

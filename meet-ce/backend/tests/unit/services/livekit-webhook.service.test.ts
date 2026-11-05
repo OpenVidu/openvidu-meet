@@ -12,7 +12,7 @@ import {
 import type { ParticipantInfo, Room } from 'livekit-server-sdk';
 import { AccessToken, EgressInfo, EgressStatus } from 'livekit-server-sdk';
 import crypto from 'crypto';
-// LivekitWebhookService is still in an import cycle with the DI container module, which therefore has to be
+// LivekitWebhookService is in an import cycle with the DI container module, which therefore has to be
 // evaluated first: otherwise RoomScheduledTasksService declares `@inject(LivekitWebhookService)` before it exists.
 import { container, registerDependencies } from '../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../src/environment.js';

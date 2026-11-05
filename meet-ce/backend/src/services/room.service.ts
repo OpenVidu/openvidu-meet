@@ -386,74 +386,40 @@ export class RoomService {
 	 *
 	 * @param roomId - The ID of the room
 	 * @param roomRoles - The updated room roles configuration
-	 * @returns A promise that resolves when all members have been updated
 	 */
 	protected async updateAllRoomMemberPermissions(roomId: string, roomRoles: MeetRoomRoles): Promise<void> {
-		this.logger.verbose(`Updating effective permissions for all members in room '${roomId}'`);
-
-		let batchNumber = 0;
 		let nextPageToken: string | undefined;
-		let totalUpdated = 0;
 
 		do {
-			batchNumber++;
-
-			const {
-				members,
-				isTruncated,
-				nextPageToken: token
-			} = await this.roomMemberRepository.findByRoomId(roomId, {
-				maxItems: 100,
+			const page = await this.roomMemberRepository.findByRoomId(roomId, {
 				nextPageToken,
 				fields: ['memberId', 'baseRole', 'customPermissions']
 			});
 
-			if (members.length === 0) {
-				break;
-			}
-
-			this.logger.verbose(`Processing batch ${batchNumber} with ${members.length} members in room '${roomId}'`);
-
 			await runConcurrently(
-				members,
-				async (member) => {
+				page.members,
+				async ({ memberId, baseRole, customPermissions }) => {
 					try {
-						const effectivePermissions = MeetRoomMemberHelper.computeEffectivePermissions(
-							roomRoles,
-							member.baseRole,
-							member.customPermissions
-						);
-
-						await this.roomMemberRepository.updatePartial(roomId, member.memberId, {
-							effectivePermissions,
+						await this.roomMemberRepository.updatePartial(roomId, memberId, {
+							effectivePermissions: MeetRoomMemberHelper.computeEffectivePermissions(
+								roomRoles,
+								baseRole,
+								customPermissions
+							),
 							permissionsUpdatedAt: Date.now()
 						});
-
-						this.logger.debug(
-							`Updated effective permissions for member '${member.memberId}' in room '${roomId}'`
-						);
 					} catch (error) {
 						this.logger.warn(
-							`Failed to update effective permissions for member '${member.memberId}' in room '${roomId}':`,
+							`Failed to update effective permissions for member '${memberId}' in room '${roomId}':`,
 							error
 						);
 					}
 				},
-				{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_UPDATE_PERMISSIONS, failFast: true }
+				{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_UPDATE_PERMISSIONS }
 			);
 
-			totalUpdated += members.length;
-			nextPageToken = isTruncated ? token : undefined;
-
-			this.logger.verbose(`Completed batch ${batchNumber}, total updated: ${totalUpdated} members`);
+			nextPageToken = page.isTruncated ? page.nextPageToken : undefined;
 		} while (nextPageToken);
-
-		if (totalUpdated === 0) {
-			this.logger.verbose(`No members found in room '${roomId}' to update`);
-			return;
-		}
-
-		this.logger.info(`Successfully updated effective permissions for ${totalUpdated} members in room '${roomId}'`);
 	}
 
 	/**
