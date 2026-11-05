@@ -287,7 +287,7 @@ export class MeetingDurationLimitService {
 	 * LiveKit room sid, so a leaked flag is inert for the room's later meetings.
 	 */
 	protected async recordMeetingEndedReason(roomId: string, meetingId: string): Promise<void> {
-		const key = `${RedisKeyName.MEETING_ENDED_REASON}${roomId}`;
+		const key = this.getMeetingEndedReasonKey(roomId);
 		await this.redisService.set(key, meetingId, ms(INTERNAL_CONFIG.MEETING_ENDED_REASON_TTL));
 	}
 
@@ -302,7 +302,7 @@ export class MeetingDurationLimitService {
 	 * meeting already occupying the (room-scoped) key is never touched.
 	 */
 	protected async clearMeetingEndedReason(roomId: string, meetingId: string): Promise<void> {
-		const key = `${RedisKeyName.MEETING_ENDED_REASON}${roomId}`;
+		const key = this.getMeetingEndedReasonKey(roomId);
 		const value = await this.redisService.get(key);
 
 		if (value === meetingId) {
@@ -321,7 +321,7 @@ export class MeetingDurationLimitService {
 	 * for the meeting this service ended, which is the very case the room status sweep covers.
 	 */
 	async getMeetingEndedReason(roomId: string, meetingId?: string): Promise<MeetMeetingEndedReason | undefined> {
-		const key = `${RedisKeyName.MEETING_ENDED_REASON}${roomId}`;
+		const key = this.getMeetingEndedReasonKey(roomId);
 		const value = await this.redisService.get(key);
 
 		if (value === null || (meetingId !== undefined && value !== meetingId)) return undefined;
@@ -333,5 +333,9 @@ export class MeetingDurationLimitService {
 		}
 
 		return MeetMeetingEndedReason.MAX_DURATION_REACHED;
+	}
+
+	private getMeetingEndedReasonKey(roomId: string): string {
+		return `${RedisKeyName.MEETING_ENDED_REASON}${roomId}`;
 	}
 }

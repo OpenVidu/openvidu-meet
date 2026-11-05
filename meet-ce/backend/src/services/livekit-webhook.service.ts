@@ -429,7 +429,7 @@ export class LivekitWebhookService {
 	 * timer is cancelled either way.
 	 *
 	 * @param finishedRoom - The finished room, as much of it as the caller knows: the LiveKit
-	 * webhook carries the meeting's `sid`, while {@link RoomScheduledTasksService}'s reconcile GC
+	 * webhook carries the meeting's `sid`, while the room status sweep of `RoomScheduledTasksService`
 	 * knows only the room id, LiveKit having already forgotten the meeting it is reporting.
 	 */
 	async handleRoomFinished({ name: roomId, sid: meetingId }: { name: string; sid?: string }): Promise<void> {
