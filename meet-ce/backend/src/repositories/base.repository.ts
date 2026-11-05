@@ -126,11 +126,9 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	): Promise<PaginatedResult<TDomain>> {
 		const { maxItems = 100, nextPageToken, sortField = '_id', sortOrder = SortOrder.DESC } = options;
 
-		// Parse and apply pagination cursor if provided
-		if (nextPageToken) {
-			const cursor = decodePaginationCursor(nextPageToken);
-			this.applyCursorToFilter(filter, cursor, sortField, sortOrder);
-		}
+		const pageFilter = nextPageToken
+			? { $and: [filter, this.buildCursorFilter(decodePaginationCursor(nextPageToken), sortField, sortOrder)] }
+			: filter;
 
 		// Convert sort order to MongoDB format
 		const mongoSortOrder: 1 | -1 = sortOrder === SortOrder.ASC ? 1 : -1;
@@ -144,17 +142,24 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 		// Fetch one more than requested to check if there are more results
 		const limit = maxItems + 1;
 
-		const projection = this.buildProjection(fields, true);
-		const documents = (await this.model.find(filter, projection).sort(sort).limit(limit).lean().exec()) as Array<
-			Require_id<TDocument> & { __v?: number }
-		>;
+		// The next page token is built from the sort field, so it is read even when not requested
+		const unrequestedSortField = fields?.length && !fields.includes(sortField) ? [sortField] : [];
+		const projection = this.buildProjection(fields && [...fields, ...unrequestedSortField], true);
+		const documents = (await this.model
+			.find(pageFilter, projection)
+			.sort(sort)
+			.limit(limit)
+			.lean()
+			.exec()) as Array<Require_id<TDocument> & { __v?: number }>;
 
 		// Check if there are more results
 		const hasMore = documents.length > maxItems;
 		const resultDocuments = hasMore ? documents.slice(0, maxItems) : documents;
 
 		// Transform documents to domain objects
-		const items = resultDocuments.map((doc) => this.toDomain(this.stripMetadataFromDocument(doc)));
+		const items = resultDocuments.map((doc) =>
+			this.toDomain(this.stripMetadataFromDocument(doc, unrequestedSortField))
+		);
 
 		// Generate next page token (encode last document's sort field value and _id)
 		const nextToken =
@@ -201,9 +206,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 
 		try {
 			const isUpdateQuery = Object.keys(update).some((key) => key.startsWith('$'));
-			const safeUpdate = isUpdateQuery
-				? (update as UpdateQuery<TDocument>)
-				: this.buildUpdateQuery(update);
+			const safeUpdate = isUpdateQuery ? (update as UpdateQuery<TDocument>) : this.buildUpdateQuery(update);
 
 			if (!safeUpdate.$set && !safeUpdate.$unset) {
 				throw new Error('Partial update requires at least one field to set or unset');
@@ -407,12 +410,20 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	}
 
 	/**
-	 * Removes persistence-only metadata fields from a document before mapping it to domain.
+	 * Removes persistence-only metadata fields, and any other given field, from a document before mapping it to domain.
 	 */
-	private stripMetadataFromDocument(document: Require_id<TDocument> & { __v?: number }): TDocument {
+	private stripMetadataFromDocument(
+		document: Require_id<TDocument> & { __v?: number },
+		otherFields: readonly string[] = []
+	): TDocument {
 		const { _id, __v, ...domainDocument } = document;
 		void _id;
 		void __v;
+
+		for (const field of otherFields) {
+			delete (domainDocument as Record<string, unknown>)[field];
+		}
+
 		return domainDocument as TDocument;
 	}
 
@@ -477,9 +488,8 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	}
 
 	/**
-	 * Applies cursor-based pagination to the MongoDB filter.
+	 * Builds the condition that selects the documents after the cursor in the list order.
 	 * Uses compound comparison to handle non-unique sort fields correctly.
-	 * Handles missing/undefined fields properly in MongoDB queries.
 	 *
 	 * For ascending order:
 	 *   (sortField > cursor.fieldValue) OR (sortField = cursor.fieldValue AND _id > cursor.id)
@@ -487,63 +497,35 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	 * For descending order:
 	 *   (sortField < cursor.fieldValue) OR (sortField = cursor.fieldValue AND _id < cursor.id)
 	 *
-	 * Special handling for null/undefined values (missing fields):
-	 * - In ascending order, missing fields come first in MongoDB's sort order
-	 * - In descending order, missing fields come last
-	 * - We use $exists: false to check for missing fields instead of comparing with null
+	 * Documents without the sort field come first in ascending order and last in descending order,
+	 * so a null cursor value is matched with $exists: false instead of a comparison with null.
 	 *
-	 * @param filter - The MongoDB filter to modify
 	 * @param cursor - The decoded cursor
 	 * @param sortField - The field used for sorting
 	 * @param sortOrder - The sort order ('asc' or 'desc')
 	 */
-	protected applyCursorToFilter(
-		filter: QueryFilter<TDocument>,
+	private buildCursorFilter(
 		cursor: PaginationCursor,
 		sortField: string,
 		sortOrder: SortOrder
-	): void {
+	): QueryFilter<TDocument> {
 		const comparison = sortOrder === SortOrder.ASC ? '$gt' : '$lt';
-		const equalComparison = sortOrder === SortOrder.ASC ? '$gt' : '$lt';
 
-		// Build compound filter for pagination
-		// This ensures correct ordering even when sortField values are not unique
-		const orConditions: QueryFilter<TDocument>[] = [];
-
-		// If cursor field value is null (field doesn't exist in the document)
 		if (cursor.fieldValue === null) {
-			// For missing fields, we filter by _id among documents where the field doesn't exist
-			orConditions.push({
-				[sortField]: { $exists: false },
-				_id: { [equalComparison]: cursor.id }
-			});
-
-			// In ascending order, also include documents where the field exists (they come after missing fields)
-			if (sortOrder === SortOrder.ASC) {
-				orConditions.push({
-					[sortField]: { $exists: true }
-				});
-			}
-		} else {
-			// Normal case: field has a value
-			orConditions.push(
-				{
-					[sortField]: { [comparison]: cursor.fieldValue }
-				},
-				{
-					[sortField]: cursor.fieldValue,
-					_id: { [equalComparison]: cursor.id }
-				}
-			);
-
-			// In descending order, also include documents where the field doesn't exist (they come after all values)
-			if (sortOrder === SortOrder.DESC) {
-				orConditions.push({
-					[sortField]: { $exists: false }
-				});
-			}
+			return {
+				$or: [
+					{ [sortField]: { $exists: false }, _id: { [comparison]: cursor.id } },
+					...(sortOrder === SortOrder.ASC ? [{ [sortField]: { $exists: true } }] : [])
+				]
+			};
 		}
 
-		Object.assign(filter, { $or: orConditions });
+		return {
+			$or: [
+				{ [sortField]: { [comparison]: cursor.fieldValue } },
+				{ [sortField]: cursor.fieldValue, _id: { [comparison]: cursor.id } },
+				...(sortOrder === SortOrder.DESC ? [{ [sortField]: { $exists: false } }] : [])
+			]
+		};
 	}
 }

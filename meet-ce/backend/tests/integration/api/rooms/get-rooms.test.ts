@@ -203,6 +203,26 @@ describe('Room API Tests', () => {
 			});
 		});
 
+		it('should page through rooms when the requested fields leave out the sort field', async () => {
+			for (let i = 0; i < 3; i++) {
+				await createRoom({ roomName: `test-room-${i}` });
+			}
+
+			const firstPage = await getRooms({ maxItems: 2, fields: 'roomId' });
+			expectSuccessRoomsResponse(firstPage, 2, 2, true, true);
+
+			const secondPage = await getRooms({
+				maxItems: 2,
+				fields: 'roomId',
+				nextPageToken: firstPage.body.pagination.nextPageToken
+			});
+			expectSuccessRoomsResponse(secondPage, 1, 2, false, false);
+
+			const rooms: MeetRoom[] = [...firstPage.body.rooms, ...secondPage.body.rooms];
+			rooms.forEach((room) => expectValidRoomWithFields(room, ['roomId']));
+			expect(new Set(rooms.map((room) => room.roomId)).size).toBe(3);
+		});
+
 		it('should capped maxItems to the maximum allowed', async () => {
 			const response = await getRooms({ maxItems: 101 });
 
@@ -460,6 +480,34 @@ describe('Room API Tests', () => {
 		it('should return only accessible rooms for ROOM_MEMBER room member', async () => {
 			const response = await getRooms(undefined, undefined, testUsers.roomMember.accessToken);
 			expectRoomsToContainOnly(response, [testRooms.membersRoom, testRooms.openRoom]);
+		});
+
+		const getRoomIdsPageByPage = async (accessToken: string) => {
+			const roomIds: string[] = [];
+			let nextPageToken: string | undefined;
+
+			do {
+				const response = await getRooms(
+					{ maxItems: 1, ...(nextPageToken && { nextPageToken }) },
+					undefined,
+					accessToken
+				);
+				expect(response.status).toBe(200);
+				roomIds.push(...response.body.rooms.map((room: MeetRoom) => room.roomId));
+				nextPageToken = response.body.pagination.nextPageToken;
+			} while (nextPageToken);
+
+			return roomIds;
+		};
+
+		it('should keep the access scope on every page for ROOM_MANAGER room owner', async () => {
+			const roomIds = await getRoomIdsPageByPage(testUsers.roomManager.accessToken);
+			expect(roomIds.sort()).toEqual([testRooms.userRoom, testRooms.membersRoom, testRooms.openRoom].sort());
+		});
+
+		it('should keep the access scope on every page for ROOM_MEMBER room member', async () => {
+			const roomIds = await getRoomIdsPageByPage(testUsers.roomMember.accessToken);
+			expect(roomIds.sort()).toEqual([testRooms.membersRoom, testRooms.openRoom].sort());
 		});
 
 		it("should not include access.anonymous URLs when user doesn't have canShareAccessLinks permission", async () => {
