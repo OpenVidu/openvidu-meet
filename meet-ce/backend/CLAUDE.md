@@ -111,12 +111,12 @@ what LiveKit's webhooks never told.
   `ContainerModule`s and loaded in one order-independent `container.load(...)`; every binding is a
   lazy singleton. Injection is fully explicit `@inject(...)`: decorator metadata emission is **off**
   and there is no `reflect-metadata`, so a missing `@inject` fails at runtime. Only the edge of the
-  app (`config/`, `server.ts`, routes, controllers, middlewares) resolves from `container`; services,
-  helpers, models and repositories never import it. Importing it puts a module in an import cycle
-  with `dependency-injector.config.ts`, where evaluation order decides whether `@inject(X)` reads `X`
-  or an uninitialized binding. A construction cycle between services means a shared piece belongs
-  lower down (a repository, a smaller service or a pure helper), never behind a lazy lookup.
-  Startup work that must happen before listening goes in `initializeEagerServices()`.
+  app (`config/`, `server.ts`, routes, controllers, middlewares) resolves from `container`; anywhere
+  else in `src`, ESLint (`no-restricted-imports`) refuses to import it. Importing it puts a module
+  in an import cycle with `dependency-injector.config.ts`, where evaluation order decides whether
+  `@inject(X)` reads `X` or an uninitialized binding. A construction cycle between services means a
+  shared piece belongs lower down (a repository, a smaller service or a pure helper), never behind a
+  lazy lookup. Startup work that must happen before listening goes in `initializeEagerServices()`.
 - **Request context**: `initRequestContext` must stay the first middleware after body parsing; it
   opens the `AsyncLocalStorage` scope that `RequestSessionService` (authenticated user, room member
   token info) relies on. Anything outside a request (schedulers, webhooks) has no session.
