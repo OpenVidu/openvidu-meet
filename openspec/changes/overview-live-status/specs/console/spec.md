@@ -14,6 +14,21 @@ The overview SHALL show, from `getAnalytics`, the number of rooms split into ope
 - **WHEN** an admin opens the overview
 - **THEN** it shows that no recording is in progress and 0 rooms in a meeting now
 
+### Requirement: Overview getting started
+When the figures read from the server show no room and no recording, the overview SHALL show a getting-started view with three actions: create the first room, go to the configuration page and go to the embedded page. A request that failed SHALL never produce this view.
+
+#### Scenario: Fresh deployment
+- **GIVEN** a deployment with no rooms and no recordings
+- **WHEN** an admin opens the overview
+- **THEN** the getting-started view is shown
+- **AND** its actions open the room wizard, the configuration page and the embedded page
+
+#### Scenario: First request fails
+- **GIVEN** a deployment with rooms and recordings and a server that fails the first request of the overview
+- **WHEN** an admin opens the overview
+- **THEN** an error notice says the figures could not be read, with the Refresh action
+- **AND** the getting-started view is not shown
+
 ### Requirement: Usage analytics endpoint
 `getAnalytics` (`GET /internal-api/v1/analytics`) SHALL answer only an access token of a user with role `admin`. A user with another role SHALL get `403`; an API key or no credential SHALL get `401`.
 
@@ -80,3 +95,34 @@ The overview SHALL show how many rooms reach their `autoDeletionDate` within the
 - **GIVEN** a closed room with recordings whose `autoDeletionDate` passed yesterday, kept by the default policy
 - **WHEN** an admin calls `getAnalytics`
 - **THEN** `roomsExpiringSoon` is 0 and `nextExpiringRoom` is absent
+
+### Requirement: Overview keeps its figures current
+While the overview is open and its tab is visible, it SHALL request the figures every 30 seconds and again as soon as the tab becomes visible after being hidden, and SHALL not request them while the tab is hidden. It SHALL offer a Refresh action that requests them at once, show the time of the last successful reading, and keep the figures on screen while a request runs. When a request fails it SHALL keep the last figures and show an error notice.
+
+#### Scenario: Periodic refresh
+- **GIVEN** the overview is open in a visible tab and a recording starts
+- **WHEN** 30 seconds pass
+- **THEN** the overview requests the figures again and shows one recording in progress
+- **AND** the time of the last reading is updated
+
+#### Scenario: Hidden tab
+- **GIVEN** the overview is open in a tab that is then hidden for several minutes
+- **WHEN** the tab becomes visible again
+- **THEN** the overview requests the figures at once
+- **AND** it made no request while the tab was hidden
+
+#### Scenario: Manual refresh
+- **WHEN** an admin chooses Refresh on the overview
+- **THEN** the overview requests the figures at once and shows the time of that reading
+
+#### Scenario: Figures stay while reloading
+- **GIVEN** the overview shows its figures
+- **WHEN** it requests them again
+- **THEN** the figures stay on screen and no loading screen replaces them
+
+#### Scenario: Failed reload
+- **GIVEN** the overview shows its figures
+- **WHEN** a later request fails
+- **THEN** the last figures and the time of the last successful reading stay on screen
+- **AND** an error notice says the figures could not be updated
+- **AND** the next refresh requests them again

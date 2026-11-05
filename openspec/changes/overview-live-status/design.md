@@ -16,6 +16,7 @@ Measured on a seeded MongoDB 8.0 (100,000 rooms, 500,000 recordings), every new 
 ## Goals / Non-Goals
 
 **Goals:**
+- The overview stays current while it is open, without the admin reloading the page.
 - The new figures arrive in the same `getAnalytics` response, so the overview still makes one request.
 - No persisted field, no new index, no migration.
 
@@ -23,7 +24,8 @@ Measured on a seeded MongoDB 8.0 (100,000 rooms, 500,000 recordings), every new 
 - Storage used, recorded hours and any figure that needs reading every recording (about 200 ms with 500,000 recordings): they need a cache or a counter, decided separately.
 - An overview for `room_manager` and `room_member`: `getAnalytics` stays admin only.
 - Links from the status breakdown to the filtered Rooms list.
-- A configurable expiry window.
+- A configurable expiry window or refresh interval.
+- Pushing changes to the browser: Meet has no channel between replicas, so a change handled by one replica cannot reach a browser connected to another.
 
 ## Decisions
 
@@ -39,6 +41,10 @@ Measured on a seeded MongoDB 8.0 (100,000 rooms, 500,000 recordings), every new 
 
 **Counts are not one snapshot.** The figures are taken in parallel without a transaction, as the existing four are. A room that changes status between two counts can make `openRooms + activeRooms + closedRooms` differ from `totalRooms` by one for that response. The page shows `totalRooms` as the number and sizes the bar from the three status counts, so the bar never exceeds its track and the difference is not visible.
 
+**Refresh by polling, in the component.** The overview requests the figures every 30 seconds (`OVERVIEW_REFRESH_INTERVAL_MS`, a constant of the overview) while `document.visibilityState` is `visible`, once more on every `visibilitychange` to visible, and from the Refresh action. A tick, a visibility change or a click that arrives while a request is running is ignored, so requests never overlap and an older answer cannot replace a newer one. The timer lives as long as the component and is torn down with it. Polling was chosen over server push because any replica answers any request from MongoDB and nothing has to travel between replicas; 30 seconds because the figures that move, meetings and recordings, change in minutes and each reading costs 1 to 20 ms.
+
+**State of the page.** The page keeps the last `MeetAnalytics` (absent until the first reading), the time of the last successful reading, whether a request is running and whether the last one failed. The first request shows the loading view; every later one keeps the figures on screen and only disables Refresh and spins its icon. The getting-started view is chosen from figures that were read and are all zero, never from a missing reading. A failure keeps the last figures and time and raises an error notice with the Refresh action; a failure with no figures yet shows the notice alone. The time of the last reading uses the browser's locale, `HH:mm`.
+
 **Frontend.** The component keeps the `MeetAnalytics` signal and derives the bar segments, the relative date and the empty states in the component, not in the template. The segment widths come from the status counts; a status with 0 rooms has no segment. The bar carries an accessible text with the three counts, and every status is also a legend row with its name and count, so colour is not the only carrier. The soonest room's date shows as "today", "tomorrow" or "in N days" from three console translation keys, a language without them shows English, as `localization` specifies. The pulsing dot of a recording in progress stops when the user asks for reduced motion. The room name opens the room detail page through the navigation service, the way the rooms list opens it.
 
 **Several replicas.** Every figure is computed from MongoDB on each request and nothing is cached or held in memory, so any replica answers with the same figures, up to the time they were read.
@@ -47,4 +53,6 @@ Measured on a seeded MongoDB 8.0 (100,000 rooms, 500,000 recordings), every new 
 
 - **Planner on the status counts.** The status index is shared by the list filter and the sweeps; the counts are covered by it on the seeded data. A future change of that index must keep `status` as its first key.
 - **"Expiring" is a date, not a promise of deletion.** A room whose policy is `withRecordings` `close` is closed, not deleted, at its date; the card is titled "Rooms expiring soon" for that reason and says "reach their auto-deletion date".
-- **Load.** The overview request now runs six index counts and one read instead of four counts; measured at 1 to 20 ms each in parallel on the seeded data. It is an admin page opened occasionally, not polled.
+- **Load.** The overview request now runs four more index counts and one read; measured at 1 to 20 ms each in parallel on the seeded data. A visible tab polls it twice a minute; 20 admins with the page open make under one request every second, well under the 500 a minute per address of the API rate limiter. A hidden tab makes none.
+- **Stale until the next tick.** Up to 30 seconds can pass between a meeting starting and the overview showing it. The time of the last reading and the Refresh action make that visible and fixable; a shorter interval would raise the load for little more freshness.
+- **A tab that is visible but unattended** keeps polling; this is the same load as an attended one.
