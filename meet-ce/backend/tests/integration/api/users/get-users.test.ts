@@ -181,6 +181,30 @@ describe('Users API Tests', () => {
 			expect(secondResponse.body.pagination.isTruncated).toBe(false);
 		});
 
+		it('should keep the userId and name filters on every page', async () => {
+			const allUsersResponse = await getUsers();
+			const aliceUser = allUsersResponse.body.users.find((u: MeetUser) => u.userId.startsWith('alice_'));
+			const userIds: string[] = [];
+			let nextPageToken: string | undefined;
+
+			do {
+				const response = await getUsers({
+					userId: aliceUser.userId,
+					name: 'Bob',
+					nameMatchMode: 'prefix',
+					maxItems: 1,
+					...(nextPageToken && { nextPageToken })
+				});
+				expect(response.status).toBe(200);
+				userIds.push(...response.body.users.map((user: MeetUser) => user.userId));
+				nextPageToken = response.body.pagination.nextPageToken;
+			} while (nextPageToken);
+
+			expect(userIds).toHaveLength(2);
+			expect(userIds).toContain(aliceUser.userId);
+			expect(userIds.some((userId) => userId.startsWith('bob_'))).toBe(true);
+		});
+
 		it('should sort users by registrationDate in descending order by default', async () => {
 			const response = await getUsers();
 			expect(response.status).toBe(200);

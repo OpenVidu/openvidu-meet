@@ -207,6 +207,26 @@ describe('Recordings API Tests', () => {
 			});
 		});
 
+		it('should page through recordings when the requested fields leave out the sort field', async () => {
+			context = await setupMultiRecordingsTestContext(2, 2, 2);
+
+			const firstPage = await getAllRecordings({ maxItems: 1, fields: 'recordingId' });
+			expectSuccessListRecordingResponse(firstPage, 1, true, true, 1);
+
+			const secondPage = await getAllRecordings({
+				maxItems: 1,
+				fields: 'recordingId',
+				nextPageToken: firstPage.body.pagination.nextPageToken
+			});
+			expectSuccessListRecordingResponse(secondPage, 1, false, false, 1);
+
+			const recordings: MeetRecordingInfo[] = [...firstPage.body.recordings, ...secondPage.body.recordings];
+			recordings.forEach((recording) => expectValidRecordingWithFields(recording, ['recordingId']));
+			expect(recordings.map((recording) => recording.recordingId).sort()).toEqual(
+				context.rooms.map((roomData: RoomData) => roomData.recordingId).sort()
+			);
+		});
+
 		it('should return recordings with pagination', async () => {
 			context = await setupMultiRecordingsTestContext(6, 6, 6);
 			const rooms = context.rooms;

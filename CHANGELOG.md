@@ -109,6 +109,12 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - Kicking a participant answered `404` when the media server stopped answering during the kick. It now answers `503`.
 - A list request with a `maxItems` below 1, such as `0.5`, answered an empty page marked as truncated and without a
   `nextPageToken`. Such a value now returns one item.
+- The pages after the first of [`getRooms`][3.9-get-rooms] and [`getRecordings`][3.9-get-recordings] requested by a
+  `room_manager` or `room_member` user listed rooms and recordings outside that user's scope, and those of
+  [`getUsers`][3.9-get-users] with both `userId` and `name` ignored both filters. Every page now keeps the scope and the
+  filters of the first.
+- When `fields` left out the field the list is sorted by, the second page of `getRooms`, `getRecordings` and
+  [`getRoomMembers`][3.9-get-room-members] was empty. It now continues the listing.
 - [`participantRoleUpdate`][3.10-participant-role-update], [`participantMute`][3.9-participant-mute],
   [`participantMuteAll`][3.9-participant-mute-all], `updateRoomMember` and the embedded commands that use them
   answered with an error when the notice to the affected participants could not be delivered, although the change
@@ -455,6 +461,10 @@ registered on both receives it twice.
 [3.9-download-recordings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/downloadRecordings
 [3.9-delete-room]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/deleteRoom
 [3.9-bulk-delete-rooms]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/bulkDeleteRooms
+[3.9-get-rooms]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/getRooms
+[3.9-get-recordings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/getRecordings
+[3.9-get-users]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/getUsers
+[3.9-get-room-members]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/getRoomMembers
 
 [3.10-recording-ended]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/recordingEndedWebhook
 [3.10-broadcasts]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/broadcastStart

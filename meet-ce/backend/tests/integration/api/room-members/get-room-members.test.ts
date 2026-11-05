@@ -282,6 +282,27 @@ describe('Room Members API Tests', () => {
 			expect(firstPageMemberIds).not.toEqual(secondPageMemberIds);
 		});
 
+		it('should page through members when the requested fields leave out the sort field', async () => {
+			const memberIds: string[] = [];
+			let nextPageToken: string | undefined;
+
+			do {
+				const response = await getRoomMembers(roomId, {
+					fields: 'memberId',
+					maxItems: 2,
+					...(nextPageToken && { nextPageToken })
+				});
+				expect(response.status).toBe(200);
+				response.body.members.forEach((member: MeetRoomMember) =>
+					expect(Object.keys(member)).toEqual(['memberId'])
+				);
+				memberIds.push(...response.body.members.map((member: MeetRoomMember) => member.memberId));
+				nextPageToken = response.body.pagination.nextPageToken;
+			} while (nextPageToken);
+
+			expect(new Set(memberIds).size).toBe(5);
+		});
+
 		it('should cap maxItems at 100', async () => {
 			const response = await getRoomMembers(roomId, { maxItems: 150 });
 			expect(response.status).toBe(200);
