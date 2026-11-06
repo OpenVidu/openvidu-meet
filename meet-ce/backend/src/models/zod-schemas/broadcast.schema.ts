@@ -29,8 +29,13 @@ const destinationNameSchema = z
 		`Destination name cannot exceed ${MEET_BROADCAST_DESTINATION_NAME_MAX_LENGTH} characters`
 	);
 
+const isRtmpUrl = (url: string): boolean => /^rtmps?:$/.test(URL.parse(url)?.protocol ?? '');
+
+// Not z.url(), whose output drops the line breaks and tabs inside the URL before the form is checked.
 const destinationUrlSchema = z
-	.url({ protocol: /^rtmps?$/, error: 'Destination url must be an rtmp:// or rtmps:// URL' })
+	.string()
+	.trim()
+	.refine(isRtmpUrl, 'Destination url must be an rtmp:// or rtmps:// URL')
 	.max(DESTINATION_URL_MAX_LENGTH, `Destination url cannot exceed ${DESTINATION_URL_MAX_LENGTH} characters`)
 	.refine(isValidStreamUrl, 'Destination url must have the form rtmp(s)://{host}(/{path})/{app}/{stream_key}');
 

@@ -196,13 +196,16 @@ describe('Broadcast Room Configuration Tests', () => {
 			expect(Object.values(await storedUrls(room.roomId))).toEqual(urls);
 		});
 
-		it('should reject a destination URL with a fragment, no host, user information, a malformed escape, or whose stream key is only a query string', async () => {
+		it('should reject a destination URL with a fragment, no host, user information, a malformed escape, a line break or tab inside, or whose stream key is only a query string', async () => {
 			for (const url of [
 				'rtmp://media.example.com/live/key#frag',
 				'rtmp:///live/key',
 				'rtmp://media.example.com/live/?key=secret',
 				'rtmp://user:pass@192.0.2.10/live/key1abcdefgh',
-				'rtmp://172.18.0.1:1935/live/ab%zzKEY'
+				'rtmp://172.18.0.1:1935/live/ab%zzKEY',
+				'rtmp://media.example.com/live/key\nsecond-line',
+				'rtmp://media.example.com/live/ke\ty',
+				'rtmp://media.example.com/li\r\nve/key'
 			]) {
 				const response = await createRoomRequest({
 					roomName: 'bad-url',

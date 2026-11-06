@@ -249,6 +249,27 @@ describe('broadcast destinations', () => {
 		expect(configIssues([{ name: 'X' }])).toEqual([expect.stringMatching(/^destinations\.0\.url: /)]);
 	});
 
+	it.each(['rtmp://mtx/live/key\nsecond', 'rtmp://mtx/live/ke\ty', 'rtmp://mtx/li\r\nve/key'])(
+		'rejects a URL with a line break or tab inside, instead of streaming to it without them: %j',
+		(url) => {
+			expect(configIssues([{ name: 'X', url }])).toEqual([
+				'destinations.0.url: Destination url must have the form rtmp(s)://{host}(/{path})/{app}/{stream_key}'
+			]);
+			expect(
+				StartBroadcastReqSchema.safeParse({ roomId, destinationIds: [], destinations: [{ name: 'X', url }] })
+					.success
+			).toBe(false);
+		}
+	);
+
+	it('keeps a valid URL exactly as sent, only trimming the whitespace around it', () => {
+		const url = 'rtmps://live.example.com:443/app/key%2Fpart?token=abc/def live=1';
+
+		expect(BroadcastConfigSchema.parse({ destinations: [{ name: 'X', url: `  ${url}\n` }] })).toEqual({
+			destinations: [{ name: 'X', url }]
+		});
+	});
+
 	it('accepts a URL of exactly 2048 characters and rejects one more', () => {
 		expect(configIssues([{ name: 'X', url: urlOfLength(2048) }])).toEqual([]);
 		expect(configIssues([{ name: 'X', url: urlOfLength(2049) }])).toEqual([

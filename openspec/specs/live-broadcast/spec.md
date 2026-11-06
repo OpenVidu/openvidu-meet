@@ -20,7 +20,7 @@ The server SHALL start a broadcast in a room only while the room's `broadcast.en
 - **THEN** the room's `broadcast` is disabled, with no destinations, layout `grid` and encoding `H264_720P_30`
 
 ### Requirement: Room destinations
-A room's `broadcast.destinations` SHALL hold any number of destinations, each a `name` of 1 to 50 characters and an RTMP or RTMPS `url` of the form `rtmp(s)://{host}(/{path})/{app}/{stream_key}`, optionally followed by ` live=1`, whose stream key is what follows the last `/`. The server SHALL give each saved destination an `id`, and SHALL answer `422` to a malformed name or URL, a URL with user information or a malformed `%` escape included, storing nothing.
+A room's `broadcast.destinations` SHALL hold any number of destinations, each a `name` of 1 to 50 characters and an RTMP or RTMPS `url` of the form `rtmp(s)://{host}(/{path})/{app}/{stream_key}`, optionally followed by ` live=1`, whose stream key is what follows the last `/`. The server SHALL give each saved destination an `id`, and SHALL answer `422` to a malformed name or URL, a URL with user information, a malformed `%` escape or a line break or tab inside included, storing nothing. Whitespace around the whole URL SHALL be ignored, and a URL that is accepted SHALL be streamed to exactly as sent.
 
 #### Scenario: Destination saved
 - **WHEN** `createRoom` is called with `config.broadcast.destinations` holding `{ "name": "YouTube", "url": "rtmp://a.rtmp.youtube.com/live2/abcd-1234" }`
@@ -41,6 +41,10 @@ A room's `broadcast.destinations` SHALL hold any number of destinations, each a 
 #### Scenario: URL with a malformed escape
 - **WHEN** a destination is sent with the URL `rtmp://172.18.0.1:1935/live/ab%zzKEY`
 - **THEN** the server answers `422`
+
+#### Scenario: URL with a line break inside
+- **WHEN** `createRoom` is called with the destination URL `rtmp://a.rtmp.youtube.com/live2/abcd\n1234`, a line break inside its stream key
+- **THEN** the REST API answers `422` and stores nothing
 
 ### Requirement: Live broadcast needs a destination
 The server SHALL answer `422` with error `Broadcast Error`, storing nothing, to a `createRoom` or `updateRoomConfig` request whose resulting config has `broadcast.enabled` set to `true` and no destination, judging the destinations sent in the request or, when it sends none, the saved ones.
