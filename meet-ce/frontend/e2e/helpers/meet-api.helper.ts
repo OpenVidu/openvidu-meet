@@ -78,25 +78,6 @@ const assertOk = (response: Response, responseText: string, operation: string): 
 // ---------------------------------------------------------------------------
 
 /**
- * Fetches the global captions configuration.
- */
-export const getCaptionsGlobalConfig = async (): Promise<{
-	enabled: boolean;
-}> => {
-	const response = await fetch(`${INTERNAL_API_BASE_URL}/config/captions`, {
-		method: 'GET',
-		headers: {
-			'x-api-key': API_KEY
-		}
-	});
-
-	const responseText = await response.text();
-	assertOk(response, responseText, 'get captions global config');
-
-	return JSON.parse(responseText) as { enabled: boolean };
-};
-
-/**
  * Creates a room with the given options.
  */
 export const createRoom = async (options: MeetRoomOptions = {}): Promise<MeetRoom> => {
