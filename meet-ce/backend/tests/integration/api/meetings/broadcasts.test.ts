@@ -7,7 +7,15 @@ import type {
 } from '@openvidu-meet/typings';
 import { MEET_BROADCAST_REDACTED_STREAM_KEY, MeetBroadcastStatus, MeetRecordingLayout } from '@openvidu-meet/typings';
 import { Express } from 'express';
-import { EgressClient, ServerError, StreamOutput, StreamProtocol } from 'livekit-server-sdk';
+import {
+	EgressClient,
+	Output,
+	ServerError,
+	StartEgressRequest,
+	StreamOutput,
+	StreamProtocol,
+	TemplateSource
+} from 'livekit-server-sdk';
 import request from 'supertest';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
@@ -283,7 +291,7 @@ describe('Broadcasts API Tests', () => {
 			const roomData = await setupMeetingRoom(broadcastConfig(['a']));
 			const { roomId } = roomData.room;
 			const startEgress = jest
-				.spyOn(EgressClient.prototype, 'startRoomCompositeEgress')
+				.spyOn(EgressClient.prototype, 'startEgress')
 				.mockRejectedValueOnce(
 					new ServerError('Service Unavailable', 'twirp error unknown: no response from servers', 503)
 				);
@@ -535,13 +543,23 @@ describe('Broadcasts API Tests', () => {
 			const roomData = await setupMeetingRoom(broadcastConfig(['a']));
 			const { roomId } = roomData.room;
 
-			await container
-				.get(LiveKitService)
-				.startRoomComposite(
-					roomId,
-					new StreamOutput({ protocol: StreamProtocol.RTMP, urls: [await createRtmpSink('lost')] }),
-					{ layout: MeetRecordingLayout.GRID }
-				);
+			await container.get(LiveKitService).startEgress(
+				new StartEgressRequest({
+					roomName: roomId,
+					source: { case: 'template', value: new TemplateSource({ layout: MeetRecordingLayout.GRID }) },
+					outputs: [
+						new Output({
+							config: {
+								case: 'stream',
+								value: new StreamOutput({
+									protocol: StreamProtocol.RTMP,
+									urls: [await createRtmpSink('lost')]
+								})
+							}
+						})
+					]
+				})
+			);
 
 			await waitForNoActiveEgress(roomId, 30_000);
 			expect((await getBroadcasts(roomId)).body.broadcasts).toEqual([]);

@@ -3,13 +3,11 @@ import { inject, injectable } from 'inversify';
 import type {
 	CreateOptions,
 	EgressInfo,
-	EncodedFileOutput,
 	ListEgressOptions,
 	ParticipantInfo,
 	Room,
-	RoomCompositeOptions,
 	SendDataOptions,
-	StreamOutput
+	StartEgressRequest
 } from 'livekit-server-sdk';
 import { DataPacket_Kind, EgressStatus, LiveKitAPI } from 'livekit-server-sdk';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
@@ -456,18 +454,12 @@ export class LiveKitService {
 		}
 	}
 
-	async startRoomComposite(
-		roomName: string,
-		output: EncodedFileOutput | StreamOutput,
-		options: RoomCompositeOptions
-	): Promise<EgressInfo> {
+	async startEgress(request: StartEgressRequest): Promise<EgressInfo> {
 		try {
-			return await this.lk.egress.startRoomCompositeEgress(roomName, output, options);
+			return await this.lk.egress.startEgress(request);
 		} catch (error) {
-			this.logger.error(
-				`Error starting Room Composite Egress for room '${roomName}' (${this.egressFailure(error)})`
-			);
-			throw this.toEgressError(error, `starting Room Composite Egress for room '${roomName}'`);
+			this.logger.error(`Error starting egress for room '${request.roomName}' (${this.egressFailure(error)})`);
+			throw this.toEgressError(error, `starting egress for room '${request.roomName}'`);
 		}
 	}
 

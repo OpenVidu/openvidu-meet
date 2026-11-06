@@ -50,16 +50,16 @@ describe('Recording API Race Conditions Tests', () => {
 	it('should release the recording lock when LiveKit refuses to start the egress', async () => {
 		context = await setupMultiRoomTestContext(1, true);
 		const roomData = context.getRoomByIndex(0)!;
-		const startRoomCompositeSpy = jest
-			.spyOn(recordingService['livekitService'], 'startRoomComposite')
+		const startEgressSpy = jest
+			.spyOn(recordingService['livekitService'], 'startEgress')
 			.mockImplementation(async () => {
-				throw new Error('Failed to start room composite');
+				throw new Error('Failed to start egress');
 			});
 		const releaseLockSpy = jest.spyOn(recordingService, 'releaseRecordingLockIfNoEgress');
 
 		const result = await startRecording(roomData.room.roomId);
 
-		expect(startRoomCompositeSpy).toHaveBeenCalledTimes(1);
+		expect(startEgressSpy).toHaveBeenCalledTimes(1);
 		expect(releaseLockSpy).toHaveBeenCalledWith(roomData.room.roomId);
 		expect(result.status).toBe(500);
 		expect(result.body.error).toContain('Internal Server Error');
@@ -70,15 +70,13 @@ describe('Recording API Race Conditions Tests', () => {
 		const room1 = context.getRoomByIndex(0)!;
 		const room2 = context.getRoomByIndex(1)!;
 
-		const originalStartRoomComposite = recordingService['livekitService'].startRoomComposite;
-		const startRoomCompositeSpy = jest
-			.spyOn(recordingService['livekitService'], 'startRoomComposite')
+		const originalStartEgress = recordingService['livekitService'].startEgress;
+		const startEgressSpy = jest
+			.spyOn(recordingService['livekitService'], 'startEgress')
 			.mockImplementationOnce(async () => {
 				throw new Error('Request failed with status 503: Service Unavailable');
 			})
-			.mockImplementation((...args) =>
-				originalStartRoomComposite.apply(recordingService['livekitService'], args)
-			);
+			.mockImplementation((...args) => originalStartEgress.apply(recordingService['livekitService'], args));
 
 		const rec1 = await startRecording(room1.room.roomId);
 		expect(rec1.status).toBe(500);
@@ -94,23 +92,23 @@ describe('Recording API Race Conditions Tests', () => {
 		expectValidStartRecordingResponse(rec3, room1.room.roomId, room1.room.roomName);
 		response = await stopRecording(rec3.body.recordingId!);
 		expectValidStopRecordingResponse(response, rec3.body.recordingId!, room1.room.roomId, room1.room.roomName);
-		expect(startRoomCompositeSpy).toHaveBeenCalledTimes(3);
+		expect(startEgressSpy).toHaveBeenCalledTimes(3);
 	});
 
 	it('should handle concurrent refused starts in multiple rooms', async () => {
 		context = await setupMultiRoomTestContext(3, true);
 		const rooms = [0, 1, 2].map((i) => context!.getRoomByIndex(i)!);
 
-		const startRoomCompositeSpy = jest
-			.spyOn(recordingService['livekitService'], 'startRoomComposite')
+		const startEgressSpy = jest
+			.spyOn(recordingService['livekitService'], 'startEgress')
 			.mockImplementation(async () => {
-				throw new Error('Failed to start room composite');
+				throw new Error('Failed to start egress');
 			});
 
 		const results = await Promise.all(rooms.map((room) => startRecording(room.room.roomId)));
 		results.forEach((result) => expect(result.status).toBe(500));
 
-		startRoomCompositeSpy.mockRestore();
+		startEgressSpy.mockRestore();
 
 		const retryResults = await Promise.all(rooms.map((room) => startRecordingAndWaitUntilActive(room.room.roomId)));
 

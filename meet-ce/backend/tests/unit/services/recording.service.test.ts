@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { ParticipantInfo_Kind } from '@livekit/protocol';
 import type { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { MeetRecordingAutoStartMode, MeetRecordingStatus } from '@openvidu-meet/typings';
-import type { ParticipantInfo, Room } from 'livekit-server-sdk';
+import type { ParticipantInfo, Room, StartEgressRequest } from 'livekit-server-sdk';
 import { EgressInfo, EgressStatus } from 'livekit-server-sdk';
 import { PassThrough, Readable } from 'stream';
 import {
@@ -214,12 +214,12 @@ const ROOM_ID = 'room-1';
 const MEETING_ID = 'RM_meeting_1';
 
 class FakeStartLiveKitService {
-	composites: string[] = [];
+	egressStarts: string[] = [];
 	egressQueries = 0;
 	inProgress: Partial<EgressInfo>[] = [];
 
-	async startRoomComposite(roomId: string): Promise<never> {
-		this.composites.push(roomId);
+	async startEgress({ roomName }: StartEgressRequest): Promise<never> {
+		this.egressStarts.push(roomName);
 		throw new Error('unexpected egress start');
 	}
 
@@ -310,7 +310,7 @@ describe('RecordingService.startRecording — B8: the deliberate-stop latch is r
 		await expect(start).rejects.toMatchObject({ statusCode: 409 });
 
 		expect(latch.reads).toEqual([[ROOM_ID, MEETING_ID]]);
-		expect(livekit.composites).toEqual([]);
+		expect(livekit.egressStarts).toEqual([]);
 		expect(frontendEvents.signals).toEqual([]);
 		expect(mutex.released).toEqual([expect.stringContaining(ROOM_ID)]);
 	});
@@ -371,7 +371,7 @@ describe('RecordingService.startRecording (the guards that say no)', () => {
 
 		await expect(service.startRecording(ROOM_ID)).rejects.toMatchObject({ statusCode: 409 });
 
-		expect(livekit.composites).toEqual([]);
+		expect(livekit.egressStarts).toEqual([]);
 	});
 });
 
@@ -814,7 +814,10 @@ describe('RecordingService.deleteAllRoomRecordings', () => {
 
 	it('stops a recording still in progress and ends it as aborted before deleting every recording of the room', async () => {
 		jest.useFakeTimers();
-		const { service, actions } = build([recordingEgress(EgressStatus.EGRESS_ACTIVE)], [RECORDING_ID, 'room-1--EG_0--old']);
+		const { service, actions } = build(
+			[recordingEgress(EgressStatus.EGRESS_ACTIVE)],
+			[RECORDING_ID, 'room-1--EG_0--old']
+		);
 
 		const deletion = service.deleteAllRoomRecordings('room-1');
 		await jest.advanceTimersByTimeAsync(1000);

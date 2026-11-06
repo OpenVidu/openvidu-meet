@@ -14,8 +14,15 @@ import type { Archiver } from 'archiver';
 import { ZipArchive } from 'archiver';
 import { once } from 'events';
 import { inject, injectable } from 'inversify';
-import type { EgressInfo, ParticipantInfo, Room, RoomCompositeOptions } from 'livekit-server-sdk';
-import { EgressStatus, EncodedFileOutput, EncodedFileType } from 'livekit-server-sdk';
+import type { EgressInfo, ParticipantInfo, Room } from 'livekit-server-sdk';
+import {
+	EgressStatus,
+	EncodedFileType,
+	FileOutput,
+	Output,
+	StartEgressRequest,
+	TemplateSource
+} from 'livekit-server-sdk';
 import ms from 'ms';
 import type { Readable, Writable } from 'stream';
 import { uid } from 'uid';
@@ -115,10 +122,9 @@ export class RecordingService {
 			}
 
 			const roomRecordingConfig = await this.validateRoomForStartRecording(roomId);
-			const options = this.generateCompositeOptionsFromRequest(roomRecordingConfig, configOverride);
-			const output = this.generateFileOutputFromRequest(roomId);
+			const request = this.generateEgressRequest(roomId, roomRecordingConfig, configOverride);
 			egressRequested = true;
-			const egressInfo = await this.livekitService.startRoomComposite(roomId, output, options);
+			const egressInfo = await this.livekitService.startEgress(request);
 			const recordingInfo = await this.toRecordingInfo(egressInfo);
 
 			this.logger.info(`Recording '${recordingInfo.recordingId}' started for room '${roomId}'`);
@@ -890,31 +896,30 @@ export class RecordingService {
 	}
 
 	/**
-	 * Generates composite options for recording based on the provided room recording configuration.
-	 * If configOverride is provided, its values will take precedence over room configuration.
+	 * Generates the egress request that records the room into a new file through the egress layout
+	 * template. If configOverride is provided, its values will take precedence over room configuration.
 	 *
+	 * @param roomId  The room to record
 	 * @param roomRecordingConfig  The recording configuration defined for the room
 	 * @param configOverride  Optional configuration override from the request
-	 * @returns The generated RoomCompositeOptions object.
 	 */
-	protected generateCompositeOptionsFromRequest(
+	protected generateEgressRequest(
+		roomId: string,
 		roomRecordingConfig: MeetRecordingConfig,
 		configOverride?: {
 			layout?: MeetRecordingLayout;
 			encoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
 		}
-	): RoomCompositeOptions {
+	): StartEgressRequest {
 		const layout = configOverride?.layout ?? roomRecordingConfig.layout;
 		const encoding = configOverride?.encoding ?? roomRecordingConfig.encoding;
-		const encodingOptions = EncodingConverter.toLivekit(encoding);
 
-		return {
-			layout,
-			encodingOptions
-			// customBaseUrl: customLayout,
-			// audioOnly: false,
-			// videoOnly: false
-		};
+		return new StartEgressRequest({
+			roomName: roomId,
+			source: { case: 'template', value: new TemplateSource({ layout }) },
+			encoding: EncodingConverter.toLivekit(encoding),
+			outputs: [new Output({ config: { case: 'file', value: this.generateFileOutputFromRequest(roomId) } })]
+		});
 	}
 
 	/**
@@ -923,13 +928,13 @@ export class RecordingService {
 	 * @param fileName - The name of the file (default is 'recording').
 	 * @returns The generated file output object.
 	 */
-	protected generateFileOutputFromRequest(roomId: string): EncodedFileOutput {
+	protected generateFileOutputFromRequest(roomId: string): FileOutput {
 		// Added unique identifier to the file path for avoiding overwriting
 		const recordingName = `${roomId}--${uid(10)}`;
 
 		const filepath = this.blobStorageService.getRecordingOutputPath(roomId, recordingName);
 
-		return new EncodedFileOutput({
+		return new FileOutput({
 			fileType: EncodedFileType.DEFAULT_FILETYPE,
 			filepath,
 			disableManifest: true
