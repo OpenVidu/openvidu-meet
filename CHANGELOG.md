@@ -291,6 +291,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   a link every recipient was refused with. The meeting no longer offers it.
 - The console overview showed the getting-started view of an empty deployment when its request failed. It now keeps its
   last figures, or shows an error notice when it has none.
+- The console pages scrolled inside their own column, with the scrollbar in the middle of the screen, and the bottom of
+  the page, the **Load more** button of a list included, was cut off. The whole page scrolls now, with the scrollbar at
+  the window edge.
 
 #### Deployment
 
