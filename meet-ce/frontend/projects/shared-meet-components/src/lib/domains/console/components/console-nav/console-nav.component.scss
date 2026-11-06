@@ -8,6 +8,15 @@ mat-sidenav-container {
 
 .page-content {
 	@extend .page-content;
+
+	&:has(.ov-page-container) {
+		height: auto;
+
+		::ng-deep .ov-page-container {
+			height: auto;
+			overflow: visible;
+		}
+	}
 }
 
 mat-toolbar {
@@ -53,6 +62,10 @@ mat-sidenav {
 // Move the content down so that it won't be hidden by the toolbar
 mat-sidenav-content {
 	@extend %ov-sidenav-content;
+
+	&:has(.ov-page-container) {
+		box-sizing: border-box;
+	}
 }
 
 .main-container {
