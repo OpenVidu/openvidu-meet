@@ -277,13 +277,9 @@ export class BroadcastHelper {
 	}
 
 	private static async addressesOf(url: string, resolve: AddressLookup): Promise<string[]> {
-		let host: string;
+		const host = BroadcastHelper.hostOf(url);
 
-		try {
-			host = new URL(url).hostname;
-		} catch {
-			return [];
-		}
+		if (!host) return [];
 
 		const literal = host.startsWith('[') && host.endsWith(']') ? host.slice(1, -1) : host;
 
@@ -294,6 +290,16 @@ export class BroadcastHelper {
 		} catch {
 			return [];
 		}
+	}
+
+	/**
+	 * The host a destination URL reaches. An `rtmp://` URL keeps its host as written, while the media
+	 * server reads it as a web address host: escapes decoded, other characters mapped to the name they
+	 * stand for (`127。0。0。1` is `127.0.0.1`) and IPv4 shorthands expanded (`0x7f.1` is `127.0.0.1`).
+	 */
+	private static hostOf(url: string): string | undefined {
+		const written = URL.parse(url)?.hostname;
+		return written ? URL.parse(`http://${written}`)?.hostname : undefined;
 	}
 
 	private static isForbiddenStreamAddress(address: string): boolean {

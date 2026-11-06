@@ -216,6 +216,42 @@ describe('BroadcastHelper.assertDestinationsAllowed', () => {
 		}
 	});
 
+	it('refuses a forbidden host however it is written, as the media server reads it', async () => {
+		for (const url of [
+			'rtmp://127。0。0。1/live/key',
+			'rtmp://①②⑦.0.0.1/live/key',
+			'rtmp://１６９.２５４.１６９.２５４/live/key',
+			'rtmp://127.0.0.1./live/key',
+			'rtmp://0x7f.1/live/key',
+			'rtmp://2130706433/live/key',
+			'rtmp://[::ffff:127.0.0.1]/live/key',
+			'rtmp://[::ffff:7f00:1]/live/key',
+			'rtmp://ⓔgress.local/live/key',
+			'rtmp://%65gress.local/live/key',
+			'rtmp://EGRESS.LOCAL/live/key'
+		]) {
+			expect([url, await verdict(url)]).toEqual([
+				url,
+				expect.stringMatching(/^422 Destination '.*\*{8}' is not allowed/)
+			]);
+		}
+	});
+
+	it('resolves a host written in other characters by the name it stands for', async () => {
+		const resolved: string[] = [];
+		const recordingResolve = async (host: string) => {
+			resolved.push(host);
+			return resolve(host);
+		};
+
+		await BroadcastHelper.assertDestinationsAllowed(
+			['rtmps://ａ.rtmp.youtube.com/live2/key', 'rtmp://%73ink.lan/live/key'],
+			recordingResolve
+		);
+
+		expect(resolved).toEqual(['a.rtmp.youtube.com', 'sink.lan']);
+	});
+
 	it('lets through a private network, a public host and a host that does not resolve', async () => {
 		for (const url of [
 			'rtmp://10.0.0.7/live/key',
