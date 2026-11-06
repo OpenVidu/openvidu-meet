@@ -226,8 +226,7 @@
         "MEMBERS_TO_ADD_SUFFIX": "）",
         "EDIT_MEMBER": "编辑成员",
         "REMOVE_MEMBER": "移除成员",
-        "FEATURE_DISABLED_PERMISSION": "在“会议”步骤中启用相应功能以配置此权限。",
-        "DEPENDENT_PERMISSION_DISABLED": "请先授予此权限所依赖的权限，才能进行配置。"
+        "FEATURE_DISABLED_PERMISSION": "在“会议”步骤中启用相应功能以配置此权限。"
       },
       "MEETING": {
         "TITLE": "会议",

@@ -133,12 +133,15 @@ properties:
     chatWrite:
         type: boolean
         example: true
-        description: Can send chat messages in the meeting.
+        description: >
+            Can send chat messages in the meeting. Only effective together with `chatRead`: the server lets a
+            participant publish chat messages only when they can also read the chat.
     mediaChangeVirtualBackground:
         type: boolean
         example: true
         description: >
-            Can change the virtual background. The background is applied in the participant's browser, so the
+            Can change the virtual background. Only effective together with `mediaPublishVideo`, since the
+            background applies to the camera. The background is applied in the participant's browser, so the
             server does not enforce this permission.
     canRecord:
         type: boolean

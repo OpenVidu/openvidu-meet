@@ -226,8 +226,7 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Lid bewerken",
         "REMOVE_MEMBER": "Lid verwijderen",
-        "FEATURE_DISABLED_PERMISSION": "Schakel de betreffende functie in bij de stap Meeting om deze machtiging te configureren.",
-        "DEPENDENT_PERMISSION_DISABLED": "Verleen eerst de toestemming waarvan deze afhangt om deze in te stellen."
+        "FEATURE_DISABLED_PERMISSION": "Schakel de betreffende functie in bij de stap Meeting om deze machtiging te configureren."
       },
       "MEETING": {
         "TITLE": "Meeting",

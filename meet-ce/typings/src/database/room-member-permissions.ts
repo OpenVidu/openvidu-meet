@@ -134,11 +134,13 @@ export interface MeetRoomMemberPermissions {
 	 */
 	chatRead: boolean;
 	/**
-	 * Can send chat messages in the meeting.
+	 * Can send chat messages in the meeting. Only effective together with `chatRead`: the server lets a
+	 * participant publish chat messages only when they can also read the chat.
 	 */
 	chatWrite: boolean;
 	/**
-	 * Can change the virtual background.
+	 * Can change the virtual background. Only effective together with `mediaPublishVideo`: the background
+	 * applies to the camera, so the meeting offers no background effects without it.
 	 */
 	mediaChangeVirtualBackground: boolean;
 }

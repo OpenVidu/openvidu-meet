@@ -45,7 +45,10 @@ describe('RoomMemberService LiveKit grant (identity cannot be self-forged)', () 
 
 	it('still grants the media capabilities the permissions imply', () => {
 		// Pins that withholding the metadata write does not disturb the rest of the grant.
-		const grant = service.buildGrant('room-abc', permissionsWith({ mediaPublishVideo: true, chatWrite: true }));
+		const grant = service.buildGrant(
+			'room-abc',
+			permissionsWith({ mediaPublishVideo: true, chatRead: true, chatWrite: true })
+		);
 
 		expect(grant.roomJoin).toBe(true);
 		expect(grant.canPublish).toBe(true);
@@ -54,17 +57,23 @@ describe('RoomMemberService LiveKit grant (identity cannot be self-forged)', () 
 	});
 });
 
-describe('RoomMemberService LiveKit grant (room chat switch)', () => {
-	it('denies publishing data when the room has chat disabled, whatever chatWrite says', () => {
-		const grant = service.buildGrant('room-abc', permissionsWith({ chatWrite: true }), false);
+describe('RoomMemberService LiveKit grant (chat)', () => {
+	it('denies publishing data when the room has chat disabled, whatever the chat permissions say', () => {
+		const grant = service.buildGrant('room-abc', permissionsWith({ chatRead: true, chatWrite: true }), false);
 
 		expect(grant.canPublishData).toBe(false);
 	});
 
-	it('allows publishing data when the room has chat enabled and chatWrite is granted', () => {
-		const grant = service.buildGrant('room-abc', permissionsWith({ chatWrite: true }), true);
+	it('allows publishing data when the room has chat enabled and chatRead and chatWrite are granted', () => {
+		const grant = service.buildGrant('room-abc', permissionsWith({ chatRead: true, chatWrite: true }), true);
 
 		expect(grant.canPublishData).toBe(true);
+	});
+
+	it('denies publishing data to a participant who can write but not read the chat', () => {
+		const grant = service.buildGrant('room-abc', permissionsWith({ chatWrite: true }), true);
+
+		expect(grant.canPublishData).toBe(false);
 	});
 });
 

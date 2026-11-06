@@ -111,6 +111,7 @@
       "GUEST": "Identified guest"
     },
     "PERMISSIONS": {
+      "DEPENDENT_PERMISSION_DISABLED": "Grant the permission this one depends on to configure it.",
       "GROUPS": {
         "MEETING": "Meeting",
         "MEDIA": "Media",
@@ -169,7 +170,7 @@
         },
         "mediaChangeVirtualBackground": {
           "LABEL": "Change virtual background",
-          "DESCRIPTION": "Allow changing the virtual background"
+          "DESCRIPTION": "Allow changing the virtual background. Needs \"Publish video\""
         },
         "recordingControl": {
           "LABEL": "Record",
@@ -205,7 +206,7 @@
         },
         "chatWrite": {
           "LABEL": "Write",
-          "DESCRIPTION": "Allow sending chat messages"
+          "DESCRIPTION": "Allow sending chat messages. Needs \"Read\""
         }
       }
     },

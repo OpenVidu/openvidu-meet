@@ -43,7 +43,7 @@ const completeLobby = async (page: Page, options?: { name?: string; e2eeKey?: st
 /**
  * Clicks the join button in the prejoin screen after it becomes visible.
  */
-const clickJoinMeeting = async (page: Page): Promise<void> => {
+export const clickJoinMeeting = async (page: Page): Promise<void> => {
 	const joinButton = page.locator('#join-button');
 	await expect(joinButton).toBeVisible({ timeout: 10_000 });
 	await click(joinButton, 10_000);

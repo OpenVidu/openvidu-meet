@@ -111,6 +111,7 @@
       "GUEST": "Geïdentificeerde gast"
     },
     "PERMISSIONS": {
+      "DEPENDENT_PERMISSION_DISABLED": "Verleen eerst de toestemming waarvan deze afhangt om deze in te stellen.",
       "GROUPS": {
         "MEETING": "Meeting",
         "MEDIA": "Media",
@@ -169,7 +170,7 @@
         },
         "mediaChangeVirtualBackground": {
           "LABEL": "Virtuele achtergrond wijzigen",
-          "DESCRIPTION": "De virtuele achtergrond wijzigen toestaan"
+          "DESCRIPTION": "De virtuele achtergrond wijzigen toestaan. Vereist \"Video publiceren\""
         },
         "recordingControl": {
           "LABEL": "Opnemen",
@@ -205,7 +206,7 @@
         },
         "chatWrite": {
           "LABEL": "Schrijven",
-          "DESCRIPTION": "Chatberichten versturen toestaan"
+          "DESCRIPTION": "Chatberichten versturen toestaan. Vereist \"Lezen\""
         }
       }
     },

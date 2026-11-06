@@ -111,6 +111,7 @@
       "GUEST": "識別済みゲスト"
     },
     "PERMISSIONS": {
+      "DEPENDENT_PERMISSION_DISABLED": "この権限を設定するには、依存先の権限を先に付与してください。",
       "GROUPS": {
         "MEETING": "会議",
         "MEDIA": "メディア",
@@ -169,7 +170,7 @@
         },
         "mediaChangeVirtualBackground": {
           "LABEL": "仮想背景の変更",
-          "DESCRIPTION": "仮想背景の変更を許可します"
+          "DESCRIPTION": "仮想背景の変更を許可します。「ビデオの公開」が必要です"
         },
         "recordingControl": {
           "LABEL": "録画",
@@ -205,7 +206,7 @@
         },
         "chatWrite": {
           "LABEL": "書き込み",
-          "DESCRIPTION": "チャットメッセージの送信を許可します"
+          "DESCRIPTION": "チャットメッセージの送信を許可します。「読み取り」が必要です"
         }
       }
     },

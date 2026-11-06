@@ -111,6 +111,7 @@
       "GUEST": "Invité identifié"
     },
     "PERMISSIONS": {
+      "DEPENDENT_PERMISSION_DISABLED": "Accordez la permission dont celle-ci dépend pour la configurer.",
       "GROUPS": {
         "MEETING": "Réunion",
         "MEDIA": "Média",
@@ -169,7 +170,7 @@
         },
         "mediaChangeVirtualBackground": {
           "LABEL": "Changer l'arrière-plan virtuel",
-          "DESCRIPTION": "Autoriser à changer l'arrière-plan virtuel"
+          "DESCRIPTION": "Autoriser à changer l'arrière-plan virtuel. Nécessite « Publier de la vidéo »"
         },
         "recordingControl": {
           "LABEL": "Enregistrer",
@@ -205,7 +206,7 @@
         },
         "chatWrite": {
           "LABEL": "Écrire",
-          "DESCRIPTION": "Autoriser à envoyer des messages dans le chat"
+          "DESCRIPTION": "Autoriser à envoyer des messages dans le chat. Nécessite « Lire »"
         }
       }
     },

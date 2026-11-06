@@ -92,6 +92,13 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 				icon: 'videocam'
 			},
 			{
+				key: 'mediaChangeVirtualBackground',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.mediaChangeVirtualBackground.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.mediaChangeVirtualBackground.DESCRIPTION',
+				icon: 'background_replace',
+				dependsOn: 'mediaPublishVideo'
+			},
+			{
 				key: 'mediaPublishAudio',
 				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.mediaPublishAudio.LABEL',
 				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.mediaPublishAudio.DESCRIPTION',
@@ -102,12 +109,6 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.mediaShareScreen.LABEL',
 				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.mediaShareScreen.DESCRIPTION',
 				icon: 'screen_share'
-			},
-			{
-				key: 'mediaChangeVirtualBackground',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.mediaChangeVirtualBackground.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.mediaChangeVirtualBackground.DESCRIPTION',
-				icon: 'background_replace'
 			}
 		]
 	},
@@ -180,7 +181,8 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 				key: 'chatWrite',
 				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.chatWrite.LABEL',
 				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.chatWrite.DESCRIPTION',
-				icon: 'edit'
+				icon: 'edit',
+				dependsOn: 'chatRead'
 			}
 		]
 	}

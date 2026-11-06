@@ -111,6 +111,7 @@
       "GUEST": "实名访客"
     },
     "PERMISSIONS": {
+      "DEPENDENT_PERMISSION_DISABLED": "请先授予此权限所依赖的权限，才能进行配置。",
       "GROUPS": {
         "MEETING": "会议",
         "MEDIA": "媒体",
@@ -169,7 +170,7 @@
         },
         "mediaChangeVirtualBackground": {
           "LABEL": "更改虚拟背景",
-          "DESCRIPTION": "允许更改虚拟背景"
+          "DESCRIPTION": "允许更改虚拟背景。需要“发布视频”"
         },
         "recordingControl": {
           "LABEL": "录制",
@@ -205,7 +206,7 @@
         },
         "chatWrite": {
           "LABEL": "发送消息",
-          "DESCRIPTION": "允许发送聊天消息"
+          "DESCRIPTION": "允许发送聊天消息。需要“阅读”"
         }
       }
     },

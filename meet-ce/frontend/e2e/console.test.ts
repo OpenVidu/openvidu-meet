@@ -259,6 +259,33 @@ test.describe('Console Room detail E2E Tests', () => {
 		await expect(page.locator('ov-room-members-list')).toBeVisible({ timeout: 20_000 });
 	});
 
+	test('the member form disables a permission while the one it needs is off', async ({ page }) => {
+		const permissionSwitch = (key: string) => page.locator(`#member-permission-${key} button`);
+
+		await page.goto(`${MEET_BASE_URL}/rooms/${room.roomId}/members/new`, { waitUntil: 'domcontentloaded' });
+		await page.locator('.permissions-panel mat-expansion-panel-header').click();
+		await expect(permissionSwitch('chatRead')).toBeVisible({ timeout: 20_000 });
+
+		// The speaker base role denies broadcastControl, so adding destinations starts unavailable.
+		await expect(permissionSwitch('broadcastEdit')).toBeDisabled();
+
+		for (const [dependent, parent] of [
+			['chatWrite', 'chatRead'],
+			['mediaChangeVirtualBackground', 'mediaPublishVideo']
+		]) {
+			await permissionSwitch(parent).click();
+			await expect(permissionSwitch(dependent)).toBeDisabled();
+			await expect(permissionSwitch(dependent)).toHaveAttribute('aria-checked', 'true');
+
+			await permissionSwitch(parent).click();
+			await expect(permissionSwitch(dependent)).toBeEnabled();
+		}
+
+		await page.locator('mat-select[formcontrolname="role"]').click();
+		await page.getByRole('option', { name: /moderator/i }).click();
+		await expect(permissionSwitch('broadcastEdit')).toBeEnabled();
+	});
+
 	test('shows the notice of copying a member link in the selected language', async ({ page }) => {
 		const member = await createRoomMember(room.roomId, {
 			name: 'Invitada',

@@ -926,7 +926,7 @@ export class RoomMemberService {
 		return {
 			canPublish: permissions.mediaPublishAudio || permissions.mediaPublishVideo || permissions.mediaShareScreen,
 			canPublishSources,
-			canPublishData: chatEnabled && permissions.chatWrite
+			canPublishData: chatEnabled && permissions.chatRead && permissions.chatWrite
 		};
 	}
 

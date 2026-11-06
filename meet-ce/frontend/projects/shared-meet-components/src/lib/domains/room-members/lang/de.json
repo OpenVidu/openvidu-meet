@@ -111,6 +111,7 @@
       "GUEST": "Identifizierter Gast"
     },
     "PERMISSIONS": {
+      "DEPENDENT_PERMISSION_DISABLED": "Erteilen Sie zuerst die Berechtigung, von der diese abhängt.",
       "GROUPS": {
         "MEETING": "Meeting",
         "MEDIA": "Medien",
@@ -169,7 +170,7 @@
         },
         "mediaChangeVirtualBackground": {
           "LABEL": "Virtuellen Hintergrund ändern",
-          "DESCRIPTION": "Erlaubt das Ändern des virtuellen Hintergrunds"
+          "DESCRIPTION": "Erlaubt das Ändern des virtuellen Hintergrunds. Erfordert „Video übertragen“"
         },
         "recordingControl": {
           "LABEL": "Aufzeichnen",
@@ -205,7 +206,7 @@
         },
         "chatWrite": {
           "LABEL": "Schreiben",
-          "DESCRIPTION": "Erlaubt das Senden von Chat-Nachrichten"
+          "DESCRIPTION": "Erlaubt das Senden von Chat-Nachrichten. Erfordert „Lesen“"
         }
       }
     },

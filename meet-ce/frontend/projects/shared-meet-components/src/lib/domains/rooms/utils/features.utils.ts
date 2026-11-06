@@ -52,9 +52,9 @@ export class FeatureCalculator {
 			features.showReactions = permissions.participantReactionSend;
 		}
 
-		// Backgrounds
+		// Backgrounds apply to the camera, so they need mediaPublishVideo too.
 		if (features.showBackgrounds) {
-			features.showBackgrounds = permissions.mediaChangeVirtualBackground;
+			features.showBackgrounds = permissions.mediaChangeVirtualBackground && permissions.mediaPublishVideo;
 		}
 
 		// Media features

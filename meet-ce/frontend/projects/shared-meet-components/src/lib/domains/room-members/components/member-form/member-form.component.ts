@@ -30,6 +30,7 @@ import { TranslateService } from '../../../../shared/services/i18n/translate.ser
 import { UserService } from '../../../users/services/user.service';
 import { MemberFormMemberType } from '../../models/member-form.model';
 import { PERMISSION_GROUPS } from '../../models/permissions.model';
+import { syncDependentPermissions } from '../../utils/permission-dependencies';
 import { RoomMemberUiUtils } from '../../utils/ui';
 
 @Component({
@@ -119,6 +120,10 @@ export class MemberFormComponent implements OnInit {
 					this.resetPermissionsToRoleDefaults(role);
 				}
 			});
+
+		this.permissionsForm.valueChanges
+			.pipe(takeUntilDestroyed())
+			.subscribe(() => syncDependentPermissions(this.permissionsForm));
 
 		// Autocomplete search for users
 		this.form
@@ -293,6 +298,8 @@ export class MemberFormComponent implements OnInit {
 			permissionsForm.get(key)?.setValue(value, { emitEvent: false });
 		}
 
+		syncDependentPermissions(permissionsForm);
+
 		// Mark dirty only if there are active custom permissions (differ from role defaults)
 		if (options.customPermissions && Object.keys(options.customPermissions).length > 0) {
 			permissionsForm.markAsDirty();
@@ -323,6 +330,8 @@ export class MemberFormComponent implements OnInit {
 		for (const key of MEET_ROOM_MEMBER_PERMISSIONS_FIELDS) {
 			permissionsForm.get(key)?.setValue(rolePermissions[key] ?? false, { emitEvent: false });
 		}
+
+		syncDependentPermissions(permissionsForm);
 
 		permissionsForm.markAsPristine();
 	}

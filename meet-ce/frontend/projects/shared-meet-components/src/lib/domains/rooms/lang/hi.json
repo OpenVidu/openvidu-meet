@@ -226,8 +226,7 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "सदस्य संपादित करें",
         "REMOVE_MEMBER": "सदस्य हटाएं",
-        "FEATURE_DISABLED_PERMISSION": "इस अनुमति को कॉन्फ़िगर करने के लिए मीटिंग चरण में संबंधित सुविधा सक्षम करें।",
-        "DEPENDENT_PERMISSION_DISABLED": "इसे कॉन्फ़िगर करने के लिए पहले वह अनुमति दें जिस पर यह निर्भर है।"
+        "FEATURE_DISABLED_PERMISSION": "इस अनुमति को कॉन्फ़िगर करने के लिए मीटिंग चरण में संबंधित सुविधा सक्षम करें।"
       },
       "MEETING": {
         "TITLE": "मीटिंग",

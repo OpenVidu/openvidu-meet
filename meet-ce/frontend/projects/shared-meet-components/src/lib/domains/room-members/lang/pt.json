@@ -111,6 +111,7 @@
       "GUEST": "Convidado identificado"
     },
     "PERMISSIONS": {
+      "DEPENDENT_PERMISSION_DISABLED": "Conceda primeiro a permissão da qual esta depende para configurá-la.",
       "GROUPS": {
         "MEETING": "Reunião",
         "MEDIA": "Multimédia",
@@ -169,7 +170,7 @@
         },
         "mediaChangeVirtualBackground": {
           "LABEL": "Alterar fundo virtual",
-          "DESCRIPTION": "Permitir alterar o fundo virtual"
+          "DESCRIPTION": "Permitir alterar o fundo virtual. Requer \"Publicar vídeo\""
         },
         "recordingControl": {
           "LABEL": "Gravar",
@@ -205,7 +206,7 @@
         },
         "chatWrite": {
           "LABEL": "Escrever",
-          "DESCRIPTION": "Permitir enviar mensagens no chat"
+          "DESCRIPTION": "Permitir enviar mensagens no chat. Requer \"Ler\""
         }
       }
     },
