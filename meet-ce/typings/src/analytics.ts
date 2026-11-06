@@ -49,6 +49,10 @@ export interface MeetAnalytics {
 	 */
 	recordingsInProgress: number;
 	/**
+	 * Number of recordings whose status is `failed`, `aborted` or `limit_reached`
+	 */
+	failedRecordings: number;
+	/**
 	 * Number of rooms whose `autoDeletionDate` falls between now and 7 days ahead
 	 */
 	roomsExpiringSoon: number;

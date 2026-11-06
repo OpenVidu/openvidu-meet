@@ -41,6 +41,7 @@ export class AnalyticsService {
 				totalRecordings,
 				completeRecordings,
 				recordingsInProgress,
+				failedRecordings,
 				roomsExpiringSoon,
 				nextExpiringRoom
 			] = await Promise.all([
@@ -51,6 +52,7 @@ export class AnalyticsService {
 				this.recordingRepository.countTotal(),
 				this.recordingRepository.countCompleteRecordings(),
 				this.recordingRepository.countInProgress(),
+				this.recordingRepository.countFailed(),
 				this.roomRepository.countExpiringRooms(now, expiringUntil),
 				this.roomRepository.findNextExpiringRoom(now, expiringUntil)
 			]);
@@ -63,6 +65,7 @@ export class AnalyticsService {
 				totalRecordings,
 				completeRecordings,
 				recordingsInProgress,
+				failedRecordings,
 				roomsExpiringSoon,
 				...(nextExpiringRoom && { nextExpiringRoom })
 			};

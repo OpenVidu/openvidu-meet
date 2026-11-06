@@ -19,6 +19,18 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 
+interface StatusSegment {
+	key: string;
+	count: number;
+	label: string;
+}
+
+const statusBreakdown = (label: string, segments: StatusSegment[]) => ({
+	label,
+	labelParams: Object.fromEntries(segments.map(({ key, count }) => [key, count])) as TranslateParams,
+	segments
+});
+
 @Component({
 	selector: 'ov-overview',
 	imports: [
@@ -55,14 +67,24 @@ export class OverviewComponent {
 		return stats !== null && (stats.totalRooms > 0 || stats.totalRecordings > 0);
 	});
 
-	roomSegments = computed(() => {
+	roomBreakdown = computed(() => {
 		const stats = this.stats();
 
-		return [
+		return statusBreakdown('OVERVIEW.ROOMS_BAR_LABEL', [
 			{ key: 'open', count: stats?.openRooms ?? 0, label: 'OVERVIEW.ROOMS_STATUS_OPEN' },
 			{ key: 'meeting', count: stats?.activeRooms ?? 0, label: 'OVERVIEW.ROOMS_STATUS_MEETING' },
 			{ key: 'closed', count: stats?.closedRooms ?? 0, label: 'OVERVIEW.ROOMS_STATUS_CLOSED' }
-		];
+		]);
+	});
+
+	recordingBreakdown = computed(() => {
+		const stats = this.stats();
+
+		return statusBreakdown('OVERVIEW.RECORDINGS_BAR_LABEL', [
+			{ key: 'available', count: stats?.completeRecordings ?? 0, label: 'OVERVIEW.RECORDINGS_STATUS_AVAILABLE' },
+			{ key: 'progress', count: stats?.recordingsInProgress ?? 0, label: 'OVERVIEW.RECORDINGS_STATUS_PROGRESS' },
+			{ key: 'failed', count: stats?.failedRecordings ?? 0, label: 'OVERVIEW.RECORDINGS_STATUS_FAILED' }
+		]);
 	});
 
 	nextExpiringWhen = computed<{ key: string; params: TranslateParams } | null>(() => {

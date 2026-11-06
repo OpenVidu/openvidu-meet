@@ -41,6 +41,7 @@ class FakeRecordingRepository {
 	total = 0;
 	complete = 0;
 	inProgress = 0;
+	failed = 0;
 
 	countTotal(): Promise<number> {
 		return Promise.resolve(this.total);
@@ -52,6 +53,10 @@ class FakeRecordingRepository {
 
 	countInProgress(): Promise<number> {
 		return Promise.resolve(this.inProgress);
+	}
+
+	countFailed(): Promise<number> {
+		return Promise.resolve(this.failed);
 	}
 }
 
@@ -84,14 +89,20 @@ describe('AnalyticsService', () => {
 		expect(analytics).toMatchObject({ totalRooms: 48, openRooms: 31, activeRooms: 5, closedRooms: 12 });
 	});
 
-	it('reports the recordings that exist, the complete ones and the ones in progress', async () => {
+	it('reports the recordings that exist, the complete ones, the ones in progress and the failed ones', async () => {
 		recordings.total = 214;
 		recordings.complete = 207;
 		recordings.inProgress = 2;
+		recordings.failed = 5;
 
 		const analytics = await service.getAnalytics();
 
-		expect(analytics).toMatchObject({ totalRecordings: 214, completeRecordings: 207, recordingsInProgress: 2 });
+		expect(analytics).toMatchObject({
+			totalRecordings: 214,
+			completeRecordings: 207,
+			recordingsInProgress: 2,
+			failedRecordings: 5
+		});
 	});
 
 	it('counts and looks up the expiring rooms in the window that starts now', async () => {
