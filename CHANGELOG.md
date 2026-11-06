@@ -95,10 +95,10 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - The console lists keep their rows, dimmed, while a search, a sort or a new page loads, and show placeholder rows when
   they have none yet, instead of replacing the list with a spinner, and the Embedded page shows its sections with
   placeholder rows instead of a loading screen.
-- The console overview shows the rooms by status (open, in a meeting now and closed), the recordings in progress and the
-  rooms that reach their auto-deletion date within 7 days, and refreshes every 30 seconds while its tab is visible or
-  on Refresh; `getAnalytics` returns them as `openRooms`, `closedRooms`, `recordingsInProgress`, `roomsExpiringSoon`
-  and `nextExpiringRoom`.
+- The console overview shows the rooms by status (open, in a meeting now and closed), the recordings by status
+  (available for playback, in progress and failed) and the rooms that reach their auto-deletion date within 7 days, and
+  refreshes every 30 seconds while its tab is visible or on Refresh; `getAnalytics` returns them as `openRooms`,
+  `closedRooms`, `recordingsInProgress`, `failedRecordings`, `roomsExpiringSoon` and `nextExpiringRoom`.
 
 ### Fixed
 

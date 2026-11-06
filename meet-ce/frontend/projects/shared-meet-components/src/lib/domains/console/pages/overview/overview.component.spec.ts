@@ -18,6 +18,7 @@ const busy = (overrides: Partial<MeetAnalytics> = {}): MeetAnalytics => ({
 	totalRecordings: 214,
 	completeRecordings: 207,
 	recordingsInProgress: 2,
+	failedRecordings: 5,
 	roomsExpiringSoon: 3,
 	nextExpiringRoom: { roomId: 'room-1', roomName: 'Weekly sync', autoDeletionDate: NOW.getTime() + 2 * DAY_MS },
 	...overrides
@@ -110,7 +111,7 @@ describe('OverviewComponent', () => {
 			expect(el('.stats-grid')).toBeNull();
 		});
 
-		it('shows the rooms by status, the recordings in progress and the expiring rooms', async () => {
+		it('shows the rooms and the recordings by status and the expiring rooms', async () => {
 			await open();
 
 			expect(text('.rooms-card .stat-number')).toBe('48');
@@ -118,8 +119,9 @@ describe('OverviewComponent', () => {
 			expect(text('#rooms-status-meeting')).toContain('5');
 			expect(text('#rooms-status-closed')).toContain('12');
 			expect(text('.recordings-card .stat-number')).toBe('214');
-			expect(text('#recordings-in-progress')).toContain('2');
-			expect(text('#recordings-in-progress')).toContain('OVERVIEW.LIVE');
+			expect(text('#recordings-status-available')).toContain('207');
+			expect(text('#recordings-status-progress')).toContain('2');
+			expect(text('#recordings-status-failed')).toContain('5');
 			expect(text('.expiring-card .stat-number')).toBe('3');
 			expect(text('#next-expiring-room')).toContain('Weekly sync');
 		});
@@ -127,15 +129,34 @@ describe('OverviewComponent', () => {
 		it('leaves out the segment of a status with no room', async () => {
 			await open(busy({ activeRooms: 0 }));
 
-			expect(fixture.nativeElement.querySelectorAll('.status-segment').length).toBe(2);
+			expect(fixture.nativeElement.querySelectorAll('.rooms-card .status-segment').length).toBe(2);
 			expect(text('#rooms-status-meeting')).toContain('0');
 		});
 
-		it('says no recording is in progress and no room is expiring when there is none', async () => {
+		it('fills the recordings bar with the available segment alone when none is in progress or failed', async () => {
+			await open(
+				busy({ totalRecordings: 3, completeRecordings: 3, recordingsInProgress: 0, failedRecordings: 0 })
+			);
+
+			const segments = fixture.nativeElement.querySelectorAll('.recordings-card .status-segment');
+			expect(segments.length).toBe(1);
+			expect(segments[0].classList).toContain('status-available');
+			expect(text('#recordings-status-progress')).toContain('0');
+			expect(text('#recordings-status-failed')).toContain('0');
+		});
+
+		it('labels the recordings bar with its three counts', async () => {
+			await open();
+
+			expect(el('.recordings-card .status-bar')?.getAttribute('aria-label')).toBe(
+				'OVERVIEW.RECORDINGS_BAR_LABEL {"available":207,"progress":2,"failed":5}'
+			);
+		});
+
+		it('shows no recording in progress and no room expiring when there is none', async () => {
 			await open(quiet());
 
-			expect(text('#recordings-in-progress')).toContain('OVERVIEW.NO_RECORDING_IN_PROGRESS');
-			expect(el('#recordings-in-progress .live-badge')).toBeNull();
+			expect(text('#recordings-status-progress')).toContain('0');
 			expect(text('#next-expiring-room')).toContain('OVERVIEW.EXPIRING_NONE');
 		});
 
@@ -203,7 +224,7 @@ describe('OverviewComponent', () => {
 			await tick(1);
 
 			expect(getAnalytics).toHaveBeenCalledTimes(2);
-			expect(text('#recordings-in-progress')).toContain('3');
+			expect(text('#recordings-status-progress')).toContain('3');
 			expect(text('#overview-updated-at')).toBe('OVERVIEW.UPDATED_AT {"time":"14:33"}');
 		});
 

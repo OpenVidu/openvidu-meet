@@ -30,6 +30,27 @@
 	}
 </ng-template>
 
+<ng-template #statusBreakdown let-breakdown let-idPrefix="idPrefix">
+	<div class="status-breakdown">
+		<div class="status-bar" role="img" [attr.aria-label]="breakdown.label | translate: breakdown.labelParams">
+			@for (segment of breakdown.segments; track segment.key) {
+				@if (segment.count > 0) {
+					<div [class]="'status-segment status-' + segment.key" [style.flex-grow]="segment.count"></div>
+				}
+			}
+		</div>
+		<ul class="status-legend">
+			@for (segment of breakdown.segments; track segment.key) {
+				<li class="status-legend-row" [id]="idPrefix + '-status-' + segment.key">
+					<span [class]="'legend-swatch status-' + segment.key"></span>
+					<span class="legend-label">{{ segment.label | translate }}</span>
+					<span class="legend-count">{{ segment.count }}</span>
+				</li>
+			}
+		</ul>
+	</div>
+</ng-template>
+
 <div class="ov-page-container ov-mb-xxl">
 	@if (isLoading()) {
 		<!-- Loading State -->
@@ -69,34 +90,10 @@
 								<div class="stat-label">{{ 'OVERVIEW.TOTAL_ROOMS' | translate }}</div>
 							</div>
 						</mat-card-content>
-						<div class="status-breakdown">
-							<div
-								class="status-bar"
-								role="img"
-								[attr.aria-label]="
-									'OVERVIEW.ROOMS_BAR_LABEL'
-										| translate: { open: s.openRooms, meeting: s.activeRooms, closed: s.closedRooms }
-								"
-							>
-								@for (segment of roomSegments(); track segment.key) {
-									@if (segment.count > 0) {
-										<div
-											[class]="'status-segment status-' + segment.key"
-											[style.flex-grow]="segment.count"
-										></div>
-									}
-								}
-							</div>
-							<ul class="status-legend">
-								@for (segment of roomSegments(); track segment.key) {
-									<li class="status-legend-row" [id]="'rooms-status-' + segment.key">
-										<span [class]="'legend-swatch status-' + segment.key"></span>
-										<span class="legend-label">{{ segment.label | translate }}</span>
-										<span class="legend-count">{{ segment.count }}</span>
-									</li>
-								}
-							</ul>
-						</div>
+						<ng-container
+							[ngTemplateOutlet]="statusBreakdown"
+							[ngTemplateOutletContext]="{ $implicit: roomBreakdown(), idPrefix: 'rooms' }"
+						/>
 						<mat-card-actions>
 							<button
 								mat-button
@@ -122,19 +119,12 @@
 							<div class="stat-content">
 								<div class="stat-number">{{ s.totalRecordings }}</div>
 								<div class="stat-label">{{ 'OVERVIEW.TOTAL_RECORDINGS' | translate }}</div>
-								<div class="stat-detail">{{ s.completeRecordings }} {{ 'OVERVIEW.AVAILABLE_PLAYBACK_SUFFIX' | translate }}</div>
 							</div>
 						</mat-card-content>
-						<div class="live-status" id="recordings-in-progress">
-							@if (s.recordingsInProgress > 0) {
-								<span class="live-dot"></span>
-								<span class="live-text"><strong>{{ s.recordingsInProgress }}</strong> {{ 'OVERVIEW.RECORDINGS_IN_PROGRESS' | translate }}</span>
-								<span class="live-badge">{{ 'OVERVIEW.LIVE' | translate }}</span>
-							} @else {
-								<span class="idle-dot"></span>
-								<span class="live-text idle">{{ 'OVERVIEW.NO_RECORDING_IN_PROGRESS' | translate }}</span>
-							}
-						</div>
+						<ng-container
+							[ngTemplateOutlet]="statusBreakdown"
+							[ngTemplateOutletContext]="{ $implicit: recordingBreakdown(), idPrefix: 'recordings' }"
+						/>
 						<mat-card-actions>
 							<button mat-button (click)="navigateTo('recordings')" id="view-all-recordings-button">
 								<mat-icon class="ov-navigation-icon">arrow_forward</mat-icon>

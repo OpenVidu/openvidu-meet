@@ -46,6 +46,7 @@ describe('Analytics API Tests', () => {
 				'totalRecordings',
 				'completeRecordings',
 				'recordingsInProgress',
+				'failedRecordings',
 				'roomsExpiringSoon'
 			];
 
@@ -67,6 +68,7 @@ describe('Analytics API Tests', () => {
 			expect(analytics.openRooms).toBe(0);
 			expect(analytics.closedRooms).toBe(0);
 			expect(analytics.recordingsInProgress).toBe(0);
+			expect(analytics.failedRecordings).toBe(0);
 			expect(analytics.roomsExpiringSoon).toBe(0);
 			expect(analytics).not.toHaveProperty('nextExpiringRoom');
 		});
@@ -132,7 +134,7 @@ describe('Analytics API Tests', () => {
 			expect(analytics.closedRooms).toBe(1);
 		});
 
-		it('should count only the recordings that are in progress as in progress', async () => {
+		it('should count each recording status under one figure: complete, in progress or failed', async () => {
 			const { roomId } = await createRoom({ roomName: 'analytics-statuses' });
 			const recordingRepository = container.get(RecordingRepository);
 			const statuses = [
@@ -141,7 +143,8 @@ describe('Analytics API Tests', () => {
 				MeetRecordingStatus.ENDING,
 				MeetRecordingStatus.COMPLETE,
 				MeetRecordingStatus.FAILED,
-				MeetRecordingStatus.ABORTED
+				MeetRecordingStatus.ABORTED,
+				MeetRecordingStatus.LIMIT_REACHED
 			];
 
 			for (const status of statuses) {
@@ -160,9 +163,10 @@ describe('Analytics API Tests', () => {
 			expect(response.status).toBe(200);
 
 			const analytics: MeetAnalytics = response.body;
-			expect(analytics.totalRecordings).toBe(6);
+			expect(analytics.totalRecordings).toBe(7);
 			expect(analytics.completeRecordings).toBe(1);
 			expect(analytics.recordingsInProgress).toBe(3);
+			expect(analytics.failedRecordings).toBe(3);
 		});
 
 		describe('rooms expiring soon', () => {

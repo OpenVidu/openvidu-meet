@@ -29,6 +29,10 @@ properties:
         type: integer
         description: Number of recordings whose status is `starting`, `active` or `ending`
         example: 2
+    failedRecordings:
+        type: integer
+        description: Number of recordings whose status is `failed`, `aborted` or `limit_reached`
+        example: 1
     roomsExpiringSoon:
         type: integer
         description: Number of rooms whose `autoDeletionDate` falls between now and 7 days ahead
@@ -64,4 +68,5 @@ required:
     - totalRecordings
     - completeRecordings
     - recordingsInProgress
+    - failedRecordings
     - roomsExpiringSoon

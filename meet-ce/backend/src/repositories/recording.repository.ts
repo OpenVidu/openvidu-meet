@@ -390,4 +390,15 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 			status: { $in: [MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE, MeetRecordingStatus.ENDING] }
 		});
 	}
+
+	/**
+	 * Counts the recordings that ended without a playable file: status 'failed', 'aborted' or 'limit_reached'.
+	 */
+	countFailed(): Promise<number> {
+		return this.count({
+			status: {
+				$in: [MeetRecordingStatus.FAILED, MeetRecordingStatus.ABORTED, MeetRecordingStatus.LIMIT_REACHED]
+			}
+		});
+	}
 }

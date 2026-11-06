@@ -125,22 +125,8 @@
 	}
 }
 
-@keyframes ov-overview-pulse {
-	0%,
-	100% {
-		opacity: 1;
-		transform: scale(1);
-	}
-
-	50% {
-		opacity: 0.45;
-		transform: scale(0.8);
-	}
-}
-
 @media (prefers-reduced-motion: reduce) {
-	.refresh-toolbar .spinning,
-	.live-status .live-dot {
+	.refresh-toolbar .spinning {
 		animation: none;
 	}
 }
@@ -204,7 +190,6 @@
 	}
 
 	.status-breakdown,
-	.live-status,
 	.expiring-next {
 		margin: 0 var(--ov-meet-spacing-lg) var(--ov-meet-spacing-md);
 	}
@@ -272,47 +257,17 @@
 		.status-closed {
 			background: var(--ov-meet-color-secondary-light);
 		}
-	}
 
-	.live-status {
-		display: flex;
-		align-items: center;
-		gap: var(--ov-meet-spacing-sm);
-		padding-top: var(--ov-meet-spacing-md);
-		border-top: 1px solid var(--ov-meet-border-color);
-		font-size: var(--ov-meet-font-size-md);
-
-		.live-dot,
-		.idle-dot {
-			flex-shrink: 0;
-			width: 12px;
-			height: 12px;
-			border-radius: var(--ov-meet-radius-circle);
-			box-sizing: border-box;
+		.status-available {
+			background: var(--ov-meet-color-success);
 		}
 
-		.live-dot {
+		.status-progress {
+			background: var(--ov-meet-color-primary);
+		}
+
+		.status-failed {
 			background: var(--ov-meet-color-error);
-			animation: ov-overview-pulse 1.6s ease-in-out infinite;
-		}
-
-		.idle-dot {
-			border: 2px solid var(--ov-meet-text-secondary);
-		}
-
-		.live-text.idle {
-			color: var(--ov-meet-text-secondary);
-		}
-
-		.live-badge {
-			margin-left: auto;
-			padding: 2px var(--ov-meet-spacing-sm);
-			border-radius: 999px;
-			font-size: var(--ov-meet-font-size-xs);
-			font-weight: var(--ov-meet-font-weight-medium);
-			letter-spacing: 0.6px;
-			color: var(--ov-meet-color-error);
-			background: color-mix(in srgb, var(--ov-meet-color-error) 12%, transparent);
 		}
 	}
 
