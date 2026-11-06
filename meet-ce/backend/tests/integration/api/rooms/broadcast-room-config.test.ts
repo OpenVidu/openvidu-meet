@@ -219,8 +219,14 @@ describe('Broadcast Room Configuration Tests', () => {
 			expect((await getRooms()).body.rooms).toEqual([]);
 		});
 
-		it('should reject a destination on a loopback or link-local address, where no RTMP server can live', async () => {
-			for (const url of ['rtmp://127.0.0.1:6379/live/key', 'rtmp://169.254.169.254/live/key']) {
+		it('should reject a destination on a loopback or link-local address, where no RTMP server can live, however its host is written', async () => {
+			for (const url of [
+				'rtmp://127.0.0.1:6379/live/key',
+				'rtmp://169.254.169.254/live/key',
+				'rtmp://127。0。0。1:6379/live/key',
+				'rtmp://１６９.２５４.１６９.２５４/live/key',
+				'rtmp://ⓛocalhost:1935/live/key'
+			]) {
 				const response = await createRoomRequest({
 					roomName: 'internal-destination',
 					config: { broadcast: { enabled: true, destinations: [{ name: 'Internal', url }] } }
