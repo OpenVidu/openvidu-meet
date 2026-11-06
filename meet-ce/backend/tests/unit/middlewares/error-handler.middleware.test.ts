@@ -19,6 +19,7 @@ const buildApp = () => {
 	const app = express();
 	app.use(express.json({ limit: '1kb' }));
 	app.post('/echo', (req, res) => res.status(200).json(req.body));
+	app.get('/items/:itemId', (req, res) => res.status(200).json(req.params));
 	app.post('/broken', () => {
 		throw new Error('connection reset by peer');
 	});
@@ -61,6 +62,27 @@ describe('globalErrorHandler', () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body).toEqual({ error: 'Bad Request', message: 'Malformed body' });
+	});
+
+	it.each(['%E0%A4%A', '%ZZ', '%'])(
+		'answers 400 Bad Request to a path parameter that does not percent-decode (%s), without an error log',
+		async (itemId) => {
+			const error = jest.spyOn(container.get(LoggerService), 'error');
+
+			const response = await request(buildApp()).get(`/items/${itemId}`);
+
+			expect(response.status).toBe(400);
+			expect(response.body).toEqual({ error: 'Bad Request', message: 'Malformed path' });
+			expect(error).not.toHaveBeenCalled();
+			error.mockRestore();
+		}
+	);
+
+	it('decodes a well-formed percent escape in a path parameter', async () => {
+		const response = await request(buildApp()).get('/items/a%20b');
+
+		expect(response.status).toBe(200);
+		expect(response.body).toEqual({ itemId: 'a b' });
 	});
 
 	it('leaves an error raised after the response started to Express, instead of writing a second one', () => {

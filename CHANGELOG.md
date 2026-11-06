@@ -113,6 +113,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   credentials it joined with.
 - A request whose credentials could not be checked because MongoDB or Redis failed answered `401`. It now answers
   `500`.
+- A request whose path held a percent escape that does not decode, such as `/api/v1/rooms/%ZZ`, answered `500`. It
+  now answers `400`.
 - Kicking a participant answered `404` when the media server stopped answering during the kick. It now answers `503`.
 - A list request with a `maxItems` below 1, such as `0.5`, answered an empty page marked as truncated and without a
   `nextPageToken`. Such a value now returns one item.
