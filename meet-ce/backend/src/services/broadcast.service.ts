@@ -12,7 +12,7 @@ import {
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { EgressInfo } from 'livekit-server-sdk';
-import { StreamOutput, StreamProtocol } from 'livekit-server-sdk';
+import { Output, StartEgressRequest, StreamOutput, StreamProtocol, TemplateSource } from 'livekit-server-sdk';
 import type { StringValue } from 'ms';
 import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
@@ -334,10 +334,20 @@ export class BroadcastService {
 		url: string,
 		{ layout, encoding }: Pick<BroadcastRecord, 'layout' | 'encoding'>
 	): Promise<EgressInfo> {
-		return this.livekitService.startRoomComposite(
-			roomId,
-			new StreamOutput({ protocol: StreamProtocol.RTMP, urls: [url] }),
-			{ layout, encodingOptions: EncodingConverter.toLivekit(encoding) }
+		return this.livekitService.startEgress(
+			new StartEgressRequest({
+				roomName: roomId,
+				source: { case: 'template', value: new TemplateSource({ layout }) },
+				encoding: EncodingConverter.toLivekit(encoding),
+				outputs: [
+					new Output({
+						config: {
+							case: 'stream',
+							value: new StreamOutput({ protocol: StreamProtocol.RTMP, urls: [url] })
+						}
+					})
+				]
+			})
 		);
 	}
 

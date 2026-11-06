@@ -33,55 +33,58 @@ const createCompleteEncodingOptions = (
 	}
 });
 
+const preset = (value: EncodingOptionsPreset) => ({ case: 'preset' as const, value });
+const advanced = (value: EncodingOptions) => ({ case: 'advanced' as const, value });
+
 describe('EncodingConverter - Encoding Options Conversion', () => {
 	describe('toLivekit', () => {
 		describe('Preset Conversion', () => {
 			it('Should convert H264_720P_30 preset correctly', () => {
 				const result = EncodingConverter.toLivekit(MeetRecordingEncodingPreset.H264_720P_30);
 
-				expect(result).toBe(EncodingOptionsPreset.H264_720P_30);
+				expect(result).toEqual(preset(EncodingOptionsPreset.H264_720P_30));
 			});
 
 			it('Should convert H264_720P_60 preset correctly', () => {
 				const result = EncodingConverter.toLivekit(MeetRecordingEncodingPreset.H264_720P_60);
 
-				expect(result).toBe(EncodingOptionsPreset.H264_720P_60);
+				expect(result).toEqual(preset(EncodingOptionsPreset.H264_720P_60));
 			});
 
 			it('Should convert H264_1080P_30 preset correctly', () => {
 				const result = EncodingConverter.toLivekit(MeetRecordingEncodingPreset.H264_1080P_30);
 
-				expect(result).toBe(EncodingOptionsPreset.H264_1080P_30);
+				expect(result).toEqual(preset(EncodingOptionsPreset.H264_1080P_30));
 			});
 
 			it('Should convert H264_1080P_60 preset correctly', () => {
 				const result = EncodingConverter.toLivekit(MeetRecordingEncodingPreset.H264_1080P_60);
 
-				expect(result).toBe(EncodingOptionsPreset.H264_1080P_60);
+				expect(result).toEqual(preset(EncodingOptionsPreset.H264_1080P_60));
 			});
 
 			it('Should convert PORTRAIT_H264_720P_30 preset correctly', () => {
 				const result = EncodingConverter.toLivekit(MeetRecordingEncodingPreset.PORTRAIT_H264_720P_30);
 
-				expect(result).toBe(EncodingOptionsPreset.PORTRAIT_H264_720P_30);
+				expect(result).toEqual(preset(EncodingOptionsPreset.PORTRAIT_H264_720P_30));
 			});
 
 			it('Should convert PORTRAIT_H264_720P_60 preset correctly', () => {
 				const result = EncodingConverter.toLivekit(MeetRecordingEncodingPreset.PORTRAIT_H264_720P_60);
 
-				expect(result).toBe(EncodingOptionsPreset.PORTRAIT_H264_720P_60);
+				expect(result).toEqual(preset(EncodingOptionsPreset.PORTRAIT_H264_720P_60));
 			});
 
 			it('Should convert PORTRAIT_H264_1080P_30 preset correctly', () => {
 				const result = EncodingConverter.toLivekit(MeetRecordingEncodingPreset.PORTRAIT_H264_1080P_30);
 
-				expect(result).toBe(EncodingOptionsPreset.PORTRAIT_H264_1080P_30);
+				expect(result).toEqual(preset(EncodingOptionsPreset.PORTRAIT_H264_1080P_30));
 			});
 
 			it('Should convert PORTRAIT_H264_1080P_60 preset correctly', () => {
 				const result = EncodingConverter.toLivekit(MeetRecordingEncodingPreset.PORTRAIT_H264_1080P_60);
 
-				expect(result).toBe(EncodingOptionsPreset.PORTRAIT_H264_1080P_60);
+				expect(result).toEqual(preset(EncodingOptionsPreset.PORTRAIT_H264_1080P_60));
 			});
 		});
 
@@ -89,7 +92,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 			it('Should convert complete encoding options correctly', () => {
 				const meetOptions = createCompleteEncodingOptions();
 
-				const result = EncodingConverter.toLivekit(meetOptions) as EncodingOptions;
+				const result = EncodingConverter.toLivekit(meetOptions).value as EncodingOptions;
 
 				expect(result).toBeInstanceOf(EncodingOptions);
 				expect(result.width).toBe(1920);
@@ -108,7 +111,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 					video: { codec: MeetRecordingVideoCodec.VP8 }
 				});
 
-				const result = EncodingConverter.toLivekit(meetOptions) as EncodingOptions;
+				const result = EncodingConverter.toLivekit(meetOptions).value as EncodingOptions;
 
 				expect(result.videoCodec).toBe(VideoCodec.VP8);
 			});
@@ -118,7 +121,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 					audio: { codec: MeetRecordingAudioCodec.AAC }
 				});
 
-				const result = EncodingConverter.toLivekit(meetOptions) as EncodingOptions;
+				const result = EncodingConverter.toLivekit(meetOptions).value as EncodingOptions;
 
 				expect(result.audioCodec).toBe(AudioCodec.AAC);
 			});
@@ -128,7 +131,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 					video: { width: 1280, height: 720, framerate: 60, bitrate: 3000 }
 				});
 
-				const result = EncodingConverter.toLivekit(meetOptions) as EncodingOptions;
+				const result = EncodingConverter.toLivekit(meetOptions).value as EncodingOptions;
 
 				expect(result.width).toBe(1280);
 				expect(result.height).toBe(720);
@@ -141,7 +144,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 					audio: { bitrate: 96, frequency: 44100 }
 				});
 
-				const result = EncodingConverter.toLivekit(meetOptions) as EncodingOptions;
+				const result = EncodingConverter.toLivekit(meetOptions).value as EncodingOptions;
 
 				expect(result.audioBitrate).toBe(96);
 				expect(result.audioFrequency).toBe(44100);
@@ -152,7 +155,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 					video: { keyFrameInterval: 4.5 }
 				});
 
-				const result = EncodingConverter.toLivekit(meetOptions) as EncodingOptions;
+				const result = EncodingConverter.toLivekit(meetOptions).value as EncodingOptions;
 
 				expect(result.keyFrameInterval).toBe(4.5);
 			});
@@ -162,7 +165,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 					video: { keyFrameInterval: 0 }
 				});
 
-				const result = EncodingConverter.toLivekit(meetOptions) as EncodingOptions;
+				const result = EncodingConverter.toLivekit(meetOptions).value as EncodingOptions;
 
 				expect(result.keyFrameInterval).toBe(0);
 			});
@@ -187,7 +190,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 						video: { codec }
 					});
 
-					const result = EncodingConverter.toLivekit(meetOptions) as EncodingOptions;
+					const result = EncodingConverter.toLivekit(meetOptions).value as EncodingOptions;
 
 					expect(result.videoCodec).toBe(expectedLivekitCodecs[index]);
 				});
@@ -203,7 +206,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 						audio: { codec }
 					});
 
-					const result = EncodingConverter.toLivekit(meetOptions) as EncodingOptions;
+					const result = EncodingConverter.toLivekit(meetOptions).value as EncodingOptions;
 
 					expect(result.audioCodec).toBe(expectedLivekitCodecs[index]);
 				});
@@ -215,11 +218,11 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 					video: { keyFrameInterval: 2.5 }
 				});
 
-				const livekitOptions = EncodingConverter.toLivekit(meetOptions) as EncodingOptions;
-				expect(livekitOptions.keyFrameInterval).toBe(2.5);
+				const livekitEncoding = EncodingConverter.toLivekit(meetOptions);
+				expect((livekitEncoding.value as EncodingOptions).keyFrameInterval).toBe(2.5);
 
 				// LiveKit -> Meet (round trip)
-				const convertedBack = EncodingConverter.fromLivekit(livekitOptions) as MeetRecordingEncodingOptions;
+				const convertedBack = EncodingConverter.fromLivekit(livekitEncoding) as MeetRecordingEncodingOptions;
 				expect(convertedBack.video.keyFrameInterval).toBe(2.5);
 			});
 
@@ -228,7 +231,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 					video: { depth: 32 }
 				});
 
-				const result = EncodingConverter.toLivekit(meetOptions) as EncodingOptions;
+				const result = EncodingConverter.toLivekit(meetOptions).value as EncodingOptions;
 
 				expect(result.depth).toBe(32);
 			});
@@ -239,20 +242,20 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 					video: { depth: 16 }
 				});
 
-				const livekitOptions = EncodingConverter.toLivekit(meetOptions) as EncodingOptions;
-				expect(livekitOptions.depth).toBe(16);
+				const livekitEncoding = EncodingConverter.toLivekit(meetOptions);
+				expect((livekitEncoding.value as EncodingOptions).depth).toBe(16);
 
 				// LiveKit -> Meet (round trip)
-				const convertedBack = EncodingConverter.fromLivekit(livekitOptions) as MeetRecordingEncodingOptions;
+				const convertedBack = EncodingConverter.fromLivekit(livekitEncoding) as MeetRecordingEncodingOptions;
 				expect(convertedBack.video.depth).toBe(16);
 			});
 		});
 
 		describe('Edge Cases', () => {
-			it('Should return undefined when encoding options is undefined', () => {
+			it('Should return no encoding when encoding options is undefined', () => {
 				const result = EncodingConverter.toLivekit(undefined);
 
-				expect(result).toBeUndefined();
+				expect(result).toEqual({ case: undefined });
 			});
 		});
 	});
@@ -260,56 +263,56 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 	describe('fromLivekit', () => {
 		describe('Preset Conversion from LiveKit', () => {
 			it('Should convert H264_720P_30 preset from LiveKit correctly', () => {
-				const result = EncodingConverter.fromLivekit(EncodingOptionsPreset.H264_720P_30);
+				const result = EncodingConverter.fromLivekit(preset(EncodingOptionsPreset.H264_720P_30));
 
 				expect(result).toBe(MeetRecordingEncodingPreset.H264_720P_30);
 			});
 
 			it('Should convert H264_720P_60 preset from LiveKit correctly', () => {
-				const result = EncodingConverter.fromLivekit(EncodingOptionsPreset.H264_720P_60);
+				const result = EncodingConverter.fromLivekit(preset(EncodingOptionsPreset.H264_720P_60));
 
 				expect(result).toBe(MeetRecordingEncodingPreset.H264_720P_60);
 			});
 
 			it('Should convert H264_1080P_30 preset from LiveKit correctly', () => {
-				const result = EncodingConverter.fromLivekit(EncodingOptionsPreset.H264_1080P_30);
+				const result = EncodingConverter.fromLivekit(preset(EncodingOptionsPreset.H264_1080P_30));
 
 				expect(result).toBe(MeetRecordingEncodingPreset.H264_1080P_30);
 			});
 
 			it('Should convert H264_1080P_60 preset from LiveKit correctly', () => {
-				const result = EncodingConverter.fromLivekit(EncodingOptionsPreset.H264_1080P_60);
+				const result = EncodingConverter.fromLivekit(preset(EncodingOptionsPreset.H264_1080P_60));
 
 				expect(result).toBe(MeetRecordingEncodingPreset.H264_1080P_60);
 			});
 
 			it('Should convert PORTRAIT_H264_720P_30 preset from LiveKit correctly', () => {
-				const result = EncodingConverter.fromLivekit(EncodingOptionsPreset.PORTRAIT_H264_720P_30);
+				const result = EncodingConverter.fromLivekit(preset(EncodingOptionsPreset.PORTRAIT_H264_720P_30));
 
 				expect(result).toBe(MeetRecordingEncodingPreset.PORTRAIT_H264_720P_30);
 			});
 
 			it('Should convert PORTRAIT_H264_720P_60 preset from LiveKit correctly', () => {
-				const result = EncodingConverter.fromLivekit(EncodingOptionsPreset.PORTRAIT_H264_720P_60);
+				const result = EncodingConverter.fromLivekit(preset(EncodingOptionsPreset.PORTRAIT_H264_720P_60));
 
 				expect(result).toBe(MeetRecordingEncodingPreset.PORTRAIT_H264_720P_60);
 			});
 
 			it('Should convert PORTRAIT_H264_1080P_30 preset from LiveKit correctly', () => {
-				const result = EncodingConverter.fromLivekit(EncodingOptionsPreset.PORTRAIT_H264_1080P_30);
+				const result = EncodingConverter.fromLivekit(preset(EncodingOptionsPreset.PORTRAIT_H264_1080P_30));
 
 				expect(result).toBe(MeetRecordingEncodingPreset.PORTRAIT_H264_1080P_30);
 			});
 
 			it('Should convert PORTRAIT_H264_1080P_60 preset from LiveKit correctly', () => {
-				const result = EncodingConverter.fromLivekit(EncodingOptionsPreset.PORTRAIT_H264_1080P_60);
+				const result = EncodingConverter.fromLivekit(preset(EncodingOptionsPreset.PORTRAIT_H264_1080P_60));
 
 				expect(result).toBe(MeetRecordingEncodingPreset.PORTRAIT_H264_1080P_60);
 			});
 
 			it('Should return default preset for unknown LiveKit preset', () => {
 				const unknownPreset = 999 as EncodingOptionsPreset;
-				const result = EncodingConverter.fromLivekit(unknownPreset);
+				const result = EncodingConverter.fromLivekit(preset(unknownPreset));
 
 				expect(result).toBe(MeetRecordingEncodingPreset.H264_720P_30);
 			});
@@ -328,7 +331,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 				lkOptions.audioBitrate = 128;
 				lkOptions.audioFrequency = 48000;
 
-				const result = EncodingConverter.fromLivekit(lkOptions) as MeetRecordingEncodingOptions;
+				const result = EncodingConverter.fromLivekit(advanced(lkOptions)) as MeetRecordingEncodingOptions;
 
 				// Both video and audio should be defined with all properties
 				expect(result.video).toBeDefined();
@@ -357,7 +360,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 				lkOptions.audioBitrate = 128;
 				lkOptions.audioFrequency = 48000;
 
-				const result = EncodingConverter.fromLivekit(lkOptions) as MeetRecordingEncodingOptions;
+				const result = EncodingConverter.fromLivekit(advanced(lkOptions)) as MeetRecordingEncodingOptions;
 
 				expect(result.video).toBeDefined();
 				expect(result.video.keyFrameInterval).toBe(4);
@@ -375,7 +378,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 				lkOptions.audioFrequency = 48000;
 				// depth is not set in LiveKit
 
-				const result = EncodingConverter.fromLivekit(lkOptions) as MeetRecordingEncodingOptions;
+				const result = EncodingConverter.fromLivekit(advanced(lkOptions)) as MeetRecordingEncodingOptions;
 
 				expect(result.video).toBeDefined();
 				expect(result.video.depth).toBe(24); // Default value
@@ -393,7 +396,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 				lkOptions.audioBitrate = 128;
 				lkOptions.audioFrequency = 48000;
 
-				const result = EncodingConverter.fromLivekit(lkOptions) as MeetRecordingEncodingOptions;
+				const result = EncodingConverter.fromLivekit(advanced(lkOptions)) as MeetRecordingEncodingOptions;
 
 				expect(result.video).toBeDefined();
 				expect(result.video.depth).toBe(32); // Preserved from LiveKit
@@ -411,7 +414,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 				lkOptions.audioBitrate = 96;
 				lkOptions.audioFrequency = 44100;
 
-				const result = EncodingConverter.fromLivekit(lkOptions) as MeetRecordingEncodingOptions;
+				const result = EncodingConverter.fromLivekit(advanced(lkOptions)) as MeetRecordingEncodingOptions;
 
 				expect(result.video.codec).toBe(MeetRecordingVideoCodec.VP8);
 				expect(result.audio.codec).toBe(MeetRecordingAudioCodec.AAC);
@@ -421,7 +424,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 				// LiveKit's EncodingOptions constructor sets default codecs
 				const lkOptions = new EncodingOptions();
 
-				const result = EncodingConverter.fromLivekit(lkOptions) as MeetRecordingEncodingOptions;
+				const result = EncodingConverter.fromLivekit(advanced(lkOptions)) as MeetRecordingEncodingOptions;
 
 				// EncodingOptions has default codecs (H264_MAIN and OPUS)
 				expect(result.video).toBeDefined();
@@ -458,7 +461,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 					const lkOptions = new EncodingOptions();
 					lkOptions.videoCodec = codec;
 
-					const result = EncodingConverter.fromLivekit(lkOptions) as MeetRecordingEncodingOptions;
+					const result = EncodingConverter.fromLivekit(advanced(lkOptions)) as MeetRecordingEncodingOptions;
 
 					expect(result.video.codec).toBe(expectedMeetCodecs[index]);
 				});
@@ -476,7 +479,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 					const lkOptions = new EncodingOptions();
 					lkOptions.audioCodec = codec;
 
-					const result = EncodingConverter.fromLivekit(lkOptions) as MeetRecordingEncodingOptions;
+					const result = EncodingConverter.fromLivekit(advanced(lkOptions)) as MeetRecordingEncodingOptions;
 
 					expect(result.audio.codec).toBe(expectedMeetCodecs[index]);
 				});
@@ -486,7 +489,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 				const lkOptions = new EncodingOptions();
 				lkOptions.videoCodec = 999 as VideoCodec;
 
-				const result = EncodingConverter.fromLivekit(lkOptions) as MeetRecordingEncodingOptions;
+				const result = EncodingConverter.fromLivekit(advanced(lkOptions)) as MeetRecordingEncodingOptions;
 
 				expect(result.video.codec).toBe(MeetRecordingVideoCodec.H264_MAIN);
 			});
@@ -495,7 +498,7 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 				const lkOptions = new EncodingOptions();
 				lkOptions.audioCodec = 999 as AudioCodec;
 
-				const result = EncodingConverter.fromLivekit(lkOptions) as MeetRecordingEncodingOptions;
+				const result = EncodingConverter.fromLivekit(advanced(lkOptions)) as MeetRecordingEncodingOptions;
 
 				expect(result.audio.codec).toBe(MeetRecordingAudioCodec.OPUS);
 			});
@@ -518,10 +521,10 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 				});
 
 				// Meet -> LiveKit
-				const livekitOptions = EncodingConverter.toLivekit(originalMeetOptions) as EncodingOptions;
+				const livekitEncoding = EncodingConverter.toLivekit(originalMeetOptions);
 
 				// LiveKit -> Meet
-				const convertedBack = EncodingConverter.fromLivekit(livekitOptions) as MeetRecordingEncodingOptions;
+				const convertedBack = EncodingConverter.fromLivekit(livekitEncoding) as MeetRecordingEncodingOptions;
 
 				// Verify all values are preserved
 				expect(convertedBack.video.width).toBe(1280);
@@ -538,8 +541,8 @@ describe('EncodingConverter - Encoding Options Conversion', () => {
 		});
 
 		describe('Edge Cases from LiveKit', () => {
-			it('Should return default preset when undefined', () => {
-				const result = EncodingConverter.fromLivekit(undefined);
+			it('Should return default preset when LiveKit reports no encoding', () => {
+				const result = EncodingConverter.fromLivekit({ case: undefined });
 
 				expect(result).toBe(MeetRecordingEncodingPreset.H264_720P_30);
 			});

@@ -1,16 +1,29 @@
 import { describe, expect, it } from '@jest/globals';
 import type { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { MeetRecordingEncodingPreset, MeetRecordingLayout } from '@openvidu-meet/typings';
-import { EgressInfo, EncodingOptions, EncodingOptionsPreset, RoomCompositeEgressRequest } from 'livekit-server-sdk';
+import {
+	EgressInfo,
+	EncodingOptions,
+	EncodingOptionsPreset,
+	StartEgressRequest,
+	TemplateSource
+} from 'livekit-server-sdk';
 import { EncodingConverter } from '../../../src/helpers/encoding-converter.helper.js';
 import { RecordingHelper } from '../../../src/helpers/recording.helper.js';
 
-const recordingEgress = (request?: Partial<RoomCompositeEgressRequest>, file: object = {}) =>
+const recordingEgress = (request?: { layout?: string; encoding?: StartEgressRequest['encoding'] }, file: object = {}) =>
 	new EgressInfo({
 		egressId: 'EG_1',
 		roomName: 'room-1',
 		request: request
-			? { case: 'roomComposite', value: new RoomCompositeEgressRequest({ roomName: 'room-1', ...request }) }
+			? {
+					case: 'egress',
+					value: new StartEgressRequest({
+						roomName: 'room-1',
+						source: { case: 'template', value: new TemplateSource({ layout: request.layout }) },
+						encoding: request.encoding
+					})
+				}
 			: { case: undefined },
 		fileResults: [{ filename: 'openvidu-meet/recordings/room-1/room-1--uid1.mp4', ...file }]
 	});
@@ -41,7 +54,7 @@ describe('RecordingHelper reading a recording egress', () => {
 	it('reads the encoding preset the recording was started with', () => {
 		const egress = recordingEgress({
 			layout: 'grid',
-			options: { case: 'preset', value: EncodingOptionsPreset.H264_720P_30 }
+			encoding: { case: 'preset', value: EncodingOptionsPreset.H264_720P_30 }
 		});
 
 		expect(RecordingHelper.extractRecordingEncoding(egress)).toBe(MeetRecordingEncodingPreset.H264_720P_30);
@@ -49,19 +62,20 @@ describe('RecordingHelper reading a recording egress', () => {
 
 	it('reads the advanced encoding options the recording was started with', () => {
 		const options = new EncodingOptions({ width: 640, height: 360, framerate: 15, videoBitrate: 800 });
-		const egress = recordingEgress({ layout: 'grid', options: { case: 'advanced', value: options } });
+		const encoding = { case: 'advanced' as const, value: options };
+		const egress = recordingEgress({ layout: 'grid', encoding });
 
-		expect(RecordingHelper.extractRecordingEncoding(egress)).toEqual(EncodingConverter.fromLivekit(options));
+		expect(RecordingHelper.extractRecordingEncoding(egress)).toEqual(EncodingConverter.fromLivekit(encoding));
 		expect(RecordingHelper.extractRecordingEncoding(egress)).toMatchObject({ video: { width: 640, height: 360 } });
 	});
 
-	it('reads the default preset from a room composite started without encoding options', () => {
+	it('reads the default preset from an egress started without encoding options', () => {
 		expect(RecordingHelper.extractRecordingEncoding(recordingEgress({ layout: 'grid' }))).toBe(
 			MeetRecordingEncodingPreset.H264_720P_30
 		);
 	});
 
-	it('reads no layout or encoding from an egress that is not a room composite', () => {
+	it('reads no layout or encoding from an egress that is not a template egress', () => {
 		const egress = recordingEgress();
 
 		expect(RecordingHelper.extractRecordingLayout(egress)).toBeUndefined();

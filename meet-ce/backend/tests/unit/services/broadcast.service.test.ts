@@ -7,7 +7,7 @@ import {
 	MeetRecordingLayout,
 	MeetWebhookEventType
 } from '@openvidu-meet/typings';
-import type { EgressInfo, RoomCompositeOptions, StreamOutput } from 'livekit-server-sdk';
+import type { EgressInfo, StartEgressRequest, StreamOutput, TemplateSource } from 'livekit-server-sdk';
 import { BroadcastHelper } from '../../../src/helpers/broadcast.helper.js';
 import type { BroadcastRecord } from '../../../src/models/broadcast.model.js';
 import { errorEgressNotAvailable, OpenViduMeetError } from '../../../src/models/error.model.js';
@@ -84,7 +84,7 @@ class FakeLiveKitService {
 	egressInRoom = true;
 	streamTags = new Map<string, string[]>();
 	egressList: EgressInfo[] = [];
-	startCalls: { roomName: string; urls: string[]; layout?: string; encodingOptions?: unknown }[] = [];
+	startCalls: { roomName: string; urls: string[]; layout?: string; encoding?: unknown }[] = [];
 	stopCalls: string[] = [];
 	stopFails = false;
 	alreadyEnded = false;
@@ -100,18 +100,15 @@ class FakeLiveKitService {
 		return this.participants;
 	}
 
-	async startRoomComposite(
-		roomName: string,
-		output: StreamOutput,
-		options: RoomCompositeOptions
-	): Promise<EgressInfo> {
+	async startEgress({ roomName, source, encoding, outputs }: StartEgressRequest): Promise<EgressInfo> {
+		const { urls } = outputs[0].config.value as StreamOutput;
 		this.startCalls.push({
 			roomName,
-			urls: output.urls,
-			layout: options.layout,
-			encodingOptions: options.encodingOptions
+			urls,
+			layout: (source.value as TemplateSource).layout,
+			encoding: encoding.value
 		});
-		this.streamTags.set(this.nextEgress.egressId, output.urls.map(tagOf));
+		this.streamTags.set(this.nextEgress.egressId, urls.map(tagOf));
 		return this.report(this.nextEgress);
 	}
 
@@ -332,7 +329,7 @@ describe('BroadcastService', () => {
 					roomName: ROOM_ID,
 					urls: [tagged(REAL_URLS.a, info.broadcastId)],
 					layout: MeetRecordingLayout.SPEAKER,
-					encodingOptions: EncodingOptionsPreset.H264_1080P_30
+					encoding: EncodingOptionsPreset.H264_1080P_30
 				}
 			]);
 			expect(info).toMatchObject({

@@ -1,6 +1,6 @@
 import { describe, expect, it, jest } from '@jest/globals';
-import type { EgressInfo, StreamOutput } from 'livekit-server-sdk';
-import { TwirpError } from 'livekit-server-sdk';
+import type { EgressInfo } from 'livekit-server-sdk';
+import { StartEgressRequest, TwirpError } from 'livekit-server-sdk';
 import type { OpenViduMeetError } from '../../../src/models/error.model.js';
 import { errorLivekitNotAvailable } from '../../../src/models/error.model.js';
 import { LiveKitService } from '../../../src/services/livekit.service.js';
@@ -10,6 +10,7 @@ const logger = { info: () => {}, warn: () => {}, error: () => {}, debug: () => {
 const egress = { egressId: 'EG_1' } as EgressInfo;
 const twirp = (status: number) => Object.assign(new Error(`twirp error ${status}`), { status, code: 'unknown' });
 const timeout = () => new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+const request = new StartEgressRequest({ roomName: 'room-1' });
 
 /** A LiveKitService whose egress client answers every call with the egress, or fails with the given error. */
 const answering = (failure?: unknown) => {
@@ -20,7 +21,7 @@ const answering = (failure?: unknown) => {
 		return egress;
 	};
 	(service as unknown as { lk: unknown }).lk = {
-		egress: { updateStream: answer, startRoomCompositeEgress: answer }
+		egress: { updateStream: answer, startEgress: answer }
 	};
 	return service;
 };
@@ -38,8 +39,7 @@ const outcome = (call: Promise<unknown>) =>
  */
 describe('LiveKitService calls to an egress', () => {
 	it('answers 503 for a start no egress service takes, whether LiveKit says so or the call times out', async () => {
-		const start = (failure?: unknown) =>
-			outcome(answering(failure).startRoomComposite('room-1', {} as StreamOutput, {}));
+		const start = (failure?: unknown) => outcome(answering(failure).startEgress(request));
 
 		expect(await start()).toBe(egress);
 		expect(await start(twirp(503))).toBe('503 No egress service is available');
@@ -53,7 +53,7 @@ describe('LiveKitService calls to an egress', () => {
 			code: 'invalid_argument'
 		});
 
-		expect(await outcome(answering(invalid).startRoomComposite('room-1', {} as StreamOutput, {}))).toBe(
+		expect(await outcome(answering(invalid).startEgress(request))).toBe(
 			'422 The media server refused the egress options as invalid'
 		);
 	});
@@ -66,7 +66,7 @@ describe('LiveKitService calls to an egress', () => {
 		});
 		const errorLog = jest.spyOn(logger, 'error');
 
-		const start = await outcome(answering(echoing).startRoomComposite('room-1', {} as StreamOutput, {}));
+		const start = await outcome(answering(echoing).startEgress(request));
 		const update = await outcome(answering(echoing).updateStream('EG_1', ['url'], []));
 
 		const logged = (errorLog.mock.calls.flat() as unknown[]).map((arg) =>

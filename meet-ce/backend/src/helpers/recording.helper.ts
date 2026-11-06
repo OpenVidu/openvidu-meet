@@ -141,11 +141,11 @@ export class RecordingHelper {
 	}
 
 	static extractRecordingLayout(egressInfo: EgressInfo): MeetRecordingLayout | undefined {
-		if (egressInfo.request.case !== 'roomComposite') return undefined;
+		const { request } = egressInfo;
 
-		const { layout } = egressInfo.request.value;
+		if (request.case !== 'egress' || request.value.source.case !== 'template') return undefined;
 
-		switch (layout) {
+		switch (request.value.source.value.layout) {
 			case 'grid':
 				return MeetRecordingLayout.GRID;
 			case 'speaker':
@@ -167,15 +167,9 @@ export class RecordingHelper {
 	static extractRecordingEncoding(
 		egressInfo: EgressInfo
 	): MeetRecordingEncodingPreset | MeetRecordingEncodingOptions | undefined {
-		if (egressInfo.request.case !== 'roomComposite') return undefined;
+		if (egressInfo.request.case !== 'egress') return undefined;
 
-		const { options } = egressInfo.request.value;
-
-		// Extract encoding based on type (preset or advanced)
-		const encodingOptions =
-			options.case === 'preset' ? options.value : options.case === 'advanced' ? options.value : undefined;
-
-		return EncodingConverter.fromLivekit(encodingOptions);
+		return EncodingConverter.fromLivekit(egressInfo.request.value.encoding);
 	}
 
 	/**

@@ -1,10 +1,6 @@
-import type {
-	MeetRecordingEncodingOptions} from '@openvidu-meet/typings';
-import {
-	MeetRecordingAudioCodec,
-	MeetRecordingEncodingPreset,
-	MeetRecordingVideoCodec
-} from '@openvidu-meet/typings';
+import type { MeetRecordingEncodingOptions } from '@openvidu-meet/typings';
+import { MeetRecordingAudioCodec, MeetRecordingEncodingPreset, MeetRecordingVideoCodec } from '@openvidu-meet/typings';
+import type { StartEgressRequest } from 'livekit-server-sdk';
 import { AudioCodec, EncodingOptions, EncodingOptionsPreset, VideoCodec } from 'livekit-server-sdk';
 
 /**
@@ -45,43 +41,39 @@ export class EncodingConverter {
 	 * Used when starting a recording to translate from Meet format to LiveKit SDK format.
 	 *
 	 * @param encoding - The encoding configuration in OpenVidu Meet format
-	 * @returns The encoding options in LiveKit format (preset or advanced)
+	 * @returns The encoding of a LiveKit egress request (preset or advanced)
 	 */
 	static toLivekit(
 		encoding: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions | undefined
-	): EncodingOptions | EncodingOptionsPreset | undefined {
-		if (!encoding) return undefined;
+	): StartEgressRequest['encoding'] {
+		if (!encoding) return { case: undefined };
 
-		// If it's a preset string
 		if (typeof encoding === 'string') {
-			return this.convertPresetToLivekit(encoding);
+			return { case: 'preset', value: this.convertPresetToLivekit(encoding) };
 		}
 
-		// It's advanced encoding options
-		return this.convertAdvancedOptionsToLivekit(encoding);
+		return { case: 'advanced', value: this.convertAdvancedOptionsToLivekit(encoding) };
 	}
 
 	/**
 	 * Converts LiveKit encoding options back to OpenVidu Meet format.
 	 * Used when receiving webhook information about a recording.
 	 *
-	 * @param encodingOptions - The encoding options from LiveKit
+	 * @param encoding - The encoding of the LiveKit egress request (preset or advanced)
 	 * @returns The encoding configuration in OpenVidu Meet format
 	 */
 	static fromLivekit(
-		encodingOptions: EncodingOptions | EncodingOptionsPreset | undefined
-	): MeetRecordingEncodingPreset | MeetRecordingEncodingOptions | undefined {
-		// When undefined, recording is using default preset but EgressInfo does not specify it.
-		// Return default preset.
-		if (encodingOptions === undefined) return MeetRecordingEncodingPreset.H264_720P_30;
-
-		// If it's a preset (number enum from LiveKit)
-		if (typeof encodingOptions === 'number') {
-			return this.convertPresetFromLivekit(encodingOptions);
+		encoding: StartEgressRequest['encoding']
+	): MeetRecordingEncodingPreset | MeetRecordingEncodingOptions {
+		switch (encoding.case) {
+			case 'preset':
+				return this.convertPresetFromLivekit(encoding.value);
+			case 'advanced':
+				return this.convertAdvancedOptionsFromLivekit(encoding.value);
+			default:
+				// LiveKit reports no encoding when the egress was started with its default preset
+				return MeetRecordingEncodingPreset.H264_720P_30;
 		}
-
-		// It's an EncodingOptions object
-		return this.convertAdvancedOptionsFromLivekit(encodingOptions);
 	}
 
 	/**

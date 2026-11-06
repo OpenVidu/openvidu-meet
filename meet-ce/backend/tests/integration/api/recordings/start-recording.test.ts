@@ -292,9 +292,7 @@ describe('Recording API Tests', () => {
 			]
 		])('should return 503 and leave the room free to record when %s', async (_case, egressError) => {
 			await joinFakeParticipant(room.roomId, 'fakeParticipantId');
-			const startEgress = jest
-				.spyOn(EgressClient.prototype, 'startRoomCompositeEgress')
-				.mockRejectedValueOnce(egressError);
+			const startEgress = jest.spyOn(EgressClient.prototype, 'startEgress').mockRejectedValueOnce(egressError);
 
 			let response: Awaited<ReturnType<typeof startRecording>>;
 

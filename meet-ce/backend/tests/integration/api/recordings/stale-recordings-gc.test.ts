@@ -102,7 +102,7 @@ describe('Stale Recordings GC Tests', () => {
 			],
 			streamResults: [],
 			request: {
-				case: 'roomComposite'
+				case: 'egress'
 			}
 		} as unknown as EgressInfo;
 	}
