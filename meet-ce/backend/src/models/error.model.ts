@@ -19,6 +19,10 @@ export const errorMalformedBody = (): OpenViduMeetError => {
 	return new OpenViduMeetError('Bad Request', 'Malformed body', 400);
 };
 
+export const errorMalformedPath = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Bad Request', 'Malformed path', 400);
+};
+
 export const errorPayloadTooLarge = (limitBytes: number): OpenViduMeetError => {
 	return new OpenViduMeetError('Payload Too Large', `Request body exceeds the limit of ${limitBytes} bytes`, 413);
 };

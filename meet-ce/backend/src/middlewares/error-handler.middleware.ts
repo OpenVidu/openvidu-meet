@@ -4,6 +4,7 @@ import { container } from '../config/dependency-injector.config.js';
 import { configureZodErrorMessages } from '../config/zod-config.js';
 import {
 	errorMalformedBody,
+	errorMalformedPath,
 	errorPayloadTooLarge,
 	internalError,
 	OpenViduMeetError,
@@ -79,6 +80,10 @@ const fromBodyParser = (err: unknown): OpenViduMeetError | undefined => {
 	}
 };
 
+/** The router rejects a path parameter it cannot percent-decode with a `URIError`. */
+const fromRouter = (err: unknown): OpenViduMeetError | undefined =>
+	err instanceof URIError ? errorMalformedPath() : undefined;
+
 /**
  * Global catch-all error middleware. Registered last, after every route.
  *
@@ -88,8 +93,8 @@ const fromBodyParser = (err: unknown): OpenViduMeetError | undefined => {
  * Express's default handler and never reach Winston, leaving 500s untraceable.
  *
  * It preserves the existing error contract: an OpenViduMeetError keeps its own status code,
- * a body the parser refused gets the 4xx it already deserved, anything else is logged with
- * its stack and masked as a generic 500.
+ * a body the parser refused and a path the router could not decode get the 4xx they already
+ * deserved, anything else is logged with its stack and masked as a generic 500.
  */
 export const globalErrorHandler = (err: unknown, _req: Request, res: Response, next: NextFunction): void => {
 	const logger = container.get(LoggerService);
@@ -99,7 +104,7 @@ export const globalErrorHandler = (err: unknown, _req: Request, res: Response, n
 		return next(err);
 	}
 
-	const meetError = err instanceof OpenViduMeetError ? err : fromBodyParser(err);
+	const meetError = err instanceof OpenViduMeetError ? err : (fromBodyParser(err) ?? fromRouter(err));
 
 	if (!meetError) {
 		logger.error('Unhandled error reached the global error handler', err);
