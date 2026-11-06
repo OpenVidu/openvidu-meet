@@ -529,7 +529,7 @@ The wizard SHALL block finishing while the participant limit is outside 1 to 30,
 - **THEN** the finish button is disabled
 
 ### Requirement: Wizard dependent settings
-The wizard SHALL keep end-to-end encryption mutually exclusive with recording, live broadcast and live captions, restoring the others when one is turned off again, warning while encryption is on that recording and live captions are unavailable, and SHALL disable the `mediaChangeVirtualBackground` role switches while virtual backgrounds are off, restoring them as left once they are back on. The chat and broadcast role switches are specified in `meeting-chat` and `live-broadcast`.
+The wizard SHALL keep end-to-end encryption mutually exclusive with recording, live broadcast and live captions, restoring the others when one is off again and warning that recording and live captions are unavailable while it is on. It SHALL disable a role's `mediaChangeVirtualBackground` switch, shown below `mediaPublishVideo`, while virtual backgrounds are off or the role lacks `mediaPublishVideo`, keeping its value. Chat and broadcast switches: see `meeting-chat` and `live-broadcast`.
 
 #### Scenario: Enabling end-to-end encryption
 - **GIVEN** the wizard with recording and live broadcast allowed
@@ -550,6 +550,12 @@ The wizard SHALL keep end-to-end encryption mutually exclusive with recording, l
 - **GIVEN** the wizard with virtual backgrounds turned off in the Meeting step
 - **WHEN** the user opens the Room Access step
 - **THEN** the `mediaChangeVirtualBackground` switches of both roles are disabled while the chat ones stay enabled
+
+#### Scenario: Camera revoked from a role
+- **GIVEN** the wizard with virtual backgrounds on and the speaker role holding `mediaPublishVideo` and `mediaChangeVirtualBackground`
+- **WHEN** the user switches off the speaker's `mediaPublishVideo`
+- **THEN** the speaker's `mediaChangeVirtualBackground` switch is disabled and still on
+- **AND** switching `mediaPublishVideo` back on makes it available again
 
 ### Requirement: Console room detail page
 The console SHALL open a room's detail page only for a user the server lets read the room, redirecting anyone else to the Rooms page. The page SHALL show the room id (copyable), owner, creation date, auto-deletion state and status with the same actions as the list, a Recordings tab that lists the room's recordings only when the user holds `recordingList` in the room (see `recordings`), and a Room Members tab only for users who manage the room (see `room-members`).

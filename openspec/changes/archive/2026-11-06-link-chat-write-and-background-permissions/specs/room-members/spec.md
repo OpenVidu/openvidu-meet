@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Console permission toggles
-The member form SHALL group the permission toggles under Meeting, Media, Recordings, Live broadcast and Chat, start them at the values of the chosen base role, reset them to the new role's values when the role changes, and send as `customPermissions` only the toggles that differ from the role, an empty object when an edited member no longer differs. It SHALL disable the `chatWrite`, `mediaChangeVirtualBackground` and `broadcastEdit` toggles while `chatRead`, `mediaPublishVideo` and `broadcastControl` respectively are off, keeping their values.
+The member form SHALL group the permission toggles under Meeting, Media, Recordings, Live broadcast and Chat, start them at the base role's values, reset them when the role changes, and send as `customPermissions` only the toggles that differ from the role, an empty object when an edited member no longer differs. It SHALL disable `chatWrite`, `mediaChangeVirtualBackground` and `broadcastEdit` while `chatRead`, `mediaPublishVideo` and `broadcastControl` respectively are off, keeping their values.
 
 #### Scenario: Only differences are sent
 - **GIVEN** the add member form with base role `speaker`
