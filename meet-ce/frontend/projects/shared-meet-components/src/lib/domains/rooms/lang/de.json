@@ -226,8 +226,7 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Mitglied bearbeiten",
         "REMOVE_MEMBER": "Mitglied entfernen",
-        "FEATURE_DISABLED_PERMISSION": "Aktivieren Sie die zugehörige Funktion im Schritt Meeting, um diese Berechtigung zu konfigurieren.",
-        "DEPENDENT_PERMISSION_DISABLED": "Erteilen Sie zuerst die Berechtigung, von der diese abhängt."
+        "FEATURE_DISABLED_PERMISSION": "Aktivieren Sie die zugehörige Funktion im Schritt Meeting, um diese Berechtigung zu konfigurieren."
       },
       "MEETING": {
         "TITLE": "Meeting",

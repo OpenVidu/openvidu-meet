@@ -226,8 +226,7 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Edit member",
         "REMOVE_MEMBER": "Remove member",
-        "FEATURE_DISABLED_PERMISSION": "Enable the related feature in the Meeting step to configure this permission.",
-        "DEPENDENT_PERMISSION_DISABLED": "Grant the permission this one depends on to configure it."
+        "FEATURE_DISABLED_PERMISSION": "Enable the related feature in the Meeting step to configure this permission."
       },
       "MEETING": {
         "TITLE": "Meeting",

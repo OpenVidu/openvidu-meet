@@ -1,5 +1,5 @@
 import { MEET_PERMISSION_KEYS } from '@openvidu-meet/typings';
-import { PERMISSION_GROUPS } from './permissions.model';
+import { DEPENDENT_PERMISSIONS, PERMISSION_GROUPS } from './permissions.model';
 
 /**
  * UI-side twin of the backend's alias-map guard: the permissions form is built from
@@ -32,6 +32,26 @@ describe('PERMISSION_GROUPS', () => {
 			'recordingDownload',
 			'recordingDelete'
 		]);
+	});
+
+	it('should declare the permissions that only take effect together with another one', () => {
+		expect(DEPENDENT_PERMISSIONS.map(({ key, dependsOn }) => [key, dependsOn])).toEqual([
+			['mediaChangeVirtualBackground', 'mediaPublishVideo'],
+			['broadcastEdit', 'broadcastControl'],
+			['chatWrite', 'chatRead']
+		]);
+	});
+
+	it('should list each dependent permission right after the one it depends on, since its row is drawn under it', () => {
+		for (const group of PERMISSION_GROUPS) {
+			group.permissions.forEach((item, index) => {
+				if (item.dependsOn) {
+					expect(group.permissions[index - 1]?.key)
+						.withContext(item.key)
+						.toBe(item.dependsOn);
+				}
+			});
+		}
 	});
 
 	it('should derive every label and description i18n key from the permission key', () => {

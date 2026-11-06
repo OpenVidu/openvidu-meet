@@ -76,6 +76,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 - The embedded event `participantLeft` carries the participant's `leaveReason`, the same one the
   [`participantLeft`][3.9-participant-left] webhook carries.
+- `chatWrite` lets a participant send chat messages only together with `chatRead`, and
+  `mediaChangeVirtualBackground` offers background effects only together with `mediaPublishVideo`. The room
+  wizard and the member form disable each of these switches while the permission it needs is off.
 
 #### UI
 

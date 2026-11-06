@@ -18,11 +18,8 @@ import { take } from 'rxjs';
 import { AuthService } from '../../../../../auth/services/auth.service';
 import { MemberFormDialogComponent } from '../../../../../room-members/components/member-form-dialog/member-form-dialog.component';
 import { MemberFormDialogData } from '../../../../../room-members/models/member-form.model';
-import {
-	DEPENDENT_PERMISSIONS,
-	PERMISSION_GROUPS,
-	PermissionItem
-} from '../../../../../room-members/models/permissions.model';
+import { PERMISSION_GROUPS, PermissionItem } from '../../../../../room-members/models/permissions.model';
+import { syncDependentPermissions } from '../../../../../room-members/utils/permission-dependencies';
 import { RoomMemberUiUtils } from '../../../../../room-members/utils/ui';
 import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
 import {
@@ -161,21 +158,10 @@ export class RoomAccessComponent implements OnInit {
 	 */
 	private applyPermissionDependencies(): void {
 		for (const roleForm of [this.moderatorForm, this.speakerForm]) {
-			for (const { key, dependsOn } of DEPENDENT_PERMISSIONS) {
-				const parent = roleForm.controls[dependsOn];
-				const dependent = roleForm.controls[key];
-
-				const sync = (granted: boolean) => {
-					if (granted && !this.featureDisabledPermissions.has(key)) {
-						dependent.enable({ emitEvent: false });
-					} else {
-						dependent.disable({ emitEvent: false });
-					}
-				};
-
-				sync(parent.value);
-				parent.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(sync);
-			}
+			syncDependentPermissions(roleForm, this.featureDisabledPermissions);
+			roleForm.valueChanges
+				.pipe(takeUntilDestroyed(this.destroyRef))
+				.subscribe(() => syncDependentPermissions(roleForm, this.featureDisabledPermissions));
 		}
 	}
 
@@ -191,7 +177,7 @@ export class RoomAccessComponent implements OnInit {
 		}
 
 		return permission.dependsOn && roleForm.controls[permission.key].disabled
-			? 'ROOMS.WIZARD.ACCESS.DEPENDENT_PERMISSION_DISABLED'
+			? 'ROOM_MEMBERS.PERMISSIONS.DEPENDENT_PERMISSION_DISABLED'
 			: '';
 	}
 

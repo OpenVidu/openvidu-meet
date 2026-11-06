@@ -226,8 +226,7 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Modifier le membre",
         "REMOVE_MEMBER": "Retirer le membre",
-        "FEATURE_DISABLED_PERMISSION": "Activez la fonctionnalité correspondante à l'étape Réunion pour configurer cette autorisation.",
-        "DEPENDENT_PERMISSION_DISABLED": "Accordez la permission dont celle-ci dépend pour la configurer."
+        "FEATURE_DISABLED_PERMISSION": "Activez la fonctionnalité correspondante à l'étape Réunion pour configurer cette autorisation."
       },
       "MEETING": {
         "TITLE": "Réunion",

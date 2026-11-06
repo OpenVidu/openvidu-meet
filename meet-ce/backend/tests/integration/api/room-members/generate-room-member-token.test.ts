@@ -466,6 +466,23 @@ describe('Room Members API Tests', () => {
 			expect(claims.video?.canPublishData).toBe(false);
 		});
 
+		it('should deny LiveKit canPublishData when chatWrite is enabled but chatRead is not', async () => {
+			const createResponse = await createRoomMember(roomId, {
+				name: 'Blind Writer',
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: { chatRead: false, chatWrite: true }
+			});
+			const memberId = createResponse.body.memberId as string;
+
+			const token = await generateRoomMemberToken(roomId, {
+				secret: memberId,
+				joinMeeting: true,
+				participantName: 'Blind Writer'
+			});
+			const claims = tokenService.getClaimsIgnoringExpiration(getRawToken(token));
+			expect(claims.video?.canPublishData).toBe(false);
+		});
+
 		it('should deny LiveKit canPublishData to a moderator of a room with chat disabled', async () => {
 			const roomWithoutChat = await setupSingleRoom(false, 'NO_CHAT_ROOM', { chat: { enabled: false } });
 
@@ -864,7 +881,7 @@ describe('Room Members API Tests', () => {
 			});
 		});
 
-		it('should apply the LiveKit canPublishData grant live when chatWrite changes mid-meeting', async () => {
+		it('should apply the LiveKit canPublishData grant live when chatWrite or chatRead changes mid-meeting', async () => {
 			// Identified guest speaker joins the meeting with chat-write enabled
 			const createResponse = await createRoomMember(roomId, {
 				name: 'Live Chat Writer',
@@ -922,6 +939,22 @@ describe('Room Members API Tests', () => {
 
 			participant = await livekitService.getParticipant(roomId, participantIdentity!);
 			expect(participant.permission?.canPublishData).toBe(true);
+
+			updateResponse = await updateRoomMember(roomId, memberId, {
+				customPermissions: { chatRead: false, chatWrite: true }
+			});
+			expect(updateResponse.status).toBe(200);
+
+			refreshResponse = await generateRoomMemberTokenRequest(
+				roomId,
+				{ secret: memberId, joinMeeting: true },
+				undefined,
+				initialToken
+			);
+			expect(refreshResponse.status).toBe(200);
+
+			participant = await livekitService.getParticipant(roomId, participantIdentity!);
+			expect(participant.permission?.canPublishData).toBe(false);
 		});
 
 		it('should revoke the LiveKit camera grant live when mediaPublishVideo is removed mid-meeting', async () => {

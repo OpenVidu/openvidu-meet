@@ -124,9 +124,10 @@ describe('FeatureCalculator.applyPermissions', () => {
 		expect(featuresFor({ participantReactionSend: false }).showReactions).toBeFalse();
 	});
 
-	it('should gate the virtual backgrounds on mediaChangeVirtualBackground', () => {
+	it('should gate the virtual backgrounds on mediaChangeVirtualBackground AND mediaPublishVideo', () => {
 		expect(featuresFor().showBackgrounds).toBeTrue();
 		expect(featuresFor({ mediaChangeVirtualBackground: false }).showBackgrounds).toBeFalse();
+		expect(featuresFor({ mediaPublishVideo: false }).showBackgrounds).toBeFalse();
 	});
 });
 

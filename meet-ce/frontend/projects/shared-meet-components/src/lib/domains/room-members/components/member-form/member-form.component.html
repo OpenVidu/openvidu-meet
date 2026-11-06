@@ -144,7 +144,16 @@
 							</div>
 
 							@for (permission of group.permissions; track permission.key) {
-								<div class="permission-row">
+								<div
+									class="permission-row"
+									[class.dependent]="!!permission.dependsOn"
+									[attr.id]="'member-permission-' + permission.key"
+									[matTooltip]="
+										permissionsForm.get(permission.key)?.disabled
+											? ('ROOM_MEMBERS.PERMISSIONS.DEPENDENT_PERMISSION_DISABLED' | translate)
+											: ''
+									"
+								>
 									<div class="permission-info">
 										<mat-icon class="permission-icon material-symbols-outlined">{{
 											permission.icon

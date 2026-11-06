@@ -18,6 +18,9 @@ import {
  * the "Meeting" step — and are restored when the feature is turned back on ("keep as-is"):
  *   - Chat feature off        -> chatRead / chatWrite disabled for both roles.
  *   - Virtual background off  -> mediaChangeVirtualBackground disabled for both roles.
+ * A permission that only takes effect with another one is disabled likewise while its role lacks that
+ * other one (chatWrite / chatRead, mediaChangeVirtualBackground / mediaPublishVideo, broadcastEdit /
+ * broadcastControl).
  *
  * The wizard's step order is Room Details -> Meeting -> Recording -> Broadcast -> Room Access, so these
  * specs set a toggle in Meeting, then jump forward to Room Access to assert on the role-permission
@@ -162,6 +165,28 @@ test.describe('Room wizard E2E Tests', () => {
 			// Chat stays interactive.
 			await expect(permissionSwitch(page, role, 'chatRead')).toBeEnabled();
 			await expect(permissionSwitch(page, role, 'chatWrite')).toBeEnabled();
+		}
+	});
+
+	test('dependent permissions: writing in the chat follows reading it, the virtual background follows the camera', async ({
+		page
+	}) => {
+		await openWizardAtMeeting(page);
+		await gotoRoomAccess(page);
+		await openRolePermissions(page, 'speaker');
+
+		for (const [dependent, parent] of [
+			['chatWrite', 'chatRead'],
+			['mediaChangeVirtualBackground', 'mediaPublishVideo']
+		] as const) {
+			await setPermission(page, 'speaker', parent, false);
+			await expect(permissionSwitch(page, 'speaker', dependent)).toBeDisabled();
+			await expect(permissionSwitch(page, 'speaker', dependent)).toHaveAttribute('aria-checked', 'true');
+			await expect(permissionSwitch(page, 'moderator', dependent)).toBeEnabled();
+
+			await setPermission(page, 'speaker', parent, true);
+			await expect(permissionSwitch(page, 'speaker', dependent)).toBeEnabled();
+			await expect(permissionSwitch(page, 'speaker', dependent)).toHaveAttribute('aria-checked', 'true');
 		}
 	});
 

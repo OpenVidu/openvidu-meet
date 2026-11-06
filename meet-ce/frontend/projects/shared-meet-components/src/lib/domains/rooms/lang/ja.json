@@ -226,8 +226,7 @@
         "MEMBERS_TO_ADD_SUFFIX": "）",
         "EDIT_MEMBER": "メンバーを編集",
         "REMOVE_MEMBER": "メンバーを削除",
-        "FEATURE_DISABLED_PERMISSION": "この権限を設定するには、「会議」ステップで対応する機能を有効にしてください。",
-        "DEPENDENT_PERMISSION_DISABLED": "この権限を設定するには、依存先の権限を先に付与してください。"
+        "FEATURE_DISABLED_PERMISSION": "この権限を設定するには、「会議」ステップで対応する機能を有効にしてください。"
       },
       "MEETING": {
         "TITLE": "会議",

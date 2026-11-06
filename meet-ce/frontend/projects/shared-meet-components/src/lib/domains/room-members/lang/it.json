@@ -111,6 +111,7 @@
       "GUEST": "Ospite identificato"
     },
     "PERMISSIONS": {
+      "DEPENDENT_PERMISSION_DISABLED": "Concedi prima il permesso da cui dipende questo per configurarlo.",
       "GROUPS": {
         "MEETING": "Riunione",
         "MEDIA": "Media",
@@ -169,7 +170,7 @@
         },
         "mediaChangeVirtualBackground": {
           "LABEL": "Cambiare lo sfondo virtuale",
-          "DESCRIPTION": "Consenti di cambiare lo sfondo virtuale"
+          "DESCRIPTION": "Consenti di cambiare lo sfondo virtuale. Richiede \"Pubblicare il video\""
         },
         "recordingControl": {
           "LABEL": "Registrare",
@@ -205,7 +206,7 @@
         },
         "chatWrite": {
           "LABEL": "Scrivere",
-          "DESCRIPTION": "Consenti di inviare messaggi nella chat"
+          "DESCRIPTION": "Consenti di inviare messaggi nella chat. Richiede \"Leggere\""
         }
       }
     },

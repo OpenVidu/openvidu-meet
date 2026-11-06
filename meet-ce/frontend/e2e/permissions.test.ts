@@ -42,12 +42,14 @@ import {
 	type WirePermissions
 } from './helpers/meet-api.helper';
 import {
+	clickJoinMeeting,
 	expectEndMeetingOption,
 	expectKickedFromMeeting,
 	expectMeetingAccessRevoked,
 	expectNoEndMeetingOption,
 	openLobby,
-	openMeeting
+	openMeeting,
+	openPrejoin
 } from './helpers/meeting-navigation.helper';
 import { toggleParticipantsPanel } from './helpers/panels.helper';
 import {
@@ -252,6 +254,19 @@ test.describe('Permissions E2E Tests', () => {
 
 		test('canChangeVirtualBackground denied: the backgrounds control is not available', async ({ page }) => {
 			await joinAsGuest(page, { canChangeVirtualBackground: false });
+			await expectNoBackgroundsButton(page);
+		});
+
+		test('mediaChangeVirtualBackground without mediaPublishVideo: no backgrounds control before or after joining', async ({
+			page
+		}) => {
+			const member = await createGuest({ mediaChangeVirtualBackground: true, mediaPublishVideo: false });
+			await openPrejoin(page, member.accessUrl);
+			await expect(page.locator('#join-button')).toBeVisible();
+			await expect(page.locator('#backgrounds-button')).toHaveCount(0);
+
+			await clickJoinMeeting(page);
+			await expect(page.locator('#layout-container')).toBeVisible({ timeout: 15_000 });
 			await expectNoBackgroundsButton(page);
 		});
 
