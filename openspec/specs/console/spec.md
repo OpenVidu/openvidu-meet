@@ -80,18 +80,24 @@ The navigation SHALL collapse to icons, each showing its label as a tooltip, and
 - **THEN** only the page icons remain, with their labels as tooltips
 
 ### Requirement: Overview with usage figures
-The overview SHALL show, from `getAnalytics`, the number of rooms split into open, in a meeting now and closed, and the number of recordings with how many are available for playback and how many are in progress now, with actions to create a room, list all rooms and list all recordings.
+The overview SHALL show, from `getAnalytics`, the number of rooms split into open, in a meeting now and closed, and the number of recordings split into available for playback, in progress now and failed, each split as a proportional bar with a legend carrying the counts, with actions to create a room, list all rooms and list all recordings.
 
 #### Scenario: Deployment in use
-- **GIVEN** three rooms, one open, one with an active meeting and one closed, and two complete recordings, one more recording being in progress
+- **GIVEN** three rooms, one open, one with an active meeting and one closed, and two complete recordings, one recording in progress and one that failed
 - **WHEN** an admin opens the overview
 - **THEN** it shows 3 rooms with 1 open, 1 in a meeting now and 1 closed
-- **AND** it shows 3 recordings with 2 available for playback and 1 in progress
+- **AND** it shows 4 recordings with 2 available for playback, 1 in progress and 1 failed
 
 #### Scenario: Nothing running
 - **GIVEN** rooms and recordings, none of them in a meeting or in progress
 - **WHEN** an admin opens the overview
-- **THEN** it shows that no recording is in progress and 0 rooms in a meeting now
+- **THEN** it shows 0 recordings in progress and 0 rooms in a meeting now
+
+#### Scenario: Bar without a status
+- **GIVEN** three complete recordings and none in progress or failed
+- **WHEN** an admin opens the overview
+- **THEN** the recordings bar is filled by the available segment alone
+- **AND** the legend still lists in progress and failed with 0
 
 ### Requirement: Overview getting started
 When the figures read from the server show no room and no recording, the overview SHALL show a getting-started view with three actions: create the first room, go to the configuration page and go to the embedded page. A request that failed SHALL never produce this view.
@@ -113,7 +119,7 @@ When the figures read from the server show no room and no recording, the overvie
 
 #### Scenario: Admin reads analytics
 - **WHEN** an admin calls `getAnalytics` with their access token
-- **THEN** the server answers `200` with `totalRooms`, `activeRooms`, `openRooms`, `closedRooms`, `totalRecordings`, `completeRecordings`, `recordingsInProgress` and `roomsExpiringSoon`, and with `nextExpiringRoom` when a room is expiring soon
+- **THEN** the server answers `200` with `totalRooms`, `activeRooms`, `openRooms`, `closedRooms`, `totalRecordings`, `completeRecordings`, `recordingsInProgress`, `failedRecordings` and `roomsExpiringSoon`, and with `nextExpiringRoom` when a room is expiring soon
 
 #### Scenario: API key is not accepted
 - **WHEN** a client calls `getAnalytics` with the API key
@@ -124,7 +130,7 @@ When the figures read from the server show no room and no recording, the overvie
 - **THEN** the server answers `403`
 
 ### Requirement: Analytics count the current state
-`getAnalytics` SHALL count the rooms that exist (`totalRooms`) and, of them, those open (`openRooms`), whose meeting is active (`activeRooms`) and closed (`closedRooms`); and the recordings that exist (`totalRecordings`), those whose status is `complete` (`completeRecordings`) and those in progress, `starting`, `active` or `ending` (`recordingsInProgress`). Deleted rooms and recordings SHALL not be counted.
+`getAnalytics` SHALL count the rooms that exist (`totalRooms`) and, of them, those open (`openRooms`), with an active meeting (`activeRooms`) and closed (`closedRooms`); and the recordings that exist (`totalRecordings`) and, of them, those `complete` (`completeRecordings`), those `starting`, `active` or `ending` (`recordingsInProgress`) and those `failed`, `aborted` or `limit_reached` (`failedRecordings`). Deleted rooms and recordings SHALL not be counted.
 
 #### Scenario: Room deleted
 - **GIVEN** `getAnalytics` reports 3 rooms
@@ -134,7 +140,7 @@ When the figures read from the server show no room and no recording, the overvie
 #### Scenario: Recording still in progress
 - **GIVEN** one complete recording and one recording that is still active
 - **WHEN** an admin calls `getAnalytics`
-- **THEN** `totalRecordings` is 2, `completeRecordings` is 1 and `recordingsInProgress` is 1
+- **THEN** `totalRecordings` is 2, `completeRecordings` is 1, `recordingsInProgress` is 1 and `failedRecordings` is 0
 
 #### Scenario: Rooms by status
 - **GIVEN** one open room, one room with an active meeting and two closed rooms
@@ -142,9 +148,10 @@ When the figures read from the server show no room and no recording, the overvie
 - **THEN** `totalRooms` is 4, `openRooms` is 1, `activeRooms` is 1 and `closedRooms` is 2
 
 #### Scenario: Recording that is not in progress
-- **GIVEN** a recording that is `complete`, one that `failed` and one that was `aborted`
+- **GIVEN** a recording that is `complete`, one that `failed`, one that was `aborted` and one whose status is `limit_reached`
 - **WHEN** an admin calls `getAnalytics`
-- **THEN** `recordingsInProgress` is 0
+- **THEN** `recordingsInProgress` is 0 and `failedRecordings` is 3
+- **AND** `completeRecordings`, `recordingsInProgress` and `failedRecordings` add up to `totalRecordings`
 
 ### Requirement: Embedded page
 The embedded page SHALL gather, for administrators, the API key section (see `authentication`) and the webhooks section (see `webhooks`), and SHALL link to the REST API reference served by the deployment at `<base path>/api/v1/docs/`.
