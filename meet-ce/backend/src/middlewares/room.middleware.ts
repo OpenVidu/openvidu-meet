@@ -1,4 +1,4 @@
-import type { MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import type { MeetParticipantHandOptions, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { MeetUserRole } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
@@ -166,24 +166,30 @@ export const withRoomPermission = (
 	};
 };
 
+const checkHandLowerPermission = withRoomPermission('participantHandLower');
+
 /**
- * Like {@link withRoomPermission}, except that a participant acting on themselves needs no
- * permission: the permission gates acting on another participant.
- *
- * @param permission The permission to check when the target is not the caller.
+ * Authorizes a change to a participant's hand. A participant raises and lowers their own hand
+ * without any permission, and lowering another participant's hand needs `participantHandLower`.
+ * Raising it is never allowed, whatever the caller holds, which the meeting service answers once
+ * it knows the room has a meeting.
  */
-export const withRoomPermissionForOthers = (permission: keyof MeetRoomMemberPermissions) => {
-	const checkPermission = withRoomPermission(permission);
+export const withHandUpdatePermission = (req: Request, res: Response, next: NextFunction) => {
+	const callerIdentity = container.get(RequestSessionService).getParticipantIdentity();
 
-	return (req: Request, res: Response, next: NextFunction) => {
-		const callerIdentity = container.get(RequestSessionService).getParticipantIdentity();
+	if (callerIdentity && callerIdentity === req.params.participantIdentity) {
+		return next();
+	}
 
-		if (callerIdentity && callerIdentity === req.params.participantIdentity) {
-			return next();
-		}
+	if (!(req.body as MeetParticipantHandOptions).raised) {
+		return checkHandLowerPermission(req, res, next);
+	}
 
-		return checkPermission(req, res, next);
-	};
+	if (isTokenOfAnotherRoom(req.params.roomId as string)) {
+		return rejectRequestFromMeetError(res, errorInsufficientPermissions());
+	}
+
+	return next();
 };
 
 /**

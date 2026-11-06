@@ -11,7 +11,7 @@ import {
 	validateUpdateParticipantRoleReq
 } from '../middlewares/request-validators/meeting-validator.middleware.js';
 import { withValidRoomId } from '../middlewares/request-validators/room-validator.middleware.js';
-import { withRoomPermission, withRoomPermissionForOthers } from '../middlewares/room.middleware.js';
+import { withHandUpdatePermission, withRoomPermission } from '../middlewares/room.middleware.js';
 
 export const meetingRouter: Router = Router();
 meetingRouter.use(bodyParser.urlencoded({ extended: true }));
@@ -91,7 +91,7 @@ meetingRouter.put(
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
 	validateUpdateParticipantHandReq,
-	withRoomPermissionForOthers('participantHandLower'),
+	withHandUpdatePermission,
 	meetingCtrl.updateParticipantHand
 );
 

@@ -360,7 +360,8 @@
             A participant raises and lowers their own hand freely, through the room member token
             they joined with. Lowering another participant's hand is a moderator action that
             requires the `participantHandLower` permission; raising someone else's hand is rejected
-            with a `409`. A room whose `raiseHand.enabled` config is `false` rejects every raise with a `403`.
+            with a `409`, whatever the caller holds. A room whose `raiseHand.enabled` config is `false`
+            rejects a raise of the caller's own hand with a `403`.
 
             A hand already in the requested state is left as it is, so a repeated raise keeps its
             original `handRaiseDate`.
