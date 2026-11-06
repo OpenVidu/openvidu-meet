@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Wizard dependent settings
-The wizard SHALL keep end-to-end encryption mutually exclusive with recording, live broadcast and live captions, restoring the others when one is turned off again, warning while encryption is on that recording and live captions are unavailable, and SHALL disable the `mediaChangeVirtualBackground` role switches while virtual backgrounds are off, restoring them as left once they are back on, and a role's `mediaChangeVirtualBackground` switch, shown next to its `mediaPublishVideo` one, while that role does not hold `mediaPublishVideo`. The chat and broadcast role switches are specified in `meeting-chat` and `live-broadcast`.
+The wizard SHALL keep end-to-end encryption mutually exclusive with recording, live broadcast and live captions, restoring the others when one is off again and warning that recording and live captions are unavailable while it is on. It SHALL disable a role's `mediaChangeVirtualBackground` switch, shown below `mediaPublishVideo`, while virtual backgrounds are off or the role lacks `mediaPublishVideo`, keeping its value. Chat and broadcast switches: see `meeting-chat` and `live-broadcast`.
 
 #### Scenario: Enabling end-to-end encryption
 - **GIVEN** the wizard with recording and live broadcast allowed

@@ -360,7 +360,7 @@ A media status event SHALL carry `origin` `participant` when the local participa
 - **THEN** their host receives `mediaAudioStatusChanged` with `origin` `participant`
 
 ### Requirement: Where background effects are offered
-The meeting SHALL offer background effects only in a room whose `virtualBackground.enabled` is `true`, its default, and only to participants with `mediaChangeVirtualBackground`. Where they are not offered, no remembered effect SHALL be applied, and losing the permission during the meeting SHALL remove an applied effect, closing the background effects panel.
+The meeting SHALL offer background effects only in a room whose `virtualBackground.enabled` is `true`, its default, and only to participants with both `mediaChangeVirtualBackground` and `mediaPublishVideo`. Where they are not offered, no remembered effect SHALL be applied, and losing either permission during the meeting SHALL remove an applied effect, closing the background effects panel.
 
 #### Scenario: Room with virtual backgrounds off
 - **GIVEN** a room with `virtualBackground.enabled` set to `false` and a browser that remembers a background effect
@@ -373,6 +373,11 @@ The meeting SHALL offer background effects only in a room whose `virtualBackgrou
 - **WHEN** `mediaChangeVirtualBackground` is revoked from them during the meeting
 - **THEN** the effect is removed from their video
 - **AND** the background effects control disappears
+
+#### Scenario: Participant without mediaPublishVideo
+- **GIVEN** a room with virtual backgrounds on and a participant holding `mediaChangeVirtualBackground` but not `mediaPublishVideo`
+- **WHEN** they open the device setup screen and then join the meeting
+- **THEN** neither the device setup screen nor the meeting offers background effects
 
 ### Requirement: Background effects
 The background effects SHALL be no effect, soft blur, hard blur, and images grouped as Professional, Home Office and Creative. An effect SHALL apply at once to the participant's preview and to the video the others receive, on the device setup screen and in the meeting, except to the preview of a camera tried in the meeting settings and not applied yet; it SHALL NOT be selectable while the camera is off, and it SHALL keep reaching the others while the sender's window is minimised or covered.
