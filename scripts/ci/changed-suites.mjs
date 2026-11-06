@@ -8,6 +8,9 @@ import { readFileSync } from 'node:fs';
 //   --without-backend the e2e suites ignore changes that only touch the backend
 // Patterns follow GitHub's `paths` filters: evaluated in order, `!` excludes, a later pattern re-includes.
 
+// Only the SPA routes reach the console, so the web component bundle never contains it.
+const CONSOLE_DOMAIN = '!meet-ce/frontend/projects/shared-meet-components/src/lib/domains/console/**';
+
 const SUITES = {
 	'backend-unit': [
 		'meet-ce/backend/**',
@@ -33,6 +36,7 @@ const SUITES = {
 		'meet-ce/frontend/webcomponent/**',
 		'!meet-ce/frontend/webcomponent/tests/e2e/**',
 		'meet-ce/frontend/projects/shared-meet-components/**',
+		CONSOLE_DOMAIN,
 		'!meet-ce/frontend/projects/**/*.spec.ts',
 		'meet-ce/typings/**',
 		'meet.sh',
@@ -63,6 +67,7 @@ const SUITES = {
 		'meet-ce/frontend/webcomponent/**',
 		'!meet-ce/frontend/webcomponent/tests/unit/**',
 		'meet-ce/frontend/projects/shared-meet-components/**',
+		CONSOLE_DOMAIN,
 		'!meet-ce/frontend/projects/**/*.spec.ts',
 		'meet-ce/typings/**',
 		'testapp/**',
