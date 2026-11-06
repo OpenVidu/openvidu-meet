@@ -3,7 +3,7 @@ import { MeetEventOrigin } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
 import { WebhookDispatcherService } from '../../../../src/services/webhook-dispatcher.service.js';
-import { errorInsufficientPermissions } from '../../../../src/models/error.model.js';
+import { errorHandNotOwn, errorInsufficientPermissions } from '../../../../src/models/error.model.js';
 import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRooms,
@@ -198,6 +198,46 @@ describe('Meetings API Tests', () => {
 			expect(response.status).toBe(409);
 			expect(response.body.error).toBe('Participant Error');
 			expect((await handOf(alice)).handRaised).toBe(false);
+		});
+
+		it("should reject with 409 a participant without participantHandLower raising another participant's hand", async () => {
+			const alice = await joinSpeaker('Alice');
+			const bob = await joinSpeaker('Bob');
+
+			const response = await updateParticipantHand(
+				roomData.room.roomId,
+				alice.identity,
+				{ raised: true },
+				bob.token
+			);
+			expectMeetError(response, errorHandNotOwn(alice.identity, roomData.room.roomId));
+			expect((await handOf(alice)).handRaised).toBe(false);
+		});
+
+		it("should fail with 403 when a token of another room raises a participant's hand", async () => {
+			const alice = await joinSpeaker('Alice');
+			const otherRoom = await setupSingleRoom(false, 'OTHER_ROOM');
+
+			const response = await updateParticipantHand(
+				roomData.room.roomId,
+				alice.identity,
+				{ raised: true },
+				otherRoom.moderatorToken
+			);
+			expectMeetError(response, errorInsufficientPermissions());
+			expect((await handOf(alice)).handRaised).toBe(false);
+		});
+
+		it("should fail with 404 when another participant's hand is raised in a room without a meeting", async () => {
+			const emptyRoom = await setupSingleRoom(false, 'EMPTY_ROOM');
+
+			const response = await updateParticipantHand(
+				emptyRoom.room.roomId,
+				'SOMEONE',
+				{ raised: true },
+				emptyRoom.moderatorToken
+			);
+			expect(response.status).toBe(404);
 		});
 
 		it('should reject a raise while the room has raising hands disabled', async () => {

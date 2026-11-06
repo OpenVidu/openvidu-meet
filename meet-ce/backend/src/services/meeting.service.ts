@@ -208,18 +208,18 @@ export class MeetingService {
 	 * @param roomId - The ID of the room
 	 * @param participantIdentity - The identity of the participant whose hand changes
 	 * @param raised - The requested hand state
-	 * @throws A 404 error when the participant is not in the meeting, a 409 when the caller raises
-	 * someone else's hand or another change to the same hand is still in progress, or a 403 when the
-	 * room has the feature disabled
+	 * @throws A 404 error when the room has no active meeting or the participant is not in it, a 409
+	 * when the caller raises someone else's hand or another change to the same hand is still in
+	 * progress, or a 403 when the room has the feature disabled
 	 */
 	async updateParticipantHand(roomId: string, participantIdentity: string, raised: boolean): Promise<void> {
+		const room = await this.getActiveMeetingRoom(roomId);
 		const own = participantIdentity === this.requestSessionService.getParticipantIdentity();
 
 		if (raised && !own) {
 			throw errorHandNotOwn(participantIdentity, roomId);
 		}
 
-		const room = await this.getActiveMeetingRoom(roomId);
 		const origin = own ? MeetEventOrigin.PARTICIPANT : MeetEventOrigin.MODERATOR;
 		await this.setHand(room, participantIdentity, raised, origin);
 	}
