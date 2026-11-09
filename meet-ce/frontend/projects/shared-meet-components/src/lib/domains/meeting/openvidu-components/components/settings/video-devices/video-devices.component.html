@@ -3,17 +3,15 @@
 	@if (compact()) {
 		@if (hasVideoDevices()) {
 			<div class="unified-device-button">
-				<!-- Main toggle button -->
+				@let toggleName = (isCameraEnabled() ? 'TOOLBAR.STOP_VIDEO' : 'TOOLBAR.START_VIDEO') | translate;
 				<button
-					mat-flat-button
 					class="toggle-section"
 					[disabled]="!hasVideoDevices() || cameraStatusChanging()"
 					[class.device-enabled]="isCameraEnabled()"
 					[class.device-disabled]="!isCameraEnabled()"
+					[attr.aria-label]="toggleName"
 					(click)="toggleCam($event)"
-					[matTooltip]="
-						isCameraEnabled() ? ('TOOLBAR.STOP_VIDEO' | translate) : ('TOOLBAR.START_VIDEO' | translate)
-					"
+					[matTooltip]="toggleName"
 					[matTooltipDisabled]="!hasVideoDevices()"
 					id="camera-button"
 				>
@@ -22,18 +20,15 @@
 					</mat-icon>
 				</button>
 
-				<!-- Dropdown section -->
-				@if (isCameraEnabled()) {
-					<button
-						mat-flat-button
-						id="video-dropdown"
-						class="dropdown-section"
-						[matMenuTriggerFor]="cameraMenu"
-						[disabled]="cameraStatusChanging()"
-					>
-						<mat-icon>expand_more</mat-icon>
-					</button>
-				}
+				<button
+					id="video-dropdown"
+					class="dropdown-section"
+					[matMenuTriggerFor]="cameraMenu"
+					[disabled]="cameraStatusChanging() || cameras().length === 0"
+					[attr.aria-label]="'DEVICES.CHOOSE_CAMERA' | translate"
+				>
+					<mat-icon>expand_more</mat-icon>
+				</button>
 			</div>
 		} @else {
 			<!-- No Camera Available -->

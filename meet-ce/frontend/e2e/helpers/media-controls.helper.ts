@@ -386,7 +386,6 @@ export const selectVideoDevice = async (page: Page, label: string): Promise<void
  * Opens the microphone device dropdown (prejoin compact selector or settings panel) and returns each
  * device option's `label` and whether it is currently `selected`. See {@link getVideoDeviceOptions}.
  *
- * The dropdown only exists while the microphone is enabled, so the microphone must be on.
  * Returns `[]` when the dropdown is not openable.
  */
 export const getAudioDeviceOptions = async (page: Page): Promise<Array<{ label: string; selected: boolean }>> => {

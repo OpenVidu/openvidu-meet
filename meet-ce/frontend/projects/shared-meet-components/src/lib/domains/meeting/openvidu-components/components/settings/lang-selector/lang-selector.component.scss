@@ -15,35 +15,38 @@
 .full-lang-button {
 	display: flex;
 	align-items: center;
-	gap: 8px;
-	padding: 12px 16px;
-	background: var(--ov-surface-color, #ffffff);
-	border: 1px solid var(--ov-secondary-action-color, #e0e0e0);
-	border-radius: var(--ov-surface-radius, 8px);
-	transition: all 0.2s ease;
-	color: var(--ov-text-primary-color, #333);
-	font-weight: 500;
+	justify-content: center;
 	min-width: 150px;
+	height: 40px;
+	padding: 0 16px;
+	border: 1px solid var(--ov-border-color);
+	border-radius: var(--ov-surface-radius, 8px);
+	background: var(--ov-surface-color);
+	color: var(--ov-text-surface-color);
+	font: inherit;
+	cursor: pointer;
+	transition: background-color 0.2s ease;
 
 	&:hover {
-		box-shadow: 0 2px 8px rgba(66, 133, 244, 0.1);
+		background: var(--ov-hover-color);
+	}
+
+	&:focus-visible {
+		@include controls.focus-ring();
 	}
 
 	.lang-name {
-		display: inline-block !important;
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
 		font-size: 14px;
 		font-weight: 500;
-		text-transform: capitalize;
-		color: var(--ov-text-surface-color) !important;
 	}
 
 	.expand-icon {
-		@include controls.icon(16px);
-		min-width: 16px;
-		min-height: 16px;
-		color: var(--ov-text-secondary-color, #666);
+		@include controls.icon(18px);
+		color: var(--ov-text-secondary-color);
 		transition: transform 0.2s ease;
-		vertical-align: bottom;
 	}
 
 	&[aria-expanded='true'] .expand-icon {

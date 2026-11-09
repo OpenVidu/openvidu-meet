@@ -1,5 +1,4 @@
 import { Component, computed, inject, input, output, Signal, signal, WritableSignal } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -21,7 +20,7 @@ const LEVEL_BARS = 24;
  */
 @Component({
 	selector: 'ov-audio-devices-select',
-	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe, MicStatusAlertComponent],
+	imports: [MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe, MicStatusAlertComponent],
 	templateUrl: './audio-devices.component.html',
 	styleUrl: './audio-devices.component.scss',
 	host: { '[class.compact]': 'compact()' }
@@ -39,12 +38,16 @@ export class AudioDevicesComponent {
 		: null;
 
 	readonly switchesAtOnce = this.trial === null;
-	private readonly publishedLevel = inject(MicActivityService).level;
-	private readonly micLevel = computed(() =>
+	private readonly micActivity = inject(MicActivityService);
+	private readonly publishedLevel = this.micActivity.level;
+	protected readonly micLevel = computed(() =>
 		this.trial?.microphone.device() ? this.trial.microphone.level() : this.publishedLevel()
 	);
 	readonly levelBars = Array.from({ length: LEVEL_BARS });
 	readonly litLevelBars = computed(() => (this.isMicrophoneEnabled() ? Math.round(this.micLevel() * LEVEL_BARS) : 0));
+	/** The level shows only while the microphone is on and the system does not mute its input. */
+	protected readonly levelVisible = computed(() => this.isMicrophoneEnabled() && !this.micActivity.systemMuted());
+	protected readonly isPickingUpSound = computed(() => this.levelVisible() && this.micActivity.isSpeaking());
 	readonly isApplying = computed(() => this.trial?.applying() ?? false);
 
 	private log: ILogger = {

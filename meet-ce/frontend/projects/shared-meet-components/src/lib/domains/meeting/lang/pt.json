@@ -33,7 +33,10 @@
 	"DEVICES": {
 		"NO_VIDEO_DEVICE": "Dispositivo de vídeo não encontrado",
 		"NO_AUDIO_DEVICE": "Dispositivo de áudio não encontrado",
-		"CHECK_DEVICE": "Verifique se está ligado e se o navegador tem permissão para o utilizar."
+		"CHECK_DEVICE": "Verifique se está ligado e se o navegador tem permissão para o utilizar.",
+		"CHOOSE_CAMERA": "Escolher câmara",
+		"CHOOSE_MICROPHONE": "Escolher microfone",
+		"PICKING_UP_SOUND": "a captar som"
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Silenciar o seu áudio",

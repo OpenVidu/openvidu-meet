@@ -7,7 +7,10 @@
 	"DEVICES": {
 		"NO_VIDEO_DEVICE": "Video device not found",
 		"NO_AUDIO_DEVICE": "Audio device not found",
-		"CHECK_DEVICE": "Check that it is connected and that the browser is allowed to use it."
+		"CHECK_DEVICE": "Check that it is connected and that the browser is allowed to use it.",
+		"CHOOSE_CAMERA": "Choose camera",
+		"CHOOSE_MICROPHONE": "Choose microphone",
+		"PICKING_UP_SOUND": "picking up sound"
 	},
 	"ROOM": {
 		"JOINING": "Joining meeting...",

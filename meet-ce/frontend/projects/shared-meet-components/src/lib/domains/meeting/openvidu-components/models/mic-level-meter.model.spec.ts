@@ -53,6 +53,13 @@ describe('MicLevelMeter', () => {
 		await waitFor(() => meter!.level() === 1);
 	});
 
+	it('shows a quiet room, as loud as ambient noise gets, well above silence', async () => {
+		microphone.setGain(0.005);
+		meter = new MicLevelMeter(microphone.track);
+
+		await waitFor(() => meter!.level() > 0.3);
+	});
+
 	it('keeps measuring while the capture is muted in the meeting', async () => {
 		microphone.track.enabled = false;
 		meter = new MicLevelMeter(microphone.track);

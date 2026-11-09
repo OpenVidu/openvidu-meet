@@ -270,49 +270,64 @@
 	}
 }
 
-// The prejoin's camera and microphone buttons: the toggle and the device menu in one pill.
+// The frame of the prejoin's device controls: a rounded dark frame that holds a raised toggle and,
+// beside it, a flat menu button. The elevation difference separates the two, with no divider line.
+@mixin split-frame() {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	height: 48px;
+	padding: 2px;
+	box-sizing: border-box;
+	border-radius: 13px;
+	background: color-mix(in srgb, var(--ov-surface-color) 93%, transparent);
+	border: 1px solid var(--ov-border-color);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+@mixin split-toggle() {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 44px;
+	height: 42px;
+	padding: 0;
+	border: none;
+	border-radius: 10px;
+	overflow: hidden;
+	background: var(--ov-primary-action-color);
+	color: var(--ov-text-primary-color);
+	cursor: pointer;
+
+	&:disabled {
+		cursor: default;
+		opacity: 0.6;
+	}
+
+	&:focus-visible {
+		@include focus-ring();
+	}
+
+	mat-icon {
+		@include icon(22px);
+		position: relative;
+		margin: 0;
+		color: inherit;
+	}
+}
+
 @mixin compact-device-button() {
 	.unified-device-button {
-		display: flex;
-		background: var(--ov-primary-action-color);
-		backdrop-filter: blur(20px);
-		border-radius: 12px;
-		overflow: hidden;
-		transition: all 0.2s ease;
+		@include split-frame();
 
 		.toggle-section {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			min-width: 50px;
-			width: 50px;
-			height: 48px;
-			border: none;
-			background: transparent;
-			border-radius: 0;
-			padding: 0;
-			transition: all 0.2s ease;
-
-			&.device-enabled {
-				color: var(--ov-text-primary-color);
-
-				mat-icon {
-					color: var(--ov-text-primary-color);
-				}
-			}
+			@include split-toggle();
 
 			&.device-disabled {
-				background: var(--ov-error-color);
-				color: var(--ov-text-surface-color);
-
-				mat-icon {
-					color: var(--ov-text-surface-color);
-				}
-			}
-
-			mat-icon {
-				@include icon();
-				margin: 0;
+				background: #d93025;
+				color: #ffffff;
 			}
 		}
 
@@ -320,18 +335,31 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			min-width: 30px;
-			width: 30px;
-			height: 48px;
-			border: none;
-			background: transparent;
-			border-radius: 0;
+			width: 28px;
+			height: 42px;
 			padding: 0;
-			color: var(--ov-text-secondary-color, #666);
-			transition: all 0.2s ease;
+			border: none;
+			border-radius: 0 10px 10px 0;
+			background: transparent;
+			color: var(--ov-text-secondary-color);
+			cursor: pointer;
+
+			&:hover:not(:disabled) {
+				background: color-mix(in srgb, var(--ov-text-primary-color) 10%, transparent);
+				color: var(--ov-text-primary-color);
+			}
+
+			&:disabled {
+				cursor: default;
+				opacity: 0.5;
+			}
+
+			&:focus-visible {
+				@include focus-ring();
+			}
 
 			mat-icon {
-				@include icon(16px);
+				@include icon(20px);
 				margin: 0;
 			}
 		}

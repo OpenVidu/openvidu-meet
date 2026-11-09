@@ -69,10 +69,10 @@
 									@if (showBackgroundsButton() && hasVideoDevices()) {
 										<div class="background-control">
 											<button
-												mat-flat-button
 												class="background-button"
 												(click)="toggleBackgroundPanel()"
 												[matTooltip]="'MEDIA_SETUP.BACKGROUND' | translate"
+												[attr.aria-label]="'MEDIA_SETUP.BACKGROUND' | translate"
 												[disabled]="!isVideoEnabled()"
 												id="backgrounds-button"
 											>

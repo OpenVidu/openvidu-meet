@@ -1,5 +1,4 @@
 import { Component, computed, inject, input, output, Signal, signal, WritableSignal } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -24,7 +23,7 @@ import type { ILogger } from '../../../../../../shared/models/logger.model';
  */
 @Component({
 	selector: 'ov-video-devices-select',
-	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe, VideoElementComponent],
+	imports: [MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe, VideoElementComponent],
 	templateUrl: './video-devices.component.html',
 	styleUrl: './video-devices.component.scss',
 	host: { '[class.compact]': 'compact()' }
