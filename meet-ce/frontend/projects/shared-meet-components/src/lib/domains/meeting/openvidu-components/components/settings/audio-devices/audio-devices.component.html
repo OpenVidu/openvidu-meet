@@ -2,40 +2,43 @@
 	<!-- Unified Device Button (Compact Mode) -->
 	@if (compact()) {
 		@if (hasAudioDevices()) {
-			<!-- Anchor for the mic status warnings: the unified button clips its content
-				 (overflow: hidden for the rounded corners), so the alert overlay hangs from
-				 this wrapper instead -->
 			<div class="mic-button-anchor">
 				<div class="unified-device-button">
-					<!-- Main toggle button -->
+					@let toggleName =
+						(isMicrophoneEnabled() ? 'TOOLBAR.MUTE_AUDIO' : 'TOOLBAR.UNMUTE_AUDIO') | translate;
 					<button
-						mat-flat-button
 						class="toggle-section"
 						[disabled]="!hasAudioDevices() || microphoneStatusChanging()"
-						[class.device-enabled]="isMicrophoneEnabled()"
 						[class.device-disabled]="!isMicrophoneEnabled()"
-						(click)="toggleMic($event)"
-						[matTooltip]="
-							isMicrophoneEnabled()
-								? ('TOOLBAR.MUTE_AUDIO' | translate)
-								: ('TOOLBAR.UNMUTE_AUDIO' | translate)
+						[attr.aria-label]="
+							isPickingUpSound()
+								? toggleName + ', ' + ('DEVICES.PICKING_UP_SOUND' | translate)
+								: toggleName
 						"
+						(click)="toggleMic($event)"
+						[matTooltip]="toggleName"
 						[matTooltipDisabled]="!hasAudioDevices()"
 						id="microphone-button"
 					>
+						@if (levelVisible()) {
+							<span
+								class="level-fill"
+								[style.transform]="'scaleY(' + micLevel() + ')'"
+								aria-hidden="true"
+							></span>
+						}
 						<mat-icon [id]="isMicrophoneEnabled() ? 'mic' : 'mic_off'">{{
 							isMicrophoneEnabled() ? 'mic' : 'mic_off'
 						}}</mat-icon>
 					</button>
 
-					<!-- Dropdown section -->
 					@if (isMicrophoneEnabled()) {
 						<button
-							mat-flat-button
 							id="audio-dropdown"
 							class="dropdown-section"
 							[matMenuTriggerFor]="microphoneMenu"
 							[disabled]="microphoneStatusChanging()"
+							[attr.aria-label]="'DEVICES.CHOOSE_MICROPHONE' | translate"
 						>
 							<mat-icon>expand_more</mat-icon>
 						</button>

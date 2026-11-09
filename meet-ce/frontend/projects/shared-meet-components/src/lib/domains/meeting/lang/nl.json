@@ -33,7 +33,10 @@
 	"DEVICES": {
 		"NO_VIDEO_DEVICE": "Videoapparaat niet gevonden",
 		"NO_AUDIO_DEVICE": "Audioapparaat niet gevonden",
-		"CHECK_DEVICE": "Controleer of het is aangesloten en of de browser het mag gebruiken."
+		"CHECK_DEVICE": "Controleer of het is aangesloten en of de browser het mag gebruiken.",
+		"CHOOSE_CAMERA": "Camera kiezen",
+		"CHOOSE_MICROPHONE": "Microfoon kiezen",
+		"PICKING_UP_SOUND": "vangt geluid op"
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Audio dempen",

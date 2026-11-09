@@ -33,7 +33,10 @@
 	"DEVICES": {
 		"NO_VIDEO_DEVICE": "Video-Gerät nicht gefunden",
 		"NO_AUDIO_DEVICE": "Audio-Gerät nicht gefunden",
-		"CHECK_DEVICE": "Prüfen Sie, ob es angeschlossen ist und der Browser es verwenden darf."
+		"CHECK_DEVICE": "Prüfen Sie, ob es angeschlossen ist und der Browser es verwenden darf.",
+		"CHOOSE_CAMERA": "Kamera auswählen",
+		"CHOOSE_MICROPHONE": "Mikrofon auswählen",
+		"PICKING_UP_SOUND": "nimmt Ton auf"
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Stummschalten des Audios",

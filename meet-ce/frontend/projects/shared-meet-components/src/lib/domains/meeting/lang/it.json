@@ -33,7 +33,10 @@
 	"DEVICES": {
 		"NO_VIDEO_DEVICE": "Dispositivo video non trovato",
 		"NO_AUDIO_DEVICE": "Dispositivo audio non trovato",
-		"CHECK_DEVICE": "Verifica che sia collegato e che il browser sia autorizzato a usarlo."
+		"CHECK_DEVICE": "Verifica che sia collegato e che il browser sia autorizzato a usarlo.",
+		"CHOOSE_CAMERA": "Scegli la fotocamera",
+		"CHOOSE_MICROPHONE": "Scegli il microfono",
+		"PICKING_UP_SOUND": "rileva suono"
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Disattiva l'audio",

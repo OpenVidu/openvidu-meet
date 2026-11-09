@@ -33,7 +33,10 @@
 	"DEVICES": {
 		"NO_VIDEO_DEVICE": "ビデオデバイスが見つかりません",
 		"NO_AUDIO_DEVICE": "オーディオデバイスが見つかりません",
-		"CHECK_DEVICE": "接続されていること、およびブラウザーに使用が許可されていることを確認してください。"
+		"CHECK_DEVICE": "接続されていること、およびブラウザーに使用が許可されていることを確認してください。",
+		"CHOOSE_CAMERA": "カメラを選択",
+		"CHOOSE_MICROPHONE": "マイクを選択",
+		"PICKING_UP_SOUND": "音を拾っています"
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "オーディオをミュートする",

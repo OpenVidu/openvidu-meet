@@ -22,10 +22,33 @@
 
 		@include controls.compact-device-button();
 
-		// Positioning context for the mic status warnings (badge + popup). The unified button
-		// itself clips its content (overflow: hidden), so the overlay hangs from this wrapper.
+		// Positioning context for the mic status warnings (badge + popup), which hang from this
+		// wrapper because the toggle clips its content.
 		.mic-button-anchor {
 			position: relative;
+
+			// The warning mark sits on the toggle's top corner, over the frame.
+			::ng-deep .mic-warning-badge {
+				top: -7px;
+				right: auto;
+				left: 38px;
+				width: 20px;
+				height: 20px;
+				box-sizing: border-box;
+				border: 2px solid #2d2d2d;
+			}
+		}
+
+		.level-fill {
+			position: absolute;
+			left: -2px;
+			right: -2px;
+			bottom: 0;
+			height: 100%;
+			border-radius: 45% 45% 0 0 / 8px 8px 0 0;
+			background: rgba(92, 200, 222, 0.5);
+			transform-origin: bottom;
+			transition: transform 80ms linear;
 		}
 	}
 }

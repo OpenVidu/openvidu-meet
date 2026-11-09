@@ -63,6 +63,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - The room wizard gets a Broadcast step to save the room's default RTMP destinations and layout, the meeting's activities
   panel a Live broadcast activity to go live to them, add one for the meeting, and stop or restart each, and
   the status rail a `LIVE` chip with the time on air.
+- The device setup screen shows the microphone's live level in its microphone button, and its camera, microphone and
+  background effects controls are split controls with a separate toggle and menu button.
 
 #### Deployment
 

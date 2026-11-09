@@ -33,7 +33,10 @@
 	"DEVICES": {
 		"NO_VIDEO_DEVICE": "Appareil vidéo introuvable",
 		"NO_AUDIO_DEVICE": "Appareil audio introuvable",
-		"CHECK_DEVICE": "Vérifiez qu'il est branché et que le navigateur est autorisé à l'utiliser."
+		"CHECK_DEVICE": "Vérifiez qu'il est branché et que le navigateur est autorisé à l'utiliser.",
+		"CHOOSE_CAMERA": "Choisir la caméra",
+		"CHOOSE_MICROPHONE": "Choisir le micro",
+		"PICKING_UP_SOUND": "capte du son"
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Mettez votre audio en sourdine",
