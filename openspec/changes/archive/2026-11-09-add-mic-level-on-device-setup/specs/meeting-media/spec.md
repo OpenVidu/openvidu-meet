@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Device controls of the device setup screen
-On the device setup screen, the camera and the microphone SHALL each have a control made of two buttons inside one rounded frame: a button that turns the device on or off, raised above the frame, and a menu button beside it that opens the list of devices. The background effects button SHALL use the same frame with its single button. The frame and its buttons SHALL follow the light and dark themes.
+On the device setup screen, the camera and the microphone SHALL each have a split control, as in Material 3: two tonal buttons side by side, one that turns the device on or off and one beside it that opens the list of devices, without a surrounding frame or border. The background effects button SHALL be a single round button of the same style. The controls SHALL follow the light and dark themes.
 
 #### Scenario: Turning the camera off
 - **GIVEN** a participant on the device setup screen with the camera on

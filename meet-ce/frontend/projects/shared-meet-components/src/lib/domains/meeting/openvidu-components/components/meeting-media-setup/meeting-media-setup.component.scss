@@ -162,12 +162,9 @@
 						bottom: 16px;
 						left: 16px;
 
-						.background-frame {
-							@include controls.split-frame();
-						}
-
 						.background-button {
-							@include controls.split-toggle();
+							@include controls.split-toggle(24px);
+							width: 48px;
 						}
 					}
 				}

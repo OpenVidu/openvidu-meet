@@ -4,7 +4,7 @@ The device setup screen lets a participant pick a microphone but never shows whe
 
 ## What Changes
 
-- The device setup screen's camera and microphone controls become split controls, as in other meeting products: one frame, with the rounded corners of the current buttons, holding a raised toggle that turns the device on or off and a flat menu button that opens the device list. Background effects uses the same frame. Toggling and choosing are two separate buttons, with their own accessible names.
+- The device setup screen's camera and microphone controls become split controls, as Material 3 split buttons: a tonal toggle that turns the device on or off and a tonal menu button beside it that opens the device list, with no frame or border. Background effects is a single round button of the same style. Toggling and choosing are two separate buttons, with their own accessible names.
 - The microphone toggle shows the live level of the selected microphone: its background fills from the bottom and rises and falls with the sound, like a wave. The menu button never fills.
 - The level shows only while the microphone is on; a microphone that is off or muted by the system shows no level.
 - Every screen built on the device setup controls shows it too.

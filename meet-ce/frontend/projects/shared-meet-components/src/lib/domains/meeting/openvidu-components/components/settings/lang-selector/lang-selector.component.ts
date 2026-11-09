@@ -1,5 +1,4 @@
 import { Component, effect, inject, input, OnInit, output } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { AvailableLangs, LangOption } from '../../../models/lang.model';
@@ -10,7 +9,7 @@ import { MeetingTranslateService } from '../../../services/translate/meeting-tra
  */
 @Component({
 	selector: 'ov-lang-selector',
-	imports: [MatButtonModule, MatIconModule, MatMenuModule],
+	imports: [MatIconModule, MatMenuModule],
 	templateUrl: './lang-selector.component.html',
 	styleUrl: './lang-selector.component.scss',
 	host: { '[class.field]': "variant() === 'field'" }

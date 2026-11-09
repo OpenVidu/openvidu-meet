@@ -68,20 +68,18 @@
 									<!-- Virtual Background Button -->
 									@if (showBackgroundsButton() && hasVideoDevices()) {
 										<div class="background-control">
-											<div class="background-frame">
-												<button
-													class="background-button"
-													(click)="toggleBackgroundPanel()"
-													[matTooltip]="'MEDIA_SETUP.BACKGROUND' | translate"
-													[attr.aria-label]="'MEDIA_SETUP.BACKGROUND' | translate"
-													[disabled]="!isVideoEnabled()"
-													id="backgrounds-button"
+											<button
+												class="background-button"
+												(click)="toggleBackgroundPanel()"
+												[matTooltip]="'MEDIA_SETUP.BACKGROUND' | translate"
+												[attr.aria-label]="'MEDIA_SETUP.BACKGROUND' | translate"
+												[disabled]="!isVideoEnabled()"
+												id="backgrounds-button"
+											>
+												<mat-icon class="material-symbols-outlined"
+													>background_replace</mat-icon
 												>
-													<mat-icon class="material-symbols-outlined"
-														>background_replace</mat-icon
-													>
-												</button>
-											</div>
+											</button>
 										</div>
 									}
 								</div>

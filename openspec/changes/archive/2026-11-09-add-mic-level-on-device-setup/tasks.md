@@ -2,7 +2,7 @@
 
 ## 1. Device setup microphone level
 
-- [x] 1.0 Turn the device setup camera, microphone and background effects controls into split controls (frame keeping the current corner radius, raised toggle, flat menu button), with separate accessible names for toggling and choosing. Verify with Karma specs (toggle does not open the menu, menu does not toggle) and the SPA e2e cases that drive these controls.
+- [x] 1.0 Turn the device setup camera, microphone and background effects controls into split controls (Material 3 split buttons: tonal toggle and menu button, no frame), with separate accessible names for toggling and choosing. Verify with Karma specs (toggle does not open the menu, menu does not toggle) and the SPA e2e cases that drive these controls.
 - [x] 1.1 In the microphone toggle, add a fill layer clipped by its rounded corners and bound to `MicActivityService.level` through `scaleY`, hidden while the microphone is off or muted by the system, with the menu arrow outside it. Add "picking up sound" to the accessible name above the speaking threshold, debounced. Verify with a Karma spec of the control (level drives the fill, hidden when off or system muted, menu part never fills) and `./meet.sh lint-frontend`.
 - [ ] 1.2 Check by hand on the device setup screen, in the SPA and in the web component: speaking moves the fill, muting hides it, changing microphone follows the new one.
 
