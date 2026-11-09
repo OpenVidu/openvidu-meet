@@ -275,13 +275,10 @@
 @mixin split-frame() {
 	display: flex;
 	align-items: center;
-	gap: 2px;
-	height: 52px;
-	padding: 4px;
-	box-sizing: border-box;
+	height: 48px;
 	border-radius: 14px;
+	overflow: hidden;
 	background: color-mix(in srgb, var(--ov-surface-color) 93%, transparent);
-	border: 1px solid var(--ov-border-color);
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
@@ -291,11 +288,10 @@
 	align-items: center;
 	justify-content: center;
 	flex-shrink: 0;
-	width: 44px;
-	height: 42px;
+	width: 48px;
+	height: 100%;
 	padding: 0;
 	border: none;
-	border-radius: 10px;
 	overflow: hidden;
 	background: var(--ov-primary-action-color);
 	color: var(--ov-text-primary-color);
@@ -307,7 +303,7 @@
 	}
 
 	&:focus-visible {
-		@include focus-ring();
+		@include focus-ring(-3px);
 	}
 
 	mat-icon {
@@ -335,11 +331,10 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			width: 28px;
-			height: 42px;
+			width: 32px;
+			height: 100%;
 			padding: 0;
 			border: none;
-			border-radius: 0 10px 10px 0;
 			background: transparent;
 			color: var(--ov-text-secondary-color);
 			cursor: pointer;
@@ -355,7 +350,7 @@
 			}
 
 			&:focus-visible {
-				@include focus-ring();
+				@include focus-ring(-3px);
 			}
 
 			mat-icon {
