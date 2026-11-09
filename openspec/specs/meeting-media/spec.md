@@ -627,7 +627,7 @@ The meeting SHALL offer trying a device before applying it only where the browse
 - **AND** beside the camera selector the tab says that the others see the new camera as soon as it is picked
 
 ### Requirement: Device controls of the device setup screen
-On the device setup screen, the camera and the microphone SHALL each have a split control, as in Material 3: two tonal buttons side by side, one that turns the device on or off and one beside it that opens the list of devices, without a surrounding frame or border. The background effects button SHALL be a single round button of the same style. The controls SHALL follow the light and dark themes.
+On the device setup screen, the camera and the microphone SHALL each have a control made of two buttons inside one rounded frame: a button that turns the device on or off, borderless, and a menu button beside it that opens the list of devices. The frame and the buttons SHALL keep the rounded corners of the current device buttons. The background effects button SHALL stay a single button, without a frame. The controls SHALL follow the light and dark themes.
 
 #### Scenario: Turning the camera off
 - **GIVEN** a participant on the device setup screen with the camera on

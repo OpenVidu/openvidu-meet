@@ -163,8 +163,32 @@
 						left: 16px;
 
 						.background-button {
-							@include controls.split-toggle(24px);
+							display: flex;
+							align-items: center;
+							justify-content: center;
 							width: 48px;
+							height: 48px;
+							padding: 0;
+							border: none;
+							background: var(--ov-primary-action-color);
+							color: var(--ov-text-primary-color);
+							border-radius: 16px;
+							cursor: pointer;
+
+							&:disabled {
+								background: var(--ov-disabled-background);
+								color: var(--ov-text-disabled-color);
+								cursor: not-allowed;
+							}
+
+							&:focus-visible {
+								@include controls.focus-ring();
+							}
+
+							mat-icon {
+								@include controls.icon(22px);
+								margin: 0;
+							}
 						}
 					}
 				}

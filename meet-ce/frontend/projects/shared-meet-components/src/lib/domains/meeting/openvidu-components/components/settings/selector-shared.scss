@@ -270,30 +270,36 @@
 	}
 }
 
-// The prejoin's device controls are Material 3 split buttons: a toggle and a menu button side by side,
-// tonal, with fully rounded outer corners and small inner ones.
+// The frame of the prejoin's device controls: a rounded dark frame that holds a raised toggle and,
+// beside it, a flat menu button. The elevation difference separates the two, with no divider line.
 @mixin split-frame() {
 	display: flex;
 	align-items: center;
 	gap: 2px;
+	height: 52px;
+	padding: 4px;
+	box-sizing: border-box;
+	border-radius: 14px;
+	background: color-mix(in srgb, var(--ov-surface-color) 93%, transparent);
+	border: 1px solid var(--ov-border-color);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
-@mixin split-segment() {
+@mixin split-toggle() {
+	position: relative;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	flex-shrink: 0;
-	height: 48px;
+	width: 44px;
+	height: 42px;
 	padding: 0;
 	border: none;
+	border-radius: 10px;
+	overflow: hidden;
 	background: var(--ov-primary-action-color);
 	color: var(--ov-text-primary-color);
 	cursor: pointer;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-
-	&:hover:not(:disabled) {
-		background: color-mix(in srgb, var(--ov-primary-action-color), var(--ov-text-primary-color) 10%);
-	}
 
 	&:disabled {
 		cursor: default;
@@ -306,21 +312,9 @@
 
 	mat-icon {
 		@include icon(22px);
+		position: relative;
 		margin: 0;
 		color: inherit;
-	}
-}
-
-@mixin split-toggle($radius: 24px 4px 4px 24px) {
-	@include split-segment();
-	position: relative;
-	width: 56px;
-	border-radius: $radius;
-	overflow: hidden;
-	z-index: 0;
-
-	mat-icon {
-		position: relative;
 	}
 }
 
@@ -334,17 +328,40 @@
 			&.device-disabled {
 				background: #d93025;
 				color: #ffffff;
-
-				&:hover:not(:disabled) {
-					background: color-mix(in srgb, #d93025, #ffffff 10%);
-				}
 			}
 		}
 
 		.dropdown-section {
-			@include split-segment();
-			width: 36px;
-			border-radius: 4px 24px 24px 4px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 28px;
+			height: 42px;
+			padding: 0;
+			border: none;
+			border-radius: 0 10px 10px 0;
+			background: transparent;
+			color: var(--ov-text-secondary-color);
+			cursor: pointer;
+
+			&:hover:not(:disabled) {
+				background: color-mix(in srgb, var(--ov-text-primary-color) 10%, transparent);
+				color: var(--ov-text-primary-color);
+			}
+
+			&:disabled {
+				cursor: default;
+				opacity: 0.5;
+			}
+
+			&:focus-visible {
+				@include focus-ring();
+			}
+
+			mat-icon {
+				@include icon(20px);
+				margin: 0;
+			}
 		}
 	}
 
