@@ -112,6 +112,8 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - A room member token issued before its participant was demoted through
   [`participantRoleUpdate`][3.10-participant-role-update] or `participantUpdateRole` stayed valid until it expired,
   so they kept their moderator permissions. It is now rejected.
+- A room member token held by a participant kicked through [`participantKick`][3.10-participant-kick] or the embedded
+  command of the same name stayed valid for up to 2 hours, so they could reconnect with it. It is now rejected.
 - `refreshRoomMemberToken` renewed room member tokens without the checks that invalidate them after a change of the
   room's roles or access, of the member's permissions or of the user's role, or the deletion of the member or the
   user. It now applies them, and the meeting renews a refused token with the
@@ -458,6 +460,7 @@ registered on both receives it twice.
 - The `openvidu/openvidu-meet` Docker image resolved its dependencies anew on every build instead of installing the versions in the lockfile. It now installs the locked versions.
 
 [3.10-create-user]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/createUser
+[3.10-participant-kick]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantKick
 [3.10-participant-role-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantRoleChangedWebhook
 [3.10-participant-role-update]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantRoleUpdate
 [3.10-update-room-status]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/updateRoomStatus
