@@ -21,7 +21,7 @@ None.
 
 ## Impact
 
-- Meeting UI: the device setup screen's device controls, designed on the canvas https://claude.ai/artifact/SUGwB3GV8XhJsShM6sodvg. New accessible names (choose camera, choose microphone, picking up sound) in every locale.
+- Meeting UI: the device setup screen's device controls. New accessible names (choose camera, choose microphone, picking up sound) in every locale.
 - REST API, webhooks, embedded API, console UI, deployment: not affected.
 - CE extension seams: none needed; the button stays a library component.
 - openvidu.io: no page changes.
