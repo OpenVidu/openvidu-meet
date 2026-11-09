@@ -77,7 +77,12 @@ RUN pnpm --config.inject-workspace-packages=true --filter @openvidu-meet/backend
 # ====================================================
 FROM node:24-alpine AS production
 
-RUN apk add --no-cache tzdata
+# Alpine fixes published after the base image was built; npm, npx, corepack and yarn are not needed to run the
+# backend, which the entrypoint starts with node.
+RUN apk upgrade --no-cache \
+    && apk add --no-cache tzdata \
+    && rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+        /usr/local/bin/yarn /usr/local/bin/yarnpkg /opt/yarn-*
 
 WORKDIR /opt/openvidu-meet
 
