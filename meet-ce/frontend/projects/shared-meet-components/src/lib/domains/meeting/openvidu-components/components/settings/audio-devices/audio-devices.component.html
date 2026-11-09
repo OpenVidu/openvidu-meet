@@ -9,6 +9,7 @@
 					<button
 						class="toggle-section"
 						[disabled]="!hasAudioDevices() || microphoneStatusChanging()"
+						[class.device-enabled]="isMicrophoneEnabled()"
 						[class.device-disabled]="!isMicrophoneEnabled()"
 						[attr.aria-label]="
 							isPickingUpSound()

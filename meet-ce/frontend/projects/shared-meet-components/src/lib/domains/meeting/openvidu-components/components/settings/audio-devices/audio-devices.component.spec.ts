@@ -162,6 +162,16 @@ describe('AudioDevicesComponent', () => {
 			expect(fill()).toBeNull();
 		});
 
+		it('marks the toggle with the state of the microphone', () => {
+			expect(query('#microphone-button')?.classList).toContain('device-enabled');
+
+			localMedia.microphone.enabled.set(false);
+			fixture.detectChanges();
+
+			expect(query('#microphone-button')?.classList).toContain('device-disabled');
+			expect(query('#microphone-button')?.classList).not.toContain('device-enabled');
+		});
+
 		it('keeps the menu button, enabled, while the microphone is off', () => {
 			localMedia.microphone.enabled.set(false);
 			fixture.detectChanges();
