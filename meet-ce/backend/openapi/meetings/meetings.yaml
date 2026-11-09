@@ -182,6 +182,11 @@
             `404` and disconnects nobody.
 
 
+            The room member tokens issued to the participant until then stop working: a connection with one
+            is removed at once, in this meeting or the room's next, and the participant comes back by
+            obtaining a new token through their link.
+
+
             Requires the `participantKick` permission.
         tags:
             - OpenVidu Meet - Meetings

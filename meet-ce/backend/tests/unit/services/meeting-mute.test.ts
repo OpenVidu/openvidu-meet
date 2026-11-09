@@ -9,6 +9,7 @@ import type { LiveKitService } from '../../../src/services/livekit.service.js';
 import type { LoggerService } from '../../../src/services/logger.service.js';
 import { MeetingService } from '../../../src/services/meeting.service.js';
 import type { BroadcastService } from '../../../src/services/broadcast.service.js';
+import type { ParticipantTokenRevocationService } from '../../../src/services/participant-token-revocation.service.js';
 import type { MutexService } from '../../../src/services/mutex.service.js';
 import type { RecordingService } from '../../../src/services/recording.service.js';
 import type { RequestSessionService } from '../../../src/services/request-session.service.js';
@@ -63,6 +64,9 @@ describe('MeetingService mute', () => {
 		>;
 	};
 	let requestSessionService: { getParticipantIdentity: jest.Mock<() => string | undefined> };
+	let participantTokenRevocationService: {
+		revokeIssuedTokens: jest.Mock<(roomId: string, identity: string) => Promise<void>>;
+	};
 	let meetingService: MeetingService;
 
 	const mutedTrackSids = () => livekitService.mutePublishedTrack.mock.calls.map(([, , trackSid]) => trackSid);
@@ -77,6 +81,7 @@ describe('MeetingService mute', () => {
 		};
 		frontendEventService = { sendParticipantMediaMutedSignal: jest.fn(async () => {}) };
 		requestSessionService = { getParticipantIdentity: jest.fn(() => undefined as string | undefined) };
+		participantTokenRevocationService = { revokeIssuedTokens: jest.fn(async () => {}) };
 
 		meetingService = new MeetingService(
 			{ warn: () => {} } as unknown as LoggerService,
@@ -87,7 +92,8 @@ describe('MeetingService mute', () => {
 			{} as unknown as WebhookDispatcherService,
 			{} as unknown as MutexService,
 			{} as unknown as BroadcastService,
-			{} as unknown as RecordingService
+			{} as unknown as RecordingService,
+			participantTokenRevocationService as unknown as ParticipantTokenRevocationService
 		);
 	});
 
@@ -150,6 +156,25 @@ describe('MeetingService mute', () => {
 		expect(livekitService.deleteParticipant).toHaveBeenCalledWith(ROOM_ID, IDENTITY);
 	});
 
+	it('revokes the tokens of a kicked participant before disconnecting them', async () => {
+		livekitService.getParticipant.mockResolvedValue(speakerWith([microphone]));
+
+		await meetingService.kickParticipant(ROOM_ID, IDENTITY);
+
+		expect(participantTokenRevocationService.revokeIssuedTokens).toHaveBeenCalledWith(ROOM_ID, IDENTITY);
+		expect(participantTokenRevocationService.revokeIssuedTokens.mock.invocationCallOrder[0]).toBeLessThan(
+			livekitService.deleteParticipant.mock.invocationCallOrder[0]
+		);
+	});
+
+	it('does not disconnect a participant whose tokens could not be revoked', async () => {
+		livekitService.getParticipant.mockResolvedValue(speakerWith([microphone]));
+		participantTokenRevocationService.revokeIssuedTokens.mockRejectedValue(new Error('redis down'));
+
+		await expect(meetingService.kickParticipant(ROOM_ID, IDENTITY)).rejects.toThrow('redis down');
+		expect(livekitService.deleteParticipant).not.toHaveBeenCalled();
+	});
+
 	it('answers a kick of a recorder or an agent with a 404 and disconnects nobody', async () => {
 		livekitService.getParticipant.mockResolvedValue({
 			...speakerWith([]),
@@ -158,6 +183,7 @@ describe('MeetingService mute', () => {
 
 		await expect(meetingService.kickParticipant(ROOM_ID, IDENTITY)).rejects.toMatchObject({ statusCode: 404 });
 		expect(livekitService.deleteParticipant).not.toHaveBeenCalled();
+		expect(participantTokenRevocationService.revokeIssuedTokens).not.toHaveBeenCalled();
 	});
 
 	it('mutes everyone but the moderators', async () => {

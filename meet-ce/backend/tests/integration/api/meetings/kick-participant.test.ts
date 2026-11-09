@@ -1,10 +1,20 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import { MeetRecordingStatus } from '@openvidu-meet/typings';
+import { jwtDecode } from 'jwt-decode';
+import type { ClaimGrants } from 'livekit-server-sdk';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MeetParticipantHelper } from '../../../../src/helpers/participant.helper.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
-import { errorInsufficientPermissions, OpenViduMeetError } from '../../../../src/models/error.model.js';
-import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
+import {
+	errorInsufficientPermissions,
+	errorInvalidToken,
+	OpenViduMeetError
+} from '../../../../src/models/error.model.js';
+import {
+	disconnectFakeParticipants,
+	joinFakeParticipant,
+	joinFakeParticipantUntilRemoved
+} from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRooms,
 	generateRoomMemberToken,
@@ -57,24 +67,48 @@ describe('Meetings API Tests', () => {
 			);
 		});
 
-		it('should let a kicked participant join again with the same access', async () => {
-			const joinWithSpeakerLink = async () => {
+		describe('the tokens of a kicked participant', () => {
+			const generateSpeakerToken = async () => {
 				const token = await generateRoomMemberToken(roomData.room.roomId, {
 					secret: roomData.speakerSecret,
 					joinMeeting: true,
 					participantName: 'Kicked Speaker'
 				});
-				const { sub: identity } = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
-				await joinFakeParticipant(roomData.room.roomId, identity);
-				return identity as string;
+				const { sub, metadata } = jwtDecode<ClaimGrants>(token.replace(/^Bearer\s+/i, ''));
+				return { token, identity: sub!, metadata: metadata! };
 			};
 
-			const kickedIdentity = await joinWithSpeakerLink();
-			const response = await kickParticipant(roomData.room.roomId, kickedIdentity, roomData.moderatorToken);
-			expect(response.status).toBe(200);
+			const joinAndKickSpeaker = async () => {
+				const held = await generateSpeakerToken();
+				await joinFakeParticipant(roomData.room.roomId, held.identity, held.metadata);
+				const response = await kickParticipant(roomData.room.roomId, held.identity, roomData.moderatorToken);
+				expect(response.status).toBe(200);
+				return held;
+			};
 
-			const rejoinedIdentity = await joinWithSpeakerLink();
-			expect(await livekitService.participantExists(roomData.room.roomId, rejoinedIdentity)).toBe(true);
+			it('should reject the token the participant held', async () => {
+				const held = await joinAndKickSpeaker();
+
+				const response = await kickParticipant(roomData.room.roomId, participantIdentity, held.token);
+				expectMeetError(response, errorInvalidToken());
+			});
+
+			it('should remove a session that reconnects with the token the participant held', async () => {
+				const held = await joinAndKickSpeaker();
+
+				await joinFakeParticipantUntilRemoved(roomData.room.roomId, held.identity, held.metadata);
+
+				expect(await livekitService.participantExists(roomData.room.roomId, held.identity)).toBe(false);
+			});
+
+			it('should let the participant join again with a new token from their link', async () => {
+				await joinAndKickSpeaker();
+
+				const renewed = await generateSpeakerToken();
+				await joinFakeParticipant(roomData.room.roomId, renewed.identity, renewed.metadata);
+
+				expect(await livekitService.participantExists(roomData.room.roomId, renewed.identity)).toBe(true);
+			});
 		});
 
 		it('should fail with 404 if participant does not exist', async () => {

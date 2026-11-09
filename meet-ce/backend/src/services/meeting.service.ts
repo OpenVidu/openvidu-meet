@@ -36,6 +36,7 @@ import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { MutexService } from './mutex.service.js';
+import { ParticipantTokenRevocationService } from './participant-token-revocation.service.js';
 import { RecordingService } from './recording.service.js';
 import { RequestSessionService } from './request-session.service.js';
 import { RoomService } from './room.service.js';
@@ -60,7 +61,9 @@ export class MeetingService {
 		@inject(WebhookDispatcherService) protected webhookDispatcherService: WebhookDispatcherService,
 		@inject(MutexService) protected mutexService: MutexService,
 		@inject(BroadcastService) protected broadcastService: BroadcastService,
-		@inject(RecordingService) protected recordingService: RecordingService
+		@inject(RecordingService) protected recordingService: RecordingService,
+		@inject(ParticipantTokenRevocationService)
+		protected participantTokenRevocationService: ParticipantTokenRevocationService
 	) {}
 
 	/**
@@ -122,7 +125,8 @@ export class MeetingService {
 	}
 
 	/**
-	 * Disconnects a participant from the meeting of a room.
+	 * Disconnects a participant from the meeting of a room and revokes the room member tokens issued to
+	 * them until now, so they come back only by obtaining a new one.
 	 *
 	 * @param roomId - The ID of the room
 	 * @param participantIdentity - The identity of the participant to kick
@@ -130,6 +134,7 @@ export class MeetingService {
 	 */
 	async kickParticipant(roomId: string, participantIdentity: string): Promise<void> {
 		await this.getStandardParticipant(roomId, participantIdentity);
+		await this.participantTokenRevocationService.revokeIssuedTokens(roomId, participantIdentity);
 		await this.livekitService.deleteParticipant(roomId, participantIdentity);
 	}
 
