@@ -35,7 +35,7 @@
 				width: 20px;
 				height: 20px;
 				box-sizing: border-box;
-				border: 2px solid #2d2d2d;
+				border: 2px solid var(--ov-surface-color);
 			}
 		}
 
@@ -46,7 +46,7 @@
 			bottom: 0;
 			height: 100%;
 			border-radius: 45% 45% 0 0 / 8px 8px 0 0;
-			background: rgba(92, 200, 222, 0.5);
+			background: rgba(0, 150, 180, 0.42);
 			transform-origin: bottom;
 			transition: transform 80ms linear;
 		}

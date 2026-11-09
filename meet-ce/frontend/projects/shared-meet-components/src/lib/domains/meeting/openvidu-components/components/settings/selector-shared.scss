@@ -280,8 +280,8 @@
 	padding: 4px;
 	box-sizing: border-box;
 	border-radius: 14px;
-	background: rgba(32, 33, 36, 0.93);
-	border: 1px solid rgba(255, 255, 255, 0.14);
+	background: color-mix(in srgb, var(--ov-surface-color) 93%, transparent);
+	border: 1px solid var(--ov-border-color);
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
@@ -329,8 +329,8 @@
 			@include split-toggle();
 
 			&.device-disabled {
-				background: var(--ov-error-color);
-				color: var(--ov-text-surface-color);
+				background: #d93025;
+				color: #ffffff;
 			}
 		}
 
@@ -344,12 +344,17 @@
 			border: none;
 			border-radius: 0 10px 10px 0;
 			background: transparent;
-			color: #c4c7c5;
+			color: var(--ov-text-secondary-color);
 			cursor: pointer;
 
 			&:hover:not(:disabled) {
-				background: rgba(255, 255, 255, 0.08);
-				color: #ffffff;
+				background: color-mix(in srgb, var(--ov-text-primary-color) 10%, transparent);
+				color: var(--ov-text-primary-color);
+			}
+
+			&:disabled {
+				cursor: default;
+				opacity: 0.5;
 			}
 
 			&:focus-visible {

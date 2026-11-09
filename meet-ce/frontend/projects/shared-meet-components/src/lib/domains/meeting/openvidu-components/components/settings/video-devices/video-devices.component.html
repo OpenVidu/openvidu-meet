@@ -19,17 +19,15 @@
 					</mat-icon>
 				</button>
 
-				@if (isCameraEnabled()) {
-					<button
-						id="video-dropdown"
-						class="dropdown-section"
-						[matMenuTriggerFor]="cameraMenu"
-						[disabled]="cameraStatusChanging()"
-						[attr.aria-label]="'DEVICES.CHOOSE_CAMERA' | translate"
-					>
-						<mat-icon>expand_more</mat-icon>
-					</button>
-				}
+				<button
+					id="video-dropdown"
+					class="dropdown-section"
+					[matMenuTriggerFor]="cameraMenu"
+					[disabled]="cameraStatusChanging() || cameras().length === 0"
+					[attr.aria-label]="'DEVICES.CHOOSE_CAMERA' | translate"
+				>
+					<mat-icon>expand_more</mat-icon>
+				</button>
 			</div>
 		} @else {
 			<!-- No Camera Available -->

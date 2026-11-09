@@ -162,6 +162,13 @@ describe('AudioDevicesComponent', () => {
 			expect(fill()).toBeNull();
 		});
 
+		it('keeps the menu button, enabled, while the microphone is off', () => {
+			localMedia.microphone.enabled.set(false);
+			fixture.detectChanges();
+
+			expect((query('#audio-dropdown') as HTMLButtonElement | null)?.disabled).toBeFalse();
+		});
+
 		it('shows no level while the system mutes the microphone', () => {
 			systemMuted.set(true);
 			fixture.detectChanges();

@@ -627,7 +627,7 @@ The meeting SHALL offer trying a device before applying it only where the browse
 - **AND** beside the camera selector the tab says that the others see the new camera as soon as it is picked
 
 ### Requirement: Device controls of the device setup screen
-On the device setup screen, the camera and the microphone SHALL each have a control made of two buttons inside one rounded frame: a button that turns the device on or off, raised above the frame, and a menu button beside it that opens the list of devices. The frame and the buttons SHALL keep the rounded corners of the current device buttons. The background effects button SHALL use the same frame with its single button.
+On the device setup screen, the camera and the microphone SHALL each have a control made of two buttons inside one rounded frame: a button that turns the device on or off, raised above the frame, and a menu button beside it that opens the list of devices. The background effects button SHALL use the same frame with its single button. The frame and its buttons SHALL follow the light and dark themes.
 
 #### Scenario: Turning the camera off
 - **GIVEN** a participant on the device setup screen with the camera on
@@ -639,8 +639,18 @@ On the device setup screen, the camera and the microphone SHALL each have a cont
 - **WHEN** they press the menu button beside the microphone
 - **THEN** the list of microphones opens and the microphone stays as it was
 
+#### Scenario: The menu button stays while the device is off
+- **GIVEN** a participant on the device setup screen
+- **WHEN** they turn the camera or the microphone off
+- **THEN** the menu button beside it stays in place and the control keeps its size
+
+#### Scenario: Choosing a microphone while it is off
+- **GIVEN** a participant on the device setup screen with the microphone off
+- **WHEN** they pick another microphone from the menu and then turn the microphone on
+- **THEN** the microphone turns on with the picked one
+
 ### Requirement: Microphone level on the device setup screen
-On the device setup screen, while the microphone is on, the microphone toggle SHALL show the live level of the selected microphone by filling its background from the bottom, rising and falling with the sound. The menu button SHALL never fill. A microphone that is off or muted by the system SHALL show no level; a microphone muted by the system SHALL keep the warning mark and warning of "Microphone muted by the system" on the toggle.
+On the device setup screen, while the microphone is on, the microphone toggle SHALL show the live level of the selected microphone by filling its background from the bottom, rising and falling with the sound, sensitively enough for the ambient noise of a quiet room to move it. The menu button SHALL never fill. A microphone that is off or muted by the system SHALL show no level; one muted by the system SHALL keep the warning mark and warning on the toggle.
 
 #### Scenario: Speaking into the microphone
 - **GIVEN** a participant on the device setup screen with the microphone on

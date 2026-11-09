@@ -2,8 +2,10 @@ import { signal } from '@angular/core';
 import type { LocalAudioTrack } from '../services/livekit';
 import { createAudioAnalyser } from '../services/livekit';
 
-// The reading that fills the level meter: loud, close speech.
-const FULL_LEVEL_RMS = 0.25;
+// The meter is logarithmic, like hearing: the ambient noise of a quiet room already moves it and loud,
+// close speech fills it.
+const SILENT_DB = -70;
+const FULL_DB = -20;
 // Level changes smaller than this do not show in the meter, so they do not wake whoever reads it:
 // background noise would otherwise re-render the meter on every sample.
 const LEVEL_CHANGE_THRESHOLD = 0.02;
@@ -19,7 +21,7 @@ const SAMPLE_INTERVAL_MS = 50;
 export class MicLevelMeter {
 	private readonly _level = signal(0, { equal: (a, b) => Math.abs(a - b) < LEVEL_CHANGE_THRESHOLD });
 	private readonly timer: ReturnType<typeof setInterval>;
-	private readonly buffer: Uint8Array<ArrayBuffer>;
+	private readonly buffer: Float32Array<ArrayBuffer>;
 	private readonly analyser: AnalyserNode;
 	private readonly cleanup: () => Promise<void>;
 	private readonly clone: MediaStreamTrack;
@@ -46,13 +48,16 @@ export class MicLevelMeter {
 			});
 			this.analyser = analyser;
 			this.cleanup = cleanup;
+			// A context created before any interaction with the page, as in an embedded prejoin, starts
+			// suspended and reads silence; the browser lets this request through at the first interaction.
+			(analyser.context as AudioContext).resume?.().catch(() => {});
 		} catch (error) {
 			this.clone.stop();
 			throw error;
 		}
 
-		// getByteTimeDomainData needs a buffer of fftSize samples, backed by a plain ArrayBuffer.
-		this.buffer = new Uint8Array(new ArrayBuffer(this.analyser.fftSize));
+		// getFloatTimeDomainData needs a buffer of fftSize samples, backed by a plain ArrayBuffer.
+		this.buffer = new Float32Array(new ArrayBuffer(this.analyser.fftSize * Float32Array.BYTES_PER_ELEMENT));
 		this.sample();
 		this.timer = setInterval(this.sample, SAMPLE_INTERVAL_MS);
 	}
@@ -67,17 +72,17 @@ export class MicLevelMeter {
 
 	private readonly sample = (): void => {
 		// Time-domain RMS: the real amplitude of the waveform, independent of the analyser's dB
-		// calibration. Samples are 0-255 centered on 128, so recenter to [-1, 1] first.
-		this.analyser.getByteTimeDomainData(this.buffer);
+		// calibration. Float samples, because 8-bit ones cannot tell a quiet room from silence.
+		this.analyser.getFloatTimeDomainData(this.buffer);
 		let sumSquares = 0;
 
 		for (const sample of this.buffer) {
-			const centered = (sample - 128) / 128;
-			sumSquares += centered * centered;
+			sumSquares += sample * sample;
 		}
 
 		const rms = Math.sqrt(sumSquares / this.buffer.length);
-		this._level.set(Math.min(1, rms / FULL_LEVEL_RMS));
+		const decibels = 20 * Math.log10(rms);
+		this._level.set(Math.min(1, Math.max(0, (decibels - SILENT_DB) / (FULL_DB - SILENT_DB))));
 		this.onSample?.(rms);
 	};
 }
