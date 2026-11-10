@@ -1,6 +1,6 @@
 /recordings/{recordingId}/link:
     get:
-        operationId: getRecordingLink
+        operationId: recordingLinkGet
         summary: Get what a recording link grants
         description: >
             Tells the recording view page whether the `recordingSecret` of the link it was opened with plays and
