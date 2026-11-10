@@ -1,4 +1,5 @@
 import { MeetRecordingEncodingPreset, MeetRecordingLayout } from '@openvidu-meet/typings';
+import { uid as secureUid } from 'uid/secure';
 import { MEET_ENV } from '../environment.js';
 import type { SchemaMigrationMap, SchemaTransform } from '../models/migration.model.js';
 import { generateSchemaMigrationName } from '../models/migration.model.js';
@@ -7,6 +8,7 @@ import { meetRecordingCollectionName } from '../models/mongoose-schemas/recordin
 
 const recordingMigrationV1ToV2Name = generateSchemaMigrationName(meetRecordingCollectionName, 1, 2);
 const recordingMigrationV2ToV3Name = generateSchemaMigrationName(meetRecordingCollectionName, 2, 3);
+const recordingMigrationV3ToV4Name = generateSchemaMigrationName(meetRecordingCollectionName, 3, 4);
 
 const recordingMigrationV1ToV2Transform: SchemaTransform<MeetRecordingDocument> = (recording) => {
 	recording.layout = MeetRecordingLayout.GRID;
@@ -20,11 +22,18 @@ const recordingMigrationV2ToV3Transform: SchemaTransform<MeetRecordingDocument> 
 	return recording;
 };
 
+const recordingMigrationV3ToV4Transform: SchemaTransform<MeetRecordingDocument> = (recording) => {
+	recording.accessSecrets.publicPlay = secureUid(10);
+	recording.accessSecrets.privatePlay = secureUid(10);
+	return recording;
+};
+
 /**
  * Schema migrations for MeetRecording.
  * Key format: schema_{collection}_v{from}_to_v{to}
  */
 export const recordingMigrations: SchemaMigrationMap<MeetRecordingDocument> = new Map([
 	[recordingMigrationV1ToV2Name, recordingMigrationV1ToV2Transform],
-	[recordingMigrationV2ToV3Name, recordingMigrationV2ToV3Transform]
+	[recordingMigrationV2ToV3Name, recordingMigrationV2ToV3Transform],
+	[recordingMigrationV3ToV4Name, recordingMigrationV3ToV4Transform]
 ]);

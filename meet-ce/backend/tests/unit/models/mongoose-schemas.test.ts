@@ -137,7 +137,9 @@ const recordingPaths = {
 	error: 'String',
 	details: 'String',
 	'accessSecrets.public': 'String required',
-	'accessSecrets.private': 'String required'
+	'accessSecrets.private': 'String required',
+	'accessSecrets.publicPlay': 'String required',
+	'accessSecrets.privatePlay': 'String required'
 };
 
 const userPaths = {

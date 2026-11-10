@@ -3,6 +3,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { mergeFieldsHeaderIntoQuery } from '../../models/zod-schemas/field-selection.schema.js';
 import {
 	BulkDeleteRecordingsReqSchema,
+	GetRecordingLinkReqSchema,
 	GetRecordingMediaReqSchema,
 	GetRecordingReqSchema,
 	GetRecordingUrlReqSchema,
@@ -145,5 +146,20 @@ export const validateGetRecordingUrlReq = (req: Request, res: Response, next: Ne
 
 	req.params.recordingId = data.params.recordingId;
 	res.locals.validatedQuery = { privateAccess: data.query.privateAccess };
+	next();
+};
+
+export const validateGetRecordingLinkReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = GetRecordingLinkReqSchema.safeParse({
+		params: req.params,
+		query: req.query
+	});
+
+	if (!success) {
+		return rejectUnprocessableRequest(res, error);
+	}
+
+	req.params.recordingId = data.params.recordingId;
+	req.query.recordingSecret = data.query.recordingSecret;
 	next();
 };

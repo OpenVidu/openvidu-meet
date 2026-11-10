@@ -34,6 +34,7 @@ import { MeetLock } from '../helpers/redis.helper.js';
 import {
 	errorAnonymousAccessDisabled,
 	errorInsufficientPermissions,
+	errorInvalidRecordingSecret,
 	errorRecordingAlreadyStarted,
 	errorRecordingAlreadyStopped,
 	errorRecordingAutoStartDisabled,
@@ -45,6 +46,7 @@ import {
 	errorRoomNotFound,
 	OpenViduMeetError
 } from '../models/error.model.js';
+import type { MeetRecordingAccessSecrets } from '../models/mongoose-schemas/recording.schema.js';
 import type { RedisLock } from '../models/redis-lock.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
@@ -613,12 +615,10 @@ export class RecordingService {
 	 * Retrieves the access secrets for a specific recording.
 	 *
 	 * @param recordingId - The unique identifier of the recording
-	 * @returns A promise that resolves to an object containing the public and private access secrets
+	 * @returns A promise that resolves to the recording's four access secrets
 	 * @throws Will throw an error if the recording is not found
 	 */
-	async getRecordingAccessSecrets(
-		recordingId: string
-	): Promise<{ publicAccessSecret: string; privateAccessSecret: string }> {
+	protected async getRecordingAccessSecrets(recordingId: string): Promise<MeetRecordingAccessSecrets> {
 		const recordingSecrets = await this.recordingRepository.findAccessSecretsByRecordingId(recordingId);
 
 		if (!recordingSecrets) {
@@ -629,14 +629,42 @@ export class RecordingService {
 	}
 
 	/**
+	 * Tells what a recording secret grants: the scope of the link (public or private) and whether it
+	 * downloads the recording or only plays it.
+	 *
+	 * @throws Will throw an error if the recording is not found or the secret is not one of its secrets
+	 */
+	async getRecordingSecretGrant(
+		recordingId: string,
+		recordingSecret: string
+	): Promise<{ scope: 'public' | 'private'; download: boolean }> {
+		const secrets = await this.getRecordingAccessSecrets(recordingId);
+
+		switch (recordingSecret) {
+			case secrets.public:
+				return { scope: 'public', download: true };
+			case secrets.publicPlay:
+				return { scope: 'public', download: false };
+			case secrets.private:
+				return { scope: 'private', download: true };
+			case secrets.privatePlay:
+				return { scope: 'private', download: false };
+			default:
+				throw errorInvalidRecordingSecret(recordingId);
+		}
+	}
+
+	/**
 	 * Generates a recording access URL.
 	 *
 	 * Public URLs are only generated when anonymous recording access is enabled in the room config.
 	 * Private URLs are always allowed and require authenticated access when used.
+	 * The link downloads the recording only when the caller holds `recordingDownload`; otherwise it only plays it.
 	 */
 	async generateRecordingUrl(recordingId: string, privateAccess: boolean): Promise<string> {
 		const { roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
 		const recordingSecrets = await this.getRecordingAccessSecrets(recordingId);
+		const { recordingDownload } = await this.roomAccessService.getAuthenticatedRoomMemberPermissions(roomId);
 
 		if (!privateAccess) {
 			const { access } = await this.getRoom(roomId, ['access']);
@@ -646,7 +674,8 @@ export class RecordingService {
 			}
 		}
 
-		const secret = privateAccess ? recordingSecrets.privateAccessSecret : recordingSecrets.publicAccessSecret;
+		const scope = privateAccess ? 'private' : 'public';
+		const secret = recordingSecrets[recordingDownload ? scope : (`${scope}Play` as const)];
 		return `${getBaseUrl()}/recording/${recordingId}?recordingSecret=${secret}`;
 	}
 

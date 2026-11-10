@@ -20,6 +20,7 @@ import {
 } from '../middlewares/recording.middleware.js';
 import {
 	validateBulkDeleteRecordingsReq,
+	validateGetRecordingLinkReq,
 	validateGetRecordingMediaReq,
 	validateGetRecordingReq,
 	validateGetRecordingsReq,
@@ -79,7 +80,7 @@ recordingRouter.get(
 recordingRouter.get(
 	'/:recordingId',
 	validateGetRecordingReq,
-	setupRecordingAuthentication,
+	setupRecordingAuthentication('recordingPlay'),
 	authorizeRecordingAccess('recordingPlay', true),
 	recordingCtrl.getRecording
 );
@@ -104,7 +105,7 @@ recordingRouter.post(
 recordingRouter.get(
 	'/:recordingId/media',
 	validateGetRecordingMediaReq,
-	setupRecordingAuthentication,
+	setupRecordingAuthentication('recordingPlay'),
 	authorizeRecordingAccess('recordingPlay', true),
 	recordingCtrl.getRecordingMedia
 );
@@ -113,7 +114,7 @@ recordingRouter.get(
 recordingRouter.get(
 	'/:recordingId/download',
 	validateGetRecordingMediaReq,
-	setupRecordingAuthentication,
+	setupRecordingAuthentication('recordingDownload'),
 	authorizeRecordingAccess('recordingDownload', true),
 	recordingCtrl.downloadRecordingMedia
 );
@@ -127,4 +128,19 @@ recordingRouter.get(
 	validateGetRecordingUrlReq,
 	authorizeRecordingAccess('recordingPlay'),
 	recordingCtrl.getRecordingUrl
+);
+
+// Internal recording routes
+export const internalRecordingRouter: Router = Router();
+internalRecordingRouter.use(bodyParser.urlencoded({ extended: true }));
+internalRecordingRouter.use(bodyParser.json());
+internalRecordingRouter.use(apiLimiter);
+
+// Tells the recording view page whether the link it was opened with downloads or only plays.
+internalRecordingRouter.get(
+	'/:recordingId/link',
+	validateGetRecordingLinkReq,
+	setupRecordingAuthentication('recordingPlay'),
+	authorizeRecordingAccess('recordingPlay', true),
+	recordingCtrl.getRecordingLink
 );

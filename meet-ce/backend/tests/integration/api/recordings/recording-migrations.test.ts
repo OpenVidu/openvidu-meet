@@ -53,6 +53,13 @@ const buildLegacyRecordingV2 = (recordingId: string) => ({
 	}
 });
 
+const buildLegacyRecordingV3 = (recordingId: string) => ({
+	...buildLegacyRecordingV2(recordingId),
+	schemaVersion: 3,
+	roomOwner: MEET_ENV.INITIAL_ADMIN_USER,
+	roomUserAccess: false
+});
+
 /**
  * Single assertion function for migrated recording documents in integration tests.
  * This ensures all fields are validated consistently across test cases, and serves
@@ -78,7 +85,9 @@ const expectMigratedRecordingToCurrentVersion = (migratedRecording: Record<strin
 		roomUserAccess: false,
 		accessSecrets: {
 			public: 'public-secret',
-			private: 'private-secret'
+			private: 'private-secret',
+			publicPlay: expect.any(String),
+			privatePlay: expect.any(String)
 		}
 	});
 };
@@ -174,6 +183,26 @@ describe('Recording Schema Migrations', () => {
 		});
 	});
 
+	describe('Recording Migration Transforms v3 to v4', () => {
+		it('should add distinct play-only secrets to every recording and keep the other two', () => {
+			const migrationName = generateSchemaMigrationName(meetRecordingCollectionName, 3, 4);
+			const transform = recordingMigrations.get(migrationName);
+			expect(transform).toBeDefined();
+
+			const migrate = (recordingId: string) =>
+				transform!(buildLegacyRecordingV3(recordingId) as unknown as MeetRecordingDocument).accessSecrets;
+			const first = migrate('recording-a');
+			const second = migrate('recording-b');
+
+			expect(first).toMatchObject({ public: 'public-secret', private: 'private-secret' });
+			expect(first.publicPlay).toEqual(expect.any(String));
+			expect(first.privatePlay).toEqual(expect.any(String));
+			expect(new Set([first.public, first.private, first.publicPlay, first.privatePlay]).size).toBe(4);
+			expect(second.publicPlay).not.toBe(first.publicPlay);
+			expect(second.privatePlay).not.toBe(first.privatePlay);
+		});
+	});
+
 	describe('Recording Migration Integration', () => {
 		let migrationService: MigrationService;
 		const testRecordingIds: string[] = [];
@@ -193,7 +222,8 @@ describe('Recording Schema Migrations', () => {
 		 */
 		it.each([
 			{ fromVersion: 1, buildDocument: buildLegacyRecordingV1 },
-			{ fromVersion: 2, buildDocument: buildLegacyRecordingV2 }
+			{ fromVersion: 2, buildDocument: buildLegacyRecordingV2 },
+			{ fromVersion: 3, buildDocument: buildLegacyRecordingV3 }
 		])(
 			'should migrate a legacy recording document from v$fromVersion to current version',
 			async ({ buildDocument }) => {

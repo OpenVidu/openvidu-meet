@@ -7,6 +7,7 @@ import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { DocumentNotFoundError } from '../models/database.model.js';
 import { internalError } from '../models/error.model.js';
 import type {
+	MeetRecordingAccessSecrets,
 	MeetRecordingDocument,
 	MeetRecordingDocumentOnlyField
 } from '../models/mongoose-schemas/recording.schema.js';
@@ -84,7 +85,9 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 				room.access.user.enabled && room.roles.speaker.permissions.recordingList,
 			accessSecrets: {
 				public: secureUid(10),
-				private: secureUid(10)
+				private: secureUid(10),
+				publicPlay: secureUid(10),
+				privatePlay: secureUid(10)
 			},
 			schemaVersion: INTERNAL_CONFIG.RECORDING_SCHEMA_VERSION
 		};
@@ -306,21 +309,11 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * This is the only method that returns the access secrets.
 	 *
 	 * @param recordingId - The ID of the recording
-	 * @returns Object with public and private secrets, or null if not found
+	 * @returns The recording's four secrets, or null if not found
 	 */
-	async findAccessSecretsByRecordingId(
-		recordingId: string
-	): Promise<{ publicAccessSecret: string; privateAccessSecret: string } | null> {
-		const result = await this.model.findOne({ recordingId }).select({ _id: 0, accessSecrets: 1 }).exec();
-
-		if (!result || !result.accessSecrets) {
-			return null;
-		}
-
-		return {
-			publicAccessSecret: result.accessSecrets.public,
-			privateAccessSecret: result.accessSecrets.private
-		};
+	async findAccessSecretsByRecordingId(recordingId: string): Promise<MeetRecordingAccessSecrets | null> {
+		const result = await this.model.findOne({ recordingId }).select({ _id: 0, accessSecrets: 1 }).lean().exec();
+		return result?.accessSecrets ?? null;
 	}
 
 	/**
