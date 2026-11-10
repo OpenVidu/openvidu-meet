@@ -1,5 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
+import type { MeetRoom, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import type { Room } from 'livekit-server-sdk';
+import { MeetRoomMemberHelper } from '../../../src/helpers/room-member.helper.js';
 import { MeetRoomHelper } from '../../../src/helpers/room.helper.js';
 
 describe('MeetRoomHelper.meetingRemainingMs', () => {
@@ -64,20 +66,170 @@ describe('MeetRoomHelper.sanitizeRoomId', () => {
 	});
 });
 
-describe('MeetRoomHelper field stripping', () => {
-	const deleteFieldByPath = (entity: Record<string, unknown>, path: string) =>
-		(
-			MeetRoomHelper as unknown as {
-				deleteFieldByPath: (entity: Record<string, unknown>, path: string) => void;
-			}
-		).deleteFieldByPath(entity, path);
+describe('MeetRoomHelper anonymous link disclosure', () => {
+	const moderatorPermissions = MeetRoomMemberHelper.allPermissions();
+	const speakerPermissions: MeetRoomMemberPermissions = {
+		...MeetRoomMemberHelper.noPermissions(),
+		recordingList: true,
+		recordingPlay: true,
+		recordingDownload: true,
+		meetingJoin: true,
+		meetingRead: true,
+		participantReactionSend: true,
+		mediaPublishVideo: true,
+		mediaPublishAudio: true,
+		mediaShareScreen: true,
+		chatRead: true,
+		chatWrite: true,
+		mediaChangeVirtualBackground: true
+	};
+	const room = (): Partial<MeetRoom> => ({
+		roomId: 'room-1',
+		roles: {
+			moderator: { permissions: moderatorPermissions },
+			speaker: { permissions: speakerPermissions }
+		},
+		access: {
+			anonymous: {
+				moderator: { enabled: true, url: '/room/room-1?secret=mod' },
+				speaker: { enabled: true, url: '/room/room-1?secret=spk' },
+				recording: { enabled: false, url: '/room/room-1/recordings?secret=rec' }
+			},
+			user: { enabled: true, url: '/room/room-1' }
+		}
+	});
+	const linksReturnedTo = (permissions: MeetRoomMemberPermissions, filteredRoom = room()) => {
+		const { anonymous } = MeetRoomHelper.applyPermissionFiltering(filteredRoom, permissions).access!;
+		return (['moderator', 'speaker', 'recording'] as const).filter((link) => anonymous[link].url !== undefined);
+	};
 
-	it('leaves the prototype chain alone for a path that walks into it', () => {
-		const prototype = { secret: 'kept' };
-		const entity = Object.create(prototype) as Record<string, unknown>;
+	describe('grantsWithin', () => {
+		it('should accept a link that grants a subset of the holder permissions', () => {
+			expect(MeetRoomHelper.grantsWithin(speakerPermissions, moderatorPermissions)).toBe(true);
+			expect(MeetRoomHelper.grantsWithin(speakerPermissions, speakerPermissions)).toBe(true);
+		});
 
-		deleteFieldByPath(entity, '__proto__.secret');
+		it('should refuse a link that grants a permission the holder lacks', () => {
+			expect(MeetRoomHelper.grantsWithin(moderatorPermissions, speakerPermissions)).toBe(false);
+			expect(MeetRoomHelper.grantsWithin(speakerPermissions, { ...speakerPermissions, chatWrite: false })).toBe(
+				false
+			);
+		});
 
-		expect(prototype.secret).toBe('kept');
+		it('should refuse a link whose permission is missing from the holder set', () => {
+			const { participantReactionSend: _omitted, ...holder } = speakerPermissions;
+
+			expect(MeetRoomHelper.grantsWithin(speakerPermissions, holder as MeetRoomMemberPermissions)).toBe(false);
+		});
+
+		it('should accept any link for a holder of every permission', () => {
+			expect(MeetRoomHelper.grantsWithin(moderatorPermissions, MeetRoomMemberHelper.allPermissions())).toBe(true);
+		});
+	});
+
+	describe('applyPermissionFiltering', () => {
+		it('should return the three links to the default moderator', () => {
+			expect(linksReturnedTo(moderatorPermissions)).toEqual(['moderator', 'speaker', 'recording']);
+		});
+
+		it('should return every link to a holder of every permission', () => {
+			expect(linksReturnedTo(MeetRoomMemberHelper.allPermissions())).toEqual([
+				'moderator',
+				'speaker',
+				'recording'
+			]);
+		});
+
+		it('should return no link without roomShareAccessLinks', () => {
+			expect(linksReturnedTo(speakerPermissions)).toEqual([]);
+			expect(linksReturnedTo({ ...moderatorPermissions, roomShareAccessLinks: false })).toEqual([]);
+		});
+
+		it('should return the speaker and recordings links, not the moderator one, to a speaker allowed to share', () => {
+			expect(linksReturnedTo({ ...speakerPermissions, roomShareAccessLinks: true })).toEqual([
+				'speaker',
+				'recording'
+			]);
+		});
+
+		it('should drop the moderator link for a moderator member denied one of its permissions', () => {
+			expect(linksReturnedTo({ ...moderatorPermissions, participantKick: false })).toEqual([
+				'speaker',
+				'recording'
+			]);
+		});
+
+		it('should drop the speaker link for a holder below the speaker role', () => {
+			const holder = { ...speakerPermissions, roomShareAccessLinks: true, chatWrite: false };
+
+			expect(linksReturnedTo(holder)).toEqual(['recording']);
+		});
+
+		it('should drop the recordings link for a holder without every recording read permission', () => {
+			const holder = { ...moderatorPermissions, recordingDownload: false };
+
+			expect(linksReturnedTo(holder)).toEqual([]);
+		});
+
+		it('should drop the role links when the room carries no roles', () => {
+			const { roles: _roles, ...withoutRoles } = room();
+
+			expect(linksReturnedTo(moderatorPermissions, withoutRoles)).toEqual(['recording']);
+		});
+
+		it('should keep every enabled flag and the user access link', () => {
+			const { access } = MeetRoomHelper.applyPermissionFiltering(room(), MeetRoomMemberHelper.noPermissions());
+
+			expect(access).toEqual({
+				anonymous: { moderator: { enabled: true }, speaker: { enabled: true }, recording: { enabled: false } },
+				user: { enabled: true, url: '/room/room-1' }
+			});
+		});
+
+		it('should not change the room it filters', () => {
+			const original = room();
+
+			MeetRoomHelper.applyPermissionFiltering(original, MeetRoomMemberHelper.noPermissions(), ['roles']);
+
+			expect(original).toEqual(room());
+		});
+
+		it('should drop the fields read only for the filtering', () => {
+			const filtered = MeetRoomHelper.applyPermissionFiltering(room(), moderatorPermissions, ['roomId', 'roles']);
+
+			expect(filtered.roles).toBeUndefined();
+			expect(filtered.roomId).toBeUndefined();
+			expect(filtered.access!.anonymous.moderator.url).toBeDefined();
+		});
+
+		it('should leave a room projected without access unchanged', () => {
+			expect(MeetRoomHelper.applyPermissionFiltering({ roomName: 'r' }, moderatorPermissions)).toEqual({
+				roomName: 'r'
+			});
+		});
+	});
+
+	describe('shouldApplyPermissionFilteringForFields', () => {
+		it('should filter a full room or a projection that carries access', () => {
+			expect(MeetRoomHelper.shouldApplyPermissionFilteringForFields()).toBe(true);
+			expect(MeetRoomHelper.shouldApplyPermissionFilteringForFields(['roomName', 'access'])).toBe(true);
+		});
+
+		it('should not filter a projection without access', () => {
+			expect(MeetRoomHelper.shouldApplyPermissionFilteringForFields(['roomName', 'roles'])).toBe(false);
+		});
+	});
+
+	describe('addMissingFields', () => {
+		it('should add only the fields the projection lacks and report them', () => {
+			const fields: ('roomName' | 'roomId' | 'roles' | 'access')[] = ['roomName', 'roomId', 'access'];
+
+			expect(MeetRoomHelper.addMissingFields(fields, ['roomId', 'roles'])).toEqual(['roles']);
+			expect(fields).toEqual(['roomName', 'roomId', 'access', 'roles']);
+		});
+
+		it('should add nothing to a projection that already returns every field', () => {
+			expect(MeetRoomHelper.addMissingFields(undefined, ['roles'])).toEqual([]);
+		});
 	});
 });

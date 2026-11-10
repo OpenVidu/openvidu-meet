@@ -131,6 +131,9 @@ again gives the guest a link of the current form and a new `memberId`.
   worked as the `secret` of the guest's `accessUrl`, so anyone who saw it could get room member tokens as that guest.
   Guests added from this release get an `accessUrl` whose `secret` adds a random part to the `memberId`, and only
   that exact secret grants their access.
+- A room member holding `roomShareAccessLinks` received every anonymous link of the room from
+  [`getRoom`][3.10-get-room] and [`getRooms`][3.10-get-rooms], the moderator link included. Each link is now returned
+  only to a caller that also holds every permission it grants.
 - A request whose credentials could not be checked because MongoDB or Redis failed answered `401`. It now answers
   `500`.
 - A request whose path held a percent escape that does not decode, such as `/api/v1/rooms/%ZZ`, answered `500`. It
@@ -477,6 +480,8 @@ registered on both receives it twice.
 [3.10-participant-role-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantRoleChangedWebhook
 [3.10-participant-role-update]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantRoleUpdate
 [3.10-update-room-status]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/updateRoomStatus
+[3.10-get-room]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/getRoom
+[3.10-get-rooms]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/getRooms
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html
 [3.9-meetings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/meetingGet
 [3.9-webhooks-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/webhookList

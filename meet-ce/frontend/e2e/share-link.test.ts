@@ -124,6 +124,27 @@ test.describe('Share Link E2E Tests', () => {
 			await expectHidden(page, '#invite-panel');
 		});
 
+		test('should offer nothing to share when the speaker link grants a permission the member lacks', async ({
+			page
+		}) => {
+			const member = await createRoomMember(roomId, {
+				name: `member-${Date.now()}`,
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: { roomShareAccessLinks: true, chatWrite: false }
+			});
+
+			await openJoinScreen(page, member.accessUrl);
+			await expectHidden(page, 'ov-share-room-access-link');
+
+			await openMeeting(page, member.accessUrl);
+			await expectVisible(page, '#invite-overlay');
+			await expectHidden(page, '#invite-overlay .copy-url-btn');
+			await expectHidden(page, '#copy-speaker-link');
+
+			await toggleParticipantsPanel(page);
+			await expectHidden(page, '#invite-panel');
+		});
+
 		test('should hide the layout overlay when another participant joins the meeting', async ({ page, browser }) => {
 			const moderatorAccessUrl = await createMemberAccessUrl(true);
 			const speaker = await createRoomMember(roomId, {

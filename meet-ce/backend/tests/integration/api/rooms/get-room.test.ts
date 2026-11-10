@@ -13,8 +13,14 @@ import {
 	expectValidRoom,
 	expectValidRoomWithFields
 } from '../../../helpers/assertion-helpers.js';
-import { createRoom, deleteAllRooms, getRoom, startTestServer } from '../../../helpers/request-helpers.js';
-import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
+import {
+	createRoom,
+	deleteAllRooms,
+	generateRoomMemberToken,
+	getRoom,
+	startTestServer
+} from '../../../helpers/request-helpers.js';
 
 describe('Room API Tests', () => {
 	beforeAll(async () => {
@@ -140,21 +146,6 @@ describe('Room API Tests', () => {
 			});
 		});
 
-		it("should not include access.anonymous URLs when user doesn't have canShareAccessLinks permission", async () => {
-			const roomData = await setupSingleRoom();
-			const response = await getRoom(roomData.room.roomId, undefined, undefined, roomData.speakerToken);
-
-			expect(response.status).toBe(200);
-			expect(response.body.access).toBeDefined();
-			expect(response.body.access.anonymous).toBeDefined();
-			expect(response.body.access.anonymous.moderator).toBeDefined();
-			expect(response.body.access.anonymous.moderator.url).toBeUndefined();
-			expect(response.body.access.anonymous.speaker).toBeDefined();
-			expect(response.body.access.anonymous.speaker.url).toBeUndefined();
-			expect(response.body.access.anonymous.recording).toBeDefined();
-			expect(response.body.access.anonymous.recording.url).toBeUndefined();
-		});
-
 		it('should retrieve a room with encoding preset', async () => {
 			const createdRoom = await createRoom({
 				roomName: 'encoding-preset-test',
@@ -209,6 +200,90 @@ describe('Room API Tests', () => {
 			const response = await getRoom(fakeRoomId);
 			expect(response.status).toBe(404);
 			expect(response.body.message).toBe(`Room '${fakeRoomId}' does not exist`);
+		});
+	});
+
+	describe('Anonymous link disclosure', () => {
+		const anonymousUrls = (body: { access: { anonymous: Record<string, { url?: string }> } }) =>
+			Object.entries(body.access.anonymous)
+				.filter(([, link]) => link.url !== undefined)
+				.map(([name]) => name);
+
+		const tokensFor = async (options: Parameters<typeof createRoom>[0] = {}) => {
+			const room = await createRoom({ roomName: 'link-disclosure', ...options });
+			const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(room.access);
+			const [moderatorToken, speakerToken] = await Promise.all([
+				generateRoomMemberToken(room.roomId, { secret: moderatorSecret, joinMeeting: false }),
+				generateRoomMemberToken(room.roomId, { secret: speakerSecret, joinMeeting: false })
+			]);
+			return { room, moderatorToken, speakerToken };
+		};
+
+		it('should return no anonymous link to a speaker without roomShareAccessLinks', async () => {
+			const { room, speakerToken } = await tokensFor();
+
+			const response = await getRoom(room.roomId, undefined, undefined, speakerToken);
+
+			expect(response.status).toBe(200);
+			expect(anonymousUrls(response.body)).toEqual([]);
+			expect(response.body.access.user.url).toBeDefined();
+			expect(response.body.access.anonymous.moderator.enabled).toBe(true);
+		});
+
+		it('should return the three anonymous links to a moderator with the default permissions', async () => {
+			const { room, moderatorToken } = await tokensFor();
+
+			const response = await getRoom(room.roomId, undefined, undefined, moderatorToken);
+
+			expect(response.status).toBe(200);
+			expect(anonymousUrls(response.body)).toEqual(['moderator', 'speaker', 'recording']);
+		});
+
+		it('should not return the moderator link to a speaker allowed to share', async () => {
+			const { room, speakerToken } = await tokensFor({
+				roles: { speaker: { permissions: { roomShareAccessLinks: true } } }
+			});
+
+			const response = await getRoom(room.roomId, undefined, undefined, speakerToken);
+
+			expect(response.status).toBe(200);
+			expect(anonymousUrls(response.body)).toEqual(['speaker', 'recording']);
+		});
+
+		it('should not return the speaker link to a moderator whose role lacks a speaker permission', async () => {
+			const { room, moderatorToken } = await tokensFor({
+				roles: { moderator: { permissions: { chatWrite: false } } }
+			});
+
+			const response = await getRoom(room.roomId, undefined, undefined, moderatorToken);
+
+			expect(response.status).toBe(200);
+			expect(anonymousUrls(response.body)).toEqual(['moderator', 'recording']);
+		});
+
+		it('should return the three anonymous links to an API key', async () => {
+			const { room } = await tokensFor({
+				roles: { moderator: { permissions: { roomShareAccessLinks: false } } }
+			});
+
+			const response = await getRoom(room.roomId);
+
+			expect(response.status).toBe(200);
+			expect(anonymousUrls(response.body)).toEqual(['moderator', 'speaker', 'recording']);
+		});
+
+		it('should return the roles only when extraFields asks for them', async () => {
+			const { room, moderatorToken } = await tokensFor();
+
+			const byDefault = await getRoom(room.roomId, undefined, undefined, moderatorToken);
+			const accessOnly = await getRoom(room.roomId, 'access', undefined, moderatorToken);
+			const withRoles = await getRoom(room.roomId, undefined, 'roles', moderatorToken);
+
+			expect(byDefault.body.roles).toBeUndefined();
+			expect(accessOnly.body.roles).toBeUndefined();
+			expect(Object.keys(accessOnly.body).filter((key) => key !== '_extraFields')).toEqual(['access']);
+			expect(anonymousUrls(accessOnly.body)).toEqual(['moderator', 'speaker', 'recording']);
+			expect(withRoles.body.roles.moderator.permissions).toBeDefined();
 		});
 	});
 
