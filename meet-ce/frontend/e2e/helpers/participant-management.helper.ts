@@ -142,7 +142,7 @@ const joinParticipantInternal = async (
  * Launches a headless Chromium with fake media and joins the meeting.
  *
  * - When `accessUrl` is provided the participant navigates directly to it
- *   and sets its display name via the lobby input.
+ *   and sets its display name via the join screen input.
  * - Otherwise a room member is created via the API using `roomId`.
  */
 const joinHeadlessParticipant = async (
@@ -238,7 +238,7 @@ const disconnectFakeParticipant = async (roomId: string, identity: string): Prom
  * array of {@link ParticipantConfig} objects.
  *
  * - When `accessUrl` is provided every participant navigates to that URL and
- *   fills in the lobby name input. `baseRole` / `customPermissions` are ignored.
+ *   fills on the join screen name input. `baseRole` / `customPermissions` are ignored.
  * - Otherwise, a room member is created via the API for each participant.
  *
  * Unless `skipRemoteStreamCheck` is `true`, the function waits until every

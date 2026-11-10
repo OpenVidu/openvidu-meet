@@ -284,7 +284,7 @@ test.describe('Room wizard E2E Tests', () => {
 
 		await page.locator('#wizard-finish-btn').click();
 
-		// Creating redirects to the new room's lobby, which is where its id becomes readable.
+		// Creating redirects to the new room's join screen, which is where its id becomes readable.
 		await page.waitForURL(/\/room\/[^/?]+/);
 		const roomId = /\/room\/([^/?]+)/.exec(page.url())![1];
 		createdRoomIds.push(roomId);

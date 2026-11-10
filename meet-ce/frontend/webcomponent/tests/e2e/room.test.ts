@@ -442,7 +442,7 @@ test.describe('Room Features E2E Tests', () => {
 
 	// Share-access-link affordances are owned by the host application in BOTH
 	// embedded transports, so Meet hides them when running as a webcomponent OR
-	// inside an iframe and shows the waiting panel/overlay in their place. The
+	// inside an iframe and shows the invitation and the overlay without the link. The
 	// rest of this file is webcomponent-only by design; these parity checks run
 	// against each integration.
 	for (const integration of INTEGRATIONS) {
@@ -458,7 +458,7 @@ test.describe('Room Features E2E Tests', () => {
 				await leaveMeeting(page, { integration, role: 'moderator' });
 			});
 
-			test('does not render the share-room-access-link component in the lobby', async ({ page }) => {
+			test('does not render the share-room-access-link component on the join screen', async ({ page }) => {
 				const room = await createRoom({ config: { e2ee: { enabled: true } } });
 				createdRoomIds.push(room.roomId);
 				const accessUrl = room.access.anonymous.moderator.url;
@@ -473,28 +473,27 @@ test.describe('Room Features E2E Tests', () => {
 				await expect(meetLocator(page, integration, 'ov-share-room-access-link')).toHaveCount(0);
 			});
 
-			test('shows the waiting panel instead of the invite panel in the participants panel', async ({ page }) => {
-				// Join as moderator: in SPA this role would see the share/copy link panel,
-				// so it is the strongest check that the embedded mode replaces it.
+			test('shows the invitation without the link in the participants panel', async ({ page }) => {
+				// Join as moderator: in SPA this role would see the link in the invite panel,
+				// so it is the strongest check that the embedded mode leaves it out.
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 
 				await meetLocator(page, integration, '#participants-panel-btn').click();
 				await expect(meetLocator(page, integration, 'ov-participants-panel')).toBeVisible();
 
-				// Embedded mode replaces the share/copy link panel with the waiting panel
-				await expect(meetLocator(page, integration, '#waiting-panel')).toBeVisible();
+				await expect(meetLocator(page, integration, '#invite-without-link')).toBeVisible();
 				await expect(meetLocator(page, integration, '#invite-panel')).toHaveCount(0);
 
 				await leaveMeeting(page, { integration, role: 'moderator' });
 			});
 
-			test('shows the waiting overlay instead of the share link overlay when alone', async ({ page }) => {
-				// Moderator alone: in SPA this shows the share link overlay, so it is the
-				// strongest check that the embedded mode shows the waiting overlay instead.
+			test('shows the invite overlay without the link when alone', async ({ page }) => {
+				// Moderator alone: in SPA the overlay shows the link, so it is the
+				// strongest check that the embedded mode leaves it out.
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 
-				await expect(meetLocator(page, integration, '#waiting-overlay')).toBeVisible();
-				await expect(meetLocator(page, integration, '#share-link-overlay')).toHaveCount(0);
+				await expect(meetLocator(page, integration, '#invite-overlay')).toBeVisible();
+				await expect(meetLocator(page, integration, '#invite-overlay .copy-url-btn')).toHaveCount(0);
 
 				await leaveMeeting(page, { integration, role: 'moderator' });
 			});

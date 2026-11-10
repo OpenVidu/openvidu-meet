@@ -42,6 +42,23 @@
 		color: var(--ov-text-surface-color); // Use ov-components variable
 		margin: var(--ov-meet-spacing-sm);
 	}
+	&.without-link {
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-sm);
+
+		.room-access-url-badge-title,
+		.room-access-url-badge-subtitle {
+			margin: 0;
+		}
+
+		.room-access-url-badge-subtitle {
+			font-size: var(--ov-meet-font-size-sm);
+			font-weight: var(--ov-meet-font-weight-light);
+			opacity: 0.8;
+		}
+	}
+
 	.room-access-url-badge-container {
 		@include design-tokens.ov-flex-center;
 		@include design-tokens.ov-theme-transition;

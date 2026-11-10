@@ -18,7 +18,7 @@ import {
 	getRecordingShareUrl,
 	updateRoomRoles
 } from './helpers/meet-api.helper';
-import { openLobby } from './helpers/meeting-navigation.helper';
+import { openJoinScreen } from './helpers/meeting-navigation.helper';
 import {
 	openRecording,
 	openRoomRecordings,
@@ -30,10 +30,10 @@ import { expectRecordingViewShown, expectRoomRecordingsListShown, recordRoom } f
 /**
  * Access tests verify only that each individual can *reach* the expected view — the view is shown,
  * or the login form is shown when it should be (after which we log in and confirm the view). The
- * same set of access methods is exercised against several views (room lobby, recordings list,
+ * same set of access methods is exercised against several views (join screen, recordings list,
  * individual recording), which are reached through the same room URL: the recordings list and an
  * individual recording are opened by adding the `show-only-recordings` / `show-recording` query
- * params, so they inherit the room's access method. For the room lobby we also check the
+ * params, so they inherit the room's access method. For the join screen we also check the
  * participant-name input (value + editability). Permissions are covered in `permissions.test.ts`.
  */
 test.describe('Access E2E Tests', () => {
@@ -125,7 +125,7 @@ test.describe('Access E2E Tests', () => {
 		outcome: 'shown' | 'denied';
 		getUrl: () => string;
 		getUser?: () => ReadyUser;
-		/** Only used by the lobby view (the expected participant-name input state). */
+		/** Only used by the join screen view (the expected participant-name input state). */
 		getName?: () => NameExpect;
 		/** Temporarily remove canRetrieveRecordings from the room's speaker role for this test. */
 		gateSpeakerRetrieve?: boolean;
@@ -136,13 +136,13 @@ test.describe('Access E2E Tests', () => {
 		buildUrl: (url: string) => string;
 		/** Navigates without logging in and without waiting for the final view. */
 		navigate: (page: Page, url: string) => Promise<void>;
-		/** Asserts the expected view is shown (the name is only used by the lobby). */
+		/** Asserts the expected view is shown (the name is only used by the join screen). */
 		expectShown: (page: Page, name?: NameExpect) => Promise<void>;
 	};
 
-	const lobbyView: View = {
+	const joinScreenView: View = {
 		buildUrl: (url) => url,
-		navigate: (page, url) => openLobby(page, url, { checkNameInput: false }),
+		navigate: (page, url) => openJoinScreen(page, url, { checkNameInput: false }),
 		expectShown: (page, name) => expectNameInput(page, name!)
 	};
 
@@ -495,15 +495,15 @@ test.describe('Access E2E Tests', () => {
 		}
 	];
 
-	// ── Room lobby access ──────────────────────────────────────────────────────
+	// ── Join screen access ──────────────────────────────────────────────────────
 
-	test.describe('Room lobby access', () => {
-		runScenarios(lobbyView, accessScenarios);
+	test.describe('Join screen access', () => {
+		runScenarios(joinScreenView, accessScenarios);
 
 		test('another room entered in the same tab by its user access link asks to log in', async ({ page }) => {
 			const otherRoom = await createRoom();
 			createdRoomIds.push(otherRoom.roomId);
-			await openLobby(page, otherRoom.access.anonymous.speaker.url);
+			await openJoinScreen(page, otherRoom.access.anonymous.speaker.url);
 
 			await page.goto(room.access.user.url, { waitUntil: 'domcontentloaded' });
 

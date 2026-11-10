@@ -134,7 +134,7 @@ export class MeetingEntryService {
 		}
 
 		// Prefer the caller-supplied value (URL/input); otherwise restore the last one
-		// stored for this room so the lobby pre-fills it.
+		// stored for this room so the join screen pre-fills it.
 		if (e2eeKey) {
 			this.meetingContextService.setE2eeKey(e2eeKey, true);
 		} else {

@@ -1,8 +1,8 @@
-@if (showLobby()) {
-	<!-- Lobby phase (before joining meeting) -->
-	@if (lobbyState() === 'ready') {
-		<ov-meeting-lobby />
-	} @else if (lobbyState() === 'error') {
+@if (showJoin()) {
+	<!-- Join screen (before joining the meeting) -->
+	@if (joinState() === 'ready') {
+		<ov-meeting-join />
+	} @else if (joinState() === 'error') {
 		<div class="prejoin-loading-container">
 			<mat-icon>error</mat-icon>
 			<p class="prejoin-loading-text">{{ 'MEETING_PAGE.PREPARE_ERROR' | translate }}</p>
@@ -72,23 +72,26 @@
 		</ng-container>
 
 		<!-- Panel Before Local Participant: the invitation heads the panel because it is about the
-		     room, not about anyone in the list. Embedded mode leaves it out: there, link sharing is
-		     the host app's job. The raised hands strip follows, above your own row, because lowering
-		     every hand lowers yours too -->
+		     room, not about anyone in the list. The raised hands strip follows, above your own row,
+		     because lowering every hand lowers yours too -->
 		<div *ovParticipantPanelBeforeLocalParticipant>
-			@if (!isEmbeddedMode()) {
-				<ng-content select="ov-meeting-invite-panel" />
-			}
+			<ng-content select="ov-meeting-invite-panel" />
 			<ov-meeting-raised-hands-strip />
 		</div>
 
 		<!-- Panel After Local Participant: the panel-wide moderation strip heads the remote list,
 		     because it never touches your own devices, and takes itself out of the panel when there
-		     is nobody there to reach. In embedded mode, a wait notice takes its place while alone -->
+		     is nobody there to reach. Embedded, while alone, a note that others will appear here
+		     comes first -->
 		<div *ovParticipantPanelAfterLocalParticipant>
-			@if (isAlone() && isEmbeddedMode()) {
-				<div id="waiting-panel">
-					<ng-content select="ov-meeting-waiting-panel" />
+			@if (showInviteWithoutLink()) {
+				<div id="invite-without-link">
+					<ov-share-room-access-link
+						[title]="'INVITE_WITHOUT_LINK.TITLE' | translate"
+						[subtitle]="'INVITE_WITHOUT_LINK.PANEL_SUBTITLE' | translate"
+						titleSize="md"
+						titleWeight="semibold"
+					/>
 				</div>
 			}
 			<ng-content select="ov-meeting-participants-panel-actions" />

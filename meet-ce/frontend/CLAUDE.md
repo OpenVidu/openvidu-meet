@@ -54,7 +54,7 @@ matters (extract params → validate access → strip query params).
 `AppCeMeetingComponent` (library, `domains/meeting/pages/app-ce-meeting/`) is the pattern: it renders
 `<ov-meeting>` and content-projects the customization components from
 `domains/meeting/customization/` (toolbar buttons, leave button, more-options menu, invite panel,
-waiting panel, participant item, settings extensions, custom layout). PRO composes the same
+participant item, settings extensions, custom layout). PRO composes the same
 `<ov-meeting>` with its own set. So: put new in-call UI in a customization component and project it;
 don't hardcode it inside the meeting component.
 

@@ -11,7 +11,7 @@ import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
     styleUrl: './share-room-access-link.component.scss'
 })
 export class ShareRoomAccessLinkComponent {
-	roomAccessUrl = input.required<string>();
+	roomAccessUrl = input<string>();
 	// Undefined by default so the template can resolve the localized fallback reactively via the
 	// translate pipe (an imperative translate() here would capture the language loaded at construction
 	// and never react to lazy locale loads or language switches).

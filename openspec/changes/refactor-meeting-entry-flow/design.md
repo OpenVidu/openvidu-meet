@@ -43,7 +43,9 @@ Findings:
 | `MeetingLobbyService` | `MeetingJoinService` (the join screen's view model only, see D3) |
 | `LOBBY.*` translation keys | `JOIN.*`, in every locale |
 | `lobby` test ids and helper names | `join`, in the SPA and web component end-to-end tests and the testapp |
-| `MeetingWaitingPanelComponent` (`ov-meeting-waiting-panel`), its slot and `#waiting-panel` | `MeetingAlonePanelComponent` (`ov-meeting-alone-panel`), `#alone-panel`, in CE and PRO |
+| `MeetingWaitingPanelComponent` (`ov-meeting-waiting-panel`), its slot, `#waiting-panel` and `#waiting-overlay` | Removed, in CE and PRO: `MeetingComponent` shows the text without the link in the same place (`#invite-without-link`), and one layout overlay (`#invite-overlay`) shows the link where Meet shares it and the text without it otherwise |
+
+The waiting panel was the share link block without the link, in a slot of its own that CE and PRO filled with the same component. `ShareRoomAccessLinkComponent` now takes an optional link and shows only its title and subtitle without one; whoever shows it decides whether there is a link to share. Texts, positions and conditions stay.
 
 "Join screen" and "device setup screen" are the product names (`meeting-join`). After this, "lobby" and "waiting" in code mean only the waiting room. The renames land in their own pull request, before any logic moves, so the second pull request's diff shows only structure.
 

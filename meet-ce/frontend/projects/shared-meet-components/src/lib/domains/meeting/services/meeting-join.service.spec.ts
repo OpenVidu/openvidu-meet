@@ -15,7 +15,7 @@ import { RoomMemberContextService } from '../../room-members/services/room-membe
 import { RoomService } from '../../rooms/services/room.service';
 import { E2eeService } from '../openvidu-components/services/e2ee/e2ee.service';
 import { MeetingContextService } from './meeting-context.service';
-import { MeetingLobbyService } from './meeting-lobby.service';
+import { MeetingJoinService } from './meeting-join.service';
 import { RoomAccessLinkService } from './room-access-link.service';
 
 class LoggerServiceStub {
@@ -24,10 +24,10 @@ class LoggerServiceStub {
 	}
 }
 
-describe('MeetingLobbyService', () => {
+describe('MeetingJoinService', () => {
 	const ROOM_ID = 'room1';
 
-	let service: MeetingLobbyService;
+	let service: MeetingJoinService;
 	let roomService: jasmine.SpyObj<RoomService>;
 	let roomMemberContext: jasmine.SpyObj<RoomMemberContextService>;
 	let e2eeService: jasmine.SpyObj<E2eeService>;
@@ -85,7 +85,7 @@ describe('MeetingLobbyService', () => {
 
 		e2eeService = jasmine.createSpyObj<E2eeService>('E2eeService', ['setE2EEKey', 'encrypt']);
 		e2eeService.setE2EEKey.and.resolveTo(undefined);
-		// `encrypt` is overloaded (text and bytes); the lobby only ever encrypts the display name.
+		// `encrypt` is overloaded (text and bytes); the join screen only ever encrypts the display name.
 		e2eeService.encrypt.and.callFake((async (value: string) => `encrypted(${value})`) as E2eeService['encrypt']);
 
 		meetingContextStub = {
@@ -102,7 +102,7 @@ describe('MeetingLobbyService', () => {
 		TestBed.configureTestingModule({
 			providers: [
 				provideZonelessChangeDetection(),
-				MeetingLobbyService,
+				MeetingJoinService,
 				{ provide: LoggerService, useClass: LoggerServiceStub },
 				{ provide: RoomService, useValue: roomService },
 				{ provide: RoomMemberContextService, useValue: roomMemberContext },
@@ -123,10 +123,10 @@ describe('MeetingLobbyService', () => {
 			]
 		});
 
-		service = TestBed.inject(MeetingLobbyService);
+		service = TestBed.inject(MeetingJoinService);
 	});
 
-	async function enterLobby(name = 'Alice'): Promise<void> {
+	async function enterJoinScreen(name = 'Alice'): Promise<void> {
 		await service.initialize();
 		service.setParticipantName(name);
 	}
@@ -135,9 +135,9 @@ describe('MeetingLobbyService', () => {
 		return roomMemberContext.generateToken.calls.mostRecent().args[1];
 	}
 
-	// Everything the lobby screen renders comes from these computeds: the room's name, whether it
+	// Everything the join screen renders comes from these computeds: the room's name, whether it
 	// still accepts anyone, whether a key is needed, and the name and link fields.
-	describe('what the lobby shows', () => {
+	describe('what the join screen shows', () => {
 		it('exposes the room it loaded', async () => {
 			await service.initialize();
 
@@ -233,7 +233,7 @@ describe('MeetingLobbyService', () => {
 			expect(service.showShareLink()).toBeTrue();
 		});
 
-		it('refuses to open a lobby for no room', async () => {
+		it('refuses to open a join screen for no room', async () => {
 			meetingContextStub.roomId = () => '';
 
 			await expectAsync(service.initialize()).toBeRejected();
@@ -254,26 +254,26 @@ describe('MeetingLobbyService', () => {
 			embeddedMode = true;
 			signedIn = true;
 
-			expect(await backButtonAfterInit()).toBe('LOBBY.BACK');
+			expect(await backButtonAfterInit()).toBe('JOIN.BACK');
 		});
 
 		it('reads Back in an iframe for an anonymous participant', async () => {
 			embeddedMode = true;
 
-			expect(await backButtonAfterInit()).toBe('LOBBY.BACK');
+			expect(await backButtonAfterInit()).toBe('JOIN.BACK');
 		});
 
 		it('reads Back in an iframe with a leave redirect', async () => {
 			embeddedMode = true;
 			leaveRedirectUrl = 'https://example.com/left';
 
-			expect(await backButtonAfterInit()).toBe('LOBBY.BACK');
+			expect(await backButtonAfterInit()).toBe('JOIN.BACK');
 		});
 
 		it('goes back to the rooms of a signed-in user in the standalone app', async () => {
 			signedIn = true;
 
-			expect(await backButtonAfterInit()).toBe('LOBBY.BACK_TO_ROOMS');
+			expect(await backButtonAfterInit()).toBe('JOIN.BACK_TO_ROOMS');
 		});
 
 		it('is absent for an anonymous participant in the standalone app', async () => {
@@ -281,9 +281,9 @@ describe('MeetingLobbyService', () => {
 		});
 	});
 
-	describe('clearing the lobby', () => {
+	describe('getting past the join screen', () => {
 		it('grants access to the prejoin without minting a token', async () => {
-			await enterLobby();
+			await enterJoinScreen();
 			await service.submitAccess();
 
 			expect(service.accessGranted()).toBeTrue();
@@ -292,7 +292,7 @@ describe('MeetingLobbyService', () => {
 		});
 
 		it('loads the room config before granting access, so the prejoin opens the devices from it', async () => {
-			await enterLobby();
+			await enterJoinScreen();
 
 			let configLoaded = false;
 			roomService.loadRoomConfig.and.callFake(async () => {
@@ -306,7 +306,7 @@ describe('MeetingLobbyService', () => {
 		});
 
 		it('grants access even when the room config could not be loaded', async () => {
-			await enterLobby();
+			await enterJoinScreen();
 			roomService.loadRoomConfig.and.rejectWith(new Error('boom'));
 
 			await service.submitAccess();
@@ -315,7 +315,7 @@ describe('MeetingLobbyService', () => {
 		});
 
 		it('refuses an empty participant name', async () => {
-			await enterLobby('');
+			await enterJoinScreen('');
 
 			await expectAsync(service.submitAccess()).toBeRejected();
 			expect(service.accessGranted()).toBeFalse();
@@ -323,7 +323,7 @@ describe('MeetingLobbyService', () => {
 
 		it('refuses to grant access to an E2EE room with no key', async () => {
 			e2eeEnabled = true;
-			await enterLobby();
+			await enterJoinScreen();
 
 			await expectAsync(service.submitAccess()).toBeRejected();
 			expect(service.accessGranted()).toBeFalse();
@@ -331,8 +331,8 @@ describe('MeetingLobbyService', () => {
 	});
 
 	describe('committing to the join', () => {
-		it('mints a joining token for the name entered in the lobby', async () => {
-			await enterLobby();
+		it('mints a joining token for the name entered on the join screen', async () => {
+			await enterJoinScreen();
 			await service.submitAccess();
 
 			await expectAsync(service.generateJoinToken()).toBeResolvedTo('minted-token');
@@ -346,7 +346,7 @@ describe('MeetingLobbyService', () => {
 
 		it('encrypts the display name of an E2EE meeting before it reaches the token', async () => {
 			e2eeEnabled = true;
-			await enterLobby();
+			await enterJoinScreen();
 			service.setE2eeKey('passphrase');
 			await service.submitAccess();
 
@@ -357,7 +357,7 @@ describe('MeetingLobbyService', () => {
 		});
 
 		it('reports the failure to mint instead of leaving the caller with no token', async () => {
-			await enterLobby();
+			await enterJoinScreen();
 			await service.submitAccess();
 			roomMemberContext.generateToken.and.rejectWith({ status: 409, error: { message: 'Room is closed' } });
 
@@ -368,7 +368,7 @@ describe('MeetingLobbyService', () => {
 		it('shows the invalid participant data screen and logs the refused fields', async () => {
 			const redirect = spyOn(TestBed.inject(NavigationService), 'redirectToErrorPage');
 			const logError = spyOn(service['log'], 'e');
-			await enterLobby();
+			await enterJoinScreen();
 			await service.submitAccess();
 			roomMemberContext.generateToken.and.rejectWith(
 				new HttpErrorResponse({

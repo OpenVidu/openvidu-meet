@@ -238,7 +238,7 @@
 		"E2EE_ERROR_CONTENT": "Este participante está a utilizar uma chave de encriptação diferente. Não é possível apresentar o vídeo.",
 		"GENERIC": "Ocorreu um erro inesperado. Tente novamente."
 	},
-	"LOBBY": {
+	"JOIN": {
 		"E2EE_BADGE_TOOLTIP": "Encriptação ponto a ponto",
 		"E2EE_BADGE_TEXT": "As reuniões nesta sala têm encriptação ponto a ponto",
 		"JOIN_TITLE": "Entrar na reunião",
@@ -273,10 +273,10 @@
 		"TITLE": "Comece a colaborar",
 		"SUBTITLE": "Partilhe esta ligação para trazer outras pessoas para a reunião"
 	},
-	"WAITING_PANEL": {
+	"INVITE_WITHOUT_LINK": {
 		"TITLE": "À espera que outras pessoas entrem",
-		"SUBTITLE": "Os participantes aparecerão aqui assim que entrarem na reunião.",
-		"ALONE_SUBTITLE": "De momento, é a única pessoa aqui."
+		"PANEL_SUBTITLE": "Os participantes aparecerão aqui assim que entrarem na reunião.",
+		"OVERLAY_SUBTITLE": "De momento, é a única pessoa aqui."
 	},
 	"CAPTIONS": {
 		"ARIA_FROM": "Legenda de ",

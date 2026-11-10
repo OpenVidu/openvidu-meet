@@ -238,7 +238,7 @@
 		"E2EE_ERROR_CONTENT": "Questo partecipante sta utilizzando una chiave di crittografia diversa. Il video non può essere visualizzato.",
 		"GENERIC": "Si è verificato un errore imprevisto. Riprova."
 	},
-	"LOBBY": {
+	"JOIN": {
 		"E2EE_BADGE_TOOLTIP": "Crittografia end-to-end",
 		"E2EE_BADGE_TEXT": "Le riunioni in questa stanza sono crittografate end-to-end",
 		"JOIN_TITLE": "Partecipa alla riunione",
@@ -273,10 +273,10 @@
 		"TITLE": "Inizia a collaborare",
 		"SUBTITLE": "Condividi questo link per invitare altri alla riunione"
 	},
-	"WAITING_PANEL": {
+	"INVITE_WITHOUT_LINK": {
 		"TITLE": "In attesa che altri partecipino",
-		"SUBTITLE": "I partecipanti appariranno qui non appena si uniranno alla riunione.",
-		"ALONE_SUBTITLE": "Al momento sei l'unico qui."
+		"PANEL_SUBTITLE": "I partecipanti appariranno qui non appena si uniranno alla riunione.",
+		"OVERLAY_SUBTITLE": "Al momento sei l'unico qui."
 	},
 	"CAPTIONS": {
 		"ARIA_FROM": "Sottotitolo di ",
@@ -396,7 +396,7 @@
 		"PREPARING": "Preparazione della riunione in corso...",
 		"PREPARE_ERROR": "Impossibile preparare la riunione.",
 		"INIT_ERROR_TITLE": "Errore",
-		"INIT_ERROR_MESSAGE": "Si è verificato un errore durante l'inizializzazione della lobby della riunione. Riprova più tardi.",
+		"INIT_ERROR_MESSAGE": "Si è verificato un errore durante la preparazione della riunione. Riprova più tardi.",
 		"INIT_ERROR_CONFIRM": "OK"
 	},
 	"MIC_ALERT": {

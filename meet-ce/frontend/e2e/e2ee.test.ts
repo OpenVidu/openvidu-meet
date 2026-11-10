@@ -19,7 +19,7 @@ import {
 	createRoomMember,
 	deleteRooms
 } from './helpers/meet-api.helper';
-import { openLobby, openMeeting } from './helpers/meeting-navigation.helper';
+import { openJoinScreen, openMeeting } from './helpers/meeting-navigation.helper';
 import { openMoreOptionsMenu, toggleParticipantsPanel } from './helpers/panels.helper';
 import {
 	expectHandRaisedNotice,
@@ -47,11 +47,11 @@ test.describe('E2EE E2E Tests', () => {
 		await deleteRooms(createdRoomIds);
 	});
 
-	test.describe('E2EE Lobby Elements', () => {
-		test('should show E2EE key input and badge in lobby when E2EE is enabled', async ({ page }) => {
+	test.describe('E2EE join screen elements', () => {
+		test('should show E2EE key input and badge on the join screen when E2EE is enabled', async ({ page }) => {
 			const accessUrl = await createE2eeRoom();
 
-			await openLobby(page, accessUrl);
+			await openJoinScreen(page, accessUrl);
 
 			// Check for encryption badge with correct text
 			await expectVisible(page, '.encryption-badge');
@@ -63,10 +63,10 @@ test.describe('E2EE E2E Tests', () => {
 			await expect(page.locator('#participant-e2eekey-input')).toHaveAttribute('required', '');
 		});
 
-		test('should hide E2EE elements in lobby when E2EE is disabled', async ({ page }) => {
+		test('should hide E2EE elements on the join screen when E2EE is disabled', async ({ page }) => {
 			const accessUrl = await createE2eeRoom(false);
 
-			await openLobby(page, accessUrl);
+			await openJoinScreen(page, accessUrl);
 
 			await expectHidden(page, '.encryption-badge');
 			await expectHidden(page, '#participant-e2eekey-input');

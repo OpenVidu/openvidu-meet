@@ -238,7 +238,7 @@
 		"E2EE_ERROR_CONTENT": "Deze deelnemer gebruikt een andere beveiligingssleutel. Video kan niet worden weergegeven.",
 		"GENERIC": "Er is een onverwachte fout opgetreden. Probeer het opnieuw."
 	},
-	"LOBBY": {
+	"JOIN": {
 		"E2EE_BADGE_TOOLTIP": "End-to-end versleuteld",
 		"E2EE_BADGE_TEXT": "Meetings in deze kamer zijn end-to-end versleuteld",
 		"JOIN_TITLE": "Deelnemen aan meeting",
@@ -273,10 +273,10 @@
 		"TITLE": "Begin met samenwerken",
 		"SUBTITLE": "Deel deze link om anderen aan de meeting te laten deelnemen"
 	},
-	"WAITING_PANEL": {
+	"INVITE_WITHOUT_LINK": {
 		"TITLE": "Wachten tot anderen deelnemen",
-		"SUBTITLE": "Deelnemers verschijnen hier zodra ze deelnemen aan de meeting.",
-		"ALONE_SUBTITLE": "U bent op dit moment de enige hier."
+		"PANEL_SUBTITLE": "Deelnemers verschijnen hier zodra ze deelnemen aan de meeting.",
+		"OVERLAY_SUBTITLE": "U bent op dit moment de enige hier."
 	},
 	"CAPTIONS": {
 		"ARIA_FROM": "Ondertiteling van ",
@@ -396,7 +396,7 @@
 		"PREPARING": "Uw meeting voorbereiden...",
 		"PREPARE_ERROR": "Kan uw meeting niet voorbereiden.",
 		"INIT_ERROR_TITLE": "Fout",
-		"INIT_ERROR_MESSAGE": "Er is een fout opgetreden bij het initialiseren van de meetinglobby. Probeer het later opnieuw.",
+		"INIT_ERROR_MESSAGE": "Er is een fout opgetreden bij het voorbereiden van de meeting. Probeer het later opnieuw.",
 		"INIT_ERROR_CONFIRM": "OK"
 	},
 	"MIC_ALERT": {

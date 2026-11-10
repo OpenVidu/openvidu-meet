@@ -144,7 +144,7 @@ type OpenMeetingOptions = {
 
 /**
  * Mounts `<openvidu-meet>` with the role's anonymous-access URL fetched from the
- * REST API and drives the lobby until the media-setup (prejoin) screen renders,
+ * REST API and drives the join screen until the media-setup (prejoin) screen renders,
  * WITHOUT clicking "Join" — the room is not connected yet, so imperative commands
  * sent from this point on exercise the pre-connect path (`PrejoinTarget`, and the
  * iframe bridge's `isConnected()` guard). Returns the integration-scoped `meet`
@@ -211,7 +211,7 @@ export const openMeetingAtMediaSetup = async (
 
 	const meet = (selector: string) => meetLocator(page, integration, selector);
 
-	// The lobby screen renders a participant-name input. When the
+	// The join screen renders a participant-name input. When the
 	// `participant-name` attribute is supplied via applyConfig, the input is
 	// pre-filled and disabled — only the submit click is required to advance.
 	// Use `waitFor`, not `isVisible()` — the latter is a single-shot check

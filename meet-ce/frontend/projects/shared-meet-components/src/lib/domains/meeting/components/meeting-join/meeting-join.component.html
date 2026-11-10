@@ -6,9 +6,9 @@
 			<div class="room-info">
 				<h1 class="room-title">{{ roomName() }}</h1>
 				@if (isE2EEEnabled()) {
-					<span class="encryption-badge" [matTooltip]="'LOBBY.E2EE_BADGE_TOOLTIP' | translate">
+					<span class="encryption-badge" [matTooltip]="'JOIN.E2EE_BADGE_TOOLTIP' | translate">
 						<mat-icon class="badge-icon">lock</mat-icon>
-						{{ 'LOBBY.E2EE_BADGE_TEXT' | translate }}
+						{{ 'JOIN.E2EE_BADGE_TEXT' | translate }}
 					</span>
 				}
 			</div>
@@ -29,17 +29,17 @@
 					<div class="card-title-group">
 						<mat-card-title>{{
 							roomClosed()
-								? ('LOBBY.ROOM_CLOSED_TITLE' | translate)
+								? ('JOIN.ROOM_CLOSED_TITLE' | translate)
 								: !canJoinMeeting()
-									? ('LOBBY.ACCESS_RESTRICTED_TITLE' | translate)
-									: ('LOBBY.JOIN_TITLE' | translate)
+									? ('JOIN.ACCESS_RESTRICTED_TITLE' | translate)
+									: ('JOIN.JOIN_TITLE' | translate)
 						}}</mat-card-title>
 						<mat-card-subtitle>{{
 							roomClosed()
-								? ('LOBBY.ROOM_CLOSED_SUBTITLE' | translate)
+								? ('JOIN.ROOM_CLOSED_SUBTITLE' | translate)
 								: !canJoinMeeting()
-									? ('LOBBY.ACCESS_RESTRICTED_SUBTITLE' | translate)
-									: ('LOBBY.JOIN_SUBTITLE' | translate)
+									? ('JOIN.ACCESS_RESTRICTED_SUBTITLE' | translate)
+									: ('JOIN.JOIN_SUBTITLE' | translate)
 						}}</mat-card-subtitle>
 					</div>
 				</mat-card-header>
@@ -49,19 +49,19 @@
 						<form [formGroup]="participantForm()" (ngSubmit)="onFormSubmit()" class="join-form">
 							<!-- Participant Name Input -->
 							<mat-form-field appearance="outline" class="name-field">
-								<mat-label>{{ 'LOBBY.NAME_LABEL' | translate }}</mat-label>
+								<mat-label>{{ 'JOIN.NAME_LABEL' | translate }}</mat-label>
 								<input
 									id="participant-name-input"
 									matInput
-									[placeholder]="'LOBBY.NAME_PLACEHOLDER' | translate"
+									[placeholder]="'JOIN.NAME_PLACEHOLDER' | translate"
 									formControlName="name"
 									required
 								/>
 								<mat-icon matSuffix class="ov-action-icon">person</mat-icon>
 								@if (participantForm().get('name')?.hasError('required')) {
 									<mat-error
-										>{{ 'LOBBY.NAME_REQUIRED_PREFIX' | translate
-										}}<strong>{{ 'LOBBY.REQUIRED' | translate }}</strong></mat-error
+										>{{ 'JOIN.NAME_REQUIRED_PREFIX' | translate
+										}}<strong>{{ 'JOIN.REQUIRED' | translate }}</strong></mat-error
 									>
 								}
 							</mat-form-field>
@@ -69,23 +69,23 @@
 							<!-- E2EE Key Input (shown when E2EE is enabled and key is not pre-filled from URL) -->
 							@if (showE2EEKeyInput()) {
 								<mat-form-field appearance="outline" class="e2eekey-field fade-in">
-									<mat-label>{{ 'LOBBY.E2EE_KEY_LABEL' | translate }}</mat-label>
+									<mat-label>{{ 'JOIN.E2EE_KEY_LABEL' | translate }}</mat-label>
 									<input
 										id="participant-e2eekey-input"
 										matInput
 										type="password"
-										[placeholder]="'LOBBY.E2EE_KEY_PLACEHOLDER' | translate"
+										[placeholder]="'JOIN.E2EE_KEY_PLACEHOLDER' | translate"
 										formControlName="e2eeKey"
 										required
 									/>
 									<mat-icon matSuffix class="ov-action-icon">vpn_key</mat-icon>
 									@if (participantForm().get('e2eeKey')?.hasError('required')) {
 										<mat-error
-											>{{ 'LOBBY.E2EE_KEY_REQUIRED_PREFIX' | translate
-											}}<strong>{{ 'LOBBY.REQUIRED' | translate }}</strong></mat-error
+											>{{ 'JOIN.E2EE_KEY_REQUIRED_PREFIX' | translate
+											}}<strong>{{ 'JOIN.REQUIRED' | translate }}</strong></mat-error
 										>
 									}
-									<mat-hint>{{ 'LOBBY.E2EE_KEY_HINT' | translate }}</mat-hint>
+									<mat-hint>{{ 'JOIN.E2EE_KEY_HINT' | translate }}</mat-hint>
 								</mat-form-field>
 							}
 
@@ -97,18 +97,18 @@
 								class="join-button"
 								[disabled]="participantForm().invalid"
 							>
-								<span>{{ 'LOBBY.JOIN_BUTTON' | translate }}</span>
+								<span>{{ 'JOIN.JOIN_BUTTON' | translate }}</span>
 							</button>
 						</form>
 					} @else if (roomClosed()) {
 						<div class="room-closed-message">
 							<mat-icon class="warning-icon">warning</mat-icon>
-							<p>{{ 'LOBBY.ROOM_CLOSED_MESSAGE' | translate }}</p>
+							<p>{{ 'JOIN.ROOM_CLOSED_MESSAGE' | translate }}</p>
 						</div>
 					} @else {
 						<div class="room-closed-message">
 							<mat-icon class="warning-icon">block</mat-icon>
-							<p>{{ 'LOBBY.NO_PERMISSION_MESSAGE' | translate }}</p>
+							<p>{{ 'JOIN.NO_PERMISSION_MESSAGE' | translate }}</p>
 						</div>
 					}
 				</mat-card-content>
@@ -120,14 +120,14 @@
 					<mat-card-header class="card-header">
 						<mat-icon class="ov-recording-icon card-icon">video_library</mat-icon>
 						<div class="card-title-group">
-							<mat-card-title>{{ 'LOBBY.RECORDINGS_TITLE' | translate }}</mat-card-title>
-							<mat-card-subtitle>{{ 'LOBBY.RECORDINGS_SUBTITLE' | translate }}</mat-card-subtitle>
+							<mat-card-title>{{ 'JOIN.RECORDINGS_TITLE' | translate }}</mat-card-title>
+							<mat-card-subtitle>{{ 'JOIN.RECORDINGS_SUBTITLE' | translate }}</mat-card-subtitle>
 						</div>
 					</mat-card-header>
 
 					<mat-card-content class="card-content">
 						<div class="recordings-info">
-							<p class="recordings-description">{{ 'LOBBY.RECORDINGS_DESCRIPTION' | translate }}</p>
+							<p class="recordings-description">{{ 'JOIN.RECORDINGS_DESCRIPTION' | translate }}</p>
 						</div>
 
 						<button
@@ -137,7 +137,7 @@
 							(click)="onViewRecordingsClick()"
 							class="recordings-button"
 						>
-							<span>{{ 'LOBBY.RECORDINGS_BUTTON' | translate }}</span>
+							<span>{{ 'JOIN.RECORDINGS_BUTTON' | translate }}</span>
 						</button>
 					</mat-card-content>
 				</mat-card>

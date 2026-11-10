@@ -238,7 +238,7 @@
 		"E2EE_ERROR_CONTENT": "此参与者使用了不同的加密密钥。无法显示视频。",
 		"GENERIC": "发生意外错误。请重试。"
 	},
-	"LOBBY": {
+	"JOIN": {
 		"E2EE_BADGE_TOOLTIP": "端到端加密",
 		"E2EE_BADGE_TEXT": "此房间中的会议采用端到端加密",
 		"JOIN_TITLE": "加入会议",
@@ -273,10 +273,10 @@
 		"TITLE": "开始协作",
 		"SUBTITLE": "分享此链接，邀请他人加入会议"
 	},
-	"WAITING_PANEL": {
+	"INVITE_WITHOUT_LINK": {
 		"TITLE": "正在等待其他人加入",
-		"SUBTITLE": "参与者加入会议后将显示在此处。",
-		"ALONE_SUBTITLE": "目前只有您一人在此。"
+		"PANEL_SUBTITLE": "参与者加入会议后将显示在此处。",
+		"OVERLAY_SUBTITLE": "目前只有您一人在此。"
 	},
 	"CAPTIONS": {
 		"ARIA_FROM": "字幕来自 ",

@@ -1,11 +1,12 @@
 import { Component, computed, inject } from '@angular/core';
+import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { ShareRoomAccessLinkComponent } from '../../components/share-room-access-link/share-room-access-link.component';
 import { RoomAccessLinkService } from '../../services/room-access-link.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
 
 /**
- * Reusable component for displaying the share room access link panel
- * inside the participants panel.
+ * Heads the participants panel with the room access link, in the standalone app only: embedded, the
+ * host app shares the link.
  */
 @Component({
 	selector: 'ov-meeting-invite-panel',
@@ -16,10 +17,14 @@ import { MeetingContextService } from '../../services/meeting-context.service';
 export class MeetingInvitePanelComponent {
 	protected meetingContextService = inject(MeetingContextService);
 	protected roomAccessLinkService = inject(RoomAccessLinkService);
+	private readonly isEmbeddedMode = inject(RuntimeConfigService).isEmbeddedMode;
 
 	roomAccessUrl = this.roomAccessLinkService.speakerPublicLink;
 	showShareLink = computed(
-		() => this.meetingContextService.meetingUI().showShareAccessLinks && !!this.roomAccessUrl()
+		() =>
+			!this.isEmbeddedMode() &&
+			this.meetingContextService.meetingUI().showShareAccessLinks &&
+			!!this.roomAccessUrl()
 	);
 
 	onCopyClicked(): void {

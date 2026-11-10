@@ -142,7 +142,7 @@ export class RoomMemberContextService {
 	 *
 	 * @param roomId - The unique identifier of the room
 	 * @param tokenOptions - The options for the token generation. When the meeting is E2EE-encrypted,
-	 *        `participantName` is expected to be already encrypted by the caller (see MeetingLobbyService).
+	 *        `participantName` is expected to be already encrypted by the caller (see MeetingJoinService).
 	 * @param headers - Optional additional headers to include in the token generation request
 	 * @return A promise that resolves to the room member token
 	 */
