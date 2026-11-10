@@ -7,7 +7,9 @@ properties:
             The unique identifier of the room member.
 
             - For users: This is set to the userId of the linked Meet user account.
-            - For identified guests: This is an automatically generated unique identifier starting from 'guest-'.
+            - For identified guests: This is an automatically generated unique identifier starting with 'guest-'.
+              It is also the guest's participant identity in meetings, so it does not grant access to the room:
+              the guest's personal link is `accessUrl`.
     roomId:
         type: string
         example: 'room-123'
@@ -41,8 +43,11 @@ properties:
         format: uri
         example: 'http://localhost:6080/room/room-123'
         description: >
-            The URL for this member to access the room. Identified guests receives a unique access URL, while users use the shared user access URL.
+            The URL for this member to access the room. Identified guests receive a unique access URL, while users use the shared user access URL.
             This URL provides access with the specific permissions assigned to this member.
+            An identified guest's URL is their personal link: its `secret` is the `memberId`, a hyphen and a random part
+            (`?secret=guest-abc123-654321`), and only that exact secret grants the guest's access.
+            Guests added before 3.10.0 keep a URL whose `secret` is their `memberId`, deprecated and replaced in 3.13.0.
     baseRole:
         type: string
         enum:

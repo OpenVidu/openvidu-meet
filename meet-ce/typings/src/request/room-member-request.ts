@@ -21,7 +21,8 @@ export interface MeetRoomMemberOptions {
  */
 export interface MeetRoomMemberTokenOptions {
 	/**
-	 * A secret key for room access. Determines the member's role.
+	 * A secret key for room access: one of the room's anonymous access secrets, or the `secret` of an
+	 * identified guest's `MeetRoomMember.accessUrl`, which binds the token to that guest.
 	 */
 	secret?: string;
 	/**

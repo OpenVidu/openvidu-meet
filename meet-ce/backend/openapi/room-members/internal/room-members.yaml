@@ -7,7 +7,7 @@
 
 
             A `secret` in the request body authenticates on its own: one of the room's access secrets, or the
-            `memberId` of an identified guest. The anonymous recording secret yields a token that only allows
+            `secret` of an identified guest's `accessUrl`. The anonymous recording secret yields a token that only allows
             retrieval of room recordings. Without a `secret` a user access token is required.
             `X-Room-Member-Token` is not a credential here, but an optional hint that preserves the participant
             identity when regenerating a join token.

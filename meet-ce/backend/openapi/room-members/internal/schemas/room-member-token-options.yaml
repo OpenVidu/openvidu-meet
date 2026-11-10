@@ -9,7 +9,7 @@ properties:
             - Moderator anonymous access secret
             - Speaker anonymous access secret
             - Recording anonymous access secret (generates a token with read-only recording permissions)
-            - Identified guest access secret
+            - The `secret` of an identified guest's `accessUrl`, which binds the token to that guest
         example: 'abc123456'
     joinMeeting:
         type: boolean

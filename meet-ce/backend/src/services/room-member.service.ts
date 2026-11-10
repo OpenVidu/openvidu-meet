@@ -150,7 +150,7 @@ export class RoomMemberService {
 			memberId = `guest-${secureUid(10)}`;
 			memberName = name;
 			memberType = MeetRoomMemberType.IDENTIFIED_GUEST;
-			accessUrl += `?secret=${memberId}`;
+			accessUrl += `?secret=${memberId}-${secureUid(10)}`;
 		} else {
 			throw new Error('Either userId or name must be provided');
 		}
@@ -657,39 +657,60 @@ export class RoomMemberService {
 	}
 
 	/**
-	 * Resolves permission source from a room secret, which can be either an identified guest member secret or an anonymous access secret.
-	 *
-	 * - If the secret starts with 'guest-', it is treated as an identified guest member ID and looks up the corresponding member record in the database.
-	 * - If the secret does not start with 'guest-', it is treated as an anonymous access secret
-	 * and resolves permissions based on matching it to the room's anonymous access secrets for moderator, speaker, or recording roles.
+	 * Resolves permission source from a room secret: the secret of an identified guest's access URL when it starts
+	 * with 'guest-', and otherwise one of the room's anonymous access secrets.
 	 *
 	 * @param roomId - The ID of the room
 	 * @param secret - The secret provided for access
 	 * @returns The resolved permission source for the secret
-	 * @throws Error if the secret is invalid, if no member is found for an identified guest member secret,
+	 * @throws Error if the secret is invalid, if it is not the secret of an identified guest's access URL,
 	 * or if anonymous access for the corresponding role is disabled
 	 */
 	protected async resolvePermissionSourceFromSecret(
 		roomId: string,
 		secret: string
 	): Promise<ResolvedPermissionSource> {
-		const isIdentifiedGuestMemberId = secret.startsWith('guest-');
-
-		if (isIdentifiedGuestMemberId) {
-			const member = await this.getRoomMember(roomId, secret, ['memberId', 'name', 'effectivePermissions']);
-
-			if (!member) {
-				throw errorRoomMemberNotFound(roomId, secret);
-			}
-
-			return {
-				memberId: member.memberId,
-				name: member.name,
-				permissions: member.effectivePermissions
-			};
+		if (secret.startsWith('guest-')) {
+			return this.resolveIdentifiedGuestBySecret(roomId, secret);
 		}
 
 		return this.resolveAnonymousAccessBySecret(roomId, secret);
+	}
+
+	/**
+	 * Resolves the identified guest whose access URL carries exactly the given secret.
+	 * The secret is the guest's memberId followed by '-' and a random part, or, for guests added
+	 * before 3.10.0 (deprecated until 3.13.0), the memberId alone.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param secret - A secret starting with 'guest-'
+	 * @returns The resolved permission source for the identified guest
+	 * @throws Error if no identified guest of the room has that secret in its access URL
+	 */
+	protected async resolveIdentifiedGuestBySecret(roomId: string, secret: string): Promise<ResolvedPermissionSource> {
+		const memberId = secret.split('-', 2).join('-');
+		const member = await this.getRoomMember(roomId, memberId, [
+			'memberId',
+			'name',
+			'effectivePermissions',
+			'accessUrl'
+		]);
+
+		if (!member || new URL(member.accessUrl, 'http://localhost').searchParams.get('secret') !== secret) {
+			throw errorRoomMemberNotFound(roomId, memberId);
+		}
+
+		if (secret === memberId) {
+			this.logger.warn(
+				`Identified guest '${memberId}' of room '${roomId}' used a deprecated access link whose secret is its memberId, which stops working in 3.13.0`
+			);
+		}
+
+		return {
+			memberId: member.memberId,
+			name: member.name,
+			permissions: member.effectivePermissions
+		};
 	}
 
 	/**

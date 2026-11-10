@@ -971,19 +971,4 @@ export class RoomService {
 		const { owner } = await this.getMeetRoom(roomId, ['owner']);
 		return owner === userId;
 	}
-
-	/**
-	 * Validates if the provided secret matches one of the room's secrets for anonymous access.
-	 *
-	 * @param roomId - The ID of the room
-	 * @param secret - The secret to validate
-	 * @returns A promise that resolves to true if the secret is valid, false otherwise
-	 * @throws Error if room not found
-	 */
-	async isValidRoomSecret(roomId: string, secret: string): Promise<boolean> {
-		const { access } = await this.getMeetRoom(roomId, ['access']);
-		const { moderatorSecret, speakerSecret, recordingSecret } = MeetRoomHelper.extractSecretsFromRoom(access);
-		const allSecrets = [moderatorSecret, speakerSecret, recordingSecret];
-		return allSecrets.includes(secret);
-	}
 }

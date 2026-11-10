@@ -30,7 +30,12 @@ import {
 	startTestServer,
 	updateRoomAccessConfig
 } from '../../../helpers/request-helpers.js';
-import { setupSingleRoom, setupTestUsers, setupTestUsersForRoom } from '../../../helpers/test-scenarios.js';
+import {
+	guestSecretOf,
+	setupSingleRoom,
+	setupTestUsers,
+	setupTestUsersForRoom
+} from '../../../helpers/test-scenarios.js';
 import { RoomData, RoomTestUsers, TestUsers } from '../../../interfaces/scenarios.js';
 
 const ROOMS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`);
@@ -45,6 +50,7 @@ describe('Room Members API Security Tests', () => {
 	let roomUsers: RoomTestUsers;
 
 	let memberId: string;
+	let memberSecret: string;
 
 	const createTestMember = async () => {
 		const response = await createRoomMember(roomId, {
@@ -52,6 +58,7 @@ describe('Room Members API Security Tests', () => {
 			baseRole: MeetRoomMemberRole.SPEAKER
 		});
 		memberId = response.body.memberId;
+		memberSecret = guestSecretOf(response.body);
 	};
 
 	beforeAll(async () => {
@@ -603,9 +610,9 @@ describe('Room Members API Security Tests', () => {
 			expectMeetError(response, errorInvalidRoomSecret(roomId));
 		});
 
-		it('should succeed when using valid identified guest ID as secret', async () => {
+		it('should succeed when using the secret of an identified guest link', async () => {
 			const response = await request(app).post(`${INTERNAL_ROOMS_PATH}/${roomId}/members/token`).send({
-				secret: memberId,
+				secret: memberSecret,
 				joinMeeting: false
 			});
 			expect(response.status).toBe(200);

@@ -367,6 +367,10 @@ export const setupTestUsers = async (): Promise<TestUsers> => {
  * @param memberOptions Options for creating the room member
  * @returns RoomMemberData with member info and authentication token
  */
+/** The `secret` of an identified guest's access link. */
+export const guestSecretOf = (member: Pick<MeetRoomMember, 'accessUrl'>): string =>
+	new URL(member.accessUrl, 'http://localhost').searchParams.get('secret')!;
+
 export const setupRoomMember = async (
 	roomId: string,
 	memberOptions: MeetRoomMemberOptions,
@@ -378,7 +382,7 @@ export const setupRoomMember = async (
 	const member = createResponse.body as MeetRoomMember;
 
 	// Generate room member token for this member
-	const secret = member.memberId.startsWith('guest-') ? member.memberId : undefined;
+	const secret = member.memberId.startsWith('guest-') ? guestSecretOf(member) : undefined;
 	const memberToken = await generateRoomMemberToken(
 		roomId,
 		{
@@ -408,7 +412,7 @@ export const updateRoomMemberPermissions = async (
 	const member = updateResponse.body as MeetRoomMember;
 
 	// Generate room member token for this member
-	const secret = member.memberId.startsWith('guest-') ? member.memberId : undefined;
+	const secret = member.memberId.startsWith('guest-') ? guestSecretOf(member) : undefined;
 	const memberToken = await generateRoomMemberToken(
 		roomId,
 		{

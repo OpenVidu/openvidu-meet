@@ -2,12 +2,7 @@ import type { MeetRoomMemberTokenOptions } from '@openvidu-meet/typings';
 import { MeetUserRole } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
-import {
-	errorInsufficientPermissions,
-	errorInvalidRoomSecret,
-	errorRoomMemberNotFound,
-	errorRoomNotFound
-} from '../models/error.model.js';
+import { errorInsufficientPermissions, errorRoomMemberNotFound, errorRoomNotFound } from '../models/error.model.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomMemberService } from '../services/room-member.service.js';
 import { RoomAccessService } from '../services/room-access.service.js';
@@ -96,7 +91,7 @@ export const setupRoomMemberTokenAuthentication = (req: Request, res: Response, 
 /**
  * Middleware to authorize the generation of a room member token.
  *
- * - If a secret is provided, it checks if it matches a valid room secret (anonymous access) or if it corresponds to a room member.
+ * - If a secret is provided, it is left to the token generation, which resolves and validates it.
  * - If no secret is provided, it checks if the authenticated user has permissions to access the room (admin, owner, or member).
  */
 export const authorizeRoomMemberTokenGeneration = async (req: Request, res: Response, next: NextFunction) => {
@@ -112,57 +107,25 @@ export const authorizeRoomMemberTokenGeneration = async (req: Request, res: Resp
 		return rejectRequestFromMeetError(res, error);
 	}
 
-	const requestSessionService = container.get(RequestSessionService);
-	const user = requestSessionService.getAuthenticatedUser();
-
-	const forbiddenError = errorInsufficientPermissions();
-
-	// Scenario 1: Secret provided (Anonymous access or Member ID)
 	if (secret) {
-		try {
-			const isIdentifiedGuestMemberId = secret.startsWith('guest-');
-
-			if (isIdentifiedGuestMemberId) {
-				// Check if secret is a memberId
-				const roomMemberService = container.get(RoomMemberService);
-				const isMember = await roomMemberService.isRoomMember(roomId, secret);
-
-				if (!isMember) {
-					const error = errorRoomMemberNotFound(roomId, secret);
-					return rejectRequestFromMeetError(res, error);
-				}
-
-				return next();
-			}
-
-			// Check if secret matches any room access URL secret
-			const isValidSecret = await roomService.isValidRoomSecret(roomId, secret);
-
-			if (!isValidSecret) {
-				const error = errorInvalidRoomSecret(roomId);
-				return rejectRequestFromMeetError(res, error);
-			}
-
-			return next();
-		} catch (error) {
-			return handleError(res, error, 'checking room secret');
-		}
+		return next();
 	}
 
-	// Scenario 2: No secret provided (Authenticated User)
-	if (user) {
-		try {
-			const canAccess = await container.get(RoomAccessService).canUserAccessRoom(roomId, user);
+	const user = container.get(RequestSessionService).getAuthenticatedUser();
 
-			if (!canAccess) {
-				return rejectRequestFromMeetError(res, forbiddenError);
-			}
-
-			return next();
-		} catch (error) {
-			return handleError(res, error, 'checking user access to room');
-		}
+	if (!user) {
+		return rejectRequestFromMeetError(res, errorInsufficientPermissions());
 	}
 
-	return rejectRequestFromMeetError(res, forbiddenError);
+	try {
+		const canAccess = await container.get(RoomAccessService).canUserAccessRoom(roomId, user);
+
+		if (!canAccess) {
+			return rejectRequestFromMeetError(res, errorInsufficientPermissions());
+		}
+
+		return next();
+	} catch (error) {
+		return handleError(res, error, 'checking user access to room');
+	}
 };
