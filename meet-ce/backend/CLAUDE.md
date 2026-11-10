@@ -2,7 +2,7 @@
 
 Node.js + Express 5 REST API in TypeScript. ESM (`"type": "module"`): every relative import needs an
 explicit `.js` extension, even when the source file is `.ts`. Deliberately framework-light: no Nest,
-no ORM beyond Mongoose. Dependencies: MongoDB (state), Redis (locks / ephemeral state),
+no ORM beyond Mongoose. Dependencies: MongoDB (state), Redis (locks / ephemeral state / realtime relay),
 LiveKit (media), and S3 / Azure Blob / GCS (recordings).
 
 Entry point: `src/server.ts`. It also serves the built SPA and the webcomponent bundle out of
@@ -130,8 +130,18 @@ what LiveKit's webhooks never told.
 - **Distributed coordination**: `MutexService` (redlock-universal via `models/redis-lock.model.ts`).
   Meet runs multi-replica (OpenVidu High Availability, see the `deployment` spec): any garbage
   collection, migration, recording or broadcast state transition must be lock-guarded. Lock TTLs cap
-  at 24h. Cross-replica state lives in Redis keys, never in process memory; there is no pub/sub
-  channel between replicas.
+  at 24h. Cross-replica state lives in Redis keys, never in process memory.
+- **Realtime channel**: `RealtimeService` serves WebSockets at `<basePath>internal-api/v1/ws` on
+  the HTTP server's `upgrade` event, outside Express (no middleware, no request validators). A
+  feature calls `register({ credential, resolve, onOpen, onPong, onClose })`: the query parameter
+  that carries its credential, how it resolves to a room and address, and hooks that run only for
+  its own connections. `send` / `sendMany` publish on the one Redis channel
+  `ov_meet:realtime:<db>`, which every replica subscribes to and delivers to its local
+  connections; this is the only pub/sub between replicas. Nothing is resent when a replica's
+  subscription comes back, so a feature sends its state with `connection.send` (straight to the
+  socket) from `onOpen` and `onPong`, and recovers from a lost message on its own. Do not rely on
+  `redisDisconnected` to detect an outage: ioredis retries forever and emits `end` only when it
+  gives up, which it never does here.
 - **Scheduled tasks**: `TaskSchedulerService` + `*-scheduled-tasks.service.ts` (cron), plus
   `MeetingDurationLimitService`, which owns its sweep next to the per-meeting timers. Intervals,
   batch sizes and concurrency limits are all constants in `config/internal-config.ts`; reuse them

@@ -1,8 +1,10 @@
-import type { NextFunction, Request, RequestHandler, Response } from 'express';
-import rateLimit, { type Options } from 'express-rate-limit';
+import type { Express, NextFunction, Request, RequestHandler, Response } from 'express';
+import rateLimit, { ipKeyGenerator, MemoryStore, type Options } from 'express-rate-limit';
 import ms from 'ms';
+import proxyaddr from 'proxy-addr';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import type { RealtimeHandshakeGuard } from '../models/realtime.model.js';
 import { LoggerService } from '../services/logger.service.js';
 
 /**
@@ -12,6 +14,11 @@ import { LoggerService } from '../services/logger.service.js';
  * always hand it a structured object instead.
  */
 const tooManyRequestsMessage = (message: string) => ({ error: 'Too Many Requests', message });
+
+const isRateLimitBypassed = (): boolean => {
+	const { NODE_ENV } = process.env;
+	return NODE_ENV === 'development' || NODE_ENV === 'test' || NODE_ENV === 'ci';
+};
 
 /**
  * Wraps an express-rate-limit instance so that rate limiting is bypassed in the test environment.
@@ -41,11 +48,7 @@ const withTestBypass = (options: Partial<Options>): RequestHandler => {
 	});
 
 	return (req: Request, res: Response, next: NextFunction) => {
-		// Bypass rate limiting in development, test or CI environment
-		const { NODE_ENV } = process.env;
-		const skipRateLimit = NODE_ENV === 'development' || NODE_ENV === 'test' || NODE_ENV === 'ci';
-
-		if (skipRateLimit) return next();
+		if (isRateLimitBypassed()) return next();
 
 		return limiter(req, res, next);
 	};
@@ -109,6 +112,9 @@ export const tokenIssuanceLimiter: RequestHandler = withTestBypass({
 	message: tooManyRequestsMessage('Too many token requests, please try again later')
 });
 
+const API_LIMIT = 500;
+const apiLimiterStore = new MemoryStore();
+
 /**
  * General-purpose rate limiter for authenticated API routes that perform expensive
  * authorization (DB lookups, signed-URL generation, file system access).
@@ -122,9 +128,24 @@ export const tokenIssuanceLimiter: RequestHandler = withTestBypass({
  */
 export const apiLimiter: RequestHandler = withTestBypass({
 	windowMs: ms('1m'),
-	limit: 500,
+	limit: API_LIMIT,
+	store: apiLimiterStore,
 	skip: skipApiKeyRequests,
 	message: tooManyRequestsMessage('Too many requests, please try again later')
+});
+
+/**
+ * A realtime handshake never reaches Express, so it is counted against {@link apiLimiter}'s bucket for
+ * the client address Express would derive.
+ */
+export const realtimeHandshakeGuard = (app: Express): RealtimeHandshakeGuard => ({
+	clientAddress: (req) => proxyaddr(req, app.get('trust proxy fn') as Parameters<typeof proxyaddr>[1]),
+	admit: async (clientAddress) => {
+		if (isRateLimitBypassed()) return true;
+
+		const { totalHits } = await apiLimiterStore.increment(ipKeyGenerator(clientAddress));
+		return totalHits <= API_LIMIT;
+	}
 });
 
 /**

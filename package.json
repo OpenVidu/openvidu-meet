@@ -30,6 +30,7 @@
 		"test:integration-backend-webhooks": "pnpm --filter @openvidu-meet/backend run test:integration-webhooks",
 		"test:integration-backend-auth-security": "pnpm --filter @openvidu-meet/backend run test:integration-auth-security",
 		"test:integration-backend-config-analytics": "pnpm --filter @openvidu-meet/backend run test:integration-config-analytics",
+		"test:integration-backend-realtime": "pnpm --filter @openvidu-meet/backend run test:integration-realtime",
 		"test:integration-backend-recordings": "pnpm --filter @openvidu-meet/backend run test:integration-recordings",
 		"test:unit-backend": "pnpm --filter @openvidu-meet/backend run test:unit",
 		"test:unit-frontend": "pnpm --filter @openvidu-meet/frontend run test:unit:lib",
