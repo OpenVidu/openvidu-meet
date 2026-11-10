@@ -68,7 +68,8 @@ export interface MeetRoomMemberPermissions {
 	 */
 	meetingRead: boolean;
 	/**
-	 * Can share room access links to invite others.
+	 * Can share room access links to invite others: the user access link, and each anonymous link
+	 * whose permissions the holder also has.
 	 */
 	roomShareAccessLinks: boolean;
 	/**

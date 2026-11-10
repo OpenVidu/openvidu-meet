@@ -802,4 +802,108 @@ describe('Room API Tests', () => {
 			expectValidRoom(room2, 'multi-extrafields-2', { roomIdPrefix: 'multi_extrafields_2', config: config2 });
 		});
 	});
+
+	describe('List Rooms anonymous link disclosure', () => {
+		let testUsers: TestUsers;
+		let memberDeniedKickRoom: string;
+		let memberModeratorRoom: string;
+
+		const anonymousUrls = (room: MeetRoom) =>
+			Object.entries(room.access.anonymous)
+				.filter(([, link]) => link.url !== undefined)
+				.map(([name]) => name);
+
+		const anonymousUrlsByRoomName = (response: Response) => {
+			expect(response.status).toBe(200);
+			return Object.fromEntries(
+				(response.body.rooms as MeetRoom[]).map((room) => [room.roomName, anonymousUrls(room)])
+			);
+		};
+
+		beforeAll(async () => {
+			await deleteAllRooms();
+			testUsers = await setupTestUsers();
+
+			const [deniedKick, moderator] = await Promise.all([
+				createRoom({ roomName: 'denied-kick' }),
+				createRoom({ roomName: 'moderator-member' }),
+				createRoom(
+					{
+						roomName: 'owned',
+						roles: { moderator: { permissions: { roomShareAccessLinks: false } } }
+					},
+					testUsers.roomManager.accessToken
+				)
+			]);
+			memberDeniedKickRoom = deniedKick.roomId;
+			memberModeratorRoom = moderator.roomId;
+
+			await Promise.all([
+				createRoomMember(memberDeniedKickRoom, {
+					userId: testUsers.roomMember.user.userId,
+					baseRole: MeetRoomMemberRole.MODERATOR,
+					customPermissions: { participantKick: false }
+				}),
+				createRoomMember(memberModeratorRoom, {
+					userId: testUsers.roomMember.user.userId,
+					baseRole: MeetRoomMemberRole.MODERATOR
+				})
+			]);
+		});
+
+		afterAll(async () => {
+			await deleteAllRooms();
+			await deleteAllUsers();
+		});
+
+		it('should return to a member only the links whose permissions they all hold', async () => {
+			const response = await getRooms(undefined, undefined, testUsers.roomMember.accessToken);
+
+			expect(anonymousUrlsByRoomName(response)).toEqual({
+				'denied-kick': ['speaker', 'recording'],
+				'moderator-member': ['moderator', 'speaker', 'recording']
+			});
+		});
+
+		it('should return every link to the owner, whatever the moderator role holds', async () => {
+			const response = await getRooms(undefined, undefined, testUsers.roomManager.accessToken);
+
+			expect(anonymousUrlsByRoomName(response)).toEqual({ owned: ['moderator', 'speaker', 'recording'] });
+		});
+
+		it('should return every link to an API key', async () => {
+			const response = await getRooms();
+
+			expect(anonymousUrlsByRoomName(response)).toEqual({
+				'denied-kick': ['moderator', 'speaker', 'recording'],
+				'moderator-member': ['moderator', 'speaker', 'recording'],
+				owned: ['moderator', 'speaker', 'recording']
+			});
+		});
+
+		it('should filter a projection without roomId or roles and return neither', async () => {
+			const response = await getRooms({ fields: 'roomName,access' }, undefined, testUsers.roomMember.accessToken);
+
+			expect(anonymousUrlsByRoomName(response)['denied-kick']).toEqual(['speaker', 'recording']);
+
+			for (const room of response.body.rooms as MeetRoom[]) {
+				expect(Object.keys(room).sort()).toEqual(['access', 'roomName']);
+			}
+		});
+
+		it('should return the roles only when extraFields asks for them', async () => {
+			const byDefault = await getRooms(undefined, undefined, testUsers.roomMember.accessToken);
+			const withRoles = await getRooms({ extraFields: 'roles' }, undefined, testUsers.roomMember.accessToken);
+
+			for (const room of byDefault.body.rooms as MeetRoom[]) {
+				expect(room.roles).toBeUndefined();
+			}
+
+			for (const room of withRoles.body.rooms as MeetRoom[]) {
+				expect(room.roles.moderator.permissions).toBeDefined();
+			}
+
+			expect(anonymousUrlsByRoomName(withRoles)['denied-kick']).toEqual(['speaker', 'recording']);
+		});
+	});
 });

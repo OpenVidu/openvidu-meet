@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Disclosure of the anonymous links
-In every room returned by `getRoom` and `getRooms`, the server SHALL include the URL of an anonymous link only when the caller holds `roomShareAccessLinks` in that room and also holds every permission the link grants: the `moderator` role's permissions for the moderator link, the `speaker` role's for the speaker link, and `recordingList`, `recordingPlay` and `recordingDownload` for the recordings link. It SHALL always include `access.user.url` and every `enabled` flag. An API key, an `admin` user and the room's owner hold every permission, so they SHALL always receive every link.
+In every room returned by `getRoom` and `getRooms`, the server SHALL include the URL of an anonymous link only when the caller holds `roomShareAccessLinks` in that room and every permission the link grants: the `moderator` role's for the moderator link, the `speaker` role's for the speaker link, and `recordingList`, `recordingPlay` and `recordingDownload` for the recordings link. It SHALL always include `access.user.url` and every `enabled` flag.
 
 #### Scenario: Speaker without the permission
 - **GIVEN** a room whose `speaker` role lacks `roomShareAccessLinks`
@@ -27,11 +27,11 @@ In every room returned by `getRoom` and `getRooms`, the server SHALL include the
 
 #### Scenario: Owner
 - **GIVEN** a room whose `moderator` role lacks `roomShareAccessLinks`
-- **WHEN** its owner calls `getRoom`
-- **THEN** the room carries the URLs of its three anonymous links
+- **WHEN** its owner, an `admin` user or an API key calls `getRoom`
+- **THEN** the room carries the URLs of its three anonymous links, because they hold every permission
 
 ### Requirement: Sharing links from the console
-The console SHALL let a user share a room's links from the Rooms and room detail pages only when the server returned the URL of the room's anonymous speaker or moderator link. It SHALL offer the user access link, and each of the two anonymous links whose URL the server returned, while that link is enabled. Sharing SHALL be unavailable for closed rooms. Next to a disabled link, and next to the user access link while user access is disabled, a user who manages the room SHALL get a shortcut to the Room Access step of the wizard.
+The console SHALL offer sharing a room's links on the Rooms and room detail pages only when the server returned the URL of its anonymous speaker or moderator link, and never for a closed room. It SHALL offer the user access link and each anonymous link whose URL was returned, selectable while enabled. Next to a disabled link, and next to the user access link while user access is disabled, a user who manages the room SHALL get a shortcut to the Room Access step of the wizard.
 
 #### Scenario: Copying the speaker link
 - **GIVEN** a room manager on the Rooms page with an open room they own
@@ -55,7 +55,7 @@ The console SHALL let a user share a room's links from the Rooms and room detail
 - **THEN** it offers the user access link and the anonymous speaker link, and no moderator link
 
 ### Requirement: Sharing the room from the meeting
-In a meeting opened in the standalone app, a participant SHALL be offered the room's anonymous speaker link to copy while the server returns its URL to them (see "Disclosure of the anonymous links") and that link is enabled: on the join screen while the room is not closed, in a toolbar button, at the top of the participants panel and in an overlay shown while they are alone. The link SHALL be displayed as the host and path of the user access link. Embedded meetings (webcomponent or iframe) SHALL never offer it.
+In a meeting opened in the standalone app, a participant SHALL be offered the room's anonymous speaker link to copy while the server returns its URL to them and that link is enabled: on the join screen while the room is not closed, in a toolbar button, atop the participants panel and in an overlay shown while they are alone. It SHALL be displayed as the host and path of the user access link. Embedded meetings (webcomponent or iframe) SHALL never offer it.
 
 #### Scenario: Moderator alone in the meeting
 - **GIVEN** a participant holding `roomShareAccessLinks` alone in a meeting in the standalone app

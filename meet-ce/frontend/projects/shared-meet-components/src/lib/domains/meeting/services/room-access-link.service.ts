@@ -24,7 +24,7 @@ export class RoomAccessLinkService {
 	readonly speakerPublicLink = this._speakerPublicLink.asReadonly();
 	/** Readonly signal for the real speaker link used for copy action */
 	readonly speakerCopyLink = this._speakerCopyLink.asReadonly();
-	/** Whether the room's anonymous speaker access is disabled, so there is no link to share */
+	/** Whether there is no speaker link to share: disabled, or beyond the participant's permissions */
 	readonly speakerLinkDisabled = this._speakerLinkDisabled.asReadonly();
 
 	constructor() {
@@ -65,11 +65,12 @@ export class RoomAccessLinkService {
 	}
 
 	/**
-	 * Sets speaker links from room access information, only while the anonymous speaker access is enabled.
-	 * The public link is shown in the UI while the speaker link is used for copy action.
+	 * Sets speaker links from room access information, only while the anonymous speaker access is enabled
+	 * and the server returned its URL. The public link is shown in the UI while the speaker link is used
+	 * for copy action.
 	 */
 	private setSpeakerLinksFromRoomAccess(access: MeetRoomAccess): void {
-		if (!access.anonymous.speaker.enabled) {
+		if (!access.anonymous.speaker.enabled || !access.anonymous.speaker.url) {
 			this.clear();
 			this._speakerLinkDisabled.set(true);
 			return;

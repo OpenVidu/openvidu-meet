@@ -1,6 +1,7 @@
 import type {
 	MeetRoom,
 	MeetRoomAccess,
+	MeetRoomAnonymousUsers,
 	MeetRoomConfigOptions,
 	MeetRoomExtraField,
 	MeetRoomField,
@@ -8,18 +9,16 @@ import type {
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
 import {
+	MEET_PERMISSION_KEYS,
 	MEET_ROOM_EXTRA_FIELDS,
 	MEET_ROOM_FIELDS,
-	MeetRecordingAutoStartMode,
-	SENSITIVE_ROOM_FIELDS_ENTRIES
+	MeetRecordingAutoStartMode
 } from '@openvidu-meet/typings';
 import type { Room } from 'livekit-server-sdk';
 import { MEET_ENV } from '../environment.js';
 import { addHttpResponseMetadata, applyHttpFieldFiltering, buildFieldsForDbQuery } from './field-filter.helper.js';
 import { RecordingHelper } from './recording.helper.js';
-
-// Path segments that could walk into the prototype chain instead of a data property.
-const UNSAFE_PATH_SEGMENTS = new Set(['__proto__', 'constructor', 'prototype']);
+import { MeetRoomMemberHelper } from './room-member.helper.js';
 
 export class MeetRoomHelper {
 	private constructor() {
@@ -328,88 +327,73 @@ export class MeetRoomHelper {
 	}
 
 	/**
-	 * Applies permission filtering to a MeetRoom object by removing sensitive fields based on the provided permissions.
+	 * Removes from a room the anonymous link URLs the caller may not read: each one is kept only when
+	 * the caller holds `roomShareAccessLinks` and every permission that link grants. Reads the room's
+	 * `roles`, so the room must carry them whenever it carries `access`.
 	 *
-	 * @param room - The MeetRoom object to filter
-	 * @param permissions - The permissions of the room member, used to determine which sensitive fields to exclude
-	 * @returns A MeetRoom object with sensitive fields removed according to the member's permissions
+	 * @param room - The room to filter
+	 * @param permissions - The caller's permissions in the room
+	 * @param fieldsToDrop - Fields read only for the filtering, removed from the result
 	 */
 	static applyPermissionFiltering<TRoom extends Partial<MeetRoom>>(
 		room: TRoom,
-		permissions: MeetRoomMemberPermissions
+		permissions: MeetRoomMemberPermissions,
+		fieldsToDrop: MeetRoomField[] = []
 	): TRoom {
-		if (!room || !permissions || SENSITIVE_ROOM_FIELDS_ENTRIES.length === 0) {
-			return room;
-		}
-
 		const filteredRoom = { ...room };
 
-		for (const [permissionKey, fieldPaths] of SENSITIVE_ROOM_FIELDS_ENTRIES) {
-			if (fieldPaths.length === 0 || permissions[permissionKey]) {
-				continue;
+		if (room.access) {
+			const linkPermissions = {
+				moderator: room.roles?.moderator.permissions,
+				speaker: room.roles?.speaker.permissions,
+				recording: MeetRoomMemberHelper.recordingReadOnlyPermissions()
+			};
+			const anonymous: Record<keyof MeetRoomAnonymousUsers, { enabled: boolean; url?: string }> = {
+				...room.access.anonymous
+			};
+
+			for (const link of Object.keys(linkPermissions) as (keyof MeetRoomAnonymousUsers)[]) {
+				const granted = linkPermissions[link];
+
+				if (!permissions.roomShareAccessLinks || !granted || !this.grantsWithin(granted, permissions)) {
+					anonymous[link] = { enabled: anonymous[link].enabled };
+				}
 			}
 
-			fieldPaths.forEach((fieldPath) => {
-				this.deleteFieldByPath(filteredRoom, fieldPath);
-			});
+			filteredRoom.access = { ...room.access, anonymous: anonymous as MeetRoomAnonymousUsers };
+		}
+
+		for (const field of fieldsToDrop) {
+			delete filteredRoom[field];
 		}
 
 		return filteredRoom;
 	}
 
 	/**
-	 * Determines if permission filtering may be needed based on requested room fields.
-	 *
-	 * If no explicit field projection is provided, all fields may be present and filtering must be applied.
-	 * If fields are provided, filtering is only needed when they include the first segment of any sensitive path.
+	 * Whether every permission `link` grants is also held by `holder`.
 	 */
-	static shouldApplyPermissionFilteringForFields(fields?: MeetRoomField[]): boolean {
-		if (!fields) {
-			return true;
-		}
-
-		const sensitiveFieldFirstSegments = new Set<MeetRoomField>();
-
-		for (const [, fieldPaths] of SENSITIVE_ROOM_FIELDS_ENTRIES) {
-			fieldPaths.forEach((fieldPath) => {
-				const firstSegment = fieldPath.split('.')[0] as MeetRoomField;
-				sensitiveFieldFirstSegments.add(firstSegment);
-			});
-		}
-
-		return fields.some((field) => sensitiveFieldFirstSegments.has(field));
+	static grantsWithin(link: MeetRoomMemberPermissions, holder: MeetRoomMemberPermissions): boolean {
+		return MEET_PERMISSION_KEYS.every((key) => !link[key] || holder[key] === true);
 	}
 
 	/**
-	 * Deletes a property from an object by path (supports top-level and nested fields).
+	 * Whether a room projected to `fields` carries anonymous link URLs to filter.
 	 */
-	private static deleteFieldByPath(entity: Record<string, unknown>, path: string): void {
-		const segments = path.split('.');
+	static shouldApplyPermissionFilteringForFields(fields?: MeetRoomField[]): boolean {
+		return !fields || fields.includes('access');
+	}
 
-		// Reject segments that could walk into the prototype chain instead of a data property.
-		if (segments.some((segment) => UNSAFE_PATH_SEGMENTS.has(segment))) {
-			return;
-		}
+	/**
+	 * Adds to a query projection the `required` fields it lacks, and returns those it added so the
+	 * response can drop them again.
+	 */
+	static addMissingFields(fields: MeetRoomField[] | undefined, required: MeetRoomField[]): MeetRoomField[] {
+		if (!fields) return [];
 
-		if (segments.length === 1) {
-			delete entity[path];
-			return;
-		}
-
-		const lastSegment = segments.pop();
-		let current: Record<string, unknown> = entity;
-
-		for (const segment of segments) {
-			const nextNode = current[segment];
-
-			if (!nextNode || typeof nextNode !== 'object' || Array.isArray(nextNode)) {
-				return;
-			}
-
-			current = nextNode as Record<string, unknown>;
-		}
-
-		delete current[lastSegment!];
+		const missing = required.filter((field) => !fields.includes(field));
+		fields.push(...missing);
+		return missing;
 	}
 
 	/**
