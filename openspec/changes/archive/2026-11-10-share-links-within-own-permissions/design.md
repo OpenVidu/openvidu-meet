@@ -47,16 +47,17 @@ The admin and owner bypass needs no special case, since `allPermissions()` inclu
 
 ### D3. The exported typings stay
 
-`SENSITIVE_ROOM_FIELDS_ENTRIES` and `MeetRoomSensitiveFieldPath` stay exported and unchanged, because removing them before 3.12.0 would break an importer. Their TSDoc says that `roomShareAccessLinks` is necessary for the three URLs but not sufficient, and points to the OpenAPI description. Removing or deprecating them is left to the 3.12.0 clean-up.
+`SENSITIVE_ROOM_FIELDS_ENTRIES` and `MeetRoomSensitiveFieldPath` stay exported and unchanged, because removing them before 3.12.0 would break an importer. Their TSDoc says that `roomShareAccessLinks` is necessary for the three URLs but not sufficient, and points to the OpenAPI description. Both are `@deprecated` from 3.10.0, with no replacement, and the 3.12.0 clean-up removes them (USER, 2026-11-10); the changelog lists them under `Deprecated`.
 
 ### D4. The frontend trusts the response
 
 - `RoomUiUtils.hasAccessLinks` already checks the URLs and stays as it is.
 - `RoomShareDialogComponent` shows the speaker and moderator options only when their URL is present. The `enabled` flag still decides whether a present option can be chosen, so the disabled-link shortcut keeps working for managers, who always get every URL.
-- `RoomAccessLinkService` treats a missing speaker URL like a disabled link: it shows no share link and leaves the "waiting for others" text.
+- `RoomAccessLinkService` treats a missing speaker URL like a disabled link: it shows no share link and leaves the "waiting for others" text. It asks again with every new room member token, since a change of any permission can change which links the server returns, and applies only the answer to the latest request.
 
 ## Risks / Trade-offs
 
 - [An integration that read a link through a member token loses it] → Intended: that read was the escalation. The OpenAPI and the changelog say which links are returned. API keys, which most integrations use, are not affected.
 - [A member whose permissions sit below their own role's set no longer sees their own role's link] → For example, a speaker member whose custom permissions drop `chatWrite` loses the speaker link. Sharing it would hand out more than they hold. The meeting shows the "waiting for others" text, as when the link is disabled.
+- [A participant promoted to moderator in the meeting reads the moderator link] → Accepted (USER, 2026-11-10): their token holds the moderator permissions while promoted, so `getRoom` returns the link, and they keep it after the demotion. Promoting someone trusts them with moderator access.
 - [`roles` read on every filtered room] → A small embedded document in a query that already runs, for at most one page of rooms.

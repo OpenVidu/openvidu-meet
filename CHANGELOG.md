@@ -31,6 +31,9 @@ again gives the guest a link of the current form and a new `memberId`.
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | The `accessUrl` of an identified guest added before 3.10.0, whose `secret` is the `memberId` | The `accessUrl` whose `secret` is the `memberId`, a `-` and a random part, which every guest added from 3.10.0 gets |
 
+`SENSITIVE_ROOM_FIELDS_ENTRIES` and `MeetRoomSensitiveFieldPath` of `@openvidu-meet/typings` are removed in **3.12.0**,
+with no replacement.
+
 ### Added
 
 #### Integration
