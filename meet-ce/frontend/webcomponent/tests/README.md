@@ -156,7 +156,7 @@ Dynamic feature toggling:
 
 ##### **E2EE UI Tests** (`e2e/e2ee-ui.test.ts` - 7 tests)
 End-to-end encryption interface:
-- E2EE badge display in lobby when enabled
+- E2EE badge display on the join screen when enabled
 - E2EE key input field presence and validation
 - Encryption key requirement enforcement
 - E2EE elements hidden when disabled

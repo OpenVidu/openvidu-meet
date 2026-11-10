@@ -1,7 +1,7 @@
 import { MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { createRoom, createRoomMember, deleteRooms } from './helpers/meet-api.helper';
-import { leaveMeeting, openLobby, openMeeting } from './helpers/meeting-navigation.helper';
+import { leaveMeeting, openJoinScreen, openMeeting } from './helpers/meeting-navigation.helper';
 import { toggleParticipantsPanel } from './helpers/panels.helper';
 import { waitForRemoteStream } from './helpers/stream.helper';
 import { expectCopiedText, expectHidden, expectVisible, installClipboardCapture } from './helpers/ui-utils.helper';
@@ -43,24 +43,24 @@ test.describe('Share Link E2E Tests', () => {
 		return member.accessUrl;
 	};
 
-	test.describe('Lobby', () => {
-		test('should render the share room access link in the lobby when member can share access links', async ({
+	test.describe('Join screen', () => {
+		test('should render the share room access link on the join screen when member can share access links', async ({
 			page
 		}) => {
 			const accessUrl = await createMemberAccessUrl(true);
 
-			await openLobby(page, accessUrl);
+			await openJoinScreen(page, accessUrl);
 
 			await expect(page.locator('ov-share-room-access-link')).toBeVisible();
 			await expect(page.locator('ov-share-room-access-link .copy-url-btn')).toBeVisible();
 		});
 
-		test('should not render the share room access link in the lobby when member cannot share access links', async ({
+		test('should not render the share room access link on the join screen when member cannot share access links', async ({
 			page
 		}) => {
 			const accessUrl = await createMemberAccessUrl(false);
 
-			await openLobby(page, accessUrl);
+			await openJoinScreen(page, accessUrl);
 
 			await expectHidden(page, 'ov-share-room-access-link');
 		});
@@ -78,7 +78,7 @@ test.describe('Share Link E2E Tests', () => {
 			await expectVisible(page, '#copy-speaker-link');
 
 			// Layout overlay (only shown while the member is alone in the room)
-			const shareOverlay = page.locator('#share-link-overlay');
+			const shareOverlay = page.locator('#invite-overlay');
 			await expect(shareOverlay).toBeVisible();
 			await expect(shareOverlay.locator('.main-share-room-access-link')).toBeVisible();
 			await expect(shareOverlay.locator('.copy-url-btn')).toBeVisible();
@@ -98,7 +98,7 @@ test.describe('Share Link E2E Tests', () => {
 			await openMeeting(page, accessUrl);
 
 			await expectHidden(page, '#copy-speaker-link');
-			await expectHidden(page, '#share-link-overlay');
+			await expectHidden(page, '#invite-overlay');
 
 			await toggleParticipantsPanel(page);
 			await expectHidden(page, '#invite-panel');
@@ -112,12 +112,12 @@ test.describe('Share Link E2E Tests', () => {
 			createdRoomIds.push(roomId);
 			const accessUrl = await createMemberAccessUrl(true);
 
-			await openLobby(page, accessUrl);
+			await openJoinScreen(page, accessUrl);
 			await expectHidden(page, 'ov-share-room-access-link');
 
 			await openMeeting(page, accessUrl);
-			await expectVisible(page, '#waiting-overlay');
-			await expectHidden(page, '#share-link-overlay');
+			await expectVisible(page, '#invite-overlay');
+			await expectHidden(page, '#invite-overlay .copy-url-btn');
 			await expectHidden(page, '#copy-speaker-link');
 
 			await toggleParticipantsPanel(page);
@@ -132,14 +132,14 @@ test.describe('Share Link E2E Tests', () => {
 			});
 
 			await openMeeting(page, moderatorAccessUrl);
-			await expectVisible(page, '#share-link-overlay');
+			await expectVisible(page, '#invite-overlay');
 
 			const speakerContext = await browser.newContext();
 			const speakerPage = await speakerContext.newPage();
 			await openMeeting(speakerPage, speaker.accessUrl, { name: 'Speaker' });
 
 			await waitForRemoteStream(page);
-			await expectHidden(page, '#share-link-overlay');
+			await expectHidden(page, '#invite-overlay');
 
 			await leaveMeeting(speakerPage);
 			await speakerPage.close();
@@ -148,10 +148,10 @@ test.describe('Share Link E2E Tests', () => {
 	});
 
 	test.describe('Copying the anonymous speaker access link', () => {
-		test('should copy the anonymous speaker access link from the lobby', async ({ page }) => {
+		test('should copy the anonymous speaker access link from the join screen', async ({ page }) => {
 			const accessUrl = await createMemberAccessUrl(true);
 
-			await openLobby(page, accessUrl);
+			await openJoinScreen(page, accessUrl);
 			await installClipboardCapture(page);
 
 			await page.locator('ov-share-room-access-link .copy-url-btn').click();
@@ -176,7 +176,7 @@ test.describe('Share Link E2E Tests', () => {
 			await openMeeting(page, accessUrl);
 			await installClipboardCapture(page);
 
-			await page.locator('#share-link-overlay .copy-url-btn').click();
+			await page.locator('#invite-overlay .copy-url-btn').click();
 			await expectCopiedText(page, speakerAccessLink);
 		});
 

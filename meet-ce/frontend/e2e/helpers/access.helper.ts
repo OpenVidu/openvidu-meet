@@ -32,10 +32,10 @@ export const createReadyMemberUser = async (
 	return { user, member };
 };
 
-// ─── Lobby name input ─────────────────────────────────────────────────────────
+// ─── Join screen name input ─────────────────────────────────────────────────────────
 
 /**
- * Asserts the value and editability of the lobby participant-name input.
+ * Asserts the value and editability of the join screen participant-name input.
  */
 export const expectNameInput = async (page: Page, expected: { value: string; editable: boolean }): Promise<void> => {
 	const nameInput = page.locator('#participant-name-input');
@@ -53,7 +53,7 @@ export const expectNameInput = async (page: Page, expected: { value: string; edi
 
 /**
  * Asserts that access to the room/recordings was denied: the app renders the error page and no
- * lobby name input is shown. Used for individuals that cannot access the resource at all (e.g. a
+ * join screen name input is shown. Used for individuals that cannot access the resource at all (e.g. a
  * non-member user when the room's user access is disabled).
  */
 export const expectRoomAccessDenied = async (page: Page): Promise<void> => {
@@ -62,10 +62,10 @@ export const expectRoomAccessDenied = async (page: Page): Promise<void> => {
 };
 
 /**
- * Asserts that the lobby is reached but joining is restricted (the `canJoinMeeting` permission is
+ * Asserts that the join screen is reached but joining is restricted (the `canJoinMeeting` permission is
  * denied): the "no permission" card is shown instead of the name input / join form.
  */
-export const expectLobbyAccessRestricted = async (page: Page): Promise<void> => {
+export const expectJoinScreenAccessRestricted = async (page: Page): Promise<void> => {
 	await expect(page.locator('.room-closed-message')).toBeVisible({ timeout: 15_000 });
 	await expect(page.locator('#participant-name-input')).toHaveCount(0);
 };

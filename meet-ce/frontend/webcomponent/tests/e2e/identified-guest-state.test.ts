@@ -10,7 +10,7 @@ import { wcLocator } from '../helpers/webcomponent.helper';
 // link) was kept in the root-provided meeting/room-member context, which
 // survives a remount of the <openvidu-meet> Angular Element. Reusing the same
 // page with a different access link then leaked the previous guest's name into
-// the lobby name field. The fix clears that state when the custom element is
+// the join screen name field. The fix clears that state when the custom element is
 // removed from the DOM (App's DestroyRef.onDestroy → clearMeetingContext).
 //
 // `openWebcomponentWithAttributes` re-applies the testapp config, which the

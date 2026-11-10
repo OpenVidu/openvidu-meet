@@ -6,7 +6,7 @@ import {
 	MeetUserRole
 } from '@openvidu-meet/typings';
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { createReadyMemberUser, expectLobbyAccessRestricted, expectNameInput } from './helpers/access.helper';
+import { createReadyMemberUser, expectJoinScreenAccessRestricted, expectNameInput } from './helpers/access.helper';
 import { authenticate, createReadyUser, type ReadyUser } from './helpers/auth.helper';
 import {
 	expectChatAvailable,
@@ -47,7 +47,7 @@ import {
 	expectKickedFromMeeting,
 	expectMeetingAccessRevoked,
 	expectNoEndMeetingOption,
-	openLobby,
+	openJoinScreen,
 	openMeeting,
 	openPrejoin
 } from './helpers/meeting-navigation.helper';
@@ -159,21 +159,21 @@ test.describe('Permissions E2E Tests', () => {
 		return cachedRecordingId;
 	};
 
-	// ── Lobby permissions ─────────────────────────────────────────────────────────
+	// ── Join screen permissions ─────────────────────────────────────────────────────────
 
-	test.describe('Room lobby', () => {
-		test('canJoinMeeting granted: the lobby join form is shown', async ({ page }) => {
+	test.describe('Join screen', () => {
+		test('canJoinMeeting granted: the join form is shown', async ({ page }) => {
 			const member = await createGuest({ canJoinMeeting: true });
-			await openLobby(page, member.accessUrl);
+			await openJoinScreen(page, member.accessUrl);
 
 			await expectNameInput(page, { value: member.name, editable: false });
 		});
 
-		test('canJoinMeeting denied: the lobby shows the access-restricted card', async ({ page }) => {
+		test('canJoinMeeting denied: the join screen shows the access-restricted card', async ({ page }) => {
 			const member = await createGuest({ canJoinMeeting: false });
 			await page.goto(member.accessUrl, { waitUntil: 'domcontentloaded' });
 
-			await expectLobbyAccessRestricted(page);
+			await expectJoinScreenAccessRestricted(page);
 		});
 	});
 

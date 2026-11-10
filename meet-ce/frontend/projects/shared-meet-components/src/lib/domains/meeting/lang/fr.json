@@ -238,7 +238,7 @@
 		"E2EE_ERROR_CONTENT": "Ce participant utilise une clé de chiffrement différente. La vidéo ne peut pas être affichée.",
 		"GENERIC": "Une erreur inattendue s'est produite. Veuillez réessayer."
 	},
-	"LOBBY": {
+	"JOIN": {
 		"E2EE_BADGE_TOOLTIP": "Chiffré de bout en bout",
 		"E2EE_BADGE_TEXT": "Les réunions dans cette salle sont chiffrées de bout en bout",
 		"JOIN_TITLE": "Rejoindre la réunion",
@@ -273,10 +273,10 @@
 		"TITLE": "Commencez à collaborer",
 		"SUBTITLE": "Partagez ce lien pour inviter d'autres personnes à la réunion"
 	},
-	"WAITING_PANEL": {
+	"INVITE_WITHOUT_LINK": {
 		"TITLE": "En attente d'autres participants",
-		"SUBTITLE": "Les participants apparaîtront ici dès qu'ils rejoindront la réunion.",
-		"ALONE_SUBTITLE": "Vous êtes seul ici pour le moment."
+		"PANEL_SUBTITLE": "Les participants apparaîtront ici dès qu'ils rejoindront la réunion.",
+		"OVERLAY_SUBTITLE": "Vous êtes seul ici pour le moment."
 	},
 	"CAPTIONS": {
 		"ARIA_FROM": "Sous-titre de ",

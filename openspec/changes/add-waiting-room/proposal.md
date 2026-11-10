@@ -28,7 +28,7 @@ Anyone holding a room's link enters the meeting at once. Hosts of classes, consu
   - One status enum, `MeetLobbyStatus`, shared by the `lobbyStatusChanged` webhook and event.
   - Permissions `lobbyBypass` (join without waiting) and `lobbyAdmin` (list, admit and reject).
 - **Console:** the Room Access step of the room wizard gains a Waiting room section (switch and message) and the "Join without waiting" and "Admit participants" permissions.
-- **Refactor, in its own change before this one (`refactor-meeting-entry-flow`):** the frontend Join screen pieces named "lobby" and the lone participant's `MeetingWaitingPanelComponent` are renamed, so "lobby" and "waiting" mean only the waiting room, and the entry flow gets one owner, with the join token request (`JoinTokenService`) apart from the Join screen. Each waiting room piece is its own library component.
+- **Refactor, in its own change before this one (`refactor-meeting-entry-flow`):** the frontend Join screen pieces named "lobby" are renamed and the lone participant's `MeetingWaitingPanelComponent` is removed, so "lobby" and "waiting" mean only the waiting room, and the entry flow gets one owner, with the join token request (`JoinTokenService`) apart from the Join screen. Each waiting room piece is its own library component.
 
 ## Capabilities
 

@@ -9,13 +9,13 @@ The waiting room (`add-waiting-room`) adds a step to the way a participant enter
 - **The error mapping is written twice.** `RoomAccessService.validateAccess` and `MeetingLobbyService.generateJoinToken` map the same answers of the room member token request to the same error screens, matching the same message fragments.
 - **An entry parameter is threaded by hand through eight places:** the `EmbeddedAttribute` enum and `WebComponentPropertyValues` in the typings, the element's inputs, `wcRouteFromAttributes`, `MeetingRoute.params` (a copy of `MeetingEntryParams`), `extractParams`, `extractRoomMeetingParamsGuard`, and `MeetingEntryService.prepare`.
 - **Phase checks compare strings.** The embedded command gate accepts device commands when `phase() === 'prejoin'`; the waiting screen needs the same commands, and every such check would have to learn the new phase.
-- **Names collide with the waiting room.** The join screen is called "lobby" in code (`MeetingLobbyService`, `MeetingLobbyComponent`, `LOBBY.*` keys, `lobby` test ids) and the lone participant's panel is `MeetingWaitingPanelComponent`.
+- **Names collide with the waiting room.** The join screen is called "lobby" in code (`MeetingLobbyService`, `MeetingLobbyComponent`, `LOBBY.*` keys, `lobby` test ids) and the lone participant's panel is `MeetingWaitingPanelComponent`, a copy of the share link block without the link.
 
 ## What Changes
 
 A refactor of `shared-meet-components`, in two pull requests, with no change a user, an integrator or an operator can observe:
 
-1. **Renames.** The join screen pieces and the lone participant's panel take the names of what they are (design D1), in CE and PRO. This replaces task group 1 of `add-waiting-room`.
+1. **Renames.** The join screen pieces take the names of what they are, and the lone participant's panel is removed: the share link block shows its text without the link (design D1), in CE and PRO. This replaces task group 1 of `add-waiting-room`.
 2. **Structure:**
    - one entry flow, owned by a component-scoped `MeetingEntryFlowService`, whose steps and skip rules come from one pure function, with both screens on by default (D2);
    - the join token request moves out of the join screen into `JoinTokenService` (D3);
@@ -37,8 +37,8 @@ None (`skip_specs: true`). Every requirement of `meeting-join`, `meeting-media` 
 
 ## Impact
 
-- Code: `meet-ce/frontend/projects/shared-meet-components` (meeting, embedded, rooms and room-members domains), the SPA and web component end-to-end tests and the testapp (test ids), and `meet-pro/frontend/.../app-pro-meeting.component.ts` (the renamed panel).
-- PRO: the renamed exports (`MeetingJoinComponent`, `MeetingJoinService`, `MeetingAlonePanelComponent`) and translation keys (`JOIN.*`). A PRO or a deployment that overrides `LOBBY.*` translations needs the same rename.
+- Code: `meet-ce/frontend/projects/shared-meet-components` (meeting, embedded, rooms and room-members domains), the SPA and web component end-to-end tests and the testapp (test ids), and `meet-pro/frontend/.../app-pro-meeting.component.ts` (the removed panel).
+- PRO: the renamed exports (`MeetingJoinComponent`, `MeetingJoinService`), the removed `MeetingWaitingPanelComponent` and translation keys (`JOIN.*`, `INVITE_WITHOUT_LINK.*`). A PRO or a deployment that overrides `LOBBY.*` or `WAITING_PANEL.*` translations needs the same rename.
 - REST API, webhooks, embedded API, typings, backend, deployment: not affected.
 - `CHANGELOG.md`: none (refactor). openvidu.io: none.
 

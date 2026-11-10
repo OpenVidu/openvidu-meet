@@ -16,11 +16,11 @@ import { E2eeService } from '../openvidu-components/services/e2ee/e2ee.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 
 /**
- * Service that manages the meeting lobby phase state and operations.
- * This service is ONLY responsible for the LOBBY PHASE - the period before a participant joins the meeting.
+ * Service that manages the join screen state and operations.
+ * This service is ONLY responsible for the JOIN SCREEN, the period before a participant joins the meeting.
  */
 @Injectable()
-export class MeetingLobbyService {
+export class MeetingJoinService {
 	protected roomService = inject(RoomService);
 	protected accessLinkService = inject(RoomAccessLinkService);
 	protected meetingContextService = inject(MeetingContextService);
@@ -32,11 +32,11 @@ export class MeetingLobbyService {
 	protected leaveRedirect = inject(LeaveRedirectService);
 	protected runtimeConfigService = inject(RuntimeConfigService);
 	protected loggerService = inject(LoggerService);
-	protected log = this.loggerService.get('OpenVidu Meet - MeetingLobbyService');
+	protected log = this.loggerService.get('OpenVidu Meet - MeetingJoinService');
 
 	/**
-	 * Individual signals for lobby state.
-	 * This state is only relevant during the lobby phase - before a participant joins the meeting.
+	 * Individual signals for join screen state.
+	 * This state is only relevant while the join screen shows, before a participant joins the meeting.
 	 */
 	private readonly _roomId = signal<string | undefined>(undefined);
 	private readonly _room = signal<Partial<MeetRoom> | undefined>(undefined);
@@ -91,7 +91,7 @@ export class MeetingLobbyService {
 	/** Computed signal for room access URL derived from MeetingContextService */
 	readonly roomAccessUrl = computed(() => this.accessLinkService.speakerPublicLink() ?? '');
 
-	/** Whether the participant cleared the lobby and moved on to the meeting's prejoin. */
+	/** Whether the participant got past the join screen and moved on to the meeting's prejoin. */
 	readonly accessGranted = this._accessGranted.asReadonly();
 
 	/** Readonly signal for the participant form */
@@ -152,7 +152,7 @@ export class MeetingLobbyService {
 	});
 
 	/**
-	 * Initializes the lobby state by fetching room data and configuring UI
+	 * Initializes the join screen state by fetching room data and configuring UI
 	 */
 	async initialize(): Promise<void> {
 		try {
@@ -162,12 +162,12 @@ export class MeetingLobbyService {
 
 			this._roomId.set(roomId);
 
-			// Non-critical tasks should not block lobby rendering.
+			// Non-critical tasks should not block join screen rendering.
 			void this.setBackButtonText().catch((error) => {
 				this.log.w('Error setting back button text:', error);
 			});
 			void this.checkForRecordings().catch((error) => {
-				this.log.w('Error checking recordings during lobby initialization:', error);
+				this.log.w('Error checking recordings during join screen initialization:', error);
 			});
 			void this.initializeParticipantName().catch((error) => {
 				this.log.w('Error initializing participant name:', error);
@@ -201,7 +201,7 @@ export class MeetingLobbyService {
 				form.get('e2eeKey')?.updateValueAndValidity();
 			}
 		} catch (error) {
-			this.clearLobbyState();
+			this.clearJoinState();
 			throw error;
 		}
 	}
@@ -277,7 +277,7 @@ export class MeetingLobbyService {
 		}
 
 		// Order matters: the room config carries the initial media state, and granting access is what
-		// hides the lobby and renders the meeting view, whose prejoin opens the devices from that
+		// hides the join screen and renders the meeting view, whose prejoin opens the devices from that
 		// state. Loading it second lets a slow response reach the prejoin too late, and nothing mutes
 		// a track that already exists. A failure must not block the join, though.
 		await this.roomService.loadRoomConfig(this._roomId()!).catch((error) => {
@@ -301,8 +301,7 @@ export class MeetingLobbyService {
 			return;
 		}
 
-		const backButtonText =
-			isStandaloneMode && !redirection && isAuthenticated ? 'LOBBY.BACK_TO_ROOMS' : 'LOBBY.BACK';
+		const backButtonText = isStandaloneMode && !redirection && isAuthenticated ? 'JOIN.BACK_TO_ROOMS' : 'JOIN.BACK';
 		this._showBackButton.set(true);
 		this._backButtonText.set(backButtonText);
 	}
@@ -326,7 +325,7 @@ export class MeetingLobbyService {
 
 			const roomId = this._roomId();
 
-			if (!roomId) throw new Error('Room ID is not set in lobby state');
+			if (!roomId) throw new Error('Room ID is not set on the join screen state');
 
 			const { recordings } = await this.recordingService.listRecordings({
 				maxItems: 1,
@@ -387,7 +386,7 @@ export class MeetingLobbyService {
 
 	/**
 	 * Mints the token this participant joins the meeting with, called when they commit to
-	 * joining rather than when they clear the lobby: minting reserves their name, checks the
+	 * joining rather than when they get past the join screen: minting reserves their name, checks the
 	 * meeting's capacity and creates the LiveKit room, and all three belong to the real join.
 	 *
 	 * @returns The room member token to connect with
@@ -399,7 +398,7 @@ export class MeetingLobbyService {
 			const participantName = this.participantName();
 
 			// For E2EE meetings, encrypt the display name before it is embedded in the token metadata
-			// so it is never exposed in plaintext. Done here (lazy lobby flow) to keep the room-member
+			// so it is never exposed in plaintext. Done here (lazy join screen flow) to keep the room-member
 			// token layer free of the LiveKit-based E2eeService. The plaintext `participantName` is kept
 			// for local storage below.
 			const e2eeKey = this.e2eeKeyValue();
@@ -495,12 +494,12 @@ export class MeetingLobbyService {
 		return details.map(({ field, message }) => `${field}: ${message}`).join('; ') || error.error?.message;
 	}
 
-	protected clearLobbyState() {
+	protected clearJoinState() {
 		this._room.set(undefined);
 		this._roomId.set(undefined);
 		this._showRecordingCard.set(false);
 		this._showBackButton.set(true);
-		this._backButtonText.set('LOBBY.BACK');
+		this._backButtonText.set('JOIN.BACK');
 		this._accessGranted.set(false);
 		this._participantForm.set(
 			new FormGroup({

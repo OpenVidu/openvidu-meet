@@ -8,17 +8,10 @@ import { MeetingCaptionsService } from '../../services/meeting-captions.service'
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingStateService } from '../../services/meeting-state.service';
 import { MeetingCaptionsComponent } from '../meeting-captions/meeting-captions.component';
-import { MeetingWaitingPanelComponent } from '../meeting-waiting-panel/meeting-waiting-panel.component';
 
 @Component({
 	selector: 'ov-meeting-custom-layout',
-	imports: [
-		OpenViduComponentsUiModule,
-		SmartLayoutComponent,
-		ShareRoomAccessLinkComponent,
-		MeetingCaptionsComponent,
-		MeetingWaitingPanelComponent
-	],
+	imports: [OpenViduComponentsUiModule, SmartLayoutComponent, ShareRoomAccessLinkComponent, MeetingCaptionsComponent],
 	templateUrl: './meeting-custom-layout.component.html',
 	styleUrl: './meeting-custom-layout.component.scss'
 })
@@ -42,32 +35,22 @@ export class MeetingCustomLayoutComponent {
 		titleWeight: 'bold' as const
 	};
 
-	/**
-	 * Share/copy link overlay: standalone SPA only.
-	 */
-	shouldShowLinkOverlay = computed(() => {
-		const hasPublicSpeakerLink = !!this.roomAccessUrl();
-		return (
-			!this.isEmbeddedMode() &&
-			this.meetingContextService.meetingUI().showShareAccessLinks &&
-			this.meetingStateService.isAlone() &&
-			hasPublicSpeakerLink
-		);
-	});
-
-	/**
-	 * Waiting overlay, shown while alone in place of the share/copy link overlay: in embedded modes
-	 * (webcomponent or iframe), where link sharing is handled by the host application, and when the
-	 * room's anonymous speaker access is disabled, so there is no link to share.
-	 */
-	shouldShowWaitingOverlay = computed(
-		() =>
-			(this.isEmbeddedMode() || this.roomAccessLinkService.speakerLinkDisabled()) &&
-			this.meetingStateService.isAlone()
+	/** The link to share, in the standalone SPA only: embedded, the host app shares it. */
+	shareLink = computed(() =>
+		!this.isEmbeddedMode() && this.meetingContextService.meetingUI().showShareAccessLinks
+			? this.roomAccessUrl()
+			: undefined
 	);
 
-	/** True when either overlay covers the layout (used to hide the hidden-participants indicator). */
-	shouldShowOverlay = computed(() => this.shouldShowLinkOverlay() || this.shouldShowWaitingOverlay());
+	/**
+	 * Covers the layout while nobody else has joined: with the link to share, or without one when
+	 * the host app shares it or the room's anonymous speaker access is disabled.
+	 */
+	shouldShowOverlay = computed(
+		() =>
+			this.meetingStateService.isAlone() &&
+			(!!this.shareLink() || this.isEmbeddedMode() || this.roomAccessLinkService.speakerLinkDisabled())
+	);
 
 	showLayoutSelector = computed(() => this.meetingContextService.meetingUI().showLayoutSelector);
 

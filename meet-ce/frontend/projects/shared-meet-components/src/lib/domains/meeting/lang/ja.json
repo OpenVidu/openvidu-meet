@@ -238,7 +238,7 @@
 		"E2EE_ERROR_CONTENT": "この参加者は異なる暗号化キーを使用しています。ビデオを表示できません。",
 		"GENERIC": "予期しないエラーが発生しました。もう一度お試しください。"
 	},
-	"LOBBY": {
+	"JOIN": {
 		"E2EE_BADGE_TOOLTIP": "エンドツーエンドで暗号化",
 		"E2EE_BADGE_TEXT": "このルームの会議はエンドツーエンドで暗号化されています",
 		"JOIN_TITLE": "会議に参加",
@@ -273,10 +273,10 @@
 		"TITLE": "コラボレーションを始めましょう",
 		"SUBTITLE": "このリンクを共有して他の人を会議に招待しましょう"
 	},
-	"WAITING_PANEL": {
+	"INVITE_WITHOUT_LINK": {
 		"TITLE": "他の参加者を待っています",
-		"SUBTITLE": "参加者が会議に参加するとすぐにここに表示されます。",
-		"ALONE_SUBTITLE": "現在、参加しているのはあなただけです。"
+		"PANEL_SUBTITLE": "参加者が会議に参加するとすぐにここに表示されます。",
+		"OVERLAY_SUBTITLE": "現在、参加しているのはあなただけです。"
 	},
 	"CAPTIONS": {
 		"ARIA_FROM": "字幕：",

@@ -238,7 +238,7 @@
 		"E2EE_ERROR_CONTENT": "Dieser Teilnehmer verwendet einen anderen Verschlüsselungsschlüssel. Video kann nicht angezeigt werden.",
 		"GENERIC": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut."
 	},
-	"LOBBY": {
+	"JOIN": {
 		"E2EE_BADGE_TOOLTIP": "Ende-zu-Ende-verschlüsselt",
 		"E2EE_BADGE_TEXT": "Meetings in diesem Raum sind Ende-zu-Ende-verschlüsselt",
 		"JOIN_TITLE": "Meeting beitreten",
@@ -273,10 +273,10 @@
 		"TITLE": "Zusammenarbeit starten",
 		"SUBTITLE": "Teilen Sie diesen Link, um andere ins Meeting zu holen"
 	},
-	"WAITING_PANEL": {
+	"INVITE_WITHOUT_LINK": {
 		"TITLE": "Warten auf andere Teilnehmer",
-		"SUBTITLE": "Teilnehmer erscheinen hier, sobald sie dem Meeting beitreten.",
-		"ALONE_SUBTITLE": "Sie sind im Moment der oder die Einzige hier."
+		"PANEL_SUBTITLE": "Teilnehmer erscheinen hier, sobald sie dem Meeting beitreten.",
+		"OVERLAY_SUBTITLE": "Sie sind im Moment der oder die Einzige hier."
 	},
 	"CAPTIONS": {
 		"ARIA_FROM": "Untertitel von ",
@@ -396,7 +396,7 @@
 		"PREPARING": "Ihr Meeting wird vorbereitet...",
 		"PREPARE_ERROR": "Ihr Meeting konnte nicht vorbereitet werden.",
 		"INIT_ERROR_TITLE": "Fehler",
-		"INIT_ERROR_MESSAGE": "Beim Initialisieren der Meeting-Lobby ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut.",
+		"INIT_ERROR_MESSAGE": "Beim Vorbereiten des Meetings ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut.",
 		"INIT_ERROR_CONFIRM": "OK"
 	},
 	"MIC_ALERT": {

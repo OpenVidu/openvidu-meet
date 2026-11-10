@@ -7,24 +7,27 @@
 			(hiddenParticipantsIndicatorClicked)="toggleParticipantsPanel()"
 		>
 			<ng-container *ovLayoutAdditionalElements>
-				@if (shouldShowLinkOverlay()) {
-					<div id="share-link-overlay" class="main-share-room-access-link-container fade-in-delayed OV_big">
-						<ov-share-room-access-link
-							class="main-share-room-access-link"
-							[title]="'SHARE_OVERLAY.TITLE' | translate"
-							[subtitle]="'SHARE_OVERLAY.SUBTITLE' | translate"
-							[titleSize]="linkOverlayConfig.titleSize"
-							[titleWeight]="linkOverlayConfig.titleWeight"
-							[roomAccessUrl]="roomAccessUrl() ?? ''"
-							(copyClicked)="onCopyRoomAccessLinkClicked()"
-						/>
-					</div>
-				} @else if (shouldShowWaitingOverlay()) {
-					<div id="waiting-overlay" class="main-share-room-access-link-container fade-in-delayed OV_big">
-						<ov-meeting-waiting-panel
-							class="main-share-room-access-link"
-							[subtitle]="'WAITING_PANEL.ALONE_SUBTITLE' | translate"
-						/>
+				@if (shouldShowOverlay()) {
+					<div id="invite-overlay" class="main-share-room-access-link-container fade-in-delayed OV_big">
+						@if (shareLink(); as url) {
+							<ov-share-room-access-link
+								class="main-share-room-access-link"
+								[title]="'SHARE_OVERLAY.TITLE' | translate"
+								[subtitle]="'SHARE_OVERLAY.SUBTITLE' | translate"
+								[titleSize]="linkOverlayConfig.titleSize"
+								[titleWeight]="linkOverlayConfig.titleWeight"
+								[roomAccessUrl]="url"
+								(copyClicked)="onCopyRoomAccessLinkClicked()"
+							/>
+						} @else {
+							<ov-share-room-access-link
+								class="main-share-room-access-link"
+								[title]="'INVITE_WITHOUT_LINK.TITLE' | translate"
+								[subtitle]="'INVITE_WITHOUT_LINK.OVERLAY_SUBTITLE' | translate"
+								titleSize="md"
+								titleWeight="semibold"
+							/>
+						}
 					</div>
 				}
 			</ng-container>

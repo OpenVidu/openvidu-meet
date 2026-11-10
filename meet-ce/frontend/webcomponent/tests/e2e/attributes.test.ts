@@ -83,10 +83,10 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 					[EmbeddedAttribute.E2EE_KEY]: 'super-secret-key-123'
 				});
 
-				// Wait for the lobby to render so the E2EE control evaluation is complete.
+				// Wait for the join screen to render so the E2EE control evaluation is complete.
 				await expect(wcLocator(page, '#participant-name-input')).toBeVisible();
 
-				// When `e2ee-key` is provided via the URL/attribute, the lobby disables the
+				// When `e2ee-key` is provided via the URL/attribute, the join screen disables the
 				// e2eeKey form control. The hidden state and the E2EE message confirms the
 				// `e2ee-key` attribute was accepted by the web component.
 				await expect(wcLocator(page, '#participant-e2eekey-input')).toHaveCount(0);
@@ -96,7 +96,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 			test('should keep the join button enabled when both participant-name and e2ee-key are set', async ({
 				page
 			}) => {
-				// Regression: providing BOTH participant-name and e2ee-key disables both lobby
+				// Regression: providing BOTH participant-name and e2ee-key disables both join screen
 				// form controls. A FormGroup whose every control is disabled has status DISABLED,
 				// so `valid` is false even though the form is complete — which previously left the
 				// join button permanently disabled. The button must remain clickable here.
@@ -127,7 +127,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				mediaEnabledAccessUrl = room.access.anonymous.moderator.url;
 			});
 
-			/** Mounts the WC with `attributes` and advances the lobby to the media-setup screen. */
+			/** Mounts the WC with `attributes` and advances the join screen to the media-setup screen. */
 			const openMediaSetup = async (page: Page, attributes: WebComponentAttributes): Promise<void> => {
 				await openWebcomponentWithAttributes(page, {
 					[EmbeddedAttribute.ROOM_URL]: mediaEnabledAccessUrl,
@@ -244,7 +244,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await expectPrejoinCameraEnabled(page, 'iframe', false, { timeout: 10_000 });
 			});
 
-			// The lobby must have the room config before it renders the meeting view: the prejoin opens
+			// The join screen must have the room config before it renders the meeting view: the prejoin opens
 			// the devices from the resolved state, and nothing mutes a track that already exists.
 			test('should honor the room default even when its config response is slow', async ({ page }) => {
 				await page.route('**/api/v1/rooms/*/config**', async (route) => {
@@ -735,7 +735,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 			});
 		}
 
-		test('should redirect to the configured URL from the lobby back button', async ({ page }) => {
+		test('should redirect to the configured URL from the join screen back button', async ({ page }) => {
 			await openWebcomponentWithAttributes(page, {
 				[EmbeddedAttribute.ROOM_URL]: accessUrl,
 				[EmbeddedAttribute.LEAVE_REDIRECT_URL]: REDIRECT_TARGET_URL

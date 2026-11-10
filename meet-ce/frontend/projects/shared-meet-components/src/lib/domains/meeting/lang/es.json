@@ -238,7 +238,7 @@
 		"E2EE_ERROR_CONTENT": "Este participante está utilizando una clave de cifrado diferente. No se puede mostrar el vídeo.",
 		"GENERIC": "Se produjo un error inesperado. Inténtalo de nuevo."
 	},
-	"LOBBY": {
+	"JOIN": {
 		"E2EE_BADGE_TOOLTIP": "Cifrado de extremo a extremo",
 		"E2EE_BADGE_TEXT": "Las reuniones de esta sala están cifradas de extremo a extremo",
 		"JOIN_TITLE": "Unirse a la reunión",
@@ -273,10 +273,10 @@
 		"TITLE": "Empieza a colaborar",
 		"SUBTITLE": "Comparte este enlace para que otros se unan a la reunión"
 	},
-	"WAITING_PANEL": {
+	"INVITE_WITHOUT_LINK": {
 		"TITLE": "Esperando a que otros se unan",
-		"SUBTITLE": "Los participantes aparecerán aquí en cuanto se unan a la reunión.",
-		"ALONE_SUBTITLE": "Ahora mismo eres el único aquí."
+		"PANEL_SUBTITLE": "Los participantes aparecerán aquí en cuanto se unan a la reunión.",
+		"OVERLAY_SUBTITLE": "Ahora mismo eres el único aquí."
 	},
 	"CAPTIONS": {
 		"ARIA_FROM": "Subtítulo de ",

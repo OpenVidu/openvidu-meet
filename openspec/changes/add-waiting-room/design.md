@@ -27,7 +27,7 @@ What the code does today (`main` at `f18e47f23`):
 - **Frontend.**
   - `MeetingViewPhase` is `loading | prejoin | connecting | live | disconnected | error`. The join is `tokenProvider()` → `_applyToken` → `_connectToRoom`.
   - The embedded command gate runs `mediaToggleAudio` and `mediaToggleVideo` only in `prejoin` or in a live session (`embedded-command.service.ts:30`, :251).
-  - `MeetingLobbyService`, `MeetingLobbyComponent`, the `LOBBY.*` translation keys and the `lobby` test ids are the Join screen. `MeetingWaitingPanelComponent` (`ov-meeting-waiting-panel`) is the "waiting for others" placeholder of a lone participant, also a customization slot used by PRO.
+  - `MeetingLobbyService`, `MeetingLobbyComponent`, the `LOBBY.*` translation keys and the `lobby` test ids are the Join screen. `MeetingWaitingPanelComponent` (`ov-meeting-waiting-panel`) is the "waiting for others" text a lone embedded participant sees, also a customization slot used by PRO.
   - `ov-notifications` supports one action (`NotificationOptions.action`). After LiveKit refuses a connection, the client reads `meetingGet` to tell a full meeting from another failure (`meeting-livekit.service.ts:250`).
 - **Realtime channel.** `add-realtime-channel` provides `RealtimeService` (server) and `RealtimeConnectionService` (browser). A feature registers how a connection is authenticated and addressed; messages reach every connection of an address on any replica, and each feature recovers on its own from a lost message.
 
@@ -294,7 +294,7 @@ The feature lives in `services/lobby/`, one responsibility per piece, each an in
 
 ### Frontend
 
-- **Prepared by `refactor-meeting-entry-flow`**, implemented and archived before this change, so the feature's diff carries no rename and no restructuring: the Join screen is `MeetingJoinComponent` and `MeetingJoinService`, the lone participant's panel `MeetingAlonePanelComponent`, the keys `JOIN.*`; `MeetingEntryFlowService` decides which entry screen comes next; `JoinTokenService` requests the join token and maps its failures with the access check's mapping; `MeetingPhaseService.isPreviewing` tells the embedded command gate whether the preview is on. "Lobby" and "waiting" in code then mean only the waiting room.
+- **Prepared by `refactor-meeting-entry-flow`**, implemented and archived before this change, so the feature's diff carries no rename and no restructuring: the Join screen is `MeetingJoinComponent` and `MeetingJoinService`, the lone participant's panel is gone (the share link block shows its text without the link), the keys `JOIN.*`; `MeetingEntryFlowService` decides which entry screen comes next; `JoinTokenService` requests the join token and maps its failures with the access check's mapping; `MeetingPhaseService.isPreviewing` tells the embedded command gate whether the preview is on. "Lobby" and "waiting" in code then mean only the waiting room.
 - **Modules.** The waiting room lives in `domains/meeting/waiting-room/`, one piece per standalone library component, exported through the barrels and composed by the meeting through the customization seam, so PRO can replace any one of them:
   - `WaitingRoomService` (ticket, realtime connection, state);
   - `LobbyAdminService` (list, derived events, commands);

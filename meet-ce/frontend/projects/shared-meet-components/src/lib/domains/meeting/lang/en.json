@@ -238,7 +238,7 @@
 		"E2EE_ERROR_CONTENT": "This participant is using a different encryption key. Video cannot be displayed.",
 		"GENERIC": "An unexpected error occurred. Please try again."
 	},
-	"LOBBY": {
+	"JOIN": {
 		"E2EE_BADGE_TOOLTIP": "End-to-end encrypted",
 		"E2EE_BADGE_TEXT": "Meetings in this room are end-to-end encrypted",
 		"JOIN_TITLE": "Join Meeting",
@@ -273,10 +273,10 @@
 		"TITLE": "Start collaborating",
 		"SUBTITLE": "Share this link to bring others into the meeting"
 	},
-	"WAITING_PANEL": {
+	"INVITE_WITHOUT_LINK": {
 		"TITLE": "Waiting for others to join",
-		"SUBTITLE": "Participants will appear here as soon as they join the meeting.",
-		"ALONE_SUBTITLE": "You're the only one here right now."
+		"PANEL_SUBTITLE": "Participants will appear here as soon as they join the meeting.",
+		"OVERLAY_SUBTITLE": "You're the only one here right now."
 	},
 	"CAPTIONS": {
 		"ARIA_FROM": "Caption from ",
@@ -396,7 +396,7 @@
 		"PREPARING": "Preparing your meeting...",
 		"PREPARE_ERROR": "Unable to prepare your meeting.",
 		"INIT_ERROR_TITLE": "Error",
-		"INIT_ERROR_MESSAGE": "An error occurred while initializing the meeting lobby. Please try again later.",
+		"INIT_ERROR_MESSAGE": "An error occurred while preparing the meeting. Please try again later.",
 		"INIT_ERROR_CONFIRM": "OK"
 	},
 	"MIC_ALERT": {

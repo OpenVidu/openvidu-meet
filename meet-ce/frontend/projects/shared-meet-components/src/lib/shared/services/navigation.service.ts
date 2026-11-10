@@ -303,7 +303,7 @@ export class NavigationService {
 	}
 
 	/**
-	 * Back-navigation from the meeting lobby / disconnected / error screens.
+	 * Back-navigation from the join screen / disconnected / error screens.
 	 *
 	 * @param fallbackRoute SPA route when no leave-redirect URL is set. Defaults to `/rooms`.
 	 * @param replaceUrl Replace the current history entry when navigating to it.

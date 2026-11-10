@@ -29,7 +29,7 @@ test.describe('Meeting start E2E Tests', () => {
 		await openPrejoin(page, accessUrl);
 
 		// The dwell is what makes this meaningful: the status is read repeatedly over a window long
-		// enough for a room created at lobby submit to have been reported started.
+		// enough for a room created at join screen submit to have been reported started.
 		for (let attempt = 0; attempt < 5; attempt++) {
 			expect(await getRoomStatus(roomId)).toBe(MeetRoomStatus.OPEN);
 			await page.waitForTimeout(1_000);

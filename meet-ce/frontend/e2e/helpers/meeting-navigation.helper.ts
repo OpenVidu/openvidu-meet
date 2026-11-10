@@ -4,25 +4,25 @@ import { ensurePrejoinAudioState, ensurePrejoinVideoState } from './media-contro
 import { click } from './ui-utils.helper';
 
 /**
- * Time allowed for the app to bootstrap and present the lobby after navigation.
+ * Time allowed for the app to bootstrap and present the join screen after navigation.
  * Generous on purpose: when a test joins several participants they all boot the app
  * in parallel, and the resulting resource spike can slow a cold Angular bootstrap.
- * This gates on "the lobby is shown", distinct from in-app interaction waits which
+ * This gates on "the join screen is shown", distinct from in-app interaction waits which
  * stay tight to keep catching real regressions.
  */
-const LOBBY_BOOT_TIMEOUT = 30_000;
+const JOIN_SCREEN_BOOT_TIMEOUT = 30_000;
 
-// ─── Internal lobby / prejoin steps ─────────────────────────────────────────
+// ─── Internal join screen / prejoin steps ─────────────────────────────────────────
 
 /**
- * Fills the lobby form (participant name + optional E2EE key) and submits it.
+ * Fills the join screen form (participant name + optional E2EE key) and submits it.
  * Waits for the relevant inputs to be visible before interacting.
  */
-const completeLobby = async (page: Page, options?: { name?: string; e2eeKey?: string }): Promise<void> => {
+const completeJoinScreen = async (page: Page, options?: { name?: string; e2eeKey?: string }): Promise<void> => {
 	const nameSubmit = page.locator('#participant-name-submit');
 	const nameInput = page.locator('#participant-name-input');
-	await expect(nameSubmit).toBeVisible({ timeout: LOBBY_BOOT_TIMEOUT });
-	await expect(nameInput).toBeVisible({ timeout: LOBBY_BOOT_TIMEOUT });
+	await expect(nameSubmit).toBeVisible({ timeout: JOIN_SCREEN_BOOT_TIMEOUT });
+	await expect(nameInput).toBeVisible({ timeout: JOIN_SCREEN_BOOT_TIMEOUT });
 
 	if (options?.name && (await nameInput.isEditable())) {
 		await nameInput.fill(options.name);
@@ -52,7 +52,7 @@ export const clickJoinMeeting = async (page: Page): Promise<void> => {
 // ─── Navigation entry-points ────────────────────────────────────────────────
 
 /**
- * Navigates to the access URL, completes the lobby, clicks join, and waits for
+ * Navigates to the access URL, completes the join screen, clicks join, and waits for
  * the meeting layout to be fully loaded.
  *
  * @param options.name     - Participant display name (auto-generated when omitted).
@@ -97,7 +97,7 @@ export const openMeeting = async (
 };
 
 /**
- * Navigates to the access URL, completes the lobby, and stops at the prejoin
+ * Navigates to the access URL, completes the join screen, and stops at the prejoin
  * screen (camera / microphone preview) without joining the room.
  *
  * @param options.name     - Participant display name (auto-generated when omitted).
@@ -112,27 +112,27 @@ export const openPrejoin = async (
 ): Promise<void> => {
 	const timeoutMs = options?.timeoutMs ?? 15_000;
 
-	await openLobby(page, accessUrl, options);
-	await completeLobby(page, options);
+	await openJoinScreen(page, accessUrl, options);
+	await completeJoinScreen(page, options);
 
 	await expect(page.locator('#join-button')).toBeVisible({ timeout: timeoutMs });
 };
 
 /**
- * Navigates to the access URL and (by default) waits for the lobby name-input to appear, without
+ * Navigates to the access URL and (by default) waits for the join screen name-input to appear, without
  * filling it or proceeding further. This is the single entry point that performs the user login:
  * when `options.login` credentials are given and the app presents the login form (auto-detected),
- * the user is logged in — including the forced password change on a first login — before the lobby.
+ * the user is logged in — including the forced password change on a first login — before the join screen.
  *
  * Set `options.checkNameInput` to `false` to skip waiting for the name input — useful to assert an
  * intermediate state first (e.g. that the login form is shown) before logging in.
  */
-export const openLobby = async (
+export const openJoinScreen = async (
 	page: Page,
 	accessUrl: string,
 	options?: { timeoutMs?: number; login?: LoginOptions; checkNameInput?: boolean }
 ): Promise<void> => {
-	const timeoutMs = options?.timeoutMs ?? LOBBY_BOOT_TIMEOUT;
+	const timeoutMs = options?.timeoutMs ?? JOIN_SCREEN_BOOT_TIMEOUT;
 	const checkNameInput = options?.checkNameInput ?? true;
 
 	await page.goto(accessUrl, { waitUntil: 'domcontentloaded' });
@@ -220,7 +220,7 @@ export const leaveMeeting = async (page: Page, timeoutMs = 10_000): Promise<void
 };
 
 /**
- * Re-opens the prejoin in the SAME browser context (simulating a returning user). The lobby may be
+ * Re-opens the prejoin in the SAME browser context (simulating a returning user). The join screen may be
  * skipped when the participant name is already stored for the tab, so this tolerates both flows
  * rather than assuming the name form is shown (which is what {@link openPrejoin} requires).
  */
@@ -228,12 +228,12 @@ export const reopenPrejoin = async (page: Page, accessUrl: string): Promise<void
 	await page.goto(accessUrl, { waitUntil: 'domcontentloaded' });
 
 	const nameSubmit = page.locator('#participant-name-submit');
-	const lobbyShown = await nameSubmit
+	const joinScreenShown = await nameSubmit
 		.waitFor({ state: 'visible', timeout: 5_000 })
 		.then(() => true)
 		.catch(() => false);
 
-	if (lobbyShown) {
+	if (joinScreenShown) {
 		const nameInput = page.locator('#participant-name-input');
 
 		if (!(await nameInput.inputValue())) {

@@ -10,7 +10,8 @@ import { RuntimeConfigService } from '../../../../shared/services/runtime-config
 import { SoundService } from '../../../../shared/services/sound.service';
 import { EmbeddedCommandService } from '../../../embedded/services/embedded-command.service';
 import { IframeBridgeService } from '../../../embedded/services/iframe-bridge.service';
-import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
+import { MeetingJoinComponent } from '../../components/meeting-join/meeting-join.component';
+import { ShareRoomAccessLinkComponent } from '../../components/share-room-access-link/share-room-access-link.component';
 import { MeetingParticipantItemComponent } from '../../customization/meeting-participant-item/meeting-participant-item.component';
 import { MeetingRaisedHandsStripComponent } from '../../customization/meeting-raised-hands-strip/meeting-raised-hands-strip.component';
 import {
@@ -25,7 +26,7 @@ import { MeetingCaptionsService } from '../../services/meeting-captions.service'
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingStateService } from '../../services/meeting-state.service';
 import { MeetingEventHandlerService } from '../../services/meeting-event-handler.service';
-import { MeetingLobbyService } from '../../services/meeting-lobby.service';
+import { MeetingJoinService } from '../../services/meeting-join.service';
 import { MeetingShortcutsService } from '../../services/meeting-shortcuts.service';
 
 @Component({
@@ -37,15 +38,16 @@ import { MeetingShortcutsService } from '../../services/meeting-shortcuts.servic
 		NgTemplateOutlet,
 		MatIconModule,
 		MatProgressSpinnerModule,
-		MeetingLobbyComponent,
-		MeetingRaisedHandsStripComponent
+		MeetingJoinComponent,
+		MeetingRaisedHandsStripComponent,
+		ShareRoomAccessLinkComponent
 	],
-	providers: [MeetingLobbyService, MeetingEventHandlerService, MeetingShortcutsService]
+	providers: [MeetingJoinService, MeetingEventHandlerService, MeetingShortcutsService]
 })
 export class MeetingComponent implements OnInit, OnDestroy {
 	protected meetingContextService = inject(MeetingContextService);
 	protected meetingStateService = inject(MeetingStateService);
-	protected lobbyService = inject(MeetingLobbyService);
+	protected joinService = inject(MeetingJoinService);
 	protected eventHandlerService = inject(MeetingEventHandlerService);
 	protected captionsService = inject(MeetingCaptionsService);
 	protected meetingThemeService = inject(MeetingThemeService);
@@ -53,36 +55,29 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	protected notificationService = inject(NotificationService);
 	protected dialogService = inject(DialogService);
 	protected soundService = inject(SoundService);
-	private readonly runtimeConfigService = inject(RuntimeConfigService);
 	private readonly translateService = inject(TranslateService);
 	private readonly broadcastState = inject(BroadcastStateService);
+	private readonly isEmbeddedMode = inject(RuntimeConfigService).isEmbeddedMode;
+
+	/** Embedded, where the host app shares the link, the participants panel says others will appear. */
+	protected readonly showInviteWithoutLink = computed(
+		() => this.isEmbeddedMode() && this.meetingStateService.isAlone()
+	);
 
 	// Template reference for custom participant panel item
 	protected participantItem = contentChild.required(MeetingParticipantItemComponent);
 	protected participantItemTemplate = computed(() => this.participantItem().template());
 
-	/** Controls whether to show lobby (true) or meeting view (false) */
-	showLobby = computed(() => !this.lobbyService.accessGranted());
-	lobbyState = signal<'loading' | 'ready' | 'error'>('loading');
+	/** Controls whether to show the join screen (true) or meeting view (false) */
+	showJoin = computed(() => !this.joinService.accessGranted());
+	joinState = signal<'loading' | 'ready' | 'error'>('loading');
 
 	/** Controls whether to show the videoconference component */
 	isMeetingLeft = signal(false);
 
-	/**
-	 * Whether the app runs embedded in a host application (webcomponent or iframe).
-	 */
-	isEmbeddedMode = this.runtimeConfigService.isEmbeddedMode;
-
-	/**
-	 * Whether the local participant is alone (no remote participants yet).
-	 * The panel after the local participant — the share/copy link panel (standalone SPA)
-	 * or the waiting panel (embedded) — is only shown while alone.
-	 */
-	isAlone = this.meetingStateService.isAlone;
-
 	// Signals for meeting context data
-	roomName = this.lobbyService.roomName;
-	e2eeKey = this.lobbyService.e2eeKeyValue;
+	roomName = this.joinService.roomName;
+	e2eeKey = this.joinService.e2eeKeyValue;
 	features = this.meetingContextService.meetingUI;
 	initialMediaState = this.meetingContextService.initialMediaState;
 	hasRecordings = this.meetingContextService.hasRecordings;
@@ -95,7 +90,7 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	protected readonly extraButtonsPosition = ToolbarAdditionalButtonsPosition.BEFORE_MENU;
 
 	/** Handed to the meeting view, which calls it when the participant commits to joining. */
-	protected readonly generateJoinToken = () => this.lobbyService.generateJoinToken();
+	protected readonly generateJoinToken = () => this.joinService.generateJoinToken();
 
 	constructor() {
 		inject(IframeBridgeService).attachCommands(inject(EmbeddedCommandService));
@@ -129,12 +124,12 @@ export class MeetingComponent implements OnInit, OnDestroy {
 
 	async ngOnInit() {
 		try {
-			this.lobbyState.set('loading');
-			await this.lobbyService.initialize();
-			this.lobbyState.set('ready');
+			this.joinState.set('loading');
+			await this.joinService.initialize();
+			this.joinState.set('ready');
 		} catch (error) {
-			console.error('Error initializing lobby state:', error);
-			this.lobbyState.set('error');
+			console.error('Error initializing join screen state:', error);
+			this.joinState.set('error');
 			this.dialogService.showDialog({
 				title: this.translateService.translate('MEETING_PAGE.INIT_ERROR_TITLE'),
 				message: this.translateService.translate('MEETING_PAGE.INIT_ERROR_MESSAGE'),
