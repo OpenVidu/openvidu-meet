@@ -44,7 +44,7 @@ The recording player, in the console recording detail page and on the recording 
 - **THEN** the REST API answers `200`, as before
 
 ### Requirement: Access with a recording secret
-For `getRecording`, `getRecordingMedia` and `downloadRecording`, a public secret SHALL grant access on its own, without any credential, while the room's anonymous recording access is enabled, and `403` while it is disabled. A private secret SHALL waive the recording permission for a caller authenticated by any credential and answer `401` without one. A play-only secret SHALL grant nothing for `downloadRecording`, which answers `403`. An unrecognised secret SHALL answer `400` whatever credential comes with it.
+A public secret SHALL grant access to `getRecording`, `getRecordingMedia` and `downloadRecording` on its own, without any credential, while the room's anonymous recording access is enabled, and `403` while it is disabled. A private secret SHALL waive the recording permission for any authenticated caller and answer `401` without a credential. A play-only secret SHALL answer `403` on `downloadRecording`. An unrecognised secret SHALL answer `400` whatever credential comes with it.
 
 #### Scenario: Public secret without credentials
 - **WHEN** `getRecordingMedia` is called with the public secret and no credential

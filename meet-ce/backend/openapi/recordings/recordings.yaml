@@ -378,7 +378,9 @@
             `GET /recordings/{recordingId}/media`, served with a `Content-Disposition: attachment` header so
             browsers save the file instead of playing it inline.
 
-            Requires the `recordingDownload` permission, or a valid `recordingSecret` for the recording.
+            Requires the `recordingDownload` permission, or a valid `recordingSecret` that grants download. A
+            `recordingSecret` from a link created by a caller without `recordingDownload` only plays the
+            recording and answers `403`, whatever credential comes with it.
 
             Playing and downloading are gated by different permissions (`recordingPlay` vs `recordingDownload`),
             which is why they are separate endpoints: the server cannot tell the intent apart on a shared one.
@@ -522,6 +524,9 @@
             This URL is intended to be shared with people who do not have direct access to the recording.
 
             Requires the `recordingPlay` permission.
+
+            The link grants what its creator holds: it plays **and downloads** the recording when the caller holds
+            `recordingDownload`, and only plays it otherwise.
 
             It can be restricted to OpenVidu Meet users only, or made accessible by anyone with the link,
             depending on the `privateAccess` query parameter.
