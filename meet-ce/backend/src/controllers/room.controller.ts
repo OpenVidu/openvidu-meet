@@ -59,17 +59,12 @@ export const getRooms = async (_req: Request, res: Response) => {
 	logger.verbose(`Getting all rooms with filters: ${JSON.stringify(queryParams)}`);
 
 	try {
-		const fieldsForQuery = MeetRoomHelper.computeFieldsForRoomQuery(
-			queryParams.fields ? [...queryParams.fields] : undefined,
-			queryParams.extraFields
-		);
-
+		const fieldsForQuery = MeetRoomHelper.computeFieldsForRoomQuery(queryParams.fields, queryParams.extraFields);
 		const shouldApplyPermissionFiltering = MeetRoomHelper.shouldApplyPermissionFilteringForFields(fieldsForQuery);
-		const fieldsToDrop = shouldApplyPermissionFiltering
-			? MeetRoomHelper.addMissingFields(fieldsForQuery, ['roomId', 'roles'])
-			: [];
-
-		const optimizedQueryParams: RoomQueryWithFields = { ...queryParams, fields: fieldsForQuery };
+		const optimizedQueryParams: RoomQueryWithFields = {
+			...queryParams,
+			fields: shouldApplyPermissionFiltering ? [...fieldsForQuery, 'roomId', 'roles'] : fieldsForQuery
+		};
 		const { rooms, isTruncated, nextPageToken } = await roomService.getAllMeetRooms(optimizedQueryParams);
 
 		const filteredRooms = shouldApplyPermissionFiltering
@@ -77,7 +72,12 @@ export const getRooms = async (_req: Request, res: Response) => {
 					rooms,
 					async (room) => {
 						const permissions = await roomAccessService.getAuthenticatedRoomMemberPermissions(room.roomId!);
-						return MeetRoomHelper.applyPermissionFiltering(room, permissions, fieldsToDrop);
+						const filteredRoom = MeetRoomHelper.applyPermissionFiltering(room, permissions);
+						return MeetRoomHelper.applyFieldFilters(
+							filteredRoom,
+							queryParams.fields,
+							queryParams.extraFields
+						);
 					},
 					{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_RETRIEVE_ROOMS, failFast: true }
 				)
@@ -111,15 +111,16 @@ export const getRoom = async (req: Request, res: Response) => {
 		const roomService = container.get(RoomService);
 		const fieldsForQuery = MeetRoomHelper.computeFieldsForRoomQuery(fields, extraFields);
 		const shouldApplyPermissionFiltering = MeetRoomHelper.shouldApplyPermissionFilteringForFields(fieldsForQuery);
-		const fieldsToDrop = shouldApplyPermissionFiltering
-			? MeetRoomHelper.addMissingFields(fieldsForQuery, ['roles'])
-			: [];
 
-		let room = await roomService.getMeetRoom(roomId, fieldsForQuery);
+		let room = await roomService.getMeetRoom(
+			roomId,
+			shouldApplyPermissionFiltering ? [...fieldsForQuery, 'roles'] : fieldsForQuery
+		);
 
 		if (shouldApplyPermissionFiltering) {
 			const permissions = await container.get(RoomAccessService).getAuthenticatedRoomMemberPermissions(roomId);
-			room = MeetRoomHelper.applyPermissionFiltering(room, permissions, fieldsToDrop);
+			room = MeetRoomHelper.applyPermissionFiltering(room, permissions);
+			room = MeetRoomHelper.applyFieldFilters(room, fields, extraFields);
 		}
 
 		room = roomToWire(room);

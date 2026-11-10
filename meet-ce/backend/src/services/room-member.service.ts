@@ -716,8 +716,7 @@ export class RoomMemberService {
 	/**
 	 * Resolves anonymous access and effective permissions from a room secret.
 	 *
-	 * - Moderator and speaker secrets map to their room role permissions.
-	 * - Recording secret maps to read-only recording permissions.
+	 * Grants what the secret's link grants (see {@link MeetRoomHelper.anonymousLinkPermissions}).
 	 *
 	 * @param roomId - The ID of the room
 	 * @param secret - The secret provided for anonymous access
@@ -745,14 +744,8 @@ export class RoomMemberService {
 			throw errorAnonymousAccessDisabled(roomId, anonymousRole);
 		}
 
-		if (anonymousRole === 'recording') {
-			return {
-				permissions: MeetRoomMemberHelper.recordingReadOnlyPermissions()
-			};
-		}
-
 		return {
-			permissions: roles[anonymousRole].permissions
+			permissions: MeetRoomHelper.anonymousLinkPermissions(anonymousRole, roles)
 		};
 	}
 

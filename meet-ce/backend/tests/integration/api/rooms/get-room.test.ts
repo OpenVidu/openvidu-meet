@@ -7,6 +7,7 @@ import {
 } from '@openvidu-meet/typings';
 import ms from 'ms';
 import {
+	anonymousLinksWithUrl,
 	expectExtraFieldsInResponse,
 	expectSuccessRoomResponse,
 	expectValidationError,
@@ -204,11 +205,6 @@ describe('Room API Tests', () => {
 	});
 
 	describe('Anonymous link disclosure', () => {
-		const anonymousUrls = (body: { access: { anonymous: Record<string, { url?: string }> } }) =>
-			Object.entries(body.access.anonymous)
-				.filter(([, link]) => link.url !== undefined)
-				.map(([name]) => name);
-
 		const tokensFor = async (options: Parameters<typeof createRoom>[0] = {}) => {
 			const room = await createRoom({ roomName: 'link-disclosure', ...options });
 			const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(room.access);
@@ -225,7 +221,7 @@ describe('Room API Tests', () => {
 			const response = await getRoom(room.roomId, undefined, undefined, speakerToken);
 
 			expect(response.status).toBe(200);
-			expect(anonymousUrls(response.body)).toEqual([]);
+			expect(anonymousLinksWithUrl(response.body)).toEqual([]);
 			expect(response.body.access.user.url).toBeDefined();
 			expect(response.body.access.anonymous.moderator.enabled).toBe(true);
 		});
@@ -236,7 +232,7 @@ describe('Room API Tests', () => {
 			const response = await getRoom(room.roomId, undefined, undefined, moderatorToken);
 
 			expect(response.status).toBe(200);
-			expect(anonymousUrls(response.body)).toEqual(['moderator', 'speaker', 'recording']);
+			expect(anonymousLinksWithUrl(response.body)).toEqual(['moderator', 'speaker', 'recording']);
 		});
 
 		it('should not return the moderator link to a speaker allowed to share', async () => {
@@ -247,7 +243,7 @@ describe('Room API Tests', () => {
 			const response = await getRoom(room.roomId, undefined, undefined, speakerToken);
 
 			expect(response.status).toBe(200);
-			expect(anonymousUrls(response.body)).toEqual(['speaker', 'recording']);
+			expect(anonymousLinksWithUrl(response.body)).toEqual(['speaker', 'recording']);
 		});
 
 		it('should not return the speaker link to a moderator whose role lacks a speaker permission', async () => {
@@ -258,7 +254,7 @@ describe('Room API Tests', () => {
 			const response = await getRoom(room.roomId, undefined, undefined, moderatorToken);
 
 			expect(response.status).toBe(200);
-			expect(anonymousUrls(response.body)).toEqual(['moderator', 'recording']);
+			expect(anonymousLinksWithUrl(response.body)).toEqual(['moderator', 'recording']);
 		});
 
 		it('should return the three anonymous links to an API key', async () => {
@@ -269,7 +265,7 @@ describe('Room API Tests', () => {
 			const response = await getRoom(room.roomId);
 
 			expect(response.status).toBe(200);
-			expect(anonymousUrls(response.body)).toEqual(['moderator', 'speaker', 'recording']);
+			expect(anonymousLinksWithUrl(response.body)).toEqual(['moderator', 'speaker', 'recording']);
 		});
 
 		it('should return the roles only when extraFields asks for them', async () => {
@@ -282,7 +278,7 @@ describe('Room API Tests', () => {
 			expect(byDefault.body.roles).toBeUndefined();
 			expect(accessOnly.body.roles).toBeUndefined();
 			expect(Object.keys(accessOnly.body).filter((key) => key !== '_extraFields')).toEqual(['access']);
-			expect(anonymousUrls(accessOnly.body)).toEqual(['moderator', 'speaker', 'recording']);
+			expect(anonymousLinksWithUrl(accessOnly.body)).toEqual(['moderator', 'speaker', 'recording']);
 			expect(withRoles.body.roles.moderator.permissions).toBeDefined();
 		});
 	});

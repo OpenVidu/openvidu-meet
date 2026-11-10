@@ -6,19 +6,17 @@ import type {
 	MeetRoomExtraField,
 	MeetRoomField,
 	MeetRoomMemberPermissions,
-	MeetRoomOptions
+	MeetRoomOptions,
+	MeetRoomRoles
 } from '@openvidu-meet/typings';
-import {
-	MEET_PERMISSION_KEYS,
-	MEET_ROOM_EXTRA_FIELDS,
-	MEET_ROOM_FIELDS,
-	MeetRecordingAutoStartMode
-} from '@openvidu-meet/typings';
+import { MEET_ROOM_EXTRA_FIELDS, MEET_ROOM_FIELDS, MeetRecordingAutoStartMode } from '@openvidu-meet/typings';
 import type { Room } from 'livekit-server-sdk';
 import { MEET_ENV } from '../environment.js';
 import { addHttpResponseMetadata, applyHttpFieldFiltering, buildFieldsForDbQuery } from './field-filter.helper.js';
 import { RecordingHelper } from './recording.helper.js';
 import { MeetRoomMemberHelper } from './room-member.helper.js';
+
+type MeetRoomAnonymousLink = keyof MeetRoomAnonymousUsers;
 
 export class MeetRoomHelper {
 	private constructor() {
@@ -287,9 +285,9 @@ export class MeetRoomHelper {
 	 * @returns Array of fields to request from database
 	 */
 	static computeFieldsForRoomQuery(
-		fields?: MeetRoomField[],
-		extraFields?: MeetRoomExtraField[]
-	): MeetRoomField[] | undefined {
+		fields?: readonly MeetRoomField[],
+		extraFields?: readonly MeetRoomExtraField[]
+	): MeetRoomField[] {
 		return buildFieldsForDbQuery(fields, extraFields, MEET_ROOM_FIELDS, MEET_ROOM_EXTRA_FIELDS);
 	}
 
@@ -322,7 +320,11 @@ export class MeetRoomHelper {
 	 * // Result: { roomId: '123', config: {...} }
 	 * ```
 	 */
-	static applyFieldFilters(room: MeetRoom, fields?: MeetRoomField[], extraFields?: MeetRoomExtraField[]): MeetRoom {
+	static applyFieldFilters<TRoom extends Partial<MeetRoom>>(
+		room: TRoom,
+		fields?: readonly MeetRoomField[],
+		extraFields?: readonly MeetRoomExtraField[]
+	): TRoom {
 		return applyHttpFieldFiltering(room, fields, extraFields, MEET_ROOM_EXTRA_FIELDS);
 	}
 
@@ -333,67 +335,44 @@ export class MeetRoomHelper {
 	 *
 	 * @param room - The room to filter
 	 * @param permissions - The caller's permissions in the room
-	 * @param fieldsToDrop - Fields read only for the filtering, removed from the result
 	 */
 	static applyPermissionFiltering<TRoom extends Partial<MeetRoom>>(
 		room: TRoom,
-		permissions: MeetRoomMemberPermissions,
-		fieldsToDrop: MeetRoomField[] = []
+		permissions: MeetRoomMemberPermissions
 	): TRoom {
-		const filteredRoom = { ...room };
+		const { access, roles } = room;
 
-		if (room.access) {
-			const linkPermissions = {
-				moderator: room.roles?.moderator.permissions,
-				speaker: room.roles?.speaker.permissions,
-				recording: MeetRoomMemberHelper.recordingReadOnlyPermissions()
-			};
-			const anonymous: Record<keyof MeetRoomAnonymousUsers, { enabled: boolean; url?: string }> = {
-				...room.access.anonymous
-			};
-
-			for (const link of Object.keys(linkPermissions) as (keyof MeetRoomAnonymousUsers)[]) {
-				const granted = linkPermissions[link];
-
-				if (!permissions.roomShareAccessLinks || !granted || !this.grantsWithin(granted, permissions)) {
-					anonymous[link] = { enabled: anonymous[link].enabled };
-				}
-			}
-
-			filteredRoom.access = { ...room.access, anonymous: anonymous as MeetRoomAnonymousUsers };
+		if (!access) {
+			return room;
 		}
 
-		for (const field of fieldsToDrop) {
-			delete filteredRoom[field];
-		}
+		const canShare = (link: MeetRoomAnonymousLink) =>
+			permissions.roomShareAccessLinks &&
+			!!roles &&
+			MeetRoomMemberHelper.grantsWithin(this.anonymousLinkPermissions(link, roles), permissions);
+		const anonymous = Object.fromEntries(
+			(Object.keys(access.anonymous) as MeetRoomAnonymousLink[]).map((link) => {
+				const { enabled, url } = access.anonymous[link];
+				return [link, canShare(link) ? { enabled, url } : { enabled }];
+			})
+		) as unknown as MeetRoomAnonymousUsers;
 
-		return filteredRoom;
+		return { ...room, access: { ...access, anonymous } };
 	}
 
 	/**
-	 * Whether every permission `link` grants is also held by `holder`.
+	 * The permissions an anonymous link grants whoever enters through it: its role's for the moderator
+	 * and speaker links, the recording read permissions for the recordings link.
 	 */
-	static grantsWithin(link: MeetRoomMemberPermissions, holder: MeetRoomMemberPermissions): boolean {
-		return MEET_PERMISSION_KEYS.every((key) => !link[key] || holder[key] === true);
+	static anonymousLinkPermissions(link: MeetRoomAnonymousLink, roles: MeetRoomRoles): MeetRoomMemberPermissions {
+		return link === 'recording' ? MeetRoomMemberHelper.recordingReadOnlyPermissions() : roles[link].permissions;
 	}
 
 	/**
 	 * Whether a room projected to `fields` carries anonymous link URLs to filter.
 	 */
-	static shouldApplyPermissionFilteringForFields(fields?: MeetRoomField[]): boolean {
-		return !fields || fields.includes('access');
-	}
-
-	/**
-	 * Adds to a query projection the `required` fields it lacks, and returns those it added so the
-	 * response can drop them again.
-	 */
-	static addMissingFields(fields: MeetRoomField[] | undefined, required: MeetRoomField[]): MeetRoomField[] {
-		if (!fields) return [];
-
-		const missing = required.filter((field) => !fields.includes(field));
-		fields.push(...missing);
-		return missing;
+	static shouldApplyPermissionFilteringForFields(fields: MeetRoomField[]): boolean {
+		return fields.includes('access');
 	}
 
 	/**
