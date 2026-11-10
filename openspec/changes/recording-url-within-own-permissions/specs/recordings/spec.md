@@ -1,7 +1,20 @@
+## ADDED Requirements
+
+### Requirement: Recording player offers no download of its own
+The recording player, in the console recording detail page and on the recording view page, SHALL open no context menu on the video and SHALL offer no download in its native controls, whatever the viewer holds. Download SHALL be offered only by the app's own action, under the rules of the page that shows the player.
+
+#### Scenario: Right click on the video
+- **WHEN** a user opens a recording in the console and right-clicks the video
+- **THEN** no context menu opens
+
+#### Scenario: Play-only visitor
+- **WHEN** an anonymous visitor opens a play-only recording link and right-clicks the video
+- **THEN** no context menu opens and the page offers no download
+
 ## MODIFIED Requirements
 
 ### Requirement: Shareable recording links
-`getRecordingUrl` SHALL require `recordingPlay` and return a link to the recording view page holding one of the recording's secrets, all created with the recording and never changed: a public one by default, refused with `403` while the room's `access.anonymous.recording.enabled` is `false`, or a private one with `privateAccess=true`, always available. The link SHALL grant download only when the caller holds `recordingDownload`; otherwise it SHALL grant play only.
+`getRecordingUrl` SHALL require `recordingPlay` and return a link to the recording view page holding one of the recording's secrets, which never change: a public one by default, refused with `403` while the room's `access.anonymous.recording.enabled` is `false`, or a private one with `privateAccess=true`, always available. The link SHALL grant download only when the caller holds `recordingDownload`; otherwise it SHALL grant play only.
 
 #### Scenario: Public link
 - **GIVEN** a room with anonymous recording access enabled
@@ -29,11 +42,6 @@
 - **GIVEN** a public link to a recording obtained before this release
 - **WHEN** `downloadRecording` is called with its secret
 - **THEN** the REST API answers `200`, as before
-
-#### Scenario: Several replicas
-- **GIVEN** two Meet replicas sharing the deployment
-- **WHEN** replica A returns a play-only link and replica B serves a request carrying its secret
-- **THEN** replica B grants play and refuses download, as replica A would
 
 ### Requirement: Access with a recording secret
 For `getRecording`, `getRecordingMedia` and `downloadRecording`, a public secret SHALL grant access on its own, without any credential, while the room's anonymous recording access is enabled, and `403` while it is disabled. A private secret SHALL waive the recording permission for a caller authenticated by any credential and answer `401` without one. A play-only secret SHALL grant nothing for `downloadRecording`, which answers `403`. An unrecognised secret SHALL answer `400` whatever credential comes with it.
@@ -68,8 +76,21 @@ For `getRecording`, `getRecordingMedia` and `downloadRecording`, a public secret
 - **WHEN** `getRecording` is called with a `recordingSecret` that is not one of the recording's secrets, even with an API key
 - **THEN** the REST API answers `400`
 
+### Requirement: Downloading a recording
+`downloadRecording` SHALL serve the same media as `getRecordingMedia`, as an attachment named after the recording's filename (or `{recordingId}.mp4`), gated by `recordingDownload` instead of `recordingPlay`, or by a `recordingSecret` that grants download (see "Access with a recording secret").
+
+#### Scenario: Play granted, download denied
+- **GIVEN** a room member token holding `recordingPlay` but not `recordingDownload`
+- **WHEN** it calls `getRecordingMedia` and then `downloadRecording` for a recording of its room
+- **THEN** the first call answers `200` and the second answers `403`
+
+#### Scenario: Download granted, play denied
+- **GIVEN** a room member token holding `recordingDownload` but not `recordingPlay`
+- **WHEN** it calls `downloadRecording`
+- **THEN** the REST API answers `200` with a `Content-Disposition: attachment` header
+
 ### Requirement: Recording view page
-The page `/recording/{recordingId}` SHALL play a `complete` recording, or show its status otherwise, to a visitor holding `recordingPlay` in its room or bringing a valid `recordingSecret`. It SHALL offer download with `recordingDownload` or a secret that grants download, and delete with `recordingDelete`. A visitor with a private link and no session SHALL be sent to log in and back.
+The page `/recording/{recordingId}` SHALL play a `complete` recording, or show its status otherwise, to a visitor holding `recordingPlay` in its room or bringing a valid `recordingSecret`. It SHALL offer download to a visitor bringing a secret only when that secret grants download, to any other visitor only with `recordingDownload`, and delete with `recordingDelete`. A visitor with a private link and no session SHALL be sent to log in and back.
 
 #### Scenario: Public link
 - **WHEN** an anonymous visitor opens a public recording link that grants download
@@ -78,7 +99,11 @@ The page `/recording/{recordingId}` SHALL play a `complete` recording, or show i
 #### Scenario: Play-only link
 - **WHEN** an anonymous visitor opens a public recording link created by a member without `recordingDownload`
 - **THEN** the page plays the recording and offers no download
-- **AND** its share dialog offers that same link
+
+#### Scenario: Play-only link opened by a member allowed to download
+- **GIVEN** a registered user whose permissions in the recording's room hold `recordingDownload`
+- **WHEN** the user, logged in, opens a play-only recording link
+- **THEN** the page plays the recording and offers no download
 
 #### Scenario: Private link without a session
 - **WHEN** a visitor without a session opens a private recording link
