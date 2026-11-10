@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { ShareRoomAccessLinkComponent } from '../../components/share-room-access-link/share-room-access-link.component';
+import { MeetingEntryFlowService } from '../../services/meeting-entry-flow.service';
 import { MeetingJoinService } from '../../services/meeting-join.service';
 
 /**
@@ -32,6 +33,7 @@ import { MeetingJoinService } from '../../services/meeting-join.service';
 })
 export class MeetingJoinComponent {
 	protected joinService = inject(MeetingJoinService);
+	private readonly entryFlow = inject(MeetingEntryFlowService);
 
 	protected roomName = this.joinService.roomName;
 	protected roomClosed = this.joinService.roomClosed;
@@ -48,7 +50,7 @@ export class MeetingJoinComponent {
 	protected backButtonText = this.joinService.backButtonText;
 
 	async onFormSubmit(): Promise<void> {
-		await this.joinService.submitAccess();
+		await this.entryFlow.completeJoinScreen();
 	}
 
 	async onViewRecordingsClick(): Promise<void> {

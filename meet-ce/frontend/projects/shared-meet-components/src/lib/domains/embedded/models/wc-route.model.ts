@@ -1,5 +1,6 @@
 import { LeftEventReason } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
+import type { MeetingEntryParams } from '../../meeting/services/meeting-entry.service';
 
 /**
  * The set of views the webcomponent can render. Each name maps one-to-one to a
@@ -19,20 +20,10 @@ export enum WcRouteName {
 	INVALID = 'invalid'
 }
 
-/** Meeting room view (`/room/:room-id`). Params mirror {@link MeetingEntryParams}. */
+/** Meeting room view (`/room/:room-id`). */
 export interface MeetingRoute {
 	name: WcRouteName.MEETING;
-	params: {
-		roomId: string;
-		secret?: string;
-		e2eeKey?: string;
-		participantName?: string;
-		participantExternalId?: string;
-		participantMetadata?: string;
-		initialAudioActive?: boolean;
-		initialVideoActive?: boolean;
-		leaveRedirectUrl?: string;
-	};
+	params: MeetingEntryParams;
 }
 
 /** Single-recording view (`/recording/:recording-id`). Params mirror {@link RecordingEntryParams}. */

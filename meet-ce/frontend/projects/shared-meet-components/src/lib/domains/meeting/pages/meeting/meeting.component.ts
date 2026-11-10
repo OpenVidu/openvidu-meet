@@ -1,10 +1,8 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, contentChild, effect, inject, OnInit, signal, untracked, OnDestroy } from '@angular/core';
+import { Component, computed, contentChild, effect, inject, OnInit, untracked, OnDestroy } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
-import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { SoundService } from '../../../../shared/services/sound.service';
@@ -25,6 +23,8 @@ import {
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingStateService } from '../../services/meeting-state.service';
+import { JoinTokenService } from '../../services/join-token.service';
+import { MeetingEntryFlowService } from '../../services/meeting-entry-flow.service';
 import { MeetingEventHandlerService } from '../../services/meeting-event-handler.service';
 import { MeetingJoinService } from '../../services/meeting-join.service';
 import { MeetingShortcutsService } from '../../services/meeting-shortcuts.service';
@@ -42,20 +42,20 @@ import { MeetingShortcutsService } from '../../services/meeting-shortcuts.servic
 		MeetingRaisedHandsStripComponent,
 		ShareRoomAccessLinkComponent
 	],
-	providers: [MeetingJoinService, MeetingEventHandlerService, MeetingShortcutsService]
+	providers: [MeetingJoinService, MeetingEntryFlowService, MeetingEventHandlerService, MeetingShortcutsService]
 })
 export class MeetingComponent implements OnInit, OnDestroy {
 	protected meetingContextService = inject(MeetingContextService);
 	protected meetingStateService = inject(MeetingStateService);
 	protected joinService = inject(MeetingJoinService);
+	protected entryFlow = inject(MeetingEntryFlowService);
+	private readonly joinToken = inject(JoinTokenService);
 	protected eventHandlerService = inject(MeetingEventHandlerService);
 	protected captionsService = inject(MeetingCaptionsService);
 	protected meetingThemeService = inject(MeetingThemeService);
 	protected navigationService = inject(NavigationService);
 	protected notificationService = inject(NotificationService);
-	protected dialogService = inject(DialogService);
 	protected soundService = inject(SoundService);
-	private readonly translateService = inject(TranslateService);
 	private readonly broadcastState = inject(BroadcastStateService);
 	private readonly isEmbeddedMode = inject(RuntimeConfigService).isEmbeddedMode;
 
@@ -67,13 +67,6 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	// Template reference for custom participant panel item
 	protected participantItem = contentChild.required(MeetingParticipantItemComponent);
 	protected participantItemTemplate = computed(() => this.participantItem().template());
-
-	/** Controls whether to show the join screen (true) or meeting view (false) */
-	showJoin = computed(() => !this.joinService.accessGranted());
-	joinState = signal<'loading' | 'ready' | 'error'>('loading');
-
-	/** Controls whether to show the videoconference component */
-	isMeetingLeft = signal(false);
 
 	// Signals for meeting context data
 	roomName = this.joinService.roomName;
@@ -90,7 +83,7 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	protected readonly extraButtonsPosition = ToolbarAdditionalButtonsPosition.BEFORE_MENU;
 
 	/** Handed to the meeting view, which calls it when the participant commits to joining. */
-	protected readonly generateJoinToken = () => this.joinService.generateJoinToken();
+	protected readonly requestJoinToken = () => this.joinToken.request(this.joinService.joinRequest());
 
 	constructor() {
 		inject(IframeBridgeService).attachCommands(inject(EmbeddedCommandService));
@@ -123,20 +116,7 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	}
 
 	async ngOnInit() {
-		try {
-			this.joinState.set('loading');
-			await this.joinService.initialize();
-			this.joinState.set('ready');
-		} catch (error) {
-			console.error('Error initializing join screen state:', error);
-			this.joinState.set('error');
-			this.dialogService.showDialog({
-				title: this.translateService.translate('MEETING_PAGE.INIT_ERROR_TITLE'),
-				message: this.translateService.translate('MEETING_PAGE.INIT_ERROR_MESSAGE'),
-				showCancelButton: false,
-				confirmText: this.translateService.translate('MEETING_PAGE.INIT_ERROR_CONFIRM')
-			});
-		}
+		await this.entryFlow.start();
 	}
 
 	ngOnDestroy() {
@@ -177,11 +157,8 @@ export class MeetingComponent implements OnInit, OnDestroy {
 		this.eventHandlerService.onParticipantConnected(event);
 	}
 
-	/**
-	 * Handles the participant left event and hides the videoconference component
-	 */
 	onParticipantLeft(event: any): void {
-		this.isMeetingLeft.set(true);
+		this.entryFlow.left();
 		this.eventHandlerService.onParticipantLeft(event);
 	}
 }

@@ -1,119 +1,121 @@
-@if (showJoin()) {
-	<!-- Join screen (before joining the meeting) -->
-	@if (joinState() === 'ready') {
-		<ov-meeting-join />
-	} @else if (joinState() === 'error') {
-		<div class="prejoin-loading-container">
-			<mat-icon>error</mat-icon>
-			<p class="prejoin-loading-text">{{ 'MEETING_PAGE.PREPARE_ERROR' | translate }}</p>
-		</div>
-	} @else {
+@switch (entryFlow.step()) {
+	@case ('preparing') {
 		<div class="prejoin-loading-container">
 			<mat-spinner diameter="30" />
 			<p class="prejoin-loading-text">{{ 'MEETING_PAGE.PREPARING' | translate }}</p>
 		</div>
 	}
-} @else if (!isMeetingLeft()) {
-	<ov-meeting-view
-		[tokenProvider]="generateJoinToken"
-		[prejoin]="true"
-		[initialMediaState]="initialMediaState()"
-		[e2eeKey]="e2eeKey()"
-		[toolbarRoomName]="roomName()"
-		[showCameraControls]="features().showCamera"
-		[showMicrophoneControls]="features().showMicrophone"
-		[toolbarScreenshareButton]="features().showScreenShare"
-		[toolbarLeaveButton]="!features().showEndMeeting"
-		[toolbarRecordingButton]="features().showStartStopRecording"
-		[toolbarBroadcastButton]="features().showBroadcastControls"
-		[toolbarViewRecordingsButton]="features().showViewRecordings && hasRecordings()"
-		[toolbarChatPanelButton]="features().showChat"
-		[chatWritable]="features().showChatInput"
-		[toolbarBackgroundEffectsButton]="features().showBackgrounds"
-		[toolbarParticipantsPanelButton]="features().showParticipantList"
-		[toolbarSettingsButton]="features().showSettings"
-		[toolbarFullscreenButton]="features().showFullscreen"
-		[toolbarActivitiesPanelButton]="
-			features().showStartStopRecording ||
-			(features().showViewRecordings && hasRecordings()) ||
-			showBroadcastActivity()
-		"
-		[activitiesPanelRecordingActivity]="
-			features().showStartStopRecording || (features().showViewRecordings && hasRecordings())
-		"
-		[recordingActivityStartStopRecordingButton]="features().showStartStopRecording"
-		[recordingActivityViewRecordingsButton]="features().showViewRecordings && hasRecordings()"
-		[activitiesPanelBroadcastActivity]="showBroadcastActivity()"
-		[broadcastActivityControls]="features().showBroadcastControls"
-		[broadcastActivityAddDestinations]="features().showBroadcastAddDestinations"
-		[showThemeSelector]="features().showThemeSelector"
-		(onRoomCreated)="onRoomCreated($event)"
-		(onParticipantConnected)="onParticipantConnected($event)"
-		(onParticipantLeft)="onParticipantLeft($event)"
-		(onRoomReconnected)="eventHandlerService.onRoomReconnected()"
-		(onRecordingStartRequested)="eventHandlerService.onRecordingStartRequested($event)"
-		(onRecordingStopRequested)="eventHandlerService.onRecordingStopRequested($event)"
-		(onBroadcastRequested)="eventHandlerService.onBroadcastRequested($event)"
-		(onViewRecordingsClicked)="onViewRecordingsClicked()"
-	>
-		<!-- Toolbar Leave Button (for moderators) -->
-		<ng-container *ovToolbarLeaveButton>
-			<ng-content select="ov-meeting-toolbar-leave-button" />
-		</ng-container>
-
-		<!-- Toolbar Additional Buttons -->
-		<div *ovToolbarAdditionalButtons [ovToolbarAdditionalButtonsPosition]="extraButtonsPosition">
-			<ng-content select="ov-meeting-toolbar-extra-buttons" />
+	@case ('error') {
+		<div class="prejoin-loading-container">
+			<mat-icon>error</mat-icon>
+			<p class="prejoin-loading-text">{{ 'MEETING_PAGE.PREPARE_ERROR' | translate }}</p>
 		</div>
-
-		<!-- Toolbar More Options Additional Items -->
-		<ng-container *ovToolbarMoreOptionsAdditionalMenuItems>
-			<ng-content select="ov-meeting-toolbar-more-options-menu" />
-		</ng-container>
-
-		<!-- Panel Before Local Participant: the invitation heads the panel because it is about the
-		     room, not about anyone in the list. The raised hands strip follows, above your own row,
-		     because lowering every hand lowers yours too -->
-		<div *ovParticipantPanelBeforeLocalParticipant>
-			<ng-content select="ov-meeting-invite-panel" />
-			<ov-meeting-raised-hands-strip />
-		</div>
-
-		<!-- Panel After Local Participant: the panel-wide moderation strip heads the remote list,
-		     because it never touches your own devices, and takes itself out of the panel when there
-		     is nobody there to reach. Embedded, while alone, a note that others will appear here
-		     comes first -->
-		<div *ovParticipantPanelAfterLocalParticipant>
-			@if (showInviteWithoutLink()) {
-				<div id="invite-without-link">
-					<ov-share-room-access-link
-						[title]="'INVITE_WITHOUT_LINK.TITLE' | translate"
-						[subtitle]="'INVITE_WITHOUT_LINK.PANEL_SUBTITLE' | translate"
-						titleSize="md"
-						titleWeight="semibold"
-					/>
-				</div>
-			}
-			<ng-content select="ov-meeting-participants-panel-actions" />
-		</div>
-
-		<!-- Participant Panel Item Template -->
-		<div *ovParticipantPanelItem="let participant">
-			<ng-container
-				[ngTemplateOutlet]="participantItemTemplate()"
-				[ngTemplateOutletContext]="{ participant: participant }"
-			/>
-		</div>
-
-		@if (features().showLayoutSelector) {
-			<ng-container *ovSettingsPanelLayout>
-				<ng-content select="ov-meeting-settings-extensions" />
+	}
+	@case ('join') {
+		<ov-meeting-join />
+	}
+	@case ('meeting') {
+		<ov-meeting-view
+			[tokenProvider]="requestJoinToken"
+			[prejoin]="entryFlow.options().showDeviceSetup"
+			[initialMediaState]="initialMediaState()"
+			[e2eeKey]="e2eeKey()"
+			[toolbarRoomName]="roomName()"
+			[showCameraControls]="features().showCamera"
+			[showMicrophoneControls]="features().showMicrophone"
+			[toolbarScreenshareButton]="features().showScreenShare"
+			[toolbarLeaveButton]="!features().showEndMeeting"
+			[toolbarRecordingButton]="features().showStartStopRecording"
+			[toolbarBroadcastButton]="features().showBroadcastControls"
+			[toolbarViewRecordingsButton]="features().showViewRecordings && hasRecordings()"
+			[toolbarChatPanelButton]="features().showChat"
+			[chatWritable]="features().showChatInput"
+			[toolbarBackgroundEffectsButton]="features().showBackgrounds"
+			[toolbarParticipantsPanelButton]="features().showParticipantList"
+			[toolbarSettingsButton]="features().showSettings"
+			[toolbarFullscreenButton]="features().showFullscreen"
+			[toolbarActivitiesPanelButton]="
+				features().showStartStopRecording ||
+				(features().showViewRecordings && hasRecordings()) ||
+				showBroadcastActivity()
+			"
+			[activitiesPanelRecordingActivity]="
+				features().showStartStopRecording || (features().showViewRecordings && hasRecordings())
+			"
+			[recordingActivityStartStopRecordingButton]="features().showStartStopRecording"
+			[recordingActivityViewRecordingsButton]="features().showViewRecordings && hasRecordings()"
+			[activitiesPanelBroadcastActivity]="showBroadcastActivity()"
+			[broadcastActivityControls]="features().showBroadcastControls"
+			[broadcastActivityAddDestinations]="features().showBroadcastAddDestinations"
+			[showThemeSelector]="features().showThemeSelector"
+			(onRoomCreated)="onRoomCreated($event)"
+			(onParticipantConnected)="onParticipantConnected($event)"
+			(onParticipantLeft)="onParticipantLeft($event)"
+			(onRoomReconnected)="eventHandlerService.onRoomReconnected()"
+			(onRecordingStartRequested)="eventHandlerService.onRecordingStartRequested($event)"
+			(onRecordingStopRequested)="eventHandlerService.onRecordingStopRequested($event)"
+			(onBroadcastRequested)="eventHandlerService.onBroadcastRequested($event)"
+			(onViewRecordingsClicked)="onViewRecordingsClicked()"
+		>
+			<!-- Toolbar Leave Button (for moderators) -->
+			<ng-container *ovToolbarLeaveButton>
+				<ng-content select="ov-meeting-toolbar-leave-button" />
 			</ng-container>
-		}
 
-		<!-- Custom layout component -->
-		<ng-container *ovLayout>
-			<ng-content select="ov-meeting-custom-layout" />
-		</ng-container>
-	</ov-meeting-view>
+			<!-- Toolbar Additional Buttons -->
+			<div *ovToolbarAdditionalButtons [ovToolbarAdditionalButtonsPosition]="extraButtonsPosition">
+				<ng-content select="ov-meeting-toolbar-extra-buttons" />
+			</div>
+
+			<!-- Toolbar More Options Additional Items -->
+			<ng-container *ovToolbarMoreOptionsAdditionalMenuItems>
+				<ng-content select="ov-meeting-toolbar-more-options-menu" />
+			</ng-container>
+
+			<!-- Panel Before Local Participant: the invitation heads the panel because it is about the
+			     room, not about anyone in the list. The raised hands strip follows, above your own row,
+			     because lowering every hand lowers yours too -->
+			<div *ovParticipantPanelBeforeLocalParticipant>
+				<ng-content select="ov-meeting-invite-panel" />
+				<ov-meeting-raised-hands-strip />
+			</div>
+
+			<!-- Panel After Local Participant: the panel-wide moderation strip heads the remote list,
+			     because it never touches your own devices, and takes itself out of the panel when there
+			     is nobody there to reach. Embedded, while alone, a note that others will appear here
+			     comes first -->
+			<div *ovParticipantPanelAfterLocalParticipant>
+				@if (showInviteWithoutLink()) {
+					<div id="invite-without-link">
+						<ov-share-room-access-link
+							[title]="'INVITE_WITHOUT_LINK.TITLE' | translate"
+							[subtitle]="'INVITE_WITHOUT_LINK.PANEL_SUBTITLE' | translate"
+							titleSize="md"
+							titleWeight="semibold"
+						/>
+					</div>
+				}
+				<ng-content select="ov-meeting-participants-panel-actions" />
+			</div>
+
+			<!-- Participant Panel Item Template -->
+			<div *ovParticipantPanelItem="let participant">
+				<ng-container
+					[ngTemplateOutlet]="participantItemTemplate()"
+					[ngTemplateOutletContext]="{ participant: participant }"
+				/>
+			</div>
+
+			@if (features().showLayoutSelector) {
+				<ng-container *ovSettingsPanelLayout>
+					<ng-content select="ov-meeting-settings-extensions" />
+				</ng-container>
+			}
+
+			<!-- Custom layout component -->
+			<ng-container *ovLayout>
+				<ng-content select="ov-meeting-custom-layout" />
+			</ng-container>
+		</ov-meeting-view>
+	}
 }

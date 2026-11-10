@@ -1,9 +1,7 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { HttpErrorResponse } from '@angular/common/http';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MeetRoomMemberTokenOptions, MeetRoomStatus } from '@openvidu-meet/typings';
-import { NavigationErrorReason } from '../../../shared/models/navigation.model';
+import { MeetRoomStatus } from '@openvidu-meet/typings';
 import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
@@ -13,7 +11,6 @@ import { AuthService } from '../../auth/services/auth.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomService } from '../../rooms/services/room.service';
-import { E2eeService } from '../openvidu-components/services/e2ee/e2ee.service';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingJoinService } from './meeting-join.service';
 import { RoomAccessLinkService } from './room-access-link.service';
@@ -30,7 +27,6 @@ describe('MeetingJoinService', () => {
 	let service: MeetingJoinService;
 	let roomService: jasmine.SpyObj<RoomService>;
 	let roomMemberContext: jasmine.SpyObj<RoomMemberContextService>;
-	let e2eeService: jasmine.SpyObj<E2eeService>;
 	let meetingContextStub: {
 		roomId: () => string;
 		roomSecret: () => string;
@@ -38,7 +34,6 @@ describe('MeetingJoinService', () => {
 		isE2eeKeyFromUrl: () => boolean;
 		setE2eeKey: jasmine.Spy;
 		setHasRecordings: jasmine.Spy;
-		setIsActiveMeeting: jasmine.Spy;
 		meetingUI: () => { showJoinMeeting: boolean; showShareAccessLinks: boolean };
 	};
 	let e2eeEnabled: boolean;
@@ -53,7 +48,7 @@ describe('MeetingJoinService', () => {
 		signedIn = false;
 		leaveRedirectUrl = undefined;
 		speakerPublicLink = undefined;
-		roomService = jasmine.createSpyObj<RoomService>('RoomService', ['getRoom', 'loadRoomConfig']);
+		roomService = jasmine.createSpyObj<RoomService>('RoomService', ['getRoom']);
 		roomService.getRoom.and.callFake(
 			async () =>
 				({
@@ -63,30 +58,19 @@ describe('MeetingJoinService', () => {
 					config: { e2ee: { enabled: e2eeEnabled } }
 				}) as never
 		);
-		roomService.loadRoomConfig.and.resolveTo(undefined);
 
 		roomMemberContext = jasmine.createSpyObj<RoomMemberContextService>('RoomMemberContextService', [
 			'generateToken',
-			'saveParticipantNameToStorage',
 			'hasPermission',
 			'memberName',
 			'participantName',
-			'isParticipantNameFromUrl',
-			'participantExternalId',
-			'participantMetadata'
+			'isParticipantNameFromUrl'
 		]);
 		roomMemberContext.generateToken.and.resolveTo('minted-token');
 		roomMemberContext.hasPermission.and.returnValue(false);
 		roomMemberContext.memberName.and.returnValue(undefined);
 		roomMemberContext.participantName.and.returnValue(undefined);
 		roomMemberContext.isParticipantNameFromUrl.and.returnValue(false);
-		roomMemberContext.participantExternalId.and.returnValue(undefined);
-		roomMemberContext.participantMetadata.and.returnValue(undefined);
-
-		e2eeService = jasmine.createSpyObj<E2eeService>('E2eeService', ['setE2EEKey', 'encrypt']);
-		e2eeService.setE2EEKey.and.resolveTo(undefined);
-		// `encrypt` is overloaded (text and bytes); the join screen only ever encrypts the display name.
-		e2eeService.encrypt.and.callFake((async (value: string) => `encrypted(${value})`) as E2eeService['encrypt']);
 
 		meetingContextStub = {
 			roomId: () => ROOM_ID,
@@ -95,7 +79,6 @@ describe('MeetingJoinService', () => {
 			isE2eeKeyFromUrl: () => false,
 			setE2eeKey: jasmine.createSpy('setE2eeKey'),
 			setHasRecordings: jasmine.createSpy('setHasRecordings'),
-			setIsActiveMeeting: jasmine.createSpy('setIsActiveMeeting'),
 			meetingUI: () => ({ showJoinMeeting: true, showShareAccessLinks: false })
 		};
 
@@ -106,7 +89,6 @@ describe('MeetingJoinService', () => {
 				{ provide: LoggerService, useClass: LoggerServiceStub },
 				{ provide: RoomService, useValue: roomService },
 				{ provide: RoomMemberContextService, useValue: roomMemberContext },
-				{ provide: E2eeService, useValue: e2eeService },
 				{ provide: MeetingContextService, useValue: meetingContextStub },
 				{ provide: RoomAccessLinkService, useValue: { speakerPublicLink: () => speakerPublicLink } },
 				{ provide: RecordingService, useValue: { listRecordings: async () => ({ recordings: [] }) } },
@@ -114,7 +96,7 @@ describe('MeetingJoinService', () => {
 					provide: AuthService,
 					useValue: { isUserAuthenticated: async () => signedIn, getUserName: async () => undefined }
 				},
-				{ provide: NavigationService, useValue: { redirectToErrorPage: async () => undefined } },
+				{ provide: NavigationService, useValue: {} },
 				{ provide: LeaveRedirectService, useValue: { getLeaveRedirectURL: () => leaveRedirectUrl } },
 				{
 					provide: RuntimeConfigService,
@@ -129,10 +111,6 @@ describe('MeetingJoinService', () => {
 	async function enterJoinScreen(name = 'Alice'): Promise<void> {
 		await service.initialize();
 		service.setParticipantName(name);
-	}
-
-	function joinTokenOptions(): MeetRoomMemberTokenOptions {
-		return roomMemberContext.generateToken.calls.mostRecent().args[1];
 	}
 
 	// Everything the join screen renders comes from these computeds: the room's name, whether it
@@ -281,112 +259,98 @@ describe('MeetingJoinService', () => {
 		});
 	});
 
-	describe('getting past the join screen', () => {
-		it('grants access to the prejoin without minting a token', async () => {
+	describe('submitting the join screen', () => {
+		it('takes the form without requesting a token', async () => {
 			await enterJoinScreen();
-			await service.submitAccess();
 
-			expect(service.accessGranted()).toBeTrue();
+			expect(service.submit()).toBeTrue();
 			expect(roomMemberContext.generateToken).not.toHaveBeenCalled();
-			expect(meetingContextStub.setIsActiveMeeting).not.toHaveBeenCalled();
-		});
-
-		it('loads the room config before granting access, so the prejoin opens the devices from it', async () => {
-			await enterJoinScreen();
-
-			let configLoaded = false;
-			roomService.loadRoomConfig.and.callFake(async () => {
-				configLoaded = true;
-			});
-
-			await service.submitAccess();
-
-			expect(configLoaded).toBeTrue();
-			expect(roomService.loadRoomConfig).toHaveBeenCalledWith(ROOM_ID);
-		});
-
-		it('grants access even when the room config could not be loaded', async () => {
-			await enterJoinScreen();
-			roomService.loadRoomConfig.and.rejectWith(new Error('boom'));
-
-			await service.submitAccess();
-
-			expect(service.accessGranted()).toBeTrue();
 		});
 
 		it('refuses an empty participant name', async () => {
 			await enterJoinScreen('');
 
-			await expectAsync(service.submitAccess()).toBeRejected();
-			expect(service.accessGranted()).toBeFalse();
+			expect(service.submit()).toBeFalse();
 		});
 
-		it('refuses to grant access to an E2EE room with no key', async () => {
+		it('refuses an E2EE room with no key', async () => {
 			e2eeEnabled = true;
 			await enterJoinScreen();
 
-			await expectAsync(service.submitAccess()).toBeRejected();
-			expect(service.accessGranted()).toBeFalse();
-		});
-	});
-
-	describe('committing to the join', () => {
-		it('mints a joining token for the name entered on the join screen', async () => {
-			await enterJoinScreen();
-			await service.submitAccess();
-
-			await expectAsync(service.generateJoinToken()).toBeResolvedTo('minted-token');
-
-			expect(roomMemberContext.generateToken).toHaveBeenCalledTimes(1);
-			expect(joinTokenOptions()).toEqual(
-				jasmine.objectContaining({ joinMeeting: true, participantName: 'Alice', secret: 'secret' })
-			);
-			expect(meetingContextStub.setIsActiveMeeting).toHaveBeenCalledWith(true);
+			expect(service.submit()).toBeFalse();
 		});
 
-		it('encrypts the display name of an E2EE meeting before it reaches the token', async () => {
+		it('keeps the key typed for an E2EE room', async () => {
 			e2eeEnabled = true;
 			await enterJoinScreen();
 			service.setE2eeKey('passphrase');
-			await service.submitAccess();
 
-			await service.generateJoinToken();
+			expect(service.submit()).toBeTrue();
+			expect(meetingContextStub.setE2eeKey).toHaveBeenCalledWith('passphrase');
+		});
+	});
 
-			expect(e2eeService.setE2EEKey).toHaveBeenCalledWith('passphrase');
-			expect(joinTokenOptions().participantName).toBe('encrypted(Alice)');
+	describe('what the participant joins as', () => {
+		it('is the name and key entered, typed by the participant', async () => {
+			e2eeEnabled = true;
+			await enterJoinScreen();
+			service.setE2eeKey('passphrase');
+
+			expect(service.joinRequest()).toEqual({
+				participantName: 'Alice',
+				e2eeKey: 'passphrase',
+				nameTypedByParticipant: true
+			});
 		});
 
-		it('reports the failure to mint instead of leaving the caller with no token', async () => {
-			await enterJoinScreen();
-			await service.submitAccess();
-			roomMemberContext.generateToken.and.rejectWith({ status: 409, error: { message: 'Room is closed' } });
+		it('says the name was not typed when the membership gave it', async () => {
+			roomMemberContext.memberName.and.returnValue('Ana');
+			await service.initialize();
+			await Promise.resolve();
 
-			await expectAsync(service.generateJoinToken()).toBeRejected();
-			expect(meetingContextStub.setIsActiveMeeting).not.toHaveBeenCalled();
+			expect(service.joinRequest()).toEqual({
+				participantName: 'Ana',
+				e2eeKey: '',
+				nameTypedByParticipant: false
+			});
 		});
 
-		it('shows the invalid participant data screen and logs the refused fields', async () => {
-			const redirect = spyOn(TestBed.inject(NavigationService), 'redirectToErrorPage');
-			const logError = spyOn(service['log'], 'e');
+		it('reads a name set after it was first asked for', async () => {
+			await service.initialize();
+			expect(service.joinRequest().participantName).toBe('');
+
+			service.setParticipantName('Alice');
+
+			expect(service.joinRequest().participantName).toBe('Alice');
+		});
+	});
+
+	describe('what the join screen would ask or tell', () => {
+		it('has nothing to ask a named participant of an open room', async () => {
 			await enterJoinScreen();
-			await service.submitAccess();
-			roomMemberContext.generateToken.and.rejectWith(
-				new HttpErrorResponse({
-					status: 422,
-					error: {
-						message: 'Invalid request',
-						details: [{ field: 'participantExternalId', message: 'Invalid participant external id' }]
-					}
-				})
-			);
 
-			await expectAsync(service.generateJoinToken()).toBeRejected();
+			expect(service.joinScreenState()).toEqual({
+				nameKnown: true,
+				e2eeKeyMissing: false,
+				roomClosed: false,
+				canJoinMeeting: true
+			});
+		});
 
-			expect(redirect).toHaveBeenCalledWith(NavigationErrorReason.INVALID_PARTICIPANT_DATA, true);
-			expect(logError).toHaveBeenCalledWith(
-				'Invalid participant data:',
-				'participantExternalId: Invalid participant external id'
+		it('asks for a name and for the key of an encrypted room', async () => {
+			e2eeEnabled = true;
+			await service.initialize();
+
+			expect(service.joinScreenState()).toEqual(
+				jasmine.objectContaining({ nameKnown: false, e2eeKeyMissing: true })
 			);
+		});
+
+		it('tells a participant who may not join', async () => {
+			meetingContextStub.meetingUI = () => ({ showJoinMeeting: false, showShareAccessLinks: false });
+			await enterJoinScreen();
+
+			expect(service.joinScreenState().canJoinMeeting).toBeFalse();
 		});
 	});
 

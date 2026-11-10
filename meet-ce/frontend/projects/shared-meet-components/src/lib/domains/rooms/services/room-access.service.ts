@@ -3,6 +3,7 @@ import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
+import { roomMemberTokenFailure } from '../../room-members/utils/room-member-token-failure.utils';
 
 export interface RoomAccessValidationResult {
 	allowed: boolean;
@@ -54,30 +55,9 @@ export class RoomAccessService {
 			}
 
 			return { allowed: true };
-		} catch (error: any) {
+		} catch (error) {
 			console.error('Error generating room member token:', error);
-			const message = error?.error?.message || error.message || 'Unknown error';
-
-			switch (error.status) {
-				case 400:
-					return { allowed: false, reason: NavigationErrorReason.INVALID_ROOM_SECRET };
-				case 403:
-					if (message.includes('Anonymous access')) {
-						return { allowed: false, reason: NavigationErrorReason.ANONYMOUS_ACCESS_DISABLED };
-					}
-
-					return { allowed: false, reason: NavigationErrorReason.FORBIDDEN_ROOM_ACCESS };
-				case 404:
-					if (message.includes('Room member')) {
-						return { allowed: false, reason: NavigationErrorReason.INVALID_MEMBER };
-					}
-
-					return { allowed: false, reason: NavigationErrorReason.INVALID_ROOM };
-				case 429:
-					return { allowed: false, reason: NavigationErrorReason.TOO_MANY_REQUESTS };
-				default:
-					return { allowed: false, reason: NavigationErrorReason.INTERNAL_ERROR };
-			}
+			return { allowed: false, reason: roomMemberTokenFailure(error) };
 		}
 	}
 }

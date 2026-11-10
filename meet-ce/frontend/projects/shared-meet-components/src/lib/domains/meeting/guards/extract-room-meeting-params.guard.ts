@@ -1,8 +1,9 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
 import { NavigationService } from '../../../shared/services/navigation.service';
-import { extractParams, parseOptionalBoolean } from '../../../shared/utils/url.utils';
+import { extractParams } from '../../../shared/utils/url.utils';
 import { MeetingEntryService } from '../services/meeting-entry.service';
+import { readMeetingEntryParams } from '../utils/meeting-entry-params.utils';
 
 /**
  * Adapter guard: extracts meeting params from the route and delegates the actual
@@ -13,35 +14,10 @@ export const extractRoomMeetingParamsGuard: CanActivateFn = (route: ActivatedRou
 	const meetingEntry = inject(MeetingEntryService);
 	const navigation = inject(NavigationService);
 
-	const {
-		roomId,
-		secret,
-		participantName,
-		participantExternalId,
-		participantMetadata,
-		initialAudioActive,
-		initialVideoActive,
-		leaveRedirectUrl,
-		showOnlyRecordings,
-		showRecording,
-		e2eeKey
-	} = extractParams(route);
-
-	const decision = meetingEntry.prepare({
-		roomId,
-		secret,
-		leaveRedirectUrl,
-		e2eeKey,
-		participantName,
-		participantExternalId,
-		participantMetadata,
-		// Kept tri-state: an absent query param means "no opinion" (the room's own default decides),
-		// while either explicit value outranks it.
-		initialAudioActive: parseOptionalBoolean(initialAudioActive),
-		initialVideoActive: parseOptionalBoolean(initialVideoActive),
-		showRecording,
-		showOnlyRecordings: parseOptionalBoolean(showOnlyRecordings)
-	});
+	const { roomId, secret } = extractParams(route);
+	const decision = meetingEntry.prepare(
+		readMeetingEntryParams({ roomId, secret }, (attribute) => route.queryParamMap.get(attribute))
+	);
 
 	if (decision.kind === 'redirect') {
 		return navigation.createRedirectionTo(decision.to);
