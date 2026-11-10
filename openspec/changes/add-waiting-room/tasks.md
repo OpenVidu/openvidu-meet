@@ -1,16 +1,10 @@
 # Tasks
 
-Requires `revoke-tokens-on-kick` (merged in #208), `fix-refresh-of-revoked-session` and `add-realtime-channel` on the branch, both archived before this change.
+Requires `revoke-tokens-on-kick` (merged in #208), and `refactor-meeting-entry-flow`, `fix-refresh-of-revoked-session` and `add-realtime-channel` on the branch, all archived before this change.
 
-## 1. Frontend renames (separate refactor pull request)
+## 1. Frontend preparation (separate change)
 
-- [ ] 1.1 In a refactor pull request of its own, merged before this change (a refactor needs no OpenSpec change), rename, in `shared-meet-components`, with their specs and imports:
-  - `MeetingLobbyService` → `MeetingJoinService`, `MeetingLobbyComponent` → `MeetingJoinComponent` (selector `ov-meeting-join`);
-  - the `LOBBY.*` translation keys → `JOIN.*` in every locale;
-  - the `lobby` `data-testid`s → `join`, in the SPA e2e, the webcomponent e2e and the testapp;
-  - `MeetingWaitingPanelComponent` → `MeetingAlonePanelComponent` (`ov-meeting-alone-panel`) with its customization slot, also in `meet-pro/` when present.
-
-  Verify the frontend unit suite, `./meet.sh lint-frontend` and `./meet.sh lint-webcomponent` pass with no other diff.
+- [ ] 1.1 `refactor-meeting-entry-flow` is implemented and archived before this change: the renames (`MeetingLobbyService` → `MeetingJoinService`, `MeetingLobbyComponent` → `MeetingJoinComponent`, `LOBBY.*` → `JOIN.*`, the `lobby` test ids, `MeetingWaitingPanelComponent` → `MeetingAlonePanelComponent`), the entry flow, `JoinTokenService`, the shared token failure mapping and `MeetingPhaseService.isPreviewing`. Verify that its archive is in `openspec/changes/archive/` on the branch.
 
 ## 2. Contracts
 

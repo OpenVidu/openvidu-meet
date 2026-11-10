@@ -28,7 +28,7 @@ Anyone holding a room's link enters the meeting at once. Hosts of classes, consu
   - One status enum, `MeetLobbyStatus`, shared by the `lobbyStatusChanged` webhook and event.
   - Permissions `lobbyBypass` (join without waiting) and `lobbyAdmin` (list, admit and reject).
 - **Console:** the Room Access step of the room wizard gains a Waiting room section (switch and message) and the "Join without waiting" and "Admit participants" permissions.
-- **Refactor, in its own pull request before this change:** the frontend Join screen pieces named "lobby" (`MeetingLobbyService`, `MeetingLobbyComponent`, the `LOBBY.*` translation keys and the `lobby` test ids) and the lone participant's `MeetingWaitingPanelComponent` are renamed, so "lobby" and "waiting" mean only the waiting room. Each waiting room piece is its own library component.
+- **Refactor, in its own change before this one (`refactor-meeting-entry-flow`):** the frontend Join screen pieces named "lobby" and the lone participant's `MeetingWaitingPanelComponent` are renamed, so "lobby" and "waiting" mean only the waiting room, and the entry flow gets one owner, with the join token request (`JoinTokenService`) apart from the Join screen. Each waiting room piece is its own library component.
 
 ## Capabilities
 
@@ -149,6 +149,6 @@ USER, 2026-11-10 (spec review round 12):
 - `roomShareAccessLinks` reveals the moderator link, so behind a waiting room it amounts to `lobbyBypass`: documented in the TSDoc, the wizard and member form text and the feature page. Sharing keeps revealing every link of the room, the moderator one included (USER, 2026-11-10).
 
 Scope:
-- 3.10.0, CE only, any number of replicas. Archived after `fix-refresh-of-revoked-session` and `add-realtime-channel`. An identified guest's access secret being their participant identity is a pre-existing defect, independent of the waiting room, fixed for guests added since by `separate-guest-access-secret` (USER, 2026-11-09); guests added before 3.10.0 keep it until the deprecation ends.
+- 3.10.0, CE only, any number of replicas. Archived after `refactor-meeting-entry-flow`, `fix-refresh-of-revoked-session` and `add-realtime-channel`. An identified guest's access secret being their participant identity is a pre-existing defect, independent of the waiting room, fixed for guests added since by `separate-guest-access-secret` (USER, 2026-11-09); guests added before 3.10.0 keep it until the deprecation ends.
 - Sounds for a knock and for an admission are pending, outside this change.
 - Follow-up, outside this change: a host action that stops new requests to join during a meeting.
