@@ -44,12 +44,12 @@ export class MeetingCustomLayoutComponent {
 
 	/**
 	 * Covers the layout while nobody else has joined: with the link to share, or without one when
-	 * the host app shares it or the room's anonymous speaker access is disabled.
+	 * the host app shares it or there is no speaker link to share.
 	 */
 	shouldShowOverlay = computed(
 		() =>
 			this.meetingStateService.isAlone() &&
-			(!!this.shareLink() || this.isEmbeddedMode() || this.roomAccessLinkService.speakerLinkDisabled())
+			(!!this.shareLink() || this.isEmbeddedMode() || this.roomAccessLinkService.speakerLinkUnavailable())
 	);
 
 	showLayoutSelector = computed(() => this.meetingContextService.meetingUI().showLayoutSelector);

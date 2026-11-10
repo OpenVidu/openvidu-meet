@@ -222,6 +222,11 @@ In a meeting opened in the standalone app, a participant SHALL be offered the ro
 - **WHEN** they are on the join screen or in the meeting, alone or not
 - **THEN** no share link, copy button or share overlay is shown, and the overlay shown while alone says they are waiting for others instead
 
+#### Scenario: Permissions changed during the meeting
+- **GIVEN** a participant holding `roomShareAccessLinks` but not `chatWrite`, alone in a meeting in the standalone app, in a room whose `speaker` role grants `chatWrite`
+- **WHEN** a change of their permissions gives them `chatWrite`, and later takes it away again
+- **THEN** the share link, copy button and share overlay appear without reloading the page, and disappear again
+
 #### Scenario: Embedded meeting
 - **GIVEN** a participant holding `roomShareAccessLinks` in a meeting embedded with the webcomponent
 - **WHEN** they are alone in the meeting

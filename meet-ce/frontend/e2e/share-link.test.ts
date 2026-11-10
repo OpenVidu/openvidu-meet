@@ -1,6 +1,6 @@
 import { MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
-import { createRoom, createRoomMember, deleteRooms } from './helpers/meet-api.helper';
+import { createRoom, createRoomMember, deleteRooms, updateRoomMemberPermissions } from './helpers/meet-api.helper';
 import { leaveMeeting, openJoinScreen, openMeeting } from './helpers/meeting-navigation.helper';
 import { toggleParticipantsPanel } from './helpers/panels.helper';
 import { waitForRemoteStream } from './helpers/stream.helper';
@@ -143,6 +143,30 @@ test.describe('Share Link E2E Tests', () => {
 
 			await toggleParticipantsPanel(page);
 			await expectHidden(page, '#invite-panel');
+		});
+
+		test('should follow the speaker link as the member permissions change during the meeting', async ({ page }) => {
+			const member = await createRoomMember(roomId, {
+				name: `member-${Date.now()}`,
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: { roomShareAccessLinks: true, chatWrite: false }
+			});
+
+			await openMeeting(page, member.accessUrl);
+			await expectVisible(page, '#invite-overlay');
+			await expectHidden(page, '#copy-speaker-link');
+
+			await updateRoomMemberPermissions(roomId, member.memberId, {
+				customPermissions: { roomShareAccessLinks: true, chatWrite: true }
+			});
+			await expectVisible(page, '#copy-speaker-link');
+			await expectVisible(page, '#invite-overlay .copy-url-btn');
+
+			await updateRoomMemberPermissions(roomId, member.memberId, {
+				customPermissions: { roomShareAccessLinks: true, chatWrite: false }
+			});
+			await expectHidden(page, '#copy-speaker-link');
+			await expectHidden(page, '#invite-overlay .copy-url-btn');
 		});
 
 		test('should hide the layout overlay when another participant joins the meeting', async ({ page, browser }) => {

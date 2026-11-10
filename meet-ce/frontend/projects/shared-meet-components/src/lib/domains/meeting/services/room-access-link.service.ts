@@ -17,50 +17,53 @@ export class RoomAccessLinkService {
 
 	private readonly _speakerPublicLink = signal<string | undefined>(undefined);
 	private readonly _speakerCopyLink = signal<string | undefined>(undefined);
-	private readonly _speakerLinkDisabled = signal(false);
-	private lastFetchedRoomId?: string;
+	private readonly _speakerLinkUnavailable = signal(false);
+	private latestRequest = 0;
 
 	/** Readonly signal for the speaker link displayed in the UI */
 	readonly speakerPublicLink = this._speakerPublicLink.asReadonly();
 	/** Readonly signal for the real speaker link used for copy action */
 	readonly speakerCopyLink = this._speakerCopyLink.asReadonly();
 	/** Whether there is no speaker link to share: disabled, or beyond the participant's permissions */
-	readonly speakerLinkDisabled = this._speakerLinkDisabled.asReadonly();
+	readonly speakerLinkUnavailable = this._speakerLinkUnavailable.asReadonly();
 
 	constructor() {
-		// Keep link state synchronized with permission and room changes.
+		// The server decides from every permission which links it returns, so each new token asks again.
 		effect(() => {
-			const canShareAccessLinks = !!this.roomMemberContextService.permissions()?.roomShareAccessLinks;
+			const permissions = this.roomMemberContextService.permissions();
 			const roomId = this.roomMemberContextService.roomId();
 
-			if (!canShareAccessLinks || !roomId) {
-				this.lastFetchedRoomId = undefined;
+			if (!permissions?.roomShareAccessLinks || !roomId) {
+				this.latestRequest++;
 				this.clear();
 				return;
 			}
 
-			if (this.lastFetchedRoomId === roomId) {
-				return;
-			}
-
-			this.lastFetchedRoomId = roomId;
 			void this.refreshSpeakerLinksFromRoom(roomId);
 		});
 	}
 
 	/**
-	 * Refreshes speaker links by requesting room access information.
+	 * Refreshes speaker links by requesting room access information. Only the latest request applies
+	 * its answer, so a slower answer to earlier permissions never overwrites it.
 	 */
 	private async refreshSpeakerLinksFromRoom(roomId: string): Promise<void> {
+		const request = ++this.latestRequest;
+
 		try {
 			const room = await this.roomService.getRoom(roomId, {
 				fields: ['access']
 			});
-			this.setSpeakerLinksFromRoomAccess(room.access);
+
+			if (request === this.latestRequest) {
+				this.setSpeakerLinksFromRoomAccess(room.access);
+			}
 		} catch (error) {
 			this.log.w('Could not refresh speaker links from room access:', error);
-			this.lastFetchedRoomId = undefined;
-			this.clear();
+
+			if (request === this.latestRequest) {
+				this.clear();
+			}
 		}
 	}
 
@@ -72,11 +75,12 @@ export class RoomAccessLinkService {
 	private setSpeakerLinksFromRoomAccess(access: MeetRoomAccess): void {
 		if (!access.anonymous.speaker.enabled || !access.anonymous.speaker.url) {
 			this.clear();
-			this._speakerLinkDisabled.set(true);
+			this._speakerLinkUnavailable.set(true);
 			return;
 		}
 
 		const publicLink = this.getPublicLinkFromAccessUrl(access.user.url);
+		this._speakerLinkUnavailable.set(false);
 		this._speakerPublicLink.set(publicLink);
 		this._speakerCopyLink.set(access.anonymous.speaker.url);
 	}
@@ -125,6 +129,6 @@ export class RoomAccessLinkService {
 	clear(): void {
 		this._speakerPublicLink.set(undefined);
 		this._speakerCopyLink.set(undefined);
-		this._speakerLinkDisabled.set(false);
+		this._speakerLinkUnavailable.set(false);
 	}
 }
