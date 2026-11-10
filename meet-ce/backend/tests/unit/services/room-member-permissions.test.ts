@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import type { MeetRoomMemberPermissions, MeetRoomRoles } from '@openvidu-meet/typings';
+import type { MeetRoom, MeetRoomMemberPermissions, MeetRoomRoles } from '@openvidu-meet/typings';
 import { MEET_PERMISSION_KEYS, MeetRoomMemberRole, MeetRoomMemberUIBadge, TrackSource } from '@openvidu-meet/typings';
 import type { ParticipantInfo } from 'livekit-server-sdk';
 import ms from 'ms';
@@ -24,6 +24,16 @@ import { TokenService } from '../../../src/services/token.service.js';
 class TestableRoomMemberService extends RoomMemberService {
 	merge(first?: MeetRoomMemberPermissions, second?: MeetRoomMemberPermissions): MeetRoomMemberPermissions {
 		return this.mergePermissions(first, second);
+	}
+
+	apply(
+		roomId: string,
+		identity: string,
+		room: Pick<MeetRoom, 'roles' | 'config'>,
+		buildMetadata: (current: ParticipantMeetingMetadata) => ParticipantMeetingMetadata,
+		refusedIssuedBefore?: number
+	) {
+		return this.applyPermissionsToLiveParticipant(roomId, identity, room, buildMetadata, refusedIssuedBefore);
 	}
 }
 
@@ -335,6 +345,99 @@ describe('RoomMemberService.refreshRoomMemberToken from the participant in the m
 			permissions: speaker,
 			badge: MeetRoomMemberUIBadge.OTHER
 		});
+	});
+});
+
+// The renewal of a token from the participant in the meeting (refresh mode of the token endpoint) must not turn the
+// metadata of a session that connected with an earlier token into a valid one; a push of the server must still reach it.
+describe('RoomMemberService.applyPermissionsToLiveParticipant on a session issued before a revocation or a room change', () => {
+	const ROOM_ID = 'room-abc';
+	const IDENTITY = 'speaker-1';
+	const ROOM_UPDATED_AT = 2_000;
+	const speaker: MeetRoomMemberPermissions = { ...none, meetingJoin: true, chatWrite: true };
+	const room = {
+		roles: {
+			[MeetRoomMemberRole.MODERATOR]: { permissions: MeetRoomMemberHelper.allPermissions() },
+			[MeetRoomMemberRole.SPEAKER]: { permissions: speaker }
+		},
+		config: { chat: { enabled: true } }
+	} as unknown as Pick<MeetRoom, 'roles' | 'config'>;
+
+	let liveMetadata: ParticipantMeetingMetadata;
+	let revoked: boolean;
+	let updateParticipant: jest.Mock<(roomId: string, identity: string, update: { metadata: string }) => Promise<void>>;
+	let memberService: TestableRoomMemberService;
+
+	const renew = (refusedIssuedBefore?: number) =>
+		memberService.apply(
+			ROOM_ID,
+			IDENTITY,
+			room,
+			(current) => ({ ...current, permissions: speaker }),
+			refusedIssuedBefore
+		);
+
+	beforeEach(() => {
+		revoked = false;
+		liveMetadata = { iat: 3_000, roomId: ROOM_ID, permissions: speaker, badge: MeetRoomMemberUIBadge.OTHER };
+		updateParticipant = jest.fn(async () => {});
+
+		memberService = new TestableRoomMemberService(
+			...([
+				{ warn: () => {}, debug: () => {}, verbose: () => {} },
+				{},
+				{},
+				{},
+				{},
+				{},
+				{
+					getParticipant: async () =>
+						({
+							identity: IDENTITY,
+							metadata: JSON.stringify(liveMetadata),
+							permission: { canSubscribe: true }
+						}) as unknown as ParticipantInfo,
+					updateParticipant
+				},
+				{},
+				{},
+				{},
+				{},
+				{},
+				{ isRevoked: async () => revoked, getTokenIssue: async () => ({ iat: 4_000 }) },
+				{ withRetryLock: (_key: string, _ttl: number, update: () => Promise<unknown>) => update() }
+			] as unknown as ConstructorParameters<typeof RoomMemberService>)
+		);
+	});
+
+	it('refuses to renew a session revoked after its token was issued', async () => {
+		revoked = true;
+
+		await expect(renew(ROOM_UPDATED_AT)).rejects.toMatchObject({ statusCode: 401 });
+		expect(updateParticipant).not.toHaveBeenCalled();
+	});
+
+	it('refuses to renew a session issued before the last update of the room', async () => {
+		liveMetadata.iat = ROOM_UPDATED_AT - 1;
+
+		await expect(renew(ROOM_UPDATED_AT)).rejects.toMatchObject({ statusCode: 401 });
+		expect(updateParticipant).not.toHaveBeenCalled();
+	});
+
+	it('renews a session issued after the last update of the room and not revoked, a demoted one included', async () => {
+		await renew(ROOM_UPDATED_AT);
+
+		expect(updateParticipant).toHaveBeenCalledTimes(1);
+		expect(JSON.parse(updateParticipant.mock.calls[0]![2].metadata)).toMatchObject({ iat: 4_000 });
+	});
+
+	it('still pushes a change of the member to a session the renewal would refuse', async () => {
+		revoked = true;
+		liveMetadata.iat = ROOM_UPDATED_AT - 1;
+
+		await renew();
+
+		expect(updateParticipant).toHaveBeenCalledTimes(1);
 	});
 });
 

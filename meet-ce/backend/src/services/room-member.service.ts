@@ -472,7 +472,12 @@ export class RoomMemberService {
 		participantIdentity?: string
 	): Promise<string> {
 		// Check that room is open
-		const { status, roles, config } = await this.roomService.getMeetRoom(roomId, ['status', 'roles', 'config']);
+		const { status, roles, config, rolesUpdatedAt } = await this.roomService.getMeetRoom(roomId, [
+			'status',
+			'roles',
+			'config',
+			'rolesUpdatedAt'
+		]);
 
 		if (status === MeetRoomStatus.CLOSED) {
 			throw errorRoomClosed(roomId);
@@ -547,7 +552,8 @@ export class RoomMemberService {
 				roomId,
 				participantIdentity!,
 				{ roles, config },
-				() => tokenMetadata
+				() => tokenMetadata,
+				rolesUpdatedAt
 			);
 			participantName = participant.name || participantName;
 		}
@@ -1066,24 +1072,30 @@ export class RoomMemberService {
 	 * @param room - The room's roles and config
 	 * @param buildMetadata - Builds the participant's metadata, with their new base permissions and badge, from
 	 * their current one
+	 * @param refusedIssuedBefore - Set when the push renews a token: the room's last roles or access update. A session
+	 * revoked, or issued before it, is not renewed
 	 * @returns The participant as it was before the update
+	 * @throws The `401` invalid token error when the session is refused
 	 */
 	protected async applyPermissionsToLiveParticipant(
 		roomId: string,
 		participantIdentity: string,
 		{ roles, config }: Pick<MeetRoom, 'roles' | 'config'>,
-		buildMetadata: (current: ParticipantMeetingMetadata) => ParticipantMeetingMetadata
+		buildMetadata: (current: ParticipantMeetingMetadata) => ParticipantMeetingMetadata,
+		refusedIssuedBefore?: number
 	): Promise<ParticipantInfo> {
 		return this.withParticipantMetadataLock(roomId, participantIdentity, async () => {
 			const participant = await this.getParticipantFromMeeting(roomId, participantIdentity);
 			const current = MeetParticipantHelper.parseOwnMeetingMetadata(participant);
+			const revoked = await this.participantTokenRevocationService.isRevoked(roomId, participantIdentity, current);
+
+			if (refusedIssuedBefore !== undefined && (revoked || current.iat < refusedIssuedBefore)) {
+				throw errorInvalidToken();
+			}
+
 			const metadata = buildMetadata(current);
 
-			if (
-				current.isPromotedModerator &&
-				metadata.badge === MeetRoomMemberUIBadge.OTHER &&
-				!(await this.participantTokenRevocationService.isRevoked(roomId, participantIdentity, current))
-			) {
+			if (current.isPromotedModerator && metadata.badge === MeetRoomMemberUIBadge.OTHER && !revoked) {
 				metadata.originalPermissions = metadata.permissions;
 				metadata.permissions = this.mergePermissions(
 					metadata.permissions,
