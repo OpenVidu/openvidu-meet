@@ -2,7 +2,7 @@
 
 ## 1. Server
 
-- [ ] 1.1 In `RoomMemberService.applyPermissionsToLiveParticipant`, when called from refresh mode, read the live participant's metadata and answer `401` when `ParticipantTokenRevocationService.isRevoked` reports it issued before the identity's last revocation, and when its metadata `iat` precedes the room's `rolesUpdatedAt`, before rewriting anything. Verify with unit tests of the refresh mode (revoked session refused, session older than `rolesUpdatedAt` refused, demoted session renewed, session outdated by a member change renewed) and integration tests:
+- [ ] 1.1 In `RoomMemberService.applyPermissionsToLiveParticipant`, when called from refresh mode, read the live participant's metadata and answer `401` when `ParticipantTokenRevocationService.isRevoked` reports it issued before the identity's last revocation, and when its metadata `iat` precedes the room's `rolesUpdatedAt`, before rewriting anything (the room read gains `rolesUpdatedAt` in its projection; the member-update push is unchanged). Verify with unit tests of the refresh mode (revoked session refused, session older than `rolesUpdatedAt` refused, demoted session renewed, session outdated by a member change renewed) and integration tests:
   - a kicked participant who reconnects with the old token and asks for a fresh one with it gets `401` and the reconnection is removed with no `participantJoined` or `participantLeft` webhook;
   - a speaker whose room roles were updated between meetings reconnects with the old token and asks for a fresh one with it: `401`, and the reconnection is removed;
   - a fresh token through the link still joins.

@@ -13,7 +13,7 @@ The Meet server can only reach a client through the LiveKit data channel, so it 
   - the meeting client reconnects with growing, randomized delays, and at once when the network comes back or the page becomes visible again after a silence. It reconnects with the same credential, and stops when the server no longer knows it;
   - a feature that has nothing more to say to a client says so in its own message, and its client closes the connection for good, such as the waiting room after the final state of a wait. The server never closes a connection for a feature: the connection may be held by another replica.
 - When a replica loses its Redis subscription, it keeps its connections and accepts new ones, and still sends each connection the state its features send on open and on every answered ping, which goes straight to the connection; messages published meanwhile are lost, and that state recovers them.
-- A handshake counts against its client address's API rate limit, like any other request; the address is the one Express derives, honouring `MEET_SERVER_TRUST_PROXY`, so clients behind a proxy do not share one bucket.
+- A handshake counts against its client address's API rate limit, like any other request; the address is the one Express derives, honouring `SERVER_TRUST_PROXY`, so clients behind a proxy do not share one bucket.
 - No feature uses the channel in this change. The waiting room is its first user.
 
 ## Capabilities
@@ -55,7 +55,7 @@ Review round 10:
 - Each handshake counts against its client address's limit for the other API routes.
 
 USER, 2026-11-10 (spec review round 11):
-- The client address of a handshake is derived as Express derives `req.ip`, honouring `MEET_SERVER_TRUST_PROXY`, so every client behind a proxy has its own bucket.
+- The client address of a handshake is derived as Express derives `req.ip`, honouring `SERVER_TRUST_PROXY`, so every client behind a proxy has its own bucket.
 - The ordering guarantee covers what a replica publishes; a reply sent straight to a connection is not ordered with it.
 
 Scope:

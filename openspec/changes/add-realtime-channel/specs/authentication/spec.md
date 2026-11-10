@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Credentials of a realtime connection
-A realtime connection (see `deployment`) SHALL open only with a credential that a feature using the channel accepts, given in the query of the connection; the waiting room's is its waiting ticket (`add-waiting-room`). The server SHALL refuse the connection before it opens when the query carries no such credential, and SHALL close it before sending any message, as forbidden, when the feature does not know the credential.
+A realtime connection (see `deployment`) SHALL open only with a credential that a feature using the channel accepts, given in the query of the connection; the waiting room's is its waiting ticket (see `waiting-room`). The server SHALL refuse the connection before it opens when the query carries no such credential, and SHALL close it before sending any message, as forbidden, when the feature does not know the credential.
 
 #### Scenario: Connection without a credential
 - **WHEN** a client opens a realtime connection with no credential

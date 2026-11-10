@@ -49,7 +49,12 @@ In a room with `lobby.enabled`, a participant who asks to join SHALL wait instea
 - **THEN** the server answers `409` and the "Closed room" error screen is shown, as without the waiting room
 
 ### Requirement: Asking to join gives a waiting ticket, not a token
-Asking to join a room where the participant waits SHALL answer with a waiting ticket, not a token. The ticket SHALL serve only its own wait: the realtime connection that keeps the place, the join token once admitted, and leaving. It SHALL last as long as the wait, without renewal, and give no access to the meeting's media or API. Asking SHALL NOT start the meeting, reserve the name or take a place in it, and SHALL fix the identity kept once admitted (see `meetings`).
+Asking to join a room where the participant waits SHALL answer with a waiting ticket and their identity, not a token. The ticket SHALL serve only its own wait: the realtime connection that keeps the place, the join token once admitted, and leaving. It SHALL last as long as the wait, without renewal, and give no access to the meeting's media or API. Asking SHALL NOT start the meeting, reserve the name or take a place in it. The identity SHALL be the one kept once admitted (see `meetings`).
+
+#### Scenario: Waiter knows its identity
+- **GIVEN** a participant with the anonymous speaker link of a room with the waiting room on
+- **WHEN** they ask to join and wait
+- **THEN** the answer carries the waiting ticket and the identity that `lobbyList` lists and `participantJoined` reports after their admission
 
 #### Scenario: Room stays open
 - **GIVEN** an open room with the waiting room on and no meeting running
@@ -169,7 +174,8 @@ Each time a participant asks to join, it SHALL start a new wait at the end of th
 #### Scenario: Admitted participant on the way in
 - **GIVEN** a room with `maxParticipants` 4, two participants connected and Ana admitted, who has not joined yet
 - **WHEN** a client holding `lobbyAdmin` calls `lobbyList`
-- **THEN** `availablePlaces` is 1, and it is 2 again about a minute after Ana closes her page without joining
+- **THEN** `availablePlaces` is 1, and it is 2 again a minute after her admission if she has not joined
+- **AND** it stays 1 once she joins, since she then counts as connected only
 
 #### Scenario: Meeting at its limit
 - **GIVEN** a room with `maxParticipants` 2, two participants connected and Ana admitted, who has not joined yet, because a holder of `lobbyBypass` took the place meanwhile
@@ -251,9 +257,9 @@ The `externalId` and `metadata` of a `MeetLobbyParticipant` SHALL be what the pa
 
 #### Scenario: Last free place
 - **GIVEN** a meeting with `maxParticipants` 3, two participants connected and Ana and Ben waiting
-- **WHEN** a moderator admits Ana and, before she connects, admits Ben
+- **WHEN** a moderator admits Ana and, before she appears in the meeting, admits Ben
 - **THEN** the first admission answers `200` and the second `409`, and Ben keeps waiting
-- **AND** `availablePlaces` is 0 meanwhile
+- **AND** `availablePlaces` is 0 until she appears in the meeting
 
 #### Scenario: Admitting on two replicas
 - **GIVEN** two replicas, a meeting with one free place and two participants waiting
@@ -262,7 +268,7 @@ The `externalId` and `metadata` of a `MeetLobbyParticipant` SHALL be what the pa
 
 #### Scenario: Admitted participant who never comes
 - **GIVEN** a meeting with `maxParticipants` 3, two participants connected, Ana admitted who closes her page, and Ben waiting
-- **WHEN** a minute passes and a moderator admits Ben
+- **WHEN** a minute passes after Ana's admission and a moderator admits Ben
 - **THEN** the server answers `200` and Ben enters the meeting
 
 ### Requirement: Deciding on everyone waiting
@@ -350,7 +356,7 @@ A request or a reconnection with the ticket of a wait that has ended SHALL NOT s
 - **THEN** the server answers `409` and issues no token
 
 ### Requirement: What happens when an admission cannot complete
-An admitted participant who finds the meeting full when asking for their join token SHALL go back to their earlier place in line. One whose meeting then fails to connect SHALL see the meeting's connection error or "Meeting full" screen and SHALL ask again to come back. One who loses the connection to Meet before asking SHALL lose the place like any waiter. A closed room SHALL end the wait with the "Closed room" screen; withdrawn access SHALL show that access error screen while the wait expires.
+An admitted participant who finds the meeting full when asking for their join token SHALL go back to their earlier place in line. One whose meeting then fails to connect SHALL see the meeting's connection error or "Meeting full" screen and SHALL ask again to come back. A closed room SHALL end the wait with the "Closed room" screen; withdrawn access SHALL show that access error screen while the admission expires.
 
 #### Scenario: Meeting full at the admission
 - **GIVEN** Ana admitted first in line, and the last free place taken by a holder of `lobbyBypass` before she asks for her join token
@@ -361,11 +367,7 @@ An admitted participant who finds the meeting full when asking for their join to
 - **GIVEN** Ana admitted, whose join token was issued and whose connection to the meeting's media keeps failing
 - **WHEN** her meeting gives up joining
 - **THEN** she sees the connection error screen and `lobbyList` does not list her
-
-#### Scenario: Tab closed after the admission
-- **GIVEN** a participant who closes their laptop just as they are admitted
-- **WHEN** a minute passes without them asking for their join token
-- **THEN** their wait ends with a `lobbyStatusChanged` webhook with `expired`
+- **AND** her place counts as taken until a minute after her admission
 
 #### Scenario: Rejected after an admission that did not complete
 - **GIVEN** a member admitted who found the meeting full and is back in line
@@ -377,13 +379,29 @@ An admitted participant who finds the meeting full when asking for their join to
 - **WHEN** the room is closed before their meeting asks for their join token
 - **THEN** their wait ends and the "Closed room" error screen is shown
 
-### Requirement: An admission ends when its join token is issued
-An admitted participant SHALL leave the waiting room when their join token is issued; from then on the waiting room SHALL NOT report them, whatever happens to their connection to the meeting.
+### Requirement: An admission holds its place until the participant joins
+An admitted participant SHALL count as a taken place from their admission until LiveKit reports their identity in the room, and for one minute at most. An admission not used within that minute SHALL end as expired, from the server's own rule, and its place SHALL be released. Getting the join token SHALL NOT release the place. A participant counted both as connected and as admitted SHALL only make the free places lower, never higher.
 
-#### Scenario: Join notice lost
-- **GIVEN** an admitted participant whose join token was issued and who closed their realtime connection
-- **WHEN** the notice of their joining never reaches Meet and a minute passes
-- **THEN** `lobbyList` does not list them and no `lobbyStatusChanged` webhook with `expired` is sent
+#### Scenario: Admission never used
+- **GIVEN** a meeting with `maxParticipants` 3, two participants connected and Ana admitted, who closes her page
+- **WHEN** a minute passes after her admission
+- **THEN** `availablePlaces` is 1 again and her wait ends with a `lobbyStatusChanged` webhook with `expired`
+- **AND** a script that keeps its connection open without asking for the join token loses the place the same way
+
+#### Scenario: Participant joins
+- **GIVEN** a meeting with `maxParticipants` 4, two participants connected and Ana admitted, whose join token was issued
+- **WHEN** LiveKit reports Ana in the room
+- **THEN** her place stops counting at once and `availablePlaces` is 1
+
+#### Scenario: Joined notice lost
+- **GIVEN** an admitted participant who joined the meeting, whose joined notice never reaches Meet
+- **WHEN** a minute passes after their admission
+- **THEN** their place stops counting and no `lobbyStatusChanged` webhook with `expired` is sent
+
+#### Scenario: Notice reaches another replica
+- **GIVEN** two replicas, Ana admitted through replica A, and LiveKit's joined notice for Ana handled by replica B
+- **WHEN** a moderator calls `lobbyList` through replica A
+- **THEN** her place no longer counts
 
 ### Requirement: Only participants let in reach the meeting
 In a room with the waiting room on, a join token SHALL be issued only to a holder of `lobbyBypass` or to an admitted participant, and turning the waiting room on SHALL invalidate every room member token issued before (see `authentication`). A join token SHALL then connect to the room's media until it expires, its holder is kicked (see `meeting-moderation`), or a later change invalidates it (see `authentication`). A participant already in the meeting who loses `lobbyBypass` stays in it.
@@ -473,7 +491,7 @@ A meeting that ends because its last participants left or lost their connection 
 - **AND** when the moderator comes back and joins, their participants panel lists the participant
 
 ### Requirement: Turning the waiting room off lets everyone in
-Turning `lobby.enabled` off between meetings SHALL let everyone waiting in, each through the usual join checks of `meeting-join`. When they outnumber the free places, those whose meeting asks for a join token first SHALL get in, whatever their place in line, and the others SHALL see "Meeting full".
+Turning `lobby.enabled` off between meetings SHALL let everyone waiting in, each through the usual join checks of `meeting-join`. When they outnumber the free places, the first to connect SHALL stay, whatever their place in line, and the others SHALL see "Meeting full".
 
 #### Scenario: Waiting room turned off between meetings
 - **GIVEN** a room with no meeting running and two participants waiting
@@ -487,8 +505,8 @@ Turning `lobby.enabled` off between meetings SHALL let everyone waiting in, each
 
 #### Scenario: More participants waiting than places
 - **GIVEN** a room with `maxParticipants` 2, no meeting running, and Ana, Ben and Zoe waiting in that order
-- **WHEN** its owner turns the waiting room off and Zoe's and Ana's meetings ask for their join tokens before Ben's
-- **THEN** Zoe and Ana enter the meeting and Ben sees "Meeting full"
+- **WHEN** its owner turns the waiting room off
+- **THEN** two of them enter the meeting and the third sees "Meeting full"
 
 ### Requirement: Asking to join from the join screen
 When submitting the join screen would make the participant wait, its button SHALL read "Ask to join" and submitting it SHALL start the wait at once, without the device setup screen. The waiting screen SHALL take its place: the participant prepares their camera and microphone there, seeded like the device setup screen (see `meeting-join`), and an admitted participant SHALL join with what it shows.
@@ -758,7 +776,7 @@ The embedded element of a participant who waits SHALL dispatch `lobbyStatusChang
 #### Scenario: Waiting then admitted
 - **GIVEN** an embedded participant who asks to join and is second in line
 - **WHEN** the participant ahead is admitted and then they are admitted
-- **THEN** the host receives `lobbyStatusChanged` with `waiting` and position 2, `waiting` and position 1, then `admitted`, all with the same `participantIdentity`, followed by `meetingJoined` with that identity
+- **THEN** the host receives `lobbyStatusChanged` with `waiting` and position 2, `waiting` and position 1, then `admitted`, all with the identity the server answered when they asked, followed by `meetingJoined` with that identity
 
 #### Scenario: Rejected
 - **GIVEN** an embedded participant waiting

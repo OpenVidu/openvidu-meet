@@ -5,7 +5,7 @@
 - [ ] 1.1 Add `ws` (and `@types/ws` as a dev dependency) to `meet-ce/backend`; verify `./meet.sh install` and the backend build succeed.
 - [ ] 1.2 Implement `RealtimeService`:
   - the upgrade handler on the server of `startServer()`, matching `<base path>internal-api/v1/ws` and leaving other paths alone;
-  - `registerAuthenticator(queryParameter, resolve)`: a request without a registered credential parameter destroyed before the upgrade, each handshake counted against its client address's limit for the other API routes through the shared rate-limit store (HTTP `429` over it), the address derived as Express derives `req.ip` (`proxy-addr` with `app.get('trust proxy fn')`, set from `MEET_SERVER_TRUST_PROXY`), at most 100 handshakes in flight per replica (HTTP `429`), no logging of `req.url`, then the resolution under a 5 s timeout, and close codes `4403` (unknown credential) and `1013` (timeout);
+  - `registerAuthenticator(queryParameter, resolve)`: a request without a registered credential parameter destroyed before the upgrade, each handshake counted against its client address's limit for the other API routes through an explicit store given to `apiLimiter`, which the handshake increments with the key the limiter derives (IPv6 subnet included); the count is per replica, as for every route (HTTP `429` over it), the address derived as Express derives `req.ip` (`proxy-addr` with `app.get('trust proxy fn')`, set from `SERVER_TRUST_PROXY`), at most 100 handshakes in flight per replica (HTTP `429`), no logging of `req.url`, then the resolution under a 5 s timeout, and close codes `4403` (unknown credential) and `1013` (timeout);
   - the local registry by room and address, at most 5 connections per room and address, a sixth closing the oldest with `1008`;
   - the JSON envelope, inbound frames dropped and `maxPayload`;
   - the 20 s cycle: ping, termination of unanswered connections, `lastSeenAt` updated on each answer, and the `heartbeat` message to every connection;
@@ -43,7 +43,7 @@
 ## 3. Deployment check
 
 - [ ] 3.1 Open a realtime connection through the OpenVidu local deployment's proxy (Caddy, on the Meet path) with a test credential, leave it idle for two minutes and confirm it survives; record the result in this task. No configuration change is expected.
-- [ ] 3.2 Repeat on an Elastic or High Availability deployment with two Meet replicas: connect through the load balancer, produce a message on the replica that does not hold the connection, stop the replica, and confirm delivery and reconnection; record the result in this task.
+- [ ] 3.2 Repeat on an Elastic or High Availability deployment with two Meet replicas: connect through the load balancer, produce a message on the replica that does not hold the connection, stop the replica, and confirm delivery and reconnection; record the result in this task, or record that it was not run and why.
 
 ## 4. Release surfaces
 

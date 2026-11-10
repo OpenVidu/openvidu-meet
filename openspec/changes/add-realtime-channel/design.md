@@ -41,7 +41,7 @@ Alternatives considered:
 An upgrade request never reaches Express middleware: there is no `initRequestContext`, no `withAuth` and no `req.query`. `RealtimeService.handleUpgrade(req, socket, head)`:
 
 1. Matches the pathname against `getBasePath() + 'internal-api/v1/ws'`. Any other path destroys the socket: Meet has no other upgrade listener (`server.ts`).
-2. Finds the authenticator registered for the credential the query carries (`?lobbyTicket=…` for the waiting room). A request whose query names no registered credential is destroyed before the upgrade. Each handshake counts against its client address's limit for the other API routes (500 per minute, "Rate limiting per client address" in `deployment`), which Express middleware cannot apply to an upgrade. The client address is derived as Express derives `req.ip`: `proxy-addr` over the socket address and `X-Forwarded-For` with the app's `trust proxy` function (`app.get('trust proxy fn')`, set from `MEET_SERVER_TRUST_PROXY`), so behind the proxies of an OpenVidu deployment each client has its own bucket, not the proxy's: over it, the replica answers HTTP `429` and destroys the socket. The replica also admits at most 100 handshakes in flight at once, answering HTTP `429` and destroying the socket beyond it. `req.url` carries the credential, so the handshake never logs it.
+2. Finds the authenticator registered for the credential the query carries (`?lobbyTicket=…` for the waiting room). A request whose query names no registered credential is destroyed before the upgrade. Each handshake counts against its client address's limit for the other API routes (500 per minute, "Rate limiting per client address" in `deployment`), which Express middleware cannot apply to an upgrade: `apiLimiter` gets an explicit store that the handshake increments with the key the limiter derives (express-rate-limit masks an IPv6 address to its subnet), and the count is per replica, as for every route. The client address is derived as Express derives `req.ip`: `proxy-addr` over the socket address and `X-Forwarded-For` with the app's `trust proxy` function (`app.get('trust proxy fn')`, set from `SERVER_TRUST_PROXY`), so behind the proxies of an OpenVidu deployment each client has its own bucket, not the proxy's: over it, the replica answers HTTP `429` and destroys the socket. The replica also admits at most 100 handshakes in flight at once, answering HTTP `429` and destroying the socket beyond it. `req.url` carries the credential, so the handshake never logs it.
 3. Completes the upgrade, then asks the authenticator to resolve the credential to a room and an address, under a 5 s timeout: during a Redis outage a read would otherwise wait in the offline queue indefinitely.
 4. Rejects a connection by closing it before registering it:
    - `4403` (forbidden) for a credential the authenticator does not know;
@@ -97,7 +97,7 @@ Alternatives considered:
 
 ### Browser client
 
-`RealtimeConnectionService` in `shared-meet-components` (meeting domain, provided per meeting like `MeetingLiveKitService`):
+`RealtimeConnectionService` in `shared-meet-components` (meeting domain, a root service torn down with the meeting, like `MeetingLiveKitService`):
 
 - **Connecting:** `connect({ credential: { name, value } }, { giveUpAfterMs })` builds the URL from the Meet base URL, `wss://` for `https` and `ws://` for `http` (development), with the credential in the query, so the web component connects to its Meet origin, not the host page.
 - **Messages:** `messages$(type)` hands each feature its messages.

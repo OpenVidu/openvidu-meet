@@ -22,10 +22,10 @@
 ## Decisions
 
 - Refresh mode reads the live participant's metadata before applying anything and answers `401` (`errorInvalidToken`) when `isRevoked` says it was issued before the identity's last revocation.
-- Refresh mode also answers `401` when the live metadata's `iat` precedes the room's `rolesUpdatedAt`, read with the room it already loads (:475). Roles, access and the waiting room cannot change while a meeting runs, so such a session connected with an outdated token: renewing it would launder it past the removal on `participant_joined`.
+- Refresh mode also answers `401` when the live metadata's `iat` precedes the room's `rolesUpdatedAt`, read with the room it already loads (:475), whose projection gains `rolesUpdatedAt` (it holds `status`, `roles` and `config` only). Roles, access and the waiting room cannot change while a meeting runs, so such a session connected with an outdated token: renewing it would launder it past the removal on `participant_joined`.
 - Nothing else of the currency is checked: a session outdated by a member or user change is what refresh mode exists to bring up to date.
 - The check reuses `isRevoked`, so a kick, a demotion and any later revocation share one rule. A demoted participant's session was re-stamped after its revocation, so it passes.
-- The live participant is already read by `applyPermissionsToLiveParticipant`; both checks go inside it, before the metadata is rewritten, so there is one read and one decision under the participant lock.
+- The live participant is already read by `applyPermissionsToLiveParticipant`; both checks go inside it, only when called from refresh mode (the member-update push shares the method and rethrows only `404` and `409`, so an unconditional `401` would reach the manager), before the metadata is rewritten, so there is one read and one decision under the participant lock.
 
 ## Risks / Trade-offs
 
