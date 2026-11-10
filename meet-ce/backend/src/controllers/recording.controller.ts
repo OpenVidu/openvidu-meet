@@ -268,6 +268,19 @@ export const getRecordingUrl = async (req: Request, res: Response) => {
 	}
 };
 
+export const getRecordingLink = async (req: Request, res: Response) => {
+	const recordingService = container.get(RecordingService);
+	const recordingId = req.params.recordingId as string;
+	const recordingSecret = req.query.recordingSecret as string;
+
+	try {
+		const { download } = await recordingService.getRecordingSecretGrant(recordingId, recordingSecret);
+		return res.status(200).json({ download });
+	} catch (error) {
+		handleError(res, error, `getting the link of recording '${recordingId}'`);
+	}
+};
+
 export const downloadRecordingsZip = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);

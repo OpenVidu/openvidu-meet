@@ -1597,7 +1597,7 @@ describe('Recording API Security Tests', () => {
 
 	describe('Recording Access Secret Authentication', () => {
 		type Credential = 'none' | 'apiKey' | 'adminToken' | 'outsiderToken' | 'memberToken';
-		type Secret = 'none' | 'public' | 'private' | 'invalid';
+		type Secret = 'none' | 'public' | 'private' | 'publicPlay' | 'privatePlay' | 'invalid';
 
 		let roomData: RoomData;
 		let roomId: string;
@@ -1605,6 +1605,8 @@ describe('Recording API Security Tests', () => {
 		let roomMember: RoomMemberData;
 		let publicSecret: string;
 		let privateSecret: string;
+		let publicPlaySecret: string;
+		let privatePlaySecret: string;
 
 		const OPERATIONS: [string, (id: string) => string][] = [
 			['getRecording', (id) => `${RECORDINGS_PATH}/${id}`],
@@ -1644,6 +1646,10 @@ describe('Recording API Security Tests', () => {
 					return publicSecret;
 				case 'private':
 					return privateSecret;
+				case 'publicPlay':
+					return publicPlaySecret;
+				case 'privatePlay':
+					return privatePlaySecret;
 				case 'invalid':
 					return 'invalidSecret';
 				default:
@@ -1737,6 +1743,116 @@ describe('Recording API Security Tests', () => {
 					await read(recordingPath(), 'invalid', 'apiKey'),
 					errorInvalidRecordingSecret(recordingId)
 				);
+			});
+		});
+
+		describe('with play-only secrets', () => {
+			const INTERNAL_RECORDINGS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`);
+
+			const secretOf = (response: Response): string =>
+				new URL(response.body.url).searchParams.get('recordingSecret')!;
+
+			const readLink = (secret: string, credential: Credential = 'none') => {
+				const req = request(app)
+					.get(`${INTERNAL_RECORDINGS_PATH}/${recordingId}/link`)
+					.query({ recordingSecret: secret });
+				const header = credentialHeader(credential);
+
+				if (header) {
+					req.set(header[0], header[1]);
+				}
+
+				return req;
+			};
+
+			beforeAll(async () => {
+				const playOnlyMember = await setupRoomMember(roomId, {
+					name: 'Play Only Guest',
+					baseRole: MeetRoomMemberRole.MODERATOR
+				});
+				const { memberToken } = await updateRoomMemberPermissions(roomId, playOnlyMember.member.memberId, {
+					recordingPlay: true,
+					recordingDownload: false
+				});
+
+				const urlPath = `${RECORDINGS_PATH}/${recordingId}/url`;
+				const publicResponse = await request(app)
+					.get(urlPath)
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, memberToken);
+				const privateResponse = await request(app)
+					.get(urlPath)
+					.query({ privateAccess: true })
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, memberToken);
+				expect(publicResponse.status).toBe(200);
+				expect(privateResponse.status).toBe(200);
+				publicPlaySecret = secretOf(publicResponse);
+				privatePlaySecret = secretOf(privateResponse);
+			});
+
+			it('gives a caller allowed to play but not to download links other than the downloading ones', () => {
+				expect(publicPlaySecret).not.toBe(publicSecret);
+				expect(privatePlaySecret).not.toBe(privateSecret);
+				expect(publicPlaySecret).not.toBe(privatePlaySecret);
+			});
+
+			it('plays with the public play-only secret and no credential', async () => {
+				const media = await request(app)
+					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
+					.query({ recordingSecret: publicPlaySecret });
+				const info = await request(app).get(recordingPath()).query({ recordingSecret: publicPlaySecret });
+				expect(media.status).toBe(200);
+				expect(info.status).toBe(200);
+			});
+
+			it.each<Credential>(['none', 'apiKey', 'adminToken', 'memberToken'])(
+				'refuses the download with the public play-only secret carrying a %s credential',
+				async (credential) => {
+					const response = await read(`${RECORDINGS_PATH}/${recordingId}/download`, 'publicPlay', credential);
+					expectMeetError(response, errorInsufficientPermissions());
+				}
+			);
+
+			it('plays with the private play-only secret and a credential, and answers 401 without one', async () => {
+				const mediaPath = `${RECORDINGS_PATH}/${recordingId}/media`;
+				expect((await read(mediaPath, 'privatePlay', 'outsiderToken')).status).toBe(200);
+				expectMeetError(await read(mediaPath, 'privatePlay', 'none'), errorUnauthorized());
+			});
+
+			it.each<Credential>(['apiKey', 'adminToken', 'outsiderToken'])(
+				'refuses the download with the private play-only secret carrying a %s credential',
+				async (credential) => {
+					const response = await read(
+						`${RECORDINGS_PATH}/${recordingId}/download`,
+						'privatePlay',
+						credential
+					);
+					expectMeetError(response, errorInsufficientPermissions());
+				}
+			);
+
+			it('tells the recording view page what each secret grants', async () => {
+				const grants: [string, boolean][] = [
+					[publicSecret, true],
+					[privateSecret, true],
+					[publicPlaySecret, false]
+				];
+
+				for (const [secret, download] of grants) {
+					const response = await readLink(secret, 'adminToken');
+					expect(response.status).toBe(200);
+					expect(response.body).toEqual({ download });
+				}
+
+				const privatePlay = await readLink(privatePlaySecret, 'adminToken');
+				expect(privatePlay.body).toEqual({ download: false });
+			});
+
+			it('answers the recording link read like getRecording', async () => {
+				expect((await readLink(publicSecret)).status).toBe(200);
+				expectMeetError(await readLink(privateSecret), errorUnauthorized());
+				expectMeetError(await readLink('invalidSecret', 'apiKey'), errorInvalidRecordingSecret(recordingId));
+				const missing = await request(app).get(`${INTERNAL_RECORDINGS_PATH}/${recordingId}/link`);
+				expect(missing.status).toBe(422);
 			});
 		});
 

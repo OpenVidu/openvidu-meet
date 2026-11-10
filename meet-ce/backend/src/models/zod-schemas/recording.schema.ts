@@ -171,6 +171,15 @@ export const GetRecordingMediaReqSchema = z.object({
 		.loose() // Allow other headers to pass through
 });
 
+export const GetRecordingLinkReqSchema = z.object({
+	params: z.object({
+		recordingId: nonEmptySanitizedRecordingId('recordingId')
+	}),
+	query: z.object({
+		recordingSecret: z.string().min(1)
+	})
+});
+
 export const GetRecordingUrlReqSchema = z.object({
 	params: z.object({
 		recordingId: nonEmptySanitizedRecordingId('recordingId')

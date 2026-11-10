@@ -13,10 +13,18 @@ import type { SchemaMigratableDocument } from '../migration.model.js';
 export interface MeetRecordingDocument extends MeetRecordingInfo, SchemaMigratableDocument {
 	roomOwner: string;
 	roomUserAccess: boolean;
-	accessSecrets: {
-		public: string;
-		private: string;
-	};
+	accessSecrets: MeetRecordingAccessSecrets;
+}
+
+/**
+ * The four secrets of a recording link: `public` and `private` grant play and download,
+ * `publicPlay` and `privatePlay` grant play only.
+ */
+export interface MeetRecordingAccessSecrets {
+	public: string;
+	private: string;
+	publicPlay: string;
+	privatePlay: string;
 }
 
 /**
@@ -118,6 +126,14 @@ const MeetRecordingSchema = new Schema<MeetRecordingDocument>(
 				required: true
 			},
 			private: {
+				type: String,
+				required: true
+			},
+			publicPlay: {
+				type: String,
+				required: true
+			},
+			privatePlay: {
 				type: String,
 				required: true
 			}

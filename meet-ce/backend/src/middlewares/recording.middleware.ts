@@ -7,7 +7,6 @@ import { RecordingHelper } from '../helpers/recording.helper.js';
 import {
 	errorAnonymousAccessDisabled,
 	errorInsufficientPermissions,
-	errorInvalidRecordingSecret,
 	errorManualRecordingNotAllowed,
 	errorRecordingDisabled,
 	OpenViduMeetError
@@ -68,27 +67,37 @@ export const withRecordingStartAllowed = async (req: Request, res: Response, nex
  * - A public recordingSecret authenticates on its own.
  * - A private recordingSecret authenticates nobody: the caller still needs one of the usual
  *   credentials. What it grants is the permission check, waived in `authorizeRecordingAccess`.
+ * - A play-only recordingSecret, public or private, is refused on a route serving `recordingDownload`.
  * - Without a recordingSecret, API key, room member token and user access token all apply.
+ *
+ * @param permission - The permission the route serves (recordingPlay or recordingDownload).
  */
-export const setupRecordingAuthentication = async (req: Request, res: Response, next: NextFunction) => {
-	const recordingSecret = req.query.recordingSecret as string;
-	const authValidators: AuthValidator[] = [
-		apiKeyValidator,
-		roomMemberTokenValidator,
-		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)
-	];
+export const setupRecordingAuthentication = (permission: 'recordingPlay' | 'recordingDownload') => {
+	return async (req: Request, res: Response, next: NextFunction) => {
+		const recordingSecret = req.query.recordingSecret as string;
+		const authValidators: AuthValidator[] = [
+			apiKeyValidator,
+			roomMemberTokenValidator,
+			accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)
+		];
 
-	// If a recording secret is provided, validate it against the stored secrets
-	// and apply the appropriate authentication logic.
-	if (recordingSecret) {
-		try {
-			const recordingId = req.params.recordingId as string;
+		// If a recording secret is provided, validate it against the stored secrets
+		// and apply the appropriate authentication logic.
+		if (recordingSecret) {
+			try {
+				const recordingId = req.params.recordingId as string;
 
-			const recordingService = container.get(RecordingService);
-			const recordingSecrets = await recordingService.getRecordingAccessSecrets(recordingId);
+				const recordingService = container.get(RecordingService);
+				const { scope, download } = await recordingService.getRecordingSecretGrant(
+					recordingId,
+					recordingSecret
+				);
 
-			switch (recordingSecret) {
-				case recordingSecrets.publicAccessSecret: {
+				if (permission === 'recordingDownload' && !download) {
+					return rejectRequestFromMeetError(res, errorInsufficientPermissions());
+				}
+
+				if (scope === 'public') {
 					// Public recording secret is only valid if anonymous recording access is enabled in the room
 					const { roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
 					const roomService = container.get(RoomService);
@@ -102,19 +111,13 @@ export const setupRecordingAuthentication = async (req: Request, res: Response, 
 					// left in the caller's browser must not break a public link.
 					return withAuth(allowAnonymous)(req, res, next);
 				}
-
-				case recordingSecrets.privateAccessSecret:
-					break;
-				default:
-					// Invalid secret provided
-					return rejectRequestFromMeetError(res, errorInvalidRecordingSecret(recordingId));
+			} catch (error) {
+				return handleError(res, error, 'retrieving recording secrets');
 			}
-		} catch (error) {
-			return handleError(res, error, 'retrieving recording secrets');
 		}
-	}
 
-	return withAuth(...authValidators)(req, res, next);
+		return withAuth(...authValidators)(req, res, next);
+	};
 };
 
 /**

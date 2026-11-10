@@ -137,6 +137,9 @@ with no replacement.
 - A room member holding `roomShareAccessLinks` received every anonymous link of the room from
   [`getRoom`][3.10-get-room] and [`getRooms`][3.10-get-rooms], the moderator link included. Each link is now returned
   only to a caller that also holds every permission it grants.
+- [`getRecordingUrl`][3.10-get-recording-url] returned a link that downloads the recording to a caller holding
+  `recordingPlay` without `recordingDownload`, and the recording player's context menu saved the video for any viewer.
+  Such a caller now gets a link that only plays the recording, and the player opens no context menu.
 - A request whose credentials could not be checked because MongoDB or Redis failed answered `401`. It now answers
   `500`.
 - A request whose path held a percent escape that does not decode, such as `/api/v1/rooms/%ZZ`, answered `500`. It
@@ -484,6 +487,7 @@ registered on both receives it twice.
 [3.10-participant-role-update]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantRoleUpdate
 [3.10-update-room-status]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/updateRoomStatus
 [3.10-get-room]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/getRoom
+[3.10-get-recording-url]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/getRecordingUrl
 [3.10-get-rooms]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/getRooms
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html
 [3.9-meetings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/meetingGet
