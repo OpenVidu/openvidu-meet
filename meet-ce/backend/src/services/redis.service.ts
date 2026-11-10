@@ -12,7 +12,8 @@ import { LoggerService } from './logger.service.js';
 @injectable()
 export class RedisService extends EventEmitter {
 	protected readonly DEFAULT_TTL: number = ms('32 days');
-	protected redisPublisher: Redis;
+	protected client: Redis;
+	protected subscriber?: Redis;
 	protected redlockAdapter: IoredisAdapter;
 	protected isConnected = false;
 
@@ -20,11 +21,11 @@ export class RedisService extends EventEmitter {
 		super();
 
 		const redisOptions = this.loadRedisConfig();
-		this.redisPublisher = new Redis(redisOptions);
+		this.client = new Redis(redisOptions);
 
-		// Shared distributed-lock adapter over the publisher connection. Reused
+		// Shared distributed-lock adapter over the shared client. Reused
 		// across every Redlock so the release/extend Lua scripts stay EVALSHA-cached.
-		this.redlockAdapter = new IoredisAdapter(this.redisPublisher);
+		this.redlockAdapter = new IoredisAdapter(this.client);
 
 		this.setupEventHandlers();
 	}
@@ -58,9 +59,9 @@ export class RedisService extends EventEmitter {
 			this.emit('redisDisconnected');
 		};
 
-		this.redisPublisher.on('connect', onConnect);
-		this.redisPublisher.on('error', onError);
-		this.redisPublisher.on('end', onDisconnect);
+		this.client.on('connect', onConnect);
+		this.client.on('error', onError);
+		this.client.on('end', onDisconnect);
 	}
 
 	/**
@@ -87,6 +88,34 @@ export class RedisService extends EventEmitter {
 		this.on('redisDisconnected', callback);
 	}
 
+	get database(): number {
+		return this.client.options.db ?? 0;
+	}
+
+	async publish(channel: string, message: string): Promise<void> {
+		await this.client.publish(channel, message);
+	}
+
+	/**
+	 * Subscribes on a connection of its own, since a subscribed connection runs no other command.
+	 * ioredis subscribes it again after every reconnection.
+	 */
+	async subscribe(channel: string, onMessage: (message: string) => void): Promise<void> {
+		this.subscriber ??= this.createSubscriber();
+		this.subscriber.on('message', (receivedChannel: string, message: string) => {
+			if (receivedChannel === channel) {
+				onMessage(message);
+			}
+		});
+		await this.subscriber.subscribe(channel);
+	}
+
+	private createSubscriber(): Redis {
+		const subscriber = this.client.duplicate();
+		subscriber.on('error', (error: Error) => this.logger.warn('Redis subscriber error', error));
+		return subscriber;
+	}
+
 	/**
 	 * Retrieves all keys from Redis that match the specified pattern.
 	 *
@@ -99,7 +128,7 @@ export class RedisService extends EventEmitter {
 		const keys: string[] = [];
 
 		do {
-			const [nextCursor, partialKeys] = await this.redisPublisher.scan(cursor, 'MATCH', pattern);
+			const [nextCursor, partialKeys] = await this.client.scan(cursor, 'MATCH', pattern);
 			keys.push(...partialKeys);
 			cursor = nextCursor;
 		} while (cursor !== '0');
@@ -119,7 +148,7 @@ export class RedisService extends EventEmitter {
 		}
 
 		try {
-			const pipeline = this.redisPublisher.pipeline();
+			const pipeline = this.client.pipeline();
 
 			for (const key of keys) {
 				pipeline.exists(key);
@@ -153,7 +182,7 @@ export class RedisService extends EventEmitter {
 	 */
 	async exists(key: string): Promise<boolean> {
 		try {
-			const result = await this.redisPublisher.exists(key);
+			const result = await this.client.exists(key);
 			return result === 1;
 		} catch {
 			return false;
@@ -172,7 +201,7 @@ export class RedisService extends EventEmitter {
 		}
 
 		try {
-			return await this.redisPublisher.mget(keys);
+			return await this.client.mget(keys);
 		} catch (error) {
 			this.logger.error('Error getting multiple values from Redis', error);
 			throw internalError('getting multiple values from Redis');
@@ -186,7 +215,7 @@ export class RedisService extends EventEmitter {
 	 */
 	get(key: string): Promise<string | null> {
 		try {
-			return this.redisPublisher.get(key);
+			return this.client.get(key);
 		} catch (error) {
 			this.logger.error(`Error getting value from Redis for key '${key}'`, error);
 			throw internalError('getting value from Redis');
@@ -209,15 +238,15 @@ export class RedisService extends EventEmitter {
 				const stringValue = value.toString();
 
 				if (hasTTL) {
-					await this.redisPublisher.set(key, stringValue, 'PX', ttlMs);
+					await this.client.set(key, stringValue, 'PX', ttlMs);
 				} else {
-					await this.redisPublisher.set(key, stringValue);
+					await this.client.set(key, stringValue);
 				}
 			} else {
-				await this.redisPublisher.hmset(key, value as Record<string, string | number>);
+				await this.client.hmset(key, value as Record<string, string | number>);
 
 				if (hasTTL) {
-					await this.redisPublisher.pexpire(key, ttlMs);
+					await this.client.pexpire(key, ttlMs);
 				}
 			}
 
@@ -241,7 +270,7 @@ export class RedisService extends EventEmitter {
 				keys = [keys];
 			}
 
-			return this.redisPublisher.del(keys);
+			return this.client.del(keys);
 		} catch {
 			throw internalError(`deleting key from Redis`);
 		}
@@ -260,9 +289,9 @@ export class RedisService extends EventEmitter {
 			let result: string | null;
 
 			if (ttlMs) {
-				result = await this.redisPublisher.set(key, value, 'PX', ttlMs, 'NX');
+				result = await this.client.set(key, value, 'PX', ttlMs, 'NX');
 			} else {
-				result = (await this.redisPublisher.setnx(key, value)) ? 'OK' : null;
+				result = (await this.client.setnx(key, value)) ? 'OK' : null;
 			}
 
 			return result === 'OK';
@@ -282,7 +311,7 @@ export class RedisService extends EventEmitter {
 	 */
 	async runScript(script: string, keys: string[], args: Array<string | number>): Promise<unknown> {
 		try {
-			return await this.redisPublisher.eval(script, keys.length, ...keys, ...args);
+			return await this.client.eval(script, keys.length, ...keys, ...args);
 		} catch (error) {
 			this.logger.error(`Error running a Lua script in Redis for keys '${keys.join(', ')}'`, error);
 			throw error;
@@ -298,7 +327,7 @@ export class RedisService extends EventEmitter {
 	 */
 	async setExpiration(key: string, ttlMs: number): Promise<boolean> {
 		try {
-			const result = await this.redisPublisher.pexpire(key, ttlMs);
+			const result = await this.client.pexpire(key, ttlMs);
 			return result === 1;
 		} catch (error) {
 			this.logger.error(`Error setting expiration in Redis for key '${key}'`, error);
@@ -317,14 +346,14 @@ export class RedisService extends EventEmitter {
 	async addToSet(key: string, member: string, ttlMs?: number): Promise<number> {
 		try {
 			if (ttlMs !== undefined) {
-				const [added] = (await this.redisPublisher.multi().sadd(key, member).pexpire(key, ttlMs).exec()) as [
+				const [added] = (await this.client.multi().sadd(key, member).pexpire(key, ttlMs).exec()) as [
 					[Error | null, number],
 					unknown
 				];
 				return added[1];
 			}
 
-			return await this.redisPublisher.sadd(key, member);
+			return await this.client.sadd(key, member);
 		} catch (error) {
 			this.logger.error(`Error adding to set in Redis for key '${key}'`, error);
 			throw error;
@@ -340,7 +369,7 @@ export class RedisService extends EventEmitter {
 	 */
 	async removeFromSet(key: string, member: string): Promise<number> {
 		try {
-			return await this.redisPublisher.srem(key, member);
+			return await this.client.srem(key, member);
 		} catch (error) {
 			this.logger.error(`Error removing from set in Redis for key '${key}'`, error);
 			throw error;
@@ -350,7 +379,7 @@ export class RedisService extends EventEmitter {
 	/** Reads one field of a Redis hash, `null` when the hash has no such field. */
 	async getHashField(key: string, field: string): Promise<string | null> {
 		try {
-			return await this.redisPublisher.hget(key, field);
+			return await this.client.hget(key, field);
 		} catch (error) {
 			this.logger.error(`Error reading field '${field}' of hash '${key}' from Redis`, error);
 			throw error;
@@ -360,7 +389,7 @@ export class RedisService extends EventEmitter {
 	/** Writes one field of a Redis hash. */
 	async setHashField(key: string, field: string, value: string): Promise<void> {
 		try {
-			await this.redisPublisher.hset(key, field, value);
+			await this.client.hset(key, field, value);
 		} catch (error) {
 			this.logger.error(`Error writing field '${field}' of hash '${key}' in Redis`, error);
 			throw error;
@@ -370,7 +399,7 @@ export class RedisService extends EventEmitter {
 	/** Removes one field of a Redis hash; the hash goes with its last field. */
 	async removeHashField(key: string, field: string): Promise<void> {
 		try {
-			await this.redisPublisher.hdel(key, field);
+			await this.client.hdel(key, field);
 		} catch (error) {
 			this.logger.error(`Error removing field '${field}' of hash '${key}' from Redis`, error);
 			throw error;
@@ -379,7 +408,7 @@ export class RedisService extends EventEmitter {
 
 	async hasHashField(key: string, field: string): Promise<boolean> {
 		try {
-			return (await this.redisPublisher.hexists(key, field)) === 1;
+			return (await this.client.hexists(key, field)) === 1;
 		} catch (error) {
 			this.logger.error(`Error checking field '${field}' of hash '${key}' in Redis`, error);
 			throw error;
@@ -389,7 +418,7 @@ export class RedisService extends EventEmitter {
 	/** The field names of a Redis hash, read in one call whatever the size of the keyspace. */
 	async getHashFieldNames(key: string): Promise<string[]> {
 		try {
-			return await this.redisPublisher.hkeys(key);
+			return await this.client.hkeys(key);
 		} catch (error) {
 			this.logger.error(`Error reading the fields of hash '${key}' from Redis`, error);
 			throw error;
@@ -401,7 +430,7 @@ export class RedisService extends EventEmitter {
 	 */
 	async getCardinality(key: string): Promise<number> {
 		try {
-			return await this.redisPublisher.scard(key);
+			return await this.client.scard(key);
 		} catch (error) {
 			this.logger.error(`Error reading set cardinality from Redis for key '${key}'`, error);
 			throw error;
@@ -413,8 +442,11 @@ export class RedisService extends EventEmitter {
 		// Detach the connect/error/end handlers from the client itself before quitting: `quit()` can
 		// still surface a stray `error` while the socket finishes closing, and with `isConnected` about
 		// to be reset to false, onError would misread it as a failed initial connection and exit(1).
-		this.redisPublisher.removeAllListeners();
-		void this.redisPublisher.quit();
+		this.client.removeAllListeners();
+		void this.client.quit();
+		this.subscriber?.removeAllListeners();
+		void this.subscriber?.quit();
+		this.subscriber = undefined;
 		this.removeAllListeners();
 		this.isConnected = false;
 	}

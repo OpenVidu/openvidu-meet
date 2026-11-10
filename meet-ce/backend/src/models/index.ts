@@ -2,6 +2,7 @@
 export * from './database.model.js';
 export * from './error.model.js';
 export * from './migration.model.js';
+export * from './realtime.model.js';
 export * from './redis.model.js';
 export * from './redis-lock.model.js';
 export * from './request-context.model.js';

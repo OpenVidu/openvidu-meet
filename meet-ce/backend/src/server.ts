@@ -12,7 +12,7 @@ import { checkModuleEnabled, logEnvVars, MEET_ENV } from './environment.js';
 import { apiKeyValidator, withAuth } from './middlewares/auth.middleware.js';
 import { setBaseUrlFromRequest } from './middlewares/base-url.middleware.js';
 import { globalErrorHandler } from './middlewares/error-handler.middleware.js';
-import { staticAssetLimiter } from './middlewares/rate-limit.middleware.js';
+import { realtimeHandshakeGuard, staticAssetLimiter } from './middlewares/rate-limit.middleware.js';
 import { initRequestContext } from './middlewares/request-context.middleware.js';
 import { serveWebcomponentBundle } from './middlewares/webcomponent-bundle.middleware.js';
 import { aiAssistantRouter } from './routes/ai-assistant.routes.js';
@@ -28,6 +28,7 @@ import { internalRoomRouter, roomRouter } from './routes/room.routes.js';
 import { internalUserRouter, userRouter } from './routes/user.routes.js';
 import { webhookRouter } from './routes/webhook.routes.js';
 import { LoggerService } from './services/logger.service.js';
+import { RealtimeService } from './services/realtime.service.js';
 import { getBasePath, getHtmlWithBasePath, getOpenApiHtmlWithBasePath } from './utils/html-dynamic-base-path.utils.js';
 import {
 	frontendDirectoryPath,
@@ -155,7 +156,7 @@ const createApp = () => {
 	return app;
 };
 
-const startServer = (app: express.Application) => {
+const startServer = (app: Express) => {
 	const basePath = getBasePath();
 	const basePathDisplay = basePath === '/' ? '' : basePath.slice(0, -1);
 
@@ -182,6 +183,8 @@ const startServer = (app: express.Application) => {
 		console.error('Server failed to start:', error);
 		process.exit(1);
 	});
+
+	void container.get(RealtimeService).attach(server, realtimeHandshakeGuard(app));
 };
 
 /**

@@ -11,7 +11,7 @@ const unconnected = () => {
 	const service = Object.create(RedisService.prototype) as RedisService;
 	EventEmitter.call(service);
 	const client = new EventEmitter();
-	Object.assign(service, { logger, isConnected: false, redisPublisher: client });
+	Object.assign(service, { logger, isConnected: false, client: client });
 	return { service, client };
 };
 

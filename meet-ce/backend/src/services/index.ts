@@ -12,6 +12,7 @@ export * from './mutex.service.js';
 export * from './participant-name.service.js';
 export * from './participant-token-revocation.service.js';
 export * from './recording-scheduled-tasks.service.js';
+export * from './realtime.service.js';
 export * from './recording.service.js';
 export * from './redis.service.js';
 export * from './request-session.service.js';
