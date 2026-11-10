@@ -355,6 +355,31 @@ export const expectRecordingViewShown = async (page: Page): Promise<void> => {
 };
 
 /**
+ * Asserts that the recording player's video opens no context menu: a `contextmenu` event dispatched
+ * on it comes back cancelled.
+ */
+export const expectNoContextMenuOnVideo = async (page: Page): Promise<void> => {
+	const video = page.locator('ov-recording-video-player video').first();
+	await expect(video).toBeVisible({ timeout: 15_000 });
+
+	const prevented = await video.evaluate((element) => {
+		const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+		element.dispatchEvent(event);
+		return event.defaultPrevented;
+	});
+
+	expect(prevented).toBe(true);
+};
+
+/**
+ * Asserts that the individual recording view offers, or does not offer, the download action.
+ */
+export const expectRecordingDownloadOffered = async (page: Page, offered: boolean): Promise<void> => {
+	await expect(page.locator('ov-recording-video-player').first()).toBeVisible({ timeout: 15_000 });
+	await expect(page.locator('button:has(mat-icon:text-is("download"))')).toHaveCount(offered ? 1 : 0);
+};
+
+/**
  * Asserts that the individual recording view is loaded and shows the delete action
  * (`canDeleteRecordings`).
  */

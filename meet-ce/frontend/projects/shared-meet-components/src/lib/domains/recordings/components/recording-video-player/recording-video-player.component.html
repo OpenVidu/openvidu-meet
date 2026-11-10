@@ -13,6 +13,7 @@
 				class="video-player"
 				(loadeddata)="onVideoLoaded()"
 				(error)="onVideoError()"
+				(contextmenu)="$event.preventDefault()"
 			></video>
 
 			@if (!isVideoLoaded()) {

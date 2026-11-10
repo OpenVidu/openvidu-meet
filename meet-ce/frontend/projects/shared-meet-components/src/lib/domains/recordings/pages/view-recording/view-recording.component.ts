@@ -19,6 +19,7 @@ import { AuthService } from '../../../auth/services/auth.service';
 import { ViewportService } from '../../../meeting/openvidu-components';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { RecordingVideoPlayerComponent } from '../../components/recording-video-player/recording-video-player.component';
+import { RecordingEntryService } from '../../services/recording-entry.service';
 import { RecordingService } from '../../services/recording.service';
 import { RecordingUiUtils } from '../../utils/ui';
 
@@ -39,6 +40,7 @@ import { RecordingUiUtils } from '../../utils/ui';
 })
 export class ViewRecordingComponent implements OnInit {
 	protected readonly recordingService = inject(RecordingService);
+	private readonly recordingEntryService = inject(RecordingEntryService);
 	protected readonly notificationService = inject(NotificationService);
 	protected readonly dialogService = inject(DialogService);
 	protected readonly navigationService = inject(NavigationService);
@@ -67,10 +69,11 @@ export class ViewRecordingComponent implements OnInit {
 
 	canRetrieveRecordings = computed(() => this.roomMemberContextService.permissions()?.recordingList ?? false);
 	canDeleteRecordings = computed(() => this.roomMemberContextService.permissions()?.recordingDelete ?? false);
-	// A share-link viewer (recordingSecret) may download without a member context: the server-side
-	// secret short-circuit covers the whole retrieval group, matching the pre-split behavior.
-	canDownloadRecording = computed(
-		() => !!this.recordingSecret || (this.roomMemberContextService.permissions()?.recordingDownload ?? false)
+	// A visit with a recordingSecret downloads only if the secret grants it, whatever the visitor holds.
+	canDownloadRecording = computed(() =>
+		this.recordingSecret
+			? this.recordingEntryService.linkGrantsDownload()
+			: (this.roomMemberContextService.permissions()?.recordingDownload ?? false)
 	);
 	backButtonText = computed(() =>
 		this.canRetrieveRecordings() && !!this.recording()?.roomId

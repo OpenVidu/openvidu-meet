@@ -1,24 +1,36 @@
-import { MeetRecordingStatus } from '@openvidu-meet/typings';
+import { MeetRecordingStatus, MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { expect, test, type Page } from '@playwright/test';
+import { authenticate, createReadyUser } from './helpers/auth.helper';
+import { MEET_BASE_URL } from './helpers/meet-api.helper';
 import {
 	createRoomAndGetAnonymousAccessUrl,
+	createRoomMember,
 	deleteRooms,
+	deleteUsers,
 	getRoomRecordings,
 	requestRecording,
 	stopStartingRecording
 } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-navigation.helper';
+import { openRecording, toIndividualRecordingUrl } from './helpers/recordings-navigation.helper';
 import {
 	clickViewRecordingsButton,
 	dismissRecordingNotice,
+	expectNoContextMenuOnVideo,
 	expectNoRecordingNotice,
 	expectRecordingBadgeStarting,
+	expectPublicRecordingUrlGenerated,
 	expectRecordingBadgeVisible,
+	expectRecordingDownloadOffered,
 	expectRecordingNotice,
+	expectRecordingViewShown,
 	expectRoomRecordingsListShown,
 	expectStartRecordingButtonVisible,
 	expectStopRecordingButtonVisible,
 	expectViewRecordingsButtonVisible,
+	generatePublicRecordingUrl,
+	openShareDialogFromRecordingView,
+	recordRoom,
 	startStopRecordingFromActivitiesPanel,
 	startStopRecordingFromToolbar,
 	waitForRecordingStarted
@@ -26,6 +38,7 @@ import {
 
 test.describe('Recordings E2E Tests', () => {
 	const createdRoomIds: string[] = [];
+	const createdUserIds: string[] = [];
 
 	let roomId: string;
 	let accessUrl: string;
@@ -38,7 +51,7 @@ test.describe('Recordings E2E Tests', () => {
 	});
 
 	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
+		await Promise.all([deleteRooms(createdRoomIds), deleteUsers(createdUserIds)]);
 	});
 
 	test('should start a recording from activities recording panel', async ({ page }) => {
@@ -150,5 +163,72 @@ test.describe('Recordings E2E Tests', () => {
 			const [recording] = await getRoomRecordings(roomId);
 			await stopStartingRecording(recording.recordingId);
 		});
+	});
+
+	test.describe('a recording link', () => {
+		test('shared by a member allowed to play but not to download only plays', async ({ browser, page }) => {
+			test.setTimeout(240_000);
+			const { recordingId } = await recordRoom(browser, roomId);
+			const member = await createRoomMember(roomId, {
+				name: 'Play Only',
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: { recordingPlay: true, recordingDownload: false }
+			});
+
+			await openRecording(page, toIndividualRecordingUrl(member.accessUrl, recordingId));
+			await expectRecordingViewShown(page);
+			await expectRecordingDownloadOffered(page, false);
+			await openShareDialogFromRecordingView(page);
+			await generatePublicRecordingUrl(page);
+			await expectPublicRecordingUrlGenerated(page);
+			const link = await page.locator('ov-share-recording-dialog .url-input').inputValue();
+
+			const visitorContext = await browser.newContext();
+
+			try {
+				const visitorPage = await visitorContext.newPage();
+				await openRecording(visitorPage, link);
+				await expectRecordingViewShown(visitorPage);
+				await expectRecordingDownloadOffered(visitorPage, false);
+				await expectNoContextMenuOnVideo(visitorPage);
+			} finally {
+				await visitorContext.close();
+			}
+		});
+
+		test('shared by a moderator also downloads', async ({ browser, page }) => {
+			test.setTimeout(240_000);
+			const { recordingId } = await recordRoom(browser, roomId);
+
+			await openRecording(page, toIndividualRecordingUrl(accessUrl, recordingId));
+			await expectRecordingViewShown(page);
+			await expectRecordingDownloadOffered(page, true);
+			await openShareDialogFromRecordingView(page);
+			await generatePublicRecordingUrl(page);
+			await expectPublicRecordingUrlGenerated(page);
+			const link = await page.locator('ov-share-recording-dialog .url-input').inputValue();
+
+			const visitorContext = await browser.newContext();
+
+			try {
+				const visitorPage = await visitorContext.newPage();
+				await openRecording(visitorPage, link);
+				await expectRecordingViewShown(visitorPage);
+				await expectRecordingDownloadOffered(visitorPage, true);
+			} finally {
+				await visitorContext.close();
+			}
+		});
+	});
+
+	test('the console recording player opens no context menu', async ({ browser, page }) => {
+		test.setTimeout(240_000);
+		const { recordingId } = await recordRoom(browser, roomId);
+		const { user } = await createReadyUser('Console Admin');
+		createdUserIds.push(user.userId);
+
+		await authenticate(page, { userId: user.userId, password: user.password });
+		await openRecording(page, `${MEET_BASE_URL}/recordings/${recordingId}`);
+		await expectNoContextMenuOnVideo(page);
 	});
 });
