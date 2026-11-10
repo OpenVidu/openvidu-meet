@@ -6,7 +6,6 @@ import {
 	BroadcastStateService,
 	LocalMediaService,
 	MeetingPhaseService,
-	MeetingViewPhase,
 	RecordingState,
 	RecordingStateInfo,
 	ScreenShareService,
@@ -65,7 +64,7 @@ describe('EmbeddedCommandService', () => {
 	let broadcastService: jasmine.SpyObj<BroadcastService>;
 	let runningBroadcasts: ReturnType<typeof signal<{ broadcastId: string; status: MeetBroadcastStatus }[]>>;
 	let startPending: ReturnType<typeof signal<boolean>>;
-	let phase: ReturnType<typeof signal<MeetingViewPhase>>;
+	let phase: MeetingPhaseService;
 	let hasPermission: jasmine.Spy;
 	let logger: LoggerServiceStub;
 	let roomId: ReturnType<typeof signal<string | undefined>>;
@@ -138,7 +137,6 @@ describe('EmbeddedCommandService', () => {
 		broadcastService.request.and.resolveTo();
 		startPending = signal(false);
 		runningBroadcasts = signal([{ broadcastId: BROADCAST_ID, status: MeetBroadcastStatus.ACTIVE }]);
-		phase = signal<MeetingViewPhase>('live');
 		hasPermission = jasmine.createSpy('hasPermission').and.returnValue(true);
 		roomId = signal<string | undefined>(ROOM_ID);
 
@@ -158,7 +156,6 @@ describe('EmbeddedCommandService', () => {
 					useValue: { recordingStatus, setRecordingStarting } as unknown as RecordingStateService
 				},
 				{ provide: MeetingLiveKitService, useValue: liveKitService as unknown as MeetingLiveKitService },
-				{ provide: MeetingPhaseService, useValue: { phase } as unknown as MeetingPhaseService },
 				{
 					provide: RoomMemberContextService,
 					useValue: { hasPermission } as unknown as RoomMemberContextService
@@ -178,6 +175,8 @@ describe('EmbeddedCommandService', () => {
 			]
 		});
 
+		phase = TestBed.inject(MeetingPhaseService);
+		phase.set('live');
 		service = TestBed.inject(EmbeddedCommandService);
 		logger = TestBed.inject(LoggerService) as unknown as LoggerServiceStub;
 	});

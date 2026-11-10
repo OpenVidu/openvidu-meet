@@ -1,8 +1,6 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
-import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
@@ -11,8 +9,9 @@ import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomService } from '../../rooms/services/room.service';
 import { MeetingContextService } from './meeting-context.service';
+import { JoinScreenState } from '../utils/meeting-entry-flow.utils';
+import { JoinRequest } from './join-token.service';
 import { RoomAccessLinkService } from './room-access-link.service';
-import { E2eeService } from '../openvidu-components/services/e2ee/e2ee.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 
 /**
@@ -27,7 +26,6 @@ export class MeetingJoinService {
 	protected recordingService = inject(RecordingService);
 	protected authService = inject(AuthService);
 	protected roomMemberContextService = inject(RoomMemberContextService);
-	protected e2eeService = inject(E2eeService);
 	protected navigationService = inject(NavigationService);
 	protected leaveRedirect = inject(LeaveRedirectService);
 	protected runtimeConfigService = inject(RuntimeConfigService);
@@ -43,7 +41,6 @@ export class MeetingJoinService {
 	private readonly _showRecordingCard = signal<boolean>(false);
 	private readonly _showBackButton = signal<boolean>(true);
 	private readonly _backButtonText = signal<string>('Back');
-	private readonly _accessGranted = signal<boolean>(false);
 	private readonly _participantForm = signal<FormGroup>(
 		new FormGroup({
 			name: new FormControl('', [Validators.required]),
@@ -91,21 +88,11 @@ export class MeetingJoinService {
 	/** Computed signal for room access URL derived from MeetingContextService */
 	readonly roomAccessUrl = computed(() => this.accessLinkService.speakerPublicLink() ?? '');
 
-	/** Whether the participant got past the join screen and moved on to the meeting's prejoin. */
-	readonly accessGranted = this._accessGranted.asReadonly();
-
 	/** Readonly signal for the participant form */
 	readonly participantForm = this._participantForm.asReadonly();
 
-	/**
-	 * Computed signal to determine if the participant name input should be disabled
-	 * Name is disabled when: from URL, member exists, or user is authenticated
-	 */
-	readonly isParticipantNameDisabled = computed(() => {
-		const form = this._participantForm();
-		const nameControl = form.get('name');
-		return nameControl?.disabled ?? false;
-	});
+	/** Whether the name came from the URL, the membership or the account, so the participant cannot change it. */
+	readonly isParticipantNameDisabled = (): boolean => this._participantForm().get('name')?.disabled ?? false;
 
 	/**
 	 * Setter for participant name
@@ -114,20 +101,11 @@ export class MeetingJoinService {
 		this._participantForm().get('name')?.setValue(name);
 	}
 
-	/**
-	 * Computed signal for participant name - optimized to avoid repeated form access
-	 * Uses getRawValue() to get the value even when the control is disabled (e.g., when set from URL param or member/authenticated user)
-	 */
-	readonly participantName = computed(() => {
+	/** The name to join with, empty while the form is invalid. Read from the form each time, since it is not a signal. */
+	readonly participantName = (): string => {
 		const form = this._participantForm();
-		const rawValue = form.getRawValue();
-
-		if (form.invalid || !rawValue.name?.trim()) {
-			return '';
-		}
-
-		return rawValue.name.trim();
-	});
+		return form.invalid ? '' : (form.getRawValue().name?.trim() ?? '');
+	};
 
 	/**
 	 * Setter for E2EE key
@@ -136,20 +114,11 @@ export class MeetingJoinService {
 		this._participantForm().get('e2eeKey')?.setValue(key);
 	}
 
-	/**
-	 * Computed signal for E2EE key - optimized to avoid repeated form access
-	 * Uses getRawValue() to get the value even when the control is disabled (e.g., when set from URL param)
-	 */
-	readonly e2eeKeyValue = computed(() => {
+	/** The encryption key to join with, empty while the form is invalid. Read from the form each time, since it is not a signal. */
+	readonly e2eeKeyValue = (): string => {
 		const form = this._participantForm();
-		const rawValue = form.getRawValue();
-
-		if (form.invalid || !rawValue.e2eeKey?.trim()) {
-			return '';
-		}
-
-		return rawValue.e2eeKey.trim();
-	});
+		return form.invalid ? '' : (form.getRawValue().e2eeKey?.trim() ?? '');
+	};
 
 	/**
 	 * Initializes the join screen state by fetching room data and configuring UI
@@ -254,36 +223,44 @@ export class MeetingJoinService {
 		}
 	}
 
-	async submitAccess(): Promise<void> {
-		const name = this.participantName();
-
-		if (!name) {
+	/** Takes what the participant entered; false while the form cannot be submitted. */
+	submit(): boolean {
+		if (!this.participantName()) {
 			this.log.e('Participant form is invalid. Cannot join meeting.');
-			throw new Error('Participant form is invalid');
+			return false;
 		}
 
-		// For E2EE rooms, validate passkey and set it in MeetingContextService if not already set
-		const hasRoomE2EEEnabled = this.hasRoomE2EEEnabled();
-
-		if (hasRoomE2EEEnabled && !this.meetingContextService.isE2eeKeyFromUrl()) {
+		if (this.hasRoomE2EEEnabled() && !this.meetingContextService.isE2eeKeyFromUrl()) {
 			const e2eeKey = this.e2eeKeyValue();
 
 			if (!e2eeKey) {
 				this.log.w('E2EE key is required for encrypted rooms.');
-				return;
+				return false;
 			}
 
 			this.meetingContextService.setE2eeKey(e2eeKey);
 		}
 
-		// Order matters: the room config carries the initial media state, and granting access is what
-		// hides the join screen and renders the meeting view, whose prejoin opens the devices from that
-		// state. Loading it second lets a slow response reach the prejoin too late, and nothing mutes
-		// a track that already exists. A failure must not block the join, though.
-		await this.roomService.loadRoomConfig(this._roomId()!).catch((error) => {
-			this.log.w('Could not load the room config before joining; its initial media state will not apply', error);
-		});
-		this._accessGranted.set(true);
+		return true;
+	}
+
+	/** What the participant joins as, read when they commit to joining. */
+	joinRequest(): JoinRequest {
+		return {
+			participantName: this.participantName(),
+			e2eeKey: this.e2eeKeyValue(),
+			nameTypedByParticipant: !this.isParticipantNameDisabled()
+		};
+	}
+
+	/** What decides whether the join screen has something to ask or tell. */
+	joinScreenState(): JoinScreenState {
+		return {
+			nameKnown: !!this.participantName(),
+			e2eeKeyMissing: this.hasRoomE2EEEnabled() && !this.e2eeKeyValue(),
+			roomClosed: this.roomClosed(),
+			canJoinMeeting: this.canJoinMeeting()
+		};
 	}
 
 	/**
@@ -384,123 +361,12 @@ export class MeetingJoinService {
 		}
 	}
 
-	/**
-	 * Mints the token this participant joins the meeting with, called when they commit to
-	 * joining rather than when they get past the join screen: minting reserves their name, checks the
-	 * meeting's capacity and creates the LiveKit room, and all three belong to the real join.
-	 *
-	 * @returns The room member token to connect with
-	 */
-	async generateJoinToken(): Promise<string> {
-		try {
-			const roomId = this._roomId();
-			const roomSecret = this.meetingContextService.roomSecret();
-			const participantName = this.participantName();
-
-			// For E2EE meetings, encrypt the display name before it is embedded in the token metadata
-			// so it is never exposed in plaintext. Done here (lazy join screen flow) to keep the room-member
-			// token layer free of the LiveKit-based E2eeService. The plaintext `participantName` is kept
-			// for local storage below.
-			const e2eeKey = this.e2eeKeyValue();
-			let tokenParticipantName = participantName;
-
-			if (e2eeKey && participantName) {
-				await this.e2eeService.setE2EEKey(e2eeKey);
-				tokenParticipantName = await this.e2eeService.encrypt(participantName);
-			}
-
-			// The app-provided correlation fields are deliberately NOT E2EE-encrypted: they belong to
-			// the integration plane (the embedding application already knows them and consumes them
-			// server-side), not to the user content the E2EE key protects.
-			const roomMemberToken = await this.roomMemberContextService.generateToken(roomId!, {
-				secret: roomSecret,
-				joinMeeting: true,
-				participantName: tokenParticipantName,
-				participantExternalId: this.roomMemberContextService.participantExternalId(),
-				participantMetadata: this.roomMemberContextService.participantMetadata()
-			});
-
-			// Save participant name to storage only if it was chosen freely by the user
-			if (!this.isParticipantNameDisabled()) {
-				this.roomMemberContextService.saveParticipantNameToStorage(participantName);
-			}
-
-			this.meetingContextService.setIsActiveMeeting(true);
-			return roomMemberToken;
-		} catch (error: any) {
-			this.log.e('Error generating room member token for joining meeting:', error);
-			const message = error?.error?.message || error.message || 'Unknown error';
-
-			switch (error.status) {
-				case 400:
-					// Invalid secret
-					await this.navigationService.redirectToErrorPage(NavigationErrorReason.INVALID_ROOM_SECRET, true);
-					break;
-				case 403:
-					// Insufficient permissions or anonymous access disabled
-					if (message.includes('Anonymous access')) {
-						await this.navigationService.redirectToErrorPage(
-							NavigationErrorReason.ANONYMOUS_ACCESS_DISABLED,
-							true
-						);
-					} else {
-						await this.navigationService.redirectToErrorPage(
-							NavigationErrorReason.FORBIDDEN_ROOM_ACCESS,
-							true
-						);
-					}
-
-					break;
-				case 404:
-					// Room or member not found
-					if (message.includes('Room member')) {
-						await this.navigationService.redirectToErrorPage(NavigationErrorReason.INVALID_MEMBER, true);
-					} else {
-						await this.navigationService.redirectToErrorPage(NavigationErrorReason.INVALID_ROOM, true);
-					}
-
-					break;
-				case 409:
-					// Meeting at its maxParticipants limit, or the room is closed
-					if (message.includes('maximum number of participants')) {
-						await this.navigationService.redirectToErrorPage(NavigationErrorReason.MEETING_FULL, true);
-					} else {
-						await this.navigationService.redirectToErrorPage(NavigationErrorReason.CLOSED_ROOM, true);
-					}
-
-					break;
-				case 422:
-					// The embedding application sent a participant external id or metadata the server refuses
-					this.log.e('Invalid participant data:', this.describeValidationError(error));
-					await this.navigationService.redirectToErrorPage(
-						NavigationErrorReason.INVALID_PARTICIPANT_DATA,
-						true
-					);
-					break;
-				case 429:
-					// Too many requests (rate limited)
-					await this.navigationService.redirectToErrorPage(NavigationErrorReason.TOO_MANY_REQUESTS, true);
-					break;
-				default:
-					await this.navigationService.redirectToErrorPage(NavigationErrorReason.INTERNAL_ERROR, true);
-			}
-
-			throw new Error('Error generating room member token', { cause: error });
-		}
-	}
-
-	protected describeValidationError(error: HttpErrorResponse): string {
-		const details: { field: string; message: string }[] = error.error?.details ?? [];
-		return details.map(({ field, message }) => `${field}: ${message}`).join('; ') || error.error?.message;
-	}
-
 	protected clearJoinState() {
 		this._room.set(undefined);
 		this._roomId.set(undefined);
 		this._showRecordingCard.set(false);
 		this._showBackButton.set(true);
 		this._backButtonText.set('JOIN.BACK');
-		this._accessGranted.set(false);
 		this._participantForm.set(
 			new FormGroup({
 				name: new FormControl('', [Validators.required]),

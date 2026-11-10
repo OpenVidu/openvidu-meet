@@ -2,7 +2,10 @@ import type { WebComponentPropertyValues } from '@openvidu-meet/typings';
 import { LeftEventReason } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { appendQuery, lastPathSegment, queryParam } from '../../../shared/utils/url.utils';
+import { readMeetingEntryParams } from '../../meeting/utils/meeting-entry-params.utils';
 import { WcRoute, WcRouteName } from '../models/wc-route.model';
+
+const toCamel = (kebab: string): string => kebab.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
 
 /**
  * Resolves the host attributes/properties into the initial {@link WcRoute} the shell navigates to
@@ -55,19 +58,14 @@ export const wcRouteFromAttributes = (inputs: WebComponentPropertyValues): WcRou
 
 		return {
 			name: WcRouteName.MEETING,
-			params: {
-				roomId,
-				secret: queryParam(roomUrl, 'secret') ?? undefined,
-				e2eeKey: inputs.e2eeKey || undefined,
-				participantName: inputs.participantName || undefined,
-				participantExternalId: inputs.participantExternalId || undefined,
-				participantMetadata: inputs.participantMetadata || undefined,
-				// No `|| undefined` collapse here: unlike the other optional fields above, `false` is
-				// a meaningful, non-default value for these two (explicitly inactive), not an absence.
-				initialAudioActive: inputs.initialAudioActive,
-				initialVideoActive: inputs.initialVideoActive,
-				leaveRedirectUrl: inputs.leaveRedirectUrl || undefined
-			}
+			params: readMeetingEntryParams(
+				{ roomId, secret: queryParam(roomUrl, 'secret') ?? undefined },
+				(attribute) => {
+					// An attribute set to an empty string says nothing, as one that is not set.
+					const value = inputs[toCamel(attribute) as keyof WebComponentPropertyValues];
+					return value === '' ? undefined : value;
+				}
+			)
 		};
 	}
 

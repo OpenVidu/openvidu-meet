@@ -114,6 +114,12 @@ describe('parseOptionalBoolean', () => {
 	// `true`, because only the latter outranks the room's own initial-media default.
 	it('keeps an absent value undefined instead of defaulting it', () => {
 		expect(parseOptionalBoolean(undefined)).toBeUndefined();
+		expect(parseOptionalBoolean(null)).toBeUndefined();
+	});
+
+	it('reads an element value as it is', () => {
+		expect(parseOptionalBoolean(false)).toBeFalse();
+		expect(parseOptionalBoolean(true)).toBeTrue();
 	});
 
 	it('reads only the literal "false" as false', () => {
@@ -133,49 +139,25 @@ describe('parseOptionalBoolean', () => {
 });
 
 describe('extractParams', () => {
-	it('maps route params + query params onto the entry-parameter bag', () => {
+	it('maps the room and the language params', () => {
 		const result = extractParams({
 			params: { 'room-id': 'r1' },
 			queryParamMap: convertToParamMap({
 				secret: 'sec',
-				[EmbeddedAttribute.PARTICIPANT_NAME]: 'Alice',
-				[EmbeddedAttribute.PARTICIPANT_EXTERNAL_ID]: 'crm-user_42',
-				[EmbeddedAttribute.PARTICIPANT_METADATA]: '{"plan":"premium"}',
-				[EmbeddedAttribute.INITIAL_AUDIO_ACTIVE]: 'true',
-				[EmbeddedAttribute.INITIAL_VIDEO_ACTIVE]: 'false',
 				[EmbeddedAttribute.LANGUAGE]: 'es',
 				[EmbeddedAttribute.SHOW_LANGUAGE_SELECTOR]: 'false',
-				[EmbeddedAttribute.LEAVE_REDIRECT_URL]: 'https://back',
-				[EmbeddedAttribute.SHOW_ONLY_RECORDINGS]: 'true',
-				[EmbeddedAttribute.SHOW_RECORDING]: 'rec-1',
-				[EmbeddedAttribute.E2EE_KEY]: 'k'
+				[EmbeddedAttribute.PARTICIPANT_NAME]: 'Alice'
 			})
 		});
 
-		expect(result).toEqual({
-			roomId: 'r1',
-			secret: 'sec',
-			participantName: 'Alice',
-			participantExternalId: 'crm-user_42',
-			participantMetadata: '{"plan":"premium"}',
-			initialAudioActive: 'true',
-			initialVideoActive: 'false',
-			language: 'es',
-			showLanguageSelector: 'false',
-			leaveRedirectUrl: 'https://back',
-			showOnlyRecordings: 'true',
-			showRecording: 'rec-1',
-			e2eeKey: 'k'
-		});
+		expect(result).toEqual({ roomId: 'r1', secret: 'sec', language: 'es', showLanguageSelector: 'false' });
 	});
 
 	it('leaves absent params undefined', () => {
 		const result = extractParams({ params: { 'room-id': 'r1' }, queryParamMap: convertToParamMap({}) });
-		expect(result.showOnlyRecordings).toBeUndefined();
 		expect(result.secret).toBeUndefined();
-		expect(result.participantName).toBeUndefined();
-		expect(result.participantExternalId).toBeUndefined();
-		expect(result.participantMetadata).toBeUndefined();
+		expect(result.language).toBeUndefined();
+		expect(result.showLanguageSelector).toBeUndefined();
 	});
 
 	it('takes the first value of a repeated param', () => {
@@ -186,22 +168,6 @@ describe('extractParams', () => {
 
 		expect(result.language).toBe('es');
 		expect(result.secret).toBe('a');
-	});
-
-	it('reads show-only-recordings with the rule of the other boolean params', () => {
-		const showOnlyRecordings = (value?: string) =>
-			parseOptionalBoolean(
-				extractParams({
-					params: { 'room-id': 'r1' },
-					queryParamMap: convertToParamMap({ [EmbeddedAttribute.SHOW_ONLY_RECORDINGS]: value })
-				}).showOnlyRecordings
-			);
-
-		expect(showOnlyRecordings(undefined)).toBeUndefined();
-		expect(showOnlyRecordings('')).toBeTrue();
-		expect(showOnlyRecordings('1')).toBeTrue();
-		expect(showOnlyRecordings('true')).toBeTrue();
-		expect(showOnlyRecordings('false')).toBeFalse();
 	});
 });
 

@@ -248,7 +248,7 @@ export class EmbeddedCommandService {
 
 		const allowed =
 			this.meetingLiveKitService.isSessionActive() ||
-			(PREJOIN_CAPABLE_COMMANDS.has(command) && this.meetingPhase.phase() === 'prejoin');
+			(PREJOIN_CAPABLE_COMMANDS.has(command) && this.meetingPhase.isPreviewing());
 
 		if (!allowed) {
 			this.log.w(`${command} rejected: not available in the current meeting phase`);

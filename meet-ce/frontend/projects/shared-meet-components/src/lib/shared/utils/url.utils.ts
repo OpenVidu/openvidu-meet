@@ -47,16 +47,17 @@ export const queryParam = (rawUrl: string, name: string): string | null => {
 };
 
 /**
- * Parses a boolean query param with three meaningful states: absent ("no opinion", so a
- * lower-precedence source decides), `'false'`, and anything else (`true`). Collapsing the absent case
- * to a default would make it indistinguishable from an explicit `true`, and for
+ * Reads a boolean attribute with three meaningful states: absent ("no opinion", so a
+ * lower-precedence source decides), `false` or `'false'`, and anything else (`true`). Collapsing the
+ * absent case to a default would make it indistinguishable from an explicit `true`, and for
  * `initial-audio-active` / `initial-video-active` only the latter outranks the room's own default.
  */
-export const parseOptionalBoolean = (value: string | undefined): boolean | undefined =>
-	value === undefined ? undefined : value !== 'false';
+export const parseOptionalBoolean = (value: string | boolean | null | undefined): boolean | undefined =>
+	value === undefined || value === null ? undefined : value !== false && value !== 'false';
 
 /**
- * Extracts the meeting/recording entry parameters from a route snapshot's `params` + `queryParams`.
+ * Extracts the room and the interface language from a route snapshot. The meeting entry parameters are
+ * read by `readMeetingEntryParams`.
  */
 export const extractParams = (route: { params: Record<string, string>; queryParamMap: ParamMap }) => {
 	const { params, queryParamMap } = route;
@@ -64,17 +65,8 @@ export const extractParams = (route: { params: Record<string, string>; queryPara
 	return {
 		roomId: params['room-id'],
 		secret: query('secret'),
-		participantName: query(EmbeddedAttribute.PARTICIPANT_NAME),
-		participantExternalId: query(EmbeddedAttribute.PARTICIPANT_EXTERNAL_ID),
-		participantMetadata: query(EmbeddedAttribute.PARTICIPANT_METADATA),
-		initialAudioActive: query(EmbeddedAttribute.INITIAL_AUDIO_ACTIVE),
-		initialVideoActive: query(EmbeddedAttribute.INITIAL_VIDEO_ACTIVE),
 		language: query(EmbeddedAttribute.LANGUAGE),
-		showLanguageSelector: query(EmbeddedAttribute.SHOW_LANGUAGE_SELECTOR),
-		leaveRedirectUrl: query(EmbeddedAttribute.LEAVE_REDIRECT_URL),
-		showOnlyRecordings: query(EmbeddedAttribute.SHOW_ONLY_RECORDINGS),
-		showRecording: query(EmbeddedAttribute.SHOW_RECORDING),
-		e2eeKey: query(EmbeddedAttribute.E2EE_KEY)
+		showLanguageSelector: query(EmbeddedAttribute.SHOW_LANGUAGE_SELECTOR)
 	};
 };
 
