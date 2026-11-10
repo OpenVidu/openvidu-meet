@@ -19,6 +19,7 @@ import {
 	errorAnonymousAccessDisabled,
 	errorInsufficientPermissions,
 	errorInvalidRoomSecret,
+	errorInvalidToken,
 	errorParticipantNotFound,
 	errorRoomClosed,
 	errorRoomMemberNotFound,
@@ -1261,6 +1262,39 @@ describe('Room Members API Tests', () => {
 			expect(participantMetadata).toHaveProperty('permissions', normalizePermissions(allPermissions));
 			expect(participantMetadata).not.toHaveProperty('isPromotedModerator');
 			expect(participantMetadata).not.toHaveProperty('originalPermissions');
+		});
+	});
+
+	describe('Renewing a session that connected with a token issued before a room change', () => {
+		it('should answer 401 and leave the session as it was', async () => {
+			const initialToken = await generateRoomMemberToken(roomId, {
+				secret: roomData.speakerSecret,
+				joinMeeting: true,
+				participantName: 'Outdated Speaker'
+			});
+			const claims = tokenService.getClaimsIgnoringExpiration(getRawToken(initialToken));
+			const participantIdentity = claims.sub!;
+			const metadata = JSON.parse(claims.metadata || '{}') as MeetRoomMemberTokenMetadata;
+
+			// The roles change between meetings: the one the token created is ended first
+			const moderatorToken = await generateRoomMemberToken(roomId, { secret: roomData.moderatorSecret });
+			await endMeeting(roomId, moderatorToken);
+			const updateResponse = await updateRoomRoles(roomId, { speaker: { permissions: { meetingJoin: true } } });
+			expect(updateResponse.status).toBe(200);
+
+			await joinFakeParticipant(roomId, participantIdentity);
+			await updateParticipantMetadata(roomId, participantIdentity, metadata);
+
+			const response = await generateRoomMemberTokenRequest(
+				roomId,
+				{ secret: roomData.speakerSecret, joinMeeting: true },
+				undefined,
+				initialToken
+			);
+			expectMeetError(response, errorInvalidToken());
+
+			const participant = await livekitService.getParticipant(roomId, participantIdentity);
+			expect(JSON.parse(participant.metadata || '{}')).toMatchObject({ iat: metadata.iat });
 		});
 	});
 

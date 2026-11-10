@@ -13,11 +13,13 @@ import {
 import {
 	disconnectFakeParticipants,
 	joinFakeParticipant,
-	joinFakeParticipantUntilRemoved
+	joinFakeParticipantUntilRemoved,
+	updateParticipantMetadata
 } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRooms,
 	generateRoomMemberToken,
+	generateRoomMemberTokenRequest,
 	getRecording,
 	kickParticipant,
 	startRecordingAndWaitUntilActive,
@@ -99,6 +101,21 @@ describe('Meetings API Tests', () => {
 				await joinFakeParticipantUntilRemoved(roomData.room.roomId, held.identity, held.metadata);
 
 				expect(await livekitService.participantExists(roomData.room.roomId, held.identity)).toBe(false);
+			});
+
+			it('should not renew a session that reconnected with the token the participant held', async () => {
+				const held = await joinAndKickSpeaker();
+				await joinFakeParticipant(roomData.room.roomId, held.identity);
+				await updateParticipantMetadata(roomData.room.roomId, held.identity, JSON.parse(held.metadata));
+
+				const response = await generateRoomMemberTokenRequest(
+					roomData.room.roomId,
+					{ secret: roomData.speakerSecret, joinMeeting: true },
+					undefined,
+					held.token
+				);
+
+				expectMeetError(response, errorInvalidToken());
 			});
 
 			it('should let the participant join again with a new token from their link', async () => {
