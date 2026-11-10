@@ -1,5 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { provideZonelessChangeDetection, signal } from '@angular/core';
+import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MeetRoom, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { LoggerService } from '../../../shared/services/logger.service';
@@ -18,27 +18,31 @@ const roomWith = (speaker: { enabled: boolean; url?: string }) =>
 		}
 	}) as MeetRoom;
 
+const sharer = (permissions: Partial<MeetRoomMemberPermissions> = {}) =>
+	({ roomShareAccessLinks: true, ...permissions }) as MeetRoomMemberPermissions;
+
 describe('RoomAccessLinkService', () => {
 	let service: RoomAccessLinkService;
 	let getRoom: jasmine.Spy;
 	let clipboard: jasmine.SpyObj<Clipboard>;
+	let permissions: WritableSignal<MeetRoomMemberPermissions | undefined>;
 
-	async function load(room: MeetRoom) {
-		getRoom = jasmine.createSpy('getRoom').and.resolveTo(room);
+	const settle = async () => {
+		TestBed.tick();
+		await new Promise((resolve) => setTimeout(resolve));
+	};
+
+	async function load(...rooms: (MeetRoom | Promise<MeetRoom>)[]) {
+		getRoom = jasmine.createSpy('getRoom').and.returnValues(...rooms.map((room) => Promise.resolve(room)));
 		clipboard = jasmine.createSpyObj<Clipboard>('Clipboard', ['copy']);
+		permissions = signal(sharer());
 
 		TestBed.configureTestingModule({
 			providers: [
 				provideZonelessChangeDetection(),
 				{ provide: Clipboard, useValue: clipboard },
 				{ provide: RoomService, useValue: { getRoom } },
-				{
-					provide: RoomMemberContextService,
-					useValue: {
-						roomId: signal('r1'),
-						permissions: signal({ roomShareAccessLinks: true } as MeetRoomMemberPermissions)
-					}
-				},
+				{ provide: RoomMemberContextService, useValue: { roomId: signal('r1'), permissions } },
 				{ provide: NotificationService, useValue: { showMessage: () => {} } },
 				{
 					provide: LoggerService,
@@ -47,9 +51,7 @@ describe('RoomAccessLinkService', () => {
 			]
 		});
 		service = TestBed.inject(RoomAccessLinkService);
-		TestBed.tick();
-		await getRoom.calls.mostRecent().returnValue;
-		await Promise.resolve();
+		await settle();
 	}
 
 	it('exposes the speaker link the server returned', async () => {
@@ -57,7 +59,7 @@ describe('RoomAccessLinkService', () => {
 
 		expect(service.speakerCopyLink()).toBe(SPEAKER_URL);
 		expect(service.speakerPublicLink()).toBe('meet.example.com/room/r1');
-		expect(service.speakerLinkDisabled()).toBeFalse();
+		expect(service.speakerLinkUnavailable()).toBeFalse();
 	});
 
 	it('exposes no link and marks it unavailable when the server left the speaker URL out', async () => {
@@ -65,11 +67,11 @@ describe('RoomAccessLinkService', () => {
 
 		expect(service.speakerCopyLink()).toBeUndefined();
 		expect(service.speakerPublicLink()).toBeUndefined();
-		expect(service.speakerLinkDisabled()).toBeTrue();
+		expect(service.speakerLinkUnavailable()).toBeTrue();
 	});
 
 	it('copies nothing when the server left the speaker URL out', async () => {
-		await load(roomWith({ enabled: true }));
+		await load(roomWith({ enabled: true }), roomWith({ enabled: true }));
 
 		await service.copyRoomAccessLink();
 
@@ -80,6 +82,40 @@ describe('RoomAccessLinkService', () => {
 		await load(roomWith({ enabled: false, url: SPEAKER_URL }));
 
 		expect(service.speakerCopyLink()).toBeUndefined();
-		expect(service.speakerLinkDisabled()).toBeTrue();
+		expect(service.speakerLinkUnavailable()).toBeTrue();
+	});
+
+	it('asks the server again when new permissions keep the share permission', async () => {
+		await load(roomWith({ enabled: true }), roomWith({ enabled: true, url: SPEAKER_URL }));
+
+		permissions.set(sharer({ chatWrite: true }));
+		await settle();
+
+		expect(getRoom).toHaveBeenCalledTimes(2);
+		expect(service.speakerCopyLink()).toBe(SPEAKER_URL);
+		expect(service.speakerLinkUnavailable()).toBeFalse();
+	});
+
+	it('drops the link when new permissions no longer reach it', async () => {
+		await load(roomWith({ enabled: true, url: SPEAKER_URL }), roomWith({ enabled: true }));
+
+		permissions.set(sharer({ chatWrite: false }));
+		await settle();
+
+		expect(service.speakerCopyLink()).toBeUndefined();
+		expect(service.speakerLinkUnavailable()).toBeTrue();
+	});
+
+	it('keeps the answer to the latest permissions when an earlier request answers last', async () => {
+		let answerFirst!: (room: MeetRoom) => void;
+		const first = new Promise<MeetRoom>((resolve) => (answerFirst = resolve));
+		await load(first, roomWith({ enabled: true, url: SPEAKER_URL }));
+
+		permissions.set(sharer({ chatWrite: true }));
+		await settle();
+		answerFirst(roomWith({ enabled: true }));
+		await settle();
+
+		expect(service.speakerCopyLink()).toBe(SPEAKER_URL);
 	});
 });

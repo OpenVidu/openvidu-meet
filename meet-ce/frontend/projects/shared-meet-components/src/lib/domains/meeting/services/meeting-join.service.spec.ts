@@ -392,7 +392,7 @@ describe('MeetingJoinService', () => {
 
 			expect(links.speakerPublicLink()).toBe('meet.example.com/room/room1');
 			expect(links.speakerCopyLink()).toBe('https://meet.example.com/room/room1?secret=abc');
-			expect(links.speakerLinkDisabled()).toBeFalse();
+			expect(links.speakerLinkUnavailable()).toBeFalse();
 		});
 
 		it('is not offered when the room has its anonymous speaker access disabled', async () => {
@@ -400,7 +400,7 @@ describe('MeetingJoinService', () => {
 
 			expect(links.speakerPublicLink()).toBeUndefined();
 			expect(links.speakerCopyLink()).toBeUndefined();
-			expect(links.speakerLinkDisabled()).toBeTrue();
+			expect(links.speakerLinkUnavailable()).toBeTrue();
 		});
 	});
 });
