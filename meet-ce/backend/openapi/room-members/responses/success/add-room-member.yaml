@@ -22,7 +22,7 @@ content:
                     type: 'identified_guest'
                     name: 'Charlie'
                     membershipDate: 1620007200000
-                    accessUrl: 'https://example.com/room/room-123?secret=guest-abc123'
+                    accessUrl: 'https://example.com/room/room-123?secret=guest-abc123-654321'
                     baseRole: 'speaker'
                     customPermissions:
                         mediaShareScreen: true

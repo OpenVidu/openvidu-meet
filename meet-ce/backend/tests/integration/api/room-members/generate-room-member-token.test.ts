@@ -21,8 +21,10 @@ import {
 	errorInvalidRoomSecret,
 	errorParticipantNotFound,
 	errorRoomClosed,
+	errorRoomMemberNotFound,
 	errorRoomNotFound
 } from '../../../../src/models/error.model.js';
+import { MeetRoomMemberModel } from '../../../../src/models/mongoose-schemas/room-member.schema.js';
 import {
 	expectMeetError,
 	expectValidationError,
@@ -38,6 +40,7 @@ import {
 	createRoomMember,
 	deleteAllRooms,
 	deleteAllUsers,
+	deleteRoomMember,
 	endMeeting,
 	generateRoomMemberToken,
 	generateRoomMemberTokenRequest,
@@ -49,7 +52,13 @@ import {
 	updateRoomStatus,
 	updateUserRole
 } from '../../../helpers/request-helpers.js';
-import { setupSingleRoom, setupTestUsers, setupTestUsersForRoom, setupUser } from '../../../helpers/test-scenarios.js';
+import {
+	guestSecretOf,
+	setupSingleRoom,
+	setupTestUsers,
+	setupTestUsersForRoom,
+	setupUser
+} from '../../../helpers/test-scenarios.js';
 import { waitForParticipantMediaState } from '../../../helpers/wait-helpers.js';
 import { RoomData, RoomTestUsers, TestUsers } from '../../../interfaces/scenarios.js';
 
@@ -388,16 +397,86 @@ describe('Room Members API Tests', () => {
 				baseRole: MeetRoomMemberRole.SPEAKER
 			});
 			const memberId = createResponse.body.memberId;
+			const secret = guestSecretOf(createResponse.body);
 
-			// Generate token using identified guestId as secret
 			const response = await generateRoomMemberTokenRequest(roomId, {
-				secret: memberId
+				secret
 			});
 			expectValidRoomMemberTokenResponse(response, {
 				roomId,
 				memberId,
 				badge: MeetRoomMemberUIBadge.OTHER,
 				permissions: roomRoles.speaker.permissions
+			});
+		});
+
+		describe('identified guest links', () => {
+			const createGuest = async (targetRoomId = roomId) => {
+				const createResponse = await createRoomMember(targetRoomId, {
+					name: 'Linked Guest',
+					baseRole: MeetRoomMemberRole.MODERATOR
+				});
+				const member = createResponse.body as MeetRoomMember;
+				return { memberId: member.memberId, secret: guestSecretOf(member) };
+			};
+
+			it('should give each guest a secret made of its memberId, a hyphen and a random part', async () => {
+				const first = await createGuest();
+				const second = await createGuest();
+
+				expect(first.secret).toMatch(new RegExp(`^${first.memberId}-[0-9a-f]{10}$`));
+				expect(second.secret).toMatch(new RegExp(`^${second.memberId}-[0-9a-f]{10}$`));
+				expect(first.secret.slice(first.memberId.length)).not.toBe(second.secret.slice(second.memberId.length));
+			});
+
+			it('should refuse the memberId of a guest as secret', async () => {
+				const { memberId } = await createGuest();
+
+				const response = await generateRoomMemberTokenRequest(roomId, { secret: memberId });
+				expectMeetError(response, errorRoomMemberNotFound(roomId, memberId));
+			});
+
+			it('should refuse a wrong random part with the same response as an unknown guest', async () => {
+				const { memberId } = await createGuest();
+
+				const wrongPart = await generateRoomMemberTokenRequest(roomId, { secret: `${memberId}-0123456789` });
+				const unknownGuest = await generateRoomMemberTokenRequest(roomId, {
+					secret: 'guest-0000000000-0123456789'
+				});
+				expectMeetError(wrongPart, errorRoomMemberNotFound(roomId, memberId));
+				expectMeetError(unknownGuest, errorRoomMemberNotFound(roomId, 'guest-0000000000'));
+			});
+
+			it('should keep accepting the memberId of a guest whose stored link carries it', async () => {
+				const { memberId } = await createGuest();
+				await MeetRoomMemberModel.updateOne(
+					{ roomId, memberId },
+					{ accessUrl: `/room/${roomId}?secret=${memberId}` }
+				);
+
+				const response = await generateRoomMemberTokenRequest(roomId, { secret: memberId });
+				expectValidRoomMemberTokenResponse(response, {
+					roomId,
+					memberId,
+					badge: MeetRoomMemberUIBadge.MODERATOR,
+					permissions: roomRoles.moderator.permissions
+				});
+			});
+
+			it('should refuse the secret of a guest of another room', async () => {
+				const otherRoom = await createRoom();
+				const { memberId, secret } = await createGuest(otherRoom.roomId);
+
+				const response = await generateRoomMemberTokenRequest(roomId, { secret });
+				expectMeetError(response, errorRoomMemberNotFound(roomId, memberId));
+			});
+
+			it('should refuse the secret of a removed guest', async () => {
+				const { memberId, secret } = await createGuest();
+				expect((await deleteRoomMember(roomId, memberId)).status).toBe(200);
+
+				const response = await generateRoomMemberTokenRequest(roomId, { secret });
+				expectMeetError(response, errorRoomMemberNotFound(roomId, memberId));
 			});
 		});
 
@@ -415,10 +494,11 @@ describe('Room Members API Tests', () => {
 				}
 			});
 			const memberId = createResponse.body.memberId;
+			const secret = guestSecretOf(createResponse.body);
 			const permissions = createResponse.body.effectivePermissions;
 
 			const response = await generateRoomMemberTokenRequest(roomId, {
-				secret: memberId
+				secret
 			});
 			expectValidRoomMemberTokenResponse(response, {
 				roomId,
@@ -436,10 +516,10 @@ describe('Room Members API Tests', () => {
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				customPermissions: { chatRead: true, chatWrite: true }
 			});
-			const memberId = createResponse.body.memberId as string;
+			const secret = guestSecretOf(createResponse.body);
 
 			const token = await generateRoomMemberToken(roomId, {
-				secret: memberId,
+				secret,
 				joinMeeting: true,
 				participantName: 'Chat Writer'
 			});
@@ -455,10 +535,10 @@ describe('Room Members API Tests', () => {
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				customPermissions: { chatRead: true, chatWrite: false }
 			});
-			const memberId = createResponse.body.memberId as string;
+			const secret = guestSecretOf(createResponse.body);
 
 			const token = await generateRoomMemberToken(roomId, {
-				secret: memberId,
+				secret,
 				joinMeeting: true,
 				participantName: 'Chat Reader'
 			});
@@ -472,10 +552,10 @@ describe('Room Members API Tests', () => {
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				customPermissions: { chatRead: false, chatWrite: true }
 			});
-			const memberId = createResponse.body.memberId as string;
+			const secret = guestSecretOf(createResponse.body);
 
 			const token = await generateRoomMemberToken(roomId, {
-				secret: memberId,
+				secret,
 				joinMeeting: true,
 				participantName: 'Blind Writer'
 			});
@@ -530,7 +610,7 @@ describe('Room Members API Tests', () => {
 
 			const response = await generateRoomMemberTokenRequest(
 				roomId,
-				{ secret: guestMemberId },
+				{ secret: guestSecretOf(createResponse.body) },
 				testUsers.admin.accessToken
 			);
 			expectValidRoomMemberTokenResponse(response, {
@@ -628,7 +708,7 @@ describe('Room Members API Tests', () => {
 
 			const response = await generateRoomMemberTokenRequest(
 				roomId,
-				{ secret: guestMemberId },
+				{ secret: guestSecretOf(createGuestResponse.body) },
 				userData.accessToken
 			);
 			expectValidRoomMemberTokenResponse(response, {
@@ -746,7 +826,7 @@ describe('Room Members API Tests', () => {
 
 			// Try to generate token to join meeting
 			const response = await generateRoomMemberTokenRequest(roomId, {
-				secret: member.memberId,
+				secret: guestSecretOf(member),
 				joinMeeting: true,
 				participantName: member.name
 			});
@@ -809,7 +889,7 @@ describe('Room Members API Tests', () => {
 			});
 
 			const token = await generateRoomMemberToken(roomId, {
-				secret: createResponse.body.memberId as string,
+				secret: guestSecretOf(createResponse.body),
 				joinMeeting: true,
 				participantName: 'Bob'
 			});
@@ -835,7 +915,7 @@ describe('Room Members API Tests', () => {
 			});
 
 			const token = await generateRoomMemberToken(encryptedRoom.room.roomId, {
-				secret: createResponse.body.memberId as string,
+				secret: guestSecretOf(createResponse.body),
 				joinMeeting: true,
 				participantName: 'encrypted-name'
 			});
@@ -889,9 +969,10 @@ describe('Room Members API Tests', () => {
 				customPermissions: { chatRead: true, chatWrite: true }
 			});
 			const memberId = createResponse.body.memberId as string;
+			const secret = guestSecretOf(createResponse.body);
 
 			const initialToken = await generateRoomMemberToken(roomId, {
-				secret: memberId,
+				secret,
 				joinMeeting: true,
 				participantName: 'Live Chat Writer'
 			});
@@ -912,7 +993,7 @@ describe('Room Members API Tests', () => {
 
 			let refreshResponse = await generateRoomMemberTokenRequest(
 				roomId,
-				{ secret: memberId, joinMeeting: true },
+				{ secret, joinMeeting: true },
 				undefined,
 				initialToken
 			);
@@ -931,7 +1012,7 @@ describe('Room Members API Tests', () => {
 
 			refreshResponse = await generateRoomMemberTokenRequest(
 				roomId,
-				{ secret: memberId, joinMeeting: true },
+				{ secret, joinMeeting: true },
 				undefined,
 				initialToken
 			);
@@ -947,7 +1028,7 @@ describe('Room Members API Tests', () => {
 
 			refreshResponse = await generateRoomMemberTokenRequest(
 				roomId,
-				{ secret: memberId, joinMeeting: true },
+				{ secret, joinMeeting: true },
 				undefined,
 				initialToken
 			);
@@ -964,9 +1045,10 @@ describe('Room Members API Tests', () => {
 				customPermissions: { mediaPublishVideo: true }
 			});
 			const memberId = createResponse.body.memberId as string;
+			const secret = guestSecretOf(createResponse.body);
 
 			const initialToken = await generateRoomMemberToken(roomId, {
-				secret: memberId,
+				secret,
 				joinMeeting: true,
 				participantName: 'Live Camera Publisher'
 			});
@@ -985,7 +1067,7 @@ describe('Room Members API Tests', () => {
 
 			let refreshResponse = await generateRoomMemberTokenRequest(
 				roomId,
-				{ secret: memberId, joinMeeting: true },
+				{ secret, joinMeeting: true },
 				undefined,
 				initialToken
 			);
@@ -1005,7 +1087,7 @@ describe('Room Members API Tests', () => {
 
 			refreshResponse = await generateRoomMemberTokenRequest(
 				roomId,
-				{ secret: memberId, joinMeeting: true },
+				{ secret, joinMeeting: true },
 				undefined,
 				initialToken
 			);

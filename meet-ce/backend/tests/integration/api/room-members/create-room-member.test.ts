@@ -87,7 +87,9 @@ describe('Room Members API Tests', () => {
 			expect(response.body).toHaveProperty('baseRole', MeetRoomMemberRole.MODERATOR);
 			expect(response.body).toHaveProperty('membershipDate');
 			expect(response.body).toHaveProperty('accessUrl');
-			expect(response.body.accessUrl).toContain(`/room/${roomId}?secret=${response.body.memberId}`);
+			expect(response.body.accessUrl).toMatch(
+				new RegExp(`/room/${roomId}\\?secret=${response.body.memberId}-[0-9a-f]{10}$`)
+			);
 			expect(response.body).toHaveProperty('effectivePermissions');
 			expect(response.body).toHaveProperty('permissionsUpdatedAt');
 		});

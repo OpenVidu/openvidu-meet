@@ -22,6 +22,15 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - Webhooks registered without `events`, the one of `MEET_INITIAL_WEBHOOK_URL` included, also receive
   `participantRoleChanged`, `participantHandChanged`, `broadcastStarted`, `broadcastUpdated` and `broadcastEnded`.
 
+### Deprecated
+
+The link form below still works in this release and is removed in **3.13.0**. Removing such a guest and adding them
+again gives the guest a link of the current form and a new `memberId`.
+
+| Deprecated                                                                                   | Replacement                                                                                                         |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| The `accessUrl` of an identified guest added before 3.10.0, whose `secret` is the `memberId` | The `accessUrl` whose `secret` is the `memberId`, a `-` and a random part, which every guest added from 3.10.0 gets |
+
 ### Added
 
 #### Integration
@@ -118,6 +127,10 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   room's roles or access, of the member's permissions or of the user's role, or the deletion of the member or the
   user. It now applies them, and the meeting renews a refused token with the
   credentials it joined with.
+- The `memberId` of an identified guest, which every participant of a meeting can read as their identity, also
+  worked as the `secret` of the guest's `accessUrl`, so anyone who saw it could get room member tokens as that guest.
+  Guests added from this release get an `accessUrl` whose `secret` adds a random part to the `memberId`, and only
+  that exact secret grants their access.
 - A request whose credentials could not be checked because MongoDB or Redis failed answered `401`. It now answers
   `500`.
 - A request whose path held a percent escape that does not decode, such as `/api/v1/rooms/%ZZ`, answered `500`. It

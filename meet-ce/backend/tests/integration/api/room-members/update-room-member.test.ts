@@ -36,6 +36,7 @@ import {
 	startTestServer,
 	updateRoomMember
 } from '../../../helpers/request-helpers.js';
+import { guestSecretOf } from '../../../helpers/test-scenarios.js';
 
 describe('Room Members API Tests', () => {
 	let app: Express;
@@ -52,7 +53,12 @@ describe('Room Members API Tests', () => {
 
 	/** The metadata a room member token to join the meeting carries, which the media server holds for its session. */
 	const joinTokenMetadata = async (memberId: string, participantName: string): Promise<string> => {
-		const token = await generateRoomMemberToken(roomId, { secret: memberId, joinMeeting: true, participantName });
+		const { body: member } = await getRoomMember(roomId, memberId);
+		const token = await generateRoomMemberToken(roomId, {
+			secret: guestSecretOf(member),
+			joinMeeting: true,
+			participantName
+		});
 		const { metadata } = container.get(TokenService).getClaimsIgnoringExpiration(token.replace(/^Bearer\s+/i, ''));
 		return metadata!;
 	};
@@ -94,6 +100,8 @@ describe('Room Members API Tests', () => {
 
 			expect(response.body).toHaveProperty('baseRole', MeetRoomMemberRole.MODERATOR);
 			expect(response.body.effectivePermissions).toEqual(roomRoles.moderator.permissions);
+			expect(new URL(response.body.accessUrl).pathname).toBe(new URL(createResponse.body.accessUrl).pathname);
+			expect(guestSecretOf(response.body)).toBe(guestSecretOf(createResponse.body));
 		});
 
 		it('should successfully update baseRole from MODERATOR to SPEAKER', async () => {
@@ -302,7 +310,7 @@ describe('Room Members API Tests', () => {
 				baseRole: MeetRoomMemberRole.SPEAKER
 			});
 			const memberId = createResponse.body.memberId;
-			const memberToken = await generateRoomMemberToken(roomId, { secret: memberId });
+			const memberToken = await generateRoomMemberToken(roomId, { secret: guestSecretOf(createResponse.body) });
 
 			// Update with empty body
 			const response = await updateRoomMember(roomId, memberId, {});

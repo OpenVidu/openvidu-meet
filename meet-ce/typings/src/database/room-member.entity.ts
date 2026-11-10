@@ -5,7 +5,10 @@ import { MeetRoomMemberPermissions } from './room-member-permissions.js';
  * A member can be a user (identified by userId) or an identified guest (identified by name).
  */
 export interface MeetRoomMember {
-	/** Unique identifier for the member (equals userId for users, or generated for identified guests) */
+	/**
+	 * Unique identifier for the member (equals userId for users, or generated with a `guest-` prefix for identified guests).
+	 * It is also the participant identity in meetings, so it never grants access: an identified guest's link is {@link MeetRoomMember.accessUrl}.
+	 */
 	memberId: string;
 	/** ID of the room the member belongs to */
 	roomId: string;
@@ -15,7 +18,11 @@ export interface MeetRoomMember {
 	name: string;
 	/** Timestamp when the member was added to the room (milliseconds since epoch) */
 	membershipDate: number;
-	/** URL for the member to access the room */
+	/**
+	 * URL for the member to access the room. For an identified guest it is their personal link, whose `secret`
+	 * is the `memberId`, a hyphen and a random part; guests added before 3.10.0 keep a link whose `secret` is
+	 * their `memberId`, deprecated until 3.13.0.
+	 */
 	accessUrl: string;
 	/** Base role of the member in the room. See {@link MeetRoomMemberRole} for details. */
 	baseRole: MeetRoomMemberRole;

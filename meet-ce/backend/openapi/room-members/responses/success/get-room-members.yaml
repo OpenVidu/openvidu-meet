@@ -38,7 +38,7 @@ content:
                           type: 'identified_guest'
                           name: 'Bob'
                           membershipDate: 1620003600000
-                          accessUrl: 'https://example.com/room/room-123?secret=guest-abc123'
+                          accessUrl: 'https://example.com/room/room-123?secret=guest-abc123-654321'
                           baseRole: 'speaker'
                           customPermissions:
                               mediaShareScreen: false
@@ -91,7 +91,7 @@ content:
                           type: 'identified_guest'
                           name: 'Bob'
                           membershipDate: 1620003600000
-                          accessUrl: 'https://example.com/room/room-123?secret=guest-abc123'
+                          accessUrl: 'https://example.com/room/room-123?secret=guest-abc123-654321'
                           baseRole: 'speaker'
                           customPermissions:
                               mediaShareScreen: false
@@ -131,7 +131,7 @@ content:
                     members:
                         - accessUrl: 'https://example.com/room/room-123'
                           baseRole: 'moderator'
-                        - accessUrl: 'https://example.com/room/room-123?secret=guest-abc123'
+                        - accessUrl: 'https://example.com/room/room-123?secret=guest-abc123-654321'
                           baseRole: 'speaker'
                     _extraFields:
                         - effectivePermissions

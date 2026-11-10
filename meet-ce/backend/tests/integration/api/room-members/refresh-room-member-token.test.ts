@@ -37,7 +37,7 @@ import {
 	updateRoomMember,
 	updateUserRole
 } from '../../../helpers/request-helpers.js';
-import { setupRoomMember, setupSingleRoom, setupUser } from '../../../helpers/test-scenarios.js';
+import { guestSecretOf, setupRoomMember, setupSingleRoom, setupUser } from '../../../helpers/test-scenarios.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
 
 describe('Room Members API Tests', () => {
@@ -331,7 +331,10 @@ describe('Room Members API Tests', () => {
 				name: 'Guest Moderator',
 				baseRole: MeetRoomMemberRole.MODERATOR
 			});
-			const previousToken = await generateRoomMemberToken(roomId, { secret: member.memberId, joinMeeting: true });
+			const previousToken = await generateRoomMemberToken(roomId, {
+				secret: guestSecretOf(member),
+				joinMeeting: true
+			});
 			const participantIdentity = await joinWith(previousToken);
 
 			const updateResponse = await updateRoomMember(roomId, member.memberId, {
@@ -345,7 +348,7 @@ describe('Room Members API Tests', () => {
 
 			const regenerated = await generateRoomMemberToken(
 				roomId,
-				{ secret: member.memberId, joinMeeting: true },
+				{ secret: guestSecretOf(member), joinMeeting: true },
 				undefined,
 				previousToken
 			);
