@@ -46,7 +46,7 @@ export function buildFieldsForDbQuery<TField extends string, TExtraField extends
 	extraFields: readonly TExtraField[] | undefined,
 	allFields: readonly TField[],
 	extraFieldsList: readonly TExtraField[]
-): TField[] | undefined {
+): TField[] {
 	// Case 1: fields is explicitly specified
 	// Return the union of fields and extraFields for precise DB query
 	if (fields && fields.length > 0) {

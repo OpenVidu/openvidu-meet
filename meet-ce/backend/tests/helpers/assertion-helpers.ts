@@ -155,6 +155,14 @@ export const expectSuccessRoomConfigResponse = (response: Response, config: Meet
 	expect(response.body).toEqual(config);
 };
 
+/**
+ * The anonymous links whose URL a room in a response carries, in the order the room lists them.
+ */
+export const anonymousLinksWithUrl = (room: Pick<MeetRoom, 'access'>) =>
+	Object.entries(room.access.anonymous)
+		.filter(([, link]) => link.url !== undefined)
+		.map(([name]) => name);
+
 export const expectExtraFieldsInResponse = (room: MeetRoom) => {
 	expect((room as any)._extraFields).toEqual(['config', 'roles']);
 };

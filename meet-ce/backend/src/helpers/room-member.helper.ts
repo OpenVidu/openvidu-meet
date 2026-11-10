@@ -26,7 +26,7 @@ export class MeetRoomMemberHelper {
 	static computeFieldsForMemberQuery(
 		fields?: MeetRoomMemberField[],
 		extraFields?: MeetRoomMemberExtraField[]
-	): MeetRoomMemberField[] | undefined {
+	): MeetRoomMemberField[] {
 		return buildFieldsForDbQuery(fields, extraFields, MEET_ROOM_MEMBER_FIELDS, MEET_ROOM_MEMBER_EXTRA_FIELDS);
 	}
 
@@ -89,6 +89,13 @@ export class MeetRoomMemberHelper {
 			recordingPlay: true,
 			recordingDownload: true
 		};
+	}
+
+	/**
+	 * Whether every permission `granted` holds is also held by `holder`.
+	 */
+	static grantsWithin(granted: MeetRoomMemberPermissions, holder: MeetRoomMemberPermissions): boolean {
+		return MEET_PERMISSION_KEYS.every((key) => !granted[key] || holder[key] === true);
 	}
 
 	/**

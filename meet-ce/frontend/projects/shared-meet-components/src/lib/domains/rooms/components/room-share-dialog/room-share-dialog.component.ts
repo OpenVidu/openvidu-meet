@@ -22,6 +22,14 @@ import { WizardStepId } from '../../models/wizard.model';
 
 export type RoomAccessType = 'anonymous-moderator' | 'anonymous-speaker' | 'user';
 
+interface AnonymousAccessOption {
+	type: Exclude<RoomAccessType, 'user'>;
+	icon: string;
+	title: string;
+	enabledDescription: string;
+	link: { enabled: boolean; url: string };
+}
+
 export interface RoomShareDialogData {
 	access: MeetRoomAccess;
 	roomId?: string;
@@ -59,48 +67,43 @@ export class RoomShareDialogComponent {
 
 	selectedAccessType = signal<RoomAccessType>('user');
 
-	currentUrl = computed(() => {
-		const access = this.data.access;
+	readonly anonymousOptions = (
+		[
+			{
+				type: 'anonymous-speaker',
+				icon: 'record_voice_over',
+				title: 'ROOMS.SHARE_DIALOG.ANONYMOUS_SPEAKER',
+				enabledDescription: 'ROOMS.SHARE_DIALOG.ANONYMOUS_SPEAKER_ENABLED_DESC',
+				link: this.data.access.anonymous.speaker
+			},
+			{
+				type: 'anonymous-moderator',
+				icon: 'shield_person',
+				title: 'ROOMS.SHARE_DIALOG.ANONYMOUS_MODERATOR',
+				enabledDescription: 'ROOMS.SHARE_DIALOG.ANONYMOUS_MODERATOR_ENABLED_DESC',
+				link: this.data.access.anonymous.moderator
+			}
+		] satisfies AnonymousAccessOption[]
+	).filter((option) => !!option.link.url);
 
-		switch (this.selectedAccessType()) {
-			case 'anonymous-moderator':
-				return access.anonymous.moderator.url;
-			case 'anonymous-speaker':
-				return access.anonymous.speaker.url;
-			case 'user':
-				return access.user.url;
-		}
-	});
+	private readonly selectedAnonymousOption = computed(() =>
+		this.anonymousOptions.find((option) => option.type === this.selectedAccessType())
+	);
 
-	selectedAccessLabel = computed(() => {
-		switch (this.selectedAccessType()) {
-			case 'anonymous-moderator':
-				return 'ROOMS.SHARE_DIALOG.ANONYMOUS_MODERATOR';
-			case 'anonymous-speaker':
-				return 'ROOMS.SHARE_DIALOG.ANONYMOUS_SPEAKER';
-			case 'user':
-				return this.data.access.user.enabled
-					? 'ROOMS.SHARE_DIALOG.USERS'
-					: 'ROOMS.SHARE_DIALOG.USER_MEMBERS';
-		}
-	});
+	currentUrl = computed(() =>
+		this.selectedAccessType() === 'user' ? this.data.access.user.url : this.selectedAnonymousOption()?.link.url
+	);
 
-	isCurrentAccessSelectable = computed(() => this.isAccessEnabled(this.selectedAccessType()));
+	selectedAccessLabel = computed(
+		() =>
+			this.selectedAnonymousOption()?.title ??
+			(this.data.access.user.enabled ? 'ROOMS.SHARE_DIALOG.USERS' : 'ROOMS.SHARE_DIALOG.USER_MEMBERS')
+	);
 
-	isAccessEnabled(accessType: RoomAccessType): boolean {
-		const access = this.data.access;
-
-		switch (accessType) {
-			case 'anonymous-moderator':
-				return access.anonymous.moderator.enabled;
-			case 'anonymous-speaker':
-				return access.anonymous.speaker.enabled;
-			case 'user':
-				// User access link always works for admins and user members,
-				// even when general user access is disabled.
-				return true;
-		}
-	}
+	// User access link always works for admins and user members, even when general user access is disabled.
+	isCurrentAccessSelectable = computed(
+		() => this.selectedAccessType() === 'user' || !!this.selectedAnonymousOption()?.link.enabled
+	);
 
 	onAccessTypeChange(accessType: RoomAccessType) {
 		this.selectedAccessType.set(accessType);

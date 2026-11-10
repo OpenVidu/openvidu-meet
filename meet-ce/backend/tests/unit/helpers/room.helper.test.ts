@@ -105,25 +105,29 @@ describe('MeetRoomHelper anonymous link disclosure', () => {
 
 	describe('grantsWithin', () => {
 		it('should accept a link that grants a subset of the holder permissions', () => {
-			expect(MeetRoomHelper.grantsWithin(speakerPermissions, moderatorPermissions)).toBe(true);
-			expect(MeetRoomHelper.grantsWithin(speakerPermissions, speakerPermissions)).toBe(true);
+			expect(MeetRoomMemberHelper.grantsWithin(speakerPermissions, moderatorPermissions)).toBe(true);
+			expect(MeetRoomMemberHelper.grantsWithin(speakerPermissions, speakerPermissions)).toBe(true);
 		});
 
 		it('should refuse a link that grants a permission the holder lacks', () => {
-			expect(MeetRoomHelper.grantsWithin(moderatorPermissions, speakerPermissions)).toBe(false);
-			expect(MeetRoomHelper.grantsWithin(speakerPermissions, { ...speakerPermissions, chatWrite: false })).toBe(
-				false
-			);
+			expect(MeetRoomMemberHelper.grantsWithin(moderatorPermissions, speakerPermissions)).toBe(false);
+			expect(
+				MeetRoomMemberHelper.grantsWithin(speakerPermissions, { ...speakerPermissions, chatWrite: false })
+			).toBe(false);
 		});
 
 		it('should refuse a link whose permission is missing from the holder set', () => {
 			const { participantReactionSend: _omitted, ...holder } = speakerPermissions;
 
-			expect(MeetRoomHelper.grantsWithin(speakerPermissions, holder as MeetRoomMemberPermissions)).toBe(false);
+			expect(MeetRoomMemberHelper.grantsWithin(speakerPermissions, holder as MeetRoomMemberPermissions)).toBe(
+				false
+			);
 		});
 
 		it('should accept any link for a holder of every permission', () => {
-			expect(MeetRoomHelper.grantsWithin(moderatorPermissions, MeetRoomMemberHelper.allPermissions())).toBe(true);
+			expect(MeetRoomMemberHelper.grantsWithin(moderatorPermissions, MeetRoomMemberHelper.allPermissions())).toBe(
+				true
+			);
 		});
 	});
 
@@ -171,10 +175,10 @@ describe('MeetRoomHelper anonymous link disclosure', () => {
 			expect(linksReturnedTo(holder)).toEqual([]);
 		});
 
-		it('should drop the role links when the room carries no roles', () => {
+		it('should drop every link when the room carries no roles', () => {
 			const { roles: _roles, ...withoutRoles } = room();
 
-			expect(linksReturnedTo(moderatorPermissions, withoutRoles)).toEqual(['recording']);
+			expect(linksReturnedTo(moderatorPermissions, withoutRoles)).toEqual([]);
 		});
 
 		it('should keep every enabled flag and the user access link', () => {
@@ -189,17 +193,9 @@ describe('MeetRoomHelper anonymous link disclosure', () => {
 		it('should not change the room it filters', () => {
 			const original = room();
 
-			MeetRoomHelper.applyPermissionFiltering(original, MeetRoomMemberHelper.noPermissions(), ['roles']);
+			MeetRoomHelper.applyPermissionFiltering(original, MeetRoomMemberHelper.noPermissions());
 
 			expect(original).toEqual(room());
-		});
-
-		it('should drop the fields read only for the filtering', () => {
-			const filtered = MeetRoomHelper.applyPermissionFiltering(room(), moderatorPermissions, ['roomId', 'roles']);
-
-			expect(filtered.roles).toBeUndefined();
-			expect(filtered.roomId).toBeUndefined();
-			expect(filtered.access!.anonymous.moderator.url).toBeDefined();
 		});
 
 		it('should leave a room projected without access unchanged', () => {
@@ -209,27 +205,28 @@ describe('MeetRoomHelper anonymous link disclosure', () => {
 		});
 	});
 
+	describe('anonymousLinkPermissions', () => {
+		it('should grant the role permissions through the moderator and speaker links', () => {
+			const { roles } = room();
+
+			expect(MeetRoomHelper.anonymousLinkPermissions('moderator', roles!)).toBe(moderatorPermissions);
+			expect(MeetRoomHelper.anonymousLinkPermissions('speaker', roles!)).toBe(speakerPermissions);
+		});
+
+		it('should grant only the recording read permissions through the recordings link', () => {
+			expect(MeetRoomHelper.anonymousLinkPermissions('recording', room().roles!)).toEqual(
+				MeetRoomMemberHelper.recordingReadOnlyPermissions()
+			);
+		});
+	});
+
 	describe('shouldApplyPermissionFilteringForFields', () => {
-		it('should filter a full room or a projection that carries access', () => {
-			expect(MeetRoomHelper.shouldApplyPermissionFilteringForFields()).toBe(true);
+		it('should filter a projection that carries access', () => {
 			expect(MeetRoomHelper.shouldApplyPermissionFilteringForFields(['roomName', 'access'])).toBe(true);
 		});
 
 		it('should not filter a projection without access', () => {
 			expect(MeetRoomHelper.shouldApplyPermissionFilteringForFields(['roomName', 'roles'])).toBe(false);
-		});
-	});
-
-	describe('addMissingFields', () => {
-		it('should add only the fields the projection lacks and report them', () => {
-			const fields: ('roomName' | 'roomId' | 'roles' | 'access')[] = ['roomName', 'roomId', 'access'];
-
-			expect(MeetRoomHelper.addMissingFields(fields, ['roomId', 'roles'])).toEqual(['roles']);
-			expect(fields).toEqual(['roomName', 'roomId', 'access', 'roles']);
-		});
-
-		it('should add nothing to a projection that already returns every field', () => {
-			expect(MeetRoomHelper.addMissingFields(undefined, ['roles'])).toEqual([]);
 		});
 	});
 });

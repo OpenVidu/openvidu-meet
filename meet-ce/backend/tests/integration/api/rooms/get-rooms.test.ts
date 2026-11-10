@@ -10,6 +10,7 @@ import {
 import ms from 'ms';
 import { Response } from 'supertest';
 import {
+	anonymousLinksWithUrl,
 	expectExtraFieldsInResponse,
 	expectMeetError,
 	expectSuccessRoomsResponse,
@@ -808,15 +809,10 @@ describe('Room API Tests', () => {
 		let memberDeniedKickRoom: string;
 		let memberModeratorRoom: string;
 
-		const anonymousUrls = (room: MeetRoom) =>
-			Object.entries(room.access.anonymous)
-				.filter(([, link]) => link.url !== undefined)
-				.map(([name]) => name);
-
 		const anonymousUrlsByRoomName = (response: Response) => {
 			expect(response.status).toBe(200);
 			return Object.fromEntries(
-				(response.body.rooms as MeetRoom[]).map((room) => [room.roomName, anonymousUrls(room)])
+				(response.body.rooms as MeetRoom[]).map((room) => [room.roomName, anonymousLinksWithUrl(room)])
 			);
 		};
 
@@ -827,6 +823,11 @@ describe('Room API Tests', () => {
 			const [deniedKick, moderator] = await Promise.all([
 				createRoom({ roomName: 'denied-kick' }),
 				createRoom({ roomName: 'moderator-member' }),
+				createRoom({
+					roomName: 'user-access',
+					roles: { speaker: { permissions: { roomShareAccessLinks: true } } },
+					access: { user: { enabled: true } }
+				}),
 				createRoom(
 					{
 						roomName: 'owned',
@@ -861,14 +862,18 @@ describe('Room API Tests', () => {
 
 			expect(anonymousUrlsByRoomName(response)).toEqual({
 				'denied-kick': ['speaker', 'recording'],
-				'moderator-member': ['moderator', 'speaker', 'recording']
+				'moderator-member': ['moderator', 'speaker', 'recording'],
+				'user-access': ['speaker', 'recording']
 			});
 		});
 
-		it('should return every link to the owner, whatever the moderator role holds', async () => {
+		it('should return every link to the owner, and in a room reached through user access only those within the speaker role', async () => {
 			const response = await getRooms(undefined, undefined, testUsers.roomManager.accessToken);
 
-			expect(anonymousUrlsByRoomName(response)).toEqual({ owned: ['moderator', 'speaker', 'recording'] });
+			expect(anonymousUrlsByRoomName(response)).toEqual({
+				owned: ['moderator', 'speaker', 'recording'],
+				'user-access': ['speaker', 'recording']
+			});
 		});
 
 		it('should return every link to an API key', async () => {
@@ -877,6 +882,7 @@ describe('Room API Tests', () => {
 			expect(anonymousUrlsByRoomName(response)).toEqual({
 				'denied-kick': ['moderator', 'speaker', 'recording'],
 				'moderator-member': ['moderator', 'speaker', 'recording'],
+				'user-access': ['moderator', 'speaker', 'recording'],
 				owned: ['moderator', 'speaker', 'recording']
 			});
 		});

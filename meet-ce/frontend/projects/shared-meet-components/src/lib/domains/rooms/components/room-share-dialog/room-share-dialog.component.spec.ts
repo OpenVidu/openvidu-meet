@@ -1,5 +1,5 @@
 import { provideZonelessChangeDetection } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MeetRoomAccess } from '@openvidu-meet/typings';
 import { NavigationService } from '../../../../shared/services/navigation.service';
@@ -33,40 +33,74 @@ describe('RoomShareDialogComponent', () => {
 
 		const fixture = TestBed.createComponent(RoomShareDialogComponent);
 		fixture.detectChanges();
-		return fixture.nativeElement as HTMLElement;
+		return fixture;
 	}
 
-	const offeredLinks = (element: HTMLElement) =>
-		Array.from(element.querySelectorAll('mat-radio-button')).map((option) => option.getAttribute('value'));
+	const OFFERED = {
+		'ROOMS.SHARE_DIALOG.USERS': 'user',
+		'ROOMS.SHARE_DIALOG.ANONYMOUS_SPEAKER': 'anonymous-speaker',
+		'ROOMS.SHARE_DIALOG.ANONYMOUS_MODERATOR': 'anonymous-moderator'
+	} as Record<string, string>;
+
+	const optionFor = (fixture: ComponentFixture<RoomShareDialogComponent>, title: string) =>
+		Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('mat-radio-button')).find(
+			(option) => option.querySelector('.option-title')?.textContent?.trim() === title
+		);
+
+	const offeredLinks = (fixture: ComponentFixture<RoomShareDialogComponent>) =>
+		Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.option-title')).map(
+			(title) => OFFERED[title.textContent!.trim()]
+		);
 
 	it('offers the user, speaker and moderator links when the server returned both anonymous URLs', () => {
-		const element = render({
+		const fixture = render({
 			access: access({ moderator: 'https://meet.example.com/m', speaker: 'https://meet.example.com/s' })
 		});
 
-		expect(offeredLinks(element)).toEqual(['user', 'anonymous-speaker', 'anonymous-moderator']);
+		expect(offeredLinks(fixture)).toEqual(['user', 'anonymous-speaker', 'anonymous-moderator']);
 	});
 
 	it('offers no moderator link when the server left its URL out', () => {
-		const element = render({ access: access({ speaker: 'https://meet.example.com/s' }) });
+		const fixture = render({ access: access({ speaker: 'https://meet.example.com/s' }) });
 
-		expect(offeredLinks(element)).toEqual(['user', 'anonymous-speaker']);
+		expect(offeredLinks(fixture)).toEqual(['user', 'anonymous-speaker']);
 	});
 
 	it('offers only the user link when the server left both anonymous URLs out', () => {
-		const element = render({ access: access({}) });
+		const fixture = render({ access: access({}) });
 
-		expect(offeredLinks(element)).toEqual(['user']);
+		expect(offeredLinks(fixture)).toEqual(['user']);
 	});
 
 	it('keeps a returned but disabled link visible and not selectable', () => {
-		const element = render({
+		const fixture = render({
 			access: access({ moderator: 'https://meet.example.com/m', speaker: 'https://meet.example.com/s' }, false),
 			canManageRoom: true
 		});
 
-		const speaker = element.querySelector('mat-radio-button[value="anonymous-speaker"]');
+		const speaker = optionFor(fixture, 'ROOMS.SHARE_DIALOG.ANONYMOUS_SPEAKER');
 		expect(speaker?.classList).toContain('access-disabled');
 		expect(speaker?.querySelector('.enable-link')).not.toBeNull();
+
+		fixture.componentInstance.onAccessTypeChange('anonymous-speaker');
+		fixture.componentInstance.generateLink();
+		expect(fixture.componentInstance.roomUrl()).toBeUndefined();
+	});
+
+	it('generates the URL and label of the chosen link', () => {
+		const fixture = render({
+			access: access({ moderator: 'https://meet.example.com/m', speaker: 'https://meet.example.com/s' })
+		});
+		const dialog = fixture.componentInstance;
+
+		dialog.onAccessTypeChange('anonymous-moderator');
+		dialog.generateLink();
+		expect(dialog.roomUrl()).toBe('https://meet.example.com/m');
+		expect(dialog.selectedAccessLabel()).toBe('ROOMS.SHARE_DIALOG.ANONYMOUS_MODERATOR');
+
+		dialog.onAccessTypeChange('user');
+		dialog.generateLink();
+		expect(dialog.roomUrl()).toBe('https://meet.example.com/room/r1');
+		expect(dialog.selectedAccessLabel()).toBe('ROOMS.SHARE_DIALOG.USERS');
 	});
 });

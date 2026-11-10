@@ -31,7 +31,9 @@
 										} @else {
 											@if (data.canManageRoom) {
 												{{ 'ROOMS.SHARE_DIALOG.USER_MEMBERS_DESC_MANAGE_PREFIX' | translate }}
-												<a class="enable-link" (click)="editRoomAccess()">{{ 'ROOMS.SHARE_DIALOG.EDIT_THE_ROOM' | translate }}</a>
+												<a class="enable-link" (click)="editRoomAccess()">{{
+													'ROOMS.SHARE_DIALOG.EDIT_THE_ROOM' | translate
+												}}</a>
 												{{ 'ROOMS.SHARE_DIALOG.USER_MEMBERS_DESC_MANAGE_SUFFIX' | translate }}
 											} @else {
 												{{ 'ROOMS.SHARE_DIALOG.USER_MEMBERS_DESC_NO_MANAGE' | translate }}
@@ -42,52 +44,25 @@
 							</div>
 						</mat-radio-button>
 
-						@if (data.access.anonymous.speaker.url) {
+						@for (option of anonymousOptions; track option.type) {
 							<mat-radio-button
-								value="anonymous-speaker"
+								[value]="option.type"
 								class="access-option"
-								[class.access-disabled]="!data.access.anonymous.speaker.enabled"
-								[disabled]="!data.access.anonymous.speaker.enabled"
+								[class.access-disabled]="!option.link.enabled"
+								[disabled]="!option.link.enabled"
 							>
 								<div class="option-content">
-									<mat-icon class="option-icon material-symbols-outlined">record_voice_over</mat-icon>
+									<mat-icon class="option-icon material-symbols-outlined">{{ option.icon }}</mat-icon>
 									<div class="option-details">
-										<span class="option-title">{{ 'ROOMS.SHARE_DIALOG.ANONYMOUS_SPEAKER' | translate }}</span>
+										<span class="option-title">{{ option.title | translate }}</span>
 										<span class="option-description">
-											@if (data.access.anonymous.speaker.enabled) {
-												{{ 'ROOMS.SHARE_DIALOG.ANONYMOUS_SPEAKER_ENABLED_DESC' | translate }}
-											} @else {
-												@if (data.canManageRoom) {
-													{{ 'ROOMS.SHARE_DIALOG.DISABLED_MANAGE_PREFIX' | translate }}
-													<a class="enable-link" (click)="editRoomAccess()">{{ 'ROOMS.SHARE_DIALOG.EDIT_THE_ROOM' | translate }}</a>
-													{{ 'ROOMS.SHARE_DIALOG.DISABLED_MANAGE_SUFFIX' | translate }}
-												} @else {
-													{{ 'ROOMS.SHARE_DIALOG.DISABLED_NO_MANAGE' | translate }}
-												}
-											}
-										</span>
-									</div>
-								</div>
-							</mat-radio-button>
-						}
-
-						@if (data.access.anonymous.moderator.url) {
-							<mat-radio-button
-								value="anonymous-moderator"
-								class="access-option"
-								[class.access-disabled]="!data.access.anonymous.moderator.enabled"
-								[disabled]="!data.access.anonymous.moderator.enabled"
-							>
-								<div class="option-content">
-									<mat-icon class="option-icon material-symbols-outlined">shield_person</mat-icon>
-									<div class="option-details">
-										<span class="option-title">{{ 'ROOMS.SHARE_DIALOG.ANONYMOUS_MODERATOR' | translate }}</span>
-										<span class="option-description">
-											@if (data.access.anonymous.moderator.enabled) {
-												{{ 'ROOMS.SHARE_DIALOG.ANONYMOUS_MODERATOR_ENABLED_DESC' | translate }}
+											@if (option.link.enabled) {
+												{{ option.enabledDescription | translate }}
 											} @else if (data.canManageRoom) {
 												{{ 'ROOMS.SHARE_DIALOG.DISABLED_MANAGE_PREFIX' | translate }}
-												<a class="enable-link" (click)="editRoomAccess()">{{ 'ROOMS.SHARE_DIALOG.EDIT_THE_ROOM' | translate }}</a>
+												<a class="enable-link" (click)="editRoomAccess()">{{
+													'ROOMS.SHARE_DIALOG.EDIT_THE_ROOM' | translate
+												}}</a>
 												{{ 'ROOMS.SHARE_DIALOG.DISABLED_MANAGE_SUFFIX' | translate }}
 											} @else {
 												{{ 'ROOMS.SHARE_DIALOG.DISABLED_NO_MANAGE' | translate }}
@@ -104,7 +79,11 @@
 					<div class="guest-members-info">
 						<mat-icon class="guest-members-info-icon">info</mat-icon>
 						<p class="guest-members-info-text">
-							{{ 'ROOMS.SHARE_DIALOG.GUEST_INFO_PREFIX' | translate }}<strong>{{ 'ROOMS.SHARE_DIALOG.GUEST_INFO_IDENTIFIED_GUEST' | translate }}</strong>{{ 'ROOMS.SHARE_DIALOG.GUEST_INFO_MIDDLE' | translate }}<strong>{{ 'ROOMS.SHARE_DIALOG.GUEST_INFO_ROOM_MEMBERS' | translate }}</strong>{{ 'ROOMS.SHARE_DIALOG.GUEST_INFO_SUFFIX' | translate }}
+							{{ 'ROOMS.SHARE_DIALOG.GUEST_INFO_PREFIX' | translate
+							}}<strong>{{ 'ROOMS.SHARE_DIALOG.GUEST_INFO_IDENTIFIED_GUEST' | translate }}</strong
+							>{{ 'ROOMS.SHARE_DIALOG.GUEST_INFO_MIDDLE' | translate
+							}}<strong>{{ 'ROOMS.SHARE_DIALOG.GUEST_INFO_ROOM_MEMBERS' | translate }}</strong
+							>{{ 'ROOMS.SHARE_DIALOG.GUEST_INFO_SUFFIX' | translate }}
 						</p>
 					</div>
 				}
@@ -136,7 +115,11 @@
 							mat-icon-button
 							matSuffix
 							(click)="copyToClipboard()"
-							[matTooltip]="copied() ? ('ROOMS.SHARE_DIALOG.COPIED' | translate) : ('ROOMS.SHARE_DIALOG.COPY_TO_CLIPBOARD' | translate)"
+							[matTooltip]="
+								copied()
+									? ('ROOMS.SHARE_DIALOG.COPIED' | translate)
+									: ('ROOMS.SHARE_DIALOG.COPY_TO_CLIPBOARD' | translate)
+							"
 							matTooltipPosition="above"
 							class="copy-button"
 							[class.copied]="copied()"
