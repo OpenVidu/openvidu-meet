@@ -1,0 +1,44 @@
+/recordings/{recordingId}/link:
+    get:
+        operationId: getRecordingLink
+        summary: Get what a recording link grants
+        description: >
+            Tells the recording view page whether the `recordingSecret` of the link it was opened with plays and
+            downloads the recording, or only plays it.
+
+
+            Answers like `GET /recordings/{recordingId}` does for the same secret: `400` for an unrecognised one,
+            `403` for a public one while the room has anonymous recording access disabled, `401` for a private one
+            without a credential.
+        tags:
+            - Internal API - Recordings
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+            - roomMemberTokenHeader: []
+            - {}
+        parameters:
+            - $ref: '../parameters/recording-id.yaml'
+            - name: recordingSecret
+              in: query
+              required: true
+              description: The secret of a recording link.
+              schema:
+                  type: string
+        responses:
+            '200':
+                $ref: './responses/success/get-recording-link.yaml'
+            '400':
+                $ref: '../responses/errors/invalid-recording-secret.yaml'
+            '401':
+                $ref: '../../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../../shared/responses/errors/forbidden.yaml'
+            '404':
+                $ref: '../responses/errors/recording-not-found.yaml'
+            '422':
+                $ref: '../../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../../shared/responses/errors/internal-server.yaml'

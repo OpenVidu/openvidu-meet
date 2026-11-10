@@ -1,0 +1,10 @@
+description: Successfully retrieved what the recording link grants
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                download:
+                    type: boolean
+                    description: Whether the link also downloads the recording (`true`) or only plays it (`false`).
+                    example: false
