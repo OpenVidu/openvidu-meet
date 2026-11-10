@@ -222,7 +222,7 @@ The `externalId` and `metadata` of a `MeetLobbyParticipant` SHALL be what the pa
 - **THEN** `lobbyList` lists them with `externalId` "u-42", `type` `anonymous` and an identity the server generated
 
 ### Requirement: Admit or reject participants
-`POST /api/v1/meetings/{roomId}/lobby/admit` (`lobbyAdmit`) and `POST /api/v1/meetings/{roomId}/lobby/reject` (`lobbyReject`) SHALL admit or reject the waiting participants named by `participantIdentities`, one or several, and answer with the participants decided on as `MeetLobbyParticipant`. Both SHALL require `lobbyAdmin` (`403`), and a decision on named participants at least one identity, each named once (`422`): a missing or empty `participantIdentities` SHALL never mean everyone waiting.
+`POST /api/v1/meetings/{roomId}/lobby/admit` (`lobbyAdmit`) and `POST /api/v1/meetings/{roomId}/lobby/reject` (`lobbyReject`) SHALL admit or reject the waiting participants named by `participantIdentities`, one or several, and answer with the participants decided on as `MeetLobbyParticipant`. Both SHALL require `lobbyAdmin` (`403`), and a `participantIdentities` given at least one identity, each named once (`422`): an empty list SHALL never mean everyone waiting.
 
 #### Scenario: Admitting one
 - **GIVEN** a participant waiting
@@ -234,9 +234,9 @@ The `externalId` and `metadata` of a `MeetLobbyParticipant` SHALL be what the pa
 - **WHEN** a fourth participant starts waiting and the moderator presses "Admit 3"
 - **THEN** the three shown enter the meeting and the fourth keeps waiting
 
-#### Scenario: No identity
+#### Scenario: An empty list
 - **WHEN** a client holding `lobbyAdmin` calls `lobbyAdmit` with an empty `participantIdentities`
-- **THEN** the server answers `422`
+- **THEN** the server answers `422` and nobody is admitted
 
 #### Scenario: Same identity twice
 - **WHEN** a client holding `lobbyAdmin` calls `lobbyReject` naming the same identity twice
@@ -272,36 +272,36 @@ The `externalId` and `metadata` of a `MeetLobbyParticipant` SHALL be what the pa
 - **THEN** the server answers `200` and Ben enters the meeting
 
 ### Requirement: Deciding on everyone waiting
-With `all` set to `true` instead of `participantIdentities`, `lobbyAdmit` SHALL admit the participants waiting in arrival order up to the free places (see "Waiting list") and leave the rest waiting in their place, and `lobbyReject` SHALL reject, in one atomic step, everyone waiting at that moment. Both SHALL answer with the participants decided on, none when nobody waits or no place is free, and `422` for both or neither of the two fields.
+With a body without `participantIdentities`, as `broadcastStop` without `broadcastIds`, `lobbyAdmit` SHALL admit the participants waiting in arrival order up to the free places (see "Waiting list") and leave the rest waiting in their place, and `lobbyReject` SHALL reject, in one atomic step, everyone waiting at that moment. Both SHALL answer with the participants decided on, none when nobody waits or no place is free.
 
 #### Scenario: Fewer free places than participants waiting
 - **GIVEN** a meeting with two free places and Ana, Ben and Zoe waiting, in that order
-- **WHEN** a client holding `lobbyAdmin` calls `lobbyAdmit` with `all` true
+- **WHEN** a client holding `lobbyAdmin` calls `lobbyAdmit` without `participantIdentities`
 - **THEN** the server answers `200` with Ana and Ben, who enter the meeting
 - **AND** Zoe keeps waiting, first in line
 
 #### Scenario: Admitted participant on the way in
 - **GIVEN** a meeting with two free places, Ana admitted who has not joined yet, and Ben and Zoe waiting in that order
-- **WHEN** a client holding `lobbyAdmin` calls `lobbyAdmit` with `all` true
+- **WHEN** a client holding `lobbyAdmin` calls `lobbyAdmit` without `participantIdentities`
 - **THEN** the server answers `200` with Ben alone and Zoe keeps waiting, first in line
 
 #### Scenario: Admitting all without a participant limit
 - **GIVEN** a room without `maxParticipants` and three participants waiting
-- **WHEN** a client holding `lobbyAdmin` calls `lobbyAdmit` with `all` true
+- **WHEN** a client holding `lobbyAdmin` calls `lobbyAdmit` without `participantIdentities`
 - **THEN** the three enter the meeting
 
 #### Scenario: Rejecting everyone waiting
 - **GIVEN** Ana and Ben waiting
-- **WHEN** a client holding `lobbyAdmin` calls `lobbyReject` with `all` true
+- **WHEN** a client holding `lobbyAdmin` calls `lobbyReject` without `participantIdentities`
 - **THEN** the server answers `200` with Ana and Ben, and both are told they weren't let in
 
 #### Scenario: Asking right after everyone was rejected
 - **GIVEN** three participants waiting
-- **WHEN** a client calls `lobbyReject` with `all` true and Zoe asks to join right after it answers
+- **WHEN** a client calls `lobbyReject` without `participantIdentities` and Zoe asks to join right after it answers
 - **THEN** the three are rejected and Zoe waits, shown to the holders of `lobbyAdmin` as any new participant waiting
 
 ### Requirement: One decision per participant across replicas
-Decisions on the same waiting participant SHALL apply one at a time across every replica: the first one SHALL apply, and a later decision naming them SHALL answer `404` and a later one with `all` SHALL leave them out, since the participant no longer waits.
+Decisions on the same waiting participant SHALL apply one at a time across every replica: the first one SHALL apply, and a later decision naming them SHALL answer `404` and a later one on everyone waiting SHALL leave them out, since the participant no longer waits.
 
 #### Scenario: Admit and reject at once on two replicas
 - **GIVEN** two replicas sharing Redis and a participant waiting
@@ -722,12 +722,12 @@ The server SHALL send the `participantKnocked` webhook once each time a particip
 - **THEN** one `participantKnocked` webhook is delivered at once, and within about 20 seconds one `lobbyStatusChanged` webhook with `status` `expired`
 
 ### Requirement: lobbyStatusChanged webhook
-The server SHALL send the `lobbyStatusChanged` webhook on each change of a wait after it started, with `roomId`, `roomName`, the participant (`MeetLobbyParticipant`), `waitedSeconds` since `knockDate`, `origin` as in `participantHandChanged`, and `status` of `MeetLobbyStatus`: `admitted`, `rejected`, `left`, `expired`, `meeting_ended`, `room_closed`, or `waiting` for an admitted participant back in line.
+The server SHALL send the `lobbyStatusChanged` webhook on each change of a wait after it started, with `roomId`, `roomName`, the participant (`MeetLobbyParticipant`, whose `knockDate` with the event's `creationDate` tells how long they waited), `origin` as in `participantHandChanged`, and `status` of `MeetLobbyStatus`: `admitted`, `rejected`, `left`, `expired`, `meeting_ended`, `room_closed`, or `waiting` for an admitted participant back in line.
 
 #### Scenario: Admitted by another moderator
-- **GIVEN** a registered webhook subscribed to `lobbyStatusChanged` and a participant who has waited 90 seconds
+- **GIVEN** a registered webhook subscribed to `lobbyStatusChanged` and a participant who asked to join 90 seconds ago
 - **WHEN** a moderator admits them
-- **THEN** one `lobbyStatusChanged` webhook is delivered with `status` `admitted`, `origin` `moderator`, their identity and `waitedSeconds` 90
+- **THEN** one `lobbyStatusChanged` webhook is delivered with `status` `admitted`, `origin` `moderator`, their identity and a `knockDate` 90 seconds before the event's `creationDate`
 
 #### Scenario: Page closed for good
 - **GIVEN** a registered webhook subscribed to `lobbyStatusChanged` and a participant waiting
@@ -794,7 +794,7 @@ The embedded element of a participant who waits SHALL dispatch `lobbyStatusChang
 - **THEN** the host receives `lobbyStatusChanged` with `expired` and no `meetingJoined`
 
 ### Requirement: Waiting room commands
-The embedded commands `lobbyAdmit` and `lobbyReject` SHALL admit or reject the waiting participants named by `participantIdentities`, one or several, or with `all` everyone waiting (`lobbyAdmit` up to the free places), through the REST operations of the same name and with their rules. Both SHALL be gated by `lobbyAdmin` and run only while the local participant is in the meeting.
+The embedded commands `lobbyAdmit` and `lobbyReject` SHALL admit or reject the waiting participants named by `participantIdentities`, one or several, or everyone waiting when `participantIdentities` is omitted (`lobbyAdmit` up to the free places), through the REST operations of the same name and with their rules. Both SHALL be gated by `lobbyAdmin` and run only while the local participant is in the meeting.
 
 #### Scenario: Admit from the host
 - **GIVEN** an embedded moderator holding `lobbyAdmin` in the meeting and Zoe waiting
@@ -808,12 +808,12 @@ The embedded commands `lobbyAdmit` and `lobbyReject` SHALL admit or reject the w
 
 #### Scenario: Admit everyone from the host
 - **GIVEN** an embedded moderator holding `lobbyAdmin` in a meeting with one free place, and Zoe and Ana waiting, in that order
-- **WHEN** the host calls `lobbyAdmit` with `all` true
+- **WHEN** the host calls `lobbyAdmit` without `participantIdentities`
 - **THEN** Zoe enters the meeting and Ana keeps waiting
 
 #### Scenario: Deny everyone from the host
 - **GIVEN** an embedded moderator holding `lobbyAdmin` in the meeting, and Zoe and Ana waiting
-- **WHEN** the host calls `lobbyReject` with `all` true
+- **WHEN** the host calls `lobbyReject` without `participantIdentities`
 - **THEN** Zoe and Ana are told they weren't let in
 
 #### Scenario: Without the permission
