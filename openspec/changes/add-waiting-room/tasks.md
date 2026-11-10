@@ -198,6 +198,7 @@ Requires `revoke-tokens-on-kick` (merged in #208), and `refactor-meeting-entry-f
 - [ ] 9.6 openvidu.io: list `participantKnocked` and `lobbyStatusChanged` in `docs/meet/embedded/reference/webhooks.md`.
 - [ ] 9.7 openvidu.io: in `docs/meet/features/meetings/moderation.md`, state that a kicked participant joins again at once except in a room with the waiting room on, where one without `lobbyBypass` asks again and waits; and that reading and moderating a meeting behind a waiting room needs, besides `meetingRead` and the action's permission, that a room member token's holder was let in (link to the waiting room page).
 - [ ] 9.8 openvidu.io: regenerate the embedded API reference with `./meet.sh build-webcomponent-doc ../openvidu.io/shared/meet` and the REST API reference with `./meet.sh build-rest-api-doc ../openvidu.io/docs/meet/embedded/reference/api.html`.
+- [ ] 9.9 openvidu.io: add a troubleshooting line to `docs/meet/deployment/basic.md`: a meeting that shows the connection error screen while waiting to be let in, with a console error naming the WebSocket URL, means a proxy or network between the browser and Meet blocks WebSocket upgrades.
 
 ## Workflow follow-up
 
