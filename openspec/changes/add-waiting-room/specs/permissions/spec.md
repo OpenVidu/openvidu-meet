@@ -2,12 +2,12 @@
 
 ### Requirement: Waiting room permissions
 Meet SHALL gate the waiting room with two permissions (`waiting-room`):
-- `lobbyBypass`: its holder joins a room with the waiting room on without waiting, and reads the meeting there;
+- `lobbyBypass`: its holder joins a room with the waiting room on without waiting;
 - `lobbyAdmin`: its holder lists, admits and rejects the participants waiting.
 
 #### Scenario: Admitting without the permission
 - **GIVEN** a room member token denying `lobbyAdmin`
-- **WHEN** its holder calls `lobbyResolve`
+- **WHEN** its holder calls `lobbyAdmit`
 - **THEN** the server answers `403`
 
 #### Scenario: Admitter who waits
@@ -62,9 +62,9 @@ When a room member token, or a room or member stored before a permission existed
 - **THEN** the moderator role still grants `participantMute` and grants `participantHandLower` and `participantReactionSend`, and the speaker role denies `participantHandLower`
 - **AND** both roles deny `broadcastControl` and `broadcastEdit`
 
-#### Scenario: Room from 3.10.0
-- **GIVEN** a room created by 3.10.0 with default roles
-- **WHEN** the deployment is upgraded to the release that adds the waiting room
+#### Scenario: Waiting room permissions of a room from 3.9.0
+- **GIVEN** a room created by 3.9.0 with default roles
+- **WHEN** the deployment is upgraded to 3.10.0
 - **THEN** the moderator role grants `lobbyBypass` and `lobbyAdmin` and the speaker role denies both
 
 #### Scenario: Moderator member from 3.9.0
@@ -72,9 +72,9 @@ When a room member token, or a room or member stored before a permission existed
 - **WHEN** the deployment is upgraded to 3.10.0 and a manager reads the member
 - **THEN** the member's effective permissions grant `participantHandLower`
 
-#### Scenario: Moderator member from 3.10.0
-- **GIVEN** a member stored by 3.10.0 with the moderator role
-- **WHEN** the deployment is upgraded to the release that adds the waiting room and a manager reads the member
+#### Scenario: Waiting room permissions of a moderator member from 3.9.0
+- **GIVEN** a member stored by 3.9.0 with the moderator role
+- **WHEN** the deployment is upgraded to 3.10.0 and a manager reads the member
 - **THEN** the member's effective permissions grant `lobbyBypass` and `lobbyAdmin`
 
 #### Scenario: Member overrides from before 3.9.0
@@ -93,6 +93,49 @@ When a room member token, or a room or member stored before a permission existed
 - **THEN** the token is read as denying `broadcastControl` and the server answers `403`
 
 #### Scenario: Moderator token issued before the waiting room
-- **GIVEN** a moderator's room member token issued before the upgrade that adds the waiting room
-- **WHEN** its holder calls `lobbyList` after the upgrade
+- **GIVEN** a moderator's room member token issued by 3.9.0
+- **WHEN** its holder calls `lobbyList` after the upgrade to 3.10.0
 - **THEN** the token is read as denying `lobbyAdmin` and the server answers `403`
+
+### Requirement: Admins, the owner and the API key hold every permission
+The server SHALL treat an admin, the room's owner and a request authenticated with the API key as holding every permission in the room, whatever the room's role sets say, both when it checks a request and in the room member tokens it issues to an admin or the owner (a room member token is read as `Permissions of the caller` says).
+
+#### Scenario: Owner beyond the moderator role
+- **GIVEN** a room whose moderator role denies `recordingDelete`
+- **WHEN** its owner deletes one of the room's recordings
+- **THEN** the deletion succeeds
+
+#### Scenario: Integrator with the API key
+- **GIVEN** a room whose role sets deny `participantKick` to everyone
+- **WHEN** an integrator calls `participantKick` with the API key
+- **THEN** the participant is removed from the meeting
+
+### Requirement: Permissions of the caller
+For a request about a room, the server SHALL use the permissions carried by the room member token when one is presented, narrowed in a room with the waiting room on as `waiting-room` specifies, and none when that token belongs to another room; otherwise those of the user: every permission for an admin or the room's owner, the member's effective permissions for a member, the room's speaker role permissions under registered-user access (see `room-access`), and none otherwise.
+
+#### Scenario: Token of another room
+- **GIVEN** a moderator's room member token for room A
+- **WHEN** its holder calls `meetingEnd` for room B
+- **THEN** the server answers `403`
+
+#### Scenario: Member using their account
+- **GIVEN** a user member whose effective permissions deny `recordingDelete`
+- **WHEN** they delete one of the room's recordings with their access token
+- **THEN** the server answers `403`
+
+#### Scenario: Token without a participant identity behind a waiting room
+- **GIVEN** a room with the waiting room on and a moderator link token obtained without joining
+- **WHEN** its holder calls `participantKick`
+- **THEN** the server answers `403`
+
+### Requirement: Permissions without a deprecated name
+`meetingRead`, `participantMute`, `participantHandLower`, `participantReactionSend`, `broadcastControl`, `broadcastEdit`, `lobbyBypass` and `lobbyAdmin` SHALL exist only under their current names: no deprecated key sets them, and no response adds a deprecated twin for them.
+
+#### Scenario: Read back without a twin
+- **WHEN** a manager reads a room's `roles`
+- **THEN** each role carries `meetingRead`, `participantMute`, `participantHandLower`, `participantReactionSend`, `broadcastControl`, `broadcastEdit`, `lobbyBypass` and `lobbyAdmin` under those names only
+
+#### Scenario: Deprecated join key leaves meetingRead alone
+- **GIVEN** a speaker role that grants `meetingRead`
+- **WHEN** a manager calls `updateRoomRoles` with `canJoinMeeting` `false` for the speaker role
+- **THEN** the speaker role denies `meetingJoin` and still grants `meetingRead`

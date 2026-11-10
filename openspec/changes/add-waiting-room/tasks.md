@@ -1,10 +1,10 @@
 # Tasks
 
-Requires `add-realtime-channel` on the branch.
+Requires `revoke-tokens-on-kick` (merged in #208), `fix-refresh-of-revoked-session` and `add-realtime-channel` on the branch, both archived before this change.
 
-## 1. Frontend renames
+## 1. Frontend renames (separate refactor pull request)
 
-- [ ] 1.1 Rename, in `shared-meet-components`, with their specs and imports:
+- [ ] 1.1 In a refactor pull request of its own, merged before this change (a refactor needs no OpenSpec change), rename, in `shared-meet-components`, with their specs and imports:
   - `MeetingLobbyService` → `MeetingJoinService`, `MeetingLobbyComponent` → `MeetingJoinComponent` (selector `ov-meeting-join`);
   - the `LOBBY.*` translation keys → `JOIN.*` in every locale;
   - the `lobby` `data-testid`s → `join`, in the SPA e2e, the webcomponent e2e and the testapp;
@@ -17,27 +17,30 @@ Requires `add-realtime-channel` on the branch.
 - [ ] 2.1 Add to the typings, each with TSDoc:
   - `MeetLobbyConfig` and `MeetRoomConfig.lobby` (`message` up to 500 characters);
   - `lobbyBypass` and `lobbyAdmin`;
-  - `MeetLobbyParticipant` (`knockDate`, `away`);
-  - `lobbyStatus` and `lobbyWaitId` on `MeetRoomMemberTokenMetadata`;
-  - `MeetSignalType.LOBBY_UPDATED` with its payload (`roomId`, `version`);
-  - `MeetWebhookEventType.PARTICIPANT_KNOCKED` and `LOBBY_STATUS_CHANGED` with their payloads.
+  - `MeetLobbyParticipant` as its own interface (`participantIdentity`, `participantName`, `type`, `externalId?`, `metadata?`, `knockDate`), not extending `MeetParticipantPayload`, the only participant schema of the feature; the TSDoc of `externalId` and `metadata` says they are as sent by the participant's client and never a proof of identity, and that a backend that admits on its own identifies a waiter by `type` and by the `participantIdentity` of a member or user, which the server derives from their personal link or account;
+  - `MeetLobbyParticipantType` (`user`, `identified_guest`, `anonymous`, after `MeetRoomMemberType` in `room-member.entity.ts`), TSDoc saying that it is how the participant asked (own account, personal member link, shared link of the room), derived by the server;
+  - `lobbyTicket` in `MeetRoomMemberTokenOptions` (`room-member-request.ts`), and the answer shape `202 { lobbyTicket }` of the internal token request;
+  - the list shape `{ participants: MeetLobbyParticipant[]; availablePlaces: number | null }` shared by `lobbyList` and `lobbyUpdated`;
+  - `MeetLobbyStatus` (`waiting`, `admitted`, `rejected`, `left`, `expired`, `meeting_ended`, `room_closed`), shared by the webhook and the embedded event, with TSDoc saying which surface emits which value, that the event's `expired` also covers a place the meeting lost on its own (gave up reconnecting, ticket no longer known, answer lost after an admission), that `meetingJoined`, not `admitted`, confirms the join, and that a join that finds the meeting full after `admitted` raises no lobby event;
+  - `MeetSignalType.MEET_LOBBY_UPDATED` (`meet_lobby_updated`) with its payload (`roomId`, `timestamp`), like the other signals;
+  - `MeetWebhookEventType.PARTICIPANT_KNOCKED` and `LOBBY_STATUS_CHANGED` with their payloads (`lobbyStatusChanged` with `status`, `waitedSeconds` and `origin` of `MeetEventOrigin`).
 
   Verify the typings build and the backend unit tests `permission-aliases` and the entity-field suites.
-- [ ] 2.2 Add the embedded commands `lobbyAdmit`, `lobbyReject`, `lobbyAdmitAll` and `lobbyRejectAll` (`@permission lobbyAdmin`), and the events `participantKnocked`, `lobbyUpdated` and `lobbyStatusChanged` (`waiting`, `admitted`, `rejected`, `left`, `ended` with `reason`, `queuePosition`). No alias: replace the note about a future `lobbyKnocked`/`participantKnocked` alias in `meet-ce/typings/CLAUDE.md`. Verify the embedded API contract test, `api-registry.test.ts` and `scripts/lint-api-naming.mjs`.
+- [ ] 2.2 Add the embedded commands `lobbyAdmit` and `lobbyReject` (payload `{ participantIdentities }` or `{ all: true }`), both `@permission lobbyAdmin`, and the events `participantKnocked`, `lobbyUpdated` (`roomId` plus the list shape) and `lobbyStatusChanged` (`roomId`, `participantIdentity`, `status` of `MeetLobbyStatus`, `queuePosition` from 1 while waiting; the first `waiting` comes with the first state received, and a host whose connection never receives one gets none). Update the TSDoc that the waiting phase makes stale: `MEETING_LEAVE` (also leaves the waiting room), the `@prejoin` of `mediaToggleAudio` and `mediaToggleVideo` (the waiting screen included), `mediaAudioStatusChanged` and `mediaVideoStatusChanged` (also fired on the waiting screen) and the `leave-redirect-url` attribute (the waiting room's outcome screens offer the same dismiss). The TSDoc of the commands says that `participantIdentities` is never read as everyone, unlike `broadcastIds` of `broadcastStop`, that `lobbyAdmit` with `all` admits the first in line up to the free places, and that `lobbyReject` with `all` rejects everyone waiting when it runs. No alias: replace the note about a future `lobbyKnocked`/`participantKnocked` alias in `meet-ce/typings/CLAUDE.md`. Verify the embedded API contract test, `api-registry.test.ts` and `scripts/lint-api-naming.mjs`.
 - [ ] 2.3 Document in the OpenAPI:
   - `config.lobby`;
   - `lobbyBypass` and `lobbyAdmin` (schema and the full-permission examples);
-  - `MeetLobbyParticipant`;
-  - `lobbyList`, `lobbyResolve` and `lobbyResolveAll` (`participantIdentities`, `409` when the admissions do not fit);
-  - the `403` of `meetingGet`, `participantList`, `participantGet`, `broadcastList` and `broadcastGet` in rooms with the waiting room on;
-  - the `participantKnocked` and `lobbyStatusChanged` webhooks;
-  - the waiting credential outcome (`409` full, `429` pause) of the internal `generateRoomMemberToken` and the internal `GET /meetings/{roomId}/lobby/me`.
+  - `MeetLobbyParticipant`, with `type` and the statement that `externalId` and `metadata` are as sent by the participant's client and never a proof of identity, in the schema and in `lobbyList` and the `participantKnocked` webhook, saying that a backend that admits on its own identifies waiters by `type` and by the `participantIdentity` of a member or user;
+  - `lobbyList` (`participants` as `MeetLobbyParticipant`, and `availablePlaces`: the limit minus the participants connected and the admitted participants who have not joined yet, never below 0, `null` when the room has no limit), `lobbyAdmit` and `lobbyReject` (`participantIdentities` with 1 to 100 distinct items, `422` for a repeated one, never read as everyone unlike `broadcastStop`, all or nothing, `404` naming the first identity that no longer waits; each takes either it or `all: true`, `422` for both, neither, or `all` with another value; `lobbyAdmit` answers `409` when the participants named outnumber the free places and, with `all`, admits the first in line up to the free places; `lobbyReject` with `all` rejects everyone waiting when it runs; both answer the participants decided on), stating that they answer with no meeting running, and that with the waiting room off `lobbyList` answers an empty list, a named decision `404` and `all` an empty `participants`;
+  - in the description and `403` response of every operation gated by `meetingRead`, `meetingEnd`, a participant permission, `recordingControl`, `broadcastControl`, `broadcastEdit` or `lobbyAdmin`, that in a room with the waiting room on a room member token acts on the meeting only if it carries a participant identity (a join token), and that a host application acting for itself uses the API key; in `updateRoomConfig`, that turning `lobby.enabled` on invalidates the room member tokens issued before, and that `lobby.message` `null` removes the message; in `meet-room.yaml`, the `rolesUpdatedAt` description: "... or the waiting room was turned on";
+  - the `participantKnocked` and `lobbyStatusChanged` webhooks (`status` of `MeetLobbyStatus`, `waitedSeconds` and `origin`, all next to `participant`), that `participantKnocked` is sent when the participant asks, before their waiting screen connects, and that webhooks are not stored (lost if the replica sending them stops), possibly repeated by the retries and unordered, `knockDate` and `waitedSeconds` ordering them, and that a decision with `all` sends one `lobbyStatusChanged` per participant;
+  - the internal `generateRoomMemberToken`: `202 { lobbyTicket }` when the participant waits (`409` when the waiting room is full), `lobbyTicket` accepted in the body only with `joinMeeting` true (`422` otherwise), `409` with `status` for an ended or unknown wait (a ticket of another room is unknown), and the internal leave operation (`204` for any ticket, an unknown one or one of another room than the path's `roomId` included, with no effect).
 
   Verify `redocly lint`, the API naming lint and `openapi-permission-examples.test.ts`.
 
 ## 3. Room config, permissions and migrations
 
-- [ ] 3.1 Validate and store `config.lobby` (Zod create and update with the default `{ enabled: false }`, Mongoose schema, the switch rule). Verify with the unit schema tests and the integration tests `create-room` and `update-room-config` (default, `422` without `enabled`, `422` for 501 characters, `409` during a meeting).
+- [ ] 3.1 Validate and store `config.lobby` (Zod create and update with the default `{ enabled: false }`, Mongoose schema, the switch rule, `message` `null` on update removing the stored message). Verify with the unit schema tests and the integration tests `create-room` and `update-room-config` (default, `422` without `enabled`, `422` for 501 characters, `409` during a meeting, a message removed with `null`).
 - [ ] 3.2 Add `lobbyBypass` and `lobbyAdmin` across the permission checklist:
   - `UNALIASED_PERMISSION_DEFAULTS` `false`;
   - the fields lists and `MEET_PERMISSION_KEYS`;
@@ -46,87 +49,108 @@ Requires `add-realtime-channel` on the branch.
   - Zod and Mongoose schemas;
   - console `PERMISSION_GROUPS` under a "Waiting room" group ("Join without waiting", "Admit participants") in every locale.
 
-  Verify the unit tests that assert whole permission objects and the Karma `permissions.model.spec.ts`.
+  Verify the unit tests that assert whole permission objects, the Karma `permissions.model.spec.ts`, and that the member form shows the "Waiting room" group.
 - [ ] 3.3 Migrate rooms v9 → v10 (`config.lobby`, normalized permissions, both permissions granted to the moderator role) and room members v6 → v7 (granted to moderator members without an override), bumping both schema versions and `MIGRATION_REV`s per `meet-ce/backend/src/migrations/README.md`. Verify with the unit migration tests and the integration tests `room-migrations` and `room-member-migrations`.
 
 ## 4. Server
 
-- [ ] 4.1 Split `generateTokenForJoiningMeeting` into named steps and three explicit modes (join, admission, refresh), extract `createParticipantIdentity`, and add the waiting gate:
-  - a waiting credential has identity, the token issue of `getTokenIssue`, no video grant, `lobbyStatus` and `lobbyWaitId`;
-  - nothing is reserved, created or counted;
-  - a previous waiting credential is answered by its wait (admitted → join token in admission mode; waiting → renewed credential; rejected less than 15 s ago → `429`; ended or expired → new wait id).
+- [ ] 4.1 Add the waiting gate and the ticket to the join path, keeping `generateTokenForJoiningMeeting` as named private steps and extracting `createParticipantIdentity`:
+  - when the gate applies (`lobby.enabled`, no `lobbyBypass`), run steps 1 to 3, build the identity, knock and answer `202 { lobbyTicket }`; nothing is reserved, created or counted, and no token is minted;
+  - a request with `lobbyTicket` ignores any previous token attached as bearer and never enters refresh mode; the knock stores the request's principal (`memberId`, `userId` or none) and the `type` derived from it (`user`, `identified_guest`, `anonymous`), never from the client's fields, and a ticket presented with another principal answers `403`;
+  - with `lobbyTicket` in the body (`422` without `joinMeeting` true), answer by the ticket's wait: waiting → `202`; admitted → the join steps (capacity as for every join), the admission removed by one script (`consume`) just before the token is minted; full → back to `waiting` (`return`), `202`; ended as `admitted` → an ordinary join with that identity through the gate as it stands (a token, or `409` with `status`); ended otherwise, unknown or of another room → `409` with `status` when known; `assertCanJoin` failing → its usual error (`400`, `403` or `404`), the wait unchanged; `return` finding the wait ended → `409` with the recorded `status`; `consume` finding the wait no longer admitted (a leave, an end or an expiry after the checks) → `409` with the recorded `status`, the reserved name freed with the meeting;
+  - refresh, regenerate, kick and `refreshRoomMemberToken` unchanged.
 
-  Verify with unit tests of the modes and the gate, including a member with a demotion revocation, and the integration tests in `meetings`:
+  Verify with unit tests of `LobbyAdmissionPolicy` and of the join steps, and the integration tests in `meetings`:
   - the room stays `open` and no `meetingStarted` webhook is sent;
-  - a LiveKit connection with the waiting credential is refused;
-  - a full meeting still lets a participant wait;
-  - admission joins with the same identity and starts the meeting.
-- [ ] 4.2 Implement `LobbyService` state:
-  - the Redis keys (entries, presence, version, `lobby_rooms`, `lobby_ended:<waitId>`, cooldown);
-  - one Lua script per change (knock with the 100 limit, replacement of a wait of the same identity, admit with the capacity check, reject, leave, away, return to the line, expiry, end, config off), each increasing the version;
-  - list ordering;
-  - `lobbyResolveAll` over the given identities, all or nothing for admissions.
+  - the ticket is refused by LiveKit and by every Meet route but the realtime connection, the token request and the leave request;
+  - a full meeting still lets a participant wait, and an admitted participant finding it full is back in line with `202`;
+  - admission joins with the same identity and starts the meeting, and the ticket replayed afterwards answers `409` without `lobbyBypass` (also after a kick);
+  - a lost answer after the admission was used up: the retry answers `409` with `status` `admitted`;
+  - turning the waiting room off gives each waiter a join token with their identity, and granting `lobbyBypass` to a waiter's role keeps them waiting.
 
-  Verify with unit tests over a fake Redis and an integration test with two app instances as two replicas (admit and reject at once: one `200`, one `404`; two admissions for the last place: one `200`, one `409`).
-- [ ] 4.3 Add the admission register (`meeting_admitted:<roomId>:<roomSid>`):
-  - written by the `register` step of the join and admission modes;
-  - deleted by `handleRoomFinished`;
-  - enforced in `handleParticipantJoined` for standard participants;
-  - cleared for the identity by `kickParticipant`;
-  - checked by `withRoomPermission('meetingRead')` in rooms with the waiting room on.
+  A unit test of the sweep and the presence path, driving Redis time and the scheduler clock through their collaborators, shows that a wait with fresh presence is never expired after three hours.
+- [ ] 4.2 Create `services/lobby/` with `LobbyAdmissionPolicy`, `LobbyStateService` (keys and one Lua script file per change), `LobbyService` (use cases and their notifications), `LobbyRealtimeHandler` and `LobbySweepTask`, each injectable, following `meet-ce/backend/CLAUDE.md`, with no `container.get` to break a cycle. Implement the state:
+  - the wait id is `sha256(ticket)`: keys, entries, `lobby_seen` members and connection addresses use it, every lookup hashes the presented ticket first, and the ticket is never stored or logged;
+  - the Redis keys (`lobby:<roomId>`; `lobby_wait:<waitId>` with `roomName` and `type` stored at the knock (the entry carries `type` too), no TTL while the wait lives and 5 minutes after it ends; the `lobby_seen` sorted set, member `<roomId>:<waitId>`, score the last-seen time, the knock writing its time minus 45 s; the sweep's last-run time and the time of the last gap it saw); room close and deletion run `end(all, room_closed)` and leave each `lobby_wait` to expire with its outcome;
+  - six Lua scripts (`knock` with the 100 limit, ending an earlier wait of the same identity as `left`; `decide` for admit and reject, named or with `all`, admit given the room's capacity from the caller and counting the `admitted` entries as taken places (up to the free places for `all`, `409` for a named set that does not fit) and reject everyone waiting when it runs; `return`; `consume`; `presence`; `end` of the given waits or all, with an outcome), each taking the time from Redis `TIME` and returning the waiting identities in order, and each that removes an entry also removing its `lobby_seen` member and setting `EXPIRE 300` on its `lobby_wait`;
+  - the state sent to a waiter built from the entry or outcome and the room's status and `lobby.message` from MongoDB;
+  - `lobbyList` answering `{ participants, availablePlaces }` (one LiveKit count of the connected standard participants minus the `admitted` entries not used yet, never below 0, `null` without a limit; an empty list with the waiting room off);
+  - `lobbyAdmit` and `lobbyReject` over the given identities, all or nothing: `404` naming the first identity that no longer waits, `422` for a repeated identity; `lobbyAdmit` answers `409` when the named participants outnumber the free places (the same count, taken inside `decide`), and with `all` admits the first waiting in arrival order up to the free places, answering who was admitted; `lobbyReject` with `all` rejects every entry waiting when the script runs, answering who was rejected;
+  - logs: knocks, decisions, returns and expiries at `verbose` with `roomId` and identity, never the ticket; `warn` when the presence path reconciles a room or the sweep skips a run.
 
-  Verify with integration tests: a kicked participant reconnecting with their old token is removed; an old join token in the next meeting is removed; an admitted member joining again skips the wait; `meetingGet`, `participantList` and `broadcastList` answer `403` to a waiting credential and to a token of a link holder who never asked, and `200` to an admitted participant.
+  Verify with unit tests over a fake Redis (including "no key of an ended wait lacks a TTL, on every path": knock replacing a wait, decide, consume, end, room deletion, sweep expiry) and an integration test with two app instances as two replicas (admit and reject at once: one `200`, one `404`; two concurrent admissions for the last place: one `200` and one `409`; an admitted entry no longer counting once its token was issued, once it returned to the line, and a minute after its tab closed; `all` with three waiting and two free places: the first two admitted, the third still waiting; `lobbyReject` with `all` while a knock arrives on the other replica: the knock is either rejected with the others or still waiting, never lost).
+- [ ] 4.3 Restrict meeting actions to join tokens: in `RoomAccessService.getAuthenticatedRoomMemberPermissions`, through `LobbyAdmissionPolicy`, keep only `recordingList`, `recordingPlay`, `recordingDownload`, `recordingDelete` and `roomShareAccessLinks` for a room member token without participant identity in a room with the waiting room on, every other permission read as denied. Route `applyRecordingListAccessFilters` (`recording.middleware.ts:137`), which reads the token's permissions directly, through the same resolver, so no permission check bypasses it.
+
+  Verify with integration tests: `meetingGet`, `participantList`, `broadcastList` and `recordingStart` answer `403` to a token minted without joining and `200` to an admitted participant, to a holder of `lobbyBypass` and to a moderator demoted during the meeting; `lobbyAdmit` answers `403` to a waiting holder of `lobbyAdmin` using a token minted without joining; `recordingList` keeps answering `200` to a token minted without joining.
 - [ ] 4.4 Register the realtime handler:
-  - presence on open, `lobby_seen` heartbeat every 10 s for local waiting connections;
-  - immediate removal on close codes `4000` and `1001`;
-  - per-waiter `lobby.state` with `waitId`, `queuePosition`, `waitedSeconds`, `hostPresent` and `message`;
-  - final states recorded and resent on reconnection and on channel resync.
+  - the `lobbyTicket` authenticator: `lobby_wait:<sha256(ticket)>` resolved to the room and the wait, the connection addressed by the wait id, an unknown ticket refused (`4403`);
+  - presence on open and on each `onPong`, by the `presence` script, which sets the wait's `lobby_seen` score to Redis `TIME` while the wait has an entry and returns the current state or outcome, sent straight to that connection with `connection.send` as `lobby.state`;
+  - on open and on each `onPong`, the room read that builds the state also reconciles: a closed or deleted room ends the wait as `room_closed`, a room with the waiting room off as `admitted` (`origin` `system`);
+  - one `lobby.state` message (`status`, `queuePosition` from 1, `waitedSeconds`, `meetingActive` and `message`, omitted when the room cannot be read) pushed per wait and change through the channel, best effort, the room's start, end or message change not being one of them;
+  - final states recorded and sent again on reconnection and on every answered ping; the server never closes the connection.
 
-  Add the internal `GET /meetings/{roomId}/lobby/me` and the 15 s sweep (away at 30 s, admitted entries back to the line at 60 s, expiry at 5 minutes) through `TaskSchedulerService`. Verify with unit tests driving the clock through the scheduler, and with integration tests (realtime suite of `add-realtime-channel`) for:
-  - knock, leave, page closed, away, return and expiry;
-  - reconnection keeping the place, and a replica stop with reconnection through the other replica;
-  - a second wait of the same identity taking over the first;
-  - polling with the realtime connection refused;
-  - one `participantKnocked` webhook per wait.
-- [ ] 4.5 Serve `lobbyList`, `lobbyResolve` and `lobbyResolveAll` in `meeting.routes.ts` with `withRoomPermission('lobbyAdmin')`, a thin controller and request validators. Send `meet_lobby_updated` (version) to the `lobbyAdmin` holders of the meeting after each change, to a joiner holding `lobbyAdmin` in `handleParticipantJoined`, and to a participant who gains `lobbyAdmin` in `updateParticipantRole`. Recompute `hostPresent` on the meeting's participant webhooks and on role changes. Send `lobbyStatusChanged` webhooks for every change after the knock. Verify with the integration tests `meetings` (codes `200`, `403`, `404`, `409`, `422`, order, empty list, skipped identities) and `meeting-security`, and unit tests of `livekit-webhook.service` and `frontend-event.service`.
+  Add the 5 s sweep (`LobbySweepTask`, Redis only: one `ZRANGEBYSCORE` over `lobby_seen` for the waits unseen for 60 s, a knock never followed by a connection included, ended as `expired`; no expiry on a run that follows a gap of more than 15 s, nor on the runs within 25 s after it) through `TaskSchedulerService`. Verify with unit tests driving the clock through the scheduler, and with integration tests (realtime suite of `add-realtime-channel`) for:
+  - knock, leave and expiry, and a knock never followed by a connection listed by `lobbyList` at once, with its `participantKnocked`, and removed as `expired` within 20 s (the sweep runs every 5 s);
+  - a final state whose publish is lost reaching the waiter within about 20 s, also while the replica holding the connection has lost its Redis subscription;
+  - a room closed or switched off whose `end` script never ran: each connected waiter told `room_closed` or `admitted` at their next answered ping;
+  - a Redis pause of 50 s with healthy connections: nobody expired, also when two queued sweep runs flush back to back (a unit test with two runs a few milliseconds apart after a gap);
+  - the room read failing (MongoDB down): the state is sent with the last known room fields, or without them on open, and nothing is reconciled;
+  - leaving while the realtime connection is down: removed at once, `left` sent;
+  - a page closed, and a connection that stops answering pings without closing: removed within about a minute as `expired`;
+  - a reconnection within the minute keeping the place, also through another replica after a replica stop;
+  - an admitted participant whose token was issued is never reported as `expired`;
+  - a wait rejected during a short disconnection: the reconnection reports it and starts no new wait;
+  - a second request of the same identity: the first wait ends as `left`, the new one is at the end of the line with a new `participantKnocked`;
+  - one `participantKnocked` webhook per wait;
+  - the 101st knock answering `409` and a waiter's state holding nothing that identifies the others (names, identities, `externalId`, `metadata`).
+- [ ] 4.5 Serve `lobbyList` (`GET /:roomId/lobby`), `lobbyAdmit` (`POST /:roomId/lobby/admit`) and `lobbyReject` (`POST /:roomId/lobby/reject`) in `meeting.routes.ts` with `withRoomPermission('lobbyAdmin')`, a thin controller and request validators, and the internal leave (`POST /internal-api/v1/meetings/:roomId/lobby/leave?lobbyTicket=`, on `internalMeetingRouter`, no body, `204` whatever the state of the wait). Send `meet_lobby_updated` (`roomId`, `timestamp`) to the whole meeting room after each change, the knock included, at once and without waiting for the waiting screen to connect. Send `lobbyStatusChanged` webhooks for every change after the knock, with `waitedSeconds` and `origin`. Verify with the integration tests `meetings` (codes `200`, `403`, `404` with nothing changed when one identity no longer waits, naming it, `409` for a named set that does not fit (also two concurrent admissions for the last place), `204` for a leave with a ticket of another room, `all` admitting up to the free places, `lobbyReject` with `all` rejecting everyone waiting, `422` for an empty list, a repeated identity, `all` other than `true` and both or neither of `participantIdentities` and `all`, order, empty list, the waiting room off, answers with no meeting running) and `meeting-security`, and unit tests of `livekit-webhook.service` and `frontend-event.service`.
 - [ ] 4.6 End and return waits:
-  - `meetingEnd` (every surface) and the duration limit record `lobby_end_reason:<roomId>`, and `handleRoomFinished` ends the waits with `meeting_ended` only when it exists, and otherwise returns admitted entries to the line;
+  - `meetingEnd` (every surface) and the duration limit end the waits with `meeting_ended` right after the LiveKit room is deleted; a failed deletion ends nothing, and a meeting that empties changes nothing;
   - `room_closed` when the room actually closes or is deleted, in the idle paths and when `handleRoomFinished` applies a scheduled `meetingEndAction`;
-  - everyone let in when `updateMeetRoomConfig` turns `lobby.enabled` off, and the new `lobby.message` sent to the waiters when it changes.
+  - everyone let in when `updateMeetRoomConfig` turns `lobby.enabled` off (the config write made conditional on the room having no active meeting, like `updateIdleRoomStatus`; entries removed, `admitted` sent and recorded as each wait's outcome, the ordinary join on each request with the ticket, the first requests to arrive getting the free places whatever the line order, "Meeting full" for one that does not fit);
+  - turning `lobby.enabled` on sets `rolesUpdatedAt` in the same conditional write, only when the stored value is `false` and the update sets it to `true`, judged inside that write; verify that a join token issued before is refused (`401`) and its reconnection removed, and that saving the config of a room whose waiting room is already on (only `lobby.message` changed) keeps every token valid.
 
-  Verify with integration tests of each path (a meeting that empties keeps the waits; closing during a meeting ends them only when it ends) and the `webhook` suite (`participantKnocked` once, `lobbyStatusChanged` statuses, room-scoped filter honored).
+  Verify with integration tests of each path (a meeting that empties keeps the waits; an explicit end ends them, but not a wait started after it; closing during a meeting ends them only when it ends) and the `webhook` suite (`participantKnocked` once, `lobbyStatusChanged` statuses, room-scoped filter honored).
 
 ## 5. Meeting UI: the participant who waits
 
+- [ ] 5.0 Teach the translation engine plurals and ordinals: `TranslateService.translate` (`shared/services/i18n/translate.service.ts`) resolves ICU-style variants inside a string, `{name, plural, ...}` and `{name, selectordinal, ...}`, with the CLDR category from `Intl.PluralRules` for the active language (`type: 'ordinal'` for `selectordinal`), `=N` exact matches, `other` required, `#` replaced by the number formatted for that language, no nesting, and the rules cached per language and type; `cn` maps to `zh` and `pt` to `pt-PT`. Strings without a variant behave as today. Write the waiting room's counted strings with variants in every locale ("You're 2nd in line", "2 places left", "3 waiting to join", "Admit 3", "Waiting 4 min"). Verify with Karma cases in `translate.service.spec.ts`: English `one`, `two`, `few` and `other` ordinals (1st, 2nd, 3rd, 11th, 22nd), `one` and `other` plurals (1 place, 2 places), `=0`, a language with more categories, a fallback to `other`, a string without variants unchanged, and a language switch picking that language's rules.
 - [ ] 5.1 Create `domains/meeting/waiting-room/` with `WaitingRoomService` and add the `waiting` phase:
-  - the device setup button reads "Ask to join" when the participant would wait;
-  - a waiting credential keeps the device setup tracks and opens `RealtimeConnectionService` with `maxDelayMs` 5 s, falling back to polling `lobby/me` every 5 s after 10 s without a connection;
-  - `admitted` requests the token in admission mode and connects without reloading, closing the realtime connection once connected, and returns to `waiting` on failure;
-  - the waiting credential is renewed before expiry instead of the in-meeting refresh;
-  - "Leave waiting room", `meetingLeave` and removing the element close with `4000`;
-  - the tab title shows the position and "You're in", and an admission while the page is hidden joins with the microphone off;
+  - the Join screen button reads "Ask to join" when the participant would wait, and submitting it requests the token at once, skipping `prejoin`; the client follows the answer, not its guess: a `202` to any join request (Ask, or Join from the device setup screen) opens the waiting phase with its ticket and the devices already chosen, and a token answered to Ask joins at once; only these requests and the ticket request accept a `202`, the refresh fallback, the permissions-updated regenerate and the 401 recovery treat it as an error, and the waiting phase never marks the meeting active;
+  - the waiting screen creates and seeds the local tracks as `prejoin` does (initial media state, room defaults, device errors), with no credential, and an admission before the device prompt is answered joins with that device off;
+  - the ticket opens `RealtimeConnectionService` as soon as the `202` arrives, before the local tracks are created, with `giveUpAfterMs` 60 s, counted from the last message received; the screen says it is reconnecting while the connection is down, and "You lost your place" with "Ask to join again" when the client gives up or the ticket is refused (`4403` or `1008`); a client that gives up without ever receiving a message on this ticket shows the connection error screen instead and logs a console error naming the WebSocket URL;
+  - `admitted` asks for the token with the ticket: a token disconnects the realtime client and connects without reloading; a `202` stays waiting; a `409` shows its screen; a `429` is retried after its `RateLimit` reset while the realtime connection is up; another server failure is retried for up to 30 s, then the connection error screen is shown; after the token, a full meeting found by LiveKit (told through `meetingGet` as today) shows "Meeting full" and other connection failures the connection error screen;
+  - at most one token request with the ticket in flight: while one is in flight, `waiting` and `admitted` states are ignored and a final state is kept until the answer; a token answer always wins, and once the client holds a token it ignores every later answer and state of that wait; after "Leave waiting room" or `meetingLeave`, a token answer is discarded;
+  - `lobby.state` applied independently of the order of arrival: a final state is sticky, shows its screen and disconnects for good; `admitted` asks for the token and only that answer decides; `waiting` is shown as it comes and corrected at the next ping;
+  - the ticket is never stored as a token in `RoomMemberContextService`, and nothing renews it;
+  - "Ask to join again" asks like the first time, without the ticket;
+  - "Leave waiting room" and `meetingLeave` send the leave request with `keepalive`, the ticket in the query, and disconnect; removing the element only disconnects;
+  - an admission while the page is hidden joins with the microphone off, for that join only; the waiting room never writes the page title;
   - the embedded command gate accepts `mediaToggleAudio`, `mediaToggleVideo` and `meetingLeave` while waiting;
   - every check of the `prejoin` phase reviewed for `waiting`.
 
-  Verify with Karma specs of the meeting view, `WaitingRoomService`, `embedded-command.service` and `room-member-context.service`.
+  Verify with Karma specs of the meeting view, `WaitingRoomService`, `embedded-command.service` and `room-member-context.service`: a `202` answered to Join opens the waiting phase; a token answered to Ask connects; the 401 recovery never sends `joinMeeting` while waiting; a stale `waiting` after a final state is ignored; a second `admitted` during the token request sends nothing; a `409` after a token is ignored; a token answered after "Leave waiting room" is discarded; a `429` waits for its reset; a client that never received a message shows the connection error screen.
 - [ ] 5.2 Build, as separate library components following the canvas and translated in every locale:
-  - the waiting screen (position as the title, time waited, message, shorter camera preview, "The host hasn't joined yet", quiet "Leave waiting room", phone layout);
-  - the rejected, left, replaced, ended and "waiting room full" screens with "Ask to join again" where it applies (disabled during the 15 s pause) and the end screen's dismiss button.
+  - the waiting screen (position as the title, time waited, message, shorter camera preview, "The meeting hasn't started yet" from `meetingActive`, quiet "Leave waiting room", phone layout);
+  - the rejected, left, expired ("You lost your place", also when the same identity asked again elsewhere), ended and "waiting room full" screens with "Ask to join again" where it applies (after a rejection, disabled for the 15 s that follow it; the server has no pause) and the end screen's dismiss button.
 
-  Emit `lobbyStatusChanged` for every state and never `meetingLeft` for a wait. Verify with Karma component specs and the webcomponent Jest tests of the event payloads.
+  Screen readers: position changes in a polite live region, throttled to one announcement every 10 s; the admission and the final states in an assertive region, with focus moved to the outcome screen's heading.
+
+  Emit `lobbyStatusChanged` with `participantIdentity` for every state and never `meetingLeft` for a wait; `expired` when the screen says "You lost your place" without the server having reported `left` (the client gave up, the ticket is no longer known, a `409` after an admission); no lobby event after an access or connection error, whose screen and dismiss (`embeddedCloseRequested`) apply, nor for an `admitted` followed by "Meeting full", and the first `waiting` with the first state received, none when the connection never receives one. Verify with Karma component specs (including the live regions and the focus move) and the webcomponent Jest tests of the event payloads.
 
 ## 6. Meeting UI: holders of lobbyAdmin
 
 - [ ] 6.1 Add `LobbyAdminService` in `domains/meeting/waiting-room/`:
-  - fetch `lobbyList` on a higher `meet_lobby_updated` version (grouped within 300 ms), on joining, after a LiveKit reconnection and on gaining `lobbyAdmin`, honoring server-sent packets only;
-  - derive `lobbyUpdated`, and `participantKnocked` from new `(participantIdentity, knockDate)` pairs after the first list;
-  - run the four commands through the REST operations with the identities of the list held.
+  - while holding `lobbyAdmin`, fetch `lobbyList` on a `meet_lobby_updated` signal (grouped within 300 ms), on joining, after a LiveKit reconnection, when its own permissions gain `lobbyAdmin`, every 30 s while it holds `lobbyAdmin` in the meeting, and, while the list is not empty, when a participant joins or leaves the meeting (grouped in the same 300 ms window), honoring server-sent packets only; without `lobbyAdmin`, ignore the signal, and on losing `lobbyAdmin` stop the polling and the handling at once, remove the section, the chip and the notifications, and emit no more `lobbyUpdated` or `participantKnocked`;
+  - derive `lobbyUpdated`, and `participantKnocked` from `(participantIdentity, knockDate)` pairs of `participants` not seen in any earlier list since joining, after the first list, so a return to the line is not a knock;
+  - show the free places from `availablePlaces`;
+  - run the two commands, and the panel's row and bulk buttons, through `lobbyAdmit` and `lobbyReject` with the identities given or shown (the `all` form of either command passed as given); Deny all sends `lobbyReject` with `all: true`; "Admit N" sends the first N shown that fit in the free places, and on `404` resends once, without asking again, with the confirmed identities still present in a fresh list; on `409`, a second `404`, or a row's `404`, fetch the list again and let the admitter decide on the new one.
 
-  Verify with Karma specs of the service and the command handler.
+  Verify with Karma specs of the service and the command handler (a participant leaving the meeting refreshes the free places; losing `lobbyAdmin` stops everything at once; Deny all sends `all: true` and never asks again; "Admit N" resends once on `404`).
 - [ ] 6.2 Build, as separate library components:
-  - the "Waiting to join" panel section, with rows marking who is away, the free places, Deny all, "Admit N" (disabled when they do not fit) and the Deny all confirmation dialog;
-  - the status rail chip at the right end, in amber tint;
-  - the notification below the rail with two actions, grouped with View, one grouped notification on joining with people waiting, only while the panel is closed and dismissed by opening it (`ov-notification` gains a second action);
+  - the "Waiting to join" panel section, with the free places, a "Shared link" label on the rows of `anonymous` participants, Deny all, "Admit N" (the first N in line that fit, disabled when no place is free), the Deny all confirmation dialog, and the time each asked to join next to a name two rows share ("Ana · 10:42");
+  - the status rail chip at the right end, in amber tint, with an accessible name ("3 waiting to join");
+  - the notification below the rail with two actions, grouped with View, one grouped notification on joining with people waiting, only while the panel is closed and dismissed by opening it (`ov-notification` gains a second action); it never takes focus and its actions are reachable by keyboard;
   - decrypted or masked names in encrypted rooms.
 
   Translate everything in every locale. Verify with Karma component specs (`status-rail.component`, panel, notification).
@@ -138,38 +162,45 @@ Requires `add-realtime-channel` on the branch.
 ## 8. End-to-end
 
 - [ ] 8.1 Add SPA e2e cases:
-  - knock → admit (same identity, devices kept);
+  - "Ask to join" on the Join screen → devices changed on the waiting screen → admit (same identity, devices kept), and a `lobbyBypass` holder still going through device setup;
   - knock → deny → ask again after the pause (end of the line);
-  - leave, and page closed;
+  - leave, also while the realtime connection is down, and a page closed removed within about a minute;
   - position updates;
-  - the time waited kept across a reload;
-  - "The host hasn't joined yet" until a moderator joins;
+  - a member who reloads asks again and waits at the end of the line;
+  - "The meeting hasn't started yet" until the meeting starts;
   - the host losing the connection without ending the waits;
-  - the last free place: one admitted, the next admission refused;
+  - the last free place: the second admission is refused (`409`) while the first admitted participant is on the way, and the panel shows no place left; "Admit N" with fewer places than waiters admitting the first in line;
   - notification only with the panel closed;
-  - Deny all with confirmation;
+  - Deny all with confirmation, also when one of those waiting leaves before the confirmation;
+  - a participant listed in the moderator's panel as soon as they press "Ask to join";
+  - a participant leaving a full meeting: the panel shows the free place within a few seconds;
+  - the waiting room turned off with three waiting and two places: the first two to ask get in, the third sees "Meeting full";
   - the meeting ended by a moderator while waiting;
-  - a kicked participant removed when reconnecting with the old token.
-- [ ] 8.2 Add webcomponent e2e cases, on both integrations (element and iframe):
-  - `lobbyStatusChanged` sequences;
-  - `lobbyUpdated` on joining and on changes, and `participantKnocked` for new knocks only;
-  - the four commands with and without `lobbyAdmin`;
-  - `meetingLeave` and `mediaToggleVideo` while waiting;
+  - the waiting room turned on while a speaker is on the device setup screen: pressing join opens the waiting screen.
+- [ ] 8.2 Add to the testapp a control for each new command (`lobbyAdmit`, `lobbyReject`, with one or several identities or `all`) and a listener for each new event (`participantKnocked`, `lobbyUpdated`, `lobbyStatusChanged`), on both the web component and the iframe paths (`testapp/CLAUDE.md`), then add webcomponent e2e cases, on both integrations (element and iframe):
+  - `lobbyStatusChanged` sequences, with `participantIdentity`;
+  - `lobbyUpdated` on joining and on changes, with `availablePlaces`, and `participantKnocked` for new knocks only, not for a return to the line;
+  - the two commands with one and with several identities and with `all`, and without `lobbyAdmin`;
+  - `lobbyStatusChanged` with `expired` when the meeting says the participant lost their place;
+  - `meetingLeave` and `mediaToggleVideo` while waiting, and `meetingLeave` followed at once by the element's removal: `left`;
+  - removing the element and removing the iframe while waiting: removed within about a minute as `expired`, never `left`;
   - the `participantKnocked` and `lobbyStatusChanged` webhooks through the bridge.
 
   Run the suites against the local deployment, headless, or report them as not run.
 
 ## 9. Release surfaces
 
-- [ ] 9.1 Add the lines under the unreleased release of `CHANGELOG.md`:
-  - Added > Integration: the waiting room on the REST API, the webhooks and the embedded API, with `config.lobby`, `lobbyBypass`, `lobbyAdmin`, `lobbyList`, `lobbyResolve`, `lobbyResolveAll`, `participantKnocked`, `lobbyStatusChanged`, `lobbyUpdated`, `lobbyAdmit`, `lobbyReject`, `lobbyAdmitAll` and `lobbyRejectAll`; in rooms with it on, `meetingGet`, `participantList`, `participantGet`, `broadcastList` and `broadcastGet` require admission or `lobbyBypass`;
+- [ ] 9.1 Add the lines under 3.10.0 (unreleased) of `CHANGELOG.md`:
+  - Added > Integration: the waiting room on the REST API, the webhooks and the embedded API, with `config.lobby`, `lobbyBypass`, `lobbyAdmin`, `lobbyList`, `lobbyAdmit` and `lobbyReject` (REST operations and embedded commands, for named participants or `all`), `participantKnocked`, `lobbyStatusChanged` and `lobbyUpdated`; in rooms with it on, a room member token acts on the meeting (reads, moderation, recording and broadcast control, admission) only if it carries a participant identity; turning it on invalidates the room member tokens issued before, the one change of `config` that does, and updates `rolesUpdatedAt`;
   - Added > UI: the waiting screen, the admitters' panel section, chip and notification, and the wizard section;
-  - Upgrade notes: existing rooms keep the waiting room off, and their moderator role gains `lobbyBypass` and `lobbyAdmin`.
-- [ ] 9.2 openvidu.io: write `docs/meet/features/meetings/waiting-room.md` (turning it on, who waits, admitting and rejecting, capacity, what the participant sees, who reads the meeting, embedded API and webhooks) with screenshots, and register it in the navigation.
-- [ ] 9.3 openvidu.io: add `lobby` to `docs/meet/features/meetings/configuration.md`.
-- [ ] 9.4 openvidu.io: add `lobbyBypass` and `lobbyAdmin` to the predefined roles of `docs/meet/features/rooms/access.md`.
-- [ ] 9.5 openvidu.io: list `participantKnocked` and `lobbyStatusChanged` in `docs/meet/embedded/reference/webhooks.md`.
-- [ ] 9.6 openvidu.io: regenerate the embedded API reference with `./meet.sh build-webcomponent-doc ../openvidu.io/shared/meet` and the REST API reference with `./meet.sh build-rest-api-doc ../openvidu.io/docs/meet/embedded/reference/api.html`.
+  - Upgrade notes: fold "keep the waiting room off, and their moderator role gains `lobbyBypass` and `lobbyAdmin`" into the existing "Existing rooms get raise hand and reactions turned on ..." line, and `participantKnocked` and `lobbyStatusChanged` into the existing "Webhooks registered without `events` ..." line; one new line: Meet opens a WebSocket on its own path (`<base path>/internal-api/v1/ws`), so a proxy or load balancer of the operator's own in front of Meet passes WebSocket upgrades on the Meet path and keeps idle connections open for more than 20 seconds, and an external Redis whose Meet user is restricted by ACL grants it the channel permission `&ov_meet:*`.
+- [ ] 9.2 openvidu.io: write `docs/meet/features/meetings/waiting-room.md` (turning it on, who waits, admitting and rejecting, capacity, what the participant sees, who acts on the meeting, embedded API and webhooks) with screenshots, and register it in the navigation. Its "who acts on the meeting" part states that a host application acting on a meeting behind a waiting room for itself (a dashboard, an admission backend) uses the API key, since a room member token needs its holder let into the meeting. Its capacity part states that turning the waiting room off while more participants wait than the meeting can take lets in whoever's meeting asks first, not the first in line, and that a participant is listed as soon as they ask, so one who never opens the waiting screen shows for 15 to 20 seconds. It also states: that `externalId` and `metadata` are as sent by the participant's client and prove nothing, an admission backend identifying waiters by `type` and by the `participantIdentity` of a member or user; the free places count the participants admitted who have not joined yet; that a leaked link can keep the waiting room full during a meeting, whose remedy is to end the meeting and change the link; and that an anonymous waiter who reloads shows twice for up to a minute.
+- [ ] 9.3 openvidu.io: in `docs/meet/embedded/reference/webcomponent.md`, state that a host page with a Content Security Policy allows the Meet origin in `connect-src` for WebSocket too (`wss://`), since the web component opens the realtime connection from the host page.
+- [ ] 9.4 openvidu.io: add `lobby` to `docs/meet/features/meetings/configuration.md`.
+- [ ] 9.5 openvidu.io: add `lobbyBypass` and `lobbyAdmin` to the predefined roles of `docs/meet/features/rooms/access.md`.
+- [ ] 9.6 openvidu.io: list `participantKnocked` and `lobbyStatusChanged` in `docs/meet/embedded/reference/webhooks.md`.
+- [ ] 9.7 openvidu.io: in `docs/meet/features/meetings/moderation.md`, state that a kicked participant joins again at once except in a room with the waiting room on, where one without `lobbyBypass` asks again and waits.
+- [ ] 9.8 openvidu.io: regenerate the embedded API reference with `./meet.sh build-webcomponent-doc ../openvidu.io/shared/meet` and the REST API reference with `./meet.sh build-rest-api-doc ../openvidu.io/docs/meet/embedded/reference/api.html`.
 
 ## Workflow follow-up
 
@@ -178,6 +209,9 @@ Requires `add-realtime-channel` on the branch.
   - title the new spec `# Waiting Room Specification` and complete its Purpose with the surfaces and the openvidu.io page;
   - map `lobby` to `waiting-room` in the Purpose of `room-config`;
   - move "Waiting room permissions" next to the other permission groups of `permissions`.
-- The design canvas follows these decisions since 2026-11-09 (21 artboards, including joining, back in line, reconnecting, meeting ended, replaced and "waiting room full"); keep it in step if the copy changes during implementation.
+- The design canvas follows these decisions since 2026-11-09 (21 artboards, including joining, back in line, reconnecting, meeting ended, replaced and "waiting room full"), except the 2026-11-09 API review: "The host hasn't joined yet" becomes "The meeting hasn't started yet", and the Denied board's "Ask to join again" stays disabled for 15 s, and since round 9 the panel's "Admit N" admits the first N in line that fit instead of being disabled when they do not all fit, and since round 10 the tab never shows the position, a repeated name shows its arrival time and Deny all rejects everyone waiting when it arrives; update it, and keep it in step if the copy changes during implementation.
+- The target contract `../openvidu-competitors/meet-update-plan/new-api-format.md` was aligned with this change on 2026-11-09 (lobby module, knock event, bulk commands taking identities, the list as `participants` and `availablePlaces`, the `all` form of `lobbyAdmit`), and on 2026-11-09 after review round 10 (the `all` form of `lobbyReject`).
+- Follow-up outside this change: a host action that stops new requests to join during a meeting, the answer to a leaked link that keeps the waiting room full.
 - Follow-up outside this change: sounds for a knock (admitters) and for an admission (waiter), with `SoundService`.
-- Delete the superseded `MEET-LOBBY-LOCK-ROOM-PLAN.md` and `MEET-LOBBY-LOCK-ROOM-PLAN.es.md` from the repository root.
+- Follow-up outside this change: a machine-readable error code for the `409` answers of the token request (closed room, full meeting, full waiting room), which the client tells apart by their message today.
+- The design canvas has an away marker, a "replaced" board for a wait taken over and a reconnecting board that keeps the place for five minutes; since 2026-11-09 a place lasts one minute without the connection, every request is a new wait and nobody is shown as away. Update those boards.

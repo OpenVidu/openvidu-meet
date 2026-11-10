@@ -30,3 +30,30 @@ Each feature object of a config (`chat`, `recording`, `virtualBackground`, `e2ee
 #### Scenario: Waiting room message without its switch
 - **WHEN** `updateRoomConfig` is called with `config` `{ "lobby": { "message": "Please wait" } }`
 - **THEN** the server answers `422` naming `lobby.enabled`
+
+### Requirement: Updates merge with the stored config
+The server SHALL merge an update into the stored config: every field the update leaves out, at any depth, SHALL keep its stored value, and `null` SHALL lift `maxParticipants`, `maxDurationMinutes` or `recording.autoStart`, and remove `lobby.message`. A `broadcast.destinations` list that is sent SHALL replace the stored list as a whole instead of merging with it (see `live-broadcast`).
+
+#### Scenario: Recording switched off keeps its settings
+- **GIVEN** a room whose recording uses layout `speaker`
+- **WHEN** `updateRoomConfig` is called with `config` `{ "recording": { "enabled": false } }`
+- **THEN** the stored recording is disabled and keeps layout `speaker` and its encoding
+
+#### Scenario: Limit lifted with null
+- **GIVEN** a room with `maxDurationMinutes` 60 and `maxParticipants` 10
+- **WHEN** `updateRoomConfig` is called with `maxDurationMinutes` `null`
+- **THEN** the stored `maxDurationMinutes` is `null` and `maxParticipants` stays 10
+
+#### Scenario: Auto-start turned off
+- **GIVEN** a room with `recording.autoStart` `when_first_participant_joins`
+- **WHEN** `updateRoomConfig` is called with `recording` `{ "enabled": true, "autoStart": null }`
+- **THEN** the stored `recording.autoStart` is `null`
+
+#### Scenario: Destination list sent shorter
+- **GIVEN** a room with three broadcast destinations
+- **WHEN** `updateRoomConfig` sends `broadcast.destinations` holding only the first one, with its `id`
+- **THEN** the stored list holds that destination alone
+
+#### Scenario: Waiting room message removed
+- **WHEN** `updateRoomConfig` is called with `lobby` `{ "enabled": true, "message": null }`
+- **THEN** the stored waiting room has no message

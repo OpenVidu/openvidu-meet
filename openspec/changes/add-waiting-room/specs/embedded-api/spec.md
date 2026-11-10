@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Command catalogue
-Meet SHALL accept exactly the commands `meetingLeave`, `meetingEnd`, `participantKick`, `participantMute`, `participantMuteAll`, `participantUpdateRole`, `participantHandRaise`, `participantHandLower`, `participantHandLowerAll`, `participantReactionSend`, `mediaToggleAudio`, `mediaToggleVideo`, `mediaToggleScreenShare`, `recordingStart`, `recordingStop`, `broadcastStart`, `broadcastStop`, `lobbyAdmit`, `lobbyReject`, `lobbyAdmitAll` and `lobbyRejectAll`, and the deprecated `endMeeting`, `leaveRoom` and `kickParticipant`, each as its owner specifies.
+Meet SHALL accept exactly the commands `meetingLeave`, `meetingEnd`, `participantKick`, `participantMute`, `participantMuteAll`, `participantUpdateRole`, `participantHandRaise`, `participantHandLower`, `participantHandLowerAll`, `participantReactionSend`, `mediaToggleAudio`, `mediaToggleVideo`, `mediaToggleScreenShare`, `recordingStart`, `recordingStop`, `broadcastStart`, `broadcastStop`, `lobbyAdmit` and `lobbyReject`, and the deprecated `endMeeting`, `leaveRoom` and `kickParticipant`.
 
 #### Scenario: Owner of each command
 - **WHEN** a reviewer looks up what a command does
@@ -13,7 +13,7 @@ Meet SHALL accept exactly the commands `meetingLeave`, `meetingEnd`, `participan
 - **AND** `mediaToggleAudio`, `mediaToggleVideo` and `mediaToggleScreenShare` in `meeting-media`
 - **AND** `recordingStart` and `recordingStop` in `recordings`
 - **AND** `broadcastStart` and `broadcastStop` in `live-broadcast`
-- **AND** `lobbyAdmit`, `lobbyReject`, `lobbyAdmitAll` and `lobbyRejectAll` in `waiting-room`
+- **AND** `lobbyAdmit` and `lobbyReject` in `waiting-room`
 - **AND** `endMeeting`, `leaveRoom` and `kickParticipant` in this capability, as aliases
 
 ### Requirement: Commands run only when the meeting phase allows them
@@ -36,7 +36,7 @@ Meet SHALL run `mediaToggleAudio` and `mediaToggleVideo` from the device setup s
 
 #### Scenario: Meeting command while waiting
 - **GIVEN** a participant holding `lobbyAdmin` who waits to be admitted
-- **WHEN** the host calls `lobbyAdmitAll()`
+- **WHEN** the host calls `lobbyAdmit` with the identity of another participant waiting
 - **THEN** nobody is admitted and the console warns that the command was rejected
 
 #### Scenario: Command after leaving
@@ -50,7 +50,7 @@ Meet SHALL run `mediaToggleAudio` and `mediaToggleVideo` from the device setup s
 - **THEN** Meet runs the command instead of rejecting it
 
 ### Requirement: Event catalogue
-Meet SHALL emit exactly the events `meetingJoined`, `meetingLeft`, `participantJoined`, `participantLeft`, `participantKnocked`, `participantRoleChanged`, `participantHandChanged`, `participantReactionSent`, `mediaAudioStatusChanged`, `mediaVideoStatusChanged`, `mediaScreenShareStatusChanged`, `recordingStatusChanged`, `broadcastStarted`, `broadcastUpdated`, `broadcastEnded`, `lobbyUpdated`, `lobbyStatusChanged` and `embeddedCloseRequested`, and the deprecated `joined`, `left` and `closed`, each emitted as its owning capability specifies.
+Meet SHALL emit exactly the events `meetingJoined`, `meetingLeft`, `participantJoined`, `participantLeft`, `participantKnocked`, `participantRoleChanged`, `participantHandChanged`, `participantReactionSent`, `mediaAudioStatusChanged`, `mediaVideoStatusChanged`, `mediaScreenShareStatusChanged`, `recordingStatusChanged`, `broadcastStarted`, `broadcastUpdated`, `broadcastEnded`, `lobbyUpdated`, `lobbyStatusChanged` and `embeddedCloseRequested`, plus the deprecated `joined`, `left` and `closed`.
 
 #### Scenario: Owner of each event
 - **WHEN** a reviewer looks up when an event is emitted and what its payload means
