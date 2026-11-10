@@ -61,6 +61,8 @@ export type MeetRoomSortField = (typeof MEET_ROOM_SORT_FIELDS)[number];
  * Sensitive fields of a MeetRoom that require specific permissions to be viewed.
  * The permission mapped to each field is necessary, not sufficient: an anonymous link URL is also
  * withheld from a caller lacking any permission that link grants (see the OpenAPI `MeetRoomAccess`).
+ *
+ * @deprecated No replacement. Removed in 3.12.0.
  */
 export type MeetRoomSensitiveFieldPath =
 	| MeetRoomField
@@ -81,6 +83,8 @@ const SENSITIVE_ROOM_FIELDS_BY_PERMISSION: Partial<
 /**
  * Each permission with the {@link MeetRoomSensitiveFieldPath} fields it is necessary, but not
  * sufficient, to view.
+ *
+ * @deprecated No replacement. Removed in 3.12.0.
  */
 export const SENSITIVE_ROOM_FIELDS_ENTRIES = Object.entries(SENSITIVE_ROOM_FIELDS_BY_PERMISSION) as ReadonlyArray<
 	[keyof MeetRoomMemberPermissions, MeetRoomSensitiveFieldPath[]]

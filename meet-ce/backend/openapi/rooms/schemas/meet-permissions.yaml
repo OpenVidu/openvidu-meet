@@ -78,7 +78,9 @@ properties:
     roomShareAccessLinks:
         type: boolean
         example: false
-        description: Can share room access links to invite others.
+        description: >
+            Can share the room's anonymous access links to invite others: the holder reads the URL of
+            each anonymous link whose permissions they also hold (see `MeetRoomAccess`).
     participantPromote:
         type: boolean
         example: false
