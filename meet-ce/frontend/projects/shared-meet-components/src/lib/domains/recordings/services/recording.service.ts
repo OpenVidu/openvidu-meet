@@ -23,6 +23,7 @@ export class RecordingService {
 	protected log = this.loggerService.get('OpenVidu Meet - RecordingManagerService');
 
 	protected readonly RECORDINGS_API = `${HttpService.API_PATH_PREFIX}/recordings`;
+	protected readonly INTERNAL_RECORDINGS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/recordings`;
 
 	/**
 	 * Starts recording for a room
@@ -114,6 +115,23 @@ export class RecordingService {
 			path += `?recordingSecret=${recordingSecret}`;
 		}
 
+		return this.httpService.getRequest(path, headers);
+	}
+
+	/**
+	 * Checks a recording link's secret and tells what it grants
+	 *
+	 * @param recordingId - The ID of the recording
+	 * @param recordingSecret - The secret of the recording link
+	 * @param headers - Optional additional headers to include in the request
+	 * @return A promise that resolves to whether the link also downloads the recording or only plays it
+	 */
+	async getRecordingLink(
+		recordingId: string,
+		recordingSecret: string,
+		headers?: Record<string, string>
+	): Promise<{ download: boolean }> {
+		const path = `${this.INTERNAL_RECORDINGS_API}/${recordingId}/link?recordingSecret=${recordingSecret}`;
 		return this.httpService.getRequest(path, headers);
 	}
 

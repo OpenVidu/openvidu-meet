@@ -1,4 +1,4 @@
-import { Service, inject } from '@angular/core';
+import { Service, inject, signal } from '@angular/core';
 import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
@@ -49,7 +49,7 @@ export type RecordingEntryOutcome =
  * 1. **Room-permission path**: try to generate a room member token with the
  *    `recordingList` permission. Honors normal auth flows.
  * 2. **Recording-secret path**: when a `recordingSecret` is supplied, validate
- *    it by fetching the recording with the secret as proof. This is the path
+ *    it by asking what the secret grants. This is the path
  *    used by anonymous users with a shared recording link.
  *
  * Both modes may succeed; both may fail. The service composes the two and
@@ -63,6 +63,9 @@ export class RecordingEntryService {
 	private readonly roomAccessService = inject(RoomAccessService);
 	private readonly recordingService = inject(RecordingService);
 	private readonly leaveRedirect = inject(LeaveRedirectService);
+
+	/** Whether the recording secret of the last validated visit also downloads the recording or only plays it. */
+	readonly linkGrantsDownload = signal(false);
 
 	/**
 	 * Derives the recording's owning room from the recording ID and seeds room
@@ -118,7 +121,8 @@ export class RecordingEntryService {
 
 		try {
 			const headers = { [HTTP_HEADERS.SKIP_AUTH_RECOVERY]: 'true' };
-			await this.recordingService.getRecording(recordingId, recordingSecret, headers);
+			const { download } = await this.recordingService.getRecordingLink(recordingId, recordingSecret, headers);
+			this.linkGrantsDownload.set(download);
 			return { kind: 'ready' };
 		} catch (error: any) {
 			console.error('Error checking recording access:', error);

@@ -22,4 +22,14 @@ describe('RecordingVideoPlayerComponent', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('opens no context menu on the video', () => {
+    fixture.componentRef.setInput('recordingUrl', 'recording.mp4');
+    fixture.detectChanges();
+
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    fixture.nativeElement.querySelector('video').dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBeTrue();
+  });
 });
