@@ -2,9 +2,11 @@ import {
 	MeetDeprecatedPermissionKey,
 	MeetPermissionKey,
 	MeetBroadcastInfo,
+	MeetLobbyList,
 	MeetRecordingInfo,
 	MeetRoom,
 	MeetRoomConfig,
+	MeetRoomConfigOptions,
 	MeetRoomMember,
 	MeetRoomMemberOptions,
 	MeetRoomMemberRole,
@@ -183,6 +185,93 @@ export const updateRoomRoles = async (roomId: string, roles: WireRoomRolesConfig
 	const responseText = await response.text();
 	assertOk(response, responseText, 'update room roles');
 };
+
+/**
+ * Updates a room's config (partial merge). Refused with `409` while the room has a meeting running.
+ */
+export const updateRoomConfig = async (roomId: string, config: MeetRoomConfigOptions): Promise<void> => {
+	const response = await fetch(withApiPath(`/rooms/${encodeURIComponent(roomId)}/config`), {
+		method: 'PUT',
+		headers: {
+			'content-type': 'application/json',
+			'x-api-key': API_KEY
+		},
+		body: JSON.stringify({ config })
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'update room config');
+};
+
+/**
+ * Waits until the room has no meeting running, so its config can be changed again.
+ */
+export const waitForNoActiveMeeting = async (roomId: string, timeoutMs = 30_000): Promise<void> => {
+	const deadline = Date.now() + timeoutMs;
+
+	while ((await getRoomStatus(roomId)) === MeetRoomStatus.ACTIVE_MEETING) {
+		if (Date.now() > deadline) {
+			throw new Error(`Room '${roomId}' still has an active meeting after ${timeoutMs} ms`);
+		}
+
+		await new Promise((resolve) => setTimeout(resolve, 500));
+	}
+};
+
+/**
+ * Ends the room's meeting for everyone, as a host application would.
+ */
+export const endMeeting = async (roomId: string): Promise<void> => {
+	const response = await fetch(withApiPath(`/meetings/${encodeURIComponent(roomId)}`), {
+		method: 'DELETE',
+		headers: { 'x-api-key': API_KEY }
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'end meeting');
+};
+
+/**
+ * Lists the participants connected to the room's meeting, by identity.
+ */
+export const getMeetingParticipantIdentities = async (roomId: string): Promise<string[]> => {
+	const response = await fetch(withApiPath(`/meetings/${encodeURIComponent(roomId)}/participants`), {
+		method: 'GET',
+		headers: { 'x-api-key': API_KEY }
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'list meeting participants');
+
+	const { participants } = JSON.parse(responseText) as { participants: Array<{ participantIdentity: string }> };
+	return participants.map(({ participantIdentity }) => participantIdentity);
+};
+
+/**
+ * Reads the room's waiting room: who waits, in arrival order, and how many places the meeting has free.
+ */
+export const getLobby = async (roomId: string): Promise<MeetLobbyList> => {
+	const response = await fetch(withApiPath(`/meetings/${encodeURIComponent(roomId)}/lobby`), {
+		method: 'GET',
+		headers: { 'x-api-key': API_KEY }
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'get lobby');
+
+	return JSON.parse(responseText) as MeetLobbyList;
+};
+
+/**
+ * Admits the given waiting participants, or everyone waiting up to the free places when none are given.
+ * Answers the raw response, so a test can check a refusal.
+ */
+export const admitFromLobby = (roomId: string, participantIdentities?: string[]): Promise<Response> =>
+	fetch(withApiPath(`/meetings/${encodeURIComponent(roomId)}/lobby/admit`), {
+		method: 'POST',
+		headers: { 'content-type': 'application/json', 'x-api-key': API_KEY },
+		body: JSON.stringify(participantIdentities ? { participantIdentities } : {})
+	});
 
 /**
  * Adds a member to the specified room with the given options.
