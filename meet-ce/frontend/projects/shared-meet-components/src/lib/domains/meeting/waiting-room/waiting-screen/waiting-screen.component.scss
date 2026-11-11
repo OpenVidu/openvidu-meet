@@ -131,6 +131,7 @@
 
 	.video-element {
 		display: block;
+		isolation: isolate;
 		width: 100%;
 		height: 100%;
 	}
