@@ -606,7 +606,7 @@ The console SHALL let an admin or the room's owner add a member at `/rooms/{room
 - **THEN** the member type and name cannot be changed, while the base role and permissions can
 
 ### Requirement: Console permission toggles
-The member form SHALL group the permission toggles under Meeting, Media, Recordings, Live broadcast and Chat, start them at the base role's values, reset them when the role changes, and send as `customPermissions` only the toggles that differ from the role, an empty object when an edited member no longer differs. It SHALL disable `chatWrite`, `mediaChangeVirtualBackground` and `broadcastEdit` while `chatRead`, `mediaPublishVideo` and `broadcastControl` respectively are off, keeping their values.
+The member form SHALL group permission toggles under Meeting, Media, Recordings, Live broadcast, Chat and Waiting room, start them at the base role's values, reset them on a role change, and send as `customPermissions` only the toggles that differ from the role, an empty object for an edited member matching it. It SHALL disable `chatWrite`, `mediaChangeVirtualBackground` and `broadcastEdit` while `chatRead`, `mediaPublishVideo` and `broadcastControl` respectively are off, keeping their values.
 
 #### Scenario: Only differences are sent
 - **GIVEN** the add member form with base role `speaker`
@@ -628,6 +628,11 @@ The member form SHALL group the permission toggles under Meeting, Media, Recordi
 - **GIVEN** the add member form with base role `moderator`
 - **WHEN** the owner switches the base role to `speaker`, whose role denies `chatRead` and grants `chatWrite`
 - **THEN** the `chatWrite` toggle is disabled and on, and the member is added with the speaker role's `chatWrite`
+
+#### Scenario: Waiting room group
+- **GIVEN** the add member form with base role `moderator`
+- **WHEN** the owner opens the permission toggles
+- **THEN** a Waiting room group holds the `lobbyBypass` and `lobbyAdmin` toggles, both on
 
 ### Requirement: Members queued in the room wizard
 When creating a room, the console wizard SHALL let the user queue members in the Room Access step with the same form, and SHALL add them right after creating the room; members that cannot be added SHALL be named in a warning while the room stays created (see `rooms`).

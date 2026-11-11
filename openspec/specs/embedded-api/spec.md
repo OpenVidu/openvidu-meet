@@ -91,7 +91,7 @@ The embedded element SHALL move to a new target only when an attribute change al
 - **THEN** the element leaves room A's meeting and shows the join screen of room B
 
 ### Requirement: Command catalogue
-Meet SHALL accept exactly the commands `meetingLeave`, `meetingEnd`, `participantKick`, `participantMute`, `participantMuteAll`, `participantUpdateRole`, `participantHandRaise`, `participantHandLower`, `participantHandLowerAll`, `participantReactionSend`, `mediaToggleAudio`, `mediaToggleVideo`, `mediaToggleScreenShare`, `recordingStart`, `recordingStop`, `broadcastStart` and `broadcastStop`, and the deprecated `endMeeting`, `leaveRoom` and `kickParticipant`, each as its owner specifies.
+Meet SHALL accept exactly the commands `meetingLeave`, `meetingEnd`, `participantKick`, `participantMute`, `participantMuteAll`, `participantUpdateRole`, `participantHandRaise`, `participantHandLower`, `participantHandLowerAll`, `participantReactionSend`, `mediaToggleAudio`, `mediaToggleVideo`, `mediaToggleScreenShare`, `recordingStart`, `recordingStop`, `broadcastStart`, `broadcastStop`, `lobbyAdmit` and `lobbyReject`, and the deprecated `endMeeting`, `leaveRoom` and `kickParticipant`.
 
 #### Scenario: Owner of each command
 - **WHEN** a reviewer looks up what a command does
@@ -103,6 +103,7 @@ Meet SHALL accept exactly the commands `meetingLeave`, `meetingEnd`, `participan
 - **AND** `mediaToggleAudio`, `mediaToggleVideo` and `mediaToggleScreenShare` in `meeting-media`
 - **AND** `recordingStart` and `recordingStop` in `recordings`
 - **AND** `broadcastStart` and `broadcastStop` in `live-broadcast`
+- **AND** `lobbyAdmit` and `lobbyReject` in `waiting-room`
 - **AND** `endMeeting`, `leaveRoom` and `kickParticipant` in this capability, as aliases
 
 ### Requirement: How a host sends a command
@@ -144,17 +145,27 @@ Meet SHALL run a command that declares a permission (its `@permission` in the ty
 - **THEN** the meeting ends
 
 ### Requirement: Commands run only when the meeting phase allows them
-Meet SHALL run `mediaToggleAudio` and `mediaToggleVideo` from the device setup screen (the prejoin screen of the reference, see `meeting-join`) onwards, and every other command only while the local participant is in the meeting, connected or reconnecting. A command received at any other moment SHALL be rejected with a console warning and SHALL NOT be kept for later.
+Meet SHALL run `mediaToggleAudio` and `mediaToggleVideo` from the device setup screen (the prejoin screen of the reference, see `meeting-join`) onwards, the waiting screen included, `meetingLeave` also while the local participant waits to be admitted (see `waiting-room`), and every other command only while the local participant is in the meeting, connected or reconnecting. A command received at any other moment SHALL be rejected with a console warning and SHALL NOT be kept for later.
 
 #### Scenario: Media toggle on the device setup screen
 - **GIVEN** the participant is on the device setup screen
 - **WHEN** the host calls `mediaToggleVideo(false)`
 - **THEN** the camera is turned off on the device setup screen
 
+#### Scenario: Media toggle while waiting
+- **GIVEN** the participant waits to be admitted
+- **WHEN** the host calls `mediaToggleAudio(false)`
+- **THEN** the microphone is turned off on the waiting screen
+
 #### Scenario: Meeting command before joining
 - **GIVEN** a moderator on the device setup screen
 - **WHEN** the host calls `participantKick` for a participant in the meeting
 - **THEN** nobody is kicked, and the command does not run once the moderator joins
+
+#### Scenario: Meeting command while waiting
+- **GIVEN** a participant holding `lobbyAdmin` who waits to be admitted
+- **WHEN** the host calls `lobbyAdmit` with the identity of another participant waiting
+- **THEN** nobody is admitted and the console warns that the command was rejected
 
 #### Scenario: Command after leaving
 - **GIVEN** the participant left and sees the end screen
@@ -197,7 +208,7 @@ Meet in an iframe SHALL take the origin of the page that contains it from the br
 - **AND** the participant can still join and use the meeting
 
 ### Requirement: Event catalogue
-Meet SHALL emit exactly the events `meetingJoined`, `meetingLeft`, `participantJoined`, `participantLeft`, `participantRoleChanged`, `participantHandChanged`, `participantReactionSent`, `mediaAudioStatusChanged`, `mediaVideoStatusChanged`, `mediaScreenShareStatusChanged`, `recordingStatusChanged`, `broadcastStarted`, `broadcastUpdated`, `broadcastEnded` and `embeddedCloseRequested`, plus the deprecated `joined`, `left` and `closed`, each emitted as its owning capability specifies.
+Meet SHALL emit exactly the events `meetingJoined`, `meetingLeft`, `participantJoined`, `participantLeft`, `participantKnocked`, `participantRoleChanged`, `participantHandChanged`, `participantReactionSent`, `mediaAudioStatusChanged`, `mediaVideoStatusChanged`, `mediaScreenShareStatusChanged`, `recordingStatusChanged`, `broadcastStarted`, `broadcastUpdated`, `broadcastEnded`, `lobbyUpdated`, `lobbyStatusChanged` and `embeddedCloseRequested`, plus the deprecated `joined`, `left` and `closed`.
 
 #### Scenario: Owner of each event
 - **WHEN** a reviewer looks up when an event is emitted and what its payload means
@@ -209,6 +220,7 @@ Meet SHALL emit exactly the events `meetingJoined`, `meetingLeft`, `participantJ
 - **AND** `mediaAudioStatusChanged`, `mediaVideoStatusChanged` and `mediaScreenShareStatusChanged` in `meeting-media`
 - **AND** `recordingStatusChanged` in `recordings`
 - **AND** `broadcastStarted`, `broadcastUpdated` and `broadcastEnded` in `live-broadcast`
+- **AND** `participantKnocked`, `lobbyUpdated` and `lobbyStatusChanged` in `waiting-room`
 - **AND** `joined`, `left` and `closed` in this capability, as aliases
 
 ### Requirement: Events only in embedded modes
