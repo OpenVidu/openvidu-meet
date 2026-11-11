@@ -34,6 +34,16 @@ describe('PERMISSION_GROUPS', () => {
 		]);
 	});
 
+	it('should list the two waiting room permissions in the WAITING_ROOM group, independent of each other', () => {
+		const waitingRoom = PERMISSION_GROUPS.find((group) => group.label.endsWith('.WAITING_ROOM'));
+
+		expect(waitingRoom).toBeDefined();
+		expect(waitingRoom!.permissions.map((item) => [item.key, item.dependsOn])).toEqual([
+			['lobbyBypass', undefined],
+			['lobbyAdmin', undefined]
+		]);
+	});
+
 	it('should declare the permissions that only take effect together with another one', () => {
 		expect(DEPENDENT_PERMISSIONS.map(({ key, dependsOn }) => [key, dependsOn])).toEqual([
 			['mediaChangeVirtualBackground', 'mediaPublishVideo'],

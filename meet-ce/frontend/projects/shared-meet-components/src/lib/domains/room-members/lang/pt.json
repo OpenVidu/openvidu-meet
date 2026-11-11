@@ -117,7 +117,8 @@
         "MEDIA": "Multimédia",
         "RECORDINGS": "Gravações",
         "BROADCAST": "Transmissão ao vivo",
-        "CHAT": "Chat"
+        "CHAT": "Chat",
+        "WAITING_ROOM": "Sala de espera"
       },
       "ITEMS": {
         "meetingJoin": {
@@ -207,6 +208,14 @@
         "chatWrite": {
           "LABEL": "Escrever",
           "DESCRIPTION": "Permitir enviar mensagens no chat. Requer \"Ler\""
+        },
+        "lobbyBypass": {
+          "LABEL": "Entrar sem esperar",
+          "DESCRIPTION": "Permitir entrar numa sala com sala de espera sem esperar para ser admitido"
+        },
+        "lobbyAdmin": {
+          "LABEL": "Admitir participantes",
+          "DESCRIPTION": "Permitir admitir ou recusar os participantes que esperam para entrar"
         }
       }
     },

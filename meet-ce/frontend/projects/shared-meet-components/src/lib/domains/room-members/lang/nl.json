@@ -117,7 +117,8 @@
         "MEDIA": "Media",
         "RECORDINGS": "Opnames",
         "BROADCAST": "Live-uitzending",
-        "CHAT": "Chat"
+        "CHAT": "Chat",
+        "WAITING_ROOM": "Wachtkamer"
       },
       "ITEMS": {
         "meetingJoin": {
@@ -207,6 +208,14 @@
         "chatWrite": {
           "LABEL": "Schrijven",
           "DESCRIPTION": "Chatberichten versturen toestaan. Vereist \"Lezen\""
+        },
+        "lobbyBypass": {
+          "LABEL": "Zonder wachten deelnemen",
+          "DESCRIPTION": "Deelnemen aan een kamer met wachtkamer toestaan zonder op toelating te wachten"
+        },
+        "lobbyAdmin": {
+          "LABEL": "Deelnemers toelaten",
+          "DESCRIPTION": "Wachtende deelnemers toelaten of weigeren toestaan"
         }
       }
     },

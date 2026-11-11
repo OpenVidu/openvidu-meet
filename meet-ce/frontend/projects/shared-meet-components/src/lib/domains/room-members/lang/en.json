@@ -117,7 +117,8 @@
         "MEDIA": "Media",
         "RECORDINGS": "Recordings",
         "BROADCAST": "Live broadcast",
-        "CHAT": "Chat"
+        "CHAT": "Chat",
+        "WAITING_ROOM": "Waiting room"
       },
       "ITEMS": {
         "meetingJoin": {
@@ -207,6 +208,14 @@
         "chatWrite": {
           "LABEL": "Write",
           "DESCRIPTION": "Allow sending chat messages. Needs \"Read\""
+        },
+        "lobbyBypass": {
+          "LABEL": "Join without waiting",
+          "DESCRIPTION": "Allow joining a room with a waiting room without waiting to be admitted"
+        },
+        "lobbyAdmin": {
+          "LABEL": "Admit participants",
+          "DESCRIPTION": "Allow admitting or rejecting the participants waiting to join"
         }
       }
     },

@@ -18,6 +18,19 @@ import { LanguageService } from './language.service';
  */
 export type TranslateParams = Record<string, string | number>;
 
+/** Where the app's language code is not a CLDR locale, which `Intl` needs to know the language's plural rules. */
+const CLDR_LOCALES: Record<string, string> = { cn: 'zh', pt: 'pt-PT' };
+
+/** `{count, plural, one {# item} other {# items}}` and `{position, selectordinal, one {#st} other {#th}}`. */
+const VARIANT = /\{(\w+),\s*(plural|selectordinal),((?:\s*(?:=\d+|\w+)\s*\{[^{}]*\})+)\s*\}/g;
+const VARIANT_CASE = /(=\d+|\w+)\s*\{([^{}]*)\}/g;
+
+interface LanguageRules {
+	plural: Intl.PluralRules;
+	selectordinal: Intl.PluralRules;
+	number: Intl.NumberFormat;
+}
+
 @Service()
 export class TranslateService {
 	private readonly languageService = inject(LanguageService);
@@ -31,6 +44,8 @@ export class TranslateService {
 
 	// Flattened lookup for the active language (base fallback + active locale on top). `translate` reads this.
 	private active = this.base;
+	private activeLang: AvailableLangs = DEFAULT_LANG;
+	private readonly rulesByLang = new Map<AvailableLangs, LanguageRules>();
 
 	/** Currently selected language option (shared across the whole application). */
 	readonly selectedLanguageOption = this.languageService.selectedLanguage;
@@ -70,13 +85,54 @@ export class TranslateService {
 	/**
 	 * Translates a dot-separated key into the current language (empty string if missing everywhere),
 	 * filling `{name}` placeholders from `params`.
+	 *
+	 * A string can hold plural and ordinal variants, `{count, plural, one {# place} other {# places}}` and
+	 * `{position, selectordinal, one {#st} two {#nd} few {#rd} other {#th}}`: the variant picked is the
+	 * one named after the CLDR category of the `params` number in the active language, an exact `=0`
+	 * before it and `other`, which is required, after it, and `#` is that number formatted for the
+	 * language. A variant's text holds no braces, so variants do not nest.
 	 */
 	translate(key: string, params?: TranslateParams): string {
 		const translation = this.lookup(this.active, key);
 
 		if (!params) return translation;
 
-		return translation.replace(/\{(\w+)\}/g, (placeholder, name) => `${params[name] ?? placeholder}`);
+		return this.resolveVariants(translation, params).replace(
+			/\{(\w+)\}/g,
+			(placeholder, name) => `${params[name] ?? placeholder}`
+		);
+	}
+
+	private resolveVariants(translation: string, params: TranslateParams): string {
+		return translation.replace(VARIANT, (variant, name: string, kind: 'plural' | 'selectordinal', body: string) => {
+			const count = Number(params[name] ?? NaN);
+
+			if (Number.isNaN(count)) return variant;
+
+			const cases = new Map(
+				Array.from(body.matchAll(VARIANT_CASE), ([, selector, text]): [string, string] => [selector, text])
+			);
+			const rules = this.rules();
+			const text = cases.get(`=${count}`) ?? cases.get(rules[kind].select(count)) ?? cases.get('other');
+
+			return text === undefined ? variant : text.replaceAll('#', rules.number.format(count));
+		});
+	}
+
+	private rules(): LanguageRules {
+		let rules = this.rulesByLang.get(this.activeLang);
+
+		if (!rules) {
+			const locale = CLDR_LOCALES[this.activeLang] ?? this.activeLang;
+			rules = {
+				plural: new Intl.PluralRules(locale),
+				selectordinal: new Intl.PluralRules(locale, { type: 'ordinal' }),
+				number: new Intl.NumberFormat(locale)
+			};
+			this.rulesByLang.set(this.activeLang, rules);
+		}
+
+		return rules;
 	}
 
 	/**
@@ -121,6 +177,7 @@ export class TranslateService {
 	private async load(lang: AvailableLangs): Promise<void> {
 		if (lang === DEFAULT_LANG) {
 			this.active = this.base;
+			this.activeLang = lang;
 			return;
 		}
 
@@ -128,6 +185,7 @@ export class TranslateService {
 			this.bundles.map((bundle) => bundle.loaders?.[lang]?.().catch(() => ({})) ?? Promise.resolve({}))
 		);
 		this.active = parts.reduce<Map<string, string>>((map, part) => this.flatten(part, '', map), new Map(this.base));
+		this.activeLang = lang;
 	}
 
 	/**

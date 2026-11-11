@@ -4,7 +4,9 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
@@ -61,6 +63,8 @@ const FEATURE_DEPENDENT_PERMISSIONS: {
 		ReactiveFormsModule,
 		MatButtonModule,
 		MatIconModule,
+		MatFormFieldModule,
+		MatInputModule,
 		MatSlideToggleModule,
 		MatExpansionModule,
 		MatTooltipModule,
@@ -110,6 +114,10 @@ export class RoomAccessComponent implements OnInit {
 
 	async ngOnInit(): Promise<void> {
 		this.currentUserId.set((await this.authService.getUserId()) ?? '');
+	}
+
+	get lobbyEnabled(): boolean {
+		return this.roomAccessForm.controls.lobbyEnabled.value;
 	}
 
 	get moderatorForm(): RoomAccessRolePermissionsFormGroup {
@@ -245,6 +253,12 @@ export class RoomAccessComponent implements OnInit {
 
 	private saveFormData(formValue: Partial<RoomAccessFormValue>): void {
 		const stepData: Partial<MeetRoomOptions> = {
+			config: {
+				lobby: {
+					enabled: formValue.lobbyEnabled ?? false,
+					message: formValue.lobbyMessage?.trim() || null
+				}
+			},
 			access: {
 				anonymous: {
 					moderator: { enabled: formValue.anonymousModeratorEnabled ?? false },

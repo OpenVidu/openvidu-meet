@@ -185,6 +185,24 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 				dependsOn: 'chatRead'
 			}
 		]
+	},
+	{
+		label: 'ROOM_MEMBERS.PERMISSIONS.GROUPS.WAITING_ROOM',
+		icon: 'hourglass_top',
+		permissions: [
+			{
+				key: 'lobbyBypass',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.lobbyBypass.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.lobbyBypass.DESCRIPTION',
+				icon: 'fast_forward'
+			},
+			{
+				key: 'lobbyAdmin',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.lobbyAdmin.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.lobbyAdmin.DESCRIPTION',
+				icon: 'how_to_reg'
+			}
+		]
 	}
 ];
 

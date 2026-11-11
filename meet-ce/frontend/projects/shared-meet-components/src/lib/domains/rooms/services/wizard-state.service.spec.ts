@@ -278,6 +278,39 @@ describe('RoomWizardStateService.initializeWizard (steps)', () => {
 		});
 	});
 
+	it('prefills the waiting room switch and message of the Room Access step from the edited room', () => {
+		service.initializeWizard(true, {
+			roomName: 'Existing room',
+			config: { lobby: { enabled: true, message: 'The host will let you in' } }
+		});
+
+		const { lobbyEnabled, lobbyMessage } = service.getStepById(WizardStepId.ROOM_ACCESS)!.formGroup.controls;
+
+		expect(lobbyEnabled.value).toBeTrue();
+		expect(lobbyMessage.value).toBe('The host will let you in');
+	});
+
+	it('starts the Room Access step with the waiting room off and no message', () => {
+		service.initializeWizard(false);
+
+		const { lobbyEnabled, lobbyMessage } = service.getStepById(WizardStepId.ROOM_ACCESS)!.formGroup.controls;
+
+		expect(lobbyEnabled.value).toBeFalse();
+		expect(lobbyMessage.value).toBe('');
+	});
+
+	it('refuses a waiting room message longer than the server accepts', () => {
+		service.initializeWizard(false);
+
+		const { lobbyMessage } = service.getStepById(WizardStepId.ROOM_ACCESS)!.formGroup.controls;
+
+		lobbyMessage.setValue('a'.repeat(500));
+		expect(lobbyMessage.valid).toBeTrue();
+
+		lobbyMessage.setValue('a'.repeat(501));
+		expect(lobbyMessage.hasError('maxlength')).toBeTrue();
+	});
+
 	it('prefills the broadcast step, destinations and layout included, from the edited room', () => {
 		const destinations = [{ id: 'dest1', name: 'YouTube', url: 'rtmp://a.rtmp.youtube.com/live2/********' }];
 		service.initializeWizard(true, {
@@ -448,7 +481,9 @@ describe('RoomWizardStateService.initializeWizard (the room it proposes)', () =>
 					participantKick: false,
 					participantMute: false,
 					participantHandLower: false,
-					meetingEnd: false
+					meetingEnd: false,
+					lobbyBypass: false,
+					lobbyAdmin: false
 				}
 			}
 		});
@@ -464,6 +499,7 @@ describe('RoomWizardStateService.initializeWizard (the room it proposes)', () =>
 			captions: { enabled: true },
 			raiseHand: { enabled: true },
 			reactions: { enabled: true },
+			lobby: { enabled: false },
 			initialAudioActive: true,
 			initialVideoActive: true
 		});

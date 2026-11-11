@@ -4,6 +4,7 @@ import {
 	EmbeddedEventPayloadFor,
 	MeetBroadcastStartOptions,
 	MeetBroadcastStopOptions,
+	MeetLobbyDecisionOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetReaction
@@ -46,6 +47,15 @@ export class MeetCommandsService {
 	readonly muteScreenShare = signal(false);
 	/** Explicit `active` for the media toggles. `''` toggles instead. */
 	readonly mediaActive = signal<TriState>('');
+	/** Identities `lobbyAdmit()` and `lobbyReject()` name, comma separated; empty omits `participantIdentities`, so everyone waiting. */
+	readonly lobbyIdentities = signal('');
+	readonly lobbyOptions = computed<MeetLobbyDecisionOptions>(() => {
+		const participantIdentities = this.lobbyIdentities()
+			.split(',')
+			.map((identity) => identity.trim())
+			.filter(Boolean);
+		return participantIdentities.length ? { participantIdentities } : {};
+	});
 	/** Whether `broadcastStart()` names its room destinations; off, `destinationIds` is omitted. */
 	readonly broadcastPickDestinations = signal(false);
 	/** Room destinations `broadcastStart()` names when picking them; none picked sends `[]`. */
@@ -235,6 +245,26 @@ export class MeetCommandsService {
 			(element) => element.participantHandLowerAll()
 		);
 		this.log.command('participantHandLowerAll', '()');
+	}
+
+	// ── Waiting room ────────────────────────────────────────────────────────
+
+	lobbyAdmit(): void {
+		const options = this.lobbyOptions();
+		this.dispatch(
+			() => this.iframeHost.lobbyAdmit(options),
+			(element) => element.lobbyAdmit(options)
+		);
+		this.log.command('lobbyAdmit', optionsArgs(options));
+	}
+
+	lobbyReject(): void {
+		const options = this.lobbyOptions();
+		this.dispatch(
+			() => this.iframeHost.lobbyReject(options),
+			(element) => element.lobbyReject(options)
+		);
+		this.log.command('lobbyReject', optionsArgs(options));
 	}
 
 	// ── Reactions ───────────────────────────────────────────────────────────
