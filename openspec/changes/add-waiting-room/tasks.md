@@ -4,7 +4,7 @@ Requires `revoke-tokens-on-kick` (merged in #208), and `refactor-meeting-entry-f
 
 ## 1. Frontend preparation (separate change)
 
-- [ ] 1.1 `refactor-meeting-entry-flow` is implemented and archived before this change: the renames (`MeetingLobbyService` → `MeetingJoinService`, `MeetingLobbyComponent` → `MeetingJoinComponent`, `LOBBY.*` → `JOIN.*`, the `lobby` test ids, `MeetingWaitingPanelComponent` → `MeetingAlonePanelComponent`), the entry flow, `JoinTokenService`, the shared token failure mapping and `MeetingPhaseService.isPreviewing`. Verify that its archive is in `openspec/changes/archive/` on the branch.
+- [x] 1.1 `refactor-meeting-entry-flow` is implemented and archived before this change: the renames (`MeetingLobbyService` → `MeetingJoinService`, `MeetingLobbyComponent` → `MeetingJoinComponent`, `LOBBY.*` → `JOIN.*`, the `lobby` test ids, `MeetingWaitingPanelComponent` → `MeetingAlonePanelComponent`), the entry flow, `JoinTokenService`, the shared token failure mapping and `MeetingPhaseService.isPreviewing`. Verify that its archive is in `openspec/changes/archive/` on the branch.
 
 ## 2. Contracts
 
@@ -21,7 +21,7 @@ Requires `revoke-tokens-on-kick` (merged in #208), and `refactor-meeting-entry-f
 
   Verify the typings build and the backend unit tests `permission-aliases` and the entity-field suites.
 - [ ] 2.2 Add the embedded commands `lobbyAdmit` and `lobbyReject` (payload `{ participantIdentities? }`, omitted for everyone waiting), both `@permission lobbyAdmin`, and the events `participantKnocked`, `lobbyUpdated` (`roomId` plus the list shape) and `lobbyStatusChanged` (`roomId`, `participantIdentity`, `status` of `MeetLobbyStatus`, `queuePosition` from 1 while waiting; the first `waiting` comes with the first state received, and a host whose connection never receives one gets none). Update the TSDoc that the waiting phase makes stale: `MEETING_LEAVE` (also leaves the waiting room), the `@prejoin` of `mediaToggleAudio` and `mediaToggleVideo` (the waiting screen included), `mediaAudioStatusChanged` and `mediaVideoStatusChanged` (also fired on the waiting screen) and the `leave-redirect-url` attribute (the waiting room's outcome screens offer the same dismiss). The TSDoc of the commands says that an omitted `participantIdentities` means everyone waiting, as `broadcastIds` of `broadcastStop`, and an empty one is refused, that `lobbyAdmit` on everyone waiting admits the first in line up to the free places, and that `lobbyReject` on everyone waiting rejects everyone waiting when it runs. No alias: replace the note about a future `lobbyKnocked`/`participantKnocked` alias in `meet-ce/typings/CLAUDE.md`. Verify the embedded API contract test, `api-registry.test.ts` and `scripts/lint-api-naming.mjs`.
-- [ ] 2.3 Document in the OpenAPI:
+- [x] 2.3 Document in the OpenAPI:
   - `config.lobby`;
   - `lobbyBypass` and `lobbyAdmin` (schema and the full-permission examples);
   - `MeetLobbyParticipant`, with `type` and the statement that `externalId` and `metadata` are as sent by the participant's client and never a proof of identity, in the schema and in `lobbyList` and the `participantKnocked` webhook, saying that a backend that admits on its own identifies waiters by `type` and by the `participantIdentity` of a member or user;

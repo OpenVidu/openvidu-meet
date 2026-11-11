@@ -29,8 +29,10 @@ properties:
                 - meetingEnded
                 - participantJoined
                 - participantLeft
+                - participantKnocked
                 - participantRoleChanged
                 - participantHandChanged
+                - lobbyStatusChanged
                 - recordingStarted
                 - recordingUpdated
                 - recordingEnded

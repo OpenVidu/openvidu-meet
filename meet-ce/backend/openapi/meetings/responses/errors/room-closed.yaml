@@ -1,8 +1,25 @@
-description: Room closed, meeting full, or the participant's role being changed when regenerating their token
+description: >
+    Room closed, meeting full, the participant's role being changed when regenerating their token, the waiting
+    room full, or the wait of a `lobbyTicket` over
 content:
     application/json:
         schema:
-            $ref: '../../../shared/schemas/error.yaml'
+            allOf:
+                - $ref: '../../../shared/schemas/error.yaml'
+                - type: object
+                  properties:
+                      status:
+                          type: string
+                          enum:
+                              - admitted
+                              - rejected
+                              - left
+                              - expired
+                              - meeting_ended
+                              - room_closed
+                          description: >
+                              How the wait of the ticket ended, when the answer is that it has ended and Meet knows it.
+                              Absent for a ticket Meet does not know, which includes one of another room.
         examples:
             room_closed:
                 summary: Room Closed Example
@@ -19,3 +36,19 @@ content:
                 value:
                     error: 'Participant Error'
                     message: "Participant 'alice_smith' in room 'room_123' is already being updated"
+            lobby_full:
+                summary: The waiting room is full, with 100 participants waiting
+                value:
+                    error: 'Lobby Error'
+                    message: "The waiting room of room 'room_123' is full"
+            lobby_wait_ended:
+                summary: The wait of the ticket has ended, rejected here
+                value:
+                    error: 'Lobby Error'
+                    message: 'The wait has ended'
+                    status: rejected
+            lobby_wait_unknown:
+                summary: Meet does not know the ticket, or it belongs to another room
+                value:
+                    error: 'Lobby Error'
+                    message: 'The wait has ended'

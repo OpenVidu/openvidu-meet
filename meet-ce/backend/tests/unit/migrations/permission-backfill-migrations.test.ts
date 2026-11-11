@@ -27,16 +27,22 @@ const roomV4ToV5 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollec
 const roomV5ToV6 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 5, 6))!;
 const roomV6ToV7 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 6, 7))!;
 const roomV8ToV9 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 8, 9))!;
+const roomV9ToV10 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 9, 10))!;
 const roomMemberV1ToV2 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 1, 2))!;
 const roomMemberV2ToV3 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 2, 3))!;
 const roomMemberV3ToV4 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 3, 4))!;
 const roomMemberV4ToV5 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 4, 5))!;
 const roomMemberV5ToV6 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 5, 6))!;
+const roomMemberV6ToV7 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 6, 7))!;
 
-// A permission set as stored right before a key was added: every current key but that one, granted.
-const currentPermissionsWithout = (missingKey: string) => {
+// A permission set as stored right before keys were added: every current key but those, granted.
+const currentPermissionsWithout = (...missingKeys: string[]) => {
 	const permissions = Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true]));
-	delete permissions[missingKey];
+
+	for (const key of missingKeys) {
+		delete permissions[key];
+	}
+
 	return permissions;
 };
 
@@ -179,6 +185,32 @@ describe('Room migration v8 → v9', () => {
 	});
 });
 
+describe('Room migration v9 → v10', () => {
+	const v9Permissions = () => currentPermissionsWithout('lobbyBypass', 'lobbyAdmin');
+
+	it('should add the waiting room config, off, and keep the rest of the config', () => {
+		const migrated = roomV9ToV10({
+			...roomDocument(v9Permissions(), v9Permissions()),
+			config: { reactions: { enabled: true } }
+		} as unknown as MeetRoomDocument);
+
+		expect(migrated.config).toEqual({ reactions: { enabled: true }, lobby: { enabled: false } });
+	});
+
+	it('should complete the roles with the waiting room permissions and grant them to the moderator role only', () => {
+		const migrated = roomV9ToV10({
+			...roomDocument(v9Permissions(), v9Permissions()),
+			config: {}
+		} as unknown as MeetRoomDocument);
+
+		expect(Object.keys(migrated.roles.moderator.permissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
+		expect(migrated.roles.moderator.permissions.lobbyBypass).toBe(true);
+		expect(migrated.roles.moderator.permissions.lobbyAdmin).toBe(true);
+		expect(migrated.roles.speaker.permissions.lobbyBypass).toBe(false);
+		expect(migrated.roles.speaker.permissions.lobbyAdmin).toBe(false);
+	});
+});
+
 describe('Room member migration v5 → v6', () => {
 	it('should complete effectivePermissions with the broadcast keys, denied', () => {
 		const permissions = Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true]));
@@ -265,6 +297,33 @@ describe('Room member migration v4 → v5', () => {
 
 		expect(Object.keys(migrated.effectivePermissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
 		expect(migrated.effectivePermissions.participantReactionSend).toBe(true);
+		expect(migrated.customPermissions).toStrictEqual({ chatWrite: false });
+	});
+});
+
+describe('Room member migration v6 → v7', () => {
+	const roomMember = (baseRole: string) =>
+		({
+			memberId: 'member-123',
+			baseRole,
+			customPermissions: { chatWrite: false },
+			effectivePermissions: currentPermissionsWithout('lobbyBypass', 'lobbyAdmin')
+		}) as unknown as MeetRoomMemberDocument;
+
+	it('should complete effectivePermissions with the waiting room permissions, denied to a speaker, and leave the overlay alone', () => {
+		const migrated = roomMemberV6ToV7(roomMember('speaker'));
+
+		expect(Object.keys(migrated.effectivePermissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
+		expect(migrated.effectivePermissions.lobbyBypass).toBe(false);
+		expect(migrated.effectivePermissions.lobbyAdmin).toBe(false);
+		expect(migrated.customPermissions).toStrictEqual({ chatWrite: false });
+	});
+
+	it('should grant both to a member with the moderator role, as the migrated role does', () => {
+		const migrated = roomMemberV6ToV7(roomMember('moderator'));
+
+		expect(migrated.effectivePermissions.lobbyBypass).toBe(true);
+		expect(migrated.effectivePermissions.lobbyAdmin).toBe(true);
 		expect(migrated.customPermissions).toStrictEqual({ chatWrite: false });
 	});
 });

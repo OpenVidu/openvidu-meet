@@ -246,6 +246,12 @@
             Updates the config of an OpenVidu Meet room with the specified room ID.
 
 
+            Turning `lobby.enabled` on invalidates the room member tokens issued before: their holders get
+            a `401` and obtain a new one through their link, and then wait like any participant without
+            `lobbyBypass`. Sending `lobby.message` as `null` removes the saved message. Like every config
+            change, the `lobby` one is rejected with a `409` while the room has an active meeting.
+
+
             **Access token roles**: `admin`, `room_manager`.
         tags:
             - OpenVidu Meet - Rooms

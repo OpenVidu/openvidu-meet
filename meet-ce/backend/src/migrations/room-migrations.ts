@@ -15,6 +15,7 @@ const roomMigrationV5ToV6Name = generateSchemaMigrationName(meetRoomCollectionNa
 const roomMigrationV6ToV7Name = generateSchemaMigrationName(meetRoomCollectionName, 6, 7);
 const roomMigrationV7ToV8Name = generateSchemaMigrationName(meetRoomCollectionName, 7, 8);
 const roomMigrationV8ToV9Name = generateSchemaMigrationName(meetRoomCollectionName, 8, 9);
+const roomMigrationV9ToV10Name = generateSchemaMigrationName(meetRoomCollectionName, 9, 10);
 
 const roomMigrationV1ToV2Transform: SchemaTransform<MeetRoomDocument> = (room) => {
 	room.config.captions = { enabled: true };
@@ -175,6 +176,17 @@ const roomMigrationV8ToV9Transform: SchemaTransform<MeetRoomDocument> = (room) =
 	return room;
 };
 
+// v10 adds the waiting room: its room config switch, off, and the `lobbyBypass` and `lobbyAdmin`
+// permissions, completed by the same normalization as the previous steps and then granted to the
+// moderator role, as a room created from this version on has them.
+const roomMigrationV9ToV10Transform: SchemaTransform<MeetRoomDocument> = (room) => {
+	room.config.lobby = { enabled: false };
+	normalizeRolePermissionsTransform(room);
+	room.roles.moderator.permissions.lobbyBypass = true;
+	room.roles.moderator.permissions.lobbyAdmin = true;
+	return room;
+};
+
 /**
  * Schema migrations for MeetRoom.
  * Key format: schema_{collection}_v{from}_to_v{to}
@@ -187,5 +199,6 @@ export const roomMigrations: SchemaMigrationMap<MeetRoomDocument> = new Map([
 	[roomMigrationV5ToV6Name, roomMigrationV5ToV6Transform],
 	[roomMigrationV6ToV7Name, roomMigrationV6ToV7Transform],
 	[roomMigrationV7ToV8Name, roomMigrationV7ToV8Transform],
-	[roomMigrationV8ToV9Name, roomMigrationV8ToV9Transform]
+	[roomMigrationV8ToV9Name, roomMigrationV8ToV9Transform],
+	[roomMigrationV9ToV10Name, roomMigrationV9ToV10Transform]
 ]);

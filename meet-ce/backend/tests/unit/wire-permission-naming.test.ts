@@ -26,6 +26,8 @@ const moderatorPermissions: MeetRoomMemberPermissions = {
 	participantMute: true,
 	participantHandLower: true,
 	participantReactionSend: true,
+	lobbyBypass: true,
+	lobbyAdmin: true,
 	meetingEnd: true,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,

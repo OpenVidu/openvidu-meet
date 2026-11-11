@@ -84,9 +84,9 @@ conflicting pair, tokens normalized). The code rules behind it:
   recognize, so a missed entry reads as `false` instead of raising an error. It also needs a
   migration **step of its own** that re-runs the permission normalization (`room` v4→v5 and
   `roomMember` v2→v3 for `participantMute`, v5→v6 / v3→v4 for `participantHandLower`, v6→v7 / v4→v5
-  for `participantReactionSend`, v8→v9 / v5→v6 for the broadcast permissions): documents already at
-  the previous version are up to date as far as the runner is concerned, so extending the previous
-  step would never reach them.
+  for `participantReactionSend`, v8→v9 / v5→v6 for the broadcast permissions, v9→v10 / v6→v7 for the
+  waiting room permissions): documents already at the previous version are up to date as far as the
+  runner is concerned, so extending the previous step would never reach them.
 - Decoding a token normalizes old names through the same `MeetPermissionsSchema` the API uses.
 
 The plan behind it: `../openvidu-competitors/meet-update-plan/api-naming-migration-phase.md`.

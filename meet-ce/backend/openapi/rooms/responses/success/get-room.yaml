@@ -75,6 +75,8 @@ content:
                             enabled: true
                         reactions:
                             enabled: true
+                        lobby:
+                            enabled: false
                     _extraFields:
                         - config
                         - roles
@@ -112,6 +114,8 @@ content:
                             enabled: true
                         reactions:
                             enabled: true
+                        lobby:
+                            enabled: false
                     roles:
                         moderator:
                             permissions:
@@ -130,6 +134,8 @@ content:
                                 participantMute: true
                                 participantHandLower: true
                                 participantReactionSend: true
+                                lobbyBypass: true
+                                lobbyAdmin: true
                                 meetingEnd: true
                                 mediaPublishVideo: true
                                 mediaPublishAudio: true
@@ -154,6 +160,8 @@ content:
                                 participantMute: false
                                 participantHandLower: false
                                 participantReactionSend: true
+                                lobbyBypass: false
+                                lobbyAdmin: false
                                 meetingEnd: false
                                 mediaPublishVideo: true
                                 mediaPublishAudio: true

@@ -9,6 +9,11 @@
 
             Requires the `participantReactionSend` permission. A room whose `reactions.enabled` config is
             `false` rejects every reaction with a `403`, and a room without a meeting running answers `404`.
+
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            host application acting for itself uses the API key.
         tags:
             - Internal API - Meetings
         security:
@@ -25,11 +30,46 @@
             '401':
                 $ref: '../../shared/responses/errors/unauthorized.yaml'
             '403':
-                $ref: '../../shared/responses/errors/forbidden.yaml'
+                $ref: '../responses/errors/forbidden-meeting-action.yaml'
             '404':
                 $ref: '../responses/errors/no-active-meeting.yaml'
             '413':
                 $ref: '../../shared/responses/errors/payload-too-large.yaml'
+            '422':
+                $ref: '../../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../../shared/responses/errors/service-unavailable.yaml'
+/meetings/{roomId}/lobby/leave:
+    post:
+        operationId: lobbyLeave
+        summary: Leave the waiting room
+        description: >
+            Ends the wait of a participant at once, whether it is waiting or admitted and not yet used: the
+            participant no longer appears in [`lobbyList`](#/operations/lobbyList) and the
+            [`lobbyStatusChanged`](#/webhooks/lobbyStatusChangedWebhook) webhook reports `left`. The meeting client
+            calls it when the participant presses "Leave waiting room" or leaves with `meetingLeave`, also while
+            its realtime connection is down.
+
+
+            The `lobbyTicket` is the only credential and no header is sent, so a web component on another
+            origin can send it while its page unloads without a CORS preflight. It has no body.
+
+
+            It answers `204` for any ticket: one whose wait already ended, one Meet does not know, and one whose
+            wait belongs to another room than the `roomId` of the path, which has no effect.
+        tags:
+            - Internal API - Meetings
+        security: []
+        parameters:
+            - $ref: '../../rooms/parameters/room-id-path.yaml'
+            - $ref: './parameters/lobby-ticket-query.yaml'
+        responses:
+            '204':
+                $ref: './responses/success/lobby-leave.yaml'
             '422':
                 $ref: '../../shared/responses/errors/validation.yaml'
             '429':

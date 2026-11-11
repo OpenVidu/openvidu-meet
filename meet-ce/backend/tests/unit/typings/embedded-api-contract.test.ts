@@ -41,6 +41,8 @@ describe('Embedded command names', () => {
 				'recordingStop',
 				'broadcastStart',
 				'broadcastStop',
+				'lobbyAdmit',
+				'lobbyReject',
 				'endMeeting',
 				'leaveRoom',
 				'kickParticipant'
@@ -87,6 +89,9 @@ describe('Embedded event names', () => {
 				'participantRoleChanged',
 				'participantHandChanged',
 				'participantReactionSent',
+				'participantKnocked',
+				'lobbyUpdated',
+				'lobbyStatusChanged',
 				'mediaAudioStatusChanged',
 				'mediaVideoStatusChanged',
 				'mediaScreenShareStatusChanged',

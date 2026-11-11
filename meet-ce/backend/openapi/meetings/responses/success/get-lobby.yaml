@@ -1,0 +1,36 @@
+description: The participants waiting and the free places of the meeting
+content:
+    application/json:
+        schema:
+            type: object
+            required:
+                - participants
+                - availablePlaces
+            properties:
+                participants:
+                    type: array
+                    description: >
+                        The participants waiting, in arrival order (`knockDate`, then identity), at most 100. An admitted
+                        participant is not in the list. Empty when the room's waiting room is off.
+                    items:
+                        $ref: '../../schemas/meet-lobby-participant.yaml'
+                availablePlaces:
+                    type: [integer, 'null']
+                    minimum: 0
+                    example: 2
+                    description: >
+                        The free places of the meeting: the room's `maxParticipants` minus the participants connected and
+                        the participants admitted until LiveKit reports them joined, a minute after their admission at most,
+                        never below 0. `null` when the room has no participant limit.
+        example:
+            participants:
+                - participantIdentity: 'ana-a1b2c3'
+                  participantName: 'Ana'
+                  type: anonymous
+                  externalId: 'user-42'
+                  knockDate: 1620000000000
+                - participantIdentity: 'ben_smith'
+                  participantName: 'Ben'
+                  type: identified_guest
+                  knockDate: 1620000004000
+            availablePlaces: 2

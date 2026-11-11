@@ -56,6 +56,8 @@ describe('Permission alias map', () => {
 			'participantMute',
 			'participantHandLower',
 			'participantReactionSend',
+			'lobbyBypass',
+			'lobbyAdmin',
 			'broadcastControl',
 			'broadcastEdit'
 		]);
@@ -181,6 +183,8 @@ describe('normalizePermissions', () => {
 		participantMute: false,
 		participantHandLower: false,
 		participantReactionSend: true,
+		lobbyBypass: false,
+		lobbyAdmin: false,
 		broadcastControl: false,
 		broadcastEdit: false
 	};
@@ -239,6 +243,23 @@ describe('normalizePermissions', () => {
 		expect(normalizePermissions({ participantReactionSend: false }, { complete: true })).toEqual({
 			...literalDefaults,
 			participantReactionSend: false
+		});
+	});
+
+	// Skipping the waiting room and deciding who enters are powers of their own: a set that cannot name
+	// them never opens a room that turns the waiting room on.
+	it('should default the waiting room permissions to false, never take them from participantKick', () => {
+		expect(normalizePermissions({ participantKick: true }, { complete: true })).toEqual({
+			participantKick: true,
+			...literalDefaults
+		});
+		expect(normalizePermissions({ lobbyBypass: true }, { complete: true })).toEqual({
+			...literalDefaults,
+			lobbyBypass: true
+		});
+		expect(normalizePermissions({ lobbyAdmin: true }, { complete: true })).toEqual({
+			...literalDefaults,
+			lobbyAdmin: true
 		});
 	});
 
@@ -310,6 +331,8 @@ describe('toDeprecatedPermissions', () => {
 			...current,
 			participantMute: false,
 			participantHandLower: false,
+			lobbyBypass: false,
+			lobbyAdmin: false,
 			broadcastControl: false,
 			broadcastEdit: false
 		});

@@ -27,6 +27,11 @@
             room where nobody publishes audio or video keeps it `starting` until someone does. Follow the
             transition through the [`recordingUpdated`](#/webhooks/recordingUpdatedWebhook) webhook or by
             [fetching the recording](#/operations/getRecording).
+
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -487,6 +492,10 @@
             > Stopping a recording that is still `starting` cancels it: it ends `aborted`, without a file.
             > Stops are also serialized per room: while one stop is in flight, another stop for the
             > same room is rejected with a 409 error.
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -502,7 +511,7 @@
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
-                $ref: '../shared/responses/errors/forbidden.yaml'
+                $ref: '../meetings/responses/errors/forbidden-meeting-action.yaml'
             '404':
                 $ref: './responses/errors/recording-not-found.yaml'
             '409':

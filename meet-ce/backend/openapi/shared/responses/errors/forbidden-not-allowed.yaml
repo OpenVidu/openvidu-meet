@@ -1,4 +1,8 @@
-description: Forbidden
+description: >
+    Forbidden: the caller lacks the permission, recording is disabled in the room's config, or the room
+    records automatically. In a room with the waiting room on, a room member token without a participant
+    identity, such as one obtained without joining, lacks every permission to act on the meeting: only a
+    join token has them. A host application acting for itself uses the API key
 content:
     application/json:
         schema:

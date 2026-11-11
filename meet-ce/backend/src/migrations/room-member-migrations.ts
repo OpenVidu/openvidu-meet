@@ -10,6 +10,7 @@ const roomMemberMigrationV2ToV3Name = generateSchemaMigrationName(meetRoomMember
 const roomMemberMigrationV3ToV4Name = generateSchemaMigrationName(meetRoomMemberCollectionName, 3, 4);
 const roomMemberMigrationV4ToV5Name = generateSchemaMigrationName(meetRoomMemberCollectionName, 4, 5);
 const roomMemberMigrationV5ToV6Name = generateSchemaMigrationName(meetRoomMemberCollectionName, 5, 6);
+const roomMemberMigrationV6ToV7Name = generateSchemaMigrationName(meetRoomMemberCollectionName, 6, 7);
 
 // Brings customPermissions and effectivePermissions to the current key set through
 // normalizePermissions(), which does both halves of the job. It renames the deprecated `can*` spellings
@@ -60,6 +61,19 @@ const roomMemberMigrationV3ToV4Transform: SchemaTransform<MeetRoomMemberDocument
 	return roomMember;
 };
 
+// v7 adds the `lobbyBypass` and `lobbyAdmin` permissions: the normalization completes them, and a member
+// with the moderator role is then granted both, as the moderator role of every room is.
+const roomMemberMigrationV6ToV7Transform: SchemaTransform<MeetRoomMemberDocument> = (roomMember) => {
+	normalizeMemberPermissionsTransform(roomMember);
+
+	if (roomMember.baseRole === MeetRoomMemberRole.MODERATOR) {
+		roomMember.effectivePermissions.lobbyBypass = true;
+		roomMember.effectivePermissions.lobbyAdmin = true;
+	}
+
+	return roomMember;
+};
+
 /**
  * Schema migrations for MeetRoomMember.
  * Key format: schema_{collection}_v{from}_to_v{to}
@@ -69,5 +83,6 @@ export const roomMemberMigrations: SchemaMigrationMap<MeetRoomMemberDocument> = 
 	[roomMemberMigrationV2ToV3Name, normalizeMemberPermissionsTransform],
 	[roomMemberMigrationV3ToV4Name, roomMemberMigrationV3ToV4Transform],
 	[roomMemberMigrationV4ToV5Name, normalizeMemberPermissionsTransform],
-	[roomMemberMigrationV5ToV6Name, normalizeMemberPermissionsTransform]
+	[roomMemberMigrationV5ToV6Name, normalizeMemberPermissionsTransform],
+	[roomMemberMigrationV6ToV7Name, roomMemberMigrationV6ToV7Transform]
 ]);

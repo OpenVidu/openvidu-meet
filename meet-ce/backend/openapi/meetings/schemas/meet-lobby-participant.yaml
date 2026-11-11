@@ -1,0 +1,61 @@
+type: object
+description: >
+    A participant who waits to be admitted to the meeting of a room with the waiting room on. The server
+    derives `type`, and the `participantIdentity` of a member or user, from the credential of the request that
+    asked to join. `externalId` and `metadata` are what the participant's client sent and prove nothing: a
+    backend that admits on its own identifies a waiter by `type` and by the `participantIdentity` of a member
+    or user, never by those two.
+required:
+    - participantIdentity
+    - participantName
+    - type
+    - knockDate
+properties:
+    participantIdentity:
+        type: string
+        example: 'ana-a1b2c3'
+        description: >
+            The identity the participant will have in the meeting, created when they asked to join. The
+            [`participantJoined`](#/webhooks/participantJoinedWebhook) webhook reports the same identity after their
+            admission. For a member or a user, it is derived from their personal link or their account, so the same
+            person asking again gets the same identity.
+    participantName:
+        type: string
+        example: 'Ana'
+        description: >
+            The name the participant gave. It is made unique among the participants of the meeting only when they join.
+    type:
+        type: string
+        enum:
+            - user
+            - identified_guest
+            - anonymous
+        example: anonymous
+        description: |
+            How the participant asked to join, derived by the server from the credential of the request:
+            - `user`: with their own Meet account.
+            - `identified_guest`: with their personal member link.
+            - `anonymous`: with a shared link of the room.
+    externalId:
+        type: string
+        maxLength: 64
+        pattern: '^[A-Za-z0-9_-]+$'
+        example: 'user-42'
+        description: >
+            The application-defined identifier as sent by the participant's client (`participantExternalId` of the
+            token request). It is never a proof of identity: any holder of an anonymous link can send any value. A
+            backend that admits on its own identifies a waiter by `type` and by the `participantIdentity` of a member
+            or user. Absent when the client sent none.
+    metadata:
+        type: string
+        maxLength: 2048
+        example: '{"department": "cardiology"}'
+        description: >
+            The opaque application-defined payload as sent by the participant's client (`participantMetadata` of the
+            token request). It is never a proof of identity, like `externalId`. Absent when the client sent none.
+    knockDate:
+        type: number
+        example: 1620000000000
+        description: >
+            The date when the participant asked to join (milliseconds since the Unix epoch). A participant who returns
+            to the line because the meeting was full when they were admitted keeps it.

@@ -1,0 +1,21 @@
+description: The participants admitted
+content:
+    application/json:
+        schema:
+            type: object
+            required:
+                - participants
+            properties:
+                participants:
+                    type: array
+                    description: >
+                        The participants admitted, in arrival order. Possibly none when `participantIdentities` was
+                        omitted: nobody was waiting, no place was free or the room's waiting room is off.
+                    items:
+                        $ref: '../../schemas/meet-lobby-participant.yaml'
+        example:
+            participants:
+                - participantIdentity: 'ana-a1b2c3'
+                  participantName: 'Ana'
+                  type: anonymous
+                  knockDate: 1620000000000

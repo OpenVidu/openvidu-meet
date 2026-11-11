@@ -2,6 +2,8 @@ import type {
 	MeetAppearanceConfig,
 	MeetChatConfig,
 	MeetE2EEConfig,
+	MeetLobbyConfig,
+	MeetLobbyConfigOptions,
 	MeetRaiseHandConfig,
 	MeetReactionsConfig,
 	MeetRecordingConfig,
@@ -105,6 +107,18 @@ const ReactionsConfigSchema: z.ZodType<MeetReactionsConfig> = z.object({
 	enabled: z.boolean()
 });
 
+const lobbyMessageSchema = z.string().max(500, 'Must not exceed 500 characters');
+
+const LobbyConfigSchema: z.ZodType<MeetLobbyConfig> = z.object({
+	enabled: z.boolean(),
+	message: lobbyMessageSchema.optional()
+});
+
+const LobbyConfigUpdateSchema: z.ZodType<MeetLobbyConfigOptions> = z.object({
+	enabled: z.boolean(),
+	message: lobbyMessageSchema.nullable().optional()
+});
+
 const ThemeModeSchema: z.ZodType<MeetRoomThemeMode> = z.enum(MeetRoomThemeMode);
 
 const hexColorSchema = z
@@ -150,7 +164,8 @@ const UpdateRoomConfigSchema: z.ZodType<MeetRoomConfigOptions> = z
 		e2ee: E2EEConfigSchema.optional(),
 		captions: CaptionsConfigSchema.optional(),
 		raiseHand: RaiseHandConfigSchema.optional(),
-		reactions: ReactionsConfigSchema.optional()
+		reactions: ReactionsConfigSchema.optional(),
+		lobby: LobbyConfigUpdateSchema.optional()
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data: MeetRoomConfigOptions) => {
@@ -187,7 +202,8 @@ const CreateRoomConfigSchema: z.ZodType<MeetRoomConfigOptions> = z
 		e2ee: E2EEConfigSchema.optional().default(() => ({ enabled: false })),
 		captions: CaptionsConfigSchema.optional().default(() => ({ enabled: true })),
 		raiseHand: RaiseHandConfigSchema.optional().default(() => ({ enabled: true })),
-		reactions: ReactionsConfigSchema.optional().default(() => ({ enabled: true }))
+		reactions: ReactionsConfigSchema.optional().default(() => ({ enabled: true })),
+		lobby: LobbyConfigSchema.optional().default(() => ({ enabled: false }))
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data) => {
@@ -324,6 +340,7 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		captions: { enabled: true },
 		raiseHand: { enabled: true },
 		reactions: { enabled: true },
+		lobby: { enabled: false },
 		initialAudioActive: true,
 		initialVideoActive: true
 	}),

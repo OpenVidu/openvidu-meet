@@ -6,6 +6,10 @@
             Retrieves the details of a live meeting.
 
             Requires the `meetingRead` permission.
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -19,7 +23,7 @@
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
-                $ref: '../shared/responses/errors/forbidden.yaml'
+                $ref: './responses/errors/forbidden-meeting-action.yaml'
             '404':
                 $ref: './responses/errors/no-active-meeting.yaml'
             '422':
@@ -39,6 +43,10 @@
             Requires the `meetingEnd` permission.
 
             This endpoint is idempotent. If the meeting is already ended, it will return a success response without any action.
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -52,7 +60,7 @@
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
-                $ref: '../shared/responses/errors/forbidden.yaml'
+                $ref: './responses/errors/forbidden-meeting-action.yaml'
             '404':
                 $ref: '../rooms/responses/errors/room-not-found.yaml'
             '422':
@@ -73,6 +81,10 @@
             `metadata`), effective role, join date and current media state.
 
             Requires the `meetingRead` permission.
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -86,7 +98,7 @@
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
-                $ref: '../shared/responses/errors/forbidden.yaml'
+                $ref: './responses/errors/forbidden-meeting-action.yaml'
             '404':
                 $ref: './responses/errors/no-active-meeting.yaml'
             '422':
@@ -110,6 +122,11 @@
 
 
             Requires the `participantMute` permission.
+
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -127,7 +144,7 @@
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
-                $ref: '../shared/responses/errors/forbidden.yaml'
+                $ref: './responses/errors/forbidden-meeting-action.yaml'
             '404':
                 $ref: './responses/errors/no-active-meeting.yaml'
             '413':
@@ -148,6 +165,10 @@
             Retrieves the live snapshot of one participant in the meeting.
 
             Requires the `meetingRead` permission.
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -162,7 +183,7 @@
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
-                $ref: '../shared/responses/errors/forbidden.yaml'
+                $ref: './responses/errors/forbidden-meeting-action.yaml'
             '404':
                 $ref: './responses/errors/room-participant-not-found.yaml'
             '422':
@@ -188,6 +209,11 @@
 
 
             Requires the `participantKick` permission.
+
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -202,7 +228,7 @@
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
-                $ref: '../shared/responses/errors/forbidden.yaml'
+                $ref: './responses/errors/forbidden-meeting-action.yaml'
             '404':
                 $ref: './responses/errors/room-participant-not-found.yaml'
             '422':
@@ -224,6 +250,11 @@
 
 
             Requires the `participantMute` permission.
+
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -242,7 +273,7 @@
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
-                $ref: '../shared/responses/errors/forbidden.yaml'
+                $ref: './responses/errors/forbidden-meeting-action.yaml'
             '404':
                 $ref: './responses/errors/room-participant-not-found.yaml'
             '409':
@@ -280,6 +311,11 @@
             An `upgrade` reaches the `when_moderator_joins` recording auto-start trigger: in a room configured
             with it, the recording starts on its own once this request has returned, unless it was already
             stopped by hand during this meeting.
+
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -296,7 +332,7 @@
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
-                $ref: '../shared/responses/errors/forbidden.yaml'
+                $ref: './responses/errors/forbidden-meeting-action.yaml'
             '404':
                 $ref: './responses/errors/room-participant-not-found.yaml'
             '409':
@@ -324,6 +360,11 @@
 
 
             Requires the `participantHandLower` permission.
+
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -341,7 +382,7 @@
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
-                $ref: '../shared/responses/errors/forbidden.yaml'
+                $ref: './responses/errors/forbidden-meeting-action.yaml'
             '404':
                 $ref: './responses/errors/no-active-meeting.yaml'
             '413':
@@ -370,6 +411,11 @@
 
             A hand already in the requested state is left as it is, so a repeated raise keeps its
             original `handRaiseDate`.
+
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -388,7 +434,7 @@
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
-                $ref: '../shared/responses/errors/forbidden.yaml'
+                $ref: './responses/errors/forbidden-meeting-action.yaml'
             '404':
                 $ref: './responses/errors/room-participant-not-found.yaml'
             '409':
@@ -397,6 +443,200 @@
                 $ref: '../shared/responses/errors/payload-too-large.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
+
+/meetings/{roomId}/lobby:
+    get:
+        operationId: lobbyList
+        summary: List the participants waiting to join
+        description: |
+            Lists the participants waiting to be admitted to the meeting of a room, in arrival order (`knockDate`,
+            then identity), and the free places of the meeting. A room only holds participants waiting when its
+            config has `lobby.enabled`: with the waiting room off the list is empty.
+
+            Unlike the other meeting operations, it answers whether or not a meeting is running: participants wait
+            before the first one starts.
+
+            `availablePlaces` is the room's `maxParticipants` minus the participants connected and the participants
+            admitted until LiveKit reports them joined, a minute after their admission at most, never below 0, or
+            `null` when the room has no participant limit. A list holds at most 100 participants.
+
+            `externalId` and `metadata` of each [`MeetLobbyParticipant`](#/schemas/MeetLobbyParticipant) are as sent by
+            the participant's client and never a proof of identity. A backend that admits on its own identifies a
+            waiting participant by `type` and by the `participantIdentity` of a member or user, which the server derives
+            from their personal link or account.
+
+            Requires the `lobbyAdmin` permission.
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`, so a
+            participant who waits cannot list the others, whatever their permissions. A host application acting for
+            itself uses the API key.
+        tags:
+            - OpenVidu Meet - Meetings
+        security:
+            - apiKeyHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: '../rooms/parameters/room-id-path.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/get-lobby.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: './responses/errors/forbidden-meeting-action.yaml'
+            '404':
+                $ref: '../rooms/responses/errors/room-not-found.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
+/meetings/{roomId}/lobby/admit:
+    post:
+        operationId: lobbyAdmit
+        summary: Admit waiting participants
+        description: |
+            Admits waiting participants to the meeting of a room: each one's meeting asks for its join token and they
+            join with the identity they waited with. Admitting the first participant of a room with no meeting running
+            starts it, so, unlike the other meeting operations, it answers whether or not a meeting is running.
+
+            | `participantIdentities` | Participants admitted |
+            | ----------------------- | --------------------- |
+            | Omitted (an empty body or `{}`) | The first waiting, in arrival order, up to the free places |
+            | `["ana-a1b2c3", "ben_smith"]` | Exactly the ones listed, all or none |
+
+            A decision on named participants applies to all of them or to none: it answers `404`, naming the first
+            identity that no longer waits, and admits nobody, or `409` when the participants named outnumber the free
+            places of the meeting (see `availablePlaces` of [`lobbyList`](#/operations/lobbyList)), which count the
+            participants admitted who have not joined yet. An empty list and a repeated identity are rejected with a
+            `422`: an empty list is never read as everyone waiting.
+
+            Admitting everyone waiting never answers `409` for the places: it admits the first waiting, in arrival
+            order, up to the free places and leaves the rest waiting, in their place.
+
+            The response lists the participants admitted, possibly none when everyone was asked for: nobody waits, no
+            place is free or the room's waiting room is off. With the waiting room off, a decision on named participants
+            answers `404`.
+
+            Decisions on the same waiting participant apply one at a time, whichever Meet replica receives them: the
+            first one applies and a later one naming them answers `404`, while a later one on everyone waiting leaves
+            them out. Two admissions for the last free place give one `200` and one `409`.
+
+            Each participant admitted is reported through the
+            [`lobbyStatusChanged`](#/webhooks/lobbyStatusChangedWebhook) webhook with the `admitted` status, and counts
+            as a taken place until LiveKit reports them in the meeting, a minute after their admission at most. An
+            admission that is not used within that minute ends as `expired`.
+
+            Requires the `lobbyAdmin` permission.
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`, so a
+            participant who waits cannot admit anyone, themselves included, whatever their permissions. A host
+            application acting for itself uses the API key.
+        tags:
+            - OpenVidu Meet - Meetings
+        security:
+            - apiKeyHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: '../rooms/parameters/room-id-path.yaml'
+        requestBody:
+            $ref: './requests/lobby-decision.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/admit-lobby.yaml'
+            '400':
+                $ref: '../shared/responses/errors/malformed-body.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: './responses/errors/forbidden-meeting-action.yaml'
+            '404':
+                $ref: './responses/errors/lobby-not-found.yaml'
+            '409':
+                $ref: './responses/errors/lobby-no-free-places.yaml'
+            '413':
+                $ref: '../shared/responses/errors/payload-too-large.yaml'
+            '422':
+                $ref: './responses/errors/lobby-decision-invalid.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
+/meetings/{roomId}/lobby/reject:
+    post:
+        operationId: lobbyReject
+        summary: Reject waiting participants
+        description: |
+            Rejects waiting participants of the meeting of a room: each one leaves the line and their meeting tells
+            them they were not let in, with the option to ask to join again, which starts a new wait at the end of the
+            line. Unlike the other meeting operations, it answers whether or not a meeting is running.
+
+            | `participantIdentities` | Participants rejected |
+            | ----------------------- | --------------------- |
+            | Omitted (an empty body or `{}`) | Everyone waiting when the request runs |
+            | `["ana-a1b2c3", "ben_smith"]` | Exactly the ones listed, all or none |
+
+            A decision on named participants applies to all of them or to none: it answers `404`, naming the first
+            identity that no longer waits, and rejects nobody. An empty list and a repeated identity are rejected
+            with a `422`: an empty list is never read as everyone waiting.
+
+            Rejecting everyone waiting rejects, in one step, everyone waiting at that moment, so it never fails because
+            the line changed after the caller looked at it; a participant who asks to join right after starts a new
+            wait and is not rejected.
+
+            The response lists the participants rejected, possibly none when everyone was asked for: nobody waits or
+            the room's waiting room is off. With the waiting room off, a decision on named participants answers
+            `404`.
+
+            Decisions on the same waiting participant apply one at a time, whichever Meet replica receives them: the
+            first one applies and a later one naming them answers `404`, while a later one on everyone waiting leaves
+            them out.
+
+            Each participant rejected is reported through the
+            [`lobbyStatusChanged`](#/webhooks/lobbyStatusChangedWebhook) webhook with the `rejected` status.
+
+            Requires the `lobbyAdmin` permission.
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`. A host
+            application acting for itself uses the API key.
+        tags:
+            - OpenVidu Meet - Meetings
+        security:
+            - apiKeyHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: '../rooms/parameters/room-id-path.yaml'
+        requestBody:
+            $ref: './requests/lobby-decision.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/reject-lobby.yaml'
+            '400':
+                $ref: '../shared/responses/errors/malformed-body.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: './responses/errors/forbidden-meeting-action.yaml'
+            '404':
+                $ref: './responses/errors/lobby-not-found.yaml'
+            '413':
+                $ref: '../shared/responses/errors/payload-too-large.yaml'
+            '422':
+                $ref: './responses/errors/lobby-decision-invalid.yaml'
             '429':
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':

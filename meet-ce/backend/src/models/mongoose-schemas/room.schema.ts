@@ -211,6 +211,23 @@ const MeetReactionsConfigSchema = new Schema(
 );
 
 /**
+ * Sub-schema for waiting room configuration.
+ */
+const MeetLobbyConfigSchema = new Schema(
+	{
+		enabled: {
+			type: Boolean,
+			required: true
+		},
+		message: {
+			type: String,
+			required: false
+		}
+	},
+	{ _id: false }
+);
+
+/**
  * Sub-schema for room theme configuration.
  */
 const MeetRoomThemeSchema = new Schema(
@@ -388,6 +405,10 @@ const MeetRoomConfigSchema = new Schema(
 		},
 		reactions: {
 			type: MeetReactionsConfigSchema,
+			required: true
+		},
+		lobby: {
+			type: MeetLobbyConfigSchema,
 			required: true
 		}
 	},
