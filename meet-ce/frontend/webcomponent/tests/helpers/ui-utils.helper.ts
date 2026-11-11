@@ -40,3 +40,20 @@ export const getWebhookFromStorage = async (
 
 	return (await handle.jsonValue()) as MeetWebhookEvent;
 };
+
+/** Every webhook event of `eventName` the testapp has stored for the room so far, in arrival order. */
+export const webhooksFromStorage = (
+	page: Page,
+	roomId: string,
+	eventName: MeetWebhookEventType
+): Promise<MeetWebhookEvent[]> =>
+	page.evaluate(
+		({ roomId, eventName }) => {
+			const map = JSON.parse(sessionStorage.getItem('webhookEventsByRoom') ?? '{}') as Record<
+				string,
+				Array<{ event: string }>
+			>;
+			return (map[roomId]?.filter((e) => e.event === eventName) ?? []) as unknown as MeetWebhookEvent[];
+		},
+		{ roomId, eventName }
+	);

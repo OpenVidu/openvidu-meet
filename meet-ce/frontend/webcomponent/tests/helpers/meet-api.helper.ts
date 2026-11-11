@@ -1,4 +1,5 @@
 import {
+	MeetLobbyList,
 	MeetParticipantModerationAction,
 	MeetParticipantPayload,
 	MeetRecordingInfo,
@@ -143,6 +144,42 @@ export const waitForMeetingParticipant = async (roomId: string, participantName:
 	}
 
 	throw new Error(`Participant '${participantName}' never appeared in the meeting of room ${roomId}`);
+};
+
+/**
+ * Reads the room's waiting room via the Meet API: who waits, in arrival order, and the free places.
+ */
+export const getLobby = async (roomId: string): Promise<MeetLobbyList> => {
+	const response = await fetch(withApiPath(`/meetings/${encodeURIComponent(roomId)}/lobby`), {
+		method: 'GET',
+		headers: { 'x-api-key': MEET_API_KEY }
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'get lobby');
+
+	return JSON.parse(responseText) as MeetLobbyList;
+};
+
+/**
+ * Admits or rejects waiting participants via the Meet API, those named or, with none, everyone waiting.
+ */
+export const decideOnLobby = async (
+	roomId: string,
+	decision: 'admit' | 'reject',
+	participantIdentities?: string[]
+): Promise<void> => {
+	const response = await fetch(withApiPath(`/meetings/${encodeURIComponent(roomId)}/lobby/${decision}`), {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'x-api-key': MEET_API_KEY
+		},
+		body: JSON.stringify(participantIdentities ? { participantIdentities } : {})
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, `lobby ${decision}`);
 };
 
 /**
