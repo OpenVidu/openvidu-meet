@@ -1402,3 +1402,58 @@ export const getBroadcast = async (broadcastId: string, roomMemberToken?: string
 	checkAppIsRunning();
 	return await asBroadcastCaller(request(app).get(`${broadcastsPath()}/${broadcastId}`), roomMemberToken);
 };
+
+// WAITING ROOM HELPERS
+
+const lobbyPath = (roomId: string, action = '') =>
+	getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/lobby${action}`);
+
+/** Calls a waiting room operation with the given room member token, or with the API key without one. */
+const asLobbyAdmitter = (req: request.Test, roomMemberToken?: string) =>
+	roomMemberToken
+		? req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
+		: req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+
+export const getLobby = async (roomId: string, roomMemberToken?: string): Promise<Response> => {
+	checkAppIsRunning();
+	return await asLobbyAdmitter(request(app).get(lobbyPath(roomId)), roomMemberToken);
+};
+
+export const admitFromLobby = async (
+	roomId: string,
+	participantIdentities?: string[],
+	roomMemberToken?: string
+): Promise<Response> => {
+	checkAppIsRunning();
+	return await asLobbyAdmitter(request(app).post(lobbyPath(roomId, '/admit')), roomMemberToken).send(
+		participantIdentities ? { participantIdentities } : {}
+	);
+};
+
+export const rejectFromLobby = async (
+	roomId: string,
+	participantIdentities?: string[],
+	roomMemberToken?: string
+): Promise<Response> => {
+	checkAppIsRunning();
+	return await asLobbyAdmitter(request(app).post(lobbyPath(roomId, '/reject')), roomMemberToken).send(
+		participantIdentities ? { participantIdentities } : {}
+	);
+};
+
+export const leaveLobby = async (roomId: string, lobbyTicket: string): Promise<Response> => {
+	checkAppIsRunning();
+	return await request(app)
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/lobby/leave`))
+		.query({ lobbyTicket })
+		.send();
+};
+
+/** Asks to join a room's meeting with one of its links, by the first request or with the ticket of a wait. */
+export const askToJoin = async (
+	roomId: string,
+	secret: string,
+	participantName = 'Waiter',
+	lobbyTicket?: string
+): Promise<Response> =>
+	generateRoomMemberTokenRequest(roomId, { secret, joinMeeting: true, participantName, lobbyTicket });

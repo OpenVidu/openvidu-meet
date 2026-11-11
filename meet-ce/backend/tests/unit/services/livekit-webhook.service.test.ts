@@ -322,7 +322,8 @@ describe('LivekitWebhookService.handleRoomFinished', () => {
 				redis,
 				new FakeLogger(),
 				{ cleanupRoom: record('cleanupRoom') },
-				meetingDurationLimitService
+				meetingDurationLimitService,
+				{ closeRoom: record('endWaits') }
 			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
 		);
 
@@ -359,6 +360,20 @@ describe('LivekitWebhookService.handleRoomFinished', () => {
 
 		expect(cleanups).toContain('deleteAllRoomRecordings(room-1)');
 		expect(cleanups).toContain('deleteAllByRoomId(room-1)');
+		expect(cleanups).toContain('endWaits(room-1)');
+	});
+
+	it('ends the waits of a room the end closed', async () => {
+		const { service, roomRepository, cleanups } = buildFinishedService(new FakeRedisService());
+		roomRepository.endedRoom = {
+			roomId: 'room-1',
+			status: MeetRoomStatus.CLOSED,
+			meetingEndAction: MeetingEndAction.NONE
+		};
+
+		await service.handleRoomFinished({ name: 'room-1', sid: 'sid-1' });
+
+		expect(cleanups).toContain('endWaits(room-1)');
 	});
 
 	it('sends one meetingEnded when the same end is reported twice at once', async () => {

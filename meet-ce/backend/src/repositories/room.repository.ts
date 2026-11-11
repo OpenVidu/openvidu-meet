@@ -82,21 +82,38 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	}
 
 	/**
-	 * Replaces the config of a room together with the real URL of each of its broadcast
-	 * destinations, which live outside the domain shape (see {@link findBroadcastDestinationUrls}).
+	 * Replaces the config of a room without an active meeting together with the real URL of each of its
+	 * broadcast destinations, which live outside the domain shape (see {@link findBroadcastDestinationUrls}),
+	 * atomically. Turning the waiting room on also sets `rolesUpdatedAt`, judged on the stored config by
+	 * the write itself, so the room member tokens issued before stop working.
 	 *
 	 * @param roomId - The unique room identifier
 	 * @param config - The complete config to store
 	 * @param broadcastDestinationUrls - The real URL of each destination in `config.broadcast`
-	 * @returns The updated room with enriched URLs
-	 * @throws Error if room not found
+	 * @returns The updated room with enriched URLs, or `null` if the room has an active meeting, does not
+	 * exist, or had its waiting room switched meanwhile
 	 */
-	updateConfig(
+	async updateIdleRoomConfig(
 		roomId: string,
 		config: MeetRoomConfig,
 		broadcastDestinationUrls: BroadcastDestinationUrls
-	): Promise<MeetRoom> {
-		return this.updatePartialOne({ roomId }, { config, broadcastDestinationUrls });
+	): Promise<MeetRoom | null> {
+		const idleRoom = { roomId, status: { $ne: MeetRoomStatus.ACTIVE_MEETING } };
+		const update = { config, broadcastDestinationUrls };
+
+		if (!config.lobby.enabled) {
+			return this.updatePartialOne(idleRoom, update, { throwIfNotFound: false });
+		}
+
+		const turnedOn = await this.updatePartialOne(
+			{ ...idleRoom, 'config.lobby.enabled': { $ne: true } },
+			{ ...update, rolesUpdatedAt: Date.now() },
+			{ throwIfNotFound: false }
+		);
+		return (
+			turnedOn ??
+			this.updatePartialOne({ ...idleRoom, 'config.lobby.enabled': true }, update, { throwIfNotFound: false })
+		);
 	}
 
 	/**

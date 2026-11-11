@@ -232,19 +232,28 @@ export class LobbyService {
 		return result.ended;
 	}
 
-	/** Ends every wait of a room whose meeting was ended on purpose; a wait started afterwards goes on. */
-	async endMeeting(roomId: string, origin: MeetEventOrigin): Promise<void> {
-		await this.endWaits(roomId, MeetLobbyStatus.MEETING_ENDED, origin);
+	/**
+	 * Ends every wait of a room whose meeting was ended on purpose; a wait started afterwards goes on. Never
+	 * fails: the waits left go on for the room's next meeting, as when a meeting empties.
+	 */
+	endMeeting(roomId: string, origin: MeetEventOrigin): Promise<void> {
+		return this.endEveryWait(roomId, MeetLobbyStatus.MEETING_ENDED, origin);
 	}
 
-	/** Ends every wait of a room that was closed or deleted. */
-	async closeRoom(roomId: string): Promise<void> {
-		await this.endWaits(roomId, MeetLobbyStatus.ROOM_CLOSED, MeetEventOrigin.MODERATOR);
+	/**
+	 * Ends every wait of a room that was closed or deleted. Never fails: a waiter left is told at their next
+	 * answered ping, which finds the room closed.
+	 */
+	closeRoom(roomId: string): Promise<void> {
+		return this.endEveryWait(roomId, MeetLobbyStatus.ROOM_CLOSED, MeetEventOrigin.MODERATOR);
 	}
 
-	/** Lets everyone waiting in a room whose waiting room was turned off: each one joins as any participant. */
-	async letEveryoneIn(roomId: string): Promise<void> {
-		await this.endWaits(roomId, MeetLobbyStatus.ADMITTED, MeetEventOrigin.MODERATOR);
+	/**
+	 * Lets everyone waiting in a room whose waiting room was turned off: each one joins as any participant.
+	 * Never fails: a waiter left is let in at their next answered ping, which finds the waiting room off.
+	 */
+	letEveryoneIn(roomId: string): Promise<void> {
+		return this.endEveryWait(roomId, MeetLobbyStatus.ADMITTED, MeetEventOrigin.MODERATOR);
 	}
 
 	/**
@@ -278,6 +287,14 @@ export class LobbyService {
 				`Could not release the waiting room place of participant '${participantIdentity}' in room '${roomId}'`,
 				error
 			);
+		}
+	}
+
+	protected async endEveryWait(roomId: string, outcome: MeetLobbyStatus, origin: MeetEventOrigin): Promise<void> {
+		try {
+			await this.endWaits(roomId, outcome, origin);
+		} catch (error) {
+			this.logger.warn(`Could not end the waits of room '${roomId}' as ${outcome}`, error);
 		}
 	}
 

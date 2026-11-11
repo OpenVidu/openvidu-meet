@@ -7,6 +7,8 @@ import {
 	MeetRoomMemberUIBadge
 } from '@openvidu-meet/typings';
 import { Express } from 'express';
+import { jwtDecode } from 'jwt-decode';
+import type { ClaimGrants } from 'livekit-server-sdk';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
@@ -23,15 +25,26 @@ import {
 	updateParticipantMetadata
 } from '../../../helpers/livekit-cli-helpers.js';
 import {
+	admitFromLobby,
+	askToJoin,
 	createAssistant,
 	deleteAllRooms,
 	generateRoomMemberToken,
 	getFullPath,
+	getLobby,
 	loginRootAdmin,
-	startTestServer
+	refreshRoomMemberTokenRequest,
+	startTestServer,
+	stopAllRecordings
 } from '../../../helpers/request-helpers.js';
 
-import { setupRoomMember, setupSingleRoom, updateRoomMemberPermissions } from '../../../helpers/test-scenarios.js';
+import {
+	guestSecretOf,
+	setupRoomMember,
+	setupSingleRoom,
+	updateRoomMemberPermissions
+} from '../../../helpers/test-scenarios.js';
+import { waitForMeetingToStart } from '../../../helpers/wait-helpers.js';
 import { RoomData, RoomMemberData } from '../../../interfaces/scenarios.js';
 
 const MEETINGS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings`);
@@ -435,6 +448,133 @@ describe('Meeting API Security Tests', () => {
 
 				expectMeetError(response, errorUnauthorized());
 			});
+		});
+	});
+
+	describe('Waiting room Tests', () => {
+		const RECORDINGS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`);
+
+		let lobbyRoomId: string;
+		let lobbyRoom: RoomData;
+		let waitingAdmitter: RoomMemberData;
+		let admittedToken: string;
+		let hostToken: string;
+		let demotedToken: string;
+
+		/** Joins the meeting with the identity and metadata of a join token, as its client would. */
+		const connectWith = async (token: string) => {
+			const { sub, metadata } = jwtDecode<ClaimGrants>(token);
+			await joinFakeParticipant(lobbyRoomId, sub!, metadata);
+			return sub!;
+		};
+
+		/** Asks to join with a link, is admitted with the API key and joins with the ticket. */
+		const joinThroughTheLine = async (secret: string, name: string) => {
+			const { body: wait } = await askToJoin(lobbyRoomId, secret, name);
+			expect((await admitFromLobby(lobbyRoomId, [wait.participantIdentity])).status).toBe(200);
+			const joined = await askToJoin(lobbyRoomId, secret, name, wait.lobbyTicket);
+			expect(joined.status).toBe(200);
+			return joined.body.token as string;
+		};
+
+		const meetingRequests = (token: string) => [
+			request(app).get(`${MEETINGS_PATH}/${lobbyRoomId}`).set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token),
+			request(app)
+				.get(`${MEETINGS_PATH}/${lobbyRoomId}/participants`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token),
+			request(app)
+				.get(BROADCASTS_PATH)
+				.query({ roomId: lobbyRoomId })
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token)
+		];
+
+		const startRecordingWith = (token: string) =>
+			request(app)
+				.post(RECORDINGS_PATH)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token)
+				.send({ roomId: lobbyRoomId });
+
+		beforeAll(async () => {
+			lobbyRoom = await setupSingleRoom(false, 'LOBBY_ROOM', { lobby: { enabled: true } });
+			lobbyRoomId = lobbyRoom.room.roomId;
+			waitingAdmitter = await setupRoomMember(lobbyRoomId, {
+				name: 'Waiting Admitter',
+				baseRole: MeetRoomMemberRole.MODERATOR,
+				customPermissions: { lobbyBypass: false }
+			});
+
+			const host = await askToJoin(lobbyRoomId, lobbyRoom.moderatorSecret, 'Host');
+			hostToken = `Bearer ${host.body.token}`;
+			await connectWith(host.body.token);
+			await waitForMeetingToStart(lobbyRoomId);
+
+			const admitted = await joinThroughTheLine(guestSecretOf(waitingAdmitter.member), 'Waiting Admitter');
+			admittedToken = `Bearer ${admitted}`;
+			await connectWith(admitted);
+
+			const demoted = await joinThroughTheLine(lobbyRoom.speakerSecret, 'Demoted');
+			const demotedIdentity = await connectWith(demoted);
+
+			for (const action of [MeetParticipantModerationAction.UPGRADE, MeetParticipantModerationAction.DOWNGRADE]) {
+				const response = await request(app)
+					.put(`${MEETINGS_PATH}/${lobbyRoomId}/participants/${demotedIdentity}/role`)
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, hostToken)
+					.send({ action });
+				expect(response.status).toBe(200);
+			}
+
+			const renewed = await refreshRoomMemberTokenRequest(lobbyRoomId, `Bearer ${demoted}`);
+			expect(renewed.status).toBe(200);
+			demotedToken = `Bearer ${renewed.body.token}`;
+		});
+
+		afterAll(async () => {
+			await stopAllRecordings();
+		});
+
+		it('should fail to act on the meeting with a room member token minted without joining', async () => {
+			const responses = await Promise.all([
+				...meetingRequests(waitingAdmitter.memberToken),
+				startRecordingWith(waitingAdmitter.memberToken),
+				getLobby(lobbyRoomId, waitingAdmitter.memberToken)
+			]);
+
+			responses.forEach((response) => expectMeetError(response, errorInsufficientPermissions()));
+		});
+
+		it('should still list the recordings with a room member token minted without joining', async () => {
+			const response = await request(app)
+				.get(RECORDINGS_PATH)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, waitingAdmitter.memberToken);
+			expect(response.status).toBe(200);
+		});
+
+		it('should act on the meeting with the join token of an admitted participant, of a holder of lobbyBypass and of a moderator demoted during the meeting', async () => {
+			for (const token of [admittedToken, hostToken, demotedToken]) {
+				const responses = await Promise.all(meetingRequests(token));
+				responses.forEach((response) => expect(response.status).toBe(200));
+			}
+
+			for (const token of [admittedToken, hostToken]) {
+				expect((await startRecordingWith(token)).status).not.toBe(403);
+			}
+
+			expect((await getLobby(lobbyRoomId, admittedToken)).status).toBe(200);
+		});
+
+		it('should guard the waiting room operations with lobbyAdmin', async () => {
+			expect((await getLobby(lobbyRoomId)).status).toBe(200);
+			expectMeetError(await getLobby(lobbyRoomId, demotedToken), errorInsufficientPermissions());
+			expectMeetError(
+				await request(app)
+					.get(`${MEETINGS_PATH}/${lobbyRoomId}/lobby`)
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, rootAdminAccessToken),
+				errorUnauthorized()
+			);
+			expectMeetError(
+				await getLobby(lobbyRoomId, (await setupSingleRoom()).moderatorToken),
+				errorInsufficientPermissions()
+			);
 		});
 	});
 });

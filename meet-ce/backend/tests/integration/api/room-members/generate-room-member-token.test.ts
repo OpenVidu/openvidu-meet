@@ -12,7 +12,9 @@ import {
 	MeetUserRole,
 	normalizePermissions
 } from '@openvidu-meet/typings';
+import request from 'supertest';
 import { container } from '../../../../src/config/dependency-injector.config.js';
+import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { TokenService } from '../../../../src/services/token.service.js';
 import {
@@ -45,6 +47,7 @@ import {
 	endMeeting,
 	generateRoomMemberToken,
 	generateRoomMemberTokenRequest,
+	getFullPath,
 	startTestServer,
 	updateParticipant,
 	updateRoomAccessConfig,
@@ -695,6 +698,8 @@ describe('Room Members API Tests', () => {
 					participantKick: true,
 					participantMute: true,
 					participantHandLower: true,
+					lobbyBypass: true,
+					lobbyAdmin: true,
 					meetingEnd: true
 				}
 			});
@@ -1384,6 +1389,27 @@ describe('Room Members API Tests', () => {
 	});
 
 	describe('Generate Room Member Token Validation Tests', () => {
+		it('should fail when lobbyTicket comes without joinMeeting true', async () => {
+			const response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
+				secret: roomData.speakerSecret,
+				lobbyTicket: 'q8d1u3Zr0m6ZxVwK9tHc2A'
+			});
+			expectValidationError(response, 'lobbyTicket', 'lobbyTicket is only accepted with joinMeeting true');
+		});
+
+		it('should expose the RateLimit header to a caller on another origin', async () => {
+			const response = await request(await startTestServer())
+				.post(
+					getFullPath(
+						`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomData.room.roomId}/members/token`
+					)
+				)
+				.set('Origin', 'https://host.example.com')
+				.send({ secret: roomData.speakerSecret });
+
+			expect(response.headers['access-control-expose-headers']).toBe('RateLimit');
+		});
+
 		it('should fail when joinMeeting is not a boolean', async () => {
 			const response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
 				joinMeeting: 'not-a-boolean' as unknown as boolean

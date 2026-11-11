@@ -1,6 +1,14 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import type { MeetRoom, MeetRoomMemberPermissions, MeetRoomRoles } from '@openvidu-meet/typings';
-import { MEET_PERMISSION_KEYS, MeetRoomMemberRole, MeetRoomMemberUIBadge, TrackSource } from '@openvidu-meet/typings';
+import {
+	MEET_PERMISSION_KEYS,
+	MeetLobbyParticipantType,
+	MeetLobbyStatus,
+	MeetRoomMemberRole,
+	MeetRoomMemberUIBadge,
+	MeetRoomStatus,
+	TrackSource
+} from '@openvidu-meet/typings';
 import type { ParticipantInfo } from 'livekit-server-sdk';
 import ms from 'ms';
 import { container, registerDependencies } from '../../../src/config/dependency-injector.config.js';
@@ -8,7 +16,9 @@ import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
 import type { ParticipantMeetingMetadata } from '../../../src/helpers/participant.helper.js';
 import { MeetRoomMemberHelper } from '../../../src/helpers/room-member.helper.js';
 import { errorParticipantNotFound } from '../../../src/models/error.model.js';
+import type { LobbyEntry, LobbyReturnResult, LobbyTicketChange, LobbyWait } from '../../../src/models/lobby.model.js';
 import { RoomRepository } from '../../../src/repositories/room.repository.js';
+import { LobbyAdmissionPolicy } from '../../../src/services/lobby/lobby-admission.policy.js';
 import { MutexService } from '../../../src/services/mutex.service.js';
 import { ParticipantTokenRevocationService } from '../../../src/services/participant-token-revocation.service.js';
 import { RedisService } from '../../../src/services/redis.service.js';
@@ -447,5 +457,240 @@ describe('the participant metadata lock', () => {
 		const requestsMs = 2 * INTERNAL_CONFIG.LIVEKIT_REQUEST_TIMEOUT_SECONDS * 1000;
 
 		expect(ms(INTERNAL_CONFIG.PARTICIPANT_METADATA_LOCK_TTL)).toBeGreaterThan(requestsMs);
+	});
+});
+
+// A participant the waiting room applies to gets a ticket, not a token, and the ticket is answered by the state
+// of its wait. Only an admission, used right before the token is minted, yields a token.
+describe('RoomMemberService.generateRoomMemberToken in a room with the waiting room on', () => {
+	const ROOM_ID = 'room-lobby';
+	const TICKET = 'ticket-1';
+	const speaker: MeetRoomMemberPermissions = { ...none, meetingJoin: true };
+
+	class JoinStepsRoomMemberService extends RoomMemberService {
+		source: { memberId?: string; permissions: MeetRoomMemberPermissions } = { permissions: speaker };
+
+		protected override async resolvePermissionSourceFromSecret() {
+			return this.source;
+		}
+	}
+
+	let steps: string[];
+	let lobbyEnabled: boolean;
+	let connected: number;
+	let wait: LobbyWait | null;
+	let consumed: LobbyTicketChange;
+	let returned: LobbyReturnResult;
+	let memberService: JoinStepsRoomMemberService;
+
+	const entry = { waitId: 'wait-1' } as LobbyEntry;
+	const waitOf = (status: MeetLobbyStatus, ended = false, principal?: string): LobbyWait => ({
+		waitId: 'wait-1',
+		roomId: ROOM_ID,
+		participant: {
+			participantIdentity: 'ana-1',
+			participantName: 'Ana',
+			type: MeetLobbyParticipantType.ANONYMOUS,
+			externalId: 'ext-1',
+			knockDate: 1,
+			roomName: 'Room'
+		},
+		...(principal && { principal }),
+		status,
+		ended
+	});
+	const join = (options: { lobbyTicket?: string; participantName?: string } = {}, previousToken?: string) =>
+		memberService.generateRoomMemberToken(
+			ROOM_ID,
+			{ secret: 'link', joinMeeting: true, participantName: 'Ana', ...options },
+			previousToken
+		);
+
+	beforeEach(() => {
+		steps = [];
+		lobbyEnabled = true;
+		connected = 0;
+		wait = null;
+		consumed = { entry };
+		returned = { entry, line: { now: 0, from: 1, waiting: [] } };
+		const room = () => ({
+			roomId: ROOM_ID,
+			roomName: 'Room',
+			status: MeetRoomStatus.OPEN,
+			roles: { moderator: { permissions: MeetRoomMemberHelper.allPermissions() } },
+			config: {
+				lobby: { enabled: lobbyEnabled },
+				e2ee: { enabled: false },
+				chat: { enabled: true },
+				maxParticipants: 2
+			},
+			rolesUpdatedAt: 0
+		});
+
+		memberService = new JoinStepsRoomMemberService(
+			...([
+				{ warn: () => {}, debug: () => {}, verbose: () => {} },
+				{},
+				{
+					getMeetRoom: async () => room(),
+					createLivekitRoom: async () => steps.push('createRoom')
+				},
+				{},
+				{
+					reserveUniqueName: async (_roomId: string, name: string) => {
+						steps.push(`reserve:${name}`);
+						return name;
+					}
+				},
+				{},
+				{},
+				{
+					generateRoomMemberToken: async (options: {
+						participantIdentity: string;
+						tokenMetadata: object;
+					}) => {
+						steps.push(`mint:${options.participantIdentity}`);
+						return 'join-token';
+					}
+				},
+				{ getAuthenticatedUser: () => undefined },
+				{ countStandardParticipants: async () => connected },
+				{},
+				{},
+				{ getTokenIssue: async () => ({}) },
+				{},
+				{
+					knock: async (_room: object, request: { participantIdentity: string; memberId?: string }) => {
+						steps.push(`knock:${request.memberId ?? 'anonymous'}`);
+						return { lobbyTicket: TICKET, participantIdentity: request.participantIdentity };
+					},
+					findWait: async () => wait,
+					consume: async () => {
+						steps.push('consume');
+						return consumed;
+					},
+					returnToLine: async () => {
+						steps.push('return');
+						return returned;
+					}
+				},
+				new LobbyAdmissionPolicy()
+			] as unknown as ConstructorParameters<typeof RoomMemberService>)
+		);
+	});
+
+	it('answers a ticket to a participant without lobbyBypass, reserving, creating and minting nothing', async () => {
+		memberService.source = { memberId: 'guest-1', permissions: speaker };
+
+		await expect(join()).resolves.toEqual({ lobbyTicket: TICKET, participantIdentity: 'guest-1' });
+		expect(steps).toEqual(['knock:guest-1']);
+	});
+
+	it('gives a holder of lobbyBypass a join token at once', async () => {
+		memberService.source = { permissions: { ...speaker, lobbyBypass: true } };
+
+		await expect(join()).resolves.toEqual({ token: 'join-token' });
+		expect(steps).toEqual(['reserve:Ana', 'createRoom', expect.stringMatching(/^mint:ana-/)]);
+	});
+
+	it('still asks for a name and for meetingJoin before a participant waits', async () => {
+		await expect(join({ participantName: '' })).rejects.toMatchObject({ statusCode: 400 });
+
+		memberService.source = { permissions: none };
+		await expect(join()).rejects.toMatchObject({ statusCode: 403 });
+		expect(steps).toEqual([]);
+	});
+
+	it('answers the same ticket while the wait goes on, ignoring a previous token', async () => {
+		wait = waitOf(MeetLobbyStatus.WAITING);
+
+		await expect(join({ lobbyTicket: TICKET }, 'previous-token')).resolves.toEqual({
+			lobbyTicket: TICKET,
+			participantIdentity: 'ana-1'
+		});
+		expect(steps).toEqual([]);
+	});
+
+	it('joins an admitted participant with the identity of the wait, using the admission right before minting', async () => {
+		wait = waitOf(MeetLobbyStatus.ADMITTED);
+
+		await expect(join({ lobbyTicket: TICKET })).resolves.toEqual({ token: 'join-token' });
+		expect(steps).toEqual(['reserve:Ana', 'createRoom', 'consume', 'mint:ana-1']);
+	});
+
+	it('puts an admitted participant who finds the meeting full back in line', async () => {
+		wait = waitOf(MeetLobbyStatus.ADMITTED);
+		connected = 2;
+
+		await expect(join({ lobbyTicket: TICKET })).resolves.toEqual({
+			lobbyTicket: TICKET,
+			participantIdentity: 'ana-1'
+		});
+		expect(steps).toEqual(['return']);
+	});
+
+	it.each([
+		['the meeting is full and the wait ended before it went back in line', 2, 'return'],
+		['the wait ended before its admission was used', 0, 'consume']
+	])('answers 409 with the recorded status when %s', async (_case, connectedCount, step) => {
+		wait = waitOf(MeetLobbyStatus.ADMITTED);
+		connected = connectedCount;
+		returned = { status: MeetLobbyStatus.LEFT };
+		consumed = { status: MeetLobbyStatus.LEFT };
+
+		await expect(join({ lobbyTicket: TICKET })).rejects.toMatchObject({
+			statusCode: 409,
+			status: MeetLobbyStatus.LEFT
+		});
+		expect(steps).toContain(step);
+		expect(steps.filter((name) => name.startsWith('mint'))).toEqual([]);
+	});
+
+	it('answers the usual access error to an admitted participant who lost meetingJoin, leaving the wait as it is', async () => {
+		wait = waitOf(MeetLobbyStatus.ADMITTED);
+		memberService.source = { permissions: none };
+
+		await expect(join({ lobbyTicket: TICKET })).rejects.toMatchObject({ statusCode: 403 });
+		expect(steps).toEqual([]);
+	});
+
+	it('refuses a ticket presented with the credential of another principal', async () => {
+		wait = waitOf(MeetLobbyStatus.ADMITTED, false, 'guest-1');
+		memberService.source = { memberId: 'guest-2', permissions: speaker };
+
+		await expect(join({ lobbyTicket: TICKET })).rejects.toMatchObject({ statusCode: 403 });
+		expect(steps).toEqual([]);
+	});
+
+	it.each([
+		['ended otherwise', waitOf(MeetLobbyStatus.REJECTED, true), MeetLobbyStatus.REJECTED],
+		['unknown', null, undefined],
+		['of another room', { ...waitOf(MeetLobbyStatus.WAITING), roomId: 'other-room' }, undefined]
+	])('answers 409 to a ticket whose wait is %s, never starting a new one', async (_case, found, status) => {
+		wait = found;
+
+		const error = await join({ lobbyTicket: TICKET }).catch((refusal: unknown) => refusal);
+
+		expect(error).toMatchObject({ statusCode: 409, message: 'The wait has ended' });
+		expect((error as { status?: MeetLobbyStatus }).status).toBe(status);
+		expect(steps).toEqual([]);
+	});
+
+	it('answers 409 with status admitted to a wait already let in while the gate still applies', async () => {
+		wait = waitOf(MeetLobbyStatus.ADMITTED, true);
+
+		await expect(join({ lobbyTicket: TICKET })).rejects.toMatchObject({
+			statusCode: 409,
+			status: MeetLobbyStatus.ADMITTED
+		});
+		expect(steps).toEqual([]);
+	});
+
+	it('joins a wait let in by turning the waiting room off as an ordinary join with its identity', async () => {
+		wait = waitOf(MeetLobbyStatus.ADMITTED, true);
+		lobbyEnabled = false;
+
+		await expect(join({ lobbyTicket: TICKET })).resolves.toEqual({ token: 'join-token' });
+		expect(steps).toEqual(['reserve:Ana', 'createRoom', 'mint:ana-1']);
 	});
 });

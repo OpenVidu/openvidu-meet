@@ -1,4 +1,4 @@
-import { MeetMeetingEndedReason } from '@openvidu-meet/typings';
+import { MeetEventOrigin, MeetMeetingEndedReason } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { Room } from 'livekit-server-sdk';
 import ms from 'ms';
@@ -9,6 +9,7 @@ import { RedisKeyName } from '../models/redis.model.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
 import { LiveKitService } from './livekit.service.js';
+import { LobbyService } from './lobby/lobby.service.js';
 import { LoggerService } from './logger.service.js';
 import { MutexService } from './mutex.service.js';
 import { RedisService } from './redis.service.js';
@@ -27,7 +28,8 @@ export class MeetingDurationLimitService {
 		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(RedisService) protected redisService: RedisService,
-		@inject(MutexService) protected mutexService: MutexService
+		@inject(MutexService) protected mutexService: MutexService,
+		@inject(LobbyService) protected lobbyService: LobbyService
 	) {
 		this.taskSchedulerService.registerTask({
 			name: 'reconcileDurationLimitTimersGC',
@@ -269,7 +271,9 @@ export class MeetingDurationLimitService {
 					this.logger.error(`Error ending the meeting over its duration limit in '${roomId}':`, error);
 				}
 
-				if (!deleted) {
+				if (deleted) {
+					await this.lobbyService.endMeeting(roomId, MeetEventOrigin.SYSTEM);
+				} else {
 					await this.clearMeetingEndedReason(roomId, livekitRoom.sid);
 				}
 

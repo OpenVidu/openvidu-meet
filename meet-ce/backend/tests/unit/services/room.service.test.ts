@@ -42,7 +42,8 @@ describe('RoomService.getRequestRoomConfig', () => {
 			{} as never,
 			{} as never,
 			{} as never,
-			requestSessionService
+			requestSessionService,
+			{} as never
 		);
 	});
 
@@ -76,29 +77,38 @@ describe('RoomService.getRequestRoomConfig', () => {
 	});
 });
 
-describe('RoomService.updateMeetRoomConfig (waiting room message)', () => {
+describe('RoomService.updateMeetRoomConfig (waiting room)', () => {
 	const storedConfig = {
 		broadcast: { enabled: false, destinations: [] },
 		lobby: { enabled: true, message: 'Please wait' }
 	} as unknown as MeetRoomConfig;
 
-	const updateWith = async (config: MeetRoomConfigOptions) => {
-		const updateConfig = jest.fn(async (_roomId: string, written: MeetRoomConfig) => written);
+	const buildConfigService = (stored: MeetRoomConfig[], writesMatching: boolean[] = []) => {
+		const updateIdleRoomConfig = jest.fn(async (_roomId: string, config: MeetRoomConfig) =>
+			(writesMatching.shift() ?? true) ? { config } : null
+		);
+		const letEveryoneIn = jest.fn(async (_roomId: string) => {});
 		const roomService = new RoomService(
 			{ debug: () => {} } as unknown as LoggerService,
 			{
-				findByRoomId: async () => ({ config: storedConfig, status: MeetRoomStatus.OPEN }),
+				findByRoomId: async () => ({ config: stored.shift() ?? storedConfig, status: MeetRoomStatus.OPEN }),
 				findBroadcastDestinationUrls: async () => ({}),
-				updateConfig
+				updateIdleRoomConfig
 			} as unknown as RoomRepository,
 			{} as never,
 			{} as never,
 			{} as never,
-			{} as never
+			{} as never,
+			{ letEveryoneIn } as never
 		);
+		return { roomService, updateIdleRoomConfig, letEveryoneIn };
+	};
+
+	const updateWith = async (config: MeetRoomConfigOptions) => {
+		const { roomService, updateIdleRoomConfig } = buildConfigService([]);
 
 		await roomService.updateMeetRoomConfig('room-1', config);
-		return updateConfig.mock.calls[0][1];
+		return updateIdleRoomConfig.mock.calls[0][1];
 	};
 
 	it('keeps the stored message when the update leaves it out', async () => {
@@ -118,6 +128,32 @@ describe('RoomService.updateMeetRoomConfig (waiting room message)', () => {
 		expect(lobby.enabled).toBe(true);
 		expect(lobby).toHaveProperty('message', undefined);
 	});
+
+	it('lets everyone waiting in when the update turns the waiting room off', async () => {
+		const { roomService, letEveryoneIn } = buildConfigService([]);
+
+		await roomService.updateMeetRoomConfig('room-1', { lobby: { enabled: false } });
+
+		expect(letEveryoneIn).toHaveBeenCalledWith('room-1');
+	});
+
+	it('lets nobody in when the waiting room stays on, or was already off', async () => {
+		const offConfig = { ...storedConfig, lobby: { enabled: false } } as MeetRoomConfig;
+		const { roomService, letEveryoneIn } = buildConfigService([storedConfig, offConfig]);
+
+		await roomService.updateMeetRoomConfig('room-1', { lobby: { enabled: true } });
+		await roomService.updateMeetRoomConfig('room-1', { lobby: { enabled: false } });
+
+		expect(letEveryoneIn).not.toHaveBeenCalled();
+	});
+
+	it('reads the room again when the conditional write finds a meeting started or the waiting room switched', async () => {
+		const { roomService, updateIdleRoomConfig } = buildConfigService([], [false]);
+
+		await roomService.updateMeetRoomConfig('room-1', { lobby: { enabled: true } });
+
+		expect(updateIdleRoomConfig).toHaveBeenCalledTimes(2);
+	});
 });
 
 describe('RoomService.deleteMeetRoom (a meeting that starts or ends while the room is deleted)', () => {
@@ -129,7 +165,8 @@ describe('RoomService.deleteMeetRoom (a meeting that starts or ends while the ro
 			{ deleteAllByRoomId } as never,
 			{ hasRoomRecordings: async () => false } as never,
 			{} as never,
-			{} as never
+			{} as never,
+			{ closeRoom: async () => {} } as never
 		);
 		return { roomService, deleteAllByRoomId };
 	};
@@ -200,7 +237,8 @@ describe('RoomService.deleteMeetRoom policies', () => {
 				deleteAllRoomRecordings: async () => actions.push('deleteRecordings')
 			} as never,
 			{ deleteRoom: async () => actions.push('endMeeting') } as never,
-			{} as never
+			{} as never,
+			{ closeRoom: async () => actions.push('endWaits') } as never
 		);
 		return { roomService, actions };
 	};
@@ -212,17 +250,31 @@ describe('RoomService.deleteMeetRoom policies', () => {
 	const replace = JSON.stringify({ replaceDeletion: true });
 
 	it.each([
-		[idle, M_FAIL, R_FAIL, MeetRoomDeletionSuccessCode.ROOM_DELETED, ['deleteRoom', 'deleteMembers'], false],
-		[idle, M_FORCE, R_CLOSE, MeetRoomDeletionSuccessCode.ROOM_DELETED, ['deleteRoom', 'deleteMembers'], false],
+		[
+			idle,
+			M_FAIL,
+			R_FAIL,
+			MeetRoomDeletionSuccessCode.ROOM_DELETED,
+			['deleteRoom', 'deleteMembers', 'endWaits'],
+			false
+		],
+		[
+			idle,
+			M_FORCE,
+			R_CLOSE,
+			MeetRoomDeletionSuccessCode.ROOM_DELETED,
+			['deleteRoom', 'deleteMembers', 'endWaits'],
+			false
+		],
 		[
 			withRecordings,
 			M_FAIL,
 			R_FORCE,
 			MeetRoomDeletionSuccessCode.ROOM_AND_RECORDINGS_DELETED,
-			['deleteRoom', 'deleteRecordings', 'deleteMembers'],
+			['deleteRoom', 'deleteRecordings', 'deleteMembers', 'endWaits'],
 			false
 		],
-		[withRecordings, M_FAIL, R_CLOSE, MeetRoomDeletionSuccessCode.ROOM_CLOSED, ['status:closed'], true],
+		[withRecordings, M_FAIL, R_CLOSE, MeetRoomDeletionSuccessCode.ROOM_CLOSED, ['status:closed', 'endWaits'], true],
 		[
 			live,
 			M_FORCE,

@@ -1,17 +1,21 @@
 import type { ParticipantPermission } from '@livekit/protocol';
 import type {
 	LiveKitPermissions,
+	MeetLobbyTicketResponse,
 	MeetRoom,
+	MeetRoomField,
 	MeetRoomMember,
 	MeetRoomMemberField,
 	MeetRoomMemberOptions,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberTokenOptions,
+	ProjectedMeetRoom,
 	ProjectedMeetRoomMember
 } from '@openvidu-meet/typings';
 import {
 	MEET_PERMISSION_KEYS,
+	MeetLobbyStatus,
 	MeetParticipantModerationAction,
 	MeetRoomMemberRole,
 	MeetRoomMemberType,
@@ -48,8 +52,10 @@ import {
 	errorRoomMemberNotFound,
 	errorUnauthorized,
 	errorUserNotFound,
+	LobbyWaitEndedError,
 	OpenViduMeetError
 } from '../models/error.model.js';
+import type { LobbyWait } from '../models/lobby.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { UserRepository } from '../repositories/user.repository.js';
 import type {
@@ -61,6 +67,8 @@ import type {
 import { runConcurrently } from '../utils/concurrency.utils.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
+import { LobbyAdmissionPolicy } from './lobby/lobby-admission.policy.js';
+import { LobbyService } from './lobby/lobby.service.js';
 import { LoggerService } from './logger.service.js';
 import { MeetingService } from './meeting.service.js';
 import { MutexService } from './mutex.service.js';
@@ -79,6 +87,20 @@ interface ResolvedPermissionSource {
 	permissions: MeetRoomMemberPermissions;
 	badge?: MeetRoomMemberUIBadge;
 }
+
+/** What a token request answers: a token, or the ticket of the wait of a participant who has to wait. */
+export type RoomMemberTokenAnswer = { token: string } | MeetLobbyTicketResponse;
+
+const ROOM_TO_JOIN_FIELDS = [
+	'roomId',
+	'roomName',
+	'status',
+	'roles',
+	'config',
+	'rolesUpdatedAt'
+] as const satisfies readonly MeetRoomField[];
+
+type RoomToJoin = ProjectedMeetRoom<typeof ROOM_TO_JOIN_FIELDS>;
 
 /**
  * Service for managing room members and meeting participants.
@@ -100,7 +122,9 @@ export class RoomMemberService {
 		@inject(WebhookDispatcherService) protected webhookDispatcherService: WebhookDispatcherService,
 		@inject(ParticipantTokenRevocationService)
 		protected participantTokenRevocationService: ParticipantTokenRevocationService,
-		@inject(MutexService) protected mutexService: MutexService
+		@inject(MutexService) protected mutexService: MutexService,
+		@inject(LobbyService) protected lobbyService: LobbyService,
+		@inject(LobbyAdmissionPolicy) protected lobbyAdmissionPolicy: LobbyAdmissionPolicy
 	) {}
 
 	/**
@@ -365,24 +389,26 @@ export class RoomMemberService {
 	}
 
 	/**
-	 * Generates a room member token.
+	 * Generates a room member token, or, for a participant who has to wait in the room's waiting room, the
+	 * ticket of their wait.
 	 *
 	 * @param roomId - The room identifier
 	 * @param tokenOptions - Options for token generation
-	 * @param previousToken - An optional existing token to regenerate from
-	 * @returns A promise that resolves to the generated token
+	 * @param previousToken - An optional existing token to regenerate from, ignored with a `lobbyTicket`
+	 * @returns A promise that resolves to the generated token or to the ticket of the wait
 	 */
 	async generateRoomMemberToken(
 		roomId: string,
 		tokenOptions: MeetRoomMemberTokenOptions,
 		previousToken?: string
-	): Promise<string> {
+	): Promise<RoomMemberTokenAnswer> {
 		const {
 			secret,
 			joinMeeting = false,
 			participantName,
 			participantExternalId,
-			participantMetadata
+			participantMetadata,
+			lobbyTicket
 		} = tokenOptions;
 
 		const [secretSource, authenticatedSource, room] = await Promise.all([
@@ -413,152 +439,269 @@ export class RoomMemberService {
 			metadata: participantMetadata
 		};
 
-		if (joinMeeting) {
-			tokenMetadata.livekitUrl = MEET_ENV.LIVEKIT_URL;
-			const boundName =
-				secretSource?.name ||
-				authenticatedSource?.name ||
-				this.requestSessionService.getAuthenticatedUser()?.name;
-			// An encrypted room gets the name encrypted by the client, which the server cannot check
-			let resolvedParticipantName = room.config.e2ee.enabled
-				? participantName || boundName
-				: boundName || participantName;
-			let participantIdentity: string | undefined;
-
-			// If regenerating an existing token for joining a meeting, use the participant identity from the previous token's context
-			// to ensure they keep the same identity in LiveKit and maintain their presence in the meeting.
-			if (previousToken) {
-				const tokenContext = await this.getValidatedRoomMemberTokenContext(roomId, previousToken);
-
-				if (tokenContext.participantIdentity && tokenContext.participantName) {
-					participantIdentity = tokenContext.participantIdentity;
-					resolvedParticipantName = tokenContext.participantName;
-				}
-
-				// The app-provided correlation fields travel with the participant, not with the request:
-				// keep the previous token's values unless the regeneration explicitly re-provides them.
-				tokenMetadata.externalId ??= tokenContext.tokenMetadata.externalId;
-				tokenMetadata.metadata ??= tokenContext.tokenMetadata.metadata;
-			}
-
-			return this.generateTokenForJoiningMeeting(
-				roomId,
-				tokenMetadata,
-				resolvedParticipantName,
-				participantIdentity
-			);
+		if (!joinMeeting) {
+			this.logger.verbose(`Generating room member token for room '${roomId}' (not joining a meeting)`);
+			return { token: await this.tokenService.generateRoomMemberToken({ tokenMetadata }) };
 		}
 
-		this.logger.verbose(`Generating room member token for room '${roomId}' (not joining a meeting)`);
-		return this.tokenService.generateRoomMemberToken({ tokenMetadata });
+		tokenMetadata.livekitUrl = MEET_ENV.LIVEKIT_URL;
+
+		if (lobbyTicket) {
+			return this.joinWithLobbyTicket(roomId, lobbyTicket, tokenMetadata);
+		}
+
+		const boundName =
+			secretSource?.name || authenticatedSource?.name || this.requestSessionService.getAuthenticatedUser()?.name;
+		// An encrypted room gets the name encrypted by the client, which the server cannot check
+		const resolvedParticipantName = room.config.e2ee.enabled
+			? participantName || boundName
+			: boundName || participantName;
+
+		if (previousToken) {
+			const tokenContext = await this.getValidatedRoomMemberTokenContext(roomId, previousToken);
+
+			// The app-provided correlation fields travel with the participant, not with the request:
+			// keep the previous token's values unless the regeneration explicitly re-provides them.
+			tokenMetadata.externalId ??= tokenContext.tokenMetadata.externalId;
+			tokenMetadata.metadata ??= tokenContext.tokenMetadata.metadata;
+
+			// A participant regenerating their token keeps their identity in LiveKit and their presence in the meeting.
+			if (tokenContext.participantIdentity && tokenContext.participantName) {
+				return {
+					token: await this.regenerateJoinToken(
+						roomId,
+						tokenMetadata,
+						tokenContext.participantName,
+						tokenContext.participantIdentity
+					)
+				};
+			}
+		}
+
+		return this.generateTokenForJoiningMeeting(roomId, tokenMetadata, resolvedParticipantName);
 	}
 
 	/**
-	 * Generates a room member token for joining a meeting. This method handles both initial token generation when joining a meeting
-	 * for the first time and token regeneration when refreshing an existing token while in a meeting.
-	 * When regenerating a token, it ensures that the participant keeps the same identity in LiveKit to maintain their presence in the meeting
-	 * and updates their permissions based on the current LiveKit participant metadata.
+	 * Answers a participant asking to join a meeting: a join token, or the ticket of a new wait when the
+	 * room's waiting room applies to them. A wait reserves, creates and counts nothing.
 	 *
 	 * @param roomId - The ID of the room
 	 * @param tokenMetadata - The metadata to include in the token
-	 * @param participantName - The name of the participant (required for initial generation)
-	 * @param participantIdentity - The identity of the participant (required for regeneration)
-	 * @returns A promise that resolves to the generated token
+	 * @param participantName - The name of the participant
+	 * @returns A promise that resolves to the join token or to the ticket of the wait
 	 */
 	protected async generateTokenForJoiningMeeting(
 		roomId: string,
 		tokenMetadata: MeetRoomMemberTokenMetadata,
-		participantName?: string,
-		participantIdentity?: string
-	): Promise<string> {
-		// Check that room is open
-		const { status, roles, config, rolesUpdatedAt } = await this.roomService.getMeetRoom(roomId, [
-			'status',
-			'roles',
-			'config',
-			'rolesUpdatedAt'
-		]);
+		participantName?: string
+	): Promise<RoomMemberTokenAnswer> {
+		const room = await this.getRoomToJoin(roomId);
+		this.assertCanJoin(room, tokenMetadata);
+		const name = this.requireParticipantName(participantName);
+		const participantIdentity = this.createParticipantIdentity(tokenMetadata, name);
 
-		if (status === MeetRoomStatus.CLOSED) {
-			throw errorRoomClosed(roomId);
+		if (this.lobbyAdmissionPolicy.mustWait(room.config, tokenMetadata.permissions)) {
+			const { memberId, userId, externalId, metadata } = tokenMetadata;
+			return this.lobbyService.knock(room, {
+				participantIdentity,
+				participantName: name,
+				externalId,
+				metadata,
+				memberId,
+				userId
+			});
 		}
 
-		// Check that member has permission to join meeting
+		await this.assertCapacity(room);
+		return { token: await this.joinMeeting(room, tokenMetadata, name, participantIdentity) };
+	}
+
+	/**
+	 * Answers a participant asking to join with the ticket of their wait, by the state of the wait: the
+	 * ticket again while waiting or when an admitted participant finds the meeting full, a join token once
+	 * admitted, and a `409` for a wait that ended otherwise. A ticket never starts a new wait.
+	 *
+	 * @throws The `403` error when the request's credential resolves to another principal than the wait's,
+	 * the `409` wait ended error, and the usual errors of a join
+	 */
+	protected async joinWithLobbyTicket(
+		roomId: string,
+		lobbyTicket: string,
+		tokenMetadata: MeetRoomMemberTokenMetadata
+	): Promise<RoomMemberTokenAnswer> {
+		const wait = await this.lobbyService.findWait(lobbyTicket);
+		const answer = this.lobbyAdmissionPolicy.answerTicket(wait, roomId, tokenMetadata);
+
+		if (answer.kind === 'forbidden') throw errorInsufficientPermissions();
+
+		if (answer.kind === 'ended') throw new LobbyWaitEndedError(answer.status);
+
+		const { participantIdentity, participantName, externalId, metadata } = wait!.participant;
+
+		if (answer.kind === 'waiting') return { lobbyTicket, participantIdentity };
+
+		Object.assign(tokenMetadata, { externalId, metadata });
+		const room = await this.getRoomToJoin(roomId);
+		this.assertCanJoin(room, tokenMetadata);
+
+		if (answer.kind === 'rejoin') {
+			if (this.lobbyAdmissionPolicy.mustWait(room.config, tokenMetadata.permissions)) {
+				throw new LobbyWaitEndedError(MeetLobbyStatus.ADMITTED);
+			}
+
+			await this.assertCapacity(room);
+			return { token: await this.joinMeeting(room, tokenMetadata, participantName, participantIdentity) };
+		}
+
+		if (await this.isMeetingFull(room)) {
+			const change = await this.lobbyService.returnToLine(wait!);
+
+			if (!('entry' in change)) throw new LobbyWaitEndedError(change.status);
+
+			return { lobbyTicket, participantIdentity };
+		}
+
+		return {
+			token: await this.joinMeeting(room, tokenMetadata, participantName, participantIdentity, () =>
+				this.consumeAdmission(wait!)
+			)
+		};
+	}
+
+	/**
+	 * Regenerates the join token of a participant connected to the meeting, keeping their identity and
+	 * applying their current permissions to their LiveKit participant.
+	 */
+	protected async regenerateJoinToken(
+		roomId: string,
+		tokenMetadata: MeetRoomMemberTokenMetadata,
+		participantName: string,
+		participantIdentity: string
+	): Promise<string> {
+		const room = await this.getRoomToJoin(roomId);
+		this.assertCanJoin(room, tokenMetadata);
+		this.logger.verbose(
+			`Regenerating room member token for participant '${participantIdentity}' in room '${roomId}'`
+		);
+
+		const participant = await this.applyPermissionsToLiveParticipant(
+			roomId,
+			participantIdentity,
+			room,
+			() => tokenMetadata,
+			room.rolesUpdatedAt
+		);
+		return this.mintJoinToken(room, tokenMetadata, participant.name || participantName, participantIdentity);
+	}
+
+	protected getRoomToJoin(roomId: string): Promise<RoomToJoin> {
+		return this.roomService.getMeetRoom(roomId, ROOM_TO_JOIN_FIELDS);
+	}
+
+	/**
+	 * @throws The `409` room closed error, or the `403` error when the participant may not join meetings
+	 */
+	protected assertCanJoin(room: RoomToJoin, tokenMetadata: MeetRoomMemberTokenMetadata): void {
+		if (room.status === MeetRoomStatus.CLOSED) {
+			throw errorRoomClosed(room.roomId);
+		}
+
 		if (!tokenMetadata.permissions.meetingJoin) {
 			throw errorInsufficientPermissions();
 		}
+	}
 
-		const isRefresh = !!participantIdentity;
-
-		if (!isRefresh) {
-			// GENERATION MODE
-
-			// Name is required for joining a meeting
-			if (!participantName) {
-				throw errorParticipantNameRequiredForMeetingJoin();
-			}
-
-			const { maxParticipants } = config;
-
-			if (maxParticipants) {
-				const currentParticipantsCount = await this.meetingService.countStandardParticipants(roomId);
-				const isMeetingFull = currentParticipantsCount >= maxParticipants;
-
-				if (isMeetingFull) throw errorMeetingFull(roomId);
-			}
-
-			this.logger.verbose(
-				`Generating room member token for joining a meeting for '${participantName}' in room '${roomId}'`
-			);
-
-			if (tokenMetadata.memberId || tokenMetadata.userId) {
-				// Use memberId as participant identity for identified members
-				// (users or identified guests with a record in the database)
-				// Use userId as participant identity for users without a member record
-				participantIdentity = tokenMetadata.memberId || tokenMetadata.userId;
-			} else {
-				// For anonymous users, create a unique participant identity based on the provided participant name
-				const identityPrefix = this.createParticipantIdentityPrefixFromName(participantName) || 'participant';
-				participantIdentity = `${identityPrefix}-${uid(15)}`;
-			}
-
-			Object.assign(
-				tokenMetadata,
-				await this.participantTokenRevocationService.getTokenIssue(roomId, participantIdentity!)
-			);
-
-			try {
-				// Reserve a unique name for the participant
-				participantName = await this.participantNameService.reserveUniqueName(
-					roomId,
-					participantName,
-					participantIdentity!
-				);
-				this.logger.verbose(`Reserved unique name '${participantName}' for room '${roomId}'`);
-			} catch (error) {
-				this.logger.debug(`Failed to reserve unique name '${participantName}' for room '${roomId}':`, error);
-				throw error;
-			}
-
-			// Create the Livekit room if it doesn't exist
-			await this.roomService.createLivekitRoom(roomId);
-		} else {
-			// REFRESH MODE
-			this.logger.verbose(
-				`Regenerating room member token for participant '${participantIdentity}' in room '${roomId}'`
-			);
-
-			const participant = await this.applyPermissionsToLiveParticipant(
-				roomId,
-				participantIdentity!,
-				{ roles, config },
-				() => tokenMetadata,
-				rolesUpdatedAt
-			);
-			participantName = participant.name || participantName;
+	protected requireParticipantName(participantName?: string): string {
+		if (!participantName) {
+			throw errorParticipantNameRequiredForMeetingJoin();
 		}
 
-		const livekitPermissions = this.getLiveKitPermissions(roomId, tokenMetadata.permissions, config.chat.enabled);
+		return participantName;
+	}
+
+	/**
+	 * The identity of a participant in the meeting: their `memberId` or `userId` when the credential has one,
+	 * and otherwise a unique identity made from their name.
+	 */
+	protected createParticipantIdentity(tokenMetadata: MeetRoomMemberTokenMetadata, participantName: string): string {
+		const { memberId, userId } = tokenMetadata;
+
+		if (memberId || userId) {
+			return (memberId || userId)!;
+		}
+
+		const identityPrefix = this.createParticipantIdentityPrefixFromName(participantName) || 'participant';
+		return `${identityPrefix}-${uid(15)}`;
+	}
+
+	protected async isMeetingFull(room: RoomToJoin): Promise<boolean> {
+		const { maxParticipants } = room.config;
+		return (
+			!!maxParticipants && (await this.meetingService.countStandardParticipants(room.roomId)) >= maxParticipants
+		);
+	}
+
+	/**
+	 * @throws The `409` meeting full error when the meeting has as many participants as the room allows
+	 */
+	protected async assertCapacity(room: RoomToJoin): Promise<void> {
+		if (await this.isMeetingFull(room)) throw errorMeetingFull(room.roomId);
+	}
+
+	/**
+	 * Joins a participant to the room's meeting: stamps the token issue, reserves a unique name, creates the
+	 * LiveKit room, which starts the meeting, and mints the join token, running `beforeMint` right before it.
+	 */
+	protected async joinMeeting(
+		room: RoomToJoin,
+		tokenMetadata: MeetRoomMemberTokenMetadata,
+		participantName: string,
+		participantIdentity: string,
+		beforeMint?: () => Promise<void>
+	): Promise<string> {
+		const { roomId } = room;
+		this.logger.verbose(
+			`Generating room member token for joining a meeting for '${participantName}' in room '${roomId}'`
+		);
+		Object.assign(
+			tokenMetadata,
+			await this.participantTokenRevocationService.getTokenIssue(roomId, participantIdentity)
+		);
+
+		const uniqueName = await this.participantNameService.reserveUniqueName(
+			roomId,
+			participantName,
+			participantIdentity
+		);
+		this.logger.verbose(`Reserved unique name '${uniqueName}' for room '${roomId}'`);
+
+		await this.roomService.createLivekitRoom(roomId);
+		await beforeMint?.();
+		return this.mintJoinToken(room, tokenMetadata, uniqueName, participantIdentity);
+	}
+
+	/**
+	 * Uses the admission of a wait to issue its join token.
+	 *
+	 * @throws The `409` wait ended error when the wait is no longer admitted or its admission was used
+	 */
+	protected async consumeAdmission(wait: LobbyWait): Promise<void> {
+		const change = await this.lobbyService.consume(wait);
+
+		if (!('entry' in change)) throw new LobbyWaitEndedError(change.status);
+	}
+
+	protected mintJoinToken(
+		room: RoomToJoin,
+		tokenMetadata: MeetRoomMemberTokenMetadata,
+		participantName: string,
+		participantIdentity: string
+	): Promise<string> {
+		const livekitPermissions = this.getLiveKitPermissions(
+			room.roomId,
+			tokenMetadata.permissions,
+			room.config.chat.enabled
+		);
 		return this.tokenService.generateRoomMemberToken({
 			tokenMetadata,
 			livekitPermissions,
@@ -1087,7 +1230,11 @@ export class RoomMemberService {
 		return this.withParticipantMetadataLock(roomId, participantIdentity, async () => {
 			const participant = await this.getParticipantFromMeeting(roomId, participantIdentity);
 			const current = MeetParticipantHelper.parseOwnMeetingMetadata(participant);
-			const revoked = await this.participantTokenRevocationService.isRevoked(roomId, participantIdentity, current);
+			const revoked = await this.participantTokenRevocationService.isRevoked(
+				roomId,
+				participantIdentity,
+				current
+			);
 
 			if (refusedIssuedBefore !== undefined && (revoked || current.iat < refusedIssuedBefore)) {
 				throw errorInvalidToken();

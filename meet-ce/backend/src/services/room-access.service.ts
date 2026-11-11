@@ -5,6 +5,7 @@ import { MeetRoomMemberHelper } from '../helpers/room-member.helper.js';
 import { errorRoomNotFound } from '../models/error.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
+import { LobbyAdmissionPolicy } from './lobby/lobby-admission.policy.js';
 import { RequestSessionService } from './request-session.service.js';
 
 /**
@@ -15,13 +16,16 @@ export class RoomAccessService {
 	constructor(
 		@inject(RoomRepository) protected roomRepository: RoomRepository,
 		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
-		@inject(RequestSessionService) protected requestSessionService: RequestSessionService
+		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
+		@inject(LobbyAdmissionPolicy) protected lobbyAdmissionPolicy: LobbyAdmissionPolicy
 	) {}
 
 	/**
 	 * Retrieves the permissions of the authenticated room member.
 	 *
-	 * - If the user is authenticated via room member token, their permissions are obtained from the token metadata.
+	 * - If the user is authenticated via room member token, their permissions are obtained from the token metadata,
+	 * narrowed by {@link LobbyAdmissionPolicy.permissionsOf} for a token without participant identity in a room with
+	 * the waiting room on.
 	 * - If the user is admin or the room owner, they have all permissions.
 	 * - If the user is a room member, their permissions are obtained from their room member info.
 	 * - If the user is authenticated but not a room member, permissions depend on whether user access is enabled
@@ -43,7 +47,7 @@ export class RoomAccessService {
 				return MeetRoomMemberHelper.noPermissions();
 			}
 
-			return this.requestSessionService.getRoomMemberPermissions()!;
+			return this.getRoomMemberTokenPermissions(roomId);
 		}
 
 		// Authenticated user
@@ -81,6 +85,26 @@ export class RoomAccessService {
 
 		// No authenticated user nor room member token - return all permissions for system processes
 		return MeetRoomMemberHelper.allPermissions();
+	}
+
+	/**
+	 * The permissions of the room member token of the current request in its own room.
+	 *
+	 * @throws The `404` room not found error
+	 */
+	protected async getRoomMemberTokenPermissions(roomId: string): Promise<MeetRoomMemberPermissions> {
+		const room =
+			this.requestSessionService.getRoom(roomId) ?? (await this.roomRepository.findByRoomId(roomId, ['config']));
+
+		if (!room) {
+			throw errorRoomNotFound(roomId);
+		}
+
+		return this.lobbyAdmissionPolicy.permissionsOf(
+			room.config,
+			this.requestSessionService.getRoomMemberPermissions()!,
+			this.requestSessionService.getParticipantIdentity()
+		);
 	}
 
 	/**
