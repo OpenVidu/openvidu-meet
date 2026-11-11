@@ -80,6 +80,154 @@ describe('TranslateService', () => {
 });
 
 /**
+ * Counted strings ("You're 2nd in line", "2 places left") keep the whole sentence in one translation
+ * with its variants inside, and the language's own rules choose among them, so a translator writes
+ * the categories their language has and the code never branches on a count.
+ */
+describe('TranslateService plurals and ordinals', () => {
+	const english = {
+		WAIT: {
+			POSITION: "You're {position, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} in line",
+			PLACES: '{count, plural, =0 {No places left} one {# place left} other {# places left}}',
+			LAST: '{count, plural, =1 {Last place} one {# place} other {# places}}',
+			ASKED: '{name} asked, {count, plural, one {# place left} other {# places left}}',
+			SPACED: '{count,plural,one{# place}other{# places}}',
+			NO_OTHER: '{count, plural, one {# place}}',
+			PLAIN: 'Hello {name}, {braces}',
+			// Says which of `one` and `other` the active language's rules chose, whatever the language writes.
+			COUNT: '{count, plural, one {ONE} other {OTHER}}'
+		}
+	};
+	const german = { WAIT: { PLACES: '{count, plural, one {# Platz} other {# Plätze}}' } };
+	const french = {
+		WAIT: { POSITION: 'Vous êtes {position, selectordinal, one {#er} other {#e}}' }
+	};
+	const russian = {
+		WAIT: {
+			PLACES: '{count, plural, one {# место} few {# места} many {# мест} other {# места}}',
+			FALLBACK: '{count, plural, one {# место} other {# мест}}'
+		}
+	};
+
+	let service: TranslateService;
+
+	const switchTo = async (lang: string): Promise<void> => {
+		service.setCurrentLanguage(lang);
+		// The locale is lazily loaded, so the switch lands a turn later.
+		await new Promise((resolve) => setTimeout(resolve, 0));
+	};
+
+	beforeEach(() => {
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				TranslateService,
+				LanguageService,
+				{ provide: MeetStorageService, useValue: { getLang: () => undefined, setLang: () => {} } },
+				provideTranslations({
+					default: english,
+					loaders: {
+						de: async () => german,
+						fr: async () => french,
+						ru: async () => russian,
+						cn: async () => ({}),
+						pt: async () => ({})
+					}
+				})
+			]
+		});
+		service = TestBed.inject(TranslateService);
+		service.updateLanguageOptions([...service.getAvailableLanguages(), { name: 'Русский', lang: 'ru' }]);
+	});
+
+	it('picks the English ordinal one, two, few and other', () => {
+		const position = (value: number) => service.translate('WAIT.POSITION', { position: value });
+
+		expect(position(1)).toBe("You're 1st in line");
+		expect(position(2)).toBe("You're 2nd in line");
+		expect(position(3)).toBe("You're 3rd in line");
+		expect(position(4)).toBe("You're 4th in line");
+		expect(position(11)).toBe("You're 11th in line");
+		expect(position(22)).toBe("You're 22nd in line");
+	});
+
+	it('picks the English plural one and other', () => {
+		expect(service.translate('WAIT.PLACES', { count: 1 })).toBe('1 place left');
+		expect(service.translate('WAIT.PLACES', { count: 2 })).toBe('2 places left');
+	});
+
+	it('prefers an exact =N match to the category of the number', () => {
+		expect(service.translate('WAIT.PLACES', { count: 0 })).toBe('No places left');
+		expect(service.translate('WAIT.LAST', { count: 1 })).toBe('Last place');
+		expect(service.translate('WAIT.LAST', { count: 2 })).toBe('2 places');
+	});
+
+	it('writes the number the way the language does', async () => {
+		expect(service.translate('WAIT.PLACES', { count: 12345 })).toBe('12,345 places left');
+
+		await switchTo('de');
+
+		expect(service.translate('WAIT.PLACES', { count: 12345 })).toBe('12.345 Plätze');
+	});
+
+	it('fills the other placeholders of the string around a variant', () => {
+		expect(service.translate('WAIT.ASKED', { name: 'Ana', count: 1 })).toBe('Ana asked, 1 place left');
+	});
+
+	it('reads a variant written without spaces', () => {
+		expect(service.translate('WAIT.SPACED', { count: 2 })).toBe('2 places');
+	});
+
+	it('leaves a string without variants as it always was', () => {
+		expect(service.translate('WAIT.PLAIN', { name: 'Ana' })).toBe('Hello Ana, {braces}');
+		expect(service.translate('WAIT.PLAIN')).toBe('Hello {name}, {braces}');
+	});
+
+	it('leaves a variant as written when it has no number or no case for it', () => {
+		expect(service.translate('WAIT.PLACES')).toBe(english.WAIT.PLACES);
+		expect(service.translate('WAIT.PLACES', { name: 'Ana' })).toBe(english.WAIT.PLACES);
+		expect(service.translate('WAIT.PLACES', { count: 'many' })).toBe(english.WAIT.PLACES);
+		expect(service.translate('WAIT.NO_OTHER', { count: 1 })).toBe('1 place');
+		expect(service.translate('WAIT.NO_OTHER', { count: 2 })).toBe(english.WAIT.NO_OTHER);
+	});
+
+	it('picks the variants of the language in use after a switch', async () => {
+		expect(service.translate('WAIT.POSITION', { position: 2 })).toBe("You're 2nd in line");
+
+		await switchTo('fr');
+
+		expect(service.translate('WAIT.POSITION', { position: 1 })).toBe('Vous êtes 1er');
+		expect(service.translate('WAIT.POSITION', { position: 2 })).toBe('Vous êtes 2e');
+	});
+
+	it('picks among the categories of a language that has more than one and other', async () => {
+		await switchTo('ru');
+		const places = (value: number) => service.translate('WAIT.PLACES', { count: value });
+
+		expect(places(1)).toBe('1 место');
+		expect(places(2)).toBe('2 места');
+		expect(places(5)).toBe('5 мест');
+		expect(places(21)).toBe('21 место');
+		expect(places(22)).toBe('22 места');
+	});
+
+	it('falls back to other for a category the string does not write', async () => {
+		await switchTo('ru');
+
+		expect(service.translate('WAIT.FALLBACK', { count: 2 })).toBe('2 мест');
+	});
+
+	it('maps the app language codes to their CLDR locale: cn to zh, pt to pt-PT', async () => {
+		await switchTo('cn');
+		expect(service.translate('WAIT.COUNT', { count: 1 })).toBe('OTHER');
+
+		await switchTo('pt');
+		expect(service.translate('WAIT.COUNT', { count: 0 })).toBe('OTHER');
+		expect(service.translate('WAIT.COUNT', { count: 1 })).toBe('ONE');
+	});
+});
+
+/**
  * The embedding application can ask for a language, or for the browser's. It outranks the
  * participant's stored preference without ever being written over it, and the participant can still
  * pick another one unless the application hides the selectors.

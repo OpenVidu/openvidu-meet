@@ -117,7 +117,8 @@
         "MEDIA": "メディア",
         "RECORDINGS": "録画",
         "BROADCAST": "ライブ配信",
-        "CHAT": "チャット"
+        "CHAT": "チャット",
+        "WAITING_ROOM": "待機室"
       },
       "ITEMS": {
         "meetingJoin": {
@@ -207,6 +208,14 @@
         "chatWrite": {
           "LABEL": "書き込み",
           "DESCRIPTION": "チャットメッセージの送信を許可します。「読み取り」が必要です"
+        },
+        "lobbyBypass": {
+          "LABEL": "待たずに参加",
+          "DESCRIPTION": "待機室があるルームに、承認を待たずに参加することを許可します"
+        },
+        "lobbyAdmin": {
+          "LABEL": "参加者を承認",
+          "DESCRIPTION": "待機中の参加者を承認または拒否することを許可します"
         }
       }
     },

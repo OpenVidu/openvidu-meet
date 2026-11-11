@@ -3,6 +3,7 @@ import {
 	EmbeddedEventPayloadFor,
 	MeetBroadcastStartOptions,
 	MeetBroadcastStopOptions,
+	MeetLobbyDecisionOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetReaction
@@ -32,6 +33,8 @@ export interface OpenViduMeetElement extends HTMLElement {
 	participantHandLower(participantIdentity?: string): void;
 	participantHandLowerAll(): void;
 	participantReactionSend(reaction: MeetReaction): void;
+	lobbyAdmit(options?: MeetLobbyDecisionOptions): void;
+	lobbyReject(options?: MeetLobbyDecisionOptions): void;
 	broadcastStart(options?: MeetBroadcastStartOptions): void;
 	broadcastStop(options?: MeetBroadcastStopOptions): void;
 	/** @deprecated Renamed to `meetingEnd()`. Removed in 3.12.0. Declared so the e2e can drive it. */

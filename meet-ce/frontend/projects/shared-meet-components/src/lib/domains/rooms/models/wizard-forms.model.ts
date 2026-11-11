@@ -76,10 +76,15 @@ export type RoomAccessPermissionsControls = {
 
 export type RoomAccessRolePermissionsFormGroup = FormGroup<RoomAccessPermissionsControls>;
 
+/** Longest waiting room message the backend accepts. */
+export const MAX_LOBBY_MESSAGE_LENGTH = 500;
+
 export interface RoomAccessFormValue {
 	anonymousModeratorEnabled: boolean;
 	anonymousSpeakerEnabled: boolean;
 	userEnabled: boolean;
+	lobbyEnabled: boolean;
+	lobbyMessage: string;
 	moderator: Partial<MeetRoomMemberPermissions>;
 	speaker: Partial<MeetRoomMemberPermissions>;
 }
@@ -88,6 +93,8 @@ export type RoomAccessFormGroup = FormGroup<{
 	anonymousModeratorEnabled: FormControl<boolean>;
 	anonymousSpeakerEnabled: FormControl<boolean>;
 	userEnabled: FormControl<boolean>;
+	lobbyEnabled: FormControl<boolean>;
+	lobbyMessage: FormControl<string>;
 	moderator: RoomAccessRolePermissionsFormGroup;
 	speaker: RoomAccessRolePermissionsFormGroup;
 }>;

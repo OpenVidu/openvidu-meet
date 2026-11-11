@@ -195,6 +195,11 @@
 		}
 	}
 
+	.lobby-message-field {
+		width: 100%;
+		margin-top: var(--ov-meet-spacing-xs);
+	}
+
 	// ─── Permissions Section ─────────────────────────────────────────────────────
 
 	.permissions-section {

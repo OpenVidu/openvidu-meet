@@ -56,6 +56,40 @@
 				</div>
 			</section>
 
+			<!-- ── Waiting Room Section ── -->
+			<section class="access-section" id="waiting-room-section">
+				<p class="section-label">{{ 'ROOMS.WIZARD.ACCESS.WAITING_ROOM' | translate }}</p>
+				<p class="section-subtitle">{{ 'ROOMS.WIZARD.ACCESS.WAITING_ROOM_SUBTITLE' | translate }}</p>
+
+				<div class="access-row" id="room-access-lobby">
+					<div class="access-info">
+						<mat-icon class="access-icon material-symbols-outlined">hourglass_top</mat-icon>
+						<div class="access-text">
+							<span class="access-label">{{
+								'ROOMS.WIZARD.ACCESS.WAITING_ROOM_ENABLED' | translate
+							}}</span>
+							<span class="access-description">{{
+								'ROOMS.WIZARD.ACCESS.WAITING_ROOM_ENABLED_DESC' | translate
+							}}</span>
+						</div>
+					</div>
+					<mat-slide-toggle formControlName="lobbyEnabled" color="primary" class="access-toggle" />
+				</div>
+
+				@if (lobbyEnabled) {
+					<mat-form-field appearance="outline" class="lobby-message-field" subscriptSizing="dynamic">
+						<mat-label>{{ 'ROOMS.WIZARD.ACCESS.WAITING_ROOM_MESSAGE' | translate }}</mat-label>
+						<textarea matInput id="room-lobby-message" rows="3" formControlName="lobbyMessage"></textarea>
+						<mat-hint>{{ 'ROOMS.WIZARD.ACCESS.WAITING_ROOM_MESSAGE_HINT' | translate }}</mat-hint>
+						@if (roomAccessForm.controls.lobbyMessage.hasError('maxlength')) {
+							<mat-error>{{
+								'ROOMS.WIZARD.ACCESS.WAITING_ROOM_MESSAGE_MAXLENGTH' | translate
+							}}</mat-error>
+						}
+					</mat-form-field>
+				}
+			</section>
+
 			<!-- ── Role Permissions Section ── -->
 			<section class="permissions-section">
 				<p class="section-label">{{ 'ROOMS.WIZARD.ACCESS.ROLE_PERMISSIONS' | translate }}</p>

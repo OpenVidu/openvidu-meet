@@ -19,6 +19,7 @@ import {
 	AnyWizardStep,
 	BroadcastFormGroup,
 	MAX_DURATION_MINUTES_LIMIT,
+	MAX_LOBBY_MESSAGE_LENGTH,
 	MAX_PARTICIPANTS_LIMIT,
 	MIN_DURATION_MINUTES_LIMIT,
 	MIN_PARTICIPANTS_LIMIT,
@@ -50,7 +51,9 @@ const DEFAULT_MODERATOR_PERMISSIONS: MeetRoomMemberPermissions = {
 	mediaShareScreen: true,
 	chatRead: true,
 	chatWrite: true,
-	mediaChangeVirtualBackground: true
+	mediaChangeVirtualBackground: true,
+	lobbyBypass: true,
+	lobbyAdmin: true
 };
 
 const DEFAULT_SPEAKER_PERMISSIONS: MeetRoomMemberPermissions = {
@@ -75,7 +78,9 @@ const DEFAULT_SPEAKER_PERMISSIONS: MeetRoomMemberPermissions = {
 	mediaShareScreen: true,
 	chatRead: true,
 	chatWrite: true,
-	mediaChangeVirtualBackground: true
+	mediaChangeVirtualBackground: true,
+	lobbyBypass: false,
+	lobbyAdmin: false
 };
 
 // Default room config following the app's defaults
@@ -91,6 +96,7 @@ const DEFAULT_CONFIG: MeetRoomConfig = {
 	captions: { enabled: true },
 	raiseHand: { enabled: true },
 	reactions: { enabled: true },
+	lobby: { enabled: false },
 	initialAudioActive: true,
 	initialVideoActive: true
 };
@@ -388,6 +394,11 @@ export class RoomWizardStateService {
 						initialRoomOptions.access!.anonymous!.speaker!.enabled
 					),
 					userEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.access!.user!.enabled),
+					lobbyEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.lobby!.enabled),
+					lobbyMessage: this.formBuilder.nonNullable.control(
+						initialRoomOptions.config!.lobby!.message ?? '',
+						[Validators.maxLength(MAX_LOBBY_MESSAGE_LENGTH)]
+					),
 					moderator: this.formBuilder.group({
 						...this.buildPermissionsFormConfig(initialRoomOptions.roles!.moderator!.permissions)
 					}),

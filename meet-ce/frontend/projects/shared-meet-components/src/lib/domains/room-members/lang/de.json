@@ -117,7 +117,8 @@
         "MEDIA": "Medien",
         "RECORDINGS": "Aufnahmen",
         "BROADCAST": "Live-Übertragung",
-        "CHAT": "Chat"
+        "CHAT": "Chat",
+        "WAITING_ROOM": "Warteraum"
       },
       "ITEMS": {
         "meetingJoin": {
@@ -207,6 +208,14 @@
         "chatWrite": {
           "LABEL": "Schreiben",
           "DESCRIPTION": "Erlaubt das Senden von Chat-Nachrichten. Erfordert „Lesen“"
+        },
+        "lobbyBypass": {
+          "LABEL": "Ohne Warten beitreten",
+          "DESCRIPTION": "Erlaubt, einem Raum mit Warteraum beizutreten, ohne auf die Zulassung zu warten"
+        },
+        "lobbyAdmin": {
+          "LABEL": "Teilnehmer zulassen",
+          "DESCRIPTION": "Erlaubt, wartende Teilnehmer zuzulassen oder abzulehnen"
         }
       }
     },

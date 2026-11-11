@@ -88,3 +88,86 @@ describe('RoomWizardComponent.createRoomAdvance — B5/F7: a rejected submit des
 		);
 	});
 });
+
+/**
+ * The waiting room message travels differently in the two requests: creating a room has no `null` to
+ * remove a message with, so a cleared one is left out, while updating one sends `null`, which is what
+ * removes the stored message.
+ */
+describe('RoomWizardComponent.createRoomAdvance (waiting room message)', () => {
+	let component: RoomWizardComponent;
+	let wizardService: RoomWizardStateService;
+	let roomService: Record<'createRoom' | 'updateRoomConfig' | 'updateRoomAccess' | 'updateRoomRoles', jasmine.Spy>;
+
+	beforeEach(() => {
+		roomService = {
+			createRoom: jasmine
+				.createSpy('createRoom')
+				.and.resolveTo({ roomId: 'room-1', access: { user: { url: 'https://meet.example.com/room/room-1' } } }),
+			updateRoomConfig: jasmine.createSpy('updateRoomConfig').and.resolveTo({}),
+			updateRoomAccess: jasmine.createSpy('updateRoomAccess').and.resolveTo({}),
+			updateRoomRoles: jasmine.createSpy('updateRoomRoles').and.resolveTo({})
+		};
+
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				RoomWizardStateService,
+				{ provide: RoomService, useValue: roomService },
+				{ provide: RoomMemberService, useValue: {} },
+				{ provide: NotificationService, useValue: { showMessage: () => {} } },
+				{
+					provide: NavigationService,
+					useValue: { redirectTo: () => Promise.resolve(), navigateTo: () => Promise.resolve() }
+				},
+				{ provide: TranslateService, useValue: { translate: (key: string) => key } },
+				{
+					provide: ActivatedRoute,
+					useValue: {
+						snapshot: { url: [], paramMap: { get: () => null }, queryParamMap: { get: () => null } }
+					}
+				}
+			]
+		});
+
+		component = TestBed.createComponent(RoomWizardComponent).componentInstance;
+		wizardService = TestBed.inject(RoomWizardStateService);
+	});
+
+	it('creates a room with the waiting room on and its message', async () => {
+		wizardService.initializeWizard(false);
+		wizardService.updateStepData({ config: { lobby: { enabled: true, message: 'The host will let you in' } } });
+
+		await component.createRoomAdvance();
+
+		expect(roomService.createRoom.calls.mostRecent().args[0].config.lobby).toEqual({
+			enabled: true,
+			message: 'The host will let you in'
+		});
+	});
+
+	it('creates a room without a message key when the message was cleared', async () => {
+		wizardService.initializeWizard(false);
+		wizardService.updateStepData({ config: { lobby: { enabled: true, message: null } } });
+
+		await component.createRoomAdvance();
+
+		const { lobby } = roomService.createRoom.calls.mostRecent().args[0].config;
+
+		expect(lobby.enabled).toBeTrue();
+		expect(JSON.parse(JSON.stringify(lobby))).toEqual({ enabled: true });
+	});
+
+	it('updates a room with message null when the message was cleared', async () => {
+		wizardService.initializeWizard(true, { config: { lobby: { enabled: true, message: 'Welcome' } } });
+		component.roomId = 'room-1';
+		wizardService.updateStepData({ config: { lobby: { enabled: true, message: null } } });
+
+		await component.createRoomAdvance();
+
+		expect(roomService.updateRoomConfig.calls.mostRecent().args[1].lobby).toEqual({
+			enabled: true,
+			message: null
+		});
+	});
+});

@@ -117,7 +117,8 @@
         "MEDIA": "媒体",
         "RECORDINGS": "录像",
         "BROADCAST": "直播",
-        "CHAT": "聊天"
+        "CHAT": "聊天",
+        "WAITING_ROOM": "等候室"
       },
       "ITEMS": {
         "meetingJoin": {
@@ -207,6 +208,14 @@
         "chatWrite": {
           "LABEL": "发送消息",
           "DESCRIPTION": "允许发送聊天消息。需要“阅读”"
+        },
+        "lobbyBypass": {
+          "LABEL": "无需等待直接加入",
+          "DESCRIPTION": "允许无需等待准入，直接加入设有等候室的房间"
+        },
+        "lobbyAdmin": {
+          "LABEL": "准入参与者",
+          "DESCRIPTION": "允许准入或拒绝正在等待加入的参与者"
         }
       }
     },
