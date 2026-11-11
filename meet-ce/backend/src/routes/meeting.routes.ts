@@ -1,9 +1,12 @@
 import bodyParser from 'body-parser';
 import { Router } from 'express';
+import * as lobbyCtrl from '../controllers/lobby.controller.js';
 import * as meetingCtrl from '../controllers/meeting.controller.js';
 import { apiKeyValidator, roomMemberTokenValidator, withAuth } from '../middlewares/auth.middleware.js';
 import { apiLimiter } from '../middlewares/rate-limit.middleware.js';
 import {
+	validateLobbyDecisionReq,
+	validateLobbyLeaveReq,
 	validateLowerAllHandsReq,
 	validateMuteParticipantMediaReq,
 	validateSendParticipantReactionReq,
@@ -95,6 +98,31 @@ meetingRouter.put(
 	meetingCtrl.updateParticipantHand
 );
 
+// Waiting room routes: they answer with no meeting running, since participants wait before it starts.
+meetingRouter.get(
+	'/:roomId/lobby',
+	withAuth(apiKeyValidator, roomMemberTokenValidator),
+	withValidRoomId,
+	withRoomPermission('lobbyAdmin'),
+	lobbyCtrl.getLobby
+);
+meetingRouter.post(
+	'/:roomId/lobby/admit',
+	withAuth(apiKeyValidator, roomMemberTokenValidator),
+	withValidRoomId,
+	validateLobbyDecisionReq,
+	withRoomPermission('lobbyAdmin'),
+	lobbyCtrl.admitFromLobby
+);
+meetingRouter.post(
+	'/:roomId/lobby/reject',
+	withAuth(apiKeyValidator, roomMemberTokenValidator),
+	withValidRoomId,
+	validateLobbyDecisionReq,
+	withRoomPermission('lobbyAdmin'),
+	lobbyCtrl.rejectFromLobby
+);
+
 // Internal meeting routes
 export const internalMeetingRouter: Router = Router();
 internalMeetingRouter.use(bodyParser.urlencoded({ extended: true }));
@@ -110,3 +138,6 @@ internalMeetingRouter.post(
 	withRoomPermission('participantReactionSend'),
 	meetingCtrl.sendParticipantReaction
 );
+
+// The ticket is the only credential, and no header is needed, so a page that unloads sends it without a CORS preflight.
+internalMeetingRouter.post('/:roomId/lobby/leave', withValidRoomId, validateLobbyLeaveReq, lobbyCtrl.leaveLobby);

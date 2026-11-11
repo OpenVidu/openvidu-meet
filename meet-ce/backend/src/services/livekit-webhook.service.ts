@@ -21,6 +21,7 @@ import { AiAssistantService } from './ai-assistant.service.js';
 import { BroadcastService } from './broadcast.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
+import { LobbyService } from './lobby/lobby.service.js';
 import { LoggerService } from './logger.service.js';
 import { MeetingDurationLimitService } from './meeting-duration-limit.service.js';
 import { MeetingPresenceService } from './meeting-presence.service.js';
@@ -50,7 +51,8 @@ export class LivekitWebhookService {
 		@inject(RedisService) protected redisService: RedisService,
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(BroadcastService) protected broadcastService: BroadcastService,
-		@inject(MeetingDurationLimitService) protected meetingDurationLimitService: MeetingDurationLimitService
+		@inject(MeetingDurationLimitService) protected meetingDurationLimitService: MeetingDurationLimitService,
+		@inject(LobbyService) protected lobbyService: LobbyService
 	) {
 		this.webhookReceiver = new WebhookReceiver(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
 	}
@@ -172,6 +174,8 @@ export class LivekitWebhookService {
 	 */
 	async handleParticipantJoined(room: Room, participant: ParticipantInfo) {
 		if (!MeetParticipantHelper.isStandardParticipant(participant)) return;
+
+		await this.lobbyService.joined(room.name, participant.identity);
 
 		if (await this.removeSessionWithRevokedToken(room, participant)) return;
 

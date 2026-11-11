@@ -3,6 +3,8 @@ import { MeetReaction } from '@openvidu-meet/typings';
 import type { z } from 'zod';
 import { configureZodErrorMessages } from '../../../src/config/zod-config.js';
 import {
+	LobbyDecisionReqSchema,
+	LobbyLeaveReqSchema,
 	LowerAllHandsReqSchema,
 	MuteParticipantMediaReqSchema,
 	SendParticipantReactionReqSchema,
@@ -102,5 +104,50 @@ describe('SendParticipantReactionReqSchema', () => {
 			expect.stringMatching(/^reaction: Invalid enum value\. Expected '.*', received 'sparkles'$/)
 		]);
 		expect(issues(SendParticipantReactionReqSchema, {})).toEqual(['reaction: Required']);
+	});
+});
+
+describe('LobbyDecisionReqSchema', () => {
+	it('reads an empty body as everyone waiting', () => {
+		expect(LobbyDecisionReqSchema.parse({})).toEqual({});
+	});
+
+	it('accepts one participant or several, each named once', () => {
+		expect(LobbyDecisionReqSchema.parse({ participantIdentities: ['ana'] })).toEqual({
+			participantIdentities: ['ana']
+		});
+		expect(LobbyDecisionReqSchema.parse({ participantIdentities: ['ana', 'ben'] })).toEqual({
+			participantIdentities: ['ana', 'ben']
+		});
+	});
+
+	it('refuses an empty list instead of reading it as everyone waiting', () => {
+		expect(issues(LobbyDecisionReqSchema, { participantIdentities: [] })).toEqual([
+			'participantIdentities: Must name at least one participant'
+		]);
+	});
+
+	it('refuses an identity named twice', () => {
+		expect(issues(LobbyDecisionReqSchema, { participantIdentities: ['ana', 'ana'] })).toEqual([
+			'participantIdentities: Must not repeat an identity'
+		]);
+	});
+
+	it('refuses more participants than a waiting room holds, and identities that are not strings', () => {
+		const identities = Array.from({ length: 101 }, (_, index) => `p-${index}`);
+
+		expect(issues(LobbyDecisionReqSchema, { participantIdentities: identities })).toHaveLength(1);
+		expect(issues(LobbyDecisionReqSchema, { participantIdentities: [42] })).toHaveLength(1);
+		expect(issues(LobbyDecisionReqSchema, { participantIdentities: [''] })).toHaveLength(1);
+	});
+});
+
+describe('LobbyLeaveReqSchema', () => {
+	it('needs the ticket of the wait', () => {
+		expect(LobbyLeaveReqSchema.parse({ lobbyTicket: 'q8d1u3Zr0m6ZxVwK9tHc2A' })).toEqual({
+			lobbyTicket: 'q8d1u3Zr0m6ZxVwK9tHc2A'
+		});
+		expect(issues(LobbyLeaveReqSchema, {})).toHaveLength(1);
+		expect(issues(LobbyLeaveReqSchema, { lobbyTicket: '' })).toHaveLength(1);
 	});
 });

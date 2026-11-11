@@ -1,7 +1,9 @@
 import type {
 	MeetBroadcastInfo,
+	MeetLobbyStatusChangedPayload,
 	MeetMeetingEndedPayload,
 	MeetParticipantJoinedPayload,
+	MeetParticipantKnockedPayload,
 	MeetParticipantLeftPayload,
 	MeetParticipantHandChangedPayload,
 	MeetParticipantRoleChangedPayload,
@@ -115,6 +117,32 @@ export class WebhookDispatcherService {
 			MeetWebhookEventType.PARTICIPANT_HAND_CHANGED,
 			payload,
 			`Room ID: ${payload.roomId}, Participant: ${payload.participant.participantIdentity}`
+		);
+	}
+
+	/**
+	 * Sends a webhook notification when a participant asks to join and waits.
+	 *
+	 * @param payload - The room and the participant who waits
+	 */
+	sendParticipantKnockedWebhook(payload: MeetParticipantKnockedPayload) {
+		this.sendWebhookEventInBackground(
+			MeetWebhookEventType.PARTICIPANT_KNOCKED,
+			payload,
+			`Room ID: ${payload.roomId}, Participant: ${payload.participant.participantIdentity}`
+		);
+	}
+
+	/**
+	 * Sends a webhook notification when a wait changes after it started.
+	 *
+	 * @param payload - The room, the participant, the new status of the wait and who caused it
+	 */
+	sendLobbyStatusChangedWebhook(payload: MeetLobbyStatusChangedPayload) {
+		this.sendWebhookEventInBackground(
+			MeetWebhookEventType.LOBBY_STATUS_CHANGED,
+			payload,
+			`Room ID: ${payload.roomId}, Participant: ${payload.participant.participantIdentity}, Status: ${payload.status}`
 		);
 	}
 

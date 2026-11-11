@@ -415,6 +415,16 @@ export class RedisService extends EventEmitter {
 		}
 	}
 
+	/** Every field of a Redis hash with its value, empty when the hash does not exist. */
+	async getHash(key: string): Promise<Record<string, string>> {
+		try {
+			return await this.client.hgetall(key);
+		} catch (error) {
+			this.logger.error(`Error reading hash '${key}' from Redis`, error);
+			throw error;
+		}
+	}
+
 	/** The field names of a Redis hash, read in one call whatever the size of the keyspace. */
 	async getHashFieldNames(key: string): Promise<string[]> {
 		try {
