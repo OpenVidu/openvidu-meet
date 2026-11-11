@@ -112,6 +112,25 @@ export class LocalMediaService {
 		return this.switchTo(this.microphone, deviceId);
 	}
 
+	/**
+	 * The message key for the devices the participant asked for and the browser did not hand over, so a
+	 * camera that failed to start is not left looking like a camera the participant turned off. A device
+	 * the machine does not have is not a failure, and neither is one nobody asked for.
+	 */
+	unavailableDevicesMessageKey(): string | undefined {
+		const closed = (device: LocalDevice, present: boolean) => present && device.wanted() && !device.track();
+		const camera = closed(this.camera, this.deviceService.hasVideoDevices());
+		const microphone = closed(this.microphone, this.deviceService.hasAudioDevices());
+
+		if (camera && microphone) return 'ERRORS.DEVICES_UNAVAILABLE';
+
+		if (camera) return 'ERRORS.CAMERA_UNAVAILABLE';
+
+		if (microphone) return 'ERRORS.MICROPHONE_UNAVAILABLE';
+
+		return undefined;
+	}
+
 	/** Stops and forgets both devices and the participant they were published to. The next entry starts over. */
 	release(): void {
 		this.entry++;

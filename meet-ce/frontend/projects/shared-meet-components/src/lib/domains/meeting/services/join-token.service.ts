@@ -1,9 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
+import { MeetLobbyTicketResponse } from '@openvidu-meet/typings';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
-import { roomMemberTokenFailure } from '../../room-members/utils/room-member-token-failure.utils';
+import { isWaitingRoomFull, roomMemberTokenFailure } from '../../room-members/utils/room-member-token-failure.utils';
 import { E2eeService } from '../openvidu-components/services/e2ee/e2ee.service';
 import { MeetingContextService } from './meeting-context.service';
 
@@ -16,9 +17,13 @@ export interface JoinRequest {
 	nameTypedByParticipant: boolean;
 }
 
+/** The answer to a request to join: the token to connect with, or the ticket of a wait to be let in. */
+export type JoinAnswer = { kind: 'token'; token: string } | { kind: 'waiting'; ticket: MeetLobbyTicketResponse };
+
 /**
  * Requests the token a participant joins the meeting with. It is requested when they commit to joining,
- * not before: the request reserves their name, checks the meeting's capacity and creates the meeting.
+ * not before: the request reserves their name, checks the meeting's capacity and creates the meeting,
+ * unless the participant has to wait to be let in.
  */
 @Service()
 export class JoinTokenService {
@@ -28,35 +33,56 @@ export class JoinTokenService {
 	private readonly navigationService = inject(NavigationService);
 	private readonly log = inject(LoggerService).get('OpenVidu Meet - JoinTokenService');
 
-	/** Resolves to the room member token to connect with; a refusal shows its error screen and rejects. */
-	async request({ participantName, e2eeKey, nameTypedByParticipant }: JoinRequest): Promise<string> {
+	/**
+	 * Resolves to the token to connect with, or to the ticket of a wait. A refusal shows its error screen
+	 * and rejects, except a full waiting room, whose screen belongs to the waiting room.
+	 */
+	async request(join: JoinRequest): Promise<JoinAnswer> {
 		try {
-			// The correlation fields are not encrypted: they belong to the host application, which already knows them.
-			const token = await this.roomMemberContextService.generateToken(this.meetingContextService.roomId()!, {
-				secret: this.meetingContextService.roomSecret(),
-				joinMeeting: true,
-				participantName: await this.nameInToken(participantName, e2eeKey),
-				participantExternalId: this.roomMemberContextService.participantExternalId(),
-				participantMetadata: this.roomMemberContextService.participantMetadata()
-			});
-
-			if (nameTypedByParticipant) {
-				this.roomMemberContextService.saveParticipantNameToStorage(participantName);
-			}
-
-			this.meetingContextService.setIsActiveMeeting(true);
-			return token;
+			return await this.ask(join);
 		} catch (error) {
-			this.log.e('Error generating room member token for joining meeting:', error);
-			const reason = roomMemberTokenFailure(error);
+			if (isWaitingRoomFull(error)) throw error;
 
-			if (error instanceof HttpErrorResponse && error.status === 422) {
-				this.log.e('Invalid participant data:', this.describeValidationError(error));
-			}
-
-			await this.navigationService.redirectToErrorPage(reason, true);
+			await this.showFailure(error);
 			throw new Error('Error generating room member token', { cause: error });
 		}
+	}
+
+	/** Asks for the token of a wait with its ticket. Its failures are the caller's to handle. */
+	requestWithTicket(join: JoinRequest, lobbyTicket: string): Promise<JoinAnswer> {
+		return this.ask(join, lobbyTicket);
+	}
+
+	/** Shows the error screen of a refused request to join. */
+	async showFailure(error: unknown): Promise<void> {
+		this.log.e('Error generating room member token for joining meeting:', error);
+
+		if (error instanceof HttpErrorResponse && error.status === 422) {
+			this.log.e('Invalid participant data:', this.describeValidationError(error));
+		}
+
+		await this.navigationService.redirectToErrorPage(roomMemberTokenFailure(error), true);
+	}
+
+	private async ask(
+		{ participantName, e2eeKey, nameTypedByParticipant }: JoinRequest,
+		lobbyTicket?: string
+	): Promise<JoinAnswer> {
+		// The correlation fields are not encrypted: they belong to the host application, which already knows them.
+		const answer = await this.roomMemberContextService.requestJoin(this.meetingContextService.roomId()!, {
+			secret: this.meetingContextService.roomSecret(),
+			joinMeeting: true,
+			participantName: await this.nameInToken(participantName, e2eeKey),
+			participantExternalId: this.roomMemberContextService.participantExternalId(),
+			participantMetadata: this.roomMemberContextService.participantMetadata(),
+			...(lobbyTicket && { lobbyTicket })
+		});
+
+		if (nameTypedByParticipant) {
+			this.roomMemberContextService.saveParticipantNameToStorage(participantName);
+		}
+
+		return 'lobbyTicket' in answer ? { kind: 'waiting', ticket: answer } : { kind: 'token', token: answer.token };
 	}
 
 	/** An encrypted meeting gets the name encrypted, so the server never sees it in plain text. */

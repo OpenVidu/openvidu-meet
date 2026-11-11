@@ -11,8 +11,8 @@ export class MeetingPhaseService {
 
 	readonly phase = this._phase.asReadonly();
 
-	/** Whether the device setup screen shows the local preview. */
-	readonly isPreviewing = computed(() => this._phase() === 'prejoin');
+	/** Whether the device setup screen or the waiting screen shows the local preview. */
+	readonly isPreviewing = computed(() => this._phase() === 'prejoin' || this._phase() === 'waiting');
 
 	set(phase: MeetingViewPhase): void {
 		this._phase.set(phase);

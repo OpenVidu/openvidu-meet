@@ -1,0 +1,30 @@
+<div class="outcome-container">
+	<main class="outcome-card" [id]="'waiting-outcome-' + outcome()" aria-labelledby="waiting-outcome-title">
+		<div class="logo-container">
+			<img [src]="logoUrl" alt="OpenVidu Meet" class="logo-image" />
+		</div>
+
+		<h1 #heading id="waiting-outcome-title" class="title" tabindex="-1">{{ copy().titleKey | translate }}</h1>
+		<p class="message">{{ copy().messageKey | translate }}</p>
+
+		<div class="actions">
+			@if (joinService.showBackButton()) {
+				<button mat-stroked-button id="waiting-outcome-back-button" (click)="joinService.goBack()">
+					<mat-icon aria-hidden="true">arrow_back</mat-icon>
+					{{ joinService.backButtonText() | translate }}
+				</button>
+			}
+			<button
+				mat-flat-button
+				id="waiting-outcome-ask-again-button"
+				[disabled]="askAgainPaused()"
+				(click)="askAgain()"
+			>
+				<mat-icon aria-hidden="true">door_front</mat-icon>
+				{{ 'WAITING_ROOM.ASK_AGAIN' | translate }}
+			</button>
+		</div>
+
+		<p class="footer">{{ 'END_MEETING.FOOTER' | translate }}</p>
+	</main>
+</div>

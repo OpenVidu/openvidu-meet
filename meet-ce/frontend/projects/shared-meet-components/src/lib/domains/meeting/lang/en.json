@@ -263,7 +263,30 @@
 		"RECORDINGS_DESCRIPTION": "Access previously recorded meetings from this room. You can watch, download, or manage existing recordings.",
 		"RECORDINGS_BUTTON": "Browse Recordings",
 		"BACK": "Back",
-		"BACK_TO_ROOMS": "Back to Rooms"
+		"BACK_TO_ROOMS": "Back to Rooms",
+		"ASK_BUTTON": "Ask to join"
+	},
+	"WAITING_ROOM": {
+		"TITLE": "Waiting to be let in",
+		"POSITION": "You're {position, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} in line",
+		"SUBTITLE": "The host knows you're here. You'll join as soon as they let you in.",
+		"RECONNECTING": "Reconnecting… You keep your place if you're back within a minute.",
+		"WAITED": "{minutes, plural, one {Waiting # min} other {Waiting # min}}",
+		"NOT_STARTED": "The meeting hasn't started yet",
+		"PREVIEW_PRIVATE": "Nobody in the meeting can see or hear you yet",
+		"LEAVE": "Leave waiting room",
+		"ADMITTED": "You've been let in. Joining the meeting",
+		"ASK_AGAIN": "Ask to join again",
+		"REJECTED_TITLE": "You weren't let in",
+		"REJECTED_MESSAGE": "Your request to join wasn't accepted. You can ask again.",
+		"LEFT_TITLE": "You left the waiting room",
+		"LEFT_MESSAGE": "You didn't join the meeting. Your request was withdrawn.",
+		"EXPIRED_TITLE": "You lost your place",
+		"EXPIRED_MESSAGE": "You were away for too long, or you asked to join from somewhere else. If you ask again, you'll be at the end of the line.",
+		"ENDED_TITLE": "The meeting has ended",
+		"ENDED_MESSAGE": "It ended before you were let in. If you ask again, you'll wait for the next one.",
+		"FULL_TITLE": "The waiting room is full",
+		"FULL_MESSAGE": "Too many people are waiting to join this meeting right now. Try again in a few minutes."
 	},
 	"SHARE_ACCESS": {
 		"COPY_TOOLTIP": "Copy room access link",

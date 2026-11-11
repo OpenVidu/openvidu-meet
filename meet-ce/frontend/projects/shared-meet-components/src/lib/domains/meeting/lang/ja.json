@@ -263,7 +263,30 @@
 		"RECORDINGS_DESCRIPTION": "このルームで以前に録画された会議にアクセスできます。既存の録画を視聴、ダウンロード、または管理できます。",
 		"RECORDINGS_BUTTON": "録画を閲覧",
 		"BACK": "戻る",
-		"BACK_TO_ROOMS": "ルームに戻る"
+		"BACK_TO_ROOMS": "ルームに戻る",
+		"ASK_BUTTON": "参加をリクエスト"
+	},
+	"WAITING_ROOM": {
+		"TITLE": "入室の許可を待っています",
+		"POSITION": "待機順は {position} 番目です",
+		"SUBTITLE": "ホストはあなたが待っていることを知っています。許可されるとすぐに参加できます。",
+		"RECONNECTING": "再接続しています… 1 分以内に戻れば順番は保持されます。",
+		"WAITED": "{minutes, plural, other {待機中 # 分}}",
+		"NOT_STARTED": "会議はまだ始まっていません",
+		"PREVIEW_PRIVATE": "会議の参加者にはまだあなたの映像や音声は届いていません",
+		"LEAVE": "待機室を退出",
+		"ADMITTED": "入室が許可されました。会議に参加しています",
+		"ASK_AGAIN": "もう一度参加をリクエスト",
+		"REJECTED_TITLE": "入室が許可されませんでした",
+		"REJECTED_MESSAGE": "参加リクエストは承認されませんでした。もう一度リクエストできます。",
+		"LEFT_TITLE": "待機室を退出しました",
+		"LEFT_MESSAGE": "会議には参加していません。リクエストは取り下げられました。",
+		"EXPIRED_TITLE": "順番が取り消されました",
+		"EXPIRED_MESSAGE": "離れていた時間が長すぎたか、別の場所から参加をリクエストしました。もう一度リクエストすると、列の最後になります。",
+		"ENDED_TITLE": "会議は終了しました",
+		"ENDED_MESSAGE": "入室が許可される前に会議が終了しました。もう一度リクエストすると、次の会議を待つことになります。",
+		"FULL_TITLE": "待機室は満員です",
+		"FULL_MESSAGE": "現在、この会議への参加を待っている人が多すぎます。数分後にもう一度お試しください。"
 	},
 	"SHARE_ACCESS": {
 		"COPY_TOOLTIP": "ルームアクセスリンクをコピー",

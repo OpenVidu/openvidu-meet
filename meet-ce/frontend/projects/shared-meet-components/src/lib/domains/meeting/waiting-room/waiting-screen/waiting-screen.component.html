@@ -1,0 +1,75 @@
+<main class="waiting-screen" id="waiting-screen" aria-labelledby="waiting-screen-title">
+	<section class="waiting-header">
+		<div class="status">
+			<span class="status-icon" [class.reconnecting]="isReconnecting()" aria-hidden="true">
+				<mat-icon>{{ isReconnecting() ? 'wifi_off' : 'hourglass_top' }}</mat-icon>
+			</span>
+			<div class="status-text">
+				<h1 id="waiting-screen-title" class="title">
+					@if (queuePosition(); as position) {
+						{{ 'WAITING_ROOM.POSITION' | translate: { position } }}
+					} @else {
+						{{ 'WAITING_ROOM.TITLE' | translate }}
+					}
+				</h1>
+				<p class="subtitle" id="waiting-screen-subtitle">
+					{{ (isReconnecting() ? 'WAITING_ROOM.RECONNECTING' : 'WAITING_ROOM.SUBTITLE') | translate }}
+				</p>
+				<p class="waited" id="waiting-screen-waited" aria-live="off">
+					@if (minutesWaited() >= 1) {
+						<mat-icon aria-hidden="true">schedule</mat-icon>
+						{{ 'WAITING_ROOM.WAITED' | translate: { minutes: minutesWaited() } }}
+					}
+				</p>
+			</div>
+		</div>
+
+		@if (meetingActive() === false) {
+			<p class="notice" id="waiting-screen-not-started">
+				<mat-icon aria-hidden="true">event_busy</mat-icon>
+				<span>{{ 'WAITING_ROOM.NOT_STARTED' | translate }}</span>
+			</p>
+		}
+
+		@if (message()) {
+			<p class="notice room-message" id="waiting-screen-message">
+				<mat-icon aria-hidden="true">campaign</mat-icon>
+				<span>{{ message() }}</span>
+			</p>
+		}
+
+		@if (deviceErrorKey(); as errorKey) {
+			<p class="notice device-error" role="alert">
+				<mat-icon aria-hidden="true">error_outline</mat-icon>
+				<span>{{ errorKey | translate }}</span>
+			</p>
+		}
+	</section>
+
+	<div class="preview">
+		<ov-video-element
+			class="video-element"
+			[videoTrack]="videoTrack()"
+			[avatar]="avatar()"
+			[isLocal]="true"
+			[id]="videoTrack()?.id || 'no-video'"
+		/>
+		<span class="private-badge">
+			<mat-icon aria-hidden="true">visibility_off</mat-icon>
+			{{ 'WAITING_ROOM.PREVIEW_PRIVATE' | translate }}
+		</span>
+		<div class="device-controls">
+			@if (showCameraControls()) {
+				<ov-video-devices-select [compact]="true" />
+			}
+			@if (showMicrophoneControls()) {
+				<ov-audio-devices-select [compact]="true" />
+			}
+		</div>
+	</div>
+
+	<button mat-button class="leave-button" id="waiting-room-leave-button" (click)="leave()">
+		<mat-icon aria-hidden="true">logout</mat-icon>
+		{{ 'WAITING_ROOM.LEAVE' | translate }}
+	</button>
+</main>

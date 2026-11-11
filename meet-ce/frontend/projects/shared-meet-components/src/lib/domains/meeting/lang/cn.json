@@ -263,7 +263,30 @@
 		"RECORDINGS_DESCRIPTION": "访问此房间之前录制的会议。您可以观看、下载或管理现有录像。",
 		"RECORDINGS_BUTTON": "浏览录像",
 		"BACK": "返回",
-		"BACK_TO_ROOMS": "返回房间"
+		"BACK_TO_ROOMS": "返回房间",
+		"ASK_BUTTON": "请求加入"
+	},
+	"WAITING_ROOM": {
+		"TITLE": "等待主持人准许进入",
+		"POSITION": "您排在第 {position} 位",
+		"SUBTITLE": "主持人已知道您在这里。获准后您将立即加入。",
+		"RECONNECTING": "正在重新连接… 如果您在一分钟内恢复连接，将保留您的位置。",
+		"WAITED": "{minutes, plural, other {已等待 # 分钟}}",
+		"NOT_STARTED": "会议尚未开始",
+		"PREVIEW_PRIVATE": "会议中的人还看不到也听不到您",
+		"LEAVE": "离开等候室",
+		"ADMITTED": "您已获准进入，正在加入会议",
+		"ASK_AGAIN": "再次请求加入",
+		"REJECTED_TITLE": "您未获准进入",
+		"REJECTED_MESSAGE": "您的加入请求未被接受。您可以再次请求。",
+		"LEFT_TITLE": "您已离开等候室",
+		"LEFT_MESSAGE": "您没有加入会议，您的请求已撤回。",
+		"EXPIRED_TITLE": "您已失去排队位置",
+		"EXPIRED_MESSAGE": "您离开的时间过长，或您从其他地方请求了加入。如果再次请求，您将排在队尾。",
+		"ENDED_TITLE": "会议已结束",
+		"ENDED_MESSAGE": "会议在您获准进入前已结束。如果再次请求，您将等待下一场会议。",
+		"FULL_TITLE": "等候室已满",
+		"FULL_MESSAGE": "目前等待加入此会议的人数过多。请几分钟后再试。"
 	},
 	"SHARE_ACCESS": {
 		"COPY_TOOLTIP": "复制房间访问链接",

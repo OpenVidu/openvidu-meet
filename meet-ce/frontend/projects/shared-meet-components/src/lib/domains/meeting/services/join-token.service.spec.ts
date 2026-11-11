@@ -23,17 +23,16 @@ describe('JoinTokenService', () => {
 	let service: JoinTokenService;
 	let roomMemberContext: jasmine.SpyObj<RoomMemberContextService>;
 	let e2eeService: jasmine.SpyObj<E2eeService>;
-	let setIsActiveMeeting: jasmine.Spy;
 	let redirectToErrorPage: jasmine.Spy;
 
 	beforeEach(() => {
 		roomMemberContext = jasmine.createSpyObj<RoomMemberContextService>('RoomMemberContextService', [
-			'generateToken',
+			'requestJoin',
 			'saveParticipantNameToStorage',
 			'participantExternalId',
 			'participantMetadata'
 		]);
-		roomMemberContext.generateToken.and.resolveTo('minted-token');
+		roomMemberContext.requestJoin.and.resolveTo({ token: 'minted-token' });
 		roomMemberContext.participantExternalId.and.returnValue('ext-1');
 		roomMemberContext.participantMetadata.and.returnValue(undefined);
 
@@ -42,7 +41,6 @@ describe('JoinTokenService', () => {
 		// `encrypt` is overloaded (text and bytes); only the display name is encrypted here.
 		e2eeService.encrypt.and.callFake((async (value: string) => `encrypted(${value})`) as E2eeService['encrypt']);
 
-		setIsActiveMeeting = jasmine.createSpy('setIsActiveMeeting');
 		redirectToErrorPage = jasmine.createSpy('redirectToErrorPage').and.resolveTo(undefined);
 
 		TestBed.configureTestingModule({
@@ -53,7 +51,7 @@ describe('JoinTokenService', () => {
 				{ provide: E2eeService, useValue: e2eeService },
 				{
 					provide: MeetingContextService,
-					useValue: { roomId: () => ROOM_ID, roomSecret: () => 'secret', setIsActiveMeeting }
+					useValue: { roomId: () => ROOM_ID, roomSecret: () => 'secret' }
 				},
 				{ provide: NavigationService, useValue: { redirectToErrorPage } }
 			]
@@ -63,13 +61,13 @@ describe('JoinTokenService', () => {
 	});
 
 	function tokenOptions(): MeetRoomMemberTokenOptions {
-		return roomMemberContext.generateToken.calls.mostRecent().args[1];
+		return roomMemberContext.requestJoin.calls.mostRecent().args[1];
 	}
 
 	it('requests a joining token for the name and the correlation fields', async () => {
-		await expectAsync(service.request(alice)).toBeResolvedTo('minted-token');
+		await expectAsync(service.request(alice)).toBeResolvedTo({ kind: 'token', token: 'minted-token' });
 
-		expect(roomMemberContext.generateToken).toHaveBeenCalledOnceWith(ROOM_ID, jasmine.anything());
+		expect(roomMemberContext.requestJoin).toHaveBeenCalledOnceWith(ROOM_ID, jasmine.anything());
 		expect(tokenOptions()).toEqual({
 			secret: 'secret',
 			joinMeeting: true,
@@ -77,7 +75,29 @@ describe('JoinTokenService', () => {
 			participantExternalId: 'ext-1',
 			participantMetadata: undefined
 		});
-		expect(setIsActiveMeeting).toHaveBeenCalledWith(true);
+	});
+
+	it('answers the ticket of a participant who has to wait', async () => {
+		const ticket = { lobbyTicket: 'ticket-1', participantIdentity: 'alice-1' };
+		roomMemberContext.requestJoin.and.resolveTo(ticket);
+
+		await expectAsync(service.request(alice)).toBeResolvedTo({ kind: 'waiting', ticket });
+	});
+
+	it('sends the ticket of a wait with the same request', async () => {
+		await service.requestWithTicket(alice, 'ticket-1');
+
+		expect(tokenOptions()).toEqual(jasmine.objectContaining({ joinMeeting: true, lobbyTicket: 'ticket-1' }));
+	});
+
+	it('leaves the screen of a full waiting room to the waiting room', async () => {
+		roomMemberContext.requestJoin.and.rejectWith(
+			new HttpErrorResponse({ status: 409, error: { message: "The waiting room of room 'room1' is full" } })
+		);
+
+		await expectAsync(service.request(alice)).toBeRejected();
+
+		expect(redirectToErrorPage).not.toHaveBeenCalled();
 	});
 
 	it('encrypts the display name of an E2EE meeting before it reaches the token', async () => {
@@ -100,19 +120,18 @@ describe('JoinTokenService', () => {
 		expect(roomMemberContext.saveParticipantNameToStorage).not.toHaveBeenCalled();
 	});
 
-	it('shows the error screen of a refusal and rejects, leaving the meeting inactive', async () => {
-		roomMemberContext.generateToken.and.rejectWith({ status: 409, error: { message: 'Room is closed' } });
+	it('shows the error screen of a refusal and rejects', async () => {
+		roomMemberContext.requestJoin.and.rejectWith({ status: 409, error: { message: 'Room is closed' } });
 
 		await expectAsync(service.request(alice)).toBeRejected();
 
 		expect(redirectToErrorPage).toHaveBeenCalledWith(NavigationErrorReason.CLOSED_ROOM, true);
-		expect(setIsActiveMeeting).not.toHaveBeenCalled();
 		expect(roomMemberContext.saveParticipantNameToStorage).not.toHaveBeenCalled();
 	});
 
 	it('shows the invalid participant data screen and logs the refused fields', async () => {
 		const logError = spyOn(service['log'], 'e');
-		roomMemberContext.generateToken.and.rejectWith(
+		roomMemberContext.requestJoin.and.rejectWith(
 			new HttpErrorResponse({
 				status: 422,
 				error: {

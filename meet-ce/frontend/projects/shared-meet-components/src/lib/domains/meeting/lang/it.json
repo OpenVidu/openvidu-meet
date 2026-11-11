@@ -263,7 +263,30 @@
 		"RECORDINGS_DESCRIPTION": "Accedi alle riunioni registrate in precedenza in questa stanza. Puoi guardare, scaricare o gestire le registrazioni esistenti.",
 		"RECORDINGS_BUTTON": "Sfoglia registrazioni",
 		"BACK": "Indietro",
-		"BACK_TO_ROOMS": "Torna alle stanze"
+		"BACK_TO_ROOMS": "Torna alle stanze",
+		"ASK_BUTTON": "Chiedi di partecipare"
+	},
+	"WAITING_ROOM": {
+		"TITLE": "In attesa di essere ammesso",
+		"POSITION": "Sei {position, selectordinal, many {all'#º} other {al #º}} posto in fila",
+		"SUBTITLE": "L'host sa che sei qui. Entrerai non appena verrai ammesso.",
+		"RECONNECTING": "Riconnessione… Mantieni il tuo posto se torni entro un minuto.",
+		"WAITED": "{minutes, plural, one {In attesa da # min} other {In attesa da # min}}",
+		"NOT_STARTED": "La riunione non è ancora iniziata",
+		"PREVIEW_PRIVATE": "Nessuno nella riunione può ancora vederti o sentirti",
+		"LEAVE": "Esci dalla sala d'attesa",
+		"ADMITTED": "Sei stato ammesso. Accesso alla riunione in corso",
+		"ASK_AGAIN": "Chiedi di nuovo di partecipare",
+		"REJECTED_TITLE": "Non sei stato ammesso",
+		"REJECTED_MESSAGE": "La tua richiesta di partecipare non è stata accettata. Puoi chiedere di nuovo.",
+		"LEFT_TITLE": "Hai lasciato la sala d'attesa",
+		"LEFT_MESSAGE": "Non sei entrato nella riunione. La tua richiesta è stata ritirata.",
+		"EXPIRED_TITLE": "Hai perso il tuo posto",
+		"EXPIRED_MESSAGE": "Sei rimasto assente troppo a lungo o hai chiesto di partecipare da un'altra parte. Se chiedi di nuovo, sarai in fondo alla fila.",
+		"ENDED_TITLE": "La riunione è terminata",
+		"ENDED_MESSAGE": "È terminata prima che venissi ammesso. Se chiedi di nuovo, aspetterai la prossima.",
+		"FULL_TITLE": "La sala d'attesa è piena",
+		"FULL_MESSAGE": "Troppe persone stanno aspettando di entrare in questa riunione. Riprova tra qualche minuto."
 	},
 	"SHARE_ACCESS": {
 		"COPY_TOOLTIP": "Copia il link di accesso alla stanza",

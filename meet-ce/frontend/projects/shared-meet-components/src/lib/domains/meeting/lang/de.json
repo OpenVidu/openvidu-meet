@@ -263,7 +263,30 @@
 		"RECORDINGS_DESCRIPTION": "Greifen Sie auf zuvor aufgezeichnete Meetings aus diesem Raum zu. Sie können vorhandene Aufnahmen ansehen, herunterladen oder verwalten.",
 		"RECORDINGS_BUTTON": "Aufnahmen durchsuchen",
 		"BACK": "Zurück",
-		"BACK_TO_ROOMS": "Zurück zu den Räumen"
+		"BACK_TO_ROOMS": "Zurück zu den Räumen",
+		"ASK_BUTTON": "Beitritt anfragen"
+	},
+	"WAITING_ROOM": {
+		"TITLE": "Warten auf Einlass",
+		"POSITION": "Sie sind auf Platz {position} der Warteschlange",
+		"SUBTITLE": "Der Host weiß, dass Sie hier sind. Sie nehmen teil, sobald Sie eingelassen werden.",
+		"RECONNECTING": "Verbindung wird wiederhergestellt… Ihr Platz bleibt erhalten, wenn Sie innerhalb einer Minute zurück sind.",
+		"WAITED": "{minutes, plural, one {Wartet seit # Min.} other {Wartet seit # Min.}}",
+		"NOT_STARTED": "Das Meeting hat noch nicht begonnen",
+		"PREVIEW_PRIVATE": "Im Meeting kann Sie noch niemand sehen oder hören",
+		"LEAVE": "Warteraum verlassen",
+		"ADMITTED": "Sie wurden eingelassen. Sie treten dem Meeting bei",
+		"ASK_AGAIN": "Erneut anfragen",
+		"REJECTED_TITLE": "Sie wurden nicht eingelassen",
+		"REJECTED_MESSAGE": "Ihre Beitrittsanfrage wurde nicht angenommen. Sie können erneut anfragen.",
+		"LEFT_TITLE": "Sie haben den Warteraum verlassen",
+		"LEFT_MESSAGE": "Sie sind dem Meeting nicht beigetreten. Ihre Anfrage wurde zurückgezogen.",
+		"EXPIRED_TITLE": "Sie haben Ihren Platz verloren",
+		"EXPIRED_MESSAGE": "Sie waren zu lange weg oder haben den Beitritt woanders angefragt. Wenn Sie erneut anfragen, stehen Sie am Ende der Warteschlange.",
+		"ENDED_TITLE": "Das Meeting ist beendet",
+		"ENDED_MESSAGE": "Es wurde beendet, bevor Sie eingelassen wurden. Wenn Sie erneut anfragen, warten Sie auf das nächste.",
+		"FULL_TITLE": "Der Warteraum ist voll",
+		"FULL_MESSAGE": "Gerade warten zu viele Personen auf den Beitritt zu diesem Meeting. Versuchen Sie es in ein paar Minuten erneut."
 	},
 	"SHARE_ACCESS": {
 		"COPY_TOOLTIP": "Raum-Zugangslink kopieren",

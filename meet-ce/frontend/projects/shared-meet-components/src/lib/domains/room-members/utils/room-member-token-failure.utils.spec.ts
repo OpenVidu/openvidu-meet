@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
-import { roomMemberTokenFailure } from './room-member-token-failure.utils';
+import { isWaitingRoomFull, roomMemberTokenFailure } from './room-member-token-failure.utils';
 
 describe('roomMemberTokenFailure', () => {
 	const failure = (status: number, message = '') => new HttpErrorResponse({ status, error: { message } });
@@ -38,5 +38,16 @@ describe('roomMemberTokenFailure', () => {
 		expect(roomMemberTokenFailure({ status: 404, message: 'Room member not found' })).toBe(
 			NavigationErrorReason.INVALID_MEMBER
 		);
+	});
+});
+
+describe('isWaitingRoomFull', () => {
+	const failure = (status: number, message: string) => new HttpErrorResponse({ status, error: { message } });
+
+	it('tells a full waiting room from the other refusals of a join', () => {
+		expect(isWaitingRoomFull(failure(409, "The waiting room of room 'r1' is full"))).toBeTrue();
+		expect(isWaitingRoomFull(failure(409, "Room 'r1' has reached its maximum number of participants"))).toBeFalse();
+		expect(isWaitingRoomFull(failure(409, "Room 'r1' is closed and cannot be joined"))).toBeFalse();
+		expect(isWaitingRoomFull(failure(403, 'The waiting room is on'))).toBeFalse();
 	});
 });

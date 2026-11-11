@@ -6,3 +6,4 @@ export * from './models';
 export * from './openvidu-components';
 export * from './pages';
 export * from './services';
+export * from './waiting-room';

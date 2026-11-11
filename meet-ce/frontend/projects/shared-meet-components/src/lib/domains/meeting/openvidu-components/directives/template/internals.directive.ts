@@ -16,6 +16,18 @@ export class PreJoinDirective {
 }
 
 /**
+ * The ***ovWaiting** directive provides what the meeting view shows while the participant waits to be let in.
+ *
+ * @internal
+ */
+@Directive({
+	selector: '[ovWaiting]'
+})
+export class WaitingDirective {
+	public template = inject(TemplateRef<any>);
+}
+
+/**
  * The ***ovParticipantPanelBeforeLocalParticipant** directive allows you to inject custom HTML or Angular templates
  * at the top of the participant panel, above the local participant item: the place for content that is about the
  * room rather than about anyone in the list (an invitation link, for instance).

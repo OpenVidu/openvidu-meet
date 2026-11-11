@@ -22,12 +22,16 @@ import { MeetingContextService } from '../../meeting/services/meeting-context.se
 import { MeetingHandService } from '../../meeting/services/meeting-hand.service';
 import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
 import { MeetingReactionsService } from '../../meeting/services/meeting-reactions.service';
+import { WaitingRoomService } from '../../meeting/waiting-room/waiting-room.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 
-/** Commands that also work from the prejoin screen; every other command needs an active session. */
-const PREJOIN_CAPABLE_COMMANDS: ReadonlySet<EmbeddedCommandName> = new Set([
+/**
+ * Commands that also work while the preview is on, on the device setup screen or the waiting screen.
+ * `meetingLeave` also works while waiting; every other command needs an active session.
+ */
+const PREVIEW_CAPABLE_COMMANDS: ReadonlySet<EmbeddedCommandName> = new Set([
 	EmbeddedCommandName.MEDIA_TOGGLE_AUDIO,
 	EmbeddedCommandName.MEDIA_TOGGLE_VIDEO
 ]);
@@ -52,6 +56,7 @@ export class EmbeddedCommandService {
 	private readonly reactionsService = inject(MeetingReactionsService);
 	private readonly broadcastService = inject(BroadcastService);
 	private readonly broadcastState = inject(BroadcastStateService);
+	private readonly waitingRoom = inject(WaitingRoomService);
 	private readonly log = inject(LoggerService).get('EmbeddedCommandService');
 	private lastRecordingStart: Promise<void> | undefined;
 
@@ -69,7 +74,13 @@ export class EmbeddedCommandService {
 	}
 
 	async meetingLeave(): Promise<void> {
-		await this.run(EmbeddedCommandName.MEETING_LEAVE, null, () => this.meetingLiveKitService.disconnect());
+		await this.run(EmbeddedCommandName.MEETING_LEAVE, null, async () => {
+			if (this.waitingRoom.isWaiting()) {
+				this.waitingRoom.leave();
+			} else {
+				await this.meetingLiveKitService.disconnect();
+			}
+		});
 	}
 
 	async participantKick(participantIdentity: string): Promise<void> {
@@ -248,7 +259,8 @@ export class EmbeddedCommandService {
 
 		const allowed =
 			this.meetingLiveKitService.isSessionActive() ||
-			(PREJOIN_CAPABLE_COMMANDS.has(command) && this.meetingPhase.isPreviewing());
+			(PREVIEW_CAPABLE_COMMANDS.has(command) && this.meetingPhase.isPreviewing()) ||
+			(command === EmbeddedCommandName.MEETING_LEAVE && this.waitingRoom.isWaiting());
 
 		if (!allowed) {
 			this.log.w(`${command} rejected: not available in the current meeting phase`);
