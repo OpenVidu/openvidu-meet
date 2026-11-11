@@ -395,9 +395,11 @@ jobs:
             specs: access.test.ts permissions.test.ts token-refresh.test.ts share-link.test.ts
           - group: Participants, streams and devices
             specs: participants.test.ts stream.test.ts media-devices.test.ts
+          - group: Waiting room
+            specs: waiting-room.test.ts
           # Every spec the groups above leave out, so a new one runs here until it joins a group.
           - group: Console and meeting features
-            specs: --grep-invert (layout|access|permissions|token-refresh|share-link|participants|stream|media-devices)\.test\.ts
+            specs: --grep-invert (layout|access|permissions|token-refresh|share-link|participants|stream|media-devices|waiting-room)\.test\.ts
     steps:
       - *checkout
       - *setup-node

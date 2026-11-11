@@ -522,6 +522,28 @@ export const cutNetwork = async (page: Page): Promise<NetworkOutage> => {
 	};
 };
 
+export type CrashablePage = {
+	page: Page;
+	/** Kills the browser process, as a crash or a machine losing power: nothing gets a chance to say goodbye. */
+	crash: () => Promise<void>;
+};
+
+/**
+ * A page in a browser process of its own, with fake media, that the test can kill without the page
+ * leaving anything: the server only learns that the connection was lost.
+ */
+export const openCrashablePage = async (): Promise<CrashablePage> => {
+	const server = await chromium.launchServer({
+		headless: true,
+		args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream']
+	});
+	const browser = await chromium.connect(server.wsEndpoint());
+	const page = await browser.newPage({ ignoreHTTPSErrors: true });
+	page.context().on('close', () => void server.kill());
+
+	return { page, crash: () => server.kill() };
+};
+
 // ─── Participants panel: lookup ───────────────────────────────────────────────
 
 /**
