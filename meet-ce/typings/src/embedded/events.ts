@@ -1,7 +1,7 @@
 import { MeetBroadcastInfo } from '../database/broadcast.entity.js';
 import { MeetRecordingStatus } from '../database/recording.entity.js';
 import { MeetReaction } from '../reaction.js';
-import { MeetLobbyList, MeetLobbyParticipant, MeetLobbyStatus } from '../response/lobby-response.js';
+import { MeetLobbyParticipant, MeetLobbyStatus } from '../response/lobby-response.js';
 import { MeetParticipantInfo, MeetParticipantPayload } from '../response/participant-response.js';
 import type { MeetParticipantDeparturePayload } from '../webhook.js';
 
@@ -306,12 +306,15 @@ export interface EmbeddedEventPayloads {
 	 */
 	[EmbeddedEventName.BROADCAST_ENDED]: MeetBroadcastInfo;
 	/**
-	 * Payload for the {@link EmbeddedEventName.LOBBY_UPDATED} event: the waiting participants in
-	 * arrival order and the free places, or `null` for a room without a limit (see {@link MeetLobbyList}).
+	 * Payload for the {@link EmbeddedEventName.LOBBY_UPDATED} event: `participants` are the participants
+	 * waiting, in arrival order (see {@link MeetLobbyParticipant}), and `availablePlaces` the free places of
+	 * the meeting, or `null` for a room without a limit.
 	 */
 	[EmbeddedEventName.LOBBY_UPDATED]: {
 		roomId: string;
-	} & MeetLobbyList;
+		participants: MeetLobbyParticipant[];
+		availablePlaces: number | null;
+	};
 	/**
 	 * Payload for the {@link EmbeddedEventName.LOBBY_STATUS_CHANGED} event. `participantIdentity` is the
 	 * identity the participant will have in the meeting, the one the server answered when they asked,
