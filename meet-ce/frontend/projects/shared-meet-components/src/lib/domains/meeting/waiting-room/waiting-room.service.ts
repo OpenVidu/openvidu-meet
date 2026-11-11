@@ -15,7 +15,7 @@ import { NavigationService } from '../../../shared/services/navigation.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { EmbeddedEventBusService } from '../../embedded/services/embedded-event-bus.service';
 import { ACCESS_DENIED_STATUSES } from '../../room-members/services/room-member-context.service';
-import { isWaitingRoomFull } from '../../room-members/utils/room-member-token-failure.utils';
+import { isLobbyWaitEnded, isWaitingRoomFull } from '../../room-members/utils/room-member-token-failure.utils';
 import { MeetingConnectionError } from '../openvidu-components/models/meeting-view-state.model';
 import { LocalMediaService } from '../openvidu-components/services/local-media/local-media.service';
 import { MeetingPhaseService } from '../openvidu-components/services/meeting-phase/meeting-phase.service';
@@ -228,6 +228,11 @@ export class WaitingRoomService {
 		const failingSince = Date.now();
 
 		for (;;) {
+			if (entry.finalStatusWhileRequesting) {
+				entry.tokenRequestInFlight = false;
+				return this.end(entry, entry.finalStatusWhileRequesting);
+			}
+
 			let answer: JoinAnswer;
 
 			try {
@@ -292,14 +297,14 @@ export class WaitingRoomService {
 
 		if (entry.finalStatusWhileRequesting) return this.end(entry, entry.finalStatusWhileRequesting);
 
-		if (status === 409) {
+		if (isLobbyWaitEnded(error)) {
 			const endedAs: MeetLobbyStatus | undefined = (error as HttpErrorResponse).error?.status;
 			return this.end(entry, endedAs ?? MeetLobbyStatus.EXPIRED);
 		}
 
 		this.finish(entry);
 
-		if (status !== undefined && [...ACCESS_DENIED_STATUSES, 400, 422].includes(status)) {
+		if (status !== undefined && [...ACCESS_DENIED_STATUSES, 400, 409, 422].includes(status)) {
 			void this.joinToken.showFailure(error);
 		} else {
 			this.log.e('The token to join after being let in could not be requested:', error);

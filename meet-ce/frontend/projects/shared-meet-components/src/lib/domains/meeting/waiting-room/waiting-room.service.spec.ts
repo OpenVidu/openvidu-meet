@@ -365,6 +365,19 @@ describe('WaitingRoomService', () => {
 			expect(lobbyStatuses()).toEqual([MeetLobbyStatus.ADMITTED]);
 		});
 
+		it('shows the error screen of a full meeting or a closed room, with no lobby event after it', async () => {
+			const answer = new Deferred<JoinAnswer>();
+			await admitWith(answer);
+			const error = refusal(409, { message: "Room 'room1' has reached its maximum number of participants" });
+
+			answer.reject(error);
+			await flush();
+
+			expect(joinToken.showFailure).toHaveBeenCalledOnceWith(error);
+			expect(service.outcome()).toBeUndefined();
+			expect(lobbyStatuses()).toEqual([MeetLobbyStatus.ADMITTED]);
+		});
+
 		it('joins without waiting for the browser to answer a device prompt', async () => {
 			const answer = new Deferred<JoinAnswer>();
 			const { joined } = await admitWith(answer);
@@ -412,6 +425,25 @@ describe('WaitingRoomService', () => {
 			jasmine.clock().tick(1);
 			await flush();
 			expect(joined).toHaveBeenCalledOnceWith('join-token');
+		});
+
+		it('stops asking again once the realtime connection is lost', async () => {
+			joinToken.requestWithTicket.and.callFake(() =>
+				Promise.reject(refusal(429, {}, new HttpHeaders({ RateLimit: 'limit=200, remaining=0, reset=7' })))
+			);
+			void service.join(ANA);
+			await flush();
+			send({ status: MeetLobbyStatus.WAITING, queuePosition: 1 });
+			send({ status: MeetLobbyStatus.ADMITTED });
+			await flush();
+
+			webSocket.stopReason.set('gave_up');
+			TestBed.tick();
+			jasmine.clock().tick(7_000);
+			await flush();
+
+			expect(joinToken.requestWithTicket).toHaveBeenCalledTimes(1);
+			expect(service.outcome()).toBe('expired');
 		});
 
 		it('retries a server failure for 30 seconds, then shows the connection error', async () => {

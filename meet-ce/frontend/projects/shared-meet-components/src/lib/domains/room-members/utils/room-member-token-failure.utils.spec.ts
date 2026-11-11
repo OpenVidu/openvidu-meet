@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
-import { isWaitingRoomFull, roomMemberTokenFailure } from './room-member-token-failure.utils';
+import { isLobbyWaitEnded, isWaitingRoomFull, roomMemberTokenFailure } from './room-member-token-failure.utils';
 
 describe('roomMemberTokenFailure', () => {
 	const failure = (status: number, message = '') => new HttpErrorResponse({ status, error: { message } });
@@ -49,5 +49,16 @@ describe('isWaitingRoomFull', () => {
 		expect(isWaitingRoomFull(failure(409, "Room 'r1' has reached its maximum number of participants"))).toBeFalse();
 		expect(isWaitingRoomFull(failure(409, "Room 'r1' is closed and cannot be joined"))).toBeFalse();
 		expect(isWaitingRoomFull(failure(403, 'The waiting room is on'))).toBeFalse();
+	});
+});
+
+describe('isLobbyWaitEnded', () => {
+	const failure = (status: number, message: string) => new HttpErrorResponse({ status, error: { message } });
+
+	it('tells an ended wait from the other refusals of a join with a ticket', () => {
+		expect(isLobbyWaitEnded(failure(409, 'The wait has ended'))).toBeTrue();
+		expect(isLobbyWaitEnded(failure(409, "Room 'r1' has reached its maximum number of participants"))).toBeFalse();
+		expect(isLobbyWaitEnded(failure(409, "Room 'r1' is closed and cannot be joined"))).toBeFalse();
+		expect(isLobbyWaitEnded(failure(404, 'The wait has ended'))).toBeFalse();
 	});
 });
