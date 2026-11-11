@@ -7,7 +7,7 @@ Meet SHALL gate the waiting room with two permissions (`waiting-room`):
 
 #### Scenario: Admitting without the permission
 - **GIVEN** a room member token denying `waitingRoomAdmin`
-- **WHEN** its holder calls `waitingRoomAdmit`
+- **WHEN** its holder calls `participantWaitingAdmit`
 - **THEN** the server answers `403`
 
 #### Scenario: Admitter who waits
@@ -94,7 +94,7 @@ When a room member token, or a room or member stored before a permission existed
 
 #### Scenario: Moderator token issued before the waiting room
 - **GIVEN** a moderator's room member token issued by 3.9.0
-- **WHEN** its holder calls `waitingRoomList` after the upgrade to 3.10.0
+- **WHEN** its holder calls `participantWaitingList` after the upgrade to 3.10.0
 - **THEN** the token is read as denying `waitingRoomAdmin` and the server answers `403`
 
 ### Requirement: Admins, the owner and the API key hold every permission

@@ -505,14 +505,14 @@ export const broadcastStopToCommand = async (page: Page, names: string[]): Promi
 	await page.getByTestId('btn-broadcast-stop').click();
 };
 
-/** Clicks the testapp's `waitingRoomAdmit()` button naming `participantIdentities`, or, with none, everyone waiting. */
+/** Clicks the testapp's `participantWaitingAdmit()` button naming `participantIdentities`, or, with none, everyone waiting. */
 export const waitingRoomAdmitCommand = async (page: Page, participantIdentities: string[] = []): Promise<void> => {
 	await showControlsPanel(page, 'commands');
 	await page.getByTestId('input-waiting-room-identities').fill(participantIdentities.join(','));
 	await page.getByTestId('btn-waiting-room-admit').click();
 };
 
-/** Clicks the testapp's `waitingRoomReject()` button naming `participantIdentities`, or, with none, everyone waiting. */
+/** Clicks the testapp's `participantWaitingReject()` button naming `participantIdentities`, or, with none, everyone waiting. */
 export const waitingRoomRejectCommand = async (page: Page, participantIdentities: string[] = []): Promise<void> => {
 	await showControlsPanel(page, 'commands');
 	await page.getByTestId('input-waiting-room-identities').fill(participantIdentities.join(','));

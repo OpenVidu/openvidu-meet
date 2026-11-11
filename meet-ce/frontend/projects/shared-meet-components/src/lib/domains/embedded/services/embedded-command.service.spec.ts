@@ -262,13 +262,13 @@ describe('EmbeddedCommandService', () => {
 			});
 
 			it('rejects the waiting room commands, even with waitingRoomAdmin', async () => {
-				await service.waitingRoomAdmit({ participantIdentities: ['zoe'] });
-				await service.waitingRoomReject();
+				await service.participantWaitingAdmit({ participantIdentities: ['zoe'] });
+				await service.participantWaitingReject();
 
 				expect(waitingRoomAdmin.admit).not.toHaveBeenCalled();
 				expect(waitingRoomAdmin.reject).not.toHaveBeenCalled();
 				expect(logger.warn).toHaveBeenCalledWith(
-					'waitingRoomAdmit rejected: not available in the current meeting phase'
+					'participantWaitingAdmit rejected: not available in the current meeting phase'
 				);
 			});
 
@@ -798,17 +798,17 @@ describe('EmbeddedCommandService', () => {
 
 	describe('waiting room commands', () => {
 		it('admits and rejects the participants named, or everyone waiting without a payload', async () => {
-			await service.waitingRoomAdmit({ participantIdentities: ['zoe', 'ben'] });
-			await service.waitingRoomAdmit();
-			await service.waitingRoomReject({ participantIdentities: ['ana'] });
-			await service.waitingRoomReject();
+			await service.participantWaitingAdmit({ participantIdentities: ['zoe', 'ben'] });
+			await service.participantWaitingAdmit();
+			await service.participantWaitingReject({ participantIdentities: ['ana'] });
+			await service.participantWaitingReject();
 
 			expect(waitingRoomAdmin.admit.calls.allArgs()).toEqual([[['zoe', 'ben']], [undefined]]);
 			expect(waitingRoomAdmin.reject.calls.allArgs()).toEqual([[['ana']], [undefined]]);
 		});
 
 		it('passes an empty list as given, for the server to refuse', async () => {
-			await service.waitingRoomAdmit({ participantIdentities: [] });
+			await service.participantWaitingAdmit({ participantIdentities: [] });
 
 			expect(waitingRoomAdmin.admit).toHaveBeenCalledOnceWith([]);
 		});
@@ -816,20 +816,20 @@ describe('EmbeddedCommandService', () => {
 		it('rejects both without waitingRoomAdmin', async () => {
 			hasPermission.and.callFake((permission: string) => permission !== 'waitingRoomAdmin');
 
-			await service.waitingRoomAdmit();
-			await service.waitingRoomReject({ participantIdentities: ['zoe'] });
+			await service.participantWaitingAdmit();
+			await service.participantWaitingReject({ participantIdentities: ['zoe'] });
 
 			expect(waitingRoomAdmin.admit).not.toHaveBeenCalled();
 			expect(waitingRoomAdmin.reject).not.toHaveBeenCalled();
 			expect(logger.warn).toHaveBeenCalledWith(
-				"waitingRoomReject rejected: local participant lacks the 'waitingRoomAdmin' permission"
+				"participantWaitingReject rejected: local participant lacks the 'waitingRoomAdmin' permission"
 			);
 		});
 
 		it('rejects both with no active session', async () => {
 			liveKitService.isSessionActive.set(false);
 
-			await service.waitingRoomAdmit();
+			await service.participantWaitingAdmit();
 
 			expect(waitingRoomAdmin.admit).not.toHaveBeenCalled();
 		});
@@ -837,7 +837,7 @@ describe('EmbeddedCommandService', () => {
 		it('logs a decision the server refused instead of propagating it to the host', async () => {
 			waitingRoomAdmin.admit.and.rejectWith(new Error('409'));
 
-			await expectAsync(service.waitingRoomAdmit({ participantIdentities: ['zoe'] })).toBeResolved();
+			await expectAsync(service.participantWaitingAdmit({ participantIdentities: ['zoe'] })).toBeResolved();
 			expect(logger.error).toHaveBeenCalled();
 		});
 	});

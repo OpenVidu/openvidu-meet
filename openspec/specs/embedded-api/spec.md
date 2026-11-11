@@ -91,7 +91,7 @@ The embedded element SHALL move to a new target only when an attribute change al
 - **THEN** the element leaves room A's meeting and shows the join screen of room B
 
 ### Requirement: Command catalogue
-Meet SHALL accept exactly the commands `meetingLeave`, `meetingEnd`, `participantKick`, `participantMute`, `participantMuteAll`, `participantUpdateRole`, `participantHandRaise`, `participantHandLower`, `participantHandLowerAll`, `participantReactionSend`, `mediaToggleAudio`, `mediaToggleVideo`, `mediaToggleScreenShare`, `recordingStart`, `recordingStop`, `broadcastStart`, `broadcastStop`, `waitingRoomAdmit` and `waitingRoomReject`, and the deprecated `endMeeting`, `leaveRoom` and `kickParticipant`.
+Meet SHALL accept exactly the commands `meetingLeave`, `meetingEnd`, `participantKick`, `participantMute`, `participantMuteAll`, `participantUpdateRole`, `participantHandRaise`, `participantHandLower`, `participantHandLowerAll`, `participantReactionSend`, `mediaToggleAudio`, `mediaToggleVideo`, `mediaToggleScreenShare`, `recordingStart`, `recordingStop`, `broadcastStart`, `broadcastStop`, `participantWaitingAdmit` and `participantWaitingReject`, and the deprecated `endMeeting`, `leaveRoom` and `kickParticipant`.
 
 #### Scenario: Owner of each command
 - **WHEN** a reviewer looks up what a command does
@@ -103,7 +103,7 @@ Meet SHALL accept exactly the commands `meetingLeave`, `meetingEnd`, `participan
 - **AND** `mediaToggleAudio`, `mediaToggleVideo` and `mediaToggleScreenShare` in `meeting-media`
 - **AND** `recordingStart` and `recordingStop` in `recordings`
 - **AND** `broadcastStart` and `broadcastStop` in `live-broadcast`
-- **AND** `waitingRoomAdmit` and `waitingRoomReject` in `waiting-room`
+- **AND** `participantWaitingAdmit` and `participantWaitingReject` in `waiting-room`
 - **AND** `endMeeting`, `leaveRoom` and `kickParticipant` in this capability, as aliases
 
 ### Requirement: How a host sends a command
@@ -164,7 +164,7 @@ Meet SHALL run `mediaToggleAudio` and `mediaToggleVideo` from the device setup s
 
 #### Scenario: Meeting command while waiting
 - **GIVEN** a participant holding `waitingRoomAdmin` who waits to be admitted
-- **WHEN** the host calls `waitingRoomAdmit` with the identity of another participant waiting
+- **WHEN** the host calls `participantWaitingAdmit` with the identity of another participant waiting
 - **THEN** nobody is admitted and the console warns that the command was rejected
 
 #### Scenario: Command after leaving

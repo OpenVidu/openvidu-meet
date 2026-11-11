@@ -60,7 +60,7 @@ export interface MeetWaitingRoomParticipant {
 }
 
 /**
- * The waiting participants and the free places of the meeting, as `waitingRoomList` answers and the
+ * The waiting participants and the free places of the meeting, as `participantWaitingList` answers and the
  * `waitingRoomUpdated` embedded event carries.
  */
 export interface MeetWaitingRoomList {
@@ -75,7 +75,7 @@ export interface MeetWaitingRoomList {
 }
 
 /**
- * Answer of `waitingRoomAdmit` and `waitingRoomReject`: the participants decided on.
+ * Answer of `participantWaitingAdmit` and `participantWaitingReject`: the participants decided on.
  */
 export interface MeetWaitingRoomDecisionResponse {
 	/** The participants admitted or rejected, in arrival order. Possibly none when the decision was on everyone waiting */

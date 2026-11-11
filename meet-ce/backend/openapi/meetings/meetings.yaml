@@ -452,7 +452,7 @@
 
 /meetings/{roomId}/waiting-room:
     get:
-        operationId: waitingRoomList
+        operationId: participantWaitingList
         summary: List the participants waiting to join
         description: |
             Lists the participants waiting to be admitted to the meeting of a room, in arrival order (`knockDate`,
@@ -503,7 +503,7 @@
                 $ref: '../shared/responses/errors/service-unavailable.yaml'
 /meetings/{roomId}/waiting-room/admit:
     post:
-        operationId: waitingRoomAdmit
+        operationId: participantWaitingAdmit
         summary: Admit waiting participants
         description: |
             Admits waiting participants to the meeting of a room: each one's meeting asks for its join token and they
@@ -517,8 +517,9 @@
 
             A decision on named participants applies to all of them or to none: it answers `404`, naming the first
             identity that no longer waits, and admits nobody, or `409` when the participants named outnumber the free
-            places of the meeting (see `availablePlaces` of [`waitingRoomList`](#/operations/waitingRoomList)), which count the
-            participants admitted who have not joined yet. An empty list and a repeated identity are rejected with a
+            places of the meeting (see `availablePlaces` of
+            [`participantWaitingList`](#/operations/participantWaitingList)), which count the participants admitted
+            who have not joined yet. An empty list and a repeated identity are rejected with a
             `422`: an empty list is never read as everyone waiting.
 
             Admitting everyone waiting never answers `409` for the places: it admits the first waiting, in arrival
@@ -577,7 +578,7 @@
                 $ref: '../shared/responses/errors/service-unavailable.yaml'
 /meetings/{roomId}/waiting-room/reject:
     post:
-        operationId: waitingRoomReject
+        operationId: participantWaitingReject
         summary: Reject waiting participants
         description: |
             Rejects waiting participants of the meeting of a room: each one leaves the line and their meeting tells

@@ -245,14 +245,14 @@ export class EmbeddedCommandService {
 		});
 	}
 
-	async waitingRoomAdmit(options: MeetWaitingRoomDecisionOptions = {}): Promise<void> {
-		await this.run(EmbeddedCommandName.WAITING_ROOM_ADMIT, 'waitingRoomAdmin', async () => {
+	async participantWaitingAdmit(options: MeetWaitingRoomDecisionOptions = {}): Promise<void> {
+		await this.run(EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT, 'waitingRoomAdmin', async () => {
 			await this.waitingRoomAdmin.admit(options.participantIdentities);
 		});
 	}
 
-	async waitingRoomReject(options: MeetWaitingRoomDecisionOptions = {}): Promise<void> {
-		await this.run(EmbeddedCommandName.WAITING_ROOM_REJECT, 'waitingRoomAdmin', async () => {
+	async participantWaitingReject(options: MeetWaitingRoomDecisionOptions = {}): Promise<void> {
+		await this.run(EmbeddedCommandName.PARTICIPANT_WAITING_REJECT, 'waitingRoomAdmin', async () => {
 			await this.waitingRoomAdmin.reject(options.participantIdentities);
 		});
 	}

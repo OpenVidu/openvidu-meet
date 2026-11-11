@@ -45,11 +45,11 @@
                 $ref: '../../shared/responses/errors/service-unavailable.yaml'
 /meetings/{roomId}/waiting-room/leave:
     post:
-        operationId: waitingRoomLeave
+        operationId: participantWaitingLeave
         summary: Leave the waiting room
         description: >
             Ends the wait of a participant at once, whether it is waiting or admitted and not yet used: the
-            participant no longer appears in [`waitingRoomList`](#/operations/waitingRoomList) and the
+            participant no longer appears in [`participantWaitingList`](#/operations/participantWaitingList) and the
             [`waitingRoomStatusChanged`](#/webhooks/waitingRoomStatusChangedWebhook) webhook reports `left`. The meeting client
             calls it when the participant presses "Leave waiting room" or leaves with `meetingLeave`, also while
             its realtime connection is down.

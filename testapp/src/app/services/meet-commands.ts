@@ -47,7 +47,7 @@ export class MeetCommandsService {
 	readonly muteScreenShare = signal(false);
 	/** Explicit `active` for the media toggles. `''` toggles instead. */
 	readonly mediaActive = signal<TriState>('');
-	/** Identities `waitingRoomAdmit()` and `waitingRoomReject()` name, comma separated; empty omits `participantIdentities`, so everyone waiting. */
+	/** Identities `participantWaitingAdmit()` and `participantWaitingReject()` name, comma separated; empty omits `participantIdentities`, so everyone waiting. */
 	readonly waitingRoomIdentities = signal('');
 	readonly waitingRoomOptions = computed<MeetWaitingRoomDecisionOptions>(() => {
 		const participantIdentities = this.waitingRoomIdentities()
@@ -249,22 +249,22 @@ export class MeetCommandsService {
 
 	// ── Waiting room ────────────────────────────────────────────────────────
 
-	waitingRoomAdmit(): void {
+	participantWaitingAdmit(): void {
 		const options = this.waitingRoomOptions();
 		this.dispatch(
-			() => this.iframeHost.waitingRoomAdmit(options),
-			(element) => element.waitingRoomAdmit(options)
+			() => this.iframeHost.participantWaitingAdmit(options),
+			(element) => element.participantWaitingAdmit(options)
 		);
-		this.log.command('waitingRoomAdmit', optionsArgs(options));
+		this.log.command('participantWaitingAdmit', optionsArgs(options));
 	}
 
-	waitingRoomReject(): void {
+	participantWaitingReject(): void {
 		const options = this.waitingRoomOptions();
 		this.dispatch(
-			() => this.iframeHost.waitingRoomReject(options),
-			(element) => element.waitingRoomReject(options)
+			() => this.iframeHost.participantWaitingReject(options),
+			(element) => element.participantWaitingReject(options)
 		);
-		this.log.command('waitingRoomReject', optionsArgs(options));
+		this.log.command('participantWaitingReject', optionsArgs(options));
 	}
 
 	// ── Reactions ───────────────────────────────────────────────────────────
