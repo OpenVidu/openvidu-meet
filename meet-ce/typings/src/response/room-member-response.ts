@@ -31,6 +31,8 @@ export const MEET_ROOM_MEMBER_PERMISSIONS_FIELDS = [
 	'participantMute',
 	'participantHandLower',
 	'participantReactionSend',
+	'lobbyBypass',
+	'lobbyAdmin',
 	'meetingEnd',
 	'mediaPublishVideo',
 	'mediaPublishAudio',

@@ -51,3 +51,16 @@ export enum MeetRoomMemberType {
 	/** An identified guest, not linked to any Meet user account. */
 	IDENTIFIED_GUEST = 'identified_guest'
 }
+
+/**
+ * How a participant asked to join a room with a waiting room, derived by the server from the credential
+ * of the request.
+ */
+export enum MeetLobbyParticipantType {
+	/** The participant asked with their own Meet user account */
+	USER = 'user',
+	/** The participant asked with the personal link of an identified guest */
+	IDENTIFIED_GUEST = 'identified_guest',
+	/** The participant asked with a shared link of the room, so they are anonymous */
+	ANONYMOUS = 'anonymous'
+}

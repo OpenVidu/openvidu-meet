@@ -1,5 +1,6 @@
 import { MeetReaction } from '../reaction.js';
 import { MeetBroadcastStartOptions, MeetBroadcastStopOptions } from '../request/broadcast-request.js';
+import { MeetLobbyDecisionOptions } from '../request/lobby-request.js';
 import { MeetParticipantMuteOptions } from '../request/meeting-request.js';
 import { MeetParticipantModerationAction } from '../request/room-member-request.js';
 
@@ -14,7 +15,8 @@ import { MeetParticipantModerationAction } from '../request/room-member-request.
  */
 export enum EmbeddedCommandName {
 	/**
-	 * Disconnects the local participant from the current meeting.
+	 * Disconnects the local participant from the current meeting, or takes them out of the waiting
+	 * room while they wait to be admitted.
 	 */
 	MEETING_LEAVE = 'meetingLeave',
 	/**
@@ -62,6 +64,21 @@ export enum EmbeddedCommandName {
 	 */
 	PARTICIPANT_HAND_LOWER_ALL = 'participantHandLowerAll',
 	/**
+	 * Admits the waiting participants named by `participantIdentities`, one or several, all or none of
+	 * them, or everyone waiting when it is omitted, in which case the first in line up to the free
+	 * places are admitted and the rest keep their place. An empty `participantIdentities` is refused.
+	 * @permission lobbyAdmin
+	 */
+	LOBBY_ADMIT = 'lobbyAdmit',
+	/**
+	 * Rejects the waiting participants named by `participantIdentities`, one or several, all or none
+	 * of them, or everyone waiting when it is omitted, in which case everyone waiting when the command
+	 * runs is rejected. An empty `participantIdentities` is refused. A rejected participant may ask to
+	 * join again.
+	 * @permission lobbyAdmin
+	 */
+	LOBBY_REJECT = 'lobbyReject',
+	/**
 	 * Sends a reaction from the local participant, which every participant sees for a few seconds and
 	 * is notified of through the `participantReactionSent` event.
 	 * @permission participantReactionSend
@@ -70,13 +87,13 @@ export enum EmbeddedCommandName {
 	/**
 	 * Toggles the local participant's microphone, or sets it when `active` is provided.
 	 * @permission mediaPublishAudio
-	 * @prejoin Works from the prejoin screen onwards, before the meeting is joined.
+	 * @prejoin Works from the prejoin screen onwards, before the meeting is joined, and on the waiting screen.
 	 */
 	MEDIA_TOGGLE_AUDIO = 'mediaToggleAudio',
 	/**
 	 * Toggles the local participant's camera, or sets it when `active` is provided.
 	 * @permission mediaPublishVideo
-	 * @prejoin Works from the prejoin screen onwards, before the meeting is joined.
+	 * @prejoin Works from the prejoin screen onwards, before the meeting is joined, and on the waiting screen.
 	 */
 	MEDIA_TOGGLE_VIDEO = 'mediaToggleVideo',
 	/**
@@ -186,6 +203,16 @@ export interface EmbeddedCommandPayloads {
 	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL} command.
 	 */
 	[EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL]: void;
+	/**
+	 * Payload for the {@link EmbeddedCommandName.LOBBY_ADMIT} command. When `participantIdentities` is
+	 * omitted, everyone waiting, up to the free places. See {@link MeetLobbyDecisionOptions}.
+	 */
+	[EmbeddedCommandName.LOBBY_ADMIT]: MeetLobbyDecisionOptions;
+	/**
+	 * Payload for the {@link EmbeddedCommandName.LOBBY_REJECT} command. When `participantIdentities` is
+	 * omitted, everyone waiting. See {@link MeetLobbyDecisionOptions}.
+	 */
+	[EmbeddedCommandName.LOBBY_REJECT]: MeetLobbyDecisionOptions;
 	/**
 	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_REACTION_SEND} command.
 	 * `reaction` is one of the reactions in {@link MeetReaction}.
@@ -375,6 +402,28 @@ export interface EmbeddedParticipantHandLowerAllCommand {
 }
 
 /**
+ * Command message for {@link EmbeddedCommandName.LOBBY_ADMIT}: the command name plus its optional
+ * payload (omitted payload or `participantIdentities` = everyone waiting), derived from
+ * {@link EmbeddedCommandPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedLobbyAdmitCommand {
+	command: EmbeddedCommandName.LOBBY_ADMIT;
+	payload?: EmbeddedCommandPayloadFor<EmbeddedCommandName.LOBBY_ADMIT>;
+}
+
+/**
+ * Command message for {@link EmbeddedCommandName.LOBBY_REJECT}: the command name plus its optional
+ * payload (omitted payload or `participantIdentities` = everyone waiting), derived from
+ * {@link EmbeddedCommandPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedLobbyRejectCommand {
+	command: EmbeddedCommandName.LOBBY_REJECT;
+	payload?: EmbeddedCommandPayloadFor<EmbeddedCommandName.LOBBY_REJECT>;
+}
+
+/**
  * Command message for {@link EmbeddedCommandName.PARTICIPANT_REACTION_SEND}: the command name plus its
  * payload, derived from {@link EmbeddedCommandPayloadFor}.
  * @category Communication
@@ -493,6 +542,8 @@ export type EmbeddedCommand =
 	| EmbeddedParticipantHandRaiseCommand
 	| EmbeddedParticipantHandLowerCommand
 	| EmbeddedParticipantHandLowerAllCommand
+	| EmbeddedLobbyAdmitCommand
+	| EmbeddedLobbyRejectCommand
 	| EmbeddedParticipantReactionSendCommand
 	| EmbeddedMediaToggleAudioCommand
 	| EmbeddedMediaToggleVideoCommand

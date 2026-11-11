@@ -16,7 +16,9 @@ export enum MeetSignalType {
 	/** Emitted when a moderator turns off a participant's microphone, camera or screen share */
 	MEET_PARTICIPANT_MEDIA_MUTED = 'meet_participant_media_muted',
 	/** Emitted to everyone in the meeting when a participant sends a reaction */
-	MEET_PARTICIPANT_REACTION_SENT = 'meet_participant_reaction_sent'
+	MEET_PARTICIPANT_REACTION_SENT = 'meet_participant_reaction_sent',
+	/** Emitted to everyone in the meeting when the list of participants waiting to join changes */
+	MEET_LOBBY_UPDATED = 'meet_lobby_updated'
 }
 
 /**
@@ -93,14 +95,27 @@ export interface MeetParticipantReactionSentPayload {
 }
 
 /**
+ * Payload for MEET_LOBBY_UPDATED signal. It only says that the list of waiting participants
+ * changed: the participants who may admit them fetch the list, and the others ignore the signal.
+ */
+export interface MeetLobbyUpdatedPayload {
+	/** ID of the room whose waiting list changed */
+	roomId: string;
+	/** Timestamp in milliseconds when the change occurred */
+	timestamp: number;
+}
+
+/**
  * Union type representing the payload of a MeetSignal.
  * It can be either a {@link MeetRecordingUpdatedPayload}, {@link MeetBroadcastUpdatedPayload},
- * {@link MeetParticipantPermissionsUpdatedPayload}, {@link MeetParticipantMediaMutedPayload} or
- * {@link MeetParticipantReactionSentPayload}, depending on the signal type.
+ * {@link MeetParticipantPermissionsUpdatedPayload}, {@link MeetParticipantMediaMutedPayload},
+ * {@link MeetParticipantReactionSentPayload} or {@link MeetLobbyUpdatedPayload}, depending on the
+ * signal type.
  */
 export type MeetSignalPayload =
 	| MeetRecordingUpdatedPayload
 	| MeetBroadcastUpdatedPayload
 	| MeetParticipantPermissionsUpdatedPayload
 	| MeetParticipantMediaMutedPayload
-	| MeetParticipantReactionSentPayload;
+	| MeetParticipantReactionSentPayload
+	| MeetLobbyUpdatedPayload;
