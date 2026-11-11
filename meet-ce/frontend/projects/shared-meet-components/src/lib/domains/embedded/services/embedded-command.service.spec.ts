@@ -17,6 +17,7 @@ import { MeetingContextService } from '../../meeting/services/meeting-context.se
 import { MeetingHandService } from '../../meeting/services/meeting-hand.service';
 import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
 import { MeetingReactionsService } from '../../meeting/services/meeting-reactions.service';
+import { WaitingRoomService } from '../../meeting/waiting-room/waiting-room.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { LoggerService } from '../../../shared/services/logger.service';
@@ -71,6 +72,7 @@ describe('EmbeddedCommandService', () => {
 	let microphoneEnabled: ReturnType<typeof signal<boolean>>;
 	let cameraEnabled: ReturnType<typeof signal<boolean>>;
 	let screenShareEnabled: ReturnType<typeof signal<boolean>>;
+	let waitingRoom: { isWaiting: ReturnType<typeof signal<boolean>>; leave: jasmine.Spy };
 
 	// Defaults: active session, not on the prejoin screen, every permission granted — each test narrows one axis.
 	beforeEach(() => {
@@ -139,6 +141,7 @@ describe('EmbeddedCommandService', () => {
 		runningBroadcasts = signal([{ broadcastId: BROADCAST_ID, status: MeetBroadcastStatus.ACTIVE }]);
 		hasPermission = jasmine.createSpy('hasPermission').and.returnValue(true);
 		roomId = signal<string | undefined>(ROOM_ID);
+		waitingRoom = { isWaiting: signal(false), leave: jasmine.createSpy('leave') };
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -165,6 +168,7 @@ describe('EmbeddedCommandService', () => {
 					useValue: { roomId } as unknown as MeetingContextService
 				},
 				{ provide: BroadcastService, useValue: broadcastService },
+				{ provide: WaitingRoomService, useValue: waitingRoom as unknown as WaitingRoomService },
 				{
 					provide: BroadcastStateService,
 					useValue: {
@@ -216,6 +220,46 @@ describe('EmbeddedCommandService', () => {
 			await service.mediaToggleVideo(true);
 
 			expect(localMedia.setCameraEnabled).not.toHaveBeenCalled();
+		});
+
+		describe('while waiting to be let in', () => {
+			beforeEach(() => {
+				liveKitService.isSessionActive.set(false);
+				waitingRoom.isWaiting.set(true);
+				phase.set('waiting');
+			});
+
+			it('runs the media toggles on the waiting screen', async () => {
+				await service.mediaToggleAudio(false);
+				await service.mediaToggleVideo(false);
+
+				expect(localMedia.setMicrophoneEnabled).toHaveBeenCalledOnceWith(false);
+				expect(localMedia.setCameraEnabled).toHaveBeenCalledOnceWith(false);
+			});
+
+			it('leaves the waiting room on meetingLeave, without touching the meeting connection', async () => {
+				await service.meetingLeave();
+
+				expect(waitingRoom.leave).toHaveBeenCalledTimes(1);
+				expect(liveKitService.disconnect).not.toHaveBeenCalled();
+			});
+
+			it('rejects the meeting commands, even with their permission', async () => {
+				await service.participantKick(IDENTITY);
+				await service.mediaToggleScreenShare(true);
+
+				expect(moderationService.kickParticipant).not.toHaveBeenCalled();
+				expect(screenShare.setEnabled).not.toHaveBeenCalled();
+			});
+
+			it('rejects meetingLeave once the wait ended', async () => {
+				waitingRoom.isWaiting.set(false);
+				phase.set('disconnected');
+
+				await service.meetingLeave();
+
+				expect(waitingRoom.leave).not.toHaveBeenCalled();
+			});
 		});
 
 		it('rejects mediaToggleScreenShare on the prejoin screen', async () => {

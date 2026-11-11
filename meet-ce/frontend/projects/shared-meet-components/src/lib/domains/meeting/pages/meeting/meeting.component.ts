@@ -23,12 +23,13 @@ import {
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingStateService } from '../../services/meeting-state.service';
-import { JoinTokenService } from '../../services/join-token.service';
 import { MeetingEntryFlowService } from '../../services/meeting-entry-flow.service';
 import { MeetingEventHandlerService } from '../../services/meeting-event-handler.service';
 import { MeetingJoinService } from '../../services/meeting-join.service';
 import { MeetingShortcutsService } from '../../services/meeting-shortcuts.service';
 import { WebSocketService } from '../../services/websocket.service';
+import { MeetingWaitingRoomComponent } from '../../waiting-room/meeting-waiting-room/meeting-waiting-room.component';
+import { WaitingRoomService } from '../../waiting-room/waiting-room.service';
 
 @Component({
 	selector: 'ov-meeting',
@@ -50,7 +51,7 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	protected meetingStateService = inject(MeetingStateService);
 	protected joinService = inject(MeetingJoinService);
 	protected entryFlow = inject(MeetingEntryFlowService);
-	private readonly joinToken = inject(JoinTokenService);
+	protected readonly waitingRoom = inject(WaitingRoomService);
 	protected eventHandlerService = inject(MeetingEventHandlerService);
 	protected captionsService = inject(MeetingCaptionsService);
 	protected meetingThemeService = inject(MeetingThemeService);
@@ -69,6 +70,9 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	// Template reference for custom participant panel item
 	protected participantItem = contentChild.required(MeetingParticipantItemComponent);
 	protected participantItemTemplate = computed(() => this.participantItem().template());
+	private readonly waitingRoomScreens = contentChild.required(MeetingWaitingRoomComponent);
+	protected readonly waitingScreenTemplate = computed(() => this.waitingRoomScreens().screen());
+	protected readonly waitingOutcomeTemplate = computed(() => this.waitingRoomScreens().outcome());
 
 	// Signals for meeting context data
 	roomName = this.joinService.roomName;
@@ -84,8 +88,14 @@ export class MeetingComponent implements OnInit, OnDestroy {
 
 	protected readonly extraButtonsPosition = ToolbarAdditionalButtonsPosition.BEFORE_MENU;
 
+	/** Whoever asks to be let in prepares the camera and microphone while waiting instead. */
+	protected readonly showDeviceSetup = computed(
+		() =>
+			this.entryFlow.options().showDeviceSetup && !this.joinService.asksToJoin() && !this.waitingRoom.hasWaited()
+	);
+
 	/** Handed to the meeting view, which calls it when the participant commits to joining. */
-	protected readonly requestJoinToken = () => this.joinToken.request(this.joinService.joinRequest());
+	protected readonly requestJoinToken = () => this.waitingRoom.join(this.joinService.joinRequest());
 
 	constructor() {
 		inject(IframeBridgeService).attachCommands(inject(EmbeddedCommandService));
@@ -124,6 +134,7 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	ngOnDestroy() {
 		// Cleanup captions service
 		this.captionsService.destroy();
+		this.waitingRoom.dispose();
 		this.webSocket.disconnect();
 	}
 

@@ -1,0 +1,83 @@
+@use '_design-tokens.scss';
+
+.outcome-container {
+	@include design-tokens.ov-theme-transition;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-height: 90vh;
+	height: 100%;
+	background: var(--ov-background-color);
+}
+
+.outcome-card {
+	@include design-tokens.ov-card;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 616px;
+	padding: var(--ov-meet-spacing-xxl);
+	text-align: center;
+	background: var(--ov-meet-surface-elevated);
+	box-shadow: var(--ov-meet-shadow-lg);
+
+	@include design-tokens.ov-mobile-down {
+		padding: var(--ov-meet-spacing-xl);
+		margin: var(--ov-meet-spacing-md);
+		max-width: calc(100vw - 2 * var(--ov-meet-spacing-md));
+	}
+}
+
+.logo-container {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 80px;
+	height: 80px;
+	border-radius: var(--ov-meet-radius-circle);
+	background: rgba(25, 118, 210, 0.1);
+
+	.logo-image {
+		width: 50px;
+		height: auto;
+		object-fit: contain;
+	}
+}
+
+.title {
+	margin: var(--ov-meet-spacing-lg) 0 0;
+	font-size: var(--ov-meet-font-size-xxl);
+	font-weight: var(--ov-meet-font-weight-semibold);
+	line-height: var(--ov-meet-line-height-tight);
+	color: var(--ov-meet-text-primary);
+	outline: none;
+
+	@include design-tokens.ov-mobile-down {
+		font-size: var(--ov-meet-font-size-xl);
+	}
+}
+
+.message {
+	margin: var(--ov-meet-spacing-sm) 0 0;
+	line-height: 1.5;
+	color: var(--ov-meet-text-secondary);
+}
+
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: var(--ov-meet-spacing-md);
+	margin-top: var(--ov-meet-spacing-xl);
+}
+
+.footer {
+	width: 100%;
+	margin: var(--ov-meet-spacing-xl) 0 0;
+	padding-top: var(--ov-meet-spacing-lg);
+	border-top: 1px solid var(--ov-meet-border-color);
+	font-size: var(--ov-meet-font-size-sm);
+	color: var(--ov-meet-text-secondary);
+}

@@ -22,6 +22,8 @@
 				/>
 			}
 		</div>
+	} @else if (phase() === 'waiting') {
+		<ng-container *ngTemplateOutlet="templateRegistry.waiting() ?? null" />
 	} @else if (phase() === 'error') {
 		<!-- Error -->
 		<div id="spinner">

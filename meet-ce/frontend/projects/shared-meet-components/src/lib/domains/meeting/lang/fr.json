@@ -263,7 +263,30 @@
 		"RECORDINGS_DESCRIPTION": "Accédez aux réunions précédemment enregistrées dans cette salle. Vous pouvez visionner, télécharger ou gérer les enregistrements existants.",
 		"RECORDINGS_BUTTON": "Parcourir les enregistrements",
 		"BACK": "Retour",
-		"BACK_TO_ROOMS": "Retour aux salles"
+		"BACK_TO_ROOMS": "Retour aux salles",
+		"ASK_BUTTON": "Demander à participer"
+	},
+	"WAITING_ROOM": {
+		"TITLE": "En attente d'admission",
+		"POSITION": "Vous êtes {position, selectordinal, one {#er} other {#e}} dans la file",
+		"SUBTITLE": "L'hôte sait que vous êtes là. Vous rejoindrez la réunion dès votre admission.",
+		"RECONNECTING": "Reconnexion… Vous gardez votre place si vous revenez en moins d'une minute.",
+		"WAITED": "{minutes, plural, one {En attente depuis # min} other {En attente depuis # min}}",
+		"NOT_STARTED": "La réunion n'a pas encore commencé",
+		"PREVIEW_PRIVATE": "Personne dans la réunion ne peut encore vous voir ni vous entendre",
+		"LEAVE": "Quitter la salle d'attente",
+		"ADMITTED": "Vous avez été admis. Connexion à la réunion",
+		"ASK_AGAIN": "Redemander à participer",
+		"REJECTED_TITLE": "Vous n'avez pas été admis",
+		"REJECTED_MESSAGE": "Votre demande de participation n'a pas été acceptée. Vous pouvez la renouveler.",
+		"LEFT_TITLE": "Vous avez quitté la salle d'attente",
+		"LEFT_MESSAGE": "Vous n'avez pas rejoint la réunion. Votre demande a été retirée.",
+		"EXPIRED_TITLE": "Vous avez perdu votre place",
+		"EXPIRED_MESSAGE": "Vous avez été absent trop longtemps ou vous avez demandé à participer depuis un autre endroit. Si vous redemandez, vous serez en fin de file.",
+		"ENDED_TITLE": "La réunion est terminée",
+		"ENDED_MESSAGE": "Elle s'est terminée avant votre admission. Si vous redemandez, vous attendrez la prochaine.",
+		"FULL_TITLE": "La salle d'attente est pleine",
+		"FULL_MESSAGE": "Trop de personnes attendent de rejoindre cette réunion pour le moment. Réessayez dans quelques minutes."
 	},
 	"SHARE_ACCESS": {
 		"COPY_TOOLTIP": "Copier le lien d'accès à la salle",

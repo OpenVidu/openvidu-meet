@@ -22,7 +22,8 @@ import {
 	PreJoinDirective,
 	LeaveButtonDirective,
 	SettingsPanelLayoutDirective,
-	ToolbarMoreOptionsAdditionalMenuItemsDirective
+	ToolbarMoreOptionsAdditionalMenuItemsDirective,
+	WaitingDirective
 } from './internals.directive';
 
 const directives = [
@@ -46,7 +47,8 @@ const directives = [
 	LayoutAdditionalElementsDirective,
 	ParticipantPanelParticipantBadgeDirective,
 	SettingsPanelLayoutDirective,
-	ToolbarMoreOptionsAdditionalMenuItemsDirective
+	ToolbarMoreOptionsAdditionalMenuItemsDirective,
+	WaitingDirective
 ];
 
 @NgModule({

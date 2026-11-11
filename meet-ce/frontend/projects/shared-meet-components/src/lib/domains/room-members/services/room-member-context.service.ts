@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject, Service, signal } from '@angular/core';
 import {
+	MeetLobbyTicketResponse,
 	MeetRoomMember,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberTokenOptions,
@@ -138,7 +139,8 @@ export class RoomMemberContextService {
 	}
 
 	/**
-	 * Generates a room member token and updates the context with role and permissions.
+	 * Generates a room member token and updates the context with role and permissions. A participant
+	 * who has to wait is an error here: only {@link requestJoin} expects that answer.
 	 *
 	 * @param roomId - The unique identifier of the room
 	 * @param tokenOptions - The options for the token generation. When the meeting is E2EE-encrypted,
@@ -151,6 +153,29 @@ export class RoomMemberContextService {
 		tokenOptions: MeetRoomMemberTokenOptions,
 		headers?: Record<string, string>
 	): Promise<string> {
+		const answer = await this.requestJoin(roomId, tokenOptions, headers);
+
+		if ('lobbyTicket' in answer) {
+			throw new Error('The server asked the participant to wait to be let in, which only a join expects');
+		}
+
+		return answer.token;
+	}
+
+	/**
+	 * Requests a room member token, which updates the context like {@link generateToken}, or, for a
+	 * participant who has to wait to be let in, the ticket of the wait, which is never kept as a token.
+	 *
+	 * @param roomId - The unique identifier of the room
+	 * @param tokenOptions - The options for the token generation
+	 * @param headers - Optional additional headers to include in the token generation request
+	 * @return A promise that resolves to the token or to the ticket of the wait
+	 */
+	async requestJoin(
+		roomId: string,
+		tokenOptions: MeetRoomMemberTokenOptions,
+		headers?: Record<string, string>
+	): Promise<{ token: string } | MeetLobbyTicketResponse> {
 		// Best effort: keep access token fresh for authenticated users before generating room member tokens.
 		const isAuthenticated = await this.authService.isUserAuthenticated();
 
@@ -162,15 +187,17 @@ export class RoomMemberContextService {
 			}
 		}
 
-		const { token } = await this.roomMemberService.generateRoomMemberToken(roomId, tokenOptions, headers);
+		const answer = await this.roomMemberService.requestJoinToken(roomId, tokenOptions, headers);
+
+		if ('lobbyTicket' in answer) return answer;
 
 		if (tokenOptions.joinMeeting) {
 			this.joinSecret = tokenOptions.secret;
 		}
 
-		this._roomMemberToken.set(token);
-		await this.updateContextFromToken(token);
-		return token;
+		this._roomMemberToken.set(answer.token);
+		await this.updateContextFromToken(answer.token);
+		return answer;
 	}
 
 	/**

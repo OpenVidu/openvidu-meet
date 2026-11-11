@@ -93,12 +93,18 @@ export class WebSocketService {
 		document.removeEventListener('visibilitychange', this.onWake);
 	}
 
-	private urlFor({ name, value }: WebSocketCredential): string {
+	/** The address the client connects to, without any credential. */
+	endpoint(): string {
 		const url = new URL(
 			this.runtimeConfig.resolveUrl(`${HttpService.INTERNAL_API_PATH_PREFIX}/ws`),
 			window.location.href
 		);
 		url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+		return url.toString();
+	}
+
+	private urlFor({ name, value }: WebSocketCredential): string {
+		const url = new URL(this.endpoint());
 		url.searchParams.set(name, value);
 		return url.toString();
 	}

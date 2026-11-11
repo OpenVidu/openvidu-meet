@@ -17,6 +17,7 @@ export class TemplateRegistryService {
 	readonly layout = signal<TemplateRef<any> | undefined>(undefined);
 	readonly stream = signal<TemplateRef<any> | undefined>(undefined);
 	readonly preJoin = signal<TemplateRef<any> | undefined>(undefined);
+	readonly waiting = signal<TemplateRef<any> | undefined>(undefined);
 
 	// ── Panel templates ───────────────────────────────────────────────────────
 

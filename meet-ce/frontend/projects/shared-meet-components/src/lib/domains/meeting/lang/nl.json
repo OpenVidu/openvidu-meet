@@ -263,7 +263,30 @@
 		"RECORDINGS_DESCRIPTION": "Open eerder opgenomen meetings van deze kamer. U kunt bestaande opnames bekijken, downloaden of beheren.",
 		"RECORDINGS_BUTTON": "Opnames bekijken",
 		"BACK": "Terug",
-		"BACK_TO_ROOMS": "Terug naar kamers"
+		"BACK_TO_ROOMS": "Terug naar kamers",
+		"ASK_BUTTON": "Vragen om deel te nemen"
+	},
+	"WAITING_ROOM": {
+		"TITLE": "Wachten tot u wordt toegelaten",
+		"POSITION": "U bent {position, selectordinal, other {#e}} in de rij",
+		"SUBTITLE": "De host weet dat u er bent. U neemt deel zodra u wordt toegelaten.",
+		"RECONNECTING": "Opnieuw verbinden… U behoudt uw plaats als u binnen een minuut terug bent.",
+		"WAITED": "{minutes, plural, one {Wacht al # min} other {Wacht al # min}}",
+		"NOT_STARTED": "De meeting is nog niet begonnen",
+		"PREVIEW_PRIVATE": "Niemand in de meeting kan u al zien of horen",
+		"LEAVE": "Wachtruimte verlaten",
+		"ADMITTED": "U bent toegelaten. Deelnemen aan de meeting",
+		"ASK_AGAIN": "Opnieuw vragen om deel te nemen",
+		"REJECTED_TITLE": "U bent niet toegelaten",
+		"REJECTED_MESSAGE": "Uw verzoek om deel te nemen is niet geaccepteerd. U kunt het opnieuw vragen.",
+		"LEFT_TITLE": "U heeft de wachtruimte verlaten",
+		"LEFT_MESSAGE": "U heeft niet deelgenomen aan de meeting. Uw verzoek is ingetrokken.",
+		"EXPIRED_TITLE": "U bent uw plaats kwijt",
+		"EXPIRED_MESSAGE": "U was te lang weg of u heeft vanaf een andere plek gevraagd om deel te nemen. Als u het opnieuw vraagt, staat u achteraan in de rij.",
+		"ENDED_TITLE": "De meeting is beëindigd",
+		"ENDED_MESSAGE": "De meeting is beëindigd voordat u werd toegelaten. Als u het opnieuw vraagt, wacht u op de volgende.",
+		"FULL_TITLE": "De wachtruimte is vol",
+		"FULL_MESSAGE": "Er wachten op dit moment te veel mensen om deel te nemen aan deze meeting. Probeer het over een paar minuten opnieuw."
 	},
 	"SHARE_ACCESS": {
 		"COPY_TOOLTIP": "Toegangslink van kamer kopiëren",

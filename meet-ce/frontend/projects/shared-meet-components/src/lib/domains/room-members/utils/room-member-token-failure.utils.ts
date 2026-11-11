@@ -31,6 +31,12 @@ export function roomMemberTokenFailure(error: unknown): NavigationErrorReason {
 	}
 }
 
+/** Whether the request to join was refused because the waiting room holds as many participants as it can. */
+export function isWaitingRoomFull(error: unknown): boolean {
+	const { status, message } = describe(error);
+	return status === 409 && message.includes('waiting room');
+}
+
 function describe(error: unknown): { status?: number; message: string } {
 	const {
 		status,

@@ -263,7 +263,30 @@
 		"RECORDINGS_DESCRIPTION": "Accede a reuniones grabadas anteriormente en esta sala. Puedes ver, descargar o gestionar las grabaciones existentes.",
 		"RECORDINGS_BUTTON": "Explorar grabaciones",
 		"BACK": "Atrás",
-		"BACK_TO_ROOMS": "Volver a las salas"
+		"BACK_TO_ROOMS": "Volver a las salas",
+		"ASK_BUTTON": "Pedir unirse"
+	},
+	"WAITING_ROOM": {
+		"TITLE": "Esperando a que te dejen entrar",
+		"POSITION": "Eres el {position, selectordinal, other {#.º}} de la fila",
+		"SUBTITLE": "El anfitrión sabe que estás aquí. Entrarás en cuanto te deje pasar.",
+		"RECONNECTING": "Reconectando… Conservas tu lugar si vuelves en menos de un minuto.",
+		"WAITED": "{minutes, plural, one {Esperando # min} other {Esperando # min}}",
+		"NOT_STARTED": "La reunión aún no ha empezado",
+		"PREVIEW_PRIVATE": "Nadie en la reunión puede verte ni oírte todavía",
+		"LEAVE": "Salir de la sala de espera",
+		"ADMITTED": "Te han dejado entrar. Uniéndote a la reunión",
+		"ASK_AGAIN": "Pedir unirse de nuevo",
+		"REJECTED_TITLE": "No te han dejado entrar",
+		"REJECTED_MESSAGE": "No se aceptó tu solicitud para unirte. Puedes volver a pedirlo.",
+		"LEFT_TITLE": "Has salido de la sala de espera",
+		"LEFT_MESSAGE": "No te has unido a la reunión. Tu solicitud se ha retirado.",
+		"EXPIRED_TITLE": "Has perdido tu lugar",
+		"EXPIRED_MESSAGE": "Estuviste ausente demasiado tiempo o pediste unirte desde otro sitio. Si lo pides de nuevo, quedarás al final de la fila.",
+		"ENDED_TITLE": "La reunión ha terminado",
+		"ENDED_MESSAGE": "Terminó antes de que te dejaran entrar. Si lo pides de nuevo, esperarás a la siguiente.",
+		"FULL_TITLE": "La sala de espera está llena",
+		"FULL_MESSAGE": "Hay demasiadas personas esperando para unirse a esta reunión. Inténtalo de nuevo en unos minutos."
 	},
 	"SHARE_ACCESS": {
 		"COPY_TOOLTIP": "Copiar enlace de acceso",

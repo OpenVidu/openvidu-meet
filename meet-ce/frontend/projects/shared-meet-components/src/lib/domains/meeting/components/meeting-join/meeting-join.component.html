@@ -97,7 +97,7 @@
 								class="join-button"
 								[disabled]="participantForm().invalid"
 							>
-								<span>{{ 'JOIN.JOIN_BUTTON' | translate }}</span>
+								<span>{{ (asksToJoin() ? 'JOIN.ASK_BUTTON' : 'JOIN.JOIN_BUTTON') | translate }}</span>
 							</button>
 						</form>
 					} @else if (roomClosed()) {

@@ -6,7 +6,6 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { AvatarView } from '../../models/avatar-view.model';
 import { CustomDevice } from '../../models/device.model';
 import { LangOption } from '../../models/lang.model';
-import type { LocalDevice } from '../../models/local-device.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
@@ -197,9 +196,9 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 		try {
 			await this.localMedia.acquire();
 
-			const failure = this.deviceFailureMessage();
+			const failure = this.localMedia.unavailableDevicesMessageKey();
 
-			if (failure) this.errorMessage.set(failure);
+			if (failure) this.errorMessage.set(this.translateService.translate(failure));
 
 			// Restore previously selected virtual background in prejoin when possible.
 			// Skip restore when the user is not allowed to use virtual backgrounds.
@@ -214,24 +213,5 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 		} catch (error) {
 			this.handleError(error);
 		}
-	}
-
-	/**
-	 * The message for a device the participant asked for and the browser did not hand over, so a
-	 * camera that failed to start is not left looking like a camera the participant turned off.
-	 * A device the machine does not have is not a failure, and neither is one nobody asked for.
-	 */
-	private deviceFailureMessage(): string | undefined {
-		const closed = (device: LocalDevice) => device.wanted() && !device.track();
-		const camera = this.deviceSrv.hasVideoDevices() && closed(this.localMedia.camera);
-		const microphone = this.deviceSrv.hasAudioDevices() && closed(this.localMedia.microphone);
-
-		if (camera && microphone) return this.translateService.translate('ERRORS.DEVICES_UNAVAILABLE');
-
-		if (camera) return this.translateService.translate('ERRORS.CAMERA_UNAVAILABLE');
-
-		if (microphone) return this.translateService.translate('ERRORS.MICROPHONE_UNAVAILABLE');
-
-		return undefined;
 	}
 }

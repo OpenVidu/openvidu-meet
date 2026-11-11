@@ -2,11 +2,13 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { DialogService } from '../../../../../shared/services/dialog.service';
+import { MeetingConnectionError } from '../../models/meeting-view-state.model';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import { LocalMediaService } from '../../services/local-media/local-media.service';
 import { MeetingEventsService } from '../../services/meeting-events/meeting-events.service';
 import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
+import { MeetingPhaseService } from '../../services/meeting-phase/meeting-phase.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { MediaStorageService } from '../../services/storage/storage.service';
@@ -260,6 +262,47 @@ describe('MeetingViewComponent', () => {
 			await mint.reject();
 
 			expect(dialogService.showDialog).toHaveBeenCalled();
+			expect(participantService.connect).not.toHaveBeenCalled();
+		});
+	});
+
+	/** The consumer answers the token only once the participant is let in, keeping the view waiting. */
+	describe('a participant who waits to be let in', () => {
+		let meetingPhase: MeetingPhaseService;
+		let mint: DeferredToken;
+
+		beforeEach(async () => {
+			meetingPhase = TestBed.inject(MeetingPhaseService);
+			mint = new DeferredToken();
+			tokenProvider.and.returnValue(mint.promise);
+			await startView();
+			component._onReadyToJoin();
+			meetingPhase.set('waiting');
+		});
+
+		it('asks for no second token while waiting', async () => {
+			component._onReadyToJoin();
+			await flush();
+
+			expect(tokenProvider).toHaveBeenCalledTimes(1);
+			expect(component.phase()).toBe('waiting');
+		});
+
+		it('connects with the token answered once let in', async () => {
+			meetingPhase.set('connecting');
+			await mint.resolve('admitted-token');
+
+			expect(meetingLiveKitService.initializeAndSetToken).toHaveBeenCalledWith('admitted-token', 'wss://lk.test');
+			expect(component.phase()).toBe('live');
+		});
+
+		it('shows the connection error when the wait could not reach Meet', async () => {
+			await mint.reject(new MeetingConnectionError('unreachable'));
+
+			expect(component.phase()).toBe('error');
+			expect(dialogService.showDialog).toHaveBeenCalledWith(
+				jasmine.objectContaining({ message: 'ERRORS.MEETING_CONNECTION_FAILED' })
+			);
 			expect(participantService.connect).not.toHaveBeenCalled();
 		});
 	});

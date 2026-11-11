@@ -144,6 +144,7 @@ export class App {
 	readonly broadcastStarted = output<EmbeddedEventPayloadFor<EmbeddedEventName.BROADCAST_STARTED>>();
 	readonly broadcastUpdated = output<EmbeddedEventPayloadFor<EmbeddedEventName.BROADCAST_UPDATED>>();
 	readonly broadcastEnded = output<EmbeddedEventPayloadFor<EmbeddedEventName.BROADCAST_ENDED>>();
+	readonly lobbyStatusChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.LOBBY_STATUS_CHANGED>>();
 	readonly embeddedCloseRequested = output<void>();
 
 	/** @deprecated Renamed to `meetingJoined`. Removed in 3.12.0. Dispatched alongside it. */
@@ -434,6 +435,9 @@ export class App {
 				break;
 			case EmbeddedEventName.BROADCAST_ENDED:
 				this.broadcastEnded.emit(payload);
+				break;
+			case EmbeddedEventName.LOBBY_STATUS_CHANGED:
+				this.lobbyStatusChanged.emit(payload);
 				break;
 		}
 	}

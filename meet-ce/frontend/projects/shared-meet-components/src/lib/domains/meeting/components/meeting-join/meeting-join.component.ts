@@ -38,6 +38,7 @@ export class MeetingJoinComponent {
 	protected roomName = this.joinService.roomName;
 	protected roomClosed = this.joinService.roomClosed;
 	protected canJoinMeeting = this.joinService.canJoinMeeting;
+	protected asksToJoin = this.joinService.asksToJoin;
 	protected isE2EEEnabled = this.joinService.hasRoomE2EEEnabled;
 
 	protected participantForm = this.joinService.participantForm;

@@ -263,7 +263,30 @@
 		"RECORDINGS_DESCRIPTION": "Aceda às reuniões gravadas anteriormente nesta sala. Pode ver, transferir ou gerir as gravações existentes.",
 		"RECORDINGS_BUTTON": "Consultar gravações",
 		"BACK": "Voltar",
-		"BACK_TO_ROOMS": "Voltar às salas"
+		"BACK_TO_ROOMS": "Voltar às salas",
+		"ASK_BUTTON": "Pedir para entrar"
+	},
+	"WAITING_ROOM": {
+		"TITLE": "À espera de autorização para entrar",
+		"POSITION": "É o {position, selectordinal, other {#.º}} na fila",
+		"SUBTITLE": "O anfitrião sabe que está aqui. Entrará assim que for autorizado.",
+		"RECONNECTING": "A restabelecer a ligação… Mantém o seu lugar se voltar dentro de um minuto.",
+		"WAITED": "{minutes, plural, one {À espera há # min} other {À espera há # min}}",
+		"NOT_STARTED": "A reunião ainda não começou",
+		"PREVIEW_PRIVATE": "Ainda ninguém na reunião o pode ver ou ouvir",
+		"LEAVE": "Sair da sala de espera",
+		"ADMITTED": "Foi autorizado a entrar. A entrar na reunião",
+		"ASK_AGAIN": "Pedir novamente para entrar",
+		"REJECTED_TITLE": "Não foi autorizado a entrar",
+		"REJECTED_MESSAGE": "O seu pedido para entrar não foi aceite. Pode voltar a pedir.",
+		"LEFT_TITLE": "Saiu da sala de espera",
+		"LEFT_MESSAGE": "Não entrou na reunião. O seu pedido foi retirado.",
+		"EXPIRED_TITLE": "Perdeu o seu lugar",
+		"EXPIRED_MESSAGE": "Esteve ausente demasiado tempo ou pediu para entrar a partir de outro local. Se voltar a pedir, ficará no fim da fila.",
+		"ENDED_TITLE": "A reunião terminou",
+		"ENDED_MESSAGE": "Terminou antes de ser autorizado a entrar. Se voltar a pedir, aguardará pela próxima.",
+		"FULL_TITLE": "A sala de espera está cheia",
+		"FULL_MESSAGE": "Há demasiadas pessoas à espera para entrar nesta reunião. Tente novamente dentro de alguns minutos."
 	},
 	"SHARE_ACCESS": {
 		"COPY_TOOLTIP": "Copiar ligação de acesso à sala",

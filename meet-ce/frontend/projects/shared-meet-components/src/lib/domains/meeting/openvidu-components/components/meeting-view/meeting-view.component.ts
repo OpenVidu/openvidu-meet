@@ -30,7 +30,8 @@ import {
 	ParticipantsPanelHeaderActionsDirective,
 	PreJoinDirective,
 	SettingsPanelLayoutDirective,
-	ToolbarMoreOptionsAdditionalMenuItemsDirective
+	ToolbarMoreOptionsAdditionalMenuItemsDirective,
+	WaitingDirective
 } from '../../directives/template/internals.directive';
 import {
 	ActivitiesPanelDirective,
@@ -48,6 +49,7 @@ import {
 } from '../../directives/template/openvidu-components-angular.directive';
 import { CustomDevice } from '../../models/device.model';
 import { LangOption } from '../../models/lang.model';
+import { MeetingConnectionError } from '../../models/meeting-view-state.model';
 import {
 	ActivitiesPanelStatusEvent,
 	ChatPanelStatusEvent,
@@ -176,6 +178,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	// *** PreJoin ***
 
 	readonly externalPreJoin = contentChild(PreJoinDirective);
+	readonly externalWaiting = contentChild(WaitingDirective);
 	readonly externalParticipantPanelBeforeLocalParticipant = contentChild(
 		ParticipantPanelBeforeLocalParticipantDirective
 	);
@@ -408,7 +411,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 		this.meetingPhase.set('error');
 
 		// Open dialog only when user is already in the session (not on prejoin)
-		if (prevPhase !== 'prejoin' && prevPhase !== 'loading') {
+		if (prevPhase !== 'prejoin' && prevPhase !== 'waiting' && prevPhase !== 'loading') {
 			this.dialogService.showBlockingDialog({ title: error.name, message: error.message });
 		}
 
@@ -554,7 +557,8 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 
 	/**
 	 * @internal
-	 * Asks the consumer for the token of this join and applies it: 'connecting' → 'live'.
+	 * Asks the consumer for the token of this join and applies it: 'connecting' → 'live'. The consumer
+	 * may answer only once the participant is let in, moving the phase to 'waiting' meanwhile.
 	 *
 	 * A join is committed to once. What takes the prejoin button off screen is the phase leaving
 	 * 'prejoin', and that only lands on the next change detection, so a second click is turned away
@@ -566,7 +570,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	 * land on top of the error page the mint already navigated to.
 	 */
 	private async _requestTokenAndConnect(): Promise<void> {
-		if (this.phase() === 'connecting' || this.phase() === 'live') return;
+		if (this.phase() === 'connecting' || this.phase() === 'waiting' || this.phase() === 'live') return;
 
 		this.meetingPhase.set('connecting');
 		this.meetingLiveKitService.init();
@@ -578,7 +582,14 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 		} catch (error: unknown) {
 			this.log.e('Error requesting the token to join the meeting:', error);
 
-			if (!this.destroyed) this.showStartupError('ERRORS.MEETING_NOT_READY');
+			if (this.destroyed) return;
+
+			if (error instanceof MeetingConnectionError) {
+				this.meetingPhase.set('error');
+				this.showStartupError('ERRORS.MEETING_CONNECTION_FAILED');
+			} else {
+				this.showStartupError('ERRORS.MEETING_NOT_READY');
+			}
 
 			return;
 		}
@@ -701,6 +712,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 		r.layout.set(this.externalLayout()?.template ?? this.defaultLayoutTemplate()!);
 		r.stream.set(this.externalStream()?.template ?? this.defaultStreamTemplate()!);
 		r.preJoin.set(this.externalPreJoin()?.template);
+		r.waiting.set(this.externalWaiting()?.template);
 
 		// Panel slots
 		r.chatPanel.set(this.externalChatPanel()?.template ?? this.defaultChatPanelTemplate()!);

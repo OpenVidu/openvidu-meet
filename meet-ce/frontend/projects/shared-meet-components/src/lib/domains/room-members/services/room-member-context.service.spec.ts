@@ -34,19 +34,22 @@ describe('RoomMemberContextService', () => {
 	let service: RoomMemberContextService;
 	let redirectToErrorPage: jasmine.Spy;
 	let wait: jasmine.Spy;
-	let generateRoomMemberToken: jasmine.Spy;
+	let requestJoinToken: jasmine.Spy;
 	let refreshRoomMemberToken: jasmine.Spy;
 
 	beforeEach(async () => {
 		redirectToErrorPage = jasmine.createSpy('redirectToErrorPage').and.resolveTo(undefined);
-		generateRoomMemberToken = jasmine.createSpy('generateRoomMemberToken').and.resolveTo({ token: joinToken() });
+		requestJoinToken = jasmine.createSpy('requestJoinToken').and.resolveTo({ token: joinToken() });
 		refreshRoomMemberToken = jasmine.createSpy('refreshRoomMemberToken');
 
 		TestBed.configureTestingModule({
 			providers: [
 				provideZonelessChangeDetection(),
 				RoomMemberContextService,
-				{ provide: RoomMemberService, useValue: { generateRoomMemberToken, refreshRoomMemberToken } },
+				{
+					provide: RoomMemberService,
+					useValue: { requestJoinToken, refreshRoomMemberToken }
+				},
 				{ provide: NavigationService, useValue: { redirectToErrorPage } },
 				{ provide: AuthService, useValue: { isUserAuthenticated: async () => false } },
 				{ provide: LoggerService, useClass: LoggerServiceStub },
@@ -130,12 +133,12 @@ describe('RoomMemberContextService', () => {
 		it('regenerates the token with the credentials the participant joined with', async () => {
 			const regeneratedToken = joinToken('moderator');
 			refreshRoomMemberToken.and.returnValue(refusedWith(401));
-			generateRoomMemberToken.and.resolveTo({ token: regeneratedToken });
+			requestJoinToken.and.resolveTo({ token: regeneratedToken });
 
 			const updated = await service.updateTokenInMeeting(() => service.refreshToken('room1'));
 
 			expect(updated).toBeTrue();
-			expect(generateRoomMemberToken).toHaveBeenCalledWith(
+			expect(requestJoinToken).toHaveBeenCalledWith(
 				'room1',
 				{ secret: 'speaker-secret', joinMeeting: true },
 				undefined
@@ -146,7 +149,7 @@ describe('RoomMemberContextService', () => {
 
 		it('sends the participant to the error page when the regeneration is refused too', async () => {
 			refreshRoomMemberToken.and.returnValue(refusedWith(401));
-			generateRoomMemberToken.and.returnValue(refusedWith(403));
+			requestJoinToken.and.returnValue(refusedWith(403));
 
 			const updated = await service.updateTokenInMeeting(() => service.refreshToken('room1'));
 
@@ -155,14 +158,38 @@ describe('RoomMemberContextService', () => {
 		});
 
 		it('sends the participant to the error page without regenerating when they left the meeting', async () => {
-			generateRoomMemberToken.calls.reset();
+			requestJoinToken.calls.reset();
 			refreshRoomMemberToken.and.returnValue(refusedWith(404));
 
 			const updated = await service.updateTokenInMeeting(() => service.refreshToken('room1'));
 
 			expect(updated).toBeFalse();
-			expect(generateRoomMemberToken).not.toHaveBeenCalled();
+			expect(requestJoinToken).not.toHaveBeenCalled();
 			expect(redirectToErrorPage).toHaveBeenCalledOnceWith(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
+		});
+	});
+
+	/** A waiting ticket is the answer of a join only: it is never kept as the participant's token. */
+	describe('waiting ticket', () => {
+		const ticket = { lobbyTicket: 'ticket-1', participantIdentity: 'ana-1' };
+
+		it('answers the ticket of a join and keeps the current token', async () => {
+			const currentToken = service.roomMemberToken();
+			requestJoinToken.and.resolveTo(ticket);
+
+			await expectAsync(service.requestJoin('room1', { secret: 's', joinMeeting: true })).toBeResolvedTo(ticket);
+
+			expect(service.roomMemberToken()).toBe(currentToken);
+		});
+
+		it('treats a ticket answered to the regeneration of a refused refresh as an error', async () => {
+			const currentToken = service.roomMemberToken();
+			refreshRoomMemberToken.and.returnValue(Promise.reject(new HttpErrorResponse({ status: 401 })));
+			requestJoinToken.and.resolveTo(ticket);
+
+			await expectAsync(service.refreshToken('room1')).toBeRejected();
+
+			expect(service.roomMemberToken()).toBe(currentToken);
 		});
 	});
 });
