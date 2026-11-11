@@ -1,5 +1,5 @@
-import type { MeetRealtimeMessage } from '@openvidu-meet/typings';
-import { MEET_REALTIME_HEARTBEAT, MeetRealtimeCloseCode } from '@openvidu-meet/typings';
+import type { MeetWebSocketMessage } from '@openvidu-meet/typings';
+import { MEET_WEBSOCKET_HEARTBEAT, MeetWebSocketCloseCode } from '@openvidu-meet/typings';
 import type { IncomingMessage, Server } from 'http';
 import { STATUS_CODES } from 'http';
 import { inject, injectable } from 'inversify';
@@ -8,36 +8,36 @@ import type { Duplex } from 'stream';
 import { WebSocket, WebSocketServer } from 'ws';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import type {
-	RealtimeAddress,
-	RealtimeConnection,
-	RealtimeFeature,
-	RealtimeHandshakeGuard
-} from '../models/realtime.model.js';
+	WebSocketAddress,
+	WebSocketConnection,
+	WebSocketFeature,
+	WebSocketHandshakeGuard
+} from '../models/websocket.model.js';
 import { getBasePath } from '../utils/html-dynamic-base-path.utils.js';
 import { LoggerService } from './logger.service.js';
 import { RedisService } from './redis.service.js';
 import { RequestSessionService } from './request-session.service.js';
 
-interface PublishedMessage extends MeetRealtimeMessage {
+interface PublishedMessage extends MeetWebSocketMessage {
 	roomId: string;
 	addresses: string[];
 }
 
-class Connection implements RealtimeConnection {
+class Connection implements WebSocketConnection {
 	lastSeenAt = Date.now();
 	answeredPing = true;
 
 	constructor(
 		readonly roomId: string,
 		readonly address: string,
-		readonly feature: RealtimeFeature,
+		readonly feature: WebSocketFeature,
 		readonly socket: WebSocket
 	) {}
 
 	send(type: string, data?: unknown): void {
 		if (this.socket.readyState !== WebSocket.OPEN) return;
 
-		const message: MeetRealtimeMessage = { type, data };
+		const message: MeetWebSocketMessage = { type, data };
 		this.socket.send(JSON.stringify(message));
 	}
 }
@@ -49,12 +49,12 @@ const UNRESOLVED = Symbol('credential unresolved');
  * send their state from their hooks, straight to the connection.
  */
 @injectable()
-export class RealtimeService {
-	protected readonly features: RealtimeFeature[] = [];
+export class WebSocketService {
+	protected readonly features: WebSocketFeature[] = [];
 	protected readonly connections = new Map<string, Connection[]>();
 	protected readonly webSocketServer = new WebSocketServer({
 		noServer: true,
-		maxPayload: INTERNAL_CONFIG.REALTIME_MAX_PAYLOAD_BYTES
+		maxPayload: INTERNAL_CONFIG.WEBSOCKET_MAX_PAYLOAD_BYTES
 	});
 	protected pendingHandshakes = 0;
 	protected livenessTimer?: NodeJS.Timeout;
@@ -66,7 +66,7 @@ export class RealtimeService {
 	) {}
 
 	get path(): string {
-		return `${getBasePath()}${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1.slice(1)}${INTERNAL_CONFIG.REALTIME_PATH}`;
+		return `${getBasePath()}${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1.slice(1)}${INTERNAL_CONFIG.WEBSOCKET_PATH}`;
 	}
 
 	/** Publish/subscribe ignores the database number, so the channel carries it. */
@@ -74,26 +74,26 @@ export class RealtimeService {
 		return `ov_meet:realtime:${this.redisService.database}`;
 	}
 
-	register(feature: RealtimeFeature): void {
+	register(feature: WebSocketFeature): void {
 		this.features.push(feature);
 	}
 
-	async attach(httpServer: Server, guard: RealtimeHandshakeGuard): Promise<void> {
+	async attach(httpServer: Server, guard: WebSocketHandshakeGuard): Promise<void> {
 		httpServer.on('upgrade', (req: IncomingMessage, socket: Duplex, head: Buffer) => {
 			void this.requestSessionService.run(() =>
 				this.handleUpgrade(req, socket, head, guard).catch((error: unknown) => {
-					this.logger.error('Error handling a realtime handshake', error);
+					this.logger.error('Error handling a WebSocket handshake', error);
 					socket.destroy();
 				})
 			);
 		});
-		this.livenessTimer = setInterval(() => this.checkLiveness(), ms(INTERNAL_CONFIG.REALTIME_PING_INTERVAL));
+		this.livenessTimer = setInterval(() => this.checkLiveness(), ms(INTERNAL_CONFIG.WEBSOCKET_PING_INTERVAL));
 
 		try {
 			await this.redisService.subscribe(this.channel, (message) => this.deliver(message));
 		} catch (error) {
 			this.logger.error(
-				`Could not subscribe to the realtime channel '${this.channel}': realtime messages from other replicas will not arrive. A Redis user restricted by ACL needs the channel permission '&ov_meet:*'`,
+				`Could not subscribe to the Redis channel '${this.channel}': WebSocket messages from other replicas will not arrive. A Redis user restricted by ACL needs the channel permission '&ov_meet:*'`,
 				error
 			);
 		}
@@ -122,7 +122,7 @@ export class RealtimeService {
 		req: IncomingMessage,
 		socket: Duplex,
 		head: Buffer,
-		guard: RealtimeHandshakeGuard
+		guard: WebSocketHandshakeGuard
 	): Promise<void> {
 		const destroySocket = () => socket.destroy();
 		socket.on('error', destroySocket);
@@ -135,8 +135,8 @@ export class RealtimeService {
 			return;
 		}
 
-		if (this.pendingHandshakes >= INTERNAL_CONFIG.REALTIME_MAX_PENDING_HANDSHAKES) {
-			this.logger.warn('Realtime handshake refused: too many handshakes in flight');
+		if (this.pendingHandshakes >= INTERNAL_CONFIG.WEBSOCKET_MAX_PENDING_HANDSHAKES) {
+			this.logger.warn('WebSocket handshake refused: too many handshakes in flight');
 			this.refuse(socket, 429);
 			return;
 		}
@@ -147,7 +147,7 @@ export class RealtimeService {
 			const clientAddress = guard.clientAddress(req);
 
 			if (!(await guard.admit(clientAddress))) {
-				this.logger.warn(`Rate limit exceeded for a realtime handshake from IP ${clientAddress}`);
+				this.logger.warn(`Rate limit exceeded for a WebSocket handshake from IP ${clientAddress}`);
 				this.refuse(socket, 429);
 				return;
 			}
@@ -162,9 +162,9 @@ export class RealtimeService {
 			if (webSocket.readyState !== WebSocket.OPEN) return;
 
 			if (address === UNRESOLVED) {
-				webSocket.close(MeetRealtimeCloseCode.TRY_AGAIN_LATER);
+				webSocket.close(MeetWebSocketCloseCode.TRY_AGAIN_LATER);
 			} else if (!address) {
-				webSocket.close(MeetRealtimeCloseCode.FORBIDDEN);
+				webSocket.close(MeetWebSocketCloseCode.FORBIDDEN);
 			} else {
 				this.open(webSocket, feature, address);
 			}
@@ -182,31 +182,31 @@ export class RealtimeService {
 	}
 
 	protected async resolveCredential(
-		feature: RealtimeFeature,
+		feature: WebSocketFeature,
 		credential: string
-	): Promise<RealtimeAddress | null | typeof UNRESOLVED> {
+	): Promise<WebSocketAddress | null | typeof UNRESOLVED> {
 		let timer: NodeJS.Timeout | undefined;
 		const timeout = new Promise<typeof UNRESOLVED>((resolve) => {
-			timer = setTimeout(() => resolve(UNRESOLVED), ms(INTERNAL_CONFIG.REALTIME_CREDENTIAL_TIMEOUT));
+			timer = setTimeout(() => resolve(UNRESOLVED), ms(INTERNAL_CONFIG.WEBSOCKET_CREDENTIAL_TIMEOUT));
 		});
 
 		try {
 			return await Promise.race([feature.resolve(credential), timeout]);
 		} catch (error) {
-			this.logger.error('Error resolving a realtime credential', error);
+			this.logger.error('Error resolving a WebSocket credential', error);
 			return UNRESOLVED;
 		} finally {
 			clearTimeout(timer);
 		}
 	}
 
-	protected open(webSocket: WebSocket, feature: RealtimeFeature, { roomId, address }: RealtimeAddress): void {
+	protected open(webSocket: WebSocket, feature: WebSocketFeature, { roomId, address }: WebSocketAddress): void {
 		const connection = new Connection(roomId, address, feature, webSocket);
 		const key = this.keyOf(roomId, address);
 		const sameAddress = this.connections.get(key) ?? [];
 
-		if (sameAddress.length >= INTERNAL_CONFIG.REALTIME_MAX_CONNECTIONS_PER_ADDRESS) {
-			sameAddress.shift()!.socket.close(MeetRealtimeCloseCode.REPLACED);
+		if (sameAddress.length >= INTERNAL_CONFIG.WEBSOCKET_MAX_CONNECTIONS_PER_ADDRESS) {
+			sameAddress.shift()!.socket.close(MeetWebSocketCloseCode.REPLACED);
 		}
 
 		this.connections.set(key, [...sameAddress, connection]);
@@ -220,9 +220,9 @@ export class RealtimeService {
 			this.forget(connection);
 			this.runHook(connection, 'onClose');
 		});
-		webSocket.on('error', (error) => this.logger.debug(`Realtime connection error in room '${roomId}'`, error));
+		webSocket.on('error', (error) => this.logger.debug(`WebSocket connection error in room '${roomId}'`, error));
 
-		this.logger.debug(`Realtime connection opened in room '${roomId}'`);
+		this.logger.debug(`WebSocket connection opened in room '${roomId}'`);
 		this.runHook(connection, 'onOpen');
 	}
 
@@ -235,7 +235,7 @@ export class RealtimeService {
 
 			connection.answeredPing = false;
 			connection.socket.ping();
-			connection.send(MEET_REALTIME_HEARTBEAT);
+			connection.send(MEET_WEBSOCKET_HEARTBEAT);
 		}
 	}
 
@@ -245,7 +245,7 @@ export class RealtimeService {
 		try {
 			message = JSON.parse(rawMessage) as PublishedMessage;
 		} catch (error) {
-			this.logger.warn('Ignoring a realtime message that is not JSON', error);
+			this.logger.warn('Ignoring a WebSocket message that is not JSON', error);
 			return;
 		}
 
@@ -270,7 +270,7 @@ export class RealtimeService {
 	protected runHook(connection: Connection, hook: 'onOpen' | 'onPong' | 'onClose'): void {
 		Promise.resolve()
 			.then(() => connection.feature[hook]?.(connection))
-			.catch((error: unknown) => this.logger.error(`Error in the realtime ${hook} hook`, error));
+			.catch((error: unknown) => this.logger.error(`Error in the WebSocket ${hook} hook`, error));
 	}
 
 	protected refuse(socket: Duplex, status: number): void {

@@ -58,13 +58,13 @@ export const INTERNAL_CONFIG = {
 	BROADCAST_REQUEST_LOCK_WAIT: '10s' as StringValue, // How long a request waits for another change of the same room's broadcast to finish before answering 409; egress webhooks wait up to BROADCAST_LOCK_TTL
 	BROADCAST_RECONCILIATION_GC_INTERVAL: '1m' as StringValue, // Interval of the safety-net sweep that settles broadcasts whose meeting, egress or egress service ended without the LiveKit webhook reaching the server
 
-	// Realtime channel (WebSocket)
-	REALTIME_PATH: '/ws', // Under INTERNAL_API_BASE_PATH_V1
-	REALTIME_PING_INTERVAL: '20s' as StringValue, // Each connection is pinged and sent a heartbeat this often, and terminated when the previous ping went unanswered; below the 60 s idle timeout of common load balancers
-	REALTIME_CREDENTIAL_TIMEOUT: '5s' as StringValue, // How long a feature may take to resolve a connection's credential before the connection closes with 1013 (try again later)
-	REALTIME_MAX_PENDING_HANDSHAKES: 100, // Handshakes one replica resolves at once; beyond it a handshake answers 429
-	REALTIME_MAX_CONNECTIONS_PER_ADDRESS: 5, // Connections one replica keeps per room and address; a newer one closes the oldest with 1008
-	REALTIME_MAX_PAYLOAD_BYTES: 4096, // Largest frame a client may send; the server ignores client frames anyway
+	// WebSocket channel
+	WEBSOCKET_PATH: '/ws', // Under INTERNAL_API_BASE_PATH_V1
+	WEBSOCKET_PING_INTERVAL: '20s' as StringValue, // Each connection is pinged and sent a heartbeat this often, and terminated when the previous ping went unanswered; below the 60 s idle timeout of common load balancers
+	WEBSOCKET_CREDENTIAL_TIMEOUT: '5s' as StringValue, // How long a feature may take to resolve a connection's credential before the connection closes with 1013 (try again later)
+	WEBSOCKET_MAX_PENDING_HANDSHAKES: 100, // Handshakes one replica resolves at once; beyond it a handshake answers 429
+	WEBSOCKET_MAX_CONNECTIONS_PER_ADDRESS: 5, // Connections one replica keeps per room and address; a newer one closes the oldest with 1008
+	WEBSOCKET_MAX_PAYLOAD_BYTES: 4096, // Largest frame a client may send; the server ignores client frames anyway
 
 	// Additional intervals
 	MIN_ROOM_AUTO_DELETE_DURATION: '1h' as StringValue, // Minimum duration before a room can be auto-deleted

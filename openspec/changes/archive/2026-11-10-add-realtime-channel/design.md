@@ -38,7 +38,7 @@ Alternatives considered:
 
 ### The handshake runs outside Express
 
-An upgrade request never reaches Express middleware: there is no `initRequestContext`, no `withAuth` and no `req.query`. `RealtimeService.handleUpgrade(req, socket, head)`:
+An upgrade request never reaches Express middleware: there is no `initRequestContext`, no `withAuth` and no `req.query`. `WebSocketService.handleUpgrade(req, socket, head)`:
 
 1. Matches the pathname against `getBasePath() + 'internal-api/v1/ws'`. Any other path destroys the socket: Meet has no other upgrade listener (`server.ts`).
 2. Finds the authenticator registered for the credential the query carries (`?lobbyTicket=…` for the waiting room). A request whose query names no registered credential is destroyed before the upgrade. Each handshake counts against its client address's limit for the other API routes (500 per minute, "Rate limiting per client address" in `deployment`), which Express middleware cannot apply to an upgrade: `apiLimiter` gets an explicit store that the handshake increments with the key the limiter derives (express-rate-limit masks an IPv6 address to its subnet), and the count is per replica, as for every route. The client address is derived as Express derives `req.ip`: `proxy-addr` over the socket address and `X-Forwarded-For` with the app's `trust proxy` function (`app.get('trust proxy fn')`, set from `SERVER_TRUST_PROXY`), so behind the proxies of an OpenVidu deployment each client has its own bucket, not the proxy's: over it, the replica answers HTTP `429` and destroys the socket. The replica also admits at most 100 handshakes in flight at once, answering HTTP `429` and destroying the socket beyond it. `req.url` carries the credential, so the handshake never logs it.
@@ -93,11 +93,11 @@ Alternatives considered:
 
 ### Seam for features
 
-A feature calls `RealtimeService.register({ credential, resolve, onOpen, onPong, onClose })` on an injectable singleton: `credential` is the query parameter that carries its credential, `resolve(credential)` returns `{ roomId, address }` or null, and the hooks run only for the connections its own credential opened, so two features never see each other's connections. `onPong` runs each time the connection's client answers a ping. A connection exposes its room, its address, `lastSeenAt` and `send(type, data)`, which writes to its socket directly. Features use the hooks to send their state on open and on pong through `connection.send`, so that state does not depend on the subscription, and to track presence. The channel keeps no presence of its own: presence rules differ per feature (the waiting room writes it on each pong, `add-waiting-room`). PRO overrides or extends through DI like any other service.
+A feature calls `WebSocketService.register({ credential, resolve, onOpen, onPong, onClose })` on an injectable singleton: `credential` is the query parameter that carries its credential, `resolve(credential)` returns `{ roomId, address }` or null, and the hooks run only for the connections its own credential opened, so two features never see each other's connections. `onPong` runs each time the connection's client answers a ping. A connection exposes its room, its address, `lastSeenAt` and `send(type, data)`, which writes to its socket directly. Features use the hooks to send their state on open and on pong through `connection.send`, so that state does not depend on the subscription, and to track presence. The channel keeps no presence of its own: presence rules differ per feature (the waiting room writes it on each pong, `add-waiting-room`). PRO overrides or extends through DI like any other service.
 
 ### Browser client
 
-`RealtimeConnectionService` in `shared-meet-components` (meeting domain, a root service torn down with the meeting, like `MeetingLiveKitService`):
+`WebSocketService` in `shared-meet-components` (meeting domain, a root service torn down with the meeting, like `MeetingLiveKitService`):
 
 - **Connecting:** `connect({ credential: { name, value } }, { giveUpAfterMs })` builds the URL from the Meet base URL, `wss://` for `https` and `ws://` for `http` (development), with the credential in the query, so the web component connects to its Meet origin, not the host page.
 - **Messages:** `messages$(type)` hands each feature its messages.
@@ -122,7 +122,7 @@ A proxy of the operator's own in front of Meet can still break the channel when 
 - [Every replica receives every message] → Negligible at the waiting room's volume; a feature with heavier traffic shards the channel in its own change.
 - [An external Redis whose Meet user has no channel permission] → `SUBSCRIBE` fails and every feature using the channel stops working. The upgrade note of the first feature using it and the deployment pages state `&ov_meet:*`; the replica logs the refusal at startup.
 - [Credentials in URLs reaching proxy access logs] → Same exposure as LiveKit's own signalling URL, which carries its JWT, and as the existing `roomMemberToken` query parameter. The waiting ticket dies with its wait.
-- [Integration tests run without a listening server] → The realtime tests start one with `createApp()` plus `http.createServer` on an ephemeral port. They run two `RealtimeService` instances on separate Redis connections to act as two replicas.
+- [Integration tests run without a listening server] → The realtime tests start one with `createApp()` plus `http.createServer` on an ephemeral port. They run two `WebSocketService` instances on separate Redis connections to act as two replicas.
 
 ## Migration Plan
 

@@ -211,8 +211,8 @@ jobs:
             shard: webhooks
           - suite: 'Global Config, Analytics'
             shard: config-analytics
-          - suite: 'Realtime'
-            shard: realtime
+          - suite: 'WebSocket'
+            shard: websocket
     steps:
       - *setup-node
       - *setup-pnpm

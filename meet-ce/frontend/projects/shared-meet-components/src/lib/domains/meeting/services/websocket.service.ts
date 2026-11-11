@@ -1,20 +1,20 @@
 import { inject, Service, signal } from '@angular/core';
-import { MEET_REALTIME_HEARTBEAT, MeetRealtimeCloseCode, MeetRealtimeMessage } from '@openvidu-meet/typings';
+import { MEET_WEBSOCKET_HEARTBEAT, MeetWebSocketCloseCode, MeetWebSocketMessage } from '@openvidu-meet/typings';
 import { filter, map, Observable, Subject } from 'rxjs';
 import { HttpService } from '../../../shared/services/http.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 
 /** Why the connection stopped on its own: the credential is unknown, a newer connection took its place, or it gave up. */
-export type RealtimeStopReason = 'forbidden' | 'replaced' | 'gave_up';
+export type WebSocketStopReason = 'forbidden' | 'replaced' | 'gave_up';
 
-export interface RealtimeCredential {
+export interface WebSocketCredential {
 	/** Query parameter the feature registered on the server. */
 	name: string;
 	value: string;
 }
 
-export interface RealtimeConnectOptions {
+export interface WebSocketConnectOptions {
 	/** Stop, reported as `gave_up`, this long after the last message received. Without it, never give up. */
 	giveUpAfterMs?: number;
 }
@@ -38,18 +38,18 @@ interface Session {
 }
 
 /**
- * The realtime connection from the meeting client to Meet. It reconnects with the same credential
+ * The WebSocket connection from the meeting client to Meet. It reconnects with the same credential
  * after any loss it did not ask for, until a feature calls {@link disconnect} or the server refuses it.
  */
 @Service()
-export class RealtimeConnectionService {
+export class WebSocketService {
 	private readonly runtimeConfig = inject(RuntimeConfigService);
-	private readonly log = inject(LoggerService).get('OpenVidu Meet - RealtimeConnectionService');
+	private readonly log = inject(LoggerService).get('OpenVidu Meet - WebSocketService');
 
 	private session?: Session;
-	private readonly incoming = new Subject<MeetRealtimeMessage>();
+	private readonly incoming = new Subject<MeetWebSocketMessage>();
 	private readonly _isConnected = signal(false);
-	private readonly _stopReason = signal<RealtimeStopReason | undefined>(undefined);
+	private readonly _stopReason = signal<WebSocketStopReason | undefined>(undefined);
 
 	readonly isConnected = this._isConnected.asReadonly();
 	readonly stopReason = this._stopReason.asReadonly();
@@ -64,7 +64,7 @@ export class RealtimeConnectionService {
 		}
 	};
 
-	connect(credential: RealtimeCredential, { giveUpAfterMs }: RealtimeConnectOptions = {}): void {
+	connect(credential: WebSocketCredential, { giveUpAfterMs }: WebSocketConnectOptions = {}): void {
 		this.disconnect();
 		this._stopReason.set(undefined);
 		this.session = { url: this.urlFor(credential), giveUpAfterMs, failedAttempts: 0, lastMessageAt: Date.now() };
@@ -93,7 +93,7 @@ export class RealtimeConnectionService {
 		document.removeEventListener('visibilitychange', this.onWake);
 	}
 
-	private urlFor({ name, value }: RealtimeCredential): string {
+	private urlFor({ name, value }: WebSocketCredential): string {
 		const url = new URL(
 			this.runtimeConfig.resolveUrl(`${HttpService.INTERNAL_API_PATH_PREFIX}/ws`),
 			window.location.href
@@ -121,16 +121,16 @@ export class RealtimeConnectionService {
 		session.lastMessageAt = Date.now();
 		this.watchSilence(session);
 
-		let message: MeetRealtimeMessage;
+		let message: MeetWebSocketMessage;
 
 		try {
-			message = JSON.parse(frame) as MeetRealtimeMessage;
+			message = JSON.parse(frame) as MeetWebSocketMessage;
 		} catch {
-			this.log.w('Ignoring a realtime message that is not JSON');
+			this.log.w('Ignoring a WebSocket message that is not JSON');
 			return;
 		}
 
-		if (message.type !== MEET_REALTIME_HEARTBEAT) {
+		if (message.type !== MEET_WEBSOCKET_HEARTBEAT) {
 			this.incoming.next(message);
 		}
 	}
@@ -142,10 +142,10 @@ export class RealtimeConnectionService {
 		this._isConnected.set(false);
 
 		switch (code) {
-			case MeetRealtimeCloseCode.FORBIDDEN:
+			case MeetWebSocketCloseCode.FORBIDDEN:
 				this.stop('forbidden');
 				break;
-			case MeetRealtimeCloseCode.REPLACED:
+			case MeetWebSocketCloseCode.REPLACED:
 				this.stop('replaced');
 				break;
 			default:
@@ -157,7 +157,7 @@ export class RealtimeConnectionService {
 		const backoff = Math.min(FIRST_RETRY_DELAY_MS * 2 ** session.failedAttempts, MAX_RETRY_DELAY_MS);
 		const delay = backoff * (1 - RETRY_JITTER + Math.random() * 2 * RETRY_JITTER);
 		session.failedAttempts++;
-		this.log.d(`Realtime connection lost, reconnecting in ${Math.round(delay)} ms`);
+		this.log.d(`WebSocket connection lost, reconnecting in ${Math.round(delay)} ms`);
 		clearTimeout(session.retryTimer);
 		session.retryTimer = setTimeout(() => this.open(session), delay);
 	}
@@ -180,8 +180,8 @@ export class RealtimeConnectionService {
 		}
 	}
 
-	private stop(reason: RealtimeStopReason): void {
-		this.log.w(`Realtime connection stopped: ${reason}`);
+	private stop(reason: WebSocketStopReason): void {
+		this.log.w(`WebSocket connection stopped: ${reason}`);
 		this.disconnect();
 		this._stopReason.set(reason);
 	}
