@@ -823,11 +823,10 @@ for (const integration of INTEGRATIONS) {
 			// must be obeyed on both transports, not silently dropped by one of them.
 			test.describe('before joining the meeting (prejoin)', () => {
 				/**
-				 * Joins the rest of the way and reads the toolbar — the ground truth for what the
-				 * command actually did to the real device. Distinct from the prejoin screen's OWN
-				 * mic/camera button, which keeps its own display state and does not repaint on an
-				 * external change (see the "prejoin screen indicator" tests below): asserting against
-				 * it here would fail even when the command worked, and pass even when it didn't.
+				 * Joins the rest of the way and reads the toolbar: the ground truth for what the command
+				 * actually did to the real device. A command that depends on an earlier one (or on the
+				 * participant's own click) is sent only once the prejoin indicator shows that one's effect,
+				 * because the device state is applied asynchronously and a toggle reads the state as it is.
 				 */
 				const joinAndReadToolbar = async (
 					meet: (selector: string) => import('@playwright/test').Locator
@@ -861,7 +860,9 @@ for (const integration of INTEGRATIONS) {
 					// from the start (active); a dropped/no-op command would leave it unchanged, so
 					// this — unlike a round trip — can tell the two apart with a single join at the end.
 					await mediaToggleAudioCommand(page);
+					await expectPrejoinMicEnabled(page, integration, false, { timeout: 10_000 });
 					await mediaToggleAudioCommand(page);
+					await expectPrejoinMicEnabled(page, integration, true, { timeout: 10_000 });
 					await mediaToggleAudioCommand(page);
 					await joinAndReadToolbar(meet);
 
@@ -881,6 +882,8 @@ for (const integration of INTEGRATIONS) {
 					});
 
 					await meet('#microphone-button').click(); // participant unmutes themselves
+					// The device opens asynchronously: a toggle sent before it did would read the mic as OFF.
+					await expectPrejoinMicEnabled(page, integration, true, { timeout: 10_000 });
 					await mediaToggleAudioCommand(page); // host toggle: must read the mic as ON and mute it
 					await joinAndReadToolbar(meet);
 
@@ -897,6 +900,7 @@ for (const integration of INTEGRATIONS) {
 					});
 
 					await meet('#camera-button').click();
+					await expectPrejoinCameraEnabled(page, integration, true, { timeout: 10_000 });
 					await mediaToggleVideoCommand(page);
 					await joinAndReadToolbar(meet);
 
