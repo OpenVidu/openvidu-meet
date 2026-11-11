@@ -12,7 +12,7 @@ import { WebhookRepository } from '../repositories/webhook.repository.js';
 
 import { LoggerService } from '../services/logger.service.js';
 import { MutexService } from '../services/mutex.service.js';
-import { RealtimeService } from '../services/realtime.service.js';
+import { WebSocketService } from '../services/websocket.service.js';
 import { RedisService } from '../services/redis.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { TaskSchedulerService } from '../services/task-scheduler.service.js';
@@ -80,7 +80,7 @@ export const container: Container = new Container();
 const infrastructureModule = new ContainerModule(({ bind }) => {
 	bind(LoggerService).toSelf().inSingletonScope();
 	bind(RedisService).toSelf().inSingletonScope();
-	bind(RealtimeService).toSelf().inSingletonScope();
+	bind(WebSocketService).toSelf().inSingletonScope();
 	bind(MutexService).toSelf().inSingletonScope();
 	bind(TaskSchedulerService).toSelf().inSingletonScope();
 	// RequestSessionService uses AsyncLocalStorage for request isolation. It's a singleton but

@@ -4,7 +4,7 @@ import ms from 'ms';
 import proxyaddr from 'proxy-addr';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import type { RealtimeHandshakeGuard } from '../models/realtime.model.js';
+import type { WebSocketHandshakeGuard } from '../models/websocket.model.js';
 import { LoggerService } from '../services/logger.service.js';
 
 /**
@@ -135,10 +135,10 @@ export const apiLimiter: RequestHandler = withTestBypass({
 });
 
 /**
- * A realtime handshake never reaches Express, so it is counted against {@link apiLimiter}'s bucket for
+ * A WebSocket handshake never reaches Express, so it is counted against {@link apiLimiter}'s bucket for
  * the client address Express would derive.
  */
-export const realtimeHandshakeGuard = (app: Express): RealtimeHandshakeGuard => ({
+export const webSocketHandshakeGuard = (app: Express): WebSocketHandshakeGuard => ({
 	clientAddress: (req) => proxyaddr(req, app.get('trust proxy fn') as Parameters<typeof proxyaddr>[1]),
 	admit: async (clientAddress) => {
 		if (isRateLimitBypassed()) return true;

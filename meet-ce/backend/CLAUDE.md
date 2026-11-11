@@ -2,7 +2,7 @@
 
 Node.js + Express 5 REST API in TypeScript. ESM (`"type": "module"`): every relative import needs an
 explicit `.js` extension, even when the source file is `.ts`. Deliberately framework-light: no Nest,
-no ORM beyond Mongoose. Dependencies: MongoDB (state), Redis (locks / ephemeral state / realtime relay),
+no ORM beyond Mongoose. Dependencies: MongoDB (state), Redis (locks / ephemeral state / WebSocket relay),
 LiveKit (media), and S3 / Azure Blob / GCS (recordings).
 
 Entry point: `src/server.ts`. It also serves the built SPA and the webcomponent bundle out of
@@ -131,7 +131,7 @@ what LiveKit's webhooks never told.
   Meet runs multi-replica (OpenVidu High Availability, see the `deployment` spec): any garbage
   collection, migration, recording or broadcast state transition must be lock-guarded. Lock TTLs cap
   at 24h. Cross-replica state lives in Redis keys, never in process memory.
-- **Realtime channel**: `RealtimeService` serves WebSockets at `<basePath>internal-api/v1/ws` on
+- **WebSocket channel**: `WebSocketService` serves WebSockets at `<basePath>internal-api/v1/ws` on
   the HTTP server's `upgrade` event, outside Express (no middleware, no request validators). A
   feature calls `register({ credential, resolve, onOpen, onPong, onClose })`: the query parameter
   that carries its credential, how it resolves to a room and address, and hooks that run only for

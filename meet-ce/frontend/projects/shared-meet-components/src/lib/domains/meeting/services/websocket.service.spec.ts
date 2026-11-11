@@ -1,9 +1,9 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MeetRealtimeCloseCode } from '@openvidu-meet/typings';
+import { MeetWebSocketCloseCode } from '@openvidu-meet/typings';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
-import { RealtimeConnectionService } from './realtime-connection.service';
+import { WebSocketService } from './websocket.service';
 
 class LoggerServiceStub {
 	get() {
@@ -42,8 +42,8 @@ class FakeWebSocket {
 
 const CREDENTIAL = { name: 'lobbyTicket', value: 'ticket 1' };
 
-describe('RealtimeConnectionService', () => {
-	let service: RealtimeConnectionService;
+describe('WebSocketService', () => {
+	let service: WebSocketService;
 	let serverBaseUrl: ReturnType<typeof signal<string>>;
 	const originalWebSocket = window.WebSocket;
 
@@ -64,7 +64,7 @@ describe('RealtimeConnectionService', () => {
 				{ provide: RuntimeConfigService, useValue: { resolveUrl, serverBaseUrl } }
 			]
 		});
-		service = TestBed.inject(RealtimeConnectionService);
+		service = TestBed.inject(WebSocketService);
 	});
 
 	afterEach(() => {
@@ -159,7 +159,7 @@ describe('RealtimeConnectionService', () => {
 
 		it('reconnects after a refusal to try again later', () => {
 			service.connect(CREDENTIAL);
-			FakeWebSocket.latest.serverCloses(MeetRealtimeCloseCode.TRY_AGAIN_LATER);
+			FakeWebSocket.latest.serverCloses(MeetWebSocketCloseCode.TRY_AGAIN_LATER);
 
 			jasmine.clock().tick(1_000);
 
@@ -208,7 +208,7 @@ describe('RealtimeConnectionService', () => {
 	describe('stopping', () => {
 		it('stops when the credential is not known', () => {
 			service.connect(CREDENTIAL);
-			FakeWebSocket.latest.serverCloses(MeetRealtimeCloseCode.FORBIDDEN);
+			FakeWebSocket.latest.serverCloses(MeetWebSocketCloseCode.FORBIDDEN);
 
 			jasmine.clock().tick(60_000);
 
@@ -218,7 +218,7 @@ describe('RealtimeConnectionService', () => {
 
 		it('stops when a newer connection took its place', () => {
 			service.connect(CREDENTIAL);
-			FakeWebSocket.latest.serverCloses(MeetRealtimeCloseCode.REPLACED);
+			FakeWebSocket.latest.serverCloses(MeetWebSocketCloseCode.REPLACED);
 
 			jasmine.clock().tick(60_000);
 

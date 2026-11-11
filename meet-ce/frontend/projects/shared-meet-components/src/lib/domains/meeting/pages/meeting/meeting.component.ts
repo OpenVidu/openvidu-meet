@@ -28,7 +28,7 @@ import { MeetingEntryFlowService } from '../../services/meeting-entry-flow.servi
 import { MeetingEventHandlerService } from '../../services/meeting-event-handler.service';
 import { MeetingJoinService } from '../../services/meeting-join.service';
 import { MeetingShortcutsService } from '../../services/meeting-shortcuts.service';
-import { RealtimeConnectionService } from '../../services/realtime-connection.service';
+import { WebSocketService } from '../../services/websocket.service';
 
 @Component({
 	selector: 'ov-meeting',
@@ -58,7 +58,7 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	protected notificationService = inject(NotificationService);
 	protected soundService = inject(SoundService);
 	private readonly broadcastState = inject(BroadcastStateService);
-	private readonly realtimeConnection = inject(RealtimeConnectionService);
+	private readonly webSocket = inject(WebSocketService);
 	private readonly isEmbeddedMode = inject(RuntimeConfigService).isEmbeddedMode;
 
 	/** Embedded, where the host app shares the link, the participants panel says others will appear. */
@@ -124,7 +124,7 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	ngOnDestroy() {
 		// Cleanup captions service
 		this.captionsService.destroy();
-		this.realtimeConnection.disconnect();
+		this.webSocket.disconnect();
 	}
 
 	onRoomCreated(lkRoom: Room) {

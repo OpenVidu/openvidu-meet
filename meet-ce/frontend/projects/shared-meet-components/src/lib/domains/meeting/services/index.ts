@@ -9,4 +9,4 @@ export * from './meeting-join.service';
 export * from './meeting-state.service';
 export * from './meeting-moderation.service';
 export * from './meeting-shortcuts.service';
-export * from './realtime-connection.service';
+export * from './websocket.service';

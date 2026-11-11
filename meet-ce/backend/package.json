@@ -52,7 +52,7 @@
 		"test:integration-global-config": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --runInBand --forceExit --testPathPatterns \"tests/integration/api/global-config\" --ci --reporters=default --reporters=jest-junit",
 		"test:integration-analytics": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --runInBand --forceExit --testPathPatterns \"tests/integration/api/analytics\" --ci --reporters=default --reporters=jest-junit",
 		"test:integration-recordings": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --maxWorkers=1 --maxConcurrency=1 --forceExit --testPathPatterns \"tests/integration/api/recordings\" --ci --reporters=default --reporters=jest-junit",
-		"test:integration-realtime": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --runInBand --forceExit --testPathPatterns \"tests/integration/realtime\" --ci --reporters=default --reporters=jest-junit",
+		"test:integration-websocket": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --runInBand --forceExit --testPathPatterns \"tests/integration/websocket\" --ci --reporters=default --reporters=jest-junit",
 		"test:unit": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --runInBand --forceExit --testPathPatterns \"tests/unit\" --ci --reporters=default --reporters=jest-junit",
 		"lint:fix": "eslint src --fix --max-warnings 0",
 		"format:code": "prettier --ignore-path .gitignore --write '**/*.{ts,js,json,md}'",

@@ -12,7 +12,7 @@ import { checkModuleEnabled, logEnvVars, MEET_ENV } from './environment.js';
 import { apiKeyValidator, withAuth } from './middlewares/auth.middleware.js';
 import { setBaseUrlFromRequest } from './middlewares/base-url.middleware.js';
 import { globalErrorHandler } from './middlewares/error-handler.middleware.js';
-import { realtimeHandshakeGuard, staticAssetLimiter } from './middlewares/rate-limit.middleware.js';
+import { webSocketHandshakeGuard, staticAssetLimiter } from './middlewares/rate-limit.middleware.js';
 import { initRequestContext } from './middlewares/request-context.middleware.js';
 import { serveWebcomponentBundle } from './middlewares/webcomponent-bundle.middleware.js';
 import { aiAssistantRouter } from './routes/ai-assistant.routes.js';
@@ -28,7 +28,7 @@ import { internalRoomRouter, roomRouter } from './routes/room.routes.js';
 import { internalUserRouter, userRouter } from './routes/user.routes.js';
 import { webhookRouter } from './routes/webhook.routes.js';
 import { LoggerService } from './services/logger.service.js';
-import { RealtimeService } from './services/realtime.service.js';
+import { WebSocketService } from './services/websocket.service.js';
 import { getBasePath, getHtmlWithBasePath, getOpenApiHtmlWithBasePath } from './utils/html-dynamic-base-path.utils.js';
 import {
 	frontendDirectoryPath,
@@ -184,7 +184,7 @@ const startServer = (app: Express) => {
 		process.exit(1);
 	});
 
-	void container.get(RealtimeService).attach(server, realtimeHandshakeGuard(app));
+	void container.get(WebSocketService).attach(server, webSocketHandshakeGuard(app));
 };
 
 /**

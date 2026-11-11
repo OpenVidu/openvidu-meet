@@ -1,28 +1,28 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
-import { MeetRealtimeCloseCode, type MeetRealtimeMessage } from '@openvidu-meet/typings';
+import { MeetWebSocketCloseCode, type MeetWebSocketMessage } from '@openvidu-meet/typings';
 import express from 'express';
 import http from 'http';
 import type { AddressInfo } from 'net';
 import { WebSocket } from 'ws';
 import { MEET_ENV } from '../../../src/environment.js';
-import { realtimeHandshakeGuard } from '../../../src/middlewares/rate-limit.middleware.js';
-import type { RealtimeFeature } from '../../../src/models/realtime.model.js';
+import { webSocketHandshakeGuard } from '../../../src/middlewares/rate-limit.middleware.js';
+import type { WebSocketFeature } from '../../../src/models/websocket.model.js';
 import { LoggerService } from '../../../src/services/logger.service.js';
-import { RealtimeService } from '../../../src/services/realtime.service.js';
+import { WebSocketService } from '../../../src/services/websocket.service.js';
 import { RedisService } from '../../../src/services/redis.service.js';
 import { RequestSessionService } from '../../../src/services/request-session.service.js';
 
-const ROOM_ID = `realtime_room_${Date.now()}`;
+const ROOM_ID = `websocket_room_${Date.now()}`;
 
 /** A ticket names its address: `ticket-<address>`. Any other value is unknown. */
-const testFeature: RealtimeFeature = {
+const testFeature: WebSocketFeature = {
 	credential: 'testTicket',
 	resolve: async (ticket) => (ticket.startsWith('ticket-') ? { roomId: ROOM_ID, address: ticket.slice(7) } : null),
 	onOpen: (connection) => connection.send('test.opened', { address: connection.address }),
 	onPong: (connection) => connection.send('test.pong')
 };
 
-class TestReplica extends RealtimeService {
+class TestReplica extends WebSocketService {
 	readonly httpServer: http.Server;
 	readonly app = express();
 
@@ -35,7 +35,7 @@ class TestReplica extends RealtimeService {
 
 	async start(): Promise<void> {
 		await new Promise<void>((resolve) => this.httpServer.listen(0, '127.0.0.1', resolve));
-		await this.attach(this.httpServer, realtimeHandshakeGuard(this.app));
+		await this.attach(this.httpServer, webSocketHandshakeGuard(this.app));
 	}
 
 	url(query: string): string {
@@ -57,7 +57,7 @@ class TestReplica extends RealtimeService {
 interface TestClient {
 	socket: WebSocket;
 	/** Resolves with the next message, or the next one of the given type. */
-	next(type?: string): Promise<MeetRealtimeMessage>;
+	next(type?: string): Promise<MeetWebSocketMessage>;
 	closed: Promise<number>;
 }
 
@@ -66,16 +66,16 @@ const openClients: WebSocket[] = [];
 const connect = (url: string, headers: Record<string, string> = {}): TestClient => {
 	const socket = new WebSocket(url, { headers });
 	openClients.push(socket);
-	const queue: MeetRealtimeMessage[] = [];
+	const queue: MeetWebSocketMessage[] = [];
 	const waiters: (() => void)[] = [];
 
 	socket.on('message', (frame) => {
-		queue.push(JSON.parse(String(frame)) as MeetRealtimeMessage);
+		queue.push(JSON.parse(String(frame)) as MeetWebSocketMessage);
 		waiters.splice(0).forEach((wake) => wake());
 	});
 	socket.on('error', () => {});
 
-	const next = async (type?: string): Promise<MeetRealtimeMessage> => {
+	const next = async (type?: string): Promise<MeetWebSocketMessage> => {
 		for (;;) {
 			const index = queue.findIndex(
 				(message) => message.type !== 'heartbeat' && (!type || message.type === type)
@@ -109,7 +109,7 @@ const answers = (url: string, headers: Record<string, string>): Promise<number |
 		socket.on('error', () => {});
 	});
 
-describe('Realtime channel', () => {
+describe('WebSocket channel', () => {
 	let replicaA: TestReplica;
 	let replicaB: TestReplica;
 
@@ -199,7 +199,7 @@ describe('Realtime channel', () => {
 		it('closes a connection with an unknown credential as forbidden', async () => {
 			const client = connect(replicaA.url('testTicket=unknown'));
 
-			expect(await client.closed).toBe(MeetRealtimeCloseCode.FORBIDDEN);
+			expect(await client.closed).toBe(MeetWebSocketCloseCode.FORBIDDEN);
 		});
 
 		it('closes the oldest of six connections of one address with 1008', async () => {
@@ -209,7 +209,7 @@ describe('Realtime channel', () => {
 				await connectAs(replicaA, 'carol');
 			}
 
-			expect(await oldest.closed).toBe(MeetRealtimeCloseCode.REPLACED);
+			expect(await oldest.closed).toBe(MeetWebSocketCloseCode.REPLACED);
 		});
 	});
 
