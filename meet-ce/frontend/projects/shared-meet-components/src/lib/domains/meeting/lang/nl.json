@@ -286,7 +286,26 @@
 		"ENDED_TITLE": "De meeting is beëindigd",
 		"ENDED_MESSAGE": "De meeting is beëindigd voordat u werd toegelaten. Als u het opnieuw vraagt, wacht u op de volgende.",
 		"FULL_TITLE": "De wachtruimte is vol",
-		"FULL_MESSAGE": "Er wachten op dit moment te veel mensen om deel te nemen aan deze meeting. Probeer het over een paar minuten opnieuw."
+		"FULL_MESSAGE": "Er wachten op dit moment te veel mensen om deel te nemen aan deze meeting. Probeer het over een paar minuten opnieuw.",
+		"ADMIN": {
+			"TITLE": "Wacht op toegang",
+			"PLACES_LEFT": "{count, plural, =0 {Geen plaatsen meer} one {Nog # plaats} other {Nog # plaatsen}}",
+			"EVERYONE": "Iedereen die wacht",
+			"ADMIT": "Toelaten",
+			"DENY": "Weigeren",
+			"ADMIT_NAMED": "{name} toelaten",
+			"DENY_NAMED": "{name} weigeren",
+			"ADMIT_COUNT": "{count, plural, other {# toelaten}}",
+			"DENY_ALL": "Iedereen weigeren",
+			"DENY_ALL_TITLE": "Iedereen die wacht weigeren?",
+			"DENY_ALL_MESSAGE": "Iedereen die wacht op toegang ziet dat hij niet is toegelaten. Ze kunnen opnieuw vragen om deel te nemen.",
+			"CANCEL": "Annuleren",
+			"SHARED_LINK": "Gedeelde link",
+			"WAITING_COUNT": "{count, plural, other {# wachten op toegang}}",
+			"WAITING_LABEL": "wachten op toegang",
+			"WANTS_TO_JOIN": "Wil deelnemen",
+			"VIEW": "Bekijken"
+		}
 	},
 	"SHARE_ACCESS": {
 		"COPY_TOOLTIP": "Toegangslink van kamer kopiëren",

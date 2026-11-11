@@ -1,0 +1,75 @@
+@if (rows().length > 0) {
+	<section id="lobby-panel-section" class="lobby-section" aria-labelledby="lobby-section-title">
+		<div class="lobby-header">
+			<mat-icon class="lobby-header-icon">hourglass_top</mat-icon>
+			<h3 id="lobby-section-title" class="lobby-title">{{ 'WAITING_ROOM.ADMIN.TITLE' | translate }}</h3>
+			<span id="lobby-waiting-count" class="lobby-count">{{ rows().length }}</span>
+			@let places = availablePlaces();
+			@if (places !== null) {
+				<span id="lobby-places-left" class="lobby-places" [class.none]="places === 0">
+					{{ 'WAITING_ROOM.ADMIN.PLACES_LEFT' | translate: { count: places } }}
+				</span>
+			}
+		</div>
+
+		@if (rows().length > 1) {
+			<div id="lobby-bulk-actions" class="panel-bulk-actions">
+				<span class="bulk-label">{{ 'WAITING_ROOM.ADMIN.EVERYONE' | translate }}</span>
+				<button
+					mat-stroked-button
+					id="lobby-deny-all-btn"
+					class="lobby-btn"
+					[disabled]="isBusy()"
+					(click)="confirmDenyAll()"
+				>
+					{{ 'WAITING_ROOM.ADMIN.DENY_ALL' | translate }}
+				</button>
+				<button
+					mat-flat-button
+					id="lobby-admit-shown-btn"
+					class="lobby-btn admit"
+					[disabled]="isBusy() || admittable() === 0"
+					(click)="admitShown()"
+				>
+					{{ 'WAITING_ROOM.ADMIN.ADMIT_COUNT' | translate: { count: admittable() } }}
+				</button>
+			</div>
+		}
+
+		<ul class="lobby-rows">
+			@for (row of rows(); track row.participant.participantIdentity) {
+				<li class="lobby-row" [attr.data-participant-identity]="row.participant.participantIdentity">
+					<div class="lobby-who">
+						<span class="lobby-name">
+							{{ row.name }}
+							@if (row.sharesName) {
+								<span class="lobby-knock-time">&middot; {{ row.knockedAt | date: 'HH:mm' }}</span>
+							}
+						</span>
+						@if (row.viaSharedLink) {
+							<span class="lobby-shared-link">{{ 'WAITING_ROOM.ADMIN.SHARED_LINK' | translate }}</span>
+						}
+					</div>
+					<button
+						mat-stroked-button
+						class="lobby-btn lobby-deny-btn"
+						[disabled]="isBusy()"
+						[attr.aria-label]="'WAITING_ROOM.ADMIN.DENY_NAMED' | translate: { name: row.name }"
+						(click)="deny(row)"
+					>
+						{{ 'WAITING_ROOM.ADMIN.DENY' | translate }}
+					</button>
+					<button
+						mat-flat-button
+						class="lobby-btn admit lobby-admit-btn"
+						[disabled]="isBusy() || availablePlaces() === 0"
+						[attr.aria-label]="'WAITING_ROOM.ADMIN.ADMIT_NAMED' | translate: { name: row.name }"
+						(click)="admit(row)"
+					>
+						{{ 'WAITING_ROOM.ADMIN.ADMIT' | translate }}
+					</button>
+				</li>
+			}
+		</ul>
+	</section>
+}

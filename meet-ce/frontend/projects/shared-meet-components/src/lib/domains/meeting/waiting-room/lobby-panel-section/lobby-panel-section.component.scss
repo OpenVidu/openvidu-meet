@@ -1,0 +1,116 @@
+@use '../../customization/panel-strip';
+
+:host {
+	display: block;
+}
+
+.lobby-section {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin: 0 10px 8px;
+	padding-bottom: 4px;
+	border: 1px solid var(--ov-border-color);
+	border-radius: var(--ov-surface-radius);
+
+	.panel-bulk-actions {
+		gap: 6px;
+		margin: 0 6px;
+	}
+}
+
+.lobby-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 10px 4px;
+}
+
+.lobby-header-icon {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+	color: var(--ov-warn-color);
+}
+
+.lobby-title {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--ov-text-surface-color);
+}
+
+.lobby-count {
+	min-width: 22px;
+	height: 22px;
+	padding: 0 6px;
+	box-sizing: border-box;
+	border-radius: 11px;
+	background-color: color-mix(in srgb, var(--ov-text-surface-color) 10%, transparent);
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 22px;
+	text-align: center;
+	color: var(--ov-text-secondary-color);
+}
+
+.lobby-places {
+	margin-left: auto;
+	font-size: 12px;
+	color: var(--ov-text-secondary-color);
+
+	&.none {
+		color: var(--ov-warn-color);
+	}
+}
+
+.lobby-rows {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.lobby-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 48px;
+	padding: 4px 10px;
+}
+
+.lobby-who {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	flex: 1;
+	min-width: 0;
+}
+
+.lobby-name {
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--ov-text-surface-color);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.lobby-knock-time,
+.lobby-shared-link {
+	font-size: 12px;
+	font-weight: 400;
+	color: var(--ov-text-secondary-color);
+}
+
+.lobby-btn {
+	--mat-button-outlined-container-height: 30px;
+	--mat-button-outlined-container-shape: var(--ov-surface-radius);
+	--mat-button-outlined-horizontal-padding: 12px;
+	--mat-button-outlined-label-text-size: 13px;
+	--mat-button-filled-container-height: 30px;
+	--mat-button-filled-container-shape: var(--ov-surface-radius);
+	--mat-button-filled-horizontal-padding: 14px;
+	--mat-button-filled-label-text-size: 13px;
+	--mat-button-filled-label-text-weight: 700;
+	flex-shrink: 0;
+}

@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import {
+	NotificationAction,
 	NotificationPlacement,
 	NotificationText,
 	NotificationTone,
@@ -18,7 +19,13 @@ interface NotificationView {
 	tone: NotificationTone;
 	title?: string;
 	message: string;
-	action?: { label: string; run: () => void };
+	action?: ActionView;
+	secondaryAction?: ActionView;
+}
+
+interface ActionView {
+	label: string;
+	run: () => void;
 }
 
 /**
@@ -64,9 +71,9 @@ export class NotificationsComponent {
 	}
 
 	/** Acting on a notification answers it, so it goes away with the action. */
-	protected run(notification: NotificationView): void {
+	protected run(notification: NotificationView, action: ActionView): void {
 		this.dismiss(notification.id);
-		notification.action?.run();
+		action.run();
 	}
 
 	private toView(notification: ShownNotification): NotificationView {
@@ -77,11 +84,13 @@ export class NotificationsComponent {
 			tone: notification.tone ?? 'neutral',
 			title: this.resolve(notification.title),
 			message: this.resolve(notification.message)!,
-			action: notification.action && {
-				label: this.resolve(notification.action.label)!,
-				run: notification.action.run
-			}
+			action: this.toActionView(notification.action),
+			secondaryAction: this.toActionView(notification.secondaryAction)
 		};
+	}
+
+	private toActionView(action: NotificationAction | undefined): ActionView | undefined {
+		return action && { label: this.resolve(action.label)!, run: action.run };
 	}
 
 	private resolve(text: NotificationText | undefined): string | undefined {

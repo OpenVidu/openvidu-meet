@@ -73,6 +73,7 @@ describe('WaitingRoomService', () => {
 	let eventBus: EmbeddedEventBusService;
 	let setIsActiveMeeting: jasmine.Spy;
 	let setMicrophoneEnabled: jasmine.Spy;
+	let stopWaitingForDevices: jasmine.Spy;
 	let redirectToErrorPage: jasmine.Spy;
 	let fetchSpy: jasmine.Spy;
 
@@ -87,6 +88,7 @@ describe('WaitingRoomService', () => {
 		webSocket = new WebSocketServiceStub();
 		setIsActiveMeeting = jasmine.createSpy('setIsActiveMeeting');
 		setMicrophoneEnabled = jasmine.createSpy('setMicrophoneEnabled').and.resolveTo();
+		stopWaitingForDevices = jasmine.createSpy('stopWaitingForDevices');
 		redirectToErrorPage = jasmine.createSpy('redirectToErrorPage').and.resolveTo();
 		fetchSpy = spyOn(window, 'fetch').and.resolveTo(new Response(null, { status: 204 }));
 
@@ -97,7 +99,7 @@ describe('WaitingRoomService', () => {
 				{ provide: JoinTokenService, useValue: joinToken },
 				{ provide: WebSocketService, useValue: webSocket },
 				{ provide: MeetingContextService, useValue: { roomId: () => ROOM_ID, setIsActiveMeeting } },
-				{ provide: LocalMediaService, useValue: { setMicrophoneEnabled } },
+				{ provide: LocalMediaService, useValue: { setMicrophoneEnabled, stopWaitingForDevices } },
 				{ provide: NavigationService, useValue: { redirectToErrorPage } },
 				{
 					provide: RuntimeConfigService,
@@ -361,6 +363,18 @@ describe('WaitingRoomService', () => {
 
 			expect(joinToken.showFailure).toHaveBeenCalledOnceWith(error);
 			expect(lobbyStatuses()).toEqual([MeetLobbyStatus.ADMITTED]);
+		});
+
+		it('joins without waiting for the browser to answer a device prompt', async () => {
+			const answer = new Deferred<JoinAnswer>();
+			const { joined } = await admitWith(answer);
+
+			expect(stopWaitingForDevices).not.toHaveBeenCalled();
+
+			answer.resolve(tokenAnswer());
+			await flush();
+
+			expect(stopWaitingForDevices).toHaveBeenCalledBefore(joined);
 		});
 
 		it('joins with the microphone off when let in while the page is hidden', async () => {

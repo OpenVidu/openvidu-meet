@@ -30,6 +30,7 @@ import {
 	ParticipantsPanelHeaderActionsDirective,
 	PreJoinDirective,
 	SettingsPanelLayoutDirective,
+	StatusRailEndDirective,
 	ToolbarMoreOptionsAdditionalMenuItemsDirective,
 	WaitingDirective
 } from '../../directives/template/internals.directive';
@@ -179,6 +180,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 
 	readonly externalPreJoin = contentChild(PreJoinDirective);
 	readonly externalWaiting = contentChild(WaitingDirective);
+	readonly externalStatusRailEnd = contentChild(StatusRailEndDirective);
 	readonly externalParticipantPanelBeforeLocalParticipant = contentChild(
 		ParticipantPanelBeforeLocalParticipantDirective
 	);
@@ -741,5 +743,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 		const layoutAdditional = this.externalLayoutAdditionalElements();
 		r.layoutAdditionalElements.set(layoutAdditional?.template);
 		r.layoutAdditionalElementsSlot.set(layoutAdditional?.slot() ?? 'default');
+
+		r.statusRailEnd.set(this.externalStatusRailEnd()?.template);
 	}
 }

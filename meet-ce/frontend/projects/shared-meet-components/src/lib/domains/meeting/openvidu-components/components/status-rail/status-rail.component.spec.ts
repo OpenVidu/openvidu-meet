@@ -1,9 +1,10 @@
-import { provideZonelessChangeDetection, signal } from '@angular/core';
+import { Component, provideZonelessChangeDetection, signal, TemplateRef, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MeetReaction } from '@openvidu-meet/typings';
 import { TranslateService } from '../../../../../shared/services/i18n/translate.service';
 import { MeetingContextService } from '../../../services/meeting-context.service';
 import { MeetingReactionsService } from '../../../services/meeting-reactions.service';
+import { LobbyAdminService } from '../../../waiting-room/lobby-admin.service';
 import { HiddenParticipantsSummary } from '../../models/layout/smart-layout.model';
 import { PanelType } from '../../models/panel.model';
 import { ReactionCount } from '../../models/reaction.model';
@@ -15,7 +16,16 @@ import { MeetingEndingSoonService } from '../../services/meeting-ending-soon/mee
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { RecordingService } from '../../services/recording/recording.service';
+import { TemplateRegistryService } from '../../services/template/template-registry.service';
 import { StatusRailComponent } from './status-rail.component';
+
+/** Stands for the meeting, which adds the chip of those waiting to be let in at the end of the rail. */
+@Component({
+	template: '<ng-template #end><button id="lobby-waiting-chip">3</button></ng-template>'
+})
+class MeetingEndChipsStub {
+	readonly end = viewChild.required<TemplateRef<unknown>>('end');
+}
 
 /**
  * Where a phone puts each chip is a media query; what is checked here is what the rail holds and when
@@ -33,6 +43,7 @@ describe('StatusRailComponent', () => {
 	let e2eeKey: ReturnType<typeof signal<string>>;
 	let raisedHands: ReturnType<typeof signal<{ identity: string }[]>>;
 	let reactionCounts: ReturnType<typeof signal<ReactionCount[]>>;
+	let lobbyWaiting: ReturnType<typeof signal<unknown[]>>;
 	let panelService: jasmine.SpyObj<PanelService>;
 
 	beforeEach(async () => {
@@ -46,6 +57,7 @@ describe('StatusRailComponent', () => {
 		e2eeKey = signal('');
 		raisedHands = signal<{ identity: string }[]>([]);
 		reactionCounts = signal<ReactionCount[]>([]);
+		lobbyWaiting = signal<unknown[]>([]);
 		panelService = jasmine.createSpyObj<PanelService>('PanelService', ['togglePanel', 'isActivitiesPanelOpened']);
 		panelService.isActivitiesPanelOpened.and.returnValue(false);
 
@@ -75,7 +87,8 @@ describe('StatusRailComponent', () => {
 				},
 				{ provide: PanelService, useValue: panelService },
 				{ provide: ParticipantService, useValue: { raisedHands } },
-				{ provide: MeetingReactionsService, useValue: { counts: reactionCounts } }
+				{ provide: MeetingReactionsService, useValue: { counts: reactionCounts } },
+				{ provide: LobbyAdminService, useValue: { waiting: lobbyWaiting } }
 			]
 		}).compileComponents();
 
@@ -185,6 +198,27 @@ describe('StatusRailComponent', () => {
 		find('#reaction-pulse')!.click();
 
 		expect(panelService.togglePanel).toHaveBeenCalledWith(PanelType.PARTICIPANTS);
+	});
+
+	it('shows the rail while participants wait, their chip at the right end after the people off the grid', async () => {
+		const meeting = TestBed.createComponent(MeetingEndChipsStub);
+		meeting.detectChanges();
+		TestBed.inject(TemplateRegistryService).statusRailEnd.set(meeting.componentInstance.end());
+		await render();
+
+		expect(find('#status-rail')).toBeNull();
+
+		lobbyWaiting.set([{}]);
+		await render();
+
+		expect(find('.status-rail-end #lobby-waiting-chip')).not.toBeNull();
+
+		hiddenParticipants.set({ count: 2, names: [] });
+		await render();
+
+		const people = find('.status-rail-end .status-rail-people')!;
+		expect(people.lastElementChild?.id).toBe('lobby-waiting-chip');
+		expect(people.firstElementChild?.tagName.toLowerCase()).toBe('ov-hidden-participants-indicator');
 	});
 
 	it('opens the participants panel from the people left off the grid', async () => {

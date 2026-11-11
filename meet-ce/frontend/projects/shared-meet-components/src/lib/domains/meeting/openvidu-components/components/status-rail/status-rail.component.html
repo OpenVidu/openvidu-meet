@@ -102,14 +102,20 @@
 				</div>
 			}
 
-			@if (hiddenParticipants(); as hidden) {
-				<ov-hidden-participants-indicator
-					mode="topbar"
-					[class.inert]="!canOpenParticipantsPanel()"
-					[count]="hidden.count"
-					[hiddenParticipantNames]="hidden.names"
-					(clicked)="openParticipantsPanel()"
-				/>
+			@if (hiddenParticipants() || hasWaitingParticipants()) {
+				<div class="status-rail-people">
+					@if (hiddenParticipants(); as hidden) {
+						<ov-hidden-participants-indicator
+							mode="topbar"
+							[class.inert]="!canOpenParticipantsPanel()"
+							[count]="hidden.count"
+							[hiddenParticipantNames]="hidden.names"
+							(clicked)="openParticipantsPanel()"
+						/>
+					}
+
+					<ng-container [ngTemplateOutlet]="endTemplate()" />
+				</div>
 			}
 		</div>
 	</div>

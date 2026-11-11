@@ -286,7 +286,26 @@
 		"ENDED_TITLE": "会議は終了しました",
 		"ENDED_MESSAGE": "入室が許可される前に会議が終了しました。もう一度リクエストすると、次の会議を待つことになります。",
 		"FULL_TITLE": "待機室は満員です",
-		"FULL_MESSAGE": "現在、この会議への参加を待っている人が多すぎます。数分後にもう一度お試しください。"
+		"FULL_MESSAGE": "現在、この会議への参加を待っている人が多すぎます。数分後にもう一度お試しください。",
+		"ADMIN": {
+			"TITLE": "参加待ち",
+			"PLACES_LEFT": "{count, plural, =0 {空きがありません} other {残り # 人分}}",
+			"EVERYONE": "待機中の全員",
+			"ADMIT": "許可",
+			"DENY": "拒否",
+			"ADMIT_NAMED": "{name} を許可",
+			"DENY_NAMED": "{name} を拒否",
+			"ADMIT_COUNT": "{count, plural, other {# 人を許可}}",
+			"DENY_ALL": "すべて拒否",
+			"DENY_ALL_TITLE": "待機中の全員を拒否しますか？",
+			"DENY_ALL_MESSAGE": "参加を待っている全員に、入室が許可されなかったことが表示されます。もう一度参加をリクエストできます。",
+			"CANCEL": "キャンセル",
+			"SHARED_LINK": "共有リンク",
+			"WAITING_COUNT": "{count, plural, other {# 人が参加待ち}}",
+			"WAITING_LABEL": "人が参加待ち",
+			"WANTS_TO_JOIN": "参加をリクエストしています",
+			"VIEW": "表示"
+		}
 	},
 	"SHARE_ACCESS": {
 		"COPY_TOOLTIP": "ルームアクセスリンクをコピー",

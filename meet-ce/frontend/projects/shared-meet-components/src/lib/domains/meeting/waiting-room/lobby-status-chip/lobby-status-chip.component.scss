@@ -1,0 +1,41 @@
+@use '../../openvidu-components/components/status-rail/status-chip' as chip;
+
+:host {
+	display: contents;
+}
+
+// Amber tint, apart from the solid amber of a meeting about to end and of the raised hands.
+.lobby-chip {
+	@include chip.status-chip;
+	max-width: 100%;
+	min-width: 0;
+	overflow: hidden;
+	background-color: color-mix(in srgb, var(--ov-warn-color) 22%, var(--ov-surface-color));
+	border-color: color-mix(in srgb, var(--ov-warn-color) 55%, var(--ov-surface-color));
+	color: var(--ov-text-primary-color);
+	font: inherit;
+
+	&.clickable {
+		@include chip.status-chip-interactive;
+
+		&:hover {
+			background-color: color-mix(in srgb, var(--ov-warn-color) 32%, var(--ov-surface-color));
+		}
+	}
+
+	.status-chip-icon {
+		color: var(--ov-warn-color);
+	}
+
+	.names {
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	// A phone keeps the count alone; the participants panel it opens names them.
+	@media only screen and (max-width: 790px) {
+		.words {
+			display: none;
+		}
+	}
+}

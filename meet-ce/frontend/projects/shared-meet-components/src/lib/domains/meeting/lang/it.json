@@ -286,7 +286,26 @@
 		"ENDED_TITLE": "La riunione è terminata",
 		"ENDED_MESSAGE": "È terminata prima che venissi ammesso. Se chiedi di nuovo, aspetterai la prossima.",
 		"FULL_TITLE": "La sala d'attesa è piena",
-		"FULL_MESSAGE": "Troppe persone stanno aspettando di entrare in questa riunione. Riprova tra qualche minuto."
+		"FULL_MESSAGE": "Troppe persone stanno aspettando di entrare in questa riunione. Riprova tra qualche minuto.",
+		"ADMIN": {
+			"TITLE": "In attesa di entrare",
+			"PLACES_LEFT": "{count, plural, =0 {Nessun posto libero} one {# posto libero} other {# posti liberi}}",
+			"EVERYONE": "Tutti in attesa",
+			"ADMIT": "Ammetti",
+			"DENY": "Rifiuta",
+			"ADMIT_NAMED": "Ammetti {name}",
+			"DENY_NAMED": "Rifiuta {name}",
+			"ADMIT_COUNT": "{count, plural, other {Ammetti #}}",
+			"DENY_ALL": "Rifiuta tutti",
+			"DENY_ALL_TITLE": "Rifiutare tutte le persone in attesa?",
+			"DENY_ALL_MESSAGE": "Tutte le persone in attesa vedranno che non sono state ammesse. Potranno chiedere di nuovo di partecipare.",
+			"CANCEL": "Annulla",
+			"SHARED_LINK": "Link condiviso",
+			"WAITING_COUNT": "{count, plural, other {# in attesa di entrare}}",
+			"WAITING_LABEL": "in attesa di entrare",
+			"WANTS_TO_JOIN": "Chiede di partecipare",
+			"VIEW": "Visualizza"
+		}
 	},
 	"SHARE_ACCESS": {
 		"COPY_TOOLTIP": "Copia il link di accesso alla stanza",

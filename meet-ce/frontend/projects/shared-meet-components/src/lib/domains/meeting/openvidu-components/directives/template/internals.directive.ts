@@ -28,6 +28,18 @@ export class WaitingDirective {
 }
 
 /**
+ * The ***ovStatusRailEnd** directive adds chips at the right end of the meeting's status rail.
+ *
+ * @internal
+ */
+@Directive({
+	selector: '[ovStatusRailEnd]'
+})
+export class StatusRailEndDirective {
+	public template = inject(TemplateRef<any>);
+}
+
+/**
  * The ***ovParticipantPanelBeforeLocalParticipant** directive allows you to inject custom HTML or Angular templates
  * at the top of the participant panel, above the local participant item: the place for content that is about the
  * room rather than about anyone in the list (an invitation link, for instance).

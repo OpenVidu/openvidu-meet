@@ -57,7 +57,9 @@ describe('IframeBridgeService', () => {
 			'participantHandLowerAll',
 			'participantReactionSend',
 			'broadcastStart',
-			'broadcastStop'
+			'broadcastStop',
+			'lobbyAdmit',
+			'lobbyReject'
 		]);
 		commandService.meetingEnd.and.resolveTo();
 		commandService.meetingLeave.and.resolveTo();
@@ -76,6 +78,8 @@ describe('IframeBridgeService', () => {
 		commandService.participantReactionSend.and.resolveTo();
 		commandService.broadcastStart.and.resolveTo();
 		commandService.broadcastStop.and.resolveTo();
+		commandService.lobbyAdmit.and.resolveTo();
+		commandService.lobbyReject.and.resolveTo();
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -289,6 +293,20 @@ describe('IframeBridgeService', () => {
 				[{ broadcastIds: undefined }],
 				[{ broadcastIds: ['bc1'] }]
 			]);
+		});
+
+		it('forwards LOBBY_ADMIT and LOBBY_REJECT with the participants named, or none for everyone waiting', () => {
+			startBridge();
+
+			postFromHost({ command: EmbeddedCommandName.LOBBY_ADMIT, payload: { participantIdentities: ['zoe'] } });
+			postFromHost({ command: EmbeddedCommandName.LOBBY_ADMIT });
+			postFromHost({ command: EmbeddedCommandName.LOBBY_REJECT, payload: {} });
+
+			expect(commandService.lobbyAdmit.calls.allArgs()).toEqual([
+				[{ participantIdentities: ['zoe'] }],
+				[{ participantIdentities: undefined }]
+			]);
+			expect(commandService.lobbyReject).toHaveBeenCalledOnceWith({ participantIdentities: undefined });
 		});
 
 		it('ignores malformed messages (no command)', () => {

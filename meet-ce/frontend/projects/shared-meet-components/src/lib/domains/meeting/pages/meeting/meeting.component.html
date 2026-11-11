@@ -1,3 +1,5 @@
+<ng-content select="ov-lobby-notice" />
+
 @switch (entryFlow.step()) {
 	@case ('preparing') {
 		<div class="prejoin-loading-container">
@@ -75,10 +77,11 @@
 					<ng-content select="ov-meeting-toolbar-more-options-menu" />
 				</ng-container>
 
-				<!-- Panel Before Local Participant: the invitation heads the panel because it is about the
-			     room, not about anyone in the list. The raised hands strip follows, above your own row,
+				<!-- Panel Before Local Participant: those waiting to join head the panel, then the invitation,
+			     which is about the room, not about anyone in the list. The raised hands strip follows, above your own row,
 			     because lowering every hand lowers yours too -->
 				<div *ovParticipantPanelBeforeLocalParticipant>
+					<ng-content select="ov-lobby-panel-section" />
 					<ng-content select="ov-meeting-invite-panel" />
 					<ov-meeting-raised-hands-strip />
 				</div>
@@ -118,6 +121,10 @@
 				<!-- Custom layout component -->
 				<ng-container *ovLayout>
 					<ng-content select="ov-meeting-custom-layout" />
+				</ng-container>
+
+				<ng-container *ovStatusRailEnd>
+					<ng-content select="ov-lobby-status-chip" />
 				</ng-container>
 
 				<ng-container *ovWaiting>

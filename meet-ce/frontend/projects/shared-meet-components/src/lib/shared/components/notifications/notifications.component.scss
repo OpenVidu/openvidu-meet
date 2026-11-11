@@ -99,6 +99,10 @@
 	&:hover {
 		text-decoration: underline;
 	}
+
+	&.secondary {
+		color: var(--ov-text-secondary-color);
+	}
 }
 
 .notification-dismiss {

@@ -25,6 +25,14 @@
 .status-rail-end {
 	justify-content: flex-end;
 	min-width: 0;
+}
+
+// Who is not on the grid: the people off it, then those waiting to be let in, at the very end.
+.status-rail-people {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
 
 	ov-hidden-participants-indicator {
 		min-width: 0;
@@ -163,7 +171,8 @@
 	}
 
 	.status-rail-end,
-	.status-rail-end ov-hidden-participants-indicator {
+	.status-rail-people,
+	.status-rail-people ov-hidden-participants-indicator {
 		min-width: auto;
 	}
 
@@ -199,7 +208,7 @@
 			}
 		}
 
-		.status-rail-end ov-hidden-participants-indicator {
+		.status-rail-people {
 			grid-area: 2 / 3;
 			justify-self: end;
 		}
