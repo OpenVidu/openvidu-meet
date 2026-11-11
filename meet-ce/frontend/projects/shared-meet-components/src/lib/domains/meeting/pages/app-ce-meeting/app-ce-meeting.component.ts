@@ -7,9 +7,9 @@ import { MeetingSettingsExtensionsComponent } from '../../customization/meeting-
 import { MeetingToolbarExtraButtonsComponent } from '../../customization/meeting-toolbar-extra-buttons/meeting-toolbar-extra-buttons.component';
 import { MeetingToolbarLeaveButtonComponent } from '../../customization/meeting-toolbar-leave-button/meeting-toolbar-leave-button.component';
 import { MeetingToolbarMoreOptionsMenuComponent } from '../../customization/meeting-toolbar-more-options-menu/meeting-toolbar-more-options-menu.component';
-import { LobbyNoticeComponent } from '../../waiting-room/lobby-notice/lobby-notice.component';
-import { LobbyPanelSectionComponent } from '../../waiting-room/lobby-panel-section/lobby-panel-section.component';
-import { LobbyStatusChipComponent } from '../../waiting-room/lobby-status-chip/lobby-status-chip.component';
+import { WaitingRoomNoticeComponent } from '../../waiting-room/waiting-room-notice/waiting-room-notice.component';
+import { WaitingRoomPanelSectionComponent } from '../../waiting-room/waiting-room-panel-section/waiting-room-panel-section.component';
+import { WaitingRoomStatusChipComponent } from '../../waiting-room/waiting-room-status-chip/waiting-room-status-chip.component';
 import { MeetingWaitingRoomComponent } from '../../waiting-room/meeting-waiting-room/meeting-waiting-room.component';
 import { MeetingComponent } from '../meeting/meeting.component';
 
@@ -26,9 +26,9 @@ import { MeetingComponent } from '../meeting/meeting.component';
 		MeetingToolbarMoreOptionsMenuComponent,
 		MeetingSettingsExtensionsComponent,
 		MeetingWaitingRoomComponent,
-		LobbyPanelSectionComponent,
-		LobbyStatusChipComponent,
-		LobbyNoticeComponent
+		WaitingRoomPanelSectionComponent,
+		WaitingRoomStatusChipComponent,
+		WaitingRoomNoticeComponent
 	],
 	template: `
 		<ov-meeting>
@@ -41,9 +41,9 @@ import { MeetingComponent } from '../meeting/meeting.component';
 			<ov-meeting-settings-extensions />
 			<ov-meeting-custom-layout />
 			<ov-meeting-waiting-room />
-			<ov-lobby-panel-section />
-			<ov-lobby-status-chip />
-			<ov-lobby-notice />
+			<ov-waiting-room-panel-section />
+			<ov-waiting-room-status-chip />
+			<ov-waiting-room-notice />
 		</ov-meeting>
 	`,
 	styles: ''

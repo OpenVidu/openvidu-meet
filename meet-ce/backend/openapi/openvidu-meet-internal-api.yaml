@@ -32,8 +32,8 @@ paths:
         $ref: './room-members/internal/room-members.yaml#/~1rooms~1{roomId}~1members~1token~1refresh'
     /meetings/{roomId}/reactions:
         $ref: './meetings/internal/meetings.yaml#/~1meetings~1{roomId}~1reactions'
-    /meetings/{roomId}/lobby/leave:
-        $ref: './meetings/internal/meetings.yaml#/~1meetings~1{roomId}~1lobby~1leave'
+    /meetings/{roomId}/waiting-room/leave:
+        $ref: './meetings/internal/meetings.yaml#/~1meetings~1{roomId}~1waiting-room~1leave'
     /recordings/{recordingId}/link:
         $ref: './recordings/internal/recordings.yaml#/~1recordings~1{recordingId}~1link'
     /ai/assistants:

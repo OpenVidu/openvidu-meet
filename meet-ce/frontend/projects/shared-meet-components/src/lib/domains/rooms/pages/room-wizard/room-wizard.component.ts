@@ -306,9 +306,12 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 
 	/** A creation request has no `null` to remove a message with, so a cleared waiting room message is left out. */
 	private forCreation({ config, ...options }: MeetRoomOptions): MeetRoomOptions {
-		const lobby = config?.lobby && { ...config.lobby, message: config.lobby.message ?? undefined };
+		const waitingRoom = config?.waitingRoom && {
+			...config.waitingRoom,
+			message: config.waitingRoom.message ?? undefined
+		};
 
-		return { ...options, config: { ...config, lobby } };
+		return { ...options, config: { ...config, waitingRoom } };
 	}
 
 	private async createPendingMembers(roomId: string, members: MeetRoomMemberOptions[]): Promise<void> {

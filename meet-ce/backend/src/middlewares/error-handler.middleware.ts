@@ -1,4 +1,4 @@
-import type { MeetLobbyStatus } from '@openvidu-meet/typings';
+import type { MeetWaitingRoomStatus } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import type { z } from 'zod';
 import { container } from '../config/dependency-injector.config.js';
@@ -8,7 +8,7 @@ import {
 	errorMalformedPath,
 	errorPayloadTooLarge,
 	internalError,
-	LobbyWaitEndedError,
+	WaitingRoomWaitEndedError,
 	OpenViduMeetError,
 	toMeetError
 } from '../models/error.model.js';
@@ -22,7 +22,7 @@ configureZodErrorMessages();
 interface ErrorResponse {
 	error: string;
 	message: string;
-	status?: MeetLobbyStatus;
+	status?: MeetWaitingRoomStatus;
 	details?: {
 		field: string;
 		message: string;
@@ -46,7 +46,7 @@ export const rejectRequestFromMeetError = (res: Response, error: OpenViduMeetErr
 	const errorResponse: ErrorResponse = {
 		error: error.name,
 		message: error.message,
-		...(error instanceof LobbyWaitEndedError && error.status && { status: error.status })
+		...(error instanceof WaitingRoomWaitEndedError && error.status && { status: error.status })
 	};
 	return res.status(error.statusCode).json(errorResponse);
 };

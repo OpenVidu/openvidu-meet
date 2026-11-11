@@ -27,6 +27,6 @@ None.
 - Console UI: the share dialog of the Rooms and room detail pages, for `room_member` users.
 - Meeting UI: the share link, for a participant whose permissions do not cover the speaker link.
 - Webhooks, embedded API, deployment configuration: not affected.
-- `add-waiting-room`: the risk "`roomShareAccessLinks` reveals the moderator link" goes away, because the moderator link grants `lobbyBypass`, which a waiter lacks. Its design and proposal drop that risk and the related documentation tasks.
+- `add-waiting-room`: the risk "`roomShareAccessLinks` reveals the moderator link" goes away, because the moderator link grants `waitingRoomBypass`, which a waiter lacks. Its design and proposal drop that risk and the related documentation tasks.
 - `CHANGELOG.md`: one line under 3.10.0, `Fixed`, `Integration`.
 - openvidu.io: `docs/meet/features/rooms/access.md` says that sharing offers only the links whose permissions the sharer holds.

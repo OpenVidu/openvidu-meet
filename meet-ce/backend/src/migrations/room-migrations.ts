@@ -176,14 +176,14 @@ const roomMigrationV8ToV9Transform: SchemaTransform<MeetRoomDocument> = (room) =
 	return room;
 };
 
-// v10 adds the waiting room: its room config switch, off, and the `lobbyBypass` and `lobbyAdmin`
+// v10 adds the waiting room: its room config switch, off, and the `waitingRoomBypass` and `waitingRoomAdmin`
 // permissions, completed by the same normalization as the previous steps and then granted to the
 // moderator role, as a room created from this version on has them.
 const roomMigrationV9ToV10Transform: SchemaTransform<MeetRoomDocument> = (room) => {
-	room.config.lobby = { enabled: false };
+	room.config.waitingRoom = { enabled: false };
 	normalizeRolePermissionsTransform(room);
-	room.roles.moderator.permissions.lobbyBypass = true;
-	room.roles.moderator.permissions.lobbyAdmin = true;
+	room.roles.moderator.permissions.waitingRoomBypass = true;
+	room.roles.moderator.permissions.waitingRoomAdmin = true;
 	return room;
 };
 

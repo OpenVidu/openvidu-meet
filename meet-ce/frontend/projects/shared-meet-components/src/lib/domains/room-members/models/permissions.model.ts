@@ -191,15 +191,15 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 		icon: 'hourglass_top',
 		permissions: [
 			{
-				key: 'lobbyBypass',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.lobbyBypass.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.lobbyBypass.DESCRIPTION',
+				key: 'waitingRoomBypass',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.waitingRoomBypass.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.waitingRoomBypass.DESCRIPTION',
 				icon: 'fast_forward'
 			},
 			{
-				key: 'lobbyAdmin',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.lobbyAdmin.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.lobbyAdmin.DESCRIPTION',
+				key: 'waitingRoomAdmin',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.waitingRoomAdmin.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.waitingRoomAdmin.DESCRIPTION',
 				icon: 'how_to_reg'
 			}
 		]

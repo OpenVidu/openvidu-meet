@@ -3,7 +3,7 @@ import {
 	EmbeddedCommandName,
 	MeetBroadcastStartOptions,
 	MeetBroadcastStopOptions,
-	MeetLobbyDecisionOptions,
+	MeetWaitingRoomDecisionOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetReaction,
@@ -23,7 +23,7 @@ import { MeetingContextService } from '../../meeting/services/meeting-context.se
 import { MeetingHandService } from '../../meeting/services/meeting-hand.service';
 import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
 import { MeetingReactionsService } from '../../meeting/services/meeting-reactions.service';
-import { LobbyAdminService } from '../../meeting/waiting-room/lobby-admin.service';
+import { WaitingRoomAdminService } from '../../meeting/waiting-room/waiting-room-admin.service';
 import { WaitingRoomService } from '../../meeting/waiting-room/waiting-room.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
@@ -59,7 +59,7 @@ export class EmbeddedCommandService {
 	private readonly broadcastService = inject(BroadcastService);
 	private readonly broadcastState = inject(BroadcastStateService);
 	private readonly waitingRoom = inject(WaitingRoomService);
-	private readonly lobbyAdmin = inject(LobbyAdminService);
+	private readonly waitingRoomAdmin = inject(WaitingRoomAdminService);
 	private readonly log = inject(LoggerService).get('EmbeddedCommandService');
 	private lastRecordingStart: Promise<void> | undefined;
 
@@ -245,15 +245,15 @@ export class EmbeddedCommandService {
 		});
 	}
 
-	async lobbyAdmit(options: MeetLobbyDecisionOptions = {}): Promise<void> {
-		await this.run(EmbeddedCommandName.LOBBY_ADMIT, 'lobbyAdmin', async () => {
-			await this.lobbyAdmin.admit(options.participantIdentities);
+	async waitingRoomAdmit(options: MeetWaitingRoomDecisionOptions = {}): Promise<void> {
+		await this.run(EmbeddedCommandName.WAITING_ROOM_ADMIT, 'waitingRoomAdmin', async () => {
+			await this.waitingRoomAdmin.admit(options.participantIdentities);
 		});
 	}
 
-	async lobbyReject(options: MeetLobbyDecisionOptions = {}): Promise<void> {
-		await this.run(EmbeddedCommandName.LOBBY_REJECT, 'lobbyAdmin', async () => {
-			await this.lobbyAdmin.reject(options.participantIdentities);
+	async waitingRoomReject(options: MeetWaitingRoomDecisionOptions = {}): Promise<void> {
+		await this.run(EmbeddedCommandName.WAITING_ROOM_REJECT, 'waitingRoomAdmin', async () => {
+			await this.waitingRoomAdmin.reject(options.participantIdentities);
 		});
 	}
 

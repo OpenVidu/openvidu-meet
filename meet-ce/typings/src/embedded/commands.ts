@@ -1,6 +1,6 @@
 import { MeetReaction } from '../reaction.js';
 import { MeetBroadcastStartOptions, MeetBroadcastStopOptions } from '../request/broadcast-request.js';
-import { MeetLobbyDecisionOptions } from '../request/lobby-request.js';
+import { MeetWaitingRoomDecisionOptions } from '../request/waiting-room-request.js';
 import { MeetParticipantMuteOptions } from '../request/meeting-request.js';
 import { MeetParticipantModerationAction } from '../request/room-member-request.js';
 
@@ -67,17 +67,17 @@ export enum EmbeddedCommandName {
 	 * Admits the waiting participants named by `participantIdentities`, one or several, all or none of
 	 * them, or everyone waiting when it is omitted, in which case the first in line up to the free
 	 * places are admitted and the rest keep their place. An empty `participantIdentities` is refused.
-	 * @permission lobbyAdmin
+	 * @permission waitingRoomAdmin
 	 */
-	LOBBY_ADMIT = 'lobbyAdmit',
+	WAITING_ROOM_ADMIT = 'waitingRoomAdmit',
 	/**
 	 * Rejects the waiting participants named by `participantIdentities`, one or several, all or none
 	 * of them, or everyone waiting when it is omitted, in which case everyone waiting when the command
 	 * runs is rejected. An empty `participantIdentities` is refused. A rejected participant may ask to
 	 * join again.
-	 * @permission lobbyAdmin
+	 * @permission waitingRoomAdmin
 	 */
-	LOBBY_REJECT = 'lobbyReject',
+	WAITING_ROOM_REJECT = 'waitingRoomReject',
 	/**
 	 * Sends a reaction from the local participant, which every participant sees for a few seconds and
 	 * is notified of through the `participantReactionSent` event.
@@ -204,15 +204,15 @@ export interface EmbeddedCommandPayloads {
 	 */
 	[EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL]: void;
 	/**
-	 * Payload for the {@link EmbeddedCommandName.LOBBY_ADMIT} command. When `participantIdentities` is
-	 * omitted, everyone waiting, up to the free places. See {@link MeetLobbyDecisionOptions}.
+	 * Payload for the {@link EmbeddedCommandName.WAITING_ROOM_ADMIT} command. When `participantIdentities` is
+	 * omitted, everyone waiting, up to the free places. See {@link MeetWaitingRoomDecisionOptions}.
 	 */
-	[EmbeddedCommandName.LOBBY_ADMIT]: MeetLobbyDecisionOptions;
+	[EmbeddedCommandName.WAITING_ROOM_ADMIT]: MeetWaitingRoomDecisionOptions;
 	/**
-	 * Payload for the {@link EmbeddedCommandName.LOBBY_REJECT} command. When `participantIdentities` is
-	 * omitted, everyone waiting. See {@link MeetLobbyDecisionOptions}.
+	 * Payload for the {@link EmbeddedCommandName.WAITING_ROOM_REJECT} command. When `participantIdentities` is
+	 * omitted, everyone waiting. See {@link MeetWaitingRoomDecisionOptions}.
 	 */
-	[EmbeddedCommandName.LOBBY_REJECT]: MeetLobbyDecisionOptions;
+	[EmbeddedCommandName.WAITING_ROOM_REJECT]: MeetWaitingRoomDecisionOptions;
 	/**
 	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_REACTION_SEND} command.
 	 * `reaction` is one of the reactions in {@link MeetReaction}.
@@ -402,25 +402,25 @@ export interface EmbeddedParticipantHandLowerAllCommand {
 }
 
 /**
- * Command message for {@link EmbeddedCommandName.LOBBY_ADMIT}: the command name plus its optional
+ * Command message for {@link EmbeddedCommandName.WAITING_ROOM_ADMIT}: the command name plus its optional
  * payload (omitted payload or `participantIdentities` = everyone waiting), derived from
  * {@link EmbeddedCommandPayloadFor}.
  * @category Communication
  */
-export interface EmbeddedLobbyAdmitCommand {
-	command: EmbeddedCommandName.LOBBY_ADMIT;
-	payload?: EmbeddedCommandPayloadFor<EmbeddedCommandName.LOBBY_ADMIT>;
+export interface EmbeddedWaitingRoomAdmitCommand {
+	command: EmbeddedCommandName.WAITING_ROOM_ADMIT;
+	payload?: EmbeddedCommandPayloadFor<EmbeddedCommandName.WAITING_ROOM_ADMIT>;
 }
 
 /**
- * Command message for {@link EmbeddedCommandName.LOBBY_REJECT}: the command name plus its optional
+ * Command message for {@link EmbeddedCommandName.WAITING_ROOM_REJECT}: the command name plus its optional
  * payload (omitted payload or `participantIdentities` = everyone waiting), derived from
  * {@link EmbeddedCommandPayloadFor}.
  * @category Communication
  */
-export interface EmbeddedLobbyRejectCommand {
-	command: EmbeddedCommandName.LOBBY_REJECT;
-	payload?: EmbeddedCommandPayloadFor<EmbeddedCommandName.LOBBY_REJECT>;
+export interface EmbeddedWaitingRoomRejectCommand {
+	command: EmbeddedCommandName.WAITING_ROOM_REJECT;
+	payload?: EmbeddedCommandPayloadFor<EmbeddedCommandName.WAITING_ROOM_REJECT>;
 }
 
 /**
@@ -542,8 +542,8 @@ export type EmbeddedCommand =
 	| EmbeddedParticipantHandRaiseCommand
 	| EmbeddedParticipantHandLowerCommand
 	| EmbeddedParticipantHandLowerAllCommand
-	| EmbeddedLobbyAdmitCommand
-	| EmbeddedLobbyRejectCommand
+	| EmbeddedWaitingRoomAdmitCommand
+	| EmbeddedWaitingRoomRejectCommand
 	| EmbeddedParticipantReactionSendCommand
 	| EmbeddedMediaToggleAudioCommand
 	| EmbeddedMediaToggleVideoCommand

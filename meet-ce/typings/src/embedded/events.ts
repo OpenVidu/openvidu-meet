@@ -1,7 +1,7 @@
 import { MeetBroadcastInfo } from '../database/broadcast.entity.js';
 import { MeetRecordingStatus } from '../database/recording.entity.js';
 import { MeetReaction } from '../reaction.js';
-import { MeetLobbyParticipant, MeetLobbyStatus } from '../response/lobby-response.js';
+import { MeetWaitingRoomParticipant, MeetWaitingRoomStatus } from '../response/waiting-room-response.js';
 import { MeetParticipantInfo, MeetParticipantPayload } from '../response/participant-response.js';
 import type { MeetParticipantDeparturePayload } from '../webhook.js';
 
@@ -43,9 +43,9 @@ export enum EmbeddedEventName {
 	 */
 	PARTICIPANT_ROLE_CHANGED = 'participantRoleChanged',
 	/**
-	 * Event emitted to the participants who hold `lobbyAdmin` when a participant asks to join and
+	 * Event emitted to the participants who hold `waitingRoomAdmin` when a participant asks to join and
 	 * waits, as soon as they ask. Participants already waiting when the local participant joins, and a
-	 * participant back in line after an admission that failed, are reported by `lobbyUpdated`, not by
+	 * participant back in line after an admission that failed, are reported by `waitingRoomUpdated`, not by
 	 * this event.
 	 */
 	PARTICIPANT_KNOCKED = 'participantKnocked',
@@ -100,20 +100,20 @@ export enum EmbeddedEventName {
 	 */
 	BROADCAST_ENDED = 'broadcastEnded',
 	/**
-	 * Event emitted to the participants who hold `lobbyAdmin` with the whole list of participants
+	 * Event emitted to the participants who hold `waitingRoomAdmin` with the whole list of participants
 	 * waiting to join and the free places of the meeting: on joining, and on every change of the list.
 	 */
-	LOBBY_UPDATED = 'lobbyUpdated',
+	WAITING_ROOM_UPDATED = 'waitingRoomUpdated',
 	/**
 	 * Event emitted to the participant who asks to join, for every state of their wait: `waiting`
 	 * (repeated every time their position in line changes), `admitted`, `rejected`, `left`, `expired`,
 	 * `meeting_ended` and `room_closed`. The first `waiting` comes with the first state the meeting
 	 * receives, so a participant whose connection never receives one gets none. `admitted` is not
 	 * the join: `meetingJoined` confirms it, and a join that finds the meeting full after `admitted`
-	 * raises no lobby event. No lobby event follows an access or connection error: its screen and
+	 * raises no waiting room event. No waiting room event follows an access or connection error: its screen and
 	 * `embeddedCloseRequested` apply.
 	 */
-	LOBBY_STATUS_CHANGED = 'lobbyStatusChanged',
+	WAITING_ROOM_STATUS_CHANGED = 'waitingRoomStatusChanged',
 	/**
 	 * Event emitted when the participant asks to close OpenVidu Meet by dismissing the post-meeting,
 	 * join, error or recording screen. The host application responds by removing the embedded
@@ -244,11 +244,11 @@ export interface EmbeddedEventPayloads {
 	};
 	/**
 	 * Payload for the {@link EmbeddedEventName.PARTICIPANT_KNOCKED} event. `participant` is who asks
-	 * to join (see {@link MeetLobbyParticipant}).
+	 * to join (see {@link MeetWaitingRoomParticipant}).
 	 */
 	[EmbeddedEventName.PARTICIPANT_KNOCKED]: {
 		roomId: string;
-		participant: MeetLobbyParticipant;
+		participant: MeetWaitingRoomParticipant;
 	};
 	/**
 	 * Payload for the {@link EmbeddedEventName.PARTICIPANT_REACTION_SENT} event.
@@ -306,25 +306,25 @@ export interface EmbeddedEventPayloads {
 	 */
 	[EmbeddedEventName.BROADCAST_ENDED]: MeetBroadcastInfo;
 	/**
-	 * Payload for the {@link EmbeddedEventName.LOBBY_UPDATED} event: `participants` are the participants
-	 * waiting, in arrival order (see {@link MeetLobbyParticipant}), and `availablePlaces` the free places of
+	 * Payload for the {@link EmbeddedEventName.WAITING_ROOM_UPDATED} event: `participants` are the participants
+	 * waiting, in arrival order (see {@link MeetWaitingRoomParticipant}), and `availablePlaces` the free places of
 	 * the meeting, or `null` for a room without a limit.
 	 */
-	[EmbeddedEventName.LOBBY_UPDATED]: {
+	[EmbeddedEventName.WAITING_ROOM_UPDATED]: {
 		roomId: string;
-		participants: MeetLobbyParticipant[];
+		participants: MeetWaitingRoomParticipant[];
 		availablePlaces: number | null;
 	};
 	/**
-	 * Payload for the {@link EmbeddedEventName.LOBBY_STATUS_CHANGED} event. `participantIdentity` is the
+	 * Payload for the {@link EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED} event. `participantIdentity` is the
 	 * identity the participant will have in the meeting, the one the server answered when they asked,
-	 * `status` the state of the wait (see {@link MeetLobbyStatus}) and `queuePosition`, from 1, the place
+	 * `status` the state of the wait (see {@link MeetWaitingRoomStatus}) and `queuePosition`, from 1, the place
 	 * in line while `status` is `waiting`.
 	 */
-	[EmbeddedEventName.LOBBY_STATUS_CHANGED]: {
+	[EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED]: {
 		roomId: string;
 		participantIdentity: string;
-		status: MeetLobbyStatus;
+		status: MeetWaitingRoomStatus;
 		queuePosition?: number;
 	};
 	/**
@@ -456,9 +456,9 @@ export interface EmbeddedParticipantKnockedEvent {
  * payload, derived from {@link EmbeddedEventPayloadFor}.
  * @category Communication
  */
-export interface EmbeddedLobbyUpdatedEvent {
-	event: EmbeddedEventName.LOBBY_UPDATED;
-	payload: EmbeddedEventPayloadFor<EmbeddedEventName.LOBBY_UPDATED>;
+export interface EmbeddedWaitingRoomUpdatedEvent {
+	event: EmbeddedEventName.WAITING_ROOM_UPDATED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.WAITING_ROOM_UPDATED>;
 }
 
 /**
@@ -466,9 +466,9 @@ export interface EmbeddedLobbyUpdatedEvent {
  * payload, derived from {@link EmbeddedEventPayloadFor}.
  * @category Communication
  */
-export interface EmbeddedLobbyStatusChangedEvent {
-	event: EmbeddedEventName.LOBBY_STATUS_CHANGED;
-	payload: EmbeddedEventPayloadFor<EmbeddedEventName.LOBBY_STATUS_CHANGED>;
+export interface EmbeddedWaitingRoomStatusChangedEvent {
+	event: EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED>;
 }
 
 /**
@@ -611,8 +611,8 @@ export type EmbeddedEvent =
 	| EmbeddedBroadcastStartedEvent
 	| EmbeddedBroadcastUpdatedEvent
 	| EmbeddedBroadcastEndedEvent
-	| EmbeddedLobbyUpdatedEvent
-	| EmbeddedLobbyStatusChangedEvent
+	| EmbeddedWaitingRoomUpdatedEvent
+	| EmbeddedWaitingRoomStatusChangedEvent
 	| EmbeddedCloseRequestedEvent
 	| EmbeddedJoinedEvent
 	| EmbeddedLeftEvent

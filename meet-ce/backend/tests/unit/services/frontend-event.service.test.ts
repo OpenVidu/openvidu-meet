@@ -220,13 +220,13 @@ describe('FrontendEventService signal payloads', () => {
 	it('tells the whole meeting that the waiting list changed, naming nobody, while the room exists', async () => {
 		const { service, sent } = buildService();
 
-		await service.sendLobbyUpdatedSignal('room-1');
+		await service.sendWaitingRoomUpdatedSignal('room-1');
 
 		expect(sent).toEqual([
 			{
 				roomName: 'room-1',
 				data: { roomId: 'room-1', timestamp: expect.any(Number) },
-				options: { topic: MeetSignalType.MEET_LOBBY_UPDATED }
+				options: { topic: MeetSignalType.MEET_WAITING_ROOM_UPDATED }
 			}
 		]);
 	});
@@ -241,7 +241,7 @@ describe('FrontendEventService waiting list signal', () => {
 			>)
 		);
 
-		await service.sendLobbyUpdatedSignal('room-1');
+		await service.sendWaitingRoomUpdatedSignal('room-1');
 
 		expect(sendData).not.toHaveBeenCalled();
 	});

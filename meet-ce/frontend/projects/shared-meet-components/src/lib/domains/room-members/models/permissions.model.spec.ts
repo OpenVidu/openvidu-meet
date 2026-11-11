@@ -39,8 +39,8 @@ describe('PERMISSION_GROUPS', () => {
 
 		expect(waitingRoom).toBeDefined();
 		expect(waitingRoom!.permissions.map((item) => [item.key, item.dependsOn])).toEqual([
-			['lobbyBypass', undefined],
-			['lobbyAdmin', undefined]
+			['waitingRoomBypass', undefined],
+			['waitingRoomAdmin', undefined]
 		]);
 	});
 

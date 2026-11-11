@@ -209,11 +209,11 @@
           "LABEL": "書き込み",
           "DESCRIPTION": "チャットメッセージの送信を許可します。「読み取り」が必要です"
         },
-        "lobbyBypass": {
+        "waitingRoomBypass": {
           "LABEL": "待たずに参加",
           "DESCRIPTION": "待機室があるルームに、承認を待たずに参加することを許可します"
         },
-        "lobbyAdmin": {
+        "waitingRoomAdmin": {
           "LABEL": "参加者を承認",
           "DESCRIPTION": "待機中の参加者を承認または拒否することを許可します"
         }

@@ -241,13 +241,13 @@ The server SHALL reject with `401` a room member token issued before the room's 
 
 #### Scenario: Waiting room turned on
 - **GIVEN** a room member token for a room with the waiting room off
-- **WHEN** a manager of the room calls `updateRoomConfig` with `lobby.enabled` true
+- **WHEN** a manager of the room calls `updateRoomConfig` with `waitingRoom.enabled` true
 - **AND** the holder calls `getRoom` with that token
 - **THEN** the server answers `401` with message `Invalid token`
 
 #### Scenario: Waiting room message changed
 - **GIVEN** a room member token for a room with the waiting room on
-- **WHEN** a manager calls `updateRoomConfig` changing only `lobby.message`
+- **WHEN** a manager calls `updateRoomConfig` changing only `waitingRoom.message`
 - **THEN** the token is still accepted
 
 ### Requirement: Member and user changes invalidate room member tokens

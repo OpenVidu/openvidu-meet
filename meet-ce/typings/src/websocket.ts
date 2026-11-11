@@ -14,7 +14,7 @@ export enum MeetWebSocketCloseCode {
  * Message the server sends on a WebSocket connection.
  */
 export interface MeetWebSocketMessage<T = unknown> {
-	/** Type of the message, namespaced by the feature that sends it (`lobby.state`), or {@link MEET_WEBSOCKET_HEARTBEAT} */
+	/** Type of the message, namespaced by the feature that sends it (`waitingRoom.state`), or {@link MEET_WEBSOCKET_HEARTBEAT} */
 	type: string;
 	/** Payload of the message; a heartbeat has none */
 	data?: T;

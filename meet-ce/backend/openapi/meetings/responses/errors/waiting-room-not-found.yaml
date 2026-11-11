@@ -1,0 +1,19 @@
+description: >
+    Room not found, or a participant named in `participantIdentities` that no longer waits: it left, was
+    decided on by another request, expired or never existed, or the room's waiting room is off. Nobody is
+    admitted or rejected
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        examples:
+            participant_not_waiting:
+                summary: A participant named no longer waits
+                value:
+                    error: 'Waiting Room Error'
+                    message: "Participant 'ana-a1b2c3' is not waiting in room 'room_123'"
+            room_not_found:
+                summary: Room not found
+                value:
+                    error: 'Room Error'
+                    message: 'Room "room_123" does not exist'

@@ -9,7 +9,7 @@ import { RedisKeyName } from '../models/redis.model.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
 import { LiveKitService } from './livekit.service.js';
-import { LobbyService } from './lobby/lobby.service.js';
+import { WaitingRoomService } from './waiting-room/waiting-room.service.js';
 import { LoggerService } from './logger.service.js';
 import { MutexService } from './mutex.service.js';
 import { RedisService } from './redis.service.js';
@@ -29,7 +29,7 @@ export class MeetingDurationLimitService {
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(RedisService) protected redisService: RedisService,
 		@inject(MutexService) protected mutexService: MutexService,
-		@inject(LobbyService) protected lobbyService: LobbyService
+		@inject(WaitingRoomService) protected waitingRoomService: WaitingRoomService
 	) {
 		this.taskSchedulerService.registerTask({
 			name: 'reconcileDurationLimitTimersGC',
@@ -272,7 +272,7 @@ export class MeetingDurationLimitService {
 				}
 
 				if (deleted) {
-					await this.lobbyService.endMeeting(roomId, MeetEventOrigin.SYSTEM);
+					await this.waitingRoomService.endMeeting(roomId, MeetEventOrigin.SYSTEM);
 				} else {
 					await this.clearMeetingEndedReason(roomId, livekitRoom.sid);
 				}

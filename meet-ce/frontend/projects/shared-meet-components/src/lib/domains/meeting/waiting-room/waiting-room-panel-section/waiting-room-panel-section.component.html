@@ -1,0 +1,81 @@
+@if (rows().length > 0) {
+	<section id="waiting-room-panel-section" class="waiting-room-section" aria-labelledby="waiting-room-section-title">
+		<div class="waiting-room-header">
+			<mat-icon class="waiting-room-header-icon">hourglass_top</mat-icon>
+			<h3 id="waiting-room-section-title" class="waiting-room-title">
+				{{ 'WAITING_ROOM.ADMIN.TITLE' | translate }}
+			</h3>
+			<span id="waiting-room-waiting-count" class="waiting-room-count">{{ rows().length }}</span>
+			@let places = availablePlaces();
+			@if (places !== null) {
+				<span id="waiting-room-places-left" class="waiting-room-places" [class.none]="places === 0">
+					{{ 'WAITING_ROOM.ADMIN.PLACES_LEFT' | translate: { count: places } }}
+				</span>
+			}
+		</div>
+
+		@if (rows().length > 1) {
+			<div id="waiting-room-bulk-actions" class="panel-bulk-actions">
+				<span class="bulk-label">{{ 'WAITING_ROOM.ADMIN.EVERYONE' | translate }}</span>
+				<button
+					mat-stroked-button
+					id="waiting-room-deny-all-btn"
+					class="waiting-room-btn"
+					[disabled]="isBusy()"
+					(click)="confirmDenyAll()"
+				>
+					{{ 'WAITING_ROOM.ADMIN.DENY_ALL' | translate }}
+				</button>
+				<button
+					mat-flat-button
+					id="waiting-room-admit-shown-btn"
+					class="waiting-room-btn admit"
+					[disabled]="isBusy() || admittable() === 0"
+					(click)="admitShown()"
+				>
+					{{ 'WAITING_ROOM.ADMIN.ADMIT_COUNT' | translate: { count: admittable() } }}
+				</button>
+			</div>
+		}
+
+		<ul class="waiting-room-rows">
+			@for (row of rows(); track row.participant.participantIdentity) {
+				<li class="waiting-room-row" [attr.data-participant-identity]="row.participant.participantIdentity">
+					<div class="waiting-room-who">
+						<span class="waiting-room-name">
+							{{ row.name }}
+							@if (row.sharesName) {
+								<span class="waiting-room-knock-time"
+									>&middot; {{ row.knockedAt | date: 'HH:mm' }}</span
+								>
+							}
+						</span>
+						@if (row.viaSharedLink) {
+							<span class="waiting-room-shared-link">{{
+								'WAITING_ROOM.ADMIN.SHARED_LINK' | translate
+							}}</span>
+						}
+					</div>
+					<button
+						mat-stroked-button
+						class="waiting-room-btn waiting-room-deny-btn"
+						[disabled]="isBusy()"
+						[attr.aria-label]="'WAITING_ROOM.ADMIN.DENY_NAMED' | translate: { name: row.name }"
+						(click)="deny(row)"
+					>
+						{{ 'WAITING_ROOM.ADMIN.DENY' | translate }}
+					</button>
+					<button
+						mat-flat-button
+						class="waiting-room-btn admit waiting-room-admit-btn"
+						[disabled]="isBusy() || availablePlaces() === 0"
+						[attr.aria-label]="'WAITING_ROOM.ADMIN.ADMIT_NAMED' | translate: { name: row.name }"
+						(click)="admit(row)"
+					>
+						{{ 'WAITING_ROOM.ADMIN.ADMIT' | translate }}
+					</button>
+				</li>
+			}
+		</ul>
+	</section>
+}

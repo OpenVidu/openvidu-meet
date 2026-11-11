@@ -84,8 +84,8 @@ const allPermissions: MeetRoomMemberPermissions = {
 	participantMute: true,
 	participantHandLower: true,
 	participantReactionSend: true,
-	lobbyBypass: true,
-	lobbyAdmin: true,
+	waitingRoomBypass: true,
+	waitingRoomAdmin: true,
 	meetingEnd: true,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -111,8 +111,8 @@ const recordingReadOnlyPermissions: MeetRoomMemberPermissions = {
 	participantMute: false,
 	participantHandLower: false,
 	participantReactionSend: false,
-	lobbyBypass: false,
-	lobbyAdmin: false,
+	waitingRoomBypass: false,
+	waitingRoomAdmin: false,
 	meetingEnd: false,
 	mediaPublishVideo: false,
 	mediaPublishAudio: false,
@@ -138,8 +138,8 @@ const noPermissions: MeetRoomMemberPermissions = {
 	participantMute: false,
 	participantHandLower: false,
 	participantReactionSend: false,
-	lobbyBypass: false,
-	lobbyAdmin: false,
+	waitingRoomBypass: false,
+	waitingRoomAdmin: false,
 	meetingEnd: false,
 	mediaPublishVideo: false,
 	mediaPublishAudio: false,
@@ -698,8 +698,8 @@ describe('Room Members API Tests', () => {
 					participantKick: true,
 					participantMute: true,
 					participantHandLower: true,
-					lobbyBypass: true,
-					lobbyAdmin: true,
+					waitingRoomBypass: true,
+					waitingRoomAdmin: true,
 					meetingEnd: true
 				}
 			});
@@ -1389,12 +1389,16 @@ describe('Room Members API Tests', () => {
 	});
 
 	describe('Generate Room Member Token Validation Tests', () => {
-		it('should fail when lobbyTicket comes without joinMeeting true', async () => {
+		it('should fail when waitingRoomTicket comes without joinMeeting true', async () => {
 			const response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
 				secret: roomData.speakerSecret,
-				lobbyTicket: 'q8d1u3Zr0m6ZxVwK9tHc2A'
+				waitingRoomTicket: 'q8d1u3Zr0m6ZxVwK9tHc2A'
 			});
-			expectValidationError(response, 'lobbyTicket', 'lobbyTicket is only accepted with joinMeeting true');
+			expectValidationError(
+				response,
+				'waitingRoomTicket',
+				'waitingRoomTicket is only accepted with joinMeeting true'
+			);
 		});
 
 		it('should expose the RateLimit header to a caller on another origin', async () => {

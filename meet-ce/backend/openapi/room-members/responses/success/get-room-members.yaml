@@ -78,8 +78,8 @@ content:
                               participantMute: true
                               participantHandLower: true
                               participantReactionSend: true
-                              lobbyBypass: true
-                              lobbyAdmin: true
+                              waitingRoomBypass: true
+                              waitingRoomAdmin: true
                               meetingEnd: false
                               mediaPublishVideo: true
                               mediaPublishAudio: true
@@ -114,8 +114,8 @@ content:
                               participantMute: false
                               participantHandLower: false
                               participantReactionSend: true
-                              lobbyBypass: false
-                              lobbyAdmin: false
+                              waitingRoomBypass: false
+                              waitingRoomAdmin: false
                               meetingEnd: false
                               mediaPublishVideo: true
                               mediaPublishAudio: true

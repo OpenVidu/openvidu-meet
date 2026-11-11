@@ -1,5 +1,5 @@
 import type {
-	MeetLobbyDecisionOptions,
+	MeetWaitingRoomDecisionOptions,
 	MeetParticipantHandOptions,
 	MeetParticipantReactionOptions
 } from '@openvidu-meet/typings';
@@ -37,17 +37,17 @@ export const SendParticipantReactionReqSchema: z.ZodType<MeetParticipantReaction
 });
 
 // Omitted means everyone waiting, so an empty list is refused instead of being read as everyone.
-export const LobbyDecisionReqSchema: z.ZodType<MeetLobbyDecisionOptions> = z.object({
+export const WaitingRoomDecisionReqSchema: z.ZodType<MeetWaitingRoomDecisionOptions> = z.object({
 	participantIdentities: z
 		.array(z.string().min(1))
 		.min(1, 'Must name at least one participant')
-		.max(INTERNAL_CONFIG.LOBBY_MAX_ENTRIES)
+		.max(INTERNAL_CONFIG.WAITING_ROOM_MAX_ENTRIES)
 		.refine((identities) => new Set(identities).size === identities.length, 'Must not repeat an identity')
 		.optional()
 });
 
-export const LobbyTicketSchema = z.string().min(1).max(100);
+export const WaitingRoomTicketSchema = z.string().min(1).max(100);
 
-export const LobbyLeaveReqSchema = z.object({
-	lobbyTicket: LobbyTicketSchema
+export const WaitingRoomLeaveReqSchema = z.object({
+	waitingRoomTicket: WaitingRoomTicketSchema
 });

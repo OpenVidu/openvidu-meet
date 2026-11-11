@@ -72,9 +72,9 @@ export interface MeetRoomConfig {
 	 */
 	reactions: MeetReactionsConfig;
 	/**
-	 * Configuration for the waiting room. See {@link MeetLobbyConfig} for details.
+	 * Configuration for the waiting room. See {@link MeetWaitingRoomConfig} for details.
 	 */
-	lobby: MeetLobbyConfig;
+	waitingRoom: MeetWaitingRoomConfig;
 	// appearance: MeetAppearanceConfig;
 }
 
@@ -366,18 +366,18 @@ export interface MeetReactionsConfig {
 
 /**
  * Interface representing the config for the waiting room of a room: the participants without the
- * `lobbyBypass` permission wait until someone holding `lobbyAdmin` admits them.
+ * `waitingRoomBypass` permission wait until someone holding `waitingRoomAdmin` admits them.
  */
-export interface MeetLobbyConfig {
+export interface MeetWaitingRoomConfig {
 	/**
-	 * Indicates if the participants without `lobbyBypass` wait to be admitted. It can only be changed
+	 * Indicates if the participants without `waitingRoomBypass` wait to be admitted. It can only be changed
 	 * while the room has no active meeting. Turning it on invalidates the room member tokens issued
 	 * before.
 	 */
 	enabled: boolean;
 	/**
 	 * Message the waiting participants see while they wait, up to 500 characters. An update that
-	 * sends `null` removes it (see {@link MeetLobbyConfigOptions}).
+	 * sends `null` removes it (see {@link MeetWaitingRoomConfigOptions}).
 	 */
 	message?: string;
 }

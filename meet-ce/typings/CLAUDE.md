@@ -77,8 +77,9 @@ every surface. `src/api-registry.ts` is the registry (`MEET_API_MODULES`, `MEET_
 token.
 
 - **Module token**: a singular, single-word lowerCamelCase noun (`embedded`, named after the
-  embedded mode, is the one adjective), registered exactly once, never a prefix of another token.
-  A concept needing two words is not a module; fold it into the closest one and put the extra
+  embedded mode, is the one adjective, and `waitingRoom`, the name the feature has in the UI, the
+  docs and the API, the one compound), registered exactly once, never a prefix of another token.
+  Any other concept needing two words is not a module; fold it into the closest one and put the extra
   word in the action (`mediaChangeVirtualBackground`, not a `virtualBackground` module).
 - **Command** `moduleAction`: module first, then an imperative verb (`meetingLeave`,
   `participantKick`); bulk variants suffix `All`. **Event/webhook** `moduleEvent`: module first,
@@ -101,7 +102,7 @@ token.
   media, starts with `embedded`, so a host finds all of them under one prefix.
 - **Known exceptions** the lint allows on purpose: the 3.8.0 deprecated aliases (derived from the
   alias maps, gone in 3.12.0). The knock of the waiting room is `participantKnocked` alone, a
-  `participant` event with no `lobbyKnocked` alias.
+  `participant` event with no `waitingRoomKnocked` alias.
 
 ## Change discipline
 

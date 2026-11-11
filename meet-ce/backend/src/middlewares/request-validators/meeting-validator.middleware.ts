@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import {
-	LobbyDecisionReqSchema,
-	LobbyLeaveReqSchema,
+	WaitingRoomDecisionReqSchema,
+	WaitingRoomLeaveReqSchema,
 	LowerAllHandsReqSchema,
 	MuteParticipantMediaReqSchema,
 	SendParticipantReactionReqSchema,
@@ -66,8 +66,8 @@ export const validateSendParticipantReactionReq = (req: Request, res: Response, 
 };
 
 /** An empty body decides on everyone waiting. */
-export const validateLobbyDecisionReq = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = LobbyDecisionReqSchema.safeParse(req.body ?? {});
+export const validateWaitingRoomDecisionReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = WaitingRoomDecisionReqSchema.safeParse(req.body ?? {});
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);
@@ -77,8 +77,8 @@ export const validateLobbyDecisionReq = (req: Request, res: Response, next: Next
 	next();
 };
 
-export const validateLobbyLeaveReq = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = LobbyLeaveReqSchema.safeParse(req.query);
+export const validateWaitingRoomLeaveReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = WaitingRoomLeaveReqSchema.safeParse(req.query);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);

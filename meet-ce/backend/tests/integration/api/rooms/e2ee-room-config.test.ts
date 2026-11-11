@@ -70,7 +70,7 @@ describe('E2EE Room Configuration Tests', () => {
 					captions: { enabled: true },
 					raiseHand: { enabled: true },
 					reactions: { enabled: true },
-					lobby: { enabled: false }
+					waitingRoom: { enabled: false }
 				}
 			};
 
@@ -120,7 +120,7 @@ describe('E2EE Room Configuration Tests', () => {
 						captions: { enabled: true },
 						raiseHand: { enabled: true },
 						reactions: { enabled: true },
-						lobby: { enabled: false }
+						waitingRoom: { enabled: false }
 					}
 				},
 				undefined,
@@ -168,7 +168,7 @@ describe('E2EE Room Configuration Tests', () => {
 					captions: { enabled: true },
 					raiseHand: { enabled: true },
 					reactions: { enabled: true },
-					lobby: { enabled: false }
+					waitingRoom: { enabled: false }
 				}
 			};
 
@@ -200,7 +200,7 @@ describe('E2EE Room Configuration Tests', () => {
 					captions: { enabled: true },
 					raiseHand: { enabled: true },
 					reactions: { enabled: true },
-					lobby: { enabled: false }
+					waitingRoom: { enabled: false }
 				}
 			};
 
@@ -242,7 +242,7 @@ describe('E2EE Room Configuration Tests', () => {
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
 				reactions: { enabled: true },
-				lobby: { enabled: false }
+				waitingRoom: { enabled: false }
 			});
 
 			expect(status).toBe(200);
@@ -274,7 +274,7 @@ describe('E2EE Room Configuration Tests', () => {
 						captions: { enabled: true },
 						raiseHand: { enabled: true },
 						reactions: { enabled: true },
-						lobby: { enabled: false }
+						waitingRoom: { enabled: false }
 					}
 				},
 				undefined,
@@ -300,7 +300,7 @@ describe('E2EE Room Configuration Tests', () => {
 						captions: { enabled: true },
 						raiseHand: { enabled: true },
 						reactions: { enabled: true },
-						lobby: { enabled: false }
+						waitingRoom: { enabled: false }
 					}
 				},
 				undefined,

@@ -112,23 +112,23 @@ properties:
             Can send reactions in the meeting. Seeing the reactions of others is never gated. Has no
             deprecated `can*` equivalent. Granted to the moderator and speaker roles by default, and to every
             room and member that existed before 3.10.0.
-    lobbyBypass:
+    waitingRoomBypass:
         type: boolean
         example: true
         description: >
-            Can join the meeting without waiting in a room whose config has `lobby.enabled`. Without it, the
-            participant asks to join and waits until someone holding `lobbyAdmin` admits them. Independent of
-            `lobbyAdmin`: a holder of `lobbyAdmin` who lacks it waits like anyone else. Has no deprecated `can*`
+            Can join the meeting without waiting in a room whose config has `waitingRoom.enabled`. Without it, the
+            participant asks to join and waits until someone holding `waitingRoomAdmin` admits them. Independent of
+            `waitingRoomAdmin`: a holder of `waitingRoomAdmin` who lacks it waits like anyone else. Has no deprecated `can*`
             equivalent. A room created from 3.10.0 on grants it to the moderator role and denies it to the
             speaker role by default; a room or member that existed before 3.10.0 gets it with the moderator role.
-    lobbyAdmin:
+    waitingRoomAdmin:
         type: boolean
         example: true
         description: >
             Can list the participants waiting to join and admit or reject them
-            ([`lobbyList`](#/operations/lobbyList), [`lobbyAdmit`](#/operations/lobbyAdmit),
-            [`lobbyReject`](#/operations/lobbyReject)). Independent of `lobbyBypass`. Has no deprecated `can*`
-            equivalent. Same defaults and history as `lobbyBypass`.
+            ([`waitingRoomList`](#/operations/waitingRoomList), [`waitingRoomAdmit`](#/operations/waitingRoomAdmit),
+            [`waitingRoomReject`](#/operations/waitingRoomReject)). Independent of `waitingRoomBypass`. Has no deprecated `can*`
+            equivalent. Same defaults and history as `waitingRoomBypass`.
     meetingEnd:
         type: boolean
         example: false

@@ -209,11 +209,11 @@
           "LABEL": "Schrijven",
           "DESCRIPTION": "Chatberichten versturen toestaan. Vereist \"Lezen\""
         },
-        "lobbyBypass": {
+        "waitingRoomBypass": {
           "LABEL": "Zonder wachten deelnemen",
           "DESCRIPTION": "Deelnemen aan een kamer met wachtkamer toestaan zonder op toelating te wachten"
         },
-        "lobbyAdmin": {
+        "waitingRoomAdmin": {
           "LABEL": "Deelnemers toelaten",
           "DESCRIPTION": "Wachtende deelnemers toelaten of weigeren toestaan"
         }

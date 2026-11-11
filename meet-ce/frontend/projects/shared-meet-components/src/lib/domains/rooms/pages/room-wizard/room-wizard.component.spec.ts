@@ -136,11 +136,13 @@ describe('RoomWizardComponent.createRoomAdvance (waiting room message)', () => {
 
 	it('creates a room with the waiting room on and its message', async () => {
 		wizardService.initializeWizard(false);
-		wizardService.updateStepData({ config: { lobby: { enabled: true, message: 'The host will let you in' } } });
+		wizardService.updateStepData({
+			config: { waitingRoom: { enabled: true, message: 'The host will let you in' } }
+		});
 
 		await component.createRoomAdvance();
 
-		expect(roomService.createRoom.calls.mostRecent().args[0].config.lobby).toEqual({
+		expect(roomService.createRoom.calls.mostRecent().args[0].config.waitingRoom).toEqual({
 			enabled: true,
 			message: 'The host will let you in'
 		});
@@ -148,24 +150,24 @@ describe('RoomWizardComponent.createRoomAdvance (waiting room message)', () => {
 
 	it('creates a room without a message key when the message was cleared', async () => {
 		wizardService.initializeWizard(false);
-		wizardService.updateStepData({ config: { lobby: { enabled: true, message: null } } });
+		wizardService.updateStepData({ config: { waitingRoom: { enabled: true, message: null } } });
 
 		await component.createRoomAdvance();
 
-		const { lobby } = roomService.createRoom.calls.mostRecent().args[0].config;
+		const { waitingRoom } = roomService.createRoom.calls.mostRecent().args[0].config;
 
-		expect(lobby.enabled).toBeTrue();
-		expect(JSON.parse(JSON.stringify(lobby))).toEqual({ enabled: true });
+		expect(waitingRoom.enabled).toBeTrue();
+		expect(JSON.parse(JSON.stringify(waitingRoom))).toEqual({ enabled: true });
 	});
 
 	it('updates a room with message null when the message was cleared', async () => {
-		wizardService.initializeWizard(true, { config: { lobby: { enabled: true, message: 'Welcome' } } });
+		wizardService.initializeWizard(true, { config: { waitingRoom: { enabled: true, message: 'Welcome' } } });
 		component.roomId = 'room-1';
-		wizardService.updateStepData({ config: { lobby: { enabled: true, message: null } } });
+		wizardService.updateStepData({ config: { waitingRoom: { enabled: true, message: null } } });
 
 		await component.createRoomAdvance();
 
-		expect(roomService.updateRoomConfig.calls.mostRecent().args[1].lobby).toEqual({
+		expect(roomService.updateRoomConfig.calls.mostRecent().args[1].waitingRoom).toEqual({
 			enabled: true,
 			message: null
 		});

@@ -3,7 +3,7 @@ MeetRoomConfig:
     description: >
         Config of a room. A config update merges with the stored config, so an omitted top-level field keeps
         its current value. The nested objects (`chat`, `recording`, `broadcast`, `virtualBackground`, `e2ee`,
-        `captions`, `raiseHand`, `reactions`, `lobby`) merge field by field too, but each one requires its own
+        `captions`, `raiseHand`, `reactions`, `waitingRoom`) merge field by field too, but each one requires its own
         `enabled` whenever it is sent at all: a request that carries `recording` without `recording.enabled` is
         rejected with a `422`.
     properties:
@@ -77,8 +77,8 @@ MeetRoomConfig:
         reactions:
             $ref: '#/MeetReactionsConfig'
             description: Config for reactions in the room.
-        lobby:
-            $ref: '#/MeetLobbyConfig'
+        waitingRoom:
+            $ref: '#/MeetWaitingRoomConfig'
             description: Config for the waiting room of the room.
 MeetChatConfig:
     type: object
@@ -272,7 +272,7 @@ MeetReactionsConfig:
             description: >
                 If true, participants can send reactions during the meeting. The server rejects a reaction
                 while it is false.
-MeetLobbyConfig:
+MeetWaitingRoomConfig:
     type: object
     required:
         - enabled
@@ -282,8 +282,8 @@ MeetLobbyConfig:
             default: false
             example: false
             description: >
-                If true, a participant who asks to join the room waits until someone holding `lobbyAdmin`
-                admits them, unless they hold `lobbyBypass`. Admins and the room's owner hold every permission
+                If true, a participant who asks to join the room waits until someone holding `waitingRoomAdmin`
+                admits them, unless they hold `waitingRoomBypass`. Admins and the room's owner hold every permission
                 and join directly. Like the rest of the config, it can only be changed while the room has no
                 active meeting. Turning it on invalidates the room member tokens issued before, so a
                 participant who held one asks to join again and waits; turning it off lets everyone waiting

@@ -43,19 +43,19 @@
                 $ref: '../../shared/responses/errors/internal-server.yaml'
             '503':
                 $ref: '../../shared/responses/errors/service-unavailable.yaml'
-/meetings/{roomId}/lobby/leave:
+/meetings/{roomId}/waiting-room/leave:
     post:
-        operationId: lobbyLeave
+        operationId: waitingRoomLeave
         summary: Leave the waiting room
         description: >
             Ends the wait of a participant at once, whether it is waiting or admitted and not yet used: the
-            participant no longer appears in [`lobbyList`](#/operations/lobbyList) and the
-            [`lobbyStatusChanged`](#/webhooks/lobbyStatusChangedWebhook) webhook reports `left`. The meeting client
+            participant no longer appears in [`waitingRoomList`](#/operations/waitingRoomList) and the
+            [`waitingRoomStatusChanged`](#/webhooks/waitingRoomStatusChangedWebhook) webhook reports `left`. The meeting client
             calls it when the participant presses "Leave waiting room" or leaves with `meetingLeave`, also while
             its realtime connection is down.
 
 
-            The `lobbyTicket` is the only credential and no header is sent, so a web component on another
+            The `waitingRoomTicket` is the only credential and no header is sent, so a web component on another
             origin can send it while its page unloads without a CORS preflight. It has no body.
 
 
@@ -66,10 +66,10 @@
         security: []
         parameters:
             - $ref: '../../rooms/parameters/room-id-path.yaml'
-            - $ref: './parameters/lobby-ticket-query.yaml'
+            - $ref: './parameters/waiting-room-ticket-query.yaml'
         responses:
             '204':
-                $ref: './responses/success/lobby-leave.yaml'
+                $ref: './responses/success/waiting-room-leave.yaml'
             '422':
                 $ref: '../../shared/responses/errors/validation.yaml'
             '429':

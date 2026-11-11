@@ -3,8 +3,8 @@ import {
 	MeetBroadcastInfo,
 	MeetBroadcastStatus,
 	MeetEventOrigin,
-	MeetLobbyParticipantType,
-	MeetLobbyStatus,
+	MeetWaitingRoomParticipantType,
+	MeetWaitingRoomStatus,
 	MeetParticipantJoinedPayload,
 	MeetParticipantLeftPayload,
 	MeetParticipantModerationAction,
@@ -17,7 +17,7 @@ import {
 } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { createRtmpSink, deleteRtmpSinks } from '../helpers/broadcast-sink.helper';
-import { createRoom, deleteRooms, getLobby, getRecording, getRoom } from '../helpers/meet-api.helper';
+import { createRoom, deleteRooms, getWaitingRoom, getRecording, getRoom } from '../helpers/meet-api.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import {
 	askToJoin,
@@ -27,8 +27,8 @@ import {
 	expectWebhook,
 	joinedParticipantIdentity,
 	leaveMeeting,
-	lobbyAdmitCommand,
-	lobbyRejectCommand,
+	waitingRoomAdmitCommand,
+	waitingRoomRejectCommand,
 	openMeeting,
 	participantUpdateRoleCommand,
 	webhookLocator
@@ -261,55 +261,58 @@ test.describe('Webhooks E2E Tests', () => {
 		expect(ended.status).toBe(MeetBroadcastStatus.COMPLETE);
 	});
 
-	test('should receive participantKnocked once per wait and lobbyStatusChanged for each decision', async ({
+	test('should receive participantKnocked once per wait and waitingRoomStatusChanged for each decision', async ({
 		page,
 		browser
 	}) => {
-		const { roomId: lobbyRoomId, roomName } = await createRoom({ config: { lobby: { enabled: true } } });
-		createdRoomIds.push(lobbyRoomId);
-		await openMeeting(page, lobbyRoomId, { role: 'moderator' });
+		const { roomId: waitingRoomRoomId, roomName } = await createRoom({
+			config: { waitingRoom: { enabled: true } }
+		});
+		createdRoomIds.push(waitingRoomRoomId);
+		await openMeeting(page, waitingRoomRoomId, { role: 'moderator' });
 
 		const anaContext = await browser.newContext();
 		const benContext = await browser.newContext();
-		await askToJoin(await anaContext.newPage(), lobbyRoomId, { name: 'Ana', externalId: 'u-42' });
-		await askToJoin(await benContext.newPage(), lobbyRoomId, { name: 'Ben' });
-		const [ana, ben] = (await getLobby(lobbyRoomId)).participants;
+		await askToJoin(await anaContext.newPage(), waitingRoomRoomId, { name: 'Ana', externalId: 'u-42' });
+		await askToJoin(await benContext.newPage(), waitingRoomRoomId, { name: 'Ben' });
+		const [ana, ben] = (await getWaitingRoom(waitingRoomRoomId)).participants;
 		expect(ana).toMatchObject({
 			participantName: 'Ana',
-			type: MeetLobbyParticipantType.ANONYMOUS,
+			type: MeetWaitingRoomParticipantType.ANONYMOUS,
 			externalId: 'u-42'
 		});
 
-		const knocked = () => webhooksFromStorage(page, lobbyRoomId, MeetWebhookEventType.PARTICIPANT_KNOCKED);
+		const knocked = () => webhooksFromStorage(page, waitingRoomRoomId, MeetWebhookEventType.PARTICIPANT_KNOCKED);
 		await expect
 			.poll(async () => (await knocked()).map(({ data }) => data))
 			.toEqual(
 				expect.arrayContaining([
-					{ roomId: lobbyRoomId, roomName, participant: ana },
-					{ roomId: lobbyRoomId, roomName, participant: ben }
+					{ roomId: waitingRoomRoomId, roomName, participant: ana },
+					{ roomId: waitingRoomRoomId, roomName, participant: ben }
 				])
 			);
 
-		await lobbyRejectCommand(page, [ana.participantIdentity]);
-		await lobbyAdmitCommand(page, [ben.participantIdentity]);
+		await waitingRoomRejectCommand(page, [ana.participantIdentity]);
+		await waitingRoomAdmitCommand(page, [ben.participantIdentity]);
 
-		const statusChanged = () => webhooksFromStorage(page, lobbyRoomId, MeetWebhookEventType.LOBBY_STATUS_CHANGED);
+		const statusChanged = () =>
+			webhooksFromStorage(page, waitingRoomRoomId, MeetWebhookEventType.WAITING_ROOM_STATUS_CHANGED);
 		await expect
 			.poll(async () => (await statusChanged()).map(({ data }) => data))
 			.toEqual(
 				expect.arrayContaining([
 					{
-						roomId: lobbyRoomId,
+						roomId: waitingRoomRoomId,
 						roomName,
 						participant: ana,
-						status: MeetLobbyStatus.REJECTED,
+						status: MeetWaitingRoomStatus.REJECTED,
 						origin: MeetEventOrigin.MODERATOR
 					},
 					{
-						roomId: lobbyRoomId,
+						roomId: waitingRoomRoomId,
 						roomName,
 						participant: ben,
-						status: MeetLobbyStatus.ADMITTED,
+						status: MeetWaitingRoomStatus.ADMITTED,
 						origin: MeetEventOrigin.MODERATOR
 					}
 				])

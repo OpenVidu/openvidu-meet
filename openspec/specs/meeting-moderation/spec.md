@@ -318,7 +318,7 @@ Every participant's panel SHALL mark each participant's role with a badge (owner
 - **THEN** neither Promote nor Demote is offered
 
 ### Requirement: A kick does not revoke access
-Kicking a participant SHALL only disconnect them from the meeting in progress and end their tokens. Their access to the room SHALL be unchanged: with the same access link or account they SHALL be able to ask to join that meeting again at once, and later meetings of the room; behind a waiting room, one without `lobbyBypass` waits (see `waiting-room`). Keeping a participant out SHALL require revoking their access to the room (see `room-access` and `room-members`).
+Kicking a participant SHALL only disconnect them from the meeting in progress and end their tokens. Their access to the room SHALL be unchanged: with the same access link or account they SHALL be able to ask to join that meeting again at once, and later meetings of the room; behind a waiting room, one without `waitingRoomBypass` waits (see `waiting-room`). Keeping a participant out SHALL require revoking their access to the room (see `room-access` and `room-members`).
 
 #### Scenario: Kicked participant joins again
 - **GIVEN** a speaker who entered through the room's speaker link and was kicked
@@ -336,7 +336,7 @@ Kicking a participant SHALL only disconnect them from the meeting in progress an
 - **THEN** the server answers `409` and the speaker can still join again through the link
 
 #### Scenario: Kicked participant behind a waiting room
-- **GIVEN** a room with the waiting room on and a speaker without `lobbyBypass` who was admitted and then kicked
+- **GIVEN** a room with the waiting room on and a speaker without `waitingRoomBypass` who was admitted and then kicked
 - **WHEN** they open the same link and ask to join while the meeting is still running
 - **THEN** they wait in the line
 

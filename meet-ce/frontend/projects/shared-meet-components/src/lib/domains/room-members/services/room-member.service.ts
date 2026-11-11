@@ -1,6 +1,6 @@
 import { inject, Service } from '@angular/core';
 import {
-	MeetLobbyTicketResponse,
+	MeetWaitingRoomTicketResponse,
 	MeetRoomMember,
 	MeetRoomMemberField,
 	MeetRoomMemberFilters,
@@ -235,7 +235,7 @@ export class RoomMemberService {
 		roomId: string,
 		tokenOptions: MeetRoomMemberTokenOptions,
 		headers?: Record<string, string>
-	): Promise<{ token: string } | MeetLobbyTicketResponse> {
+	): Promise<{ token: string } | MeetWaitingRoomTicketResponse> {
 		const path = `${this.getRoomMemberApiPath(roomId, true)}/token`;
 		return this.httpService.postRequest(path, tokenOptions, headers);
 	}

@@ -56,8 +56,8 @@ content:
                         participantMute: true
                         participantHandLower: true
                         participantReactionSend: true
-                        lobbyBypass: true
-                        lobbyAdmin: true
+                        waitingRoomBypass: true
+                        waitingRoomAdmin: true
                         meetingEnd: false
                         mediaPublishVideo: true
                         mediaPublishAudio: true

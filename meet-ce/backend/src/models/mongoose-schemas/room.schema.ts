@@ -213,7 +213,7 @@ const MeetReactionsConfigSchema = new Schema(
 /**
  * Sub-schema for waiting room configuration.
  */
-const MeetLobbyConfigSchema = new Schema(
+const MeetWaitingRoomConfigSchema = new Schema(
 	{
 		enabled: {
 			type: Boolean,
@@ -407,8 +407,8 @@ const MeetRoomConfigSchema = new Schema(
 			type: MeetReactionsConfigSchema,
 			required: true
 		},
-		lobby: {
-			type: MeetLobbyConfigSchema,
+		waitingRoom: {
+			type: MeetWaitingRoomConfigSchema,
 			required: true
 		}
 	},

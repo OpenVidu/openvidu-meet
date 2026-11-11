@@ -89,7 +89,7 @@ describe('RoomOptionsSchema defaults', () => {
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
 				reactions: { enabled: true },
-				lobby: { enabled: false },
+				waitingRoom: { enabled: false },
 				initialAudioActive: true,
 				initialVideoActive: true
 			},
@@ -161,7 +161,7 @@ describe('RoomOptionsSchema defaults', () => {
 		expect(parseRoom({ config: { broadcast } }).config.broadcast).toEqual(broadcast);
 	});
 
-	it.each(['chat', 'virtualBackground', 'e2ee', 'captions', 'raiseHand', 'reactions', 'lobby'])(
+	it.each(['chat', 'virtualBackground', 'e2ee', 'captions', 'raiseHand', 'reactions', 'waitingRoom'])(
 		'requires the %s switch when its config is present',
 		(feature) => {
 			expect(configIssues({ [feature]: {} })).toEqual([`config.${feature}.enabled: Required`]);
@@ -196,24 +196,27 @@ describe('RoomOptionsSchema defaults', () => {
 	});
 
 	it('keeps the waiting room switch and message a config names', () => {
-		expect(parseRoom({ config: { lobby: { enabled: true } } }).config.lobby).toEqual({ enabled: true });
-		expect(parseRoom({ config: { lobby: { enabled: true, message: 'Please wait' } } }).config.lobby).toEqual({
+		expect(parseRoom({ config: { waitingRoom: { enabled: true } } }).config.waitingRoom).toEqual({ enabled: true });
+		expect(
+			parseRoom({ config: { waitingRoom: { enabled: true, message: 'Please wait' } } }).config.waitingRoom
+		).toEqual({
 			enabled: true,
 			message: 'Please wait'
 		});
 	});
 
 	it('accepts a waiting room message of 500 characters and rejects one of 501', () => {
-		expect(parseRoom({ config: { lobby: { enabled: true, message: 'a'.repeat(500) } } }).config.lobby.message).toBe(
-			'a'.repeat(500)
-		);
-		expect(configIssues({ lobby: { enabled: true, message: 'a'.repeat(501) } })).toEqual([
-			'config.lobby.message: Must not exceed 500 characters'
+		expect(
+			parseRoom({ config: { waitingRoom: { enabled: true, message: 'a'.repeat(500) } } }).config.waitingRoom
+				.message
+		).toBe('a'.repeat(500));
+		expect(configIssues({ waitingRoom: { enabled: true, message: 'a'.repeat(501) } })).toEqual([
+			'config.waitingRoom.message: Must not exceed 500 characters'
 		]);
 	});
 
 	it('rejects a null waiting room message, which only an update accepts', () => {
-		expect(configIssues({ lobby: { enabled: true, message: null } })).toHaveLength(1);
+		expect(configIssues({ waitingRoom: { enabled: true, message: null } })).toHaveLength(1);
 	});
 });
 
@@ -487,27 +490,27 @@ describe('room update schemas', () => {
 		expect(UpdateRoomConfigReqSchema.parse({ config: { broadcast: { enabled: true } } })).toEqual({
 			config: { broadcast: { enabled: true } }
 		});
-		expect(UpdateRoomConfigReqSchema.parse({ config: { lobby: { enabled: true } } })).toEqual({
-			config: { lobby: { enabled: true } }
+		expect(UpdateRoomConfigReqSchema.parse({ config: { waitingRoom: { enabled: true } } })).toEqual({
+			config: { waitingRoom: { enabled: true } }
 		});
 	});
 
 	it('UpdateRoomConfigReqSchema keeps a null waiting room message, which removes the stored one', () => {
-		expect(UpdateRoomConfigReqSchema.parse({ config: { lobby: { enabled: true, message: null } } })).toEqual({
-			config: { lobby: { enabled: true, message: null } }
+		expect(UpdateRoomConfigReqSchema.parse({ config: { waitingRoom: { enabled: true, message: null } } })).toEqual({
+			config: { waitingRoom: { enabled: true, message: null } }
 		});
-		expect(UpdateRoomConfigReqSchema.parse({ config: { lobby: { enabled: true, message: 'Hi' } } })).toEqual({
-			config: { lobby: { enabled: true, message: 'Hi' } }
+		expect(UpdateRoomConfigReqSchema.parse({ config: { waitingRoom: { enabled: true, message: 'Hi' } } })).toEqual({
+			config: { waitingRoom: { enabled: true, message: 'Hi' } }
 		});
 	});
 
 	it('UpdateRoomConfigReqSchema requires the waiting room switch and caps its message', () => {
-		expect(issues(UpdateRoomConfigReqSchema, { config: { lobby: { message: 'Please wait' } } })).toEqual([
-			'config.lobby.enabled: Required'
+		expect(issues(UpdateRoomConfigReqSchema, { config: { waitingRoom: { message: 'Please wait' } } })).toEqual([
+			'config.waitingRoom.enabled: Required'
 		]);
 		expect(
-			issues(UpdateRoomConfigReqSchema, { config: { lobby: { enabled: true, message: 'a'.repeat(501) } } })
-		).toEqual(['config.lobby.message: Must not exceed 500 characters']);
+			issues(UpdateRoomConfigReqSchema, { config: { waitingRoom: { enabled: true, message: 'a'.repeat(501) } } })
+		).toEqual(['config.waitingRoom.message: Must not exceed 500 characters']);
 	});
 
 	it('UpdateRoomConfigReqSchema applies the limits of the creation', () => {

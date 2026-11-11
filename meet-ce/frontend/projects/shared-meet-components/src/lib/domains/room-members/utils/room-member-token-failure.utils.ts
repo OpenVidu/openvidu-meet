@@ -38,7 +38,7 @@ export function isWaitingRoomFull(error: unknown): boolean {
 }
 
 /** Whether the request to join with a ticket was refused because its wait is over or unknown. */
-export function isLobbyWaitEnded(error: unknown): boolean {
+export function isWaitingRoomWaitEnded(error: unknown): boolean {
 	const { status, message } = describe(error);
 	return status === 409 && message.includes('wait has ended');
 }

@@ -39,7 +39,7 @@ import {
 	type EmbeddedEvent,
 	type MeetBroadcastStartOptions,
 	type MeetBroadcastStopOptions,
-	type MeetLobbyDecisionOptions,
+	type MeetWaitingRoomDecisionOptions,
 	type MeetParticipantModerationAction,
 	type MeetParticipantMuteOptions,
 	type MeetReaction,
@@ -146,8 +146,9 @@ export class App {
 	readonly broadcastUpdated = output<EmbeddedEventPayloadFor<EmbeddedEventName.BROADCAST_UPDATED>>();
 	readonly broadcastEnded = output<EmbeddedEventPayloadFor<EmbeddedEventName.BROADCAST_ENDED>>();
 	readonly participantKnocked = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_KNOCKED>>();
-	readonly lobbyUpdated = output<EmbeddedEventPayloadFor<EmbeddedEventName.LOBBY_UPDATED>>();
-	readonly lobbyStatusChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.LOBBY_STATUS_CHANGED>>();
+	readonly waitingRoomUpdated = output<EmbeddedEventPayloadFor<EmbeddedEventName.WAITING_ROOM_UPDATED>>();
+	readonly waitingRoomStatusChanged =
+		output<EmbeddedEventPayloadFor<EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED>>();
 	readonly embeddedCloseRequested = output<void>();
 
 	/** @deprecated Renamed to `meetingJoined`. Removed in 3.12.0. Dispatched alongside it. */
@@ -376,12 +377,12 @@ export class App {
 		return this.commandService.broadcastStop(options);
 	}
 
-	lobbyAdmit(options?: MeetLobbyDecisionOptions): Promise<void> {
-		return this.commandService.lobbyAdmit(options);
+	waitingRoomAdmit(options?: MeetWaitingRoomDecisionOptions): Promise<void> {
+		return this.commandService.waitingRoomAdmit(options);
 	}
 
-	lobbyReject(options?: MeetLobbyDecisionOptions): Promise<void> {
-		return this.commandService.lobbyReject(options);
+	waitingRoomReject(options?: MeetWaitingRoomDecisionOptions): Promise<void> {
+		return this.commandService.waitingRoomReject(options);
 	}
 
 	// ── Internal ─────────────────────────────────────────────────────────────
@@ -450,11 +451,11 @@ export class App {
 			case EmbeddedEventName.PARTICIPANT_KNOCKED:
 				this.participantKnocked.emit(payload);
 				break;
-			case EmbeddedEventName.LOBBY_UPDATED:
-				this.lobbyUpdated.emit(payload);
+			case EmbeddedEventName.WAITING_ROOM_UPDATED:
+				this.waitingRoomUpdated.emit(payload);
 				break;
-			case EmbeddedEventName.LOBBY_STATUS_CHANGED:
-				this.lobbyStatusChanged.emit(payload);
+			case EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED:
+				this.waitingRoomStatusChanged.emit(payload);
 				break;
 		}
 	}

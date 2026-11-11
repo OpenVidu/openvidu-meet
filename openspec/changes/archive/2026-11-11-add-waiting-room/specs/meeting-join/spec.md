@@ -6,7 +6,7 @@ The server SHALL issue a participant's join token only if:
 - they hold `meetingJoin` (`403`);
 - a name is given or known from their member record or account (`400`);
 - the meeting is below its `maxParticipants` (`409`, see `meetings`);
-- with the waiting room on, they hold `lobbyBypass` or an admitted wait's ticket, or else they wait (see `waiting-room`).
+- with the waiting room on, they hold `waitingRoomBypass` or an admitted wait's ticket, or else they wait (see `waiting-room`).
 
 The meeting SHALL show the "Closed room", "Forbidden room access" or "Meeting full" error screen.
 
@@ -31,7 +31,7 @@ The meeting SHALL show the "Closed room", "Forbidden room access" or "Meeting fu
 - **THEN** the server answers `400`
 
 #### Scenario: Waiting room on
-- **GIVEN** a room with the waiting room on and a speaker without `lobbyBypass`
+- **GIVEN** a room with the waiting room on and a speaker without `waitingRoomBypass`
 - **WHEN** a join token is requested for the speaker
 - **THEN** the server answers with a waiting ticket instead of a join token
 
@@ -54,7 +54,7 @@ Submitting the join screen SHALL open the device setup screen, where the partici
 - **THEN** they join once, with a single name and identity
 
 #### Scenario: Participant who would wait
-- **GIVEN** a room with the waiting room on and a speaker without `lobbyBypass`
+- **GIVEN** a room with the waiting room on and a speaker without `waitingRoomBypass`
 - **WHEN** the speaker submits the join screen
 - **THEN** they wait without seeing the device setup screen
 

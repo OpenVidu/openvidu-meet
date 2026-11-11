@@ -4,7 +4,7 @@ import {
 	EmbeddedEventPayloadFor,
 	MeetBroadcastStartOptions,
 	MeetBroadcastStopOptions,
-	MeetLobbyDecisionOptions,
+	MeetWaitingRoomDecisionOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetReaction
@@ -47,10 +47,10 @@ export class MeetCommandsService {
 	readonly muteScreenShare = signal(false);
 	/** Explicit `active` for the media toggles. `''` toggles instead. */
 	readonly mediaActive = signal<TriState>('');
-	/** Identities `lobbyAdmit()` and `lobbyReject()` name, comma separated; empty omits `participantIdentities`, so everyone waiting. */
-	readonly lobbyIdentities = signal('');
-	readonly lobbyOptions = computed<MeetLobbyDecisionOptions>(() => {
-		const participantIdentities = this.lobbyIdentities()
+	/** Identities `waitingRoomAdmit()` and `waitingRoomReject()` name, comma separated; empty omits `participantIdentities`, so everyone waiting. */
+	readonly waitingRoomIdentities = signal('');
+	readonly waitingRoomOptions = computed<MeetWaitingRoomDecisionOptions>(() => {
+		const participantIdentities = this.waitingRoomIdentities()
 			.split(',')
 			.map((identity) => identity.trim())
 			.filter(Boolean);
@@ -249,22 +249,22 @@ export class MeetCommandsService {
 
 	// ── Waiting room ────────────────────────────────────────────────────────
 
-	lobbyAdmit(): void {
-		const options = this.lobbyOptions();
+	waitingRoomAdmit(): void {
+		const options = this.waitingRoomOptions();
 		this.dispatch(
-			() => this.iframeHost.lobbyAdmit(options),
-			(element) => element.lobbyAdmit(options)
+			() => this.iframeHost.waitingRoomAdmit(options),
+			(element) => element.waitingRoomAdmit(options)
 		);
-		this.log.command('lobbyAdmit', optionsArgs(options));
+		this.log.command('waitingRoomAdmit', optionsArgs(options));
 	}
 
-	lobbyReject(): void {
-		const options = this.lobbyOptions();
+	waitingRoomReject(): void {
+		const options = this.waitingRoomOptions();
 		this.dispatch(
-			() => this.iframeHost.lobbyReject(options),
-			(element) => element.lobbyReject(options)
+			() => this.iframeHost.waitingRoomReject(options),
+			(element) => element.waitingRoomReject(options)
 		);
-		this.log.command('lobbyReject', optionsArgs(options));
+		this.log.command('waitingRoomReject', optionsArgs(options));
 	}
 
 	// ── Reactions ───────────────────────────────────────────────────────────

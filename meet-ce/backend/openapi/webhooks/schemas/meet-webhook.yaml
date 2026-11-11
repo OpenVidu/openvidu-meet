@@ -21,5 +21,5 @@ MeetWebhookEvent:
                       - participantKnocked
                       - participantRoleChanged
                       - participantHandChanged
-                      - lobbyStatusChanged
+                      - waitingRoomStatusChanged
                   example: recordingStarted

@@ -3,9 +3,9 @@ import {
 	LeftEventReason,
 	MEET_PERMISSION_KEYS,
 	MeetEventOrigin,
-	MeetLobbyParticipantType,
-	MeetLobbyStatus,
-	MeetLobbyStatusChangedPayload,
+	MeetWaitingRoomParticipantType,
+	MeetWaitingRoomStatus,
+	MeetWaitingRoomStatusChangedPayload,
 	MeetParticipantJoinedPayload,
 	MeetParticipantKnockedPayload,
 	MeetParticipantLeftPayload,
@@ -40,7 +40,7 @@ import {
 	updateParticipantMetadata
 } from '../../helpers/livekit-cli-helpers.js';
 import {
-	admitFromLobby,
+	admitFromWaitingRoom,
 	askToJoin,
 	createRoom,
 	createWebhook,
@@ -50,8 +50,8 @@ import {
 	deleteRoom,
 	getApiKeys,
 	endMeeting,
-	leaveLobby,
-	rejectFromLobby,
+	leaveWaitingRoom,
+	rejectFromWaitingRoom,
 	restoreDefaultGlobalConfig,
 	sleep,
 	startTestServer,
@@ -95,7 +95,7 @@ describe('Webhook Integration Tests', () => {
 		captions: { enabled: true },
 		raiseHand: { enabled: true },
 		reactions: { enabled: true },
-		lobby: { enabled: false },
+		waitingRoom: { enabled: false },
 		initialAudioActive: true,
 		initialVideoActive: true
 	};
@@ -413,23 +413,25 @@ describe('Webhook Integration Tests', () => {
 			expect(demotion.participant.role).toBe(MeetRoomMemberRole.SPEAKER);
 		});
 
-		it('should send participantKnocked once per wait and lobbyStatusChanged for every later change', async () => {
-			const { room, speakerSecret } = await setupSingleRoom(false, 'LOBBY_ROOM', { lobby: { enabled: true } });
+		it('should send participantKnocked once per wait and waitingRoomStatusChanged for every later change', async () => {
+			const { room, speakerSecret } = await setupSingleRoom(false, 'WAITING_ROOM_ROOM', {
+				waitingRoom: { enabled: true }
+			});
 			const { roomId } = room;
 			const knock = async (name: string) => (await askToJoin(roomId, speakerSecret, name)).body;
 			const ana = await knock('Ana');
 			const bob = await knock('Bob');
 			const carla = await knock('Carla');
 
-			await admitFromLobby(roomId, [ana.participantIdentity]);
-			await rejectFromLobby(roomId, [bob.participantIdentity]);
-			await leaveLobby(roomId, carla.lobbyTicket);
+			await admitFromWaitingRoom(roomId, [ana.participantIdentity]);
+			await rejectFromWaitingRoom(roomId, [bob.participantIdentity]);
+			await leaveWaitingRoom(roomId, carla.waitingRoomTicket);
 
 			const ofRoom = (event: MeetWebhookEventType) => (webhook: ReceivedWebhook) =>
 				webhook.body.event === event && (webhook.body.data as { roomId: string }).roomId === roomId;
-			await waitForWebhookCount(receivedWebhooks, ofRoom(MeetWebhookEventType.LOBBY_STATUS_CHANGED), 3);
+			await waitForWebhookCount(receivedWebhooks, ofRoom(MeetWebhookEventType.WAITING_ROOM_STATUS_CHANGED), 3);
 			const knocked = receivedWebhooks.filter(ofRoom(MeetWebhookEventType.PARTICIPANT_KNOCKED));
-			const changes = receivedWebhooks.filter(ofRoom(MeetWebhookEventType.LOBBY_STATUS_CHANGED));
+			const changes = receivedWebhooks.filter(ofRoom(MeetWebhookEventType.WAITING_ROOM_STATUS_CHANGED));
 			[...knocked, ...changes].forEach(expectValidSignature);
 
 			expect(
@@ -441,25 +443,25 @@ describe('Webhook Integration Tests', () => {
 				participant: {
 					participantIdentity: ana.participantIdentity,
 					participantName: 'Ana',
-					type: MeetLobbyParticipantType.ANONYMOUS,
+					type: MeetWaitingRoomParticipantType.ANONYMOUS,
 					knockDate: expect.any(Number)
 				}
 			});
 			expect(
 				changes.map(({ body }) => {
-					const { participant, status, origin } = body.data as MeetLobbyStatusChangedPayload;
+					const { participant, status, origin } = body.data as MeetWaitingRoomStatusChangedPayload;
 					return [participant.participantName, status, origin];
 				})
 			).toEqual([
-				['Ana', MeetLobbyStatus.ADMITTED, MeetEventOrigin.MODERATOR],
-				['Bob', MeetLobbyStatus.REJECTED, MeetEventOrigin.MODERATOR],
-				['Carla', MeetLobbyStatus.LEFT, MeetEventOrigin.PARTICIPANT]
+				['Ana', MeetWaitingRoomStatus.ADMITTED, MeetEventOrigin.MODERATOR],
+				['Bob', MeetWaitingRoomStatus.REJECTED, MeetEventOrigin.MODERATOR],
+				['Carla', MeetWaitingRoomStatus.LEFT, MeetEventOrigin.PARTICIPANT]
 			]);
 		});
 
 		it('should send the waiting room webhooks of its room only to a webhook scoped to a room', async () => {
-			const scoped = await setupSingleRoom(false, 'LOBBY_ROOM', { lobby: { enabled: true } });
-			const other = await setupSingleRoom(false, 'LOBBY_ROOM', { lobby: { enabled: true } });
+			const scoped = await setupSingleRoom(false, 'WAITING_ROOM_ROOM', { waitingRoom: { enabled: true } });
+			const other = await setupSingleRoom(false, 'WAITING_ROOM_ROOM', { waitingRoom: { enabled: true } });
 			await deleteAllWebhooks();
 			await createWebhook({ url: webhookUrl, roomId: scoped.room.roomId });
 

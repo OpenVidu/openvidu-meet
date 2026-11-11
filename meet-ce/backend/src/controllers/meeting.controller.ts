@@ -10,7 +10,7 @@ import { container } from '../config/dependency-injector.config.js';
 import { handleError, rejectRequestFromMeetError } from '../middlewares/error-handler.middleware.js';
 import { errorInsufficientPermissions } from '../models/error.model.js';
 import { LiveKitService } from '../services/livekit.service.js';
-import { LobbyService } from '../services/lobby/lobby.service.js';
+import { WaitingRoomService } from '../services/waiting-room/waiting-room.service.js';
 import { LoggerService } from '../services/logger.service.js';
 import { MeetingService } from '../services/meeting.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
@@ -72,7 +72,7 @@ export const endMeeting = async (req: Request, res: Response) => {
 
 		// To end a meeting, we need to delete the room from LiveKit
 		if (await livekitService.deleteRoom(roomId)) {
-			await container.get(LobbyService).endMeeting(roomId, MeetEventOrigin.MODERATOR);
+			await container.get(WaitingRoomService).endMeeting(roomId, MeetEventOrigin.MODERATOR);
 		}
 
 		res.status(200).json({ message: `Meeting in room '${roomId}' ended successfully` });

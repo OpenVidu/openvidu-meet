@@ -25,6 +25,6 @@ content:
                     enabled: true
                 virtualBackground:
                     enabled: true
-                lobby:
+                waitingRoom:
                     enabled: true
                     message: The host will let you in shortly.

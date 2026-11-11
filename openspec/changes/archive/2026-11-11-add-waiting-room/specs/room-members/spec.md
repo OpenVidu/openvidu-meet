@@ -27,4 +27,4 @@ The member form SHALL group permission toggles under Meeting, Media, Recordings,
 #### Scenario: Waiting room group
 - **GIVEN** the add member form with base role `moderator`
 - **WHEN** the owner opens the permission toggles
-- **THEN** a Waiting room group holds the `lobbyBypass` and `lobbyAdmin` toggles, both on
+- **THEN** a Waiting room group holds the `waitingRoomBypass` and `waitingRoomAdmin` toggles, both on

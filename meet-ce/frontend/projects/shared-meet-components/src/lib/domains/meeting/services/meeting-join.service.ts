@@ -54,9 +54,11 @@ export class MeetingJoinService {
 	readonly canJoinMeeting = computed(() => this.meetingContextService.meetingUI().showJoinMeeting);
 	/** Readonly signal for whether the room is closed */
 	readonly roomClosed = computed(() => this._room()?.status === MeetRoomStatus.CLOSED);
-	/** Whether submitting the join screen asks to be let in: the room has the waiting room on and the participant lacks `lobbyBypass`. */
+	/** Whether submitting the join screen asks to be let in: the room has the waiting room on and the participant lacks `waitingRoomBypass`. */
 	readonly asksToJoin = computed(
-		() => !!this._room()?.config?.lobby?.enabled && !this.roomMemberContextService.hasPermission('lobbyBypass')
+		() =>
+			!!this._room()?.config?.waitingRoom?.enabled &&
+			!this.roomMemberContextService.hasPermission('waitingRoomBypass')
 	);
 	/** Readonly signal for whether E2EE is enabled in the room */
 	readonly hasRoomE2EEEnabled = computed(() => this._room()?.config?.e2ee?.enabled ?? false);

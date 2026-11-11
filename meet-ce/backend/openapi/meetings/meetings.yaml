@@ -450,14 +450,14 @@
             '503':
                 $ref: '../shared/responses/errors/service-unavailable.yaml'
 
-/meetings/{roomId}/lobby:
+/meetings/{roomId}/waiting-room:
     get:
-        operationId: lobbyList
+        operationId: waitingRoomList
         summary: List the participants waiting to join
         description: |
             Lists the participants waiting to be admitted to the meeting of a room, in arrival order (`knockDate`,
             then identity), and the free places of the meeting. A room only holds participants waiting when its
-            config has `lobby.enabled`: with the waiting room off the list is empty.
+            config has `waitingRoom.enabled`: with the waiting room off the list is empty.
 
             Unlike the other meeting operations, it answers whether or not a meeting is running: participants wait
             before the first one starts.
@@ -466,12 +466,12 @@
             admitted until LiveKit reports them joined, a minute after their admission at most, never below 0, or
             `null` when the room has no participant limit. A list holds at most 100 participants.
 
-            `externalId` and `metadata` of each [`MeetLobbyParticipant`](#/schemas/MeetLobbyParticipant) are as sent by
+            `externalId` and `metadata` of each [`MeetWaitingRoomParticipant`](#/schemas/MeetWaitingRoomParticipant) are as sent by
             the participant's client and never a proof of identity. A backend that admits on its own identifies a
             waiting participant by `type` and by the `participantIdentity` of a member or user, which the server derives
             from their personal link or account.
 
-            Requires the `lobbyAdmin` permission.
+            Requires the `waitingRoomAdmin` permission.
 
             In a room with the waiting room on, a room member token acts on the meeting only if it carries a
             participant identity, which only a join token does: one obtained without joining answers `403`, so a
@@ -486,7 +486,7 @@
             - $ref: '../rooms/parameters/room-id-path.yaml'
         responses:
             '200':
-                $ref: './responses/success/get-lobby.yaml'
+                $ref: './responses/success/get-waiting-room.yaml'
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
@@ -501,9 +501,9 @@
                 $ref: '../shared/responses/errors/internal-server.yaml'
             '503':
                 $ref: '../shared/responses/errors/service-unavailable.yaml'
-/meetings/{roomId}/lobby/admit:
+/meetings/{roomId}/waiting-room/admit:
     post:
-        operationId: lobbyAdmit
+        operationId: waitingRoomAdmit
         summary: Admit waiting participants
         description: |
             Admits waiting participants to the meeting of a room: each one's meeting asks for its join token and they
@@ -517,7 +517,7 @@
 
             A decision on named participants applies to all of them or to none: it answers `404`, naming the first
             identity that no longer waits, and admits nobody, or `409` when the participants named outnumber the free
-            places of the meeting (see `availablePlaces` of [`lobbyList`](#/operations/lobbyList)), which count the
+            places of the meeting (see `availablePlaces` of [`waitingRoomList`](#/operations/waitingRoomList)), which count the
             participants admitted who have not joined yet. An empty list and a repeated identity are rejected with a
             `422`: an empty list is never read as everyone waiting.
 
@@ -533,11 +533,11 @@
             them out. Two admissions for the last free place give one `200` and one `409`.
 
             Each participant admitted is reported through the
-            [`lobbyStatusChanged`](#/webhooks/lobbyStatusChangedWebhook) webhook with the `admitted` status, and counts
+            [`waitingRoomStatusChanged`](#/webhooks/waitingRoomStatusChangedWebhook) webhook with the `admitted` status, and counts
             as a taken place until LiveKit reports them in the meeting, a minute after their admission at most. An
             admission that is not used within that minute ends as `expired`.
 
-            Requires the `lobbyAdmin` permission.
+            Requires the `waitingRoomAdmin` permission.
 
             In a room with the waiting room on, a room member token acts on the meeting only if it carries a
             participant identity, which only a join token does: one obtained without joining answers `403`, so a
@@ -551,10 +551,10 @@
         parameters:
             - $ref: '../rooms/parameters/room-id-path.yaml'
         requestBody:
-            $ref: './requests/lobby-decision.yaml'
+            $ref: './requests/waiting-room-decision.yaml'
         responses:
             '200':
-                $ref: './responses/success/admit-lobby.yaml'
+                $ref: './responses/success/admit-waiting-room.yaml'
             '400':
                 $ref: '../shared/responses/errors/malformed-body.yaml'
             '401':
@@ -562,22 +562,22 @@
             '403':
                 $ref: './responses/errors/forbidden-meeting-action.yaml'
             '404':
-                $ref: './responses/errors/lobby-not-found.yaml'
+                $ref: './responses/errors/waiting-room-not-found.yaml'
             '409':
-                $ref: './responses/errors/lobby-no-free-places.yaml'
+                $ref: './responses/errors/waiting-room-no-free-places.yaml'
             '413':
                 $ref: '../shared/responses/errors/payload-too-large.yaml'
             '422':
-                $ref: './responses/errors/lobby-decision-invalid.yaml'
+                $ref: './responses/errors/waiting-room-decision-invalid.yaml'
             '429':
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
             '503':
                 $ref: '../shared/responses/errors/service-unavailable.yaml'
-/meetings/{roomId}/lobby/reject:
+/meetings/{roomId}/waiting-room/reject:
     post:
-        operationId: lobbyReject
+        operationId: waitingRoomReject
         summary: Reject waiting participants
         description: |
             Rejects waiting participants of the meeting of a room: each one leaves the line and their meeting tells
@@ -606,9 +606,9 @@
             them out.
 
             Each participant rejected is reported through the
-            [`lobbyStatusChanged`](#/webhooks/lobbyStatusChangedWebhook) webhook with the `rejected` status.
+            [`waitingRoomStatusChanged`](#/webhooks/waitingRoomStatusChangedWebhook) webhook with the `rejected` status.
 
-            Requires the `lobbyAdmin` permission.
+            Requires the `waitingRoomAdmin` permission.
 
             In a room with the waiting room on, a room member token acts on the meeting only if it carries a
             participant identity, which only a join token does: one obtained without joining answers `403`. A host
@@ -621,10 +621,10 @@
         parameters:
             - $ref: '../rooms/parameters/room-id-path.yaml'
         requestBody:
-            $ref: './requests/lobby-decision.yaml'
+            $ref: './requests/waiting-room-decision.yaml'
         responses:
             '200':
-                $ref: './responses/success/reject-lobby.yaml'
+                $ref: './responses/success/reject-waiting-room.yaml'
             '400':
                 $ref: '../shared/responses/errors/malformed-body.yaml'
             '401':
@@ -632,11 +632,11 @@
             '403':
                 $ref: './responses/errors/forbidden-meeting-action.yaml'
             '404':
-                $ref: './responses/errors/lobby-not-found.yaml'
+                $ref: './responses/errors/waiting-room-not-found.yaml'
             '413':
                 $ref: '../shared/responses/errors/payload-too-large.yaml'
             '422':
-                $ref: './responses/errors/lobby-decision-invalid.yaml'
+                $ref: './responses/errors/waiting-room-decision-invalid.yaml'
             '429':
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':

@@ -5,8 +5,8 @@ import {
 	LeftEventReason,
 	MeetBroadcastStatus,
 	MeetEventOrigin,
-	MeetLobbyParticipant,
-	MeetLobbyStatus,
+	MeetWaitingRoomParticipant,
+	MeetWaitingRoomStatus,
 	MeetParticipantJoinedPayload,
 	MeetParticipantLeftPayload,
 	MeetParticipantModerationAction,
@@ -21,9 +21,9 @@ import { createRtmpSink, deleteRtmpSinks } from '../helpers/broadcast-sink.helpe
 import { INTEGRATIONS, meetLocator, waitForPageRedirect } from '../helpers/webcomponent.helper';
 import {
 	createRoom,
-	decideOnLobby,
+	decideOnWaitingRoom,
 	deleteRooms,
-	getLobby,
+	getWaitingRoom,
 	getRecordingUrl,
 	getRoom,
 	listRecordingsByRoomId,
@@ -71,8 +71,8 @@ const PLACE_LOST_TIMEOUT = 90_000;
 /** A waiter's state is sent again at every answered ping, every 20 s, and the waiting list read every 30 s. */
 const NEXT_STATE_TIMEOUT = 40_000;
 
-type LobbyStatusChangedPayload = EmbeddedEventPayloadFor<EmbeddedEventName.LOBBY_STATUS_CHANGED>;
-type LobbyUpdatedPayload = EmbeddedEventPayloadFor<EmbeddedEventName.LOBBY_UPDATED>;
+type WaitingRoomStatusChangedPayload = EmbeddedEventPayloadFor<EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED>;
+type WaitingRoomUpdatedPayload = EmbeddedEventPayloadFor<EmbeddedEventName.WAITING_ROOM_UPDATED>;
 type ParticipantKnockedPayload = EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_KNOCKED>;
 
 // Events carry the same names/payloads regardless of transport; run every spec
@@ -893,11 +893,13 @@ for (const integration of INTEGRATIONS) {
 
 		test.describe('Waiting room', () => {
 			const contexts: BrowserContext[] = [];
-			let lobbyRoomId: string;
+			let waitingRoomRoomId: string;
 
-			const createLobbyRoom = async (config: MeetRoomConfigOptions = {}): Promise<void> => {
-				({ roomId: lobbyRoomId } = await createRoom({ config: { lobby: { enabled: true }, ...config } }));
-				createdRoomIds.push(lobbyRoomId);
+			const createWaitingRoomRoom = async (config: MeetRoomConfigOptions = {}): Promise<void> => {
+				({ roomId: waitingRoomRoomId } = await createRoom({
+					config: { waitingRoom: { enabled: true }, ...config }
+				}));
+				createdRoomIds.push(waitingRoomRoomId);
 			};
 
 			/** A page of its own browser context, closed after the test. */
@@ -909,20 +911,21 @@ for (const integration of INTEGRATIONS) {
 
 			const waiter = async (browser: Browser, name: string): Promise<Page> => {
 				const waiterPage = await otherPage(browser);
-				await askToJoin(waiterPage, lobbyRoomId, { name });
+				await askToJoin(waiterPage, waitingRoomRoomId, { name });
 				return waiterPage;
 			};
 
-			const waiting = async (): Promise<MeetLobbyParticipant[]> => (await getLobby(lobbyRoomId)).participants;
+			const waiting = async (): Promise<MeetWaitingRoomParticipant[]> =>
+				(await getWaitingRoom(waitingRoomRoomId)).participants;
 			const waitingNames = async (): Promise<string[]> =>
 				(await waiting()).map(({ participantName }) => participantName);
 			const waitingIdentityOf = async (name: string): Promise<string> =>
 				(await waiting()).find(({ participantName }) => participantName === name)!.participantIdentity;
 
-			const lobbyStatuses = (target: Page) =>
-				eventPayloads<LobbyStatusChangedPayload>(target, EmbeddedEventName.LOBBY_STATUS_CHANGED);
-			const lastLobbyUpdate = async (target: Page) =>
-				(await eventPayloads<LobbyUpdatedPayload>(target, EmbeddedEventName.LOBBY_UPDATED)).at(-1);
+			const waitingRoomStatuses = (target: Page) =>
+				eventPayloads<WaitingRoomStatusChangedPayload>(target, EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED);
+			const lastWaitingRoomUpdate = async (target: Page) =>
+				(await eventPayloads<WaitingRoomUpdatedPayload>(target, EmbeddedEventName.WAITING_ROOM_UPDATED)).at(-1);
 			const knocks = (target: Page) =>
 				eventPayloads<ParticipantKnockedPayload>(target, EmbeddedEventName.PARTICIPANT_KNOCKED);
 
@@ -934,52 +937,56 @@ for (const integration of INTEGRATIONS) {
 				page,
 				browser
 			}) => {
-				await createLobbyRoom();
+				await createWaitingRoomRoom();
 				await waiter(browser, 'Ana');
-				await askToJoin(page, lobbyRoomId, { integration, name: 'Ben' });
+				await askToJoin(page, waitingRoomRoomId, { integration, name: 'Ben' });
 				const ben = await waitingIdentityOf('Ben');
 				const inLine = (queuePosition: number) => ({
-					roomId: lobbyRoomId,
+					roomId: waitingRoomRoomId,
 					participantIdentity: ben,
-					status: MeetLobbyStatus.WAITING,
+					status: MeetWaitingRoomStatus.WAITING,
 					queuePosition
 				});
 
-				await expect.poll(() => lobbyStatuses(page)).toEqual([inLine(2)]);
+				await expect.poll(() => waitingRoomStatuses(page)).toEqual([inLine(2)]);
 
-				await decideOnLobby(lobbyRoomId, 'admit', [await waitingIdentityOf('Ana')]);
+				await decideOnWaitingRoom(waitingRoomRoomId, 'admit', [await waitingIdentityOf('Ana')]);
 				await expect
-					.poll(() => lobbyStatuses(page), { timeout: NEXT_STATE_TIMEOUT })
+					.poll(() => waitingRoomStatuses(page), { timeout: NEXT_STATE_TIMEOUT })
 					.toEqual([inLine(2), inLine(1)]);
 
-				await decideOnLobby(lobbyRoomId, 'admit', [ben]);
+				await decideOnWaitingRoom(waitingRoomRoomId, 'admit', [ben]);
 				const joined = await expectEvent(page, EmbeddedEventName.MEETING_JOINED, { timeout: 20_000 });
 				expect(await eventPayloadField(joined, 'participantIdentity')).toBe(ben);
-				expect(await lobbyStatuses(page)).toEqual([
+				expect(await waitingRoomStatuses(page)).toEqual([
 					inLine(2),
 					inLine(1),
-					{ roomId: lobbyRoomId, participantIdentity: ben, status: MeetLobbyStatus.ADMITTED }
+					{ roomId: waitingRoomRoomId, participantIdentity: ben, status: MeetWaitingRoomStatus.ADMITTED }
 				]);
 				await expect(eventLocator(page, EmbeddedEventName.MEETING_LEFT)).toHaveCount(0);
 			});
 
 			test('should report a rejection without meetingLeft', async ({ page }) => {
-				await createLobbyRoom();
-				const { meet } = await askToJoin(page, lobbyRoomId, { integration, name: 'Ben' });
+				await createWaitingRoomRoom();
+				const { meet } = await askToJoin(page, waitingRoomRoomId, { integration, name: 'Ben' });
 				const ben = await waitingIdentityOf('Ben');
-				await expect.poll(() => lobbyStatuses(page)).toHaveLength(1);
+				await expect.poll(() => waitingRoomStatuses(page)).toHaveLength(1);
 
-				await decideOnLobby(lobbyRoomId, 'reject', [ben]);
+				await decideOnWaitingRoom(waitingRoomRoomId, 'reject', [ben]);
 
 				await expect(meet('#waiting-outcome-rejected')).toBeVisible({ timeout: 10_000 });
 				await expect
-					.poll(async () => (await lobbyStatuses(page)).at(-1))
-					.toEqual({ roomId: lobbyRoomId, participantIdentity: ben, status: MeetLobbyStatus.REJECTED });
+					.poll(async () => (await waitingRoomStatuses(page)).at(-1))
+					.toEqual({
+						roomId: waitingRoomRoomId,
+						participantIdentity: ben,
+						status: MeetWaitingRoomStatus.REJECTED
+					});
 				await expect(eventLocator(page, EmbeddedEventName.MEETING_LEFT)).toHaveCount(0);
 			});
 
 			test('should report expired when the meeting says the participant lost their place', async ({ page }) => {
-				await createLobbyRoom();
+				await createWaitingRoomRoom();
 				// The waiting screen's connection opens but never reaches Meet, which forgets the wait.
 				const held: WebSocketRoute[] = [];
 				let holding = true;
@@ -990,7 +997,7 @@ for (const integration of INTEGRATIONS) {
 						ws.connectToServer();
 					}
 				});
-				const { meet } = await askToJoin(page, lobbyRoomId, { integration, name: 'Ben' });
+				const { meet } = await askToJoin(page, waitingRoomRoomId, { integration, name: 'Ben' });
 				const ben = await waitingIdentityOf('Ben');
 				await expect.poll(waitingNames, { timeout: UNCONNECTED_KNOCK_TIMEOUT }).toEqual([]);
 
@@ -999,16 +1006,18 @@ for (const integration of INTEGRATIONS) {
 
 				await expect(meet('#waiting-outcome-expired')).toBeVisible({ timeout: 15_000 });
 				await expect
-					.poll(() => lobbyStatuses(page))
-					.toEqual([{ roomId: lobbyRoomId, participantIdentity: ben, status: MeetLobbyStatus.EXPIRED }]);
+					.poll(() => waitingRoomStatuses(page))
+					.toEqual([
+						{ roomId: waitingRoomRoomId, participantIdentity: ben, status: MeetWaitingRoomStatus.EXPIRED }
+					]);
 				const expired = await getWebhookFromStorage(
 					page,
-					lobbyRoomId,
-					MeetWebhookEventType.LOBBY_STATUS_CHANGED
+					waitingRoomRoomId,
+					MeetWebhookEventType.WAITING_ROOM_STATUS_CHANGED
 				);
 				expect(expired.data).toMatchObject({
-					roomId: lobbyRoomId,
-					status: MeetLobbyStatus.EXPIRED,
+					roomId: waitingRoomRoomId,
+					status: MeetWaitingRoomStatus.EXPIRED,
 					origin: MeetEventOrigin.SYSTEM,
 					participant: { participantIdentity: ben }
 				});
@@ -1018,23 +1027,27 @@ for (const integration of INTEGRATIONS) {
 				page
 			}) => {
 				test.setTimeout(PLACE_LOST_TIMEOUT + 60_000);
-				await createLobbyRoom();
-				await askToJoin(page, lobbyRoomId, { integration, name: 'Ben' });
+				await createWaitingRoomRoom();
+				await askToJoin(page, waitingRoomRoomId, { integration, name: 'Ben' });
 				const ben = await waitingIdentityOf('Ben');
-				await expect.poll(() => lobbyStatuses(page)).toHaveLength(1);
+				await expect.poll(() => waitingRoomStatuses(page)).toHaveLength(1);
 
 				await removeEmbeddedMeeting(page, integration);
 
 				await expect.poll(waitingNames, { timeout: PLACE_LOST_TIMEOUT, intervals: [2_000] }).toEqual([]);
-				const ended = await getWebhookFromStorage(page, lobbyRoomId, MeetWebhookEventType.LOBBY_STATUS_CHANGED);
+				const ended = await getWebhookFromStorage(
+					page,
+					waitingRoomRoomId,
+					MeetWebhookEventType.WAITING_ROOM_STATUS_CHANGED
+				);
 				expect(ended.data).toMatchObject({
-					roomId: lobbyRoomId,
-					status: MeetLobbyStatus.EXPIRED,
+					roomId: waitingRoomRoomId,
+					status: MeetWaitingRoomStatus.EXPIRED,
 					origin: MeetEventOrigin.SYSTEM,
 					participant: { participantIdentity: ben }
 				});
 				expect(
-					await webhooksFromStorage(page, lobbyRoomId, MeetWebhookEventType.LOBBY_STATUS_CHANGED)
+					await webhooksFromStorage(page, waitingRoomRoomId, MeetWebhookEventType.WAITING_ROOM_STATUS_CHANGED)
 				).toHaveLength(1);
 			});
 
@@ -1042,41 +1055,41 @@ for (const integration of INTEGRATIONS) {
 				page,
 				browser
 			}) => {
-				await createLobbyRoom({ maxParticipants: 5 });
+				await createWaitingRoomRoom({ maxParticipants: 5 });
 				await waiter(browser, 'Zoe');
 				await waiter(browser, 'Ana');
 				const [zoe, ana] = await waiting();
 
-				await openMeeting(page, lobbyRoomId, { integration, role: 'moderator' });
+				await openMeeting(page, waitingRoomRoomId, { integration, role: 'moderator' });
 				await expect
-					.poll(() => lastLobbyUpdate(page))
-					.toEqual({ roomId: lobbyRoomId, participants: [zoe, ana], availablePlaces: 4 });
+					.poll(() => lastWaitingRoomUpdate(page))
+					.toEqual({ roomId: waitingRoomRoomId, participants: [zoe, ana], availablePlaces: 4 });
 
 				await waiter(browser, 'Ben');
 				const ben = (await waiting())[2];
-				await expect.poll(() => knocks(page)).toEqual([{ roomId: lobbyRoomId, participant: ben }]);
+				await expect.poll(() => knocks(page)).toEqual([{ roomId: waitingRoomRoomId, participant: ben }]);
 				await expect
-					.poll(() => lastLobbyUpdate(page))
-					.toEqual({ roomId: lobbyRoomId, participants: [zoe, ana, ben], availablePlaces: 4 });
+					.poll(() => lastWaitingRoomUpdate(page))
+					.toEqual({ roomId: waitingRoomRoomId, participants: [zoe, ana, ben], availablePlaces: 4 });
 
-				await decideOnLobby(lobbyRoomId, 'reject', [zoe.participantIdentity]);
+				await decideOnWaitingRoom(waitingRoomRoomId, 'reject', [zoe.participantIdentity]);
 				await expect
-					.poll(() => lastLobbyUpdate(page))
-					.toEqual({ roomId: lobbyRoomId, participants: [ana, ben], availablePlaces: 4 });
+					.poll(() => lastWaitingRoomUpdate(page))
+					.toEqual({ roomId: waitingRoomRoomId, participants: [ana, ben], availablePlaces: 4 });
 
-				await decideOnLobby(lobbyRoomId, 'admit', [ana.participantIdentity]);
+				await decideOnWaitingRoom(waitingRoomRoomId, 'admit', [ana.participantIdentity]);
 				await expect
-					.poll(() => lastLobbyUpdate(page))
-					.toEqual({ roomId: lobbyRoomId, participants: [ben], availablePlaces: 3 });
+					.poll(() => lastWaitingRoomUpdate(page))
+					.toEqual({ roomId: waitingRoomRoomId, participants: [ben], availablePlaces: 3 });
 				expect(await knocks(page)).toHaveLength(1);
 			});
 
-			test('should report a participant back in line after a failed admission through lobbyUpdated, not participantKnocked', async ({
+			test('should report a participant back in line after a failed admission through waitingRoomUpdated, not participantKnocked', async ({
 				page,
 				browser
 			}) => {
-				await createLobbyRoom({ maxParticipants: 2 });
-				await openMeeting(page, lobbyRoomId, { integration, role: 'moderator' });
+				await createWaitingRoomRoom({ maxParticipants: 2 });
+				await openMeeting(page, waitingRoomRoomId, { integration, role: 'moderator' });
 
 				// Zoe's request for her join token waits until the last place is taken.
 				const zoePage = await otherPage(browser);
@@ -1085,32 +1098,36 @@ for (const integration of INTEGRATIONS) {
 				let tokenRequestHeld!: () => void;
 				const held = new Promise<void>((resolve) => (tokenRequestHeld = resolve));
 				await zoePage.route('**/members/token', async (route) => {
-					if (route.request().postDataJSON()?.lobbyTicket) {
+					if (route.request().postDataJSON()?.waitingRoomTicket) {
 						tokenRequestHeld();
 						await released;
 					}
 
 					await route.continue();
 				});
-				await askToJoin(zoePage, lobbyRoomId, { name: 'Zoe' });
+				await askToJoin(zoePage, waitingRoomRoomId, { name: 'Zoe' });
 				const [zoe] = await waiting();
-				await expect.poll(() => knocks(page)).toEqual([{ roomId: lobbyRoomId, participant: zoe }]);
-				await expect.poll(() => lobbyStatuses(zoePage)).toHaveLength(1);
+				await expect.poll(() => knocks(page)).toEqual([{ roomId: waitingRoomRoomId, participant: zoe }]);
+				await expect.poll(() => waitingRoomStatuses(zoePage)).toHaveLength(1);
 
-				await decideOnLobby(lobbyRoomId, 'admit', [zoe.participantIdentity]);
+				await decideOnWaitingRoom(waitingRoomRoomId, 'admit', [zoe.participantIdentity]);
 				await held;
-				await openMeeting(await otherPage(browser), lobbyRoomId, { role: 'moderator' });
+				await openMeeting(await otherPage(browser), waitingRoomRoomId, { role: 'moderator' });
 				releaseTokenRequest();
 
 				await expect
-					.poll(() => lastLobbyUpdate(page), { timeout: NEXT_STATE_TIMEOUT })
-					.toEqual({ roomId: lobbyRoomId, participants: [zoe], availablePlaces: 0 });
+					.poll(() => lastWaitingRoomUpdate(page), { timeout: NEXT_STATE_TIMEOUT })
+					.toEqual({ roomId: waitingRoomRoomId, participants: [zoe], availablePlaces: 0 });
 				expect(await knocks(page)).toHaveLength(1);
 				await expect
-					.poll(async () => (await lobbyStatuses(zoePage)).map(({ status }) => status), {
+					.poll(async () => (await waitingRoomStatuses(zoePage)).map(({ status }) => status), {
 						timeout: NEXT_STATE_TIMEOUT
 					})
-					.toEqual([MeetLobbyStatus.WAITING, MeetLobbyStatus.ADMITTED, MeetLobbyStatus.WAITING]);
+					.toEqual([
+						MeetWaitingRoomStatus.WAITING,
+						MeetWaitingRoomStatus.ADMITTED,
+						MeetWaitingRoomStatus.WAITING
+					]);
 			});
 		});
 

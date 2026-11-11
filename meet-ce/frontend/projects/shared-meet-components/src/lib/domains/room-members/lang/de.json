@@ -209,11 +209,11 @@
           "LABEL": "Schreiben",
           "DESCRIPTION": "Erlaubt das Senden von Chat-Nachrichten. Erfordert „Lesen“"
         },
-        "lobbyBypass": {
+        "waitingRoomBypass": {
           "LABEL": "Ohne Warten beitreten",
           "DESCRIPTION": "Erlaubt, einem Raum mit Warteraum beizutreten, ohne auf die Zulassung zu warten"
         },
-        "lobbyAdmin": {
+        "waitingRoomAdmin": {
           "LABEL": "Teilnehmer zulassen",
           "DESCRIPTION": "Erlaubt, wartende Teilnehmer zuzulassen oder abzulehnen"
         }

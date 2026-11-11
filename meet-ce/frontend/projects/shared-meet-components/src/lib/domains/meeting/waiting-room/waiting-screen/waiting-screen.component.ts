@@ -2,7 +2,7 @@ import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { Component, computed, DestroyRef, effect, inject, OnInit, signal, untracked } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MeetLobbyStatus } from '@openvidu-meet/typings';
+import { MeetWaitingRoomStatus } from '@openvidu-meet/typings';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { LoggerService } from '../../../../shared/services/logger.service';
@@ -82,7 +82,7 @@ export class WaitingScreenComponent implements OnInit {
 		});
 
 		effect(() => {
-			if (this.waitingRoom.status() === MeetLobbyStatus.ADMITTED) {
+			if (this.waitingRoom.status() === MeetWaitingRoomStatus.ADMITTED) {
 				untracked(() => this.announce('WAITING_ROOM.ADMITTED', 'assertive'));
 			}
 		});

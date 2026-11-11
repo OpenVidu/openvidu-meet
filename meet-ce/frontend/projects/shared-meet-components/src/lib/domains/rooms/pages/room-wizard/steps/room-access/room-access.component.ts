@@ -116,8 +116,8 @@ export class RoomAccessComponent implements OnInit {
 		this.currentUserId.set((await this.authService.getUserId()) ?? '');
 	}
 
-	get lobbyEnabled(): boolean {
-		return this.roomAccessForm.controls.lobbyEnabled.value;
+	get waitingRoomEnabled(): boolean {
+		return this.roomAccessForm.controls.waitingRoomEnabled.value;
 	}
 
 	get moderatorForm(): RoomAccessRolePermissionsFormGroup {
@@ -254,9 +254,9 @@ export class RoomAccessComponent implements OnInit {
 	private saveFormData(formValue: Partial<RoomAccessFormValue>): void {
 		const stepData: Partial<MeetRoomOptions> = {
 			config: {
-				lobby: {
-					enabled: formValue.lobbyEnabled ?? false,
-					message: formValue.lobbyMessage?.trim() || null
+				waitingRoom: {
+					enabled: formValue.waitingRoomEnabled ?? false,
+					message: formValue.waitingRoomMessage?.trim() || null
 				}
 			},
 			access: {

@@ -10,7 +10,7 @@ import { TranslateService } from '../../../../shared/services/i18n/translate.ser
 import { UserService } from '../../../users/services/user.service';
 import { MemberFormComponent } from './member-form.component';
 
-const WAITING_ROOM_PERMISSIONS = ['lobbyBypass', 'lobbyAdmin'];
+const WAITING_ROOM_PERMISSIONS = ['waitingRoomBypass', 'waitingRoomAdmin'];
 
 const permissions = (granted: (key: string) => boolean): MeetRoomMemberPermissions =>
 	Object.fromEntries(
@@ -62,8 +62,8 @@ describe('MemberFormComponent (waiting room permissions)', () => {
 
 		expect(group).toBeDefined();
 		expect(Array.from(group!.querySelectorAll('.permission-row')).map((row) => row.id)).toEqual([
-			'member-permission-lobbyBypass',
-			'member-permission-lobbyAdmin'
+			'member-permission-waitingRoomBypass',
+			'member-permission-waitingRoomAdmin'
 		]);
 	});
 
