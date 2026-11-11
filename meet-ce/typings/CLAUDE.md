@@ -100,8 +100,8 @@ token.
   `meeting`). Every event about that element, not about the meeting, its participants or their
   media, starts with `embedded`, so a host finds all of them under one prefix.
 - **Known exceptions** the lint allows on purpose: the 3.8.0 deprecated aliases (derived from the
-  alias maps, gone in 3.12.0). `lobbyKnocked`/`participantKnocked` will be a deliberate
-  cross-module alias when the lobby module lands.
+  alias maps, gone in 3.12.0). The knock of the waiting room is `participantKnocked` alone, a
+  `participant` event with no `lobbyKnocked` alias.
 
 ## Change discipline
 

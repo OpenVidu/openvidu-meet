@@ -1,6 +1,7 @@
 import { MeetBroadcastInfo } from '../database/broadcast.entity.js';
 import { MeetRecordingStatus } from '../database/recording.entity.js';
 import { MeetReaction } from '../reaction.js';
+import { MeetLobbyList, MeetLobbyParticipant, MeetLobbyStatus } from '../response/lobby-response.js';
 import { MeetParticipantInfo, MeetParticipantPayload } from '../response/participant-response.js';
 import type { MeetParticipantDeparturePayload } from '../webhook.js';
 
@@ -42,6 +43,13 @@ export enum EmbeddedEventName {
 	 */
 	PARTICIPANT_ROLE_CHANGED = 'participantRoleChanged',
 	/**
+	 * Event emitted to the participants who hold `lobbyAdmin` when a participant asks to join and
+	 * waits, as soon as they ask. Participants already waiting when the local participant joins, and a
+	 * participant back in line after an admission that failed, are reported by `lobbyUpdated`, not by
+	 * this event.
+	 */
+	PARTICIPANT_KNOCKED = 'participantKnocked',
+	/**
 	 * Event emitted to every participant when a participant's hand is raised or lowered, by
 	 * themselves or by a moderator. A participant joining a meeting with raised hands receives one
 	 * event per raised hand, in queue order, right after `meetingJoined`. The queue is ordered by
@@ -55,12 +63,12 @@ export enum EmbeddedEventName {
 	PARTICIPANT_REACTION_SENT = 'participantReactionSent',
 	/**
 	 * Event emitted to the local participant when their microphone state changes. Emitted from the
-	 * prejoin screen onwards, before `meetingJoined`.
+	 * prejoin screen onwards, before `meetingJoined`, and also on the waiting screen.
 	 */
 	MEDIA_AUDIO_STATUS_CHANGED = 'mediaAudioStatusChanged',
 	/**
 	 * Event emitted to the local participant when their camera state changes. Emitted from the
-	 * prejoin screen onwards, before `meetingJoined`.
+	 * prejoin screen onwards, before `meetingJoined`, and also on the waiting screen.
 	 */
 	MEDIA_VIDEO_STATUS_CHANGED = 'mediaVideoStatusChanged',
 	/**
@@ -91,6 +99,21 @@ export enum EmbeddedEventName {
 	 * because it failed.
 	 */
 	BROADCAST_ENDED = 'broadcastEnded',
+	/**
+	 * Event emitted to the participants who hold `lobbyAdmin` with the whole list of participants
+	 * waiting to join and the free places of the meeting: on joining, and on every change of the list.
+	 */
+	LOBBY_UPDATED = 'lobbyUpdated',
+	/**
+	 * Event emitted to the participant who asks to join, for every state of their wait: `waiting`
+	 * (repeated every time their position in line changes), `admitted`, `rejected`, `left`, `expired`,
+	 * `meeting_ended` and `room_closed`. The first `waiting` comes with the first state the meeting
+	 * receives, so a participant whose connection never receives one gets none. `admitted` is not
+	 * the join: `meetingJoined` confirms it, and a join that finds the meeting full after `admitted`
+	 * raises no lobby event. No lobby event follows an access or connection error: its screen and
+	 * `embeddedCloseRequested` apply.
+	 */
+	LOBBY_STATUS_CHANGED = 'lobbyStatusChanged',
 	/**
 	 * Event emitted when the participant asks to close OpenVidu Meet by dismissing the post-meeting,
 	 * join, error or recording screen. The host application responds by removing the embedded
@@ -220,6 +243,14 @@ export interface EmbeddedEventPayloads {
 		origin: MeetEventOrigin.PARTICIPANT | MeetEventOrigin.MODERATOR;
 	};
 	/**
+	 * Payload for the {@link EmbeddedEventName.PARTICIPANT_KNOCKED} event. `participant` is who asks
+	 * to join (see {@link MeetLobbyParticipant}).
+	 */
+	[EmbeddedEventName.PARTICIPANT_KNOCKED]: {
+		roomId: string;
+		participant: MeetLobbyParticipant;
+	};
+	/**
 	 * Payload for the {@link EmbeddedEventName.PARTICIPANT_REACTION_SENT} event.
 	 * `participant` is who sent the reaction, as they are at that moment (see {@link MeetParticipantInfo}),
 	 * and `reaction` one of the reactions in {@link MeetReaction}.
@@ -274,6 +305,25 @@ export interface EmbeddedEventPayloads {
 	 * state, with its end date, duration and error if it failed.
 	 */
 	[EmbeddedEventName.BROADCAST_ENDED]: MeetBroadcastInfo;
+	/**
+	 * Payload for the {@link EmbeddedEventName.LOBBY_UPDATED} event: the waiting participants in
+	 * arrival order and the free places, or `null` for a room without a limit (see {@link MeetLobbyList}).
+	 */
+	[EmbeddedEventName.LOBBY_UPDATED]: {
+		roomId: string;
+	} & MeetLobbyList;
+	/**
+	 * Payload for the {@link EmbeddedEventName.LOBBY_STATUS_CHANGED} event. `participantIdentity` is the
+	 * identity the participant will have in the meeting, the one the server answered when they asked,
+	 * `status` the state of the wait (see {@link MeetLobbyStatus}) and `queuePosition`, from 1, the place
+	 * in line while `status` is `waiting`.
+	 */
+	[EmbeddedEventName.LOBBY_STATUS_CHANGED]: {
+		roomId: string;
+		participantIdentity: string;
+		status: MeetLobbyStatus;
+		queuePosition?: number;
+	};
 	/**
 	 * Payload for the {@link EmbeddedEventName.JOINED} event.
 	 * @deprecated Use {@link EmbeddedEventName.MEETING_JOINED}. Removed in 3.12.0.
@@ -386,6 +436,36 @@ export interface EmbeddedParticipantRoleChangedEvent {
 export interface EmbeddedParticipantHandChangedEvent {
 	event: EmbeddedEventName.PARTICIPANT_HAND_CHANGED;
 	payload: EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_HAND_CHANGED>;
+}
+
+/**
+ * Event message emitted when a participant asks to join: the event name plus its payload, derived
+ * from {@link EmbeddedEventPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedParticipantKnockedEvent {
+	event: EmbeddedEventName.PARTICIPANT_KNOCKED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_KNOCKED>;
+}
+
+/**
+ * Event message emitted when the list of waiting participants changes: the event name plus its
+ * payload, derived from {@link EmbeddedEventPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedLobbyUpdatedEvent {
+	event: EmbeddedEventName.LOBBY_UPDATED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.LOBBY_UPDATED>;
+}
+
+/**
+ * Event message emitted when the wait of the local participant changes: the event name plus its
+ * payload, derived from {@link EmbeddedEventPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedLobbyStatusChangedEvent {
+	event: EmbeddedEventName.LOBBY_STATUS_CHANGED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.LOBBY_STATUS_CHANGED>;
 }
 
 /**
@@ -518,6 +598,7 @@ export type EmbeddedEvent =
 	| EmbeddedParticipantJoinedEvent
 	| EmbeddedParticipantLeftEvent
 	| EmbeddedParticipantRoleChangedEvent
+	| EmbeddedParticipantKnockedEvent
 	| EmbeddedParticipantHandChangedEvent
 	| EmbeddedParticipantReactionSentEvent
 	| EmbeddedMediaAudioStatusChangedEvent
@@ -527,6 +608,8 @@ export type EmbeddedEvent =
 	| EmbeddedBroadcastStartedEvent
 	| EmbeddedBroadcastUpdatedEvent
 	| EmbeddedBroadcastEndedEvent
+	| EmbeddedLobbyUpdatedEvent
+	| EmbeddedLobbyStatusChangedEvent
 	| EmbeddedCloseRequestedEvent
 	| EmbeddedJoinedEvent
 	| EmbeddedLeftEvent

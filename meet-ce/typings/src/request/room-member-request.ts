@@ -47,6 +47,12 @@ export interface MeetRoomMemberTokenOptions {
 	 * never interpreted by OpenVidu Meet.
 	 */
 	participantMetadata?: string;
+	/**
+	 * Ticket of the participant's wait, as the token request answered it (`202`) when the room has a
+	 * waiting room. Once the participant is admitted, the same request with the ticket answers the join
+	 * token. Only accepted with `joinMeeting` true.
+	 */
+	lobbyTicket?: string;
 }
 
 /**

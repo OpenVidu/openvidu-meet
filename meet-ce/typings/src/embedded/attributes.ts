@@ -61,7 +61,7 @@ export enum EmbeddedAttribute {
 	E2EE_KEY = 'e2ee-key',
 	/**
 	 * URL to redirect to when the participant dismisses the post-meeting, join, error or recording
-	 * screen, right after the **`embeddedCloseRequested` event** fires.
+	 * screen, or the end screen of the waiting room, right after the **`embeddedCloseRequested` event** fires.
 	 */
 	LEAVE_REDIRECT_URL = 'leave-redirect-url',
 	/**
