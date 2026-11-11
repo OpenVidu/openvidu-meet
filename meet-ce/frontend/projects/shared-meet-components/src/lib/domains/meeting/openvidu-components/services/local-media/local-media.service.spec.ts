@@ -759,6 +759,37 @@ describe('LocalMediaService', () => {
 			expect(service.camera.enabled()).toBeFalse();
 		});
 
+		it('stops waiting for a prompt the browser has not answered: the devices stay off and come closed later', async () => {
+			const acquiring = service.acquire();
+			await browserIsOpeningTheDevices();
+
+			service.stopWaitingForDevices();
+			await acquiring;
+			await service.publish(asParticipant());
+
+			expect(service.camera.enabled()).toBeFalse();
+			expect(service.microphone.enabled()).toBeFalse();
+			expect(participant.publishTrack).not.toHaveBeenCalled();
+
+			handOver([asTrack(video), asTrack(audio)]);
+			await browserIsOpeningTheDevices();
+
+			expect(video.stopped).toBeTrue();
+			expect(audio.stopped).toBeTrue();
+			expect(service.camera.track()).toBeUndefined();
+		});
+
+		it('has nothing to stop waiting for once the browser answered', async () => {
+			const acquiring = service.acquire();
+			handOver([asTrack(video), asTrack(audio)]);
+			await acquiring;
+
+			service.stopWaitingForDevices();
+
+			expect(service.camera.enabled()).toBeTrue();
+			expect(video.stopped).toBeFalse();
+		});
+
 		it('closes a device the browser hands over after the release, and opens for the next entry', async () => {
 			const acquiring = service.acquire();
 			await browserIsOpeningTheDevices();

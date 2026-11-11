@@ -286,7 +286,26 @@
 		"ENDED_TITLE": "La réunion est terminée",
 		"ENDED_MESSAGE": "Elle s'est terminée avant votre admission. Si vous redemandez, vous attendrez la prochaine.",
 		"FULL_TITLE": "La salle d'attente est pleine",
-		"FULL_MESSAGE": "Trop de personnes attendent de rejoindre cette réunion pour le moment. Réessayez dans quelques minutes."
+		"FULL_MESSAGE": "Trop de personnes attendent de rejoindre cette réunion pour le moment. Réessayez dans quelques minutes.",
+		"ADMIN": {
+			"TITLE": "En attente d'admission",
+			"PLACES_LEFT": "{count, plural, =0 {Aucune place libre} one {# place libre} other {# places libres}}",
+			"EVERYONE": "Toutes les personnes en attente",
+			"ADMIT": "Admettre",
+			"DENY": "Refuser",
+			"ADMIT_NAMED": "Admettre {name}",
+			"DENY_NAMED": "Refuser {name}",
+			"ADMIT_COUNT": "{count, plural, other {Admettre #}}",
+			"DENY_ALL": "Tout refuser",
+			"DENY_ALL_TITLE": "Refuser toutes les personnes en attente ?",
+			"DENY_ALL_MESSAGE": "Toutes les personnes en attente verront qu'elles n'ont pas été admises. Elles peuvent redemander à participer.",
+			"CANCEL": "Annuler",
+			"SHARED_LINK": "Lien partagé",
+			"WAITING_COUNT": "{count, plural, other {# en attente d'admission}}",
+			"WAITING_LABEL": "en attente d'admission",
+			"WANTS_TO_JOIN": "Demande à participer",
+			"VIEW": "Voir"
+		}
 	},
 	"SHARE_ACCESS": {
 		"COPY_TOOLTIP": "Copier le lien d'accès à la salle",

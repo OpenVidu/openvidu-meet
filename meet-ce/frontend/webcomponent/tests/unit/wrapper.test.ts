@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals
 import type {
 	MeetBroadcastStartOptions,
 	MeetBroadcastStopOptions,
+	MeetLobbyDecisionOptions,
 	MeetParticipantMuteOptions
 } from '@openvidu-meet/typings';
 import { MeetParticipantModerationAction } from '@openvidu-meet/typings';
@@ -49,6 +50,8 @@ interface ComponentInstance {
 	participantReactionSend: jest.Mock;
 	broadcastStart: jest.Mock;
 	broadcastStop: jest.Mock;
+	lobbyAdmit: jest.Mock;
+	lobbyReject: jest.Mock;
 }
 
 interface TestableElement extends FakeNgElementBase {
@@ -73,6 +76,8 @@ interface TestableElement extends FakeNgElementBase {
 	participantReactionSend(reaction: string): void;
 	broadcastStart(options?: MeetBroadcastStartOptions): void;
 	broadcastStop(options?: MeetBroadcastStopOptions): void;
+	lobbyAdmit(options?: MeetLobbyDecisionOptions): void;
+	lobbyReject(options?: MeetLobbyDecisionOptions): void;
 	endMeeting(): void;
 	leaveRoom(): void;
 	kickParticipant(participantIdentity: string): void;
@@ -97,7 +102,9 @@ const componentInstance = (): ComponentInstance => ({
 	participantHandLowerAll: jest.fn(),
 	participantReactionSend: jest.fn(),
 	broadcastStart: jest.fn(),
-	broadcastStop: jest.fn()
+	broadcastStop: jest.fn(),
+	lobbyAdmit: jest.fn(),
+	lobbyReject: jest.fn()
 });
 
 const withComponent = (): [TestableElement, ComponentInstance] => {
@@ -279,6 +286,7 @@ describe('openvidu-meet custom element', () => {
 		// untouched: the element is a transport, it decides nothing.
 		const start: MeetBroadcastStartOptions = { destinationIds: ['dest-a'] };
 		const stop: MeetBroadcastStopOptions = { broadcastIds: ['bc1'] };
+		const decision: MeetLobbyDecisionOptions = { participantIdentities: ['zoe', 'ben'] };
 		const commands: [keyof ComponentInstance, (el: TestableElement) => void, unknown[]][] = [
 			['meetingEnd', (el) => el.meetingEnd(), []],
 			['meetingLeave', (el) => el.meetingLeave(), []],
@@ -300,7 +308,9 @@ describe('openvidu-meet custom element', () => {
 			['participantHandLowerAll', (el) => el.participantHandLowerAll(), []],
 			['participantReactionSend', (el) => el.participantReactionSend('thumbs_up'), ['thumbs_up']],
 			['broadcastStart', (el) => el.broadcastStart(start), [start]],
-			['broadcastStop', (el) => el.broadcastStop(stop), [stop]]
+			['broadcastStop', (el) => el.broadcastStop(stop), [stop]],
+			['lobbyAdmit', (el) => el.lobbyAdmit(decision), [decision]],
+			['lobbyReject', (el) => el.lobbyReject(), [undefined]]
 		];
 
 		it.each(commands)('%s() reaches the Angular component instance as it was called', (name, call, args) => {

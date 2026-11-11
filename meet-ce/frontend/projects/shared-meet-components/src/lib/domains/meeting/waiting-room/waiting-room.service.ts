@@ -255,6 +255,8 @@ export class WaitingRoomService {
 			entry.tokenRequestInFlight = false;
 
 			if (answer.kind === 'token') {
+				this.localMedia.stopWaitingForDevices();
+
 				if (document.visibilityState === 'hidden') {
 					this.localMedia
 						.setMicrophoneEnabled(false)

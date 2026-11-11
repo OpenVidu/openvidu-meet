@@ -286,7 +286,26 @@
 		"ENDED_TITLE": "Das Meeting ist beendet",
 		"ENDED_MESSAGE": "Es wurde beendet, bevor Sie eingelassen wurden. Wenn Sie erneut anfragen, warten Sie auf das nächste.",
 		"FULL_TITLE": "Der Warteraum ist voll",
-		"FULL_MESSAGE": "Gerade warten zu viele Personen auf den Beitritt zu diesem Meeting. Versuchen Sie es in ein paar Minuten erneut."
+		"FULL_MESSAGE": "Gerade warten zu viele Personen auf den Beitritt zu diesem Meeting. Versuchen Sie es in ein paar Minuten erneut.",
+		"ADMIN": {
+			"TITLE": "Wartet auf Einlass",
+			"PLACES_LEFT": "{count, plural, =0 {Keine Plätze frei} one {# Platz frei} other {# Plätze frei}}",
+			"EVERYONE": "Alle Wartenden",
+			"ADMIT": "Zulassen",
+			"DENY": "Ablehnen",
+			"ADMIT_NAMED": "{name} zulassen",
+			"DENY_NAMED": "{name} ablehnen",
+			"ADMIT_COUNT": "{count, plural, other {# zulassen}}",
+			"DENY_ALL": "Alle ablehnen",
+			"DENY_ALL_TITLE": "Alle Wartenden ablehnen?",
+			"DENY_ALL_MESSAGE": "Alle, die auf Einlass warten, sehen, dass sie nicht eingelassen wurden. Sie können erneut anfragen.",
+			"CANCEL": "Abbrechen",
+			"SHARED_LINK": "Geteilter Link",
+			"WAITING_COUNT": "{count, plural, other {# warten auf Einlass}}",
+			"WAITING_LABEL": "warten auf Einlass",
+			"WANTS_TO_JOIN": "Möchte beitreten",
+			"VIEW": "Anzeigen"
+		}
 	},
 	"SHARE_ACCESS": {
 		"COPY_TOOLTIP": "Raum-Zugangslink kopieren",

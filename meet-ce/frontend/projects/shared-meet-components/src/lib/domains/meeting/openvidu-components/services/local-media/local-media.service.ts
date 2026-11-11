@@ -54,6 +54,8 @@ export class LocalMediaService {
 	private entry = 0;
 	private lastInitialState: Partial<InitialMediaState> = {};
 	private queue: Promise<unknown> = Promise.resolve();
+	/** Each request the browser has not answered yet, given up by calling it. */
+	private readonly unansweredRequests = new Set<() => void>();
 
 	/**
 	 * Takes the initial state resolved outside the library. It arrives through a reactive input that
@@ -129,6 +131,15 @@ export class LocalMediaService {
 		if (microphone) return 'ERRORS.MICROPHONE_UNAVAILABLE';
 
 		return undefined;
+	}
+
+	/**
+	 * Stops waiting for the browser to answer a device request, as when the participant is let in while
+	 * the permission prompt is still up: the devices it asked for stay off, and whatever the browser
+	 * hands over later is closed.
+	 */
+	stopWaitingForDevices(): void {
+		this.unansweredRequests.forEach((giveUp) => giveUp());
 	}
 
 	/** Stops and forgets both devices and the participant they were published to. The next entry starts over. */
@@ -327,7 +338,27 @@ export class LocalMediaService {
 	}
 
 	private createTracks(options: CreateLocalTracksOptions): Promise<LocalTrack[]> {
-		return acquireDevice(() => this.livekitSdkService.createLocalTracks(options), this.log);
+		const request = acquireDevice(() => this.livekitSdkService.createLocalTracks(options), this.log);
+
+		return new Promise((resolve, reject) => {
+			const giveUp = () => {
+				this.unansweredRequests.delete(giveUp);
+
+				if (options.video) this.camera.setWanted(false);
+
+				if (options.audio) this.microphone.setWanted(false);
+
+				resolve([]);
+			};
+
+			const answered = () => this.unansweredRequests.delete(giveUp);
+
+			this.unansweredRequests.add(giveUp);
+			request.then(
+				(tracks) => (answered() ? resolve(tracks) : tracks.forEach((track) => track.stop())),
+				(error) => answered() && reject(error)
+			);
+		});
 	}
 
 	/** Device operations run one at a time: a toggle issued while the devices are still opening applies once they are. */

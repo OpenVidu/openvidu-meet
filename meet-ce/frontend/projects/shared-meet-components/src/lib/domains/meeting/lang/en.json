@@ -286,7 +286,26 @@
 		"ENDED_TITLE": "The meeting has ended",
 		"ENDED_MESSAGE": "It ended before you were let in. If you ask again, you'll wait for the next one.",
 		"FULL_TITLE": "The waiting room is full",
-		"FULL_MESSAGE": "Too many people are waiting to join this meeting right now. Try again in a few minutes."
+		"FULL_MESSAGE": "Too many people are waiting to join this meeting right now. Try again in a few minutes.",
+		"ADMIN": {
+			"TITLE": "Waiting to join",
+			"PLACES_LEFT": "{count, plural, =0 {No places left} one {# place left} other {# places left}}",
+			"EVERYONE": "Everyone waiting",
+			"ADMIT": "Admit",
+			"DENY": "Deny",
+			"ADMIT_NAMED": "Admit {name}",
+			"DENY_NAMED": "Deny {name}",
+			"ADMIT_COUNT": "{count, plural, other {Admit #}}",
+			"DENY_ALL": "Deny all",
+			"DENY_ALL_TITLE": "Deny everyone waiting?",
+			"DENY_ALL_MESSAGE": "Everyone waiting to join will see that they weren't let in. They can ask to join again.",
+			"CANCEL": "Cancel",
+			"SHARED_LINK": "Shared link",
+			"WAITING_COUNT": "{count, plural, other {# waiting to join}}",
+			"WAITING_LABEL": "waiting to join",
+			"WANTS_TO_JOIN": "Wants to join",
+			"VIEW": "View"
+		}
 	},
 	"SHARE_ACCESS": {
 		"COPY_TOOLTIP": "Copy room access link",

@@ -17,8 +17,14 @@
 			<span class="notification-message">{{ notification.message }}</span>
 		</div>
 
+		@if (notification.secondaryAction; as action) {
+			<button type="button" class="notification-action secondary" (click)="run(notification, action)">
+				{{ action.label }}
+			</button>
+		}
+
 		@if (notification.action; as action) {
-			<button type="button" class="notification-action" (click)="run(notification)">
+			<button type="button" class="notification-action" (click)="run(notification, action)">
 				{{ action.label }}
 			</button>
 		}

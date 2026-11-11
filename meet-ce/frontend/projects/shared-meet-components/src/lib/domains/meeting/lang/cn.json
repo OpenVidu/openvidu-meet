@@ -286,7 +286,26 @@
 		"ENDED_TITLE": "会议已结束",
 		"ENDED_MESSAGE": "会议在您获准进入前已结束。如果再次请求，您将等待下一场会议。",
 		"FULL_TITLE": "等候室已满",
-		"FULL_MESSAGE": "目前等待加入此会议的人数过多。请几分钟后再试。"
+		"FULL_MESSAGE": "目前等待加入此会议的人数过多。请几分钟后再试。",
+		"ADMIN": {
+			"TITLE": "等待加入",
+			"PLACES_LEFT": "{count, plural, =0 {没有空位} other {剩余 # 个空位}}",
+			"EVERYONE": "所有等待者",
+			"ADMIT": "准许",
+			"DENY": "拒绝",
+			"ADMIT_NAMED": "准许 {name}",
+			"DENY_NAMED": "拒绝 {name}",
+			"ADMIT_COUNT": "{count, plural, other {准许 # 人}}",
+			"DENY_ALL": "全部拒绝",
+			"DENY_ALL_TITLE": "拒绝所有等待者？",
+			"DENY_ALL_MESSAGE": "所有等待加入的人都会看到自己未获准进入。他们可以再次请求加入。",
+			"CANCEL": "取消",
+			"SHARED_LINK": "共享链接",
+			"WAITING_COUNT": "{count, plural, other {# 人等待加入}}",
+			"WAITING_LABEL": "人等待加入",
+			"WANTS_TO_JOIN": "请求加入",
+			"VIEW": "查看"
+		}
 	},
 	"SHARE_ACCESS": {
 		"COPY_TOOLTIP": "复制房间访问链接",

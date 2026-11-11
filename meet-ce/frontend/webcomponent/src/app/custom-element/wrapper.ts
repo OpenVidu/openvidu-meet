@@ -4,6 +4,7 @@ import {
 	EmbeddedEventPayloadFor,
 	MeetBroadcastStartOptions,
 	MeetBroadcastStopOptions,
+	MeetLobbyDecisionOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetReaction
@@ -117,6 +118,14 @@ export function createOpenViduMeetElementClass(
 
 		broadcastStop(options?: MeetBroadcastStopOptions): void {
 			this._run(EmbeddedCommandName.BROADCAST_STOP, (app) => app.broadcastStop(options));
+		}
+
+		lobbyAdmit(options?: MeetLobbyDecisionOptions): void {
+			this._run(EmbeddedCommandName.LOBBY_ADMIT, (app) => app.lobbyAdmit(options));
+		}
+
+		lobbyReject(options?: MeetLobbyDecisionOptions): void {
+			this._run(EmbeddedCommandName.LOBBY_REJECT, (app) => app.lobbyReject(options));
 		}
 
 		// ── Deprecated method aliases ────────────────────────────────────────

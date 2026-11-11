@@ -48,6 +48,12 @@ export type NotificationTone = 'alert' | 'warning' | 'neutral';
  */
 export type NotificationPlacement = 'corner' | 'pinned';
 
+/** Something the reader can do about a notification, offered as a button. */
+export interface NotificationAction {
+	label: NotificationText;
+	run: () => void;
+}
+
 /**
  * A message shown without stopping what the reader is doing, as opposed to the overlays
  * {@link DialogOptions} describes: it waits its turn in a stack and says only what to read.
@@ -61,10 +67,9 @@ export interface NotificationOptions {
 	title?: NotificationText;
 	message: NotificationText;
 	/** Something the reader can do about it, offered as a button. Running it takes the notification away. */
-	action?: {
-		label: NotificationText;
-		run: () => void;
-	};
+	action?: NotificationAction;
+	/** A second answer, the lesser one, offered before {@link action}. */
+	secondaryAction?: NotificationAction;
 	/** Defaults to `neutral`. */
 	tone?: NotificationTone;
 	/** Defaults to `corner`. */

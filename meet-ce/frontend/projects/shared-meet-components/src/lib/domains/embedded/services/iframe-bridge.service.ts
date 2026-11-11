@@ -310,9 +310,23 @@ export class IframeBridgeService {
 				break;
 			}
 
+			case EmbeddedCommandName.LOBBY_ADMIT:
+				await commandService.lobbyAdmit({ participantIdentities: this.extractParticipantIdentities(message) });
+				break;
+
+			case EmbeddedCommandName.LOBBY_REJECT:
+				await commandService.lobbyReject({ participantIdentities: this.extractParticipantIdentities(message) });
+				break;
+
 			default:
 				break;
 		}
+	}
+
+	/** Reads the optional `participantIdentities` of a waiting room command: absent means everyone waiting. */
+	private extractParticipantIdentities(message: EmbeddedCommand): string[] | undefined {
+		const payload = 'payload' in message ? message.payload : undefined;
+		return payload && 'participantIdentities' in payload ? payload.participantIdentities : undefined;
 	}
 
 	/**

@@ -39,6 +39,7 @@ import {
 	type EmbeddedEvent,
 	type MeetBroadcastStartOptions,
 	type MeetBroadcastStopOptions,
+	type MeetLobbyDecisionOptions,
 	type MeetParticipantModerationAction,
 	type MeetParticipantMuteOptions,
 	type MeetReaction,
@@ -144,6 +145,8 @@ export class App {
 	readonly broadcastStarted = output<EmbeddedEventPayloadFor<EmbeddedEventName.BROADCAST_STARTED>>();
 	readonly broadcastUpdated = output<EmbeddedEventPayloadFor<EmbeddedEventName.BROADCAST_UPDATED>>();
 	readonly broadcastEnded = output<EmbeddedEventPayloadFor<EmbeddedEventName.BROADCAST_ENDED>>();
+	readonly participantKnocked = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_KNOCKED>>();
+	readonly lobbyUpdated = output<EmbeddedEventPayloadFor<EmbeddedEventName.LOBBY_UPDATED>>();
 	readonly lobbyStatusChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.LOBBY_STATUS_CHANGED>>();
 	readonly embeddedCloseRequested = output<void>();
 
@@ -373,6 +376,14 @@ export class App {
 		return this.commandService.broadcastStop(options);
 	}
 
+	lobbyAdmit(options?: MeetLobbyDecisionOptions): Promise<void> {
+		return this.commandService.lobbyAdmit(options);
+	}
+
+	lobbyReject(options?: MeetLobbyDecisionOptions): Promise<void> {
+		return this.commandService.lobbyReject(options);
+	}
+
 	// ── Internal ─────────────────────────────────────────────────────────────
 	// The bus only ever queues canonical events (see EmbeddedEventBusService), so this switch
 	// only ever handles canonical names; emitting the deprecated output alongside the canonical
@@ -435,6 +446,12 @@ export class App {
 				break;
 			case EmbeddedEventName.BROADCAST_ENDED:
 				this.broadcastEnded.emit(payload);
+				break;
+			case EmbeddedEventName.PARTICIPANT_KNOCKED:
+				this.participantKnocked.emit(payload);
+				break;
+			case EmbeddedEventName.LOBBY_UPDATED:
+				this.lobbyUpdated.emit(payload);
 				break;
 			case EmbeddedEventName.LOBBY_STATUS_CHANGED:
 				this.lobbyStatusChanged.emit(payload);

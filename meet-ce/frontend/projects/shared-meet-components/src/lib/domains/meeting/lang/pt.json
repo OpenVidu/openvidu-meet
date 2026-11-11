@@ -286,7 +286,26 @@
 		"ENDED_TITLE": "A reunião terminou",
 		"ENDED_MESSAGE": "Terminou antes de ser autorizado a entrar. Se voltar a pedir, aguardará pela próxima.",
 		"FULL_TITLE": "A sala de espera está cheia",
-		"FULL_MESSAGE": "Há demasiadas pessoas à espera para entrar nesta reunião. Tente novamente dentro de alguns minutos."
+		"FULL_MESSAGE": "Há demasiadas pessoas à espera para entrar nesta reunião. Tente novamente dentro de alguns minutos.",
+		"ADMIN": {
+			"TITLE": "À espera para entrar",
+			"PLACES_LEFT": "{count, plural, =0 {Sem lugares livres} one {# lugar livre} other {# lugares livres}}",
+			"EVERYONE": "Todos os que estão à espera",
+			"ADMIT": "Admitir",
+			"DENY": "Recusar",
+			"ADMIT_NAMED": "Admitir {name}",
+			"DENY_NAMED": "Recusar {name}",
+			"ADMIT_COUNT": "{count, plural, other {Admitir #}}",
+			"DENY_ALL": "Recusar todos",
+			"DENY_ALL_TITLE": "Recusar todos os que estão à espera?",
+			"DENY_ALL_MESSAGE": "Todos os que estão à espera para entrar vão ver que não foram autorizados a entrar. Podem pedir novamente para entrar.",
+			"CANCEL": "Cancelar",
+			"SHARED_LINK": "Link partilhado",
+			"WAITING_COUNT": "{count, plural, other {# à espera para entrar}}",
+			"WAITING_LABEL": "à espera para entrar",
+			"WANTS_TO_JOIN": "Pede para entrar",
+			"VIEW": "Ver"
+		}
 	},
 	"SHARE_ACCESS": {
 		"COPY_TOOLTIP": "Copiar ligação de acesso à sala",
