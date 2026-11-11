@@ -142,6 +142,8 @@ type OpenMeetingOptions = {
 	showLanguageSelector?: boolean;
 };
 
+type MountedMeeting = { meet: (selector: string) => Locator; participantName: string };
+
 /**
  * Mounts `<openvidu-meet>` with the role's anonymous-access URL fetched from the
  * REST API and drives the join screen until the media-setup (prejoin) screen renders,
@@ -156,7 +158,23 @@ export const openMeetingAtMediaSetup = async (
 	page: Page,
 	roomId: string,
 	options?: OpenMeetingOptions
-): Promise<{ meet: (selector: string) => Locator; participantName: string }> => {
+): Promise<MountedMeeting> => {
+	const mounted = await submitJoinScreen(page, roomId, options);
+	await expect(mounted.meet('ov-meeting-media-setup')).toBeVisible({ timeout: 15_000 });
+	return mounted;
+};
+
+/**
+ * Mounts the meeting like {@link openMeetingAtMediaSetup} in a room with the waiting room on, where
+ * submitting the join screen asks to join, and waits for the waiting screen.
+ */
+export const askToJoin = async (page: Page, roomId: string, options?: OpenMeetingOptions): Promise<MountedMeeting> => {
+	const mounted = await submitJoinScreen(page, roomId, options);
+	await expect(mounted.meet('#waiting-screen')).toBeVisible({ timeout: 15_000 });
+	return mounted;
+};
+
+const submitJoinScreen = async (page: Page, roomId: string, options?: OpenMeetingOptions): Promise<MountedMeeting> => {
 	const {
 		integration = 'webcomponent',
 		role = 'speaker',
@@ -229,8 +247,6 @@ export const openMeetingAtMediaSetup = async (
 	} catch {
 		// Name screen skipped — proceed directly.
 	}
-
-	await expect(meet('ov-meeting-media-setup')).toBeVisible({ timeout: 15_000 });
 
 	return { meet, participantName };
 };
@@ -489,6 +505,26 @@ export const broadcastStopToCommand = async (page: Page, names: string[]): Promi
 	await page.getByTestId('btn-broadcast-stop').click();
 };
 
+/** Clicks the testapp's `lobbyAdmit()` button naming `participantIdentities`, or, with none, everyone waiting. */
+export const lobbyAdmitCommand = async (page: Page, participantIdentities: string[] = []): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+	await page.getByTestId('input-lobby-identities').fill(participantIdentities.join(','));
+	await page.getByTestId('btn-lobby-admit').click();
+};
+
+/** Clicks the testapp's `lobbyReject()` button naming `participantIdentities`, or, with none, everyone waiting. */
+export const lobbyRejectCommand = async (page: Page, participantIdentities: string[] = []): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+	await page.getByTestId('input-lobby-identities').fill(participantIdentities.join(','));
+	await page.getByTestId('btn-lobby-reject').click();
+};
+
+/** Removes the embedded meeting from the host page, the element or the iframe, as a host application would. */
+export const removeEmbeddedMeeting = async (page: Page, integration: Integration): Promise<void> => {
+	const host = integration === 'iframe' ? page.getByTestId('meet-iframe') : page.locator('openvidu-meet');
+	await host.evaluate((element) => element.remove());
+};
+
 /** Clicks the testapp's deprecated `leaveRoom()` button. Removed in 3.12.0. */
 export const leaveRoomLegacyCommand = async (page: Page): Promise<void> => {
 	await showControlsPanel(page, 'commands');
@@ -587,6 +623,12 @@ export const eventPayloadField = async (event: Locator, field: string): Promise<
 
 	return value;
 };
+
+/** The payloads of every `.event-{name}` marker, in the order the events arrived. */
+export const eventPayloads = <T = Record<string, unknown>>(page: Page, eventName: EmbeddedEventName): Promise<T[]> =>
+	eventLocator(page, eventName).evaluateAll((markers) =>
+		markers.map((marker) => JSON.parse(marker.textContent || '{}'))
+	);
 
 /** The `.event-participantHandChanged` markers about `participantIdentity` reporting the hand `raised` or not. */
 export const participantHandChangedLocator = (page: Page, participantIdentity: string, raised: boolean): Locator =>

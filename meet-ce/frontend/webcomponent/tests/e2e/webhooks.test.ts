@@ -2,6 +2,9 @@ import {
 	LeftEventReason,
 	MeetBroadcastInfo,
 	MeetBroadcastStatus,
+	MeetEventOrigin,
+	MeetLobbyParticipantType,
+	MeetLobbyStatus,
 	MeetParticipantJoinedPayload,
 	MeetParticipantLeftPayload,
 	MeetParticipantModerationAction,
@@ -14,20 +17,23 @@ import {
 } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { createRtmpSink, deleteRtmpSinks } from '../helpers/broadcast-sink.helper';
-import { createRoom, deleteRooms, getRecording, getRoom } from '../helpers/meet-api.helper';
+import { createRoom, deleteRooms, getLobby, getRecording, getRoom } from '../helpers/meet-api.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import {
+	askToJoin,
 	broadcastStartCommand,
 	broadcastStopCommand,
 	endMeetingCommand,
 	expectWebhook,
 	joinedParticipantIdentity,
 	leaveMeeting,
+	lobbyAdmitCommand,
+	lobbyRejectCommand,
 	openMeeting,
 	participantUpdateRoleCommand,
 	webhookLocator
 } from '../helpers/testapp.helper';
-import { getWebhookFromStorage } from '../helpers/ui-utils.helper';
+import { getWebhookFromStorage, webhooksFromStorage } from '../helpers/ui-utils.helper';
 
 test.describe('Webhooks E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -253,5 +259,65 @@ test.describe('Webhooks E2E Tests', () => {
 		const ended = endedWebhook.data as MeetBroadcastInfo;
 		expect(ended.broadcastId).toBe(started.broadcastId);
 		expect(ended.status).toBe(MeetBroadcastStatus.COMPLETE);
+	});
+
+	test('should receive participantKnocked once per wait and lobbyStatusChanged for each decision', async ({
+		page,
+		browser
+	}) => {
+		const { roomId: lobbyRoomId, roomName } = await createRoom({ config: { lobby: { enabled: true } } });
+		createdRoomIds.push(lobbyRoomId);
+		await openMeeting(page, lobbyRoomId, { role: 'moderator' });
+
+		const anaContext = await browser.newContext();
+		const benContext = await browser.newContext();
+		await askToJoin(await anaContext.newPage(), lobbyRoomId, { name: 'Ana', externalId: 'u-42' });
+		await askToJoin(await benContext.newPage(), lobbyRoomId, { name: 'Ben' });
+		const [ana, ben] = (await getLobby(lobbyRoomId)).participants;
+		expect(ana).toMatchObject({
+			participantName: 'Ana',
+			type: MeetLobbyParticipantType.ANONYMOUS,
+			externalId: 'u-42'
+		});
+
+		const knocked = () => webhooksFromStorage(page, lobbyRoomId, MeetWebhookEventType.PARTICIPANT_KNOCKED);
+		await expect
+			.poll(async () => (await knocked()).map(({ data }) => data))
+			.toEqual(
+				expect.arrayContaining([
+					{ roomId: lobbyRoomId, roomName, participant: ana },
+					{ roomId: lobbyRoomId, roomName, participant: ben }
+				])
+			);
+
+		await lobbyRejectCommand(page, [ana.participantIdentity]);
+		await lobbyAdmitCommand(page, [ben.participantIdentity]);
+
+		const statusChanged = () => webhooksFromStorage(page, lobbyRoomId, MeetWebhookEventType.LOBBY_STATUS_CHANGED);
+		await expect
+			.poll(async () => (await statusChanged()).map(({ data }) => data))
+			.toEqual(
+				expect.arrayContaining([
+					{
+						roomId: lobbyRoomId,
+						roomName,
+						participant: ana,
+						status: MeetLobbyStatus.REJECTED,
+						origin: MeetEventOrigin.MODERATOR
+					},
+					{
+						roomId: lobbyRoomId,
+						roomName,
+						participant: ben,
+						status: MeetLobbyStatus.ADMITTED,
+						origin: MeetEventOrigin.MODERATOR
+					}
+				])
+			);
+		expect(await statusChanged()).toHaveLength(2);
+		expect(await knocked()).toHaveLength(2);
+
+		await anaContext.close();
+		await benContext.close();
 	});
 });

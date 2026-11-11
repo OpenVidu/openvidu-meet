@@ -2,16 +2,25 @@ import {
 	EmbeddedEventName,
 	LeftEventReason,
 	MeetEventOrigin,
+	MeetLobbyStatus,
 	MeetParticipantModerationAction,
 	MeetReaction,
 	MeetRecordingStatus,
 	MeetRoomMemberRole,
+	MeetRoomOptions,
 	MeetWebhookEventType
 } from '@openvidu-meet/typings';
-import { expect, test } from '@playwright/test';
+import { Browser, BrowserContext, expect, Page, test } from '@playwright/test';
 import { INTEGRATIONS, meetLocator, wcLocator } from '../helpers/webcomponent.helper';
 import { createRtmpSink, deleteRtmpSinks } from '../helpers/broadcast-sink.helper';
-import { createRoom, deleteRooms, getRecording } from '../helpers/meet-api.helper';
+import {
+	createRoom,
+	decideOnLobby,
+	deleteRooms,
+	getLobby,
+	getRecording,
+	listMeetingParticipants
+} from '../helpers/meet-api.helper';
 import {
 	expectPrejoinCameraEnabled,
 	expectPrejoinMicEnabled,
@@ -19,6 +28,7 @@ import {
 	expectToolbarMicEnabled
 } from '../helpers/media-controls.helper';
 import {
+	askToJoin,
 	broadcastStartCommand,
 	broadcastStartToCommand,
 	broadcastStopCommand,
@@ -27,6 +37,7 @@ import {
 	endMeetingLegacyCommand,
 	eventLocator,
 	eventPayloadField,
+	eventPayloads,
 	expectEvent,
 	expectWebhook,
 	participantHandChangedLocator,
@@ -39,6 +50,8 @@ import {
 	leaveMeeting,
 	leaveRoomCommand,
 	leaveRoomLegacyCommand,
+	lobbyAdmitCommand,
+	lobbyRejectCommand,
 	mediaToggleAudioCommand,
 	mediaToggleScreenShareCommand,
 	mediaToggleVideoCommand,
@@ -51,8 +64,10 @@ import {
 	participantUpdateRoleCommand,
 	recordingStartCommand,
 	recordingStatusLocator,
-	recordingStopCommand
+	recordingStopCommand,
+	removeEmbeddedMeeting
 } from '../helpers/testapp.helper';
+import { getWebhookFromStorage } from '../helpers/ui-utils.helper';
 
 // The command/event API is identical across embedding transports — only the
 // delivery differs (element methods/DOM events vs. postMessage). Each spec runs
@@ -997,6 +1012,201 @@ for (const integration of INTEGRATIONS) {
 				await page.waitForTimeout(3_000);
 				await expect(eventLocator(page, EmbeddedEventName.BROADCAST_STARTED)).toHaveCount(0);
 				await expect(meetLocator(page, integration, '#broadcast-tag')).toHaveCount(0);
+			});
+		});
+
+		test.describe('Waiting room commands', () => {
+			const contexts: BrowserContext[] = [];
+			let lobbyRoomId: string;
+
+			const createLobbyRoom = async (options: MeetRoomOptions = {}): Promise<void> => {
+				({ roomId: lobbyRoomId } = await createRoom({
+					...options,
+					config: { lobby: { enabled: true }, ...options.config }
+				}));
+				createdRoomIds.push(lobbyRoomId);
+			};
+
+			/** Asks to join as `name` from a web component of its own browser context, closed after the test. */
+			const waiter = async (browser: Browser, name: string): Promise<Page> => {
+				const context = await browser.newContext();
+				contexts.push(context);
+				const waiterPage = await context.newPage();
+				await askToJoin(waiterPage, lobbyRoomId, { name });
+				return waiterPage;
+			};
+
+			const waitingNames = async (): Promise<string[]> =>
+				(await getLobby(lobbyRoomId)).participants.map(({ participantName }) => participantName);
+
+			const identitiesOf = async (...names: string[]): Promise<string[]> => {
+				const { participants } = await getLobby(lobbyRoomId);
+				return names.map(
+					(name) => participants.find(({ participantName }) => participantName === name)!.participantIdentity
+				);
+			};
+
+			const meetingNames = async (): Promise<string[]> =>
+				(await listMeetingParticipants(lobbyRoomId)).map(({ participantName }) => participantName).sort();
+			const lobbyStatuses = async (target: Page): Promise<MeetLobbyStatus[]> =>
+				(await eventPayloads<{ status: MeetLobbyStatus }>(target, EmbeddedEventName.LOBBY_STATUS_CHANGED)).map(
+					({ status }) => status
+				);
+			const expectRejected = (waiterPage: Page) =>
+				expect(wcLocator(waiterPage, '#waiting-outcome-rejected')).toBeVisible({ timeout: 10_000 });
+
+			test.afterEach(async () => {
+				await Promise.all(contexts.splice(0).map((context) => context.close().catch(() => {})));
+			});
+
+			test('should admit with lobbyAdmit the participant named, then several named', async ({
+				page,
+				browser
+			}) => {
+				await createLobbyRoom();
+				await openMeeting(page, lobbyRoomId, { integration, role: 'moderator', name: 'Host' });
+				await waiter(browser, 'Zoe');
+				await waiter(browser, 'Ana');
+				await waiter(browser, 'Ben');
+
+				await lobbyAdmitCommand(page, await identitiesOf('Ana'));
+				await expect.poll(waitingNames).toEqual(['Zoe', 'Ben']);
+				await expect.poll(meetingNames, { timeout: 20_000 }).toEqual(['Ana', 'Host']);
+
+				await lobbyAdmitCommand(page, await identitiesOf('Zoe', 'Ben'));
+				await expect.poll(waitingNames).toEqual([]);
+				await expect.poll(meetingNames, { timeout: 20_000 }).toEqual(['Ana', 'Ben', 'Host', 'Zoe']);
+			});
+
+			test('should reject with lobbyReject the participant named, then several named', async ({
+				page,
+				browser
+			}) => {
+				await createLobbyRoom();
+				await openMeeting(page, lobbyRoomId, { integration, role: 'moderator' });
+				const zoe = await waiter(browser, 'Zoe');
+				const ana = await waiter(browser, 'Ana');
+				const ben = await waiter(browser, 'Ben');
+
+				await lobbyRejectCommand(page, await identitiesOf('Ana'));
+				await expectRejected(ana);
+				expect(await waitingNames()).toEqual(['Zoe', 'Ben']);
+
+				await lobbyRejectCommand(page, await identitiesOf('Zoe', 'Ben'));
+				await expectRejected(zoe);
+				await expectRejected(ben);
+				expect(await waitingNames()).toEqual([]);
+			});
+
+			test('should admit with lobbyAdmit without identities those first in line up to the free places', async ({
+				page,
+				browser
+			}) => {
+				await createLobbyRoom({ config: { maxParticipants: 2 } });
+				await openMeeting(page, lobbyRoomId, { integration, role: 'moderator', name: 'Host' });
+				await waiter(browser, 'Zoe');
+				await waiter(browser, 'Ana');
+
+				await lobbyAdmitCommand(page);
+
+				await expect.poll(meetingNames, { timeout: 20_000 }).toEqual(['Host', 'Zoe']);
+				expect(await waitingNames()).toEqual(['Ana']);
+			});
+
+			test('should reject with lobbyReject without identities everyone waiting', async ({ page, browser }) => {
+				await createLobbyRoom();
+				await openMeeting(page, lobbyRoomId, { integration, role: 'moderator' });
+				const zoe = await waiter(browser, 'Zoe');
+				const ana = await waiter(browser, 'Ana');
+
+				await lobbyRejectCommand(page);
+
+				await expectRejected(zoe);
+				await expectRejected(ana);
+				expect(await waitingNames()).toEqual([]);
+			});
+
+			test('should not decide on anyone when the caller lacks the lobbyAdmin permission', async ({
+				page,
+				browser
+			}) => {
+				await createLobbyRoom({ roles: { moderator: { permissions: { lobbyAdmin: false } } } });
+				await openMeeting(page, lobbyRoomId, { integration, role: 'moderator', initialVideoActive: true });
+				const zoe = await waiter(browser, 'Zoe');
+				const [zoeIdentity] = await identitiesOf('Zoe');
+
+				await lobbyRejectCommand(page, [zoeIdentity]);
+				await lobbyAdmitCommand(page);
+				// Commands run in order: once this one shows, the two before it were turned down.
+				await mediaToggleVideoCommand(page, false);
+				await expect(
+					eventLocator(page, EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED).filter({
+						hasText: '"active":false'
+					})
+				).toHaveCount(1, { timeout: 10_000 });
+
+				expect(await waitingNames()).toEqual(['Zoe']);
+				await expect(wcLocator(zoe, '#waiting-screen')).toBeVisible();
+				expect(await lobbyStatuses(zoe)).toEqual([MeetLobbyStatus.WAITING]);
+			});
+
+			test('should leave the waiting room with meetingLeave, without meetingLeft', async ({ page }) => {
+				await createLobbyRoom();
+				const { meet } = await askToJoin(page, lobbyRoomId, { integration, name: 'Ben' });
+				const [ben] = await identitiesOf('Ben');
+				await expect.poll(() => lobbyStatuses(page)).toEqual([MeetLobbyStatus.WAITING]);
+
+				await leaveRoomCommand(page);
+
+				await expect(meet('#waiting-outcome-left')).toBeVisible({ timeout: 10_000 });
+				await expect.poll(() => lobbyStatuses(page)).toEqual([MeetLobbyStatus.WAITING, MeetLobbyStatus.LEFT]);
+				await expect.poll(waitingNames, { timeout: 5_000 }).toEqual([]);
+				const left = await getWebhookFromStorage(page, lobbyRoomId, MeetWebhookEventType.LOBBY_STATUS_CHANGED);
+				expect(left.data).toMatchObject({
+					status: MeetLobbyStatus.LEFT,
+					origin: MeetEventOrigin.PARTICIPANT,
+					participant: { participantIdentity: ben }
+				});
+				await expect(eventLocator(page, EmbeddedEventName.MEETING_LEFT)).toHaveCount(0);
+			});
+
+			if (integration === 'webcomponent') {
+				test('should leave the waiting room with meetingLeave even when the host removes the element right after', async ({
+					page
+				}) => {
+					await createLobbyRoom();
+					await askToJoin(page, lobbyRoomId, { integration, name: 'Ben' });
+					await expect.poll(() => lobbyStatuses(page)).toEqual([MeetLobbyStatus.WAITING]);
+
+					await leaveRoomCommand(page);
+					await removeEmbeddedMeeting(page, integration);
+
+					await expect.poll(waitingNames, { timeout: 5_000 }).toEqual([]);
+					const left = await getWebhookFromStorage(
+						page,
+						lobbyRoomId,
+						MeetWebhookEventType.LOBBY_STATUS_CHANGED
+					);
+					expect(left.data).toMatchObject({
+						status: MeetLobbyStatus.LEFT,
+						origin: MeetEventOrigin.PARTICIPANT
+					});
+				});
+			}
+
+			test('should turn the camera off with mediaToggleVideo while waiting and join with it off', async ({
+				page
+			}) => {
+				await createLobbyRoom();
+				await askToJoin(page, lobbyRoomId, { integration, name: 'Ben', initialVideoActive: true });
+				await expectPrejoinCameraEnabled(page, integration, true);
+
+				await mediaToggleVideoCommand(page, false);
+				await expectPrejoinCameraEnabled(page, integration, false);
+
+				await decideOnLobby(lobbyRoomId, 'admit');
+				await expectEvent(page, EmbeddedEventName.MEETING_JOINED, { timeout: 20_000 });
+				await expectToolbarCameraEnabled(page, integration, false);
 			});
 		});
 

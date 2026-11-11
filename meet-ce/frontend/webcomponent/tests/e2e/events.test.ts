@@ -1,23 +1,29 @@
 import {
 	EmbeddedAttribute,
 	EmbeddedEventName,
+	EmbeddedEventPayloadFor,
 	LeftEventReason,
 	MeetBroadcastStatus,
 	MeetEventOrigin,
+	MeetLobbyParticipant,
+	MeetLobbyStatus,
 	MeetParticipantJoinedPayload,
 	MeetParticipantLeftPayload,
 	MeetParticipantModerationAction,
 	MeetRecordingStatus,
+	MeetRoomConfigOptions,
 	MeetRoomMemberRole,
 	MeetWebhookEventType
 } from '@openvidu-meet/typings';
-import { expect, Locator, test } from '@playwright/test';
+import { Browser, BrowserContext, expect, Locator, Page, test, WebSocketRoute } from '@playwright/test';
 import { MEET_TESTAPP_URL } from '../config';
 import { createRtmpSink, deleteRtmpSinks } from '../helpers/broadcast-sink.helper';
 import { INTEGRATIONS, meetLocator, waitForPageRedirect } from '../helpers/webcomponent.helper';
 import {
 	createRoom,
+	decideOnLobby,
 	deleteRooms,
+	getLobby,
 	getRecordingUrl,
 	getRoom,
 	listRecordingsByRoomId,
@@ -27,11 +33,13 @@ import {
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import { openWebcomponentWithAttributes } from '../helpers/webcomponent-attributes.helper';
 import {
+	askToJoin,
 	broadcastStartCommand,
 	broadcastStopCommand,
 	endMeetingCommand,
 	eventLocator,
 	eventPayloadField,
+	eventPayloads,
 	eventSequence,
 	expectEvent,
 	participantHandChangedLocator,
@@ -47,11 +55,25 @@ import {
 	participantMuteCommand,
 	participantUpdateRoleCommand,
 	recordHostEvents,
-	recordingStatusLocator
+	recordingStatusLocator,
+	removeEmbeddedMeeting
 } from '../helpers/testapp.helper';
-import { getWebhookFromStorage } from '../helpers/ui-utils.helper';
+import { getWebhookFromStorage, webhooksFromStorage } from '../helpers/ui-utils.helper';
 
 const LEAVE_REDIRECT_URL = `${MEET_TESTAPP_URL.replace(/\/$/, '')}/?left`;
+
+/** The realtime connection of a waiting screen to Meet. */
+const REALTIME_CHANNEL = /\/internal-api\/v1\/ws\?/;
+/** Meet forgets a knock whose waiting screen never connects 15 s after it; its sweep runs every 5 s. */
+const UNCONNECTED_KNOCK_TIMEOUT = 40_000;
+/** Meet forgets a waiter whose connection has been gone for a minute; its sweep runs every 5 s. */
+const PLACE_LOST_TIMEOUT = 90_000;
+/** A waiter's state is sent again at every answered ping, every 20 s, and the waiting list read every 30 s. */
+const NEXT_STATE_TIMEOUT = 40_000;
+
+type LobbyStatusChangedPayload = EmbeddedEventPayloadFor<EmbeddedEventName.LOBBY_STATUS_CHANGED>;
+type LobbyUpdatedPayload = EmbeddedEventPayloadFor<EmbeddedEventName.LOBBY_UPDATED>;
+type ParticipantKnockedPayload = EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_KNOCKED>;
 
 // Events carry the same names/payloads regardless of transport; run every spec
 // against both integrations, selecting the mode through the testapp's UI.
@@ -866,6 +888,229 @@ for (const integration of INTEGRATIONS) {
 
 				const ended = await expectEvent(page, EmbeddedEventName.BROADCAST_ENDED, { timeout: 30_000 });
 				await expect(ended).toContainText(`"status":"${MeetBroadcastStatus.COMPLETE}"`);
+			});
+		});
+
+		test.describe('Waiting room', () => {
+			const contexts: BrowserContext[] = [];
+			let lobbyRoomId: string;
+
+			const createLobbyRoom = async (config: MeetRoomConfigOptions = {}): Promise<void> => {
+				({ roomId: lobbyRoomId } = await createRoom({ config: { lobby: { enabled: true }, ...config } }));
+				createdRoomIds.push(lobbyRoomId);
+			};
+
+			/** A page of its own browser context, closed after the test. */
+			const otherPage = async (browser: Browser): Promise<Page> => {
+				const context = await browser.newContext();
+				contexts.push(context);
+				return context.newPage();
+			};
+
+			const waiter = async (browser: Browser, name: string): Promise<Page> => {
+				const waiterPage = await otherPage(browser);
+				await askToJoin(waiterPage, lobbyRoomId, { name });
+				return waiterPage;
+			};
+
+			const waiting = async (): Promise<MeetLobbyParticipant[]> => (await getLobby(lobbyRoomId)).participants;
+			const waitingNames = async (): Promise<string[]> =>
+				(await waiting()).map(({ participantName }) => participantName);
+			const waitingIdentityOf = async (name: string): Promise<string> =>
+				(await waiting()).find(({ participantName }) => participantName === name)!.participantIdentity;
+
+			const lobbyStatuses = (target: Page) =>
+				eventPayloads<LobbyStatusChangedPayload>(target, EmbeddedEventName.LOBBY_STATUS_CHANGED);
+			const lastLobbyUpdate = async (target: Page) =>
+				(await eventPayloads<LobbyUpdatedPayload>(target, EmbeddedEventName.LOBBY_UPDATED)).at(-1);
+			const knocks = (target: Page) =>
+				eventPayloads<ParticipantKnockedPayload>(target, EmbeddedEventName.PARTICIPANT_KNOCKED);
+
+			test.afterEach(async () => {
+				await Promise.all(contexts.splice(0).map((context) => context.close().catch(() => {})));
+			});
+
+			test('should report the place in line and the admission, then meetingJoined with the same identity', async ({
+				page,
+				browser
+			}) => {
+				await createLobbyRoom();
+				await waiter(browser, 'Ana');
+				await askToJoin(page, lobbyRoomId, { integration, name: 'Ben' });
+				const ben = await waitingIdentityOf('Ben');
+				const inLine = (queuePosition: number) => ({
+					roomId: lobbyRoomId,
+					participantIdentity: ben,
+					status: MeetLobbyStatus.WAITING,
+					queuePosition
+				});
+
+				await expect.poll(() => lobbyStatuses(page)).toEqual([inLine(2)]);
+
+				await decideOnLobby(lobbyRoomId, 'admit', [await waitingIdentityOf('Ana')]);
+				await expect
+					.poll(() => lobbyStatuses(page), { timeout: NEXT_STATE_TIMEOUT })
+					.toEqual([inLine(2), inLine(1)]);
+
+				await decideOnLobby(lobbyRoomId, 'admit', [ben]);
+				const joined = await expectEvent(page, EmbeddedEventName.MEETING_JOINED, { timeout: 20_000 });
+				expect(await eventPayloadField(joined, 'participantIdentity')).toBe(ben);
+				expect(await lobbyStatuses(page)).toEqual([
+					inLine(2),
+					inLine(1),
+					{ roomId: lobbyRoomId, participantIdentity: ben, status: MeetLobbyStatus.ADMITTED }
+				]);
+				await expect(eventLocator(page, EmbeddedEventName.MEETING_LEFT)).toHaveCount(0);
+			});
+
+			test('should report a rejection without meetingLeft', async ({ page }) => {
+				await createLobbyRoom();
+				const { meet } = await askToJoin(page, lobbyRoomId, { integration, name: 'Ben' });
+				const ben = await waitingIdentityOf('Ben');
+				await expect.poll(() => lobbyStatuses(page)).toHaveLength(1);
+
+				await decideOnLobby(lobbyRoomId, 'reject', [ben]);
+
+				await expect(meet('#waiting-outcome-rejected')).toBeVisible({ timeout: 10_000 });
+				await expect
+					.poll(async () => (await lobbyStatuses(page)).at(-1))
+					.toEqual({ roomId: lobbyRoomId, participantIdentity: ben, status: MeetLobbyStatus.REJECTED });
+				await expect(eventLocator(page, EmbeddedEventName.MEETING_LEFT)).toHaveCount(0);
+			});
+
+			test('should report expired when the meeting says the participant lost their place', async ({ page }) => {
+				await createLobbyRoom();
+				// The waiting screen's connection opens but never reaches Meet, which forgets the wait.
+				const held: WebSocketRoute[] = [];
+				let holding = true;
+				await page.routeWebSocket(REALTIME_CHANNEL, (ws) => {
+					if (holding) {
+						held.push(ws);
+					} else {
+						ws.connectToServer();
+					}
+				});
+				const { meet } = await askToJoin(page, lobbyRoomId, { integration, name: 'Ben' });
+				const ben = await waitingIdentityOf('Ben');
+				await expect.poll(waitingNames, { timeout: UNCONNECTED_KNOCK_TIMEOUT }).toEqual([]);
+
+				holding = false;
+				await Promise.all(held.map((ws) => ws.close()));
+
+				await expect(meet('#waiting-outcome-expired')).toBeVisible({ timeout: 15_000 });
+				await expect
+					.poll(() => lobbyStatuses(page))
+					.toEqual([{ roomId: lobbyRoomId, participantIdentity: ben, status: MeetLobbyStatus.EXPIRED }]);
+				const expired = await getWebhookFromStorage(
+					page,
+					lobbyRoomId,
+					MeetWebhookEventType.LOBBY_STATUS_CHANGED
+				);
+				expect(expired.data).toMatchObject({
+					roomId: lobbyRoomId,
+					status: MeetLobbyStatus.EXPIRED,
+					origin: MeetEventOrigin.SYSTEM,
+					participant: { participantIdentity: ben }
+				});
+			});
+
+			test(`should end the wait as expired, never left, about a minute after the host removes the ${integration === 'iframe' ? 'iframe' : 'element'}`, async ({
+				page
+			}) => {
+				test.setTimeout(PLACE_LOST_TIMEOUT + 60_000);
+				await createLobbyRoom();
+				await askToJoin(page, lobbyRoomId, { integration, name: 'Ben' });
+				const ben = await waitingIdentityOf('Ben');
+				await expect.poll(() => lobbyStatuses(page)).toHaveLength(1);
+
+				await removeEmbeddedMeeting(page, integration);
+
+				await expect.poll(waitingNames, { timeout: PLACE_LOST_TIMEOUT, intervals: [2_000] }).toEqual([]);
+				const ended = await getWebhookFromStorage(page, lobbyRoomId, MeetWebhookEventType.LOBBY_STATUS_CHANGED);
+				expect(ended.data).toMatchObject({
+					roomId: lobbyRoomId,
+					status: MeetLobbyStatus.EXPIRED,
+					origin: MeetEventOrigin.SYSTEM,
+					participant: { participantIdentity: ben }
+				});
+				expect(
+					await webhooksFromStorage(page, lobbyRoomId, MeetWebhookEventType.LOBBY_STATUS_CHANGED)
+				).toHaveLength(1);
+			});
+
+			test('should list on joining those already waiting, then report each new one with participantKnocked', async ({
+				page,
+				browser
+			}) => {
+				await createLobbyRoom({ maxParticipants: 5 });
+				await waiter(browser, 'Zoe');
+				await waiter(browser, 'Ana');
+				const [zoe, ana] = await waiting();
+
+				await openMeeting(page, lobbyRoomId, { integration, role: 'moderator' });
+				await expect
+					.poll(() => lastLobbyUpdate(page))
+					.toEqual({ roomId: lobbyRoomId, participants: [zoe, ana], availablePlaces: 4 });
+
+				await waiter(browser, 'Ben');
+				const ben = (await waiting())[2];
+				await expect.poll(() => knocks(page)).toEqual([{ roomId: lobbyRoomId, participant: ben }]);
+				await expect
+					.poll(() => lastLobbyUpdate(page))
+					.toEqual({ roomId: lobbyRoomId, participants: [zoe, ana, ben], availablePlaces: 4 });
+
+				await decideOnLobby(lobbyRoomId, 'reject', [zoe.participantIdentity]);
+				await expect
+					.poll(() => lastLobbyUpdate(page))
+					.toEqual({ roomId: lobbyRoomId, participants: [ana, ben], availablePlaces: 4 });
+
+				await decideOnLobby(lobbyRoomId, 'admit', [ana.participantIdentity]);
+				await expect
+					.poll(() => lastLobbyUpdate(page))
+					.toEqual({ roomId: lobbyRoomId, participants: [ben], availablePlaces: 3 });
+				expect(await knocks(page)).toHaveLength(1);
+			});
+
+			test('should report a participant back in line after a failed admission through lobbyUpdated, not participantKnocked', async ({
+				page,
+				browser
+			}) => {
+				await createLobbyRoom({ maxParticipants: 2 });
+				await openMeeting(page, lobbyRoomId, { integration, role: 'moderator' });
+
+				// Zoe's request for her join token waits until the last place is taken.
+				const zoePage = await otherPage(browser);
+				let releaseTokenRequest!: () => void;
+				const released = new Promise<void>((resolve) => (releaseTokenRequest = resolve));
+				let tokenRequestHeld!: () => void;
+				const held = new Promise<void>((resolve) => (tokenRequestHeld = resolve));
+				await zoePage.route('**/members/token', async (route) => {
+					if (route.request().postDataJSON()?.lobbyTicket) {
+						tokenRequestHeld();
+						await released;
+					}
+
+					await route.continue();
+				});
+				await askToJoin(zoePage, lobbyRoomId, { name: 'Zoe' });
+				const [zoe] = await waiting();
+				await expect.poll(() => knocks(page)).toEqual([{ roomId: lobbyRoomId, participant: zoe }]);
+				await expect.poll(() => lobbyStatuses(zoePage)).toHaveLength(1);
+
+				await decideOnLobby(lobbyRoomId, 'admit', [zoe.participantIdentity]);
+				await held;
+				await openMeeting(await otherPage(browser), lobbyRoomId, { role: 'moderator' });
+				releaseTokenRequest();
+
+				await expect
+					.poll(() => lastLobbyUpdate(page), { timeout: NEXT_STATE_TIMEOUT })
+					.toEqual({ roomId: lobbyRoomId, participants: [zoe], availablePlaces: 0 });
+				expect(await knocks(page)).toHaveLength(1);
+				await expect
+					.poll(async () => (await lobbyStatuses(zoePage)).map(({ status }) => status), {
+						timeout: NEXT_STATE_TIMEOUT
+					})
+					.toEqual([MeetLobbyStatus.WAITING, MeetLobbyStatus.ADMITTED, MeetLobbyStatus.WAITING]);
 			});
 		});
 
