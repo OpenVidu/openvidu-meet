@@ -241,15 +241,16 @@ export class MeetingLiveKitService {
 	}
 
 	/**
-	 * Whether the meeting rejected this participant because it is full. LiveKit reports its own
-	 * `maxParticipants` rejection as an unexplained server error, indistinguishable from any other
-	 * one, so the occupancy is read from Meet's API instead. Every other failure reason (an
-	 * unreachable server, a timeout, a rejected token, a cancelled attempt) is explained already and
-	 * never reaches that read.
+	 * Whether the meeting rejected this participant because it is full. LiveKit refuses the signal
+	 * WebSocket of a full room without saying why, which the SDK reports as a WebSocket or an internal
+	 * error, indistinguishable from any other unexplained failure, so the occupancy is read from
+	 * Meet's API instead. Every other failure reason (an unreachable server, a timeout, a rejected
+	 * token, a cancelled attempt) is explained already and never reaches that read.
 	 */
 	private async isMeetingAtCapacity(error: unknown): Promise<boolean> {
 		const unexplainedServerError =
-			error instanceof ConnectionError && error.reason === ConnectionErrorReason.InternalError;
+			error instanceof ConnectionError &&
+			[ConnectionErrorReason.WebSocket, ConnectionErrorReason.InternalError].includes(error.reason);
 
 		if (!unexplainedServerError || !this.roomId) {
 			return false;
@@ -258,9 +259,13 @@ export class MeetingLiveKitService {
 		try {
 			const { participantCount, maxParticipants } = await this.httpService.getRequest<MeetMeetingInfo>(
 				`${HttpService.API_PATH_PREFIX}/meetings/${this.roomId}`,
-				// A failed read here is an answer ("could not tell"), not a session to recover: without
-				// this the interceptor would mint a fresh joining token and reserve a participant name.
-				{ [HTTP_HEADERS.SKIP_AUTH_RECOVERY]: 'true' }
+				{
+					// The failed connect may already have cleared the meeting context, and its token with it.
+					[HTTP_HEADERS.ROOM_MEMBER_TOKEN]: `Bearer ${this.livekitToken}`,
+					// A failed read here is an answer ("could not tell"), not a session to recover: without
+					// this the interceptor would mint a fresh joining token and reserve a participant name.
+					[HTTP_HEADERS.SKIP_AUTH_RECOVERY]: 'true'
+				}
 			);
 			return maxParticipants !== undefined && participantCount >= maxParticipants;
 		} catch (error) {

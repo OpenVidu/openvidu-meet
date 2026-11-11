@@ -343,8 +343,9 @@ describe('MeetingLiveKitService', () => {
 	/**
 	 * A full meeting and a broken network both reach connect() as a rejection, and only the first one
 	 * deserves the room-full message. LiveKit cannot tell them apart on its own: it reports its
-	 * `maxParticipants` rejection as `InternalError`, the same bucket as any unexplained server
-	 * failure, so occupancy is confirmed against Meet's own API before that message is shown.
+	 * `maxParticipants` rejection as a `WebSocket` or `InternalError` failure, the same buckets as any
+	 * unexplained server failure, so occupancy is confirmed against Meet's own API before that message
+	 * is shown.
 	 */
 	describe('connect()', () => {
 		/** What livekit-client throws when the server refused the upgrade without explaining itself. */
@@ -372,6 +373,26 @@ describe('MeetingLiveKitService', () => {
 			expect(httpService.getRequest).toHaveBeenCalledOnceWith(
 				'api/v1/meetings/room-1',
 				jasmine.objectContaining({ 'x-ov-skip-auth-recovery': 'true' })
+			);
+		});
+
+		it('reports MEETING_FULL when LiveKit refuses the signal connection of a full meeting', async () => {
+			livekitSdkService.connectRoom.and.rejectWith(
+				ConnectionError.websocket('Encountered websocket error during connection establishment')
+			);
+			httpService.getRequest.and.resolveTo({ participantCount: 2, maxParticipants: 2 } as MeetMeetingInfo);
+
+			await expectAsync(service.connect()).toBeRejectedWith(jasmine.objectContaining({ code: 'MEETING_FULL' }));
+		});
+
+		it('reads the occupancy with the token it tried to connect with', async () => {
+			livekitSdkService.connectRoom.and.rejectWith(unexplainedServerError());
+			httpService.getRequest.and.resolveTo({ participantCount: 3, maxParticipants: 3 } as MeetMeetingInfo);
+
+			await expectAsync(service.connect()).toBeRejected();
+			expect(httpService.getRequest).toHaveBeenCalledOnceWith(
+				'api/v1/meetings/room-1',
+				jasmine.objectContaining({ 'x-room-member-token': jasmine.stringMatching(/^Bearer header\./) })
 			);
 		});
 
