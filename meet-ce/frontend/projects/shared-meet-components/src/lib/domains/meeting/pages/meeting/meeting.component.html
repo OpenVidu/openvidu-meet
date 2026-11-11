@@ -1,4 +1,4 @@
-<ng-content select="ov-lobby-notice" />
+<ng-content select="ov-waiting-room-notice" />
 
 @switch (entryFlow.step()) {
 	@case ('preparing') {
@@ -81,7 +81,7 @@
 			     which is about the room, not about anyone in the list. The raised hands strip follows, above your own row,
 			     because lowering every hand lowers yours too -->
 				<div *ovParticipantPanelBeforeLocalParticipant>
-					<ng-content select="ov-lobby-panel-section" />
+					<ng-content select="ov-waiting-room-panel-section" />
 					<ng-content select="ov-meeting-invite-panel" />
 					<ov-meeting-raised-hands-strip />
 				</div>
@@ -124,7 +124,7 @@
 				</ng-container>
 
 				<ng-container *ovStatusRailEnd>
-					<ng-content select="ov-lobby-status-chip" />
+					<ng-content select="ov-waiting-room-status-chip" />
 				</ng-container>
 
 				<ng-container *ovWaiting>

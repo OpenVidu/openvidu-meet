@@ -1,0 +1,10 @@
+description: >
+    Conflict: the participants named outnumber the free places of the meeting, counting the participants
+    admitted who have not joined yet. Nobody is admitted
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        example:
+            error: 'Waiting Room Error'
+            message: "Room 'room_123' has fewer free places than the 3 participants to admit"

@@ -1,0 +1,27 @@
+description: >
+    The participant has to wait to be admitted: the room has the waiting room on and the participant lacks
+    `waitingRoomBypass`. No token is issued, nothing is reserved and the meeting does not start. The same answer
+    comes back when the request carries the `waitingRoomTicket` of a wait that is still waiting, with the same
+    ticket
+content:
+    application/json:
+        schema:
+            type: object
+            required:
+                - waitingRoomTicket
+                - participantIdentity
+            properties:
+                waitingRoomTicket:
+                    type: string
+                    example: 'q8d1u3Zr0m6ZxVwK9tHc2A'
+                    description: >
+                        The opaque credential of the wait. It opens only the realtime connection of that wait, the token
+                        request once admitted (as `waitingRoomTicket` in its body) and the leave request, lasts as long as
+                        the wait and is never renewed. It gives no access to the meeting's media or API.
+                participantIdentity:
+                    type: string
+                    example: 'ana-a1b2c3'
+                    description: >
+                        The identity the participant will have in the meeting. It is the one
+                        [`waitingRoomList`](#/operations/waitingRoomList) lists and
+                        [`participantJoined`](#/webhooks/participantJoinedWebhook) later reports. It is not secret.

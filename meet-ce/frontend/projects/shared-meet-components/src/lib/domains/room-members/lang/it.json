@@ -209,11 +209,11 @@
           "LABEL": "Scrivere",
           "DESCRIPTION": "Consenti di inviare messaggi nella chat. Richiede \"Leggere\""
         },
-        "lobbyBypass": {
+        "waitingRoomBypass": {
           "LABEL": "Partecipare senza attendere",
           "DESCRIPTION": "Consenti di partecipare senza attendere l'ammissione in una stanza con sala d'attesa"
         },
-        "lobbyAdmin": {
+        "waitingRoomAdmin": {
           "LABEL": "Ammettere i partecipanti",
           "DESCRIPTION": "Consenti di ammettere o rifiutare i partecipanti in attesa di entrare"
         }

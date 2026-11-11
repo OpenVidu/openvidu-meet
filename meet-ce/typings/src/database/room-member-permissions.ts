@@ -116,7 +116,7 @@ export interface MeetRoomMemberPermissions {
 	participantReactionSend: boolean;
 	/**
 	 * Can join the meeting without waiting in a room whose waiting room is on. Without it, the
-	 * participant asks to join and waits until someone holding `lobbyAdmin` admits them.
+	 * participant asks to join and waits until someone holding `waitingRoomAdmin` admits them.
 	 *
 	 * Introduced after the rename, so it has no deprecated `can*` spelling (see
 	 * {@link MEET_UNALIASED_PERMISSION_KEYS}). It is independent of every other permission: a request
@@ -125,10 +125,10 @@ export interface MeetRoomMemberPermissions {
 	 * (see {@link UNALIASED_PERMISSION_DEFAULTS}). A room or member stored before 3.10.0 is migrated
 	 * with it granted to the moderator role and denied to the speaker role.
 	 */
-	lobbyBypass: boolean;
+	waitingRoomBypass: boolean;
 	/**
 	 * Can list the participants waiting to join and admit or reject them. Independent of
-	 * `lobbyBypass`: a holder of `lobbyAdmin` without `lobbyBypass` waits like anyone else and can
+	 * `waitingRoomBypass`: a holder of `waitingRoomAdmin` without `waitingRoomBypass` waits like anyone else and can
 	 * admit others only once admitted.
 	 *
 	 * Introduced after the rename, so it has no deprecated `can*` spelling (see
@@ -138,7 +138,7 @@ export interface MeetRoomMemberPermissions {
 	 * (see {@link UNALIASED_PERMISSION_DEFAULTS}). A room or member stored before 3.10.0 is migrated
 	 * with it granted to the moderator role and denied to the speaker role.
 	 */
-	lobbyAdmin: boolean;
+	waitingRoomAdmin: boolean;
 	/**
 	 * Can end the meeting for all participants.
 	 */
@@ -315,7 +315,7 @@ export const MEET_PERMISSION_ALIASES = {
  *   moderation capability no earlier permission decided.
  * - `participantReactionSend` ← `true`: reacting is taking part, like raising one's own hand, not
  *   a power over others, and the room config `reactions.enabled` is what turns it off for everyone.
- * - `lobbyBypass`, `lobbyAdmin` ← `false`: skipping the waiting room and deciding who enters are
+ * - `waitingRoomBypass`, `waitingRoomAdmin` ← `false`: skipping the waiting room and deciding who enters are
  *   powers no deployment decided on before 3.10.0, and a completed set never opens a room that
  *   turns the waiting room on.
  * - `broadcastControl`, `broadcastEdit` ← `false`: streaming
@@ -327,8 +327,8 @@ const UNALIASED_PERMISSION_DEFAULTS = {
 	participantMute: false,
 	participantHandLower: false,
 	participantReactionSend: true,
-	lobbyBypass: false,
-	lobbyAdmin: false,
+	waitingRoomBypass: false,
+	waitingRoomAdmin: false,
 	broadcastControl: false,
 	broadcastEdit: false
 } as const satisfies Readonly<

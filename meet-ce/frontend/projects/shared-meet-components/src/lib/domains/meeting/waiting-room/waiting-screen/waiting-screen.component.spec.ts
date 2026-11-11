@@ -1,7 +1,7 @@
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { CUSTOM_ELEMENTS_SCHEMA, provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MeetLobbyStatus } from '@openvidu-meet/typings';
+import { MeetWaitingRoomStatus } from '@openvidu-meet/typings';
 import { TranslateParams, TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { LoggerService } from '../../../../shared/services/logger.service';
 import { AudioDevicesComponent } from '../../openvidu-components/components/settings/audio-devices/audio-devices.component';
@@ -25,7 +25,7 @@ describe('WaitingScreenComponent', () => {
 	let announce: jasmine.Spy;
 	let leave: jasmine.Spy;
 	let acquire: jasmine.Spy;
-	const status = signal<MeetLobbyStatus | undefined>(MeetLobbyStatus.WAITING);
+	const status = signal<MeetWaitingRoomStatus | undefined>(MeetWaitingRoomStatus.WAITING);
 	const queuePosition = signal<number | undefined>(undefined);
 	const knockedAt = signal<number | undefined>(undefined);
 	const meetingActive = signal<boolean | undefined>(undefined);
@@ -34,7 +34,7 @@ describe('WaitingScreenComponent', () => {
 	beforeEach(async () => {
 		jasmine.clock().install();
 		jasmine.clock().mockDate(new Date('2026-11-11T10:00:00Z'));
-		status.set(MeetLobbyStatus.WAITING);
+		status.set(MeetWaitingRoomStatus.WAITING);
 		queuePosition.set(undefined);
 		knockedAt.set(undefined);
 		meetingActive.set(undefined);
@@ -153,7 +153,7 @@ describe('WaitingScreenComponent', () => {
 	});
 
 	it('announces the admission assertively', async () => {
-		status.set(MeetLobbyStatus.ADMITTED);
+		status.set(MeetWaitingRoomStatus.ADMITTED);
 		await render();
 
 		expect(announce).toHaveBeenCalledWith('WAITING_ROOM.ADMITTED', 'assertive');

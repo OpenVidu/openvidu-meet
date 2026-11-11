@@ -58,8 +58,8 @@ describe('IframeBridgeService', () => {
 			'participantReactionSend',
 			'broadcastStart',
 			'broadcastStop',
-			'lobbyAdmit',
-			'lobbyReject'
+			'waitingRoomAdmit',
+			'waitingRoomReject'
 		]);
 		commandService.meetingEnd.and.resolveTo();
 		commandService.meetingLeave.and.resolveTo();
@@ -78,8 +78,8 @@ describe('IframeBridgeService', () => {
 		commandService.participantReactionSend.and.resolveTo();
 		commandService.broadcastStart.and.resolveTo();
 		commandService.broadcastStop.and.resolveTo();
-		commandService.lobbyAdmit.and.resolveTo();
-		commandService.lobbyReject.and.resolveTo();
+		commandService.waitingRoomAdmit.and.resolveTo();
+		commandService.waitingRoomReject.and.resolveTo();
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -295,18 +295,21 @@ describe('IframeBridgeService', () => {
 			]);
 		});
 
-		it('forwards LOBBY_ADMIT and LOBBY_REJECT with the participants named, or none for everyone waiting', () => {
+		it('forwards WAITING_ROOM_ADMIT and WAITING_ROOM_REJECT with the participants named, or none for everyone waiting', () => {
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommandName.LOBBY_ADMIT, payload: { participantIdentities: ['zoe'] } });
-			postFromHost({ command: EmbeddedCommandName.LOBBY_ADMIT });
-			postFromHost({ command: EmbeddedCommandName.LOBBY_REJECT, payload: {} });
+			postFromHost({
+				command: EmbeddedCommandName.WAITING_ROOM_ADMIT,
+				payload: { participantIdentities: ['zoe'] }
+			});
+			postFromHost({ command: EmbeddedCommandName.WAITING_ROOM_ADMIT });
+			postFromHost({ command: EmbeddedCommandName.WAITING_ROOM_REJECT, payload: {} });
 
-			expect(commandService.lobbyAdmit.calls.allArgs()).toEqual([
+			expect(commandService.waitingRoomAdmit.calls.allArgs()).toEqual([
 				[{ participantIdentities: ['zoe'] }],
 				[{ participantIdentities: undefined }]
 			]);
-			expect(commandService.lobbyReject).toHaveBeenCalledOnceWith({ participantIdentities: undefined });
+			expect(commandService.waitingRoomReject).toHaveBeenCalledOnceWith({ participantIdentities: undefined });
 		});
 
 		it('ignores malformed messages (no command)', () => {

@@ -5,7 +5,7 @@ import { MeetRoomMemberHelper } from '../helpers/room-member.helper.js';
 import { errorRoomNotFound } from '../models/error.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
-import { LobbyAdmissionPolicy } from './lobby/lobby-admission.policy.js';
+import { WaitingRoomAdmissionPolicy } from './waiting-room/waiting-room-admission.policy.js';
 import { RequestSessionService } from './request-session.service.js';
 
 /**
@@ -17,14 +17,14 @@ export class RoomAccessService {
 		@inject(RoomRepository) protected roomRepository: RoomRepository,
 		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
-		@inject(LobbyAdmissionPolicy) protected lobbyAdmissionPolicy: LobbyAdmissionPolicy
+		@inject(WaitingRoomAdmissionPolicy) protected waitingRoomAdmissionPolicy: WaitingRoomAdmissionPolicy
 	) {}
 
 	/**
 	 * Retrieves the permissions of the authenticated room member.
 	 *
 	 * - If the user is authenticated via room member token, their permissions are obtained from the token metadata,
-	 * narrowed by {@link LobbyAdmissionPolicy.permissionsOf} for a token without participant identity in a room with
+	 * narrowed by {@link WaitingRoomAdmissionPolicy.permissionsOf} for a token without participant identity in a room with
 	 * the waiting room on.
 	 * - If the user is admin or the room owner, they have all permissions.
 	 * - If the user is a room member, their permissions are obtained from their room member info.
@@ -100,7 +100,7 @@ export class RoomAccessService {
 			throw errorRoomNotFound(roomId);
 		}
 
-		return this.lobbyAdmissionPolicy.permissionsOf(
+		return this.waitingRoomAdmissionPolicy.permissionsOf(
 			room.config,
 			this.requestSessionService.getRoomMemberPermissions()!,
 			this.requestSessionService.getParticipantIdentity()

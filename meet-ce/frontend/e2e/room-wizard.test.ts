@@ -371,42 +371,42 @@ test.describe('Room wizard E2E Tests', () => {
 
 	test('create mode: the waiting room and its message reach the created room', async ({ page }) => {
 		await openAdvancedWizard(page);
-		await page.locator('input[formcontrolname="roomName"]').fill('wizard-lobby-create');
+		await page.locator('input[formcontrolname="roomName"]').fill('wizard-waiting-room-create');
 		await gotoRoomAccess(page);
 
-		await setFeature(page, 'room-access-lobby', true);
-		await page.locator('#room-lobby-message').fill('The host will let you in');
+		await setFeature(page, 'room-access-waiting-room', true);
+		await page.locator('#room-waiting-room-message').fill('The host will let you in');
 		await page.locator('#wizard-finish-btn').click();
 
 		await page.waitForURL(/\/room\/[^/?]+/);
 		const roomId = /\/room\/([^/?]+)/.exec(page.url())![1];
 		createdRoomIds.push(roomId);
 
-		const { lobby } = await getRoomConfig(roomId);
+		const { waitingRoom } = await getRoomConfig(roomId);
 
-		expect(lobby).toEqual({ enabled: true, message: 'The host will let you in' });
+		expect(waitingRoom).toEqual({ enabled: true, message: 'The host will let you in' });
 	});
 
 	test('edit mode: a cleared waiting room message is removed from the room', async ({ page }) => {
 		const room = await createRoom({
-			roomName: 'wizard-lobby-edit',
-			config: { lobby: { enabled: true, message: 'Welcome' } }
+			roomName: 'wizard-waiting-room-edit',
+			config: { waitingRoom: { enabled: true, message: 'Welcome' } }
 		});
 		createdRoomIds.push(room.roomId);
 
 		await page.goto(`${MEET_BASE_URL}/rooms/${room.roomId}/edit`, { waitUntil: 'domcontentloaded' });
 		await gotoRoomAccess(page);
 
-		await expect(page.locator('#room-access-lobby button')).toHaveAttribute('aria-checked', 'true');
-		await expect(page.locator('#room-lobby-message')).toHaveValue('Welcome');
+		await expect(page.locator('#room-access-waiting-room button')).toHaveAttribute('aria-checked', 'true');
+		await expect(page.locator('#room-waiting-room-message')).toHaveValue('Welcome');
 
-		await page.locator('#room-lobby-message').fill('');
+		await page.locator('#room-waiting-room-message').fill('');
 		await page.locator('#wizard-finish-btn').click();
 		await page.waitForURL(`**/rooms/${room.roomId}`);
 
-		const { lobby } = await getRoomConfig(room.roomId);
+		const { waitingRoom } = await getRoomConfig(room.roomId);
 
-		expect(lobby).toEqual({ enabled: true });
+		expect(waitingRoom).toEqual({ enabled: true });
 	});
 
 	// ── Recording round-trip (wizard -> API) ────────────────────────────────────

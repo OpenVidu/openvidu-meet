@@ -209,11 +209,11 @@
           "LABEL": "Write",
           "DESCRIPTION": "Allow sending chat messages. Needs \"Read\""
         },
-        "lobbyBypass": {
+        "waitingRoomBypass": {
           "LABEL": "Join without waiting",
           "DESCRIPTION": "Allow joining a room with a waiting room without waiting to be admitted"
         },
-        "lobbyAdmin": {
+        "waitingRoomAdmin": {
           "LABEL": "Admit participants",
           "DESCRIPTION": "Allow admitting or rejecting the participants waiting to join"
         }

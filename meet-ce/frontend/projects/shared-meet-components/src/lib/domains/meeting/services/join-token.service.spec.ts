@@ -78,7 +78,7 @@ describe('JoinTokenService', () => {
 	});
 
 	it('answers the ticket of a participant who has to wait', async () => {
-		const ticket = { lobbyTicket: 'ticket-1', participantIdentity: 'alice-1' };
+		const ticket = { waitingRoomTicket: 'ticket-1', participantIdentity: 'alice-1' };
 		roomMemberContext.requestJoin.and.resolveTo(ticket);
 
 		await expectAsync(service.request(alice)).toBeResolvedTo({ kind: 'waiting', ticket });
@@ -87,7 +87,7 @@ describe('JoinTokenService', () => {
 	it('sends the ticket of a wait with the same request', async () => {
 		await service.requestWithTicket(alice, 'ticket-1');
 
-		expect(tokenOptions()).toEqual(jasmine.objectContaining({ joinMeeting: true, lobbyTicket: 'ticket-1' }));
+		expect(tokenOptions()).toEqual(jasmine.objectContaining({ joinMeeting: true, waitingRoomTicket: 'ticket-1' }));
 	});
 
 	it('leaves the screen of a full waiting room to the waiting room', async () => {

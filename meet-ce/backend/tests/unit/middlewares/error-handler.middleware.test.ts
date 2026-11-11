@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it, jest } from '@jest/globals';
-import { MeetLobbyStatus } from '@openvidu-meet/typings';
+import { MeetWaitingRoomStatus } from '@openvidu-meet/typings';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import request from 'supertest';
 import { container, registerDependencies } from '../../../src/config/dependency-injector.config.js';
@@ -8,7 +8,7 @@ import { DocumentNotFoundError } from '../../../src/models/database.model.js';
 import {
 	errorLivekitNotAvailable,
 	errorRecordingNotFound,
-	LobbyWaitEndedError,
+	WaitingRoomWaitEndedError,
 	OpenViduMeetError
 } from '../../../src/models/error.model.js';
 import { LoggerService } from '../../../src/services/logger.service.js';
@@ -32,10 +32,10 @@ const buildApp = () => {
 		throw errorLivekitNotAvailable();
 	});
 	app.post('/wait-ended', () => {
-		throw new LobbyWaitEndedError(MeetLobbyStatus.REJECTED);
+		throw new WaitingRoomWaitEndedError(MeetWaitingRoomStatus.REJECTED);
 	});
 	app.post('/wait-unknown', () => {
-		throw new LobbyWaitEndedError();
+		throw new WaitingRoomWaitEndedError();
 	});
 	app.post('/typed-object', () => {
 		throw { type: 'entity.parse.failed' };
@@ -109,9 +109,9 @@ describe('globalErrorHandler', () => {
 		const unknown = await request(buildApp()).post('/wait-unknown').send({});
 
 		expect(ended.status).toBe(409);
-		expect(ended.body).toEqual({ error: 'Lobby Error', message: 'The wait has ended', status: 'rejected' });
+		expect(ended.body).toEqual({ error: 'Waiting Room Error', message: 'The wait has ended', status: 'rejected' });
 		expect(unknown.status).toBe(409);
-		expect(unknown.body).toEqual({ error: 'Lobby Error', message: 'The wait has ended' });
+		expect(unknown.body).toEqual({ error: 'Waiting Room Error', message: 'The wait has ended' });
 	});
 
 	it('masks any other error as a 500 without leaking its message', async () => {

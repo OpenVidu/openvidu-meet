@@ -281,34 +281,36 @@ describe('RoomWizardStateService.initializeWizard (steps)', () => {
 	it('prefills the waiting room switch and message of the Room Access step from the edited room', () => {
 		service.initializeWizard(true, {
 			roomName: 'Existing room',
-			config: { lobby: { enabled: true, message: 'The host will let you in' } }
+			config: { waitingRoom: { enabled: true, message: 'The host will let you in' } }
 		});
 
-		const { lobbyEnabled, lobbyMessage } = service.getStepById(WizardStepId.ROOM_ACCESS)!.formGroup.controls;
+		const { waitingRoomEnabled, waitingRoomMessage } = service.getStepById(WizardStepId.ROOM_ACCESS)!.formGroup
+			.controls;
 
-		expect(lobbyEnabled.value).toBeTrue();
-		expect(lobbyMessage.value).toBe('The host will let you in');
+		expect(waitingRoomEnabled.value).toBeTrue();
+		expect(waitingRoomMessage.value).toBe('The host will let you in');
 	});
 
 	it('starts the Room Access step with the waiting room off and no message', () => {
 		service.initializeWizard(false);
 
-		const { lobbyEnabled, lobbyMessage } = service.getStepById(WizardStepId.ROOM_ACCESS)!.formGroup.controls;
+		const { waitingRoomEnabled, waitingRoomMessage } = service.getStepById(WizardStepId.ROOM_ACCESS)!.formGroup
+			.controls;
 
-		expect(lobbyEnabled.value).toBeFalse();
-		expect(lobbyMessage.value).toBe('');
+		expect(waitingRoomEnabled.value).toBeFalse();
+		expect(waitingRoomMessage.value).toBe('');
 	});
 
 	it('refuses a waiting room message longer than the server accepts', () => {
 		service.initializeWizard(false);
 
-		const { lobbyMessage } = service.getStepById(WizardStepId.ROOM_ACCESS)!.formGroup.controls;
+		const { waitingRoomMessage } = service.getStepById(WizardStepId.ROOM_ACCESS)!.formGroup.controls;
 
-		lobbyMessage.setValue('a'.repeat(500));
-		expect(lobbyMessage.valid).toBeTrue();
+		waitingRoomMessage.setValue('a'.repeat(500));
+		expect(waitingRoomMessage.valid).toBeTrue();
 
-		lobbyMessage.setValue('a'.repeat(501));
-		expect(lobbyMessage.hasError('maxlength')).toBeTrue();
+		waitingRoomMessage.setValue('a'.repeat(501));
+		expect(waitingRoomMessage.hasError('maxlength')).toBeTrue();
 	});
 
 	it('prefills the broadcast step, destinations and layout included, from the edited room', () => {
@@ -482,8 +484,8 @@ describe('RoomWizardStateService.initializeWizard (the room it proposes)', () =>
 					participantMute: false,
 					participantHandLower: false,
 					meetingEnd: false,
-					lobbyBypass: false,
-					lobbyAdmin: false
+					waitingRoomBypass: false,
+					waitingRoomAdmin: false
 				}
 			}
 		});
@@ -499,7 +501,7 @@ describe('RoomWizardStateService.initializeWizard (the room it proposes)', () =>
 			captions: { enabled: true },
 			raiseHand: { enabled: true },
 			reactions: { enabled: true },
-			lobby: { enabled: false },
+			waitingRoom: { enabled: false },
 			initialAudioActive: true,
 			initialVideoActive: true
 		});

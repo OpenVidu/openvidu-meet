@@ -4,8 +4,8 @@ import { toggleParticipantsPanel } from './panels.helper';
 import { click } from './ui-utils.helper';
 
 const WAITING_SCREEN = '#waiting-screen';
-const LOBBY_SECTION = '#lobby-panel-section';
-const LOBBY_KNOCK_NOTIFICATION = '.ov-notification[data-kind="lobby-knock"]';
+const WAITING_ROOM_SECTION = '#waiting-room-panel-section';
+const WAITING_ROOM_KNOCK_NOTIFICATION = '.ov-notification[data-kind="waiting-room-knock"]';
 const MEETING_FULL_TEXT = 'This meeting has reached its maximum number of participants';
 
 // ─── The participant who waits ────────────────────────────────────────────────
@@ -98,13 +98,13 @@ export const holdBackLiveKitConnection = async (page: Page): Promise<void> => {
 
 // ─── Whoever lets participants in ─────────────────────────────────────────────
 
-export const lobbySection = (page: Page): Locator => page.locator(LOBBY_SECTION);
+export const waitingRoomSection = (page: Page): Locator => page.locator(WAITING_ROOM_SECTION);
 
 /** The row of a waiting participant in the moderator's panel, by the name they typed. */
-export const lobbyRow = (page: Page, name: string): Locator =>
-	page.locator(`${LOBBY_SECTION} .lobby-row`).filter({ hasText: name });
+export const waitingRoomRow = (page: Page, name: string): Locator =>
+	page.locator(`${WAITING_ROOM_SECTION} .waiting-room-row`).filter({ hasText: name });
 
-export const lobbyNotification = (page: Page): Locator => page.locator(LOBBY_KNOCK_NOTIFICATION);
+export const waitingRoomNotification = (page: Page): Locator => page.locator(WAITING_ROOM_KNOCK_NOTIFICATION);
 
 export const openParticipantsPanel = async (page: Page): Promise<void> => {
 	if (!(await page.locator('ov-participants-panel').isVisible())) {
@@ -123,9 +123,9 @@ export const closeParticipantsPanel = async (page: Page): Promise<void> => {
 };
 
 export const admitFromPanel = async (page: Page, name: string): Promise<void> => {
-	await click(lobbyRow(page, name).locator('.lobby-admit-btn'), 10_000);
+	await click(waitingRoomRow(page, name).locator('.waiting-room-admit-btn'), 10_000);
 };
 
 export const denyFromPanel = async (page: Page, name: string): Promise<void> => {
-	await click(lobbyRow(page, name).locator('.lobby-deny-btn'), 10_000);
+	await click(waitingRoomRow(page, name).locator('.waiting-room-deny-btn'), 10_000);
 };

@@ -1,11 +1,11 @@
 import { MeetRoomMemberRole, MeetRoomStatus, type MeetRoomConfigOptions } from '@openvidu-meet/typings';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import {
-	admitFromLobby,
+	admitFromWaitingRoom,
 	createRoom,
 	createRoomMember,
 	deleteRooms,
-	getLobby,
+	getWaitingRoom,
 	getMeetingParticipantIdentities,
 	getRoomStatus,
 	updateRoomConfig,
@@ -31,9 +31,9 @@ import {
 	expectWaitingScreen,
 	holdBackLiveKitConnection,
 	leaveWaitingRoom,
-	lobbyNotification,
-	lobbyRow,
-	lobbySection,
+	waitingRoomNotification,
+	waitingRoomRow,
+	waitingRoomSection,
 	meetingFullMessage,
 	newWaiterPage,
 	openParticipantsPanel,
@@ -63,8 +63,8 @@ test.describe('Waiting room E2E Tests', () => {
 		createdRoomIds.push(roomId);
 	};
 
-	const createLobbyRoom = (config: MeetRoomConfigOptions = {}): Promise<void> =>
-		createRoomWith({ lobby: { enabled: true }, ...config });
+	const createWaitingRoomRoom = (config: MeetRoomConfigOptions = {}): Promise<void> =>
+		createRoomWith({ waitingRoom: { enabled: true }, ...config });
 
 	/** A page of its own browser context, closed after the test. */
 	const newPage = async (browser: Browser): Promise<Page> => {
@@ -87,11 +87,13 @@ test.describe('Waiting room E2E Tests', () => {
 		return page;
 	};
 
-	const lobbyNames = async (): Promise<string[]> =>
-		(await getLobby(roomId)).participants.map(({ participantName }) => participantName);
+	const waitingRoomNames = async (): Promise<string[]> =>
+		(await getWaitingRoom(roomId)).participants.map(({ participantName }) => participantName);
 
 	const identityOf = async (name: string): Promise<string> => {
-		const listed = (await getLobby(roomId)).participants.find(({ participantName }) => participantName === name);
+		const listed = (await getWaitingRoom(roomId)).participants.find(
+			({ participantName }) => participantName === name
+		);
 
 		if (!listed) throw new Error(`'${name}' is not waiting in room '${roomId}'`);
 
@@ -117,9 +119,9 @@ test.describe('Waiting room E2E Tests', () => {
 		test('should keep the devices chosen on the waiting screen and join with the identity listed once admitted', async ({
 			browser
 		}) => {
-			await createLobbyRoom();
+			await createWaitingRoomRoom();
 
-			// A holder of lobbyBypass still goes through the device setup screen.
+			// A holder of waitingRoomBypass still goes through the device setup screen.
 			const hostPage = await newPage(browser);
 			await openJoinScreen(hostPage, moderatorUrl);
 			await hostPage.locator('#participant-name-input').fill('Host');
@@ -147,7 +149,7 @@ test.describe('Waiting room E2E Tests', () => {
 		test('should list a participant in the panel as soon as they ask, before their waiting screen connects', async ({
 			browser
 		}) => {
-			await createLobbyRoom();
+			await createWaitingRoomRoom();
 			const hostPage = await host(browser);
 			await openParticipantsPanel(hostPage);
 
@@ -156,11 +158,11 @@ test.describe('Waiting room E2E Tests', () => {
 			await realtime.cut();
 			await askToJoin(ana, speakerUrl, 'Ana');
 
-			await expect(lobbyRow(hostPage, 'Ana')).toBeVisible({ timeout: 5_000 });
+			await expect(waitingRoomRow(hostPage, 'Ana')).toBeVisible({ timeout: 5_000 });
 		});
 
 		test('should say the meeting has not started until a meeting starts', async ({ browser }) => {
-			await createLobbyRoom();
+			await createWaitingRoomRoom();
 			const ana = await waiter(browser, 'Ana');
 			await expect(ana.locator('#waiting-screen-not-started')).toBeVisible({ timeout: 10_000 });
 
@@ -173,23 +175,23 @@ test.describe('Waiting room E2E Tests', () => {
 		test('should open the waiting screen when the waiting room is turned on while a speaker sets up devices', async ({
 			page
 		}) => {
-			await createRoomWith({ lobby: { enabled: false } });
+			await createRoomWith({ waitingRoom: { enabled: false } });
 
 			await openPrejoin(page, speakerUrl, { name: 'Ana' });
-			await updateRoomConfig(roomId, { lobby: { enabled: true } });
+			await updateRoomConfig(roomId, { waitingRoom: { enabled: true } });
 			await clickJoinMeeting(page);
 
 			await expectWaitingScreen(page);
-			await expect.poll(lobbyNames).toEqual(['Ana']);
+			await expect.poll(waitingRoomNames).toEqual(['Ana']);
 
-			expect((await admitFromLobby(roomId, [await identityOf('Ana')])).status).toBe(200);
+			expect((await admitFromWaitingRoom(roomId, [await identityOf('Ana')])).status).toBe(200);
 			await expectInMeeting(page);
 		});
 	});
 
 	test.describe('The line', () => {
 		test('should update the positions as the line moves', async ({ browser }) => {
-			await createLobbyRoom();
+			await createWaitingRoomRoom();
 			const ana = await waiter(browser, 'Ana');
 			const ben = await waiter(browser, 'Ben');
 			const cleo = await waiter(browser, 'Cleo');
@@ -201,13 +203,13 @@ test.describe('Waiting room E2E Tests', () => {
 			await leaveWaitingRoom(ben);
 			await expectQueuePosition(cleo, '2nd');
 
-			expect((await admitFromLobby(roomId, [await identityOf('Ana')])).status).toBe(200);
+			expect((await admitFromWaitingRoom(roomId, [await identityOf('Ana')])).status).toBe(200);
 			await expectInMeeting(ana);
 			await expectQueuePosition(cleo, '1st');
 		});
 
 		test('should put a member who reloads at the end of the line with the same identity', async ({ browser }) => {
-			await createLobbyRoom();
+			await createWaitingRoomRoom();
 			const member = await createRoomMember(roomId, { name: 'Mia', baseRole: MeetRoomMemberRole.SPEAKER });
 
 			const mia = await waiter(browser, 'Mia', member.accessUrl);
@@ -226,14 +228,14 @@ test.describe('Waiting room E2E Tests', () => {
 
 			await expectQueuePosition(mia, '2nd');
 			await expectQueuePosition(xavi, '1st');
-			await expect.poll(lobbyNames).toEqual(['Xavi', 'Mia']);
+			await expect.poll(waitingRoomNames).toEqual(['Xavi', 'Mia']);
 			expect(await identityOf('Mia')).toBe(identity);
 		});
 
 		test('should let a rejected participant ask again after the pause, at the end of the line', async ({
 			browser
 		}) => {
-			await createLobbyRoom();
+			await createWaitingRoomRoom();
 			const hostPage = await host(browser);
 			await openParticipantsPanel(hostPage);
 			const ana = await waiter(browser, 'Ana');
@@ -249,24 +251,24 @@ test.describe('Waiting room E2E Tests', () => {
 
 			await expectWaitingScreen(ana);
 			await expectQueuePosition(ana, '2nd');
-			await expect.poll(lobbyNames).toEqual(['Ben', 'Ana']);
+			await expect.poll(waitingRoomNames).toEqual(['Ben', 'Ana']);
 		});
 	});
 
 	test.describe('Leaving', () => {
 		test('should leave the waiting room at once', async ({ browser }) => {
-			await createLobbyRoom();
+			await createWaitingRoomRoom();
 			const ana = await waiter(browser, 'Ana');
-			await expect.poll(lobbyNames).toEqual(['Ana']);
+			await expect.poll(waitingRoomNames).toEqual(['Ana']);
 
 			await leaveWaitingRoom(ana);
 
 			await expect(waitingOutcome(ana, 'left')).toBeVisible();
-			await expect.poll(lobbyNames, { timeout: 5_000 }).toEqual([]);
+			await expect.poll(waitingRoomNames, { timeout: 5_000 }).toEqual([]);
 		});
 
 		test('should leave the waiting room at once while the realtime connection is down', async ({ browser }) => {
-			await createLobbyRoom();
+			await createWaitingRoomRoom();
 			const ana = await newPage(browser);
 			const realtime = await routeRealtimeChannel(ana);
 			await askToJoin(ana, speakerUrl, 'Ana');
@@ -278,40 +280,40 @@ test.describe('Waiting room E2E Tests', () => {
 			await leaveWaitingRoom(ana);
 
 			await expect(waitingOutcome(ana, 'left')).toBeVisible();
-			await expect.poll(lobbyNames, { timeout: 5_000 }).toEqual([]);
+			await expect.poll(waitingRoomNames, { timeout: 5_000 }).toEqual([]);
 		});
 
 		test('should remove a participant whose page closed within about a minute', async ({ browser }) => {
 			test.setTimeout(PLACE_LOST_TIMEOUT + 30_000);
-			await createLobbyRoom();
+			await createWaitingRoomRoom();
 			const ana = await waiter(browser, 'Ana');
 			await expectQueuePosition(ana, '1st');
 
 			await ana.context().close();
 
-			expect(await lobbyNames()).toEqual(['Ana']);
-			await expect.poll(lobbyNames, { timeout: PLACE_LOST_TIMEOUT, intervals: [2_000] }).toEqual([]);
+			expect(await waitingRoomNames()).toEqual(['Ana']);
+			await expect.poll(waitingRoomNames, { timeout: PLACE_LOST_TIMEOUT, intervals: [2_000] }).toEqual([]);
 		});
 	});
 
 	test.describe('Admitters', () => {
 		test('should notify a knock only while the participants panel is closed', async ({ browser }) => {
-			await createLobbyRoom();
+			await createWaitingRoomRoom();
 			const hostPage = await host(browser);
 
 			await waiter(browser, 'Ana');
-			await expect(lobbyNotification(hostPage)).toContainText('Ana', { timeout: 10_000 });
+			await expect(waitingRoomNotification(hostPage)).toContainText('Ana', { timeout: 10_000 });
 
 			await openParticipantsPanel(hostPage);
-			await expect(lobbyNotification(hostPage)).toHaveCount(0);
+			await expect(waitingRoomNotification(hostPage)).toHaveCount(0);
 
 			await waiter(browser, 'Ben');
-			await expect(lobbyRow(hostPage, 'Ben')).toBeVisible({ timeout: 10_000 });
-			await expect(lobbyNotification(hostPage)).toHaveCount(0);
+			await expect(waitingRoomRow(hostPage, 'Ben')).toBeVisible({ timeout: 10_000 });
+			await expect(waitingRoomNotification(hostPage)).toHaveCount(0);
 
 			await closeParticipantsPanel(hostPage);
 			const cleo = await waiter(browser, 'Cleo');
-			const notice = lobbyNotification(hostPage);
+			const notice = waitingRoomNotification(hostPage);
 			await expect(notice).toContainText('Cleo', { timeout: 10_000 });
 			await click(notice.locator('.notification-action:not(.secondary)'));
 
@@ -321,15 +323,15 @@ test.describe('Waiting room E2E Tests', () => {
 		test('should deny everyone waiting after the confirmation, also when one leaves before it', async ({
 			browser
 		}) => {
-			await createLobbyRoom();
+			await createWaitingRoomRoom();
 			const hostPage = await host(browser);
 			await openParticipantsPanel(hostPage);
 			const ana = await waiter(browser, 'Ana');
 			const ben = await waiter(browser, 'Ben');
 			const cleo = await waiter(browser, 'Cleo');
-			await expect(lobbySection(hostPage).locator('.lobby-row')).toHaveCount(3, { timeout: 10_000 });
+			await expect(waitingRoomSection(hostPage).locator('.waiting-room-row')).toHaveCount(3, { timeout: 10_000 });
 
-			await click(hostPage.locator('#lobby-deny-all-btn'));
+			await click(hostPage.locator('#waiting-room-deny-all-btn'));
 			const confirm = hostPage.locator('.confirm-button');
 			await expect(confirm).toBeVisible();
 
@@ -340,12 +342,12 @@ test.describe('Waiting room E2E Tests', () => {
 			await expect(waitingOutcome(ana, 'rejected')).toBeVisible({ timeout: 10_000 });
 			await expect(waitingOutcome(ben, 'rejected')).toBeVisible({ timeout: 10_000 });
 			await expect(waitingOutcome(cleo, 'left')).toBeVisible();
-			await expect.poll(lobbyNames).toEqual([]);
-			await expect(lobbySection(hostPage)).toHaveCount(0);
+			await expect.poll(waitingRoomNames).toEqual([]);
+			await expect(waitingRoomSection(hostPage)).toHaveCount(0);
 		});
 
 		test('should tell the waiting participants when a moderator ends the meeting', async ({ browser }) => {
-			await createLobbyRoom();
+			await createWaitingRoomRoom();
 			const hostPage = await host(browser);
 			const ana = await waiter(browser, 'Ana');
 
@@ -353,12 +355,12 @@ test.describe('Waiting room E2E Tests', () => {
 			await click(hostPage.locator('#end-meeting-option'));
 
 			await expect(waitingOutcome(ana, 'meeting_ended')).toBeVisible({ timeout: 15_000 });
-			await expect.poll(lobbyNames).toEqual([]);
+			await expect.poll(waitingRoomNames).toEqual([]);
 		});
 
 		test('should keep the waits when the host loses the connection', async ({ browser }) => {
 			test.setTimeout(150_000);
-			await createLobbyRoom();
+			await createWaitingRoomRoom();
 			const crashingHost = await openCrashablePage();
 			openedPages.push(crashingHost.page);
 			await openMeeting(crashingHost.page, moderatorUrl, { name: 'Host' });
@@ -370,7 +372,7 @@ test.describe('Waiting room E2E Tests', () => {
 
 			await expect(ana.locator('#waiting-screen-not-started')).toBeVisible({ timeout: NEXT_PING_TIMEOUT });
 			await expectQueuePosition(ana, '1st');
-			expect(await lobbyNames()).toEqual(['Ana']);
+			expect(await waitingRoomNames()).toEqual(['Ana']);
 
 			const returningHost = await host(browser, 'Host again');
 			await openParticipantsPanel(returningHost);
@@ -384,7 +386,7 @@ test.describe('Waiting room E2E Tests', () => {
 			browser
 		}) => {
 			test.setTimeout(PLACE_LOST_TIMEOUT + 60_000);
-			await createLobbyRoom({ maxParticipants: 2 });
+			await createWaitingRoomRoom({ maxParticipants: 2 });
 			const hostPage = await host(browser);
 			await openParticipantsPanel(hostPage);
 
@@ -393,69 +395,71 @@ test.describe('Waiting room E2E Tests', () => {
 			await askToJoin(ana, speakerUrl, 'Ana');
 			await expectWaitingScreen(ana);
 			await waiter(browser, 'Ben');
-			await expect(hostPage.locator('#lobby-places-left')).toHaveText('1 place left', { timeout: 10_000 });
+			await expect(hostPage.locator('#waiting-room-places-left')).toHaveText('1 place left', { timeout: 10_000 });
 
 			await admitFromPanel(hostPage, 'Ana');
 
-			await expect(hostPage.locator('#lobby-places-left')).toHaveText('No places left', { timeout: 10_000 });
-			await expect(lobbyRow(hostPage, 'Ben').locator('.lobby-admit-btn')).toBeDisabled();
-			expect((await admitFromLobby(roomId, [await identityOf('Ben')])).status).toBe(409);
+			await expect(hostPage.locator('#waiting-room-places-left')).toHaveText('No places left', {
+				timeout: 10_000
+			});
+			await expect(waitingRoomRow(hostPage, 'Ben').locator('.waiting-room-admit-btn')).toBeDisabled();
+			expect((await admitFromWaitingRoom(roomId, [await identityOf('Ben')])).status).toBe(409);
 
 			await expect
-				.poll(async () => (await getLobby(roomId)).availablePlaces, {
+				.poll(async () => (await getWaitingRoom(roomId)).availablePlaces, {
 					timeout: PLACE_LOST_TIMEOUT,
 					intervals: [2_000]
 				})
 				.toBe(1);
-			await expect(hostPage.locator('#lobby-places-left')).toHaveText('1 place left', { timeout: 35_000 });
+			await expect(hostPage.locator('#waiting-room-places-left')).toHaveText('1 place left', { timeout: 35_000 });
 		});
 
 		test('should admit the first in line with "Admit N" when there are fewer places than waiters', async ({
 			browser
 		}) => {
-			await createLobbyRoom({ maxParticipants: 3 });
+			await createWaitingRoomRoom({ maxParticipants: 3 });
 			const hostPage = await host(browser);
 			await openParticipantsPanel(hostPage);
 			const ana = await waiter(browser, 'Ana');
 			const ben = await waiter(browser, 'Ben');
 			const cleo = await waiter(browser, 'Cleo');
 
-			const admitShown = hostPage.locator('#lobby-admit-shown-btn');
+			const admitShown = hostPage.locator('#waiting-room-admit-shown-btn');
 			await expect(admitShown).toHaveText('Admit 2', { timeout: 10_000 });
 			await click(admitShown);
 
 			await expectInMeeting(ana);
 			await expectInMeeting(ben);
 			await expectQueuePosition(cleo, '1st');
-			await expect.poll(lobbyNames).toEqual(['Cleo']);
+			await expect.poll(waitingRoomNames).toEqual(['Cleo']);
 		});
 
 		test('should show the free place within a few seconds when a participant leaves a full meeting', async ({
 			browser
 		}) => {
-			await createLobbyRoom({ maxParticipants: 2 });
+			await createWaitingRoomRoom({ maxParticipants: 2 });
 			const hostPage = await host(browser);
 			const secondHost = await host(browser, 'Second host');
 			await openParticipantsPanel(hostPage);
 			await waiter(browser, 'Ana');
 
-			const placesLeft = hostPage.locator('#lobby-places-left');
+			const placesLeft = hostPage.locator('#waiting-room-places-left');
 			await expect(placesLeft).toHaveText('No places left', { timeout: 10_000 });
-			await expect(lobbyRow(hostPage, 'Ana').locator('.lobby-admit-btn')).toBeDisabled();
+			await expect(waitingRoomRow(hostPage, 'Ana').locator('.waiting-room-admit-btn')).toBeDisabled();
 
 			await leaveMeeting(secondHost);
 
 			await expect(placesLeft).toHaveText('1 place left', { timeout: 10_000 });
-			await expect(lobbyRow(hostPage, 'Ana').locator('.lobby-admit-btn')).toBeEnabled();
+			await expect(waitingRoomRow(hostPage, 'Ana').locator('.waiting-room-admit-btn')).toBeEnabled();
 		});
 
 		test('should let two of three in and show "Meeting full" to the third when the waiting room is turned off with two places', async ({
 			browser
 		}) => {
-			await createLobbyRoom({ maxParticipants: 2 });
+			await createWaitingRoomRoom({ maxParticipants: 2 });
 			const waiters = [await waiter(browser, 'Ana'), await waiter(browser, 'Ben'), await waiter(browser, 'Cleo')];
 
-			await updateRoomConfig(roomId, { lobby: { enabled: false } });
+			await updateRoomConfig(roomId, { waitingRoom: { enabled: false } });
 
 			const count = async (visible: (page: Page) => Promise<boolean>) =>
 				(await Promise.all(waiters.map(visible))).filter(Boolean).length;

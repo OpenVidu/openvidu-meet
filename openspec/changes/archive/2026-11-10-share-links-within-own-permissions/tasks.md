@@ -18,7 +18,7 @@
 
 ## 3. `add-waiting-room`
 
-- [x] 3.1 Remove the risk "`roomShareAccessLinks` reveals the moderator link" from its design. Replace the `roomShareAccessLinks` sentence of "Only participants who joined act on the meeting" with: "it reveals only links whose permissions the holder has (`share-links-within-own-permissions`), and the moderator link grants `lobbyBypass`, so a waiter never reads it". Drop the TSDoc, wizard and feature-page tasks about that risk from its proposal and tasks.
+- [x] 3.1 Remove the risk "`roomShareAccessLinks` reveals the moderator link" from its design. Replace the `roomShareAccessLinks` sentence of "Only participants who joined act on the meeting" with: "it reveals only links whose permissions the holder has (`share-links-within-own-permissions`), and the moderator link grants `waitingRoomBypass`, so a waiter never reads it". Drop the TSDoc, wizard and feature-page tasks about that risk from its proposal and tasks.
 
 ## 4. Release surfaces
 

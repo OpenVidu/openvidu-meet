@@ -66,8 +66,8 @@ const expectedCurrentEffectivePermissions = {
 	participantMute: false,
 	participantHandLower: false,
 	participantReactionSend: true,
-	lobbyBypass: false,
-	lobbyAdmin: false,
+	waitingRoomBypass: false,
+	waitingRoomAdmin: false,
 	meetingEnd: false,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -79,7 +79,11 @@ const expectedCurrentEffectivePermissions = {
 
 // v6 is what the live broadcast builds store: the current shape without the waiting room permissions.
 const buildLegacyRoomMemberV6 = (roomId: string, memberId: string, baseRole: MeetRoomMemberRole) => {
-	const { lobbyBypass: _bypass, lobbyAdmin: _admin, ...effectivePermissions } = expectedCurrentEffectivePermissions;
+	const {
+		waitingRoomBypass: _bypass,
+		waitingRoomAdmin: _admin,
+		...effectivePermissions
+	} = expectedCurrentEffectivePermissions;
 
 	return {
 		schemaVersion: 6,
@@ -131,7 +135,7 @@ describe('Room Member Schema Migrations', () => {
 					MeetRoomMemberRole.MODERATOR
 				) as unknown as MeetRoomMemberDocument
 			);
-			expect(moderator.effectivePermissions).toMatchObject({ lobbyBypass: true, lobbyAdmin: true });
+			expect(moderator.effectivePermissions).toMatchObject({ waitingRoomBypass: true, waitingRoomAdmin: true });
 			expect(moderator.customPermissions).toEqual({ chatWrite: false });
 
 			const speaker = transform!(
@@ -141,7 +145,7 @@ describe('Room Member Schema Migrations', () => {
 					MeetRoomMemberRole.SPEAKER
 				) as unknown as MeetRoomMemberDocument
 			);
-			expect(speaker.effectivePermissions).toMatchObject({ lobbyBypass: false, lobbyAdmin: false });
+			expect(speaker.effectivePermissions).toMatchObject({ waitingRoomBypass: false, waitingRoomAdmin: false });
 		});
 
 		it('should leave an absent customPermissions untouched', () => {
@@ -209,7 +213,11 @@ describe('Room Member Schema Migrations', () => {
 			const speaker = await MeetRoomMemberModel.collection.findOne({ roomId, memberId: speakerId });
 			expect(moderator).toMatchObject({
 				schemaVersion: INTERNAL_CONFIG.ROOM_MEMBER_SCHEMA_VERSION,
-				effectivePermissions: { ...expectedCurrentEffectivePermissions, lobbyBypass: true, lobbyAdmin: true },
+				effectivePermissions: {
+					...expectedCurrentEffectivePermissions,
+					waitingRoomBypass: true,
+					waitingRoomAdmin: true
+				},
 				customPermissions: { chatWrite: false }
 			});
 			expect(speaker).toMatchObject({

@@ -1405,47 +1405,47 @@ export const getBroadcast = async (broadcastId: string, roomMemberToken?: string
 
 // WAITING ROOM HELPERS
 
-const lobbyPath = (roomId: string, action = '') =>
-	getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/lobby${action}`);
+const waitingRoomPath = (roomId: string, action = '') =>
+	getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/waiting-room${action}`);
 
 /** Calls a waiting room operation with the given room member token, or with the API key without one. */
-const asLobbyAdmitter = (req: request.Test, roomMemberToken?: string) =>
+const asWaitingRoomAdmitter = (req: request.Test, roomMemberToken?: string) =>
 	roomMemberToken
 		? req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
 		: req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 
-export const getLobby = async (roomId: string, roomMemberToken?: string): Promise<Response> => {
+export const getWaitingRoom = async (roomId: string, roomMemberToken?: string): Promise<Response> => {
 	checkAppIsRunning();
-	return await asLobbyAdmitter(request(app).get(lobbyPath(roomId)), roomMemberToken);
+	return await asWaitingRoomAdmitter(request(app).get(waitingRoomPath(roomId)), roomMemberToken);
 };
 
-export const admitFromLobby = async (
+export const admitFromWaitingRoom = async (
 	roomId: string,
 	participantIdentities?: string[],
 	roomMemberToken?: string
 ): Promise<Response> => {
 	checkAppIsRunning();
-	return await asLobbyAdmitter(request(app).post(lobbyPath(roomId, '/admit')), roomMemberToken).send(
+	return await asWaitingRoomAdmitter(request(app).post(waitingRoomPath(roomId, '/admit')), roomMemberToken).send(
 		participantIdentities ? { participantIdentities } : {}
 	);
 };
 
-export const rejectFromLobby = async (
+export const rejectFromWaitingRoom = async (
 	roomId: string,
 	participantIdentities?: string[],
 	roomMemberToken?: string
 ): Promise<Response> => {
 	checkAppIsRunning();
-	return await asLobbyAdmitter(request(app).post(lobbyPath(roomId, '/reject')), roomMemberToken).send(
+	return await asWaitingRoomAdmitter(request(app).post(waitingRoomPath(roomId, '/reject')), roomMemberToken).send(
 		participantIdentities ? { participantIdentities } : {}
 	);
 };
 
-export const leaveLobby = async (roomId: string, lobbyTicket: string): Promise<Response> => {
+export const leaveWaitingRoom = async (roomId: string, waitingRoomTicket: string): Promise<Response> => {
 	checkAppIsRunning();
 	return await request(app)
-		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/lobby/leave`))
-		.query({ lobbyTicket })
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/waiting-room/leave`))
+		.query({ waitingRoomTicket })
 		.send();
 };
 
@@ -1454,6 +1454,6 @@ export const askToJoin = async (
 	roomId: string,
 	secret: string,
 	participantName = 'Waiter',
-	lobbyTicket?: string
+	waitingRoomTicket?: string
 ): Promise<Response> =>
-	generateRoomMemberTokenRequest(roomId, { secret, joinMeeting: true, participantName, lobbyTicket });
+	generateRoomMemberTokenRequest(roomId, { secret, joinMeeting: true, participantName, waitingRoomTicket });

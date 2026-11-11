@@ -36,7 +36,7 @@ describe('NotificationsComponent', () => {
 		const deny = jasmine.createSpy('deny');
 		const admit = jasmine.createSpy('admit');
 		notificationService.showNotification({
-			kind: 'lobby-knock',
+			kind: 'waiting-room-knock',
 			icon: 'hourglass_top',
 			message: 'Wants to join',
 			placement: 'pinned',

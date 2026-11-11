@@ -641,7 +641,7 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 	let liveParticipant: ParticipantInfo;
 	let deleteParticipant: jest.Mock<(roomId: string, identity: string) => Promise<void>>;
 	let webhookDispatcherService: { sendParticipantJoinedWebhook: jest.Mock; sendParticipantLeftWebhook: jest.Mock };
-	let lobbyService: { joined: jest.Mock<(roomId: string, identity: string) => Promise<void>> };
+	let waitingRoomService: { joined: jest.Mock<(roomId: string, identity: string) => Promise<void>> };
 	let service: LivekitWebhookService;
 
 	const ISSUED_BEFORE_DEMOTION = {};
@@ -678,7 +678,7 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 		jest.spyOn(container.get(RoomRepository), 'findByRoomId').mockResolvedValue({ rolesUpdatedAt: 0 } as never);
 		deleteParticipant = jest.fn(async () => {});
 		webhookDispatcherService = { sendParticipantJoinedWebhook: jest.fn(), sendParticipantLeftWebhook: jest.fn() };
-		lobbyService = { joined: jest.fn(async () => {}) };
+		waitingRoomService = { joined: jest.fn(async () => {}) };
 		const silent = () => {};
 
 		service = new LivekitWebhookService(
@@ -699,7 +699,7 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 				{ info: silent, warn: silent, debug: silent, verbose: silent, error: silent },
 				{ getBroadcasts: async () => [] },
 				{},
-				lobbyService
+				waitingRoomService
 			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
 		);
 	});
@@ -763,8 +763,8 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 
 		await service.handleParticipantJoined(ROOM, liveParticipant);
 
-		expect(lobbyService.joined).toHaveBeenCalledWith(ROOM.name, IDENTITY);
-		expect(lobbyService.joined.mock.invocationCallOrder[0]).toBeLessThan(
+		expect(waitingRoomService.joined).toHaveBeenCalledWith(ROOM.name, IDENTITY);
+		expect(waitingRoomService.joined.mock.invocationCallOrder[0]).toBeLessThan(
 			deleteParticipant.mock.invocationCallOrder[0]
 		);
 	});
@@ -775,7 +775,7 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 			kind: ParticipantInfo_Kind.AGENT
 		} as ParticipantInfo);
 
-		expect(lobbyService.joined).not.toHaveBeenCalled();
+		expect(waitingRoomService.joined).not.toHaveBeenCalled();
 	});
 
 	it('leaves a session without Meet metadata alone', async () => {

@@ -1,7 +1,7 @@
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { EmbeddedEventName, MeetLobbyState, MeetLobbyStatus } from '@openvidu-meet/typings';
+import { EmbeddedEventName, MeetWaitingRoomState, MeetWaitingRoomStatus } from '@openvidu-meet/typings';
 import { Subject } from 'rxjs';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { LoggerService } from '../../../shared/services/logger.service';
@@ -23,7 +23,7 @@ class LoggerServiceStub {
 }
 
 class WebSocketServiceStub {
-	readonly states = new Subject<MeetLobbyState>();
+	readonly states = new Subject<MeetWaitingRoomState>();
 	readonly isConnected = signal(true);
 	readonly stopReason = signal<WebSocketStopReason | undefined>(undefined);
 	readonly connect = jasmine.createSpy('connect');
@@ -53,7 +53,7 @@ class Deferred<T> {
 }
 
 const ROOM_ID = 'room1';
-const TICKET = { lobbyTicket: 'ticket/1', participantIdentity: 'ana-1' };
+const TICKET = { waitingRoomTicket: 'ticket/1', participantIdentity: 'ana-1' };
 const ANA: JoinRequest = { participantName: 'Ana', e2eeKey: '', nameTypedByParticipant: true };
 const WAITING: JoinAnswer = { kind: 'waiting', ticket: TICKET };
 const tokenAnswer = (token = 'join-token'): JoinAnswer => ({ kind: 'token', token });
@@ -114,15 +114,16 @@ describe('WaitingRoomService', () => {
 		phase.set('connecting');
 	});
 
-	const send = (state: MeetLobbyState) => webSocket.states.next(state);
+	const send = (state: MeetWaitingRoomState) => webSocket.states.next(state);
 
-	const lobbyEvents = () =>
+	const waitingRoomEvents = () =>
 		eventBus
 			.events()
-			.filter(({ event }) => event === EmbeddedEventName.LOBBY_STATUS_CHANGED)
+			.filter(({ event }) => event === EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED)
 			.map((event) => (event as { payload: unknown }).payload);
 
-	const lobbyStatuses = () => lobbyEvents().map((payload) => (payload as { status: MeetLobbyStatus }).status);
+	const waitingRoomStatuses = () =>
+		waitingRoomEvents().map((payload) => (payload as { status: MeetWaitingRoomStatus }).status);
 
 	/** Starts a wait and lets it be admitted, with the token request answering what `answer` settles to. */
 	async function admitWith(answer: Deferred<JoinAnswer>): Promise<{ joined: jasmine.Spy }> {
@@ -130,7 +131,7 @@ describe('WaitingRoomService', () => {
 		const joined = jasmine.createSpy('joined');
 		service.join(ANA).then(joined, () => {});
 		await flush();
-		send({ status: MeetLobbyStatus.ADMITTED });
+		send({ status: MeetWaitingRoomStatus.ADMITTED });
 		await flush();
 		return { joined };
 	}
@@ -152,20 +153,20 @@ describe('WaitingRoomService', () => {
 			expect(phase.phase()).toBe('waiting');
 			expect(service.isWaiting()).toBeTrue();
 			expect(webSocket.connect).toHaveBeenCalledOnceWith(
-				{ name: 'lobbyTicket', value: TICKET.lobbyTicket },
+				{ name: 'waitingRoomTicket', value: TICKET.waitingRoomTicket },
 				{ giveUpAfterMs: 60_000 }
 			);
 			expect(setIsActiveMeeting).not.toHaveBeenCalled();
 		});
 
-		it('shows the full waiting room screen, with no lobby event', async () => {
+		it('shows the full waiting room screen, with no waiting room event', async () => {
 			joinToken.request.and.rejectWith(refusal(409, { message: "The waiting room of room 'room1' is full" }));
 
 			void service.join(ANA);
 			await flush();
 
 			expect(service.outcome()).toBe('full');
-			expect(lobbyEvents()).toEqual([]);
+			expect(waitingRoomEvents()).toEqual([]);
 		});
 	});
 
@@ -176,13 +177,13 @@ describe('WaitingRoomService', () => {
 		});
 
 		it('tells the host nothing until the first state, then each place in line once', () => {
-			expect(lobbyEvents()).toEqual([]);
+			expect(waitingRoomEvents()).toEqual([]);
 
-			send({ status: MeetLobbyStatus.WAITING, queuePosition: 2, waitedSeconds: 240, meetingActive: false });
-			send({ status: MeetLobbyStatus.WAITING, queuePosition: 2, waitedSeconds: 260, meetingActive: false });
-			send({ status: MeetLobbyStatus.WAITING, queuePosition: 1, waitedSeconds: 280, meetingActive: true });
+			send({ status: MeetWaitingRoomStatus.WAITING, queuePosition: 2, waitedSeconds: 240, meetingActive: false });
+			send({ status: MeetWaitingRoomStatus.WAITING, queuePosition: 2, waitedSeconds: 260, meetingActive: false });
+			send({ status: MeetWaitingRoomStatus.WAITING, queuePosition: 1, waitedSeconds: 280, meetingActive: true });
 
-			expect(lobbyEvents()).toEqual([
+			expect(waitingRoomEvents()).toEqual([
 				{
 					roomId: ROOM_ID,
 					participantIdentity: TICKET.participantIdentity,
@@ -201,50 +202,55 @@ describe('WaitingRoomService', () => {
 		});
 
 		it('keeps the room fields it shows when the server could not read the room', () => {
-			send({ status: MeetLobbyStatus.WAITING, queuePosition: 1, meetingActive: false, message: 'At 10:00' });
-			send({ status: MeetLobbyStatus.WAITING, queuePosition: 1 });
+			send({
+				status: MeetWaitingRoomStatus.WAITING,
+				queuePosition: 1,
+				meetingActive: false,
+				message: 'At 10:00'
+			});
+			send({ status: MeetWaitingRoomStatus.WAITING, queuePosition: 1 });
 
 			expect(service.meetingActive()).toBeFalse();
 			expect(service.message()).toBe('At 10:00');
 		});
 
 		it('ends on a final state for good, ignoring a stale state after it', () => {
-			send({ status: MeetLobbyStatus.REJECTED });
-			send({ status: MeetLobbyStatus.WAITING, queuePosition: 1 });
+			send({ status: MeetWaitingRoomStatus.REJECTED });
+			send({ status: MeetWaitingRoomStatus.WAITING, queuePosition: 1 });
 
 			expect(service.outcome()).toBe('rejected');
 			expect(service.isWaiting()).toBeFalse();
 			expect(webSocket.disconnect).toHaveBeenCalled();
-			expect(lobbyStatuses()).toEqual([MeetLobbyStatus.REJECTED]);
+			expect(waitingRoomStatuses()).toEqual([MeetWaitingRoomStatus.REJECTED]);
 		});
 
 		it('says the place was lost when a newer request replaced the wait, reporting what the server said', () => {
-			send({ status: MeetLobbyStatus.LEFT });
+			send({ status: MeetWaitingRoomStatus.LEFT });
 
 			expect(service.outcome()).toBe('expired');
-			expect(lobbyStatuses()).toEqual([MeetLobbyStatus.LEFT]);
+			expect(waitingRoomStatuses()).toEqual([MeetWaitingRoomStatus.LEFT]);
 		});
 
 		it('shows the closed room screen when the room closed', () => {
-			send({ status: MeetLobbyStatus.ROOM_CLOSED });
+			send({ status: MeetWaitingRoomStatus.ROOM_CLOSED });
 
 			expect(redirectToErrorPage).toHaveBeenCalledOnceWith(NavigationErrorReason.CLOSED_ROOM, true);
-			expect(lobbyStatuses()).toEqual([MeetLobbyStatus.ROOM_CLOSED]);
+			expect(waitingRoomStatuses()).toEqual([MeetWaitingRoomStatus.ROOM_CLOSED]);
 		});
 
 		it('says the place was lost when the connection gives up after hearing from the wait', () => {
-			send({ status: MeetLobbyStatus.WAITING, queuePosition: 1 });
+			send({ status: MeetWaitingRoomStatus.WAITING, queuePosition: 1 });
 
 			webSocket.stopReason.set('gave_up');
 			TestBed.tick();
 
 			expect(service.outcome()).toBe('expired');
-			expect(lobbyStatuses()).toEqual([MeetLobbyStatus.WAITING, MeetLobbyStatus.EXPIRED]);
+			expect(waitingRoomStatuses()).toEqual([MeetWaitingRoomStatus.WAITING, MeetWaitingRoomStatus.EXPIRED]);
 		});
 	});
 
 	describe('a connection that never heard from the wait', () => {
-		it('shows the connection error naming the WebSocket address, with no lobby event', async () => {
+		it('shows the connection error naming the WebSocket address, with no waiting room event', async () => {
 			const consoleError = spyOn(console, 'error');
 			const joining = service.join(ANA);
 			await flush();
@@ -255,7 +261,7 @@ describe('WaitingRoomService', () => {
 			await expectAsync(joining).toBeRejectedWithError(MeetingConnectionError);
 			expect(consoleError).toHaveBeenCalledWith(jasmine.stringContaining(webSocket.endpoint()));
 			expect(service.outcome()).toBeUndefined();
-			expect(lobbyEvents()).toEqual([]);
+			expect(waitingRoomEvents()).toEqual([]);
 		});
 	});
 
@@ -267,30 +273,30 @@ describe('WaitingRoomService', () => {
 			answer.resolve(tokenAnswer('admitted-token'));
 			await flush();
 
-			expect(joinToken.requestWithTicket).toHaveBeenCalledOnceWith(ANA, TICKET.lobbyTicket);
+			expect(joinToken.requestWithTicket).toHaveBeenCalledOnceWith(ANA, TICKET.waitingRoomTicket);
 			expect(joined).toHaveBeenCalledOnceWith('admitted-token');
 			expect(webSocket.disconnect).toHaveBeenCalled();
 			expect(phase.phase()).toBe('connecting');
 			expect(setIsActiveMeeting).toHaveBeenCalledOnceWith(true);
-			expect(lobbyStatuses()).toEqual([MeetLobbyStatus.ADMITTED]);
+			expect(waitingRoomStatuses()).toEqual([MeetWaitingRoomStatus.ADMITTED]);
 		});
 
 		it('sends one token request however often the admission is repeated meanwhile', async () => {
 			await admitWith(new Deferred<JoinAnswer>());
 
-			send({ status: MeetLobbyStatus.ADMITTED });
-			send({ status: MeetLobbyStatus.WAITING, queuePosition: 3 });
+			send({ status: MeetWaitingRoomStatus.ADMITTED });
+			send({ status: MeetWaitingRoomStatus.WAITING, queuePosition: 3 });
 			await flush();
 
 			expect(joinToken.requestWithTicket).toHaveBeenCalledTimes(1);
-			expect(lobbyStatuses()).toEqual([MeetLobbyStatus.ADMITTED]);
+			expect(waitingRoomStatuses()).toEqual([MeetWaitingRoomStatus.ADMITTED]);
 		});
 
 		it('lets a token answer win over a final state that arrived meanwhile', async () => {
 			const answer = new Deferred<JoinAnswer>();
 			const { joined } = await admitWith(answer);
 
-			send({ status: MeetLobbyStatus.EXPIRED });
+			send({ status: MeetWaitingRoomStatus.EXPIRED });
 			answer.resolve(tokenAnswer());
 			await flush();
 
@@ -302,7 +308,7 @@ describe('WaitingRoomService', () => {
 			const answer = new Deferred<JoinAnswer>();
 			await admitWith(answer);
 
-			send({ status: MeetLobbyStatus.MEETING_ENDED });
+			send({ status: MeetWaitingRoomStatus.MEETING_ENDED });
 			answer.resolve(WAITING);
 			await flush();
 
@@ -316,7 +322,7 @@ describe('WaitingRoomService', () => {
 			answer.resolve(WAITING);
 			await flush();
 
-			expect(service.status()).toBe(MeetLobbyStatus.WAITING);
+			expect(service.status()).toBe(MeetWaitingRoomStatus.WAITING);
 			expect(webSocket.disconnect).not.toHaveBeenCalled();
 		});
 
@@ -326,34 +332,34 @@ describe('WaitingRoomService', () => {
 			answer.resolve(tokenAnswer());
 			await flush();
 
-			send({ status: MeetLobbyStatus.REJECTED });
+			send({ status: MeetWaitingRoomStatus.REJECTED });
 
 			expect(service.outcome()).toBeUndefined();
-			expect(lobbyStatuses()).toEqual([MeetLobbyStatus.ADMITTED]);
+			expect(waitingRoomStatuses()).toEqual([MeetWaitingRoomStatus.ADMITTED]);
 		});
 
 		it('says the place was lost on a 409 that names the admission, telling the host it expired', async () => {
 			const answer = new Deferred<JoinAnswer>();
 			await admitWith(answer);
 
-			answer.reject(refusal(409, { message: 'The wait has ended', status: MeetLobbyStatus.ADMITTED }));
+			answer.reject(refusal(409, { message: 'The wait has ended', status: MeetWaitingRoomStatus.ADMITTED }));
 			await flush();
 
 			expect(service.outcome()).toBe('expired');
-			expect(lobbyStatuses()).toEqual([MeetLobbyStatus.ADMITTED, MeetLobbyStatus.EXPIRED]);
+			expect(waitingRoomStatuses()).toEqual([MeetWaitingRoomStatus.ADMITTED, MeetWaitingRoomStatus.EXPIRED]);
 		});
 
 		it('shows the screen of the status a 409 names', async () => {
 			const answer = new Deferred<JoinAnswer>();
 			await admitWith(answer);
 
-			answer.reject(refusal(409, { message: 'The wait has ended', status: MeetLobbyStatus.REJECTED }));
+			answer.reject(refusal(409, { message: 'The wait has ended', status: MeetWaitingRoomStatus.REJECTED }));
 			await flush();
 
 			expect(service.outcome()).toBe('rejected');
 		});
 
-		it('shows the access error of a refused request, with no lobby event after it', async () => {
+		it('shows the access error of a refused request, with no waiting room event after it', async () => {
 			const answer = new Deferred<JoinAnswer>();
 			await admitWith(answer);
 			const error = refusal(403, { message: 'Insufficient permissions' });
@@ -362,10 +368,10 @@ describe('WaitingRoomService', () => {
 			await flush();
 
 			expect(joinToken.showFailure).toHaveBeenCalledOnceWith(error);
-			expect(lobbyStatuses()).toEqual([MeetLobbyStatus.ADMITTED]);
+			expect(waitingRoomStatuses()).toEqual([MeetWaitingRoomStatus.ADMITTED]);
 		});
 
-		it('shows the error screen of a full meeting or a closed room, with no lobby event after it', async () => {
+		it('shows the error screen of a full meeting or a closed room, with no waiting room event after it', async () => {
 			const answer = new Deferred<JoinAnswer>();
 			await admitWith(answer);
 			const error = refusal(409, { message: "Room 'room1' has reached its maximum number of participants" });
@@ -375,7 +381,7 @@ describe('WaitingRoomService', () => {
 
 			expect(joinToken.showFailure).toHaveBeenCalledOnceWith(error);
 			expect(service.outcome()).toBeUndefined();
-			expect(lobbyStatuses()).toEqual([MeetLobbyStatus.ADMITTED]);
+			expect(waitingRoomStatuses()).toEqual([MeetWaitingRoomStatus.ADMITTED]);
 		});
 
 		it('joins without waiting for the browser to answer a device prompt', async () => {
@@ -415,7 +421,7 @@ describe('WaitingRoomService', () => {
 			const joined = jasmine.createSpy('joined');
 			service.join(ANA).then(joined);
 			await flush();
-			send({ status: MeetLobbyStatus.ADMITTED });
+			send({ status: MeetWaitingRoomStatus.ADMITTED });
 			await flush();
 
 			jasmine.clock().tick(6_999);
@@ -433,8 +439,8 @@ describe('WaitingRoomService', () => {
 			);
 			void service.join(ANA);
 			await flush();
-			send({ status: MeetLobbyStatus.WAITING, queuePosition: 1 });
-			send({ status: MeetLobbyStatus.ADMITTED });
+			send({ status: MeetWaitingRoomStatus.WAITING, queuePosition: 1 });
+			send({ status: MeetWaitingRoomStatus.ADMITTED });
 			await flush();
 
 			webSocket.stopReason.set('gave_up');
@@ -452,7 +458,7 @@ describe('WaitingRoomService', () => {
 			const joining = service.join(ANA);
 			joining.catch(() => {});
 			await flush();
-			send({ status: MeetLobbyStatus.ADMITTED });
+			send({ status: MeetWaitingRoomStatus.ADMITTED });
 			await flush();
 
 			for (let elapsed = 0; elapsed <= 30_000; elapsed += 3_000) {
@@ -462,7 +468,7 @@ describe('WaitingRoomService', () => {
 
 			await expectAsync(joining).toBeRejectedWithError(MeetingConnectionError);
 			expect(joinToken.requestWithTicket.calls.count()).toBeGreaterThan(5);
-			expect(lobbyStatuses()).toEqual([MeetLobbyStatus.ADMITTED]);
+			expect(waitingRoomStatuses()).toEqual([MeetWaitingRoomStatus.ADMITTED]);
 		});
 	});
 
@@ -474,12 +480,12 @@ describe('WaitingRoomService', () => {
 			service.leave();
 
 			expect(fetchSpy).toHaveBeenCalledOnceWith(
-				`/meet/internal-api/v1/meetings/${ROOM_ID}/lobby/leave?lobbyTicket=ticket%2F1`,
+				`/meet/internal-api/v1/meetings/${ROOM_ID}/waiting-room/leave?waitingRoomTicket=ticket%2F1`,
 				{ method: 'POST', keepalive: true }
 			);
 			expect(webSocket.disconnect).toHaveBeenCalled();
 			expect(service.outcome()).toBe('left');
-			expect(lobbyStatuses()).toEqual([MeetLobbyStatus.LEFT]);
+			expect(waitingRoomStatuses()).toEqual([MeetWaitingRoomStatus.LEFT]);
 		});
 
 		it('discards a token answered after leaving', async () => {
@@ -502,7 +508,7 @@ describe('WaitingRoomService', () => {
 
 			expect(fetchSpy).not.toHaveBeenCalled();
 			expect(webSocket.disconnect).toHaveBeenCalled();
-			expect(lobbyEvents()).toEqual([]);
+			expect(waitingRoomEvents()).toEqual([]);
 		});
 	});
 
@@ -510,7 +516,7 @@ describe('WaitingRoomService', () => {
 		it('asks like the first time, without the ticket', async () => {
 			void service.join(ANA);
 			await flush();
-			send({ status: MeetLobbyStatus.REJECTED });
+			send({ status: MeetWaitingRoomStatus.REJECTED });
 
 			service.askAgain();
 			void service.join(ANA);

@@ -85,7 +85,7 @@ describe('Room API Tests', () => {
 					captions: { enabled: true },
 					raiseHand: { enabled: true },
 					reactions: { enabled: true },
-					lobby: { enabled: false }
+					waitingRoom: { enabled: false }
 				}
 			};
 			// Create a room with custom config

@@ -333,34 +333,36 @@
 			<span class="ta-hint">identities separated by commas; none means everyone waiting</span>
 		</div>
 		<div class="ta-field">
-			<label class="ta-arg-label" for="lobby-identities-input">participantIdentities</label>
+			<label class="ta-arg-label" for="waiting-room-identities-input">participantIdentities</label>
 			<input
-				id="lobby-identities-input"
+				id="waiting-room-identities-input"
 				type="text"
-				data-testid="input-lobby-identities"
-				[(ngModel)]="commands.lobbyIdentities"
+				data-testid="input-waiting-room-identities"
+				[(ngModel)]="commands.waitingRoomIdentities"
 				placeholder="identities of the participants waiting"
 			/>
 		</div>
 		<div class="ta-btn-row">
 			<button
-				id="lobby-admit-btn"
+				id="waiting-room-admit-btn"
 				class="ta-btn ta-btn--grow"
-				data-testid="btn-lobby-admit"
-				(click)="commands.lobbyAdmit()"
+				data-testid="btn-waiting-room-admit"
+				(click)="commands.waitingRoomAdmit()"
 			>
-				lobbyAdmit()
+				waitingRoomAdmit()
 			</button>
 			<button
-				id="lobby-reject-btn"
+				id="waiting-room-reject-btn"
 				class="ta-btn ta-btn--grow ta-btn--danger"
-				data-testid="btn-lobby-reject"
-				(click)="commands.lobbyReject()"
+				data-testid="btn-waiting-room-reject"
+				(click)="commands.waitingRoomReject()"
 			>
-				lobbyReject()
+				waitingRoomReject()
 			</button>
 		</div>
-		<code class="ta-payload" data-testid="lobby-payload">{{ optionsArgs(commands.lobbyOptions()) }}</code>
+		<code class="ta-payload" data-testid="waiting-room-payload"
+			>{{ optionsArgs(commands.waitingRoomOptions()) }}</code
+		>
 	</section>
 
 	<section class="ta-card">

@@ -126,7 +126,7 @@ const buildService = (
 	const taskScheduler = new FakeTaskSchedulerService();
 	const mutexService = new FakeMutexService();
 	const endedWaits: string[] = [];
-	const lobbyService = {
+	const waitingRoomService = {
 		endMeeting: async (roomId: string, origin: MeetEventOrigin) => {
 			endedWaits.push(`${roomId}:${origin}`);
 		}
@@ -139,7 +139,7 @@ const buildService = (
 			livekitService,
 			redisService,
 			mutexService,
-			lobbyService
+			waitingRoomService
 		] as unknown as ConstructorParameters<typeof MeetingDurationLimitService>)
 	);
 	return { service, taskScheduler, mutexService, endedWaits };

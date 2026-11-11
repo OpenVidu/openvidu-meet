@@ -17,7 +17,7 @@ import { MeetingContextService } from '../../meeting/services/meeting-context.se
 import { MeetingHandService } from '../../meeting/services/meeting-hand.service';
 import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
 import { MeetingReactionsService } from '../../meeting/services/meeting-reactions.service';
-import { LobbyAdminService } from '../../meeting/waiting-room/lobby-admin.service';
+import { WaitingRoomAdminService } from '../../meeting/waiting-room/waiting-room-admin.service';
 import { WaitingRoomService } from '../../meeting/waiting-room/waiting-room.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
@@ -74,7 +74,7 @@ describe('EmbeddedCommandService', () => {
 	let cameraEnabled: ReturnType<typeof signal<boolean>>;
 	let screenShareEnabled: ReturnType<typeof signal<boolean>>;
 	let waitingRoom: { isWaiting: ReturnType<typeof signal<boolean>>; leave: jasmine.Spy };
-	let lobbyAdmin: jasmine.SpyObj<LobbyAdminService>;
+	let waitingRoomAdmin: jasmine.SpyObj<WaitingRoomAdminService>;
 
 	// Defaults: active session, not on the prejoin screen, every permission granted — each test narrows one axis.
 	beforeEach(() => {
@@ -144,9 +144,12 @@ describe('EmbeddedCommandService', () => {
 		hasPermission = jasmine.createSpy('hasPermission').and.returnValue(true);
 		roomId = signal<string | undefined>(ROOM_ID);
 		waitingRoom = { isWaiting: signal(false), leave: jasmine.createSpy('leave') };
-		lobbyAdmin = jasmine.createSpyObj<LobbyAdminService>('LobbyAdminService', ['admit', 'reject']);
-		lobbyAdmin.admit.and.resolveTo([]);
-		lobbyAdmin.reject.and.resolveTo([]);
+		waitingRoomAdmin = jasmine.createSpyObj<WaitingRoomAdminService>('WaitingRoomAdminService', [
+			'admit',
+			'reject'
+		]);
+		waitingRoomAdmin.admit.and.resolveTo([]);
+		waitingRoomAdmin.reject.and.resolveTo([]);
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -174,7 +177,7 @@ describe('EmbeddedCommandService', () => {
 				},
 				{ provide: BroadcastService, useValue: broadcastService },
 				{ provide: WaitingRoomService, useValue: waitingRoom as unknown as WaitingRoomService },
-				{ provide: LobbyAdminService, useValue: lobbyAdmin },
+				{ provide: WaitingRoomAdminService, useValue: waitingRoomAdmin },
 				{
 					provide: BroadcastStateService,
 					useValue: {
@@ -258,14 +261,14 @@ describe('EmbeddedCommandService', () => {
 				expect(screenShare.setEnabled).not.toHaveBeenCalled();
 			});
 
-			it('rejects the waiting room commands, even with lobbyAdmin', async () => {
-				await service.lobbyAdmit({ participantIdentities: ['zoe'] });
-				await service.lobbyReject();
+			it('rejects the waiting room commands, even with waitingRoomAdmin', async () => {
+				await service.waitingRoomAdmit({ participantIdentities: ['zoe'] });
+				await service.waitingRoomReject();
 
-				expect(lobbyAdmin.admit).not.toHaveBeenCalled();
-				expect(lobbyAdmin.reject).not.toHaveBeenCalled();
+				expect(waitingRoomAdmin.admit).not.toHaveBeenCalled();
+				expect(waitingRoomAdmin.reject).not.toHaveBeenCalled();
 				expect(logger.warn).toHaveBeenCalledWith(
-					'lobbyAdmit rejected: not available in the current meeting phase'
+					'waitingRoomAdmit rejected: not available in the current meeting phase'
 				);
 			});
 
@@ -795,46 +798,46 @@ describe('EmbeddedCommandService', () => {
 
 	describe('waiting room commands', () => {
 		it('admits and rejects the participants named, or everyone waiting without a payload', async () => {
-			await service.lobbyAdmit({ participantIdentities: ['zoe', 'ben'] });
-			await service.lobbyAdmit();
-			await service.lobbyReject({ participantIdentities: ['ana'] });
-			await service.lobbyReject();
+			await service.waitingRoomAdmit({ participantIdentities: ['zoe', 'ben'] });
+			await service.waitingRoomAdmit();
+			await service.waitingRoomReject({ participantIdentities: ['ana'] });
+			await service.waitingRoomReject();
 
-			expect(lobbyAdmin.admit.calls.allArgs()).toEqual([[['zoe', 'ben']], [undefined]]);
-			expect(lobbyAdmin.reject.calls.allArgs()).toEqual([[['ana']], [undefined]]);
+			expect(waitingRoomAdmin.admit.calls.allArgs()).toEqual([[['zoe', 'ben']], [undefined]]);
+			expect(waitingRoomAdmin.reject.calls.allArgs()).toEqual([[['ana']], [undefined]]);
 		});
 
 		it('passes an empty list as given, for the server to refuse', async () => {
-			await service.lobbyAdmit({ participantIdentities: [] });
+			await service.waitingRoomAdmit({ participantIdentities: [] });
 
-			expect(lobbyAdmin.admit).toHaveBeenCalledOnceWith([]);
+			expect(waitingRoomAdmin.admit).toHaveBeenCalledOnceWith([]);
 		});
 
-		it('rejects both without lobbyAdmin', async () => {
-			hasPermission.and.callFake((permission: string) => permission !== 'lobbyAdmin');
+		it('rejects both without waitingRoomAdmin', async () => {
+			hasPermission.and.callFake((permission: string) => permission !== 'waitingRoomAdmin');
 
-			await service.lobbyAdmit();
-			await service.lobbyReject({ participantIdentities: ['zoe'] });
+			await service.waitingRoomAdmit();
+			await service.waitingRoomReject({ participantIdentities: ['zoe'] });
 
-			expect(lobbyAdmin.admit).not.toHaveBeenCalled();
-			expect(lobbyAdmin.reject).not.toHaveBeenCalled();
+			expect(waitingRoomAdmin.admit).not.toHaveBeenCalled();
+			expect(waitingRoomAdmin.reject).not.toHaveBeenCalled();
 			expect(logger.warn).toHaveBeenCalledWith(
-				"lobbyReject rejected: local participant lacks the 'lobbyAdmin' permission"
+				"waitingRoomReject rejected: local participant lacks the 'waitingRoomAdmin' permission"
 			);
 		});
 
 		it('rejects both with no active session', async () => {
 			liveKitService.isSessionActive.set(false);
 
-			await service.lobbyAdmit();
+			await service.waitingRoomAdmit();
 
-			expect(lobbyAdmin.admit).not.toHaveBeenCalled();
+			expect(waitingRoomAdmin.admit).not.toHaveBeenCalled();
 		});
 
 		it('logs a decision the server refused instead of propagating it to the host', async () => {
-			lobbyAdmin.admit.and.rejectWith(new Error('409'));
+			waitingRoomAdmin.admit.and.rejectWith(new Error('409'));
 
-			await expectAsync(service.lobbyAdmit({ participantIdentities: ['zoe'] })).toBeResolved();
+			await expectAsync(service.waitingRoomAdmit({ participantIdentities: ['zoe'] })).toBeResolved();
 			expect(logger.error).toHaveBeenCalled();
 		});
 	});

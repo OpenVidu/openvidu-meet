@@ -1,7 +1,7 @@
 description: >
     Forbidden: the caller lacks the permission the operation requires. In a room with the waiting room on, that
     includes a room member token without a participant identity, which a token obtained without joining is: it
-    acts on the meeting only once it is a join token, issued to a holder of `lobbyBypass` or to an admitted
+    acts on the meeting only once it is a join token, issued to a holder of `waitingRoomBypass` or to an admitted
     participant. A host application acting for itself uses the API key
 content:
     application/json:

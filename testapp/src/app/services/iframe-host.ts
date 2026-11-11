@@ -5,7 +5,7 @@ import {
 	EmbeddedEvent,
 	MeetBroadcastStartOptions,
 	MeetBroadcastStopOptions,
-	MeetLobbyDecisionOptions,
+	MeetWaitingRoomDecisionOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetReaction
@@ -142,12 +142,12 @@ export class IframeHostService {
 		this.post({ command: EmbeddedCommandName.PARTICIPANT_REACTION_SEND, payload: { reaction } });
 	}
 
-	lobbyAdmit(options: MeetLobbyDecisionOptions): void {
-		this.post({ command: EmbeddedCommandName.LOBBY_ADMIT, payload: options });
+	waitingRoomAdmit(options: MeetWaitingRoomDecisionOptions): void {
+		this.post({ command: EmbeddedCommandName.WAITING_ROOM_ADMIT, payload: options });
 	}
 
-	lobbyReject(options: MeetLobbyDecisionOptions): void {
-		this.post({ command: EmbeddedCommandName.LOBBY_REJECT, payload: options });
+	waitingRoomReject(options: MeetWaitingRoomDecisionOptions): void {
+		this.post({ command: EmbeddedCommandName.WAITING_ROOM_REJECT, payload: options });
 	}
 
 	broadcastStart(options: MeetBroadcastStartOptions): void {

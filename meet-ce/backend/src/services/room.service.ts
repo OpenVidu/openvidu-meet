@@ -50,7 +50,7 @@ import type {
 } from '../types/room-projection.types.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
 import { LiveKitService } from './livekit.service.js';
-import { LobbyService } from './lobby/lobby.service.js';
+import { WaitingRoomService } from './waiting-room/waiting-room.service.js';
 import { LoggerService } from './logger.service.js';
 import { RecordingService } from './recording.service.js';
 import { RequestSessionService } from './request-session.service.js';
@@ -70,7 +70,7 @@ export class RoomService {
 		@inject(RecordingService) protected recordingService: RecordingService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
-		@inject(LobbyService) protected lobbyService: LobbyService
+		@inject(WaitingRoomService) protected waitingRoomService: WaitingRoomService
 	) {}
 
 	/**
@@ -115,8 +115,8 @@ export class RoomService {
 			participantMute: true,
 			participantHandLower: true,
 			participantReactionSend: true,
-			lobbyBypass: true,
-			lobbyAdmin: true,
+			waitingRoomBypass: true,
+			waitingRoomAdmin: true,
 			meetingEnd: true,
 			mediaPublishVideo: true,
 			mediaPublishAudio: true,
@@ -144,8 +144,8 @@ export class RoomService {
 			participantMute: false,
 			participantHandLower: false,
 			participantReactionSend: true,
-			lobbyBypass: false,
-			lobbyAdmin: false,
+			waitingRoomBypass: false,
+			waitingRoomAdmin: false,
 			meetingEnd: false,
 			mediaPublishVideo: true,
 			mediaPublishAudio: true,
@@ -263,8 +263,8 @@ export class RoomService {
 		// Merge existing config with new config (partial update)
 		const updatedConfig = merge({}, room.config, config);
 
-		if (config.lobby?.message === null) {
-			updatedConfig.lobby.message = undefined;
+		if (config.waitingRoom?.message === null) {
+			updatedConfig.waitingRoom.message = undefined;
 		}
 
 		// The destination list is replaced as a whole, never merged entry by entry, and its saved
@@ -293,8 +293,8 @@ export class RoomService {
 
 		if (!updatedRoom) return this.updateMeetRoomConfig(roomId, config);
 
-		if (room.config.lobby.enabled && !updatedRoom.config.lobby.enabled) {
-			await this.lobbyService.letEveryoneIn(roomId);
+		if (room.config.waitingRoom.enabled && !updatedRoom.config.waitingRoom.enabled) {
+			await this.waitingRoomService.letEveryoneIn(roomId);
 		}
 
 		return updatedRoom;
@@ -348,7 +348,7 @@ export class RoomService {
 
 			if (status === MeetRoomStatus.CLOSED) {
 				this.logger.info(`Room '${roomId}' closed`);
-				await this.lobbyService.closeRoom(roomId);
+				await this.waitingRoomService.closeRoom(roomId);
 			}
 
 			return { room: updatedRoom, updated: true };
@@ -677,7 +677,7 @@ export class RoomService {
 
 			await Promise.all([
 				this.roomMemberRepository.deleteAllByRoomId(roomId),
-				this.lobbyService.closeRoom(roomId)
+				this.waitingRoomService.closeRoom(roomId)
 			]);
 			return {};
 		}
@@ -709,7 +709,7 @@ export class RoomService {
 
 			if (!updatedRoom) return null;
 
-			await this.lobbyService.closeRoom(roomId);
+			await this.waitingRoomService.closeRoom(roomId);
 			return { room: updatedRoom };
 		}
 
@@ -719,7 +719,7 @@ export class RoomService {
 		await Promise.all([
 			this.recordingService.deleteAllRoomRecordings(roomId),
 			this.roomMemberRepository.deleteAllByRoomId(roomId),
-			this.lobbyService.closeRoom(roomId)
+			this.waitingRoomService.closeRoom(roomId)
 		]);
 		return {};
 	}

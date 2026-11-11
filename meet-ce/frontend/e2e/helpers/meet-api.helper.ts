@@ -2,7 +2,7 @@ import {
 	MeetDeprecatedPermissionKey,
 	MeetPermissionKey,
 	MeetBroadcastInfo,
-	MeetLobbyList,
+	MeetWaitingRoomList,
 	MeetRecordingInfo,
 	MeetRoom,
 	MeetRoomConfig,
@@ -250,24 +250,24 @@ export const getMeetingParticipantIdentities = async (roomId: string): Promise<s
 /**
  * Reads the room's waiting room: who waits, in arrival order, and how many places the meeting has free.
  */
-export const getLobby = async (roomId: string): Promise<MeetLobbyList> => {
-	const response = await fetch(withApiPath(`/meetings/${encodeURIComponent(roomId)}/lobby`), {
+export const getWaitingRoom = async (roomId: string): Promise<MeetWaitingRoomList> => {
+	const response = await fetch(withApiPath(`/meetings/${encodeURIComponent(roomId)}/waiting-room`), {
 		method: 'GET',
 		headers: { 'x-api-key': API_KEY }
 	});
 
 	const responseText = await response.text();
-	assertOk(response, responseText, 'get lobby');
+	assertOk(response, responseText, 'get waiting room');
 
-	return JSON.parse(responseText) as MeetLobbyList;
+	return JSON.parse(responseText) as MeetWaitingRoomList;
 };
 
 /**
  * Admits the given waiting participants, or everyone waiting up to the free places when none are given.
  * Answers the raw response, so a test can check a refusal.
  */
-export const admitFromLobby = (roomId: string, participantIdentities?: string[]): Promise<Response> =>
-	fetch(withApiPath(`/meetings/${encodeURIComponent(roomId)}/lobby/admit`), {
+export const admitFromWaitingRoom = (roomId: string, participantIdentities?: string[]): Promise<Response> =>
+	fetch(withApiPath(`/meetings/${encodeURIComponent(roomId)}/waiting-room/admit`), {
 		method: 'POST',
 		headers: { 'content-type': 'application/json', 'x-api-key': API_KEY },
 		body: JSON.stringify(participantIdentities ? { participantIdentities } : {})

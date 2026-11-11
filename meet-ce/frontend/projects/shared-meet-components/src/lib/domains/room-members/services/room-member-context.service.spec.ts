@@ -171,7 +171,7 @@ describe('RoomMemberContextService', () => {
 
 	/** A waiting ticket is the answer of a join only: it is never kept as the participant's token. */
 	describe('waiting ticket', () => {
-		const ticket = { lobbyTicket: 'ticket-1', participantIdentity: 'ana-1' };
+		const ticket = { waitingRoomTicket: 'ticket-1', participantIdentity: 'ana-1' };
 
 		it('answers the ticket of a join and keeps the current token', async () => {
 			const currentToken = service.roomMemberToken();

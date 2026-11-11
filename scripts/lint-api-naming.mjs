@@ -5,7 +5,7 @@
  * fails when a public identifier steps outside the `moduleAction` / `moduleEvent` / `moduleAbility`
  * scheme:
  *
- *   1. Registry hygiene — module tokens are single-word lowercase, unique, and none is a prefix of
+ *   1. Registry hygiene — module tokens are lowerCamelCase nouns, unique, and none is a prefix of
  *      another (prefix matching would turn ambiguous).
  *   2. Every permission key, embedding command/event and webhook event type starts with a
  *      registered module token. The deprecated 3.8.0 aliases are exempt, derived from the alias
@@ -116,8 +116,8 @@ const {
 // ── 1. Registry hygiene ─────────────────────────────────────────────────────
 
 for (const token of MEET_API_MODULES) {
-	if (!/^[a-z]+$/.test(token)) {
-		fail(`module token '${token}' must be a single lowercase word`);
+	if (!/^[a-z]+(?:[A-Z][a-z]+)*$/.test(token)) {
+		fail(`module token '${token}' must be a lowerCamelCase noun`);
 	}
 }
 

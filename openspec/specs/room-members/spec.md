@@ -632,7 +632,7 @@ The member form SHALL group permission toggles under Meeting, Media, Recordings,
 #### Scenario: Waiting room group
 - **GIVEN** the add member form with base role `moderator`
 - **WHEN** the owner opens the permission toggles
-- **THEN** a Waiting room group holds the `lobbyBypass` and `lobbyAdmin` toggles, both on
+- **THEN** a Waiting room group holds the `waitingRoomBypass` and `waitingRoomAdmin` toggles, both on
 
 ### Requirement: Members queued in the room wizard
 When creating a room, the console wizard SHALL let the user queue members in the Room Access step with the same form, and SHALL add them right after creating the room; members that cannot be added SHALL be named in a warning while the room stays created (see `rooms`).

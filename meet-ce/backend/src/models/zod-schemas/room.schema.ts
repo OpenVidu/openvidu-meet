@@ -2,8 +2,8 @@ import type {
 	MeetAppearanceConfig,
 	MeetChatConfig,
 	MeetE2EEConfig,
-	MeetLobbyConfig,
-	MeetLobbyConfigOptions,
+	MeetWaitingRoomConfig,
+	MeetWaitingRoomConfigOptions,
 	MeetRaiseHandConfig,
 	MeetReactionsConfig,
 	MeetRecordingConfig,
@@ -107,16 +107,16 @@ const ReactionsConfigSchema: z.ZodType<MeetReactionsConfig> = z.object({
 	enabled: z.boolean()
 });
 
-const lobbyMessageSchema = z.string().max(500, 'Must not exceed 500 characters');
+const waitingRoomMessageSchema = z.string().max(500, 'Must not exceed 500 characters');
 
-const LobbyConfigSchema: z.ZodType<MeetLobbyConfig> = z.object({
+const WaitingRoomConfigSchema: z.ZodType<MeetWaitingRoomConfig> = z.object({
 	enabled: z.boolean(),
-	message: lobbyMessageSchema.optional()
+	message: waitingRoomMessageSchema.optional()
 });
 
-const LobbyConfigUpdateSchema: z.ZodType<MeetLobbyConfigOptions> = z.object({
+const WaitingRoomConfigUpdateSchema: z.ZodType<MeetWaitingRoomConfigOptions> = z.object({
 	enabled: z.boolean(),
-	message: lobbyMessageSchema.nullable().optional()
+	message: waitingRoomMessageSchema.nullable().optional()
 });
 
 const ThemeModeSchema: z.ZodType<MeetRoomThemeMode> = z.enum(MeetRoomThemeMode);
@@ -165,7 +165,7 @@ const UpdateRoomConfigSchema: z.ZodType<MeetRoomConfigOptions> = z
 		captions: CaptionsConfigSchema.optional(),
 		raiseHand: RaiseHandConfigSchema.optional(),
 		reactions: ReactionsConfigSchema.optional(),
-		lobby: LobbyConfigUpdateSchema.optional()
+		waitingRoom: WaitingRoomConfigUpdateSchema.optional()
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data: MeetRoomConfigOptions) => {
@@ -203,7 +203,7 @@ const CreateRoomConfigSchema: z.ZodType<MeetRoomConfigOptions> = z
 		captions: CaptionsConfigSchema.optional().default(() => ({ enabled: true })),
 		raiseHand: RaiseHandConfigSchema.optional().default(() => ({ enabled: true })),
 		reactions: ReactionsConfigSchema.optional().default(() => ({ enabled: true })),
-		lobby: LobbyConfigSchema.optional().default(() => ({ enabled: false }))
+		waitingRoom: WaitingRoomConfigSchema.optional().default(() => ({ enabled: false }))
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data) => {
@@ -340,7 +340,7 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		captions: { enabled: true },
 		raiseHand: { enabled: true },
 		reactions: { enabled: true },
-		lobby: { enabled: false },
+		waitingRoom: { enabled: false },
 		initialAudioActive: true,
 		initialVideoActive: true
 	}),

@@ -1,9 +1,0 @@
-name: lobbyTicket
-in: query
-required: true
-description: >
-    The ticket of the wait to end, as the token request answered it (`202`). It is the only credential of
-    this operation.
-schema:
-    type: string
-example: 'q8d1u3Zr0m6ZxVwK9tHc2A'

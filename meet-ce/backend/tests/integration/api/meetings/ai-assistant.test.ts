@@ -153,7 +153,7 @@ describe('AI Assistant API Tests', () => {
 					captions: { enabled: false },
 					raiseHand: { enabled: true },
 					reactions: { enabled: true },
-					lobby: { enabled: false }
+					waitingRoom: { enabled: false }
 				});
 
 				const response = await createAssistant(roomWithCaptionsOff.speakerToken);

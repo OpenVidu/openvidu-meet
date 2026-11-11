@@ -2,7 +2,7 @@ import { MeetBroadcastInfo } from './database/broadcast.entity.js';
 import { MeetRecordingInfo } from './database/recording.entity.js';
 import { MeetRoom } from './database/room.entity.js';
 import { LeftEventReason, MeetEventOrigin } from './embedded/events.js';
-import { MeetLobbyParticipant, MeetLobbyStatus } from './response/lobby-response.js';
+import { MeetWaitingRoomParticipant, MeetWaitingRoomStatus } from './response/waiting-room-response.js';
 import { MeetParticipantInfo, MeetParticipantPayload } from './response/participant-response.js';
 
 /**
@@ -36,7 +36,7 @@ export enum MeetWebhookEventType {
 	/** Emitted when a participant's hand is raised or lowered */
 	PARTICIPANT_HAND_CHANGED = 'participantHandChanged',
 	/** Emitted when a participant waiting to join is admitted, rejected or otherwise stops waiting */
-	LOBBY_STATUS_CHANGED = 'lobbyStatusChanged',
+	WAITING_ROOM_STATUS_CHANGED = 'waitingRoomStatusChanged',
 	/** Emitted when a recording starts in a room */
 	RECORDING_STARTED = 'recordingStarted',
 	/** Emitted when a recording is updated */
@@ -193,18 +193,18 @@ export interface MeetParticipantKnockedPayload {
 	roomId: string;
 	/** Name of the room the participant asked to join */
 	roomName: string;
-	/** The participant who waits. See {@link MeetLobbyParticipant} for details */
-	participant: MeetLobbyParticipant;
+	/** The participant who waits. See {@link MeetWaitingRoomParticipant} for details */
+	participant: MeetWaitingRoomParticipant;
 }
 
 /**
- * Payload for the {@link MeetWebhookEventType.LOBBY_STATUS_CHANGED} webhook event. Sent for every
+ * Payload for the {@link MeetWebhookEventType.WAITING_ROOM_STATUS_CHANGED} webhook event. Sent for every
  * change of a wait after the knock, one per participant also when a decision covers everyone waiting.
  * The time waited is `creationDate` of the event minus `participant.knockDate`.
  */
-export interface MeetLobbyStatusChangedPayload extends MeetParticipantKnockedPayload {
-	/** What happened to the wait. See {@link MeetLobbyStatus} for details */
-	status: MeetLobbyStatus;
+export interface MeetWaitingRoomStatusChangedPayload extends MeetParticipantKnockedPayload {
+	/** What happened to the wait. See {@link MeetWaitingRoomStatus} for details */
+	status: MeetWaitingRoomStatus;
 	/**
 	 * Who caused the change: the participant for `left`; a moderator for a change made by someone
 	 * else's request, whatever the credential (a decision, an explicit end, closing or deleting the room,
@@ -220,7 +220,7 @@ export interface MeetLobbyStatusChangedPayload extends MeetParticipantKnockedPay
  * {@link MeetRoom}, {@link MeetMeetingEndedPayload}, {@link MeetParticipantJoinedPayload},
  * {@link MeetParticipantLeftPayload}, {@link MeetParticipantRoleChangedPayload},
  * {@link MeetParticipantHandChangedPayload}, {@link MeetParticipantKnockedPayload} or
- * {@link MeetLobbyStatusChangedPayload}.
+ * {@link MeetWaitingRoomStatusChangedPayload}.
  */
 export type MeetWebhookPayload =
 	| MeetRecordingInfo
@@ -232,4 +232,4 @@ export type MeetWebhookPayload =
 	| MeetParticipantRoleChangedPayload
 	| MeetParticipantHandChangedPayload
 	| MeetParticipantKnockedPayload
-	| MeetLobbyStatusChangedPayload;
+	| MeetWaitingRoomStatusChangedPayload;

@@ -1,5 +1,10 @@
 import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { EmbeddedAttribute, EmbeddedCommandName, EmbeddedEventName, MeetLobbyStatus } from '@openvidu-meet/typings';
+import {
+	EmbeddedAttribute,
+	EmbeddedCommandName,
+	EmbeddedEventName,
+	MeetWaitingRoomStatus
+} from '@openvidu-meet/typings';
 
 // The loader `import()`s the heavy ESM only when the internal `openvidu-meet-impl`
 // tag is NOT yet defined. By registering a lightweight stand-in for that tag BEFORE
@@ -30,8 +35,8 @@ class FakeImpl extends HTMLElement {
 	participantReactionSend = jest.fn();
 	broadcastStart = jest.fn();
 	broadcastStop = jest.fn();
-	lobbyAdmit = jest.fn();
-	lobbyReject = jest.fn();
+	waitingRoomAdmit = jest.fn();
+	waitingRoomReject = jest.fn();
 	endMeeting = jest.fn();
 	leaveRoom = jest.fn();
 	kickParticipant = jest.fn();
@@ -139,21 +144,21 @@ describe('openvidu-meet lazy loader', () => {
 			document.body.appendChild(el);
 			await flush();
 
-			const onLobbyStatus = jest.fn();
-			el.on(EmbeddedEventName.LOBBY_STATUS_CHANGED, onLobbyStatus);
+			const onWaitingRoomStatus = jest.fn();
+			el.on(EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED, onWaitingRoomStatus);
 			const states = [
-				{ roomId: 'r1', participantIdentity: 'ana-1', status: MeetLobbyStatus.WAITING, queuePosition: 2 },
-				{ roomId: 'r1', participantIdentity: 'ana-1', status: MeetLobbyStatus.WAITING, queuePosition: 1 },
-				{ roomId: 'r1', participantIdentity: 'ana-1', status: MeetLobbyStatus.LEFT }
+				{ roomId: 'r1', participantIdentity: 'ana-1', status: MeetWaitingRoomStatus.WAITING, queuePosition: 2 },
+				{ roomId: 'r1', participantIdentity: 'ana-1', status: MeetWaitingRoomStatus.WAITING, queuePosition: 1 },
+				{ roomId: 'r1', participantIdentity: 'ana-1', status: MeetWaitingRoomStatus.LEFT }
 			];
 
 			for (const detail of states) {
 				implOf(el).dispatchEvent(
-					new CustomEvent(EmbeddedEventName.LOBBY_STATUS_CHANGED, { bubbles: false, detail })
+					new CustomEvent(EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED, { bubbles: false, detail })
 				);
 			}
 
-			expect(onLobbyStatus.mock.calls.map(([detail]) => detail)).toEqual(states);
+			expect(onWaitingRoomStatus.mock.calls.map(([detail]) => detail)).toEqual(states);
 		});
 
 		it('forwards every event name declared in the typings, canonical and deprecated', async () => {

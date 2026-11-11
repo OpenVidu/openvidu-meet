@@ -10,9 +10,10 @@
  * Rules for the tokens (charter §"Module"):
  *
  * - A **singular, single-word** lowerCamelCase noun (`embedded`, named after the embedded mode, is
- *   the one adjective). A concept that would need two words is not a module — fold it into the
- *   closest existing one and put the extra word in the action/ability (virtual background →
- *   `media` as `mediaChangeVirtualBackground`, not a `virtualBackground` module).
+ *   the one adjective; `waitingRoom`, the name the feature has everywhere, is the one compound). A
+ *   concept that would need two words is not a module — fold it into the closest existing one and
+ *   put the extra word in the action/ability (virtual background → `media` as
+ *   `mediaChangeVirtualBackground`, not a `virtualBackground` module).
  * - A token belongs to **exactly one** module, and no token may be a prefix of another (prefix
  *   matching would turn ambiguous).
  * - Reserved meanings: `broadcast` is RTMP egress only, `reaction` is the emoji overlay only,
@@ -21,7 +22,7 @@
  *   about that element, not about the meeting, its participants or their media, starts with it.
  *
  * The list covers the implemented modules and the ones the API studies already commit to
- * (`lobby`, `hand`, `breakout`, `notes`, `whiteboard`, `file`, `reaction`, `broadcast`), so a
+ * (`waitingRoom`, `hand`, `breakout`, `notes`, `whiteboard`, `file`, `reaction`, `broadcast`), so a
  * future feature lands with its naming already decided.
  */
 export const MEET_API_MODULES = [
@@ -32,7 +33,7 @@ export const MEET_API_MODULES = [
 	'recording',
 	'embedded',
 	'broadcast',
-	'lobby',
+	'waitingRoom',
 	'chat',
 	'file',
 	'reaction',

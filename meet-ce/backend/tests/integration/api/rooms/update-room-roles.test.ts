@@ -186,32 +186,41 @@ describe('Room API Tests', () => {
 				xExtraFields: 'roles'
 			});
 
-			expect(createdRoom.roles.moderator.permissions).toMatchObject({ lobbyBypass: true, lobbyAdmin: true });
-			expect(createdRoom.roles.speaker.permissions).toMatchObject({ lobbyBypass: false, lobbyAdmin: false });
+			expect(createdRoom.roles.moderator.permissions).toMatchObject({
+				waitingRoomBypass: true,
+				waitingRoomAdmin: true
+			});
+			expect(createdRoom.roles.speaker.permissions).toMatchObject({
+				waitingRoomBypass: false,
+				waitingRoomAdmin: false
+			});
 		});
 
 		it('should update each waiting room permission independently of the other', async () => {
 			const createdRoom = await createRoom({ roomName: 'waiting-room-roles-update' });
 
 			const updateResponse = await updateRoomRoles(createdRoom.roomId, {
-				moderator: { permissions: { lobbyBypass: false } },
-				speaker: { permissions: { lobbyAdmin: true } }
+				moderator: { permissions: { waitingRoomBypass: false } },
+				speaker: { permissions: { waitingRoomAdmin: true } }
 			});
 			expect(updateResponse.status).toBe(200);
 
 			const getResponse = await getRoom(createdRoom.roomId, undefined, 'roles');
 			expect(getResponse.body.roles.moderator.permissions).toMatchObject({
-				lobbyBypass: false,
-				lobbyAdmin: true
+				waitingRoomBypass: false,
+				waitingRoomAdmin: true
 			});
-			expect(getResponse.body.roles.speaker.permissions).toMatchObject({ lobbyBypass: false, lobbyAdmin: true });
+			expect(getResponse.body.roles.speaker.permissions).toMatchObject({
+				waitingRoomBypass: false,
+				waitingRoomAdmin: true
+			});
 		});
 
 		it('should reject a waiting room permission that is not a boolean', async () => {
 			const createdRoom = await createRoom({ roomName: 'waiting-room-roles-invalid' });
 
 			const response = await updateRoomRoles(createdRoom.roomId, {
-				speaker: { permissions: { lobbyAdmin: 'yes' } }
+				speaker: { permissions: { waitingRoomAdmin: 'yes' } }
 			} as unknown as MeetRoomRolesConfig);
 
 			expect(response.status).toBe(422);

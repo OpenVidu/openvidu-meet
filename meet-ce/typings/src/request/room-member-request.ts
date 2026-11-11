@@ -52,7 +52,7 @@ export interface MeetRoomMemberTokenOptions {
 	 * waiting room. Once the participant is admitted, the same request with the ticket answers the join
 	 * token. Only accepted with `joinMeeting` true.
 	 */
-	lobbyTicket?: string;
+	waitingRoomTicket?: string;
 }
 
 /**

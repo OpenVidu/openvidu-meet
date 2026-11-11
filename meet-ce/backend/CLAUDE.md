@@ -142,12 +142,12 @@ what LiveKit's webhooks never told.
   socket) from `onOpen` and `onPong`, and recovers from a lost message on its own. Do not rely on
   `redisDisconnected` to detect an outage: ioredis retries forever and emits `end` only when it
   gives up, which it never does here.
-- **Waiting room** (`services/lobby/`): the line of waiting participants lives only in Redis and changes
-  only through the Lua scripts of `LobbyStateService` (one file per change, each takes its time from Redis
-  `TIME` and sets a TTL on every wait that ends). `LobbyService` is the one entry point and each use case
+- **Waiting room** (`services/waiting-room/`): the line of waiting participants lives only in Redis and changes
+  only through the Lua scripts of `WaitingRoomStateService` (one file per change, each takes its time from Redis
+  `TIME` and sets a TTL on every wait that ends). `WaitingRoomService` is the one entry point and each use case
   is one script followed by its notifications; it depends on a few low-level services only, because
   `RoomService`, the meeting end, `MeetingDurationLimitService` and `LivekitWebhookService` call it and
-  `LobbyAdmissionPolicy` holds the pure rules (the waiting gate, the permissions of a token without a
+  `WaitingRoomAdmissionPolicy` holds the pure rules (the waiting gate, the permissions of a token without a
   participant identity). A wait is identified by `sha256(ticket)`; the ticket itself is never stored or logged.
 - **Scheduled tasks**: `TaskSchedulerService` + `*-scheduled-tasks.service.ts` (cron), plus
   `MeetingDurationLimitService`, which owns its sweep next to the per-meeting timers. Intervals,

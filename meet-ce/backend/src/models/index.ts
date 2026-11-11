@@ -1,7 +1,7 @@
 // Core models
 export * from './database.model.js';
 export * from './error.model.js';
-export * from './lobby.model.js';
+export * from './waiting-room.model.js';
 export * from './migration.model.js';
 export * from './websocket.model.js';
 export * from './redis.model.js';

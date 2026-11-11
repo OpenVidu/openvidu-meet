@@ -1,47 +1,47 @@
 ## Purpose
 
-The waiting room holds the participants of a room who ask to join until a holder of `lobbyAdmin` admits or rejects them. Participants, holders of `lobbyAdmin`, host applications, REST clients and webhook receivers rely on it.
+The waiting room holds the participants of a room who ask to join until a holder of `waitingRoomAdmin` admits or rejects them. Participants, holders of `waitingRoomAdmin`, host applications, REST clients and webhook receivers rely on it.
 
 ## ADDED Requirements
 
 ### Requirement: The waiting room is turned on per room
-The room config field `lobby.enabled` SHALL decide whether a room holds participants who ask to join, `false` by default. The optional `lobby.message`, up to 500 characters, SHALL be shown to the participants while they wait. Like the rest of the config, `lobby` SHALL NOT change while a meeting runs (see `room-config`), and the meeting SHALL offer no way to turn the waiting room off.
+The room config field `waitingRoom.enabled` SHALL decide whether a room holds participants who ask to join, `false` by default. The optional `waitingRoom.message`, up to 500 characters, SHALL be shown to the participants while they wait. Like the rest of the config, `waitingRoom` SHALL NOT change while a meeting runs (see `room-config`), and the meeting SHALL offer no way to turn the waiting room off.
 
 #### Scenario: Room created without the waiting room
-- **WHEN** a client creates a room without `config.lobby`
-- **THEN** `getRoomConfig` returns `lobby.enabled` false and every participant joins directly
+- **WHEN** a client creates a room without `config.waitingRoom`
+- **THEN** `getRoomConfig` returns `waitingRoom.enabled` false and every participant joins directly
 
 #### Scenario: Message too long
-- **WHEN** a client calls `updateRoomConfig` with a `lobby.message` of 501 characters
+- **WHEN** a client calls `updateRoomConfig` with a `waitingRoom.message` of 501 characters
 - **THEN** the server answers `422` and the config is unchanged
 
 #### Scenario: Turning it off during a meeting
 - **GIVEN** a room with the waiting room on and a meeting running
-- **WHEN** its owner calls `updateRoomConfig` with `lobby.enabled` false
+- **WHEN** its owner calls `updateRoomConfig` with `waitingRoom.enabled` false
 - **THEN** the server answers `409` and the waiting room stays on
 
 ### Requirement: Who waits
-In a room with `lobby.enabled`, a participant who asks to join SHALL wait instead of joining, unless they hold `lobbyBypass`. An admitted participant who reloads the page SHALL ask again and wait. An admin and the room's owner hold every permission and SHALL join directly. The server checks of `meeting-join` SHALL run before a participant waits, except the participant limit, which applies when their join token is issued. Gaining `lobbyBypass` while waiting SHALL NOT end the wait.
+In a room with `waitingRoom.enabled`, a participant who asks to join SHALL wait instead of joining, unless they hold `waitingRoomBypass`. An admitted participant who reloads the page SHALL ask again and wait. An admin and the room's owner hold every permission and SHALL join directly. The server checks of `meeting-join` SHALL run before a participant waits, except the participant limit, which applies when their join token is issued. Gaining `waitingRoomBypass` while waiting SHALL NOT end the wait.
 
 #### Scenario: Speaker waits
-- **GIVEN** a room with the waiting room on whose speaker role denies `lobbyBypass`
+- **GIVEN** a room with the waiting room on whose speaker role denies `waitingRoomBypass`
 - **WHEN** a participant with the anonymous speaker link presses "Ask to join"
 - **THEN** they see the waiting screen and do not enter the meeting
 
 #### Scenario: Moderator joins directly
-- **GIVEN** a room with the waiting room on whose moderator role grants `lobbyBypass`
+- **GIVEN** a room with the waiting room on whose moderator role grants `waitingRoomBypass`
 - **WHEN** a participant with the anonymous moderator link presses join
 - **THEN** they enter the meeting
 
 #### Scenario: Admitted member reloads
-- **GIVEN** a member without `lobbyBypass` who was admitted and is in the meeting
+- **GIVEN** a member without `waitingRoomBypass` who was admitted and is in the meeting
 - **WHEN** they reload the page and ask to join again
 - **THEN** they wait at the end of the line
 
-#### Scenario: Granted lobbyBypass while waiting
+#### Scenario: Granted waitingRoomBypass while waiting
 - **GIVEN** a member waiting in a room with the waiting room on
-- **WHEN** a manager grants their role `lobbyBypass`
-- **THEN** they keep waiting until a holder of `lobbyAdmin` admits them
+- **WHEN** a manager grants their role `waitingRoomBypass`
+- **THEN** they keep waiting until a holder of `waitingRoomAdmin` admits them
 
 #### Scenario: Closed room
 - **GIVEN** a closed room with the waiting room on
@@ -54,7 +54,7 @@ Asking to join a room where the participant waits SHALL answer with a waiting ti
 #### Scenario: Waiter knows its identity
 - **GIVEN** a participant with the anonymous speaker link of a room with the waiting room on
 - **WHEN** they ask to join and wait
-- **THEN** the answer carries the waiting ticket and the identity that `lobbyList` lists and `participantJoined` reports after their admission
+- **THEN** the answer carries the waiting ticket and the identity that `waitingRoomList` lists and `participantJoined` reports after their admission
 
 #### Scenario: Room stays open
 - **GIVEN** an open room with the waiting room on and no meeting running
@@ -66,13 +66,13 @@ Asking to join a room where the participant waits SHALL answer with a waiting ti
 - **WHEN** a third participant asks to join
 - **THEN** they wait
 
-#### Scenario: Waiting holder of lobbyAdmin
-- **GIVEN** a room with the waiting room on and a member granted `lobbyAdmin` and denied `lobbyBypass`, waiting
-- **WHEN** their client calls `lobbyList`, or `lobbyAdmit` with their own identity
+#### Scenario: Waiting holder of waitingRoomAdmin
+- **GIVEN** a room with the waiting room on and a member granted `waitingRoomAdmin` and denied `waitingRoomBypass`, waiting
+- **WHEN** their client calls `waitingRoomList`, or `waitingRoomAdmit` with their own identity
 - **THEN** the server refuses it and they keep waiting
 
 #### Scenario: Waiting holder of meetingEnd
-- **GIVEN** a member granted `meetingEnd` and denied `lobbyBypass`, waiting while a meeting runs
+- **GIVEN** a member granted `meetingEnd` and denied `waitingRoomBypass`, waiting while a meeting runs
 - **WHEN** their client calls `meetingEnd`
 - **THEN** the server refuses it and the meeting goes on
 
@@ -87,17 +87,17 @@ A participant SHALL start waiting when they ask to join, and keep their place on
 #### Scenario: Asking without ever connecting
 - **GIVEN** a client that asks to join and never opens its realtime connection
 - **WHEN** 20 seconds pass
-- **THEN** `lobbyList` no longer lists it
+- **THEN** `waitingRoomList` no longer lists it
 
 #### Scenario: Leaving the waiting room
 - **GIVEN** a participant waiting
 - **WHEN** they press "Leave waiting room"
-- **THEN** `lobbyList` no longer lists them
+- **THEN** `waitingRoomList` no longer lists them
 
 #### Scenario: Leaving while reconnecting
 - **GIVEN** a participant waiting whose realtime connection is being restored after a network change
 - **WHEN** they press "Leave waiting room"
-- **THEN** `lobbyList` no longer lists them and a `lobbyStatusChanged` webhook with `left` is sent
+- **THEN** `waitingRoomList` no longer lists them and a `waitingRoomStatusChanged` webhook with `left` is sent
 
 #### Scenario: Replica stops
 - **GIVEN** two replicas and a participant waiting whose realtime connection is held by replica A
@@ -115,18 +115,18 @@ A participant whose realtime connection has been down for about a minute, whatev
 #### Scenario: Page closed
 - **GIVEN** a participant waiting
 - **WHEN** they close the browser tab
-- **THEN** `lobbyList` stops listing them within about a minute and one `lobbyStatusChanged` webhook with `expired` is sent
+- **THEN** `waitingRoomList` stops listing them within about a minute and one `waitingRoomStatusChanged` webhook with `expired` is sent
 
 #### Scenario: Network lost for two minutes
 - **GIVEN** a participant second in line
 - **WHEN** their device loses its network for two minutes
-- **THEN** `lobbyList` stops listing them within about a minute of the loss
+- **THEN** `waitingRoomList` stops listing them within about a minute of the loss
 - **AND** their meeting says they lost their place and offers to ask again, which puts them at the end of the line
 
 #### Scenario: Host removes the embedded element
 - **GIVEN** an embedded participant waiting, through the web component or through an iframe
 - **WHEN** the host application removes the element or the iframe
-- **THEN** `lobbyList` stops listing them within about a minute, with a `lobbyStatusChanged` webhook with `expired`, not `left`
+- **THEN** `waitingRoomList` stops listing them within about a minute, with a `waitingRoomStatusChanged` webhook with `expired`, not `left`
 
 #### Scenario: Realtime connection blocked
 - **GIVEN** a network that blocks the realtime connection to Meet
@@ -141,7 +141,7 @@ Each time a participant asks to join, it SHALL start a new wait at the end of th
 - **WHEN** they ask to join the same room from a phone
 - **THEN** the phone shows them second in line, behind Ben
 - **AND** the laptop says they lost their place
-- **AND** `lobbyList` lists them once
+- **AND** `waitingRoomList` lists them once
 
 #### Scenario: Reload while waiting
 - **GIVEN** a member waiting first in line, with Ben behind them
@@ -149,42 +149,42 @@ Each time a participant asks to join, it SHALL start a new wait at the end of th
 - **THEN** they wait behind Ben, and a `participantKnocked` webhook is sent for the new wait
 
 ### Requirement: Waiting list
-`GET /api/v1/meetings/{roomId}/lobby` (`lobbyList`) SHALL require `lobbyAdmin` (`403`) and return `participants`, those waiting as `MeetLobbyParticipant` in arrival order (`knockDate`, then identity), and `availablePlaces`, the free places: `maxParticipants` minus the participants connected and those admitted who have not joined yet, never below 0, or `null` without a limit. Unlike the other meeting operations, the waiting room operations SHALL answer whether or not a meeting runs.
+`GET /api/v1/meetings/{roomId}/waiting-room` (`waitingRoomList`) SHALL require `waitingRoomAdmin` (`403`) and return `participants`, those waiting as `MeetWaitingRoomParticipant` in arrival order (`knockDate`, then identity), and `availablePlaces`, the free places: `maxParticipants` minus the participants connected and those admitted who have not joined yet, never below 0, or `null` without a limit. Unlike the other meeting operations, the waiting room operations SHALL answer whether or not a meeting runs.
 
 #### Scenario: Two participants waiting
 - **GIVEN** Ana asked to join before Ben
-- **WHEN** a client holding `lobbyAdmin` calls `lobbyList`
+- **WHEN** a client holding `waitingRoomAdmin` calls `waitingRoomList`
 - **THEN** `participants` holds Ana and then Ben, each with their identity, name and `knockDate`
 
 #### Scenario: Waiting before the meeting starts
 - **GIVEN** a room with no meeting running and a participant waiting
-- **WHEN** a backend calls `lobbyList` with the API key
+- **WHEN** a backend calls `waitingRoomList` with the API key
 - **THEN** it returns that participant
 
 #### Scenario: Without the permission
-- **GIVEN** a room member token without `lobbyAdmin`
-- **WHEN** its holder calls `lobbyList`
+- **GIVEN** a room member token without `waitingRoomAdmin`
+- **WHEN** its holder calls `waitingRoomList`
 - **THEN** the server answers `403`
 
 #### Scenario: Free places
 - **GIVEN** a room with `maxParticipants` 4 and a meeting with two participants connected
-- **WHEN** a client holding `lobbyAdmin` calls `lobbyList`
+- **WHEN** a client holding `waitingRoomAdmin` calls `waitingRoomList`
 - **THEN** `availablePlaces` is 2
 
 #### Scenario: Admitted participant on the way in
 - **GIVEN** a room with `maxParticipants` 4, two participants connected and Ana admitted, who has not joined yet
-- **WHEN** a client holding `lobbyAdmin` calls `lobbyList`
+- **WHEN** a client holding `waitingRoomAdmin` calls `waitingRoomList`
 - **THEN** `availablePlaces` is 1, and it is 2 again a minute after her admission if she has not joined
 - **AND** it stays 1 once she joins, since she then counts as connected only
 
 #### Scenario: Meeting at its limit
-- **GIVEN** a room with `maxParticipants` 2, two participants connected and Ana admitted, who has not joined yet, because a holder of `lobbyBypass` took the place meanwhile
-- **WHEN** a client holding `lobbyAdmin` calls `lobbyList`
+- **GIVEN** a room with `maxParticipants` 2, two participants connected and Ana admitted, who has not joined yet, because a holder of `waitingRoomBypass` took the place meanwhile
+- **WHEN** a client holding `waitingRoomAdmin` calls `waitingRoomList`
 - **THEN** `availablePlaces` is 0, never negative
 
 #### Scenario: No participant limit
 - **GIVEN** a room without `maxParticipants` and a participant waiting
-- **WHEN** a client holding `lobbyAdmin` calls `lobbyList`
+- **WHEN** a client holding `waitingRoomAdmin` calls `waitingRoomList`
 - **THEN** `availablePlaces` is `null`
 
 ### Requirement: Limit on the waiting list
@@ -196,16 +196,16 @@ A room SHALL hold at most 100 participants waiting: one more asking to join SHAL
 - **THEN** the server answers `409` and they see that the waiting room is full
 
 ### Requirement: The waiting list tells how each participant came
-Each `MeetLobbyParticipant` SHALL carry a `type` the server derives from the credential of the request: `user` for a participant who asked with their own Meet account, `identified_guest` for one who asked with their personal member link, `anonymous` for one who asked with a shared link of the room. The participants panel SHALL mark each `anonymous` row.
+Each `MeetWaitingRoomParticipant` SHALL carry a `type` the server derives from the credential of the request: `user` for a participant who asked with their own Meet account, `identified_guest` for one who asked with their personal member link, `anonymous` for one who asked with a shared link of the room. The participants panel SHALL mark each `anonymous` row.
 
 #### Scenario: Shared link
 - **GIVEN** a participant who asked to join with the room's anonymous speaker link
-- **WHEN** a client holding `lobbyAdmin` calls `lobbyList`
+- **WHEN** a client holding `waitingRoomAdmin` calls `waitingRoomList`
 - **THEN** their entry has `type` `anonymous` and the panel marks their row
 
 #### Scenario: Account and personal link
 - **GIVEN** a user waiting with their own account and an identified guest waiting with their personal link
-- **WHEN** a client holding `lobbyAdmin` calls `lobbyList`
+- **WHEN** a client holding `waitingRoomAdmin` calls `waitingRoomList`
 - **THEN** the entries have `type` `user` and `identified_guest`, and the panel marks neither row
 
 #### Scenario: Name chosen by the participant
@@ -214,19 +214,19 @@ Each `MeetLobbyParticipant` SHALL carry a `type` the server derives from the cre
 - **THEN** the row reads "Dr. Ruiz" with the "Shared link" marker
 
 ### Requirement: The correlation fields prove nothing
-The `externalId` and `metadata` of a `MeetLobbyParticipant` SHALL be what the participant's client sent, never verified. A backend that admits on its own SHALL identify a waiting participant by `type` and by the `participantIdentity` of a member or user, which the server derives from their personal link or account.
+The `externalId` and `metadata` of a `MeetWaitingRoomParticipant` SHALL be what the participant's client sent, never verified. A backend that admits on its own SHALL identify a waiting participant by `type` and by the `participantIdentity` of a member or user, which the server derives from their personal link or account.
 
 #### Scenario: Forged external id
 - **GIVEN** a room's anonymous speaker link
 - **WHEN** a participant opens it with `participant-external-id` "u-42" and asks to join
-- **THEN** `lobbyList` lists them with `externalId` "u-42", `type` `anonymous` and an identity the server generated
+- **THEN** `waitingRoomList` lists them with `externalId` "u-42", `type` `anonymous` and an identity the server generated
 
 ### Requirement: Admit or reject participants
-`POST /api/v1/meetings/{roomId}/lobby/admit` (`lobbyAdmit`) and `POST /api/v1/meetings/{roomId}/lobby/reject` (`lobbyReject`) SHALL admit or reject the waiting participants named by `participantIdentities`, one or several, and answer with the participants decided on as `MeetLobbyParticipant`. Both SHALL require `lobbyAdmin` (`403`), and a `participantIdentities` given at least one identity, each named once (`422`): an empty list SHALL never mean everyone waiting.
+`POST /api/v1/meetings/{roomId}/waiting-room/admit` (`waitingRoomAdmit`) and `POST /api/v1/meetings/{roomId}/waiting-room/reject` (`waitingRoomReject`) SHALL admit or reject the waiting participants named by `participantIdentities`, one or several, and answer with the participants decided on as `MeetWaitingRoomParticipant`. Both SHALL require `waitingRoomAdmin` (`403`), and a `participantIdentities` given at least one identity, each named once (`422`): an empty list SHALL never mean everyone waiting.
 
 #### Scenario: Admitting one
 - **GIVEN** a participant waiting
-- **WHEN** a moderator holding `lobbyAdmin` calls `lobbyAdmit` with their identity
+- **WHEN** a moderator holding `waitingRoomAdmin` calls `waitingRoomAdmit` with their identity
 - **THEN** the server answers `200` and the participant enters the meeting
 
 #### Scenario: Admitting the three shown
@@ -235,24 +235,24 @@ The `externalId` and `metadata` of a `MeetLobbyParticipant` SHALL be what the pa
 - **THEN** the three shown enter the meeting and the fourth keeps waiting
 
 #### Scenario: An empty list
-- **WHEN** a client holding `lobbyAdmin` calls `lobbyAdmit` with an empty `participantIdentities`
+- **WHEN** a client holding `waitingRoomAdmin` calls `waitingRoomAdmit` with an empty `participantIdentities`
 - **THEN** the server answers `422` and nobody is admitted
 
 #### Scenario: Same identity twice
-- **WHEN** a client holding `lobbyAdmin` calls `lobbyReject` naming the same identity twice
+- **WHEN** a client holding `waitingRoomAdmin` calls `waitingRoomReject` naming the same identity twice
 - **THEN** the server answers `422` and nobody is rejected
 
 ### Requirement: A decision on named participants applies to all of them or to none
-`lobbyAdmit` and `lobbyReject` with `participantIdentities` SHALL change nothing and answer `404` when one of them is not waiting, and `lobbyAdmit` SHALL admit nobody and answer `409` when they outnumber the free places, which count the admitted participants who have not joined yet (see "Waiting list"). Decisions SHALL apply one at a time across replicas, so two admissions for the last place give one success and one `409`.
+`waitingRoomAdmit` and `waitingRoomReject` with `participantIdentities` SHALL change nothing and answer `404` when one of them is not waiting, and `waitingRoomAdmit` SHALL admit nobody and answer `409` when they outnumber the free places, which count the admitted participants who have not joined yet (see "Waiting list"). Decisions SHALL apply one at a time across replicas, so two admissions for the last place give one success and one `409`.
 
 #### Scenario: One of them no longer waits
 - **GIVEN** Ana and Ben waiting, and Ben leaves the waiting room
-- **WHEN** a client holding `lobbyAdmin` calls `lobbyReject` with Ana's and Ben's identities
+- **WHEN** a client holding `waitingRoomAdmin` calls `waitingRoomReject` with Ana's and Ben's identities
 - **THEN** the server answers `404` and Ana keeps waiting
 
 #### Scenario: Not enough places
 - **GIVEN** a meeting with two free places and three participants waiting
-- **WHEN** a client calls `lobbyAdmit` with the three identities
+- **WHEN** a client calls `waitingRoomAdmit` with the three identities
 - **THEN** the server answers `409` and the three keep waiting
 
 #### Scenario: Last free place
@@ -272,33 +272,33 @@ The `externalId` and `metadata` of a `MeetLobbyParticipant` SHALL be what the pa
 - **THEN** the server answers `200` and Ben enters the meeting
 
 ### Requirement: Deciding on everyone waiting
-With a body without `participantIdentities`, as `broadcastStop` without `broadcastIds`, `lobbyAdmit` SHALL admit the participants waiting in arrival order up to the free places (see "Waiting list") and leave the rest waiting in their place, and `lobbyReject` SHALL reject, in one atomic step, everyone waiting at that moment. Both SHALL answer with the participants decided on, none when nobody waits or no place is free.
+With a body without `participantIdentities`, as `broadcastStop` without `broadcastIds`, `waitingRoomAdmit` SHALL admit the participants waiting in arrival order up to the free places (see "Waiting list") and leave the rest waiting in their place, and `waitingRoomReject` SHALL reject, in one atomic step, everyone waiting at that moment. Both SHALL answer with the participants decided on, none when nobody waits or no place is free.
 
 #### Scenario: Fewer free places than participants waiting
 - **GIVEN** a meeting with two free places and Ana, Ben and Zoe waiting, in that order
-- **WHEN** a client holding `lobbyAdmin` calls `lobbyAdmit` without `participantIdentities`
+- **WHEN** a client holding `waitingRoomAdmin` calls `waitingRoomAdmit` without `participantIdentities`
 - **THEN** the server answers `200` with Ana and Ben, who enter the meeting
 - **AND** Zoe keeps waiting, first in line
 
 #### Scenario: Admitted participant on the way in
 - **GIVEN** a meeting with two free places, Ana admitted who has not joined yet, and Ben and Zoe waiting in that order
-- **WHEN** a client holding `lobbyAdmin` calls `lobbyAdmit` without `participantIdentities`
+- **WHEN** a client holding `waitingRoomAdmin` calls `waitingRoomAdmit` without `participantIdentities`
 - **THEN** the server answers `200` with Ben alone and Zoe keeps waiting, first in line
 
 #### Scenario: Admitting all without a participant limit
 - **GIVEN** a room without `maxParticipants` and three participants waiting
-- **WHEN** a client holding `lobbyAdmin` calls `lobbyAdmit` without `participantIdentities`
+- **WHEN** a client holding `waitingRoomAdmin` calls `waitingRoomAdmit` without `participantIdentities`
 - **THEN** the three enter the meeting
 
 #### Scenario: Rejecting everyone waiting
 - **GIVEN** Ana and Ben waiting
-- **WHEN** a client holding `lobbyAdmin` calls `lobbyReject` without `participantIdentities`
+- **WHEN** a client holding `waitingRoomAdmin` calls `waitingRoomReject` without `participantIdentities`
 - **THEN** the server answers `200` with Ana and Ben, and both are told they weren't let in
 
 #### Scenario: Asking right after everyone was rejected
 - **GIVEN** three participants waiting
-- **WHEN** a client calls `lobbyReject` without `participantIdentities` and Zoe asks to join right after it answers
-- **THEN** the three are rejected and Zoe waits, shown to the holders of `lobbyAdmin` as any new participant waiting
+- **WHEN** a client calls `waitingRoomReject` without `participantIdentities` and Zoe asks to join right after it answers
+- **THEN** the three are rejected and Zoe waits, shown to the holders of `waitingRoomAdmin` as any new participant waiting
 
 ### Requirement: One decision per participant across replicas
 Decisions on the same waiting participant SHALL apply one at a time across every replica: the first one SHALL apply, and a later decision naming them SHALL answer `404` and a later one on everyone waiting SHALL leave them out, since the participant no longer waits.
@@ -338,7 +338,7 @@ A request or a reconnection with the ticket of a wait that has ended SHALL NOT s
 - **GIVEN** a participant waiting whose network drops
 - **WHEN** a moderator rejects them and their network comes back
 - **THEN** their meeting says they weren't let in
-- **AND** `lobbyList` does not list them and no new `participantKnocked` webhook is sent
+- **AND** `waitingRoomList` does not list them and no new `participantKnocked` webhook is sent
 
 #### Scenario: Laptop asleep for an hour
 - **GIVEN** a participant whose laptop slept for an hour while waiting
@@ -351,7 +351,7 @@ A request or a reconnection with the ticket of a wait that has ended SHALL NOT s
 - **THEN** within about 20 seconds their meeting says they weren't let in
 
 #### Scenario: Replaying the ticket after a kick
-- **GIVEN** a speaker without `lobbyBypass` who was admitted, joined the meeting and was kicked
+- **GIVEN** a speaker without `waitingRoomBypass` who was admitted, joined the meeting and was kicked
 - **WHEN** their client asks for a join token with the waiting ticket of that admission
 - **THEN** the server answers `409` and issues no token
 
@@ -359,14 +359,14 @@ A request or a reconnection with the ticket of a wait that has ended SHALL NOT s
 An admitted participant who finds the meeting full when asking for their join token SHALL go back to their earlier place in line. One whose meeting then fails to connect SHALL see the meeting's connection error or "Meeting full" screen and SHALL ask again to come back. A closed room SHALL end the wait with the "Closed room" screen; withdrawn access SHALL show that access error screen while the admission expires.
 
 #### Scenario: Meeting full at the admission
-- **GIVEN** Ana admitted first in line, and the last free place taken by a holder of `lobbyBypass` before she asks for her join token
+- **GIVEN** Ana admitted first in line, and the last free place taken by a holder of `waitingRoomBypass` before she asks for her join token
 - **WHEN** her meeting asks to join
-- **THEN** she is back first in line and `lobbyList` lists her under `participants`
+- **THEN** she is back first in line and `waitingRoomList` lists her under `participants`
 
 #### Scenario: Media server refuses the admitted participant
 - **GIVEN** Ana admitted, whose join token was issued and whose connection to the meeting's media keeps failing
 - **WHEN** her meeting gives up joining
-- **THEN** she sees the connection error screen and `lobbyList` does not list her
+- **THEN** she sees the connection error screen and `waitingRoomList` does not list her
 - **AND** her place counts as taken until a minute after her admission
 
 #### Scenario: Rejected after an admission that did not complete
@@ -385,7 +385,7 @@ An admitted participant SHALL count as a taken place from their admission until 
 #### Scenario: Admission never used
 - **GIVEN** a meeting with `maxParticipants` 3, two participants connected and Ana admitted, who closes her page
 - **WHEN** a minute passes after her admission
-- **THEN** `availablePlaces` is 1 again and her wait ends with a `lobbyStatusChanged` webhook with `expired`
+- **THEN** `availablePlaces` is 1 again and her wait ends with a `waitingRoomStatusChanged` webhook with `expired`
 - **AND** a script that keeps its connection open without asking for the join token loses the place the same way
 
 #### Scenario: Participant joins
@@ -396,15 +396,15 @@ An admitted participant SHALL count as a taken place from their admission until 
 #### Scenario: Joined notice lost
 - **GIVEN** an admitted participant who joined the meeting, whose joined notice never reaches Meet
 - **WHEN** a minute passes after their admission
-- **THEN** their place stops counting and no `lobbyStatusChanged` webhook with `expired` is sent
+- **THEN** their place stops counting and no `waitingRoomStatusChanged` webhook with `expired` is sent
 
 #### Scenario: Notice reaches another replica
 - **GIVEN** two replicas, Ana admitted through replica A, and LiveKit's joined notice for Ana handled by replica B
-- **WHEN** a moderator calls `lobbyList` through replica A
+- **WHEN** a moderator calls `waitingRoomList` through replica A
 - **THEN** her place no longer counts
 
 ### Requirement: Only participants let in reach the meeting
-In a room with the waiting room on, a join token SHALL be issued only to a holder of `lobbyBypass` or to an admitted participant, and turning the waiting room on SHALL invalidate every room member token issued before (see `authentication`). A join token SHALL then connect to the room's media until it expires, its holder is kicked (see `meeting-moderation`), or a later change invalidates it (see `authentication`). A participant already in the meeting who loses `lobbyBypass` stays in it.
+In a room with the waiting room on, a join token SHALL be issued only to a holder of `waitingRoomBypass` or to an admitted participant, and turning the waiting room on SHALL invalidate every room member token issued before (see `authentication`). A join token SHALL then connect to the room's media until it expires, its holder is kicked (see `meeting-moderation`), or a later change invalidates it (see `authentication`). A participant already in the meeting who loses `waitingRoomBypass` stays in it.
 
 #### Scenario: Token from before the waiting room
 - **GIVEN** a speaker who joined a meeting while the room had the waiting room off and kept their join token
@@ -412,7 +412,7 @@ In a room with the waiting room on, a join token SHALL be issued only to a holde
 - **THEN** they are removed at once, and asking to join again makes them wait
 
 ### Requirement: Only participants who joined act on the meeting
-In a room with the waiting room on, a room member token without a participant identity, one obtained without joining, SHALL hold for every server check only `recordingList`, `recordingPlay`, `recordingDownload`, `recordingDelete` and `roomShareAccessLinks`: every operation gated by another permission, such as `meetingRead`, `meetingEnd`, a participant permission, `recordingControl`, `broadcastControl`, `broadcastEdit` or `lobbyAdmin`, SHALL answer `403`. API keys SHALL keep their access.
+In a room with the waiting room on, a room member token without a participant identity, one obtained without joining, SHALL hold for every server check only `recordingList`, `recordingPlay`, `recordingDownload`, `recordingDelete` and `roomShareAccessLinks`: every operation gated by another permission, such as `meetingRead`, `meetingEnd`, a participant permission, `recordingControl`, `broadcastControl`, `broadcastEdit` or `waitingRoomAdmin`, SHALL answer `403`. API keys SHALL keep their access.
 
 #### Scenario: Waiting participant lists the participants
 - **GIVEN** a participant waiting with a speaker link whose role grants `meetingRead`
@@ -430,8 +430,8 @@ In a room with the waiting room on, a room member token without a participant id
 - **THEN** the server answers `403`
 
 #### Scenario: Second token of an admitter who waits
-- **GIVEN** a member granted `lobbyAdmin` and denied `lobbyBypass`, waiting
-- **WHEN** they obtain a token without joining and call `lobbyAdmit` with their own identity
+- **GIVEN** a member granted `waitingRoomAdmin` and denied `waitingRoomBypass`, waiting
+- **WHEN** they obtain a token without joining and call `waitingRoomAdmit` with their own identity
 - **THEN** the server answers `403` and they keep waiting
 
 #### Scenario: Moderator demoted during the meeting
@@ -491,11 +491,11 @@ A meeting that ends because its last participants left or lost their connection 
 - **AND** when the moderator comes back and joins, their participants panel lists the participant
 
 ### Requirement: Turning the waiting room off lets everyone in
-Turning `lobby.enabled` off between meetings SHALL let everyone waiting in, each through the usual join checks of `meeting-join`. When they outnumber the free places, the first to connect SHALL stay, whatever their place in line, and the others SHALL see "Meeting full".
+Turning `waitingRoom.enabled` off between meetings SHALL let everyone waiting in, each through the usual join checks of `meeting-join`. When they outnumber the free places, the first to connect SHALL stay, whatever their place in line, and the others SHALL see "Meeting full".
 
 #### Scenario: Waiting room turned off between meetings
 - **GIVEN** a room with no meeting running and two participants waiting
-- **WHEN** its owner calls `updateRoomConfig` with `lobby.enabled` false
+- **WHEN** its owner calls `updateRoomConfig` with `waitingRoom.enabled` false
 - **THEN** both participants are let in and enter the meeting
 
 #### Scenario: Reconnecting when it is turned off
@@ -512,7 +512,7 @@ Turning `lobby.enabled` off between meetings SHALL let everyone waiting in, each
 When submitting the join screen would make the participant wait, its button SHALL read "Ask to join" and submitting it SHALL start the wait at once, without the device setup screen. The waiting screen SHALL take its place: the participant prepares their camera and microphone there, seeded like the device setup screen (see `meeting-join`), and an admitted participant SHALL join with what it shows.
 
 #### Scenario: Asking from the join screen
-- **GIVEN** a room with the waiting room on and a speaker without `lobbyBypass`
+- **GIVEN** a room with the waiting room on and a speaker without `waitingRoomBypass`
 - **WHEN** the speaker submits the join screen with "Ask to join"
 - **THEN** they are in line and the waiting screen shows their camera preview with the device controls, and no device setup screen
 
@@ -522,12 +522,12 @@ When submitting the join screen would make the participant wait, its button SHAL
 - **THEN** they join with the camera off
 
 #### Scenario: Joining without waiting
-- **GIVEN** a room with the waiting room on and a moderator holding `lobbyBypass`
+- **GIVEN** a room with the waiting room on and a moderator holding `waitingRoomBypass`
 - **WHEN** the moderator submits the join screen
 - **THEN** its button read "Join Meeting" and the device setup screen opens as usual
 
 #### Scenario: Waiting room turned on while choosing devices
-- **GIVEN** a speaker without `lobbyBypass` on the device setup screen of a room whose waiting room was off when they opened it
+- **GIVEN** a speaker without `waitingRoomBypass` on the device setup screen of a room whose waiting room was off when they opened it
 - **WHEN** the owner turns the waiting room on and the speaker presses join
 - **THEN** they see the waiting screen with the devices they chose
 
@@ -537,7 +537,7 @@ When submitting the join screen would make the participant wait, its button SHAL
 - **THEN** they enter the meeting without the device setup screen, with the room's initial media settings
 
 ### Requirement: The waiting screen
-While waiting, the meeting SHALL show the participant's position in line, the room's `lobby.message`, the camera preview with the device controls, and a "Leave waiting room" button. While no meeting runs in the room, it SHALL say that the meeting has not started yet. All of it SHALL update live, at the latest about 20 seconds after a change, the message included when it changes between meetings.
+While waiting, the meeting SHALL show the participant's position in line, the room's `waitingRoom.message`, the camera preview with the device controls, and a "Leave waiting room" button. While no meeting runs in the room, it SHALL say that the meeting has not started yet. All of it SHALL update live, at the latest about 20 seconds after a change, the message included when it changes between meetings.
 
 #### Scenario: Position moves up
 - **GIVEN** Ana and Ben waiting, in that order
@@ -546,12 +546,12 @@ While waiting, the meeting SHALL show the participant's position in line, the ro
 
 #### Scenario: Meeting starts
 - **GIVEN** a participant waiting in a room with no meeting running
-- **WHEN** a moderator holding `lobbyBypass` joins and the meeting starts
+- **WHEN** a moderator holding `waitingRoomBypass` joins and the meeting starts
 - **THEN** the waiting screen stops saying that the meeting has not started yet
 
 #### Scenario: Message changed between meetings
 - **GIVEN** a participant waiting in a room with no meeting running
-- **WHEN** its owner changes `lobby.message`
+- **WHEN** its owner changes `waitingRoom.message`
 - **THEN** the waiting screen shows the new message
 
 ### Requirement: Time waited
@@ -579,7 +579,7 @@ A screen reader SHALL announce a waiter's position politely, at most once every 
 - **THEN** the screen reader announces it at once and focus moves to the heading "You weren't let in"
 
 #### Scenario: Notification while typing
-- **GIVEN** a moderator holding `lobbyAdmin` typing a chat message with the participants panel closed
+- **GIVEN** a moderator holding `waitingRoomAdmin` typing a chat message with the participants panel closed
 - **WHEN** a participant starts waiting
 - **THEN** the notification appears and the focus stays in the chat
 
@@ -612,17 +612,17 @@ These screens SHALL offer the end screen's dismiss button (see `meeting-join`).
 - **WHEN** they press the dismiss button
 - **THEN** the host receives `embeddedCloseRequested`
 
-### Requirement: Holders of lobbyAdmin see who waits
-In the meeting, only holders of `lobbyAdmin` SHALL see the waiting list, live from the moment someone asks to join, in arrival order: a "Waiting to join" section atop the participants panel, each row with Deny and Admit and, for a repeated name, its arrival time, and a rail chip with the number waiting. It SHALL show the free places under a limit and, from two waiting, Deny all after a confirmation and "Admit N" for the first N that fit, catching up within 30 seconds when a notice is lost.
+### Requirement: Holders of waitingRoomAdmin see who waits
+In the meeting, only holders of `waitingRoomAdmin` SHALL see the waiting list, live from the moment someone asks to join, in arrival order: a "Waiting to join" section atop the participants panel, each row with Deny and Admit and, for a repeated name, its arrival time, and a rail chip with the number waiting. It SHALL show the free places under a limit and, from two waiting, Deny all after a confirmation and "Admit N" for the first N that fit, catching up within 30 seconds when a notice is lost.
 
 #### Scenario: Section and chip
-- **GIVEN** a moderator holding `lobbyAdmin` in a meeting and a speaker without it
+- **GIVEN** a moderator holding `waitingRoomAdmin` in a meeting and a speaker without it
 - **WHEN** a participant starts waiting
 - **THEN** the moderator's participants panel lists them and the status rail shows "1 waiting to join"
 - **AND** the speaker sees neither
 
 #### Scenario: Listed before the waiting screen connects
-- **GIVEN** a moderator holding `lobbyAdmin` in a meeting
+- **GIVEN** a moderator holding `waitingRoomAdmin` in a meeting
 - **WHEN** a participant presses "Ask to join" and their waiting screen has not connected to Meet yet
 - **THEN** the moderator's participants panel already lists them
 
@@ -643,48 +643,48 @@ In the meeting, only holders of `lobbyAdmin` SHALL see the waiting list, live fr
 
 #### Scenario: Two participants with the same name
 - **GIVEN** two anonymous participants who both asked to join as "Ana"
-- **WHEN** a moderator holding `lobbyAdmin` looks at the panel
+- **WHEN** a moderator holding `waitingRoomAdmin` looks at the panel
 - **THEN** each row shows "Ana" with the time that participant asked to join
 
 #### Scenario: More waiting than free places
 - **GIVEN** a meeting with two free places and three participants waiting
-- **WHEN** a moderator holding `lobbyAdmin` presses "Admit 2"
+- **WHEN** a moderator holding `waitingRoomAdmin` presses "Admit 2"
 - **THEN** the first two in line enter the meeting and the third keeps waiting
 
 #### Scenario: Notice of a knock lost
-- **GIVEN** a moderator holding `lobbyAdmin` in a meeting
+- **GIVEN** a moderator holding `waitingRoomAdmin` in a meeting
 - **WHEN** a participant starts waiting and the notice of that change never reaches the moderator's meeting
 - **THEN** within about 30 seconds the moderator's participants panel lists them
 
-### Requirement: The list follows lobbyAdmin at once
-A participant who gains `lobbyAdmin` during the meeting SHALL see the waiting list at once, without waiting for it to change. One who loses it SHALL stop seeing the list, the chip and the notifications, and their host SHALL stop receiving `lobbyUpdated` and `participantKnocked`, at once.
+### Requirement: The list follows waitingRoomAdmin at once
+A participant who gains `waitingRoomAdmin` during the meeting SHALL see the waiting list at once, without waiting for it to change. One who loses it SHALL stop seeing the list, the chip and the notifications, and their host SHALL stop receiving `waitingRoomUpdated` and `participantKnocked`, at once.
 
 #### Scenario: Promoted during the meeting
-- **GIVEN** two participants waiting and a speaker without `lobbyAdmin` in the meeting
-- **WHEN** a moderator gives the speaker a role that grants `lobbyAdmin`
+- **GIVEN** two participants waiting and a speaker without `waitingRoomAdmin` in the meeting
+- **WHEN** a moderator gives the speaker a role that grants `waitingRoomAdmin`
 - **THEN** the speaker's participants panel lists the two at once
 
 #### Scenario: Demoted during the meeting
-- **GIVEN** a moderator holding `lobbyAdmin` whose panel lists two participants waiting
-- **WHEN** a manager gives them a role that denies `lobbyAdmin`
+- **GIVEN** a moderator holding `waitingRoomAdmin` whose panel lists two participants waiting
+- **WHEN** a manager gives them a role that denies `waitingRoomAdmin`
 - **THEN** the section and the chip disappear at once and a new participant waiting raises no notification for them
 
 ### Requirement: Notification of a new participant waiting
-While their participants panel is closed, a participant holding `lobbyAdmin` SHALL get a notification for each participant who starts waiting, with Deny and Admit, grouped into one with the number waiting and a View button when several wait. Joining a meeting while participants already wait SHALL show one grouped notification. The notification SHALL sit below the status rail on the top right, and opening the panel SHALL dismiss it.
+While their participants panel is closed, a participant holding `waitingRoomAdmin` SHALL get a notification for each participant who starts waiting, with Deny and Admit, grouped into one with the number waiting and a View button when several wait. Joining a meeting while participants already wait SHALL show one grouped notification. The notification SHALL sit below the status rail on the top right, and opening the panel SHALL dismiss it.
 
 #### Scenario: Panel closed
-- **GIVEN** a moderator holding `lobbyAdmin` with the participants panel closed
+- **GIVEN** a moderator holding `waitingRoomAdmin` with the participants panel closed
 - **WHEN** Zoe starts waiting
 - **THEN** a notification names Zoe with Deny and Admit, and Admit lets her in
 
 #### Scenario: Panel open
-- **GIVEN** a moderator holding `lobbyAdmin` with the participants panel open
+- **GIVEN** a moderator holding `waitingRoomAdmin` with the participants panel open
 - **WHEN** Zoe starts waiting
 - **THEN** no notification appears and Zoe is listed in the panel
 
 #### Scenario: Joining with people waiting
 - **GIVEN** three participants waiting
-- **WHEN** a moderator holding `lobbyAdmin` joins the meeting
+- **WHEN** a moderator holding `waitingRoomAdmin` joins the meeting
 - **THEN** one notification says three people are waiting to join
 
 ### Requirement: The waiting list in the meeting comes only from the server
@@ -696,15 +696,15 @@ A meeting SHALL update the waiting list it shows only from what the server sends
 - **THEN** no moderator's panel changes
 
 ### Requirement: Names in encrypted rooms
-In an end-to-end encrypted room, the waiting list in the meeting SHALL show each name as the participants panel shows participants: decrypted when the waiting participant used the viewer's encryption key, masked otherwise, never encrypted. `lobbyList`, the webhooks and the embedded events SHALL carry the name as the participant's client sent it, as `participantJoined` does.
+In an end-to-end encrypted room, the waiting list in the meeting SHALL show each name as the participants panel shows participants: decrypted when the waiting participant used the viewer's encryption key, masked otherwise, never encrypted. `waitingRoomList`, the webhooks and the embedded events SHALL carry the name as the participant's client sent it, as `participantJoined` does.
 
 #### Scenario: Same key
-- **GIVEN** an encrypted room where a moderator holding `lobbyAdmin` and Ana use the same encryption key
+- **GIVEN** an encrypted room where a moderator holding `waitingRoomAdmin` and Ana use the same encryption key
 - **WHEN** Ana starts waiting
 - **THEN** the moderator's panel and notification name her "Ana"
 
 ### Requirement: participantKnocked webhook
-The server SHALL send the `participantKnocked` webhook once each time a participant asks to join and waits, without waiting for their waiting screen to connect, with `roomId`, `roomName` and the participant as `MeetLobbyParticipant`. It SHALL NOT be sent again when the same wait reconnects, nor by another replica. Like every webhook it is not stored: lost if the replica sending it stops, possibly repeated by the retries of `webhooks`, and unordered.
+The server SHALL send the `participantKnocked` webhook once each time a participant asks to join and waits, without waiting for their waiting screen to connect, with `roomId`, `roomName` and the participant as `MeetWaitingRoomParticipant`. It SHALL NOT be sent again when the same wait reconnects, nor by another replica. Like every webhook it is not stored: lost if the replica sending it stops, possibly repeated by the retries of `webhooks`, and unordered.
 
 #### Scenario: Knock
 - **GIVEN** a registered webhook subscribed to `participantKnocked` and scoped to the room
@@ -717,122 +717,122 @@ The server SHALL send the `participantKnocked` webhook once each time a particip
 - **THEN** no second `participantKnocked` webhook is delivered
 
 #### Scenario: Knock never followed by a connection
-- **GIVEN** a registered webhook subscribed to `participantKnocked` and `lobbyStatusChanged`
+- **GIVEN** a registered webhook subscribed to `participantKnocked` and `waitingRoomStatusChanged`
 - **WHEN** a client asks to join and never opens its realtime connection
-- **THEN** one `participantKnocked` webhook is delivered at once, and within about 20 seconds one `lobbyStatusChanged` webhook with `status` `expired`
+- **THEN** one `participantKnocked` webhook is delivered at once, and within about 20 seconds one `waitingRoomStatusChanged` webhook with `status` `expired`
 
-### Requirement: lobbyStatusChanged webhook
-The server SHALL send the `lobbyStatusChanged` webhook on each change of a wait after it started, with `roomId`, `roomName`, the participant (`MeetLobbyParticipant`, whose `knockDate` with the event's `creationDate` tells how long they waited), `origin` as in `participantHandChanged`, and `status` of `MeetLobbyStatus`: `admitted`, `rejected`, `left`, `expired`, `meeting_ended`, `room_closed`, or `waiting` for an admitted participant back in line.
+### Requirement: waitingRoomStatusChanged webhook
+The server SHALL send the `waitingRoomStatusChanged` webhook on each change of a wait after it started, with `roomId`, `roomName`, the participant (`MeetWaitingRoomParticipant`, whose `knockDate` with the event's `creationDate` tells how long they waited), `origin` as in `participantHandChanged`, and `status` of `MeetWaitingRoomStatus`: `admitted`, `rejected`, `left`, `expired`, `meeting_ended`, `room_closed`, or `waiting` for an admitted participant back in line.
 
 #### Scenario: Admitted by another moderator
-- **GIVEN** a registered webhook subscribed to `lobbyStatusChanged` and a participant who asked to join 90 seconds ago
+- **GIVEN** a registered webhook subscribed to `waitingRoomStatusChanged` and a participant who asked to join 90 seconds ago
 - **WHEN** a moderator admits them
-- **THEN** one `lobbyStatusChanged` webhook is delivered with `status` `admitted`, `origin` `moderator`, their identity and a `knockDate` 90 seconds before the event's `creationDate`
+- **THEN** one `waitingRoomStatusChanged` webhook is delivered with `status` `admitted`, `origin` `moderator`, their identity and a `knockDate` 90 seconds before the event's `creationDate`
 
 #### Scenario: Page closed for good
-- **GIVEN** a registered webhook subscribed to `lobbyStatusChanged` and a participant waiting
+- **GIVEN** a registered webhook subscribed to `waitingRoomStatusChanged` and a participant waiting
 - **WHEN** they close the browser tab and do not come back
-- **THEN** about a minute later one `lobbyStatusChanged` webhook is delivered with `status` `expired` and `origin` `system`
+- **THEN** about a minute later one `waitingRoomStatusChanged` webhook is delivered with `status` `expired` and `origin` `system`
 
 #### Scenario: Waiter leaves
-- **GIVEN** a registered webhook subscribed to `lobbyStatusChanged` and a participant waiting
+- **GIVEN** a registered webhook subscribed to `waitingRoomStatusChanged` and a participant waiting
 - **WHEN** they press "Leave waiting room"
-- **THEN** one `lobbyStatusChanged` webhook is delivered with `status` `left` and `origin` `participant`
+- **THEN** one `waitingRoomStatusChanged` webhook is delivered with `status` `left` and `origin` `participant`
 
 ### Requirement: participantKnocked embedded event
-The embedded element of each participant holding `lobbyAdmin` in the meeting SHALL dispatch `participantKnocked` once for each participant who starts waiting while it is in the meeting, with `roomId` and the participant as `MeetLobbyParticipant`. Participants already waiting when the element joined SHALL be reported by `lobbyUpdated`, not by `participantKnocked`, and so SHALL a participant back in line after an admission that failed.
+The embedded element of each participant holding `waitingRoomAdmin` in the meeting SHALL dispatch `participantKnocked` once for each participant who starts waiting while it is in the meeting, with `roomId` and the participant as `MeetWaitingRoomParticipant`. Participants already waiting when the element joined SHALL be reported by `waitingRoomUpdated`, not by `participantKnocked`, and so SHALL a participant back in line after an admission that failed.
 
 #### Scenario: Knock while in the meeting
-- **GIVEN** a host listening to `participantKnocked` for a moderator holding `lobbyAdmin` in the meeting
+- **GIVEN** a host listening to `participantKnocked` for a moderator holding `waitingRoomAdmin` in the meeting
 - **WHEN** a participant starts waiting
 - **THEN** the host receives one `participantKnocked` with that participant
 
 #### Scenario: Speaker's host
-- **GIVEN** an embedded speaker without `lobbyAdmin` in the meeting
+- **GIVEN** an embedded speaker without `waitingRoomAdmin` in the meeting
 - **WHEN** a participant starts waiting
 - **THEN** the speaker's host receives no `participantKnocked`
 
 #### Scenario: Back in line after a failed admission
-- **GIVEN** a host listening to `participantKnocked` for a moderator holding `lobbyAdmin`, and Zoe admitted
+- **GIVEN** a host listening to `participantKnocked` for a moderator holding `waitingRoomAdmin`, and Zoe admitted
 - **WHEN** Zoe finds the meeting full and returns to the line
-- **THEN** the host receives `lobbyUpdated` listing Zoe and no `participantKnocked`
+- **THEN** the host receives `waitingRoomUpdated` listing Zoe and no `participantKnocked`
 
-### Requirement: lobbyUpdated embedded event
-The embedded element of each participant holding `lobbyAdmin` in the meeting SHALL dispatch `lobbyUpdated` with `roomId` and the waiting list as `lobbyList` returns it: `participants` as `MeetLobbyParticipant` items in arrival order and `availablePlaces`. It SHALL be dispatched once after joining, or after gaining `lobbyAdmin`, and again each time it changes.
+### Requirement: waitingRoomUpdated embedded event
+The embedded element of each participant holding `waitingRoomAdmin` in the meeting SHALL dispatch `waitingRoomUpdated` with `roomId` and the waiting list as `waitingRoomList` returns it: `participants` as `MeetWaitingRoomParticipant` items in arrival order and `availablePlaces`. It SHALL be dispatched once after joining, or after gaining `waitingRoomAdmin`, and again each time it changes.
 
 #### Scenario: Someone admitted by another moderator
-- **GIVEN** two embedded moderators holding `lobbyAdmin` and Zoe and Ana waiting
+- **GIVEN** two embedded moderators holding `waitingRoomAdmin` and Zoe and Ana waiting
 - **WHEN** the first moderator admits Zoe
-- **THEN** the second moderator's host receives `lobbyUpdated` with only Ana in `participants`
+- **THEN** the second moderator's host receives `waitingRoomUpdated` with only Ana in `participants`
 
 #### Scenario: Joining with people waiting
 - **GIVEN** two participants waiting
-- **WHEN** an embedded moderator holding `lobbyAdmin` joins the meeting
-- **THEN** the host receives `lobbyUpdated` listing both and no `participantKnocked`
+- **WHEN** an embedded moderator holding `waitingRoomAdmin` joins the meeting
+- **THEN** the host receives `waitingRoomUpdated` listing both and no `participantKnocked`
 
-### Requirement: lobbyStatusChanged embedded event
-The embedded element of a participant who waits SHALL dispatch `lobbyStatusChanged` with `roomId`, `participantIdentity` and `status` of `MeetLobbyStatus`: `waiting` with `queuePosition` (1 for the first) on the first state received, a position change or a return to the line, and each other value when the wait ends that way (`left` also for a wait replaced by a new request, `expired` whenever else their meeting says they lost their place). No `meetingLeft` SHALL be dispatched for a wait.
+### Requirement: waitingRoomStatusChanged embedded event
+The embedded element of a participant who waits SHALL dispatch `waitingRoomStatusChanged` with `roomId`, `participantIdentity` and `status` of `MeetWaitingRoomStatus`: `waiting` with `queuePosition` (1 for the first) on the first state received, a position change or a return to the line, and each other value when the wait ends that way (`left` also for a wait replaced by a new request, `expired` whenever else their meeting says they lost their place). No `meetingLeft` SHALL be dispatched for a wait.
 
 #### Scenario: Waiting then admitted
 - **GIVEN** an embedded participant who asks to join and is second in line
 - **WHEN** the participant ahead is admitted and then they are admitted
-- **THEN** the host receives `lobbyStatusChanged` with `waiting` and position 2, `waiting` and position 1, then `admitted`, all with the identity the server answered when they asked, followed by `meetingJoined` with that identity
+- **THEN** the host receives `waitingRoomStatusChanged` with `waiting` and position 2, `waiting` and position 1, then `admitted`, all with the identity the server answered when they asked, followed by `meetingJoined` with that identity
 
 #### Scenario: Rejected
 - **GIVEN** an embedded participant waiting
 - **WHEN** a moderator rejects them
-- **THEN** the host receives `lobbyStatusChanged` with `rejected` and no `meetingLeft`
+- **THEN** the host receives `waitingRoomStatusChanged` with `rejected` and no `meetingLeft`
 
 #### Scenario: Realtime connection never opens
 - **GIVEN** an embedded participant who asks to join and whose realtime connection never receives a message
 - **WHEN** the meeting shows the connection error screen
-- **THEN** the host receives no `lobbyStatusChanged`
+- **THEN** the host receives no `waitingRoomStatusChanged`
 
 #### Scenario: Admission lost on the way
-- **GIVEN** an embedded participant admitted, whose host received `lobbyStatusChanged` with `admitted`
+- **GIVEN** an embedded participant admitted, whose host received `waitingRoomStatusChanged` with `admitted`
 - **WHEN** the answer to their join token request is lost and their meeting says they lost their place
-- **THEN** the host receives `lobbyStatusChanged` with `expired` and no `meetingJoined`
+- **THEN** the host receives `waitingRoomStatusChanged` with `expired` and no `meetingJoined`
 
 ### Requirement: Waiting room commands
-The embedded commands `lobbyAdmit` and `lobbyReject` SHALL admit or reject the waiting participants named by `participantIdentities`, one or several, or everyone waiting when `participantIdentities` is omitted (`lobbyAdmit` up to the free places), through the REST operations of the same name and with their rules. Both SHALL be gated by `lobbyAdmin` and run only while the local participant is in the meeting.
+The embedded commands `waitingRoomAdmit` and `waitingRoomReject` SHALL admit or reject the waiting participants named by `participantIdentities`, one or several, or everyone waiting when `participantIdentities` is omitted (`waitingRoomAdmit` up to the free places), through the REST operations of the same name and with their rules. Both SHALL be gated by `waitingRoomAdmin` and run only while the local participant is in the meeting.
 
 #### Scenario: Admit from the host
-- **GIVEN** an embedded moderator holding `lobbyAdmin` in the meeting and Zoe waiting
-- **WHEN** the host calls `lobbyAdmit` with `participantIdentities` holding Zoe's identity
+- **GIVEN** an embedded moderator holding `waitingRoomAdmin` in the meeting and Zoe waiting
+- **WHEN** the host calls `waitingRoomAdmit` with `participantIdentities` holding Zoe's identity
 - **THEN** Zoe enters the meeting
 
 #### Scenario: Admit a set chosen by the host
-- **GIVEN** an embedded moderator holding `lobbyAdmin` in the meeting, and Zoe, Ana and Ben waiting
-- **WHEN** the host calls `lobbyAdmit` with Zoe's and Ben's identities
+- **GIVEN** an embedded moderator holding `waitingRoomAdmin` in the meeting, and Zoe, Ana and Ben waiting
+- **WHEN** the host calls `waitingRoomAdmit` with Zoe's and Ben's identities
 - **THEN** Zoe and Ben enter the meeting and Ana keeps waiting
 
 #### Scenario: Admit everyone from the host
-- **GIVEN** an embedded moderator holding `lobbyAdmin` in a meeting with one free place, and Zoe and Ana waiting, in that order
-- **WHEN** the host calls `lobbyAdmit` without `participantIdentities`
+- **GIVEN** an embedded moderator holding `waitingRoomAdmin` in a meeting with one free place, and Zoe and Ana waiting, in that order
+- **WHEN** the host calls `waitingRoomAdmit` without `participantIdentities`
 - **THEN** Zoe enters the meeting and Ana keeps waiting
 
 #### Scenario: Deny everyone from the host
-- **GIVEN** an embedded moderator holding `lobbyAdmin` in the meeting, and Zoe and Ana waiting
-- **WHEN** the host calls `lobbyReject` without `participantIdentities`
+- **GIVEN** an embedded moderator holding `waitingRoomAdmin` in the meeting, and Zoe and Ana waiting
+- **WHEN** the host calls `waitingRoomReject` without `participantIdentities`
 - **THEN** Zoe and Ana are told they weren't let in
 
 #### Scenario: Without the permission
-- **GIVEN** an embedded speaker without `lobbyAdmin` and Zoe waiting
-- **WHEN** the host calls `lobbyReject` with Zoe's identity
+- **GIVEN** an embedded speaker without `waitingRoomAdmin` and Zoe waiting
+- **WHEN** the host calls `waitingRoomReject` with Zoe's identity
 - **THEN** the command is rejected and Zoe keeps waiting
 
 ### Requirement: The host of a waiting participant
-While the local participant waits, `mediaToggleAudio` and `mediaToggleVideo` SHALL act on the camera preview and microphone as on the device setup screen, and `meetingLeave` SHALL leave the waiting room, dispatching `lobbyStatusChanged` with `left`.
+While the local participant waits, `mediaToggleAudio` and `mediaToggleVideo` SHALL act on the camera preview and microphone as on the device setup screen, and `meetingLeave` SHALL leave the waiting room, dispatching `waitingRoomStatusChanged` with `left`.
 
 #### Scenario: Leave command while waiting
 - **GIVEN** an embedded participant waiting
 - **WHEN** the host calls `meetingLeave()`
-- **THEN** the participant leaves the waiting room, `lobbyList` no longer lists them, and the host receives `lobbyStatusChanged` with `left`
+- **THEN** the participant leaves the waiting room, `waitingRoomList` no longer lists them, and the host receives `waitingRoomStatusChanged` with `left`
 
 #### Scenario: Leave command and removal at once
 - **GIVEN** an embedded participant waiting
 - **WHEN** the host calls `meetingLeave()` and removes the element right after
-- **THEN** `lobbyList` no longer lists them and a `lobbyStatusChanged` webhook with `left` is sent
+- **THEN** `waitingRoomList` no longer lists them and a `waitingRoomStatusChanged` webhook with `left` is sent
 
 #### Scenario: Camera off while waiting
 - **GIVEN** an embedded participant waiting with the camera on
@@ -840,9 +840,9 @@ While the local participant waits, `mediaToggleAudio` and `mediaToggleVideo` SHA
 - **THEN** the preview turns off, and the participant joins with the camera off once admitted
 
 ### Requirement: Waiting room in the room wizard
-The Room Access step of the console room wizard SHALL hold a Waiting room section with a switch for `lobby.enabled` and a field for `lobby.message`. The field SHALL be shown only while the switch is on. Each role SHALL get a "Join without waiting" switch for `lobbyBypass` and an "Admit participants" switch for `lobbyAdmin`, in a "Waiting room" permission group.
+The Room Access step of the console room wizard SHALL hold a Waiting room section with a switch for `waitingRoom.enabled` and a field for `waitingRoom.message`. The field SHALL be shown only while the switch is on. Each role SHALL get a "Join without waiting" switch for `waitingRoomBypass` and an "Admit participants" switch for `waitingRoomAdmin`, in a "Waiting room" permission group.
 
 #### Scenario: Creating a room with a waiting room
 - **GIVEN** the wizard
 - **WHEN** the user turns the waiting room on, writes a message and finishes
-- **THEN** the new room has `lobby.enabled` true and that `lobby.message`
+- **THEN** the new room has `waitingRoom.enabled` true and that `waitingRoom.message`

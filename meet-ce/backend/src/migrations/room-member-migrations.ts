@@ -61,14 +61,14 @@ const roomMemberMigrationV3ToV4Transform: SchemaTransform<MeetRoomMemberDocument
 	return roomMember;
 };
 
-// v7 adds the `lobbyBypass` and `lobbyAdmin` permissions: the normalization completes them, and a member
+// v7 adds the `waitingRoomBypass` and `waitingRoomAdmin` permissions: the normalization completes them, and a member
 // with the moderator role is then granted both, as the moderator role of every room is.
 const roomMemberMigrationV6ToV7Transform: SchemaTransform<MeetRoomMemberDocument> = (roomMember) => {
 	normalizeMemberPermissionsTransform(roomMember);
 
 	if (roomMember.baseRole === MeetRoomMemberRole.MODERATOR) {
-		roomMember.effectivePermissions.lobbyBypass = true;
-		roomMember.effectivePermissions.lobbyAdmin = true;
+		roomMember.effectivePermissions.waitingRoomBypass = true;
+		roomMember.effectivePermissions.waitingRoomAdmin = true;
 	}
 
 	return roomMember;

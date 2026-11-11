@@ -16,11 +16,11 @@ import {
  * `test-unit-backend` run, closer to the editor.
  */
 describe('MEET_API_MODULES registry', () => {
-	it('should contain unique single-word lowercase tokens, none a prefix of another', () => {
+	it('should contain unique lowerCamelCase tokens, none a prefix of another', () => {
 		expect(new Set(MEET_API_MODULES).size).toBe(MEET_API_MODULES.length);
 
 		for (const token of MEET_API_MODULES) {
-			expect(token).toMatch(/^[a-z]+$/);
+			expect(token).toMatch(/^[a-z]+(?:[A-Z][a-z]+)*$/);
 		}
 
 		const prefixPairs = MEET_API_MODULES.flatMap((a) =>

@@ -6,12 +6,12 @@
             Generates a token for a user to access an OpenVidu Meet room and its resources.
 
 
-            When the room's config has `lobby.enabled` and the participant joining (`joinMeeting` true) lacks
-            `lobbyBypass`, the request runs the usual join checks, puts the participant in the waiting line and
-            answers `202` with a `lobbyTicket` and their `participantIdentity` instead of a token: nothing is
+            When the room's config has `waitingRoom.enabled` and the participant joining (`joinMeeting` true) lacks
+            `waitingRoomBypass`, the request runs the usual join checks, puts the participant in the waiting line and
+            answers `202` with a `waitingRoomTicket` and their `participantIdentity` instead of a token: nothing is
             reserved or counted, the meeting does not start and the room stays `open`. It answers `409` when the
             line already holds 100 participants. Once a participant is admitted, the same request with the
-            `lobbyTicket` in the body answers the join token, applying the join checks again, including the
+            `waitingRoomTicket` in the body answers the join token, applying the join checks again, including the
             participant limit: a participant who finds the meeting full goes back to their place in the line
             (`202`). The ticket always answers by the state of its wait: still waiting `202`, admitted a token, an
             ended wait `409` with its `status`, and so does a ticket Meet does not know, which includes one of
@@ -39,7 +39,7 @@
             '200':
                 $ref: './responses/success/generate-room-member-token.yaml'
             '202':
-                $ref: './responses/success/lobby-ticket.yaml'
+                $ref: './responses/success/waiting-room-ticket.yaml'
             '400':
                 $ref: './responses/errors/invalid-room-member-token-request.yaml'
             '401':

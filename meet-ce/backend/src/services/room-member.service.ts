@@ -1,7 +1,7 @@
 import type { ParticipantPermission } from '@livekit/protocol';
 import type {
 	LiveKitPermissions,
-	MeetLobbyTicketResponse,
+	MeetWaitingRoomTicketResponse,
 	MeetRoom,
 	MeetRoomField,
 	MeetRoomMember,
@@ -15,7 +15,7 @@ import type {
 } from '@openvidu-meet/typings';
 import {
 	MEET_PERMISSION_KEYS,
-	MeetLobbyStatus,
+	MeetWaitingRoomStatus,
 	MeetParticipantModerationAction,
 	MeetRoomMemberRole,
 	MeetRoomMemberType,
@@ -52,10 +52,10 @@ import {
 	errorRoomMemberNotFound,
 	errorUnauthorized,
 	errorUserNotFound,
-	LobbyWaitEndedError,
+	WaitingRoomWaitEndedError,
 	OpenViduMeetError
 } from '../models/error.model.js';
-import type { LobbyWait } from '../models/lobby.model.js';
+import type { WaitingRoomWait } from '../models/waiting-room.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { UserRepository } from '../repositories/user.repository.js';
 import type {
@@ -67,8 +67,8 @@ import type {
 import { runConcurrently } from '../utils/concurrency.utils.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
-import { LobbyAdmissionPolicy } from './lobby/lobby-admission.policy.js';
-import { LobbyService } from './lobby/lobby.service.js';
+import { WaitingRoomAdmissionPolicy } from './waiting-room/waiting-room-admission.policy.js';
+import { WaitingRoomService } from './waiting-room/waiting-room.service.js';
 import { LoggerService } from './logger.service.js';
 import { MeetingService } from './meeting.service.js';
 import { MutexService } from './mutex.service.js';
@@ -89,7 +89,7 @@ interface ResolvedPermissionSource {
 }
 
 /** What a token request answers: a token, or the ticket of the wait of a participant who has to wait. */
-export type RoomMemberTokenAnswer = { token: string } | MeetLobbyTicketResponse;
+export type RoomMemberTokenAnswer = { token: string } | MeetWaitingRoomTicketResponse;
 
 const ROOM_TO_JOIN_FIELDS = [
 	'roomId',
@@ -123,8 +123,8 @@ export class RoomMemberService {
 		@inject(ParticipantTokenRevocationService)
 		protected participantTokenRevocationService: ParticipantTokenRevocationService,
 		@inject(MutexService) protected mutexService: MutexService,
-		@inject(LobbyService) protected lobbyService: LobbyService,
-		@inject(LobbyAdmissionPolicy) protected lobbyAdmissionPolicy: LobbyAdmissionPolicy
+		@inject(WaitingRoomService) protected waitingRoomService: WaitingRoomService,
+		@inject(WaitingRoomAdmissionPolicy) protected waitingRoomAdmissionPolicy: WaitingRoomAdmissionPolicy
 	) {}
 
 	/**
@@ -394,7 +394,7 @@ export class RoomMemberService {
 	 *
 	 * @param roomId - The room identifier
 	 * @param tokenOptions - Options for token generation
-	 * @param previousToken - An optional existing token to regenerate from, ignored with a `lobbyTicket`
+	 * @param previousToken - An optional existing token to regenerate from, ignored with a `waitingRoomTicket`
 	 * @returns A promise that resolves to the generated token or to the ticket of the wait
 	 */
 	async generateRoomMemberToken(
@@ -408,7 +408,7 @@ export class RoomMemberService {
 			participantName,
 			participantExternalId,
 			participantMetadata,
-			lobbyTicket
+			waitingRoomTicket
 		} = tokenOptions;
 
 		const [secretSource, authenticatedSource, room] = await Promise.all([
@@ -446,8 +446,8 @@ export class RoomMemberService {
 
 		tokenMetadata.livekitUrl = MEET_ENV.LIVEKIT_URL;
 
-		if (lobbyTicket) {
-			return this.joinWithLobbyTicket(roomId, lobbyTicket, tokenMetadata);
+		if (waitingRoomTicket) {
+			return this.joinWithWaitingRoomTicket(roomId, waitingRoomTicket, tokenMetadata);
 		}
 
 		const boundName =
@@ -500,9 +500,9 @@ export class RoomMemberService {
 		const name = this.requireParticipantName(participantName);
 		const participantIdentity = this.createParticipantIdentity(tokenMetadata, name);
 
-		if (this.lobbyAdmissionPolicy.mustWait(room.config, tokenMetadata.permissions)) {
+		if (this.waitingRoomAdmissionPolicy.mustWait(room.config, tokenMetadata.permissions)) {
 			const { memberId, userId, externalId, metadata } = tokenMetadata;
-			return this.lobbyService.knock(room, {
+			return this.waitingRoomService.knock(room, {
 				participantIdentity,
 				participantName: name,
 				externalId,
@@ -524,29 +524,29 @@ export class RoomMemberService {
 	 * @throws The `403` error when the request's credential resolves to another principal than the wait's,
 	 * the `409` wait ended error, and the usual errors of a join
 	 */
-	protected async joinWithLobbyTicket(
+	protected async joinWithWaitingRoomTicket(
 		roomId: string,
-		lobbyTicket: string,
+		waitingRoomTicket: string,
 		tokenMetadata: MeetRoomMemberTokenMetadata
 	): Promise<RoomMemberTokenAnswer> {
-		const wait = await this.lobbyService.findWait(lobbyTicket);
-		const answer = this.lobbyAdmissionPolicy.answerTicket(wait, roomId, tokenMetadata);
+		const wait = await this.waitingRoomService.findWait(waitingRoomTicket);
+		const answer = this.waitingRoomAdmissionPolicy.answerTicket(wait, roomId, tokenMetadata);
 
 		if (answer.kind === 'forbidden') throw errorInsufficientPermissions();
 
-		if (answer.kind === 'ended') throw new LobbyWaitEndedError(answer.status);
+		if (answer.kind === 'ended') throw new WaitingRoomWaitEndedError(answer.status);
 
 		const { participantIdentity, participantName, externalId, metadata } = wait!.participant;
 
-		if (answer.kind === 'waiting') return { lobbyTicket, participantIdentity };
+		if (answer.kind === 'waiting') return { waitingRoomTicket, participantIdentity };
 
 		Object.assign(tokenMetadata, { externalId, metadata });
 		const room = await this.getRoomToJoin(roomId);
 		this.assertCanJoin(room, tokenMetadata);
 
 		if (answer.kind === 'rejoin') {
-			if (this.lobbyAdmissionPolicy.mustWait(room.config, tokenMetadata.permissions)) {
-				throw new LobbyWaitEndedError(MeetLobbyStatus.ADMITTED);
+			if (this.waitingRoomAdmissionPolicy.mustWait(room.config, tokenMetadata.permissions)) {
+				throw new WaitingRoomWaitEndedError(MeetWaitingRoomStatus.ADMITTED);
 			}
 
 			await this.assertCapacity(room);
@@ -554,11 +554,11 @@ export class RoomMemberService {
 		}
 
 		if (await this.isMeetingFull(room)) {
-			const change = await this.lobbyService.returnToLine(wait!);
+			const change = await this.waitingRoomService.returnToLine(wait!);
 
-			if (!('entry' in change)) throw new LobbyWaitEndedError(change.status);
+			if (!('entry' in change)) throw new WaitingRoomWaitEndedError(change.status);
 
-			return { lobbyTicket, participantIdentity };
+			return { waitingRoomTicket, participantIdentity };
 		}
 
 		return {
@@ -685,10 +685,10 @@ export class RoomMemberService {
 	 *
 	 * @throws The `409` wait ended error when the wait is no longer admitted or its admission was used
 	 */
-	protected async consumeAdmission(wait: LobbyWait): Promise<void> {
-		const change = await this.lobbyService.consume(wait);
+	protected async consumeAdmission(wait: WaitingRoomWait): Promise<void> {
+		const change = await this.waitingRoomService.consume(wait);
 
-		if (!('entry' in change)) throw new LobbyWaitEndedError(change.status);
+		if (!('entry' in change)) throw new WaitingRoomWaitEndedError(change.status);
 	}
 
 	protected mintJoinToken(

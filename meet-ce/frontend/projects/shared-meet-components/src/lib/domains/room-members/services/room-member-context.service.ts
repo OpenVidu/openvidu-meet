@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject, Service, signal } from '@angular/core';
 import {
-	MeetLobbyTicketResponse,
+	MeetWaitingRoomTicketResponse,
 	MeetRoomMember,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberTokenOptions,
@@ -155,7 +155,7 @@ export class RoomMemberContextService {
 	): Promise<string> {
 		const answer = await this.requestJoin(roomId, tokenOptions, headers);
 
-		if ('lobbyTicket' in answer) {
+		if ('waitingRoomTicket' in answer) {
 			throw new Error('The server asked the participant to wait to be let in, which only a join expects');
 		}
 
@@ -175,7 +175,7 @@ export class RoomMemberContextService {
 		roomId: string,
 		tokenOptions: MeetRoomMemberTokenOptions,
 		headers?: Record<string, string>
-	): Promise<{ token: string } | MeetLobbyTicketResponse> {
+	): Promise<{ token: string } | MeetWaitingRoomTicketResponse> {
 		// Best effort: keep access token fresh for authenticated users before generating room member tokens.
 		const isAuthenticated = await this.authService.isUserAuthenticated();
 
@@ -189,7 +189,7 @@ export class RoomMemberContextService {
 
 		const answer = await this.roomMemberService.requestJoinToken(roomId, tokenOptions, headers);
 
-		if ('lobbyTicket' in answer) return answer;
+		if ('waitingRoomTicket' in answer) return answer;
 
 		if (tokenOptions.joinMeeting) {
 			this.joinSecret = tokenOptions.secret;

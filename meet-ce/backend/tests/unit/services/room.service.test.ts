@@ -80,7 +80,7 @@ describe('RoomService.getRequestRoomConfig', () => {
 describe('RoomService.updateMeetRoomConfig (waiting room)', () => {
 	const storedConfig = {
 		broadcast: { enabled: false, destinations: [] },
-		lobby: { enabled: true, message: 'Please wait' }
+		waitingRoom: { enabled: true, message: 'Please wait' }
 	} as unknown as MeetRoomConfig;
 
 	const buildConfigService = (stored: MeetRoomConfig[], writesMatching: boolean[] = []) => {
@@ -112,37 +112,39 @@ describe('RoomService.updateMeetRoomConfig (waiting room)', () => {
 	};
 
 	it('keeps the stored message when the update leaves it out', async () => {
-		expect((await updateWith({ lobby: { enabled: true } })).lobby).toEqual({
+		expect((await updateWith({ waitingRoom: { enabled: true } })).waitingRoom).toEqual({
 			enabled: true,
 			message: 'Please wait'
 		});
 	});
 
 	it('replaces the stored message with the one sent', async () => {
-		expect((await updateWith({ lobby: { enabled: true, message: 'Soon' } })).lobby.message).toBe('Soon');
+		expect((await updateWith({ waitingRoom: { enabled: true, message: 'Soon' } })).waitingRoom.message).toBe(
+			'Soon'
+		);
 	});
 
 	it('removes the stored message when the update sends null', async () => {
-		const { lobby } = await updateWith({ lobby: { enabled: true, message: null } });
+		const { waitingRoom } = await updateWith({ waitingRoom: { enabled: true, message: null } });
 
-		expect(lobby.enabled).toBe(true);
-		expect(lobby).toHaveProperty('message', undefined);
+		expect(waitingRoom.enabled).toBe(true);
+		expect(waitingRoom).toHaveProperty('message', undefined);
 	});
 
 	it('lets everyone waiting in when the update turns the waiting room off', async () => {
 		const { roomService, letEveryoneIn } = buildConfigService([]);
 
-		await roomService.updateMeetRoomConfig('room-1', { lobby: { enabled: false } });
+		await roomService.updateMeetRoomConfig('room-1', { waitingRoom: { enabled: false } });
 
 		expect(letEveryoneIn).toHaveBeenCalledWith('room-1');
 	});
 
 	it('lets nobody in when the waiting room stays on, or was already off', async () => {
-		const offConfig = { ...storedConfig, lobby: { enabled: false } } as MeetRoomConfig;
+		const offConfig = { ...storedConfig, waitingRoom: { enabled: false } } as MeetRoomConfig;
 		const { roomService, letEveryoneIn } = buildConfigService([storedConfig, offConfig]);
 
-		await roomService.updateMeetRoomConfig('room-1', { lobby: { enabled: true } });
-		await roomService.updateMeetRoomConfig('room-1', { lobby: { enabled: false } });
+		await roomService.updateMeetRoomConfig('room-1', { waitingRoom: { enabled: true } });
+		await roomService.updateMeetRoomConfig('room-1', { waitingRoom: { enabled: false } });
 
 		expect(letEveryoneIn).not.toHaveBeenCalled();
 	});
@@ -150,7 +152,7 @@ describe('RoomService.updateMeetRoomConfig (waiting room)', () => {
 	it('reads the room again when the conditional write finds a meeting started or the waiting room switched', async () => {
 		const { roomService, updateIdleRoomConfig } = buildConfigService([], [false]);
 
-		await roomService.updateMeetRoomConfig('room-1', { lobby: { enabled: true } });
+		await roomService.updateMeetRoomConfig('room-1', { waitingRoom: { enabled: true } });
 
 		expect(updateIdleRoomConfig).toHaveBeenCalledTimes(2);
 	});

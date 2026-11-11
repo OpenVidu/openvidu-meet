@@ -101,18 +101,20 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 		const idleRoom = { roomId, status: { $ne: MeetRoomStatus.ACTIVE_MEETING } };
 		const update = { config, broadcastDestinationUrls };
 
-		if (!config.lobby.enabled) {
+		if (!config.waitingRoom.enabled) {
 			return this.updatePartialOne(idleRoom, update, { throwIfNotFound: false });
 		}
 
 		const turnedOn = await this.updatePartialOne(
-			{ ...idleRoom, 'config.lobby.enabled': { $ne: true } },
+			{ ...idleRoom, 'config.waitingRoom.enabled': { $ne: true } },
 			{ ...update, rolesUpdatedAt: Date.now() },
 			{ throwIfNotFound: false }
 		);
 		return (
 			turnedOn ??
-			this.updatePartialOne({ ...idleRoom, 'config.lobby.enabled': true }, update, { throwIfNotFound: false })
+			this.updatePartialOne({ ...idleRoom, 'config.waitingRoom.enabled': true }, update, {
+				throwIfNotFound: false
+			})
 		);
 	}
 

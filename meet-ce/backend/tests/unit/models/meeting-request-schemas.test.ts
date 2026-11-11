@@ -3,8 +3,8 @@ import { MeetReaction } from '@openvidu-meet/typings';
 import type { z } from 'zod';
 import { configureZodErrorMessages } from '../../../src/config/zod-config.js';
 import {
-	LobbyDecisionReqSchema,
-	LobbyLeaveReqSchema,
+	WaitingRoomDecisionReqSchema,
+	WaitingRoomLeaveReqSchema,
 	LowerAllHandsReqSchema,
 	MuteParticipantMediaReqSchema,
 	SendParticipantReactionReqSchema,
@@ -107,28 +107,28 @@ describe('SendParticipantReactionReqSchema', () => {
 	});
 });
 
-describe('LobbyDecisionReqSchema', () => {
+describe('WaitingRoomDecisionReqSchema', () => {
 	it('reads an empty body as everyone waiting', () => {
-		expect(LobbyDecisionReqSchema.parse({})).toEqual({});
+		expect(WaitingRoomDecisionReqSchema.parse({})).toEqual({});
 	});
 
 	it('accepts one participant or several, each named once', () => {
-		expect(LobbyDecisionReqSchema.parse({ participantIdentities: ['ana'] })).toEqual({
+		expect(WaitingRoomDecisionReqSchema.parse({ participantIdentities: ['ana'] })).toEqual({
 			participantIdentities: ['ana']
 		});
-		expect(LobbyDecisionReqSchema.parse({ participantIdentities: ['ana', 'ben'] })).toEqual({
+		expect(WaitingRoomDecisionReqSchema.parse({ participantIdentities: ['ana', 'ben'] })).toEqual({
 			participantIdentities: ['ana', 'ben']
 		});
 	});
 
 	it('refuses an empty list instead of reading it as everyone waiting', () => {
-		expect(issues(LobbyDecisionReqSchema, { participantIdentities: [] })).toEqual([
+		expect(issues(WaitingRoomDecisionReqSchema, { participantIdentities: [] })).toEqual([
 			'participantIdentities: Must name at least one participant'
 		]);
 	});
 
 	it('refuses an identity named twice', () => {
-		expect(issues(LobbyDecisionReqSchema, { participantIdentities: ['ana', 'ana'] })).toEqual([
+		expect(issues(WaitingRoomDecisionReqSchema, { participantIdentities: ['ana', 'ana'] })).toEqual([
 			'participantIdentities: Must not repeat an identity'
 		]);
 	});
@@ -136,18 +136,18 @@ describe('LobbyDecisionReqSchema', () => {
 	it('refuses more participants than a waiting room holds, and identities that are not strings', () => {
 		const identities = Array.from({ length: 101 }, (_, index) => `p-${index}`);
 
-		expect(issues(LobbyDecisionReqSchema, { participantIdentities: identities })).toHaveLength(1);
-		expect(issues(LobbyDecisionReqSchema, { participantIdentities: [42] })).toHaveLength(1);
-		expect(issues(LobbyDecisionReqSchema, { participantIdentities: [''] })).toHaveLength(1);
+		expect(issues(WaitingRoomDecisionReqSchema, { participantIdentities: identities })).toHaveLength(1);
+		expect(issues(WaitingRoomDecisionReqSchema, { participantIdentities: [42] })).toHaveLength(1);
+		expect(issues(WaitingRoomDecisionReqSchema, { participantIdentities: [''] })).toHaveLength(1);
 	});
 });
 
-describe('LobbyLeaveReqSchema', () => {
+describe('WaitingRoomLeaveReqSchema', () => {
 	it('needs the ticket of the wait', () => {
-		expect(LobbyLeaveReqSchema.parse({ lobbyTicket: 'q8d1u3Zr0m6ZxVwK9tHc2A' })).toEqual({
-			lobbyTicket: 'q8d1u3Zr0m6ZxVwK9tHc2A'
+		expect(WaitingRoomLeaveReqSchema.parse({ waitingRoomTicket: 'q8d1u3Zr0m6ZxVwK9tHc2A' })).toEqual({
+			waitingRoomTicket: 'q8d1u3Zr0m6ZxVwK9tHc2A'
 		});
-		expect(issues(LobbyLeaveReqSchema, {})).toHaveLength(1);
-		expect(issues(LobbyLeaveReqSchema, { lobbyTicket: '' })).toHaveLength(1);
+		expect(issues(WaitingRoomLeaveReqSchema, {})).toHaveLength(1);
+		expect(issues(WaitingRoomLeaveReqSchema, { waitingRoomTicket: '' })).toHaveLength(1);
 	});
 });

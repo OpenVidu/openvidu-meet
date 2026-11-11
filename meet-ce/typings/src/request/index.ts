@@ -1,5 +1,5 @@
 export * from './broadcast-request.js';
-export * from './lobby-request.js';
+export * from './waiting-room-request.js';
 export * from './meeting-request.js';
 export * from './room-member-request.js';
 export * from './room-request.js';

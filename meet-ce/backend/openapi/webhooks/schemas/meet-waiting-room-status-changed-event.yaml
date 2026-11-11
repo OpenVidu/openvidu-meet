@@ -1,0 +1,60 @@
+type: object
+required:
+    - roomId
+    - roomName
+    - participant
+    - status
+    - origin
+properties:
+    roomId:
+        type: string
+        example: 'room-123'
+        description: >
+            The unique identifier of the room the participant waited to join.
+    roomName:
+        type: string
+        example: 'room'
+        description: >
+            The display name of the room the participant waited to join, as it was when they asked: it is
+            still reported when the room was deleted meanwhile.
+    participant:
+        $ref: ../../meetings/schemas/meet-waiting-room-participant.yaml
+    status:
+        type: string
+        enum:
+            - waiting
+            - admitted
+            - rejected
+            - left
+            - expired
+            - meeting_ended
+            - room_closed
+        example: admitted
+        description: |
+            What happened to the wait:
+            - `waiting`: an admitted participant returned to the line, with the `knockDate` they had, because the
+              meeting was full when their meeting asked for its join token.
+            - `admitted`: a holder of `waitingRoomAdmin` let the participant in, or the room's waiting room was turned off.
+              It is not the join: the [`participantJoined`](#/webhooks/participantJoinedWebhook) webhook
+              confirms it. Using up an admission when the join token is issued sends no webhook.
+            - `rejected`: a holder of `waitingRoomAdmin` rejected the participant.
+            - `left`: the participant left the waiting room, or asked to join again and so started a new wait.
+            - `expired`: the participant lost their place: their meeting stopped being in touch for a minute, or an
+              admission was not used within a minute.
+            - `meeting_ended`: the meeting was ended explicitly, or reached its duration limit, while the
+              participant waited.
+            - `room_closed`: the room was closed or deleted while the participant waited.
+    origin:
+        type: string
+        enum:
+            - participant
+            - moderator
+            - system
+        example: moderator
+        description: |
+            Who caused the change:
+            - `participant`: the participant themselves, for `left`.
+            - `moderator`: a change made by someone else's request, whatever the credential (a decision on the
+              participant, an explicit end of the meeting, closing or deleting the room, turning the waiting room
+              off).
+            - `system`: the server's own rules: an expiry, a return to the line, the duration limit.

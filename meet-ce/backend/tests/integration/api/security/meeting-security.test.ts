@@ -25,13 +25,13 @@ import {
 	updateParticipantMetadata
 } from '../../../helpers/livekit-cli-helpers.js';
 import {
-	admitFromLobby,
+	admitFromWaitingRoom,
 	askToJoin,
 	createAssistant,
 	deleteAllRooms,
 	generateRoomMemberToken,
 	getFullPath,
-	getLobby,
+	getWaitingRoom,
 	loginRootAdmin,
 	refreshRoomMemberTokenRequest,
 	startTestServer,
@@ -454,8 +454,8 @@ describe('Meeting API Security Tests', () => {
 	describe('Waiting room Tests', () => {
 		const RECORDINGS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`);
 
-		let lobbyRoomId: string;
-		let lobbyRoom: RoomData;
+		let waitingRoomRoomId: string;
+		let waitingRoomRoom: RoomData;
 		let waitingAdmitter: RoomMemberData;
 		let admittedToken: string;
 		let hostToken: string;
@@ -464,27 +464,29 @@ describe('Meeting API Security Tests', () => {
 		/** Joins the meeting with the identity and metadata of a join token, as its client would. */
 		const connectWith = async (token: string) => {
 			const { sub, metadata } = jwtDecode<ClaimGrants>(token);
-			await joinFakeParticipant(lobbyRoomId, sub!, metadata);
+			await joinFakeParticipant(waitingRoomRoomId, sub!, metadata);
 			return sub!;
 		};
 
 		/** Asks to join with a link, is admitted with the API key and joins with the ticket. */
 		const joinThroughTheLine = async (secret: string, name: string) => {
-			const { body: wait } = await askToJoin(lobbyRoomId, secret, name);
-			expect((await admitFromLobby(lobbyRoomId, [wait.participantIdentity])).status).toBe(200);
-			const joined = await askToJoin(lobbyRoomId, secret, name, wait.lobbyTicket);
+			const { body: wait } = await askToJoin(waitingRoomRoomId, secret, name);
+			expect((await admitFromWaitingRoom(waitingRoomRoomId, [wait.participantIdentity])).status).toBe(200);
+			const joined = await askToJoin(waitingRoomRoomId, secret, name, wait.waitingRoomTicket);
 			expect(joined.status).toBe(200);
 			return joined.body.token as string;
 		};
 
 		const meetingRequests = (token: string) => [
-			request(app).get(`${MEETINGS_PATH}/${lobbyRoomId}`).set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token),
 			request(app)
-				.get(`${MEETINGS_PATH}/${lobbyRoomId}/participants`)
+				.get(`${MEETINGS_PATH}/${waitingRoomRoomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token),
+			request(app)
+				.get(`${MEETINGS_PATH}/${waitingRoomRoomId}/participants`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token),
 			request(app)
 				.get(BROADCASTS_PATH)
-				.query({ roomId: lobbyRoomId })
+				.query({ roomId: waitingRoomRoomId })
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token)
 		];
 
@@ -492,38 +494,38 @@ describe('Meeting API Security Tests', () => {
 			request(app)
 				.post(RECORDINGS_PATH)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token)
-				.send({ roomId: lobbyRoomId });
+				.send({ roomId: waitingRoomRoomId });
 
 		beforeAll(async () => {
-			lobbyRoom = await setupSingleRoom(false, 'LOBBY_ROOM', { lobby: { enabled: true } });
-			lobbyRoomId = lobbyRoom.room.roomId;
-			waitingAdmitter = await setupRoomMember(lobbyRoomId, {
+			waitingRoomRoom = await setupSingleRoom(false, 'WAITING_ROOM_ROOM', { waitingRoom: { enabled: true } });
+			waitingRoomRoomId = waitingRoomRoom.room.roomId;
+			waitingAdmitter = await setupRoomMember(waitingRoomRoomId, {
 				name: 'Waiting Admitter',
 				baseRole: MeetRoomMemberRole.MODERATOR,
-				customPermissions: { lobbyBypass: false }
+				customPermissions: { waitingRoomBypass: false }
 			});
 
-			const host = await askToJoin(lobbyRoomId, lobbyRoom.moderatorSecret, 'Host');
+			const host = await askToJoin(waitingRoomRoomId, waitingRoomRoom.moderatorSecret, 'Host');
 			hostToken = `Bearer ${host.body.token}`;
 			await connectWith(host.body.token);
-			await waitForMeetingToStart(lobbyRoomId);
+			await waitForMeetingToStart(waitingRoomRoomId);
 
 			const admitted = await joinThroughTheLine(guestSecretOf(waitingAdmitter.member), 'Waiting Admitter');
 			admittedToken = `Bearer ${admitted}`;
 			await connectWith(admitted);
 
-			const demoted = await joinThroughTheLine(lobbyRoom.speakerSecret, 'Demoted');
+			const demoted = await joinThroughTheLine(waitingRoomRoom.speakerSecret, 'Demoted');
 			const demotedIdentity = await connectWith(demoted);
 
 			for (const action of [MeetParticipantModerationAction.UPGRADE, MeetParticipantModerationAction.DOWNGRADE]) {
 				const response = await request(app)
-					.put(`${MEETINGS_PATH}/${lobbyRoomId}/participants/${demotedIdentity}/role`)
+					.put(`${MEETINGS_PATH}/${waitingRoomRoomId}/participants/${demotedIdentity}/role`)
 					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, hostToken)
 					.send({ action });
 				expect(response.status).toBe(200);
 			}
 
-			const renewed = await refreshRoomMemberTokenRequest(lobbyRoomId, `Bearer ${demoted}`);
+			const renewed = await refreshRoomMemberTokenRequest(waitingRoomRoomId, `Bearer ${demoted}`);
 			expect(renewed.status).toBe(200);
 			demotedToken = `Bearer ${renewed.body.token}`;
 		});
@@ -536,7 +538,7 @@ describe('Meeting API Security Tests', () => {
 			const responses = await Promise.all([
 				...meetingRequests(waitingAdmitter.memberToken),
 				startRecordingWith(waitingAdmitter.memberToken),
-				getLobby(lobbyRoomId, waitingAdmitter.memberToken)
+				getWaitingRoom(waitingRoomRoomId, waitingAdmitter.memberToken)
 			]);
 
 			responses.forEach((response) => expectMeetError(response, errorInsufficientPermissions()));
@@ -549,7 +551,7 @@ describe('Meeting API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should act on the meeting with the join token of an admitted participant, of a holder of lobbyBypass and of a moderator demoted during the meeting', async () => {
+		it('should act on the meeting with the join token of an admitted participant, of a holder of waitingRoomBypass and of a moderator demoted during the meeting', async () => {
 			for (const token of [admittedToken, hostToken, demotedToken]) {
 				const responses = await Promise.all(meetingRequests(token));
 				responses.forEach((response) => expect(response.status).toBe(200));
@@ -559,20 +561,20 @@ describe('Meeting API Security Tests', () => {
 				expect((await startRecordingWith(token)).status).not.toBe(403);
 			}
 
-			expect((await getLobby(lobbyRoomId, admittedToken)).status).toBe(200);
+			expect((await getWaitingRoom(waitingRoomRoomId, admittedToken)).status).toBe(200);
 		});
 
-		it('should guard the waiting room operations with lobbyAdmin', async () => {
-			expect((await getLobby(lobbyRoomId)).status).toBe(200);
-			expectMeetError(await getLobby(lobbyRoomId, demotedToken), errorInsufficientPermissions());
+		it('should guard the waiting room operations with waitingRoomAdmin', async () => {
+			expect((await getWaitingRoom(waitingRoomRoomId)).status).toBe(200);
+			expectMeetError(await getWaitingRoom(waitingRoomRoomId, demotedToken), errorInsufficientPermissions());
 			expectMeetError(
 				await request(app)
-					.get(`${MEETINGS_PATH}/${lobbyRoomId}/lobby`)
+					.get(`${MEETINGS_PATH}/${waitingRoomRoomId}/waiting-room`)
 					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, rootAdminAccessToken),
 				errorUnauthorized()
 			);
 			expectMeetError(
-				await getLobby(lobbyRoomId, (await setupSingleRoom()).moderatorToken),
+				await getWaitingRoom(waitingRoomRoomId, (await setupSingleRoom()).moderatorToken),
 				errorInsufficientPermissions()
 			);
 		});

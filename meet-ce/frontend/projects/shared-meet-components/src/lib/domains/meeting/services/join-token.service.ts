@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
-import { MeetLobbyTicketResponse } from '@openvidu-meet/typings';
+import { MeetWaitingRoomTicketResponse } from '@openvidu-meet/typings';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
@@ -18,7 +18,7 @@ export interface JoinRequest {
 }
 
 /** The answer to a request to join: the token to connect with, or the ticket of a wait to be let in. */
-export type JoinAnswer = { kind: 'token'; token: string } | { kind: 'waiting'; ticket: MeetLobbyTicketResponse };
+export type JoinAnswer = { kind: 'token'; token: string } | { kind: 'waiting'; ticket: MeetWaitingRoomTicketResponse };
 
 /**
  * Requests the token a participant joins the meeting with. It is requested when they commit to joining,
@@ -49,8 +49,8 @@ export class JoinTokenService {
 	}
 
 	/** Asks for the token of a wait with its ticket. Its failures are the caller's to handle. */
-	requestWithTicket(join: JoinRequest, lobbyTicket: string): Promise<JoinAnswer> {
-		return this.ask(join, lobbyTicket);
+	requestWithTicket(join: JoinRequest, waitingRoomTicket: string): Promise<JoinAnswer> {
+		return this.ask(join, waitingRoomTicket);
 	}
 
 	/** Shows the error screen of a refused request to join. */
@@ -66,7 +66,7 @@ export class JoinTokenService {
 
 	private async ask(
 		{ participantName, e2eeKey, nameTypedByParticipant }: JoinRequest,
-		lobbyTicket?: string
+		waitingRoomTicket?: string
 	): Promise<JoinAnswer> {
 		// The correlation fields are not encrypted: they belong to the host application, which already knows them.
 		const answer = await this.roomMemberContextService.requestJoin(this.meetingContextService.roomId()!, {
@@ -75,14 +75,16 @@ export class JoinTokenService {
 			participantName: await this.nameInToken(participantName, e2eeKey),
 			participantExternalId: this.roomMemberContextService.participantExternalId(),
 			participantMetadata: this.roomMemberContextService.participantMetadata(),
-			...(lobbyTicket && { lobbyTicket })
+			...(waitingRoomTicket && { waitingRoomTicket })
 		});
 
 		if (nameTypedByParticipant) {
 			this.roomMemberContextService.saveParticipantNameToStorage(participantName);
 		}
 
-		return 'lobbyTicket' in answer ? { kind: 'waiting', ticket: answer } : { kind: 'token', token: answer.token };
+		return 'waitingRoomTicket' in answer
+			? { kind: 'waiting', ticket: answer }
+			: { kind: 'token', token: answer.token };
 	}
 
 	/** An encrypted meeting gets the name encrypted, so the server never sees it in plain text. */

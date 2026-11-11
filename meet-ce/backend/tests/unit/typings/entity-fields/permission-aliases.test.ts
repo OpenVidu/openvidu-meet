@@ -56,8 +56,8 @@ describe('Permission alias map', () => {
 			'participantMute',
 			'participantHandLower',
 			'participantReactionSend',
-			'lobbyBypass',
-			'lobbyAdmin',
+			'waitingRoomBypass',
+			'waitingRoomAdmin',
 			'broadcastControl',
 			'broadcastEdit'
 		]);
@@ -108,7 +108,7 @@ describe('Permission alias map', () => {
 			'breakout',
 			'notes',
 			'whiteboard',
-			'lobby',
+			'waitingRoom',
 			'broadcast'
 		];
 
@@ -183,8 +183,8 @@ describe('normalizePermissions', () => {
 		participantMute: false,
 		participantHandLower: false,
 		participantReactionSend: true,
-		lobbyBypass: false,
-		lobbyAdmin: false,
+		waitingRoomBypass: false,
+		waitingRoomAdmin: false,
 		broadcastControl: false,
 		broadcastEdit: false
 	};
@@ -253,13 +253,13 @@ describe('normalizePermissions', () => {
 			participantKick: true,
 			...literalDefaults
 		});
-		expect(normalizePermissions({ lobbyBypass: true }, { complete: true })).toEqual({
+		expect(normalizePermissions({ waitingRoomBypass: true }, { complete: true })).toEqual({
 			...literalDefaults,
-			lobbyBypass: true
+			waitingRoomBypass: true
 		});
-		expect(normalizePermissions({ lobbyAdmin: true }, { complete: true })).toEqual({
+		expect(normalizePermissions({ waitingRoomAdmin: true }, { complete: true })).toEqual({
 			...literalDefaults,
-			lobbyAdmin: true
+			waitingRoomAdmin: true
 		});
 	});
 
@@ -331,8 +331,8 @@ describe('toDeprecatedPermissions', () => {
 			...current,
 			participantMute: false,
 			participantHandLower: false,
-			lobbyBypass: false,
-			lobbyAdmin: false,
+			waitingRoomBypass: false,
+			waitingRoomAdmin: false,
 			broadcastControl: false,
 			broadcastEdit: false
 		});

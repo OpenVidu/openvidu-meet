@@ -7,7 +7,7 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
 import { RoomAccessComponent } from './room-access.component';
 
 /**
- * The Room Access step is where a room's waiting room is decided: a switch for `config.lobby.enabled`,
+ * The Room Access step is where a room's waiting room is decided: a switch for `config.waitingRoom.enabled`,
  * a message that only makes sense while it is on, and the two permissions that say who waits and who
  * admits, once per role.
  */
@@ -29,9 +29,10 @@ describe('RoomAccessComponent (waiting room)', () => {
 		await fixture.whenStable();
 	};
 
-	const lobbySwitch = (): HTMLButtonElement => element().querySelector('#room-access-lobby button[role="switch"]')!;
+	const waitingRoomSwitch = (): HTMLButtonElement =>
+		element().querySelector('#room-access-waiting-room button[role="switch"]')!;
 
-	const messageField = (): HTMLTextAreaElement | null => element().querySelector('#room-lobby-message');
+	const messageField = (): HTMLTextAreaElement | null => element().querySelector('#room-waiting-room-message');
 
 	const permissionSwitch = (role: 'moderator' | 'speaker', key: string): HTMLButtonElement | null =>
 		element().querySelector(`#${role}-permission-${key} button[role="switch"]`);
@@ -44,7 +45,7 @@ describe('RoomAccessComponent (waiting room)', () => {
 		await settle();
 	};
 
-	const savedLobby = () => wizardService.roomOptions().config?.lobby;
+	const savedWaitingRoom = () => wizardService.roomOptions().config?.waitingRoom;
 
 	beforeEach(() => {
 		TestBed.configureTestingModule({
@@ -64,14 +65,14 @@ describe('RoomAccessComponent (waiting room)', () => {
 	it('starts with the waiting room off and no message field', async () => {
 		await render();
 
-		expect(lobbySwitch().getAttribute('aria-checked')).toBe('false');
+		expect(waitingRoomSwitch().getAttribute('aria-checked')).toBe('false');
 		expect(messageField()).toBeNull();
-		expect(savedLobby()).toEqual({ enabled: false });
+		expect(savedWaitingRoom()).toEqual({ enabled: false });
 	});
 
 	it('names the section, the switch and the message field', async () => {
 		await render();
-		lobbySwitch().click();
+		waitingRoomSwitch().click();
 		await settle();
 
 		const text = element().querySelector('#waiting-room-section')!.textContent!;
@@ -91,48 +92,48 @@ describe('RoomAccessComponent (waiting room)', () => {
 	it('turns the waiting room on and shows the message field only while it is on', async () => {
 		await render();
 
-		lobbySwitch().click();
+		waitingRoomSwitch().click();
 		await settle();
 
-		expect(savedLobby()?.enabled).toBeTrue();
+		expect(savedWaitingRoom()?.enabled).toBeTrue();
 		expect(messageField()).not.toBeNull();
 
-		lobbySwitch().click();
+		waitingRoomSwitch().click();
 		await settle();
 
-		expect(savedLobby()?.enabled).toBeFalse();
+		expect(savedWaitingRoom()?.enabled).toBeFalse();
 		expect(messageField()).toBeNull();
 	});
 
 	it('writes the message into the room options without the whitespace around it', async () => {
 		await render();
-		lobbySwitch().click();
+		waitingRoomSwitch().click();
 		await settle();
 
 		await type('  The host will let you in  ');
 
-		expect(savedLobby()).toEqual({ enabled: true, message: 'The host will let you in' });
+		expect(savedWaitingRoom()).toEqual({ enabled: true, message: 'The host will let you in' });
 	});
 
 	it('writes a cleared message as null, which is what removes a stored one on update', async () => {
-		await render(true, { config: { lobby: { enabled: true, message: 'Welcome' } } });
+		await render(true, { config: { waitingRoom: { enabled: true, message: 'Welcome' } } });
 		expect(messageField()!.value).toBe('Welcome');
 
 		await type('');
 
-		expect(savedLobby()).toEqual({ enabled: true, message: null });
+		expect(savedWaitingRoom()).toEqual({ enabled: true, message: null });
 	});
 
 	it('prefills the switch and the message of the room being edited', async () => {
-		await render(true, { config: { lobby: { enabled: true, message: 'Welcome' } } });
+		await render(true, { config: { waitingRoom: { enabled: true, message: 'Welcome' } } });
 
-		expect(lobbySwitch().getAttribute('aria-checked')).toBe('true');
+		expect(waitingRoomSwitch().getAttribute('aria-checked')).toBe('true');
 		expect(messageField()!.value).toBe('Welcome');
 	});
 
 	it('flags a message longer than 500 characters and holds the wizard from finishing', async () => {
 		await render();
-		lobbySwitch().click();
+		waitingRoomSwitch().click();
 		await settle();
 
 		await type('a'.repeat(500));
@@ -152,34 +153,36 @@ describe('RoomAccessComponent (waiting room)', () => {
 		await render();
 
 		const granted = (role: 'moderator' | 'speaker') =>
-			['lobbyBypass', 'lobbyAdmin'].map((key) => permissionSwitch(role, key)?.getAttribute('aria-checked'));
+			['waitingRoomBypass', 'waitingRoomAdmin'].map((key) =>
+				permissionSwitch(role, key)?.getAttribute('aria-checked')
+			);
 
 		expect(granted('moderator')).toEqual(['true', 'true']);
 		expect(granted('speaker')).toEqual(['false', 'false']);
-		expect(element().querySelector('#moderator-permission-lobbyBypass')!.textContent).toContain(
-			'ROOM_MEMBERS.PERMISSIONS.ITEMS.lobbyBypass.LABEL'
+		expect(element().querySelector('#moderator-permission-waitingRoomBypass')!.textContent).toContain(
+			'ROOM_MEMBERS.PERMISSIONS.ITEMS.waitingRoomBypass.LABEL'
 		);
 	});
 
 	it('sends the waiting room permissions a role is switched to', async () => {
 		await render();
 
-		permissionSwitch('speaker', 'lobbyBypass')!.click();
+		permissionSwitch('speaker', 'waitingRoomBypass')!.click();
 		await settle();
 
 		expect(wizardService.roomOptions().roles?.speaker?.permissions).toEqual(
-			jasmine.objectContaining({ lobbyBypass: true, lobbyAdmin: false })
+			jasmine.objectContaining({ waitingRoomBypass: true, waitingRoomAdmin: false })
 		);
 	});
 
 	it('keeps the waiting room permissions usable whether the waiting room is on or off', async () => {
 		await render();
 
-		expect(permissionSwitch('speaker', 'lobbyAdmin')!.disabled).toBeFalse();
+		expect(permissionSwitch('speaker', 'waitingRoomAdmin')!.disabled).toBeFalse();
 
-		lobbySwitch().click();
+		waitingRoomSwitch().click();
 		await settle();
 
-		expect(permissionSwitch('speaker', 'lobbyAdmin')!.disabled).toBeFalse();
+		expect(permissionSwitch('speaker', 'waitingRoomAdmin')!.disabled).toBeFalse();
 	});
 });

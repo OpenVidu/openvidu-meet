@@ -44,7 +44,7 @@ properties:
             multibyte string of exactly 2048 characters can be rejected as too large). Stored in the
             token metadata as `metadata`; never interpreted by OpenVidu Meet.
         example: '{"department": "cardiology"}'
-    lobbyTicket:
+    waitingRoomTicket:
         type: string
         description: >
             The ticket of the participant's wait, as this operation answered it (`202`) when the room has the

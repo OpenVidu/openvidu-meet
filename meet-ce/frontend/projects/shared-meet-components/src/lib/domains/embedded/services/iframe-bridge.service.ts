@@ -310,12 +310,16 @@ export class IframeBridgeService {
 				break;
 			}
 
-			case EmbeddedCommandName.LOBBY_ADMIT:
-				await commandService.lobbyAdmit({ participantIdentities: this.extractParticipantIdentities(message) });
+			case EmbeddedCommandName.WAITING_ROOM_ADMIT:
+				await commandService.waitingRoomAdmit({
+					participantIdentities: this.extractParticipantIdentities(message)
+				});
 				break;
 
-			case EmbeddedCommandName.LOBBY_REJECT:
-				await commandService.lobbyReject({ participantIdentities: this.extractParticipantIdentities(message) });
+			case EmbeddedCommandName.WAITING_ROOM_REJECT:
+				await commandService.waitingRoomReject({
+					participantIdentities: this.extractParticipantIdentities(message)
+				});
 				break;
 
 			default:

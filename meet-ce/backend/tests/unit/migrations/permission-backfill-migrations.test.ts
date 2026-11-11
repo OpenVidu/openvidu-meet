@@ -186,7 +186,7 @@ describe('Room migration v8 → v9', () => {
 });
 
 describe('Room migration v9 → v10', () => {
-	const v9Permissions = () => currentPermissionsWithout('lobbyBypass', 'lobbyAdmin');
+	const v9Permissions = () => currentPermissionsWithout('waitingRoomBypass', 'waitingRoomAdmin');
 
 	it('should add the waiting room config, off, and keep the rest of the config', () => {
 		const migrated = roomV9ToV10({
@@ -194,7 +194,7 @@ describe('Room migration v9 → v10', () => {
 			config: { reactions: { enabled: true } }
 		} as unknown as MeetRoomDocument);
 
-		expect(migrated.config).toEqual({ reactions: { enabled: true }, lobby: { enabled: false } });
+		expect(migrated.config).toEqual({ reactions: { enabled: true }, waitingRoom: { enabled: false } });
 	});
 
 	it('should complete the roles with the waiting room permissions and grant them to the moderator role only', () => {
@@ -204,10 +204,10 @@ describe('Room migration v9 → v10', () => {
 		} as unknown as MeetRoomDocument);
 
 		expect(Object.keys(migrated.roles.moderator.permissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
-		expect(migrated.roles.moderator.permissions.lobbyBypass).toBe(true);
-		expect(migrated.roles.moderator.permissions.lobbyAdmin).toBe(true);
-		expect(migrated.roles.speaker.permissions.lobbyBypass).toBe(false);
-		expect(migrated.roles.speaker.permissions.lobbyAdmin).toBe(false);
+		expect(migrated.roles.moderator.permissions.waitingRoomBypass).toBe(true);
+		expect(migrated.roles.moderator.permissions.waitingRoomAdmin).toBe(true);
+		expect(migrated.roles.speaker.permissions.waitingRoomBypass).toBe(false);
+		expect(migrated.roles.speaker.permissions.waitingRoomAdmin).toBe(false);
 	});
 });
 
@@ -307,23 +307,23 @@ describe('Room member migration v6 → v7', () => {
 			memberId: 'member-123',
 			baseRole,
 			customPermissions: { chatWrite: false },
-			effectivePermissions: currentPermissionsWithout('lobbyBypass', 'lobbyAdmin')
+			effectivePermissions: currentPermissionsWithout('waitingRoomBypass', 'waitingRoomAdmin')
 		}) as unknown as MeetRoomMemberDocument;
 
 	it('should complete effectivePermissions with the waiting room permissions, denied to a speaker, and leave the overlay alone', () => {
 		const migrated = roomMemberV6ToV7(roomMember('speaker'));
 
 		expect(Object.keys(migrated.effectivePermissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
-		expect(migrated.effectivePermissions.lobbyBypass).toBe(false);
-		expect(migrated.effectivePermissions.lobbyAdmin).toBe(false);
+		expect(migrated.effectivePermissions.waitingRoomBypass).toBe(false);
+		expect(migrated.effectivePermissions.waitingRoomAdmin).toBe(false);
 		expect(migrated.customPermissions).toStrictEqual({ chatWrite: false });
 	});
 
 	it('should grant both to a member with the moderator role, as the migrated role does', () => {
 		const migrated = roomMemberV6ToV7(roomMember('moderator'));
 
-		expect(migrated.effectivePermissions.lobbyBypass).toBe(true);
-		expect(migrated.effectivePermissions.lobbyAdmin).toBe(true);
+		expect(migrated.effectivePermissions.waitingRoomBypass).toBe(true);
+		expect(migrated.effectivePermissions.waitingRoomAdmin).toBe(true);
 		expect(migrated.customPermissions).toStrictEqual({ chatWrite: false });
 	});
 });

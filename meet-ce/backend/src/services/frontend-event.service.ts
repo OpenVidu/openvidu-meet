@@ -1,7 +1,7 @@
 import type {
 	MeetBroadcastInfo,
 	MeetBroadcastUpdatedPayload,
-	MeetLobbyUpdatedPayload,
+	MeetWaitingRoomUpdatedPayload,
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantMuteOptions,
 	MeetParticipantPermissionsUpdatedPayload,
@@ -151,13 +151,13 @@ export class FrontendEventService {
 	 * Tells everyone in the meeting that the waiting list changed. Only the participants who may admit
 	 * fetch it, so the signal names nobody. A list changes also with no meeting running.
 	 */
-	async sendLobbyUpdatedSignal(roomId: string): Promise<void> {
-		const signalPayload: MeetLobbyUpdatedPayload = { roomId, timestamp: Date.now() };
+	async sendWaitingRoomUpdatedSignal(roomId: string): Promise<void> {
+		const signalPayload: MeetWaitingRoomUpdatedPayload = { roomId, timestamp: Date.now() };
 
 		await this.sendSignal(
 			roomId,
 			signalPayload,
-			{ topic: MeetSignalType.MEET_LOBBY_UPDATED },
+			{ topic: MeetSignalType.MEET_WAITING_ROOM_UPDATED },
 			{ onlyIfRoomExists: true }
 		);
 	}

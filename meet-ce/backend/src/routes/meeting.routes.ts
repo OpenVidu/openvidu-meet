@@ -1,12 +1,12 @@
 import bodyParser from 'body-parser';
 import { Router } from 'express';
-import * as lobbyCtrl from '../controllers/lobby.controller.js';
+import * as waitingRoomCtrl from '../controllers/waiting-room.controller.js';
 import * as meetingCtrl from '../controllers/meeting.controller.js';
 import { apiKeyValidator, roomMemberTokenValidator, withAuth } from '../middlewares/auth.middleware.js';
 import { apiLimiter } from '../middlewares/rate-limit.middleware.js';
 import {
-	validateLobbyDecisionReq,
-	validateLobbyLeaveReq,
+	validateWaitingRoomDecisionReq,
+	validateWaitingRoomLeaveReq,
 	validateLowerAllHandsReq,
 	validateMuteParticipantMediaReq,
 	validateSendParticipantReactionReq,
@@ -100,27 +100,27 @@ meetingRouter.put(
 
 // Waiting room routes: they answer with no meeting running, since participants wait before it starts.
 meetingRouter.get(
-	'/:roomId/lobby',
+	'/:roomId/waiting-room',
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
-	withRoomPermission('lobbyAdmin'),
-	lobbyCtrl.getLobby
+	withRoomPermission('waitingRoomAdmin'),
+	waitingRoomCtrl.getWaitingRoom
 );
 meetingRouter.post(
-	'/:roomId/lobby/admit',
+	'/:roomId/waiting-room/admit',
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
-	validateLobbyDecisionReq,
-	withRoomPermission('lobbyAdmin'),
-	lobbyCtrl.admitFromLobby
+	validateWaitingRoomDecisionReq,
+	withRoomPermission('waitingRoomAdmin'),
+	waitingRoomCtrl.admitFromWaitingRoom
 );
 meetingRouter.post(
-	'/:roomId/lobby/reject',
+	'/:roomId/waiting-room/reject',
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
-	validateLobbyDecisionReq,
-	withRoomPermission('lobbyAdmin'),
-	lobbyCtrl.rejectFromLobby
+	validateWaitingRoomDecisionReq,
+	withRoomPermission('waitingRoomAdmin'),
+	waitingRoomCtrl.rejectFromWaitingRoom
 );
 
 // Internal meeting routes
@@ -140,4 +140,9 @@ internalMeetingRouter.post(
 );
 
 // The ticket is the only credential, and no header is needed, so a page that unloads sends it without a CORS preflight.
-internalMeetingRouter.post('/:roomId/lobby/leave', withValidRoomId, validateLobbyLeaveReq, lobbyCtrl.leaveLobby);
+internalMeetingRouter.post(
+	'/:roomId/waiting-room/leave',
+	withValidRoomId,
+	validateWaitingRoomLeaveReq,
+	waitingRoomCtrl.leaveWaitingRoom
+);

@@ -4,7 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetingContextService } from '../../../services/meeting-context.service';
 import { MeetingReactionsService } from '../../../services/meeting-reactions.service';
-import { LobbyAdminService } from '../../../waiting-room/lobby-admin.service';
+import { WaitingRoomAdminService } from '../../../waiting-room/waiting-room-admin.service';
 import { PanelActivitiesOptions, PanelType } from '../../models/panel.model';
 import { REACTION_EMOJI } from '../../models/reaction.model';
 import { RecordingState } from '../../models/recording.model';
@@ -52,7 +52,7 @@ export class StatusRailComponent implements OnDestroy {
 	private readonly panelService = inject(PanelService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly reactionsService = inject(MeetingReactionsService);
-	private readonly lobbyAdmin = inject(LobbyAdminService);
+	private readonly waitingRoomAdmin = inject(WaitingRoomAdminService);
 
 	private readonly now = signal(Date.now());
 	private readonly clockHandle = setInterval(() => this.now.set(Date.now()), 1000);
@@ -132,7 +132,7 @@ export class StatusRailComponent implements OnDestroy {
 
 	/** Chips the meeting adds at the right end, such as the participants waiting to be let in. */
 	protected readonly endTemplate = inject(TemplateRegistryService).statusRailEnd;
-	protected readonly hasWaitingParticipants = computed(() => this.lobbyAdmin.waiting().length > 0);
+	protected readonly hasWaitingParticipants = computed(() => this.waitingRoomAdmin.waiting().length > 0);
 
 	protected readonly canOpenActivitiesPanel = this.uiConfig.activitiesPanelButtonSignal;
 	protected readonly activitiesOptions = PanelActivitiesOptions;

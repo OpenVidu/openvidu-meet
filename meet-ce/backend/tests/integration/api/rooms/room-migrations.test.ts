@@ -154,8 +154,8 @@ const expectedCurrentModeratorPermissions = {
 	participantMute: false,
 	participantHandLower: true,
 	participantReactionSend: true,
-	lobbyBypass: true,
-	lobbyAdmin: true,
+	waitingRoomBypass: true,
+	waitingRoomAdmin: true,
 	meetingEnd: true,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -181,8 +181,8 @@ const expectedCurrentSpeakerPermissions = {
 	participantMute: false,
 	participantHandLower: false,
 	participantReactionSend: true,
-	lobbyBypass: false,
-	lobbyAdmin: false,
+	waitingRoomBypass: false,
+	waitingRoomAdmin: false,
 	meetingEnd: false,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -226,7 +226,7 @@ const expectMigratedRoomToCurrentVersion = (migratedRoom: Record<string, unknown
 			},
 			raiseHand: { enabled: true },
 			reactions: { enabled: true },
-			lobby: { enabled: false }
+			waitingRoom: { enabled: false }
 		},
 		roles: {
 			moderator: {
@@ -298,10 +298,10 @@ const buildLegacyRoomV7 = (roomId: string) => ({
 	},
 	roles: {
 		moderator: {
-			permissions: withoutPermissionsStartingWith(expectedCurrentModeratorPermissions, 'broadcast', 'lobby')
+			permissions: withoutPermissionsStartingWith(expectedCurrentModeratorPermissions, 'broadcast', 'waitingRoom')
 		},
 		speaker: {
-			permissions: withoutPermissionsStartingWith(expectedCurrentSpeakerPermissions, 'broadcast', 'lobby')
+			permissions: withoutPermissionsStartingWith(expectedCurrentSpeakerPermissions, 'broadcast', 'waitingRoom')
 		}
 	},
 	access: {
@@ -334,8 +334,10 @@ const buildLegacyRoomV9 = (roomId: string) => {
 		},
 		broadcastDestinationUrls: {},
 		roles: {
-			moderator: { permissions: withoutPermissionsStartingWith(expectedCurrentModeratorPermissions, 'lobby') },
-			speaker: { permissions: withoutPermissionsStartingWith(expectedCurrentSpeakerPermissions, 'lobby') }
+			moderator: {
+				permissions: withoutPermissionsStartingWith(expectedCurrentModeratorPermissions, 'waitingRoom')
+			},
+			speaker: { permissions: withoutPermissionsStartingWith(expectedCurrentSpeakerPermissions, 'waitingRoom') }
 		}
 	};
 };
@@ -522,8 +524,8 @@ describe('Room Schema Migrations', () => {
 			expect(migratedRoom.roles.moderator.permissions).toEqual({
 				...expectedCurrentModeratorPermissions,
 				participantHandLower: false,
-				lobbyBypass: false,
-				lobbyAdmin: false
+				waitingRoomBypass: false,
+				waitingRoomAdmin: false
 			});
 			expect(migratedRoom.roles.speaker.permissions).toEqual(expectedCurrentSpeakerPermissions);
 		});
@@ -535,7 +537,7 @@ describe('Room Schema Migrations', () => {
 
 			const migratedRoom = transform!(buildLegacyRoomV9('room-v9') as unknown as MeetRoomDocument);
 
-			expect(migratedRoom.config.lobby).toEqual({ enabled: false });
+			expect(migratedRoom.config.waitingRoom).toEqual({ enabled: false });
 			expect(migratedRoom.roles.moderator.permissions).toEqual(expectedCurrentModeratorPermissions);
 			expect(migratedRoom.roles.speaker.permissions).toEqual(expectedCurrentSpeakerPermissions);
 		});

@@ -4,14 +4,14 @@
 
 The room `config` object holds the settings every meeting of a room starts from: the meeting limits, the initial media defaults and the switch of each in-meeting feature. This capability covers the object as a whole (defaults, validation, ceilings, partial updates and when it can change), relied on by integrators through the REST API and by room managers through the console room wizard.
 
-Surfaces: REST API (`config` of `createRoom`, `getRoomConfig`, `updateRoomConfig`, and the extra field `config` of room responses; `meet-ce/backend/openapi/rooms/schemas/meet-room-config.yaml`), console (Meeting and Recording steps of the room wizard, specified in `rooms`). The meaning of each field belongs to its feature: `maxParticipants` and `maxDurationMinutes` to `meetings`, `initialAudioActive` and `initialVideoActive` to `meeting-join`, `chat` to `meeting-chat`, `recording` to `recordings`, `virtualBackground` and `e2ee` to `meeting-media`, `captions` to `live-captions`, `raiseHand` to `raise-hand`, `reactions` to `reactions` and `lobby` to `waiting-room`. The appearance of the meeting is global, not per room (see `appearance`). Documented in openvidu.io `docs/meet/features/meetings/configuration.md` and `docs/meet/features/rooms/management.md`.
+Surfaces: REST API (`config` of `createRoom`, `getRoomConfig`, `updateRoomConfig`, and the extra field `config` of room responses; `meet-ce/backend/openapi/rooms/schemas/meet-room-config.yaml`), console (Meeting and Recording steps of the room wizard, specified in `rooms`). The meaning of each field belongs to its feature: `maxParticipants` and `maxDurationMinutes` to `meetings`, `initialAudioActive` and `initialVideoActive` to `meeting-join`, `chat` to `meeting-chat`, `recording` to `recordings`, `virtualBackground` and `e2ee` to `meeting-media`, `captions` to `live-captions`, `raiseHand` to `raise-hand`, `reactions` to `reactions` and `waitingRoom` to `waiting-room`. The appearance of the meeting is global, not per room (see `appearance`). Documented in openvidu.io `docs/meet/features/meetings/configuration.md` and `docs/meet/features/rooms/management.md`.
 
 ## Requirements
 
 ### Requirement: Default config of a new room
 When `createRoom` carries no `config`, the server SHALL give the room:
 - `chat`, `virtualBackground`, `captions`, `raiseHand` and `reactions` enabled;
-- `e2ee` and `lobby` disabled;
+- `e2ee` and `waitingRoom` disabled;
 - `recording` enabled with layout `grid`, encoding `H264_720P_30` and no `autoStart`;
 - `broadcast` disabled with no destinations, layout `grid` and encoding `H264_720P_30`;
 - `initialAudioActive` and `initialVideoActive` set to `true`;
@@ -19,7 +19,7 @@ When `createRoom` carries no `config`, the server SHALL give the room:
 
 #### Scenario: Room created without config
 - **WHEN** `createRoom` is called without `config`
-- **THEN** `getRoomConfig` for the new room returns every feature enabled except `e2ee`, `broadcast` and `lobby`
+- **THEN** `getRoomConfig` for the new room returns every feature enabled except `e2ee`, `broadcast` and `waitingRoom`
 - **AND** `recording` has layout `grid`, encoding `H264_720P_30` and no `autoStart`
 - **AND** `broadcast` has no destinations, layout `grid` and encoding `H264_720P_30`
 - **AND** `initialAudioActive` and `initialVideoActive` are `true` and no meeting limit is set
@@ -44,7 +44,7 @@ The server SHALL fill every top-level field missing from the `config` of a `crea
 - **THEN** the room has live broadcast disabled, in the `speaker` layout
 
 ### Requirement: Feature objects carry their switch
-Each feature object of a config (`chat`, `recording`, `virtualBackground`, `e2ee`, `captions`, `raiseHand`, `reactions`, `lobby`) SHALL carry a boolean `enabled` whenever it is sent, at creation and on update; otherwise the server SHALL answer `422` naming the field and store nothing.
+Each feature object of a config (`chat`, `recording`, `virtualBackground`, `e2ee`, `captions`, `raiseHand`, `reactions`, `waitingRoom`) SHALL carry a boolean `enabled` whenever it is sent, at creation and on update; otherwise the server SHALL answer `422` naming the field and store nothing.
 
 #### Scenario: Missing switch
 - **WHEN** `updateRoomConfig` is called with `config` `{ "recording": { "layout": "speaker" } }`
@@ -55,8 +55,8 @@ Each feature object of a config (`chat`, `recording`, `virtualBackground`, `e2ee
 - **THEN** the server answers `422` and no room is created
 
 #### Scenario: Waiting room message without its switch
-- **WHEN** `updateRoomConfig` is called with `config` `{ "lobby": { "message": "Please wait" } }`
-- **THEN** the server answers `422` naming `lobby.enabled`
+- **WHEN** `updateRoomConfig` is called with `config` `{ "waitingRoom": { "message": "Please wait" } }`
+- **THEN** the server answers `422` naming `waitingRoom.enabled`
 
 ### Requirement: Meeting limit bounds
 The server SHALL accept as `maxParticipants` an integer from 1 to 30 or `null`, and as `maxDurationMinutes` an integer from 1 to 1440 or `null`, where `null` or an absent value means no limit, and SHALL answer `422` naming the field to any other value, storing nothing.
@@ -158,7 +158,7 @@ The server SHALL apply `updateRoomConfig` only for the callers allowed to manage
 - **THEN** the server answers `403`
 
 ### Requirement: Updates merge with the stored config
-The server SHALL merge an update into the stored config: every field the update leaves out, at any depth, SHALL keep its stored value, and `null` SHALL lift `maxParticipants`, `maxDurationMinutes` or `recording.autoStart`, and remove `lobby.message`. A `broadcast.destinations` list that is sent SHALL replace the stored list as a whole instead of merging with it (see `live-broadcast`).
+The server SHALL merge an update into the stored config: every field the update leaves out, at any depth, SHALL keep its stored value, and `null` SHALL lift `maxParticipants`, `maxDurationMinutes` or `recording.autoStart`, and remove `waitingRoom.message`. A `broadcast.destinations` list that is sent SHALL replace the stored list as a whole instead of merging with it (see `live-broadcast`).
 
 #### Scenario: Recording switched off keeps its settings
 - **GIVEN** a room whose recording uses layout `speaker`
@@ -181,7 +181,7 @@ The server SHALL merge an update into the stored config: every field the update 
 - **THEN** the stored list holds that destination alone
 
 #### Scenario: Waiting room message removed
-- **WHEN** `updateRoomConfig` is called with `lobby` `{ "enabled": true, "message": null }`
+- **WHEN** `updateRoomConfig` is called with `waitingRoom` `{ "enabled": true, "message": null }`
 - **THEN** the stored waiting room has no message
 
 ### Requirement: Config fixed during a meeting

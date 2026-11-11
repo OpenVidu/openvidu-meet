@@ -40,7 +40,7 @@ class FakeWebSocket {
 	}
 }
 
-const CREDENTIAL = { name: 'lobbyTicket', value: 'ticket 1' };
+const CREDENTIAL = { name: 'waitingRoomTicket', value: 'ticket 1' };
 
 describe('WebSocketService', () => {
 	let service: WebSocketService;
@@ -77,7 +77,7 @@ describe('WebSocketService', () => {
 		it('uses ws:// on the page origin under the Meet base path', () => {
 			service.connect(CREDENTIAL);
 
-			const expected = new URL('/meet/internal-api/v1/ws?lobbyTicket=ticket+1', window.location.href);
+			const expected = new URL('/meet/internal-api/v1/ws?waitingRoomTicket=ticket+1', window.location.href);
 			expected.protocol = 'ws:';
 			expect(FakeWebSocket.latest.url).toBe(expected.toString());
 		});
@@ -88,7 +88,7 @@ describe('WebSocketService', () => {
 			service.connect(CREDENTIAL);
 
 			expect(FakeWebSocket.latest.url).toBe(
-				'wss://meet.example.com/meet/internal-api/v1/ws?lobbyTicket=ticket+1'
+				'wss://meet.example.com/meet/internal-api/v1/ws?waitingRoomTicket=ticket+1'
 			);
 		});
 	});
@@ -96,14 +96,14 @@ describe('WebSocketService', () => {
 	describe('messages', () => {
 		it('hands each type its payloads, never the heartbeat', () => {
 			const states: unknown[] = [];
-			service.messages$('lobby.state').subscribe((data) => states.push(data));
+			service.messages$('waitingRoom.state').subscribe((data) => states.push(data));
 			service.connect(CREDENTIAL);
 			const socket = FakeWebSocket.latest;
 			socket.serverOpens();
 
 			socket.serverSends({ type: 'heartbeat' });
 			socket.serverSends({ type: 'other.thing', data: 1 });
-			socket.serverSends({ type: 'lobby.state', data: { status: 'waiting' } });
+			socket.serverSends({ type: 'waitingRoom.state', data: { status: 'waiting' } });
 
 			expect(states).toEqual([{ status: 'waiting' }]);
 			expect(service.isConnected()).toBeTrue();
