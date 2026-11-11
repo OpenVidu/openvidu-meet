@@ -23,5 +23,5 @@ content:
                     example: 'ana-a1b2c3'
                     description: >
                         The identity the participant will have in the meeting. It is the one
-                        [`waitingRoomList`](#/operations/waitingRoomList) lists and
+                        [`participantWaitingList`](#/operations/participantWaitingList) lists and
                         [`participantJoined`](#/webhooks/participantJoinedWebhook) later reports. It is not secret.

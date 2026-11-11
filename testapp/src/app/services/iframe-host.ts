@@ -142,12 +142,12 @@ export class IframeHostService {
 		this.post({ command: EmbeddedCommandName.PARTICIPANT_REACTION_SEND, payload: { reaction } });
 	}
 
-	waitingRoomAdmit(options: MeetWaitingRoomDecisionOptions): void {
-		this.post({ command: EmbeddedCommandName.WAITING_ROOM_ADMIT, payload: options });
+	participantWaitingAdmit(options: MeetWaitingRoomDecisionOptions): void {
+		this.post({ command: EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT, payload: options });
 	}
 
-	waitingRoomReject(options: MeetWaitingRoomDecisionOptions): void {
-		this.post({ command: EmbeddedCommandName.WAITING_ROOM_REJECT, payload: options });
+	participantWaitingReject(options: MeetWaitingRoomDecisionOptions): void {
+		this.post({ command: EmbeddedCommandName.PARTICIPANT_WAITING_REJECT, payload: options });
 	}
 
 	broadcastStart(options: MeetBroadcastStartOptions): void {

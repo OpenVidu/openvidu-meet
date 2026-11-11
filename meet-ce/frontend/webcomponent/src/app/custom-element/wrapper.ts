@@ -120,12 +120,12 @@ export function createOpenViduMeetElementClass(
 			this._run(EmbeddedCommandName.BROADCAST_STOP, (app) => app.broadcastStop(options));
 		}
 
-		waitingRoomAdmit(options?: MeetWaitingRoomDecisionOptions): void {
-			this._run(EmbeddedCommandName.WAITING_ROOM_ADMIT, (app) => app.waitingRoomAdmit(options));
+		participantWaitingAdmit(options?: MeetWaitingRoomDecisionOptions): void {
+			this._run(EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT, (app) => app.participantWaitingAdmit(options));
 		}
 
-		waitingRoomReject(options?: MeetWaitingRoomDecisionOptions): void {
-			this._run(EmbeddedCommandName.WAITING_ROOM_REJECT, (app) => app.waitingRoomReject(options));
+		participantWaitingReject(options?: MeetWaitingRoomDecisionOptions): void {
+			this._run(EmbeddedCommandName.PARTICIPANT_WAITING_REJECT, (app) => app.participantWaitingReject(options));
 		}
 
 		// ── Deprecated method aliases ────────────────────────────────────────

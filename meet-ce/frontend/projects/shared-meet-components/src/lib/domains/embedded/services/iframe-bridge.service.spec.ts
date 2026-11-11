@@ -58,8 +58,8 @@ describe('IframeBridgeService', () => {
 			'participantReactionSend',
 			'broadcastStart',
 			'broadcastStop',
-			'waitingRoomAdmit',
-			'waitingRoomReject'
+			'participantWaitingAdmit',
+			'participantWaitingReject'
 		]);
 		commandService.meetingEnd.and.resolveTo();
 		commandService.meetingLeave.and.resolveTo();
@@ -78,8 +78,8 @@ describe('IframeBridgeService', () => {
 		commandService.participantReactionSend.and.resolveTo();
 		commandService.broadcastStart.and.resolveTo();
 		commandService.broadcastStop.and.resolveTo();
-		commandService.waitingRoomAdmit.and.resolveTo();
-		commandService.waitingRoomReject.and.resolveTo();
+		commandService.participantWaitingAdmit.and.resolveTo();
+		commandService.participantWaitingReject.and.resolveTo();
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -295,21 +295,23 @@ describe('IframeBridgeService', () => {
 			]);
 		});
 
-		it('forwards WAITING_ROOM_ADMIT and WAITING_ROOM_REJECT with the participants named, or none for everyone waiting', () => {
+		it('forwards PARTICIPANT_WAITING_ADMIT and PARTICIPANT_WAITING_REJECT with the participants named, or none for everyone waiting', () => {
 			startBridge();
 
 			postFromHost({
-				command: EmbeddedCommandName.WAITING_ROOM_ADMIT,
+				command: EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT,
 				payload: { participantIdentities: ['zoe'] }
 			});
-			postFromHost({ command: EmbeddedCommandName.WAITING_ROOM_ADMIT });
-			postFromHost({ command: EmbeddedCommandName.WAITING_ROOM_REJECT, payload: {} });
+			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT });
+			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_WAITING_REJECT, payload: {} });
 
-			expect(commandService.waitingRoomAdmit.calls.allArgs()).toEqual([
+			expect(commandService.participantWaitingAdmit.calls.allArgs()).toEqual([
 				[{ participantIdentities: ['zoe'] }],
 				[{ participantIdentities: undefined }]
 			]);
-			expect(commandService.waitingRoomReject).toHaveBeenCalledOnceWith({ participantIdentities: undefined });
+			expect(commandService.participantWaitingReject).toHaveBeenCalledOnceWith({
+				participantIdentities: undefined
+			});
 		});
 
 		it('ignores malformed messages (no command)', () => {

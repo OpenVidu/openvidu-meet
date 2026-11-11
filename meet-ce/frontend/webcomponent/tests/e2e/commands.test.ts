@@ -1062,7 +1062,7 @@ for (const integration of INTEGRATIONS) {
 				await Promise.all(contexts.splice(0).map((context) => context.close().catch(() => {})));
 			});
 
-			test('should admit with waitingRoomAdmit the participant named, then several named', async ({
+			test('should admit with participantWaitingAdmit the participant named, then several named', async ({
 				page,
 				browser
 			}) => {
@@ -1081,7 +1081,7 @@ for (const integration of INTEGRATIONS) {
 				await expect.poll(meetingNames, { timeout: 20_000 }).toEqual(['Ana', 'Ben', 'Host', 'Zoe']);
 			});
 
-			test('should reject with waitingRoomReject the participant named, then several named', async ({
+			test('should reject with participantWaitingReject the participant named, then several named', async ({
 				page,
 				browser
 			}) => {
@@ -1101,7 +1101,7 @@ for (const integration of INTEGRATIONS) {
 				expect(await waitingNames()).toEqual([]);
 			});
 
-			test('should admit with waitingRoomAdmit without identities those first in line up to the free places', async ({
+			test('should admit with participantWaitingAdmit without identities those first in line up to the free places', async ({
 				page,
 				browser
 			}) => {
@@ -1116,7 +1116,7 @@ for (const integration of INTEGRATIONS) {
 				expect(await waitingNames()).toEqual(['Ana']);
 			});
 
-			test('should reject with waitingRoomReject without identities everyone waiting', async ({
+			test('should reject with participantWaitingReject without identities everyone waiting', async ({
 				page,
 				browser
 			}) => {

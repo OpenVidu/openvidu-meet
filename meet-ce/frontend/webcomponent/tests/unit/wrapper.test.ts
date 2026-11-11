@@ -50,8 +50,8 @@ interface ComponentInstance {
 	participantReactionSend: jest.Mock;
 	broadcastStart: jest.Mock;
 	broadcastStop: jest.Mock;
-	waitingRoomAdmit: jest.Mock;
-	waitingRoomReject: jest.Mock;
+	participantWaitingAdmit: jest.Mock;
+	participantWaitingReject: jest.Mock;
 }
 
 interface TestableElement extends FakeNgElementBase {
@@ -76,8 +76,8 @@ interface TestableElement extends FakeNgElementBase {
 	participantReactionSend(reaction: string): void;
 	broadcastStart(options?: MeetBroadcastStartOptions): void;
 	broadcastStop(options?: MeetBroadcastStopOptions): void;
-	waitingRoomAdmit(options?: MeetWaitingRoomDecisionOptions): void;
-	waitingRoomReject(options?: MeetWaitingRoomDecisionOptions): void;
+	participantWaitingAdmit(options?: MeetWaitingRoomDecisionOptions): void;
+	participantWaitingReject(options?: MeetWaitingRoomDecisionOptions): void;
 	endMeeting(): void;
 	leaveRoom(): void;
 	kickParticipant(participantIdentity: string): void;
@@ -103,8 +103,8 @@ const componentInstance = (): ComponentInstance => ({
 	participantReactionSend: jest.fn(),
 	broadcastStart: jest.fn(),
 	broadcastStop: jest.fn(),
-	waitingRoomAdmit: jest.fn(),
-	waitingRoomReject: jest.fn()
+	participantWaitingAdmit: jest.fn(),
+	participantWaitingReject: jest.fn()
 });
 
 const withComponent = (): [TestableElement, ComponentInstance] => {
@@ -309,8 +309,8 @@ describe('openvidu-meet custom element', () => {
 			['participantReactionSend', (el) => el.participantReactionSend('thumbs_up'), ['thumbs_up']],
 			['broadcastStart', (el) => el.broadcastStart(start), [start]],
 			['broadcastStop', (el) => el.broadcastStop(stop), [stop]],
-			['waitingRoomAdmit', (el) => el.waitingRoomAdmit(decision), [decision]],
-			['waitingRoomReject', (el) => el.waitingRoomReject(), [undefined]]
+			['participantWaitingAdmit', (el) => el.participantWaitingAdmit(decision), [decision]],
+			['participantWaitingReject', (el) => el.participantWaitingReject(), [undefined]]
 		];
 
 		it.each(commands)('%s() reaches the Angular component instance as it was called', (name, call, args) => {

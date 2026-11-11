@@ -76,14 +76,16 @@ with no replacement.
 - Waiting room, on the REST API, the webhooks and the embedded API: in a room whose
   [`config.waitingRoom`][3.10-room-config] has `enabled` set, participants without the new
   [`waitingRoomBypass`][3.10-permissions] permission ask to join and wait until a holder of `waitingRoomAdmin` admits or
-  rejects them. [`waitingRoomList`][3.10-waiting-room-list], [`waitingRoomAdmit`][3.10-waiting-room-admit] and
-  [`waitingRoomReject`][3.10-waiting-room-reject], and the embedded commands `waitingRoomAdmit` and `waitingRoomReject`,
-  are gated by `waitingRoomAdmin` and take the participants named or everyone waiting. The webhooks
-  [`participantKnocked`][3.10-participant-knocked] and [`waitingRoomStatusChanged`][3.10-waiting-room-status-changed]
-  and the embedded events `participantKnocked`, `waitingRoomUpdated` and `waitingRoomStatusChanged` report who waits and
-  what became of each wait. In these rooms a room member token acts on the meeting (reads, moderation, recording and
-  broadcast control, admission) only if it carries a participant identity, and turning the waiting room on invalidates
-  the room member tokens issued before and updates `rolesUpdatedAt`.
+  rejects them. [`participantWaitingList`][3.10-waiting-room-list],
+  [`participantWaitingAdmit`][3.10-waiting-room-admit] and
+  [`participantWaitingReject`][3.10-waiting-room-reject], and the embedded commands `participantWaitingAdmit` and
+  `participantWaitingReject`, are gated by `waitingRoomAdmin` and take the participants named or everyone waiting. The
+  webhooks [`participantKnocked`][3.10-participant-knocked] and
+  [`waitingRoomStatusChanged`][3.10-waiting-room-status-changed] and the embedded events `participantKnocked`,
+  `waitingRoomUpdated` and `waitingRoomStatusChanged` report who waits and what became of each wait. In these rooms a room member token
+  acts on the meeting (reads, moderation, recording and broadcast control, admission) only if it carries a participant
+  identity, and turning the waiting room on invalidates the room member tokens issued before and updates
+  `rolesUpdatedAt`.
 - User responses carry `isRootAdmin`, `true` for the `MEET_INITIAL_ADMIN_USER` account.
 
 #### UI
@@ -545,8 +547,8 @@ registered on both receives it twice.
 [3.10-broadcast-started]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/broadcastStartedWebhook
 [3.10-broadcast-updated]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/broadcastUpdatedWebhook
 [3.10-broadcast-ended]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/broadcastEndedWebhook
-[3.10-waiting-room-list]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/waitingRoomList
-[3.10-waiting-room-admit]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/waitingRoomAdmit
-[3.10-waiting-room-reject]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/waitingRoomReject
+[3.10-waiting-room-list]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantWaitingList
+[3.10-waiting-room-admit]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantWaitingAdmit
+[3.10-waiting-room-reject]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantWaitingReject
 [3.10-participant-knocked]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantKnockedWebhook
 [3.10-waiting-room-status-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/waitingRoomStatusChangedWebhook

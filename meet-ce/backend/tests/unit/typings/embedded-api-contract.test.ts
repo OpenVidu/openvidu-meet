@@ -41,8 +41,8 @@ describe('Embedded command names', () => {
 				'recordingStop',
 				'broadcastStart',
 				'broadcastStop',
-				'waitingRoomAdmit',
-				'waitingRoomReject',
+				'participantWaitingAdmit',
+				'participantWaitingReject',
 				'endMeeting',
 				'leaveRoom',
 				'kickParticipant'

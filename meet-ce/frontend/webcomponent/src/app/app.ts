@@ -377,12 +377,12 @@ export class App {
 		return this.commandService.broadcastStop(options);
 	}
 
-	waitingRoomAdmit(options?: MeetWaitingRoomDecisionOptions): Promise<void> {
-		return this.commandService.waitingRoomAdmit(options);
+	participantWaitingAdmit(options?: MeetWaitingRoomDecisionOptions): Promise<void> {
+		return this.commandService.participantWaitingAdmit(options);
 	}
 
-	waitingRoomReject(options?: MeetWaitingRoomDecisionOptions): Promise<void> {
-		return this.commandService.waitingRoomReject(options);
+	participantWaitingReject(options?: MeetWaitingRoomDecisionOptions): Promise<void> {
+		return this.commandService.participantWaitingReject(options);
 	}
 
 	// ── Internal ─────────────────────────────────────────────────────────────
