@@ -50,6 +50,7 @@ import type {
 } from '../types/room-projection.types.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
 import { LiveKitService } from './livekit.service.js';
+import { LobbyService } from './lobby/lobby.service.js';
 import { LoggerService } from './logger.service.js';
 import { RecordingService } from './recording.service.js';
 import { RequestSessionService } from './request-session.service.js';
@@ -68,7 +69,8 @@ export class RoomService {
 		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
 		@inject(RecordingService) protected recordingService: RecordingService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
-		@inject(RequestSessionService) protected requestSessionService: RequestSessionService
+		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
+		@inject(LobbyService) protected lobbyService: LobbyService
 	) {}
 
 	/**
@@ -242,8 +244,9 @@ export class RoomService {
 	}
 
 	/**
-	 * Updates the configuration of a specific meeting room.
+	 * Updates the configuration of a specific meeting room without an active meeting.
 	 * Supports partial updates - only provided fields will be updated.
+	 * Turning the waiting room off lets everyone waiting in.
 	 *
 	 * @param roomId - The unique identifier of the meeting room to update
 	 * @param config - Partial config with the fields to update
@@ -282,7 +285,19 @@ export class RoomService {
 		this.validateRecordingAutoStartIsReachable(updatedConfig);
 		this.validateBroadcastHasDestinations(updatedConfig);
 
-		return this.roomRepository.updateConfig(roomId, updatedConfig, broadcastDestinations.urls);
+		const updatedRoom = await this.roomRepository.updateIdleRoomConfig(
+			roomId,
+			updatedConfig,
+			broadcastDestinations.urls
+		);
+
+		if (!updatedRoom) return this.updateMeetRoomConfig(roomId, config);
+
+		if (room.config.lobby.enabled && !updatedRoom.config.lobby.enabled) {
+			await this.lobbyService.letEveryoneIn(roomId);
+		}
+
+		return updatedRoom;
 	}
 
 	/**
@@ -333,6 +348,7 @@ export class RoomService {
 
 			if (status === MeetRoomStatus.CLOSED) {
 				this.logger.info(`Room '${roomId}' closed`);
+				await this.lobbyService.closeRoom(roomId);
 			}
 
 			return { room: updatedRoom, updated: true };
@@ -659,7 +675,10 @@ export class RoomService {
 		if (!hasActiveMeeting && !hasRecordings) {
 			if (!(await this.roomRepository.deleteIdleRoom(roomId))) return null;
 
-			await this.roomMemberRepository.deleteAllByRoomId(roomId);
+			await Promise.all([
+				this.roomMemberRepository.deleteAllByRoomId(roomId),
+				this.lobbyService.closeRoom(roomId)
+			]);
 			return {};
 		}
 
@@ -687,7 +706,11 @@ export class RoomService {
 		if (shouldCloseRoom) {
 			// Close room instead of deleting if recordings exist and policy is CLOSE
 			const updatedRoom = await this.roomRepository.updateIdleRoomStatus(roomId, MeetRoomStatus.CLOSED);
-			return updatedRoom && { room: updatedRoom };
+
+			if (!updatedRoom) return null;
+
+			await this.lobbyService.closeRoom(roomId);
+			return { room: updatedRoom };
 		}
 
 		// Force delete: delete room and all recordings and members
@@ -695,7 +718,8 @@ export class RoomService {
 
 		await Promise.all([
 			this.recordingService.deleteAllRoomRecordings(roomId),
-			this.roomMemberRepository.deleteAllByRoomId(roomId)
+			this.roomMemberRepository.deleteAllByRoomId(roomId),
+			this.lobbyService.closeRoom(roomId)
 		]);
 		return {};
 	}

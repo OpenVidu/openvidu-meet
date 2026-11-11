@@ -22,6 +22,7 @@ import {
 } from '@openvidu-meet/typings';
 import { z } from 'zod';
 import { invalidRegexPatternReason } from '../../utils/string-match-filter.utils.js';
+import { LobbyTicketSchema } from './meeting.schema.js';
 import { maxItemsSchema } from './pagination.schema.js';
 
 /**
@@ -273,21 +274,30 @@ export const UpdateRoomMemberReqSchema = z.object({
 	customPermissions: PartialMeetPermissionsSchema.optional()
 });
 
-export const RoomMemberTokenOptionsSchema: z.ZodType<MeetRoomMemberTokenOptions> = z.object({
-	secret: z.string().optional(),
-	joinMeeting: z.boolean().optional().default(false),
-	participantName: z.string().max(1024, 'participantName cannot exceed 1024 characters').optional(),
-	participantExternalId: z
-		.string()
-		.min(1, 'participantExternalId cannot be empty')
-		.max(64, 'participantExternalId cannot exceed 64 characters')
-		.regex(/^[A-Za-z0-9_-]+$/, 'participantExternalId must contain only letters, digits, underscores and hyphens')
-		.optional(),
-	participantMetadata: z
-		.string()
-		.refine((value) => Buffer.byteLength(value, 'utf8') <= 2048, 'participantMetadata cannot exceed 2048 bytes')
-		.optional()
-});
+export const RoomMemberTokenOptionsSchema: z.ZodType<MeetRoomMemberTokenOptions> = z
+	.object({
+		secret: z.string().optional(),
+		joinMeeting: z.boolean().optional().default(false),
+		participantName: z.string().max(1024, 'participantName cannot exceed 1024 characters').optional(),
+		participantExternalId: z
+			.string()
+			.min(1, 'participantExternalId cannot be empty')
+			.max(64, 'participantExternalId cannot exceed 64 characters')
+			.regex(
+				/^[A-Za-z0-9_-]+$/,
+				'participantExternalId must contain only letters, digits, underscores and hyphens'
+			)
+			.optional(),
+		participantMetadata: z
+			.string()
+			.refine((value) => Buffer.byteLength(value, 'utf8') <= 2048, 'participantMetadata cannot exceed 2048 bytes')
+			.optional(),
+		lobbyTicket: LobbyTicketSchema.optional()
+	})
+	.refine((options) => !options.lobbyTicket || options.joinMeeting, {
+		message: 'lobbyTicket is only accepted with joinMeeting true',
+		path: ['lobbyTicket']
+	});
 
 export const RoomMemberTokenMetadataSchema: z.ZodType<MeetRoomMemberTokenMetadata> = z.object({
 	iat: z.number(),

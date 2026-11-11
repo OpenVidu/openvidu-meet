@@ -179,8 +179,8 @@ export const generateRoomMemberToken = async (req: Request, res: Response) => {
 
 	try {
 		logger.verbose(`Generating room member token for room '${roomId}'`);
-		const token = await roomMemberTokenService.generateRoomMemberToken(roomId, tokenOptions, previousToken);
-		return res.status(200).json({ token });
+		const answer = await roomMemberTokenService.generateRoomMemberToken(roomId, tokenOptions, previousToken);
+		return res.status('lobbyTicket' in answer ? 202 : 200).json(answer);
 	} catch (error) {
 		handleError(res, error, `generating room member token for room '${roomId}'`);
 	}

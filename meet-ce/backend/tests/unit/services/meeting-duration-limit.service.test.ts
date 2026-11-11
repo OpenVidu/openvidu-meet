@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
-import { MeetMeetingEndedReason } from '@openvidu-meet/typings';
+import { MeetEventOrigin, MeetMeetingEndedReason } from '@openvidu-meet/typings';
 import type { Room } from 'livekit-server-sdk';
 import ms from 'ms';
 import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
@@ -125,6 +125,12 @@ const buildService = (
 ) => {
 	const taskScheduler = new FakeTaskSchedulerService();
 	const mutexService = new FakeMutexService();
+	const endedWaits: string[] = [];
+	const lobbyService = {
+		endMeeting: async (roomId: string, origin: MeetEventOrigin) => {
+			endedWaits.push(`${roomId}:${origin}`);
+		}
+	};
 	const service = new TestableMeetingDurationLimitService(
 		...([
 			noopLogger,
@@ -132,10 +138,11 @@ const buildService = (
 			taskScheduler,
 			livekitService,
 			redisService,
-			mutexService
+			mutexService,
+			lobbyService
 		] as unknown as ConstructorParameters<typeof MeetingDurationLimitService>)
 	);
-	return { service, taskScheduler, mutexService };
+	return { service, taskScheduler, mutexService, endedWaits };
 };
 
 describe('MeetingDurationLimitService (the sweep it installs on construction)', () => {
@@ -286,11 +293,12 @@ describe('MeetingDurationLimitService.reconcileDurationLimitTimersGC (C7 follow-
 		buildExpiredRoom(livekitService, roomRepository);
 		livekitService.deleteOutcome = 'already-gone';
 		const redisService = new FakeRedisService();
-		const { service } = buildService(livekitService, roomRepository, redisService);
+		const { service, endedWaits } = buildService(livekitService, roomRepository, redisService);
 
 		await service.runDurationLimitTimersGC();
 
 		expect(redisService.store.get(reasonKey)).toBeUndefined();
+		expect(endedWaits).toEqual([]);
 	});
 
 	it('withdraws the reason flag when its own deleteRoom fails outright', async () => {
@@ -299,11 +307,12 @@ describe('MeetingDurationLimitService.reconcileDurationLimitTimersGC (C7 follow-
 		buildExpiredRoom(livekitService, roomRepository);
 		livekitService.deleteOutcome = 'error';
 		const redisService = new FakeRedisService();
-		const { service } = buildService(livekitService, roomRepository, redisService);
+		const { service, endedWaits } = buildService(livekitService, roomRepository, redisService);
 
 		await expect(service.runDurationLimitTimersGC()).resolves.toBeUndefined();
 
 		expect(redisService.store.get(reasonKey)).toBeUndefined();
+		expect(endedWaits).toEqual([]);
 	});
 
 	it('keeps the reason flag when its own deleteRoom actually ends the meeting', async () => {
@@ -312,11 +321,12 @@ describe('MeetingDurationLimitService.reconcileDurationLimitTimersGC (C7 follow-
 		buildExpiredRoom(livekitService, roomRepository);
 		livekitService.deleteOutcome = 'deleted';
 		const redisService = new FakeRedisService();
-		const { service } = buildService(livekitService, roomRepository, redisService);
+		const { service, endedWaits } = buildService(livekitService, roomRepository, redisService);
 
 		await service.runDurationLimitTimersGC();
 
 		expect(redisService.store.get(reasonKey)).toBe(sid);
+		expect(endedWaits).toEqual([`${roomId}:${MeetEventOrigin.SYSTEM}`]);
 	});
 });
 

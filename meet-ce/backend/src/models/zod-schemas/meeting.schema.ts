@@ -46,6 +46,8 @@ export const LobbyDecisionReqSchema: z.ZodType<MeetLobbyDecisionOptions> = z.obj
 		.optional()
 });
 
+export const LobbyTicketSchema = z.string().min(1).max(100);
+
 export const LobbyLeaveReqSchema = z.object({
-	lobbyTicket: z.string().min(1).max(100)
+	lobbyTicket: LobbyTicketSchema
 });

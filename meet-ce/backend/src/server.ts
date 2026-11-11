@@ -53,7 +53,8 @@ const createApp = () => {
 		app.use(
 			cors({
 				origin: MEET_ENV.SERVER_CORS_ORIGIN,
-				credentials: true
+				credentials: true,
+				exposedHeaders: ['RateLimit']
 			})
 		);
 	}

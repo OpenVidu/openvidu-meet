@@ -457,10 +457,12 @@ export class LivekitWebhookService {
 				this.logger.info(`Deleted room '${roomId}' (and its recordings if any) after its meeting finished`);
 				tasks.push(
 					this.recordingService.deleteAllRoomRecordings(roomId),
-					this.roomMemberRepository.deleteAllByRoomId(roomId)
+					this.roomMemberRepository.deleteAllByRoomId(roomId),
+					this.lobbyService.closeRoom(roomId)
 				);
 			} else if (endedRoom.status === MeetRoomStatus.CLOSED) {
 				this.logger.info(`Closed room '${roomId}' after its meeting finished`);
+				tasks.push(this.lobbyService.closeRoom(roomId));
 			}
 
 			const reason = await this.meetingDurationLimitService.getMeetingEndedReason(roomId, meetingId);

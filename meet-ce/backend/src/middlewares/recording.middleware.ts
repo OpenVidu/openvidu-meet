@@ -128,7 +128,7 @@ export const setupRecordingAuthentication = (permission: 'recordingPlay' | 'reco
  * - ROOM_MANAGER: defaults to owner OR member OR user-access scopes.
  * - ROOM_MEMBER: defaults to member OR user-access scopes.
  */
-export const applyRecordingListAccessFilters = (_req: Request, res: Response, next: NextFunction) => {
+export const applyRecordingListAccessFilters = async (_req: Request, res: Response, next: NextFunction) => {
 	const requestSessionService = container.get(RequestSessionService);
 	const memberRoomId = requestSessionService.getRoomIdFromMember();
 
@@ -137,12 +137,16 @@ export const applyRecordingListAccessFilters = (_req: Request, res: Response, ne
 	// If request is made with room member token,
 	// scope recordings to the associated room and check recordingList permission.
 	if (memberRoomId) {
-		const permissions = requestSessionService.getRoomMemberPermissions();
+		try {
+			const permissions = await container
+				.get(RoomAccessService)
+				.getAuthenticatedRoomMemberPermissions(memberRoomId);
 
-		// If member token does not have recordingList permission, reject the request
-		if (!permissions?.recordingList) {
-			const error = errorInsufficientPermissions();
-			return rejectRequestFromMeetError(res, error);
+			if (!permissions.recordingList) {
+				throw errorInsufficientPermissions();
+			}
+		} catch (error) {
+			return handleError(res, error, 'checking recording permissions');
 		}
 
 		queryOptions.roomId = memberRoomId;

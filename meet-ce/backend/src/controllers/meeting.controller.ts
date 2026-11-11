@@ -4,11 +4,13 @@ import type {
 	MeetParticipantMuteOptions,
 	MeetParticipantReactionOptions
 } from '@openvidu-meet/typings';
+import { MeetEventOrigin } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { handleError, rejectRequestFromMeetError } from '../middlewares/error-handler.middleware.js';
 import { errorInsufficientPermissions } from '../models/error.model.js';
 import { LiveKitService } from '../services/livekit.service.js';
+import { LobbyService } from '../services/lobby/lobby.service.js';
 import { LoggerService } from '../services/logger.service.js';
 import { MeetingService } from '../services/meeting.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
@@ -69,7 +71,10 @@ export const endMeeting = async (req: Request, res: Response) => {
 		logger.info(`Ending meeting from room '${roomId}'`);
 
 		// To end a meeting, we need to delete the room from LiveKit
-		await livekitService.deleteRoom(roomId);
+		if (await livekitService.deleteRoom(roomId)) {
+			await container.get(LobbyService).endMeeting(roomId, MeetEventOrigin.MODERATOR);
+		}
+
 		res.status(200).json({ message: `Meeting in room '${roomId}' ended successfully` });
 	} catch (error) {
 		handleError(res, error, `ending meeting from room '${roomId}'`);
