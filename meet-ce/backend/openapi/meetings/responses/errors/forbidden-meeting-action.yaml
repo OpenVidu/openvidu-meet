@@ -1,0 +1,25 @@
+description: >
+    Forbidden: the caller lacks the permission the operation requires. In a room with the waiting room on, that
+    includes a room member token without a participant identity, which a token obtained without joining is: it
+    acts on the meeting only once it is a join token, issued to a holder of `lobbyBypass` or to an admitted
+    participant. A host application acting for itself uses the API key
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        examples:
+            insufficient_permissions:
+                summary: The role or the room permissions of the caller do not cover the operation, or the token was obtained without joining a room with the waiting room on
+                value:
+                    error: Authorization Error
+                    message: 'Insufficient permissions to access this resource'
+            invalid_token_subject:
+                summary: The user the access token was issued for no longer exists
+                value:
+                    error: Authorization Error
+                    message: 'Invalid token subject'
+            invalid_api_key_subject:
+                summary: The user the API key belongs to no longer exists
+                value:
+                    error: Authorization Error
+                    message: 'Invalid API key subject. The user associated with the API key does not exist'

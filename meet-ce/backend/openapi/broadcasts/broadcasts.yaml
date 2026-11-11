@@ -22,6 +22,10 @@
             Starting a destination the meeting already streams to, or one with the same stream key as a
             destination already streamed to, is rejected with a `409`, as is starting while the meeting has no
             participants.
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Broadcasts
         security:
@@ -64,6 +68,10 @@
             reports how it went.
 
             Requires the `meetingRead` permission.
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Broadcasts
         security:
@@ -79,7 +87,7 @@
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
-                $ref: '../shared/responses/errors/forbidden.yaml'
+                $ref: '../meetings/responses/errors/forbidden-meeting-action.yaml'
             '404':
                 $ref: '../rooms/responses/errors/room-not-found.yaml'
             '422':
@@ -113,6 +121,10 @@
 
             Either every broadcast listed stops or none does: a `broadcastId` that is not in progress in the
             room, including one of another room, answers `404`, and one already stopping `409`.
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Broadcasts
         security:
@@ -131,7 +143,7 @@
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
-                $ref: '../shared/responses/errors/forbidden.yaml'
+                $ref: '../meetings/responses/errors/forbidden-meeting-action.yaml'
             '404':
                 $ref: './responses/errors/broadcast-not-found.yaml'
             '409':
@@ -155,6 +167,10 @@
             Retrieves a broadcast while it is in progress.
 
             Requires the `meetingRead` permission in the broadcast's room.
+
+            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
+            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Broadcasts
         security:
@@ -170,7 +186,7 @@
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
-                $ref: '../shared/responses/errors/forbidden.yaml'
+                $ref: '../meetings/responses/errors/forbidden-meeting-action.yaml'
             '404':
                 $ref: './responses/errors/broadcast-not-found.yaml'
             '422':

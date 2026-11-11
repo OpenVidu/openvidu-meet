@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import type { MeetRoom, MeetRoomConfig } from '@openvidu-meet/typings';
+import type { MeetRoom, MeetRoomConfig, MeetRoomConfigOptions } from '@openvidu-meet/typings';
 import {
 	MeetingEndAction,
 	MeetRoomDeletionErrorCode,
@@ -73,6 +73,50 @@ describe('RoomService.getRequestRoomConfig', () => {
 		await expect(
 			inRequestValidatedAgainst('room-2', () => roomService.getRequestRoomConfig('room-1'))
 		).rejects.toMatchObject({ statusCode: 404 });
+	});
+});
+
+describe('RoomService.updateMeetRoomConfig (waiting room message)', () => {
+	const storedConfig = {
+		broadcast: { enabled: false, destinations: [] },
+		lobby: { enabled: true, message: 'Please wait' }
+	} as unknown as MeetRoomConfig;
+
+	const updateWith = async (config: MeetRoomConfigOptions) => {
+		const updateConfig = jest.fn(async (_roomId: string, written: MeetRoomConfig) => written);
+		const roomService = new RoomService(
+			{ debug: () => {} } as unknown as LoggerService,
+			{
+				findByRoomId: async () => ({ config: storedConfig, status: MeetRoomStatus.OPEN }),
+				findBroadcastDestinationUrls: async () => ({}),
+				updateConfig
+			} as unknown as RoomRepository,
+			{} as never,
+			{} as never,
+			{} as never,
+			{} as never
+		);
+
+		await roomService.updateMeetRoomConfig('room-1', config);
+		return updateConfig.mock.calls[0][1];
+	};
+
+	it('keeps the stored message when the update leaves it out', async () => {
+		expect((await updateWith({ lobby: { enabled: true } })).lobby).toEqual({
+			enabled: true,
+			message: 'Please wait'
+		});
+	});
+
+	it('replaces the stored message with the one sent', async () => {
+		expect((await updateWith({ lobby: { enabled: true, message: 'Soon' } })).lobby.message).toBe('Soon');
+	});
+
+	it('removes the stored message when the update sends null', async () => {
+		const { lobby } = await updateWith({ lobby: { enabled: true, message: null } });
+
+		expect(lobby.enabled).toBe(true);
+		expect(lobby).toHaveProperty('message', undefined);
 	});
 });
 

@@ -113,6 +113,8 @@ export class RoomService {
 			participantMute: true,
 			participantHandLower: true,
 			participantReactionSend: true,
+			lobbyBypass: true,
+			lobbyAdmin: true,
 			meetingEnd: true,
 			mediaPublishVideo: true,
 			mediaPublishAudio: true,
@@ -140,6 +142,8 @@ export class RoomService {
 			participantMute: false,
 			participantHandLower: false,
 			participantReactionSend: true,
+			lobbyBypass: false,
+			lobbyAdmin: false,
 			meetingEnd: false,
 			mediaPublishVideo: true,
 			mediaPublishAudio: true,
@@ -255,6 +259,10 @@ export class RoomService {
 
 		// Merge existing config with new config (partial update)
 		const updatedConfig = merge({}, room.config, config);
+
+		if (config.lobby?.message === null) {
+			updatedConfig.lobby.message = undefined;
+		}
 
 		// The destination list is replaced as a whole, never merged entry by entry, and its saved
 		// URLs are the only ones the room knows: a redacted URL sent back keeps the saved one.

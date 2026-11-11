@@ -89,7 +89,8 @@ describe('Room API Tests', () => {
 					},
 					captions: { enabled: false },
 					raiseHand: { enabled: true },
-					reactions: { enabled: true }
+					reactions: { enabled: true },
+					lobby: { enabled: false }
 				}
 			};
 
@@ -140,7 +141,8 @@ describe('Room API Tests', () => {
 						enabled: true
 					},
 					raiseHand: { enabled: true },
-					reactions: { enabled: true }
+					reactions: { enabled: true },
+					lobby: { enabled: false }
 				}
 			};
 
@@ -163,7 +165,8 @@ describe('Room API Tests', () => {
 				},
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
-				reactions: { enabled: true }
+				reactions: { enabled: true },
+				lobby: { enabled: false }
 			};
 			expectValidRoom(room, 'Partial Config Room', {
 				roomIdPrefix: 'partial_config_room',
@@ -211,7 +214,8 @@ describe('Room API Tests', () => {
 				},
 				captions: { enabled: true }, // Default value
 				raiseHand: { enabled: true },
-				reactions: { enabled: true }
+				reactions: { enabled: true },
+				lobby: { enabled: false }
 			};
 			expectValidRoom(room, 'Partial Config Room', {
 				roomIdPrefix: 'partial_config_room',
@@ -481,7 +485,8 @@ describe('Room API Tests', () => {
 				},
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
-				reactions: { enabled: true }
+				reactions: { enabled: true },
+				lobby: { enabled: false }
 			};
 			expectValidRoom(room, 'Room without encoding', { roomIdPrefix: 'room_without_encoding' });
 			expectExtraFieldsInResponse(room);
@@ -523,7 +528,8 @@ describe('Room API Tests', () => {
 				},
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
-				reactions: { enabled: true }
+				reactions: { enabled: true },
+				lobby: { enabled: false }
 			};
 			expectValidRoom(room, '1080p Preset Room', { roomIdPrefix: '1080p_preset_room' });
 			const response = await getRoom(room.roomId, undefined, 'config');
@@ -563,7 +569,8 @@ describe('Room API Tests', () => {
 				},
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
-				reactions: { enabled: true }
+				reactions: { enabled: true },
+				lobby: { enabled: false }
 			};
 			expectValidRoom(room, 'Portrait 720p Room', { roomIdPrefix: 'portrait_720p_room' });
 			const response = await getRoom(room.roomId, undefined, 'config');
@@ -633,7 +640,8 @@ describe('Room API Tests', () => {
 				},
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
-				reactions: { enabled: true }
+				reactions: { enabled: true },
+				lobby: { enabled: false }
 			};
 			expectValidRoom(room, 'Full Advanced Encoding Room', { roomIdPrefix: 'full_advanced_encoding_room' });
 			const response = await getRoom(room.roomId, undefined, 'config');
@@ -641,6 +649,55 @@ describe('Room API Tests', () => {
 				roomIdPrefix: 'full_advanced_encoding_room',
 				config: expectedConfig
 			});
+		});
+	});
+
+	describe('Waiting Room Configuration Tests', () => {
+		const createRoomRequest = (lobby: unknown) =>
+			request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+				.send({ roomName: 'lobby-config', config: { lobby } });
+
+		it('should create a room with the waiting room off by default', async () => {
+			const room = await createRoom({ roomName: 'lobby-default' });
+			const response = await getRoom(room.roomId, undefined, 'config');
+
+			expect(response.body.config.lobby).toEqual({ enabled: false });
+		});
+
+		it('should store the switch and the message of the waiting room', async () => {
+			const response = await createRoomRequest({ enabled: true, message: 'Please wait' }).expect(201);
+			const room = await getRoom(response.body.roomId, undefined, 'config');
+
+			expect(room.body.config.lobby).toEqual({ enabled: true, message: 'Please wait' });
+		});
+
+		it('should accept a message of 500 characters', async () => {
+			const message = 'a'.repeat(500);
+			const response = await createRoomRequest({ enabled: true, message }).expect(201);
+			const room = await getRoom(response.body.roomId, undefined, 'config');
+
+			expect(room.body.config.lobby.message).toBe(message);
+		});
+
+		it('should fail when the waiting room carries no switch', async () => {
+			const response = await createRoomRequest({ message: 'Please wait' });
+
+			expectValidationError(response, 'config.lobby.enabled', 'Required');
+		});
+
+		it('should fail when the message has 501 characters', async () => {
+			const response = await createRoomRequest({ enabled: true, message: 'a'.repeat(501) });
+
+			expectValidationError(response, 'config.lobby.message', 'Must not exceed 500 characters');
+		});
+
+		it('should fail when the message is null, which only an update accepts', async () => {
+			const response = await createRoomRequest({ enabled: true, message: null });
+
+			expect(response.status).toBe(422);
+			expect(JSON.stringify(response.body.details)).toContain('config.lobby.message');
 		});
 	});
 

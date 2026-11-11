@@ -44,3 +44,12 @@ properties:
             multibyte string of exactly 2048 characters can be rejected as too large). Stored in the
             token metadata as `metadata`; never interpreted by OpenVidu Meet.
         example: '{"department": "cardiology"}'
+    lobbyTicket:
+        type: string
+        description: >
+            The ticket of the participant's wait, as this operation answered it (`202`) when the room has the
+            waiting room on. Once the participant is admitted, the same request with the ticket answers the join
+            token. Only accepted with `joinMeeting` true: any other request carrying it is rejected with a `422`.
+            A request with a ticket ignores any room member token attached as a previous token, and one that
+            resolves to another principal than the ticket's, such as another member's link, answers `403`.
+        example: 'q8d1u3Zr0m6ZxVwK9tHc2A'

@@ -1,0 +1,24 @@
+description: >
+    Validation error: `participantIdentities` is an empty list, names an identity twice or more than 100
+    identities, or the body is otherwise invalid. Nobody is admitted or rejected
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        examples:
+            empty_list:
+                summary: An empty list is never read as everyone waiting
+                value:
+                    error: 'Unprocessable Entity'
+                    message: 'Invalid request'
+                    details:
+                        - field: 'participantIdentities'
+                          message: 'Must name at least one participant'
+            repeated_identity:
+                summary: An identity named twice
+                value:
+                    error: 'Unprocessable Entity'
+                    message: 'Invalid request'
+                    details:
+                        - field: 'participantIdentities'
+                          message: 'Must not repeat an identity'

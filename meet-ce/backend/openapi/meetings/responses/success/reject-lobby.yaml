@@ -1,0 +1,21 @@
+description: The participants rejected
+content:
+    application/json:
+        schema:
+            type: object
+            required:
+                - participants
+            properties:
+                participants:
+                    type: array
+                    description: >
+                        The participants rejected, in arrival order. Possibly none when `participantIdentities` was
+                        omitted: nobody was waiting or the room's waiting room is off.
+                    items:
+                        $ref: '../../schemas/meet-lobby-participant.yaml'
+        example:
+            participants:
+                - participantIdentity: 'ben_smith'
+                  participantName: 'Ben'
+                  type: identified_guest
+                  knockDate: 1620000004000

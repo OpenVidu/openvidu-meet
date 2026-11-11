@@ -24,6 +24,7 @@ describe('Room API Tests', () => {
 		captions: { enabled: true },
 		raiseHand: { enabled: true },
 		reactions: { enabled: true },
+		lobby: { enabled: false },
 		initialAudioActive: true,
 		initialVideoActive: true
 	};
@@ -67,6 +68,7 @@ describe('Room API Tests', () => {
 					captions: { enabled: true },
 					raiseHand: { enabled: true },
 					reactions: { enabled: true },
+					lobby: { enabled: false },
 					initialAudioActive: false,
 					initialVideoActive: true
 				}

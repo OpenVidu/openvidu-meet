@@ -1,4 +1,4 @@
-import { MeetBroadcastConfig, MeetRoomConfig } from '../database/room-config.js';
+import { MeetBroadcastConfig, MeetLobbyConfig, MeetRoomConfig } from '../database/room-config.js';
 import { MeetRoomMemberPermissions } from '../database/room-member-permissions.js';
 import { MeetRoomAutoDeletionPolicy } from '../database/room.entity.js';
 
@@ -39,10 +39,18 @@ export interface MeetRoomOptions {
  * field is optional. Omitted, a field takes its default on creation and keeps its current value on
  * an update. See {@link MeetRoomConfig} for details.
  */
-export type MeetRoomConfigOptions = Partial<Omit<MeetRoomConfig, 'broadcast'>> & {
+export type MeetRoomConfigOptions = Partial<Omit<MeetRoomConfig, 'broadcast' | 'lobby'>> & {
 	/** Live broadcast configuration. See {@link MeetBroadcastConfigOptions} for details. */
 	broadcast?: MeetBroadcastConfigOptions;
+	/** Waiting room configuration. See {@link MeetLobbyConfigOptions} for details. */
+	lobby?: MeetLobbyConfigOptions;
 };
+
+/**
+ * Waiting room configuration as a request sends it: on an update, a `message` of `null` removes the
+ * saved one, which a room's config never returns as `null`. See {@link MeetLobbyConfig} for details.
+ */
+export type MeetLobbyConfigOptions = Omit<MeetLobbyConfig, 'message'> & { message?: string | null };
 
 /**
  * Live broadcast configuration as a request sends it. The switch and the destination list are

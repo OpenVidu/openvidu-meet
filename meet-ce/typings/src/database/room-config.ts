@@ -376,8 +376,8 @@ export interface MeetLobbyConfig {
 	 */
 	enabled: boolean;
 	/**
-	 * Message the waiting participants see while they wait, up to 500 characters. On an update,
-	 * `null` removes it.
+	 * Message the waiting participants see while they wait, up to 500 characters. An update that
+	 * sends `null` removes it (see {@link MeetLobbyConfigOptions}).
 	 */
 	message?: string;
 }

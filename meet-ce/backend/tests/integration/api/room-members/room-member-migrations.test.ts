@@ -66,6 +66,8 @@ const expectedCurrentEffectivePermissions = {
 	participantMute: false,
 	participantHandLower: false,
 	participantReactionSend: true,
+	lobbyBypass: false,
+	lobbyAdmin: false,
 	meetingEnd: false,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -73,6 +75,25 @@ const expectedCurrentEffectivePermissions = {
 	chatRead: true,
 	chatWrite: true,
 	mediaChangeVirtualBackground: true
+};
+
+// v6 is what the live broadcast builds store: the current shape without the waiting room permissions.
+const buildLegacyRoomMemberV6 = (roomId: string, memberId: string, baseRole: MeetRoomMemberRole) => {
+	const { lobbyBypass: _bypass, lobbyAdmin: _admin, ...effectivePermissions } = expectedCurrentEffectivePermissions;
+
+	return {
+		schemaVersion: 6,
+		memberId,
+		roomId,
+		type: MeetRoomMemberType.IDENTIFIED_GUEST,
+		name: 'Legacy Member',
+		membershipDate: Date.now(),
+		accessUrl: `/room/${roomId}?secret=${memberId}`,
+		baseRole,
+		customPermissions: { chatWrite: false },
+		effectivePermissions,
+		permissionsUpdatedAt: Date.now()
+	};
 };
 
 // The partial custom overlay stays partial: the legacy flags rename (and the retrieval flag expands
@@ -96,6 +117,31 @@ describe('Room Member Schema Migrations', () => {
 
 			expect(migratedMember.effectivePermissions).toEqual(expectedCurrentEffectivePermissions);
 			expect(migratedMember.customPermissions).toEqual(expectedCurrentCustomPermissions);
+		});
+
+		it('should transform room member schema from v6 to v7 granting the waiting room permissions to a moderator only', () => {
+			const migrationName = generateSchemaMigrationName(meetRoomMemberCollectionName, 6, 7);
+			const transform = roomMemberMigrations.get(migrationName);
+			expect(transform).toBeDefined();
+
+			const moderator = transform!(
+				buildLegacyRoomMemberV6(
+					'room-v6',
+					'moderator-v6',
+					MeetRoomMemberRole.MODERATOR
+				) as unknown as MeetRoomMemberDocument
+			);
+			expect(moderator.effectivePermissions).toMatchObject({ lobbyBypass: true, lobbyAdmin: true });
+			expect(moderator.customPermissions).toEqual({ chatWrite: false });
+
+			const speaker = transform!(
+				buildLegacyRoomMemberV6(
+					'room-v6',
+					'speaker-v6',
+					MeetRoomMemberRole.SPEAKER
+				) as unknown as MeetRoomMemberDocument
+			);
+			expect(speaker.effectivePermissions).toMatchObject({ lobbyBypass: false, lobbyAdmin: false });
 		});
 
 		it('should leave an absent customPermissions untouched', () => {
@@ -145,6 +191,32 @@ describe('Room Member Schema Migrations', () => {
 			expect(migratedMember).not.toHaveProperty('effectivePermissions.canRecord');
 			expect(migratedMember).not.toHaveProperty('effectivePermissions.canRetrieveRecordings');
 			expect(migratedMember).not.toHaveProperty('customPermissions.canRecord');
+		});
+
+		it('should migrate a legacy room member document from v6 to the current version, granting the waiting room permissions by role', async () => {
+			const roomId = `legacy-member-room-v6-${Date.now()}`;
+			const moderatorId = `legacy-moderator-${Date.now()}`;
+			const speakerId = `legacy-speaker-${Date.now()}`;
+			testRoomIds.push(roomId);
+
+			await MeetRoomMemberModel.collection.insertMany([
+				buildLegacyRoomMemberV6(roomId, moderatorId, MeetRoomMemberRole.MODERATOR),
+				buildLegacyRoomMemberV6(roomId, speakerId, MeetRoomMemberRole.SPEAKER)
+			]);
+			await migrationService.runMigrations();
+
+			const moderator = await MeetRoomMemberModel.collection.findOne({ roomId, memberId: moderatorId });
+			const speaker = await MeetRoomMemberModel.collection.findOne({ roomId, memberId: speakerId });
+			expect(moderator).toMatchObject({
+				schemaVersion: INTERNAL_CONFIG.ROOM_MEMBER_SCHEMA_VERSION,
+				effectivePermissions: { ...expectedCurrentEffectivePermissions, lobbyBypass: true, lobbyAdmin: true },
+				customPermissions: { chatWrite: false }
+			});
+			expect(speaker).toMatchObject({
+				schemaVersion: INTERNAL_CONFIG.ROOM_MEMBER_SCHEMA_VERSION,
+				effectivePermissions: expectedCurrentEffectivePermissions,
+				customPermissions: { chatWrite: false }
+			});
 		});
 	});
 });

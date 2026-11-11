@@ -1,0 +1,3 @@
+description: >
+    The wait is over, or there was nothing to end: the answer is the same for a ticket that is unknown, whose
+    wait already ended, or that belongs to another room than the one in the path, which have no effect

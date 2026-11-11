@@ -1,0 +1,32 @@
+description: >
+    The waiting participants to decide on. Without `participantIdentities` (an empty body or `{}`), everyone
+    waiting.
+required: false
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                participantIdentities:
+                    type: array
+                    minItems: 1
+                    maxItems: 100
+                    uniqueItems: true
+                    description: >
+                        The identities of the waiting participants to decide on, one or several, each named once.
+                        Omitted, everyone waiting. An empty list is rejected with a `422`, never read as everyone.
+                    items:
+                        type: string
+                        example: 'ana-a1b2c3'
+        examples:
+            oneParticipant:
+                summary: One participant
+                value:
+                    participantIdentities: ['ana-a1b2c3']
+            severalParticipants:
+                summary: Several participants
+                value:
+                    participantIdentities: ['ana-a1b2c3', 'ben-d4e5f6']
+            everyoneWaiting:
+                summary: Everyone waiting
+                value: {}

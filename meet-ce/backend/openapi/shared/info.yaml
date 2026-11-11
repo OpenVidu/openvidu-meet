@@ -23,7 +23,10 @@ description: |
 
     - **API key** (`X-API-KEY`): not subject to any permission check.
     - **Room member token** (`X-Room-Member-Token`): the permissions the token itself carries, for the one
-      room it was issued for.
+      room it was issued for. In a room with the waiting room on (`lobby.enabled`), a token obtained without
+      joining the meeting, with no participant identity, keeps only the recording retrieval and deletion
+      permissions and `roomShareAccessLinks`: every operation on the meeting answers `403` to it, and only a
+      join token, issued to a holder of `lobbyBypass` or to an admitted participant, acts on the meeting.
     - **User access token** (`Authorization`): administrators and the room's owner always hold every
       permission; a room member holds their effective permissions; any other user holds the speaker role's
       permissions when the room has `access.user.enabled`, and none otherwise.

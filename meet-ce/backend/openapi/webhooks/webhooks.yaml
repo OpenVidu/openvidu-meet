@@ -469,3 +469,111 @@ participantHandChanged:
         responses:
             '200':
                 $ref: ./responses/success/webhook-success.yaml
+
+participantKnocked:
+    post:
+        summary: Participant knocked
+        description: |
+            This webhook is triggered when a participant asks to join a room with the waiting room on and starts
+            waiting to be admitted, once per wait. A participant who asks again starts a new wait and a new
+            webhook. The [`lobbyStatusChanged`](#/webhooks/lobbyStatusChangedWebhook) webhook reports each later
+            change of the wait.
+
+            > It is sent when the participant asks, before their waiting screen connects: a participant who never
+            > connects it is removed from the line within about 20 seconds, which `lobbyStatusChanged` reports as
+            > `expired`.
+            >
+            > The `participant` is a [`MeetLobbyParticipant`](#/schemas/MeetLobbyParticipant). Its `externalId` and
+            > `metadata` are as sent by the participant's client and never a proof of identity: a backend that
+            > admits on its own identifies a waiting participant by `type` and by the `participantIdentity` of a
+            > member or user, which the server derives from their personal link or account.
+            >
+            > Webhooks are not stored: one is lost if the Meet replica sending it stops, may be repeated by the
+            > retries and is not ordered with the others. The `knockDate` of the participant and the
+            > `creationDate` of the event order them.
+        operationId: participantKnockedWebhook
+        parameters:
+            - $ref: ./parameters/x-timestamp.yaml
+            - $ref: ./parameters/x-signature.yaml
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        allOf:
+                            - $ref: ./schemas/webhook-base-event.yaml
+                            - properties:
+                                  event:
+                                      example: participantKnocked
+                                  data:
+                                      $ref: ./schemas/meet-participant-knocked-event.yaml
+                    example:
+                        creationDate: 1620000000500
+                        event: participantKnocked
+                        data:
+                            roomId: 'room-123'
+                            roomName: 'room'
+                            participant:
+                                participantIdentity: 'ana-a1b2c3'
+                                participantName: 'Ana'
+                                type: anonymous
+                                externalId: 'user-42'
+                                knockDate: 1620000000000
+        responses:
+            '200':
+                $ref: ./responses/success/webhook-success.yaml
+
+lobbyStatusChanged:
+    post:
+        summary: Lobby status changed
+        description: |
+            This webhook is triggered when a wait in the waiting room changes after the
+            [`participantKnocked`](#/webhooks/participantKnockedWebhook) webhook: the participant is admitted,
+            rejected, leaves, loses their place, returns to the line or the wait ends with the meeting or the
+            room. `status` says what happened and `origin` who caused it. A decision on everyone waiting sends one
+            webhook per participant.
+
+            > The time a participant waited is the `creationDate` of the event minus the `knockDate` of the
+            > `participant`: a repeated delivery carries the same values.
+            >
+            > `admitted` is not the join: the [`participantJoined`](#/webhooks/participantJoinedWebhook) webhook
+            > confirms it, with the same `participantIdentity`.
+            >
+            > Webhooks are not stored: one is lost if the Meet replica sending it stops, may be repeated by the
+            > retries and is not ordered with the others. The `knockDate` of the participant and the
+            > `creationDate` of the event order them.
+        operationId: lobbyStatusChangedWebhook
+        parameters:
+            - $ref: ./parameters/x-timestamp.yaml
+            - $ref: ./parameters/x-signature.yaml
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        allOf:
+                            - $ref: ./schemas/webhook-base-event.yaml
+                            - properties:
+                                  event:
+                                      example: lobbyStatusChanged
+                                  data:
+                                      $ref: ./schemas/meet-lobby-status-changed-event.yaml
+                    example:
+                        creationDate: 1620000012000
+                        event: lobbyStatusChanged
+                        data:
+                            roomId: 'room-123'
+                            roomName: 'room'
+                            participant:
+                                participantIdentity: 'ana-a1b2c3'
+                                participantName: 'Ana'
+                                type: anonymous
+                                externalId: 'user-42'
+                                knockDate: 1620000000000
+                            status: admitted
+                            origin: moderator
+        responses:
+            '200':
+                $ref: ./responses/success/webhook-success.yaml

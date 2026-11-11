@@ -154,6 +154,8 @@ const expectedCurrentModeratorPermissions = {
 	participantMute: false,
 	participantHandLower: true,
 	participantReactionSend: true,
+	lobbyBypass: true,
+	lobbyAdmin: true,
 	meetingEnd: true,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -179,6 +181,8 @@ const expectedCurrentSpeakerPermissions = {
 	participantMute: false,
 	participantHandLower: false,
 	participantReactionSend: true,
+	lobbyBypass: false,
+	lobbyAdmin: false,
 	meetingEnd: false,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -221,7 +225,8 @@ const expectMigratedRoomToCurrentVersion = (migratedRoom: Record<string, unknown
 				enabled: true
 			},
 			raiseHand: { enabled: true },
-			reactions: { enabled: true }
+			reactions: { enabled: true },
+			lobby: { enabled: false }
 		},
 		roles: {
 			moderator: {
@@ -266,9 +271,13 @@ const expectMigratedRoomToCurrentVersion = (migratedRoom: Record<string, unknown
 	expect(migratedRoom).not.toHaveProperty('roles.speaker.permissions.canRetrieveRecordings');
 };
 
-// v7 is what 3.9.0 stores: the current shape without the live broadcast config and permissions.
-const withoutBroadcastPermissions = (permissions: Record<string, boolean>) =>
-	Object.fromEntries(Object.entries(permissions).filter(([key]) => !key.startsWith('broadcast')));
+const withoutPermissionsStartingWith = (permissions: Record<string, boolean>, ...prefixes: string[]) =>
+	Object.fromEntries(
+		Object.entries(permissions).filter(([key]) => !prefixes.some((prefix) => key.startsWith(prefix)))
+	);
+
+// v7 is what 3.9.0 stores: the current shape without the live broadcast and waiting room permissions and
+// without the live broadcast config.
 
 const buildLegacyRoomV7 = (roomId: string) => ({
 	schemaVersion: 7,
@@ -288,8 +297,12 @@ const buildLegacyRoomV7 = (roomId: string) => ({
 		reactions: { enabled: true }
 	},
 	roles: {
-		moderator: { permissions: withoutBroadcastPermissions(expectedCurrentModeratorPermissions) },
-		speaker: { permissions: withoutBroadcastPermissions(expectedCurrentSpeakerPermissions) }
+		moderator: {
+			permissions: withoutPermissionsStartingWith(expectedCurrentModeratorPermissions, 'broadcast', 'lobby')
+		},
+		speaker: {
+			permissions: withoutPermissionsStartingWith(expectedCurrentSpeakerPermissions, 'broadcast', 'lobby')
+		}
 	},
 	access: {
 		anonymous: {
@@ -301,6 +314,31 @@ const buildLegacyRoomV7 = (roomId: string) => ({
 	},
 	rolesUpdatedAt: Date.now()
 });
+
+// v9 is what the live broadcast builds store: the current shape without the waiting room config and
+// permissions.
+const buildLegacyRoomV9 = (roomId: string) => {
+	const roomV7 = buildLegacyRoomV7(roomId);
+
+	return {
+		...roomV7,
+		schemaVersion: 9,
+		config: {
+			...roomV7.config,
+			broadcast: {
+				enabled: false,
+				destinations: [],
+				layout: MeetRecordingLayout.GRID,
+				encoding: MeetRecordingEncodingPreset.H264_720P_30
+			}
+		},
+		broadcastDestinationUrls: {},
+		roles: {
+			moderator: { permissions: withoutPermissionsStartingWith(expectedCurrentModeratorPermissions, 'lobby') },
+			speaker: { permissions: withoutPermissionsStartingWith(expectedCurrentSpeakerPermissions, 'lobby') }
+		}
+	};
+};
 
 describe('Room Schema Migrations', () => {
 	/**
@@ -483,8 +521,22 @@ describe('Room Schema Migrations', () => {
 
 			expect(migratedRoom.roles.moderator.permissions).toEqual({
 				...expectedCurrentModeratorPermissions,
-				participantHandLower: false
+				participantHandLower: false,
+				lobbyBypass: false,
+				lobbyAdmin: false
 			});
+			expect(migratedRoom.roles.speaker.permissions).toEqual(expectedCurrentSpeakerPermissions);
+		});
+
+		it('should transform room schema from v9 to v10 adding the waiting room, off, and granting its permissions to the moderator role', () => {
+			const migrationName = generateSchemaMigrationName(meetRoomCollectionName, 9, 10);
+			const transform = roomMigrations.get(migrationName);
+			expect(transform).toBeDefined();
+
+			const migratedRoom = transform!(buildLegacyRoomV9('room-v9') as unknown as MeetRoomDocument);
+
+			expect(migratedRoom.config.lobby).toEqual({ enabled: false });
+			expect(migratedRoom.roles.moderator.permissions).toEqual(expectedCurrentModeratorPermissions);
 			expect(migratedRoom.roles.speaker.permissions).toEqual(expectedCurrentSpeakerPermissions);
 		});
 	});
@@ -526,7 +578,8 @@ describe('Room Schema Migrations', () => {
 			{ fromVersion: 1, buildDocument: buildLegacyRoomV1 },
 			{ fromVersion: 2, buildDocument: buildLegacyRoomV2 },
 			{ fromVersion: 3, buildDocument: buildLegacyRoomV3 },
-			{ fromVersion: 7, buildDocument: buildLegacyRoomV7 }
+			{ fromVersion: 7, buildDocument: buildLegacyRoomV7 },
+			{ fromVersion: 9, buildDocument: buildLegacyRoomV9 }
 		])(
 			'should migrate a legacy room document from v$fromVersion to the current version',
 			async ({ buildDocument }) => {

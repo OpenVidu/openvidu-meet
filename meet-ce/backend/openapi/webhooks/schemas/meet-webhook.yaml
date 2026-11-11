@@ -18,6 +18,8 @@ MeetWebhookEvent:
                       - meetingEnded
                       - participantJoined
                       - participantLeft
+                      - participantKnocked
                       - participantRoleChanged
                       - participantHandChanged
+                      - lobbyStatusChanged
                   example: recordingStarted

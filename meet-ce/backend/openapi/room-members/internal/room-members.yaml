@@ -6,6 +6,18 @@
             Generates a token for a user to access an OpenVidu Meet room and its resources.
 
 
+            When the room's config has `lobby.enabled` and the participant joining (`joinMeeting` true) lacks
+            `lobbyBypass`, the request runs the usual join checks, puts the participant in the waiting line and
+            answers `202` with a `lobbyTicket` and their `participantIdentity` instead of a token: nothing is
+            reserved or counted, the meeting does not start and the room stays `open`. It answers `409` when the
+            line already holds 100 participants. Once a participant is admitted, the same request with the
+            `lobbyTicket` in the body answers the join token, applying the join checks again, including the
+            participant limit: a participant who finds the meeting full goes back to their place in the line
+            (`202`). The ticket always answers by the state of its wait: still waiting `202`, admitted a token, an
+            ended wait `409` with its `status`, and so does a ticket Meet does not know, which includes one of
+            another room, without `status`. A ticket never starts a new wait: asking again is a request without it.
+
+
             A `secret` in the request body authenticates on its own: one of the room's access secrets, or the
             `secret` of an identified guest's `accessUrl`. The anonymous recording secret yields a token that only allows
             retrieval of room recordings. Without a `secret` a user access token is required.
@@ -26,6 +38,8 @@
         responses:
             '200':
                 $ref: './responses/success/generate-room-member-token.yaml'
+            '202':
+                $ref: './responses/success/lobby-ticket.yaml'
             '400':
                 $ref: './responses/errors/invalid-room-member-token-request.yaml'
             '401':
@@ -52,8 +66,9 @@
         description: >
             Refreshes a room member token for a participant already connected to a meeting.
             Requires in `X-Room-Member-Token` a room member token the server still accepts, expired at most
-            10 seconds ago. A token issued before a change of the room's roles or access, of the member's
-            permissions or of the user's role, or after the member or the user was deleted, answers `401`;
+            10 seconds ago. A token issued before a change of the room's roles or access, before the room's
+            waiting room was turned on, or before a change of the member's permissions or of the user's role,
+            or after the member or the user was deleted, answers `401`;
             one issued before the participant's demotion is renewed with the restored permissions.
         tags:
             - Internal API - Room Members
