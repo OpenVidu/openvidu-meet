@@ -626,6 +626,7 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 	let liveParticipant: ParticipantInfo;
 	let deleteParticipant: jest.Mock<(roomId: string, identity: string) => Promise<void>>;
 	let webhookDispatcherService: { sendParticipantJoinedWebhook: jest.Mock; sendParticipantLeftWebhook: jest.Mock };
+	let lobbyService: { joined: jest.Mock<(roomId: string, identity: string) => Promise<void>> };
 	let service: LivekitWebhookService;
 
 	const ISSUED_BEFORE_DEMOTION = {};
@@ -662,6 +663,7 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 		jest.spyOn(container.get(RoomRepository), 'findByRoomId').mockResolvedValue({ rolesUpdatedAt: 0 } as never);
 		deleteParticipant = jest.fn(async () => {});
 		webhookDispatcherService = { sendParticipantJoinedWebhook: jest.fn(), sendParticipantLeftWebhook: jest.fn() };
+		lobbyService = { joined: jest.fn(async () => {}) };
 		const silent = () => {};
 
 		service = new LivekitWebhookService(
@@ -680,7 +682,9 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 				container.get(TokenService),
 				redis,
 				{ info: silent, warn: silent, debug: silent, verbose: silent, error: silent },
-				{ getBroadcasts: async () => [] }
+				{ getBroadcasts: async () => [] },
+				{},
+				lobbyService
 			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
 		);
 	});
@@ -737,6 +741,26 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 		await service.handleParticipantJoined(ROOM, liveParticipant);
 
 		expect(getParticipant).not.toHaveBeenCalled();
+	});
+
+	it('releases the waiting room place of the participant, also of a session it then removes', async () => {
+		liveParticipant = session(ISSUED_BEFORE_DEMOTION);
+
+		await service.handleParticipantJoined(ROOM, liveParticipant);
+
+		expect(lobbyService.joined).toHaveBeenCalledWith(ROOM.name, IDENTITY);
+		expect(lobbyService.joined.mock.invocationCallOrder[0]).toBeLessThan(
+			deleteParticipant.mock.invocationCallOrder[0]
+		);
+	});
+
+	it('does not look for a waiting room place of a participant that is not a person', async () => {
+		await service.handleParticipantJoined(ROOM, {
+			...session(),
+			kind: ParticipantInfo_Kind.AGENT
+		} as ParticipantInfo);
+
+		expect(lobbyService.joined).not.toHaveBeenCalled();
 	});
 
 	it('leaves a session without Meet metadata alone', async () => {
@@ -825,7 +849,9 @@ describe('LivekitWebhookService participant presence and meeting state', () => {
 				},
 				new FakeRedisService(),
 				new FakeLogger(),
-				{ getBroadcasts: async () => roomBroadcasts }
+				{ getBroadcasts: async () => roomBroadcasts },
+				{},
+				{ joined: async () => {} }
 			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
 		);
 
@@ -1096,7 +1122,8 @@ describe('LivekitWebhookService handlers whose collaborators fail', () => {
 			{ get: async () => null, delete: failing },
 			new FakeLogger(),
 			{ getBroadcasts: async () => [] },
-			new FakeMeetingDurationLimitService()
+			new FakeMeetingDurationLimitService(),
+			{ joined: async () => {} }
 		] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
 	);
 

@@ -46,6 +46,11 @@ import { BroadcastService } from '../services/broadcast.service.js';
 import { FrontendEventService } from '../services/frontend-event.service.js';
 import { LivekitWebhookService } from '../services/livekit-webhook.service.js';
 import { LiveKitService } from '../services/livekit.service.js';
+import { LobbyAdmissionPolicy } from '../services/lobby/lobby-admission.policy.js';
+import { LobbyRealtimeHandler } from '../services/lobby/lobby-realtime.handler.js';
+import { LobbyStateService } from '../services/lobby/lobby-state.service.js';
+import { LobbySweepTask } from '../services/lobby/lobby-sweep.task.js';
+import { LobbyService } from '../services/lobby/lobby.service.js';
 import { MeetingDurationLimitService } from '../services/meeting-duration-limit.service.js';
 import { MeetingPresenceService } from '../services/meeting-presence.service.js';
 import { MeetingService } from '../services/meeting.service.js';
@@ -171,6 +176,11 @@ const domainModule = new ContainerModule(({ bind }) => {
 	bind(BroadcastScheduledTasksService).toSelf().inSingletonScope();
 	bind(AnalyticsService).toSelf().inSingletonScope();
 	bind(AiAssistantService).toSelf().inSingletonScope();
+	bind(LobbyAdmissionPolicy).toSelf().inSingletonScope();
+	bind(LobbyStateService).toSelf().inSingletonScope();
+	bind(LobbyService).toSelf().inSingletonScope();
+	bind(LobbyRealtimeHandler).toSelf().inSingletonScope();
+	bind(LobbySweepTask).toSelf().inSingletonScope();
 });
 
 /**
@@ -215,4 +225,8 @@ export const initializeEagerServices = async () => {
 	container.get(RoomScheduledTasksService);
 	container.get(MeetingDurationLimitService);
 	container.get(BroadcastScheduledTasksService);
+	container.get(LobbySweepTask);
+
+	// Registers the waiting room's WebSocket connections before the server listens
+	container.get(LobbyRealtimeHandler);
 };

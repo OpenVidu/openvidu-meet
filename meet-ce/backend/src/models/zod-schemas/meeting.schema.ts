@@ -1,6 +1,11 @@
-import type { MeetParticipantHandOptions, MeetParticipantReactionOptions } from '@openvidu-meet/typings';
+import type {
+	MeetLobbyDecisionOptions,
+	MeetParticipantHandOptions,
+	MeetParticipantReactionOptions
+} from '@openvidu-meet/typings';
 import { MeetParticipantModerationAction, MeetReaction } from '@openvidu-meet/typings';
 import { z } from 'zod';
+import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 
 export const UpdateParticipantRoleReqSchema = z.object({
 	action: z.enum(MeetParticipantModerationAction)
@@ -29,4 +34,18 @@ export const LowerAllHandsReqSchema: z.ZodType<MeetParticipantHandOptions> = z.o
 
 export const SendParticipantReactionReqSchema: z.ZodType<MeetParticipantReactionOptions> = z.object({
 	reaction: z.enum(MeetReaction)
+});
+
+// Omitted means everyone waiting, so an empty list is refused instead of being read as everyone.
+export const LobbyDecisionReqSchema: z.ZodType<MeetLobbyDecisionOptions> = z.object({
+	participantIdentities: z
+		.array(z.string().min(1))
+		.min(1, 'Must name at least one participant')
+		.max(INTERNAL_CONFIG.LOBBY_MAX_ENTRIES)
+		.refine((identities) => new Set(identities).size === identities.length, 'Must not repeat an identity')
+		.optional()
+});
+
+export const LobbyLeaveReqSchema = z.object({
+	lobbyTicket: z.string().min(1).max(100)
 });

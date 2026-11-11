@@ -216,4 +216,33 @@ describe('FrontendEventService signal payloads', () => {
 			}
 		]);
 	});
+
+	it('tells the whole meeting that the waiting list changed, naming nobody, while the room exists', async () => {
+		const { service, sent } = buildService();
+
+		await service.sendLobbyUpdatedSignal('room-1');
+
+		expect(sent).toEqual([
+			{
+				roomName: 'room-1',
+				data: { roomId: 'room-1', timestamp: expect.any(Number) },
+				options: { topic: MeetSignalType.MEET_LOBBY_UPDATED }
+			}
+		]);
+	});
+});
+
+describe('FrontendEventService waiting list signal', () => {
+	it('is not sent to a room the media server does not have, since a list changes with no meeting running', async () => {
+		const sendData = jest.fn(async () => {});
+		const service = new FrontendEventService(
+			...([noopLogger, { roomExists: async () => false, sendData }] as unknown as ConstructorParameters<
+				typeof FrontendEventService
+			>)
+		);
+
+		await service.sendLobbyUpdatedSignal('room-1');
+
+		expect(sendData).not.toHaveBeenCalled();
+	});
 });
