@@ -7,6 +7,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ParticipantPanelParticipantBadgeDirective } from '../../../../directives/template/internals.directive';
 import { ParticipantPanelItemElementsDirective } from '../../../../directives/template/openvidu-components-angular.directive';
+import { MeetingMaterialSymbol } from '../../../../../icons/meeting-material-symbols';
 import { MeetingReactionsService } from '../../../../../services/meeting-reactions.service';
 import { ParticipantMediaKind, ParticipantModel } from '../../../../models/participant.model';
 import { REACTION_NAME_KEYS } from '../../../../models/reaction.model';
@@ -23,7 +24,7 @@ type MediaControlState = 'active' | 'off';
 
 /** How a device reads while it has something to say. */
 export interface ParticipantMediaFace {
-	icon: string;
+	icon: MeetingMaterialSymbol;
 	state: MediaControlState;
 	labelKey: string;
 	actionable: boolean;
@@ -44,9 +45,9 @@ interface MediaControlDescriptor {
 	kind: ParticipantMediaKind;
 	idPrefix: string;
 	isLive: (participant: ParticipantModel) => boolean;
-	active: { icon: string; labelKey: string };
+	active: { icon: MeetingMaterialSymbol; labelKey: string };
 	/** Absent for a device whose inactive state is not worth saying out loud. */
-	off?: { icon: string; labelKey: string };
+	off?: { icon: MeetingMaterialSymbol; labelKey: string };
 	actionLabelKey: string;
 }
 

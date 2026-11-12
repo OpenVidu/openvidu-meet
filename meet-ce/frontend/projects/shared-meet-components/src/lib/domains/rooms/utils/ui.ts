@@ -1,4 +1,5 @@
 import { MeetingEndAction, MeetRoom, MeetRoomStatus, MeetUserRole } from '@openvidu-meet/typings';
+import { RoomsMaterialSymbol } from '../icons/rooms-material-symbols';
 
 /**
  * Utility functions for Room-related UI operations.
@@ -161,7 +162,7 @@ export class RoomUiUtils {
 	/**
 	 * Gets the Material icon name for auto-deletion status
 	 */
-	static getAutoDeletionIcon(room: MeetRoom): string {
+	static getAutoDeletionIcon(room: MeetRoom): RoomsMaterialSymbol {
 		if (!room.autoDeletionDate) {
 			return 'close';
 		}

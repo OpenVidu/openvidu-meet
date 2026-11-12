@@ -18,13 +18,14 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetRoomAccess } from '@openvidu-meet/typings';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { NavigationService } from '../../../../shared/services/navigation.service';
+import { RoomsMaterialSymbol } from '../../icons/rooms-material-symbols';
 import { WizardStepId } from '../../models/wizard.model';
 
 export type RoomAccessType = 'anonymous-moderator' | 'anonymous-speaker' | 'user';
 
 interface AnonymousAccessOption {
 	type: Exclude<RoomAccessType, 'user'>;
-	icon: string;
+	icon: RoomsMaterialSymbol;
 	title: string;
 	enabledDescription: string;
 	link: { enabled: boolean; url: string };

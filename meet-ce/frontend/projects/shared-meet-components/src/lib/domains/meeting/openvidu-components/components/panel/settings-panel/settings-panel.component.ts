@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { LanguageService } from '../../../../../../shared/services/i18n/language.service';
+import { MeetingMaterialSymbol } from '../../../../icons/meeting-material-symbols';
 import { CustomDevice } from '../../../models/device.model';
 import { LangOption } from '../../../models/lang.model';
 import { PanelSettingsOptions, PanelType } from '../../../models/panel.model';
@@ -19,7 +20,7 @@ import { ThemeSelectorComponent } from '../../settings/theme-selector/theme-sele
 
 interface SettingsTab {
 	option: PanelSettingsOptions;
-	icon: string;
+	icon: MeetingMaterialSymbol;
 	labelKey: string;
 }
 
