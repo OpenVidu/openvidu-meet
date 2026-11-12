@@ -98,6 +98,7 @@ const build = ({
 	const signals: string[] = [];
 	const knocked: MeetParticipantKnockedPayload[] = [];
 	const changed: MeetParticipantWaitingChangedPayload[] = [];
+	const webhooks: string[] = [];
 	const service = new WaitingRoomService(
 		...([
 			{
@@ -116,15 +117,20 @@ const build = ({
 			},
 			{ sendWaitingRoomUpdatedSignal: async (roomId: string) => signals.push(roomId) },
 			{
-				sendParticipantKnockedWebhook: (payload: MeetParticipantKnockedPayload) => knocked.push(payload),
-				sendParticipantWaitingChangedWebhook: (payload: MeetParticipantWaitingChangedPayload) =>
-					changed.push(payload)
+				sendParticipantKnockedWebhook: (payload: MeetParticipantKnockedPayload) => {
+					knocked.push(payload);
+					webhooks.push('knocked');
+				},
+				sendParticipantWaitingChangedWebhook: (payload: MeetParticipantWaitingChangedPayload) => {
+					changed.push(payload);
+					webhooks.push(payload.status);
+				}
 			},
 			noopLogger
 		] as unknown as ConstructorParameters<typeof WaitingRoomService>)
 	);
 	const stateOf = (waitId: string) => states.filter(([, address]) => address === waitId).map(([, , , data]) => data);
-	return { service, state, states, stateOf, signals, knocked, changed };
+	return { service, state, states, stateOf, signals, knocked, changed, webhooks };
 };
 
 const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
@@ -195,8 +201,8 @@ describe('WaitingRoomService', () => {
 			expect(changed).toEqual([]);
 		});
 
-		it('ends the earlier wait of the same identity as left, telling it and the webhooks', async () => {
-			const { service, state, stateOf, changed } = build();
+		it('ends the earlier wait of the same identity as left, telling it and the webhooks before the new knock', async () => {
+			const { service, state, stateOf, changed, webhooks } = build();
 			state.knockResult = { entry: entry('ana', { waitId: 'wait-new' }), replaced: entry('ana'), line: noLine };
 
 			await service.knock(
@@ -218,6 +224,7 @@ describe('WaitingRoomService', () => {
 					reason: MeetWaitingRoomReason.REPLACED
 				})
 			]);
+			expect(webhooks).toEqual([MeetWaitingRoomStatus.LEFT, 'knocked']);
 		});
 
 		it('refuses a knock when the waiting room is full', async () => {
