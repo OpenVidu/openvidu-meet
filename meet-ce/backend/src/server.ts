@@ -12,6 +12,7 @@ import { checkModuleEnabled, logEnvVars, MEET_ENV } from './environment.js';
 import { apiKeyValidator, withAuth } from './middlewares/auth.middleware.js';
 import { setBaseUrlFromRequest } from './middlewares/base-url.middleware.js';
 import { globalErrorHandler } from './middlewares/error-handler.middleware.js';
+import { serveFrontendFiles } from './middlewares/frontend-static.middleware.js';
 import { webSocketHandshakeGuard, staticAssetLimiter } from './middlewares/rate-limit.middleware.js';
 import { initRequestContext } from './middlewares/request-context.middleware.js';
 import { serveWebcomponentBundle } from './middlewares/webcomponent-bundle.middleware.js';
@@ -131,8 +132,7 @@ const createApp = () => {
 		staticAssetLimiter,
 		serveWebcomponentBundle(webcomponentEsmBundlePath, WEBCOMPONENT_BUNDLE_ALLOW_ORIGIN)
 	);
-	// Serve static files (disable automatic index.html serving so our catch-all can inject config)
-	appRouter.use(express.static(frontendDirectoryPath, { index: false }));
+	appRouter.use(serveFrontendFiles(frontendDirectoryPath));
 	// Serve OpenVidu Meet index.html file for all non-API routes (with dynamic base path injection)
 	appRouter.get(/^(?!.*\/(api|internal-api)\/).*$/, (_req: Request, res: Response) => {
 		res.type('html').send(getHtmlWithBasePath(frontendHtmlPath));
