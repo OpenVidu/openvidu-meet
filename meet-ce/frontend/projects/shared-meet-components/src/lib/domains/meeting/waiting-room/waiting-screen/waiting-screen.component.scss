@@ -2,8 +2,6 @@
 
 :host {
 	display: flex;
-	justify-content: center;
-	align-items: flex-start;
 	width: 100%;
 	height: 100%;
 	overflow-y: auto;
@@ -21,6 +19,7 @@
 	flex-direction: column;
 	width: 100%;
 	max-width: 520px;
+	margin: auto;
 	overflow: hidden;
 	border-radius: var(--ov-surface-radius);
 	background: var(--ov-surface-color);
@@ -30,6 +29,7 @@
 	@include design-tokens.ov-mobile-down {
 		max-width: none;
 		min-height: 100%;
+		margin: 0;
 		border-radius: 0;
 		box-shadow: none;
 	}
@@ -125,6 +125,7 @@
 }
 
 .preview {
+	--ov-video-radius: 0;
 	position: relative;
 	aspect-ratio: 16 / 9;
 	background: var(--ov-video-background);
