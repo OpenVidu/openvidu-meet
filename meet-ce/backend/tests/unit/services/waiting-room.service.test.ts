@@ -360,11 +360,12 @@ describe('WaitingRoomService', () => {
 				message: "Participant 'ben' is not waiting in room 'room-1'"
 			});
 
-			state.decideResult = { noPlaces: true };
+			state.decideResult = { noPlaces: true, availablePlaces: 1 };
 
 			await expect(service.admit('room-1', ['ana', 'ben', 'zoe'])).rejects.toMatchObject({
 				statusCode: 409,
-				message: "Room 'room-1' has fewer free places than the 3 participants to admit"
+				message: "Room 'room-1' has fewer free places (1) than participants to admit (3)",
+				fields: { availablePlaces: 1 }
 			});
 		});
 

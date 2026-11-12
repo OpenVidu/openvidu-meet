@@ -225,8 +225,8 @@ export class WaitingRoomService {
 	 * Admits the named waiting participants, all of them or none, or, with none named, the first waiting up
 	 * to the free places. Answers the participants admitted.
 	 *
-	 * @throws The `404` error naming the first participant that no longer waits, the `409` error when the
-	 * named participants outnumber the free places, or the `404` room not found error
+	 * @throws The `404` error naming the first participant that no longer waits, the `409` error with the
+	 * free places when the named participants outnumber them, or the `404` room not found error
 	 */
 	admit(roomId: string, participantIdentities?: string[]): Promise<MeetWaitingRoomParticipant[]> {
 		return this.decide(roomId, 'admit', participantIdentities);
@@ -378,7 +378,9 @@ export class WaitingRoomService {
 
 		if ('notWaiting' in result) throw errorWaitingRoomParticipantNotWaiting(result.notWaiting, roomId);
 
-		if ('noPlaces' in result) throw errorWaitingRoomNoFreePlaces(roomId, participantIdentities?.length ?? 0);
+		if ('noPlaces' in result) {
+			throw errorWaitingRoomNoFreePlaces(roomId, participantIdentities?.length ?? 0, result.availablePlaces);
+		}
 
 		const status = decision === 'admit' ? MeetWaitingRoomStatus.ADMITTED : MeetWaitingRoomStatus.REJECTED;
 

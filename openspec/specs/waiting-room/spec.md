@@ -322,12 +322,18 @@ When a decision names participants who are no longer waiting, the meeting of the
 - **AND** the list no longer shows her
 
 ### Requirement: Refusals name their cause with a code
-A refused request of the waiting room SHALL carry in `error` a code that tells the cause apart without reading `message`: `participant_not_waiting`, with the participant in `participantIdentity`, `not_enough_places`, `waiting_room_full`, or `wait_ended`, with `status` when Meet knows how the wait ended.
+A refused request of the waiting room SHALL carry in `error` a code that tells the cause apart without reading `message`: `participant_not_waiting`, with the participant in `participantIdentity`, `not_enough_places`, with the free places in `availablePlaces`, `waiting_room_full`, or `wait_ended`, with `status` when Meet knows how the wait ended.
 
 #### Scenario: Admitting someone who no longer waits
 - **GIVEN** Ana and Ben waiting, and Ben leaves the waiting room
 - **WHEN** a client calls `participantWaitingAdmit` with Ana's and Ben's identities
 - **THEN** the server answers `404` with `error` `participant_not_waiting` and `participantIdentity` Ben's identity
+
+#### Scenario: Admitting more than the free places
+- **GIVEN** a meeting with one free place and Ana and Ben waiting
+- **WHEN** a client calls `participantWaitingAdmit` with Ana's and Ben's identities
+- **THEN** the server answers `409` with `error` `not_enough_places` and `availablePlaces` 1
+- **AND** both keep waiting
 
 #### Scenario: Waiting room full
 - **GIVEN** a room whose waiting room holds 100 participants

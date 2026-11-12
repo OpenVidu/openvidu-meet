@@ -2,7 +2,8 @@ import { WAITING_ROOM_SCRIPT_PRELUDE } from './prelude.script.js';
 
 /**
  * Admits or rejects the named waiting participants, all of them or none, or everyone waiting. An
- * admission fits the room's capacity, from which the admitted entries take their places. ARGV: room
+ * admission fits the room's capacity, from which the admitted entries take their places; a named one that
+ * does not fit answers the free places. ARGV: room
  * id, `admit` or `reject`, capacity (empty for none), then the identities, none for everyone waiting.
  */
 export const DECIDE_SCRIPT = `${WAITING_ROOM_SCRIPT_PRELUDE}
@@ -39,7 +40,7 @@ if decision == 'admit' and capacity then
 	end
 	free = math.max(free, 0)
 	if named and #chosen > free then
-		return cjson.encode({ noPlaces = true })
+		return cjson.encode({ noPlaces = true, availablePlaces = free })
 	end
 	while #chosen > free do
 		table.remove(chosen)

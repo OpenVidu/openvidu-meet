@@ -7,6 +7,7 @@ type StatusError = 400 | 401 | 402 | 403 | 404 | 409 | 413 | 415 | 416 | 422 | 5
 export interface OpenViduMeetErrorFields {
 	status?: MeetWaitingRoomStatus;
 	participantIdentity?: string;
+	availablePlaces?: number;
 }
 
 export class OpenViduMeetError extends Error {
@@ -577,11 +578,16 @@ export const errorWaitingRoomParticipantNotWaiting = (
 	);
 };
 
-export const errorWaitingRoomNoFreePlaces = (roomId: string, participantCount: number): OpenViduMeetError => {
+export const errorWaitingRoomNoFreePlaces = (
+	roomId: string,
+	participantCount: number,
+	availablePlaces: number
+): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		MeetWaitingRoomErrorCode.NOT_ENOUGH_PLACES,
-		`Room '${roomId}' has fewer free places than the ${participantCount} participants to admit`,
-		409
+		`Room '${roomId}' has fewer free places (${availablePlaces}) than participants to admit (${participantCount})`,
+		409,
+		{ availablePlaces }
 	);
 };
 

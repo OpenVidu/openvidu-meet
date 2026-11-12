@@ -56,7 +56,7 @@ export enum MeetWaitingRoomReason {
 export enum MeetWaitingRoomErrorCode {
 	/** `404`: a participant named in the decision does not wait; the body names them in `participantIdentity` */
 	PARTICIPANT_NOT_WAITING = 'participant_not_waiting',
-	/** `409`: the participants named outnumber the free places of the meeting */
+	/** `409`: the participants named outnumber the free places of the meeting; the body tells how many are free in `availablePlaces` */
 	NOT_ENOUGH_PLACES = 'not_enough_places',
 	/** `409`: the waiting room already holds as many participants as it can */
 	WAITING_ROOM_FULL = 'waiting_room_full',
