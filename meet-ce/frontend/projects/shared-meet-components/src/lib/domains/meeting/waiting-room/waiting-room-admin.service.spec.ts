@@ -60,6 +60,7 @@ describe('WaitingRoomAdminService', () => {
 	let http: jasmine.SpyObj<HttpService>;
 	let waitingRoom: MeetWaitingRoomList;
 	let waitingRoomAdmin: ReturnType<typeof signal<boolean>>;
+	let waitingRoomEnabled: ReturnType<typeof signal<boolean>>;
 	let sessionActive: ReturnType<typeof signal<boolean>>;
 	let connected: ReturnType<typeof signal<boolean>>;
 	let remoteParticipants: ReturnType<typeof signal<unknown[]>>;
@@ -75,6 +76,7 @@ describe('WaitingRoomAdminService', () => {
 		http.getRequest.and.callFake(async () => structuredClone(waitingRoom) as never);
 		http.postRequest.and.resolveTo({ participants: [] } as never);
 		waitingRoomAdmin = signal(true);
+		waitingRoomEnabled = signal(true);
 		sessionActive = signal(false);
 		connected = signal(false);
 		remoteParticipants = signal<unknown[]>([]);
@@ -86,7 +88,10 @@ describe('WaitingRoomAdminService', () => {
 				provideZonelessChangeDetection(),
 				{ provide: LoggerService, useClass: LoggerServiceStub },
 				{ provide: HttpService, useValue: http },
-				{ provide: MeetingContextService, useValue: { roomId: () => ROOM_ID } },
+				{
+					provide: MeetingContextService,
+					useValue: { roomId: () => ROOM_ID, waitingRoomConfig: () => ({ enabled: waitingRoomEnabled() }) }
+				},
 				{
 					provide: RoomMemberContextService,
 					useValue: {
@@ -223,6 +228,23 @@ describe('WaitingRoomAdminService', () => {
 			expect(http.getRequest).not.toHaveBeenCalled();
 		});
 
+		it('reads nothing in a room without waiting room until a signal says its list changed', async () => {
+			waitingRoomEnabled.set(false);
+			await join();
+			jasmine.clock().tick(30_000);
+			await flush();
+
+			expect(http.getRequest).not.toHaveBeenCalled();
+			expect(hostEvents(EmbeddedEventName.WAITING_ROOM_UPDATED)).toEqual([]);
+
+			waitingRoom = list([waiter('zoe')]);
+			signalWaitingRoomUpdated();
+			jasmine.clock().tick(300);
+			await flush();
+
+			expect(identities()).toEqual(['zoe']);
+		});
+
 		it('reads it at once when the local participant gains waitingRoomAdmin', async () => {
 			waitingRoomAdmin.set(false);
 			waitingRoom = list([waiter('ana')]);
@@ -350,6 +372,15 @@ describe('WaitingRoomAdminService', () => {
 				[`${WAITING_ROOM_PATH}/admit`, { participantIdentities: ['ben'] }],
 				[`${WAITING_ROOM_PATH}/reject`, {}]
 			]);
+		});
+
+		it('shows the line as the decision left it before answering', async () => {
+			waitingRoom = list([waiter('ana'), waiter('zoe')], 1);
+
+			await service.admit(['ben']);
+
+			expect(identities()).toEqual(['ana', 'zoe']);
+			expect(service.availablePlaces()).toBe(1);
 		});
 
 		it('admits the first in line that fit in the free places', async () => {

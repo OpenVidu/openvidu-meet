@@ -4,7 +4,8 @@ import {
 	MeetBroadcastConfig,
 	MeetRecordingConfig,
 	MeetRoomConfig,
-	MeetRoomMemberPermissions
+	MeetRoomMemberPermissions,
+	MeetWaitingRoomConfig
 } from '@openvidu-meet/typings';
 import type { InitialMediaState } from '../../meeting/openvidu-components';
 import { GlobalConfigService } from '../../../shared/services/global-config.service';
@@ -85,6 +86,11 @@ export class RoomFeatureService {
 
 	/** The room's live broadcast configuration (its saved destinations), for the activity that offers them. */
 	public readonly broadcastConfig = computed<MeetBroadcastConfig | undefined>(() => this.roomConfig()?.broadcast);
+
+	/** The room's waiting room configuration, for the participants who let others in. */
+	public readonly waitingRoomConfig = computed<MeetWaitingRoomConfig | undefined>(
+		() => this.roomConfig()?.waitingRoom
+	);
 
 	/**
 	 * Loads global feature configuration once the service is ready for requests.

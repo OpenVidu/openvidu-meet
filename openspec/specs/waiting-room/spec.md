@@ -828,7 +828,12 @@ The embedded element of each participant holding `waitingRoomAdmin` in the meeti
 - **THEN** the host receives `waitingRoomUpdated` listing Zoe and no `participantKnocked`
 
 ### Requirement: waitingRoomUpdated embedded event
-The embedded element of each participant holding `waitingRoomAdmin` in the meeting SHALL dispatch `waitingRoomUpdated` with `roomId` and the waiting list as `participantWaitingList` returns it: `participants` as `MeetWaitingRoomParticipant` items in arrival order and `availablePlaces`. It SHALL be dispatched once after joining, or after gaining `waitingRoomAdmin`, and again each time it changes.
+The embedded element of each participant holding `waitingRoomAdmin` in the meeting of a room with the waiting room on SHALL dispatch `waitingRoomUpdated` with `roomId` and the waiting list as `participantWaitingList` returns it: `participants` as `MeetWaitingRoomParticipant` items in arrival order and `availablePlaces`. It SHALL be dispatched once after joining, or after gaining `waitingRoomAdmin`, and again each time it changes.
+
+#### Scenario: Room without waiting room
+- **GIVEN** a room whose config has the waiting room off
+- **WHEN** an embedded moderator holding `waitingRoomAdmin` joins the meeting
+- **THEN** the host receives no `waitingRoomUpdated` and the meeting sends no request for the waiting list
 
 #### Scenario: Someone admitted by another moderator
 - **GIVEN** two embedded moderators holding `waitingRoomAdmin` and Zoe and Ana waiting

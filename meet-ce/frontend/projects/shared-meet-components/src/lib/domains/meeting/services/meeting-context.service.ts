@@ -64,6 +64,8 @@ export class MeetingContextService {
 	readonly recordingConfig = this.roomFeatureService.recordingConfig;
 	/** Readonly signal for the room's live broadcast configuration (its saved destinations) */
 	readonly broadcastConfig = this.roomFeatureService.broadcastConfig;
+	/** Readonly signal for the room's waiting room configuration */
+	readonly waitingRoomConfig = this.roomFeatureService.waitingRoomConfig;
 	/** Readonly signal for room appearance configuration from global settings */
 	readonly meetingAppearance = this.globalConfigService.roomAppearanceConfig;
 

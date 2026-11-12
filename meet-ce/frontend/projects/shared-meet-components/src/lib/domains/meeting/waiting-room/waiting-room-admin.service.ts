@@ -95,14 +95,16 @@ export class WaitingRoomAdminService {
 	private pollTimer?: ReturnType<typeof setInterval>;
 
 	constructor() {
+		// A room whose config has the waiting room off is read only when a signal says its list changed.
 		effect(() => {
 			const admitting = this.isAdmitting();
 			const connected = this.meetingLiveKit.isConnected();
+			const hasWaitingRoom = !!this.meetingContext.waitingRoomConfig()?.enabled;
 
 			untracked(() => {
 				if (!admitting) {
 					this.reset();
-				} else if (connected) {
+				} else if (connected && hasWaitingRoom) {
 					this.startPolling();
 					void this.refresh();
 				} else {
@@ -170,8 +172,8 @@ export class WaitingRoomAdminService {
 	}
 
 	/**
-	 * A decision the line no longer allows (someone left, or no longer fits) shows the new line instead,
-	 * and says who is no longer waiting.
+	 * Shows the line as the decision left it. A decision the line no longer allows (someone left, or no
+	 * longer fits) shows the new line instead, and says who is no longer waiting.
 	 */
 	private async decide(
 		decision: WaitingRoomDecision,
@@ -190,6 +192,7 @@ export class WaitingRoomAdminService {
 				`${this.waitingRoomPath(roomId)}/${decision}`,
 				body
 			);
+			await this.refresh();
 			return participants;
 		} catch (error) {
 			if (error instanceof HttpErrorResponse && (error.status === 404 || error.status === 409)) {
