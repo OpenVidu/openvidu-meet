@@ -1,6 +1,7 @@
 export * from './components';
 export * from './directives';
 export * from './guards';
+export * from './icons/material-symbols';
 export * from './interceptors';
 export * from './lang/shared-translations';
 export * from './models';

@@ -3,6 +3,7 @@ import eslint from '@eslint/js';
 import angular from 'angular-eslint';
 import prettier from 'eslint-config-prettier';
 import tseslint from 'typescript-eslint';
+import { declaredMaterialSymbols } from './eslint-rules/declared-material-symbols.mjs';
 
 /**
  * Direct `localStorage`/`sessionStorage` access is how ad-hoc storage crept back into the library
@@ -146,7 +147,8 @@ export default tseslint.config(
 		files: ['src/**/*.html', 'projects/shared-meet-components/src/**/*.html', 'webcomponent/src/**/*.html'],
 		ignores: ['**/*inline-template-*.component.html'],
 		extends: [angular.configs.templateRecommended, prettier],
-		rules: {}
+		plugins: { meet: { rules: { 'declared-material-symbols': declaredMaterialSymbols } } },
+		rules: { 'meet/declared-material-symbols': 'error' }
 	},
 	// ── Test code: Playwright suites and the webcomponent's Jest specs ───────────────────────────
 	// Same correctness rules, minus the Angular-specific ones (no components here).

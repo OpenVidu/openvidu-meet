@@ -1,5 +1,6 @@
 import { Component, input, output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
+import { SharedMaterialSymbol } from '../../icons/shared-material-symbols';
 import { ProFeatureBadgeComponent } from '../pro-feature-badge/pro-feature-badge.component';
 
 /**
@@ -66,7 +67,7 @@ export class SelectableCardComponent {
 	 * Custom icon for the PRO badge
 	 * @default 'crown'
 	 */
-	proBadgeIcon = input('crown');
+	proBadgeIcon = input<SharedMaterialSymbol>('crown');
 
 	/**
 	 * Custom text for the PRO badge

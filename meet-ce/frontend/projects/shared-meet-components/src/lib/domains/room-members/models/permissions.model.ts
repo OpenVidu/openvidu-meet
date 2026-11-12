@@ -1,4 +1,5 @@
 import { MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import { RoomMembersMaterialSymbol } from '../icons/room-members-material-symbols';
 
 export interface PermissionItem {
 	key: keyof MeetRoomMemberPermissions;
@@ -6,7 +7,7 @@ export interface PermissionItem {
 	label: string;
 	/** i18n key — resolve with the `translate` pipe at render. */
 	description: string;
-	icon: string;
+	icon: RoomMembersMaterialSymbol;
 	/** A permission that only takes effect together with this other one, which the UI disables it without. */
 	dependsOn?: keyof MeetRoomMemberPermissions;
 }

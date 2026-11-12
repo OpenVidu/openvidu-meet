@@ -1,4 +1,5 @@
 import { MeetRoomMember, MeetRoomMemberRole, MeetRoomMemberType, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
+import { RoomMembersMaterialSymbol } from '../icons/room-members-material-symbols';
 
 /**
  * Utility functions for RoomMember-related UI operations.
@@ -26,7 +27,7 @@ export class RoomMemberUiUtils {
 	/**
 	 * Gets the Material icon name for a room member role.
 	 */
-	static getRoleIcon(role: MeetRoomMemberRole): string {
+	static getRoleIcon(role: MeetRoomMemberRole): RoomMembersMaterialSymbol | '' {
 		switch (role) {
 			case MeetRoomMemberRole.MODERATOR:
 				return 'shield_person';
@@ -53,7 +54,7 @@ export class RoomMemberUiUtils {
 
 	// ===== BADGE UTILITIES =====
 
-	static getParticipantBadgeIcon(badge: MeetRoomMemberUIBadge): string {
+	static getParticipantBadgeIcon(badge: MeetRoomMemberUIBadge): RoomMembersMaterialSymbol | '' {
 		switch (badge) {
 			case MeetRoomMemberUIBadge.OWNER:
 				return 'crown'; // passkey or location_away
@@ -118,7 +119,7 @@ export class RoomMemberUiUtils {
 	/**
 	 * Gets the Material icon name for the member type.
 	 */
-	static getMemberTypeIcon(member: MeetRoomMember): string {
+	static getMemberTypeIcon(member: MeetRoomMember): RoomMembersMaterialSymbol {
 		return RoomMemberUiUtils.isUserMember(member) ? 'verified_user' : 'person';
 	}
 
