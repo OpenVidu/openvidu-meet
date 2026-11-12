@@ -191,6 +191,15 @@ describe('Waiting room', () => {
 			);
 		});
 
+		it('refuses a name over 1024 characters and lists nobody as waiting', async () => {
+			const roomData = await setupWaitingRoomRoom();
+
+			const response = await askToJoin(roomData.room.roomId, roomData.speakerSecret, 'x'.repeat(1025));
+
+			expect(response.status).toBe(422);
+			expect(await waiting(roomData.room.roomId)).toEqual([]);
+		});
+
 		it('refuses a knock when the waiting room is full', async () => {
 			const roomData = await setupWaitingRoomRoom();
 			const maxEntries = INTERNAL_CONFIG.WAITING_ROOM_MAX_ENTRIES;
