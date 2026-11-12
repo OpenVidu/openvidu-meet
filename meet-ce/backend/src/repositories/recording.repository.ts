@@ -362,36 +362,9 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	}
 
 	/**
-	 * Counts the total number of recordings.
+	 * Counts the recordings with the given status.
 	 */
-	countTotal(): Promise<number> {
-		return this.count();
-	}
-
-	/**
-	 * Counts the number of recordings with status 'complete'.
-	 */
-	countCompleteRecordings(): Promise<number> {
-		return this.count({ status: MeetRecordingStatus.COMPLETE });
-	}
-
-	/**
-	 * Counts the recordings that have started and not yet ended: status 'starting', 'active' or 'ending'.
-	 */
-	countInProgress(): Promise<number> {
-		return this.count({
-			status: { $in: [MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE, MeetRecordingStatus.ENDING] }
-		});
-	}
-
-	/**
-	 * Counts the recordings that ended without a playable file: status 'failed', 'aborted' or 'limit_reached'.
-	 */
-	countFailed(): Promise<number> {
-		return this.count({
-			status: {
-				$in: [MeetRecordingStatus.FAILED, MeetRecordingStatus.ABORTED, MeetRecordingStatus.LIMIT_REACHED]
-			}
-		});
+	countByStatus(status: MeetRecordingStatus): Promise<number> {
+		return this.count({ status });
 	}
 }

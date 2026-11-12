@@ -522,13 +522,6 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	}
 
 	/**
-	 * Counts the total number of rooms.
-	 */
-	countTotal(): Promise<number> {
-		return this.count();
-	}
-
-	/**
 	 * Counts the number of rooms with the given status.
 	 */
 	countByStatus(status: MeetRoomStatus): Promise<number> {

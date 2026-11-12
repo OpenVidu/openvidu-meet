@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import type { MeetExpiringRoom } from '@openvidu-meet/typings';
-import { MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
 import ms from 'ms';
 import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
 import { AnalyticsService } from '../../../src/services/analytics.service.js';
@@ -12,15 +12,10 @@ const WINDOW = ms(INTERNAL_CONFIG.ANALYTICS_EXPIRING_ROOMS_WINDOW);
 
 class FakeRoomRepository {
 	roomsByStatus: Partial<Record<MeetRoomStatus, number>> = {};
-	total = 0;
 	expiringCount = 0;
 	nextExpiring: MeetExpiringRoom | null = null;
 	expiringWindows: [number, number][] = [];
 	nextExpiringWindows: [number, number][] = [];
-
-	countTotal(): Promise<number> {
-		return Promise.resolve(this.total);
-	}
 
 	countByStatus(status: MeetRoomStatus): Promise<number> {
 		return Promise.resolve(this.roomsByStatus[status] ?? 0);
@@ -38,25 +33,10 @@ class FakeRoomRepository {
 }
 
 class FakeRecordingRepository {
-	total = 0;
-	complete = 0;
-	inProgress = 0;
-	failed = 0;
+	recordingsByStatus: Partial<Record<MeetRecordingStatus, number>> = {};
 
-	countTotal(): Promise<number> {
-		return Promise.resolve(this.total);
-	}
-
-	countCompleteRecordings(): Promise<number> {
-		return Promise.resolve(this.complete);
-	}
-
-	countInProgress(): Promise<number> {
-		return Promise.resolve(this.inProgress);
-	}
-
-	countFailed(): Promise<number> {
-		return Promise.resolve(this.failed);
+	countByStatus(status: MeetRecordingStatus): Promise<number> {
+		return Promise.resolve(this.recordingsByStatus[status] ?? 0);
 	}
 }
 
@@ -76,8 +56,7 @@ describe('AnalyticsService', () => {
 		jest.restoreAllMocks();
 	});
 
-	it('reports each room status under its own figure', async () => {
-		rooms.total = 48;
+	it('reports each room status under its own figure, and all of them as the total', async () => {
 		rooms.roomsByStatus = {
 			[MeetRoomStatus.OPEN]: 31,
 			[MeetRoomStatus.ACTIVE_MEETING]: 5,
@@ -90,10 +69,14 @@ describe('AnalyticsService', () => {
 	});
 
 	it('reports the recordings that exist, the complete ones, the ones in progress and the failed ones', async () => {
-		recordings.total = 214;
-		recordings.complete = 207;
-		recordings.inProgress = 2;
-		recordings.failed = 5;
+		recordings.recordingsByStatus = {
+			[MeetRecordingStatus.STARTING]: 1,
+			[MeetRecordingStatus.ENDING]: 1,
+			[MeetRecordingStatus.COMPLETE]: 207,
+			[MeetRecordingStatus.FAILED]: 3,
+			[MeetRecordingStatus.ABORTED]: 1,
+			[MeetRecordingStatus.LIMIT_REACHED]: 1
+		};
 
 		const analytics = await service.getAnalytics();
 
@@ -131,8 +114,21 @@ describe('AnalyticsService', () => {
 		expect(analytics).not.toHaveProperty('nextExpiringRoom');
 	});
 
+	it('counts every recording once, whatever its status', async () => {
+		recordings.recordingsByStatus = Object.fromEntries(
+			Object.values(MeetRecordingStatus).map((status) => [status, 1])
+		) as Record<MeetRecordingStatus, number>;
+
+		const analytics = await service.getAnalytics();
+
+		expect(analytics.totalRecordings).toBe(Object.values(MeetRecordingStatus).length);
+		expect(analytics.completeRecordings + analytics.recordingsInProgress + analytics.failedRecordings).toBe(
+			analytics.totalRecordings
+		);
+	});
+
 	it('rethrows a repository failure', async () => {
-		rooms.countTotal = () => Promise.reject(new Error('database down'));
+		rooms.countByStatus = () => Promise.reject(new Error('database down'));
 
 		await expect(service.getAnalytics()).rejects.toThrow('database down');
 	});
