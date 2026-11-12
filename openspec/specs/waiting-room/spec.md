@@ -69,6 +69,11 @@ Asking to join a room where the participant waits SHALL answer with a waiting ti
 - **WHEN** a third participant asks to join
 - **THEN** they wait
 
+#### Scenario: Name over the character limit
+- **GIVEN** a room with the waiting room on
+- **WHEN** a participant asks to join with a name of 1025 characters
+- **THEN** the server answers `422` and nobody is listed as waiting
+
 #### Scenario: Waiting holder of waitingRoomAdmin
 - **GIVEN** a room with the waiting room on and a member granted `waitingRoomAdmin` and denied `waitingRoomBypass`, waiting
 - **WHEN** their client calls `participantWaitingList`, or `participantWaitingAdmit` with their own identity
