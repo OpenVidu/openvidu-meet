@@ -5,6 +5,7 @@ import {
 	MeetEventOrigin,
 	MeetWaitingRoomParticipantType,
 	MeetWaitingRoomStatus,
+	MeetWaitingRoomTicketResponse,
 	MeetParticipantWaitingChangedPayload,
 	MeetParticipantJoinedPayload,
 	MeetParticipantKnockedPayload,
@@ -418,13 +419,14 @@ describe('Webhook Integration Tests', () => {
 				waitingRoom: { enabled: true }
 			});
 			const { roomId } = room;
-			const knock = async (name: string) => (await askToJoin(roomId, speakerSecret, name)).body;
+			const knock = async (name: string) =>
+				(await askToJoin(roomId, speakerSecret, name)).body as MeetWaitingRoomTicketResponse;
 			const ana = await knock('Ana');
 			const bob = await knock('Bob');
 			const carla = await knock('Carla');
 
-			await admitFromWaitingRoom(roomId, [ana.participantIdentity]);
-			await rejectFromWaitingRoom(roomId, [bob.participantIdentity]);
+			await admitFromWaitingRoom(roomId, [ana.participant.participantIdentity]);
+			await rejectFromWaitingRoom(roomId, [bob.participant.participantIdentity]);
 			await leaveWaitingRoom(roomId, carla.waitingRoomTicket);
 
 			const ofRoom = (event: MeetWebhookEventType) => (webhook: ReceivedWebhook) =>
@@ -441,7 +443,7 @@ describe('Webhook Integration Tests', () => {
 				roomId,
 				roomName: room.roomName,
 				participant: {
-					participantIdentity: ana.participantIdentity,
+					participantIdentity: ana.participant.participantIdentity,
 					participantName: 'Ana',
 					type: MeetWaitingRoomParticipantType.ANONYMOUS,
 					knockDate: expect.any(Number)
