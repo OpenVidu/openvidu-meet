@@ -152,7 +152,7 @@ export class RecordingDetailComponent implements OnInit {
 	}
 
 	async shareRecording() {
-		this.recordingService.openShareRecordingDialog(this.recordingId(), true);
+		await this.recordingService.openShareRecordingDialog(this.recordingId(), true);
 	}
 
 	copyRecordingId() {

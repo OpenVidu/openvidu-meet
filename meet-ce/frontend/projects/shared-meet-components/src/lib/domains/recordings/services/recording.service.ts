@@ -7,7 +7,6 @@ import { RuntimeConfigService } from '../../../shared/services/runtime-config.se
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
-import { RecordingShareDialogComponent } from '../components/recording-share-dialog/recording-share-dialog.component';
 import { LoggerService } from '../../../shared/services/logger.service';
 
 @Service()
@@ -340,7 +339,9 @@ export class RecordingService {
 	 *   when the current user cannot request a signed URL from the backend (e.g. anonymous access in
 	 *   webcomponent mode, where there are no routes to fall back on)
 	 */
-	openShareRecordingDialog(recordingId: string, hasRecordingAccess = false, recordingSecret?: string) {
+	async openShareRecordingDialog(recordingId: string, hasRecordingAccess = false, recordingSecret?: string) {
+		const { RecordingShareDialogComponent } =
+			await import('../components/recording-share-dialog/recording-share-dialog.component');
 		this.dialog.open(RecordingShareDialogComponent, {
 			width: '450px',
 			data: {
