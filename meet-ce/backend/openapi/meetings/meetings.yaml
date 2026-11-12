@@ -525,6 +525,10 @@
             Admitting everyone waiting never answers `409` for the places: it admits the first waiting, in arrival
             order, up to the free places and leaves the rest waiting, in their place.
 
+            A participant whose page closed no longer waits for this purpose, in the seconds before they leave the
+            list: naming them answers `404`, and asking for everyone leaves them out. One whose page connects again,
+            after a reload, can be admitted again.
+
             The response lists the participants admitted, possibly none when everyone was asked for: nobody waits, no
             place is free or the room's waiting room is off. With the waiting room off, a decision on named participants
             answers `404`.
