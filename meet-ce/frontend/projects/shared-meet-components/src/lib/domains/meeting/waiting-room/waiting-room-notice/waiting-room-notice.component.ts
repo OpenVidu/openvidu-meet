@@ -8,6 +8,9 @@ import { PanelType } from '../../openvidu-components/models/panel.model';
 import { PanelService } from '../../openvidu-components/services/panel/panel.service';
 import { WaitingRoomAdminService, WaitingRoomWaiter } from '../waiting-room-admin.service';
 
+/** The avatars the notification stacks, however many are waiting. */
+const MAX_AVATARS = 3;
+
 /**
  * Tells whoever may let participants in that someone asked to join, below the status rail, while the
  * participants panel, which lists them, is closed. One person is named, with Deny and Admit; several
@@ -73,10 +76,12 @@ export class WaitingRoomNoticeComponent {
 
 	private options(waiters: WaitingRoomWaiter[]): NotificationOptions {
 		const notice = { kind: 'waiting-room-knock', icon: 'hourglass_top' };
+		const avatars = waiters.slice(0, MAX_AVATARS).map(({ name, color }) => ({ name, color }));
 
 		if (waiters.length > 1) {
 			return {
 				...notice,
+				avatars,
 				title: { key: 'WAITING_ROOM.ADMIN.WAITING_COUNT', params: { count: waiters.length } },
 				message: this.namesOf(waiters),
 				action: { label: { key: 'WAITING_ROOM.ADMIN.VIEW' }, run: () => this.openPanel() }
@@ -88,6 +93,7 @@ export class WaitingRoomNoticeComponent {
 
 		return {
 			...notice,
+			avatars,
 			title: name,
 			message: { key: 'WAITING_ROOM.ADMIN.WANTS_TO_JOIN' },
 			secondaryAction: {

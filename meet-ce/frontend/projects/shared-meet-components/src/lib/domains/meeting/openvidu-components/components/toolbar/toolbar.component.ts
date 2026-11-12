@@ -47,6 +47,7 @@ import { ParticipantService } from '../../services/participant/participant.servi
 import { PlatformService } from '../../services/platform/platform.service';
 import { RecordingService } from '../../services/recording/recording.service';
 import { MeetingContextService } from '../../../services/meeting-context.service';
+import { WaitingRoomAdminService } from '../../../waiting-room/waiting-room-admin.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
@@ -79,6 +80,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly chatService = inject(ChatService);
 	private readonly panelService = inject(PanelService);
 	private readonly participantService = inject(ParticipantService);
+	private readonly waitingRoomAdmin = inject(WaitingRoomAdminService);
 	private readonly localMedia = inject(LocalMediaService);
 	private readonly screenShare = inject(ScreenShareService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
@@ -337,6 +339,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	readonly isBroadcastBusy = computed(() => this.broadcastState.isEnding() || this.broadcastState.isStartPending());
 
 	readonly totalParticipants = this.participantService.totalParticipantsSignal;
+	readonly waitingParticipants = computed(() => this.waitingRoomAdmin.waiting().length);
 
 	private log: ILogger = inject(LoggerService).get('ToolbarComponent');
 

@@ -60,6 +60,36 @@
 	}
 }
 
+// Who it is about, as the participants panel shows them: the same rounded square with their initial.
+// Several overlap, each ringed in the card's own colour so they read apart.
+.notification-avatars {
+	display: flex;
+	flex-shrink: 0;
+}
+
+.notification-avatar {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 32px;
+	height: 32px;
+	border-radius: var(--ov-surface-radius);
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--ov-meet-avatar-text-color);
+}
+
+.stacked .notification-avatar {
+	box-sizing: border-box;
+	border: 2px solid var(--ov-surface-color);
+	font-size: 13px;
+
+	& + .notification-avatar {
+		margin-left: -10px;
+	}
+}
+
 .notification-body {
 	display: flex;
 	flex-direction: column;

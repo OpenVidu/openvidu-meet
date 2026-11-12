@@ -22,6 +22,20 @@
 		}
 	}
 
+	// Someone asks to join: a dot on the participants button, ringed in the toolbar's own colour.
+	.waiting-dot {
+		position: absolute;
+		right: 3px;
+		bottom: 5px;
+		width: 10px;
+		height: 10px;
+		box-sizing: border-box;
+		border: 2px solid var(--ov-background-color);
+		border-radius: 50%;
+		background-color: var(--ov-warn-color);
+		pointer-events: none;
+	}
+
 	.active-btn,
 	::ng-deep .active-btn {
 		background-color: var(--ov-accent-action-color) !important;

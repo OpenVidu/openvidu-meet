@@ -48,6 +48,13 @@ export type NotificationTone = 'alert' | 'warning' | 'neutral';
  */
 export type NotificationPlacement = 'corner' | 'pinned';
 
+/** Who a notification is about, shown as an avatar. */
+export interface NotificationAvatar {
+	name: string;
+	/** CSS colour of the avatar. */
+	color: string;
+}
+
 /** Something the reader can do about a notification, offered as a button. */
 export interface NotificationAction {
 	label: NotificationText;
@@ -63,6 +70,8 @@ export interface NotificationOptions {
 	kind: string;
 	/** Material icon glyph. */
 	icon: string;
+	/** The people the notification is about, stacked in place of the glyph. */
+	avatars?: NotificationAvatar[];
 	/** Omit for a one-liner, where the message says it all. */
 	title?: NotificationText;
 	message: NotificationText;

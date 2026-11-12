@@ -78,6 +78,11 @@
 	padding: 4px 10px;
 }
 
+// The avatar is the participants panel's own, which leaves its gap to the row.
+.waiting-room-row ov-participant-avatar {
+	margin-right: 4px;
+}
+
 .waiting-room-who {
 	display: flex;
 	flex-direction: column;
@@ -113,4 +118,11 @@
 	--mat-button-filled-label-text-size: 13px;
 	--mat-button-filled-label-text-weight: 700;
 	flex-shrink: 0;
+}
+
+// Rejecting everyone is the destructive answer. A fixed red, because the theme's error colour turns
+// light in the dark theme, where white text on it would not read.
+.deny-all {
+	--mat-button-filled-container-color: #dc3545;
+	--mat-button-filled-label-text-color: #ffffff;
 }

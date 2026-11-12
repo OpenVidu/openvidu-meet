@@ -7,6 +7,7 @@ import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { DialogService } from '../../../../shared/services/dialog.service';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { LoggerService } from '../../../../shared/services/logger.service';
+import { ParticipantAvatarComponent } from '../../openvidu-components/components/participant-avatar/participant-avatar.component';
 import { WaitingRoomAdminService, WaitingRoomWaiter } from '../waiting-room-admin.service';
 
 interface Row extends WaitingRoomWaiter {
@@ -22,7 +23,7 @@ interface Row extends WaitingRoomWaiter {
  */
 @Component({
 	selector: 'ov-waiting-room-panel-section',
-	imports: [DatePipe, MatButtonModule, MatIconModule, TranslatePipe],
+	imports: [DatePipe, MatButtonModule, MatIconModule, ParticipantAvatarComponent, TranslatePipe],
 	templateUrl: './waiting-room-panel-section.component.html',
 	styleUrl: './waiting-room-panel-section.component.scss'
 })

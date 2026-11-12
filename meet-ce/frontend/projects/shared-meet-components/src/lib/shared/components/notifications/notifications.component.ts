@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import {
 	NotificationAction,
+	NotificationAvatar,
 	NotificationPlacement,
 	NotificationText,
 	NotificationTone,
@@ -16,11 +17,17 @@ interface NotificationView {
 	id: number;
 	kind: string;
 	icon: string;
+	avatars?: AvatarView[];
 	tone: NotificationTone;
 	title?: string;
 	message: string;
 	action?: ActionView;
 	secondaryAction?: ActionView;
+}
+
+interface AvatarView {
+	letter: string;
+	color: string;
 }
 
 interface ActionView {
@@ -81,12 +88,17 @@ export class NotificationsComponent {
 			id: notification.id,
 			kind: notification.kind,
 			icon: notification.icon,
+			avatars: notification.avatars?.map((avatar) => this.toAvatarView(avatar)),
 			tone: notification.tone ?? 'neutral',
 			title: this.resolve(notification.title),
 			message: this.resolve(notification.message)!,
 			action: this.toActionView(notification.action),
 			secondaryAction: this.toActionView(notification.secondaryAction)
 		};
+	}
+
+	private toAvatarView({ name, color }: NotificationAvatar): AvatarView {
+		return { letter: name.charAt(0).toLocaleUpperCase(), color };
 	}
 
 	private toActionView(action: NotificationAction | undefined): ActionView | undefined {

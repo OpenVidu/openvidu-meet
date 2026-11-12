@@ -363,6 +363,7 @@ test.describe('Waiting room E2E Tests', () => {
 
 			await waiter(browser, 'Ana');
 			await expect(waitingRoomNotification(hostPage)).toContainText('Ana', { timeout: 10_000 });
+			await expect(hostPage.locator('#participants-waiting-dot')).toBeVisible();
 
 			await openParticipantsPanel(hostPage);
 			await expect(waitingRoomNotification(hostPage)).toHaveCount(0);
