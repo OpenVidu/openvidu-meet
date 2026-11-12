@@ -50,6 +50,17 @@ export enum EmbeddedEventName {
 	 */
 	PARTICIPANT_KNOCKED = 'participantKnocked',
 	/**
+	 * Event emitted to the participant who asks to join, for every state of their wait: `waiting`
+	 * (repeated every time their position in line changes), `admitted`, `rejected`, `left`, `expired`,
+	 * `meeting_ended` and `room_closed`. The first `waiting` comes with the first state the meeting
+	 * receives, so a participant whose connection never receives one gets none. `admitted` is not
+	 * the join: `meetingJoined` confirms it, and a join that finds the meeting full after `admitted`
+	 * raises no waiting room event. No waiting room event follows an access or connection error: its screen and
+	 * `embeddedCloseRequested` apply. The `participantWaitingChanged` webhook reports the same changes of every
+	 * wait to the host's backend.
+	 */
+	PARTICIPANT_WAITING_CHANGED = 'participantWaitingChanged',
+	/**
 	 * Event emitted to every participant when a participant's hand is raised or lowered, by
 	 * themselves or by a moderator. A participant joining a meeting with raised hands receives one
 	 * event per raised hand, in queue order, right after `meetingJoined`. The queue is ordered by
@@ -104,16 +115,6 @@ export enum EmbeddedEventName {
 	 * waiting to join and the free places of the meeting: on joining, and on every change of the list.
 	 */
 	WAITING_ROOM_UPDATED = 'waitingRoomUpdated',
-	/**
-	 * Event emitted to the participant who asks to join, for every state of their wait: `waiting`
-	 * (repeated every time their position in line changes), `admitted`, `rejected`, `left`, `expired`,
-	 * `meeting_ended` and `room_closed`. The first `waiting` comes with the first state the meeting
-	 * receives, so a participant whose connection never receives one gets none. `admitted` is not
-	 * the join: `meetingJoined` confirms it, and a join that finds the meeting full after `admitted`
-	 * raises no waiting room event. No waiting room event follows an access or connection error: its screen and
-	 * `embeddedCloseRequested` apply.
-	 */
-	WAITING_ROOM_STATUS_CHANGED = 'waitingRoomStatusChanged',
 	/**
 	 * Event emitted when the participant asks to close OpenVidu Meet by dismissing the post-meeting,
 	 * join, error or recording screen. The host application responds by removing the embedded
@@ -316,16 +317,18 @@ export interface EmbeddedEventPayloads {
 		availablePlaces: number | null;
 	};
 	/**
-	 * Payload for the {@link EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED} event. `participantIdentity` is the
-	 * identity the participant will have in the meeting, the one the server answered when they asked,
-	 * `status` the state of the wait (see {@link MeetWaitingRoomStatus}) and `queuePosition`, from 1, the place
-	 * in line while `status` is `waiting`.
+	 * Payload for the {@link EmbeddedEventName.PARTICIPANT_WAITING_CHANGED} event. `participant` is who waits, with
+	 * the identity they will have in the meeting (see {@link MeetWaitingRoomParticipant}), `status` the state of
+	 * the wait (see {@link MeetWaitingRoomStatus}), `queuePosition`, from 1, the place in line while `status` is
+	 * `waiting`, and `origin` who caused the change (see {@link MeetEventOrigin}): absent while `status` is
+	 * `waiting` and when the participant's meeting could not learn it.
 	 */
-	[EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED]: {
+	[EmbeddedEventName.PARTICIPANT_WAITING_CHANGED]: {
 		roomId: string;
-		participantIdentity: string;
+		participant: MeetWaitingRoomParticipant;
 		status: MeetWaitingRoomStatus;
 		queuePosition?: number;
+		origin?: MeetEventOrigin;
 	};
 	/**
 	 * Payload for the {@link EmbeddedEventName.JOINED} event.
@@ -466,9 +469,9 @@ export interface EmbeddedWaitingRoomUpdatedEvent {
  * payload, derived from {@link EmbeddedEventPayloadFor}.
  * @category Communication
  */
-export interface EmbeddedWaitingRoomStatusChangedEvent {
-	event: EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED;
-	payload: EmbeddedEventPayloadFor<EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED>;
+export interface EmbeddedParticipantWaitingChangedEvent {
+	event: EmbeddedEventName.PARTICIPANT_WAITING_CHANGED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_WAITING_CHANGED>;
 }
 
 /**
@@ -612,7 +615,7 @@ export type EmbeddedEvent =
 	| EmbeddedBroadcastUpdatedEvent
 	| EmbeddedBroadcastEndedEvent
 	| EmbeddedWaitingRoomUpdatedEvent
-	| EmbeddedWaitingRoomStatusChangedEvent
+	| EmbeddedParticipantWaitingChangedEvent
 	| EmbeddedCloseRequestedEvent
 	| EmbeddedJoinedEvent
 	| EmbeddedLeftEvent

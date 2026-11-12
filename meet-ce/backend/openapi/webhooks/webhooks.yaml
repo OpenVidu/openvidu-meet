@@ -476,11 +476,11 @@ participantKnocked:
         description: |
             This webhook is triggered when a participant asks to join a room with the waiting room on and starts
             waiting to be admitted, once per wait. A participant who asks again starts a new wait and a new
-            webhook. The [`waitingRoomStatusChanged`](#/webhooks/waitingRoomStatusChangedWebhook) webhook reports each later
+            webhook. The [`participantWaitingChanged`](#/webhooks/participantWaitingChangedWebhook) webhook reports each later
             change of the wait.
 
             > It is sent when the participant asks, before their waiting screen connects: a participant who never
-            > connects it is removed from the line within about 20 seconds, which `waitingRoomStatusChanged` reports as
+            > connects it is removed from the line within about 20 seconds, which `participantWaitingChanged` reports as
             > `expired`.
             >
             > The `participant` is a [`MeetWaitingRoomParticipant`](#/schemas/MeetWaitingRoomParticipant). Its `externalId` and
@@ -524,9 +524,9 @@ participantKnocked:
             '200':
                 $ref: ./responses/success/webhook-success.yaml
 
-waitingRoomStatusChanged:
+participantWaitingChanged:
     post:
-        summary: Waiting room status changed
+        summary: Participant waiting changed
         description: |
             This webhook is triggered when a wait in the waiting room changes after the
             [`participantKnocked`](#/webhooks/participantKnockedWebhook) webhook: the participant is admitted,
@@ -543,7 +543,7 @@ waitingRoomStatusChanged:
             > Webhooks are not stored: one is lost if the Meet replica sending it stops, may be repeated by the
             > retries and is not ordered with the others. The `knockDate` of the participant and the
             > `creationDate` of the event order them.
-        operationId: waitingRoomStatusChangedWebhook
+        operationId: participantWaitingChangedWebhook
         parameters:
             - $ref: ./parameters/x-timestamp.yaml
             - $ref: ./parameters/x-signature.yaml
@@ -557,12 +557,12 @@ waitingRoomStatusChanged:
                             - $ref: ./schemas/webhook-base-event.yaml
                             - properties:
                                   event:
-                                      example: waitingRoomStatusChanged
+                                      example: participantWaitingChanged
                                   data:
-                                      $ref: ./schemas/meet-waiting-room-status-changed-event.yaml
+                                      $ref: ./schemas/meet-participant-waiting-changed-event.yaml
                     example:
                         creationDate: 1620000012000
-                        event: waitingRoomStatusChanged
+                        event: participantWaitingChanged
                         data:
                             roomId: 'room-123'
                             roomName: 'room'

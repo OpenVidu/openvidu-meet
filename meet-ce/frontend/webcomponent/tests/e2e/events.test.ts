@@ -71,7 +71,7 @@ const PLACE_LOST_TIMEOUT = 90_000;
 /** A waiter's state is sent again at every answered ping, every 20 s, and the waiting list read every 30 s. */
 const NEXT_STATE_TIMEOUT = 40_000;
 
-type WaitingRoomStatusChangedPayload = EmbeddedEventPayloadFor<EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED>;
+type ParticipantWaitingChangedPayload = EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_WAITING_CHANGED>;
 type WaitingRoomUpdatedPayload = EmbeddedEventPayloadFor<EmbeddedEventName.WAITING_ROOM_UPDATED>;
 type ParticipantKnockedPayload = EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_KNOCKED>;
 
@@ -923,7 +923,7 @@ for (const integration of INTEGRATIONS) {
 				(await waiting()).find(({ participantName }) => participantName === name)!.participantIdentity;
 
 			const waitingRoomStatuses = (target: Page) =>
-				eventPayloads<WaitingRoomStatusChangedPayload>(target, EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED);
+				eventPayloads<ParticipantWaitingChangedPayload>(target, EmbeddedEventName.PARTICIPANT_WAITING_CHANGED);
 			const lastWaitingRoomUpdate = async (target: Page) =>
 				(await eventPayloads<WaitingRoomUpdatedPayload>(target, EmbeddedEventName.WAITING_ROOM_UPDATED)).at(-1);
 			const knocks = (target: Page) =>
@@ -943,25 +943,30 @@ for (const integration of INTEGRATIONS) {
 				const ben = await waitingIdentityOf('Ben');
 				const inLine = (queuePosition: number) => ({
 					roomId: waitingRoomRoomId,
-					participantIdentity: ben,
+					participant: { participantIdentity: ben },
 					status: MeetWaitingRoomStatus.WAITING,
 					queuePosition
 				});
 
-				await expect.poll(() => waitingRoomStatuses(page)).toEqual([inLine(2)]);
+				await expect.poll(() => waitingRoomStatuses(page)).toMatchObject([inLine(2)]);
 
 				await decideOnWaitingRoom(waitingRoomRoomId, 'admit', [await waitingIdentityOf('Ana')]);
 				await expect
 					.poll(() => waitingRoomStatuses(page), { timeout: NEXT_STATE_TIMEOUT })
-					.toEqual([inLine(2), inLine(1)]);
+					.toMatchObject([inLine(2), inLine(1)]);
 
 				await decideOnWaitingRoom(waitingRoomRoomId, 'admit', [ben]);
 				const joined = await expectEvent(page, EmbeddedEventName.MEETING_JOINED, { timeout: 20_000 });
 				expect(await eventPayloadField(joined, 'participantIdentity')).toBe(ben);
-				expect(await waitingRoomStatuses(page)).toEqual([
+				expect(await waitingRoomStatuses(page)).toMatchObject([
 					inLine(2),
 					inLine(1),
-					{ roomId: waitingRoomRoomId, participantIdentity: ben, status: MeetWaitingRoomStatus.ADMITTED }
+					{
+						roomId: waitingRoomRoomId,
+						participant: { participantIdentity: ben },
+						status: MeetWaitingRoomStatus.ADMITTED,
+						origin: MeetEventOrigin.MODERATOR
+					}
 				]);
 				await expect(eventLocator(page, EmbeddedEventName.MEETING_LEFT)).toHaveCount(0);
 			});
@@ -977,10 +982,11 @@ for (const integration of INTEGRATIONS) {
 				await expect(meet('#waiting-outcome-rejected')).toBeVisible({ timeout: 10_000 });
 				await expect
 					.poll(async () => (await waitingRoomStatuses(page)).at(-1))
-					.toEqual({
+					.toMatchObject({
 						roomId: waitingRoomRoomId,
-						participantIdentity: ben,
-						status: MeetWaitingRoomStatus.REJECTED
+						participant: { participantIdentity: ben },
+						status: MeetWaitingRoomStatus.REJECTED,
+						origin: MeetEventOrigin.MODERATOR
 					});
 				await expect(eventLocator(page, EmbeddedEventName.MEETING_LEFT)).toHaveCount(0);
 			});
@@ -1007,13 +1013,17 @@ for (const integration of INTEGRATIONS) {
 				await expect(meet('#waiting-outcome-expired')).toBeVisible({ timeout: 15_000 });
 				await expect
 					.poll(() => waitingRoomStatuses(page))
-					.toEqual([
-						{ roomId: waitingRoomRoomId, participantIdentity: ben, status: MeetWaitingRoomStatus.EXPIRED }
+					.toMatchObject([
+						{
+							roomId: waitingRoomRoomId,
+							participant: { participantIdentity: ben },
+							status: MeetWaitingRoomStatus.EXPIRED
+						}
 					]);
 				const expired = await getWebhookFromStorage(
 					page,
 					waitingRoomRoomId,
-					MeetWebhookEventType.WAITING_ROOM_STATUS_CHANGED
+					MeetWebhookEventType.PARTICIPANT_WAITING_CHANGED
 				);
 				expect(expired.data).toMatchObject({
 					roomId: waitingRoomRoomId,
@@ -1038,7 +1048,7 @@ for (const integration of INTEGRATIONS) {
 				const ended = await getWebhookFromStorage(
 					page,
 					waitingRoomRoomId,
-					MeetWebhookEventType.WAITING_ROOM_STATUS_CHANGED
+					MeetWebhookEventType.PARTICIPANT_WAITING_CHANGED
 				);
 				expect(ended.data).toMatchObject({
 					roomId: waitingRoomRoomId,
@@ -1047,7 +1057,7 @@ for (const integration of INTEGRATIONS) {
 					participant: { participantIdentity: ben }
 				});
 				expect(
-					await webhooksFromStorage(page, waitingRoomRoomId, MeetWebhookEventType.WAITING_ROOM_STATUS_CHANGED)
+					await webhooksFromStorage(page, waitingRoomRoomId, MeetWebhookEventType.PARTICIPANT_WAITING_CHANGED)
 				).toHaveLength(1);
 			});
 

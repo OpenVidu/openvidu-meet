@@ -1,6 +1,6 @@
 import { ParticipantInfo_Kind } from '@livekit/protocol';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import type { MeetWaitingRoomStatusChangedPayload, MeetParticipantKnockedPayload } from '@openvidu-meet/typings';
+import type { MeetParticipantWaitingChangedPayload, MeetParticipantKnockedPayload } from '@openvidu-meet/typings';
 import {
 	MEET_WAITING_ROOM_STATE_MESSAGE,
 	MeetEventOrigin,
@@ -96,7 +96,7 @@ const build = ({
 	const states: [string, string, string, unknown][] = [];
 	const signals: string[] = [];
 	const knocked: MeetParticipantKnockedPayload[] = [];
-	const changed: MeetWaitingRoomStatusChangedPayload[] = [];
+	const changed: MeetParticipantWaitingChangedPayload[] = [];
 	const service = new WaitingRoomService(
 		...([
 			{
@@ -116,7 +116,7 @@ const build = ({
 			{ sendWaitingRoomUpdatedSignal: async (roomId: string) => signals.push(roomId) },
 			{
 				sendParticipantKnockedWebhook: (payload: MeetParticipantKnockedPayload) => knocked.push(payload),
-				sendWaitingRoomStatusChangedWebhook: (payload: MeetWaitingRoomStatusChangedPayload) =>
+				sendParticipantWaitingChangedWebhook: (payload: MeetParticipantWaitingChangedPayload) =>
 					changed.push(payload)
 			},
 			noopLogger
@@ -130,15 +130,29 @@ const sha256 = (value: string) => createHash('sha256').update(value).digest('hex
 
 describe('WaitingRoomService', () => {
 	describe('knock', () => {
-		it('answers a ticket whose hash is the wait, and the identity, with the type and principal from the credential', async () => {
+		it('answers a ticket whose hash is the wait, and the participant, with the type and principal from the credential', async () => {
 			const { service, state } = build();
+			state.knockResult = {
+				entry: entry('guest-1', {
+					participantName: 'Ana',
+					type: MeetWaitingRoomParticipantType.IDENTIFIED_GUEST,
+					externalId: 'u-42'
+				}),
+				line: noLine
+			};
 
 			const answer = await service.knock(
 				{ roomId: 'room-1', roomName: 'Room 1' },
 				{ participantIdentity: 'guest-1', participantName: 'Ana', externalId: 'u-42', memberId: 'guest-1' }
 			);
 
-			expect(answer.participantIdentity).toBe('guest-1');
+			expect(answer.participant).toEqual({
+				participantIdentity: 'guest-1',
+				participantName: 'Ana',
+				type: MeetWaitingRoomParticipantType.IDENTIFIED_GUEST,
+				externalId: 'u-42',
+				knockDate: NOW - 90_000
+			});
 			expect(answer.waitingRoomTicket).toMatch(/^[A-Za-z0-9_-]{22}$/);
 			expect(state.knocks).toEqual([
 				[
@@ -189,7 +203,9 @@ describe('WaitingRoomService', () => {
 				{ participantIdentity: 'ana', participantName: 'Ana' }
 			);
 
-			expect(stateOf('wait-ana')).toEqual([{ status: MeetWaitingRoomStatus.LEFT }]);
+			expect(stateOf('wait-ana')).toEqual([
+				{ status: MeetWaitingRoomStatus.LEFT, origin: MeetEventOrigin.PARTICIPANT }
+			]);
 			expect(changed).toEqual([
 				expect.objectContaining({ status: MeetWaitingRoomStatus.LEFT, origin: MeetEventOrigin.PARTICIPANT })
 			]);
@@ -221,7 +237,12 @@ describe('WaitingRoomService', () => {
 			await service.endWaits('room-1', MeetWaitingRoomStatus.LEFT, MeetEventOrigin.PARTICIPANT, ['wait-ana']);
 
 			expect(states).toEqual([
-				['room-1', 'wait-ana', MEET_WAITING_ROOM_STATE_MESSAGE, { status: MeetWaitingRoomStatus.LEFT }],
+				[
+					'room-1',
+					'wait-ana',
+					MEET_WAITING_ROOM_STATE_MESSAGE,
+					{ status: MeetWaitingRoomStatus.LEFT, origin: MeetEventOrigin.PARTICIPANT }
+				],
 				[
 					'room-1',
 					'wait-ben',
@@ -297,7 +318,9 @@ describe('WaitingRoomService', () => {
 			const admitted = await service.admit('room-1');
 
 			expect(admitted.map(({ participantIdentity }) => participantIdentity)).toEqual(['ana']);
-			expect(stateOf('wait-ana')).toEqual([{ status: MeetWaitingRoomStatus.ADMITTED }]);
+			expect(stateOf('wait-ana')).toEqual([
+				{ status: MeetWaitingRoomStatus.ADMITTED, origin: MeetEventOrigin.MODERATOR }
+			]);
 			expect(stateOf('wait-ben')).toEqual([
 				{ status: MeetWaitingRoomStatus.WAITING, queuePosition: 1, waitedSeconds: 0 }
 			]);

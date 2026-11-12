@@ -1052,7 +1052,7 @@ for (const integration of INTEGRATIONS) {
 				(
 					await eventPayloads<{ status: MeetWaitingRoomStatus }>(
 						target,
-						EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED
+						EmbeddedEventName.PARTICIPANT_WAITING_CHANGED
 					)
 				).map(({ status }) => status);
 			const expectRejected = (waiterPage: Page) =>
@@ -1176,7 +1176,7 @@ for (const integration of INTEGRATIONS) {
 				const left = await getWebhookFromStorage(
 					page,
 					waitingRoomRoomId,
-					MeetWebhookEventType.WAITING_ROOM_STATUS_CHANGED
+					MeetWebhookEventType.PARTICIPANT_WAITING_CHANGED
 				);
 				expect(left.data).toMatchObject({
 					status: MeetWaitingRoomStatus.LEFT,
@@ -1201,7 +1201,7 @@ for (const integration of INTEGRATIONS) {
 					const left = await getWebhookFromStorage(
 						page,
 						waitingRoomRoomId,
-						MeetWebhookEventType.WAITING_ROOM_STATUS_CHANGED
+						MeetWebhookEventType.PARTICIPANT_WAITING_CHANGED
 					);
 					expect(left.data).toMatchObject({
 						status: MeetWaitingRoomStatus.LEFT,

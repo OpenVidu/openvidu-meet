@@ -145,7 +145,7 @@ describe('openvidu-meet lazy loader', () => {
 			await flush();
 
 			const onWaitingRoomStatus = jest.fn();
-			el.on(EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED, onWaitingRoomStatus);
+			el.on(EmbeddedEventName.PARTICIPANT_WAITING_CHANGED, onWaitingRoomStatus);
 			const states = [
 				{ roomId: 'r1', participantIdentity: 'ana-1', status: MeetWaitingRoomStatus.WAITING, queuePosition: 2 },
 				{ roomId: 'r1', participantIdentity: 'ana-1', status: MeetWaitingRoomStatus.WAITING, queuePosition: 1 },
@@ -154,7 +154,7 @@ describe('openvidu-meet lazy loader', () => {
 
 			for (const detail of states) {
 				implOf(el).dispatchEvent(
-					new CustomEvent(EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED, { bubbles: false, detail })
+					new CustomEvent(EmbeddedEventName.PARTICIPANT_WAITING_CHANGED, { bubbles: false, detail })
 				);
 			}
 

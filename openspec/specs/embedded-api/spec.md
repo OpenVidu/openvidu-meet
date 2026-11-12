@@ -208,7 +208,7 @@ Meet in an iframe SHALL take the origin of the page that contains it from the br
 - **AND** the participant can still join and use the meeting
 
 ### Requirement: Event catalogue
-Meet SHALL emit exactly the events `meetingJoined`, `meetingLeft`, `participantJoined`, `participantLeft`, `participantKnocked`, `participantRoleChanged`, `participantHandChanged`, `participantReactionSent`, `mediaAudioStatusChanged`, `mediaVideoStatusChanged`, `mediaScreenShareStatusChanged`, `recordingStatusChanged`, `broadcastStarted`, `broadcastUpdated`, `broadcastEnded`, `waitingRoomUpdated`, `waitingRoomStatusChanged` and `embeddedCloseRequested`, plus the deprecated `joined`, `left` and `closed`.
+Meet SHALL emit exactly the events `meetingJoined`, `meetingLeft`, `participantJoined`, `participantLeft`, `participantKnocked`, `participantRoleChanged`, `participantHandChanged`, `participantReactionSent`, `mediaAudioStatusChanged`, `mediaVideoStatusChanged`, `mediaScreenShareStatusChanged`, `recordingStatusChanged`, `broadcastStarted`, `broadcastUpdated`, `broadcastEnded`, `waitingRoomUpdated`, `participantWaitingChanged` and `embeddedCloseRequested`, plus the deprecated `joined`, `left` and `closed`.
 
 #### Scenario: Owner of each event
 - **WHEN** a reviewer looks up when an event is emitted and what its payload means
@@ -220,7 +220,7 @@ Meet SHALL emit exactly the events `meetingJoined`, `meetingLeft`, `participantJ
 - **AND** `mediaAudioStatusChanged`, `mediaVideoStatusChanged` and `mediaScreenShareStatusChanged` in `meeting-media`
 - **AND** `recordingStatusChanged` in `recordings`
 - **AND** `broadcastStarted`, `broadcastUpdated` and `broadcastEnded` in `live-broadcast`
-- **AND** `participantKnocked`, `waitingRoomUpdated` and `waitingRoomStatusChanged` in `waiting-room`
+- **AND** `participantKnocked`, `waitingRoomUpdated` and `participantWaitingChanged` in `waiting-room`
 - **AND** `joined`, `left` and `closed` in this capability, as aliases
 
 ### Requirement: Events only in embedded modes

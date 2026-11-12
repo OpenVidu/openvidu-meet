@@ -32,7 +32,7 @@ properties:
                 - participantKnocked
                 - participantRoleChanged
                 - participantHandChanged
-                - waitingRoomStatusChanged
+                - participantWaitingChanged
                 - recordingStarted
                 - recordingUpdated
                 - recordingEnded

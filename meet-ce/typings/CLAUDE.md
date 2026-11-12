@@ -101,8 +101,9 @@ token.
   `meeting`). Every event about that element, not about the meeting, its participants or their
   media, starts with `embedded`, so a host finds all of them under one prefix.
 - **Known exceptions** the lint allows on purpose: the 3.8.0 deprecated aliases (derived from the
-  alias maps, gone in 3.12.0). The knock of the waiting room is `participantKnocked` alone, a
-  `participant` event with no `waitingRoomKnocked` alias.
+  alias maps, gone in 3.12.0). What happens to a participant's wait is a
+  `participant` event (`participantKnocked`, `participantWaitingChanged`), with no `waitingRoom…` alias; only
+  the line itself is `waitingRoomUpdated`.
 
 ## Change discipline
 

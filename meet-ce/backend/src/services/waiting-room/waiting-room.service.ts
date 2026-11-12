@@ -123,7 +123,12 @@ export class WaitingRoomService {
 		}
 
 		this.afterChange(roomId, knock.line);
-		return { waitingRoomTicket, participantIdentity };
+		return this.ticketOf(waitingRoomTicket, knock.entry);
+	}
+
+	/** The answer that hands a participant the ticket of their wait. */
+	ticketOf(waitingRoomTicket: string, participant: WaitingRoomParticipant): MeetWaitingRoomTicketResponse {
+		return { waitingRoomTicket, participant: toParticipant(participant) };
 	}
 
 	/** The wait of a ticket, also for a while after it ended; null when unknown. */
@@ -361,10 +366,10 @@ export class WaitingRoomService {
 	): void {
 		for (const entry of entries) {
 			if (status !== MeetWaitingRoomStatus.WAITING) {
-				this.sendState(roomId, entry.waitId, { status });
+				this.sendState(roomId, entry.waitId, { status, origin });
 			}
 
-			this.webhookDispatcherService.sendWaitingRoomStatusChangedWebhook({
+			this.webhookDispatcherService.sendParticipantWaitingChangedWebhook({
 				roomId,
 				roomName: entry.roomName,
 				participant: toParticipant(entry),

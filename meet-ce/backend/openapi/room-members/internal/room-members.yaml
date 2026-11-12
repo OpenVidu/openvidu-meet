@@ -8,7 +8,7 @@
 
             When the room's config has `waitingRoom.enabled` and the participant joining (`joinMeeting` true) lacks
             `waitingRoomBypass`, the request runs the usual join checks, puts the participant in the waiting line and
-            answers `202` with a `waitingRoomTicket` and their `participantIdentity` instead of a token: nothing is
+            answers `202` with a `waitingRoomTicket` and the `participant` who waits instead of a token: nothing is
             reserved or counted, the meeting does not start and the room stays `open`. It answers `409` when the
             line already holds 100 participants. Once a participant is admitted, the same request with the
             `waitingRoomTicket` in the body answers the join token, applying the join checks again, including the

@@ -261,7 +261,7 @@ test.describe('Webhooks E2E Tests', () => {
 		expect(ended.status).toBe(MeetBroadcastStatus.COMPLETE);
 	});
 
-	test('should receive participantKnocked once per wait and waitingRoomStatusChanged for each decision', async ({
+	test('should receive participantKnocked once per wait and participantWaitingChanged for each decision', async ({
 		page,
 		browser
 	}) => {
@@ -296,7 +296,7 @@ test.describe('Webhooks E2E Tests', () => {
 		await waitingRoomAdmitCommand(page, [ben.participantIdentity]);
 
 		const statusChanged = () =>
-			webhooksFromStorage(page, waitingRoomRoomId, MeetWebhookEventType.WAITING_ROOM_STATUS_CHANGED);
+			webhooksFromStorage(page, waitingRoomRoomId, MeetWebhookEventType.PARTICIPANT_WAITING_CHANGED);
 		await expect
 			.poll(async () => (await statusChanged()).map(({ data }) => data))
 			.toEqual(

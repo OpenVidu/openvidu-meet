@@ -488,7 +488,7 @@ describe('RoomMemberService.generateRoomMemberToken in a room with the waiting r
 	let returned: WaitingRoomReturnResult;
 	let memberService: JoinStepsRoomMemberService;
 
-	const entry = { waitId: 'wait-1' } as WaitingRoomEntry;
+	const entry = { waitId: 'wait-1', participantIdentity: 'ana-1' } as WaitingRoomEntry;
 	const waitOf = (status: MeetWaitingRoomStatus, ended = false, principal?: string): WaitingRoomWait => ({
 		waitId: 'wait-1',
 		roomId: ROOM_ID,
@@ -567,8 +567,12 @@ describe('RoomMemberService.generateRoomMemberToken in a room with the waiting r
 				{
 					knock: async (_room: object, request: { participantIdentity: string; memberId?: string }) => {
 						steps.push(`knock:${request.memberId ?? 'anonymous'}`);
-						return { waitingRoomTicket: TICKET, participantIdentity: request.participantIdentity };
+						return {
+							waitingRoomTicket: TICKET,
+							participant: { participantIdentity: request.participantIdentity }
+						};
 					},
+					ticketOf: (waitingRoomTicket: string, participant: object) => ({ waitingRoomTicket, participant }),
 					findWait: async () => wait,
 					consume: async () => {
 						steps.push('consume');
@@ -587,7 +591,10 @@ describe('RoomMemberService.generateRoomMemberToken in a room with the waiting r
 	it('answers a ticket to a participant without waitingRoomBypass, reserving, creating and minting nothing', async () => {
 		memberService.source = { memberId: 'guest-1', permissions: speaker };
 
-		await expect(join()).resolves.toEqual({ waitingRoomTicket: TICKET, participantIdentity: 'guest-1' });
+		await expect(join()).resolves.toEqual({
+			waitingRoomTicket: TICKET,
+			participant: { participantIdentity: 'guest-1' }
+		});
 		expect(steps).toEqual(['knock:guest-1']);
 	});
 
@@ -611,7 +618,7 @@ describe('RoomMemberService.generateRoomMemberToken in a room with the waiting r
 
 		await expect(join({ waitingRoomTicket: TICKET }, 'previous-token')).resolves.toEqual({
 			waitingRoomTicket: TICKET,
-			participantIdentity: 'ana-1'
+			participant: expect.objectContaining({ participantIdentity: 'ana-1' })
 		});
 		expect(steps).toEqual([]);
 	});
@@ -629,7 +636,7 @@ describe('RoomMemberService.generateRoomMemberToken in a room with the waiting r
 
 		await expect(join({ waitingRoomTicket: TICKET })).resolves.toEqual({
 			waitingRoomTicket: TICKET,
-			participantIdentity: 'ana-1'
+			participant: expect.objectContaining({ participantIdentity: 'ana-1' })
 		});
 		expect(steps).toEqual(['return']);
 	});

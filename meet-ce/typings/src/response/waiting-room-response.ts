@@ -1,7 +1,8 @@
 import { MeetWaitingRoomParticipantType } from '../database/room-member.entity.js';
+import { MeetEventOrigin } from '../embedded/events.js';
 
 /**
- * How a wait in the waiting room stands or ended. It is the status the `waitingRoomStatusChanged` webhook
+ * How a wait in the waiting room stands or ended. It is the status the `participantWaitingChanged` webhook
  * and embedded event carry, and the one the waiting screen shows.
  */
 export enum MeetWaitingRoomStatus {
@@ -88,8 +89,8 @@ export interface MeetWaitingRoomDecisionResponse {
 export interface MeetWaitingRoomTicketResponse {
 	/** Opaque credential of the wait: it opens the WebSocket connection of the wait, the token request once admitted and the leave request */
 	waitingRoomTicket: string;
-	/** Identity the participant will have in the meeting */
-	participantIdentity: string;
+	/** The participant who waits, with the identity they will have in the meeting. See {@link MeetWaitingRoomParticipant} for details */
+	participant: MeetWaitingRoomParticipant;
 }
 
 /**
@@ -99,6 +100,8 @@ export interface MeetWaitingRoomTicketResponse {
 export interface MeetWaitingRoomState {
 	/** Status of the wait. A final one, any but `waiting` and `admitted`, ends the conversation */
 	status: MeetWaitingRoomStatus;
+	/** Who caused the change. Omitted while `status` is `waiting`. See {@link MeetEventOrigin} for details */
+	origin?: MeetEventOrigin;
 	/** Position in line, from 1, while `status` is `waiting` */
 	queuePosition?: number;
 	/** Seconds waited since the participant asked, while `status` is `waiting` */

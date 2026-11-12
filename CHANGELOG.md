@@ -21,7 +21,7 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
   `broadcastControl` and `broadcastEdit` granted to no role or member, and `waitingRoomBypass` and `waitingRoomAdmin`
   granted to their moderator role.
 - Webhooks registered without `events`, the one of `MEET_INITIAL_WEBHOOK_URL` included, also receive
-  `participantRoleChanged`, `participantHandChanged`, `participantKnocked`, `waitingRoomStatusChanged`,
+  `participantRoleChanged`, `participantHandChanged`, `participantKnocked`, `participantWaitingChanged`,
   `broadcastStarted`, `broadcastUpdated` and `broadcastEnded`.
 - Meet opens a WebSocket on its own path, `<base path>/internal-api/v1/ws`: a proxy or load balancer of the operator's
   own in front of Meet passes WebSocket upgrades on the Meet path and keeps idle connections open for more than 20
@@ -81,8 +81,8 @@ with no replacement.
   [`participantWaitingReject`][3.10-waiting-room-reject], and the embedded commands `participantWaitingAdmit` and
   `participantWaitingReject`, are gated by `waitingRoomAdmin` and take the participants named or everyone waiting. The
   webhooks [`participantKnocked`][3.10-participant-knocked] and
-  [`waitingRoomStatusChanged`][3.10-waiting-room-status-changed] and the embedded events `participantKnocked`,
-  `waitingRoomUpdated` and `waitingRoomStatusChanged` report who waits and what became of each wait. In these rooms a room member token
+  [`participantWaitingChanged`][3.10-participant-waiting-changed] and the embedded events `participantKnocked`,
+  `waitingRoomUpdated` and `participantWaitingChanged` report who waits and what became of each wait. In these rooms a room member token
   acts on the meeting (reads, moderation, recording and broadcast control, admission) only if it carries a participant
   identity, and turning the waiting room on invalidates the room member tokens issued before and updates
   `rolesUpdatedAt`.
@@ -551,4 +551,4 @@ registered on both receives it twice.
 [3.10-waiting-room-admit]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantWaitingAdmit
 [3.10-waiting-room-reject]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantWaitingReject
 [3.10-participant-knocked]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantKnockedWebhook
-[3.10-waiting-room-status-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/waitingRoomStatusChangedWebhook
+[3.10-participant-waiting-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantWaitingChangedWebhook

@@ -3,7 +3,7 @@
 ## Purpose
 The waiting room holds the participants of a room who ask to join until a holder of `waitingRoomAdmin` admits or rejects them. Participants, holders of `waitingRoomAdmin`, host applications, REST clients and webhook receivers rely on it.
 
-Surfaces: REST API (`participantWaitingList`, `participantWaitingAdmit`, `participantWaitingReject`, the internal token request and leave request; `meet-ce/backend/openapi/meetings/`), webhooks `participantKnocked` and `waitingRoomStatusChanged` (`meet-ce/backend/openapi/webhooks/`), embedded commands `participantWaitingAdmit` and `participantWaitingReject` and events `participantKnocked`, `waitingRoomUpdated` and `waitingRoomStatusChanged` (`meet-ce/typings/src/embedded/`), the WebSocket of the realtime channel, room config `waitingRoom`, permissions `waitingRoomBypass` and `waitingRoomAdmin`, the meeting UI (Join screen, waiting screen, outcome screens, Participants panel, status rail, notifications) and the console room wizard. Documented in openvidu.io `docs/meet/features/meetings/waiting-room.md`.
+Surfaces: REST API (`participantWaitingList`, `participantWaitingAdmit`, `participantWaitingReject`, the internal token request and leave request; `meet-ce/backend/openapi/meetings/`), webhooks `participantKnocked` and `participantWaitingChanged` (`meet-ce/backend/openapi/webhooks/`), embedded commands `participantWaitingAdmit` and `participantWaitingReject` and events `participantKnocked`, `waitingRoomUpdated` and `participantWaitingChanged` (`meet-ce/typings/src/embedded/`), the WebSocket of the realtime channel, room config `waitingRoom`, permissions `waitingRoomBypass` and `waitingRoomAdmin`, the meeting UI (Join screen, waiting screen, outcome screens, Participants panel, status rail, notifications) and the console room wizard. Documented in openvidu.io `docs/meet/features/meetings/waiting-room.md`.
 
 ## Requirements
 
@@ -52,12 +52,12 @@ In a room with `waitingRoom.enabled`, a participant who asks to join SHALL wait 
 - **THEN** the server answers `409` and the "Closed room" error screen is shown, as without the waiting room
 
 ### Requirement: Asking to join gives a waiting ticket, not a token
-Asking to join a room where the participant waits SHALL answer with a waiting ticket and their identity, not a token. The ticket SHALL serve only its own wait: the realtime connection that keeps the place, the join token once admitted, and leaving. It SHALL last as long as the wait, without renewal, and give no access to the meeting's media or API. Asking SHALL NOT start the meeting, reserve the name or take a place in it. The identity SHALL be the one kept once admitted (see `meetings`).
+Asking to join a room where the participant waits SHALL answer with a waiting ticket and the participant as `MeetWaitingRoomParticipant`, not a token. The ticket SHALL serve only its own wait: the realtime connection that keeps the place, the join token once admitted, and leaving. It SHALL last as long as the wait, without renewal, and give no access to the meeting's media or API. Asking SHALL NOT start the meeting, reserve the name or take a place in it. The identity SHALL be the one kept once admitted (see `meetings`).
 
 #### Scenario: Waiter knows its identity
 - **GIVEN** a participant with the anonymous speaker link of a room with the waiting room on
 - **WHEN** they ask to join and wait
-- **THEN** the answer carries the waiting ticket and the identity that `participantWaitingList` lists and `participantJoined` reports after their admission
+- **THEN** the answer carries the waiting ticket and the participant, with the identity that `participantWaitingList` lists and `participantJoined` reports after their admission
 
 #### Scenario: Room stays open
 - **GIVEN** an open room with the waiting room on and no meeting running
@@ -100,7 +100,7 @@ A participant SHALL start waiting when they ask to join, and keep their place on
 #### Scenario: Leaving while reconnecting
 - **GIVEN** a participant waiting whose realtime connection is being restored after a network change
 - **WHEN** they press "Leave waiting room"
-- **THEN** `participantWaitingList` no longer lists them and a `waitingRoomStatusChanged` webhook with `left` is sent
+- **THEN** `participantWaitingList` no longer lists them and a `participantWaitingChanged` webhook with `left` is sent
 
 #### Scenario: Replica stops
 - **GIVEN** two replicas and a participant waiting whose realtime connection is held by replica A
@@ -118,7 +118,7 @@ A participant whose realtime connection has been down for about a minute, whatev
 #### Scenario: Page closed
 - **GIVEN** a participant waiting
 - **WHEN** they close the browser tab
-- **THEN** `participantWaitingList` stops listing them within about a minute and one `waitingRoomStatusChanged` webhook with `expired` is sent
+- **THEN** `participantWaitingList` stops listing them within about a minute and one `participantWaitingChanged` webhook with `expired` is sent
 
 #### Scenario: Network lost for two minutes
 - **GIVEN** a participant second in line
@@ -129,7 +129,7 @@ A participant whose realtime connection has been down for about a minute, whatev
 #### Scenario: Host removes the embedded element
 - **GIVEN** an embedded participant waiting, through the web component or through an iframe
 - **WHEN** the host application removes the element or the iframe
-- **THEN** `participantWaitingList` stops listing them within about a minute, with a `waitingRoomStatusChanged` webhook with `expired`, not `left`
+- **THEN** `participantWaitingList` stops listing them within about a minute, with a `participantWaitingChanged` webhook with `expired`, not `left`
 
 #### Scenario: Realtime connection blocked
 - **GIVEN** a network that blocks the realtime connection to Meet
@@ -388,7 +388,7 @@ An admitted participant SHALL count as a taken place from their admission until 
 #### Scenario: Admission never used
 - **GIVEN** a meeting with `maxParticipants` 3, two participants connected and Ana admitted, who closes her page
 - **WHEN** a minute passes after her admission
-- **THEN** `availablePlaces` is 1 again and her wait ends with a `waitingRoomStatusChanged` webhook with `expired`
+- **THEN** `availablePlaces` is 1 again and her wait ends with a `participantWaitingChanged` webhook with `expired`
 - **AND** a script that keeps its connection open without asking for the join token loses the place the same way
 
 #### Scenario: Participant joins
@@ -399,7 +399,7 @@ An admitted participant SHALL count as a taken place from their admission until 
 #### Scenario: Joined notice lost
 - **GIVEN** an admitted participant who joined the meeting, whose joined notice never reaches Meet
 - **WHEN** a minute passes after their admission
-- **THEN** their place stops counting and no `waitingRoomStatusChanged` webhook with `expired` is sent
+- **THEN** their place stops counting and no `participantWaitingChanged` webhook with `expired` is sent
 
 #### Scenario: Notice reaches another replica
 - **GIVEN** two replicas, Ana admitted through replica A, and LiveKit's joined notice for Ana handled by replica B
@@ -720,27 +720,27 @@ The server SHALL send the `participantKnocked` webhook once each time a particip
 - **THEN** no second `participantKnocked` webhook is delivered
 
 #### Scenario: Knock never followed by a connection
-- **GIVEN** a registered webhook subscribed to `participantKnocked` and `waitingRoomStatusChanged`
+- **GIVEN** a registered webhook subscribed to `participantKnocked` and `participantWaitingChanged`
 - **WHEN** a client asks to join and never opens its realtime connection
-- **THEN** one `participantKnocked` webhook is delivered at once, and within about 20 seconds one `waitingRoomStatusChanged` webhook with `status` `expired`
+- **THEN** one `participantKnocked` webhook is delivered at once, and within about 20 seconds one `participantWaitingChanged` webhook with `status` `expired`
 
-### Requirement: waitingRoomStatusChanged webhook
-The server SHALL send the `waitingRoomStatusChanged` webhook on each change of a wait after it started, with `roomId`, `roomName`, the participant (`MeetWaitingRoomParticipant`, whose `knockDate` with the event's `creationDate` tells how long they waited), `origin` as in `participantHandChanged`, and `status` of `MeetWaitingRoomStatus`: `admitted`, `rejected`, `left`, `expired`, `meeting_ended`, `room_closed`, or `waiting` for an admitted participant back in line.
+### Requirement: participantWaitingChanged webhook
+The server SHALL send the `participantWaitingChanged` webhook on each change of a wait after it started, with `roomId`, `roomName`, the participant (`MeetWaitingRoomParticipant`, whose `knockDate` with the event's `creationDate` tells how long they waited), `origin` as in `participantHandChanged`, and `status` of `MeetWaitingRoomStatus`: `admitted`, `rejected`, `left`, `expired`, `meeting_ended`, `room_closed`, or `waiting` for an admitted participant back in line.
 
 #### Scenario: Admitted by another moderator
-- **GIVEN** a registered webhook subscribed to `waitingRoomStatusChanged` and a participant who asked to join 90 seconds ago
+- **GIVEN** a registered webhook subscribed to `participantWaitingChanged` and a participant who asked to join 90 seconds ago
 - **WHEN** a moderator admits them
-- **THEN** one `waitingRoomStatusChanged` webhook is delivered with `status` `admitted`, `origin` `moderator`, their identity and a `knockDate` 90 seconds before the event's `creationDate`
+- **THEN** one `participantWaitingChanged` webhook is delivered with `status` `admitted`, `origin` `moderator`, their identity and a `knockDate` 90 seconds before the event's `creationDate`
 
 #### Scenario: Page closed for good
-- **GIVEN** a registered webhook subscribed to `waitingRoomStatusChanged` and a participant waiting
+- **GIVEN** a registered webhook subscribed to `participantWaitingChanged` and a participant waiting
 - **WHEN** they close the browser tab and do not come back
-- **THEN** about a minute later one `waitingRoomStatusChanged` webhook is delivered with `status` `expired` and `origin` `system`
+- **THEN** about a minute later one `participantWaitingChanged` webhook is delivered with `status` `expired` and `origin` `system`
 
 #### Scenario: Waiter leaves
-- **GIVEN** a registered webhook subscribed to `waitingRoomStatusChanged` and a participant waiting
+- **GIVEN** a registered webhook subscribed to `participantWaitingChanged` and a participant waiting
 - **WHEN** they press "Leave waiting room"
-- **THEN** one `waitingRoomStatusChanged` webhook is delivered with `status` `left` and `origin` `participant`
+- **THEN** one `participantWaitingChanged` webhook is delivered with `status` `left` and `origin` `participant`
 
 ### Requirement: participantKnocked embedded event
 The embedded element of each participant holding `waitingRoomAdmin` in the meeting SHALL dispatch `participantKnocked` once for each participant who starts waiting while it is in the meeting, with `roomId` and the participant as `MeetWaitingRoomParticipant`. Participants already waiting when the element joined SHALL be reported by `waitingRoomUpdated`, not by `participantKnocked`, and so SHALL a participant back in line after an admission that failed.
@@ -773,28 +773,28 @@ The embedded element of each participant holding `waitingRoomAdmin` in the meeti
 - **WHEN** an embedded moderator holding `waitingRoomAdmin` joins the meeting
 - **THEN** the host receives `waitingRoomUpdated` listing both and no `participantKnocked`
 
-### Requirement: waitingRoomStatusChanged embedded event
-The embedded element of a participant who waits SHALL dispatch `waitingRoomStatusChanged` with `roomId`, `participantIdentity` and `status` of `MeetWaitingRoomStatus`: `waiting` with `queuePosition` (1 for the first) on the first state received, a position change or a return to the line, and each other value when the wait ends that way (`left` also for a wait replaced by a new request, `expired` whenever else their meeting says they lost their place). No `meetingLeft` SHALL be dispatched for a wait.
+### Requirement: participantWaitingChanged embedded event
+The embedded element of a participant who waits SHALL dispatch `participantWaitingChanged` with `roomId`, the participant as the answer to their request gave it (`MeetWaitingRoomParticipant`) and `status` of `MeetWaitingRoomStatus`: `waiting` with `queuePosition` (1 for the first) on the first state received, a position change or a return to the line, and each other value when the wait ends that way (`left` also for a wait replaced by a new request, `expired` whenever else their meeting says they lost their place). Every one but `waiting` SHALL carry `origin` as the `participantWaitingChanged` webhook does, unless their meeting could not learn it. No `meetingLeft` SHALL be dispatched for a wait.
 
 #### Scenario: Waiting then admitted
 - **GIVEN** an embedded participant who asks to join and is second in line
 - **WHEN** the participant ahead is admitted and then they are admitted
-- **THEN** the host receives `waitingRoomStatusChanged` with `waiting` and position 2, `waiting` and position 1, then `admitted`, all with the identity the server answered when they asked, followed by `meetingJoined` with that identity
+- **THEN** the host receives `participantWaitingChanged` with `waiting` and position 2, `waiting` and position 1, then `admitted`, all with the participant the server answered when they asked, and `admitted` with `origin` `moderator`, followed by `meetingJoined` with that identity
 
 #### Scenario: Rejected
 - **GIVEN** an embedded participant waiting
 - **WHEN** a moderator rejects them
-- **THEN** the host receives `waitingRoomStatusChanged` with `rejected` and no `meetingLeft`
+- **THEN** the host receives `participantWaitingChanged` with `rejected` and no `meetingLeft`
 
 #### Scenario: Realtime connection never opens
 - **GIVEN** an embedded participant who asks to join and whose realtime connection never receives a message
 - **WHEN** the meeting shows the connection error screen
-- **THEN** the host receives no `waitingRoomStatusChanged`
+- **THEN** the host receives no `participantWaitingChanged`
 
 #### Scenario: Admission lost on the way
-- **GIVEN** an embedded participant admitted, whose host received `waitingRoomStatusChanged` with `admitted`
+- **GIVEN** an embedded participant admitted, whose host received `participantWaitingChanged` with `admitted`
 - **WHEN** the answer to their join token request is lost and their meeting says they lost their place
-- **THEN** the host receives `waitingRoomStatusChanged` with `expired` and no `meetingJoined`
+- **THEN** the host receives `participantWaitingChanged` with `expired` and no `meetingJoined`
 
 ### Requirement: Waiting room commands
 The embedded commands `participantWaitingAdmit` and `participantWaitingReject` SHALL admit or reject the waiting participants named by `participantIdentities`, one or several, or everyone waiting when `participantIdentities` is omitted (`participantWaitingAdmit` up to the free places), through the REST operations of the same name and with their rules. Both SHALL be gated by `waitingRoomAdmin` and run only while the local participant is in the meeting.
@@ -825,17 +825,17 @@ The embedded commands `participantWaitingAdmit` and `participantWaitingReject` S
 - **THEN** the command is rejected and Zoe keeps waiting
 
 ### Requirement: The host of a waiting participant
-While the local participant waits, `mediaToggleAudio` and `mediaToggleVideo` SHALL act on the camera preview and microphone as on the device setup screen, and `meetingLeave` SHALL leave the waiting room, dispatching `waitingRoomStatusChanged` with `left`.
+While the local participant waits, `mediaToggleAudio` and `mediaToggleVideo` SHALL act on the camera preview and microphone as on the device setup screen, and `meetingLeave` SHALL leave the waiting room, dispatching `participantWaitingChanged` with `left`.
 
 #### Scenario: Leave command while waiting
 - **GIVEN** an embedded participant waiting
 - **WHEN** the host calls `meetingLeave()`
-- **THEN** the participant leaves the waiting room, `participantWaitingList` no longer lists them, and the host receives `waitingRoomStatusChanged` with `left`
+- **THEN** the participant leaves the waiting room, `participantWaitingList` no longer lists them, and the host receives `participantWaitingChanged` with `left`
 
 #### Scenario: Leave command and removal at once
 - **GIVEN** an embedded participant waiting
 - **WHEN** the host calls `meetingLeave()` and removes the element right after
-- **THEN** `participantWaitingList` no longer lists them and a `waitingRoomStatusChanged` webhook with `left` is sent
+- **THEN** `participantWaitingList` no longer lists them and a `participantWaitingChanged` webhook with `left` is sent
 
 #### Scenario: Camera off while waiting
 - **GIVEN** an embedded participant waiting with the camera on
