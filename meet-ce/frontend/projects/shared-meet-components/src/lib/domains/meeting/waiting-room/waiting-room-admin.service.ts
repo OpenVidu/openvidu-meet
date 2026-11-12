@@ -12,6 +12,7 @@ import {
 import { filter, Subject } from 'rxjs';
 import { HttpService } from '../../../shared/services/http.service';
 import { LoggerService } from '../../../shared/services/logger.service';
+import { NotificationService } from '../../../shared/services/notification.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { EmbeddedEventBusService } from '../../embedded/services/embedded-event-bus.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
@@ -23,6 +24,8 @@ import { MeetingContextService } from '../services/meeting-context.service';
 
 /** Signals and participant moves this close together make one request for the list. */
 const GROUPING_MS = 300;
+/** How long the notice that a participant left before the decision stays up. */
+const NOT_WAITING_NOTICE_MS = 6_000;
 /** The list is read this often anyway, so a lost signal shows within this time. */
 const POLL_INTERVAL_MS = 30_000;
 
@@ -54,6 +57,7 @@ export class WaitingRoomAdminService {
 	private readonly e2ee = inject(E2eeService);
 	private readonly eventBus = inject(EmbeddedEventBusService);
 	private readonly runtimeConfig = inject(RuntimeConfigService);
+	private readonly notificationService = inject(NotificationService);
 	private readonly log = inject(LoggerService).get('OpenVidu Meet - WaitingRoomAdminService');
 
 	private readonly _waiting = signal<WaitingRoomWaiter[]>([]);
@@ -164,7 +168,10 @@ export class WaitingRoomAdminService {
 		return this.admit(shown.map(({ participant }) => participant.participantIdentity));
 	}
 
-	/** A decision the line no longer allows (someone left, or no longer fits) shows the new line instead. */
+	/**
+	 * A decision the line no longer allows (someone left, or no longer fits) shows the new line instead,
+	 * and says who is no longer waiting.
+	 */
 	private async decide(
 		decision: WaitingRoomDecision,
 		participantIdentities?: string[]
@@ -175,6 +182,7 @@ export class WaitingRoomAdminService {
 
 		const body: MeetWaitingRoomDecisionOptions =
 			participantIdentities === undefined ? {} : { participantIdentities };
+		const names = new Map(this._waiting().map(({ participant, name }) => [participant.participantIdentity, name]));
 
 		try {
 			const { participants } = await this.http.postRequest<MeetWaitingRoomDecisionResponse>(
@@ -187,8 +195,28 @@ export class WaitingRoomAdminService {
 				void this.refresh();
 			}
 
+			if (error instanceof HttpErrorResponse && error.status === 404) {
+				this.tellNotWaiting(error, names);
+			}
+
 			throw error;
 		}
+	}
+
+	/** Says who the refused decision named that no longer waits. */
+	private tellNotWaiting(error: HttpErrorResponse, names: Map<string, string>): void {
+		const identity = /^Participant '([^']+)' is not waiting/.exec(error.error?.message ?? '')?.[1];
+
+		if (!identity) return;
+
+		this.notificationService.showNotification({
+			kind: 'waiting-room-not-waiting',
+			icon: 'person_off',
+			tone: 'warning',
+			title: { key: 'WAITING_ROOM.ADMIN.GONE_TITLE', params: { name: names.get(identity) ?? identity } },
+			message: { key: 'WAITING_ROOM.ADMIN.GONE_MESSAGE' },
+			durationMs: NOT_WAITING_NOTICE_MS
+		});
 	}
 
 	private apply(roomId: string, list: MeetWaitingRoomList, waiting: WaitingRoomWaiter[]): void {

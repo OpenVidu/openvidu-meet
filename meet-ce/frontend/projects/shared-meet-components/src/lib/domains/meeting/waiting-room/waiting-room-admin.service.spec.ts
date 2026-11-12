@@ -12,6 +12,7 @@ import {
 import { Subject } from 'rxjs';
 import { HttpService } from '../../../shared/services/http.service';
 import { LoggerService } from '../../../shared/services/logger.service';
+import { NotificationService } from '../../../shared/services/notification.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { EmbeddedEventBusService } from '../../embedded/services/embedded-event-bus.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
@@ -64,6 +65,7 @@ describe('WaitingRoomAdminService', () => {
 	let signals: Subject<MeetSignal>;
 	let eventBus: EmbeddedEventBusService;
 	let arrivals: WaitingRoomWaiter[][];
+	let showNotification: jasmine.Spy;
 
 	beforeEach(() => {
 		jasmine.clock().install();
@@ -76,6 +78,7 @@ describe('WaitingRoomAdminService', () => {
 		connected = signal(false);
 		remoteParticipants = signal<unknown[]>([]);
 		signals = new Subject<MeetSignal>();
+		showNotification = jasmine.createSpy('showNotification');
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -98,7 +101,8 @@ describe('WaitingRoomAdminService', () => {
 				{ provide: ParticipantService, useValue: { remoteParticipants } },
 				{ provide: E2eeService, useValue: { decryptOrMask: async (text: string) => text } },
 				{ provide: MeetingEventsService, useValue: { meetSignals$: signals.asObservable() } },
-				{ provide: RuntimeConfigService, useValue: { isEmbeddedMode: () => true } }
+				{ provide: RuntimeConfigService, useValue: { isEmbeddedMode: () => true } },
+				{ provide: NotificationService, useValue: { showNotification } }
 			]
 		});
 
@@ -366,6 +370,34 @@ describe('WaitingRoomAdminService', () => {
 			await service.admitShown();
 
 			expect(http.postRequest).not.toHaveBeenCalled();
+		});
+
+		it('says which participant is no longer waiting, by name, when a decision names one who left', async () => {
+			http.postRequest.and.rejectWith(
+				new HttpErrorResponse({
+					status: 404,
+					error: { message: "Participant 'ben' is not waiting in room 'room-1'" }
+				})
+			);
+
+			await expectAsync(service.admit(['ana', 'ben'])).toBeRejected();
+
+			expect(showNotification).toHaveBeenCalledOnceWith(
+				jasmine.objectContaining({
+					kind: 'waiting-room-not-waiting',
+					title: { key: 'WAITING_ROOM.ADMIN.GONE_TITLE', params: { name: 'BEN' } },
+					message: { key: 'WAITING_ROOM.ADMIN.GONE_MESSAGE' }
+				})
+			);
+		});
+
+		it('says nothing about a 404 that names nobody, nor about a 409', async () => {
+			http.postRequest.and.rejectWith(new HttpErrorResponse({ status: 404 }));
+			await expectAsync(service.admit(['ana'])).toBeRejected();
+			http.postRequest.and.rejectWith(new HttpErrorResponse({ status: 409 }));
+			await expectAsync(service.admit(['ana'])).toBeRejected();
+
+			expect(showNotification).not.toHaveBeenCalled();
 		});
 
 		for (const status of [404, 409]) {

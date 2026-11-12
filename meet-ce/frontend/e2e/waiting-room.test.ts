@@ -36,6 +36,7 @@ import {
 	waitingRoomSection,
 	meetingFullMessage,
 	newWaiterPage,
+	notWaitingNotification,
 	openParticipantsPanel,
 	routeRealtimeChannel,
 	waitingOutcome
@@ -46,6 +47,8 @@ import { click } from './helpers/ui-utils.helper';
 const PLACE_LOST_TIMEOUT = 90_000;
 /** A waiter whose page closed is dropped 15 s later, by a sweep that runs every 5 s. */
 const PAGE_CLOSED_TIMEOUT = 30_000;
+/** Long enough for the close of a page's connection to reach the server. */
+const CLOSE_REACHES_SERVER_MS = 1_000;
 /** A waiter's state is sent again at every answered ping, every 20 s. */
 const NEXT_PING_TIMEOUT = 30_000;
 
@@ -320,6 +323,25 @@ test.describe('Waiting room E2E Tests', () => {
 	});
 
 	test.describe('Admitters', () => {
+		test('should tell a moderator who admits a participant that closed the tab that they already left', async ({
+			browser
+		}) => {
+			await createWaitingRoomRoom();
+			const hostPage = await host(browser);
+			await openParticipantsPanel(hostPage);
+			const ana = await waiter(browser, 'Ana');
+			const identity = await identityOf('Ana');
+			await expect(waitingRoomRow(hostPage, 'Ana')).toBeVisible({ timeout: 10_000 });
+
+			await ana.context().close();
+			await hostPage.waitForTimeout(CLOSE_REACHES_SERVER_MS);
+			await admitFromPanel(hostPage, 'Ana');
+
+			await expect(notWaitingNotification(hostPage)).toContainText('Ana already left', { timeout: 10_000 });
+			await expect(waitingRoomRow(hostPage, 'Ana')).toBeHidden({ timeout: PAGE_CLOSED_TIMEOUT });
+			expect(await getMeetingParticipantIdentities(roomId)).not.toContain(identity);
+		});
+
 		test('should notify a knock only while the participants panel is closed', async ({ browser }) => {
 			await createWaitingRoomRoom();
 			const hostPage = await host(browser);

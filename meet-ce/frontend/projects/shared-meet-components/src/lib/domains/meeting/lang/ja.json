@@ -304,7 +304,9 @@
 			"WAITING_COUNT": "{count, plural, other {# 人が参加待ち}}",
 			"WAITING_LABEL": "人が参加待ち",
 			"WANTS_TO_JOIN": "参加をリクエストしています",
-			"VIEW": "表示"
+			"VIEW": "表示",
+			"GONE_TITLE": "{name}さんはすでに退出しました",
+			"GONE_MESSAGE": "この参加者は待機室で見つかりませんでした。"
 		}
 	},
 	"SHARE_ACCESS": {

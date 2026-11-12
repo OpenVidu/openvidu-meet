@@ -304,7 +304,9 @@
 			"WAITING_COUNT": "{count, plural, other {# शामिल होने की प्रतीक्षा में}}",
 			"WAITING_LABEL": "शामिल होने की प्रतीक्षा में",
 			"WANTS_TO_JOIN": "शामिल होना चाहते हैं",
-			"VIEW": "देखें"
+			"VIEW": "देखें",
+			"GONE_TITLE": "{name} पहले ही जा चुके हैं",
+			"GONE_MESSAGE": "वह प्रतिभागी प्रतीक्षा कक्ष में नहीं मिला।"
 		}
 	},
 	"SHARE_ACCESS": {
