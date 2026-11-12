@@ -11,7 +11,6 @@ import {
 	provideZonelessChangeDetection,
 	ɵSHARED_STYLES_HOST as SHARED_STYLES_HOST
 } from '@angular/core';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import {
 	AUTH_TRANSLATIONS,
@@ -35,7 +34,6 @@ export const appConfig: ApplicationConfig = {
 	providers: [
 		provideBrowserGlobalErrorListeners(),
 		provideZonelessChangeDetection(),
-		provideAnimationsAsync(),
 		provideRouter([]),
 		{ provide: THEME_ROOT_ELEMENT, useValue: null },
 		provideAppInitializer(() => inject(ThemeService).init()),
