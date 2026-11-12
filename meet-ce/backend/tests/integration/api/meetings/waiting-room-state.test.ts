@@ -518,6 +518,42 @@ describe('Waiting room state in Redis', () => {
 			expect(await state.seenAt(roomId, ben.waitId)).toBeNull();
 		});
 
+		it('keeps an admission from the participant whose page closed, by name and for everyone', async () => {
+			const ana = await knock('ana');
+			await knock('ben');
+			await state.pageClosed(ana.waitId, 0);
+
+			expect(await state.decide(roomId, 'admit', ['ana'], null)).toEqual({ notWaiting: 'ana' });
+			expect(await state.decide(roomId, 'admit', ['ben', 'ana'], null)).toEqual({ notWaiting: 'ana' });
+
+			const everyone = await state.decide(roomId, 'admit', undefined, null);
+
+			expect(
+				'decided' in everyone && everyone.decided.map(({ participantIdentity }) => participantIdentity)
+			).toEqual(['ben']);
+			expect(await lineOf()).toEqual(['ana']);
+		});
+
+		it('still lets a moderator reject the participant whose page closed', async () => {
+			const ana = await knock('ana');
+			await state.pageClosed(ana.waitId, 0);
+
+			const result = await state.decide(roomId, 'reject', ['ana'], null);
+
+			expect('decided' in result && result.decided).toHaveLength(1);
+			expect(await state.seenAt(roomId, ana.waitId)).toBeNull();
+		});
+
+		it('lets the participant be admitted again once their page connects again', async () => {
+			const ana = await knock('ana');
+			await state.pageClosed(ana.waitId, 0);
+			await state.presence(ana.waitId);
+
+			const result = await state.decide(roomId, 'admit', ['ana'], null);
+
+			expect('decided' in result && result.decided).toHaveLength(1);
+		});
+
 		it('is undone by the next presence of the wait', async () => {
 			const ana = await knock('ana');
 			await state.pageClosed(ana.waitId, 0);

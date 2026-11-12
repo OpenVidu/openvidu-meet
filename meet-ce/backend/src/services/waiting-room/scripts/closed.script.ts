@@ -1,8 +1,9 @@
 import { WAITING_ROOM_SCRIPT_PRELUDE } from './prelude.script.js';
 
 /**
- * Dates the presence of a waiting participant whose page closed back in time, so that the wait expires
- * soon unless its client connects again, which records its presence anew. A presence newer than the closed
+ * Marks a waiting participant whose page closed as gone and dates its presence back in time, so that the wait
+ * expires soon unless its client connects again, which records its presence anew and clears the mark.
+ * A gone participant cannot be admitted. A presence newer than the closed
  * connection's last answer belongs to another connection of the wait and is left alone, and so is one
  * dated further back already. ARGV: wait id, how long before now to date the presence, how long ago a
  * presence is another connection's.
@@ -20,5 +21,6 @@ if not seen or seen > now - other_connections_ago then
 	return cjson.encode({})
 end
 redis.call('ZADD', seen_key, 'LT', ms(now - dated_back), member)
+redis.call('ZADD', closed_key, ms(now), member)
 return cjson.encode({ dated = true })
 `;

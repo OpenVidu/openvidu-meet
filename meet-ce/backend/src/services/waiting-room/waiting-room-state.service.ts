@@ -44,6 +44,8 @@ const lineOf = (line: WaitingRoomLine): WaitingRoomLine => ({ ...line, waiting: 
  *   outcome for {@link INTERNAL_CONFIG.WAITING_ROOM_ENDED_WAIT_TTL} once it ends;
  * - `<prefix>_seen`, sorted set of every room's entries (`<roomId>:<waitId>`) by when their client was last
  *   seen, or by when they were admitted;
+ * - `<prefix>_closed`, sorted set of the waiting entries whose page closed, by when, which expire soon and cannot
+ *   be admitted;
  * - `<prefix>_sweep`, hash of the sweep's last pass and last gap.
  */
 @injectable()
@@ -116,7 +118,8 @@ export class WaitingRoomStateService {
 	}
 
 	/**
-	 * Lets a wait expire soon, as its page closed, unless its client connects again. `lastAnsweredAgo` is how
+	 * Lets a wait expire soon, as its page closed, unless its client connects again, and refuses its admission
+	 * meanwhile. `lastAnsweredAgo` is how
 	 * long ago the closed connection last answered: a presence newer than that is another connection's.
 	 */
 	async pageClosed(waitId: string, lastAnsweredAgo: number): Promise<void> {

@@ -15,6 +15,7 @@ end
 
 if entry and entry.status == 'waiting' then
 	redis.call('ZADD', seen_key, ms(now), seen_member(room_id, wait_id))
+	redis.call('ZREM', closed_key, seen_member(room_id, wait_id))
 	local position = 0
 	for index, waiting in ipairs(line_of(room_id)) do
 		if waiting.waitId == wait_id then

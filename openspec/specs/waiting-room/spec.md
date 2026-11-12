@@ -113,7 +113,7 @@ A participant SHALL start waiting when they ask to join, and keep their place on
 - **THEN** the participant keeps their place in line
 
 ### Requirement: A minute without the connection loses the place
-A participant whose page closes, reloads or navigates away, which ends the connection with the browser's going away code, SHALL lose their place 15 seconds later unless their meeting connects again, so a moderator sees them leave the list within seconds. A participant whose realtime connection has been down for about a minute, whatever the reason (network loss, a phone suspending the page, a browser that crashed, an embedded element or iframe removed by its host), SHALL lose their place and their wait SHALL end as expired, never as left, which only leaving reports. Their meeting SHALL then stop reconnecting, say they lost their place and offer to ask again, or show the connection error screen if it never reached Meet during that wait.
+A participant whose realtime connection has been down for about a minute, whatever the reason (network loss, a phone suspending the page, a browser that crashed, an embedded element or iframe removed by its host), SHALL lose their place and their wait SHALL end as expired, never as left, which only leaving reports. Their meeting SHALL then stop reconnecting, say they lost their place and offer to ask again, or show the connection error screen if it never reached Meet during that wait.
 
 #### Scenario: Short network loss
 - **GIVEN** a participant second in line
@@ -141,6 +141,14 @@ A participant whose page closes, reloads or navigates away, which ends the conne
 - **GIVEN** a network that blocks the realtime connection to Meet
 - **WHEN** a participant asks to join
 - **THEN** about a minute later their meeting shows the connection error screen, not that they lost their place
+
+### Requirement: A page that goes away loses the place in seconds
+A participant whose page closes, reloads or navigates away, which ends their connection with the browser's going away code, SHALL lose their place 15 seconds later unless their meeting connects again, so a moderator sees them leave the list within seconds. A reload that connects again within that time SHALL keep the place.
+
+#### Scenario: Tab closed
+- **GIVEN** a participant waiting and a moderator with the participants panel open
+- **WHEN** the participant closes the tab
+- **THEN** within about 20 seconds the moderator's list drops them, with one `participantWaitingChanged` webhook with `expired`
 
 ### Requirement: Every request to join is a new wait
 Each time a participant asks to join, except to continue the wait a reload interrupted, it SHALL start a new wait at the end of the line. When the same identity already waits (a member or a user asking again from another tab or another device), the earlier wait SHALL end as left and the earlier screen, if still open, SHALL say they lost their place.
@@ -304,6 +312,33 @@ The `externalId` and `metadata` of a `MeetWaitingRoomParticipant` SHALL be what 
 - **GIVEN** a meeting with `maxParticipants` 3, two participants connected, Ana admitted who closes her page, and Ben waiting
 - **WHEN** a minute passes after Ana's admission and a moderator admits Ben
 - **THEN** the server answers `200` and Ben enters the meeting
+
+### Requirement: Nobody is admitted whose page closed
+`participantWaitingAdmit` SHALL treat a participant whose page closed, until they leave the list, as not waiting: naming them SHALL answer `404` and change nothing, and admitting everyone waiting SHALL leave them out. A participant whose page connects again SHALL be admittable again. `participantWaitingReject` SHALL still reject them.
+
+#### Scenario: Admitting a participant who closed the tab
+- **GIVEN** Ana waiting, who closed her tab seconds ago
+- **WHEN** a client holding `waitingRoomAdmin` calls `participantWaitingAdmit` with her identity
+- **THEN** the server answers `404` and no place is taken
+
+#### Scenario: Admitting everyone with a participant who closed the tab
+- **GIVEN** Ana, who closed her tab seconds ago, and Ben waiting
+- **WHEN** a client calls `participantWaitingAdmit` without identities
+- **THEN** only Ben is admitted
+
+#### Scenario: Admitting a participant whose page connected again
+- **GIVEN** Ana waiting, whose page reloaded and connected again
+- **WHEN** a client calls `participantWaitingAdmit` with her identity
+- **THEN** Ana is admitted
+
+### Requirement: The moderator is told who left before the decision
+When a decision names participants who are no longer waiting, the meeting of the moderator who made it SHALL tell them with a notification, instead of an error, naming who left, or how many, and SHALL show the list as it stands. It SHALL do so wherever the decision was made: the participants panel or the knock notification.
+
+#### Scenario: Admitting someone who closed the tab
+- **GIVEN** a moderator with the participants panel open and Ana listed, who closed her tab seconds ago
+- **WHEN** the moderator admits Ana
+- **THEN** a notification says that Ana is no longer waiting
+- **AND** the list no longer shows her
 
 ### Requirement: Deciding on everyone waiting
 With a body without `participantIdentities`, as `broadcastStop` without `broadcastIds`, `participantWaitingAdmit` SHALL admit the participants waiting in arrival order up to the free places (see "Waiting list") and leave the rest waiting in their place, and `participantWaitingReject` SHALL reject, in one atomic step, everyone waiting at that moment. Both SHALL answer with the participants decided on, none when nobody waits or no place is free.
