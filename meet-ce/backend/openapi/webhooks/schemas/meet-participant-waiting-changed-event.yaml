@@ -39,8 +39,8 @@ properties:
               confirms it. Using up an admission when the join token is issued sends no webhook.
             - `rejected`: a holder of `waitingRoomAdmin` rejected the participant.
             - `left`: the participant left the waiting room, or asked to join again and so started a new wait.
-            - `expired`: the participant lost their place: their meeting stopped being in touch for a minute, or
-              15 seconds after its page closed, or an admission was not used within a minute.
+            - `expired`: the participant lost their place: their page closed, their meeting stopped being in touch
+              for a minute, or an admission was not used within a minute.
             - `meeting_ended`: the meeting was ended explicitly, or reached its duration limit, while the
               participant waited.
             - `room_closed`: the room was closed or deleted while the participant waited.
@@ -58,3 +58,20 @@ properties:
               participant, an explicit end of the meeting, closing or deleting the room, turning the waiting room
               off).
             - `system`: the server's own rules: an expiry, a return to the line, the duration limit.
+    reason:
+        type: string
+        enum:
+            - replaced
+            - page_closed
+            - connection_lost
+            - admission_unused
+            - waiting_room_disabled
+        example: page_closed
+        description: |
+            Why the wait changed, present only where `status` and `origin` do not tell:
+            - `replaced`: with `left`, the participant asked to join again, from another tab or device, which
+              started a new wait.
+            - `page_closed`: with `expired`, the participant's page closed, reloaded or navigated away.
+            - `connection_lost`: with `expired`, the participant's meeting was out of touch for a minute.
+            - `admission_unused`: with `expired`, the participant was admitted and did not join within a minute.
+            - `waiting_room_disabled`: with `admitted`, the room's waiting room was turned off.

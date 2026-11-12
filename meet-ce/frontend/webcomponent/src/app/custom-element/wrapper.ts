@@ -4,7 +4,7 @@ import {
 	EmbeddedEventPayloadFor,
 	MeetBroadcastStartOptions,
 	MeetBroadcastStopOptions,
-	MeetWaitingRoomDecisionOptions,
+	MeetParticipantWaitingDecisionOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetReaction
@@ -120,11 +120,11 @@ export function createOpenViduMeetElementClass(
 			this._run(EmbeddedCommandName.BROADCAST_STOP, (app) => app.broadcastStop(options));
 		}
 
-		participantWaitingAdmit(options?: MeetWaitingRoomDecisionOptions): void {
+		participantWaitingAdmit(options?: MeetParticipantWaitingDecisionOptions): void {
 			this._run(EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT, (app) => app.participantWaitingAdmit(options));
 		}
 
-		participantWaitingReject(options?: MeetWaitingRoomDecisionOptions): void {
+		participantWaitingReject(options?: MeetParticipantWaitingDecisionOptions): void {
 			this._run(EmbeddedCommandName.PARTICIPANT_WAITING_REJECT, (app) => app.participantWaitingReject(options));
 		}
 

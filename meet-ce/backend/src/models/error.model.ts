@@ -1,12 +1,24 @@
-import type { MeetWaitingRoomStatus, MeetRoomDeletionErrorCode, MeetRoomMemberRole } from '@openvidu-meet/typings';
+import type { MeetRoomDeletionErrorCode, MeetRoomMemberRole, MeetWaitingRoomStatus } from '@openvidu-meet/typings';
+import { MeetWaitingRoomErrorCode } from '@openvidu-meet/typings';
 import { DocumentNotFoundError } from './database.model.js';
 
 type StatusError = 400 | 401 | 402 | 403 | 404 | 409 | 413 | 415 | 416 | 422 | 500 | 503;
+/** Data a refusal carries in its body next to `error` and `message`, for a client to act on. */
+export interface OpenViduMeetErrorFields {
+	status?: MeetWaitingRoomStatus;
+	participantIdentity?: string;
+}
+
 export class OpenViduMeetError extends Error {
 	name: string;
 	statusCode: StatusError;
 
-	constructor(error: string, message: string, statusCode: StatusError) {
+	constructor(
+		error: string,
+		message: string,
+		statusCode: StatusError,
+		readonly fields: OpenViduMeetErrorFields = {}
+	) {
 		super(message);
 		this.name = error;
 		this.statusCode = statusCode;
@@ -558,30 +570,33 @@ export const errorWaitingRoomParticipantNotWaiting = (
 	roomId: string
 ): OpenViduMeetError => {
 	return new OpenViduMeetError(
-		'Waiting Room Error',
+		MeetWaitingRoomErrorCode.PARTICIPANT_NOT_WAITING,
 		`Participant '${participantIdentity}' is not waiting in room '${roomId}'`,
-		404
+		404,
+		{ participantIdentity }
 	);
 };
 
 export const errorWaitingRoomNoFreePlaces = (roomId: string, participantCount: number): OpenViduMeetError => {
 	return new OpenViduMeetError(
-		'Waiting Room Error',
+		MeetWaitingRoomErrorCode.NOT_ENOUGH_PLACES,
 		`Room '${roomId}' has fewer free places than the ${participantCount} participants to admit`,
 		409
 	);
 };
 
 export const errorWaitingRoomFull = (roomId: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Waiting Room Error', `The waiting room of room '${roomId}' is full`, 409);
+	return new OpenViduMeetError(
+		MeetWaitingRoomErrorCode.WAITING_ROOM_FULL,
+		`The waiting room of room '${roomId}' is full`,
+		409
+	);
 };
 
 /** The wait of a ticket is over, or unknown; `status` tells how it ended when it is known. */
-export class WaitingRoomWaitEndedError extends OpenViduMeetError {
-	constructor(readonly status?: MeetWaitingRoomStatus) {
-		super('Waiting Room Error', 'The wait has ended', 409);
-	}
-}
+export const errorWaitingRoomWaitEnded = (status?: MeetWaitingRoomStatus): OpenViduMeetError => {
+	return new OpenViduMeetError(MeetWaitingRoomErrorCode.WAIT_ENDED, 'The wait has ended', 409, status && { status });
+};
 
 // AI Assistant errors
 

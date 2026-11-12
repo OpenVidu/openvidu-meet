@@ -5,6 +5,7 @@ import {
 	EmbeddedEventName,
 	MEET_WAITING_ROOM_STATE_MESSAGE,
 	MeetEventOrigin,
+	MeetWaitingRoomReason,
 	MeetWaitingRoomState,
 	MeetWaitingRoomStatus,
 	MeetWaitingRoomTicketResponse
@@ -36,10 +37,10 @@ const FAILING_REQUEST_RETRY_DELAY_MS = 3_000;
 const RATE_LIMIT_DEFAULT_RESET_MS = 10_000;
 
 /** How a wait ended: its status and, when the meeting knows it, who caused it. */
-interface WaitingRoomEnd {
-	status: MeetWaitingRoomStatus;
-	origin?: MeetEventOrigin;
-}
+type WaitingRoomEnd = Pick<MeetWaitingRoomState, 'status' | 'origin' | 'reason'>;
+
+/** What the host is told of a state of the wait. */
+type Reported = Pick<MeetWaitingRoomState, 'status' | 'queuePosition' | 'origin' | 'reason'>;
 
 /** One participant's way through the waiting room, from asking to join until they connect or the wait ends. */
 interface Entry {
@@ -49,6 +50,7 @@ interface Entry {
 	ticket?: MeetWaitingRoomTicketResponse;
 	tokenRequestInFlight?: boolean;
 	endedWhileRequesting?: WaitingRoomEnd;
+	waitingWhileRequesting?: MeetWaitingRoomState;
 	lastReported?: string;
 }
 
@@ -145,7 +147,7 @@ export class WaitingRoomService {
 		);
 
 		this.finish(entry);
-		this.report(entry, MeetWaitingRoomStatus.LEFT, undefined, MeetEventOrigin.PARTICIPANT);
+		this.report(entry, { status: MeetWaitingRoomStatus.LEFT, origin: MeetEventOrigin.PARTICIPANT });
 		this.show('left');
 	}
 
@@ -238,7 +240,7 @@ export class WaitingRoomService {
 
 		if (state.status !== MeetWaitingRoomStatus.WAITING && state.status !== MeetWaitingRoomStatus.ADMITTED) {
 			if (entry.tokenRequestInFlight) {
-				entry.endedWhileRequesting ??= { status: state.status, origin: state.origin };
+				entry.endedWhileRequesting ??= { status: state.status, origin: state.origin, reason: state.reason };
 			} else {
 				this.end(entry, state);
 			}
@@ -246,12 +248,16 @@ export class WaitingRoomService {
 			return;
 		}
 
-		if (entry.tokenRequestInFlight) return;
+		if (entry.tokenRequestInFlight) {
+			if (state.status === MeetWaitingRoomStatus.WAITING) entry.waitingWhileRequesting = state;
+
+			return;
+		}
 
 		this._status.set(state.status);
 
 		if (state.status === MeetWaitingRoomStatus.ADMITTED) {
-			this.report(entry, state.status, undefined, state.origin);
+			this.report(entry, { status: state.status, origin: state.origin, reason: state.reason });
 			void this.requestToken(entry);
 			return;
 		}
@@ -262,7 +268,7 @@ export class WaitingRoomService {
 			this._knockedAt.set(Date.now() - state.waitedSeconds * 1000);
 		}
 
-		this.report(entry, state.status, state.queuePosition);
+		this.report(entry, { status: state.status, queuePosition: state.queuePosition });
 	}
 
 	/** Asks for the token with the ticket, one request at a time; only its answer decides. */
@@ -316,8 +322,9 @@ export class WaitingRoomService {
 
 			if (entry.endedWhileRequesting) return this.end(entry, entry.endedWhileRequesting);
 
-			this._status.set(MeetWaitingRoomStatus.WAITING);
-			return;
+			const backInLine = entry.waitingWhileRequesting ?? { status: MeetWaitingRoomStatus.WAITING };
+			entry.waitingWhileRequesting = undefined;
+			return this.onState(backInLine);
 		}
 	}
 
@@ -370,7 +377,11 @@ export class WaitingRoomService {
 			return;
 		}
 
-		const expired = { status: MeetWaitingRoomStatus.EXPIRED, origin: MeetEventOrigin.SYSTEM };
+		const expired = {
+			status: MeetWaitingRoomStatus.EXPIRED,
+			origin: MeetEventOrigin.SYSTEM,
+			reason: MeetWaitingRoomReason.CONNECTION_LOST
+		};
 
 		if (entry.tokenRequestInFlight) {
 			entry.endedWhileRequesting ??= expired;
@@ -380,14 +391,15 @@ export class WaitingRoomService {
 	}
 
 	/** Ends the wait with the status the server reported or the client concluded, and shows its screen. */
-	private end(entry: Entry, { status, origin }: WaitingRoomEnd): void {
+	private end(entry: Entry, ended: WaitingRoomEnd): void {
+		const { status } = ended;
 		this.finish(entry);
 
 		// A 409 after an admission means its answer was lost: the place is, too.
 		if (status === MeetWaitingRoomStatus.ADMITTED) {
-			this.report(entry, MeetWaitingRoomStatus.EXPIRED, undefined, MeetEventOrigin.SYSTEM);
+			this.report(entry, { status: MeetWaitingRoomStatus.EXPIRED, origin: MeetEventOrigin.SYSTEM });
 		} else {
-			this.report(entry, status, undefined, origin);
+			this.report(entry, ended);
 		}
 
 		switch (status) {
@@ -431,12 +443,7 @@ export class WaitingRoomService {
 	}
 
 	/** Tells the host each state shown, once, with the participant as the server answered when they asked. */
-	private report(
-		entry: Entry,
-		status: MeetWaitingRoomStatus,
-		queuePosition?: number,
-		origin?: MeetEventOrigin
-	): void {
+	private report(entry: Entry, { status, queuePosition, origin, reason }: Reported): void {
 		const reported = `${status}:${queuePosition ?? ''}`;
 
 		if (!entry.ticket || entry.lastReported === reported || !this.runtimeConfig.isEmbeddedMode()) return;
@@ -449,7 +456,8 @@ export class WaitingRoomService {
 				participant: entry.ticket.participant,
 				status,
 				...(queuePosition !== undefined && { queuePosition }),
-				...(origin !== undefined && { origin })
+				...(origin !== undefined && { origin }),
+				...(reason !== undefined && { reason })
 			}
 		});
 	}

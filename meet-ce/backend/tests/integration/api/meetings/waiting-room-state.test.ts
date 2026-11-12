@@ -65,6 +65,9 @@ class TestWaitingRoomState extends WaitingRoomStateService {
 	}
 }
 
+/** Knocks in the same millisecond tie on `knockDate` and are ordered by identity instead. */
+const nextMillisecond = () => new Promise((resolve) => setTimeout(resolve, 2));
+
 const participant = (identity: string): Omit<WaitingRoomParticipant, 'knockDate'> => ({
 	participantIdentity: identity,
 	participantName: identity.toUpperCase(),
@@ -144,7 +147,9 @@ describe('Waiting room state in Redis', () => {
 
 		it('ends the earlier wait of the same identity as left and starts a new one at the end of the line', async () => {
 			const first = await knock('ana', 'wait-ana-1', 'member-ana');
+			await nextMillisecond();
 			await knock('ben');
+			await nextMillisecond();
 			const result = await state.knock(roomId, 'wait-ana-2', participant('ana'), 'member-ana');
 
 			expect(result!.replaced?.waitId).toBe(first.waitId);
@@ -468,99 +473,6 @@ describe('Waiting room state in Redis', () => {
 
 			expect(result.ended.map(({ waitId }) => waitId)).toEqual([ben.waitId]);
 			expect(await lineOf()).toEqual(['ana']);
-		});
-	});
-
-	describe('pageClosed', () => {
-		it('dates the presence so the wait expires 15 seconds after the page closed', async () => {
-			const ana = await knock('ana');
-			await state.presence(ana.waitId);
-
-			await state.pageClosed(ana.waitId, 0);
-
-			const datedBack = Date.now() - (await state.seenAt(roomId, ana.waitId))!;
-			expect(datedBack).toBeGreaterThanOrEqual(45_000);
-			expect(datedBack).toBeLessThan(47_000);
-		});
-
-		it('leaves a presence newer than the closed connection last answered to the connection that wrote it', async () => {
-			const ana = await knock('ana');
-			await state.presence(ana.waitId);
-			const seenAt = await state.seenAt(roomId, ana.waitId);
-
-			await state.pageClosed(ana.waitId, 30_000);
-
-			expect(await state.seenAt(roomId, ana.waitId)).toBe(seenAt);
-		});
-
-		it('never extends a wait already dated further back', async () => {
-			const ana = await knock('ana');
-			await state.age(roomId, ana.waitId, 50_000);
-			const seenAt = await state.seenAt(roomId, ana.waitId);
-
-			await state.pageClosed(ana.waitId, 0);
-
-			expect(await state.seenAt(roomId, ana.waitId)).toBe(seenAt);
-		});
-
-		it('does nothing for an admitted wait, an ended one or an unknown one', async () => {
-			const ana = await knock('ana');
-			const ben = await knock('ben');
-			await state.decide(roomId, 'admit', ['ana'], null);
-			await state.decide(roomId, 'reject', ['ben'], null);
-			const admittedSeenAt = await state.seenAt(roomId, ana.waitId);
-
-			await state.pageClosed(ana.waitId, 0);
-			await state.pageClosed(ben.waitId, 0);
-			await state.pageClosed('unknown-wait', 0);
-
-			expect(await state.seenAt(roomId, ana.waitId)).toBe(admittedSeenAt);
-			expect(await state.seenAt(roomId, ben.waitId)).toBeNull();
-		});
-
-		it('keeps an admission from the participant whose page closed, by name and for everyone', async () => {
-			const ana = await knock('ana');
-			await knock('ben');
-			await state.pageClosed(ana.waitId, 0);
-
-			expect(await state.decide(roomId, 'admit', ['ana'], null)).toEqual({ notWaiting: 'ana' });
-			expect(await state.decide(roomId, 'admit', ['ben', 'ana'], null)).toEqual({ notWaiting: 'ana' });
-
-			const everyone = await state.decide(roomId, 'admit', undefined, null);
-
-			expect(
-				'decided' in everyone && everyone.decided.map(({ participantIdentity }) => participantIdentity)
-			).toEqual(['ben']);
-			expect(await lineOf()).toEqual(['ana']);
-		});
-
-		it('still lets a moderator reject the participant whose page closed', async () => {
-			const ana = await knock('ana');
-			await state.pageClosed(ana.waitId, 0);
-
-			const result = await state.decide(roomId, 'reject', ['ana'], null);
-
-			expect('decided' in result && result.decided).toHaveLength(1);
-			expect(await state.seenAt(roomId, ana.waitId)).toBeNull();
-		});
-
-		it('lets the participant be admitted again once their page connects again', async () => {
-			const ana = await knock('ana');
-			await state.pageClosed(ana.waitId, 0);
-			await state.presence(ana.waitId);
-
-			const result = await state.decide(roomId, 'admit', ['ana'], null);
-
-			expect('decided' in result && result.decided).toHaveLength(1);
-		});
-
-		it('is undone by the next presence of the wait', async () => {
-			const ana = await knock('ana');
-			await state.pageClosed(ana.waitId, 0);
-
-			await state.presence(ana.waitId);
-
-			expect(Date.now() - (await state.seenAt(roomId, ana.waitId))!).toBeLessThan(2_000);
 		});
 	});
 

@@ -2,7 +2,11 @@ import { MeetBroadcastInfo } from './database/broadcast.entity.js';
 import { MeetRecordingInfo } from './database/recording.entity.js';
 import { MeetRoom } from './database/room.entity.js';
 import { LeftEventReason, MeetEventOrigin } from './embedded/events.js';
-import { MeetWaitingRoomParticipant, MeetWaitingRoomStatus } from './response/waiting-room-response.js';
+import {
+	MeetWaitingRoomParticipant,
+	MeetWaitingRoomReason,
+	MeetWaitingRoomStatus
+} from './response/waiting-room-response.js';
 import { MeetParticipantInfo, MeetParticipantPayload } from './response/participant-response.js';
 
 /**
@@ -212,6 +216,8 @@ export interface MeetParticipantWaitingChangedPayload extends MeetParticipantKno
 	 * the duration limit)
 	 */
 	origin: MeetEventOrigin;
+	/** Why the wait changed, where `status` and `origin` do not tell. See {@link MeetWaitingRoomReason} for details */
+	reason?: MeetWaitingRoomReason;
 }
 
 /**

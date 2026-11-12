@@ -1,17 +1,27 @@
 description: >
     Room not found, or a participant named in `participantIdentities` that no longer waits: it left, was
-    decided on by another request, expired or never existed, or the room's waiting room is off. Nobody is
-    admitted or rejected
+    decided on by another request, expired or never existed, or the room's waiting room is off. Then `error` is
+    `participant_not_waiting` and `participantIdentity` names the first such participant. Nobody is admitted or
+    rejected
 content:
     application/json:
         schema:
-            $ref: '../../../shared/schemas/error.yaml'
+            allOf:
+                - $ref: '../../../shared/schemas/error.yaml'
+                - type: object
+                  properties:
+                      participantIdentity:
+                          type: string
+                          description: >
+                              The first participant named that no longer waits, when `error` is
+                              `participant_not_waiting`.
         examples:
             participant_not_waiting:
                 summary: A participant named no longer waits
                 value:
-                    error: 'Waiting Room Error'
+                    error: participant_not_waiting
                     message: "Participant 'ana-a1b2c3' is not waiting in room 'room_123'"
+                    participantIdentity: 'ana-a1b2c3'
             room_not_found:
                 summary: Room not found
                 value:

@@ -45,10 +45,8 @@ import { click } from './helpers/ui-utils.helper';
 
 /** The server forgets a waiter whose connection has been gone for a minute; its sweep runs every 5 s. */
 const PLACE_LOST_TIMEOUT = 90_000;
-/** A waiter whose page closed is dropped 15 s later, by a sweep that runs every 5 s. */
-const PAGE_CLOSED_TIMEOUT = 30_000;
-/** Long enough for the close of a page's connection to reach the server. */
-const CLOSE_REACHES_SERVER_MS = 1_000;
+/** A waiter whose page closed is dropped as soon as the server sees the connection close. */
+const PAGE_CLOSED_TIMEOUT = 10_000;
 /** A waiter's state is sent again at every answered ping, every 20 s. */
 const NEXT_PING_TIMEOUT = 30_000;
 
@@ -213,7 +211,7 @@ test.describe('Waiting room E2E Tests', () => {
 			await expectQueuePosition(cleo, '1st');
 		});
 
-		test('should keep the place and the identity of a member who reloads, without asking again', async ({
+		test('should put a member who reloads at the end of the line on their own, with the same identity', async ({
 			browser
 		}) => {
 			await createWaitingRoomRoom();
@@ -228,9 +226,10 @@ test.describe('Waiting room E2E Tests', () => {
 			await mia.reload({ waitUntil: 'domcontentloaded' });
 
 			await expectWaitingScreen(mia, 30_000);
-			await expectQueuePosition(mia, '1st');
-			await expectQueuePosition(xavi, '2nd');
-			await expect.poll(waitingRoomNames).toEqual(['Mia', 'Xavi']);
+			await expect(mia.locator('#participant-name-submit')).toHaveCount(0);
+			await expectQueuePosition(mia, '2nd');
+			await expectQueuePosition(xavi, '1st');
+			await expect.poll(waitingRoomNames).toEqual(['Xavi', 'Mia']);
 			expect(await identityOf('Mia')).toBe(identity);
 		});
 
@@ -239,7 +238,6 @@ test.describe('Waiting room E2E Tests', () => {
 		}) => {
 			await createWaitingRoomRoom();
 			const ana = await waiter(browser, 'Ana');
-			const identity = await identityOf('Ana');
 
 			for (let reload = 0; reload < 3; reload++) {
 				await ana.reload({ waitUntil: 'domcontentloaded' });
@@ -247,10 +245,9 @@ test.describe('Waiting room E2E Tests', () => {
 				await expectQueuePosition(ana, '1st');
 			}
 
-			expect(await waitingRoomNames()).toEqual(['Ana']);
-			expect(await identityOf('Ana')).toBe(identity);
+			await expect.poll(waitingRoomNames).toEqual(['Ana']);
 
-			expect((await admitFromWaitingRoom(roomId, [identity])).status).toBe(200);
+			expect((await admitFromWaitingRoom(roomId, [await identityOf('Ana')])).status).toBe(200);
 			await expectInMeeting(ana);
 		});
 
@@ -316,14 +313,13 @@ test.describe('Waiting room E2E Tests', () => {
 
 			await ana.context().close();
 
-			expect(await waitingRoomNames()).toEqual(['Ana']);
 			await expect(waitingRoomRow(hostPage, 'Ana')).toBeHidden({ timeout: PAGE_CLOSED_TIMEOUT });
 			expect(await waitingRoomNames()).toEqual([]);
 		});
 	});
 
 	test.describe('Admitters', () => {
-		test('should tell a moderator who admits a participant that closed the tab that they already left', async ({
+		test('should tell a moderator who admits a participant that already left, when their list was not updated yet', async ({
 			browser
 		}) => {
 			await createWaitingRoomRoom();
@@ -332,13 +328,13 @@ test.describe('Waiting room E2E Tests', () => {
 			const ana = await waiter(browser, 'Ana');
 			const identity = await identityOf('Ana');
 			await expect(waitingRoomRow(hostPage, 'Ana')).toBeVisible({ timeout: 10_000 });
+			await hostPage.route(/\/meetings\/[^/]+\/waiting-room$/, (route) => route.abort());
 
 			await ana.context().close();
-			await hostPage.waitForTimeout(CLOSE_REACHES_SERVER_MS);
+			await expect.poll(waitingRoomNames, { timeout: PAGE_CLOSED_TIMEOUT }).toEqual([]);
 			await admitFromPanel(hostPage, 'Ana');
 
 			await expect(notWaitingNotification(hostPage)).toContainText('Ana already left', { timeout: 10_000 });
-			await expect(waitingRoomRow(hostPage, 'Ana')).toBeHidden({ timeout: PAGE_CLOSED_TIMEOUT });
 			expect(await getMeetingParticipantIdentities(roomId)).not.toContain(identity);
 		});
 

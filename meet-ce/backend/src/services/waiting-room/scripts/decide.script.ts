@@ -2,8 +2,7 @@ import { WAITING_ROOM_SCRIPT_PRELUDE } from './prelude.script.js';
 
 /**
  * Admits or rejects the named waiting participants, all of them or none, or everyone waiting. An
- * admission leaves out the participants whose page closed, and fits the room's capacity, from which the
- * admitted entries take their places. ARGV: room
+ * admission fits the room's capacity, from which the admitted entries take their places. ARGV: room
  * id, `admit` or `reject`, capacity (empty for none), then the identities, none for everyone waiting.
  */
 export const DECIDE_SCRIPT = `${WAITING_ROOM_SCRIPT_PRELUDE}
@@ -12,16 +11,10 @@ local named = #ARGV > 5
 local before = line_of(room_id)
 local chosen = {}
 
-local function present(entry)
-	return decision ~= 'admit' or not redis.call('ZSCORE', closed_key, seen_member(room_id, entry.waitId))
-end
-
 if named then
 	local waiting = {}
 	for _, entry in ipairs(before) do
-		if present(entry) then
-			waiting[entry.participantIdentity] = entry
-		end
+		waiting[entry.participantIdentity] = entry
 	end
 	for index = 6, #ARGV do
 		local entry = waiting[ARGV[index]]
@@ -32,10 +25,8 @@ if named then
 	end
 	table.sort(chosen, by_arrival)
 else
-	for _, entry in ipairs(before) do
-		if present(entry) then
-			chosen[#chosen + 1] = entry
-		end
+	for index, entry in ipairs(before) do
+		chosen[index] = entry
 	end
 end
 

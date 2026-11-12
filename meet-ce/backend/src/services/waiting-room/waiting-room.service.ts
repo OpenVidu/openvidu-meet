@@ -6,7 +6,12 @@ import type {
 	MeetRoom,
 	MeetRoomConfig
 } from '@openvidu-meet/typings';
-import { MEET_WAITING_ROOM_STATE_MESSAGE, MeetEventOrigin, MeetWaitingRoomStatus } from '@openvidu-meet/typings';
+import {
+	MEET_WAITING_ROOM_STATE_MESSAGE,
+	MeetEventOrigin,
+	MeetWaitingRoomReason,
+	MeetWaitingRoomStatus
+} from '@openvidu-meet/typings';
 import { createHash, randomBytes } from 'crypto';
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
@@ -37,6 +42,14 @@ import { WebhookDispatcherService } from '../webhook-dispatcher.service.js';
 import { WebSocketService } from '../websocket.service.js';
 import { WaitingRoomAdmissionPolicy } from './waiting-room-admission.policy.js';
 import { WaitingRoomStateService } from './waiting-room-state.service.js';
+
+/** Why each wait in a list changed; none where its status and origin tell it all. */
+type ReasonOf = (entry: WaitingRoomEntry) => MeetWaitingRoomReason | undefined;
+
+const noReason: ReasonOf = () => undefined;
+
+/** How far a replica's clock may differ from Redis's when it dates the last answer of a connection. */
+const CLOCK_SKEW_TOLERANCE_MS = 2_000;
 
 const toParticipant = ({
 	participantIdentity,
@@ -119,7 +132,13 @@ export class WaitingRoomService {
 		});
 
 		if (knock.replaced) {
-			this.tell(roomId, [knock.replaced], MeetWaitingRoomStatus.LEFT, MeetEventOrigin.PARTICIPANT);
+			this.tell(
+				roomId,
+				[knock.replaced],
+				MeetWaitingRoomStatus.LEFT,
+				MeetEventOrigin.PARTICIPANT,
+				() => MeetWaitingRoomReason.REPLACED
+			);
 		}
 
 		this.afterChange(roomId, knock.line);
@@ -230,11 +249,30 @@ export class WaitingRoomService {
 		roomId: string,
 		outcome: MeetWaitingRoomStatus,
 		origin: MeetEventOrigin,
-		waitIds?: string[]
+		waitIds?: string[],
+		reason?: MeetWaitingRoomReason
 	): Promise<WaitingRoomEntry[]> {
 		const result = await this.waitingRoomStateService.end(roomId, outcome, { waitIds });
-		this.afterEnd(roomId, result, outcome, origin);
+		this.afterEnd(roomId, result, outcome, origin, () => reason);
 		return result.ended;
+	}
+
+	/**
+	 * Ends as expired the wait of a page that closed, reloaded or navigated away, unless another connection of
+	 * the wait was seen after the closed one last answered, `lastAnsweredAgo` milliseconds ago.
+	 */
+	async pageClosed(roomId: string, waitId: string, lastAnsweredAgo: number): Promise<void> {
+		const result = await this.waitingRoomStateService.end(roomId, MeetWaitingRoomStatus.EXPIRED, {
+			waitIds: [waitId],
+			unseenFor: Math.max(0, lastAnsweredAgo - CLOCK_SKEW_TOLERANCE_MS)
+		});
+		this.afterEnd(
+			roomId,
+			result,
+			MeetWaitingRoomStatus.EXPIRED,
+			MeetEventOrigin.SYSTEM,
+			() => MeetWaitingRoomReason.PAGE_CLOSED
+		);
 	}
 
 	/**
@@ -258,7 +296,12 @@ export class WaitingRoomService {
 	 * Never fails: a waiter left is let in at their next answered ping, which finds the waiting room off.
 	 */
 	letEveryoneIn(roomId: string): Promise<void> {
-		return this.endEveryWait(roomId, MeetWaitingRoomStatus.ADMITTED, MeetEventOrigin.MODERATOR);
+		return this.endEveryWait(
+			roomId,
+			MeetWaitingRoomStatus.ADMITTED,
+			MeetEventOrigin.MODERATOR,
+			MeetWaitingRoomReason.WAITING_ROOM_DISABLED
+		);
 	}
 
 	/**
@@ -272,7 +315,11 @@ export class WaitingRoomService {
 			includeUsed: true,
 			unseenFor: ms(INTERNAL_CONFIG.WAITING_ROOM_UNSEEN_TIMEOUT)
 		});
-		this.afterEnd(roomId, result, MeetWaitingRoomStatus.EXPIRED, MeetEventOrigin.SYSTEM);
+		this.afterEnd(roomId, result, MeetWaitingRoomStatus.EXPIRED, MeetEventOrigin.SYSTEM, ({ status }) =>
+			status === MeetWaitingRoomStatus.ADMITTED
+				? MeetWaitingRoomReason.ADMISSION_UNUSED
+				: MeetWaitingRoomReason.CONNECTION_LOST
+		);
 	}
 
 	/**
@@ -298,10 +345,11 @@ export class WaitingRoomService {
 	protected async endEveryWait(
 		roomId: string,
 		outcome: MeetWaitingRoomStatus,
-		origin: MeetEventOrigin
+		origin: MeetEventOrigin,
+		reason?: MeetWaitingRoomReason
 	): Promise<void> {
 		try {
-			await this.endWaits(roomId, outcome, origin);
+			await this.endWaits(roomId, outcome, origin, undefined, reason);
 		} catch (error) {
 			this.logger.warn(`Could not end the waits of room '${roomId}' as ${outcome}`, error);
 		}
@@ -346,14 +394,15 @@ export class WaitingRoomService {
 		roomId: string,
 		{ ended, silent, line }: WaitingRoomEndResult,
 		outcome: MeetWaitingRoomStatus,
-		origin: MeetEventOrigin
+		origin: MeetEventOrigin,
+		reasonOf: ReasonOf = noReason
 	): void {
 		if (ended.length + silent.length === 0) return;
 
 		this.logger.verbose(
 			`Waits ended as ${outcome} in room '${roomId}': ${identitiesOf([...ended, ...silent])}${silent.length > 0 ? ` (${silent.length} already joining)` : ''}`
 		);
-		this.tell(roomId, ended, outcome, origin);
+		this.tell(roomId, ended, outcome, origin, reasonOf);
 		this.afterChange(roomId, line);
 	}
 
@@ -362,11 +411,14 @@ export class WaitingRoomService {
 		roomId: string,
 		entries: WaitingRoomEntry[],
 		status: MeetWaitingRoomStatus,
-		origin: MeetEventOrigin
+		origin: MeetEventOrigin,
+		reasonOf: ReasonOf = noReason
 	): void {
 		for (const entry of entries) {
+			const reason = reasonOf(entry);
+
 			if (status !== MeetWaitingRoomStatus.WAITING) {
-				this.sendState(roomId, entry.waitId, { status, origin });
+				this.sendState(roomId, entry.waitId, { status, origin, ...(reason && { reason }) });
 			}
 
 			this.webhookDispatcherService.sendParticipantWaitingChangedWebhook({
@@ -374,7 +426,8 @@ export class WaitingRoomService {
 				roomName: entry.roomName,
 				participant: toParticipant(entry),
 				status,
-				origin
+				origin,
+				...(reason && { reason })
 			});
 		}
 	}

@@ -1,4 +1,4 @@
-import type { MeetWaitingRoomDecisionOptions } from '@openvidu-meet/typings';
+import type { MeetParticipantWaitingDecisionOptions } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { handleError } from '../middlewares/error-handler.middleware.js';
@@ -21,7 +21,7 @@ export const admitFromWaitingRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const waitingRoomService = container.get(WaitingRoomService);
 	const { roomId } = req.params as Record<string, string>;
-	const { participantIdentities } = req.body as MeetWaitingRoomDecisionOptions;
+	const { participantIdentities } = req.body as MeetParticipantWaitingDecisionOptions;
 
 	try {
 		logger.info(`Admitting ${participantIdentities?.length ?? 'every'} waiting participant(s) in room '${roomId}'`);
@@ -36,7 +36,7 @@ export const rejectFromWaitingRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const waitingRoomService = container.get(WaitingRoomService);
 	const { roomId } = req.params as Record<string, string>;
-	const { participantIdentities } = req.body as MeetWaitingRoomDecisionOptions;
+	const { participantIdentities } = req.body as MeetParticipantWaitingDecisionOptions;
 
 	try {
 		logger.info(`Rejecting ${participantIdentities?.length ?? 'every'} waiting participant(s) in room '${roomId}'`);

@@ -1,7 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MeetRoomMemberTokenOptions, MeetWaitingRoomParticipantType } from '@openvidu-meet/typings';
+import {
+	MeetRoomMemberTokenOptions,
+	MeetWaitingRoomErrorCode,
+	MeetWaitingRoomParticipantType
+} from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
@@ -100,7 +104,10 @@ describe('JoinTokenService', () => {
 
 	it('leaves the screen of a full waiting room to the waiting room', async () => {
 		roomMemberContext.requestJoin.and.rejectWith(
-			new HttpErrorResponse({ status: 409, error: { message: "The waiting room of room 'room1' is full" } })
+			new HttpErrorResponse({
+				status: 409,
+				error: { error: MeetWaitingRoomErrorCode.WAITING_ROOM_FULL, message: '' }
+			})
 		);
 
 		await expectAsync(service.request(alice)).toBeRejected();

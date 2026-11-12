@@ -1,7 +1,11 @@
 import { MeetBroadcastInfo } from '../database/broadcast.entity.js';
 import { MeetRecordingStatus } from '../database/recording.entity.js';
 import { MeetReaction } from '../reaction.js';
-import { MeetWaitingRoomParticipant, MeetWaitingRoomStatus } from '../response/waiting-room-response.js';
+import {
+	MeetWaitingRoomParticipant,
+	MeetWaitingRoomReason,
+	MeetWaitingRoomStatus
+} from '../response/waiting-room-response.js';
 import { MeetParticipantInfo, MeetParticipantPayload } from '../response/participant-response.js';
 import type { MeetParticipantDeparturePayload } from '../webhook.js';
 
@@ -54,10 +58,10 @@ export enum EmbeddedEventName {
 	 * (repeated every time their position in line changes), `admitted`, `rejected`, `left`, `expired`,
 	 * `meeting_ended` and `room_closed`. The first `waiting` comes with the first state the meeting
 	 * receives, so a participant whose connection never receives one gets none. `admitted` is not
-	 * the join: `meetingJoined` confirms it, and a join that finds the meeting full after `admitted`
-	 * raises no waiting room event. No waiting room event follows an access or connection error: its screen and
-	 * `embeddedCloseRequested` apply. The `participantWaitingChanged` webhook reports the same changes of every
-	 * wait to the host's backend.
+	 * the join: `meetingJoined` confirms it, or `waiting` follows at once when the meeting is full by then.
+	 * No waiting room event follows an access or connection error: its screen and `embeddedCloseRequested`
+	 * apply. The `participantWaitingChanged` webhook reports the same changes of every wait to the host's
+	 * backend.
 	 */
 	PARTICIPANT_WAITING_CHANGED = 'participantWaitingChanged',
 	/**
@@ -320,8 +324,9 @@ export interface EmbeddedEventPayloads {
 	 * Payload for the {@link EmbeddedEventName.PARTICIPANT_WAITING_CHANGED} event. `participant` is who waits, with
 	 * the identity they will have in the meeting (see {@link MeetWaitingRoomParticipant}), `status` the state of
 	 * the wait (see {@link MeetWaitingRoomStatus}), `queuePosition`, from 1, the place in line while `status` is
-	 * `waiting`, and `origin` who caused the change (see {@link MeetEventOrigin}): absent while `status` is
-	 * `waiting` and when the participant's meeting could not learn it.
+	 * `waiting` once the meeting knows it, `origin` who caused the change (see {@link MeetEventOrigin}): absent
+	 * while `status` is `waiting` and when the participant's meeting could not learn it, and `reason` why, where
+	 * `status` and `origin` do not tell (see {@link MeetWaitingRoomReason}).
 	 */
 	[EmbeddedEventName.PARTICIPANT_WAITING_CHANGED]: {
 		roomId: string;
@@ -329,6 +334,7 @@ export interface EmbeddedEventPayloads {
 		status: MeetWaitingRoomStatus;
 		queuePosition?: number;
 		origin?: MeetEventOrigin;
+		reason?: MeetWaitingRoomReason;
 	};
 	/**
 	 * Payload for the {@link EmbeddedEventName.JOINED} event.
