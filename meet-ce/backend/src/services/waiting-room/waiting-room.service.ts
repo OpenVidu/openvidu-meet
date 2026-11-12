@@ -125,11 +125,6 @@ export class WaitingRoomService {
 		if (!knock) throw errorWaitingRoomFull(roomId);
 
 		this.logger.verbose(`Participant '${participantIdentity}' asked to join room '${roomId}' and waits`);
-		this.webhookDispatcherService.sendParticipantKnockedWebhook({
-			roomId,
-			roomName,
-			participant: toParticipant(knock.entry)
-		});
 
 		if (knock.replaced) {
 			this.tell(
@@ -140,6 +135,12 @@ export class WaitingRoomService {
 				() => MeetWaitingRoomReason.REPLACED
 			);
 		}
+
+		this.webhookDispatcherService.sendParticipantKnockedWebhook({
+			roomId,
+			roomName,
+			participant: toParticipant(knock.entry)
+		});
 
 		this.afterChange(roomId, knock.line);
 		return this.ticketOf(waitingRoomTicket, knock.entry);
