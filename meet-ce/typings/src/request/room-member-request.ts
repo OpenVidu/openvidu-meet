@@ -30,7 +30,7 @@ export interface MeetRoomMemberTokenOptions {
 	 */
 	joinMeeting?: boolean;
 	/**
-	 * The name of the participant when joining the meeting.
+	 * The name of the participant when joining the meeting, up to 1024 characters.
 	 * Required if joinMeeting is true and user is anonymous.
 	 */
 	participantName?: string;

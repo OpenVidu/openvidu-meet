@@ -307,7 +307,7 @@ The meeting SHALL load the room's initial media defaults before opening the devi
 - **THEN** the new participant carries no `externalId`
 
 ### Requirement: Correlation field limits
-The server SHALL reject a join whose `participant-external-id` is empty, longer than 64 characters or has characters other than letters, digits, `_` and `-`, or whose `participant-metadata` exceeds 2048 UTF-8 bytes, with `422`, and the participant SHALL NOT enter the meeting. The meeting SHALL then show the "Invalid participant data" error screen and log the server's reason in the browser console.
+The server SHALL reject a join whose `participant-external-id` is empty, longer than 64 characters or has characters other than letters, digits, `_` and `-`, or whose `participant-metadata` exceeds 2048 UTF-8 bytes, or whose participant name is longer than 1024 characters, with `422`, and the participant SHALL NOT enter the meeting. The meeting SHALL then show the "Invalid participant data" error screen and log the server's reason in the browser console.
 
 #### Scenario: External id with a space
 - **GIVEN** an embedded element with `participant-external-id="user 42"`
@@ -317,6 +317,11 @@ The server SHALL reject a join whose `participant-external-id` is empty, longer 
 
 #### Scenario: Metadata over the byte limit
 - **GIVEN** a `participant-metadata` of 2000 characters that takes more than 2048 bytes in UTF-8
+- **WHEN** a join token is requested with it
+- **THEN** the server answers `422`
+
+#### Scenario: Name over the character limit
+- **GIVEN** a participant name of 1025 characters
 - **WHEN** a join token is requested with it
 - **THEN** the server answers `422`
 

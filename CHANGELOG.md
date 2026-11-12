@@ -140,6 +140,8 @@ with no replacement.
 - [`getRecordingUrl`][3.10-get-recording-url] returned a link that downloads the recording to a caller holding
   `recordingPlay` without `recordingDownload`, and the recording player's context menu saved the video for any viewer.
   Such a caller now gets a link that only plays the recording, and the player opens no context menu.
+- A `participantName` of any length was accepted when requesting a room member token to join a meeting. It is now
+  limited to 1024 characters, and a longer one answers `422`.
 - A request whose credentials could not be checked because MongoDB or Redis failed answered `401`. It now answers
   `500`.
 - A request whose path held a percent escape that does not decode, such as `/api/v1/rooms/%ZZ`, answered `500`. It

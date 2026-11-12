@@ -1426,6 +1426,15 @@ describe('Room Members API Tests', () => {
 			);
 		});
 
+		it('should fail when participantName exceeds 1024 characters', async () => {
+			const response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
+				secret: roomData.moderatorSecret,
+				joinMeeting: true,
+				participantName: 'x'.repeat(1025)
+			});
+			expectValidationError(response, 'participantName', 'participantName cannot exceed 1024 characters');
+		});
+
 		it('should fail when participantMetadata exceeds 2048 bytes', async () => {
 			const response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
 				secret: roomData.moderatorSecret,

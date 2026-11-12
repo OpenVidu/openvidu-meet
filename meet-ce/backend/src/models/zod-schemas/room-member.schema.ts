@@ -276,7 +276,7 @@ export const UpdateRoomMemberReqSchema = z.object({
 export const RoomMemberTokenOptionsSchema: z.ZodType<MeetRoomMemberTokenOptions> = z.object({
 	secret: z.string().optional(),
 	joinMeeting: z.boolean().optional().default(false),
-	participantName: z.string().optional(),
+	participantName: z.string().max(1024, 'participantName cannot exceed 1024 characters').optional(),
 	participantExternalId: z
 		.string()
 		.min(1, 'participantExternalId cannot be empty')

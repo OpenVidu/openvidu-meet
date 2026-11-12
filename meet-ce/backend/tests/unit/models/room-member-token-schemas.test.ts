@@ -53,6 +53,16 @@ describe('RoomMemberTokenOptionsSchema — participant identity correlation fiel
 		}
 	});
 
+	it('accepts a participantName of 1024 characters and rejects one of 1025', () => {
+		expect(RoomMemberTokenOptionsSchema.safeParse({ participantName: 'x'.repeat(1024) }).success).toBe(true);
+
+		const result = RoomMemberTokenOptionsSchema.safeParse({ participantName: 'x'.repeat(1025) });
+
+		expect(result.success).toBe(false);
+		expect(firstIssue(result).path).toEqual(['participantName']);
+		expect(firstIssue(result).message).toContain('cannot exceed 1024 characters');
+	});
+
 	it('rejects a participantMetadata payload over 2048 bytes', () => {
 		const result = RoomMemberTokenOptionsSchema.safeParse({ participantMetadata: 'x'.repeat(2049) });
 
