@@ -25,6 +25,7 @@ describe('MeetingEntryFlowService', () => {
 	let roomService: jasmine.SpyObj<RoomService>;
 	let showDialog: jasmine.Spy;
 	let hasPendingWait: jasmine.Spy;
+	let asksToJoin: jasmine.Spy;
 
 	beforeEach(() => {
 		joinService = jasmine.createSpyObj<MeetingJoinService>('MeetingJoinService', [
@@ -35,6 +36,8 @@ describe('MeetingEntryFlowService', () => {
 		joinService.initialize.and.resolveTo();
 		joinService.submit.and.returnValue(true);
 		joinService.joinScreenState.and.returnValue(ready);
+		asksToJoin = jasmine.createSpy('asksToJoin').and.returnValue(true);
+		Object.assign(joinService, { asksToJoin });
 
 		roomService = jasmine.createSpyObj<RoomService>('RoomService', ['loadRoomConfig']);
 		roomService.loadRoomConfig.and.resolveTo(undefined);
@@ -76,6 +79,15 @@ describe('MeetingEntryFlowService', () => {
 		await flow.start();
 
 		expect(flow.step()).toBe('meeting');
+	});
+
+	it('shows the join screen when the room no longer makes the participant wait, whatever a reload left behind', async () => {
+		hasPendingWait.and.returnValue(true);
+		asksToJoin.and.returnValue(false);
+
+		await flow.start();
+
+		expect(flow.step()).toBe('join');
 	});
 
 	it('shows the error step and a dialog when the room cannot be loaded', async () => {

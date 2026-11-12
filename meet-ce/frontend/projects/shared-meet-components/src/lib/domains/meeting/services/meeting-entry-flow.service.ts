@@ -56,7 +56,9 @@ export class MeetingEntryFlowService {
 			return;
 		}
 
-		if (joinScreenNeeded(this._options(), this.joinService.joinScreenState(), this.waitingRoom.hasPendingWait())) {
+		const resumingWait = this.joinService.asksToJoin() && this.waitingRoom.hasPendingWait();
+
+		if (joinScreenNeeded(this._options(), this.joinService.joinScreenState(), resumingWait)) {
 			this._step.set('join');
 		} else {
 			await this.enterMeeting();
