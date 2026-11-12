@@ -116,9 +116,11 @@ describe('MeetingJoinService', () => {
 	// Everything the join screen renders comes from these computeds: the room's name, whether it
 	// still accepts anyone, whether a key is needed, and the name and link fields.
 	describe('what the join screen shows', () => {
-		it('exposes the room it loaded', async () => {
-			await service.initialize();
+		it('exposes the room it loaded, and hands over its config for the meeting', async () => {
+			const config = await service.initialize();
 
+			expect(config).toEqual({ e2ee: { enabled: false } } as never);
+			expect(roomService.getRoom).toHaveBeenCalledTimes(1);
 			expect(service.roomName()).toBe('Room One');
 			expect(service.roomClosed()).toBeFalse();
 			expect(service.hasRoomE2EEEnabled()).toBeFalse();

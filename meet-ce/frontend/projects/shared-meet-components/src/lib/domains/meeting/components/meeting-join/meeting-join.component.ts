@@ -50,8 +50,8 @@ export class MeetingJoinComponent {
 	protected showBackButton = this.joinService.showBackButton;
 	protected backButtonText = this.joinService.backButtonText;
 
-	async onFormSubmit(): Promise<void> {
-		await this.entryFlow.completeJoinScreen();
+	onFormSubmit(): void {
+		this.entryFlow.completeJoinScreen();
 	}
 
 	async onViewRecordingsClick(): Promise<void> {

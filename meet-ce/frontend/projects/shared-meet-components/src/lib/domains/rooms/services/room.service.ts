@@ -19,14 +19,12 @@ import {
 import { HttpService } from '../../../shared/services/http.service';
 import type { MeetRoomClientResponseOptions } from '../models/room-request';
 import type { MeetRoomQueryOptionsWithFields } from '../types/room-projection.types';
-import { RoomFeatureService } from './room-feature.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 import type { ILogger } from '../../../shared/models/logger.model';
 
 @Service()
 export class RoomService {
 	protected httpService: HttpService = inject(HttpService);
-	protected roomFeatureService: RoomFeatureService = inject(RoomFeatureService);
 	protected loggerService: LoggerService = inject(LoggerService);
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - RoomService');
 
@@ -131,35 +129,6 @@ export class RoomService {
 		const path = `${this.ROOMS_API}/${roomId}${queryString ? `?${queryString}` : ''}`;
 
 		return this.httpService.getRequest(path);
-	}
-
-	/**
-	 * Retrieves the config for a specific room.
-	 *
-	 * @param roomId - The unique identifier of the room
-	 * @return A promise that resolves to the MeetRoomConfig object
-	 */
-	async getRoomConfig(roomId: string): Promise<MeetRoomConfig> {
-		const path = `${this.ROOMS_API}/${roomId}/config`;
-		return this.httpService.getRequest<MeetRoomConfig>(path);
-	}
-
-	/**
-	 * Loads the room config and updates the feature configuration service.
-	 *
-	 * @param roomId - The unique identifier of the room
-	 */
-	async loadRoomConfig(roomId: string): Promise<void> {
-		this.log.d('Fetching room config for roomId:', roomId);
-
-		try {
-			const config = await this.getRoomConfig(roomId);
-			this.roomFeatureService.setRoomConfig(config);
-			this.log.d('Room config loaded:', config);
-		} catch (error) {
-			this.log.e('Error loading room config', error);
-			throw new Error('Failed to load room config', { cause: error });
-		}
 	}
 
 	/**
