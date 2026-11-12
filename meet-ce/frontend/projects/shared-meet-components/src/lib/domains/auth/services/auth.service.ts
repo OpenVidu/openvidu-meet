@@ -200,19 +200,19 @@ export class AuthService {
 	 * Retrieves the authenticated user's information and caches it in the service.
 	 * If the user information is already cached and force is not true, it returns immediately.
 	 * If force is true, it will attempt to fetch the user information again from the server.
+	 * A browser that stores no token is anonymous without asking the server.
 	 *
 	 * @param force - If true, forces a refresh of the user information from the server
 	 */
 	private async getAuthenticatedUser(force = false) {
 		if (force || (!this.user && !this.hasCheckAuth)) {
-			try {
-				const user = await this.userService.getMe();
-				this.user = user;
-			} catch {
-				this.user = null;
-			}
+			this.user = this.hasStoredTokens() ? await this.userService.getMe().catch(() => null) : null;
 		}
 
 		this.hasCheckAuth = true;
+	}
+
+	private hasStoredTokens(): boolean {
+		return !!this.tokenStorageService.getAccessToken() || !!this.tokenStorageService.getRefreshToken();
 	}
 }
