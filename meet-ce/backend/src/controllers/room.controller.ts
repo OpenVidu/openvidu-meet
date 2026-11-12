@@ -19,10 +19,10 @@ import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { handleError } from '../middlewares/error-handler.middleware.js';
 import type { MeetRoomDeletionOptions } from '../models/request-context.model.js';
 import { LoggerService } from '../services/logger.service.js';
-import { RoomAccessService } from '../services/room-access.service.js';
+import type { RoomAccessFacts } from '../services/room-access.service.js';
+import { ROOM_ACCESS_FIELDS, RoomAccessService } from '../services/room-access.service.js';
 import { RoomService } from '../services/room.service.js';
 import type { RoomQueryWithFields } from '../types/room-projection.types.js';
-import { runConcurrently } from '../utils/concurrency.utils.js';
 import { getBaseUrl } from '../utils/url.utils.js';
 
 export const createRoom = async (req: Request, res: Response) => {
@@ -63,25 +63,25 @@ export const getRooms = async (_req: Request, res: Response) => {
 		const shouldApplyPermissionFiltering = MeetRoomHelper.shouldApplyPermissionFilteringForFields(fieldsForQuery);
 		const optimizedQueryParams: RoomQueryWithFields = {
 			...queryParams,
-			fields: shouldApplyPermissionFiltering ? [...fieldsForQuery, 'roomId', 'roles'] : fieldsForQuery
+			fields: shouldApplyPermissionFiltering ? [...fieldsForQuery, ...ROOM_ACCESS_FIELDS] : fieldsForQuery
 		};
 		const { rooms, isTruncated, nextPageToken } = await roomService.getAllMeetRooms(optimizedQueryParams);
 
-		const filteredRooms = shouldApplyPermissionFiltering
-			? await runConcurrently(
-					rooms,
-					async (room) => {
-						const permissions = await roomAccessService.getGrantedRoomMemberPermissions(room.roomId!);
-						const filteredRoom = MeetRoomHelper.applyPermissionFiltering(room, permissions);
-						return MeetRoomHelper.applyFieldFilters(
-							filteredRoom,
-							queryParams.fields,
-							queryParams.extraFields
-						);
-					},
-					{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_RETRIEVE_ROOMS, failFast: true }
+		let filteredRooms = rooms;
+
+		if (shouldApplyPermissionFiltering) {
+			const permissions = await roomAccessService.getGrantedRoomMemberPermissionsInRooms(
+				rooms as RoomAccessFacts[]
+			);
+			filteredRooms = rooms.map((room, index) =>
+				MeetRoomHelper.applyFieldFilters(
+					MeetRoomHelper.applyPermissionFiltering(room, permissions[index]),
+					queryParams.fields,
+					queryParams.extraFields
 				)
-			: rooms;
+			);
+		}
+
 		const maxItems = Number(queryParams.maxItems);
 
 		const wireRooms = filteredRooms.map((room) => roomToWire(room));

@@ -149,6 +149,28 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	}
 
 	/**
+	 * Finds the memberships of a member in the given rooms.
+	 *
+	 * @param memberId - The ID of the member (userId)
+	 * @param roomIds - The IDs of the rooms
+	 * @param fields - Array of field names to include in the result
+	 * @returns The memberships found, in no particular order
+	 */
+	findByMemberIdInRooms<const TFields extends readonly MeetRoomMemberField[]>(
+		memberId: string,
+		roomIds: string[],
+		fields: TFields
+	): Promise<ProjectedMeetRoomMember<TFields>[]>;
+
+	findByMemberIdInRooms(
+		memberId: string,
+		roomIds: string[],
+		fields: readonly MeetRoomMemberField[]
+	): Promise<Partial<MeetRoomMember>[]> {
+		return this.findAll({ memberId, roomId: { $in: roomIds } }, fields as string[]);
+	}
+
+	/**
 	 * Gets all room IDs where a user is a member, optionally filtered by permission.
 	 *
 	 * @param memberId - The ID of the member (userId)
