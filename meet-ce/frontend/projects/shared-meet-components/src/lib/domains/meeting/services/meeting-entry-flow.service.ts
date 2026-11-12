@@ -10,6 +10,7 @@ import {
 } from '../utils/meeting-entry-flow.utils';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingJoinService } from './meeting-join.service';
+import { WaitingRoomService } from '../waiting-room/waiting-room.service';
 
 /**
  * Where the participant is on their way into the meeting:
@@ -25,6 +26,7 @@ export type MeetingEntryStep = 'preparing' | 'join' | 'meeting' | 'left' | 'erro
 @Injectable()
 export class MeetingEntryFlowService {
 	private readonly joinService = inject(MeetingJoinService);
+	private readonly waitingRoom = inject(WaitingRoomService);
 	private readonly roomService = inject(RoomService);
 	private readonly meetingContextService = inject(MeetingContextService);
 	private readonly dialogService = inject(DialogService);
@@ -54,7 +56,7 @@ export class MeetingEntryFlowService {
 			return;
 		}
 
-		if (joinScreenNeeded(this._options(), this.joinService.joinScreenState())) {
+		if (joinScreenNeeded(this._options(), this.joinService.joinScreenState(), this.waitingRoom.hasPendingWait())) {
 			this._step.set('join');
 		} else {
 			await this.enterMeeting();

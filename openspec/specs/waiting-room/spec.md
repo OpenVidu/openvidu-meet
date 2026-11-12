@@ -24,7 +24,7 @@ The room config field `waitingRoom.enabled` SHALL decide whether a room holds pa
 - **THEN** the server answers `409` and the waiting room stays on
 
 ### Requirement: Who waits
-In a room with `waitingRoom.enabled`, a participant who asks to join SHALL wait instead of joining, unless they hold `waitingRoomBypass`. An admitted participant who reloads the page SHALL ask again and wait. An admin and the room's owner hold every permission and SHALL join directly. The server checks of `meeting-join` SHALL run before a participant waits, except the participant limit, which applies when their join token is issued. Gaining `waitingRoomBypass` while waiting SHALL NOT end the wait.
+In a room with `waitingRoom.enabled`, a participant who asks to join SHALL wait instead of joining, unless they hold `waitingRoomBypass`. A participant who reloads the page while waiting SHALL continue the same wait; an admitted participant who reloads the page after joining SHALL ask again and wait. An admin and the room's owner hold every permission and SHALL join directly. The server checks of `meeting-join` SHALL run before a participant waits, except the participant limit, which applies when their join token is issued. Gaining `waitingRoomBypass` while waiting SHALL NOT end the wait.
 
 #### Scenario: Speaker waits
 - **GIVEN** a room with the waiting room on whose speaker role denies `waitingRoomBypass`
@@ -113,7 +113,7 @@ A participant SHALL start waiting when they ask to join, and keep their place on
 - **THEN** the participant keeps their place in line
 
 ### Requirement: A minute without the connection loses the place
-A participant whose realtime connection has been down for about a minute, whatever the reason (network loss, closed or reloaded page, a phone suspending the page, an embedded element or iframe removed by its host), SHALL lose their place and their wait SHALL end as expired, never as left, which only leaving reports. Their meeting SHALL then stop reconnecting, say they lost their place and offer to ask again, or show the connection error screen if it never reached Meet during that wait.
+A participant whose realtime connection has been down for about a minute, whatever the reason (network loss, closed page, a phone suspending the page, an embedded element or iframe removed by its host), SHALL lose their place and their wait SHALL end as expired, never as left, which only leaving reports. Their meeting SHALL then stop reconnecting, say they lost their place and offer to ask again, or show the connection error screen if it never reached Meet during that wait.
 
 #### Scenario: Short network loss
 - **GIVEN** a participant second in line
@@ -142,7 +142,7 @@ A participant whose realtime connection has been down for about a minute, whatev
 - **THEN** about a minute later their meeting shows the connection error screen, not that they lost their place
 
 ### Requirement: Every request to join is a new wait
-Each time a participant asks to join, it SHALL start a new wait at the end of the line. When the same identity already waits (a member or a user asking again from a reload, another tab or another device), the earlier wait SHALL end as left and the earlier screen, if still open, SHALL say they lost their place.
+Each time a participant asks to join, except to continue the wait a reload interrupted, it SHALL start a new wait at the end of the line. When the same identity already waits (a member or a user asking again from another tab or another device), the earlier wait SHALL end as left and the earlier screen, if still open, SHALL say they lost their place.
 
 #### Scenario: Member asks from a second device
 - **GIVEN** a member waiting first in line on a laptop, with Ben behind them
@@ -151,10 +151,30 @@ Each time a participant asks to join, it SHALL start a new wait at the end of th
 - **AND** the laptop says they lost their place
 - **AND** `participantWaitingList` lists them once
 
-#### Scenario: Reload while waiting
+### Requirement: A reload continues the wait
+A participant who reloads the page while waiting SHALL return to the waiting screen with the same wait, keeping their identity and their place, without the join screen and without a new `participantKnocked` webhook. The page SHALL remember the wait of its tab until it ends, so another tab starts its own. When the remembered wait is over or cannot be continued, the page SHALL ask to join again as the first time. The join screen SHALL show only when it has something to ask, such as a name.
+
+#### Scenario: Member reloads while waiting
 - **GIVEN** a member waiting first in line, with Ben behind them
-- **WHEN** they reload the page and ask to join again
-- **THEN** they wait behind Ben, and a `participantKnocked` webhook is sent for the new wait
+- **WHEN** they reload the page
+- **THEN** the waiting screen shows them first in line, with the same identity
+- **AND** `participantWaitingList` lists them once, ahead of Ben
+- **AND** no `participantKnocked` webhook is sent
+
+#### Scenario: Anonymous participant reloads repeatedly
+- **GIVEN** an anonymous participant waiting
+- **WHEN** they reload the page three times
+- **THEN** `participantWaitingList` lists them once, with the identity they had when they asked
+
+#### Scenario: Reload after the wait ended
+- **GIVEN** a participant who reloads the page after the wait they left behind was rejected, expired or ended with the meeting
+- **WHEN** the page loads
+- **THEN** they ask to join as the first time, and wait at the end of the line
+
+#### Scenario: Reload after the connection was lost for a minute
+- **GIVEN** a participant whose page was closed for two minutes
+- **WHEN** they open the room again in a new tab
+- **THEN** they ask to join as the first time, and wait at the end of the line
 
 ### Requirement: Waiting list
 `GET /api/v1/meetings/{roomId}/waiting-room` (`participantWaitingList`) SHALL require `waitingRoomAdmin` (`403`) and return `participants`, those waiting as `MeetWaitingRoomParticipant` in arrival order (`knockDate`, then identity), and `availablePlaces`, the free places: `maxParticipants` minus the participants connected and those admitted who have not joined yet, never below 0, or `null` without a limit. Unlike the other meeting operations, the waiting room operations SHALL answer whether or not a meeting runs.

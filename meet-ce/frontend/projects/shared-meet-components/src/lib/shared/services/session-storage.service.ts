@@ -1,4 +1,5 @@
 import { inject, Service } from '@angular/core';
+import type { MeetWaitingRoomTicketResponse } from '@openvidu-meet/typings';
 import { SessionStorageKeys } from '../models/storage.model';
 import { BrowserStorageService } from './browser-storage.service';
 
@@ -125,11 +126,44 @@ export class SessionStorageService {
 	}
 
 	/**
-	 * Clears all data related to the meeting,including room secret, redirect URL, and E2EE data.
+	 * Stores the ticket of the wait the participant is in, together with the room it belongs to, so a reload
+	 * of the page continues the wait instead of starting another.
+	 *
+	 * @param roomId The room the participant waits to join.
+	 * @param ticket The answer that handed the participant the ticket of their wait.
+	 */
+	public setWaitingRoomTicket(roomId: string, ticket: MeetWaitingRoomTicketResponse): void {
+		this.storage.set(SessionStorageKeys.WAITING_ROOM_TICKET, { roomId, ticket }, 'session');
+	}
+
+	/**
+	 * Retrieves the ticket of the wait stored for a room.
+	 *
+	 * @param roomId The room being entered.
+	 * @returns The ticket stored for that room, or null when none was stored for it.
+	 */
+	public getWaitingRoomTicket(roomId: string): MeetWaitingRoomTicketResponse | null {
+		const stored = this.storage.get<{ roomId: string; ticket: MeetWaitingRoomTicketResponse }>(
+			SessionStorageKeys.WAITING_ROOM_TICKET,
+			'session'
+		);
+		return stored?.roomId === roomId ? stored.ticket : null;
+	}
+
+	/**
+	 * Removes the stored waiting room ticket.
+	 */
+	public removeWaitingRoomTicket(): void {
+		this.storage.remove(SessionStorageKeys.WAITING_ROOM_TICKET, 'session');
+	}
+
+	/**
+	 * Clears all data related to the meeting, including room secret, redirect URL, E2EE data and waiting room ticket.
 	 */
 	public clearMeetingData(): void {
 		this.removeRoomSecret();
 		this.removeRedirectUrl();
 		this.removeE2EEData();
+		this.removeWaitingRoomTicket();
 	}
 }

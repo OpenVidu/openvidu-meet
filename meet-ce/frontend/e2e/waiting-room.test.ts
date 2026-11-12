@@ -208,7 +208,9 @@ test.describe('Waiting room E2E Tests', () => {
 			await expectQueuePosition(cleo, '1st');
 		});
 
-		test('should put a member who reloads at the end of the line with the same identity', async ({ browser }) => {
+		test('should keep the place and the identity of a member who reloads, without asking again', async ({
+			browser
+		}) => {
 			await createWaitingRoomRoom();
 			const member = await createRoomMember(roomId, { name: 'Mia', baseRole: MeetRoomMemberRole.SPEAKER });
 
@@ -219,17 +221,32 @@ test.describe('Waiting room E2E Tests', () => {
 			await expectQueuePosition(xavi, '2nd');
 
 			await mia.reload({ waitUntil: 'domcontentloaded' });
-			const askButton = mia.locator('#participant-name-submit');
-			await expect(askButton.or(mia.locator('#waiting-screen'))).toBeVisible({ timeout: 30_000 });
 
-			if (await askButton.isVisible()) {
-				await click(askButton, 10_000);
+			await expectWaitingScreen(mia, 30_000);
+			await expectQueuePosition(mia, '1st');
+			await expectQueuePosition(xavi, '2nd');
+			await expect.poll(waitingRoomNames).toEqual(['Mia', 'Xavi']);
+			expect(await identityOf('Mia')).toBe(identity);
+		});
+
+		test('should not add another waiting participant each time an anonymous participant reloads', async ({
+			browser
+		}) => {
+			await createWaitingRoomRoom();
+			const ana = await waiter(browser, 'Ana');
+			const identity = await identityOf('Ana');
+
+			for (let reload = 0; reload < 3; reload++) {
+				await ana.reload({ waitUntil: 'domcontentloaded' });
+				await expectWaitingScreen(ana, 30_000);
+				await expectQueuePosition(ana, '1st');
 			}
 
-			await expectQueuePosition(mia, '2nd');
-			await expectQueuePosition(xavi, '1st');
-			await expect.poll(waitingRoomNames).toEqual(['Xavi', 'Mia']);
-			expect(await identityOf('Mia')).toBe(identity);
+			expect(await waitingRoomNames()).toEqual(['Ana']);
+			expect(await identityOf('Ana')).toBe(identity);
+
+			expect((await admitFromWaitingRoom(roomId, [identity])).status).toBe(200);
+			await expectInMeeting(ana);
 		});
 
 		test('should let a rejected participant ask again after the pause, at the end of the line', async ({
