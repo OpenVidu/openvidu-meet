@@ -1,6 +1,6 @@
 import type {
 	MeetBroadcastInfo,
-	MeetWaitingRoomStatusChangedPayload,
+	MeetParticipantWaitingChangedPayload,
 	MeetMeetingEndedPayload,
 	MeetParticipantJoinedPayload,
 	MeetParticipantKnockedPayload,
@@ -138,9 +138,9 @@ export class WebhookDispatcherService {
 	 *
 	 * @param payload - The room, the participant, the new status of the wait and who caused it
 	 */
-	sendWaitingRoomStatusChangedWebhook(payload: MeetWaitingRoomStatusChangedPayload) {
+	sendParticipantWaitingChangedWebhook(payload: MeetParticipantWaitingChangedPayload) {
 		this.sendWebhookEventInBackground(
-			MeetWebhookEventType.WAITING_ROOM_STATUS_CHANGED,
+			MeetWebhookEventType.PARTICIPANT_WAITING_CHANGED,
 			payload,
 			`Room ID: ${payload.roomId}, Participant: ${payload.participant.participantIdentity}, Status: ${payload.status}`
 		);

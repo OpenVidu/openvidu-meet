@@ -1,7 +1,14 @@
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { EmbeddedEventName, MeetWaitingRoomState, MeetWaitingRoomStatus } from '@openvidu-meet/typings';
+import {
+	EmbeddedEventName,
+	MeetEventOrigin,
+	MeetWaitingRoomParticipant,
+	MeetWaitingRoomParticipantType,
+	MeetWaitingRoomState,
+	MeetWaitingRoomStatus
+} from '@openvidu-meet/typings';
 import { Subject } from 'rxjs';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { LoggerService } from '../../../shared/services/logger.service';
@@ -53,7 +60,13 @@ class Deferred<T> {
 }
 
 const ROOM_ID = 'room1';
-const TICKET = { waitingRoomTicket: 'ticket/1', participantIdentity: 'ana-1' };
+const PARTICIPANT: MeetWaitingRoomParticipant = {
+	participantIdentity: 'ana-1',
+	participantName: 'Ana',
+	type: MeetWaitingRoomParticipantType.ANONYMOUS,
+	knockDate: 1_800_000_000_000
+};
+const TICKET = { waitingRoomTicket: 'ticket/1', participant: PARTICIPANT };
 const ANA: JoinRequest = { participantName: 'Ana', e2eeKey: '', nameTypedByParticipant: true };
 const WAITING: JoinAnswer = { kind: 'waiting', ticket: TICKET };
 const tokenAnswer = (token = 'join-token'): JoinAnswer => ({ kind: 'token', token });
@@ -119,11 +132,14 @@ describe('WaitingRoomService', () => {
 	const waitingRoomEvents = () =>
 		eventBus
 			.events()
-			.filter(({ event }) => event === EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED)
+			.filter(({ event }) => event === EmbeddedEventName.PARTICIPANT_WAITING_CHANGED)
 			.map((event) => (event as { payload: unknown }).payload);
 
 	const waitingRoomStatuses = () =>
 		waitingRoomEvents().map((payload) => (payload as { status: MeetWaitingRoomStatus }).status);
+
+	const waitingRoomOrigins = () =>
+		waitingRoomEvents().map((payload) => (payload as { origin?: MeetEventOrigin }).origin);
 
 	/** Starts a wait and lets it be admitted, with the token request answering what `answer` settles to. */
 	async function admitWith(answer: Deferred<JoinAnswer>): Promise<{ joined: jasmine.Spy }> {
@@ -186,13 +202,13 @@ describe('WaitingRoomService', () => {
 			expect(waitingRoomEvents()).toEqual([
 				{
 					roomId: ROOM_ID,
-					participantIdentity: TICKET.participantIdentity,
+					participant: PARTICIPANT,
 					status: 'waiting',
 					queuePosition: 2
 				},
 				{
 					roomId: ROOM_ID,
-					participantIdentity: TICKET.participantIdentity,
+					participant: PARTICIPANT,
 					status: 'waiting',
 					queuePosition: 1
 				}
@@ -215,13 +231,14 @@ describe('WaitingRoomService', () => {
 		});
 
 		it('ends on a final state for good, ignoring a stale state after it', () => {
-			send({ status: MeetWaitingRoomStatus.REJECTED });
+			send({ status: MeetWaitingRoomStatus.REJECTED, origin: MeetEventOrigin.MODERATOR });
 			send({ status: MeetWaitingRoomStatus.WAITING, queuePosition: 1 });
 
 			expect(service.outcome()).toBe('rejected');
 			expect(service.isWaiting()).toBeFalse();
 			expect(webSocket.disconnect).toHaveBeenCalled();
 			expect(waitingRoomStatuses()).toEqual([MeetWaitingRoomStatus.REJECTED]);
+			expect(waitingRoomOrigins()).toEqual([MeetEventOrigin.MODERATOR]);
 		});
 
 		it('says the place was lost when a newer request replaced the wait, reporting what the server said', () => {
@@ -246,6 +263,7 @@ describe('WaitingRoomService', () => {
 
 			expect(service.outcome()).toBe('expired');
 			expect(waitingRoomStatuses()).toEqual([MeetWaitingRoomStatus.WAITING, MeetWaitingRoomStatus.EXPIRED]);
+			expect(waitingRoomOrigins()).toEqual([undefined, MeetEventOrigin.SYSTEM]);
 		});
 	});
 
@@ -486,6 +504,7 @@ describe('WaitingRoomService', () => {
 			expect(webSocket.disconnect).toHaveBeenCalled();
 			expect(service.outcome()).toBe('left');
 			expect(waitingRoomStatuses()).toEqual([MeetWaitingRoomStatus.LEFT]);
+			expect(waitingRoomOrigins()).toEqual([MeetEventOrigin.PARTICIPANT]);
 		});
 
 		it('discards a token answered after leaving', async () => {

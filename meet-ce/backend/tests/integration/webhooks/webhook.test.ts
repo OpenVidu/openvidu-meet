@@ -5,7 +5,7 @@ import {
 	MeetEventOrigin,
 	MeetWaitingRoomParticipantType,
 	MeetWaitingRoomStatus,
-	MeetWaitingRoomStatusChangedPayload,
+	MeetParticipantWaitingChangedPayload,
 	MeetParticipantJoinedPayload,
 	MeetParticipantKnockedPayload,
 	MeetParticipantLeftPayload,
@@ -413,7 +413,7 @@ describe('Webhook Integration Tests', () => {
 			expect(demotion.participant.role).toBe(MeetRoomMemberRole.SPEAKER);
 		});
 
-		it('should send participantKnocked once per wait and waitingRoomStatusChanged for every later change', async () => {
+		it('should send participantKnocked once per wait and participantWaitingChanged for every later change', async () => {
 			const { room, speakerSecret } = await setupSingleRoom(false, 'WAITING_ROOM_ROOM', {
 				waitingRoom: { enabled: true }
 			});
@@ -429,9 +429,9 @@ describe('Webhook Integration Tests', () => {
 
 			const ofRoom = (event: MeetWebhookEventType) => (webhook: ReceivedWebhook) =>
 				webhook.body.event === event && (webhook.body.data as { roomId: string }).roomId === roomId;
-			await waitForWebhookCount(receivedWebhooks, ofRoom(MeetWebhookEventType.WAITING_ROOM_STATUS_CHANGED), 3);
+			await waitForWebhookCount(receivedWebhooks, ofRoom(MeetWebhookEventType.PARTICIPANT_WAITING_CHANGED), 3);
 			const knocked = receivedWebhooks.filter(ofRoom(MeetWebhookEventType.PARTICIPANT_KNOCKED));
-			const changes = receivedWebhooks.filter(ofRoom(MeetWebhookEventType.WAITING_ROOM_STATUS_CHANGED));
+			const changes = receivedWebhooks.filter(ofRoom(MeetWebhookEventType.PARTICIPANT_WAITING_CHANGED));
 			[...knocked, ...changes].forEach(expectValidSignature);
 
 			expect(
@@ -449,7 +449,7 @@ describe('Webhook Integration Tests', () => {
 			});
 			expect(
 				changes.map(({ body }) => {
-					const { participant, status, origin } = body.data as MeetWaitingRoomStatusChangedPayload;
+					const { participant, status, origin } = body.data as MeetParticipantWaitingChangedPayload;
 					return [participant.participantName, status, origin];
 				})
 			).toEqual([

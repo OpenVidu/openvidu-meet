@@ -538,7 +538,7 @@ export class RoomMemberService {
 
 		const { participantIdentity, participantName, externalId, metadata } = wait!.participant;
 
-		if (answer.kind === 'waiting') return { waitingRoomTicket, participantIdentity };
+		if (answer.kind === 'waiting') return this.waitingRoomService.ticketOf(waitingRoomTicket, wait!.participant);
 
 		Object.assign(tokenMetadata, { externalId, metadata });
 		const room = await this.getRoomToJoin(roomId);
@@ -558,7 +558,7 @@ export class RoomMemberService {
 
 			if (!('entry' in change)) throw new WaitingRoomWaitEndedError(change.status);
 
-			return { waitingRoomTicket, participantIdentity };
+			return this.waitingRoomService.ticketOf(waitingRoomTicket, change.entry);
 		}
 
 		return {

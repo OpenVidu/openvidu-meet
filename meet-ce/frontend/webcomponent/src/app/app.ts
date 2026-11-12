@@ -147,8 +147,8 @@ export class App {
 	readonly broadcastEnded = output<EmbeddedEventPayloadFor<EmbeddedEventName.BROADCAST_ENDED>>();
 	readonly participantKnocked = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_KNOCKED>>();
 	readonly waitingRoomUpdated = output<EmbeddedEventPayloadFor<EmbeddedEventName.WAITING_ROOM_UPDATED>>();
-	readonly waitingRoomStatusChanged =
-		output<EmbeddedEventPayloadFor<EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED>>();
+	readonly participantWaitingChanged =
+		output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_WAITING_CHANGED>>();
 	readonly embeddedCloseRequested = output<void>();
 
 	/** @deprecated Renamed to `meetingJoined`. Removed in 3.12.0. Dispatched alongside it. */
@@ -454,8 +454,8 @@ export class App {
 			case EmbeddedEventName.WAITING_ROOM_UPDATED:
 				this.waitingRoomUpdated.emit(payload);
 				break;
-			case EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED:
-				this.waitingRoomStatusChanged.emit(payload);
+			case EmbeddedEventName.PARTICIPANT_WAITING_CHANGED:
+				this.participantWaitingChanged.emit(payload);
 				break;
 		}
 	}

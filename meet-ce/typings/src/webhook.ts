@@ -33,10 +33,10 @@ export enum MeetWebhookEventType {
 	PARTICIPANT_ROLE_CHANGED = 'participantRoleChanged',
 	/** Emitted when a participant asks to join a room with a waiting room and starts waiting to be admitted */
 	PARTICIPANT_KNOCKED = 'participantKnocked',
+	/** Emitted when a participant waiting to join is admitted, rejected or otherwise stops waiting */
+	PARTICIPANT_WAITING_CHANGED = 'participantWaitingChanged',
 	/** Emitted when a participant's hand is raised or lowered */
 	PARTICIPANT_HAND_CHANGED = 'participantHandChanged',
-	/** Emitted when a participant waiting to join is admitted, rejected or otherwise stops waiting */
-	WAITING_ROOM_STATUS_CHANGED = 'waitingRoomStatusChanged',
 	/** Emitted when a recording starts in a room */
 	RECORDING_STARTED = 'recordingStarted',
 	/** Emitted when a recording is updated */
@@ -198,11 +198,11 @@ export interface MeetParticipantKnockedPayload {
 }
 
 /**
- * Payload for the {@link MeetWebhookEventType.WAITING_ROOM_STATUS_CHANGED} webhook event. Sent for every
+ * Payload for the {@link MeetWebhookEventType.PARTICIPANT_WAITING_CHANGED} webhook event. Sent for every
  * change of a wait after the knock, one per participant also when a decision covers everyone waiting.
  * The time waited is `creationDate` of the event minus `participant.knockDate`.
  */
-export interface MeetWaitingRoomStatusChangedPayload extends MeetParticipantKnockedPayload {
+export interface MeetParticipantWaitingChangedPayload extends MeetParticipantKnockedPayload {
 	/** What happened to the wait. See {@link MeetWaitingRoomStatus} for details */
 	status: MeetWaitingRoomStatus;
 	/**
@@ -220,7 +220,7 @@ export interface MeetWaitingRoomStatusChangedPayload extends MeetParticipantKnoc
  * {@link MeetRoom}, {@link MeetMeetingEndedPayload}, {@link MeetParticipantJoinedPayload},
  * {@link MeetParticipantLeftPayload}, {@link MeetParticipantRoleChangedPayload},
  * {@link MeetParticipantHandChangedPayload}, {@link MeetParticipantKnockedPayload} or
- * {@link MeetWaitingRoomStatusChangedPayload}.
+ * {@link MeetParticipantWaitingChangedPayload}.
  */
 export type MeetWebhookPayload =
 	| MeetRecordingInfo
@@ -232,4 +232,4 @@ export type MeetWebhookPayload =
 	| MeetParticipantRoleChangedPayload
 	| MeetParticipantHandChangedPayload
 	| MeetParticipantKnockedPayload
-	| MeetWaitingRoomStatusChangedPayload;
+	| MeetParticipantWaitingChangedPayload;

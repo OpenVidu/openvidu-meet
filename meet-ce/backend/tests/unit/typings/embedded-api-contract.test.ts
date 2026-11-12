@@ -91,7 +91,7 @@ describe('Embedded event names', () => {
 				'participantReactionSent',
 				'participantKnocked',
 				'waitingRoomUpdated',
-				'waitingRoomStatusChanged',
+				'participantWaitingChanged',
 				'mediaAudioStatusChanged',
 				'mediaVideoStatusChanged',
 				'mediaScreenShareStatusChanged',

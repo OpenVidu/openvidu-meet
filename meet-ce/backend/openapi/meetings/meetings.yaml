@@ -534,7 +534,7 @@
             them out. Two admissions for the last free place give one `200` and one `409`.
 
             Each participant admitted is reported through the
-            [`waitingRoomStatusChanged`](#/webhooks/waitingRoomStatusChangedWebhook) webhook with the `admitted` status, and counts
+            [`participantWaitingChanged`](#/webhooks/participantWaitingChangedWebhook) webhook with the `admitted` status, and counts
             as a taken place until LiveKit reports them in the meeting, a minute after their admission at most. An
             admission that is not used within that minute ends as `expired`.
 
@@ -607,7 +607,7 @@
             them out.
 
             Each participant rejected is reported through the
-            [`waitingRoomStatusChanged`](#/webhooks/waitingRoomStatusChangedWebhook) webhook with the `rejected` status.
+            [`participantWaitingChanged`](#/webhooks/participantWaitingChangedWebhook) webhook with the `rejected` status.
 
             Requires the `waitingRoomAdmin` permission.
 

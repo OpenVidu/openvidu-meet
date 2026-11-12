@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MeetRoomMemberTokenOptions } from '@openvidu-meet/typings';
+import { MeetRoomMemberTokenOptions, MeetWaitingRoomParticipantType } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
@@ -78,7 +78,15 @@ describe('JoinTokenService', () => {
 	});
 
 	it('answers the ticket of a participant who has to wait', async () => {
-		const ticket = { waitingRoomTicket: 'ticket-1', participantIdentity: 'alice-1' };
+		const ticket = {
+			waitingRoomTicket: 'ticket-1',
+			participant: {
+				participantIdentity: 'alice-1',
+				participantName: 'Alice',
+				type: MeetWaitingRoomParticipantType.ANONYMOUS,
+				knockDate: 1_800_000_000_000
+			}
+		};
 		roomMemberContext.requestJoin.and.resolveTo(ticket);
 
 		await expectAsync(service.request(alice)).toBeResolvedTo({ kind: 'waiting', ticket });

@@ -29,7 +29,7 @@ content:
                             - participantKnocked
                             - participantRoleChanged
                             - participantHandChanged
-                            - waitingRoomStatusChanged
+                            - participantWaitingChanged
                             - recordingStarted
                             - recordingUpdated
                             - recordingEnded

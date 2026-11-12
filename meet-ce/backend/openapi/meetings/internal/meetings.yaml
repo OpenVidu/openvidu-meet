@@ -50,7 +50,7 @@
         description: >
             Ends the wait of a participant at once, whether it is waiting or admitted and not yet used: the
             participant no longer appears in [`participantWaitingList`](#/operations/participantWaitingList) and the
-            [`waitingRoomStatusChanged`](#/webhooks/waitingRoomStatusChangedWebhook) webhook reports `left`. The meeting client
+            [`participantWaitingChanged`](#/webhooks/participantWaitingChangedWebhook) webhook reports `left`. The meeting client
             calls it when the participant presses "Leave waiting room" or leaves with `meetingLeave`, also while
             its realtime connection is down.
 

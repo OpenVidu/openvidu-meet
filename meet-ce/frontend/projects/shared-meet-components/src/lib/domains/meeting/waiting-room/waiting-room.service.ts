@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
 	EmbeddedEventName,
 	MEET_WAITING_ROOM_STATE_MESSAGE,
+	MeetEventOrigin,
 	MeetWaitingRoomState,
 	MeetWaitingRoomStatus,
 	MeetWaitingRoomTicketResponse
@@ -33,6 +34,12 @@ const FAILING_REQUEST_RETRY_MS = 30_000;
 const FAILING_REQUEST_RETRY_DELAY_MS = 3_000;
 const RATE_LIMIT_DEFAULT_RESET_MS = 10_000;
 
+/** How a wait ended: its status and, when the meeting knows it, who caused it. */
+interface WaitingRoomEnd {
+	status: MeetWaitingRoomStatus;
+	origin?: MeetEventOrigin;
+}
+
 /** One participant's way through the waiting room, from asking to join until they connect or the wait ends. */
 interface Entry {
 	request: JoinRequest;
@@ -40,7 +47,7 @@ interface Entry {
 	reject: (error: unknown) => void;
 	ticket?: MeetWaitingRoomTicketResponse;
 	tokenRequestInFlight?: boolean;
-	finalStatusWhileRequesting?: MeetWaitingRoomStatus;
+	endedWhileRequesting?: WaitingRoomEnd;
 	lastReported?: string;
 }
 
@@ -131,7 +138,7 @@ export class WaitingRoomService {
 		);
 
 		this.finish(entry);
-		this.report(entry, MeetWaitingRoomStatus.LEFT);
+		this.report(entry, MeetWaitingRoomStatus.LEFT, undefined, MeetEventOrigin.PARTICIPANT);
 		this.show('left');
 	}
 
@@ -200,9 +207,9 @@ export class WaitingRoomService {
 
 		if (state.status !== MeetWaitingRoomStatus.WAITING && state.status !== MeetWaitingRoomStatus.ADMITTED) {
 			if (entry.tokenRequestInFlight) {
-				entry.finalStatusWhileRequesting ??= state.status;
+				entry.endedWhileRequesting ??= { status: state.status, origin: state.origin };
 			} else {
-				this.end(entry, state.status);
+				this.end(entry, state);
 			}
 
 			return;
@@ -213,7 +220,7 @@ export class WaitingRoomService {
 		this._status.set(state.status);
 
 		if (state.status === MeetWaitingRoomStatus.ADMITTED) {
-			this.report(entry, state.status);
+			this.report(entry, state.status, undefined, state.origin);
 			void this.requestToken(entry);
 			return;
 		}
@@ -233,9 +240,9 @@ export class WaitingRoomService {
 		const failingSince = Date.now();
 
 		for (;;) {
-			if (entry.finalStatusWhileRequesting) {
+			if (entry.endedWhileRequesting) {
 				entry.tokenRequestInFlight = false;
-				return this.end(entry, entry.finalStatusWhileRequesting);
+				return this.end(entry, entry.endedWhileRequesting);
 			}
 
 			let answer: JoinAnswer;
@@ -276,7 +283,7 @@ export class WaitingRoomService {
 				return this.connect(entry, answer.token);
 			}
 
-			if (entry.finalStatusWhileRequesting) return this.end(entry, entry.finalStatusWhileRequesting);
+			if (entry.endedWhileRequesting) return this.end(entry, entry.endedWhileRequesting);
 
 			this._status.set(MeetWaitingRoomStatus.WAITING);
 			return;
@@ -300,11 +307,11 @@ export class WaitingRoomService {
 	private onTokenRequestFailed(entry: Entry, error: unknown): void {
 		const status = error instanceof HttpErrorResponse ? error.status : undefined;
 
-		if (entry.finalStatusWhileRequesting) return this.end(entry, entry.finalStatusWhileRequesting);
+		if (entry.endedWhileRequesting) return this.end(entry, entry.endedWhileRequesting);
 
 		if (isWaitingRoomWaitEnded(error)) {
 			const endedAs: MeetWaitingRoomStatus | undefined = (error as HttpErrorResponse).error?.status;
-			return this.end(entry, endedAs ?? MeetWaitingRoomStatus.EXPIRED);
+			return this.end(entry, { status: endedAs ?? MeetWaitingRoomStatus.EXPIRED });
 		}
 
 		this.finish(entry);
@@ -332,18 +339,25 @@ export class WaitingRoomService {
 			return;
 		}
 
+		const expired = { status: MeetWaitingRoomStatus.EXPIRED, origin: MeetEventOrigin.SYSTEM };
+
 		if (entry.tokenRequestInFlight) {
-			entry.finalStatusWhileRequesting ??= MeetWaitingRoomStatus.EXPIRED;
+			entry.endedWhileRequesting ??= expired;
 		} else {
-			this.end(entry, MeetWaitingRoomStatus.EXPIRED);
+			this.end(entry, expired);
 		}
 	}
 
 	/** Ends the wait with the status the server reported or the client concluded, and shows its screen. */
-	private end(entry: Entry, status: MeetWaitingRoomStatus): void {
+	private end(entry: Entry, { status, origin }: WaitingRoomEnd): void {
 		this.finish(entry);
+
 		// A 409 after an admission means its answer was lost: the place is, too.
-		this.report(entry, status === MeetWaitingRoomStatus.ADMITTED ? MeetWaitingRoomStatus.EXPIRED : status);
+		if (status === MeetWaitingRoomStatus.ADMITTED) {
+			this.report(entry, MeetWaitingRoomStatus.EXPIRED, undefined, MeetEventOrigin.SYSTEM);
+		} else {
+			this.report(entry, status, undefined, origin);
+		}
 
 		switch (status) {
 			case MeetWaitingRoomStatus.ROOM_CLOSED:
@@ -383,20 +397,26 @@ export class WaitingRoomService {
 		this._outcome.set(outcome);
 	}
 
-	/** Tells the host each state shown, once, with the identity the participant will have in the meeting. */
-	private report(entry: Entry, status: MeetWaitingRoomStatus, queuePosition?: number): void {
+	/** Tells the host each state shown, once, with the participant as the server answered when they asked. */
+	private report(
+		entry: Entry,
+		status: MeetWaitingRoomStatus,
+		queuePosition?: number,
+		origin?: MeetEventOrigin
+	): void {
 		const reported = `${status}:${queuePosition ?? ''}`;
 
 		if (!entry.ticket || entry.lastReported === reported || !this.runtimeConfig.isEmbeddedMode()) return;
 
 		entry.lastReported = reported;
 		this.eventBus.emit({
-			event: EmbeddedEventName.WAITING_ROOM_STATUS_CHANGED,
+			event: EmbeddedEventName.PARTICIPANT_WAITING_CHANGED,
 			payload: {
 				roomId: this.meetingContext.roomId() ?? '',
-				participantIdentity: entry.ticket.participantIdentity,
+				participant: entry.ticket.participant,
 				status,
-				...(queuePosition !== undefined && { queuePosition })
+				...(queuePosition !== undefined && { queuePosition }),
+				...(origin !== undefined && { origin })
 			}
 		});
 	}

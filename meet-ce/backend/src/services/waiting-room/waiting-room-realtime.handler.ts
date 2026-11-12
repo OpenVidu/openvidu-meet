@@ -73,7 +73,7 @@ export class WaitingRoomRealtimeHandler implements WebSocketFeature {
 				this.logger.warn(
 					`Room '${roomId}' was ${outcome === MeetWaitingRoomStatus.ROOM_CLOSED ? 'closed or deleted' : 'switched to no waiting room'} without ending the wait of participant '${ended[0].participantIdentity}': ended it as ${outcome}`
 				);
-				state = { status: outcome };
+				state = { status: outcome, origin: MeetEventOrigin.SYSTEM };
 			}
 		}
 

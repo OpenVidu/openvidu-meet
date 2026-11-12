@@ -263,14 +263,14 @@ The server SHALL process a notification from the media server once even when sev
 - **THEN** the webhook receives exactly one `participantJoined` for that participant
 
 ### Requirement: Webhook event catalogue
-The server SHALL emit exactly the event types `meetingStarted`, `meetingEnded`, `participantJoined`, `participantLeft`, `participantKnocked`, `participantRoleChanged`, `participantHandChanged`, `waitingRoomStatusChanged`, `recordingStarted`, `recordingUpdated`, `recordingEnded`, `broadcastStarted`, `broadcastUpdated` and `broadcastEnded`, each triggered as its owning capability specifies. `testEvent` SHALL only be sent by `webhookTest` and is not an event type.
+The server SHALL emit exactly the event types `meetingStarted`, `meetingEnded`, `participantJoined`, `participantLeft`, `participantKnocked`, `participantRoleChanged`, `participantHandChanged`, `participantWaitingChanged`, `recordingStarted`, `recordingUpdated`, `recordingEnded`, `broadcastStarted`, `broadcastUpdated` and `broadcastEnded`, each triggered as its owning capability specifies. `testEvent` SHALL only be sent by `webhookTest` and is not an event type.
 
 #### Scenario: Owner of each event
 - **WHEN** a reviewer looks up when an event fires and what its payload means
 - **THEN** `meetingStarted`, `meetingEnded`, `participantJoined` and `participantLeft` are specified in `meetings`
 - **AND** `participantRoleChanged` in `meeting-moderation`
 - **AND** `participantHandChanged` in `raise-hand`
-- **AND** `participantKnocked` and `waitingRoomStatusChanged` in `waiting-room`
+- **AND** `participantKnocked` and `participantWaitingChanged` in `waiting-room`
 - **AND** `recordingStarted`, `recordingUpdated` and `recordingEnded` in `recordings`
 - **AND** `broadcastStarted`, `broadcastUpdated` and `broadcastEnded` in `live-broadcast`
 

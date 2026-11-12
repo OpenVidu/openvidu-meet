@@ -1,5 +1,10 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import type { MeetWaitingRoomParticipant, MeetWaitingRoomState, MeetWebSocketMessage } from '@openvidu-meet/typings';
+import type {
+	MeetWaitingRoomParticipant,
+	MeetWaitingRoomState,
+	MeetWaitingRoomTicketResponse,
+	MeetWebSocketMessage
+} from '@openvidu-meet/typings';
 import {
 	MEET_WAITING_ROOM_STATE_MESSAGE,
 	MeetWaitingRoomParticipantType,
@@ -58,7 +63,8 @@ const setupWaitingRoomRoom = (maxParticipants: number | null = null, withPartici
 const knock = async (roomData: RoomData, name: string, secret = roomData.speakerSecret) => {
 	const response = await askToJoin(roomData.room.roomId, secret, name);
 	expect(response.status).toBe(202);
-	return response.body as { waitingRoomTicket: string; participantIdentity: string };
+	const { waitingRoomTicket, participant } = response.body as MeetWaitingRoomTicketResponse;
+	return { waitingRoomTicket, participant, participantIdentity: participant.participantIdentity };
 };
 
 const identityOf = (token: string) => jwtDecode<ClaimGrants>(token).sub;
@@ -224,12 +230,12 @@ describe('Waiting room', () => {
 	describe('Joining with the ticket', () => {
 		it('answers the same ticket while the wait goes on', async () => {
 			const roomData = await setupWaitingRoomRoom();
-			const { waitingRoomTicket, participantIdentity } = await knock(roomData, 'Ana');
+			const { waitingRoomTicket, participant } = await knock(roomData, 'Ana');
 
 			const response = await askToJoin(roomData.room.roomId, roomData.speakerSecret, 'Ana', waitingRoomTicket);
 
 			expect(response.status).toBe(202);
-			expect(response.body).toEqual({ waitingRoomTicket, participantIdentity });
+			expect(response.body).toEqual({ waitingRoomTicket, participant });
 		});
 
 		it('joins an admitted participant with the identity of the wait, starts the meeting and refuses the ticket after', async () => {
