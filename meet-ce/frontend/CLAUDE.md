@@ -100,6 +100,13 @@ recording and live broadcast UI.
   base URL and mode (`isWebcomponentMode`, `isIframeMode`, `isEmbeddedMode`). Gate embedding-specific
   UI on those signals rather than sniffing the URL. In webcomponent mode API calls must wait for
   `isReadyForRequests`.
+- **Material Symbols**: the `material-symbols-outlined` font is loaded with only the icons the code
+  declares, so an undeclared name shows as plain text. Each domain lists its icons in
+  `icons/<domain>-material-symbols.ts` (sorted, string literals only) and `provideMaterialSymbols()` in
+  each shell loads them all; an edition passes its own list as an argument. The ESLint rule
+  `meet/declared-material-symbols` (`eslint-rules/`) catches an undeclared name written in a template;
+  a name computed in TypeScript is typed with its domain's `<Domain>MaterialSymbol` so the compiler
+  catches it. The `Material Icons` font (`<mat-icon>` without that class) is loaded whole.
 - **i18n**: custom engine (not Transloco). Per-scope JSON bundles under each domain's `lang/`,
   registered with `provideTranslations(<DOMAIN>_TRANSLATIONS)`; one shared language preference. Add
   keys to every locale file in the bundle. Permission label keys were renamed to match the new

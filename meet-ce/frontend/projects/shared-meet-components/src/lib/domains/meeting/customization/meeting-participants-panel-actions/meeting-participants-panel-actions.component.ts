@@ -6,6 +6,7 @@ import { MeetParticipantMuteOptions } from '@openvidu-meet/typings';
 import { LoggerService } from '../../../../shared/services/logger.service';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
+import { MeetingMaterialSymbol } from '../../icons/meeting-material-symbols';
 import { ParticipantMediaKind, ParticipantModel, ParticipantService } from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingModerationService } from '../../services/meeting-moderation.service';
@@ -14,7 +15,7 @@ import { MeetingModerationService } from '../../services/meeting-moderation.serv
 interface BulkAction {
 	kind: ParticipantMediaKind;
 	id: string;
-	icon: string;
+	icon: MeetingMaterialSymbol;
 	enabled: boolean;
 	labelKey: string;
 	media: MeetParticipantMuteOptions;
@@ -54,7 +55,7 @@ const BULK_ACTIONS = [
 		idleLabelKey: 'PARTICIPANTS_PANEL_ACTIONS.TURN_OFF_ALL_CAMERAS_NONE',
 		media: { videoActive: false } as MeetParticipantMuteOptions
 	}
-];
+] as const;
 
 /**
  * Panel-wide moderation, sitting after the local participant at the head of the remote list it acts
