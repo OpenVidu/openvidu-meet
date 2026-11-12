@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, inject, Service, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { fromEvent } from 'rxjs';
 import {
 	EmbeddedEventName,
 	MEET_WAITING_ROOM_STATE_MESSAGE,
@@ -111,6 +112,10 @@ export class WaitingRoomService {
 
 			if (reason) untracked(() => this.onConnectionStopped(reason));
 		});
+
+		fromEvent(window, 'pagehide')
+			.pipe(takeUntilDestroyed())
+			.subscribe(() => this.onPageHide());
 	}
 
 	/**
@@ -127,7 +132,7 @@ export class WaitingRoomService {
 
 	/** Whether a wait of this room is unfinished in this tab, as a reload leaves it. The next request to join continues it. */
 	hasPendingWait(): boolean {
-		return !!this.pendingTicket();
+		return !!this.pendingWait();
 	}
 
 	/** Leaves the waiting room: tells the server even while the connection is down, and disconnects. */
@@ -136,16 +141,7 @@ export class WaitingRoomService {
 
 		if (!entry?.ticket) return;
 
-		const roomId = encodeURIComponent(this.meetingContext.roomId() ?? '');
-		const ticket = encodeURIComponent(entry.ticket.waitingRoomTicket);
-		const url = this.runtimeConfig.resolveUrl(
-			`${HttpService.INTERNAL_API_PATH_PREFIX}/meetings/${roomId}/waiting-room/leave?waitingRoomTicket=${ticket}`
-		);
-		// Not through HttpService: its XHR has no keepalive, and its room member header would force a preflight.
-		fetch(url, { method: 'POST', keepalive: true }).catch((error) =>
-			this.log.w('The request to leave the waiting room failed:', error)
-		);
-
+		this.sendLeave(entry.ticket);
 		this.finish(entry);
 		this.report(entry, { status: MeetWaitingRoomStatus.LEFT, origin: MeetEventOrigin.PARTICIPANT });
 		this.show('left');
@@ -162,6 +158,32 @@ export class WaitingRoomService {
 
 		this._outcome.set(undefined);
 		this._hasWaited.set(false);
+	}
+
+	/**
+	 * The page closes, reloads or navigates away: the wait ends at once, and the tab keeps only that it was
+	 * waiting, so a reload asks again on its own. A page the system discards without this event keeps its
+	 * place until the server's minute.
+	 */
+	private onPageHide(): void {
+		const ticket = this.entry?.ticket;
+
+		if (!ticket) return;
+
+		this.sendLeave(ticket, MeetWaitingRoomReason.PAGE_CLOSED);
+		this.sessionStorage.setWaitingRoomTicket(this.meetingContext.roomId() ?? '');
+	}
+
+	/** Not through HttpService: its XHR has no keepalive, and its room member header would force a preflight. */
+	private sendLeave(ticket: MeetWaitingRoomTicketResponse, reason?: MeetWaitingRoomReason.PAGE_CLOSED): void {
+		const roomId = encodeURIComponent(this.meetingContext.roomId() ?? '');
+		const query = `waitingRoomTicket=${encodeURIComponent(ticket.waitingRoomTicket)}${reason ? `&reason=${reason}` : ''}`;
+		const url = this.runtimeConfig.resolveUrl(
+			`${HttpService.INTERNAL_API_PATH_PREFIX}/meetings/${roomId}/waiting-room/leave?${query}`
+		);
+		fetch(url, { method: 'POST', keepalive: true }).catch((error) =>
+			this.log.w('The request to leave the waiting room failed:', error)
+		);
 	}
 
 	private async ask(entry: Entry): Promise<void> {
@@ -187,26 +209,26 @@ export class WaitingRoomService {
 	}
 
 	/**
-	 * Continues the wait a reload interrupted, which keeps its place and identity, and starts a new one
-	 * when that wait is over or cannot be continued.
+	 * Continues the wait a reload interrupted without the page telling Meet, which keeps its place and
+	 * identity, and starts a new one when that wait is over, cannot be continued or has no ticket.
 	 */
 	private async requestAnswer(entry: Entry): Promise<JoinAnswer> {
-		const ticket = this.pendingTicket();
+		const ticket = this.pendingWait()?.ticket;
 
 		if (ticket) {
 			try {
 				return await this.joinToken.requestWithTicket(entry.request, ticket.waitingRoomTicket);
 			} catch (error) {
 				this.log.d('The wait left by the reload cannot be continued:', error);
-				this.sessionStorage.removeWaitingRoomTicket();
 			}
 		}
 
+		this.sessionStorage.removeWaitingRoomTicket();
 		return this.joinToken.request(entry.request);
 	}
 
-	private pendingTicket(): MeetWaitingRoomTicketResponse | null {
-		return this.sessionStorage.getWaitingRoomTicket(this.meetingContext.roomId() ?? '');
+	private pendingWait(): { ticket?: MeetWaitingRoomTicketResponse } | null {
+		return this.sessionStorage.getWaitingRoomWait(this.meetingContext.roomId() ?? '');
 	}
 
 	private wait(entry: Entry, ticket: MeetWaitingRoomTicketResponse): void {

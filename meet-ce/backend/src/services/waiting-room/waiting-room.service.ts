@@ -48,9 +48,6 @@ type ReasonOf = (entry: WaitingRoomEntry) => MeetWaitingRoomReason | undefined;
 
 const noReason: ReasonOf = () => undefined;
 
-/** How far a replica's clock may differ from Redis's when it dates the last answer of a connection. */
-const CLOCK_SKEW_TOLERANCE_MS = 2_000;
-
 const toParticipant = ({
 	participantIdentity,
 	participantName,
@@ -190,13 +187,20 @@ export class WaitingRoomService {
 		return change;
 	}
 
-	/** Ends a wait at its participant's request. A ticket of another room, unknown or ended, changes nothing. */
-	async leave(roomId: string, waitingRoomTicket: string): Promise<void> {
+	/**
+	 * Ends a wait at its participant's request: as `left`, or as `expired` when their page closed, reloaded or
+	 * navigated away. A ticket of another room, unknown or ended, changes nothing.
+	 */
+	async leave(roomId: string, waitingRoomTicket: string, reason?: MeetWaitingRoomReason.PAGE_CLOSED): Promise<void> {
 		const wait = await this.findWait(waitingRoomTicket);
 
 		if (wait?.roomId !== roomId || wait.ended) return;
 
-		await this.endWaits(roomId, MeetWaitingRoomStatus.LEFT, MeetEventOrigin.PARTICIPANT, [wait.waitId]);
+		if (reason) {
+			await this.endWaits(roomId, MeetWaitingRoomStatus.EXPIRED, MeetEventOrigin.SYSTEM, [wait.waitId], reason);
+		} else {
+			await this.endWaits(roomId, MeetWaitingRoomStatus.LEFT, MeetEventOrigin.PARTICIPANT, [wait.waitId]);
+		}
 	}
 
 	/**
@@ -256,24 +260,6 @@ export class WaitingRoomService {
 		const result = await this.waitingRoomStateService.end(roomId, outcome, { waitIds });
 		this.afterEnd(roomId, result, outcome, origin, () => reason);
 		return result.ended;
-	}
-
-	/**
-	 * Ends as expired the wait of a page that closed, reloaded or navigated away, unless another connection of
-	 * the wait was seen after the closed one last answered, `lastAnsweredAgo` milliseconds ago.
-	 */
-	async pageClosed(roomId: string, waitId: string, lastAnsweredAgo: number): Promise<void> {
-		const result = await this.waitingRoomStateService.end(roomId, MeetWaitingRoomStatus.EXPIRED, {
-			waitIds: [waitId],
-			unseenFor: Math.max(0, lastAnsweredAgo - CLOCK_SKEW_TOLERANCE_MS)
-		});
-		this.afterEnd(
-			roomId,
-			result,
-			MeetWaitingRoomStatus.EXPIRED,
-			MeetEventOrigin.SYSTEM,
-			() => MeetWaitingRoomReason.PAGE_CLOSED
-		);
 	}
 
 	/**

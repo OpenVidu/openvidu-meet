@@ -137,7 +137,7 @@ A participant whose realtime connection has been down for about a minute, whatev
 - **THEN** about a minute later their meeting shows the connection error screen, not that they lost their place
 
 ### Requirement: A page that goes away ends the wait
-A participant whose page closes, reloads or navigates away, which ends their connection with the browser's going away code, SHALL end their wait at once as `expired`, with `reason` `page_closed` and `origin` `system`, unless another connection of the same wait was seen after it. A moderator SHALL see them leave the list at once. Coming back SHALL be a new wait, reported by a new `participantKnocked`.
+A participant whose page closes, reloads or navigates away SHALL end their wait at once as `expired`, with `reason` `page_closed` and `origin` `system`, when the browser lets the page tell Meet as it goes; a page discarded without that loses its place as a client out of touch. The realtime connection closing alone SHALL NOT end the wait. A moderator SHALL see them leave the list at once. Coming back SHALL be a new wait, with a new `participantKnocked`.
 
 #### Scenario: Tab closed
 - **GIVEN** a participant waiting and a moderator with the participants panel open
@@ -149,6 +149,16 @@ A participant whose page closes, reloads or navigates away, which ends their con
 - **GIVEN** a participant waiting in an iframe
 - **WHEN** the host application removes the iframe
 - **THEN** their wait ends as `expired` with `reason` `page_closed` within a few seconds
+
+#### Scenario: Tab discarded in the background
+- **GIVEN** a participant waiting on a phone
+- **WHEN** the system discards the browser tab in the background without the page telling Meet
+- **THEN** their wait ends as `expired` with `reason` `connection_lost` within about a minute
+
+#### Scenario: Proxy restarted
+- **GIVEN** participants waiting behind a reverse proxy
+- **WHEN** the proxy restarts and closes every realtime connection
+- **THEN** each waiting participant reconnects and keeps their place in line
 
 ### Requirement: Every request to join is a new wait
 Each time a participant asks to join, except to continue a remembered wait that is still on, it SHALL start a new wait at the end of the line. When the same identity already waits (a member or a user asking again from another tab or another device), the earlier wait SHALL end as left, with `reason` `replaced`, and the earlier screen, if still open, SHALL say they lost their place.

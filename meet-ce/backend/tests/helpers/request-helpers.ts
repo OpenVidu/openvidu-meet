@@ -1441,11 +1441,15 @@ export const rejectFromWaitingRoom = async (
 	);
 };
 
-export const leaveWaitingRoom = async (roomId: string, waitingRoomTicket: string): Promise<Response> => {
+export const leaveWaitingRoom = async (
+	roomId: string,
+	waitingRoomTicket: string,
+	reason?: string
+): Promise<Response> => {
 	checkAppIsRunning();
 	return await request(app)
 		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/waiting-room/leave`))
-		.query({ waitingRoomTicket })
+		.query({ waitingRoomTicket, ...(reason && { reason }) })
 		.send();
 };
 

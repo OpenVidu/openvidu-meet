@@ -649,7 +649,7 @@ describe('WaitingRoomService', () => {
 			expect(service.outcome()).toBe('left');
 		});
 
-		it('only disconnects when the page goes away', async () => {
+		it('only disconnects when the meeting page is destroyed', async () => {
 			void service.join(ANA);
 			await flush();
 
@@ -658,6 +658,44 @@ describe('WaitingRoomService', () => {
 			expect(fetchSpy).not.toHaveBeenCalled();
 			expect(webSocket.disconnect).toHaveBeenCalled();
 			expect(waitingRoomEvents()).toEqual([]);
+		});
+	});
+
+	describe('when the page closes', () => {
+		const pageHide = () => window.dispatchEvent(new PageTransitionEvent('pagehide'));
+
+		it('tells the server the page closed, with a keepalive request', async () => {
+			void service.join(ANA);
+			await flush();
+
+			pageHide();
+
+			expect(fetchSpy).toHaveBeenCalledOnceWith(
+				`/meet/internal-api/v1/meetings/${ROOM_ID}/waiting-room/leave?waitingRoomTicket=ticket%2F1&reason=page_closed`,
+				{ method: 'POST', keepalive: true }
+			);
+		});
+
+		it('asks again after the reload, without the ticket of the wait it ended', async () => {
+			void service.join(ANA);
+			await flush();
+			pageHide();
+			joinToken.request.calls.reset();
+
+			expect(service.hasPendingWait()).toBeTrue();
+
+			void service.join(ANA);
+			await flush();
+
+			expect(joinToken.requestWithTicket).not.toHaveBeenCalled();
+			expect(joinToken.request).toHaveBeenCalledOnceWith(ANA);
+		});
+
+		it('tells nothing without a wait', () => {
+			pageHide();
+
+			expect(fetchSpy).not.toHaveBeenCalled();
+			expect(service.hasPendingWait()).toBeFalse();
 		});
 	});
 

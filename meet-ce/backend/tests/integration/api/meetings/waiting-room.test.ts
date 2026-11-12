@@ -313,6 +313,21 @@ describe('Waiting room', () => {
 			expectWaitEnded(await ask('unknown-ticket'));
 			expectWaitEnded(await ask(elsewhere.waitingRoomTicket));
 		});
+
+		it('expires the wait of a page that closed, and refuses another reason', async () => {
+			const roomData = await setupWaitingRoomRoom();
+			const { roomId } = roomData.room;
+			const ana = await knock(roomData, 'Ana');
+
+			expect((await leaveWaitingRoom(roomId, ana.waitingRoomTicket, 'replaced')).status).toBe(422);
+			expect((await leaveWaitingRoom(roomId, ana.waitingRoomTicket, 'page_closed')).status).toBe(204);
+
+			expect(await waiting(roomId)).toEqual([]);
+			expectWaitEnded(
+				await askToJoin(roomId, roomData.speakerSecret, 'Ana', ana.waitingRoomTicket),
+				MeetWaitingRoomStatus.EXPIRED
+			);
+		});
 	});
 
 	describe('Admitting and rejecting', () => {

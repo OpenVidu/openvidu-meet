@@ -27,11 +27,9 @@ const build = () => {
 	};
 	let room: unknown = openRoom({ message: 'Hold on' });
 	const ends: unknown[][] = [];
-	const pageClosed = jest.fn(async (..._args: unknown[]) => {});
 	const waitingRoomService = {
 		findWait: async (ticket: string) =>
 			ticket === 'known' ? ({ waitId: 'wait-ana', roomId: 'room-1' } as WaitingRoomWait) : null,
-		pageClosed,
 		endWaits: jest.fn(async (...args: unknown[]) => {
 			ends.push(args);
 			return [{ participantIdentity: 'ana' }];
@@ -66,7 +64,6 @@ const build = () => {
 		sent,
 		ends,
 		waitingRoomService,
-		pageClosed,
 		setPresence: (value: WaitingRoomPresence | null) => (presence = value),
 		setRoom: (value: unknown) => (room = value)
 	};
@@ -137,25 +134,6 @@ describe('WaitingRoomRealtimeHandler', () => {
 			expect.objectContaining({ data: expect.objectContaining({ status: MeetWaitingRoomStatus.REJECTED }) })
 		]);
 		expect(ends).toEqual([]);
-	});
-
-	it('ends the wait when its page goes away, telling how long ago the connection last answered', async () => {
-		const { handler, connection, pageClosed } = build();
-
-		await handler.onClose({ ...connection, lastSeenAt: Date.now() - 12_000 }, 1001);
-
-		expect(pageClosed).toHaveBeenCalledTimes(1);
-		expect(pageClosed.mock.calls[0].slice(0, 2)).toEqual(['room-1', 'wait-ana']);
-		expect(pageClosed.mock.calls[0][2]).toBeGreaterThanOrEqual(12_000);
-		expect(pageClosed.mock.calls[0][2]).toBeLessThan(13_000);
-	});
-
-	it.each([1000, 1005, 1006, 4003])('keeps the wait on a connection closed with %s', async (code) => {
-		const { handler, connection, pageClosed } = build();
-
-		await handler.onClose(connection, code);
-
-		expect(pageClosed).not.toHaveBeenCalled();
 	});
 
 	it('sends nothing for a wait no longer known', async () => {

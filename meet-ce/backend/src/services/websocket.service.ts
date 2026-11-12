@@ -216,9 +216,9 @@ export class WebSocketService {
 			connection.lastSeenAt = Date.now();
 			this.runHook(connection, 'onPong');
 		});
-		webSocket.on('close', (code: number) => {
+		webSocket.on('close', () => {
 			this.forget(connection);
-			this.runHook(connection, 'onClose', code);
+			this.runHook(connection, 'onClose');
 		});
 		webSocket.on('error', (error) => this.logger.debug(`WebSocket connection error in room '${roomId}'`, error));
 
@@ -267,13 +267,9 @@ export class WebSocketService {
 		}
 	}
 
-	protected runHook(connection: Connection, hook: 'onOpen' | 'onPong' | 'onClose', closeCode = 1005): void {
+	protected runHook(connection: Connection, hook: 'onOpen' | 'onPong' | 'onClose'): void {
 		Promise.resolve()
-			.then(() =>
-				hook === 'onClose'
-					? connection.feature.onClose?.(connection, closeCode)
-					: connection.feature[hook]?.(connection)
-			)
+			.then(() => connection.feature[hook]?.(connection))
 			.catch((error: unknown) => this.logger.error(`Error in the WebSocket ${hook} hook`, error));
 	}
 

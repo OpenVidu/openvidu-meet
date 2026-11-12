@@ -1,0 +1,12 @@
+name: reason
+in: query
+required: false
+description: >
+    `page_closed` when the participant's page closes, reloads or navigates away: the wait ends as `expired`, with
+    `reason` `page_closed` and `origin` `system`. Without it, the participant left on purpose and the wait ends as
+    `left`, with `origin` `participant`.
+schema:
+    type: string
+    enum:
+        - page_closed
+example: page_closed

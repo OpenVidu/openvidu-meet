@@ -3,7 +3,7 @@ import type {
 	MeetParticipantHandOptions,
 	MeetParticipantReactionOptions
 } from '@openvidu-meet/typings';
-import { MeetParticipantModerationAction, MeetReaction } from '@openvidu-meet/typings';
+import { MeetParticipantModerationAction, MeetReaction, MeetWaitingRoomReason } from '@openvidu-meet/typings';
 import { z } from 'zod';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 
@@ -49,5 +49,6 @@ export const WaitingRoomDecisionReqSchema: z.ZodType<MeetParticipantWaitingDecis
 export const WaitingRoomTicketSchema = z.string().min(1).max(100);
 
 export const WaitingRoomLeaveReqSchema = z.object({
-	waitingRoomTicket: WaitingRoomTicketSchema
+	waitingRoomTicket: WaitingRoomTicketSchema,
+	reason: z.literal(MeetWaitingRoomReason.PAGE_CLOSED).optional()
 });

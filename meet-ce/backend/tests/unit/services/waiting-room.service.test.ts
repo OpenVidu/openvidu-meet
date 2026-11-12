@@ -403,6 +403,28 @@ describe('WaitingRoomService', () => {
 			expect(state.ends).toEqual([['room-1', MeetWaitingRoomStatus.LEFT, { waitIds: ['wait-ana'] }]]);
 		});
 
+		it('expires the wait of a page that closed, as the system', async () => {
+			const { service, state, changed } = build();
+			state.wait = {
+				waitId: 'wait-ana',
+				roomId: 'room-1',
+				status: MeetWaitingRoomStatus.WAITING,
+				ended: false
+			} as WaitingRoomWait;
+			state.endResult = { ended: [entry('ana')], silent: [], line: noLine };
+
+			await service.leave('room-1', 'ticket-of-ana', MeetWaitingRoomReason.PAGE_CLOSED);
+
+			expect(state.ends).toEqual([['room-1', MeetWaitingRoomStatus.EXPIRED, { waitIds: ['wait-ana'] }]]);
+			expect(changed).toEqual([
+				expect.objectContaining({
+					status: MeetWaitingRoomStatus.EXPIRED,
+					origin: MeetEventOrigin.SYSTEM,
+					reason: MeetWaitingRoomReason.PAGE_CLOSED
+				})
+			]);
+		});
+
 		it('changes nothing for a ticket of another room, an ended wait or an unknown one', async () => {
 			const { service, state } = build();
 
@@ -446,31 +468,6 @@ describe('WaitingRoomService', () => {
 				})
 			]);
 			expect(stateOf('wait-ben')).toEqual([]);
-		});
-
-		it('expires at once the wait of a page that closed, unless another connection was seen since', async () => {
-			const { service, state, changed, stateOf } = build();
-			state.endResult = { ended: [entry('ana')], silent: [], line: noLine };
-
-			await service.pageClosed('room-1', 'wait-ana', 12_000);
-
-			expect(state.ends).toEqual([
-				['room-1', MeetWaitingRoomStatus.EXPIRED, { waitIds: ['wait-ana'], unseenFor: 10_000 }]
-			]);
-			expect(changed).toEqual([
-				expect.objectContaining({
-					status: MeetWaitingRoomStatus.EXPIRED,
-					origin: MeetEventOrigin.SYSTEM,
-					reason: MeetWaitingRoomReason.PAGE_CLOSED
-				})
-			]);
-			expect(stateOf('wait-ana')).toEqual([
-				{
-					status: MeetWaitingRoomStatus.EXPIRED,
-					origin: MeetEventOrigin.SYSTEM,
-					reason: MeetWaitingRoomReason.PAGE_CLOSED
-				}
-			]);
 		});
 
 		it.each([

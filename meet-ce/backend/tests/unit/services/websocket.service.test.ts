@@ -66,7 +66,7 @@ describe('WebSocketService', () => {
 	let feature: WebSocketFeature & {
 		onOpen: jest.Mock<(connection: WebSocketConnection) => void>;
 		onPong: jest.Mock<(connection: WebSocketConnection) => void>;
-		onClose: jest.Mock<(connection: WebSocketConnection, code: number) => void>;
+		onClose: jest.Mock<(connection: WebSocketConnection) => void>;
 	};
 
 	beforeEach(async () => {
@@ -161,10 +161,7 @@ describe('WebSocketService', () => {
 			webSocket.connect(feature, 'room', 'alice').close(1000);
 			await flush();
 
-			expect(feature.onClose).toHaveBeenCalledWith(
-				expect.objectContaining({ roomId: 'room', address: 'alice' }),
-				1000
-			);
+			expect(feature.onClose).toHaveBeenCalledWith(expect.objectContaining({ roomId: 'room', address: 'alice' }));
 		});
 	});
 
