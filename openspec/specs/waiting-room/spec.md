@@ -113,7 +113,7 @@ A participant SHALL start waiting when they ask to join, and keep their place on
 - **THEN** the participant keeps their place in line
 
 ### Requirement: A minute without the connection loses the place
-A participant whose realtime connection has been down for about a minute, whatever the reason (network loss, closed page, a phone suspending the page, an embedded element or iframe removed by its host), SHALL lose their place and their wait SHALL end as expired, never as left, which only leaving reports. Their meeting SHALL then stop reconnecting, say they lost their place and offer to ask again, or show the connection error screen if it never reached Meet during that wait.
+A participant whose page closes, reloads or navigates away, which ends the connection with the browser's going away code, SHALL lose their place 15 seconds later unless their meeting connects again, so a moderator sees them leave the list within seconds. A participant whose realtime connection has been down for about a minute, whatever the reason (network loss, a phone suspending the page, a browser that crashed, an embedded element or iframe removed by its host), SHALL lose their place and their wait SHALL end as expired, never as left, which only leaving reports. Their meeting SHALL then stop reconnecting, say they lost their place and offer to ask again, or show the connection error screen if it never reached Meet during that wait.
 
 #### Scenario: Short network loss
 - **GIVEN** a participant second in line
@@ -123,7 +123,8 @@ A participant whose realtime connection has been down for about a minute, whatev
 #### Scenario: Page closed
 - **GIVEN** a participant waiting
 - **WHEN** they close the browser tab
-- **THEN** `participantWaitingList` stops listing them within about a minute and one `participantWaitingChanged` webhook with `expired` is sent
+- **THEN** `participantWaitingList` stops listing them within about 20 seconds and one `participantWaitingChanged` webhook with `expired` is sent
+- **AND** the participants panel of a moderator stops listing them at the same time
 
 #### Scenario: Network lost for two minutes
 - **GIVEN** a participant second in line
@@ -152,7 +153,7 @@ Each time a participant asks to join, except to continue the wait a reload inter
 - **AND** `participantWaitingList` lists them once
 
 ### Requirement: A reload continues the wait
-A participant who reloads the page while waiting SHALL return to the waiting screen with the same wait, keeping their identity and their place, without the join screen and without a new `participantKnocked` webhook. The page SHALL remember the wait of its tab until it ends, so another tab starts its own. When the remembered wait is over or cannot be continued, the page SHALL ask to join again as the first time. The join screen SHALL show only when it has something to ask, such as a name.
+A participant who reloads the page while waiting SHALL return to the waiting screen with the same wait, keeping their identity and their place, without the join screen and without a new `participantKnocked` webhook. The page SHALL remember the wait of its tab until it ends, so another tab starts its own. When the remembered wait is over or cannot be continued, the page SHALL ask to join again as the first time. The join screen SHALL show only when it has something to ask, such as a name, or when the room no longer makes the participant wait: the remembered ticket then joins with the same identity.
 
 #### Scenario: Member reloads while waiting
 - **GIVEN** a member waiting first in line, with Ben behind them
@@ -166,12 +167,17 @@ A participant who reloads the page while waiting SHALL return to the waiting scr
 - **WHEN** they reload the page three times
 - **THEN** `participantWaitingList` lists them once, with the identity they had when they asked
 
+#### Scenario: Reload after the waiting room was turned off
+- **GIVEN** a participant who reloads the page after the room's waiting room was turned off
+- **WHEN** the page loads
+- **THEN** the join screen shows, and joining enters the meeting with the identity they waited with
+
 #### Scenario: Reload after the wait ended
 - **GIVEN** a participant who reloads the page after the wait they left behind was rejected, expired or ended with the meeting
 - **WHEN** the page loads
 - **THEN** they ask to join as the first time, and wait at the end of the line
 
-#### Scenario: Reload after the connection was lost for a minute
+#### Scenario: Reload after the page was closed for a while
 - **GIVEN** a participant whose page was closed for two minutes
 - **WHEN** they open the room again in a new tab
 - **THEN** they ask to join as the first time, and wait at the end of the line

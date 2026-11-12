@@ -12,6 +12,9 @@ export interface WebSocketConnection extends WebSocketAddress {
 	send(type: string, data?: unknown): void;
 }
 
+/** The close code a browser gives a connection when its page closes, reloads or navigates away. */
+export const WEBSOCKET_GOING_AWAY_CLOSE_CODE = 1001;
+
 /**
  * A feature that opens WebSocket connections. The hooks run only for the connections its credential
  * opened; `onPong` runs each time the connection's client answers a ping.
@@ -23,7 +26,8 @@ export interface WebSocketFeature {
 	resolve(credential: string): Promise<WebSocketAddress | null>;
 	onOpen?(connection: WebSocketConnection): void | Promise<void>;
 	onPong?(connection: WebSocketConnection): void | Promise<void>;
-	onClose?(connection: WebSocketConnection): void | Promise<void>;
+	/** Runs when a connection closes, with the close code its client or the server gave. */
+	onClose?(connection: WebSocketConnection, code: number): void | Promise<void>;
 }
 
 export interface WebSocketHandshakeGuard {

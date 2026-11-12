@@ -471,6 +471,63 @@ describe('Waiting room state in Redis', () => {
 		});
 	});
 
+	describe('pageClosed', () => {
+		it('dates the presence so the wait expires 15 seconds after the page closed', async () => {
+			const ana = await knock('ana');
+			await state.presence(ana.waitId);
+
+			await state.pageClosed(ana.waitId, 0);
+
+			const datedBack = Date.now() - (await state.seenAt(roomId, ana.waitId))!;
+			expect(datedBack).toBeGreaterThanOrEqual(45_000);
+			expect(datedBack).toBeLessThan(47_000);
+		});
+
+		it('leaves a presence newer than the closed connection last answered to the connection that wrote it', async () => {
+			const ana = await knock('ana');
+			await state.presence(ana.waitId);
+			const seenAt = await state.seenAt(roomId, ana.waitId);
+
+			await state.pageClosed(ana.waitId, 30_000);
+
+			expect(await state.seenAt(roomId, ana.waitId)).toBe(seenAt);
+		});
+
+		it('never extends a wait already dated further back', async () => {
+			const ana = await knock('ana');
+			await state.age(roomId, ana.waitId, 50_000);
+			const seenAt = await state.seenAt(roomId, ana.waitId);
+
+			await state.pageClosed(ana.waitId, 0);
+
+			expect(await state.seenAt(roomId, ana.waitId)).toBe(seenAt);
+		});
+
+		it('does nothing for an admitted wait, an ended one or an unknown one', async () => {
+			const ana = await knock('ana');
+			const ben = await knock('ben');
+			await state.decide(roomId, 'admit', ['ana'], null);
+			await state.decide(roomId, 'reject', ['ben'], null);
+			const admittedSeenAt = await state.seenAt(roomId, ana.waitId);
+
+			await state.pageClosed(ana.waitId, 0);
+			await state.pageClosed(ben.waitId, 0);
+			await state.pageClosed('unknown-wait', 0);
+
+			expect(await state.seenAt(roomId, ana.waitId)).toBe(admittedSeenAt);
+			expect(await state.seenAt(roomId, ben.waitId)).toBeNull();
+		});
+
+		it('is undone by the next presence of the wait', async () => {
+			const ana = await knock('ana');
+			await state.pageClosed(ana.waitId, 0);
+
+			await state.presence(ana.waitId);
+
+			expect(Date.now() - (await state.seenAt(roomId, ana.waitId))!).toBeLessThan(2_000);
+		});
+	});
+
 	describe('sweep', () => {
 		it('records each pass and finds the waits of this prefix unseen for a minute', async () => {
 			const ana = await knock('ana');
