@@ -21,16 +21,12 @@ import { REDIS_KEY_PREFIX } from '../../models/redis.model.js';
 import { RedisService } from '../redis.service.js';
 import { CONSUME_SCRIPT } from './scripts/consume.script.js';
 import { DECIDE_SCRIPT } from './scripts/decide.script.js';
-import { CLOSED_SCRIPT } from './scripts/closed.script.js';
 import { END_SCRIPT } from './scripts/end.script.js';
 import { JOINED_SCRIPT } from './scripts/joined.script.js';
 import { KNOCK_SCRIPT } from './scripts/knock.script.js';
 import { PRESENCE_SCRIPT } from './scripts/presence.script.js';
 import { RETURN_SCRIPT } from './scripts/return.script.js';
 import { SWEEP_SCRIPT } from './scripts/sweep.script.js';
-
-/** How far a replica's clock may differ from Redis's when it dates the last answer of a connection. */
-const CLOCK_SKEW_TOLERANCE_MS = 2_000;
 
 /** Lua's JSON encoder writes an empty array as an object. */
 const listOf = <T>(value: T[] | object | undefined): T[] => (Array.isArray(value) ? (value as T[]) : []);
@@ -44,8 +40,6 @@ const lineOf = (line: WaitingRoomLine): WaitingRoomLine => ({ ...line, waiting: 
  *   outcome for {@link INTERNAL_CONFIG.WAITING_ROOM_ENDED_WAIT_TTL} once it ends;
  * - `<prefix>_seen`, sorted set of every room's entries (`<roomId>:<waitId>`) by when their client was last
  *   seen, or by when they were admitted;
- * - `<prefix>_closed`, sorted set of the waiting entries whose page closed, by when, which expire soon and cannot
- *   be admitted;
  * - `<prefix>_sweep`, hash of the sweep's last pass and last gap.
  */
 @injectable()
@@ -115,17 +109,6 @@ export class WaitingRoomStateService {
 	async presence(waitId: string): Promise<WaitingRoomPresence | null> {
 		const presence = await this.run<WaitingRoomPresence | { status?: never }>(PRESENCE_SCRIPT, [waitId]);
 		return presence.status ? presence : null;
-	}
-
-	/**
-	 * Lets a wait expire soon, as its page closed, unless its client connects again, and refuses its admission
-	 * meanwhile. `lastAnsweredAgo` is how
-	 * long ago the closed connection last answered: a presence newer than that is another connection's.
-	 */
-	async pageClosed(waitId: string, lastAnsweredAgo: number): Promise<void> {
-		const datedBack =
-			ms(INTERNAL_CONFIG.WAITING_ROOM_UNSEEN_TIMEOUT) - ms(INTERNAL_CONFIG.WAITING_ROOM_PAGE_CLOSED_TIMEOUT);
-		await this.run(CLOSED_SCRIPT, [waitId, datedBack, Math.max(0, lastAnsweredAgo - CLOCK_SKEW_TOLERANCE_MS)]);
 	}
 
 	async end(

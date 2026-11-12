@@ -24,7 +24,7 @@ The room config field `waitingRoom.enabled` SHALL decide whether a room holds pa
 - **THEN** the server answers `409` and the waiting room stays on
 
 ### Requirement: Who waits
-In a room with `waitingRoom.enabled`, a participant who asks to join SHALL wait instead of joining, unless they hold `waitingRoomBypass`. A participant who reloads the page while waiting SHALL continue the same wait; an admitted participant who reloads the page after joining SHALL ask again and wait. An admin and the room's owner hold every permission and SHALL join directly. The server checks of `meeting-join` SHALL run before a participant waits, except the participant limit, which applies when their join token is issued. Gaining `waitingRoomBypass` while waiting SHALL NOT end the wait.
+In a room with `waitingRoom.enabled`, a participant who asks to join SHALL wait instead of joining, unless they hold `waitingRoomBypass`. A participant who reloads the page, while waiting or after joining, SHALL ask again and wait. An admin and the room's owner hold every permission and SHALL join directly. The server checks of `meeting-join` SHALL run before a participant waits, except the participant limit, which applies when their join token is issued. Gaining `waitingRoomBypass` while waiting SHALL NOT end the wait.
 
 #### Scenario: Speaker waits
 - **GIVEN** a room with the waiting room on whose speaker role denies `waitingRoomBypass`
@@ -113,18 +113,12 @@ A participant SHALL start waiting when they ask to join, and keep their place on
 - **THEN** the participant keeps their place in line
 
 ### Requirement: A minute without the connection loses the place
-A participant whose realtime connection has been down for about a minute, whatever the reason (network loss, a phone suspending the page, a browser that crashed, an embedded element or iframe removed by its host), SHALL lose their place and their wait SHALL end as expired, never as left, which only leaving reports. Their meeting SHALL then stop reconnecting, say they lost their place and offer to ask again, or show the connection error screen if it never reached Meet during that wait.
+A participant whose realtime connection has been down for about a minute, whatever the reason (network loss, a phone suspending the page, a browser that crashed, a web component element removed by its host), SHALL lose their place and their wait SHALL end as expired, never as left, which only leaving reports. Their meeting SHALL then stop reconnecting, say they lost their place and offer to ask again, or show the connection error screen if it never reached Meet during that wait.
 
 #### Scenario: Short network loss
 - **GIVEN** a participant second in line
 - **WHEN** their connection drops and comes back 20 seconds later
 - **THEN** they are still second in line and no new `participantKnocked` webhook is sent
-
-#### Scenario: Page closed
-- **GIVEN** a participant waiting
-- **WHEN** they close the browser tab
-- **THEN** `participantWaitingList` stops listing them within about 20 seconds and one `participantWaitingChanged` webhook with `expired` is sent
-- **AND** the participants panel of a moderator stops listing them at the same time
 
 #### Scenario: Network lost for two minutes
 - **GIVEN** a participant second in line
@@ -142,16 +136,22 @@ A participant whose realtime connection has been down for about a minute, whatev
 - **WHEN** a participant asks to join
 - **THEN** about a minute later their meeting shows the connection error screen, not that they lost their place
 
-### Requirement: A page that goes away loses the place in seconds
-A participant whose page closes, reloads or navigates away, which ends their connection with the browser's going away code, SHALL lose their place 15 seconds later unless their meeting connects again, so a moderator sees them leave the list within seconds. A reload that connects again within that time SHALL keep the place.
+### Requirement: A page that goes away ends the wait
+A participant whose page closes, reloads or navigates away, which ends their connection with the browser's going away code, SHALL end their wait at once as `expired`, with `reason` `page_closed` and `origin` `system`, unless another connection of the same wait was seen after it. A moderator SHALL see them leave the list at once. Coming back SHALL be a new wait, reported by a new `participantKnocked`.
 
 #### Scenario: Tab closed
 - **GIVEN** a participant waiting and a moderator with the participants panel open
 - **WHEN** the participant closes the tab
-- **THEN** within about 20 seconds the moderator's list drops them, with one `participantWaitingChanged` webhook with `expired`
+- **THEN** the moderator's list drops them within a few seconds
+- **AND** one `participantWaitingChanged` webhook is sent with `status` `expired` and `reason` `page_closed`
+
+#### Scenario: Iframe removed by its host
+- **GIVEN** a participant waiting in an iframe
+- **WHEN** the host application removes the iframe
+- **THEN** their wait ends as `expired` with `reason` `page_closed` within a few seconds
 
 ### Requirement: Every request to join is a new wait
-Each time a participant asks to join, except to continue the wait a reload interrupted, it SHALL start a new wait at the end of the line. When the same identity already waits (a member or a user asking again from another tab or another device), the earlier wait SHALL end as left and the earlier screen, if still open, SHALL say they lost their place.
+Each time a participant asks to join, except to continue a remembered wait that is still on, it SHALL start a new wait at the end of the line. When the same identity already waits (a member or a user asking again from another tab or another device), the earlier wait SHALL end as left, with `reason` `replaced`, and the earlier screen, if still open, SHALL say they lost their place.
 
 #### Scenario: Member asks from a second device
 - **GIVEN** a member waiting first in line on a laptop, with Ben behind them
@@ -160,20 +160,19 @@ Each time a participant asks to join, except to continue the wait a reload inter
 - **AND** the laptop says they lost their place
 - **AND** `participantWaitingList` lists them once
 
-### Requirement: A reload continues the wait
-A participant who reloads the page while waiting SHALL return to the waiting screen with the same wait, keeping their identity and their place, without the join screen and without a new `participantKnocked` webhook. The page SHALL remember the wait of its tab until it ends, so another tab starts its own. When the remembered wait is over or cannot be continued, the page SHALL ask to join again as the first time. The join screen SHALL show only when it has something to ask, such as a name, or when the room no longer makes the participant wait: the remembered ticket then joins with the same identity.
+### Requirement: A reload asks to join again on its own
+A participant who reloads the page while waiting SHALL ask to join again on their own, without the join screen, and wait at the end of the line as a new wait, with a new `participantKnocked`: the reload ended the earlier wait (see "A page that goes away ends the wait"). A member or a user SHALL keep their identity. The page SHALL remember the wait of its tab until it ends, so another tab starts its own, and SHALL continue that wait instead when it is still on, as when the browser could not tell Meet the page closed. The join screen SHALL show only when it has something to ask, such as a name, or when the room no longer makes the participant wait: the remembered ticket then joins with the same identity.
 
 #### Scenario: Member reloads while waiting
 - **GIVEN** a member waiting first in line, with Ben behind them
 - **WHEN** they reload the page
-- **THEN** the waiting screen shows them first in line, with the same identity
-- **AND** `participantWaitingList` lists them once, ahead of Ben
-- **AND** no `participantKnocked` webhook is sent
+- **THEN** the waiting screen shows them second in line, behind Ben, with the same identity, without the join screen
+- **AND** a `participantKnocked` webhook is sent for the new wait, after a `participantWaitingChanged` webhook with `expired` and `reason` `page_closed` for the earlier one
 
 #### Scenario: Anonymous participant reloads repeatedly
 - **GIVEN** an anonymous participant waiting
 - **WHEN** they reload the page three times
-- **THEN** `participantWaitingList` lists them once, with the identity they had when they asked
+- **THEN** `participantWaitingList` lists them once
 
 #### Scenario: Reload after the waiting room was turned off
 - **GIVEN** a participant who reloads the page after the room's waiting room was turned off
@@ -313,32 +312,27 @@ The `externalId` and `metadata` of a `MeetWaitingRoomParticipant` SHALL be what 
 - **WHEN** a minute passes after Ana's admission and a moderator admits Ben
 - **THEN** the server answers `200` and Ben enters the meeting
 
-### Requirement: Nobody is admitted whose page closed
-`participantWaitingAdmit` SHALL treat a participant whose page closed, until they leave the list, as not waiting: naming them SHALL answer `404` and change nothing, and admitting everyone waiting SHALL leave them out. A participant whose page connects again SHALL be admittable again. `participantWaitingReject` SHALL still reject them.
-
-#### Scenario: Admitting a participant who closed the tab
-- **GIVEN** Ana waiting, who closed her tab seconds ago
-- **WHEN** a client holding `waitingRoomAdmin` calls `participantWaitingAdmit` with her identity
-- **THEN** the server answers `404` and no place is taken
-
-#### Scenario: Admitting everyone with a participant who closed the tab
-- **GIVEN** Ana, who closed her tab seconds ago, and Ben waiting
-- **WHEN** a client calls `participantWaitingAdmit` without identities
-- **THEN** only Ben is admitted
-
-#### Scenario: Admitting a participant whose page connected again
-- **GIVEN** Ana waiting, whose page reloaded and connected again
-- **WHEN** a client calls `participantWaitingAdmit` with her identity
-- **THEN** Ana is admitted
-
 ### Requirement: The moderator is told who left before the decision
 When a decision names participants who are no longer waiting, the meeting of the moderator who made it SHALL tell them with a notification, instead of an error, naming who left, or how many, and SHALL show the list as it stands. It SHALL do so wherever the decision was made: the participants panel or the knock notification.
 
-#### Scenario: Admitting someone who closed the tab
-- **GIVEN** a moderator with the participants panel open and Ana listed, who closed her tab seconds ago
+#### Scenario: Admitting someone who left meanwhile
+- **GIVEN** a moderator whose list still shows Ana, who left the waiting room an instant ago
 - **WHEN** the moderator admits Ana
-- **THEN** a notification says that Ana is no longer waiting
+- **THEN** a notification says that Ana already left
 - **AND** the list no longer shows her
+
+### Requirement: Refusals name their cause with a code
+A refused request of the waiting room SHALL carry in `error` a code that tells the cause apart without reading `message`: `participant_not_waiting`, with the participant in `participantIdentity`, `not_enough_places`, `waiting_room_full`, or `wait_ended`, with `status` when Meet knows how the wait ended.
+
+#### Scenario: Admitting someone who no longer waits
+- **GIVEN** Ana and Ben waiting, and Ben leaves the waiting room
+- **WHEN** a client calls `participantWaitingAdmit` with Ana's and Ben's identities
+- **THEN** the server answers `404` with `error` `participant_not_waiting` and `participantIdentity` Ben's identity
+
+#### Scenario: Waiting room full
+- **GIVEN** a room whose waiting room holds 100 participants
+- **WHEN** one more asks to join
+- **THEN** the server answers `409` with `error` `waiting_room_full`
 
 ### Requirement: Deciding on everyone waiting
 With a body without `participantIdentities`, as `broadcastStop` without `broadcastIds`, `participantWaitingAdmit` SHALL admit the participants waiting in arrival order up to the free places (see "Waiting list") and leave the rest waiting in their place, and `participantWaitingReject` SHALL reject, in one atomic step, everyone waiting at that moment. Both SHALL answer with the participants decided on, none when nobody waits or no place is free.
@@ -431,6 +425,7 @@ An admitted participant who finds the meeting full when asking for their join to
 - **GIVEN** Ana admitted first in line, and the last free place taken by a holder of `waitingRoomBypass` before she asks for her join token
 - **WHEN** her meeting asks to join
 - **THEN** she is back first in line and `participantWaitingList` lists her under `participants`
+- **AND** a `participantWaitingChanged` webhook with `waiting` is sent, and her embedded host receives `participantWaitingChanged` with `waiting` at once
 
 #### Scenario: Media server refuses the admitted participant
 - **GIVEN** Ana admitted, whose join token was issued and whose connection to the meeting's media keeps failing
@@ -791,7 +786,7 @@ The server SHALL send the `participantKnocked` webhook once each time a particip
 - **THEN** one `participantKnocked` webhook is delivered at once, and within about 20 seconds one `participantWaitingChanged` webhook with `status` `expired`
 
 ### Requirement: participantWaitingChanged webhook
-The server SHALL send the `participantWaitingChanged` webhook on each change of a wait after it started, with `roomId`, `roomName`, the participant (`MeetWaitingRoomParticipant`, whose `knockDate` with the event's `creationDate` tells how long they waited), `origin` as in `participantHandChanged`, and `status` of `MeetWaitingRoomStatus`: `admitted`, `rejected`, `left`, `expired`, `meeting_ended`, `room_closed`, or `waiting` for an admitted participant back in line.
+The server SHALL send the `participantWaitingChanged` webhook on each change of a wait after it started, with `roomId`, `roomName`, the participant (`MeetWaitingRoomParticipant`, whose `knockDate` with the event's `creationDate` tells how long they waited), `origin` as in `participantHandChanged`, `status` of `MeetWaitingRoomStatus`: `admitted`, `rejected`, `left`, `expired`, `meeting_ended`, `room_closed`, or `waiting` for an admitted participant back in line, and `reason` of `MeetWaitingRoomReason` where `status` and `origin` do not tell why: `replaced`, `page_closed`, `connection_lost`, `admission_unused` or `waiting_room_disabled`.
 
 #### Scenario: Admitted by another moderator
 - **GIVEN** a registered webhook subscribed to `participantWaitingChanged` and a participant who asked to join 90 seconds ago
@@ -840,7 +835,7 @@ The embedded element of each participant holding `waitingRoomAdmin` in the meeti
 - **THEN** the host receives `waitingRoomUpdated` listing both and no `participantKnocked`
 
 ### Requirement: participantWaitingChanged embedded event
-The embedded element of a participant who waits SHALL dispatch `participantWaitingChanged` with `roomId`, the participant as the answer to their request gave it (`MeetWaitingRoomParticipant`) and `status` of `MeetWaitingRoomStatus`: `waiting` with `queuePosition` (1 for the first) on the first state received, a position change or a return to the line, and each other value when the wait ends that way (`left` also for a wait replaced by a new request, `expired` whenever else their meeting says they lost their place). Every one but `waiting` SHALL carry `origin` as the `participantWaitingChanged` webhook does, unless their meeting could not learn it. No `meetingLeft` SHALL be dispatched for a wait.
+The embedded element of a participant who waits SHALL dispatch `participantWaitingChanged` with `roomId`, the participant as the answer to their request gave it (`MeetWaitingRoomParticipant`) and `status` of `MeetWaitingRoomStatus`: `waiting` with `queuePosition` (1 for the first) on the first state received and on a position change, and at once on a return to the line after an admission that found the meeting full, with `queuePosition` once known, and each other value when the wait ends that way (`left` also for a wait replaced by a new request, `expired` whenever else their meeting says they lost their place). Every one but `waiting` SHALL carry `origin`, and `reason` where it applies, as the `participantWaitingChanged` webhook does, unless their meeting could not learn it. No `meetingLeft` SHALL be dispatched for a wait.
 
 #### Scenario: Waiting then admitted
 - **GIVEN** an embedded participant who asks to join and is second in line

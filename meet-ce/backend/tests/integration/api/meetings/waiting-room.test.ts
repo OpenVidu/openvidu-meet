@@ -93,7 +93,7 @@ const deleteMeetingRoom = async (roomId: string) => {
 
 const expectWaitEnded = (response: { status: number; body: { status?: string } }, status?: MeetWaitingRoomStatus) => {
 	expect(response.status).toBe(409);
-	expect(response.body).toMatchObject({ error: 'Waiting Room Error', message: 'The wait has ended' });
+	expect(response.body).toMatchObject({ error: 'wait_ended', message: 'The wait has ended' });
 	expect(response.body.status).toBe(status);
 };
 
@@ -211,7 +211,10 @@ describe('Waiting room', () => {
 				const response = await askToJoin(roomData.room.roomId, roomData.speakerSecret, 'Carla');
 
 				expect(response.status).toBe(409);
-				expect(response.body.message).toBe(`The waiting room of room '${roomData.room.roomId}' is full`);
+				expect(response.body).toEqual({
+					error: 'waiting_room_full',
+					message: `The waiting room of room '${roomData.room.roomId}' is full`
+				});
 			} finally {
 				INTERNAL_CONFIG.WAITING_ROOM_MAX_ENTRIES = maxEntries;
 			}
@@ -288,7 +291,7 @@ describe('Waiting room', () => {
 			const response = await askToJoin(roomId, roomData.speakerSecret, 'Ana', ana.waitingRoomTicket);
 
 			expect(response.status).toBe(202);
-			expect(response.body).toEqual(ana);
+			expect(response.body).toEqual({ waitingRoomTicket: ana.waitingRoomTicket, participant: ana.participant });
 			expect(await waiting(roomId)).toEqual(['Ana', 'Bob']);
 		});
 
@@ -352,10 +355,11 @@ describe('Waiting room', () => {
 
 			const notWaiting = await admitFromWaitingRoom(roomId, [ana.participantIdentity, 'ghost-1']);
 			expect(notWaiting.status).toBe(404);
-			expect(notWaiting.body.message).toContain("'ghost-1'");
+			expect(notWaiting.body).toMatchObject({ error: 'participant_not_waiting', participantIdentity: 'ghost-1' });
 
 			const tooMany = await admitFromWaitingRoom(roomId, [ana.participantIdentity, bob.participantIdentity]);
 			expect(tooMany.status).toBe(409);
+			expect(tooMany.body.error).toBe('not_enough_places');
 			expect(await waiting(roomId)).toEqual(['Ana', 'Bob']);
 		});
 

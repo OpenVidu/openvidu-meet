@@ -1,5 +1,5 @@
 import type {
-	MeetWaitingRoomDecisionOptions,
+	MeetParticipantWaitingDecisionOptions,
 	MeetParticipantHandOptions,
 	MeetParticipantReactionOptions
 } from '@openvidu-meet/typings';
@@ -37,7 +37,7 @@ export const SendParticipantReactionReqSchema: z.ZodType<MeetParticipantReaction
 });
 
 // Omitted means everyone waiting, so an empty list is refused instead of being read as everyone.
-export const WaitingRoomDecisionReqSchema: z.ZodType<MeetWaitingRoomDecisionOptions> = z.object({
+export const WaitingRoomDecisionReqSchema: z.ZodType<MeetParticipantWaitingDecisionOptions> = z.object({
 	participantIdentities: z
 		.array(z.string().min(1))
 		.min(1, 'Must name at least one participant')

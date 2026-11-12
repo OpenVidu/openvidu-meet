@@ -39,7 +39,7 @@ import {
 	type EmbeddedEvent,
 	type MeetBroadcastStartOptions,
 	type MeetBroadcastStopOptions,
-	type MeetWaitingRoomDecisionOptions,
+	type MeetParticipantWaitingDecisionOptions,
 	type MeetParticipantModerationAction,
 	type MeetParticipantMuteOptions,
 	type MeetReaction,
@@ -377,11 +377,11 @@ export class App {
 		return this.commandService.broadcastStop(options);
 	}
 
-	participantWaitingAdmit(options?: MeetWaitingRoomDecisionOptions): Promise<void> {
+	participantWaitingAdmit(options?: MeetParticipantWaitingDecisionOptions): Promise<void> {
 		return this.commandService.participantWaitingAdmit(options);
 	}
 
-	participantWaitingReject(options?: MeetWaitingRoomDecisionOptions): Promise<void> {
+	participantWaitingReject(options?: MeetParticipantWaitingDecisionOptions): Promise<void> {
 		return this.commandService.participantWaitingReject(options);
 	}
 

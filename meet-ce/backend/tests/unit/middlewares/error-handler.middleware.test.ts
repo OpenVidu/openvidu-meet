@@ -8,7 +8,7 @@ import { DocumentNotFoundError } from '../../../src/models/database.model.js';
 import {
 	errorLivekitNotAvailable,
 	errorRecordingNotFound,
-	WaitingRoomWaitEndedError,
+	errorWaitingRoomWaitEnded,
 	OpenViduMeetError
 } from '../../../src/models/error.model.js';
 import { LoggerService } from '../../../src/services/logger.service.js';
@@ -32,10 +32,10 @@ const buildApp = () => {
 		throw errorLivekitNotAvailable();
 	});
 	app.post('/wait-ended', () => {
-		throw new WaitingRoomWaitEndedError(MeetWaitingRoomStatus.REJECTED);
+		throw errorWaitingRoomWaitEnded(MeetWaitingRoomStatus.REJECTED);
 	});
 	app.post('/wait-unknown', () => {
-		throw new WaitingRoomWaitEndedError();
+		throw errorWaitingRoomWaitEnded();
 	});
 	app.post('/typed-object', () => {
 		throw { type: 'entity.parse.failed' };
@@ -109,9 +109,9 @@ describe('globalErrorHandler', () => {
 		const unknown = await request(buildApp()).post('/wait-unknown').send({});
 
 		expect(ended.status).toBe(409);
-		expect(ended.body).toEqual({ error: 'Waiting Room Error', message: 'The wait has ended', status: 'rejected' });
+		expect(ended.body).toEqual({ error: 'wait_ended', message: 'The wait has ended', status: 'rejected' });
 		expect(unknown.status).toBe(409);
-		expect(unknown.body).toEqual({ error: 'Waiting Room Error', message: 'The wait has ended' });
+		expect(unknown.body).toEqual({ error: 'wait_ended', message: 'The wait has ended' });
 	});
 
 	it('masks any other error as a 500 without leaking its message', async () => {

@@ -52,7 +52,7 @@ import {
 	errorRoomMemberNotFound,
 	errorUnauthorized,
 	errorUserNotFound,
-	WaitingRoomWaitEndedError,
+	errorWaitingRoomWaitEnded,
 	OpenViduMeetError
 } from '../models/error.model.js';
 import type { WaitingRoomWait } from '../models/waiting-room.model.js';
@@ -534,7 +534,7 @@ export class RoomMemberService {
 
 		if (answer.kind === 'forbidden') throw errorInsufficientPermissions();
 
-		if (answer.kind === 'ended') throw new WaitingRoomWaitEndedError(answer.status);
+		if (answer.kind === 'ended') throw errorWaitingRoomWaitEnded(answer.status);
 
 		const { participantIdentity, participantName, externalId, metadata } = wait!.participant;
 
@@ -546,7 +546,7 @@ export class RoomMemberService {
 
 		if (answer.kind === 'rejoin') {
 			if (this.waitingRoomAdmissionPolicy.mustWait(room.config, tokenMetadata.permissions)) {
-				throw new WaitingRoomWaitEndedError(MeetWaitingRoomStatus.ADMITTED);
+				throw errorWaitingRoomWaitEnded(MeetWaitingRoomStatus.ADMITTED);
 			}
 
 			await this.assertCapacity(room);
@@ -556,7 +556,7 @@ export class RoomMemberService {
 		if (await this.isMeetingFull(room)) {
 			const change = await this.waitingRoomService.returnToLine(wait!);
 
-			if (!('entry' in change)) throw new WaitingRoomWaitEndedError(change.status);
+			if (!('entry' in change)) throw errorWaitingRoomWaitEnded(change.status);
 
 			return this.waitingRoomService.ticketOf(waitingRoomTicket, change.entry);
 		}
@@ -688,7 +688,7 @@ export class RoomMemberService {
 	protected async consumeAdmission(wait: WaitingRoomWait): Promise<void> {
 		const change = await this.waitingRoomService.consume(wait);
 
-		if (!('entry' in change)) throw new WaitingRoomWaitEndedError(change.status);
+		if (!('entry' in change)) throw errorWaitingRoomWaitEnded(change.status);
 	}
 
 	protected mintJoinToken(

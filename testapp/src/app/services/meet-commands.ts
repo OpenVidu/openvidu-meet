@@ -4,7 +4,7 @@ import {
 	EmbeddedEventPayloadFor,
 	MeetBroadcastStartOptions,
 	MeetBroadcastStopOptions,
-	MeetWaitingRoomDecisionOptions,
+	MeetParticipantWaitingDecisionOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetReaction
@@ -49,7 +49,7 @@ export class MeetCommandsService {
 	readonly mediaActive = signal<TriState>('');
 	/** Identities `participantWaitingAdmit()` and `participantWaitingReject()` name, comma separated; empty omits `participantIdentities`, so everyone waiting. */
 	readonly waitingRoomIdentities = signal('');
-	readonly waitingRoomOptions = computed<MeetWaitingRoomDecisionOptions>(() => {
+	readonly waitingRoomOptions = computed<MeetParticipantWaitingDecisionOptions>(() => {
 		const participantIdentities = this.waitingRoomIdentities()
 			.split(',')
 			.map((identity) => identity.trim())

@@ -7,15 +7,14 @@ import { MeetEventOrigin } from '../embedded/events.js';
  */
 export enum MeetWaitingRoomStatus {
 	/**
-	 * The participant waits to be admitted. The webhook sends it only when an admitted participant
-	 * returns to the line because the meeting was full; the embedded event also repeats it every time
-	 * the position in line changes.
+	 * The participant waits to be admitted. Both surfaces send it when an admitted participant returns to
+	 * the line because the meeting was full; the embedded event also repeats it every time the position in
+	 * line changes.
 	 */
 	WAITING = 'waiting',
 	/**
 	 * A moderator let the participant in, or the waiting room was turned off. It is not the join:
-	 * `meetingJoined` confirms it. A join that finds the meeting full after `admitted` raises no waitingRoom
-	 * event.
+	 * `meetingJoined` confirms it, or `waiting` follows when the meeting is full by then.
 	 */
 	ADMITTED = 'admitted',
 	/** A moderator rejected the participant */
@@ -23,16 +22,46 @@ export enum MeetWaitingRoomStatus {
 	/** The participant left the waiting room, or asked again and so started a new wait */
 	LEFT = 'left',
 	/**
-	 * The participant lost their place: their meeting stopped being in touch for a minute, or 15 seconds
-	 * after its page closed, or an admission was not used within a minute. The embedded event also
-	 * reports it when the meeting gave up reconnecting, no longer knew the wait, or lost the answer after
-	 * an admission.
+	 * The participant lost their place: their page closed, their meeting stopped being in touch for a minute,
+	 * or an admission was not used within a minute. The embedded event also reports it when the meeting gave
+	 * up reconnecting, no longer knew the wait, or lost the answer after an admission.
 	 */
 	EXPIRED = 'expired',
 	/** The meeting was ended explicitly, or reached its duration limit, while the participant waited */
 	MEETING_ENDED = 'meeting_ended',
 	/** The room was closed or deleted while the participant waited */
 	ROOM_CLOSED = 'room_closed'
+}
+
+/**
+ * Why a wait changed, where its status and origin alone do not tell. Carried as `reason` by the
+ * `participantWaitingChanged` webhook and embedded event.
+ */
+export enum MeetWaitingRoomReason {
+	/** `left`: the participant asked to join again, from another tab or device, which started a new wait */
+	REPLACED = 'replaced',
+	/** `expired`: the participant's page closed, reloaded or navigated away */
+	PAGE_CLOSED = 'page_closed',
+	/** `expired`: the participant's meeting was out of touch for a minute */
+	CONNECTION_LOST = 'connection_lost',
+	/** `expired`: the participant was admitted and did not join within a minute */
+	ADMISSION_UNUSED = 'admission_unused',
+	/** `admitted`: the room's waiting room was turned off, which lets everyone waiting in */
+	WAITING_ROOM_DISABLED = 'waiting_room_disabled'
+}
+
+/**
+ * Value of `error` in the body of a refused waiting room request, as a code to tell the refusals apart.
+ */
+export enum MeetWaitingRoomErrorCode {
+	/** `404`: a participant named in the decision does not wait; the body names them in `participantIdentity` */
+	PARTICIPANT_NOT_WAITING = 'participant_not_waiting',
+	/** `409`: the participants named outnumber the free places of the meeting */
+	NOT_ENOUGH_PLACES = 'not_enough_places',
+	/** `409`: the waiting room already holds as many participants as it can */
+	WAITING_ROOM_FULL = 'waiting_room_full',
+	/** `409`: the wait of the ticket is over, or unknown; the body tells how it ended in `status` when known */
+	WAIT_ENDED = 'wait_ended'
 }
 
 /**
@@ -79,7 +108,7 @@ export interface MeetWaitingRoomList {
 /**
  * Answer of `participantWaitingAdmit` and `participantWaitingReject`: the participants decided on.
  */
-export interface MeetWaitingRoomDecisionResponse {
+export interface MeetParticipantWaitingDecisionResponse {
 	/** The participants admitted or rejected, in arrival order. Possibly none when the decision was on everyone waiting */
 	participants: MeetWaitingRoomParticipant[];
 }
@@ -103,6 +132,8 @@ export interface MeetWaitingRoomState {
 	status: MeetWaitingRoomStatus;
 	/** Who caused the change. Omitted while `status` is `waiting`. See {@link MeetEventOrigin} for details */
 	origin?: MeetEventOrigin;
+	/** Why the wait changed, where `status` and `origin` do not tell. See {@link MeetWaitingRoomReason} for details */
+	reason?: MeetWaitingRoomReason;
 	/** Position in line, from 1, while `status` is `waiting` */
 	queuePosition?: number;
 	/** Seconds waited since the participant asked, while `status` is `waiting` */

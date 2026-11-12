@@ -70,7 +70,6 @@ export const INTERNAL_CONFIG = {
 	WAITING_ROOM_MAX_ENTRIES: 100, // Participants a room's waiting room holds, admitted ones not joined yet included; one more asking answers 409
 	WAITING_ROOM_UNSEEN_TIMEOUT: '60s' as StringValue, // A waiting participant unseen this long, or an admission not used by joining within it, expires
 	WAITING_ROOM_UNCONNECTED_KNOCK_TIMEOUT: '15s' as StringValue, // A knock whose waiting screen never connects expires this long after it, through the same rule as WAITING_ROOM_UNSEEN_TIMEOUT
-	WAITING_ROOM_PAGE_CLOSED_TIMEOUT: '15s' as StringValue, // A waiting participant whose page closed or reloaded expires this long after, unless its client connects again, through the same rule as WAITING_ROOM_UNSEEN_TIMEOUT
 	WAITING_ROOM_ENDED_WAIT_TTL: '5m' as StringValue, // How long an ended wait remembers its outcome, so a client that reconnects learns how it ended
 	WAITING_ROOM_SWEEP_INTERVAL: '5s' as StringValue, // Interval of the sweep that expires the waits of WAITING_ROOM_UNSEEN_TIMEOUT
 	WAITING_ROOM_SWEEP_MAX_GAP: '15s' as StringValue, // A sweep run following a longer pause since the previous one (a Redis outage, a stalled replica) expires nobody

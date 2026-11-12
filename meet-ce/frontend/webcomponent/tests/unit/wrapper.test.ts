@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals
 import type {
 	MeetBroadcastStartOptions,
 	MeetBroadcastStopOptions,
-	MeetWaitingRoomDecisionOptions,
+	MeetParticipantWaitingDecisionOptions,
 	MeetParticipantMuteOptions
 } from '@openvidu-meet/typings';
 import { MeetParticipantModerationAction } from '@openvidu-meet/typings';
@@ -76,8 +76,8 @@ interface TestableElement extends FakeNgElementBase {
 	participantReactionSend(reaction: string): void;
 	broadcastStart(options?: MeetBroadcastStartOptions): void;
 	broadcastStop(options?: MeetBroadcastStopOptions): void;
-	participantWaitingAdmit(options?: MeetWaitingRoomDecisionOptions): void;
-	participantWaitingReject(options?: MeetWaitingRoomDecisionOptions): void;
+	participantWaitingAdmit(options?: MeetParticipantWaitingDecisionOptions): void;
+	participantWaitingReject(options?: MeetParticipantWaitingDecisionOptions): void;
 	endMeeting(): void;
 	leaveRoom(): void;
 	kickParticipant(participantIdentity: string): void;
@@ -286,7 +286,7 @@ describe('openvidu-meet custom element', () => {
 		// untouched: the element is a transport, it decides nothing.
 		const start: MeetBroadcastStartOptions = { destinationIds: ['dest-a'] };
 		const stop: MeetBroadcastStopOptions = { broadcastIds: ['bc1'] };
-		const decision: MeetWaitingRoomDecisionOptions = { participantIdentities: ['zoe', 'ben'] };
+		const decision: MeetParticipantWaitingDecisionOptions = { participantIdentities: ['zoe', 'ben'] };
 		const commands: [keyof ComponentInstance, (el: TestableElement) => void, unknown[]][] = [
 			['meetingEnd', (el) => el.meetingEnd(), []],
 			['meetingLeave', (el) => el.meetingLeave(), []],

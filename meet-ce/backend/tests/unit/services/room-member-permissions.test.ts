@@ -652,7 +652,7 @@ describe('RoomMemberService.generateRoomMemberToken in a room with the waiting r
 
 		await expect(join({ waitingRoomTicket: TICKET })).rejects.toMatchObject({
 			statusCode: 409,
-			status: MeetWaitingRoomStatus.LEFT
+			fields: { status: MeetWaitingRoomStatus.LEFT }
 		});
 		expect(steps).toContain(step);
 		expect(steps.filter((name) => name.startsWith('mint'))).toEqual([]);
@@ -684,7 +684,7 @@ describe('RoomMemberService.generateRoomMemberToken in a room with the waiting r
 		const error = await join({ waitingRoomTicket: TICKET }).catch((refusal: unknown) => refusal);
 
 		expect(error).toMatchObject({ statusCode: 409, message: 'The wait has ended' });
-		expect((error as { status?: MeetWaitingRoomStatus }).status).toBe(status);
+		expect((error as { fields: { status?: MeetWaitingRoomStatus } }).fields.status).toBe(status);
 		expect(steps).toEqual([]);
 	});
 
@@ -693,7 +693,7 @@ describe('RoomMemberService.generateRoomMemberToken in a room with the waiting r
 
 		await expect(join({ waitingRoomTicket: TICKET })).rejects.toMatchObject({
 			statusCode: 409,
-			status: MeetWaitingRoomStatus.ADMITTED
+			fields: { status: MeetWaitingRoomStatus.ADMITTED }
 		});
 		expect(steps).toEqual([]);
 	});

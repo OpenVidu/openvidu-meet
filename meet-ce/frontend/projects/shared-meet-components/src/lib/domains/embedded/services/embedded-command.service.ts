@@ -3,7 +3,7 @@ import {
 	EmbeddedCommandName,
 	MeetBroadcastStartOptions,
 	MeetBroadcastStopOptions,
-	MeetWaitingRoomDecisionOptions,
+	MeetParticipantWaitingDecisionOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetReaction,
@@ -245,13 +245,13 @@ export class EmbeddedCommandService {
 		});
 	}
 
-	async participantWaitingAdmit(options: MeetWaitingRoomDecisionOptions = {}): Promise<void> {
+	async participantWaitingAdmit(options: MeetParticipantWaitingDecisionOptions = {}): Promise<void> {
 		await this.run(EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT, 'waitingRoomAdmin', async () => {
 			await this.waitingRoomAdmin.admit(options.participantIdentities);
 		});
 	}
 
-	async participantWaitingReject(options: MeetWaitingRoomDecisionOptions = {}): Promise<void> {
+	async participantWaitingReject(options: MeetParticipantWaitingDecisionOptions = {}): Promise<void> {
 		await this.run(EmbeddedCommandName.PARTICIPANT_WAITING_REJECT, 'waitingRoomAdmin', async () => {
 			await this.waitingRoomAdmin.reject(options.participantIdentities);
 		});

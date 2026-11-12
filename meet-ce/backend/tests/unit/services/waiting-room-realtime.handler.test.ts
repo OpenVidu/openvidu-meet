@@ -2,6 +2,7 @@ import { describe, expect, it, jest } from '@jest/globals';
 import {
 	MEET_WAITING_ROOM_STATE_MESSAGE,
 	MeetEventOrigin,
+	MeetWaitingRoomReason,
 	MeetWaitingRoomStatus,
 	MeetRoomStatus
 } from '@openvidu-meet/typings';
@@ -30,6 +31,7 @@ const build = () => {
 	const waitingRoomService = {
 		findWait: async (ticket: string) =>
 			ticket === 'known' ? ({ waitId: 'wait-ana', roomId: 'room-1' } as WaitingRoomWait) : null,
+		pageClosed,
 		endWaits: jest.fn(async (...args: unknown[]) => {
 			ends.push(args);
 			return [{ participantIdentity: 'ana' }];
@@ -39,7 +41,7 @@ const build = () => {
 		...([
 			{ register: (feature: WebSocketFeature) => registered.push(feature) },
 			waitingRoomService,
-			{ presence: async () => presence, pageClosed },
+			{ presence: async () => presence },
 			{
 				findByRoomId: async () => {
 					if (room instanceof Error) throw room;
@@ -137,15 +139,15 @@ describe('WaitingRoomRealtimeHandler', () => {
 		expect(ends).toEqual([]);
 	});
 
-	it('lets the wait expire soon when its page goes away, telling how long ago the connection last answered', async () => {
+	it('ends the wait when its page goes away, telling how long ago the connection last answered', async () => {
 		const { handler, connection, pageClosed } = build();
 
 		await handler.onClose({ ...connection, lastSeenAt: Date.now() - 12_000 }, 1001);
 
 		expect(pageClosed).toHaveBeenCalledTimes(1);
-		expect(pageClosed.mock.calls[0][0]).toBe('wait-ana');
-		expect(pageClosed.mock.calls[0][1]).toBeGreaterThanOrEqual(12_000);
-		expect(pageClosed.mock.calls[0][1]).toBeLessThan(13_000);
+		expect(pageClosed.mock.calls[0].slice(0, 2)).toEqual(['room-1', 'wait-ana']);
+		expect(pageClosed.mock.calls[0][2]).toBeGreaterThanOrEqual(12_000);
+		expect(pageClosed.mock.calls[0][2]).toBeLessThan(13_000);
 	});
 
 	it.each([1000, 1005, 1006, 4003])('keeps the wait on a connection closed with %s', async (code) => {
@@ -166,16 +168,21 @@ describe('WaitingRoomRealtimeHandler', () => {
 	});
 
 	it.each([
-		['closed', openRoom({ status: MeetRoomStatus.CLOSED }), MeetWaitingRoomStatus.ROOM_CLOSED],
-		['deleted', null, MeetWaitingRoomStatus.ROOM_CLOSED],
-		['without its waiting room', openRoom({ enabled: false }), MeetWaitingRoomStatus.ADMITTED]
-	])('ends the wait of a room %s whose waits were not ended, as the system', async (_case, room, outcome) => {
+		['closed', openRoom({ status: MeetRoomStatus.CLOSED }), MeetWaitingRoomStatus.ROOM_CLOSED, undefined],
+		['deleted', null, MeetWaitingRoomStatus.ROOM_CLOSED, undefined],
+		[
+			'without its waiting room',
+			openRoom({ enabled: false }),
+			MeetWaitingRoomStatus.ADMITTED,
+			MeetWaitingRoomReason.WAITING_ROOM_DISABLED
+		]
+	])('ends the wait of a room %s whose waits were not ended, as the system', async (_case, room, outcome, reason) => {
 		const { handler, connection, sent, ends, setRoom } = build();
 		setRoom(room);
 
 		await handler.onPong(connection);
 
-		expect(ends).toEqual([['room-1', outcome, MeetEventOrigin.SYSTEM, ['wait-ana']]]);
+		expect(ends).toEqual([['room-1', outcome, MeetEventOrigin.SYSTEM, ['wait-ana'], reason]]);
 		expect(sent).toEqual([
 			{ type: MEET_WAITING_ROOM_STATE_MESSAGE, data: expect.objectContaining({ status: outcome }) }
 		]);

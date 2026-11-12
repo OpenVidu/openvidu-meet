@@ -7,7 +7,6 @@ export const WAITING_ROOM_SCRIPT_PRELUDE = `
 local prefix = ARGV[1]
 local ended_wait_ttl = ARGV[2]
 local seen_key = prefix .. '_seen'
-local closed_key = prefix .. '_closed'
 local time = redis.call('TIME')
 local now = tonumber(time[1]) * 1000 + math.floor(tonumber(time[2]) / 1000)
 
@@ -73,7 +72,6 @@ end
 local function finish(room_id, entry, outcome)
 	redis.call('HDEL', room_key(room_id), entry.participantIdentity)
 	redis.call('ZREM', seen_key, seen_member(room_id, entry.waitId))
-	redis.call('ZREM', closed_key, seen_member(room_id, entry.waitId))
 	if not entry.used then
 		redis.call('HSET', wait_key(entry.waitId), 'outcome', outcome)
 	end

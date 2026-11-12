@@ -2,6 +2,7 @@ import type { MeetWaitingRoomState, MeetRoom } from '@openvidu-meet/typings';
 import {
 	MEET_WAITING_ROOM_STATE_MESSAGE,
 	MeetEventOrigin,
+	MeetWaitingRoomReason,
 	MeetWaitingRoomStatus,
 	MeetRoomStatus
 } from '@openvidu-meet/typings';
@@ -55,10 +56,10 @@ export class WaitingRoomRealtimeHandler implements WebSocketFeature {
 		return this.sendState(connection);
 	}
 
-	onClose({ address, lastSeenAt }: WebSocketConnection, code: number): Promise<void> {
+	onClose({ roomId, address, lastSeenAt }: WebSocketConnection, code: number): Promise<void> {
 		if (code !== WEBSOCKET_GOING_AWAY_CLOSE_CODE) return Promise.resolve();
 
-		return this.waitingRoomStateService.pageClosed(address, Date.now() - lastSeenAt);
+		return this.waitingRoomService.pageClosed(roomId, address, Date.now() - lastSeenAt);
 	}
 
 	protected async sendState(connection: WebSocketConnection): Promise<void> {
@@ -74,7 +75,13 @@ export class WaitingRoomRealtimeHandler implements WebSocketFeature {
 		const outcome = room === undefined ? undefined : this.reconciliationOf(room);
 
 		if (outcome && (status === MeetWaitingRoomStatus.WAITING || status === MeetWaitingRoomStatus.ADMITTED)) {
-			const ended = await this.waitingRoomService.endWaits(roomId, outcome, MeetEventOrigin.SYSTEM, [waitId]);
+			const ended = await this.waitingRoomService.endWaits(
+				roomId,
+				outcome,
+				MeetEventOrigin.SYSTEM,
+				[waitId],
+				outcome === MeetWaitingRoomStatus.ADMITTED ? MeetWaitingRoomReason.WAITING_ROOM_DISABLED : undefined
+			);
 
 			if (ended.length > 0) {
 				this.logger.warn(

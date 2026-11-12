@@ -3,6 +3,7 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
 	EmbeddedEventName,
+	MeetWaitingRoomErrorCode,
 	MeetWaitingRoomList,
 	MeetWaitingRoomParticipant,
 	MeetWaitingRoomParticipantType,
@@ -376,7 +377,11 @@ describe('WaitingRoomAdminService', () => {
 			http.postRequest.and.rejectWith(
 				new HttpErrorResponse({
 					status: 404,
-					error: { message: "Participant 'ben' is not waiting in room 'room-1'" }
+					error: {
+						error: MeetWaitingRoomErrorCode.PARTICIPANT_NOT_WAITING,
+						message: "Participant 'ben' is not waiting in room 'room-1'",
+						participantIdentity: 'ben'
+					}
 				})
 			);
 

@@ -3,8 +3,9 @@ import { computed, effect, inject, Service, signal, untracked } from '@angular/c
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
 	EmbeddedEventName,
-	MeetWaitingRoomDecisionOptions,
-	MeetWaitingRoomDecisionResponse,
+	MeetParticipantWaitingDecisionOptions,
+	MeetParticipantWaitingDecisionResponse,
+	MeetWaitingRoomErrorCode,
 	MeetWaitingRoomList,
 	MeetWaitingRoomParticipant,
 	MeetSignalType
@@ -180,12 +181,12 @@ export class WaitingRoomAdminService {
 
 		if (!roomId) throw new Error(`Cannot ${decision} participants outside a meeting`);
 
-		const body: MeetWaitingRoomDecisionOptions =
+		const body: MeetParticipantWaitingDecisionOptions =
 			participantIdentities === undefined ? {} : { participantIdentities };
 		const names = new Map(this._waiting().map(({ participant, name }) => [participant.participantIdentity, name]));
 
 		try {
-			const { participants } = await this.http.postRequest<MeetWaitingRoomDecisionResponse>(
+			const { participants } = await this.http.postRequest<MeetParticipantWaitingDecisionResponse>(
 				`${this.waitingRoomPath(roomId)}/${decision}`,
 				body
 			);
@@ -205,9 +206,12 @@ export class WaitingRoomAdminService {
 
 	/** Says who the refused decision named that no longer waits. */
 	private tellNotWaiting(error: HttpErrorResponse, names: Map<string, string>): void {
-		const identity = /^Participant '([^']+)' is not waiting/.exec(error.error?.message ?? '')?.[1];
+		const { error: code, participantIdentity: identity } = (error.error ?? {}) as {
+			error?: string;
+			participantIdentity?: string;
+		};
 
-		if (!identity) return;
+		if (code !== MeetWaitingRoomErrorCode.PARTICIPANT_NOT_WAITING || !identity) return;
 
 		this.notificationService.showNotification({
 			kind: 'waiting-room-not-waiting',

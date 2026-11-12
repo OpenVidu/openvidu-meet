@@ -1,7 +1,6 @@
 import { MeetReaction } from '../reaction.js';
 import { MeetBroadcastStartOptions, MeetBroadcastStopOptions } from '../request/broadcast-request.js';
-import { MeetWaitingRoomDecisionOptions } from '../request/waiting-room-request.js';
-import { MeetParticipantMuteOptions } from '../request/meeting-request.js';
+import { MeetParticipantMuteOptions, MeetParticipantWaitingDecisionOptions } from '../request/meeting-request.js';
 import { MeetParticipantModerationAction } from '../request/room-member-request.js';
 
 /**
@@ -205,14 +204,14 @@ export interface EmbeddedCommandPayloads {
 	[EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL]: void;
 	/**
 	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT} command. When `participantIdentities` is
-	 * omitted, everyone waiting, up to the free places. See {@link MeetWaitingRoomDecisionOptions}.
+	 * omitted, everyone waiting, up to the free places. See {@link MeetParticipantWaitingDecisionOptions}.
 	 */
-	[EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT]: MeetWaitingRoomDecisionOptions;
+	[EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT]: MeetParticipantWaitingDecisionOptions;
 	/**
 	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_WAITING_REJECT} command. When `participantIdentities` is
-	 * omitted, everyone waiting. See {@link MeetWaitingRoomDecisionOptions}.
+	 * omitted, everyone waiting. See {@link MeetParticipantWaitingDecisionOptions}.
 	 */
-	[EmbeddedCommandName.PARTICIPANT_WAITING_REJECT]: MeetWaitingRoomDecisionOptions;
+	[EmbeddedCommandName.PARTICIPANT_WAITING_REJECT]: MeetParticipantWaitingDecisionOptions;
 	/**
 	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_REACTION_SEND} command.
 	 * `reaction` is one of the reactions in {@link MeetReaction}.

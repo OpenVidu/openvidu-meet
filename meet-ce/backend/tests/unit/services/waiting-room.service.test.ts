@@ -5,6 +5,7 @@ import {
 	MEET_WAITING_ROOM_STATE_MESSAGE,
 	MeetEventOrigin,
 	MeetWaitingRoomParticipantType,
+	MeetWaitingRoomReason,
 	MeetWaitingRoomStatus
 } from '@openvidu-meet/typings';
 import { createHash } from 'crypto';
@@ -204,10 +205,18 @@ describe('WaitingRoomService', () => {
 			);
 
 			expect(stateOf('wait-ana')).toEqual([
-				{ status: MeetWaitingRoomStatus.LEFT, origin: MeetEventOrigin.PARTICIPANT }
+				{
+					status: MeetWaitingRoomStatus.LEFT,
+					origin: MeetEventOrigin.PARTICIPANT,
+					reason: MeetWaitingRoomReason.REPLACED
+				}
 			]);
 			expect(changed).toEqual([
-				expect.objectContaining({ status: MeetWaitingRoomStatus.LEFT, origin: MeetEventOrigin.PARTICIPANT })
+				expect.objectContaining({
+					status: MeetWaitingRoomStatus.LEFT,
+					origin: MeetEventOrigin.PARTICIPANT,
+					reason: MeetWaitingRoomReason.REPLACED
+				})
 			]);
 		});
 
@@ -399,10 +408,10 @@ describe('WaitingRoomService', () => {
 			expect(state.ends).toEqual([]);
 		});
 
-		it('expires only waits still unseen, used admissions silently', async () => {
+		it('expires only waits still unseen, used admissions silently, telling why each one expired', async () => {
 			const { service, state, changed, stateOf } = build();
 			state.endResult = {
-				ended: [entry('ana')],
+				ended: [entry('ana'), entry('cleo', { status: MeetWaitingRoomStatus.ADMITTED })],
 				silent: [entry('ben', { status: MeetWaitingRoomStatus.ADMITTED, used: true })],
 				line: noLine
 			};
@@ -420,10 +429,40 @@ describe('WaitingRoomService', () => {
 				expect.objectContaining({
 					participant: expect.objectContaining({ participantIdentity: 'ana' }),
 					status: MeetWaitingRoomStatus.EXPIRED,
-					origin: MeetEventOrigin.SYSTEM
+					origin: MeetEventOrigin.SYSTEM,
+					reason: MeetWaitingRoomReason.CONNECTION_LOST
+				}),
+				expect.objectContaining({
+					participant: expect.objectContaining({ participantIdentity: 'cleo' }),
+					reason: MeetWaitingRoomReason.ADMISSION_UNUSED
 				})
 			]);
 			expect(stateOf('wait-ben')).toEqual([]);
+		});
+
+		it('expires at once the wait of a page that closed, unless another connection was seen since', async () => {
+			const { service, state, changed, stateOf } = build();
+			state.endResult = { ended: [entry('ana')], silent: [], line: noLine };
+
+			await service.pageClosed('room-1', 'wait-ana', 12_000);
+
+			expect(state.ends).toEqual([
+				['room-1', MeetWaitingRoomStatus.EXPIRED, { waitIds: ['wait-ana'], unseenFor: 10_000 }]
+			]);
+			expect(changed).toEqual([
+				expect.objectContaining({
+					status: MeetWaitingRoomStatus.EXPIRED,
+					origin: MeetEventOrigin.SYSTEM,
+					reason: MeetWaitingRoomReason.PAGE_CLOSED
+				})
+			]);
+			expect(stateOf('wait-ana')).toEqual([
+				{
+					status: MeetWaitingRoomStatus.EXPIRED,
+					origin: MeetEventOrigin.SYSTEM,
+					reason: MeetWaitingRoomReason.PAGE_CLOSED
+				}
+			]);
 		});
 
 		it.each([
@@ -431,21 +470,24 @@ describe('WaitingRoomService', () => {
 				'endMeeting',
 				(service: WaitingRoomService) => service.endMeeting('room-1', MeetEventOrigin.SYSTEM),
 				MeetWaitingRoomStatus.MEETING_ENDED,
-				MeetEventOrigin.SYSTEM
+				MeetEventOrigin.SYSTEM,
+				undefined
 			],
 			[
 				'closeRoom',
 				(service: WaitingRoomService) => service.closeRoom('room-1'),
 				MeetWaitingRoomStatus.ROOM_CLOSED,
-				MeetEventOrigin.MODERATOR
+				MeetEventOrigin.MODERATOR,
+				undefined
 			],
 			[
 				'letEveryoneIn',
 				(service: WaitingRoomService) => service.letEveryoneIn('room-1'),
 				MeetWaitingRoomStatus.ADMITTED,
-				MeetEventOrigin.MODERATOR
+				MeetEventOrigin.MODERATOR,
+				MeetWaitingRoomReason.WAITING_ROOM_DISABLED
 			]
-		])('%s ends every wait of the room', async (_name, run, outcome, origin) => {
+		])('%s ends every wait of the room', async (_name, run, outcome, origin, reason) => {
 			const { service, state, changed } = build();
 			state.endResult = { ended: [entry('ana')], silent: [], line: noLine };
 
@@ -453,6 +495,7 @@ describe('WaitingRoomService', () => {
 
 			expect(state.ends).toEqual([['room-1', outcome, { waitIds: undefined }]]);
 			expect(changed).toEqual([expect.objectContaining({ status: outcome, origin })]);
+			expect((changed[0] as { reason?: MeetWaitingRoomReason }).reason).toBe(reason);
 		});
 	});
 

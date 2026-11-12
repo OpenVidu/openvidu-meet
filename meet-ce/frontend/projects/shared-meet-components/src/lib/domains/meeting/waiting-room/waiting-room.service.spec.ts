@@ -4,8 +4,10 @@ import { TestBed } from '@angular/core/testing';
 import {
 	EmbeddedEventName,
 	MeetEventOrigin,
+	MeetWaitingRoomErrorCode,
 	MeetWaitingRoomParticipant,
 	MeetWaitingRoomParticipantType,
+	MeetWaitingRoomReason,
 	MeetWaitingRoomState,
 	MeetWaitingRoomStatus
 } from '@openvidu-meet/typings';
@@ -178,7 +180,7 @@ describe('WaitingRoomService', () => {
 		});
 
 		it('shows the full waiting room screen, with no waiting room event', async () => {
-			joinToken.request.and.rejectWith(refusal(409, { message: "The waiting room of room 'room1' is full" }));
+			joinToken.request.and.rejectWith(refusal(409, { error: MeetWaitingRoomErrorCode.WAITING_ROOM_FULL }));
 
 			void service.join(ANA);
 			await flush();
@@ -234,7 +236,7 @@ describe('WaitingRoomService', () => {
 
 		it('asks again when the wait is over', async () => {
 			leaveWaitBehind();
-			joinToken.requestWithTicket.and.rejectWith(refusal(409, { message: 'The wait has ended' }));
+			joinToken.requestWithTicket.and.rejectWith(refusal(409, { error: MeetWaitingRoomErrorCode.WAIT_ENDED }));
 
 			void service.join(ANA);
 			await flush();
@@ -328,6 +330,25 @@ describe('WaitingRoomService', () => {
 			expect(service.outcome()).toBe('expired');
 			expect(waitingRoomStatuses()).toEqual([MeetWaitingRoomStatus.WAITING, MeetWaitingRoomStatus.EXPIRED]);
 			expect(waitingRoomOrigins()).toEqual([undefined, MeetEventOrigin.SYSTEM]);
+			expect(waitingRoomEvents()[1]).toEqual(
+				jasmine.objectContaining({ reason: MeetWaitingRoomReason.CONNECTION_LOST })
+			);
+		});
+
+		it('tells the host why the wait ended when the server says it', () => {
+			send({
+				status: MeetWaitingRoomStatus.LEFT,
+				origin: MeetEventOrigin.PARTICIPANT,
+				reason: MeetWaitingRoomReason.REPLACED
+			});
+
+			expect(waitingRoomEvents()).toEqual([
+				jasmine.objectContaining({
+					status: MeetWaitingRoomStatus.LEFT,
+					origin: MeetEventOrigin.PARTICIPANT,
+					reason: MeetWaitingRoomReason.REPLACED
+				})
+			]);
 		});
 	});
 
@@ -408,6 +429,36 @@ describe('WaitingRoomService', () => {
 			expect(webSocket.disconnect).not.toHaveBeenCalled();
 		});
 
+		it('tells the host at once that the participant is back in line, in the place a state gave meanwhile', async () => {
+			const answer = new Deferred<JoinAnswer>();
+			await admitWith(answer);
+			send({ status: MeetWaitingRoomStatus.WAITING, queuePosition: 2 });
+
+			answer.resolve(WAITING);
+			await flush();
+
+			expect(waitingRoomStatuses()).toEqual([MeetWaitingRoomStatus.ADMITTED, MeetWaitingRoomStatus.WAITING]);
+			expect(waitingRoomEvents()[1]).toEqual(jasmine.objectContaining({ queuePosition: 2 }));
+			expect(service.queuePosition()).toBe(2);
+		});
+
+		it('tells the host at once that the participant is back in line, before knowing the place', async () => {
+			const answer = new Deferred<JoinAnswer>();
+			await admitWith(answer);
+
+			answer.resolve(WAITING);
+			await flush();
+			send({ status: MeetWaitingRoomStatus.WAITING, queuePosition: 3 });
+
+			expect(waitingRoomStatuses()).toEqual([
+				MeetWaitingRoomStatus.ADMITTED,
+				MeetWaitingRoomStatus.WAITING,
+				MeetWaitingRoomStatus.WAITING
+			]);
+			expect(waitingRoomEvents()[1]).not.toEqual(jasmine.objectContaining({ queuePosition: jasmine.anything() }));
+			expect(waitingRoomEvents()[2]).toEqual(jasmine.objectContaining({ queuePosition: 3 }));
+		});
+
 		it('ignores every later state once it holds the token', async () => {
 			const answer = new Deferred<JoinAnswer>();
 			await admitWith(answer);
@@ -424,7 +475,9 @@ describe('WaitingRoomService', () => {
 			const answer = new Deferred<JoinAnswer>();
 			await admitWith(answer);
 
-			answer.reject(refusal(409, { message: 'The wait has ended', status: MeetWaitingRoomStatus.ADMITTED }));
+			answer.reject(
+				refusal(409, { error: MeetWaitingRoomErrorCode.WAIT_ENDED, status: MeetWaitingRoomStatus.ADMITTED })
+			);
 			await flush();
 
 			expect(service.outcome()).toBe('expired');
@@ -435,7 +488,9 @@ describe('WaitingRoomService', () => {
 			const answer = new Deferred<JoinAnswer>();
 			await admitWith(answer);
 
-			answer.reject(refusal(409, { message: 'The wait has ended', status: MeetWaitingRoomStatus.REJECTED }));
+			answer.reject(
+				refusal(409, { error: MeetWaitingRoomErrorCode.WAIT_ENDED, status: MeetWaitingRoomStatus.REJECTED })
+			);
 			await flush();
 
 			expect(service.outcome()).toBe('rejected');

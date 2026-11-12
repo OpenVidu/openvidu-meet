@@ -1,3 +1,4 @@
+import { MeetWaitingRoomErrorCode } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 
 /**
@@ -33,17 +34,15 @@ export function roomMemberTokenFailure(error: unknown): NavigationErrorReason {
 
 /** Whether the request to join was refused because the waiting room holds as many participants as it can. */
 export function isWaitingRoomFull(error: unknown): boolean {
-	const { status, message } = describe(error);
-	return status === 409 && message.includes('waiting room');
+	return describe(error).code === MeetWaitingRoomErrorCode.WAITING_ROOM_FULL;
 }
 
 /** Whether the request to join with a ticket was refused because its wait is over or unknown. */
 export function isWaitingRoomWaitEnded(error: unknown): boolean {
-	const { status, message } = describe(error);
-	return status === 409 && message.includes('wait has ended');
+	return describe(error).code === MeetWaitingRoomErrorCode.WAIT_ENDED;
 }
 
-function describe(error: unknown): { status?: number; message: string } {
+function describe(error: unknown): { status?: number; message: string; code?: string } {
 	const {
 		status,
 		message,
@@ -51,7 +50,7 @@ function describe(error: unknown): { status?: number; message: string } {
 	} = (error ?? {}) as {
 		status?: number;
 		message?: string;
-		error?: { message?: string };
+		error?: { error?: string; message?: string };
 	};
-	return { status, message: body?.message || message || '' };
+	return { status, message: body?.message || message || '', code: body?.error };
 }
