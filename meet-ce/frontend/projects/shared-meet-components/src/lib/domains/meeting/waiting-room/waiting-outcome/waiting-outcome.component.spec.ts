@@ -5,7 +5,7 @@ import { AssetsService } from '../../../../shared/services/assets.service';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { MeetingJoinService } from '../../services/meeting-join.service';
 import { WaitingRoomOutcome, WaitingRoomService } from '../waiting-room.service';
-import { ASK_AGAIN_PAUSE_AFTER_REJECTION_MS, WaitingOutcomeComponent } from './waiting-outcome.component';
+import { WaitingOutcomeComponent } from './waiting-outcome.component';
 
 describe('WaitingOutcomeComponent', () => {
 	let fixture: ComponentFixture<WaitingOutcomeComponent>;
@@ -15,7 +15,6 @@ describe('WaitingOutcomeComponent', () => {
 	const outcome = signal<WaitingRoomOutcome | undefined>(undefined);
 
 	beforeEach(() => {
-		jasmine.clock().install();
 		announce = jasmine.createSpy('announce').and.resolveTo();
 		askAgain = jasmine.createSpy('askAgain');
 		goBack = jasmine.createSpy('goBack').and.resolveTo();
@@ -40,7 +39,6 @@ describe('WaitingOutcomeComponent', () => {
 
 	afterEach(() => {
 		fixture?.destroy();
-		jasmine.clock().uninstall();
 	});
 
 	async function show(how: WaitingRoomOutcome): Promise<HTMLElement> {
@@ -64,14 +62,13 @@ describe('WaitingOutcomeComponent', () => {
 		expect(announce).toHaveBeenCalledOnceWith('WAITING_ROOM.REJECTED_TITLE', 'assertive');
 	});
 
-	it('keeps asking again disabled for the 15 seconds after a rejection', async () => {
+	it('lets a rejected participant ask again at once', async () => {
 		const element = await show('rejected');
-		expect(askAgainButton(element).disabled).toBeTrue();
-
-		jasmine.clock().tick(ASK_AGAIN_PAUSE_AFTER_REJECTION_MS);
-		await fixture.whenStable();
 
 		expect(askAgainButton(element).disabled).toBeFalse();
+		askAgainButton(element).click();
+
+		expect(askAgain).toHaveBeenCalledTimes(1);
 	});
 
 	it('lets the participant ask again at once after losing the place', async () => {

@@ -1,5 +1,5 @@
 import { LiveAnnouncer } from '@angular/cdk/a11y';
-import { afterNextRender, Component, computed, DestroyRef, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { afterNextRender, Component, computed, ElementRef, inject, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
@@ -7,9 +7,6 @@ import { AssetsService } from '../../../../shared/services/assets.service';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { MeetingJoinService } from '../../services/meeting-join.service';
 import { WaitingRoomOutcome, WaitingRoomService } from '../waiting-room.service';
-
-/** After a rejection, asking again stays off this long. The server has no pause of its own. */
-export const ASK_AGAIN_PAUSE_AFTER_REJECTION_MS = 15_000;
 
 const OUTCOME_COPY: Record<WaitingRoomOutcome, { titleKey: string; messageKey: string }> = {
 	rejected: { titleKey: 'WAITING_ROOM.REJECTED_TITLE', messageKey: 'WAITING_ROOM.REJECTED_MESSAGE' },
@@ -36,14 +33,8 @@ export class WaitingOutcomeComponent {
 	protected readonly logoUrl = inject(AssetsService).logo;
 	protected readonly outcome = computed(() => this.waitingRoom.outcome() ?? 'expired');
 	protected readonly copy = computed(() => OUTCOME_COPY[this.outcome()]);
-	protected readonly askAgainPaused = signal(this.outcome() === 'rejected');
 
 	constructor() {
-		if (this.askAgainPaused()) {
-			const pause = setTimeout(() => this.askAgainPaused.set(false), ASK_AGAIN_PAUSE_AFTER_REJECTION_MS);
-			inject(DestroyRef).onDestroy(() => clearTimeout(pause));
-		}
-
 		afterNextRender(() => {
 			this.heading().nativeElement.focus();
 			this.liveAnnouncer
