@@ -115,8 +115,9 @@ export enum EmbeddedEventName {
 	 */
 	BROADCAST_ENDED = 'broadcastEnded',
 	/**
-	 * Event emitted to the participants who hold `waitingRoomAdmin` with the whole list of participants
-	 * waiting to join and the free places of the meeting: on joining, and on every change of the list.
+	 * Event emitted to the participants who hold `waitingRoomAdmin`, in a room with the waiting room on,
+	 * with the whole list of participants waiting to join and the free places of the meeting: on joining,
+	 * and on every change of the list.
 	 */
 	WAITING_ROOM_UPDATED = 'waitingRoomUpdated',
 	/**
