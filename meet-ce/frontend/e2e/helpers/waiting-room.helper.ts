@@ -62,6 +62,10 @@ export const meetingFullMessage = (page: Page): Locator => page.getByText(MEETIN
 export type RealtimeChannel = {
 	/** Drops the page's realtime connection and refuses every reconnection, while HTTP keeps working. */
 	cut: () => Promise<void>;
+	/** Closes the page's realtime connection at both ends with 1001, as a reverse proxy that restarts, and lets it reconnect. */
+	restartProxy: () => Promise<void>;
+	/** How many realtime connections the page opened so far. */
+	opened: () => number;
 };
 
 /**
@@ -70,21 +74,32 @@ export type RealtimeChannel = {
  */
 export const routeRealtimeChannel = async (page: Page): Promise<RealtimeChannel> => {
 	let down = false;
-	const open: WebSocketRoute[] = [];
+	let opened = 0;
+	const open: { client: WebSocketRoute; server: WebSocketRoute }[] = [];
 
 	await page.routeWebSocket(/\/internal-api\/v1\/ws\?/, async (client) => {
 		if (down) return client.close({ code: 1011 });
 
 		const server = client.connectToServer();
-		open.push(client);
+		opened++;
+		open.push({ client, server });
 		client.onClose(() => server.close());
 	});
 
 	return {
 		cut: async () => {
 			down = true;
-			await Promise.all(open.splice(0).map((client) => client.close({ code: 1011 })));
-		}
+			await Promise.all(open.splice(0).map(({ client }) => client.close({ code: 1011 })));
+		},
+		restartProxy: async () => {
+			await Promise.all(
+				open.splice(0).map(async ({ client, server }) => {
+					await server.close({ code: 1001 });
+					await client.close({ code: 1001 });
+				})
+			);
+		},
+		opened: () => opened
 	};
 };
 

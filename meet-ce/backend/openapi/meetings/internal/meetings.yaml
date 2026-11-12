@@ -50,9 +50,10 @@
         description: >
             Ends the wait of a participant at once, whether it is waiting or admitted and not yet used: the
             participant no longer appears in [`participantWaitingList`](#/operations/participantWaitingList) and the
-            [`participantWaitingChanged`](#/webhooks/participantWaitingChangedWebhook) webhook reports `left`. The meeting client
-            calls it when the participant presses "Leave waiting room" or leaves with `meetingLeave`, also while
-            its realtime connection is down.
+            [`participantWaitingChanged`](#/webhooks/participantWaitingChangedWebhook) webhook reports `left`, or
+            `expired` with `reason` `page_closed`. The meeting client calls it when the participant presses "Leave
+            waiting room" or leaves with `meetingLeave`, also while its realtime connection is down, and with
+            `reason` `page_closed` when their page closes, reloads or navigates away.
 
 
             The `waitingRoomTicket` is the only credential and no header is sent, so a web component on another
@@ -67,6 +68,7 @@
         parameters:
             - $ref: '../../rooms/parameters/room-id-path.yaml'
             - $ref: './parameters/waiting-room-ticket-query.yaml'
+            - $ref: './parameters/waiting-room-leave-reason-query.yaml'
         responses:
             '204':
                 $ref: './responses/success/waiting-room-leave.yaml'

@@ -126,28 +126,29 @@ export class SessionStorageService {
 	}
 
 	/**
-	 * Stores the ticket of the wait the participant is in, together with the room it belongs to, so a reload
-	 * of the page continues the wait instead of starting another.
+	 * Stores the wait the participant is in, together with the room it belongs to, so a reload of the page
+	 * continues it, or asks to join again without the join screen when the wait has no ticket: the page told
+	 * Meet it was going away, which ended the wait.
 	 *
 	 * @param roomId The room the participant waits to join.
-	 * @param ticket The answer that handed the participant the ticket of their wait.
+	 * @param ticket The answer that handed the participant the ticket of their wait, if it is still on.
 	 */
-	public setWaitingRoomTicket(roomId: string, ticket: MeetWaitingRoomTicketResponse): void {
+	public setWaitingRoomTicket(roomId: string, ticket?: MeetWaitingRoomTicketResponse): void {
 		this.storage.set(SessionStorageKeys.WAITING_ROOM_TICKET, { roomId, ticket }, 'session');
 	}
 
 	/**
-	 * Retrieves the ticket of the wait stored for a room.
+	 * Retrieves the wait stored for a room.
 	 *
 	 * @param roomId The room being entered.
-	 * @returns The ticket stored for that room, or null when none was stored for it.
+	 * @returns The wait stored for that room, with its ticket while it is still on, or null when none was stored for it.
 	 */
-	public getWaitingRoomTicket(roomId: string): MeetWaitingRoomTicketResponse | null {
-		const stored = this.storage.get<{ roomId: string; ticket: MeetWaitingRoomTicketResponse }>(
+	public getWaitingRoomWait(roomId: string): { ticket?: MeetWaitingRoomTicketResponse } | null {
+		const stored = this.storage.get<{ roomId: string; ticket?: MeetWaitingRoomTicketResponse }>(
 			SessionStorageKeys.WAITING_ROOM_TICKET,
 			'session'
 		);
-		return stored?.roomId === roomId ? stored.ticket : null;
+		return stored?.roomId === roomId ? { ticket: stored.ticket } : null;
 	}
 
 	/**

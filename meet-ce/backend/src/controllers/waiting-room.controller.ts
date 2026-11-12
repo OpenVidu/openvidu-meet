@@ -1,4 +1,4 @@
-import type { MeetParticipantWaitingDecisionOptions } from '@openvidu-meet/typings';
+import type { MeetParticipantWaitingDecisionOptions, MeetWaitingRoomReason } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { handleError } from '../middlewares/error-handler.middleware.js';
@@ -50,10 +50,13 @@ export const rejectFromWaitingRoom = async (req: Request, res: Response) => {
 export const leaveWaitingRoom = async (req: Request, res: Response) => {
 	const waitingRoomService = container.get(WaitingRoomService);
 	const { roomId } = req.params as Record<string, string>;
-	const { waitingRoomTicket } = res.locals.validatedQuery as { waitingRoomTicket: string };
+	const { waitingRoomTicket, reason } = res.locals.validatedQuery as {
+		waitingRoomTicket: string;
+		reason?: MeetWaitingRoomReason.PAGE_CLOSED;
+	};
 
 	try {
-		await waitingRoomService.leave(roomId, waitingRoomTicket);
+		await waitingRoomService.leave(roomId, waitingRoomTicket, reason);
 		res.status(204).end();
 	} catch (error) {
 		handleError(res, error, `leaving the waiting room of room '${roomId}'`);

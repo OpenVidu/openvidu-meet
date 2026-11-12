@@ -45,7 +45,7 @@ import { click } from './helpers/ui-utils.helper';
 
 /** The server forgets a waiter whose connection has been gone for a minute; its sweep runs every 5 s. */
 const PLACE_LOST_TIMEOUT = 90_000;
-/** A waiter whose page closed is dropped as soon as the server sees the connection close. */
+/** A waiter whose page closed is dropped as soon as the page tells the server. */
 const PAGE_CLOSED_TIMEOUT = 10_000;
 /** A waiter's state is sent again at every answered ping, every 20 s. */
 const NEXT_PING_TIMEOUT = 30_000;
@@ -82,6 +82,12 @@ test.describe('Waiting room E2E Tests', () => {
 		await askToJoin(page, accessUrl, name);
 		await expectWaitingScreen(page);
 		return page;
+	};
+
+	/** Closes the tab as a person does, so the page runs its unload handlers. */
+	const closeTab = async (page: Page): Promise<void> => {
+		await Promise.all([page.waitForEvent('close'), page.close({ runBeforeUnload: true })]);
+		await page.context().close();
 	};
 
 	const host = async (browser: Browser, name = 'Host'): Promise<Page> => {
@@ -286,6 +292,23 @@ test.describe('Waiting room E2E Tests', () => {
 			await expect.poll(waitingRoomNames, { timeout: 5_000 }).toEqual([]);
 		});
 
+		test('should keep the place of a participant whose realtime connection a restarting proxy closes', async ({
+			browser
+		}) => {
+			await createWaitingRoomRoom();
+			await waiter(browser, 'Ana');
+			const ben = await newPage(browser);
+			const realtime = await routeRealtimeChannel(ben);
+			await askToJoin(ben, speakerUrl, 'Ben');
+			await expectQueuePosition(ben, '2nd');
+
+			await realtime.restartProxy();
+			await expect.poll(realtime.opened, { timeout: 15_000 }).toBe(2);
+
+			await expectQueuePosition(ben, '2nd');
+			expect(await waitingRoomNames()).toEqual(['Ana', 'Ben']);
+		});
+
 		test('should leave the waiting room at once while the realtime connection is down', async ({ browser }) => {
 			await createWaitingRoomRoom();
 			const ana = await newPage(browser);
@@ -311,7 +334,7 @@ test.describe('Waiting room E2E Tests', () => {
 			const ana = await waiter(browser, 'Ana');
 			await expect(waitingRoomRow(hostPage, 'Ana')).toBeVisible({ timeout: 10_000 });
 
-			await ana.context().close();
+			await closeTab(ana);
 
 			await expect(waitingRoomRow(hostPage, 'Ana')).toBeHidden({ timeout: PAGE_CLOSED_TIMEOUT });
 			expect(await waitingRoomNames()).toEqual([]);
@@ -330,7 +353,7 @@ test.describe('Waiting room E2E Tests', () => {
 			await expect(waitingRoomRow(hostPage, 'Ana')).toBeVisible({ timeout: 10_000 });
 			await hostPage.route(/\/meetings\/[^/]+\/waiting-room$/, (route) => route.abort());
 
-			await ana.context().close();
+			await closeTab(ana);
 			await expect.poll(waitingRoomNames, { timeout: PAGE_CLOSED_TIMEOUT }).toEqual([]);
 			await admitFromPanel(hostPage, 'Ana');
 
