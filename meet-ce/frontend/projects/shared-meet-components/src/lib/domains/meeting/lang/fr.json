@@ -304,7 +304,9 @@
 			"WAITING_COUNT": "{count, plural, other {# en attente d'admission}}",
 			"WAITING_LABEL": "en attente d'admission",
 			"WANTS_TO_JOIN": "Demande à participer",
-			"VIEW": "Voir"
+			"VIEW": "Voir",
+			"GONE_TITLE": "{name} est déjà parti",
+			"GONE_MESSAGE": "Ce participant est introuvable dans la salle d'attente."
 		}
 	},
 	"SHARE_ACCESS": {

@@ -304,7 +304,9 @@
 			"WAITING_COUNT": "{count, plural, other {# à espera para entrar}}",
 			"WAITING_LABEL": "à espera para entrar",
 			"WANTS_TO_JOIN": "Pede para entrar",
-			"VIEW": "Ver"
+			"VIEW": "Ver",
+			"GONE_TITLE": "{name} já saiu",
+			"GONE_MESSAGE": "Esse participante não foi encontrado na sala de espera."
 		}
 	},
 	"SHARE_ACCESS": {

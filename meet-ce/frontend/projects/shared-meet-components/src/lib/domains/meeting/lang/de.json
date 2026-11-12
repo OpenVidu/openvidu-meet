@@ -304,7 +304,9 @@
 			"WAITING_COUNT": "{count, plural, other {# warten auf Einlass}}",
 			"WAITING_LABEL": "warten auf Einlass",
 			"WANTS_TO_JOIN": "Möchte beitreten",
-			"VIEW": "Anzeigen"
+			"VIEW": "Anzeigen",
+			"GONE_TITLE": "{name} hat den Warteraum bereits verlassen",
+			"GONE_MESSAGE": "Dieser Teilnehmer wurde im Warteraum nicht gefunden."
 		}
 	},
 	"SHARE_ACCESS": {

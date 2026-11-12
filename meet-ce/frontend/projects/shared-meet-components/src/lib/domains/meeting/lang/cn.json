@@ -304,7 +304,9 @@
 			"WAITING_COUNT": "{count, plural, other {# 人等待加入}}",
 			"WAITING_LABEL": "人等待加入",
 			"WANTS_TO_JOIN": "请求加入",
-			"VIEW": "查看"
+			"VIEW": "查看",
+			"GONE_TITLE": "{name} 已经离开",
+			"GONE_MESSAGE": "在等候室中未找到该参与者。"
 		}
 	},
 	"SHARE_ACCESS": {

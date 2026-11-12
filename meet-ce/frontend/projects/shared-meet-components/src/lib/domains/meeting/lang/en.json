@@ -304,7 +304,9 @@
 			"WAITING_COUNT": "{count, plural, other {# waiting to join}}",
 			"WAITING_LABEL": "waiting to join",
 			"WANTS_TO_JOIN": "Wants to join",
-			"VIEW": "View"
+			"VIEW": "View",
+			"GONE_TITLE": "{name} already left",
+			"GONE_MESSAGE": "That participant could not be found in the waiting room."
 		}
 	},
 	"SHARE_ACCESS": {
