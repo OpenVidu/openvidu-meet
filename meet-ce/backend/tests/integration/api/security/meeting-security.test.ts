@@ -4,7 +4,8 @@ import {
 	MeetParticipantModerationAction,
 	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
-	MeetRoomMemberUIBadge
+	MeetRoomMemberUIBadge,
+	MeetWaitingRoomTicketResponse
 } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import { jwtDecode } from 'jwt-decode';
@@ -470,9 +471,10 @@ describe('Meeting API Security Tests', () => {
 
 		/** Asks to join with a link, is admitted with the API key and joins with the ticket. */
 		const joinThroughTheLine = async (secret: string, name: string) => {
-			const { body: wait } = await askToJoin(waitingRoomRoomId, secret, name);
-			expect((await admitFromWaitingRoom(waitingRoomRoomId, [wait.participantIdentity])).status).toBe(200);
-			const joined = await askToJoin(waitingRoomRoomId, secret, name, wait.waitingRoomTicket);
+			const { waitingRoomTicket, participant } = (await askToJoin(waitingRoomRoomId, secret, name))
+				.body as MeetWaitingRoomTicketResponse;
+			expect((await admitFromWaitingRoom(waitingRoomRoomId, [participant.participantIdentity])).status).toBe(200);
+			const joined = await askToJoin(waitingRoomRoomId, secret, name, waitingRoomTicket);
 			expect(joined.status).toBe(200);
 			return joined.body.token as string;
 		};
