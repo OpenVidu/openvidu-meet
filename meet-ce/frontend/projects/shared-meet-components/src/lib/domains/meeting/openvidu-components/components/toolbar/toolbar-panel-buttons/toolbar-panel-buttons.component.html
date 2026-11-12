@@ -42,6 +42,9 @@
 						[class.active-menu-item]="isParticipantsOpened()"
 					>
 						<mat-icon aria-hidden="false">people</mat-icon>
+						@if (waitingParticipants() > 0) {
+							<span class="waiting-dot" aria-hidden="true"></span>
+						}
 					</button>
 				}
 
@@ -104,6 +107,9 @@
 				aria-hidden="false"
 				>people</mat-icon
 			>
+			@if (waitingParticipants() > 0) {
+				<span id="participants-waiting-dot" class="waiting-dot" aria-hidden="true"></span>
+			}
 		</button>
 	}
 

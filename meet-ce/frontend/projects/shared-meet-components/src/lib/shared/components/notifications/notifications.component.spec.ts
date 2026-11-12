@@ -32,6 +32,26 @@ describe('NotificationsComponent', () => {
 	const buttons = (): HTMLButtonElement[] =>
 		Array.from(fixture.nativeElement.querySelectorAll('.notification-action'));
 
+	it('shows the avatars of whom it is about in place of the glyph, stacked from two', async () => {
+		notificationService.showNotification({
+			kind: 'waiting-room-knock',
+			icon: 'hourglass_top',
+			avatars: [
+				{ name: 'zoe', color: 'rgb(255, 221, 153)' },
+				{ name: 'James', color: 'rgb(153, 214, 255)' }
+			],
+			message: 'Zoe and James',
+			placement: 'pinned'
+		});
+		await render();
+
+		const avatars: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('.notification-avatar'));
+		expect(avatars.map((avatar) => avatar.textContent!.trim())).toEqual(['Z', 'J']);
+		expect(avatars[0].style.backgroundColor).toBe('rgb(255, 221, 153)');
+		expect(fixture.nativeElement.querySelector('.notification-avatars.stacked')).not.toBeNull();
+		expect(fixture.nativeElement.querySelector('.notification-icon')).toBeNull();
+	});
+
 	it('offers a second answer before the first, each running its own action and taking the notification away', async () => {
 		const deny = jasmine.createSpy('deny');
 		const admit = jasmine.createSpy('admit');

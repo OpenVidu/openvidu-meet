@@ -44,7 +44,8 @@ const waiter = (identity: string, name = identity): WaitingRoomWaiter => ({
 		knockDate: 0
 	},
 	name,
-	knockedAt: 0
+	knockedAt: 0,
+	color: 'hsl(40, 100%, 80%)'
 });
 
 describe('WaitingRoomNoticeComponent', () => {
@@ -107,6 +108,7 @@ describe('WaitingRoomNoticeComponent', () => {
 		const [notice] = shown();
 		expect(shown().length).toBe(1);
 		expect(notice.title).toBe('Zoe');
+		expect(notice.avatars).toEqual([{ name: 'Zoe', color: zoe.color }]);
 		expect(notice.message).toEqual({ key: 'WAITING_ROOM.ADMIN.WANTS_TO_JOIN' });
 
 		notice.secondaryAction!.run();
@@ -114,6 +116,13 @@ describe('WaitingRoomNoticeComponent', () => {
 
 		expect(waitingRoomAdmin.reject).toHaveBeenCalledOnceWith(['zoe']);
 		expect(waitingRoomAdmin.admit).toHaveBeenCalledOnceWith(['zoe']);
+	});
+
+	it('stacks the avatars of three people at most', async () => {
+		const waiting = ['ana', 'ben', 'cleo', 'dan'].map((name) => waiter(name));
+		await line(waiting, waiting);
+
+		expect(shown()[0].avatars?.map(({ name }) => name)).toEqual(['ana', 'ben', 'cleo']);
 	});
 
 	it('groups several into one notification, counted, with View opening the panel', async () => {
@@ -126,6 +135,7 @@ describe('WaitingRoomNoticeComponent', () => {
 		expect(shown().length).toBe(1);
 		expect(notice.title).toEqual({ key: 'WAITING_ROOM.ADMIN.WAITING_COUNT', params: { count: 2 } });
 		expect(notice.message).toBe('ana, ben');
+		expect(notice.avatars?.map(({ name }) => name)).toEqual(['ana', 'ben']);
 		expect(notice.secondaryAction).toBeUndefined();
 
 		notice.action!.run();

@@ -35,6 +35,8 @@ export class ToolbarPanelButtonsComponent {
 	recordingStatus = input<any>();
 	toolbarAdditionalPanelButtonsTemplate = input<TemplateRef<any> | undefined>();
 	totalParticipants = input<number>(0);
+	/** People asking to join, which the participants button flags with a dot. */
+	waitingParticipants = input<number>(0);
 
 	// Signal outputs back to toolbar
 	toggleActivitiesPanel = output<string | undefined>();

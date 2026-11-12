@@ -37,9 +37,19 @@ export interface WaitingRoomWaiter {
 	name: string;
 	/** When they asked to join, in this device's time. */
 	knockedAt: number;
+	/** The colour of their avatar, which stays the same for the same participant. */
+	color: string;
 }
 
 export type WaitingRoomDecision = 'admit' | 'reject';
+
+const avatarColorOf = (identity: string): string => {
+	let hue = 0;
+
+	for (const char of identity) hue = (hue * 31 + char.charCodeAt(0)) % 360;
+
+	return `hsl(${hue}, 100%, 80%)`;
+};
 
 const knockOf = ({ participantIdentity, knockDate }: MeetWaitingRoomParticipant) =>
 	`${participantIdentity}:${knockDate}`;
@@ -261,7 +271,8 @@ export class WaitingRoomAdminService {
 		return {
 			participant,
 			name: await this.e2ee.decryptOrMask(participant.participantName, participant.participantIdentity),
-			knockedAt: participant.knockDate - this.roomMemberContext.serverTimeSkewMs()
+			knockedAt: participant.knockDate - this.roomMemberContext.serverTimeSkewMs(),
+			color: avatarColorOf(participant.participantIdentity)
 		};
 	}
 

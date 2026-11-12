@@ -6,9 +6,17 @@
 		[attr.data-kind]="notification.kind"
 		role="alert"
 	>
-		<span class="notification-icon">
-			<mat-icon>{{ notification.icon }}</mat-icon>
-		</span>
+		@if (notification.avatars; as avatars) {
+			<span class="notification-avatars" [class.stacked]="avatars.length > 1" aria-hidden="true">
+				@for (avatar of avatars; track $index) {
+					<span class="notification-avatar" [style.background-color]="avatar.color">{{ avatar.letter }}</span>
+				}
+			</span>
+		} @else {
+			<span class="notification-icon">
+				<mat-icon>{{ notification.icon }}</mat-icon>
+			</span>
+		}
 
 		<div class="notification-body">
 			@if (notification.title) {

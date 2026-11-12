@@ -17,7 +17,8 @@ class LoggerServiceStub {
 const waiter = (identity: string, name: string, type = MeetWaitingRoomParticipantType.USER): WaitingRoomWaiter => ({
 	participant: { participantIdentity: identity, participantName: name, type, knockDate: 0 },
 	name,
-	knockedAt: new Date(2026, 10, 11, 10, 42).getTime()
+	knockedAt: new Date(2026, 10, 11, 10, 42).getTime(),
+	color: 'hsl(40, 100%, 80%)'
 });
 
 describe('WaitingRoomPanelSectionComponent', () => {
@@ -91,6 +92,13 @@ describe('WaitingRoomPanelSectionComponent', () => {
 			'WAITING_ROOM.ADMIN.SHARED_LINK'
 		);
 		expect(rows()[1].querySelector('.waiting-room-shared-link')).toBeNull();
+	});
+
+	it('shows each waiting participant with their avatar', async () => {
+		waiting.set([waiter('ana', 'Ana'), waiter('ben', 'Ben')]);
+		await render();
+
+		expect(rows().map((row) => row.querySelector('.panel-initial')?.textContent?.trim())).toEqual(['A', 'B']);
 	});
 
 	it('shows when each asked to join next to a name two rows share', async () => {

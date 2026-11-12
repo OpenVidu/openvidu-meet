@@ -18,9 +18,9 @@
 			<div id="waiting-room-bulk-actions" class="panel-bulk-actions">
 				<span class="bulk-label">{{ 'WAITING_ROOM.ADMIN.EVERYONE' | translate }}</span>
 				<button
-					mat-stroked-button
+					mat-flat-button
 					id="waiting-room-deny-all-btn"
-					class="waiting-room-btn"
+					class="waiting-room-btn deny-all"
 					[disabled]="isBusy()"
 					(click)="confirmDenyAll()"
 				>
@@ -41,6 +41,7 @@
 		<ul class="waiting-room-rows">
 			@for (row of rows(); track row.participant.participantIdentity) {
 				<li class="waiting-room-row" [attr.data-participant-identity]="row.participant.participantIdentity">
+					<ov-participant-avatar variant="panel" [nickname]="row.name" [color]="row.color" />
 					<div class="waiting-room-who">
 						<span class="waiting-room-name">
 							{{ row.name }}
